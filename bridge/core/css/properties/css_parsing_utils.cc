@@ -801,7 +801,7 @@ std::shared_ptr<const CSSValue> ConsumeRatio(CSSParserTokenStream& stream,
   }
 
   savepoint.Release();
-  return std::make_shared<cssvalue::CSSRatioValue>(*first, *second);
+  return std::make_shared<cssvalue::CSSRatioValue>(first, second);
 }
 
 

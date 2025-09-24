@@ -6,6 +6,7 @@
 #define WEBF_CORE_CSS_CSS_RATIO_VALUE_H_
 
 #include "core/css/css_primitive_value.h"
+#include <memory>
 
 namespace webf {
 
@@ -14,7 +15,8 @@ namespace cssvalue {
 // https://drafts.csswg.org/css-values-4/#ratios
 class CSSRatioValue : public CSSValue {
  public:
-  CSSRatioValue(const CSSPrimitiveValue& first, const CSSPrimitiveValue& second);
+  CSSRatioValue(std::shared_ptr<const CSSPrimitiveValue> first,
+                std::shared_ptr<const CSSPrimitiveValue> second);
 
   // Numerator, but called 'first' by the spec.
   const CSSPrimitiveValue& First() const { return *first_; }
