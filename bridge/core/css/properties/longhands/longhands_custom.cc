@@ -3180,7 +3180,10 @@ void BackgroundOrigin::ApplyValue(webf::StyleResolverState&,
                                   webf::CSSProperty::ValueMode) const {}
 
 std::shared_ptr<const CSSValue> TransitionDelay::InitialValue() const {
-  return nullptr;
+  // Initial value for transition-delay is 0s
+  thread_local static std::shared_ptr<const CSSValue> value =
+      CSSNumericLiteralValue::Create(0, CSSPrimitiveValue::UnitType::kSeconds);
+  return value;
 }
 
 void TextOrientation::ApplyInherit(webf::StyleResolverState&) const {}
