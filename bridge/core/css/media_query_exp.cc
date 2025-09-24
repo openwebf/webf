@@ -252,7 +252,7 @@ std::optional<MediaQueryExpValue> MediaQueryExpValue::Consume(const String& medi
       return std::nullopt;
     }
     if (!css_parsing_utils::ConsumeSlashIncludingWhitespace(range)) {
-      return MediaQueryExpValue(*value, *CSSNumericLiteralValue::Create(1, CSSPrimitiveValue::UnitType::kNumber));
+      return MediaQueryExpValue(value, CSSNumericLiteralValue::Create(1, CSSPrimitiveValue::UnitType::kNumber));
     }
     std::shared_ptr<const CSSPrimitiveValue> denominator =
         css_parsing_utils::ConsumeNumber(range, context, CSSPrimitiveValue::ValueRange::kNonNegative);
@@ -260,10 +260,10 @@ std::optional<MediaQueryExpValue> MediaQueryExpValue::Consume(const String& medi
       return std::nullopt;
     }
     if (value->GetDoubleValue() == 0 && denominator->GetDoubleValue() == 0) {
-      return MediaQueryExpValue(*CSSNumericLiteralValue::Create(1, CSSPrimitiveValue::UnitType::kNumber),
-                                *CSSNumericLiteralValue::Create(0, CSSPrimitiveValue::UnitType::kNumber));
+      return MediaQueryExpValue(CSSNumericLiteralValue::Create(1, CSSPrimitiveValue::UnitType::kNumber),
+                                CSSNumericLiteralValue::Create(0, CSSPrimitiveValue::UnitType::kNumber));
     }
-    return MediaQueryExpValue(*value, *denominator);
+    return MediaQueryExpValue(value, denominator);
   }
 
   if (FeatureWithInteger(media_feature, value.get()) || FeatureWithNumber(media_feature, value.get()) ||
