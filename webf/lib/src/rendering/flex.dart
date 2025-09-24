@@ -2678,6 +2678,10 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (contentMinHeight > adjustedMaxHeight) {
       adjustedMaxHeight = contentMinHeight;
     }
+    // Normalize: maxHeight must be >= minHeight.
+    if (adjustedMaxHeight < minConstraintHeight) {
+      adjustedMaxHeight = minConstraintHeight;
+    }
 
     // If the child did not flex in the main axis, preserve its measured main size
     // to prevent block-level expansion to the available width when max-width is percentage
@@ -2688,19 +2692,32 @@ class RenderFlexLayout extends RenderLayoutBox {
     // clamp height to the preserved base size; letting the item re-measure
     // after cross-axis width becomes definite is required for correct text wrapping.
     if (preserveMainAxisSize != null && childFlexedMainSize == null) {
+      // Preserve the hypothetical main size when no flexing occurs (free space = 0).
+      // Spec: the used main size equals the hypothetical main size in this case.
       if (_isHorizontalFlexDirection) {
-        // Preserve base main size for non-flexed items.
-        // If a definite flex-basis is specified, it overrides width per spec.
+        // Row direction: preserve width.
         final bool hasDefiniteFlexBasis = _getFlexBasis(child) != null;
         if (hasDefiniteFlexBasis || (child.renderStyle.width.isAuto && !child.renderStyle.isSelfRenderReplaced())) {
-          // Old constraints may reflect an earlier intrinsic pass that forced a tight
-          // width of 0 due to flex-basis: 0. Do not clamp the preserved size to that.
-          // Use the preserved main size directly, and let the child’s own min/max
-          // constraints (handled below) cap it if necessary.
           minConstraintWidth = preserveMainAxisSize;
           maxConstraintWidth = preserveMainAxisSize;
         }
+      } else {
+        // Column direction: preserve height. Avoid over-constraining text reflow cases
+        // by applying only when the intrinsic pass forced a tight zero height or when
+        // the basis is definite (including 0) and height is auto.
+        final bool hasDefiniteFlexBasis = _getFlexBasis(child) != null;
+        final bool heightAuto = child.renderStyle.height.isAuto;
+        final bool intrinsicForcedZero = oldConstraints.maxHeight == 0;
+        if (preserveMainAxisSize > 0 && (intrinsicForcedZero || (hasDefiniteFlexBasis && heightAuto))) {
+          minConstraintHeight = preserveMainAxisSize;
+          maxConstraintHeight = preserveMainAxisSize;
+        }
       }
+    }
+
+    // Ensure normalization after any adjustments above (preserveMainAxisSize may raise min).
+    if (adjustedMaxHeight < minConstraintHeight) {
+      adjustedMaxHeight = minConstraintHeight;
     }
 
     BoxConstraints childConstraints = BoxConstraints(
