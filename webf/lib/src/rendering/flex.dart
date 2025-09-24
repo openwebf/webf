@@ -1788,9 +1788,15 @@ class RenderFlexLayout extends RenderLayoutBox {
         if (box != null) {
           if (box.renderStyle.overflowX == CSSOverflowType.hidden) {
             overflowHiddenNodeId.add(childNodeId);
+            // For hidden-overflow items, track the minimum width we must honor when redistributing.
             overflowHiddenNodeTotalMinWidth += box.contentConstraints?.minWidth ?? 0;
           } else {
-            overflowNotHiddenNodeTotalWidth += _originalMainSize;
+            // For non-hidden items, reserve their hypothetical (intrinsic/clamped) main size
+            // rather than the flex base size. This ensures items like a trailing label
+            // with flex-basis: 0% (from `flex: 1`) still keep their natural width
+            // when we pre-distribute space to hidden-overflow siblings for ellipsis.
+            // Use `intrinsicMain` computed above instead of `_originalMainSize` which may be 0.
+            overflowNotHiddenNodeTotalWidth += intrinsicMain;
           }
         }
       }
