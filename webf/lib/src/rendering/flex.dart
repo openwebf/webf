@@ -537,15 +537,32 @@ class RenderFlexLayout extends RenderLayoutBox {
       // Note: When flex-basis is 0%, it should remain 0, not be changed to minContentWidth
       // The commented code below was incorrectly setting flexBasis to minContentWidth for 0% values
       if (flexBasis != null && flexBasis == 0 && box.renderStyle.flexBasis?.type == CSSLengthType.PERCENTAGE) {
-        // When the flex container’s main size is indefinite, CSS says the used
-        // value of a percentage flex-basis becomes 'content'. Defer to content-based
-        // sizing by returning null here so the item measures itself naturally first.
-        // This avoids prematurely substituting an uninitialized min-content size (0).
-        bool isMainSizeDefinite = _isHorizontalFlexDirection
-            ? renderStyle.contentBoxLogicalWidth != null
-            : renderStyle.contentBoxLogicalHeight != null;
-        if (!isMainSizeDefinite) {
+        // CSS Flexbox: percentage flex-basis is resolved against the flex container’s
+        // inner main size. If that size is indefinite, the used value is 'content'.
+        // Our previous check only looked at specified CSS width/height and missed cases
+        // where the container receives a definite size via layout constraints. That
+        // caused 0% to incorrectly behave like 'content' during the second layout pass
+        // even when the container’s main size was known, preventing equal distribution.
+        // Treat the main size as definite if:
+        // - The flex container has a specified content-box size on the main axis, OR
+        // - The layout constraints on the main axis are tight.
+        final bool hasSpecifiedMain = _isHorizontalFlexDirection
+            ? (renderStyle.contentBoxLogicalWidth != null)
+            : (renderStyle.contentBoxLogicalHeight != null);
+        final bool mainTight = _isHorizontalFlexDirection
+            ? ((contentConstraints?.hasTightWidth ?? false) || constraints.hasTightWidth)
+            : ((contentConstraints?.hasTightHeight ?? false) || constraints.hasTightHeight);
+        final bool mainDefinite = hasSpecifiedMain || mainTight;
+        if (!mainDefinite) {
+          if (DebugFlags.debugLogFlexEnabled) {
+            renderingLogger.finer('[Flex] flex-basis % is indefinite for ${_childDesc(box)} '
+                '(basis=0%) hasSpecifiedMain=$hasSpecifiedMain mainTight=$mainTight → usedBasis=content');
+          }
           return null;
+        }
+        if (DebugFlags.debugLogFlexEnabled) {
+          renderingLogger.finer('[Flex] flex-basis % is definite for ${_childDesc(box)} '
+              '(basis=0%) hasSpecifiedMain=$hasSpecifiedMain mainTight=$mainTight → usedBasis=0 (definite)');
         }
       }
 
@@ -1516,6 +1533,19 @@ class RenderFlexLayout extends RenderLayoutBox {
     } else {
       flexLineLimit = containerBox!.contentConstraints!.maxHeight;
     }
+    if (DebugFlags.debugLogFlexEnabled) {
+      final c = constraints;
+      final cc = contentConstraints;
+      renderingLogger.fine('[Flex] container start dir=${renderStyle.flexDirection} jc=${renderStyle.justifyContent} '
+          'ai=${renderStyle.alignItems} ac=${renderStyle.alignContent} wm=' +
+          (((renderStyle is CSSRenderStyle) ? (renderStyle as CSSRenderStyle).writingMode : CSSWritingMode.horizontalTb)
+              .toString()) +
+          ' isHorizontalMain=${_isHorizontalFlexDirection} '
+          'constraints=${_fmtC(c)} contentConstraints=${_fmtC(cc!)} '
+          'logical=(w:${renderStyle.contentBoxLogicalWidth}, h:${renderStyle.contentBoxLogicalHeight})');
+      renderingLogger.fine('[Flex] flexLineLimit=${flexLineLimit.isFinite ? flexLineLimit.toStringAsFixed(1) : '∞'} '
+          '(reason=${_isHorizontalFlexDirection ? 'contentMaxConstraintsWidth' : 'contentConstraints.maxHeight'})');
+    }
 
     // Info about each flex item in each flex line
     Map<int?, _RunChild> runChildren = {};
@@ -2129,8 +2159,20 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     // Flexbox has several additional cases where a length can be considered definite.
     // https://www.w3.org/TR/css-flexbox-1/#definite-sizes
-    bool isMainSizeDefinite =
-        _isHorizontalFlexDirection ? contentBoxLogicalWidth != null : contentBoxLogicalHeight != null;
+    // Treat the main size as definite if either:
+    // - The flex container has a specified content-box size in the main axis, or
+    // - The layout constraints on the main axis are tight (e.g., fixed by parent).
+    bool isMainSizeDefinite = _isHorizontalFlexDirection
+        ? (contentBoxLogicalWidth != null || (contentConstraints?.hasTightWidth ?? false) || constraints.hasTightWidth)
+        : (contentBoxLogicalHeight != null || (contentConstraints?.hasTightHeight ?? false) || constraints.hasTightHeight);
+
+    if (DebugFlags.debugLogFlexEnabled) {
+      renderingLogger.fine('[Flex] main-size definiteness: isDef=$isMainSizeDefinite '
+          'maxMainSize=${maxMainSize?.toStringAsFixed(1)} '
+          'contentBoxLogicalW=$contentBoxLogicalWidth contentBoxLogicalH=$contentBoxLogicalHeight '
+          'tightW=${contentConstraints?.hasTightWidth} tightH=${contentConstraints?.hasTightHeight} '
+          'outerTightW=${constraints.hasTightWidth} outerTightH=${constraints.hasTightHeight}');
+    }
 
     for (int i = 0; i < _runMetrics.length; ++i) {
       final _RunMetrics metrics = _runMetrics[i];
@@ -2169,6 +2211,13 @@ class RenderFlexLayout extends RenderLayoutBox {
 
       // Flexbox with no size on main axis should adapt the main axis size with children.
       double initialFreeSpace = isMainSizeDefinite ? (maxMainSize ?? 0) - totalSpace : 0;
+
+      if (DebugFlags.debugLogFlexEnabled) {
+        renderingLogger.fine('[Flex] run totalSpace=${totalSpace.toStringAsFixed(1)} '
+            'maxMain=${(maxMainSize ?? 0).toStringAsFixed(1)} '
+            'initialFree=${initialFreeSpace.toStringAsFixed(1)} items=${runChildren.length} '
+            'gaps=${runChildren.length > 1 ? ((runChildren.length - 1) * _getMainAxisGap()).toStringAsFixed(1) : '0'}');
+      }
 
       double layoutContentMainSize = _isHorizontalFlexDirection ? contentSize.width : contentSize.height;
       double minMainAxisSize = _getMinMainAxisSize(this);
