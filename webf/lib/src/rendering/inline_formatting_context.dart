@@ -1,20 +1,20 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui
     show
-        Paragraph,
-        ParagraphBuilder,
-        ParagraphStyle,
-        ParagraphConstraints,
-        PlaceholderAlignment,
-        TextBox,
-        TextPosition,
-        LineMetrics,
-        TextStyle,
-        TextHeightBehavior,
-        TextLeadingDistribution,
-        StrutStyle,
-        Path,
-        PathOperation;
+    Paragraph,
+    ParagraphBuilder,
+    ParagraphStyle,
+    ParagraphConstraints,
+    PlaceholderAlignment,
+    TextBox,
+    TextPosition,
+    LineMetrics,
+    TextStyle,
+    TextHeightBehavior,
+    TextLeadingDistribution,
+    StrutStyle,
+    Path,
+    PathOperation;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
@@ -56,6 +56,7 @@ class InlineFormattingContext {
   // New: Paragraph-based layout artifacts
   ui.Paragraph? _paragraph;
   List<ui.LineMetrics> _paraLines = const [];
+
   // Track how many code units were added to the paragraph (text + placeholders)
   int _paraCharCount = 0;
 
@@ -64,13 +65,16 @@ class InlineFormattingContext {
 
   // Placeholder boxes as reported by Paragraph, in the order placeholders were added.
   List<ui.TextBox> _placeholderBoxes = const [];
+
   // For text-run placeholders (vertical-align on non-atomic text), store sub-paragraphs
   // aligned by index with _allPlaceholders; null for non text-run placeholders.
   List<ui.Paragraph?> _textRunParas = const [];
+
   // Baseline offsets computed from a prior layout pass for text-run placeholders.
   // Indexed by occurrence order of textRun placeholders only.
   List<double>? _textRunBaselineOffsets;
   int _textRunBuildIndex = 0;
+
   // Baseline offsets computed for atomic (inline-block/replaced) placeholders with
   // CSS vertical-align != baseline. Indexed by encounter order of atomic placeholders.
   List<double>? _atomicBaselineOffsets;
@@ -100,6 +104,7 @@ class InlineFormattingContext {
 
   // For mapping inline element RenderBox -> range in paragraph text
   final Map<RenderBoxModel, (int start, int end)> _elementRanges = {};
+
   // Measured visual sizes (border-box) for inline render boxes (including wrappers)
   final Map<RenderBox, Size> _measuredVisualSizes = {};
 
@@ -107,7 +112,7 @@ class InlineFormattingContext {
 
   // Resolve the RenderBoxModel that carries CSS styles for a placeholder's
   // render box (which may be a wrapper). Walk down a few levels if necessary.
-  RenderBoxModel? _resolveStyleBoxForPlaceholder(RenderBox rb) {
+  RenderBoxModel? _resolveStyleBoxForPlaceholder(RenderBox? rb) {
     if (rb is RenderBoxModel) return rb;
     RenderBox? cur = rb;
     for (int i = 0; i < 3; i++) {
@@ -370,7 +375,7 @@ class InlineFormattingContext {
     // Base rights from paragraph line metrics
     final rights = List<double>.generate(
       _paraLines.length,
-      (i) => _paraLines[i].left + _paraLines[i].width,
+          (i) => _paraLines[i].left + _paraLines[i].width,
       growable: false,
     );
     // Extend rights by trailing extras of inline elements that end on a line
@@ -394,7 +399,8 @@ class InlineFormattingContext {
     double visualLongest = rights.fold<double>(0, (p, v) => v > p ? v : p);
     final double result = visualLongest > baseLongest ? visualLongest : baseLongest;
     if (DebugFlags.debugLogInlineLayoutEnabled) {
-      renderingLogger.fine('[IFC] visualLongestLine=${result.toStringAsFixed(2)} (base=${baseLongest.toStringAsFixed(2)})');
+      renderingLogger.fine(
+          '[IFC] visualLongestLine=${result.toStringAsFixed(2)} (base=${baseLongest.toStringAsFixed(2)})');
     }
     return result;
   }
@@ -520,7 +526,8 @@ class InlineFormattingContext {
         // Skip reserve if a right-extras placeholder already accounts for it.
         if (hasRightPH.contains(box)) return;
         final s = box.renderStyle;
-        final double extra = s.paddingRight.computedValue + s.effectiveBorderRightWidth.computedValue + s.marginRight.computedValue;
+        final double extra = s.paddingRight.computedValue + s.effectiveBorderRightWidth.computedValue +
+            s.marginRight.computedValue;
         if (extra > reserves[li]) reserves[li] = extra;
       });
       return reserves;
@@ -565,7 +572,10 @@ class InlineFormattingContext {
         final testRes = _computePerLineReserve(paragraph);
         bool pass = true;
         for (int i = 0; i < testLines.length && i < testRes.length; i++) {
-          if (testLines[i].width + testRes[i] > maxW + 0.1) { pass = false; break; }
+          if (testLines[i].width + testRes[i] > maxW + 0.1) {
+            pass = false;
+            break;
+          }
         }
         if (pass) {
           midChosen = mid;
@@ -583,6 +593,7 @@ class InlineFormattingContext {
           '${maxW.toStringAsFixed(2)} → ${chosen.toStringAsFixed(2)}');
     }
   }
+
   /// Mark that inline collection is needed.
   void setNeedsCollectInlines() {
     _needsCollectInlines = true;
@@ -628,7 +639,7 @@ class InlineFormattingContext {
   double get paragraphMaxIntrinsicWidth {
     if (_paragraph != null) {
       try {
-        final double w = ( _paragraph as dynamic).maxIntrinsicWidth as double? ?? _paragraph!.longestLine;
+        final double w = (_paragraph as dynamic).maxIntrinsicWidth as double? ?? _paragraph!.longestLine;
         return w.isFinite ? w : _paragraph!.longestLine;
       } catch (_) {
         return _paragraph!.longestLine;
@@ -693,7 +704,8 @@ class InlineFormattingContext {
       final (int sIdx, int eIdx) = entry.value;
       if (eIdx <= sIdx) continue;
       final styleR = box.renderStyle;
-      final double extraR = styleR.paddingRight.computedValue + styleR.effectiveBorderRightWidth.computedValue + styleR.marginRight.computedValue;
+      final double extraR = styleR.paddingRight.computedValue + styleR.effectiveBorderRightWidth.computedValue +
+          styleR.marginRight.computedValue;
       if (extraR <= 0) continue;
       final rects = _paragraph!.getBoxesForRange(sIdx, eIdx);
       if (rects.isEmpty) continue;
@@ -706,8 +718,9 @@ class InlineFormattingContext {
     if (_forceRightExtrasOwners.isNotEmpty || needsVARebuild) {
       _suppressAllRightExtras = false;
       if (DebugFlags.debugLogInlineLayoutEnabled) {
-        renderingLogger.fine('[IFC] PASS 2: enable right extras for ${_forceRightExtrasOwners.length} single-line owners'
-            '${needsVARebuild ? ' + apply text-run baseline offsets' : ''}');
+        renderingLogger.fine(
+            '[IFC] PASS 2: enable right extras for ${_forceRightExtrasOwners.length} single-line owners'
+                '${needsVARebuild ? ' + apply text-run baseline offsets' : ''}');
       }
       _buildAndLayoutParagraph(constraints);
       // Clear offsets after they are consumed in PASS 2
@@ -720,6 +733,61 @@ class InlineFormattingContext {
     // Use visual longest line that includes trailing extras for shrink-to-fit behavior
     final double width = _computeVisualLongestLine();
     double height = para.height;
+    // If there's no text (only placeholders) and the container explicitly sets
+    // line-height: 0, browsers size each line to the tallest atomic inline on
+    // that line without adding extra leading. Flutter's paragraph may report a
+    // slightly larger line height due to internal metrics. Normalize by
+    // summing per-line max placeholder heights.
+    if (_placeholderBoxes.isNotEmpty) {
+      // Determine if the paragraph has any real text glyphs (exclude placeholders).
+      final int _placeholderCount = math.min(_placeholderBoxes.length, _allPlaceholders.length);
+      final bool _hasTextGlyphs = (_paraCharCount - _placeholderCount) > 0;
+      if (!_hasTextGlyphs) {
+        final CSSRenderStyle cStyle = (container as RenderBoxModel).renderStyle;
+        final CSSLengthValue lh = cStyle.lineHeight;
+        if (lh.type != CSSLengthType.NORMAL && lh.computedValue <= 0) {
+          // Build per-line max atomic owner border-box heights (ignore placeholder
+          // rectangles which may incorporate extra leading). Then sum.
+          final Map<int, double> lineMax = <int, double>{};
+          final int n = math.min(_placeholderBoxes.length, _allPlaceholders.length);
+          for (int i = 0; i < n; i++) {
+            final ph = _allPlaceholders[i];
+            if (ph.kind != _PHKind.atomic) continue;
+            final tb = _placeholderBoxes[i];
+            final int li = _lineIndexForRect(tb);
+            if (li < 0) continue;
+            final RenderBox? rb = i < _placeholderOrder.length ? _placeholderOrder[i] : null;
+            final RenderBoxModel? styleBox = _resolveStyleBoxForPlaceholder(rb);
+            double ownerBorderHeight = 0.0;
+            if (styleBox != null) {
+              final Size sz = styleBox.boxSize ?? (styleBox.hasSize ? styleBox.size : Size.zero);
+              ownerBorderHeight = sz.height.isFinite ? sz.height : 0.0;
+            }
+            final double prev = lineMax[li] ?? 0.0;
+            if (ownerBorderHeight > prev) lineMax[li] = ownerBorderHeight;
+            if (DebugFlags.debugLogInlineLayoutEnabled) {
+              renderingLogger.finer('[IFC] lh0 line=$li phIdx=$i ownerH=${ownerBorderHeight.toStringAsFixed(2)} '
+                  'tbH=${(tb.bottom - tb.top).toStringAsFixed(2)}');
+            }
+          }
+          double sum = 0.0;
+          if (lineMax.isNotEmpty) {
+            final keys = lineMax.keys.toList()
+              ..sort();
+            for (final k in keys) {
+              sum += lineMax[k] ?? 0.0;
+            }
+          }
+          if (DebugFlags.debugLogInlineLayoutEnabled) {
+            renderingLogger.fine(
+                '[IFC] lh0 adjust: paraH=${para.height.toStringAsFixed(2)} sumLines=${sum.toStringAsFixed(2)}');
+          }
+          if (sum > 0.0 && (sum - height).abs() > 0.5) {
+            height = sum;
+          }
+        }
+      }
+    }
     // If there is no text and no placeholders, an IFC with purely out-of-flow content
     // contributes 0 to the in-flow content height per CSS.
     if (_paraCharCount == 0 && _placeholderBoxes.isEmpty) {
@@ -743,7 +811,10 @@ class InlineFormattingContext {
       if (ph.kind != _PHKind.textRun) continue;
       final tb = _placeholderBoxes[i];
       final int li = _lineIndexForRect(tb);
-      if (li < 0 || li >= _paraLines.length) { offsets.add(0.0); continue; }
+      if (li < 0 || li >= _paraLines.length) {
+        offsets.add(0.0);
+        continue;
+      }
       final lm = _paraLines[li];
       final double h = tb.bottom - tb.top;
       // Determine desired alignment from the owner style
@@ -762,7 +833,7 @@ class InlineFormattingContext {
           baselineOffset = (lm.ascent - lm.descent + h) / 2.0;
           break;
         default:
-          // baseline (or others): keep baseline alignment with default sub-para baseline
+        // baseline (or others): keep baseline alignment with default sub-para baseline
           baselineOffset = h; // fallback harmless value; will not be used if va==baseline
           break;
       }
@@ -770,7 +841,8 @@ class InlineFormattingContext {
       if (va != VerticalAlign.baseline) any = true;
       if (DebugFlags.debugLogInlineLayoutEnabled) {
         renderingLogger.finer('[IFC] compute VA offset kind=textRun line=$li ascent=${lm.ascent.toStringAsFixed(2)} '
-            'descent=${lm.descent.toStringAsFixed(2)} h=${h.toStringAsFixed(2)} va=$va → baselineOffset=${baselineOffset.toStringAsFixed(2)}');
+            'descent=${lm.descent.toStringAsFixed(2)} h=${h.toStringAsFixed(2)} va=$va → baselineOffset=${baselineOffset
+            .toStringAsFixed(2)}');
       }
     }
     if (any) {
@@ -790,12 +862,19 @@ class InlineFormattingContext {
       final ph = _allPlaceholders[i];
       if (ph.kind != _PHKind.atomic) continue;
       final rb = _placeholderOrder[i];
-      if (rb is! RenderBoxModel) { offsets.add(0.0); continue; }
+      if (rb is! RenderBoxModel) {
+        offsets.add(0.0);
+        continue;
+      }
       final va = rb.renderStyle.verticalAlign;
       if (va == VerticalAlign.baseline) continue;
       final tb = _placeholderBoxes[i];
       final int li = _lineIndexForRect(tb);
-      if (li < 0 || li >= _paraLines.length) { offsets.add(0.0); any = true; continue; }
+      if (li < 0 || li >= _paraLines.length) {
+        offsets.add(0.0);
+        any = true;
+        continue;
+      }
       final lm = _paraLines[li];
       final double h = tb.bottom - tb.top;
       double baselineOffset;
@@ -819,7 +898,8 @@ class InlineFormattingContext {
       any = true;
       if (DebugFlags.debugLogInlineLayoutEnabled) {
         renderingLogger.finer('[IFC] compute atomic VA offset line=$li ascent=${lm.ascent.toStringAsFixed(2)} '
-            'descent=${lm.descent.toStringAsFixed(2)} h=${h.toStringAsFixed(2)} va=$va → baselineOffset=${baselineOffset.toStringAsFixed(2)}');
+            'descent=${lm.descent.toStringAsFixed(2)} h=${h.toStringAsFixed(2)} va=$va → baselineOffset=${baselineOffset
+            .toStringAsFixed(2)}');
       }
     }
     if (any) {
@@ -834,7 +914,7 @@ class InlineFormattingContext {
 
     final CSSRenderStyle containerStyle = (container as RenderBoxModel).renderStyle;
     final bool _clipText = containerStyle.backgroundClip == CSSBackgroundBoundary.text;
-    
+
 
     // Interleave line background and text painting so that later lines can
     // visually overlay earlier lines when they cross vertically.
@@ -843,7 +923,9 @@ class InlineFormattingContext {
     if (_paraLines.isEmpty) {
       // Fallback: paint decorations then text if no line metrics
       _paintInlineSpanDecorations(context, offset);
-        if (!_clipText) { context.canvas.drawParagraph(para, offset); }
+      if (!_clipText) {
+        context.canvas.drawParagraph(para, offset);
+      }
     } else {
       // Pre-scan lines to see if any requires right-side shifting for trailing extras.
       bool anyShift = false;
@@ -866,7 +948,8 @@ class InlineFormattingContext {
             final int li = _lineIndexForRect(last);
             if (li != i) return;
             final s = box.renderStyle;
-            final double extraR = s.paddingRight.computedValue + s.effectiveBorderRightWidth.computedValue + s.marginRight.computedValue;
+            final double extraR = s.paddingRight.computedValue + s.effectiveBorderRightWidth.computedValue +
+                s.marginRight.computedValue;
             if (extraR > 0) shiftSum += extraR;
           });
           if (shiftSum > 0) anyShift = true;
@@ -875,7 +958,7 @@ class InlineFormattingContext {
 
       // Collect per-line vertical-align adjustments for non-atomic inline spans (not needed when using
       // text-run placeholders, but kept for future parity; remains empty in common paths).
-      final Map<int, List<(ui.TextBox tb, double dy)>> vaAdjust = <int, List<(ui.TextBox,double)>>{};
+      final Map<int, List<(ui.TextBox tb, double dy)>> vaAdjust = <int, List<(ui.TextBox, double)>>{};
       if (_elementRanges.isNotEmpty) {
         _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
           final va = box.renderStyle.verticalAlign;
@@ -901,12 +984,12 @@ class InlineFormattingContext {
                 dy = lineMid - boxMid;
                 break;
               default:
-                // Approximate text-top/text-bottom using line box top/bottom
+              // Approximate text-top/text-bottom using line box top/bottom
                 dy = (va == VerticalAlign.textTop)
                     ? (bandTop - tb.top)
                     : (va == VerticalAlign.textBottom)
-                        ? (bandBottom - tb.bottom)
-                        : 0.0;
+                    ? (bandBottom - tb.bottom)
+                    : 0.0;
                 break;
             }
             if (dy.abs() > 0.01) {
@@ -919,9 +1002,11 @@ class InlineFormattingContext {
 
       // If no line needs shifting for trailing extras, and no vertical-align adjustment,
       // just paint decorations once and draw paragraph once.
-          if (!anyShift && !anyVAAdjust) {
+      if (!anyShift && !anyVAAdjust) {
         _paintInlineSpanDecorations(context, offset);
-          if (!_clipText) { context.canvas.drawParagraph(para, offset); }
+        if (!_clipText) {
+          context.canvas.drawParagraph(para, offset);
+        }
       } else {
         for (int i = 0; i < _paraLines.length; i++) {
           final lm = _paraLines[i];
@@ -934,14 +1019,14 @@ class InlineFormattingContext {
           // Determine aggregate right-extras shift for multi-line owners that end on this line.
           double shiftSum = 0.0;
           double boundaryX = lm.left; // rightmost boundary among owners on this line
-           if (_elementRanges.isNotEmpty) {
-             final Set<RenderBoxModel> hasRightPH = <RenderBoxModel>{};
-             for (int p = 0; p < _allPlaceholders.length && p < _placeholderBoxes.length; p++) {
-               final ph = _allPlaceholders[p];
-               if (ph.kind == _PHKind.rightExtra && ph.owner != null) {
-                 hasRightPH.add(ph.owner!);
-               }
-             }
+          if (_elementRanges.isNotEmpty) {
+            final Set<RenderBoxModel> hasRightPH = <RenderBoxModel>{};
+            for (int p = 0; p < _allPlaceholders.length && p < _placeholderBoxes.length; p++) {
+              final ph = _allPlaceholders[p];
+              if (ph.kind == _PHKind.rightExtra && ph.owner != null) {
+                hasRightPH.add(ph.owner!);
+              }
+            }
             _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
               if (range.$2 <= range.$1) return;
               if (hasRightPH.contains(box)) return; // single-line owners already accounted
@@ -951,7 +1036,8 @@ class InlineFormattingContext {
               final int li = _lineIndexForRect(last);
               if (li != i) return;
               final s = box.renderStyle;
-              final double extraR = s.paddingRight.computedValue + s.effectiveBorderRightWidth.computedValue + s.marginRight.computedValue;
+              final double extraR = s.paddingRight.computedValue + s.effectiveBorderRightWidth.computedValue +
+                  s.marginRight.computedValue;
               if (extraR > 0) {
                 shiftSum += extraR;
                 if (last.right > boundaryX) boundaryX = last.right;
@@ -979,8 +1065,9 @@ class InlineFormattingContext {
           );
 
           ui.Path _clipMinusVA(Rect base, bool isRightSlice) {
-            ui.Path p = ui.Path()..addRect(base);
-            final adj = vaAdjust[i] ?? const <(ui.TextBox,double)>[];
+            ui.Path p = ui.Path()
+              ..addRect(base);
+            final adj = vaAdjust[i] ?? const <(ui.TextBox, double)>[];
             if (adj.isEmpty) return p;
             ui.Path sub = ui.Path();
             for (final (tb, _) in adj) {
@@ -993,31 +1080,33 @@ class InlineFormattingContext {
               );
               if (r.overlaps(base)) sub.addRect(r.intersect(base));
             }
-            if (sub.getBounds().isEmpty) return p;
+            if (sub
+                .getBounds()
+                .isEmpty) return p;
             return ui.Path.combine(ui.PathOperation.difference, p, sub);
           }
 
           // Left slice (no horizontal shift)
-            if (!_clipText) {
-              context.canvas.save();
-              context.canvas.clipPath(_clipMinusVA(leftBase, false));
-              context.canvas.drawParagraph(para, offset);
-              context.canvas.restore();
-            }
+          if (!_clipText) {
+            context.canvas.save();
+            context.canvas.clipPath(_clipMinusVA(leftBase, false));
+            context.canvas.drawParagraph(para, offset);
+            context.canvas.restore();
+          }
 
           // Right slice (apply shift if needed)
-            if (!_clipText) {
-              context.canvas.save();
-              context.canvas.clipPath(_clipMinusVA(rightBase, true));
-              if (shiftSum != 0.0) {
-                context.canvas.translate(shiftSum, 0.0);
-              }
-              context.canvas.drawParagraph(para, offset);
-              context.canvas.restore();
+          if (!_clipText) {
+            context.canvas.save();
+            context.canvas.clipPath(_clipMinusVA(rightBase, true));
+            if (shiftSum != 0.0) {
+              context.canvas.translate(shiftSum, 0.0);
             }
+            context.canvas.drawParagraph(para, offset);
+            context.canvas.restore();
+          }
 
           // Repaint vertical-align adjusted fragments with vertical translation (and horizontal if in right slice)
-          final adj = vaAdjust[i] ?? const <(ui.TextBox,double)>[];
+          final adj = vaAdjust[i] ?? const <(ui.TextBox, double)>[];
           for (final (tb, dy) in adj) {
             final double leftPartRight = math.min(tb.right, boundaryX);
             final double rightPartLeft = math.max(tb.left, boundaryX);
@@ -1081,7 +1170,8 @@ class InlineFormattingContext {
             final int li = _lineIndexForRect(last);
             if (li != i) return;
             final s = box.renderStyle;
-            final double extraR = s.paddingRight.computedValue + s.effectiveBorderRightWidth.computedValue + s.marginRight.computedValue;
+            final double extraR = s.paddingRight.computedValue + s.effectiveBorderRightWidth.computedValue +
+                s.marginRight.computedValue;
             if (extraR > 0) {
               if (last.right > boundaryX) boundaryX = last.right;
               shiftSum += extraR;
@@ -1146,7 +1236,8 @@ class InlineFormattingContext {
             // Draw the paragraph shape into the layer (uses its own style; color may be null/black).
             context.canvas.drawParagraph(_para, offset);
             // Now overlay the background with srcIn so it is clipped to the glyphs we just drew.
-            final Paint p = Paint()..blendMode = BlendMode.srcIn;
+            final Paint p = Paint()
+              ..blendMode = BlendMode.srcIn;
             if (_grad != null) {
               p.shader = _grad.createShader(contRect);
               context.canvas.drawRect(layer, p);
@@ -1201,7 +1292,6 @@ class InlineFormattingContext {
     if (DebugFlags.debugPaintInlineLayoutEnabled) {
       _debugPaintParagraph(context, offset);
     }
-
   }
 
   /// Debug paint for paragraph-based layout path: visualizes lines, baselines,
@@ -1246,7 +1336,8 @@ class InlineFormattingContext {
             final int li = _lineIndexForRect(last);
             if (li != i) return; // consider owners ending on this line only
             final s = box.renderStyle;
-            final double extraR = s.paddingRight.computedValue + s.effectiveBorderRightWidth.computedValue + s.marginRight.computedValue;
+            final double extraR = s.paddingRight.computedValue + s.effectiveBorderRightWidth.computedValue +
+                s.marginRight.computedValue;
             if (extraR > 0) {
               if (last.right > boundaryX) boundaryX = last.right;
               shiftSum += extraR;
@@ -1294,7 +1385,7 @@ class InlineFormattingContext {
       _elementRanges.forEach((box, range) {
         final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
         if (rects.isEmpty) return;
-      entries.add(_SpanPaintEntry(box, box.renderStyle, rects, _depthFromContainer(box), false));
+        entries.add(_SpanPaintEntry(box, box.renderStyle, rects, _depthFromContainer(box), false));
       });
       entries.sort((a, b) => a.depth.compareTo(b.depth));
 
@@ -1712,7 +1803,8 @@ class InlineFormattingContext {
     // with padding-inline-start to simulate hanging markers (common pattern).
     final CSSLengthValue indent = style.textIndent;
     double indentPx = 0;
-    if (indent.type != CSSLengthType.INITIAL && indent.type != CSSLengthType.UNKNOWN && indent.type != CSSLengthType.AUTO) {
+    if (indent.type != CSSLengthType.INITIAL && indent.type != CSSLengthType.UNKNOWN &&
+        indent.type != CSSLengthType.AUTO) {
       indentPx = indent.computedValue;
     }
     if (indentPx != 0) {
@@ -1733,7 +1825,9 @@ class InlineFormattingContext {
           paraPos += 1;
         }
         if (DebugFlags.debugLogInlineLayoutEnabled) {
-          renderingLogger.finer('[IFC] apply text-indent=${indentPx.toStringAsFixed(2)} dir=${style.direction} reserved=${reserved.toStringAsFixed(2)}');
+          renderingLogger.finer(
+              '[IFC] apply text-indent=${indentPx.toStringAsFixed(2)} dir=${style.direction} reserved=${reserved
+                  .toStringAsFixed(2)}');
         }
       }
     }
@@ -1757,7 +1851,8 @@ class InlineFormattingContext {
             renderingLogger.finer('[IFC] open extras <${_getElementDescription(frame.box)}> '
                 'leftExtras=${frame.leftExtras.toStringAsFixed(2)} '
                 'metrics(height=${ph.toStringAsFixed(2)}, baselineOffset=${bo.toStringAsFixed(2)}, '
-                'effectiveLineHeight=${effLH.toStringAsFixed(2)}, fontSize=${rs.fontSize.computedValue.toStringAsFixed(2)})');
+                'effectiveLineHeight=${effLH.toStringAsFixed(2)}, fontSize=${rs.fontSize.computedValue.toStringAsFixed(
+                2)})');
           }
         }
       }
@@ -1799,9 +1894,12 @@ class InlineFormattingContext {
 
     String _insertWordJoinersForAsciiWords(String input) {
       if (input.isEmpty) return input;
-      const int A = 0x41, Z = 0x5A; // A-Z
-      const int a = 0x61, z = 0x7A; // a-z
-      const int zero = 0x30, nine = 0x39; // 0-9
+      const int A = 0x41,
+          Z = 0x5A; // A-Z
+      const int a = 0x61,
+          z = 0x7A; // a-z
+      const int zero = 0x30,
+          nine = 0x39; // 0-9
       bool isAsciiAlphaNum(int cu) =>
           (cu >= A && cu <= Z) || (cu >= a && cu <= z) || (cu >= zero && cu <= nine);
 
@@ -1864,7 +1962,9 @@ class InlineFormattingContext {
           if (DebugFlags.debugLogInlineLayoutEnabled) {
             final fam = st.fontFamily;
             final fs = st.fontSize.computedValue;
-            renderingLogger.finer('[IFC] pushStyle <${_getElementDescription(rb)}> fontSize=${fs.toStringAsFixed(2)} family=${fam?.join(',') ?? 'default'}');
+            renderingLogger.finer(
+                '[IFC] pushStyle <${_getElementDescription(rb)}> fontSize=${fs.toStringAsFixed(2)} family=${fam?.join(
+                    ',') ?? 'default'}');
           }
         }
         // Record content range start after left extras
@@ -1887,7 +1987,7 @@ class InlineFormattingContext {
             int idx = openFrames.lastIndexWhere((f) => f.box == item.renderBox);
             if (idx != -1) {
               final frame = openFrames.removeAt(idx);
-            if (frame.hadContent) {
+              if (frame.hadContent) {
                 // Non-empty inline span: ensure left extras flushed, then add a trailing
                 // right-extras placeholder only if allowed in this pass.
                 _flushPendingLeftExtras();
@@ -1907,12 +2007,14 @@ class InlineFormattingContext {
                     _allPlaceholders.add(_InlinePlaceholder.rightExtra(frame.box));
                     _textRunParas.add(null);
                     if (DebugFlags.debugLogInlineLayoutEnabled) {
-                      renderingLogger.finer('[IFC] add right extras placeholder for </${_getElementDescription(frame.box)}> '
-                          'rightExtras=${frame.rightExtras.toStringAsFixed(2)}');
+                      renderingLogger.finer(
+                          '[IFC] add right extras placeholder for </${_getElementDescription(frame.box)}> '
+                              'rightExtras=${frame.rightExtras.toStringAsFixed(2)}');
                     }
                   } else if (DebugFlags.debugLogInlineLayoutEnabled && frame.rightExtras > 0) {
-                    renderingLogger.finer('[IFC] suppress right extras placeholder for </${_getElementDescription(frame.box)}> '
-                        '(pass=${_suppressAllRightExtras ? '1' : '2'})');
+                    renderingLogger.finer(
+                        '[IFC] suppress right extras placeholder for </${_getElementDescription(frame.box)}> '
+                            '(pass=${_suppressAllRightExtras ? '1' : '2'})');
                   }
                 }
               } else {
@@ -1981,7 +2083,7 @@ class InlineFormattingContext {
         // If we have a precomputed baseline offset for atomic vertical-align, prefer baseline alignment
         // to precisely match CSS line box top/middle/bottom against paragraph metrics.
         final double? preOffset = (rbStyle.verticalAlign != VerticalAlign.baseline &&
-                _atomicBaselineOffsets != null && _atomicBuildIndex < (_atomicBaselineOffsets?.length ?? 0))
+            _atomicBaselineOffsets != null && _atomicBuildIndex < (_atomicBaselineOffsets?.length ?? 0))
             ? _atomicBaselineOffsets![_atomicBuildIndex]
             : null;
         if (preOffset != null) {
@@ -2017,9 +2119,13 @@ class InlineFormattingContext {
         if (DebugFlags.debugLogInlineLayoutEnabled) {
           final bw = rb.boxSize?.width ?? (rb.hasSize ? rb.size.width : 0.0);
           final bh = rb.boxSize?.height ?? (rb.hasSize ? rb.size.height : 0.0);
-          renderingLogger.finer('[IFC] placeholder <${_getElementDescription(rb)}> borderBox=(${bw.toStringAsFixed(2)}x${bh.toStringAsFixed(2)}) '
-              'margins=(L:${mL.toStringAsFixed(2)},T:${mT.toStringAsFixed(2)},R:${mR.toStringAsFixed(2)},B:${mB.toStringAsFixed(2)}) '
-              'placeholder=(w:${width.toStringAsFixed(2)}, h:${height.toStringAsFixed(2)}, baselineOffset:${baselineOffset.toStringAsFixed(2)})');
+          renderingLogger.finer(
+              '[IFC] placeholder <${_getElementDescription(rb)}> borderBox=(${bw.toStringAsFixed(2)}x${bh
+                  .toStringAsFixed(2)}) '
+                  'margins=(L:${mL.toStringAsFixed(2)},T:${mT.toStringAsFixed(2)},R:${mR.toStringAsFixed(2)},B:${mB
+                  .toStringAsFixed(2)}) '
+                  'placeholder=(w:${width.toStringAsFixed(2)}, h:${height.toStringAsFixed(
+                  2)}, baselineOffset:${baselineOffset.toStringAsFixed(2)})');
         }
       } else if (item.isText) {
         String text = item.getText(_textContent);
@@ -2061,7 +2167,8 @@ class InlineFormattingContext {
           final double phHeight = subPara.height;
           // Prefer baseline alignment with a precomputed baselineOffset when available from a prior pass,
           // so we can align to line top/bottom/middle precisely.
-          final double? preOffset = _textRunBaselineOffsets != null && _textRunBuildIndex < (_textRunBaselineOffsets?.length ?? 0)
+          final double? preOffset = _textRunBaselineOffsets != null &&
+              _textRunBuildIndex < (_textRunBaselineOffsets?.length ?? 0)
               ? _textRunBaselineOffsets![_textRunBuildIndex]
               : null;
           if (preOffset != null) {
@@ -2188,13 +2295,16 @@ class InlineFormattingContext {
       return s.contains(RegExp(r"[\s\u200B\u2060]")); // include ZWSP/WORD JOINER
     }
     bool _hasAtomicInlines = _items.any((it) => it.isAtomicInline);
-    bool _hasExplicitBreaks = _items.any((it) => it.type == InlineItemType.control || it.type == InlineItemType.lineBreakOpportunity);
+    bool _hasExplicitBreaks = _items.any((it) =>
+    it.type == InlineItemType.control || it.type == InlineItemType.lineBreakOpportunity);
     bool _hasWhitespaceInText = false;
     bool _hasInteriorWhitespaceInText = false;
     for (final it in _items) {
       if (it.isText) {
         final t = it.getText(_textContent);
-        if (_containsSoftWrapWhitespace(t)) { _hasWhitespaceInText = true; }
+        if (_containsSoftWrapWhitespace(t)) {
+          _hasWhitespaceInText = true;
+        }
         // Detect interior (between non-space) soft wrap whitespace, not just leading/trailing
         if (!_hasInteriorWhitespaceInText) {
           if (RegExp(r"\S\s+\S").hasMatch(t)) {
@@ -2337,27 +2447,39 @@ class InlineFormattingContext {
       // Try to extract intrinsic widths when available on this engine.
       double? minIntrinsic;
       double? maxIntrinsic;
-      try { minIntrinsic = (paragraph as dynamic).minIntrinsicWidth as double?; } catch (_) {}
-      try { maxIntrinsic = (paragraph as dynamic).maxIntrinsicWidth as double?; } catch (_) {}
+      try {
+        minIntrinsic = (paragraph as dynamic).minIntrinsicWidth as double?;
+      } catch (_) {}
+      try {
+        maxIntrinsic = (paragraph as dynamic).maxIntrinsicWidth as double?;
+      } catch (_) {}
 
-      renderingLogger.fine('[IFC] paragraph: width=${paragraph.width.toStringAsFixed(2)} height=${paragraph.height.toStringAsFixed(2)} '
-          'longestLine=${paragraph.longestLine.toStringAsFixed(2)} maxLines=${style.lineClamp} exceeded=${paragraph.didExceedMaxLines}');
+      renderingLogger.fine(
+          '[IFC] paragraph: width=${paragraph.width.toStringAsFixed(2)} height=${paragraph.height.toStringAsFixed(2)} '
+              'longestLine=${paragraph.longestLine.toStringAsFixed(2)} maxLines=${style.lineClamp} exceeded=${paragraph
+              .didExceedMaxLines}');
       if (minIntrinsic != null || maxIntrinsic != null) {
         renderingLogger.fine('[IFC] intrinsic: min=${(minIntrinsic ?? double.nan).toStringAsFixed(2)} '
             'max=${(maxIntrinsic ?? double.nan).toStringAsFixed(2)}');
       }
       // Log flags related to break avoidance in scrollable containers.
-      renderingLogger.fine('[IFC] flags: avoidWordBreakInScrollableX=${_avoidWordBreakInScrollableX} whiteSpace=${style.whiteSpace}');
+      renderingLogger.fine(
+          '[IFC] flags: avoidWordBreakInScrollableX=${_avoidWordBreakInScrollableX} whiteSpace=${style.whiteSpace}');
       for (int i = 0; i < _paraLines.length; i++) {
         final lm = _paraLines[i];
-        renderingLogger.finer('  [line $i] baseline=${lm.baseline.toStringAsFixed(2)} height=${lm.height.toStringAsFixed(2)} '
-            'ascent=${lm.ascent.toStringAsFixed(2)} descent=${lm.descent.toStringAsFixed(2)} left=${lm.left.toStringAsFixed(2)} width=${lm.width.toStringAsFixed(2)}');
+        renderingLogger.finer(
+            '  [line $i] baseline=${lm.baseline.toStringAsFixed(2)} height=${lm.height.toStringAsFixed(2)} '
+                'ascent=${lm.ascent.toStringAsFixed(2)} descent=${lm.descent.toStringAsFixed(2)} left=${lm.left
+                .toStringAsFixed(2)} width=${lm.width.toStringAsFixed(2)}');
       }
       // Log all placeholders including extras (left/right/empty) and atomics
       for (int i = 0; i < _placeholderBoxes.length && i < _allPlaceholders.length; i++) {
         final tb = _placeholderBoxes[i];
         final ph = _allPlaceholders[i];
-        final kind = ph.kind.toString().split('.').last;
+        final kind = ph.kind
+            .toString()
+            .split('.')
+            .last;
         String ownerDesc = 'n/a';
         if (ph.owner != null) ownerDesc = _getElementDescription(ph.owner!);
         double height = tb.bottom - tb.top;
@@ -2375,16 +2497,21 @@ class InlineFormattingContext {
         if (ph.kind == _PHKind.leftExtra && ph.owner != null) {
           final (h, b) = _measureTextMetricsFor(ph.owner!.renderStyle);
           final effLH = _effectiveLineHeightPx(ph.owner!.renderStyle);
-          renderingLogger.finer('  [ph $i] kind=$kind owner=<$ownerDesc> rect=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(2)} - ${tb.right.toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)}) '
-              'h=${height.toStringAsFixed(2)} metrics(height=${h.toStringAsFixed(2)}, baselineOffset=${b.toStringAsFixed(2)}, effLineHeight=${effLH.toStringAsFixed(2)})$lineStr');
+          renderingLogger.finer(
+              '  [ph $i] kind=$kind owner=<$ownerDesc> rect=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(
+                  2)} - ${tb.right.toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)}) '
+                  'h=${height.toStringAsFixed(2)} metrics(height=${h.toStringAsFixed(2)}, baselineOffset=${b
+                  .toStringAsFixed(2)}, effLineHeight=${effLH.toStringAsFixed(2)})$lineStr');
         } else {
           String childDesc = '';
           if (ph.kind == _PHKind.atomic && i < _placeholderOrder.length) {
             final rb = _placeholderOrder[i];
             childDesc = ' child=<${_getElementDescription(rb is RenderBoxModel ? rb : null)}>';
           }
-          renderingLogger.finer('  [ph $i] kind=$kind owner=<$ownerDesc> rect=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(2)} - ${tb.right.toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)}) '
-              'h=${height.toStringAsFixed(2)}$childDesc$lineStr');
+          renderingLogger.finer(
+              '  [ph $i] kind=$kind owner=<$ownerDesc> rect=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(
+                  2)} - ${tb.right.toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)}) '
+                  'h=${height.toStringAsFixed(2)}$childDesc$lineStr');
         }
       }
       // Log element ranges
@@ -2400,8 +2527,10 @@ class InlineFormattingContext {
             final lb = lm.baseline + lm.descent;
             final dt = tb.top - lt;
             final db = lb - tb.bottom;
-            renderingLogger.finer('    [frag $i] tb=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(2)} - ${tb.right.toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)}) '
-                '→ line=$li topDelta=${dt.toStringAsFixed(2)} bottomDelta=${db.toStringAsFixed(2)}');
+            renderingLogger.finer(
+                '    [frag $i] tb=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(2)} - ${tb.right
+                    .toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)}) '
+                    '→ line=$li topDelta=${dt.toStringAsFixed(2)} bottomDelta=${db.toStringAsFixed(2)}');
           }
         }
       });
@@ -2416,8 +2545,9 @@ class InlineFormattingContext {
         if (laidOut.contains(child)) continue;
         final constraints = child.getConstraints();
         if (DebugFlags.debugLogInlineLayoutEnabled) {
-          renderingLogger.finer('[IFC] layout atomic <${_getElementDescription(child is RenderBoxModel ? child : null)}>'
-              ' constraints=${constraints.toString()}');
+          renderingLogger.finer(
+              '[IFC] layout atomic <${_getElementDescription(child is RenderBoxModel ? child : null)}>'
+                  ' constraints=${constraints.toString()}');
         }
         // Pre-measure atomic inline without depending on parent's size readbacks.
         // Using parentUsesSize=false avoids relying on parent's relayout boundary
@@ -2514,7 +2644,8 @@ class InlineFormattingContext {
           final lm = _paraLines[currentLineIndex];
           final double baseTop = lm.baseline - mBaseline;
           final double baseBottom = baseTop + mHeight;
-          if (DebugFlags.debugLogInlineLayoutEnabled && ((top - baseTop).abs() > 0.5 || (bottom - baseBottom).abs() > 0.5)) {
+          if (DebugFlags.debugLogInlineLayoutEnabled &&
+              ((top - baseTop).abs() > 0.5 || (bottom - baseBottom).abs() > 0.5)) {
             renderingLogger.finer('    [metrics] span frag to content band: '
                 'top ${top.toStringAsFixed(2)}→${baseTop.toStringAsFixed(2)} '
                 'bottom ${bottom.toStringAsFixed(2)}→${baseBottom.toStringAsFixed(2)}');
@@ -2588,7 +2719,10 @@ class InlineFormattingContext {
                   : _lineIndexForRect(tb);
               if (liK != liI) continue;
               final double w = rk.right - rk.left;
-              if (w > smallThresh) { hasOtherWideOnLine = true; break; }
+              if (w > smallThresh) {
+                hasOtherWideOnLine = true;
+                break;
+              }
             }
             if (fragWidth <= smallThresh && hasOtherWideOnLine) {
               if (isFirst) isFirst = false;
@@ -2667,7 +2801,10 @@ class InlineFormattingContext {
                     : _lineIndexForRect(cr);
                 if (lmIdx != ljIdx) continue;
                 final double w = rm.right - rm.left;
-                if (w > smallThreshC) { hasOtherWide = true; break; }
+                if (w > smallThreshC) {
+                  hasOtherWide = true;
+                  break;
+                }
               }
               if (hasOtherWide) {
                 if (cIsFirst) cIsFirst = false;
@@ -2703,21 +2840,24 @@ class InlineFormattingContext {
               if (rk.bottom <= lineTop || rk.top >= lineBottom) continue;
             }
             if (_lineOf(rk) != _lineOf(tb)) continue;
-            if ((rk.right - rk.left) > _dbgThresh) { _dbgHasOtherWide = true; break; }
+            if ((rk.right - rk.left) > _dbgThresh) {
+              _dbgHasOtherWide = true;
+              break;
+            }
           }
           final bool _dbgTinyEdge = (_dbgFragW <= _dbgThresh) && _dbgHasOtherWide && (physLeftEdge || physRightEdge);
-          renderingLogger.finer('[DECOR] <${_getElementDescription(e.box)}> frag=${i}'+
-              lineInfo+
-              ' rect=(${rect.left.toStringAsFixed(2)},${rect.top.toStringAsFixed(2)} - '+
-              '${rect.right.toStringAsFixed(2)},${rect.bottom.toStringAsFixed(2)}) size=('+
-              '${rect.width.toStringAsFixed(2)}x${rect.height.toStringAsFixed(2)}) '+
-              'borders(T:${drawTop ? bT.toStringAsFixed(2) : '0'}, '+
-              'R:${drawRight ? bR.toStringAsFixed(2) : '0'}, '+
-              'B:${drawBottom ? bB.toStringAsFixed(2) : '0'}, '+
+          renderingLogger.finer('[DECOR] <${_getElementDescription(e.box)}> frag=${i}' +
+              lineInfo +
+              ' rect=(${rect.left.toStringAsFixed(2)},${rect.top.toStringAsFixed(2)} - ' +
+              '${rect.right.toStringAsFixed(2)},${rect.bottom.toStringAsFixed(2)}) size=(' +
+              '${rect.width.toStringAsFixed(2)}x${rect.height.toStringAsFixed(2)}) ' +
+              'borders(T:${drawTop ? bT.toStringAsFixed(2) : '0'}, ' +
+              'R:${drawRight ? bR.toStringAsFixed(2) : '0'}, ' +
+              'B:${drawBottom ? bB.toStringAsFixed(2) : '0'}, ' +
               'L:${drawLeft ? bL.toStringAsFixed(2) : '0'}) '
-              'phys(L:${physLeftEdge},R:${physRightEdge}) '
-              'fragW=${_dbgFragW.toStringAsFixed(2)} thresh=${_dbgThresh.toStringAsFixed(2)} '
-              'hasOtherWide=${_dbgHasOtherWide} tinyEdge=${_dbgTinyEdge}');
+                  'phys(L:${physLeftEdge},R:${physRightEdge}) '
+                  'fragW=${_dbgFragW.toStringAsFixed(2)} thresh=${_dbgThresh.toStringAsFixed(2)} '
+                  'hasOtherWide=${_dbgHasOtherWide} tinyEdge=${_dbgTinyEdge}');
         }
 
         // Background: optionally suppress tiny edge whitespace fragment painting to avoid slivers
@@ -2740,17 +2880,19 @@ class InlineFormattingContext {
         }
         final bool suppressEdge = _suppressTinyEdgePaint();
         if (DebugFlags.debugLogInlineLayoutEnabled) {
-          renderingLogger.finer('    [paint] frag=${i} suppressEdge=${suppressEdge} '+
-              'phys(L:${physLeftEdge},R:${physRightEdge}) w=${(right-left).toStringAsFixed(2)}');
+          renderingLogger.finer('    [paint] frag=${i} suppressEdge=${suppressEdge} ' +
+              'phys(L:${physLeftEdge},R:${physRightEdge}) w=${(right - left).toStringAsFixed(2)}');
         }
         // Skip painting inline background rectangles when background-clip:text is set
         if (!suppressEdge && s.backgroundColor?.value != null && s.backgroundClip != CSSBackgroundBoundary.text) {
-          final bg = Paint()..color = s.backgroundColor!.value;
+          final bg = Paint()
+            ..color = s.backgroundColor!.value;
           canvas.drawRect(rect, bg);
         }
 
         // Borders
-        final p = Paint()..style = PaintingStyle.fill;
+        final p = Paint()
+          ..style = PaintingStyle.fill;
         // Paint top border on every fragment (spec behavior). With clamped bands
         // and conditional padding, the shared join sits at a single y.
         if (!suppressEdge && bT > 0) {
@@ -2778,7 +2920,8 @@ class InlineFormattingContext {
         for (int i = 0; i < e.rects.length; i++) {
           final tb = e.rects[i];
           renderingLogger.finer('  [span] <${_getElementDescription(e.box)}> frag=$i '
-              'tb=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(2)} - ${tb.right.toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)})');
+              'tb=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(2)} - ${tb.right.toStringAsFixed(2)},${tb
+              .bottom.toStringAsFixed(2)})');
         }
       }
     }
@@ -2857,7 +3000,7 @@ class InlineFormattingContext {
         return ui.PlaceholderAlignment.bottom;
       case VerticalAlign.middle:
         return ui.PlaceholderAlignment.middle;
-      // For unsupported values (textTop/textBottom), fall back to baseline.
+    // For unsupported values (textTop/textBottom), fall back to baseline.
       default:
         return ui.PlaceholderAlignment.baseline;
     }
@@ -2871,7 +3014,7 @@ class InlineFormattingContext {
     }
     // Map CSS line-height to a multiplier for dart:ui. For 'normal', align with CSS by
     // using 1.2× font-size instead of letting Flutter pick a font-driven band.
-    final double? heightMultiple = ((){
+    final double? heightMultiple = (() {
       if (rs.lineHeight.type == CSSLengthType.NORMAL) {
         return kTextHeightNone; // CSS 'normal' approximation
       }
@@ -2988,7 +3131,10 @@ class InlineFormattingContext {
 
       for (int i = 0; i < _items.length; i++) {
         final item = _items[i];
-        final typeStr = item.type.toString().split('.').last;
+        final typeStr = item.type
+            .toString()
+            .split('.')
+            .last;
         itemTypeCounts[typeStr] = (itemTypeCounts[typeStr] ?? 0) + 1;
 
         // Build visual representation
@@ -3120,6 +3266,7 @@ class InlineFormattingContext {
 // defer inserting left extras until we know the span actually has content.
 class _OpenInlineFrame {
   _OpenInlineFrame(this.box, {required this.leftExtras, required this.rightExtras});
+
   final RenderBoxModel box;
   final double leftExtras;
   final double rightExtras;
@@ -3137,11 +3284,16 @@ class _InlinePlaceholder {
   final RenderBox? atomic;
   final double? width; // used for merged empty span extras
   _InlinePlaceholder._(this.kind, {this.owner, this.atomic, this.width});
+
   factory _InlinePlaceholder.atomic(RenderBox rb) => _InlinePlaceholder._(_PHKind.atomic, atomic: rb);
+
   factory _InlinePlaceholder.leftExtra(RenderBoxModel owner) => _InlinePlaceholder._(_PHKind.leftExtra, owner: owner);
+
   factory _InlinePlaceholder.rightExtra(RenderBoxModel owner) => _InlinePlaceholder._(_PHKind.rightExtra, owner: owner);
+
   factory _InlinePlaceholder.emptySpan(RenderBoxModel owner, double width) =>
       _InlinePlaceholder._(_PHKind.emptySpan, owner: owner, width: width);
+
   factory _InlinePlaceholder.textRun(RenderBoxModel owner) => _InlinePlaceholder._(_PHKind.textRun, owner: owner);
 }
 

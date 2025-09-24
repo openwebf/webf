@@ -644,8 +644,8 @@ class CSSText {
     if (value.isNotEmpty) {
       if (CSSLength.isNonNegativeLength(value) || CSSPercentage.isNonNegativePercentage(value)) {
         CSSLengthValue lineHeight = CSSLength.parseLength(value, renderStyle, propertyName);
-        // Line-height 0 and negative value is considered invalid.
-        if (lineHeight.computedValue != double.infinity && lineHeight.computedValue > 0) {
+        // Per CSS Inline spec, line-height accepts non-negative values. Zero is valid.
+        if (lineHeight.computedValue != double.infinity && lineHeight.computedValue >= 0) {
           return lineHeight;
         }
       } else if (value == NORMAL) {
