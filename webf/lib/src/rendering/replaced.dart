@@ -86,20 +86,35 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
         childConstraints = childConstraints.tighten(width: clampedW, height: height);
       }
 
-      // Avoid passing unconstrained infinity to child render box. Clamp to viewport when unbounded.
+      // Avoid passing totally unconstrained constraints to child render box.
+      // Historically we clamped both axes to the viewport which caused <img> with unknown
+      // intrinsic height to temporarily take the full viewport height (e.g., 640px) before
+      // the image loaded, breaking baseline alignment in flex containers.
+      //
+      // Fix: Only clamp the max-width to the viewport when unbounded. Keep max-height
+      // unbounded so replaced elements without a resolved height/aspect-ratio don't
+      // inherit the viewport height during initial layout. This lets them size to 0
+      // (or to their intrinsic defaults once available) instead of stretching cross-axis.
       if (childConstraints.maxWidth == double.infinity || childConstraints.maxHeight == double.infinity) {
         final viewport = renderStyle.target.ownerDocument.viewport!.viewportSize;
-        final double newMaxW = childConstraints.maxWidth.isFinite ? childConstraints.maxWidth : viewport.width;
-        final double newMaxH = childConstraints.maxHeight.isFinite ? childConstraints.maxHeight : viewport.height;
-        double newMinW = childConstraints.minWidth;
-        double newMinH = childConstraints.minHeight;
-        if (!newMinW.isFinite || newMinW > newMaxW) newMinW = 0;
-        if (!newMinH.isFinite || newMinH > newMaxH) newMinH = 0;
+
+        final double resolvedMaxW = childConstraints.maxWidth.isFinite ? childConstraints.maxWidth : viewport.width;
+        // Preserve unbounded maxHeight to avoid using viewport height as a fallback.
+        final double resolvedMaxH = childConstraints.maxHeight.isFinite ? childConstraints.maxHeight : double.infinity;
+
+        double resolvedMinW = childConstraints.minWidth;
+        double resolvedMinH = childConstraints.minHeight;
+        if (!resolvedMinW.isFinite || resolvedMinW > resolvedMaxW) resolvedMinW = 0;
+        // When maxHeight is unbounded, ensure minHeight is not greater than it and remains finite.
+        if (!resolvedMinH.isFinite || (!resolvedMaxH.isFinite && resolvedMinH > 0) || (resolvedMaxH.isFinite && resolvedMinH > resolvedMaxH)) {
+          resolvedMinH = 0;
+        }
+
         childConstraints = BoxConstraints(
-          minWidth: newMinW,
-          maxWidth: newMaxW,
-          minHeight: newMinH,
-          maxHeight: newMaxH,
+          minWidth: resolvedMinW,
+          maxWidth: resolvedMaxW,
+          minHeight: resolvedMinH,
+          maxHeight: resolvedMaxH,
         );
       }
 
