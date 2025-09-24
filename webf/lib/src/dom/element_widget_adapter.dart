@@ -443,7 +443,10 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
 
         if (childDisplay == CSSDisplay.block || childDisplay == CSSDisplay.flex) {
           hasBlockContent = true;
-        } else if (childDisplay == CSSDisplay.inline || childDisplay == CSSDisplay.inlineBlock) {
+        } else if (childDisplay == CSSDisplay.inline ||
+            childDisplay == CSSDisplay.inlineBlock ||
+            childDisplay == CSSDisplay.inlineFlex) {
+          // Treat inline-flex as inline-level for anonymous block grouping per spec.
           hasInlineContent = true;
           // Case 4: inline child that itself contains block-level children
           // Detect using renderStyle helper to avoid deep scanning here
