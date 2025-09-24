@@ -104,8 +104,14 @@ class AtomicString {
     return string_->Find(match_function, start);
   }
 
-  bool Contains(char ch, size_t start = 0) const { return string_->Contains(ch, start); }
-  bool Contains(char16_t ch, size_t start = 0) const { return string_->Contains(ch, start); }
+  bool Contains(char ch, size_t start = 0) const {
+    if (!string_) return false;
+    return string_->Contains(ch, start);
+  }
+  bool Contains(char16_t ch, size_t start = 0) const {
+    if (!string_) return false;
+    return string_->Contains(ch, start);
+  }
 
   bool StartsWith(
       const StringView& prefix,
