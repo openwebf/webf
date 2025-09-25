@@ -2407,8 +2407,12 @@ class RenderFlexLayout extends RenderLayoutBox {
         initialFreeSpace = maxMainSize - totalSpace;
       }
 
-      bool isFlexGrow = initialFreeSpace > 0 && totalFlexGrow > 0;
-      bool isFlexShrink = initialFreeSpace < 0 && totalFlexShrink > 0;
+      double usedFreeSpace = initialFreeSpace;
+      if (boundedOnly && usedFreeSpace > 0) {
+        usedFreeSpace = 0;
+      }
+      bool isFlexGrow = usedFreeSpace > 0 && totalFlexGrow > 0;
+      bool isFlexShrink = usedFreeSpace < 0 && totalFlexShrink > 0;
 
       // Legacy overflow preservation (guarded):
       // Preserve pre-existing behavior for non-replaced items so certain
@@ -2453,20 +2457,20 @@ class RenderFlexLayout extends RenderLayoutBox {
         impl: FlexImpl.flex,
         feature: FlexFeature.resolve,
         level: Level.FINE,
-        message: () => 'run pre-resolve initialFreeSpace=${initialFreeSpace.toStringAsFixed(1)} '
+        message: () => 'run pre-resolve initialFreeSpace=${usedFreeSpace.toStringAsFixed(1)} '
             'totalGrow=${totalFlexGrow.toStringAsFixed(1)} totalShrink=${totalFlexShrink.toStringAsFixed(1)}',
       );
       if (isFlexGrow || isFlexShrink) {
         // remainingFreeSpace starts out at the same value as initialFreeSpace
         // but as we place and lay out flex items we subtract from it.
-        metrics.remainingFreeSpace = initialFreeSpace;
+        metrics.remainingFreeSpace = usedFreeSpace;
 
         Map<String, double> totalFlexFactor = {
           'flexGrow': metrics.totalFlexGrow,
           'flexShrink': metrics.totalFlexShrink,
         };
         // Loop flex items to resolve flexible length of flex items with flex factor.
-        while (_resolveFlexibleLengths(metrics, totalFlexFactor, initialFreeSpace)) {}
+        while (_resolveFlexibleLengths(metrics, totalFlexFactor, usedFreeSpace)) {}
       }
 
       // Update run cross axis extent after flex item main size is adjusted which may
@@ -3057,13 +3061,25 @@ class RenderFlexLayout extends RenderLayoutBox {
           }
         }
       } else {
-        // Column direction: preserve height. Avoid over-constraining text reflow cases
-        // by applying only when the intrinsic pass forced a tight zero height or when
-        // the basis is definite (including 0) and height is auto.
+        // Column direction: preserve height.
+        // Do not preserve when the flex container's main size is auto and only
+        // bounded by a max constraint (e.g., max-height). In that scenario, the
+        // container must not force a tight height on the item; allow the child to
+        // reflow under the container's bounded height instead of freezing to the
+        // intrinsic height from PASS 2.
+        final bool containerBoundedOnly = (contentConstraints?.hasBoundedHeight ?? false) &&
+            !(contentConstraints?.hasTightHeight ?? false) &&
+            renderStyle.contentBoxLogicalHeight == null;
+
+        // Avoid over-constraining text reflow cases by applying only when the
+        // intrinsic pass forced a tight zero height or when the basis is definite
+        // (including 0) and height is auto.
         final bool hasDefiniteFlexBasis = _getFlexBasis(child) != null;
         final bool heightAuto = child.renderStyle.height.isAuto;
         final bool intrinsicForcedZero = oldConstraints.maxHeight == 0;
-        if (preserveMainAxisSize > 0 && (intrinsicForcedZero || (hasDefiniteFlexBasis && heightAuto))) {
+        if (!containerBoundedOnly &&
+            preserveMainAxisSize > 0 &&
+            (intrinsicForcedZero || (hasDefiniteFlexBasis && heightAuto))) {
           minConstraintHeight = preserveMainAxisSize;
           maxConstraintHeight = preserveMainAxisSize;
         }
