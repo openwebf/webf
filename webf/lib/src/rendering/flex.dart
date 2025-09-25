@@ -2360,22 +2360,15 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
 
       // Flexbox free space distribution:
-      // - For definite main sizes (tight or specified), distribute both positive and negative free space.
-      // - For auto main size bounded only by a max constraint (e.g., max-height), allow shrink
-      //   when overflowing (negative free space), but do not grow to fill spare space.
-      //   This matches shrink-to-fit behavior for auto main-size under a max constraint.
+      // For definite main sizes (tight or specified) or auto main size bounded by a max constraint,
+      // distribute free space per spec. Positive free space allows grow when flex-basis is 0 (e.g., flex: 1),
+      // negative free space triggers shrink when items overflow.
       final bool boundedOnly = maxMainSize != null && !(_isHorizontalFlexDirection
-          ? (contentBoxLogicalWidth != null || (contentConstraints?.hasTightWidth ?? false) ||
-          constraints.hasTightWidth)
-          : (contentBoxLogicalHeight != null || (contentConstraints?.hasTightHeight ?? false) ||
-          constraints.hasTightHeight));
+          ? (contentBoxLogicalWidth != null || (contentConstraints?.hasTightWidth ?? false) || constraints.hasTightWidth)
+          : (contentBoxLogicalHeight != null || (contentConstraints?.hasTightHeight ?? false) || constraints.hasTightHeight));
       double initialFreeSpace = 0;
       if (maxMainSize != null) {
         initialFreeSpace = maxMainSize! - totalSpace;
-        // Clamp positive free space to zero when the main size is auto and only bounded by max-constraint.
-        if (boundedOnly && initialFreeSpace > 0) {
-          initialFreeSpace = 0;
-        }
       }
 
       FlexLog.log(
@@ -2407,10 +2400,41 @@ class RenderFlexLayout extends RenderLayoutBox {
         initialFreeSpace = maxMainSize - totalSpace;
       }
 
+      // In bounded-only (max-constrained, auto main-size) scenarios, allow grow only when at least
+      // one item explicitly opts into shrinking/growing by setting min-main-size: 0 (e.g., min-height: 0 in column).
+      // This preserves expected behavior for scrollable/filling items like list views, while preventing
+      // unintended growth for text blocks whose min-size:auto would otherwise clamp upward.
+      bool anyExplicitMinZeroMain = false;
+      if (boundedOnly && initialFreeSpace > 0) {
+        runChildren.forEach((_, _RunChild rc) {
+          final RenderBox child = rc.child;
+          RenderBoxModel? box = child is RenderBoxModel
+              ? child
+              : (child is RenderEventListener ? child.child as RenderBoxModel? : null);
+          if (box != null) {
+            if (_isHorizontalFlexDirection) {
+              if (box.renderStyle.minWidth.isNotAuto && box.renderStyle.minWidth.computedValue == 0) {
+                anyExplicitMinZeroMain = true;
+              }
+            } else {
+              if (box.renderStyle.minHeight.isNotAuto && box.renderStyle.minHeight.computedValue == 0) {
+                anyExplicitMinZeroMain = true;
+              }
+            }
+          }
+        });
+      }
+
       double usedFreeSpace = initialFreeSpace;
       if (boundedOnly && usedFreeSpace > 0) {
-        usedFreeSpace = 0;
+        // Only allow grow under max-constraint when the container allows visible overflow
+        // and at least one item explicitly opts into flexible growth (min-main-size: 0).
+        final bool overflowAllowsGrow = renderStyle.effectiveOverflowY == CSSOverflowType.visible;
+        if (!(overflowAllowsGrow && anyExplicitMinZeroMain)) {
+          usedFreeSpace = 0;
+        }
       }
+
       bool isFlexGrow = usedFreeSpace > 0 && totalFlexGrow > 0;
       bool isFlexShrink = usedFreeSpace < 0 && totalFlexShrink > 0;
 
