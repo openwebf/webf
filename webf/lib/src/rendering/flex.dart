@@ -175,9 +175,10 @@ class RenderFlexLayout extends RenderLayoutBox {
   double? _getUsedFlexBasis(RenderBox child) {
     double? basis = _getFlexBasis(child);
     if (basis == null) return null;
-    RenderBoxModel? box = child is RenderBoxModel
-        ? child
-        : (child is RenderEventListener ? child.child as RenderBoxModel? : null);
+    // Important: RenderEventListener extends RenderBoxModel and represents the DOM element
+    // itself. Do NOT unwrap to its child when resolving the element’s own max-width/height.
+    // We must read max constraints from the element (wrapper) RenderStyle.
+    RenderBoxModel? box = child is RenderBoxModel ? child : null;
     if (box == null) return basis;
     final double paddingBorder = _isHorizontalFlexDirection
         ? (box.renderStyle.padding.horizontal + box.renderStyle.border.horizontal)
@@ -592,16 +593,57 @@ class RenderFlexLayout extends RenderLayoutBox {
     return AlignSelf.auto;
   }
 
-  double _getMaxMainAxisSize(RenderBox child) {
-    double? maxMainSize;
-    if (child is RenderBoxModel) {
+  double _getMaxMainAxisSize(RenderBoxModel child) {
+    double? resolvePctCap(CSSLengthValue len) {
+      if (len.type != CSSLengthType.PERCENTAGE || len.value == null) return null;
+      // Determine the container's inner content-box size in the main axis.
+      double? containerInner;
       if (_isHorizontalFlexDirection) {
-        maxMainSize = child.renderStyle.maxWidth.isNone ? null : child.renderStyle.maxWidth.computedValue;
+        containerInner = renderStyle.contentBoxLogicalWidth;
+        if (containerInner == null) {
+          if (contentConstraints != null && contentConstraints!.maxWidth.isFinite) {
+            containerInner = contentConstraints!.maxWidth;
+          } else if (constraints.hasTightWidth && constraints.maxWidth.isFinite) {
+            containerInner = constraints.maxWidth;
+          } else if (renderStyle is CSSRenderStyle) {
+            // Fallback to ancestor-provided available inline size used for shrink-to-fit.
+            final double cmw = (renderStyle as CSSRenderStyle).contentMaxConstraintsWidth;
+            if (cmw.isFinite) containerInner = cmw;
+          }
+        }
       } else {
-        maxMainSize = child.renderStyle.maxHeight.isNone ? null : child.renderStyle.maxHeight.computedValue;
+        containerInner = renderStyle.contentBoxLogicalHeight;
+        if (containerInner == null) {
+          if (contentConstraints != null && contentConstraints!.maxHeight.isFinite) {
+            containerInner = contentConstraints!.maxHeight;
+          } else if (constraints.hasTightHeight && constraints.maxHeight.isFinite) {
+            containerInner = constraints.maxHeight;
+          }
+        }
       }
+      if (containerInner != null && containerInner.isFinite) {
+        // Min/max in WebF are applied to the border-box. Percentage is relative to
+        // the flex container's content box in the main axis, so the cap is:
+        // border-box cap = percent * container content size.
+        final double pct = len.value!.clamp(0.0, double.infinity);
+        return containerInner * pct;
+      }
+      return null;
     }
-    return maxMainSize ?? double.infinity;
+
+    if (_isHorizontalFlexDirection) {
+      final CSSLengthValue mw = child.renderStyle.maxWidth;
+      if (mw.isNone) return double.infinity;
+      // Prefer resolving percentage against the flex container when possible.
+      final double? pctCap = resolvePctCap(mw);
+      return pctCap ?? mw.computedValue;
+    } else {
+      final CSSLengthValue mh = child.renderStyle.maxHeight;
+      if (mh.isNone) return double.infinity;
+      final double? pctCap = resolvePctCap(mh);
+      return pctCap ?? mh.computedValue;
+    }
+    return double.infinity;
   }
 
   double _getMinMainAxisSize(RenderBox child) {
@@ -2145,13 +2187,20 @@ class RenderFlexLayout extends RenderLayoutBox {
 
       double minFlexPrecision = 0.5;
       // Find all the violations by comparing min and max size of flex items.
-      if (child is RenderBoxModel && !_isChildMainAxisClip(child)) {
-        double minMainAxisSize = _getMinMainAxisSize(child);
-        double maxMainAxisSize = _getMaxMainAxisSize(child);
-        if (computedSize < minMainAxisSize && (computedSize - minMainAxisSize).abs() >= minFlexPrecision) {
-          flexedMainSize = minMainAxisSize;
-        } else if (computedSize > maxMainAxisSize && (computedSize - minMainAxisSize).abs() >= minFlexPrecision) {
-          flexedMainSize = maxMainAxisSize;
+      // Always enforce min/max constraints on the flex item, regardless of overflow clipping.
+      // Overflow does not disable max-width/height.
+      {
+        // Apply min/max against the flex item itself (the element). RenderEventListener
+        // is a RenderBoxModel; do not unwrap to its child.
+        RenderBoxModel? clampTarget = child is RenderBoxModel ? child : null;
+        if (clampTarget != null) {
+          double minMainAxisSize = _getMinMainAxisSize(clampTarget);
+          double maxMainAxisSize = _getMaxMainAxisSize(clampTarget);
+          if (computedSize < minMainAxisSize && (computedSize - minMainAxisSize).abs() >= minFlexPrecision) {
+            flexedMainSize = minMainAxisSize;
+          } else if (computedSize > maxMainAxisSize && (computedSize - minMainAxisSize).abs() >= minFlexPrecision) {
+            flexedMainSize = maxMainAxisSize;
+          }
         }
       }
 
