@@ -243,7 +243,7 @@ describe('flexbox_flex', () => {
 
   // @TODO: Impl setting longest words width as the minimum size of text.
   // https://github.com/openkraken/kraken/issues/401
-  fit('initial', async () => {
+  it('initial', async () => {
     let div;
     let flex;
     div = createElement(
