@@ -310,11 +310,7 @@ void Window::postMessage(const ScriptValue& message,
   dispatchEvent(message_event, exception_state);
 }
 
-WindowComputedStyle Window::getComputedStyle(Element* element, ExceptionState& exception_state) {
-  if (GetExecutingContext()->isBlinkEnabled()) {
-    return MakeGarbageCollected<ComputedCssStyleDeclaration>(GetExecutingContext());
-  }
-
+legacy::LegacyComputedCssStyleDeclaration* Window::getComputedStyle(Element* element, ExceptionState& exception_state) {
   // Legacy ComputedStyle is from dart side.
   NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<Element>>::ToNativeValue(element)};
   NativeValue result = InvokeBindingMethod(
@@ -330,12 +326,11 @@ WindowComputedStyle Window::getComputedStyle(Element* element, ExceptionState& e
   return MakeGarbageCollected<legacy::LegacyComputedCssStyleDeclaration>(GetExecutingContext(), native_binding_object);
 }
 
-WindowComputedStyle Window::getComputedStyle(Element* element,
+legacy::LegacyComputedCssStyleDeclaration* Window::getComputedStyle(Element* element,
                                                       const AtomicString& pseudo_elt,
                                                       ExceptionState& exception_state) {
   return getComputedStyle(element, exception_state);
 }
-
 
 double Window::___requestIdleCallback__(const std::shared_ptr<QJSFunction>& callback,
                                         webf::ExceptionState& exception_state) {

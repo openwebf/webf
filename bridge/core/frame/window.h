@@ -69,8 +69,14 @@ class Window : public EventTargetWithInlineData {
   void postMessage(const ScriptValue& message, ExceptionState& exception_state);
   void postMessage(const ScriptValue& message, const AtomicString& target_origin, ExceptionState& exception_state);
 
-  WindowComputedStyle getComputedStyle(Element* element, ExceptionState& exception_state);
-  WindowComputedStyle getComputedStyle(Element* element,
+  // We will expose only the legacy::LegacyComputedCssStyleDeclaration* (a.k.a dart side computedStyle)
+  legacy::LegacyComputedCssStyleDeclaration* getComputedStyle(Element* element, ExceptionState& exception_state);
+  legacy::LegacyComputedCssStyleDeclaration* getComputedStyle(Element* element,
+                                                const AtomicString& pseudo_elt,
+                                                ExceptionState& exception_state);
+
+  ComputedCssStyleDeclaration* getBlinkComputedStyle(Element* element, ExceptionState& exception_state);
+  ComputedCssStyleDeclaration* getBlinkComputedStyle(Element* element,
                                                 const AtomicString& pseudo_elt,
                                                 ExceptionState& exception_state);
 
