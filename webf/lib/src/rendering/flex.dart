@@ -2766,6 +2766,8 @@ class RenderFlexLayout extends RenderLayoutBox {
     // actual width (e.g., padding-bottom:50% → height=width/2), matching browsers.
     if (!_isHorizontalFlexDirection && childStretchedCrossSize == null) {
       final bool childCrossAuto = child.renderStyle.width.isAuto;
+      final bool childCrossPercent = child.renderStyle.width.type == CSSLengthType.PERCENTAGE;
+
       if (childCrossAuto) {
         double fixedW;
         // For replaced elements with an aspect ratio and auto width, prefer
@@ -2796,6 +2798,47 @@ class RenderFlexLayout extends RenderLayoutBox {
                 'containerCrossMax=${(contentConstraints?.maxWidth ?? double.infinity).toStringAsFixed(1)}',
           );
         }
+      } else if (childCrossPercent) {
+        // Resolve percentage width against the flex container's definite cross size (content box width)
+        // once it becomes known (second layout pass). This matches CSS flex item percentage resolution
+        // in column-direction containers.
+        double containerContentW;
+        if (contentConstraints != null && contentConstraints!.maxWidth.isFinite) {
+          containerContentW = contentConstraints!.maxWidth;
+        } else {
+          // Fallback to the container's current laid-out content box width.
+          final double borderH = renderStyle.effectiveBorderLeftWidth.computedValue +
+              renderStyle.effectiveBorderRightWidth.computedValue;
+          containerContentW = math.max(0, size.width - borderH);
+        }
+        final double percent = child.renderStyle.width.value ?? 0;
+        // Compute the child's content-box width from percentage.
+        double childContentW = containerContentW.isFinite ? (containerContentW * percent) : 0;
+        // Inflate to border-box width for constraints by adding child's padding+border.
+        final double childPadBorderH = child.renderStyle.padding.horizontal + child.renderStyle.border.horizontal;
+        double childBorderBoxW = childContentW + childPadBorderH;
+        // Guard against negative / non-finite.
+        if (!childBorderBoxW.isFinite || childBorderBoxW < 0) childBorderBoxW = 0;
+
+        // Honor child's definite non-percentage max-width if any.
+        if (child.renderStyle.maxWidth.isNotNone && child.renderStyle.maxWidth.type != CSSLengthType.PERCENTAGE) {
+          childBorderBoxW = math.min(childBorderBoxW, child.renderStyle.maxWidth.computedValue);
+        }
+        // Honor child's min-width.
+        if (child.renderStyle.minWidth.isNotAuto) {
+          childBorderBoxW = math.max(childBorderBoxW, child.renderStyle.minWidth.computedValue);
+        }
+
+        minConstraintWidth = childBorderBoxW;
+        maxConstraintWidth = childBorderBoxW;
+        _overrideChildContentBoxLogicalWidth(child, childBorderBoxW);
+        FlexLog.log(
+          impl: FlexImpl.flex,
+          feature: FlexFeature.childConstraints,
+          level: Level.FINER,
+          message: () => 'resolve %width for ${_childDesc(child)} percent=${(percent * 100).toStringAsFixed(1)}% '
+              'containerContentW=${containerContentW.toStringAsFixed(1)} borderBoxW=${childBorderBoxW.toStringAsFixed(1)}',
+        );
       }
     }
 
@@ -3203,7 +3246,19 @@ class RenderFlexLayout extends RenderLayoutBox {
         // Total main size of previous siblings.
         double preSiblingsMainSize = 0;
         for (RenderBox sibling in runChildrenList) {
+          // Include prior siblings' border-box size in the main axis.
           preSiblingsMainSize += _isHorizontalFlexDirection ? sibling.size.width : sibling.size.height;
+          // Also include the siblings' margins in the main axis; flex items' margins do not collapse
+          // and must contribute to the scrollable overflow region.
+          if (sibling is RenderBoxModel) {
+            if (_isHorizontalFlexDirection) {
+              preSiblingsMainSize += sibling.renderStyle.marginLeft.computedValue +
+                  sibling.renderStyle.marginRight.computedValue;
+            } else {
+              preSiblingsMainSize += sibling.renderStyle.marginTop.computedValue +
+                  sibling.renderStyle.marginBottom.computedValue;
+            }
+          }
         }
 
         Size childScrollableSize = child.size;
