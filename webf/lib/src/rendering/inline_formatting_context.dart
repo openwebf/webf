@@ -745,8 +745,18 @@ class InlineFormattingContext {
 
     // Compute size from paragraph
     final para = _paragraph!;
-    // Use visual longest line that includes trailing extras for shrink-to-fit behavior
-    final double width = _computeVisualLongestLine();
+    // For nowrap+ellipsis scenarios (with overflow not visible), browsers keep the
+    // line box width equal to the available content width so truncation/ellipsis
+    // can occur at the right edge. Honor the bounded width directly in this case.
+    final CSSRenderStyle cStyle = (container as RenderBoxModel).renderStyle;
+    final bool wantsEllipsis = cStyle.effectiveTextOverflow == TextOverflow.ellipsis &&
+        (cStyle.effectiveOverflowX != CSSOverflowType.visible) &&
+        (cStyle.whiteSpace == WhiteSpace.nowrap || cStyle.whiteSpace == WhiteSpace.pre);
+    // Use visual longest line for general shrink-to-fit; override with bounded width when keeping ellipsis.
+    double width = _computeVisualLongestLine();
+    if (wantsEllipsis && constraints.hasBoundedWidth && constraints.maxWidth.isFinite && constraints.maxWidth > 0) {
+      width = constraints.maxWidth;
+    }
     double height = para.height;
     // If there's no text (only placeholders) and the container explicitly sets
     // line-height: 0, browsers size each line to the tallest atomic inline on
