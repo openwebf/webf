@@ -169,7 +169,6 @@ describe('right', () => {
     await snapshot();
   });
 
-  // @TODO: Support CSS inherit keyword.
   it('007', async () => {
     let p;
     let div1;
@@ -228,7 +227,6 @@ describe('right', () => {
     await snapshot();
   });
 
-  // @TODO: Support CSS inherit keyword.
   it('008', async () => {
     let p;
     let div1;
@@ -455,7 +453,6 @@ describe('right', () => {
     await snapshot();
   });
 
-  // @TODO: Support CSS inherit keyword.
   it('019', async () => {
     let p;
     let div1;
@@ -514,7 +511,6 @@ describe('right', () => {
     await snapshot();
   });
 
-  // @TODO: Support CSS inherit keyword.
   it('020', async () => {
     let p;
     let div1;
