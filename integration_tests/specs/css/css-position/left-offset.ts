@@ -181,8 +181,7 @@ describe('left-offset', () => {
     await snapshot();
   });
 
-  // @TODO: Support direction.
-  xit('003-ref', async () => {
+  it('003-ref', async () => {
     let p;
     let div;
     p = createElement(
@@ -284,10 +283,10 @@ describe('left-offset', () => {
     await snapshot();
   });
 
-  // @TODO: Support direction.
-  xit('percentage-001-ref', async () => {
+  it('percentage-001-ref', async (done) => {
     let p;
     let div;
+    let img;
     p = createElement(
       'p',
       {
@@ -312,7 +311,7 @@ describe('left-offset', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/blue15x15.png',
           width: '50',
           height: '50',
@@ -323,8 +322,10 @@ describe('left-offset', () => {
     );
     BODY.appendChild(p);
     BODY.appendChild(div);
-
-    await snapshot();
+    onImageLoad(img, async () => {
+      await snapshot();
+      done();
+    });
   });
   it('percentage-001', async () => {
     let p;
