@@ -2812,11 +2812,9 @@ class RenderFlexLayout extends RenderLayoutBox {
           containerContentW = math.max(0, size.width - borderH);
         }
         final double percent = child.renderStyle.width.value ?? 0;
-        // Compute the child's content-box width from percentage.
-        double childContentW = containerContentW.isFinite ? (containerContentW * percent) : 0;
-        // Inflate to border-box width for constraints by adding child's padding+border.
-        final double childPadBorderH = child.renderStyle.padding.horizontal + child.renderStyle.border.horizontal;
-        double childBorderBoxW = childContentW + childPadBorderH;
+        // In this engine we treat width as border-box (box-sizing:border-box semantics).
+        // Therefore percentage width applies to the border-box directly.
+        double childBorderBoxW = containerContentW.isFinite ? (containerContentW * percent) : 0;
         // Guard against negative / non-finite.
         if (!childBorderBoxW.isFinite || childBorderBoxW < 0) childBorderBoxW = 0;
 
