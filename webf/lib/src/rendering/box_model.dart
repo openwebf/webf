@@ -744,13 +744,12 @@ abstract class RenderBoxModel extends RenderBox
     assert(value.isFinite);
     if (_maxScrollableSize != value) {
       // Verbose logging to diagnose scrollable sizing
-      if (DebugFlags.debugLogFlowEnabled) {
-        renderingLogger.finer('[Overflow] set scrollableSize '
-            'from=${_maxScrollableSize.width.toStringAsFixed(2)}×${_maxScrollableSize.height.toStringAsFixed(2)} '
-            'to=${value.width.toStringAsFixed(2)}×${value.height.toStringAsFixed(2)} '
-            'for <${renderStyle.target.tagName.toLowerCase()}> '
-            'overflowX=${renderStyle.effectiveOverflowX} overflowY=${renderStyle.effectiveOverflowY}');
-      }
+      FlowLog.log(
+        impl: FlowImpl.overflow,
+        feature: FlowFeature.scrollable,
+        message: () =>
+            'set scrollableSize from=${_maxScrollableSize.width.toStringAsFixed(2)}×${_maxScrollableSize.height.toStringAsFixed(2)} to=${value.width.toStringAsFixed(2)}×${value.height.toStringAsFixed(2)} for <${renderStyle.target.tagName.toLowerCase()}> overflowX=${renderStyle.effectiveOverflowX} overflowY=${renderStyle.effectiveOverflowY}',
+      );
       _maxScrollableSize = value;
     } else {
       _maxScrollableSize = value;
@@ -906,14 +905,12 @@ abstract class RenderBoxModel extends RenderBox
         _contentSize!.height + renderStyle.paddingTop.computedValue + renderStyle.paddingBottom.computedValue));
 
     setUpOverflowScroller(scrollableSize, scrollableViewportSize);
-    if (DebugFlags.debugLogFlowEnabled) {
-      renderingLogger.finer('[Overflow] didLayout <${renderStyle.target.tagName.toLowerCase()}> '
-          'box=${size.width.toStringAsFixed(2)}×${size.height.toStringAsFixed(2)} '
-          'content=${_contentSize!.width.toStringAsFixed(2)}×${_contentSize!.height.toStringAsFixed(2)} '
-          'viewport=${scrollableViewportSize.width.toStringAsFixed(2)}×${scrollableViewportSize.height.toStringAsFixed(2)} '
-          'scrollable=${scrollableSize.width.toStringAsFixed(2)}×${scrollableSize.height.toStringAsFixed(2)} '
-          'overflowX=${renderStyle.effectiveOverflowX} overflowY=${renderStyle.effectiveOverflowY}');
-    }
+    FlowLog.log(
+      impl: FlowImpl.overflow,
+      feature: FlowFeature.setup,
+      message: () =>
+          'didLayout <${renderStyle.target.tagName.toLowerCase()}> box=${size.width.toStringAsFixed(2)}×${size.height.toStringAsFixed(2)} content=${_contentSize!.width.toStringAsFixed(2)}×${_contentSize!.height.toStringAsFixed(2)} viewport=${scrollableViewportSize.width.toStringAsFixed(2)}×${scrollableViewportSize.height.toStringAsFixed(2)} scrollable=${scrollableSize.width.toStringAsFixed(2)}×${scrollableSize.height.toStringAsFixed(2)} overflowX=${renderStyle.effectiveOverflowX} overflowY=${renderStyle.effectiveOverflowY}',
+    );
 
     if (positionedHolder != null && renderStyle.position != CSSPositionType.sticky) {
       // Make position holder preferred size equal to current element boundary size except sticky element.

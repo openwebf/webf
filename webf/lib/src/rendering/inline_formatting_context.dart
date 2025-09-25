@@ -19,6 +19,8 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
+import 'package:logging/logging.dart' show Level;
+import 'package:webf/src/foundation/inline_layout_logging.dart';
 
 import 'inline_item.dart';
 import 'line_box.dart';
@@ -398,10 +400,12 @@ class InlineFormattingContext {
     double baseLongest = _paragraph!.longestLine;
     double visualLongest = rights.fold<double>(0, (p, v) => v > p ? v : p);
     final double result = visualLongest > baseLongest ? visualLongest : baseLongest;
-    if (DebugFlags.debugLogInlineLayoutEnabled) {
-      renderingLogger.fine(
-          '[IFC] visualLongestLine=${result.toStringAsFixed(2)} (base=${baseLongest.toStringAsFixed(2)})');
-    }
+    InlineLayoutLog.log(
+      impl: InlineImpl.paragraphIFC,
+      feature: InlineFeature.metrics,
+      level: Level.FINE,
+      message: () => 'visualLongestLine=${result.toStringAsFixed(2)} (base=${baseLongest.toStringAsFixed(2)})',
+    );
     return result;
   }
 
@@ -542,12 +546,15 @@ class InlineFormattingContext {
       final reserves = _computePerLineReserve(paragraph);
       if (reserves.isEmpty) break;
       bool ok = true;
-      if (DebugFlags.debugLogInlineLayoutEnabled) {
-        for (int i = 0; i < lines.length && i < reserves.length; i++) {
-          renderingLogger.finer('[IFC] line[$i] width=${lines[i].width.toStringAsFixed(2)} '
-              '+ reserve=${reserves[i].toStringAsFixed(2)} '
-              '→ sum=${(lines[i].width + reserves[i]).toStringAsFixed(2)} maxW=${maxW.toStringAsFixed(2)}');
-        }
+      for (int i = 0; i < lines.length && i < reserves.length; i++) {
+        final int idx = i;
+        InlineLayoutLog.log(
+          impl: InlineImpl.paragraphIFC,
+          feature: InlineFeature.metrics,
+          message: () => 'line[$idx] width=${lines[idx].width.toStringAsFixed(2)} '
+              '+ reserve=${reserves[idx].toStringAsFixed(2)} '
+              '→ sum=${(lines[idx].width + reserves[idx]).toStringAsFixed(2)} maxW=${maxW.toStringAsFixed(2)}',
+        );
       }
       for (int i = 0; i < lines.length && i < reserves.length; i++) {
         if (lines[i].width + reserves[i] > maxW + 0.1) {
@@ -588,10 +595,13 @@ class InlineFormattingContext {
       paragraph.layout(ui.ParagraphConstraints(width: chosen));
     }
 
-    if (DebugFlags.debugLogInlineLayoutEnabled) {
-      renderingLogger.fine('[IFC] reserve trailing extras (all lines): width '
-          '${maxW.toStringAsFixed(2)} → ${chosen.toStringAsFixed(2)}');
-    }
+    InlineLayoutLog.log(
+      impl: InlineImpl.paragraphIFC,
+      feature: InlineFeature.sizing,
+      level: Level.FINE,
+      message: () => 'reserve trailing extras (all lines): width '
+          '${maxW.toStringAsFixed(2)} → ${chosen.toStringAsFixed(2)}',
+    );
   }
 
   /// Mark that inline collection is needed.
@@ -660,9 +670,12 @@ class InlineFormattingContext {
     _paragraph!.layout(ui.ParagraphConstraints(width: width));
     _paraLines = _paragraph!.computeLineMetrics();
     _placeholderBoxes = _paragraph!.getBoxesForPlaceholders();
-    if (DebugFlags.debugLogInlineLayoutEnabled) {
-      renderingLogger.fine('[IFC] relayout paragraph to width=${width.toStringAsFixed(2)}');
-    }
+    InlineLayoutLog.log(
+      impl: InlineImpl.paragraphIFC,
+      feature: InlineFeature.sizing,
+      level: Level.FINE,
+      message: () => 'relayout paragraph to width=${width.toStringAsFixed(2)}',
+    );
   }
 
   // Leading spacer logic removed; pass 2 only re-enables right extras for
@@ -717,11 +730,13 @@ class InlineFormattingContext {
     }
     if (_forceRightExtrasOwners.isNotEmpty || needsVARebuild) {
       _suppressAllRightExtras = false;
-      if (DebugFlags.debugLogInlineLayoutEnabled) {
-        renderingLogger.fine(
-            '[IFC] PASS 2: enable right extras for ${_forceRightExtrasOwners.length} single-line owners'
-                '${needsVARebuild ? ' + apply text-run baseline offsets' : ''}');
-      }
+      InlineLayoutLog.log(
+        impl: InlineImpl.paragraphIFC,
+        feature: InlineFeature.placeholders,
+        level: Level.FINE,
+        message: () => 'PASS 2: enable right extras for ${_forceRightExtrasOwners.length} single-line owners'
+            '${needsVARebuild ? ' + apply text-run baseline offsets' : ''}',
+      );
       _buildAndLayoutParagraph(constraints);
       // Clear offsets after they are consumed in PASS 2
       _textRunBaselineOffsets = null;
@@ -772,10 +787,12 @@ class InlineFormattingContext {
           if (ownerBorderHeight > prevOwner) lineMaxOwner[li] = ownerBorderHeight;
           final double prevTB = lineMaxTB[li] ?? 0.0;
           if (tbH > prevTB) lineMaxTB[li] = tbH;
-          if (DebugFlags.debugLogInlineLayoutEnabled) {
-            renderingLogger.finer('[IFC] lh0 line=$li phIdx=$i ownerH=${ownerBorderHeight.toStringAsFixed(2)} '
-                'tbH=${tbH.toStringAsFixed(2)}');
-          }
+          InlineLayoutLog.log(
+            impl: InlineImpl.paragraphIFC,
+            feature: InlineFeature.metrics,
+            message: () => 'lh0 line=$li phIdx=$i ownerH=${ownerBorderHeight.toStringAsFixed(2)} '
+                'tbH=${tbH.toStringAsFixed(2)}',
+          );
         }
         double sumOwner = 0.0;
         if (lineMaxOwner.isNotEmpty) {
@@ -791,10 +808,13 @@ class InlineFormattingContext {
             sumTB += lineMaxTB[k] ?? 0.0;
           }
         }
-        if (DebugFlags.debugLogInlineLayoutEnabled) {
-          renderingLogger.fine('[IFC] lh0 adjust: paraH=${para.height.toStringAsFixed(2)} '
-              'sumOwner=${sumOwner.toStringAsFixed(2)} sumTB=${sumTB.toStringAsFixed(2)}');
-        }
+        InlineLayoutLog.log(
+          impl: InlineImpl.paragraphIFC,
+          feature: InlineFeature.metrics,
+          level: Level.FINE,
+          message: () => 'lh0 adjust: paraH=${para.height.toStringAsFixed(2)} '
+              'sumOwner=${sumOwner.toStringAsFixed(2)} sumTB=${sumTB.toStringAsFixed(2)}',
+        );
         // Apply spec-driven behavior:
         // - If line-height<=0 explicitly, use placeholder heights (includes inline-block vertical margins)
         //   so lines reflect atomic inline margin-box height as browsers do in this case.
@@ -819,16 +839,18 @@ class InlineFormattingContext {
     }
     // Emit diagnostics on paragraph sizing vs. atomic overflow so callers can
     // understand why container scrollable height may exceed box height.
-    if (DebugFlags.debugLogInlineLayoutEnabled) {
-      final double baseHeight = _paraLines.isEmpty
-          ? (_paragraph?.height ?? 0.0)
-          : _paraLines.fold<double>(0.0, (sum, lm) => sum + lm.height);
-      final double extraRel = additionalPositiveYOffsetFromAtomicPlaceholders();
-      final double extraAtomic = additionalOverflowHeightFromAtomicPlaceholders();
-      renderingLogger.finer('[IFC] size result width=${width.toStringAsFixed(2)} height=${height.toStringAsFixed(2)} '
-          'baseParaH=${baseHeight.toStringAsFixed(2)} extraY(rel/transform)=${extraRel.toStringAsFixed(2)} '
-          'extraY(atomicOverflow)=${extraAtomic.toStringAsFixed(2)}');
-    }
+    final double baseHeight = _paraLines.isEmpty
+        ? (_paragraph?.height ?? 0.0)
+        : _paraLines.fold<double>(0.0, (sum, lm) => sum + lm.height);
+    final double extraRel = additionalPositiveYOffsetFromAtomicPlaceholders();
+    final double extraAtomic = additionalOverflowHeightFromAtomicPlaceholders();
+    InlineLayoutLog.log(
+      impl: InlineImpl.paragraphIFC,
+      feature: InlineFeature.sizing,
+      level: Level.FINER,
+      message: () =>
+          'size result width=${width.toStringAsFixed(2)} height=${height.toStringAsFixed(2)} baseParaH=${baseHeight.toStringAsFixed(2)} extraY(rel/transform)=${extraRel.toStringAsFixed(2)} extraY(atomicOverflow)=${extraAtomic.toStringAsFixed(2)}',
+    );
 
     // After paragraph is ready, update parentData.offset for atomic inline children so that
     // paint and hit testing can rely on the standard Flutter offset mechanism.
@@ -876,11 +898,13 @@ class InlineFormattingContext {
       }
       offsets.add(baselineOffset);
       if (va != VerticalAlign.baseline) any = true;
-      if (DebugFlags.debugLogInlineLayoutEnabled) {
-        renderingLogger.finer('[IFC] compute VA offset kind=textRun line=$li ascent=${lm.ascent.toStringAsFixed(2)} '
-            'descent=${lm.descent.toStringAsFixed(2)} h=${h.toStringAsFixed(2)} va=$va → baselineOffset=${baselineOffset
-            .toStringAsFixed(2)}');
-      }
+      InlineLayoutLog.log(
+        impl: InlineImpl.paragraphIFC,
+        feature: InlineFeature.offsets,
+        level: Level.FINER,
+        message: () =>
+            'compute VA offset kind=textRun line=$li ascent=${lm.ascent.toStringAsFixed(2)} descent=${lm.descent.toStringAsFixed(2)} h=${h.toStringAsFixed(2)} va=$va → baselineOffset=${baselineOffset.toStringAsFixed(2)}',
+      );
     }
     if (any) {
       _textRunBaselineOffsets = offsets;
@@ -933,11 +957,12 @@ class InlineFormattingContext {
       }
       offsets.add(baselineOffset);
       any = true;
-      if (DebugFlags.debugLogInlineLayoutEnabled) {
-        renderingLogger.finer('[IFC] compute atomic VA offset line=$li ascent=${lm.ascent.toStringAsFixed(2)} '
-            'descent=${lm.descent.toStringAsFixed(2)} h=${h.toStringAsFixed(2)} va=$va → baselineOffset=${baselineOffset
-            .toStringAsFixed(2)}');
-      }
+      InlineLayoutLog.log(
+        impl: InlineImpl.paragraphIFC,
+        feature: InlineFeature.offsets,
+        message: () => 'compute atomic VA offset line=$li ascent=${lm.ascent.toStringAsFixed(2)} '
+            'descent=${lm.descent.toStringAsFixed(2)} h=${h.toStringAsFixed(2)} va=$va → baselineOffset=${baselineOffset.toStringAsFixed(2)}',
+      );
     }
     if (any) {
       _atomicBaselineOffsets = offsets;
@@ -1712,10 +1737,13 @@ class InlineFormattingContext {
   // Build and layout a Paragraph from collected inline items
   void _buildAndLayoutParagraph(BoxConstraints constraints) {
     final style = (container as RenderBoxModel).renderStyle;
-    if (DebugFlags.debugLogInlineLayoutEnabled) {
-      renderingLogger.fine('[IFC] PASS ${_suppressAllRightExtras ? '1' : '2'}: '
-          'suppressRightExtras=${_suppressAllRightExtras} forceRightCount=${_forceRightExtrasOwners.length}');
-    }
+    InlineLayoutLog.log(
+      impl: InlineImpl.paragraphIFC,
+      feature: InlineFeature.placeholders,
+      level: Level.FINE,
+      message: () => 'PASS ${_suppressAllRightExtras ? '1' : '2'}: '
+          'suppressRightExtras=${_suppressAllRightExtras} forceRightCount=${_forceRightExtrasOwners.length}',
+    );
     // Lay out atomic inlines first to obtain sizes for placeholders
     _layoutAtomicInlineItemsForParagraph();
 
@@ -1783,18 +1811,23 @@ class InlineFormattingContext {
     // Track an inline element stack to record ranges
     final List<RenderBoxModel> elementStack = [];
 
-    if (DebugFlags.debugLogInlineLayoutEnabled) {
-      // Log high-level container info
-      renderingLogger.fine('[IFC] Build paragraph: maxWidth=${constraints.maxWidth.toStringAsFixed(2)} '
-          'dir=${style.direction} textAlign=${style.textAlign} lineClamp=${style.lineClamp}');
-    }
+    InlineLayoutLog.log(
+      impl: InlineImpl.paragraphIFC,
+      feature: InlineFeature.text,
+      level: Level.FINE,
+      message: () => 'Build paragraph: maxWidth=${constraints.maxWidth.toStringAsFixed(2)} '
+          'dir=${style.direction} textAlign=${style.textAlign} lineClamp=${style.lineClamp}',
+    );
 
     // Record overflow flags for debugging
     final CSSOverflowType containerOverflowX = style.effectiveOverflowX;
     final CSSOverflowType containerOverflowY = style.effectiveOverflowY;
-    if (DebugFlags.debugLogInlineLayoutEnabled) {
-      renderingLogger.fine('[IFC] overflow flags: overflowX=$containerOverflowX overflowY=$containerOverflowY');
-    }
+    InlineLayoutLog.log(
+      impl: InlineImpl.paragraphIFC,
+      feature: InlineFeature.scrollable,
+      level: Level.FINE,
+      message: () => 'overflow flags: overflowX=$containerOverflowX overflowY=$containerOverflowY',
+    );
 
     // Measure text metrics (height and baseline offset) for a given CSS text style.
     // Returns (height, baselineOffset) where baselineOffset is distance from top to alphabetic baseline.
@@ -1861,11 +1894,11 @@ class InlineFormattingContext {
           pb.pop();
           paraPos += 1;
         }
-        if (DebugFlags.debugLogInlineLayoutEnabled) {
-          renderingLogger.finer(
-              '[IFC] apply text-indent=${indentPx.toStringAsFixed(2)} dir=${style.direction} reserved=${reserved
-                  .toStringAsFixed(2)}');
-        }
+        InlineLayoutLog.log(
+          impl: InlineImpl.paragraphIFC,
+          feature: InlineFeature.text,
+          message: () => 'apply text-indent=${indentPx.toStringAsFixed(2)} dir=${style.direction} reserved=${reserved.toStringAsFixed(2)}',
+        );
       }
     }
 
@@ -1883,14 +1916,15 @@ class InlineFormattingContext {
           _allPlaceholders.add(_InlinePlaceholder.leftExtra(frame.box));
           _textRunParas.add(null);
           frame.leftFlushed = true;
-          if (DebugFlags.debugLogInlineLayoutEnabled) {
-            final effLH = _effectiveLineHeightPx(rs);
-            renderingLogger.finer('[IFC] open extras <${_getElementDescription(frame.box)}> '
+          final effLH = _effectiveLineHeightPx(rs);
+          InlineLayoutLog.log(
+            impl: InlineImpl.paragraphIFC,
+            feature: InlineFeature.placeholders,
+            message: () => 'open extras <${_getElementDescription(frame.box)}> '
                 'leftExtras=${frame.leftExtras.toStringAsFixed(2)} '
                 'metrics(height=${ph.toStringAsFixed(2)}, baselineOffset=${bo.toStringAsFixed(2)}, '
-                'effectiveLineHeight=${effLH.toStringAsFixed(2)}, fontSize=${rs.fontSize.computedValue.toStringAsFixed(
-                2)})');
-          }
+                'effectiveLineHeight=${effLH.toStringAsFixed(2)}, fontSize=${rs.fontSize.computedValue.toStringAsFixed(2)})',
+          );
         }
       }
     }
@@ -1912,10 +1946,13 @@ class InlineFormattingContext {
           }
           final o = p.renderStyle.effectiveOverflowX;
           if (o == CSSOverflowType.scroll || o == CSSOverflowType.auto) {
-            if (DebugFlags.debugLogInlineLayoutEnabled) {
-              final t = p.renderStyle.target.tagName.toLowerCase();
-              renderingLogger.fine('[IFC] ancestor scroll-x detected at <$t> overflowX=$o');
-            }
+            final t = p.renderStyle.target.tagName.toLowerCase();
+            InlineLayoutLog.log(
+              impl: InlineImpl.paragraphIFC,
+              feature: InlineFeature.scrollable,
+              level: Level.FINE,
+              message: () => 'ancestor scroll-x detected at <$t> overflowX=$o',
+            );
             return true;
           }
         }
@@ -1996,13 +2033,13 @@ class InlineFormattingContext {
             openFrames.add(_OpenInlineFrame(rb, leftExtras: leftExtras, rightExtras: rightExtras));
           }
           pb.pushStyle(_uiTextStyleFromCss(st));
-          if (DebugFlags.debugLogInlineLayoutEnabled) {
-            final fam = st.fontFamily;
-            final fs = st.fontSize.computedValue;
-            renderingLogger.finer(
-                '[IFC] pushStyle <${_getElementDescription(rb)}> fontSize=${fs.toStringAsFixed(2)} family=${fam?.join(
-                    ',') ?? 'default'}');
-          }
+          final fam = st.fontFamily;
+          final fs = st.fontSize.computedValue;
+          InlineLayoutLog.log(
+            impl: InlineImpl.paragraphIFC,
+            feature: InlineFeature.text,
+            message: () => 'pushStyle <${_getElementDescription(rb)}> fontSize=${fs.toStringAsFixed(2)} family=${fam?.join(',') ?? 'default'}',
+          );
         }
         // Record content range start after left extras
         _elementRanges[rb] = (paraPos, paraPos);
@@ -2015,9 +2052,11 @@ class InlineFormattingContext {
         }
         if (item.style != null) {
           pb.pop();
-          if (DebugFlags.debugLogInlineLayoutEnabled) {
-            renderingLogger.finer('[IFC] popStyle </${_getElementDescription(item.renderBox!)}>');
-          }
+          InlineLayoutLog.log(
+            impl: InlineImpl.paragraphIFC,
+            feature: InlineFeature.text,
+            message: () => 'popStyle </${_getElementDescription(item.renderBox!)}>',
+          );
           // Handle right extras or merged extras for empty spans
           if (item.renderBox is RenderBoxModel) {
             // Find and remove the corresponding open frame
@@ -2043,15 +2082,19 @@ class InlineFormattingContext {
                     paraPos += 1;
                     _allPlaceholders.add(_InlinePlaceholder.rightExtra(frame.box));
                     _textRunParas.add(null);
-                    if (DebugFlags.debugLogInlineLayoutEnabled) {
-                      renderingLogger.finer(
-                          '[IFC] add right extras placeholder for </${_getElementDescription(frame.box)}> '
-                              'rightExtras=${frame.rightExtras.toStringAsFixed(2)}');
-                    }
-                  } else if (DebugFlags.debugLogInlineLayoutEnabled && frame.rightExtras > 0) {
-                    renderingLogger.finer(
-                        '[IFC] suppress right extras placeholder for </${_getElementDescription(frame.box)}> '
-                            '(pass=${_suppressAllRightExtras ? '1' : '2'})');
+                    InlineLayoutLog.log(
+                      impl: InlineImpl.paragraphIFC,
+                      feature: InlineFeature.placeholders,
+                      message: () => 'add right extras placeholder for </${_getElementDescription(frame.box)}> '
+                          'rightExtras=${frame.rightExtras.toStringAsFixed(2)}',
+                    );
+                  } else if (frame.rightExtras > 0) {
+                    InlineLayoutLog.log(
+                      impl: InlineImpl.paragraphIFC,
+                      feature: InlineFeature.placeholders,
+                      message: () => 'suppress right extras placeholder for </${_getElementDescription(frame.box)}> '
+                          '(pass=${_suppressAllRightExtras ? '1' : '2'})',
+                    );
                   }
                 }
               } else {
@@ -2067,15 +2110,19 @@ class InlineFormattingContext {
                   paraPos += 1;
                   _allPlaceholders.add(_InlinePlaceholder.emptySpan(frame.box, merged));
                   _textRunParas.add(null);
-                  if (DebugFlags.debugLogInlineLayoutEnabled) {
-                    renderingLogger.finer('[IFC] empty span extras <${_getElementDescription(frame.box)}>'
-                        ' merged=${merged.toStringAsFixed(2)}');
-                  }
+                  InlineLayoutLog.log(
+                    impl: InlineImpl.paragraphIFC,
+                    feature: InlineFeature.placeholders,
+                    message: () => 'empty span extras <${_getElementDescription(frame.box)}>'
+                        ' merged=${merged.toStringAsFixed(2)}',
+                  );
                 } else {
-                  if (DebugFlags.debugLogInlineLayoutEnabled) {
-                    renderingLogger.finer('[IFC] suppress empty span placeholder for '
-                        '<${_getElementDescription(frame.box)}> (no padding/border/margins)');
-                  }
+                  InlineLayoutLog.log(
+                    impl: InlineImpl.paragraphIFC,
+                    feature: InlineFeature.placeholders,
+                    message: () => 'suppress empty span placeholder for '
+                        '<${_getElementDescription(frame.box)}> (no padding/border/margins)',
+                  );
                 }
               }
             }
@@ -2153,17 +2200,15 @@ class InlineFormattingContext {
         }
         paraPos += 1; // placeholder adds a single object replacement char
 
-        if (DebugFlags.debugLogInlineLayoutEnabled) {
-          final bw = rb.boxSize?.width ?? (rb.hasSize ? rb.size.width : 0.0);
-          final bh = rb.boxSize?.height ?? (rb.hasSize ? rb.size.height : 0.0);
-          renderingLogger.finer(
-              '[IFC] placeholder <${_getElementDescription(rb)}> borderBox=(${bw.toStringAsFixed(2)}x${bh
-                  .toStringAsFixed(2)}) '
-                  'margins=(L:${mL.toStringAsFixed(2)},T:${mT.toStringAsFixed(2)},R:${mR.toStringAsFixed(2)},B:${mB
-                  .toStringAsFixed(2)}) '
-                  'placeholder=(w:${width.toStringAsFixed(2)}, h:${height.toStringAsFixed(
-                  2)}, baselineOffset:${baselineOffset.toStringAsFixed(2)})');
-        }
+        final bw = rb.boxSize?.width ?? (rb.hasSize ? rb.size.width : 0.0);
+        final bh = rb.boxSize?.height ?? (rb.hasSize ? rb.size.height : 0.0);
+        InlineLayoutLog.log(
+          impl: InlineImpl.paragraphIFC,
+          feature: InlineFeature.placeholders,
+          message: () => 'placeholder <${_getElementDescription(rb)}> borderBox=(${bw.toStringAsFixed(2)}x${bh.toStringAsFixed(2)}) '
+              'margins=(L:${mL.toStringAsFixed(2)},T:${mT.toStringAsFixed(2)},R:${mR.toStringAsFixed(2)},B:${mB.toStringAsFixed(2)}) '
+              'placeholder=(w:${width.toStringAsFixed(2)}, h:${height.toStringAsFixed(2)}, baselineOffset:${(baselineOffset ?? 0).toStringAsFixed(2)})',
+        );
       } else if (item.isText) {
         String text = item.getText(_textContent);
         if (text.isEmpty || item.style == null) continue;
@@ -2218,20 +2263,28 @@ class InlineFormattingContext {
           _allPlaceholders.add(_InlinePlaceholder.textRun(ownerBox!));
           _textRunParas.add(subPara);
           _textRunBuildIndex += 1;
-          if (DebugFlags.debugLogInlineLayoutEnabled) {
-            final t = text.replaceAll('\n', '\\n');
-            renderingLogger.finer('[IFC] addText-as-placeholder len=${text.length} at=$paraPos "$t" '
-                'size=(${phWidth.toStringAsFixed(2)}x${phHeight.toStringAsFixed(2)}) va=$ownerVA');
-          }
+          InlineLayoutLog.log(
+            impl: InlineImpl.paragraphIFC,
+            feature: InlineFeature.text,
+            message: () {
+              final t = text.replaceAll('\n', '\\n');
+              return 'addText-as-placeholder len=${text.length} at=$paraPos "$t" '
+                  'size=(${phWidth.toStringAsFixed(2)}x${phHeight.toStringAsFixed(2)}) va=$ownerVA';
+            },
+          );
         } else {
           pb.pushStyle(_uiTextStyleFromCss(item.style!));
           pb.addText(text);
           pb.pop();
           paraPos += text.length;
-          if (DebugFlags.debugLogInlineLayoutEnabled) {
-            final t = text.replaceAll('\n', '\\n');
-            renderingLogger.finer('[IFC] addText len=${text.length} at=$paraPos "$t"');
-          }
+          InlineLayoutLog.log(
+            impl: InlineImpl.paragraphIFC,
+            feature: InlineFeature.text,
+            message: () {
+              final t = text.replaceAll('\n', '\\n');
+              return 'addText len=${text.length} at=$paraPos "$t"';
+            },
+          );
         }
       } else if (item.type == InlineItemType.control) {
         // Control characters (e.g., from <br>) act as hard line breaks.
@@ -2248,10 +2301,14 @@ class InlineFormattingContext {
         pb.addText(text);
         pb.pop();
         paraPos += text.length;
-        if (DebugFlags.debugLogInlineLayoutEnabled) {
-          final t = text.replaceAll('\n', '\\n');
-          renderingLogger.finer('[IFC] addCtrl len=${text.length} at=$paraPos "$t"');
-        }
+        InlineLayoutLog.log(
+          impl: InlineImpl.paragraphIFC,
+          feature: InlineFeature.text,
+          message: () {
+            final t = text.replaceAll('\n', '\\n');
+            return 'addCtrl len=${text.length} at=$paraPos "$t"';
+          },
+        );
       }
     }
 
@@ -2368,17 +2425,23 @@ class InlineFormattingContext {
         if (_preferZeroWidthShaping) {
           initialWidth = 0.0;
           _shapedWithZeroWidth = true;
-          if (DebugFlags.debugLogInlineLayoutEnabled) {
-            renderingLogger.fine('[IFC] respect zero maxWidth for shaping (has breaks)');
-          }
+        InlineLayoutLog.log(
+          impl: InlineImpl.paragraphIFC,
+          feature: InlineFeature.sizing,
+          level: Level.FINE,
+          message: () => 'respect zero maxWidth for shaping (has breaks)',
+        );
         } else {
           initialWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
               ? fallbackContentMaxWidth
               : 1000000.0;
-          if (DebugFlags.debugLogInlineLayoutEnabled) {
-            renderingLogger.fine('[IFC] avoid zero-width shaping for unbreakable text; '
-                'use fallback=${initialWidth.toStringAsFixed(2)}');
-          }
+          InlineLayoutLog.log(
+            impl: InlineImpl.paragraphIFC,
+            feature: InlineFeature.sizing,
+            level: Level.FINE,
+            message: () => 'avoid zero-width shaping for unbreakable text; '
+                'use fallback=${initialWidth.toStringAsFixed(2)}',
+          );
         }
       }
     }
@@ -2397,10 +2460,13 @@ class InlineFormattingContext {
     final bool _wideShapeForScrollableX = (_ancestorScrollX || _localIsScrollableX) && _contentHasNoBreaks;
     if (_wideShapeForScrollableX) {
       initialWidth = 1000000.0;
-      if (DebugFlags.debugLogInlineLayoutEnabled) {
-        renderingLogger.fine('[IFC] scrollable-x with unbreakable content → shape wide initialWidth='
-            '${initialWidth.toStringAsFixed(2)}');
-      }
+      InlineLayoutLog.log(
+        impl: InlineImpl.paragraphIFC,
+        feature: InlineFeature.sizing,
+        level: Level.FINE,
+        message: () => 'scrollable-x with unbreakable content → shape wide initialWidth='
+            '${initialWidth.toStringAsFixed(2)}',
+      );
     }
 
     // CSS white-space: nowrap and white-space: pre both suppress automatic
@@ -2418,19 +2484,30 @@ class InlineFormattingContext {
           (style.effectiveOverflowX != CSSOverflowType.visible);
       if (!wantsEllipsis) {
         initialWidth = 1000000.0;
-        if (DebugFlags.debugLogInlineLayoutEnabled) {
-          renderingLogger.fine('[IFC] white-space=${style.whiteSpace} → disable soft wrap; initialWidth='
-              '${initialWidth.toStringAsFixed(2)}');
-        }
-      } else if (DebugFlags.debugLogInlineLayoutEnabled) {
-        renderingLogger.fine('[IFC] nowrap + ellipsis → keep bounded width for truncation');
+        InlineLayoutLog.log(
+          impl: InlineImpl.paragraphIFC,
+          feature: InlineFeature.sizing,
+          level: Level.FINE,
+          message: () => 'white-space=${style.whiteSpace} → disable soft wrap; initialWidth='
+              '${initialWidth.toStringAsFixed(2)}',
+        );
+      } else {
+        InlineLayoutLog.log(
+          impl: InlineImpl.paragraphIFC,
+          feature: InlineFeature.sizing,
+          level: Level.FINE,
+          message: () => 'nowrap + ellipsis → keep bounded width for truncation',
+        );
       }
     }
-    if (DebugFlags.debugLogInlineLayoutEnabled) {
-      renderingLogger.fine('[IFC] initialWidth=${initialWidth.toStringAsFixed(2)} '
+    InlineLayoutLog.log(
+      impl: InlineImpl.paragraphIFC,
+      feature: InlineFeature.sizing,
+      level: Level.FINE,
+      message: () => 'initialWidth=${initialWidth.toStringAsFixed(2)} '
           '(bounded=${constraints.hasBoundedWidth}, maxW=${constraints.maxWidth.toStringAsFixed(2)}, '
-          'fallback=${(fallbackContentMaxWidth ?? 0).toStringAsFixed(2)})');
-    }
+          'fallback=${(fallbackContentMaxWidth ?? 0).toStringAsFixed(2)})',
+    );
     paragraph.layout(ui.ParagraphConstraints(width: initialWidth));
 
     // Use container's available content width to preserve text-align behavior
@@ -2456,12 +2533,12 @@ class InlineFormattingContext {
           final double targetWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
               ? fallbackContentMaxWidth
               : paragraph.longestLine;
-          if (DebugFlags.debugLogInlineLayoutEnabled) {
+          if (false) {
             renderingLogger.fine('[IFC] block-like reflow with fallback width '
                 '${targetWidth.toStringAsFixed(2)} (had maxWidth=${constraints.maxWidth})');
           }
           paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
-        } else if (DebugFlags.debugLogInlineLayoutEnabled) {
+        } else if (false) {
           renderingLogger.fine('[IFC] keep zero-width shaping for block-like container');
         }
       }
@@ -2480,7 +2557,7 @@ class InlineFormattingContext {
     _placeholderBoxes = paragraph.getBoxesForPlaceholders();
     _paraCharCount = paraPos; // record final character count
 
-    if (DebugFlags.debugLogInlineLayoutEnabled) {
+    if (false) {
       // Try to extract intrinsic widths when available on this engine.
       double? minIntrinsic;
       double? maxIntrinsic;
@@ -2581,7 +2658,7 @@ class InlineFormattingContext {
         final child = item.renderBox!;
         if (laidOut.contains(child)) continue;
         final constraints = child.getConstraints();
-        if (DebugFlags.debugLogInlineLayoutEnabled) {
+        if (false) {
           renderingLogger.finer(
               '[IFC] layout atomic <${_getElementDescription(child is RenderBoxModel ? child : null)}>'
                   ' constraints=${constraints.toString()}');
@@ -2681,11 +2758,14 @@ class InlineFormattingContext {
           final lm = _paraLines[currentLineIndex];
           final double baseTop = lm.baseline - mBaseline;
           final double baseBottom = baseTop + mHeight;
-          if (DebugFlags.debugLogInlineLayoutEnabled &&
-              ((top - baseTop).abs() > 0.5 || (bottom - baseBottom).abs() > 0.5)) {
-            renderingLogger.finer('    [metrics] span frag to content band: '
-                'top ${top.toStringAsFixed(2)}→${baseTop.toStringAsFixed(2)} '
-                'bottom ${bottom.toStringAsFixed(2)}→${baseBottom.toStringAsFixed(2)}');
+          if (((top - baseTop).abs() > 0.5 || (bottom - baseBottom).abs() > 0.5)) {
+            InlineLayoutLog.log(
+              impl: InlineImpl.paragraphIFC,
+              feature: InlineFeature.metrics,
+              message: () => '    [metrics] span frag to content band: '
+                  'top ${top.toStringAsFixed(2)}→${baseTop.toStringAsFixed(2)} '
+                  'bottom ${bottom.toStringAsFixed(2)}→${baseBottom.toStringAsFixed(2)}',
+            );
           }
           top = baseTop;
           bottom = baseBottom;
@@ -2857,7 +2937,7 @@ class InlineFormattingContext {
 
         final rect = Rect.fromLTRB(left, top, right, bottom).shift(offset);
 
-        if (DebugFlags.debugLogInlineLayoutEnabled) {
+        if (false) {
           final bool drawTop = (bT > 0);
           final bool drawBottom = (bB > 0);
           final bool drawLeft = (logicalFirstFrag && bL > 0);
@@ -2916,7 +2996,7 @@ class InlineFormattingContext {
           return false;
         }
         final bool suppressEdge = _suppressTinyEdgePaint();
-        if (DebugFlags.debugLogInlineLayoutEnabled) {
+        if (false) {
           renderingLogger.finer('    [paint] frag=${i} suppressEdge=${suppressEdge} ' +
               'phys(L:${physLeftEdge},R:${physRightEdge}) w=${(right - left).toStringAsFixed(2)}');
         }
@@ -2952,7 +3032,7 @@ class InlineFormattingContext {
       }
     }
 
-    if (DebugFlags.debugLogInlineLayoutEnabled) {
+    if (false) {
       for (final e in entries) {
         for (int i = 0; i < e.rects.length; i++) {
           final tb = e.rects[i];

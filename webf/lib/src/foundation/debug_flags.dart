@@ -9,8 +9,7 @@ class DebugFlags {
   // Controls verbose IMG element logs added for diagnostics.
   static bool enableImageLogs = false;
 
-  // Verbose logging for flow sizing and constraints; toggle at runtime.
-  static bool debugLogFlowEnabled = false;
+  // Removed: Use FlowLog filters to enable flow logs.
 
   // Verbose logging for scrollable sizing; toggle at runtime.
   static bool debugLogScrollableEnabled = false;
@@ -18,8 +17,7 @@ class DebugFlags {
   // Enable verbose baseline logging for flex baseline alignment.
   static bool debugLogFlexBaselineEnabled = false;
 
-  // Verbose logging for flex sizing and constraints; toggle at runtime.
-  static bool debugLogFlexEnabled = false;
+  // Removed: Use FlexLog filters to enable flex logs.
 
   /// Debug flag to enable inline layout visualization.
   /// When true, paints debug information for line boxes, margins, padding, etc.
@@ -49,7 +47,7 @@ class DebugFlags {
   /// - Line box height calculations
   /// - Padding and border rendering
   static bool debugPaintInlineLayoutEnabled = false;
-  static bool debugLogInlineLayoutEnabled = false; // Enable verbose logging for paragraph-based IFC
+  // Removed: Use InlineLayoutLog filters to enable inline layout logs.
 
   // Enable verbose DOM logs (tree walks, counters, pseudo, etc.)
   static bool enableDomLogs = false;

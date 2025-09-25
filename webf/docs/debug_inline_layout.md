@@ -128,15 +128,51 @@ The debug paint clearly shows:
 
 ## Console Output
 
-When debug paint is enabled with console logging, you'll see:
+When debug logging for inline layout is enabled by features/groups, you'll see grouped messages:
 
 ```
-[IFC] Open tag: margin=20.0, padding=5.0, X=108.2
-[IFC] Adding text "inline element" at X=113.2, width=108.6
-[IFC] Close tag: padding=5.0, margin=30.0, X=256.8
+[IFC/Paragraph/Metrics] visualLongestLine=256.80 (base=248.40)
+[IFC/Flow/Decision] decision <div> inline=true block=false effectiveDisplay=block → establishIFC=true
+[IFC/Paragraph/Sizing] size result width=300.00 height=46.00 baseParaH=38.00 extraY(rel/transform)=0.00 extraY(atomicOverflow)=8.00
+[IFC/Paragraph/Offsets] compute VA offset kind=textRun line=0 ascent=12.00 descent=3.00 h=14.00 va=middle → baselineOffset=11.50
 ```
 
 This helps trace the exact positioning calculations during layout.
+
+### Log Grouping
+
+Inline layout logs are grouped by implementation and feature to make scanning easier:
+
+- Implementations: `Paragraph` (new paragraph-based IFC), `Legacy` (legacy line boxes), `Flow` (flow decisions around IFC)
+- Features: `Decision`, `Sizing`, `Baselines`, `Offsets`, `Scrollable`, `Painting`, `Placeholders`, `Text`, `Metrics`
+
+All grouped logs are controlled by InlineLayoutLog filters and use the `WebF.Rendering` logger.
+
+## Selective Logging
+
+You can enable only parts of the inline layout logs by feature and implementation:
+
+```dart
+import 'package:webf/foundation.dart';
+
+void main() {
+  // Only log sizing and baselines from the Paragraph IFC
+  InlineLayoutLog.enableImpls({ InlineImpl.paragraphIFC });
+  InlineLayoutLog.enableFeatures({ InlineFeature.sizing, InlineFeature.baselines });
+
+  // To allow all logs again:
+  InlineLayoutLog.enableAll();
+
+  // To temporarily silence all inline logs without touching the global flag:
+  // InlineLayoutLog.disableAll();
+}
+```
+
+Feature keys: `Decision`, `Sizing`, `Baselines`, `Offsets`, `Scrollable`, `Painting`, `Placeholders`, `Text`, `Metrics`.
+
+Note: There is no global switch for inline layout logs; use the filters above or the DevTools UI to enable by kind.
+
+Implementation keys: `Paragraph` (new), `Legacy` (legacy line boxes), `Flow` (IFC establishment decisions).
 
 ## Best Practices
 

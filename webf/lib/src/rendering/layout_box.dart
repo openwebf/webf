@@ -310,16 +310,19 @@ abstract class RenderLayoutBox extends RenderBoxModel
     required double contentWidth,
     required double contentHeight,
   }) {
-    if (DebugFlags.debugLogFlowEnabled || DebugFlags.debugLogFlexEnabled) {
-      try {
-        final tag = renderStyle.target.tagName.toLowerCase();
-        final disp = renderStyle.effectiveDisplay;
-        final pType = parent?.runtimeType.toString() ?? 'null';
-        renderingLogger.finer('[BoxSize] <$tag> getContentSize in='
-            '${contentWidth.toStringAsFixed(2)}×${contentHeight.toStringAsFixed(2)} '
-            'display=$disp parent=$pType');
-      } catch (_) {}
-    }
+    try {
+      final tag = renderStyle.target.tagName.toLowerCase();
+      final disp = renderStyle.effectiveDisplay;
+      final pType = parent?.runtimeType.toString() ?? 'null';
+      final msg = () => '[BoxSize] <$tag> getContentSize in='
+          '${contentWidth.toStringAsFixed(2)}×${contentHeight.toStringAsFixed(2)} '
+          'display=$disp parent=$pType';
+      if (renderStyle.isParentRenderFlexLayout()) {
+        FlexLog.log(impl: FlexImpl.flex, feature: FlexFeature.container, message: msg);
+      } else {
+        FlowLog.log(impl: FlowImpl.flow, feature: FlowFeature.sizing, message: msg);
+      }
+    } catch (_) {}
     double finalContentWidth = contentWidth;
     double finalContentHeight = contentHeight;
 
@@ -434,18 +437,21 @@ abstract class RenderLayoutBox extends RenderBoxModel
 
     Size finalContentSize = Size(finalContentWidth, finalContentHeight);
 
-    if (DebugFlags.debugLogFlowEnabled || DebugFlags.debugLogFlexEnabled) {
-      try {
-        final tag = renderStyle.target.tagName.toLowerCase();
-        final paddL = renderStyle.paddingLeft.computedValue;
-        final paddR = renderStyle.paddingRight.computedValue;
-        final bordL = renderStyle.effectiveBorderLeftWidth.computedValue;
-        final bordR = renderStyle.effectiveBorderRightWidth.computedValue;
-        renderingLogger.finer('[BoxSize] <$tag> getContentSize out='
-            '${finalContentSize.width.toStringAsFixed(2)}×${finalContentSize.height.toStringAsFixed(2)} '
-            'padH=${(paddL + paddR).toStringAsFixed(2)} borderH=${(bordL + bordR).toStringAsFixed(2)}');
-      } catch (_) {}
-    }
+    try {
+      final tag = renderStyle.target.tagName.toLowerCase();
+      final paddL = renderStyle.paddingLeft.computedValue;
+      final paddR = renderStyle.paddingRight.computedValue;
+      final bordL = renderStyle.effectiveBorderLeftWidth.computedValue;
+      final bordR = renderStyle.effectiveBorderRightWidth.computedValue;
+      final msg = () => '[BoxSize] <$tag> getContentSize out='
+          '${finalContentSize.width.toStringAsFixed(2)}×${finalContentSize.height.toStringAsFixed(2)} '
+          'padH=${(paddL + paddR).toStringAsFixed(2)} borderH=${(bordL + bordR).toStringAsFixed(2)}';
+      if (renderStyle.isParentRenderFlexLayout()) {
+        FlexLog.log(impl: FlexImpl.flex, feature: FlexFeature.container, message: msg);
+      } else {
+        FlowLog.log(impl: FlowImpl.flow, feature: FlowFeature.sizing, message: msg);
+      }
+    } catch (_) {}
     return finalContentSize;
   }
 

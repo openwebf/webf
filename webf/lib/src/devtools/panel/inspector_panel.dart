@@ -21,7 +21,7 @@ import 'package:webf/src/foundation/http_cache.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/src/launcher/controller.dart' show RoutePerformanceMetrics;
 import 'package:webf/src/launcher/loading_state.dart';
-import 'package:webf/rendering.dart' show debugPaintInlineLayoutEnabled, debugLogInlineLayoutEnabled, debugLogFlexBaselineEnabled;
+import 'package:webf/rendering.dart' show debugPaintInlineLayoutEnabled, debugLogFlexBaselineEnabled;
 
 /// A floating inspector panel for WebF that provides debugging tools and insights.
 ///
@@ -2170,15 +2170,15 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
           ),
         ),
         PopupMenuItem<int>(
-          value: 1,
-          child: _buildSwitchRow(
-            label: 'Log Inline Layout',
-            value: DebugFlags.debugLogInlineLayoutEnabled,
-            onChanged: (v) {
-              setState(() {
-                DebugFlags.debugLogInlineLayoutEnabled = v;
-              });
+          value: 11,
+          child: ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
+            title: Text('Inline Log Filters...'),
+            onTap: () {
               Navigator.pop(context);
+              _showInlineLogFilters();
             },
           ),
         ),
@@ -2192,6 +2192,32 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                 DebugFlags.debugLogFlexBaselineEnabled = v;
               });
               Navigator.pop(context);
+            },
+          ),
+        ),
+        PopupMenuItem<int>(
+          value: 13,
+          child: ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
+            title: Text('Flex Log Filters...'),
+            onTap: () {
+              Navigator.pop(context);
+              _showFlexLogFilters();
+            },
+          ),
+        ),
+        PopupMenuItem<int>(
+          value: 12,
+          child: ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
+            title: Text('Flow Log Filters...'),
+            onTap: () {
+              Navigator.pop(context);
+              _showFlowLogFilters();
             },
           ),
         ),
@@ -2211,6 +2237,407 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         ),
       ],
     );
+  }
+
+  void _showInlineLogFilters() async {
+    final allImpls = InlineImpl.values;
+    final allFeatures = InlineFeature.values;
+
+    // If null => treat as none selected until user applies.
+    final currentImpls = InlineLayoutLog.enabledImpls ?? <InlineImpl>{};
+    final currentFeatures = InlineLayoutLog.enabledFeatures ?? <InlineFeature>{};
+
+    final impls = currentImpls.toSet();
+    final features = currentFeatures.toSet();
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setStateDialog) {
+            return AlertDialog(
+              title: Text('Inline Log Filters'),
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Implementations', style: Theme.of(ctx).textTheme.titleSmall),
+                    const SizedBox(height: 8),
+                    ...allImpls.map((i) => CheckboxListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          title: Text(_implLabel(i)),
+                          value: impls.contains(i),
+                          onChanged: (v) {
+                            setStateDialog(() {
+                              if (v == true) {
+                                impls.add(i);
+                              } else {
+                                impls.remove(i);
+                              }
+                            });
+                          },
+                        )),
+                    const Divider(),
+                    Text('Features', style: Theme.of(ctx).textTheme.titleSmall),
+                    const SizedBox(height: 8),
+                    ...allFeatures.map((f) => CheckboxListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          title: Text(_featureLabel(f)),
+                          value: features.contains(f),
+                          onChanged: (v) {
+                            setStateDialog(() {
+                              if (v == true) {
+                                features.add(f);
+                              } else {
+                                features.remove(f);
+                              }
+                            });
+                          },
+                        )),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    // Reset to allow all
+                    InlineLayoutLog.enableAll();
+                    Navigator.of(ctx).pop();
+                    setState(() {});
+                  },
+                  child: Text('Allow All'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    // Mute all
+                    InlineLayoutLog.disableAll();
+                    Navigator.of(ctx).pop();
+                    setState(() {});
+                  },
+                  child: Text('Mute All'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    // Apply selections
+                    if (impls.length == allImpls.length && features.length == allFeatures.length) {
+                      InlineLayoutLog.enableAll();
+                    } else {
+                      InlineLayoutLog.enableImpls(impls);
+                      InlineLayoutLog.enableFeatures(features);
+                    }
+                    Navigator.of(ctx).pop();
+                    setState(() {});
+                  },
+                  child: Text('Apply'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showFlowLogFilters() async {
+    final allImpls = FlowImpl.values;
+    final allFeatures = FlowFeature.values;
+
+    final currentImpls = FlowLog.enabledImpls ?? allImpls.toSet();
+    final currentFeatures = FlowLog.enabledFeatures ?? allFeatures.toSet();
+
+    final impls = currentImpls.toSet();
+    final features = currentFeatures.toSet();
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setStateDialog) {
+            return AlertDialog(
+              title: Text('Flow Log Filters'),
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Implementations', style: Theme.of(ctx).textTheme.titleSmall),
+                    const SizedBox(height: 8),
+                    ...allImpls.map((i) => CheckboxListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          title: Text(_flowImplLabel(i)),
+                          value: impls.contains(i),
+                          onChanged: (v) {
+                            setStateDialog(() {
+                              if (v == true) {
+                                impls.add(i);
+                              } else {
+                                impls.remove(i);
+                              }
+                            });
+                          },
+                        )),
+                    const Divider(),
+                    Text('Features', style: Theme.of(ctx).textTheme.titleSmall),
+                    const SizedBox(height: 8),
+                    ...allFeatures.map((f) => CheckboxListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          title: Text(_flowFeatureLabel(f)),
+                          value: features.contains(f),
+                          onChanged: (v) {
+                            setStateDialog(() {
+                              if (v == true) {
+                                features.add(f);
+                              } else {
+                                features.remove(f);
+                              }
+                            });
+                          },
+                        )),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    FlowLog.enableAll();
+                    Navigator.of(ctx).pop();
+                    setState(() {});
+                  },
+                  child: Text('Allow All'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    FlowLog.disableAll();
+                    Navigator.of(ctx).pop();
+                    setState(() {});
+                  },
+                  child: Text('Mute All'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    if (impls.length == allImpls.length && features.length == allFeatures.length) {
+                      FlowLog.enableAll();
+                    } else {
+                      FlowLog.enableImpls(impls);
+                      FlowLog.enableFeatures(features);
+                    }
+                    Navigator.of(ctx).pop();
+                    setState(() {});
+                  },
+                  child: Text('Apply'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showFlexLogFilters() async {
+    final allImpls = FlexImpl.values;
+    final allFeatures = FlexFeature.values;
+
+    final currentImpls = FlexLog.enabledImpls ?? allImpls.toSet();
+    final currentFeatures = FlexLog.enabledFeatures ?? allFeatures.toSet();
+
+    final impls = currentImpls.toSet();
+    final features = currentFeatures.toSet();
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setStateDialog) {
+            return AlertDialog(
+              title: Text('Flex Log Filters'),
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Implementations', style: Theme.of(ctx).textTheme.titleSmall),
+                    const SizedBox(height: 8),
+                    ...allImpls.map((i) => CheckboxListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          title: Text(_flexImplLabel(i)),
+                          value: impls.contains(i),
+                          onChanged: (v) {
+                            setStateDialog(() {
+                              if (v == true) {
+                                impls.add(i);
+                              } else {
+                                impls.remove(i);
+                              }
+                            });
+                          },
+                        )),
+                    const Divider(),
+                    Text('Features', style: Theme.of(ctx).textTheme.titleSmall),
+                    const SizedBox(height: 8),
+                    ...allFeatures.map((f) => CheckboxListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          title: Text(_flexFeatureLabel(f)),
+                          value: features.contains(f),
+                          onChanged: (v) {
+                            setStateDialog(() {
+                              if (v == true) {
+                                features.add(f);
+                              } else {
+                                features.remove(f);
+                              }
+                            });
+                          },
+                        )),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    FlexLog.enableAll();
+                    Navigator.of(ctx).pop();
+                    setState(() {});
+                  },
+                  child: Text('Allow All'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    FlexLog.disableAll();
+                    Navigator.of(ctx).pop();
+                    setState(() {});
+                  },
+                  child: Text('Mute All'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    if (impls.length == allImpls.length && features.length == allFeatures.length) {
+                      FlexLog.enableAll();
+                    } else {
+                      FlexLog.enableImpls(impls);
+                      FlexLog.enableFeatures(features);
+                    }
+                    Navigator.of(ctx).pop();
+                    setState(() {});
+                  },
+                  child: Text('Apply'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _flexImplLabel(FlexImpl i) {
+    switch (i) {
+      case FlexImpl.flex:
+        return 'Flex';
+    }
+  }
+
+  String _flexFeatureLabel(FlexFeature f) {
+    switch (f) {
+      case FlexFeature.container:
+        return 'Container';
+      case FlexFeature.intrinsic:
+        return 'Intrinsic';
+      case FlexFeature.basis:
+        return 'Basis';
+      case FlexFeature.baseSize:
+        return 'Base size';
+      case FlexFeature.runs:
+        return 'Runs';
+      case FlexFeature.resolve:
+        return 'Resolve';
+      case FlexFeature.childConstraints:
+        return 'Child constraints';
+      case FlexFeature.alignment:
+        return 'Alignment';
+    }
+  }
+
+  String _flowImplLabel(FlowImpl i) {
+    switch (i) {
+      case FlowImpl.flow:
+        return 'Flow';
+      case FlowImpl.ifc:
+        return 'IFC Integration';
+      case FlowImpl.overflow:
+        return 'Overflow';
+    }
+  }
+
+  String _flowFeatureLabel(FlowFeature f) {
+    switch (f) {
+      case FlowFeature.constraints:
+        return 'Constraints';
+      case FlowFeature.sizing:
+        return 'Sizing';
+      case FlowFeature.layout:
+        return 'Layout';
+      case FlowFeature.painting:
+        return 'Painting';
+      case FlowFeature.child:
+        return 'Child';
+      case FlowFeature.runs:
+        return 'Runs';
+      case FlowFeature.marginCollapse:
+        return 'Margin Collapse';
+      case FlowFeature.scrollable:
+        return 'Scrollable';
+      case FlowFeature.shrinkToFit:
+        return 'Shrink-to-fit';
+      case FlowFeature.widthBreakdown:
+        return 'Width breakdown';
+      case FlowFeature.setup:
+        return 'Setup';
+    }
+  }
+
+  String _implLabel(InlineImpl i) {
+    switch (i) {
+      case InlineImpl.paragraphIFC:
+        return 'Paragraph IFC';
+      case InlineImpl.legacyIFC:
+        return 'Legacy IFC';
+      case InlineImpl.flow:
+        return 'Flow';
+    }
+  }
+
+  String _featureLabel(InlineFeature f) {
+    switch (f) {
+      case InlineFeature.decision:
+        return 'Decision';
+      case InlineFeature.sizing:
+        return 'Sizing';
+      case InlineFeature.baselines:
+        return 'Baselines';
+      case InlineFeature.offsets:
+        return 'Offsets';
+      case InlineFeature.scrollable:
+        return 'Scrollable';
+      case InlineFeature.painting:
+        return 'Painting';
+      case InlineFeature.placeholders:
+        return 'Placeholders';
+      case InlineFeature.text:
+        return 'Text';
+      case InlineFeature.metrics:
+        return 'Metrics';
+    }
   }
 
   Widget _buildSwitchRow({required String label, required bool value, required ValueChanged<bool> onChanged}) {

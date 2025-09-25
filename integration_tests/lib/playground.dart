@@ -13,6 +13,7 @@ import 'package:webf/css.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/devtools.dart';
+import 'package:webf/foundation.dart';
 
 import 'bridge/from_native.dart';
 import 'bridge/test_input.dart';
@@ -27,14 +28,15 @@ import 'modules/array_buffer_module.dart';
 // By CLI: `KRAKEN_ENABLE_TEST=true flutter run`
 void main() async {
   // Inline formatter + paragraph logs (placeholders, baselines, lines)
-  DebugFlags.debugLogInlineLayoutEnabled = true;
+  InlineLayoutLog.enableAll();
+  FlexLog.enableAll();
+  FlowLog.enableAll();
+
   // debugPaintBaselinesEnabled = true;
   // DebugFlags.enableDomLogs = true;
   // DebugFlags.enableCssLogs = true;
   // DebugFlags.debugPaintInlineLayoutEnabled = true;
   // Flow layout baseline logs
-  DebugFlags.debugLogFlowEnabled = true;
-  DebugFlags.debugLogFlexEnabled = true;
 
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(

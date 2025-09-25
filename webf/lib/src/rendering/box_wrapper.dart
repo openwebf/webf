@@ -8,6 +8,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/src/foundation/flow_logging.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart' as dom;
 
@@ -94,12 +95,14 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
 
     childConstraints = _intersect(childConstraints, constraints);
 
-    if (DebugFlags.debugLogFlowEnabled) {
-      try {
-        final tag = renderStyle.target.tagName.toLowerCase();
-        renderingLogger.finer('[Wrapper] <$tag> layout child ${c.runtimeType} with $childConstraints');
-      } catch (_) {}
-    }
+    try {
+      final tag = renderStyle.target.tagName.toLowerCase();
+      FlowLog.log(
+        impl: FlowImpl.flow,
+        feature: FlowFeature.layout,
+        message: () => '[Wrapper] <$tag> layout child ${c.runtimeType} with $childConstraints',
+      );
+    } catch (_) {}
     c.layout(childConstraints, parentUsesSize: true);
 
     if (c is RenderBoxModel) {
@@ -139,12 +142,14 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
 
       size = constraints.constrain(Size(wrapperWidth, wrapperHeight));
 
-      if (DebugFlags.debugLogFlowEnabled) {
-        try {
-          final tag = renderStyle.target.tagName.toLowerCase();
-          renderingLogger.finer('[Wrapper] <$tag> childSize=${c.size} scrollable=${contentScrollable} -> wrapperSize=$size');
-        } catch (_) {}
-      }
+      try {
+        final tag = renderStyle.target.tagName.toLowerCase();
+        FlowLog.log(
+          impl: FlowImpl.flow,
+          feature: FlowFeature.sizing,
+          message: () => '[Wrapper] <$tag> childSize=${c.size} scrollable=${contentScrollable} -> wrapperSize=$size',
+        );
+      } catch (_) {}
 
       if (renderStyle.isSelfPositioned()) {
         CSSPositionedLayout.applyPositionedChildOffset(this, c);

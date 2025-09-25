@@ -15,13 +15,13 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/css/css_animation.dart';
 import 'package:webf/src/svg/rendering/shape.dart';
 
 import 'svg.dart';
-import 'package:webf/src/foundation/debug_flags.dart';
-import 'package:webf/src/foundation/logger.dart';
+import 'package:logging/logging.dart' show Level;
 
 typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObject);
 
@@ -2481,17 +2481,19 @@ class CSSRenderStyle extends RenderStyle
           final RenderBoxModel? parentBox = parentStyle.attachedRenderBoxModel;
           final BoxConstraints? pcc = parentBox?.contentConstraints;
           if (pcc != null && pcc.hasBoundedWidth && pcc.maxWidth.isFinite) {
-            if (DebugFlags.debugLogFlowEnabled || DebugFlags.debugLogFlexEnabled) {
-              try {
-                final tag = target.tagName.toLowerCase();
-                renderingLogger.finer('[Style] <$tag> computeContentBoxLogicalWidth: '
+            try {
+              final tag = target.tagName.toLowerCase();
+              FlexLog.log(
+                impl: FlexImpl.flex,
+                feature: FlexFeature.container,
+                message: () => '[Style] <$tag> computeContentBoxLogicalWidth: '
                     'inherit from flex-item parent contentConstraints.maxW='
-                    '${pcc.maxWidth.toStringAsFixed(2)} marginH=${renderStyle.margin.horizontal.toStringAsFixed(2)}');
-              } catch (_) {}
-            }
+                    '${pcc.maxWidth.toStringAsFixed(2)} marginH=${renderStyle.margin.horizontal.toStringAsFixed(2)}',
+              );
+            } catch (_) {}
             logicalWidth = pcc.maxWidth - renderStyle.margin.horizontal;
           }
-        
+
         // Case B: normal flow (not inside a flex item) — find the nearest non-inline ancestor
         // and adopt its content box logical width or bounded content constraints.
         } else if (!parentIsFlexItem &&
@@ -3148,11 +3150,14 @@ class CSSRenderStyle extends RenderStyle
     // Establish IFC if we have inline content (including anonymous blocks)
     // and no regular block content
     final bool establish = hasInlineContent && !hasBlockContent;
-    if (DebugFlags.debugLogInlineLayoutEnabled) {
-      final tag = target.tagName.toLowerCase();
-      renderingLogger.finer('[IFC] decision <${tag}> inline=${hasInlineContent} block=${hasBlockContent} '
-          'effectiveDisplay=${effectiveDisplay} → establishIFC=${establish}');
-    }
+    final tag = target.tagName.toLowerCase();
+    InlineLayoutLog.log(
+      impl: InlineImpl.flow,
+      feature: InlineFeature.decision,
+      level: Level.FINER,
+      message: () => 'decision <${tag}> inline=${hasInlineContent} '
+          'block=${hasBlockContent} effectiveDisplay=${effectiveDisplay} → establishIFC=${establish}',
+    );
     return establish;
   }
 
