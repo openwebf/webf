@@ -2460,44 +2460,10 @@ class RenderFlexLayout extends RenderLayoutBox {
       bool isFlexGrow = usedFreeSpace > 0 && totalFlexGrow > 0;
       bool isFlexShrink = usedFreeSpace < 0 && totalFlexShrink > 0;
 
-      // Legacy overflow preservation (guarded):
-      // Preserve pre-existing behavior for non-replaced items so certain
-      // tests expect fixed-size items to overflow rather than shrink.
-      // Do NOT preserve when any item is a replaced element (e.g., <img>)
-      // or when any item explicitly opts into shrinking via min-size: 0.
-      if (isFlexShrink && totalFlexGrow == 0 && renderStyle.flexWrap == FlexWrap.nowrap) {
-        bool allDefiniteBasis = true;
-        bool anyReplaced = false;
-        bool anyExplicitMinZero = false;
-        runChildren.forEach((_, _RunChild rc) {
-          // Definite used flex-basis required for preservation
-          if (_getUsedFlexBasis(rc.child) == null) {
-            allDefiniteBasis = false;
-          }
-          // Replaced elements should follow spec shrinking
-          RenderBoxModel? box = rc.child is RenderBoxModel
-              ? rc.child as RenderBoxModel
-              : (rc.child is RenderEventListener ? (rc.child as RenderEventListener).child as RenderBoxModel? : null);
-          if (box != null) {
-            if (box.renderStyle.isSelfRenderReplaced()) {
-              anyReplaced = true;
-            }
-            // Honor explicit author intent to allow shrinking
-            if (_isHorizontalFlexDirection) {
-              if (box.renderStyle.minWidth.isNotAuto && box.renderStyle.minWidth.computedValue == 0) {
-                anyExplicitMinZero = true;
-              }
-            } else {
-              if (box.renderStyle.minHeight.isNotAuto && box.renderStyle.minHeight.computedValue == 0) {
-                anyExplicitMinZero = true;
-              }
-            }
-          }
-        });
-        if (allDefiniteBasis && !anyReplaced && !anyExplicitMinZero) {
-          isFlexShrink = false;
-        }
-      }
+      // Follow CSS Flexbox spec strictly: if free space is negative and totalShrink > 0,
+      // we shrink items proportionally to their scaled flex-shrink factors. Do not suppress
+      // shrinking for “overflow preservation” scenarios — authors can opt out via
+      // min-width/height or flex: none.
 
       FlexLog.log(
         impl: FlexImpl.flex,

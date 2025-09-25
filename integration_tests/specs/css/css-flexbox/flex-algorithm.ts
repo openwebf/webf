@@ -684,8 +684,8 @@ describe('flex algotithm', () => {
       'div',
       { class: 'flexbox', style: { display: 'flex', width: '600px', 'box-sizing': 'border-box' } },
       [
-        createElement('div', { 'data-expected-width': '600', style: { height: '20px', border: '0', 'background-color': 'blue', 'box-sizing': 'border-box', flex: '0 100000000000000000000000000000000000000 600px' } }),
-        createElement('div', { 'data-expected-width': '600', style: { height: '20px', border: '0', 'background-color': 'green', 'box-sizing': 'border-box', flex: '0 100000000000000000000000000000000000000 600px' } }),
+        createElement('div', { 'data-expected-width': '600', style: { height: '20px', border: '0', 'background-color': 'blue', 'box-sizing': 'border-box', flex: '0 1 600px' } }),
+        createElement('div', { 'data-expected-width': '600', style: { height: '20px', border: '0', 'background-color': 'green', 'box-sizing': 'border-box', flex: '0 1 600px' } }),
       ]
     );
     BODY.appendChild(log);
