@@ -3875,12 +3875,11 @@ class RenderFlexLayout extends RenderLayoutBox {
         // Need to subtract start margin of main axis when calculating next child's start position.
         double mainAxisGap = _getMainAxisGap();
 
-        // For space-between, space-around, and space-evenly, gap should not be applied
-        // because these justify-content values already handle the spacing between items
-        bool shouldApplyGap = !(renderStyle.justifyContent == JustifyContent.spaceBetween ||
-            renderStyle.justifyContent == JustifyContent.spaceAround ||
-            renderStyle.justifyContent == JustifyContent.spaceEvenly);
-        double effectiveGap = shouldApplyGap ? mainAxisGap : 0;
+        // Apply the author-specified gap in addition to any justify-content spacing.
+        // Spec: the free space for justify-content is computed after subtracting gaps
+        // from the available inline-size, but the physical gap remains between items.
+        // Therefore, each inter-item separation equals gap + betweenSpace.
+        double effectiveGap = mainAxisGap;
 
         if (flipMainAxis) {
           childMainPosition -= betweenSpace + childMainAxisMargin + effectiveGap;
