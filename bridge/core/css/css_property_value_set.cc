@@ -485,7 +485,7 @@ bool MutableCSSPropertyValueSet::RemovePropertiesInSet(const CSSProperty* const 
     properties[new_index++] = properties[old_index];
   }
   if (new_index != old_size) {
-    property_vector_.reserve(new_index);
+    property_vector_.erase(property_vector_.begin() + new_index, property_vector_.end());
     return true;
   }
   return false;
