@@ -85,6 +85,8 @@ bool Element::hasAttribute(const AtomicString& name, ExceptionState& exception_s
 }
 
 AtomicString Element::getAttribute(const AtomicString& name, ExceptionState& exception_state) const {
+  // Keep lazily-synchronized attributes (notably "style") up to date before reading them.
+  const_cast<Element*>(this)->SynchronizeAttribute(name);
   return EnsureElementAttributes().getAttribute(name, exception_state);
 }
 

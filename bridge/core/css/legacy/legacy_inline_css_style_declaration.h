@@ -39,7 +39,7 @@ class LegacyInlineCssStyleDeclaration : public LegacyCssStyleDeclaration {
 
   [[nodiscard]] String ToString() const;
 
-  void InlineStyleChanged();
+  void InlineStyleChanged(const AtomicString& old_style_text);
 
   bool NamedPropertyQuery(const AtomicString&, ExceptionState&) override;
   void NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&) override;

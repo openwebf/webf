@@ -138,9 +138,11 @@ bool LegacyInlineCssStyleDeclaration::SetItem(const AtomicString& key,
   }
 
   std::string propertyName = key.ToUTF8String();
+  AtomicString old_style = cssText();
   bool success = InternalSetProperty(propertyName, value.ToLegacyDOMString(ctx()));
-  if (success)
-    InlineStyleChanged();
+  if (success) {
+    InlineStyleChanged(old_style);
+  }
   return success;
 }
 
@@ -153,7 +155,11 @@ unsigned LegacyInlineCssStyleDeclaration::length() const {
 }
 
 void LegacyInlineCssStyleDeclaration::Clear() {
+  if (properties_.empty())
+    return;
+  AtomicString old_style = cssText();
   InternalClearProperty();
+  InlineStyleChanged(old_style);
 }
 
 AtomicString LegacyInlineCssStyleDeclaration::getPropertyValue(const AtomicString& key, ExceptionState& exception_state) {
@@ -166,14 +172,22 @@ void LegacyInlineCssStyleDeclaration::setProperty(const AtomicString& key,
                                             const AtomicString& priority,
                                             ExceptionState& exception_state) {
   std::string propertyName = key.ToUTF8String();
+  AtomicString old_style = cssText();
   bool success = InternalSetProperty(propertyName, value.ToLegacyDOMString(ctx()));
-  if (success)
-    InlineStyleChanged();
+  if (success) {
+    InlineStyleChanged(old_style);
+  }
 }
 
 AtomicString LegacyInlineCssStyleDeclaration::removeProperty(const AtomicString& key, ExceptionState& exception_state) {
   std::string propertyName = key.ToUTF8String();
-  return InternalRemoveProperty(propertyName);
+  AtomicString old_style = cssText();
+  AtomicString removed = InternalRemoveProperty(propertyName);
+  if (removed.IsNull()) {
+    return AtomicString::Empty();
+  }
+  InlineStyleChanged(old_style);
+  return removed;
 }
 
 void LegacyInlineCssStyleDeclaration::CopyWith(LegacyInlineCssStyleDeclaration* inline_style) {
@@ -196,8 +210,9 @@ AtomicString LegacyInlineCssStyleDeclaration::cssText() const {
 }
 
 void LegacyInlineCssStyleDeclaration::setCssText(const webf::AtomicString& value, webf::ExceptionState& exception_state) {
+  AtomicString old_style = cssText();
   SetCSSTextInternal(value);
-  InlineStyleChanged();
+  InlineStyleChanged(old_style);
 }
 
 void LegacyInlineCssStyleDeclaration::SetCSSTextInternal(const AtomicString& value) {
@@ -245,20 +260,16 @@ String LegacyInlineCssStyleDeclaration::ToString() const {
   return builder.ReleaseString();
 }
 
-void LegacyInlineCssStyleDeclaration::InlineStyleChanged() {
+void LegacyInlineCssStyleDeclaration::InlineStyleChanged(const AtomicString& old_style_text) {
   assert(owner_element_->IsStyledElement());
 
   owner_element_->InvalidateStyleAttribute(false);
 
   if (std::shared_ptr<MutationObserverInterestGroup> recipients =
           MutationObserverInterestGroup::CreateForAttributesMutation(*owner_element_, html_names::kStyleAttr)) {
-    AtomicString old_value = AtomicString::Null();
-    if (owner_element_->attributes()->hasAttribute(html_names::kStyleAttr, ASSERT_NO_EXCEPTION())) {
-      old_value = owner_element_->attributes()->getAttribute(html_names::kStyleAttr, ASSERT_NO_EXCEPTION());
-    }
-
-    recipients->EnqueueMutationRecord(
-        MutationRecord::CreateAttributes(owner_element_, html_names::kStyleAttr, AtomicString::Null(), old_value));
+    AtomicString serialized_old_value = old_style_text.IsNull() ? AtomicString::Empty() : old_style_text;
+    recipients->EnqueueMutationRecord(MutationRecord::CreateAttributes(owner_element_, html_names::kStyleAttr,
+                                                                       AtomicString::Null(), serialized_old_value));
     owner_element_->SynchronizeStyleAttributeInternal();
   }
 }
@@ -304,13 +315,11 @@ AtomicString LegacyInlineCssStyleDeclaration::InternalRemoveProperty(std::string
   name = parseJavaScriptCSSPropertyName(name);
 
   if (UNLIKELY(properties_.count(name) == 0)) {
-    return AtomicString::Empty();
+    return AtomicString::Null();
   }
 
   AtomicString return_value = properties_[name];
   properties_.erase(name);
-
-  InlineStyleChanged();
 
   std::unique_ptr<SharedNativeString> args_01 = stringToNativeString(name);
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01),

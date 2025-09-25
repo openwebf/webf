@@ -42,13 +42,15 @@ class StyleAttributeMutationScope {
 
   ~StyleAttributeMutationScope();
 
-  void EnqueueMutationRecord() { should_deliver_ = true; }
+  void EnqueueMutationRecord();
 
   void DidInvalidateStyleAttr() { should_notify_inspector_ = true; }
 
  private:
   static unsigned scope_count_;
   static AbstractPropertySetCSSStyleDeclaration* current_decl_;
+  static AbstractPropertySetCSSStyleDeclaration* cached_decl_;
+  static AtomicString cached_style_text_;
   static bool should_notify_inspector_;
   static bool should_deliver_;
 
