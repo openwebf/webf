@@ -609,7 +609,6 @@ describe('columns-auto', () => {
     await snapshot();
   });
 
-  // @TODO: max-width/max-height is not considered when calculating remaining space for flex-shrink.
   it("size 002", async () => {
     let flexbox_7;
     flexbox_7 = createElement(
