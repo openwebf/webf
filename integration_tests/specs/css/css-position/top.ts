@@ -164,7 +164,7 @@ describe('top', () => {
   });
 
   // @TODO: Negative margin-top fail to work on following case.
-  xit('007', async () => {
+  it('007', async () => {
     let p;
     let div2;
     let div1;
@@ -221,7 +221,7 @@ describe('top', () => {
   });
 
   // @TODO: Negative margin-top fail to work on following case.
-  xit('008', async () => {
+  it('008', async () => {
     let p;
     let div2;
     let div1;
