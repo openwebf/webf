@@ -29,21 +29,10 @@
 
 namespace webf {
 
-namespace {
-
-// static CustomElementDefinition* DefinitionIfStyleChangedCallback(
-//     Element* element) {
-//   CustomElementDefinition* definition =
-//       CustomElement::DefinitionForElement(element);
-//   return definition && definition->HasStyleAttributeChangedCallback()
-//              ? definition
-//              : nullptr;
-// }
-
-}  // namespace
-
 unsigned StyleAttributeMutationScope::scope_count_ = 0;
 AbstractPropertySetCSSStyleDeclaration* StyleAttributeMutationScope::current_decl_ = nullptr;
+AbstractPropertySetCSSStyleDeclaration* StyleAttributeMutationScope::cached_decl_ = nullptr;
+AtomicString StyleAttributeMutationScope::cached_style_text_ = AtomicString::Empty();
 bool StyleAttributeMutationScope::should_notify_inspector_ = false;
 bool StyleAttributeMutationScope::should_deliver_ = false;
 
@@ -62,12 +51,17 @@ StyleAttributeMutationScope::StyleAttributeMutationScope(AbstractPropertySetCSSS
     return;
   }
 
+  if (cached_decl_ != current_decl_) {
+    cached_decl_ = current_decl_;
+    cached_style_text_ = current_decl_->cssText();
+  }
+
   mutation_recipients_ = MutationObserverInterestGroup::CreateForAttributesMutation(
       static_cast<Node&>(*current_decl_->ParentElement()), html_names::kStyleAttr);
   bool should_read_old_value = (mutation_recipients_ && mutation_recipients_->IsOldValueRequested());
 
   if (should_read_old_value) {
-    old_value_ = current_decl_->ParentElement()->getAttribute(html_names::kStyleAttr, ASSERT_NO_EXCEPTION());
+    old_value_ = cached_style_text_;
   }
 
   if (mutation_recipients_) {
@@ -90,15 +84,23 @@ StyleAttributeMutationScope::~StyleAttributeMutationScope() {
     should_deliver_ = false;
   }
 
-  Element* element = current_decl_->ParentElement();
-
   // We have to clear internal state before calling Inspector's code.
-  AbstractPropertySetCSSStyleDeclaration* local_copy_style_decl = current_decl_;
   current_decl_ = nullptr;
 
   if (!should_notify_inspector_) {
     return;
   }
+}
+
+void StyleAttributeMutationScope::EnqueueMutationRecord() {
+  should_deliver_ = true;
+
+  if (!current_decl_) {
+    return;
+  }
+
+  cached_style_text_ = current_decl_->cssText();
+  cached_decl_ = current_decl_;
 }
 
 }  // namespace webf
