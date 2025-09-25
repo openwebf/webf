@@ -262,8 +262,61 @@ String StylePropertySerializer::AsText() const {
   std::bitset<kNumCSSPropertyIDs> shorthand_appeared;
 
   unsigned size = property_set_.PropertyCount();
+
+  // Build a canonical serialization order:
+  // 1) Custom properties (in original order)
+  // 2) Physical inset longhands in TRBL order: top, right, bottom, left
+  // 3) Remaining properties (in original order)
+  std::vector<unsigned> ordered_indices;
+  ordered_indices.reserve(size);
+
+  // 1) Custom properties
+  for (unsigned i = 0; i < size; ++i) {
+    if (!property_set_.ShouldProcessPropertyAt(i)) {
+      continue;
+    }
+    auto prop = property_set_.PropertyAt(i);
+    if (prop.Name().Id() == CSSPropertyID::kVariable) {
+      ordered_indices.push_back(i);
+    }
+  }
+
+  // 2) TRBL order for physical inset longhands
+  const CSSPropertyID trbl_order[] = {CSSPropertyID::kTop, CSSPropertyID::kRight, CSSPropertyID::kBottom,
+                                      CSSPropertyID::kLeft};
+  for (CSSPropertyID pid : trbl_order) {
+    int idx = property_set_.FindPropertyIndex(CSSProperty::Get(pid));
+    if (idx != -1 && property_set_.ShouldProcessPropertyAt(static_cast<unsigned>(idx))) {
+      ordered_indices.push_back(static_cast<unsigned>(idx));
+    }
+  }
+
+  // 3) Remaining properties in original order, excluding ones already added
+  auto already_added = [&](unsigned index) {
+    for (unsigned v : ordered_indices) {
+      if (v == index) {
+        return true;
+      }
+    }
+    return false;
+  };
+  for (unsigned i = 0; i < size; ++i) {
+    if (!property_set_.ShouldProcessPropertyAt(i)) {
+      continue;
+    }
+    auto prop = property_set_.PropertyAt(i);
+    CSSPropertyID pid = prop.Name().Id();
+    if (pid == CSSPropertyID::kVariable || pid == CSSPropertyID::kTop || pid == CSSPropertyID::kRight ||
+        pid == CSSPropertyID::kBottom || pid == CSSPropertyID::kLeft) {
+      continue;  // already handled
+    }
+    if (!already_added(i)) {
+      ordered_indices.push_back(i);
+    }
+  }
+
   unsigned num_decls = 0;
-  for (unsigned n = 0; n < size; ++n) {
+  for (unsigned n : ordered_indices) {
     if (!property_set_.ShouldProcessPropertyAt(n)) {
       continue;
     }
