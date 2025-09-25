@@ -14,6 +14,7 @@ import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/html/text.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/widget.dart';
 
 String _fmtC(BoxConstraints c) =>
     'C[minW=${c.minWidth.toStringAsFixed(1)}, maxW=${c.maxWidth.isFinite ? c.maxWidth.toStringAsFixed(1) : '∞'}, '
@@ -2854,6 +2855,27 @@ class RenderFlexLayout extends RenderLayoutBox {
         // Ensure max height is not lower than min height.
         if (maxConstraintHeight < minConstraintHeight) {
           maxConstraintHeight = minConstraintHeight;
+        }
+      }
+    }
+
+    // Column flex: when the container has a bounded max-height (definite cap) but an
+    // indefinite main-size (height:auto), browsers do not distribute positive free space.
+    // However, widget-based flex items (RenderWidget) commonly require a tight viewport
+    // height to behave correctly (e.g., list views). When the preserved (intrinsic) main
+    // size exceeds the container’s available cap, clamp the child’s main-axis constraints
+    // tightly to the container cap so the widget sizes to the visible viewport instead of
+    // overflowing. This mirrors practical browser behavior for scrollable widgets when
+    // author intent is flex: 1; min-height: 0 under a max-height container.
+    if (!_isHorizontalFlexDirection) {
+      final bool containerBounded = (contentConstraints?.hasBoundedHeight ?? false) &&
+          (contentConstraints?.maxHeight.isFinite ?? false);
+      if (containerBounded) {
+        final double cap = contentConstraints!.maxHeight;
+        final bool childIsWidget = child is RenderWidget || child.renderStyle.target is WidgetElement;
+        if (childIsWidget && preserveMainAxisSize != null && preserveMainAxisSize > cap) {
+          minConstraintHeight = cap;
+          maxConstraintHeight = cap;
         }
       }
     }
