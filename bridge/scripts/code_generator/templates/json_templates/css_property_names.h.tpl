@@ -77,10 +77,13 @@ static_assert((static_cast<int>(kLastHighPriorityCSSProperty) -
                static_cast<int>(kFirstHighPriorityCSSProperty)) == 33,
               "There should a low number of high-priority properties");
 
+CSSPropertyID ResolveCSSPropertyID(CSSPropertyID id);
+
 inline int GetCSSPropertyIDIndex(CSSPropertyID id) {
-    assert(id > kFirstCSSProperty);
-    assert(id < kLastCSSProperty);
-    return static_cast<int>(id) - kIntFirstCSSProperty;
+    CSSPropertyID resolved_id = ResolveCSSPropertyID(id);
+    assert(resolved_id >= kFirstCSSProperty);
+    assert(resolved_id <= kLastCSSProperty);
+    return static_cast<int>(resolved_id) - kIntFirstCSSProperty;
 }
 
 constexpr bool IsHighPriority(CSSPropertyID id) {
