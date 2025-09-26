@@ -516,7 +516,10 @@ String StylePropertySerializer::CommonShorthandChecks(const StylePropertyShortha
 
 String StylePropertySerializer::SerializeShorthand(CSSPropertyID property_id) const {
   const StylePropertyShorthand& shorthand = shorthandForProperty(property_id);
-  DCHECK(shorthand.length());
+  if (!shorthand.length()) {
+    NOTREACHED_IN_MIGRATION();
+    return String::EmptyString();
+  }
 
   bool is_check_success = false;
   String result = CommonShorthandChecks(shorthand, &is_check_success);
@@ -647,6 +650,10 @@ String StylePropertySerializer::SerializeShorthand(CSSPropertyID property_id) co
       return GetLayeredShorthandValue(transitionShorthand());
     case CSSPropertyID::kTextEmphasis:
       return GetShorthandValue(textEmphasisShorthand());
+    case CSSPropertyID::kWhiteSpace:
+      return Get2Values(whiteSpaceShorthand());
+    case CSSPropertyID::kMarker:
+      return GetCommonValue(markerShorthand());
       //    case CSSPropertyID::kTextSpacing:
       //      return TextSpacingValue();
       //    case CSSPropertyID::kWebkitTextStroke:
@@ -660,13 +667,14 @@ String StylePropertySerializer::SerializeShorthand(CSSPropertyID property_id) co
     case CSSPropertyID::kPageBreakInside:
       return PageBreakPropertyValue(pageBreakInsideShorthand());
     case CSSPropertyID::kWebkitColumnBreakAfter:
+      return PageBreakPropertyValue(webkitColumnBreakAfterShorthand());
     case CSSPropertyID::kWebkitColumnBreakBefore:
+      return PageBreakPropertyValue(webkitColumnBreakBeforeShorthand());
     case CSSPropertyID::kWebkitColumnBreakInside:
+      return PageBreakPropertyValue(webkitColumnBreakInsideShorthand());
     default:
-      assert_m(false, ("Shorthand property " + (CSSPropertyName(property_id).ToAtomicString().ToUTF8String()) +
-                       " must be handled in StylePropertySerializer::SerializeShorthand.")
-                          .c_str());
-      return String::EmptyString();
+      NOTREACHED_IN_MIGRATION();
+      return SerializeGenericShorthand(shorthand);
   }
 }
 
@@ -1446,10 +1454,11 @@ String StylePropertySerializer::GetLayeredShorthandValue(const StylePropertyShor
       if (property->IDEquals(CSSPropertyID::kTransitionBehavior)) {
         assert(shorthand.id() == CSSPropertyID::kTransition);
         auto* ident = DynamicTo<CSSIdentifierValue>(value);
-        //        assert(ident) << " transition-behavior should only have a "
-        //                         "CSSIdentifierValue for a value. CssText: "
-        //                      << value->CssText();
-        assert(ident);
+        if (!ident) {
+          // Non-identifier values (e.g. custom idents or unresolved data)
+          // cannot be serialized via the shorthand, so bail out.
+          return String::EmptyString();
+        }
         if (ident->GetValueID() == CSSValueID::kNormal) {
           // transition-behavior overrides InitialValue to return "normal"
           // instead of "initial", but we don't want to include "normal" in the
@@ -1964,6 +1973,27 @@ String StylePropertySerializer::BorderRadiusValue() const {
   }
 
   return builder.ReleaseString();
+}
+
+String StylePropertySerializer::SerializeGenericShorthand(const StylePropertyShorthand& shorthand) const {
+  if (!shorthand.length()) {
+    return String::EmptyString();
+  }
+
+  switch (shorthand.length()) {
+    case 1: {
+      std::shared_ptr<const CSSValue> value = property_set_.GetPropertyCSSValue(*shorthand.properties()[0]);
+      return value ? value->CssText() : String::EmptyString();
+    }
+    case 2:
+      return Get2Values(shorthand);
+    case 3:
+      return GetShorthandValue(shorthand);
+    case 4:
+      return Get4Values(shorthand);
+    default:
+      return GetShorthandValue(shorthand);
+  }
 }
 
 String StylePropertySerializer::PageBreakPropertyValue(const StylePropertyShorthand& shorthand) const {
