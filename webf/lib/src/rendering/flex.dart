@@ -4292,48 +4292,60 @@ class RenderFlexLayout extends RenderLayoutBox {
     return childSize;
   }
 
-  // Get distance from top to baseline of child including margin.
+  // Get distance from the item's cross-start margin edge to its first baseline.
+  // For row-direction flex containers (horizontal main axis), this is
+  // margin-top + (distance from border-box top to the baseline).
+  // If the child provides no baseline, synthesize it from the bottom margin edge.
   double _getChildAscent(RenderBox child) {
     // Prefer CSS-cached baseline computed during the child's own layout.
-    double? childAscent;
+    double? cssBaselineFromBorderTop;
     if (child is RenderBoxModel) {
-      // Unwrap baseline from wrapped content if this is an event listener wrapper
+      // Unwrap baseline from wrapped content if this is an event listener wrapper.
       if (child is RenderEventListener) {
         final RenderBox? wrapped = child.child;
         if (wrapped is RenderBoxModel) {
-          childAscent = wrapped.computeCssFirstBaseline();
+          cssBaselineFromBorderTop = wrapped.computeCssFirstBaseline();
           if (DebugFlags.debugLogFlexBaselineEnabled) {
             // ignore: avoid_print
             print('[FlexBaseline] unwrap baseline from child content: '
-                '${wrapped.runtimeType}#${wrapped.hashCode} => baseline=${childAscent?.toStringAsFixed(2)}');
+                '${wrapped.runtimeType}#${wrapped.hashCode} => baseline=${cssBaselineFromBorderTop?.toStringAsFixed(2)}');
           }
         } else {
-          childAscent = child.computeCssFirstBaseline();
+          cssBaselineFromBorderTop = child.computeCssFirstBaseline();
         }
       } else {
-        childAscent = child.computeCssFirstBaseline();
+        cssBaselineFromBorderTop = child.computeCssFirstBaseline();
       }
     }
-    double? childMarginTop = 0;
-    double? childMarginBottom = 0;
+
+    // Cross-start margins in the flex item's own axis.
+    double marginTop = 0;
+    double marginBottom = 0;
     if (child is RenderBoxModel) {
-      childMarginTop = child.renderStyle.marginTop.computedValue;
-      childMarginBottom = child.renderStyle.marginBottom.computedValue;
+      marginTop = child.renderStyle.marginTop.computedValue;
+      marginBottom = child.renderStyle.marginBottom.computedValue;
     }
 
-    Size? childSize = _getChildSize(child);
+    final Size? childSize = _getChildSize(child);
 
-    double baseline = parent is RenderFlowLayout
-        ? childMarginTop + childSize!.height + childMarginBottom
-        : childMarginTop + childSize!.height;
-    // When baseline of children not found, use boundary of margin bottom as baseline.
-    double extentAboveBaseline = childAscent ?? baseline;
+    // Fallback baseline for boxes without an intrinsic baseline.
+    // Bottom margin edge: top-margin + border-box height (+ bottom-margin when used by flow layout baseline).
+    final double fallbackFromMarginTop = marginTop + (childSize?.height ?? 0);
+    // Compose the final distance from the margin-top edge to the baseline.
+    final double extentAboveBaseline = (cssBaselineFromBorderTop != null)
+        // Spec: distance from cross-start margin edge to the baseline includes margin-top.
+        ? marginTop + cssBaselineFromBorderTop
+        // If no baseline, synthesize from bottom margin edge.
+        : (parent is RenderFlowLayout
+            ? (fallbackFromMarginTop + marginBottom)
+            : fallbackFromMarginTop);
+
     if (DebugFlags.debugLogFlexBaselineEnabled) {
       // ignore: avoid_print
       print('[FlexBaseline] _getChildAscent child='
           '${child.runtimeType}#${child.hashCode} '
-          'cssFirstBaseline=${childAscent?.toStringAsFixed(2)} '
-          'fallback=${baseline.toStringAsFixed(2)} '
+          'cssFirstBaseline=${cssBaselineFromBorderTop?.toStringAsFixed(2)} '
+          'marginTop=${marginTop.toStringAsFixed(2)} marginBottom=${marginBottom.toStringAsFixed(2)} '
           'extent=${extentAboveBaseline.toStringAsFixed(2)} size='
           '${childSize?.width.toStringAsFixed(2)}x${childSize?.height.toStringAsFixed(2)}');
     }
