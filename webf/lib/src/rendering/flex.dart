@@ -1526,21 +1526,17 @@ class RenderFlexLayout extends RenderLayoutBox {
     bool isDisplayInline = effectiveDisplay != CSSDisplay.block && effectiveDisplay != CSSDisplay.flex;
     if (_flexLineBoxMetrics.isEmpty) {
       if (isDisplayInline) {
-        // Inline flex container with no flex items: per CSS 2.1 §10.8.1 and
-        // CSS Flexbox alignment rules, when no baseline can be taken from in-flow
-        // content, synthesize the baseline from the bottom margin edge.
-        //
-        // Our cached CSS baselines are measured from the border-box top.
-        // Bottom margin edge distance = borderBoxHeight + margin-bottom.
+        // Inline flex container with no flex items: treat as atomic inline-level
+        // and synthesize baseline from the bottom border edge (distance from
+        // border-box top to border-box bottom).
         final double borderBoxHeight = boxSize?.height ?? size.height;
-        final double marginBottom = renderStyle.marginBottom.computedValue;
-        containerBaseline = borderBoxHeight + marginBottom;
+        containerBaseline = borderBoxHeight;
       }
     } else {
       // If the flex container's main axis differs from the inline axis (e.g. column/column-reverse),
       // it participates in baseline alignment as a block container per
       // https://www.w3.org/TR/css-flexbox-1/#flex-baselines. Block containers without
-      // inline content synthesize the baseline from the bottom margin edge.
+      // inline content synthesize the baseline from the bottom border edge.
       if (!_isHorizontalFlexDirection) {
         // Establish baseline from the first flex item on the first line that
         // participates in baseline alignment (align-self/align-items: baseline).
@@ -1596,12 +1592,11 @@ class RenderFlexLayout extends RenderLayoutBox {
             return;
           }
           // No child provided a baseline; fall back to block container behavior
-          // (distance from border-box top to bottom margin edge).
+          // (distance from border-box top to the bottom border edge).
         }
 
         final double borderBoxHeight = boxSize?.height ?? size.height;
-        final double marginBottom = renderStyle.marginBottom.computedValue;
-        containerBaseline = borderBoxHeight + marginBottom;
+        containerBaseline = borderBoxHeight;
         setCssBaselines(first: containerBaseline, last: containerBaseline);
         return;
       }
@@ -1611,7 +1606,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       // the first flex item on the first line that participates in baseline
       // alignment (align-self: baseline or align-items: baseline). If none
       // participate, fall back to the first item with a baseline; if no item
-      // exposes a baseline, synthesize from the bottom margin edge.
+      // exposes a baseline, synthesize from the bottom border edge.
       final _RunMetrics firstLineMetrics = _flexLineBoxMetrics[0];
       final List<_RunChild> firstRunChildren = firstLineMetrics.runChildren.values.toList();
       FlexLog.log(
@@ -1717,16 +1712,15 @@ class RenderFlexLayout extends RenderLayoutBox {
                   '→ containerBaseline=${containerBaseline!.toStringAsFixed(2)}',
             );
           } else {
-            // Chosen item has no baseline; synthesize from container bottom edge.
+            // Chosen item has no baseline; synthesize from container bottom border edge.
             final double borderBoxHeight = boxSize?.height ?? size.height;
-            final double marginBottom = renderStyle.marginBottom.computedValue;
-            containerBaseline = borderBoxHeight + marginBottom;
+            containerBaseline = borderBoxHeight;
             FlexLog.log(
               impl: FlexImpl.flex,
               feature: FlexFeature.alignment,
               level: Level.FINE,
-              message: () => 'baseline synthesize from bottom: borderH=${(boxSize?.height ?? size.height).toStringAsFixed(2)} '
-                  '+ marginBottom=${marginBottom.toStringAsFixed(2)} '
+              message: () => 'baseline synthesize from bottom border edge: '
+                  'borderH=${(boxSize?.height ?? size.height).toStringAsFixed(2)} '
                   '→ containerBaseline=${containerBaseline!.toStringAsFixed(2)}',
             );
           }

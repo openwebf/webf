@@ -479,5 +479,50 @@ void main() {
       expect(baseline, isNotNull);
       expect((baseline! - firstBaseline!).abs(), lessThanOrEqualTo(0.5));
     });
+
+    testWidgets('inline-block baseline aligns with flex fallback', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'inline-block-flex-margin-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div style="font-size: 16px;">
+            <span id="canvas" style="display: inline-block; width: 50px; height: 50px; background: blue;"></span>
+            <span id="magenta" style="display: inline-block; border: 5px solid magenta; margin: 10px;">
+              <div id="flex" style="display: flex; border: 10px solid cyan; padding: 15px; margin: 20px 0; background: yellow;"></div>
+            </span>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+      await tester.pump();
+
+      final magenta = prepared.getElementById('magenta');
+      final canvas = prepared.getElementById('canvas');
+      final flex = prepared.getElementById('flex');
+
+      expect(magenta, isNotNull);
+      expect(canvas, isNotNull);
+      expect(flex, isNotNull);
+
+      final RenderFlowLayout inlineBlock = magenta.attachedRenderer as RenderFlowLayout;
+      final RenderFlowLayout canvasBlock = canvas.attachedRenderer as RenderFlowLayout;
+      final RenderFlexLayout flexLayout = flex.attachedRenderer as RenderFlexLayout;
+
+      final double? parentBaseline = inlineBlock.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+      final double? canvasBaseline = canvasBlock.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+      final double? childBaseline = flexLayout.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+
+      expect(parentBaseline, isNotNull);
+      expect(canvasBaseline, isNotNull);
+      expect(childBaseline, isNotNull);
+
+      // Canvas inline-block baseline equals its border-box height.
+      expect((canvasBaseline! - canvasBlock.boxSize!.height).abs(), lessThanOrEqualTo(0.5));
+      // Inline-block with a flex fallback should synthesize baseline from its bottom border edge.
+      expect((parentBaseline! - inlineBlock.boxSize!.height).abs(), lessThanOrEqualTo(0.5));
+      // Flex baseline fallback should be defined.
+      expect(childBaseline, greaterThan(0));
+    });
   });
 }

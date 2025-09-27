@@ -1959,9 +1959,11 @@ class RenderFlowLayout extends RenderLayoutBox {
         firstBaseline = ifcLastBaseline! + paddingTop + borderTop;
         lastBaseline = firstBaseline;
       } else if (flowChildLastBaseline != null) {
-        // Use baseline contributed by in-flow child elements (e.g. flex/grid)
-        firstBaseline = flowChildFirstBaseline ?? flowChildLastBaseline;
-        lastBaseline = flowChildLastBaseline;
+        // Inline-block without inline-level content falls back to its bottom border edge,
+        // even if descendants expose baselines (e.g. flex/grid items).
+        final double borderBoxHeight = boxSize!.height;
+        firstBaseline = borderBoxHeight;
+        lastBaseline = borderBoxHeight;
       } else {
         // No in-flow line boxes or baselines: per CSS 2.1 §10.8.1, synthesize baseline from bottom margin edge.
         final double marginBottom = renderStyle.marginBottom.computedValue;
@@ -2032,7 +2034,12 @@ class RenderFlowLayout extends RenderLayoutBox {
     }
 
     final Offset offset = getLayoutTransformTo(resolved, this, excludeScrollOffset: true);
-    return offset.dy + childBaseline;
+    final double collapsedWithParent = resolved.renderStyle.collapsedMarginTop;
+    final double ignoringParent = resolved.renderStyle.collapsedMarginTopIgnoringParent;
+    final double marginAdjustment = ignoringParent > collapsedWithParent
+        ? (ignoringParent - collapsedWithParent)
+        : 0.0;
+    return offset.dy + marginAdjustment + childBaseline;
   }
 
   @override

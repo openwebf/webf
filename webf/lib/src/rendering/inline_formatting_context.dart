@@ -2233,7 +2233,19 @@ class InlineFormattingContext {
         final resolvedChild = _resolveAtomicChildForBaseline(rb);
         double? innerBaseline = _computeInlineBlockBaseline(resolvedChild) ?? _computeInlineBlockBaseline(rb);
         // Shift baseline by top margin so it's measured from placeholder top
-        double? baselineOffset = innerBaseline != null ? (mT + innerBaseline) : null;
+        double? baselineOffset;
+        if (innerBaseline != null) {
+          baselineOffset = mT + innerBaseline;
+          if ((innerBaseline - borderBoxHeight).abs() <= 0.5) {
+            baselineOffset += mB;
+          }
+        }
+        final bool inlineFlexEmpty = rb is RenderFlexLayout &&
+            rb.renderStyle.effectiveDisplay == CSSDisplay.inlineFlex &&
+            rb.firstChild == null;
+        if (inlineFlexEmpty) {
+          baselineOffset = height;
+        }
         baselineOffset ??= height; // fallback to bottom edge including margins
 
         // Map CSS vertical-align to dart:ui PlaceholderAlignment for atomic inline items.
