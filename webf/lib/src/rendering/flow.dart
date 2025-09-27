@@ -1911,15 +1911,15 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     // Special handling for inline-block elements
     if (renderStyle.display == CSSDisplay.inlineBlock && boxSize != null) {
-      // Search for in-flow descendants that establish an inline formatting context (line boxes).
-      // Use the baseline of the last such line box. If none exist anywhere inside,
-      // synthesize from the bottom margin edge per CSS 2.1 §10.8.1.
-      double? descendantIFCBaseline = _findDescendantIFCBaseline();
-      if (descendantIFCBaseline != null) {
-        firstBaseline = descendantIFCBaseline;
-        lastBaseline = descendantIFCBaseline;
+      // Search for in-flow descendants that expose a CSS baseline:
+      //  - Prefer inline formatting contexts (line boxes) when present.
+      //  - Otherwise, use flex/grid container baselines if available.
+      // If none exist anywhere inside, synthesize from the bottom margin edge.
+      double? descendantBaseline = _findDescendantBaseline();
+      if (descendantBaseline != null) {
+        firstBaseline = descendantBaseline;
+        lastBaseline = descendantBaseline;
       } else {
-        // No in-flow line boxes found anywhere inside
         final double marginBottom = renderStyle.marginBottom.computedValue;
         firstBaseline = boxSize!.height + marginBottom;
         lastBaseline = firstBaseline;
@@ -1948,9 +1948,10 @@ class RenderFlowLayout extends RenderLayoutBox {
     setCssBaselines(first: firstBaseline, last: lastBaseline);
   }
 
-  // Find the baseline of the last in-flow descendant that establishes IFC (has line boxes).
+  // Find the baseline of the last in-flow descendant that exposes a CSS baseline.
+  // Prefers IFC (line boxes); otherwise accepts container baselines (e.g., flex/grid).
   // Returns the baseline measured from this box's border-box top, or null if none found.
-  double? _findDescendantIFCBaseline() {
+  double? _findDescendantBaseline() {
     double? result;
 
     void dfs(RenderObject node) {
@@ -1964,20 +1965,31 @@ class RenderFlowLayout extends RenderLayoutBox {
         }
       }
 
+      double? baselineFrom(RenderBoxModel model, double? b) {
+        if (b == null) return null;
+        final Offset offset = getLayoutTransformTo(model, this, excludeScrollOffset: true);
+        final double collapsedWithParent = model.renderStyle.collapsedMarginTop;
+        final double ignoringParent = model.renderStyle.collapsedMarginTopIgnoringParent;
+        final double marginAdjustment = ignoringParent > collapsedWithParent
+            ? (ignoringParent - collapsedWithParent)
+            : 0.0;
+        return offset.dy + marginAdjustment + b;
+      }
+
+      // Prefer IFC baselines (line boxes)
       if (node is RenderFlowLayout && node.establishIFC) {
         final double? b = node.computeCssLastBaseline();
-        if (b != null) {
-          // Map to this container's coordinate system. Adjust for parent margin collapse.
-          final Offset offset = getLayoutTransformTo(node, this, excludeScrollOffset: true);
-          final double collapsedWithParent = node.renderStyle.collapsedMarginTop;
-          final double ignoringParent = node.renderStyle.collapsedMarginTopIgnoringParent;
-          final double marginAdjustment = ignoringParent > collapsedWithParent
-              ? (ignoringParent - collapsedWithParent)
-              : 0.0;
-          final double candidate = offset.dy + marginAdjustment + b;
-          if (result == null || candidate > result!) {
-            result = candidate;
-          }
+        final double? candidate = baselineFrom(node, b);
+        if (candidate != null && (result == null || candidate > result!)) {
+          result = candidate;
+        }
+      }
+      // Accept flex container cached baselines as a fallback
+      if (node is RenderFlexLayout) {
+        final double? b = node.computeCssLastBaselineOf(TextBaseline.alphabetic);
+        final double? candidate = baselineFrom(node, b);
+        if (candidate != null && (result == null || candidate > result!)) {
+          result = candidate;
         }
       }
 
