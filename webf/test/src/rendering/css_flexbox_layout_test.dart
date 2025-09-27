@@ -117,6 +117,42 @@ void main() {
       // item2 keeps its specified height
       expect(item2.offsetHeight, equals(50.0));
     });
+
+    testWidgets('flex stretched item respects cross margins', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'flex-stretch-margin-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div style="
+                display: flex;
+                width: 300px;
+                height: 80px;
+                background-color: #eee;
+                border: 1px solid black;
+                box-sizing: border-box;
+                justify-content: space-around;
+              ">
+                <span id="item" style="
+                  flex: 1 0 0%;
+                  margin: 10px;
+                  background: white;
+                  display: inline-block;
+                  box-sizing: border-box;
+                ">one</span>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final item = prepared.getElementById('item');
+
+      // Container content box is 78px tall (80px border-box with 1px border), so
+      // stretching subtracts the item's 10px top and bottom margins: 78 - 20 = 58.
+      expect(item.offsetHeight, equals(58.0));
+    });
   });
 
   group('Flex Sizing', () {

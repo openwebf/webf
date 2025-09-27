@@ -3004,8 +3004,15 @@ class RenderFlexLayout extends RenderLayoutBox {
         child.renderStyle.height.isAuto;
 
     if (allowDynamicHeight) {
-      // Remove tight height constraints to allow text to reflow properly
-      minConstraintHeight = 0;
+      // Remove tight height constraints to allow text to reflow properly. When the
+      // flex item is stretched in the cross axis, maintain its minimum height so
+      // margins and padding are preserved while still allowing it to expand beyond
+      // the stretched size if its contents require it.
+      if (childStretchedCrossSize != null && childStretchedCrossSize > 0) {
+        minConstraintHeight = math.max(minConstraintHeight, childStretchedCrossSize);
+      } else {
+        minConstraintHeight = 0;
+      }
       maxConstraintHeight = double.infinity;
       // Clear any previously overridden content logical height so getContentSize
       // uses the measured IFC height rather than a stale fixed value.
