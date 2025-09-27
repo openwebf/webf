@@ -4,6 +4,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
+import 'package:webf/rendering.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/dom.dart' as dom;
 import '../../setup.dart';
@@ -152,6 +153,53 @@ void main() {
       // Container content box is 78px tall (80px border-box with 1px border), so
       // stretching subtracts the item's 10px top and bottom margins: 78 - 20 = 58.
       expect(item.offsetHeight, equals(58.0));
+    });
+
+    testWidgets('inline flex baseline prefers baseline-aligned child', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'inline-flex-baseline-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0; font-family: sans-serif;">
+              <div id="container" style="box-sizing: border-box;">
+                before text
+                <div class="inline-flexbox" style="
+                  display: inline-flex;
+                  background-color: lightgrey;
+                  margin-top: 5px;
+                  box-sizing: border-box;
+                  height: 50px;
+                ">
+                  <div class="flex-end" style="box-sizing: border-box; align-self: flex-end;">below</div>
+                  <div class="baseline" style="box-sizing: border-box; align-self: baseline; margin-top: 15px;">baseline</div>
+                  <div class="flex-start" style="box-sizing: border-box; align-self: flex-start;">above</div>
+                </div>
+                after text
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final inlineFlex = prepared.document.querySelector('.inline-flexbox') as dom.Element;
+      final baselineChild = inlineFlex.querySelector('.baseline') as dom.Element;
+
+      final RenderBoxModel flexRenderBox = inlineFlex.renderStyle.attachedRenderBoxModel!;
+      final RenderBoxModel baselineRenderBox = baselineChild.renderStyle.attachedRenderBoxModel!;
+
+      final RenderLayoutParentData baselineParentData =
+          baselineRenderBox.parentData as RenderLayoutParentData;
+
+      final double? containerBaseline = flexRenderBox.computeCssFirstBaseline();
+      final double? childBaseline = baselineRenderBox.computeCssFirstBaseline();
+
+      expect(containerBaseline, isNotNull);
+      expect(childBaseline, isNotNull);
+      expect(
+        containerBaseline,
+        closeTo(childBaseline! + baselineParentData.offset.dy, 0.01),
+      );
     });
   });
 

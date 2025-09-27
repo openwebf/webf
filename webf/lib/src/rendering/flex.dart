@@ -1537,26 +1537,64 @@ class RenderFlexLayout extends RenderLayoutBox {
         containerBaseline = borderBoxHeight + marginBottom;
       }
     } else {
-      // Baseline equals the first child's baseline plus its offset within the container.
+      // Baseline equals the baseline of the first flex item on the first line that
+      // participates in baseline alignment. If none participate, fall back to the
+      // first item with a baseline, otherwise the very first item.
       final _RunMetrics firstLineMetrics = _flexLineBoxMetrics[0];
       final List<_RunChild> firstRunChildren = firstLineMetrics.runChildren.values.toList();
       if (firstRunChildren.isNotEmpty) {
-        final RenderBox child = firstRunChildren[0].child;
-        final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-        final double? childBaseline = child.getDistanceToBaseline(TextBaseline.alphabetic);
-        // Offset of the child's border-box top within the flex container's border-box.
-        // Use the laid-out offset directly (includes margins) so the container baseline
-        // derived from the child matches browser behavior for inline-flex baseline.
-        double childOffsetY = childParentData.offset.dy;
-        if (child is RenderBoxModel) {
-          final Offset? relativeOffset = CSSPositionedLayout.getRelativeOffset(child.renderStyle);
-          if (relativeOffset != null) {
-            childOffsetY -= relativeOffset.dy;
+        RenderBox? baselineChild;
+        double? baselineDistance;
+        RenderBox? fallbackChild;
+        double? fallbackBaseline;
+
+        bool participatesInBaseline(RenderBox candidate) {
+          final AlignSelf self = _getAlignSelf(candidate);
+          if (self == AlignSelf.baseline) return true;
+          if (self == AlignSelf.auto && renderStyle.alignItems == AlignItems.baseline) {
+            return true;
           }
+          return false;
         }
-        // Child baseline is relative to the child's border-box top; convert to the
-        // container's border-box by adding the child's offset within the container.
-        containerBaseline = (childBaseline ?? 0) + childOffsetY;
+
+        for (final _RunChild runChild in firstRunChildren) {
+          final RenderBox child = runChild.child;
+          final double? childBaseline = child.getDistanceToBaseline(TextBaseline.alphabetic);
+          final bool participates = participatesInBaseline(child);
+
+          if (participates && baselineChild == null) {
+            baselineChild = child;
+            baselineDistance = childBaseline;
+            // Per spec, the first baseline-aligned item defines the container baseline,
+            // even if it lacks an explicit baseline (fallback will apply later).
+            if (childBaseline != null) {
+              break;
+            }
+          }
+
+          if (childBaseline != null && fallbackChild == null) {
+            fallbackChild = child;
+            fallbackBaseline = childBaseline;
+          }
+
+          // Ensure we always have a fallback item (first run child).
+          fallbackChild ??= child;
+        }
+
+        baselineChild ??= fallbackChild;
+        baselineDistance ??= fallbackBaseline;
+
+        if (baselineChild != null) {
+          final RenderLayoutParentData childParentData = baselineChild.parentData as RenderLayoutParentData;
+          double childOffsetY = childParentData.offset.dy;
+          if (baselineChild is RenderBoxModel) {
+            final Offset? relativeOffset = CSSPositionedLayout.getRelativeOffset(baselineChild.renderStyle);
+            if (relativeOffset != null) {
+              childOffsetY -= relativeOffset.dy;
+            }
+          }
+          containerBaseline = (baselineDistance ?? 0) + childOffsetY;
+        }
       }
     }
     setCssBaselines(first: containerBaseline, last: containerBaseline);
