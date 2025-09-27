@@ -243,6 +243,57 @@ void main() {
       }
     });
 
+    testWidgets('inline-block with flex child adopts flex baseline', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'inline-block-flex-baseline-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div style="font-size: 18px;">
+            before
+            <span id="inline-block-flex" style="display: inline-block; background: rgba(0,0,0,0.05);">
+              <div id="flex-child" style="display: flex; align-items: baseline; height: 40px; background: rgba(0,0,255,0.05); margin-top: 6px;">
+                <div style="margin-top: 12px;">baseline</div>
+              </div>
+            </span>
+            after
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+      await tester.pump();
+
+      final inlineBlock = prepared.getElementById('inline-block-flex');
+      final flexChild = prepared.getElementById('flex-child');
+
+      expect(inlineBlock, isNotNull);
+      expect(flexChild, isNotNull);
+
+      final inlineRenderer = inlineBlock.attachedRenderer;
+      final flexRenderer = flexChild.attachedRenderer;
+
+      expect(inlineRenderer, isA<RenderFlowLayout>());
+      expect(flexRenderer, isA<RenderFlexLayout>());
+
+      final RenderFlowLayout inlineFlow = inlineRenderer as RenderFlowLayout;
+      final RenderFlexLayout flexLayout = flexRenderer as RenderFlexLayout;
+
+      final double? inlineBaseline = inlineFlow.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+      final double? flexBaseline = flexLayout.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+
+      expect(inlineBaseline, isNotNull);
+      expect(flexBaseline, isNotNull);
+
+      // Baseline should not fall back to the bottom edge.
+      expect(inlineFlow.hasSize, isTrue);
+      expect(inlineBaseline!, lessThan(inlineFlow.size.height));
+
+      final Offset flexOffset = getLayoutTransformTo(flexLayout, inlineFlow, excludeScrollOffset: true);
+      final double expectedBaseline = flexBaseline! + flexOffset.dy;
+
+      expect(inlineBaseline, moreOrLessEquals(expectedBaseline, epsilon: 0.5));
+    });
+
     testWidgets('complex nested inline-block structure', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,

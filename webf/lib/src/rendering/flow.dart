@@ -1915,41 +1915,58 @@ class RenderFlowLayout extends RenderLayoutBox {
     // Special handling for inline-block elements
     if (renderStyle.display == CSSDisplay.inlineBlock && boxSize != null) {
       // Check if any child elements have text content (establish IFC)
-      double? childLastBaseline;
+      double? ifcLastBaseline;
       bool hasChildWithText = false;
 
+      double? flowChildFirstBaseline;
+      double? flowChildLastBaseline;
+
+      void collectBaseline(RenderBox target) {
+        final double? candidate = _baselineFromInFlowChild(target);
+        if (candidate != null) {
+          flowChildFirstBaseline ??= candidate;
+          flowChildLastBaseline = candidate;
+        }
+      }
+
       visitChildren((child) {
+        collectBaseline(child as RenderBox);
+
         if (child is RenderFlowLayout && child.establishIFC) {
           hasChildWithText = true;
           // Ensure child baseline is calculated first
           child.calculateBaseline();
           double? baseline = child.computeCssLastBaseline();
           if (baseline != null) {
-            childLastBaseline = baseline;
+            ifcLastBaseline = baseline;
           }
         } else if (child is RenderEventListener) {
           // Check children of RenderEventListener (common wrapper)
           child.visitChildren((grandchild) {
+            collectBaseline(grandchild as RenderBox);
             if (grandchild is RenderFlowLayout && grandchild.establishIFC) {
               hasChildWithText = true;
               // Ensure grandchild baseline is calculated first
               grandchild.calculateBaseline();
               double? baseline = grandchild.computeCssLastBaseline();
               if (baseline != null) {
-                childLastBaseline = baseline;
+                ifcLastBaseline = baseline;
               }
             }
           });
         }
       });
 
-      if (hasChildWithText && childLastBaseline != null) {
+      if (hasChildWithText && ifcLastBaseline != null) {
         // Use child's text baseline
-        firstBaseline = childLastBaseline! + paddingTop + borderTop;
+        firstBaseline = ifcLastBaseline! + paddingTop + borderTop;
         lastBaseline = firstBaseline;
+      } else if (flowChildLastBaseline != null) {
+        // Use baseline contributed by in-flow child elements (e.g. flex/grid)
+        firstBaseline = flowChildFirstBaseline ?? flowChildLastBaseline;
+        lastBaseline = flowChildLastBaseline;
       } else {
-        // No in-flow line boxes inside the inline-block: per CSS 2.1 §10.8.1,
-        // synthesize baseline from the bottom margin edge.
+        // No in-flow line boxes or baselines: per CSS 2.1 §10.8.1, synthesize baseline from bottom margin edge.
         final double marginBottom = renderStyle.marginBottom.computedValue;
         firstBaseline = boxSize!.height + marginBottom;
         lastBaseline = firstBaseline;
@@ -1976,6 +1993,49 @@ class RenderFlowLayout extends RenderLayoutBox {
       lastBaseline = firstBaseline;
     }
     setCssBaselines(first: firstBaseline, last: lastBaseline);
+  }
+
+  double? _baselineFromInFlowChild(RenderBox child) {
+    RenderBox? current = child;
+    RenderBoxModel? resolved;
+    for (int depth = 0; depth < 4 && current != null; depth++) {
+      if (current is RenderBoxModel) {
+        resolved = current;
+        break;
+      }
+      if (current is RenderEventListener) {
+        current = current.child as RenderBox?;
+        continue;
+      }
+      if (current is RenderPositionPlaceholder) {
+        current = current.positioned;
+        continue;
+      }
+      if (current is RenderObjectWithChildMixin<RenderBox>) {
+        final RenderBox? singleChild = (current as dynamic).child as RenderBox?;
+        if (singleChild == null) break;
+        current = singleChild;
+        continue;
+      }
+      break;
+    }
+
+    if (resolved == null || !resolved.hasSize) {
+      return null;
+    }
+
+    final CSSPositionType pos = resolved.renderStyle.position;
+    if (pos == CSSPositionType.absolute || pos == CSSPositionType.fixed) {
+      return null;
+    }
+
+    final double? childBaseline = resolved.computeCssLastBaselineOf(TextBaseline.alphabetic);
+    if (childBaseline == null) {
+      return null;
+    }
+
+    final Offset offset = getLayoutTransformTo(resolved, this, excludeScrollOffset: true);
+    return offset.dy + childBaseline;
   }
 
   @override
