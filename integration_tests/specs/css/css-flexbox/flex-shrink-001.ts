@@ -260,7 +260,7 @@ describe('CSS Flexbox flex-shrink', () => {
   });
 
   // Test 7: flex-shrink with different content sizes
-  xit('007-flex-shrink-content-sizes', async () => {
+  it('007-flex-shrink-content-sizes', async () => {
     let container;
     container = createElement(
       'div',
@@ -736,8 +736,9 @@ describe('CSS Flexbox flex-shrink', () => {
   });
 
   // Test 18: flex-shrink with replaced elements
-  xit('018-flex-shrink-replaced', async () => {
+  it('018-flex-shrink-replaced', async (done) => {
     let container;
+    let img;
     container = createElement(
       'div',
       {
@@ -750,7 +751,7 @@ describe('CSS Flexbox flex-shrink', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/100x100-green.png',
           style: {
             width: '100px',
@@ -771,7 +772,10 @@ describe('CSS Flexbox flex-shrink', () => {
       ]
     );
     BODY.appendChild(container);
-    await snapshot();
+     onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
   // Test 19: flex-shrink with text overflow
