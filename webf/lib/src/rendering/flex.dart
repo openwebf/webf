@@ -3949,9 +3949,23 @@ class RenderFlexLayout extends RenderLayoutBox {
 
       for (_RunChild runChild in runChildrenList) {
         RenderBox child = runChild.child;
-        double childMainAxisMargin = _flowAwareChildMainAxisMargin(child)!;
-        // Add start margin of main axis when setting offset.
-        childMainPosition += _calculateMainAxisMarginForJustContentType(childMainAxisMargin);
+        // Flow-aware margins in the main axis.
+        final double childStartMargin = _flowAwareChildMainAxisMargin(child)!;
+        final double childEndMargin = _flowAwareChildMainAxisMargin(child, isEnd: true)!;
+        // Border-box main-size of the child (no margins).
+        final double childMainSizeOnly = _getMainSize(child);
+
+        // Position the child along the main axis respecting direction.
+        if (flipMainAxis) {
+          // In reversed main axis (e.g., column-reverse or RTL row), advance from the
+          // far edge by the start margin and the child's own size. Do not subtract the
+          // trailing (end) margin here — it separates this item from the next.
+          final double adjStartMargin = _calculateMainAxisMarginForJustContentType(childStartMargin);
+          childMainPosition -= (adjStartMargin + childMainSizeOnly);
+        } else {
+          // In normal flow, advance by the start margin before placing.
+          childMainPosition += _calculateMainAxisMarginForJustContentType(childStartMargin);
+        }
         double? childCrossPosition;
         AlignSelf alignSelf = _getAlignSelf(child);
 
@@ -4087,8 +4101,8 @@ class RenderFlexLayout extends RenderLayoutBox {
           }
         }
 
-        if (flipMainAxis) childMainPosition -= _getMainAxisExtent(child);
-
+        // childMainPosition already accounts for size in reversed flow.
+        
         double crossOffset;
         if (renderStyle.flexWrap == FlexWrap.wrapReverse) {
           crossOffset =
@@ -4116,19 +4130,20 @@ class RenderFlexLayout extends RenderLayoutBox {
         // Apply position relative offset change.
         CSSPositionedLayout.applyRelativeOffset(relativeOffset, child);
 
-        // Need to subtract start margin of main axis when calculating next child's start position.
-        double mainAxisGap = _getMainAxisGap();
-
+        // Prepare for next child.
         // Apply the author-specified gap in addition to any justify-content spacing.
         // Spec: the free space for justify-content is computed after subtracting gaps
         // from the available inline-size, but the physical gap remains between items.
-        // Therefore, each inter-item separation equals gap + betweenSpace.
-        double effectiveGap = mainAxisGap;
+        final double mainAxisGap = _getMainAxisGap();
+        final double effectiveGap = mainAxisGap;
 
         if (flipMainAxis) {
-          childMainPosition -= betweenSpace + childMainAxisMargin + effectiveGap;
+          // After placing in reversed flow, move past the trailing (end) margin,
+          // then account for between-space and gaps.
+          childMainPosition -= (childEndMargin + betweenSpace + effectiveGap);
         } else {
-          childMainPosition += _getMainAxisExtent(child) - childMainAxisMargin + betweenSpace + effectiveGap;
+          // Normal flow: advance by the child size, trailing margin, between-space and gaps.
+          childMainPosition += (childMainSizeOnly + childEndMargin + betweenSpace + effectiveGap);
         }
       }
 
