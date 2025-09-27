@@ -1526,11 +1526,11 @@ class RenderFlexLayout extends RenderLayoutBox {
     bool isDisplayInline = effectiveDisplay != CSSDisplay.block && effectiveDisplay != CSSDisplay.flex;
     if (_flexLineBoxMetrics.isEmpty) {
       if (isDisplayInline) {
-        // Inline flex container with no flex items: treat as atomic inline-level
-        // and synthesize baseline from the bottom border edge (distance from
-        // border-box top to border-box bottom).
+        // Inline flex container with no flex items: synthesize baseline from the
+        // bottom margin edge (consistent with atomic inline-level boxes per CSS2.1).
         final double borderBoxHeight = boxSize?.height ?? size.height;
-        containerBaseline = borderBoxHeight;
+        final double marginBottom = renderStyle.marginBottom.computedValue;
+        containerBaseline = borderBoxHeight + marginBottom;
       }
     } else {
       // If the flex container's main axis differs from the inline axis (e.g. column/column-reverse),
@@ -1596,7 +1596,13 @@ class RenderFlexLayout extends RenderLayoutBox {
         }
 
         final double borderBoxHeight = boxSize?.height ?? size.height;
-        containerBaseline = borderBoxHeight;
+        // For inline flex containers, include bottom margin to synthesize an
+        // external baseline from the bottom margin edge.
+        if (isDisplayInline) {
+          containerBaseline = borderBoxHeight + renderStyle.marginBottom.computedValue;
+        } else {
+          containerBaseline = borderBoxHeight;
+        }
         setCssBaselines(first: containerBaseline, last: containerBaseline);
         return;
       }
@@ -1712,15 +1718,20 @@ class RenderFlexLayout extends RenderLayoutBox {
                   '→ containerBaseline=${containerBaseline!.toStringAsFixed(2)}',
             );
           } else {
-            // Chosen item has no baseline; synthesize from container bottom border edge.
+            // Chosen item has no baseline; synthesize from container bottom edge.
             final double borderBoxHeight = boxSize?.height ?? size.height;
-            containerBaseline = borderBoxHeight;
+            // If inline-level (inline-flex), synthesize from bottom margin edge.
+            if (isDisplayInline) {
+              containerBaseline = borderBoxHeight + renderStyle.marginBottom.computedValue;
+            } else {
+              containerBaseline = borderBoxHeight;
+            }
             FlexLog.log(
               impl: FlexImpl.flex,
               feature: FlexFeature.alignment,
               level: Level.FINE,
-              message: () => 'baseline synthesize from bottom border edge: '
-                  'borderH=${(boxSize?.height ?? size.height).toStringAsFixed(2)} '
+              message: () => 'baseline synthesize from bottom ${isDisplayInline ? 'margin' : 'border'} edge: '
+                  'borderH=${(boxSize?.height ?? size.height).toStringAsFixed(2)} marginB=${renderStyle.marginBottom.computedValue.toStringAsFixed(2)} '
                   '→ containerBaseline=${containerBaseline!.toStringAsFixed(2)}',
             );
           }

@@ -2229,24 +2229,28 @@ class InlineFormattingContext {
             : (rb.hasSize ? rb.size.height : 0.0);
         final height = borderBoxHeight + mT + mB;
 
-        // Baseline offset for inline-block: prefer child last-line baseline if available.
-        final resolvedChild = _resolveAtomicChildForBaseline(rb);
-        double? innerBaseline = _computeInlineBlockBaseline(resolvedChild) ?? _computeInlineBlockBaseline(rb);
-        // Shift baseline by top margin so it's measured from placeholder top
+        // Baseline offset for inline-block: use the element's own cached CSS baseline.
+        // This ensures spec-accurate behavior:
+        //  - If there are line boxes anywhere inside (in-flow), baseline is that last line box.
+        //  - Otherwise, baseline is the bottom margin edge.
+        // The cached baseline is measured from the border-box top; placeholder top is at margin-top.
         double? baselineOffset;
-        if (innerBaseline != null) {
-          baselineOffset = mT + innerBaseline;
-          if ((innerBaseline - borderBoxHeight).abs() <= 0.5) {
-            baselineOffset += mB;
+        // Unwrap wrappers (e.g., RenderEventListener) to the underlying RenderBoxModel
+        final RenderBox resolvedForBaseline = _resolveAtomicChildForBaseline(rb);
+        RenderBoxModel? styleBoxForBaseline;
+        if (resolvedForBaseline is RenderBoxModel) {
+          styleBoxForBaseline = resolvedForBaseline;
+        } else if (rb is RenderBoxModel) {
+          styleBoxForBaseline = rb;
+        }
+        if (styleBoxForBaseline != null) {
+          final double? cssBaseline = styleBoxForBaseline.computeCssLastBaselineOf(TextBaseline.alphabetic);
+          if (cssBaseline != null) {
+            baselineOffset = mT + cssBaseline;
           }
         }
-        final bool inlineFlexEmpty = rb is RenderFlexLayout &&
-            rb.renderStyle.effectiveDisplay == CSSDisplay.inlineFlex &&
-            rb.firstChild == null;
-        if (inlineFlexEmpty) {
-          baselineOffset = height;
-        }
-        baselineOffset ??= height; // fallback to bottom edge including margins
+        // Fallback to bottom margin edge if no baseline is available yet.
+        baselineOffset ??= height;
 
         // Map CSS vertical-align to dart:ui PlaceholderAlignment for atomic inline items.
         // For textTop/textBottom we approximate using top/bottom as Flutter does not

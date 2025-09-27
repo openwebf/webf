@@ -1911,61 +1911,15 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     // Special handling for inline-block elements
     if (renderStyle.display == CSSDisplay.inlineBlock && boxSize != null) {
-      // Check if any child elements have text content (establish IFC)
-      double? ifcLastBaseline;
-      bool hasChildWithText = false;
-
-      double? flowChildFirstBaseline;
-      double? flowChildLastBaseline;
-
-      void collectBaseline(RenderBox target) {
-        final double? candidate = _baselineFromInFlowChild(target);
-        if (candidate != null) {
-          flowChildFirstBaseline ??= candidate;
-          flowChildLastBaseline = candidate;
-        }
-      }
-
-      visitChildren((child) {
-        collectBaseline(child as RenderBox);
-
-        if (child is RenderFlowLayout && child.establishIFC) {
-          hasChildWithText = true;
-          // Ensure child baseline is calculated first
-          child.calculateBaseline();
-          double? baseline = child.computeCssLastBaseline();
-          if (baseline != null) {
-            ifcLastBaseline = baseline;
-          }
-        } else if (child is RenderEventListener) {
-          // Check children of RenderEventListener (common wrapper)
-          child.visitChildren((grandchild) {
-            collectBaseline(grandchild as RenderBox);
-            if (grandchild is RenderFlowLayout && grandchild.establishIFC) {
-              hasChildWithText = true;
-              // Ensure grandchild baseline is calculated first
-              grandchild.calculateBaseline();
-              double? baseline = grandchild.computeCssLastBaseline();
-              if (baseline != null) {
-                ifcLastBaseline = baseline;
-              }
-            }
-          });
-        }
-      });
-
-      if (hasChildWithText && ifcLastBaseline != null) {
-        // Use child's text baseline
-        firstBaseline = ifcLastBaseline! + paddingTop + borderTop;
-        lastBaseline = firstBaseline;
-      } else if (flowChildLastBaseline != null) {
-        // Inline-block without inline-level content falls back to its bottom border edge,
-        // even if descendants expose baselines (e.g. flex/grid items).
-        final double borderBoxHeight = boxSize!.height;
-        firstBaseline = borderBoxHeight;
-        lastBaseline = borderBoxHeight;
+      // Search for in-flow descendants that establish an inline formatting context (line boxes).
+      // Use the baseline of the last such line box. If none exist anywhere inside,
+      // synthesize from the bottom margin edge per CSS 2.1 §10.8.1.
+      double? descendantIFCBaseline = _findDescendantIFCBaseline();
+      if (descendantIFCBaseline != null) {
+        firstBaseline = descendantIFCBaseline;
+        lastBaseline = descendantIFCBaseline;
       } else {
-        // No in-flow line boxes or baselines: per CSS 2.1 §10.8.1, synthesize baseline from bottom margin edge.
+        // No in-flow line boxes found anywhere inside
         final double marginBottom = renderStyle.marginBottom.computedValue;
         firstBaseline = boxSize!.height + marginBottom;
         lastBaseline = firstBaseline;
@@ -1992,6 +1946,47 @@ class RenderFlowLayout extends RenderLayoutBox {
       lastBaseline = firstBaseline;
     }
     setCssBaselines(first: firstBaseline, last: lastBaseline);
+  }
+
+  // Find the baseline of the last in-flow descendant that establishes IFC (has line boxes).
+  // Returns the baseline measured from this box's border-box top, or null if none found.
+  double? _findDescendantIFCBaseline() {
+    double? result;
+
+    void dfs(RenderObject node) {
+      if (node is! RenderBox) return;
+
+      // Skip out-of-flow positioned boxes entirely
+      if (node is RenderBoxModel) {
+        final CSSPositionType pos = node.renderStyle.position;
+        if (pos == CSSPositionType.absolute || pos == CSSPositionType.fixed) {
+          return;
+        }
+      }
+
+      if (node is RenderFlowLayout && node.establishIFC) {
+        final double? b = node.computeCssLastBaseline();
+        if (b != null) {
+          // Map to this container's coordinate system. Adjust for parent margin collapse.
+          final Offset offset = getLayoutTransformTo(node, this, excludeScrollOffset: true);
+          final double collapsedWithParent = node.renderStyle.collapsedMarginTop;
+          final double ignoringParent = node.renderStyle.collapsedMarginTopIgnoringParent;
+          final double marginAdjustment = ignoringParent > collapsedWithParent
+              ? (ignoringParent - collapsedWithParent)
+              : 0.0;
+          final double candidate = offset.dy + marginAdjustment + b;
+          if (result == null || candidate > result!) {
+            result = candidate;
+          }
+        }
+      }
+
+      // Recurse into children
+      node.visitChildren(dfs);
+    }
+
+    visitChildren(dfs);
+    return result;
   }
 
   double? _baselineFromInFlowChild(RenderBox child) {
