@@ -1552,6 +1552,11 @@ class RenderFlexLayout extends RenderLayoutBox {
         double? fallbackBaseline;
 
         bool participatesInBaseline(RenderBox candidate) {
+          // Items with auto margins on the cross axis absorb free space and should not
+          // be considered for establishing the container's external baseline.
+          // This mirrors browser behavior in cases like margin-top:auto, where the
+          // baseline-aligned item no longer anchors the container baseline in IFC.
+          if (_isChildCrossAxisMarginAutoExist(candidate)) return false;
           final AlignSelf self = _getAlignSelf(candidate);
           if (self == AlignSelf.baseline) return true;
           if (self == AlignSelf.auto && renderStyle.alignItems == AlignItems.baseline) {
@@ -1601,14 +1606,23 @@ class RenderFlexLayout extends RenderLayoutBox {
         return;
       }
 
-      // Baseline equals the baseline of the first flex item on the first line that
-      // participates in baseline alignment. If none participate, fall back to the
-      // first item with a baseline, otherwise the very first item.
+      // Row-direction (horizontal main axis): per CSS Flexbox §10.8 and
+      // Baseline Alignment in Flexbox, the container’s baseline is taken from
+      // the first flex item on the first line that participates in baseline
+      // alignment (align-self: baseline or align-items: baseline). If none
+      // participate, fall back to the first item with a baseline; if no item
+      // exposes a baseline, synthesize from the bottom margin edge.
       final _RunMetrics firstLineMetrics = _flexLineBoxMetrics[0];
       final List<_RunChild> firstRunChildren = firstLineMetrics.runChildren.values.toList();
+      FlexLog.log(
+        impl: FlexImpl.flex,
+        feature: FlexFeature.alignment,
+        level: Level.FINE,
+        message: () => 'baseline scan start items=${firstRunChildren.length}',
+      );
       if (firstRunChildren.isNotEmpty) {
         RenderBox? baselineChild;
-        double? baselineDistance;
+        double? baselineDistance; // distance from child's border-top to its baseline
         RenderBox? fallbackChild;
         double? fallbackBaseline;
 
@@ -1624,13 +1638,48 @@ class RenderFlexLayout extends RenderLayoutBox {
         for (final _RunChild runChild in firstRunChildren) {
           final RenderBox child = runChild.child;
           final double? childBaseline = child.getDistanceToBaseline(TextBaseline.alphabetic);
-          final bool participates = participatesInBaseline(child);
+
+          // Compute baseline participation (inline here for robust wrapper handling)
+          RenderBoxModel? styleBox;
+          if (child is RenderBoxModel) {
+            styleBox = child;
+          } else if (child is RenderEventListener) {
+            styleBox = child.child as RenderBoxModel?;
+          } else if (child is RenderPositionPlaceholder) {
+            styleBox = child.positioned;
+          }
+          bool hasCrossAuto = false;
+          double mt = 0, mb = 0; bool mtAuto = false, mbAuto = false;
+          if (styleBox != null) {
+            final s = styleBox.renderStyle;
+            mt = s.marginTop.computedValue;
+            mb = s.marginBottom.computedValue;
+            mtAuto = s.marginTop.isAuto;
+            mbAuto = s.marginBottom.isAuto;
+            hasCrossAuto = _isHorizontalFlexDirection
+                ? (mtAuto || mbAuto)
+                : (s.marginLeft.isAuto || s.marginRight.isAuto);
+          }
+          AlignSelf self = _getAlignSelf(child);
+          final bool participates = (!hasCrossAuto) &&
+              (self == AlignSelf.baseline || (self == AlignSelf.auto && renderStyle.alignItems == AlignItems.baseline));
+          double dy = 0;
+          if (child.parentData is RenderLayoutParentData) {
+            dy = (child.parentData as RenderLayoutParentData).offset.dy;
+          }
+          FlexLog.log(
+            impl: FlexImpl.flex,
+            feature: FlexFeature.alignment,
+            level: Level.FINER,
+            message: () => 'baseline candidate ${_childDesc(child)} self=$self mt=${mt.toStringAsFixed(2)}'
+                '${mtAuto ? '(auto)' : ''} mb=${mb.toStringAsFixed(2)}${mbAuto ? '(auto)' : ''} '
+                'dy=${dy.toStringAsFixed(2)} childBaseline=${childBaseline?.toStringAsFixed(2)} '
+                'participates=$participates',
+          );
 
           if (participates && baselineChild == null) {
             baselineChild = child;
             baselineDistance = childBaseline;
-            // Per spec, the first baseline-aligned item defines the container baseline,
-            // even if it lacks an explicit baseline (fallback will apply later).
             if (childBaseline != null) {
               break;
             }
@@ -1641,23 +1690,46 @@ class RenderFlexLayout extends RenderLayoutBox {
             fallbackBaseline = childBaseline;
           }
 
-          // Ensure we always have a fallback item (first run child).
           fallbackChild ??= child;
         }
 
-        baselineChild ??= fallbackChild;
-        baselineDistance ??= fallbackBaseline;
+        // Prefer the first baseline-participating child (excluding cross-axis auto margins);
+        // otherwise fall back to the first child that exposes a baseline; otherwise the first item.
+        final RenderBox? chosen = baselineChild ?? fallbackChild;
+        final double? chosenBaseline = baselineChild != null ? baselineDistance : fallbackBaseline;
 
-        if (baselineChild != null) {
-          final RenderLayoutParentData childParentData = baselineChild.parentData as RenderLayoutParentData;
-          double childOffsetY = childParentData.offset.dy;
-          if (baselineChild is RenderBoxModel) {
-            final Offset? relativeOffset = CSSPositionedLayout.getRelativeOffset(baselineChild.renderStyle);
-            if (relativeOffset != null) {
-              childOffsetY -= relativeOffset.dy;
+        if (chosen != null) {
+          if (chosenBaseline != null) {
+            final RenderLayoutParentData pd = chosen.parentData as RenderLayoutParentData;
+            double dy = pd.offset.dy;
+            if (chosen is RenderBoxModel) {
+              final Offset? rel = CSSPositionedLayout.getRelativeOffset(chosen.renderStyle);
+              if (rel != null) dy -= rel.dy;
             }
+            containerBaseline = chosenBaseline + dy;
+            FlexLog.log(
+              impl: FlexImpl.flex,
+              feature: FlexFeature.alignment,
+              level: Level.FINE,
+              message: () => 'baseline chosen=${_childDesc(chosen)} '
+                  'mode=${baselineChild != null ? 'participant' : 'fallback'} '
+                  'childBaseline=${chosenBaseline.toStringAsFixed(2)} dy=${dy.toStringAsFixed(2)} '
+                  '→ containerBaseline=${containerBaseline!.toStringAsFixed(2)}',
+            );
+          } else {
+            // Chosen item has no baseline; synthesize from container bottom edge.
+            final double borderBoxHeight = boxSize?.height ?? size.height;
+            final double marginBottom = renderStyle.marginBottom.computedValue;
+            containerBaseline = borderBoxHeight + marginBottom;
+            FlexLog.log(
+              impl: FlexImpl.flex,
+              feature: FlexFeature.alignment,
+              level: Level.FINE,
+              message: () => 'baseline synthesize from bottom: borderH=${(boxSize?.height ?? size.height).toStringAsFixed(2)} '
+                  '+ marginBottom=${marginBottom.toStringAsFixed(2)} '
+                  '→ containerBaseline=${containerBaseline!.toStringAsFixed(2)}',
+            );
           }
-          containerBaseline = (baselineDistance ?? 0) + childOffsetY;
         }
       }
     }
@@ -4130,32 +4202,44 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   // Whether margin auto of child is set in the main axis.
   bool _isChildMainAxisMarginAutoExist(RenderBox child) {
+    RenderBoxModel? box;
     if (child is RenderBoxModel) {
-      RenderStyle childRenderStyle = child.renderStyle;
-      CSSLengthValue marginLeft = childRenderStyle.marginLeft;
-      CSSLengthValue marginRight = childRenderStyle.marginRight;
-      CSSLengthValue marginTop = childRenderStyle.marginTop;
-      CSSLengthValue marginBottom = childRenderStyle.marginBottom;
-      if (_isHorizontalFlexDirection && (marginLeft.isAuto || marginRight.isAuto) ||
-          !_isHorizontalFlexDirection && (marginTop.isAuto || marginBottom.isAuto)) {
-        return true;
-      }
+      box = child;
+    } else if (child is RenderEventListener) {
+      box = child.child as RenderBoxModel?;
+    } else if (child is RenderPositionPlaceholder) {
+      box = child.positioned;
+    }
+    if (box != null) {
+      final RenderStyle s = box.renderStyle;
+      final CSSLengthValue marginLeft = s.marginLeft;
+      final CSSLengthValue marginRight = s.marginRight;
+      final CSSLengthValue marginTop = s.marginTop;
+      final CSSLengthValue marginBottom = s.marginBottom;
+      if (_isHorizontalFlexDirection && (marginLeft.isAuto || marginRight.isAuto)) return true;
+      if (!_isHorizontalFlexDirection && (marginTop.isAuto || marginBottom.isAuto)) return true;
     }
     return false;
   }
 
   // Whether margin auto of child is set in the cross axis.
   bool _isChildCrossAxisMarginAutoExist(RenderBox child) {
+    RenderBoxModel? box;
     if (child is RenderBoxModel) {
-      RenderStyle childRenderStyle = child.renderStyle;
-      CSSLengthValue marginLeft = childRenderStyle.marginLeft;
-      CSSLengthValue marginRight = childRenderStyle.marginRight;
-      CSSLengthValue marginTop = childRenderStyle.marginTop;
-      CSSLengthValue marginBottom = childRenderStyle.marginBottom;
-      if (_isHorizontalFlexDirection && (marginTop.isAuto || marginBottom.isAuto) ||
-          !_isHorizontalFlexDirection && (marginLeft.isAuto || marginRight.isAuto)) {
-        return true;
-      }
+      box = child;
+    } else if (child is RenderEventListener) {
+      box = child.child as RenderBoxModel?;
+    } else if (child is RenderPositionPlaceholder) {
+      box = child.positioned;
+    }
+    if (box != null) {
+      final RenderStyle s = box.renderStyle;
+      final CSSLengthValue marginLeft = s.marginLeft;
+      final CSSLengthValue marginRight = s.marginRight;
+      final CSSLengthValue marginTop = s.marginTop;
+      final CSSLengthValue marginBottom = s.marginBottom;
+      if (_isHorizontalFlexDirection && (marginTop.isAuto || marginBottom.isAuto)) return true;
+      if (!_isHorizontalFlexDirection && (marginLeft.isAuto || marginRight.isAuto)) return true;
     }
     return false;
   }
