@@ -201,6 +201,45 @@ void main() {
         closeTo(childBaseline! + baselineParentData.offset.dy, 0.01),
       );
     });
+
+    testWidgets('inline flex column baseline uses bottom edge', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'inline-flex-column-baseline-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0; font-family: sans-serif;">
+              <div id="container" style="box-sizing: border-box;">
+                before text
+                <div class="inline-flexbox column" style="
+                  display: inline-flex;
+                  flex-direction: column;
+                  background-color: lightgrey;
+                  margin-top: 5px;
+                  box-sizing: border-box;
+                ">
+                  <div class="first" style="box-sizing: border-box;">baseline</div>
+                  <div class="second" style="box-sizing: border-box;">above</div>
+                </div>
+                after text
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final inlineFlex = prepared.document.querySelector('.inline-flexbox') as dom.Element;
+      final RenderBoxModel flexRenderBox = inlineFlex.renderStyle.attachedRenderBoxModel!;
+
+      final double? containerBaseline = flexRenderBox.computeCssFirstBaseline();
+      final double borderBoxHeight = flexRenderBox.size.height;
+
+      expect(containerBaseline, isNotNull);
+      expect(
+        containerBaseline,
+        closeTo(borderBoxHeight, 0.01),
+      );
+    });
   });
 
   group('Flex Sizing', () {

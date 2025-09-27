@@ -1537,6 +1537,70 @@ class RenderFlexLayout extends RenderLayoutBox {
         containerBaseline = borderBoxHeight + marginBottom;
       }
     } else {
+      // If the flex container's main axis differs from the inline axis (e.g. column/column-reverse),
+      // it participates in baseline alignment as a block container per
+      // https://www.w3.org/TR/css-flexbox-1/#flex-baselines. Block containers without
+      // inline content synthesize the baseline from the bottom margin edge.
+      if (!_isHorizontalFlexDirection) {
+        // Establish baseline from the first flex item on the first line that
+        // participates in baseline alignment (align-self/align-items: baseline).
+        final _RunMetrics firstLineMetrics = _flexLineBoxMetrics[0];
+        final List<_RunChild> firstRunChildren = firstLineMetrics.runChildren.values.toList();
+        RenderBox? baselineChild;
+        double? baselineDistance;
+        RenderBox? fallbackChild;
+        double? fallbackBaseline;
+
+        bool participatesInBaseline(RenderBox candidate) {
+          final AlignSelf self = _getAlignSelf(candidate);
+          if (self == AlignSelf.baseline) return true;
+          if (self == AlignSelf.auto && renderStyle.alignItems == AlignItems.baseline) {
+            return true;
+          }
+          return false;
+        }
+
+        for (final _RunChild runChild in firstRunChildren) {
+          final RenderBox child = runChild.child;
+          final double? childBaseline = child.getDistanceToBaseline(TextBaseline.alphabetic);
+          final bool participates = participatesInBaseline(child);
+
+          if (participates && baselineChild == null) {
+            baselineChild = child;
+            baselineDistance = childBaseline;
+            if (childBaseline != null) {
+              break;
+            }
+          }
+
+          if (childBaseline != null && fallbackChild == null) {
+            fallbackChild = child;
+            fallbackBaseline = childBaseline;
+          }
+
+          fallbackChild ??= child;
+        }
+
+        baselineChild ??= fallbackChild;
+        baselineDistance ??= fallbackBaseline;
+
+        if (baselineChild != null) {
+          if (baselineDistance != null) {
+            containerBaseline = baselineDistance;
+            setCssBaselines(first: containerBaseline, last: containerBaseline);
+            return;
+          }
+          // No child provided a baseline; fall back to block container behavior
+          // (distance from border-box top to bottom margin edge).
+        }
+
+        final double borderBoxHeight = boxSize?.height ?? size.height;
+        final double marginBottom = renderStyle.marginBottom.computedValue;
+        containerBaseline = borderBoxHeight + marginBottom;
+        setCssBaselines(first: containerBaseline, last: containerBaseline);
+        return;
+      }
+
       // Baseline equals the baseline of the first flex item on the first line that
       // participates in baseline alignment. If none participate, fall back to the
       // first item with a baseline, otherwise the very first item.
