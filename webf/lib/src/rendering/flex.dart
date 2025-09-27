@@ -719,8 +719,11 @@ class RenderFlexLayout extends RenderLayoutBox {
   double _getAutoMinSize(RenderBoxModel child) {
     RenderStyle? childRenderStyle = child.renderStyle;
     double? childAspectRatio = childRenderStyle.aspectRatio;
-    double? childLogicalWidth = child.renderStyle.borderBoxLogicalWidth;
-    double? childLogicalHeight = child.renderStyle.borderBoxLogicalHeight;
+    // Use content-box for specified size suggestion, per spec language.
+    // The automatic minimum size compares content-box suggestions and only
+    // converts to border-box at the end by adding padding/border.
+    double? childLogicalWidth = child.renderStyle.contentBoxLogicalWidth;
+    double? childLogicalHeight = child.renderStyle.contentBoxLogicalHeight;
 
     // If the item’s computed main size property is definite, then the specified size suggestion is that size
     // (clamped by its max main size property if it’s definite). It is otherwise undefined.
@@ -828,6 +831,17 @@ class RenderFlexLayout extends RenderLayoutBox {
         : (childRenderStyle.padding.vertical + childRenderStyle.border.vertical);
 
     double autoMinBorderBox = autoMinSizeContent + paddingBorderMain;
+
+    FlexLog.log(
+      impl: FlexImpl.flex,
+      feature: FlexFeature.baseSize,
+      level: Level.FINER,
+      message: () =>
+          'auto-min for ${_childDesc(child)} mainAxis=${_isHorizontalFlexDirection ? 'row' : 'column'} '
+          'specified(content)=${specifiedSize?.toStringAsFixed(1)} '
+          'contentMin=${contentSize.toStringAsFixed(1)} paddingBorderMain=${paddingBorderMain.toStringAsFixed(1)} '
+          '→ autoMin(border)=${autoMinBorderBox.toStringAsFixed(1)}',
+    );
 
     // Finally, clamp by the definite max main size (which is border-box) if present.
     if (maxMainLength.isNotNone) {
@@ -1952,6 +1966,13 @@ class RenderFlexLayout extends RenderLayoutBox {
       if (child is RenderBoxModel) {
         final double autoMinMain = _getMinMainAxisSize(child);
         if (intrinsicMain < autoMinMain) {
+          FlexLog.log(
+            impl: FlexImpl.flex,
+            feature: FlexFeature.baseSize,
+            level: Level.FINER,
+            message: () => 'auto-min clamp ${_childDesc(child)} from=${intrinsicMain.toStringAsFixed(1)} '
+                'to=${autoMinMain.toStringAsFixed(1)}',
+          );
           intrinsicMain = autoMinMain;
         }
       }
@@ -2982,6 +3003,27 @@ class RenderFlexLayout extends RenderLayoutBox {
     double minConstraintHeight = child.hasOverrideContentLogicalHeight
         ? math.max(0, child.renderStyle.borderBoxLogicalHeight!)
         : (oldConstraints.minHeight > maxConstraintHeight ? maxConstraintHeight : oldConstraints.minHeight);
+
+    // If the flex item has a definite height in a row-direction container,
+    // lock the child's height to the used border-box height. This prevents
+    // later passes (e.g., text reflow) from clearing the specified height
+    // and expanding to content height (which would incorrectly grow the
+    // flex item above its specified height). Matches CSS: a definite
+    // cross-size is not affected by align-items: stretch or content.
+    if (_isHorizontalFlexDirection && !child.renderStyle.height.isAuto) {
+      final double? usedBorderBoxH = child.renderStyle.borderBoxLogicalHeight;
+      if (usedBorderBoxH != null && usedBorderBoxH.isFinite) {
+        minConstraintHeight = usedBorderBoxH;
+        maxConstraintHeight = usedBorderBoxH;
+        FlexLog.log(
+          impl: FlexImpl.flex,
+          feature: FlexFeature.childConstraints,
+          level: Level.FINER,
+          message: () => 'lock cross-size(height) for ${_childDesc(child)} to border-box '
+              '${usedBorderBoxH.toStringAsFixed(1)} (definite height)',
+        );
+      }
+    }
 
     // If a stretched cross size was computed for this item, apply it directly to
     // the child's constraints in the cross axis. This avoids relying on override
