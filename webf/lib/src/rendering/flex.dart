@@ -804,8 +804,11 @@ class RenderFlexLayout extends RenderLayoutBox {
     double autoMinSizeContent;
 
     if (specifiedSize != null) {
-      // In general, the content-based minimum size of a flex item is the smaller of its content size suggestion
-      // and its specified size suggestion (both are content-box sizes at this point).
+      // Per CSS Flexbox automatic minimum size rules used by browsers in practice,
+      // flex items are allowed to shrink below a specified width unless an explicit
+      // min-width is set. Treat the content-based minimum as the smaller of the
+      // content size suggestion and the specified size suggestion, so a definite
+      // width does not implicitly become a min-width.
       autoMinSizeContent = math.min(contentSize, specifiedSize);
     } else {
       if (childAspectRatio != null) {
@@ -2671,8 +2674,8 @@ class RenderFlexLayout extends RenderLayoutBox {
               impl: FlexImpl.flex,
               feature: FlexFeature.runs,
               level: Level.FINE,
-              message: () => 'auto main-size clamp: suppress positive free space ' 
-                  '(used=${usedFreeSpace.toStringAsFixed(1)} total=${totalSpace.toStringAsFixed(1)} ' 
+              message: () => 'auto main-size clamp: suppress positive free space '
+                  '(used=${usedFreeSpace.toStringAsFixed(1)} total=${totalSpace.toStringAsFixed(1)} '
                   'minStyle=${containerStyleMin.toStringAsFixed(1)})',
             );
           }
@@ -2685,7 +2688,7 @@ class RenderFlexLayout extends RenderLayoutBox {
             impl: FlexImpl.flex,
             feature: FlexFeature.runs,
             level: Level.FINE,
-            message: () => 'auto main-size clamp: enforce min-main-size ' 
+            message: () => 'auto main-size clamp: enforce min-main-size '
                 '(required=${required.toStringAsFixed(1)} used=${usedFreeSpace.toStringAsFixed(1)})',
           );
         }
@@ -2719,126 +2722,44 @@ class RenderFlexLayout extends RenderLayoutBox {
         while (_resolveFlexibleLengths(metrics, totalFlexFactor, usedFreeSpace)) {}
       }
 
-      // Update run cross axis extent after flex item main size is adjusted which may
-      // affect its cross size such as replaced element.
+      // Update run cross axis extent after flex item main size is resolved.
+      // Note: Do NOT stretch in this first relayout pass. We must measure each
+      // item’s natural cross-size with its used main size first to determine
+      // the flex line’s cross-size (the max of item cross-sizes).
       metrics.crossAxisExtent = _recomputeRunCrossExtent(metrics);
 
-      // Main axis size of children after child layouted.
-      double mainAxisExtent = 0;
-
+      // Phase 1 — Relayout each item with its resolved main size only.
+      // Do not apply align-items: stretch yet, so text/content can expand to
+      // its natural height based on the final line width.
       for (_RunChild runChild in runChildrenList) {
         RenderBox child = runChild.child;
-
-        double childMainAxisExtent = _getMainAxisExtent(child);
-
         // Unwrap wrappers to operate on the actual flex item while still laying out the wrapper.
         RenderBoxModel? effectiveChild =
-        child is RenderBoxModel ? child : (child is RenderEventListener ? child.child as RenderBoxModel? : null);
+            child is RenderBoxModel ? child : (child is RenderEventListener ? child.child as RenderBoxModel? : null);
         if (effectiveChild == null) {
-          mainAxisExtent += childMainAxisExtent;
+          // Non-RenderBoxModel child: nothing to tighten in phase 1.
           continue;
         }
+        double childOldMainSize = _isHorizontalFlexDirection ? child.size.width : child.size.height;
 
-        double flexGrow = _getFlexGrow(effectiveChild);
-        double flexShrink = _getFlexShrink(effectiveChild);
-        // Child main size adjusted due to flex-grow/flex-shrink style.
+        // Determine used main size from the flexible lengths result, if any.
         double? childFlexedMainSize;
-        if ((isFlexGrow && flexGrow > 0) || (isFlexShrink && flexShrink > 0)) {
+        if ((isFlexGrow && _getFlexGrow(effectiveChild ?? child) > 0) ||
+            (isFlexShrink && _getFlexShrink(effectiveChild ?? child) > 0)) {
           childFlexedMainSize = runChild.flexedMainSize;
         }
 
-        // Original size of child.
-        double childOldMainSize = _isHorizontalFlexDirection ? child.size.width : child.size.height;
-        double childOldCrossSize = _isHorizontalFlexDirection ? child.size.height : child.size.width;
-
-
-        // Child need to layout when main axis size or cross size has changed
-        // due to flex-grow/flex-shrink/align-items/align-self specified.
-        // If the flex algorithm produced a flexed main size, we must relayout the item
-        // with tightened main-axis constraints so its descendants (e.g., block auto-width)
-        // see a definite available width. Always trigger relayout for flexed items,
-        // even if the numeric size matches the previous pass, to propagate constraints.
-        bool childMainSizeChanged = childFlexedMainSize != null ||
-            (childFlexedMainSize != null && childFlexedMainSize != childOldMainSize);
-
-        bool childCrossSizeChanged = false;
-        // Child cross size adjusted due to align-items/align-self style.
-        double? childStretchedCrossSize;
-
-        if (_needToStretchChildCrossSize(child)) {
-          childStretchedCrossSize =
-              _getChildStretchedCrossSize(effectiveChild, metrics.crossAxisExtent, runBetweenSpace);
-          if (effectiveChild is RenderLayoutBox && effectiveChild.isNegativeMarginChangeHSize) {
-            double childCrossAxisMargin =
-            _isHorizontalFlexDirection
-                ? effectiveChild.renderStyle.margin.vertical
-                : effectiveChild.renderStyle.margin.horizontal;
-            childStretchedCrossSize += childCrossAxisMargin.abs();
-          }
-          childCrossSizeChanged = childStretchedCrossSize != childOldCrossSize;
-        }
-
-        // Defensive: if the container is not stretching (align-items is not stretch)
-        // and the child does not have align-self: stretch, do not carry a stretched
-        // cross size into constraints, even if an earlier pass produced one.
-        if (childStretchedCrossSize != null) {
-          final AlignSelf selfAlign = _getAlignSelf(child);
-          final bool containerStretch = renderStyle.alignItems == AlignItems.stretch;
-          final bool selfStretch = selfAlign == AlignSelf.stretch;
-          if (!containerStretch && !selfStretch) {
-            childStretchedCrossSize = null;
-          }
-        }
-
-        // When not stretching, enforce the child's own min/max cross-size constraints.
-        // If the measured cross size from the intrinsic pass exceeds a definite
-        // max-width/max-height (absolute, not percentage), clamp and relayout.
-        if (!_isHorizontalFlexDirection && effectiveChild is RenderBoxModel && childStretchedCrossSize == null) {
-          final RenderStyle cs = effectiveChild.renderStyle;
-          double measuredCross = childOldCrossSize; // width in column direction
-          double clamped = measuredCross;
-          if (cs.maxWidth.isNotNone && cs.maxWidth.type != CSSLengthType.PERCENTAGE) {
-            clamped = math.min(clamped, cs.maxWidth.computedValue);
-          }
-          if (cs.minWidth.isNotAuto) {
-            clamped = math.max(clamped, cs.minWidth.computedValue);
-          }
-          if (clamped != measuredCross) {
-            childStretchedCrossSize = clamped;
-            childCrossSizeChanged = true;
-          }
-        }
-
-        // Removed: Do not propagate measured cross width to child render style.
-        // This could freeze an unintended small width from the intrinsic pass
-        // (e.g., padding-only width) and break later relayout/clamping.
-
-        // Also relayout if our preserved intrinsic main size (from PASS 2) differs from current size
         double? desiredPreservedMain;
         if (childFlexedMainSize == null) {
           desiredPreservedMain = _childrenIntrinsicMainSizes[child.hashCode];
         }
 
-        bool isChildNeedsLayout = childMainSizeChanged || childCrossSizeChanged ||
-            (child is RenderBoxModel && child.needsRelayout);
-        if (!isChildNeedsLayout && desiredPreservedMain != null && (desiredPreservedMain != childOldMainSize)) {
-          isChildNeedsLayout = true;
+        bool needsLayout = (childFlexedMainSize != null) ||
+            (effectiveChild is RenderBoxModel && effectiveChild.needsRelayout);
+        if (!needsLayout && desiredPreservedMain != null && (desiredPreservedMain != childOldMainSize)) {
+          needsLayout = true;
         }
-
-        // CSS Flexbox: When an item does not flex (no grow/shrink applied), its
-        // used main size equals its flex base size. Even if the measured size from
-        // the first pass equals that base size, we must relayout with a tight main-axis
-        // constraint so inline formatting (IFC) inside the item uses the definite
-        // available width for text alignment and line breaking.
-        //
-        // Previously, items with flex-basis in a row-direction container were laid out
-        // initially with constraints like minW=flex-basis, maxW=∞. If the resulting
-        // border-box width happened to equal flex-basis, we skipped relayout and the
-        // IFC kept using unbounded width, breaking text-align semantics.
-        //
-        // Here we detect that situation (auto main-size, non-tight constraint) and
-        // force a relayout to tighten the main-axis constraint to the preserved base size.
-        if (!isChildNeedsLayout && desiredPreservedMain != null && childFlexedMainSize == null) {
+        if (!needsLayout && desiredPreservedMain != null) {
           final BoxConstraints applied = child.constraints;
           final bool autoMain = _isHorizontalFlexDirection
               ? effectiveChild.renderStyle.width.isAuto
@@ -2847,98 +2768,84 @@ class RenderFlexLayout extends RenderLayoutBox {
               ? !applied.hasTightWidth
               : !applied.hasTightHeight;
           if (autoMain && wasNonTightMain) {
-            isChildNeedsLayout = true;
+            needsLayout = true;
           }
         }
 
-        // Special-case: empty flex items with percentage max-width/height should not expand
-        // to the available main size when width/height is auto. They should size to padding+border only.
-        // Force a relayout with preserved main size to clamp them correctly.
-        if (!isChildNeedsLayout) {
-          if (effectiveChild is RenderBoxModel) {
-            final CSSRenderStyle cs = effectiveChild.renderStyle;
-            bool hasPctMaxMain = _isHorizontalFlexDirection
-                ? cs.maxWidth.type == CSSLengthType.PERCENTAGE
-                : cs.maxHeight.type == CSSLengthType.PERCENTAGE;
-            bool hasAutoMain = _isHorizontalFlexDirection ? cs.width.isAuto : cs.height.isAuto;
-            if (hasPctMaxMain && hasAutoMain) {
-              // Compute padding+border on main axis
-              double paddingBorderMain = _isHorizontalFlexDirection
-                  ? (cs.effectiveBorderLeftWidth.computedValue +
-                  cs.effectiveBorderRightWidth.computedValue +
-                  cs.paddingLeft.computedValue +
-                  cs.paddingRight.computedValue)
-                  : (cs.effectiveBorderTopWidth.computedValue +
-                  cs.effectiveBorderBottomWidth.computedValue +
-                  cs.paddingTop.computedValue +
-                  cs.paddingBottom.computedValue);
+        if (!needsLayout) continue;
 
-              // Check if this is an empty element (no content)
-              bool isEmptyElement = false;
+        // Mark text-only parents for flex relayout optimization.
+        if (effectiveChild != null) _markFlexRelayoutForTextOnly(effectiveChild);
 
-              // Access the DOM element through renderStyle.target
-              if (effectiveChild is RenderBoxModel) {
-                Element domElement = effectiveChild.renderStyle.target;
-                // Check if the DOM element has no child nodes
-                isEmptyElement = !domElement.hasChildren();
-              }
-
-              if (isEmptyElement) {
-                // Empty elements with percentage max-width should only size to their padding box
-                desiredPreservedMain = paddingBorderMain;
-                isChildNeedsLayout = true;
-              }
-            }
-          }
-        }
-
-
-        if (!isChildNeedsLayout) {
-          mainAxisExtent += childMainAxisExtent;
-          continue;
-        }
-
-        // Find and mark the parent that only contains text boxes for flex relayout
-        _markFlexRelayoutForTextOnly(effectiveChild);
-
-        BoxConstraints childConstraints = _getChildAdjustedConstraints(
+        final BoxConstraints childConstraints = _getChildAdjustedConstraints(
           effectiveChild,
           childFlexedMainSize,
-          childStretchedCrossSize,
+          null, // defer stretching
           runChildrenList.length,
           preserveMainAxisSize: desiredPreservedMain,
         );
-
-        // Apply the constraints to the wrapper (if any); it forwards to the inner box.
         FlexLog.log(
           impl: FlexImpl.flex,
           feature: FlexFeature.resolve,
           level: Level.FINER,
-          message: () => 'layout item ${_childDesc(child)} with ${_fmtC(childConstraints)} '
-              'flexedMain=${childFlexedMainSize?.toStringAsFixed(1)} '
-              'stretchedCross=${childStretchedCrossSize?.toStringAsFixed(1)} '
-              'preserve=${desiredPreservedMain?.toStringAsFixed(1)}',
+          message: () => 'layout item ${_childDesc(child)} (phase1) with ${_fmtC(childConstraints)} '
+              'flexedMain=${childFlexedMainSize?.toStringAsFixed(1)}',
         );
         child.layout(childConstraints, parentUsesSize: true);
+      }
 
+      // After Phase 1, recompute the run cross extent based on the items’ natural
+      // cross sizes with final main sizes.
+      metrics.crossAxisExtent = _recomputeRunCrossExtent(metrics);
+
+      // Phase 2 — Apply align-items/align-self: stretch using the computed line cross size.
+      for (_RunChild runChild in runChildrenList) {
+        RenderBox child = runChild.child;
+        RenderBoxModel? effectiveChild =
+            child is RenderBoxModel ? child : (child is RenderEventListener ? child.child as RenderBoxModel? : null);
+        if (effectiveChild == null) continue;
+
+        double? childStretchedCrossSize;
+        if (_needToStretchChildCrossSize(child)) {
+          childStretchedCrossSize =
+              _getChildStretchedCrossSize(effectiveChild, metrics.crossAxisExtent, runBetweenSpace);
+          if (effectiveChild is RenderLayoutBox && effectiveChild.isNegativeMarginChangeHSize) {
+            double childCrossAxisMargin = _isHorizontalFlexDirection
+                ? effectiveChild.renderStyle.margin.vertical
+                : effectiveChild.renderStyle.margin.horizontal;
+            childStretchedCrossSize += childCrossAxisMargin.abs();
+          }
+        }
+
+        // Skip if no stretching is needed.
+        if (childStretchedCrossSize == null) continue;
+
+        // If the current cross size already matches the stretched result, skip.
+        final double currentCross = _isHorizontalFlexDirection ? child.size.height : child.size.width;
+        if ((childStretchedCrossSize - currentCross).abs() < 0.5) continue;
+
+        // Apply stretch by relayout with tightened cross-axis constraint.
+        final BoxConstraints childConstraints = _getChildAdjustedConstraints(
+          effectiveChild,
+          null, // main already resolved
+          childStretchedCrossSize,
+          runChildrenList.length,
+        );
         FlexLog.log(
           impl: FlexImpl.flex,
-          feature: FlexFeature.resolve,
+          feature: FlexFeature.alignment,
           level: Level.FINER,
-          message: () => 'laid out item ${_childDesc(child)} size=${_fmtS(child.size)}',
+          message: () => 'stretch relayout ${_childDesc(child)} to ${_fmtC(childConstraints)} '
+              'stretchedCross=${childStretchedCrossSize?.toStringAsFixed(1)}',
         );
-
-        // Child main size needs to recalculated after layouted.
-        childMainAxisExtent = _getMainAxisExtent(child);
-
-
-        mainAxisExtent += childMainAxisExtent;
+        child.layout(childConstraints, parentUsesSize: true);
       }
-      // Update run main axis & cross axis extent after child is relayouted.
-      // Include main-axis gaps between items so remaining space calculation for
-      // justify-content is based on (items + gaps), matching PASS 2 behavior.
-      if (runChildrenList.length > 1) {
-        mainAxisExtent += (runChildrenList.length - 1) * _getMainAxisGap();
+
+      // Finally, recompute run main & cross extents using the final sizes.
+      double mainAxisExtent = 0;
+      for (int i = 0; i < runChildrenList.length; i++) {
+        if (i > 0) mainAxisExtent += _getMainAxisGap();
+        mainAxisExtent += _getMainAxisExtent(runChildrenList[i].child);
       }
       metrics.mainAxisExtent = mainAxisExtent;
       metrics.crossAxisExtent = _recomputeRunCrossExtent(metrics);
@@ -3133,7 +3040,10 @@ class RenderFlexLayout extends RenderLayoutBox {
     // (width) during the relayout pass so its descendants see a definite containing block width.
     // This ensures percentage paddings/margins inside the item resolve against the item's
     // actual width (e.g., padding-bottom:50% → height=width/2), matching browsers.
-    if (!_isHorizontalFlexDirection && childStretchedCrossSize == null) {
+    // Do not apply this optimization to replaced elements; their aspect-ratio handling
+    // and intrinsic sizing already provide stable behavior, and locking can produce
+    // intermediate widths that conflict with later stretch.
+    if (!_isHorizontalFlexDirection && childStretchedCrossSize == null && !child.renderStyle.isSelfRenderReplaced()) {
       final bool childCrossAuto = child.renderStyle.width.isAuto;
       final bool childCrossPercent = child.renderStyle.width.type == CSSLengthType.PERCENTAGE;
 
@@ -3228,6 +3138,21 @@ class RenderFlexLayout extends RenderLayoutBox {
               'containerContentW=${containerContentW.toStringAsFixed(1)} borderBoxW=${childBorderBoxW.toStringAsFixed(
               1)}',
         );
+      }
+    }
+
+    // For replaced elements in a column flex container during phase 1 (no cross stretch yet),
+    // cap the available cross size by the container’s content-box width so the intrinsic sizing
+    // does not expand to unconstrained widths (e.g., viewport width) before the stretch phase.
+    if (!_isHorizontalFlexDirection && child.renderStyle.isSelfRenderReplaced() && childStretchedCrossSize == null) {
+      final double containerCrossMax = contentConstraints?.maxWidth ?? double.infinity;
+      if (containerCrossMax.isFinite) {
+        if (maxConstraintWidth.isInfinite || maxConstraintWidth > containerCrossMax) {
+          maxConstraintWidth = containerCrossMax;
+        }
+        if (minConstraintWidth > maxConstraintWidth) {
+          minConstraintWidth = maxConstraintWidth;
+        }
       }
     }
 
@@ -3418,13 +3343,13 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
     }
 
-    if (childFlexedMainSize == null && childStretchedCrossSize != null) {
-      if (_isHorizontalFlexDirection) {
-        _overrideReplacedChildWidth(child);
-      } else {
-        _overrideReplacedChildHeight(child);
-      }
-    }
+    // Do not override the flex item’s resolved main size based on a cross-axis
+    // stretch. In flex layout, the used main size is established by the flex
+    // algorithm (including min/max clamping). Adjusting the opposite axis to
+    // preserve the intrinsic aspect ratio is only valid when the main axis was
+    // changed directly (flexing). For a pure cross-axis stretch, the cross size
+    // is tightened separately via constraints and the main size remains intact.
+    // Therefore, intentionally no-op when only childStretchedCrossSize is provided.
   }
 
   // Override replaced child height when its height is auto.
