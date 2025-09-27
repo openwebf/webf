@@ -3148,13 +3148,33 @@ class RenderFlexLayout extends RenderLayoutBox {
         } else {
           fixedW = child.size.width;
         }
-        // Clamp to the container's available cross-axis width when present,
-        // so overly large intrinsic widths don't cause misplaced centering
-        // or incorrect percentage resolution.
+        // Determine container content width (available cross size)
         final double containerCrossMax = contentConstraints?.maxWidth ?? double.infinity;
-        if (containerCrossMax.isFinite) {
-          fixedW = math.min(fixedW, containerCrossMax);
+        final double containerContentW = containerCrossMax.isFinite
+            ? containerCrossMax
+            : math.max(0.0, size.width - (renderStyle.effectiveBorderLeftWidth.computedValue +
+                renderStyle.effectiveBorderRightWidth.computedValue));
+
+        // Respect child's min/max-width while locking
+        double styleMinW = 0.0;
+        final CSSLengthValue minWLen = child.renderStyle.minWidth;
+        if (minWLen.isNotAuto) {
+          styleMinW = (minWLen.type == CSSLengthType.PERCENTAGE)
+              ? (minWLen.value ?? 0) * containerContentW
+              : minWLen.computedValue;
         }
+        double styleMaxW = double.infinity;
+        final CSSLengthValue maxWLen = child.renderStyle.maxWidth;
+        if (maxWLen.isNotNone) {
+          styleMaxW = (maxWLen.type == CSSLengthType.PERCENTAGE)
+              ? (maxWLen.value ?? 0) * containerContentW
+              : maxWLen.computedValue;
+        }
+
+        // Clamp to child min/max, then to container width
+        fixedW = fixedW.clamp(styleMinW, styleMaxW);
+        if (containerContentW.isFinite) fixedW = math.min(fixedW, containerContentW);
+
         if (fixedW.isFinite && fixedW > 0) {
           minConstraintWidth = fixedW;
           maxConstraintWidth = fixedW;
@@ -3164,7 +3184,8 @@ class RenderFlexLayout extends RenderLayoutBox {
             feature: FlexFeature.childConstraints,
             level: Level.FINER,
             message: () => 'cross-lock width for ${_childDesc(child)} fixedW=${fixedW.toStringAsFixed(1)} '
-                'containerCrossMax=${(contentConstraints?.maxWidth ?? double.infinity).toStringAsFixed(1)}',
+                'containerCrossMax=${(contentConstraints?.maxWidth ?? double.infinity).toStringAsFixed(1)} '
+                'style[min=${styleMinW.toStringAsFixed(1)},max=${styleMaxW.isFinite ? styleMaxW.toStringAsFixed(1) : '∞'}]',
           );
         }
       } else if (childCrossPercent) {
