@@ -624,20 +624,86 @@ class InlineFormattingContext {
   // Expose paragraph intrinsic widths when available.
   // minIntrinsicWidth approximates CSS min-content width for the inline content
   // and is used by flex auto-min-size computation to avoid clamping to the
-  // max-content width (longestLine).
+  // max-content width (longestLine). When the engine does not expose
+  // minIntrinsicWidth, compute a conservative approximation by scanning
+  // unbreakable segments (words, splitting also on hyphens).
   double get paragraphMinIntrinsicWidth {
     if (_paragraph != null) {
-      // ui.Paragraph provides minIntrinsicWidth when text is laid out.
-      // If unavailable for any reason, fall back to longestLine to remain
-      // conservative.
+      double? engineMin;
       try {
-        final double w = (_paragraph as dynamic).minIntrinsicWidth as double? ?? _paragraph!.longestLine;
-        return w.isFinite ? w : _paragraph!.longestLine;
+        engineMin = (_paragraph as dynamic).minIntrinsicWidth as double?;
       } catch (_) {
-        return _paragraph!.longestLine;
+        engineMin = null;
       }
+      final double approx = _approxParagraphMinIntrinsicWidth();
+      if (engineMin != null && engineMin.isFinite && engineMin > 0) {
+        // Use the smaller of engine-provided minIntrinsic and our token-based
+        // approximation to better match CSS min-content behavior around hyphens
+        // and similar break opportunities.
+        if (approx.isFinite && approx > 0) return math.min(engineMin, approx);
+        return engineMin;
+      }
+      if (approx.isFinite && approx > 0) return approx;
+      return _paragraph!.longestLine;
     }
     return 0;
+  }
+
+  // Approximate the paragraph's min intrinsic width by measuring the widest
+  // unbreakable segment. Split on whitespace, hard hyphen '-', soft hyphen
+  // U+00AD, zero-width space U+200B, and '/'. This reduces the auto min-size
+  // of flex items to a content-based minimum closer to browsers.
+  double _approxParagraphMinIntrinsicWidth() {
+    if (_paragraph == null || _textContent == null || _textContent!.isEmpty) return 0;
+    final String s = _textContent!;
+    int i = 0;
+    double maxToken = 0;
+    while (i < s.length) {
+      // Skip break chars
+      while (i < s.length && _isBreakChar(s.codeUnitAt(i))) i++;
+      final int start = i;
+      while (i < s.length && !_isBreakChar(s.codeUnitAt(i))) i++;
+      final int end = i;
+      if (end > start) {
+        final double w = _measureRangeWidth(start, end);
+        if (w.isFinite) maxToken = math.max(maxToken, w);
+      }
+    }
+    if (maxToken <= 0) return _paragraph!.longestLine;
+    return maxToken;
+  }
+
+  bool _isBreakChar(int cu) {
+    // Whitespace
+    if (cu == 0x20 || cu == 0x09 || cu == 0x0A || cu == 0x0D || cu == 0x0B || cu == 0x0C) return true;
+    // Hyphen-minus, slash, soft hyphen, zero-width space
+    if (cu == 0x2D || cu == 0x2F || cu == 0x00AD || cu == 0x200B) return true;
+    return false;
+  }
+
+  double _measureRangeWidth(int start, int end) {
+    try {
+      final boxes = _paragraph!.getBoxesForRange(start, end);
+      if (boxes.isEmpty) return 0;
+      double minL = double.infinity;
+      double maxR = 0;
+      for (final b in boxes) {
+        if (b.left < minL) minL = b.left;
+        if (b.right > maxR) maxR = b.right;
+      }
+      final double w = (maxR - minL).abs();
+      if (!w.isFinite || w <= 0) {
+        double maxSingle = 0;
+        for (final b in boxes) {
+          final double bw = (b.right - b.left).abs();
+          if (bw > maxSingle) maxSingle = bw;
+        }
+        return maxSingle;
+      }
+      return w;
+    } catch (_) {
+      return 0;
+    }
   }
 
   // Expose visual longest line width (accounts for trailing extras) for

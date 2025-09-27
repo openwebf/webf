@@ -310,7 +310,7 @@ describe('CSS Flexbox flex-basis', () => {
   });
 
   // Test 8: flex-basis with flex-grow
-  xit('008-flex-basis-with-grow', async () => {
+  it('008-flex-basis-with-grow', async () => {
     let container;
     container = createElement(
       'div',
@@ -361,7 +361,7 @@ describe('CSS Flexbox flex-basis', () => {
   });
 
   // Test 9: flex-basis with flex-shrink
-  xit('009-flex-basis-with-shrink', async () => {
+  it('009-flex-basis-with-shrink', async () => {
     let container;
     container = createElement(
       'div',
@@ -486,7 +486,7 @@ describe('CSS Flexbox flex-basis', () => {
   });
 
   // Test 12: flex-basis with box-sizing
-  xit('012-flex-basis-box-sizing', async () => {
+  it('012-flex-basis-box-sizing', async () => {
     let container;
     container = createElement(
       'div',
@@ -699,8 +699,9 @@ describe('CSS Flexbox flex-basis', () => {
   });
 
   // Test 17: flex-basis with replaced elements
-  xit('017-flex-basis-replaced', async () => {
+  it('017-flex-basis-replaced', async (done) => {
     let container;
+    let img;
     container = createElement(
       'div',
       {
@@ -713,7 +714,7 @@ describe('CSS Flexbox flex-basis', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/100x100-green.png',
           style: {
             'flex-basis': '80px',
@@ -732,11 +733,14 @@ describe('CSS Flexbox flex-basis', () => {
       ]
     );
     BODY.appendChild(container);
-    await snapshot();
+     img.onload = async () => {
+      await snapshot();
+      done();
+    }
   });
 
   // Test 18: flex-basis with overflow
-  xit('018-flex-basis-overflow', async () => {
+  it('018-flex-basis-overflow', async () => {
     let container;
     container = createElement(
       'div',

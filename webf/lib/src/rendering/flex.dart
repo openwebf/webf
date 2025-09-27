@@ -175,10 +175,10 @@ class RenderFlexLayout extends RenderLayoutBox {
   double? _getUsedFlexBasis(RenderBox child) {
     double? basis = _getFlexBasis(child);
     if (basis == null) return null;
-    // Important: RenderEventListener extends RenderBoxModel and represents the DOM element
-    // itself. Do NOT unwrap to its child when resolving the element’s own max-width/height.
-    // We must read max constraints from the element (wrapper) RenderStyle.
-    RenderBoxModel? box = child is RenderBoxModel ? child : null;
+    // Unwrap wrappers to read padding/border from the flex item element itself.
+    RenderBoxModel? box = child is RenderBoxModel
+        ? child
+        : (child is RenderEventListener ? child.child as RenderBoxModel? : null);
     if (box == null) return basis;
     final double paddingBorder = _isHorizontalFlexDirection
         ? (box.renderStyle.padding.horizontal + box.renderStyle.border.horizontal)
@@ -2126,8 +2126,10 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     double sumFlexFactors = (isFlexGrow ? totalFlexGrow : totalFlexShrink);
 
-    // If the sum of the unfrozen flex items’ flex factors is less than one,
-    // multiply the initial free space by this sum as remaining free space.
+    // Per CSS Flexbox §9.7, if the sum of the unfrozen flex items’ flex
+    // factors is less than 1, multiply the free space by this sum.
+    // Applies to both grow and shrink phases (for shrink, the factors are
+    // the flex-shrink factors of unfrozen items).
     if (sumFlexFactors > 0 && sumFlexFactors < 1) {
       double remainingFreeSpace = initialFreeSpace;
       double fractional = initialFreeSpace * sumFlexFactors;
@@ -2198,7 +2200,7 @@ class RenderFlexLayout extends RenderLayoutBox {
           double maxMainAxisSize = _getMaxMainAxisSize(clampTarget);
           if (computedSize < minMainAxisSize && (computedSize - minMainAxisSize).abs() >= minFlexPrecision) {
             flexedMainSize = minMainAxisSize;
-          } else if (computedSize > maxMainAxisSize && (computedSize - minMainAxisSize).abs() >= minFlexPrecision) {
+          } else if (computedSize > maxMainAxisSize && (computedSize - maxMainAxisSize).abs() >= minFlexPrecision) {
             flexedMainSize = maxMainAxisSize;
           }
         }
