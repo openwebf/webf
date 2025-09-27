@@ -2600,6 +2600,19 @@ class RenderFlexLayout extends RenderLayoutBox {
       double initialFreeSpace = 0;
       if (maxMainSize != null) {
         initialFreeSpace = maxMainSize! - totalSpace;
+      } else {
+        // If the container's main size is indefinite but it has a definite
+        // min-main-size (e.g., min-height for column), treat that as the
+        // available main size for the purpose of free-space distribution.
+        // This ensures a single flex item with flex-grow can expand to the
+        // container's min size, matching browser behavior.
+        final double layoutContentMainSize = _isHorizontalFlexDirection ? contentSize.width : contentSize.height;
+        final double minMainAxisSize = _getMinMainAxisSize(this);
+        final double inferredMain = math.max(minMainAxisSize, layoutContentMainSize);
+        if (inferredMain > 0) {
+          maxMainSize = inferredMain;
+          initialFreeSpace = inferredMain - totalSpace;
+        }
       }
 
       FlexLog.log(
@@ -2636,6 +2649,46 @@ class RenderFlexLayout extends RenderLayoutBox {
       double usedFreeSpace = initialFreeSpace;
       if (boundedOnly && usedFreeSpace > 0) {
         usedFreeSpace = 0;
+      }
+      // If the flex container's main size is not definite (height:auto for
+      // column, width:auto for row), browsers do not treat any positive headroom
+      // as distributable free space. Only a definite min-main-size can create
+      // positive free space for growth. Clamp positive free space to 0 in the
+      // auto main-size case unless the container's min-main-size requires growth.
+      if (!isMainSizeDefinite) {
+        // For auto main-size, suppress positive free space distribution unless
+        // a definite CSS min-main-size exists on the flex container itself.
+        double containerStyleMin = 0.0;
+        if (_isHorizontalFlexDirection) {
+          if (renderStyle.minWidth.isNotAuto) containerStyleMin = renderStyle.minWidth.computedValue;
+        } else {
+          if (renderStyle.minHeight.isNotAuto) containerStyleMin = renderStyle.minHeight.computedValue;
+        }
+
+        if (containerStyleMin <= 0 || containerStyleMin <= totalSpace) {
+          if (usedFreeSpace > 0) {
+            FlexLog.log(
+              impl: FlexImpl.flex,
+              feature: FlexFeature.runs,
+              level: Level.FINE,
+              message: () => 'auto main-size clamp: suppress positive free space ' 
+                  '(used=${usedFreeSpace.toStringAsFixed(1)} total=${totalSpace.toStringAsFixed(1)} ' 
+                  'minStyle=${containerStyleMin.toStringAsFixed(1)})',
+            );
+          }
+          usedFreeSpace = math.min(usedFreeSpace, 0);
+        } else {
+          // Ensure at least enough free space to satisfy container's CSS min-main-size.
+          final double required = containerStyleMin - totalSpace;
+          if (required > usedFreeSpace) usedFreeSpace = required;
+          FlexLog.log(
+            impl: FlexImpl.flex,
+            feature: FlexFeature.runs,
+            level: Level.FINE,
+            message: () => 'auto main-size clamp: enforce min-main-size ' 
+                '(required=${required.toStringAsFixed(1)} used=${usedFreeSpace.toStringAsFixed(1)})',
+          );
+        }
       }
 
       bool isFlexGrow = usedFreeSpace > 0 && totalFlexGrow > 0;
