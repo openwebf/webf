@@ -401,8 +401,7 @@ describe('flex-direction-001', () => {
   });
 
   // Test 9: flex-direction with RTL direction
-  // TODO support rtl
-  xit('009-rtl-direction', async () => {
+  it('009-rtl-direction', async () => {
     let container;
     container = createElement(
       'div',
