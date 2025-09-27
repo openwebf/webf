@@ -441,5 +441,43 @@ void main() {
       // Baseline alignment expectation: blue bottom aligns with cyan bottom.
       expect((blueBottom - cyanBottom).abs(), lessThanOrEqualTo(1.0));
     });
+
+    testWidgets('flex item with scrollable content uses first line baseline', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'inline-flex-scroll-baseline-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div style="font-size: 18px;">
+            before
+            <div id="inline-flex" style="display: inline-flex; align-items: baseline; background: rgba(0,0,0,0.05);">
+              <div id="scroll-item" style="overflow-y: scroll; height: 50px; padding-top: 15px;">
+                <span>First line baseline</span><br/>
+                Second line text that overflows<br/>
+                Third line text
+              </div>
+            </div>
+            after
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+      await tester.pump();
+
+      final scrollItem = prepared.getElementById('scroll-item');
+      expect(scrollItem, isNotNull);
+
+      final renderBox = scrollItem.attachedRenderer;
+      expect(renderBox, isA<RenderFlowLayout>());
+
+      final RenderFlowLayout flowLayout = renderBox as RenderFlowLayout;
+      expect(flowLayout.hasSize, isTrue);
+
+      final double? firstBaseline = flowLayout.computeCssFirstBaselineOf(TextBaseline.alphabetic);
+      final double? baseline = flowLayout.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+      expect(firstBaseline, isNotNull);
+      expect(baseline, isNotNull);
+      expect((baseline! - firstBaseline!).abs(), lessThanOrEqualTo(0.5));
+    });
   });
 }

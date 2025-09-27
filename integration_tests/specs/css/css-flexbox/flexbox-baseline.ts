@@ -1,7 +1,7 @@
 /*auto generated*/
 describe('flexbox-baseline', () => {
   // Group 1: Basic Baseline Alignment
-  fit("basic baseline alignment", async () => {
+  it("basic baseline alignment", async () => {
     let inlineFlexbox;
     let div;
 
@@ -73,7 +73,7 @@ after text
   });
 
   // Group 2: Baseline with Writing Mode
-  fit("baseline with writing mode", async () => {
+  it("baseline with writing mode", async () => {
     let inlineFlexbox_1;
     let inlineFlexbox_4;
     let inlineFlexbox_5;
@@ -217,7 +217,7 @@ of the grey flexbox
   });
 
   // Group 3: Baseline with Different Element Types
-  fit("baseline with different element types", async () => {
+  it("baseline with different element types", async () => {
     let inlineFlexbox_2;
     let inlineFlexbox_3;
     let div_2;
@@ -327,7 +327,7 @@ after text
   });
 
   // Group 4: Column Direction Baseline
-  fit("column direction baseline", async () => {
+  it("column direction baseline", async () => {
     let inlineFlexbox_6;
     let inlineFlexbox_7;
     let inlineFlexbox_8;
@@ -543,7 +543,7 @@ of the grey flexbox
         style: {
           'box-sizing': 'border-box',
           position: 'absolute',
-          top: '605px',
+          top: '100px',
           left: '0px',
           width: '360px',
         },

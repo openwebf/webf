@@ -4,7 +4,7 @@
  */
 import 'dart:math' as math;
 import 'dart:ui' as ui
-    show Paragraph, ParagraphBuilder, ParagraphConstraints, ParagraphStyle, TextStyle, TextHeightBehavior, TextLeadingDistribution;
+    show Paragraph, ParagraphBuilder, ParagraphConstraints, ParagraphStyle, TextStyle, TextHeightBehavior, LineMetrics, TextLeadingDistribution;
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -1435,13 +1435,15 @@ class RenderFlowLayout extends RenderLayoutBox {
   // Compute distance to baseline of flow layout: prefer cached baselines from layout.
   @override
   double? computeDistanceToActualBaseline(TextBaseline baseline) {
-    final bool overflowVisible = renderStyle.effectiveOverflowX == CSSOverflowType.visible &&
-        renderStyle.effectiveOverflowY == CSSOverflowType.visible;
-    if (!overflowVisible) {
-      return boxSize?.height;
+    final double? first = computeCssFirstBaselineOf(baseline);
+    if (first != null) {
+      return first;
     }
-    // Use cached last baseline when available; otherwise fall back to bottom edge.
-    return computeCssLastBaselineOf(baseline) ?? boxSize?.height;
+    final double? last = computeCssLastBaselineOf(baseline);
+    if (last != null) {
+      return last;
+    }
+    return boxSize?.height;
   }
 
   // Set the size of scrollable overflow area for inline formatting context.
@@ -1845,61 +1847,56 @@ class RenderFlowLayout extends RenderLayoutBox {
 
 
   void setUpChildBaselineForIFC() {
+    if (_inlineFormattingContext == null) {
+      setCssBaselines(first: null, last: null);
+      return;
+    }
+
     // Cache CSS baselines for this element, computed from IFC line metrics.
     // Baselines are measured from the top padding/border edge as distances,
-    // consistent with how computeDistanceToBaseline reports.
-    final paddingTop = renderStyle.paddingTop.computedValue;
-    final borderTop = renderStyle.effectiveBorderTopWidth.computedValue;
-    final bool overflowVisible = renderStyle.effectiveOverflowX == CSSOverflowType.visible &&
-        renderStyle.effectiveOverflowY == CSSOverflowType.visible;
+    // consistent with how computeDistanceToActualBaseline reports.
+    final double paddingTop = renderStyle.paddingTop.computedValue;
+    final double borderTop = renderStyle.effectiveBorderTopWidth.computedValue;
     double? firstBaseline;
     double? lastBaseline;
-    if (overflowVisible) {
-      final lines = _inlineFormattingContext!.paragraphLineMetrics;
-      if (lines.isNotEmpty) {
-        // For inline-block elements inside IFC, compute both first and last baselines:
-        // - first baseline = baseline of the first in-flow line box
-        // - last baseline  = baseline of the last in-flow line box
-        if (renderStyle.display == CSSDisplay.inlineBlock) {
-          firstBaseline = lines.first.baseline + paddingTop + borderTop;
-          lastBaseline = lines.last.baseline + paddingTop + borderTop;
-        } else {
-          firstBaseline = lines.first.baseline + paddingTop + borderTop;
-          lastBaseline = lines.last.baseline + paddingTop + borderTop;
-        }
-        InlineLayoutLog.log(
-          impl: InlineImpl.paragraphIFC,
-          feature: InlineFeature.baselines,
-          level: Level.FINE,
-          message: () =>
-          'setCssBaselines first=${firstBaseline!.toStringAsFixed(2)} last=${lastBaseline!.toStringAsFixed(
-              2)} paddingTop=${paddingTop.toStringAsFixed(2)} borderTop=${borderTop.toStringAsFixed(2)}',
-        );
-      } else if (_inlineFormattingContext!.lineBoxes.isNotEmpty) {
-        // Legacy line boxes path
-        final first = _inlineFormattingContext!.lineBoxes.first;
-        double y = 0;
-        for (int i = 0; i < _inlineFormattingContext!.lineBoxes.length - 1; i++) {
-          y += _inlineFormattingContext!.lineBoxes[i].height;
-        }
-        final last = _inlineFormattingContext!.lineBoxes.last;
-        // For inline-block elements, compute distinct first and last baselines.
-        if (renderStyle.display == CSSDisplay.inlineBlock) {
-          firstBaseline = first.baseline + paddingTop + borderTop;
-          lastBaseline = y + last.baseline + paddingTop + borderTop;
-        } else {
-          firstBaseline = first.baseline + paddingTop + borderTop;
-          lastBaseline = y + last.baseline + paddingTop + borderTop;
-        }
-        InlineLayoutLog.log(
-          impl: InlineImpl.legacyIFC,
-          feature: InlineFeature.baselines,
-          level: Level.FINE,
-          message: () => 'setCssBaselines first=${firstBaseline!.toStringAsFixed(2)} last=${lastBaseline!
-              .toStringAsFixed(2)}',
-        );
+
+    final List<ui.LineMetrics> paraLines = _inlineFormattingContext!.paragraphLineMetrics;
+    if (paraLines.isNotEmpty) {
+      firstBaseline = paraLines.first.baseline + paddingTop + borderTop;
+      lastBaseline = paraLines.last.baseline + paddingTop + borderTop;
+      InlineLayoutLog.log(
+        impl: InlineImpl.paragraphIFC,
+        feature: InlineFeature.baselines,
+        level: Level.FINE,
+        message: () => 'setCssBaselines first=${firstBaseline!.toStringAsFixed(2)} '
+            'last=${lastBaseline!.toStringAsFixed(2)} paddingTop=${paddingTop.toStringAsFixed(2)} '
+            'borderTop=${borderTop.toStringAsFixed(2)}',
+      );
+    } else if (_inlineFormattingContext!.lineBoxes.isNotEmpty) {
+      // Legacy line boxes path
+      final first = _inlineFormattingContext!.lineBoxes.first;
+      double y = 0;
+      for (int i = 0; i < _inlineFormattingContext!.lineBoxes.length - 1; i++) {
+        y += _inlineFormattingContext!.lineBoxes[i].height;
       }
+      final last = _inlineFormattingContext!.lineBoxes.last;
+      firstBaseline = first.baseline + paddingTop + borderTop;
+      lastBaseline = y + last.baseline + paddingTop + borderTop;
+      InlineLayoutLog.log(
+        impl: InlineImpl.legacyIFC,
+        feature: InlineFeature.baselines,
+        level: Level.FINE,
+        message: () => 'setCssBaselines first=${firstBaseline!.toStringAsFixed(2)} '
+            'last=${lastBaseline!.toStringAsFixed(2)}',
+      );
+    } else {
+      // Fallback: no line boxes produced (empty content). Synthesize from bottom margin edge for inline-block.
+      final double marginBottom = renderStyle.marginBottom.computedValue;
+      final double fallback = (boxSize?.height ?? size.height) + marginBottom;
+      firstBaseline = fallback;
+      lastBaseline = fallback;
     }
+
     setCssBaselines(first: firstBaseline, last: lastBaseline);
   }
 
