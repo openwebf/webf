@@ -5,14 +5,15 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/foundation/positioned_layout_logging.dart';
 
 /// A placeholder for positioned RenderBox
 class RenderPositionPlaceholder extends RenderPreferredSize {
   RenderPositionPlaceholder({
-    required Size preferredSize,
+    required super.preferredSize,
     this.positioned,
-    RenderBox? child,
-  }) : super(preferredSize: preferredSize, child: child);
+    super.child,
+  });
 
   // Real position of this renderBox.
   RenderBoxModel? positioned;
@@ -36,6 +37,17 @@ class RenderPositionPlaceholder extends RenderPreferredSize {
     super.performLayout();
     // The relative offset of positioned renderBox are depends on positionHolder' offset.
     // When the placeHolder got layout, should notify the positioned renderBox to layout again.
+    try {
+      final String mapped = positioned?.renderStyle.target.tagName.toLowerCase() ?? '';
+      final Offset? off = (parentData is RenderLayoutParentData) ? (parentData as RenderLayoutParentData).offset : null;
+      PositionedLayoutLog.log(
+        impl: PositionedImpl.placeholder,
+        feature: PositionedFeature.layout,
+        message: () => 'layout size=${size.width.toStringAsFixed(2)}×${size.height.toStringAsFixed(2)} '
+            'offset=${off == null ? 'null' : '${off.dx.toStringAsFixed(2)},${off.dy.toStringAsFixed(2)}'} '
+            'mappedTo=<$mapped>',
+      );
+    } catch (_) {}
     SchedulerBinding.instance.scheduleFrameCallback((_) {
       if (positioned?.disposed == false) {
         positioned?.markNeedsLayout();

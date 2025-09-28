@@ -8,6 +8,7 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/foundation/logger.dart';
+import 'package:webf/src/foundation/positioned_layout_logging.dart';
 
 // CSS Positioned Layout: https://drafts.csswg.org/css-position/
 
@@ -43,8 +44,6 @@ Offset _getPlaceholderToParentOffset(RenderPositionPlaceholder? placeholder, Ren
 }
 
 class CSSPositionedLayout {
-  // Toggle detailed positioned layout logging.
-  static bool debugLogPositionedEnabled = false;
   static Offset? getRelativeOffset(RenderStyle renderStyle) {
     CSSLengthValue left = renderStyle.left;
     CSSLengthValue right = renderStyle.right;
@@ -253,12 +252,34 @@ class CSSPositionedLayout {
       // Change sticky status to fixed
       child.stickyStatus = StickyPositionType.fixed;
       child.markNeedsPaint();
+      try {
+        final pd = child.parentData as RenderLayoutParentData;
+        PositionedLayoutLog.log(
+          impl: PositionedImpl.layout,
+          feature: PositionedFeature.sticky,
+          message: () => '<${child.renderStyle.target.tagName.toLowerCase()}>'
+              ' sticky fixed(h=${isHorizontalFixed}, v=${isVerticalFixed}) at '
+              '(${pd.offset.dx.toStringAsFixed(2)},${pd.offset.dy.toStringAsFixed(2)}) '
+              'within <${scrollContainer.renderStyle.target.tagName.toLowerCase()}>',
+        );
+      } catch (_) {}
     } else {
       // Change sticky status to relative
       if (child.stickyStatus == StickyPositionType.fixed) {
         child.stickyStatus = StickyPositionType.relative;
         // Reset child offset to its original offset
         child.markNeedsPaint();
+        try {
+          final pd = child.parentData as RenderLayoutParentData;
+          PositionedLayoutLog.log(
+            impl: PositionedImpl.layout,
+            feature: PositionedFeature.sticky,
+            message: () => '<${child.renderStyle.target.tagName.toLowerCase()}>'
+                ' sticky relative at '
+                '(${pd.offset.dx.toStringAsFixed(2)},${pd.offset.dy.toStringAsFixed(2)}) '
+                'within <${scrollContainer.renderStyle.target.tagName.toLowerCase()}>',
+          );
+        } catch (_) {}
       }
     }
   }
@@ -273,8 +294,25 @@ class CSSPositionedLayout {
     }
 
     if (isChildNeedsLayout) {
+      try {
+        PositionedLayoutLog.log(
+          impl: PositionedImpl.layout,
+          feature: PositionedFeature.layout,
+          message: () => '<${child.renderStyle.target.tagName.toLowerCase()}> layout start '
+              'constraints=(${childConstraints.minWidth.toStringAsFixed(1)}..${childConstraints.maxWidth.isFinite ? childConstraints.maxWidth.toStringAsFixed(1) : '∞'}, '
+              '${childConstraints.minHeight.toStringAsFixed(1)}..${childConstraints.maxHeight.isFinite ? childConstraints.maxHeight.toStringAsFixed(1) : '∞'})',
+        );
+      } catch (_) {}
       // Should create relayoutBoundary for positioned child.
       child.layout(childConstraints, parentUsesSize: false);
+      try {
+        final Size s = child.size;
+        PositionedLayoutLog.log(
+          impl: PositionedImpl.layout,
+          feature: PositionedFeature.layout,
+          message: () => '<${child.renderStyle.target.tagName.toLowerCase()}> layout done size=${s.width.toStringAsFixed(2)}×${s.height.toStringAsFixed(2)}',
+        );
+      } catch (_) {}
     }
   }
 
@@ -327,15 +365,19 @@ class CSSPositionedLayout {
     Offset staticPositionOffset = _getPlaceholderToParentOffset(ph, parent,
         excludeScrollOffset: child.renderStyle.position != CSSPositionType.fixed);
 
-    if (debugLogPositionedEnabled) {
+    try {
       final pTag = parent.renderStyle.target.tagName.toLowerCase();
       final cTag = child.renderStyle.target.tagName.toLowerCase();
       final phOff = (ph != null && ph.parentData is RenderLayoutParentData)
           ? (ph.parentData as RenderLayoutParentData).offset
           : null;
-      renderingLogger.finer('[ABS] <$cTag> static from placeholder: raw=${phOff?.dx.toStringAsFixed(2)},${phOff?.dy.toStringAsFixed(2)} '
-          'toParent=${staticPositionOffset.dx.toStringAsFixed(2)},${staticPositionOffset.dy.toStringAsFixed(2)} parent=<$pTag>');
-    }
+      PositionedLayoutLog.log(
+        impl: PositionedImpl.layout,
+        feature: PositionedFeature.staticPosition,
+        message: () => '<$cTag> static from placeholder: raw=${phOff == null ? 'null' : '${phOff.dx.toStringAsFixed(2)},${phOff.dy.toStringAsFixed(2)}'} '
+            'toParent=${staticPositionOffset.dx.toStringAsFixed(2)},${staticPositionOffset.dy.toStringAsFixed(2)} parent=<$pTag>',
+      );
+    } catch (_) {}
 
     // Ensure static position accuracy for W3C compliance
     // W3C requires static position to represent where element would be in normal flow
@@ -355,10 +397,13 @@ class CSSPositionedLayout {
       parentPaddingTop
     );
 
-    if (debugLogPositionedEnabled) {
-      renderingLogger.finer('[ABS] adjusted static pos = '
-          '(${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})');
-    }
+    try {
+      PositionedLayoutLog.log(
+        impl: PositionedImpl.layout,
+        feature: PositionedFeature.staticPosition,
+        message: () => 'adjusted static pos = (${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})',
+      );
+    } catch (_) {}
 
     // Child renderObject is reparented under its containing block at build time,
     // and staticPositionOffset is already measured relative to the containing block.
@@ -371,6 +416,14 @@ class CSSPositionedLayout {
       Offset scrollOffset = child.getTotalScrollOffset();
       child.additionalPaintOffsetX = scrollOffset.dx;
       child.additionalPaintOffsetY = scrollOffset.dy;
+      try {
+        PositionedLayoutLog.log(
+          impl: PositionedImpl.layout,
+          feature: PositionedFeature.fixed,
+          message: () => '<${child.renderStyle.target.tagName.toLowerCase()}>'
+              ' fixed paintOffset=(${scrollOffset.dx.toStringAsFixed(2)},${scrollOffset.dy.toStringAsFixed(2)})',
+        );
+      } catch (_) {}
     }
 
     // When the parent is a scroll container (overflow on either axis not visible),
@@ -408,13 +461,16 @@ class CSSPositionedLayout {
       marginTop,
       marginBottom,
     );
-
-    if (debugLogPositionedEnabled) {
+    try {
       final dir = parent.renderStyle.direction;
-      renderingLogger.finer('[ABS] apply offset for <${child.renderStyle.target.tagName.toLowerCase()}> '
-          'dir=$dir parentScroll=${parentIsScrollContainer} right=${right.cssText()} left=${left.cssText()} '
-          'final=(${x.toStringAsFixed(2)},${y.toStringAsFixed(2)}) ');
-    }
+      PositionedLayoutLog.log(
+        impl: PositionedImpl.layout,
+        feature: PositionedFeature.offsets,
+        message: () => 'compute offset for <${child.renderStyle.target.tagName.toLowerCase()}>'
+            ' dir=$dir parentScroll=$parentIsScrollContainer left=${left.cssText()} right=${right.cssText()} '
+            'top=${top.cssText()} bottom=${bottom.cssText()} → (${x.toStringAsFixed(2)},${y.toStringAsFixed(2)})',
+      );
+    } catch (_) {}
 
     final Offset finalOffset = Offset(x, y) - ancestorOffset;
     // If this positioned element is wrapped (e.g., by RenderEventListener), ensure
@@ -431,11 +487,14 @@ class CSSPositionedLayout {
       childParentData.offset = finalOffset;
     }
 
-    if (debugLogPositionedEnabled) {
-      renderingLogger.finer('[ABS] final offset=(${finalOffset.dx.toStringAsFixed(2)},${finalOffset.dy.toStringAsFixed(2)}) '
-          'components: x=${x.toStringAsFixed(2)} y=${y.toStringAsFixed(2)} '
-          'ancestor=(${ancestorOffset.dx.toStringAsFixed(2)},${ancestorOffset.dy.toStringAsFixed(2)})');
-    }
+    try {
+      PositionedLayoutLog.log(
+        impl: PositionedImpl.layout,
+        feature: PositionedFeature.offsets,
+        message: () => 'apply offset final=(${finalOffset.dx.toStringAsFixed(2)},${finalOffset.dy.toStringAsFixed(2)}) '
+            'from x=${x.toStringAsFixed(2)} y=${y.toStringAsFixed(2)} ancestor=(${ancestorOffset.dx.toStringAsFixed(2)},${ancestorOffset.dy.toStringAsFixed(2)})',
+      );
+    } catch (_) {}
   }
 
   // Compute the offset of positioned element in one axis.

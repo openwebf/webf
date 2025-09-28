@@ -26,3 +26,4 @@ export 'src/foundation/debug_flags.dart';
 export 'src/foundation/inline_layout_logging.dart';
 export 'src/foundation/flow_logging.dart';
 export 'src/foundation/flex_logging.dart';
+export 'src/foundation/positioned_layout_logging.dart';
