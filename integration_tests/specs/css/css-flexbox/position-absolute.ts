@@ -324,7 +324,7 @@ describe('flexbox-position-absolute', () => {
 
     div.appendChild(img);
 
-    await snapshot();
+    await snapshot(1);
   });
 
 });

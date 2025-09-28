@@ -14,6 +14,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/foundation/logger.dart';
 
@@ -804,8 +805,18 @@ class WebFRenderReplacedRenderObjectWidget extends flutter.SingleChildRenderObje
   @override
   RenderObject createRenderObject(flutter.BuildContext context) {
     // Prefer an existing paired render object; fall back to creating one if missing.
-    return webFElement.renderStyle.getWidgetPairedRenderBoxModel(context as flutter.RenderObjectElement) ??
+    RenderBoxModel renderBoxModel =  webFElement.renderStyle.getWidgetPairedRenderBoxModel(context as flutter.RenderObjectElement) ??
         (webFElement.createRenderer(context as flutter.RenderObjectElement) as RenderBoxModel);
+
+    // Attach position holder to apply offsets based on original layout.
+    for (final positionHolder in webFElement!.positionHolderElements) {
+      if (positionHolder.mounted) {
+        renderBoxModel.renderPositionPlaceholder = positionHolder.renderObject as RenderPositionPlaceholder;
+        (positionHolder.renderObject as RenderPositionPlaceholder).positioned = renderBoxModel;
+      }
+    }
+
+    return renderBoxModel;
   }
 
   @override
