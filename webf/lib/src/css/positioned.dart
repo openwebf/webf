@@ -615,10 +615,17 @@ class CSSPositionedLayout {
         ? contentAreaX
         : staticPositionOffset.dx;
 
-    // Vertical axis: when both top and bottom are auto, use the placeholder's
-    // laid-out position plus the element's own margin-top. The placeholder
-    // offset is already aligned to the following in-flow sibling by Flow.
-    double correctedY = staticPositionOffset.dy + (shouldUseAccurateVerticalPosition ? child.renderStyle.marginTop.computedValue : 0);
+    // Vertical axis: decide whether placeholder offset already accounts for the
+    // element's own vertical margins. In flex layout, the placeholder is treated
+    // as a flex item and its laid-out cross offset includes its start margin.
+    // In normal flow (RenderFlowLayout), placeholders are 0×0 and aligned to
+    // the following in-flow sibling without adding the positioned element's own
+    // margins, so we must add the element's margin-top to reach the margin box.
+    bool placeholderInFlex = placeholder.parent is RenderFlexLayout;
+    double correctedY = staticPositionOffset.dy +
+        ((shouldUseAccurateVerticalPosition && !placeholderInFlex)
+            ? child.renderStyle.marginTop.computedValue
+            : 0);
 
     return Offset(correctedX, correctedY);
   }
