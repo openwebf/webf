@@ -548,12 +548,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         final bool mainTight = _isHorizontalFlexDirection
             ? ((contentConstraints?.hasTightWidth ?? false) || constraints.hasTightWidth)
             : ((contentConstraints?.hasTightHeight ?? false) || constraints.hasTightHeight);
-        final bool mainBounded = _isHorizontalFlexDirection
-            ? (((contentConstraints?.hasBoundedWidth ?? false) && (contentConstraints?.maxWidth.isFinite ?? false)) ||
-            (constraints.hasBoundedWidth && constraints.maxWidth.isFinite))
-            : (((contentConstraints?.hasBoundedHeight ?? false) && (contentConstraints?.maxHeight.isFinite ?? false)) ||
-            (constraints.hasBoundedHeight && constraints.maxHeight.isFinite));
-        final bool mainDefinite = hasSpecifiedMain || mainTight || mainBounded;
+        final bool mainDefinite = hasSpecifiedMain || mainTight;
         if (!mainDefinite) {
           FlexLog.log(
             impl: FlexImpl.flex,
@@ -1003,9 +998,7 @@ class RenderFlexLayout extends RenderLayoutBox {
               boundedContainerW = contentConstraints!.maxWidth;
             } else if (!isInlineFlexAuto) {
               // Fall back to bounded (non-tight) width for block-level flex containers.
-              if (constraints.hasBoundedWidth && constraints.maxWidth.isFinite) {
-                boundedContainerW = constraints.maxWidth;
-              } else if ((contentConstraints?.hasBoundedWidth ?? false) && contentConstraints!.maxWidth.isFinite) {
+              if ((contentConstraints?.hasBoundedWidth ?? false) && contentConstraints!.maxWidth.isFinite) {
                 boundedContainerW = contentConstraints!.maxWidth;
               }
             }
@@ -4102,7 +4095,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         }
 
         // childMainPosition already accounts for size in reversed flow.
-        
+
         double crossOffset;
         if (renderStyle.flexWrap == FlexWrap.wrapReverse) {
           crossOffset =

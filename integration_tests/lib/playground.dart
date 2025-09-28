@@ -28,10 +28,13 @@ import 'modules/array_buffer_module.dart';
 // By CLI: `KRAKEN_ENABLE_TEST=true flutter run`
 void main() async {
   // Inline formatter + paragraph logs (placeholders, baselines, lines)
-  InlineLayoutLog.enableAll();
+  InlineLayoutLog.enableFeatures({
+    InlineFeature.sizing,
+  });
   FlexLog.enableAll();
   FlowLog.enableAll();
-  CSSPositionedLayout.debugLogPositionedEnabled = true;
+  // PositionedLayoutLog.enableAll();
+
   DebugFlags.enableDomLogs = true;
 
   // debugPaintBaselinesEnabled = true;
