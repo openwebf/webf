@@ -837,6 +837,12 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   // Get the offset of current element relative to specified ancestor element.
+  // For scrollable containers, the offsetParent used by DOM APIs is the wrapper
+  // (RenderLayoutBoxWrapper). The positioned layout logic already converts
+  // positioned offsets into the wrapper’s content-box coordinate space when the
+  // parent establishes a scrolling content box. In that case, do not subtract
+  // the ancestor’s border again here, otherwise offsetLeft/Top would be short by
+  // the border widths.
   Offset getOffset({RenderBoxModel? ancestorRenderBox, bool excludeScrollOffset = false}) {
     // Returns (0, 0) when ancestor is null.
     if (ancestorRenderBox == null) {
@@ -844,8 +850,13 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     }
 
     return getSelfRenderBoxValue((renderBoxModel, _) {
-      return renderBoxModel.getOffsetToAncestor(Offset.zero, ancestorRenderBox,
-          excludeScrollOffset: excludeScrollOffset);
+      final bool excludeAncestorBorder = ancestorRenderBox is RenderLayoutBoxWrapper ? false : true;
+      return renderBoxModel.getOffsetToAncestor(
+        Offset.zero,
+        ancestorRenderBox,
+        excludeScrollOffset: excludeScrollOffset,
+        excludeAncestorBorderTop: excludeAncestorBorder,
+      );
     });
   }
 

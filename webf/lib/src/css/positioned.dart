@@ -383,7 +383,7 @@ class CSSPositionedLayout {
 
     double x = _computePositionedOffset(
       Axis.horizontal,
-      parentIsScrollContainer,
+      false,
       parentBorderLeftWidth,
       parentPaddingLeft,
       containingBlockSize.width,
@@ -397,7 +397,7 @@ class CSSPositionedLayout {
 
     double y = _computePositionedOffset(
       Axis.vertical,
-      parentIsScrollContainer,
+      false,
       parentBorderTopWidth,
       parentPaddingTop,
       containingBlockSize.height,
@@ -626,6 +626,29 @@ class CSSPositionedLayout {
         ((shouldUseAccurateVerticalPosition && !placeholderInFlex)
             ? child.renderStyle.marginTop.computedValue
             : 0);
+
+    // Special handling for flex containers: if both top/bottom are auto and the
+    // container aligns items to the center on the cross axis, align the static
+    // position to the flex centering result using the container's content box.
+    // This matches browser behavior where an abspos with all insets auto in a
+    // row-direction flex container visually centers vertically when align-items:center.
+    if (placeholderInFlex && shouldUseAccurateVerticalPosition) {
+      final CSSRenderStyle pStyle = parent.renderStyle;
+      final FlexDirection dir = pStyle.flexDirection;
+      final bool isRowDirection = (dir == FlexDirection.row || dir == FlexDirection.rowReverse);
+      final bool centerCross = pStyle.alignItems == AlignItems.center;
+      if (isRowDirection && centerCross) {
+        final double borderTop = parentBorderTopWidth.computedValue;
+        final double borderBottom = parentBorderBottomWidth.computedValue;
+        final double padTop = parentPaddingTop.computedValue;
+        final double padBottom = pStyle.paddingBottom.computedValue;
+        final Size parentSize = parent.boxSize ?? Size.zero;
+        final Size childSize = child.boxSize ?? Size.zero;
+        final double contentH = (parentSize.height - borderTop - borderBottom - padTop - padBottom).clamp(0.0, double.infinity);
+        final double centerY = borderTop + padTop + (contentH - childSize.height) / 2.0;
+        correctedY = centerY.isFinite ? centerY : correctedY;
+      }
+    }
 
     return Offset(correctedX, correctedY);
   }
