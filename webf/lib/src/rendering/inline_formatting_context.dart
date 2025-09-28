@@ -58,6 +58,8 @@ class InlineFormattingContext {
   // New: Paragraph-based layout artifacts
   ui.Paragraph? _paragraph;
   List<ui.LineMetrics> _paraLines = const [];
+  double _paragraphMinLeft = 0.0; // Painting translation applied to paragraph output.
+  bool _paragraphShapedWithHugeWidth = false; // Track when layout used extremely wide shaping.
 
   // Track how many code units were added to the paragraph (text + placeholders)
   int _paraCharCount = 0;
@@ -373,11 +375,21 @@ class InlineFormattingContext {
   // on the last fragment of inline elements. This adjusts for our choice to not insert
   // right-extras placeholders for non-empty spans.
   double _computeVisualLongestLine() {
-    if (_paragraph == null || _paraLines.isEmpty) return _paragraph?.longestLine ?? 0;
+    if (_paragraph == null || _paraLines.isEmpty) {
+      _paragraphMinLeft = 0.0;
+      return _paragraph?.longestLine ?? 0;
+    }
+    double minLeft = double.infinity; // Track smallest line-left reported by Paragraph.
     // Base rights from paragraph line metrics
     final rights = List<double>.generate(
       _paraLines.length,
-          (i) => _paraLines[i].left + _paraLines[i].width,
+      (i) {
+        final line = _paraLines[i];
+        if (line.left.isFinite) {
+          minLeft = math.min(minLeft, line.left);
+        }
+        return line.left + line.width;
+      },
       growable: false,
     );
     // Extend rights by trailing extras of inline elements that end on a line
@@ -388,6 +400,9 @@ class InlineFormattingContext {
       List<ui.TextBox> rects = _paragraph!.getBoxesForRange(sIdx, eIdx);
       if (rects.isEmpty) return;
       final last = rects.last;
+      if (last.left.isFinite) {
+        minLeft = math.min(minLeft, last.left);
+      }
       final li = _lineIndexForRect(last);
       if (li < 0) return;
       final s = box.renderStyle;
@@ -397,9 +412,21 @@ class InlineFormattingContext {
       final double extended = last.right + padR + bR + mR;
       if (extended > rights[li]) rights[li] = extended;
     });
+    if (!minLeft.isFinite) {
+      minLeft = 0;
+    }
+    final bool applyShift = _paragraphShapedWithHugeWidth && minLeft > 0.01;
+    _paragraphMinLeft = applyShift ? minLeft : 0.0;
     double baseLongest = _paragraph!.longestLine;
-    double visualLongest = rights.fold<double>(0, (p, v) => v > p ? v : p);
-    final double result = visualLongest > baseLongest ? visualLongest : baseLongest;
+    double visualRight = rights.fold<double>(double.negativeInfinity, (p, v) => v > p ? v : p);
+    if (!visualRight.isFinite) {
+      visualRight = baseLongest + _paragraphMinLeft;
+    }
+    double visualWidth = math.max(0, visualRight - _paragraphMinLeft);
+    if (!visualWidth.isFinite) {
+      visualWidth = baseLongest;
+    }
+    final double result = visualWidth > baseLongest ? visualWidth : baseLongest;
     InlineLayoutLog.log(
       impl: InlineImpl.paragraphIFC,
       feature: InlineFeature.metrics,
@@ -1050,103 +1077,111 @@ class InlineFormattingContext {
   void paint(PaintingContext context, Offset offset) {
     if (_paragraph == null) return;
 
-    final CSSRenderStyle containerStyle = (container as RenderBoxModel).renderStyle;
-    final bool _clipText = containerStyle.backgroundClip == CSSBackgroundBoundary.text;
+    final double shiftX = _paragraphMinLeft.isFinite ? _paragraphMinLeft : 0.0;
+    final bool applyShift = shiftX.abs() > 0.01;
+    if (applyShift) {
+      context.canvas.save();
+      context.canvas.translate(-shiftX, 0.0);
+    }
+
+    try {
+      final CSSRenderStyle containerStyle = (container as RenderBoxModel).renderStyle;
+      final bool _clipText = containerStyle.backgroundClip == CSSBackgroundBoundary.text;
 
 
-    // Interleave line background and text painting so that later lines can
-    // visually overlay earlier lines when they cross vertically.
-    // For each paragraph line: paint decorations for that line, then clip and paint text for that line.
-    final para = _paragraph!;
-    if (_paraLines.isEmpty) {
-      // Fallback: paint decorations then text if no line metrics
-      _paintInlineSpanDecorations(context, offset);
-      if (!_clipText) {
-        context.canvas.drawParagraph(para, offset);
-      }
-    } else {
-      // Pre-scan lines to see if any requires right-side shifting for trailing extras.
-      bool anyShift = false;
-      if (_elementRanges.isNotEmpty) {
-        final Set<RenderBoxModel> hasRightPH = <RenderBoxModel>{};
-        for (int p = 0; p < _allPlaceholders.length && p < _placeholderBoxes.length; p++) {
-          final ph = _allPlaceholders[p];
-          if (ph.kind == _PHKind.rightExtra && ph.owner != null) {
-            hasRightPH.add(ph.owner!);
-          }
-        }
-        for (int i = 0; i < _paraLines.length && !anyShift; i++) {
-          double shiftSum = 0.0;
-          _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
-            if (range.$2 <= range.$1) return;
-            if (hasRightPH.contains(box)) return; // single-line owners already accounted
-            final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
-            if (rects.isEmpty) return;
-            final last = rects.last;
-            final int li = _lineIndexForRect(last);
-            if (li != i) return;
-            final s = box.renderStyle;
-            final double extraR = s.paddingRight.computedValue + s.effectiveBorderRightWidth.computedValue +
-                s.marginRight.computedValue;
-            if (extraR > 0) shiftSum += extraR;
-          });
-          if (shiftSum > 0) anyShift = true;
-        }
-      }
-
-      // Collect per-line vertical-align adjustments for non-atomic inline spans (not needed when using
-      // text-run placeholders, but kept for future parity; remains empty in common paths).
-      final Map<int, List<(ui.TextBox tb, double dy)>> vaAdjust = <int, List<(ui.TextBox, double)>>{};
-      if (_elementRanges.isNotEmpty) {
-        _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
-          final va = box.renderStyle.verticalAlign;
-          if (va == VerticalAlign.baseline) return;
-          if (range.$2 <= range.$1) return;
-          final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
-          if (rects.isEmpty) return;
-          for (final tb in rects) {
-            final int li = _lineIndexForRect(tb);
-            if (li < 0 || li >= _paraLines.length) continue;
-            final (bandTop, bandBottom, _) = _bandForLine(li);
-            double dy = 0.0;
-            switch (va) {
-              case VerticalAlign.top:
-                dy = bandTop - tb.top;
-                break;
-              case VerticalAlign.bottom:
-                dy = bandBottom - tb.bottom;
-                break;
-              case VerticalAlign.middle:
-                final double lineMid = (bandTop + bandBottom) / 2.0;
-                final double boxMid = (tb.top + tb.bottom) / 2.0;
-                dy = lineMid - boxMid;
-                break;
-              default:
-              // Approximate text-top/text-bottom using line box top/bottom
-                dy = (va == VerticalAlign.textTop)
-                    ? (bandTop - tb.top)
-                    : (va == VerticalAlign.textBottom)
-                    ? (bandBottom - tb.bottom)
-                    : 0.0;
-                break;
-            }
-            if (dy.abs() > 0.01) {
-              (vaAdjust[li] ??= []).add((tb, dy));
-            }
-          }
-        });
-      }
-      final bool anyVAAdjust = vaAdjust.values.any((l) => l.isNotEmpty);
-
-      // If no line needs shifting for trailing extras, and no vertical-align adjustment,
-      // just paint decorations once and draw paragraph once.
-      if (!anyShift && !anyVAAdjust) {
+      // Interleave line background and text painting so that later lines can
+      // visually overlay earlier lines when they cross vertically.
+      // For each paragraph line: paint decorations for that line, then clip and paint text for that line.
+      final para = _paragraph!;
+      if (_paraLines.isEmpty) {
+        // Fallback: paint decorations then text if no line metrics
         _paintInlineSpanDecorations(context, offset);
         if (!_clipText) {
           context.canvas.drawParagraph(para, offset);
         }
       } else {
-        for (int i = 0; i < _paraLines.length; i++) {
+        // Pre-scan lines to see if any requires right-side shifting for trailing extras.
+        bool anyShift = false;
+        if (_elementRanges.isNotEmpty) {
+          final Set<RenderBoxModel> hasRightPH = <RenderBoxModel>{};
+          for (int p = 0; p < _allPlaceholders.length && p < _placeholderBoxes.length; p++) {
+            final ph = _allPlaceholders[p];
+            if (ph.kind == _PHKind.rightExtra && ph.owner != null) {
+              hasRightPH.add(ph.owner!);
+            }
+          }
+          for (int i = 0; i < _paraLines.length && !anyShift; i++) {
+            double shiftSum = 0.0;
+            _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
+              if (range.$2 <= range.$1) return;
+              if (hasRightPH.contains(box)) return; // single-line owners already accounted
+              final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+              if (rects.isEmpty) return;
+              final last = rects.last;
+              final int li = _lineIndexForRect(last);
+              if (li != i) return;
+              final s = box.renderStyle;
+              final double extraR = s.paddingRight.computedValue + s.effectiveBorderRightWidth.computedValue +
+                  s.marginRight.computedValue;
+              if (extraR > 0) shiftSum += extraR;
+            });
+            if (shiftSum > 0) anyShift = true;
+          }
+        }
+
+        // Collect per-line vertical-align adjustments for non-atomic inline spans (not needed when using
+        // text-run placeholders, but kept for future parity; remains empty in common paths).
+        final Map<int, List<(ui.TextBox tb, double dy)>> vaAdjust = <int, List<(ui.TextBox, double)>>{};
+        if (_elementRanges.isNotEmpty) {
+          _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
+            final va = box.renderStyle.verticalAlign;
+            if (va == VerticalAlign.baseline) return;
+            if (range.$2 <= range.$1) return;
+            final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+            if (rects.isEmpty) return;
+            for (final tb in rects) {
+              final int li = _lineIndexForRect(tb);
+              if (li < 0 || li >= _paraLines.length) continue;
+              final (bandTop, bandBottom, _) = _bandForLine(li);
+              double dy = 0.0;
+              switch (va) {
+                case VerticalAlign.top:
+                  dy = bandTop - tb.top;
+                  break;
+                case VerticalAlign.bottom:
+                  dy = bandBottom - tb.bottom;
+                  break;
+                case VerticalAlign.middle:
+                  final double lineMid = (bandTop + bandBottom) / 2.0;
+                  final double boxMid = (tb.top + tb.bottom) / 2.0;
+                  dy = lineMid - boxMid;
+                  break;
+                default:
+                  // Approximate text-top/text-bottom using line box top/bottom
+                  dy = (va == VerticalAlign.textTop)
+                      ? (bandTop - tb.top)
+                      : (va == VerticalAlign.textBottom)
+                          ? (bandBottom - tb.bottom)
+                          : 0.0;
+                  break;
+              }
+              if (dy.abs() > 0.01) {
+                (vaAdjust[li] ??= []).add((tb, dy));
+              }
+            }
+          });
+        }
+        final bool anyVAAdjust = vaAdjust.values.any((l) => l.isNotEmpty);
+
+        // If no line needs shifting for trailing extras, and no vertical-align adjustment,
+        // just paint decorations once and draw paragraph once.
+        if (!anyShift && !anyVAAdjust) {
+          _paintInlineSpanDecorations(context, offset);
+          if (!_clipText) {
+            context.canvas.drawParagraph(para, offset);
+          }
+        } else {
+          for (int i = 0; i < _paraLines.length; i++) {
           final lm = _paraLines[i];
           final double lineTop = lm.baseline - lm.ascent;
           final double lineBottom = lm.baseline + lm.descent;
@@ -1429,6 +1464,11 @@ class InlineFormattingContext {
 
     if (DebugFlags.debugPaintInlineLayoutEnabled) {
       _debugPaintParagraph(context, offset);
+    }
+    } finally {
+      if (applyShift) {
+        context.canvas.restore();
+      }
     }
   }
 
@@ -1767,7 +1807,8 @@ class InlineFormattingContext {
     final idx = _placeholderOrder.indexOf(targetBox);
     if (idx >= 0 && idx < _placeholderBoxes.length) {
       final r = _placeholderBoxes[idx];
-      return Rect.fromLTWH(r.left, r.top, r.right - r.left, r.bottom - r.top);
+      final double left = r.left - (_paragraphMinLeft.isFinite ? _paragraphMinLeft : 0.0);
+      return Rect.fromLTWH(left, r.top, r.right - r.left, r.bottom - r.top);
     }
     // For inline element ranges (non-atomic), approximate using getBoxesForRange if recorded
     if (targetBox is RenderBoxModel) {
@@ -1782,10 +1823,13 @@ class InlineFormattingContext {
         if (rects.isNotEmpty) {
           if (!synthesized) {
             double? minX, minY, maxX, maxY;
+            final double offsetX = (_paragraphMinLeft.isFinite ? _paragraphMinLeft : 0.0);
             for (final tb in rects) {
-              minX = (minX == null) ? tb.left : math.min(minX, tb.left);
+              final double adjLeft = tb.left - offsetX;
+              final double adjRight = tb.right - offsetX;
+              minX = (minX == null) ? adjLeft : math.min(minX, adjLeft);
               minY = (minY == null) ? tb.top : math.min(minY, tb.top);
-              maxX = (maxX == null) ? tb.right : math.max(maxX, tb.right);
+              maxX = (maxX == null) ? adjRight : math.max(maxX, adjRight);
               maxY = (maxY == null) ? tb.bottom : math.max(maxY, tb.bottom);
             }
             return Rect.fromLTRB(minX!, minY!, maxX!, maxY!);
@@ -1798,8 +1842,9 @@ class InlineFormattingContext {
             final bB = style.effectiveBorderBottomWidth.computedValue;
             final lh = _effectiveLineHeightPx(style);
             final tb = rects.first;
-            final double left = tb.left;
-            final double right = tb.right;
+            final double offsetX = (_paragraphMinLeft.isFinite ? _paragraphMinLeft : 0.0);
+            final double left = tb.left - offsetX;
+            final double right = tb.right - offsetX;
             final double top = tb.top - (lh + padT + bT);
             final double bottom = tb.top + (padB + bB);
             return Rect.fromLTRB(left, top, right, bottom);
@@ -2469,6 +2514,7 @@ class InlineFormattingContext {
     }
 
     double initialWidth;
+    bool shapedWithHugeWidth = false;
     bool _shapedWithZeroWidth = false; // Track when we intentionally shape with 0 width
 
     // Decide whether shaping with zero width is appropriate. We only do this
@@ -2506,6 +2552,9 @@ class InlineFormattingContext {
       initialWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
           ? fallbackContentMaxWidth
           : 1000000.0;
+      if (initialWidth >= 1000000.0) {
+        shapedWithHugeWidth = true;
+      }
     } else {
       if (constraints.maxWidth > 0) {
         initialWidth = constraints.maxWidth;
@@ -2527,6 +2576,9 @@ class InlineFormattingContext {
           initialWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
               ? fallbackContentMaxWidth
               : 1000000.0;
+          if (initialWidth >= 1000000.0) {
+            shapedWithHugeWidth = true;
+          }
           InlineLayoutLog.log(
             impl: InlineImpl.paragraphIFC,
             feature: InlineFeature.sizing,
@@ -2552,6 +2604,7 @@ class InlineFormattingContext {
     final bool _wideShapeForScrollableX = (_ancestorScrollX || _localIsScrollableX) && _contentHasNoBreaks;
     if (_wideShapeForScrollableX) {
       initialWidth = 1000000.0;
+      shapedWithHugeWidth = true;
       InlineLayoutLog.log(
         impl: InlineImpl.paragraphIFC,
         feature: InlineFeature.sizing,
@@ -2576,6 +2629,7 @@ class InlineFormattingContext {
           (style.effectiveOverflowX != CSSOverflowType.visible);
       if (!wantsEllipsis) {
         initialWidth = 1000000.0;
+        shapedWithHugeWidth = true;
         InlineLayoutLog.log(
           impl: InlineImpl.paragraphIFC,
           feature: InlineFeature.sizing,
@@ -2741,6 +2795,8 @@ class InlineFormattingContext {
         }
       });
     }
+
+    _paragraphShapedWithHugeWidth = shapedWithHugeWidth;
   }
 
   void _layoutAtomicInlineItemsForParagraph() {

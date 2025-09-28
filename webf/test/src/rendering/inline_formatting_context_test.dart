@@ -162,6 +162,32 @@ void main() {
       expect(div.attachedRenderer!.size.height, lessThan(30));
     });
 
+    testWidgets('should keep RTL nowrap text within intrinsic width', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'rtl-nowrap-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="host" style="display: flex; flex-direction: row; width: 160px; direction: rtl; border: 1px solid black;">
+            <div id="btn" style="white-space: nowrap; background: #007bff; color: white; padding: 3px 6px;">
+              Btn
+            </div>
+          </div>
+        ''',
+      );
+
+      final controller = prepared.controller;
+      await tester.pump();
+
+      final host = controller.view.document.getElementById('host') as dom.Element;
+      final btn = controller.view.document.getElementById('btn') as dom.Element;
+
+      expect(host.attachedRenderer!.hasSize, isTrue);
+      expect(btn.attachedRenderer!.hasSize, isTrue);
+      expect(btn.attachedRenderer!.size.width, greaterThan(0));
+      expect(btn.attachedRenderer!.size.width, lessThan(200));
+      expect(btn.attachedRenderer!.size.width, lessThan(host.attachedRenderer!.size.width));
+    });
+
     testWidgets('should handle nested inline elements', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
