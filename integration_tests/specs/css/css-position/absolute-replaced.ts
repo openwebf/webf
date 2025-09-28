@@ -2351,7 +2351,7 @@ describe('absolute-replaced', () => {
   });
 
   // @TODO: margin auto fail on position absolute element.
-  xit('height-036', async () => {
+  it('height-036', async () => {
     let p;
     let abspos;
     let abspos_1;
@@ -3698,7 +3698,7 @@ describe('absolute-replaced', () => {
   });
 
   // @TODO: Support direction.
-  xit('width-029', async () => {
+  it('width-029', async () => {
     let p;
     let div1;
     p = createElement(
@@ -4509,7 +4509,7 @@ describe('absolute-replaced', () => {
   });
 
   // @TODO: Support direction.
-  xit('width-057', async () => {
+  it('width-057', async () => {
     let p;
     let div1;
     p = createElement(
