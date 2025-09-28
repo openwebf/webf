@@ -1,5 +1,5 @@
 describe('Text wrapper edge cases for flexbox', () => {
-  xit('should handle empty text content with flex containers', async () => {
+  it('should handle empty text content with flex containers', async () => {
     const container = document.createElement('div');
     container.style.display = 'flex';
     container.style.width = '200px';
