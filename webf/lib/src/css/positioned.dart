@@ -383,7 +383,7 @@ class CSSPositionedLayout {
 
     double x = _computePositionedOffset(
       Axis.horizontal,
-      false,
+      parentIsScrollContainer,
       parentBorderLeftWidth,
       parentPaddingLeft,
       containingBlockSize.width,
@@ -397,7 +397,7 @@ class CSSPositionedLayout {
 
     double y = _computePositionedOffset(
       Axis.vertical,
-      false,
+      parentIsScrollContainer,
       parentBorderTopWidth,
       parentPaddingTop,
       containingBlockSize.height,
