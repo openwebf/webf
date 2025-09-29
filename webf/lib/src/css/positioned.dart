@@ -398,6 +398,39 @@ class CSSPositionedLayout {
       parentPaddingTop
     );
 
+    // Inline static-position correction (horizontal): when the placeholder sits inside
+    // an IFC container (e.g., text followed by abspos inline), align the static X to the
+    // inline advance within that container's content box so that `left:auto` follows the
+    // preceding inline content per CSS static-position rules.
+    if (!parent.isDocumentRootBox && ph != null && ph.parent is RenderFlowLayout) {
+      final RenderFlowLayout flowParent = ph.parent as RenderFlowLayout;
+      if (flowParent.establishIFC) {
+        // Base content-left inset inside the IFC container
+        final double contentLeftInset =
+            flowParent.renderStyle.effectiveBorderLeftWidth.computedValue +
+            flowParent.renderStyle.paddingLeft.computedValue;
+        // Try using IFC-provided inline advance; if not available, fall back to
+        // measuring preceding text boxes directly.
+        double inlineAdvance = flowParent.inlineAdvanceBefore(ph);
+        if (inlineAdvance == 0.0) {
+          inlineAdvance = _computeInlineAdvanceBeforePlaceholder(flowParent, ph);
+        }
+        if (contentLeftInset != 0.0 || inlineAdvance != 0.0) {
+          adjustedStaticPosition = adjustedStaticPosition.translate(contentLeftInset + inlineAdvance, 0);
+          try {
+            PositionedLayoutLog.log(
+              impl: PositionedImpl.layout,
+              feature: PositionedFeature.staticPosition,
+              message: () => 'adjust static pos by IFC inline advance '
+                  'contentLeft=${contentLeftInset.toStringAsFixed(2)} '
+                  'advance=${inlineAdvance.toStringAsFixed(2)} '
+                  '→ (${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})',
+            );
+          } catch (_) {}
+        }
+      }
+    }
+
     // If the containing block is the document root (<html>) and the placeholder lives
     // under the block formatting context of <body>, align the static position vertically
     // with the first in-flow block-level child’s collapsed top (ignoring parent collapse).
@@ -575,6 +608,32 @@ class CSSPositionedLayout {
       next = (current.parentData as RenderLayoutParentData?)?.nextSibling as RenderObject?;
     }
     return null;
+  }
+
+  // Compute inline horizontal advance (sum of visual widths) of siblings before the
+  // placeholder within an IFC container. Prefers text measurement for RenderTextBox,
+  // skips placeholders and out-of-flow boxes.
+  static double _computeInlineAdvanceBeforePlaceholder(RenderFlowLayout flowParent, RenderPositionPlaceholder ph) {
+    double sum = 0.0;
+    if (ph.parentData is! RenderLayoutParentData) return 0.0;
+    RenderBox? child = flowParent.firstChild;
+    while (child != null && child != ph) {
+      if (child is RenderTextBox) {
+        // Measure full text width with no wrap to approximate natural advance.
+        try {
+          final Size sz = child.computeFullTextSizeForWidth(double.infinity);
+          sum += sz.width;
+        } catch (_) {}
+      } else if (child is RenderBoxModel) {
+        // Inline-level boxes: if they have a size, add their border-box width.
+        // Positioned/placeholder are excluded by size==null or handled elsewhere.
+        final Size? sz = child.boxSize;
+        if (sz != null) sum += sz.width;
+      }
+      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+      child = pd.nextSibling;
+    }
+    return sum;
   }
 
   // Compute the offset of positioned element in one axis.

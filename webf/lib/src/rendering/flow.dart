@@ -70,6 +70,23 @@ class RenderFlowLayout extends RenderLayoutBox {
     addAll(children);
   }
 
+  // Public helper: for IFC containers, compute the inline horizontal advance
+  // (in the container's content box space) before a given child. This sums the
+  // measured visual widths of inline items that precede the marker in DOM order.
+  // Returns 0 when IFC is not established or measurement is unavailable.
+  double inlineAdvanceBefore(RenderObject marker) {
+    if (!establishIFC || _inlineFormattingContext == null) return 0.0;
+    double sum = 0.0;
+    RenderBox? child = firstChild;
+    while (child != null && child != marker) {
+      final Size? sz = _inlineFormattingContext!.measuredVisualSizeOf(child);
+      if (sz != null) sum += sz.width;
+      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+      child = pd.nextSibling;
+    }
+    return sum;
+  }
+
   // Line boxes of flow layout.
   // https://www.w3.org/TR/css-inline-3/#line-boxes
   // Fow example <i>Hello<br>world.</i> will have two <i> line boxes
