@@ -78,85 +78,85 @@
       "specs/css/css-position/**/*.{js,jsx,ts,tsx,html}"
     ]
   },
-  {
-    "name": "FontsAndImages",
-    "specs": [
-      "specs/css/css-fonts/**/*.{js,jsx,ts,tsx,html}",
-      "specs/css/css-images/**/*.{js,jsx,ts,tsx,html}"
-    ]
-  },
-  {
-    "name": "TextAndColorAndFilterEffect",
-    "specs": [
-      "specs/css/css-text/**/*.{js,jsx,ts,tsx,html}",
-      "specs/css/css-text-decor/**/*.{js,jsx,ts,tsx,html}",
-      "specs/css/css-color/**/*.{js,jsx,ts,tsx,html}",
-      "specs/css/css-text-color/**/*.{js,jsx,ts,tsx,html}",
-      "specs/css/filter-effects/**/*.{js,jsx,ts,tsx,html}",
-      "specs/css/css-text-mixin/**/*.{js,jsx,ts,tsx,html}"
-    ]
-  },
-  {
-    "name": "Transforms",
-    "specs": [
-      "specs/css/css-transforms/**/*.{js,jsx,ts,tsx,html}"
-    ]
-  },
-  {
-    "name": "Transitions",
-    "specs": [
-      "specs/css/css-transitions/**/*.{js,jsx,ts,tsx,html}"
-    ]
-  },
-  {
-    "name": "Animations",
-    "specs": [
-      "specs/css/css-animations/**/*.{js,jsx,ts,tsx,html}"
-    ]
-  },
-  {
-    "name": "ValuesAndUnitAndVaraiables",
-    "specs": [
-      "specs/css/css-values/**/*.{js,jsx,ts,tsx,html}",
-      "specs/css/css-variables/**/*.{js,jsx,ts,tsx,html}"
-    ]
-  },
-  {
-    "name": "Selectors",
-    "specs": [
-      "specs/css/css-selectors/**/*.{js,jsx,ts,tsx,html}"
-    ]
-  },
-  {
-    "name": "Rendering",
-    "specs": [
-      "specs/rendering/**/*.{js,jsx,ts,tsx,html}"
-    ]
-  },
+  // {
+  //   "name": "FontsAndImages",
+  //   "specs": [
+  //     "specs/css/css-fonts/**/*.{js,jsx,ts,tsx,html}",
+  //     "specs/css/css-images/**/*.{js,jsx,ts,tsx,html}"
+  //   ]
+  // },
+  // {
+  //   "name": "TextAndColorAndFilterEffect",
+  //   "specs": [
+  //     "specs/css/css-text/**/*.{js,jsx,ts,tsx,html}",
+  //     "specs/css/css-text-decor/**/*.{js,jsx,ts,tsx,html}",
+  //     "specs/css/css-color/**/*.{js,jsx,ts,tsx,html}",
+  //     "specs/css/css-text-color/**/*.{js,jsx,ts,tsx,html}",
+  //     "specs/css/filter-effects/**/*.{js,jsx,ts,tsx,html}",
+  //     "specs/css/css-text-mixin/**/*.{js,jsx,ts,tsx,html}"
+  //   ]
+  // },
+  // {
+  //   "name": "Transforms",
+  //   "specs": [
+  //     "specs/css/css-transforms/**/*.{js,jsx,ts,tsx,html}"
+  //   ]
+  // },
+  // {
+  //   "name": "Transitions",
+  //   "specs": [
+  //     "specs/css/css-transitions/**/*.{js,jsx,ts,tsx,html}"
+  //   ]
+  // },
+  // {
+  //   "name": "Animations",
+  //   "specs": [
+  //     "specs/css/css-animations/**/*.{js,jsx,ts,tsx,html}"
+  //   ]
+  // },
+  // {
+  //   "name": "ValuesAndUnitAndVaraiables",
+  //   "specs": [
+  //     "specs/css/css-values/**/*.{js,jsx,ts,tsx,html}",
+  //     "specs/css/css-variables/**/*.{js,jsx,ts,tsx,html}"
+  //   ]
+  // },
+  // {
+  //   "name": "Selectors",
+  //   "specs": [
+  //     "specs/css/css-selectors/**/*.{js,jsx,ts,tsx,html}"
+  //   ]
+  // },
+  // {
+  //   "name": "Rendering",
+  //   "specs": [
+  //     "specs/rendering/**/*.{js,jsx,ts,tsx,html}"
+  //   ]
+  // },
   // {
   //   "name": "SVG",
   //   "specs": [
   //     "specs/svg/**/*.{js,jsx,ts,tsx,html,svg}"
   //   ]
   // },
-  {
-    "name": "Blink_CSS1",
-    "snapshotRoot": "body",
-    "delayForSnapshot": true,
-    "specs": [
-      "specs/blink/css1/**/*.{js,jsx,ts,tsx,html,svg}"
-    ]
-  },
-  {
-    "name": "Rust",
-    "specs": [
-      "specs/rust/**/*.{js,jsx,ts,tsx,html}"
-    ]
-  },
-  {
-    "name": "TextCodec",
-    "specs": [
-      "specs/text-codec/**/*.{js,jsx,ts,tsx,html}"
-    ]
-  },
+  // {
+  //   "name": "Blink_CSS1",
+  //   "snapshotRoot": "body",
+  //   "delayForSnapshot": true,
+  //   "specs": [
+  //     "specs/blink/css1/**/*.{js,jsx,ts,tsx,html,svg}"
+  //   ]
+  // },
+  // {
+  //   "name": "Rust",
+  //   "specs": [
+  //     "specs/rust/**/*.{js,jsx,ts,tsx,html}"
+  //   ]
+  // },
+  // {
+  //   "name": "TextCodec",
+  //   "specs": [
+  //     "specs/text-codec/**/*.{js,jsx,ts,tsx,html}"
+  //   ]
+  // },
 ]

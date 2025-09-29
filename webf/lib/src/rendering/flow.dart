@@ -531,13 +531,6 @@ class RenderFlowLayout extends RenderLayoutBox {
       child = childParentData.nextSibling;
     }
 
-    // Need to layout out of flow positioned element before normal flow element
-    // cause the size of RenderPositionPlaceholder in flex layout needs to use
-    // the size of its original RenderBoxModel.
-    for (RenderBoxModel child in positionedChildren) {
-      CSSPositionedLayout.layoutPositionedChild(this, child);
-    }
-
     // Layout non positioned element (include element in flow and
     // placeholder of positioned element).
     _layoutChildren(nonPositionedChildren);
@@ -553,6 +546,15 @@ class RenderFlowLayout extends RenderLayoutBox {
     // following normal-flow content. This offset is only used by positioned layout
     // and does not affect normal-flow layout (placeholders remain 0×0 and skipped).
     _alignPositionPlaceholdersToFollowingSiblings();
+
+    // Now that the container size and placeholder static positions are known,
+    // lay out out-of-flow positioned children. This ensures percentage sizes
+    // (e.g., width/height: 100%) resolve against the containing block's final
+    // padding box dimensions, matching browser behavior for inline-block
+    // shrink-to-fit containers with positioned overlays.
+    for (RenderBoxModel child in positionedChildren) {
+      CSSPositionedLayout.layoutPositionedChild(this, child);
+    }
 
     // Apply offset for positioned elements that are direct children (containing block = this).
     // Do not let out-of-flow positioned children expand scrollable area when this

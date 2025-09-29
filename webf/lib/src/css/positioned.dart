@@ -4,6 +4,7 @@
  */
 
 import 'package:flutter/rendering.dart';
+import 'dart:math' as math;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
@@ -617,8 +618,12 @@ class CSSPositionedLayout {
       return staticPositionOffset;
     }
 
-    // W3C: When insets are auto, use static position
-    // Ensure this static position accurately represents normal flow position
+    // Detect whether the placeholder is laid out inside a flex container.
+    final bool placeholderInFlex = placeholder.parent is RenderFlexLayout;
+
+    // W3C: When insets are auto, use static position. We may refine horizontal/vertical
+    // axes when the placeholder’s current offset is known to be inaccurate, but by
+    // default we keep the computed placeholder offset.
     bool shouldUseAccurateHorizontalPosition = left.isAuto && right.isAuto;
     bool shouldUseAccurateVerticalPosition = top.isAuto && bottom.isAuto;
 
@@ -629,39 +634,25 @@ class CSSPositionedLayout {
     // Check if current static position may be inaccurate due to flow layout artifacts
     bool needsCorrection = _staticPositionNeedsCorrection(placeholder, staticPositionOffset, parent);
 
-    // Special-case: Inline Formatting Context containers with no in-flow content
-    // For absolutely positioned descendants with all insets auto, browsers position
-    // them at the bottom-right of the padding box when there's no static flow to anchor.
-    // Detect this by checking IFC and placeholder being the first child (no previous sibling).
-    bool isIFC = parent is RenderFlowLayout && (parent as RenderFlowLayout).establishIFC;
-    if (!needsCorrection && isIFC && (left.isAuto && right.isAuto || top.isAuto && bottom.isAuto)) {
+    // Special-case: Inline Formatting Context containing block with no in-flow anchor
+    // For absolutely positioned non-replaced elements with all insets auto, when the
+    // containing block establishes an IFC and there is no in-flow sibling before the
+    // placeholder (i.e., nothing to anchor in normal flow), browsers place the box at
+    // the bottom-right corner of the padding box. Constrain within padding edges.
+    final bool isIFCContainingBlock = parent is RenderFlowLayout && (parent as RenderFlowLayout).establishIFC;
+    if (!placeholderInFlex && isIFCContainingBlock && left.isAuto && right.isAuto && top.isAuto && bottom.isAuto) {
       if (placeholder.parentData is RenderLayoutParentData) {
         final RenderLayoutParentData pd = placeholder.parentData as RenderLayoutParentData;
-        final bool isFirst = pd.previousSibling == null;
-        if (isFirst) {
+        if (pd.previousSibling == null) {
           final double padLeft = parentBorderLeftWidth.computedValue + parentPaddingLeft.computedValue;
           final double padTop = parentBorderTopWidth.computedValue + parentPaddingTop.computedValue;
           final Size parentSize = parent.boxSize ?? Size.zero;
           final Size childSize = child.boxSize ?? Size.zero;
-
-          double correctedX = staticPositionOffset.dx;
-          double correctedY = staticPositionOffset.dy;
-
-          if (left.isAuto && right.isAuto) {
-            final double rightEdge = parentSize.width - parentBorderRightWidth.computedValue;
-            correctedX = rightEdge - childSize.width;
-            final double leftEdge = padLeft;
-            if (correctedX < leftEdge) correctedX = leftEdge;
-          }
-
-          if (top.isAuto && bottom.isAuto) {
-            final double bottomEdge = parentSize.height - parentBorderBottomWidth.computedValue;
-            correctedY = bottomEdge - childSize.height;
-            final double topEdge = padTop;
-            if (correctedY < topEdge) correctedY = topEdge;
-          }
-
-          return Offset(correctedX, correctedY);
+          final double rightEdge = parentSize.width - parentBorderRightWidth.computedValue;
+          final double bottomEdge = parentSize.height - parentBorderBottomWidth.computedValue;
+          final double bx = math.max(padLeft, rightEdge - childSize.width);
+          final double by = math.max(padTop, bottomEdge - childSize.height);
+          return Offset(bx, by);
         }
       }
     }
@@ -675,12 +666,9 @@ class CSSPositionedLayout {
         : staticPositionOffset.dx;
 
     // Vertical axis: decide whether placeholder offset already accounts for the
-    // element's own vertical margins. In flex layout, the placeholder is treated
-    // as a flex item and its laid-out cross offset includes its start margin.
-    // In normal flow (RenderFlowLayout), placeholders are 0×0 and aligned to
-    // the following in-flow sibling without adding the positioned element's own
-    // margins, so we must add the element's margin-top to reach the margin box.
-    bool placeholderInFlex = placeholder.parent is RenderFlexLayout;
+    // element's own vertical margins. In normal flow (RenderFlowLayout), placeholders
+    // are 0×0 and aligned to the following in-flow sibling without adding the positioned
+    // element's own margins, so we must add the element's margin-top to reach the margin box.
     double correctedY = staticPositionOffset.dy +
         ((shouldUseAccurateVerticalPosition && !placeholderInFlex)
             ? child.renderStyle.marginTop.computedValue
@@ -691,23 +679,73 @@ class CSSPositionedLayout {
     // position to the flex centering result using the container's content box.
     // This matches browser behavior where an abspos with all insets auto in a
     // row-direction flex container visually centers vertically when align-items:center.
-    if (placeholderInFlex && shouldUseAccurateVerticalPosition) {
-      final CSSRenderStyle pStyle = parent.renderStyle;
+    // For flex containers, refine the vertical static position when top/bottom are auto
+    // and cross-axis centering applies (align-self/align-items center). The placeholder
+    // is 0-height and is placed at the cross-axis center; we need to subtract half of the
+    // child's box height so the top edge is positioned correctly.
+    if (placeholderInFlex && (shouldUseAccurateVerticalPosition || shouldUseAccurateHorizontalPosition)) {
+      // Use the flex container (placeholder's parent) to determine direction and alignment.
+      final RenderFlexLayout flexContainer = placeholder.parent as RenderFlexLayout;
+      final CSSRenderStyle pStyle = flexContainer.renderStyle;
       final FlexDirection dir = pStyle.flexDirection;
       final bool isRowDirection = (dir == FlexDirection.row || dir == FlexDirection.rowReverse);
-      final bool centerCross = pStyle.alignItems == AlignItems.center;
-      if (isRowDirection && centerCross) {
-        final double borderTop = parentBorderTopWidth.computedValue;
-        final double borderBottom = parentBorderBottomWidth.computedValue;
-        final double padTop = parentPaddingTop.computedValue;
-        final double padBottom = pStyle.paddingBottom.computedValue;
-        final Size parentSize = parent.boxSize ?? Size.zero;
-        final Size childSize = child.boxSize ?? Size.zero;
-        final double contentH = (parentSize.height - borderTop - borderBottom - padTop - padBottom).clamp(0.0, double.infinity);
-        final double centerY = borderTop + padTop + (contentH - childSize.height) / 2.0;
-        correctedY = centerY.isFinite ? centerY : correctedY;
+      // Effective cross-axis alignment respects child's align-self when specified,
+      // otherwise falls back to container's align-items.
+      final AlignSelf self = child.renderStyle.alignSelf;
+      final AlignItems parentAlignItems = pStyle.alignItems;
+      final bool isCenter = self == AlignSelf.center || (self == AlignSelf.auto && parentAlignItems == AlignItems.center);
+      final bool isEnd = self == AlignSelf.flexEnd || (self == AlignSelf.auto && parentAlignItems == AlignItems.flexEnd);
+      final bool isStart = self == AlignSelf.flexStart || (self == AlignSelf.auto && parentAlignItems == AlignItems.flexStart);
+
+      if (isRowDirection && shouldUseAccurateVerticalPosition) {
+        // Compute from the flex container’s content box in the containing block’s
+        // coordinate space: containerOffset + padding/border + alignment.
+        final RenderLayoutParentData? phPD = placeholder.parentData as RenderLayoutParentData?;
+        final Offset phOffsetInFlex = phPD?.offset ?? Offset.zero;
+        // staticPositionOffset = flexOffsetToCB + placeholderOffsetInFlex
+        final Offset flexOffsetToCB = staticPositionOffset - phOffsetInFlex;
+
+        final double fcBorderTop = pStyle.effectiveBorderTopWidth.computedValue;
+        final double fcBorderBottom = pStyle.effectiveBorderBottomWidth.computedValue;
+        final double fcPadTop = pStyle.paddingTop.computedValue;
+        final double fcPadBottom = pStyle.paddingBottom.computedValue;
+        final Size fcSize = flexContainer.boxSize ?? Size.zero;
+        final double fcContentH = (fcSize.height - fcBorderTop - fcBorderBottom - fcPadTop - fcPadBottom).clamp(0.0, double.infinity);
+        final double childH = child.boxSize?.height ?? 0;
+        final double contentTopInCB = flexOffsetToCB.dy + fcBorderTop + fcPadTop;
+        if (isCenter) {
+          correctedY = contentTopInCB + (fcContentH - childH) / 2.0;
+        } else if (isEnd) {
+          correctedY = contentTopInCB + (fcContentH - childH);
+        } else if (isStart) {
+          correctedY = contentTopInCB;
+        }
+      } else if (!isRowDirection && shouldUseAccurateHorizontalPosition) {
+        // Column direction: cross-axis is horizontal. Compute left from the flex
+        // container content box so the abspos element centers and updates when width changes.
+        final RenderLayoutParentData? phPD = placeholder.parentData as RenderLayoutParentData?;
+        final Offset phOffsetInFlex = phPD?.offset ?? Offset.zero;
+        final Offset flexOffsetToCB = staticPositionOffset - phOffsetInFlex;
+
+        final double fcBorderLeft = pStyle.effectiveBorderLeftWidth.computedValue;
+        final double fcBorderRight = pStyle.effectiveBorderRightWidth.computedValue;
+        final double fcPadLeft = pStyle.paddingLeft.computedValue;
+        final double fcPadRight = pStyle.paddingRight.computedValue;
+        final Size fcSize = flexContainer.boxSize ?? Size.zero;
+        final double fcContentW = (fcSize.width - fcBorderLeft - fcBorderRight - fcPadLeft - fcPadRight).clamp(0.0, double.infinity);
+        final double childW = child.boxSize?.width ?? 0;
+        final double contentLeftInCB = flexOffsetToCB.dx + fcBorderLeft + fcPadLeft;
+        if (isCenter) {
+          correctedX = contentLeftInCB + (fcContentW - childW) / 2.0;
+        } else if (isEnd) {
+          correctedX = contentLeftInCB + (fcContentW - childW);
+        } else if (isStart) {
+          correctedX = contentLeftInCB;
+        }
       }
     }
+
+    // For non-flex containers, keep the placeholder-computed position with optional margin compensation.
 
     return Offset(correctedX, correctedY);
   }
