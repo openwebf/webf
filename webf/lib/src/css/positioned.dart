@@ -415,15 +415,21 @@ class CSSPositionedLayout {
         if (inlineAdvance == 0.0) {
           inlineAdvance = _computeInlineAdvanceBeforePlaceholder(flowParent, ph);
         }
-        if (contentLeftInset != 0.0 || inlineAdvance != 0.0) {
-          adjustedStaticPosition = adjustedStaticPosition.translate(contentLeftInset + inlineAdvance, 0);
+        // Do not use inline advance when the abspos has percentage width (e.g., width:100%),
+        // since the horizontal insets equation will use the static position as 'left' and a
+        // percentage width that fills the containing block; browsers effectively align such
+        // overlays at the content-left (no inline advance).
+        final bool widthIsPercentage = child.renderStyle.width.type == CSSLengthType.PERCENTAGE;
+        final double effAdvance = widthIsPercentage ? 0.0 : inlineAdvance;
+        if (contentLeftInset != 0.0 || effAdvance != 0.0) {
+          adjustedStaticPosition = adjustedStaticPosition.translate(contentLeftInset + effAdvance, 0);
           try {
             PositionedLayoutLog.log(
               impl: PositionedImpl.layout,
               feature: PositionedFeature.staticPosition,
               message: () => 'adjust static pos by IFC inline advance '
                   'contentLeft=${contentLeftInset.toStringAsFixed(2)} '
-                  'advance=${inlineAdvance.toStringAsFixed(2)} '
+                  'advance=${effAdvance.toStringAsFixed(2)} '
                   '→ (${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})',
             );
           } catch (_) {}
