@@ -445,7 +445,7 @@ class CSSMathExpressionKeywordLiteral final : public CSSMathExpressionNode {
   CSSPrimitiveValue::UnitType ResolvedUnitType() const final { return CSSPrimitiveValue::UnitType::kIdent; }
   void Trace(GCVisitor* visitor) const final { CSSMathExpressionNode::Trace(visitor); }
 
-#if DDEBUG
+#if DCHECK_IS_ON()
   bool InvolvesPercentageComparisons() const { return false; }
 #endif
 
@@ -518,7 +518,7 @@ class CSSMathExpressionOperation final : public CSSMathExpressionNode {
 
   CSSMathExpressionOperation(CalculationResultCategory category, CSSMathOperator op);
 
-  std::shared_ptr<CSSMathExpressionNode> Copy() const final {
+  std::shared_ptr<CSSMathExpressionNode> Copy() const override final {
     Operands operands(operands_);
     return std::make_shared<CSSMathExpressionOperation>(category_, std::move(operands), operator_);
   }
