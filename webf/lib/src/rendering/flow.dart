@@ -541,12 +541,6 @@ class RenderFlowLayout extends RenderLayoutBox {
     // calculate all flexItem child overflow size
     addOverflowLayoutFromChildren(nonPositionedChildren);
 
-    // Optionally adjust placeholders' offsets to align with the next in-flow sibling
-    // so that static-position for absolutely positioned elements anchors next to
-    // following normal-flow content. This offset is only used by positioned layout
-    // and does not affect normal-flow layout (placeholders remain 0×0 and skipped).
-    _alignPositionPlaceholdersToFollowingSiblings();
-
     // Now that the container size and placeholder static positions are known,
     // lay out out-of-flow positioned children. This ensures percentage sizes
     // (e.g., width/height: 100%) resolve against the containing block's final
@@ -595,41 +589,6 @@ class RenderFlowLayout extends RenderLayoutBox {
     }
 
     didLayout();
-  }
-
-  // Move each position placeholder vertically to the offset of its first
-  // following in-flow sibling (skipping other placeholders and positioned boxes).
-  // This provides a stable anchor for absolute static-position (top/bottom:auto)
-  // that matches browsers: abspos element sits near the subsequent content.
-  void _alignPositionPlaceholdersToFollowingSiblings() {
-    RenderBox? child = firstChild;
-    while (child != null) {
-      if (child is RenderPositionPlaceholder) {
-        final RenderLayoutParentData phPD = child.parentData as RenderLayoutParentData;
-        RenderBox? sib = phPD.nextSibling;
-        RenderLayoutParentData? anchorPD;
-        while (sib != null) {
-          if (sib is RenderPositionPlaceholder) {
-            sib = (sib.parentData as RenderLayoutParentData).nextSibling;
-            continue;
-          }
-          if (sib is RenderBoxModel && sib.renderStyle.isSelfPositioned()) {
-            sib = (sib.parentData as RenderLayoutParentData).nextSibling;
-            continue;
-          }
-          if (sib.parentData is RenderLayoutParentData) {
-            anchorPD = sib.parentData as RenderLayoutParentData;
-          }
-          break;
-        }
-        if (anchorPD != null) {
-          // Align placeholder Y to the anchor's laid-out Y within this container.
-          phPD.offset = Offset(phPD.offset.dx, anchorPD.offset.dy);
-        }
-      }
-      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
-      child = pd.nextSibling;
-    }
   }
 
   void _setContainerSizeFromIFC(Size ifcSize) {
@@ -956,6 +915,16 @@ class RenderFlowLayout extends RenderLayoutBox {
         if (childRenderBoxModel != null) {
           if (childRenderBoxModel.renderStyle.isSelfPositioned()) {
             childMainAxisExtent = childCrossAxisExtent = 0;
+            try {
+              final tag = childRenderBoxModel.renderStyle.target.tagName.toLowerCase();
+              FlowLog.log(
+                impl: FlowImpl.flow,
+                feature: FlowFeature.runs,
+                level: Level.FINER,
+                message: () => 'encounter placeholder for positioned <$tag>; '
+                    'exclude from run sizing (main=cross=0)'
+              );
+            } catch (_) {}
           }
         }
       }
@@ -998,6 +967,16 @@ class RenderFlowLayout extends RenderLayoutBox {
     double? lastPrevCollapsedBottom;
     for (int i = 0; i < runMetrics.length; i++) {
       final RunMetrics run = runMetrics[i];
+      try {
+        FlowLog.log(
+          impl: FlowImpl.flow,
+          feature: FlowFeature.runs,
+          level: Level.FINER,
+          message: () => 'run index=$i carriedPrevBottom=${carriedPrevCollapsedBottom?.toStringAsFixed(2) ?? 'null'} '
+              'runCrossAxisExtent=${run.crossAxisExtent.toStringAsFixed(2)} '
+              'runMainAxisExtent=${run.mainAxisExtent.toStringAsFixed(2)}',
+        );
+      } catch (_) {}
 
       // Track previous child's collapsed bottom within the run,
       // seeded from the previous run's carry.
@@ -1015,6 +994,15 @@ class RenderFlowLayout extends RenderLayoutBox {
       for (final RenderBox child in run.runChildren) {
         // Out-of-flow placeholders must not participate in sibling margin collapsing.
         if (child is RenderPositionPlaceholder) {
+          try {
+            final tag = child.positioned?.renderStyle.target.tagName.toLowerCase() ?? '';
+            FlowLog.log(
+              impl: FlowImpl.flow,
+              feature: FlowFeature.marginCollapse,
+              level: Level.FINER,
+              message: () => 'skip placeholder mapped to <$tag> in collapse accounting',
+            );
+          } catch (_) {}
           continue;
         }
         RenderBoxModel? childRenderBoxModel;
@@ -1364,6 +1352,14 @@ class RenderFlowLayout extends RenderLayoutBox {
             // Placeholders: do not contribute vertical margins to collapsing.
             childMarginTop = 0;
             childMarginBottom = 0;
+            try {
+              final tag = (child as RenderPositionPlaceholder).positioned?.renderStyle.target.tagName.toLowerCase() ?? '';
+              FlowLog.log(
+                impl: FlowImpl.flow,
+                feature: FlowFeature.marginCollapse,
+                message: () => 'placeholder mapped to <$tag>: marginTop=0 marginBottom=0 (skipped in collapsing)',
+              );
+            } catch (_) {}
           }
           if (!isPlaceholder) {
             if (prevCollapsedBottom != null) {

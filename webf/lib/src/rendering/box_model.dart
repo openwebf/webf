@@ -230,9 +230,7 @@ abstract class RenderBoxModel extends RenderBox
   /// Whether current box is the root of the document which corresponds to HTML element in dom tree.
   bool get isDocumentRootBox {
     // Get the outer box of overflow scroll box
-    RenderBoxModel currentBox = this;
-    // Root element of document is the child of viewport.
-    return currentBox.parent is RootRenderViewportBox || currentBox.parent is RouterViewViewportBox;
+    return renderStyle.target is HTMLElement || renderStyle.target is RouterLinkElement;
   }
 
   // Width/height is overrided by flex-grow or flex-shrink in flex layout.

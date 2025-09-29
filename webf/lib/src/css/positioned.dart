@@ -398,6 +398,49 @@ class CSSPositionedLayout {
       parentPaddingTop
     );
 
+    // If the containing block is the document root (<html>) and the placeholder lives
+    // under the block formatting context of <body>, align the static position vertically
+    // with the first in-flow block-level child’s collapsed top (ignoring parent collapse).
+    // This matches browser behavior where the first in-flow child’s top margin effectively
+    // offsets the visible content from the root. The positioned element’s static position
+    // should reflect that visual start so the out-of-flow element and the following in-flow
+    // element align vertically when no insets are specified.
+    if (parent.isDocumentRootBox && ph != null) {
+      final RenderObject? phParent = ph.parent;
+      if (phParent is RenderBoxModel) {
+        final RenderBoxModel phContainer = phParent;
+        final RenderStyle cStyle = phContainer.renderStyle;
+        final bool qualifiesBFC =
+            cStyle.isLayoutBox() &&
+            cStyle.effectiveDisplay == CSSDisplay.block &&
+            (cStyle.effectiveOverflowY == CSSOverflowType.visible || cStyle.effectiveOverflowY == CSSOverflowType.clip) &&
+            cStyle.paddingTop.computedValue == 0 &&
+            cStyle.effectiveBorderTopWidth.computedValue == 0;
+
+        // Only adjust when placeholder is the first attached child (no previous in-flow block)
+        final bool isFirstChild = (ph.parentData is RenderLayoutParentData) &&
+            ((ph.parentData as RenderLayoutParentData).previousSibling == null);
+
+        if (qualifiesBFC && isFirstChild) {
+          final RenderBoxModel? firstFlow = _resolveNextInFlowSiblingModel(ph);
+          if (firstFlow != null) {
+            final double childTopIgnoringParent = firstFlow.renderStyle.collapsedMarginTopIgnoringParent;
+            if (childTopIgnoringParent != 0) {
+              adjustedStaticPosition = adjustedStaticPosition.translate(0, childTopIgnoringParent);
+              try {
+                PositionedLayoutLog.log(
+                  impl: PositionedImpl.layout,
+                  feature: PositionedFeature.staticPosition,
+                  message: () => 'adjust static pos by first in-flow child top(${childTopIgnoringParent.toStringAsFixed(2)}) '
+                      '→ (${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})',
+                );
+              } catch (_) {}
+            }
+          }
+        }
+      }
+    }
+
     try {
       PositionedLayoutLog.log(
         impl: PositionedImpl.layout,
@@ -496,6 +539,42 @@ class CSSPositionedLayout {
             'from x=${x.toStringAsFixed(2)} y=${y.toStringAsFixed(2)} ancestor=(${ancestorOffset.dx.toStringAsFixed(2)},${ancestorOffset.dy.toStringAsFixed(2)})',
       );
     } catch (_) {}
+  }
+
+  // Resolve the next in-flow block-level RenderBoxModel sibling after a placeholder.
+  // Skips wrappers (RenderEventListener) and ignores other placeholders.
+  static RenderBoxModel? _resolveNextInFlowSiblingModel(RenderPositionPlaceholder ph) {
+    RenderObject? current = ph;
+    // Move to next sibling in the parent's child list
+    if (ph.parentData is! RenderLayoutParentData) return null;
+    RenderObject? next = (ph.parentData as RenderLayoutParentData).nextSibling as RenderObject?;
+    while (next != null) {
+      if (next is RenderPositionPlaceholder) {
+        // Skip other placeholders
+        current = next;
+        next = (next.parentData as RenderLayoutParentData?)?.nextSibling as RenderObject?;
+        continue;
+      }
+      if (next is RenderBoxModel) {
+        final rs = next.renderStyle;
+        if ((rs.effectiveDisplay == CSSDisplay.block || rs.effectiveDisplay == CSSDisplay.flex) && !rs.isSelfPositioned()) {
+          return next;
+        }
+      }
+      if (next is RenderEventListener) {
+        final RenderBox? inner = next.child as RenderBox?;
+        if (inner is RenderBoxModel) {
+          final rs = inner.renderStyle;
+          if ((rs.effectiveDisplay == CSSDisplay.block || rs.effectiveDisplay == CSSDisplay.flex) && !rs.isSelfPositioned()) {
+            return inner;
+          }
+        }
+      }
+      // Fallback: advance to subsequent sibling
+      current = next;
+      next = (current.parentData as RenderLayoutParentData?)?.nextSibling as RenderObject?;
+    }
+    return null;
   }
 
   // Compute the offset of positioned element in one axis.
