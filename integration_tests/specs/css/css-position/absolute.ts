@@ -1124,11 +1124,9 @@ describe('Position absolute', () => {
 
     await waitForOnScreen(container);
 
-    child1.scroll(1000, 1000);
+    await sleep(1);
 
-    await waitForFrame();
-    await waitForFrame();
-    await waitForFrame();
+    child1.scroll(1000, 1000);
     
     expect(child.offsetTop).toEqual(300);
     expect(child.offsetLeft).toEqual(0);

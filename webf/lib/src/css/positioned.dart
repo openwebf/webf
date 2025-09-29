@@ -434,6 +434,27 @@ class CSSPositionedLayout {
             );
           } catch (_) {}
         }
+
+        // Vertical static position for top/bottom auto in IFC:
+        // Anchor to the IFC container's content top so the abspos aligns with
+        // the line box where the placeholder sits (top of the first line).
+        if (top.isAuto && bottom.isAuto) {
+          final double padTop = flowParent.renderStyle.paddingTop.computedValue;
+          final double borderTop = flowParent.renderStyle.effectiveBorderTopWidth.computedValue;
+          final double contentTopInset = padTop + borderTop;
+          if (contentTopInset != 0.0) {
+            adjustedStaticPosition = adjustedStaticPosition.translate(0, contentTopInset);
+            try {
+              PositionedLayoutLog.log(
+                impl: PositionedImpl.layout,
+                feature: PositionedFeature.staticPosition,
+                message: () => 'adjust static pos by IFC contentTop '
+                    'inset=${contentTopInset.toStringAsFixed(2)} '
+                    '→ (${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})',
+              );
+            } catch (_) {}
+          }
+        }
       }
     }
 
