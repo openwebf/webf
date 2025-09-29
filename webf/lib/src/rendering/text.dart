@@ -73,12 +73,43 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   Size computeFullTextSizeForWidth(double maxWidth) {
     // Reuse span building to keep style consistent with actual painting.
     final span = _buildTextSpan();
+    // Configure strut and text height behavior to honor CSS line-height.
+    StrutStyle? _strut;
+    final lh = renderStyle.lineHeight;
+    if (lh.type != CSSLengthType.NORMAL) {
+      final double fs = renderStyle.fontSize.computedValue;
+      final double multiple = lh.computedValue / fs;
+      if (multiple.isFinite && multiple > 0) {
+        _strut = StrutStyle(
+          fontSize: fs,
+          height: multiple,
+          fontFamilyFallback: renderStyle.fontFamily,
+          fontStyle: renderStyle.fontStyle,
+          fontWeight: renderStyle.fontWeight,
+          // Minimum line-box height like CSS; allow expansion if content larger.
+          forceStrutHeight: false,
+        );
+      }
+    }
+    const TextHeightBehavior _thb = TextHeightBehavior(
+      applyHeightToFirstAscent: true,
+      applyHeightToLastDescent: true,
+      leadingDistribution: TextLeadingDistribution.even,
+    );
+
+    // Compute effective maxLines consistent with layout.
+    final bool _nowrap = renderStyle.whiteSpace == WhiteSpace.nowrap;
+    final bool _ellipsis = renderStyle.effectiveTextOverflow == TextOverflow.ellipsis;
+    final int? _effectiveMaxLines = renderStyle.lineClamp ?? (_nowrap && _ellipsis ? 1 : null);
+
     final tp = TextPainter(
       text: span,
       textAlign: renderStyle.textAlign,
       textDirection: renderStyle.direction,
-      ellipsis: (renderStyle.effectiveTextOverflow == TextOverflow.ellipsis) ? '…' : null,
-      maxLines: renderStyle.lineClamp, // honor line-clamp if any
+      ellipsis: _ellipsis ? '…' : null,
+      maxLines: _effectiveMaxLines, // honor line-clamp or nowrap+ellipsis
+      strutStyle: _strut,
+      textHeightBehavior: _thb,
     );
     tp.layout(minWidth: 0, maxWidth: maxWidth.isFinite ? maxWidth : double.infinity);
     return Size(tp.width, tp.height);
@@ -117,13 +148,42 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     final bool wantsEllipsis = renderStyle.effectiveTextOverflow == TextOverflow.ellipsis;
     final int? effectiveMaxLines = renderStyle.lineClamp ?? (nowrap && wantsEllipsis ? 1 : null);
 
+    // Configure strut and text height behavior to honor CSS line-height.
+    final lh = renderStyle.lineHeight;
+    StrutStyle? _strut;
+    if (lh.type != CSSLengthType.NORMAL) {
+      final double fs = renderStyle.fontSize.computedValue;
+      final double multiple = lh.computedValue / fs;
+      if (multiple.isFinite && multiple > 0) {
+        _strut = StrutStyle(
+          fontSize: fs,
+          height: multiple,
+          fontFamilyFallback: renderStyle.fontFamily,
+          fontStyle: renderStyle.fontStyle,
+          fontWeight: renderStyle.fontWeight,
+          // Minimum line-box height like CSS; allow expansion if content larger.
+          forceStrutHeight: false,
+        );
+      }
+    }
+    const TextHeightBehavior _thb = TextHeightBehavior(
+      applyHeightToFirstAscent: true,
+      applyHeightToLastDescent: true,
+      leadingDistribution: TextLeadingDistribution.even,
+    );
+
     _textPainter!
       ..text = span
       ..textAlign = renderStyle.textAlign
       ..textDirection = renderStyle.direction
       ..ellipsis = (renderStyle.effectiveTextOverflow == TextOverflow.ellipsis) ? '…' : null
       ..maxLines = effectiveMaxLines
+      ..strutStyle = _strut
+      ..textHeightBehavior = _thb
       ..layout(
+        // Use loose width to keep intrinsic sizing (shrink-to-fit) for
+        // absolutely/fixed positioned auto-width content. Horizontal centering
+        // will be handled in paint by offsetting within the available width.
         minWidth: constraints.minWidth.clamp(0.0, double.infinity),
         maxWidth: constraints.hasBoundedWidth ? constraints.maxWidth : double.infinity,
       );
@@ -170,7 +230,32 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       _layoutText(constraints);
     }
     if (_textPainter == null) return;
-    _textPainter!.paint(context.canvas, offset);
+    // Apply horizontal alignment manually when painting within a bounded box.
+    double dx = 0.0;
+    if (constraints.hasBoundedWidth && _textPainter != null) {
+      final double availableWidth = constraints.maxWidth;
+      final double lineWidth = _textPainter!.width;
+      TextAlign align = renderStyle.textAlign;
+      if (align == TextAlign.start) {
+        align = (renderStyle.direction == TextDirection.rtl) ? TextAlign.right : TextAlign.left;
+      }
+      switch (align) {
+        case TextAlign.center:
+          dx = (availableWidth - lineWidth) / 2.0;
+          break;
+        case TextAlign.right:
+        case TextAlign.end:
+          dx = (availableWidth - lineWidth);
+          break;
+        case TextAlign.justify:
+        case TextAlign.left:
+        case TextAlign.start:
+          dx = 0.0;
+          break;
+      }
+      if (dx.isNaN || !dx.isFinite) dx = 0.0;
+    }
+    _textPainter!.paint(context.canvas, offset + Offset(dx, 0));
   }
 
   // Text node need hittest self to trigger scroll
