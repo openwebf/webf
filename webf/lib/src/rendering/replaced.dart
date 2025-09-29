@@ -72,7 +72,7 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
         height = height!.clamp(childConstraints.minHeight, childConstraints.maxHeight);
       }
 
-      // Apply aspect-ratio when only one dimension is specified.
+      // Apply aspect-ratio and constraint-driven sizing when only one or neither dimension is specified.
       final double? ratio = renderStyle.aspectRatio;
       if (width != null && height != null) {
         childConstraints = childConstraints.tighten(width: width, height: height);
@@ -84,6 +84,51 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
         final double? w = ratio != null ? (height! * ratio) : null;
         final double? clampedW = w != null ? w.clamp(childConstraints.minWidth, childConstraints.maxWidth) : null;
         childConstraints = childConstraints.tighten(width: clampedW, height: height);
+      } else if (ratio != null) {
+        // Both width and height are auto; resolve via aspect-ratio and constraints.
+        final double loW = childConstraints.minWidth.isFinite ? childConstraints.minWidth : 0.0;
+        final double hiW = childConstraints.maxWidth.isFinite ? childConstraints.maxWidth : double.infinity;
+        final double loH = childConstraints.minHeight.isFinite ? childConstraints.minHeight : 0.0;
+        final double hiH = childConstraints.maxHeight.isFinite ? childConstraints.maxHeight : double.infinity;
+
+        final bool hasWidthDef = loW > 0 || hiW.isFinite;
+        final bool hasHeightDef = loH > 0 || hiH.isFinite;
+
+        double? usedW;
+        double? usedH;
+
+        if (hasWidthDef || !hasHeightDef) {
+          // Prefer width-driven when width has a definite constraint (e.g., min-width) or height does not.
+          double w0 = renderStyle.intrinsicWidth.isFinite && renderStyle.intrinsicWidth > 0
+              ? renderStyle.intrinsicWidth
+              : 0.0;
+          // Satisfy min/max width constraints; if intrinsic is below min, take min.
+          w0 = w0.clamp(loW, hiW);
+          if (w0 <= 0 && loW > 0) w0 = loW;
+          // Derive height from ratio and clamp.
+          double hFromW = w0 / ratio;
+          double h1 = hFromW.clamp(loH, hiH);
+          // If clamping height changed the ratio, recompute width to preserve ratio within constraints.
+          double w1 = (h1 * ratio).clamp(loW, hiW);
+          usedW = w1;
+          usedH = h1;
+        } else {
+          // Height-driven when only height has a definite constraint.
+          double h0 = renderStyle.intrinsicHeight.isFinite && renderStyle.intrinsicHeight > 0
+              ? renderStyle.intrinsicHeight
+              : 0.0;
+          h0 = h0.clamp(loH, hiH);
+          if (h0 <= 0 && loH > 0) h0 = loH;
+          double wFromH = h0 * ratio;
+          double w1 = wFromH.clamp(loW, hiW);
+          double h1 = (w1 / ratio).clamp(loH, hiH);
+          usedW = w1;
+          usedH = h1;
+        }
+
+        if (usedW != null && usedH != null && usedW > 0 && usedH > 0) {
+          childConstraints = childConstraints.tighten(width: usedW, height: usedH);
+        }
       }
 
       // Avoid passing totally unconstrained constraints to child render box.

@@ -185,6 +185,49 @@ void main() {
       reason: 'Overlay width should be 100% of container width');
   });
 
+  testWidgets('inline-block container height equals replaced content (absolute 100% overlay ignored)', (WidgetTester tester) async {
+    final name = 'inline-block-abs-overlay-${DateTime.now().millisecondsSinceEpoch}';
+    final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+      tester: tester,
+      controllerName: name,
+      html: '''
+        <html>
+          <body style="margin: 0; padding: 0;">
+            <div style="text-align: center;">
+              <div id="container" style="position: relative; display: inline-block; background: #3b82f6;">
+                <img id="image" style="display: block; border: 1px solid #e5e7eb; width: 100px; height: 100px; object-fit: contain;"
+                     src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAGXRFWHRTb2Z0d2FyZQBQYWludC5ORVQgdjQuMi4xMUc7nU4AAAAXSURBVHhe7cEBAQAAAIIg/69uIBQAAAAA4P0GAAAB0D3rAAAAAElFTkSuQmCC" />
+                <div id="overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; border: 1px solid #ef4444;">
+                  <span id="span" style="border: 1px solid #22c55e;">1Icon</span>
+                </div>
+              </div>
+            </div>
+          </body>
+        </html>
+      ''',
+    );
+
+    // Allow image decode and layout
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+
+    final container = prepared.getElementById('container');
+    final image = prepared.getElementById('image');
+    final overlay = prepared.getElementById('overlay');
+
+    // Image border-box should be 102x102
+    expect(image.offsetWidth, equals(102.0));
+    expect(image.offsetHeight, equals(102.0));
+
+    // Container should shrink-wrap to replaced content height (ignore absolute overlay)
+    expect(container.offsetHeight, equals(102.0),
+        reason: 'Inline-block height should equal replaced content border-box');
+
+    // Absolute overlay should size to 100% of container but not affect container height
+    expect(overlay.offsetWidth, equals(container.offsetWidth));
+    expect(overlay.offsetHeight, equals(container.offsetHeight));
+  });
+
   testWidgets('width property should not work when width of style is auto', (WidgetTester tester) async {
     final name = 'width-auto-test-${DateTime.now().millisecondsSinceEpoch}';
     final prepared = await WebFWidgetTestUtils.prepareWidgetTest(

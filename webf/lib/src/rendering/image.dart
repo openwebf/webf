@@ -20,8 +20,6 @@ class WebFRenderImage extends RenderImage {
   @override
   void performLayout() {
     super.performLayout();
-    Size trySize = constraints.biggest;
-    size = trySize.isInfinite ? size : trySize;
   }
 }
 

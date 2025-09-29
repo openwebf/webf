@@ -763,6 +763,10 @@ class InlineFormattingContext {
     _paragraph!.layout(ui.ParagraphConstraints(width: width));
     _paraLines = _paragraph!.computeLineMetrics();
     _placeholderBoxes = _paragraph!.getBoxesForPlaceholders();
+    // After changing line breaks/positions, refresh atomic inline offsets so
+    // paint and hit testing use the updated placeholder positions (e.g., after
+    // shrink-to-fit adjusts the used content width of an inline-block).
+    _applyAtomicInlineParentDataOffsets();
     InlineLayoutLog.log(
       impl: InlineImpl.paragraphIFC,
       feature: InlineFeature.sizing,
@@ -1797,6 +1801,25 @@ class InlineFormattingContext {
       }
 
       final Offset relativeOffset = Offset(contentOriginX + left, contentOriginY + top);
+      InlineLayoutLog.log(
+        impl: InlineImpl.paragraphIFC,
+        feature: InlineFeature.offsets,
+        level: Level.FINER,
+        message: () {
+          final String desc;
+          if (rb is RenderBoxModel) {
+            final tag = rb.renderStyle.target.tagName.toLowerCase();
+            final id = (rb.renderStyle.target.id ?? '').trim();
+            desc = id.isNotEmpty ? '$tag#$id' : tag;
+          } else {
+            desc = rb.runtimeType.toString();
+          }
+          return 'set atomic parentData.offset for <$desc> tb=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(2)},'
+              '${tb.right.toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)}) contentOrigin=('
+              '${contentOriginX.toStringAsFixed(2)},${contentOriginY.toStringAsFixed(2)}) → '
+              'offset=(${relativeOffset.dx.toStringAsFixed(2)},${relativeOffset.dy.toStringAsFixed(2)})';
+        },
+      );
       CSSPositionedLayout.applyRelativeOffset(relativeOffset, paintBox);
     }
   }
