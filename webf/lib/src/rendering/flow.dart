@@ -84,6 +84,13 @@ class RenderFlowLayout extends RenderLayoutBox {
       final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
       child = pd.nextSibling;
     }
+    try {
+      FlowLog.log(
+        impl: FlowImpl.ifc,
+        feature: FlowFeature.layout,
+        message: () => 'inlineAdvanceBefore marker=${marker.runtimeType} sum=${sum.toStringAsFixed(2)}',
+      );
+    } catch (_) {}
     return sum;
   }
 
