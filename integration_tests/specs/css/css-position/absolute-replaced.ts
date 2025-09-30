@@ -4509,9 +4509,10 @@ describe('absolute-replaced', () => {
   });
 
   // @TODO: Support direction.
-  it('width-057', async () => {
+  it('width-057', async (done) => {
     let p;
     let div1;
+    let img;
     p = createElement(
       'p',
       {
@@ -4551,7 +4552,7 @@ describe('absolute-replaced', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           alt: 'blue 96x96',
           src: 'assets/blue96x96.png',
           style: {
@@ -4579,7 +4580,10 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot();
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
   // @TODO: Support direction.

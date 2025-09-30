@@ -192,7 +192,8 @@ describe('flexbox-position-absolute', () => {
     await snapshot();
   });
 
-  it('should works with image of position absolute and self no height', async () => {
+  it('should works with image of position absolute and self no height', async (done) => {
+    let img;
     const div = createElement('div', {
        style: {
            display: 'flex',
@@ -201,7 +202,7 @@ describe('flexbox-position-absolute', () => {
            overflow: 'hidden',
        }
     }, [
-        createElement('img', {
+      img = createElement('img', {
             src: 'assets/100x100-green.png',
             style: {
                 position: 'absolute',
@@ -218,8 +219,10 @@ describe('flexbox-position-absolute', () => {
         })
     ]);
     document.body.appendChild(div);
-
-    await snapshot(1);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
   it('should works with child of position absolute and self no height', async () => {
