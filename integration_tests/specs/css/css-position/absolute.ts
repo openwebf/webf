@@ -1225,11 +1225,11 @@ background: white;
     ]);
     document.body.appendChild(container);
 
-    setTimeout(async () => {
+     onImageLoad(img, async () => {
       container.style.display = 'block';
-      await snapshot();
+      await snapshot(0.1);
       done();
-    }, 300);
+    });
   });
 
   it('should works when dynamic toggle display on positioned elements', async () => {
