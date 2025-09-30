@@ -42,6 +42,7 @@ class AtomicString {
   explicit AtomicString(const UTF8String& s) : AtomicString(CreateFromUTF8(s)){};
   explicit AtomicString(const String& s);
   explicit AtomicString(String&& s);
+  explicit AtomicString(const StringView& view);
 
   explicit AtomicString(const UChar* chars)
     : AtomicString(chars, chars ? std::char_traits<char16_t>::length(chars) : 0) {}

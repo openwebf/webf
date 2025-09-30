@@ -13,6 +13,7 @@
 #include <cstdio>
 #include "string_builder.h"
 #include "string_view.h"
+#include "utf8_codecs.h"
 
 namespace webf {
 
@@ -262,31 +263,10 @@ std::string String::ToUTF8String() const {
   }
   
   if (impl_->Is8Bit()) {
-    // For 8-bit strings, we can just copy the bytes
-    return std::string(reinterpret_cast<const char*>(impl_->Characters8()), impl_->length());
-  } else {
-    // For 16-bit strings, we need to convert to UTF-8
-    // This is a simplified implementation - production code would need proper UTF-8 encoding
-    std::string result;
-    result.reserve(impl_->length() * 3);  // Worst case UTF-8 expansion
-    
-    const UChar* chars = impl_->Characters16();
-    for (size_t i = 0; i < impl_->length(); ++i) {
-      UChar ch = chars[i];
-      if (ch < 0x80) {
-        result.push_back(static_cast<char>(ch));
-      } else if (ch < 0x800) {
-        result.push_back(static_cast<char>(0xC0 | (ch >> 6)));
-        result.push_back(static_cast<char>(0x80 | (ch & 0x3F)));
-      } else {
-        result.push_back(static_cast<char>(0xE0 | (ch >> 12)));
-        result.push_back(static_cast<char>(0x80 | ((ch >> 6) & 0x3F)));
-        result.push_back(static_cast<char>(0x80 | (ch & 0x3F)));
-      }
-    }
-    
-    return result;
+    return UTF8Codecs::EncodeLatin1({impl_->Characters8(), impl_->length()});
   }
+
+  return UTF8Codecs::EncodeUTF16({impl_->Characters16(), impl_->length()});
 }
 
 StringView String::ToStringView() const LIFETIME_BOUND {

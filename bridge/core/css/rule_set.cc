@@ -38,6 +38,7 @@
 #include "core/css/css_style_rule.h"
 #include "core/css/media_query_evaluator.h"
 #include "core/css/style_rule.h"
+#include "foundation/string/string_view.h"
 #include "core/css/style_sheet_contents.h"
 #include "foundation/casting.h"
 #include "foundation/logging.h"
@@ -151,10 +152,43 @@ const std::vector<std::shared_ptr<RuleData>>& RuleSet::ClassRules(
 
 const std::vector<std::shared_ptr<RuleData>>& RuleSet::TagRules(
     const AtomicString& tag_name) const {
-  
-  auto it = tag_rules_.find(tag_name);
-  if (it != tag_rules_.end() && it->second) {
-    return *it->second;
+  if (!tag_name.IsNull()) {
+    auto it = tag_rules_.find(tag_name);
+    if (it != tag_rules_.end() && it->second) {
+      return *it->second;
+    }
+
+    // HTML tag selectors are ASCII case-insensitive. Retry lookup using
+    // lower/upper ASCII folds before falling back.
+    AtomicString lower = tag_name.LowerASCII();
+    if (lower != tag_name) {
+      it = tag_rules_.find(lower);
+      if (it != tag_rules_.end() && it->second) {
+        return *it->second;
+      }
+    }
+
+    AtomicString upper = tag_name.UpperASCII();
+    if (upper != tag_name) {
+      it = tag_rules_.find(upper);
+      if (it != tag_rules_.end() && it->second) {
+        return *it->second;
+      }
+    }
+
+    // As a last resort, perform a linear scan with ASCII case-insensitive
+    // comparison. This only runs when lookups above miss (e.g. author wrote
+    // “BoDy”).
+    StringView needle(tag_name);
+    for (const auto& entry : tag_rules_) {
+      if (!entry.second || entry.second->empty()) {
+        continue;
+      }
+      const AtomicString& key = entry.first;
+      if (EqualIgnoringASCIICase(StringView(key), needle)) {
+        return *entry.second;
+      }
+    }
   }
   return empty_rule_data_vector_;
 }
@@ -209,10 +243,14 @@ RuleSet::RuleDataVector* RuleSet::FindBestRuleSetForSelector(
   if (current->Match() == CSSSelector::kTag) {
     const AtomicString& tag_name = current->TagQName().LocalName();
     if (!tag_name.IsNull() && tag_name != "*") {
-      if (tag_rules_.find(tag_name) == tag_rules_.end()) {
-        tag_rules_[tag_name] = std::make_unique<RuleDataVector>();
+      AtomicString bucket = tag_name;
+      if (bucket.Is8Bit()) {
+        bucket = tag_name.LowerASCII();
       }
-      return tag_rules_[tag_name].get();
+      if (tag_rules_.find(bucket) == tag_rules_.end()) {
+        tag_rules_[bucket] = std::make_unique<RuleDataVector>();
+      }
+      return tag_rules_[bucket].get();
     }
   }
   
