@@ -54,18 +54,32 @@ class CSSPositionedLayout {
       double? dx;
       double? dy;
 
-      if (left.isNotAuto) {
-        dx = renderStyle.left.computedValue;
-      } else if (right.isNotAuto) {
-        double _dx = renderStyle.right.computedValue;
-        dx = -_dx;
+      // CSS2.1 §9.4.3 (Relative positioning): If both 'left' and 'right' are
+      // specified as non-auto values, the 'direction' property determines which
+      // one applies: in LTR, 'left' wins; in RTL, 'right' wins.
+      final bool hasLeft = left.isNotAuto;
+      final bool hasRight = right.isNotAuto;
+      if (hasLeft && hasRight) {
+        if (renderStyle.direction == TextDirection.rtl) {
+          // RTL: use 'right' and ignore 'left'
+          dx = -right.computedValue;
+        } else {
+          // LTR: use 'left' and ignore 'right'
+          dx = left.computedValue;
+        }
+      } else if (hasLeft) {
+        dx = left.computedValue;
+      } else if (hasRight) {
+        dx = -right.computedValue;
       }
 
-      if (top.isNotAuto) {
-        dy = renderStyle.top.computedValue;
-      } else if (bottom.isNotAuto) {
-        double _dy = renderStyle.bottom.computedValue;
-        dy = -_dy;
+      // Vertical axis: if both 'top' and 'bottom' are non-auto, 'top' wins per CSS2.1.
+      final bool hasTop = top.isNotAuto;
+      final bool hasBottom = bottom.isNotAuto;
+      if (hasTop) {
+        dy = top.computedValue;
+      } else if (hasBottom) {
+        dy = -bottom.computedValue;
       }
 
       if (dx != null || dy != null) {
