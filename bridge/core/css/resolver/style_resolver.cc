@@ -395,6 +395,10 @@ void StyleResolver::MatchAuthorRules(
   // Create a media query evaluator for the current document
   MediaQueryEvaluator media_evaluator("screen");
   
+  const auto& author_sheets = document.EnsureStyleEngine().AuthorSheets();
+  unsigned inline_sheet_base = author_sheets.size();
+  unsigned inline_counter = 0;
+
   for (auto* style_element : style_elements) {
     if (!style_element) {
       continue;
@@ -421,12 +425,11 @@ void StyleResolver::MatchAuthorRules(
     auto rule_set_ptr = sheet->Contents()->EnsureRuleSet(media_evaluator);
     
     // Create a match request for this style sheet
-    MatchRequest match_request(rule_set_ptr);
+    MatchRequest match_request(rule_set_ptr, CascadeOrigin::kAuthor, inline_sheet_base + inline_counter++);
     collector.CollectMatchingRules(match_request);
   }
 
   // Process link-based author stylesheets from StyleEngine registry (robust even if DOM traversal misses links)
-  const auto& author_sheets = document.EnsureStyleEngine().AuthorSheets();
   unsigned author_index = 0;
   for (const auto& contents : author_sheets) {
     if (!contents) { author_index++; continue; }
