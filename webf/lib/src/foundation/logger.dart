@@ -41,12 +41,12 @@ class WebFLogger {
 
       // In debug mode, use debugPrint for better Flutter integration
       if (kDebugMode) {
-        Platform.isMacOS ? print(logMessage) : debugPrint(logMessage);
+        Platform.isMacOS ? debugPrintSynchronously(logMessage) : debugPrint(logMessage);
         if (record.error != null) {
-          debugPrint('Error: ${record.error}');
+          debugPrintSynchronously('Error: ${record.error}');
         }
         if (record.stackTrace != null) {
-          debugPrint('Stack trace:\n${record.stackTrace}');
+          debugPrintSynchronously('Stack trace:\n${record.stackTrace}');
         }
       } else {
         // In release/profile mode, you might want to send logs to a service
