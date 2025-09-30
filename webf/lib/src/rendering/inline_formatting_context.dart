@@ -150,7 +150,7 @@ class InlineFormattingContext {
       if (ph.kind != _PHKind.atomic) continue;
       final tb = _placeholderBoxes[i];
       // Map placeholder index to the corresponding render box (may be a wrapper).
-      RenderBox? rb = i < _placeholderOrder.length ? _placeholderOrder[i] : null;
+      RenderBox? rb = ph.atomic;
       if (rb == null) continue;
       final RenderBoxModel? styleBox = _resolveStyleBoxForPlaceholder(rb);
       if (styleBox == null) continue;
@@ -188,7 +188,7 @@ class InlineFormattingContext {
       // Paragraph-reported box for the placeholder position in paragraph space.
       final tb = _placeholderBoxes[i];
       // Map placeholder index to the corresponding render box (may be a wrapper).
-      final RenderBox? rb = i < _placeholderOrder.length ? _placeholderOrder[i] : null;
+      final RenderBox? rb = ph.atomic;
       if (rb == null) continue;
 
       // Resolve to a RenderBoxModel that carries CSS styles/scrollable sizes.
@@ -240,7 +240,7 @@ class InlineFormattingContext {
       final ph = _allPlaceholders[i];
       if (ph.kind != _PHKind.atomic) continue;
       final tb = _placeholderBoxes[i];
-      final RenderBox? rb = i < _placeholderOrder.length ? _placeholderOrder[i] : null;
+      final RenderBox? rb = ph.atomic;
       if (rb == null) continue;
       final RenderBoxModel? styleBox = _resolveStyleBoxForPlaceholder(rb);
       if (styleBox == null || !styleBox.hasSize) continue;
@@ -1029,11 +1029,15 @@ class InlineFormattingContext {
     for (int i = 0; i < _allPlaceholders.length && i < _placeholderBoxes.length; i++) {
       final ph = _allPlaceholders[i];
       if (ph.kind != _PHKind.atomic) continue;
-      final rb = _placeholderOrder[i];
-      if (rb is! RenderBoxModel) {
+      // Resolve the render box for this atomic placeholder, unwrapping wrappers for baseline.
+      final RenderBox? raw = ph.atomic;
+      if (raw == null) continue;
+      final RenderBox resolved = _resolveAtomicChildForBaseline(raw);
+      if (resolved is! RenderBoxModel) {
         offsets.add(0.0);
         continue;
       }
+      final RenderBoxModel rb = resolved;
       final va = rb.renderStyle.verticalAlign;
       if (va == VerticalAlign.baseline) continue;
       final tb = _placeholderBoxes[i];
@@ -1527,8 +1531,10 @@ class InlineFormattingContext {
     final double contentOriginY =
         container.renderStyle.paddingTop.computedValue + container.renderStyle.effectiveBorderTopWidth.computedValue;
 
-    for (int i = 0; i < _placeholderOrder.length && i < _placeholderBoxes.length; i++) {
-      final rb = _placeholderOrder[i];
+    for (int i = 0; i < _allPlaceholders.length && i < _placeholderBoxes.length; i++) {
+      final ph = _allPlaceholders[i];
+      if (ph.kind != _PHKind.atomic) continue;
+      final rb = ph.atomic;
       if (rb == null) continue;
       // Choose the direct child (wrapper) to paint
       RenderBox paintBox = rb;
@@ -1688,8 +1694,10 @@ class InlineFormattingContext {
     final double contentOriginY =
         container.renderStyle.paddingTop.computedValue + container.renderStyle.effectiveBorderTopWidth.computedValue;
 
-    for (int i = 0; i < _placeholderOrder.length && i < _placeholderBoxes.length; i++) {
-      final rb = _placeholderOrder[i];
+    for (int i = 0; i < _allPlaceholders.length && i < _placeholderBoxes.length; i++) {
+      final ph = _allPlaceholders[i];
+      if (ph.kind != _PHKind.atomic) continue;
+      final rb = ph.atomic;
       if (rb == null) continue;
       // Use the direct child (wrapper) that carries the parentData offset
       RenderBox hitBox = rb;
@@ -1829,7 +1837,7 @@ class InlineFormattingContext {
     if ((container as RenderBoxModel).renderStyle.direction == TextDirection.rtl) {
       // Group indices by paragraph line index.
       final Map<int, List<int>> byLine = <int, List<int>>{};
-      for (int i = 0; i < _placeholderOrder.length && i < _placeholderBoxes.length; i++) {
+      for (int i = 0; i < _allPlaceholders.length && i < _placeholderBoxes.length; i++) {
         final tb = _placeholderBoxes[i];
         final int li = _lineIndexForRect(tb);
         if (li < 0) continue;
@@ -3050,6 +3058,39 @@ class InlineFormattingContext {
         // Physical edge flags (before adjustments below)
         final bool physLeftEdge = isFirst;
         final bool physRightEdge = isLast;
+
+        // Include atomic inline placeholders owned by this inline element on the same line,
+        // so background/borders of the inline span wrap its atomic children as per CSS.
+        // We detect ownership by render tree ancestry (atomic box is a descendant of e.box).
+        if (_allPlaceholders.isNotEmpty && _placeholderBoxes.isNotEmpty) {
+          for (int pi = 0; pi < _allPlaceholders.length && pi < _placeholderBoxes.length; pi++) {
+            final ph = _allPlaceholders[pi];
+            if (ph.kind != _PHKind.atomic) continue;
+            final ui.TextBox ptb = _placeholderBoxes[pi];
+            // Filter to same line when line clipping requested
+            if (lineTop != null && lineBottom != null) {
+              final int li = _lineIndexForRect(ptb);
+              if (li < 0 || li >= _paraLines.length) continue;
+              final int thisLi = _lineIndexForRect(tb);
+              if (thisLi != li) continue;
+            }
+            final RenderBox? atomicBox = ph.atomic;
+            if (atomicBox == null) continue;
+            // Is atomicBox a descendant of this span's render box?
+            RenderObject? p = atomicBox;
+            bool isDescendant = false;
+            while (p != null && p != container) {
+              if (identical(p, e.box)) { isDescendant = true; break; }
+              p = p.parent;
+            }
+            if (!isDescendant) continue;
+            // Expand rect to include the atomic placeholder bounds
+            if (ptb.left < left) left = ptb.left;
+            if (ptb.right > right) right = ptb.right;
+            if (ptb.top < top) top = ptb.top;
+            if (ptb.bottom > bottom) bottom = ptb.bottom;
+          }
+        }
 
         // Logical fragment edges across the entire element (independent of line).
         // These are used for left/right border painting so borders only appear

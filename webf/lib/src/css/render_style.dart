@@ -3052,11 +3052,12 @@ class CSSRenderStyle extends RenderStyle
     // Do not special-case BODY/HTML here. They can also establish IFC
     // when they contain only inline content and no block-level content.
 
-    // Positioned elements should not establish inline formatting contexts
-    // They are taken out of normal flow and need special layout handling
-    if (position == CSSPositionType.absolute || position == CSSPositionType.fixed) {
-      return false;
-    }
+    // Positioned elements (absolute/fixed) are taken out of normal flow with
+    // respect to their placement, but their in-flow descendants still form
+    // formatting contexts as usual. Per CSS 2.1 §9.4.1 and css-position-3,
+    // an absolutely positioned block container with inline-level content
+    // still establishes an inline formatting context for its content.
+    // Therefore, do NOT block IFC establishment solely due to positioning.
 
     // Flex items may establish their own IFC; do not block based on parent.
 
