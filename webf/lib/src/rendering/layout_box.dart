@@ -155,6 +155,33 @@ abstract class RenderLayoutBox extends RenderBoxModel
       List<RenderBoxModel> positionedAutoOrZero = [];
       List<RenderBoxModel> positives = [];
 
+      bool _subtreeHasAutoOrZeroParticipant(RenderBox node, [int depth = 0]) {
+        if (depth > 12) return false;
+        // Check this node if it's a RenderBoxModel participant itself
+        if (node is RenderBoxModel) {
+          final rs = node.renderStyle;
+          final int? zi = rs.zIndex;
+          final bool positioned = rs.position != CSSPositionType.static;
+          // z-index: 0 (including flex/grid items) or positioned with z-index:auto
+          if (zi == 0 || (positioned && zi == null)) return true;
+        }
+        // Unwrap single-child wrappers
+        if (node is RenderObjectWithChildMixin<RenderBox>) {
+          final RenderBox? c = (node as dynamic).child as RenderBox?;
+          if (c != null && _subtreeHasAutoOrZeroParticipant(c, depth + 1)) return true;
+        }
+        // Iterate container children
+        if (node is RenderLayoutBox) {
+          RenderBox? c = node.firstChild;
+          while (c != null) {
+            if (_subtreeHasAutoOrZeroParticipant(c, depth + 1)) return true;
+            final RenderLayoutParentData pd = c.parentData as RenderLayoutParentData;
+            c = pd.nextSibling;
+          }
+        }
+        return false;
+      }
+
       containerLayoutBox.visitChildren((RenderObject child) {
         if (child is RenderBoxModel) {
           final rs = child.renderStyle;
@@ -172,8 +199,14 @@ abstract class RenderLayoutBox extends RenderBoxModel
             // Positioned with z-index: auto
             positionedAutoOrZero.add(child);
           } else {
-            // Non-positioned descendants (including non-positioned stacking contexts)
-            normalFlow.add(child);
+            // Non-positioned descendants: if subtree contains any z-index:0 or auto-positioned participants,
+            // elevate this container to the auto/0 layer so those participants paint in the correct phase
+            // relative to siblings (e.g., flex item with z-index:0 vs. abspos auto).
+            if (_subtreeHasAutoOrZeroParticipant(child)) {
+              positionedAutoOrZero.add(child);
+            } else {
+              normalFlow.add(child);
+            }
           }
         } else {
           normalFlow.add(child as RenderBox);

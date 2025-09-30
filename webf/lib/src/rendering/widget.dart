@@ -118,6 +118,29 @@ class RenderWidget extends RenderBoxModel
     List<RenderBoxModel> positionedAutoOrZero = [];
     List<RenderBoxModel> positives = [];
 
+    bool _subtreeHasAutoOrZeroParticipant(RenderBox node, [int depth = 0]) {
+      if (depth > 12) return false;
+      if (node is RenderBoxModel) {
+        final rs = node.renderStyle;
+        final int? zi = rs.zIndex;
+        final bool positioned = rs.position != CSSPositionType.static;
+        if (zi == 0 || (positioned && zi == null)) return true;
+      }
+      if (node is RenderObjectWithChildMixin<RenderBox>) {
+        final RenderBox? c = (node as dynamic).child as RenderBox?;
+        if (c != null && _subtreeHasAutoOrZeroParticipant(c, depth + 1)) return true;
+      }
+      if (node is RenderLayoutBox) {
+        RenderBox? c = node.firstChild;
+        while (c != null) {
+          if (_subtreeHasAutoOrZeroParticipant(c, depth + 1)) return true;
+          final RenderLayoutParentData pd = c.parentData as RenderLayoutParentData;
+          c = pd.nextSibling;
+        }
+      }
+      return false;
+    }
+
     visitChildren((RenderObject c) {
       if (c is RenderBoxModel) {
         final rs = c.renderStyle;
@@ -132,7 +155,13 @@ class RenderWidget extends RenderBoxModel
         } else if (positioned && zi == null) {
           positionedAutoOrZero.add(c);
         } else {
-          normal.add(c);
+          // If subtree contains any z-index:0 or auto-positioned participants,
+          // elevate this container to the auto/0 layer for global ordering.
+          if (_subtreeHasAutoOrZeroParticipant(c)) {
+            positionedAutoOrZero.add(c);
+          } else {
+            normal.add(c);
+          }
         }
       } else {
         normal.add(c as RenderBox);
