@@ -1177,9 +1177,29 @@ class InlineFormattingContext {
         }
         final bool anyVAAdjust = vaAdjust.values.any((l) => l.isNotEmpty);
 
-        // If no line needs shifting for trailing extras, and no vertical-align adjustment,
+        // Build relative-position adjustments for inline elements with position:relative
+        final Map<int, List<(ui.TextBox tb, double dx, double dy)>> relAdjust = <int, List<(ui.TextBox, double, double)>>{};
+        if (_elementRanges.isNotEmpty) {
+          _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
+            final rs = box.renderStyle;
+            if (rs.position != CSSPositionType.relative) return;
+            final Offset? rel = CSSPositionedLayout.getRelativeOffset(rs);
+            if (rel == null || (rel.dx == 0 && rel.dy == 0)) return;
+            if (range.$2 <= range.$1) return;
+            final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+            if (rects.isEmpty) return;
+            for (final tb in rects) {
+              final int li = _lineIndexForRect(tb);
+              if (li < 0 || li >= _paraLines.length) continue;
+              (relAdjust[li] ??= <(ui.TextBox, double, double)>[]).add((tb, rel.dx, rel.dy));
+            }
+          });
+        }
+        final bool anyRelAdjust = relAdjust.values.any((l) => l.isNotEmpty);
+
+        // If no line needs shifting for trailing extras, and no vertical-align/relative adjustment,
         // just paint decorations once and draw paragraph once.
-        if (!anyShift && !anyVAAdjust) {
+        if (!anyShift && !anyVAAdjust && !anyRelAdjust) {
           _paintInlineSpanDecorations(context, offset);
           if (!_clipText) {
             context.canvas.drawParagraph(para, offset);
@@ -1245,7 +1265,8 @@ class InlineFormattingContext {
             ui.Path p = ui.Path()
               ..addRect(base);
             final adj = vaAdjust[i] ?? const <(ui.TextBox, double)>[];
-            if (adj.isEmpty) return p;
+            final rel = relAdjust[i] ?? const <(ui.TextBox, double, double)>[];
+            if (adj.isEmpty && rel.isEmpty) return p;
             ui.Path sub = ui.Path();
             for (final (tb, _) in adj) {
               final double xShift = isRightSlice ? shiftSum : 0.0;
@@ -1254,6 +1275,22 @@ class InlineFormattingContext {
                 offset.dy + tb.top,
                 offset.dx + tb.right + xShift,
                 offset.dy + tb.bottom,
+              );
+              if (r.overlaps(base)) sub.addRect(r.intersect(base));
+            }
+            for (final (tb, dx, dy) in rel) {
+              final double xShift = isRightSlice ? shiftSum : 0.0;
+              final Rect r0 = Rect.fromLTRB(
+                offset.dx + tb.left + xShift,
+                offset.dy + tb.top,
+                offset.dx + tb.right + xShift,
+                offset.dy + tb.bottom,
+              );
+              final Rect r = Rect.fromLTRB(
+                dx < 0 ? r0.left + dx : r0.left,
+                dy < 0 ? r0.top + dy : r0.top,
+                dx > 0 ? r0.right + dx : r0.right,
+                dy > 0 ? r0.bottom + dy : r0.bottom,
               );
               if (r.overlaps(base)) sub.addRect(r.intersect(base));
             }
@@ -1316,6 +1353,46 @@ class InlineFormattingContext {
                 context.canvas.save();
                 context.canvas.clipRect(target);
                 context.canvas.translate(shiftSum, dy);
+                context.canvas.drawParagraph(para, offset);
+                context.canvas.restore();
+              }
+            }
+          }
+
+          // Repaint relative-position adjusted fragments with XY translation (and horizontal shift if in right slice)
+          final rel = relAdjust[i] ?? const <(ui.TextBox, double, double)>[];
+          for (final (tb, dx, dy) in rel) {
+            final double leftPartRight = math.min(tb.right, boundaryX);
+            final double rightPartLeft = math.max(tb.left, boundaryX);
+
+            // Left portion (no x shift)
+            if (tb.left < boundaryX && leftPartRight > tb.left) {
+              final Rect target = Rect.fromLTRB(
+                offset.dx + tb.left + dx,
+                offset.dy + tb.top + dy,
+                offset.dx + leftPartRight + dx,
+                offset.dy + tb.bottom + dy,
+              );
+              if (!_clipText) {
+                context.canvas.save();
+                context.canvas.clipRect(target);
+                context.canvas.translate(dx, dy);
+                context.canvas.drawParagraph(para, offset);
+                context.canvas.restore();
+              }
+            }
+            // Right portion (apply x shift)
+            if (tb.right > boundaryX && rightPartLeft < tb.right) {
+              final Rect target = Rect.fromLTRB(
+                offset.dx + rightPartLeft + shiftSum + dx,
+                offset.dy + tb.top + dy,
+                offset.dx + tb.right + shiftSum + dx,
+                offset.dy + tb.bottom + dy,
+              );
+              if (!_clipText) {
+                context.canvas.save();
+                context.canvas.clipRect(target);
+                context.canvas.translate(shiftSum + dx, dy);
                 context.canvas.drawParagraph(para, offset);
                 context.canvas.restore();
               }
