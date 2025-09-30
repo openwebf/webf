@@ -399,12 +399,18 @@ mixin CSSTextMixin on RenderStyle {
 
   @override
   TextDirection get direction {
-    // Get style from self or closest parent if specified style property is not set
-    // due to style inheritance.
-    if (_direction == null && getParentRenderStyle() != null) {
-      return getParentRenderStyle()!.direction;
+    // CSS 'direction' is inherited via the DOM parent chain. For out-of-flow
+    // render reparenting (e.g., positioned elements), prefer the DOM parent’s
+    // renderStyle over the render tree parent to ensure correct inheritance.
+    if (_direction != null) return _direction!;
+    final dom.Element? domParent = target.parentElement;
+    if (domParent != null) {
+      return domParent.renderStyle.direction;
     }
-    return _direction ?? TextDirection.ltr;
+    // Fallback to render parent when DOM parent is unavailable (e.g., root).
+    final RenderStyle? renderParent = getParentRenderStyle();
+    if (renderParent != null) return renderParent.direction;
+    return TextDirection.ltr;
   }
 
   set direction(TextDirection? value) {

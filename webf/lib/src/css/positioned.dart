@@ -552,8 +552,19 @@ class CSSPositionedLayout {
         parent.renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
         parent.renderStyle.effectiveOverflowY != CSSOverflowType.visible;
 
+    // Determine direction for resolving 'auto' horizontal insets: use the
+    // direction of the element establishing the static-position containing block
+    // (typically the IFC container hosting the placeholder) when available;
+    // otherwise fall back to the containing block's direction.
+    TextDirection _staticContainingDir = parent.renderStyle.direction;
+    if (ph != null && ph.parent is RenderFlowLayout) {
+      final RenderFlowLayout flowParent = ph.parent as RenderFlowLayout;
+      _staticContainingDir = flowParent.renderStyle.direction;
+    }
+
     double x = _computePositionedOffset(
       Axis.horizontal,
+      _staticContainingDir,
       false,
       parentBorderLeftWidth,
       parentPaddingLeft,
@@ -568,6 +579,7 @@ class CSSPositionedLayout {
 
     double y = _computePositionedOffset(
       Axis.vertical,
+      parent.renderStyle.direction,
       false,
       parentBorderTopWidth,
       parentPaddingTop,
@@ -680,6 +692,7 @@ class CSSPositionedLayout {
   // Compute the offset of positioned element in one axis.
   static double _computePositionedOffset(
     Axis axis,
+    TextDirection containerDirection,
     bool isParentScrollingContentBox,
     CSSLengthValue parentBorderBeforeWidth,
     CSSLengthValue parentPaddingBefore,
@@ -699,10 +712,19 @@ class CSSPositionedLayout {
     // Refer to the table of `Summary of rules for dir=ltr in horizontal writing modes` in following spec.
     // https://www.w3.org/TR/css-position-3/#abs-non-replaced-width
     if (insetBefore.isAuto && insetAfter.isAuto) {
-      // If all three of left, width, and right are auto: First set any auto values for margin-left
-      // and margin-right to 0. Then, if the direction property of the element establishing the
-      // static-position containing block is ltr set left to the static position.
-      offset = staticPosition;
+      // Both insets are auto. Per CSS Positioned Layout:
+      // - Set auto margins to 0.
+      // - If the direction of the element establishing the static-position
+      //   containing block is LTR, use left = static-position.
+      // - If RTL, use right = static-position.
+      if (axis == Axis.horizontal && containerDirection == TextDirection.rtl) {
+        // Resolve right = staticPosition → compute left offset accordingly.
+        // left = contentLeft + (CB width - width - staticPosition)
+        final double leftFromContent = containingBlockLength - length - staticPosition;
+        offset = parentBorderBeforeWidth.computedValue + leftFromContent + marginBefore.computedValue;
+      } else {
+        offset = staticPosition;
+      }
     } else {
       if (insetBefore.isNotAuto && insetAfter.isNotAuto) {
         double freeSpace = containingBlockLength - length - insetBefore.computedValue - insetAfter.computedValue;

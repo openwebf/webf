@@ -379,6 +379,7 @@ class InlineFormattingContext {
       _paragraphMinLeft = 0.0;
       return _paragraph?.longestLine ?? 0;
     }
+    // Normal path: compute from paragraph lines and trailing extras.
     double minLeft = double.infinity; // Track smallest line-left reported by Paragraph.
     // Base rights from paragraph line metrics
     final rights = List<double>.generate(
@@ -945,6 +946,38 @@ class InlineFormattingContext {
         } else {
           if (sumOwner > 0.0 && (sumOwner - height) > 0.5) {
             height = sumOwner;
+          }
+        }
+      }
+    }
+    // Special-case: if the IFC contains only hard line breaks (e.g., one or more
+    // <br> elements) and no text or atomic inline content, CSS expects the block
+    // to contribute one line box per <br>. Flutter's Paragraph reports an extra
+    // trailing empty line in this situation (n breaks -> n+1 lines). Compensate
+    // by subtracting the last line height so that a single <br> yields one line
+    // instead of two.
+    if (_paraLines.isNotEmpty) {
+      bool onlyHardBreaks = true;
+      for (final it in _items) {
+        if (it.type == InlineItemType.text || it.type == InlineItemType.atomicInline) {
+          onlyHardBreaks = false;
+          break;
+        }
+      }
+      if (onlyHardBreaks) {
+        int breakCount = 0;
+        for (int i = 0; i < _textContent.length; i++) {
+          if (_textContent.codeUnitAt(i) == 0x0A) breakCount++; // '\n'
+        }
+        if (breakCount > 0) {
+          // Paragraph tends to produce breakCount + 1 lines for pure newlines.
+          // Subtract the trailing empty line height to match CSS behavior.
+          final int expectedParaLines = breakCount + 1;
+          if (_paraLines.length >= expectedParaLines) {
+            final double lastH = _paraLines.isNotEmpty ? _paraLines.last.height : 0.0;
+            if (lastH.isFinite && lastH > 0) {
+              height = math.max(0.0, height - lastH);
+            }
           }
         }
       }
