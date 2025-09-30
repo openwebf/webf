@@ -110,10 +110,12 @@ std::shared_ptr<StyleSheetContents> CSSDefaultStyleSheets::ParseUASheet(const ch
   // UA stylesheets always parse in the UA sheet mode
   auto parser_context = std::make_shared<CSSParserContext>(kUASheetMode);
   auto sheet = std::make_shared<StyleSheetContents>(parser_context);
-  
+
+
+  // TODO: remove UA Style all togather.
   // Parse the CSS string - we need to use ParseSheet directly with the UA context
   // instead of ParseString which creates its own context
-  CSSParser::ParseSheet(parser_context, sheet, String::FromUTF8(css));
+  // CSSParser::ParseSheet(parser_context, sheet, String::FromUTF8(css));
   
   // WEBF_LOG(VERBOSE) << "Parsed UA stylesheet, rule count: " << sheet->RuleCount();
   
