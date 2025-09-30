@@ -2414,6 +2414,10 @@ std::shared_ptr<const CSSValue> ConsumeBackgroundSize(CSSParserTokenRange& range
   if (!range.AtEnd()) {
     if (range.Peek().Id() == CSSValueID::kAuto) {  // `auto' is the default
       range.ConsumeIncludingWhitespace();
+      const auto* horizontal_identifier = DynamicTo<CSSIdentifierValue>(horizontal.get());
+      if (!horizontal_identifier || horizontal_identifier->GetValueID() != CSSValueID::kAuto) {
+        vertical = CSSIdentifierValue::Create(CSSValueID::kAuto);
+      }
     } else {
       vertical = ConsumeLengthOrPercentCountNegative(range, context);
     }
@@ -2447,6 +2451,10 @@ std::shared_ptr<const CSSValue> ConsumeBackgroundSize(CSSParserTokenStream& stre
   if (!stream.AtEnd()) {
     if (stream.Peek().Id() == CSSValueID::kAuto) {  // `auto' is the default
       stream.ConsumeIncludingWhitespace();
+      const auto* horizontal_identifier = DynamicTo<CSSIdentifierValue>(horizontal.get());
+      if (!horizontal_identifier || horizontal_identifier->GetValueID() != CSSValueID::kAuto) {
+        vertical = CSSIdentifierValue::Create(CSSValueID::kAuto);
+      }
     } else {
       vertical = ConsumeLengthOrPercentCountNegative(stream, context);
     }
