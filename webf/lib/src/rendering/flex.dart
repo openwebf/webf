@@ -99,6 +99,7 @@ class _RunChild {
       : _child = child,
         _originalMainSize = originalMainSize,
         _flexedMainSize = flexedMainSize,
+        _unclampedMainSize = originalMainSize,
         _frozen = frozen;
 
   // Render object of flex item.
@@ -128,6 +129,18 @@ class _RunChild {
   set flexedMainSize(double value) {
     if (_flexedMainSize != value) {
       _flexedMainSize = value;
+    }
+  }
+
+  // Temporary main size computed from free-space distribution before
+  // min/max clamping in the current iteration (§9.7). Used to correctly
+  // update remaining free space when freezing violating items.
+  double get unclampedMainSize => _unclampedMainSize;
+  double _unclampedMainSize;
+
+  set unclampedMainSize(double value) {
+    if (_unclampedMainSize != value) {
+      _unclampedMainSize = value;
     }
   }
 
@@ -825,6 +838,18 @@ class RenderFlexLayout extends RenderLayoutBox {
         ? (childRenderStyle.padding.horizontal + childRenderStyle.border.horizontal)
         : (childRenderStyle.padding.vertical + childRenderStyle.border.vertical);
 
+    // If overflow in the flex main axis is not visible, browsers allow the flex item
+    // to shrink below the content-based minimum. Model this by treating the automatic
+    // minimum as zero (border-box becomes just padding+border).
+    if ((_isHorizontalFlexDirection && childRenderStyle.overflowX != CSSOverflowType.visible) ||
+        (!_isHorizontalFlexDirection && childRenderStyle.overflowY != CSSOverflowType.visible)) {
+      double autoMinBorderBox = paddingBorderMain;
+      if (maxMainLength.isNotNone) {
+        autoMinBorderBox = math.min(autoMinBorderBox, maxMainLength.computedValue);
+      }
+      return autoMinBorderBox;
+    }
+
     double autoMinBorderBox = autoMinSizeContent + paddingBorderMain;
 
     FlexLog.log(
@@ -1379,7 +1404,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
 
     // calculate all flexItem child overflow size
-    addOverflowLayoutFromChildren(_flexItemChildren);
+    addOverflowLayoutFromChildren(orderedChildren);
 
     // Every placeholder of positioned element should be layouted in a separated layer in flex layout
     // which is different from the placeholder in flow layout which layout in the same flow as
@@ -2112,56 +2137,10 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
 
     if (runChildren.isNotEmpty) {
-      if (overflowHiddenNodeId.isNotEmpty &&
-          runMainAxisExtent > flexLineLimit &&
-          overflowHiddenNodeTotalMinWidth < flexLineLimit) {
-        int _overflowNodeSize = overflowHiddenNodeId.length;
-        double overWidth = flexLineLimit - overflowNotHiddenNodeTotalWidth;
-        double avgOverWidth = overWidth / _overflowNodeSize;
-        int index = 0;
-        for (int nodeId in overflowHiddenNodeId) {
-          _RunChild? _runChild = runChildren[nodeId];
-          if (_runChild != null) {
-            index += 1;
-            if (overWidth <= 0) {
-              // the remaining width is less than 0.
-              BoxConstraints oldConstraints = _runChild.child.constraints;
-              double _minWidth = oldConstraints.minWidth;
-              _runChild.child.layout(
-                  BoxConstraints(
-                      minWidth: _minWidth,
-                      maxWidth: _minWidth,
-                      minHeight: oldConstraints.minHeight,
-                      maxHeight: oldConstraints.maxHeight),
-                  parentUsesSize: true);
-              _runChild.originalMainSize = _minWidth;
-              _childrenIntrinsicMainSizes[nodeId] = _minWidth;
-            } else if (_runChild.originalMainSize <= avgOverWidth) {
-              // the actual width of a subwidget is less than the average value of the remaining width.
-              // The child does not need layout calculations; adjust the average value.
-              overWidth -= _runChild.originalMainSize;
-              avgOverWidth = overWidth / (_overflowNodeSize - index);
-            } else {
-              BoxConstraints oldConstraints = _runChild.child.constraints;
-              double _minWidth = oldConstraints.minWidth;
-              double _maxWidth = avgOverWidth;
-              if (_minWidth > _maxWidth) {
-                _maxWidth = _minWidth;
-              }
-              _runChild.child.layout(
-                  BoxConstraints(
-                      minWidth: _minWidth,
-                      maxWidth: _maxWidth,
-                      minHeight: oldConstraints.minHeight,
-                      maxHeight: oldConstraints.maxHeight),
-                  parentUsesSize: true);
-              _runChild.originalMainSize = avgOverWidth;
-              _childrenIntrinsicMainSizes[nodeId] = avgOverWidth;
-            }
-          }
-        }
-        runMainAxisExtent = flexLineLimit;
-      }
+      // Do not pre-shrink overflow:hidden items outside of the standard flex
+      // algorithm. Browsers resolve flexible lengths per §9.7, then clamp to
+      // min/max and iterate. Pre-distribution here deviates from CSS and caused
+      // incorrect widths for cases like text truncation within flex rows.
       _runMetrics.add(_RunMetrics(
           runMainAxisExtent,
           runCrossAxisExtent,
@@ -2371,16 +2350,17 @@ class RenderFlexLayout extends RenderLayoutBox {
         final double spacePerFlex = totalFlexGrow > 0 ? (remainingFreeSpace / totalFlexGrow) : double.nan;
         computedSize = originalMainSize + spacePerFlex * flexGrow;
       } else if (doShrink) {
-        // If child's mainAxis have clips, it will create a new format context in it's children's.
-        // so we do't need to care about child's size.
-        if (child is RenderBoxModel && _isChildMainAxisClip(child)) {
-          computedSize = originalMainSize + remainingFreeSpace > 0 ? originalMainSize + remainingFreeSpace : 0;
-        } else {
-          double shrinkValue = _getShrinkConstraints(child, runChildren, remainingFreeSpace);
-          computedSize = originalMainSize + shrinkValue;
-        }
+        // Distribute negative free space proportionally per §9.7. Items with
+        // overflow clipping still participate normally; their automatic
+        // minimum size may be zero, but that affects clamping, not the
+        // distribution itself.
+        double shrinkValue = _getShrinkConstraints(child, runChildren, remainingFreeSpace);
+        computedSize = originalMainSize + shrinkValue;
       }
 
+      // Save the pre-clamp size to adjust remaining free space correctly
+      // when freezing items that violate min/max.
+      runChild.unclampedMainSize = computedSize;
       flexedMainSize = computedSize;
 
       double minFlexPrecision = 0.5;
@@ -2437,6 +2417,10 @@ class RenderFlexLayout extends RenderLayoutBox {
         _RunChild runChild = violations[i];
         runChild.frozen = true;
         RenderBox child = runChild.child;
+        // Update remaining free space by the actual amount assigned to this
+        // item in this iteration (relative to its original size). If the
+        // item was clamped to its min/max, flexedMainSize equals the clamp
+        // result; its delta reflects how much free space it actually took.
         runMetric.remainingFreeSpace -= runChild.flexedMainSize - runChild.originalMainSize;
 
         double flexGrow = _getFlexGrow(child);
@@ -2983,18 +2967,52 @@ class RenderFlexLayout extends RenderLayoutBox {
           'overrideW=${child.hasOverrideContentLogicalWidth} overrideH=${child.hasOverrideContentLogicalHeight}',
     );
 
+    // Compute safe used border-box sizes when overrides are present. In certain
+    // multi-pass layouts (e.g., wrappers like RenderEventListener or when text
+    // reflows), borderBoxLogicalWidth/Height may not yet be populated even if
+    // hasOverrideContentLogicalWidth/Height is true. Avoid null-unwrap and fall
+    // back to deriving from contentBox + padding + border or the previous
+    // constraints.
+    double _safeUsedBorderBoxWidth() {
+      final double? logicalW = child.renderStyle.borderBoxLogicalWidth;
+      if (logicalW != null && logicalW.isFinite) return math.max(0, logicalW);
+      final double? contentW = child.renderStyle.contentBoxLogicalWidth;
+      if (contentW != null && contentW.isFinite) {
+        final double pad = child.renderStyle.paddingLeft.computedValue +
+            child.renderStyle.paddingRight.computedValue;
+        final double border = child.renderStyle.effectiveBorderLeftWidth.computedValue +
+            child.renderStyle.effectiveBorderRightWidth.computedValue;
+        return math.max(0, contentW + pad + border);
+      }
+      return math.max(0, oldConstraints.maxWidth);
+    }
+
+    double _safeUsedBorderBoxHeight() {
+      final double? logicalH = child.renderStyle.borderBoxLogicalHeight;
+      if (logicalH != null && logicalH.isFinite) return math.max(0, logicalH);
+      final double? contentH = child.renderStyle.contentBoxLogicalHeight;
+      if (contentH != null && contentH.isFinite) {
+        final double pad = child.renderStyle.paddingTop.computedValue +
+            child.renderStyle.paddingBottom.computedValue;
+        final double border = child.renderStyle.effectiveBorderTopWidth.computedValue +
+            child.renderStyle.effectiveBorderBottomWidth.computedValue;
+        return math.max(0, contentH + pad + border);
+      }
+      return math.max(0, oldConstraints.maxHeight);
+    }
+
     double maxConstraintWidth = child.hasOverrideContentLogicalWidth
-        ? math.max(0, child.renderStyle.borderBoxLogicalWidth!)
+        ? _safeUsedBorderBoxWidth()
         : oldConstraints.maxWidth;
     double maxConstraintHeight = child.hasOverrideContentLogicalHeight
-        ? math.max(0, child.renderStyle.borderBoxLogicalHeight!)
+        ? _safeUsedBorderBoxHeight()
         : oldConstraints.maxHeight;
 
     double minConstraintWidth = child.hasOverrideContentLogicalWidth
-        ? math.max(0, child.renderStyle.borderBoxLogicalWidth!)
+        ? _safeUsedBorderBoxWidth()
         : (oldConstraints.minWidth > maxConstraintWidth ? maxConstraintWidth : oldConstraints.minWidth);
     double minConstraintHeight = child.hasOverrideContentLogicalHeight
-        ? math.max(0, child.renderStyle.borderBoxLogicalHeight!)
+        ? _safeUsedBorderBoxHeight()
         : (oldConstraints.minHeight > maxConstraintHeight ? maxConstraintHeight : oldConstraints.minHeight);
 
     // If the flex item has a definite height in a row-direction container,
