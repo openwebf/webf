@@ -544,9 +544,16 @@ abstract class RenderBoxModel extends RenderBox
 
   /// Set the size of scrollable overflow area of renderBoxModel
   void setMaxScrollableSize(Size contentSize) {
-    // Scrollable area includes right and bottom padding
-    scrollableSize = Size(contentSize.width + renderStyle.paddingLeft.computedValue,
-        contentSize.height + renderStyle.paddingTop.computedValue);
+    // Scrollable area includes trailing (end) padding per axis.
+    // When there is no child content, the scrollable overflow region should
+    // extend to include end-side padding so that the container can scroll
+    // enough for its padded edge to be reachable. Using the leading padding
+    // here (left/top) was incorrect and could overestimate the visible start
+    // and leave extra space at the bottom/right.
+    scrollableSize = Size(
+      contentSize.width + renderStyle.paddingRight.computedValue,
+      contentSize.height + renderStyle.paddingBottom.computedValue,
+    );
   }
 
   // Box size equals to RenderBox.size to avoid flutter complain when read size property.

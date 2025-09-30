@@ -1611,6 +1611,9 @@ class RenderFlowLayout extends RenderLayoutBox {
     List<double> scrollableMainSizeOfLines = [];
     // Scrollable cross size collection of each line.
     List<double> scrollableCrossSizeOfLines = [];
+    // Track whether any child contributes extra vertical overflow beyond its own box
+    // (e.g., descendant overflow increasing effective height, or positive relative/transform Y).
+    bool hasChildCrossOverflow = false;
     // Total cross size of previous lines.
     double preLinesCrossSize = 0;
     for (RunMetrics runMetric in _lineMetrics) {
@@ -1676,6 +1679,12 @@ class RenderFlowLayout extends RenderLayoutBox {
             childOffsetX = transformOffset.dx > 0 ? childOffsetX + transformOffset.dx : childOffsetX;
             childOffsetY = transformOffset.dy > 0 ? childOffsetY + transformOffset.dy : childOffsetY;
           }
+
+          // Detect additional vertical overflow contributed by this child beyond its own box.
+          double baseChildHeight = child.boxSize?.height ?? 0.0;
+          if (childScrollableSize.height > baseChildHeight + 0.5 || childOffsetY > 0.5) {
+            hasChildCrossOverflow = true;
+          }
         } else if (child is RenderTextBox) {
           // When the container is a scroll container (overflow not visible), a text
           // child should contribute its full laid-out height (across all lines) to the
@@ -1699,6 +1708,9 @@ class RenderFlowLayout extends RenderLayoutBox {
                       .toStringAsFixed(2)} '
                       'usedW=${usedW.toStringAsFixed(2)} availW=${(availW.isFinite ? availW : double.infinity)
                       .toStringAsFixed(2)}');
+            }
+            if (textFull.height > (getChildSize(child)?.height ?? 0) + 0.5) {
+              hasChildCrossOverflow = true;
             }
           } else {
             // Not a scroll container: use the actual box size.
@@ -1779,11 +1791,15 @@ class RenderFlowLayout extends RenderLayoutBox {
         ? 0.0
         : scrollableCrossSizeOfLines.reduce((double curr, double next) => curr > next ? curr : next);
 
-    // Choose the larger of collapsed cross stack (margin-collapsed layout height)
-    // and the deepest visual bottom across lines that includes children's own
-    // scrollable overflow. This ensures overflow:visible content participates in
-    // scrollable overflow propagation without double-counting margins.
-    final double chosenCross = math.max(collapsedCrossStack, linesCrossMax);
+    // Prefer collapsed (margin-aware) cross size when this container is not a scroll container
+    // and children do not contribute extra overflow. This avoids double-counting collapsed
+    // margins across runs. Elevate to the deeper visual bottom when scrolling is enabled
+    // or when any child increases cross overflow.
+    final double chosenCross = (renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
+            renderStyle.effectiveOverflowY != CSSOverflowType.visible ||
+            hasChildCrossOverflow)
+        ? math.max(collapsedCrossStack, linesCrossMax)
+        : collapsedCrossStack;
 
     double maxScrollableCrossSizeOfChildren = chosenCross +
         renderStyle.paddingTop.computedValue +
