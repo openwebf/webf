@@ -569,10 +569,16 @@ mixin CSSTextMixin on RenderStyle {
     //   locale: The locale used to select region-specific glyphs.
     //   background: The paint drawn as a background for the text.
     //   foreground: The paint used to draw the text. If this is specified, color must be null.
+    // Respect visibility:hidden: do not paint text or its decorations but keep layout.
+    final bool _hidden = renderStyle.isVisibilityHidden;
+    final Color? _effectiveColor = _hidden
+        ? const Color(0x00000000)
+        : (renderStyle.backgroundClip != CSSBackgroundBoundary.text ? color ?? renderStyle.color.value : null);
+
     TextStyle textStyle = TextStyle(
-        color: renderStyle.backgroundClip != CSSBackgroundBoundary.text ? color ?? renderStyle.color.value : null,
-        decoration: renderStyle.textDecorationLine,
-        decorationColor: renderStyle.textDecorationColor?.value,
+        color: _effectiveColor,
+        decoration: _hidden ? TextDecoration.none : renderStyle.textDecorationLine,
+        decorationColor: _hidden ? const Color(0x00000000) : renderStyle.textDecorationColor?.value,
         decorationStyle: renderStyle.textDecorationStyle,
         fontWeight: renderStyle.fontWeight,
         fontStyle: renderStyle.fontStyle,

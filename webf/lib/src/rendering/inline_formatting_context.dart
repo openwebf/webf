@@ -480,6 +480,10 @@ class InlineFormattingContext {
     final entries = <_SpanPaintEntry>[];
     _elementRanges.forEach((box, range) {
       final style = box.renderStyle;
+      // Do not paint inline backgrounds/borders for visibility:hidden.
+      if (style.isVisibilityHidden) {
+        return;
+      }
       final hasBg = style.backgroundColor?.value != null;
       final hasBorder = ((style.borderLeftWidth?.value ?? 0) > 0) ||
           ((style.borderTopWidth?.value ?? 0) > 0) ||
@@ -3431,13 +3435,18 @@ class InlineFormattingContext {
     })();
 
     final bool clipText = (container as RenderBoxModel).renderStyle.backgroundClip == CSSBackgroundBoundary.text;
-    final Color baseColor = rs.color.value;
-    final Color effectiveColor = clipText ? baseColor.withAlpha(0xFF) : baseColor;
+    // visibility:hidden should not paint text or its text decorations, but must still
+    // participate in layout. Achieve this by using a fully transparent text color and
+    // disabling text decorations for the hidden run. Background/border for inline boxes
+    // are handled separately and are also suppressed in their painter.
+    final bool hidden = rs.isVisibilityHidden;
+    final Color baseColor = hidden ? const Color(0x00000000) : rs.color.value;
+    final Color effectiveColor = clipText ? baseColor.withAlpha(hidden ? 0x00 : 0xFF) : baseColor;
     return ui.TextStyle(
       // For clip-text, force fully-opaque glyphs for the mask (ignore alpha).
       color: effectiveColor,
-      decoration: rs.textDecorationLine,
-      decorationColor: rs.textDecorationColor?.value,
+      decoration: hidden ? TextDecoration.none : rs.textDecorationLine,
+      decorationColor: hidden ? const Color(0x00000000) : rs.textDecorationColor?.value,
       decorationStyle: rs.textDecorationStyle,
       fontWeight: rs.fontWeight,
       fontStyle: rs.fontStyle,
