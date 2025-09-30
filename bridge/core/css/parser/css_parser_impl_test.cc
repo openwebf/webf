@@ -3,11 +3,13 @@
 // found in the LICENSE file.
 
 #include "core/css/parser/css_parser_impl.h"
+
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_parser_observer.h"
 #include "core/css/parser/css_parser_token_stream.h"
 #include "core/css/parser/css_tokenizer.h"
 #include "core/css/style_sheet_contents.h"
+#include "css_parser.h"
 #include "foundation/string/wtf_string.h"
 #include "gtest/gtest.h"
 

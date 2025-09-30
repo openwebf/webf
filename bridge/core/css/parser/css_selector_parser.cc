@@ -1203,7 +1203,7 @@ bool CSSSelectorParser::ConsumeName(CSSParserTokenStream& stream, AtomicString& 
 
   const CSSParserToken& first_token = stream.Peek();
   if (first_token.GetType() == kIdentToken) {
-    name = AtomicString::CreateFromUTF8(first_token.Value().data(), first_token.Value().size());
+    name = AtomicString(first_token.Value());
     stream.Consume();
   } else if (first_token.GetType() == kDelimiterToken && first_token.Delimiter() == '*') {
     name = CSSSelector::UniversalSelectorAtom();
@@ -1224,7 +1224,7 @@ bool CSSSelectorParser::ConsumeName(CSSParserTokenStream& stream, AtomicString& 
 
   namespace_prefix = name == CSSSelector::UniversalSelectorAtom() ? g_star_atom : name;
   if (stream.Peek().GetType() == kIdentToken) {
-    name = AtomicString(String(stream.Consume().Value()));
+    name = AtomicString(stream.Consume().Value());
   } else if (stream.Peek().GetType() == kDelimiterToken && stream.Peek().Delimiter() == '*') {
     stream.Consume();
     name = CSSSelector::UniversalSelectorAtom();

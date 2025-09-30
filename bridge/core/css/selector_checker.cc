@@ -95,17 +95,20 @@ static bool MatchesTagName(const Element& element, const QualifiedName& tag_q_na
  // }
  const AtomicString& local_name = tag_q_name.LocalName();
  if (local_name != CSSSelector::UniversalSelectorAtom() && local_name != element.localName()) {
-   if (element.IsHTMLElement()) {
-     return false;
-   }
-   // Non-html elements in html documents are normalized to their camel-cased
-   // version during parsing if applicable. Yet, type selectors are lower-cased
-   // for selectors in html documents. Compare the upper case converted names
-   // instead to allow matching SVG elements like foreignObject.
-   if (element.TagQName().LocalNameUpper() != tag_q_name.LocalNameUpper()) {
-     return false;
-   }
- }
+  if (element.IsHTMLElement()) {
+    if (!EqualIgnoringASCIICase(StringView(local_name), StringView(element.localName()))) {
+      return false;
+    }
+  } else {
+  // Non-html elements in html documents are normalized to their camel-cased
+  // version during parsing if applicable. Yet, type selectors are lower-cased
+  // for selectors in html documents. Compare the upper case converted names
+  // instead to allow matching SVG elements like foreignObject.
+  if (element.TagQName().LocalNameUpper() != tag_q_name.LocalNameUpper()) {
+    return false;
+  }
+  }
+}
  const AtomicString& namespace_uri = tag_q_name.NamespaceURI();
  return namespace_uri == g_star_atom || namespace_uri == element.namespaceURI();
 }

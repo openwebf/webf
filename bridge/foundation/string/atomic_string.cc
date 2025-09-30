@@ -77,6 +77,18 @@ AtomicString::AtomicString(const String& s) : AtomicString(String(s)) {}
 
 AtomicString::AtomicString(String&& s) : string_(AtomicStringTable::Instance().Add(s.ReleaseImpl())) {}
 
+AtomicString::AtomicString(const StringView& view) {
+  if (view.IsNull()) {
+    return;
+  }
+
+  if (view.Is8Bit()) {
+    string_ = AtomicStringTable::Instance().AddLatin1(view.Characters8(), view.length());
+  } else {
+    string_ = AtomicStringTable::Instance().Add(view.Characters16(), view.length());
+  }
+}
+
 AtomicString::AtomicString(UTF16StringView string_view)
     : string_(AtomicStringTable::Instance().Add(string_view.data(), string_view.length())) {}
 
