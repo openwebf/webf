@@ -139,26 +139,14 @@ class RenderWidget extends RenderBoxModel
       }
     });
 
-    // Precompute DOM order index per item to minimize comparator work and allocations.
-    final Map<RenderBoxModel, int> _domIndexMap = {};
-    void _ensureDomIndex(RenderBoxModel m) {
-      if (_domIndexMap.containsKey(m)) return;
-      final el = m.renderStyle.target;
-      final parent = el.parentElement;
-      if (parent == null) {
-        _domIndexMap[m] = 0;
-        return;
-      }
-      int i = 0;
-      for (final childEl in parent.children) {
-        if (identical(childEl, el)) break;
-        i++;
-      }
-      _domIndexMap[m] = i;
-    }
-    int _domIndex(RenderBoxModel m) {
-      _ensureDomIndex(m);
-      return _domIndexMap[m] ?? 0;
+    // Compare two render boxes by full document tree order using DOM compareDocumentPosition.
+    int _compareTreeOrder(RenderBoxModel a, RenderBoxModel b) {
+      final Node aNode = a.renderStyle.target;
+      final Node bNode = b.renderStyle.target;
+      final DocumentPosition pos = aNode.compareDocumentPosition(bNode);
+      if (pos == DocumentPosition.FOLLOWING) return -1; // a before b
+      if (pos == DocumentPosition.PRECEDING) return 1;  // a after b
+      return 0;
     }
 
     // Negative z-index first (ascending)
@@ -166,18 +154,18 @@ class RenderWidget extends RenderBoxModel
       final int az = a.renderStyle.zIndex ?? 0;
       final int bz = b.renderStyle.zIndex ?? 0;
       if (az != bz) return az.compareTo(bz);
-      return _domIndex(a).compareTo(_domIndex(b));
+      return _compareTreeOrder(a, b);
     });
 
     // Positioned auto/0 by DOM order
-    positionedAutoOrZero.sort((a, b) => _domIndex(a).compareTo(_domIndex(b)));
+    positionedAutoOrZero.sort(_compareTreeOrder);
 
     // Positive z-index ascending
     positives.sort((a, b) {
       final int az = a.renderStyle.zIndex ?? 0;
       final int bz = b.renderStyle.zIndex ?? 0;
       if (az != bz) return az.compareTo(bz);
-      return _domIndex(a).compareTo(_domIndex(b));
+      return _compareTreeOrder(a, b);
     });
 
     final List<RenderBox> ordered = [];

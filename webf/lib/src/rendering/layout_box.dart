@@ -6,6 +6,7 @@
 import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/foundation.dart';
 
@@ -179,43 +180,33 @@ abstract class RenderLayoutBox extends RenderBoxModel
         }
       });
 
-      // Precompute DOM order index for each item we sort (decorate-sort-undecorate) to avoid
-      // creating per-compare objects and reduce transient allocations.
-      final Map<RenderBoxModel, int> _domIndexMap = {};
-      void _ensureDomIndex(RenderBoxModel m) {
-        if (_domIndexMap.containsKey(m)) return;
-        final el = m.renderStyle.target;
-        final parent = el.parentElement;
-        if (parent == null) {
-          _domIndexMap[m] = 0;
-          return;
-        }
-        int i = 0;
-        for (final childEl in parent.children) {
-          if (identical(childEl, el)) break;
-          i++;
-        }
-        _domIndexMap[m] = i;
-      }
-      int _domIndex(RenderBoxModel m) {
-        _ensureDomIndex(m);
-        return _domIndexMap[m] ?? 0;
+      // Compare two render boxes by full document tree order using DOM compareDocumentPosition.
+      int _compareTreeOrder(RenderBoxModel a, RenderBoxModel b) {
+        final Node aNode = a.renderStyle.target;
+        final Node bNode = b.renderStyle.target;
+        final DocumentPosition pos = aNode.compareDocumentPosition(bNode);
+        // FOLLOWING means `a` is before `b` in document order.
+        if (pos == DocumentPosition.FOLLOWING) return -1;
+        if (pos == DocumentPosition.PRECEDING) return 1;
+        // For disconnected/equivalent (shouldn't happen for normal nodes), fall back to stable order.
+        return 0;
       }
 
       negatives.sort((a, b) {
         final int az = a.renderStyle.zIndex ?? 0;
         final int bz = b.renderStyle.zIndex ?? 0;
         if (az != bz) return az.compareTo(bz);
-        return _domIndex(a).compareTo(_domIndex(b));
+        return _compareTreeOrder(a, b);
       });
 
-      positionedAutoOrZero.sort((a, b) => _domIndex(a).compareTo(_domIndex(b)));
+      // For positioned with auto/0 z-index, order strictly by document tree order.
+      positionedAutoOrZero.sort(_compareTreeOrder);
 
       positives.sort((a, b) {
         final int az = a.renderStyle.zIndex ?? 0;
         final int bz = b.renderStyle.zIndex ?? 0;
         if (az != bz) return az.compareTo(bz);
-        return _domIndex(a).compareTo(_domIndex(b));
+        return _compareTreeOrder(a, b);
       });
 
       final List<RenderBox> ordered = [];
