@@ -653,31 +653,37 @@ class InlineFormattingContext {
   }
 
   // Expose paragraph intrinsic widths when available.
-  // minIntrinsicWidth approximates CSS min-content width for the inline content
-  // and is used by flex auto-min-size computation to avoid clamping to the
-  // max-content width (longestLine). When the engine does not expose
-  // minIntrinsicWidth, compute a conservative approximation by scanning
-  // unbreakable segments (words, splitting also on hyphens).
+  // CSS min-content width depends on white-space:
+  //  - For normal/pre-wrap: roughly the longest unbreakable segment (“word”).
+  //  - For nowrap/pre: no soft wrap opportunities; min-content equals the
+  //    max-content width (entire line width).
+  // This value feeds flex auto-min-size to prevent over/under‑constraining.
   double get paragraphMinIntrinsicWidth {
-    if (_paragraph != null) {
-      double? engineMin;
-      try {
-        engineMin = (_paragraph as dynamic).minIntrinsicWidth as double?;
-      } catch (_) {
-        engineMin = null;
-      }
-      final double approx = _approxParagraphMinIntrinsicWidth();
-      if (engineMin != null && engineMin.isFinite && engineMin > 0) {
-        // Use the smaller of engine-provided minIntrinsic and our token-based
-        // approximation to better match CSS min-content behavior around hyphens
-        // and similar break opportunities.
-        if (approx.isFinite && approx > 0) return math.min(engineMin, approx);
-        return engineMin;
-      }
-      if (approx.isFinite && approx > 0) return approx;
-      return _paragraph!.longestLine;
+    if (_paragraph == null) return 0;
+
+    final CSSRenderStyle cStyle = (container as RenderBoxModel).renderStyle;
+    final WhiteSpace ws = cStyle.whiteSpace;
+    // Treat nowrap/pre as unbreakable content: min-content equals max-content.
+    if (ws == WhiteSpace.nowrap || ws == WhiteSpace.pre) {
+      return paragraphMaxIntrinsicWidth;
     }
-    return 0;
+
+    double? engineMin;
+    try {
+      engineMin = (_paragraph as dynamic).minIntrinsicWidth as double?;
+    } catch (_) {
+      engineMin = null;
+    }
+    final double approx = _approxParagraphMinIntrinsicWidth();
+    if (engineMin != null && engineMin.isFinite && engineMin > 0) {
+      // Use the smaller of engine-provided minIntrinsic and our token-based
+      // approximation to better match CSS min-content behavior around hyphens
+      // and similar break opportunities.
+      if (approx.isFinite && approx > 0) return math.min(engineMin, approx);
+      return engineMin;
+    }
+    if (approx.isFinite && approx > 0) return approx;
+    return _paragraph!.longestLine;
   }
 
   // Approximate the paragraph's min intrinsic width by measuring the widest
