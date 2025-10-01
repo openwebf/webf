@@ -1648,8 +1648,11 @@ std::shared_ptr<StyleRule> CSSParserImpl::ConsumeStyleRule(CSSParserTokenStream&
     if (!observer_ && lazy_state_) {
       assert(style_sheet_);
 
-      uint32_t len =
-          static_cast<uint32_t>(FindLengthOfDeclarationList(StringView(stream.RemainingText().data() + 1, stream.RemainingText().length() - 1)));
+      // Avoid byte-level pointer arithmetic on possibly 16-bit data.
+      // Create a StringView starting at offset 1 to skip the '{'.
+      StringView remaining = stream.RemainingText();
+      StringView inner_block(remaining, 1, remaining.length() > 0 ? remaining.length() - 1 : 0);
+      uint32_t len = static_cast<uint32_t>(FindLengthOfDeclarationList(inner_block));
       if (len != 0) {
         uint32_t block_start_offset = stream.Offset();
         stream.SkipToEndOfBlock(len + 2);  // +2 for { and }.
