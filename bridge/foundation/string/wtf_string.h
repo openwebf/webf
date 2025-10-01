@@ -51,6 +51,7 @@ class String {
   // immutable and refcounted.
   String(const String&) = default;
   String& operator=(const String&) = default;
+  bool ToDouble(double* p);
   String(String&&) = default;
   String& operator=(String&&) = default;
 

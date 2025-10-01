@@ -18,6 +18,7 @@
 #include "foundation/macros.h"
 
 #include "core/base/strings/string_number_conversions_internal.h"
+#include "string/string_types.h"
 
 namespace base {
 
@@ -117,7 +118,7 @@ bool StringToDouble(std::string_view input, double* output) {
   return internal::StringToDoubleImpl(input, input.data(), *output);
 }
 
-bool StringToDouble(std::u16string_view input, double* output) {
+bool StringToDouble(webf::UTF16StringView input, double* output) {
   return internal::StringToDoubleImpl(input, reinterpret_cast<const uint16_t*>(input.data()), *output);
 }
 

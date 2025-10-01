@@ -16,6 +16,8 @@
 #include <string_view>
 #include <vector>
 
+#include "string/string_types.h"
+
 // ----------------------------------------------------------------------------
 // IMPORTANT MESSAGE FROM YOUR SPONSOR
 //
@@ -81,6 +83,7 @@ bool StringToSizeT(std::string_view input, size_t* output);
 // WARNING: Will write to |output| even when returning false.
 //          Read the comments here and above StringToInt() carefully.
 bool StringToDouble(std::string_view input, double* output);
+inline bool StringToDouble(webf::UTF16StringView input, double* output);
 
 // Hex encoding ----------------------------------------------------------------
 

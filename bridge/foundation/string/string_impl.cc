@@ -12,6 +12,8 @@
 #include <cassert>
 #include <string>
 #include "ascii_fast_path.h"
+#include "bindings/qjs/native_string_utils.h"
+#include "core/base/strings/string_number_conversions.h"
 #include "string_buffer.h"
 #include "string_view.h"
 #include "utf8_codecs.h"
@@ -96,6 +98,19 @@ StringImpl* StringImpl::empty16_bit_ = const_cast<StringImpl*>(&g_global_empty16
 void StringImpl::InitStatics() {
   new ((void*)empty_) StringImpl(kConstructEmptyString);
   new ((void*)empty16_bit_) StringImpl(kConstructEmptyString16Bit);
+}
+
+bool StringImpl::ToDouble(double* p) const {
+  if (Is8Bit()) {
+    auto sv = Latin1StringView(Characters8(), length_);
+    auto str = UTF8Codecs::EncodeLatin1(sv);
+    return base::StringToDouble(str, p);
+  }
+  auto sv = UTF16StringView(Characters16(), length_);
+  // Avoid relying on the UTF16 overload to prevent link-time undefined symbol.
+  // Convert to UTF-8 and use the std::string_view overload instead.
+  auto str = UTF8Codecs::EncodeUTF16(sv);
+  return base::StringToDouble(str, p);
 }
 
 std::shared_ptr<StringImpl> StringImpl::Create(const LChar* characters, size_t length) {

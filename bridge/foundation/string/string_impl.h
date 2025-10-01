@@ -129,6 +129,8 @@ class StringImpl {
     return false;
   }
 
+  bool ToDouble(double* p) const;
+
   static inline constexpr uint32_t LengthToAsciiFlags(int length) {
     return length ? 0 : kAsciiPropertyCheckDone | kContainsOnlyAscii | kIsLowerAscii;
   }
