@@ -1,7 +1,6 @@
 import 'package:flutter/rendering.dart';
 import 'package:webf/rendering.dart';
 import 'inline_formatting_context.dart';
-import 'line_box.dart';
 import 'inline_item.dart';
 
 /// A utility class to provide enhanced debugging information for inline layout.
@@ -12,54 +11,34 @@ class InlineLayoutDebugger {
 
   final InlineFormattingContext context;
 
-  /// Generate a visual ASCII representation of the line boxes.
+  /// Generate a visual ASCII representation of paragraph line metrics.
   String generateLineBoxDiagram() {
-    if (context.lineBoxes.isEmpty) {
-      return 'No line boxes';
+    final lines = context.paragraphLineMetrics;
+    if (lines.isEmpty) {
+      return 'No paragraph lines';
     }
 
     final buffer = StringBuffer();
-    buffer.writeln('Line Box Layout:');
+    buffer.writeln('Paragraph Lines:');
     buffer.writeln('================');
 
     double totalHeight = 0;
-    for (int i = 0; i < context.lineBoxes.length; i++) {
-      final lineBox = context.lineBoxes[i];
+    double maxWidth = 0;
+    for (int i = 0; i < lines.length; i++) {
+      final lm = lines[i];
       buffer.writeln();
       buffer.writeln('Line ${i + 1}:');
-      buffer.writeln('├─ Size: ${lineBox.width.toStringAsFixed(1)} × ${lineBox.height.toStringAsFixed(1)}');
-      buffer.writeln('├─ Baseline: ${lineBox.baseline.toStringAsFixed(1)}');
-      buffer.writeln('├─ Alignment: ${lineBox.alignmentOffset.toStringAsFixed(1)}');
-      buffer.writeln('└─ Items (${lineBox.items.length}):');
-
-      for (int j = 0; j < lineBox.items.length; j++) {
-        final item = lineBox.items[j];
-        final isLast = j == lineBox.items.length - 1;
-        final prefix = isLast ? '   └─ ' : '   ├─ ';
-        
-        if (item is TextLineBoxItem) {
-          final text = item.text.length > 20 ? '${item.text.substring(0, 20)}...' : item.text;
-          buffer.writeln('$prefix[Text] "$text" @ ${_formatOffset(item.offset)}, size: ${_formatSize(item.size)}');
-        } else if (item is BoxLineBoxItem) {
-          final desc = item.renderBox is RenderBoxModel ? _getElementDescription(item.renderBox as RenderBoxModel) : item.renderBox.runtimeType.toString();
-          buffer.writeln('$prefix[Box] $desc @ ${_formatOffset(item.offset)}, size: ${_formatSize(item.size)}');
-          if (item.children.isNotEmpty) {
-            buffer.writeln('${isLast ? '      ' : '   │  '}  └─ ${item.children.length} children');
-          }
-        } else if (item is AtomicLineBoxItem) {
-          final desc = item.renderBox is RenderBoxModel ? _getElementDescription(item.renderBox as RenderBoxModel) : item.renderBox.runtimeType.toString();
-          buffer.writeln('$prefix[Atomic] $desc @ ${_formatOffset(item.offset)}, size: ${_formatSize(item.size)}');
-        }
-      }
-
-      totalHeight += lineBox.height;
+      buffer.writeln('├─ Size: ${lm.width.toStringAsFixed(1)} × ${lm.height.toStringAsFixed(1)}');
+      buffer.writeln('└─ Baseline: ${lm.baseline.toStringAsFixed(1)}');
+      totalHeight += lm.height;
+      if (lm.width > maxWidth) maxWidth = lm.width;
     }
 
     buffer.writeln();
     buffer.writeln('Summary:');
-    buffer.writeln('├─ Total lines: ${context.lineBoxes.length}');
+    buffer.writeln('├─ Total lines: ${lines.length}');
     buffer.writeln('├─ Total height: ${totalHeight.toStringAsFixed(1)}');
-    buffer.writeln('└─ Max width: ${context.lineBoxes.map((l) => l.width).reduce((a, b) => a > b ? a : b).toStringAsFixed(1)}');
+    buffer.writeln('└─ Max width: ${maxWidth.toStringAsFixed(1)}');
 
     return buffer.toString();
   }

@@ -15,7 +15,6 @@ import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'inline_formatting_context.dart';
-import 'line_box.dart';
 import 'text.dart';
 import 'event_listener.dart';
 import 'package:webf/src/foundation/logger.dart';
@@ -1522,62 +1521,9 @@ class RenderFlowLayout extends RenderLayoutBox {
       return;
     }
 
-    final hasLineBoxes = _inlineFormattingContext!.lineBoxes.isNotEmpty;
-
     double maxScrollableWidth = 0;
     double maxScrollableHeight = 0;
-
-    if (hasLineBoxes) {
-      // Calculate the scrollable size from line boxes (legacy path), but also
-      // account for atomic inline boxes whose own scrollable height exceeds
-      // the line box height per CSS overflow propagation.
-      double preLinesCross = 0.0;
-      for (final lineBox in _inlineFormattingContext!.lineBoxes) {
-        double lineWidth = 0;
-        double lineHeight = lineBox.height;
-        double lineMaxBottom = preLinesCross + lineHeight;
-
-        // Calculate the maximum width needed by this line and the deepest bottom
-        // contributed by atomic inline items.
-        for (final item in lineBox.items) {
-          if (item is AtomicLineBoxItem || item is BoxLineBoxItem) {
-            final renderBox = (item is AtomicLineBoxItem) ? item.renderBox : (item as BoxLineBoxItem).renderBox;
-
-            if (renderBox != null) {
-              double itemRight = item.offset.dx + item.size.width;
-
-              // Add margins for RenderBoxModel (horizontal only)
-              if (renderBox is RenderBoxModel) {
-                itemRight += renderBox.renderStyle.marginRight.computedValue;
-                // Compute candidate visual bottom using the child's effective scrollable height.
-                final rs = renderBox.renderStyle;
-                final bool childScrolls = rs.effectiveOverflowX != CSSOverflowType.visible ||
-                    rs.effectiveOverflowY != CSSOverflowType.visible;
-                final Size childExtent = childScrolls
-                    ? (renderBox.boxSize ?? renderBox.size)
-                    : (renderBox is RenderBoxModel ? renderBox.scrollableSize : (renderBox.size));
-                double candidateBottom = preLinesCross + item.offset.dy +
-                    (childExtent.height.isFinite ? childExtent.height : 0.0);
-                final Offset? rel = CSSPositionedLayout.getRelativeOffset(rs);
-                if (rel != null && rel.dy > 0) candidateBottom += rel.dy;
-                final Offset? tr = rs.effectiveTransformOffset;
-                if (tr != null && tr.dy > 0) candidateBottom += tr.dy;
-                lineMaxBottom = math.max(lineMaxBottom, candidateBottom);
-              }
-
-              lineWidth = math.max(lineWidth, itemRight);
-            }
-          } else if (item is TextLineBoxItem) {
-            lineWidth = math.max(lineWidth, item.offset.dx + item.size.width);
-          }
-        }
-
-        maxScrollableWidth = math.max(maxScrollableWidth, lineWidth);
-        // Extend by the larger of the line height or atomic bottom depth for this line.
-        maxScrollableHeight = math.max(maxScrollableHeight, lineMaxBottom);
-        preLinesCross += lineHeight;
-      }
-    } else {
+    {
       // Paragraph path: use visual longest line and total height from paragraph metrics,
       // then extend horizontally to include atomic boxes that overflow their own inline
       // width (scrollable width beyond the placeholder width).
@@ -1654,7 +1600,7 @@ class RenderFlowLayout extends RenderLayoutBox {
           'height=${finalScrollableHeight.toStringAsFixed(2)} '
           'viewport=(${viewportW.toStringAsFixed(2)}×${viewportH.toStringAsFixed(2)}) '
           'overflowX=${renderStyle.effectiveOverflowX} overflowY=${renderStyle.effectiveOverflowY} '
-          'via=${hasLineBoxes ? 'lineBoxes' : 'paragraph'}',
+          'via=paragraph',
     );
   }
 
@@ -1849,9 +1795,12 @@ class RenderFlowLayout extends RenderLayoutBox {
     // and children do not contribute extra overflow. This avoids double-counting collapsed
     // margins across runs. Elevate to the deeper visual bottom when scrolling is enabled
     // or when any child increases cross overflow.
-    final double chosenCross = (renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
-            renderStyle.effectiveOverflowY != CSSOverflowType.visible ||
-            hasChildCrossOverflow)
+    // Use collapsed stack height by default to avoid double-counting margins across runs.
+    // Only elevate to a deeper visual bottom when a child contributes additional
+    // vertical overflow (e.g., relative/transform offsets or intrinsic overflow),
+    // which is captured by linesCrossMax.
+    final bool needsExtendedCross = hasChildCrossOverflow;
+    final double chosenCross = needsExtendedCross
         ? math.max(collapsedCrossStack, linesCrossMax)
         : collapsedCrossStack;
 
@@ -1956,23 +1905,6 @@ class RenderFlowLayout extends RenderLayoutBox {
         message: () => 'setCssBaselines first=${firstBaseline!.toStringAsFixed(2)} '
             'last=${lastBaseline!.toStringAsFixed(2)} paddingTop=${paddingTop.toStringAsFixed(2)} '
             'borderTop=${borderTop.toStringAsFixed(2)}',
-      );
-    } else if (_inlineFormattingContext!.lineBoxes.isNotEmpty) {
-      // Legacy line boxes path
-      final first = _inlineFormattingContext!.lineBoxes.first;
-      double y = 0;
-      for (int i = 0; i < _inlineFormattingContext!.lineBoxes.length - 1; i++) {
-        y += _inlineFormattingContext!.lineBoxes[i].height;
-      }
-      final last = _inlineFormattingContext!.lineBoxes.last;
-      firstBaseline = first.baseline + paddingTop + borderTop;
-      lastBaseline = y + last.baseline + paddingTop + borderTop;
-      InlineLayoutLog.log(
-        impl: InlineImpl.legacyIFC,
-        feature: InlineFeature.baselines,
-        level: Level.FINE,
-        message: () => 'setCssBaselines first=${firstBaseline!.toStringAsFixed(2)} '
-            'last=${lastBaseline!.toStringAsFixed(2)}',
       );
     } else {
       // Fallback: no line boxes produced (empty content). Synthesize from bottom margin edge for inline-block.

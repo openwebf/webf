@@ -23,7 +23,7 @@ import 'package:logging/logging.dart' show Level;
 import 'package:webf/src/foundation/inline_layout_logging.dart';
 
 import 'inline_item.dart';
-import 'line_box.dart';
+// Legacy line-box based IFC removed; paragraph-based IFC only.
 import 'inline_items_builder.dart';
 import 'inline_layout_debugger.dart';
 
@@ -50,10 +50,7 @@ class InlineFormattingContext {
   /// Whether this context needs preparation.
   bool _needsCollectInlines = true;
 
-  /// The line boxes created by layout.
-  final List<LineBox> _lineBoxes = [];
-
-  List<LineBox> get lineBoxes => _lineBoxes;
+  // Legacy line boxes removed.
 
   // New: Paragraph-based layout artifacts
   ui.Paragraph? _paragraph;
@@ -113,6 +110,53 @@ class InlineFormattingContext {
   final Map<RenderBox, Size> _measuredVisualSizes = {};
 
   Size? measuredVisualSizeOf(RenderBox box) => _measuredVisualSizes[box];
+
+  // Public helpers for consumers outside IFC to query inline element metrics
+  // without relying on legacy line boxes.
+  double inlineElementMaxLineWidth(RenderBoxModel box) {
+    if (_paragraph == null) return 0.0;
+    final range = _elementRanges[box];
+    if (range == null) return 0.0;
+    final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+    if (rects.isEmpty) return 0.0;
+    final Map<int, (double left, double right)> perLine = {};
+    for (final tb in rects) {
+      final int li = _lineIndexForRect(tb);
+      if (li < 0) continue;
+      final prev = perLine[li];
+      final double l = tb.left;
+      final double r = tb.right;
+      if (prev == null) {
+        perLine[li] = (l, r);
+      } else {
+        final double nl = l < prev.$1 ? l : prev.$1;
+        final double nr = r > prev.$2 ? r : prev.$2;
+        perLine[li] = (nl, nr);
+      }
+    }
+    double maxW = 0.0;
+    perLine.forEach((_, bounds) {
+      final double w = bounds.$2 - bounds.$1;
+      if (w > maxW) maxW = w;
+    });
+    return maxW;
+  }
+
+  double inlineElementMaxLineHeight(RenderBoxModel box) {
+    if (_paragraph == null || _paraLines.isEmpty) return 0.0;
+    final range = _elementRanges[box];
+    if (range == null) return 0.0;
+    final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+    if (rects.isEmpty) return 0.0;
+    double maxH = 0.0;
+    for (final tb in rects) {
+      final int li = _lineIndexForRect(tb);
+      if (li < 0 || li >= _paraLines.length) continue;
+      final double h = _paraLines[li].height;
+      if (h > maxH) maxH = h;
+    }
+    return maxH;
+  }
 
   // Resolve the RenderBoxModel that carries CSS styles for a placeholder's
   // render box (which may be a wrapper). Walk down a few levels if necessary.
@@ -3506,7 +3550,6 @@ class InlineFormattingContext {
 
   void dispose() {
     _items.clear();
-    _lineBoxes.clear();
     _placeholderBoxes = const [];
     _placeholderOrder.clear();
     _allPlaceholders.clear();
@@ -3572,7 +3615,6 @@ class InlineFormattingContext {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     properties.add(DiagnosticsProperty<RenderLayoutBox>('container', container));
     properties.add(IntProperty('items', _items.length));
-    properties.add(IntProperty('lineBoxes', _lineBoxes.length));
     properties.add(StringProperty('textContent', _textContent, showName: true, quoted: true, ifEmpty: '<empty>'));
     properties.add(
         FlagProperty('needsCollectInlines', value: _needsCollectInlines, ifTrue: 'needs collect', ifFalse: 'ready'));
@@ -3640,57 +3682,28 @@ class InlineFormattingContext {
       ));
     }
 
-    // Add detailed line box information with visual layout
-    if (_lineBoxes.isNotEmpty) {
-      final lineBoxDescriptions = <String>[];
+    // Add paragraph line information (legacy line boxes removed)
+    if (_paraLines.isNotEmpty) {
+      final lines = <String>[];
       double totalHeight = 0;
-
-      for (int i = 0; i < _lineBoxes.length && i < 5; i++) {
-        // Show first 5 lines
-        final lineBox = _lineBoxes[i];
-        totalHeight += lineBox.height;
-
-        // Count item types in this line
-        final lineItemTypes = <String, int>{};
-        for (final item in lineBox.items) {
-          final typeName = item.runtimeType.toString().replaceAll('LineBoxItem', '');
-          lineItemTypes[typeName] = (lineItemTypes[typeName] ?? 0) + 1;
-        }
-
-        final lineStr = 'Line ${i + 1}: '
-            'w=${lineBox.width.toStringAsFixed(1)}, '
-            'h=${lineBox.height.toStringAsFixed(1)}, '
-            'baseline=${lineBox.baseline.toStringAsFixed(1)}, '
-            'align=${lineBox.alignmentOffset.toStringAsFixed(1)}, '
-            'items=${lineBox.items.length} '
-            '${lineItemTypes.entries.map((e) => '${e.key}:${e.value}').join(', ')}';
-
-        lineBoxDescriptions.add(lineStr);
+      for (int i = 0; i < _paraLines.length && i < 5; i++) {
+        final lm = _paraLines[i];
+        totalHeight += lm.height;
+        lines.add('Line ${i + 1}: w=${lm.width.toStringAsFixed(1)}, h=${lm.height.toStringAsFixed(1)}, '
+            'baseline=${lm.baseline.toStringAsFixed(1)}');
       }
-
-      if (_lineBoxes.length > 5) {
-        lineBoxDescriptions.add('... ${_lineBoxes.length - 5} more lines');
+      if (_paraLines.length > 5) {
+        lines.add('... ${_paraLines.length - 5} more lines');
       }
-
-      properties.add(DiagnosticsProperty<List<String>>(
-        'lineBoxLayout',
-        lineBoxDescriptions,
-        style: DiagnosticsTreeStyle.truncateChildren,
-      ));
-
-      // Add layout metrics
+      properties.add(DiagnosticsProperty<List<String>>('paragraphLines', lines,
+          style: DiagnosticsTreeStyle.truncateChildren));
       final layoutMetrics = <String, String>{
-        'totalLines': _lineBoxes.length.toString(),
+        'totalLines': _paraLines.length.toString(),
         'totalHeight': totalHeight.toStringAsFixed(1),
-        'avgLineHeight': (_lineBoxes.isEmpty ? 0 : totalHeight / _lineBoxes.length).toStringAsFixed(1),
-        'maxLineWidth': _lineBoxes.map((l) => l.width).reduce((a, b) => a > b ? a : b).toStringAsFixed(1),
+        'avgLineHeight': (_paraLines.isEmpty ? 0 : totalHeight / _paraLines.length).toStringAsFixed(1),
       };
-
-      properties.add(DiagnosticsProperty<Map<String, String>>(
-        'layoutMetrics',
-        layoutMetrics,
-        style: DiagnosticsTreeStyle.sparse,
-      ));
+      properties.add(DiagnosticsProperty<Map<String, String>>('layoutMetrics', layoutMetrics,
+          style: DiagnosticsTreeStyle.sparse));
     }
 
     // Add bidi information if present
@@ -3709,7 +3722,7 @@ class InlineFormattingContext {
     }
 
     // Add detailed visual debugging if items and line boxes are available
-    if (_items.isNotEmpty && _lineBoxes.isNotEmpty) {
+    if (_items.isNotEmpty && _paraLines.isNotEmpty) {
       final debugger = InlineLayoutDebugger(this);
       debugger.debugFillProperties(properties);
     }
