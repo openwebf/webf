@@ -1266,7 +1266,7 @@ std::shared_ptr<StyleRuleMedia> CSSParserImpl::ConsumeMediaRule(
   }
 
   StringView range = stream.StringRangeAt(prelude_offset_start, prelude_offset_end - prelude_offset_start);
-  String prelude_string = String::FromUTF8(range.data(), range.size());
+  String prelude_string = String(range);
   CSSParserTokenOffsets offsets = ReparseForOffsets(range, prelude);
   std::shared_ptr<const MediaQuerySet> media = CachedMediaQuerySet(prelude_string, prelude, offsets);
   DCHECK(media);
