@@ -10,6 +10,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/rendering.dart';
+import 'package:webf/src/foundation/logger.dart';
 
 // A circular list implementation that allows access in a circular fashion.
 class CircularIntervalList<T> {
@@ -796,6 +798,28 @@ class BoxDecorationPainter extends BoxPainter {
     final Rect rect = offset & configuration.size!;
     final TextDirection? textDirection = configuration.textDirection;
 
+    // When this element participates in an inline formatting context, backgrounds and borders
+    // for inline-level boxes are painted by the paragraph path (InlineFormattingContext).
+    // Skip BoxDecoration painting here to avoid double painting and mismatched joins.
+    bool _skipForInlineIFC() {
+      // Only inline-level boxes are painted via paragraph IFC.
+      if (renderStyle.effectiveDisplay != CSSDisplay.inline) return false;
+      final RenderBoxModel? self = renderStyle.attachedRenderBoxModel;
+      if (self == null) return false;
+      RenderObject? p = self.parent;
+      while (p != null) {
+        if (p is RenderFlowLayout) {
+          return p.establishIFC;
+        }
+        p = (p as RenderObject).parent;
+      }
+      return false;
+    }
+
+    if (_skipForInlineIFC()) {
+      return;
+    }
+
     bool hasLocalAttachment = _hasLocalBackgroundImage();
     if (!hasLocalAttachment) {
       if (renderStyle.backgroundClip != CSSBackgroundBoundary.text) {
@@ -830,6 +854,21 @@ class BoxDecorationPainter extends BoxPainter {
           (border.left as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed;
 
       hasDashedBorder = hasTopDashedBorder || hasRightDashedBorder || hasBottomDashedBorder || hasLeftDashedBorder;
+    }
+
+    // Emit debug about border widths/colors when any side is present.
+    final EdgeInsets bw = renderStyle.border;
+    if ((bw.top + bw.right + bw.bottom + bw.left) > 0) {
+      final colorTop = renderStyle.borderTopColor?.value;
+      final colorRight = renderStyle.borderRightColor?.value;
+      final colorBottom = renderStyle.borderBottomColor?.value;
+      final colorLeft = renderStyle.borderLeftColor?.value;
+      renderingLogger.finer('[Paint/Border] <${renderStyle.target.tagName.toLowerCase()}${renderStyle.target.id != null && renderStyle.target.id!.isNotEmpty ? ('#${renderStyle.target.id!}') : ''}> '
+          'T:${bw.top.toStringAsFixed(2)} R:${bw.right.toStringAsFixed(2)} B:${bw.bottom.toStringAsFixed(2)} L:${bw.left.toStringAsFixed(2)} '
+          'colors(T:${colorTop?.value?.toRadixString(16) ?? 'null'} '
+          'R:${colorRight?.value?.toRadixString(16) ?? 'null'} '
+          'B:${colorBottom?.value?.toRadixString(16) ?? 'null'} '
+          'L:${colorLeft?.value?.toRadixString(16) ?? 'null'})');
     }
 
     // If we have a dashed border, use our custom painter

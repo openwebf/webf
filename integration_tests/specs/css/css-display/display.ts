@@ -157,7 +157,7 @@ describe('display', () => {
         container.style.display = 'block';
         await snapshot();
         await simulateSwipe(0, 0, 30, 30, 0.1);
-        await snapshot();
+        await snapshot(0.5);
         done();
       });
     });
@@ -199,7 +199,7 @@ describe('display', () => {
         container.style.display = 'block';
         await snapshot();
         await simulateSwipe(0, 0, 30, 30, 0.1);
-        await snapshot();
+        await snapshot(0.5);
         done();
       });
     });

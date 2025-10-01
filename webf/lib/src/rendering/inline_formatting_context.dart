@@ -3158,6 +3158,54 @@ class InlineFormattingContext {
           }
         }
 
+        // Apply CSS vertical-align adjustments for decoration bands so backgrounds/borders move
+        // together with the text when using text-run placeholders (e.g., vertical-align: top).
+        final va = s.verticalAlign;
+        final int liForVA = (lineTop != null && lineBottom != null && currentLineIndex >= 0)
+            ? currentLineIndex
+            : _lineIndexForRect(tb);
+        if (liForVA >= 0 && liForVA < _paraLines.length && va != VerticalAlign.baseline) {
+          final (bandTop, bandBottom, _) = _bandForLine(liForVA);
+          double newTop = top;
+          double newBottom = bottom;
+          switch (va) {
+            case VerticalAlign.top:
+              newTop = bandTop;
+              newBottom = bandTop + (bottom - top);
+              break;
+            case VerticalAlign.bottom:
+              newBottom = bandBottom;
+              newTop = bandBottom - (bottom - top);
+              break;
+            case VerticalAlign.middle:
+              final double bandMid = (bandTop + bandBottom) / 2.0;
+              final double half = (bottom - top) / 2.0;
+              newTop = bandMid - half;
+              newBottom = bandMid + half;
+              break;
+            default:
+              // For textTop/textBottom and unknowns, approximate to top/bottom behavior.
+              if (va == VerticalAlign.textTop) {
+                newTop = bandTop;
+                newBottom = bandTop + (bottom - top);
+              } else if (va == VerticalAlign.textBottom) {
+                newBottom = bandBottom;
+                newTop = bandBottom - (bottom - top);
+              }
+              break;
+          }
+          if ((newTop - top).abs() > 0.01 || (newBottom - bottom).abs() > 0.01) {
+            InlineLayoutLog.log(
+              impl: InlineImpl.paragraphIFC,
+              feature: InlineFeature.metrics,
+              message: () => '    [va] ${va.toString().split('.').last}: (${top.toStringAsFixed(2)},${bottom.toStringAsFixed(2)}) '
+                  '→ (${newTop.toStringAsFixed(2)},${newBottom.toStringAsFixed(2)})',
+            );
+            top = newTop;
+            bottom = newBottom;
+          }
+        }
+
         // For empty height rects we keep the clamped band; vertical padding/border
         // will be applied conditionally below to avoid exaggerated heights.
 
