@@ -489,6 +489,14 @@ class InlineFormattingContext {
     return false;
   }
 
+  // Whether this inline element had a right-extras placeholder inserted.
+  bool _elementHasRightExtrasPlaceholder(RenderBoxModel box) {
+    for (final ph in _allPlaceholders) {
+      if (ph.kind == _PHKind.rightExtra && ph.owner == box) return true;
+    }
+    return false;
+  }
+
   // Return the line band's top, bottom and baseline for a given line index.
   (double top, double bottom, double baseline) _bandForLine(int lineIndex) {
     final lm = _paraLines[lineIndex];
@@ -3049,6 +3057,14 @@ class InlineFormattingContext {
     final entries = _buildDecorationEntriesForPainting();
     final canvas = context.canvas;
 
+    InlineLayoutLog.log(
+      impl: InlineImpl.paragraphIFC,
+      feature: InlineFeature.painting,
+      level: Level.FINE,
+      message: () => 'decor entries=${entries.length} lineClip=' +
+          ((lineTop != null && lineBottom != null) ? '[$lineTop,$lineBottom]' : '<none>'),
+    );
+
     // Identify current line index if painting per-line.
     int currentLineIndex = -1;
     if (lineTop != null && lineBottom != null && _paraLines.isNotEmpty) {
@@ -3077,6 +3093,15 @@ class InlineFormattingContext {
       final bB = s.effectiveBorderBottomWidth.computedValue;
       // Cache metrics per style for all its fragments in this loop
       final (double mHeight, double mBaseline) = _measureTextMetricsForStyle(s);
+
+      InlineLayoutLog.log(
+        impl: InlineImpl.paragraphIFC,
+        feature: InlineFeature.painting,
+        level: Level.FINER,
+        message: () => 'span <' + _getElementDescription(e.box) + '> depth=${e.depth} rectCount=${e.rects.length} ' +
+            'pad(L:$padL T:$padT R:$padR B:$padB) border(L:$bL T:$bT R:$bR B:$bB) ' +
+            'hasLeftPH=${_elementHasLeftExtrasPlaceholder(e.box)} hasRightPH=${_elementHasRightExtrasPlaceholder(e.box)}',
+      );
 
       for (int i = 0; i < e.rects.length; i++) {
         final tb = e.rects[i];
@@ -3313,6 +3338,17 @@ class InlineFormattingContext {
 
         final rect = Rect.fromLTRB(left, top, right, bottom).shift(offset);
 
+        InlineLayoutLog.log(
+          impl: InlineImpl.paragraphIFC,
+          feature: InlineFeature.painting,
+          level: Level.FINER,
+          message: () => '  frag#$i <' + _getElementDescription(e.box) + '> ' +
+              (currentLineIndex >= 0 ? 'line=$currentLineIndex ' : '') +
+              'tb=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(2)} - ${tb.right.toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)}) ' +
+              'phys(L:$physLeftEdge R:$physRightEdge) logical(first:$logicalFirstFrag last:$logicalLastFrag) ' +
+              'rect=(${rect.left.toStringAsFixed(2)},${rect.top.toStringAsFixed(2)} - ${rect.right.toStringAsFixed(2)},${rect.bottom.toStringAsFixed(2)})',
+        );
+
         if (false) {
           final bool drawTop = (bT > 0);
           final bool drawBottom = (bB > 0);
@@ -3383,27 +3419,46 @@ class InlineFormattingContext {
           canvas.drawRect(rect, bg);
         }
 
-        // Borders
-        final p = Paint()
-          ..style = PaintingStyle.fill;
+        // Borders: do not suppress on tiny edge fragments; borders must remain continuous.
+        final p = Paint()..style = PaintingStyle.fill;
         // Paint top border on every fragment (spec behavior). With clamped bands
         // and conditional padding, the shared join sits at a single y.
-        if (!suppressEdge && bT > 0) {
+        if (bT > 0) {
           p.color = s.borderTopColor?.value ?? const Color(0xFF000000);
           canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, rect.width, bT), p);
+          InlineLayoutLog.log(
+            impl: InlineImpl.paragraphIFC,
+            feature: InlineFeature.painting,
+            message: () => '    draw TOP <' + _getElementDescription(e.box) + '> h=$bT @ y=${rect.top.toStringAsFixed(2)} w=${rect.width.toStringAsFixed(2)}',
+          );
         }
         // Paint bottom border on every fragment.
-        if (!suppressEdge && bB > 0) {
+        if (bB > 0) {
           p.color = s.borderBottomColor?.value ?? const Color(0xFF000000);
           canvas.drawRect(Rect.fromLTWH(rect.left, rect.bottom - bB, rect.width, bB), p);
+          InlineLayoutLog.log(
+            impl: InlineImpl.paragraphIFC,
+            feature: InlineFeature.painting,
+            message: () => '    draw BOTTOM <' + _getElementDescription(e.box) + '> h=$bB @ y=${(rect.bottom - bB).toStringAsFixed(2)} w=${rect.width.toStringAsFixed(2)}',
+          );
         }
-        if (!suppressEdge && logicalFirstFrag && bL > 0) {
+        if (logicalFirstFrag && bL > 0) {
           p.color = s.borderLeftColor?.value ?? const Color(0xFF000000);
           canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, bL, rect.height), p);
+          InlineLayoutLog.log(
+            impl: InlineImpl.paragraphIFC,
+            feature: InlineFeature.painting,
+            message: () => '    draw LEFT <' + _getElementDescription(e.box) + '> w=$bL @ x=${rect.left.toStringAsFixed(2)} h=${rect.height.toStringAsFixed(2)}',
+          );
         }
-        if (!suppressEdge && logicalLastFrag && bR > 0) {
+        if (logicalLastFrag && bR > 0) {
           p.color = s.borderRightColor?.value ?? const Color(0xFF000000);
           canvas.drawRect(Rect.fromLTWH(rect.right - bR, rect.top, bR, rect.height), p);
+          InlineLayoutLog.log(
+            impl: InlineImpl.paragraphIFC,
+            feature: InlineFeature.painting,
+            message: () => '    draw RIGHT <' + _getElementDescription(e.box) + '> w=$bR @ x=${(rect.right - bR).toStringAsFixed(2)} h=${rect.height.toStringAsFixed(2)}',
+          );
         }
       }
     }
