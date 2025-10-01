@@ -22,6 +22,7 @@
 #include "core/css/properties/css_parsing_utils.h"
 #include "core/css/style_color.h"
 #include "css_parser_fast_path.h"
+#include <type_traits>
 #include "style_property_shorthand.h"
 
 namespace webf {
@@ -1003,8 +1004,19 @@ static ParseColorResult ParseColor(CSSPropertyID property_id,
   // Fast path for hex colors and rgb()/rgba()/hsl()/hsla() colors.
   // Note that ParseColor may be called from external contexts,
   // i.e., when parsing style sheets, so we need the Unicode path here.
-  const bool parsed =
-      FastParseColorInternal(out_color, string.Is8Bit() ? string.Characters8() : reinterpret_cast<const uint8_t*>(string.Characters16()), string.length(), quirks_mode);
+  // Ensure we pass a contiguous 8-bit buffer to the fast color parser.
+  std::vector<uint8_t> color_tmp;
+  const uint8_t* color_bytes = webf::VisitCharacters(string, [&](auto chars) {
+    using CharT = typename std::decay_t<decltype(chars)>::value_type;
+    if constexpr (std::is_same_v<CharT, LChar>) {
+      return reinterpret_cast<const uint8_t*>(chars.data());
+    } else {
+      color_tmp.resize(chars.size());
+      for (size_t i = 0; i < chars.size(); ++i) color_tmp[i] = static_cast<uint8_t>(chars[i] & 0xFF);
+      return reinterpret_cast<const uint8_t*>(color_tmp.data());
+    }
+  });
+  const bool parsed = FastParseColorInternal(out_color, color_bytes, string.length(), quirks_mode);
   return parsed ? ParseColorResult::kColor : ParseColorResult::kFailure;
 }
 
@@ -1384,8 +1396,19 @@ static std::shared_ptr<const CSSValue> ParseKeywordValue(CSSPropertyID property_
                                                          std::shared_ptr<const CSSParserContext> context) {
   DCHECK(!string.IsEmpty());
 
-  std::shared_ptr<const CSSValue> css_wide_keyword =
-      ParseCSSWideKeywordValue(string.Is8Bit() ? string.Characters8() : reinterpret_cast<const uint8_t*>(string.Characters16()), string.length());
+  // Prepare 8-bit buffer for wide keyword parsing
+  std::vector<uint8_t> kw_tmp;
+  const uint8_t* kw_bytes = webf::VisitCharacters(string, [&](auto chars) {
+    using CharT = typename std::decay_t<decltype(chars)>::value_type;
+    if constexpr (std::is_same_v<CharT, LChar>) {
+      return reinterpret_cast<const uint8_t*>(chars.data());
+    } else {
+      kw_tmp.resize(chars.size());
+      for (size_t i = 0; i < chars.size(); ++i) kw_tmp[i] = static_cast<uint8_t>(chars[i] & 0xFF);
+      return reinterpret_cast<const uint8_t*>(kw_tmp.data());
+    }
+  });
+  std::shared_ptr<const CSSValue> css_wide_keyword = ParseCSSWideKeywordValue(kw_bytes, string.length());
 
   if (!CSSParserFastPaths::IsHandledByKeywordFastPath(property_id)) {
     // This isn't a property we have a fast path for, but even
@@ -1657,8 +1680,19 @@ static std::shared_ptr<const CSSValue> ParseSimpleTransform(CSSPropertyID proper
     return nullptr;
   }
 
-  const uint8_t* pos = reinterpret_cast<const uint8_t*>(string.data());
+  // Prepare an 8-bit view over the input for transform fast-path parsing.
   unsigned length = string.length();
+  std::vector<uint8_t> buf;
+  const uint8_t* pos = webf::VisitCharacters(string, [&](auto chars) {
+    using CharT = typename std::decay_t<decltype(chars)>::value_type;
+    if constexpr (std::is_same_v<CharT, LChar>) {
+      return reinterpret_cast<const uint8_t*>(chars.data());
+    } else {
+      buf.resize(chars.size());
+      for (size_t i = 0; i < chars.size(); ++i) buf[i] = static_cast<uint8_t>(chars[i] & 0xFF);
+      return reinterpret_cast<const uint8_t*>(buf.data());
+    }
+  });
   if (!TransformCanLikelyUseFastPath(pos, length)) {
     return nullptr;
   }

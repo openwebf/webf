@@ -113,7 +113,7 @@ class CSSParserTokenOffsets {
   StringView StringForTokens(const CSSParserToken* begin, const CSSParserToken* end) const {
     uint32_t begin_offset = OffsetFor(begin);
     uint32_t end_offset = OffsetFor(end);
-    return StringView(string_.data() + begin_offset, end_offset - begin_offset);
+    return StringView(string_, begin_offset, end_offset - begin_offset);
   }
 
  private:
