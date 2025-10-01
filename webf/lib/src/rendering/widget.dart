@@ -149,7 +149,9 @@ class RenderWidget extends RenderBoxModel
         if (zi != null && zi < 0) {
           negatives.add(c);
         } else if (zi != null && zi > 0) {
-          positives.add(c);
+          if (!(renderStyle as CSSRenderStyle).suppressPositiveStackingFromDescendants) {
+            positives.add(c);
+          }
         } else if (zi == 0) {
           positionedAutoOrZero.add(c);
         } else if (positioned && zi == null) {
@@ -167,6 +169,37 @@ class RenderWidget extends RenderBoxModel
         normal.add(c as RenderBox);
       }
     });
+
+    // Promote descendant stacking context roots with positive z-index so they can
+    // participate in ordering at this level (e.g., widget container hosting <body>
+    // vs absolutely-positioned under <html>).
+    void _collectPositiveStackingContexts(RenderBox node, List<RenderBoxModel> out, [int depth = 0]) {
+      if (depth > 64) return;
+      if (node is RenderBoxModel) {
+        final CSSRenderStyle rs = node.renderStyle;
+        if (rs.establishesStackingContext) {
+          final int? zi = rs.zIndex;
+          if (zi != null && zi > 0) out.add(node);
+          return;
+        }
+      }
+      if (node is RenderObjectWithChildMixin<RenderBox>) {
+        final RenderBox? c = (node as dynamic).child as RenderBox?;
+        if (c != null) _collectPositiveStackingContexts(c, out, depth + 1);
+      }
+      if (node is RenderLayoutBox) {
+        RenderBox? c = node.firstChild;
+        while (c != null) {
+          _collectPositiveStackingContexts(c, out, depth + 1);
+          final RenderLayoutParentData pd = c.parentData as RenderLayoutParentData;
+          c = pd.nextSibling;
+        }
+      }
+    }
+
+    for (final RenderBox nf in normal) {
+      _collectPositiveStackingContexts(nf, positives);
+    }
 
     // Compare two render boxes by full document tree order using DOM compareDocumentPosition.
     int _compareTreeOrder(RenderBoxModel a, RenderBoxModel b) {
@@ -350,10 +383,57 @@ class RenderWidget extends RenderBoxModel
       }
     }
 
+    Offset _accumulateOffsetFromDescendant(RenderObject descendant, RenderObject ancestor) {
+      Offset sum = Offset.zero;
+      RenderObject? cur = descendant;
+      while (cur != null && cur != ancestor) {
+        final Object? pd = (cur is RenderBox) ? (cur.parentData) : null;
+        if (pd is ContainerBoxParentData) {
+          sum += (pd as ContainerBoxParentData).offset;
+        } else if (pd is RenderLayoutParentData) {
+          sum += (pd as RenderLayoutParentData).offset;
+        }
+        cur = cur.parent as RenderObject?;
+      }
+      return sum;
+    }
+
     for (final RenderBox child in paintingOrder) {
       if (isPositionPlaceholder(child)) continue;
       final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
-      if (child.hasSize) context.paintChild(child, offset + pd.offset);
+      if (!child.hasSize) continue;
+
+      bool restoreFlag = false;
+      bool previous = false;
+      final bool promoteHere = (renderStyle as CSSRenderStyle).isDocumentRootBox();
+      if (promoteHere && child is RenderBoxModel) {
+        final CSSRenderStyle rs = child.renderStyle;
+        final int? zi = rs.zIndex;
+        final bool isPositive = zi != null && zi > 0;
+        if (!isPositive) {
+          previous = rs.suppressPositiveStackingFromDescendants;
+          rs.suppressPositiveStackingFromDescendants = true;
+          if (child is RenderLayoutBox) {
+            child.markChildrenNeedsSort();
+          } else if (child is RenderWidget) {
+            child.markChildrenNeedsSort();
+          }
+          restoreFlag = true;
+        }
+      }
+
+      final bool direct = identical(child.parent, this);
+      final Offset localOffset = direct ? pd.offset : _accumulateOffsetFromDescendant(child, this);
+      context.paintChild(child, offset + localOffset);
+
+      if (restoreFlag && child is RenderBoxModel) {
+        (child.renderStyle as CSSRenderStyle).suppressPositiveStackingFromDescendants = previous;
+        if (child is RenderLayoutBox) {
+          child.markChildrenNeedsSort();
+        } else if (child is RenderWidget) {
+          child.markChildrenNeedsSort();
+        }
+      }
     }
   }
 

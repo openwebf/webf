@@ -1304,6 +1304,14 @@ class CSSRenderStyle extends RenderStyle
         CSSSvgMixin {
   CSSRenderStyle({required this.target});
 
+  // Transient flag for painting: when true on a container, its local painting
+  // order computation will suppress direct children (or deeper descendants) that
+  // are stacking context roots with positive z-index. Those participants are
+  // expected to be promoted and painted by an ancestor stacking context to
+  // satisfy cross-parent z-index ordering. This flag is only mutated during a
+  // paint pass and should not be persisted.
+  bool suppressPositiveStackingFromDescendants = false;
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);

@@ -237,6 +237,21 @@ class RenderFlowLayout extends RenderLayoutBox {
     }
 
     // Regular flow layout painting: skip RenderTextBox unless it paints itself (non-IFC)
+    Offset _accumulateOffsetFromDescendant(RenderObject descendant, RenderObject ancestor) {
+      Offset sum = Offset.zero;
+      RenderObject? cur = descendant;
+      while (cur != null && cur != ancestor) {
+        final Object? pd = (cur is RenderBox) ? (cur.parentData) : null;
+        if (pd is ContainerBoxParentData) {
+          sum += (pd as ContainerBoxParentData).offset;
+        } else if (pd is RenderLayoutParentData) {
+          sum += (pd as RenderLayoutParentData).offset;
+        }
+        cur = cur.parent as RenderObject?;
+      }
+      return sum;
+    }
+
     for (int i = 0; i < paintingOrder.length; i++) {
       RenderBox child = paintingOrder[i];
       bool shouldPaint = !isPositionPlaceholder(child);
@@ -246,10 +261,42 @@ class RenderFlowLayout extends RenderLayoutBox {
         shouldPaint = shouldPaint && (child as RenderTextBox).paintsSelf;
       }
 
-      if (shouldPaint) {
-        final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-        if (child.hasSize) {
-          context.paintChild(child, childParentData.offset + offset);
+      if (!shouldPaint) continue;
+
+      final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+      if (!child.hasSize) continue;
+
+      bool restoreFlag = false;
+      bool previous = false;
+      // Only suppress descendants' positive stacking when painting the document root
+      // (where we promote descendant positives to this level).
+      final bool promoteHere = (renderStyle as CSSRenderStyle).isDocumentRootBox();
+      if (promoteHere && child is RenderBoxModel) {
+        final CSSRenderStyle rs = child.renderStyle;
+        final int? zi = rs.zIndex;
+        final bool isPositive = zi != null && zi > 0;
+        if (!isPositive) {
+          previous = rs.suppressPositiveStackingFromDescendants;
+          rs.suppressPositiveStackingFromDescendants = true;
+          if (child is RenderLayoutBox) {
+            child.markChildrenNeedsSort();
+          } else if (child is RenderWidget) {
+            child.markChildrenNeedsSort();
+          }
+          restoreFlag = true;
+        }
+      }
+
+      final bool direct = identical(child.parent, this);
+      final Offset localOffset = direct ? childParentData.offset : _accumulateOffsetFromDescendant(child, this);
+      context.paintChild(child, localOffset + offset);
+
+      if (restoreFlag && child is RenderBoxModel) {
+        (child.renderStyle as CSSRenderStyle).suppressPositiveStackingFromDescendants = previous;
+        if (child is RenderLayoutBox) {
+          child.markChildrenNeedsSort();
+        } else if (child is RenderWidget) {
+          child.markChildrenNeedsSort();
         }
       }
     }

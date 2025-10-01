@@ -213,6 +213,46 @@ abstract class RenderLayoutBox extends RenderBoxModel
         }
       });
 
+      // Promote descendant stacking context roots with positive z-index into the
+      // current container's positive bucket so that ordering can be resolved
+      // across non-stacking ancestors — only for the document root stacking context.
+      void _collectPositiveStackingContexts(RenderBox node, List<RenderBoxModel> out, [int depth = 0]) {
+        // Avoid degenerate deep recursion.
+        if (depth > 64) return;
+        if (node is RenderBoxModel) {
+          final CSSRenderStyle rs = node.renderStyle;
+          // If this node establishes its own stacking context, treat it as a
+          // single participant at this level and do not descend further.
+          if (rs.establishesStackingContext) {
+            final int? zi = rs.zIndex;
+            if (zi != null && zi > 0) out.add(node);
+            return;
+          }
+        }
+        // Descend into containers/wrappers that don't establish a stacking context.
+        if (node is RenderObjectWithChildMixin<RenderBox>) {
+          final RenderBox? c = (node as dynamic).child as RenderBox?;
+          if (c != null) _collectPositiveStackingContexts(c, out, depth + 1);
+        }
+        if (node is RenderLayoutBox) {
+          RenderBox? c = node.firstChild;
+          while (c != null) {
+            _collectPositiveStackingContexts(c, out, depth + 1);
+            final RenderLayoutParentData pd = c.parentData as RenderLayoutParentData;
+            c = pd.nextSibling;
+          }
+        }
+      }
+
+      // Only promote at the document root (<html>), to avoid interfering with normal
+      // stacking of nested flex/grid containers.
+      final bool promoteAtThisLevel = (renderStyle as CSSRenderStyle).isDocumentRootBox();
+      if (promoteAtThisLevel) {
+        for (final RenderBox nf in normalFlow) {
+          _collectPositiveStackingContexts(nf, positives);
+        }
+      }
+
       // Compare two render boxes by full document tree order using DOM compareDocumentPosition.
       int _compareTreeOrder(RenderBoxModel a, RenderBoxModel b) {
         final Node aNode = a.renderStyle.target;
@@ -292,12 +332,64 @@ abstract class RenderLayoutBox extends RenderBoxModel
 
   @override
   void performPaint(PaintingContext context, Offset offset) {
+    Offset _accumulateOffsetFromDescendant(RenderObject descendant, RenderObject ancestor) {
+      Offset sum = Offset.zero;
+      RenderObject? cur = descendant;
+      while (cur != null && cur != ancestor) {
+        final Object? pd = (cur is RenderBox) ? (cur.parentData) : null;
+        if (pd is ContainerBoxParentData) {
+          final Offset o = (pd as ContainerBoxParentData).offset;
+          sum += o;
+        } else if (pd is RenderLayoutParentData) {
+          sum += (pd as RenderLayoutParentData).offset;
+        }
+        cur = cur.parent as RenderObject?;
+      }
+      return sum;
+    }
+
     for (int i = 0; i < paintingOrder.length; i++) {
       RenderBox child = paintingOrder[i];
-      if (!isPositionPlaceholder(child)) {
-        final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-        if (child.hasSize) {
-          context.paintChild(child, childParentData.offset + offset);
+      if (isPositionPlaceholder(child)) continue;
+
+      final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+      if (!child.hasSize) continue;
+
+      bool restoreFlag = false;
+      bool previous = false;
+      final bool promoteHere = (renderStyle as CSSRenderStyle).isDocumentRootBox();
+      if (promoteHere && child is RenderBoxModel) {
+        final CSSRenderStyle rs = child.renderStyle;
+        final int? zi = rs.zIndex;
+        final bool isPositive = zi != null && zi > 0;
+        // Suppress painting of descendant positive stacking contexts when painting
+        // normal-flow/auto/zero buckets; those positives are promoted to be painted
+        // at this ancestor level to resolve cross-parent ordering.
+        if (!isPositive) {
+          previous = rs.suppressPositiveStackingFromDescendants;
+          rs.suppressPositiveStackingFromDescendants = true;
+          // Invalidate cached painting order on this child so suppression takes effect.
+          if (child is RenderLayoutBox) {
+            child.markChildrenNeedsSort();
+          } else if (child is RenderWidget) {
+            child.markChildrenNeedsSort();
+          }
+          restoreFlag = true;
+        }
+      }
+
+      // Compute correct paint offset even if the render box to paint is not a direct child
+      // of this container (e.g., promoted positive stacking contexts).
+      final bool direct = identical(child.parent, this);
+      final Offset localOffset = direct ? childParentData.offset : _accumulateOffsetFromDescendant(child, this);
+      context.paintChild(child, localOffset + offset);
+
+      if (restoreFlag && child is RenderBoxModel) {
+        (child.renderStyle as CSSRenderStyle).suppressPositiveStackingFromDescendants = previous;
+        if (child is RenderLayoutBox) {
+          child.markChildrenNeedsSort();
+        } else if (child is RenderWidget) {
+          child.markChildrenNeedsSort();
         }
       }
     }
