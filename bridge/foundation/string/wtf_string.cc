@@ -104,6 +104,13 @@ String::String(JSContext* ctx, JSValue qjs_value) {
   }
 }
 
+bool String::ToDouble(double* p) {
+  if (!impl_) {
+    return false;
+  }
+  return impl_->ToDouble(p);
+}
+
 String String::Substring(size_t pos, size_t len) const {
   if (!impl_) {
     return String::EmptyString();
