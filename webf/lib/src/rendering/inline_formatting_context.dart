@@ -3137,6 +3137,25 @@ class InlineFormattingContext {
           }
           top = baseTop;
           bottom = baseBottom;
+        } else {
+          // Clamp vertical extent to the line's content band even when not painting per-line.
+          final int li = _lineIndexForRect(tb);
+          if (li >= 0 && li < _paraLines.length) {
+            final lm = _paraLines[li];
+            final double baseTop = lm.baseline - mBaseline;
+            final double baseBottom = baseTop + mHeight;
+            if (((top - baseTop).abs() > 0.5 || (bottom - baseBottom).abs() > 0.5)) {
+              InlineLayoutLog.log(
+                impl: InlineImpl.paragraphIFC,
+                feature: InlineFeature.metrics,
+                message: () => '    [metrics] span frag (global) to content band: '
+                    'top ${top.toStringAsFixed(2)}→${baseTop.toStringAsFixed(2)} '
+                    'bottom ${bottom.toStringAsFixed(2)}→${baseBottom.toStringAsFixed(2)}',
+              );
+            }
+            top = baseTop;
+            bottom = baseBottom;
+          }
         }
 
         // For empty height rects we keep the clamped band; vertical padding/border
