@@ -113,8 +113,19 @@ static std::shared_ptr<const CSSValue> ParseSimpleLengthValue(CSSPropertyID prop
   double number;
   CSSPrimitiveValue::UnitType unit = CSSPrimitiveValue::UnitType::kNumber;
 
-  const bool parsed_simple_length =
-      ParseSimpleLength(string.Characters8(), string.length(), unit, number);
+  // Ensure we pass 8-bit characters to the simple length parser.
+  std::vector<LChar> simple_tmp;
+  const LChar* simple_chars = webf::VisitCharacters(string, [&](auto chars) {
+    using CharT = typename std::decay_t<decltype(chars)>::value_type;
+    if constexpr (std::is_same_v<CharT, LChar>) {
+      return reinterpret_cast<const LChar*>(chars.data());
+    } else {
+      simple_tmp.resize(chars.size());
+      for (size_t i = 0; i < chars.size(); ++i) simple_tmp[i] = static_cast<LChar>(chars[i] & 0xFF);
+      return reinterpret_cast<const LChar*>(simple_tmp.data());
+    }
+  });
+  const bool parsed_simple_length = ParseSimpleLength(simple_chars, string.length(), unit, number);
   if (!parsed_simple_length) {
     return nullptr;
   }
