@@ -106,11 +106,6 @@ class InlineFormattingContext {
   // For mapping inline element RenderBox -> range in paragraph text
   final Map<RenderBoxModel, (int start, int end)> _elementRanges = {};
 
-  // Measured visual sizes (border-box) for inline render boxes (including wrappers)
-  final Map<RenderBox, Size> _measuredVisualSizes = {};
-
-  Size? measuredVisualSizeOf(RenderBox box) => _measuredVisualSizes[box];
-
   // Public helpers for consumers outside IFC to query inline element metrics
   // without relying on legacy line boxes.
   double inlineElementMaxLineWidth(RenderBoxModel box) {
@@ -156,6 +151,30 @@ class InlineFormattingContext {
       if (h > maxH) maxH = h;
     }
     return maxH;
+  }
+
+  // Total visual height that this inline element spans across lines.
+  // Sums the heights of unique paragraph lines that intersect the element's
+  // text range. This is useful for sizing the element's render box to match
+  // the visual union of all its fragments (e.g., for hit testing or serving as
+  // a containing block for positioned descendants).
+  double inlineElementTotalHeight(RenderBoxModel box) {
+    if (_paragraph == null || _paraLines.isEmpty) return 0.0;
+    final range = _elementRanges[box];
+    if (range == null) return 0.0;
+    final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+    if (rects.isEmpty) return 0.0;
+
+    final Set<int> lineIndexes = <int>{};
+    for (final tb in rects) {
+      final int li = _lineIndexForRect(tb);
+      if (li >= 0 && li < _paraLines.length) lineIndexes.add(li);
+    }
+    double sum = 0.0;
+    for (final li in lineIndexes) {
+      sum += _paraLines[li].height;
+    }
+    return sum;
   }
 
   // Resolve the RenderBoxModel that carries CSS styles for a placeholder's
@@ -2126,7 +2145,6 @@ class InlineFormattingContext {
     _textRunBuildIndex = 0;
     _atomicBuildIndex = 0;
     _elementRanges.clear();
-    _measuredVisualSizes.clear();
     // Track open inline element frames for deferred extras handling
     final List<_OpenInlineFrame> openFrames = [];
 
@@ -3676,7 +3694,6 @@ class InlineFormattingContext {
     _placeholderOrder.clear();
     _allPlaceholders.clear();
     _elementRanges.clear();
-    _measuredVisualSizes.clear();
     _paraLines = const [];
     _paragraph = null;
   }

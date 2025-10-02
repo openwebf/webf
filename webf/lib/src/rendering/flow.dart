@@ -78,8 +78,6 @@ class RenderFlowLayout extends RenderLayoutBox {
     double sum = 0.0;
     RenderBox? child = firstChild;
     while (child != null && child != marker) {
-      final Size? sz = _inlineFormattingContext!.measuredVisualSizeOf(child);
-      if (sz != null) sum += sz.width;
       final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
       child = pd.nextSibling;
     }
@@ -114,14 +112,6 @@ class RenderFlowLayout extends RenderLayoutBox {
   // to avoid downstream issues (semantics/devtools traversals accessing size).
   void _ensureChildrenLaidOutRecursively(RenderBox parent) {
     void layoutIfNeeded(RenderBox node) {
-      // If IFC measured a visual size for this node, lay it out tightly to that size
-      if (establishIFC && _inlineFormattingContext != null) {
-        final Size? measured = _inlineFormattingContext!.measuredVisualSizeOf(node);
-        if (measured != null) {
-          node.layout(BoxConstraints.tight(measured), parentUsesSize: true);
-          return;
-        }
-      }
       if (node.hasSize) return;
 
       // Use specific constraints for known special cases to avoid side-effects
@@ -1239,6 +1229,39 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   // Set flex container size according to children size.
   void _setContainerSize({double adjustHeight = 0, double adjustWidth = 0}) {
+    // Special handling: when this element is inline-level and participates in
+    // the parent's inline formatting context, size it to the union of its visual
+    // fragments as measured by the parent IFC rather than from its own flow runs.
+    final bool isInlineSelf = renderStyle.effectiveDisplay == CSSDisplay.inline;
+    final RenderBoxModel? p = renderStyle.getParentRenderStyle()?.attachedRenderBoxModel;
+    if (isInlineSelf && p is RenderFlowLayout && p.establishIFC && p.inlineFormattingContext != null) {
+      final InlineFormattingContext ifc = p.inlineFormattingContext!;
+      // Width: max per-line fragment width of this inline element.
+      double w = ifc.inlineElementMaxLineWidth(this);
+      // Height: sum of unique line heights that the element spans.
+      double h = ifc.inlineElementTotalHeight(this);
+      // Fallback to legacy metrics if IFC did not record a range for this element.
+      if ((w <= 0 || !w.isFinite) || (h <= 0 || !h.isFinite)) {
+        if (_lineMetrics.isEmpty) {
+          _setContainerSizeWithNoChild();
+          return;
+        }
+        w = _getRunsMaxMainSize(_lineMetrics);
+        h = _getRunsCrossSizeWithCollapse(_lineMetrics);
+      }
+
+      Size layoutContentSize = getContentSize(
+        contentWidth: w + adjustWidth,
+        contentHeight: h + adjustHeight,
+      );
+      size = getBoxSize(layoutContentSize);
+
+      // Use IFC-driven sizes for min-content as well to better reflect visuals when inline.
+      minContentWidth = w;
+      minContentHeight = h;
+      return;
+    }
+
     if (_lineMetrics.isEmpty) {
       _setContainerSizeWithNoChild();
       return;
@@ -1260,8 +1283,6 @@ class RenderFlowLayout extends RenderLayoutBox {
     // Keep min-content height consistent with collapsed cross size to
     // avoid overestimating intrinsic size and leaving extra space.
     minContentHeight = runCrossSize;
-
-    // logging removed
   }
 
   // Set size when layout has no child.

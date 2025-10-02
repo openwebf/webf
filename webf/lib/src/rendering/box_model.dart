@@ -1298,8 +1298,6 @@ abstract class RenderBoxModel extends RenderBox
     super.debugFillProperties(properties);
     properties.add(renderStyle.toDiagnosticsNode(name: 'renderStyle'));
     properties.add(DiagnosticsProperty('creatorElement', renderStyle.target));
-    properties.add(DiagnosticsProperty('minContentWidth', minContentWidth));
-    properties.add(DiagnosticsProperty('minContentHeight', minContentHeight));
     properties.add(DiagnosticsProperty('contentSize', _contentSize));
     properties.add(DiagnosticsProperty('contentConstraints', contentConstraints, missingIfNull: true));
     properties.add(DiagnosticsProperty('maxScrollableSize', scrollableSize, missingIfNull: true));
