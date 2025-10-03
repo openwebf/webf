@@ -868,8 +868,15 @@ class RenderFlowLayout extends RenderLayoutBox {
       final CSSDisplay disp = crs.effectiveDisplay;
       final bool isBlockLevel = disp == CSSDisplay.block || disp == CSSDisplay.flex;
       if (!isBlockLevel || !crs.width.isAuto) continue;
-      if (disp == CSSDisplay.flex || disp == CSSDisplay.inlineFlex) {
-        // Skip stretching flex containers to preserve correct shrink-to-fit of the inline-block.
+      // Do not stretch replaced elements like <img>. Their used width with
+      // width:auto should be based on intrinsic dimensions (subject to min/max),
+      // not the container's shrink-to-fit width. Stretching here caused images
+      // to incorrectly expand to the inline-block's available line width.
+      if (crs.isSelfRenderReplaced()) {
+        continue;
+      }
+      if (disp == CSSDisplay.inlineFlex) {
+        // Skip inline-level flex containers; only stretch block-level children.
         continue;
       }
 

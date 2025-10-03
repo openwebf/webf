@@ -313,18 +313,17 @@ class CSSLengthValue {
               _computedValue = double.infinity;
               break;
             }
-            // For inline-block shrink-to-fit (width:auto), resolve percentages against
-            // the available inline size (ancestor-constrained width), not the element's
-            // current used width to avoid recursive halving.
+            // For inline-block (or inline-flex) with width:auto (shrink-to-fit), the containing block
+            // inline size is not yet definite for in-flow children. Per CSS, percentage widths here
+            // compute to auto. Defer resolution by returning infinity; a later pass stretches the child
+            // to the resolved inline-block content width.
             if (!isPositioned &&
                 parentRenderStyle != null &&
-                parentRenderStyle.effectiveDisplay == CSSDisplay.inlineBlock &&
-                parentRenderStyle.width.isAuto &&
-                parentRenderStyle is CSSRenderStyle) {
-              final double aw = (parentRenderStyle as CSSRenderStyle).contentMaxConstraintsWidth;
-              if (aw != double.infinity) {
-                relativeParentWidth = aw;
-              }
+                (parentRenderStyle.effectiveDisplay == CSSDisplay.inlineBlock ||
+                    parentRenderStyle.effectiveDisplay == CSSDisplay.inlineFlex) &&
+                parentRenderStyle.width.isAuto) {
+              _computedValue = double.infinity;
+              break;
             }
             if (relativeParentWidth != null) {
               _computedValue = value! * relativeParentWidth;

@@ -2482,7 +2482,19 @@ class CSSRenderStyle extends RenderStyle
       if (logicalWidth == null && renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
       } else if (logicalWidth == null && renderStyle.isSelfHTMLElement()) {
-        logicalWidth = target.ownerView.viewport!.boxSize!.width;
+        // Avoid defaulting to the viewport width when this element participates
+        // in an inline-block shrink-to-fit context. Children of an inline-block
+        // with auto width must not assume a definite containing block width; doing so
+        // causes percentage widths (e.g., 100%) to immediately resolve to the viewport
+        // and force the inline-block to expand to the full line width. Instead, keep
+        // width auto here so the child can measure intrinsically and the parent can
+        // shrink-wrap to its contents.
+        final CSSRenderStyle? p = renderStyle.getParentRenderStyle();
+        final bool parentInlineBlockAuto = p != null &&
+            p.effectiveDisplay == CSSDisplay.inlineBlock && p.width.isAuto;
+        if (!parentInlineBlockAuto) {
+          logicalWidth = target.ownerView.viewport!.boxSize!.width;
+        }
       } else if (logicalWidth == null && (renderStyle.isSelfRouterLinkElement() && getCurrentViewportBox() is! RootRenderViewportBox)) {
         logicalWidth = getCurrentViewportBox()!.boxSize!.width;
       } else if (logicalWidth == null && parentStyle != null) {
