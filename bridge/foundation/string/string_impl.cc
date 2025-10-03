@@ -85,6 +85,12 @@ std::shared_ptr<StringImpl> StringImpl::Create(const UChar* characters, size_t l
   return string;
 }
 
+size_t StringImpl::GetHash() const {
+  if (size_t hash = GetHashRaw())
+    return hash;
+  return HashSlowCase();
+}
+
 std::shared_ptr<StringImpl> StringImpl::CreateUninitialized(size_t length, LChar*& data) {
   if (!length) {
     data = nullptr;
