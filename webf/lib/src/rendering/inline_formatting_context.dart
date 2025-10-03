@@ -836,6 +836,59 @@ class InlineFormattingContext {
   // Expose paragraph object for consumers (Flow) that need paragraph height fallback.
   ui.Paragraph? get paragraph => _paragraph;
 
+  // Expose the paragraph's left shift applied at paint so consumers can map
+  // paragraph coordinates back to container content-box coordinates.
+  double get paragraphLeftShift => _paragraphMinLeft.isFinite ? _paragraphMinLeft : 0.0;
+
+  // Whether this inline element had a right-extras placeholder inserted.
+  bool elementHasRightExtrasPlaceholder(RenderBoxModel box) => _elementHasRightExtrasPlaceholder(box);
+
+  // Compute inline horizontal advance (in container content-box space) to the
+  // end of the owning inline element for a given descendant render object. The
+  // returned value reflects where subsequent inline content would begin on the
+  // same line, excluding any trailing right-extras placeholder that may have
+  // been inserted for positive padding/border/margin.
+  double inlineAdvanceForDescendant(RenderObject descendant) {
+    if (_paragraph == null) return 0.0;
+
+    // Ascend to find an owning inline RenderBoxModel that participates in this IFC.
+    RenderObject? cur = descendant;
+    RenderBoxModel? owner;
+    int guard = 0;
+    while (cur != null && cur != container && guard++ < 64) {
+      if (cur is RenderBoxModel) {
+        owner = cur;
+        // Prefer the nearest RenderBoxModel that actually has a recorded range.
+        final hasRange = _elementRanges.containsKey(owner);
+        if (hasRange) break;
+      }
+      cur = cur.parent as RenderObject?;
+    }
+    if (owner == null) return 0.0;
+    final range = _elementRanges[owner];
+    if (range == null) return 0.0;
+
+    final List<ui.TextBox> rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+    if (rects.isEmpty) return 0.0;
+
+    // Use the right edge of the last fragment; subtract any paragraph left shift
+    // so the result is in container content-box coordinates.
+    double right = rects.last.right - paragraphLeftShift;
+
+    // If a right-extras placeholder was inserted for this owner (positive padding/border/margin),
+    // subtract those extras to get the end of inline content where following content would start.
+    if (elementHasRightExtrasPlaceholder(owner)) {
+      final s = owner.renderStyle;
+      final double extrasR = s.paddingRight.computedValue +
+          s.effectiveBorderRightWidth.computedValue +
+          s.marginRight.computedValue;
+      right -= extrasR;
+    }
+
+    if (!right.isFinite) return 0.0;
+    return right;
+  }
+
   // Relayout the existing paragraph to a new width and refresh line/placeholder caches.
   // Used by shrink-to-fit adjustments (e.g., inline-block auto width) so that
   // text inside the element is positioned relative to the final used width.

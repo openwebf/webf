@@ -434,9 +434,18 @@ class CSSPositionedLayout {
     // preceding inline content per CSS static-position rules.
     // Only apply when the containing block is not the document root. Root cases are handled
     // specially below to preserve expected behavior.
-    if (!parent.isDocumentRootBox && ph != null && ph.parent is RenderFlowLayout) {
-      final RenderFlowLayout flowParent = ph.parent as RenderFlowLayout;
-      if (flowParent.establishIFC) {
+    if (!parent.isDocumentRootBox && ph != null) {
+      // Find the nearest ancestor flow container that establishes an IFC.
+      RenderObject? a = ph.parent;
+      RenderFlowLayout? flowParent;
+      while (a != null) {
+        if (a is RenderFlowLayout && a.establishIFC) {
+          flowParent = a;
+          break;
+        }
+        a = (a.parent is RenderObject) ? a.parent as RenderObject? : null;
+      }
+      if (flowParent != null) {
         // Only inline-level hypothetical boxes should use inline advance for static X.
         // Use specified display (not effective) to avoid misclassifying inline elements
         // that are out-of-flow as block.
@@ -447,8 +456,7 @@ class CSSPositionedLayout {
             flowParent.renderStyle.effectiveBorderLeftWidth.computedValue +
             flowParent.renderStyle.paddingLeft.computedValue;
         if (!childIsBlockLike) {
-          // Try using IFC-provided inline advance; if not available, fall back to
-          // measuring preceding text boxes directly.
+          // Use IFC-provided inline advance; when unavailable (e.g., empty inline), keep 0.
           double inlineAdvance = flowParent.inlineAdvanceBefore(ph);
           try {
             PositionedLayoutLog.log(
@@ -458,7 +466,19 @@ class CSSPositionedLayout {
             );
           } catch (_) {}
           if (inlineAdvance == 0.0) {
-            inlineAdvance = _computeInlineAdvanceBeforePlaceholder(flowParent, ph);
+            // Fallback: if placeholder is appended after inline content within this IFC container,
+            // use the paragraph visual max line width as the preceding inline advance.
+            final bool hasPrecedingInline = _hasInlineContentBeforePlaceholder(flowParent, ph);
+            if (hasPrecedingInline && flowParent.inlineFormattingContext != null) {
+              inlineAdvance = flowParent.inlineFormattingContext!.paragraphVisualMaxLineWidth;
+              try {
+                PositionedLayoutLog.log(
+                  impl: PositionedImpl.layout,
+                  feature: PositionedFeature.staticPosition,
+                  message: () => 'fallback inline advance by paragraph width =${inlineAdvance.toStringAsFixed(2)}',
+                );
+              } catch (_) {}
+            }
           }
           // Do not use inline advance when the abspos has percentage width (e.g., width:100%),
           // since the horizontal insets equation will use the static position as 'left' and a
@@ -466,24 +486,42 @@ class CSSPositionedLayout {
           // overlays at the content-left (no inline advance).
           final bool widthIsPercentage = child.renderStyle.width.type == CSSLengthType.PERCENTAGE;
           final double effAdvance = widthIsPercentage ? 0.0 : inlineAdvance;
-          if (contentLeftInset != 0.0 || effAdvance != 0.0) {
-            adjustedStaticPosition = adjustedStaticPosition.translate(contentLeftInset + effAdvance, 0);
+          // Compute flow content-left in CB space and add inline advance.
+          final Offset _phToFlow = _getPlaceholderToParentOffset(ph, flowParent, excludeScrollOffset: true);
+          final double targetX = staticPositionOffset.dx - _phToFlow.dx + contentLeftInset + effAdvance;
+          adjustedStaticPosition = Offset(targetX, adjustedStaticPosition.dy);
+          try {
+            PositionedLayoutLog.log(
+              impl: PositionedImpl.layout,
+              feature: PositionedFeature.staticPosition,
+              message: () => 'adjust static pos by IFC inline advance '
+                  'contentLeft=${contentLeftInset.toStringAsFixed(2)} '
+                  'advance=${effAdvance.toStringAsFixed(2)} '
+                  '→ (${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})',
+            );
+          } catch (_) {}
+          // Vertical: when both top and bottom are auto, align to the IFC container's
+          // content-top in CB coordinates so the abspos sits at the top of the line box.
+          if (top.isAuto && bottom.isAuto) {
+            final double contentTopInset = flowParent.renderStyle.paddingTop.computedValue +
+                flowParent.renderStyle.effectiveBorderTopWidth.computedValue;
+            final double targetY = staticPositionOffset.dy - _phToFlow.dy + contentTopInset;
+            adjustedStaticPosition = Offset(adjustedStaticPosition.dx, targetY);
             try {
               PositionedLayoutLog.log(
                 impl: PositionedImpl.layout,
                 feature: PositionedFeature.staticPosition,
-                message: () => 'adjust static pos by IFC inline advance '
-                    'contentLeft=${contentLeftInset.toStringAsFixed(2)} '
-                    'advance=${effAdvance.toStringAsFixed(2)} '
-                    '→ (${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})',
+                message: () => 'adjust static Y by IFC content-top '
+                    'flowContentTopInCB=${targetY.toStringAsFixed(2)}',
               );
             } catch (_) {}
           }
-          // Vertical: inline-level abspos anchors to the top of the line; nothing extra needed here.
         } else {
-          // Block-level hypothetical box: anchor to content-left only.
+          // Block-level hypothetical box: anchor to flow content-left in CB space.
           if (contentLeftInset != 0.0) {
-            adjustedStaticPosition = adjustedStaticPosition.translate(contentLeftInset, 0);
+            final Offset _phToFlow = _getPlaceholderToParentOffset(ph, flowParent, excludeScrollOffset: true);
+            final double targetX = staticPositionOffset.dx - _phToFlow.dx + contentLeftInset;
+            adjustedStaticPosition = Offset(targetX, adjustedStaticPosition.dy);
             try {
               PositionedLayoutLog.log(
                 impl: PositionedImpl.layout,
@@ -516,7 +554,7 @@ class CSSPositionedLayout {
                 } else {
                   paraH = ifc.paragraph?.height ?? 0.0;
                 }
-                if (paraH != 0.0) {
+                if (paraH != 0.0 && adjustedStaticPosition.dy.abs() < 0.5) {
                   adjustedStaticPosition = adjustedStaticPosition.translate(0, paraH);
                   try {
                   PositionedLayoutLog.log(
@@ -540,7 +578,7 @@ class CSSPositionedLayout {
           final double padTop = flowParent.renderStyle.paddingTop.computedValue;
           final double borderTop = flowParent.renderStyle.effectiveBorderTopWidth.computedValue;
           final double contentTopInset = padTop + borderTop;
-          if (contentTopInset != 0.0) {
+          if (contentTopInset != 0.0 && adjustedStaticPosition.dy.abs() < 0.5) {
             adjustedStaticPosition = adjustedStaticPosition.translate(0, contentTopInset);
             try {
               PositionedLayoutLog.log(
@@ -602,8 +640,21 @@ class CSSPositionedLayout {
         // block is <html>, the static X should reflect the inline advance within the IFC container.
         // Compute inline advance from the IFC paragraph; if the placeholder is the last child,
         // fall back to the paragraph’s visual max line width.
+        // Use the nearest IFC container up the chain for horizontal inline advance.
+        RenderFlowLayout? flowParent;
         if (phParent is RenderFlowLayout && phParent.establishIFC) {
-          final RenderFlowLayout flowParent = phParent as RenderFlowLayout;
+          flowParent = phParent as RenderFlowLayout;
+        } else {
+          RenderObject? a = phParent.parent;
+          while (a != null) {
+            if (a is RenderFlowLayout && a.establishIFC) {
+              flowParent = a;
+              break;
+            }
+            a = (a.parent is RenderObject) ? a.parent as RenderObject? : null;
+          }
+        }
+        if (flowParent != null) {
           // Base inset: content-left inside the IFC container
           final double contentLeftInset =
               flowParent.renderStyle.effectiveBorderLeftWidth.computedValue +
@@ -625,7 +676,9 @@ class CSSPositionedLayout {
           } catch (_) {}
           if (childIsBlockLike) {
             if (contentLeftInset != 0.0) {
-              adjustedStaticPosition = adjustedStaticPosition.translate(contentLeftInset, 0);
+              final Offset _phToFlow = _getPlaceholderToParentOffset(ph, flowParent, excludeScrollOffset: true);
+              final double targetX = staticPositionOffset.dx - _phToFlow.dx + contentLeftInset;
+              adjustedStaticPosition = Offset(targetX, adjustedStaticPosition.dy);
               try {
                 PositionedLayoutLog.log(
                   impl: PositionedImpl.layout,
@@ -682,31 +735,33 @@ class CSSPositionedLayout {
               );
             } catch (_) {}
             if (inlineAdvance == 0.0) {
-              // If placeholder is the last sibling, use paragraph visual width
-              if (ph.parentData is RenderLayoutParentData &&
-                  (ph.parentData as RenderLayoutParentData).nextSibling == null) {
-                final InlineFormattingContext? ifc = flowParent.inlineFormattingContext;
-                if (ifc != null) inlineAdvance = ifc.paragraphVisualMaxLineWidth;
-              }
-              if (inlineAdvance == 0.0) {
-                inlineAdvance = _computeInlineAdvanceBeforePlaceholder(flowParent, ph);
+              final bool hasPrecedingInline = _hasInlineContentBeforePlaceholder(flowParent, ph);
+              if (hasPrecedingInline && flowParent.inlineFormattingContext != null) {
+                inlineAdvance = flowParent.inlineFormattingContext!.paragraphVisualMaxLineWidth;
+                try {
+                  PositionedLayoutLog.log(
+                    impl: PositionedImpl.layout,
+                    feature: PositionedFeature.staticPosition,
+                    message: () => 'fallback inline advance under root by paragraph width =${inlineAdvance.toStringAsFixed(2)}',
+                  );
+                } catch (_) {}
               }
             }
             final bool widthIsPercentage = child.renderStyle.width.type == CSSLengthType.PERCENTAGE;
             final double effAdvance = widthIsPercentage ? 0.0 : inlineAdvance;
-            if (contentLeftInset != 0.0 || effAdvance != 0.0) {
-              adjustedStaticPosition = adjustedStaticPosition.translate(contentLeftInset + effAdvance, 0);
-              try {
-                PositionedLayoutLog.log(
-                  impl: PositionedImpl.layout,
-                  feature: PositionedFeature.staticPosition,
-                  message: () => 'adjust static pos under root by IFC inline advance '
-                      'contentLeft=${contentLeftInset.toStringAsFixed(2)} '
-                      'advance=${effAdvance.toStringAsFixed(2)} '
-                      '→ (${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})',
-                );
-              } catch (_) {}
-            }
+            final Offset _phToFlow = _getPlaceholderToParentOffset(ph, flowParent, excludeScrollOffset: true);
+            final double targetX = staticPositionOffset.dx - _phToFlow.dx + contentLeftInset + effAdvance;
+            adjustedStaticPosition = Offset(targetX, adjustedStaticPosition.dy);
+            try {
+              PositionedLayoutLog.log(
+                impl: PositionedImpl.layout,
+                feature: PositionedFeature.staticPosition,
+                message: () => 'adjust static pos under root by IFC inline advance '
+                    'contentLeft=${contentLeftInset.toStringAsFixed(2)} '
+                    'advance=${effAdvance.toStringAsFixed(2)} '
+                    '→ (${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})',
+              );
+            } catch (_) {}
           }
         }
       }
@@ -1005,7 +1060,9 @@ class CSSPositionedLayout {
             marginAfter.computedValue;
         offset = parentBorderBeforeWidth.computedValue + insetBeforeValue + marginBefore.computedValue;
       } else {
-        // If right is auto, left and width are not auto, then solve for right.
+        // If right/bottom is auto, left/top and width/height are not auto, then solve for right/bottom.
+        // Offsets are measured from the padding edge; relative to the parent's border edge, add border + inset.
+        // Do NOT add parentPaddingBefore here; 'left/top' is already relative to the padding edge.
         offset = parentBorderBeforeWidth.computedValue + insetBefore.computedValue + marginBefore.computedValue;
       }
 

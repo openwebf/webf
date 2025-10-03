@@ -70,25 +70,26 @@ class RenderFlowLayout extends RenderLayoutBox {
   }
 
   // Public helper: for IFC containers, compute the inline horizontal advance
-  // (in the container's content box space) before a given child. This sums the
-  // measured visual widths of inline items that precede the marker in DOM order.
+  // (in this container's content box space) before a descendant render object
+  // "marker" (typically a RenderPositionPlaceholder). Uses the paragraph-based
+  // IFC to resolve the right edge of the inline element that owns the marker.
   // Returns 0 when IFC is not established or measurement is unavailable.
   double inlineAdvanceBefore(RenderObject marker) {
     if (!establishIFC || _inlineFormattingContext == null) return 0.0;
-    double sum = 0.0;
-    RenderBox? child = firstChild;
-    while (child != null && child != marker) {
-      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
-      child = pd.nextSibling;
-    }
+
+    // Ask IFC to compute advance for this descendant based on its owning inline element
     try {
+      final double adv = _inlineFormattingContext!.inlineAdvanceForDescendant(marker);
       FlowLog.log(
         impl: FlowImpl.ifc,
         feature: FlowFeature.layout,
-        message: () => 'inlineAdvanceBefore marker=${marker.runtimeType} sum=${sum.toStringAsFixed(2)}',
+        message: () => 'inlineAdvanceBefore marker=${marker.runtimeType} adv=${adv.toStringAsFixed(2)}',
       );
-    } catch (_) {}
-    return sum;
+      return adv;
+    } catch (_) {
+      // Fall back gracefully if anything goes wrong.
+      return 0.0;
+    }
   }
 
   // Line boxes of flow layout.

@@ -155,7 +155,7 @@ describe('display', () => {
       container.style.display = 'none';
       requestAnimationFrame(async () => {
         container.style.display = 'block';
-        await snapshot();
+        await snapshot(0.5);
         await simulateSwipe(0, 0, 30, 30, 0.1);
         await snapshot(0.5);
         done();
