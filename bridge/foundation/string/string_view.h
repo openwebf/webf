@@ -135,7 +135,7 @@ class StringView final {
   bool operator==(const StringView& other) const;
   bool operator!=(const StringView& other) const { return !(*this == other); }
   bool operator==(const char* str) const;
-  bool operator!=(const char* str) const { return !(*this == str); }
+  bool operator!=(const char* str) const { return !(*this == str); } std::string ToUTF8String();
 
  private:
   // We use the StringImpl to mark for 8bit or 16bit, even for strings where

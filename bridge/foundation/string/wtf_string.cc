@@ -269,11 +269,7 @@ std::string String::ToUTF8String() const {
     return std::string();
   }
   
-  if (impl_->Is8Bit()) {
-    return UTF8Codecs::EncodeLatin1({impl_->Characters8(), impl_->length()});
-  }
-
-  return UTF8Codecs::EncodeUTF16({impl_->Characters16(), impl_->length()});
+  return impl_->ToUTF8String();
 }
 
 StringView String::ToStringView() const LIFETIME_BOUND {

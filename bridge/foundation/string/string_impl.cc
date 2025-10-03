@@ -113,6 +113,14 @@ bool StringImpl::ToDouble(double* p) const {
   return base::StringToDouble(str, p);
 }
 
+std::string StringImpl::ToUTF8String() {
+  if (Is8Bit()) {
+    return UTF8Codecs::EncodeLatin1({Characters8(), length()});
+  }
+
+  return UTF8Codecs::EncodeUTF16({Characters16(), length()});
+}
+
 std::shared_ptr<StringImpl> StringImpl::Create(const LChar* characters, size_t length) {
   if (!characters || !length)
     return empty_shared();

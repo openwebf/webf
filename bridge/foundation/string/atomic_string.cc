@@ -261,11 +261,7 @@ UTF8String AtomicString::ToUTF8String() const {
     return std::string{};
   }
 
-  if (string_->Is8Bit()) {
-    return UTF8Codecs::EncodeLatin1({string_->Characters8(), string_->length()});
-  }
-
-  return UTF8Codecs::EncodeUTF16({string_->Characters16(), string_->length()});
+  return string_->ToUTF8String();
 }
 
 const LChar* AtomicString::Characters8() const {
