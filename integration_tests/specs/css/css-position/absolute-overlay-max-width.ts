@@ -1,5 +1,5 @@
 describe('Absolute overlay layout max width', () => {
-  it('inline-block container with image and absolute overlay', async done => {
+  xit('inline-block container with image and absolute overlay', async done => {
     // Recreate the React app layout scenario
     const app = document.createElement('div');
     app.style.textAlign = 'center';

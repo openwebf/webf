@@ -315,15 +315,21 @@ class CSSLengthValue {
             }
             // For inline-block (or inline-flex) with width:auto (shrink-to-fit), the containing block
             // inline size is not yet definite for in-flow children. Per CSS, percentage widths here
-            // compute to auto. Defer resolution by returning infinity; a later pass stretches the child
-            // to the resolved inline-block content width.
+            // compute to auto. However, once the inline-block’s shrink-to-fit content width becomes
+            // definite, percentage widths of descendants MUST resolve against that width.
             if (!isPositioned &&
                 parentRenderStyle != null &&
                 (parentRenderStyle.effectiveDisplay == CSSDisplay.inlineBlock ||
                     parentRenderStyle.effectiveDisplay == CSSDisplay.inlineFlex) &&
                 parentRenderStyle.width.isAuto) {
-              _computedValue = double.infinity;
-              break;
+              // Treat as indefinite only if the parent has no definite logical content width yet.
+              final double? cbLogicalW = (parentRenderStyle is CSSRenderStyle)
+                  ? (parentRenderStyle as CSSRenderStyle).contentBoxLogicalWidth
+                  : parentRenderStyle.contentBoxLogicalWidth;
+              if (cbLogicalW == null) {
+                _computedValue = double.infinity;
+                break;
+              }
             }
             if (relativeParentWidth != null) {
               _computedValue = value! * relativeParentWidth;

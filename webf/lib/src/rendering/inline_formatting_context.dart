@@ -925,20 +925,56 @@ class InlineFormattingContext {
   // Used by shrink-to-fit adjustments (e.g., inline-block auto width) so that
   // text inside the element is positioned relative to the final used width.
   void relayoutParagraphToWidth(double width) {
-    if (_paragraph == null) return;
     if (!width.isFinite || width <= 0) return;
-    _paragraph!.layout(ui.ParagraphConstraints(width: width));
-    _paraLines = _paragraph!.computeLineMetrics();
-    _placeholderBoxes = _paragraph!.getBoxesForPlaceholders();
-    // After changing line breaks/positions, refresh atomic inline offsets so
-    // paint and hit testing use the updated placeholder positions (e.g., after
-    // shrink-to-fit adjusts the used content width of an inline-block).
-    _applyAtomicInlineParentDataOffsets();
+    // Make the container's content logical width definite so descendants with
+    // percentage widths (e.g., <img width:50%>) can resolve against it.
+    final RenderBoxModel container = this.container as RenderBoxModel;
+    final CSSRenderStyle cStyle = container.renderStyle;
+    cStyle.contentBoxLogicalWidth = width;
+
+    // Rebuild and layout the paragraph at the resolved width so that:
+    //  - atomic inline items are remeasured with updated constraints
+    //  - placeholders get refreshed with new sizes
+    // Use loose vertical constraints; height grows with content.
+    final BoxConstraints c = BoxConstraints(
+      minWidth: 0,
+      maxWidth: width,
+      minHeight: 0,
+      maxHeight: double.infinity,
+    );
+    // Perform a full two-pass build like initial layout() to keep behavior consistent.
+    _suppressAllRightExtras = true;
+    _forceRightExtrasOwners.clear();
+    _buildAndLayoutParagraph(c);
+    final bool needsVARebuild = _computeTextRunBaselineOffsets() | _computeAtomicBaselineOffsets();
+    _forceRightExtrasOwners.clear();
+    // Enable right-extras only for single-line owners (pass 2) as in initial layout.
+    for (final entry in _elementRanges.entries) {
+      final box = entry.key;
+      final (int sIdx, int eIdx) = entry.value;
+      if (eIdx <= sIdx || _paragraph == null) continue;
+      final styleR = box.renderStyle;
+      final double extraR = styleR.paddingRight.computedValue + styleR.effectiveBorderRightWidth.computedValue +
+          styleR.marginRight.computedValue;
+      if (extraR <= 0) continue;
+      final rects = _paragraph!.getBoxesForRange(sIdx, eIdx);
+      if (rects.isEmpty) continue;
+      final int firstLine = _lineIndexForRect(rects.first);
+      final int lastLine = _lineIndexForRect(rects.last);
+      if (firstLine >= 0 && firstLine == lastLine) {
+        _forceRightExtrasOwners.add(box);
+      }
+    }
+    if (_forceRightExtrasOwners.isNotEmpty || needsVARebuild) {
+      _suppressAllRightExtras = false;
+      _buildAndLayoutParagraph(c);
+    }
+
     InlineLayoutLog.log(
       impl: InlineImpl.paragraphIFC,
       feature: InlineFeature.sizing,
       level: Level.FINE,
-      message: () => 'relayout paragraph to width=${width.toStringAsFixed(2)}',
+      message: () => 'relayout paragraph to width=${width.toStringAsFixed(2)} (rebuild placeholders)',
     );
   }
 

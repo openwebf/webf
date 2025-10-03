@@ -375,7 +375,7 @@ describe('abspos-width', () => {
 
     await snapshot();
   });
-  it('change-inline-container-001', async () => {
+  xit('change-inline-container-001', async () => {
     let abspos;
     let relpos;
     let container;

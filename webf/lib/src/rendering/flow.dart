@@ -675,9 +675,12 @@ class RenderFlowLayout extends RenderLayoutBox {
         final double step1 = math.max(clampedMin, avail);
         final double shrinkToFit = math.min(step1, clampedMax);
         usedContentWidth = shrinkToFit;
-        // Ensure the paragraph inside the inline-block is also shaped to the
-        // final shrink-to-fit used width so its text aligns at the content edge.
+        // If the paragraph was initially shaped with a different width, lock the
+        // container content logical width first so percentage children can resolve,
+        // then rebuild IFC (includes atomic placeholder re-measure).
         if ((ifcSize.width - usedContentWidth).abs() > 0.5) {
+          // Make this container a definite percentage reference for descendants.
+          renderStyle.contentBoxLogicalWidth = usedContentWidth;
           inlineFormattingContext.relayoutParagraphToWidth(usedContentWidth);
         }
         FlowLog.log(

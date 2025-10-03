@@ -377,7 +377,7 @@ abstract class RenderBoxModel extends RenderBox
           parentRenderBoxModel.renderStyle.width.isAuto;
 
       if (parentIsInlineBlockAutoWidth) {
-        parentBoxContentConstraintsWidth = double.infinity;
+          parentBoxContentConstraintsWidth = double.infinity;
       } else {
         // Prefer the actual layout parent's content constraints if available,
         // because CSS parent may not yet have computed contentConstraints during IFC layout.
