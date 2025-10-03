@@ -48,8 +48,6 @@ class StringView final {
   explicit StringView(const UTF8Char*);
   explicit StringView(const LChar*);
   explicit StringView(const UChar*);
-  explicit StringView(const std::string_view&);
-  explicit StringView(const std::string& string);
   explicit StringView(const SharedNativeString* string);
   explicit StringView(void* bytes, unsigned length, bool is_wide_char);
   explicit StringView(const char* view, unsigned length);

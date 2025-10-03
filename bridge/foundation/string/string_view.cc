@@ -105,17 +105,6 @@ StringView::StringView(const String& string, unsigned offset)
 StringView::StringView(const String& string)
     : StringView(string.Impl()) {}
 
-StringView::StringView(const std::string_view& view) {
-  impl_ = StringImpl::empty_;
-  bytes_ = view.data();
-  length_ = view.length();
-  // TODO: decode utf8
-}
-StringView::StringView(const std::string& string) 
-    : impl_(StringImpl::empty_),
-      bytes_(string.data()), 
-      length_(string.length()) {}
-
 StringView::StringView(const SharedNativeString* string)
     : impl_(StringImpl::empty16_bit_),
       bytes_(string->string()), 
