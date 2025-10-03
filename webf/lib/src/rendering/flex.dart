@@ -3169,12 +3169,28 @@ class RenderFlexLayout extends RenderLayoutBox {
           shrinkBorderW = math.min(math.max(minBorder, availBorder), maxBorder);
         }
 
-        // Respect the child’s own min/max-width caps (non-percentage for max).
+        // Respect the child’s own min/max-width caps.
+        // For percentages, clamp against the flex container's definite cross size
+        // (its content-box width) when available; otherwise, defer clamping.
         if (child.renderStyle.minWidth.isNotAuto) {
-          shrinkBorderW = math.max(shrinkBorderW, child.renderStyle.minWidth.computedValue);
+          if (child.renderStyle.minWidth.type == CSSLengthType.PERCENTAGE) {
+            if (availableCross.isFinite) {
+              final double usedMin = (child.renderStyle.minWidth.value ?? 0) * availableCross;
+              shrinkBorderW = math.max(shrinkBorderW, usedMin);
+            }
+          } else {
+            shrinkBorderW = math.max(shrinkBorderW, child.renderStyle.minWidth.computedValue);
+          }
         }
-        if (child.renderStyle.maxWidth.isNotNone && child.renderStyle.maxWidth.type != CSSLengthType.PERCENTAGE) {
-          shrinkBorderW = math.min(shrinkBorderW, child.renderStyle.maxWidth.computedValue);
+        if (child.renderStyle.maxWidth.isNotNone) {
+          if (child.renderStyle.maxWidth.type == CSSLengthType.PERCENTAGE) {
+            if (availableCross.isFinite) {
+              final double usedMax = (child.renderStyle.maxWidth.value ?? 0) * availableCross;
+              shrinkBorderW = math.min(shrinkBorderW, usedMax);
+            }
+          } else {
+            shrinkBorderW = math.min(shrinkBorderW, child.renderStyle.maxWidth.computedValue);
+          }
         }
 
         if (shrinkBorderW.isFinite && shrinkBorderW >= 0) {
