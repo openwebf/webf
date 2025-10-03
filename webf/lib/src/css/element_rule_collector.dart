@@ -4,6 +4,9 @@
 
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:flutter/foundation.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/src/css/query_selector.dart';
 
 bool kShowUnavailableCSSProperties = false;
@@ -18,7 +21,13 @@ class ElementRuleCollector {
       return [];
     }
     List<CSSRule> rules = _collectMatchingRulesForList(ruleSet.pseudoRules, element);
-    return rules.map((e) => e as CSSStyleRule).toList();
+    final list = rules.map((e) => e as CSSStyleRule).toList();
+    if (kDebugMode && DebugFlags.enableCssLogs && list.isNotEmpty) {
+      final examples = list.take(2).map((r) => r.selectorGroup.selectorText).toList();
+      cssLogger.fine('[match] <' + element.tagName + '> pseudo matched=' + list.length.toString() +
+          (examples.isNotEmpty ? ' e.g. ' + examples.join(', ') : ''));
+    }
+    return list;
   }
 
   List<CSSRule> matchedRules(RuleSet ruleSet, Element element) {
@@ -58,6 +67,15 @@ class ElementRuleCollector {
     CSSStyleDeclaration declaration = CSSStyleDeclaration();
     if (rules.isEmpty) {
       return declaration;
+    }
+
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      final examples = rules.whereType<CSSStyleRule>()
+          .take(3)
+          .map((r) => r.selectorGroup.selectorText)
+          .toList();
+      cssLogger.fine('[match] <' + element.tagName + '> matched rules=' + rules.length.toString() +
+          (examples.isNotEmpty ? ' e.g. ' + examples.join(', ') : ''));
     }
 
     // sort selector

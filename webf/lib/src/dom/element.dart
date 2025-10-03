@@ -1257,6 +1257,9 @@ abstract class Element extends ContainerNode
 
   void _applyInlineStyle(CSSStyleDeclaration style) {
     if (inlineStyle.isNotEmpty) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[inline] <' + tagName + '> apply ' + inlineStyle.length.toString() + ' props');
+      }
       inlineStyle.forEach((propertyName, value) {
         // Force inline style to be applied as important priority.
         style.setProperty(propertyName, value, isImportant: true);
@@ -1313,6 +1316,10 @@ abstract class Element extends ContainerNode
   void setInlineStyle(String property, String value) {
     // Current only for mark property is setting by inline style.
     inlineStyle[property] = value;
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      final String v = value.length > 80 ? value.substring(0, 80) + '…' : value;
+      cssLogger.fine('[inline] <' + tagName + '> set ' + property + ' = ' + v);
+    }
     // recalculate matching styles for element when inline styles are removed.
     if (value.isEmpty) {
       style.removeProperty(property, true);
@@ -1323,6 +1330,9 @@ abstract class Element extends ContainerNode
   }
 
   void clearInlineStyle() {
+    if (kDebugMode && DebugFlags.enableCssLogs && inlineStyle.isNotEmpty) {
+      cssLogger.fine('[inline] <' + tagName + '> clear ' + inlineStyle.length.toString() + ' props');
+    }
     for (var key in inlineStyle.keys) {
       style.removeProperty(key, true);
     }

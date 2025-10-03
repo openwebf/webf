@@ -522,6 +522,9 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       CSSPropertyValue currentValue = _pendingProperties[DISPLAY]!;
       _properties[DISPLAY] = currentValue;
       _pendingProperties.remove(DISPLAY);
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[display] <' + (_target.tagName) + '> ' + (prevValue?.value ?? 'null') + ' -> ' + currentValue.value);
+      }
       _emitPropertyChanged(DISPLAY, prevValue?.value, currentValue.value, baseHref: currentValue.baseHref);
     }
   }

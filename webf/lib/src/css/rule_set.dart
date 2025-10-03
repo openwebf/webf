@@ -5,6 +5,9 @@
 import 'dart:collection';
 
 import 'package:webf/css.dart';
+import 'package:flutter/foundation.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/dom.dart';
 
 typedef CSSMap = HashMap<String, List<CSSRule>>;
@@ -36,6 +39,14 @@ class RuleSet {
   void addRules(List<CSSRule> rules, { required String? baseHref }) {
     for (CSSRule rule in rules) {
       addRule(rule, baseHref: baseHref);
+    }
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[ruleset] indexed: id=' + idRules.length.toString() +
+          ' class=' + classRules.length.toString() +
+          ' attr=' + attributeRules.length.toString() +
+          ' tag=' + tagRules.length.toString() +
+          ' universal=' + universalRules.length.toString() +
+          ' pseudo=' + pseudoRules.length.toString());
     }
   }
 

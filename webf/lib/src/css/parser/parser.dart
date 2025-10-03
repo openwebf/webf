@@ -30,7 +30,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:webf/css.dart';
+import 'package:webf/foundation.dart';
 
 import 'package:source_span/source_span.dart';
 
@@ -134,6 +136,9 @@ class CSSParser {
 
   List<CSSRule> parseRules({double? windowWidth, double? windowHeight, bool? isDarkMode}) {
     var rules = <CSSRule>[];
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[parse] begin parseRules');
+    }
     while (!_maybeEat(TokenKind.END_OF_FILE)) {
       final data = processRule();
       if (data != null) {
@@ -152,6 +157,17 @@ class CSSParser {
       }
     }
     checkEndOfFile();
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      final int styleCount = rules.where((r) => r is CSSStyleRule).length;
+      final int mediaCount = rules.where((r) => r is CSSMediaDirective).length;
+      final int keyframesCount = rules.where((r) => r is CSSKeyframesRule).length;
+      final int fontFaceCount = rules.where((r) => r is CSSFontFaceRule).length;
+      cssLogger.fine('[parse] parsed: total=' + rules.length.toString() +
+          ' style=' + styleCount.toString() +
+          ' media=' + mediaCount.toString() +
+          ' keyframes=' + keyframesCount.toString() +
+          ' font-face=' + fontFaceCount.toString());
+    }
     return rules;
   }
 
