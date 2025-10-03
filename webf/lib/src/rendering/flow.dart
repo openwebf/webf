@@ -882,11 +882,18 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       // Relayout the child wrapper with the container's content width tightly,
       // so an empty block (no content) still expands to the intended width.
-      // Let height be determined by the child (e.g., specified height).
+      // Preserve the child's cross-axis minimum (e.g., CSS min-height) or its
+      // previously measured height so that vertical alignment inside flex/grid
+      // (e.g., align-items:center) continues to take effect after this pass.
+      double preservedMinH = 0.0;
+      if (childBoxModel != null) {
+        final CSSRenderStyle crs2 = childBoxModel.renderStyle;
+        if (crs2.minHeight.isNotAuto) preservedMinH = crs2.minHeight.computedValue;
+      }
       final BoxConstraints stretch = BoxConstraints(
         minWidth: targetWidth,
         maxWidth: targetWidth,
-        minHeight: 0,
+        minHeight: preservedMinH,
         maxHeight: double.infinity,
       );
       FlowLog.log(
