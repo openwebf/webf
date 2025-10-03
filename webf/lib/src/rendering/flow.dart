@@ -1399,6 +1399,8 @@ class RenderFlowLayout extends RenderLayoutBox {
 
         RenderBoxModel? childRenderBoxModel;
         final bool isPlaceholder = child is RenderPositionPlaceholder;
+        final bool isStickyPlaceholder = isPlaceholder &&
+            ((child as RenderPositionPlaceholder).positioned?.renderStyle.position == CSSPositionType.sticky);
         if (child is RenderBoxModel) {
           childRenderBoxModel = child;
         } else if (isPlaceholder) {
@@ -1413,7 +1415,7 @@ class RenderFlowLayout extends RenderLayoutBox {
           double? dbgOwnTopInExtent;
           double? dbgSelfTopIgnoringParent;
           double? dbgTopContribution;
-          if (!isPlaceholder) {
+          if (!isPlaceholder || isStickyPlaceholder) {
             // The top margin as counted in the run's cross extent for this child.
             final double ownTopInExtent = getChildMarginTop(childRenderBoxModel);
             // Use the element's self/first-child collapsed top (ignoring parent collapse)
@@ -1447,7 +1449,7 @@ class RenderFlowLayout extends RenderLayoutBox {
             dbgSelfTopIgnoringParent = selfTopIgnoringParent;
             dbgTopContribution = topContribution;
           } else {
-            // Placeholders: do not contribute vertical margins to collapsing.
+            // Absolute/fixed placeholders do not participate in vertical margin collapsing.
             childMarginTop = 0;
             childMarginBottom = 0;
             try {
@@ -1459,7 +1461,7 @@ class RenderFlowLayout extends RenderLayoutBox {
               );
             } catch (_) {}
           }
-          if (!isPlaceholder) {
+          if (!isPlaceholder || isStickyPlaceholder) {
             if (prevCollapsedBottom != null) {
               final tag = rs.target.tagName.toLowerCase();
               final double p = prevCollapsedBottom!;
@@ -1506,7 +1508,7 @@ class RenderFlowLayout extends RenderLayoutBox {
         childMainPosition += childMainAxisExtent + childBetweenSpace;
 
         // Update previous collapsed bottom margin for next in-flow sibling in the run
-        if (childMarginBottom != null && childRenderBoxModel != null && !isPlaceholder) {
+        if (childMarginBottom != null && childRenderBoxModel != null && (!isPlaceholder || isStickyPlaceholder)) {
           prevCollapsedBottom = childMarginBottom;
         }
       }
