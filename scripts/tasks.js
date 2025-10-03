@@ -252,6 +252,10 @@ task('build-darwin-webf-lib', done => {
   }
   
   console.log(chalk.green('✓ macOS build completed successfully!'));
+
+  const copyMacosDylibsScriptPath = path.join(paths.scripts, 'copy_macos_dylibs.js');
+  execSync(`node ${copyMacosDylibsScriptPath}`, { stdio: 'inherit' });
+  console.log(chalk.green('✓ Copied macOS dylibs to target directory'));
   done();
 });
 
