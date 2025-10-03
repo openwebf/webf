@@ -256,6 +256,14 @@ bool StringView::operator==(const char* str) const {
   }
 }
 
+std::string StringView::ToUTF8String() {
+  if (impl_ == nullptr) {
+    return std::string();
+  }
+
+  return impl_->ToUTF8String();
+}
+
 String StringView::EncodeForDebugging() const {
   if (IsNull()) {
     return String::FromUTF8("<null>");

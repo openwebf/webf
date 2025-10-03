@@ -131,6 +131,8 @@ class StringImpl {
 
   bool ToDouble(double* p) const;
 
+  std::string ToUTF8String();
+
   static inline constexpr uint32_t LengthToAsciiFlags(int length) {
     return length ? 0 : kAsciiPropertyCheckDone | kContainsOnlyAscii | kIsLowerAscii;
   }
