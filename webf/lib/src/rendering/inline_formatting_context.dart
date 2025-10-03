@@ -21,6 +21,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:logging/logging.dart' show Level;
 import 'package:webf/src/foundation/inline_layout_logging.dart';
+import 'package:webf/src/css/text_script_detector.dart';
 
 import 'inline_item.dart';
 // Legacy line-box based IFC removed; paragraph-based IFC only.
@@ -775,6 +776,26 @@ class InlineFormattingContext {
     final String s = _textContent!;
     int i = 0;
     double maxToken = 0;
+    double maxCjkGlyph = 0;
+
+    // If the content contains CJK and white-space allows wrapping, treat each CJK
+    // codepoint as individually breakable and approximate min-content width as the
+    // width of the widest single CJK glyph (per CSS Text and UAX#14).
+    final CSSRenderStyle cStyle = (container as RenderBoxModel).renderStyle;
+    final bool wsSoftWrap = cStyle.whiteSpace != WhiteSpace.nowrap && cStyle.whiteSpace != WhiteSpace.pre;
+    final bool containsCJK = TextScriptDetector.containsCJK(s);
+    if (containsCJK && wsSoftWrap) {
+      for (int j = 0; j < s.length; j++) {
+        final int cu = s.codeUnitAt(j);
+        // Skip common whitespace/control; measure only visible glyphs
+        if (cu == 0x20 || cu == 0x09 || cu == 0x0A || cu == 0x0D) continue;
+        // For CJK characters (including kana/hangul), measure single-glyph width
+        if (TextScriptDetector.isCJKCharacter(cu)) {
+          final double w = _measureRangeWidth(j, j + 1);
+          if (w.isFinite) maxCjkGlyph = math.max(maxCjkGlyph, w);
+        }
+      }
+    }
     while (i < s.length) {
       // Skip break chars
       while (i < s.length && _isBreakChar(s.codeUnitAt(i))) i++;
@@ -786,8 +807,11 @@ class InlineFormattingContext {
         if (w.isFinite) maxToken = math.max(maxToken, w);
       }
     }
-    if (maxToken <= 0) return _paragraph!.longestLine;
-    return maxToken;
+    // Prefer the larger of widest ASCII-token and widest CJK glyph. If both fail,
+    // fall back to longest line as a last resort.
+    final double approx = math.max(maxToken, maxCjkGlyph);
+    if (approx > 0) return approx;
+    return _paragraph!.longestLine;
   }
 
   bool _isBreakChar(int cu) {
@@ -2870,6 +2894,7 @@ class InlineFormattingContext {
     bool _hasWhitespaceInText = false;
     bool _hasInteriorWhitespaceInText = false;
     bool _hasBreakablePunctuationInText = false; // e.g., hyphen '-' or soft hyphen
+    bool _hasCJKBreaks = false; // CJK characters introduce break opportunities under normal line-breaking
     for (final it in _items) {
       if (it.isText) {
         final t = it.getText(_textContent);
@@ -2888,10 +2913,16 @@ class InlineFormattingContext {
             _hasBreakablePunctuationInText = true;
           }
         }
-        if (_hasWhitespaceInText && _hasInteriorWhitespaceInText && _hasBreakablePunctuationInText) break;
+        // Detect presence of CJK characters which allow soft wrapping between characters
+        if (!_hasCJKBreaks && TextScriptDetector.containsCJK(t)) {
+          _hasCJKBreaks = true;
+        }
+        if (_hasWhitespaceInText && _hasInteriorWhitespaceInText && _hasBreakablePunctuationInText && _hasCJKBreaks) break;
       }
     }
-    final bool _preferZeroWidthShaping = _hasAtomicInlines || _hasExplicitBreaks || _hasWhitespaceInText;
+    // Respect CSS white-space: nowrap/pre (handled later), but for other modes treat CJK as breakable.
+    final bool _preferZeroWidthShaping =
+        _hasAtomicInlines || _hasExplicitBreaks || _hasWhitespaceInText || _hasCJKBreaks;
     InlineLayoutLog.log(
       impl: InlineImpl.paragraphIFC,
       feature: InlineFeature.sizing,
@@ -2901,6 +2932,7 @@ class InlineFormattingContext {
           ' wsAny='+_hasWhitespaceInText.toString()+
           ' wsInterior='+_hasInteriorWhitespaceInText.toString()+
           ' punct='+_hasBreakablePunctuationInText.toString()+
+          ' cjk='+_hasCJKBreaks.toString()+
           ' preferZeroWidth='+_preferZeroWidthShaping.toString()+
           ' constraints='+constraints.toString(),
     );
@@ -2962,7 +2994,8 @@ class InlineFormattingContext {
     final bool _contentHasNoBreaks = !_hasAtomicInlines &&
         !_hasExplicitBreaks &&
         !_hasInteriorWhitespaceInText &&
-        !_hasBreakablePunctuationInText;
+        !_hasBreakablePunctuationInText &&
+        !_hasCJKBreaks;
     // Always avoid per-character wrapping for truly unbreakable content by shaping wide.
     // This matches browser behavior where a single long word overflows horizontally
     // instead of wrapping at arbitrary character boundaries.
