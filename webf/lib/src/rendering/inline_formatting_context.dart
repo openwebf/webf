@@ -57,6 +57,10 @@ class InlineFormattingContext {
   List<ui.LineMetrics> _paraLines = const [];
   double _paragraphMinLeft = 0.0; // Painting translation applied to paragraph output.
   bool _paragraphShapedWithHugeWidth = false; // Track when layout used extremely wide shaping.
+  // When we intentionally reflow a wide-shaped paragraph to the container's available
+  // width to honor text-align (e.g., center/right) without wrapping, record it so the
+  // IFC reported width can reflect the container width rather than the longest line.
+  bool _paraReflowedToAvailWidthForAlign = false;
 
   // Track how many code units were added to the paragraph (text + placeholders)
   int _paraCharCount = 0;
@@ -312,8 +316,8 @@ class InlineFormattingContext {
       final bool childScrolls = rs.effectiveOverflowX != CSSOverflowType.visible ||
           rs.effectiveOverflowY != CSSOverflowType.visible;
       final Size childExtent = childScrolls
-          ? (styleBox.boxSize ?? styleBox.size)
-          : styleBox.scrollableSize;
+            ? (styleBox.boxSize ?? styleBox.size)
+            : styleBox.scrollableSize;
 
       double candidateRight = tb.left + (childExtent.width.isFinite ? childExtent.width : 0.0);
       final Offset? rel = CSSPositionedLayout.getRelativeOffset(rs);
@@ -479,7 +483,11 @@ class InlineFormattingContext {
     if (!minLeft.isFinite) {
       minLeft = 0;
     }
-    final bool applyShift = _paragraphShapedWithHugeWidth && minLeft > 0.01;
+    // Do not apply left-shift when we reflowed the paragraph to the container's
+    // available width for alignment; in that case, we want the paragraph's
+    // internal alignment (e.g., center/right) to be honored without additional
+    // translation.
+    final bool applyShift = _paragraphShapedWithHugeWidth && !_paraReflowedToAvailWidthForAlign && minLeft > 0.01;
     _paragraphMinLeft = applyShift ? minLeft : 0.0;
     double baseLongest = _paragraph!.longestLine;
     double visualRight = rights.fold<double>(double.negativeInfinity, (p, v) => v > p ? v : p);
@@ -986,8 +994,62 @@ class InlineFormattingContext {
         (cStyle.whiteSpace == WhiteSpace.nowrap || cStyle.whiteSpace == WhiteSpace.pre);
     // Use visual longest line for general shrink-to-fit; override with bounded width when keeping ellipsis.
     double width = _computeVisualLongestLine();
+    InlineLayoutLog.log(
+      impl: InlineImpl.paragraphIFC,
+      feature: InlineFeature.metrics,
+      level: Level.FINER,
+      message: () => 'width selection pre-adjust: visualLongest='+width.toStringAsFixed(2)+
+          ' ellipsis='+wantsEllipsis.toString()+
+          ' reflowedToAvail='+_paraReflowedToAvailWidthForAlign.toString()+
+          ' constraints.maxW='+(constraints.hasBoundedWidth ? constraints.maxWidth.toStringAsFixed(2) : '∞'),
+    );
+    // If we reflowed the paragraph to the available width for alignment,
+    // report that width as the IFC width so block containers use the full
+    // content inline-size (preserving text-align).
+    if (_paraReflowedToAvailWidthForAlign &&
+        constraints.hasBoundedWidth && constraints.maxWidth.isFinite && constraints.maxWidth > 0) {
+      width = constraints.maxWidth;
+      InlineLayoutLog.log(
+        impl: InlineImpl.paragraphIFC,
+        feature: InlineFeature.sizing,
+        level: Level.FINER,
+        message: () => 'width selection adjusted to container maxW='+constraints.maxWidth.toStringAsFixed(2)+
+            ' (reflowedToAvailWidthForAlign)',
+      );
+    }
+    // For left/start alignment, if we shaped wide due to unbreakable detection but the
+    // natural single-line width fits within the bounded available width, report the
+    // bounded width as the IFC width. Keep left-shift in painting for coordinate mapping.
+    if (!_paraReflowedToAvailWidthForAlign && _paragraphShapedWithHugeWidth &&
+        constraints.hasBoundedWidth && constraints.maxWidth.isFinite && constraints.maxWidth > 0) {
+      // Avoid overriding width reporting for out-of-flow positioned containers
+      // (absolute/fixed). In those cases, leave the paragraph width based on
+      // natural line width to prevent interfering with positioned layout.
+      final CSSPositionType posType = (container as RenderBoxModel).renderStyle.position;
+      final bool containerIsOutOfFlow = posType == CSSPositionType.absolute || posType == CSSPositionType.fixed;
+      if (!containerIsOutOfFlow) {
+        final double natural = _paragraph?.longestLine ?? width;
+        if (constraints.maxWidth + 0.5 >= natural) {
+          width = constraints.maxWidth;
+          InlineLayoutLog.log(
+            impl: InlineImpl.paragraphIFC,
+            feature: InlineFeature.sizing,
+            level: Level.FINER,
+            message: () => 'width selection adjusted to container maxW='+constraints.maxWidth.toStringAsFixed(2)+
+                ' (left-align fits natural line)',
+          );
+        }
+      }
+    }
     if (wantsEllipsis && constraints.hasBoundedWidth && constraints.maxWidth.isFinite && constraints.maxWidth > 0) {
       width = constraints.maxWidth;
+      InlineLayoutLog.log(
+        impl: InlineImpl.paragraphIFC,
+        feature: InlineFeature.sizing,
+        level: Level.FINER,
+        message: () => 'width selection adjusted to container maxW='+constraints.maxWidth.toStringAsFixed(2)+
+            ' (nowrap+ellipsis)',
+      );
     }
     double height = para.height;
     // If there's no text (only placeholders) and the container explicitly sets
@@ -2133,6 +2195,8 @@ class InlineFormattingContext {
   // Build and layout a Paragraph from collected inline items
   void _buildAndLayoutParagraph(BoxConstraints constraints) {
     final style = (container as RenderBoxModel).renderStyle;
+    // Reset alignment reflow flag for this build.
+    _paraReflowedToAvailWidthForAlign = false;
     InlineLayoutLog.log(
       impl: InlineImpl.paragraphIFC,
       feature: InlineFeature.placeholders,
@@ -2805,6 +2869,7 @@ class InlineFormattingContext {
     it.type == InlineItemType.control || it.type == InlineItemType.lineBreakOpportunity);
     bool _hasWhitespaceInText = false;
     bool _hasInteriorWhitespaceInText = false;
+    bool _hasBreakablePunctuationInText = false; // e.g., hyphen '-' or soft hyphen
     for (final it in _items) {
       if (it.isText) {
         final t = it.getText(_textContent);
@@ -2817,10 +2882,28 @@ class InlineFormattingContext {
             _hasInteriorWhitespaceInText = true;
           }
         }
-        if (_hasWhitespaceInText && _hasInteriorWhitespaceInText) break;
+        // Detect common breakable punctuation within the run (hyphen-minus, soft hyphen, slash)
+        if (!_hasBreakablePunctuationInText) {
+          if (t.contains('-') || t.contains('\u00AD') || t.contains('/')) {
+            _hasBreakablePunctuationInText = true;
+          }
+        }
+        if (_hasWhitespaceInText && _hasInteriorWhitespaceInText && _hasBreakablePunctuationInText) break;
       }
     }
     final bool _preferZeroWidthShaping = _hasAtomicInlines || _hasExplicitBreaks || _hasWhitespaceInText;
+    InlineLayoutLog.log(
+      impl: InlineImpl.paragraphIFC,
+      feature: InlineFeature.sizing,
+      level: Level.FINER,
+      message: () => 'sizing flags: atomic='+_hasAtomicInlines.toString()+
+          ' explicitBreaks='+_hasExplicitBreaks.toString()+
+          ' wsAny='+_hasWhitespaceInText.toString()+
+          ' wsInterior='+_hasInteriorWhitespaceInText.toString()+
+          ' punct='+_hasBreakablePunctuationInText.toString()+
+          ' preferZeroWidth='+_preferZeroWidthShaping.toString()+
+          ' constraints='+constraints.toString(),
+    );
     if (!constraints.hasBoundedWidth) {
       // Unbounded: prefer a reasonable fallback if available, otherwise use a very large width
       initialWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
@@ -2874,16 +2957,23 @@ class InlineFormattingContext {
     final bool _ancestorScrollX = _ancestorHasHorizontalScroll();
     final bool _localIsScrollableX = style.effectiveOverflowX == CSSOverflowType.scroll ||
         style.effectiveOverflowX == CSSOverflowType.auto;
-    final bool _contentHasNoBreaks = !_hasAtomicInlines && !_hasExplicitBreaks && !_hasWhitespaceInText;
-    final bool _wideShapeForScrollableX = (_ancestorScrollX || _localIsScrollableX) && _contentHasNoBreaks;
-    if (_wideShapeForScrollableX) {
+    // Consider only interior whitespace as natural break opportunities. Leading/trailing
+    // whitespace does not create interior break points for a single long word.
+    final bool _contentHasNoBreaks = !_hasAtomicInlines &&
+        !_hasExplicitBreaks &&
+        !_hasInteriorWhitespaceInText &&
+        !_hasBreakablePunctuationInText;
+    // Always avoid per-character wrapping for truly unbreakable content by shaping wide.
+    // This matches browser behavior where a single long word overflows horizontally
+    // instead of wrapping at arbitrary character boundaries.
+    if (_contentHasNoBreaks) {
       initialWidth = 1000000.0;
       shapedWithHugeWidth = true;
       InlineLayoutLog.log(
         impl: InlineImpl.paragraphIFC,
         feature: InlineFeature.sizing,
         level: Level.FINE,
-        message: () => 'scrollable-x with unbreakable content → shape wide initialWidth='
+        message: () => 'unbreakable content → disable soft wrap; initialWidth='
             '${initialWidth.toStringAsFixed(2)}',
       );
     }
@@ -2929,12 +3019,51 @@ class InlineFormattingContext {
           'fallback=${(fallbackContentMaxWidth ?? 0).toStringAsFixed(2)})',
     );
     paragraph.layout(ui.ParagraphConstraints(width: initialWidth));
+    InlineLayoutLog.log(
+      impl: InlineImpl.paragraphIFC,
+      feature: InlineFeature.metrics,
+      level: Level.FINER,
+      message: () => 'post-shape paragraph: width='+
+          paragraph.width.toStringAsFixed(2)+
+          ' height='+paragraph.height.toStringAsFixed(2)+
+          ' longest='+paragraph.longestLine.toStringAsFixed(2)+
+          ' shapedHuge='+shapedWithHugeWidth.toString(),
+    );
 
     // Use container's available content width to preserve text-align behavior
     // for both block and inline-block containers when width is definite.
     // Only shrink-to-fit when the width is effectively unbounded.
     final CSSDisplay display = (container as RenderBoxModel).renderStyle.effectiveDisplay;
     final bool isBlockLike = display == CSSDisplay.block || display == CSSDisplay.inlineBlock;
+
+    // If we shaped with a huge width due to unbreakable content but the container provides
+    // a bounded width that is wide enough to fit the entire single line, reflow the paragraph
+    // to that available width. This preserves correct text-align (e.g., center/right) behavior
+    // without introducing wrapping.
+    if (shapedWithHugeWidth && constraints.hasBoundedWidth && constraints.maxWidth.isFinite && constraints.maxWidth > 0) {
+      // Do not reflow wide-shaped paragraphs inside out-of-flow positioned containers
+      // (absolute/fixed); their layout should not be coerced to the bounded width here.
+      final CSSPositionType posType = (container as RenderBoxModel).renderStyle.position;
+      final bool containerIsOutOfFlow = posType == CSSPositionType.absolute || posType == CSSPositionType.fixed;
+      if (!containerIsOutOfFlow) {
+        final double naturalSingleLine = paragraph.longestLine;
+        if (constraints.maxWidth + 0.5 >= naturalSingleLine) {
+          paragraph.layout(ui.ParagraphConstraints(width: constraints.maxWidth));
+          // Only mark as reflowed-for-align when textAlign requests centering or non-start alignment.
+          final ta = style.textAlign;
+          final bool alignForCentering = (ta == TextAlign.center || ta == TextAlign.right || ta == TextAlign.end || ta == TextAlign.justify);
+          _paraReflowedToAvailWidthForAlign = alignForCentering;
+          InlineLayoutLog.log(
+            impl: InlineImpl.paragraphIFC,
+            feature: InlineFeature.sizing,
+            level: Level.FINER,
+            message: () => 'wide-shaped but container fits single line → reflow to maxW='
+                '${constraints.maxWidth.toStringAsFixed(2)} (natural=${naturalSingleLine.toStringAsFixed(2)})',
+          );
+          // Keep shapedWithHugeWidth flag true so we still skip trailing-extras shrink below.
+        }
+      }
+    }
 
     if (isBlockLike) {
       // Keep the laid-out width (initialWidth) when we have a definite width.
@@ -2970,7 +3099,20 @@ class InlineFormattingContext {
         paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
       }
     }
-    _shrinkWidthForTrailingExtras(paragraph, constraints);
+    // When we shaped with a huge width due to unbreakable content (no interior
+    // break opportunities), do not shrink paragraph width for trailing extras.
+    // Shrinking would force per-character wrapping against the bounded maxWidth
+    // and inflate height, defeating the purpose of wide shaping.
+    if (!shapedWithHugeWidth) {
+      _shrinkWidthForTrailingExtras(paragraph, constraints);
+    } else {
+      InlineLayoutLog.log(
+        impl: InlineImpl.paragraphIFC,
+        feature: InlineFeature.sizing,
+        level: Level.FINER,
+        message: () => 'skip trailing-extras shrink (wide-shaped, unbreakable content)',
+      );
+    }
 
     _paragraph = paragraph;
     _paraLines = paragraph.computeLineMetrics();

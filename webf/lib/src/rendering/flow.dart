@@ -21,7 +21,6 @@ import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/src/foundation/flow_logging.dart';
 import 'package:logging/logging.dart' show Level;
 import 'package:webf/src/foundation/inline_layout_logging.dart';
-import 'package:logging/logging.dart' show Level;
 
 // Pretty format for BoxConstraints in debug logs.
 String _fmtC(BoxConstraints c) =>

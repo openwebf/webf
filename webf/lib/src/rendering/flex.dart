@@ -1029,29 +1029,12 @@ class RenderFlexLayout extends RenderLayoutBox {
             }
             newMaxW = boundedContainerW;
           } else if (containerCrossDefinite && !shouldStretch) {
-            // Not stretching: if this flex item will establish an IFC, bound it by the
-            // container's available cross width so inline content performs shrink-to-fit
-            // within that width. If it won't establish IFC (pure block children), do not
-            // clamp here to avoid over-expansion of percent-based descendants.
-            double available = double.infinity;
-            if (constraints.hasTightWidth && constraints.maxWidth.isFinite) {
-              available = constraints.maxWidth;
-            } else if ((contentConstraints?.hasBoundedWidth ?? false) && contentConstraints!.maxWidth.isFinite) {
-              available = contentConstraints!.maxWidth;
-            } else if (constraints.hasBoundedWidth && constraints.maxWidth.isFinite) {
-              available = constraints.maxWidth;
-            }
-
-            final bool willEstablishIFC = (child is RenderBoxModel) &&
-                (child as RenderBoxModel).renderStyle.shouldEstablishInlineFormattingContext();
-
-            if (willEstablishIFC && available.isFinite) {
-              final double paddingBorderH =
-                  child.renderStyle.padding.horizontal + child.renderStyle.border.horizontal;
-              newMaxW = available + paddingBorderH;
-            } else {
-              newMaxW = double.infinity;
-            }
+            // Not stretching: during intrinsic measurement, do not clamp the cross-axis
+            // width to the container. Let content determine its natural (max-content)
+            // contribution so that subsequent shrink-to-fit in _getChildAdjustedConstraints
+            // can correctly choose between min-/max-content. This avoids measuring the
+            // item at full container width (e.g., 398px) which breaks centering tests.
+            newMaxW = double.infinity;
           } else {
             // No definite container width: let content determine size.
             newMaxW = double.infinity;
@@ -2249,6 +2232,14 @@ class RenderFlexLayout extends RenderLayoutBox {
           break;
       }
     }
+    // If lines overflow the container cross axis (negative free space), clamp alignment to start
+    // only when the cross axis is horizontal (i.e., flex-direction: column where cross is width).
+    // This avoids negative X offsets (e.g., wrap-004). For vertical cross axes (row direction),
+    // preserve negative leading space so align-content:center truly centers the overflowing lines.
+    if (crossAxisFreeSpace < 0 && !_isHorizontalFlexDirection) {
+      runLeadingSpace = 0.0;
+      runBetweenSpace = 0.0;
+    }
     Map<String, double> _runSpacingMap = {'leading': runLeadingSpace, 'between': runBetweenSpace};
     return _runSpacingMap;
   }
@@ -2770,6 +2761,24 @@ class RenderFlexLayout extends RenderLayoutBox {
           }
         }
 
+        // For column-direction containers, if the flex item has auto cross size (width)
+        // and is not stretched, and the container has a definite available cross size,
+        // force a secondary layout when the intrinsic pass measured the item wider than
+        // the available width. This enables shrink-to-fit logic in
+        // _getChildAdjustedConstraints to produce the expected width.
+        if (!needsLayout && !_isHorizontalFlexDirection && effectiveChild is RenderBoxModel) {
+          final bool childCrossAuto = effectiveChild.renderStyle.width.isAuto;
+          final bool noStretch = !_needToStretchChildCrossSize(effectiveChild);
+          final double availCross = contentConstraints?.maxWidth ?? double.infinity;
+          if (childCrossAuto && noStretch && availCross.isFinite) {
+            // Compare against the border-box width measured during intrinsic pass.
+            final double measuredBorderW = effectiveChild.size.width;
+            if (measuredBorderW > availCross + 0.5) {
+              needsLayout = true;
+            }
+          }
+        }
+
         if (!needsLayout) continue;
 
         // Mark text-only parents for flex relayout optimization.
@@ -3100,25 +3109,104 @@ class RenderFlexLayout extends RenderLayoutBox {
       final bool childCrossAuto = child.renderStyle.width.isAuto;
       final bool childCrossPercent = child.renderStyle.width.type == CSSLengthType.PERCENTAGE;
 
-      if (childCrossAuto) {
+      // Determine the effective cross-axis alignment for this child.
+      final AlignSelf selfAlign = _getAlignSelf(child);
+      final bool isStretchAlignment = selfAlign != AlignSelf.auto
+          ? (selfAlign == AlignSelf.stretch)
+          : (renderStyle.alignItems == AlignItems.stretch);
+
+      // If the child will not be stretched in the cross axis (e.g., align-self: center),
+      // prefer a shrink-to-fit width based on the child’s content contribution so items
+      // don’t expand to the full column width. This matches browser behavior for
+      // column-direction flex items with non-stretch alignment.
+      if (childCrossAuto && !isStretchAlignment) {
+        // Compute shrink-to-fit width in the cross axis for column flex items:
+        // used = min(max(min-content, available), max-content).
+        // Work in content-box, then convert to border-box by adding padding+border.
+        final double paddingBorderH = child.renderStyle.padding.horizontal + child.renderStyle.border.horizontal;
+
+        // Min-content contribution (content-box).
+        final double minContentCB = child.minContentWidth;
+
+        // Max-content contribution (content-box). Prefer IFC paragraph max-intrinsic width for flow content.
+        double maxContentCB = minContentCB; // fallback
+        if (child is RenderFlowLayout && child.inlineFormattingContext != null) {
+          final double paraMax = child.inlineFormattingContext!.paragraphMaxIntrinsicWidth;
+          if (paraMax.isFinite && paraMax > 0) maxContentCB = paraMax;
+        }
+
+        // Available cross size (content-box width of the container) if definite.
+        double availableCross = double.infinity;
+        if (contentConstraints != null && contentConstraints!.maxWidth.isFinite) {
+          availableCross = contentConstraints!.maxWidth;
+        } else {
+          // Fallback to current laid-out content width when known.
+          final double borderH = renderStyle.effectiveBorderLeftWidth.computedValue +
+              renderStyle.effectiveBorderRightWidth.computedValue;
+          final double fallback = math.max(0.0, size.width - borderH);
+          if (fallback.isFinite && fallback > 0) availableCross = fallback;
+        }
+
+        // If IFC not available yet and max-content collapsed to min-content, try using
+        // the child width from the intrinsic pass as a better approximation of max-content,
+        // but only when it is less than the container's available cross size to avoid
+        // regressing centering cases (e.g., column-wrap with align-self:center).
+        if (maxContentCB <= minContentCB + 0.5) {
+          final double priorBorderW = child.size.width;
+          final double priorContentW = math.max(0.0, priorBorderW - (child.renderStyle.padding.horizontal + child.renderStyle.border.horizontal));
+          if (priorContentW.isFinite && priorContentW > minContentCB) {
+            maxContentCB = priorContentW;
+          }
+        }
+
+        // Convert to border-box for comparison with constraints we apply to the child.
+        final double minBorder = math.max(0.0, minContentCB + paddingBorderH);
+        final double maxBorder = math.max(minBorder, maxContentCB + paddingBorderH);
+        final double availBorder = availableCross.isFinite ? availableCross : double.infinity;
+
+        double shrinkBorderW = maxBorder;
+        if (availBorder.isFinite) {
+          shrinkBorderW = math.min(math.max(minBorder, availBorder), maxBorder);
+        }
+
+        // Respect the child’s own min/max-width caps (non-percentage for max).
+        if (child.renderStyle.minWidth.isNotAuto) {
+          shrinkBorderW = math.max(shrinkBorderW, child.renderStyle.minWidth.computedValue);
+        }
+        if (child.renderStyle.maxWidth.isNotNone && child.renderStyle.maxWidth.type != CSSLengthType.PERCENTAGE) {
+          shrinkBorderW = math.min(shrinkBorderW, child.renderStyle.maxWidth.computedValue);
+        }
+
+        if (shrinkBorderW.isFinite && shrinkBorderW >= 0) {
+          minConstraintWidth = shrinkBorderW;
+          maxConstraintWidth = shrinkBorderW;
+          _overrideChildContentBoxLogicalWidth(child, shrinkBorderW);
+          FlexLog.log(
+            impl: FlexImpl.flex,
+            feature: FlexFeature.childConstraints,
+            level: Level.FINER,
+            message: () => 'shrink-to-fit cross width for ${_childDesc(child)} '
+                'min=${minBorder.toStringAsFixed(1)} avail=${availBorder.isFinite ? availBorder.toStringAsFixed(1) : '∞'} '
+                'max=${maxBorder.toStringAsFixed(1)} -> borderW=${shrinkBorderW.toStringAsFixed(1)}',
+          );
+        }
+      } else if (childCrossAuto) {
+        // Existing behavior: cross-lock width to the available cross size when stretching
+        // (or when alignment falls back to stretch). This preserves previous layout for
+        // stretch cases and avoids regressions.
         double fixedW;
-        // For replaced elements with an aspect ratio and auto width, prefer
-        // computing width from the current (possibly flexed) used height to
-        // preserve the intrinsic aspect ratio.
         if (child.renderStyle.isSelfRenderReplaced() && child.renderStyle.aspectRatio != null) {
           final double usedBorderBoxH = child.renderStyle.borderBoxLogicalHeight ?? child.size.height;
           fixedW = usedBorderBoxH * child.renderStyle.aspectRatio!;
         } else {
           fixedW = child.size.width;
         }
-        // Determine container content width (available cross size)
         final double containerCrossMax = contentConstraints?.maxWidth ?? double.infinity;
         final double containerContentW = containerCrossMax.isFinite
             ? containerCrossMax
             : math.max(0.0, size.width - (renderStyle.effectiveBorderLeftWidth.computedValue +
                 renderStyle.effectiveBorderRightWidth.computedValue));
 
-        // Respect child's min/max-width while locking
         double styleMinW = 0.0;
         final CSSLengthValue minWLen = child.renderStyle.minWidth;
         if (minWLen.isNotAuto) {
@@ -3134,7 +3222,6 @@ class RenderFlexLayout extends RenderLayoutBox {
               : maxWLen.computedValue;
         }
 
-        // Clamp to child min/max, then to container width
         fixedW = fixedW.clamp(styleMinW, styleMaxW);
         if (containerContentW.isFinite) fixedW = math.min(fixedW, containerContentW);
 
@@ -3159,23 +3246,17 @@ class RenderFlexLayout extends RenderLayoutBox {
         if (contentConstraints != null && contentConstraints!.maxWidth.isFinite) {
           containerContentW = contentConstraints!.maxWidth;
         } else {
-          // Fallback to the container's current laid-out content box width.
           final double borderH = renderStyle.effectiveBorderLeftWidth.computedValue +
               renderStyle.effectiveBorderRightWidth.computedValue;
           containerContentW = math.max(0, size.width - borderH);
         }
         final double percent = child.renderStyle.width.value ?? 0;
-        // In this engine we treat width as border-box (box-sizing:border-box semantics).
-        // Therefore percentage width applies to the border-box directly.
         double childBorderBoxW = containerContentW.isFinite ? (containerContentW * percent) : 0;
-        // Guard against negative / non-finite.
         if (!childBorderBoxW.isFinite || childBorderBoxW < 0) childBorderBoxW = 0;
 
-        // Honor child's definite non-percentage max-width if any.
         if (child.renderStyle.maxWidth.isNotNone && child.renderStyle.maxWidth.type != CSSLengthType.PERCENTAGE) {
           childBorderBoxW = math.min(childBorderBoxW, child.renderStyle.maxWidth.computedValue);
         }
-        // Honor child's min-width.
         if (child.renderStyle.minWidth.isNotAuto) {
           childBorderBoxW = math.max(childBorderBoxW, child.renderStyle.minWidth.computedValue);
         }
@@ -3188,8 +3269,7 @@ class RenderFlexLayout extends RenderLayoutBox {
           feature: FlexFeature.childConstraints,
           level: Level.FINER,
           message: () => 'resolve %width for ${_childDesc(child)} percent=${(percent * 100).toStringAsFixed(1)}% '
-              'containerContentW=${containerContentW.toStringAsFixed(1)} borderBoxW=${childBorderBoxW.toStringAsFixed(
-              1)}',
+              'containerContentW=${containerContentW.toStringAsFixed(1)} borderBoxW=${childBorderBoxW.toStringAsFixed(1)}',
         );
       }
     }

@@ -31,13 +31,11 @@ void main() async {
   // InlineLayoutLog.enableFeatures({
   //   InlineFeature.sizing,
   // });
+  // DebugFlags.enableDomLogs = true;
   InlineLayoutLog.enableAll();
   FlexLog.enableAll();
   FlowLog.enableAll();
   PositionedLayoutLog.enableAll();
-
-
-  DebugFlags.enableDomLogs = true;
 
   // debugPaintBaselinesEnabled = true;
   // DebugFlags.enableDomLogs = true;

@@ -19,6 +19,7 @@ import 'package:webf/rendering.dart';
 import 'box_overflow.dart';
 import 'package:webf/src/foundation/logger.dart';
 import 'debug_overlay.dart';
+import 'package:logging/logging.dart' show Level;
 
 // The hashCode of all the renderBox which is in layout.
 List<int> renderBoxInLayoutHashCodes = [];
@@ -823,6 +824,17 @@ abstract class RenderBoxModel extends RenderBox
     final double childRight = childLeft + childSize.width;
     final double childBottom = childTop + childSize.height;
 
+    FlowLog.log(
+      impl: FlowImpl.overflow,
+      feature: FlowFeature.scrollable,
+      level: Level.FINER,
+      message: () => 'extend scrollable by positioned <'+child.renderStyle.target.tagName.toLowerCase()+'> '
+          'containerContent='+containerContentWidth.toStringAsFixed(2)+'×'+containerContentHeight.toStringAsFixed(2)+' '
+          'childPos=(' + childLeft.toStringAsFixed(2) + ',' + childTop.toStringAsFixed(2) + ')-('+
+          childRight.toStringAsFixed(2) + ',' + childBottom.toStringAsFixed(2) + ') '
+          'childSize='+childSize.width.toStringAsFixed(2)+'×'+childSize.height.toStringAsFixed(2),
+    );
+
     // Extend scroll area when the positioned box reaches or crosses the
     // scrollport (padding box) boundary.
     // For LTR, treat boxes that start exactly at the trailing edge as contributing
@@ -847,6 +859,15 @@ abstract class RenderBoxModel extends RenderBox
     }
 
     scrollableSize = Size(maxScrollableX, maxScrollableY);
+
+    FlowLog.log(
+      impl: FlowImpl.overflow,
+      feature: FlowFeature.scrollable,
+      level: Level.FINER,
+      message: () => 'positioned extend result scrollable='+maxScrollableX.toStringAsFixed(2)+'×'+
+          maxScrollableY.toStringAsFixed(2)+' intersectsH='+intersectsH.toString()+' intersectsV='+
+          intersectsV.toString(),
+    );
   }
 
   // iterate add child to overflowLayout

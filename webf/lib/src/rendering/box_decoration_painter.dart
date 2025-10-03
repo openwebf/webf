@@ -856,21 +856,6 @@ class BoxDecorationPainter extends BoxPainter {
       hasDashedBorder = hasTopDashedBorder || hasRightDashedBorder || hasBottomDashedBorder || hasLeftDashedBorder;
     }
 
-    // Emit debug about border widths/colors when any side is present.
-    final EdgeInsets bw = renderStyle.border;
-    if ((bw.top + bw.right + bw.bottom + bw.left) > 0) {
-      final colorTop = renderStyle.borderTopColor?.value;
-      final colorRight = renderStyle.borderRightColor?.value;
-      final colorBottom = renderStyle.borderBottomColor?.value;
-      final colorLeft = renderStyle.borderLeftColor?.value;
-      renderingLogger.finer('[Paint/Border] <${renderStyle.target.tagName.toLowerCase()}${renderStyle.target.id != null && renderStyle.target.id!.isNotEmpty ? ('#${renderStyle.target.id!}') : ''}> '
-          'T:${bw.top.toStringAsFixed(2)} R:${bw.right.toStringAsFixed(2)} B:${bw.bottom.toStringAsFixed(2)} L:${bw.left.toStringAsFixed(2)} '
-          'colors(T:${colorTop?.value?.toRadixString(16) ?? 'null'} '
-          'R:${colorRight?.value?.toRadixString(16) ?? 'null'} '
-          'B:${colorBottom?.value?.toRadixString(16) ?? 'null'} '
-          'L:${colorLeft?.value?.toRadixString(16) ?? 'null'})');
-    }
-
     // If we have a dashed border, use our custom painter
     if (hasDashedBorder) {
       _paintDashedBorder(canvas, rect, textDirection);
