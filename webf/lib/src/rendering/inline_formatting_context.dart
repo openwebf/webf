@@ -72,6 +72,10 @@ class InlineFormattingContext {
   // Placeholder boxes as reported by Paragraph, in the order placeholders were added.
   List<ui.TextBox> _placeholderBoxes = const [];
 
+  // Positive text-indent applied to the first line (px). Used to avoid shifting
+  // atomic inline boxes when indent is realized via a leading placeholder.
+  double _leadingTextIndentPx = 0.0;
+
   // For text-run placeholders (vertical-align on non-atomic text), store sub-paragraphs
   // aligned by index with _allPlaceholders; null for non text-run placeholders.
   List<ui.Paragraph?> _textRunParas = const [];
@@ -1140,7 +1144,7 @@ class InlineFormattingContext {
           final double tbH = tb.bottom - tb.top;
           final int li = _lineIndexForRect(tb);
           if (li < 0) continue;
-          final RenderBox? rb = i < _placeholderOrder.length ? _placeholderOrder[i] : null;
+          final RenderBox? rb = ph.atomic;
           final RenderBoxModel? styleBox = _resolveStyleBoxForPlaceholder(rb);
           double ownerBorderHeight = 0.0;
           if (styleBox != null) {
@@ -2111,7 +2115,11 @@ class InlineFormattingContext {
   /// can rely on Flutter's standard offset mechanism. Offsets are set in container-origin
   /// coordinates (i.e., include padding and border).
   void _applyAtomicInlineParentDataOffsets() {
-    if (_placeholderBoxes.isEmpty || _placeholderOrder.isEmpty) return;
+    // We must align atomic placeholders with their actual placeholder indices
+    // in the paragraph. Do not assume atomic placeholders start from index 0:
+    // other placeholders (e.g., text-indent, left/right extras, textRun) may
+    // precede them. Use _allPlaceholders to map each atomic to its TextBox.
+    if (_placeholderBoxes.isEmpty || _allPlaceholders.isEmpty) return;
 
     final double contentOriginX =
         container.renderStyle.paddingLeft.computedValue + container.renderStyle.effectiveBorderLeftWidth.computedValue;
@@ -2143,8 +2151,13 @@ class InlineFormattingContext {
       });
     }
 
-    for (int i = 0; i < _placeholderOrder.length && i < _placeholderBoxes.length; i++) {
-      final rb = _placeholderOrder[i];
+    // Walk all placeholders; for atomic ones, map to their corresponding
+    // TextBox by the same index and update the render object's offset.
+    final int n = math.min(_allPlaceholders.length, _placeholderBoxes.length);
+    for (int i = 0; i < n; i++) {
+      final ph = _allPlaceholders[i];
+      if (ph.kind != _PHKind.atomic) continue;
+      final RenderBox? rb = ph.atomic;
       if (rb == null) continue;
 
       // Find the direct RenderBox child under the container; it carries RenderLayoutParentData
@@ -2155,9 +2168,20 @@ class InlineFormattingContext {
         p = p.parent;
       }
 
-      final tb = (rtlRemap != null && rtlRemap.containsKey(i)) ? rtlRemap[i]! : _placeholderBoxes[i];
+      final ui.TextBox tb = (rtlRemap != null && rtlRemap.containsKey(i)) ? rtlRemap[i]! : _placeholderBoxes[i];
       double left = tb.left;
       double top = tb.top;
+      // If a positive text-indent was applied using a leading placeholder, and
+      // this atomic placeholder sits at the very start of the first line, do
+      // not include the indent in its x offset. This preserves expected
+      // behavior where atomic inlines are not shifted by first-line indent.
+      final TextDirection dir = (container as RenderBoxModel).renderStyle.direction;
+      if (_leadingTextIndentPx > 0 && dir == TextDirection.ltr) {
+        final int li = _lineIndexForRect(tb);
+        if (li == 0 && left <= _leadingTextIndentPx + 0.01) {
+          left -= _leadingTextIndentPx;
+        }
+      }
       // Add box margins and conditionally add CSS relative offset.
       // If the direct child under the container is a RenderBoxModel, let
       // CSSPositionedLayout.applyRelativeOffset add the style offset.
@@ -2386,6 +2410,8 @@ class InlineFormattingContext {
     }
 
     // Apply text-indent on the first line by inserting a leading placeholder.
+    // Reset cached first-line indent on each build; set when we insert a real indent.
+    _leadingTextIndentPx = 0.0;
     // Positive values indent from the inline-start; negative values create a hanging indent.
     // For now, we support positive values by reserving space; for negative values, we still
     // insert a placeholder of zero width (layout unaffected) and rely on authors to pair
@@ -2400,8 +2426,12 @@ class InlineFormattingContext {
       final (ph, bo) = _measureTextMetricsFor(style);
       final double reserved = indentPx > 0 ? indentPx : 0.0;
       if (reserved > 0) {
+        _leadingTextIndentPx = reserved;
         pb.addPlaceholder(reserved, ph, ui.PlaceholderAlignment.baseline,
             baseline: TextBaseline.alphabetic, baselineOffset: bo);
+        // Keep placeholder indices aligned: record a neutral placeholder so that
+        // subsequent atomic placeholders map to the correct TextBox indices.
+        _allPlaceholders.add(_InlinePlaceholder.emptySpan(container as RenderBoxModel, reserved));
         paraPos += 1;
         _textRunParas.add(null);
         // In RTL, reserve space on the inline-start (right) by forcing the
