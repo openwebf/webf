@@ -3081,11 +3081,10 @@ class CSSRenderStyle extends RenderStyle
 
     // Flex items may establish their own IFC; do not block based on parent.
 
-    // If parent is using inline formatting, this block should participate
-    // in the parent's IFC rather than establishing its own
-    if (isParentRenderFlowLayout() && getParentRenderStyle()!.display == CSSDisplay.inline) {
-      return false;
-    }
+    // Do not suppress IFC solely because the parent is inline-level.
+    // A block container inside an inline element creates anonymous block boxes
+    // and still establishes an inline formatting context for its inline content
+    // per CSS 2.1 §9.2.1.1 and §9.4.2.
 
     // Check children from RenderObject perspective
     // This properly accounts for anonymous blocks
