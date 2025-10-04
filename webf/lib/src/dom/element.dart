@@ -598,8 +598,10 @@ abstract class Element extends ContainerNode
 
       renderStyle.requestWidgetToRebuild(
           ToPositionPlaceHolderUpdateReason(positionedElement: this, containingBlockElement: containingBlockElement));
-      containingBlockElement.renderStyle.requestWidgetToRebuild(
-          AttachPositionedChild(positionedElement: this, containingBlockElement: containingBlockElement));
+      if (!containingBlockElement.outOfFlowPositionedElements.contains(this)) {
+        containingBlockElement.renderStyle.requestWidgetToRebuild(
+            AttachPositionedChild(positionedElement: this, containingBlockElement: containingBlockElement));
+      }
     } else if (currentPosition == CSSPositionType.static) {
 
       Element? elementNeedsToRebuild;
@@ -616,8 +618,70 @@ abstract class Element extends ContainerNode
       }
 
       elementNeedsToRebuild?.renderStyle.requestWidgetToRebuild(ToStaticLayoutUpdateReason());
+
+      // If this element no longer establishes a containing block (e.g., relative -> static),
+      // rehome any out-of-flow positioned descendants whose containing block was this element.
+      _reattachOutOfFlowDescendantsToCorrectContainingBlocks();
       updateElementKey();
+    } else if (currentPosition == CSSPositionType.relative) {
+      // When becoming a positioned ancestor (static -> relative), some absolutely-positioned
+      // descendants may now use this element as their nearest containing block.
+      _reattachOutOfFlowDescendantsToCorrectContainingBlocks();
     }
+  }
+
+  // Walk subtree and ensure any out-of-flow positioned descendants are attached under
+  // the correct containing block after this element's position change.
+  void _reattachOutOfFlowDescendantsToCorrectContainingBlocks() {
+    // Fast-exit if not connected; no render objects to update yet.
+    if (!isConnected) return;
+
+    void visit(Element el) {
+      for (final Node node in el.childNodes) {
+        if (node is! Element) continue;
+        final Element child = node as Element;
+        final CSSPositionType pos = child.renderStyle.position;
+        // Only consider out-of-flow positioned descendants.
+        if (pos == CSSPositionType.absolute || pos == CSSPositionType.fixed || pos == CSSPositionType.sticky) {
+          // New containing block after our position change.
+          final Element? newCB = child.getContainingBlockElement();
+          final Element? oldCB = child.holderAttachedContainingBlockElement;
+
+          if (newCB != oldCB) {
+            // Detach from old containing block list if present.
+            if (oldCB != null) {
+              oldCB.removeOutOfFlowPositionedElement(child);
+              oldCB.renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
+            }
+
+            if (newCB != null) {
+              // Update child's placeholder mapping so parents render the placeholder correctly.
+              child.renderStyle.requestWidgetToRebuild(
+                ToPositionPlaceHolderUpdateReason(positionedElement: child, containingBlockElement: newCB),
+              );
+
+              // Attach positioned child under its new containing block for actual renderObject placement.
+              if (!newCB.outOfFlowPositionedElements.contains(child)) {
+                newCB.renderStyle.requestWidgetToRebuild(
+                  AttachPositionedChild(positionedElement: child, containingBlockElement: newCB),
+                );
+              } else {
+                // Still ensure the new containing block rebuilds to reflect placeholder/offset updates.
+                newCB.renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
+              }
+            } else {
+              // Fallback: no valid containing block; treat as static layout for safety.
+              child.renderStyle.requestWidgetToRebuild(ToStaticLayoutUpdateReason());
+            }
+          }
+        }
+
+        // Continue traversal for deeper descendants.
+        visit(child);
+      }
+    }
+
+    visit(this);
   }
 
   // Parse 'counter-*' shorthand values into a simple map: name -> integer
@@ -1200,7 +1264,19 @@ abstract class Element extends ContainerNode
   }
 
   void setRenderStyle(String property, String present, {String? baseHref}) {
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      final idPart = _id != null ? '#$_id' : '';
+      final baseHrefPart = baseHref != null ? ' (baseHref=$baseHref)' : '';
+      cssLogger.fine('[style] <${tagName.toLowerCase()}$idPart> set $property <- ${present.isEmpty ? 'null' : present}$baseHrefPart');
+    }
+
     dynamic value = present.isEmpty ? null : renderStyle.resolveValue(property, present, baseHref: baseHref);
+
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      final idPart = _id != null ? '#$_id' : '';
+      cssLogger.fine('[style] <${tagName.toLowerCase()}$idPart> resolved $property = ${value?.toString() ?? 'null'}');
+    }
+
     setRenderStyleProperty(property, value);
   }
 
