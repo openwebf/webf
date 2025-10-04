@@ -21,7 +21,7 @@ describe('position-fixed-router-link', () => {
         position: 'fixed',
         top: '20px',
         left: '20px',
-        width: '100px',
+        width: '110px',
         height: '50px',
         backgroundColor: 'blue',
         color: 'white',

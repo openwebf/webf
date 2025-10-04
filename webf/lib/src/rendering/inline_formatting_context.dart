@@ -57,6 +57,10 @@ class InlineFormattingContext {
   ui.Paragraph? _paragraph;
   List<ui.LineMetrics> _paraLines = const [];
   double _paragraphMinLeft = 0.0; // Painting translation applied to paragraph output.
+  // When aligning wide-shaped single-line paragraphs inside a bounded container
+  // (without reflow), retain a forced left translation so subsequent metric
+  // queries keep the same paint-time shift.
+  double? _forcedParagraphMinLeftAlignShift;
   bool _paragraphShapedWithHugeWidth = false; // Track when layout used extremely wide shaping.
   // When we intentionally reflow a wide-shaped paragraph to the container's available
   // width to honor text-align (e.g., center/right) without wrapping, record it so the
@@ -493,13 +497,20 @@ class InlineFormattingContext {
     // internal alignment (e.g., center/right) to be honored without additional
     // translation.
     final bool applyShift = _paragraphShapedWithHugeWidth && !_paraReflowedToAvailWidthForAlign && minLeft > 0.01;
-    _paragraphMinLeft = applyShift ? minLeft : 0.0;
+    // If a forced align-based shift is present (set during layout), prefer it.
+    final double usedLeft = (_forcedParagraphMinLeftAlignShift != null && applyShift)
+        ? _forcedParagraphMinLeftAlignShift!
+        : minLeft;
+    _paragraphMinLeft = applyShift ? usedLeft : 0.0;
     double baseLongest = _paragraph!.longestLine;
     double visualRight = rights.fold<double>(double.negativeInfinity, (p, v) => v > p ? v : p);
     if (!visualRight.isFinite) {
-      visualRight = baseLongest + _paragraphMinLeft;
+      // Use the paragraph's base longest line extended by the raw minLeft for width calculation.
+      visualRight = baseLongest + minLeft;
     }
-    double visualWidth = math.max(0, visualRight - _paragraphMinLeft);
+    // For width calculation, subtract the raw minLeft (not the forced paint-time shift)
+    // so visualLongestLine remains independent of alignment adjustments.
+    double visualWidth = math.max(0, visualRight - minLeft);
     if (!visualWidth.isFinite) {
       visualWidth = baseLongest;
     }
@@ -1116,6 +1127,58 @@ class InlineFormattingContext {
       );
     }
     double height = para.height;
+
+    if (!_paraReflowedToAvailWidthForAlign && _paragraphShapedWithHugeWidth) {
+      if (constraints.hasBoundedWidth && constraints.maxWidth.isFinite && constraints.maxWidth > 0) {
+        final CSSRenderStyle cStyle2 = (container as RenderBoxModel).renderStyle;
+        final TextAlign ta = cStyle2.textAlign;
+        final TextDirection dir = cStyle2.direction;
+        final bool isRtl = dir == TextDirection.rtl;
+        final bool wantsAlignShift =
+            ta == TextAlign.center || ta == TextAlign.right || ta == TextAlign.end || (ta == TextAlign.start && isRtl);
+        if (wantsAlignShift) {
+          final double cw = constraints.maxWidth;
+          final double lineW = _paragraph?.longestLine ?? width;
+          double desiredLeft;
+          switch (ta) {
+            case TextAlign.center:
+              desiredLeft = (cw - lineW) / 2.0;
+              break;
+            case TextAlign.right:
+              desiredLeft = cw - lineW;
+              break;
+            case TextAlign.end:
+              desiredLeft = isRtl ? 0.0 : (cw - lineW);
+              break;
+            case TextAlign.start:
+              desiredLeft = isRtl ? (cw - lineW) : 0.0;
+              break;
+            default:
+              desiredLeft = 0.0;
+              break;
+          }
+          double minLeft = 0.0;
+          if (_paraLines.isNotEmpty) {
+            double m = double.infinity;
+            for (final lm in _paraLines) {
+              if (lm.left.isFinite) m = math.min(m, lm.left);
+            }
+            if (m.isFinite) minLeft = m;
+          }
+          final double forced = minLeft - desiredLeft;
+          _paragraphMinLeft = forced;
+          _forcedParagraphMinLeftAlignShift = forced;
+          InlineLayoutLog.log(
+            impl: InlineImpl.paragraphIFC,
+            feature: InlineFeature.painting,
+            level: Level.FINER,
+            message: () => 'apply align shift: ta='+ta.toString()+' dir='+dir.toString()+
+                ' cw='+cw.toStringAsFixed(2)+' lineW='+lineW.toStringAsFixed(2)+
+                ' minLeft='+minLeft.toStringAsFixed(2)+' → paragraphMinLeft='+_paragraphMinLeft.toStringAsFixed(2),
+          );
+        }
+      }
+    }
     // If there's no text (only placeholders) and the container explicitly sets
     // line-height: 0, browsers size each line to the tallest atomic inline on
     // that line without adding extra leading. Flutter's paragraph may report a
@@ -2281,6 +2344,8 @@ class InlineFormattingContext {
     final style = (container as RenderBoxModel).renderStyle;
     // Reset alignment reflow flag for this build.
     _paraReflowedToAvailWidthForAlign = false;
+    // Clear any previous forced align shift; may be recomputed below when applicable.
+    _forcedParagraphMinLeftAlignShift = null;
     InlineLayoutLog.log(
       impl: InlineImpl.paragraphIFC,
       feature: InlineFeature.placeholders,
