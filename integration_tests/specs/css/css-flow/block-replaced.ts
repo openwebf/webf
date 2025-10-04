@@ -351,9 +351,11 @@ describe('block-replaced', () => {
 
     await snapshot();
   });
-  it('height-006-ref', async () => {
+  it('height-006-ref', async (done) => {
     let p;
     let div;
+    let img1; 
+    let img2;
     p = createElement(
       'p',
       {
@@ -379,7 +381,7 @@ describe('block-replaced', () => {
         style: {},
       },
       [
-        createElement('img', {
+        img1 = createElement('img', {
           src: 'assets/blue15x15.png',
           alt: 'Image download support must be enabled',
           style: {
@@ -387,7 +389,7 @@ describe('block-replaced', () => {
             width: '200px',
           },
         }),
-        createElement('img', {
+        img2 = createElement('img', {
           src: 'assets/swatch-orange.png',
           alt: 'Image download support must be enabled',
           style: {
@@ -399,8 +401,10 @@ describe('block-replaced', () => {
     );
     BODY.appendChild(p);
     BODY.appendChild(div);
-
-    await snapshot(1);
+    onDoubleImageLoad(img1, img2, async () => {
+      await snapshot(0.1)
+      done();
+    })
   });
   it('width-001', async () => {
     let p;

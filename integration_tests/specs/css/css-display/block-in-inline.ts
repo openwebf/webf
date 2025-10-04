@@ -274,7 +274,8 @@ describe('Display block in inline', () => {
     await snapshot(container);
   });
 
-  it('percentage box inside of inline-block elements', async () => {
+  it('percentage box inside of inline-block elements', async (done) => {
+    let img;
     const container = createElement('div', {
       style: {
         width: '50px'
@@ -285,7 +286,7 @@ describe('Display block in inline', () => {
           display: 'inline-block'
         }
       }, [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/green15x15.png',
           style: {
             width: '50%'
@@ -294,10 +295,14 @@ describe('Display block in inline', () => {
       ])
     ]);
     document.body.appendChild(container);
-    await snapshot(1);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
-  it('percentage box inside of inline-block elements with bigger images', async () => {
+  it('percentage box inside of inline-block elements with bigger images', async (done) => {
+    let img;
     const container = createElement('div', {
       style: {
         width: '50px'
@@ -308,7 +313,7 @@ describe('Display block in inline', () => {
           display: 'inline-block'
         }
       }, [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/200x200-green.png',
           style: {
             width: '50%'
@@ -318,6 +323,9 @@ describe('Display block in inline', () => {
     ]);
 
     document.body.appendChild(container);
-    await snapshot(1);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 });

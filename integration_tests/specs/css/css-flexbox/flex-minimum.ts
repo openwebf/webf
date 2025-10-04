@@ -184,9 +184,10 @@ describe('flex-minimum', () => {
 
     await snapshot();
   });
-  it('height-flex-items-004', async () => {
+  it('height-flex-items-004', async (done) => {
     let referenceOverlappedRed;
     let constrainedFlex;
+    let img;
     referenceOverlappedRed = createElement('div', {
       xmlns: 'http://www.w3.org/1999/xhtml',
       id: 'reference-overlapped-red',
@@ -211,7 +212,7 @@ describe('flex-minimum', () => {
         },
       },
       [
-        createElement('img', {
+       img = createElement('img', {
           src: 'assets/100x100-green.png',
           style: {},
         }),
@@ -220,7 +221,10 @@ describe('flex-minimum', () => {
     BODY.appendChild(referenceOverlappedRed);
     BODY.appendChild(constrainedFlex);
 
-    await snapshot(1);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
   it('height-flex-items-005', async () => {
     let referenceOverlappedRed;
@@ -989,9 +993,10 @@ describe('flex-minimum', () => {
     await snapshot(0.1);
   })
 
-  it("width-flex-items-005-2", async () => {
+  it("width-flex-items-005-2", async (done) => {
     let constrainedFlex;
-
+    let img1;
+    let img2;
     constrainedFlex = createElement(
       'div',
       {
@@ -1003,14 +1008,14 @@ describe('flex-minimum', () => {
         },
       },
       [
-        (createElement('img', {
+        (img1 = createElement('img', {
           id: 'test-flex-item-overlapping-green',
           src: 'assets/60x60-green.png',
           style: {
             width: '100px',
           },
         })),
-        (createElement('img', {
+        (img2 = createElement('img', {
           id: 'test-flex-item-overlapping-green',
           src: 'assets/100x100-blue-and-orange.png',
           style: {
@@ -1021,7 +1026,10 @@ describe('flex-minimum', () => {
     );
     BODY.appendChild(constrainedFlex);
 
-    await snapshot(1);
+    onDoubleImageLoad(img1, img2, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
   it("width-flex-items-006", async () => {
