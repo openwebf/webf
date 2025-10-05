@@ -267,9 +267,11 @@ describe('position-sticky', () => {
     BODY.appendChild(scroller);
     BODY.appendChild(div);
 
-    window.addEventListener('load', function () {
-      scroller.scrollTop = 100;
-    });
+    await snapshot(0.2);
+
+    scroller.scrollTop = 100;
+
+    await waitForFrame();
 
     await snapshot(0.2);
   });

@@ -507,8 +507,10 @@ abstract class Element extends ContainerNode
 
   void handleScroll(double scrollOffset, AxisDirection axisDirection) {
     if (!renderStyle.hasRenderBox()) return;
-    _applyStickyChildrenOffset();
     _applyFixedChildrenOffset(scrollOffset, axisDirection);
+
+    // Update sticky descendants' paint offsets when this element scrolls.
+    _applyStickyChildrenOffsets();
 
     if (!_shouldConsumeScrollTicker) {
       // Make sure scroll listener trigger most to 1 time each frame.
@@ -516,6 +518,30 @@ abstract class Element extends ContainerNode
       SchedulerBinding.instance.scheduleFrame();
     }
     _shouldConsumeScrollTicker = true;
+  }
+
+  // Traverse subtree to update paint offsets for sticky elements constrained by this scroll container.
+  void _applyStickyChildrenOffsets() {
+    if (!isConnected) return;
+    final RenderBoxModel? scrollerRBM = attachedRenderer;
+    if (scrollerRBM == null) return;
+
+    void visit(Element el) {
+      for (final Node node in el.childNodes) {
+        if (node is! Element) continue;
+        final Element childEl = node as Element;
+        if (childEl.renderStyle.position == CSSPositionType.sticky) {
+          final RenderBoxModel? rbm = childEl.attachedRenderer;
+          final RenderBoxModel? cb = childEl.holderAttachedContainingBlockElement?.attachedRenderer;
+          if (rbm != null) {
+            CSSPositionedLayout.applyStickyChildOffset(cb ?? scrollerRBM, rbm, scrollContainer: scrollerRBM);
+          }
+        }
+        visit(childEl);
+      }
+    }
+
+    visit(this);
   }
 
   /// Normally element in scroll box will not repaint on scroll because of repaint boundary optimization
@@ -532,22 +558,10 @@ abstract class Element extends ContainerNode
     }
   }
 
-  // Calculate sticky status according to scroll offset and scroll direction
-  void _applyStickyChildrenOffset() {
-    RenderBoxModel scrollContainer = renderStyle.attachedRenderBoxModel!;
-
-    Set<RenderBoxModel>? stickyChildren;
-    if (scrollContainer is RenderLayoutBox) {
-      stickyChildren = scrollContainer.stickyChildren;
-    } else if (scrollContainer is RenderWidget) {
-      stickyChildren = scrollContainer.stickyChildren;
-    }
-
-    if (stickyChildren != null) {
-      for (RenderBoxModel stickyChild in stickyChildren) {
-        CSSPositionedLayout.applyStickyChildOffset(scrollContainer, stickyChild);
-      }
-    }
+  // Public hook to recompute sticky offsets for descendants constrained by this element
+  // (typically called after scroll container viewport is established during layout).
+  void updateStickyOffsets() {
+    _applyStickyChildrenOffsets();
   }
 
   void _updateHostingWidgetWithOverflow(CSSOverflowType oldOverflow) {

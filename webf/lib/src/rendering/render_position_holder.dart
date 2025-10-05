@@ -5,6 +5,7 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/css.dart';
 import 'package:webf/src/foundation/positioned_layout_logging.dart';
 
 /// A placeholder for positioned RenderBox
@@ -35,6 +36,36 @@ class RenderPositionPlaceholder extends RenderPreferredSize {
   @override
   void performLayout() {
     super.performLayout();
+
+    // For sticky positioned elements, the placeholder must reserve space in the
+    // normal flow equivalent to the element's own used size so that subsequent
+    // content does not collapse upward. Absolute/fixed placeholders remain size 0.
+    final RenderBoxModel? rbm = positioned;
+    final bool isSticky = rbm != null && rbm.renderStyle.position == CSSPositionType.sticky;
+    if (isSticky) {
+      double phWidth = size.width;
+      double phHeight = size.height;
+
+      // Prefer explicit CSS width/height if specified; otherwise fall back to any
+      // known box size from a previous layout (if available).
+      final CSSRenderStyle rs = rbm!.renderStyle;
+      if (rs.width.isNotAuto) {
+        phWidth = rs.width.computedValue;
+      } else if (rbm.boxSize != null) {
+        phWidth = rbm.boxSize!.width;
+      }
+
+      if (rs.height.isNotAuto) {
+        phHeight = rs.height.computedValue;
+      } else if (rbm.boxSize != null) {
+        phHeight = rbm.boxSize!.height;
+      }
+
+      // Constrain to incoming constraints if any (typically unconstrained in flow).
+      final BoxConstraints c = constraints;
+      final Size desired = Size(phWidth, phHeight);
+      size = c.constrain(desired);
+    }
     // The relative offset of positioned renderBox are depends on positionHolder' offset.
     // When the placeHolder got layout, should notify the positioned renderBox to layout again.
     try {

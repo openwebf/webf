@@ -45,6 +45,37 @@ Offset _getPlaceholderToParentOffset(RenderPositionPlaceholder? placeholder, Ren
 }
 
 class CSSPositionedLayout {
+  // Find nearest scroll container ancestor for a given node.
+  // A scroll container is any RenderBoxModel with overflow not visible on either axis.
+  static RenderBoxModel? _nearestScrollContainer(RenderObject start) {
+    RenderObject? current = start;
+    while (current != null) {
+      if (current is RenderBoxModel) {
+        if (current.clipX || current.clipY) return current;
+      }
+      current = current.parent;
+    }
+    return null;
+  }
+
+  // Compute viewport size of a scroll container's padding box.
+  static Size _scrollViewportSize(RenderBoxModel scrollContainer) {
+    final CSSRenderStyle rs = scrollContainer.renderStyle;
+    final double vw = math.max(
+      0.0,
+      scrollContainer.size.width -
+          rs.effectiveBorderLeftWidth.computedValue -
+          rs.effectiveBorderRightWidth.computedValue,
+    );
+    final double vh = math.max(
+      0.0,
+      scrollContainer.size.height -
+          rs.effectiveBorderTopWidth.computedValue -
+          rs.effectiveBorderBottomWidth.computedValue,
+    );
+    return Size(vw, vh);
+  }
+
   static Offset? getRelativeOffset(RenderStyle renderStyle) {
     CSSLengthValue left = renderStyle.left;
     CSSLengthValue right = renderStyle.right;
@@ -118,185 +149,6 @@ class CSSPositionedLayout {
             renderStyle.left.isNotAuto ||
             renderStyle.bottom.isNotAuto ||
             renderStyle.right.isNotAuto);
-  }
-
-  // Set horizontal offset of sticky element.
-  static bool _applyStickyChildHorizontalOffset(
-    RenderBoxModel scrollContainer,
-    RenderBoxModel child,
-    Offset childOriginalOffset,
-    Offset childToScrollContainerOffset,
-  ) {
-    bool isHorizontalFixed = false;
-    double offsetX = childOriginalOffset.dx;
-    double childWidth = child.boxSize!.width;
-    double scrollContainerWidth = scrollContainer.boxSize!.width;
-    // Dynamic offset to scroll container
-    double offsetLeftToScrollContainer = childToScrollContainerOffset.dx;
-    double offsetRightToScrollContainer = scrollContainerWidth - childWidth - offsetLeftToScrollContainer;
-    RenderStyle childRenderStyle = child.renderStyle;
-    RenderStyle? scrollContainerRenderStyle = scrollContainer.renderStyle;
-
-    if (childRenderStyle.left.isNotAuto) {
-      // Sticky offset to scroll container must include padding and border
-      double stickyLeft = childRenderStyle.left.computedValue +
-          scrollContainerRenderStyle.paddingLeft.computedValue +
-          scrollContainerRenderStyle.effectiveBorderLeftWidth.computedValue;
-      isHorizontalFixed = offsetLeftToScrollContainer < stickyLeft;
-      if (isHorizontalFixed) {
-        offsetX += stickyLeft - offsetLeftToScrollContainer;
-        // Sticky child can not exceed the left boundary of its parent container
-        RenderBoxModel parentContainer = child.parent as RenderBoxModel;
-        double maxOffsetX = parentContainer.scrollableSize.width - childWidth;
-        if (offsetX > maxOffsetX) {
-          offsetX = maxOffsetX;
-        }
-      }
-    } else if (childRenderStyle.left.isNotAuto) {
-      // Sticky offset to scroll container must include padding and border
-      double stickyRight = childRenderStyle.right.computedValue +
-          scrollContainerRenderStyle.paddingRight.computedValue +
-          scrollContainerRenderStyle.effectiveBorderRightWidth.computedValue;
-      isHorizontalFixed = offsetRightToScrollContainer < stickyRight;
-      if (isHorizontalFixed) {
-        offsetX += offsetRightToScrollContainer - stickyRight;
-        // Sticky element can not exceed the right boundary of its parent container
-        double minOffsetX = 0;
-        if (offsetX < minOffsetX) {
-          offsetX = minOffsetX;
-        }
-      }
-    }
-
-    RenderLayoutParentData boxParentData = child.parentData as RenderLayoutParentData;
-    boxParentData.offset = Offset(
-      offsetX,
-      boxParentData.offset.dy,
-    );
-    return isHorizontalFixed;
-  }
-
-  // Set vertical offset of sticky element.
-  static bool _applyStickyChildVerticalOffset(
-    RenderBoxModel scrollContainer,
-    RenderBoxModel child,
-    Offset childOriginalOffset,
-    Offset childToScrollContainerOffset,
-  ) {
-    bool isVerticalFixed = false;
-    double offsetY = childOriginalOffset.dy;
-    double childHeight = child.boxSize!.height;
-    double scrollContainerHeight = scrollContainer.boxSize!.height;
-    // Dynamic offset to scroll container
-    double offsetTopToScrollContainer = childToScrollContainerOffset.dy;
-    double offsetBottomToScrollContainer = scrollContainerHeight - childHeight - offsetTopToScrollContainer;
-    RenderStyle childRenderStyle = child.renderStyle;
-    RenderStyle? scrollContainerRenderStyle = scrollContainer.renderStyle;
-
-    if (childRenderStyle.top.isNotAuto) {
-      // Sticky offset to scroll container must include padding and border
-      double stickyTop = childRenderStyle.top.computedValue +
-          scrollContainerRenderStyle.paddingTop.computedValue +
-          scrollContainerRenderStyle.effectiveBorderTopWidth.computedValue;
-      isVerticalFixed = offsetTopToScrollContainer < stickyTop;
-      if (isVerticalFixed) {
-        offsetY += stickyTop - offsetTopToScrollContainer;
-        // Sticky child can not exceed the bottom boundary of its parent container
-        // RenderBoxModel parentContainer = child.parent as RenderBoxModel;
-        RenderBoxModel parentContainer = child.renderStyle.getParentRenderStyle()!.attachedRenderBoxModel!;
-        double maxOffsetY = parentContainer.scrollableSize.height - childHeight;
-        if (offsetY > maxOffsetY) {
-          offsetY = maxOffsetY;
-        }
-      }
-    } else if (childRenderStyle.bottom.isNotAuto) {
-      // Sticky offset to scroll container must include padding and border
-      double stickyBottom = childRenderStyle.bottom.computedValue +
-          scrollContainerRenderStyle.paddingBottom.computedValue +
-          scrollContainerRenderStyle.effectiveBorderBottomWidth.computedValue;
-      isVerticalFixed = offsetBottomToScrollContainer < stickyBottom;
-      if (isVerticalFixed) {
-        offsetY += offsetBottomToScrollContainer - stickyBottom;
-        // Sticky child can not exceed the upper boundary of its parent container
-        double minOffsetY = 0;
-        if (offsetY < minOffsetY) {
-          offsetY = minOffsetY;
-        }
-      }
-    }
-
-    RenderLayoutParentData boxParentData = child.parentData as RenderLayoutParentData;
-    boxParentData.offset = Offset(
-      boxParentData.offset.dx,
-      offsetY,
-    );
-    return isVerticalFixed;
-  }
-
-  // Set sticky child offset according to scroll offset and direction,
-  // when axisDirection param is null compute the both axis direction.
-  // Sticky positioning is similar to relative positioning except
-  // the offsets are automatically calculated in reference to the nearest scrollport.
-  // https://www.w3.org/TR/css-position-3/#stickypos-insets
-  static void applyStickyChildOffset(RenderBoxModel scrollContainer, RenderBoxModel child) {
-    RenderPositionPlaceholder? childRenderPositionHolder = child.renderStyle.getSelfPositionPlaceHolder();
-    if (childRenderPositionHolder == null) return;
-    RenderLayoutParentData? childPlaceHolderParentData = childRenderPositionHolder.parentData as RenderLayoutParentData?;
-    if (childPlaceHolderParentData == null) return;
-    // Original offset of sticky child in relative status
-    Offset childOriginalOffset = childPlaceHolderParentData.offset;
-
-    // Offset of sticky child to scroll container
-    Offset childToScrollContainerOffset =
-        childRenderPositionHolder.getOffsetToAncestor(Offset.zero, scrollContainer, excludeScrollOffset: true);
-
-    bool isVerticalFixed = false;
-    bool isHorizontalFixed = false;
-    RenderStyle childRenderStyle = child.renderStyle;
-
-    if (childRenderStyle.left.isNotAuto || childRenderStyle.right.isNotAuto) {
-      isHorizontalFixed =
-          _applyStickyChildHorizontalOffset(scrollContainer, child, childOriginalOffset, childToScrollContainerOffset);
-    }
-    if (childRenderStyle.top.isNotAuto || childRenderStyle.bottom.isNotAuto) {
-      isVerticalFixed =
-          _applyStickyChildVerticalOffset(scrollContainer, child, childOriginalOffset, childToScrollContainerOffset);
-    }
-
-    if (isVerticalFixed || isHorizontalFixed) {
-      // Change sticky status to fixed
-      child.stickyStatus = StickyPositionType.fixed;
-      child.markNeedsPaint();
-      try {
-        final pd = child.parentData as RenderLayoutParentData;
-        PositionedLayoutLog.log(
-          impl: PositionedImpl.layout,
-          feature: PositionedFeature.sticky,
-          message: () => '<${child.renderStyle.target.tagName.toLowerCase()}>'
-              ' sticky fixed(h=${isHorizontalFixed}, v=${isVerticalFixed}) at '
-              '(${pd.offset.dx.toStringAsFixed(2)},${pd.offset.dy.toStringAsFixed(2)}) '
-              'within <${scrollContainer.renderStyle.target.tagName.toLowerCase()}>',
-        );
-      } catch (_) {}
-    } else {
-      // Change sticky status to relative
-      if (child.stickyStatus == StickyPositionType.fixed) {
-        child.stickyStatus = StickyPositionType.relative;
-        // Reset child offset to its original offset
-        child.markNeedsPaint();
-        try {
-          final pd = child.parentData as RenderLayoutParentData;
-          PositionedLayoutLog.log(
-            impl: PositionedImpl.layout,
-            feature: PositionedFeature.sticky,
-            message: () => '<${child.renderStyle.target.tagName.toLowerCase()}>'
-                ' sticky relative at '
-                '(${pd.offset.dx.toStringAsFixed(2)},${pd.offset.dy.toStringAsFixed(2)}) '
-                'within <${scrollContainer.renderStyle.target.tagName.toLowerCase()}>',
-          );
-        } catch (_) {}
-      }
-    }
   }
 
   static void layoutPositionedChild(RenderBoxModel parent, RenderBoxModel child, {bool needsRelayout = false}) {
@@ -814,6 +666,11 @@ class CSSPositionedLayout {
       _staticContainingDir = flowParent.renderStyle.direction;
     }
 
+    // For sticky positioning, the insets act as constraints during scroll, not as
+    // absolute offsets at layout time. Compute the base (un-stuck) offset from the
+    // static position by treating both axis insets as auto for layout.
+    final bool isSticky = childRenderStyle.position == CSSPositionType.sticky;
+
     double x = _computePositionedOffset(
       Axis.horizontal,
       _staticContainingDir,
@@ -823,8 +680,8 @@ class CSSPositionedLayout {
       containingBlockSize.width,
       size.width,
       adjustedStaticPosition.dx,
-      left,
-      right,
+      isSticky ? CSSLengthValue.auto : left,
+      isSticky ? CSSLengthValue.auto : right,
       marginLeft,
       marginRight,
     );
@@ -838,8 +695,8 @@ class CSSPositionedLayout {
       containingBlockSize.height,
       size.height,
       adjustedStaticPosition.dy,
-      top,
-      bottom,
+      isSticky ? CSSLengthValue.auto : top,
+      isSticky ? CSSLengthValue.auto : bottom,
       marginTop,
       marginBottom,
     );
@@ -875,6 +732,96 @@ class CSSPositionedLayout {
         feature: PositionedFeature.offsets,
         message: () => 'apply offset final=(${finalOffset.dx.toStringAsFixed(2)},${finalOffset.dy.toStringAsFixed(2)}) '
             'from x=${x.toStringAsFixed(2)} y=${y.toStringAsFixed(2)} ancestor=(${ancestorOffset.dx.toStringAsFixed(2)},${ancestorOffset.dy.toStringAsFixed(2)})',
+      );
+    } catch (_) {}
+  }
+
+  // Apply sticky paint-time offset based on scroll position of nearest scroll container.
+  // The child must already be laid out and have its base (un-stuck) layout offset set
+  // to its static position within the containing block (done in applyPositionedChildOffset for sticky).
+  static void applyStickyChildOffset(RenderBoxModel parent, RenderBoxModel child, {RenderBoxModel? scrollContainer}) {
+    if (child.renderStyle.position != CSSPositionType.sticky) return;
+
+    // Identify the scroll container that constrains stickiness.
+    RenderBoxModel? scroller = scrollContainer ?? _nearestScrollContainer(parent) ?? _nearestScrollContainer(child);
+
+    // Use zero scroll if no container; sticky behaves like relative.
+    final double scrollTop = scroller?.scrollTop ?? 0.0;
+    final double scrollLeft = scroller?.scrollLeft ?? 0.0;
+    final Size viewport = (scroller != null && scroller.hasSize) ? _scrollViewportSize(scroller) : Size.infinite;
+
+    // Base static layout offset measured in the containing block coordinates.
+    // If wrapped by RenderEventListener, the wrapper carries the positioned offset.
+    Offset base;
+    final RenderObject? directParent = child.parent;
+    if (directParent is RenderEventListener) {
+      final RenderLayoutParentData pdw = directParent.parentData as RenderLayoutParentData;
+      base = pdw.offset;
+    } else {
+      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+      base = pd.offset;
+    }
+
+    final CSSRenderStyle rs = child.renderStyle;
+    final double childW = child.boxSize?.width ?? child.size.width;
+    final double childH = child.boxSize?.height ?? child.size.height;
+
+    // Natural on-screen position relative to the scroll container's viewport.
+    final double natY = base.dy - scrollTop;
+    final double natX = base.dx - scrollLeft;
+
+    double desiredY = natY;
+    double desiredX = natX;
+
+    // Apply vertical stickiness constraints.
+    if (rs.top.isNotAuto || rs.bottom.isNotAuto) {
+      // Top stick: engage as soon as the natural top would cross the top edge,
+      // and keep clamped thereafter until bottom boundary says otherwise.
+      if (rs.top.isNotAuto) {
+        final double topLimit = rs.top.computedValue;
+        if (natY < topLimit) desiredY = math.max(desiredY, topLimit);
+      }
+      // Bottom stick: only clamp when the box is within the viewport (entering from below)
+      if (rs.bottom.isNotAuto && viewport.height.isFinite) {
+        final double maxY = viewport.height - rs.bottom.computedValue - childH;
+        // Bottom stick engages once the element's natural top exceeds the clamp threshold,
+        // regardless of whether its top edge is already inside the viewport.
+        if (natY > maxY) desiredY = math.min(desiredY, maxY);
+      }
+    }
+
+    // Apply horizontal stickiness constraints.
+    if (rs.left.isNotAuto || rs.right.isNotAuto) {
+      if (rs.left.isNotAuto) {
+        final double leftLimit = rs.left.computedValue;
+        if (natX < leftLimit) desiredX = math.max(desiredX, leftLimit);
+      }
+      if (rs.right.isNotAuto && viewport.width.isFinite) {
+        final double maxX = viewport.width - rs.right.computedValue - childW;
+        if (natX > maxX) desiredX = math.min(desiredX, maxX);
+      }
+    }
+
+    // Convert desired on-screen delta back to an additional paint offset.
+    // additional = desiredOnScreen - currentOnScreen = desired - (base - scroll)
+    final double addY = desiredY - natY;
+    final double addX = desiredX - natX;
+
+    if ((child.additionalPaintOffsetY ?? 0.0) != addY) {
+      child.additionalPaintOffsetY = addY;
+    }
+    if ((child.additionalPaintOffsetX ?? 0.0) != addX) {
+      child.additionalPaintOffsetX = addX;
+    }
+
+    try {
+      PositionedLayoutLog.log(
+        impl: PositionedImpl.layout,
+        feature: PositionedFeature.sticky,
+        message: () => '<${child.renderStyle.target.tagName.toLowerCase()}>'
+            ' sticky base=(${base.dx.toStringAsFixed(2)},${base.dy.toStringAsFixed(2)})'
+            ' scroll=(${scrollLeft.toStringAsFixed(2)},${scrollTop.toStringAsFixed(2)})'
+            ' add=(${addX.toStringAsFixed(2)},${addY.toStringAsFixed(2)})',
       );
     } catch (_) {}
   }

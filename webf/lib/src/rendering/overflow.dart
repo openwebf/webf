@@ -6,6 +6,7 @@
 import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/css.dart';
 import 'package:webf/gesture.dart';
@@ -174,6 +175,13 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
             'Y controller maxScroll=${maxY.toStringAsFixed(2)} viewportH=${_viewportSize!.height.toStringAsFixed(2)} contentH=${_scrollableSize!.height.toStringAsFixed(2)}',
       );
     }
+
+    // After computing viewport/content dimensions, update sticky descendants so their
+    // initial paint offsets honor top/bottom/left/right clamps before any scroll occurs.
+    try {
+      final Element el = renderStyle.target;
+      el.updateStickyOffsets();
+    } catch (_) {}
   }
   double get _paintOffsetX {
     if (_scrollOffsetX == null) return 0.0;

@@ -402,9 +402,6 @@ abstract class RenderLayoutBox extends RenderBoxModel
     return children;
   }
 
-  // Cache sticky children to calculate the base offset of sticky children
-  final Set<RenderBoxModel> stickyChildren = {};
-
   bool get isNegativeMarginChangeHSize {
     return renderStyle.width.isAuto && isMarginNegativeHorizontal();
   }
@@ -596,8 +593,6 @@ abstract class RenderLayoutBox extends RenderBoxModel
   @override
   void dispose() {
     super.dispose();
-
-    stickyChildren.clear();
   }
 }
 

@@ -574,19 +574,15 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     List<RenderBoxModel> positionedChildren = [];
     List<RenderBox> nonPositionedChildren = [];
-    List<RenderBoxModel> stickyChildren = [];
 
     // Prepare children of different type for layout.
     RenderBox? child = firstChild;
     while (child != null) {
       final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-      if (child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
+      if (child is RenderBoxModel && (child.renderStyle.isSelfPositioned() || child.renderStyle.isSelfStickyPosition())) {
         positionedChildren.add(child);
       } else {
         nonPositionedChildren.add(child);
-        if (child is RenderBoxModel && CSSPositionedLayout.isSticky(child)) {
-          stickyChildren.add(child);
-        }
       }
       child = childParentData.nextSibling;
     }
@@ -616,35 +612,14 @@ class RenderFlowLayout extends RenderLayoutBox {
     // scroll range of overflow boxes.
     for (RenderBoxModel child in positionedChildren) {
       CSSPositionedLayout.applyPositionedChildOffset(this, child);
-      // Let positioned children contribute to scrollable size; filtering
-      // for intersection with the scrollport is handled inside
-      // extendMaxScrollableSize.
-      extendMaxScrollableSize(child);
-      addOverflowLayoutFromChild(child);
-    }
-
-    // Set offset of sticky element on each layout.
-    for (RenderBoxModel child in stickyChildren) {
-      RenderBoxModel scrollContainer = child.findScrollContainer()!;
-      // Sticky offset depends on the layout of scroll container, delay the calculation of
-      // sticky offset to the layout stage of scroll container if its not layouted yet
-      // due to the layout order of Flutter renderObject tree is from down to up.
-      if (scrollContainer.hasSize) {
-        CSSPositionedLayout.applyStickyChildOffset(scrollContainer, child);
-      }
-      if (scrollContainer is RenderLayoutBox) {
-        scrollContainer.stickyChildren.add(child);
-      } else if (scrollContainer is RenderWidget) {
-        scrollContainer.stickyChildren.add(child);
-      }
-    }
-
-    final bool isScrollContainer = renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
-        renderStyle.effectiveOverflowY != CSSOverflowType.visible;
-    if (isScrollContainer) {
-      // Calculate the offset of its sticky children.
-      for (RenderBoxModel stickyChild in stickyChildren) {
-        CSSPositionedLayout.applyStickyChildOffset(this, stickyChild);
+      // Apply sticky paint-time offset (no-op for non-sticky).
+      CSSPositionedLayout.applyStickyChildOffset(this, child);
+      // Do not expand scroll range for sticky; its placeholder accounts for flow size.
+      if (child.renderStyle.position != CSSPositionType.sticky) {
+        // Let positioned children contribute to scrollable size; filtering
+        // for intersection with the scrollport is handled inside extendMaxScrollableSize.
+        extendMaxScrollableSize(child);
+        addOverflowLayoutFromChild(child);
       }
     }
 
@@ -2123,7 +2098,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       for (int i = paintingOrder.length - 1; i >= 0; i--) {
         final RenderBox child = paintingOrder[i];
         // Only consider positioned elements when using IFC
-        if (child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
+        if (child is RenderBoxModel && (child.renderStyle.isSelfPositioned() || child.renderStyle.isSelfStickyPosition())) {
           final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
           final bool isHit = result.addWithPaintOffset(
             offset: childParentData.offset,

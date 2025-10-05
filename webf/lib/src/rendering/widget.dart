@@ -278,7 +278,7 @@ class RenderWidget extends RenderBoxModel
     RenderBox? child = firstChild;
     while (child != null) {
       final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-      if (child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
+      if (child is RenderBoxModel && (child.renderStyle.isSelfPositioned() || child.renderStyle.isSelfStickyPosition())) {
         _positionedChildren.add(child);
       } else {
         _nonPositionedChildren.add(child);
@@ -304,12 +304,15 @@ class RenderWidget extends RenderBoxModel
 
     for (RenderBoxModel child in _positionedChildren) {
       CSSPositionedLayout.applyPositionedChildOffset(this, child);
+      // Apply sticky offset after setting base offset (no-op for non-sticky).
+      CSSPositionedLayout.applyStickyChildOffset(this, child);
     }
 
-    // // Calculate the offset of its sticky children.
-    // for (RenderBoxModel stickyChild in stickyChildren) {
-    //   CSSPositionedLayout.applyStickyChildOffset(this, stickyChild);
-    // }
+    // Sticky children in this widget may also need dynamic paint offsets if they were not
+    // classified as positioned at build-time. Apply here as a best-effort.
+    for (RenderBoxModel stickyChild in _stickyChildren) {
+      CSSPositionedLayout.applyStickyChildOffset(this, stickyChild);
+    }
 
     calculateBaseline();
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));

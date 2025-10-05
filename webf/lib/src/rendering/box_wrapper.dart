@@ -151,7 +151,7 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
         );
       } catch (_) {}
 
-      if (renderStyle.isSelfPositioned()) {
+      if (renderStyle.isSelfPositioned() || renderStyle.isSelfStickyPosition()) {
         CSSPositionedLayout.applyPositionedChildOffset(this, c);
       } else {
         // Offset the child within the wrapper by its margins
