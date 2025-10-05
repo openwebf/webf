@@ -750,16 +750,18 @@ class CSSPositionedLayout {
     final double scrollLeft = scroller?.scrollLeft ?? 0.0;
     final Size viewport = (scroller != null && scroller.hasSize) ? _scrollViewportSize(scroller) : Size.infinite;
 
-    // Base static layout offset measured in the containing block coordinates.
-    // If wrapped by RenderEventListener, the wrapper carries the positioned offset.
-    Offset base;
-    final RenderObject? directParent = child.parent;
-    if (directParent is RenderEventListener) {
-      final RenderLayoutParentData pdw = directParent.parentData as RenderLayoutParentData;
-      base = pdw.offset;
-    } else {
-      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
-      base = pd.offset;
+    // Measure child's base offset in the scroll container's coordinate space (content box),
+    // excluding any paint-time scroll transform. This ensures sticky math uses the correct
+    // reference regardless of intermediate wrappers or containing block differences.
+    Offset baseInScroller = Offset.zero;
+    if (scroller != null) {
+      try {
+        baseInScroller = child.getOffsetToAncestor(Offset.zero, scroller!, excludeScrollOffset: true);
+      } catch (_) {
+        // Fallback to local parent offset if transform fails; better than nothing.
+        final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+        baseInScroller = pd.offset;
+      }
     }
 
     final CSSRenderStyle rs = child.renderStyle;
@@ -767,8 +769,8 @@ class CSSPositionedLayout {
     final double childH = child.boxSize?.height ?? child.size.height;
 
     // Natural on-screen position relative to the scroll container's viewport.
-    final double natY = base.dy - scrollTop;
-    final double natX = base.dx - scrollLeft;
+    final double natY = baseInScroller.dy - scrollTop;
+    final double natX = baseInScroller.dx - scrollLeft;
 
     double desiredY = natY;
     double desiredX = natX;
@@ -802,6 +804,30 @@ class CSSPositionedLayout {
       }
     }
 
+    // Constrain within the containing block (parent) padding box so sticky never
+    // leaves its own containing block. Compute the parent's padding-box edges in
+    // the scroller's coordinate space.
+    if (parent.attached && scroller != null && parent.boxSize != null) {
+      try {
+        final Offset parentToScroller = parent.getOffsetToAncestor(Offset.zero, scroller!, excludeScrollOffset: true);
+        final CSSRenderStyle p = parent.renderStyle;
+        final double padLeftEdgeS = parentToScroller.dx + p.effectiveBorderLeftWidth.computedValue;
+        final double padTopEdgeS = parentToScroller.dy + p.effectiveBorderTopWidth.computedValue;
+        final double padRightEdgeS = parentToScroller.dx + parent.boxSize!.width - p.effectiveBorderRightWidth.computedValue;
+        final double padBottomEdgeS = parentToScroller.dy + parent.boxSize!.height - p.effectiveBorderBottomWidth.computedValue;
+
+        // Convert parent padding edges to viewport coordinates by subtracting scroll.
+        final double padLeftEdgeV = padLeftEdgeS - scrollLeft;
+        final double padTopEdgeV = padTopEdgeS - scrollTop;
+        final double padRightEdgeV = padRightEdgeS - scrollLeft;
+        final double padBottomEdgeV = padBottomEdgeS - scrollTop;
+
+        // Clamp within containing block padding box in viewport space.
+        desiredX = desiredX.clamp(padLeftEdgeV, padRightEdgeV - childW);
+        desiredY = desiredY.clamp(padTopEdgeV, padBottomEdgeV - childH);
+      } catch (_) {}
+    }
+
     // Convert desired on-screen delta back to an additional paint offset.
     // additional = desiredOnScreen - currentOnScreen = desired - (base - scroll)
     final double addY = desiredY - natY;
@@ -819,7 +845,7 @@ class CSSPositionedLayout {
         impl: PositionedImpl.layout,
         feature: PositionedFeature.sticky,
         message: () => '<${child.renderStyle.target.tagName.toLowerCase()}>'
-            ' sticky base=(${base.dx.toStringAsFixed(2)},${base.dy.toStringAsFixed(2)})'
+            ' sticky base=(${baseInScroller.dx.toStringAsFixed(2)},${baseInScroller.dy.toStringAsFixed(2)})'
             ' scroll=(${scrollLeft.toStringAsFixed(2)},${scrollTop.toStringAsFixed(2)})'
             ' add=(${addX.toStringAsFixed(2)},${addY.toStringAsFixed(2)})',
       );

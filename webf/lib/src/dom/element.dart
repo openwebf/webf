@@ -523,8 +523,19 @@ abstract class Element extends ContainerNode
   // Traverse subtree to update paint offsets for sticky elements constrained by this scroll container.
   void _applyStickyChildrenOffsets() {
     if (!isConnected) return;
-    final RenderBoxModel? scrollerRBM = attachedRenderer;
-    if (scrollerRBM == null) return;
+    final RenderBoxModel? defaultScroller = attachedRenderer;
+    if (defaultScroller == null) return;
+
+    RenderBoxModel? _nearestScrollContainer(RenderObject start) {
+      RenderObject? current = start;
+      while (current != null) {
+        if (current is RenderBoxModel) {
+          if (current.clipX || current.clipY) return current;
+        }
+        current = current.parent as RenderObject?;
+      }
+      return null;
+    }
 
     void visit(Element el) {
       for (final Node node in el.childNodes) {
@@ -534,7 +545,10 @@ abstract class Element extends ContainerNode
           final RenderBoxModel? rbm = childEl.attachedRenderer;
           final RenderBoxModel? cb = childEl.holderAttachedContainingBlockElement?.attachedRenderer;
           if (rbm != null) {
-            CSSPositionedLayout.applyStickyChildOffset(cb ?? scrollerRBM, rbm, scrollContainer: scrollerRBM);
+            // Use the child's own nearest scroll container so nested scrollers don't get
+            // overridden by outer viewport updates (e.g., <html> / <body> setups).
+            final RenderBoxModel? scForChild = _nearestScrollContainer(rbm) ?? defaultScroller;
+            CSSPositionedLayout.applyStickyChildOffset(cb ?? scForChild!, rbm, scrollContainer: scForChild);
           }
         }
         visit(childEl);
