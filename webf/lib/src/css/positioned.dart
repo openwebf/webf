@@ -822,14 +822,41 @@ class CSSPositionedLayout {
         // For non-scroller parents (ancestors inside the scroller's content), subtracting
         // scroll aligns them to the scroller's viewport coordinate space.
         final bool parentIsScroller = identical(parent, scroller);
-        final double padLeftEdgeV = parentIsScroller ? padLeftEdgeS : padLeftEdgeS - scrollLeft;
-        final double padTopEdgeV = parentIsScroller ? padTopEdgeS : padTopEdgeS - scrollTop;
-        final double padRightEdgeV = parentIsScroller ? padRightEdgeS : padRightEdgeS - scrollLeft;
-        final double padBottomEdgeV = parentIsScroller ? padBottomEdgeS : padBottomEdgeS - scrollTop;
+        double padLeftEdgeV;
+        double padTopEdgeV;
+        double padRightEdgeV;
+        double padBottomEdgeV;
+
+        if (parentIsScroller) {
+          // When clamping to the scroll container itself, use the scrollport (viewport inside padding edges)
+          // in the same coordinate space as natX/natY (which already excludes the scroller's borders).
+          padLeftEdgeV = 0.0;
+          padTopEdgeV = 0.0;
+          padRightEdgeV = viewport.width.isFinite ? viewport.width : (parent.boxSize!.width - p.effectiveBorderLeftWidth.computedValue - p.effectiveBorderRightWidth.computedValue);
+          padBottomEdgeV = viewport.height.isFinite ? viewport.height : (parent.boxSize!.height - p.effectiveBorderTopWidth.computedValue - p.effectiveBorderBottomWidth.computedValue);
+        } else {
+          // For non-scroller parents, transform the parent's padding edges into the scroller's viewport space.
+          padLeftEdgeV = padLeftEdgeS - scrollLeft;
+          padTopEdgeV = padTopEdgeS - scrollTop;
+          padRightEdgeV = padRightEdgeS - scrollLeft;
+          padBottomEdgeV = padBottomEdgeS - scrollTop;
+        }
 
         // Clamp within containing block padding box in viewport space.
-        desiredX = desiredX.clamp(padLeftEdgeV, padRightEdgeV - childW);
-        desiredY = desiredY.clamp(padTopEdgeV, padBottomEdgeV - childH);
+        // Special-case large top/left when the parent is the scroller: Chrome keeps the sticky
+        // out of view at initial scroll (scrollTop/Left == 0) if the requested inset exceeds
+        // the viewport. Once scrolling begins, it clamps to the nearest edge (bottom/right).
+        final bool topOnly = rs.top.isNotAuto && !rs.bottom.isNotAuto;
+        final bool leftOnly = rs.left.isNotAuto && !rs.right.isNotAuto;
+        final bool suppressYClampInitially = parentIsScroller && topOnly && viewport.height.isFinite && (rs.top.computedValue > (padBottomEdgeV - padTopEdgeV - childH)) && scrollTop == 0.0;
+        final bool suppressXClampInitially = parentIsScroller && leftOnly && viewport.width.isFinite && (rs.left.computedValue > (padRightEdgeV - padLeftEdgeV - childW)) && scrollLeft == 0.0;
+
+        if (!suppressXClampInitially) {
+          desiredX = desiredX.clamp(padLeftEdgeV, padRightEdgeV - childW);
+        }
+        if (!suppressYClampInitially) {
+          desiredY = desiredY.clamp(padTopEdgeV, padBottomEdgeV - childH);
+        }
       } catch (_) {}
     }
 
