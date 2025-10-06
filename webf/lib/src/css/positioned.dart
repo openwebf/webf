@@ -845,11 +845,16 @@ class CSSPositionedLayout {
         // Clamp within containing block padding box in viewport space.
         // Special-case large top/left when the parent is the scroller: Chrome keeps the sticky
         // out of view at initial scroll (scrollTop/Left == 0) if the requested inset exceeds
-        // the viewport. Once scrolling begins, it clamps to the nearest edge (bottom/right).
+        // the viewport AND the container can actually scroll on that axis. If there is no
+        // scrollable overflow, clamp to the container bounds so the sticky remains visible.
         final bool topOnly = rs.top.isNotAuto && !rs.bottom.isNotAuto;
         final bool leftOnly = rs.left.isNotAuto && !rs.right.isNotAuto;
-        final bool suppressYClampInitially = parentIsScroller && topOnly && viewport.height.isFinite && (rs.top.computedValue > (padBottomEdgeV - padTopEdgeV - childH)) && scrollTop == 0.0;
-        final bool suppressXClampInitially = parentIsScroller && leftOnly && viewport.width.isFinite && (rs.left.computedValue > (padRightEdgeV - padLeftEdgeV - childW)) && scrollLeft == 0.0;
+        final bool canScrollY = parent.scrollableSize.height - parent.scrollableViewportSize.height > 0.5;
+        final bool canScrollX = parent.scrollableSize.width - parent.scrollableViewportSize.width > 0.5;
+        final bool suppressYClampInitially = parentIsScroller && topOnly && viewport.height.isFinite &&
+            (rs.top.computedValue > (padBottomEdgeV - padTopEdgeV - childH)) && scrollTop == 0.0 && canScrollY;
+        final bool suppressXClampInitially = parentIsScroller && leftOnly && viewport.width.isFinite &&
+            (rs.left.computedValue > (padRightEdgeV - padLeftEdgeV - childW)) && scrollLeft == 0.0 && canScrollX;
 
         if (!suppressXClampInitially) {
           desiredX = desiredX.clamp(padLeftEdgeV, padRightEdgeV - childW);
