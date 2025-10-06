@@ -748,7 +748,10 @@ class CSSPositionedLayout {
     // Use zero scroll if no container; sticky behaves like relative.
     final double scrollTop = scroller?.scrollTop ?? 0.0;
     final double scrollLeft = scroller?.scrollLeft ?? 0.0;
-    final Size viewport = (scroller != null && scroller.hasSize) ? _scrollViewportSize(scroller) : Size.infinite;
+    // Prefer the scroller's computed viewport (content + padding inside borders) if available
+    final Size viewport = (scroller != null && scroller.hasSize)
+        ? scroller.scrollableViewportSize
+        : Size.infinite;
 
     // Measure child's base offset in the scroll container's coordinate space (content box),
     // excluding any paint-time scroll transform. This ensures sticky math uses the correct
@@ -769,11 +772,50 @@ class CSSPositionedLayout {
     final double childH = child.boxSize?.height ?? child.size.height;
 
     // Natural on-screen position relative to the scroll container's viewport.
-    final double natY = baseInScroller.dy - scrollTop;
-    final double natX = baseInScroller.dx - scrollLeft;
+    // For sticky, the top/left/right/bottom offsets behave like relative offsets
+    // when not engaged: add them to the normal-flow static position to match
+    // browser behavior (e.g., initial offset includes the specified insets).
+    double natY = baseInScroller.dy - scrollTop;
+    double natX = baseInScroller.dx - scrollLeft;
+
+    // Apply relative-like offsets from sticky insets.
+    // Horizontal: left takes precedence in LTR; right in RTL when both set.
+    final CSSLengthValue leftInset = rs.left;
+    final CSSLengthValue rightInset = rs.right;
+    final CSSLengthValue topInset = rs.top;
+    final CSSLengthValue bottomInset = rs.bottom;
+    double? relDx;
+    double? relDy;
+    final bool hasLeft = leftInset.isNotAuto;
+    final bool hasRight = rightInset.isNotAuto;
+    if (hasLeft && hasRight) {
+      if (parent.renderStyle.direction == TextDirection.rtl) {
+        relDx = -rightInset.computedValue;
+      } else {
+        relDx = leftInset.computedValue;
+      }
+    } else if (hasLeft) {
+      relDx = leftInset.computedValue;
+    } else if (hasRight) {
+      relDx = -rightInset.computedValue;
+    }
+    final bool hasTop = topInset.isNotAuto;
+    final bool hasBottom = bottomInset.isNotAuto;
 
     double desiredY = natY;
     double desiredX = natX;
+
+    if (hasTop) {
+      relDy = topInset.computedValue;
+    } else if (hasBottom) {
+      relDy = -bottomInset.computedValue;
+    }
+    // Seed desired on-screen position from natural position, then add the
+    // relative-like offsets from sticky insets. Clamps below will further
+    // adjust desired within the viewport and container bounds.
+    if (relDx != null) desiredX += relDx;
+    if (relDy != null) desiredY += relDy;
+
 
     // Apply vertical stickiness constraints.
     if (rs.top.isNotAuto || rs.bottom.isNotAuto) {
