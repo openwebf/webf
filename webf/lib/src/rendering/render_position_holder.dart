@@ -47,17 +47,19 @@ class RenderPositionPlaceholder extends RenderPreferredSize {
       double phHeight = size.height;
 
       // Prefer explicit CSS width/height if specified; otherwise fall back to any
-      // known box size from a previous layout (if available).
+      // known box size from a previous layout, but only when the positioned box
+      // has a valid size. Avoid reading boxSize before the child has laid out to
+      // prevent assertion failures.
       final CSSRenderStyle rs = rbm!.renderStyle;
       if (rs.width.isNotAuto) {
         phWidth = rs.width.computedValue;
-      } else if (rbm.boxSize != null) {
+      } else if (rbm.hasSize && rbm.boxSize != null) {
         phWidth = rbm.boxSize!.width;
       }
 
       if (rs.height.isNotAuto) {
         phHeight = rs.height.computedValue;
-      } else if (rbm.boxSize != null) {
+      } else if (rbm.hasSize && rbm.boxSize != null) {
         phHeight = rbm.boxSize!.height;
       }
 

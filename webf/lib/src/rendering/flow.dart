@@ -176,6 +176,13 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     if (child is RenderBoxModel) {
       marginVertical = getChildMarginTop(child) + getChildMarginBottom(child);
+    } else if (child is RenderPositionPlaceholder) {
+      // Include the mapped element's vertical margins for sticky placeholders so
+      // run cross-size accounts for the collapsed margins between runs.
+      final RenderBoxModel? mapped = child.positioned;
+      if (mapped != null && mapped.renderStyle.position == CSSPositionType.sticky) {
+        marginVertical = getChildMarginTop(mapped) + getChildMarginBottom(mapped);
+      }
     }
 
     Size childSize = RenderFlowLayout.getChildSize(child) ?? Size.zero;
@@ -573,6 +580,8 @@ class RenderFlowLayout extends RenderLayoutBox {
     }
 
     List<RenderBoxModel> positionedChildren = [];
+    List<RenderBoxModel> stickyChildren = [];
+    List<RenderBoxModel> absFixedChildren = [];
     List<RenderBox> nonPositionedChildren = [];
 
     // Prepare children of different type for layout.
@@ -581,10 +590,23 @@ class RenderFlowLayout extends RenderLayoutBox {
       final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
       if (child is RenderBoxModel && (child.renderStyle.isSelfPositioned() || child.renderStyle.isSelfStickyPosition())) {
         positionedChildren.add(child);
+        if (child.renderStyle.isSelfStickyPosition()) {
+          stickyChildren.add(child);
+        } else {
+          absFixedChildren.add(child);
+        }
       } else {
         nonPositionedChildren.add(child);
       }
       child = childParentData.nextSibling;
+    }
+
+    // Pre-layout sticky positioned children so their placeholders can reserve
+    // correct flow space during the subsequent non-positioned layout pass.
+    // This keeps sticky sizing in sync with normal-flow sizing while still
+    // treating them as positioned for offset/painting.
+    for (RenderBoxModel sticky in stickyChildren) {
+      CSSPositionedLayout.layoutPositionedChild(this, sticky);
     }
 
     // Layout non positioned element (include element in flow and
@@ -602,7 +624,9 @@ class RenderFlowLayout extends RenderLayoutBox {
     // (e.g., width/height: 100%) resolve against the containing block's final
     // padding box dimensions, matching browser behavior for inline-block
     // shrink-to-fit containers with positioned overlays.
-    for (RenderBoxModel child in positionedChildren) {
+    // Lay out absolute/fixed positioned children after container size is known,
+    // preserving existing behavior for percentage resolution.
+    for (RenderBoxModel child in absFixedChildren) {
       CSSPositionedLayout.layoutPositionedChild(this, child);
     }
 
@@ -1044,18 +1068,23 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       // Iterate run children to update prevCollapsedBottom and capture first child margins.
       for (final RenderBox child in run.runChildren) {
-        // Out-of-flow placeholders must not participate in sibling margin collapsing.
+        // Out-of-flow placeholders must not participate in sibling margin collapsing,
+        // except for position: sticky which behaves like in-flow for layout (margins collapse).
         if (child is RenderPositionPlaceholder) {
-          try {
-            final tag = child.positioned?.renderStyle.target.tagName.toLowerCase() ?? '';
-            FlowLog.log(
-              impl: FlowImpl.flow,
-              feature: FlowFeature.marginCollapse,
-              level: Level.FINER,
-              message: () => 'skip placeholder mapped to <$tag> in collapse accounting',
-            );
-          } catch (_) {}
-          continue;
+          final CSSPositionType? pos = child.positioned?.renderStyle.position;
+          final bool isStickyPH = pos == CSSPositionType.sticky;
+          if (!isStickyPH) {
+            try {
+              final tag = child.positioned?.renderStyle.target.tagName.toLowerCase() ?? '';
+              FlowLog.log(
+                impl: FlowImpl.flow,
+                feature: FlowFeature.marginCollapse,
+                level: Level.FINER,
+                message: () => 'skip placeholder mapped to <$tag> in collapse accounting',
+              );
+            } catch (_) {}
+            continue;
+          }
         }
         RenderBoxModel? childRenderBoxModel;
         if (child is RenderBoxModel) {
@@ -1479,13 +1508,13 @@ class RenderFlowLayout extends RenderLayoutBox {
         // No need to add padding and border for scrolling content box.
         Offset relativeOffset = _getOffset(
             childMainPosition +
-                renderStyle.paddingLeft.computedValue +
-                renderStyle.effectiveBorderLeftWidth.computedValue +
+            renderStyle.paddingLeft.computedValue +
+            renderStyle.effectiveBorderLeftWidth.computedValue +
                 childMarginLeft,
             crossAxisOffset +
-                childLineExtent +
-                renderStyle.paddingTop.computedValue +
-                renderStyle.effectiveBorderTopWidth.computedValue +
+            childLineExtent +
+            renderStyle.paddingTop.computedValue +
+            renderStyle.effectiveBorderTopWidth.computedValue +
                 (childMarginTop ?? 0));
         // Apply position relative offset change.
         CSSPositionedLayout.applyRelativeOffset(relativeOffset, child);
