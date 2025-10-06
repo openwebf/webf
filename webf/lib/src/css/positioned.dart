@@ -772,77 +772,86 @@ class CSSPositionedLayout {
     final double childH = child.boxSize?.height ?? child.size.height;
 
     // Natural on-screen position relative to the scroll container's viewport.
-    // For sticky, the top/left/right/bottom offsets behave like relative offsets
-    // when not engaged: add them to the normal-flow static position to match
-    // browser behavior (e.g., initial offset includes the specified insets).
     double natY = baseInScroller.dy - scrollTop;
     double natX = baseInScroller.dx - scrollLeft;
-
-    // Apply relative-like offsets from sticky insets.
-    // Horizontal: left takes precedence in LTR; right in RTL when both set.
-    final CSSLengthValue leftInset = rs.left;
-    final CSSLengthValue rightInset = rs.right;
-    final CSSLengthValue topInset = rs.top;
-    final CSSLengthValue bottomInset = rs.bottom;
-    double? relDx;
-    double? relDy;
-    final bool hasLeft = leftInset.isNotAuto;
-    final bool hasRight = rightInset.isNotAuto;
-    if (hasLeft && hasRight) {
-      if (parent.renderStyle.direction == TextDirection.rtl) {
-        relDx = -rightInset.computedValue;
-      } else {
-        relDx = leftInset.computedValue;
-      }
-    } else if (hasLeft) {
-      relDx = leftInset.computedValue;
-    } else if (hasRight) {
-      relDx = -rightInset.computedValue;
-    }
-    final bool hasTop = topInset.isNotAuto;
-    final bool hasBottom = bottomInset.isNotAuto;
 
     double desiredY = natY;
     double desiredX = natX;
 
-    if (hasTop) {
-      relDy = topInset.computedValue;
-    } else if (hasBottom) {
-      relDy = -bottomInset.computedValue;
+    // Apply relative-like offsets from sticky insets at rest only when the
+    // containing block is the scroll container itself. This matches browser
+    // behavior for scrollable containers (padding + inset initial paint),
+    // without affecting non-scrolling containers like <body>.
+    final CSSLengthValue leftInset = rs.left;
+    final CSSLengthValue rightInset = rs.right;
+    final CSSLengthValue topInset = rs.top;
+    final CSSLengthValue bottomInset = rs.bottom;
+    final bool hasLeft = leftInset.isNotAuto;
+    final bool hasRight = rightInset.isNotAuto;
+    final bool hasTop = topInset.isNotAuto;
+    final bool hasBottom = bottomInset.isNotAuto;
+    final bool parentIsScroller = (scroller != null) && identical(parent, scroller);
+    if (parentIsScroller) {
+      if (hasLeft && hasRight) {
+        if (parent.renderStyle.direction == TextDirection.rtl) {
+          desiredX += -rightInset.computedValue;
+        } else {
+          desiredX += leftInset.computedValue;
+        }
+      } else if (hasLeft) {
+        desiredX += leftInset.computedValue;
+      } else if (hasRight) {
+        desiredX += -rightInset.computedValue;
+      }
+      if (hasTop) {
+        desiredY += topInset.computedValue;
+      } else if (hasBottom) {
+        desiredY += -bottomInset.computedValue;
+      }
     }
-    // Seed desired on-screen position from natural position, then add the
-    // relative-like offsets from sticky insets. Clamps below will further
-    // adjust desired within the viewport and container bounds.
-    if (relDx != null) desiredX += relDx;
-    if (relDy != null) desiredY += relDy;
+
+    // Do not add sticky insets at rest; stickiness engages only when
+    // natural position crosses the specified threshold relative to the viewport
+    // or when constrained by the containing block bounds.
 
 
-    // Apply vertical stickiness constraints.
+    // Apply vertical stickiness constraints relative to the viewport.
     if (rs.top.isNotAuto || rs.bottom.isNotAuto) {
-      // Top stick: engage as soon as the natural top would cross the top edge,
-      // and keep clamped thereafter until bottom boundary says otherwise.
-      if (rs.top.isNotAuto) {
-        final double topLimit = rs.top.computedValue;
-        if (natY < topLimit) desiredY = math.max(desiredY, topLimit);
-      }
-      // Bottom stick: only clamp when the box is within the viewport (entering from below)
-      if (rs.bottom.isNotAuto && viewport.height.isFinite) {
-        final double maxY = viewport.height - rs.bottom.computedValue - childH;
-        // Bottom stick engages once the element's natural top exceeds the clamp threshold,
-        // regardless of whether its top edge is already inside the viewport.
-        if (natY > maxY) desiredY = math.min(desiredY, maxY);
+      if (viewport.height.isFinite) {
+        // Top stick: engage as soon as the natural top would cross the top edge.
+        if (rs.top.isNotAuto) {
+          final double topLimit = rs.top.computedValue;
+          if (natY < topLimit) desiredY = math.max(desiredY, topLimit);
+        }
+        // Bottom stick: engage when the natural top exceeds the bottom clamp threshold.
+        // For non-scroller parents (e.g., body/root flow), clamp even if not yet visible so a
+        // bottom-sticky appears at the viewport bottom at rest. For scroller parents, only clamp
+        // when at least partially visible to avoid premature snapping.
+        if (rs.bottom.isNotAuto) {
+          final double maxY = viewport.height - rs.bottom.computedValue - childH;
+          final bool parentIsScrollerForViewport = (scroller != null) && identical(parent, scroller);
+          final bool isPartiallyVisible = natY < viewport.height;
+          if (natY > maxY) {
+            if (!parentIsScrollerForViewport || isPartiallyVisible) {
+              desiredY = math.min(desiredY, maxY);
+            }
+          }
+        }
       }
     }
 
-    // Apply horizontal stickiness constraints.
+    // Apply horizontal stickiness constraints (relative to viewport) only when entering horizontally.
     if (rs.left.isNotAuto || rs.right.isNotAuto) {
-      if (rs.left.isNotAuto) {
-        final double leftLimit = rs.left.computedValue;
-        if (natX < leftLimit) desiredX = math.max(desiredX, leftLimit);
-      }
-      if (rs.right.isNotAuto && viewport.width.isFinite) {
-        final double maxX = viewport.width - rs.right.computedValue - childW;
-        if (natX > maxX) desiredX = math.min(desiredX, maxX);
+      if (viewport.width.isFinite) {
+        if (rs.left.isNotAuto) {
+          final double leftLimit = rs.left.computedValue;
+          if (natX < leftLimit) desiredX = math.max(desiredX, leftLimit);
+        }
+        if (rs.right.isNotAuto) {
+          final double maxX = viewport.width - rs.right.computedValue - childW;
+          final bool isPartiallyVisibleX = natX < viewport.width;
+          if (isPartiallyVisibleX && natX > maxX) desiredX = math.min(desiredX, maxX);
+        }
       }
     }
 
@@ -884,7 +893,7 @@ class CSSPositionedLayout {
           padBottomEdgeV = padBottomEdgeS - scrollTop;
         }
 
-        // Clamp within containing block padding box in viewport space.
+        // Clamp within containing block padding box in viewport space; honor sticky insets.
         // Special-case large top/left when the parent is the scroller: Chrome keeps the sticky
         // out of view at initial scroll (scrollTop/Left == 0) if the requested inset exceeds
         // the viewport AND the container can actually scroll on that axis. If there is no
@@ -898,11 +907,22 @@ class CSSPositionedLayout {
         final bool suppressXClampInitially = parentIsScroller && leftOnly && viewport.width.isFinite &&
             (rs.left.computedValue > (padRightEdgeV - padLeftEdgeV - childW)) && scrollLeft == 0.0 && canScrollX;
 
-        if (!suppressXClampInitially) {
-          desiredX = desiredX.clamp(padLeftEdgeV, padRightEdgeV - childW);
+        // Effective sticky bounds include the insets relative to the padding box.
+        final double minXBound = rs.left.isNotAuto ? (padLeftEdgeV + rs.left.computedValue) : padLeftEdgeV;
+        final double maxXBound = rs.right.isNotAuto ? (padRightEdgeV - rs.right.computedValue - childW) : (padRightEdgeV - childW);
+        final double minYBound = rs.top.isNotAuto ? (padTopEdgeV + rs.top.computedValue) : padTopEdgeV;
+        final double maxYBound = rs.bottom.isNotAuto ? (padBottomEdgeV - rs.bottom.computedValue - childH) : (padBottomEdgeV - childH);
+
+        // Only clamp to containing-block sticky bounds when the element is at
+        // least partially visible within the scroller's viewport on that axis.
+        final bool isVertPartiallyVisible = (natY + childH) > 0.0 && natY < (viewport.height.isFinite ? viewport.height : double.infinity);
+        final bool isHorizPartiallyVisible = (natX + childW) > 0.0 && natX < (viewport.width.isFinite ? viewport.width : double.infinity);
+
+        if (!suppressXClampInitially && isHorizPartiallyVisible) {
+          desiredX = desiredX.clamp(minXBound, maxXBound);
         }
-        if (!suppressYClampInitially) {
-          desiredY = desiredY.clamp(padTopEdgeV, padBottomEdgeV - childH);
+        if (!suppressYClampInitially && isVertPartiallyVisible) {
+          desiredY = desiredY.clamp(minYBound, maxYBound);
         }
       } catch (_) {}
     }

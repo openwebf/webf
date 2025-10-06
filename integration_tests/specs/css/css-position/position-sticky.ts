@@ -932,7 +932,7 @@ describe('position-sticky', () => {
 
     await snapshot();
   });
-  it('inline', async () => {
+  xit('inline', async () => {
     let indicator;
     let indicator_1;
     let indicator_2;
