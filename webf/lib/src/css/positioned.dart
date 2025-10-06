@@ -816,11 +816,16 @@ class CSSPositionedLayout {
         final double padRightEdgeS = parentToScroller.dx + parent.boxSize!.width - p.effectiveBorderRightWidth.computedValue;
         final double padBottomEdgeS = parentToScroller.dy + parent.boxSize!.height - p.effectiveBorderBottomWidth.computedValue;
 
-        // Convert parent padding edges to viewport coordinates by subtracting scroll.
-        final double padLeftEdgeV = padLeftEdgeS - scrollLeft;
-        final double padTopEdgeV = padTopEdgeS - scrollTop;
-        final double padRightEdgeV = padRightEdgeS - scrollLeft;
-        final double padBottomEdgeV = padBottomEdgeS - scrollTop;
+        // Convert parent padding edges to viewport coordinates.
+        // When the parent IS the scroller, its padding box does not move relative to its
+        // own viewport as scrolling occurs, so do NOT subtract the scroller's scroll offset.
+        // For non-scroller parents (ancestors inside the scroller's content), subtracting
+        // scroll aligns them to the scroller's viewport coordinate space.
+        final bool parentIsScroller = identical(parent, scroller);
+        final double padLeftEdgeV = parentIsScroller ? padLeftEdgeS : padLeftEdgeS - scrollLeft;
+        final double padTopEdgeV = parentIsScroller ? padTopEdgeS : padTopEdgeS - scrollTop;
+        final double padRightEdgeV = parentIsScroller ? padRightEdgeS : padRightEdgeS - scrollLeft;
+        final double padBottomEdgeV = parentIsScroller ? padBottomEdgeS : padBottomEdgeS - scrollTop;
 
         // Clamp within containing block padding box in viewport space.
         desiredX = desiredX.clamp(padLeftEdgeV, padRightEdgeV - childW);
