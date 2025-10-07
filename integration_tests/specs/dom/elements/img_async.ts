@@ -143,7 +143,6 @@ describe('Tags img async', () => {
       height: '20px',
     });
 
-    document.body.style.background = 'green';
     document.body.appendChild(img);
 
     let imgSizeChecked = false;

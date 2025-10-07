@@ -220,7 +220,6 @@ describe('Tags img', () => {
       height: '20px',
     });
 
-    document.body.style.background = 'green';
     document.body.appendChild(img);
 
     // Image has not been loaded.

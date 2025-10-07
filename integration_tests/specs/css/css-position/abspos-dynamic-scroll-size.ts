@@ -31,8 +31,10 @@ describe('positioned scrollable size', () => {
       overlay.style.height = '100px';
       overlay.style.backgroundColor = 'red';
 
+      await waitForFrame();
+
       window.scrollTo(0, 10000);
-      await snapshot();
+      await snapshot(1);
       done();
     });
   });

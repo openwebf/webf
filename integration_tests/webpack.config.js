@@ -7,6 +7,7 @@ const execSync = require('child_process').execSync;
 const bableTransformSnapshotPlugin = require('./scripts/babel_transform_snapshot');
 
 const context = path.join(__dirname);
+const lazyStyleLoaderPath = path.join(context, 'vendor/lazy-style-loader.js');
 const runtimePath = path.join(context, 'runtime');
 const globalRuntimePath = path.join(context, 'runtime/global');
 const resetRuntimePath = path.join(context, 'runtime/reset');
@@ -27,10 +28,7 @@ const isSpecModule = (filepath) => {
 const tailwindSpecLoaders = (() => {
   try {
     const styleLoader = {
-      loader: require.resolve('style-loader'),
-      options: {
-        injectType: 'lazyStyleTag',
-      },
+      loader: lazyStyleLoaderPath,
     };
     const cssLoader = require.resolve('css-loader');
     const postcssLoader = require.resolve('postcss-loader');
@@ -171,22 +169,21 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.jsx', '.json', '.ts', '.tsx'],
     alias: {
-      '@vanilla-jsx': runtimePath,
+      '@vanilla-jsx': runtimePath
     }
   },
   module: {
     rules: [
+      tailwindSpecLoaders && {
+        test: /\.css$/i,
+        include: specsPath,
+        issuer: (file) => isSpecModule(file),
+        use: tailwindSpecLoaders,
+      },
       {
         test: /\.css$/i,
-        oneOf: [
-          tailwindSpecLoaders && {
-            issuer: (file) => isSpecModule(file),
-            use: tailwindSpecLoaders,
-          },
-          {
-            use: require.resolve('stylesheet-loader'),
-          },
-        ].filter(Boolean),
+        exclude: specsPath,
+        use: require.resolve('stylesheet-loader'),
       },
       {
         test: /\.(html?)$/i,
@@ -268,7 +265,7 @@ module.exports = {
           loader: path.resolve('./scripts/quickjs_syntax_fix_loader'),
         }]
       }
-    ],
+    ].filter(Boolean),
   },
   devServer: {
     hot: false,

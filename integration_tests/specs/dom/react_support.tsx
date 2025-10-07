@@ -77,7 +77,7 @@ async function waitForElement<T extends Element>(
 }
 
 // Validates Tailwind CSS support within React-rendered specs across multiple scenarios.
-fdescribe('React integration', () => {
+describe('React integration', () => {
   scenarios.forEach((scenario) => {
     it(scenario.name, async () => {
       const expectedCount = (scenario.initialCount ?? 0) + scenario.increments;

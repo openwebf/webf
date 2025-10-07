@@ -213,24 +213,24 @@ mixin ElementOverflowMixin on ElementBase {
 
   double get offsetWidth {
     _ensureRenderObjectHasLayout();
-    
+
     // For inline elements, calculate width from inline formatting context
     if (renderStyle.display == CSSDisplay.inline && isRendererAttached) {
       return _getInlineElementWidth();
     }
-    
+
     if (!renderStyle.hasRenderBox()) return 0;
     return renderStyle.getSelfRenderBoxValue((renderBox, _) => renderBox.hasSize ? renderBox.size.width : 0.0);
   }
 
   double get offsetHeight {
     _ensureRenderObjectHasLayout();
-    
+
     // For inline elements, calculate height from inline formatting context
     if (renderStyle.display == CSSDisplay.inline && isRendererAttached) {
       return _getInlineElementHeight();
     }
-    
+
     if (!renderStyle.hasRenderBox()) return 0;
     return renderStyle.getSelfRenderBoxValue((renderBox, _) => renderBox.hasSize ? renderBox.size.height : 0.0);
   }
@@ -265,7 +265,6 @@ mixin ElementOverflowMixin on ElementBase {
 
     // Apply scroll effect after layout.
     assert(isRendererAttached, 'Overflow can only be added to a RenderBox.');
-    RendererBinding.instance.rootPipelineOwner.flushLayout();
 
     if (scrollController.hasClients) {
       // Ensure the distance is within valid scroll range
@@ -279,7 +278,7 @@ mixin ElementOverflowMixin on ElementBase {
       );
     }
   }
-  
+
   double _getInlineElementWidth() {
     // For inline elements, we need to calculate width based on the content they contain
     // First check if this element itself has a renderer with size
@@ -287,21 +286,21 @@ mixin ElementOverflowMixin on ElementBase {
       final size = attachedRenderer!.size;
       if (size.width > 0) return size.width;
     }
-    
+
     // Otherwise, look in parent's inline formatting context
     final parent = parentNode;
     if (parent == null || parent is! Element) return 0;
-    
+
     final parentRenderer = parent.attachedRenderer;
     if (parentRenderer == null || parentRenderer is! RenderFlowLayout) return 0;
-    
+
     final ifc = parentRenderer.inlineFormattingContext;
     if (ifc == null || ifc.paragraphLineMetrics.isEmpty) return 0;
     final rb = attachedRenderer;
     if (rb is! RenderBoxModel) return 0;
     return ifc.inlineElementMaxLineWidth(rb);
   }
-  
+
   double _getInlineElementHeight() {
     // For inline elements, we need to calculate height based on the line boxes they occupy
     // First check if this element itself has a renderer with size
@@ -309,14 +308,14 @@ mixin ElementOverflowMixin on ElementBase {
       final size = attachedRenderer!.size;
       if (size.height > 0) return size.height;
     }
-    
+
     // Otherwise, look in parent's inline formatting context
     final parent = parentNode;
     if (parent == null || parent is! Element) return 0;
-    
+
     final parentRenderer = parent.attachedRenderer;
     if (parentRenderer == null || parentRenderer is! RenderFlowLayout) return 0;
-    
+
     final ifc = parentRenderer.inlineFormattingContext;
     if (ifc == null || ifc.paragraphLineMetrics.isEmpty) return 0;
     final rb = attachedRenderer;

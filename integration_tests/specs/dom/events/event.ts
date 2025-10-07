@@ -621,9 +621,6 @@ describe('Event', () => {
     el2.style.width = '102px';
   });
 
-
-
-
   it('should work with share event object', async () => {
     const container1 = document.createElement('div');
     document.body.appendChild(container1);
@@ -665,7 +662,7 @@ describe('Event', () => {
     await snapshot();
   });
 
-  it('shared string props should works', () => {
+  it('shared string props should works', (done) => {
     const container = document.createElement('div');
     document.body.appendChild(container);
     container.addEventListener('click', (e) => {
@@ -674,6 +671,7 @@ describe('Event', () => {
       expect(e['_type']).toBe('1234');
       expect(e['_type']).toBe('1234');
       expect(e['_type']).toBe('1234');
+      done();
     });
     container.click();
   });
