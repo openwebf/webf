@@ -165,9 +165,15 @@ class InlineItemsBuilder {
         } else if (display == CSSDisplay.inlineBlock || display == CSSDisplay.inlineFlex) {
           _addAtomicInline(child);
         } else if (display == CSSDisplay.block || display == CSSDisplay.flex) {
-          // Block-level elements inside inline context should be treated as inline-block
-          // This creates an anonymous block box according to CSS spec
+          // Block-level elements appearing inside an inline formatting context split the line.
+          // Model this by forcing a hard line break before (if not already at line start)
+          // and always after the atomic placeholder representing the block box.
+          if (!_atLineStart) {
+            _addControl('\n');
+          }
           _addAtomicInline(child);
+          // Always break after the block-level atomic so following inline content starts on a new line.
+          _addControl('\n');
         }
       }
 

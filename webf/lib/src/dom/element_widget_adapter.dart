@@ -41,6 +41,19 @@ class ScreenEvent {
         timestamp = DateTime.now();
 }
 
+/// Piece type used when flattening an inline element that contains block-level children.
+class _InlineOrBlockPiece {
+  final List<flutter.Widget>? inlineChildren;
+  final flutter.Widget? blockWidget;
+  final bool isInline;
+  _InlineOrBlockPiece.inline(this.inlineChildren)
+      : blockWidget = null,
+        isInline = true;
+  _InlineOrBlockPiece.block(this.blockWidget)
+      : inlineChildren = null,
+        isInline = false;
+}
+
 mixin ElementAdapterMixin on ElementBase {
   // Holds out-of-flow positioned descendants (absolute, sticky, fixed)
   final List<Element> _outOfFlowPositionedElements = [];
@@ -572,14 +585,23 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
           // For block containers, handle mixed content
           // Case 4: If an inline child contains block-level children, split it at this level
           if (display == CSSDisplay.inline && _inlineElementHasBlockChildren(node)) {
-            // Flush any pending inline content before handling split
-            flushInlineGroup();
-            // Flatten the inline element into anonymous blocks and block children
-            final flattened = _flattenInlineElementWithBlocks(node);
+            // Flatten into ordered pieces (inline segments and block children).
+            final pieces = _flattenInlineElementWithBlocksPieces(node);
             if (debugLogDomAdapterEnabled) {
-              domLogger.fine('[DOMAdapter] flattened inline-with-blocks into ${flattened.length} nodes');
+              domLogger.fine('[DOMAdapter] flattened inline-with-blocks into ${pieces.length} pieces');
             }
-            result.addAll(flattened);
+            for (final piece in pieces) {
+              if (piece.isInline) {
+                // Accumulate inline pieces into the current inline group so
+                // they can join with preceding/succeeding inline siblings.
+                currentInlineGroup.addAll(piece.inlineChildren!);
+              } else {
+                // Encountering a block piece: flush current inline group first,
+                // then add the block widget as a sibling.
+                flushInlineGroup();
+                result.add(piece.blockWidget!);
+              }
+            }
           } else if (display == CSSDisplay.block || display == CSSDisplay.flex) {
             // Flush any pending inline content before adding block
             flushInlineGroup();
@@ -647,27 +669,17 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
   }
 
   /// Flatten an inline element that contains block-level children according to CSS block-in-inline rules.
-  /// This splits the inline content into anonymous block boxes before/after the block children,
-  /// and returns a sequence of widgets that the parent block container can use as direct children.
-  List<flutter.Widget> _flattenInlineElementWithBlocks(Element inlineEl) {
+  /// Returns an ordered list of pieces. Inline pieces contain raw children (not anonymously wrapped)
+  /// so the caller can merge them with adjacent inline siblings. Block pieces are individual widgets.
+  List<_InlineOrBlockPiece> _flattenInlineElementWithBlocksPieces(Element inlineEl) {
     assert(inlineEl.renderStyle.display == CSSDisplay.inline);
 
-    List<flutter.Widget> flattened = [];
+    List<_InlineOrBlockPiece> flattened = [];
     List<flutter.Widget> pendingInlineGroup = [];
 
     void flushPendingInline() {
       if (pendingInlineGroup.isEmpty) return;
-      flattened.add(
-        WebFHTMLElement(
-          tagName: 'Anonymous',
-          controller: webFElement.ownerDocument.controller,
-          parentElement: webFElement,
-          inlineStyle: const {
-            'display': 'block',
-          },
-          children: pendingInlineGroup,
-        ),
-      );
+      flattened.add(_InlineOrBlockPiece.inline(List<flutter.Widget>.from(pendingInlineGroup)));
       pendingInlineGroup = [];
     }
 
@@ -676,12 +688,11 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
         final disp = child.renderStyle.display;
         final pos = child.renderStyle.position;
 
-        // Positioned elements don't participate in flow; preserve placeholders
+        // Positioned elements don't participate in flow; preserve placeholders in inline stream
         if (pos == CSSPositionType.absolute || pos == CSSPositionType.sticky) {
           if (child.holderAttachedPositionedElement != null) {
             pendingInlineGroup.add(PositionPlaceHolder(child.holderAttachedPositionedElement!, child));
           }
-          // The actual positioned element will be attached to its containing block; skip here.
           continue;
         } else if (pos == CSSPositionType.fixed) {
           pendingInlineGroup.add(PositionPlaceHolder(child.holderAttachedPositionedElement!, child));
@@ -689,28 +700,21 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
         }
 
         if (disp == CSSDisplay.block || disp == CSSDisplay.flex) {
-          // Close current inline group and insert the block as a sibling
           flushPendingInline();
-          flattened.add(child.toWidget());
+          flattened.add(_InlineOrBlockPiece.block(child.toWidget()));
         } else if (disp == CSSDisplay.inline || disp == CSSDisplay.inlineBlock || disp == CSSDisplay.inlineFlex) {
-          // Inline content stays in the current inline group
           pendingInlineGroup.add(child.toWidget());
         } else {
-          // Fallback: add as-is
           pendingInlineGroup.add(child.toWidget());
         }
       } else if (child is TextNode) {
         if (child.data.trim().isNotEmpty) {
           pendingInlineGroup.add(child.toWidget());
         }
-      } else if (child is Comment) {
-        // Skip
       }
     }
 
-    // Flush any remaining inline content after the last block child
     flushPendingInline();
-
     return flattened;
   }
 
