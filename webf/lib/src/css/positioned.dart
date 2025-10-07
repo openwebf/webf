@@ -770,6 +770,11 @@ class CSSPositionedLayout {
     final CSSRenderStyle rs = child.renderStyle;
     final double childW = child.boxSize?.width ?? child.size.width;
     final double childH = child.boxSize?.height ?? child.size.height;
+    final CSSRenderStyle? scrollerStyle = scroller?.renderStyle;
+    final double scrollerPaddingLeft = scrollerStyle?.paddingLeft.computedValue ?? 0.0;
+    final double scrollerPaddingRight = scrollerStyle?.paddingRight.computedValue ?? 0.0;
+    final double scrollerPaddingTop = scrollerStyle?.paddingTop.computedValue ?? 0.0;
+    final double scrollerPaddingBottom = scrollerStyle?.paddingBottom.computedValue ?? 0.0;
 
     // Debug: entering sticky computation summary
     try {
@@ -815,7 +820,7 @@ class CSSPositionedLayout {
       if (viewport.height.isFinite) {
         // Top stick: engage as soon as the natural top would cross the top edge.
         if (rs.top.isNotAuto) {
-          final double topLimit = rs.top.computedValue;
+          final double topLimit = rs.top.computedValue + scrollerPaddingTop;
           final double before = desiredY;
           if (natY < topLimit) desiredY = math.max(desiredY, topLimit);
           try {
@@ -832,7 +837,8 @@ class CSSPositionedLayout {
         // bottom-sticky appears at the viewport bottom at rest. For scroller parents, only clamp
         // when at least partially visible to avoid premature snapping.
         if (rs.bottom.isNotAuto) {
-          final double maxY = viewport.height - rs.bottom.computedValue - childH;
+          final double bottomInset = rs.bottom.computedValue + scrollerPaddingBottom;
+          final double maxY = viewport.height - bottomInset - childH;
           final bool parentIsScrollerForViewport = (scroller != null) && identical(parent, scroller);
           final bool isPartiallyVisible = natY < viewport.height;
           final double before = desiredY;
@@ -845,7 +851,7 @@ class CSSPositionedLayout {
             PositionedLayoutLog.log(
               impl: PositionedImpl.layout,
               feature: PositionedFeature.sticky,
-              message: () => 'viewportY bottom inset=${rs.bottom.computedValue.toStringAsFixed(2)} '
+              message: () => 'viewportY bottom inset=${bottomInset.toStringAsFixed(2)} '
                   'maxY=${maxY.toStringAsFixed(2)} natY=${natY.toStringAsFixed(2)} '
                   'parentIsScroller=$parentIsScrollerForViewport partiallyVisible=$isPartiallyVisible '
                   'desired: ${before.toStringAsFixed(2)} → ${desiredY.toStringAsFixed(2)}',
@@ -859,7 +865,7 @@ class CSSPositionedLayout {
     if (rs.left.isNotAuto || rs.right.isNotAuto) {
       if (viewport.width.isFinite) {
         if (rs.left.isNotAuto) {
-          final double leftLimit = rs.left.computedValue;
+          final double leftLimit = rs.left.computedValue + scrollerPaddingLeft;
           final double before = desiredX;
           if (natX < leftLimit) desiredX = math.max(desiredX, leftLimit);
           try {
@@ -872,7 +878,8 @@ class CSSPositionedLayout {
           } catch (_) {}
         }
         if (rs.right.isNotAuto) {
-          final double maxX = viewport.width - rs.right.computedValue - childW;
+          final double rightInset = rs.right.computedValue + scrollerPaddingRight;
+          final double maxX = viewport.width - rightInset - childW;
           final bool isPartiallyVisibleX = natX < viewport.width;
           final double before = desiredX;
           if (isPartiallyVisibleX && natX > maxX) desiredX = math.min(desiredX, maxX);
@@ -880,7 +887,7 @@ class CSSPositionedLayout {
             PositionedLayoutLog.log(
               impl: PositionedImpl.layout,
               feature: PositionedFeature.sticky,
-              message: () => 'viewportX right inset=${rs.right.computedValue.toStringAsFixed(2)} maxX=${maxX.toStringAsFixed(2)} '
+              message: () => 'viewportX right inset=${rightInset.toStringAsFixed(2)} maxX=${maxX.toStringAsFixed(2)} '
                   'natX=${natX.toStringAsFixed(2)} partiallyVisible=$isPartiallyVisibleX '
                   'desired: ${before.toStringAsFixed(2)} → ${desiredX.toStringAsFixed(2)}',
             );
@@ -936,10 +943,12 @@ class CSSPositionedLayout {
         final bool leftOnly = rs.left.isNotAuto && !rs.right.isNotAuto;
         final bool canScrollY = parent.scrollableSize.height - parent.scrollableViewportSize.height > 0.5;
         final bool canScrollX = parent.scrollableSize.width - parent.scrollableViewportSize.width > 0.5;
+        final double clampTopInset = rs.top.computedValue + scrollerPaddingTop;
+        final double clampLeftInset = rs.left.computedValue + scrollerPaddingLeft;
         final bool suppressYClampInitially = parentIsScroller && topOnly && viewport.height.isFinite &&
-            (rs.top.computedValue > (padBottomEdgeV - padTopEdgeV - childH)) && scrollTop == 0.0 && canScrollY;
+            (clampTopInset > (padBottomEdgeV - padTopEdgeV - childH)) && scrollTop == 0.0 && canScrollY;
         final bool suppressXClampInitially = parentIsScroller && leftOnly && viewport.width.isFinite &&
-            (rs.left.computedValue > (padRightEdgeV - padLeftEdgeV - childW)) && scrollLeft == 0.0 && canScrollX;
+            (clampLeftInset > (padRightEdgeV - padLeftEdgeV - childW)) && scrollLeft == 0.0 && canScrollX;
 
         // Debug: suppression flags for initial clamp when parent is the scroller
         try {
