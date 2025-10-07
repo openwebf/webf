@@ -34,8 +34,8 @@ void main() async {
   // DebugFlags.enableDomLogs = true;
   // InlineLayoutLog.enableAll();
   // FlexLog.enableAll();
-  FlowLog.enableAll();
-  PositionedLayoutLog.enableAll();
+  // FlowLog.enableAll();
+  // PositionedLayoutLog.enableAll();
 
   // debugPaintBaselinesEnabled = true;
   // DebugFlags.enableDomLogs = true;

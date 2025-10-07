@@ -78,13 +78,13 @@
       "specs/css/css-position/**/*.{js,jsx,ts,tsx,html}"
     ]
   },
-  // {
-  //   "name": "FontsAndImages",
-  //   "specs": [
-  //     "specs/css/css-fonts/**/*.{js,jsx,ts,tsx,html}",
-  //     "specs/css/css-images/**/*.{js,jsx,ts,tsx,html}"
-  //   ]
-  // },
+  {
+    "name": "FontsAndImages",
+    "specs": [
+      "specs/css/css-fonts/**/*.{js,jsx,ts,tsx,html}",
+      "specs/css/css-images/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
   // {
   //   "name": "TextAndColorAndFilterEffect",
   //   "specs": [
