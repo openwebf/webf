@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/scheduler.dart';
@@ -492,6 +493,9 @@ mixin StyleElementMixin on Element {
     // Question3: Animation timeline should send a command to c++ side to recalculate style or we just do it in dart side?
 
     if (text != null) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[style] <style> recalc begin (len=${text.length}, connected=$isConnected, tracked=${ownerDocument.styleNodeManager.styleSheetCandidateNodes.contains(this)})');
+      }
       if (_styleSheet != null) {
         if (kDebugMode && DebugFlags.enableCssLogs) {
           cssLogger.fine('[style] <style> replaceSync (len=' + text.length.toString() + ', darkMode=' + (ownerView.rootController.isDarkMode?.toString() ?? 'null') + ')');

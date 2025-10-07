@@ -48,7 +48,6 @@ export async function renderReactSpec(
   options: ReactSpecOptions = {}
 ): Promise<ReactSpecHandle> {
   const { container } = ensureContainer(options);
-  console.log('container:', container);
   const root = createRoot(container);
   root.render(element);
 
@@ -77,7 +76,6 @@ export async function withReactSpec(
   testFn: (handle: ReactSpecHandle) => unknown | Promise<unknown>,
   options: ReactSpecOptions = {}
 ): Promise<void> {
-  console.log('render React Spec: ', element);
   const handle = await renderReactSpec(element, options);
   try {
     await testFn(handle);

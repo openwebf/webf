@@ -35,6 +35,15 @@ class StyleNodeManager {
 
   void addStyleSheetCandidateNode(Node node) {
     if (!node.isConnected) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[style] skip add candidate: ${node.runtimeType} (not connected)');
+      }
+      return;
+    }
+    if (_styleSheetCandidateNodes.contains(node)) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[style] candidate already tracked: ${node.runtimeType}');
+      }
       return;
     }
     if (kDebugMode && DebugFlags.enableCssLogs) {
@@ -70,10 +79,16 @@ class StyleNodeManager {
 
   void appendPendingStyleSheet(CSSStyleSheet styleSheet) {
     _pendingStyleSheets.add(styleSheet);
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[style] append pending sheet: total=${_pendingStyleSheets.length}');
+    }
   }
 
   void removePendingStyleSheet(CSSStyleSheet styleSheet) {
     _pendingStyleSheets.removeWhere((element) => element == styleSheet);
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[style] remove pending sheet: remaining=${_pendingStyleSheets.length}');
+    }
   }
 
   // TODO(jiangzhou): cache stylesheet
@@ -104,6 +119,9 @@ class StyleNodeManager {
   List<CSSStyleSheet> _collectActiveStyleSheets() {
     List<CSSStyleSheet> styleSheetsForStyleSheetsList = [];
     for (Node node in _styleSheetCandidateNodes) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[style] inspect candidate: ${node.runtimeType} connected=${node.isConnected} hasSheet=${node is StyleElementMixin ? node.styleSheet != null : node is LinkElement ? node.styleSheet != null : false}');
+      }
       if (node is LinkElement && !node.disabled && !node.loading && node.styleSheet != null) {
         styleSheetsForStyleSheetsList.add(node.styleSheet!);
       } else if (node is StyleElementMixin && node.styleSheet != null) {

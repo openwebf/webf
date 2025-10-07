@@ -1,6 +1,6 @@
 /** @jsxImportSource react */
 import React from 'react';
-import './react_support.css';
+import styles from './react_support.css';
 
 type CounterScenario = {
   key: string;
@@ -84,26 +84,33 @@ fdescribe('React integration', () => {
       const incrementSelector = `[data-testid="increment-${scenario.key}"]`;
       const countSelector = `[data-testid="count-${scenario.key}"]`;
 
-      await withReactSpec(
-        <TailwindCounter scenario={scenario} />,
-        async ({ container, flush, cleanup }) => {
-          const increment = await waitForElement<HTMLButtonElement>(container, incrementSelector, flush);
+      styles.use();
 
-          for (let i = 0; i < scenario.increments; i += 1) {
-            increment.click();
+      try {
+        await withReactSpec(
+          <TailwindCounter scenario={scenario} />,
+          async ({ container, flush }) => {
+            const increment = await waitForElement<HTMLButtonElement>(container, incrementSelector, flush);
+
+            for (let i = 0; i < scenario.increments; i += 1) {
+              increment.click();
+              await flush(2);
+            }
+
             await flush(2);
-          }
+            const countLabel = await waitForElement<HTMLSpanElement>(container, countSelector, flush);
+            expect(countLabel.textContent).toBe(String(expectedCount));
 
-          await flush(2);
-          const countLabel = await waitForElement<HTMLSpanElement>(container, countSelector, flush);
-          expect(countLabel.textContent).toBe(String(expectedCount));
-
-          await snapshot();
-        },
-        {
-          framesToWait: 2,
-        },
-      );
+            await snapshot();
+          },
+          {
+            containerId: `react-spec-container-${scenario.key}`,
+            framesToWait: 2,
+          },
+        );
+      } finally {
+        styles.unuse();
+      }
     });
   });
 });

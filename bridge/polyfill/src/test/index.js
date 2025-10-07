@@ -141,16 +141,60 @@ global.simulateInputText = __webf_simulate_inputtext__;
 global.simulateChangeDarkMode = __webf_change_dark_mode__;
 
 function resetDocumentElement() {
-  document.removeChild(document.documentElement);
+  const html = document.documentElement;
+  if (!html) return;
 
-  let html  = document.createElement('html');
-  document.appendChild(html);
+  let head = document.head;
+  let body = document.body;
 
-  let head = document.createElement('head');
-  document.documentElement.appendChild(head);
+  const ensureElement = (existing, tagName) => existing || document.createElement(tagName);
 
-  let body = document.createElement('body');
-  document.documentElement.appendChild(body);
+  head = ensureElement(head, 'head');
+  body = ensureElement(body, 'body');
+
+  const cleanupAttributes = (node) => {
+    if (!node) return;
+
+    if (typeof node.getAttributeNames === 'function') {
+      node.getAttributeNames().forEach((attr) => node.removeAttribute(attr));
+    } else if (node.attributes) {
+      const attrs = [];
+      for (let i = 0; i < node.attributes.length; i += 1) {
+        attrs.push(node.attributes[i].name);
+      }
+      attrs.forEach((attr) => node.removeAttribute(attr));
+    }
+  };
+
+  const clearChildren = (node) => {
+    if (!node) return;
+    while (node.firstChild) {
+      node.removeChild(node.firstChild);
+    }
+  };
+
+  cleanupAttributes(html);
+  cleanupAttributes(head);
+  cleanupAttributes(body);
+
+  clearChildren(head);
+  clearChildren(body);
+
+  // Remove any nodes other than head/body while keeping the existing instances connected.
+  const htmlChildren = Array.from(html.childNodes);
+  for (const child of htmlChildren) {
+    if (child !== head && child !== body) {
+      html.removeChild(child);
+    }
+  }
+
+  if (head.parentNode !== html) {
+    html.insertBefore(head, html.firstChild);
+  }
+
+  if (body.parentNode !== html) {
+    html.appendChild(body);
+  }
 
   document.___force_rebuild__();
 

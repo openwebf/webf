@@ -26,7 +26,12 @@ const isSpecModule = (filepath) => {
 
 const tailwindSpecLoaders = (() => {
   try {
-    const styleLoader = require.resolve('style-loader');
+    const styleLoader = {
+      loader: require.resolve('style-loader'),
+      options: {
+        injectType: 'lazyStyleTag',
+      },
+    };
     const cssLoader = require.resolve('css-loader');
     const postcssLoader = require.resolve('postcss-loader');
     const tailwindcss = require('tailwindcss');

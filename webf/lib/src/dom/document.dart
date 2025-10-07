@@ -487,9 +487,9 @@ class Document extends ContainerNode {
 
   void updateStyleIfNeeded() {
     if (!styleNodeManager.hasPendingStyleSheet && !styleNodeManager.isStyleSheetCandidateNodeChanged) {
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[style] updateStyleIfNeeded: no pending or candidate changes');
-    }
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[style] updateStyleIfNeeded: no pending or candidate changes (candidates=${styleNodeManager.styleSheetCandidateNodes.length})');
+      }
       return;
     }
     if (_recalculating) {
@@ -501,13 +501,13 @@ class Document extends ContainerNode {
     _recalculating = true;
     if (styleSheets.isEmpty && styleNodeManager.hasPendingStyleSheet) {
       if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[style] updateStyleIfNeeded: empty styleSheets with pending, flushStyle(rebuild: true)');
+        cssLogger.fine('[style] updateStyleIfNeeded: empty styleSheets with pending, flushStyle(rebuild: true) pending=${styleNodeManager.hasPendingStyleSheet} candidates=${styleNodeManager.styleSheetCandidateNodes.length}');
       }
       flushStyle(rebuild: true);
       return;
     }
     if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[style] updateStyleIfNeeded: flushStyle()');
+      cssLogger.fine('[style] updateStyleIfNeeded: flushStyle() pending=${styleNodeManager.hasPendingStyleSheet} candidates=${styleNodeManager.styleSheetCandidateNodes.length}');
     }
     flushStyle();
   }
@@ -515,18 +515,18 @@ class Document extends ContainerNode {
   void flushStyle({bool rebuild = false}) {
     if (_styleDirtyElements.isEmpty) {
       if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[style] flushStyle: no dirty elements');
+        cssLogger.fine('[style] flushStyle: no dirty elements (pending=${styleNodeManager.hasPendingStyleSheet} candidates=${styleNodeManager.styleSheetCandidateNodes.length})');
       }
       _recalculating = false;
       return;
     }
     if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
       if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[style] flushStyle: no active stylesheet update');
-      }
-      _recalculating = false;
-      _styleDirtyElements.clear();
-      return;
+      cssLogger.fine('[style] flushStyle: no active stylesheet update');
+    }
+    _recalculating = false;
+    _styleDirtyElements.clear();
+    return;
     }
     if (_styleDirtyElements.any((address) {
           BindingObject bindingObject = ownerView.getBindingObject(Pointer.fromAddress(address));
