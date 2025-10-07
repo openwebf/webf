@@ -771,6 +771,22 @@ class CSSPositionedLayout {
     final double childW = child.boxSize?.width ?? child.size.width;
     final double childH = child.boxSize?.height ?? child.size.height;
 
+    // Debug: entering sticky computation summary
+    try {
+      final String cTag = rs.target.tagName.toLowerCase();
+      final String pTag = parent.renderStyle.target.tagName.toLowerCase();
+      final String sTag = scroller != null ? scroller.renderStyle.target.tagName.toLowerCase() : 'none';
+      PositionedLayoutLog.log(
+        impl: PositionedImpl.layout,
+        feature: PositionedFeature.sticky,
+        message: () => '<$cTag> sticky enter parent=<$pTag> scroller=<$sTag> '
+            'parentIsScroller=${scroller != null && identical(parent, scroller)} '
+            'viewport=${viewport.width.isFinite ? viewport.width.toStringAsFixed(2) : '∞'}×${viewport.height.isFinite ? viewport.height.toStringAsFixed(2) : '∞'} '
+            'scroll=(${scrollLeft.toStringAsFixed(2)},${scrollTop.toStringAsFixed(2)}) '
+            'childSize=${childW.toStringAsFixed(2)}×${childH.toStringAsFixed(2)}',
+      );
+    } catch (_) {}
+
     // Natural on-screen position relative to the scroll container's viewport.
     double natY = baseInScroller.dy - scrollTop;
     double natX = baseInScroller.dx - scrollLeft;
@@ -778,41 +794,20 @@ class CSSPositionedLayout {
     double desiredY = natY;
     double desiredX = natX;
 
-    // Apply relative-like offsets from sticky insets at rest only when the
-    // containing block is the scroll container itself. This matches browser
-    // behavior for scrollable containers (padding + inset initial paint),
-    // without affecting non-scrolling containers like <body>.
-    final CSSLengthValue leftInset = rs.left;
-    final CSSLengthValue rightInset = rs.right;
-    final CSSLengthValue topInset = rs.top;
-    final CSSLengthValue bottomInset = rs.bottom;
-    final bool hasLeft = leftInset.isNotAuto;
-    final bool hasRight = rightInset.isNotAuto;
-    final bool hasTop = topInset.isNotAuto;
-    final bool hasBottom = bottomInset.isNotAuto;
-    final bool parentIsScroller = (scroller != null) && identical(parent, scroller);
-    if (parentIsScroller) {
-      if (hasLeft && hasRight) {
-        if (parent.renderStyle.direction == TextDirection.rtl) {
-          desiredX += -rightInset.computedValue;
-        } else {
-          desiredX += leftInset.computedValue;
-        }
-      } else if (hasLeft) {
-        desiredX += leftInset.computedValue;
-      } else if (hasRight) {
-        desiredX += -rightInset.computedValue;
-      }
-      if (hasTop) {
-        desiredY += topInset.computedValue;
-      } else if (hasBottom) {
-        desiredY += -bottomInset.computedValue;
-      }
-    }
+    // Debug: natural position
+    try {
+      PositionedLayoutLog.log(
+        impl: PositionedImpl.layout,
+        feature: PositionedFeature.sticky,
+        message: () => 'nat=(${natX.toStringAsFixed(2)},${natY.toStringAsFixed(2)}) desired(init)='
+            '(${desiredX.toStringAsFixed(2)},${desiredY.toStringAsFixed(2)})',
+      );
+    } catch (_) {}
 
-    // Do not add sticky insets at rest; stickiness engages only when
-    // natural position crosses the specified threshold relative to the viewport
-    // or when constrained by the containing block bounds.
+    // Do not add sticky insets at rest. The natural position should remain
+    // unchanged until it crosses the specified threshold relative to the
+    // viewport (or the containing block bounds). Insets participate only as
+    // constraints below via clamping, which matches browser behavior.
 
 
     // Apply vertical stickiness constraints relative to the viewport.
@@ -821,7 +816,16 @@ class CSSPositionedLayout {
         // Top stick: engage as soon as the natural top would cross the top edge.
         if (rs.top.isNotAuto) {
           final double topLimit = rs.top.computedValue;
+          final double before = desiredY;
           if (natY < topLimit) desiredY = math.max(desiredY, topLimit);
+          try {
+            PositionedLayoutLog.log(
+              impl: PositionedImpl.layout,
+              feature: PositionedFeature.sticky,
+              message: () => 'viewportY top inset=${topLimit.toStringAsFixed(2)} natY=${natY.toStringAsFixed(2)} '
+                  'desired: ${before.toStringAsFixed(2)} → ${desiredY.toStringAsFixed(2)}',
+            );
+          } catch (_) {}
         }
         // Bottom stick: engage when the natural top exceeds the bottom clamp threshold.
         // For non-scroller parents (e.g., body/root flow), clamp even if not yet visible so a
@@ -831,11 +835,22 @@ class CSSPositionedLayout {
           final double maxY = viewport.height - rs.bottom.computedValue - childH;
           final bool parentIsScrollerForViewport = (scroller != null) && identical(parent, scroller);
           final bool isPartiallyVisible = natY < viewport.height;
+          final double before = desiredY;
           if (natY > maxY) {
             if (!parentIsScrollerForViewport || isPartiallyVisible) {
               desiredY = math.min(desiredY, maxY);
             }
           }
+          try {
+            PositionedLayoutLog.log(
+              impl: PositionedImpl.layout,
+              feature: PositionedFeature.sticky,
+              message: () => 'viewportY bottom inset=${rs.bottom.computedValue.toStringAsFixed(2)} '
+                  'maxY=${maxY.toStringAsFixed(2)} natY=${natY.toStringAsFixed(2)} '
+                  'parentIsScroller=$parentIsScrollerForViewport partiallyVisible=$isPartiallyVisible '
+                  'desired: ${before.toStringAsFixed(2)} → ${desiredY.toStringAsFixed(2)}',
+            );
+          } catch (_) {}
         }
       }
     }
@@ -845,12 +860,31 @@ class CSSPositionedLayout {
       if (viewport.width.isFinite) {
         if (rs.left.isNotAuto) {
           final double leftLimit = rs.left.computedValue;
+          final double before = desiredX;
           if (natX < leftLimit) desiredX = math.max(desiredX, leftLimit);
+          try {
+            PositionedLayoutLog.log(
+              impl: PositionedImpl.layout,
+              feature: PositionedFeature.sticky,
+              message: () => 'viewportX left inset=${leftLimit.toStringAsFixed(2)} natX=${natX.toStringAsFixed(2)} '
+                  'desired: ${before.toStringAsFixed(2)} → ${desiredX.toStringAsFixed(2)}',
+            );
+          } catch (_) {}
         }
         if (rs.right.isNotAuto) {
           final double maxX = viewport.width - rs.right.computedValue - childW;
           final bool isPartiallyVisibleX = natX < viewport.width;
+          final double before = desiredX;
           if (isPartiallyVisibleX && natX > maxX) desiredX = math.min(desiredX, maxX);
+          try {
+            PositionedLayoutLog.log(
+              impl: PositionedImpl.layout,
+              feature: PositionedFeature.sticky,
+              message: () => 'viewportX right inset=${rs.right.computedValue.toStringAsFixed(2)} maxX=${maxX.toStringAsFixed(2)} '
+                  'natX=${natX.toStringAsFixed(2)} partiallyVisible=$isPartiallyVisibleX '
+                  'desired: ${before.toStringAsFixed(2)} → ${desiredX.toStringAsFixed(2)}',
+            );
+          } catch (_) {}
         }
       }
     }
@@ -907,22 +941,60 @@ class CSSPositionedLayout {
         final bool suppressXClampInitially = parentIsScroller && leftOnly && viewport.width.isFinite &&
             (rs.left.computedValue > (padRightEdgeV - padLeftEdgeV - childW)) && scrollLeft == 0.0 && canScrollX;
 
-        // Effective sticky bounds include the insets relative to the padding box.
-        final double minXBound = rs.left.isNotAuto ? (padLeftEdgeV + rs.left.computedValue) : padLeftEdgeV;
-        final double maxXBound = rs.right.isNotAuto ? (padRightEdgeV - rs.right.computedValue - childW) : (padRightEdgeV - childW);
-        final double minYBound = rs.top.isNotAuto ? (padTopEdgeV + rs.top.computedValue) : padTopEdgeV;
-        final double maxYBound = rs.bottom.isNotAuto ? (padBottomEdgeV - rs.bottom.computedValue - childH) : (padBottomEdgeV - childH);
+        // Debug: suppression flags for initial clamp when parent is the scroller
+        try {
+          PositionedLayoutLog.log(
+            impl: PositionedImpl.layout,
+            feature: PositionedFeature.sticky,
+            message: () => 'parentIsScroller=$parentIsScroller canScrollY=$canScrollY canScrollX=$canScrollX '
+                'suppressYClampInitially=$suppressYClampInitially suppressXClampInitially=$suppressXClampInitially',
+          );
+        } catch (_) {}
 
-        // Only clamp to containing-block sticky bounds when the element is at
-        // least partially visible within the scroller's viewport on that axis.
-        final bool isVertPartiallyVisible = (natY + childH) > 0.0 && natY < (viewport.height.isFinite ? viewport.height : double.infinity);
-        final bool isHorizPartiallyVisible = (natX + childW) > 0.0 && natX < (viewport.width.isFinite ? viewport.width : double.infinity);
+        // Bounds within the containing block padding box should not incorporate
+        // sticky insets; insets constrain against the viewport (scrollport).
+        // Here we only ensure the sticky box never leaves its containing block.
+        final double minXBound = padLeftEdgeV;
+        final double maxXBound = padRightEdgeV - childW;
+        final double minYBound = padTopEdgeV;
+        final double maxYBound = padBottomEdgeV - childH;
 
-        if (!suppressXClampInitially && isHorizPartiallyVisible) {
+        // Debug: parent bounds and clamping window
+        try {
+          PositionedLayoutLog.log(
+            impl: PositionedImpl.layout,
+            feature: PositionedFeature.sticky,
+            message: () => 'parentBoundsV left=${padLeftEdgeV.toStringAsFixed(2)} top=${padTopEdgeV.toStringAsFixed(2)} '
+                'right=${padRightEdgeV.toStringAsFixed(2)} bottom=${padBottomEdgeV.toStringAsFixed(2)} '
+                'Xbounds=[${minXBound.toStringAsFixed(2)},${maxXBound.toStringAsFixed(2)}] '
+                'Ybounds=[${minYBound.toStringAsFixed(2)},${maxYBound.toStringAsFixed(2)}]',
+          );
+        } catch (_) {}
+
+        // Always respect containing block bounds (do not allow the sticky box to
+        // leave its containing block), except in the special initial suppression
+        // cases for scroller parents handled above.
+        if (!suppressXClampInitially) {
+          final double before = desiredX;
           desiredX = desiredX.clamp(minXBound, maxXBound);
+          try {
+            PositionedLayoutLog.log(
+              impl: PositionedImpl.layout,
+              feature: PositionedFeature.sticky,
+              message: () => 'parentClampX desired: ${before.toStringAsFixed(2)} → ${desiredX.toStringAsFixed(2)}',
+            );
+          } catch (_) {}
         }
-        if (!suppressYClampInitially && isVertPartiallyVisible) {
+        if (!suppressYClampInitially) {
+          final double before = desiredY;
           desiredY = desiredY.clamp(minYBound, maxYBound);
+          try {
+            PositionedLayoutLog.log(
+              impl: PositionedImpl.layout,
+              feature: PositionedFeature.sticky,
+              message: () => 'parentClampY desired: ${before.toStringAsFixed(2)} → ${desiredY.toStringAsFixed(2)}',
+            );
+          } catch (_) {}
         }
       } catch (_) {}
     }
@@ -946,6 +1018,8 @@ class CSSPositionedLayout {
         message: () => '<${child.renderStyle.target.tagName.toLowerCase()}>'
             ' sticky base=(${baseInScroller.dx.toStringAsFixed(2)},${baseInScroller.dy.toStringAsFixed(2)})'
             ' scroll=(${scrollLeft.toStringAsFixed(2)},${scrollTop.toStringAsFixed(2)})'
+            ' nat=(${natX.toStringAsFixed(2)},${natY.toStringAsFixed(2)})'
+            ' desired=(${desiredX.toStringAsFixed(2)},${desiredY.toStringAsFixed(2)})'
             ' add=(${addX.toStringAsFixed(2)},${addY.toStringAsFixed(2)})',
       );
     } catch (_) {}
