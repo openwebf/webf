@@ -49,7 +49,11 @@ class WebFListViewElement extends WebFListViewBindings {
   }
 
   @override
-  bool get allowsInfiniteWidth => true;
+  bool get allowsInfiniteWidth =>
+      // Only loosen horizontal constraints when the list scrolls horizontally;
+      // vertical lists need a bounded cross-axis width to satisfy Flutter's
+      // shrink-wrapping viewport requirements.
+      axis == Axis.horizontal;
 
   /// Internal Flutter scroll axis (vertical by default)
   Axis _axis = Axis.vertical;
