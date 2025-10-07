@@ -10,10 +10,66 @@ const context = path.join(__dirname);
 const runtimePath = path.join(context, 'runtime');
 const globalRuntimePath = path.join(context, 'runtime/global');
 const resetRuntimePath = path.join(context, 'runtime/reset');
+const reactRuntimePath = path.join(context, 'runtime/react');
 const buildPath = path.join(context, '.specs');
 const testPath = path.join(context, 'specs');
 const snapshotPath = path.join(context, 'snapshots');
 const specGroup = JSON5.parse(fs.readFileSync(path.join(__dirname, './spec_group.json5')));
+const specsPath = path.join(context, 'specs');
+const specModuleExtensions = /\.(?:[jt]sx?)$/i;
+
+const isSpecModule = (filepath) => {
+  if (!filepath || !specModuleExtensions.test(filepath)) return false;
+  const relative = path.relative(specsPath, filepath);
+  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+};
+
+const tailwindSpecLoaders = (() => {
+  try {
+    const styleLoader = require.resolve('style-loader');
+    const cssLoader = require.resolve('css-loader');
+    const postcssLoader = require.resolve('postcss-loader');
+    const tailwindcss = require('tailwindcss');
+    let autoprefixer;
+    try {
+      autoprefixer = require('autoprefixer');
+    } catch (err) {
+      console.warn('[webpack] Autoprefixer not found, continuing without it for Tailwind CSS.');
+    }
+
+    const tailwindConfigCandidates = [
+      path.join(context, 'tailwind.config.js'),
+      path.join(context, 'tailwind.config.cjs'),
+    ];
+    const tailwindConfigPath = tailwindConfigCandidates.find(candidate => fs.existsSync(candidate));
+    const tailwindPlugin = tailwindConfigPath ? tailwindcss({ config: tailwindConfigPath }) : tailwindcss;
+    const postcssPlugins = [tailwindPlugin];
+    if (autoprefixer) {
+      postcssPlugins.push(autoprefixer);
+    }
+
+    return [
+      styleLoader,
+      {
+        loader: cssLoader,
+        options: {
+          importLoaders: 1,
+        },
+      },
+      {
+        loader: postcssLoader,
+        options: {
+          postcssOptions: {
+            plugins: postcssPlugins,
+          },
+        },
+      },
+    ];
+  } catch (error) {
+    console.warn('[webpack] Tailwind CSS support is disabled:', error.message);
+    return null;
+  }
+})();
 
 let coreSpecFiles = [];
 let getSnapshotOption = () => ({ snapshotRoot: null, delayForSnapshot: false });
@@ -91,7 +147,8 @@ if (versionNum && parseFloat(versionNum) < 2.19) {
   })
 }
 
-// Add global vars
+// Add runtime helpers
+coreSpecFiles.unshift(reactRuntimePath);
 coreSpecFiles.unshift(globalRuntimePath);
 coreSpecFiles.unshift(resetRuntimePath);
 
@@ -116,7 +173,15 @@ module.exports = {
     rules: [
       {
         test: /\.css$/i,
-        use: require.resolve('stylesheet-loader'),
+        oneOf: [
+          tailwindSpecLoaders && {
+            issuer: (file) => isSpecModule(file),
+            use: tailwindSpecLoaders,
+          },
+          {
+            use: require.resolve('stylesheet-loader'),
+          },
+        ].filter(Boolean),
       },
       {
         test: /\.(html?)$/i,
