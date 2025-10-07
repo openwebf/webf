@@ -581,10 +581,11 @@ class InlineFormattingContext {
         return;
       }
       final hasBg = style.backgroundColor?.value != null;
-      final hasBorder = ((style.borderLeftWidth?.value ?? 0) > 0) ||
-          ((style.borderTopWidth?.value ?? 0) > 0) ||
-          ((style.borderRightWidth?.value ?? 0) > 0) ||
-          ((style.borderBottomWidth?.value ?? 0) > 0);
+      // Use effective border widths so `border-*-style: none` collapses to 0
+      final hasBorder = (style.effectiveBorderLeftWidth.computedValue > 0) ||
+          (style.effectiveBorderTopWidth.computedValue > 0) ||
+          (style.effectiveBorderRightWidth.computedValue > 0) ||
+          (style.effectiveBorderBottomWidth.computedValue > 0);
       final hasPadding = ((style.paddingLeft?.value ?? 0) > 0) ||
           ((style.paddingTop?.value ?? 0) > 0) ||
           ((style.paddingRight?.value ?? 0) > 0) ||
@@ -3865,44 +3866,295 @@ class InlineFormattingContext {
 
         // Borders: do not suppress on tiny edge fragments; borders must remain continuous.
         final p = Paint()..style = PaintingStyle.fill;
-        // Paint top border on every fragment (spec behavior). With clamped bands
-        // and conditional padding, the shared join sits at a single y.
-        if (bT > 0) {
-          p.color = s.borderTopColor?.value ?? const Color(0xFF000000);
-          canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, rect.width, bT), p);
-          InlineLayoutLog.log(
-            impl: InlineImpl.paragraphIFC,
-            feature: InlineFeature.painting,
-            message: () => '    draw TOP <' + _getElementDescription(e.box) + '> h=$bT @ y=${rect.top.toStringAsFixed(2)} w=${rect.width.toStringAsFixed(2)}',
-          );
-        }
-        // Paint bottom border on every fragment.
-        if (bB > 0) {
-          p.color = s.borderBottomColor?.value ?? const Color(0xFF000000);
-          canvas.drawRect(Rect.fromLTWH(rect.left, rect.bottom - bB, rect.width, bB), p);
-          InlineLayoutLog.log(
-            impl: InlineImpl.paragraphIFC,
-            feature: InlineFeature.painting,
-            message: () => '    draw BOTTOM <' + _getElementDescription(e.box) + '> h=$bB @ y=${(rect.bottom - bB).toStringAsFixed(2)} w=${rect.width.toStringAsFixed(2)}',
-          );
-        }
-        if (logicalFirstFrag && bL > 0) {
-          p.color = s.borderLeftColor?.value ?? const Color(0xFF000000);
-          canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, bL, rect.height), p);
-          InlineLayoutLog.log(
-            impl: InlineImpl.paragraphIFC,
-            feature: InlineFeature.painting,
-            message: () => '    draw LEFT <' + _getElementDescription(e.box) + '> w=$bL @ x=${rect.left.toStringAsFixed(2)} h=${rect.height.toStringAsFixed(2)}',
-          );
-        }
-        if (logicalLastFrag && bR > 0) {
-          p.color = s.borderRightColor?.value ?? const Color(0xFF000000);
-          canvas.drawRect(Rect.fromLTWH(rect.right - bR, rect.top, bR, rect.height), p);
-          InlineLayoutLog.log(
-            impl: InlineImpl.paragraphIFC,
-            feature: InlineFeature.painting,
-            message: () => '    draw RIGHT <' + _getElementDescription(e.box) + '> w=$bR @ x=${(rect.right - bR).toStringAsFixed(2)} h=${rect.height.toStringAsFixed(2)}',
-          );
+
+        // Precompute side styles and colors with 3D adjustments
+        final topStyle = s.borderTopStyle;
+        final rightStyle = s.borderRightStyle;
+        final bottomStyle = s.borderBottomStyle;
+        final leftStyle = s.borderLeftStyle;
+
+        Color cTop = s.borderTopColor?.value ?? const Color(0xFF000000);
+        Color cRight = s.borderRightColor?.value ?? const Color(0xFF000000);
+        Color cBottom = s.borderBottomColor?.value ?? const Color(0xFF000000);
+        Color cLeft = s.borderLeftColor?.value ?? const Color(0xFF000000);
+
+        bool _is3DInsetOutset(CSSBorderStyleType t) => t == CSSBorderStyleType.outset || t == CSSBorderStyleType.inset;
+        bool _is3DGrooveRidge(CSSBorderStyleType t) => t == CSSBorderStyleType.groove || t == CSSBorderStyleType.ridge;
+
+        // Apply 3D shading per side
+        if (topStyle == CSSBorderStyleType.outset) cTop = CSSColor.transformToLightColor(cTop);
+        if (topStyle == CSSBorderStyleType.inset) cTop = CSSColor.tranformToDarkColor(cTop);
+        if (bottomStyle == CSSBorderStyleType.outset) cBottom = CSSColor.tranformToDarkColor(cBottom);
+        if (bottomStyle == CSSBorderStyleType.inset) cBottom = CSSColor.transformToLightColor(cBottom);
+        if (leftStyle == CSSBorderStyleType.outset) cLeft = CSSColor.transformToLightColor(cLeft);
+        if (leftStyle == CSSBorderStyleType.inset) cLeft = CSSColor.tranformToDarkColor(cLeft);
+        if (rightStyle == CSSBorderStyleType.outset) cRight = CSSColor.tranformToDarkColor(cRight);
+        if (rightStyle == CSSBorderStyleType.inset) cRight = CSSColor.transformToLightColor(cRight);
+
+        final bool anyInsetOutset = _is3DInsetOutset(topStyle) || _is3DInsetOutset(rightStyle) || _is3DInsetOutset(bottomStyle) || _is3DInsetOutset(leftStyle);
+        final bool anyGrooveRidge = _is3DGrooveRidge(topStyle) || _is3DGrooveRidge(rightStyle) || _is3DGrooveRidge(bottomStyle) || _is3DGrooveRidge(leftStyle);
+
+        if (!anyInsetOutset && !anyGrooveRidge) {
+          // Helper painters for dashed/dotted sides (rectangular segments)
+          void _paintDashedHorizontal(double x0, double x1, double y, double h, Color color, bool dotted) {
+            if (x1 <= x0 || h <= 0) return;
+            final Paint dashPaint = Paint()..style = PaintingStyle.fill..color = color;
+            final double width = x1 - x0;
+            final double unit = dotted ? h : math.max(h, h * 1.8);
+            final double gap = unit; // simple equal dash-gap pattern
+            double x = x0;
+            while (x < x1) {
+              final double w = math.min(unit, x1 - x);
+              if (w <= 0) break;
+              canvas.drawRect(Rect.fromLTWH(x, y, w, h), dashPaint);
+              x += unit + gap;
+            }
+          }
+          void _paintDashedVertical(double y0, double y1, double x, double w, Color color, bool dotted) {
+            if (y1 <= y0 || w <= 0) return;
+            final Paint dashPaint = Paint()..style = PaintingStyle.fill..color = color;
+            final double height = y1 - y0;
+            final double unit = dotted ? w : math.max(w, w * 1.8);
+            final double gap = unit;
+            double y = y0;
+            while (y < y1) {
+              final double h = math.min(unit, y1 - y);
+              if (h <= 0) break;
+              canvas.drawRect(Rect.fromLTWH(x, y, w, h), dashPaint);
+              y += unit + gap;
+            }
+          }
+          // Original behavior (including double borders) when no 3D styles are involved.
+          if (bT > 0) {
+            p.color = cTop;
+            if (topStyle == CSSBorderStyleType.dashed || topStyle == CSSBorderStyleType.dotted) {
+              _paintDashedHorizontal(rect.left, rect.right, rect.top, bT, cTop, topStyle == CSSBorderStyleType.dotted);
+            } else if (topStyle == CSSBorderStyleType.double && bT >= 3.0) {
+              final double band = (bT / 3.0).floorToDouble().clamp(1.0, bT);
+              final double gap = (bT - 2 * band).clamp(0.0, bT);
+              canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, rect.width, band), p);
+              canvas.drawRect(Rect.fromLTWH(rect.left, rect.top + band + gap, rect.width, band), p);
+            } else {
+              canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, rect.width, bT), p);
+            }
+          }
+          if (bB > 0) {
+            p.color = cBottom;
+            if (bottomStyle == CSSBorderStyleType.dashed || bottomStyle == CSSBorderStyleType.dotted) {
+              _paintDashedHorizontal(rect.left, rect.right, rect.bottom - bB, bB, cBottom, bottomStyle == CSSBorderStyleType.dotted);
+            } else if (bottomStyle == CSSBorderStyleType.double && bB >= 3.0) {
+              final double band = (bB / 3.0).floorToDouble().clamp(1.0, bB);
+              final double gap = (bB - 2 * band).clamp(0.0, bB);
+              final double topY = rect.bottom - bB;
+              canvas.drawRect(Rect.fromLTWH(rect.left, topY, rect.width, band), p);
+              canvas.drawRect(Rect.fromLTWH(rect.left, topY + band + gap, rect.width, band), p);
+            } else {
+              canvas.drawRect(Rect.fromLTWH(rect.left, rect.bottom - bB, rect.width, bB), p);
+            }
+          }
+          if (logicalFirstFrag && bL > 0) {
+            p.color = cLeft;
+            if (leftStyle == CSSBorderStyleType.dashed || leftStyle == CSSBorderStyleType.dotted) {
+              _paintDashedVertical(rect.top, rect.bottom, rect.left, bL, cLeft, leftStyle == CSSBorderStyleType.dotted);
+            } else if (leftStyle == CSSBorderStyleType.double && bL >= 3.0) {
+              final double band = (bL / 3.0).floorToDouble().clamp(1.0, bL);
+              final double gap = (bL - 2 * band).clamp(0.0, bL);
+              // Outer band (left-most)
+              canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, band, rect.height), p);
+              // Inner band (toward content)
+              canvas.drawRect(Rect.fromLTWH(rect.left + band + gap, rect.top, band, rect.height), p);
+            } else {
+              canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, bL, rect.height), p);
+            }
+          }
+          if (logicalLastFrag && bR > 0) {
+            p.color = cRight;
+            if (rightStyle == CSSBorderStyleType.dashed || rightStyle == CSSBorderStyleType.dotted) {
+              _paintDashedVertical(rect.top, rect.bottom, rect.right - bR, bR, cRight, rightStyle == CSSBorderStyleType.dotted);
+            } else if (rightStyle == CSSBorderStyleType.double && bR >= 3.0) {
+              final double band = (bR / 3.0).floorToDouble().clamp(1.0, bR);
+              final double gap = (bR - 2 * band).clamp(0.0, bR);
+              // Inner band (toward content)
+              canvas.drawRect(Rect.fromLTWH(rect.right - band - gap - band, rect.top, band, rect.height), p);
+              // Outer band (right-most)
+              canvas.drawRect(Rect.fromLTWH(rect.right - band, rect.top, band, rect.height), p);
+            } else {
+              canvas.drawRect(Rect.fromLTWH(rect.right - bR, rect.top, bR, rect.height), p);
+            }
+          }
+        } else if (anyInsetOutset) {
+          // 3D corners with miter joins: draw central bands excluding corner squares,
+          // then draw corner triangles splitting along 45-degree diagonals.
+          double tlX = rect.left, tlY = rect.top;
+          double trX = rect.right, trY = rect.top;
+          double blX = rect.left, blY = rect.bottom;
+          double brX = rect.right, brY = rect.bottom;
+
+          // Helper: draw a filled triangle path given three points
+          void tri(double x1, double y1, double x2, double y2, double x3, double y3, Color color) {
+            final path = Path()
+              ..moveTo(x1, y1)
+              ..lineTo(x2, y2)
+              ..lineTo(x3, y3)
+              ..close();
+            p.color = color;
+            canvas.drawPath(path, p);
+          }
+
+          // Top central band
+          if (bT > 0) {
+            final double x = rect.left + bL;
+            final double w = math.max(0.0, rect.width - bL - bR);
+            if (w > 0) {
+              p.color = cTop;
+              if (topStyle == CSSBorderStyleType.double && bT >= 3.0) {
+                final double band = (bT / 3.0).floorToDouble().clamp(1.0, bT);
+                final double gap = (bT - 2 * band).clamp(0.0, bT);
+                canvas.drawRect(Rect.fromLTWH(x, rect.top, w, band), p);
+                canvas.drawRect(Rect.fromLTWH(x, rect.top + band + gap, w, band), p);
+              } else {
+                canvas.drawRect(Rect.fromLTWH(x, rect.top, w, bT), p);
+              }
+            }
+          }
+          // Bottom central band
+          if (bB > 0) {
+            final double x = rect.left + bL;
+            final double w = math.max(0.0, rect.width - bL - bR);
+            if (w > 0) {
+              p.color = cBottom;
+              if (bottomStyle == CSSBorderStyleType.double && bB >= 3.0) {
+                final double band = (bB / 3.0).floorToDouble().clamp(1.0, bB);
+                final double gap = (bB - 2 * band).clamp(0.0, bB);
+                final double topY = rect.bottom - bB;
+                canvas.drawRect(Rect.fromLTWH(x, topY, w, band), p);
+                canvas.drawRect(Rect.fromLTWH(x, topY + band + gap, w, band), p);
+              } else {
+                canvas.drawRect(Rect.fromLTWH(x, rect.bottom - bB, w, bB), p);
+              }
+            }
+          }
+          // Left central band (on first logical fragment only)
+          if (logicalFirstFrag && bL > 0) {
+            final double y = rect.top + bT;
+            final double h = math.max(0.0, rect.height - bT - bB);
+            if (h > 0) {
+              p.color = cLeft;
+              canvas.drawRect(Rect.fromLTWH(rect.left, y, bL, h), p);
+            }
+          }
+          // Right central band (on last logical fragment only)
+          if (logicalLastFrag && bR > 0) {
+            final double y = rect.top + bT;
+            final double h = math.max(0.0, rect.height - bT - bB);
+            if (h > 0) {
+              p.color = cRight;
+              canvas.drawRect(Rect.fromLTWH(rect.right - bR, y, bR, h), p);
+            }
+          }
+
+          // Corner triangles: split corner squares along diagonals; each side paints its half.
+          // Top-left
+          if (bT > 0 && bL > 0) {
+            // Top half
+            tri(tlX, tlY, tlX + bL, tlY, tlX, tlY + bT, cTop);
+            // Left half
+            if (logicalFirstFrag) tri(tlX + bL, tlY, tlX + bL, tlY + bT, tlX, tlY + bT, cLeft);
+          }
+          // Top-right
+          if (bT > 0 && bR > 0) {
+            // Diagonal from OUTER (trX,trY) to INNER (trX - bR, trY + bT)
+            // Top half (adjacent to top edge): (outer, top-left, inner)
+            tri(trX, trY, trX - bR, trY, trX - bR, trY + bT, cTop);
+            // Right half (adjacent to right edge): (outer, right-bottom, inner)
+            if (logicalLastFrag) tri(trX, trY, trX, trY + bT, trX - bR, trY + bT, cRight);
+          }
+          // Bottom-left
+          if (bB > 0 && bL > 0) {
+            // Diagonal from OUTER (blX, blY) to INNER (blX + bL, blY - bB)
+            // Bottom half (adjacent to bottom edge): (SW, SE, NE)
+            tri(blX, blY, blX + bL, blY, blX + bL, blY - bB, cBottom);
+            // Left half (adjacent to left edge): (SW, NW, NE)
+            if (logicalFirstFrag) tri(blX, blY, blX, blY - bB, blX + bL, blY - bB, cLeft);
+          }
+          // Bottom-right
+          if (bB > 0 && bR > 0) {
+            // Diagonal from (right - bR, bottom) to (right, bottom - bB)
+            // Bottom half (adjacent to bottom edge)
+            tri(brX - bR, brY, brX, brY, brX, brY - bB, cBottom);
+            // Right half (adjacent to right edge)
+            if (logicalLastFrag) tri(brX - bR, brY, brX - bR, brY - bB, brX, brY - bB, cRight);
+          }
+        } else {
+          // groove/ridge: two-band 3D shading per side.
+          // Compute light/dark per side from the base color.
+          Color topLight = CSSColor.transformToLightColor(s.borderTopColor?.value ?? const Color(0xFF000000));
+          Color topDark = CSSColor.tranformToDarkColor(s.borderTopColor?.value ?? const Color(0xFF000000));
+          Color rightLight = CSSColor.transformToLightColor(s.borderRightColor?.value ?? const Color(0xFF000000));
+          Color rightDark = CSSColor.tranformToDarkColor(s.borderRightColor?.value ?? const Color(0xFF000000));
+          Color bottomLight = CSSColor.transformToLightColor(s.borderBottomColor?.value ?? const Color(0xFF000000));
+          Color bottomDark = CSSColor.tranformToDarkColor(s.borderBottomColor?.value ?? const Color(0xFF000000));
+          Color leftLight = CSSColor.transformToLightColor(s.borderLeftColor?.value ?? const Color(0xFF000000));
+          Color leftDark = CSSColor.tranformToDarkColor(s.borderLeftColor?.value ?? const Color(0xFF000000));
+
+          bool isGrooveTop = topStyle == CSSBorderStyleType.groove;
+          bool isGrooveRight = rightStyle == CSSBorderStyleType.groove;
+          bool isGrooveBottom = bottomStyle == CSSBorderStyleType.groove;
+          bool isGrooveLeft = leftStyle == CSSBorderStyleType.groove;
+
+          // Top: split into two horizontal bands.
+          if (bT > 0) {
+            final double h1 = (bT / 2.0).floorToDouble().clamp(0.0, bT);
+            final double h2 = bT - h1;
+            if (h1 > 0) {
+              p.color = isGrooveTop ? topDark : topLight; // outer band (top)
+              canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, rect.width, h1), p);
+            }
+            if (h2 > 0) {
+              p.color = isGrooveTop ? topLight : topDark; // inner band (toward content)
+              canvas.drawRect(Rect.fromLTWH(rect.left, rect.top + h1, rect.width, h2), p);
+            }
+          }
+          // Bottom: split into two horizontal bands.
+          if (bB > 0) {
+            final double h1 = (bB / 2.0).floorToDouble().clamp(0.0, bB);
+            final double h2 = bB - h1;
+            // Outer band (bottom-most)
+            if (h1 > 0) {
+              p.color = isGrooveBottom ? bottomLight : bottomDark;
+              canvas.drawRect(Rect.fromLTWH(rect.left, rect.bottom - h1, rect.width, h1), p);
+            }
+            if (h2 > 0) {
+              p.color = isGrooveBottom ? bottomDark : bottomLight; // inner band (above)
+              canvas.drawRect(Rect.fromLTWH(rect.left, rect.bottom - h1 - h2, rect.width, h2), p);
+            }
+          }
+          // Left: split into two vertical bands (only on logical first fragment).
+          if (logicalFirstFrag && bL > 0) {
+            final double w1 = (bL / 2.0).floorToDouble().clamp(0.0, bL);
+            final double w2 = bL - w1;
+            if (w1 > 0) {
+              p.color = isGrooveLeft ? leftDark : leftLight; // outer band (left-most)
+              canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, w1, rect.height), p);
+            }
+            if (w2 > 0) {
+              p.color = isGrooveLeft ? leftLight : leftDark; // inner band
+              canvas.drawRect(Rect.fromLTWH(rect.left + w1, rect.top, w2, rect.height), p);
+            }
+          }
+          // Right: split into two vertical bands (only on logical last fragment).
+          if (logicalLastFrag && bR > 0) {
+            final double w1 = (bR / 2.0).floorToDouble().clamp(0.0, bR);
+            final double w2 = bR - w1;
+            if (w1 > 0) {
+              p.color = isGrooveRight ? rightLight : rightDark; // outer band (right-most)
+              canvas.drawRect(Rect.fromLTWH(rect.right - w1, rect.top, w1, rect.height), p);
+            }
+            if (w2 > 0) {
+              p.color = isGrooveRight ? rightDark : rightLight; // inner band
+              canvas.drawRect(Rect.fromLTWH(rect.right - w1 - w2, rect.top, w2, rect.height), p);
+            }
+          }
         }
       }
     }

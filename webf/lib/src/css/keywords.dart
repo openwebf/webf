@@ -237,6 +237,11 @@ const String ITALIC = 'italic';
 const String LINE_THROUGH = 'line-through';
 const String UNDERLINE = 'underline';
 const String DOTTED = 'dotted';
+const String DOUBLE = 'double';
+// Additional border-style keywords
+const String GROOVE = 'groove';
+const String RIDGE = 'ridge';
+const String OUTSET = 'outset';
 
 // Display
 const String INLINE = 'inline';

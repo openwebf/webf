@@ -211,28 +211,24 @@ class CSSColor with Diagnosticable {
     return '#$red$green$blue';
   }
 
+  // Border 3D shading helpers per CSS-style formulas:
+  // Dark (shadow): component × 0.5 → floor
+  // Light (highlight): component + (255 - component) × 0.5 → floor = (component + 255) / 2
   static Color tranformToDarkColor(Color color) {
-    // Convert to lab color
-    LabColor lab = RgbColor(color.red, color.green, color.blue).toLabColor();
-    num invertedL = min(110 - lab.l, 100);
-    if (invertedL < lab.l) {
-      RgbColor rgb = LabColor(invertedL, lab.a, lab.b).toRgbColor();
-      return Color.fromARGB(color.alpha, rgb.r.toInt(), rgb.g.toInt(), rgb.b.toInt());
-    } else {
-      return color;
-    }
+    // Round to nearest: floor(v/2 + 0.5) == (v + 1) >> 1
+    final int r = (color.red + 1) >> 1;
+    final int g = (color.green + 1) >> 1;
+    final int b = (color.blue + 1) >> 1;
+    return Color.fromARGB(color.alpha, r, g, b);
   }
 
   static Color transformToLightColor(Color color) {
-    // Convert to lab color
-    LabColor lab = RgbColor(color.red, color.green, color.blue).toLabColor();
-    num invertedL = min(110 - lab.l, 100);
-    if (invertedL > lab.l) {
-      RgbColor rgb = LabColor(invertedL, lab.a, lab.b).toRgbColor();
-      return Color.fromARGB(color.alpha, rgb.r.toInt(), rgb.g.toInt(), rgb.b.toInt());
-    } else {
-      return color;
-    }
+    // Round to nearest: round((v + 255) / 2) == (v + 256) >> 1
+    int mixToWhite(int v) => ((v + 256) >> 1);
+    final int r = mixToWhite(color.red);
+    final int g = mixToWhite(color.green);
+    final int b = mixToWhite(color.blue);
+    return Color.fromARGB(color.alpha, r, g, b);
   }
 
   static bool isColor(String color) {

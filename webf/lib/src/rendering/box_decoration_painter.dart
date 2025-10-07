@@ -837,32 +837,44 @@ class BoxDecorationPainter extends BoxPainter {
       }
     }
 
-    // Check if we have a dashed border
+    // Check for custom border styles (dashed/double)
     bool hasDashedBorder = false;
+    bool hasDoubleBorder = false;
 
     if (_decoration.border != null) {
-      Border border = _decoration.border as Border;
+      final Border border = _decoration.border as Border;
 
-      // Check if any border side is dashed
-      bool hasTopDashedBorder = border.top is ExtendedBorderSide &&
+      bool topDashed = border.top is ExtendedBorderSide &&
           (border.top as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed;
-      bool hasRightDashedBorder = border.right is ExtendedBorderSide &&
+      bool rightDashed = border.right is ExtendedBorderSide &&
           (border.right as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed;
-      bool hasBottomDashedBorder = border.bottom is ExtendedBorderSide &&
+      bool bottomDashed = border.bottom is ExtendedBorderSide &&
           (border.bottom as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed;
-      bool hasLeftDashedBorder = border.left is ExtendedBorderSide &&
+      bool leftDashed = border.left is ExtendedBorderSide &&
           (border.left as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed;
 
-      hasDashedBorder = hasTopDashedBorder || hasRightDashedBorder || hasBottomDashedBorder || hasLeftDashedBorder;
+      hasDashedBorder = topDashed || rightDashed || bottomDashed || leftDashed;
+
+      bool topDouble = border.top is ExtendedBorderSide &&
+          (border.top as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.double;
+      bool rightDouble = border.right is ExtendedBorderSide &&
+          (border.right as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.double;
+      bool bottomDouble = border.bottom is ExtendedBorderSide &&
+          (border.bottom as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.double;
+      bool leftDouble = border.left is ExtendedBorderSide &&
+          (border.left as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.double;
+
+      hasDoubleBorder = topDouble || rightDouble || bottomDouble || leftDouble;
     }
 
-    // If we have a dashed border, use our custom painter
+    // Prefer dashed painter, then double painter, else fallback to Flutter
     if (hasDashedBorder) {
       _paintDashedBorder(canvas, rect, textDirection);
-      // Report FP when border is painted
+      renderStyle.target.ownerDocument.controller.reportFP();
+    } else if (hasDoubleBorder) {
+      _paintDoubleBorder(canvas, rect, textDirection);
       renderStyle.target.ownerDocument.controller.reportFP();
     } else if (_decoration.border != null) {
-      // Otherwise use Flutter's built-in border painting
       _decoration.border?.paint(
         canvas,
         rect,
@@ -870,11 +882,132 @@ class BoxDecorationPainter extends BoxPainter {
         borderRadius: _decoration.borderRadius,
         textDirection: configuration.textDirection,
       );
-      // Report FP when border is painted
       renderStyle.target.ownerDocument.controller.reportFP();
     }
 
     _paintShadows(canvas, rect, textDirection);
+  }
+
+  // Paint CSS double borders. Two parallel bands per side inside the border area.
+  // For small widths (< 3), fall back to a single solid band for readability.
+  void _paintDoubleBorder(Canvas canvas, Rect rect, TextDirection? textDirection) {
+    if (_decoration.border == null) return;
+    final Border border = _decoration.border as Border;
+
+    // Helper: draw horizontal double bands within [top, bottom] region of the rect.
+    void _drawHorizontalDoubleBands(double top, double bottom, Color color) {
+      final double w = (bottom - top).abs();
+      if (w <= 0) return;
+      final Paint p = Paint()..style = PaintingStyle.fill..color = color;
+      if (w < 3.0) {
+        // Fallback solid band
+        canvas.drawRect(Rect.fromLTWH(rect.left, top, rect.width, w), p);
+        return;
+      }
+      final double band = (w / 3.0).floorToDouble().clamp(1.0, w);
+      final double gap = (w - 2 * band).clamp(0.0, w);
+      // Upper band (closer to content for bottom side; for top side this sits at the top edge)
+      canvas.drawRect(Rect.fromLTWH(rect.left, top, rect.width, band), p);
+      // Lower band (outer edge)
+      canvas.drawRect(Rect.fromLTWH(rect.left, top + band + gap, rect.width, band), p);
+    }
+
+    // Helper: draw vertical double bands within [left, right] region of the rect.
+    void _drawVerticalDoubleBands(double left, double right, Color color) {
+      final double w = (right - left).abs();
+      if (w <= 0) return;
+      final Paint p = Paint()..style = PaintingStyle.fill..color = color;
+      if (w < 3.0) {
+        canvas.drawRect(Rect.fromLTWH(left, rect.top, w, rect.height), p);
+        return;
+      }
+      final double band = (w / 3.0).floorToDouble().clamp(1.0, w);
+      final double gap = (w - 2 * band).clamp(0.0, w);
+      // Left inner band
+      canvas.drawRect(Rect.fromLTWH(left, rect.top, band, rect.height), p);
+      // Right outer band
+      canvas.drawRect(Rect.fromLTWH(left + band + gap, rect.top, band, rect.height), p);
+    }
+
+    // Detect uniform double border to support border-radius by stroking rrect twice.
+    bool _isUniformDouble(Border b) {
+      if (b.top is! ExtendedBorderSide || b.right is! ExtendedBorderSide || b.bottom is! ExtendedBorderSide || b.left is! ExtendedBorderSide) {
+        return false;
+      }
+      final t = b.top as ExtendedBorderSide;
+      final r = b.right as ExtendedBorderSide;
+      final btm = b.bottom as ExtendedBorderSide;
+      final l = b.left as ExtendedBorderSide;
+      final sameStyle = t.extendBorderStyle == CSSBorderStyleType.double &&
+          t.extendBorderStyle == r.extendBorderStyle &&
+          t.extendBorderStyle == btm.extendBorderStyle &&
+          t.extendBorderStyle == l.extendBorderStyle;
+      final sameWidth = t.width == r.width && t.width == btm.width && t.width == l.width;
+      final sameColor = t.color == r.color && t.color == btm.color && t.color == l.color;
+      return sameStyle && sameWidth && sameColor;
+    }
+
+    // Uniform double with border radius: draw two RRect strokes
+    if (_isUniformDouble(border) && _decoration.hasBorderRadius && _decoration.borderRadius != null) {
+      final side = border.top as ExtendedBorderSide; // all equal
+      final double w = side.width;
+      final Color color = side.color;
+      final RRect rr = _decoration.borderRadius!.toRRect(rect);
+      final Paint p = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.square
+        ..strokeJoin = StrokeJoin.miter
+        ..color = color;
+      if (w < 3.0) {
+        p.strokeWidth = w;
+        canvas.drawRRect(rr.deflate(w / 2.0), p);
+        return;
+      }
+      final double band = (w / 3.0).floorToDouble().clamp(1.0, w);
+      final double gap = (w - 2 * band).clamp(0.0, w);
+      // Outer band (near border edge)
+      p.strokeWidth = band;
+      canvas.drawRRect(rr.deflate(band / 2.0), p);
+      // Inner band (near content)
+      canvas.drawRRect(rr.deflate(band + gap + band / 2.0), p);
+      return;
+    }
+
+    // Non-uniform or no radius: paint per-side rectangles. This covers common cases like border-bottom.
+    // Note: When border-radius is present and styles are non-uniform, this approximation won't curve bands;
+    // however it ensures visibility rather than painting nothing.
+    // Extract sides as ExtendedBorderSide when double
+    if (border.top is ExtendedBorderSide &&
+        (border.top as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.double &&
+        border.top.width > 0) {
+      final s = border.top as ExtendedBorderSide;
+      final double w = s.width;
+      _drawHorizontalDoubleBands(rect.top, rect.top + w, s.color);
+    }
+
+    if (border.right is ExtendedBorderSide &&
+        (border.right as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.double &&
+        border.right.width > 0) {
+      final s = border.right as ExtendedBorderSide;
+      final double w = s.width;
+      _drawVerticalDoubleBands(rect.right - w, rect.right, s.color);
+    }
+
+    if (border.bottom is ExtendedBorderSide &&
+        (border.bottom as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.double &&
+        border.bottom.width > 0) {
+      final s = border.bottom as ExtendedBorderSide;
+      final double w = s.width;
+      _drawHorizontalDoubleBands(rect.bottom - w, rect.bottom, s.color);
+    }
+
+    if (border.left is ExtendedBorderSide &&
+        (border.left as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.double &&
+        border.left.width > 0) {
+      final s = border.left as ExtendedBorderSide;
+      final double w = s.width;
+      _drawVerticalDoubleBands(rect.left, rect.left + w, s.color);
+    }
   }
 
   @override
