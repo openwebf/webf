@@ -397,6 +397,39 @@ class InlineFormattingContext {
     return (fs, fs * 0.8);
   }
 
+  // Resolve effective text-decoration for a run by combining ancestor lines
+  // and choosing the nearest origin's color/style per CSS propagation rules.
+  (TextDecoration, TextDecorationStyle?, Color?) _computeEffectiveTextDecoration(CSSRenderStyle rs) {
+    TextDecoration combined = TextDecoration.none;
+    TextDecorationStyle? chosenStyle;
+    Color? chosenColor;
+
+    CSSRenderStyle? cur = rs;
+    CSSRenderStyle? nearestWithLine;
+    // Walk up render style chain, combining lines and capturing nearest origin.
+    while (cur != null) {
+      final TextDecoration line = cur.textDecorationLine;
+      if (line != TextDecoration.none) {
+        // Combine multiple sources of decoration lines.
+        if (combined == TextDecoration.none) {
+          combined = line;
+        } else {
+          combined = TextDecoration.combine([combined, line]);
+        }
+        nearestWithLine ??= cur;
+      }
+      cur = cur.getParentRenderStyle() as CSSRenderStyle?;
+    }
+
+    if (nearestWithLine != null) {
+      chosenStyle = nearestWithLine!.textDecorationStyle;
+      // textDecorationColor getter defaults to currentColor when unset.
+      chosenColor = nearestWithLine!.textDecorationColor?.value;
+    }
+
+    return (combined, chosenStyle, chosenColor);
+  }
+
   // Variant of _uiTextStyleFromCss that ignores CSS line-height (height multiple)
   // so we can measure pure font metrics (ascent+descent) for decoration bands.
   ui.TextStyle _uiTextStyleFromCssNoLineHeight(CSSRenderStyle rs) {
@@ -407,12 +440,13 @@ class InlineFormattingContext {
     final bool clipText = (container as RenderBoxModel).renderStyle.backgroundClip == CSSBackgroundBoundary.text;
     final Color baseColor = rs.color.value;
     final Color effectiveColor = clipText ? baseColor.withAlpha(0xFF) : baseColor;
+    final (TextDecoration effLine, TextDecorationStyle? effStyle, Color? effColor) = _computeEffectiveTextDecoration(rs);
     return ui.TextStyle(
       // For clip-text, force fully-opaque glyphs for the mask (ignore alpha).
       color: effectiveColor,
-      decoration: rs.textDecorationLine,
-      decorationColor: rs.textDecorationColor?.value,
-      decorationStyle: rs.textDecorationStyle,
+      decoration: effLine,
+      decorationColor: effColor,
+      decorationStyle: effStyle,
       fontWeight: rs.fontWeight,
       fontStyle: rs.fontStyle,
       textBaseline: CSSText.getTextBaseLine(),
@@ -4493,12 +4527,13 @@ class InlineFormattingContext {
     final bool hidden = rs.isVisibilityHidden;
     final Color baseColor = hidden ? const Color(0x00000000) : rs.color.value;
     final Color effectiveColor = clipText ? baseColor.withAlpha(hidden ? 0x00 : 0xFF) : baseColor;
+    final (TextDecoration effLine, TextDecorationStyle? effStyle, Color? effColor) = _computeEffectiveTextDecoration(rs);
     return ui.TextStyle(
       // For clip-text, force fully-opaque glyphs for the mask (ignore alpha).
       color: effectiveColor,
-      decoration: hidden ? TextDecoration.none : rs.textDecorationLine,
-      decorationColor: hidden ? const Color(0x00000000) : rs.textDecorationColor?.value,
-      decorationStyle: rs.textDecorationStyle,
+      decoration: hidden ? TextDecoration.none : effLine,
+      decorationColor: hidden ? const Color(0x00000000) : effColor,
+      decorationStyle: effStyle,
       fontWeight: rs.fontWeight,
       fontStyle: rs.fontStyle,
       textBaseline: CSSText.getTextBaseLine(),

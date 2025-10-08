@@ -77,8 +77,12 @@ mixin CSSTextMixin on RenderStyle {
 
   CSSColor? _textDecorationColor;
 
+  // Per CSS Text Decoration spec, the initial value of text-decoration-color
+  // is currentColor. If not explicitly specified on the element, use the
+  // element's currentColor so decorations have a visible color by default
+  // (instead of falling back to null/engine-defaults).
   CSSColor? get textDecorationColor {
-    return _textDecorationColor;
+    return _textDecorationColor ?? currentColor;
   }
 
   set textDecorationColor(CSSColor? value) {
