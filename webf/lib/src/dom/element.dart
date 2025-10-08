@@ -1461,9 +1461,15 @@ abstract class Element extends ContainerNode
   }
 
   void applyAttributeStyle(CSSStyleDeclaration style) {
-    // Empty implement
-    // Because attribute style is not recommend to use
-    // But it's necessary for SVG.
+    // Map the dir attribute to CSS direction so inline layout picks up RTL/LTR hints.
+    final String? dirAttr = attributes['dir'];
+    if (dirAttr != null) {
+      final String normalized = dirAttr.trim().toLowerCase();
+      final TextDirection? resolved = CSSTextMixin.resolveDirection(normalized);
+      if (resolved != null) {
+        style.setProperty(DIRECTION, normalized);
+      }
+    }
   }
 
   void recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {

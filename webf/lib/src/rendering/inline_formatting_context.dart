@@ -1874,7 +1874,9 @@ class InlineFormattingContext {
         final Gradient? _grad = _rs.backgroundImage?.gradient;
         final Color? _bgc = _rs.backgroundColor?.value;
         if (_grad != null || (_bgc != null && _bgc.alpha != 0)) {
-          final double w = _para.longestLine;
+          final double intrinsicLineWidth = _para.longestLine;
+          final double layoutWidth = _para.width;
+          final double w = math.max(layoutWidth, intrinsicLineWidth);
           final double h = _para.height;
           if (w > 0 && h > 0) {
             final Rect layer = Rect.fromLTWH(offset.dx, offset.dy, w, h);
