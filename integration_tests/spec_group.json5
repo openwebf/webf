@@ -108,19 +108,19 @@
       "specs/css/css-transitions/**/*.{js,jsx,ts,tsx,html}"
     ]
   },
-  // {
-  //   "name": "Animations",
-  //   "specs": [
-  //     "specs/css/css-animations/**/*.{js,jsx,ts,tsx,html}"
-  //   ]
-  // },
-  // {
-  //   "name": "ValuesAndUnitAndVaraiables",
-  //   "specs": [
-  //     "specs/css/css-values/**/*.{js,jsx,ts,tsx,html}",
-  //     "specs/css/css-variables/**/*.{js,jsx,ts,tsx,html}"
-  //   ]
-  // },
+  {
+    "name": "Animations",
+    "specs": [
+      "specs/css/css-animations/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
+  {
+    "name": "ValuesAndUnitAndVaraiables",
+    "specs": [
+      "specs/css/css-values/**/*.{js,jsx,ts,tsx,html}",
+      "specs/css/css-variables/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
   // {
   //   "name": "Selectors",
   //   "specs": [
