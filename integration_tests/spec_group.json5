@@ -96,18 +96,18 @@
       "specs/css/css-text-mixin/**/*.{js,jsx,ts,tsx,html}"
     ]
   },
-  // {
-  //   "name": "Transforms",
-  //   "specs": [
-  //     "specs/css/css-transforms/**/*.{js,jsx,ts,tsx,html}"
-  //   ]
-  // },
-  // {
-  //   "name": "Transitions",
-  //   "specs": [
-  //     "specs/css/css-transitions/**/*.{js,jsx,ts,tsx,html}"
-  //   ]
-  // },
+  {
+    "name": "Transforms",
+    "specs": [
+      "specs/css/css-transforms/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
+  {
+    "name": "Transitions",
+    "specs": [
+      "specs/css/css-transitions/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
   // {
   //   "name": "Animations",
   //   "specs": [
