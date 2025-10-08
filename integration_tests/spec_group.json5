@@ -121,12 +121,12 @@
       "specs/css/css-variables/**/*.{js,jsx,ts,tsx,html}"
     ]
   },
-  // {
-  //   "name": "Selectors",
-  //   "specs": [
-  //     "specs/css/css-selectors/**/*.{js,jsx,ts,tsx,html}"
-  //   ]
-  // },
+  {
+    "name": "Selectors",
+    "specs": [
+      "specs/css/css-selectors/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
   // {
   //   "name": "Rendering",
   //   "specs": [
