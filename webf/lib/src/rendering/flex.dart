@@ -4489,8 +4489,9 @@ class RenderFlexLayout extends RenderLayoutBox {
           return crossStartAddedOffset;
         }
       case 'center':
-      // Center the child's BORDER-BOX within the flex line's content box.
-      // Compute using the border-box extent by removing margins from the cross extent.
+        // Center the child's MARGIN-BOX within the flex line's content box (spec behavior).
+        // We first get the child's cross-extent including margins, then derive the
+        // border-box extent for overflow heuristics and logging.
         final double childExtentWithMargin = _getCrossAxisExtent(child); // includes margins
         final double startMargin = _flowAwareChildCrossAxisMargin(child)!;
         final double endMargin = _flowAwareChildCrossAxisMargin(child, isEnd: true)!;
@@ -4551,16 +4552,19 @@ class RenderFlexLayout extends RenderLayoutBox {
           );
           return crossStartNoMargin;
         }
-        final double freeInContent = flexLineCrossSize - borderBoxExtent;
-        final double pos = crossStartNoMargin + freeInContent / 2.0;
+        // Center the margin-box in the line's content box, then add the start margin
+        // to obtain the border-box offset.
+        final double freeInContent = flexLineCrossSize - marginBoxExtent;
+        final double pos = crossStartNoMargin + freeInContent / 2.0 + startMargin;
         FlexLog.log(
           impl: FlexImpl.flex,
           feature: FlexFeature.alignment,
           level: Level.FINER,
           message: () =>
-          'center align (content) child=${_childDesc(child)} lineCross=${flexLineCrossSize.toStringAsFixed(
-              2)} borderCross=${borderBoxExtent.toStringAsFixed(2)} startPadBorder=${crossStartNoMargin.toStringAsFixed(
-              2)} -> cross=${pos.toStringAsFixed(2)}',
+          'center align (content) child=${_childDesc(child)} lineCross=${flexLineCrossSize.toStringAsFixed(2)} '
+              'borderCross=${borderBoxExtent.toStringAsFixed(2)} marginCross=${marginBoxExtent.toStringAsFixed(2)} '
+              'startPadBorder=${crossStartNoMargin.toStringAsFixed(2)} startMargin=${startMargin.toStringAsFixed(2)} '
+              '-> cross=${pos.toStringAsFixed(2)}',
         );
         return pos;
       case 'baseline':
