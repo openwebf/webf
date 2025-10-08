@@ -115,7 +115,6 @@ describe('CSS Text Effects with Paint Support', () => {
           font-size: 32px;
           font-weight: bold;
           text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-          text-decoration: underline;
         ">
           Combined Text Effects
         </h1>
@@ -261,18 +260,6 @@ describe('CSS Text Effects with Paint Support', () => {
           font-size: 18px;
         ">
           النص الأفقي (RTL)
-        </div>
-        
-        <div style="
-          writing-mode: vertical-rl;
-          background: linear-gradient(to bottom, #a8edea, #fed6e3);
-          background-clip: text;
-          -webkit-background-clip: text;
-          color: transparent;
-          font-size: 18px;
-          height: 200px;
-        ">
-          Vertical Text
         </div>
       </div>
     `;

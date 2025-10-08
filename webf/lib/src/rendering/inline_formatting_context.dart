@@ -14,6 +14,7 @@ import 'dart:ui' as ui
     TextLeadingDistribution,
     StrutStyle,
     Path,
+    ImageFilter,
     PathOperation;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/foundation.dart';
@@ -444,9 +445,11 @@ class InlineFormattingContext {
     return ui.TextStyle(
       // For clip-text, force fully-opaque glyphs for the mask (ignore alpha).
       color: effectiveColor,
-      decoration: effLine,
-      decorationColor: effColor,
-      decorationStyle: effStyle,
+      // For clip-text mask style we suppress text decorations to avoid
+      // duplicating underline/overline in subsequent dedicated painters.
+      decoration: clipText ? TextDecoration.none : effLine,
+      decorationColor: clipText ? null : effColor,
+      decorationStyle: clipText ? null : effStyle,
       fontWeight: rs.fontWeight,
       fontStyle: rs.fontStyle,
       textBaseline: CSSText.getTextBaseLine(),
@@ -459,7 +462,9 @@ class InlineFormattingContext {
       locale: CSSText.getLocale(),
       background: CSSText.getBackground(),
       foreground: CSSText.getForeground(),
-      shadows: rs.textShadow,
+      // Do not include text-shadow in mask styles for clip-text; shadows are
+      // painted explicitly in a separate pass to preserve their color.
+      shadows: clipText ? null : rs.textShadow,
     );
   }
 
@@ -1842,10 +1847,55 @@ class InlineFormattingContext {
                 context.canvas.drawParagraph(para, offset);
                 context.canvas.restore();
               }
-            }
           }
         }
       }
+    }
+
+    // When using background-clip:text, paint text-shadow separately before the
+    // gradient mask so that shadows retain their own color instead of being
+    // tinted by the background.
+    if (_clipText && _paragraph != null) {
+      final CSSRenderStyle _rs = (container as RenderBoxModel).renderStyle;
+      final List<Shadow>? shadows = _rs.textShadow;
+      if (shadows != null && shadows.isNotEmpty) {
+        final ui.Paragraph _para = _paragraph!;
+        final double intrinsicLineWidth = _para.longestLine;
+        final double layoutWidth = _para.width;
+        final double w = math.max(layoutWidth, intrinsicLineWidth);
+        final double h = _para.height;
+        if (w > 0 && h > 0) {
+          for (final Shadow s in shadows) {
+            if (s.color.alpha == 0) continue;
+            final double blur = s.blurRadius;
+            // Approximate Flutter's radius→sigma conversion.
+            double _radiusToSigma(double r) => r > 0 ? (r * 0.57735 + 0.5) : 0.0;
+            final double sigma = _radiusToSigma(blur);
+            // Expand layer to accommodate blur spread and offset.
+            final double pad = blur * 2 + 2;
+            final Rect layer = Rect.fromLTWH(
+              offset.dx + s.offset.dx - pad,
+              offset.dy + s.offset.dy - pad,
+              w + pad * 2,
+              h + pad * 2,
+            );
+            final Paint layerPaint = Paint();
+            if (sigma > 0) {
+              layerPaint.imageFilter = ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma);
+            }
+            context.canvas.saveLayer(layer, layerPaint);
+            // Draw glyph mask shifted by the shadow offset.
+            context.canvas.drawParagraph(_para, offset.translate(s.offset.dx, s.offset.dy));
+            // Tint the mask with the shadow color.
+            final Paint tint = Paint()
+              ..blendMode = BlendMode.srcIn
+              ..color = s.color;
+            context.canvas.drawRect(layer, tint);
+            context.canvas.restore();
+          }
+        }
+      }
+    }
     }
 
     // Paint synthetic text-run placeholders (vertical-align on text spans)
@@ -1942,7 +1992,7 @@ class InlineFormattingContext {
 
             // Use a layer so we can mask the background with glyph alpha using srcIn.
             context.canvas.saveLayer(layer, Paint());
-            // Draw the paragraph shape into the layer (uses its own style; color may be null/black).
+            // Draw the paragraph shape into the layer (mask only; no shadows/decoration in clip-text).
             context.canvas.drawParagraph(_para, offset);
             // Now overlay the background with srcIn so it is clipped to the glyphs we just drew.
             final Paint p = Paint()
@@ -2026,9 +2076,11 @@ class InlineFormattingContext {
           final Color maskColor = s.isVisibilityHidden ? const Color(0x00000000) : s.color.value.withAlpha(0xFF);
           pb.pushStyle(ui.TextStyle(
             color: maskColor,
-            decoration: s.isVisibilityHidden ? TextDecoration.none : s.textDecorationLine,
-            decorationColor: s.isVisibilityHidden ? const Color(0x00000000) : s.textDecorationColor?.value,
-            decorationStyle: s.textDecorationStyle,
+            // Suppress decoration/shadow in the mask paragraph for clip-text; they
+            // are painted via dedicated passes to preserve color/ordering.
+            decoration: TextDecoration.none,
+            decorationColor: const Color(0x00000000),
+            decorationStyle: null,
             fontWeight: s.fontWeight,
             fontStyle: s.fontStyle,
             textBaseline: CSSText.getTextBaseLine(),
@@ -2041,7 +2093,7 @@ class InlineFormattingContext {
             locale: CSSText.getLocale(),
             background: CSSText.getBackground(),
             foreground: CSSText.getForeground(),
-            shadows: s.textShadow,
+            shadows: null,
           ));
           pb.addText(text);
           final ui.Paragraph p = pb.build();
@@ -2108,6 +2160,39 @@ class InlineFormattingContext {
             if (tb.bottom > b) b = tb.bottom;
           }
           final Rect layer = Rect.fromLTRB(offset.dx + l, offset.dy + t, offset.dx + r, offset.dy + b);
+
+          // Paint text shadows for this inline segment before gradient to keep shadow color.
+          final List<Shadow>? _segShadows = s.textShadow;
+          if (_segShadows != null && _segShadows.isNotEmpty) {
+            final ui.TextBox firstBox = boxes.first;
+            for (final Shadow sh in _segShadows) {
+              if (sh.color.alpha == 0) continue;
+              double _radiusToSigma(double r) => r > 0 ? (r * 0.57735 + 0.5) : 0.0;
+              final double sigma = _radiusToSigma(sh.blurRadius);
+              final double pad = sh.blurRadius * 2 + 2;
+              final Rect shadowLayer = Rect.fromLTRB(
+                layer.left + sh.offset.dx - pad,
+                layer.top + sh.offset.dy - pad,
+                layer.right + sh.offset.dx + pad,
+                layer.bottom + sh.offset.dy + pad,
+              );
+              final Paint lp = Paint();
+              if (sigma > 0) {
+                lp.imageFilter = ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma);
+              }
+              context.canvas.saveLayer(shadowLayer, lp);
+              context.canvas.drawParagraph(
+                segPara,
+                offset.translate(firstBox.left + sh.offset.dx, firstBox.top + sh.offset.dy),
+              );
+              final Paint tint = Paint()
+                ..blendMode = BlendMode.srcIn
+                ..color = sh.color;
+              context.canvas.drawRect(shadowLayer, tint);
+              context.canvas.restore();
+            }
+          }
+
           // Paint: mask paragraph at the first fragment origin on this line, then srcIn gradient.
           context.canvas.saveLayer(layer, Paint());
           context.canvas.clipPath(clip);
@@ -4531,9 +4616,10 @@ class InlineFormattingContext {
     return ui.TextStyle(
       // For clip-text, force fully-opaque glyphs for the mask (ignore alpha).
       color: effectiveColor,
-      decoration: hidden ? TextDecoration.none : effLine,
-      decorationColor: hidden ? const Color(0x00000000) : effColor,
-      decorationStyle: effStyle,
+      // Suppress decorations in clip-text mask paragraph; they are painted separately.
+      decoration: (hidden || clipText) ? TextDecoration.none : effLine,
+      decorationColor: (hidden || clipText) ? const Color(0x00000000) : effColor,
+      decorationStyle: clipText ? null : effStyle,
       fontWeight: rs.fontWeight,
       fontStyle: rs.fontStyle,
       textBaseline: CSSText.getTextBaseLine(),
@@ -4546,7 +4632,8 @@ class InlineFormattingContext {
       locale: CSSText.getLocale(),
       background: CSSText.getBackground(),
       foreground: CSSText.getForeground(),
-      shadows: rs.textShadow,
+      // Do not include text-shadow on the mask paragraph for clip-text.
+      shadows: clipText ? null : rs.textShadow,
       // fontFeatures/fontVariations could be mapped from CSS if available
     );
   }
