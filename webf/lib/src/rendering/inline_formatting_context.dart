@@ -792,6 +792,7 @@ class InlineFormattingContext {
     final String s = _textContent!;
     int i = 0;
     double maxToken = 0;
+    double maxNonCjkToken = 0;
     double maxCjkGlyph = 0;
 
     // If the content contains CJK and white-space allows wrapping, treat each CJK
@@ -805,10 +806,11 @@ class InlineFormattingContext {
         final int cu = s.codeUnitAt(j);
         // Skip common whitespace/control; measure only visible glyphs
         if (cu == 0x20 || cu == 0x09 || cu == 0x0A || cu == 0x0D) continue;
-        // For CJK characters (including kana/hangul), measure single-glyph width
         if (TextScriptDetector.isCJKCharacter(cu)) {
           final double w = _measureRangeWidth(j, j + 1);
-          if (w.isFinite) maxCjkGlyph = math.max(maxCjkGlyph, w);
+          if (w.isFinite) {
+            maxCjkGlyph = math.max(maxCjkGlyph, w);
+          }
         }
       }
     }
@@ -816,16 +818,58 @@ class InlineFormattingContext {
       // Skip break chars
       while (i < s.length && _isBreakChar(s.codeUnitAt(i))) i++;
       final int start = i;
-      while (i < s.length && !_isBreakChar(s.codeUnitAt(i))) i++;
+      bool tokenHasCjk = false;
+      bool tokenHasNonCjk = false;
+      while (i < s.length && !_isBreakChar(s.codeUnitAt(i))) {
+        final int cu = s.codeUnitAt(i);
+        if (TextScriptDetector.isCJKCharacter(cu)) {
+          tokenHasCjk = true;
+        } else {
+          tokenHasNonCjk = true;
+        }
+        i++;
+      }
       final int end = i;
       if (end > start) {
         final double w = _measureRangeWidth(start, end);
-        if (w.isFinite) maxToken = math.max(maxToken, w);
+        if (w.isFinite) {
+          maxToken = math.max(maxToken, w);
+          if (tokenHasNonCjk) {
+            int runStart = start;
+            bool inNonCjkRun = false;
+            for (int k = start; k < end; k++) {
+              final int cu = s.codeUnitAt(k);
+              final bool isCjk = TextScriptDetector.isCJKCharacter(cu);
+              if (!isCjk) {
+                if (!inNonCjkRun) {
+                  runStart = k;
+                  inNonCjkRun = true;
+                }
+              } else if (inNonCjkRun) {
+                final double runWidth = _measureRangeWidth(runStart, k);
+                if (runWidth.isFinite) {
+                  maxNonCjkToken = math.max(maxNonCjkToken, runWidth);
+                }
+                inNonCjkRun = false;
+              }
+            }
+            if (inNonCjkRun) {
+              final double runWidth = _measureRangeWidth(runStart, end);
+              if (runWidth.isFinite) {
+                maxNonCjkToken = math.max(maxNonCjkToken, runWidth);
+              }
+            }
+          }
+        }
       }
     }
-    // Prefer the larger of widest ASCII-token and widest CJK glyph. If both fail,
-    // fall back to longest line as a last resort.
-    final double approx = math.max(maxToken, maxCjkGlyph);
+    double approx;
+    if (containsCJK && wsSoftWrap) {
+      final double candidate = math.max(maxNonCjkToken, maxCjkGlyph);
+      approx = candidate > 0 ? candidate : math.max(maxToken, maxCjkGlyph);
+    } else {
+      approx = math.max(maxToken, maxCjkGlyph);
+    }
     if (approx > 0) return approx;
     return _paragraph!.longestLine;
   }

@@ -179,6 +179,61 @@ void main() {
       expect(container.offsetWidth, 160); // Should be sum of children widths
     });
 
+    testWidgets('inline-flex flex-shrink respects CJK wrapping', (WidgetTester tester) async {
+      final name = 'inline-flex-cjk-shrink-${DateTime.now().millisecondsSinceEpoch}';
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: name,
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <style>
+                .wrapper {
+                  width: 260px;
+                  padding: 20px;
+                  background: #fafafa;
+                }
+                .flex {
+                  display: inline-flex;
+                  align-items: baseline;
+                  background: #d0d0d0;
+                  padding: 5px;
+                  margin: 0;
+                }
+                .flex span {
+                  margin: 2px;
+                  padding: 0;
+                }
+                .small { font-size: 16px; }
+                .english { font-size: 24px; }
+                .large-cjk { font-size: 32px; }
+                .medium { font-size: 20px; }
+              </style>
+              <div class="wrapper">
+                <div id="flex" class="flex">
+                  <span id="small-cjk" class="small">小号中文</span>
+                  <span id="english" class="english">Large English</span>
+                  <span id="big-cjk" class="large-cjk">大号汉字</span>
+                  <span id="medium" class="medium">Medium 123</span>
+                </div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      await tester.pumpAndSettle();
+
+      final flex = prepared.getElementById('flex');
+      final bigCjk = prepared.getElementById('big-cjk');
+
+      final int offsetWidth = flex.offsetWidth;
+      final int scrollWidth = flex.scrollWidth;
+
+      expect(scrollWidth, lessThanOrEqualTo(offsetWidth + 1), reason: 'flex container should not overflow horizontally');
+      expect(bigCjk.offsetWidth, lessThan(100), reason: 'CJK item should shrink when flexing within constraints');
+    });
+
     testWidgets('flex with percentage width children', (WidgetTester tester) async {
       final name = 'flex-percentage-test-${DateTime.now().millisecondsSinceEpoch}';
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
