@@ -1970,60 +1970,115 @@ class InlineFormattingContext {
         }
         final Rect union = Rect.fromLTRB(minL, minT, maxR, maxB);
 
-        // Build a lightweight paragraph for the mask of this run only.
-        // Use the element style (font, weight, etc.) but force an opaque color so glyph alpha is present.
-        final ui.ParagraphBuilder mpb = ui.ParagraphBuilder(ui.ParagraphStyle(
-          textDirection: (container as RenderBoxModel).renderStyle.direction,
-          textHeightBehavior: const ui.TextHeightBehavior(
-            applyHeightToFirstAscent: true,
-            applyHeightToLastDescent: true,
-            leadingDistribution: ui.TextLeadingDistribution.even,
-          ),
-        ));
-        // For mask: identical to _uiTextStyleFromCss(rs) but force opaque color
-        final families = s.fontFamily;
-        if (families != null && families.isNotEmpty) {
-          CSSFontFace.ensureFontLoaded(families[0], s.fontWeight, s);
+        // Helper to build a mask paragraph for a given text (forced opaque glyph color).
+        ui.Paragraph _buildMaskPara(String text) {
+          final ui.ParagraphBuilder pb = ui.ParagraphBuilder(ui.ParagraphStyle(
+            textDirection: (container as RenderBoxModel).renderStyle.direction,
+            textHeightBehavior: const ui.TextHeightBehavior(
+              applyHeightToFirstAscent: true,
+              applyHeightToLastDescent: true,
+              leadingDistribution: ui.TextLeadingDistribution.even,
+            ),
+          ));
+          final families = s.fontFamily;
+          if (families != null && families.isNotEmpty) {
+            CSSFontFace.ensureFontLoaded(families[0], s.fontWeight, s);
+          }
+          final double? heightMultiple = (() {
+            if (s.lineHeight.type == CSSLengthType.NORMAL) return kTextHeightNone;
+            if (s.lineHeight.type == CSSLengthType.EM) return s.lineHeight.value;
+            return s.lineHeight.computedValue / s.fontSize.computedValue;
+          })();
+          final Color maskColor = s.isVisibilityHidden ? const Color(0x00000000) : s.color.value.withAlpha(0xFF);
+          pb.pushStyle(ui.TextStyle(
+            color: maskColor,
+            decoration: s.isVisibilityHidden ? TextDecoration.none : s.textDecorationLine,
+            decorationColor: s.isVisibilityHidden ? const Color(0x00000000) : s.textDecorationColor?.value,
+            decorationStyle: s.textDecorationStyle,
+            fontWeight: s.fontWeight,
+            fontStyle: s.fontStyle,
+            textBaseline: CSSText.getTextBaseLine(),
+            fontFamily: (families != null && families.isNotEmpty) ? families.first : null,
+            fontFamilyFallback: families,
+            fontSize: s.fontSize.computedValue,
+            letterSpacing: s.letterSpacing?.computedValue,
+            wordSpacing: s.wordSpacing?.computedValue,
+            height: heightMultiple,
+            locale: CSSText.getLocale(),
+            background: CSSText.getBackground(),
+            foreground: CSSText.getForeground(),
+            shadows: s.textShadow,
+          ));
+          pb.addText(text);
+          final ui.Paragraph p = pb.build();
+          p.layout(const ui.ParagraphConstraints(width: 1000000.0));
+          return p;
         }
-        final double? heightMultiple = (() {
-          if (s.lineHeight.type == CSSLengthType.NORMAL) return kTextHeightNone;
-          if (s.lineHeight.type == CSSLengthType.EM) return s.lineHeight.value;
-          return s.lineHeight.computedValue / s.fontSize.computedValue;
-        })();
-        final Color maskColor = s.isVisibilityHidden ? const Color(0x00000000) : s.color.value.withAlpha(0xFF);
-        mpb.pushStyle(ui.TextStyle(
-          color: maskColor,
-          decoration: s.isVisibilityHidden ? TextDecoration.none : s.textDecorationLine,
-          decorationColor: s.isVisibilityHidden ? const Color(0x00000000) : s.textDecorationColor?.value,
-          decorationStyle: s.textDecorationStyle,
-          fontWeight: s.fontWeight,
-          fontStyle: s.fontStyle,
-          textBaseline: CSSText.getTextBaseLine(),
-          fontFamily: (families != null && families.isNotEmpty) ? families.first : null,
-          fontFamilyFallback: families,
-          fontSize: s.fontSize.computedValue,
-          letterSpacing: s.letterSpacing?.computedValue,
-          wordSpacing: s.wordSpacing?.computedValue,
-          height: heightMultiple,
-          locale: CSSText.getLocale(),
-          background: CSSText.getBackground(),
-          foreground: CSSText.getForeground(),
-          shadows: s.textShadow,
-        ));
-        final String runText = _textContent.substring(range.$1, range.$2);
-        mpb.addText(runText);
-        final ui.Paragraph mpara = mpb.build();
-        // Layout with a large width to avoid unintended wrapping; clipping to rects per line keeps us precise.
-        mpara.layout(const ui.ParagraphConstraints(width: 1000000.0));
 
-        // Paint per rect: glyph mask then gradient/color via srcIn.
-        final Rect shaderRect = Rect.fromLTWH(offset.dx + union.left, offset.dy + union.top, union.width, union.height);
+        // Group rects by paragraph line index to preserve multi-line runs.
+        final Map<int, List<ui.TextBox>> lineRects = <int, List<ui.TextBox>>{};
         for (final tb in rects) {
-          final Rect layer = Rect.fromLTWH(offset.dx + tb.left, offset.dy + tb.top, tb.right - tb.left, tb.bottom - tb.top);
+          final int li = _lineIndexForRect(tb);
+          (lineRects[li] ??= <ui.TextBox>[]).add(tb);
+        }
+        final List<int> lines = lineRects.keys.toList()..sort();
+
+        // Binary search to find the maximal end index on a paragraph line.
+        int _findLineEnd(int startIndex, int targetLine) {
+          int lo = startIndex + 1;
+          int hi = range.$2;
+          int best = startIndex + 1;
+          while (lo <= hi) {
+            final int mid = lo + ((hi - lo) >> 1);
+            final boxes = para.getBoxesForRange(startIndex, mid);
+            if (boxes.isEmpty) {
+              lo = mid + 1;
+              continue;
+            }
+            final int lastLine = _lineIndexForRect(boxes.last);
+            if (lastLine == targetLine) {
+              best = mid;
+              lo = mid + 1;
+            } else if (lastLine < targetLine) {
+              lo = mid + 1;
+            } else {
+              hi = mid - 1;
+            }
+          }
+          return best;
+        }
+
+        int segStart = range.$1;
+        // Shader rect covers the element’s entire union area.
+        final Rect shaderRect = Rect.fromLTWH(offset.dx + union.left, offset.dy + union.top, union.width, union.height);
+
+        for (final int li in lines) {
+          final boxes = lineRects[li]!;
+          boxes.sort((a, b) => a.left.compareTo(b.left));
+          // Compute substring end for this line using binary search.
+          final int segEnd = _findLineEnd(segStart, li);
+          if (segEnd <= segStart) {
+            continue;
+          }
+          final String segText = _textContent.substring(segStart, segEnd);
+          final ui.Paragraph segPara = _buildMaskPara(segText);
+
+          // Build union clip for the line's boxes.
+          double l = boxes.first.left, t = boxes.first.top, r = boxes.first.right, b = boxes.first.bottom;
+          final ui.Path clip = ui.Path();
+          for (final tb in boxes) {
+            clip.addRect(Rect.fromLTRB(offset.dx + tb.left, offset.dy + tb.top, offset.dx + tb.right, offset.dy + tb.bottom));
+            if (tb.left < l) l = tb.left;
+            if (tb.top < t) t = tb.top;
+            if (tb.right > r) r = tb.right;
+            if (tb.bottom > b) b = tb.bottom;
+          }
+          final Rect layer = Rect.fromLTRB(offset.dx + l, offset.dy + t, offset.dx + r, offset.dy + b);
+          // Paint: mask paragraph at the first fragment origin on this line, then srcIn gradient.
           context.canvas.saveLayer(layer, Paint());
-          context.canvas.clipRect(layer);
-          // Draw the mask paragraph aligned to this fragment's top-left.
-          context.canvas.drawParagraph(mpara, offset.translate(tb.left, tb.top));
+          context.canvas.clipPath(clip);
+          final ui.TextBox first = boxes.first;
+          context.canvas.drawParagraph(segPara, offset.translate(first.left, first.top));
           final Paint p = Paint()..blendMode = BlendMode.srcIn;
           if (grad != null) {
             p.shader = grad.createShader(shaderRect);
@@ -2033,6 +2088,8 @@ class InlineFormattingContext {
             context.canvas.drawRect(layer, p);
           }
           context.canvas.restore();
+
+          segStart = segEnd;
         }
         paintedCount++;
       });
