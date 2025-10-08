@@ -350,3 +350,25 @@ TEST(StringImpl, CreateFromUTF8Empty) {
   EXPECT_TRUE(str2->length() == 0);
   EXPECT_EQ(str1, str2); // Should return the same empty string singleton
 }
+
+// Adding for hash collision reference
+// TEST(StringImpl, HashCollision1) {
+//   TEST_init();
+//
+//   // Test hash collision
+//   auto str1 = StringImpl::CreateFromUTF8(R"#(
+//       * {
+//         padding: 0;
+//         margin: 0;
+//       }
+//       .q {
+//         margin: 10px;
+//         padding: 10px;
+//         flex: 1 1 auto;
+//         background: gold;
+//       }
+//     )#");
+//   auto str2 = StringImpl::CreateFromUTF8("screen_async");
+//
+//   EXPECT_EQ(str1->GetHash(), str2->GetHash());
+// }
