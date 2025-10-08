@@ -232,6 +232,33 @@ TEST(CSSPropertyParserTest, IncompleteColor) {
   ASSERT_FALSE(value);
 }
 
+TEST(CSSPropertyParserTest, Hex8Color) {
+  // Ensure 8-digit hex colors (#RRGGBBAA) are parsed.
+  std::shared_ptr<const CSSValue> value = CSSParser::ParseSingleValue(
+      CSSPropertyID::kBackgroundColor, "#DADADA00"_s, StrictCSSParserContext(SecureContextMode::kSecureContext));
+  ASSERT_TRUE(value);
+  const cssvalue::CSSColor& css_color = To<cssvalue::CSSColor>(*value);
+  const Color& c = css_color.Value();
+  EXPECT_EQ(c.Red(), 0xDA);
+  EXPECT_EQ(c.Green(), 0xDA);
+  EXPECT_EQ(c.Blue(), 0xDA);
+  EXPECT_EQ(c.AlphaAsInteger(), 0x00);
+}
+
+TEST(CSSPropertyParserTest, Hex4Color) {
+  // Ensure 4-digit hex colors (#RGBA) are parsed.
+  std::shared_ptr<const CSSValue> value = CSSParser::ParseSingleValue(
+      CSSPropertyID::kBackgroundColor, "#1A2B"_s, StrictCSSParserContext(SecureContextMode::kSecureContext));
+  ASSERT_TRUE(value);
+  const cssvalue::CSSColor& css_color = To<cssvalue::CSSColor>(*value);
+  const Color& c = css_color.Value();
+  // #1A2B => R=0x11, G=0xAA, B=0x22, A=0xBB
+  EXPECT_EQ(c.Red(), 0x11);
+  EXPECT_EQ(c.Green(), 0xAA);
+  EXPECT_EQ(c.Blue(), 0x22);
+  EXPECT_EQ(c.AlphaAsInteger(), 0xBB);
+}
+
 void TestImageSetParsing(const String& testValue, const String& expectedCssText) {
   std::shared_ptr<const CSSValue> value = CSSParser::ParseSingleValue(
       CSSPropertyID::kBackgroundImage, testValue, StrictCSSParserContext(SecureContextMode::kSecureContext));
