@@ -751,9 +751,24 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
   List<String> strings = [];
   List<CSSColorStop> colorGradients = [];
   // rgba may contain space, color should handle special
-  if (src.startsWith('rgba(') || src.startsWith('rgb(')) {
-    int indexOfRgbaEnd = src.lastIndexOf(')');
-    strings.add(src.substring(0, indexOfRgbaEnd + 1));
+  if (src.startsWith('rgba(') || src.startsWith('rgb(') || src.startsWith('hsl(') || src.startsWith('hsla(')) {
+    // Treat functional color notations as a single token, since their arguments may include spaces.
+    // This mirrors the special handling already in place for rgb/rgba and fixes gradients using hsl()/hsla().
+    int indexOfEnd = src.lastIndexOf(')');
+    if (indexOfEnd != -1) {
+      strings.add(src.substring(0, indexOfEnd + 1));
+      // If there are trailing tokens after the color function (e.g., "hsl(...) 30%"),
+      // keep them by splitting the remainder by spaces and appending.
+      if (indexOfEnd + 1 < src.length) {
+        final String remainder = src.substring(indexOfEnd + 1).trim();
+        if (remainder.isNotEmpty) {
+          strings.addAll(remainder.split(' '));
+        }
+      }
+    } else {
+      // Fallback: unable to find a closing ')', split by spaces.
+      strings = src.split(' ');
+    }
   } else {
     strings = src.split(' ');
   }

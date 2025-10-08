@@ -16,12 +16,14 @@ import 'dart:ui' as ui
     Path,
     PathOperation;
 import 'package:flutter/rendering.dart';
+import 'package:flutter/foundation.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:logging/logging.dart' show Level;
 import 'package:webf/src/foundation/inline_layout_logging.dart';
 import 'package:webf/src/css/text_script_detector.dart';
+import 'package:webf/src/foundation/logger.dart';
 
 import 'inline_item.dart';
 // Legacy line-box based IFC removed; paragraph-based IFC only.
@@ -1496,6 +1498,11 @@ class InlineFormattingContext {
     try {
       final CSSRenderStyle containerStyle = (container as RenderBoxModel).renderStyle;
       final bool _clipText = containerStyle.backgroundClip == CSSBackgroundBoundary.text;
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[IFC] paint container=${container.hashCode} clipText=${_clipText} '
+            'bgImg=' + (containerStyle.backgroundImage?.cssText() ?? 'none') + ' bgColor='
+            + (containerStyle.backgroundColor?.value.toString() ?? 'null'));
+      }
 
 
       // Interleave line background and text painting so that later lines can
@@ -1873,6 +1880,11 @@ class InlineFormattingContext {
       if (_para != null) {
         final Gradient? _grad = _rs.backgroundImage?.gradient;
         final Color? _bgc = _rs.backgroundColor?.value;
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[IFC][bg-clip:text] container pass: gradient=' + (_grad != null ? 'yes' : 'no') +
+              ' bgColor=' + ((_bgc != null && _bgc.alpha != 0) ? _bgc.toString() : 'none') +
+              ' longest=' + _para.longestLine.toStringAsFixed(2) + ' height=' + _para.height.toStringAsFixed(2));
+        }
         if (_grad != null || (_bgc != null && _bgc.alpha != 0)) {
           final double intrinsicLineWidth = _para.longestLine;
           final double layoutWidth = _para.width;
@@ -1890,7 +1902,9 @@ class InlineFormattingContext {
             final double contTop = offset.dy - padT - borT;
             final Rect contRect = Rect.fromLTWH(contLeft, contTop, container.size.width, container.size.height);
 
-            // Removed verbose background-clip text diagnostics after stabilization.
+            if (kDebugMode && DebugFlags.enableCssLogs) {
+              cssLogger.fine('[IFC][bg-clip:text] container layer=' + layer.toString() + ' shaderRect=' + contRect.toString());
+            }
 
             // Use a layer so we can mask the background with glyph alpha using srcIn.
             context.canvas.saveLayer(layer, Paint());
@@ -1924,6 +1938,29 @@ class InlineFormattingContext {
             // End glyph-mask background pass
           }
         }
+      }
+    }
+
+    // Detect inline elements within this paragraph that request background-clip:text.
+    // We do not paint them here yet, but log them to help diagnose missing gradient text.
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      int clipTextCount = 0;
+      StringBuffer sb = StringBuffer();
+      _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
+        final s = box.renderStyle;
+        if (s.backgroundClip == CSSBackgroundBoundary.text) {
+          clipTextCount++;
+          final boxes = _paragraph?.getBoxesForRange(range.$1, range.$2) ?? const <ui.TextBox>[];
+          final String rects = boxes.isNotEmpty ?
+            boxes.map((b) => '[${b.left.toStringAsFixed(1)},${b.top.toStringAsFixed(1)}→${b.right.toStringAsFixed(1)},${b.bottom.toStringAsFixed(1)}]').join(',')
+            : 'none';
+          sb.writeln('[IFC][bg-clip:text] inline element=${box.hashCode} range=(${range.$1},${range.$2}) '
+              'grad=' + (s.backgroundImage?.cssText() ?? 'none') + ' color=' + (s.color.value.toString()) + ' rects=' + rects);
+        }
+      });
+      if (clipTextCount > 0) {
+        cssLogger.fine('[IFC][bg-clip:text] detected ' + clipTextCount.toString() + ' inline element(s) with clip=text');
+        cssLogger.fine(sb.toString().trim());
       }
     }
 

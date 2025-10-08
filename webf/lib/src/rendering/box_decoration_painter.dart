@@ -702,6 +702,9 @@ class BoxDecorationPainter extends BoxPainter {
     // to glyphs only (handled in InlineFormattingContext). Skip painting box
     // background color/image here to avoid a solid rectangle behind the text.
     if (renderStyle.backgroundClip == CSSBackgroundBoundary.text) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[background] skip box background (clip=text), defer to IFC gradient text');
+      }
       return;
     }
 
