@@ -1942,25 +1942,102 @@ class InlineFormattingContext {
     }
 
     // Detect inline elements within this paragraph that request background-clip:text.
-    // We do not paint them here yet, but log them to help diagnose missing gradient text.
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      int clipTextCount = 0;
-      StringBuffer sb = StringBuffer();
+    // Paint inline elements with background-clip:text by masking their glyphs and
+    // overlaying their background gradient within each text box rect.
+    if (_elementRanges.isNotEmpty && _paragraph != null) {
+      final para = _paragraph!;
+      int paintedCount = 0;
       _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
-        final s = box.renderStyle;
-        if (s.backgroundClip == CSSBackgroundBoundary.text) {
-          clipTextCount++;
-          final boxes = _paragraph?.getBoxesForRange(range.$1, range.$2) ?? const <ui.TextBox>[];
-          final String rects = boxes.isNotEmpty ?
-            boxes.map((b) => '[${b.left.toStringAsFixed(1)},${b.top.toStringAsFixed(1)}→${b.right.toStringAsFixed(1)},${b.bottom.toStringAsFixed(1)}]').join(',')
-            : 'none';
-          sb.writeln('[IFC][bg-clip:text] inline element=${box.hashCode} range=(${range.$1},${range.$2}) '
-              'grad=' + (s.backgroundImage?.cssText() ?? 'none') + ' color=' + (s.color.value.toString()) + ' rects=' + rects);
+        final CSSRenderStyle s = box.renderStyle;
+        if (s.backgroundClip != CSSBackgroundBoundary.text) return;
+
+        final Gradient? grad = s.backgroundImage?.gradient;
+        final Color? bgc = s.backgroundColor?.value;
+        if (grad == null && (bgc == null || bgc.alpha == 0)) return;
+        if (range.$2 <= range.$1) return;
+
+        // Text boxes for this element's range
+        final List<ui.TextBox> rects = para.getBoxesForRange(range.$1, range.$2);
+        if (rects.isEmpty) return;
+
+        // Union of rects for shader bounds
+        double minL = rects.first.left, minT = rects.first.top, maxR = rects.first.right, maxB = rects.first.bottom;
+        for (final tb in rects) {
+          if (tb.left < minL) minL = tb.left;
+          if (tb.top < minT) minT = tb.top;
+          if (tb.right > maxR) maxR = tb.right;
+          if (tb.bottom > maxB) maxB = tb.bottom;
         }
+        final Rect union = Rect.fromLTRB(minL, minT, maxR, maxB);
+
+        // Build a lightweight paragraph for the mask of this run only.
+        // Use the element style (font, weight, etc.) but force an opaque color so glyph alpha is present.
+        final ui.ParagraphBuilder mpb = ui.ParagraphBuilder(ui.ParagraphStyle(
+          textDirection: (container as RenderBoxModel).renderStyle.direction,
+          textHeightBehavior: const ui.TextHeightBehavior(
+            applyHeightToFirstAscent: true,
+            applyHeightToLastDescent: true,
+            leadingDistribution: ui.TextLeadingDistribution.even,
+          ),
+        ));
+        // For mask: identical to _uiTextStyleFromCss(rs) but force opaque color
+        final families = s.fontFamily;
+        if (families != null && families.isNotEmpty) {
+          CSSFontFace.ensureFontLoaded(families[0], s.fontWeight, s);
+        }
+        final double? heightMultiple = (() {
+          if (s.lineHeight.type == CSSLengthType.NORMAL) return kTextHeightNone;
+          if (s.lineHeight.type == CSSLengthType.EM) return s.lineHeight.value;
+          return s.lineHeight.computedValue / s.fontSize.computedValue;
+        })();
+        final Color maskColor = s.isVisibilityHidden ? const Color(0x00000000) : s.color.value.withAlpha(0xFF);
+        mpb.pushStyle(ui.TextStyle(
+          color: maskColor,
+          decoration: s.isVisibilityHidden ? TextDecoration.none : s.textDecorationLine,
+          decorationColor: s.isVisibilityHidden ? const Color(0x00000000) : s.textDecorationColor?.value,
+          decorationStyle: s.textDecorationStyle,
+          fontWeight: s.fontWeight,
+          fontStyle: s.fontStyle,
+          textBaseline: CSSText.getTextBaseLine(),
+          fontFamily: (families != null && families.isNotEmpty) ? families.first : null,
+          fontFamilyFallback: families,
+          fontSize: s.fontSize.computedValue,
+          letterSpacing: s.letterSpacing?.computedValue,
+          wordSpacing: s.wordSpacing?.computedValue,
+          height: heightMultiple,
+          locale: CSSText.getLocale(),
+          background: CSSText.getBackground(),
+          foreground: CSSText.getForeground(),
+          shadows: s.textShadow,
+        ));
+        final String runText = _textContent.substring(range.$1, range.$2);
+        mpb.addText(runText);
+        final ui.Paragraph mpara = mpb.build();
+        // Layout with a large width to avoid unintended wrapping; clipping to rects per line keeps us precise.
+        mpara.layout(const ui.ParagraphConstraints(width: 1000000.0));
+
+        // Paint per rect: glyph mask then gradient/color via srcIn.
+        final Rect shaderRect = Rect.fromLTWH(offset.dx + union.left, offset.dy + union.top, union.width, union.height);
+        for (final tb in rects) {
+          final Rect layer = Rect.fromLTWH(offset.dx + tb.left, offset.dy + tb.top, tb.right - tb.left, tb.bottom - tb.top);
+          context.canvas.saveLayer(layer, Paint());
+          context.canvas.clipRect(layer);
+          // Draw the mask paragraph aligned to this fragment's top-left.
+          context.canvas.drawParagraph(mpara, offset.translate(tb.left, tb.top));
+          final Paint p = Paint()..blendMode = BlendMode.srcIn;
+          if (grad != null) {
+            p.shader = grad.createShader(shaderRect);
+            context.canvas.drawRect(layer, p);
+          } else {
+            p.color = bgc!;
+            context.canvas.drawRect(layer, p);
+          }
+          context.canvas.restore();
+        }
+        paintedCount++;
       });
-      if (clipTextCount > 0) {
-        cssLogger.fine('[IFC][bg-clip:text] detected ' + clipTextCount.toString() + ' inline element(s) with clip=text');
-        cssLogger.fine(sb.toString().trim());
+      if (kDebugMode && DebugFlags.enableCssLogs && paintedCount > 0) {
+        cssLogger.fine('[IFC][bg-clip:text] painted inline clip-text elements: $paintedCount');
       }
     }
 
