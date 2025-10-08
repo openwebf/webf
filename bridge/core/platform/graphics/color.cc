@@ -68,9 +68,8 @@ int BlendComponent(int c, int a) {
 // originally moved here from the CSS parser
 template <typename CharacterType>
 inline bool ParseHexColorInternal(const CharacterType* name, unsigned length, Color& color) {
+  // Support 3/6-digit legacy hex and 4/8-digit CSS Color 4 hex (#RGBA/#RRGGBBAA)
   if (length != 3 && length != 4 && length != 6 && length != 8)
-    return false;
-  if ((length == 8 || length == 4))
     return false;
   unsigned value = 0;
   for (unsigned i = 0; i < length; ++i) {
