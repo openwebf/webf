@@ -179,7 +179,8 @@ const ElementAttributesPublicMethods* ElementAttributes::elementAttributesPublic
 }
 
 bool ElementAttributes::hasAttributes() const {
-  return attributes_.empty();
+  // True when at least one attribute exists.
+  return !attributes_.empty();
 }
 
 }  // namespace webf

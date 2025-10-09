@@ -405,9 +405,9 @@ inline Element* Node::parentElement() const {
 }
 
 inline bool Element::hasAttributes() const {
-  // return !Attributes().IsEmpty();
-
-  return !EnsureElementAttributes().hasAttributes();
+  // Correct semantics: true if this element has any attributes.
+  // Prefer the lightweight collection check.
+  return !Attributes().IsEmpty();
 }
 
 inline const AtomicString& Element::IdForStyleResolution() const {

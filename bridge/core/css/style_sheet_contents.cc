@@ -228,6 +228,25 @@ void StyleSheetContents::ParserAppendRule(std::shared_ptr<StyleRuleBase> rule) {
   //    return;
   //  }
 
+  // Debug: log appended style rules and their properties
+  if (rule && rule->IsStyleRule()) {
+    auto style_rule = std::static_pointer_cast<StyleRule>(rule);
+    String selectors_text = style_rule->SelectorsText();
+    WEBF_COND_LOG(STYLESHEET, VERBOSE) << "[StyleSheet] Append style rule: " << selectors_text.ToUTF8String();
+    const CSSPropertyValueSet& props = style_rule->Properties();
+    WEBF_COND_LOG(STYLESHEET, VERBOSE) << "[StyleSheet] Rule property count: " << props.PropertyCount();
+    for (unsigned i = 0; i < props.PropertyCount(); ++i) {
+      auto prop = props.PropertyAt(i);
+      const auto* vptr = prop.Value();
+      std::string name = prop.Name().IsCustomProperty()
+                             ? prop.Name().ToAtomicString().ToUTF8String()
+                             : CSSProperty::Get(prop.Id()).GetPropertyNameString().ToUTF8String();
+      WEBF_COND_LOG(STYLESHEET, VERBOSE) << "  - " << name << ": '"
+                                          << (vptr && *vptr ? (*vptr)->CssText().ToUTF8String() : std::string("<null>"))
+                                          << "'";
+    }
+  }
+
   child_rules_.push_back(rule);
 }
 
