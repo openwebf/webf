@@ -52,6 +52,7 @@
 #include "core/style/grid_area.h"
 #include "foundation/macros.h"
 #include "style_property_shorthand.h"
+#include "foundation/logging.h"
 
 #include <cmath>
 #include <memory>
@@ -2330,6 +2331,10 @@ void AddProperty(CSSPropertyID resolved_property,
     }
   }
 
+  WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] AddProperty name='"
+                    << CSSProperty::Get(resolved_property).GetPropertyNameString().ToUTF8String() << "' from_sh="
+                    << (set_from_shorthand ? "1" : "0") << " value='"
+                    << (value ? value->CssText().ToUTF8String() : std::string("<null>")) << "'";
   properties.emplace_back(CSSPropertyValue(CSSPropertyName(resolved_property), value, important, set_from_shorthand,
                                            shorthand_index, implicit == IsImplicitProperty::kImplicit));
 }
@@ -3605,11 +3610,19 @@ bool ConsumeShorthandVia4Longhands(const StylePropertyShorthand& shorthand,
     left = right;
   }
 
+  WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] AddProperty from shorthand '" << CSSProperty::Get(shorthand.id()).GetPropertyNameString().ToUTF8String()
+                    << "' longhand '" << CSSProperty::Get(longhands[0]->PropertyID()).GetPropertyNameString().ToUTF8String() << "'";
   AddProperty(longhands[0]->PropertyID(), shorthand.id(), top, important, IsImplicitProperty::kNotImplicit, properties);
+  WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] AddProperty from shorthand '" << CSSProperty::Get(shorthand.id()).GetPropertyNameString().ToUTF8String()
+                    << "' longhand '" << CSSProperty::Get(longhands[1]->PropertyID()).GetPropertyNameString().ToUTF8String() << "'";
   AddProperty(longhands[1]->PropertyID(), shorthand.id(), right, important, IsImplicitProperty::kNotImplicit,
               properties);
+  WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] AddProperty from shorthand '" << CSSProperty::Get(shorthand.id()).GetPropertyNameString().ToUTF8String()
+                    << "' longhand '" << CSSProperty::Get(longhands[2]->PropertyID()).GetPropertyNameString().ToUTF8String() << "'";
   AddProperty(longhands[2]->PropertyID(), shorthand.id(), bottom, important, IsImplicitProperty::kNotImplicit,
               properties);
+  WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] AddProperty from shorthand '" << CSSProperty::Get(shorthand.id()).GetPropertyNameString().ToUTF8String()
+                    << "' longhand '" << CSSProperty::Get(longhands[3]->PropertyID()).GetPropertyNameString().ToUTF8String() << "'";
   AddProperty(longhands[3]->PropertyID(), shorthand.id(), left, important, IsImplicitProperty::kNotImplicit,
               properties);
 

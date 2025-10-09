@@ -43,6 +43,7 @@
 #include "find_length_of_declaration_list-inl.h"
 #include "foundation/casting.h"
 #include "foundation/string/wtf_string.h"
+#include "foundation/logging.h"
 
 namespace webf {
 
@@ -176,56 +177,45 @@ CSSTokenizedValue CSSParserImpl::ConsumeRestrictedPropertyValue(CSSParserTokenSt
     return ConsumeValue(stream,
                         [](CSSParserTokenStream& stream) { return stream.ConsumeComponentValueIncludingWhitespace(); });
   }
-  // Otherwise, we consume until we're AtEnd() (which in the normal case
-  // means we hit a kSemicolonToken), or until we see kLeftBraceToken.
-  // The latter is a kind of error state, which is dealt with via additional
-  // AtEnd() checks at the call site.
-  return ConsumeValue(stream,
-                      [](CSSParserTokenStream& stream) { return stream.ConsumeUntilPeekedTypeIs<kLeftBraceToken>(); });
+  // Otherwise, we consume until we reach a token that terminates the value
+  // at top level: '{' (start of nested block), '}' (end of current block),
+  // or ';' (end of declaration). This prevents accidentally capturing
+  // trailing '}' into the original text when values contain var() etc.
+  return ConsumeValue(stream, [](CSSParserTokenStream& stream) {
+    return stream.ConsumeUntilPeekedTypeIs<kLeftBraceToken, kRightBraceToken, kSemicolonToken>();
+  });
 }
 
 static inline void FilterProperties(std::vector<CSSPropertyValue>& values,
                                     size_t& unused_entries,
                                     std::bitset<kNumCSSProperties>& seen_properties,
                                     std::unordered_set<std::string>& seen_custom_properties) {
-  // Move !important declarations last, using a simple insertion sort.
-  // This is O(n²), but n is typically small, and std::stable_partition
-  // wants to allocate memory to get to O(n), which is overkill here.
-  // Moreover, this is O(n) if there are no !important properties
-  // (the common case) or only !important properties.
-  size_t last_nonimportant_idx = values.size() - 1;
-  for (size_t i = values.size(); i--;) {
-    if (values[i].IsImportant()) {
-      if (i != last_nonimportant_idx) {
-        // Move this element to the end, preserving the order
-        // of the other elements.
-        CSSPropertyValue tmp = std::move(values[i]);
-        for (size_t j = i; j < last_nonimportant_idx; ++j) {
-          values[j] = std::move(values[j + 1]);
-        }
-        values[last_nonimportant_idx] = std::move(tmp);
-      }
-      --last_nonimportant_idx;
-    }
-  }
-
-  // Add properties in reverse order so that highest priority definitions are
-  // reached first. Duplicate definitions can then be ignored when found.
+  // Preserve original declaration order. Process in reverse and keep the last
+  // occurrence of each property/custom property. Do NOT reorder !important;
+  // within the same declaration block, the last declaration wins regardless
+  // of importance. Importance is handled later by the cascade engine across
+  // different origins/blocks.
   for (size_t i = values.size(); i--;) {
     const CSSPropertyValue& property = values[i];
+    const std::string pname = property.Name().IsCustomProperty()
+                            ? property.Name().ToAtomicString().ToUTF8String()
+                            : CSSProperty::Get(property.Id()).GetPropertyNameString().ToUTF8String();
     if (property.Id() == CSSPropertyID::kVariable) {
       const std::string& name = property.CustomPropertyName().ToUTF8String();
       if (seen_custom_properties.count(name) > 0) {
+        WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] FilterProperties drop custom '" << name << "' (duplicate)";
         continue;
       }
       seen_custom_properties.insert(name);
     } else {
       const unsigned property_id_index = GetCSSPropertyIDIndex(property.Id());
       if (seen_properties.test(property_id_index)) {
+        WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] FilterProperties drop '" << pname << "' (duplicate seen)";
         continue;
       }
       seen_properties.set(property_id_index);
     }
+    WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] FilterProperties keep '" << pname << "' at i=" << i;
     values[--unused_entries] = property;
   }
 }
@@ -650,6 +640,9 @@ void CSSParserImpl::ConsumeDeclarationList(CSSParserTokenStream& stream,
                                            std::shared_ptr<const StyleRule> parent_rule_for_nesting,
                                            std::vector<std::shared_ptr<StyleRuleBase>>* child_rules) {
   DCHECK(parsed_properties_.empty());
+  WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] Begin ConsumeDeclarationList rule_type=" << static_cast<int>(rule_type)
+                    << ", nesting=" << static_cast<int>(nesting_type)
+                    << ", parent_rule_present=" << (parent_rule_for_nesting ? 1 : 0);
 
   bool is_observer_rule_type = rule_type == StyleRule::kStyle || rule_type == StyleRule::kProperty ||
                                rule_type == StyleRule::kPage || rule_type == StyleRule::kContainer ||
@@ -697,8 +690,12 @@ void CSSParserImpl::ConsumeDeclarationList(CSSParserTokenStream& stream,
         std::shared_ptr<StyleRuleBase> child =
             ConsumeNestedRule(id, rule_type, stream, nesting_type, parent_rule_for_nesting);
         if (child && child_rules) {
+          WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] Nested at-rule encountered; emitting invisible rule from index "
+                            << (invisible_rule_start_index == kNotFound ? -1 : (long long)invisible_rule_start_index)
+                            << " to current size " << parsed_properties_.size();
           EmitInvisibleRuleIfNeeded(parent_rule_for_nesting, invisible_rule_start_index,
                                     CSSSelector::Signal::kBareDeclarationShift, child_rules);
+          WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] Setting invisible_rule_start_index to " << parsed_properties_.size();
           invisible_rule_start_index = parsed_properties_.size();
           child_rules->push_back(child);
         }
@@ -712,6 +709,8 @@ void CSSParserImpl::ConsumeDeclarationList(CSSParserTokenStream& stream,
           CSSParserTokenStream::Boundary boundary(stream, kSemicolonToken);
           consumed_declaration = ConsumeDeclaration(stream, rule_type);
         }
+        WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] After ConsumeDeclaration: parsed_properties_.size="
+                            << parsed_properties_.size();
         if (consumed_declaration) {
           if (!stream.AtEnd()) {
             DCHECK_EQ(stream.UncheckedPeek().GetType(), kSemicolonToken);
@@ -738,8 +737,12 @@ void CSSParserImpl::ConsumeDeclarationList(CSSParserTokenStream& stream,
               ConsumeNestedRule(std::nullopt, rule_type, stream, nesting_type, parent_rule_for_nesting);
           if (child) {
             if (child_rules) {
+              WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] Nested qualified rule encountered; emitting invisible rule from index "
+                                << (invisible_rule_start_index == kNotFound ? -1 : (long long)invisible_rule_start_index)
+                                << " to current size " << parsed_properties_.size();
               EmitInvisibleRuleIfNeeded(parent_rule_for_nesting, invisible_rule_start_index,
                                         CSSSelector::Signal::kBareDeclarationShift, child_rules);
+              WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] Setting invisible_rule_start_index to " << parsed_properties_.size();
               invisible_rule_start_index = parsed_properties_.size();
               child_rules->push_back(child);
             }
@@ -769,6 +772,9 @@ void CSSParserImpl::ConsumeDeclarationList(CSSParserTokenStream& stream,
   // trailing bare declarations.
   EmitInvisibleRuleIfNeeded(parent_rule_for_nesting, invisible_rule_start_index,
                             CSSSelector::Signal::kBareDeclarationShift, child_rules);
+
+  WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] End ConsumeDeclarationList parsed_properties_.size="
+                    << parsed_properties_.size();
 
   if (use_observer) {
     observer_->EndRuleBody(stream.LookAheadOffset());
@@ -835,6 +841,17 @@ static std::shared_ptr<ImmutableCSSPropertyValueSet> CreateCSSPropertyValueSet(
     std::vector<CSSPropertyValue>& parsed_properties,
     CSSParserMode mode,
     const Document* document) {
+  // Debug: list parsed properties before building set
+  if (!parsed_properties.empty()) {
+    WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] Declarations before set (count=" << parsed_properties.size() << ")";
+    for (const auto& pp : parsed_properties) {
+      const CSSPropertyName& n = pp.Name();
+      const auto* vptr = pp.Value();
+    WEBF_COND_LOG(PARSER, VERBOSE) << "  - " << (n.IsCustomProperty() ? n.ToAtomicString().ToUTF8String()
+                            : CSSProperty::Get(n.Id()).GetPropertyNameString().ToUTF8String())
+                      << ": '" << (vptr && *vptr ? (*vptr)->CssText().ToUTF8String() : std::string("<null>")) << "'";
+    }
+  }
   if (mode != kHTMLQuirksMode &&
       (parsed_properties.size() < 2 ||
        (parsed_properties.size() == 2 && parsed_properties[0].Id() != parsed_properties[1].Id()))) {
@@ -843,6 +860,9 @@ static std::shared_ptr<ImmutableCSSPropertyValueSet> CreateCSSPropertyValueSet(
     // bitsets, or similar.
     auto result = ImmutableCSSPropertyValueSet::Create(parsed_properties.data(), parsed_properties.size(), mode);
     parsed_properties.clear();
+    if (result) {
+      WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] Built property set (fast path), count=" << result->PropertyCount();
+    }
     return result;
   }
 
@@ -855,6 +875,9 @@ static std::shared_ptr<ImmutableCSSPropertyValueSet> CreateCSSPropertyValueSet(
   auto result =
       ImmutableCSSPropertyValueSet::Create(parsed_properties.data() + unused_entries, parsed_properties.size() - unused_entries, mode);
   parsed_properties.clear();
+  if (result) {
+    WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] Built property set (filtered), count=" << result->PropertyCount();
+  }
   return result;
 }
 
@@ -863,8 +886,11 @@ std::shared_ptr<StyleRule> CSSParserImpl::ConsumeStyleRuleContents(tcb::span<CSS
   std::shared_ptr<StyleRule> style_rule = StyleRule::Create(selector_vector);
   std::vector<std::shared_ptr<StyleRuleBase>> child_rules;
   child_rules.reserve(4);
-  ConsumeDeclarationList(stream, StyleRule::kStyle, CSSNestingType::kNesting,
-                         /*parent_rule_for_nesting=*/style_rule, &child_rules);
+  // For top-level style rules, do not enable nesting semantics; keep bare
+  // declarations on the main rule to avoid them being siphoned into
+  // invisible rules.
+  ConsumeDeclarationList(stream, StyleRule::kStyle, CSSNestingType::kNone,
+                         /*parent_rule_for_nesting=*/nullptr, &child_rules);
   for (auto&& child_rule : child_rules) {
     style_rule->AddChildRule(child_rule);
   }
@@ -917,6 +943,15 @@ std::shared_ptr<StyleRule> CSSParserImpl::CreateInvisibleRule(const CSSSelector*
   for (auto begin = parsed_properties_.begin() + start_index; begin < parsed_properties_.begin() + end_index; begin++) {
     invisible_declarations.emplace_back(*begin);
   }
+  WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] CreateInvisibleRule with declarations [" << start_index << ", " << end_index
+                    << ") count=" << invisible_declarations.size();
+  for (const auto& pp : invisible_declarations) {
+    const CSSPropertyName& n = pp.Name();
+    const auto* vptr = pp.Value();
+    WEBF_COND_LOG(PARSER, VERBOSE) << "  * " << (n.IsCustomProperty() ? n.ToAtomicString().ToUTF8String()
+                                                    : CSSProperty::Get(n.Id()).GetPropertyNameString().ToUTF8String())
+                      << ": '" << (vptr && *vptr ? (*vptr)->CssText().ToUTF8String() : std::string("<null>")) << "'";
+  }
 
   // Copy the selector list, and mark each CSSSelector (top-level) as invisible.
   // We only strictly need to mark the first CSSSelector in each complex
@@ -960,6 +995,7 @@ void CSSParserImpl::EmitInvisibleRuleIfNeeded(std::shared_ptr<const StyleRule> p
   if (std::shared_ptr<StyleRule> invisible_rule =
           CreateInvisibleRule(parent_rule_for_nesting->FirstSelector(), start_index, end_index, signal)) {
     child_rules->push_back(invisible_rule);
+    WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] Emitted invisible rule for range [" << start_index << ", " << end_index << ")";
   }
 }
 
@@ -1057,6 +1093,8 @@ bool CSSParserImpl::ConsumeDeclaration(CSSParserTokenStream& stream, StyleRule::
 
   DCHECK_EQ(stream.Peek().GetType(), kIdentToken);
   const CSSParserToken& lhs = stream.ConsumeIncludingWhitespace();
+  WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] Found declaration ident '" << lhs.Value().ToUTF8String() << "' at offset "
+                    << decl_offset_start;
   if (stream.Peek().GetType() != kColonToken) {
     return false;  // Parse error.
   }
@@ -1095,11 +1133,8 @@ bool CSSParserImpl::ConsumeDeclaration(CSSParserTokenStream& stream, StyleRule::
         if (rule_type != StyleRule::kStyle && rule_type != StyleRule::kKeyframe) {
           return false;
         }
-        CSSTokenizedValue tokenized_value = ConsumeUnrestrictedPropertyValue(stream);
-        important = RemoveImportantAnnotationIfPresent(tokenized_value);
-        if (important && (rule_type == StyleRule::kKeyframe)) {
-          return false;
-        }
+        // Directly consume the variable value so the token stream remains intact
+        // and the original text (including commas and spaces) is preserved.
         AtomicString variable_name = lhs.Value().ToAtomicString();
         bool allow_important_annotation = (rule_type != StyleRule::kKeyframe);
         bool is_animation_tainted = rule_type == StyleRule::kKeyframe;
@@ -1120,14 +1155,24 @@ bool CSSParserImpl::ConsumeDeclaration(CSSParserTokenStream& stream, StyleRule::
           // tokens ourselves.
           if (parsed_properties_.size() != properties_count) {
             important = parsed_properties_.back().IsImportant();
+            WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] Parsed property '"
+                              << parsed_properties_.back().Name().ToAtomicString().ToUTF8String() << "' = '"
+                              << parsed_properties_.back().Value()->get()->CssText().ToUTF8String() << "'";
           } else {
             stream.Restore(savepoint);
             CSSTokenizedValue tokenized_value = ConsumeRestrictedPropertyValue(stream);
             important = RemoveImportantAnnotationIfPresent(tokenized_value);
+            WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] Fallback capture for property '" << lhs.Value().ToUTF8String()
+                              << "' raw text='" << String(tokenized_value.text).ToUTF8String() << "'";
           }
         } else {
           ConsumeDeclarationValue(stream, unresolved_property,
                                   /*is_in_declaration_list=*/true, rule_type);
+          if (parsed_properties_.size() != properties_count) {
+            WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] Parsed property '"
+                              << parsed_properties_.back().Name().ToAtomicString().ToUTF8String() << "' = '"
+                              << parsed_properties_.back().Value()->get()->CssText().ToUTF8String() << "'";
+          }
         }
       }
     }
