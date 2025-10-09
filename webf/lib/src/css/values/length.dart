@@ -213,11 +213,20 @@ class CSSLengthValue {
         }
         break;
       case CSSLengthType.EX:
-        // Approximate 1ex as a proportion of the element's font-size (em).
-        // Without direct x-height metrics from Flutter, use a 0.5em fallback.
-        // If future font metrics are available, this can be refined.
-        final double emPx = renderStyle!.fontSize.computedValue;
-        _computedValue = value! * (emPx * _exToEmFallbackRatio);
+        // Approximate 1ex via a 0.5em fallback. For font-size itself, resolve
+        // against the parent font size to avoid recursion (per CSS: em/ex in
+        // font-size are relative to the inherited font-size).
+        double baseEmPx;
+        if (realPropertyName == FONT_SIZE) {
+          if (renderStyle!.getParentRenderStyle() == null) {
+            baseEmPx = 16; // default root font size baseline
+          } else {
+            baseEmPx = renderStyle!.getParentRenderStyle()!.fontSize.computedValue;
+          }
+        } else {
+          baseEmPx = renderStyle!.fontSize.computedValue;
+        }
+        _computedValue = value! * (baseEmPx * _exToEmFallbackRatio);
         break;
       case CSSLengthType.REM:
         // If root element set fontSize as rem unit.
