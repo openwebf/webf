@@ -149,6 +149,7 @@ void defineBuiltInElements() {
   defineElement(I, (context) => IdiomaticElement(context));
   defineElement(CODE, (context) => CodeElement(context));
   defineElement(SAMP, (context) => SampleElement(context));
+  defineElement(TT, (context) => TeletypeElement(context));
   defineElement(STRONG, (context) => StrongElement(context));
   defineElement(SMALL, (context) => SmallElement(context));
   defineElement(S, (context) => StrikethroughElement(context));
