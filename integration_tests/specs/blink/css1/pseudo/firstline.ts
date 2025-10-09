@@ -1,5 +1,5 @@
 describe('CSS1 first-line pseudo-element', () => {
-  xit('styles only the first line of paragraphs', async () => {
+  it('styles only the first line of paragraphs', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'assets/resources/base.css';

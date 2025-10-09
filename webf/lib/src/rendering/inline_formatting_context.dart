@@ -10,6 +10,7 @@ import 'dart:ui' as ui
     TextPosition,
     LineMetrics,
     TextStyle,
+    FontFeature,
     TextHeightBehavior,
     TextLeadingDistribution,
     StrutStyle,
@@ -19,6 +20,7 @@ import 'dart:ui' as ui
 import 'package:flutter/rendering.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webf/css.dart';
+import 'package:webf/dom.dart' as dom;
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:logging/logging.dart' show Level;
@@ -3339,7 +3341,7 @@ class InlineFormattingContext {
       }
     }
 
-    final paragraph = pb.build();
+    ui.Paragraph paragraph = pb.build();
     // First layout: choose a sensible width for shaping.
     // If constraints are unbounded, use a large width. If bounded but zero/negative,
     // treat it like unbounded to let content determine natural width instead of 0.
@@ -3680,97 +3682,348 @@ class InlineFormattingContext {
     _placeholderBoxes = paragraph.getBoxesForPlaceholders();
     _paraCharCount = paraPos; // record final character count
 
-    if (false) {
-      // Try to extract intrinsic widths when available on this engine.
-      double? minIntrinsic;
-      double? maxIntrinsic;
-      try {
-        minIntrinsic = (paragraph as dynamic).minIntrinsicWidth as double?;
-      } catch (_) {}
-      try {
-        maxIntrinsic = (paragraph as dynamic).maxIntrinsicWidth as double?;
-      } catch (_) {}
-
-      renderingLogger.fine(
-          '[IFC] paragraph: width=${paragraph.width.toStringAsFixed(2)} height=${paragraph.height.toStringAsFixed(2)} '
-              'longestLine=${paragraph.longestLine.toStringAsFixed(2)} maxLines=${style.lineClamp} exceeded=${paragraph
-              .didExceedMaxLines}');
-      if (minIntrinsic != null || maxIntrinsic != null) {
-        renderingLogger.fine('[IFC] intrinsic: min=${(minIntrinsic ?? double.nan).toStringAsFixed(2)} '
-            'max=${(maxIntrinsic ?? double.nan).toStringAsFixed(2)}');
-      }
-      // Log flags related to break avoidance in scrollable containers.
-      renderingLogger.fine(
-          '[IFC] flags: avoidWordBreakInScrollableX=${_avoidWordBreakInScrollableX} whiteSpace=${style.whiteSpace}');
-      for (int i = 0; i < _paraLines.length; i++) {
-        final lm = _paraLines[i];
-        renderingLogger.finer(
-            '  [line $i] baseline=${lm.baseline.toStringAsFixed(2)} height=${lm.height.toStringAsFixed(2)} '
-                'ascent=${lm.ascent.toStringAsFixed(2)} descent=${lm.descent.toStringAsFixed(2)} left=${lm.left
-                .toStringAsFixed(2)} width=${lm.width.toStringAsFixed(2)}');
-      }
-      // Log all placeholders including extras (left/right/empty) and atomics
-      for (int i = 0; i < _placeholderBoxes.length && i < _allPlaceholders.length; i++) {
-        final tb = _placeholderBoxes[i];
-        final ph = _allPlaceholders[i];
-        final kind = ph.kind
-            .toString()
-            .split('.')
-            .last;
-        String ownerDesc = 'n/a';
-        if (ph.owner != null) ownerDesc = _getElementDescription(ph.owner!);
-        double height = tb.bottom - tb.top;
-        final li = _lineIndexForRect(tb);
-        String lineStr = '';
-        if (li >= 0) {
-          final lm = _paraLines[li];
-          final lt = lm.baseline - lm.ascent;
-          final lb = lm.baseline + lm.descent;
-          final dt = tb.top - lt;
-          final db = lb - tb.bottom;
-          lineStr = ' line=$li lineTop=${lt.toStringAsFixed(2)} lineBottom=${lb.toStringAsFixed(2)} '
-              'topDelta=${dt.toStringAsFixed(2)} bottomDelta=${db.toStringAsFixed(2)}';
+    // Apply ::first-line by rebuilding the paragraph with per-range overrides
+    // once we know the first line break position for the final layout width.
+    final ownerEl0 = (container as RenderBoxModel).renderStyle.target;
+    final CSSStyleDeclaration? firstLineDecl = ownerEl0.style.pseudoFirstLineStyle;
+    if (firstLineDecl != null && _paraLines.isNotEmpty) {
+      // Determine code-unit end index of the first layout line via binary search on getBoxesForRange.
+      int loIdx = 1;
+      int hiIdx = _paraCharCount;
+      int firstLineLimit = 0;
+      while (loIdx <= hiIdx) {
+        final int mid = loIdx + ((hiIdx - loIdx) >> 1);
+        final boxes = paragraph.getBoxesForRange(0, mid);
+        if (boxes.isEmpty) {
+          loIdx = mid + 1;
+          continue;
         }
-        if (ph.kind == _PHKind.leftExtra && ph.owner != null) {
-          final (h, b) = _measureTextMetricsFor(ph.owner!.renderStyle);
-          final effLH = _effectiveLineHeightPx(ph.owner!.renderStyle);
-          renderingLogger.finer(
-              '  [ph $i] kind=$kind owner=<$ownerDesc> rect=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(
-                  2)} - ${tb.right.toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)}) '
-                  'h=${height.toStringAsFixed(2)} metrics(height=${h.toStringAsFixed(2)}, baselineOffset=${b
-                  .toStringAsFixed(2)}, effLineHeight=${effLH.toStringAsFixed(2)})$lineStr');
+        final int lastLine = _lineIndexForRect(boxes.last);
+        if (lastLine == 0) {
+          firstLineLimit = mid; // mid still on first line
+          loIdx = mid + 1;
         } else {
-          String childDesc = '';
-          if (ph.kind == _PHKind.atomic && i < _placeholderOrder.length) {
-            final rb = _placeholderOrder[i];
-            childDesc = ' child=<${_getElementDescription(rb is RenderBoxModel ? rb : null)}>';
-          }
-          renderingLogger.finer(
-              '  [ph $i] kind=$kind owner=<$ownerDesc> rect=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(
-                  2)} - ${tb.right.toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)}) '
-                  'h=${height.toStringAsFixed(2)}$childDesc$lineStr');
+          hiIdx = mid - 1;
         }
       }
-      // Log element ranges
-      _elementRanges.forEach((rb, range) {
-        renderingLogger.finer('  [range] <${_getElementDescription(rb)}> ${range.$1}..${range.$2}');
-        final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
-        for (int i = 0; i < rects.length && i < 4; i++) {
-          final tb = rects[i];
-          final li = _lineIndexForRect(tb);
-          if (li >= 0) {
-            final lm = _paraLines[li];
-            final lt = lm.baseline - lm.ascent;
-            final lb = lm.baseline + lm.descent;
-            final dt = tb.top - lt;
-            final db = lb - tb.bottom;
-            renderingLogger.finer(
-                '    [frag $i] tb=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(2)} - ${tb.right
-                    .toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)}) '
-                    '→ line=$li topDelta=${dt.toStringAsFixed(2)} bottomDelta=${db.toStringAsFixed(2)}');
+
+      // Rebuild: reset placeholder/order state and rebuild text with overrides
+      _placeholderOrder.clear();
+      _allPlaceholders.clear();
+      _textRunParas = <ui.Paragraph?>[];
+      _textRunBuildIndex = 0;
+      _atomicBuildIndex = 0;
+      _elementRanges.clear();
+
+      final List<_OpenInlineFrame> openFrames2 = [];
+      int paraPos2 = 0;
+      int firstLineRemaining = firstLineLimit;
+
+      // Helper to push first-line override style (color, font-size, small-caps)
+      ui.TextStyle? _firstLineOverrideFor(CSSRenderStyle base) {
+        Color? ovColor;
+        double? ovFontSize;
+        List<ui.FontFeature>? ovFeatures;
+        final String colorVal = firstLineDecl.getPropertyValue(COLOR);
+        if (colorVal.isNotEmpty) {
+          ovColor = CSSColor.parseColor(colorVal, renderStyle: base, propertyName: COLOR);
+        }
+        final String fsVal = firstLineDecl.getPropertyValue(FONT_SIZE);
+        if (fsVal.isNotEmpty) {
+          final CSSLengthValue parsed = CSSLength.parseLength(fsVal, base, FONT_SIZE);
+          final double comp = parsed.computedValue;
+          if (comp.isFinite && comp > 0) ovFontSize = comp;
+        }
+        String fvVal = firstLineDecl.getPropertyValue('fontVariant');
+        if (fvVal.isEmpty) {
+          fvVal = firstLineDecl.getPropertyValue('font-variant');
+        }
+        if (fvVal.isNotEmpty && fvVal.contains('small-caps')) {
+          ovFeatures = const [ui.FontFeature.enable('smcp')];
+        }
+        if (ovColor != null || ovFontSize != null || ovFeatures != null) {
+          return ui.TextStyle(color: ovColor, fontSize: ovFontSize, fontFeatures: ovFeatures);
+        }
+        return null;
+      }
+
+      final pb2 = ui.ParagraphBuilder(ui.ParagraphStyle(
+        textAlign: style.textAlign,
+        textDirection: style.direction,
+        maxLines: _effectiveMaxLines,
+        ellipsis: style.effectiveTextOverflow == TextOverflow.ellipsis ? '\u2026' : null,
+        textHeightBehavior: const ui.TextHeightBehavior(
+          applyHeightToFirstAscent: true,
+          applyHeightToLastDescent: true,
+          leadingDistribution: ui.TextLeadingDistribution.even,
+        ),
+        strutStyle: _paragraphStrut,
+      ));
+
+      // Re-run inline items building with overrides applied to text in the first line range.
+      final List<RenderBox?> placeholderOrder2 = _placeholderOrder; // alias for readability
+      final Map<RenderBoxModel, (int start, int end)> elementRanges2 = _elementRanges;
+
+      for (final item in _items) {
+        if (item.isOpenTag) {
+          final box = item.renderBox as RenderBoxModel?;
+          if (box != null) {
+            openFrames2.add(_OpenInlineFrame(box, leftExtras: 0.0, rightExtras: 0.0));
+          }
+        } else if (item.isCloseTag) {
+          if (openFrames2.isNotEmpty) {
+            final frame = openFrames2.removeLast();
+            if (!frame.hadContent) {
+              // Empty inline: skip extras per earlier logic
+            }
+          }
+        } else if (item.isAtomicInline) {
+          // Mirror the atomic placeholder logic
+          final RenderBoxModel rb = item.renderBox as RenderBoxModel;
+          final CSSRenderStyle rbStyle = rb.renderStyle;
+          final (double height, double? baselineOffset) = _measureTextMetricsFor(rbStyle);
+          final double mL = rbStyle.marginLeft.computedValue;
+          final double mR = rbStyle.marginRight.computedValue;
+          final double mT = rbStyle.marginTop.computedValue;
+          final double mB = rbStyle.marginBottom.computedValue;
+          final double width = math.max(0.0, (rb.boxSize?.width ?? (rb.hasSize ? rb.size.width : 0.0)) + mL + mR);
+          final ui.PlaceholderAlignment align = _placeholderAlignmentFromCss(rbStyle.verticalAlign);
+          double? baseline = baselineOffset;
+          if (baseline == null) baseline = height; // fallback
+          pb2.addPlaceholder(width, height, align,
+              baseline: TextBaseline.alphabetic, baselineOffset: baseline);
+          placeholderOrder2.add(rb);
+          _allPlaceholders.add(_InlinePlaceholder.atomic(rb));
+          _textRunParas.add(null);
+          if (rbStyle.verticalAlign != VerticalAlign.baseline) {
+            _atomicBuildIndex += 1;
+          }
+          paraPos2 += 1;
+          if (firstLineRemaining > 0) firstLineRemaining -= 1;
+        } else if (item.isText) {
+          String text = item.getText(_textContent);
+          if (text.isEmpty || item.style == null) continue;
+          if (openFrames2.isNotEmpty) {
+            for (final f in openFrames2) f.hadContent = true;
+            _flushPendingLeftExtras();
+          }
+          pb2.pushStyle(_uiTextStyleFromCss(item.style!));
+          if (firstLineRemaining > 0) {
+            final ui.TextStyle? ov = _firstLineOverrideFor(item.style!);
+            if (ov != null) {
+              if (firstLineRemaining >= text.length) {
+                pb2.pushStyle(ov);
+                pb2.addText(text);
+                pb2.pop();
+                firstLineRemaining -= text.length;
+              } else if (firstLineRemaining > 0) {
+                final int n = firstLineRemaining;
+                pb2.pushStyle(ov);
+                pb2.addText(text.substring(0, n));
+                pb2.pop();
+                if (n < text.length) pb2.addText(text.substring(n));
+                firstLineRemaining = 0;
+              }
+            } else {
+              // No supported overrides; just emit and consume
+              final int n = math.min(firstLineRemaining, text.length);
+              pb2.addText(text);
+              firstLineRemaining -= n;
+            }
+          } else {
+            pb2.addText(text);
+          }
+          pb2.pop();
+          paraPos2 += text.length;
+        } else if (item.type == InlineItemType.control) {
+          final text = item.getText(_textContent);
+          if (text.isEmpty) continue;
+          if (openFrames2.isNotEmpty) {
+            for (final f in openFrames2) f.hadContent = true;
+            _flushPendingLeftExtras();
+          }
+          pb2.pushStyle(_uiTextStyleFromCss(style));
+          pb2.addText(text);
+          pb2.pop();
+          paraPos2 += text.length;
+          if (firstLineRemaining > 0) firstLineRemaining -= math.min(firstLineRemaining, text.length);
+        }
+      }
+
+      paragraph = pb2.build();
+      // Re-run width selection and layout logic for the rebuilt paragraph
+      double initialWidth2 = constraints.hasBoundedWidth ? constraints.maxWidth : paragraph.longestLine;
+      if (initialWidth2 <= 0) initialWidth2 = paragraph.longestLine;
+      paragraph.layout(ui.ParagraphConstraints(width: initialWidth2));
+
+      if (isBlockLike) {
+        if (!constraints.hasBoundedWidth) {
+          final double targetWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
+              ? fallbackContentMaxWidth!
+              : paragraph.longestLine;
+          paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
+        } else if (constraints.maxWidth <= 0) {
+          final double targetWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
+              ? fallbackContentMaxWidth!
+              : paragraph.longestLine;
+          paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
+        }
+      } else {
+        final double targetWidth = math.min(
+            paragraph.longestLine, constraints.maxWidth.isFinite ? constraints.maxWidth : paragraph.longestLine);
+        if (targetWidth != initialWidth2) {
+          paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
+        }
+      }
+
+      _paragraph = paragraph;
+      _paraLines = paragraph.computeLineMetrics();
+      _placeholderBoxes = paragraph.getBoxesForPlaceholders();
+      _paraCharCount = paraPos2;
+
+      // One correction pass: if applying first-line overrides changed the
+      // first-line end index, rebuild once more so only the actual first line
+      // is styled.
+      int loFix = 1;
+      int hiFix = _paraCharCount;
+      int correctedLimit = 0;
+      while (loFix <= hiFix) {
+        final int mid = loFix + ((hiFix - loFix) >> 1);
+        final boxes = paragraph.getBoxesForRange(0, mid);
+        if (boxes.isEmpty) {
+          loFix = mid + 1;
+          continue;
+        }
+        final int lastLine = _lineIndexForRect(boxes.last);
+        if (lastLine == 0) {
+          correctedLimit = mid;
+          loFix = mid + 1;
+        } else {
+          hiFix = mid - 1;
+        }
+      }
+
+      if (correctedLimit != firstLineLimit) {
+        // Rebuild pb3 with corrected limit
+        final pb3 = ui.ParagraphBuilder(ui.ParagraphStyle(
+          textAlign: style.textAlign,
+          textDirection: style.direction,
+          maxLines: _effectiveMaxLines,
+          ellipsis: style.effectiveTextOverflow == TextOverflow.ellipsis ? '\u2026' : null,
+          textHeightBehavior: const ui.TextHeightBehavior(
+            applyHeightToFirstAscent: true,
+            applyHeightToLastDescent: true,
+            leadingDistribution: ui.TextLeadingDistribution.even,
+          ),
+          strutStyle: _paragraphStrut,
+        ));
+
+        openFrames2.clear();
+        placeholderOrder2.clear();
+        _allPlaceholders.clear();
+        _textRunParas = <ui.Paragraph?>[];
+        _textRunBuildIndex = 0;
+        _atomicBuildIndex = 0;
+        elementRanges2.clear();
+
+        int firstRemain3 = correctedLimit;
+        int paraPos3 = 0;
+        for (final item in _items) {
+          if (item.isOpenTag) {
+            final box = item.renderBox as RenderBoxModel?;
+            if (box != null) openFrames2.add(_OpenInlineFrame(box, leftExtras: 0.0, rightExtras: 0.0));
+          } else if (item.isCloseTag) {
+            if (openFrames2.isNotEmpty) {
+              final frame = openFrames2.removeLast();
+              if (!frame.hadContent) {}
+            }
+          } else if (item.isAtomicInline) {
+            final RenderBoxModel rb = item.renderBox as RenderBoxModel;
+            final CSSRenderStyle rbStyle = rb.renderStyle;
+            final (double height, double? baselineOffset) = _measureTextMetricsFor(rbStyle);
+            final double mL = rbStyle.marginLeft.computedValue;
+            final double mR = rbStyle.marginRight.computedValue;
+            final double width = math.max(0.0, (rb.boxSize?.width ?? (rb.hasSize ? rb.size.width : 0.0)) + mL + mR);
+            final ui.PlaceholderAlignment align = _placeholderAlignmentFromCss(rbStyle.verticalAlign);
+            final double base = baselineOffset ?? height;
+            pb3.addPlaceholder(width, height, align, baseline: TextBaseline.alphabetic, baselineOffset: base);
+            placeholderOrder2.add(rb);
+            _allPlaceholders.add(_InlinePlaceholder.atomic(rb));
+            _textRunParas.add(null);
+            if (rbStyle.verticalAlign != VerticalAlign.baseline) _atomicBuildIndex += 1;
+            paraPos3 += 1;
+            if (firstRemain3 > 0) firstRemain3 -= 1;
+          } else if (item.isText) {
+            String text = item.getText(_textContent);
+            if (text.isEmpty || item.style == null) continue;
+            if (openFrames2.isNotEmpty) {
+              for (final f in openFrames2) f.hadContent = true;
+              _flushPendingLeftExtras();
+            }
+            pb3.pushStyle(_uiTextStyleFromCss(item.style!));
+            if (firstRemain3 > 0) {
+              final ui.TextStyle? ov = _firstLineOverrideFor(item.style!);
+              if (ov != null) {
+                if (firstRemain3 >= text.length) {
+                  pb3.pushStyle(ov);
+                  pb3.addText(text);
+                  pb3.pop();
+                  firstRemain3 -= text.length;
+                } else if (firstRemain3 > 0) {
+                  final int n = firstRemain3;
+                  pb3.pushStyle(ov);
+                  pb3.addText(text.substring(0, n));
+                  pb3.pop();
+                  if (n < text.length) pb3.addText(text.substring(n));
+                  firstRemain3 = 0;
+                }
+              } else {
+                final int n = math.min(firstRemain3, text.length);
+                pb3.addText(text);
+                firstRemain3 -= n;
+              }
+            } else {
+              pb3.addText(text);
+            }
+            pb3.pop();
+            paraPos3 += text.length;
+          } else if (item.type == InlineItemType.control) {
+            final text = item.getText(_textContent);
+            if (text.isEmpty) continue;
+            if (openFrames2.isNotEmpty) {
+              for (final f in openFrames2) f.hadContent = true;
+              _flushPendingLeftExtras();
+            }
+            pb3.pushStyle(_uiTextStyleFromCss(style));
+            pb3.addText(text);
+            pb3.pop();
+            paraPos3 += text.length;
+            if (firstRemain3 > 0) firstRemain3 -= math.min(firstRemain3, text.length);
           }
         }
-      });
+
+        paragraph = pb3.build();
+        double initialWidth3 = constraints.hasBoundedWidth ? constraints.maxWidth : paragraph.longestLine;
+        if (initialWidth3 <= 0) initialWidth3 = paragraph.longestLine;
+        paragraph.layout(ui.ParagraphConstraints(width: initialWidth3));
+        if (isBlockLike) {
+          if (!constraints.hasBoundedWidth || constraints.maxWidth <= 0) {
+            final double targetWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
+                ? fallbackContentMaxWidth!
+                : paragraph.longestLine;
+            paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
+          }
+        } else {
+          final double targetWidth = math.min(
+              paragraph.longestLine, constraints.maxWidth.isFinite ? constraints.maxWidth : paragraph.longestLine);
+          if (targetWidth != initialWidth3) paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
+        }
+
+        _paragraph = paragraph;
+        _paraLines = paragraph.computeLineMetrics();
+        _placeholderBoxes = paragraph.getBoxesForPlaceholders();
+        _paraCharCount = paraPos3;
+      }
     }
 
     _paragraphShapedWithHugeWidth = shapedWithHugeWidth;

@@ -263,8 +263,8 @@ class SelectorEvaluator extends SelectorVisitor {
       case 'before':
       case 'after':
       case 'first-letter':
-        return true;
       case 'first-line':
+        return true;
       default:
         return false;
     }

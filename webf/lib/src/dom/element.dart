@@ -998,6 +998,19 @@ abstract class Element extends ContainerNode
     _shouldFirstLetterPseudoNeedsUpdate = false;
   }
 
+  // ::first-line pseudo update trigger
+  bool _shouldFirstLinePseudoNeedsUpdate = false;
+  void markFirstLinePseudoNeedsUpdate() {
+    if (_shouldFirstLinePseudoNeedsUpdate) return;
+    _shouldFirstLinePseudoNeedsUpdate = true;
+    Future.microtask(_updateFirstLinePseudo);
+  }
+
+  void _updateFirstLinePseudo() {
+    renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
+    _shouldFirstLinePseudoNeedsUpdate = false;
+  }
+
   @override
   void dispose() async {
     renderStyle.detach();
