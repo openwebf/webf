@@ -3,7 +3,7 @@ describe('CSS1 font-size', () => {
     const p = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('/* No font-size specified - browser default */'));
     const hr = createElement('hr', {}, []);
-    
+
     const unstyled = createElementWithStyle('p', {
       margin: '10px 0'
     }, [
@@ -22,7 +22,7 @@ describe('CSS1 font-size', () => {
     const p = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('p {font-size: medium;}'));
     const hr = createElement('hr', {}, []);
-    
+
     const one = createElementWithStyle('p', {
       fontSize: 'medium',
       margin: '10px 0'
@@ -42,7 +42,7 @@ describe('CSS1 font-size', () => {
     const p = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('p {font-size: larger;}'));
     const hr = createElement('hr', {}, []);
-    
+
     const two = createElementWithStyle('p', {
       fontSize: 'larger',
       margin: '10px 0'
@@ -62,7 +62,7 @@ describe('CSS1 font-size', () => {
     const p = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('p {font-size: smaller;}'));
     const hr = createElement('hr', {}, []);
-    
+
     const three = createElementWithStyle('p', {
       fontSize: 'smaller',
       margin: '10px 0'
@@ -82,13 +82,13 @@ describe('CSS1 font-size', () => {
     const p = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('p {font-size: xx-small;} span {font-size: medium;}'));
     const hr = createElement('hr', {}, []);
-    
+
     const fourSpan = createElementWithStyle('span', {
       fontSize: 'medium'
     }, [
       createText('medium')
     ]);
-    
+
     const four = createElementWithStyle('p', {
       fontSize: 'xx-small',
       margin: '10px 0'
@@ -110,13 +110,13 @@ describe('CSS1 font-size', () => {
     const p = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('p {font-size: x-small;} span {font-size: medium;}'));
     const hr = createElement('hr', {}, []);
-    
+
     const fiveSpan = createElementWithStyle('span', {
       fontSize: 'medium'
     }, [
       createText('medium')
     ]);
-    
+
     const five = createElementWithStyle('p', {
       fontSize: 'x-small',
       margin: '10px 0'
@@ -138,13 +138,13 @@ describe('CSS1 font-size', () => {
     const p = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('p {font-size: small;} span {font-size: medium;}'));
     const hr = createElement('hr', {}, []);
-    
+
     const sixSpan = createElementWithStyle('span', {
       fontSize: 'medium'
     }, [
       createText('medium')
     ]);
-    
+
     const six = createElementWithStyle('p', {
       fontSize: 'small',
       margin: '10px 0'
@@ -166,13 +166,13 @@ describe('CSS1 font-size', () => {
     const p = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('p {font-size: large;} span {font-size: medium;}'));
     const hr = createElement('hr', {}, []);
-    
+
     const sevenSpan = createElementWithStyle('span', {
       fontSize: 'medium'
     }, [
       createText('medium')
     ]);
-    
+
     const seven = createElementWithStyle('p', {
       fontSize: 'large',
       margin: '10px 0'
@@ -194,13 +194,13 @@ describe('CSS1 font-size', () => {
     const p = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('p {font-size: x-large;} span {font-size: medium;}'));
     const hr = createElement('hr', {}, []);
-    
+
     const eightSpan = createElementWithStyle('span', {
       fontSize: 'medium'
     }, [
       createText('medium')
     ]);
-    
+
     const eight = createElementWithStyle('p', {
       fontSize: 'x-large',
       margin: '10px 0'
@@ -222,13 +222,13 @@ describe('CSS1 font-size', () => {
     const p = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('p {font-size: xx-large;} span {font-size: medium;}'));
     const hr = createElement('hr', {}, []);
-    
+
     const nineSpan = createElementWithStyle('span', {
       fontSize: 'medium'
     }, [
       createText('medium')
     ]);
-    
+
     const nine = createElementWithStyle('p', {
       fontSize: 'xx-large',
       margin: '10px 0'
@@ -250,7 +250,7 @@ describe('CSS1 font-size', () => {
     const p = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('p {font-size: 0.5in;}'));
     const hr = createElement('hr', {}, []);
-    
+
     const a = createElementWithStyle('p', {
       fontSize: '0.5in',
       margin: '10px 0'
@@ -270,7 +270,7 @@ describe('CSS1 font-size', () => {
     const p = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('p {font-size: 1cm;}'));
     const hr = createElement('hr', {}, []);
-    
+
     const b = createElementWithStyle('p', {
       fontSize: '1cm',
       margin: '10px 0'
@@ -290,7 +290,7 @@ describe('CSS1 font-size', () => {
     const p = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('p {font-size: 10mm;}'));
     const hr = createElement('hr', {}, []);
-    
+
     const c = createElementWithStyle('p', {
       fontSize: '10mm',
       margin: '10px 0'
@@ -310,7 +310,7 @@ describe('CSS1 font-size', () => {
     const p = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('p {font-size: 18pt;}'));
     const hr = createElement('hr', {}, []);
-    
+
     const d = createElementWithStyle('p', {
       fontSize: '18pt',
       margin: '10px 0'
@@ -330,7 +330,7 @@ describe('CSS1 font-size', () => {
     const p = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('p {font-size: 1.5pc;}'));
     const hr = createElement('hr', {}, []);
-    
+
     const e = createElementWithStyle('p', {
       fontSize: '1.5pc',
       margin: '10px 0'
@@ -350,7 +350,7 @@ describe('CSS1 font-size', () => {
     const p = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('p {font-size: 2em;}'));
     const hr = createElement('hr', {}, []);
-    
+
     const f = createElementWithStyle('p', {
       fontSize: '2em',
       margin: '10px 0'
@@ -370,7 +370,7 @@ describe('CSS1 font-size', () => {
     const p = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('p {font-size: 3ex;}'));
     const hr = createElement('hr', {}, []);
-    
+
     const g = createElementWithStyle('p', {
       fontSize: '3ex',
       margin: '10px 0'
@@ -390,7 +390,7 @@ describe('CSS1 font-size', () => {
     const p = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('p {font-size: 25px;}'));
     const hr = createElement('hr', {}, []);
-    
+
     const h = createElementWithStyle('p', {
       fontSize: '25px',
       margin: '10px 0'
@@ -410,7 +410,7 @@ describe('CSS1 font-size', () => {
     const p = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('p {font-size: 200%;}'));
     const hr = createElement('hr', {}, []);
-    
+
     const i = createElementWithStyle('p', {
       fontSize: '200%',
       margin: '10px 0'
@@ -430,7 +430,7 @@ describe('CSS1 font-size', () => {
     const p = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('p {font-size: -0.5in;}'));
     const hr = createElement('hr', {}, []);
-    
+
     const j = createElementWithStyle('p', {
       fontSize: '-0.5in',
       margin: '10px 0'

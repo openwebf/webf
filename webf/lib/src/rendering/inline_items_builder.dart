@@ -78,6 +78,17 @@ class InlineItemsBuilder {
 
     _collectInlines(container);
 
+    // HTML PRE end-trim: If building a PRE formatting context, trim a trailing
+    // indentation-only line (spaces/tabs before the close tag) and a single
+    // final line feed, if present. This matches browser behavior where authors
+    // often indent the closing </pre> and don't expect an extra blank line.
+    if (container is RenderBoxModel) {
+      final String? _tag = container.renderStyle.target.tagName;
+      if (_tag == 'PRE') {
+        _trimTrailingIndentAndNewlineForPre();
+      }
+    }
+
     // Add final close tags for any unclosed boxes
     while (_boxStack.isNotEmpty) {
       _addCloseTag(_boxStack.removeLast());
@@ -390,6 +401,80 @@ class InlineItemsBuilder {
   String _processWhiteSpace(String text, CSSRenderStyle style) {
     // Use the new WhitespaceProcessor for Phase I processing
     return WhitespaceProcessor.processPhaseOne(text, style.whiteSpace);
+  }
+
+  /// Trim a trailing indentation-only line and one trailing newline
+  /// for PRE elements. Implementation details:
+  /// 1) Remove trailing spaces/tabs at end of the text buffer.
+  /// 2) If there was at least one space/tab removed and the preceding
+  ///    character is a line feed, remove that single line feed as well.
+  /// 3) Otherwise (no trailing spaces/tabs), still remove a single
+  ///    trailing line feed if present at the very end.
+  /// After trimming, clamp all item offsets to the new text length so
+  /// subsequent substring() operations remain valid.
+  void _trimTrailingIndentAndNewlineForPre() {
+    final String current = _textContent.toString();
+    if (current.isEmpty) return;
+
+    int end = current.length;
+
+    // 1) Remove trailing spaces/tabs at the very end (indentation before </pre>)
+    int i = end - 1;
+    while (i >= 0) {
+      final int cu = current.codeUnitAt(i);
+      if (cu == WhitespaceProcessor.SPACE || cu == WhitespaceProcessor.TAB) {
+        i--;
+        continue;
+      }
+      break;
+    }
+
+    bool removedIndent = i < end - 1;
+
+    // 2) If we removed indentation and the preceding char is a line feed, drop it too.
+    if (removedIndent && i >= 0 && current.codeUnitAt(i) == WhitespaceProcessor.LINE_FEED) {
+      end = i; // trim to just before the line feed
+    } else {
+      // 3) If no indentation removed, still trim a single terminal LF if present
+      if (end > 0 && current.codeUnitAt(end - 1) == WhitespaceProcessor.LINE_FEED) {
+        end = end - 1;
+      }
+    }
+
+    // If nothing to trim, bail.
+    if (end == current.length) return;
+
+    // Rebuild the text buffer to the trimmed content.
+    final String trimmed = current.substring(0, end);
+    _textContent
+      ..clear()
+      ..write(trimmed);
+
+    // Clamp all item offsets to the new content length.
+    if (items.isNotEmpty) {
+      final int newLen = end;
+      final List<InlineItem> adjusted = <InlineItem>[];
+      for (final it in items) {
+        int ns = it.startOffset;
+        int ne = it.endOffset;
+        if (ns > newLen) ns = newLen;
+        if (ne > newLen) ne = newLen;
+        if (ne < ns) ne = ns;
+        final ni = InlineItem(
+          type: it.type,
+          startOffset: ns,
+          endOffset: ne,
+          renderBox: it.renderBox,
+          style: it.style,
+          bidiLevel: it.bidiLevel,
+        );
+        ni.direction = it.direction;
+        adjusted.add(ni);
+      }
+      items
+        ..clear()
+        ..addAll(adjusted);
+    }
   }
 
   /// Add line break opportunity.
