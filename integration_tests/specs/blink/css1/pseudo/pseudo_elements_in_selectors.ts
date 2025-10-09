@@ -1,5 +1,5 @@
 describe('CSS1 pseudo-elements in selectors', () => {
-  xit('treats :first-line placement correctly', async () => {
+  it('treats :first-line placement correctly', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'assets/resources/base.css';

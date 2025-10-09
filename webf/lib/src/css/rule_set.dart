@@ -78,6 +78,22 @@ class RuleSet {
 
   // indexed by selectorText
   void findBestRuleSetAndAdd(Selector selector, CSSRule rule) {
+    // Enforce CSS rule: a pseudo-element must be the last simple selector
+    // in a compound selector. If any simple selector appears after a
+    // pseudo-element, the selector is invalid and must not match.
+    final List<SimpleSelectorSequence> seqs = selector.simpleSelectorSequences;
+    for (int i = 0; i < seqs.length; i++) {
+      final s = seqs[i].simpleSelector;
+      if (s is PseudoElementSelector || s is PseudoElementFunctionSelector) {
+        if (i != seqs.length - 1) {
+          // Invalid selector like `P:first-line.three`; drop this rule.
+          return;
+        }
+        // At most one pseudo-element; any additional would be handled by parser.
+        break;
+      }
+    }
+
     String? id, className, attributeName, tagName, pseudoName;
 
     for (final simpleSelectorSequence in selector.simpleSelectorSequences.reversed) {
