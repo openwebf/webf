@@ -1,5 +1,5 @@
 describe('CSS1 multiple pseudo-elements', () => {
-  xit('applies first-line and first-letter together', async () => {
+  it('applies first-line and first-letter together', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'assets/resources/base.css';
@@ -31,6 +31,12 @@ P.three:first-line {font-variant: small-caps;}
       <p class="two">The first letter of this paragraph, and only that one, should be 350% bigger than the rest of the first line of this paragraph and maroon (dark red), while the entire first line should be 200% bigger than normal and green. If this precise combination does not occur, then the user agent has failed this test. Remember that in order to ensure a complete test, the paragraph must be displayed on more than one line.</p>
       <p class="three">"We should check for quotation support," it was said. The first two characters in this paragraph-- a double-quote mark and a capital 'W'-- should be 350% bigger than the rest of the paragraph, and maroon (dark red). Note that the inclusion of both the quotation mark and the 'W' in the first-letter style is not required under CSS1, but it is recommended. In addition, the entire first line should be in a small-caps font and green.</p>
     `;
+
+      await snapshot();
+
+      window.scroll(0, 500);
+
+      await waitForFrame();
 
       await snapshot();
   });

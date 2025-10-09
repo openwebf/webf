@@ -3718,6 +3718,8 @@ class InlineFormattingContext {
       final List<_OpenInlineFrame> openFrames2 = [];
       int paraPos2 = 0;
       int firstLineRemaining = firstLineLimit;
+      bool firstLetterApplied2 = false;
+      final CSSStyleDeclaration? firstLetterDecl = ownerEl0.style.pseudoFirstLetterStyle;
 
       // Helper to push first-line override style (color, font-size, small-caps)
       ui.TextStyle? _firstLineOverrideFor(CSSRenderStyle base) {
@@ -3809,29 +3811,96 @@ class InlineFormattingContext {
           }
           pb2.pushStyle(_uiTextStyleFromCss(item.style!));
           if (firstLineRemaining > 0) {
-            final ui.TextStyle? ov = _firstLineOverrideFor(item.style!);
-            if (ov != null) {
-              if (firstLineRemaining >= text.length) {
-                pb2.pushStyle(ov);
+            final int segLen = math.min(firstLineRemaining, text.length);
+            final ui.TextStyle? flOv = _firstLineOverrideFor(item.style!);
+
+            int _prefixLenFor(String s) {
+              if (s.isEmpty) return 0;
+              int c0 = s.codeUnitAt(0);
+              bool isAsciiLetter(int c) => (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
+              bool isQuote(int c) => c == 0x22 || c == 0x27 || c == 0x201C || c == 0x201D || c == 0x2018 || c == 0x2019;
+              if (isQuote(c0) && s.length >= 2 && isAsciiLetter(s.codeUnitAt(1))) return 2;
+              if (isAsciiLetter(c0)) return 1;
+              return 0;
+            }
+
+            ui.TextStyle? flLetterOv;
+            int letterPrefix = 0;
+            if (!firstLetterApplied2 && firstLetterDecl != null) {
+              letterPrefix = _prefixLenFor(text);
+              if (letterPrefix > 0) {
+                Color? ovColor;
+                double? ovFontSize;
+                final String colorVal = firstLetterDecl.getPropertyValue(COLOR);
+                if (colorVal.isNotEmpty) ovColor = CSSColor.parseColor(colorVal, renderStyle: item.style!, propertyName: COLOR);
+                final String fsVal = firstLetterDecl.getPropertyValue(FONT_SIZE);
+                if (fsVal.isNotEmpty) {
+                  final CSSLengthValue parsed = CSSLength.parseLength(fsVal, item.style!, FONT_SIZE);
+                  ovFontSize = parsed.computedValue;
+                }
+                if (ovColor != null || (ovFontSize != null && ovFontSize.isFinite)) {
+                  flLetterOv = ui.TextStyle(color: ovColor, fontSize: ovFontSize);
+                } else {
+                  flLetterOv = ui.TextStyle();
+                }
+              }
+            }
+
+            if (segLen > 0) {
+              if (flOv != null) pb2.pushStyle(flOv);
+              if (letterPrefix > 0) {
+                final int used = math.min(letterPrefix, segLen);
+                if (flLetterOv != null) pb2.pushStyle(flLetterOv);
+                pb2.addText(text.substring(0, used));
+                if (flLetterOv != null) pb2.pop();
+                if (segLen > used) pb2.addText(text.substring(used, segLen));
+                firstLetterApplied2 = true;
+              } else {
+                pb2.addText(text.substring(0, segLen));
+              }
+              if (flOv != null) pb2.pop();
+            }
+            if (text.length > segLen) pb2.addText(text.substring(segLen));
+            firstLineRemaining -= segLen;
+          } else {
+            // Apply first-letter outside the first-line range if not yet applied
+            if (!firstLetterApplied2 && firstLetterDecl != null) {
+              int letterPrefix = 0;
+              Color? ovColor;
+              double? ovFontSize;
+              int _prefix() {
+                if (text.isEmpty) return 0;
+                int c0 = text.codeUnitAt(0);
+                bool isAsciiLetter(int c) => (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
+                bool isQuote(int c) => c == 0x22 || c == 0x27 || c == 0x201C || c == 0x201D || c == 0x2018 || c == 0x2019;
+                if (isQuote(c0) && text.length >= 2 && isAsciiLetter(text.codeUnitAt(1))) return 2;
+                if (isAsciiLetter(c0)) return 1;
+                return 0;
+              }
+              letterPrefix = _prefix();
+              if (letterPrefix > 0) {
+                final String colorVal = firstLetterDecl.getPropertyValue(COLOR);
+                if (colorVal.isNotEmpty) ovColor = CSSColor.parseColor(colorVal, renderStyle: item.style!, propertyName: COLOR);
+                final String fsVal = firstLetterDecl.getPropertyValue(FONT_SIZE);
+                if (fsVal.isNotEmpty) {
+                  final CSSLengthValue parsed = CSSLength.parseLength(fsVal, item.style!, FONT_SIZE);
+                  ovFontSize = parsed.computedValue;
+                }
+                if (ovColor != null || (ovFontSize != null && ovFontSize.isFinite)) {
+                  pb2.pushStyle(ui.TextStyle(color: ovColor, fontSize: ovFontSize));
+                  pb2.addText(text.substring(0, letterPrefix));
+                  pb2.pop();
+                  if (letterPrefix < text.length) pb2.addText(text.substring(letterPrefix));
+                } else {
+                  pb2.addText(text);
+                }
+                firstLetterApplied2 = true;
+              } else {
                 pb2.addText(text);
-                pb2.pop();
-                firstLineRemaining -= text.length;
-              } else if (firstLineRemaining > 0) {
-                final int n = firstLineRemaining;
-                pb2.pushStyle(ov);
-                pb2.addText(text.substring(0, n));
-                pb2.pop();
-                if (n < text.length) pb2.addText(text.substring(n));
-                firstLineRemaining = 0;
               }
             } else {
-              // No supported overrides; just emit and consume
-              final int n = math.min(firstLineRemaining, text.length);
               pb2.addText(text);
-              firstLineRemaining -= n;
             }
-          } else {
-            pb2.addText(text);
           }
           pb2.pop();
           paraPos2 += text.length;
@@ -3928,6 +3997,8 @@ class InlineFormattingContext {
 
         int firstRemain3 = correctedLimit;
         int paraPos3 = 0;
+        bool firstLetterApplied3 = false;
+        final CSSStyleDeclaration? firstLetterDecl3 = ownerEl0.style.pseudoFirstLetterStyle;
         for (final item in _items) {
           if (item.isOpenTag) {
             final box = item.renderBox as RenderBoxModel?;
@@ -3962,28 +4033,95 @@ class InlineFormattingContext {
             }
             pb3.pushStyle(_uiTextStyleFromCss(item.style!));
             if (firstRemain3 > 0) {
-              final ui.TextStyle? ov = _firstLineOverrideFor(item.style!);
-              if (ov != null) {
-                if (firstRemain3 >= text.length) {
-                  pb3.pushStyle(ov);
+              final int segLen = math.min(firstRemain3, text.length);
+              final ui.TextStyle? flOv = _firstLineOverrideFor(item.style!);
+
+              int _prefixLenFor(String s) {
+                if (s.isEmpty) return 0;
+                int c0 = s.codeUnitAt(0);
+                bool isAsciiLetter(int c) => (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
+                bool isQuote(int c) => c == 0x22 || c == 0x27 || c == 0x201C || c == 0x201D || c == 0x2018 || c == 0x2019;
+                if (isQuote(c0) && s.length >= 2 && isAsciiLetter(s.codeUnitAt(1))) return 2;
+                if (isAsciiLetter(c0)) return 1;
+                return 0;
+              }
+
+              ui.TextStyle? flLetterOv;
+              int letterPrefix = 0;
+              if (!firstLetterApplied3 && firstLetterDecl3 != null) {
+                letterPrefix = _prefixLenFor(text);
+                if (letterPrefix > 0) {
+                  Color? ovColor;
+                  double? ovFontSize;
+                  final String colorVal = firstLetterDecl3.getPropertyValue(COLOR);
+                  if (colorVal.isNotEmpty) ovColor = CSSColor.parseColor(colorVal, renderStyle: item.style!, propertyName: COLOR);
+                  final String fsVal = firstLetterDecl3.getPropertyValue(FONT_SIZE);
+                  if (fsVal.isNotEmpty) {
+                    final CSSLengthValue parsed = CSSLength.parseLength(fsVal, item.style!, FONT_SIZE);
+                    ovFontSize = parsed.computedValue;
+                  }
+                  if (ovColor != null || (ovFontSize != null && ovFontSize.isFinite)) {
+                    flLetterOv = ui.TextStyle(color: ovColor, fontSize: ovFontSize);
+                  } else {
+                    flLetterOv = ui.TextStyle();
+                  }
+                }
+              }
+
+              if (segLen > 0) {
+                if (flOv != null) pb3.pushStyle(flOv);
+                if (letterPrefix > 0) {
+                  final int used = math.min(letterPrefix, segLen);
+                  if (flLetterOv != null) pb3.pushStyle(flLetterOv);
+                  pb3.addText(text.substring(0, used));
+                  if (flLetterOv != null) pb3.pop();
+                  if (segLen > used) pb3.addText(text.substring(used, segLen));
+                  firstLetterApplied3 = true;
+                } else {
+                  pb3.addText(text.substring(0, segLen));
+                }
+                if (flOv != null) pb3.pop();
+              }
+              if (text.length > segLen) pb3.addText(text.substring(segLen));
+              firstRemain3 -= segLen;
+            } else {
+              if (!firstLetterApplied3 && firstLetterDecl3 != null) {
+                int letterPrefix = 0;
+                Color? ovColor;
+                double? ovFontSize;
+                int _prefix() {
+                  if (text.isEmpty) return 0;
+                  int c0 = text.codeUnitAt(0);
+                  bool isAsciiLetter(int c) => (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
+                  bool isQuote(int c) => c == 0x22 || c == 0x27 || c == 0x201C || c == 0x201D || c == 0x2018 || c == 0x2019;
+                  if (isQuote(c0) && text.length >= 2 && isAsciiLetter(text.codeUnitAt(1))) return 2;
+                  if (isAsciiLetter(c0)) return 1;
+                  return 0;
+                }
+                letterPrefix = _prefix();
+                if (letterPrefix > 0) {
+                  final String colorVal = firstLetterDecl3.getPropertyValue(COLOR);
+                  if (colorVal.isNotEmpty) ovColor = CSSColor.parseColor(colorVal, renderStyle: item.style!, propertyName: COLOR);
+                  final String fsVal = firstLetterDecl3.getPropertyValue(FONT_SIZE);
+                  if (fsVal.isNotEmpty) {
+                    final CSSLengthValue parsed = CSSLength.parseLength(fsVal, item.style!, FONT_SIZE);
+                    ovFontSize = parsed.computedValue;
+                  }
+                  if (ovColor != null || (ovFontSize != null && ovFontSize.isFinite)) {
+                    pb3.pushStyle(ui.TextStyle(color: ovColor, fontSize: ovFontSize));
+                    pb3.addText(text.substring(0, letterPrefix));
+                    pb3.pop();
+                    if (letterPrefix < text.length) pb3.addText(text.substring(letterPrefix));
+                  } else {
+                    pb3.addText(text);
+                  }
+                  firstLetterApplied3 = true;
+                } else {
                   pb3.addText(text);
-                  pb3.pop();
-                  firstRemain3 -= text.length;
-                } else if (firstRemain3 > 0) {
-                  final int n = firstRemain3;
-                  pb3.pushStyle(ov);
-                  pb3.addText(text.substring(0, n));
-                  pb3.pop();
-                  if (n < text.length) pb3.addText(text.substring(n));
-                  firstRemain3 = 0;
                 }
               } else {
-                final int n = math.min(firstRemain3, text.length);
                 pb3.addText(text);
-                firstRemain3 -= n;
               }
-            } else {
-              pb3.addText(text);
             }
             pb3.pop();
             paraPos3 += text.length;
