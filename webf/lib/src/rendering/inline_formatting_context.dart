@@ -2764,6 +2764,9 @@ class InlineFormattingContext {
           'dir=${style.direction} textAlign=${style.textAlign} lineClamp=${style.lineClamp}',
     );
 
+    // Whether ::first-letter styling should be applied once for this paragraph
+    bool _firstLetterDone = false;
+
     // Record overflow flags for debugging
     final CSSOverflowType containerOverflowX = style.effectiveOverflowX;
     final CSSOverflowType containerOverflowY = style.effectiveOverflowY;
@@ -3241,7 +3244,64 @@ class InlineFormattingContext {
           );
         } else {
           pb.pushStyle(_uiTextStyleFromCss(item.style!));
-          pb.addText(text);
+
+          // Apply ::first-letter if present and not yet applied.
+          final ownerEl = (container as RenderBoxModel).renderStyle.target;
+          final CSSStyleDeclaration? fl = ownerEl.style.pseudoFirstLetterStyle;
+          if (!_firstLetterDone && fl != null) {
+            // Determine prefix length to style: include leading quote if followed by ASCII letter.
+            int _prefixLen = 0;
+            if (text.isNotEmpty) {
+              int c0 = text.codeUnitAt(0);
+              bool isAsciiLetter(int c) => (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
+              bool isQuote(int c) => c == 0x22 || c == 0x27 || c == 0x201C || c == 0x201D || c == 0x2018 || c == 0x2019;
+              if (isQuote(c0) && text.length >= 2 && isAsciiLetter(text.codeUnitAt(1))) {
+                _prefixLen = 2;
+              } else if (isAsciiLetter(c0)) {
+                _prefixLen = 1;
+              }
+            }
+
+            if (_prefixLen > 0) {
+              // Build override style for color/font-size if provided.
+              Color? ovColor;
+              double? ovFontSize;
+
+              final String colorVal = fl.getPropertyValue(COLOR);
+              if (colorVal.isNotEmpty) {
+                ovColor = CSSColor.parseColor(colorVal, renderStyle: item.style!, propertyName: COLOR);
+              }
+              final String fsVal = fl.getPropertyValue(FONT_SIZE);
+              if (fsVal.isNotEmpty) {
+                final CSSLengthValue parsed = CSSLength.parseLength(fsVal, item.style!, FONT_SIZE);
+                ovFontSize = parsed.computedValue;
+              }
+
+              if (ovColor != null || (ovFontSize != null && ovFontSize.isFinite)) {
+                pb.pushStyle(ui.TextStyle(
+                  color: ovColor,
+                  fontSize: ovFontSize,
+                ));
+                pb.addText(text.substring(0, _prefixLen));
+                pb.pop();
+                if (_prefixLen < text.length) {
+                  pb.addText(text.substring(_prefixLen));
+                }
+                _firstLetterDone = true;
+              } else {
+                // No supported overrides; fall back to emitting the whole text.
+                pb.addText(text);
+                _firstLetterDone = true; // consider applied so we don't try again
+              }
+            } else {
+              // No eligible prefix in this run; emit as-is and wait for next.
+              pb.addText(text);
+            }
+          } else {
+            // No ::first-letter or already applied
+            pb.addText(text);
+          }
+
           pb.pop();
           paraPos += text.length;
           InlineLayoutLog.log(

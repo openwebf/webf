@@ -984,6 +984,20 @@ abstract class Element extends ContainerNode
     _shouldAfterPseudoElementNeedsUpdate = false;
   }
 
+  // ::first-letter pseudo update trigger
+  bool _shouldFirstLetterPseudoNeedsUpdate = false;
+  void markFirstLetterPseudoNeedsUpdate() {
+    if (_shouldFirstLetterPseudoNeedsUpdate) return;
+    _shouldFirstLetterPseudoNeedsUpdate = true;
+    Future.microtask(_updateFirstLetterPseudo);
+  }
+
+  void _updateFirstLetterPseudo() {
+    // Rebuild layout/paragraph for this element so IFC can apply ::first-letter styling
+    renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
+    _shouldFirstLetterPseudoNeedsUpdate = false;
+  }
+
   @override
   void dispose() async {
     renderStyle.detach();

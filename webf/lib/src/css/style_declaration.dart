@@ -114,6 +114,15 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     target?.markAfterPseudoElementNeedsUpdate();
   }
 
+  // ::first-letter pseudo style (applies to the first typographic letter)
+  CSSStyleDeclaration? _pseudoFirstLetterStyle;
+  CSSStyleDeclaration? get pseudoFirstLetterStyle => _pseudoFirstLetterStyle;
+  set pseudoFirstLetterStyle(CSSStyleDeclaration? newStyle) {
+    _pseudoFirstLetterStyle = newStyle;
+    // Trigger a layout rebuild so IFC can re-shape text for first-letter styling
+    target?.markFirstLetterPseudoNeedsUpdate();
+  }
+
   CSSStyleDeclaration([BindingContext? context]): super(context);
 
   // ignore: prefer_initializing_formals
@@ -650,6 +659,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
     List<CSSStyleRule> beforeRules = [];
     List<CSSStyleRule> afterRules = [];
+    List<CSSStyleRule> firstLetterRules = [];
 
     for (CSSStyleRule style in rules) {
       for (Selector selector in style.selectorGroup.selectors) {
@@ -659,6 +669,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
               beforeRules.add(style);
             } else if (sequence.simpleSelector.name == 'after') {
               afterRules.add(style);
+            } else if (sequence.simpleSelector.name == 'first-letter') {
+              firstLetterRules.add(style);
             }
           }
         }
@@ -676,6 +688,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     // sort selector
     beforeRules.sort(sortRules);
     afterRules.sort(sortRules);
+    firstLetterRules.sort(sortRules);
 
     if (beforeRules.isNotEmpty) {
       pseudoBeforeStyle ??= CSSStyleDeclaration();
@@ -696,6 +709,16 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       parentElement.markAfterPseudoElementNeedsUpdate();
     } else if (afterRules.isEmpty && pseudoAfterStyle != null) {
       pseudoAfterStyle = null;
+    }
+
+    if (firstLetterRules.isNotEmpty) {
+      pseudoFirstLetterStyle ??= CSSStyleDeclaration();
+      for (CSSStyleRule rule in firstLetterRules) {
+        pseudoFirstLetterStyle!.union(rule.declaration);
+      }
+      parentElement.markFirstLetterPseudoNeedsUpdate();
+    } else if (firstLetterRules.isEmpty && pseudoFirstLetterStyle != null) {
+      pseudoFirstLetterStyle = null;
     }
   }
 
@@ -740,6 +763,9 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
     if (other.pseudoAfterStyle != null) {
       pseudoAfterStyle?.merge(other.pseudoAfterStyle!);
+    }
+    if (other.pseudoFirstLetterStyle != null) {
+      pseudoFirstLetterStyle?.merge(other.pseudoFirstLetterStyle!);
     }
 
     return updateStatus;

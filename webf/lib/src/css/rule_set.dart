@@ -143,9 +143,9 @@ class RuleSet {
     switch (name) {
       case 'before':
       case 'after':
+      case 'first-letter':
         return true;
       case 'first-line':
-      case 'first-letter':
       default:
         return false;
     }
