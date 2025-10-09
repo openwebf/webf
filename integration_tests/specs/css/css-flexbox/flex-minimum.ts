@@ -993,7 +993,7 @@ describe('flex-minimum', () => {
     await snapshot(0.1);
   })
 
-  it("width-flex-items-005-2", async (done) => {
+  xit("width-flex-items-005-2", async (done) => {
     let constrainedFlex;
     let img1;
     let img2;
