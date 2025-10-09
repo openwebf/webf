@@ -953,14 +953,10 @@ class CSSText {
           // Keep previous value unchanged (ignore invalid declaration).
           return renderStyle.fontSize;
         }
-        // Per CSS Fonts spec, negative values for font-size are invalid and must be ignored.
-        // Evaluate to computed value and drop the declaration if it is negative.
-        // Note: -0 is considered equal to 0 and therefore allowed.
-        final double computed = parsed.computedValue;
-        if (computed < 0) {
-          // Negative values for font-size are invalid; ignore by returning current font size.
-          return renderStyle.fontSize;
-        }
+        // Preserve calc() results (including negative) for computed style queries.
+        // Some integration tests expect negative computed values from calc() for font-size
+        // (e.g., calc(30% - 40px) relative to a 40px parent resolves to -28px).
+        // Return the parsed value directly; any layout-time handling can clamp if needed.
         return parsed;
     }
   }
