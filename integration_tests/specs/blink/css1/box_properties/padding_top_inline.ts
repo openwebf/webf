@@ -1,5 +1,5 @@
 describe('CSS1 padding-top inline', () => {
-  xit('padding-top property on inline elements', async () => {
+  it('padding-top property on inline elements', async () => {
     const p1 = createElementWithStyle('p', {
       backgroundColor: 'gray'
     }, [

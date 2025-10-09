@@ -1,5 +1,5 @@
 describe('CSS1 padding-right inline', () => {
-  xit('padding-right property on inline elements', async () => {
+  it('padding-right property on inline elements', async () => {
     const p1 = createElementWithStyle('p', {
       backgroundColor: 'gray'
     }, [

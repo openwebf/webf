@@ -1,5 +1,5 @@
 describe('CSS1 border-right-width inline', () => {
-  xit('border-right-width with inline elements', async () => {
+  it('border-right-width with inline elements', async () => {
     const style = createElement('style', {}, [
       createText(`
         .one {border-right-width: 25px; border-style: solid;}

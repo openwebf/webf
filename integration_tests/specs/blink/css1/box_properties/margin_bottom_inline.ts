@@ -1,5 +1,5 @@
 describe('CSS1 margin-bottom inline', () => {
-  xit('margin-bottom property on inline elements', async () => {
+  it('margin-bottom property on inline elements', async () => {
     const p1 = createElementWithStyle('p', {
       backgroundColor: 'gray'
     }, [

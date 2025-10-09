@@ -1,5 +1,5 @@
 describe('CSS1 border-top-width inline', () => {
-  xit('border-top-width with inline elements', async () => {
+  it('border-top-width with inline elements', async () => {
     const style = createElement('style', {}, [
       createText(`
         .one {border-top-width: 25px; border-style: solid;}

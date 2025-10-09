@@ -1,5 +1,5 @@
 describe('CSS1 border-width inline', () => {
-  xit('border-width property on inline elements', async () => {
+  it('border-width property on inline elements', async () => {
     const p = createElementWithStyle('p', {
       borderWidth: '25px',
       borderStyle: 'solid'

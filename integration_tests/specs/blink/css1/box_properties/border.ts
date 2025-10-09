@@ -10,39 +10,6 @@ describe('CSS1 border', () => {
     await snapshot();
   });
 
-  xit('border with thin maroon ridge', async () => {
-    const p = createElementWithStyle('p', {
-      border: 'thin maroon ridge'
-    }, [
-      createText('This paragraph should have a thin maroon ridged border all the way around.')
-    ]);
-    
-    append(BODY, p);
-    await snapshot();
-  });
-
-  xit('border with 10px teal outset', async () => {
-    const p = createElementWithStyle('p', {
-      border: '10px teal outset'
-    }, [
-      createText('This paragraph should have a ten-pixel-wide teal outset border all the way around.')
-    ]);
-    
-    append(BODY, p);
-    await snapshot();
-  });
-
-  xit('border with 10px olive inset', async () => {
-    const p = createElementWithStyle('p', {
-      border: '10px olive inset'
-    }, [
-      createText('This paragraph should have a ten-pixel-wide olive inset border all the way around.')
-    ]);
-    
-    append(BODY, p);
-    await snapshot();
-  });
-
   it('border with 10px maroon without style', async () => {
     const p = createElementWithStyle('p', {
       border: '10px maroon'

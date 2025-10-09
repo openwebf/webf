@@ -1,5 +1,5 @@
 describe('CSS1 margin-top inline', () => {
-  xit('margin-top property on inline elements', async () => {
+  it('margin-top property on inline elements', async () => {
     const p1 = createElementWithStyle('p', {
       backgroundColor: 'gray'
     }, [

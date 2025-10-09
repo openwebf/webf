@@ -1,5 +1,5 @@
 describe('CSS1 margin-left inline', () => {
-  xit('margin-left property on inline elements', async () => {
+  it('margin-left property on inline elements', async () => {
     const p1 = createElementWithStyle('p', {
       backgroundColor: 'gray'
     }, [

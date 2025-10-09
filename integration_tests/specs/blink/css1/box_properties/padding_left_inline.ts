@@ -1,5 +1,5 @@
 describe('CSS1 padding-left inline', () => {
-  xit('padding-left property on inline elements', async () => {
+  it('padding-left property on inline elements', async () => {
     const p1 = createElementWithStyle('p', {
       backgroundColor: 'gray'
     }, [

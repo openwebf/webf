@@ -1,5 +1,5 @@
 describe('CSS1 padding inline', () => {
-  xit('padding shorthand property on inline elements', async () => {
+  it('padding shorthand property on inline elements', async () => {
     const p1 = createElementWithStyle('p', {
       backgroundColor: 'silver',
       padding: '0'

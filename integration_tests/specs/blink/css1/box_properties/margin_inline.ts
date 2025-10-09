@@ -1,5 +1,5 @@
 describe('CSS1 margin inline', () => {
-  xit('margin shorthand property on inline elements', async () => {
+  it('margin shorthand property on inline elements', async () => {
     const p1 = createElementWithStyle('p', {
       backgroundColor: 'silver',
       margin: '0'

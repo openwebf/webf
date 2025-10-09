@@ -26,6 +26,6 @@ describe('CSS1 height', () => {
       <img src="assets/resources/vblank.gif" class="two" alt="[Image]">
       <p>The rectangular image above should be 100 pixels tall and 30 pixels wide (the original image is 50x15, and the size has been doubled using the <code>height</code> property).</p>
     `;
-    await snapshot();
+    await snapshot(1);
   });
 });

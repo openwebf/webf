@@ -1,5 +1,5 @@
 describe('CSS1 padding-bottom inline', () => {
-  xit('padding-bottom property on inline elements', async () => {
+  it('padding-bottom property on inline elements', async () => {
     const p1 = createElementWithStyle('p', {
       backgroundColor: 'gray'
     }, [
