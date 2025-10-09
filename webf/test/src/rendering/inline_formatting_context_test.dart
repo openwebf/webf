@@ -270,6 +270,35 @@ void main() {
       expect(span1.attachedRenderer!.renderStyle.textDecorationLine, equals(TextDecoration.underline));
       expect(span2.attachedRenderer!.renderStyle.textDecorationLine, equals(TextDecoration.lineThrough));
     });
+
+    testWidgets('should handle multiple text-decoration lines', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'text-decoration-multi-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div style="width: 300px;">
+            <span id="s1" style="text-decoration: underline overline;">Decorated</span>
+            <span id="s2" style="text-decoration-line: underline overline line-through;">Decorated</span>
+          </div>
+        ''',
+      );
+
+      final controller = prepared.controller;
+      await tester.pump();
+
+      final s1 = controller.view.document.getElementById('s1') as dom.Element;
+      final s2 = controller.view.document.getElementById('s2') as dom.Element;
+
+      final expected1 = TextDecoration.combine([TextDecoration.underline, TextDecoration.overline]);
+      final expected2 = TextDecoration.combine([
+        TextDecoration.underline,
+        TextDecoration.overline,
+        TextDecoration.lineThrough,
+      ]);
+
+      expect(s1.attachedRenderer!.renderStyle.textDecorationLine, equals(expected1));
+      expect(s2.attachedRenderer!.renderStyle.textDecorationLine, equals(expected2));
+    });
   });
 
   testWidgets('inline-block honors max-width when content is larger', (WidgetTester tester) async {

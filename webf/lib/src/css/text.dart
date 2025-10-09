@@ -687,19 +687,36 @@ class CSSText {
   }
 
   /// In CSS2.1, text-decoration determin the type of text decoration,
-  /// but in CSS3, which is text-decoration-line.
+  /// but in CSS3, which is text-decoration-line. This resolver accepts
+  /// multiple space-separated line keywords and combines them.
   static TextDecoration resolveTextDecorationLine(String present) {
-    switch (present) {
-      case 'line-through':
-        return TextDecoration.lineThrough;
-      case 'overline':
-        return TextDecoration.overline;
-      case 'underline':
-        return TextDecoration.underline;
-      case 'none':
-      default:
-        return TextDecoration.none;
+    if (present.isEmpty) return TextDecoration.none;
+    final parts = present.trim().split(RegExp(r"\s+"));
+    // If 'none' is present with any other token, treat as none.
+    if (parts.contains('none')) return TextDecoration.none;
+
+    final List<TextDecoration> lines = [];
+    for (final p in parts) {
+      switch (p) {
+        case 'line-through':
+          if (!lines.contains(TextDecoration.lineThrough)) lines.add(TextDecoration.lineThrough);
+          break;
+        case 'overline':
+          if (!lines.contains(TextDecoration.overline)) lines.add(TextDecoration.overline);
+          break;
+        case 'underline':
+          if (!lines.contains(TextDecoration.underline)) lines.add(TextDecoration.underline);
+          break;
+        // Ignore unknown tokens; they make the longhand invalid in strict CSS,
+        // but our resolver defaults to none if nothing valid is found.
+        default:
+          break;
+      }
     }
+
+    if (lines.isEmpty) return TextDecoration.none;
+    if (lines.length == 1) return lines.first;
+    return TextDecoration.combine(lines);
   }
 
   static WhiteSpace resolveWhiteSpace(String value) {

@@ -744,23 +744,34 @@ class CSSStyleProperty {
   }
 
   static List<String?>? _getTextDecorationValues(String shorthandProperty) {
-    List<String> values = _splitBySpace(shorthandProperty);
-    String? line;
+    List<String> tokens = _splitBySpace(shorthandProperty);
+    List<String> lines = [];
     String? color;
     String? style;
 
-    for (String value in values) {
-      if (line == null && CSSText.isValidTextTextDecorationLineValue(value)) {
-        line = value;
-      } else if (color == null && CSSColor.isColor(value)) {
-        color = value;
-      } else if (style == null && CSSText.isValidTextTextDecorationStyleValue(value)) {
-        style = value;
+    for (String token in tokens) {
+      if (CSSText.isValidTextTextDecorationLineValue(token)) {
+        // 'none' is exclusive per spec; cannot be combined with other values or color/style.
+        if (token == 'none') {
+          if (lines.isNotEmpty || color != null || style != null) return null;
+          lines = ['none'];
+        } else {
+          if (lines.contains('none')) return null; // mixing with 'none' is invalid
+          if (!lines.contains(token)) lines.add(token);
+        }
+      } else if (color == null && CSSColor.isColor(token)) {
+        if (lines.contains('none')) return null; // 'none' must not be combined with color
+        color = token;
+      } else if (style == null && CSSText.isValidTextTextDecorationStyleValue(token)) {
+        if (lines.contains('none')) return null; // 'none' must not be combined with style
+        style = token;
       } else {
+        // Unknown/invalid token for shorthand; treat as invalid shorthand.
         return null;
       }
     }
 
+    String? line = lines.isNotEmpty ? lines.join(' ') : null;
     return [line, color, style];
   }
 
