@@ -315,6 +315,29 @@ class CSSLengthValue {
               _computedValue = value! * renderStyle!.getParentRenderStyle()!.fontSize.computedValue;
             }
             break;
+          case TEXT_INDENT:
+            // Percentages for text-indent refer to the width of the containing block.
+            // Use the parent content box width for in-flow elements.
+            if (relativeParentWidth != null && relativeParentWidth.isFinite) {
+              _computedValue = value! * relativeParentWidth;
+            } else if (parentRenderStyle != null) {
+              double? cbLogicalW = parentRenderStyle.contentBoxLogicalWidth;
+              if (cbLogicalW != null && cbLogicalW.isFinite) {
+                _computedValue = value! * cbLogicalW;
+              } else {
+                // Fallback to constraints or viewport width if needed.
+                final rbox = parentRenderStyle.attachedRenderBoxModel;
+                if (rbox != null && rbox.hasSize && rbox.constraints.maxWidth.isFinite) {
+                  _computedValue = value! * rbox.constraints.maxWidth;
+                } else {
+                  _computedValue = value! * renderStyle!.viewportSize.width;
+                }
+              }
+            } else {
+              // Root-level: resolve against viewport.
+              _computedValue = value! * renderStyle!.viewportSize.width;
+            }
+            break;
           case LINE_HEIGHT:
             // Relative to the font size of the element itself.
             _computedValue = value! * renderStyle!.fontSize.computedValue;
