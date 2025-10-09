@@ -6,7 +6,7 @@
     "clean": "node scripts/clean.js && git clean -xfd ./snapshots",
     "specs": "webpack --config ./webpack.config.js",
     "prettier": "prettier --no-config --single-quote --trailing-comma=es5 --write ./specs/{.,**,**/**}/*.ts",
-    "integration": "npm run clean && node scripts/core_integration_starter",
+    "integration": "cross-env npm run clean && node scripts/core_integration_starter",
     "multiple_page_integration": "node scripts/multiple_page_integration",
     "memory_leak_integration": "node scripts/memory_leak_integration",
     "compare": "npm run compare:build && node compare-snapshots.js",
@@ -50,13 +50,14 @@
     "body-parser": "^2.2.0",
     "cookie-parser": "^1.4.6",
     "core-js": "^3.8.2",
+    "cross-env": "^10.0.0",
     "get-port-please": "^3.1.2",
     "json5": "^2.2.3",
     "lodash": "^4.17.21",
     "lodash.flattendeep": "^4.4.0",
     "multer": "^2.0.0",
     "node-html-parser": "^5.1.0",
-    "svgo": "^3.0.2",
-    "open": "^7.0.3"
+    "open": "^7.0.3",
+    "svgo": "^3.0.2"
   }
 }

@@ -286,12 +286,39 @@ class ImageElement extends Element {
 
     // Stop and remove image stream reference.
     _stopListeningStream();
-    _completerHandle?.dispose();
+    
+    // Safely dispose completer handle
+    try {
+      _completerHandle?.dispose();
+    } catch (e) {
+      // Ignore StateError for disposed native peers during controller disposal
+      if (e is StateError && e.message.contains('native peer has been collected')) {
+        if (kDebugMode) {
+          debugPrint('ImageElement: Native peer disposed before completer cleanup: ${e.message}');
+        }
+      } else {
+        rethrow;
+      }
+    }
     _completerHandle = null;
     _imageStreamListener = null;
     _cachedImageStream = null;
     _cachedImageInfo = null;
-    _currentImageProvider?.evict(configuration: _currentImageConfig ?? ImageConfiguration.empty);
+    
+    // Safely evict image provider
+    try {
+      _currentImageProvider?.evict(configuration: _currentImageConfig ?? ImageConfiguration.empty);
+    } catch (e) {
+      // Ignore StateError for disposed native peers during controller disposal
+      if (e is StateError && e.message.contains('native peer has been collected')) {
+        if (kDebugMode) {
+          debugPrint('ImageElement: Native peer disposed before image provider eviction: ${e.message}');
+        }
+      } else {
+        rethrow;
+      }
+    }
+    
     _currentImageConfig = null;
     _currentImageProvider = null;
     _svgBytes = null;
@@ -469,7 +496,23 @@ class ImageElement extends Element {
     if (keepStreamAlive && _completerHandle == null && _cachedImageStream?.completer != null) {
       _completerHandle = _cachedImageStream!.completer!.keepAlive();
     }
-    _cachedImageStream?.removeListener(_listener);
+    
+    // Safely remove listener to prevent accessing disposed native peers
+    try {
+      _cachedImageStream?.removeListener(_listener);
+    } catch (e) {
+      // Ignore StateError for disposed native peers during controller disposal
+      if (e is StateError && e.message.contains('native peer has been collected')) {
+        // This is expected during controller disposal when native resources are freed
+        // before Dart objects. Just log in debug mode and continue.
+        if (kDebugMode) {
+          debugPrint('ImageElement: Native peer disposed before Dart object cleanup: ${e.message}');
+        }
+      } else {
+        // Re-throw other types of errors
+        rethrow;
+      }
+    }
     _isListeningStream = false;
   }
 

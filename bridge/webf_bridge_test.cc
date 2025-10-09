@@ -3,10 +3,29 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#endif
+
 #include "webf_bridge_test.h"
+#ifdef __linux__
 #include <execinfo.h>
-#include <signal.h>
 #include <unistd.h>
+#elif defined(_WIN32)
+#include <windows.h>
+#include <dbghelp.h>
+#include <io.h>
+// Undefine Windows macros that conflict with WebF code
+#ifdef ERROR
+#undef ERROR
+#endif
+#endif
+#include <signal.h>
 #include <atomic>
 #include "bindings/qjs/native_string_utils.h"
 #include "logging.h"
@@ -18,6 +37,7 @@ std::unordered_map<int, webf::WebFTestContext*> testContextPool = std::unordered
 #define MAX_BACKTRACE_SIZE 50
 
 void handler(int sig) {
+#ifdef __linux__
  void* array[MAX_BACKTRACE_SIZE];
  size_t size;
 
@@ -27,6 +47,25 @@ void handler(int sig) {
  // print out all the frames to stderr
  fprintf(stderr, "Error: signal %d:\n", sig);
  backtrace_symbols_fd(array, size, STDERR_FILENO);
+#elif defined(_WIN32)
+ // Windows equivalent using CaptureStackBackTrace
+ void* stack[MAX_BACKTRACE_SIZE];
+ USHORT frames = CaptureStackBackTrace(0, MAX_BACKTRACE_SIZE, stack, NULL);
+
+ fprintf(stderr, "Error: signal %d:\n", sig);
+
+ HANDLE process = GetCurrentProcess();
+ SymInitialize(process, NULL, TRUE);
+
+ for (USHORT i = 0; i < frames; i++) {
+   DWORD64 address = (DWORD64)(stack[i]);
+   fprintf(stderr, "[%d] 0x%p\n", i, (void*)address);
+ }
+
+ SymCleanup(process);
+#else
+ fprintf(stderr, "Error: signal %d\n", sig);
+#endif
  exit(1);
 }
 

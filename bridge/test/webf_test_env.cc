@@ -74,7 +74,7 @@ NativeValue* TEST_invokeModule(void* callback_context,
     callback(callback_context, context_id, nullptr, &data, nullptr, nullptr);
   }
 
-  auto* result = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
+  auto* result = static_cast<NativeValue*>(dart_malloc(sizeof(NativeValue)));
   NativeValue tmp = Native_NewCString(module);
   memcpy(result, &tmp, sizeof(NativeValue));
   return result;

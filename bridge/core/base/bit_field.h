@@ -10,6 +10,7 @@
 #include <cassert>
 #include <cstddef>
 #include <functional>
+#include <atomic>
 #include "foundation/macros.h"
 
 namespace webf {

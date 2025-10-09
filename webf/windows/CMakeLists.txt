@@ -32,10 +32,31 @@ target_link_libraries(${PLUGIN_NAME} PRIVATE flutter flutter_wrapper_plugin)
 # This can be changed to accommodate different builds.
 # add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../win_src" "${CMAKE_CURRENT_BINARY_DIR}/shared")
 
+# Automatically copy DLL files to replace symbolic links during CMake configuration
+find_program(NODE_EXECUTABLE node)
+if(NODE_EXECUTABLE)
+    message(STATUS "Running resolve_dlls.js to copy DLL files...")
+    execute_process(
+        COMMAND ${NODE_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/resolve_dlls.js"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        RESULT_VARIABLE RESOLVE_RESULT
+        OUTPUT_VARIABLE RESOLVE_OUTPUT
+        ERROR_VARIABLE RESOLVE_ERROR
+    )
+    
+    if(NOT RESOLVE_RESULT EQUAL 0)
+        message(WARNING "resolve_dlls.js failed: ${RESOLVE_ERROR}")
+    else()
+        message(STATUS "DLL copying completed: ${RESOLVE_OUTPUT}")
+    endif()
+else()
+    message(WARNING "Node.js not found, symbolic links will be used directly")
+endif()
+
 # List of absolute paths to libraries that should be bundled with the plugin
 set(webf_bundled_libraries
     ${CMAKE_CURRENT_SOURCE_DIR}/libgcc_s_seh-1.dll
-    ${CMAKE_CURRENT_SOURCE_DIR}/libstdc++-6.dll
+    ${CMAKE_CURRENT_SOURCE_DIR}/libc++.dll
     ${CMAKE_CURRENT_SOURCE_DIR}/libwinpthread-1.dll
     ${CMAKE_CURRENT_SOURCE_DIR}/libquickjs.dll
     ${CMAKE_CURRENT_SOURCE_DIR}/libwebf.dll

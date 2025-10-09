@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' show max;
 import 'dart:ui' as ui;
 
@@ -21,22 +22,27 @@ Iterable<Layer> _getLayerChain(Layer start) {
   return layerChain.reversed;
 }
 
-typedef IntersectionChangeCallback = void Function(IntersectionObserverEntry info);
+typedef IntersectionChangeCallback = void Function(
+    IntersectionObserverEntry info);
 
 mixin RenderIntersectionObserverMixin on RenderBox {
-  static copyTo(RenderIntersectionObserverMixin from, RenderIntersectionObserverMixin to) {
+  static copyTo(RenderIntersectionObserverMixin from,
+      RenderIntersectionObserverMixin to) {
     to.intersectPadding = from.intersectPadding;
     to._listeners = from._listeners;
     to._onIntersectionChange = to._dispatchChange;
     to._intersectionObserverLayer.layer = from._intersectionObserverLayer.layer;
-    to._intersectionObserverLayer.layer?.onIntersectionChange = to._dispatchChange;
+    to._intersectionObserverLayer.layer?.onIntersectionChange =
+        to._dispatchChange;
   }
 
   IntersectionChangeCallback? _onIntersectionChange;
 
-  final LayerHandle<IntersectionObserverLayer> _intersectionObserverLayer = LayerHandle<IntersectionObserverLayer>();
+  final LayerHandle<IntersectionObserverLayer> _intersectionObserverLayer =
+      LayerHandle<IntersectionObserverLayer>();
 
-  bool intersectionObserverAlwaysNeedsCompositing() => _listeners != null && _listeners!.isNotEmpty;
+  bool intersectionObserverAlwaysNeedsCompositing() =>
+      _listeners != null && _listeners!.isNotEmpty;
 
   /// A list of event handlers
   List<IntersectionChangeCallback>? _listeners;
@@ -93,7 +99,8 @@ mixin RenderIntersectionObserverMixin on RenderBox {
     }
   }
 
-  void paintIntersectionObserver(PaintingContext context, Offset offset, PaintingContextCallback callback) {
+  void paintIntersectionObserver(PaintingContext context, Offset offset,
+      PaintingContextCallback callback) {
     // Skip to next if not has intersection observer
     if (_onIntersectionChange == null) {
       callback(context, offset);
@@ -263,7 +270,8 @@ class IntersectionObserverLayer extends ContainerLayer {
     // of `addPostFrameCallback` or `scheduleFrameCallback` so that work will
     // be done even if a new frame isn't scheduled and without unnecessarily
     // scheduling a new frame.
-    SchedulerBinding.instance.scheduleTask<void>(_processCallbacks, Priority.touch);
+    SchedulerBinding.instance
+        .scheduleTask<void>(_processCallbacks, Priority.touch);
   }
 
   /// Computes the bounds for the corresponding element in
@@ -276,7 +284,10 @@ class IntersectionObserverLayer extends ContainerLayer {
   // https://github.com/google/flutter.widgets/blob/master/packages/visibility_detector/lib/src/visibility_detector_layer.dart#L130
   // Computes the accumulated clipping bounds, in global coordinates.
   Rect _computeClipRect() {
-    var clipRect = Offset.zero & flutterView.display.size;
+    var clipRect = Offset.zero &
+        ((Platform.isWindows || Platform.isLinux)
+            ? (flutterView.physicalSize / flutterView.devicePixelRatio)
+            : flutterView.display.size);
 
     var parentLayer = parent;
     while (parentLayer != null) {
@@ -351,8 +362,9 @@ class IntersectionObserverLayer extends ContainerLayer {
           elementBounds.right + layer._intersectPadding.right,
           elementBounds.bottom + layer._intersectPadding.bottom);
 
-      final info =
-          IntersectionObserverEntry.fromRects(boundingClientRect: paddingAroundElementBounds, rootBounds: rootBounds);
+      final info = IntersectionObserverEntry.fromRects(
+          boundingClientRect: paddingAroundElementBounds,
+          rootBounds: rootBounds);
       layer._fireCallback(info);
     }
     _updated.clear();
@@ -362,7 +374,11 @@ class IntersectionObserverLayer extends ContainerLayer {
 
 @immutable
 class IntersectionObserverEntry {
-  const IntersectionObserverEntry({Rect? boundingClientRect, Rect? intersectionRect, Rect? rootBounds, Size? size})
+  const IntersectionObserverEntry(
+      {Rect? boundingClientRect,
+      Rect? intersectionRect,
+      Rect? rootBounds,
+      Size? size})
       : boundingClientRect = boundingClientRect ?? Rect.zero,
         intersectionRect = intersectionRect ?? Rect.zero,
         rootBounds = rootBounds ?? Rect.zero,
@@ -379,7 +395,9 @@ class IntersectionObserverEntry {
   }) {
     // Compute the intersection in the element's local coordinates.
     final intersectionRect = boundingClientRect.overlaps(rootBounds)
-        ? boundingClientRect.intersect(rootBounds).shift(-boundingClientRect.topLeft)
+        ? boundingClientRect
+            .intersect(rootBounds)
+            .shift(-boundingClientRect.topLeft)
         : Rect.zero;
 
     return IntersectionObserverEntry(
@@ -395,8 +413,10 @@ class IntersectionObserverEntry {
   bool get isIntersecting {
     if (size == Size.zero) return false;
 
-    if (boundingClientRect.right < rootBounds.left || rootBounds.right < boundingClientRect.left) return false;
-    if (boundingClientRect.bottom < rootBounds.top || rootBounds.bottom < boundingClientRect.top) return false;
+    if (boundingClientRect.right < rootBounds.left ||
+        rootBounds.right < boundingClientRect.left) return false;
+    if (boundingClientRect.bottom < rootBounds.top ||
+        rootBounds.bottom < boundingClientRect.top) return false;
     return true;
   }
 
@@ -472,5 +492,6 @@ double _area(Size size) {
 /// Returns whether two floating-point values are approximately equal.
 bool _floatNear(double f1, double f2) {
   final absDiff = (f1 - f2).abs();
-  return absDiff <= _kDefaultTolerance || (absDiff / max(f1.abs(), f2.abs()) <= _kDefaultTolerance);
+  return absDiff <= _kDefaultTolerance ||
+      (absDiff / max(f1.abs(), f2.abs()) <= _kDefaultTolerance);
 }

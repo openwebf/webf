@@ -81,6 +81,12 @@ void Init() {
       new (address) AtomicString(AtomicString::CreateFromUTF8(kHtmlAttributeNames[i].str));
     }
   <% } %>
+  
+  // Prevent compiler optimization of thread-local symbols
+  volatile const void* symbol_refs[] = {
+<% _.forEach(data, function(name, index) { %>    &k<%= options.camelCase ? upperCamelCase(_.isArray(name) ? name[0] : (_.isObject(name) ? name.name : name)) : (_.isArray(name) ? name[0] : (_.isObject(name) ? name.name : name)) %>,
+<% }) %>  };
+  asm volatile("" :: "r"(symbol_refs) : "memory");
 };
 
 void Dispose(){

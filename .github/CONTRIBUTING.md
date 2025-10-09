@@ -15,11 +15,6 @@ brew install gperf
 apt-get install gperf
 ```
 
-**Windows**
-```bash
-choco install gperf
-```
-
 * [Node.js](https://nodejs.org/) v12.0 or later
 * [Flutter](https://flutter.dev/docs/get-started/install) version in the `webf/pubspec.yaml`
 * [CMake](https://cmake.org/) v3.12.0 or later
@@ -27,6 +22,23 @@ choco install gperf
 * [Android NDK](https://developer.android.com/studio/projects/install-ndk) version `22.1.7171670` (Running on Android)
 * [Visual Studio 2019 or later](https://visualstudio.microsoft.com/) (Running on Windows)
 * [Rust](https://www.rust-lang.org/) (For building Rust example apps.)
+* [MSYS2](https://www.msys2.org/) (For building apps for Windows)
+
+
+## Config environment for Windows
+
+1. Install MSYS2
+2. Run the following commands to install depdendencies
+
+```
+pacman -S mingw-w64-ucrt-x86_64-clang
+pacman -S mingw-w64-ucrt-x86_64-cmake
+pacman -S mingw-w64-ucrt-x86_64-ninja
+pacman -S mingw-w64-clang-x86_64-icu
+
+```
+3. Run the npm run scripts to compile the bridge in ucrt environment.
+4. Run flutter in powershell(not in msys2 ucrt environment).
 
 ## Get the code:
 

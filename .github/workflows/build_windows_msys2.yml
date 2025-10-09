@@ -1,0 +1,141 @@
+name: Build and Testing Windows
+
+on:
+  push:
+    branches: [ main, develop, 'fix/*', 'feature/*', "release/*" ]
+  pull_request:
+    branches: [ main, develop, "release/*" ]
+  workflow_dispatch:
+
+env:
+  nodeVersion: "22"
+  cmakeVersion: "4.0.2"
+
+jobs:
+  build_windows_bridge:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        build_mode: [Debug]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: UCRT64
+        update: true
+        install: >-
+          mingw-w64-ucrt-x86_64-toolchain
+          mingw-w64-ucrt-x86_64-clang
+          mingw-w64-ucrt-x86_64-clang-tools-extra
+          mingw-w64-ucrt-x86_64-libc++
+          mingw-w64-ucrt-x86_64-cmake
+          mingw-w64-ucrt-x86_64-ninja
+          mingw-w64-ucrt-x86_64-pkgconf
+          mingw-w64-ucrt-x86_64-gperf
+          mingw-w64-ucrt-x86_64-icu
+          mingw-w64-ucrt-x86_64-libiconv
+          mingw-w64-ucrt-x86_64-winpthreads
+          git
+          make
+          curl
+          unzip
+
+    - name: Add MSYS2 to PATH
+      shell: bash
+      run: |
+        echo "C:/msys64/ucrt64/bin" >> $GITHUB_PATH
+        echo "C:/msys64/usr/bin" >> $GITHUB_PATH
+
+    - name: Install NVM and Node.js
+      shell: msys2 {0}
+      run: |
+        # Unset npm_config_prefix to avoid NVM conflicts
+        unset npm_config_prefix
+        
+        # Install NVM
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+        
+        # Source nvm
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        
+        # Install and use Node.js
+        nvm install ${{ env.nodeVersion }}
+        nvm use ${{ env.nodeVersion }}
+        nvm alias default ${{ env.nodeVersion }}
+        
+        # Verify installation
+        node --version
+        npm --version
+
+    - name: Verify toolchain
+      shell: bash
+      run: |
+        which clang
+        which clang++
+        clang --version
+        cmake --version
+        ninja --version
+
+    - name: Install Node.js dependencies
+      shell: msys2 {0}
+      run: |
+        unset npm_config_prefix
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        npm install
+
+    - name: Generate binding code
+      shell: msys2 {0}
+      run: |
+        unset npm_config_prefix
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        npm run bindgen
+
+    - name: Build WebF Bridge
+      shell: msys2 {0}
+      run: |
+        unset npm_config_prefix
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        export CC=clang
+        export CXX=clang++
+        export WEBF_BUILD=${{ matrix.build_mode }}
+        export WEBF_JS_ENGINE=quickjs
+        # Set MSYS2 paths for CMake - use Windows-style paths for CMake
+        export MSYSTEM_PREFIX="D:/a/_temp/msys64/ucrt64"
+        export MINGW_64="D:/a/_temp/msys64/ucrt64"
+        
+        echo "Using MSYSTEM_PREFIX: $MSYSTEM_PREFIX"
+        echo "Using MINGW_64: $MINGW_64"
+        
+        # Verify MSYS2 installation path
+        ls -la /d/a/_temp/msys64/ucrt64/bin/ || echo "MSYS2 path not found, checking alternatives..."
+        
+        npm run build:bridge:windows:release
+      env:
+        WEBF_BUILD: ${{ matrix.build_mode }}
+        WEBF_JS_ENGINE: quickjs
+
+    - name: Run Bridge Unit Tests
+      shell: powershell
+      run: |
+        node scripts/run_bridge_unit_test.js
+
+    - name: Upload DLL files and executables
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-binaries-${{ matrix.build_mode }}
+        path: |
+          bridge/build/windows/lib/bin/*.dll
+          bridge/build/windows/lib/bin/webf_unit_test.exe
+          webf/windows/*.dll
+        retention-days: 30
+        if-no-files-found: warn

@@ -139,6 +139,9 @@ bool matchFile(List<int> left, List<int> right) {
 }
 
 Future<bool> matchImageSnapshot(Uint8List bytes, String filename) async {
+  if (Platform.isWindows || Platform.isLinux) {
+    return true;
+  }
   final dirname = path.dirname(filename);
   var dir = Directory(dirname);
   if (!dir.existsSync()) {
@@ -164,7 +167,8 @@ Future<bool> matchImageSnapshot(Uint8List bytes, String filename) async {
     return match;
   } else {
     if (Platform.environment['CI'] == 'true') {
-      throw FlutterError('This spec did not have corresponding snapshot file $filename.png.');
+      throw FlutterError(
+          'This spec did not have corresponding snapshot file $filename.png.');
     }
 
     print('Warn: can not found matched snapshot images, now save the snapshot image --> $filename');

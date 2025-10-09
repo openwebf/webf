@@ -105,23 +105,24 @@ static NativeValue* handleInvokeModuleTransientCallbackWrapper(void* ptr,
                                                                InvokeModuleResultCallback result_callback) {
   auto* moduleContext = static_cast<ModuleContext*>(ptr);
 
-#if FLUTTER_BACKEND
-  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
-  moduleContext->context->dartIsolateContext()->dispatcher()->PostToJs(
-      moduleContext->context->isDedicated(), moduleContext->context->contextId(),
-      [](ModuleContext* module_context, double context_id, const char* errmsg, NativeValue* extra_data,
-         Dart_PersistentHandle persistent_handle, InvokeModuleResultCallback result_callback) {
-        NativeValue* result = handleInvokeModuleTransientCallback(module_context, context_id, errmsg, extra_data);
-        if (result != nullptr && result_callback != nullptr) {
-          module_context->context->dartIsolateContext()->dispatcher()->PostToDart(
-              module_context->context->isDedicated(), ReturnResultToDart, persistent_handle, result, result_callback);
-        }
-      },
-      moduleContext, context_id, errmsg, extra_data, persistent_handle, result_callback);
-  return nullptr;
-#else
-  return handleInvokeModuleTransientCallback(moduleContext, context_id, errmsg, extra_data);
-#endif
+  if (dart_handle != nullptr && result_callback != nullptr) {
+    Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
+    moduleContext->context->dartIsolateContext()->dispatcher()->PostToJs(
+        moduleContext->context->isDedicated(), moduleContext->context->contextId(),
+        [](ModuleContext* module_context, double context_id, const char* errmsg, NativeValue* extra_data,
+           Dart_PersistentHandle persistent_handle, InvokeModuleResultCallback result_callback) {
+          NativeValue* result = handleInvokeModuleTransientCallback(module_context, context_id, errmsg, extra_data);
+          if (result != nullptr && result_callback != nullptr) {
+            module_context->context->dartIsolateContext()->dispatcher()->PostToDart(
+                module_context->context->isDedicated(), ReturnResultToDart, persistent_handle, result, result_callback);
+          }
+        },
+        moduleContext, context_id, errmsg, extra_data, persistent_handle, result_callback);
+    return nullptr;
+  } else {
+    handleInvokeModuleTransientCallback(moduleContext, context_id, errmsg, extra_data);
+    return nullptr;
+  }
 }
 
 NativeValue* handleInvokeModuleUnexpectedCallback(void* callbackContext,

@@ -314,6 +314,7 @@ std::shared_ptr<const CalculationExpressionNode> CalculationExpressionOperationN
       assert(false);
       return nullptr;
   }
+  return nullptr;  // Should never reach here
 }
 
 CalculationExpressionOperationNode::CalculationExpressionOperationNode(Children&& children, CalculationOperator op)
@@ -513,6 +514,7 @@ std::shared_ptr<const CalculationExpressionNode> CalculationExpressionOperationN
       NOTREACHED_IN_MIGRATION();
       return nullptr;
   }
+  return nullptr;  // Should never reach here
 }
 
 bool CalculationExpressionOperationNode::HasMinContent() const {
@@ -607,6 +609,7 @@ CalculationExpressionNode::ResultType CalculationExpressionOperationNode::Resolv
       NOTREACHED_IN_MIGRATION();
       return result_type_;
   }
+  return ResultType::kInvalid;  // Should never reach here
 }
 #endif
 

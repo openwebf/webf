@@ -11,6 +11,11 @@
 #include "core/platform/geometry/length.h"
 #include "foundation/macros.h"
 
+// Undefine Windows macros that conflict with our method names
+#ifdef CreateFont
+#undef CreateFont
+#endif
+
 namespace webf {
 
 class ComputedStyleBuilder;

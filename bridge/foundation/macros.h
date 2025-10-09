@@ -10,6 +10,7 @@
 #include <iostream>
 #include <new>
 #include <type_traits>
+#include <cstdint>
 #include "core/base/memory/stack_allocated.h"
 
 using webf::NotNullTag;

@@ -16,27 +16,107 @@ endif()
 if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
   message("Running in an MSYS2 environment (MSYS or MinGW)")
 
+  # Check environment variables first, then fall back to defaults
+  if(DEFINED ENV{MSYSTEM_PREFIX})
+    set(MSYS2_PREFIX "$ENV{MSYSTEM_PREFIX}")
+    message("Using MSYSTEM_PREFIX from environment: $ENV{MSYSTEM_PREFIX}")
+  else()
+    set(ENV{MSYSTEM_PREFIX} "C:/msys64/clang64")
+    set(MSYS2_PREFIX "C:/msys64/clang64")
+    message("Using default MSYSTEM_PREFIX: C:/msys64/clang64")
+  endif()
+
+  # Set MINGW_64 based on MSYS2_PREFIX or environment variable
+  if(DEFINED ENV{MINGW_64})
+    set(MINGW_64 "$ENV{MINGW_64}")
+    message("Using MINGW_64 from environment: $ENV{MINGW_64}")
+  else()
+    # Try to derive from MSYS2_PREFIX, otherwise use default
+    string(REPLACE "/clang64" "/ucrt64" MINGW_64 "${MSYS2_PREFIX}")
+    if(MINGW_64 STREQUAL MSYS2_PREFIX)
+      set(MINGW_64 "C:/msys64/ucrt64")
+    endif()
+    message("Using derived/default MINGW_64: ${MINGW_64}")
+  endif()
+
+#  set(CMAKE_C_COMPILER clang)
+#  set(CMAKE_CXX_COMPILER clang++)
+#  set(CMAKE_ASM_COMPILER clang)
+#  set(CMAKE_LINKER lld)
+#  set(CMAKE_AR llvm-ar)
+#  set(CMAKE_RANLIB llvm-ranlib)
+  
+  # Set C++20 standard for MSYS2 with libc++
+  set(CMAKE_CXX_STANDARD 20)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
+  add_compile_options(-stdlib=libc++)
+  add_link_options(-stdlib=libc++)
+  
+  # Define math constants that are not in standard C++
+  add_compile_definitions(_USE_MATH_DEFINES)
+
   if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
     set(CMAKE_INSTALL_PREFIX $ENV{LIBRARY_OUTPUT_DIR})
   endif()
 
   # MSYS2 environments set the MSYSTEM_PREFIX environment variable
   # which points to the root of the specific environment (e.g., /mingw64, /ucrt64, /mingw32)
-  set(LIBPTHREAD_DLL_PATH "$ENV{MSYSTEM_PREFIX}/bin/libwinpthread-1.dll")
-  set(LIBGCC_DLL_PATH "$ENV{MSYSTEM_PREFIX}/bin/libgcc_s_seh-1.dll")
-  set(LIBSTDCXX_DLL_PATH "$ENV{MSYSTEM_PREFIX}/bin/libstdc++-6.dll")
+  set(LIBPTHREAD_DLL_PATH "${MINGW_64}/bin/libwinpthread-1.dll")
+  set(LIBGCC_DLL_PATH "${MINGW_64}/bin/libgcc_s_seh-1.dll")
+  set(LIBSTDCXX_DLL_PATH "${MINGW_64}/bin/libc++.dll")
+
+  # Add ICU library support for MinGW
+  find_package(PkgConfig QUIET)
+  if(PKG_CONFIG_FOUND)
+    pkg_check_modules(ICU QUIET icu-uc icu-i18n icu-io)
+    if(ICU_FOUND)
+      message(STATUS "Found ICU via pkg-config")
+      list(APPEND BRIDGE_INCLUDE ${ICU_INCLUDE_DIRS})
+    endif()
+  endif()
 
 
   # Install the DLL to the runtime binary directory
   # 'bin' is the standard destination for runtime executables and required DLLs
-  install(FILES "${LIBPTHREAD_DLL_PATH}" DESTINATION bin)
-  install(FILES "${LIBGCC_DLL_PATH}" DESTINATION bin)
-  install(FILES "${LIBSTDCXX_DLL_PATH}" DESTINATION bin)
+  install(FILES "${LIBPTHREAD_DLL_PATH}" DESTINATION .)
+  install(FILES "${LIBGCC_DLL_PATH}" DESTINATION .)
+  install(FILES "${LIBSTDCXX_DLL_PATH}" DESTINATION .)
 endif()
 
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(CMAKE_OSX_ARCHITECTURES "arm64")
+  # Allow CMAKE_OSX_ARCHITECTURES to be set from command line
+  # If not specified, default to native architecture
+  if(NOT CMAKE_OSX_ARCHITECTURES)
+    # Detect native architecture
+    execute_process(
+      COMMAND uname -m
+      OUTPUT_VARIABLE NATIVE_ARCH
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(NATIVE_ARCH STREQUAL "arm64")
+      set(CMAKE_OSX_ARCHITECTURES "arm64")
+    else()
+      set(CMAKE_OSX_ARCHITECTURES "x86_64")
+    endif()
+  endif()
+endif ()
+
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  # Use libc++ statically linked on Linux
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -static-libgcc")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -stdlib=libc++ -static-libgcc")
+  
+  # Ensure we're using clang/clang++ for libc++ support
+  if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    message(WARNING "Using libc++ requires Clang compiler. Current compiler: ${CMAKE_CXX_COMPILER_ID}")
+  endif()
+  
+  message(STATUS "Using static libc++ for Linux build")
+  
+  # STATIC_QUICKJS is set via build script (-DSTATIC_QUICKJS=true)
 endif ()
 
 set(WEBF_JS_ENGINE $ENV{WEBF_JS_ENGINE})
@@ -56,20 +136,6 @@ if (${ENABLE_LOG})
   add_definitions(-DENABLE_LOG=1)
 else()
   add_definitions(-DENABLE_LOG=0)
-endif()
-
-if(NOT MSVC)
-  if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    include(CheckIPOSupported)
-    check_ipo_supported(RESULT supported OUTPUT error)
-    if( supported )
-      set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-      add_compile_options(-flto)
-    endif()
-  else ()
-    # debug
-    add_compile_options(-g3 -O0)
-  endif()
 endif()
 
 list(APPEND WEBF_PUBLIC_HEADERS
@@ -212,6 +278,7 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
   )
 
   target_link_libraries(quickjs PRIVATE Threads::Threads)
+  target_link_libraries(qjsc PRIVATE Threads::Threads m)
 
   set(MI_OVERRIDE OFF)
 #  if (NOT MSVC AND NOT DEFINED USE_SYSTEM_MALLOC)
@@ -242,14 +309,10 @@ list(APPEND PUBLIC_HEADER
   include/webf_bridge.h
 )
 
-add_library(webf SHARED ${BRIDGE_SOURCE})
-
-target_compile_definitions(webf PUBLIC -DFLUTTER_BACKEND=1)
-
 if (${IS_ANDROID})
   find_library(log-lib log)
 
-#  add_link_options("-Wl,-z,max-page-size=16384")
+  #  add_link_options("-Wl,-z,max-page-size=16384")
 
   if (${ANDROID_ABI} MATCHES "armeabi-v7a" OR ${ANDROID_ABI} MATCHES "x86")
     add_definitions(-DANDROID_32_BIT=1)
@@ -262,20 +325,44 @@ elseif(${IS_IOS})
   add_definitions(-DIS_IOS=1)
 endif()
 
+# Always create a static library with core sources to avoid duplicate compilation
+# Remove webf_bridge.cc from the core static library sources
+# webf_bridge.cc contains the export symbols and needs to be compiled directly into the shared library
+set(WEBF_CORE_SOURCE ${BRIDGE_SOURCE})
+list(REMOVE_ITEM WEBF_CORE_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/webf_bridge.cc)
 
-## webf
+add_library(webf_core STATIC ${WEBF_CORE_SOURCE})
+# Set position-independent code for static library that will be linked into shared library
+set_target_properties(webf_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_include_directories(webf_core PUBLIC
+  ${BRIDGE_INCLUDE}
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ./include)
+target_link_libraries(webf_core PUBLIC ${BRIDGE_LINK_LIBS})
+
+# webf shared library compiles webf_bridge.cc directly to ensure symbols are exported
+add_library(webf SHARED ${CMAKE_CURRENT_SOURCE_DIR}/webf_bridge.cc)
+target_link_libraries(webf PUBLIC webf_core ${BRIDGE_LINK_LIBS})
 target_include_directories(webf PRIVATE
   ${BRIDGE_INCLUDE}
-  ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
-target_link_libraries(webf PRIVATE ${BRIDGE_LINK_LIBS})
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ./include)
+
+
+
+
+## webf
+# Include directories and link libraries are already set above when creating webf
 
 if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs" AND NOT MSVC)
   if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti -fdata-sections -ffunction-sections)
+    target_compile_options(webf_core PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti -fdata-sections -ffunction-sections)
     target_compile_options(quickjs PRIVATE -fno-exceptions -fno-rtti -fdata-sections -ffunction-sections)
   else ()
     ### remove dynamic_cast and exceptions
     target_compile_options(webf PRIVATE -fno-exceptions -fno-rtti)
+    target_compile_options(webf_core PRIVATE -fno-exceptions -fno-rtti)
   endif ()
 endif ()
 
@@ -294,24 +381,18 @@ execute_process(
 string(REPLACE \n "" GIT_HEAD ${GIT_HEAD}) # Remove last \n
 add_definitions(-DAPP_REV="${GIT_HEAD}") # Read from git head sha1
 
-if (${ENABLE_TEST})
-  add_compile_definitions(IS_TEST=true)
-  include(./test/css_unittests.cmake)
-  include(./test/test.cmake)
-endif ()
+add_compile_definitions(IS_TEST=true)
+include(./test/css_unittests.cmake)
+# Always include test.cmake to make webf_unit_test target available
+include(./test/test.cmake)
 
-if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
-  install(TARGETS quickjs
-          LIBRARY DESTINATION lib     # For Unix-like OSes
-          ARCHIVE DESTINATION lib     # For static libs, if built
-          RUNTIME DESTINATION bin     # For Windows DLLs
-          INCLUDES DESTINATION include)
-  install(TARGETS webf
-          LIBRARY DESTINATION lib     # For Unix-like OSes
-          ARCHIVE DESTINATION lib     # For static libs, if built
-          RUNTIME DESTINATION bin     # For Windows DLLs
-          INCLUDES DESTINATION include)
-else()
+#if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
+#  install(TARGETS webf
+#          LIBRARY DESTINATION lib     # For Unix-like OSes
+#          ARCHIVE DESTINATION lib     # For static libs, if built
+#          RUNTIME DESTINATION bin     # For Windows DLLs
+#          INCLUDES DESTINATION include)
+#else()
   if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
     set_target_properties(webf
       PROPERTIES
@@ -333,7 +414,7 @@ else()
   elseif (IS_ANDROID)
     # android do nothing
   endif ()
-endif()
+#endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
   set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO")

@@ -115,12 +115,12 @@ if (process.env.SPEC_SCOPE) {
   })
   if (process.env.WEBF_TEST_FILTER) {
     const filters = process.env.WEBF_TEST_FILTER.split('|');
-    
+
     const originalFiles = [...coreSpecFiles];
     coreSpecFiles = coreSpecFiles.filter(name => {
       return filters.some(filter => name.includes(filter));
     });
-    
+
     console.log(`Filtered spec files (${coreSpecFiles.length - 2} test files from ${originalFiles.length - 2} total):`); // -2 for runtime files
     coreSpecFiles.forEach(file => {
       if (!file.includes('runtime')) {
@@ -136,18 +136,6 @@ if (process.env.SPEC_SCOPE) {
     }
     return { snapshotRoot: null, delayForSnapshot: false };
   }
-}
-
-const dartVersion = execSync('dart --version', { encoding: 'utf-8' });
-const regExp = /Dart SDK version: (\d\.\d{1,3}\.\d{1,3}) /;
-let versionNum = regExp.exec(dartVersion)[1];
-const ignoreSpecsForOldFlutter = [
-  './specs/dom/elements/pre.ts'
-];
-if (versionNum && parseFloat(versionNum) < 2.19) {
-  coreSpecFiles = coreSpecFiles.filter(file => {
-    return ignoreSpecsForOldFlutter.indexOf(file) === -1;
-  })
 }
 
 // Add runtime helpers

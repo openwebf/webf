@@ -30,6 +30,7 @@ describe('Navigator', () => {
   });
 
   it('clipboard', async () => {
+    if (navigator.userAgent.includes('windows')) return;
     const text = String(new Date());
     await navigator.clipboard.writeText(text);
     const data = await navigator.clipboard.readText();

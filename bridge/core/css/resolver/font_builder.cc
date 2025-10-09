@@ -7,6 +7,11 @@
 #include "core/style/computed_style.h"
 #include "core/platform/fonts/font_description.h"
 
+// Undefine Windows macros that conflict with our method names
+#ifdef CreateFont
+#undef CreateFont
+#endif
+
 namespace webf {
 
 void FontBuilder::CreateFont(ComputedStyleBuilder& builder, 

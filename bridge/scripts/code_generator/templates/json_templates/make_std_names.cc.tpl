@@ -13,11 +13,11 @@ namespace <%= name %>_atomicstring {
 
 <% _.forEach(data, function(name, index) { %>
   <% if (_.isArray(name)) { %>
-    const AtomicString k<%= options.camelcase ? upperCamelCase(name[0]) : name[0] %> = AtomicString::CreateFromUTF8("<%= name[1] %>");
+    const thread_local AtomicString k<%= options.camelcase ? upperCamelCase(name[0]) : name[0] %> = AtomicString::CreateFromUTF8("<%= name[1] %>");
   <% } else if (_.isObject(name)) { %>
-    const AtomicString k<%= options.camelcase ? upperCamelCase(name.name) : name.name %> = AtomicString::CreateFromUTF8("<%= name.name %>");
+    const thread_local AtomicString k<%= options.camelcase ? upperCamelCase(name.name) : name.name %> = AtomicString::CreateFromUTF8("<%= name.name %>");
   <% } else { %>
-     const AtomicString k<%= options.camelcase ? upperCamelCase(name) : name %> = AtomicString::CreateFromUTF8("<%= name %>");
+     const thread_local AtomicString k<%= options.camelcase ? upperCamelCase(name) : name %> = AtomicString::CreateFromUTF8("<%= name %>");
   <% } %>
 <% }) %>
 }

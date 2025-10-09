@@ -13,7 +13,7 @@
 
 namespace webf {
 
-struct NativeTouch {
+struct NativeTouch: DartReadable {
   int64_t identifier;
   NativeBindingObject* target;
   double clientX;

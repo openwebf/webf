@@ -11,6 +11,11 @@
 #include "code_gen/html_css.h"
 #include "code_gen/quirks_css.h"
 
+// Undefine Windows macros that conflict with our logging constants
+#ifdef ERROR
+#undef ERROR
+#endif
+
 namespace webf {
 
 // Default HTML stylesheet - loaded from bridge/core/css/resources/html.css via CMake

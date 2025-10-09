@@ -29,15 +29,33 @@ target_include_directories(${PLUGIN_NAME} INTERFACE
 target_link_libraries(${PLUGIN_NAME} PRIVATE flutter)
 target_link_libraries(${PLUGIN_NAME} PRIVATE PkgConfig::GTK)
 
-
-# Invoke the build for native code shared with the other target platforms.
-# This can be changed to accommodate different builds.
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../src" "${CMAKE_CURRENT_BINARY_DIR}/shared")
-
+# Automatically copy shared library files during CMake configuration
+find_program(NODE_EXECUTABLE node)
+if(NODE_EXECUTABLE)
+    message(STATUS "Running resolve_libs.js to copy shared library files...")
+    execute_process(
+        COMMAND ${NODE_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/resolve_libs.js"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        RESULT_VARIABLE RESOLVE_RESULT
+        OUTPUT_VARIABLE RESOLVE_OUTPUT
+        ERROR_VARIABLE RESOLVE_ERROR
+    )
+    
+    if(NOT RESOLVE_RESULT EQUAL 0)
+        message(WARNING "resolve_libs.js failed: ${RESOLVE_ERROR}")
+    else()
+        message(STATUS "Shared library copying completed: ${RESOLVE_OUTPUT}")
+    endif()
+else()
+    message(WARNING "Node.js not found, symbolic links will be used directly")
+endif()
 
 # List of absolute paths to libraries that should be bundled with the plugin
+# Note: libwebf.so now contains statically linked QuickJS and libc++
 set(webf_bundled_libraries
-    $<TARGET_FILE:webf>
-    $<TARGET_FILE:quickjs>
+    ${CMAKE_CURRENT_SOURCE_DIR}/libwebf.so
+    ${CMAKE_CURRENT_SOURCE_DIR}/libc++.so.1
+    ${CMAKE_CURRENT_SOURCE_DIR}/libc++abi.so.1
+    ${CMAKE_CURRENT_SOURCE_DIR}/libunwind.so.1
     PARENT_SCOPE
   )

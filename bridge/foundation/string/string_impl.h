@@ -6,6 +6,7 @@
 #ifndef WEBF_FOUNDATION_STRING_IMPL_H_
 #define WEBF_FOUNDATION_STRING_IMPL_H_
 
+#include <atomic>
 #include <cassert>
 #include <cinttypes>
 #include <cstring>

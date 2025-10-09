@@ -15,6 +15,7 @@
 #include "tree_scope.h"
 #include "qjs_element_creation_options.h"
 #include "qjs_unionelement_creation_options_dom_string.h"
+#include "core/html/html_script_element.h"
 
 namespace webf {
 

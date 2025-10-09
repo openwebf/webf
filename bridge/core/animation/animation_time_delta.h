@@ -10,6 +10,7 @@
 #define WEBF_CORE_ANIMATION_ANIMATION_TIME_DELTA_H_
 
 #include <cassert>
+#include <cmath>
 #include <limits>
 #include <ostream>
 #include "foundation/macros.h"

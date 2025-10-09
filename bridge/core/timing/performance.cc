@@ -14,6 +14,7 @@
 #include "performance_mark.h"
 #include "performance_measure.h"
 #include "qjs_performance_measure_options.h"
+#include "string/atomic_string_table.h"
 
 namespace webf {
 
@@ -57,7 +58,8 @@ std::vector<Member<PerformanceEntry>> Performance::getEntriesByType(const Atomic
                                                                     ExceptionState& exception_state) {
   std::vector<Member<PerformanceEntry>> result;
   for (auto& entry : entries_) {
-    if (entry->entryType() == entry_type) {
+    // Check if the Member pointer is valid before dereferencing
+    if (entry && entry->entryType() == entry_type) {
       result.emplace_back(entry);
     };
   }
@@ -69,7 +71,8 @@ std::vector<Member<PerformanceEntry>> Performance::getEntriesByName(const Atomic
                                                                     ExceptionState& exception_state) {
   std::vector<Member<PerformanceEntry>> result;
   for (auto& entry : entries_) {
-    if (entry->name() == name) {
+    // Check if the Member pointer is valid before dereferencing
+    if (entry && entry->name() == name) {
       result.emplace_back(entry);
     };
   }
@@ -82,7 +85,8 @@ std::vector<Member<PerformanceEntry>> Performance::getEntriesByName(const Atomic
                                                                     ExceptionState& exception_state) {
   std::vector<Member<PerformanceEntry>> result;
   for (auto& entry : entries_) {
-    if (entry->name() == name && entry->entryType() == entry_type) {
+    // Check if the Member pointer is valid before dereferencing
+    if (entry && entry->name() == name && entry->entryType() == entry_type) {
       result.emplace_back(entry);
     }
   }
@@ -149,7 +153,8 @@ void Performance::clearMeasures(const AtomicString& name, ExceptionState& except
   auto it = std::begin(entries_);
 
   while (it != std::end(entries_)) {
-    if (!((*it)->entryType() == performance_entry_names::kmeasure && (*it)->name() == name)) {
+    // Check if the Member pointer is valid before dereferencing
+    if (*it && !((*it)->entryType() == performance_entry_names::kmeasure && (*it)->name() == name)) {
       new_entries.emplace_back(*it);
     }
     it++;
@@ -217,7 +222,7 @@ void Performance::measure(const AtomicString& measure_name,
 
   if (end_mark.empty()) {
     auto start_entry = std::find_if(start_it, entries_.end(),
-                                    [&start_mark](auto&& entry) -> bool { return entry->name() == start_mark; });
+                                    [&start_mark](auto&& entry) -> bool { return entry && entry->name() == start_mark; });
     auto* measure = PerformanceMeasure::Create(GetExecutingContext(), measure_name, (*start_entry)->startTime(),
                                                now(exception_state), ScriptValue::Empty(ctx()), exception_state);
     entries_.emplace_back(measure);
@@ -225,7 +230,7 @@ void Performance::measure(const AtomicString& measure_name,
   }
 
   size_t start_mark_count = std::count_if(entries_.begin(), entries_.end(),
-                                          [&start_mark](auto&& entry) -> bool { return entry->name() == start_mark; });
+                                          [&start_mark](auto&& entry) -> bool { return entry && entry->name() == start_mark; });
 
   int64_t start_timestamp = 0;
   bool start_is_timestamp = false;
@@ -248,7 +253,7 @@ void Performance::measure(const AtomicString& measure_name,
   }
 
   size_t end_mark_count = std::count_if(entries_.begin(), entries_.end(),
-                                        [end_mark](auto&& entry) -> bool { return entry->name() == end_mark; });
+                                        [end_mark](auto&& entry) -> bool { return entry && entry->name() == end_mark; });
 
   int64_t end_timestamp = 0;
   bool end_is_timestamp = false;
@@ -295,11 +300,12 @@ void Performance::measure(const AtomicString& measure_name,
 
   for (size_t i = 0; i < start_mark_count; i++) {
     auto start_entry = std::find_if(start_it, entries_.end(),
-                                    [&start_mark](auto&& entry) -> bool { return entry->name() == start_mark; });
+                                    [&start_mark](auto&& entry) -> bool { return entry && entry->name() == start_mark; });
 
     bool is_start_entry_has_unique_id = (*start_entry)->uniqueId() != PERFORMANCE_ENTRY_NONE_UNIQUE_ID;
 
     auto end_entry_comparator = [&end_mark, &start_entry, is_start_entry_has_unique_id](auto&& entry) -> bool {
+      if (!entry) return false;
       if (is_start_entry_has_unique_id) {
         return entry->uniqueId() == (*start_entry)->uniqueId() && entry->name() == end_mark;
       }

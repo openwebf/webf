@@ -33,12 +33,9 @@
 #include <cassert>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include "foundation/macros.h"
-
-#if defined(_WIN32)
-#include <corecrt_math_defines.h>
-#endif
 
 constexpr double kPiDouble = M_PI;
 constexpr float kPiFloat = static_cast<float>(M_PI);

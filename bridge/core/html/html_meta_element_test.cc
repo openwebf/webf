@@ -13,6 +13,11 @@
 #include "bindings/qjs/cppgc/mutation_scope.h"
 #include "gtest/gtest.h"
 
+// Undefine Windows macros that conflict with our logging constants
+#ifdef ERROR
+#undef ERROR
+#endif
+
 namespace webf {
 
 class HTMLMetaElementTest : public testing::Test {

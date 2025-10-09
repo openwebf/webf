@@ -31,6 +31,7 @@
 #ifndef WEBF_FOUNDATION_DECIMAL_H_
 #define WEBF_FOUNDATION_DECIMAL_H_
 
+#include <cinttypes>
 #include <cassert>
 #include "foundation/macros.h"
 

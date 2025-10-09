@@ -1,21 +1,17 @@
+set(CMAKE_CXX_STANDARD 20)
+set(gtest_disable_pthreads ON)
+
+set(INSTALL_GTEST OFF)
+set(INSTALL_GMOCK OFF)
+
+add_subdirectory(./third_party/googletest)
+
 list(APPEND WEBF_TEST_SOURCE
   include/webf_bridge_test.h
   webf_bridge_test.cc
   ./test/test_framework_polyfill.c
-)
-
-set(CMAKE_CXX_STANDARD 20)
-set(gtest_disable_pthreads ON)
-
-add_subdirectory(./third_party/googletest)
-add_subdirectory(./third_party/benchmark)
-
-list(APPEND WEBF_TEST_SOURCE
-        test/webf_test_context.cc
-        test/webf_test_context.h
-        )
-
-list(APPEND WEBF_UNIT_TEST_SOURCE
+  test/webf_test_context.cc
+  test/webf_test_context.h
   ./test/webf_test_env.cc
   ./test/webf_test_env.h
   ./bindings/qjs/atomic_string_test.cc
@@ -44,15 +40,31 @@ list(APPEND WEBF_UNIT_TEST_SOURCE
   ./core/devtools/remote_object_test.cc
   ./core/devtools/devtools_bridge_test.cc
   ./test/html_script_element_casting_test.cc
+
 )
 
 ### webf_unit_test executable
-add_executable(webf_unit_test
-  ${WEBF_UNIT_TEST_SOURCE}
-  ${WEBF_CSS_UNIT_TEST_SOURCE}
-  ${WEBF_TEST_SOURCE}
-  ${BRIDGE_SOURCE}
-)
+if (TARGET webf_core)
+  # When webf_core exists, link to the static library instead of recompiling
+  add_executable(webf_unit_test
+    ${WEBF_TEST_SOURCE}
+    ${WEBF_CSS_UNIT_TEST_SOURCE}
+  )
+else()
+  # Without webf_core, compile sources directly
+  add_executable(webf_unit_test
+    ${WEBF_TEST_SOURCE}
+    ${WEBF_CSS_UNIT_TEST_SOURCE}
+    ${BRIDGE_SOURCE}
+  )
+endif()
+
+target_compile_definitions(webf_unit_test PUBLIC -DSPEC_FILE_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
+target_compile_definitions(webf_unit_test PUBLIC -DUNIT_TEST=1)
+
+target_compile_options(quickjs PUBLIC -DDUMP_LEAKS=1)
+target_compile_definitions(quickjs PUBLIC DUMP_LEAKS=1)
+target_compile_options(webf PUBLIC -DDUMP_LEAKS=1)
 
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 enable_testing()
@@ -60,73 +72,70 @@ enable_testing()
 # this sets the output dir to /bin
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
-target_include_directories(webf_unit_test PUBLIC ./third_party/googletest/googletest/include ${BRIDGE_INCLUDE} ./test)
-target_link_libraries(webf_unit_test
-  ${BRIDGE_LINK_LIBS}
-  GTest::gtest_main
-)
-
-include(GoogleTest)
-gtest_discover_tests(webf_unit_test)
-
-target_compile_options(quickjs PUBLIC -DDUMP_LEAKS=1)
-target_compile_definitions(quickjs PUBLIC DUMP_LEAKS=1)
-target_compile_options(webf PUBLIC -DDUMP_LEAKS=1)
-
-target_compile_definitions(webf_unit_test PUBLIC -DFLUTTER_BACKEND=0)
-target_compile_definitions(webf_unit_test PUBLIC -DSPEC_FILE_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
-target_compile_definitions(webf_unit_test PUBLIC -DUNIT_TEST=1)
-
-if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
-  set_target_properties(webf_unit_test
-          PROPERTIES
-          RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-          )
-endif()
-
-# Run webf integration without flutter.
-add_executable(webf_integration_test
-  ${WEBF_TEST_SOURCE}
-  ${BRIDGE_SOURCE}
-  ./test/webf_test_env.cc
-  ./test/webf_test_env.h
-  ./test/run_integration_test.cc
-  )
-target_include_directories(webf_integration_test PUBLIC ./third_party/googletest/googletest/include ${BRIDGE_INCLUDE} ./test)
-target_link_libraries(webf_integration_test gtest gtest_main ${BRIDGE_LINK_LIBS})
-target_compile_definitions(webf_integration_test PUBLIC -DFLUTTER_BACKEND=0)
-target_compile_definitions(webf_integration_test PUBLIC -DUNIT_TEST=1)
-target_compile_definitions(webf_integration_test PUBLIC -DSPEC_FILE_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
-
-# Benchmark test
-add_executable(webf_benchmark
-  ${WEBF_TEST_SOURCE}
-  ${BRIDGE_SOURCE}
-  ./test/webf_test_env.cc
-  ./test/webf_test_env.h
-  ./test/benchmark/create_element.cc
-)
-target_include_directories(webf_benchmark PUBLIC
-  ./third_party/googletest/googletest/include
-  ./third_party/benchmark/include/
-  ${BRIDGE_INCLUDE}
-  ./test)
-target_link_libraries(webf_benchmark gtest gtest_main benchmark::benchmark  ${BRIDGE_LINK_LIBS})
-target_compile_definitions(webf_benchmark PUBLIC -DFLUTTER_BACKEND=0)
-target_compile_definitions(webf_benchmark PUBLIC -DUNIT_TEST=1)
-
-# Built libwebf_test.dylib library for integration test with flutter.
-add_library(webf_test SHARED ${WEBF_TEST_SOURCE})
-target_link_libraries(webf_test PRIVATE ${BRIDGE_LINK_LIBS} webf)
-target_include_directories(webf_test PRIVATE
-  ${BRIDGE_INCLUDE}
+target_include_directories(webf_unit_test PUBLIC 
+  ./third_party/googletest/googletest/include 
+  ${BRIDGE_INCLUDE} 
   ./test
-  ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
-  set_target_properties(webf_test
-    PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-    RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-    )
+if (TARGET webf_core)
+  # Link to webf_core which already includes BRIDGE_LINK_LIBS
+  target_link_libraries(webf_unit_test
+    webf_core
+    GTest::gtest_main
+  )
+else()
+  # Link libraries directly
+  target_link_libraries(webf_unit_test
+    ${BRIDGE_LINK_LIBS}
+    GTest::gtest_main
+  )
 endif()
+
+# Configure thread stack size
+if(WIN32)
+  if(MINGW)
+    target_link_options(webf_unit_test PRIVATE -Wl,--stack,8388608)
+  else()
+    target_link_options(webf_unit_test PRIVATE /STACK:8388608)
+  endif()
+elseif(APPLE)
+  target_link_options(webf_unit_test PRIVATE -Wl,-stack_size,0x800000)
+else()
+  # Linux - use pthread attribute or ulimit, stack size set at runtime
+  target_compile_definitions(webf_unit_test PRIVATE PTHREAD_STACK_SIZE=8388608)
+endif()
+#
+# Link Windows debugging library for backtrace functionality
+if(WIN32)
+  if(MINGW)
+    target_link_libraries(webf_unit_test -ldbghelp)
+  else()
+    target_link_libraries(webf_unit_test dbghelp)
+  endif()
+endif()
+
+list(APPEND WEBF_INTEGRATION_TEST_SOURCE
+  include/webf_bridge_test.h
+  webf_bridge_test.cc
+  ./test/test_framework_polyfill.c
+  test/webf_test_context.cc
+  test/webf_test_context.h
+)
+
+# Only add test sources to main webf library when ENABLE_TEST=true
+if(${ENABLE_TEST})
+  target_sources(webf PRIVATE ${WEBF_INTEGRATION_TEST_SOURCE})
+  target_include_directories(webf PRIVATE ./test)
+  
+  if(WIN32)
+    target_link_libraries(webf PRIVATE dbghelp)
+  endif()
+endif()
+
+set_target_properties(webf_unit_test
+  PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+  RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+)
