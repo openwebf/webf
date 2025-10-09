@@ -232,6 +232,19 @@ TEST(CSSPropertyParserTest, IncompleteColor) {
   ASSERT_FALSE(value);
 }
 
+TEST(CSSPropertyParserTest, DeclarationLastWinsIgnoresImportantInSameBlock) {
+  auto ctx = StrictCSSParserContext(SecureContextMode::kSecureContext);
+  auto set = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+  bool ok = CSSParser::ParseDeclarationList(ctx, set.get(),
+                                            "color: red !important; color: blue;"_s);
+  ASSERT_TRUE(ok);
+  ASSERT_EQ(1u, set->PropertyCount());
+  auto prop = set->PropertyAt(0);
+  EXPECT_EQ(CSSPropertyID::kColor, prop.Id());
+  EXPECT_EQ("blue", set->GetPropertyValue(CSSPropertyID::kColor));
+  EXPECT_FALSE(prop.PropertyMetadata().important_);
+}
+
 TEST(CSSPropertyParserTest, Hex8Color) {
   // Ensure 8-digit hex colors (#RRGGBBAA) are parsed.
   std::shared_ptr<const CSSValue> value = CSSParser::ParseSingleValue(

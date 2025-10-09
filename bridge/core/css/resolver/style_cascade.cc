@@ -39,11 +39,18 @@
 #include "core/css/resolver/cascade_resolver.h"
 #include "core/css/resolver/style_builder.h"
 #include "core/css/resolver/style_resolver_state.h"
+#include "core/css/parser/css_property_parser.h"
+#include "core/css/parser/css_parser_token_stream.h"
+#include "core/css/parser/css_tokenizer.h"
+#include "core/css/style_rule.h"
 #include "core/style/computed_style.h"
 #include "core/css/css_unset_value.h"
 #include "core/css/css_invalid_variable_value.h"
 #include "core/css/css_pending_substitution_value.h"
 #include "core/platform/text/writing_direction_mode.h"
+#include <unordered_map>
+#include <cctype>
+#include <functional>
 #include "foundation/logging.h"
 
 namespace webf {
@@ -152,6 +159,10 @@ void StyleCascade::AnalyzeMatchResult() {
   // WEBF_LOG(VERBOSE) << "AnalyzeMatchResult: " << matched_properties.size() << " matched property sets";
   
   uint16_t block_index = 0;
+  // Collect priorities per-property, then flush to CascadeMap sorted by
+  // ForLayerComparison to satisfy CascadeMap's insertion invariant.
+  std::vector<std::vector<CascadePriority>> native_priorities(static_cast<size_t>(kNumCSSProperties));
+  std::unordered_map<AtomicString, std::vector<CascadePriority>, AtomicString::KeyHasher> custom_priorities;
   for (const auto& entry : matched_properties) {
     if (!entry.properties) {
       continue;
@@ -203,25 +214,59 @@ void StyleCascade::AnalyzeMatchResult() {
           static_cast<uint16_t>(entry.layer_level),       // layer_order
           encoded_position);                              // position
       
-      // Add to cascade map
+      // Collect per property; we will sort by ForLayerComparison before adding
+      // to CascadeMap to guarantee non-decreasing order.
       if (property.Id() == CSSPropertyID::kVariable) {
         // Custom property
         const auto& metadata = property.PropertyMetadata();
         if (!metadata.custom_name_.IsNull()) {
-          map_.Add(metadata.custom_name_, priority);
+          custom_priorities[metadata.custom_name_].emplace_back(priority);
         }
       } else {
         // Regular property - resolve surrogates first
         const CSSProperty& css_property = CSSProperty::Get(property.Id());
         const CSSProperty& resolved_property = ResolveSurrogate(css_property);
-        // WEBF_LOG(VERBOSE) << "Adding property " << static_cast<int>(resolved_property.PropertyID()) << " to cascade map at position " << (position - 1);
-        map_.Add(resolved_property.PropertyID(), priority);
+        native_priorities[static_cast<size_t>(resolved_property.PropertyID())].emplace_back(priority);
       }
     }
     ++block_index;
   }
   
   needs_match_result_analyze_ = false;
+
+  // Flush native properties in non-decreasing ForLayerComparison order.
+  for (size_t pid = 0; pid < native_priorities.size(); ++pid) {
+    auto& vec = native_priorities[pid];
+    if (vec.empty()) continue;
+    std::stable_sort(vec.begin(), vec.end(), [](const CascadePriority& a, const CascadePriority& b) {
+      uint64_t fa = a.ForLayerComparison();
+      uint64_t fb = b.ForLayerComparison();
+      if (fa != fb) return fa < fb;
+      // Tie-break: prefer non-inline before inline to keep consistency
+      if (a.IsInlineStyle() != b.IsInlineStyle()) return !a.IsInlineStyle();
+      // Final tie-breaker: position
+      return a.GetPosition() < b.GetPosition();
+    });
+    CSSPropertyID id = static_cast<CSSPropertyID>(pid);
+    for (const auto& pr : vec) {
+      map_.Add(id, pr);
+    }
+  }
+
+  // Flush custom properties in non-decreasing ForLayerComparison order.
+  for (auto& entry : custom_priorities) {
+    auto& vec = entry.second;
+    std::stable_sort(vec.begin(), vec.end(), [](const CascadePriority& a, const CascadePriority& b) {
+      uint64_t fa = a.ForLayerComparison();
+      uint64_t fb = b.ForLayerComparison();
+      if (fa != fb) return fa < fb;
+      if (a.IsInlineStyle() != b.IsInlineStyle()) return !a.IsInlineStyle();
+      return a.GetPosition() < b.GetPosition();
+    });
+    for (const auto& pr : vec) {
+      map_.Add(entry.first, pr);
+    }
+  }
 }
 
 void StyleCascade::ApplyCascadeAffecting(CascadeResolver& resolver) {
@@ -381,6 +426,9 @@ std::shared_ptr<MutableCSSPropertyValueSet> StyleCascade::BuildWinningPropertySe
   };
 
   // Export native properties (non-custom)
+  // Resolve CSSPendingSubstitutionValue like Blink by re-parsing the shorthand
+  // with variables substituted to produce concrete longhand values.
+  CascadeResolver resolver(CascadeFilter(), /*generation*/ 0);
   for (CSSPropertyID id : map_.NativeBitset()) {
     const CascadePriority* prio = map_.FindKnownToExist(id);
     if (!prio) continue;
@@ -397,8 +445,40 @@ std::shared_ptr<MutableCSSPropertyValueSet> StyleCascade::BuildWinningPropertySe
     if (!value_ptr || !(*value_ptr)) continue;
     bool important = prop_ref.PropertyMetadata().important_ || prio->IsImportant();
 
-    // Set property by ID with original value object; no evaluation performed.
-    result->SetProperty(id, *value_ptr, important);
+    const CSSProperty& property = CSSProperty::Get(id);
+    std::shared_ptr<const CSSValue> to_set = *value_ptr;  // default to original shared value
+    if (to_set && to_set->IsPendingSubstitutionValue()) {
+      if (const auto* pending = DynamicTo<cssvalue::CSSPendingSubstitutionValue>(to_set.get())) {
+        // Populate resolver cache by resolving once
+        WEBF_COND_LOG(CASCADE, VERBOSE) << "[Cascade] Resolving pending substitution for '"
+                           << CSSProperty::Get(id).GetPropertyNameString().ToUTF8String() << "'";
+        (void)ResolvePendingSubstitution(property, *pending, resolver);
+        // Find the parsed longhand value matching this property and grab its shared_ptr
+        const CSSProperty* unvisited_property = property.IsVisited() ? property.GetUnvisitedProperty() : &property;
+        for (const auto& prop_val : resolver.shorthand_cache_.parsed_properties) {
+          const CSSProperty& longhand = CSSProperty::Get(prop_val.Id());
+          if (&ResolveSurrogate(longhand) == unvisited_property) {
+            const std::shared_ptr<const CSSValue>* stored = prop_val.Value();
+            if (stored && *stored) {
+              to_set = *stored;
+              WEBF_COND_LOG(CASCADE, VERBOSE) << "[Cascade] Resolved longhand '"
+                                 << CSSProperty::Get(id).GetPropertyNameString().ToUTF8String()
+                                 << "' = '" << to_set->CssText().ToUTF8String() << "'";
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    // Set property by ID, using resolved shared_ptr when available.
+    result->SetProperty(id, to_set, important);
+
+    // Log the exported property/value for debugging.
+    WEBF_COND_LOG(CASCADE, VERBOSE) << "[Cascade] Exporting '"
+                       << CSSProperty::Get(id).GetPropertyNameString().ToUTF8String() << "' = '"
+                       << (to_set ? to_set->CssText().ToUTF8String() : std::string("<null>")) << "'"
+                       << (important ? " !important" : "");
   }
 
   // Export custom properties
@@ -517,12 +597,125 @@ const CSSValue* StyleCascade::ResolvePendingSubstitution(
 
   DCHECK_NE(property.PropertyID(), CSSPropertyID::kVariable);
 
-  // Pending substitution values represent shorthand properties that contain
-  // var() references. In WebF's current implementation, we'll return unset
-  // to use the initial value, as we don't have full variable substitution yet.
-  //
-  // In Blink, this would parse the shorthand value, resolve variables,
-  // and return the appropriate longhand values.
+  // Mirror Blink's approach:
+  // 1) Resolve variables in the shorthand's original text using the element's current custom properties.
+  // 2) Re-parse the shorthand into longhands.
+  // 3) Return the longhand value matching |property|.
+
+  // Build a map of current custom properties (winning declarations) for this element.
+  using CustomVarMap = std::unordered_map<AtomicString, String, AtomicString::KeyHasher>;
+  CustomVarMap custom_vars;
+  const auto& custom_map = map_.GetCustomMap();
+  for (const auto& entry : custom_map) {
+    const AtomicString& custom_name = entry.first;
+    // Get the top priority for this custom property name.
+    const CascadePriority& prio = map_.Top(const_cast<CascadeMap::CascadePriorityList&>(entry.second));
+    const CSSValue* cv = ValueAt(match_result_, prio.GetPosition());
+    if (!cv) continue;
+    if (const auto* unparsed = DynamicTo<CSSUnparsedDeclarationValue>(cv)) {
+      auto data = unparsed->VariableDataValue();
+      if (data) {
+        custom_vars.emplace(custom_name, String(data->OriginalText()));
+      }
+    }
+  }
+
+  // Helper to resolve var(--name[, fallback]) within a CSS text string.
+  std::function<String(const String&)> resolve_vars_in_text;
+  resolve_vars_in_text = [&](const String& input) -> String {
+    std::string s = input.ToUTF8String();
+    auto ltrim = [](const std::string& str) -> std::string {
+      size_t i = 0; while (i < str.size() && std::isspace(static_cast<unsigned char>(str[i]))) i++; return str.substr(i);
+    };
+    auto rtrim = [](const std::string& str) -> std::string {
+      if (str.empty()) return str; size_t i = str.size();
+      while (i > 0 && std::isspace(static_cast<unsigned char>(str[i-1]))) i--; return str.substr(0, i);
+    };
+    auto trim = [&](const std::string& str) -> std::string { return rtrim(ltrim(str)); };
+    size_t pos = 0;
+    while (true) {
+      size_t start = s.find("var(", pos);
+      if (start == std::string::npos) break;
+      size_t i = start + 4; int depth = 1;
+      while (i < s.size() && depth > 0) { if (s[i] == '(') depth++; else if (s[i] == ')') depth--; i++; }
+      if (depth != 0) break; // unbalanced; stop
+      size_t end = i - 1; std::string inside = s.substr(start + 4, end - (start + 4));
+      int inner_depth = 0; size_t comma_pos = std::string::npos;
+      for (size_t k = 0; k < inside.size(); ++k) { char c = inside[k];
+        if (c == '(') inner_depth++; else if (c == ')') inner_depth--; else if (c == ',' && inner_depth == 0) { comma_pos = k; break; } }
+      std::string name_part = comma_pos == std::string::npos ? inside : inside.substr(0, comma_pos);
+      std::string fb_part = comma_pos == std::string::npos ? std::string() : inside.substr(comma_pos + 1);
+      name_part = trim(name_part); fb_part = trim(fb_part);
+      std::string replacement_utf8;
+      if (name_part.rfind("--", 0) == 0) {
+        AtomicString key = AtomicString::CreateFromUTF8(name_part.c_str(), name_part.length());
+        auto it = custom_vars.find(key);
+        if (it != custom_vars.end()) {
+          replacement_utf8 = it->second.ToUTF8String();
+        } else {
+          if (!fb_part.empty()) {
+            replacement_utf8 = resolve_vars_in_text(String::FromUTF8(fb_part.c_str(), fb_part.length())).ToUTF8String();
+          } else {
+            replacement_utf8 = s.substr(start, end - start + 1);
+          }
+        }
+      } else {
+        replacement_utf8 = s.substr(start, end - start + 1);
+      }
+      s.replace(start, end - start + 1, replacement_utf8);
+      pos = start + replacement_utf8.size();
+    }
+    return String::FromUTF8(s.c_str(), s.size());
+  };
+
+  // Get shorthand original text and resolve variables within it.
+  CSSUnparsedDeclarationValue* shorthand_value = value.ShorthandValue();
+  if (!shorthand_value) {
+    return cssvalue::CSSUnsetValue::Create().get();
+  }
+  auto data = shorthand_value->VariableDataValue();
+  if (!data) {
+    return cssvalue::CSSUnsetValue::Create().get();
+  }
+  String shorthand_text = String(data->OriginalText());
+  WEBF_COND_LOG(CASCADE, VERBOSE) << "[Cascade] PendingSubstitution shorthand original: " << shorthand_text.ToUTF8String();
+  String resolved_text = resolve_vars_in_text(shorthand_text);
+  WEBF_COND_LOG(CASCADE, VERBOSE) << "[Cascade] PendingSubstitution shorthand resolved:  " << resolved_text.ToUTF8String();
+
+  // If we already cached this value, skip re-parsing.
+  bool is_cached = resolver.shorthand_cache_.value == &value;
+  if (!is_cached) {
+    // Parse the resolved shorthand text into longhands
+    CSSTokenizer tokenizer(resolved_text);
+    CSSParserTokenStream stream(tokenizer);
+    std::vector<CSSPropertyValue> parsed_properties;
+    if (!CSSPropertyParser::ParseValue(value.ShorthandPropertyId(), /*allow_important_annotation=*/false,
+                                       stream, shorthand_value->ParserContext(), parsed_properties,
+                                       StyleRule::RuleType::kStyle)) {
+      return cssvalue::CSSUnsetValue::Create().get();
+    }
+    resolver.shorthand_cache_.value = &value;
+    resolver.shorthand_cache_.parsed_properties = std::move(parsed_properties);
+    WEBF_COND_LOG(CASCADE, VERBOSE) << "[Cascade] Parsed longhands from shorthand:";
+    for (const auto& pv : resolver.shorthand_cache_.parsed_properties) {
+      const CSSProperty& lh = CSSProperty::Get(pv.Id());
+      const std::shared_ptr<const CSSValue>* v = pv.Value();
+      WEBF_COND_LOG(CASCADE, VERBOSE) << "  - " << lh.GetPropertyNameString().ToUTF8String() << ": "
+                         << (v && *v ? (*v)->CssText().ToUTF8String() : std::string("<null>"));
+    }
+  }
+
+  const auto& parsed_properties = resolver.shorthand_cache_.parsed_properties;
+  const CSSProperty* unvisited_property = property.IsVisited() ? property.GetUnvisitedProperty() : &property;
+  for (const auto& prop_val : parsed_properties) {
+    const CSSProperty& longhand = CSSProperty::Get(prop_val.Id());
+    if (&ResolveSurrogate(longhand) == unvisited_property) {
+      // Return pointer to stored CSSValue inside resolver cache (lifetime tied to resolver)
+      const std::shared_ptr<const CSSValue>* stored = prop_val.Value();
+      return stored ? stored->get() : cssvalue::CSSUnsetValue::Create().get();
+    }
+  }
+
   return cssvalue::CSSUnsetValue::Create().get();
 }
 

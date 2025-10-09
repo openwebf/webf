@@ -33,6 +33,7 @@
 #include "style_engine.h"
 
 #include <functional>
+#include <cctype>
 #include <span>
 #include <unordered_map>
 #include "core/css/css_property_name.h"
@@ -47,6 +48,9 @@
 #include "core/css/element_rule_collector.h"
 #include "core/css/resolver/style_resolver_state.h"
 #include "core/css/resolver/style_cascade.h"
+// Logging and pending substitution value support
+#include "foundation/logging.h"
+#include "core/css/css_pending_substitution_value.h"
 
 namespace webf {
 
@@ -57,7 +61,150 @@ struct CSSPropertyIDHash {
 };
 
 using InheritedValueMap = std::unordered_map<CSSPropertyID, String, CSSPropertyIDHash>;
+using CustomVarMap = std::unordered_map<AtomicString, String, AtomicString::KeyHasher>;
 
+struct InheritedState {
+  InheritedValueMap inherited_values;
+  CustomVarMap custom_vars;
+};
+
+// Very small textual resolver for var() references inside CSS text.
+// It substitutes occurrences of var(--name[, fallback]) using provided custom_vars.
+// This mirrors Blink's behavior at a high level for our narrow use-case (e.g. rgb(var(--r,g,b))).
+static String ResolveVarsInCssText(const String& input, const CustomVarMap& custom_vars) {
+  // Operate on UTF-8 for simplicity; our test inputs are ASCII-compatible.
+  std::string s = input.ToUTF8String();
+
+  auto ltrim = [](const std::string& str) -> std::string {
+    size_t i = 0;
+    while (i < str.size() && isspace(static_cast<unsigned char>(str[i]))) i++;
+    return str.substr(i);
+  };
+  auto rtrim = [](const std::string& str) -> std::string {
+    if (str.empty()) return str;
+    size_t i = str.size();
+    while (i > 0 && isspace(static_cast<unsigned char>(str[i - 1]))) i--;
+    return str.substr(0, i);
+  };
+  auto trim = [&](const std::string& str) -> std::string { return rtrim(ltrim(str)); };
+
+  size_t pos = 0;
+  while (true) {
+    size_t start = s.find("var(", pos);
+    if (start == std::string::npos) break;
+    size_t i = start + 4;  // after 'var('
+    int depth = 1;
+    while (i < s.size() && depth > 0) {
+      if (s[i] == '(') depth++;
+      else if (s[i] == ')') depth--;
+      i++;
+    }
+    if (depth != 0) {
+      // Unbalanced; abort further attempts.
+      break;
+    }
+    size_t end = i - 1;  // position of ')'
+    std::string inside = s.substr(start + 4, end - (start + 4));
+
+    // Split inside by top-level comma to get name and optional fallback.
+    int inner_depth = 0;
+    size_t comma_pos = std::string::npos;
+    for (size_t k = 0; k < inside.size(); ++k) {
+      char c = inside[k];
+      if (c == '(') inner_depth++;
+      else if (c == ')') inner_depth--;
+      else if (c == ',' && inner_depth == 0) { comma_pos = k; break; }
+    }
+    std::string name_part = comma_pos == std::string::npos ? inside : inside.substr(0, comma_pos);
+    std::string fb_part = comma_pos == std::string::npos ? std::string() : inside.substr(comma_pos + 1);
+    name_part = trim(name_part);
+    fb_part = trim(fb_part);
+
+    std::string replacement_utf8;
+    if (name_part.rfind("--", 0) == 0) {
+      AtomicString key = AtomicString::CreateFromUTF8(name_part.c_str(), name_part.length());
+      auto it = custom_vars.find(key);
+      if (it != custom_vars.end()) {
+        replacement_utf8 = it->second.ToUTF8String();
+      } else {
+        // Fallback: recursively resolve fallback text if provided; else keep original var() text
+        // (keeping original is conservative; in CSS missing var invalidates the property).
+        if (!fb_part.empty()) {
+          String fb_str = String::FromUTF8(fb_part.c_str(), fb_part.length());
+          replacement_utf8 = ResolveVarsInCssText(fb_str, custom_vars).ToUTF8String();
+        } else {
+          replacement_utf8 = s.substr(start, end - start + 1);
+        }
+      }
+    } else {
+      // Invalid custom ident; leave as-is.
+      replacement_utf8 = s.substr(start, end - start + 1);
+    }
+
+    s.replace(start, end - start + 1, replacement_utf8);
+    pos = start + replacement_utf8.size();
+  }
+
+  return String::FromUTF8(s.c_str(), s.size());
+}
+
+// Normalize gradient arguments by inserting missing commas between adjacent
+// color-stops when a stop value (e.g. 75%) is followed by a color token with
+// only whitespace in between. This helps accommodate inputs like
+// "green 75% green 100%" by transforming to "green 75%, green 100%".
+static String NormalizeGradientArguments(const String& input) {
+  std::string s = input.ToUTF8String();
+  auto normalize_in_fn = [&](size_t fn_start) {
+    // fn_start points at the start of "linear-gradient(" or similar
+    size_t lp = s.find('(', fn_start);
+    if (lp == std::string::npos) return;
+    int depth = 1;
+    size_t i = lp + 1;
+    while (i < s.size() && depth > 0) {
+      if (s[i] == '(') depth++;
+      else if (s[i] == ')') depth--;
+      i++;
+    }
+    if (depth != 0) return; // unbalanced; give up
+    size_t rp = i - 1; // position of ')'
+    // Walk range [lp+1, rp)
+    for (size_t k = lp + 1; k + 2 < rp; ++k) {
+      // Look for pattern: '%' + whitespace + [a-zA-Z#]
+      if (s[k] == '%' && (s[k + 1] == ' ' || s[k + 1] == '\t') &&
+          ((s[k + 2] >= 'A' && s[k + 2] <= 'Z') || (s[k + 2] >= 'a' && s[k + 2] <= 'z') || s[k + 2] == '#')) {
+        // If there's already a comma, skip.
+        if (k + 2 < rp && s[k + 1] == ',' ) continue;
+        // Replace single space/tabs with ", "
+        s.replace(k + 1, 1, ", ");
+        rp += 1; // length increased by 1
+      }
+    }
+  };
+
+  // Process known gradient functions.
+  const char* fns[] = {"linear-gradient(", "repeating-linear-gradient(", "radial-gradient(",
+                       "repeating-radial-gradient(", "conic-gradient("};
+  for (const char* fn : fns) {
+    size_t pos = 0;
+    while (true) {
+      size_t idx = s.find(fn, pos);
+      if (idx == std::string::npos) break;
+      normalize_in_fn(idx);
+      pos = idx + strlen(fn);
+    }
+  }
+  return String::FromUTF8(s.c_str(), s.size());
+}
+// Trim leading/trailing ASCII whitespace from a String.
+static String TrimAsciiWhitespace(const String& input) {
+  std::string s = input.ToUTF8String();
+  size_t start = 0;
+  while (start < s.size() && isspace(static_cast<unsigned char>(s[start]))) start++;
+  size_t end = s.size();
+  while (end > start && isspace(static_cast<unsigned char>(s[end - 1]))) end--;
+  if (start == 0 && end == s.size()) return input;
+  return String::FromUTF8(s.c_str() + start, end - start);
+}
 }  // namespace
 
 StyleEngine::StyleEngine(Document& document) : document_(&document) {
@@ -169,10 +316,10 @@ void StyleEngine::RecalcStyle(Document& document) {
     return;
   }
 
-  std::function<InheritedValueMap(Element*, const InheritedValueMap&)> apply_for_element =
-      [&](Element* element, const InheritedValueMap& parent_inherited) -> InheritedValueMap {
+  std::function<InheritedState(Element*, const InheritedState&)> apply_for_element =
+      [&](Element* element, const InheritedState& parent_state) -> InheritedState {
         if (!element || !element->IsStyledElement()) {
-          return parent_inherited;
+          return parent_state;
         }
 
         StyleResolver& resolver = EnsureStyleResolver();
@@ -214,13 +361,24 @@ void StyleEngine::RecalcStyle(Document& document) {
         }
 
         if (!property_set || property_set->IsEmpty()) {
-          return parent_inherited;
+          return parent_state;
         }
 
         auto* ctx = document.GetExecutingContext();
         unsigned count = property_set->PropertyCount();
         bool cleared = false;
-        InheritedValueMap inherited_values(parent_inherited);
+        InheritedValueMap inherited_values(parent_state.inherited_values);
+        CustomVarMap custom_vars(parent_state.custom_vars);
+        bool emitted_background_shorthand = false;
+
+        WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Applying styles for element tag='" << element->localName().ToUTF8String()
+                          << "' id='" << element->id().ToUTF8String() << "' class='"
+                          << element->className().ToUTF8String() << "'";
+        // Debug: check if common sizing properties exist
+        bool has_width = property_set->HasProperty(CSSPropertyID::kWidth);
+        bool has_height = property_set->HasProperty(CSSPropertyID::kHeight);
+        WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] PropertySet sizing: width=" << (has_width ? "present" : "missing")
+                          << ", height=" << (has_height ? "present" : "missing");
 
         for (unsigned i = 0; i < count; ++i) {
           auto prop = property_set->PropertyAt(i);
@@ -235,15 +393,115 @@ void StyleEngine::RecalcStyle(Document& document) {
           }
 
           const CSSValue& value = *(*value_ptr);
-          bool is_inherited_property = CSSProperty::Get(id).IsInherited();
           AtomicString prop_name = prop.Name().ToAtomicString();
           String value_string = value.CssText();
+
+          // Forward custom properties (CSS variables) to UI and record them for local substitution.
+          // Custom properties are represented with kVariable.
+          if (id == CSSPropertyID::kVariable) {
+            if (value_string.IsNull()) {
+              value_string = String("");
+            }
+            if (!cleared) {
+              WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Clear inline styles before applying variables";
+              ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
+              cleared = true;
+            }
+            WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Emitting custom property '" << prop_name.ToUTF8String()
+                              << "' = '" << value_string.ToUTF8String() << "'";
+            AtomicString value_atom_custom(value_string);
+            std::unique_ptr<SharedNativeString> args_custom = prop_name.ToStylePropertyNameNativeString();
+            ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_custom), element->bindingObject(),
+                                               value_atom_custom.ToNativeString().release());
+            // Update current custom var map (inheritance: variables inherit by default).
+            if (!value_string.IsEmpty()) {
+              custom_vars[prop_name] = value_string;
+            } else {
+              custom_vars.erase(prop_name);
+            }
+            continue;
+          }
+
+          bool is_inherited_property = CSSProperty::Get(id).IsInherited();
+
+          // Pending substitution handling: when a shorthand containing var() was
+          // expanded to longhands, the longhand values are CSSPendingSubstitutionValue
+          // which serialize to empty strings. Mirror Blink by reusing the
+          // original shorthand text with variables resolved. For background,
+          // emit the shorthand once to ensure Dart parses a consistent set of
+          // longhands.
+          if (value.IsPendingSubstitutionValue()) {
+            const auto& pending = To<cssvalue::CSSPendingSubstitutionValue>(value);
+            WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] PendingSubstitution on property '"
+                              << prop_name.ToUTF8String() << "' from shorthand '"
+                              << CSSProperty::Get(pending.ShorthandPropertyId()).GetPropertyNameString().ToUTF8String()
+                              << "'";
+            if (!emitted_background_shorthand && pending.ShorthandValue() != nullptr &&
+                pending.ShorthandPropertyId() == CSSPropertyID::kBackground) {
+              String shorthand_text = pending.ShorthandValue()->CustomCSSText();
+              // Sanitize potential trailing tokens.
+              size_t brace_pos = shorthand_text.Find('}');
+              if (brace_pos < shorthand_text.length()) {
+                shorthand_text = shorthand_text.Substring(0, brace_pos);
+              }
+              size_t semi_pos = shorthand_text.RFind(';');
+              if (semi_pos < shorthand_text.length()) {
+                shorthand_text = shorthand_text.Substring(0, semi_pos);
+              }
+              // Resolve var(...) usages using current custom property map.
+              String resolved = ResolveVarsInCssText(shorthand_text, custom_vars);
+              // Normalize gradient arguments to insert missing commas in color-stops.
+              resolved = NormalizeGradientArguments(resolved);
+              resolved = TrimAsciiWhitespace(resolved);
+              // Emit the shorthand 'background' once and skip individual longhands.
+              if (!cleared) {
+                WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Clear inline styles before applying background shorthand";
+                ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
+                cleared = true;
+              }
+              WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Emitting shorthand 'background' = '" << resolved.ToUTF8String() << "'";
+              auto shorthand_name = "background"_as;
+              std::unique_ptr<SharedNativeString> args_bg = shorthand_name.ToStylePropertyNameNativeString();
+              ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_bg), element->bindingObject(),
+                                                 AtomicString(resolved).ToNativeString().release());
+              emitted_background_shorthand = true;
+              // After emitting shorthand, allow background-image longhand to emit too as a fallback,
+              // but skip other background-* longhands.
+              if (id != CSSPropertyID::kBackgroundImage) {
+                continue;
+              }
+            } else if (pending.ShorthandPropertyId() == CSSPropertyID::kBackground && emitted_background_shorthand) {
+              if (id != CSSPropertyID::kBackgroundImage) {
+                WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Skipping background longhand '" << prop_name.ToUTF8String()
+                                  << "' (shorthand already emitted)";
+                continue;
+              }
+            }
+            if (id == CSSPropertyID::kBackgroundImage && pending.ShorthandValue() != nullptr) {
+              value_string = pending.ShorthandValue()->CustomCSSText();
+              size_t brace_pos = value_string.Find('}');
+              if (brace_pos < value_string.length()) {
+                value_string = value_string.Substring(0, brace_pos);
+              }
+              size_t semi_pos = value_string.RFind(';');
+              if (semi_pos < value_string.length()) {
+                value_string = value_string.Substring(0, semi_pos);
+              }
+              value_string = ResolveVarsInCssText(value_string, custom_vars);
+              value_string = NormalizeGradientArguments(value_string);
+              value_string = TrimAsciiWhitespace(value_string);
+              WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Using shorthand text for background-image: "
+                                << value_string.ToUTF8String();
+            } else {
+              continue;
+            }
+          }
 
           if (is_inherited_property) {
             if (value.IsInheritedValue() || value.IsUnsetValue() || value.IsRevertValue() ||
                 value.IsRevertLayerValue()) {
-              auto inherited_it = parent_inherited.find(id);
-              if (inherited_it != parent_inherited.end()) {
+              auto inherited_it = parent_state.inherited_values.find(id);
+              if (inherited_it != parent_state.inherited_values.end()) {
                 value_string = inherited_it->second;
                 if (!value_string.IsEmpty()) {
                   inherited_values[id] = value_string;
@@ -269,36 +527,42 @@ void StyleEngine::RecalcStyle(Document& document) {
           }
 
           if (!cleared) {
+            WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Clear inline styles before applying first property";
             ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
             cleared = true;
           }
 
           AtomicString value_atom(value_string);
           std::unique_ptr<SharedNativeString> args_01 = prop_name.ToStylePropertyNameNativeString();
+          WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Emitting property '" << prop_name.ToUTF8String() << "' = '"
+                            << value_string.ToUTF8String() << "'";
           ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), element->bindingObject(),
                                              value_atom.ToNativeString().release());
         }
 
-        return inherited_values;
+        InheritedState next_state;
+        next_state.inherited_values = std::move(inherited_values);
+        next_state.custom_vars = std::move(custom_vars);
+        return next_state;
       };
 
-  std::function<void(Node*, const InheritedValueMap&)> walk =
-      [&](Node* node, const InheritedValueMap& inherited_values) {
+  std::function<void(Node*, const InheritedState&)> walk =
+      [&](Node* node, const InheritedState& inherited_state) {
         if (!node) {
           return;
         }
 
-        InheritedValueMap current_inherited = inherited_values;
+        InheritedState current_state = inherited_state;
         if (node->IsElementNode()) {
-          current_inherited = apply_for_element(static_cast<Element*>(node), inherited_values);
+          current_state = apply_for_element(static_cast<Element*>(node), inherited_state);
         }
 
         for (Node* child = node->firstChild(); child; child = child->nextSibling()) {
-          walk(child, current_inherited);
+          walk(child, current_state);
         }
       };
 
-  walk(document.documentElement(), InheritedValueMap());
+  walk(document.documentElement(), InheritedState());
 }
 
 void StyleEngine::Trace(GCVisitor* visitor) {}

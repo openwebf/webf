@@ -13,6 +13,7 @@
 #include "core/css/hash_tools.h"
 #include "core/css/parser/at_rule_descriptor_parser.h"
 #include "core/css/parser/css_parser_impl.h"
+#include "core/css/parser/css_parser.h"
 #include "core/css/parser/css_tokenized_value.h"
 #include "core/css/parser/css_variable_parser.h"
 #include "core/css/properties/css_bitset.h"
@@ -48,6 +49,48 @@ bool IsPropertyAllowedInRule(const CSSProperty& property, StyleRule::RuleType ru
 }
 
 }  // namespace
+
+// Normalize gradient arguments by inserting missing commas between adjacent
+// color-stops when a stop value (e.g. 75%) is followed by a color token with
+// only whitespace between. This helps with inputs like
+// "green 75% green 100%" by transforming to "green 75%, green 100%".
+static String NormalizeGradientCommas(const String& input) {
+  std::string s = input.ToUTF8String();
+  auto normalize_in_fn = [&](size_t fn_start, const char* fn) {
+    size_t lp = s.find('(', fn_start + strlen(fn) - 1);
+    if (lp == std::string::npos) return;
+    int depth = 1;
+    size_t i = lp + 1;
+    while (i < s.size() && depth > 0) {
+      if (s[i] == '(') depth++;
+      else if (s[i] == ')') depth--;
+      i++;
+    }
+    if (depth != 0) return; // unbalanced
+    size_t rp = i - 1;
+    for (size_t k = lp + 1; k + 2 < rp; ++k) {
+      if (s[k] == '%' && (s[k + 1] == ' ' || s[k + 1] == '\t') &&
+          ((s[k + 2] >= 'A' && s[k + 2] <= 'Z') || (s[k + 2] >= 'a' && s[k + 2] <= 'z') || s[k + 2] == '#')) {
+        // insert ", " between stop and next color token
+        s.replace(k + 1, 1, ", ");
+        rp += 1; // account for increased length
+      }
+    }
+  };
+
+  const char* fns[] = {"linear-gradient(", "repeating-linear-gradient(", "radial-gradient(",
+                       "repeating-radial-gradient(", "conic-gradient("};
+  for (const char* fn : fns) {
+    size_t pos = 0;
+    while (true) {
+      size_t idx = s.find(fn, pos);
+      if (idx == std::string::npos) break;
+      normalize_in_fn(idx, fn);
+      pos = idx + strlen(fn);
+    }
+  }
+  return String::FromUTF8(s.c_str(), s.size());
+}
 
 CSSPropertyParser::CSSPropertyParser(CSSParserTokenStream& stream,
                                      std::shared_ptr<const CSSParserContext> context,
@@ -103,7 +146,8 @@ bool CSSPropertyParser::ParseCSSWideKeyword(CSSPropertyID unresolved_property, b
 bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
                                         bool allow_important_annotation,
                                         StyleRule::RuleType rule_type) {
-  if (ParseCSSWideKeyword(unresolved_property, rule_type)) {
+  // Correctly pass allow_important_annotation instead of rule_type
+  if (ParseCSSWideKeyword(unresolved_property, allow_important_annotation)) {
     return true;
   }
 
@@ -154,9 +198,12 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
     }
 
     // Remove any properties that may have been added by ParseShorthand()
-    // during a failing parse earlier.
-    parsed_properties_->erase(parsed_properties_->begin(), parsed_properties_->begin() + parsed_properties_size);
-    parsed_properties_->shrink_to_fit();
+    // during a failing parse earlier. Only remove the entries appended
+    // after we started parsing this shorthand, not the previously parsed
+    // declarations.
+    if (parsed_properties_->size() > static_cast<size_t>(parsed_properties_size)) {
+      parsed_properties_->erase(parsed_properties_->begin() + parsed_properties_size, parsed_properties_->end());
+    }
   } else {
     if (std::shared_ptr<const CSSValue> parsed_value =
             css_parsing_utils::ParseLonghand(unresolved_property, CSSPropertyID::kInvalid, context_, stream_)) {
@@ -187,6 +234,9 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
   value.text = CSSVariableParser::StripTrailingWhitespaceAndComments(value.text);
 
   if (CSSVariableParser::ContainsValidVariableReferences(value.range, context_->GetExecutingContext())) {
+    WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] PendingSubstitution fallback for '"
+                      << CSSProperty::Get(property_id).GetPropertyNameString().ToUTF8String() << "' text='"
+                      << String(value.text).ToUTF8String() << "'";
     if (value.text.length() > CSSVariableData::kMaxVariableBytes) {
       return false;
     }
@@ -204,6 +254,30 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
                   css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
     }
     return true;
+  }
+
+  // Tolerant fallback for gradients without commas between adjacent stops.
+  // Only attempt a reparse if normalization actually changes the text to avoid recursion.
+  if (is_shorthand && property_id == CSSPropertyID::kBackground) {
+    String text = String(value.text);
+    String normalized = NormalizeGradientCommas(text);
+    if (normalized != text) {
+      // Detect and remove !important if present (value already had it removed)
+      bool imp2 = CSSParserImpl::RemoveImportantAnnotationIfPresent(value);
+      auto tmp = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+      auto ctx = context_;
+      auto res = CSSParser::ParseValue(tmp.get(), property_id, normalized, imp2, ctx);
+      if (res != MutableCSSPropertyValueSet::kParseError && tmp->PropertyCount() > 0) {
+        for (unsigned i = 0; i < tmp->PropertyCount(); ++i) {
+          auto p = tmp->PropertyAt(i);
+          const auto* v = p.Value();
+          if (v && *v) {
+            parsed_properties_->emplace_back(CSSPropertyValue(p.PropertyMetadata(), *v));
+          }
+        }
+        return true;
+      }
+    }
   }
 
   return false;

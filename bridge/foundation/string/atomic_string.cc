@@ -205,6 +205,10 @@ std::unique_ptr<SharedNativeString> AtomicString::ToStylePropertyNameNativeStrin
   size_t index = 0;
 
   if (string_->Is8Bit()) {
+    // Preserve custom property names (starting with "--") exactly as-is.
+    if (string_->length() >= 2 && (*string_)[0] == '-' && (*string_)[1] == '-') {
+      return ToNativeString();
+    }
     if (this->Contains('-')) {
       bool isDash = false;
       for (auto ch : *string_) {
@@ -223,6 +227,10 @@ std::unique_ptr<SharedNativeString> AtomicString::ToStylePropertyNameNativeStrin
     }
     return ToNativeString();
   } else {
+    // Preserve custom property names (starting with "--") exactly as-is.
+    if (string_->length() >= 2 && (*string_)[0] == u'-' && (*string_)[1] == u'-') {
+      return ToNativeString();
+    }
     if (this->Contains(u'-')) {
       bool isDash = false;
       for (auto ch : *string_) {
