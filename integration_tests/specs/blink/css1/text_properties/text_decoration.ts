@@ -1,5 +1,5 @@
 describe('CSS1 text-decoration', () => {
-  xit('draws underlines, overlines, and strikes', async () => {
+  it('draws underlines, overlines, and strikes', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'assets/resources/base.css';
@@ -42,6 +42,12 @@ B.five {text-decoration: none;}
       <p style="color: green;" class="one">The underlining <span style="color: blue;">in this sentence</span> should be green, no matter what the <span style="color: black;">text color may be</span>.</p>
       <p class="one">The colors of the <span style="color: purple;">underlining</span> in <span style="color: blue;">this sentence</span> should be <span style="color: gray;">the same as that of the parent text</span> (that is, the first word in the sentence, which should be black).</p>
     `;
+
+      await snapshot();
+
+      window.scroll(0, 500);
+
+      await waitForFrame();
 
       await snapshot();
   });

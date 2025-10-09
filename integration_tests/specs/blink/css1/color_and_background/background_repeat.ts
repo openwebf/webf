@@ -55,6 +55,13 @@ body {overflow: hidden;}
       <p class="nine">This sentence should have a fully tiled background which starts at its center and is tiled in all directions; that is, the background's origin should be the exact center of the paragraph. I'll fill it with extra text to make the conformance (or lack thereof) more obvious. In fact, a lot of extra text will be necessary to make this at all obvious. This is true because I am not able to increase the text size without resorting to either headings or other CSS properties, neither of which I want to use in this circumstance. This ought to be enough text, though. A background color is present, although if it is visible, then the image may not have been tiled correctly.</p>
     `;
 
+      await snapshot(1);
+
+
+      window.scroll(0, 500);
+
+      await waitForFrame();
+
       await snapshot();
   });
 });

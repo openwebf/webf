@@ -1,5 +1,5 @@
 describe('CSS1 text-transform', () => {
-  xit('transforms capitalization and casing', async () => {
+  it('transforms capitalization and casing', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'assets/resources/base.css';
@@ -30,6 +30,13 @@ This paragraph has no text transformation and should appear normal.</p>
       <p class="upp">This paragraph is uppercased and small characters in the source (e.g. a and &aring;) should therefore appear in uppercase. In the last sentence, however, <span class="ttn">the last eight words should not be uppercase</span>.</p>
       <p class="low">This paragraph is lowercased and capital characters in the source (e.g. A and &Aring;) should therefore appear in lowercase.</p>
     `;
+
+      await snapshot();
+
+
+      window.scroll(0, 500);
+
+      await waitForFrame();
 
       await snapshot();
   });
