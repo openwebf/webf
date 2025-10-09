@@ -203,7 +203,7 @@ UL LI#gre {color: green;}`)
     ]);
     
     const pre = createElement('pre', {}, [
-      createText(`<LINK rel="stylesheet" type="text/css" HREF="../resources/linktest.css">
+      createText(`<LINK rel="stylesheet" type="text/css" HREF="assets/resources/linktest.css">
 .one {text-decoration: line-through;}`)
     ]);
     

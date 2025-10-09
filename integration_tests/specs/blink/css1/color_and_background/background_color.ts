@@ -2,7 +2,7 @@ describe('CSS1 background-color', () => {
   it('applies background colors and transparency', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '../resources/base.css';
+    link.href = 'assets/resources/base.css';
     document.head.appendChild(link);
 
     const style = document.createElement('style');
@@ -27,12 +27,6 @@ P {background-color: green;}
       <p class="two">This element should allow the document background to "shine through." There should be no green backgrounds here!</p>
     `;
 
-    try {
       await snapshot();
-    } finally {
-      document.body.innerHTML = '';
-      style.remove();
-      link.remove();
-    }
   });
 });

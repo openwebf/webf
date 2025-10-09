@@ -2,7 +2,7 @@ describe('CSS1 line-height', () => {
   xit('applies line-height across nested elements', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '../resources/base.css';
+    link.href = 'assets/resources/base.css';
     document.head.appendChild(link);
 
     const style = document.createElement('style');
@@ -66,12 +66,6 @@ SPAN.color {background-color: silver;}
       <p class="two"><span class="color">This sentence should have a line-height of two centimeters, which should cause extra spacing between the lines. The text has a background color of silver, but no padding or border. The background color has been set on an inline element and should therefore only cover the text, not the interline spacing.</span></p>
     `;
 
-    try {
       await snapshot();
-    } finally {
-      document.body.innerHTML = '';
-      style.remove();
-      link.remove();
-    }
   });
 });

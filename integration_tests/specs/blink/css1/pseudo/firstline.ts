@@ -2,7 +2,7 @@ describe('CSS1 first-line pseudo-element', () => {
   xit('styles only the first line of paragraphs', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '../resources/base.css';
+    link.href = 'assets/resources/base.css';
     document.head.appendChild(link);
 
     const style = document.createElement('style');
@@ -26,12 +26,6 @@ P:first-line {color: green;}
       <p class="three">The first line of this paragraph, and only that one, should be displayed in small-caps style. Thus, if the first line is not in small-caps style, or if the entire paragraph turns out in small-caps, then the user agent has failed this test (although the problem might be that <code>small-caps</code> is not supported by your browser). This is extra text included for the purposes of making the paragraph long enough to have more than one line.</p>
     `;
 
-    try {
       await snapshot();
-    } finally {
-      document.body.innerHTML = '';
-      style.remove();
-      link.remove();
-    }
   });
 });

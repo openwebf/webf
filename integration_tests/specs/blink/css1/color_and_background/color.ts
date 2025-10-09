@@ -2,7 +2,7 @@ describe('CSS1 color', () => {
   it('applies color from class and inline styles', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '../resources/base.css';
+    link.href = 'assets/resources/base.css';
     document.head.appendChild(link);
 
     const style = document.createElement('style');
@@ -21,12 +21,6 @@ describe('CSS1 color', () => {
       <p style="color: green;">This sentence should be green.</p>
     `;
 
-    try {
       await snapshot();
-    } finally {
-      document.body.innerHTML = '';
-      style.remove();
-      link.remove();
-    }
   });
 });

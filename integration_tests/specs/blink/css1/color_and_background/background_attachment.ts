@@ -2,13 +2,13 @@ describe('CSS1 background-attachment', () => {
   it('fixes the background relative to the viewport', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '../resources/base.css';
+    link.href = 'assets/resources/base.css';
     document.head.appendChild(link);
 
     const style = document.createElement('style');
     style.textContent = `
 BODY {
-  background-image: url(../resources/bg.gif);
+  background-image: url(assets/resources/bg.gif);
   background-repeat: repeat-x;
   background-attachment: fixed;
   overflow: hidden;
@@ -18,7 +18,7 @@ BODY {
 
     document.body.innerHTML = `
       <p>The style declarations which apply to the text below are:</p>
-      <pre>BODY {background-image: url(../resources/bg.gif); background-repeat: repeat-x; background-attachment: fixed;}
+      <pre>BODY {background-image: url(assets/resources/bg.gif); background-repeat: repeat-x; background-attachment: fixed;}
 
 </pre>
       <hr>
@@ -43,12 +43,6 @@ BODY {
       <p><em>CSS1 core:</em> UAs may treat 'fixed' as 'scroll'. However, it is recommended they interpret 'fixed' correctly, at least on the HTML and BODY elements, since there is no way for an author to provide an image only for those browsers that support 'fixed'.</p>
     `;
 
-    try {
       await snapshot();
-    } finally {
-      document.body.innerHTML = '';
-      style.remove();
-      link.remove();
-    }
   });
 });

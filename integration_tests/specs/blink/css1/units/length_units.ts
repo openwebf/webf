@@ -2,7 +2,7 @@ describe('CSS1 length units', () => {
   xit('applies various absolute and relative units', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '../resources/base.css';
+    link.href = 'assets/resources/base.css';
     document.head.appendChild(link);
 
     const style = document.createElement('style');
@@ -49,12 +49,6 @@ describe('CSS1 length units', () => {
       <p class="ten">This element has a <code>font-size</code> of <code>40px</code> and a <code>border-left</code> of <code>1ex solid purple</code>. This should make the left border the same number of pixels as the lower-case x in this element's font, as well as solid purple.</p>
     `;
 
-    try {
       await snapshot();
-    } finally {
-      document.body.innerHTML = '';
-      style.remove();
-      link.remove();
-    }
   });
 });

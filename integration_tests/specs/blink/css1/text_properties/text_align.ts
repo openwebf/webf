@@ -2,7 +2,7 @@ describe('CSS1 text-align', () => {
   it('aligns text using keywords', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '../resources/base.css';
+    link.href = 'assets/resources/base.css';
     document.head.appendChild(link);
 
     const style = document.createElement('style');
@@ -29,12 +29,6 @@ describe('CSS1 text-align', () => {
       <p class="four">This sentence should be fully justified, which means that the right and left margins of this paragraph should line up, no matter how long the paragraph becomes; the exception, of course, is the last line, which should be left-justified in Western languages.</p>
     `;
 
-    try {
       await snapshot();
-    } finally {
-      document.body.innerHTML = '';
-      style.remove();
-      link.remove();
-    }
   });
 });

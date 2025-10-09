@@ -2,19 +2,19 @@ describe('CSS1 background-image', () => {
   xit('applies and removes background images', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '../resources/base.css';
+    link.href = 'assets/resources/base.css';
     document.head.appendChild(link);
 
     const style = document.createElement('style');
     style.textContent = `
-P {background-image: url(../resources/bg.gif);}
+P {background-image: url(assets/resources/bg.gif);}
 .one {background-image: none;}
 `;
     document.head.appendChild(style);
 
     document.body.innerHTML = `
       <p>The style declarations which apply to the text below are:</p>
-      <pre>P {background-image: url(../resources/bg.gif);}
+      <pre>P {background-image: url(assets/resources/bg.gif);}
 .one {background-image: none;}
 
 </pre>
@@ -24,12 +24,6 @@ P {background-image: url(../resources/bg.gif);}
       <p class="one">This sentence should NOT be backed by a repeated green-grid image, allowing the page's background to "shine through" instead.</p>
     `;
 
-    try {
       await snapshot();
-    } finally {
-      document.body.innerHTML = '';
-      style.remove();
-      link.remove();
-    }
   });
 });

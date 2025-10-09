@@ -4,28 +4,28 @@ describe('CSS1 URL resolution', () => {
     baseLink.rel = 'stylesheet';
     baseLink.type = 'text/css';
     baseLink.media = 'screen';
-    baseLink.href = '../resources/base.css';
+    baseLink.href = 'assets/resources/base.css';
     document.head.appendChild(baseLink);
 
     const secondaryLink = document.createElement('link');
     secondaryLink.rel = 'stylesheet';
     secondaryLink.type = 'text/css';
     secondaryLink.media = 'screen';
-    secondaryLink.href = '../resources/sec64.css';
+    secondaryLink.href = 'assets/resources/sec64.css';
     document.head.appendChild(secondaryLink);
 
     const style = document.createElement('style');
     style.textContent = `
-@import url(../resources/sec642.css);
-BODY {background: url(../resources/bg.gif);}
+@import url(assets/resources/sec642.css);
+BODY {background: url(assets/resources/bg.gif);}
 `;
     document.head.appendChild(style);
 
     document.body.innerHTML = `
       <p>The style declarations which apply to the text below are:</p>
-      <pre>&lt;LINK rel="stylesheet" type="text/css" media="screen" href="../resources/bg.gif"&gt;
-@import url(../resources/sec642.css);
-BODY {background: url(../resources/bg.gif);}
+      <pre>&lt;LINK rel="stylesheet" type="text/css" media="screen" href="assets/resources/bg.gif"&gt;
+@import url(assets/resources/sec642.css);
+BODY {background: url(assets/resources/bg.gif);}
 
 </pre>
       <hr>

@@ -2,7 +2,7 @@ describe('CSS1 text-indent', () => {
   xit('indents the first line using various units', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '../resources/base.css';
+    link.href = 'assets/resources/base.css';
     document.head.appendChild(link);
 
     const style = document.createElement('style');
@@ -50,12 +50,6 @@ no matter where the lines might start, and<br>
       <blockquote>In the first half of the test page, this blockquote element should have a text indent equal to 50% of the body element's width, since blockquote is a child of body; in the second half, it is a child of table.</blockquote>
     `;
 
-    try {
       await snapshot();
-    } finally {
-      document.body.innerHTML = '';
-      style.remove();
-      link.remove();
-    }
   });
 });

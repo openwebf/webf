@@ -2,7 +2,7 @@ describe('CSS1 percentage units', () => {
   xit('applies percentage margins relative to containing block', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '../resources/base.css';
+    link.href = 'assets/resources/base.css';
     document.head.appendChild(link);
 
     const style = document.createElement('style');
@@ -34,12 +34,6 @@ describe('CSS1 percentage units', () => {
       <p class="three">This paragraph should have a left margin of 25% the width of its parent element, which should require some extra text in order to test effectively.</p>
     `;
 
-    try {
       await snapshot();
-    } finally {
-      document.body.innerHTML = '';
-      style.remove();
-      link.remove();
-    }
   });
 });

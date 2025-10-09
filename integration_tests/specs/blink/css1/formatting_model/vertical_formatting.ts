@@ -2,7 +2,7 @@ describe('CSS1 vertical formatting', () => {
   it('collapses vertical margins and applies padding', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '../resources/base.css';
+    link.href = 'assets/resources/base.css';
     document.head.appendChild(link);
 
     const style = document.createElement('style');
@@ -66,12 +66,6 @@ TABLE {clear: both;}
       <p class="thirteen">This is the next paragraph.</p>
     `;
 
-    try {
       await snapshot();
-    } finally {
-      document.body.innerHTML = '';
-      style.remove();
-      link.remove();
-    }
   });
 });

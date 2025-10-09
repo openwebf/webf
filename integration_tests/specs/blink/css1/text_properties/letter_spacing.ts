@@ -2,7 +2,7 @@ describe('CSS1 letter-spacing', () => {
   xit('handles absolute, relative, and invalid spacing', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '../resources/base.css';
+    link.href = 'assets/resources/base.css';
     document.head.appendChild(link);
 
     const style = document.createElement('style');
@@ -48,12 +48,6 @@ describe('CSS1 letter-spacing', () => {
       <p class="eleven">This letters in this sentence should have reduced space between them, since negative values are allowed on this property.</p>
     `;
 
-    try {
       await snapshot();
-    } finally {
-      document.body.innerHTML = '';
-      style.remove();
-      link.remove();
-    }
   });
 });

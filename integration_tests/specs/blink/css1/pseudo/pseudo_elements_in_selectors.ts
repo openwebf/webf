@@ -2,7 +2,7 @@ describe('CSS1 pseudo-elements in selectors', () => {
   xit('treats :first-line placement correctly', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '../resources/base.css';
+    link.href = 'assets/resources/base.css';
     document.head.appendChild(link);
 
     const style = document.createElement('style');
@@ -26,12 +26,6 @@ P:first-line.three {color: red;}
       <p class="three">The first line of this sentence should be boldfaced. If it is red, then the user agent has violated the specification in allowing pseudo-elements at a point other than the end of a selector. If neither is the case, then the user agent has correctly ignored the incorrect selector, but has suppressed other styles which are valid, and therefore must be considered to have failed the test.</p>
     `;
 
-    try {
       await snapshot();
-    } finally {
-      document.body.innerHTML = '';
-      style.remove();
-      link.remove();
-    }
   });
 });

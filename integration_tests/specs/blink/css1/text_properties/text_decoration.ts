@@ -2,7 +2,7 @@ describe('CSS1 text-decoration', () => {
   xit('draws underlines, overlines, and strikes', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '../resources/base.css';
+    link.href = 'assets/resources/base.css';
     document.head.appendChild(link);
 
     const style = document.createElement('style');
@@ -38,17 +38,11 @@ B.five {text-decoration: none;}
       <p class="seven">This sentence should be underlined, overlined, and stricken.</p>
       <p class="seven"></p>
       <p>There should be nothing visible between this sentence and the one above (there is an empty paragraph element with class of seven).</p>
-      <p class="one">Text decorations only apply to the text of an element, so the image at the end of this sentence should <em>not</em> be overlined: <img src="../resources/oransqr.gif" class="two" alt="[Image]">. The underline of the parent element should hold true beneath the image, however, since text-decoration 'spans' child elements.</p>
+      <p class="one">Text decorations only apply to the text of an element, so the image at the end of this sentence should <em>not</em> be overlined: <img src="assets/resources/oransqr.gif" class="two" alt="[Image]">. The underline of the parent element should hold true beneath the image, however, since text-decoration 'spans' child elements.</p>
       <p style="color: green;" class="one">The underlining <span style="color: blue;">in this sentence</span> should be green, no matter what the <span style="color: black;">text color may be</span>.</p>
       <p class="one">The colors of the <span style="color: purple;">underlining</span> in <span style="color: blue;">this sentence</span> should be <span style="color: gray;">the same as that of the parent text</span> (that is, the first word in the sentence, which should be black).</p>
     `;
 
-    try {
       await snapshot();
-    } finally {
-      document.body.innerHTML = '';
-      style.remove();
-      link.remove();
-    }
   });
 });

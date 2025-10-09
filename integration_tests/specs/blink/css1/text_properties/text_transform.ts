@@ -2,7 +2,7 @@ describe('CSS1 text-transform', () => {
   xit('transforms capitalization and casing', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '../resources/base.css';
+    link.href = 'assets/resources/base.css';
     document.head.appendChild(link);
 
     const style = document.createElement('style');
@@ -31,12 +31,6 @@ This paragraph has no text transformation and should appear normal.</p>
       <p class="low">This paragraph is lowercased and capital characters in the source (e.g. A and &Aring;) should therefore appear in lowercase.</p>
     `;
 
-    try {
       await snapshot();
-    } finally {
-      document.body.innerHTML = '';
-      style.remove();
-      link.remove();
-    }
   });
 });

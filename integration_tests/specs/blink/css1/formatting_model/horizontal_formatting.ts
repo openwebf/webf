@@ -2,7 +2,7 @@ describe('CSS1 horizontal formatting', () => {
   it('resolves auto margins and widths', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '../resources/base.css';
+    link.href = 'assets/resources/base.css';
     document.head.appendChild(link);
 
     const style = document.createElement('style');
@@ -52,12 +52,6 @@ P.ten {margin-left: auto; width: 100%; margin-right: auto;
       <p class="ten">Because this paragraph has width 100%, the auto margins become zero, so it should not be centered.</p>
     `;
 
-    try {
       await snapshot();
-    } finally {
-      document.body.innerHTML = '';
-      style.remove();
-      link.remove();
-    }
   });
 });

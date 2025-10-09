@@ -2,44 +2,44 @@ describe('CSS1 background-repeat', () => {
   it('tiles backgrounds according to repeat values', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '../resources/base.css';
+    link.href = 'assets/resources/base.css';
     document.head.appendChild(link);
 
     const style = document.createElement('style');
     style.textContent = `
 body {overflow: hidden;}
-.one {background-image: url(../resources/oransqr.gif); background-repeat: repeat-y;}
-.two {background-image: url(../resources/oransqr.gif); background-repeat: repeat-x;}
-.three {background-image: url(../resources/oransqr.gif); background-repeat: no-repeat;}
-.four {background-image: url(../resources/bg.gif); background-position: 50% 50%; background-repeat: repeat-y;}
-.five {background-image: url(../resources/crosshair2.gif); background-position: 50% 50%;
+.one {background-image: url(assets/resources/oransqr.gif); background-repeat: repeat-y;}
+.two {background-image: url(assets/resources/oransqr.gif); background-repeat: repeat-x;}
+.three {background-image: url(assets/resources/oransqr.gif); background-repeat: no-repeat;}
+.four {background-image: url(assets/resources/bg.gif); background-position: 50% 50%; background-repeat: repeat-y;}
+.five {background-image: url(assets/resources/crosshair2.gif); background-position: 50% 50%;
        background-color: red;}
-.six {background-image: url(../resources/crosshair2.gif); background-position: center top;
+.six {background-image: url(assets/resources/crosshair2.gif); background-position: center top;
       background-color: red;}
-.seven {background-image: url(../resources/crosshair2.gif); background-position: top left;
+.seven {background-image: url(assets/resources/crosshair2.gif); background-position: top left;
         background-color: red;}
-.eight {background-image: url(../resources/crosshair2.gif); background-position: bottom right;
+.eight {background-image: url(assets/resources/crosshair2.gif); background-position: bottom right;
         background-color: red;}
-.nine {background-image: url(../resources/crosshair2.gif); background-position: 50% 50%;
+.nine {background-image: url(assets/resources/crosshair2.gif); background-position: 50% 50%;
        background-color: red;}
 `;
     document.head.appendChild(style);
 
     document.body.innerHTML = `
       <p>The style declarations which apply to the text below are:</p>
-      <pre>.one {background-image: url(../resources/oransqr.gif); background-repeat: repeat-y;}
-.two {background-image: url(../resources/oransqr.gif); background-repeat: repeat-x;}
-.three {background-image: url(../resources/oransqr.gif); background-repeat: no-repeat;}
-.four {background-image: url(../resources/bg.gif); background-position: 50% 50%; background-repeat: repeat-y;}
-.five {background-image: url(../resources/crosshair2.gif); background-position: 50% 50%;
+      <pre>.one {background-image: url(assets/resources/oransqr.gif); background-repeat: repeat-y;}
+.two {background-image: url(assets/resources/oransqr.gif); background-repeat: repeat-x;}
+.three {background-image: url(assets/resources/oransqr.gif); background-repeat: no-repeat;}
+.four {background-image: url(assets/resources/bg.gif); background-position: 50% 50%; background-repeat: repeat-y;}
+.five {background-image: url(assets/resources/crosshair2.gif); background-position: 50% 50%;
        background-color: red;}
-.six {background-image: url(../resources/crosshair2.gif); background-position: center top;
+.six {background-image: url(assets/resources/crosshair2.gif); background-position: center top;
       background-color: red;}
-.seven {background-image: url(../resources/crosshair2.gif); background-position: top left;
+.seven {background-image: url(assets/resources/crosshair2.gif); background-position: top left;
         background-color: red;}
-.eight {background-image: url(../resources/crosshair2.gif); background-position: bottom right;
+.eight {background-image: url(assets/resources/crosshair2.gif); background-position: bottom right;
         background-color: red;}
-.nine {background-image: url(../resources/crosshair2.gif); background-position: 50% 50%;
+.nine {background-image: url(assets/resources/crosshair2.gif); background-position: 50% 50%;
        background-color: red;}
 
 </pre>
@@ -55,12 +55,6 @@ body {overflow: hidden;}
       <p class="nine">This sentence should have a fully tiled background which starts at its center and is tiled in all directions; that is, the background's origin should be the exact center of the paragraph. I'll fill it with extra text to make the conformance (or lack thereof) more obvious. In fact, a lot of extra text will be necessary to make this at all obvious. This is true because I am not able to increase the text size without resorting to either headings or other CSS properties, neither of which I want to use in this circumstance. This ought to be enough text, though. A background color is present, although if it is visible, then the image may not have been tiled correctly.</p>
     `;
 
-    try {
       await snapshot();
-    } finally {
-      document.body.innerHTML = '';
-      style.remove();
-      link.remove();
-    }
   });
 });
