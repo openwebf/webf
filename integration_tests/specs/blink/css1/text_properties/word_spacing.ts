@@ -1,5 +1,5 @@
 describe('CSS1 word-spacing', () => {
-  xit('handles various word-spacing units', async () => {
+  it('handles various word-spacing units', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'assets/resources/base.css';
@@ -49,6 +49,13 @@ describe('CSS1 word-spacing', () => {
       <p class="eleven">This words in this sentence should have reduced space between them, since negative values are allowed on this property.</p>
     `;
 
-      await snapshot();
+    await snapshot();
+
+    window.scroll(0, 500);
+
+    await waitForFrame();
+
+    await snapshot();
+
   });
 });
