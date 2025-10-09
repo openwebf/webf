@@ -12,6 +12,7 @@
 #include "core/executing_context.h"
 #include "foundation/logging.h"
 #include "include/webf_bridge.h"
+#include "string/utf8_codecs.h"
 
 namespace webf {
 
@@ -69,6 +70,20 @@ void UICommandBuffer::AddCommand(UICommand type,
                                  bool request_ui_update) {
   if (type == UICommand::kFinishRecordingCommand) {
     return;
+  }
+
+  if (type == UICommand::kSetStyle) {
+    UTF8String key = args_01 ? UTF8Codecs::EncodeUTF16(UTF16StringView(reinterpret_cast<const char16_t*>(args_01->string()), args_01->length())) : std::string("<null>");
+    std::string val;
+    if (nativePtr2 != nullptr) {
+      auto* s = reinterpret_cast<SharedNativeString*>(nativePtr2);
+      val = UTF8Codecs::EncodeUTF16({ reinterpret_cast<const char16_t*>(s->string()), s->length() });
+    }
+
+    WEBF_COND_LOG(COMMAND, VERBOSE) << "[UICommandBuffer] kSetStyle key: " << key << ", value: " << val;
+  }
+  if (type == UICommand::kClearStyle) {
+    WEBF_COND_LOG(COMMAND, VERBOSE) << "[UICommandBuffer] kClearStyle";
   }
 
   UICommandItem item{static_cast<int32_t>(type), args_01, nativePtr, nativePtr2};

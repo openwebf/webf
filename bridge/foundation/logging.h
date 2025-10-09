@@ -40,6 +40,7 @@
 //   - Stylesheet:   -DWEBF_LOG_STYLESHEET=1
 //   - Selector:     -DWEBF_LOG_SELECTOR=1
 //   - Attr:         -DWEBF_LOG_ATTR=1
+//   - Command:      -DWEBF_LOG_COMMAND=1
 // And optionally set minimum level (default VERBOSE):
 //   -DWEBF_MIN_LOG_LEVEL=0
 
@@ -96,6 +97,14 @@
 #define WEBF_LOG_COLLECTOR_IF WEBF_LOG_COLLECTOR
 #else
 #define WEBF_LOG_COLLECTOR_IF 0
+#endif
+#endif
+
+#ifndef WEBF_LOG_COMMAND_IF
+#ifdef WEBF_LOG_COMMAND
+#define WEBF_LOG_COMMAND_IF WEBF_LOG_COMMAND
+#else
+#define WEBF_LOG_COMMAND_IF 0
 #endif
 #endif
 

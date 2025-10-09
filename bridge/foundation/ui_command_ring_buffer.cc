@@ -9,9 +9,10 @@
 #include "ui_command_ring_buffer.h"
 #include <algorithm>
 #include <cstring>
+#include "bindings/qjs/native_string_utils.h"
 #include "core/executing_context.h"
 #include "foundation/logging.h"
-#include "bindings/qjs/native_string_utils.h"
+#include "string/utf8_codecs.h"
 
 namespace webf {
 
@@ -259,6 +260,20 @@ void UICommandPackageRingBuffer::AddCommand(UICommand type,
     FlushCurrentPackage();
   }
 
+  if (type == UICommand::kSetStyle) {
+    UTF8String key = args_01 ? UTF8Codecs::EncodeUTF16(UTF16StringView(reinterpret_cast<const char16_t*>(args_01->string()), args_01->length())) : std::string("<null>");
+    std::string val;
+    if (nativePtr2 != nullptr) {
+      auto* s = reinterpret_cast<SharedNativeString*>(nativePtr2);
+      val = UTF8Codecs::EncodeUTF16({ reinterpret_cast<const char16_t*>(s->string()), s->length() });
+    }
+
+    WEBF_COND_LOG(COMMAND, VERBOSE) << "[UICommandPackageRingBuffer] kSetStyle key: " << key << ", value: " << val;
+  }
+  if (type == UICommand::kClearStyle) {
+    WEBF_COND_LOG(COMMAND, VERBOSE) << "[UICommandPackageRingBuffer] kClearStyle";
+  }
+
   current_package_->AddCommand(item);
 
   // Auto-flush on certain commands
@@ -289,7 +304,7 @@ void UICommandPackageRingBuffer::PushPackage(std::unique_ptr<UICommandPackage> p
   if (next_write_idx == read_index_.load(std::memory_order_acquire)) {
     // Buffer full, use overflow
     std::lock_guard<std::mutex> lock(overflow_mutex_);
-    WEBF_LOG(VERBOSE) << " PUSH PACKAGE TO OVERFLOW " << package.get();
+    WEBF_COND_LOG(COMMAND, VERBOSE) << "[UICommandPackageRingBuffer] PUSH PACKAGE TO OVERFLOW " << package.get();
     overflow_packages_.push_back(std::move(package));
     return;
   }
