@@ -386,7 +386,37 @@ class CSSParser {
     switch (tokenId) {
       case TokenKind.DIRECTIVE_IMPORT:
         _next();
-        return null;
+        // Parse @import url or string and optional media list
+        String importHref = '';
+        String? mediaText;
+
+        // @import "file.css" ...;
+        if (_peek() == TokenKind.SINGLE_QUOTE || _peek() == TokenKind.DOUBLE_QUOTE) {
+          importHref = processQuotedString(false);
+        } else if (_peekIdentifier() && _peekToken.text.toLowerCase() == 'url') {
+          // @import url(file.css) ...;
+          // Consume 'url' and parse inside parentheses.
+          _next();
+          // processQuotedString(true) will optionally consume '('
+          final urlParam = processQuotedString(true);
+          // If processQuotedString(true) didn't consume a trailing ')', do it here.
+          if (_peek() == TokenKind.RPAREN) {
+            _next();
+          }
+          importHref = urlParam.trim();
+        }
+
+        // Parse optional media list until ';'
+        if (!_peekKind(TokenKind.SEMICOLON)) {
+          final buf = StringBuffer();
+          while (!_peekKind(TokenKind.SEMICOLON) && !_peekKind(TokenKind.END_OF_FILE) && !_peekKind(TokenKind.LBRACE)) {
+            buf.write(_next().text);
+          }
+          final text = buf.toString().trim();
+          if (text.isNotEmpty) mediaText = text;
+        }
+        _maybeEat(TokenKind.SEMICOLON);
+        return CSSImportRule(importHref, media: mediaText);
 
       case TokenKind.DIRECTIVE_MEDIA:
         _next();

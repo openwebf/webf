@@ -118,13 +118,16 @@ class CSSFontFace {
 
       // Store font descriptor for lazy loading
       String cleanFontFamily = removeQuotationMark(fontFamily);
+      // Prefer property-specific baseHref if present (e.g., from imported CSS)
+      String? srcBaseHref = declaration.getPropertyBaseHref('src') ?? baseHref;
+
       FontFaceDescriptor descriptor = FontFaceDescriptor(
         fontFamily: cleanFontFamily,
         fontWeight: fontWeight,
         fontStyle: fontStyle,
         font: targetFont,
         contextId: contextId,
-        baseHref: baseHref,
+        baseHref: srcBaseHref,
       );
 
       _fontFaceRegistry.putIfAbsent(cleanFontFamily, () => []).add(descriptor);

@@ -31,6 +31,17 @@ class CSSStyleRule extends CSSRule {
   }
 }
 
+/// https://drafts.csswg.org/cssom/#the-cssimportrule-interface
+class CSSImportRule extends CSSRule {
+  final String href;
+  final String? media;
+
+  CSSImportRule(this.href, {this.media});
+
+  @override
+  int get type => CSSRule.IMPORT_RULE;
+}
+
 class KeyFrameBlock {
   final List<String> blockSelectors;
   final CSSStyleDeclaration declarations;

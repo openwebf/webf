@@ -62,6 +62,9 @@ class RuleSet {
       CSSFontFace.resolveFontFaceRules(rule, ownerDocument.contextId!, baseHref);
     } else if (rule is CSSMediaDirective) {
       // doNothing
+    } else if (rule is CSSImportRule) {
+      // @import rules are resolved and flattened during stylesheet load.
+      // Ignore any leftover import rules.
     } else {
       assert(false, 'Unsupported rule type: ${rule.runtimeType}');
     }

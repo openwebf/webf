@@ -32,6 +32,72 @@ class HeadElement extends Element {
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
+// Resolve @import rules within a stylesheet by fetching and inlining imported rules.
+Future<void> _resolveCSSImports(Document document, CSSStyleSheet sheet) async {
+  // Determine environment for parsing imported sheets
+  double windowWidth = document.viewport?.viewportSize.width ?? document.preloadViewportSize?.width ?? -1;
+  double windowHeight = document.viewport?.viewportSize.height ?? document.preloadViewportSize?.height ?? -1;
+  bool isDarkMode = document.controller.view.rootController.isDarkMode ?? false;
+
+  // Base URL to resolve relative imports
+  String base = sheet.href ?? document.controller.url;
+
+  // Walk through rules and inline imported sheets
+  int i = 0;
+  while (i < sheet.cssRules.length) {
+    final rule = sheet.cssRules[i];
+    if (rule is CSSImportRule) {
+      String href = rule.href.trim();
+      if (href.isEmpty) {
+        // Remove empty @import to avoid infinite loops
+        sheet.cssRules.removeAt(i);
+        continue;
+      }
+
+      // Resolve URL relative to stylesheet/document
+      Uri resolved = document.controller.uriParser!.resolve(Uri.parse(base), Uri.parse(href));
+
+      // Load CSS text
+      WebFBundle bundle = document.controller.getPreloadBundleFromUrl(resolved.toString()) ?? WebFBundle.fromUrl(resolved.toString());
+      try {
+        // Track network activity
+        document.incrementRequestCount();
+        await bundle.resolve(baseUrl: document.controller.url, uriParser: document.controller.uriParser);
+        await bundle.obtainData(document.ownerView.contextId);
+
+        final String cssText = await resolveStringFromData(bundle.data!);
+
+        // Parse imported sheet with its own href so url() inside resolves correctly
+        CSSStyleSheet imported = CSSParser(cssText, href: resolved.toString())
+            .parse(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: isDarkMode);
+        imported.href = resolved.toString();
+
+        // Recursively resolve nested imports
+        await _resolveCSSImports(document, imported);
+
+        // Replace @import with imported rules (flatten)
+        sheet.cssRules.removeAt(i);
+        if (imported.cssRules.isNotEmpty) {
+          sheet.cssRules.insertAll(i, imported.cssRules);
+          i += imported.cssRules.length;
+        }
+
+        // Mark style dirty and trigger update after resolution
+        document.markElementStyleDirty(document.documentElement!);
+        document.updateStyleIfNeeded();
+      } catch (e) {
+        // On failure, drop the import to avoid blocking style application
+        sheet.cssRules.removeAt(i);
+      } finally {
+        document.decrementRequestCount();
+        bundle.dispose();
+      }
+    } else {
+      i++;
+    }
+  }
+}
+
 const String REL_STYLESHEET = 'stylesheet';
 const String DNS_PREFETCH = 'dns-prefetch';
 const String REL_PRELOAD = 'preload';
@@ -178,6 +244,14 @@ class LinkElement extends Element {
       ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
       ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
       ownerDocument.updateStyleIfNeeded();
+      // Re-resolve @import for reloaded stylesheet
+      () async {
+        if (_styleSheet != null) {
+          await _resolveCSSImports(ownerDocument, _styleSheet!);
+          ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
+          ownerDocument.updateStyleIfNeeded();
+        }
+      }();
     }
   }
 
@@ -297,6 +371,9 @@ class LinkElement extends Element {
         _styleSheet = CSSParser(cssString, href: href).parse(
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
         _styleSheet?.href = href;
+
+        // Resolve and inline any @import rules before applying
+        await _resolveCSSImports(ownerDocument, _styleSheet!);
 
         ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
@@ -508,6 +585,14 @@ mixin StyleElementMixin on Element {
         }
         _styleSheet = CSSParser(text).parse(
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
+        // Resolve @import in the parsed inline stylesheet asynchronously
+        () async {
+          if (_styleSheet != null) {
+            await _resolveCSSImports(ownerDocument, _styleSheet!);
+            ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
+            ownerDocument.updateStyleIfNeeded();
+          }
+        }();
       }
       if (_styleSheet != null) {
         ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);

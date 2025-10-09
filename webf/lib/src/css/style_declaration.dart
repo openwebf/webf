@@ -182,6 +182,11 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     return _pendingProperties[propertyName]?.value ?? _properties[propertyName]?.value ?? EMPTY_STRING;
   }
 
+  /// Returns the baseHref associated with a property value if available.
+  String? getPropertyBaseHref(String propertyName) {
+    return _pendingProperties[propertyName]?.baseHref ?? _properties[propertyName]?.baseHref;
+  }
+
   /// Removes a property from the CSS declaration.
   void removeProperty(String propertyName, [bool? isImportant]) {
     switch (propertyName) {

@@ -1,5 +1,5 @@
 describe('CSS1 length units', () => {
-  xit('applies various absolute and relative units', async () => {
+  it('applies various absolute and relative units', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'assets/resources/base.css';

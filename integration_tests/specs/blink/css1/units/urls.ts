@@ -1,5 +1,5 @@
 describe('CSS1 URL resolution', () => {
-  xit('resolves background URLs relative to stylesheets', async () => {
+  it('resolves background URLs relative to stylesheets', async () => {
     const baseLink = document.createElement('link');
     baseLink.rel = 'stylesheet';
     baseLink.type = 'text/css';
@@ -34,13 +34,6 @@ BODY {background: url(assets/resources/bg.gif);}
       <p class="two"> This paragraph should have a white background, but NO image should appear in the background. If an image, in this case a red square-- or, indeed, any red at all-- is seen there, then the browser has incorrectly interpreted a URL in relation to the document's URL, not the stylesheet's URL. </p>
     `;
 
-    try {
-      await snapshot();
-    } finally {
-      document.body.innerHTML = '';
-      style.remove();
-      secondaryLink.remove();
-      baseLink.remove();
-    }
+    await snapshot(1);
   });
 });
