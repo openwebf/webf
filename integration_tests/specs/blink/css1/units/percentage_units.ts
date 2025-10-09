@@ -1,5 +1,5 @@
 describe('CSS1 percentage units', () => {
-  xit('applies percentage margins relative to containing block', async () => {
+  it('applies percentage margins relative to containing block', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'assets/resources/base.css';

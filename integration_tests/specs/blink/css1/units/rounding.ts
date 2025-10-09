@@ -1,5 +1,5 @@
 describe('CSS1 rounding', () => {
-  xit('handles fractional em padding without gaps', async () => {
+  it('handles fractional em padding without gaps', async () => {
     const style = document.createElement('style');
     style.textContent = `
     body, div {
@@ -31,11 +31,6 @@ describe('CSS1 rounding', () => {
       <div id="console"></div>
     `;
 
-    try {
-      await snapshot();
-    } finally {
-      document.body.innerHTML = '';
-      style.remove();
-    }
+    await snapshot();
   });
 });
