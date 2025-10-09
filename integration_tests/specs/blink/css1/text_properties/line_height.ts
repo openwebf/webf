@@ -1,5 +1,5 @@
 describe('CSS1 line-height', () => {
-  xit('applies line-height across nested elements', async () => {
+  it('applies line-height across nested elements', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'assets/resources/base.css';

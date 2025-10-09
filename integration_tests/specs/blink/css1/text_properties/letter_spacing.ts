@@ -1,5 +1,5 @@
 describe('CSS1 letter-spacing', () => {
-  xit('handles absolute, relative, and invalid spacing', async () => {
+  it('handles absolute, relative, and invalid spacing', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'assets/resources/base.css';

@@ -226,7 +226,17 @@ mixin CSSTextMixin on RenderStyle {
   @override
   CSSLengthValue get lineHeight {
     if (_lineHeight == null && getParentRenderStyle() != null) {
-      CSSLengthValue parentLengthValue = getParentRenderStyle()!.lineHeight;
+      // Inherit from parent. For percentage-specified line-height, freeze to the
+      // parent’s used value (absolute px) so nested elements don’t amplify spacing
+      // when their font-size differs. Unitless numbers (EM here) continue to inherit
+      // as a multiplier to match CSS behavior.
+      final CSSLengthValue parentLengthValue = getParentRenderStyle()!.lineHeight;
+      if (parentLengthValue.type == CSSLengthType.PERCENTAGE) {
+        // Resolve percentage against the parent’s own font-size, then inherit as px.
+        final double usedPx = parentLengthValue.computedValue;
+        return CSSLengthValue(usedPx, CSSLengthType.PX, this, parentLengthValue.propertyName,
+            parentLengthValue.axisType);
+      }
       return CSSLengthValue(parentLengthValue.value, parentLengthValue.type, this, parentLengthValue.propertyName,
           parentLengthValue.axisType);
     }
