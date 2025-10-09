@@ -800,6 +800,40 @@ class CSSText {
     }
   }
 
+  // Visible for inline builder to preserve capitalization across inline boundaries.
+  static (String, bool) applyTextTransformWithCarry(String input, TextTransform transform, bool atWordStart) {
+    if (input.isEmpty || transform == TextTransform.none) return (input, atWordStart);
+    switch (transform) {
+      case TextTransform.uppercase:
+        final out = input.toUpperCase();
+        return (out, out.isNotEmpty ? isWordBoundary(out.codeUnitAt(out.length - 1)) : atWordStart);
+      case TextTransform.lowercase:
+        final out = input.toLowerCase();
+        return (out, out.isNotEmpty ? isWordBoundary(out.codeUnitAt(out.length - 1)) : atWordStart);
+      case TextTransform.capitalize:
+        final sb = StringBuffer();
+        bool aws = atWordStart;
+        for (int i = 0; i < input.length; i++) {
+          final cu = input.codeUnitAt(i);
+          final ch = String.fromCharCode(cu);
+          if (aws) {
+            sb.write(ch.toUpperCase());
+            aws = false;
+          } else {
+            sb.write(ch);
+          }
+          if (isWordBoundary(cu)) aws = true;
+        }
+        final out = sb.toString();
+        return (out, aws);
+      case TextTransform.none:
+        return (input, atWordStart);
+    }
+  }
+
+  // Expose boundary check for builder carry logic.
+  static bool isWordBoundary(int codeUnit) => _isWordBoundary(codeUnit);
+
   static bool _isWordBoundary(int codeUnit) {
     // Treat whitespace, NBSP, and common punctuation/hyphen as word boundaries.
     const nbsp = 0x00A0;

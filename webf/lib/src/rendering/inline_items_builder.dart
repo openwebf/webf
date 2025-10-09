@@ -46,6 +46,10 @@ class InlineItemsBuilder {
   /// Have we already consumed any content at the container root level?
   bool _consumedRootContent = false;
 
+  // Track cross-chunk word-start state for text-transform:capitalize so that
+  // inline element boundaries inside a word do not restart capitalization.
+  bool _capitalizeAtWordStart = true;
+
   /// Get current direction from stack or base direction.
   TextDirection get _currentDirection =>
       _directionStack.isNotEmpty ? _directionStack.last : direction;
@@ -66,6 +70,7 @@ class InlineItemsBuilder {
     _levelStack.clear();
     _endsWithCollapsibleSpace = false;
     _atLineStart = true;
+    _capitalizeAtWordStart = true;
 
     // Initialize direction stack with container's direction if it has one
     if (container is RenderBoxModel) {
@@ -219,7 +224,26 @@ class InlineItemsBuilder {
     // reflect collapsed spaces. Inherited property; style.textTransform includes parent.
     final tt = style.textTransform;
     if (tt != TextTransform.none) {
-      processedText = CSSText.applyTextTransform(processedText, tt);
+      if (tt == TextTransform.capitalize) {
+        final (tx, endAtWordStart) = CSSText.applyTextTransformWithCarry(
+          processedText,
+          tt,
+          _capitalizeAtWordStart,
+        );
+        processedText = tx;
+        _capitalizeAtWordStart = endAtWordStart;
+      } else {
+        processedText = CSSText.applyTextTransform(processedText, tt);
+        // Update carry state based on last character boundary for future chunks.
+        if (processedText.isNotEmpty) {
+          _capitalizeAtWordStart = CSSText.isWordBoundary(processedText.codeUnitAt(processedText.length - 1));
+        }
+      }
+    } else {
+      // No transform; still update carry state based on trailing boundary.
+      if (processedText.isNotEmpty) {
+        _capitalizeAtWordStart = CSSText.isWordBoundary(processedText.codeUnitAt(processedText.length - 1));
+      }
     }
 
     // HTML: If the first child of a PRE is a text node starting with a
