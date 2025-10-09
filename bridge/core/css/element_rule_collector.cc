@@ -176,14 +176,14 @@ void ElementRuleCollector::CollectMatchingRulesForList(
     // keep this path safe across all selector types.
     bool matched = selector_checker_.Match(context, match_result);
     if (matched) {
-      WEBF_LOG(VERBOSE) << "Author rule matched!";
+      WEBF_COND_LOG(COLLECTOR, VERBOSE) << "Author rule matched!";
       const std::shared_ptr<StyleRule>& rule = rule_data->Rule();
 
       String selector = rule->SelectorsText();
-      WEBF_LOG(VERBOSE) << "SELECTOR: " << selector.Characters8();
+      WEBF_COND_LOG(COLLECTOR, VERBOSE) << "SELECTOR: " << selector.Characters8();
 
       String s = rule->Properties().AsText();
-      WEBF_LOG(VERBOSE) << "RULE: " << s.Characters8();
+      WEBF_COND_LOG(COLLECTOR, VERBOSE) << "RULE: " << s.Characters8();
       DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
     }
   }

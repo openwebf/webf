@@ -28,6 +28,84 @@
 
 #define WEBF_LOG(severity) WEBF_LAZY_STREAM(WEBF_LOG_STREAM(severity), ::webf::severity >= WEBF_MIN_LOG_LEVEL)
 
+// Conditional tagged logging
+// Usage: WEBF_COND_LOG(SELECTOR, VERBOSE) << "message";
+// Only compiled when WEBF_LOG_<TAG> is defined with a truthy value.
+//
+// Enable the logs you want (define in build flags or before including logging.h):
+//   - Parser:       -DWEBF_LOG_PARSER=1
+//   - StyleEngine:  -DWEBF_LOG_STYLEENGINE=1
+//   - Cascade:      -DWEBF_LOG_CASCADE=1
+//   - Collector:    -DWEBF_LOG_COLLECTOR=1
+//   - Stylesheet:   -DWEBF_LOG_STYLESHEET=1
+//   - Selector:     -DWEBF_LOG_SELECTOR=1
+//   - Attr:         -DWEBF_LOG_ATTR=1
+// And optionally set minimum level (default VERBOSE):
+//   -DWEBF_MIN_LOG_LEVEL=0
+
+#ifndef WEBF_LOG_SELECTOR_IF
+#ifdef WEBF_LOG_SELECTOR
+#define WEBF_LOG_SELECTOR_IF WEBF_LOG_SELECTOR
+#else
+#define WEBF_LOG_SELECTOR_IF 0
+#endif
+#endif
+
+#ifndef WEBF_LOG_ATTR_IF
+#ifdef WEBF_LOG_ATTR
+#define WEBF_LOG_ATTR_IF WEBF_LOG_ATTR
+#else
+#define WEBF_LOG_ATTR_IF 0
+#endif
+#endif
+
+#ifndef WEBF_LOG_STYLESHEET_IF
+#ifdef WEBF_LOG_STYLESHEET
+#define WEBF_LOG_STYLESHEET_IF WEBF_LOG_STYLESHEET
+#else
+#define WEBF_LOG_STYLESHEET_IF 0
+#endif
+#endif
+
+#ifndef WEBF_LOG_PARSER_IF
+#ifdef WEBF_LOG_PARSER
+#define WEBF_LOG_PARSER_IF WEBF_LOG_PARSER
+#else
+#define WEBF_LOG_PARSER_IF 0
+#endif
+#endif
+
+#ifndef WEBF_LOG_STYLEENGINE_IF
+#ifdef WEBF_LOG_STYLEENGINE
+#define WEBF_LOG_STYLEENGINE_IF WEBF_LOG_STYLEENGINE
+#else
+#define WEBF_LOG_STYLEENGINE_IF 0
+#endif
+#endif
+
+#ifndef WEBF_LOG_CASCADE_IF
+#ifdef WEBF_LOG_CASCADE
+#define WEBF_LOG_CASCADE_IF WEBF_LOG_CASCADE
+#else
+#define WEBF_LOG_CASCADE_IF 0
+#endif
+#endif
+
+#ifndef WEBF_LOG_COLLECTOR_IF
+#ifdef WEBF_LOG_COLLECTOR
+#define WEBF_LOG_COLLECTOR_IF WEBF_LOG_COLLECTOR
+#else
+#define WEBF_LOG_COLLECTOR_IF 0
+#endif
+#endif
+
+#define WEBF_PP_CAT(a, b) a##b
+#define WEBF_PP_XCAT(a, b) WEBF_PP_CAT(a, b)
+#define WEBF_LOG_TAG_IF(TAG) WEBF_PP_XCAT(WEBF_LOG_, WEBF_PP_XCAT(TAG, _IF))
+
+#define WEBF_COND_LOG(TAG, severity) \
+  WEBF_LAZY_STREAM(WEBF_LOG_STREAM(severity), (WEBF_LOG_TAG_IF(TAG)) && (::webf::severity >= WEBF_MIN_LOG_LEVEL))
+
 #define WEBF_CHECK(condition) \
   WEBF_LAZY_STREAM(::webf::LogMessage(::webf::FATAL, __FILE__, __LINE__, #condition).stream(), !(condition))
 
