@@ -809,7 +809,22 @@ class CSSText {
       case 'larger':
         return CSSLengthValue(6 / 5, CSSLengthType.EM, renderStyle, propertyName);
       default:
-        return CSSLength.parseLength(fontSize, renderStyle, propertyName);
+        // Parse lengths/percentages/functions (e.g., calc()).
+        final CSSLengthValue parsed = CSSLength.parseLength(fontSize, renderStyle, propertyName);
+        // If parsing failed, treat as invalid (ignore declaration).
+        if (identical(parsed, CSSLengthValue.unknown)) {
+          // Keep previous value unchanged (ignore invalid declaration).
+          return renderStyle.fontSize;
+        }
+        // Per CSS Fonts spec, negative values for font-size are invalid and must be ignored.
+        // Evaluate to computed value and drop the declaration if it is negative.
+        // Note: -0 is considered equal to 0 and therefore allowed.
+        final double computed = parsed.computedValue;
+        if (computed < 0) {
+          // Negative values for font-size are invalid; ignore by returning current font size.
+          return renderStyle.fontSize;
+        }
+        return parsed;
     }
   }
 

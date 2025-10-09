@@ -465,8 +465,18 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         if (!CSSBackground.isValidBackgroundRepeatValue(normalizedValue)) return false;
         break;
       case FONT_SIZE:
-        CSSLengthValue parsedFontSize = CSSLength.parseLength(normalizedValue, null);
-        if (parsedFontSize == CSSLengthValue.unknown && !CSSText.isValidFontSizeValue(normalizedValue)) return false;
+        // font-size does not allow negative values.
+        // Allow:
+        //  - non-negative <length>
+        //  - non-negative <percentage>
+        //  - keywords (absolute/relative sizes)
+        //  - var()/calc() functions (validated at resolve-time)
+        final bool isVar = CSSVariable.isCSSVariableValue(normalizedValue);
+        final bool isFunc = CSSFunction.isFunction(normalizedValue);
+        final bool isNonNegLen = CSSLength.isNonNegativeLength(normalizedValue);
+        final bool isNonNegPct = CSSPercentage.isNonNegativePercentage(normalizedValue);
+        final bool isKeyword = CSSText.isValidFontSizeValue(normalizedValue);
+        if (!(isVar || isFunc || isNonNegLen || isNonNegPct || isKeyword)) return false;
         break;
     }
     return true;
