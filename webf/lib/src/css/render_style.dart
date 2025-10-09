@@ -1916,6 +1916,9 @@ class CSSRenderStyle extends RenderStyle
       case LINE_CLAMP:
         lineClamp = value;
         break;
+      case TEXT_TRANSFORM:
+        textTransform = value;
+        break;
       case TAB_SIZE:
         tabSize = value;
         break;
@@ -2388,6 +2391,9 @@ class CSSRenderStyle extends RenderStyle
       case TEXT_OVERFLOW:
         // Overflow will affect text-overflow ellipsis taking effect
         value = CSSText.resolveTextOverflow(propertyValue);
+        break;
+      case TEXT_TRANSFORM:
+        value = CSSText.resolveTextTransform(propertyValue);
         break;
       case LINE_CLAMP:
         value = CSSText.parseLineClamp(propertyValue);

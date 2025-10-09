@@ -318,6 +318,24 @@ mixin CSSTextMixin on RenderStyle {
     return _textShadow;
   }
 
+  // text-transform (inherited)
+  TextTransform? _textTransform;
+
+  TextTransform get textTransform {
+    final parent = getParentRenderStyle<CSSRenderStyle>();
+    if (_textTransform == null && parent != null) {
+      return parent.textTransform;
+    }
+    return _textTransform ?? TextTransform.none;
+  }
+
+  set textTransform(TextTransform? value) {
+    if (_textTransform == value) return;
+    _textTransform = value;
+    // Inherited: update descendants’ text layout
+    _markChildrenTextNeedsLayout(this, TEXT_TRANSFORM);
+  }
+
   set textShadow(List<Shadow>? value) {
     if (_textShadow == value) return;
     _textShadow = value;
@@ -754,6 +772,64 @@ class CSSText {
     }
   }
 
+  static TextTransform resolveTextTransform(String value) {
+    switch (value) {
+      case 'uppercase':
+        return TextTransform.uppercase;
+      case 'lowercase':
+        return TextTransform.lowercase;
+      case 'capitalize':
+        return TextTransform.capitalize;
+      case 'none':
+      default:
+        return TextTransform.none;
+    }
+  }
+
+  static String applyTextTransform(String input, TextTransform transform) {
+    if (input.isEmpty || transform == TextTransform.none) return input;
+    switch (transform) {
+      case TextTransform.uppercase:
+        return input.toUpperCase();
+      case TextTransform.lowercase:
+        return input.toLowerCase();
+      case TextTransform.capitalize:
+        return _capitalize(input);
+      case TextTransform.none:
+        return input;
+    }
+  }
+
+  static bool _isWordBoundary(int codeUnit) {
+    // Treat whitespace, NBSP, and common punctuation/hyphen as word boundaries.
+    const nbsp = 0x00A0;
+    if (codeUnit == nbsp) return true;
+    final ch = String.fromCharCode(codeUnit);
+    const seps = ' \t\r\n\f\v\u2028\u2029';
+    if (seps.contains(ch)) return true;
+    const punct = '-\u2011_.,:;!?()[]{}"\'&';
+    return punct.contains(ch);
+  }
+
+  static String _capitalize(String s) {
+    final sb = StringBuffer();
+    bool atWordStart = true;
+    for (int i = 0; i < s.length; i++) {
+      final cu = s.codeUnitAt(i);
+      if (atWordStart) {
+        final ch = String.fromCharCode(cu);
+        sb.write(ch.toUpperCase());
+        atWordStart = false;
+      } else {
+        sb.writeCharCode(cu);
+      }
+      if (_isWordBoundary(cu)) {
+        atWordStart = true;
+      }
+    }
+    return sb.toString();
+  }
+
   static TextDecorationStyle resolveTextDecorationStyle(String present) {
     switch (present) {
       case 'double':
@@ -1004,3 +1080,4 @@ class CSSText {
     return textShadows;
   }
 }
+enum TextTransform { none, capitalize, uppercase, lowercase }

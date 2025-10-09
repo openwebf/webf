@@ -215,6 +215,12 @@ class InlineItemsBuilder {
 
     final style = textBox.renderStyle;
     var processedText = _processWhiteSpace(text, style);
+    // Apply text-transform after whitespace processing so word boundaries
+    // reflect collapsed spaces. Inherited property; style.textTransform includes parent.
+    final tt = style.textTransform;
+    if (tt != TextTransform.none) {
+      processedText = CSSText.applyTextTransform(processedText, tt);
+    }
 
     // HTML: If the first child of a PRE is a text node starting with a
     // single LF (or CRLF), ignore that line break. Only apply when the

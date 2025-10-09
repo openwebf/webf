@@ -117,6 +117,7 @@ const String LINE_HEIGHT = 'lineHeight';
 const String FONT_FAMILY = 'fontFamily';
 const String VERTICAL_ALIGN = 'verticalAlign';
 const String TEXT_OVERFLOW = 'textOverflow';
+const String TEXT_TRANSFORM = 'textTransform';
 const String TEXT_DECORATION = 'textDecoration';
 const String TEXT_DECORATION_LINE = 'textDecorationLine';
 const String TEXT_DECORATION_COLOR = 'textDecorationColor';
