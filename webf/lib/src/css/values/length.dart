@@ -19,8 +19,11 @@ const _1mm = _1cm / 10; // 1mm = 1/10th of 1cm
 const _1Q = _1cm / 40; // 1Q = 1/40th of 1cm
 const _1pc = _1in / 6; // 1pc = 1/6th of 1in
 const _1pt = _1in / 72; // 1pt = 1/72th of 1in
+// Approximate x-height ratio to em when font metrics are not available.
+// Many UAs approximate 1ex ≈ 0.5em for generic fonts.
+const double _exToEmFallbackRatio = 0.5;
 
-final String _unitRegStr = '(px|rpx|vw|vh|vmin|vmax|rem|em|in|cm|mm|pc|pt)';
+final String _unitRegStr = '(px|rpx|vw|vh|vmin|vmax|rem|em|ex|in|cm|mm|pc|pt|q)';
 final _lengthRegExp = RegExp(r'^[+-]?(\d+)?(\.\d+)?' + _unitRegStr + r'$', caseSensitive: false);
 final _negativeZeroRegExp = RegExp(r'^-(0+)?(\.0+)?' + _unitRegStr + r'$', caseSensitive: false);
 final _nonNegativeLengthRegExp = RegExp(r'^[+]?(\d+)?(\.\d+)?' + _unitRegStr + r'$', caseSensitive: false);
@@ -31,6 +34,7 @@ enum CSSLengthType {
   RPX,
   // relative units
   EM, // em,
+  EX, // ex (x-height of the element's font)
   REM, // rem
   VH, // vh
   VW, // vw
@@ -63,6 +67,8 @@ class CSSLengthValue {
     if (propertyName != null) {
       if (type == CSSLengthType.EM) {
         renderStyle!.addFontRelativeProperty(propertyName!);
+      } else if (type == CSSLengthType.EX) {
+        renderStyle!.addFontRelativeProperty(propertyName!);
       } else if (type == CSSLengthType.REM) {
         renderStyle!.addRootFontRelativeProperty(propertyName!);
       }
@@ -81,6 +87,7 @@ class CSSLengthValue {
     switch (type) {
       case CSSLengthType.PX:
       case CSSLengthType.EM:
+      case CSSLengthType.EX:
         return '${computedValue.cssText()}px';
       case CSSLengthType.REM:
         return '${value?.cssText()}rem';
@@ -204,6 +211,13 @@ class CSSLengthValue {
         } else {
           _computedValue = value! * renderStyle!.fontSize.computedValue;
         }
+        break;
+      case CSSLengthType.EX:
+        // Approximate 1ex as a proportion of the element's font-size (em).
+        // Without direct x-height metrics from Flutter, use a 0.5em fallback.
+        // If future font metrics are available, this can be refined.
+        final double emPx = renderStyle!.fontSize.computedValue;
+        _computedValue = value! * (emPx * _exToEmFallbackRatio);
         break;
       case CSSLengthType.REM:
         // If root element set fontSize as rem unit.
@@ -820,6 +834,9 @@ class CSSLength {
     } else if (text.endsWith(EM)) {
       value = double.tryParse(text.split(EM)[0]);
       unit = CSSLengthType.EM;
+    } else if (text.endsWith(EX)) {
+      value = double.tryParse(text.split(EX)[0]);
+      unit = CSSLengthType.EX;
     } else if (text.endsWith(RPX)) {
       value = double.tryParse(text.split(RPX)[0]);
       unit = CSSLengthType.RPX;

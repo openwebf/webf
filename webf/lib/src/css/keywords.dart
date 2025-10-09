@@ -330,6 +330,7 @@ const String VMAX = 'vmax';
 const String EM = 'em';
 const String REM = 'rem';
 const String CH = 'ch';
+const String EX = 'ex';
 
 // Functions
 const String ENV = 'env';
