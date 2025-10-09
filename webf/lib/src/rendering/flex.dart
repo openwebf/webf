@@ -3854,14 +3854,16 @@ class RenderFlexLayout extends RenderLayoutBox {
     bool isSingleLine = (renderStyle.flexWrap != FlexWrap.wrap && renderStyle.flexWrap != FlexWrap.wrapReverse);
 
     if (isSingleLine) {
-      // For single-line flex containers, use a definite cross size only if specified on the
-      // container itself (width/height). Do NOT treat parent max constraints as definite,
-      // since shrink-to-fit contexts (e.g., inline-flex) should not stretch to max width.
-      // Always honor a definite min-cross-size.
+      final bool hasDefiniteContainerCross = _hasDefiniteContainerCrossSize();
+      // For single-line flex containers, prefer the container’s definite inner cross size
+      // (content-box) when available. This includes cases where the container’s cross size
+      // is established by its parent (e.g., align-items:stretch on the parent), even if the
+      // container’s own cross-size property is auto.
       // https://www.w3.org/TR/css-flexbox-1/#algo-cross-line
-      double? explicitContainerCross; // from explicit non-auto width/height
-      double? resolvedContainerCross; // resolved cross size for block-level flex when auto (context-dependent)
-      double? minCrossFromConstraints; // content-box min cross size
+      double? explicitContainerCross;   // from explicit non-auto width/height
+      double? resolvedContainerCross;   // resolved cross size for block-level flex when auto
+      double? minCrossFromConstraints;  // content-box min cross size
+      double? containerInnerCross;      // measured inner cross size from this layout pass
       final CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
       final bool isInlineFlex = effectiveDisplay == CSSDisplay.inlineFlex;
       final CSSWritingMode wm = (renderStyle is CSSRenderStyle)
@@ -3872,26 +3874,38 @@ class RenderFlexLayout extends RenderLayoutBox {
       if (_isHorizontalFlexDirection) {
         // Row: cross is height
         // Only treat as definite if height is explicitly specified (not auto)
-        if (renderStyle.height.isNotAuto) {
+        if (hasDefiniteContainerCross && renderStyle.height.isNotAuto) {
           explicitContainerCross = renderStyle.contentBoxLogicalHeight;
         }
-        // Height:auto is generally not definite prior to layout; do not resolve from constraints.
+        // Also consider the actually measured inner cross size from this layout pass.
+        if (hasDefiniteContainerCross && contentSize.height.isFinite && contentSize.height > 0) {
+          containerInnerCross = contentSize.height;
+        }
+        // Height:auto is generally not definite prior to layout; still capture a min-cross constraint if present.
         if (contentConstraints != null && contentConstraints!.minHeight.isFinite && contentConstraints!.minHeight > 0) {
           minCrossFromConstraints = contentConstraints!.minHeight;
         }
       } else {
         // Column: cross is width
         // Only treat as definite if width is explicitly specified (not auto)
-        if (renderStyle.width.isNotAuto) {
+        if (hasDefiniteContainerCross && renderStyle.width.isNotAuto) {
           explicitContainerCross = renderStyle.contentBoxLogicalWidth;
         }
         // For block-level flex with width:auto in horizontal writing mode, the used width
         // is fill-available and thus definite; only then may we resolve from constraints.
-        if (!isInlineFlex && (explicitContainerCross == null) && crossIsWidth && wm == CSSWritingMode.horizontalTb) {
+        if (hasDefiniteContainerCross && !isInlineFlex && (explicitContainerCross == null) && crossIsWidth &&
+            wm == CSSWritingMode.horizontalTb) {
           if (contentConstraints != null && contentConstraints!.hasBoundedWidth &&
               contentConstraints!.maxWidth.isFinite) {
             resolvedContainerCross = contentConstraints!.maxWidth;
           }
+        }
+        // For column-direction containers with width:auto, do not treat the measured
+        // content width as a definite line cross size; width:auto should shrink-to-fit
+        // in vertical writing modes. Only consider the measured inner width when the
+        // container has an explicit (non-auto) width.
+        if (hasDefiniteContainerCross && renderStyle.width.isNotAuto && contentSize.width.isFinite && contentSize.width > 0) {
+          containerInnerCross = contentSize.width;
         }
         if (contentConstraints != null && contentConstraints!.minWidth.isFinite && contentConstraints!.minWidth > 0) {
           minCrossFromConstraints = contentConstraints!.minWidth;
@@ -3901,8 +3915,13 @@ class RenderFlexLayout extends RenderLayoutBox {
       if (explicitContainerCross != null && explicitContainerCross.isFinite) {
         return explicitContainerCross;
       }
+      // Prefer the measured inner cross size from this layout pass when available,
+      // but never reduce below the max cross size contributed by items.
+      if (containerInnerCross != null && containerInnerCross.isFinite) {
+        return math.max(runCrossAxisExtent, containerInnerCross);
+      }
       // For block-level flex, use resolved container cross size when available.
-      if (!isInlineFlex && resolvedContainerCross != null && resolvedContainerCross.isFinite) {
+      if (!isInlineFlex && hasDefiniteContainerCross && resolvedContainerCross != null && resolvedContainerCross.isFinite) {
         return resolvedContainerCross;
       }
       // Otherwise clamp to min-cross if present.
@@ -4245,27 +4264,89 @@ class RenderFlexLayout extends RenderLayoutBox {
     // The absolutely-positioned box is considered to be “fixed-size”, a value of stretch
     // is treated the same as flex-start.
     // https://www.w3.org/TR/css-flexbox-1/#abspos-items
-    final ParentData? childParentData = child.parentData;
-    if (child is! RenderBoxModel || (child.renderStyle.isSelfPositioned())) {
+    RenderBoxModel? childBoxModel;
+    if (child is RenderBoxModel) {
+      childBoxModel = child;
+    } else if (child is RenderEventListener) {
+      final RenderBox? listenerChild = child.child;
+      if (listenerChild is RenderBoxModel) {
+        childBoxModel = listenerChild;
+      }
+    } else if (child is RenderPositionPlaceholder) {
+      childBoxModel = child.positioned;
+    }
+
+    if (childBoxModel == null || childBoxModel.renderStyle.isSelfPositioned()) {
+      return false;
+    }
+
+    final RenderStyle childStyle = childBoxModel.renderStyle;
+
+    final bool hasDefiniteCrossSize = _hasDefiniteContainerCrossSize();
+
+    if (childStyle.isSelfRenderReplaced() && !hasDefiniteCrossSize) {
       return false;
     }
 
     AlignSelf alignSelf = _getAlignSelf(child);
-    bool isChildAlignmentStretch =
-    alignSelf != AlignSelf.auto ? alignSelf == AlignSelf.stretch : renderStyle.alignItems == AlignItems.stretch;
+    bool isChildAlignmentStretch = alignSelf != AlignSelf.auto
+        ? alignSelf == AlignSelf.stretch
+        : renderStyle.alignItems == AlignItems.stretch;
 
-    bool isChildLengthAuto =
-    _isHorizontalFlexDirection ? child.renderStyle.height.isAuto : child.renderStyle.width.isAuto;
-
-
-    // If the cross size property of the flex item computes to auto, and neither of
-    // the cross axis margins are auto, the flex item is stretched.
-    // https://www.w3.org/TR/css-flexbox-1/#valdef-align-items-stretch
-    if (isChildAlignmentStretch && !_isChildCrossAxisMarginAutoExist(child) && isChildLengthAuto) {
-      return true;
+    if (!isChildAlignmentStretch) {
+      return false;
     }
 
-    return false;
+    if (_isChildCrossAxisMarginAutoExist(child)) {
+      return false;
+    }
+
+    final bool isChildLengthAuto = _isHorizontalFlexDirection
+        ? childBoxModel.renderStyle.height.isAuto
+        : childBoxModel.renderStyle.width.isAuto;
+
+    if (!isChildLengthAuto) {
+      return false;
+    }
+
+    // Replaced elements (e.g., <img>) with an intrinsic aspect ratio should not be
+    // stretched in the cross axis; browsers keep their border-box proportional even
+    // under align-items: stretch. This matches CSS Flexbox §9.4.
+    if (_shouldPreserveIntrinsicRatio(childBoxModel, hasDefiniteContainerCross: hasDefiniteCrossSize)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  bool _shouldPreserveIntrinsicRatio(RenderBoxModel child, {required bool hasDefiniteContainerCross}) {
+    if (child is! RenderReplaced) {
+      return false;
+    }
+    if (hasDefiniteContainerCross) {
+      return false;
+    }
+    final RenderStyle style = child.renderStyle;
+    if (style.aspectRatio != null && style.aspectRatio! > 0) {
+      return true;
+    }
+    final double intrinsicWidth = style.intrinsicWidth;
+    final double intrinsicHeight = style.intrinsicHeight;
+    return intrinsicWidth > 0 && intrinsicHeight > 0;
+  }
+
+  bool _hasDefiniteContainerCrossSize() {
+    if (_isHorizontalFlexDirection) {
+      if (renderStyle.contentBoxLogicalHeight != null) return true;
+      if (contentConstraints != null && contentConstraints!.hasTightHeight) return true;
+      if (constraints.hasTightHeight) return true;
+      return false;
+    } else {
+      if (renderStyle.contentBoxLogicalWidth != null) return true;
+      if (contentConstraints != null && contentConstraints!.hasTightWidth) return true;
+      if (constraints.hasTightWidth) return true;
+      return false;
+    }
   }
 
   // Get child stretched size in the cross axis.
