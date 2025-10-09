@@ -73,29 +73,6 @@ describe('CSS1 display', () => {
     await snapshot();
   });
 
-  xit('p4 - display list-item', async () => {
-    const style = createElement('style', {}, [
-      createText('.three {display: list-item; list-style-type: square; margin-left: 3em;}')
-    ]);
-    const head = document.head || document.getElementsByTagName('head')[0];
-    head.appendChild(style);
-
-    const descP = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
-    const pre = createElement('pre', {}, createText('.three {display: list-item; list-style-type: square; margin-left: 3em;}'));
-    const hr = createElement('hr', {}, []);
-
-    const p4 = createElement('p', { className: 'three' }, [
-      createText('This sentence should be treated as a list-item, and therefore be rendered however this user agent displays list items (if list-style-type is supported, there will be a square for the item marker).  A 3em left margin has been applied in order to ensure that there is space for the list-item marker.')
-    ]);
-
-    append(BODY, descP);
-    append(BODY, pre);
-    append(BODY, hr);
-    append(BODY, p4);
-
-    await snapshot();
-  });
-
   it('p5 - description before invisible test', async () => {
     const descP = createElement('p', {}, createText('The style declarations which apply to the text below are:'));
     const pre = createElement('pre', {}, createText('/* No special styles for this paragraph */'));

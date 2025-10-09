@@ -1,5 +1,5 @@
 describe('CSS1 Important Declarations', () => {
-  xit('important declarations override normal and id selectors', async () => {
+  it('important declarations override normal and id selectors', async () => {
     const style = createElement('style', {}, [
       createText(`
         P {color: green !important;}

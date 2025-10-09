@@ -146,6 +146,14 @@
     "specs": [
       "specs/blink/css1/basic/**/*.{js,jsx,ts,tsx,html,svg}",
       "specs/blink/css1/box_properties/**/*.{js,jsx,ts,tsx,html,svg}",
+      "specs/blink/css1/cascade/**/*.{js,jsx,ts,tsx,html,svg}",
+      "specs/blink/css1/classification/**/*.{js,jsx,ts,tsx,html,svg}",
+      "specs/blink/css1/color_and_background/**/*.{js,jsx,ts,tsx,html,svg}",
+      "specs/blink/css1/font_properties/**/*.{js,jsx,ts,tsx,html,svg}",
+      "specs/blink/css1/formatting_model/**/*.{js,jsx,ts,tsx,html,svg}",
+      "specs/blink/css1/pseudo/**/*.{js,jsx,ts,tsx,html,svg}",
+      // "specs/blink/css1/text_properties/**/*.{js,jsx,ts,tsx,html,svg}",
+      // "specs/blink/css1/units/**/*.{js,jsx,ts,tsx,html,svg}",
     ]
   },
   // {

@@ -1,4 +1,4 @@
-fdescribe('CSS1 Test Suite: 5.2.2 font-family', () => {
+describe('CSS1 Test Suite: 5.2.2 font-family', () => {
   it('should render different font families correctly', async () => {
     // Create container
     const container = createElementWithStyle('div', {

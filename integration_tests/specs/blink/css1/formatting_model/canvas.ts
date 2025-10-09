@@ -1,5 +1,5 @@
 describe('CSS1 canvas', () => {
-  xit('applies html and body background colors', async () => {
+  it('applies html and body background colors', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'assets/resources/base.css';

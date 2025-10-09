@@ -1,5 +1,5 @@
 describe('CSS1 replaced elements', () => {
-  xit('positions replaced images with different display rules', async () => {
+  it('positions replaced images with different display rules', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'assets/resources/base.css';

@@ -1,5 +1,5 @@
 describe('CSS1 first-letter pseudo-element', () => {
-  xit('styles the first letter of paragraphs', async () => {
+  it('styles the first letter of paragraphs', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'assets/resources/base.css';

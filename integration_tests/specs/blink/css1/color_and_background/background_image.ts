@@ -1,5 +1,5 @@
 describe('CSS1 background-image', () => {
-  xit('applies and removes background images', async () => {
+  it('applies and removes background images', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'assets/resources/base.css';

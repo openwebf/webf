@@ -1,5 +1,5 @@
 describe('CSS1 inline elements', () => {
-  xit('handles inline borders, padding, and margins', async () => {
+  it('handles inline borders, padding, and margins', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'assets/resources/base.css';

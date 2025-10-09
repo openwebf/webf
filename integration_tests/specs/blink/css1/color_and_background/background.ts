@@ -1,5 +1,5 @@
 describe('CSS1 background shorthand', () => {
-  xit('applies shorthand background declarations', async () => {
+  it('applies shorthand background declarations', async () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'assets/resources/base.css';
