@@ -222,7 +222,9 @@ void main() {
         ''',
       );
 
-      await tester.pumpAndSettle();
+      // A single pump is sufficient for layout; avoid pumpAndSettle to
+      // prevent hanging when fonts or baseline alignment schedule extra frames.
+      await tester.pump();
 
       final flex = prepared.getElementById('flex');
       final bigCjk = prepared.getElementById('big-cjk');
