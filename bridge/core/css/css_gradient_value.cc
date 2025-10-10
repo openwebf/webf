@@ -30,6 +30,7 @@
 #include <tuple>
 #include <utility>
 
+#include "core/css/css_color.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_math_function_value.h"
 #include "core/css/css_numeric_literal_value.h"
@@ -600,7 +601,17 @@ void CSSGradientValue::AppendCSSTextForColorStops(StringBuilder& result, bool re
     }
 
     if (stop.color_) {
-      result.Append(stop.color_->CssText());
+      // Prefer hex serialization for opaque colors inside gradients to avoid
+      // emitting rgb()/rgba() tokens that some downstream parsers split
+      // incorrectly when followed by a stop value (e.g. "rgb(...) 50%").
+      if (auto* css_color = DynamicTo<cssvalue::CSSColor>(stop.color_.get())) {
+        Color color = css_color->Value();
+        // Canvas-style serialization yields #RRGGBB for opaque colors and
+        // falls back to functional syntax when alpha is present.
+        result.Append(color.SerializeAsCanvasColor());
+      } else {
+        result.Append(stop.color_->CssText());
+      }
     }
     if (stop.color_ && stop.offset_) {
       result.Append(' ');
