@@ -643,6 +643,70 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     }
   }
 
+  void setPseudoStyle(Pointer selfPtr, String args, String key, String value) {
+    assert(hasBindingObject(selfPtr), 'id: $selfPtr');
+    Node? target = getBindingObject<Node>(selfPtr);
+    if (target == null) return;
+    if (target is! Element) {
+      debugPrint("[setPseudoStyle] target is not an element");
+      return;
+    }
+
+    switch(args) {
+      case 'before':
+        target.setPseudoStyle(args, key, value);
+        break;
+      case 'after':
+        target.setPseudoStyle(args, key, value);
+        break;
+
+      default:
+        debugPrint("[setPseudoStyle] Not supported pseudo element: $args");
+    }
+  }
+
+  void removePseudoStyle(Pointer selfPtr, String args, String key) {
+    assert(hasBindingObject(selfPtr), 'id: $selfPtr');
+    Node? target = getBindingObject<Node>(selfPtr);
+    if (target == null) return;
+    if (target is! Element) {
+      debugPrint("[removePseudoStyle] target is not an element");
+      return;
+    }
+
+    switch(args) {
+      case 'before':
+        target.removePseudoStyle(args, key);
+        break;
+      case 'after':
+        target.removePseudoStyle(args, key);
+        break;
+      default:
+        debugPrint("[removePseudoStyle] Not supported pseudo element: $args");
+    }
+  }
+
+  void clearPseudoStyle(Pointer selfPtr, String args) {
+    assert(hasBindingObject(selfPtr), 'id: $selfPtr');
+    Node? target = getBindingObject<Node>(selfPtr);
+    if (target == null) return;
+    if (target is! Element) {
+      debugPrint("[clearPseudoStyle] target is not an element");
+      return;
+    }
+
+    switch (args) {
+      case 'before':
+        target.clearPseudoStyle('before');
+        break;
+      case 'after':
+        target.clearPseudoStyle('after');
+        break;
+      default:
+        debugPrint("[clearPseudoStyle] Not supported pseudo element: $args");
+    }
+  }
+
   void flushPendingStyleProperties(int address) {
     if (!hasBindingObject(Pointer.fromAddress(address))) return;
     Node? target = getBindingObject<Node>(Pointer.fromAddress(address));

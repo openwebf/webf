@@ -773,6 +773,7 @@ enum UICommandType {
   removeNode,
   insertAdjacentNode,
   setStyle,
+  setPseudoStyle,
   clearStyle,
   setAttribute,
   setProperty,
@@ -787,6 +788,9 @@ enum UICommandType {
   requestCanvasPaint,
   requestAnimationFrame,
   finishRecordingCommand,
+  removePseudoStyle,
+  // Append-only: clear all inline pseudo styles for a given pseudo element
+  clearPseudoStyle,
 }
 
 final class UICommandItem extends Struct {

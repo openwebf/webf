@@ -73,6 +73,49 @@ String nativeStringToString(Pointer<NativeString> pointer) {
   return uint16ToString(pointer.ref.string, pointer.ref.length);
 }
 
+({String key, String value}) nativePairToPairRecord(Pointer<NativePair> pointer) {
+  if (pointer != nullptr) {
+    final keyPtr = pointer.ref.key;
+    final valuePtr = pointer.ref.value;
+
+    String key = "";
+    String value = "";
+
+    if (keyPtr != nullptr) {
+      final nativeKey = keyPtr.cast<NativeString>();
+      key = nativeStringToString(nativeKey);
+      freeNativeString(nativeKey);
+    }
+
+    if (valuePtr != nullptr) {
+      final nativeValue = valuePtr.cast<NativeString>();
+      value = nativeStringToString(nativeValue);
+      freeNativeString(nativeValue);
+    }
+
+    return (key: key, value: value);
+  }
+
+  return (key: "", value: "");
+}
+
+Map<String, String> nativeMapToMap(Pointer<NativeMap> pointer) {
+  final map = <String, String>{};
+
+  if (pointer != nullptr) {
+    final nativeMap = pointer.ref;
+    if (nativeMap.items != nullptr) {
+      for (int i = 0; i < nativeMap.length; ++i) {
+        final pair = nativeMap.items + i;
+        final pairDecoded = nativePairToPairRecord(pair);
+        map[pairDecoded.key] = pairDecoded.value;
+      }
+    }
+  }
+
+  return map;
+}
+
 void freeNativeString(Pointer<NativeString> pointer) {
   malloc.free(pointer.ref.string);
   malloc.free(pointer);

@@ -11,6 +11,7 @@
 #include <cstring>
 #include "bindings/qjs/native_string_utils.h"
 #include "core/executing_context.h"
+#define WEBF_LOG_COMMAND 1
 #include "foundation/logging.h"
 #include "string/utf8_codecs.h"
 
@@ -260,18 +261,50 @@ void UICommandPackageRingBuffer::AddCommand(UICommand type,
     FlushCurrentPackage();
   }
 
-  if (type == UICommand::kSetStyle) {
-    UTF8String key = args_01 ? UTF8Codecs::EncodeUTF16(UTF16StringView(reinterpret_cast<const char16_t*>(args_01->string()), args_01->length())) : std::string("<null>");
-    std::string val;
-    if (nativePtr2 != nullptr) {
-      auto* s = reinterpret_cast<SharedNativeString*>(nativePtr2);
-      val = UTF8Codecs::EncodeUTF16({ reinterpret_cast<const char16_t*>(s->string()), s->length() });
-    }
+  if (type == UICommand::kSetStyle || type == UICommand::kSetPseudoStyle) {
+    UTF8String name = args_01 ? UTF8Codecs::EncodeUTF16(
+                                   UTF16StringView(reinterpret_cast<const char16_t*>(args_01->string()),
+                                                   args_01->length()))
+                             : std::string("<null>");
+    std::string pseudo_type = "";
+    std::string key;
+    std::string value;
 
-    WEBF_COND_LOG(COMMAND, VERBOSE) << "[UICommandPackageRingBuffer] kSetStyle key: " << key << ", value: " << val;
+    if (type == UICommand::kSetStyle) {
+      key = name;
+      auto* s = reinterpret_cast<SharedNativeString*>(nativePtr2);
+      value = nativePtr2 ? UTF8Codecs::EncodeUTF16(
+                                   UTF16StringView(reinterpret_cast<const char16_t*>(s->string()),
+                                                   s->length()))
+                             : std::string("<null>");
+      // WEBF_COND_LOG(COMMAND, VERBOSE)
+      //     << "[UICommandPackageRingBuffer] kSetStyle key: " << key << ", value: " << value;
+    } else {
+      pseudo_type = UTF8Codecs::EncodeUTF16({reinterpret_cast<const char16_t*>(args_01->string()), args_01->length()});
+      if (nativePtr2 != nullptr) {
+        auto* s = reinterpret_cast<NativePair*>(nativePtr2);
+        if (s->key) {
+          key = UTF8Codecs::EncodeUTF16({reinterpret_cast<const char16_t*>(s->key->string()), s->key->length()});
+        }
+        if (s->value) {
+          value = UTF8Codecs::EncodeUTF16({reinterpret_cast<const char16_t*>(s->value->string()), s->value->length()});
+        }
+      }
+
+      WEBF_COND_LOG(COMMAND, VERBOSE)
+          << "[UICommandPackageRingBuffer] kSetPseudoStyle pseudo: " << pseudo_type << ", key: " << key << ", value: "
+          << value;
+    }
   }
   if (type == UICommand::kClearStyle) {
-    WEBF_COND_LOG(COMMAND, VERBOSE) << "[UICommandPackageRingBuffer] kClearStyle";
+    // WEBF_COND_LOG(COMMAND, VERBOSE) << "[UICommandPackageRingBuffer] kClearStyle";
+  }
+  if (type == UICommand::kClearPseudoStyle) {
+    UTF8String name = args_01 ? UTF8Codecs::EncodeUTF16(
+                                   UTF16StringView(reinterpret_cast<const char16_t*>(args_01->string()),
+                                                   args_01->length()))
+                             : std::string("<null>");
+    WEBF_COND_LOG(COMMAND, VERBOSE) << "[UICommandPackageRingBuffer] kClearPseudoStyle pseudo: " << name;
   }
 
   current_package_->AddCommand(item);

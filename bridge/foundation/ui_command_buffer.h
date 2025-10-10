@@ -40,6 +40,7 @@ enum class UICommand {
   kRemoveNode,
   kInsertAdjacentNode,
   kSetStyle,
+  kSetPseudoStyle,
   kClearStyle,
   kSetAttribute,
   kSetProperty,
@@ -54,6 +55,11 @@ enum class UICommand {
   // Schedule a requestAnimationFrame on UI side
   kRequestAnimationFrame,
   kFinishRecordingCommand,
+  // Append-only new commands (do not reorder previous entries)
+  // Remove a pseudo style property (converted to kSetPseudoStyle with empty value before reaching UI)
+  kRemovePseudoStyle,
+  // Clear all styles of a pseudo element (converted in bridge for compatibility)
+  kClearPseudoStyle,
 };
 
 #define MAXIMUM_UI_COMMAND_SIZE 2048

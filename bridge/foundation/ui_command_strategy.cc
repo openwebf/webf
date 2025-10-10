@@ -86,6 +86,9 @@ void UICommandSyncStrategy::RecordUICommand(UICommand type,
       break;
     }
     case UICommand::kSetStyle:
+    case UICommand::kSetPseudoStyle:
+    case UICommand::kRemovePseudoStyle:
+    case UICommand::kClearPseudoStyle:
     case UICommand::kClearStyle:
     case UICommand::kSetAttribute:
     case UICommand::kSetProperty:

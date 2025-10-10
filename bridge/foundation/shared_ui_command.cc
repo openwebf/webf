@@ -13,6 +13,9 @@
 #include "core/executing_context.h"
 #include "foundation/logging.h"
 #include "foundation/ui_command_buffer.h"
+#include "foundation/native_type.h"
+#include "foundation/string/atomic_string.h"
+#include "bindings/qjs/native_string_utils.h"
 
 namespace webf {
 
