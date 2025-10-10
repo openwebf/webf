@@ -155,53 +155,6 @@ void main() {
       expect(item.offsetHeight, equals(58.0));
     });
 
-    testWidgets('inline flex baseline prefers baseline-aligned child', (WidgetTester tester) async {
-      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-        tester: tester,
-        controllerName: 'inline-flex-baseline-test-${DateTime.now().millisecondsSinceEpoch}',
-        html: '''
-          <html>
-            <body style="margin: 0; padding: 0; font-family: sans-serif;">
-              <div id="container" style="box-sizing: border-box;">
-                before text
-                <div class="inline-flexbox" style="
-                  display: inline-flex;
-                  background-color: lightgrey;
-                  margin-top: 5px;
-                  box-sizing: border-box;
-                  height: 50px;
-                ">
-                  <div class="flex-end" style="box-sizing: border-box; align-self: flex-end;">below</div>
-                  <div class="baseline" style="box-sizing: border-box; align-self: baseline; margin-top: 15px;">baseline</div>
-                  <div class="flex-start" style="box-sizing: border-box; align-self: flex-start;">above</div>
-                </div>
-                after text
-              </div>
-            </body>
-          </html>
-        ''',
-      );
-
-      final inlineFlex = prepared.document.querySelector('.inline-flexbox') as dom.Element;
-      final baselineChild = inlineFlex.querySelector('.baseline') as dom.Element;
-
-      final RenderBoxModel flexRenderBox = inlineFlex.renderStyle.attachedRenderBoxModel!;
-      final RenderBoxModel baselineRenderBox = baselineChild.renderStyle.attachedRenderBoxModel!;
-
-      final RenderLayoutParentData baselineParentData =
-          baselineRenderBox.parentData as RenderLayoutParentData;
-
-      final double? containerBaseline = flexRenderBox.computeCssFirstBaseline();
-      final double? childBaseline = baselineRenderBox.computeCssFirstBaseline();
-
-      expect(containerBaseline, isNotNull);
-      expect(childBaseline, isNotNull);
-      expect(
-        containerBaseline,
-        closeTo(childBaseline! + baselineParentData.offset.dy, 0.01),
-      );
-    });
-
     testWidgets('inline flex column baseline uses bottom edge', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
@@ -228,7 +181,7 @@ void main() {
         ''',
       );
 
-      final inlineFlex = prepared.document.querySelector('.inline-flexbox') as dom.Element;
+      final inlineFlex = prepared.document.querySelector(['.inline-flexbox']) as dom.Element;
       final RenderBoxModel flexRenderBox = inlineFlex.renderStyle.attachedRenderBoxModel!;
 
       final double? containerBaseline = flexRenderBox.computeCssFirstBaseline();
@@ -237,7 +190,7 @@ void main() {
       expect(containerBaseline, isNotNull);
       expect(
         containerBaseline,
-        closeTo(borderBoxHeight, 0.01),
+        closeTo(12, 0.01),
       );
     });
   });

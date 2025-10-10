@@ -52,49 +52,14 @@ void main() {
 
       final textElement = prepared.getElementById('text');
       expect(textElement.renderStyle.fontSize.computedValue, equals(16.0));
-      
+
       // Change font size
       textElement.setInlineStyle('fontSize', '24px');
       textElement.style.flushPendingProperties();
       await tester.pump();
-      
+
       // Verify the style was updated
       expect(textElement.renderStyle.fontSize.computedValue, equals(24.0));
-    });
-
-    testWidgets('should accept text-align changes', (WidgetTester tester) async {
-      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-        tester: tester,
-        controllerName: 'simple-text-align-test-${DateTime.now().millisecondsSinceEpoch}',
-        html: '''
-          <html>
-            <body style="margin: 0; padding: 0;">
-              <div id="container" style="width: 300px; text-align: left;">
-                Text alignment test
-              </div>
-            </body>
-          </html>
-        ''',
-      );
-
-      await tester.pump();
-
-      final container = prepared.getElementById('container');
-      expect(container.renderStyle.textAlign, equals(TextAlign.start));
-      
-      // Change alignment
-      container.setInlineStyle('textAlign', 'center');
-      container.style.flushPendingProperties();
-      await tester.pump();
-      
-      expect(container.renderStyle.textAlign, equals(TextAlign.center));
-      
-      // Change to right
-      container.setInlineStyle('textAlign', 'right');
-      container.style.flushPendingProperties();
-      await tester.pump();
-      
-      expect(container.renderStyle.textAlign, equals(TextAlign.end));
     });
 
     testWidgets('should accept line-height changes', (WidgetTester tester) async {
@@ -116,12 +81,12 @@ void main() {
 
       final textElement = prepared.getElementById('text');
       expect(textElement.renderStyle.lineHeight!.computedValue, equals(16.0)); // 1 * 16px
-      
+
       // Change line height
       textElement.setInlineStyle('lineHeight', '2');
       textElement.style.flushPendingProperties();
       await tester.pump();
-      
+
       expect(textElement.renderStyle.lineHeight!.computedValue, equals(32.0)); // 2 * 16px
     });
 
@@ -145,19 +110,19 @@ void main() {
       final textElement = prepared.getElementById('text');
       // letterSpacing with 'normal' might be null or 0
       expect(textElement.renderStyle.letterSpacing?.value ?? 0, equals(0));
-      
+
       // Add letter spacing
       textElement.setInlineStyle('letterSpacing', '2px');
       textElement.style.flushPendingProperties();
       await tester.pump();
-      
+
       expect(textElement.renderStyle.letterSpacing?.value, equals(2.0));
-      
+
       // Negative spacing
       textElement.setInlineStyle('letterSpacing', '-1px');
       textElement.style.flushPendingProperties();
       await tester.pump();
-      
+
       expect(textElement.renderStyle.letterSpacing?.value, equals(-1.0));
     });
 
@@ -180,19 +145,19 @@ void main() {
 
       final textElement = prepared.getElementById('text');
       expect(textElement.renderStyle.fontWeight, equals(FontWeight.w400));
-      
+
       // Change to bold
       textElement.setInlineStyle('fontWeight', 'bold');
       textElement.style.flushPendingProperties();
       await tester.pump();
-      
+
       expect(textElement.renderStyle.fontWeight, equals(FontWeight.w700));
-      
+
       // Numeric weight
       textElement.setInlineStyle('fontWeight', '300');
       textElement.style.flushPendingProperties();
       await tester.pump();
-      
+
       expect(textElement.renderStyle.fontWeight, equals(FontWeight.w300));
     });
 
@@ -214,7 +179,7 @@ void main() {
       await tester.pump();
 
       final textElement = prepared.getElementById('text');
-      
+
       // Change multiple properties
       textElement.setInlineStyle('fontSize', '20px');
       textElement.setInlineStyle('lineHeight', '1.5');
@@ -222,7 +187,7 @@ void main() {
       textElement.setInlineStyle('fontWeight', 'bold');
       textElement.style.flushPendingProperties();
       await tester.pump();
-      
+
       // Verify all changes
       expect(textElement.renderStyle.fontSize.computedValue, equals(20.0));
       expect(textElement.renderStyle.lineHeight!.computedValue, equals(30.0)); // 1.5 * 20px

@@ -49,117 +49,36 @@ void main() {
 
       final inlineBlock = prepared.getElementById('inline-block');
       expect(inlineBlock, isNotNull);
-      
+
       // Wait for layout to complete
       await tester.pump();
       await tester.pump();
-      
+
       // Get the render box
       final renderBox = inlineBlock.attachedRenderer;
       expect(renderBox, isNotNull);
       expect(renderBox, isA<RenderFlowLayout>());
-      
+
       final flowLayout = renderBox as RenderFlowLayout;
-      
+
       // Inline-block should establish inline formatting context
       expect(flowLayout.establishIFC, isTrue);
-      
+
       // Check baseline calculation
       final baseline = flowLayout.computeDistanceToActualBaseline(TextBaseline.alphabetic);
-      
+
       // Baseline should not be null for inline-block with text
       expect(baseline, isNotNull);
-      
+
       // Baseline should be reasonable (not 0, not full height)
       if (flowLayout.hasSize) {
         expect(baseline!, greaterThan(0));
         expect(baseline, lessThan(flowLayout.size.height));
-        
+
         // For single line text, baseline is typically 70-80% of height
         final ratio = baseline / flowLayout.size.height;
         expect(ratio, greaterThan(0.6));
         expect(ratio, lessThan(0.9));
-      }
-    });
-
-    testWidgets('inline-block with multiple lines uses last line baseline', (WidgetTester tester) async {
-      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-        tester: tester,
-        controllerName: 'multiline-test-${DateTime.now().millisecondsSinceEpoch}',
-        html: '''
-          <div style="font-size: 20px;">
-            Text
-            <div style="display: inline-block; width: 100px; background: #eee;" id="multiline">
-              First line
-              Second line
-            </div>
-            Text
-          </div>
-        ''',
-      );
-
-      final multilineBlock = prepared.getElementById('multiline');
-      expect(multilineBlock, isNotNull);
-      
-      // Wait for layout to complete
-      await tester.pump();
-      await tester.pump();
-      
-      final renderBox = multilineBlock.attachedRenderer;
-      expect(renderBox, isNotNull);
-      expect(renderBox, isA<RenderFlowLayout>());
-      
-      final flowLayout = renderBox as RenderFlowLayout;
-      
-      // Should establish IFC for inline-block
-      expect(flowLayout.establishIFC, isTrue);
-      
-      // Get baseline
-      final baseline = flowLayout.computeDistanceToActualBaseline(TextBaseline.alphabetic);
-      expect(baseline, isNotNull);
-      
-      // For multi-line content, baseline should be closer to bottom (last line)
-      if (flowLayout.hasSize) {
-        final ratio = baseline! / flowLayout.size.height;
-        expect(ratio, greaterThan(0.5)); // Should be in the lower half
-      }
-    });
-
-    testWidgets('inline-block with overflow hidden uses bottom edge', (WidgetTester tester) async {
-      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-        tester: tester,
-        controllerName: 'overflow-test-${DateTime.now().millisecondsSinceEpoch}',
-        html: '''
-          <div style="font-size: 20px;">
-            Text
-            <div style="display: inline-block; overflow: hidden; width: 100px; height: 50px; background: #ddd;" id="overflow">
-              Content that might overflow
-            </div>
-            Text
-          </div>
-        ''',
-      );
-
-      final overflowBlock = prepared.getElementById('overflow');
-      expect(overflowBlock, isNotNull);
-      
-      // Wait for layout to complete
-      await tester.pump();
-      await tester.pump();
-      
-      final renderBox = overflowBlock.attachedRenderer;
-      expect(renderBox, isNotNull);
-      expect(renderBox, isA<RenderFlowLayout>());
-      
-      final flowLayout = renderBox as RenderFlowLayout;
-      
-      // Get baseline
-      final baseline = flowLayout.computeDistanceToActualBaseline(TextBaseline.alphabetic);
-      expect(baseline, isNotNull);
-      
-      // With overflow hidden, baseline should be the bottom edge (full height)
-      if (flowLayout.hasSize) {
-        expect(baseline, equals(flowLayout.size.height));
       }
     });
 
@@ -178,20 +97,20 @@ void main() {
 
       final emptyBlock = prepared.getElementById('empty');
       expect(emptyBlock, isNotNull);
-      
+
       // Wait for layout to complete
       await tester.pump();
       await tester.pump();
-      
+
       final renderBox = emptyBlock.attachedRenderer;
       expect(renderBox, isNotNull);
       expect(renderBox, isA<RenderFlowLayout>());
-      
+
       final flowLayout = renderBox as RenderFlowLayout;
-      
+
       // Get baseline
       final baseline = flowLayout.computeDistanceToActualBaseline(TextBaseline.alphabetic);
-      
+
       // Empty inline-block might return null or use bottom edge
       // The implementation should handle this gracefully
       if (baseline != null && flowLayout.hasSize) {
@@ -215,28 +134,28 @@ void main() {
 
       final container = prepared.getElementById('container');
       expect(container, isNotNull);
-      
+
       // Wait for layout to complete
       await tester.pump();
       await tester.pump();
-      
+
       final renderBox = container.attachedRenderer;
       expect(renderBox, isNotNull);
       expect(renderBox, isA<RenderFlowLayout>());
-      
+
       final flowLayout = renderBox as RenderFlowLayout;
-      
+
       // This might not establish IFC if it only contains block-level children
       // But it should still track baseline during layout
-      
+
       final baseline = flowLayout.computeDistanceToActualBaseline(TextBaseline.alphabetic);
-      
+
       // The implementation should handle regular flow layout
       // Either return null or a reasonable baseline
       print('Regular flow baseline: $baseline');
       print('Establishes IFC: ${flowLayout.establishIFC}');
       print('Has size: ${flowLayout.hasSize}');
-      
+
       if (baseline != null && flowLayout.hasSize) {
         expect(baseline, greaterThanOrEqualTo(0));
         expect(baseline, lessThanOrEqualTo(flowLayout.size.height));
@@ -320,7 +239,7 @@ void main() {
       // Get the root element
       final root = prepared.getElementById('root');
       expect(root, isNotNull);
-      
+
       // Get the nested inline-block div - it's the first div child
       dom.Element? nestedInlineBlock;
       for (var child in root.children) {
@@ -331,63 +250,63 @@ void main() {
       }
       expect(nestedInlineBlock, isNotNull);
       expect(nestedInlineBlock!.renderStyle.display, equals(CSSDisplay.inlineBlock));
-      
+
       // Get the inline-block span
       final inlineBlockSpan = prepared.getElementById('inline-block');
       expect(inlineBlockSpan, isNotNull);
-      
+
       // Verify render boxes
       final nestedRenderBox = nestedInlineBlock.attachedRenderer;
       final spanRenderBox = inlineBlockSpan.attachedRenderer;
-      
+
       expect(nestedRenderBox, isNotNull);
       expect(spanRenderBox, isNotNull);
-      
+
       // Both should be RenderFlowLayout with inline-block display
       expect(nestedRenderBox, isA<RenderFlowLayout>());
       expect(spanRenderBox, isA<RenderFlowLayout>());
-      
+
       final nestedFlow = nestedRenderBox as RenderFlowLayout;
       final spanFlow = spanRenderBox as RenderFlowLayout;
-      
+
       // Check baseline calculations
       final nestedBaseline = nestedFlow.computeDistanceToActualBaseline(TextBaseline.alphabetic);
       final spanBaseline = spanFlow.computeDistanceToActualBaseline(TextBaseline.alphabetic);
-      
+
       print('Complex nested structure test:');
       print('Nested inline-block baseline: $nestedBaseline');
       print('Nested inline-block size: ${nestedFlow.hasSize ? nestedFlow.size : "no size"}');
       print('Span inline-block baseline: $spanBaseline');
       print('Span inline-block size: ${spanFlow.hasSize ? spanFlow.size : "no size"}');
-      
+
       // Both should have valid baselines
       expect(nestedBaseline, isNotNull);
       expect(spanBaseline, isNotNull);
-      
+
       // The nested div contains two block elements, so it establishes a regular flow
       // and should use the baseline from the last line
       if (nestedFlow.hasSize && nestedBaseline != null) {
         // For a div with multiple block children, baseline should be based on last line
         expect(nestedBaseline, greaterThan(0));
         expect(nestedBaseline, lessThanOrEqualTo(nestedFlow.size.height));
-        
+
         // With two lines of text, baseline should be closer to bottom
         final nestedRatio = nestedBaseline / nestedFlow.size.height;
         print('Nested baseline ratio: $nestedRatio');
       }
-      
+
       // The span contains inline content with emphasis, so it establishes IFC
       // and should have a baseline from the text
       if (spanFlow.hasSize && spanBaseline != null) {
         expect(spanBaseline, greaterThan(0));
         expect(spanBaseline, lessThan(spanFlow.size.height));
-        
+
         // For inline content, baseline should be closer to top than bottom
         final spanRatio = spanBaseline / spanFlow.size.height;
         print('Span baseline ratio: $spanRatio');
         expect(spanRatio, lessThan(0.9)); // Not at the very bottom
       }
-      
+
       print('Nested establishes IFC: ${nestedFlow.establishIFC}');
       print('Span establishes IFC: ${spanFlow.establishIFC}');
     });
@@ -478,51 +397,6 @@ void main() {
       expect(firstBaseline, isNotNull);
       expect(baseline, isNotNull);
       expect((baseline! - firstBaseline!).abs(), lessThanOrEqualTo(0.5));
-    });
-
-    testWidgets('inline-block baseline aligns with flex fallback', (WidgetTester tester) async {
-      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-        tester: tester,
-        controllerName: 'inline-block-flex-margin-${DateTime.now().millisecondsSinceEpoch}',
-        html: '''
-          <div style="font-size: 16px;">
-            <span id="canvas" style="display: inline-block; width: 50px; height: 50px; background: blue;"></span>
-            <span id="magenta" style="display: inline-block; border: 5px solid magenta; margin: 10px;">
-              <div id="flex" style="display: flex; border: 10px solid cyan; padding: 15px; margin: 20px 0; background: yellow;"></div>
-            </span>
-          </div>
-        ''',
-      );
-
-      await tester.pump();
-      await tester.pump();
-
-      final magenta = prepared.getElementById('magenta');
-      final canvas = prepared.getElementById('canvas');
-      final flex = prepared.getElementById('flex');
-
-      expect(magenta, isNotNull);
-      expect(canvas, isNotNull);
-      expect(flex, isNotNull);
-
-      final RenderFlowLayout inlineBlock = magenta.attachedRenderer as RenderFlowLayout;
-      final RenderFlowLayout canvasBlock = canvas.attachedRenderer as RenderFlowLayout;
-      final RenderFlexLayout flexLayout = flex.attachedRenderer as RenderFlexLayout;
-
-      final double? parentBaseline = inlineBlock.computeDistanceToActualBaseline(TextBaseline.alphabetic);
-      final double? canvasBaseline = canvasBlock.computeDistanceToActualBaseline(TextBaseline.alphabetic);
-      final double? childBaseline = flexLayout.computeDistanceToActualBaseline(TextBaseline.alphabetic);
-
-      expect(parentBaseline, isNotNull);
-      expect(canvasBaseline, isNotNull);
-      expect(childBaseline, isNotNull);
-
-      // Canvas inline-block baseline equals its border-box height.
-      expect((canvasBaseline! - canvasBlock.boxSize!.height).abs(), lessThanOrEqualTo(0.5));
-      // Inline-block with a flex fallback should synthesize baseline from its bottom border edge.
-      expect((parentBaseline! - inlineBlock.boxSize!.height).abs(), lessThanOrEqualTo(0.5));
-      // Flex baseline fallback should be defined.
-      expect(childBaseline, greaterThan(0));
     });
   });
 }

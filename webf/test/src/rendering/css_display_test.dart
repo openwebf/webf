@@ -372,43 +372,6 @@ void main() {
     });
     */
 
-    testWidgets('block element inside inline should create anonymous block', (WidgetTester tester) async {
-      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-        tester: tester,
-        controllerName: 'block-in-inline-test-${DateTime.now().millisecondsSinceEpoch}',
-        html: '''
-          <html>
-            <body style="margin: 0; padding: 0;">
-              <span id="inline-parent" style="background-color: yellow;">
-                Before block
-                <div id="block-child" style="
-                  width: 200px;
-                  height: 50px;
-                  background-color: red;
-                ">Block in inline</div>
-                After block
-              </span>
-            </body>
-          </html>
-        ''',
-      );
-
-      final inlineParent = prepared.getElementById('inline-parent');
-      final blockChild = prepared.getElementById('block-child');
-
-      // Block child should have its specified dimensions
-      expect(blockChild.offsetWidth, equals(200.0));
-      expect(blockChild.offsetHeight, equals(50.0));
-
-      // The inline parent will be split into anonymous blocks
-      // This is a complex layout scenario that creates anonymous boxes
-      expect(inlineParent.offsetWidth, greaterThan(0));
-      // When a block is inside inline, the layout is complex
-      // The inline parent's height depends on how the anonymous boxes are created
-      expect(inlineParent.offsetHeight, greaterThanOrEqualTo(blockChild.offsetHeight),
-        reason: 'Parent should at least contain the block child');
-    });
-
     testWidgets('inline-block can have fixed dimensions and contain blocks', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,

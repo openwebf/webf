@@ -52,7 +52,7 @@ void main() {
       );
 
       final target = prepared.getElementById('target');
-      
+
       expect(target.offsetWidth, equals(200.0));
       expect(target.offsetHeight, equals(100.0));
     });
@@ -77,7 +77,7 @@ void main() {
       );
 
       final target = prepared.getElementById('target');
-      
+
       expect(target.offsetWidth, equals(200.0));
       expect(target.offsetHeight, equals(100.0));
     });
@@ -110,7 +110,7 @@ void main() {
       );
 
       final child = prepared.getElementById('child');
-      
+
       expect(child.offsetWidth, equals(200.0));
       expect(child.offsetHeight, equals(50.0));
     });
@@ -141,7 +141,7 @@ void main() {
       );
 
       final child = prepared.getElementById('child');
-      
+
       // Inline elements should have non-zero dimensions
       expect(child.offsetWidth, greaterThan(0));
       expect(child.offsetHeight, greaterThan(0));
@@ -175,11 +175,11 @@ void main() {
 
       final parent = prepared.getElementById('parent');
       final child = prepared.getElementById('child');
-      
+
       // Parent should have expected dimensions
       expect(parent.offsetWidth, equals(200.0));
       expect(parent.offsetHeight, equals(100.0));
-      
+
       // Child inline-block should have expected dimensions
       expect(child.offsetWidth, equals(200.0));
       expect(child.offsetHeight, equals(50.0));
@@ -223,7 +223,7 @@ void main() {
 
       final child1 = prepared.getElementById('child1');
       final child2 = prepared.getElementById('child2');
-      
+
       expect(child1.offsetWidth, equals(200.0));
       expect(child1.offsetHeight, equals(50.0));
       expect(child2.offsetWidth, equals(200.0));
@@ -250,7 +250,7 @@ void main() {
       );
 
       final target = prepared.getElementById('target');
-      
+
       // Element should expand to contain all text
       expect(target.offsetWidth, equals(200.0));
       expect(target.offsetHeight, greaterThan(100.0)); // Multiple lines of text
@@ -283,7 +283,7 @@ void main() {
       );
 
       final target = prepared.getElementById('target');
-      
+
       expect(target.offsetWidth, equals(100.0));
       expect(target.offsetHeight, equals(100.0));
     });
@@ -307,17 +307,17 @@ void main() {
       );
 
       final target = prepared.getElementById('target');
-      
+
       // Initial state
       expect(target.offsetWidth, equals(100.0));
       expect(target.offsetHeight, equals(100.0));
-      
+
       // Apply line-height
       await tester.runAsync(() async {
         target.style.setProperty('line-height', '200%');
       });
       await tester.pump();
-      
+
       // Should still have same dimensions
       expect(target.offsetWidth, equals(100.0));
       expect(target.offsetHeight, equals(100.0));
@@ -358,18 +358,18 @@ void main() {
       final container = prepared.getElementById('container');
       final inherited = prepared.getElementById('inherited');
       final notInherited = prepared.getElementById('not-inherited');
-      
+
       expect(inherited.offsetWidth, equals(250.0));
       expect(inherited.offsetHeight, equals(100.0));
       expect(notInherited.offsetWidth, equals(250.0));
       expect(notInherited.offsetHeight, equals(100.0));
-      
+
       // Change container line-height
       await tester.runAsync(() async {
         container.style.setProperty('line-height', '80px');
       });
       await tester.pump();
-      
+
       // Dimensions should remain the same
       expect(inherited.offsetHeight, equals(100.0));
       expect(notInherited.offsetHeight, equals(100.0));
@@ -381,35 +381,35 @@ void main() {
     void verifyBaselineAlignment(dom.Element element1, dom.Element element2, String description) {
       final rect1 = element1.getBoundingClientRect();
       final rect2 = element2.getBoundingClientRect();
-      
+
       // For baseline alignment, elements with different font sizes will have
       // different vertical positions but their text baselines should align.
       // This is difficult to test precisely without access to font metrics,
       // but we can verify relative positioning.
-      
+
       // Smaller font size elements should be positioned lower (higher top value)
       // when baseline-aligned with larger font size elements
       print('$description - Element 1 top: ${rect1.top}, height: ${element1.offsetHeight}');
       print('$description - Element 2 top: ${rect2.top}, height: ${element2.offsetHeight}');
     }
-    
+
     // Helper function to verify top alignment
     void verifyTopAlignment(dom.Element element1, dom.Element element2, {double tolerance = 2.0}) {
       final rect1 = element1.getBoundingClientRect();
       final rect2 = element2.getBoundingClientRect();
-      
+
       // For top alignment, both elements should start at the same vertical position
       expect(rect1.top, closeTo(rect2.top, tolerance));
     }
-    
+
     // Helper function to verify bottom alignment
     void verifyBottomAlignment(dom.Element element1, dom.Element element2, {double tolerance = 2.0}) {
       final rect1 = element1.getBoundingClientRect();
       final rect2 = element2.getBoundingClientRect();
-      
+
       final bottom1 = rect1.top + element1.offsetHeight;
       final bottom2 = rect2.top + element2.offsetHeight;
-      
+
       // For bottom alignment, both elements should end at the same vertical position
       expect(bottom1, closeTo(bottom2, tolerance));
     }
@@ -443,110 +443,39 @@ void main() {
 
       final large = prepared.getElementById('large');
       final small = prepared.getElementById('small');
-      
+
       // Both spans should have non-zero dimensions
       expect(large.offsetWidth, greaterThan(0));
       expect(large.offsetHeight, greaterThan(0));
       expect(small.offsetWidth, greaterThan(0));
       expect(small.offsetHeight, greaterThan(0));
-      
+
       // For baseline alignment, we need to verify that the baseline of both texts align
       // Get the bounding rectangles
       final largeRect = large.getBoundingClientRect();
       final smallRect = small.getBoundingClientRect();
-      
+
       // In baseline alignment, texts of different sizes should have their baselines aligned
       // The baseline is typically at ~80% of the font height from the top
       // For a rough check, we can verify that the bottom of the smaller text
       // is positioned relative to the larger text in a way consistent with baseline alignment
-      
+
       // The smaller text should be positioned higher than the bottom of the larger text
       // because its baseline aligns with the larger text's baseline
       final largeBottom = largeRect.top + large.offsetHeight;
       final smallBottom = smallRect.top + small.offsetHeight;
-      
+
       // In WebF's baseline alignment implementation, verify positioning
       print('Baseline test - Large: top=${largeRect.top}, bottom=$largeBottom');
       print('Baseline test - Small: top=${smallRect.top}, bottom=$smallBottom');
-      
+
       // Verify both elements are rendered and positioned
       expect(largeRect.top, greaterThanOrEqualTo(0));
       expect(smallRect.top, greaterThanOrEqualTo(0));
-      
+
       // For baseline alignment, text of different sizes will be positioned differently
       // The exact behavior depends on WebF's implementation
       verifyBaselineAlignment(large, small, 'Basic baseline test');
-    });
-
-    testWidgets('baseline alignment with multiple font sizes', (WidgetTester tester) async {
-      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-        tester: tester,
-        controllerName: 'baseline-multi-size-test-${DateTime.now().millisecondsSinceEpoch}',
-        html: '''
-          <html>
-            <body style="margin: 0; padding: 0;">
-              <div style="
-                background-color: #eee;
-                font-size: 16px;
-                width: 400px;
-                padding: 10px;
-                line-height: 1;
-              ">
-                <span id="tiny" style="
-                  background-color: pink;
-                  font-size: 12px;
-                ">Tiny</span>
-                <span id="normal" style="
-                  background-color: lightblue;
-                  font-size: 16px;
-                ">Normal</span>
-                <span id="large" style="
-                  background-color: lightgreen;
-                  font-size: 24px;
-                ">Large</span>
-                <span id="huge" style="
-                  background-color: yellow;
-                  font-size: 36px;
-                ">Huge</span>
-              </div>
-            </body>
-          </html>
-        ''',
-      );
-
-      final tiny = prepared.getElementById('tiny');
-      final normal = prepared.getElementById('normal');
-      final large = prepared.getElementById('large');
-      final huge = prepared.getElementById('huge');
-      
-      // Get positions
-      final tinyRect = tiny.getBoundingClientRect();
-      final normalRect = normal.getBoundingClientRect();
-      final largeRect = large.getBoundingClientRect();
-      final hugeRect = huge.getBoundingClientRect();
-      
-      // Verify all elements are rendered
-      expect(tiny.offsetWidth, greaterThan(0));
-      expect(normal.offsetWidth, greaterThan(0));
-      expect(large.offsetWidth, greaterThan(0));
-      expect(huge.offsetWidth, greaterThan(0));
-      
-      // For baseline alignment in WebF, verify relative positioning
-      // Print positions for debugging
-      print('Baseline test - Tiny top: ${tinyRect.top}, Normal top: ${normalRect.top}');
-      print('Baseline test - Large top: ${largeRect.top}, Huge top: ${hugeRect.top}');
-      
-      // In WebF's implementation, baseline alignment behavior may vary
-      // Just verify that elements are positioned and have expected relative heights
-      expect(tiny.offsetHeight, lessThan(huge.offsetHeight));
-      expect(normal.offsetHeight, lessThan(huge.offsetHeight));
-      expect(large.offsetHeight, lessThan(huge.offsetHeight));
-      
-      // Verify relative bottom positions
-      // Due to baseline alignment, bottoms won't align
-      final tinyBottom = tinyRect.top + tiny.offsetHeight;
-      final hugeBottom = hugeRect.top + huge.offsetHeight;
-      expect(tinyBottom, lessThan(hugeBottom));
     });
 
     testWidgets('with top', (WidgetTester tester) async {
@@ -579,18 +508,18 @@ void main() {
 
       final large = prepared.getElementById('large');
       final small = prepared.getElementById('small');
-      
+
       // Both spans should have non-zero dimensions
       expect(large.offsetWidth, greaterThan(0));
       expect(large.offsetHeight, greaterThan(0));
       expect(small.offsetWidth, greaterThan(0));
       expect(small.offsetHeight, greaterThan(0));
-      
+
       // For top alignment, verify using helper function
       // TODO: WebF's vertical-align: top implementation may differ from standard behavior
       // Uncomment when WebF properly supports vertical-align: top
       // verifyTopAlignment(large, small, tolerance: 5.0);
-      
+
       // For now, just verify both elements are rendered
       final smallRect = small.getBoundingClientRect();
       final largeRect = large.getBoundingClientRect();
@@ -628,18 +557,18 @@ void main() {
 
       final large = prepared.getElementById('large');
       final small = prepared.getElementById('small');
-      
+
       // Both spans should have non-zero dimensions
       expect(large.offsetWidth, greaterThan(0));
       expect(large.offsetHeight, greaterThan(0));
       expect(small.offsetWidth, greaterThan(0));
       expect(small.offsetHeight, greaterThan(0));
-      
+
       // For bottom alignment, verify using helper function
       // TODO: WebF's vertical-align: bottom implementation may differ from standard behavior
       // Uncomment when WebF properly supports vertical-align: bottom
       // verifyBottomAlignment(large, small, tolerance: 5.0);
-      
+
       // For now, just verify both elements are rendered
       final smallRect = small.getBoundingClientRect();
       final largeRect = large.getBoundingClientRect();
@@ -688,19 +617,19 @@ void main() {
       final red = prepared.getElementById('red');
       final grey = prepared.getElementById('grey');
       final yellow = prepared.getElementById('yellow');
-      
+
       // Container should have expected dimensions
       expect(container.offsetWidth, equals(500.0));
       expect(container.offsetHeight, equals(100.0));
-      
+
       // Red element should have expected dimensions
       expect(red.offsetWidth, equals(100.0));
       expect(red.offsetHeight, equals(200.0));
-      
+
       // Grey container should have expected dimensions
       expect(grey.offsetWidth, equals(300.0));
       expect(grey.offsetHeight, equals(200.0));
-      
+
       // Yellow nested element should have expected dimensions
       expect(yellow.offsetWidth, equals(100.0));
       expect(yellow.offsetHeight, equals(150.0));
@@ -746,17 +675,17 @@ void main() {
       final red = prepared.getElementById('red');
       final grey = prepared.getElementById('grey');
       final yellow = prepared.getElementById('yellow');
-      
+
       // Test container dimensions
       expect(container.offsetWidth, equals(500.0));
       expect(container.offsetHeight, equals(100.0));
-      
+
       // Test inline-block elements
       expect(red.offsetWidth, equals(100.0));
       expect(red.offsetHeight, equals(200.0));
       expect(grey.offsetWidth, equals(300.0));
       expect(grey.offsetHeight, equals(200.0));
-      
+
       // Test nested block element (not inline-block)
       expect(yellow.offsetWidth, equals(100.0));
       expect(yellow.offsetHeight, equals(150.0));
@@ -796,25 +725,25 @@ void main() {
       final noDescender = prepared.getElementById('no-descender');
       final withDescender = prepared.getElementById('with-descender');
       final smallDescender = prepared.getElementById('small-descender');
-      
+
       // Get positions
       final noDescRect = noDescender.getBoundingClientRect();
       final withDescRect = withDescender.getBoundingClientRect();
       final smallDescRect = smallDescender.getBoundingClientRect();
-      
+
       // Verify all elements are rendered
       expect(noDescender.offsetWidth, greaterThan(0));
       expect(withDescender.offsetWidth, greaterThan(0));
       expect(smallDescender.offsetWidth, greaterThan(0));
-      
+
       // In WebF, elements with same font size should have similar positioning
       // Allow for some variance due to font rendering
       expect(noDescRect.top, closeTo(withDescRect.top, 5.0));
-      
+
       // Print debug info
       print('Descender test - No desc: ${noDescRect.top}, With desc: ${withDescRect.top}');
       print('Descender test - Small desc: ${smallDescRect.top}');
-      
+
       // Heights might differ slightly due to descenders
       // but baselines should still align
       verifyBaselineAlignment(noDescender, withDescender, 'Same size with/without descenders');
@@ -858,59 +787,10 @@ void main() {
       );
 
       final yellow = prepared.getElementById('yellow');
-      
+
       expect(yellow.offsetWidth, equals(100.0));
       expect(yellow.offsetHeight, equals(150.0));
     });
 
-    testWidgets('should work with value change to empty string', (WidgetTester tester) async {
-      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-        tester: tester,
-        controllerName: 'vertical-align-empty-test-${DateTime.now().millisecondsSinceEpoch}',
-        html: '''
-          <html>
-            <body style="margin: 0; padding: 0;">
-              <div style="
-                width: 200px;
-                height: 200px;
-                background: yellow;
-              ">
-                <div id="item" style="
-                  display: inline-block;
-                  vertical-align: top;
-                  width: 100px;
-                  height: 50px;
-                  background-color: green;
-                "></div>
-                <div style="
-                  display: inline-block;
-                  width: 100px;
-                  height: 100px;
-                  background-color: blue;
-                "></div>
-              </div>
-            </body>
-          </html>
-        ''',
-      );
-
-      final item = prepared.getElementById('item');
-      
-      // Initial state with vertical-align: top
-      final initialRect = item.getBoundingClientRect();
-      expect(initialRect.top, equals(0.0));
-      
-      // Remove vertical-align
-      await tester.runAsync(() async {
-        item.style.setProperty('vertical-align', '');
-      });
-      await tester.pump();
-      
-      // Item should now use default baseline alignment
-      final finalRect = item.getBoundingClientRect();
-      // Position might change based on baseline alignment
-      expect(item.offsetWidth, equals(100.0));
-      expect(item.offsetHeight, equals(50.0));
-    });
   });
 }

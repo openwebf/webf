@@ -49,7 +49,7 @@ void main() {
 
       final div = controller.view.document.querySelector(['div']) as dom.Element;
       final renderBox = div.attachedRenderer!;
-      
+
       expect(renderBox.hasSize, isTrue);
       expect(renderBox.size.width, equals(200));
       expect(renderBox.size.height, greaterThan(0));
@@ -71,7 +71,7 @@ void main() {
 
       final div = controller.view.document.querySelector(['div']) as dom.Element;
       final span = controller.view.document.querySelector(['span']) as dom.Element;
-      
+
       expect(div.attachedRenderer!.hasSize, isTrue);
       expect(span.attachedRenderer!.renderStyle.color.value, equals(const Color(0xFFFF0000)));
     });
@@ -96,7 +96,7 @@ void main() {
 
       final div = controller.view.document.querySelector(['div']) as dom.Element;
       final span = controller.view.document.querySelector(['span']) as dom.Element;
-      
+
       expect(div.attachedRenderer!.hasSize, isTrue);
       expect(span.attachedRenderer!.size.width, equals(100));
       expect(span.attachedRenderer!.size.height, equals(50));
@@ -136,7 +136,7 @@ void main() {
 
       final div = controller.view.document.querySelector(['div']) as dom.Element;
       final renderBox = div.attachedRenderer!;
-      
+
       expect(renderBox.size.width, equals(100));
       // Height should be greater than single line height
       expect(renderBox.size.height, greaterThan(20));
@@ -178,8 +178,8 @@ void main() {
       final controller = prepared.controller;
       await tester.pump();
 
-      final host = controller.view.document.getElementById('host') as dom.Element;
-      final btn = controller.view.document.getElementById('btn') as dom.Element;
+      final host = controller.view.document.getElementById(['host']) as dom.Element;
+      final btn = controller.view.document.getElementById(['btn']) as dom.Element;
 
       expect(host.attachedRenderer!.hasSize, isTrue);
       expect(btn.attachedRenderer!.hasSize, isTrue);
@@ -221,7 +221,7 @@ void main() {
       await tester.pump();
 
       final span = controller.view.document.querySelector(['span']) as dom.Element;
-      
+
       expect(span.attachedRenderer!.renderStyle.borderLeftWidth?.value, equals(2));
       expect(span.attachedRenderer!.renderStyle.borderLeftColor.value, equals(const Color(0xFFFF0000)));
       expect(span.attachedRenderer!.renderStyle.paddingLeft.value, equals(5));
@@ -266,7 +266,7 @@ void main() {
       final spans = controller.view.document.querySelectorAll(['span']);
       final span1 = spans[0] as dom.Element;
       final span2 = spans[1] as dom.Element;
-      
+
       expect(span1.attachedRenderer!.renderStyle.textDecorationLine, equals(TextDecoration.underline));
       expect(span2.attachedRenderer!.renderStyle.textDecorationLine, equals(TextDecoration.lineThrough));
     });
@@ -286,8 +286,8 @@ void main() {
       final controller = prepared.controller;
       await tester.pump();
 
-      final s1 = controller.view.document.getElementById('s1') as dom.Element;
-      final s2 = controller.view.document.getElementById('s2') as dom.Element;
+      final s1 = controller.view.document.getElementById(['s1']) as dom.Element;
+      final s2 = controller.view.document.getElementById(['s2']) as dom.Element;
 
       final expected1 = TextDecoration.combine([TextDecoration.underline, TextDecoration.overline]);
       final expected2 = TextDecoration.combine([

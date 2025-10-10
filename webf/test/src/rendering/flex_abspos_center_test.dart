@@ -83,8 +83,9 @@ void main() {
     final absRect = abs.getBoundingClientRect();
     final flexRect = flex.getBoundingClientRect();
 
-    // Since text height is unknown here, assert the top aligns to roughly center start.
-    // The static-position Y for the abspos box should be around the center of the flex container (25px).
-    expect((absRect.top - (flexRect.top + 25)).abs() < 1.0, isTrue);
+    // The element's center should align to the container's cross-axis center (25px from top).
+    final absCenterY = absRect.top + absRect.height / 2;
+    final flexCenterY = flexRect.top + 25;
+    expect((absCenterY - flexCenterY).abs() < 1.0, isTrue);
   });
 }

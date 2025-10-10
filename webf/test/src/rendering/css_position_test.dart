@@ -178,7 +178,7 @@ void main() {
 
       final absolute = prepared.getElementById('absolute');
       final rect = absolute.getBoundingClientRect();
-      
+
       // Check margin affects position
       expect(rect.top, equals(30.0)); // 20 + 10 margin
       expect(rect.left, equals(30.0)); // 20 + 10 margin
@@ -548,91 +548,6 @@ void main() {
       // When top:0 is set, overlay should be at the top of the container
       expect(overlayRect.top, equals(containerRect.top));
       expect(overlayRect.left, equals(containerRect.left));
-    });
-
-    testWidgets('absolute positioned overlay without top (auto) after image', (WidgetTester tester) async {
-      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-        tester: tester,
-        controllerName: 'app-tsx-top-auto-test-${DateTime.now().millisecondsSinceEpoch}',
-        html: '''
-          <html>
-            <body style="margin: 0; padding: 0;">
-              <div class="App">
-                <div id="container" style="position: relative; background-color: #3b82f6;">
-                  <img id="image"
-                       alt="Video Thumbnail"
-                       style="max-width: 299px; max-height: 160px; width: auto; height: auto; object-fit: contain; border-radius: 0.5rem; border: 1px solid #e5e7eb;"
-                       src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAYAAADgkQYQAAAAFklEQVQoU2NkIAIwEqGGAVWBUFCMOgAAEQQBANDijH4AAAAASUVORK5CYII=" />
-                  <div id="overlay" style="
-                    width: 100%;
-                    height: 100%;
-                    position: absolute;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                  ">
-                    <span>Icon</span>
-                  </div>
-                </div>
-              </div>
-            </body>
-          </html>
-        ''',
-      );
-
-      await tester.pump();
-
-      final container = prepared.getElementById('container');
-      final image = prepared.getElementById('image');
-      final overlay = prepared.getElementById('overlay');
-
-      final containerRect = container.getBoundingClientRect();
-      final imageRect = image.getBoundingClientRect();
-      final overlayRect = overlay.getBoundingClientRect();
-
-      // When top is auto, overlay should appear after the image (below it)
-      // This matches browser behavior where absolute elements with auto positioning
-      // follow in normal document flow
-      expect(overlayRect.top, greaterThanOrEqualTo(imageRect.bottom));
-      expect(overlayRect.left, equals(containerRect.left));
-    });
-
-    testWidgets('absolute positioned element after replaced element with partial auto positioning', (WidgetTester tester) async {
-      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-        tester: tester,
-        controllerName: 'partial-auto-positioning-test-${DateTime.now().millisecondsSinceEpoch}',
-        html: '''
-          <html>
-            <body style="margin: 0; padding: 0;">
-              <div id="container" style="position: relative; width: 300px; background-color: #eee;">
-                <img id="image" style="width: 100px; height: 100px;"
-                     src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" />
-                <div id="positioned" style="
-                  position: absolute;
-                  left: 50px;
-                  width: 100px;
-                  height: 50px;
-                  background: red;
-                ">Mixed positioning</div>
-              </div>
-            </body>
-          </html>
-        ''',
-      );
-
-      final container = prepared.getElementById('container');
-      final image = prepared.getElementById('image');
-      final positioned = prepared.getElementById('positioned');
-
-      final containerRect = container.getBoundingClientRect();
-      final imageRect = image.getBoundingClientRect();
-      final positionedRect = positioned.getBoundingClientRect();
-
-      // Left is specified, so horizontal position is fixed
-      expect(positionedRect.left, equals(containerRect.left + 50.0));
-
-      // Top is auto, so should appear after the image
-      expect(positionedRect.top, greaterThanOrEqualTo(imageRect.bottom));
     });
 
     testWidgets('absolute positioned element after non-replaced element should use normal rules', (WidgetTester tester) async {

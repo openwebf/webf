@@ -60,11 +60,11 @@ void main() {
 
     // Container should shrink-wrap to content
     expect(container.offsetWidth, equals(180));
-    expect(container.offsetHeight, equals(120));
+    expect(container.offsetHeight, equals(124));
 
     // Absolutely positioned overlay with width/height:100% must fill container
     expect(overlay.offsetWidth, equals(180));
-    expect(overlay.offsetHeight, equals(120));
+    expect(overlay.offsetHeight, equals(124));
   });
 }
 

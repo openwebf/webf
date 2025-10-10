@@ -981,8 +981,9 @@ void main() {
       expect(block.offsetWidth, equals(100.0));
       // Text should wrap to multiple lines, making height noticeably larger than single line with padding (≈34)
       expect(block.offsetHeight, greaterThan(60.0));
-      // Flex container line height should expand to contain the block
-      expect(flex.offsetHeight, equals(block.offsetHeight));
+      // Flex container line height should expand to contain the block.
+      // Account for container's top+bottom border (1px each → +2).
+      expect(flex.offsetHeight, equals(block.offsetHeight + 2.0));
     });
   });
 
