@@ -1,5 +1,5 @@
 describe('Inline-block container with absolute overlay', () => {
-  fit('centers inline-block, image 100x100, absolute overlay covers and centers span', async (done) => {
+  it('centers inline-block, image 100x100, absolute overlay covers and centers span', async (done) => {
     // Match body reset from provided HTML
     document.body.style.margin = '0';
     document.body.style.padding = '0';
