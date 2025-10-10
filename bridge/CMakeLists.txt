@@ -451,18 +451,34 @@ endif ()
 # Logging options
 #############################
 
+# Helper to allow env var defaults while preserving -D cache overrides
+function(_webf_option_with_env VAR DESC DEFAULT)
+  set(_default ${DEFAULT})
+  if(DEFINED ENV{${VAR}})
+    string(TOUPPER "$ENV{${VAR}}" _env_val)
+    if(_env_val STREQUAL "1" OR _env_val STREQUAL "ON" OR _env_val STREQUAL "TRUE" OR _env_val STREQUAL "YES")
+      set(_default ON)
+    elseif(_env_val STREQUAL "0" OR _env_val STREQUAL "OFF" OR _env_val STREQUAL "FALSE" OR _env_val STREQUAL "NO")
+      set(_default OFF)
+    else()
+      message(WARNING "Ignoring invalid value for ${VAR} environment variable: '$ENV{${VAR}}'. Expected ON/OFF/1/0/TRUE/FALSE/YES/NO.")
+    endif()
+  endif()
+  option(${VAR} "${DESC}" ${_default})
+endfunction()
+
 # Master switch to quickly enable all log categories
-option(WEBF_LOG_ALL "Enable all WebF category logs" OFF)
+_webf_option_with_env(WEBF_LOG_ALL "Enable all WebF category logs" OFF)
 
 # Per-category logging switches
-option(WEBF_LOG_PARSER "Enable Parser logs" OFF)
-option(WEBF_LOG_STYLEENGINE "Enable StyleEngine logs" OFF)
-option(WEBF_LOG_CASCADE "Enable Cascade logs" OFF)
-option(WEBF_LOG_COLLECTOR "Enable Collector logs" OFF)
-option(WEBF_LOG_STYLESHEET "Enable Stylesheet logs" OFF)
-option(WEBF_LOG_SELECTOR "Enable Selector logs" OFF)
-option(WEBF_LOG_ATTR "Enable Attr logs" OFF)
-option(WEBF_LOG_COMMAND "Enable Command logs" OFF)
+_webf_option_with_env(WEBF_LOG_PARSER "Enable Parser logs" OFF)
+_webf_option_with_env(WEBF_LOG_STYLEENGINE "Enable StyleEngine logs" OFF)
+_webf_option_with_env(WEBF_LOG_CASCADE "Enable Cascade logs" OFF)
+_webf_option_with_env(WEBF_LOG_COLLECTOR "Enable Collector logs" OFF)
+_webf_option_with_env(WEBF_LOG_STYLESHEET "Enable Stylesheet logs" OFF)
+_webf_option_with_env(WEBF_LOG_SELECTOR "Enable Selector logs" OFF)
+_webf_option_with_env(WEBF_LOG_ATTR "Enable Attr logs" OFF)
+_webf_option_with_env(WEBF_LOG_COMMAND "Enable Command logs" OFF)
 
 macro(_webf_define_log VAR)
   if (WEBF_LOG_ALL OR ${VAR})
