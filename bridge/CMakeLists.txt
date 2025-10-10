@@ -445,3 +445,54 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     )
   endif()
 endif ()
+
+
+#############################
+# Logging options
+#############################
+
+# Master switch to quickly enable all log categories
+option(WEBF_LOG_ALL "Enable all WebF category logs" OFF)
+
+# Per-category logging switches
+option(WEBF_LOG_PARSER "Enable Parser logs" OFF)
+option(WEBF_LOG_STYLEENGINE "Enable StyleEngine logs" OFF)
+option(WEBF_LOG_CASCADE "Enable Cascade logs" OFF)
+option(WEBF_LOG_COLLECTOR "Enable Collector logs" OFF)
+option(WEBF_LOG_STYLESHEET "Enable Stylesheet logs" OFF)
+option(WEBF_LOG_SELECTOR "Enable Selector logs" OFF)
+option(WEBF_LOG_ATTR "Enable Attr logs" OFF)
+option(WEBF_LOG_COMMAND "Enable Command logs" OFF)
+
+macro(_webf_define_log VAR)
+  if (WEBF_LOG_ALL OR ${VAR})
+    add_compile_definitions(${VAR}=1)
+    list(APPEND _WEBF_ENABLED_LOGS ${VAR})
+  endif()
+endmacro()
+
+set(_WEBF_ENABLED_LOGS)
+_webf_define_log(WEBF_LOG_PARSER)
+_webf_define_log(WEBF_LOG_STYLEENGINE)
+_webf_define_log(WEBF_LOG_CASCADE)
+_webf_define_log(WEBF_LOG_COLLECTOR)
+_webf_define_log(WEBF_LOG_STYLESHEET)
+_webf_define_log(WEBF_LOG_SELECTOR)
+_webf_define_log(WEBF_LOG_ATTR)
+_webf_define_log(WEBF_LOG_COMMAND)
+
+if (_WEBF_ENABLED_LOGS)
+  list(JOIN _WEBF_ENABLED_LOGS ", " _WEBF_ENABLED_LOGS_STR)
+  message(STATUS "WebF logging enabled for: ${_WEBF_ENABLED_LOGS_STR}")
+  # Ensure targets built in this directory also receive the definitions
+  foreach(_log ${_WEBF_ENABLED_LOGS})
+    if (TARGET webf_core)
+      target_compile_definitions(webf_core PUBLIC ${_log}=1)
+    endif()
+    if (TARGET webf)
+      target_compile_definitions(webf PUBLIC ${_log}=1)
+    endif()
+  endforeach()
+else()
+  message(STATUS "WebF logging: no categories enabled (define WEBF_LOG_* or set WEBF_LOG_ALL)")
+endif()
