@@ -159,6 +159,16 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
         case UICommandType.clearPseudoStyle:
           printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args}';
           break;
+        case UICommandType.setPseudoStyle:
+          printMsg =
+              'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} cssText: ${command.nativePtr2 != nullptr ? nativeStringToString(command.nativePtr2.cast<NativeString>()) : null}';
+          break;
+        case UICommandType.removePseudoStyle:
+          printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} remove: ${command.nativePtr2 != nullptr ? nativeStringToString(command.nativePtr2.cast<NativeString>()) : null}';
+          break;
+        case UICommandType.clearPseudoStyle:
+          printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args}';
+          break;
         case UICommandType.setAttribute:
           printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} key: ${nativeStringToString(command.nativePtr2.cast<NativeString>())} value: ${command.args}';
           break;
@@ -260,6 +270,25 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
 
           view.setInlineStyle(nativePtr, command.args, value, baseHref: baseHref);
           pendingStylePropertiesTargets[nativePtr.address] = true;
+          break;
+        case UICommandType.setPseudoStyle:
+          if (command.nativePtr2 != nullptr) {
+            final keyValue = nativePairToPairRecord(command.nativePtr2.cast());
+            if (keyValue.key.isNotEmpty) {
+              view.setPseudoStyle(nativePtr, command.args, keyValue.key, keyValue.value);
+            }
+          }
+          break;
+        case UICommandType.removePseudoStyle:
+          if (command.nativePtr2 != nullptr) {
+            Pointer<NativeString> nativeKey = command.nativePtr2.cast<NativeString>();
+            String key = nativeStringToString(nativeKey);
+            freeNativeString(nativeKey);
+            view.removePseudoStyle(nativePtr, command.args, key);
+          }
+          break;
+        case UICommandType.clearPseudoStyle:
+          view.clearPseudoStyle(nativePtr, command.args);
           break;
         case UICommandType.clearStyle:
           view.clearInlineStyle(nativePtr);

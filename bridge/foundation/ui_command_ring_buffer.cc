@@ -9,7 +9,8 @@
 #include "ui_command_ring_buffer.h"
 #include <algorithm>
 #include <cstring>
-#define WEBF_LOG_COMMAND 1
+#include "bindings/qjs/native_string_utils.h"
+#include "core/executing_context.h"
 #include "foundation/logging.h"
 #include "string/utf8_codecs.h"
 
