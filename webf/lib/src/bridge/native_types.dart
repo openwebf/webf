@@ -32,6 +32,21 @@ final class NativeString extends Struct {
   external int length;
 }
 
+// Key-Value type, both key and value can be directly convert to javaScript String without any conversion cost.
+final class NativePair extends Struct {
+  external Pointer<NativeString> key;
+  external Pointer<NativeString> value;
+}
+
+// Key-Value pair list, the key may be duplicated, when convert to Map<K,V>, the duplicated key should be deduped with
+// that the largest index value as the final value of the key.
+final class NativeMap extends Struct {
+  external Pointer<NativePair> items;
+
+  @Uint32()
+  external int length;
+}
+
 // For memory compatibility between NativeEvent and other struct which inherit NativeEvent(exp: NativeTouchEvent, NativeGestureEvent),
 // We choose to make all this structs have same memory layout. But dart lang did't provide semantically syntax to achieve this (like inheritance a class which extends Struct
 // or declare struct memory by value).

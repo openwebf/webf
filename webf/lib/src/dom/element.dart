@@ -1979,6 +1979,21 @@ abstract class Element extends ContainerNode
     inlineStyle.clear();
   }
 
+  // Set pseudo element(::before, ::after) style.
+  void setPseudoStyle(String type, String property, String value) {
+    style.setPseudoProperty(type, property, value);
+  }
+
+  // Remove pseudo element(::before, ::after) style.
+  void removePseudoStyle(String type, String property) {
+    style.removePseudoProperty(type, property);
+  }
+
+  // Clear all inline pseudo styles for a specific pseudo element.
+  void clearPseudoStyle(String type) {
+    style.clearPseudoStyle(type);
+  }
+
   void _applyPseudoStyle(CSSStyleDeclaration style) {
     List<CSSStyleRule> pseudoRules =
         _elementRuleCollector.matchedPseudoRules(ownerDocument.ruleSet, this);

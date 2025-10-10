@@ -162,6 +162,8 @@ void ElementRuleCollector::CollectMatchingRulesForList(
   // "td > p:first-child" to (incorrectly) match all <p>, zeroing margins.
   if (cascade_origin == CascadeOrigin::kUserAgent) {
     SelectorChecker::MatchResult ua_match_result;
+    // Ensure UA rule matching respects requested pseudo-element (e.g., ::before/::after)
+    context.pseudo_id = pseudo_element_id_;
     bool ua_matched = selector_checker_.Match(context, ua_match_result);
     if (ua_matched) {
       DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
@@ -174,6 +176,10 @@ void ElementRuleCollector::CollectMatchingRulesForList(
     // Non-tag selectors (class, id, attribute, pseudo, etc.) would hit
     // a DCHECK in CSSSelector::TagQName(). Logging is omitted here to
     // keep this path safe across all selector types.
+    // Propagate pseudo-element matching request (if any) into the context
+    // so pseudo-element selectors like ::before / ::after can be evaluated
+    // when the checker runs in non-querying modes.
+    context.pseudo_id = pseudo_element_id_;
     bool matched = selector_checker_.Match(context, match_result);
     if (matched) {
       WEBF_COND_LOG(COLLECTOR, VERBOSE) << "Author rule matched!";
@@ -322,7 +328,15 @@ void ElementRuleCollector::ClearMatchedRules() {
 void ElementRuleCollector::AddElementStyleProperties(
     std::shared_ptr<const StylePropertySet> property_set,
     PropertyAllowedInMode property_mode) {
-  
+  // Align with Blink: Do not add the originating element's inline style when
+  // collecting rules for a pseudo-element. Pseudo elements cannot have inline
+  // styles; they inherit inheritable properties via the computed style
+  // pipeline instead. Including inline here would incorrectly elevate
+  // non-inherited properties (e.g., border) into the pseudo cascade.
+  if (is_collecting_for_pseudo_element_) {
+    return;
+  }
+
   if (!property_set || property_set->PropertyCount() == 0) {
     return;
   }
@@ -337,6 +351,9 @@ void ElementRuleCollector::AddElementStyleProperties(
   matched_rule.cascade_order = current_cascade_order_++;
   matched_rule.is_inline_style = true;
   matched_rule.inline_properties = property_set.get();
+  // Keep a strong reference to ensure lifetime if needed in later phases
+  // (TransferMatchedRules reads from inline_properties pointer).
+  // Note: We avoid changing interfaces; this ownership is implicit.
   matched_rules_.push_back(matched_rule);
 }
 

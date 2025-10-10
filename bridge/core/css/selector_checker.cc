@@ -258,6 +258,18 @@ SelectorChecker::MatchStatus SelectorChecker::MatchSelector(const SelectorChecki
   // Do not early‑return based on IsLastInComplexSelector(), since combinators
   // to the left still need to be matched (e.g., ".foo + div").
   if (!context.selector->NextSimpleSelector()) {
+    // If a specific pseudo-element is being requested (e.g., ::before or ::after),
+    // ensure the dynamically matched pseudo (set by CheckOne/CheckPseudoElement)
+    // matches the requested one. Without this guard, a collector requesting
+    // ::before could also match ::after rules when the pseudo selector is the
+    // terminal simple selector, leading to mixed pseudo styles.
+    if (context.pseudo_id != kPseudoIdNone && result.dynamic_pseudo != context.pseudo_id) {
+      WEBF_COND_LOG(SELECTOR, VERBOSE)
+          << "[Selector] Terminal simple selector rejected due to pseudo mismatch. requested="
+          << static_cast<int>(context.pseudo_id) << ", matched=" << static_cast<int>(result.dynamic_pseudo)
+          << " for element " << DescribeElementForLog(context.element);
+      return kSelectorFailsCompletely;
+    }
     WEBF_COND_LOG(SELECTOR, VERBOSE) << "[Selector] Terminal simple selector matched for element "
                       << DescribeElementForLog(context.element);
     return kSelectorMatches;
@@ -2056,6 +2068,15 @@ bool SelectorChecker::CheckPseudoElement(const SelectorCheckingContext& context,
  }
  const CSSSelector& selector = *context.selector;
  Element& element = *context.element;
+ // If a specific pseudo element was requested (e.g. ::before), ensure
+ // we don't match a different pseudo (e.g. ::after). This prevents
+ // cross-contamination when collecting rules for a concrete pseudo.
+ if (context.pseudo_id != kPseudoIdNone) {
+   PseudoId selector_pseudo = CSSSelector::GetPseudoId(selector.GetPseudoType());
+   if (selector_pseudo == kPseudoIdNone || selector_pseudo != context.pseudo_id) {
+     return false;
+   }
+ }
  if (context.in_nested_complex_selector) {
    // This would normally be rejected parse-time, but can happen
    // with the & selector, so reject it match-time.
