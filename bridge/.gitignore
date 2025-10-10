@@ -7,3 +7,6 @@ code_gen
 .cache
 
 bin
+
+# ignore blink soft link
+blink_source
