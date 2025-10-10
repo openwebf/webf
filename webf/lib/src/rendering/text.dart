@@ -64,7 +64,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     // No ancestor IFC found; paint ourselves.
     return true;
   }
-  
+
   bool get _paintsSelf => paintsSelf;
 
   // Measure the full text size for a given available width without being clipped by
@@ -198,6 +198,11 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
   @override
   void performLayout() {
+    if (_data.isEmpty) {
+      size = Size.zero;
+      return;
+    }
+
     if (_paintsSelf) {
       _layoutText(constraints);
       final w = _textPainter?.width ?? 0.0;
