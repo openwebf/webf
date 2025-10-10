@@ -261,6 +261,20 @@ class InlineItemsBuilder {
     // Process whitespace
 
     if (processedText.isNotEmpty) {
+      // For pre-like whitespace modes, expand tab characters to spaces using the
+      // effective CSS tab-size and the current column position on the line. This
+      // keeps Phase I semantics (tests expect tabs preserved) while ensuring
+      // layout uses visual tab stops.
+      if (style.whiteSpace == WhiteSpace.pre ||
+          style.whiteSpace == WhiteSpace.preWrap ||
+          style.whiteSpace == WhiteSpace.breakSpaces) {
+        // Determine current column from accumulated text buffer since last line feed
+        final String soFar = _textContent.toString();
+        final int lastLf = soFar.lastIndexOf('\n');
+        final int currentColumn = lastLf == -1 ? soFar.length : (soFar.length - lastLf - 1);
+        final double ts = style.tabSize;
+        processedText = WhitespaceProcessor.expandTabsForPre(processedText, currentColumn, ts);
+      }
       // Trim leading collapsible spaces at line start for normal/nowrap/pre-line
       if (_atLineStart &&
           (style.whiteSpace == WhiteSpace.normal ||

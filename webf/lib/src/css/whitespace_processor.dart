@@ -179,7 +179,7 @@ class WhitespaceProcessor {
   static String _preserveWhitespace(String text, WhiteSpace whiteSpace) {
     final output = StringBuffer();
     final length = text.length;
-    int currentColumn = 0; // Track column position for tab expansion
+    int currentColumn = 0; // Track column position (kept for potential future use)
     
     for (int i = 0; i < length; i++) {
       final codeUnit = text.codeUnitAt(i);
@@ -189,13 +189,9 @@ class WhitespaceProcessor {
         output.writeCharCode(LINE_FEED);
         currentColumn = 0; // Reset column at line break
       } else if (isTab(codeUnit)) {
-        // Expand tabs to spaces (tab stops are at multiples of 8)
-        // Calculate how many spaces to the next tab stop
-        final spacesToNextTabStop = 8 - (currentColumn % 8);
-        for (int j = 0; j < spacesToNextTabStop; j++) {
-          output.writeCharCode(SPACE);
-          currentColumn++;
-        }
+        // Preserve tab characters in pre-like modes; visual expansion is handled by layout (tab-size)
+        output.writeCharCode(TAB);
+        currentColumn++;
       } else if (isSpace(codeUnit) && whiteSpace == WhiteSpace.breakSpaces) {
         // For break-spaces, spaces remain as regular spaces (not non-breaking)
         // The breaking behavior is handled during line breaking
@@ -209,6 +205,35 @@ class WhitespaceProcessor {
     }
     
     return output.toString();
+  }
+
+  /// Expand tab characters into spaces for pre-like modes at layout time.
+  /// - `startingColumn` is the current column from the last line break.
+  /// - `tabSize` is the effective CSS tab-size (number of spaces per tab stop).
+  /// This does not alter Phase I semantics; callers opt-in during layout.
+  static String expandTabsForPre(String text, int startingColumn, double tabSize) {
+    if (text.isEmpty) return text;
+    int ts = tabSize.isFinite ? tabSize.round() : 8;
+    if (ts <= 0) ts = 8;
+    int col = startingColumn;
+    final out = StringBuffer();
+    for (int i = 0; i < text.length; i++) {
+      final int cu = text.codeUnitAt(i);
+      if (cu == LINE_FEED) {
+        out.writeCharCode(LINE_FEED);
+        col = 0;
+      } else if (cu == TAB) {
+        final int spacesToNext = ts - (col % ts);
+        for (int j = 0; j < spacesToNext; j++) {
+          out.writeCharCode(SPACE);
+        }
+        col += spacesToNext;
+      } else {
+        out.writeCharCode(cu);
+        col += 1;
+      }
+    }
+    return out.toString();
   }
 }
 
