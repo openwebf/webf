@@ -222,9 +222,12 @@ void main() {
         ''',
       );
 
-      // A single pump is sufficient for layout; avoid pumpAndSettle to
-      // prevent hanging when fonts or baseline alignment schedule extra frames.
+      // Pump a few micro frames to allow any deferred font/baseline work
+      // to complete without risking a long settle. This stabilizes
+      // inline-flex baseline alignment and shrink calculations.
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
 
       final flex = prepared.getElementById('flex');
       final bigCjk = prepared.getElementById('big-cjk');
