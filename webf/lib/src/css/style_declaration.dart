@@ -256,7 +256,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     _pendingProperties[propertyName] = CSSPropertyValue(present);
   }
 
-  void _expandShorthand(String propertyName, String normalizedValue, bool? isImportant) {
+  void _expandShorthand(String propertyName, String normalizedValue, bool? isImportant, {String? baseHref}) {
     Map<String, String?> longhandProperties;
     String cacheKey = '$propertyName:$normalizedValue';
     if (_cachedExpandedShorthand.containsKey(cacheKey)) {
@@ -369,7 +369,10 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
     if (longhandProperties.isNotEmpty) {
       longhandProperties.forEach((String propertyName, String? value) {
-        setProperty(propertyName, value, isImportant: isImportant);
+        // Preserve the baseHref from the originating declaration so any
+        // url(...) in expanded longhands (e.g., background-image) resolve
+        // relative to the stylesheet that contained the shorthand.
+        setProperty(propertyName, value, isImportant: isImportant, baseHref: baseHref);
       });
     }
   }
@@ -527,7 +530,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     if (!_isValidValue(propertyName, normalizedValue)) return;
 
     if (_CSSShorthandProperty[propertyName] != null) {
-      return _expandShorthand(propertyName, normalizedValue, isImportant);
+      return _expandShorthand(propertyName, normalizedValue, isImportant, baseHref: baseHref);
     }
 
     // From style sheet mark the property important as false.

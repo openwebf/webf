@@ -302,7 +302,12 @@ class CSSBackgroundImage {
 
         Uri uri = Uri.parse(url);
         if (url.isNotEmpty) {
-          uri = controller.uriParser!.resolve(Uri.parse(baseHref ?? controller.url), uri);
+          final String base = baseHref ?? controller.url;
+          if (kDebugMode && DebugFlags.enableCssLogs) {
+            cssLogger.fine('[background] resolve base: ' + base + ' value=url(' + url + ') for <' +
+                renderStyle.target.tagName.toLowerCase() + '>');
+          }
+          uri = controller.uriParser!.resolve(Uri.parse(base), uri);
           FlutterView ownerFlutterView = controller.ownerFlutterView!;
           if (kDebugMode && DebugFlags.enableCssLogs) {
             cssLogger.fine('[background] resolve image url: ' + uri.toString());

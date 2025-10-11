@@ -82,6 +82,14 @@ Future<void> _resolveCSSImports(Document document, CSSStyleSheet sheet) async {
           i += imported.cssRules.length;
         }
 
+        // Mark this stylesheet as pending so StyleNodeManager will re-index
+        // even if the candidate set is unchanged. This ensures newly inlined
+        // @import rules take effect.
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[style] @import flattened into sheet href=' + (sheet.href?.toString() ?? 'inline') +
+              '; marking sheet pending for update');
+        }
+        document.styleNodeManager.appendPendingStyleSheet(sheet);
         // Mark style dirty and trigger update after resolution
         document.markElementStyleDirty(document.documentElement!);
         document.updateStyleIfNeeded();
@@ -231,14 +239,22 @@ class LinkElement extends Element {
       if (kDebugMode && DebugFlags.enableCssLogs) {
         debugPrint('[webf][style] <link> replaceSync (darkMode=' + ownerView.rootController.isDarkMode.toString() + ')');
       }
+      // Ensure the stylesheet carries an absolute href for correct URL resolution
+      if (_resolvedHyperlink != null) {
+        _styleSheet!.href = _resolvedHyperlink.toString();
+      } else if (href != null) {
+        _styleSheet!.href = href;
+      }
       _styleSheet!.replaceSync(_cachedStyleSheetText!,
           windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
     } else {
       if (kDebugMode && DebugFlags.enableCssLogs) {
         debugPrint('[webf][style] <link> parse (darkMode=' + ownerView.rootController.isDarkMode.toString() + ')');
       }
-      _styleSheet = CSSParser(_cachedStyleSheetText!)
+      final String? sheetHref = _resolvedHyperlink?.toString() ?? href;
+      _styleSheet = CSSParser(_cachedStyleSheetText!, href: sheetHref)
           .parse(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
+      _styleSheet?.href = sheetHref;
     }
     if (_styleSheet != null) {
       ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
@@ -368,12 +384,15 @@ class LinkElement extends Element {
         if (kDebugMode && DebugFlags.enableCssLogs) {
           debugPrint('[webf][style] <link> parse (darkMode=' + ownerView.rootController.isDarkMode.toString() + ')');
         }
-        _styleSheet = CSSParser(cssString, href: href).parse(
+        final String? sheetHref = _resolvedHyperlink?.toString() ?? href;
+        _styleSheet = CSSParser(cssString, href: sheetHref).parse(
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
-        _styleSheet?.href = href;
+        _styleSheet?.href = sheetHref;
 
         // Resolve and inline any @import rules before applying
         await _resolveCSSImports(ownerDocument, _styleSheet!);
+        // Ensure style manager re-indexes rules after imports
+        ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
 
         ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
@@ -589,6 +608,8 @@ mixin StyleElementMixin on Element {
         () async {
           if (_styleSheet != null) {
             await _resolveCSSImports(ownerDocument, _styleSheet!);
+            // Mark sheet pending so changes are picked up without candidate changes
+            ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
             ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
             ownerDocument.updateStyleIfNeeded();
           }
