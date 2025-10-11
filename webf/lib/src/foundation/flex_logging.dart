@@ -1,4 +1,5 @@
 import 'package:logging/logging.dart';
+import 'package:flutter/foundation.dart';
 
 import 'debug_flags.dart';
 import 'logger.dart';
@@ -86,6 +87,8 @@ class FlexLog {
     required String Function() message,
     Level level = Level.FINER,
   }) {
+    // Only emit logs in debug mode.
+    if (!kDebugMode) return;
     if (!_allowed(impl, feature)) return;
     final prefix = '[Flex/${_implLabel(impl)}/${_featureLabel(feature)}]';
     final text = '$prefix ${message()}';
