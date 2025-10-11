@@ -38,6 +38,8 @@ const Map<String, bool> _CSSShorthandProperty = {
   FLEX: true,
   FLEX_FLOW: true,
   GAP: true,
+  // WebF shorthand: maps to align-items + justify-content
+  PLACE_ITEMS: true,
   OVERFLOW: true,
   TRANSITION: true,
   TEXT_DECORATION: true,
@@ -200,6 +202,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         return CSSStyleProperty.removeShorthandBackgroundPosition(this, isImportant);
       case BORDER_RADIUS:
         return CSSStyleProperty.removeShorthandBorderRadius(this, isImportant);
+      case PLACE_ITEMS:
+        return CSSStyleProperty.removeShorthandPlaceItems(this, isImportant);
       case OVERFLOW:
         return CSSStyleProperty.removeShorthandOverflow(this, isImportant);
       case FONT:
@@ -317,6 +321,9 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
           break;
         case BORDER_RADIUS:
           CSSStyleProperty.setShorthandBorderRadius(longhandProperties, normalizedValue);
+          break;
+        case PLACE_ITEMS:
+          CSSStyleProperty.setShorthandPlaceItems(longhandProperties, normalizedValue);
           break;
         case OVERFLOW:
           CSSStyleProperty.setShorthandOverflow(longhandProperties, normalizedValue);

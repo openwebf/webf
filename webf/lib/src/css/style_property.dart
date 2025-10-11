@@ -1077,4 +1077,25 @@ class CSSStyleProperty {
     properties[ANIMATION_PLAY_STATE] = values[6]?.toLowerCase();
     properties[ANIMATION_NAME] = values[7];
   }
+
+  // place-items shorthand
+  // Spec: place-items: <'align-items'> [ / <'justify-items'> ]?
+  // In flexbox, 'justify-items' has no effect. For WebF (no Grid layout),
+  // we expand only to align-items and ignore the optional second value.
+  static void setShorthandPlaceItems(Map<String, String?> properties, String shorthandValue) {
+    // Normalize any slash separators and collapse whitespace
+    shorthandValue = shorthandValue.replaceAll(_slashRegExp, ' ');
+    List<String> values = _splitBySpace(shorthandValue);
+
+    if (values.isEmpty) return;
+
+    String align = values[0];
+
+    // Expand to longhand supported by WebF (align-items only).
+    properties[ALIGN_ITEMS] = align;
+  }
+
+  static void removeShorthandPlaceItems(CSSStyleDeclaration style, [bool? isImportant]) {
+    if (style.contains(ALIGN_ITEMS)) style.removeProperty(ALIGN_ITEMS, isImportant);
+  }
 }

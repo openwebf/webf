@@ -148,6 +148,8 @@ const String TEXT_ALIGN = 'textAlign';
 const String ALIGN_ITEMS = 'alignItems';
 const String ALIGN_SELF = 'alignSelf';
 const String ALIGN_CONTENT = 'alignContent';
+// Shorthand: place-items -> align-items + justify-content (WebF extension maps justify to justify-content)
+const String PLACE_ITEMS = 'placeItems';
 
 const String DIRECTION = 'direction';
 const String UNICODE_BIDI = 'unicodeBidi';
