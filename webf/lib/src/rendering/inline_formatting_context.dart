@@ -561,6 +561,17 @@ class InlineFormattingContext {
     InlineLayoutLog.log(
       impl: InlineImpl.paragraphIFC,
       feature: InlineFeature.metrics,
+      level: Level.FINER,
+      message: () => 'visualLongest diagnostic: minLeft='+minLeft.toStringAsFixed(2)+
+          ' applyShift='+applyShift.toString()+
+          ' forcedShift='+(_forcedParagraphMinLeftAlignShift?.toStringAsFixed(2) ?? 'null')+
+          ' paragraphMinLeft='+_paragraphMinLeft.toStringAsFixed(2)+
+          ' baseLongest='+baseLongest.toStringAsFixed(2)+
+          ' visualRight='+visualRight.toStringAsFixed(2),
+    );
+    InlineLayoutLog.log(
+      impl: InlineImpl.paragraphIFC,
+      feature: InlineFeature.metrics,
       level: Level.FINE,
       message: () => 'visualLongestLine=${result.toStringAsFixed(2)} (base=${baseLongest.toStringAsFixed(2)})',
     );
@@ -1531,6 +1542,29 @@ class InlineFormattingContext {
 
     final double shiftX = _paragraphMinLeft.isFinite ? _paragraphMinLeft : 0.0;
     final bool applyShift = shiftX.abs() > 0.01;
+    // Diagnostics: paint-time info on paragraph shift and current lines
+    try {
+      InlineLayoutLog.log(
+        impl: InlineImpl.paragraphIFC,
+        feature: InlineFeature.painting,
+        level: Level.FINER,
+        message: () => 'paint start: offset=('+
+            offset.dx.toStringAsFixed(2)+','+offset.dy.toStringAsFixed(2)+') '+
+            'paragraphMinLeft='+shiftX.toStringAsFixed(2)+' applyShift='+applyShift.toString()+
+            ' lines='+_paraLines.length.toString(),
+      );
+      for (int i = 0; i < _paraLines.length && i < 3; i++) {
+        final lm = _paraLines[i];
+        InlineLayoutLog.log(
+          impl: InlineImpl.paragraphIFC,
+          feature: InlineFeature.painting,
+          level: Level.FINER,
+          message: () => 'paint line['+i.toString()+'] left='+lm.left.toStringAsFixed(2)+
+              ' width='+lm.width.toStringAsFixed(2)+
+              ' baseline='+lm.baseline.toStringAsFixed(2),
+        );
+      }
+    } catch (_) {}
     if (applyShift) {
       context.canvas.save();
       context.canvas.translate(-shiftX, 0.0);
@@ -2571,7 +2605,8 @@ class InlineFormattingContext {
       }
 
       final ui.TextBox tb = (rtlRemap != null && rtlRemap.containsKey(i)) ? rtlRemap[i]! : _placeholderBoxes[i];
-      double left = tb.left;
+      // Subtract any paragraph paint-time left shift so offsets stay in container coords.
+      double left = tb.left - (_paragraphMinLeft.isFinite ? _paragraphMinLeft : 0.0);
       double top = tb.top;
       // If a positive text-indent was applied using a leading placeholder, and
       // this atomic placeholder sits at the very start of the first line, do
@@ -2616,7 +2651,8 @@ class InlineFormattingContext {
           }
           return 'set atomic parentData.offset for <$desc> tb=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(2)},'
               '${tb.right.toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)}) contentOrigin=('
-              '${contentOriginX.toStringAsFixed(2)},${contentOriginY.toStringAsFixed(2)}) → '
+              '${contentOriginX.toStringAsFixed(2)},${contentOriginY.toStringAsFixed(2)}) '
+              'paragraphMinLeft='+(_paragraphMinLeft.isFinite ? _paragraphMinLeft.toStringAsFixed(2) : '0.00')+' → '
               'offset=(${relativeOffset.dx.toStringAsFixed(2)},${relativeOffset.dy.toStringAsFixed(2)})';
         },
       );
@@ -2685,6 +2721,8 @@ class InlineFormattingContext {
     _paraReflowedToAvailWidthForAlign = false;
     // Clear any previous forced align shift; may be recomputed below when applicable.
     _forcedParagraphMinLeftAlignShift = null;
+    // Reset paragraph paint-time left shift from prior builds.
+    _paragraphMinLeft = 0.0;
     InlineLayoutLog.log(
       impl: InlineImpl.paragraphIFC,
       feature: InlineFeature.placeholders,
@@ -3681,6 +3719,38 @@ class InlineFormattingContext {
     _paraLines = paragraph.computeLineMetrics();
     _placeholderBoxes = paragraph.getBoxesForPlaceholders();
     _paraCharCount = paraPos; // record final character count
+
+    // Debug: dump basic paragraph/line metrics to help diagnose alignment issues
+    try {
+      final int lineCount = _paraLines.length;
+      double minLeftDbg = double.infinity;
+      for (final lm in _paraLines) {
+        if (lm.left.isFinite) minLeftDbg = math.min(minLeftDbg, lm.left);
+      }
+      if (!minLeftDbg.isFinite) minLeftDbg = 0.0;
+      InlineLayoutLog.log(
+        impl: InlineImpl.paragraphIFC,
+        feature: InlineFeature.metrics,
+        level: Level.FINER,
+        message: () => 'paragraph ready: width='+paragraph.width.toStringAsFixed(2)+
+            ' longest='+paragraph.longestLine.toStringAsFixed(2)+
+            ' lines='+lineCount.toString()+
+            ' minLeft='+minLeftDbg.toStringAsFixed(2),
+      );
+      for (int i = 0; i < _paraLines.length && i < 3; i++) {
+        final lm = _paraLines[i];
+        InlineLayoutLog.log(
+          impl: InlineImpl.paragraphIFC,
+          feature: InlineFeature.metrics,
+          level: Level.FINER,
+          message: () => 'line['+i.toString()+'] left='+lm.left.toStringAsFixed(2)+
+              ' width='+lm.width.toStringAsFixed(2)+
+              ' baseline='+lm.baseline.toStringAsFixed(2)+
+              ' ascent='+lm.ascent.toStringAsFixed(2)+
+              ' descent='+lm.descent.toStringAsFixed(2),
+        );
+      }
+    } catch (_) {}
 
     // Apply ::first-line by rebuilding the paragraph with per-range overrides
     // once we know the first line break position for the final layout width.

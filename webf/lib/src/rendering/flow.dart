@@ -212,8 +212,16 @@ class RenderFlowLayout extends RenderLayoutBox {
         impl: FlowImpl.ifc,
         feature: FlowFeature.painting,
         level: Level.FINER,
-        message: () => '<${renderStyle.target.tagName.toLowerCase()}> paint IFC content at '
-            '(${contentOffset.dx.toStringAsFixed(2)}, ${contentOffset.dy.toStringAsFixed(2)})',
+        message: () {
+          final String tag = renderStyle.target.tagName.toLowerCase();
+          double shift = 0.0;
+          try {
+            shift = _inlineFormattingContext?.paragraphLeftShift ?? 0.0;
+          } catch (_) {}
+          return '<'+tag+'> paint IFC content at ('+
+              contentOffset.dx.toStringAsFixed(2)+', '+contentOffset.dy.toStringAsFixed(2)+') '+
+              'paragraphLeftShift='+shift.toStringAsFixed(2);
+        },
       );
 
       // Paint the inline formatting context content
@@ -681,10 +689,24 @@ class RenderFlowLayout extends RenderLayoutBox {
         // If the paragraph was initially shaped with a different width, lock the
         // container content logical width first so percentage children can resolve,
         // then rebuild IFC (includes atomic placeholder re-measure).
-        if ((ifcSize.width - usedContentWidth).abs() > 0.5) {
+        // Reflow paragraph to the final used width when the initially shaped width
+        // differs. This can happen even when ifcSize.width already equals usedContentWidth
+        // (e.g., shrink-to-fit chose the intrinsic width) but the paragraph was
+        // originally shaped with a larger bounded width, leaving a non-zero line-left
+        // (textAlign:center/right). Rebuilding at the used width resets line-left to 0.
+        final double shapedWidth = inlineFormattingContext.paragraph?.width ?? ifcSize.width;
+        if ((ifcSize.width - usedContentWidth).abs() > 0.5 || (shapedWidth - usedContentWidth).abs() > 0.5) {
           // Make this container a definite percentage reference for descendants.
           renderStyle.contentBoxLogicalWidth = usedContentWidth;
           inlineFormattingContext.relayoutParagraphToWidth(usedContentWidth);
+          FlowLog.log(
+            impl: FlowImpl.ifc,
+            feature: FlowFeature.shrinkToFit,
+            level: Level.FINER,
+            message: () => '<${renderStyle.target.tagName.toLowerCase()}>'
+                ' IFC reflow paragraph: shapedW='+shapedWidth.toStringAsFixed(2)+
+                ' → usedW='+usedContentWidth.toStringAsFixed(2),
+          );
         }
         FlowLog.log(
           impl: FlowImpl.ifc,
