@@ -1,4 +1,4 @@
-fdescribe('Text line-height with word-break: break-all (issue #107)', () => {
+describe('Text line-height with word-break: break-all (issue #107)', () => {
   it('applies 1.9em line-height to wrapped long text', async () => {
     const container = createElement(
       'div',
