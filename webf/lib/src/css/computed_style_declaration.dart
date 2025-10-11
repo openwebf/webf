@@ -826,6 +826,9 @@ extension WhiteSpaceText on WhiteSpace {
   }
 }
 
+// CSS word-break
+enum WordBreak { normal, breakAll, keepAll, breakWord }
+
 extension Matrix4CSSText on Matrix4 {
   String cssText() {
     if (isIdentity()) {

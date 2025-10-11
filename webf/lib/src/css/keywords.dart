@@ -125,6 +125,8 @@ const String TEXT_DECORATION_STYLE = 'textDecorationStyle';
 const String TEXT_SHADOW = 'textShadow';
 const String LETTER_SPACING = 'letterSpacing';
 const String WORD_SPACING = 'wordSpacing';
+// CSS word-break property (camelCase form used internally)
+const String WORD_BREAK = 'wordBreak';
 const String WHITE_SPACE = 'whiteSpace';
 const String LINE_CLAMP = 'lineClamp';
 const String TAB_SIZE = 'tabSize';

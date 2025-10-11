@@ -343,6 +343,25 @@ mixin CSSTextMixin on RenderStyle {
     _markChildrenTextNeedsLayout(this, TEXT_SHADOW);
   }
 
+  // word-break (inherited)
+  WordBreak? _wordBreak;
+
+  @override
+  WordBreak get wordBreak {
+    final parent = getParentRenderStyle<CSSRenderStyle>();
+    if (_wordBreak == null && parent != null) {
+      return parent.wordBreak;
+    }
+    return _wordBreak ?? WordBreak.normal;
+  }
+
+  set wordBreak(WordBreak? value) {
+    if (_wordBreak == value) return;
+    _wordBreak = value;
+    // Text-related inherited property affects text layout of descendants
+    _markChildrenTextNeedsLayout(this, 'wordBreak');
+  }
+
   WhiteSpace? _whiteSpace;
 
   @override
@@ -783,6 +802,21 @@ class CSSText {
       case 'none':
       default:
         return TextTransform.none;
+    }
+  }
+
+  // CSS word-break
+  static WordBreak resolveWordBreak(String value) {
+    switch (value) {
+      case 'break-all':
+        return WordBreak.breakAll;
+      case 'keep-all':
+        return WordBreak.keepAll;
+      case 'break-word':
+        return WordBreak.breakWord;
+      case 'normal':
+      default:
+        return WordBreak.normal;
     }
   }
 

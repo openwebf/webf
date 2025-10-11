@@ -236,6 +236,9 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   TextDirection get direction;
 
+  // CSS word-break (inherited)
+  WordBreak get wordBreak;
+
   int? get lineClamp;
 
   CSSLengthValue get lineHeight;
@@ -1501,9 +1504,9 @@ class CSSRenderStyle extends RenderStyle
         return marginRight;
       case MARGIN_BOTTOM:
         return marginBottom;
-      // Text
-      case COLOR:
-        return color;
+  // Text
+  case COLOR:
+    return color;
       case TEXT_DECORATION_LINE:
         return textDecorationLine;
       case TEXT_DECORATION_STYLE:
@@ -1528,8 +1531,10 @@ class CSSRenderStyle extends RenderStyle
         return textShadow;
       case WHITE_SPACE:
         return whiteSpace;
-      case TEXT_OVERFLOW:
-        return textOverflow;
+  case TEXT_OVERFLOW:
+    return textOverflow;
+  case WORD_BREAK:
+    return wordBreak;
       case LINE_CLAMP:
         return lineClamp;
       case TAB_SIZE:
@@ -1539,8 +1544,8 @@ class CSSRenderStyle extends RenderStyle
         return textIndent;
       case VERTICAL_ALIGN:
         return verticalAlign;
-      case TEXT_ALIGN:
-        return textAlign;
+  case TEXT_ALIGN:
+    return textAlign;
       case DIRECTION:
         return direction;
       // Transform
@@ -1912,6 +1917,9 @@ class CSSRenderStyle extends RenderStyle
         break;
       case TEXT_OVERFLOW:
         textOverflow = value;
+        break;
+      case WORD_BREAK:
+        wordBreak = value;
         break;
       case LINE_CLAMP:
         lineClamp = value;
@@ -2391,6 +2399,9 @@ class CSSRenderStyle extends RenderStyle
       case TEXT_OVERFLOW:
         // Overflow will affect text-overflow ellipsis taking effect
         value = CSSText.resolveTextOverflow(propertyValue);
+        break;
+      case WORD_BREAK:
+        value = CSSText.resolveWordBreak(propertyValue);
         break;
       case TEXT_TRANSFORM:
         value = CSSText.resolveTextTransform(propertyValue);

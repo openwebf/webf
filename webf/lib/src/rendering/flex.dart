@@ -3136,6 +3136,10 @@ class RenderFlexLayout extends RenderLayoutBox {
         }
 
         // Available cross size (content-box width of the container) if definite.
+        // Per CSS Flexbox, the available cross space for a flex item is the
+        // flex container’s inner cross size minus the item’s margins in the
+        // cross axis. Subtract positive start/end margins to get the space
+        // available to the item’s border-box for shrink-to-fit width.
         double availableCross = double.infinity;
         if (contentConstraints != null && contentConstraints!.maxWidth.isFinite) {
           availableCross = contentConstraints!.maxWidth;
@@ -3145,6 +3149,13 @@ class RenderFlexLayout extends RenderLayoutBox {
               renderStyle.effectiveBorderRightWidth.computedValue;
           final double fallback = math.max(0.0, size.width - borderH);
           if (fallback.isFinite && fallback > 0) availableCross = fallback;
+        }
+        // Subtract cross-axis margins (positive values only) from available width.
+        if (availableCross.isFinite) {
+          final double startMargin = _flowAwareChildCrossAxisMargin(child) ?? 0;
+          final double endMargin = _flowAwareChildCrossAxisMargin(child, isEnd: true) ?? 0;
+          final double marginDeduction = math.max(0.0, startMargin) + math.max(0.0, endMargin);
+          availableCross = math.max(0.0, availableCross - marginDeduction);
         }
 
         // If IFC not available yet and max-content collapsed to min-content, try using
@@ -4641,7 +4652,10 @@ class RenderFlexLayout extends RenderLayoutBox {
         // overflow is caused by margins (border-box fits, margin-box overflows). If the
         // border-box itself is wider than the line, we still center (allow negative offset)
         // per Box Alignment overflow handling.
-        final bool marginOnlyOverflow = borderBoxExtent <= flexLineCrossSize && marginBoxExtent >= flexLineCrossSize;
+        // Only treat as overflow when the margin-box actually exceeds the line cross size.
+        // If it exactly equals, there is no overflow and centering should place the
+        // border-box at startMargin (i.e., symmetric gaps), matching browser behavior.
+        final bool marginOnlyOverflow = borderBoxExtent <= flexLineCrossSize && marginBoxExtent > flexLineCrossSize;
         if (crossIsHorizontal && marginOnlyOverflow) {
           FlexLog.log(
             impl: FlexImpl.flex,
