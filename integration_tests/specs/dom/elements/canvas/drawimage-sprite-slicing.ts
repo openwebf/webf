@@ -1,5 +1,5 @@
 describe('canvas drawImage sprite slicing (issue #37)', () => {
-  fit('draws 1/47 slice when using img.width/endNum', async (done) => {
+  it('draws 1/47 slice when using img.width/endNum', async (done) => {
     const stripes = 47;
     const stripeWidth = 10;
     const height = 40;
