@@ -1,6 +1,5 @@
 describe('background-attachment', () => {
-  // @TODO: Support background-attachment: fixed.
-  xit('fixed', async () => {
+  it('fixed', async () => {
     let container = createElementWithStyle('div', {
       'background-attachment': 'fixed',
       'background-position': '1em 5em',
@@ -18,6 +17,11 @@ describe('background-attachment', () => {
     append(container, text);
     append(BODY, container);
     await sleep(1);
+    await snapshot(container);
+
+    container.scroll(0, 50);
+
+    await waitForFrame();
     await snapshot(container);
   });
 
@@ -47,7 +51,7 @@ describe('background-attachment', () => {
 
   it('scroll', async () => {
     let container = createElementWithStyle('div', {
-      'background-attachment': 'local',
+      'background-attachment': 'scroll',
       backgroundRepeat: 'no-repeat',
       'background-image':
         'url(assets/cat.png)',

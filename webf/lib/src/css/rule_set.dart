@@ -5,6 +5,9 @@
 import 'dart:collection';
 
 import 'package:webf/css.dart';
+import 'package:flutter/foundation.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/dom.dart';
 
 typedef CSSMap = HashMap<String, List<CSSRule>>;
@@ -37,6 +40,14 @@ class RuleSet {
     for (CSSRule rule in rules) {
       addRule(rule, baseHref: baseHref);
     }
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[ruleset] indexed: id=' + idRules.length.toString() +
+          ' class=' + classRules.length.toString() +
+          ' attr=' + attributeRules.length.toString() +
+          ' tag=' + tagRules.length.toString() +
+          ' universal=' + universalRules.length.toString() +
+          ' pseudo=' + pseudoRules.length.toString());
+    }
   }
 
   void addRule(CSSRule rule, { required String? baseHref }) {
@@ -51,6 +62,9 @@ class RuleSet {
       CSSFontFace.resolveFontFaceRules(rule, ownerDocument.contextId!, baseHref);
     } else if (rule is CSSMediaDirective) {
       // doNothing
+    } else if (rule is CSSImportRule) {
+      // @import rules are resolved and flattened during stylesheet load.
+      // Ignore any leftover import rules.
     } else {
       assert(false, 'Unsupported rule type: ${rule.runtimeType}');
     }
@@ -67,6 +81,22 @@ class RuleSet {
 
   // indexed by selectorText
   void findBestRuleSetAndAdd(Selector selector, CSSRule rule) {
+    // Enforce CSS rule: a pseudo-element must be the last simple selector
+    // in a compound selector. If any simple selector appears after a
+    // pseudo-element, the selector is invalid and must not match.
+    final List<SimpleSelectorSequence> seqs = selector.simpleSelectorSequences;
+    for (int i = 0; i < seqs.length; i++) {
+      final s = seqs[i].simpleSelector;
+      if (s is PseudoElementSelector || s is PseudoElementFunctionSelector) {
+        if (i != seqs.length - 1) {
+          // Invalid selector like `P:first-line.three`; drop this rule.
+          return;
+        }
+        // At most one pseudo-element; any additional would be handled by parser.
+        break;
+      }
+    }
+
     String? id, className, attributeName, tagName, pseudoName;
 
     for (final simpleSelectorSequence in selector.simpleSelectorSequences.reversed) {
@@ -132,9 +162,9 @@ class RuleSet {
     switch (name) {
       case 'before':
       case 'after':
-        return true;
-      case 'first-line':
       case 'first-letter':
+      case 'first-line':
+        return true;
       default:
         return false;
     }

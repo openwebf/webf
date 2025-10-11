@@ -201,6 +201,58 @@ describe('containing-block legacy', () => {
     await snapshot();
   });
 
+  it('017-lite', async () => {
+    let divStyle = {
+      border: '3px solid silver',
+      marginBottom: '20px',
+      padding: '100px',
+       fontSize: '12px',
+       width: '340px',
+    };
+    let container = createElementWithStyle('div', divStyle);
+    let test = createElementWithStyle('span', {
+      border: '15px solid red',
+      padding: '50px',
+      position: 'relative',
+    });
+    let clickCount = 0;
+    test.onclick = () => clickCount++;
+    
+    let positionStyle = {
+      height: '30px',
+      width: '30px',
+      position: 'absolute',
+    };
+
+    let bottomrightStyle = {
+      backgroundColor: 'green',
+      bottom: 0,
+      right: 0,
+    };
+
+    append(container, test);
+    append(BODY, container);
+    await snapshot();
+
+
+    // Use simulateClick API to verify hit test behavior.
+    const r = test.getBoundingClientRect();
+
+    // 1) inside padding area
+    await simulateClick(r.left + 10, r.top + 10);
+
+    // 2) on bottom border center
+    await simulateClick((r.left + r.right) / 2, r.bottom - 1);
+
+    // // 3) outside left should not hit
+    await simulateClick(r.left - 2, r.top + 10);
+
+    // 4) outside right should not hit
+    await simulateClick(r.right + 2, r.top + 10);
+
+    expect(clickCount).toBe(2);
+  });
+
   // @TODO: Height of display: inline element is wrong.
   xit('017', async () => {
     let divStyle = {
@@ -276,7 +328,6 @@ describe('containing-block legacy', () => {
     await snapshot();
   });
 
-  // @TODO: Height of display: inline element is wrong.
   xit('018', async () => {
     let divStyle = {
       border: '3px solid silver',

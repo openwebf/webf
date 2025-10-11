@@ -220,15 +220,17 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
     result = JS_EvalFunction(script_state_.ctx(), byte_object);
   }
 
-  DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
 
-  // Restore previous currentScript
+  // Restore previous currentScript before running microtasks
   if (script_element && document()) {
     MemberMutationScope scope{this};
     document()->setCurrentScript(previous_current_script);
   }
+
+  // Drain microtasks after clearing currentScript to match browser semantics
+  DrainMicrotasks();
 
   return success;
 }
@@ -250,16 +252,17 @@ bool ExecutingContext::EvaluateJavaScript(const char16_t* code, size_t length, c
   }
 
   JSValue result = JS_Eval(script_state_.ctx(), utf8Code.c_str(), utf8Code.size(), sourceURL, JS_EVAL_TYPE_GLOBAL);
-  DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
 
-  // Restore previous currentScript
+  // Restore previous currentScript before running microtasks
   if (script_element && document()) {
     MemberMutationScope scope{this};
     document()->setCurrentScript(previous_current_script);
   }
 
+  // Drain microtasks after clearing currentScript to match browser semantics
+  DrainMicrotasks();
   return success;
 }
 
@@ -283,13 +286,8 @@ bool ExecutingContext::EvaluateModule(const char* code,
     return false;
   }
 
-  // Set document.currentScript if script element is provided
-  HTMLScriptElement* previous_current_script = nullptr;
-  if (script_element && document()) {
-    previous_current_script = document()->currentScript();
-    MemberMutationScope scope{this};
-    document()->setCurrentScript(script_element);
-  }
+  // Per HTML spec, document.currentScript is always null in module scripts.
+  // Do not set currentScript for module evaluation.
 
   JSValue result;
   if (parsed_bytecodes == nullptr) {
@@ -326,16 +324,13 @@ bool ExecutingContext::EvaluateModule(const char* code,
     result = JS_EvalFunction(script_state_.ctx(), byte_object);
   }
 
-  DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
 
-  // Restore previous currentScript
-  if (script_element && document()) {
-    MemberMutationScope scope{this};
-    document()->setCurrentScript(previous_current_script);
-  }
+  // No currentScript restoration needed for modules
 
+  // Drain microtasks after clearing currentScript to match browser semantics
+  DrainMicrotasks();
   return success;
 }
 
@@ -354,16 +349,17 @@ bool ExecutingContext::EvaluateJavaScript(const char* code, size_t codeLength, c
   }
 
   JSValue result = JS_Eval(script_state_.ctx(), code, codeLength, sourceURL, JS_EVAL_TYPE_GLOBAL);
-  DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
 
-  // Restore previous currentScript
+  // Restore previous currentScript before running microtasks
   if (script_element && document()) {
     MemberMutationScope scope{this};
     document()->setCurrentScript(previous_current_script);
   }
 
+  // Drain microtasks after clearing currentScript to match browser semantics
+  DrainMicrotasks();
   return success;
 }
 
@@ -403,17 +399,18 @@ bool ExecutingContext::EvaluateByteCode(const uint8_t* bytes, size_t byteLength,
 
   val = JS_EvalFunction(script_state_.ctx(), obj);
 
-  DrainMicrotasks();
   bool success = HandleException(&val);
 
   JS_FreeValue(script_state_.ctx(), val);
 
-  // Restore previous currentScript
+  // Restore previous currentScript before running microtasks
   if (script_element && document()) {
     MemberMutationScope scope{this};
     document()->setCurrentScript(previous_current_script);
   }
 
+  // Drain microtasks after clearing currentScript to match browser semantics
+  DrainMicrotasks();
   return success;
 }
 

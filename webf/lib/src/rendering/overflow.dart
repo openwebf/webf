@@ -6,6 +6,8 @@
 import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/css.dart';
 import 'package:webf/gesture.dart';
 
@@ -36,18 +38,14 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       return true;
     }
 
-    // Overflow value other than 'visible' always need to clip content.
+    // Per spec, overflow other than 'visible' establishes a clipping context at the
+    // padding edge. Always clip in this case so translated scroll contents (non-zero
+    // paint offset) cannot bleed outside the container, even when the content size
+    // currently fits within the viewport. This also ensures inner padding is honored.
     // https://www.w3.org/TR/css-overflow-3/#overflow-properties
     CSSOverflowType effectiveOverflowX = renderStyle.effectiveOverflowX;
     if (effectiveOverflowX != CSSOverflowType.visible) {
-      Size scrollableSize = renderBoxModel.scrollableSize;
-      Size scrollableViewportSize = renderBoxModel.scrollableViewportSize;
-      // Border-radius always to clip inner content when overflow is not visible.
-      if (scrollableSize.width > scrollableViewportSize.width ||
-          borderRadius != null ||
-          (renderBoxModel.overflowRect != null && renderBoxModel.overflowRect!.left < 0)) {
-        return true;
-      }
+      return true;
     }
 
     return false;
@@ -64,18 +62,14 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       return true;
     }
 
-    // Overflow value other than 'visible' always need to clip content.
+    // Always clip when overflow is not 'visible' to enforce the padding-edge
+    // clipping boundary regardless of current content size. This prevents text
+    // or children from painting outside the container when scrolled and ensures
+    // padding acts as the inner clip inset.
     // https://www.w3.org/TR/css-overflow-3/#overflow-properties
     CSSOverflowType effectiveOverflowY = renderStyle.effectiveOverflowY;
     if (effectiveOverflowY != CSSOverflowType.visible) {
-      Size scrollableSize = renderBoxModel.scrollableSize;
-      Size scrollableViewportSize = renderBoxModel.scrollableViewportSize;
-      // Border-radius always to clip inner content when overflow is not visible.
-      if (scrollableSize.height > scrollableViewportSize.height ||
-          borderRadius != null ||
-          (renderBoxModel.overflowRect != null && renderBoxModel.overflowRect!.top < 0)) {
-        return true;
-      }
+      return true;
     }
     return false;
   }
@@ -109,7 +103,13 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     assert(scrollListener != null);
     // If scroll is happening, that element has been unmounted, prevent null usage.
     if (scrollOffsetX != null) {
-      scrollListener!(scrollOffsetX!.pixels, AxisDirection.right);
+      if (DebugFlags.debugLogScrollableEnabled) {
+        final double maxX = math.max(0.0, (_scrollableSize?.width ?? 0) - (_viewportSize?.width ?? 0));
+        renderingLogger.finer('[Overflow-Scroll] <${renderStyle.target.tagName.toLowerCase()}> X pixels='
+            '${scrollOffsetX!.pixels.toStringAsFixed(2)} max=${maxX.toStringAsFixed(2)}');
+      }
+      final AxisDirection dir = (renderStyle.direction == TextDirection.rtl) ? AxisDirection.left : AxisDirection.right;
+      scrollListener!(scrollOffsetX!.pixels, dir);
       markNeedsPaint();
     }
   }
@@ -117,6 +117,11 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   void scrollYListener() {
     assert(scrollListener != null);
     if (scrollOffsetY != null) {
+      if (DebugFlags.debugLogScrollableEnabled) {
+        final double maxY = math.max(0.0, (_scrollableSize?.height ?? 0) - (_viewportSize?.height ?? 0));
+        renderingLogger.finer('[Overflow-Scroll] <${renderStyle.target.tagName.toLowerCase()}> Y pixels='
+            '${scrollOffsetY!.pixels.toStringAsFixed(2)} max=${maxY.toStringAsFixed(2)}');
+      }
       scrollListener!(scrollOffsetY!.pixels, AxisDirection.down);
       markNeedsPaint();
     }
@@ -137,23 +142,68 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
 
     _scrollableSize = scrollableSize;
     _viewportSize = viewportSize;
+    // Debug: report setup parameters
+    FlowLog.log(
+      impl: FlowImpl.overflow,
+      feature: FlowFeature.setup,
+      message: () =>
+          '<${renderStyle.target.tagName.toLowerCase()}> viewport=${viewportSize.width.toStringAsFixed(2)}×${viewportSize.height.toStringAsFixed(2)} scrollable=${scrollableSize.width.toStringAsFixed(2)}×${scrollableSize.height.toStringAsFixed(2)} overflowX=${renderStyle.effectiveOverflowX} overflowY=${renderStyle.effectiveOverflowY}',
+    );
     if (_scrollOffsetX != null) {
       _setUpScrollX();
+      final double maxX = math.max(0.0, _scrollableSize!.width - _viewportSize!.width);
+      FlowLog.log(
+        impl: FlowImpl.overflow,
+        feature: FlowFeature.setup,
+        message: () =>
+            'X controller maxScroll=${maxX.toStringAsFixed(2)} viewportW=${_viewportSize!.width.toStringAsFixed(2)} contentW=${_scrollableSize!.width.toStringAsFixed(2)}',
+      );
+      // Do not auto-jump scroll position for RTL containers.
+      // Per CSS/UA expectations, initial scroll position is the start edge
+      // of the scroll range, and user agent should not forcibly move it to
+      // the visual right edge for RTL. Keeping 0 preserves expected behavior
+      // for cases where overflow content lies entirely to the right.
     }
 
     if (_scrollOffsetY != null) {
       _setUpScrollY();
+      final double maxY = math.max(0.0, _scrollableSize!.height - _viewportSize!.height);
+      FlowLog.log(
+        impl: FlowImpl.overflow,
+        feature: FlowFeature.setup,
+        message: () =>
+            'Y controller maxScroll=${maxY.toStringAsFixed(2)} viewportH=${_viewportSize!.height.toStringAsFixed(2)} contentH=${_scrollableSize!.height.toStringAsFixed(2)}',
+      );
     }
+
+    // After computing viewport/content dimensions, update sticky descendants so their
+    // initial paint offsets honor top/bottom/left/right clamps before any scroll occurs.
+    try {
+      final Element el = renderStyle.target;
+      el.updateStickyOffsets();
+    } catch (_) {}
   }
   double get _paintOffsetX {
     if (_scrollOffsetX == null) return 0.0;
-    return -_scrollOffsetX!.pixels;
+    // Compute logical left-edge position within the scrollable content.
+    // LTR: logical distance from left is the raw pixels.
+    // RTL: logical distance from left is (maxScroll - pixels) so that
+    // an initial pixels=0 aligns the visual viewport to the right edge.
+    final double maxScroll = math.max(0.0, (_scrollableSize?.width ?? 0) - (_viewportSize?.width ?? 0));
+    final double logicalLeft = (renderStyle.direction == TextDirection.rtl)
+        ? (maxScroll - _scrollOffsetX!.pixels)
+        : _scrollOffsetX!.pixels;
+    // Translate content left by the logical left distance.
+    return -logicalLeft;
   }
 
   double get _paintOffsetY {
     if (_scrollOffsetY == null) return 0.0;
     return -_scrollOffsetY!.pixels;
   }
+
+  // Expose effective paint scroll offset for use in hit testing
+  Offset get paintScrollOffset => Offset(_paintOffsetX, _paintOffsetY);
 
   double get scrollTop {
     if (_scrollOffsetY == null) return 0.0;
@@ -224,18 +274,6 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       _clipRRectLayer.layer = null;
       callback(context, offset);
     }
-  }
-
-  @override
-  double? computeDistanceToActualBaseline(TextBaseline baseline) {
-    double? result;
-    final BoxParentData? childParentData = parentData as BoxParentData?;
-    double? candidate = getDistanceToActualBaseline(baseline);
-    if (candidate != null) {
-      candidate += childParentData!.offset.dy;
-      result = candidate;
-    }
-    return result;
   }
 
   // For position fixed render box, should reduce the outer scroll offsets.

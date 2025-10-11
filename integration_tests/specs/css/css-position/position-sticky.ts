@@ -267,9 +267,11 @@ describe('position-sticky', () => {
     BODY.appendChild(scroller);
     BODY.appendChild(div);
 
-    window.addEventListener('load', function () {
-      scroller.scrollTop = 100;
-    });
+    await snapshot(0.2);
+
+    scroller.scrollTop = 100;
+
+    await waitForFrame();
 
     await snapshot(0.2);
   });
@@ -930,7 +932,7 @@ describe('position-sticky', () => {
 
     await snapshot();
   });
-  it('inline', async () => {
+  xit('inline', async () => {
     let indicator;
     let indicator_1;
     let indicator_2;

@@ -9,12 +9,14 @@
 #include <atomic>
 #include <cassert>
 #include <cinttypes>
+#include <cstring>
 #include <memory>
 #include "ascii_fast_path.h"
 #include "core/base/compiler_specific.h"
 #include "core/base/containers/span.h"
 #include "core/platform/static_constructors.h"
 #include "foundation/macros.h"
+#include "foundation/logging.h"
 #include "string_hasher.h"
 
 namespace webf {
@@ -87,7 +89,22 @@ class StringImpl {
   // Custom equality function
   struct StringImplEqual {
     bool operator()(const std::shared_ptr<StringImpl>& lhs, const std::shared_ptr<StringImpl>& rhs) const {
-      return lhs->GetHash() == rhs->GetHash();
+      if (lhs.get() == rhs.get()) return true;
+      if (!lhs || !rhs) return false;
+      if (lhs->length() != rhs->length()) return false;
+      // Fast path: both 8-bit
+      if (lhs->Is8Bit() && rhs->Is8Bit()) {
+        return std::memcmp(lhs->Characters8(), rhs->Characters8(), lhs->length()) == 0;
+      }
+      // Fast path: both 16-bit
+      if (!lhs->Is8Bit() && !rhs->Is8Bit()) {
+        return std::memcmp(lhs->Characters16(), rhs->Characters16(), lhs->length() * sizeof(char16_t)) == 0;
+      }
+      // Mixed width: compare as char16_t values
+      for (size_t i = 0; i < lhs->length(); ++i) {
+        if ((*lhs)[i] != (*rhs)[i]) return false;
+      }
+      return true;
     }
   };
 
@@ -168,19 +185,17 @@ class StringImpl {
 
   static void InitStatics();
 
-  // Hash value is 24 bits.
-  constexpr static int kHashShift = (sizeof(unsigned) * 8) - 24;
+  // Store flags in the low bits and the full 32-bit hash above them.
+  // Keep an 8-bit gap for flags and place the hash starting at bit 8.
+  // With 64-bit storage, this preserves the entire 32-bit hash.
+  constexpr static int kHashShift = 8;
 
   unsigned GetHashRaw() const {
     auto flags = hash_and_flags_.load(std::memory_order_relaxed);
     return flags >> (kHashShift);
   }
 
-  size_t GetHash() const {
-    if (size_t hash = GetHashRaw())
-      return hash;
-    return HashSlowCase();
-  }
+  size_t GetHash() const;
 
   char16_t operator[](size_t i) const {
     DCHECK(i < length_);
@@ -265,7 +280,8 @@ class StringImpl {
   void SetHashRaw(unsigned hash_val) const {
     // Setting the hash is idempotent so fetch_or() is sufficient. DCHECK()
     // as a sanity check.
-    unsigned previous_value = hash_and_flags_.fetch_or(hash_val << kHashShift, std::memory_order_relaxed);
+    uint64_t previous_value = hash_and_flags_.fetch_or(static_cast<uint64_t>(hash_val) << kHashShift,
+                                                       std::memory_order_relaxed);
     DCHECK(((previous_value >> kHashShift) == 0) || ((previous_value >> kHashShift) == hash_val));
   }
 
@@ -305,7 +321,7 @@ class StringImpl {
     kContainsOnlyAscii = 1 << 4,
     kIsLowerAscii = 1 << 5,
 
-    // The last 24 bits (past kHashShift) are reserved for the hash.
+    // Hash bits are stored above the low flag bits (starting at kHashShift).
     // These bits are all zero if the hash is uncomputed, and the hash is
     // atomically stored with bitwise or.
     //
@@ -316,8 +332,9 @@ class StringImpl {
     // storing the same bits again with a bitwise or is idempotent.
   };
 
+  // 64-bit storage: low bits keep flags, higher bits store the full 32-bit hash
   size_t length_;
-  mutable std::atomic<uint32_t> hash_and_flags_;
+  mutable std::atomic<uint64_t> hash_and_flags_;
 };
 
 inline size_t StringImpl::Find(unsigned char character, size_t start) {

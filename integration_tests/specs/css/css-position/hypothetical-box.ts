@@ -79,6 +79,8 @@ describe('hypothetical-box', () => {
     BODY.appendChild(div);
     BODY.appendChild(div_1);
 
+    await waitForFrame();
+
     // Scroll the viewport.
     window.scrollTo(window.innerWidth * 2, 0);
 
@@ -97,6 +99,8 @@ describe('hypothetical-box', () => {
     });
     BODY.appendChild(div);
     BODY.appendChild(div_1);
+
+    await waitForFrame();
 
     window.scrollTo(window.innerWidth * 2, 0);
 

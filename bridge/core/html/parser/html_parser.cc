@@ -262,17 +262,17 @@ bool HTMLParser::parseHTML(const std::string& html, Node* root_node, bool isHTML
     context->HandleException(exception_state);
     return false;
   }
-
-  // Check for parsing errors but continue - Gumbo provides error recovery
-  if (htmlTree->errors.length > 0) {
-    WEBF_LOG(WARN) << "HTML parsing completed with " << htmlTree->errors.length << " recoverable errors.";
-    // Log first few errors for debugging
-    for (int i = 0; i < std::min(3, (int)htmlTree->errors.length); i++) {
-      auto* error = (GumboError*)htmlTree->errors.data[i];
-      WEBF_LOG(VERBOSE) << "HTML Error at line " << error->position.line
-                      << ", column " << error->position.column;
-    }
-  }
+//
+//  // Check for parsing errors but continue - Gumbo provides error recovery
+//  if (htmlTree->errors.length > 0) {
+//    WEBF_LOG(WARN) << "HTML parsing completed with " << htmlTree->errors.length << " recoverable errors.";
+//    // Log first few errors for debugging
+//    for (int i = 0; i < std::min(3, (int)htmlTree->errors.length); i++) {
+//      auto* error = (GumboError*)htmlTree->errors.data[i];
+//      WEBF_LOG(VERBOSE) << "HTML Error at line " << error->position.line
+//                      << ", column " << error->position.column;
+//    }
+//  }
 
   root_container_node->ParserFinishedBuildingDocumentFragment();
 

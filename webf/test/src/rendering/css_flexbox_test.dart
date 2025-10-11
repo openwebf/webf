@@ -920,6 +920,71 @@ void main() {
       // Child2 should shrink
       expect(child2.offsetWidth, equals(20.0));
     });
+
+    testWidgets('inline text wraps and increases item height when flex-shrunk', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'flex-shrink-wrap-text-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="flexContainer" style="
+                display: flex;
+                max-width: 200px;
+                background-color: #e0e0e0;
+              ">
+                <div id="item" style="
+                  flex-shrink: 1;
+                  padding: 10px;
+                  background-color: #f0f0f0;
+                ">
+                  <span>This text in a flex-shrink item should wrap within the flex container max-width</span>
+                </div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('flexContainer');
+      final item = prepared.getElementById('item');
+
+      // After shrink to 200px max-width, the text should wrap to multiple lines
+      // causing the flex item (and thus the container line) to grow in height.
+      // Assert the container height is noticeably larger than a single-line block with 10px padding.
+      expect(container.offsetWidth, equals(200.0));
+      expect(item.offsetHeight, greaterThan(60.0));
+      expect(container.offsetHeight, equals(item.offsetHeight));
+    });
+
+    testWidgets('nested spans wrap and grow height within flex item', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'flex-nested-spans-wrap-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="flex" style="display: flex; max-width: 200px; border: 1px solid #000">
+                <div id="block" style="margin-left: 10px; padding: 5px 10px; max-width: 100px; border: 1px solid #000;">
+                  <span><span><span>123123123 123 12312 3123 12312 312</span></span></span>
+                </div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final flex = prepared.getElementById('flex');
+      final block = prepared.getElementById('block');
+
+      // Block should be clamped to its max-width (100px border-box)
+      expect(block.offsetWidth, equals(100.0));
+      // Text should wrap to multiple lines, making height noticeably larger than single line with padding (≈34)
+      expect(block.offsetHeight, greaterThan(60.0));
+      // Flex container line height should expand to contain the block.
+      // Account for container's top+bottom border (1px each → +2).
+      expect(flex.offsetHeight, equals(block.offsetHeight + 2.0));
+    });
   });
 
   group('Flex Basis', () {

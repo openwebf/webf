@@ -14,7 +14,13 @@ import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
+import 'package:webf/src/foundation/logger.dart';
+import 'package:webf/src/foundation/positioned_layout_logging.dart';
+
+// Enable verbose logging for DOM → widget building and anonymous block wrapping.
+bool debugLogDomAdapterEnabled = false;
 
 enum ScreenEventType { onScreen, offScreen }
 
@@ -35,37 +41,51 @@ class ScreenEvent {
         timestamp = DateTime.now();
 }
 
+/// Piece type used when flattening an inline element that contains block-level children.
+class _InlineOrBlockPiece {
+  final List<flutter.Widget>? inlineChildren;
+  final flutter.Widget? blockWidget;
+  final bool isInline;
+  _InlineOrBlockPiece.inline(this.inlineChildren)
+      : blockWidget = null,
+        isInline = true;
+  _InlineOrBlockPiece.block(this.blockWidget)
+      : inlineChildren = null,
+        isInline = false;
+}
+
 mixin ElementAdapterMixin on ElementBase {
-  final List<Element> _fixedPositionElements = [];
+  // Holds out-of-flow positioned descendants (absolute, sticky, fixed)
+  final List<Element> _outOfFlowPositionedElements = [];
 
   // Track the screen state and event queue
   final List<ScreenEvent> _screenEventQueue = [];
   bool _isProcessingQueue = false;
 
   @flutter.immutable
-  List<Element> get fixedPositionElements => _fixedPositionElements;
+  List<Element> get outOfFlowPositionedElements => _outOfFlowPositionedElements;
 
-  void addFixedPositionedElement(Element newElement) {
+  void addOutOfFlowPositionedElement(Element newElement) {
     assert(() {
-      if (_fixedPositionElements.contains(newElement)) {
-        throw FlutterError('Found repeat element in $_fixedPositionElements for $newElement');
+      if (_outOfFlowPositionedElements.contains(newElement)) {
+        throw FlutterError('Found repeat element in $_outOfFlowPositionedElements for $newElement');
       }
 
       return true;
     }());
-    _fixedPositionElements.add(newElement);
+    _outOfFlowPositionedElements.add(newElement);
   }
 
-  Element? getFixedPositionedElementByIndex(int index) {
-    return (index >= 0 && index < _fixedPositionElements.length ? _fixedPositionElements[index] : null);
+  Element? getOutOfFlowPositionedElementByIndex(int index) {
+    return (index >= 0 && index < _outOfFlowPositionedElements.length ? _outOfFlowPositionedElements[index] : null);
   }
 
-  void removeFixedPositionedElement(Element element) {
-    _fixedPositionElements.remove(element);
+  void removeOutOfFlowPositionedElement(Element element) {
+    _outOfFlowPositionedElements.remove(element);
   }
 
-  void clearFixedPositionedElements() {
-    _fixedPositionElements.clear();
+  void clearOutOfFlowPositionedElements() {
+    _outOfFlowPositionedElements.clear();
   }
 
   // Rendering this element as an RenderPositionHolder
@@ -125,9 +145,7 @@ mixin ElementAdapterMixin on ElementBase {
 class WebFElementWidget extends flutter.StatefulWidget {
   final Element webFElement;
 
-  WebFElementWidget(this.webFElement, {super.key}) : super() {
-    webFElement.managedByFlutterWidget = true;
-  }
+  const WebFElementWidget(this.webFElement, {super.key}) : super();
 
   @override
   flutter.State<flutter.StatefulWidget> createState() {
@@ -159,7 +177,17 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
   }
 
   void requestForChildNodeUpdate(AdapterUpdateReason reason) {
-    setState(() {});
+    if (!mounted) return;
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    // Avoid setState during build; defer to next frame.
+    if (phase == SchedulerPhase.persistentCallbacks || phase == SchedulerPhase.midFrameMicrotasks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+      SchedulerBinding.instance.scheduleFrame();
+    } else {
+      setState(() {});
+    }
   }
 
   @override
@@ -177,39 +205,83 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
     if (webFElement.childNodes.isEmpty) {
       children = [];
     } else {
-      for (final node in webFElement.childNodes) {
-        if (node is Element &&
-            (node.renderStyle.position == CSSPositionType.absolute ||
-                node.renderStyle.position == CSSPositionType.sticky)) {
-          if (node.holderAttachedPositionedElement != null) {
+      // Check if we need to create anonymous block boxes for inline content
+      // Case 2: Inline content needs to be wrapped to maintain proper formatting context
+      final shouldWrap = _shouldWrapInlineContentInAnonymousBlocks();
+      if (debugLogDomAdapterEnabled) {
+        domLogger.fine('[DOMAdapter] build <${webFElement.tagName}> wrapInline=${shouldWrap} '
+            'display=${webFElement.renderStyle.display} childCount=${webFElement.childNodes.length}');
+      }
+      if (shouldWrap) {
+        children = _wrapInlineContentInAnonymousBlocks(webFElement.childNodes);
+      } else {
+        for (var node in webFElement.childNodes) {
+          if (debugLogDomAdapterEnabled) {
+            domLogger.finer('[DOMAdapter] child node=${node.runtimeType}');
+          }
+          if (node is Element &&
+              (node.renderStyle.position == CSSPositionType.absolute ||
+                  node.renderStyle.position == CSSPositionType.sticky)) {
+            // Keep the placeholder in normal flow to capture the original layout offset
+            // but do NOT add the actual positioned element here. It will be attached
+            // directly under its containing block during that element's build.
+            if (node.holderAttachedPositionedElement != null) {
+              children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
+            }
+            continue;
+          } else if (node is Element && node.renderStyle.position == CSSPositionType.fixed) {
             children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
-          }
+          } else if (node is RouterLinkElement) {
+            webFState ??= context.findAncestorStateOfType<WebFState>();
+            String routerPath = node.path;
+            if (webFState != null && (webFState.widget.controller.initialRoute ?? '/') == routerPath) {
+              children.add(node.toWidget());
+              continue;
+            }
 
-          children.add(node.toWidget());
-          continue;
-        } else if (node is Element && node.renderStyle.position == CSSPositionType.fixed) {
-          children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
-        } else if (node is RouterLinkElement) {
-          webFState ??= context.findAncestorStateOfType<WebFState>();
-          String routerPath = node.path;
-          if (webFState != null && (webFState.widget.controller.initialRoute ?? '/') == routerPath) {
-            children.add(node.toWidget());
+            routerViewState ??= context.findAncestorStateOfType<WebFRouterViewState>();
+            if (routerViewState != null) {
+              children.add(node.toWidget());
+              continue;
+            }
+
+            children.add(flutter.SizedBox.shrink());
             continue;
-          }
-
-          routerViewState ??= context.findAncestorStateOfType<WebFRouterViewState>();
-          if (routerViewState != null) {
+          } else if (node is TextNode) {
+            if (node.data.trim().isNotEmpty) {
+              if (debugLogDomAdapterEnabled) {
+                final t = node.data;
+                domLogger.fine('[DOMAdapter] add TextNode "${t.length > 24 ? t.substring(0,24) + '…' : t}"');
+              }
+              children.add(node.toWidget());
+            } else {
+              if (debugLogDomAdapterEnabled) {
+                domLogger.finer('[DOMAdapter] skip empty TextNode');
+              }
+            }
+          } else if (node is Comment) {
+            // Skip comments entirely
+            if (debugLogDomAdapterEnabled) {
+              domLogger.finer('[DOMAdapter] skip Comment');
+            }
+          } else {
+            // Fallback: render regular elements
+            if (debugLogDomAdapterEnabled) {
+              domLogger.fine('[DOMAdapter] add element ${node.runtimeType} via toWidget()');
+            }
             children.add(node.toWidget());
-            continue;
           }
-
-          children.add(flutter.SizedBox.shrink());
-          continue;
-        } else {
-          children.add(node.toWidget());
         }
       }
-      for (final positionedElement in webFElement.fixedPositionElements) {
+      for (final positionedElement in webFElement.outOfFlowPositionedElements) {
+        try {
+          PositionedLayoutLog.log(
+            impl: PositionedImpl.build,
+            feature: PositionedFeature.wiring,
+            message: () => 'build positioned <${positionedElement.tagName.toLowerCase()}>'
+                ' under containing block <${webFElement.tagName.toLowerCase()}>',
+          );
+        } catch (_) {}
         children.add(positionedElement.toWidget());
       }
     }
@@ -217,8 +289,11 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
     flutter.Widget widget;
 
     if (webFElement.hasScroll) {
-      CSSOverflowType overflowX = webFElement.renderStyle.overflowX;
-      CSSOverflowType overflowY = webFElement.renderStyle.overflowY;
+      // Use effective overflow values so that when one axis is 'visible'
+      // and the other is non-visible, the 'visible' side computes to 'auto'
+      // per CSS Overflow spec. This ensures correct bi-axis scrollability.
+      CSSOverflowType overflowX = webFElement.renderStyle.effectiveOverflowX;
+      CSSOverflowType overflowY = webFElement.renderStyle.effectiveOverflowY;
 
       flutter.Widget? scrollableX;
       if (overflowX == CSSOverflowType.scroll ||
@@ -226,6 +301,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
           overflowX == CSSOverflowType.hidden) {
         webFElement._scrollControllerX ??= flutter.ScrollController();
         final bool xScrollable = overflowX != CSSOverflowType.hidden;
+        final bool isRTL = webFElement.renderStyle.direction == TextDirection.rtl;
         scrollableX = LayoutBoxWrapper(
             ownerElement: webFElement,
             child: NestedScrollCoordinator(
@@ -234,7 +310,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                 enabled: xScrollable,
                 child: flutter.Scrollable(
                     controller: webFElement.scrollControllerX,
-                    axisDirection: AxisDirection.right,
+                    axisDirection: isRTL ? AxisDirection.left : AxisDirection.right,
                     physics: xScrollable ? null : const flutter.NeverScrollableScrollPhysics(),
                     viewportBuilder: (flutter.BuildContext context, ViewportOffset position) {
                       flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
@@ -266,13 +342,15 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                     controller: webFElement.scrollControllerY,
                     viewportBuilder: (flutter.BuildContext context, ViewportOffset positionY) {
                       if (scrollableX != null) {
+                        final bool isRTL = webFElement.renderStyle.direction == TextDirection.rtl;
                         return NestedScrollCoordinator(
                             axis: flutter.Axis.horizontal,
                             controller: webFElement.scrollControllerX!,
-                            enabled: (webFElement.renderStyle.overflowX != CSSOverflowType.hidden),
+                            // Base on effective overflow to honor visible->auto conversion
+                            enabled: (webFElement.renderStyle.effectiveOverflowX != CSSOverflowType.hidden),
                             child: flutter.Scrollable(
                                 controller: webFElement.scrollControllerX,
-                                axisDirection: AxisDirection.right,
+                                axisDirection: isRTL ? AxisDirection.left : AxisDirection.right,
                                 viewportBuilder: (flutter.BuildContext context, ViewportOffset positionX) {
                                   flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
                                     webFElement: webFElement,
@@ -344,6 +422,317 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
 
   @override
   bool get wantKeepAlive => true;
+
+  /// Check if this element needs to wrap inline content in anonymous blocks
+  /// Case 2: When a block container has mixed inline and block-level children
+  /// Case 3: When a flex container has text nodes or inline content as direct children
+  /// Case 4: When an inline child contains block-level children (block-in-inline splitting)
+  bool _shouldWrapInlineContentInAnonymousBlocks() {
+    final display = webFElement.renderStyle.display;
+
+    // Flex containers need to wrap text nodes in anonymous flex items
+    if (display == CSSDisplay.flex || display == CSSDisplay.inlineFlex) {
+      // Check if there's any text content that needs wrapping
+      for (var node in webFElement.childNodes) {
+        if (node is TextNode && node.data.trim().isNotEmpty) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // Block-like containers (block and inline-block) can create anonymous block
+    // boxes for mixed content. Inline containers are handled by their parent via
+    // Case 4 detection below.
+    if (display != CSSDisplay.block && display != CSSDisplay.inlineBlock) {
+      return false;
+    }
+
+    bool hasInlineContent = false;
+    bool hasBlockContent = false;
+    bool hasInlineWithBlockDescendant = false;
+
+    for (var node in webFElement.childNodes) {
+      if (node is TextNode && node.data.trim().isNotEmpty) {
+        hasInlineContent = true;
+      } else if (node is Element) {
+        final childDisplay = node.renderStyle.display;
+        final position = node.renderStyle.position;
+
+        // Skip positioned elements as they're out of flow
+        if (position == CSSPositionType.absolute || position == CSSPositionType.fixed) {
+          continue;
+        }
+
+        if (childDisplay == CSSDisplay.block || childDisplay == CSSDisplay.flex) {
+          hasBlockContent = true;
+        } else if (childDisplay == CSSDisplay.inline ||
+            childDisplay == CSSDisplay.inlineBlock ||
+            childDisplay == CSSDisplay.inlineFlex) {
+          // Treat inline-flex as inline-level for anonymous block grouping per spec.
+          hasInlineContent = true;
+          // Case 4: inline child that itself contains block-level children
+          // Detect using renderStyle helper to avoid deep scanning here
+          try {
+            if (node.renderStyle.shouldCreateAnonymousBlockBoxForInlineElements()) {
+              hasInlineWithBlockDescendant = true;
+            }
+          } catch (_) {}
+        }
+      }
+
+      // If we have both, we need anonymous blocks
+      if (hasInlineContent && hasBlockContent) {
+        return true;
+      }
+    }
+
+    // If any inline child contains block children, we need wrapping at this level
+    if (hasInlineWithBlockDescendant) return true;
+
+    return false;
+  }
+
+  /// Wrap inline content in anonymous block boxes
+  /// This maintains proper block formatting context when mixing inline and block content
+  /// For flex containers, creates anonymous flex items
+  List<flutter.Widget> _wrapInlineContentInAnonymousBlocks(NodeList nodes) {
+    List<flutter.Widget> result = [];
+    List<flutter.Widget> currentInlineGroup = [];
+
+    final isFlexContainer = webFElement.renderStyle.display == CSSDisplay.flex ||
+                           webFElement.renderStyle.display == CSSDisplay.inlineFlex;
+
+    void flushInlineGroup() {
+      if (currentInlineGroup.isNotEmpty) {
+        // For flex containers, create anonymous flex items
+        // For block containers, create anonymous block boxes
+        final anonymousDisplay = isFlexContainer ? 'block' : 'block';
+
+        // Create anonymous box for inline content group
+        final anonymousBlock = WebFHTMLElement(
+          tagName: 'Anonymous',
+          controller: webFElement.ownerDocument.controller,
+          parentElement: webFElement,
+          inlineStyle: {
+            'display': anonymousDisplay,
+            // Anonymous boxes should not have any other styles
+          },
+          children: currentInlineGroup, // Pass the collected widgets as children
+        );
+        if (debugLogDomAdapterEnabled) {
+          domLogger.fine('[DOMAdapter] flushInlineGroup count=${currentInlineGroup.length} → Anonymous');
+        }
+        result.add(anonymousBlock);
+        currentInlineGroup = [];
+      }
+    }
+
+    for (var node in nodes) {
+      if (debugLogDomAdapterEnabled) {
+        domLogger.finer('[DOMAdapter] wrap pass node=${node.runtimeType}');
+      }
+      if (node is Element) {
+        final display = node.renderStyle.display;
+        final position = node.renderStyle.position;
+
+        // Handle positioned elements specially
+        if (position == CSSPositionType.absolute || position == CSSPositionType.sticky) {
+          if (node.holderAttachedPositionedElement != null) {
+            // For flex containers, positioned elements are not flex items
+            // Add them directly without wrapping
+            if (isFlexContainer) {
+              flushInlineGroup();
+              result.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
+            } else {
+              currentInlineGroup.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
+            }
+          } else {
+            // For flex containers, absolutely positioned elements don't participate in flex layout
+            if (isFlexContainer) {
+              flushInlineGroup();
+              // The actual positioned renderObject is attached to the containing block; skip here.
+            } else {
+              // The actual positioned renderObject is attached to the containing block; skip here.
+            }
+          }
+          continue;
+        } else if (position == CSSPositionType.fixed) {
+          // Fixed positioned elements are always out of flow
+          if (isFlexContainer) {
+            flushInlineGroup();
+            result.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
+          } else {
+            currentInlineGroup.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
+          }
+          continue;
+        }
+
+        // For flex containers, all non-positioned children become flex items
+        if (isFlexContainer) {
+          // In flex containers, ALL elements (inline, inline-block, block) become direct flex items
+          // Only text nodes need to be wrapped in anonymous flex items
+          flushInlineGroup();
+          if (node is RouterLinkElement) {
+            final widget = _handleRouterLinkElement(node);
+            if (widget != null) {
+              result.add(widget);
+            }
+          } else {
+            result.add(node.toWidget());
+          }
+        } else {
+          // For block containers, handle mixed content
+          // Case 4: If an inline child contains block-level children, split it at this level
+          if (display == CSSDisplay.inline && _inlineElementHasBlockChildren(node)) {
+            // Flatten into ordered pieces (inline segments and block children).
+            final pieces = _flattenInlineElementWithBlocksPieces(node);
+            if (debugLogDomAdapterEnabled) {
+              domLogger.fine('[DOMAdapter] flattened inline-with-blocks into ${pieces.length} pieces');
+            }
+            for (final piece in pieces) {
+              if (piece.isInline) {
+                // Accumulate inline pieces into the current inline group so
+                // they can join with preceding/succeeding inline siblings.
+                currentInlineGroup.addAll(piece.inlineChildren!);
+              } else {
+                // Encountering a block piece: flush current inline group first,
+                // then add the block widget as a sibling.
+                flushInlineGroup();
+                result.add(piece.blockWidget!);
+              }
+            }
+          } else if (display == CSSDisplay.block || display == CSSDisplay.flex) {
+            // Flush any pending inline content before adding block
+            flushInlineGroup();
+
+            // Add block element directly (not in anonymous block)
+            if (node is RouterLinkElement) {
+              final widget = _handleRouterLinkElement(node);
+              if (widget != null) {
+                result.add(widget);
+              }
+            } else {
+              result.add(node.toWidget());
+            }
+          } else {
+            // Inline or inline-block element
+            if (node is RouterLinkElement) {
+              final widget = _handleRouterLinkElement(node);
+              if (widget != null) {
+                currentInlineGroup.add(widget);
+              }
+            } else {
+              currentInlineGroup.add(node.toWidget());
+            }
+          }
+        }
+      } else {
+        // Text nodes are always inline content
+        if (node is TextNode && node.data.trim().isNotEmpty) {
+          if (debugLogDomAdapterEnabled) {
+            final t = node.data;
+            domLogger.fine('[DOMAdapter] add TextNode to inlineGroup "${t.length > 24 ? t.substring(0,24) + '…' : t}"');
+          }
+          currentInlineGroup.add(node.toWidget());
+        } else if (node is Comment) {
+          if (debugLogDomAdapterEnabled) {
+            domLogger.finer('[DOMAdapter] skip Comment in wrap pass');
+          }
+          // Do not flush on comment; it should not break inline grouping
+        } else {
+          if (debugLogDomAdapterEnabled) {
+            domLogger.finer('[DOMAdapter] skip non-rendered node type=${node.runtimeType} in wrap pass');
+          }
+        }
+      }
+    }
+
+    // Flush any remaining inline content
+    flushInlineGroup();
+
+    return result;
+  }
+
+  /// Detect whether an inline element has any non-positioned block-level direct children.
+  bool _inlineElementHasBlockChildren(Element inlineEl) {
+    if (inlineEl.renderStyle.display != CSSDisplay.inline) return false;
+    for (final child in inlineEl.childNodes) {
+      if (child is Element) {
+        final disp = child.renderStyle.display;
+        final pos = child.renderStyle.position;
+        if (pos == CSSPositionType.absolute || pos == CSSPositionType.fixed) continue;
+        if (disp == CSSDisplay.block || disp == CSSDisplay.flex) return true;
+      }
+    }
+    return false;
+  }
+
+  /// Flatten an inline element that contains block-level children according to CSS block-in-inline rules.
+  /// Returns an ordered list of pieces. Inline pieces contain raw children (not anonymously wrapped)
+  /// so the caller can merge them with adjacent inline siblings. Block pieces are individual widgets.
+  List<_InlineOrBlockPiece> _flattenInlineElementWithBlocksPieces(Element inlineEl) {
+    assert(inlineEl.renderStyle.display == CSSDisplay.inline);
+
+    List<_InlineOrBlockPiece> flattened = [];
+    List<flutter.Widget> pendingInlineGroup = [];
+
+    void flushPendingInline() {
+      if (pendingInlineGroup.isEmpty) return;
+      flattened.add(_InlineOrBlockPiece.inline(List<flutter.Widget>.from(pendingInlineGroup)));
+      pendingInlineGroup = [];
+    }
+
+    for (final child in inlineEl.childNodes) {
+      if (child is Element) {
+        final disp = child.renderStyle.display;
+        final pos = child.renderStyle.position;
+
+        // Positioned elements don't participate in flow; preserve placeholders in inline stream
+        if (pos == CSSPositionType.absolute || pos == CSSPositionType.sticky) {
+          if (child.holderAttachedPositionedElement != null) {
+            pendingInlineGroup.add(PositionPlaceHolder(child.holderAttachedPositionedElement!, child));
+          }
+          continue;
+        } else if (pos == CSSPositionType.fixed) {
+          pendingInlineGroup.add(PositionPlaceHolder(child.holderAttachedPositionedElement!, child));
+          continue;
+        }
+
+        if (disp == CSSDisplay.block || disp == CSSDisplay.flex) {
+          flushPendingInline();
+          flattened.add(_InlineOrBlockPiece.block(child.toWidget()));
+        } else if (disp == CSSDisplay.inline || disp == CSSDisplay.inlineBlock || disp == CSSDisplay.inlineFlex) {
+          pendingInlineGroup.add(child.toWidget());
+        } else {
+          pendingInlineGroup.add(child.toWidget());
+        }
+      } else if (child is TextNode) {
+        if (child.data.trim().isNotEmpty) {
+          pendingInlineGroup.add(child.toWidget());
+        }
+      }
+    }
+
+    flushPendingInline();
+    return flattened;
+  }
+
+  /// Handle RouterLinkElement rendering logic
+  flutter.Widget? _handleRouterLinkElement(RouterLinkElement node) {
+    final webFState = context.findAncestorStateOfType<WebFState>();
+    String routerPath = node.path;
+    if (webFState != null && (webFState.widget.controller.initialRoute ?? '/') == routerPath) {
+      return node.toWidget();
+    }
+
+    final routerViewState = context.findAncestorStateOfType<WebFRouterViewState>();
+    if (routerViewState != null) {
+      return node.toWidget();
+    }
+
+    return flutter.SizedBox.shrink();
+  }
 }
 
 class WebFReplacedElementWidget extends flutter.StatefulWidget {
@@ -373,8 +762,16 @@ class WebFReplacedElementWidgetState extends flutter.State<WebFReplacedElementWi
 
   void requestForChildNodeUpdate(AdapterUpdateReason reason) {
     if (reason is UpdateChildNodeUpdateReason) return;
-
-    setState(() {});
+    if (!mounted) return;
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.persistentCallbacks || phase == SchedulerPhase.midFrameMicrotasks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+      SchedulerBinding.instance.scheduleFrame();
+    } else {
+      setState(() {});
+    }
   }
 
   @override
@@ -420,7 +817,27 @@ class WebFRenderReplacedRenderObjectWidget extends flutter.SingleChildRenderObje
 
   @override
   RenderObject createRenderObject(flutter.BuildContext context) {
-    return webFElement.renderStyle.getWidgetPairedRenderBoxModel(context as flutter.RenderObjectElement)!;
+    // Prefer an existing paired render object; fall back to creating one if missing.
+    RenderBoxModel renderBoxModel =  webFElement.renderStyle.getWidgetPairedRenderBoxModel(context as flutter.RenderObjectElement) ??
+        (webFElement.createRenderer(context as flutter.RenderObjectElement) as RenderBoxModel);
+
+    // Attach position holder to apply offsets based on original layout.
+    for (final positionHolder in webFElement!.positionHolderElements) {
+      if (positionHolder.mounted) {
+        renderBoxModel.renderPositionPlaceholder = positionHolder.renderObject as RenderPositionPlaceholder;
+        (positionHolder.renderObject as RenderPositionPlaceholder).positioned = renderBoxModel;
+        try {
+          PositionedLayoutLog.log(
+            impl: PositionedImpl.build,
+            feature: PositionedFeature.wiring,
+            message: () => 'attach placeholder -> <${renderBoxModel.renderStyle.target.tagName.toLowerCase()}>'
+                ' under <${webFElement!.tagName.toLowerCase()}>',
+          );
+        } catch (_) {}
+      }
+    }
+
+    return renderBoxModel;
   }
 
   @override
@@ -518,8 +935,21 @@ class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget
 
   @override
   flutter.RenderObject createRenderObject(flutter.BuildContext context) {
-    RenderBoxModel renderBoxModel =
-        webFElement!.renderStyle.getWidgetPairedRenderBoxModel(context as flutter.RenderObjectElement)!;
+    // Prefer an existing paired render object; fall back to creating one if missing.
+    RenderBoxModel? renderBoxModel =
+        webFElement!.renderStyle.getWidgetPairedRenderBoxModel(context as flutter.RenderObjectElement);
+    renderBoxModel ??= webFElement!.createRenderer(context as flutter.RenderObjectElement) as RenderBoxModel;
+
+    try {
+      final phCount = webFElement!.positionHolderElements.length;
+      final posCount = webFElement!.outOfFlowPositionedElements.length;
+      PositionedLayoutLog.log(
+        impl: PositionedImpl.build,
+        feature: PositionedFeature.wiring,
+        message: () => 'createRenderObject for <${webFElement!.tagName.toLowerCase()}>'
+            ' placeholders=$phCount positionedChildren=$posCount',
+      );
+    } catch (_) {}
 
     // Attach position holder to apply offsets based on original layout.
     for (final positionHolder in webFElement!.positionHolderElements) {
@@ -654,6 +1084,21 @@ class _PositionedPlaceHolderElement extends flutter.SingleChildRenderObjectEleme
   void mount(flutter.Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
     widget.selfElement.positionHolderElements.add(this);
+    // If the positioned element's renderObject is already mounted (e.g., attached
+    // under its containing block earlier in this frame), connect the placeholder now.
+    final RenderBoxModel? rbm = widget.positionedElement.renderStyle.attachedRenderBoxModel;
+    if (rbm != null) {
+      rbm.renderPositionPlaceholder = renderObject as RenderPositionPlaceholder;
+      (renderObject as RenderPositionPlaceholder).positioned = rbm;
+      try {
+        PositionedLayoutLog.log(
+          impl: PositionedImpl.build,
+          feature: PositionedFeature.wiring,
+          message: () => 'mount placeholder for <${widget.positionedElement.tagName.toLowerCase()}>'
+              ' in <${widget.selfElement.tagName.toLowerCase()}>',
+        );
+      } catch (_) {}
+    }
   }
 
   @override
@@ -665,6 +1110,14 @@ class _PositionedPlaceHolderElement extends flutter.SingleChildRenderObjectEleme
     if (pairedRenderBoxModel?.renderPositionPlaceholder == renderObject) {
       pairedRenderBoxModel?.renderPositionPlaceholder = null;
     }
+    try {
+      PositionedLayoutLog.log(
+        impl: PositionedImpl.build,
+        feature: PositionedFeature.wiring,
+        message: () => 'unmount placeholder for <${widget.positionedElement.tagName.toLowerCase()}>'
+            ' from <${widget.selfElement.tagName.toLowerCase()}>',
+      );
+    } catch (_) {}
 
     super.unmount();
   }

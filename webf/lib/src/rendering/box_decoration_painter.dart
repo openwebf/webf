@@ -9,6 +9,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
+import 'package:webf/foundation.dart';
+import 'package:webf/rendering.dart';
+import 'package:webf/src/foundation/logger.dart';
 
 // A circular list implementation that allows access in a circular fashion.
 class CircularIntervalList<T> {
@@ -26,6 +29,14 @@ class CircularIntervalList<T> {
 }
 
 enum _BorderDirection { top, bottom, left, right }
+
+// Dashed border sizing constraints.
+// Nominal dash unit relative to border width.
+// Increase to make each dashed segment longer on average.
+// Example: 1.8 means nominal unit ≈ 1.8 × border width.
+const double _kDashedBorderAvgUnitRatio = 1.8;
+// Minimum gap length as a ratio of border width to avoid micro-gaps.
+const double _kDashedBorderMinGapWidthRatio = 0.5;
 
 /// An object that paints a [BoxDecoration] into a canvas.
 class BoxDecorationPainter extends BoxPainter {
@@ -116,43 +127,39 @@ class BoxDecorationPainter extends BoxPainter {
     bool isUniform = _isUniformDashedBorder(border);
 
     if (isUniform) {
-      // Use the original implementation for uniform borders
-      // Get side properties from the top border
-      ExtendedBorderSide side = border.top as ExtendedBorderSide;
-
-      // Skip if the border side is not visible or not dashed
+      // Uniform borders: if rounded corners are present, paint as a single
+      // continuous dashed path around the rounded rectangle to match browsers
+      // (natural ~45° appearance at extreme points). Otherwise, paint per side
+      // to preserve crisp "L" corners on rectangular borders.
+      final ExtendedBorderSide side = border.top as ExtendedBorderSide;
       if (side.extendBorderStyle != CSSBorderStyleType.dashed || side.width == 0.0) return;
 
-      // Create a paint object for the border
-      final Paint paint = Paint()
-        ..color = side.color
-        ..strokeWidth = side.width
-        ..style = PaintingStyle.stroke;
-
-      // Define dash pattern (dash length, gap length)
-      // Standard dash pattern is 3x the line width for the dash, 3x for the gap
-      final double dashLength = side.width * 3;
-      final double dashGap = side.width * 3;
-
-      // Create the path for the complete border
-      Path borderPath = Path();
-
-      // Handle differently based on whether we have border radius
       if (_decoration.hasBorderRadius && _decoration.borderRadius != null) {
-        RRect rrect = _decoration.borderRadius!.toRRect(rect);
-        borderPath.addRRect(rrect);
-      } else {
-        borderPath.addRect(rect);
-      }
+        final Paint paint = Paint()
+          ..color = side.color
+          ..strokeWidth = side.width
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.square
+          ..strokeJoin = StrokeJoin.miter;
 
-      // Draw the dashed border
-      canvas.drawPath(
-        dashPath(
-          borderPath,
-          dashArray: CircularIntervalList<double>([dashLength, dashGap]),
-        ),
-        paint,
-      );
+        final double inset = side.width / 2.0;
+        final RRect rr = _decoration.borderRadius!.toRRect(rect).deflate(inset);
+
+        final Path borderPath = Path()..addRRect(rr);
+        final double baseDash = (side.width * _kDashedBorderAvgUnitRatio).clamp(side.width, double.infinity);
+        final dashArray = CircularIntervalList<double>([baseDash, baseDash]);
+
+        canvas.drawPath(
+          dashPath(borderPath, dashArray: dashArray),
+          paint,
+        );
+      } else {
+        // No border radius: per-side painting for sharp corners.
+        _paintDashedBorderSide(canvas, rect, null, border.top as ExtendedBorderSide, _BorderDirection.top);
+        _paintDashedBorderSide(canvas, rect, null, border.right as ExtendedBorderSide, _BorderDirection.right);
+        _paintDashedBorderSide(canvas, rect, null, border.bottom as ExtendedBorderSide, _BorderDirection.bottom);
+        _paintDashedBorderSide(canvas, rect, null, border.left as ExtendedBorderSide, _BorderDirection.left);
+      }
     } else {
       // Handle non-uniform borders - draw each side individually if it's dashed
       // Check which sides have dashed borders
@@ -242,80 +249,132 @@ class BoxDecorationPainter extends BoxPainter {
     final Paint paint = Paint()
       ..color = side.color
       ..strokeWidth = side.width
-      ..style = PaintingStyle.stroke;
+      ..style = PaintingStyle.stroke
+      // Square caps create proper right-angle corner dashes ("L" shape)
+      ..strokeCap = StrokeCap.square
+      ..strokeJoin = StrokeJoin.miter;
+
+    // Fallback when the stroke is thicker than the side length. In this case,
+    // producing a dashed stroked path is numerically unstable (negative/zero
+    // path length). Browsers effectively fill the side area with the border
+    // color. Emulate that by drawing a filled rectangle for the side.
+    final double sideExtent = (direction == _BorderDirection.top || direction == _BorderDirection.bottom)
+        ? rect.width
+        : rect.height;
+    if (side.width >= sideExtent) {
+      final Paint fill = Paint()
+        ..color = side.color
+        ..style = PaintingStyle.fill;
+      switch (direction) {
+        case _BorderDirection.top:
+          canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, rect.width, side.width), fill);
+          break;
+        case _BorderDirection.bottom:
+          canvas.drawRect(Rect.fromLTWH(rect.left, rect.bottom - side.width, rect.width, side.width), fill);
+          break;
+        case _BorderDirection.left:
+          canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, side.width, rect.height), fill);
+          break;
+        case _BorderDirection.right:
+          canvas.drawRect(Rect.fromLTWH(rect.right - side.width, rect.top, side.width, rect.height), fill);
+          break;
+      }
+      return;
+    }
 
     // Define dash pattern (dash length, gap length)
-    // Standard dash pattern is 3x the line width for the dash, 3x for the gap
-    final double dashLength = side.width * 3;
-    final double dashGap = side.width * 3;
-    final dashArray = CircularIntervalList<double>([dashLength, dashGap]);
+    // Prefer to start and end sides with a dash to form a right angle at corners.
+    late final CircularIntervalList<double> dashArray;
+
+    if (rrect == null) {
+      // Non-rounded corners: compute dash/gap to start and end with a dash.
+      final double sideLength;
+      if (direction == _BorderDirection.top || direction == _BorderDirection.bottom) {
+        // Path goes from left+sw/2 to right-sw/2
+        sideLength = rect.width - side.width;
+      } else {
+        // Left/Right: from top+sw/2 to bottom-sw/2
+        sideLength = rect.height - side.width;
+      }
+
+      final List<double> pattern = _computeDashPattern(sideLength, side.width);
+      dashArray = CircularIntervalList<double>([pattern[0], pattern[1]]);
+    } else {
+      // Rounded corners: use constrained ratio for both dash and gap.
+      final double dashLength = side.width * _kDashedBorderAvgUnitRatio;
+      final double dashGap = side.width * _kDashedBorderAvgUnitRatio;
+      dashArray = CircularIntervalList<double>([dashLength, dashGap]);
+    }
 
     // Create the path for just this side
     Path borderPath = Path();
 
     if (rrect != null) {
-      // Handle rounded corners
+      // Align stroke inside by deflating half the stroke width
+      final double inset = side.width / 2.0;
+      final RRect rr = rrect.deflate(inset);
+      // Handle rounded corners. Assign corner arcs only to horizontal sides
+      // (top and bottom) to avoid duplication and direction reversals.
       switch (direction) {
         case _BorderDirection.top:
-          borderPath.moveTo(rrect.left, rrect.top + rrect.tlRadiusY);
+          // Include both top-left and top-right arcs on the top side.
+          borderPath.moveTo(rr.left, rr.top + rr.tlRadiusY);
           borderPath.arcToPoint(
-            Offset(rrect.left + rrect.tlRadiusX, rrect.top),
-            radius: Radius.elliptical(rrect.tlRadiusX, rrect.tlRadiusY),
+            Offset(rr.left + rr.tlRadiusX, rr.top),
+            radius: Radius.elliptical(rr.tlRadiusX, rr.tlRadiusY),
             clockwise: false,
           );
-          borderPath.lineTo(rrect.right - rrect.trRadiusX, rrect.top);
+          borderPath.lineTo(rr.right - rr.trRadiusX, rr.top);
           borderPath.arcToPoint(
-            Offset(rrect.right, rrect.top + rrect.trRadiusY),
-            radius: Radius.elliptical(rrect.trRadiusX, rrect.trRadiusY),
+            Offset(rr.right, rr.top + rr.trRadiusY),
+            radius: Radius.elliptical(rr.trRadiusX, rr.trRadiusY),
             clockwise: true,
           );
           break;
         case _BorderDirection.right:
-          borderPath.moveTo(rrect.right, rrect.top + rrect.trRadiusY);
-          borderPath.lineTo(rrect.right, rrect.bottom - rrect.brRadiusY);
-          borderPath.arcToPoint(
-            Offset(rrect.right - rrect.brRadiusX, rrect.bottom),
-            radius: Radius.elliptical(rrect.brRadiusX, rrect.brRadiusY),
-            clockwise: true,
-          );
+          // Vertical segment only; corner arcs handled by top/bottom.
+          borderPath.moveTo(rr.right, rr.top + rr.trRadiusY);
+          borderPath.lineTo(rr.right, rr.bottom - rr.brRadiusY);
           break;
         case _BorderDirection.bottom:
-          borderPath.moveTo(rrect.right - rrect.brRadiusX, rrect.bottom);
-          borderPath.lineTo(rrect.left + rrect.blRadiusX, rrect.bottom);
+          // Include both bottom-right and bottom-left arcs on the bottom side.
+          borderPath.moveTo(rr.right, rr.bottom - rr.brRadiusY);
           borderPath.arcToPoint(
-            Offset(rrect.left, rrect.bottom - rrect.blRadiusY),
-            radius: Radius.elliptical(rrect.blRadiusX, rrect.blRadiusY),
+            Offset(rr.right - rr.brRadiusX, rr.bottom),
+            radius: Radius.elliptical(rr.brRadiusX, rr.brRadiusY),
+            clockwise: true,
+          );
+          borderPath.lineTo(rr.left + rr.blRadiusX, rr.bottom);
+          borderPath.arcToPoint(
+            Offset(rr.left, rr.bottom - rr.blRadiusY),
+            radius: Radius.elliptical(rr.blRadiusX, rr.blRadiusY),
             clockwise: true,
           );
           break;
         case _BorderDirection.left:
-          borderPath.moveTo(rrect.left, rrect.bottom - rrect.blRadiusY);
-          borderPath.lineTo(rrect.left, rrect.top + rrect.tlRadiusY);
-          borderPath.arcToPoint(
-            Offset(rrect.left + rrect.tlRadiusX, rrect.top),
-            radius: Radius.elliptical(rrect.tlRadiusX, rrect.tlRadiusY),
-            clockwise: false,
-          );
+          // Vertical segment only; corner arcs handled by top/bottom.
+          borderPath.moveTo(rr.left, rr.bottom - rr.blRadiusY);
+          borderPath.lineTo(rr.left, rr.top + rr.tlRadiusY);
           break;
       }
     } else {
       // Handle non-rounded corners
       switch (direction) {
         case _BorderDirection.top:
-          borderPath.moveTo(rect.left, rect.top);
-          borderPath.lineTo(rect.right, rect.top);
+          borderPath.moveTo(rect.left + side.width / 2.0, rect.top + side.width / 2.0);
+          borderPath.lineTo(rect.right - side.width / 2.0, rect.top + side.width / 2.0);
           break;
         case _BorderDirection.right:
-          borderPath.moveTo(rect.right, rect.top);
-          borderPath.lineTo(rect.right, rect.bottom);
+          borderPath.moveTo(rect.right - side.width / 2.0, rect.top + side.width / 2.0);
+          borderPath.lineTo(rect.right - side.width / 2.0, rect.bottom - side.width / 2.0);
           break;
         case _BorderDirection.bottom:
-          borderPath.moveTo(rect.right, rect.bottom);
-          borderPath.lineTo(rect.left, rect.bottom);
+          borderPath.moveTo(rect.right - side.width / 2.0, rect.bottom - side.width / 2.0);
+          borderPath.lineTo(rect.left + side.width / 2.0, rect.bottom - side.width / 2.0);
           break;
         case _BorderDirection.left:
-          borderPath.moveTo(rect.left, rect.bottom);
-          borderPath.lineTo(rect.left, rect.top);
+          borderPath.moveTo(rect.left + side.width / 2.0, rect.bottom - side.width / 2.0);
+          borderPath.lineTo(rect.left + side.width / 2.0, rect.top + side.width / 2.0);
           break;
       }
     }
@@ -328,6 +387,57 @@ class BoxDecorationPainter extends BoxPainter {
       ),
       paint,
     );
+  }
+
+  // Compute dash/gap so a side starts and ends with a dash.
+  // Keep dash length ≈ border-width × _kDashedBorderAvgUnitRatio and adjust gap to fit.
+  List<double> _computeDashPattern(double length, double strokeWidth) {
+    // Base dash length target with constraint.
+    final double baseDash = (strokeWidth * _kDashedBorderAvgUnitRatio)
+        .clamp(strokeWidth, double.infinity)
+        .toDouble();
+
+    // If the side is very short, draw a single dash covering the length.
+    if (length <= baseDash) {
+      final double dash = length.clamp(0.0, double.infinity);
+      final double gap = baseDash; // gap value unused for a single dash
+      return <double>[dash, gap];
+    }
+
+    // We want: length = n * dash + (n - 1) * gap, starting and ending with dash.
+    // Fix dash = baseDash and solve for n (integer) and gap >= 0.
+    // For feasibility: n <= (length + dash) / (2 * dash).
+    int n = ((length + baseDash) / (2 * baseDash)).floor();
+    if (n < 1) n = 1;
+
+    // If n==1, just one dash across the side.
+    if (n == 1) {
+      return <double>[length, baseDash];
+    }
+
+    double gap = (length - n * baseDash) / (n - 1);
+    // Ensure non-negative gap; if negative, reduce n until it fits.
+    while (gap < 0 && n > 1) {
+      n -= 1;
+      if (n == 1) break;
+      gap = (length - n * baseDash) / (n - 1);
+    }
+
+    if (n == 1) {
+      return <double>[length, baseDash];
+    }
+
+    // Optional: Avoid excessively tiny gaps by reducing n.
+    final double minGap = strokeWidth * _kDashedBorderMinGapWidthRatio;
+    while (gap < minGap && n > 1) {
+      n -= 1;
+      if (n == 1) {
+        return <double>[length, baseDash];
+      }
+      gap = (length - n * baseDash) / (n - 1);
+    }
+
+    return <double>[baseDash, gap];
   }
 
   // Helper function to create a dashed path
@@ -547,10 +657,17 @@ class BoxDecorationPainter extends BoxPainter {
         if (_decoration.hasBorderRadius) clipPath = Path()..addRRect(_decoration.borderRadius!.toRRect(rect));
         break;
     }
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[background] paint image: rect=' + rect.toString());
+    }
     _imagePainter!.paint(canvas, rect, clipPath, configuration);
 
     // Report FCP when background image is painted (excluding CSS gradients)
     if (_imagePainter!._image != null && !rect.isEmpty) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[background] painted image ' +
+            'size=' + _imagePainter!._image!.image.width.toString() + 'x' + _imagePainter!._image!.image.height.toString());
+      }
       // Report FP first (if not already reported)
       renderStyle.target.ownerDocument.controller.reportFP();
       renderStyle.target.ownerDocument.controller.reportFCP();
@@ -580,6 +697,16 @@ class BoxDecorationPainter extends BoxPainter {
 
     final TextDirection? textDirection = configuration.textDirection;
     bool hasLocalAttachment = _hasLocalBackgroundImage();
+
+    // When background-clip: text is specified, the background should be applied
+    // to glyphs only (handled in InlineFormattingContext). Skip painting box
+    // background color/image here to avoid a solid rectangle behind the text.
+    if (renderStyle.backgroundClip == CSSBackgroundBoundary.text) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[background] skip box background (clip=text), defer to IFC gradient text');
+      }
+      return;
+    }
 
     // Rect of background color
     Rect backgroundColorRect = _getBackgroundClipRect(baseOffset, configuration);
@@ -674,43 +801,83 @@ class BoxDecorationPainter extends BoxPainter {
     final Rect rect = offset & configuration.size!;
     final TextDirection? textDirection = configuration.textDirection;
 
+    // When this element participates in an inline formatting context, backgrounds and borders
+    // for inline-level boxes are painted by the paragraph path (InlineFormattingContext).
+    // Skip BoxDecoration painting here to avoid double painting and mismatched joins.
+    bool _skipForInlineIFC() {
+      // Only inline-level boxes are painted via paragraph IFC.
+      if (renderStyle.effectiveDisplay != CSSDisplay.inline) return false;
+      final RenderBoxModel? self = renderStyle.attachedRenderBoxModel;
+      if (self == null) return false;
+      RenderObject? p = self.parent;
+      while (p != null) {
+        if (p is RenderFlowLayout) {
+          return p.establishIFC;
+        }
+        p = (p as RenderObject).parent;
+      }
+      return false;
+    }
+
+    if (_skipForInlineIFC()) {
+      return;
+    }
+
     bool hasLocalAttachment = _hasLocalBackgroundImage();
     if (!hasLocalAttachment) {
-      Rect backgroundClipRect = _getBackgroundClipRect(offset, configuration);
-      _paintBackgroundColor(canvas, backgroundClipRect, textDirection);
+      if (renderStyle.backgroundClip != CSSBackgroundBoundary.text) {
+        Rect backgroundClipRect = _getBackgroundClipRect(offset, configuration);
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[background] paint color: rect=' + backgroundClipRect.toString() +
+              ' color=' + (_decoration.color?.toString() ?? 'null'));
+        }
+        _paintBackgroundColor(canvas, backgroundClipRect, textDirection);
 
-      Rect backgroundOriginRect = _getBackgroundOriginRect(offset, configuration);
-      Rect backgroundImageRect = backgroundClipRect.intersect(backgroundOriginRect);
+        Rect backgroundOriginRect = _getBackgroundOriginRect(offset, configuration);
+        Rect backgroundImageRect = backgroundClipRect.intersect(backgroundOriginRect);
 
-      _paintBackgroundImage(canvas, backgroundImageRect, configuration);
+        _paintBackgroundImage(canvas, backgroundImageRect, configuration);
+      }
     }
 
-    // Check if we have a dashed border
+    // Check for custom border styles (dashed/double)
     bool hasDashedBorder = false;
+    bool hasDoubleBorder = false;
 
     if (_decoration.border != null) {
-      Border border = _decoration.border as Border;
+      final Border border = _decoration.border as Border;
 
-      // Check if any border side is dashed
-      bool hasTopDashedBorder = border.top is ExtendedBorderSide &&
+      bool topDashed = border.top is ExtendedBorderSide &&
           (border.top as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed;
-      bool hasRightDashedBorder = border.right is ExtendedBorderSide &&
+      bool rightDashed = border.right is ExtendedBorderSide &&
           (border.right as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed;
-      bool hasBottomDashedBorder = border.bottom is ExtendedBorderSide &&
+      bool bottomDashed = border.bottom is ExtendedBorderSide &&
           (border.bottom as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed;
-      bool hasLeftDashedBorder = border.left is ExtendedBorderSide &&
+      bool leftDashed = border.left is ExtendedBorderSide &&
           (border.left as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed;
 
-      hasDashedBorder = hasTopDashedBorder || hasRightDashedBorder || hasBottomDashedBorder || hasLeftDashedBorder;
+      hasDashedBorder = topDashed || rightDashed || bottomDashed || leftDashed;
+
+      bool topDouble = border.top is ExtendedBorderSide &&
+          (border.top as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.double;
+      bool rightDouble = border.right is ExtendedBorderSide &&
+          (border.right as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.double;
+      bool bottomDouble = border.bottom is ExtendedBorderSide &&
+          (border.bottom as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.double;
+      bool leftDouble = border.left is ExtendedBorderSide &&
+          (border.left as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.double;
+
+      hasDoubleBorder = topDouble || rightDouble || bottomDouble || leftDouble;
     }
 
-    // If we have a dashed border, use our custom painter
+    // Prefer dashed painter, then double painter, else fallback to Flutter
     if (hasDashedBorder) {
       _paintDashedBorder(canvas, rect, textDirection);
-      // Report FP when border is painted
+      renderStyle.target.ownerDocument.controller.reportFP();
+    } else if (hasDoubleBorder) {
+      _paintDoubleBorder(canvas, rect, textDirection);
       renderStyle.target.ownerDocument.controller.reportFP();
     } else if (_decoration.border != null) {
-      // Otherwise use Flutter's built-in border painting
       _decoration.border?.paint(
         canvas,
         rect,
@@ -718,11 +885,132 @@ class BoxDecorationPainter extends BoxPainter {
         borderRadius: _decoration.borderRadius,
         textDirection: configuration.textDirection,
       );
-      // Report FP when border is painted
       renderStyle.target.ownerDocument.controller.reportFP();
     }
 
     _paintShadows(canvas, rect, textDirection);
+  }
+
+  // Paint CSS double borders. Two parallel bands per side inside the border area.
+  // For small widths (< 3), fall back to a single solid band for readability.
+  void _paintDoubleBorder(Canvas canvas, Rect rect, TextDirection? textDirection) {
+    if (_decoration.border == null) return;
+    final Border border = _decoration.border as Border;
+
+    // Helper: draw horizontal double bands within [top, bottom] region of the rect.
+    void _drawHorizontalDoubleBands(double top, double bottom, Color color) {
+      final double w = (bottom - top).abs();
+      if (w <= 0) return;
+      final Paint p = Paint()..style = PaintingStyle.fill..color = color;
+      if (w < 3.0) {
+        // Fallback solid band
+        canvas.drawRect(Rect.fromLTWH(rect.left, top, rect.width, w), p);
+        return;
+      }
+      final double band = (w / 3.0).floorToDouble().clamp(1.0, w);
+      final double gap = (w - 2 * band).clamp(0.0, w);
+      // Upper band (closer to content for bottom side; for top side this sits at the top edge)
+      canvas.drawRect(Rect.fromLTWH(rect.left, top, rect.width, band), p);
+      // Lower band (outer edge)
+      canvas.drawRect(Rect.fromLTWH(rect.left, top + band + gap, rect.width, band), p);
+    }
+
+    // Helper: draw vertical double bands within [left, right] region of the rect.
+    void _drawVerticalDoubleBands(double left, double right, Color color) {
+      final double w = (right - left).abs();
+      if (w <= 0) return;
+      final Paint p = Paint()..style = PaintingStyle.fill..color = color;
+      if (w < 3.0) {
+        canvas.drawRect(Rect.fromLTWH(left, rect.top, w, rect.height), p);
+        return;
+      }
+      final double band = (w / 3.0).floorToDouble().clamp(1.0, w);
+      final double gap = (w - 2 * band).clamp(0.0, w);
+      // Left inner band
+      canvas.drawRect(Rect.fromLTWH(left, rect.top, band, rect.height), p);
+      // Right outer band
+      canvas.drawRect(Rect.fromLTWH(left + band + gap, rect.top, band, rect.height), p);
+    }
+
+    // Detect uniform double border to support border-radius by stroking rrect twice.
+    bool _isUniformDouble(Border b) {
+      if (b.top is! ExtendedBorderSide || b.right is! ExtendedBorderSide || b.bottom is! ExtendedBorderSide || b.left is! ExtendedBorderSide) {
+        return false;
+      }
+      final t = b.top as ExtendedBorderSide;
+      final r = b.right as ExtendedBorderSide;
+      final btm = b.bottom as ExtendedBorderSide;
+      final l = b.left as ExtendedBorderSide;
+      final sameStyle = t.extendBorderStyle == CSSBorderStyleType.double &&
+          t.extendBorderStyle == r.extendBorderStyle &&
+          t.extendBorderStyle == btm.extendBorderStyle &&
+          t.extendBorderStyle == l.extendBorderStyle;
+      final sameWidth = t.width == r.width && t.width == btm.width && t.width == l.width;
+      final sameColor = t.color == r.color && t.color == btm.color && t.color == l.color;
+      return sameStyle && sameWidth && sameColor;
+    }
+
+    // Uniform double with border radius: draw two RRect strokes
+    if (_isUniformDouble(border) && _decoration.hasBorderRadius && _decoration.borderRadius != null) {
+      final side = border.top as ExtendedBorderSide; // all equal
+      final double w = side.width;
+      final Color color = side.color;
+      final RRect rr = _decoration.borderRadius!.toRRect(rect);
+      final Paint p = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.square
+        ..strokeJoin = StrokeJoin.miter
+        ..color = color;
+      if (w < 3.0) {
+        p.strokeWidth = w;
+        canvas.drawRRect(rr.deflate(w / 2.0), p);
+        return;
+      }
+      final double band = (w / 3.0).floorToDouble().clamp(1.0, w);
+      final double gap = (w - 2 * band).clamp(0.0, w);
+      // Outer band (near border edge)
+      p.strokeWidth = band;
+      canvas.drawRRect(rr.deflate(band / 2.0), p);
+      // Inner band (near content)
+      canvas.drawRRect(rr.deflate(band + gap + band / 2.0), p);
+      return;
+    }
+
+    // Non-uniform or no radius: paint per-side rectangles. This covers common cases like border-bottom.
+    // Note: When border-radius is present and styles are non-uniform, this approximation won't curve bands;
+    // however it ensures visibility rather than painting nothing.
+    // Extract sides as ExtendedBorderSide when double
+    if (border.top is ExtendedBorderSide &&
+        (border.top as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.double &&
+        border.top.width > 0) {
+      final s = border.top as ExtendedBorderSide;
+      final double w = s.width;
+      _drawHorizontalDoubleBands(rect.top, rect.top + w, s.color);
+    }
+
+    if (border.right is ExtendedBorderSide &&
+        (border.right as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.double &&
+        border.right.width > 0) {
+      final s = border.right as ExtendedBorderSide;
+      final double w = s.width;
+      _drawVerticalDoubleBands(rect.right - w, rect.right, s.color);
+    }
+
+    if (border.bottom is ExtendedBorderSide &&
+        (border.bottom as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.double &&
+        border.bottom.width > 0) {
+      final s = border.bottom as ExtendedBorderSide;
+      final double w = s.width;
+      _drawHorizontalDoubleBands(rect.bottom - w, rect.bottom, s.color);
+    }
+
+    if (border.left is ExtendedBorderSide &&
+        (border.left as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.double &&
+        border.left.width > 0) {
+      final s = border.left as ExtendedBorderSide;
+      final double w = s.width;
+      _drawVerticalDoubleBands(rect.left, rect.left + w, s.color);
+    }
   }
 
   @override
@@ -978,6 +1266,15 @@ void _paintImage({
 
   final Offset destinationPosition = rect.topLeft.translate(dx, dy);
   final Rect destinationRect = destinationPosition & destinationSize;
+
+  if (kDebugMode && DebugFlags.enableCssLogs) {
+    cssLogger.fine('[background] layout image: ' +
+        'outputSize=' + outputSize.toString() +
+        ' destSize=' + destinationSize.toString() +
+        ' posX=' + positionX.cssText() + ' posY=' + positionY.cssText() +
+        ' dx=' + dx.toStringAsFixed(2) + ' dy=' + dy.toStringAsFixed(2) +
+        ' repeat=' + repeat.toString());
+  }
 
   // Set to true if we added a saveLayer to the canvas to invert/flip the image.
   bool invertedCanvas = false;

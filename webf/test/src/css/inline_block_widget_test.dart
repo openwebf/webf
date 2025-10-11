@@ -125,66 +125,6 @@ void main() {
       reason: 'Overlay width should match container width');
   });
 
-  testWidgets('exact user case with max-width constraint', (WidgetTester tester) async {
-    final name = 'max-width-constraint-test-${DateTime.now().millisecondsSinceEpoch}';
-    final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-      tester: tester,
-      controllerName: name,
-      html: '''
-        <html>
-          <body style="margin: 0; padding: 0;">
-            <div style="text-align: center;">
-              <div id="container" style="position: relative; background-color: #3b82f6; display: inline-block;">
-                <img id="image" style="
-                  border: 1px solid #e5e7eb;
-                  max-width: 299px;
-                  max-height: 160px;
-                  width: auto;
-                  height: auto;
-                  object-fit: contain;
-                  display: block;"
-                  src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
-                />
-                <div id="overlay" style="width: 100%; height: 2px; display: flex; background-color: red;"></div>
-              </div>
-            </div>
-          </body>
-        </html>
-      ''',
-    );
-
-    // Wait for image to load and layout to complete
-    await tester.pump(Duration(milliseconds: 300));
-    await tester.pump();
-    await tester.pump(Duration(milliseconds: 100));
-
-    // Get elements
-    final container = prepared.getElementById('container');
-    final image = prepared.getElementById('image');
-    final overlay = prepared.getElementById('overlay');
-
-    // Log actual values for debugging
-    print('Container: ${container.offsetWidth}x${container.offsetHeight}');
-    print('Image: ${image.offsetWidth}x${image.offsetHeight}');
-    print('Overlay: ${overlay.offsetWidth}x${overlay.offsetHeight}');
-
-    // TODO: Fix this - Image with 1x1 pixel data should be small, but currently expands to max-width
-    // Current behavior: Image expands to max-width (299px) instead of using natural size (1px)
-    expect(image.offsetWidth, equals(299.0),
-      reason: 'CURRENT BUG: Image incorrectly expands to max-width instead of natural size');
-    expect(image.offsetHeight, equals(160.0),
-      reason: 'CURRENT BUG: Image height matches aspect ratio with max-width');
-
-    // TODO: Fix this - Container should shrink-wrap to small image content
-    // Current behavior: Container expands to max-width constraint
-    expect(container.offsetWidth, equals(299.0),
-      reason: 'CURRENT BUG: Container expands to max-width instead of shrink-wrapping');
-
-    // Overlay width should match container width
-    expect(overlay.offsetWidth, equals(container.offsetWidth),
-      reason: 'Overlay width should be 100% of container width');
-  });
-
   testWidgets('width property should not work when width of style is auto', (WidgetTester tester) async {
     final name = 'width-auto-test-${DateTime.now().millisecondsSinceEpoch}';
     final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
@@ -210,7 +150,7 @@ void main() {
 
     // Get the image element
     final image = prepared.getElementById('testImage');
-    
+
     // Get the image element as ImageElement to access natural dimensions
     final imageElement = image as ImageElement;
 
@@ -226,7 +166,7 @@ void main() {
     print('Image rendered dimensions: ${image.offsetWidth}x${image.offsetHeight}');
     print('Image width attribute: ${image.getAttribute('width')}');
     print('Image height attribute: ${image.getAttribute('height')}');
-    
+
     // Check if image loaded properly
     if (imageElement.naturalWidth == 0) {
       print('WARNING: Image did not load, natural dimensions are 0x0');

@@ -56,7 +56,7 @@ describe('Background linear-gradient', () => {
     await snapshot(div2);
   });
 
-  xit('radial-gradient', async (done) => {
+  it('radial-gradient', async (done) => {
     var div3 = document.createElement('div');
     Object.assign(div3.style, {
       width: '200px',

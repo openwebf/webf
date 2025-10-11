@@ -6,7 +6,6 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/src/rendering/logic_box.dart';
 
 /// [RenderPreferredSize] Render a box with preferred size,
 /// if no child provided, size is exactly what preferred size
@@ -41,10 +40,5 @@ class RenderPreferredSize extends RenderProxyBox {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<Size>('preferredSize', _preferredSize, missingIfNull: true));
-  }
-
-
-  LogicInlineBox createLogicInlineBox() {
-    return LogicInlineBox(renderObject: this);
   }
 }

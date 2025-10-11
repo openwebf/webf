@@ -3,6 +3,7 @@
  */
 import 'dart:ffi' as ffi;
 import 'package:collection/collection.dart';
+import 'dart:ui';
 import 'package:flutter/rendering.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
@@ -124,7 +125,8 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.Background:
         return _getBackgroundShorthandValue();
       case CSSPropertyID.BackgroundColor:
-        return style.backgroundColor?.cssText() ?? '';
+        // Per CSSOM, computed background-color defaults to transparent.
+        return style.backgroundColor?.cssText() ?? CSSColor(const Color(0x00000000)).cssText();
       case CSSPropertyID.BackgroundImage:
         return style.backgroundImage?.cssText() ?? 'none';
       case CSSPropertyID.BackgroundRepeat:
@@ -801,6 +803,9 @@ extension VisibilityText on Visibility {
     }
   }
 }
+
+enum WhiteSpace { normal, nowrap, pre, preWrap, preLine, breakSpaces }
+
 
 extension WhiteSpaceText on WhiteSpace {
   String cssText() {

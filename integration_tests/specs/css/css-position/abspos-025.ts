@@ -1,8 +1,9 @@
 /*auto generated*/
 describe('abspos-025', () => {
-  it('ref', async () => {
+  it('ref', async (done) => {
     let p;
     let div;
+    let img;
     p = createElement(
       'p',
       {
@@ -30,7 +31,7 @@ describe('abspos-025', () => {
         style: {},
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/swatch-green.png',
           alt: 'Image download support must be enabled',
           style: {
@@ -45,6 +46,9 @@ describe('abspos-025', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 });

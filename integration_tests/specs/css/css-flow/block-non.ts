@@ -293,9 +293,11 @@ describe('block-non', () => {
 
     await snapshot();
   });
-  it('replaced-height-005-ref', async () => {
+  it('replaced-height-005-ref', async (done) => {
     let p;
     let div;
+    let img1;
+    let img2;
     p = createElement(
       'p',
       {
@@ -329,7 +331,7 @@ describe('block-non', () => {
         },
       },
       [
-        createElement('img', {
+        img1 = createElement('img', {
           src: 'assets/blue15x15.png',
           width: '200',
           height: '200',
@@ -338,7 +340,7 @@ describe('block-non', () => {
             'box-sizing': 'border-box',
           },
         }),
-        createElement('img', {
+        img2 = createElement('img', {
           src: 'assets/swatch-orange.png',
           width: '200',
           height: '200',
@@ -351,8 +353,10 @@ describe('block-non', () => {
     );
     BODY.appendChild(p);
     BODY.appendChild(div);
-
-    await snapshot(1);
+    onDoubleImageLoad(img1, img2, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
   it('replaced-height-005', async () => {

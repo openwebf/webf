@@ -202,10 +202,6 @@ abstract class Element extends ContainerNode
   @override
   bool get isRendererAttached => renderStyle.isSelfRenderBoxAttached();
 
-  @pragma('vm:prefer-inline')
-  @override
-  bool get isRendererAttachedToSegmentTree => renderStyle.isSelfRenderBoxAttachedToSegmentTree();
-
   bool _forceToRepaintBoundary = false;
 
   @pragma('vm:prefer-inline')
@@ -280,7 +276,7 @@ abstract class Element extends ContainerNode
 
   @override
   RenderBox createRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
-    return updateOrCreateRenderBoxModel(flutterWidgetElement: flutterWidgetElement)!;
+    return createRenderBoxModel(flutterWidgetElement: flutterWidgetElement)!;
   }
 
   String? collectElementChildText() {
@@ -436,13 +432,11 @@ abstract class Element extends ContainerNode
     return query_selector.closest(this, args.first);
   }
 
-  RenderBoxModel? updateOrCreateRenderBoxModel({flutter.RenderObjectElement? flutterWidgetElement}) {
-    RenderBoxModel nextRenderBoxModel = renderStyle.updateOrCreateRenderBoxModel();
+  RenderBoxModel? createRenderBoxModel({flutter.RenderObjectElement? flutterWidgetElement}) {
+    RenderBoxModel nextRenderBoxModel = renderStyle.createRenderBoxModel();
 
-    if (managedByFlutterWidget) {
-      assert(flutterWidgetElement != null);
-      renderStyle.addOrUpdateWidgetRenderObjects(flutterWidgetElement!, nextRenderBoxModel);
-    }
+    assert(flutterWidgetElement != null);
+    renderStyle.addOrUpdateWidgetRenderObjects(flutterWidgetElement!, nextRenderBoxModel);
 
     // Ensure that the event responder is bound.
     renderStyle.ensureEventResponderBound();
@@ -513,8 +507,10 @@ abstract class Element extends ContainerNode
 
   void handleScroll(double scrollOffset, AxisDirection axisDirection) {
     if (!renderStyle.hasRenderBox()) return;
-    _applyStickyChildrenOffset();
     _applyFixedChildrenOffset(scrollOffset, axisDirection);
+
+    // Update sticky descendants' paint offsets when this element scrolls.
+    _applyStickyChildrenOffsets();
 
     if (!_shouldConsumeScrollTicker) {
       // Make sure scroll listener trigger most to 1 time each frame.
@@ -524,36 +520,62 @@ abstract class Element extends ContainerNode
     _shouldConsumeScrollTicker = true;
   }
 
+  // Traverse subtree to update paint offsets for sticky elements constrained by this scroll container.
+  void _applyStickyChildrenOffsets() {
+    if (!isConnected) return;
+    final RenderBoxModel? defaultScroller = attachedRenderer;
+    if (defaultScroller == null) return;
+
+    RenderBoxModel? _nearestScrollContainer(RenderObject start) {
+      RenderObject? current = start;
+      while (current != null) {
+        if (current is RenderBoxModel) {
+          if (current.clipX || current.clipY) return current;
+        }
+        current = current.parent as RenderObject?;
+      }
+      return null;
+    }
+
+    void visit(Element el) {
+      for (final Node node in el.childNodes) {
+        if (node is! Element) continue;
+        final Element childEl = node as Element;
+        if (childEl.renderStyle.position == CSSPositionType.sticky) {
+          final RenderBoxModel? rbm = childEl.attachedRenderer;
+          final RenderBoxModel? cb = childEl.holderAttachedContainingBlockElement?.attachedRenderer;
+          if (rbm != null) {
+            // Use the child's own nearest scroll container so nested scrollers don't get
+            // overridden by outer viewport updates (e.g., <html> / <body> setups).
+            final RenderBoxModel? scForChild = _nearestScrollContainer(rbm) ?? defaultScroller;
+            CSSPositionedLayout.applyStickyChildOffset(cb ?? scForChild!, rbm, scrollContainer: scForChild);
+          }
+        }
+        visit(childEl);
+      }
+    }
+
+    visit(this);
+  }
+
   /// Normally element in scroll box will not repaint on scroll because of repaint boundary optimization
   /// So it needs to manually mark element needs paint and add scroll offset in paint stage
   void _applyFixedChildrenOffset(double scrollOffset, AxisDirection axisDirection) {
-    // Only root element has fixed children.
-    for (Element fixedElement in fixedPositionElements) {
-      // Save scrolling offset for paint
+    // Only apply scroll-compensation to fixed-positioned descendants.
+    for (Element positioned in outOfFlowPositionedElements) {
+      if (positioned.renderStyle.position != CSSPositionType.fixed) continue;
       if (axisDirection == AxisDirection.down) {
-        fixedElement.attachedRenderer?.additionalPaintOffsetY = scrollOffset;
+        positioned.attachedRenderer?.additionalPaintOffsetY = scrollOffset;
       } else if (axisDirection == AxisDirection.right) {
-        fixedElement.attachedRenderer?.additionalPaintOffsetX = scrollOffset;
+        positioned.attachedRenderer?.additionalPaintOffsetX = scrollOffset;
       }
     }
   }
 
-  // Calculate sticky status according to scroll offset and scroll direction
-  void _applyStickyChildrenOffset() {
-    RenderBoxModel scrollContainer = renderStyle.attachedRenderBoxModel!;
-
-    Set<RenderBoxModel>? stickyChildren;
-    if (scrollContainer is RenderLayoutBox) {
-      stickyChildren = scrollContainer.stickyChildren;
-    } else if (scrollContainer is RenderWidget) {
-      stickyChildren = scrollContainer.stickyChildren;
-    }
-
-    if (stickyChildren != null) {
-      for (RenderBoxModel stickyChild in stickyChildren) {
-        CSSPositionedLayout.applyStickyChildOffset(scrollContainer, stickyChild);
-      }
-    }
+  // Public hook to recompute sticky offsets for descendants constrained by this element
+  // (typically called after scroll container viewport is established during layout).
+  void updateStickyOffsets() {
+    _applyStickyChildrenOffsets();
   }
 
   void _updateHostingWidgetWithOverflow(CSSOverflowType oldOverflow) {
@@ -568,7 +590,6 @@ abstract class Element extends ContainerNode
   }
 
   void _updateHostingWidgetWithPosition(CSSPositionType oldPosition) {
-    assert(managedByFlutterWidget);
     CSSPositionType currentPosition = renderStyle.position;
     if (oldPosition == currentPosition) return;
 
@@ -576,13 +597,28 @@ abstract class Element extends ContainerNode
     // changes between static and relative.
     if (currentPosition == CSSPositionType.absolute ||
         currentPosition == CSSPositionType.sticky) {
-      // Find the renderBox of its containing block.
-      Element? containingBlockElement = getContainingBlockElement();
+      // Determine new containing block and attach there.
+      Element? newContainingBlockElement = getContainingBlockElement();
+      if (newContainingBlockElement == null) return;
 
-      if (containingBlockElement == null) return;
+      // If previously attached to a different containing block as positioned, remove it.
+      if (holderAttachedContainingBlockElement != null &&
+          holderAttachedContainingBlockElement != newContainingBlockElement) {
+        holderAttachedContainingBlockElement!.removeOutOfFlowPositionedElement(this);
+        holderAttachedContainingBlockElement!.renderStyle
+            .requestWidgetToRebuild(UpdateChildNodeUpdateReason());
+      }
 
-      renderStyle.requestWidgetToRebuild(
-          ToPositionPlaceHolderUpdateReason(positionedElement: this, containingBlockElement: containingBlockElement));
+      // Keep placeholder at original location for static-position anchor.
+      renderStyle.requestWidgetToRebuild(ToPositionPlaceHolderUpdateReason(
+          positionedElement: this, containingBlockElement: newContainingBlockElement));
+
+      // Ensure the actual positioned renderObject is a direct child of the containing block.
+      // Avoid duplicate attachment if it already exists.
+      if (!newContainingBlockElement.outOfFlowPositionedElements.contains(this)) {
+        newContainingBlockElement.renderStyle.requestWidgetToRebuild(
+            AttachPositionedChild(positionedElement: this, containingBlockElement: newContainingBlockElement));
+      }
     } else if (currentPosition == CSSPositionType.fixed) {
       // Find the renderBox of its containing block.
       Element? containingBlockElement = getContainingBlockElement();
@@ -590,23 +626,270 @@ abstract class Element extends ContainerNode
 
       renderStyle.requestWidgetToRebuild(
           ToPositionPlaceHolderUpdateReason(positionedElement: this, containingBlockElement: containingBlockElement));
-      containingBlockElement.renderStyle.requestWidgetToRebuild(
-          AttachPositionedChild(positionedElement: this, containingBlockElement: containingBlockElement));
+      if (!containingBlockElement.outOfFlowPositionedElements.contains(this)) {
+        containingBlockElement.renderStyle.requestWidgetToRebuild(
+            AttachPositionedChild(positionedElement: this, containingBlockElement: containingBlockElement));
+      }
     } else if (currentPosition == CSSPositionType.static) {
 
       Element? elementNeedsToRebuild;
 
-      if (oldPosition == CSSPositionType.fixed) {
+      if (oldPosition == CSSPositionType.fixed ||
+          oldPosition == CSSPositionType.absolute ||
+          oldPosition == CSSPositionType.sticky) {
+        // Remove from the (previous) containing block's positioned list.
         Element? containingBlockElement = getContainingBlockElement(positionType: oldPosition);
-        containingBlockElement?.removeFixedPositionedElement(this);
+        containingBlockElement?.removeOutOfFlowPositionedElement(this);
         elementNeedsToRebuild = containingBlockElement;
       } else {
         elementNeedsToRebuild = parentElement;
       }
 
       elementNeedsToRebuild?.renderStyle.requestWidgetToRebuild(ToStaticLayoutUpdateReason());
+
+      // If this element no longer establishes a containing block (e.g., relative -> static),
+      // rehome any out-of-flow positioned descendants whose containing block was this element.
+      _reattachOutOfFlowDescendantsToCorrectContainingBlocks();
       updateElementKey();
+    } else if (currentPosition == CSSPositionType.relative) {
+      // When becoming a positioned ancestor (static -> relative), some absolutely-positioned
+      // descendants may now use this element as their nearest containing block.
+      _reattachOutOfFlowDescendantsToCorrectContainingBlocks();
     }
+  }
+
+  // Walk subtree and ensure any out-of-flow positioned descendants are attached under
+  // the correct containing block after this element's position change.
+  void _reattachOutOfFlowDescendantsToCorrectContainingBlocks() {
+    // Fast-exit if not connected; no render objects to update yet.
+    if (!isConnected) return;
+
+    void visit(Element el) {
+      for (final Node node in el.childNodes) {
+        if (node is! Element) continue;
+        final Element child = node as Element;
+        final CSSPositionType pos = child.renderStyle.position;
+        // Only consider out-of-flow positioned descendants.
+        if (pos == CSSPositionType.absolute || pos == CSSPositionType.fixed || pos == CSSPositionType.sticky) {
+          // New containing block after our position change.
+          final Element? newCB = child.getContainingBlockElement();
+          final Element? oldCB = child.holderAttachedContainingBlockElement;
+
+          if (newCB != oldCB) {
+            // Detach from old containing block list if present.
+            if (oldCB != null) {
+              oldCB.removeOutOfFlowPositionedElement(child);
+              oldCB.renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
+            }
+
+            if (newCB != null) {
+              // Update child's placeholder mapping so parents render the placeholder correctly.
+              child.renderStyle.requestWidgetToRebuild(
+                ToPositionPlaceHolderUpdateReason(positionedElement: child, containingBlockElement: newCB),
+              );
+
+              // Attach positioned child under its new containing block for actual renderObject placement.
+              if (!newCB.outOfFlowPositionedElements.contains(child)) {
+                newCB.renderStyle.requestWidgetToRebuild(
+                  AttachPositionedChild(positionedElement: child, containingBlockElement: newCB),
+                );
+              } else {
+                // Still ensure the new containing block rebuilds to reflect placeholder/offset updates.
+                newCB.renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
+              }
+            } else {
+              // Fallback: no valid containing block; treat as static layout for safety.
+              child.renderStyle.requestWidgetToRebuild(ToStaticLayoutUpdateReason());
+            }
+          }
+        }
+
+        // Continue traversal for deeper descendants.
+        visit(child);
+      }
+    }
+
+    visit(this);
+  }
+
+  // Parse 'counter-*' shorthand values into a simple map: name -> integer
+  Map<String, int> _parseCounterList(String value) {
+    Map<String, int> result = {};
+    // Split by whitespace, treat pairs of (ident [number]?)
+    final parts = value.trim().split(RegExp(r"\s+"));
+    int i = 0;
+    while (i < parts.length) {
+      final name = parts[i];
+      if (name.isEmpty) { i++; continue; }
+      int step = 0;
+      // Default for reset is 0; for increment, caller may override default=1
+      if (i + 1 < parts.length) {
+        final next = parts[i + 1];
+        final n = int.tryParse(next);
+        if (n != null) {
+          step = n;
+          i += 2;
+          result[name] = step;
+          continue;
+        }
+      }
+      result[name] = step;
+      i++;
+    }
+    return result;
+  }
+
+  Map<String, int> _parseCounterIncrementList(String value) {
+    Map<String, int> result = {};
+    final parts = value.trim().split(RegExp(r"\s+"));
+    int i = 0;
+    while (i < parts.length) {
+      final name = parts[i];
+      if (name.isEmpty) { i++; continue; }
+      int step = 1; // default increment is 1
+      if (i + 1 < parts.length) {
+        final next = parts[i + 1];
+        final n = int.tryParse(next);
+        if (n != null) {
+          step = n;
+          i += 2;
+          result[name] = step;
+          continue;
+        }
+      }
+      result[name] = step;
+      i++;
+    }
+    return result;
+  }
+
+  // Compute the current counter value for a given name at this element's point
+  int _computeCounterValue(String name) {
+    String _getProp(CSSStyleDeclaration style, String camel, String kebab) {
+      final v1 = style.getPropertyValue(camel);
+      if (v1.isNotEmpty) return v1;
+      return style.getPropertyValue(kebab);
+    }
+
+    // 1) Find nearest ancestor that resets the counter
+    Element? scope = this;
+    int initial = 0;
+    while (scope != null) {
+      final reset = _getProp(scope.style, 'counterReset', 'counter-reset');
+      if (reset.isNotEmpty && reset != 'none') {
+        final map = _parseCounterList(reset);
+        if (map.containsKey(name)) {
+          initial = map[name] ?? 0;
+          if (DebugFlags.enableDomLogs) {
+            domLogger.fine('[Counter] reset at <${scope.tagName.toLowerCase()}> $name=$initial raw="$reset"');
+          }
+          break;
+        }
+      }
+      scope = scope.parentElement;
+    }
+
+    // 2) Walk document order from scope to this, summing increments
+    int value = initial;
+    if (scope == null) scope = ownerDocument.documentElement;
+    bool reached = false;
+
+    void walk(Node node) {
+      if (reached) return;
+      if (node is Element) {
+        // increments on element itself
+        final incEl = _getProp(node.style, 'counterIncrement', 'counter-increment');
+        if (incEl.isNotEmpty && incEl != 'none') {
+          final map = _parseCounterIncrementList(incEl);
+          final add = (map[name] ?? 0);
+          value += add;
+          if (add != 0 && DebugFlags.enableDomLogs) {
+            domLogger.fine('[Counter] element <${node.tagName.toLowerCase()}> inc $name += $add (raw="$incEl") → $value');
+          }
+        }
+        // increments on ::before pseudo only for the current element being evaluated
+        if (identical(node, this)) {
+          final incBefore = node.style.pseudoBeforeStyle == null
+              ? ''
+              : _getProp(node.style.pseudoBeforeStyle!, 'counterIncrement', 'counter-increment');
+          if (incBefore.isNotEmpty && incBefore != 'none') {
+            final map = _parseCounterIncrementList(incBefore);
+            final add = (map[name] ?? 0);
+            value += add;
+            if (add != 0 && DebugFlags.enableDomLogs) {
+              domLogger.fine('[Counter] ::before of <${node.tagName.toLowerCase()}> inc $name += $add (raw="$incBefore") → $value');
+            }
+          }
+        }
+        if (identical(node, this)) {
+          if (DebugFlags.enableDomLogs) {
+            domLogger.fine('[Counter] reached target <${node.tagName.toLowerCase()}> $name = $value');
+          }
+          reached = true;
+          return;
+        }
+      }
+      for (final child in node.childNodes) {
+        if (reached) return;
+        walk(child);
+      }
+    }
+
+    if (scope != null) walk(scope);
+    if (DebugFlags.enableDomLogs) {
+      domLogger.fine('[Counter] final for <${tagName.toLowerCase()}> $name = $value');
+    }
+    return value;
+  }
+
+  String _evaluateContent(String content) {
+    StringBuffer out = StringBuffer();
+    int i = 0;
+    while (i < content.length) {
+      final ch = content[i];
+      if (ch == '"' || ch == '\'') {
+        final quote = ch;
+        i++;
+        int start = i;
+        while (i < content.length && content[i] != quote) i++;
+        out.write(content.substring(start, i));
+        if (i < content.length && content[i] == quote) i++;
+        if (i < content.length && content[i] == ' ') i++;
+        continue;
+      }
+      // try function: counter(name)
+      // read identifier
+      int startIdent = i;
+      while (i < content.length && RegExp(r'[a-zA-Z_-]').hasMatch(content[i])) i++;
+      final ident = content.substring(startIdent, i);
+      if (ident.isNotEmpty && i < content.length && content[i] == '(') {
+        // parse args until ')'
+        i++; // skip '('
+        int argStart = i;
+        while (i < content.length && content[i] != ')') i++;
+        String args = content.substring(argStart, i).trim();
+        if (i < content.length && content[i] == ')') i++;
+        if (ident == 'counter') {
+          // args: name [ , style ]? (we handle only name)
+          String counterName = args.split(',')[0].trim();
+          if (counterName.startsWith('"') || counterName.startsWith('\'')) {
+            counterName = counterName.substring(1, counterName.length - 1);
+          }
+          final v = _computeCounterValue(counterName);
+          if (DebugFlags.enableDomLogs) {
+            domLogger.fine('[Content] counter($counterName) → $v');
+          }
+          out.write(v.toString());
+        }
+        // skip optional spaces
+        while (i < content.length && content[i] == ' ') i++;
+        continue;
+      }
+      // otherwise skip or write char
+      out.write(ch);
+      i++;
+    }
+    return out.toString();
   }
 
   PseudoElement _createOrUpdatePseudoElement(
@@ -640,13 +923,21 @@ abstract class Element extends ContainerNode
       }
     }
 
-    // We plan to support content values only with quoted strings.
+    // Support quoted strings, and minimal function handling for counter().
+    String? textContent;
     if (pseudoValue is QuoteStringContentValue) {
+      textContent = pseudoValue.value;
+    } else if (pseudoValue is FunctionContentValue || pseudoValue is KeywordContentValue) {
+      // Evaluate a composite content string with counter() and quoted strings.
+      textContent = _evaluateContent(contentValue);
+    }
+
+    if (textContent != null) {
       if (previousPseudoElement.firstChild != null) {
-        (previousPseudoElement.firstChild as TextNode).data = pseudoValue.value;
+        (previousPseudoElement.firstChild as TextNode).data = textContent;
       } else {
         final textNode = ownerDocument.createTextNode(
-            pseudoValue.value, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
+            textContent, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
         previousPseudoElement.appendChild(textNode);
       }
     }
@@ -693,6 +984,33 @@ abstract class Element extends ContainerNode
     _shouldAfterPseudoElementNeedsUpdate = false;
   }
 
+  // ::first-letter pseudo update trigger
+  bool _shouldFirstLetterPseudoNeedsUpdate = false;
+  void markFirstLetterPseudoNeedsUpdate() {
+    if (_shouldFirstLetterPseudoNeedsUpdate) return;
+    _shouldFirstLetterPseudoNeedsUpdate = true;
+    Future.microtask(_updateFirstLetterPseudo);
+  }
+
+  void _updateFirstLetterPseudo() {
+    // Rebuild layout/paragraph for this element so IFC can apply ::first-letter styling
+    renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
+    _shouldFirstLetterPseudoNeedsUpdate = false;
+  }
+
+  // ::first-line pseudo update trigger
+  bool _shouldFirstLinePseudoNeedsUpdate = false;
+  void markFirstLinePseudoNeedsUpdate() {
+    if (_shouldFirstLinePseudoNeedsUpdate) return;
+    _shouldFirstLinePseudoNeedsUpdate = true;
+    Future.microtask(_updateFirstLinePseudo);
+  }
+
+  void _updateFirstLinePseudo() {
+    renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
+    _shouldFirstLinePseudoNeedsUpdate = false;
+  }
+
   @override
   void dispose() async {
     renderStyle.detach();
@@ -705,7 +1023,7 @@ abstract class Element extends ContainerNode
     ownerDocument.clearElementStyleDirty(this);
     holderAttachedPositionedElement = null;
     holderAttachedContainingBlockElement = null;
-    clearFixedPositionedElements();
+    clearOutOfFlowPositionedElements();
     _beforeElement?.dispose();
     _beforeElement = null;
     _afterElement?.dispose();
@@ -713,25 +1031,15 @@ abstract class Element extends ContainerNode
     super.dispose();
   }
 
-  static bool isRenderObjectOwnedByFlutterFramework(Element element) {
-    return element is WidgetElement || element.managedByFlutterWidget;
-  }
-
   @override
   void childrenChanged(ChildrenChange change) {
     super.childrenChanged(change);
-    if (managedByFlutterWidget) {
-      renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
-    }
+    renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
   }
 
   @override
   @mustCallSuper
   Node appendChild(Node child) {
-    if (managedByFlutterWidget || this is WidgetElement) {
-      child.managedByFlutterWidget = true;
-    }
-
     super.appendChild(child);
     return child;
   }
@@ -752,10 +1060,6 @@ abstract class Element extends ContainerNode
   @override
   @mustCallSuper
   Node insertBefore(Node child, Node referenceNode) {
-
-    if (managedByFlutterWidget || this is WidgetElement) {
-      child.managedByFlutterWidget = true;
-    }
     Node? node = super.insertBefore(child, referenceNode);
     return node;
   }
@@ -763,9 +1067,6 @@ abstract class Element extends ContainerNode
   @override
   @mustCallSuper
   Node? replaceChild(Node newNode, Node oldNode) {
-    if (managedByFlutterWidget || this is WidgetElement) {
-      newNode.managedByFlutterWidget = true;
-    }
     return super.replaceChild(newNode, oldNode);
   }
 
@@ -813,12 +1114,10 @@ abstract class Element extends ContainerNode
 
   @override
   void connectedCallback() {
-    if (managedByFlutterWidget) {
-      applyStyle(style);
-      style.flushPendingProperties();
-      if (_connectedCompleter != null) {
-        _connectedCompleter!.complete();
-      }
+    applyStyle(style);
+    style.flushPendingProperties();
+    if (_connectedCompleter != null) {
+      _connectedCompleter!.complete();
     }
 
     super.connectedCallback();
@@ -831,8 +1130,10 @@ abstract class Element extends ContainerNode
     super.disconnectedCallback();
     _updateIDMap(null, oldID: _id);
     _updateNameMap(null, oldName: getAttribute(_nameAttr));
-    if (renderStyle.position == CSSPositionType.fixed || renderStyle.position == CSSPositionType.absolute) {
-      holderAttachedContainingBlockElement?.removeFixedPositionedElement(this);
+    if (renderStyle.position == CSSPositionType.fixed ||
+        renderStyle.position == CSSPositionType.absolute ||
+        renderStyle.position == CSSPositionType.sticky) {
+      holderAttachedContainingBlockElement?.removeOutOfFlowPositionedElement(this);
       holderAttachedContainingBlockElement?.renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
     }
     _connectedCompleter = null;
@@ -873,14 +1174,8 @@ abstract class Element extends ContainerNode
       case CSSPositionType.fixed:
         Element viewportElement = ownerDocument.documentElement!;
 
-        if (managedByFlutterWidget) {
-          // If the element has 'position: fixed', the router link element was behavior as the HTMLElement in DOM mode.
-          containingBlockElement = _findRouterLinkElement(this) ?? viewportElement;
-        } else {
-          // If the element has 'position: fixed', the containing block is established by the viewport
-          // in the case of continuous media or the page area in the case of paged media.
-          containingBlockElement = viewportElement;
-        }
+        // If the element has 'position: fixed', the router link element was behavior as the HTMLElement in DOM mode.
+        containingBlockElement = _findRouterLinkElement(this) ?? viewportElement;
 
         break;
     }
@@ -946,9 +1241,6 @@ abstract class Element extends ContainerNode
     CSSDisplay presentDisplay = renderStyle.display;
 
     if (parentElement == null || !parentElement!.isConnected) return;
-
-    assert(managedByFlutterWidget);
-
     // Destroy renderer of element when display is changed to none.
     if (presentDisplay == CSSDisplay.none) {
       renderStyle.requestWidgetToRebuild(UpdateDisplayReason());
@@ -962,6 +1254,19 @@ abstract class Element extends ContainerNode
 
     renderStyle.requestWidgetToRebuild(UpdateDisplayReason());
     updateElementKey();
+
+    // When display changes (e.g., block <-> inline), ancestor containers may need
+    // to rebuild to re-evaluate anonymous block wrapping and inline formatting.
+    // For example, when an inline element previously had a block child which turned
+    // to inline, its block parent must rebuild to drop anonymous blocks.
+    // Propagate a lightweight child-update rebuild up to two ancestor levels.
+    Element? ancestor = parentElement;
+    int hops = 0;
+    while (ancestor != null && hops < 2) {
+      ancestor.renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
+      ancestor = ancestor.parentElement;
+      hops++;
+    }
   }
 
   void setRenderStyleProperty(String name, value) {
@@ -1014,7 +1319,19 @@ abstract class Element extends ContainerNode
   }
 
   void setRenderStyle(String property, String present, {String? baseHref}) {
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      final idPart = _id != null ? '#$_id' : '';
+      final baseHrefPart = baseHref != null ? ' (baseHref=$baseHref)' : '';
+      cssLogger.fine('[style] <${tagName.toLowerCase()}$idPart> set $property <- ${present.isEmpty ? 'null' : present}$baseHrefPart');
+    }
+
     dynamic value = present.isEmpty ? null : renderStyle.resolveValue(property, present, baseHref: baseHref);
+
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      final idPart = _id != null ? '#$_id' : '';
+      cssLogger.fine('[style] <${tagName.toLowerCase()}$idPart> resolved $property = ${value?.toString() ?? 'null'}');
+    }
+
     setRenderStyleProperty(property, value);
   }
 
@@ -1071,6 +1388,9 @@ abstract class Element extends ContainerNode
 
   void _applyInlineStyle(CSSStyleDeclaration style) {
     if (inlineStyle.isNotEmpty) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[inline] <' + tagName + '> apply ' + inlineStyle.length.toString() + ' props');
+      }
       inlineStyle.forEach((propertyName, value) {
         // Force inline style to be applied as important priority.
         style.setProperty(propertyName, value, isImportant: true);
@@ -1127,6 +1447,10 @@ abstract class Element extends ContainerNode
   void setInlineStyle(String property, String value) {
     // Current only for mark property is setting by inline style.
     inlineStyle[property] = value;
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      final String v = value.length > 80 ? value.substring(0, 80) + '…' : value;
+      cssLogger.fine('[inline] <' + tagName + '> set ' + property + ' = ' + v);
+    }
     // recalculate matching styles for element when inline styles are removed.
     if (value.isEmpty) {
       style.removeProperty(property, true);
@@ -1137,6 +1461,9 @@ abstract class Element extends ContainerNode
   }
 
   void clearInlineStyle() {
+    if (kDebugMode && DebugFlags.enableCssLogs && inlineStyle.isNotEmpty) {
+      cssLogger.fine('[inline] <' + tagName + '> clear ' + inlineStyle.length.toString() + ' props');
+    }
     for (var key in inlineStyle.keys) {
       style.removeProperty(key, true);
     }
@@ -1161,9 +1488,15 @@ abstract class Element extends ContainerNode
   }
 
   void applyAttributeStyle(CSSStyleDeclaration style) {
-    // Empty implement
-    // Because attribute style is not recommend to use
-    // But it's necessary for SVG.
+    // Map the dir attribute to CSS direction so inline layout picks up RTL/LTR hints.
+    final String? dirAttr = attributes['dir'];
+    if (dirAttr != null) {
+      final String normalized = dirAttr.trim().toLowerCase();
+      final TextDirection? resolved = CSSTextMixin.resolveDirection(normalized);
+      if (resolved != null) {
+        style.setProperty(DIRECTION, normalized);
+      }
+    }
   }
 
   void recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
@@ -1214,6 +1547,49 @@ abstract class Element extends ContainerNode
         return boundingClientRect;
       }
 
+      // Special handling for inline elements that participate in inline formatting context
+      if (renderStyle.display == CSSDisplay.inline && !renderStyle.isSelfRenderReplaced()) {
+        // Check if this element participates in an inline formatting context
+        RenderBox? parent = renderStyle.attachedRenderBoxModel?.parent as RenderBox?;
+        while (parent != null) {
+          if (parent is RenderFlowLayout && parent.establishIFC && parent.inlineFormattingContext != null) {
+            // Get bounds from the inline formatting context
+            final ifcBounds = parent.inlineFormattingContext!.getBoundsForRenderBox(renderStyle.attachedRenderBoxModel!);
+            if (ifcBounds != null) {
+              // Convert IFC-relative bounds to viewport-relative bounds
+              RenderBoxModel? rootRenderBox = getRootRenderBoxModel();
+              Offset containerOffset = Offset.zero;
+              if (rootRenderBox != null) {
+                containerOffset = parent.localToGlobal(Offset.zero, ancestor: rootRenderBox);
+              }
+
+              // Add container's content offset (padding and border)
+              final contentOffset = Offset(
+                parent.renderStyle.paddingLeft.computedValue + parent.renderStyle.effectiveBorderLeftWidth.computedValue,
+                parent.renderStyle.paddingTop.computedValue + parent.renderStyle.effectiveBorderTopWidth.computedValue,
+              );
+
+              final absoluteOffset = containerOffset + contentOffset + ifcBounds.topLeft;
+
+              boundingClientRect = BoundingClientRect(
+                  context: BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()),
+                  x: absoluteOffset.dx,
+                  y: absoluteOffset.dy,
+                  width: ifcBounds.width,
+                  height: ifcBounds.height,
+                  top: absoluteOffset.dy,
+                  right: absoluteOffset.dx + ifcBounds.width,
+                  bottom: absoluteOffset.dy + ifcBounds.height,
+                  left: absoluteOffset.dx);
+              return boundingClientRect;
+            }
+            break;
+          }
+          parent = parent.parent as RenderBox?;
+        }
+      }
+
+      // Default handling for block elements and replaced elements
       if (renderStyle.isBoxModelHaveSize()) {
         RenderBoxModel? currentRenderBox = renderStyle.attachedRenderBoxModel;
         Offset offset = Offset.zero;

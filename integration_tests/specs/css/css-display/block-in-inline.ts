@@ -1,6 +1,6 @@
 describe('Display block in inline', () => {
   // @TODO: background-color should not work for display: inline box.
-  xit('simple', async () => {
+  it('simple', async () => {
     var div1 = document.createElement('div');
     setElementStyle(div1, {
       color: 'green',
@@ -120,7 +120,7 @@ describe('Display block in inline', () => {
   });
 
   // @TODO: background-color should not work for display: inline box.
-  xit('there should be no red', async () => {
+  it('there should be no red', async () => {
     let block = createElementWithStyle('div', {
       color: 'green',
       display: 'block',
@@ -274,7 +274,8 @@ describe('Display block in inline', () => {
     await snapshot(container);
   });
 
-  it('percentage box inside of inline-block elements', async () => {
+  it('percentage box inside of inline-block elements', async (done) => {
+    let img;
     const container = createElement('div', {
       style: {
         width: '50px'
@@ -285,7 +286,7 @@ describe('Display block in inline', () => {
           display: 'inline-block'
         }
       }, [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/green15x15.png',
           style: {
             width: '50%'
@@ -294,6 +295,37 @@ describe('Display block in inline', () => {
       ])
     ]);
     document.body.appendChild(container);
-    await snapshot();
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
+  });
+
+  it('percentage box inside of inline-block elements with bigger images', async (done) => {
+    let img;
+    const container = createElement('div', {
+      style: {
+        width: '50px'
+      }
+    }, [
+      createElement('div', {
+        style: {
+          display: 'inline-block'
+        }
+      }, [
+        img = createElement('img', {
+          src: 'assets/200x200-green.png',
+          style: {
+            width: '50%'
+          }
+        })
+      ])
+    ]);
+
+    document.body.appendChild(container);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 });

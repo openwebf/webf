@@ -43,7 +43,7 @@ describe('Position', () => {
     await snapshot();
   });
 
-  xit('should work with flex', async () => {
+  it('should work with flex', async () => {
     const WIDTH = '360px';
     const HEIGHT = '640px';
 

@@ -4,7 +4,9 @@
  */
 
 import 'dart:async';
-import 'dart:ffi';
+import 'dart:ffi' as ffi;
+import 'dart:typed_data';
+import 'dart:convert' as convert show utf8;
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -13,6 +15,8 @@ import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
+// Use flutter_svg parse API via the main entrypoint
+import 'package:flutter_svg/flutter_svg.dart' as svg;
 
 class BoxFitImageKey {
   const BoxFitImageKey({
@@ -65,7 +69,7 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
   final OnImageLoad? onImageLoad;
   final double devicePixelRatio;
   final double contextId;
-  final Pointer<NativeBindingObject> targetElementPtr;
+  final ffi.Pointer<NativeBindingObject> targetElementPtr;
 
   @override
   Future<BoxFitImageKey> obtainKey(ImageConfiguration configuration) {
@@ -113,12 +117,35 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
         throw StateError('Unable to read data');
       }
 
-      final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(bytes);
-      final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
+      // Detect SVG via mime or sniff
+      final bool isSvg = _isSvgMime(response.mime) || _sniffSvg(bytes);
 
+      ImageDescriptor descriptor;
       int? preferredWidth;
       int? preferredHeight;
-      if (key.configuration?.size != null) {
+      if (isSvg) {
+        // Rasterize SVG into a bitmap at a reasonable target size
+        // Prefer configuration size in physical pixels when available
+        if (key.configuration?.size != null) {
+          preferredWidth = (key.configuration!.size!.width * devicePixelRatio).round();
+          preferredHeight = (key.configuration!.size!.height * devicePixelRatio).round();
+        }
+
+        final Uint8List rasterPng = await _rasterizeSvgToPng(
+          bytes,
+          preferredWidth: preferredWidth,
+          preferredHeight: preferredHeight,
+          boxFit: boxFit,
+        );
+        final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(rasterPng);
+        descriptor = await ImageDescriptor.encoded(buffer);
+      } else {
+        final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(bytes);
+        descriptor = await ImageDescriptor.encoded(buffer);
+      }
+
+      // For raster images, compute preferred size for codec scaling
+      if (key.configuration?.size != null && !isSvg) {
         preferredWidth = (key.configuration!.size!.width * devicePixelRatio).toInt();
         preferredHeight = (key.configuration!.size!.height * devicePixelRatio).toInt();
       }
@@ -126,8 +153,9 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
       final Codec codec = await _instantiateImageCodec(
         descriptor,
         boxFit: boxFit,
-        preferredWidth: preferredWidth,
-        preferredHeight: preferredHeight,
+        // For SVG, we already rasterized to a target size; avoid scaling again
+        preferredWidth: isSvg ? null : preferredWidth,
+        preferredHeight: isSvg ? null : preferredHeight,
       );
 
       // Fire image on load after codec created.
@@ -148,6 +176,97 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
       });
       rethrow;
     }
+  }
+
+  bool _isSvgMime(String? mime) {
+    final m = mime?.toLowerCase();
+    if (m == null) return false;
+    return m.contains('image/svg');
+  }
+
+  bool _sniffSvg(Uint8List bytes) {
+    try {
+      final int probeLen = bytes.length < 512 ? bytes.length : 512;
+      final String head = String.fromCharCodes(bytes.sublist(0, probeLen)).toLowerCase();
+      return head.contains('<svg') ||
+          (head.contains('<?xml') && head.contains('svg')) ||
+          head.contains('xmlns="http://www.w3.org/2000/svg"');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<Uint8List> _rasterizeSvgToPng(
+    Uint8List svgBytes, {
+    int? preferredWidth,
+    int? preferredHeight,
+    BoxFit? boxFit,
+  }) async {
+    // Use flutter_svg BytesLoader + vector_graphics utilities to decode
+    final svg.SvgBytesLoader loader = svg.SvgBytesLoader(svgBytes);
+    final svg.PictureInfo pictureInfo = await svg.vg.loadPicture(loader, null, clipViewbox: true);
+
+    // Intrinsic size from the vector graphic
+    final Size intrinsic = pictureInfo.size;
+    int targetWidth;
+    int targetHeight;
+
+    if (preferredWidth != null && preferredHeight != null && !intrinsic.isEmpty) {
+      // Respect aspect ratio roughly according to boxFit
+      final double iw = intrinsic.width;
+      final double ih = intrinsic.height;
+      final double ar = iw > 0 && ih > 0 ? iw / ih : 1.0;
+      double tw = preferredWidth.toDouble();
+      double th = preferredHeight.toDouble();
+      if (boxFit == BoxFit.contain) {
+        final double scale = (tw / iw).clamp(0.0, double.infinity);
+        final double scaleAlt = (th / ih).clamp(0.0, double.infinity);
+        final double s = scale < scaleAlt ? scale : scaleAlt;
+        tw = (iw * s).clamp(1.0, double.infinity);
+        th = (ih * s).clamp(1.0, double.infinity);
+      } else if (boxFit == BoxFit.cover) {
+        final double scale = (tw / iw).clamp(0.0, double.infinity);
+        final double scaleAlt = (th / ih).clamp(0.0, double.infinity);
+        final double s = scale > scaleAlt ? scale : scaleAlt;
+        tw = (iw * s).clamp(1.0, double.infinity);
+        th = (ih * s).clamp(1.0, double.infinity);
+      } else if (boxFit == BoxFit.none) {
+        tw = iw;
+        th = ih;
+      }
+      targetWidth = tw.round();
+      targetHeight = th.round();
+    } else if (preferredWidth != null && preferredHeight == null && !intrinsic.isEmpty) {
+      final double iw = intrinsic.width;
+      final double ih = intrinsic.height;
+      final double ar = iw > 0 && ih > 0 ? iw / ih : 1.0;
+      targetWidth = preferredWidth;
+      targetHeight = (preferredWidth / ar).round();
+    } else if (preferredHeight != null && preferredWidth == null && !intrinsic.isEmpty) {
+      final double iw = intrinsic.width;
+      final double ih = intrinsic.height;
+      final double ar = iw > 0 && ih > 0 ? iw / ih : 1.0;
+      targetHeight = preferredHeight;
+      targetWidth = (preferredHeight * ar).round();
+    } else if (!intrinsic.isEmpty) {
+      targetWidth = intrinsic.width.round();
+      targetHeight = intrinsic.height.round();
+    } else {
+      // Fallback if no intrinsic size available
+      targetWidth = preferredWidth ?? 100;
+      targetHeight = preferredHeight ?? 100;
+    }
+
+    // Ensure minimum size
+    if (targetWidth <= 0) targetWidth = 1;
+    if (targetHeight <= 0) targetHeight = 1;
+
+    final Image image = await pictureInfo.picture.toImage(targetWidth, targetHeight);
+    final ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
+    if (byteData == null) {
+      throw StateError('Failed to rasterize SVG to PNG');
+    }
+    return byteData.buffer.asUint8List();
   }
 
   DimensionedMultiFrameImageStreamCompleter? _imageStreamCompleter;

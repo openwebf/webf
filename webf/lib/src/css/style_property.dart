@@ -4,6 +4,8 @@
  */
 
 import 'package:webf/css.dart';
+import 'package:webf/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:webf/src/css/css_animation.dart';
 
 // aB to a-b
@@ -126,17 +128,46 @@ class CSSStyleProperty {
     List<String?>? values = _getBackgroundValues(shorthandValue);
     if (values == null) return;
 
-    properties[BACKGROUND_COLOR] = values[0];
-    properties[BACKGROUND_IMAGE] = values[1];
-    properties[BACKGROUND_REPEAT] = values[2];
-    properties[BACKGROUND_ATTACHMENT] = values[3];
-    String? backgroundPosition = values[4];
-    if (backgroundPosition != null) {
-      List<String> positions = CSSPosition.parsePositionShorthand(backgroundPosition);
+    // Debug: log shorthand parsing input/output
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[background] shorthand input="' + shorthandValue + '" parsed=' + values.toString());
+    }
+
+    // Per CSS Backgrounds spec, unspecified subproperties reset to their initial values.
+    // Initials: color=transparent, image=none, repeat=repeat, attachment=scroll,
+    // position=0% 0%, size=auto. Origin/clip not parsed here.
+    final String color = values[0] ?? 'transparent';
+    final String image = values[1] ?? 'none';
+    final String repeat = values[2] ?? 'repeat';
+    final String attachment = values[3] ?? 'scroll';
+    final String? positionShorthand = values[4];
+    final String size = values[5] ?? 'auto';
+
+    properties[BACKGROUND_COLOR] = color;
+    properties[BACKGROUND_IMAGE] = image;
+    properties[BACKGROUND_REPEAT] = repeat;
+    properties[BACKGROUND_ATTACHMENT] = attachment;
+    if (positionShorthand != null) {
+      List<String> positions = CSSPosition.parsePositionShorthand(positionShorthand);
       properties[BACKGROUND_POSITION_X] = positions[0];
       properties[BACKGROUND_POSITION_Y] = positions[1];
+    } else {
+      // Reset to initial when not specified
+      properties[BACKGROUND_POSITION_X] = '0%';
+      properties[BACKGROUND_POSITION_Y] = '0%';
     }
-    properties[BACKGROUND_SIZE] = values[5];
+    properties[BACKGROUND_SIZE] = size;
+
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[background] expanded -> ' +
+          'color=' + properties[BACKGROUND_COLOR]!.toString() + ', ' +
+          'image=' + properties[BACKGROUND_IMAGE]!.toString() + ', ' +
+          'repeat=' + properties[BACKGROUND_REPEAT]!.toString() + ', ' +
+          'attachment=' + properties[BACKGROUND_ATTACHMENT]!.toString() + ', ' +
+          'position-x=' + properties[BACKGROUND_POSITION_X]!.toString() + ', ' +
+          'position-y=' + properties[BACKGROUND_POSITION_Y]!.toString() + ', ' +
+          'size=' + properties[BACKGROUND_SIZE]!.toString());
+    }
   }
 
   static void removeShorthandBackground(CSSStyleDeclaration style, [bool? isImportant]) {
@@ -398,7 +429,7 @@ class CSSStyleProperty {
     if (borderRightWidth != null) properties[BORDER_RIGHT_WIDTH] = borderRightWidth;
     if (borderBottomWidth != null) properties[BORDER_BOTTOM_WIDTH] = borderBottomWidth;
     if (borderLeftWidth != null) properties[BORDER_LEFT_WIDTH] = borderLeftWidth;
-    
+
     // Logical properties
     if (borderInlineStartWidth != null) properties[BORDER_INLINE_START_WIDTH] = borderInlineStartWidth;
     if (borderInlineStartStyle != null) properties[BORDER_INLINE_START_STYLE] = borderInlineStartStyle;
@@ -713,23 +744,34 @@ class CSSStyleProperty {
   }
 
   static List<String?>? _getTextDecorationValues(String shorthandProperty) {
-    List<String> values = _splitBySpace(shorthandProperty);
-    String? line;
+    List<String> tokens = _splitBySpace(shorthandProperty);
+    List<String> lines = [];
     String? color;
     String? style;
 
-    for (String value in values) {
-      if (line == null && CSSText.isValidTextTextDecorationLineValue(value)) {
-        line = value;
-      } else if (color == null && CSSColor.isColor(value)) {
-        color = value;
-      } else if (style == null && CSSText.isValidTextTextDecorationStyleValue(value)) {
-        style = value;
+    for (String token in tokens) {
+      if (CSSText.isValidTextTextDecorationLineValue(token)) {
+        // 'none' is exclusive per spec; cannot be combined with other values or color/style.
+        if (token == 'none') {
+          if (lines.isNotEmpty || color != null || style != null) return null;
+          lines = ['none'];
+        } else {
+          if (lines.contains('none')) return null; // mixing with 'none' is invalid
+          if (!lines.contains(token)) lines.add(token);
+        }
+      } else if (color == null && CSSColor.isColor(token)) {
+        if (lines.contains('none')) return null; // 'none' must not be combined with color
+        color = token;
+      } else if (style == null && CSSText.isValidTextTextDecorationStyleValue(token)) {
+        if (lines.contains('none')) return null; // 'none' must not be combined with style
+        style = token;
       } else {
+        // Unknown/invalid token for shorthand; treat as invalid shorthand.
         return null;
       }
     }
 
+    String? line = lines.isNotEmpty ? lines.join(' ') : null;
     return [line, color, style];
   }
 
@@ -1034,5 +1076,26 @@ class CSSStyleProperty {
     properties[ANIMATION_FILL_MODE] = values[5]?.toLowerCase();
     properties[ANIMATION_PLAY_STATE] = values[6]?.toLowerCase();
     properties[ANIMATION_NAME] = values[7];
+  }
+
+  // place-items shorthand
+  // Spec: place-items: <'align-items'> [ / <'justify-items'> ]?
+  // In flexbox, 'justify-items' has no effect. For WebF (no Grid layout),
+  // we expand only to align-items and ignore the optional second value.
+  static void setShorthandPlaceItems(Map<String, String?> properties, String shorthandValue) {
+    // Normalize any slash separators and collapse whitespace
+    shorthandValue = shorthandValue.replaceAll(_slashRegExp, ' ');
+    List<String> values = _splitBySpace(shorthandValue);
+
+    if (values.isEmpty) return;
+
+    String align = values[0];
+
+    // Expand to longhand supported by WebF (align-items only).
+    properties[ALIGN_ITEMS] = align;
+  }
+
+  static void removeShorthandPlaceItems(CSSStyleDeclaration style, [bool? isImportant]) {
+    if (style.contains(ALIGN_ITEMS)) style.removeProperty(ALIGN_ITEMS, isImportant);
   }
 }

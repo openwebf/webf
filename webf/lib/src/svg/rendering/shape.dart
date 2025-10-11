@@ -16,6 +16,9 @@ abstract class RenderSVGShape extends RenderBoxModel {
     required super.renderStyle,
   });
 
+  @override
+  void calculateBaseline() {}
+
   RenderSVGContainer? _rootRenderSVGContainer;
   RenderSVGContainer? findRoot() {
     if (_rootRenderSVGContainer != null) {

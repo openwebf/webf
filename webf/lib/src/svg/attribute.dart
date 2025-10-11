@@ -67,7 +67,7 @@ class DefsAttributeElement extends WidgetElement {
   }
 
   @override
-  RenderBoxModel? updateOrCreateRenderBoxModel(
+  RenderBoxModel? createRenderBoxModel(
       {flutter.Element? flutterWidgetElement}) {
     // do not needs to update
     return null;

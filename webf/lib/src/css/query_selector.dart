@@ -262,9 +262,9 @@ class SelectorEvaluator extends SelectorVisitor {
     switch (name) {
       case 'before':
       case 'after':
-        return true;
-      case 'first-line':
       case 'first-letter':
+      case 'first-line':
+        return true;
       default:
         return false;
     }

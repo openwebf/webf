@@ -38,7 +38,7 @@ class RenderChildSize extends RenderProxyBox {
     } else if (child is RenderPositionPlaceholder) {
       return child.boxSize;
     } else if (child is RenderTextBox) {
-      return child.boxSize;
+      return child.size;
     } else if (child.hasSize) {
       // child is WidgetElement.
       return child.size;
@@ -71,7 +71,7 @@ class RenderChildSize extends RenderProxyBox {
     } else if (child is RenderPositionPlaceholder) {
       return child.boxSize;
     } else if (child is RenderTextBox) {
-      return child.boxSize;
+      return child.size;
     } else if (child.hasSize) {
       // child is WidgetElement.
       return child.size;
@@ -223,7 +223,7 @@ class RenderChildSize extends RenderProxyBox {
     RenderBox? preChild;
     double maxSizeAboveBaseline = 0;
     double maxSizeBelowBaseline = 0;
-    Map<int?, RenderBox> runChildren = {};
+    List<RenderBox> runChildren = [];
 
     children.forEachIndexed((int index, RenderBox child) {
       if (!child.attached) return;
@@ -238,10 +238,9 @@ class RenderChildSize extends RenderProxyBox {
         _runMetrics.add(RunMetrics(
           runMainAxisExtent,
           runCrossAxisExtent,
-          maxSizeAboveBaseline,
           runChildren,
         ));
-        runChildren = {};
+        runChildren = [];
         runMainAxisExtent = 0.0;
         runCrossAxisExtent = 0.0;
         maxSizeAboveBaseline = 0.0;
@@ -298,7 +297,6 @@ class RenderChildSize extends RenderProxyBox {
       _runMetrics.add(RunMetrics(
         runMainAxisExtent,
         runCrossAxisExtent,
-        maxSizeAboveBaseline,
         runChildren,
       ));
     }

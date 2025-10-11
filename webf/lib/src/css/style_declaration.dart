@@ -3,8 +3,11 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/html.dart';
@@ -35,6 +38,8 @@ const Map<String, bool> _CSSShorthandProperty = {
   FLEX: true,
   FLEX_FLOW: true,
   GAP: true,
+  // WebF shorthand: maps to align-items + justify-content
+  PLACE_ITEMS: true,
   OVERFLOW: true,
   TRANSITION: true,
   TEXT_DECORATION: true,
@@ -43,6 +48,8 @@ const Map<String, bool> _CSSShorthandProperty = {
 
 // Reorder the properties for control render style init order, the last is the largest.
 List<String> _propertyOrders = [
+  // Ensure direction is resolved before logical properties mapping
+  DIRECTION,
   LINE_CLAMP,
   WHITE_SPACE,
   FONT_SIZE,
@@ -109,6 +116,23 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     target?.markAfterPseudoElementNeedsUpdate();
   }
 
+  // ::first-letter pseudo style (applies to the first typographic letter)
+  CSSStyleDeclaration? _pseudoFirstLetterStyle;
+  CSSStyleDeclaration? get pseudoFirstLetterStyle => _pseudoFirstLetterStyle;
+  set pseudoFirstLetterStyle(CSSStyleDeclaration? newStyle) {
+    _pseudoFirstLetterStyle = newStyle;
+    // Trigger a layout rebuild so IFC can re-shape text for first-letter styling
+    target?.markFirstLetterPseudoNeedsUpdate();
+  }
+
+  // ::first-line pseudo style (applies to only the first formatted line)
+  CSSStyleDeclaration? _pseudoFirstLineStyle;
+  CSSStyleDeclaration? get pseudoFirstLineStyle => _pseudoFirstLineStyle;
+  set pseudoFirstLineStyle(CSSStyleDeclaration? newStyle) {
+    _pseudoFirstLineStyle = newStyle;
+    target?.markFirstLinePseudoNeedsUpdate();
+  }
+
   CSSStyleDeclaration([BindingContext? context]): super(context);
 
   // ignore: prefer_initializing_formals
@@ -160,6 +184,11 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     return _pendingProperties[propertyName]?.value ?? _properties[propertyName]?.value ?? EMPTY_STRING;
   }
 
+  /// Returns the baseHref associated with a property value if available.
+  String? getPropertyBaseHref(String propertyName) {
+    return _pendingProperties[propertyName]?.baseHref ?? _properties[propertyName]?.baseHref;
+  }
+
   /// Removes a property from the CSS declaration.
   void removeProperty(String propertyName, [bool? isImportant]) {
     switch (propertyName) {
@@ -173,6 +202,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         return CSSStyleProperty.removeShorthandBackgroundPosition(this, isImportant);
       case BORDER_RADIUS:
         return CSSStyleProperty.removeShorthandBorderRadius(this, isImportant);
+      case PLACE_ITEMS:
+        return CSSStyleProperty.removeShorthandPlaceItems(this, isImportant);
       case OVERFLOW:
         return CSSStyleProperty.removeShorthandOverflow(this, isImportant);
       case FONT:
@@ -225,7 +256,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     _pendingProperties[propertyName] = CSSPropertyValue(present);
   }
 
-  void _expandShorthand(String propertyName, String normalizedValue, bool? isImportant) {
+  void _expandShorthand(String propertyName, String normalizedValue, bool? isImportant, {String? baseHref}) {
     Map<String, String?> longhandProperties;
     String cacheKey = '$propertyName:$normalizedValue';
     if (_cachedExpandedShorthand.containsKey(cacheKey)) {
@@ -241,13 +272,58 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
           CSSStyleProperty.setShorthandMargin(longhandProperties, normalizedValue);
           break;
         case BACKGROUND:
+          if (kDebugMode && DebugFlags.enableCssLogs) {
+            cssLogger.fine('[background] expand shorthand: "' + normalizedValue + '"');
+          }
+          // Purge existing background longhands to avoid stale reapplication
+          // when mixing separate longhands with a new background shorthand.
+          // This mirrors how a shorthand overwrites subproperties in the same
+          // declaration block.
+          const bgKeys = [
+            BACKGROUND_COLOR,
+            BACKGROUND_IMAGE,
+            BACKGROUND_REPEAT,
+            BACKGROUND_ATTACHMENT,
+            BACKGROUND_POSITION,
+            BACKGROUND_POSITION_X,
+            BACKGROUND_POSITION_Y,
+            BACKGROUND_SIZE,
+            BACKGROUND_CLIP,
+            BACKGROUND_ORIGIN,
+          ];
+          for (final k in bgKeys) {
+            _pendingProperties.remove(k);
+            _properties.remove(k);
+            _sheetStyle.remove(k);
+          }
+          // Keep inlineStyle map in sync with JS style.* assignments so
+          // subsequent _applyInlineStyle won't resurrect old values.
+          if (target != null) {
+            for (final k in bgKeys) {
+              target!.inlineStyle.remove(k);
+            }
+          }
           CSSStyleProperty.setShorthandBackground(longhandProperties, normalizedValue);
+          if (target != null) {
+            // Write expanded longhands back to inlineStyle so it's the new source of truth.
+            longhandProperties.forEach((String k, String? v) {
+              if (v != null) {
+                target!.inlineStyle[k] = v;
+              }
+            });
+          }
+          if (kDebugMode && DebugFlags.enableCssLogs) {
+            cssLogger.fine('[background] longhands: ' + longhandProperties.toString());
+          }
           break;
         case BACKGROUND_POSITION:
           CSSStyleProperty.setShorthandBackgroundPosition(longhandProperties, normalizedValue);
           break;
         case BORDER_RADIUS:
           CSSStyleProperty.setShorthandBorderRadius(longhandProperties, normalizedValue);
+          break;
+        case PLACE_ITEMS:
+          CSSStyleProperty.setShorthandPlaceItems(longhandProperties, normalizedValue);
           break;
         case OVERFLOW:
           CSSStyleProperty.setShorthandOverflow(longhandProperties, normalizedValue);
@@ -293,7 +369,10 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
     if (longhandProperties.isNotEmpty) {
       longhandProperties.forEach((String propertyName, String? value) {
-        setProperty(propertyName, value, isImportant: isImportant);
+        // Preserve the baseHref from the originating declaration so any
+        // url(...) in expanded longhands (e.g., background-image) resolve
+        // relative to the stylesheet that contained the shorthand.
+        setProperty(propertyName, value, isImportant: isImportant, baseHref: baseHref);
       });
     }
   }
@@ -418,8 +497,18 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         if (!CSSBackground.isValidBackgroundRepeatValue(normalizedValue)) return false;
         break;
       case FONT_SIZE:
-        CSSLengthValue parsedFontSize = CSSLength.parseLength(normalizedValue, null);
-        if (parsedFontSize == CSSLengthValue.unknown && !CSSText.isValidFontSizeValue(normalizedValue)) return false;
+        // font-size does not allow negative values.
+        // Allow:
+        //  - non-negative <length>
+        //  - non-negative <percentage>
+        //  - keywords (absolute/relative sizes)
+        //  - var()/calc() functions (validated at resolve-time)
+        final bool isVar = CSSVariable.isCSSVariableValue(normalizedValue);
+        final bool isFunc = CSSFunction.isFunction(normalizedValue);
+        final bool isNonNegLen = CSSLength.isNonNegativeLength(normalizedValue);
+        final bool isNonNegPct = CSSPercentage.isNonNegativePercentage(normalizedValue);
+        final bool isKeyword = CSSText.isValidFontSizeValue(normalizedValue);
+        if (!(isVar || isFunc || isNonNegLen || isNonNegPct || isKeyword)) return false;
         break;
     }
     return true;
@@ -441,7 +530,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     if (!_isValidValue(propertyName, normalizedValue)) return;
 
     if (_CSSShorthandProperty[propertyName] != null) {
-      return _expandShorthand(propertyName, normalizedValue, isImportant);
+      return _expandShorthand(propertyName, normalizedValue, isImportant, baseHref: baseHref);
     }
 
     // From style sheet mark the property important as false.
@@ -475,6 +564,9 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       CSSPropertyValue currentValue = _pendingProperties[DISPLAY]!;
       _properties[DISPLAY] = currentValue;
       _pendingProperties.remove(DISPLAY);
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[display] <' + (_target.tagName) + '> ' + (prevValue?.value ?? 'null') + ' -> ' + currentValue.value);
+      }
       _emitPropertyChanged(DISPLAY, prevValue?.value, currentValue.value, baseHref: currentValue.baseHref);
     }
   }
@@ -527,6 +619,27 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       return 0;
     });
 
+    // Group debug: background-related properties flush summary
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      final bgKeys = <String>{
+        BACKGROUND,
+        BACKGROUND_COLOR,
+        BACKGROUND_IMAGE,
+        BACKGROUND_REPEAT,
+        BACKGROUND_ATTACHMENT,
+        BACKGROUND_POSITION,
+        BACKGROUND_POSITION_X,
+        BACKGROUND_POSITION_Y,
+        BACKGROUND_SIZE,
+        BACKGROUND_CLIP,
+        BACKGROUND_ORIGIN,
+      };
+      final List<String> bgChanged = propertyNames.where((k) => bgKeys.contains(k)).toList();
+      if (bgChanged.isNotEmpty) {
+        cssLogger.fine('[background] flush begin: ' + bgChanged.join(', '));
+      }
+    }
+
     for (String propertyName in propertyNames) {
       CSSPropertyValue? prevValue = prevValues[propertyName];
       CSSPropertyValue currentValue = pendingProperties[propertyName]!;
@@ -534,6 +647,9 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
 
     onStyleFlushed?.call(propertyNames);
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[style] updateStyleIfNeeded: flushed ' + propertyNames.length.toString() + ' properties');
+    }
   }
 
   // Inserts the style of the given Declaration into the current Declaration.
@@ -566,6 +682,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
     List<CSSStyleRule> beforeRules = [];
     List<CSSStyleRule> afterRules = [];
+    List<CSSStyleRule> firstLetterRules = [];
+    List<CSSStyleRule> firstLineRules = [];
 
     for (CSSStyleRule style in rules) {
       for (Selector selector in style.selectorGroup.selectors) {
@@ -575,6 +693,10 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
               beforeRules.add(style);
             } else if (sequence.simpleSelector.name == 'after') {
               afterRules.add(style);
+            } else if (sequence.simpleSelector.name == 'first-letter') {
+              firstLetterRules.add(style);
+            } else if (sequence.simpleSelector.name == 'first-line') {
+              firstLineRules.add(style);
             }
           }
         }
@@ -592,6 +714,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     // sort selector
     beforeRules.sort(sortRules);
     afterRules.sort(sortRules);
+    firstLetterRules.sort(sortRules);
+    firstLineRules.sort(sortRules);
 
     if (beforeRules.isNotEmpty) {
       pseudoBeforeStyle ??= CSSStyleDeclaration();
@@ -612,6 +736,26 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       parentElement.markAfterPseudoElementNeedsUpdate();
     } else if (afterRules.isEmpty && pseudoAfterStyle != null) {
       pseudoAfterStyle = null;
+    }
+
+    if (firstLetterRules.isNotEmpty) {
+      pseudoFirstLetterStyle ??= CSSStyleDeclaration();
+      for (CSSStyleRule rule in firstLetterRules) {
+        pseudoFirstLetterStyle!.union(rule.declaration);
+      }
+      parentElement.markFirstLetterPseudoNeedsUpdate();
+    } else if (firstLetterRules.isEmpty && pseudoFirstLetterStyle != null) {
+      pseudoFirstLetterStyle = null;
+    }
+
+    if (firstLineRules.isNotEmpty) {
+      pseudoFirstLineStyle ??= CSSStyleDeclaration();
+      for (CSSStyleRule rule in firstLineRules) {
+        pseudoFirstLineStyle!.union(rule.declaration);
+      }
+      parentElement.markFirstLinePseudoNeedsUpdate();
+    } else if (firstLineRules.isEmpty && pseudoFirstLineStyle != null) {
+      pseudoFirstLineStyle = null;
     }
   }
 
@@ -657,6 +801,12 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     if (other.pseudoAfterStyle != null) {
       pseudoAfterStyle?.merge(other.pseudoAfterStyle!);
     }
+    if (other.pseudoFirstLetterStyle != null) {
+      pseudoFirstLetterStyle?.merge(other.pseudoFirstLetterStyle!);
+    }
+    if (other.pseudoFirstLineStyle != null) {
+      pseudoFirstLineStyle?.merge(other.pseudoFirstLineStyle!);
+    }
 
     return updateStatus;
   }
@@ -687,6 +837,9 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     if (original == present && (!CSSVariable.isCSSVariableValue(present))) return;
 
     if (onStyleChanged != null) {
+      if (kDebugMode && DebugFlags.enableCssLogs && (property == COLOR || property == BACKGROUND_COLOR)) {
+        cssLogger.fine('[style] emit change: ' + property + ' prev=' + (original ?? 'null') + ' curr=' + present);
+      }
       onStyleChanged!(property, original, present, baseHref: baseHref);
     }
 

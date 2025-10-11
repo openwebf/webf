@@ -313,6 +313,27 @@ class CSSBorderSide {
       case DASHED:
         borderStyle = CSSBorderStyleType.dashed;
         break;
+      case DOTTED:
+        borderStyle = CSSBorderStyleType.dotted;
+        break;
+      case DOUBLE:
+        borderStyle = CSSBorderStyleType.double;
+        break;
+      case GROOVE:
+        borderStyle = CSSBorderStyleType.groove;
+        break;
+      case RIDGE:
+        borderStyle = CSSBorderStyleType.ridge;
+        break;
+      case INSET:
+        borderStyle = CSSBorderStyleType.inset;
+        break;
+      case OUTSET:
+        borderStyle = CSSBorderStyleType.outset;
+        break;
+      case HIDDEN:
+        borderStyle = CSSBorderStyleType.hidden;
+        break;
       case NONE:
       default:
         borderStyle = CSSBorderStyleType.none;
@@ -348,7 +369,16 @@ class CSSBorderSide {
   }
 
   static bool isValidBorderStyleValue(String value) {
-    return value == SOLID || value == NONE || value == DASHED;
+    return value == SOLID ||
+        value == NONE ||
+        value == DASHED ||
+        value == DOTTED ||
+        value == DOUBLE ||
+        value == HIDDEN ||
+        value == INSET ||
+        value == OUTSET ||
+        value == GROOVE ||
+        value == RIDGE;
   }
 
   static bool isValidBorderWidthValue(String value) {

@@ -24,7 +24,10 @@ class CSSStyleSheet implements StyleSheet, Comparable {
   CSSStyleSheet(this.cssRules, {this.disabled = false, this.href});
 
   insertRule(String text, int index, {required double windowWidth, required double windowHeight, required bool isDarkMode}) {
-    List<CSSRule> rules = CSSParser(text).parseRules(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: isDarkMode);
+    // Parse with this stylesheet's href so relative URLs in inserted rules
+    // resolve against the stylesheet URL, not the document URL.
+    List<CSSRule> rules = CSSParser(text, href: href)
+        .parseRules(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: isDarkMode);
     cssRules.addAll(rules);
   }
 
@@ -36,7 +39,9 @@ class CSSStyleSheet implements StyleSheet, Comparable {
   /// Synchronously replaces the content of the stylesheet with the content passed into it.
   replaceSync(String text, {required double windowWidth, required double windowHeight, required bool? isDarkMode}) {
     cssRules.clear();
-    List<CSSRule> rules = CSSParser(text).parseRules(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: isDarkMode);
+    // Preserve href so relative URLs continue to resolve correctly after replace.
+    List<CSSRule> rules = CSSParser(text, href: href)
+        .parseRules(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: isDarkMode);
     cssRules.addAll(rules);
   }
 

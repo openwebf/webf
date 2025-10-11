@@ -117,6 +117,7 @@ const String LINE_HEIGHT = 'lineHeight';
 const String FONT_FAMILY = 'fontFamily';
 const String VERTICAL_ALIGN = 'verticalAlign';
 const String TEXT_OVERFLOW = 'textOverflow';
+const String TEXT_TRANSFORM = 'textTransform';
 const String TEXT_DECORATION = 'textDecoration';
 const String TEXT_DECORATION_LINE = 'textDecorationLine';
 const String TEXT_DECORATION_COLOR = 'textDecorationColor';
@@ -126,6 +127,8 @@ const String LETTER_SPACING = 'letterSpacing';
 const String WORD_SPACING = 'wordSpacing';
 const String WHITE_SPACE = 'whiteSpace';
 const String LINE_CLAMP = 'lineClamp';
+const String TAB_SIZE = 'tabSize';
+const String TEXT_INDENT = 'textIndent';
 
 const String FLEX = 'flex';
 const String FLEX_GROW = 'flexGrow';
@@ -145,11 +148,17 @@ const String TEXT_ALIGN = 'textAlign';
 const String ALIGN_ITEMS = 'alignItems';
 const String ALIGN_SELF = 'alignSelf';
 const String ALIGN_CONTENT = 'alignContent';
+// Shorthand: place-items -> align-items + justify-content (WebF extension maps justify to justify-content)
+const String PLACE_ITEMS = 'placeItems';
+
+const String DIRECTION = 'direction';
+const String UNICODE_BIDI = 'unicodeBidi';
 
 const String SLIVER_DIRECTION = 'sliverDirection';
 
 const String TRANSFORM = 'transform';
 const String TRANSFORM_ORIGIN = 'transformOrigin';
+const String WRITING_MODE = 'writingMode';
 
 const String TRANSITION = 'transition';
 const String TRANSITION_PROPERTY = 'transitionProperty';
@@ -231,6 +240,11 @@ const String ITALIC = 'italic';
 const String LINE_THROUGH = 'line-through';
 const String UNDERLINE = 'underline';
 const String DOTTED = 'dotted';
+const String DOUBLE = 'double';
+// Additional border-style keywords
+const String GROOVE = 'groove';
+const String RIDGE = 'ridge';
+const String OUTSET = 'outset';
 
 // Display
 const String INLINE = 'inline';
@@ -319,6 +333,7 @@ const String VMAX = 'vmax';
 const String EM = 'em';
 const String REM = 'rem';
 const String CH = 'ch';
+const String EX = 'ex';
 
 // Functions
 const String ENV = 'env';

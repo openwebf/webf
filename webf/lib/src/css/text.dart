@@ -4,11 +4,13 @@
  */
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/rendering.dart';
-import 'package:webf/src/rendering/text_span.dart';
 
 final RegExp _commaRegExp = RegExp(r'\s*,\s*');
 
@@ -39,6 +41,9 @@ mixin CSSTextMixin on RenderStyle {
   set color(CSSColor? value) {
     if (_color == value) return;
     _color = value?.value;
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[text] set color <- ' + (value?.cssText() ?? 'null'));
+    }
     // Update all the children text with specified style property not set due to style inheritance.
     _markChildrenTextNeedsLayout(this, COLOR);
   }
@@ -72,8 +77,12 @@ mixin CSSTextMixin on RenderStyle {
 
   CSSColor? _textDecorationColor;
 
+  // Per CSS Text Decoration spec, the initial value of text-decoration-color
+  // is currentColor. If not explicitly specified on the element, use the
+  // element's currentColor so decorations have a visible color by default
+  // (instead of falling back to null/engine-defaults).
   CSSColor? get textDecorationColor {
-    return _textDecorationColor;
+    return _textDecorationColor ?? currentColor;
   }
 
   set textDecorationColor(CSSColor? value) {
@@ -217,7 +226,17 @@ mixin CSSTextMixin on RenderStyle {
   @override
   CSSLengthValue get lineHeight {
     if (_lineHeight == null && getParentRenderStyle() != null) {
-      CSSLengthValue parentLengthValue = getParentRenderStyle()!.lineHeight;
+      // Inherit from parent. For percentage-specified line-height, freeze to the
+      // parent’s used value (absolute px) so nested elements don’t amplify spacing
+      // when their font-size differs. Unitless numbers (EM here) continue to inherit
+      // as a multiplier to match CSS behavior.
+      final CSSLengthValue parentLengthValue = getParentRenderStyle()!.lineHeight;
+      if (parentLengthValue.type == CSSLengthType.PERCENTAGE) {
+        // Resolve percentage against the parent’s own font-size, then inherit as px.
+        final double usedPx = parentLengthValue.computedValue;
+        return CSSLengthValue(usedPx, CSSLengthType.PX, this, parentLengthValue.propertyName,
+            parentLengthValue.axisType);
+      }
       return CSSLengthValue(parentLengthValue.value, parentLengthValue.type, this, parentLengthValue.propertyName,
           parentLengthValue.axisType);
     }
@@ -270,6 +289,23 @@ mixin CSSTextMixin on RenderStyle {
     _markChildrenTextNeedsLayout(this, WORD_SPACING);
   }
 
+  // text-indent (inherited)
+  CSSLengthValue? _textIndent;
+
+  CSSLengthValue get textIndent {
+    final parent = getParentRenderStyle<CSSRenderStyle>();
+    if (_textIndent == null && parent != null) {
+      return parent.textIndent;
+    }
+    return _textIndent ?? CSSLengthValue.zero;
+  }
+
+  set textIndent(CSSLengthValue? value) {
+    if (_textIndent == value) return;
+    _textIndent = value;
+    _markChildrenTextNeedsLayout(this, TEXT_INDENT);
+  }
+
   List<Shadow>? _textShadow;
 
   @override
@@ -280,6 +316,24 @@ mixin CSSTextMixin on RenderStyle {
       return getParentRenderStyle()!.textShadow;
     }
     return _textShadow;
+  }
+
+  // text-transform (inherited)
+  TextTransform? _textTransform;
+
+  TextTransform get textTransform {
+    final parent = getParentRenderStyle<CSSRenderStyle>();
+    if (_textTransform == null && parent != null) {
+      return parent.textTransform;
+    }
+    return _textTransform ?? TextTransform.none;
+  }
+
+  set textTransform(TextTransform? value) {
+    if (_textTransform == value) return;
+    _textTransform = value;
+    // Inherited: update descendants’ text layout
+    _markChildrenTextNeedsLayout(this, TEXT_TRANSFORM);
   }
 
   set textShadow(List<Shadow>? value) {
@@ -373,6 +427,53 @@ mixin CSSTextMixin on RenderStyle {
     _markNestFlowLayoutNeedsLayout(this, TEXT_ALIGN);
   }
 
+  TextDirection? _direction;
+
+  @override
+  TextDirection get direction {
+    // CSS 'direction' is inherited via the DOM parent chain. For out-of-flow
+    // render reparenting (e.g., positioned elements), prefer the DOM parent’s
+    // renderStyle over the render tree parent to ensure correct inheritance.
+    if (_direction != null) return _direction!;
+    final dom.Element? domParent = target.parentElement;
+    if (domParent != null) {
+      return domParent.renderStyle.direction;
+    }
+    // Fallback to render parent when DOM parent is unavailable (e.g., root).
+    final RenderStyle? renderParent = getParentRenderStyle();
+    if (renderParent != null) return renderParent.direction;
+    return TextDirection.ltr;
+  }
+
+  set direction(TextDirection? value) {
+    if (_direction == value) return;
+    _direction = value;
+    // Update all the children text and flow layout with specified style property not set due to style inheritance.
+    _markNestChildrenTextAndLayoutNeedsLayout(this, DIRECTION);
+  }
+
+  double? _tabSize;
+
+  double get tabSize {
+    // Get style from self or closest parent if specified style property is not set
+    // due to style inheritance.
+    if (_tabSize == null && getParentRenderStyle() != null) {
+      final parent = getParentRenderStyle();
+      if (parent is CSSTextMixin) {
+        return (parent as CSSTextMixin).tabSize;
+      }
+    }
+    // Default tab size is 8 space characters
+    return _tabSize ?? 8.0;
+  }
+
+  set tabSize(double? value) {
+    if (_tabSize == value) return;
+    _tabSize = value;
+    // Update all the children text with specified style property not set due to style inheritance.
+    _markChildrenTextNeedsLayout(this, TAB_SIZE);
+  }
+
   // Mark flow layout and all the children flow layout with specified style property not set needs layout.
   void _markNestFlowLayoutNeedsLayout(RenderStyle renderStyle, String styleProperty) {
     if (renderStyle.isSelfRenderFlowLayout()) {
@@ -404,9 +505,6 @@ mixin CSSTextMixin on RenderStyle {
           if (child.renderStyle.target.style[styleProperty].isEmpty) {
             _markNestChildrenTextAndLayoutNeedsLayout(child.renderStyle, styleProperty);
           }
-        } else if (child is RenderTextBox) {
-          WebFRenderParagraph renderParagraph = child.child as WebFRenderParagraph;
-          renderParagraph.markNeedsLayout();
         } else {
           child.visitChildren(visitor);
         }
@@ -422,8 +520,7 @@ mixin CSSTextMixin on RenderStyle {
   void _markTextNeedsLayout() {
     visitor(RenderObject child) {
       if (child is RenderTextBox) {
-        WebFRenderParagraph renderParagraph = child.child as WebFRenderParagraph;
-        renderParagraph.markNeedsLayout();
+        child.renderStyle.markNeedsLayout();
       } else {
         child.visitChildren(visitor);
       }
@@ -438,9 +535,7 @@ mixin CSSTextMixin on RenderStyle {
   void _markChildrenTextNeedsLayout(RenderStyle renderStyle, String styleProperty) {
     visitor(dom.Node child) {
       if (child is dom.TextNode) {
-        RenderTextBox? renderTextBox = child.attachedRenderer as RenderTextBox?;
-        WebFRenderParagraph? renderParagraph = renderTextBox?.child as WebFRenderParagraph?;
-        renderParagraph?.markNeedsLayout();
+        child.parentElement!.attachedRenderer?.markNeedsLayout();
       }
 
       if (child is dom.Element && child.style[styleProperty].isEmpty) {
@@ -452,28 +547,34 @@ mixin CSSTextMixin on RenderStyle {
   }
 
   static TextAlign? resolveTextAlign(String value) {
-    TextAlign? alignment;
-
+    // CSS mapping: left/right are physical; start/end are logical.
     switch (value) {
-      case 'end':
-      case 'right':
-        alignment = TextAlign.end;
-        break;
-      case 'center':
-        alignment = TextAlign.center;
-        break;
-      case 'justify':
-        alignment = TextAlign.justify;
-        break;
-      case 'start':
       case 'left':
-        alignment = TextAlign.start;
-      // Like inherit, which is the same with parent element.
-      // Not impl it due to performance consideration.
-      // case 'match-parent':
+        return TextAlign.left;
+      case 'right':
+        return TextAlign.right;
+      case 'start':
+        return TextAlign.start;
+      case 'end':
+        return TextAlign.end;
+      case 'center':
+        return TextAlign.center;
+      case 'justify':
+        return TextAlign.justify;
+      default:
+        return null;
     }
+  }
 
-    return alignment;
+  static TextDirection? resolveDirection(String value) {
+    switch (value) {
+      case 'rtl':
+        return TextDirection.rtl;
+      case 'ltr':
+        return TextDirection.ltr;
+      default:
+        return null;
+    }
   }
 
   static TextSpan createTextSpan(
@@ -483,6 +584,14 @@ mixin CSSTextMixin on RenderStyle {
     double? height,
     TextSpan? oldTextSpan,
   }) {
+    // Ensure font is loaded for the specific weight before creating TextStyle
+    List<String>? fontFamilies = renderStyle.fontFamily;
+    if (fontFamilies != null && fontFamilies.isNotEmpty) {
+      String primaryFontFamily = fontFamilies[0];
+      // Fire and forget - the font will be available for the next frame
+      CSSFontFace.ensureFontLoaded(primaryFontFamily, renderStyle.fontWeight, renderStyle);
+    }
+
     // Creates a new TextStyle object.
     //   color: The color to use when painting the text. If this is specified, foreground must be null.
     //   decoration: The decorations to paint near the text (e.g., an underline).
@@ -498,13 +607,20 @@ mixin CSSTextMixin on RenderStyle {
     //   locale: The locale used to select region-specific glyphs.
     //   background: The paint drawn as a background for the text.
     //   foreground: The paint used to draw the text. If this is specified, color must be null.
+    // Respect visibility:hidden: do not paint text or its decorations but keep layout.
+    final bool _hidden = renderStyle.isVisibilityHidden;
+    final Color? _effectiveColor = _hidden
+        ? const Color(0x00000000)
+        : (renderStyle.backgroundClip != CSSBackgroundBoundary.text ? color ?? renderStyle.color.value : null);
+
     TextStyle textStyle = TextStyle(
-        color: renderStyle.backgroundClip != CSSBackgroundBoundary.text ? color ?? renderStyle.color.value : null,
-        decoration: renderStyle.textDecorationLine,
-        decorationColor: renderStyle.textDecorationColor?.value,
+        color: _effectiveColor,
+        decoration: _hidden ? TextDecoration.none : renderStyle.textDecorationLine,
+        decorationColor: _hidden ? const Color(0x00000000) : renderStyle.textDecorationColor?.value,
         decorationStyle: renderStyle.textDecorationStyle,
         fontWeight: renderStyle.fontWeight,
         fontStyle: renderStyle.fontStyle,
+        fontFamily: (renderStyle.fontFamily != null && renderStyle.fontFamily!.isNotEmpty) ? renderStyle.fontFamily!.first : null,
         fontFamilyFallback: renderStyle.fontFamily,
         fontSize: renderStyle.fontSize.computedValue,
         letterSpacing: renderStyle.letterSpacing?.computedValue,
@@ -519,7 +635,7 @@ mixin CSSTextMixin on RenderStyle {
     if (oldTextSpan != null && oldTextSpan.text == text && oldTextSpan.style == textStyle) {
       return oldTextSpan;
     }
-    return WebFTextSpan(text: text, style: textStyle, children: []);
+    return TextSpan(text: text, style: textStyle, children: []);
   }
 }
 
@@ -572,8 +688,8 @@ class CSSText {
     if (value.isNotEmpty) {
       if (CSSLength.isNonNegativeLength(value) || CSSPercentage.isNonNegativePercentage(value)) {
         CSSLengthValue lineHeight = CSSLength.parseLength(value, renderStyle, propertyName);
-        // Line-height 0 and negative value is considered invalid.
-        if (lineHeight.computedValue != double.infinity && lineHeight.computedValue > 0) {
+        // Per CSS Inline spec, line-height accepts non-negative values. Zero is valid.
+        if (lineHeight.computedValue != double.infinity && lineHeight.computedValue >= 0) {
           return lineHeight;
         }
       } else if (value == NORMAL) {
@@ -589,19 +705,36 @@ class CSSText {
   }
 
   /// In CSS2.1, text-decoration determin the type of text decoration,
-  /// but in CSS3, which is text-decoration-line.
+  /// but in CSS3, which is text-decoration-line. This resolver accepts
+  /// multiple space-separated line keywords and combines them.
   static TextDecoration resolveTextDecorationLine(String present) {
-    switch (present) {
-      case 'line-through':
-        return TextDecoration.lineThrough;
-      case 'overline':
-        return TextDecoration.overline;
-      case 'underline':
-        return TextDecoration.underline;
-      case 'none':
-      default:
-        return TextDecoration.none;
+    if (present.isEmpty) return TextDecoration.none;
+    final parts = present.trim().split(RegExp(r"\s+"));
+    // If 'none' is present with any other token, treat as none.
+    if (parts.contains('none')) return TextDecoration.none;
+
+    final List<TextDecoration> lines = [];
+    for (final p in parts) {
+      switch (p) {
+        case 'line-through':
+          if (!lines.contains(TextDecoration.lineThrough)) lines.add(TextDecoration.lineThrough);
+          break;
+        case 'overline':
+          if (!lines.contains(TextDecoration.overline)) lines.add(TextDecoration.overline);
+          break;
+        case 'underline':
+          if (!lines.contains(TextDecoration.underline)) lines.add(TextDecoration.underline);
+          break;
+        // Ignore unknown tokens; they make the longhand invalid in strict CSS,
+        // but our resolver defaults to none if nothing valid is found.
+        default:
+          break;
+      }
     }
+
+    if (lines.isEmpty) return TextDecoration.none;
+    if (lines.length == 1) return lines.first;
+    return TextDecoration.combine(lines);
   }
 
   static WhiteSpace resolveWhiteSpace(String value) {
@@ -637,6 +770,98 @@ class CSSText {
       default:
         return TextOverflow.clip;
     }
+  }
+
+  static TextTransform resolveTextTransform(String value) {
+    switch (value) {
+      case 'uppercase':
+        return TextTransform.uppercase;
+      case 'lowercase':
+        return TextTransform.lowercase;
+      case 'capitalize':
+        return TextTransform.capitalize;
+      case 'none':
+      default:
+        return TextTransform.none;
+    }
+  }
+
+  static String applyTextTransform(String input, TextTransform transform) {
+    if (input.isEmpty || transform == TextTransform.none) return input;
+    switch (transform) {
+      case TextTransform.uppercase:
+        return input.toUpperCase();
+      case TextTransform.lowercase:
+        return input.toLowerCase();
+      case TextTransform.capitalize:
+        return _capitalize(input);
+      case TextTransform.none:
+        return input;
+    }
+  }
+
+  // Visible for inline builder to preserve capitalization across inline boundaries.
+  static (String, bool) applyTextTransformWithCarry(String input, TextTransform transform, bool atWordStart) {
+    if (input.isEmpty || transform == TextTransform.none) return (input, atWordStart);
+    switch (transform) {
+      case TextTransform.uppercase:
+        final out = input.toUpperCase();
+        return (out, out.isNotEmpty ? isWordBoundary(out.codeUnitAt(out.length - 1)) : atWordStart);
+      case TextTransform.lowercase:
+        final out = input.toLowerCase();
+        return (out, out.isNotEmpty ? isWordBoundary(out.codeUnitAt(out.length - 1)) : atWordStart);
+      case TextTransform.capitalize:
+        final sb = StringBuffer();
+        bool aws = atWordStart;
+        for (int i = 0; i < input.length; i++) {
+          final cu = input.codeUnitAt(i);
+          final ch = String.fromCharCode(cu);
+          if (aws) {
+            sb.write(ch.toUpperCase());
+            aws = false;
+          } else {
+            sb.write(ch);
+          }
+          if (isWordBoundary(cu)) aws = true;
+        }
+        final out = sb.toString();
+        return (out, aws);
+      case TextTransform.none:
+        return (input, atWordStart);
+    }
+  }
+
+  // Expose boundary check for builder carry logic.
+  static bool isWordBoundary(int codeUnit) => _isWordBoundary(codeUnit);
+
+  static bool _isWordBoundary(int codeUnit) {
+    // Treat whitespace, NBSP, and common punctuation/hyphen as word boundaries.
+    const nbsp = 0x00A0;
+    if (codeUnit == nbsp) return true;
+    final ch = String.fromCharCode(codeUnit);
+    const seps = ' \t\r\n\f\v\u2028\u2029';
+    if (seps.contains(ch)) return true;
+    const punct = '-\u2011_.,:;!?()[]{}"\'&';
+    return punct.contains(ch);
+  }
+
+  static String _capitalize(String s) {
+    final sb = StringBuffer();
+    bool atWordStart = true;
+    for (int i = 0; i < s.length; i++) {
+      final cu = s.codeUnitAt(i);
+      if (atWordStart) {
+        final ch = String.fromCharCode(cu);
+        sb.write(ch.toUpperCase());
+        atWordStart = false;
+      } else {
+        sb.writeCharCode(cu);
+      }
+      if (_isWordBoundary(cu)) {
+        atWordStart = true;
+      }
+    }
+    return sb.toString();
   }
 
   static TextDecorationStyle resolveTextDecorationStyle(String present) {
@@ -721,7 +946,18 @@ class CSSText {
       case 'larger':
         return CSSLengthValue(6 / 5, CSSLengthType.EM, renderStyle, propertyName);
       default:
-        return CSSLength.parseLength(fontSize, renderStyle, propertyName);
+        // Parse lengths/percentages/functions (e.g., calc()).
+        final CSSLengthValue parsed = CSSLength.parseLength(fontSize, renderStyle, propertyName);
+        // If parsing failed, treat as invalid (ignore declaration).
+        if (identical(parsed, CSSLengthValue.unknown)) {
+          // Keep previous value unchanged (ignore invalid declaration).
+          return renderStyle.fontSize;
+        }
+        // Preserve calc() results (including negative) for computed style queries.
+        // Some integration tests expect negative computed values from calc() for font-size
+        // (e.g., calc(30% - 40px) relative to a 40px parent resolves to -28px).
+        // Return the parsed value directly; any layout-time handling can clamp if needed.
+        return parsed;
     }
   }
 
@@ -874,3 +1110,4 @@ class CSSText {
     return textShadows;
   }
 }
+enum TextTransform { none, capitalize, uppercase, lowercase }

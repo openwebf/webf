@@ -1,5 +1,5 @@
 describe('Text wrapper edge cases for flexbox', () => {
-  xit('should handle empty text content with flex containers', async () => {
+  it('should handle empty text content with flex containers', async () => {
     const container = document.createElement('div');
     container.style.display = 'flex';
     container.style.width = '200px';
@@ -219,6 +219,87 @@ describe('Text wrapper edge cases for flexbox', () => {
     outerContainer.style.width = '250px';
     outerContainer.style.border = '2px solid #000';
     outerContainer.style.padding = '10px';
+
+    // First level nested container
+    const level1Container = document.createElement('div');
+    level1Container.style.display = 'flex';
+    level1Container.style.border = '1px solid red';
+    level1Container.style.padding = '5px';
+    level1Container.style.marginBottom = '5px';
+
+    // Second level nested container
+    const level2Container = document.createElement('div');
+    level2Container.style.display = 'flex';
+    level2Container.style.flex = '1';
+    level2Container.style.border = '1px solid green';
+    level2Container.style.padding = '5px';
+
+    // Text in deeply nested container
+    const nestedText = document.createElement('span');
+    nestedText.style.flex = '1';
+    nestedText.style.minWidth = '0';
+    nestedText.style.border = '1px solid blue';
+    nestedText.style.padding = '3px';
+    nestedText.textContent = 'Deeply nested text that should wrap properly even in complex layouts';
+
+    // Button in nested container
+    const nestedButton = document.createElement('div');
+    nestedButton.style.marginLeft = '5px';
+    nestedButton.style.padding = '3px 6px';
+    nestedButton.style.backgroundColor = '#007bff';
+    nestedButton.style.color = 'white';
+    nestedButton.style.fontSize = '12px';
+    nestedButton.style.whiteSpace = 'nowrap';
+    nestedButton.textContent = 'Btn';
+
+    level2Container.appendChild(nestedText);
+    level2Container.appendChild(nestedButton);
+    level1Container.appendChild(level2Container);
+    outerContainer.appendChild(level1Container);
+
+    // Add another level for more complexity
+    const anotherLevel1 = document.createElement('div');
+    anotherLevel1.style.display = 'flex';
+    anotherLevel1.style.justifyContent = 'space-between';
+    anotherLevel1.style.border = '1px solid orange';
+    anotherLevel1.style.padding = '5px';
+
+    const leftText = document.createElement('span');
+    leftText.style.maxWidth = '60%';
+    leftText.style.minWidth = '0';
+    leftText.textContent = 'Left side text content';
+
+    const rightText = document.createElement('span');
+    rightText.style.maxWidth = '35%';
+    rightText.style.minWidth = '0';
+    rightText.style.textAlign = 'right';
+    rightText.textContent = 'Right side';
+
+    anotherLevel1.appendChild(leftText);
+    anotherLevel1.appendChild(rightText);
+    outerContainer.appendChild(anotherLevel1);
+
+    document.body.appendChild(outerContainer);
+
+    await snapshot();
+
+    // Test with narrower container
+    outerContainer.style.width = '180px';
+    await snapshot();
+
+    // Very narrow
+    outerContainer.style.width = '120px';
+    await snapshot();
+  });
+
+  it('should handle nested flex containers with text wrapping with RTL', async () => {
+    const outerContainer = document.createElement('div');
+    outerContainer.style.display = 'flex';
+    outerContainer.style.flexDirection = 'column';
+    outerContainer.style.width = '250px';
+    outerContainer.style.border = '2px solid #000';
+    outerContainer.style.padding = '10px';
+    outerContainer.style.direction = 'rtl';
 
     // First level nested container
     const level1Container = document.createElement('div');

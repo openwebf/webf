@@ -8,6 +8,9 @@ import 'dart:math';
 import 'package:flutter/src/foundation/diagnostics.dart';
 import 'package:quiver/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:webf/src/foundation/logger.dart';
 import 'package:flutter/painting.dart';
 import 'package:webf/css.dart';
 
@@ -208,28 +211,24 @@ class CSSColor with Diagnosticable {
     return '#$red$green$blue';
   }
 
+  // Border 3D shading helpers per CSS-style formulas:
+  // Dark (shadow): component × 0.5 → floor
+  // Light (highlight): component + (255 - component) × 0.5 → floor = (component + 255) / 2
   static Color tranformToDarkColor(Color color) {
-    // Convert to lab color
-    LabColor lab = RgbColor(color.red, color.green, color.blue).toLabColor();
-    num invertedL = min(110 - lab.l, 100);
-    if (invertedL < lab.l) {
-      RgbColor rgb = LabColor(invertedL, lab.a, lab.b).toRgbColor();
-      return Color.fromARGB(color.alpha, rgb.r.toInt(), rgb.g.toInt(), rgb.b.toInt());
-    } else {
-      return color;
-    }
+    // Round to nearest: floor(v/2 + 0.5) == (v + 1) >> 1
+    final int r = (color.red + 1) >> 1;
+    final int g = (color.green + 1) >> 1;
+    final int b = (color.blue + 1) >> 1;
+    return Color.fromARGB(color.alpha, r, g, b);
   }
 
   static Color transformToLightColor(Color color) {
-    // Convert to lab color
-    LabColor lab = RgbColor(color.red, color.green, color.blue).toLabColor();
-    num invertedL = min(110 - lab.l, 100);
-    if (invertedL > lab.l) {
-      RgbColor rgb = LabColor(invertedL, lab.a, lab.b).toRgbColor();
-      return Color.fromARGB(color.alpha, rgb.r.toInt(), rgb.g.toInt(), rgb.b.toInt());
-    } else {
-      return color;
-    }
+    // Round to nearest: round((v + 255) / 2) == (v + 256) >> 1
+    int mixToWhite(int v) => ((v + 256) >> 1);
+    final int r = mixToWhite(color.red);
+    final int g = mixToWhite(color.green);
+    final int b = mixToWhite(color.blue);
+    return Color.fromARGB(color.alpha, r, g, b);
   }
 
   static bool isColor(String color) {
@@ -244,6 +243,9 @@ class CSSColor with Diagnosticable {
 
   static void clearCachedColorValue(String color) {
     _cachedParsedColor.remove(color.toLowerCase());
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[color] cache cleared: ' + color.toLowerCase());
+    }
   }
 
   static CSSColor? resolveColor(String color, RenderStyle renderStyle, String propertyName) {
@@ -264,16 +266,24 @@ class CSSColor with Diagnosticable {
 
   static String tryParserCSSColorWithVariable(
       String fullColor, String input, RenderStyle renderStyle, String propertyName) {
-    return input.replaceAllMapped(_variableRgbRegExp, (Match match) {
+    String replaced = input.replaceAllMapped(_variableRgbRegExp, (Match match) {
       String? varString = match[0];
       if (varString == null) return '';
       var variable = renderStyle.resolveValue(propertyName, varString);
 
       if (variable is CSSVariable) {
-        return renderStyle.getCSSVariable(variable.identifier, propertyName + '_' + fullColor) ?? '';
+        String? resolved = renderStyle.getCSSVariable(variable.identifier, propertyName + '_' + fullColor)?.toString();
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[color] var resolve: ' + varString + ' -> ' + (resolved ?? 'null'));
+        }
+        return resolved ?? '';
       }
       return '';
     });
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[color] rgba var input: ' + fullColor + ' body: ' + input + ' -> ' + replaced);
+    }
+    return replaced;
   }
 
   static Color? parseColor(String color, {RenderStyle? renderStyle, String? propertyName}) {
@@ -283,6 +293,9 @@ class CSSColor with Diagnosticable {
     if (color == TRANSPARENT) {
       return CSSColor.transparent;
     } else if (_cachedParsedColor.containsKey(color)) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[color] cache hit: ' + color + ' = ' + _cachedParsedColor[color]!.toString());
+      }
       return _cachedParsedColor[color];
     }
 
@@ -330,6 +343,9 @@ class CSSColor with Diagnosticable {
         final double? rgbO = rgbMatch[5] != null ? _parseColorPart(rgbMatch[5]!, 0, 1, renderStyle) : 1;
         if (rgbR != null && rgbG != null && rgbB != null && rgbO != null) {
           parsed = Color.fromRGBO(rgbR.round(), rgbG.round(), rgbB.round(), rgbO);
+          if (kDebugMode && DebugFlags.enableCssLogs) {
+            cssLogger.fine('[color] parsed rgba: r=' + rgbR.toString() + ' g=' + rgbG.toString() + ' b=' + rgbB.toString() + ' a=' + rgbO.toString());
+          }
         }
       }
     } else if (color.startsWith(HSL)) {

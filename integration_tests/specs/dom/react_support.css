@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.react-spec-container {
+  @apply min-h-[200px] min-w-[200px] flex items-center justify-center bg-slate-900 p-8;
+}
+
+.react-card {
+  @apply bg-emerald-500 text-white rounded-2xl shadow-xl p-6 flex flex-col gap-4 w-64;
+}
+
+.react-button {
+  @apply bg-white text-emerald-700 font-semibold px-4 py-2 rounded-lg transition-colors duration-150 hover:bg-emerald-100;
+}

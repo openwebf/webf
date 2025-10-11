@@ -273,7 +273,7 @@ describe('abspos-width', () => {
 
   // @TODO: Impl setting longest words width as the minimum size of text.
   // https://github.com/openkraken/kraken/issues/401
-  xit('005', async () => {
+  it('005', async () => {
     let p;
     let absolute;
     let relative;
@@ -327,7 +327,7 @@ describe('abspos-width', () => {
 
     await snapshot();
   });
-  it('change-inline-container-001-ref', async () => {
+  xit('change-inline-container-001-ref', async () => {
     let abspos;
     let relpos;
     let container;
@@ -375,7 +375,7 @@ describe('abspos-width', () => {
 
     await snapshot();
   });
-  it('change-inline-container-001', async () => {
+  xit('change-inline-container-001', async () => {
     let abspos;
     let relpos;
     let container;

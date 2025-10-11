@@ -149,7 +149,7 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
     return false;
   }
 
-  const WidgetElementShape* shape = GetExecutingContext()->GetWidgetElementShape(key);
+  const WidgetElementShape* shape = GetExecutingContext()->GetWidgetElementShape(tagName());
 
   if (shape == nullptr || !shape->HasPropertyOrMethod(key)) {
     // Nothing at all

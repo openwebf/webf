@@ -21,6 +21,13 @@ import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/scheduler/debounce.dart';
 import 'package:webf/svg.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+
+void _imgLog(String message) {
+  if (kDebugMode && DebugFlags.enableImageLogs) {
+    debugPrint(message);
+  }
+}
 
 const String IMAGE = 'IMG';
 const String NATURAL_WIDTH = 'naturalWidth';
@@ -65,6 +72,10 @@ class ImageElement extends Element {
 
   bool _isSVGImage = false;
   Uint8List? _svgBytes;
+  // Prefetched response used to avoid duplicate network fetch when
+  // we need to detect content-type before choosing render path.
+  ImageLoadResponse? _prefetchedImageResponse;
+  Uri? _prefetchedImageUri;
 
   // https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-complete-dev
   // A boolean value which indicates whether or not the image has completely loaded.
@@ -160,6 +171,7 @@ class ImageElement extends Element {
   @override
   RenderObject willAttachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
     RenderObject renderObject = super.willAttachRenderer(flutterWidgetElement);
+    _imgLog('[IMG] willAttachRenderer elem=${hashCode}');
     style.addStyleChangeListener(_stylePropertyChanged);
     RenderReplaced? renderReplaced = renderObject as RenderReplaced;
     if ((!_didWatchAnimationImage) && (shouldLazyLoading) && renderReplaced.hasIntersectionObserver() == false) {
@@ -177,6 +189,7 @@ class ImageElement extends Element {
   @override
   void didDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) async {
     super.didDetachRenderer(flutterWidgetElement);
+    _imgLog('[IMG] didDetachRenderer elem=${hashCode}');
     style.removeStyleChangeListener(_stylePropertyChanged);
   }
 
@@ -191,9 +204,22 @@ class ImageElement extends Element {
   set src(String value) {
     internalSetAttribute('src', value);
     final resolvedUri = _resolveResourceUri(value);
+    _imgLog('[IMG] set src value=$value resolved=$resolvedUri prev=$_resolvedUri elem=${hashCode} hasRenderer=${renderStyle.attachedRenderBoxModel != null}');
     if (_resolvedUri != resolvedUri) {
       _loaded = false;
       _resolvedUri = resolvedUri;
+      // Clear any stale prefetched response from prior URL to avoid cross-URL leakage
+      if (_prefetchedImageResponse != null) {
+        _imgLog('[IMG] clear stale prefetched response on src change elem=${hashCode}');
+      }
+      _prefetchedImageResponse = null;
+      _prefetchedImageUri = null;
+      // Reset cached frame so UI won't reuse old image
+      _cachedImageInfo = null;
+      _isSVGImage = false;
+      // Stop listening to the old stream immediately since URL changed
+      _stopListeningStream(keepStreamAlive: false);
+      _imgLog('[IMG] _startLoadNewImage due to src change elem=${hashCode}');
       _startLoadNewImage();
     }
   }
@@ -234,7 +260,7 @@ class ImageElement extends Element {
 
   void _listenToStream() {
     if (_isListeningStream) return;
-
+    _imgLog('[IMG] _listenToStream elem=${hashCode}');
     _cachedImageStream?.addListener(_listener);
     _isListeningStream = true;
   }
@@ -253,6 +279,7 @@ class ImageElement extends Element {
   @override
   void dispose() async {
     super.dispose();
+    _imgLog('[IMG] dispose elem=${hashCode} states=${_imageState.length} hasStream=$_isListeningStream');
 
     RenderReplaced? renderReplaced = renderStyle.attachedRenderBoxModel as RenderReplaced?;
     renderReplaced?.removeIntersectionChangeListener(handleIntersectionChange);
@@ -384,9 +411,11 @@ class ImageElement extends Element {
 
     // When appear
     if (entry.isIntersecting) {
+      _imgLog('[IMG] Intersection visible -> resume stream elem=${hashCode}');
       _updateImageDataLazyCompleter?.complete();
       _listenToStream();
     } else {
+      _imgLog('[IMG] Intersection hidden -> pause stream elem=${hashCode}');
       _stopListeningStream(keepStreamAlive: true);
     }
   }
@@ -405,10 +434,12 @@ class ImageElement extends Element {
   bool hadTryReload = false;
 
   void _onImageError(Object exception, StackTrace? stackTrace) async {
+    _imgLog('[IMG] _onImageError elem=${hashCode} url=$_resolvedUri exception=$exception');
     if (_resolvedUri != null) {
       // Invalidate http cache for this failed image loads.
       await WebFBundle.invalidateCache(_resolvedUri!.toString());
       if (!hadTryReload) {
+        _imgLog('[IMG] try force reload after error elem=${hashCode}');
         _reloadImage(forceUpdate: true);
         hadTryReload = true;
       }
@@ -461,7 +492,7 @@ class ImageElement extends Element {
 
   void _stopListeningStream({bool keepStreamAlive = false}) {
     if (!_isListeningStream) return;
-
+    _imgLog('[IMG] _stopListeningStream elem=${hashCode} keepAlive=$keepStreamAlive');
     if (keepStreamAlive && _completerHandle == null && _cachedImageStream?.completer != null) {
       _completerHandle = _cachedImageStream!.completer!.keepAlive();
     }
@@ -487,7 +518,7 @@ class ImageElement extends Element {
 
   void _updateSourceStream(ImageStream newStream) {
     if (_cachedImageStream?.key == newStream.key) return;
-
+    _imgLog('[IMG] _updateSourceStream elem=${hashCode} oldKey=${_cachedImageStream?.key} newKey=${newStream.key}');
     if (_isListeningStream) {
       _cachedImageStream?.removeListener(_listener);
     }
@@ -521,6 +552,7 @@ class ImageElement extends Element {
   // This callback may fire multiple times when image have multiple frames (such as an animated GIF).
   void _handleImageFrame(ImageInfo imageInfo, bool synchronousCall) {
     _cachedImageInfo = imageInfo;
+    _imgLog('[IMG] _handleImageFrame elem=${hashCode} size=${imageInfo.image.width}x${imageInfo.image.height} sync=$synchronousCall');
 
     if (_currentRequest?.state != _ImageRequestState.completelyAvailable) {
       _currentRequest?.state = _ImageRequestState.completelyAvailable;
@@ -567,12 +599,14 @@ class ImageElement extends Element {
       _updateImageDataLazyCompleter?.complete(true); // cancel lazy task
     }
     final taskId = ++_updateImageDataTaskId;
+    _imgLog('[IMG] _updateImageData elem=${hashCode} taskId=$taskId lazy=$shouldLazyLoading mountedStates=${_imageState.length}');
     final future = _updateImageDataTask(taskId);
     _updateImageDataTaskFuture = future;
     future.catchError((e) {
       print(e);
     }).whenComplete(() {
       if (taskId == _updateImageDataTaskId) {
+        _imgLog('[IMG] _updateImageData complete elem=${hashCode} taskId=$taskId');
         _updateImageDataTaskFuture = null;
       }
     });
@@ -591,6 +625,7 @@ class ImageElement extends Element {
       final abort = await completer.future;
 
       if (abort == true || taskId != _updateImageDataTaskId) {
+        _imgLog('[IMG] _updateImageDataTask aborted elem=${hashCode} taskId=$taskId');
         return;
       }
       // Because the renderObject can changed between rendering, So we need to reassign the value;
@@ -602,22 +637,69 @@ class ImageElement extends Element {
         return;
       }
 
-      _loadImg() {
+      _loadImg() async {
         // Increment load event delay count before decode.
         ownerDocument.incrementLoadEventDelayCount();
+        _imgLog('[IMG] begin load elem=${hashCode} url=$_resolvedUri');
 
+        // Fast path if URL/data scheme indicates SVG
         if (_isSVGMode) {
+          _imgLog('[IMG] detected SVG mode by URL elem=${hashCode}');
           _loadSVGImage();
-        } else {
-          _loadNormalImage();
+          return;
+        }
+
+        // Otherwise prefetch to inspect content-type and sniff as needed
+        try {
+          final ImageLoadResponse response = await obtainImage(this, _resolvedUri!);
+          final String? mime = response.mime?.toLowerCase();
+
+          bool isSvg = false;
+          if (mime != null) {
+            isSvg = mime.contains('image/svg');
+          }
+          if (!isSvg) {
+            // Sniff bytes for SVG signatures when header is absent/misleading
+            final int probeLen = response.bytes.length < 256 ? response.bytes.length : 256;
+            try {
+              final String head = String.fromCharCodes(response.bytes.sublist(0, probeLen));
+              final String headLower = head.toLowerCase();
+              if (headLower.contains('<svg') ||
+                  (headLower.contains('<?xml') && headLower.contains('svg')) ||
+                  headLower.contains('xmlns="http://www.w3.org/2000/svg"')) {
+                isSvg = true;
+              }
+            } catch (_) {}
+          }
+
+          if (isSvg) {
+            _imgLog('[IMG] prefetch decided SVG elem=${hashCode}');
+            _applySVGResponse(response);
+            // Decrement load event delay here for prefetch SVG path
+            ownerDocument.decrementLoadEventDelayCount();
+          } else {
+            // Hand off to raster pipeline and avoid double-fetch
+            _imgLog('[IMG] prefetch decided raster elem=${hashCode}');
+            _prefetchedImageResponse = response;
+            _prefetchedImageUri = _resolvedUri;
+            _isSVGImage = false;
+            _loadNormalImage();
+          }
+        } catch (e, stack) {
+          debugPrint('$e\n$stack');
+          _dispatchErrorEvent();
+          // Decrement on failure
+          ownerDocument.decrementLoadEventDelayCount();
         }
       }
 
       if (!ownerDocument.controller.isFlutterAttached) {
         ownerView.registerCallbackOnceForFlutterAttached(() {
+          _imgLog('[IMG] Flutter not attached; defer load elem=${hashCode}');
           _loadImg();
         });
       } else {
+        _imgLog('[IMG] Flutter attached; load now elem=${hashCode}');
         _loadImg();
       }
     });
@@ -627,36 +709,8 @@ class ImageElement extends Element {
   void _loadSVGImage() async {
     try {
       ImageLoadResponse response = await obtainImage(this, _resolvedUri!);
-      _svgBytes = response.bytes;
-      _resizeImage();
-      _isSVGImage = true;
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        // Apply the same fix for SVG images
-        final currentState = state;
-        if (currentState != null) {
-          currentState.requestStateUpdate();
-          _hasPendingImageUpdate = false;
-        } else if (_imageState.isNotEmpty) {
-          // There are states but none are mounted yet, mark update as pending
-          _hasPendingImageUpdate = true;
-
-          // Also schedule update for next frame as a fallback
-          SchedulerBinding.instance.addPostFrameCallback((_) {
-            if (_hasPendingImageUpdate) {
-              state?.requestStateUpdate();
-              _hasPendingImageUpdate = false;
-            }
-          });
-          SchedulerBinding.instance.scheduleFrame();
-        }
-        // Report FP first (if not already reported)
-        ownerDocument.controller.reportFP();
-        // Report FCP when SVG image is first painted
-        ownerDocument.controller.reportFCP();
-      });
-      SchedulerBinding.instance.scheduleFrame();
-
-      _dispatchLoadEvent();
+      _imgLog('[IMG] _loadSVGImage elem=${hashCode} bytes=${response.bytes.length}');
+      _applySVGResponse(response);
     } catch (e, stack) {
       print('$e\n$stack');
       _dispatchErrorEvent();
@@ -665,6 +719,40 @@ class ImageElement extends Element {
       ownerDocument.decrementLoadEventDelayCount();
     }
     return;
+  }
+
+  void _applySVGResponse(ImageLoadResponse response) {
+    _svgBytes = response.bytes;
+    _resizeImage();
+    _isSVGImage = true;
+    _imgLog('[IMG] _applySVGResponse elem=${hashCode}');
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      // Apply the same fix for SVG images
+      final currentState = state;
+      if (currentState != null) {
+        currentState.requestStateUpdate();
+        _hasPendingImageUpdate = false;
+      } else if (_imageState.isNotEmpty) {
+        // There are states but none are mounted yet, mark update as pending
+        _hasPendingImageUpdate = true;
+
+        // Also schedule update for next frame as a fallback
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          if (_hasPendingImageUpdate) {
+            state?.requestStateUpdate();
+            _hasPendingImageUpdate = false;
+          }
+        });
+        SchedulerBinding.instance.scheduleFrame();
+      }
+      // Report FP first (if not already reported)
+      ownerDocument.controller.reportFP();
+      // Report FCP when SVG image is first painted
+      ownerDocument.controller.reportFCP();
+    });
+    SchedulerBinding.instance.scheduleFrame();
+
+    _dispatchLoadEvent();
   }
 
   // https://html.spec.whatwg.org/multipage/images.html#decoding-images
@@ -687,6 +775,7 @@ class ImageElement extends Element {
         contextId: contextId!,
         devicePixelRatio: ownerFlutterView?.devicePixelRatio ?? 2.0,
       );
+      _imgLog('[IMG] created provider elem=${hashCode} url=$_resolvedUri fit=$objectFit dpr=${ownerFlutterView?.devicePixelRatio}');
     }
 
     // Try to make sure that this image can be encoded into a smaller size.
@@ -696,6 +785,7 @@ class ImageElement extends Element {
     int? cachedHeight = renderStyle.height.value != null && height > 0 && height.isFinite
         ? (height * (ownerFlutterView?.devicePixelRatio ?? 2.0)).toInt()
         : null;
+    _imgLog('[IMG] resolve stream elem=${hashCode} cached=${cachedWidth}x${cachedHeight} css=${renderStyle.width.value}x${renderStyle.height.value}');
 
     if (cachedWidth != null && cachedHeight != null) {
       // If a image with the same URL has a fixed size, attempt to remove the previous unsized imageProvider from imageCache.
@@ -704,12 +794,14 @@ class ImageElement extends Element {
         configuration: ImageConfiguration.empty,
       );
       PaintingBinding.instance.imageCache.evict(previousUnSizedKey, includeLive: true);
+      _imgLog('[IMG] evict previous unsized cache elem=${hashCode}');
     }
 
     ImageConfiguration imageConfiguration = _currentImageConfig =
         _shouldScaling && cachedWidth != null && cachedHeight != null
             ? ImageConfiguration(size: Size(cachedWidth.toDouble(), cachedHeight.toDouble()))
             : ImageConfiguration.empty;
+    _imgLog('[IMG] imageConfiguration elem=${hashCode} config=$imageConfiguration');
     final stream = provider.resolve(imageConfiguration);
     _updateSourceStream(stream);
     _listenToStream();
@@ -719,14 +811,29 @@ class ImageElement extends Element {
   // https://html.spec.whatwg.org/multipage/images.html#when-to-obtain-images
   static Future<ImageLoadResponse> obtainImage(Element element, Uri url) async {
     var self = element as ImageElement;
+    // Use prefetched response if available to avoid duplicate network fetches
+    if (self._prefetchedImageResponse != null && self._prefetchedImageUri == url) {
+      final ImageLoadResponse resp = self._prefetchedImageResponse!;
+      self._prefetchedImageResponse = null; // consume once
+      self._prefetchedImageUri = null;
+      _imgLog('[IMG] obtainImage use prefetched elem=${self.hashCode} url=$url');
+      return resp;
+    }
+    if (self._prefetchedImageResponse != null && self._prefetchedImageUri != url) {
+      _imgLog('[IMG] obtainImage drop stale prefetched elem=${self.hashCode} for=${self._prefetchedImageUri} expect=$url');
+      self._prefetchedImageResponse = null;
+      self._prefetchedImageUri = null;
+    }
     ImageRequest request = self._currentRequest = ImageRequest.fromUri(url);
     // Increment count when request.
     self.ownerDocument.incrementRequestCount();
+    _imgLog('[IMG] obtainImage start request elem=${self.hashCode} url=$url');
 
     final data = await request.obtainImage(self.ownerDocument.controller);
 
     // Decrement count when response.
     self.ownerDocument.decrementRequestCount();
+    _imgLog('[IMG] obtainImage got data elem=${self.hashCode} url=$url bytes=${data.bytes.length} mime=${data.mime}');
 
     return data;
   }
@@ -736,10 +843,12 @@ class ImageElement extends Element {
 
   void _startLoadNewImage() {
     if (_resolvedUri == null) {
+      _imgLog('[IMG] _startLoadNewImage ignored null url elem=${hashCode}');
       return;
     }
 
     _debounce.run(() {
+      _imgLog('[IMG] _startLoadNewImage -> _updateImageData elem=${hashCode} url=$_resolvedUri');
       _updateImageData();
     });
   }
@@ -755,12 +864,14 @@ class ImageElement extends Element {
         configuration: ImageConfiguration.empty,
       );
       PaintingBinding.instance.imageCache.evict(previousUnSizedKey, includeLive: true);
+      _imgLog('[IMG] _reloadImage forceUpdate elem=${hashCode}');
     }
 
-    if (_isSVGMode) {
+    if (_isSVGImage) {
       // In svg mode, we don't need to reload
     } else {
       _debounce.run(() {
+        _imgLog('[IMG] _reloadImage -> _updateImageData elem=${hashCode}');
         _updateImageData();
       });
     }
@@ -833,6 +944,7 @@ class ImageState extends flutter.State<WebFImage> {
   void initState() {
     super.initState();
     imageElement._imageState.add(this);
+    _imgLog('[IMG] ImageState.initState elem=${imageElement.hashCode} state=${hashCode} mounted=${mounted}');
 
     // Option 1: Check if there's a pending update that couldn't be delivered
     if (imageElement._hasPendingImageUpdate && imageElement._cachedImageInfo != null) {
@@ -859,6 +971,7 @@ class ImageState extends flutter.State<WebFImage> {
   void dispose() {
     super.dispose();
     imageElement._imageState.remove(this);
+    _imgLog('[IMG] ImageState.dispose elem=${imageElement.hashCode} state=${hashCode}');
   }
 
   @override

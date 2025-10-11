@@ -456,6 +456,7 @@ class NetworkBundle extends WebFBundle {
       }
 
       if (bytes.isEmpty) {
+        data = Uint8List.fromList([]);
         await WebFBundle.invalidateCache(url);
         return;
       }

@@ -1,8 +1,9 @@
 /*auto generated*/
 describe('right-offset', () => {
-  it('001-ref', async () => {
+  it('001-ref', async (done) => {
     let p;
     let inlineBlock;
+    let img1, img2, img3, img4;
     p = createElement(
       'p',
       {
@@ -31,7 +32,7 @@ describe('right-offset', () => {
             style: {},
           },
           [
-            createElement('img', {
+            img1 = createElement('img', {
               src: 'assets/1x1-white.png',
               width: '50',
               height: '50',
@@ -40,7 +41,7 @@ describe('right-offset', () => {
                 'vertical-align': 'top',
               },
             }),
-            createElement('img', {
+            img2 = createElement('img', {
               src: 'assets/blue15x15.png',
               width: '50',
               height: '50',
@@ -57,7 +58,7 @@ describe('right-offset', () => {
             style: {},
           },
           [
-            createElement('img', {
+            img3 = createElement('img', {
               src: 'assets/blue15x15.png',
               width: '50',
               height: '50',
@@ -66,7 +67,7 @@ describe('right-offset', () => {
                 'vertical-align': 'top',
               },
             }),
-            createElement('img', {
+            img4 = createElement('img', {
               src: 'assets/blue15x15.png',
               width: '50',
               height: '50',
@@ -82,7 +83,11 @@ describe('right-offset', () => {
     BODY.appendChild(p);
     BODY.appendChild(inlineBlock);
 
-    await snapshot(1);
+    onFourfoldImageLoad(img1, img2, img3, img4, async ()=> {
+      await snapshot(0.1);
+      done()
+    });
+
   });
   it('001', async () => {
     let p;

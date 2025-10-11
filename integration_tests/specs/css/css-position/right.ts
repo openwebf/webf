@@ -169,8 +169,7 @@ describe('right', () => {
     await snapshot();
   });
 
-  // @TODO: Support CSS inherit keyword.
-  xit('007', async () => {
+  it('007', async () => {
     let p;
     let div1;
     p = createElement(
@@ -228,8 +227,7 @@ describe('right', () => {
     await snapshot();
   });
 
-  // @TODO: Support CSS inherit keyword.
-  xit('008', async () => {
+  it('008', async () => {
     let p;
     let div1;
     p = createElement(
@@ -455,8 +453,7 @@ describe('right', () => {
     await snapshot();
   });
 
-  // @TODO: Support CSS inherit keyword.
-  xit('019', async () => {
+  it('019', async () => {
     let p;
     let div1;
     p = createElement(
@@ -514,8 +511,7 @@ describe('right', () => {
     await snapshot();
   });
 
-  // @TODO: Support CSS inherit keyword.
-  xit('020', async () => {
+  it('020', async () => {
     let p;
     let div1;
     p = createElement(

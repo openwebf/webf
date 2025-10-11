@@ -7,6 +7,8 @@ import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/foundation/logger.dart';
+import 'package:webf/src/foundation/flow_logging.dart';
 
 mixin CSSMarginMixin on RenderStyle {
   /// The amount to margin the child in each dimension.
@@ -71,20 +73,10 @@ mixin CSSMarginMixin on RenderStyle {
   // Margin top of in-flow block-level box which has collapsed margin.
   // https://www.w3.org/TR/CSS2/box.html#collapsing-margins
   double get collapsedMarginTop {
-    String propertyName = 'collapsedMarginTop';
-
-    // Use cached value if exits.
-    double? cachedValue = getCachedComputedValue(this, propertyName);
-    if (cachedValue != null) {
-      return cachedValue;
-    }
-
     double _marginTop;
 
     if (effectiveDisplay == CSSDisplay.inline) {
       _marginTop = 0;
-      // Cache computed value.
-      cacheComputedValue(this, propertyName, _marginTop);
       return _marginTop;
     }
 
@@ -94,23 +86,52 @@ mixin CSSMarginMixin on RenderStyle {
     // 3. Inner renderBox of element with overflow auto/scroll
     if (isDocumentRootBox() || (effectiveDisplay != CSSDisplay.block && effectiveDisplay != CSSDisplay.flex)) {
       _marginTop = marginTop.computedValue;
-      // Cache computed value.
-      cacheComputedValue(this, propertyName, _marginTop);
       return _marginTop;
     }
 
-    if (!isPreviousSiblingAreRenderObject()) {
-      // Margin top collapse with its parent if it is the first child of its parent and its value is 0.
+    // If there is any previous attached render sibling (including placeholders
+    // for positioned elements), do not treat this element as the first in-flow
+    // child for parent-top collapsing. This matches the engine’s placeholder
+    // approach used to anchor static position of positioned siblings, and
+    // preserves expected spacing when a positioned sibling precedes.
+    final bool hasPrevInFlow = isPreviousSiblingAreRenderObject();
+    // Debug info for previous sibling context affecting parent-top collapsing
+    try {
+      final bool prevIsBlockLike = isPreviousSiblingStyleMatch(
+          (rs) => rs.effectiveDisplay == CSSDisplay.block || rs.effectiveDisplay == CSSDisplay.flex);
+      final bool prevIsPositioned = isPreviousSiblingStyleMatch((rs) => rs.isSelfPositioned());
+      final tag = target.tagName.toLowerCase();
+      FlowLog.log(
+        impl: FlowImpl.flow,
+        feature: FlowFeature.marginCollapse,
+        message: () => '<$tag> prevSibling: exists=$hasPrevInFlow blockLike=$prevIsBlockLike positioned=$prevIsPositioned',
+      );
+    } catch (_) {}
+    if (!hasPrevInFlow) {
+      // First in-flow child: may collapse with parent top
       _marginTop = _collapsedMarginTopWithParent;
+      try {
+        final tag = target.tagName.toLowerCase();
+        FlowLog.log(
+          impl: FlowImpl.flow,
+          feature: FlowFeature.marginCollapse,
+          message: () => '<$tag> first in-flow child; use collapse-with-parent top = ${_marginTop.toStringAsFixed(2)}',
+        );
+      } catch (_) {}
     } else {
-      // Margin top collapse with margin-bottom of its previous sibling, get the difference between
-      // the margin top of itself and the margin bottom of ite previous sibling. Set it to 0 if the
-      // difference is negative.
-      _marginTop = _collapsedMarginTopWithPreSibling;
+      // Subsequent in-flow child: do not collapse with previous sibling here.
+      // Parent layout combines prev bottom and this top per spec.
+      _marginTop = _collapsedMarginTopWithFirstChild;
+      try {
+        final tag = target.tagName.toLowerCase();
+        FlowLog.log(
+          impl: FlowImpl.flow,
+          feature: FlowFeature.marginCollapse,
+          message: () => '<$tag> not first in-flow child; ownTopIgnoringParent = ${_marginTop.toStringAsFixed(2)}',
+        );
+      } catch (_) {}
     }
 
-    // Cache computed value.
-    cacheComputedValue(this, propertyName, _marginTop);
     return _marginTop;
   }
 
@@ -137,8 +158,9 @@ mixin CSSMarginMixin on RenderStyle {
         paddingTop == 0 &&
         borderTop == 0) {
       if (isFirstChildAreRenderBoxModel() &&
-          (isFirstChildStyleMatch((renderStyle) =>
-              renderStyle.effectiveDisplay == CSSDisplay.block || renderStyle.effectiveDisplay == CSSDisplay.flex))) {
+          // Only collapse with the first in-flow block-level child. Ignore positioned children.
+          isFirstChildStyleMatch((rs) =>
+              (rs.effectiveDisplay == CSSDisplay.block || rs.effectiveDisplay == CSSDisplay.flex) && !rs.isSelfPositioned())) {
         double childMarginTop = isFirstChildAreRenderFlowLayoutBox()
             ? getFirstChildRenderStyle<CSSMarginMixin>()!._collapsedMarginTopWithFirstChild
             : getFirstChildRenderStyle()!.marginTop.computedValue;
@@ -153,6 +175,14 @@ mixin CSSMarginMixin on RenderStyle {
     }
     return marginTop;
   }
+
+  // Expose the element’s own collapsed top ignoring parent collapse.
+  // This equals the top margin collapsed with its first in-flow block-level
+  // child (descendant) when applicable, but does NOT zero out when this box
+  // is the first in-flow child of its parent. Useful for formatting-context
+  // run-to-run margin collapsing where the previous content may be an
+  // anonymous block rather than a DOM sibling.
+  double get collapsedMarginTopIgnoringParent => _collapsedMarginTopWithFirstChild;
 
   // A box's own margins collapse if the 'min-height' property is zero, and it has neither top or bottom
   // borders nor top or bottom padding, and it has a 'height' of either 0 or 'auto', and it does not
@@ -188,6 +218,22 @@ mixin CSSMarginMixin on RenderStyle {
 
     if (parentRenderStyle == null) return 0.0;
 
+    // Flex item guard: a flex item establishes an independent formatting context
+    // for its contents. Per CSS Flexbox, margins of a flex item's descendants
+    // must not collapse with the flex item itself. If our parent is a flex item
+    // (i.e., its own parent is a flex container), do not collapse this element's
+    // top margin with that parent.
+    if (parentRenderStyle.isParentRenderFlexLayout()) {
+      return marginTop;
+    }
+    // Positioned parent guard: margins of in-flow children do not collapse
+    // with absolutely/fixed positioned ancestors. Preserve the element's own
+    // top (already collapsed with its first child), and do not collapse with
+    // the positioned parent.
+    if (parentRenderStyle.isSelfPositioned()) {
+      return marginTop;
+    }
+
     bool isParentOverflowVisible = parentRenderStyle.effectiveOverflowY == CSSOverflowType.visible;
     bool isParentOverflowClip = parentRenderStyle.effectiveOverflowY == CSSOverflowType.clip;
     bool isParentNotRenderWidget = !parentRenderStyle.isSelfRenderWidget();
@@ -202,6 +248,14 @@ mixin CSSMarginMixin on RenderStyle {
         isParentNotRenderWidget &&
         parentRenderStyle.effectiveBorderTopWidth.computedValue == 0 &&
         parentRenderStyle.isParentBoxModelMatch((renderBoxModel, _) => renderBoxModel is RenderFlowLayout || renderBoxModel is RenderLayoutBoxWrapper)) {
+      try {
+        final tag = target.tagName.toLowerCase();
+        FlowLog.log(
+          impl: FlowImpl.flow,
+          feature: FlowFeature.marginCollapse,
+          message: () => '<$tag> collapse top with parent (no padding/border/bfc) -> 0',
+        );
+      } catch (_) {}
       return 0;
     }
     return marginTop;
@@ -210,37 +264,45 @@ mixin CSSMarginMixin on RenderStyle {
   // The bottom margin of an in-flow block-level element always collapses with the top margin of its next
   // in-flow block-level sibling, unless that sibling has clearance.
   double get _collapsedMarginTopWithPreSibling {
-    double marginTop = _collapsedMarginTopWithFirstChild;
+    // Compute the contribution of this element's margin-top given the previous
+    // sibling's collapsed margin-bottom. Since the layout adds the previous
+    // sibling's collapsed bottom already, the additional top contribution here
+    // should be: collapse(prevBottom, selfTop) - prevBottom.
+    double selfTop = _collapsedMarginTopWithFirstChild;
     if (isPreviousSiblingAreRenderObject() &&
         (isPreviousSiblingStyleMatch((renderStyle) =>
-            renderStyle.effectiveDisplay == CSSDisplay.block || renderStyle.effectiveDisplay == CSSDisplay.flex))) {
-      double preSiblingMarginBottom = getPreviousSiblingRenderStyle<CSSMarginMixin>()!.collapsedMarginBottom;
-      if (marginTop > 0 && preSiblingMarginBottom > 0) {
-        return math.max(marginTop - preSiblingMarginBottom, 0);
+            (renderStyle.effectiveDisplay == CSSDisplay.block || renderStyle.effectiveDisplay == CSSDisplay.flex) &&
+            !renderStyle.isSelfPositioned()))) {
+      double prevBottom = getPreviousSiblingRenderStyle<CSSMarginMixin>()!.collapsedMarginBottom;
+      double collapsed;
+      if (selfTop >= 0 && prevBottom >= 0) {
+        collapsed = math.max(selfTop, prevBottom);
+      } else if (selfTop <= 0 && prevBottom <= 0) {
+        collapsed = math.min(selfTop, prevBottom);
+      } else {
+        collapsed = selfTop + prevBottom;
       }
+      return collapsed - prevBottom;
     }
 
-    return marginTop;
+    return selfTop;
   }
+
+  // Public accessor for sibling-collapsed top contribution.
+  // Returns the effective additional top spacing for this element when placed
+  // after its previous in-flow block-level sibling. This equals
+  // collapse(prevBottom, selfTop) - prevBottom when a previous sibling exists,
+  // otherwise it falls back to this element's own self/first-child collapsed top.
+  double get collapsedMarginTopForSibling => _collapsedMarginTopWithPreSibling;
 
   // Margin bottom of in-flow block-level box which has collapsed margin.
   // https://www.w3.org/TR/CSS2/box.html#collapsing-margins
   double get collapsedMarginBottom {
-    String propertyName = 'collapsedMarginBottom';
-
-    // Use cached value if exits.
-    double? cachedValue = getCachedComputedValue(this, propertyName);
-    if (cachedValue != null) {
-      return cachedValue;
-    }
-
     double _marginBottom;
 
     // Margin is invalid for inline element.
     if (effectiveDisplay == CSSDisplay.inline) {
       _marginBottom = 0;
-      // Cache computed value.
-      cacheComputedValue(this, propertyName, _marginBottom);
       return _marginBottom;
     }
 
@@ -250,8 +312,6 @@ mixin CSSMarginMixin on RenderStyle {
     // 3. Inner renderBox of element with overflow auto/scroll
     if (isDocumentRootBox() || (effectiveDisplay != CSSDisplay.block && effectiveDisplay != CSSDisplay.flex)) {
       _marginBottom = marginBottom.computedValue;
-      // Cache computed value.
-      cacheComputedValue(this, propertyName, _marginBottom);
       return _marginBottom;
     }
 
@@ -266,9 +326,58 @@ mixin CSSMarginMixin on RenderStyle {
       _marginBottom = _collapsedMarginBottomWithLastChild;
     }
 
-    // Cache computed value.
-    cacheComputedValue(this, propertyName, _marginBottom);
     return _marginBottom;
+  }
+
+  // Collapsed bottom margin to be used when resolving adjacency with the next
+  // in-flow sibling. This value collapses with self and the last in-flow child
+  // (descendant) when applicable, but it DOES NOT collapse with the parent.
+  //
+  // Rationale: Whether a box’s bottom margin collapses with its parent depends
+  // on the parent’s context (padding/border/height/overflow) and on whether the
+  // box is actually the last in-flow fragment for that parent. Layout is the
+  // right place to decide parent collapsing. Using this sibling-oriented value
+  // prevents prematurely zeroing out the bottom margin in cases where an
+  // anonymous block (from inline content) follows this element.
+  double get collapsedMarginBottomForSibling {
+    // Start with own collapse-with-self result (empty-block handling), then
+    // optionally fold in last-child collapse when eligible.
+    RenderStyle? renderStyle = getSelfRenderStyle();
+    if (renderStyle == null) return 0.0;
+
+    double marginBottom = _collapsedMarginBottomWithSelf;
+
+    double paddingBottom = renderStyle.paddingBottom.computedValue;
+    double borderBottom = renderStyle.effectiveBorderBottomWidth.computedValue;
+    bool isOverflowVisible = renderStyle.effectiveOverflowY == CSSOverflowType.visible;
+    bool isOverflowClip = renderStyle.effectiveOverflowY == CSSOverflowType.clip;
+
+    if (isLayoutBox() &&
+        renderStyle.height.isAuto &&
+        renderStyle.minHeight.isAuto &&
+        renderStyle.maxHeight.isNone &&
+        renderStyle.effectiveDisplay == CSSDisplay.block &&
+        (isOverflowVisible || isOverflowClip) &&
+        paddingBottom == 0 &&
+        borderBottom == 0) {
+      if (isLastChildAreRenderBoxModel() &&
+          // Only collapse with the last in-flow block-level child. Ignore positioned children.
+          isLastChildStyleMatch((rs) =>
+              (rs.effectiveDisplay == CSSDisplay.block || rs.effectiveDisplay == CSSDisplay.flex) && !rs.isSelfPositioned())) {
+        double childMarginBottom = isLastChildAreRenderLayoutBox()
+            ? getLastChildRenderStyle<CSSMarginMixin>()!._collapsedMarginBottomWithLastChild
+            : getLastChildRenderStyle<CSSMarginMixin>()!.marginBottom.computedValue;
+        if (marginBottom < 0 && childMarginBottom < 0) {
+          return math.min(marginBottom, childMarginBottom);
+        } else if (marginBottom > 0 && childMarginBottom > 0) {
+          return math.max(marginBottom, childMarginBottom);
+        } else {
+          return marginBottom + childMarginBottom;
+        }
+      }
+    }
+
+    return marginBottom;
   }
 
   // The bottom margin of an in-flow block box with a 'height' of 'auto' and a 'min-height' of zero collapses
@@ -346,6 +455,18 @@ mixin CSSMarginMixin on RenderStyle {
     RenderStyle? parentRenderStyle = getParentRenderStyle<CSSMarginMixin>();
 
     if (parentRenderStyle == null) return 0.0;
+
+    // Flex item guard: when the parent is a flex item (its own parent is a
+    // flex container), the child's bottom margin must not collapse with the
+    // parent. Preserve the child's bottom margin contribution.
+    if (parentRenderStyle.isParentRenderFlexLayout()) {
+      return marginBottom;
+    }
+    // Positioned parent guard: do not collapse the last in-flow child's bottom
+    // margin with an absolutely/fixed positioned parent.
+    if (parentRenderStyle.isSelfPositioned()) {
+      return marginBottom;
+    }
 
     bool isParentOverflowVisible = parentRenderStyle.effectiveOverflowY == CSSOverflowType.visible;
     bool isParentOverflowClip = parentRenderStyle.effectiveOverflowY == CSSOverflowType.clip;

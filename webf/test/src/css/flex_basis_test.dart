@@ -179,6 +179,28 @@ void main() {
       expect(item2.offsetWidth, equals(200.0)); // 2/3 of 300px
     });
 
+    testWidgets('flex-basis 0 overrides width', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'flex-basis-zero-overrides-width-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <p>Test passes if there is a filled green square and <strong>no red</strong>.</p>
+              <div id="container" style="background-color: green; display: flex; width: 100px; height: 100px;">
+                <div id="test" style="background-color: red; flex-basis: 0; width: 100px; height: 100px;"></div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final testDiv = prepared.getElementById('test');
+      // Even though width is 100px, flex-basis: 0 must produce a 0 used main size when not flexing.
+      expect(testDiv.offsetWidth, equals(0.0));
+      expect(testDiv.offsetHeight, equals(100.0));
+    });
+
     testWidgets('should respect min/max constraints', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
@@ -275,13 +297,15 @@ void main() {
       
       expect(container.offsetWidth, equals(200.0));
       
-      // WebF has major issues with flex-basis + flex-shrink
-      // Total width is 352px instead of 200px - flex-shrink not working
+      // Verify shrink behavior: items should shrink to fit container
       expect(item1.offsetWidth, greaterThan(0));
       expect(item2.offsetWidth, greaterThan(0));
-      // WebF doesn't shrink properly - just verify items exist
+      // Each item should not exceed its flex-basis after shrinking
+      expect(item1.offsetWidth, lessThanOrEqualTo(150.0));
+      expect(item2.offsetWidth, lessThanOrEqualTo(100.0));
+      // Total width should fit the container (allow small rounding tolerance)
       final totalWidth = item1.offsetWidth + item2.offsetWidth;
-      expect(totalWidth, greaterThan(container.offsetWidth)); // It's actually larger than container!
+      expect(totalWidth, closeTo(container.offsetWidth, 1.0));
     });
 
     testWidgets('should handle dynamic changes', (WidgetTester tester) async {
@@ -383,14 +407,10 @@ void main() {
       
       expect(container.offsetWidth, equals(300.0));
       
-      // WebF may not properly implement flex-basis override
-      // Just verify items have reasonable widths
-      expect(item1.offsetWidth, greaterThan(0));
-      expect(item2.offsetWidth, greaterThan(0));
-      
-      // WebF may not calculate flex-basis totals correctly
-      final totalWidth = item1.offsetWidth + item2.offsetWidth;
-      expect(totalWidth, closeTo(container.offsetWidth, 10.0));
+      // flex-basis should override the width property for used flex base size
+      expect(item1.offsetWidth, equals(100.0));
+      expect(item2.offsetWidth, equals(150.0));
+      // Do not require filling remaining free space (flex-grow defaults to 0)
     });
 
     testWidgets('should work with box-sizing', (WidgetTester tester) async {

@@ -82,19 +82,6 @@ class ContentVerification {
       return text.isNotEmpty;
     }
 
-    // Check WebF paragraph (multi-line text)
-    if (renderObject is WebFRenderParagraph) {
-      final text = renderObject.text.toPlainText().trim();
-      if (text.isEmpty) {
-        return false;
-      }
-
-      // Verify it has actual rendered lines
-      if (renderObject.hasSize && renderObject.size.height > 0) {
-        return true;
-      }
-    }
-
     // Check images
     if (renderObject is RenderImage) {
       return renderObject.image != null &&
@@ -243,7 +230,7 @@ class ContentVerification {
 
       info.totalElements++;
 
-      if (renderObject is WebFRenderParagraph || renderObject is RenderParagraph) {
+      if (renderObject is RenderParagraph) {
         info.textElements++;
       } else if (renderObject is RenderImage) {
         info.imageElements++;

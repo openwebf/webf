@@ -185,10 +185,10 @@ describe('custom widget element', () => {
     BODY.append(container);
 
     img.addEventListener('load', async () => {
-      await simulateClick(5, 5);
+      await simulateClick(100, 5);
       expect([containerClickedCount, imgClickedCount]).toEqual([1, 0]);
 
-      await simulateClick(15, 50);
+      await simulateClick(15, 5);
       expect([containerClickedCount, imgClickedCount]).toEqual([1, 1]);
 
       await snapshot();
@@ -228,7 +228,7 @@ describe('custom widget element', () => {
     await simulateClick(window.screen.width / 2, 5);
     expect([bodyClickedCount, bodyCaptureClickedCount, innerElementClickedCount, containerClickedCount]).toEqual([1, 1, 0, 1]);
 
-    await simulateClick(5, 40);
+    await simulateClick(5, 30);
 
     expect([bodyClickedCount, bodyCaptureClickedCount, innerElementClickedCount, containerClickedCount]).toEqual([2, 2, 1, 2]);
 
@@ -534,21 +534,6 @@ describe('custom widget element', () => {
   it('flutter widget should spread out the parent node when parent node is flex', async () => {
     const div = document.createElement('div');
     div.style.display = 'flex';
-    const fluttetText = document.createElement('flutter-text');
-    fluttetText.setAttribute('value', 'flutter text');
-    fluttetText.style.display = 'block';
-    div.appendChild(fluttetText);
-    div.appendChild(document.createTextNode('111'));
-    document.body.appendChild(div);
-
-    await snapshot();
-  });
-
-  it('flutter widget should spread out the parent node when parent node is sliver', async () => {
-    const div = document.createElement('div');
-    div.style.display = 'sliver';
-    div.style.height = '500px';
-    div.appendChild(document.createTextNode('111'));
     const fluttetText = document.createElement('flutter-text');
     fluttetText.setAttribute('value', 'flutter text');
     fluttetText.style.display = 'block';

@@ -9,7 +9,6 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/src/rendering/logic_box.dart';
 
 /// RenderBox of a replaced element whose content is outside the scope of the CSS formatting model,
 /// such as an image or embedded document.
@@ -55,29 +54,113 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
 
       double? width;
       double? height;
-      if (renderStyle.width.isPrecise) {
-        width = renderStyle.width.computedValue;
-        if (renderStyle.height.isPrecise) {
-          height = renderStyle.height.computedValue;
-          childConstraints = childConstraints.tighten(
-              width: width, height: height);
+      // Only use computed values if they are finite; unresolved percentages compute to infinity.
+      if (renderStyle.width.isNotAuto) {
+        final double w = renderStyle.width.computedValue;
+        if (w.isFinite) width = w;
+      }
+      if (renderStyle.height.isNotAuto) {
+        final double h = renderStyle.height.computedValue;
+        if (h.isFinite) height = h;
+      }
+
+      // Clamp specified sizes to the available constraints first (includes max-width/min-width from style).
+      if (width != null) {
+        width = width!.clamp(childConstraints.minWidth, childConstraints.maxWidth);
+      }
+      if (height != null) {
+        height = height!.clamp(childConstraints.minHeight, childConstraints.maxHeight);
+      }
+
+      // Apply aspect-ratio and constraint-driven sizing when only one or neither dimension is specified.
+      final double? ratio = renderStyle.aspectRatio;
+      if (width != null && height != null) {
+        childConstraints = childConstraints.tighten(width: width, height: height);
+      } else if (width != null) {
+        final double? h = ratio != null ? (width! / ratio) : null;
+        final double? clampedH = h != null ? h.clamp(childConstraints.minHeight, childConstraints.maxHeight) : null;
+        childConstraints = childConstraints.tighten(width: width, height: clampedH);
+      } else if (height != null) {
+        final double? w = ratio != null ? (height! * ratio) : null;
+        final double? clampedW = w != null ? w.clamp(childConstraints.minWidth, childConstraints.maxWidth) : null;
+        childConstraints = childConstraints.tighten(width: clampedW, height: height);
+      } else if (ratio != null) {
+        // Both width and height are auto; resolve via aspect-ratio and constraints.
+        final double loW = childConstraints.minWidth.isFinite ? childConstraints.minWidth : 0.0;
+        final double hiW = childConstraints.maxWidth.isFinite ? childConstraints.maxWidth : double.infinity;
+        final double loH = childConstraints.minHeight.isFinite ? childConstraints.minHeight : 0.0;
+        final double hiH = childConstraints.maxHeight.isFinite ? childConstraints.maxHeight : double.infinity;
+
+        final bool hasWidthDef = loW > 0 || hiW.isFinite;
+        final bool hasHeightDef = loH > 0 || hiH.isFinite;
+
+        double? usedW;
+        double? usedH;
+
+        if (hasWidthDef || !hasHeightDef) {
+          // Prefer width-driven when width has a definite constraint (e.g., min-width) or height does not.
+          double w0 = renderStyle.intrinsicWidth.isFinite && renderStyle.intrinsicWidth > 0
+              ? renderStyle.intrinsicWidth
+              : 0.0;
+          // Satisfy min/max width constraints; if intrinsic is below min, take min.
+          w0 = w0.clamp(loW, hiW);
+          if (w0 <= 0 && loW > 0) w0 = loW;
+          // Derive height from ratio and clamp.
+          double hFromW = w0 / ratio;
+          double h1 = hFromW.clamp(loH, hiH);
+          // If clamping height changed the ratio, recompute width to preserve ratio within constraints.
+          double w1 = (h1 * ratio).clamp(loW, hiW);
+          usedW = w1;
+          usedH = h1;
         } else {
-          childConstraints = childConstraints.tighten(
-              width: width, height: renderStyle.aspectRatio != null ? width * renderStyle.aspectRatio! : null);
+          // Height-driven when only height has a definite constraint.
+          double h0 = renderStyle.intrinsicHeight.isFinite && renderStyle.intrinsicHeight > 0
+              ? renderStyle.intrinsicHeight
+              : 0.0;
+          h0 = h0.clamp(loH, hiH);
+          if (h0 <= 0 && loH > 0) h0 = loH;
+          double wFromH = h0 * ratio;
+          double w1 = wFromH.clamp(loW, hiW);
+          double h1 = (w1 / ratio).clamp(loH, hiH);
+          usedW = w1;
+          usedH = h1;
+        }
+
+        if (usedW != null && usedH != null && usedW > 0 && usedH > 0) {
+          childConstraints = childConstraints.tighten(width: usedW, height: usedH);
         }
       }
-      if (renderStyle.height.isPrecise) {
-        height = renderStyle.height.computedValue;
-        if (renderStyle.width.isPrecise) {
-          width = renderStyle.width.computedValue;
-          childConstraints = childConstraints.tighten(
-            width: width, height: height
-          );
-        } else {
-          childConstraints = childConstraints.tighten(
-            width: renderStyle.aspectRatio != null ? height * renderStyle.aspectRatio! : null, height: height
-          );
+
+      // Avoid passing totally unconstrained constraints to child render box.
+      // Historically we clamped both axes to the viewport which caused <img> with unknown
+      // intrinsic height to temporarily take the full viewport height (e.g., 640px) before
+      // the image loaded, breaking baseline alignment in flex containers.
+      //
+      // Fix: Only clamp the max-width to the viewport when unbounded. Keep max-height
+      // unbounded so replaced elements without a resolved height/aspect-ratio don't
+      // inherit the viewport height during initial layout. This lets them size to 0
+      // (or to their intrinsic defaults once available) instead of stretching cross-axis.
+      if (childConstraints.maxWidth == double.infinity || childConstraints.maxHeight == double.infinity) {
+        final viewport = renderStyle.target.ownerDocument.viewport!.viewportSize;
+
+        final double resolvedMaxW = childConstraints.maxWidth.isFinite ? childConstraints.maxWidth : viewport.width;
+        // Preserve unbounded maxHeight to avoid using viewport height as a fallback.
+        final double resolvedMaxH = childConstraints.maxHeight.isFinite ? childConstraints.maxHeight : double.infinity;
+
+        double resolvedMinW = childConstraints.minWidth;
+        double resolvedMinH = childConstraints.minHeight;
+        if (!resolvedMinW.isFinite || resolvedMinW > resolvedMaxW) resolvedMinW = 0;
+        // When maxHeight is unbounded, ensure minHeight is not greater than it and remains finite.
+        if (!resolvedMinH.isFinite || (!resolvedMaxH.isFinite && resolvedMinH > 0) || (resolvedMaxH.isFinite && resolvedMinH > resolvedMaxH)) {
+          resolvedMinH = 0;
         }
+
+        childConstraints = BoxConstraints(
+          minWidth: resolvedMinW,
+          maxWidth: resolvedMaxW,
+          minHeight: resolvedMinH,
+          maxHeight: resolvedMaxH,
+        );
       }
 
       child!.layout(childConstraints, parentUsesSize: true);
@@ -89,6 +172,17 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
 
       minContentWidth = renderStyle.intrinsicWidth;
       minContentHeight = renderStyle.intrinsicHeight;
+
+      // Cache CSS baselines for replaced elements (inline-level):
+      // CSS baseline for replaced inline elements is the bottom border edge
+      // (i.e., the border-box bottom). Margins are handled by the formatting
+      // context and must NOT be included here.
+      try {
+        final double baseline = (boxSize?.height ?? size.height);
+        setCssBaselines(first: baseline, last: baseline);
+      } catch (_) {
+        // Safeguard: never let baseline caching break layout.
+      }
 
       didLayout();
     } else {
@@ -115,18 +209,13 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
 
   @override
   double computeDistanceToActualBaseline(TextBaseline baseline) {
-    return computeDistanceToBaseline();
+    final cached = computeCssLastBaselineOf(baseline);
+    if (cached != null) return cached;
+    // Fallback to bottom border edge (border-box height) without margins.
+    return (boxSize?.height ?? size.height);
   }
 
-  /// Compute distance to baseline of replaced element
-  @override
-  double computeDistanceToBaseline() {
-    double marginTop = renderStyle.marginTop.computedValue;
-    double marginBottom = renderStyle.marginBottom.computedValue;
-
-    // Use margin-bottom as baseline if layout has no children
-    return marginTop + boxSize!.height + marginBottom;
-  }
+  // Removed legacy computeDistanceToBaseline(); use computeDistanceToActualBaseline instead.
 
   // Should not paint when renderObject is in lazy loading and not rendered yet.
   @override
@@ -166,13 +255,14 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
   }
 
   @override
-  LogicInlineBox createLogicInlineBox() {
-    return LogicInlineBox(renderObject: this);
+  void calculateBaseline() {
+    double? baseline = child?.getDistanceToBaseline(TextBaseline.alphabetic);
+    setCssBaselines(first: baseline, last: baseline);
   }
 }
 
 class RenderRepaintBoundaryReplaced extends RenderReplaced {
-  RenderRepaintBoundaryReplaced(CSSRenderStyle renderStyle) : super(renderStyle);
+  RenderRepaintBoundaryReplaced(super.renderStyle);
 
   @override
   bool get isRepaintBoundary => true;

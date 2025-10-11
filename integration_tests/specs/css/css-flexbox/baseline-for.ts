@@ -1,7 +1,7 @@
 /*auto generated*/
 describe('baseline-for', () => {
   // @TODO: Height of empty inline-block div should equal to font height.
-  xit('empty-line-expected', async () => {
+  it('empty-line-expected', async () => {
     let b;
     let b_1;
     let b_2;

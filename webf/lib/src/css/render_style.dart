@@ -15,11 +15,13 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/css/css_animation.dart';
 import 'package:webf/src/svg/rendering/shape.dart';
 
 import 'svg.dart';
+import 'package:logging/logging.dart' show Level;
 
 typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObject);
 
@@ -231,6 +233,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   TextOverflow get textOverflow;
 
   TextAlign get textAlign;
+
+  TextDirection get direction;
 
   int? get lineClamp;
 
@@ -458,7 +462,7 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
         target.holderAttachedContainingBlockElement = null;
         break;
       case AttachPositionedChild:
-        target.addFixedPositionedElement((reason as AttachPositionedChild).positionedElement);
+        target.addOutOfFlowPositionedElement((reason as AttachPositionedChild).positionedElement);
         break;
       default:
         break;
@@ -563,6 +567,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     return target.attachedRenderPreviousSibling?.attachedRenderer is RenderObject;
   }
 
+  // DOM-scanning helpers removed; sibling relationships are derived from attached render siblings.
+
   @pragma('vm:prefer-inline')
   bool isFirstChildAreRenderFlowLayoutBox() {
     return target.firstAttachedRenderChild?.attachedRenderer is RenderLayoutBox;
@@ -642,6 +648,12 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   bool isSelfRenderFlowLayout() {
     return everyAttachedRenderObjectByTypeAndMatch(
         RenderObjectGetType.self, (renderObject, _) => renderObject is RenderFlowLayout);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isSelfAnonymousFlowLayout() {
+    return everyAttachedRenderObjectByTypeAndMatch(RenderObjectGetType.self,
+        (renderObject, _) => renderObject is RenderBoxModel && renderObject.renderStyle.target.tagName == 'Anonymous');
   }
 
   @pragma('vm:prefer-inline')
@@ -825,6 +837,13 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   // Get the offset of current element relative to specified ancestor element.
+  // Per CSSOM View, offsetLeft/offsetTop are measured from the padding edge of
+  // the offsetParent (its inner border edge). Therefore, when converting a
+  // descendant’s position to the ancestor’s coordinate space we must subtract
+  // the ancestor’s border so the result is relative to the padding edge.
+  // This applies even when the ancestor is a RenderLayoutBoxWrapper for
+  // scroll containers, since the wrapper shares the same RenderStyle (and thus
+  // border metrics) as the scrolling element.
   Offset getOffset({RenderBoxModel? ancestorRenderBox, bool excludeScrollOffset = false}) {
     // Returns (0, 0) when ancestor is null.
     if (ancestorRenderBox == null) {
@@ -832,8 +851,14 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     }
 
     return getSelfRenderBoxValue((renderBoxModel, _) {
-      return renderBoxModel.getOffsetToAncestor(Offset.zero, ancestorRenderBox,
-          excludeScrollOffset: excludeScrollOffset);
+      // Always subtract ancestor border so the offset is from the padding edge.
+      const bool excludeAncestorBorder = true;
+      return renderBoxModel.getOffsetToAncestor(
+        Offset.zero,
+        ancestorRenderBox,
+        excludeScrollOffset: excludeScrollOffset,
+        excludeAncestorBorderTop: excludeAncestorBorder,
+      );
     });
   }
 
@@ -955,14 +980,6 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   @pragma('vm:prefer-inline')
-  void markAdjacentRenderParagraphNeedsLayout() {
-    everyAttachedWidgetRenderBox((element, renderObject) {
-      renderObject.markAdjacentRenderParagraphNeedsLayout();
-      return true;
-    });
-  }
-
-  @pragma('vm:prefer-inline')
   void markParentNeedsRelayout() {
     everyAttachedWidgetRenderBox((element, renderObject) {
       renderObject.markParentNeedsRelayout();
@@ -974,6 +991,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   void markChildrenNeedsSort() {
     everyAttachedWidgetRenderBox((_, renderBoxModel) {
       if (renderBoxModel is RenderLayoutBox) {
+        renderBoxModel.markChildrenNeedsSort();
+      } else if (renderBoxModel is RenderWidget) {
         renderBoxModel.markChildrenNeedsSort();
       }
 
@@ -1009,32 +1028,48 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     getParentRenderStyle()?.markChildrenNeedsSort();
   }
 
-  // https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Positioning/Understanding_z_index/The_stacking_context#the_stacking_context
-  bool get needsStacking {
-    bool selfNeedsStacking =
-        // Root element of the document (<html>).
-        target is HTMLElement ||
-            // Element with a position value absolute or relative and z-index value other than auto.
-            ((position == CSSPositionType.relative || position == CSSPositionType.absolute)) ||
-            // Element with a position value fixed or sticky
-            ((position == CSSPositionType.fixed || position == CSSPositionType.sticky)) ||
-            // Element that is a child of a flex container with z-index value other than auto.
-            ((getParentRenderStyle()!.display == CSSDisplay.flex ||
-                    getParentRenderStyle()!.display == CSSDisplay.inlineFlex) &&
-                zIndex != null) ||
-            // Element with a opacity value less than 1.
-            opacity < 1.0 ||
-            // Element with a transform value.
-            transform != null ||
-            // Element with a filter value.
-            filter != null;
-    if (selfNeedsStacking) return true;
+  // Whether this element itself establishes a stacking context.
+  // Follows MDN/Specs triggers:
+  // - Root element (<html>)
+  // - position: fixed | sticky
+  // - position: absolute|relative with z-index != auto
+  // - flex item with z-index != auto
+  // - opacity < 1
+  // - transform != none
+  // - filter != none
+  bool get establishesStackingContext {
+    // Root element of the document
+    if (isDocumentRootBox()) return true;
 
+    // Fixed or sticky always establish a stacking context
+    if (position == CSSPositionType.fixed || position == CSSPositionType.sticky) return true;
+
+    // Positioned with non-auto z-index
+    if ((position == CSSPositionType.absolute || position == CSSPositionType.relative) && zIndex != null) {
+      return true;
+    }
+
+    // Flex items with non-auto z-index
+    final CSSRenderStyle? parent = getParentRenderStyle();
+    if (parent != null && (parent.display == CSSDisplay.flex || parent.display == CSSDisplay.inlineFlex) && zIndex != null) {
+      return true;
+    }
+
+    // Compositing triggers
+    if (opacity < 1.0) return true;
+    if (transform != null) return true;
+    if (filter != null) return true;
+
+    return false;
+  }
+
+  // Whether this element or any descendant needs stacking participation.
+  // Used as a coarse optimization to mark parents for sorting.
+  bool get needsStacking {
+    if (establishesStackingContext) return true;
     Node? child = target.firstChild;
     while (child != null) {
-      if (child is Element && child.renderStyle.needsStacking) {
-        return true;
-      }
+      if (child is Element && child.renderStyle.needsStacking) return true;
       child = child.nextSibling;
     }
     return false;
@@ -1065,20 +1100,17 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   dynamic getRenderBoxValueByType(RenderObjectGetType getType, RenderBoxModelGetter getter) {
-    if (target.managedByFlutterWidget) {
-      RenderBoxModel? widgetRenderBoxModel =
-          widgetRenderObjectIterator.firstWhereOrNull((renderBox) => renderBox.attached);
+    RenderBoxModel? widgetRenderBoxModel =
+    widgetRenderObjectIterator.firstWhereOrNull((renderBox) => renderBox.attached);
 
-      if (widgetRenderBoxModel == null) return null;
+    if (widgetRenderBoxModel == null) return null;
 
-      return _renderObjectMatchFn(widgetRenderBoxModel, getType, (renderObject, renderStyle) {
-        if (renderObject is RenderBoxModel && renderStyle != null) {
-          return getter(renderObject, renderStyle);
-        }
-        return null;
-      });
-    }
-    return null;
+    return _renderObjectMatchFn(widgetRenderBoxModel, getType, (renderObject, renderStyle) {
+      if (renderObject is RenderBoxModel && renderStyle != null) {
+        return getter(renderObject, renderStyle);
+      }
+      return null;
+    });
   }
 
   dynamic _renderObjectMatchFn(
@@ -1126,21 +1158,15 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   bool everyRenderObjectByTypeAndMatch(RenderObjectGetType getType, RenderObjectMatchers matcher) {
-    if (target.managedByFlutterWidget) {
-      return everyWidgetRenderBox((_, renderBoxModel) {
-        return _renderObjectMatchFn(renderBoxModel, getType, matcher);
-      });
-    }
-    return false;
+    return everyWidgetRenderBox((_, renderBoxModel) {
+      return _renderObjectMatchFn(renderBoxModel, getType, matcher);
+    });
   }
 
   bool everyAttachedRenderObjectByTypeAndMatch(RenderObjectGetType getType, RenderObjectMatchers matcher) {
-    if (target.managedByFlutterWidget) {
-      return everyAttachedWidgetRenderBox((_, renderBoxModel) {
-        return _renderObjectMatchFn(renderBoxModel, getType, matcher);
-      });
-    }
-    return false;
+    return everyAttachedWidgetRenderBox((_, renderBoxModel) {
+      return _renderObjectMatchFn(renderBoxModel, getType, matcher);
+    });
   }
 
   bool everyRenderBox(EveryRenderBoxModelHandlerCallback callback) {
@@ -1228,17 +1254,15 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
       return;
     }
 
-    if (target.managedByFlutterWidget) {
-      everyAttachedWidgetRenderBox((_, renderBoxMode) {
-        if (renderBoxMode is RenderEventListener) {
-          renderBoxMode.child?.visitChildren(visitor);
-        } else {
-          renderBoxMode.visitChildren(visitor);
-        }
-        return true;
-      });
-      return;
-    }
+    everyAttachedWidgetRenderBox((_, renderBoxMode) {
+      if (renderBoxMode is RenderEventListener) {
+        renderBoxMode.child?.visitChildren(visitor);
+      } else {
+        renderBoxMode.visitChildren(visitor);
+      }
+      return true;
+    });
+    return;
   }
 
   void dispose() {
@@ -1248,6 +1272,7 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
 class CSSRenderStyle extends RenderStyle
     with
+        CSSWritingModeMixin,
         CSSSizingMixin,
         CSSPaddingMixin,
         CSSBorderMixin,
@@ -1278,6 +1303,14 @@ class CSSRenderStyle extends RenderStyle
         CSSAnimationMixin,
         CSSSvgMixin {
   CSSRenderStyle({required this.target});
+
+  // Transient flag for painting: when true on a container, its local painting
+  // order computation will suppress direct children (or deeper descendants) that
+  // are stacking context roots with positive z-index. Those participants are
+  // expected to be promoted and painted by an ancestor stacking context to
+  // satisfy cross-parent z-index ordering. This flag is only mutated during a
+  // paint pass and should not be persisted.
+  bool suppressPositiveStackingFromDescendants = false;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -1499,10 +1532,17 @@ class CSSRenderStyle extends RenderStyle
         return textOverflow;
       case LINE_CLAMP:
         return lineClamp;
+      case TAB_SIZE:
+        // Returns effective tab-size (number of spaces) from CSSTextMixin
+        return tabSize;
+      case TEXT_INDENT:
+        return textIndent;
       case VERTICAL_ALIGN:
         return verticalAlign;
       case TEXT_ALIGN:
         return textAlign;
+      case DIRECTION:
+        return direction;
       // Transform
       case TRANSFORM:
         return transform;
@@ -1520,6 +1560,12 @@ class CSSRenderStyle extends RenderStyle
   }
 
   setProperty(String name, value) {
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      debugPrint('[webf][render-style] setProperty: ' +
+          name +
+          ' <- ' +
+          (value is CSSColor ? value.cssText() : value.toString()));
+    }
     // Memorize the variable value to renderStyle object.
     if (CSSVariable.isCSSSVariableProperty(name)) {
       setCSSVariable(name, value.toString());
@@ -1542,40 +1588,41 @@ class CSSRenderStyle extends RenderStyle
       }
     }
 
-    // Map logical properties to physical properties for LTR mode
+    // Map logical properties to physical properties based on current direction
     String propertyName = name;
+    final bool isRTL = direction == TextDirection.rtl;
 
-    // Handle inline-start properties (for LTR, maps to left side)
+    // Handle inline-start properties (maps to left in LTR, right in RTL)
     if (name == MARGIN_INLINE_START) {
-      propertyName = MARGIN_LEFT;
+      propertyName = isRTL ? MARGIN_RIGHT : MARGIN_LEFT;
     } else if (name == PADDING_INLINE_START) {
-      propertyName = PADDING_LEFT;
+      propertyName = isRTL ? PADDING_RIGHT : PADDING_LEFT;
     } else if (name == BORDER_INLINE_START) {
-      propertyName = BORDER_LEFT;
+      propertyName = isRTL ? BORDER_RIGHT : BORDER_LEFT;
     } else if (name == BORDER_INLINE_START_WIDTH) {
-      propertyName = BORDER_LEFT_WIDTH;
+      propertyName = isRTL ? BORDER_RIGHT_WIDTH : BORDER_LEFT_WIDTH;
     } else if (name == BORDER_INLINE_START_STYLE) {
-      propertyName = BORDER_LEFT_STYLE;
+      propertyName = isRTL ? BORDER_RIGHT_STYLE : BORDER_LEFT_STYLE;
     } else if (name == BORDER_INLINE_START_COLOR) {
-      propertyName = BORDER_LEFT_COLOR;
+      propertyName = isRTL ? BORDER_RIGHT_COLOR : BORDER_LEFT_COLOR;
     } else if (name == INSET_INLINE_START) {
-      propertyName = LEFT;
+      propertyName = isRTL ? RIGHT : LEFT;
     }
-    // Handle inline-end properties (for LTR, maps to right side)
+    // Handle inline-end properties (maps to right in LTR, left in RTL)
     else if (name == MARGIN_INLINE_END) {
-      propertyName = MARGIN_RIGHT;
+      propertyName = isRTL ? MARGIN_LEFT : MARGIN_RIGHT;
     } else if (name == PADDING_INLINE_END) {
-      propertyName = PADDING_RIGHT;
+      propertyName = isRTL ? PADDING_LEFT : PADDING_RIGHT;
     } else if (name == BORDER_INLINE_END) {
-      propertyName = BORDER_RIGHT;
+      propertyName = isRTL ? BORDER_LEFT : BORDER_RIGHT;
     } else if (name == BORDER_INLINE_END_WIDTH) {
-      propertyName = BORDER_RIGHT_WIDTH;
+      propertyName = isRTL ? BORDER_LEFT_WIDTH : BORDER_RIGHT_WIDTH;
     } else if (name == BORDER_INLINE_END_STYLE) {
-      propertyName = BORDER_RIGHT_STYLE;
+      propertyName = isRTL ? BORDER_LEFT_STYLE : BORDER_RIGHT_STYLE;
     } else if (name == BORDER_INLINE_END_COLOR) {
-      propertyName = BORDER_RIGHT_COLOR;
+      propertyName = isRTL ? BORDER_LEFT_COLOR : BORDER_RIGHT_COLOR;
     } else if (name == INSET_INLINE_END) {
-      propertyName = RIGHT;
+      propertyName = isRTL ? LEFT : RIGHT;
     }
     // Handle block-start properties (maps to top)
     else if (name == MARGIN_BLOCK_START) {
@@ -1712,6 +1759,10 @@ class CSSRenderStyle extends RenderStyle
         break;
       // Background
       case BACKGROUND_COLOR:
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          debugPrint(
+              '[webf][render-style] backgroundColor <- ' + (value is CSSColor ? value.cssText() : value.toString()));
+        }
         backgroundColor = value;
         break;
       case BACKGROUND_ATTACHMENT:
@@ -1818,6 +1869,9 @@ class CSSRenderStyle extends RenderStyle
         break;
       // Text
       case COLOR:
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          debugPrint('[webf][render-style] color <- ' + (value is CSSColor ? value.cssText() : value.toString()));
+        }
         color = value;
         break;
       case TEXT_DECORATION_LINE:
@@ -1862,11 +1916,34 @@ class CSSRenderStyle extends RenderStyle
       case LINE_CLAMP:
         lineClamp = value;
         break;
+      case TEXT_TRANSFORM:
+        textTransform = value;
+        break;
+      case TAB_SIZE:
+        tabSize = value;
+        break;
+      case TEXT_INDENT:
+        // Accept CSSLengthValue or parse from string
+        if (value is CSSLengthValue) {
+          textIndent = value;
+        } else if (value is String) {
+          final parsed = CSSLength.parseLength(value, this, TEXT_INDENT, Axis.horizontal);
+          if (parsed != CSSLengthValue.unknown) {
+            textIndent = parsed;
+          }
+        }
+        break;
       case VERTICAL_ALIGN:
         verticalAlign = value;
         break;
       case TEXT_ALIGN:
         textAlign = value;
+        break;
+      case DIRECTION:
+        direction = value;
+        break;
+      case WRITING_MODE:
+        writingMode = value as CSSWritingMode;
         break;
       // Transform
       case TRANSFORM:
@@ -1990,40 +2067,41 @@ class CSSRenderStyle extends RenderStyle
   dynamic resolveValue(String propertyName, String propertyValue, {String? baseHref}) {
     RenderStyle renderStyle = this;
 
-    // Map logical properties to physical properties for LTR mode
+    // Map logical properties to physical properties based on current direction
     String mappedPropertyName = propertyName;
+    final bool isRTL = direction == TextDirection.rtl;
 
-    // Handle inline-start properties (for LTR, maps to left side)
+    // Handle inline-start properties (maps to left in LTR, right in RTL)
     if (propertyName == MARGIN_INLINE_START) {
-      mappedPropertyName = MARGIN_LEFT;
+      mappedPropertyName = isRTL ? MARGIN_RIGHT : MARGIN_LEFT;
     } else if (propertyName == PADDING_INLINE_START) {
-      mappedPropertyName = PADDING_LEFT;
+      mappedPropertyName = isRTL ? PADDING_RIGHT : PADDING_LEFT;
     } else if (propertyName == BORDER_INLINE_START) {
-      mappedPropertyName = BORDER_LEFT;
+      mappedPropertyName = isRTL ? BORDER_RIGHT : BORDER_LEFT;
     } else if (propertyName == BORDER_INLINE_START_WIDTH) {
-      mappedPropertyName = BORDER_LEFT_WIDTH;
+      mappedPropertyName = isRTL ? BORDER_RIGHT_WIDTH : BORDER_LEFT_WIDTH;
     } else if (propertyName == BORDER_INLINE_START_STYLE) {
-      mappedPropertyName = BORDER_LEFT_STYLE;
+      mappedPropertyName = isRTL ? BORDER_RIGHT_STYLE : BORDER_LEFT_STYLE;
     } else if (propertyName == BORDER_INLINE_START_COLOR) {
-      mappedPropertyName = BORDER_LEFT_COLOR;
+      mappedPropertyName = isRTL ? BORDER_RIGHT_COLOR : BORDER_LEFT_COLOR;
     } else if (propertyName == INSET_INLINE_START) {
-      mappedPropertyName = LEFT;
+      mappedPropertyName = isRTL ? RIGHT : LEFT;
     }
-    // Handle inline-end properties (for LTR, maps to right side)
+    // Handle inline-end properties (maps to right in LTR, left in RTL)
     else if (propertyName == MARGIN_INLINE_END) {
-      mappedPropertyName = MARGIN_RIGHT;
+      mappedPropertyName = isRTL ? MARGIN_LEFT : MARGIN_RIGHT;
     } else if (propertyName == PADDING_INLINE_END) {
-      mappedPropertyName = PADDING_RIGHT;
+      mappedPropertyName = isRTL ? PADDING_LEFT : PADDING_RIGHT;
     } else if (propertyName == BORDER_INLINE_END) {
-      mappedPropertyName = BORDER_RIGHT;
+      mappedPropertyName = isRTL ? BORDER_LEFT : BORDER_RIGHT;
     } else if (propertyName == BORDER_INLINE_END_WIDTH) {
-      mappedPropertyName = BORDER_RIGHT_WIDTH;
+      mappedPropertyName = isRTL ? BORDER_LEFT_WIDTH : BORDER_RIGHT_WIDTH;
     } else if (propertyName == BORDER_INLINE_END_STYLE) {
-      mappedPropertyName = BORDER_RIGHT_STYLE;
+      mappedPropertyName = isRTL ? BORDER_LEFT_STYLE : BORDER_RIGHT_STYLE;
     } else if (propertyName == BORDER_INLINE_END_COLOR) {
-      mappedPropertyName = BORDER_RIGHT_COLOR;
+      mappedPropertyName = isRTL ? BORDER_LEFT_COLOR : BORDER_RIGHT_COLOR;
     } else if (propertyName == INSET_INLINE_END) {
-      mappedPropertyName = RIGHT;
+      mappedPropertyName = isRTL ? LEFT : RIGHT;
     }
     // Handle block-start properties (maps to top)
     else if (propertyName == MARGIN_BLOCK_START) {
@@ -2184,6 +2262,15 @@ class CSSRenderStyle extends RenderStyle
       case TEXT_ALIGN:
         value = CSSTextMixin.resolveTextAlign(propertyValue);
         break;
+      case TEXT_INDENT:
+        value = CSSLength.resolveLength(propertyValue, renderStyle, TEXT_INDENT);
+        break;
+      case DIRECTION:
+        value = CSSTextMixin.resolveDirection(propertyValue);
+        break;
+      case WRITING_MODE:
+        value = CSSWritingModeMixin.resolveWritingMode(propertyValue);
+        break;
       case BACKGROUND_ATTACHMENT:
         value = CSSBackground.resolveBackgroundAttachment(propertyValue);
         break;
@@ -2305,8 +2392,15 @@ class CSSRenderStyle extends RenderStyle
         // Overflow will affect text-overflow ellipsis taking effect
         value = CSSText.resolveTextOverflow(propertyValue);
         break;
+      case TEXT_TRANSFORM:
+        value = CSSText.resolveTextTransform(propertyValue);
+        break;
       case LINE_CLAMP:
         value = CSSText.parseLineClamp(propertyValue);
+        break;
+      case TAB_SIZE:
+        // CSS tab-size accepts <number> (and <length> in spec, but we currently treat it as number of spaces)
+        value = CSSNumber.parseNumber(propertyValue);
         break;
       case VERTICAL_ALIGN:
         value = CSSInlineMixin.resolveVerticalAlign(propertyValue);
@@ -2360,6 +2454,30 @@ class CSSRenderStyle extends RenderStyle
 
     CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
 
+    // Special handling for absolutely/fixed positioned non-replaced elements.
+    // Follow CSS abs-non-replaced width algorithm:
+    // - If width is auto and both left and right are auto: keep width as auto (shrink-to-fit in layout).
+    // - If width is auto and both left and right are not auto: solve width from containing block padding box.
+    if ((renderStyle.position == CSSPositionType.absolute || renderStyle.position == CSSPositionType.fixed) &&
+        !renderStyle.isSelfRenderReplaced()) {
+      if (renderStyle.width.isNotAuto) {
+        logicalWidth = renderStyle.width.computedValue;
+      } else if (renderStyle.left.isNotAuto && renderStyle.right.isNotAuto) {
+        // https://www.w3.org/TR/css-position-3/#abs-non-replaced-width
+        if (renderStyle.isParentRenderBoxModel()) {
+          RenderStyle parentRenderStyle = renderStyle.getParentRenderStyle()!;
+          // Width of positioned element should subtract its horizontal margin.
+          logicalWidth = (parentRenderStyle.paddingBoxLogicalWidth ?? 0) -
+              renderStyle.left.computedValue -
+              renderStyle.right.computedValue -
+              renderStyle.marginLeft.computedValue -
+              renderStyle.marginRight.computedValue;
+        } else {
+          logicalWidth = null;
+        }
+      }
+    }
+
     // Width applies to all elements except non-replaced inline elements.
     // https://drafts.csswg.org/css-sizing-3/#propdef-width
     if (effectiveDisplay == CSSDisplay.inline && !renderStyle.isSelfRenderReplaced()) {
@@ -2367,16 +2485,61 @@ class CSSRenderStyle extends RenderStyle
       return;
     } else if (effectiveDisplay == CSSDisplay.block || effectiveDisplay == CSSDisplay.flex) {
       CSSRenderStyle? parentStyle = renderStyle.getParentRenderStyle();
-      if (renderStyle.width.isNotAuto) {
+      if (logicalWidth == null && renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
-      } else if (renderStyle.isSelfHTMLElement()) {
-        logicalWidth = target.ownerView.viewport!.boxSize!.width;
-      } else if ((renderStyle.isSelfRouterLinkElement() && getCurrentViewportBox() is! RootRenderViewportBox)) {
+      } else if (logicalWidth == null && renderStyle.isSelfHTMLElement()) {
+        // Avoid defaulting to the viewport width when this element participates
+        // in an inline-block shrink-to-fit context. Children of an inline-block
+        // with auto width must not assume a definite containing block width; doing so
+        // causes percentage widths (e.g., 100%) to immediately resolve to the viewport
+        // and force the inline-block to expand to the full line width. Instead, keep
+        // width auto here so the child can measure intrinsically and the parent can
+        // shrink-wrap to its contents.
+        final CSSRenderStyle? p = renderStyle.getParentRenderStyle();
+        final bool parentInlineBlockAuto = p != null &&
+            p.effectiveDisplay == CSSDisplay.inlineBlock && p.width.isAuto;
+        if (!parentInlineBlockAuto) {
+          logicalWidth = target.ownerView.viewport!.boxSize!.width;
+        }
+      } else if (logicalWidth == null && (renderStyle.isSelfRouterLinkElement() && getCurrentViewportBox() is! RootRenderViewportBox)) {
         logicalWidth = getCurrentViewportBox()!.boxSize!.width;
-      } else if (parentStyle != null) {
-        // Block element (except replaced element) will stretch to the content width of its parent in flow layout.
-        // Replaced element also stretch in flex layout if align-items is stretch.
-        if (!renderStyle.isSelfRenderReplaced() || renderStyle.isParentRenderFlexLayout()) {
+      } else if (logicalWidth == null && parentStyle != null) {
+        // Resolve whether the direct parent is a flex item (its render box's parent is a flex container).
+        // Determine if our direct parent is a flex item: i.e., the parent's parent is a flex container.
+        final bool parentIsFlexItem = parentStyle.isParentRenderFlexLayout();
+        // Whether THIS element is a flex item (its own parent is a flex container).
+        // When true, width:auto must not be stretched to the parent’s width in the main axis;
+        // the flex base size is content-based per CSS Flexbox §9.2.
+        final bool thisIsFlexItem = this.isParentRenderFlexLayout();
+
+        // Case A: inside a flex item — stretch block-level auto width to the flex item's measured width.
+        if (parentIsFlexItem && !thisIsFlexItem &&
+            !renderStyle.isSelfRenderReplaced() &&
+            renderStyle.position != CSSPositionType.absolute &&
+            renderStyle.position != CSSPositionType.fixed) {
+          final RenderBoxModel? parentBox = parentStyle.attachedRenderBoxModel;
+          final BoxConstraints? pcc = parentBox?.contentConstraints;
+          if (pcc != null && pcc.hasBoundedWidth && pcc.maxWidth.isFinite) {
+            try {
+              final tag = target.tagName.toLowerCase();
+              FlexLog.log(
+                impl: FlexImpl.flex,
+                feature: FlexFeature.container,
+                message: () => '[Style] <$tag> computeContentBoxLogicalWidth: '
+                    'inherit from flex-item parent contentConstraints.maxW='
+                    '${pcc.maxWidth.toStringAsFixed(2)} marginH=${renderStyle.margin.horizontal.toStringAsFixed(2)}',
+              );
+            } catch (_) {}
+            logicalWidth = pcc.maxWidth - renderStyle.margin.horizontal;
+          }
+
+        // Case B: normal flow (not inside a flex item) — find the nearest non-inline ancestor
+        // and adopt its content box logical width or bounded content constraints.
+        } else if (!parentIsFlexItem &&
+            !renderStyle.isSelfRenderReplaced() &&
+            renderStyle.position != CSSPositionType.absolute &&
+            renderStyle.position != CSSPositionType.fixed &&
+            !renderStyle.isParentRenderFlexLayout()) {
           RenderStyle? ancestorRenderStyle = _findAncestorWithNoDisplayInline();
           // Should ignore renderStyle of display inline when searching for ancestors to stretch width.
           if (ancestorRenderStyle != null) {
@@ -2392,6 +2555,9 @@ class CSSRenderStyle extends RenderStyle
               logicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
             }
 
+            // No fallback to unrelated ancestors for flex scenarios here; if ancestor is a
+            // flex item but has no bounded width yet, defer stretching (leave null).
+
             // Should subtract horizontal margin of own from its parent content width.
             if (logicalWidth != null) {
               logicalWidth -= renderStyle.margin.horizontal;
@@ -2402,30 +2568,8 @@ class CSSRenderStyle extends RenderStyle
     } else if (effectiveDisplay == CSSDisplay.inlineBlock ||
         effectiveDisplay == CSSDisplay.inlineFlex ||
         effectiveDisplay == CSSDisplay.inline) {
-      if (renderStyle.width.isNotAuto) {
+      if (logicalWidth == null && renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
-      } else if ((renderStyle.position == CSSPositionType.absolute || renderStyle.position == CSSPositionType.fixed) &&
-          !renderStyle.isSelfRenderReplaced() &&
-          renderStyle.width.isAuto &&
-          renderStyle.left.isNotAuto &&
-          renderStyle.right.isNotAuto) {
-        // The width of positioned, non-replaced element is determined as following algorithm.
-        // https://www.w3.org/TR/css-position-3/#abs-non-replaced-width
-        if (!renderStyle.isParentRenderBoxModel()) {
-          logicalWidth = null;
-        }
-        // Should access the renderStyle of renderBoxModel parent but not renderStyle parent
-        // cause the element of renderStyle parent may not equal to containing block.
-        // RenderBoxModel parent = current.parent as RenderBoxModel;
-        // Get the renderStyle of outer scrolling box cause the renderStyle of scrolling
-        // content box is only a fraction of the complete renderStyle.
-        RenderStyle parentRenderStyle = renderStyle.getParentRenderStyle()!;
-        // Width of positioned element should subtract its horizontal margin.
-        logicalWidth = (parentRenderStyle.paddingBoxLogicalWidth ?? 0) -
-            renderStyle.left.computedValue -
-            renderStyle.right.computedValue -
-            renderStyle.marginLeft.computedValue -
-            renderStyle.marginRight.computedValue;
       }
     }
 
@@ -2800,7 +2944,7 @@ class CSSRenderStyle extends RenderStyle
   RenderWidget _createRenderWidget({RenderWidget? previousRenderWidget, bool isRepaintBoundary = false}) {
     RenderWidget nextReplaced;
 
-    if (previousRenderWidget == null || target.managedByFlutterWidget) {
+    if (previousRenderWidget == null) {
       if (isRepaintBoundary) {
         nextReplaced = RenderRepaintBoundaryWidget(
           renderStyle: this,
@@ -2817,18 +2961,18 @@ class CSSRenderStyle extends RenderStyle
   }
 
   // Create renderLayoutBox if type changed and copy children if there has previous renderLayoutBox.
-  RenderLayoutBox createRenderLayout({bool isRepaintBoundary = false, CSSRenderStyle? cssRenderStyle}) {
+  RenderBoxModel createRenderLayout({bool isRepaintBoundary = false}) {
     CSSDisplay display = this.display;
-    RenderLayoutBox? nextRenderLayoutBox;
+    RenderBoxModel nextRenderLayoutBox;
 
     if (display == CSSDisplay.flex || display == CSSDisplay.inlineFlex) {
       if (isRepaintBoundary) {
         nextRenderLayoutBox = RenderRepaintBoundaryFlexLayout(
-          renderStyle: cssRenderStyle ?? this,
+          renderStyle: this,
         );
       } else {
         nextRenderLayoutBox = RenderFlexLayout(
-          renderStyle: cssRenderStyle ?? this,
+          renderStyle: this,
         );
       }
     } else if (display == CSSDisplay.block ||
@@ -2836,19 +2980,19 @@ class CSSRenderStyle extends RenderStyle
         display == CSSDisplay.inline ||
         display == CSSDisplay.inlineBlock) {
       if (isRepaintBoundary) {
-        nextRenderLayoutBox = RenderRepaintBoundaryFlowLayout(
-          renderStyle: cssRenderStyle ?? this,
+        nextRenderLayoutBox = RenderRepaintBoundaryFlowLayoutNext(
+          renderStyle: this,
         );
       } else {
         nextRenderLayoutBox = RenderFlowLayout(
-          renderStyle: cssRenderStyle ?? this,
+          renderStyle: this,
         );
       }
     } else {
       throw FlutterError('Not supported display type $display');
     }
 
-    return nextRenderLayoutBox!;
+    return nextRenderLayoutBox;
   }
 
   RenderReplaced _createRenderReplaced({RenderReplaced? previousReplaced, bool isRepaintBoundary = false}) {
@@ -2866,7 +3010,197 @@ class CSSRenderStyle extends RenderStyle
     return nextReplaced;
   }
 
-  RenderBoxModel updateOrCreateRenderBoxModel() {
+  /// Check if anonymous block boxes should be created for inline elements.
+  /// According to CSS spec, anonymous block boxes are needed when:
+  /// 1. A block-level element is a child of an inline element
+  /// 2. Inline content needs to be wrapped to maintain proper formatting context
+  ///
+  /// This function helps determine when the layout engine should generate
+  /// anonymous block boxes to properly handle mixed inline/block content.
+  ///
+  /// Example usage:
+  /// ```dart
+  /// if (renderStyle.shouldCreateAnonymousBlockBoxForInlineElements()) {
+  ///   // Create anonymous block boxes to wrap inline content
+  ///   // before and after the block-level children
+  /// }
+  /// ```
+  ///
+  /// Returns true if anonymous block boxes are needed, false otherwise.
+  bool shouldCreateAnonymousBlockBoxForInlineElements() {
+    // Only check for inline elements
+    if (display != CSSDisplay.inline) {
+      return false;
+    }
+
+    // Check if this inline element contains any block-level children
+    final element = target;
+    bool hasBlockLevelChild = false;
+
+    for (var child in element.childNodes) {
+      if (child is Element) {
+        final childDisplay = child.renderStyle.display;
+        final childPosition = child.renderStyle.position;
+
+        // Skip positioned elements (they're out of flow)
+        if (childPosition == CSSPositionType.absolute || childPosition == CSSPositionType.fixed) {
+          continue;
+        }
+
+        // Check if child is block-level
+        if (childDisplay == CSSDisplay.block || childDisplay == CSSDisplay.flex) {
+          hasBlockLevelChild = true;
+          break;
+        }
+      }
+    }
+
+    // Anonymous block boxes are needed when inline elements contain block-level children
+    return hasBlockLevelChild;
+  }
+
+  /// Check if this element should establish an inline formatting context.
+  /// This method checks from the RenderObject perspective to properly handle
+  /// anonymous blocks that may wrap inline elements.
+  bool shouldEstablishInlineFormattingContext() {
+    // Block and inline-block containers can establish inline formatting contexts
+    if (effectiveDisplay != CSSDisplay.block && effectiveDisplay != CSSDisplay.inlineBlock) {
+      return false;
+    }
+
+    // Per CSS Inline Layout (css-inline-3) and CSS 2.1 §9.4.2, a block container
+    // establishes an inline formatting context for its inline-level content
+    // regardless of the 'overflow' property. Overflow only affects painting and
+    // scrollability (block formatting context establishment), not whether inline
+    // content forms line boxes. Therefore, do NOT early-return here when overflow
+    // is not visible; allow IFC when the content qualifies.
+
+    // Do not special-case BODY/HTML here. They can also establish IFC
+    // when they contain only inline content and no block-level content.
+
+    // Positioned elements (absolute/fixed) are taken out of normal flow with
+    // respect to their placement, but their in-flow descendants still form
+    // formatting contexts as usual. Per CSS 2.1 §9.4.1 and css-position-3,
+    // an absolutely positioned block container with inline-level content
+    // still establishes an inline formatting context for its content.
+    // Therefore, do NOT block IFC establishment solely due to positioning.
+
+    // Flex items may establish their own IFC; do not block based on parent.
+
+    // Do not suppress IFC solely because the parent is inline-level.
+    // A block container inside an inline element creates anonymous block boxes
+    // and still establishes an inline formatting context for its inline content
+    // per CSS 2.1 §9.2.1.1 and §9.4.2.
+
+    // Check children from RenderObject perspective
+    // This properly accounts for anonymous blocks
+    return _shouldEstablishIFCFromRenderObject();
+  }
+
+  /// Check render objects to determine if inline formatting context is needed
+  /// This accounts for anonymous blocks that may have been created
+  bool _shouldEstablishIFCFromRenderObject() {
+    if (!isSelfRenderFlowLayout()) {
+      return false;
+    }
+
+    final renderBoxModel = attachedRenderBoxModel as RenderFlowLayout;
+
+    bool hasInlineContent = false;
+    bool hasBlockContent = false;
+
+    // Check actual render children instead of DOM nodes
+    RenderBox? child = renderBoxModel.firstChild;
+    while (child != null) {
+      // Check for text content
+      if (child is RenderTextBox) {
+        // Text nodes indicate inline content
+        if (child.data.trim().isNotEmpty) {
+          hasInlineContent = true;
+        }
+      } else if (child is RenderBoxModel) {
+        // Special handling: if this is an event listener wrapper, inspect its real child
+        if (child is RenderEventListener) {
+          final RenderBox? wrapped = child.child;
+          if (wrapped is RenderTextBox) {
+            if (wrapped.data.trim().isNotEmpty) {
+              hasInlineContent = true;
+            }
+            child = renderBoxModel.childAfter(child);
+            continue;
+          } else if (wrapped is RenderBoxModel) {
+            final childRenderStyle = wrapped.renderStyle;
+            final childDisplay = childRenderStyle.display;
+            final childPosition = childRenderStyle.position;
+
+            if (childPosition != CSSPositionType.absolute && childPosition != CSSPositionType.fixed) {
+              if (wrapped.renderStyle.isSelfAnonymousFlowLayout()) {
+                hasInlineContent = true;
+              } else if (childDisplay == CSSDisplay.block || childDisplay == CSSDisplay.flex) {
+                hasBlockContent = true;
+              } else if (childDisplay == CSSDisplay.inline ||
+                  childDisplay == CSSDisplay.inlineBlock ||
+                  childDisplay == CSSDisplay.inlineFlex) {
+                hasInlineContent = true;
+              }
+            }
+            child = renderBoxModel.childAfter(child);
+            continue;
+          }
+        }
+        final childRenderStyle = child.renderStyle;
+        final childDisplay = childRenderStyle.display;
+        final childPosition = childRenderStyle.position;
+
+        // Skip positioned elements (out of flow)
+        if (childPosition == CSSPositionType.absolute || childPosition == CSSPositionType.fixed) {
+          child = renderBoxModel.childAfter(child);
+          continue;
+        }
+
+        // Check for anonymous blocks using the built-in method
+        if (child.renderStyle.isSelfAnonymousFlowLayout()) {
+          // Anonymous blocks contain inline content
+          hasInlineContent = true;
+        } else if (childDisplay == CSSDisplay.block || childDisplay == CSSDisplay.flex) {
+          // Regular block-level content
+          hasBlockContent = true;
+        } else if (childDisplay == CSSDisplay.inline ||
+            childDisplay == CSSDisplay.inlineBlock ||
+            childDisplay == CSSDisplay.inlineFlex) {
+          // Inline-level content
+          hasInlineContent = true;
+        }
+      } else if (child is RenderPositionPlaceholder) {
+        // Position placeholders don't affect IFC decision
+        child = renderBoxModel.childAfter(child);
+        continue;
+      }
+
+      // If we have both inline and block content, we should NOT establish IFC
+      // because anonymous blocks should have already been created to handle this
+      if (hasInlineContent && hasBlockContent) {
+        return false;
+      }
+
+      child = renderBoxModel.childAfter(child);
+    }
+
+    // Establish IFC if we have inline content (including anonymous blocks)
+    // and no regular block content
+    final bool establish = hasInlineContent && !hasBlockContent;
+    final tag = target.tagName.toLowerCase();
+    InlineLayoutLog.log(
+      impl: InlineImpl.flow,
+      feature: InlineFeature.decision,
+      level: Level.FINER,
+      message: () => 'decision <${tag}> inline=${hasInlineContent} '
+          'block=${hasBlockContent} effectiveDisplay=${effectiveDisplay} → establishIFC=${establish}',
+    );
+    return establish;
+  }
+
+  RenderBoxModel createRenderBoxModel() {
     RenderBoxModel nextRenderBoxModel;
     if (target.isWidgetElement) {
       nextRenderBoxModel = _createRenderWidget(isRepaintBoundary: target.isRepaintBoundary);
@@ -3025,5 +3359,33 @@ class CSSRenderStyle extends RenderStyle
   // Subtract padding and border to border-box width to get content-box width.
   double deflatePaddingBorderWidth(double borderBoxWidth) {
     return borderBoxWidth - paddingLeft.computedValue - paddingRight.computedValue - border.left - border.right;
+  }
+}
+
+// Writing-mode support (minimal): determines whether the inline axis is horizontal or vertical.
+// This influences flex main/cross axis mapping in components that opt-in.
+enum CSSWritingMode { horizontalTb, verticalRl, verticalLr }
+
+mixin CSSWritingModeMixin on RenderStyle {
+  CSSWritingMode get writingMode => _writingMode ?? CSSWritingMode.horizontalTb;
+  CSSWritingMode? _writingMode;
+  set writingMode(CSSWritingMode value) {
+    if (_writingMode == value) return;
+    _writingMode = value;
+    if (isSelfRenderFlexLayout()) {
+      markNeedsLayout();
+    }
+  }
+
+  static CSSWritingMode resolveWritingMode(String raw) {
+    switch (raw) {
+      case 'vertical-rl':
+        return CSSWritingMode.verticalRl;
+      case 'vertical-lr':
+        return CSSWritingMode.verticalLr;
+      case 'horizontal-tb':
+      default:
+        return CSSWritingMode.horizontalTb;
+    }
   }
 }

@@ -32,7 +32,7 @@ describe('Inline elements with text in flex layout', () => {
     await snapshot();
 
     // Change container width to trigger reflow
-    container.style.width = '600px';
+    container.style.width = '800px';
 
     // Take snapshot after width change
     await snapshot();

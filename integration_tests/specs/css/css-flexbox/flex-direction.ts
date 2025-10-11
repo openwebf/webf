@@ -76,27 +76,14 @@ describe('flex-direction', () => {
 
     await snapshot();
   });
-  it('with-element-insert', async () => {
+  // Group 1: Row Direction Tests
+  it("row direction element insert", async () => {
     let flexItem;
     let flexItem_1;
     let flexItem_2;
     let flexItem_3;
-    let flexItem_4;
-    let flexItem_5;
-    let flexItem_6;
-    let flexItem_7;
-    let flexItem_8;
-    let flexItem_9;
-    let flexItem_10;
-    let flexItem_11;
-    let flexItem_12;
-    let flexItem_13;
-    let flexItem_14;
-    let flexItem_15;
     let flexContainer;
-    let flexContainer_1;
-    let flexContainer_2;
-    let flexContainer_3;
+
     flexContainer = createElement(
       'div',
       {
@@ -181,6 +168,19 @@ describe('flex-direction', () => {
         )),
       ]
     );
+
+    BODY.appendChild(flexContainer);
+    await snapshot();
+  });
+
+  // Group 2: Row Reverse Direction Tests
+  it("row reverse direction element insert", async () => {
+    let flexItem_4;
+    let flexItem_5;
+    let flexItem_6;
+    let flexItem_7;
+    let flexContainer_1;
+
     flexContainer_1 = createElement(
       'div',
       {
@@ -265,6 +265,19 @@ describe('flex-direction', () => {
         )),
       ]
     );
+
+    BODY.appendChild(flexContainer_1);
+    await snapshot();
+  });
+
+  // Group 3: Column Direction Tests
+  it("column direction element insert", async () => {
+    let flexItem_8;
+    let flexItem_9;
+    let flexItem_10;
+    let flexItem_11;
+    let flexContainer_2;
+
     flexContainer_2 = createElement(
       'div',
       {
@@ -351,6 +364,19 @@ describe('flex-direction', () => {
         )),
       ]
     );
+
+    BODY.appendChild(flexContainer_2);
+    await snapshot();
+  });
+
+  // Group 4: Column Reverse Direction Tests
+  it("column reverse direction element insert", async () => {
+    let flexItem_12;
+    let flexItem_13;
+    let flexItem_14;
+    let flexItem_15;
+    let flexContainer_3;
+
     flexContainer_3 = createElement(
       'div',
       {
@@ -437,14 +463,11 @@ describe('flex-direction', () => {
         )),
       ]
     );
-    BODY.appendChild(flexContainer);
-    BODY.appendChild(flexContainer_1);
-    BODY.appendChild(flexContainer_2);
-    BODY.appendChild(flexContainer_3);
 
+    BODY.appendChild(flexContainer_3);
     await snapshot();
   });
-  xit("column-overlap-001", async () => {
+  it("column-overlap-001", async () => {
     let p;
     let relpos;
     let flex;

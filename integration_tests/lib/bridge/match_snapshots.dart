@@ -95,7 +95,7 @@ Future<bool> matchImage(Uint8List imageA, List<int> imageB, String filename) asy
   }
 
   double ratio = await imageSameRatio(imageA, imageB);
-  bool isMatch = (ratio * 100) < 1;
+  bool isMatch = (ratio * 100) < 0.1;
 
   if (!isMatch) {
     var width = a.width;
@@ -171,6 +171,7 @@ Future<bool> matchImageSnapshot(Uint8List bytes, String filename) async {
           'This spec did not have corresponding snapshot file $filename.png.');
     }
 
+    print('Warn: can not found matched snapshot images, now save the snapshot image --> $filename');
     await snap.writeAsBytes(currentPixels);
     return true;
   }

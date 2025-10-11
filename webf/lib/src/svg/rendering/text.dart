@@ -12,12 +12,12 @@ class RenderSVGText extends RenderBoxModel with RenderObjectWithChildMixin<Rende
 
   @override
   double? computeDistanceToActualBaseline(TextBaseline baseline) {
-    if (child != null) {
-      final result = child!.getDistanceToBaseline(baseline);
-      return result;
-    }
+    // Do not query child baseline here to avoid layout-time baseline access patterns.
     return null;
   }
+
+  @override
+  void calculateBaseline() {}
 
   @override
   void performPaint(PaintingContext context, Offset offset) {
@@ -34,7 +34,8 @@ class RenderSVGText extends RenderBoxModel with RenderObjectWithChildMixin<Rende
       // Don't constraint child
       child.layout(BoxConstraints(), parentUsesSize: true);
     });
-    _baseline = child?.getDistanceToBaseline(TextBaseline.alphabetic) ?? 0.0;
+    // Avoid calling child's baseline during layout; defer to paint-time y-offset logic.
+    _baseline = 0.0;
     size = child?.size ?? Size(0, 0);
   }
 }

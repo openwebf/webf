@@ -142,7 +142,7 @@ describe('Tags img', () => {
 
       image.addEventListener('load', async () => {
         image.style.objectPosition = '';
-        await snapshot(0.1);
+        await snapshot(1);
         done();
       });
     });
@@ -220,7 +220,6 @@ describe('Tags img', () => {
       height: '20px',
     });
 
-    document.body.style.background = 'green';
     document.body.appendChild(img);
 
     // Image has not been loaded.

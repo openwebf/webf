@@ -7,13 +7,72 @@ const execSync = require('child_process').execSync;
 const bableTransformSnapshotPlugin = require('./scripts/babel_transform_snapshot');
 
 const context = path.join(__dirname);
+const lazyStyleLoaderPath = path.join(context, 'vendor/lazy-style-loader.js');
 const runtimePath = path.join(context, 'runtime');
 const globalRuntimePath = path.join(context, 'runtime/global');
 const resetRuntimePath = path.join(context, 'runtime/reset');
+const reactRuntimePath = path.join(context, 'runtime/react');
 const buildPath = path.join(context, '.specs');
 const testPath = path.join(context, 'specs');
 const snapshotPath = path.join(context, 'snapshots');
 const specGroup = JSON5.parse(fs.readFileSync(path.join(__dirname, './spec_group.json5')));
+const specsPath = path.join(context, 'specs');
+const specModuleExtensions = /\.(?:[jt]sx?)$/i;
+
+const isSpecModule = (filepath) => {
+  if (!filepath || !specModuleExtensions.test(filepath)) return false;
+  const relative = path.relative(specsPath, filepath);
+  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+};
+
+const tailwindSpecLoaders = (() => {
+  try {
+    const styleLoader = {
+      loader: lazyStyleLoaderPath,
+    };
+    const cssLoader = require.resolve('css-loader');
+    const postcssLoader = require.resolve('postcss-loader');
+    const tailwindcss = require('tailwindcss');
+    let autoprefixer;
+    try {
+      autoprefixer = require('autoprefixer');
+    } catch (err) {
+      console.warn('[webpack] Autoprefixer not found, continuing without it for Tailwind CSS.');
+    }
+
+    const tailwindConfigCandidates = [
+      path.join(context, 'tailwind.config.js'),
+      path.join(context, 'tailwind.config.cjs'),
+    ];
+    const tailwindConfigPath = tailwindConfigCandidates.find(candidate => fs.existsSync(candidate));
+    const tailwindPlugin = tailwindConfigPath ? tailwindcss({ config: tailwindConfigPath }) : tailwindcss;
+    const postcssPlugins = [tailwindPlugin];
+    if (autoprefixer) {
+      postcssPlugins.push(autoprefixer);
+    }
+
+    return [
+      styleLoader,
+      {
+        loader: cssLoader,
+        options: {
+          importLoaders: 1,
+        },
+      },
+      {
+        loader: postcssLoader,
+        options: {
+          postcssOptions: {
+            plugins: postcssPlugins,
+          },
+        },
+      },
+    ];
+  } catch (error) {
+    console.warn('[webpack] Tailwind CSS support is disabled:', error.message);
+    return null;
+  }
+})();
 
 let coreSpecFiles = [];
 let getSnapshotOption = () => ({ snapshotRoot: null, delayForSnapshot: false });
@@ -56,12 +115,12 @@ if (process.env.SPEC_SCOPE) {
   })
   if (process.env.WEBF_TEST_FILTER) {
     const filters = process.env.WEBF_TEST_FILTER.split('|');
-    
+
     const originalFiles = [...coreSpecFiles];
     coreSpecFiles = coreSpecFiles.filter(name => {
       return filters.some(filter => name.includes(filter));
     });
-    
+
     console.log(`Filtered spec files (${coreSpecFiles.length - 2} test files from ${originalFiles.length - 2} total):`); // -2 for runtime files
     coreSpecFiles.forEach(file => {
       if (!file.includes('runtime')) {
@@ -79,7 +138,8 @@ if (process.env.SPEC_SCOPE) {
   }
 }
 
-// Add global vars
+// Add runtime helpers
+coreSpecFiles.unshift(reactRuntimePath);
 coreSpecFiles.unshift(globalRuntimePath);
 coreSpecFiles.unshift(resetRuntimePath);
 
@@ -97,13 +157,20 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.jsx', '.json', '.ts', '.tsx'],
     alias: {
-      '@vanilla-jsx': runtimePath,
+      '@vanilla-jsx': runtimePath
     }
   },
   module: {
     rules: [
+      tailwindSpecLoaders && {
+        test: /\.css$/i,
+        include: specsPath,
+        issuer: (file) => isSpecModule(file),
+        use: tailwindSpecLoaders,
+      },
       {
         test: /\.css$/i,
+        exclude: specsPath,
         use: require.resolve('stylesheet-loader'),
       },
       {
@@ -186,7 +253,7 @@ module.exports = {
           loader: path.resolve('./scripts/quickjs_syntax_fix_loader'),
         }]
       }
-    ],
+    ].filter(Boolean),
   },
   devServer: {
     hot: false,

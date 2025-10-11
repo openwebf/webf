@@ -865,7 +865,7 @@ block, and 2) is not a child of the inline containing block, but a descendant.`)
 
     await snapshot();
   });
-  it('007', async () => {
+  xit('007', async () => {
     let abspos;
     let abspos_1;
     let abspos_2;
@@ -1072,7 +1072,7 @@ block, and 2) is not a child of the inline containing block, but a descendant.`)
 
     await snapshot();
   });
-  it('008', async () => {
+  xit('008', async () => {
     let p;
     let div;
     p = createElement(

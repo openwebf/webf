@@ -254,7 +254,7 @@ describe('flex-percentage-max-width', () => {
               padding: '10px',
             },
           },
-          [createText('Fixed width')]
+          [createText('Fixed')]
         )),
       ]
     );

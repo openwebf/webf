@@ -3,8 +3,12 @@
  */
 
 import 'package:flutter/widgets.dart';
+import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/html.dart';
+import 'package:webf/foundation.dart';
+import 'package:webf/src/foundation/flow_logging.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart' as dom;
 
@@ -23,12 +27,7 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
 
   @override
   double? computeDistanceToActualBaseline(TextBaseline baseline) {
-    return computeDistanceToBaseline();
-  }
-
-  @override
-  double? computeDistanceToBaseline() {
-    return renderStyle.attachedRenderBoxModel!.computeDistanceToBaseline();
+    return computeCssFirstBaseline();
   }
 
   @override
@@ -42,41 +41,129 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
     renderStyle.computeContentBoxLogicalWidth();
     renderStyle.computeContentBoxLogicalHeight();
 
-    super.performLayout();
-
-    if (child is RenderBoxModel) {
-      double childMarginTop = renderStyle.collapsedMarginTop;
-      double childMarginBottom = renderStyle.collapsedMarginBottom;
-      Size scrollableSize = (child as RenderBoxModel).renderStyle.isSelfScrollingContainer()
-          ? child!.size
-          : (child as RenderBoxModel).scrollableSize;
-
-      size =
-          constraints.constrain(Size(scrollableSize.width, childMarginTop + scrollableSize.height + childMarginBottom));
-
-      double childMarginLeft = renderStyle.marginLeft.computedValue;
-
-      if (renderStyle.isSelfPositioned()) {
-        dom.Element? containingBlockElement = renderStyle.target.getContainingBlockElement();
-        if (containingBlockElement?.attachedRenderer != null) {
-          if (renderStyle.position == CSSPositionType.absolute) {
-            containingBlockElement!.attachedRenderer!.positionedChildren.add(child as RenderBoxModel);
-            if (!containingBlockElement.attachedRenderer!.needsLayout) {
-              CSSPositionedLayout.applyPositionedChildOffset(
-                  containingBlockElement.attachedRenderer!, child as RenderBoxModel);
-            }
-          } else {
-            CSSPositionedLayout.applyPositionedChildOffset(this, child as RenderBoxModel);
-          }
-        }
-      } else {
-        // No need to add padding and border for scrolling content box.
-        Offset relativeOffset = Offset(childMarginLeft, childMarginTop);
-        // Apply position relative offset change.
-        CSSPositionedLayout.applyRelativeOffset(relativeOffset, child as RenderBoxModel);
-      }
+    // Do NOT call super.performLayout() (RenderProxyBoxMixin) because it would
+    // pass our tight ListView constraints to the child, forcing it to expand.
+    // Instead, lay out the child with its own CSS-derived constraints.
+    final RenderBox? c = child;
+    if (c == null) {
+      size = constraints.constrain(Size.zero);
+      initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
+      return;
     }
 
+    BoxConstraints childConstraints;
+    if (c is RenderBoxModel) {
+      // Compute constraints from the child's CSS, isolating it from wrapper tightness.
+      childConstraints = c.getConstraints();
+      // Deflate wrapper padding/border aren’t relevant here; the child’s own
+      // CSS logic already accounts for its padding/border.
+    } else if (c is RenderTextBox) {
+      // Text nodes inside wrappers should measure themselves with a sensible bound.
+      final double maxW = constraints.hasBoundedWidth ? constraints.maxWidth : double.infinity;
+      final double maxH = constraints.hasBoundedHeight ? constraints.maxHeight : double.infinity;
+      childConstraints = BoxConstraints(minWidth: 0, maxWidth: maxW, minHeight: 0, maxHeight: maxH);
+    } else {
+      // Fallback: provide loose, unbounded constraints so inner WebF render boxes
+      // can compute their own CSS-based constraints without being forced to expand.
+      childConstraints = const BoxConstraints(
+        minWidth: 0,
+        maxWidth: double.infinity,
+        minHeight: 0,
+        maxHeight: double.infinity,
+      );
+    }
+
+    // Intersect child's CSS-derived constraints with the wrapper's incoming constraints.
+    // This allows outer layout (e.g., flex) to enforce a definite inline/cross size.
+    // Without this, the wrapper would ignore tight sizes from its parent and the
+    // inner WebF render boxes would keep unbounded widths.
+    BoxConstraints _intersect(BoxConstraints a, BoxConstraints b) {
+      double minW = math.max(a.minWidth, b.minWidth);
+      double minH = math.max(a.minHeight, b.minHeight);
+      double maxW = a.maxWidth;
+      double maxH = a.maxHeight;
+      if (b.hasBoundedWidth) {
+        maxW = math.min(a.maxWidth, b.maxWidth);
+      }
+      if (b.hasBoundedHeight) {
+        maxH = math.min(a.maxHeight, b.maxHeight);
+      }
+      if (minW > maxW) minW = maxW;
+      if (minH > maxH) minH = maxH;
+      return BoxConstraints(minWidth: minW, maxWidth: maxW, minHeight: minH, maxHeight: maxH);
+    }
+
+    childConstraints = _intersect(childConstraints, constraints);
+
+    try {
+      final tag = renderStyle.target.tagName.toLowerCase();
+      FlowLog.log(
+        impl: FlowImpl.flow,
+        feature: FlowFeature.layout,
+        message: () => '[Wrapper] <$tag> layout child ${c.runtimeType} with $childConstraints',
+      );
+    } catch (_) {}
+    c.layout(childConstraints, parentUsesSize: true);
+
+    if (c is RenderBoxModel) {
+      // For list-like widget containers (ListView children), sibling margin
+      // collapsing must be handled within each wrapped item since the parent
+      // is a Flutter RenderObject that doesn't implement CSS collapsing.
+      // Use sibling-oriented collapsed margins so the inter-item spacing equals
+      // the CSS collapsed result between previous bottom and current top.
+      final double childMarginTop = renderStyle.collapsedMarginTopForSibling;
+      final double childMarginBottom = renderStyle.collapsedMarginBottomForSibling;
+      final double childMarginLeft = renderStyle.marginLeft.computedValue;
+      final double childMarginRight = renderStyle.marginRight.computedValue;
+
+      // Scrollable size of the child’s content box
+      final Size contentScrollable = c.renderStyle.isSelfScrollingContainer() ? c.size : c.scrollableSize;
+
+      // Decide sizing based on list axis. In a horizontal list (unbounded width),
+      // widen by left+right margins so gaps appear between items. In a vertical
+      // list (unbounded height), increase height by top+bottom margins.
+      final bool isHorizontalList = constraints.hasBoundedHeight && !constraints.hasBoundedWidth;
+      final bool isVerticalList = constraints.hasBoundedWidth && !constraints.hasBoundedHeight;
+
+      double wrapperWidth;
+      double wrapperHeight;
+      if (isHorizontalList) {
+        wrapperWidth = contentScrollable.width + childMarginLeft + childMarginRight;
+        // Height is tight from the viewport; still offset child by vertical margins below.
+        wrapperHeight = constraints.hasBoundedHeight ? constraints.maxHeight : (contentScrollable.height + childMarginTop + childMarginBottom);
+      } else if (isVerticalList) {
+        wrapperWidth = constraints.hasBoundedWidth ? constraints.maxWidth : (contentScrollable.width + childMarginLeft + childMarginRight);
+        wrapperHeight = contentScrollable.height + childMarginTop + childMarginBottom;
+      } else {
+        // Fallback (no tightness info): include both margins conservatively.
+        wrapperWidth = contentScrollable.width + childMarginLeft + childMarginRight;
+        wrapperHeight = contentScrollable.height + childMarginTop + childMarginBottom;
+      }
+
+      size = constraints.constrain(Size(wrapperWidth, wrapperHeight));
+
+      try {
+        final tag = renderStyle.target.tagName.toLowerCase();
+        FlowLog.log(
+          impl: FlowImpl.flow,
+          feature: FlowFeature.sizing,
+          message: () => '[Wrapper] <$tag> childSize=${c.size} scrollable=${contentScrollable} -> wrapperSize=$size',
+        );
+      } catch (_) {}
+
+      if (renderStyle.isSelfPositioned() || renderStyle.isSelfStickyPosition()) {
+        CSSPositionedLayout.applyPositionedChildOffset(this, c);
+      } else {
+        // Offset the child within the wrapper by its margins
+        final Offset relativeOffset = Offset(childMarginLeft, childMarginTop);
+        CSSPositionedLayout.applyRelativeOffset(relativeOffset, c);
+      }
+    } else {
+      // Non-RenderBoxModel child: just adopt its size vertically with margins=0.
+      size = constraints.constrain(c.size);
+    }
+
+    calculateBaseline();
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
   }
 
@@ -143,6 +230,12 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
       return false;
     });
     return isHit;
+  }
+
+  @override
+  void calculateBaseline() {
+    double? baseline = child?.getDistanceToBaseline(TextBaseline.alphabetic);
+    setCssBaselines(first: baseline, last: baseline);
   }
 }
 

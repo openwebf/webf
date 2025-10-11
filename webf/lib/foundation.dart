@@ -22,3 +22,8 @@ export 'src/foundation/cookie_jar.dart';
 export 'src/foundation/logger.dart';
 export 'src/foundation/form_data/form_data.dart';
 export 'src/foundation/loading_state_registry.dart';
+export 'src/foundation/debug_flags.dart';
+export 'src/foundation/inline_layout_logging.dart';
+export 'src/foundation/flow_logging.dart';
+export 'src/foundation/flex_logging.dart';
+export 'src/foundation/positioned_layout_logging.dart';

@@ -20,31 +20,4 @@ describe('Display inline', () => {
 
     await snapshot();
   });
-
-  // @TODO: White-space collapse rule between inline element is wrong.
-  xit('textNode only if have one space', async () => {
-    let containerStyle = {
-      backgroundColor: 'fuchsia',
-      color: 'black',
-      font: '20px',
-      margin: '10px'
-    };
-
-    let container = createElementWithStyle('div', containerStyle, [
-      createElementWithStyle('span', {}, createText('Several ')),
-      createElementWithStyle('span', {}, createText(' inline elements')),
-      createText(' are '),
-      createElementWithStyle('span', {}, createText('in this')),
-      createText(' sentence.')
-    ]);
-
-    let container2 = createElementWithStyle('div', containerStyle, [
-      createText('Several inline elements are in this sentence.')
-    ]);
-
-    append(BODY, container);
-    append(BODY, container2);
-
-    await snapshot();
-  });
 });

@@ -1,36 +1,10 @@
 /*auto generated*/
 describe('flexbox-baseline', () => {
-  it('baseline', async () => {
+  // Group 1: Basic Baseline Alignment
+  it("basic baseline alignment", async () => {
     let inlineFlexbox;
-    let inlineFlexbox_1;
-    let inlineFlexbox_2;
-    let inlineFlexbox_3;
-    let inlineFlexbox_4;
-    let inlineFlexbox_5;
-    let inlineFlexbox_6;
-    let inlineFlexbox_7;
-    let inlineFlexbox_8;
-    let inlineFlexbox_9;
-    let inlineFlexbox_10;
-    let inlineFlexbox_11;
-    let inlineFlexbox_12;
     let div;
-    let div_1;
-    let div_2;
-    let div_3;
-    let div_4;
-    let div_5;
-    let div_6;
-    let div_7;
-    let div_8;
-    let div_9;
-    let div_10;
-    let flexbox;
-    let flexbox_1;
-    let flexbox_2;
-    let flexbox_3;
-    let flexitemWithScrollbar;
-    let flexboxWithScrollbar;
+
     div = createElement(
       'div',
       {
@@ -93,6 +67,20 @@ after text
 `),
       ]
     );
+
+    BODY.appendChild(div);
+    await snapshot();
+  });
+
+  // Group 2: Baseline with Writing Mode
+  it("baseline with writing mode", async () => {
+    let inlineFlexbox_1;
+    let inlineFlexbox_4;
+    let inlineFlexbox_5;
+    let div_1;
+    let div_4;
+    let div_5;
+
     div_1 = createElement(
       'div',
       {
@@ -151,6 +139,90 @@ after text
 `),
       ]
     );
+
+    div_4 = createElement(
+      'div',
+      {
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createText(`
+should align with the middle
+`),
+        (inlineFlexbox_4 = createElement(
+          'div',
+          {
+            class: 'inline-flexbox',
+            style: {
+              display: 'inline-flex',
+              'background-color': 'lightgrey',
+              'margin-top': '5px',
+              'box-sizing': 'border-box',
+              width: '40px',
+              height: '40px',
+            },
+          },
+          [
+            createElement('div', {
+              style: {
+                'box-sizing': 'border-box',
+                'writing-mode': 'vertical-rl',
+                height: '20px',
+                width: '40px',
+                'border-bottom': '1px solid black',
+              },
+            }),
+          ]
+        )),
+        createText(`
+of the grey flexbox
+`),
+      ]
+    );
+
+    div_5 = createElement(
+      'div',
+      {
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createText(`
+should align with the bottom
+`),
+        (inlineFlexbox_5 = createElement('div', {
+          class: 'inline-flexbox',
+          style: {
+            display: 'inline-flex',
+            'background-color': 'lightgrey',
+            'margin-top': '5px',
+            'box-sizing': 'border-box',
+            width: '30px',
+            height: '30px',
+          },
+        })),
+        createText(`
+of the grey flexbox
+`),
+      ]
+    );
+
+    BODY.appendChild(div_1);
+    BODY.appendChild(div_4);
+    BODY.appendChild(div_5);
+    await snapshot();
+  });
+
+  // Group 3: Baseline with Different Element Types
+  it("baseline with different element types", async () => {
+    let inlineFlexbox_2;
+    let inlineFlexbox_3;
+    let div_2;
+    let div_3;
+
     div_2 = createElement(
       'div',
       {
@@ -199,6 +271,7 @@ after text
 `),
       ]
     );
+
     div_3 = createElement(
       'div',
       {
@@ -247,74 +320,23 @@ after text
 `),
       ]
     );
-    div_4 = createElement(
-      'div',
-      {
-        style: {
-          'box-sizing': 'border-box',
-        },
-      },
-      [
-        createText(`
-should align with the middle
-`),
-        (inlineFlexbox_4 = createElement(
-          'div',
-          {
-            class: 'inline-flexbox',
-            style: {
-              display: 'inline-flex',
-              'background-color': 'lightgrey',
-              'margin-top': '5px',
-              'box-sizing': 'border-box',
-              width: '40px',
-              height: '40px',
-            },
-          },
-          [
-            createElement('div', {
-              style: {
-                'box-sizing': 'border-box',
-                'writing-mode': 'vertical-rl',
-                height: '20px',
-                width: '40px',
-                'border-bottom': '1px solid black',
-              },
-            }),
-          ]
-        )),
-        createText(`
-of the grey flexbox
-`),
-      ]
-    );
-    div_5 = createElement(
-      'div',
-      {
-        style: {
-          'box-sizing': 'border-box',
-        },
-      },
-      [
-        createText(`
-should align with the bottom
-`),
-        (inlineFlexbox_5 = createElement('div', {
-          class: 'inline-flexbox',
-          style: {
-            display: 'inline-flex',
-            'background-color': 'lightgrey',
-            'margin-top': '5px',
-            'box-sizing': 'border-box',
-            width: '30px',
-            height: '30px',
-          },
-        })),
-        createText(`
-of the grey flexbox
-`),
-      ]
-    );
+
+    BODY.appendChild(div_2);
+    BODY.appendChild(div_3);
+    await snapshot();
+  });
+
+  // Group 4: Column Direction Baseline
+  it("column direction baseline", async () => {
+    let inlineFlexbox_6;
+    let inlineFlexbox_7;
+    let inlineFlexbox_8;
+    let inlineFlexbox_9;
+    let div_6;
+    let div_7;
+    let div_8;
+    let div_9;
+
     div_6 = createElement(
       'div',
       {
@@ -364,6 +386,7 @@ after text
 `),
       ]
     );
+
     div_7 = createElement(
       'div',
       {
@@ -413,6 +436,7 @@ after text
 `),
       ]
     );
+
     div_8 = createElement(
       'div',
       {
@@ -463,6 +487,7 @@ of the grey flexbox
 `),
       ]
     );
+
     div_9 = createElement(
       'div',
       {
@@ -491,13 +516,34 @@ of the grey flexbox
 `),
       ]
     );
+
+    BODY.appendChild(div_6);
+    BODY.appendChild(div_7);
+    BODY.appendChild(div_8);
+    BODY.appendChild(div_9);
+    await snapshot();
+  });
+
+  // Group 5: Complex Baseline Scenarios
+  it("complex baseline scenarios", async () => {
+    let inlineFlexbox_10;
+    let inlineFlexbox_11;
+    let inlineFlexbox_12;
+    let div_10;
+    let flexbox;
+    let flexbox_1;
+    let flexbox_2;
+    let flexbox_3;
+    let flexitemWithScrollbar;
+    let flexboxWithScrollbar;
+
     div_10 = createElement(
       'div',
       {
         style: {
           'box-sizing': 'border-box',
           position: 'absolute',
-          top: '605px',
+          top: '100px',
           left: '0px',
           width: '360px',
         },
@@ -780,46 +826,16 @@ after text
         ),
       ]
     );
-    BODY.appendChild(div);
-    BODY.appendChild(div_1);
-    BODY.appendChild(div_2);
-    BODY.appendChild(div_3);
-    BODY.appendChild(div_4);
-    BODY.appendChild(div_5);
-    BODY.appendChild(div_6);
-    BODY.appendChild(div_7);
-    BODY.appendChild(div_8);
-    BODY.appendChild(div_9);
 
+    BODY.appendChild(div_10);
     await snapshot();
   });
-  it('margins', async () => {
+  // Group 1: Basic Flexbox Margins and Padding
+  it("basic flexbox margins and padding", async () => {
     let flexbox;
-    let flexbox_1;
-    let flexbox_2;
-    let flexbox_3;
-    let flexbox_4;
-    let flexbox_5;
-    let flexbox_6;
     let border;
     let div;
-    let div_1;
-    let div_2;
-    let div_3;
-    let div_4;
-    let div_5;
-    let flexOne;
-    let flexOne_1;
-    let flexOne_2;
-    let flexOne_3;
-    let inlineBlock;
-    let inlineBlock_1;
-    let inlineBlock_2;
-    let inlineBlock_3;
-    let inlineBlock_4;
-    let inlineBlock_5;
-    let inlineFlexbox;
-    let inlineFlexbox_1;
+
     div = createElement(
       'div',
       {
@@ -869,6 +885,24 @@ after text
 `),
       ]
     );
+
+    BODY.appendChild(div);
+    await snapshot();
+  });
+
+  // Group 2: Flexbox Alignment with Various Spacing Configurations
+  it("flexbox alignment with spacing configurations", async () => {
+    let flexbox_1;
+    let flexbox_2;
+    let flexbox_3;
+    let div_1;
+    let flexOne;
+    let flexOne_1;
+    let flexOne_2;
+    let inlineBlock;
+    let inlineBlock_1;
+    let inlineBlock_2;
+
     div_1 = createElement(
       'div',
       {
@@ -1014,6 +1048,18 @@ the grey box.
 `),
       ]
     );
+
+    BODY.appendChild(div_1);
+    await snapshot();
+  });
+
+  // Group 3: Flex Items with Spacing Properties
+  it("flex items with spacing properties", async () => {
+    let flexbox_4;
+    let div_2;
+    let flexOne_3;
+    let inlineBlock_3;
+
     div_2 = createElement(
       'div',
       {
@@ -1069,6 +1115,17 @@ bottom of the pink box.
 `),
       ]
     );
+
+    BODY.appendChild(div_2);
+    await snapshot();
+  });
+
+  // Group 4: Inline Flexbox Alignment
+  it("inline flexbox alignment", async () => {
+    let div_3;
+    let inlineFlexbox;
+    let inlineFlexbox_1;
+
     div_3 = createElement(
       'div',
       {
@@ -1111,6 +1168,20 @@ of the pink box.
 `),
       ]
     );
+
+    BODY.appendChild(div_3);
+    await snapshot();
+  });
+
+  // Group 5: Complex Nested Flexbox with Overflow
+  it("complex nested flexbox with overflow", async () => {
+    let flexbox_5;
+    let flexbox_6;
+    let div_4;
+    let div_5;
+    let inlineBlock_4;
+    let inlineBlock_5;
+
     div_4 = createElement(
       'div',
       {
@@ -1173,6 +1244,7 @@ of the horizontal scrollbar.
 `),
       ]
     );
+
     div_5 = createElement(
       'div',
       {
@@ -1229,13 +1301,9 @@ of the horizontal scrollbar, if one is visible.
 `),
       ]
     );
-    BODY.appendChild(div);
-    BODY.appendChild(div_1);
-    BODY.appendChild(div_2);
-    BODY.appendChild(div_3);
+
     BODY.appendChild(div_4);
     BODY.appendChild(div_5);
-
     await snapshot();
   });
 });

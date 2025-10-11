@@ -59,7 +59,7 @@ describe('Text layout edge cases in flex containers', () => {
     await snapshot();
   });
 
-  xit('should handle justify-between layout with text overflow', async () => {
+  it('should handle justify-between layout with text overflow', async () => {
     // Test case inspired by the first commented wrap example
     const container = document.createElement('div');
     container.className = 'App';

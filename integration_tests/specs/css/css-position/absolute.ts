@@ -1124,11 +1124,9 @@ describe('Position absolute', () => {
 
     await waitForOnScreen(container);
 
-    child1.scroll(1000, 1000);
+    await sleep(1);
 
-    await waitForFrame();
-    await waitForFrame();
-    await waitForFrame();
+    child1.scroll(1000, 1000);
     
     expect(child.offsetTop).toEqual(300);
     expect(child.offsetLeft).toEqual(0);
@@ -1169,8 +1167,10 @@ describe('Position absolute', () => {
       overlay.style.height = '100px';
       overlay.style.backgroundColor = 'red';
 
+      await waitForFrame();
+
       window.scroll(0, 10000);
-      await snapshot();
+      await snapshot(1);
       done();
     });
   });
@@ -1227,11 +1227,11 @@ background: white;
     ]);
     document.body.appendChild(container);
 
-    setTimeout(async () => {
+     onImageLoad(img, async () => {
       container.style.display = 'block';
-      await snapshot();
+      await snapshot(0.1);
       done();
-    }, 300);
+    });
   });
 
   it('should works when dynamic toggle display on positioned elements', async () => {

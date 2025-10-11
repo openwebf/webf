@@ -4,6 +4,8 @@
  */
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
+import 'package:path/path.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
@@ -42,6 +44,10 @@ class Window extends EventTarget {
         StaticDefinedSyncBindingObjectMethod(call: (window, args) => castToType<Window>(window).open(castToType<String>(args[0]))),
     'getComputedStyle': StaticDefinedSyncBindingObjectMethod(
         call: (window, args) => castToType<Window>(window).getComputedStyle(args[0] as Element)),
+    'setColorScheme': StaticDefinedSyncBindingObjectMethod(
+        call: (window, args) => castToType<Window>(window).setColorScheme(castToType<String>(args[0]))),
+    'setDarkMode': StaticDefinedSyncBindingObjectMethod(
+        call: (window, args) => castToType<Window>(window).setDarkMode(castToType<bool>(args[0]))),
   };
 
   @override
@@ -71,6 +77,21 @@ class Window extends EventTarget {
   void open(String url) {
     String? sourceUrl = document.controller.view.rootController.url;
     document.controller.view.handleNavigationAction(sourceUrl, url, WebFNavigationType.navigate);
+  }
+
+  // Test/utility API: programmatically set color scheme
+  void setColorScheme(String scheme) {
+    bool? dark = scheme.toLowerCase() == 'dark'
+        ? true
+        : scheme.toLowerCase() == 'light'
+            ? false
+            : null;
+    document.controller.darkModeOverride = dark;
+  }
+
+  // Test/utility API: convenience boolean setter
+  void setDarkMode(bool enabled) {
+    document.controller.darkModeOverride = enabled;
   }
 
   ComputedCSSStyleDeclaration getComputedStyle(Element element) {

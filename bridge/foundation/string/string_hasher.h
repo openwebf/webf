@@ -28,7 +28,8 @@ class StringHasher {
   WEBF_DISALLOW_NEW();
 
  public:
-  static const unsigned kFlagCount = 8;  // Save 8 bits for StringImpl to use as flags.
+  // Reserve 0 bits in the hash for flags; StringImpl stores flags separately.
+  static const unsigned kFlagCount = 0;
 
   constexpr StringHasher() = default;
 
@@ -93,16 +94,22 @@ class StringHasher {
   unsigned HashWithTop8BitsMasked() const {
     unsigned result = AvalancheBits();
 
-    // Reserving space from the high bits for flags preserves most of the hash's
-    // value, since hash lookup typically masks out the high bits anyway.
-    result &= (1U << (sizeof(result) * 8 - kFlagCount)) - 1;
+    if constexpr (kFlagCount != 0) {
+      // Reserving space from the high bits for flags preserves most of the hash's
+      // value, since hash lookup typically masks out the high bits anyway.
+      result &= (1u << (sizeof(result) * 8 - kFlagCount)) - 1u;
 
-    // This avoids ever returning a hash code of 0, since that is used to
-    // signal "hash not computed yet". Setting the high bit maintains
-    // reasonable fidelity to a hash code of 0 because it is likely to yield
-    // exactly 0 when hash lookup masks out the high bits.
-    if (!result)
-      result = 0x80000000 >> kFlagCount;
+      // This avoids ever returning a hash code of 0, since that is used to
+      // signal "hash not computed yet". Setting the high bit maintains
+      // reasonable fidelity to a hash code of 0 because it is likely to yield
+      // exactly 0 when hash lookup masks out the high bits.
+      if (!result)
+        result = 0x80000000u >> kFlagCount;
+    } else {
+      // Keep full 32 bits; ensure non-zero sentinel
+      if (!result)
+        result = 0x80000000u;
+    }
 
     return result;
   }
@@ -111,11 +118,9 @@ class StringHasher {
     unsigned result = AvalancheBits();
 
     // This avoids ever returning a hash code of 0, since that is used to
-    // signal "hash not computed yet". Setting the high bit maintains
-    // reasonable fidelity to a hash code of 0 because it is likely to yield
-    // exactly 0 when hash lookup masks out the high bits.
+    // signal "hash not computed yet".
     if (!result)
-      result = 0x80000000;
+      result = 0x80000000u;
 
     return result;
   }
@@ -173,19 +178,26 @@ class StringHasher {
   static char16_t DefaultConverter(char character) { return character; }
 
   static unsigned MaskTop8Bits(uint64_t result) {
-    // Reserving space from the high bits for flags preserves most of the hash's
-    // value, since hash lookup typically masks out the high bits anyway.
-    result &= (1U << (32 - kFlagCount)) - 1;
+    if constexpr (kFlagCount == 0) {
+      // Keep full 32-bit result; ensure non-zero sentinel
+      unsigned r = static_cast<unsigned>(result);
+      if (!r) r = 0x80000000u;
+      return r;
+    } else {
+      // Reserving space from the high bits for flags preserves most of the hash's
+      // value, since hash lookup typically masks out the high bits anyway.
+      result &= (1u << (32 - kFlagCount)) - 1u;
 
-    // This avoids ever returning a hash code of 0, since that is used to
-    // signal "hash not computed yet". Setting the high bit maintains
-    // reasonable fidelity to a hash code of 0 because it is likely to yield
-    // exactly 0 when hash lookup masks out the high bits.
-    if (!result) {
-      result = 0x80000000 >> kFlagCount;
+      // This avoids ever returning a hash code of 0, since that is used to
+      // signal "hash not computed yet". Setting the high bit maintains
+      // reasonable fidelity to a hash code of 0 because it is likely to yield
+      // exactly 0 when hash lookup masks out the high bits.
+      if (!result) {
+        result = 0x80000000u >> kFlagCount;
+      }
+
+      return static_cast<unsigned>(result);
     }
-
-    return static_cast<unsigned>(result);
   }
 
   template <typename T>

@@ -18,6 +18,7 @@ const String CITE = 'CITE';
 const String I = 'I';
 const String CODE = 'CODE';
 const String SAMP = 'SAMP';
+const String TT = 'TT';
 const String STRONG = 'STRONG';
 const String SMALL = 'SMALL';
 const String S = 'S';
@@ -126,6 +127,15 @@ class SampleElement extends Element {
 
 class KeyboardElement extends Element {
   KeyboardElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _codeDefaultStyle;
+}
+
+// https://html.spec.whatwg.org/multipage/obsolete.html#the-tt-element
+// The <tt> element is obsolete; for compatibility it maps to monospace font.
+class TeletypeElement extends Element {
+  TeletypeElement([BindingContext? context]) : super(context);
 
   @override
   Map<String, dynamic> get defaultStyle => _codeDefaultStyle;

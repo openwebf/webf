@@ -582,11 +582,67 @@ export class ChromeTestRunner {
       };
 
       // Initialize Jasmine boot
-      (window as any).jasmine.getEnv().configure({
+      const jasmineEnv = (window as any).jasmine.getEnv();
+      jasmineEnv.configure({
         random: false,
         stopOnSpecFailure: false,
         stopSpecOnExpectationFailure: false
       });
+
+      // Override it, fit functions to support both async and done callback patterns
+      const originalIt = (window as any).it;
+      const originalFit = (window as any).fit;
+
+      function createTestFunction(originalFn: Function) {
+        return function(this: any, description: string, testFn: Function, timeout?: number) {
+          // If function has both async and done parameter, handle it specially
+          if (testFn.constructor.name === 'AsyncFunction' && testFn.length > 0) {
+            // Function is async and takes a done callback
+            const wrappedFn = function(done: any) {
+              const timeoutMs = timeout || 5000;
+              const timer = setTimeout(() => {
+                if (done && typeof done.fail === 'function') {
+                  done.fail('Test timeout after ' + timeoutMs + 'ms');
+                } else if (typeof done === 'function') {
+                  done(new Error('Test timeout after ' + timeoutMs + 'ms'));
+                }
+              }, timeoutMs);
+
+              try {
+                const result = testFn(done);
+                if (result && typeof result.then === 'function') {
+                  // Handle case where async function returns a promise
+                  result.then(() => {
+                    clearTimeout(timer);
+                    // done() should be called by the test itself
+                  }).catch((err: any) => {
+                    clearTimeout(timer);
+                    if (done && typeof done.fail === 'function') {
+                      done.fail(err);
+                    } else if (typeof done === 'function') {
+                      done(err);
+                    }
+                  });
+                }
+              } catch (err) {
+                clearTimeout(timer);
+                if (done && typeof done.fail === 'function') {
+                  done.fail(err);
+                } else if (typeof done === 'function') {
+                  done(err);
+                }
+              }
+            };
+            return originalFn.call(this, description, wrappedFn, timeout);
+          } else {
+            // Standard case - pass through to original function
+            return originalFn.call(this, description, testFn, timeout);
+          }
+        };
+      }
+
+      (window as any).it = createTestFunction(originalIt);
+      (window as any).fit = createTestFunction(originalFit);
 
       // Add global afterEach hook to clean up DOM between tests
       (window as any).afterEach(() => {
@@ -643,6 +699,116 @@ export class ChromeTestRunner {
       };
       (window as any).createText = (content: string) => {
         return document.createTextNode(content);
+      };
+      
+      // Add missing global functions from WebF runtime
+      (window as any).setElementStyle = (dom: HTMLElement, object: any) => {
+        if (object == null) return;
+        for (let key in object) {
+          if (object.hasOwnProperty(key)) {
+            (dom.style as any)[key] = object[key];
+          }
+        }
+      };
+      
+      (window as any).setElementProps = (element: HTMLElement, props: any) => {
+        for (const key in props) {
+          if (key === 'style') {
+            (window as any).setElementStyle(element, props[key]);
+          } else if (key === 'children') {
+            if (Array.isArray(props[key])) {
+              props[key].forEach((child: any) => {
+                if (typeof child === 'string') {
+                  element.appendChild(document.createTextNode(child));
+                } else if (child instanceof Node) {
+                  element.appendChild(child);
+                }
+              });
+            }
+          } else {
+            if (key.startsWith('data-')) {
+              element.setAttribute(key, props[key]);
+            } else {
+              (element as any)[key] = props[key];
+            }
+          }
+        }
+      };
+      
+      (window as any).createElementWithStyle = (tag: string, style: any): HTMLElement => {
+        const el = document.createElement(tag);
+        (window as any).setElementStyle(el, style);
+        return el;
+      };
+      
+      (window as any).createViewElement = (extraStyle: any, child?: any): HTMLElement => {
+        return (window as any).createElement('div', {
+          style: {
+            display: 'flex',
+            position: 'relative',
+            flexDirection: 'column',
+            flexShrink: 0,
+            alignContent: 'flex-start',
+            border: '0 solid black',
+            margin: 0,
+            padding: 0,
+            minWidth: 0,
+            ...extraStyle,
+          },
+        }, child);
+      };
+      
+      (window as any).onImageLoad = (img: HTMLImageElement, onLoadCallback: () => Promise<void>) => {
+        img.addEventListener('load', onLoadCallback);
+      };
+      
+      (window as any).onDoubleImageLoad = (img1: HTMLImageElement, img2: HTMLImageElement, onLoadCallback: () => Promise<void>) => {
+        let count = 0;
+        async function onLoad() {
+          count++;
+          if (count >= 2) {
+            await onLoadCallback();
+          }
+        }
+        img1.addEventListener('load', onLoad);
+        img2.addEventListener('load', onLoad);
+      };
+      
+      (window as any).onTripleImageLoad = (img1: HTMLImageElement, img2: HTMLImageElement, img3: HTMLImageElement, onLoadCallback: () => Promise<void>) => {
+        let count = 0;
+        async function onLoad() {
+          count++;
+          if (count >= 3) {
+            await onLoadCallback();
+          }
+        }
+        img1.addEventListener('load', onLoad);
+        img2.addEventListener('load', onLoad);
+        img3.addEventListener('load', onLoad);
+      };
+      
+      (window as any).onFourfoldImageLoad = (
+        img1: HTMLImageElement,
+        img2: HTMLImageElement, 
+        img3: HTMLImageElement,
+        img4: HTMLImageElement,
+        onLoadCallback: () => Promise<void>
+      ) => {
+        let count = 0;
+        async function onLoad() {
+          count++;
+          if (count >= 4) {
+            await onLoadCallback();
+          }
+        }
+        img1.addEventListener('load', onLoad);
+        img2.addEventListener('load', onLoad);
+        img3.addEventListener('load', onLoad);
+        img4.addEventListener('load', onLoad);
+      };
+      
+      (window as any).append = (parent: HTMLElement, child: Node) => {
+        parent.appendChild(child);
       };
       
       // Add BODY global variable

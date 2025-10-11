@@ -6,39 +6,23 @@ import 'package:collection/collection.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
-import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/bridge.dart';
-
-
-const String WHITE_SPACE_CHAR = ' ';
-const String NEW_LINE_CHAR = '\n';
-const String RETURN_CHAR = '\r';
-const String TAB_CHAR = '\t';
+import 'package:webf/src/rendering/text.dart';
 
 typedef EveryRenderTextBoxHandler = void Function(RenderTextBox? textBox);
 
 class TextNode extends CharacterData {
-  static const String NORMAL_SPACE = '\u0020';
-
   TextNode(this._data, [BindingContext? context]) : super(NodeType.TEXT_NODE, context);
 
   final flutter.Key key = flutter.UniqueKey();
 
   @override
   flutter.Widget toWidget({Key? key}) {
-    return TextNodeAdapter(this, key: this.key);
+    return TextNodeAdapter(this, _data, key: this.key);
   }
 
-  final Set<_TextNodeAdapterElement> _attachedFlutterWidgetElements = {};
-
-  void everyRenderTextBox(EveryRenderTextBoxHandler handler) {
-    if (managedByFlutterWidget) {
-      for (var textNode in _attachedFlutterWidgetElements) {
-        handler(textNode.renderObject);
-      }
-    }
-  }
+  final Set<TextNodeAdapterElement> _attachedFlutterWidgetElements = {};
 
   // The text string.
   String _data = '';
@@ -52,8 +36,23 @@ class TextNode extends CharacterData {
     _data = newData;
 
 
-    if (managedByFlutterWidget) {
-      _applyTextStyle();
+    // Notify attached widgets to rebuild
+    for (var element in _attachedFlutterWidgetElements) {
+      if (element.mounted) {
+        element.markNeedsBuild();
+      }
+    }
+
+    // Also mark the nearest render container for layout so IFC can rebuild
+    // and pick up the updated text content promptly.
+    Element? ancestor = parentElement;
+    while (ancestor != null) {
+      final renderBox = ancestor.renderStyle.attachedRenderBoxModel;
+      if (renderBox != null) {
+        renderBox.markNeedsLayout();
+        break;
+      }
+      ancestor = ancestor.parentElement;
     }
 
     // Notify parent about text content changes to allow elements (e.g., textarea)
@@ -73,63 +72,9 @@ class TextNode extends CharacterData {
   String get nodeName => '#text';
 
   @override
-  RenderBox? get attachedRenderer {
-    if (managedByFlutterWidget) {
-      return _attachedFlutterWidgetElements
-          .firstWhereOrNull((flutterElement) => flutterElement.mounted)
-          ?.renderObject;
-    }
-    return null;
-  }
-
-  @override
-  bool get isRendererAttached {
-    return attachedRenderer?.attached == true;
-  }
-
-  @override
-  bool get isRendererAttachedToSegmentTree {
-    if (managedByFlutterWidget) {
-      for (var renderText in _attachedFlutterWidgetElements) {
-        if (renderText.mounted) return true;
-      }
-      return false;
-    }
-
-    return false;
-  }
-
-  @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty('data', data));
-  }
-
-  void _applyTextStyle() {
-    if (isRendererAttachedToSegmentTree) {
-      Element _parentElement = parentElement!;
-
-      everyRenderTextBox((textNode) {
-        if (textNode == null) return;
-
-        // The parentNode must be an element.
-        textNode.renderStyle = _parentElement.renderStyle;
-        textNode.data = data;
-
-        WebFRenderParagraph renderParagraph = textNode.child as WebFRenderParagraph;
-        renderParagraph.markNeedsLayout();
-
-        RenderStyle parentElementRenderStyle = _parentElement.renderStyle;
-
-        _setTextSizeType(textNode, parentElementRenderStyle.widthSizeType(), parentElementRenderStyle.heightSizeType());
-      });
-    }
-  }
-
-  void _setTextSizeType(RenderTextBox renderTextBox, BoxSizeType width, BoxSizeType height) {
-    // Migrate element's size type to RenderTextBox.
-    renderTextBox.widthSizeType = width;
-    renderTextBox.heightSizeType = height;
   }
 
   @override
@@ -140,7 +85,7 @@ class TextNode extends CharacterData {
   @override
   RenderBox createRenderer([flutter.Element? flutterWidgetElement]) {
     RenderTextBox textBox = RenderTextBox(data, renderStyle: parentElement!.renderStyle);
-    _attachedFlutterWidgetElements.add(flutterWidgetElement as _TextNodeAdapterElement);
+    _attachedFlutterWidgetElements.add(flutterWidgetElement as TextNodeAdapterElement);
 
     return textBox;
   }
@@ -162,23 +107,31 @@ class TextNode extends CharacterData {
 class TextNodeAdapter extends flutter.SingleChildRenderObjectWidget {
   final TextNode textNode;
 
-  TextNodeAdapter(this.textNode, {Key? key}) : super(key: key) {
-    textNode.managedByFlutterWidget = true;
-  }
+  String get data => textNode.data;
+
+  const TextNodeAdapter(this.textNode, String initialData, {super.key});
 
   @override
-  _TextNodeAdapterElement createElement() {
-    return _TextNodeAdapterElement(this);
+  TextNodeAdapterElement createElement() {
+    return TextNodeAdapterElement(this);
   }
 
   @override
   RenderObject createRenderObject(flutter.BuildContext context) {
-    return textNode.createRenderer(context as flutter.RenderObjectElement);
+    RenderTextBox renderTextBoxNext = textNode.createRenderer(context as flutter.RenderObjectElement) as RenderTextBox;
+    renderTextBoxNext.data = data;
+    return renderTextBoxNext;
+  }
+
+  @override
+  void updateRenderObject(flutter.BuildContext context, covariant RenderObject renderObject) {
+    super.updateRenderObject(context, renderObject);
+    (renderObject as RenderTextBox).data = data;
   }
 
   @override
   String toStringShort() {
-    return '"${textNode.data}"';
+    return '"${textNode.data.trim()}"';
   }
 
   @override
@@ -188,8 +141,8 @@ class TextNodeAdapter extends flutter.SingleChildRenderObjectWidget {
   }
 }
 
-class _TextNodeAdapterElement extends flutter.SingleChildRenderObjectElement {
-  _TextNodeAdapterElement(TextNodeAdapter widget) : super(widget);
+class TextNodeAdapterElement extends flutter.SingleChildRenderObjectElement {
+  TextNodeAdapterElement(TextNodeAdapter super.widget);
 
   @override
   RenderTextBox get renderObject => super.renderObject as RenderTextBox;

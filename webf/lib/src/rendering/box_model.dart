@@ -17,7 +17,9 @@ import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 
 import 'box_overflow.dart';
+import 'package:webf/src/foundation/logger.dart';
 import 'debug_overlay.dart';
+import 'package:logging/logging.dart' show Level;
 
 // The hashCode of all the renderBox which is in layout.
 List<int> renderBoxInLayoutHashCodes = [];
@@ -68,11 +70,10 @@ Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool e
       // Determine scroll direction - default to vertical
       Axis scrollDirection = Axis.vertical;
       if (ancestor is RenderWidget && ancestor.renderStyle.target is WebFListViewElement) {
-        scrollDirection = (ancestor.renderStyle.target as WebFListViewElement).scrollDirection;
+        scrollDirection = (ancestor.renderStyle.target as WebFListViewElement).axis;
       }
 
-      Offset sliverScrollOffset = scrollDirection == Axis.vertical ?
-          Offset(0, layoutOffset) : Offset(layoutOffset, 0);
+      Offset sliverScrollOffset = scrollDirection == Axis.vertical ? Offset(0, layoutOffset) : Offset(layoutOffset, 0);
 
       stackOffsets.add(sliverScrollOffset);
     } else if (parentRenderer is RenderBox) {
@@ -88,542 +89,11 @@ Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool e
   return stackOffsets.reduce((prev, next) => prev + next);
 }
 
-/// Modified from Flutter rendering/box.dart.
-/// A mixin that provides useful default behaviors for boxes with children
-/// managed by the [ContainerRenderObjectMixin] mixin.
-///
-/// By convention, this class doesn't override any members of the superclass.
-/// Instead, it provides helpful functions that subclasses can call as
-/// appropriate.
-mixin RenderBoxContainerDefaultsMixin<ChildType extends RenderBox,
-        ParentDataType extends ContainerBoxParentData<ChildType>>
-    implements ContainerRenderObjectMixin<ChildType, ParentDataType> {
-  /// Returns the baseline of the first child with a baseline.
-  ///
-  /// Useful when the children are displayed vertically in the same order they
-  /// appear in the child list.
-  double? defaultComputeDistanceToFirstActualBaseline(TextBaseline baseline) {
-    assert(!debugNeedsLayout);
-    ChildType? child = firstChild;
-    while (child != null) {
-      final ParentDataType? childParentData = child.parentData as ParentDataType?;
-      // ignore: INVALID_USE_OF_PROTECTED_MEMBER
-      final double? result = child.getDistanceToActualBaseline(baseline);
-      if (result != null) return result + childParentData!.offset.dy;
-      child = childParentData!.nextSibling;
-    }
-    return null;
-  }
-
-  /// Returns the minimum baseline value among every child.
-  ///
-  /// Useful when the vertical position of the children isn't determined by the
-  /// order in the child list.
-  double? defaultComputeDistanceToHighestActualBaseline(TextBaseline baseline) {
-    assert(!debugNeedsLayout);
-    double? result;
-    ChildType? child = firstChild;
-    while (child != null) {
-      final ParentDataType childParentData = child.parentData as ParentDataType;
-      // ignore: INVALID_USE_OF_PROTECTED_MEMBER
-      double? candidate = child.getDistanceToActualBaseline(baseline);
-      if (candidate != null) {
-        candidate += childParentData.offset.dy;
-        if (result != null)
-          result = math.min(result, candidate);
-        else
-          result = candidate;
-      }
-      child = childParentData.nextSibling;
-    }
-    return result;
-  }
-
-  /// Performs a hit test on each child by walking the child list backwards.
-  ///
-  /// Stops walking once after the first child reports that it contains the
-  /// given point. Returns whether any children contain the given point.
-  ///
-  /// See also:
-  ///
-  ///  * [defaultPaint], which paints the children appropriate for this
-  ///    hit-testing strategy.
-  bool defaultHitTestChildren(BoxHitTestResult result, {Offset? position}) {
-    // The x, y parameters have the top left of the node's box as the origin.
-
-    // The z-index needs to be sorted, and higher-level nodes are processed first.
-    List<RenderObject?> paintingOrder = (this as RenderLayoutBox).paintingOrder;
-    for (int i = paintingOrder.length - 1; i >= 0; i--) {
-      ChildType child = paintingOrder[i] as ChildType;
-      // Ignore detached render object.
-      if (!child.attached) {
-        continue;
-      }
-      final ParentDataType childParentData = child.parentData as ParentDataType;
-      final bool isHit = result.addWithPaintOffset(
-        offset: childParentData.offset == Offset.zero ? null : childParentData.offset,
-        position: position!,
-        hitTest: (BoxHitTestResult result, Offset transformed) {
-          assert(transformed == position - childParentData.offset);
-
-          if (child is RenderBoxModel && child.renderStyle.position == CSSPositionType.fixed) {
-            Offset scrollOffset = child.getTotalScrollOffset();
-            transformed -= scrollOffset;
-          }
-
-          return child.hitTest(result, position: transformed);
-        },
-      );
-      if (isHit) return true;
-    }
-
-    return false;
-  }
-
-  /// Paints each child by walking the child list forwards.
-  ///
-  /// See also:
-  ///
-  ///  * [defaultHitTestChildren], which implements hit-testing of the children
-  ///    in a manner appropriate for this painting strategy.
-  void defaultPaint(PaintingContext context, Offset offset) {
-    ChildType? child = firstChild;
-    while (child != null) {
-      final ParentDataType childParentData = child.parentData as ParentDataType;
-      context.paintChild(child, childParentData.offset + offset);
-      child = childParentData.nextSibling;
-    }
-  }
-
-  /// Returns a list containing the children of this render object.
-  ///
-  /// This function is useful when you need random-access to the children of
-  /// this render object. If you're accessing the children in order, consider
-  /// walking the child list directly.
-  List<ChildType> getChildren() {
-    final List<ChildType> result = <ChildType>[];
-    visitChildren((child) {
-      if (child is! RenderPositionPlaceholder) {
-        result.add(child as ChildType);
-      }
-    });
-    return result;
-  }
-}
-
-class RenderLayoutBox extends RenderBoxModel
-    with
-        ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>,
-        RenderBoxContainerDefaultsMixin<RenderBox, ContainerBoxParentData<RenderBox>>
-    implements RenderAbstractViewport {
-  RenderLayoutBox({required CSSRenderStyle renderStyle}) : super(renderStyle: renderStyle);
-
-  void markChildrenNeedsSort() {
-    _cachedPaintingOrder = null;
-  }
-
-  // RenderAbstractViewport impl so Scrollable.ensureVisible can compute reveal offsets
-  @override
-  RevealedOffset getOffsetToReveal(RenderObject target, double alignment, {Rect? rect, Axis? axis}) {
-    // WebF elements can scroll in both axes, but this method needs to work per axis
-    // Determine which axis to use based on the axis parameter or default to vertical
-    axis ??= Axis.vertical;
-
-    // Get the rect in target's coordinate space
-    rect ??= target.paintBounds;
-
-    // If target is not our descendant, return current scroll position
-    RenderObject? ancestor = target;
-    while (ancestor != null && ancestor != this) {
-      ancestor = ancestor.parent as RenderObject?;
-    }
-    if (ancestor == null) {
-      // Target is not our descendant, return current position
-      return RevealedOffset(
-        offset: axis == Axis.vertical ? scrollTop : scrollLeft,
-        rect: rect,
-      );
-    }
-
-    // Transform the rect from target's coordinate system to our coordinate system
-    final Matrix4 transform = target.getTransformTo(this);
-    Rect targetRect = MatrixUtils.transformRect(transform, rect);
-
-    // The targetRect is now in our viewport's coordinate system (already accounts for current scroll)
-    // To calculate the scroll offset needed, we need to work with the absolute position
-    // Add the current scroll offset to get the position in content space
-    final Rect targetInContentSpace = targetRect.translate(scrollLeft, scrollTop);
-
-    // Get our viewport size (visible area)
-    final Size viewportSize = scrollableViewportSize;
-
-    // Calculate the target offset based on alignment and axis
-    double targetOffset;
-    if (axis == Axis.vertical) {
-      // Vertical scrolling
-      final double targetTop = targetInContentSpace.top;
-      final double targetBottom = targetInContentSpace.bottom;
-      final double targetHeight = targetInContentSpace.height;
-      final double viewportHeight = viewportSize.height;
-
-      // Calculate position based on alignment (0.0 = top, 0.5 = center, 1.0 = bottom)
-      // For alignment=1.0 (bottom), we want the target at the bottom of the viewport
-      if (targetHeight >= viewportHeight) {
-        // Target is larger than viewport
-        if (alignment == 1.0) {
-          // Show the bottom of the target
-          targetOffset = targetBottom - viewportHeight;
-        } else if (alignment == 0.0) {
-          // Show the top of the target
-          targetOffset = targetTop;
-        } else {
-          // Center as much as possible
-          targetOffset = targetTop + (targetHeight - viewportHeight) * alignment;
-        }
-      } else {
-        // Target fits within viewport
-        if (alignment == 1.0) {
-          // Position target at bottom of viewport
-          targetOffset = targetBottom - viewportHeight;
-        } else if (alignment == 0.0) {
-          // Position target at top of viewport
-          targetOffset = targetTop;
-        } else {
-          // Position based on alignment
-          final double availableSpace = viewportHeight - targetHeight;
-          targetOffset = targetTop - (availableSpace * alignment);
-        }
-      }
-
-      // Clamp to valid scroll range
-      final double maxScroll = math.max(0.0, scrollableSize.height - viewportHeight);
-      targetOffset = targetOffset.clamp(0.0, maxScroll);
-    } else {
-      // Horizontal scrolling
-      final double targetLeft = targetInContentSpace.left;
-      final double targetRight = targetInContentSpace.right;
-      final double targetWidth = targetInContentSpace.width;
-      final double viewportWidth = viewportSize.width;
-
-      if (alignment == 1.0) {
-        // Align right of target with right of viewport
-        targetOffset = targetRight - viewportWidth;
-      } else if (alignment == 0.0) {
-        // Align left of target with left of viewport
-        targetOffset = targetLeft;
-      } else {
-        // General alignment
-        final double alignmentOffset = (viewportWidth - targetWidth) * alignment;
-        targetOffset = targetLeft - alignmentOffset;
-      }
-
-      // Clamp to valid scroll range
-      final double maxScroll = math.max(0.0, scrollableSize.width - viewportWidth);
-      targetOffset = targetOffset.clamp(0.0, maxScroll);
-    }
-
-    // Calculate the rect position in viewport space after scrolling
-    final Rect revealedRect;
-    if (axis == Axis.vertical) {
-      // After scrolling to targetOffset, the element will appear at:
-      // its content space position minus the new scroll offset
-      revealedRect = targetInContentSpace.translate(0.0, -targetOffset);
-    } else {
-      revealedRect = targetInContentSpace.translate(-targetOffset, 0.0);
-    }
-
-    return RevealedOffset(
-      offset: targetOffset,
-      rect: revealedRect,
-    );
-  }
-
-  // Sort children by zIndex, used for paint and hitTest.
-  List<RenderBox> _computePaintingOrder() {
-    RenderLayoutBox containerLayoutBox = this;
-
-    if (containerLayoutBox.childCount == 0) {
-      // No child.
-      return const [];
-    } else if (containerLayoutBox.childCount == 1) {
-      // Only one child.
-      final List<RenderBox> order = <RenderBox>[containerLayoutBox.firstChild as RenderBox];
-      return order;
-    } else {
-      // Sort by zIndex.
-      List<RenderBox> children = [];
-      List<RenderBox> negativeStackingChildren = [];
-      List<RenderBoxModel> stackingChildren = [];
-      containerLayoutBox.visitChildren((RenderObject child) {
-        if (child is RenderBoxModel) {
-          bool isNeedsStacking = child.renderStyle.needsStacking;
-          if (child.renderStyle.zIndex != null && child.renderStyle.zIndex! < 0) {
-            negativeStackingChildren.add(child);
-          } else if (isNeedsStacking) {
-            stackingChildren.add(child);
-          } else {
-            children.add(child);
-          }
-        } else {
-          children.add(child as RenderBox);
-        }
-      });
-
-      stackingChildren.sort((RenderBoxModel left, RenderBoxModel right) {
-        return (left.renderStyle.zIndex ?? 0) <= (right.renderStyle.zIndex ?? 0) ? -1 : 1;
-      });
-
-      children.insertAll(0, negativeStackingChildren);
-      children.addAll(stackingChildren);
-
-      return children;
-    }
-  }
-
-  List<RenderBox>? _cachedPaintingOrder;
-  List<RenderBox> get paintingOrder {
-    _cachedPaintingOrder ??= _computePaintingOrder();
-    return _cachedPaintingOrder!;
-  }
-
-  // No need to override [all] and [addAll] method cause they invoke [insert] method eventually.
-  @override
-  void insert(RenderBox child, {RenderBox? after}) {
-    super.insert(child, after: after);
-    _cachedPaintingOrder = null;
-  }
-
-  @override
-  void remove(RenderBox child) {
-    super.remove(child);
-    _cachedPaintingOrder = null;
-  }
-
-  @override
-  void removeAll() {
-    super.removeAll();
-    _cachedPaintingOrder = null;
-  }
-
-  @override
-  void move(RenderBox child, {RenderBox? after}) {
-    super.move(child, after: after);
-    _cachedPaintingOrder = null;
-  }
-
-  @override
-  BoxConstraints getConstraints() {
-    BoxConstraints boxConstraints = super.getConstraints();
-    return boxConstraints;
-  }
-
-  @override
-  void performPaint(PaintingContext context, Offset offset) {
-    for (int i = 0; i < paintingOrder.length; i++) {
-      RenderBox child = paintingOrder[i];
-      if (!isPositionPlaceholder(child)) {
-        final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-        if (child.hasSize) {
-          context.paintChild(child, childParentData.offset + offset);
-        }
-      }
-    }
-  }
-
-  // Get all children as a list and detach them all.
-  List<RenderBox> detachChildren() {
-    List<RenderBox> children = getChildren();
-    removeAll();
-    return children;
-  }
-
-  // Cache sticky children to calculate the base offset of sticky children
-  final Set<RenderBoxModel> stickyChildren = {};
-
-  @override
-  double? computeDistanceToActualBaseline(TextBaseline baseline) {
-    return computeDistanceToBaseline();
-  }
-
-  /// Baseline rule is as follows:
-  /// 1. Loop children to find baseline, if child is block-level find the nearest non block-level children's height
-  /// as baseline
-  /// 2. If child is text-box, use text's baseline
-  double? computeDistanceToHighestActualBaseline(TextBaseline baseline) {
-    double? result;
-    RenderBox? child = firstChild;
-    while (child != null) {
-      final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-
-      // Whether child is inline-level including text box
-      bool isChildInline = true;
-      if (child is RenderBoxModel) {
-        CSSDisplay? childTransformedDisplay = child.renderStyle.effectiveDisplay;
-        if (childTransformedDisplay == CSSDisplay.block || childTransformedDisplay == CSSDisplay.flex) {
-          isChildInline = false;
-        }
-      }
-
-      // Block level and positioned element doesn't involve in baseline alignment
-      if (child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
-        child = childParentData.nextSibling;
-        continue;
-      }
-
-      double? childDistance = child.getDistanceToActualBaseline(baseline);
-      // Use child's height if child has no baseline and not block-level
-      // Text box always has baseline
-      if (childDistance == null && isChildInline && child is RenderBoxModel) {
-        // Flutter only allow access size of direct children, so cannot use child.size
-        Size childSize = child.getBoxSize(child.contentSize);
-        childDistance = childSize.height;
-      }
-
-      if (childDistance != null) {
-        childDistance += childParentData.offset.dy;
-        if (result != null)
-          result = math.min(result, childDistance);
-        else
-          result = childDistance;
-      }
-      child = childParentData.nextSibling;
-    }
-    return result;
-  }
-
-  bool get isNegativeMarginChangeHSize {
-    return renderStyle.width.isAuto && isMarginNegativeHorizontal();
-  }
-
-  bool isMarginNegativeVertical() {
-    double? marginBottom = renderStyle.marginBottom.computedValue;
-    double? marginTop = renderStyle.marginTop.computedValue;
-    return marginBottom < 0 || marginTop < 0;
-  }
-
-  bool isMarginNegativeHorizontal() {
-    double? marginLeft = renderStyle.marginLeft.computedValue;
-    double? marginRight = renderStyle.marginRight.computedValue;
-    return marginLeft < 0 || marginRight < 0;
-  }
-
-  /// Common layout content size (including flow and flexbox layout) calculation logic
-  Size getContentSize({
-    required double contentWidth,
-    required double contentHeight,
-  }) {
-    double finalContentWidth = contentWidth;
-    double finalContentHeight = contentHeight;
-
-    // Size which is specified by sizing styles
-    double? specifiedContentWidth = renderStyle.contentBoxLogicalWidth;
-    double? specifiedContentHeight = renderStyle.contentBoxLogicalHeight;
-
-    // Margin negative will set element which is static && not set width, size bigger
-    double? marginLeft = renderStyle.marginLeft.computedValue;
-    double? marginRight = renderStyle.marginRight.computedValue;
-    double? marginAddSizeLeft = 0;
-    double? marginAddSizeRight = 0;
-    if(isNegativeMarginChangeHSize) {
-      marginAddSizeRight = marginLeft < 0 ? -marginLeft : 0;
-      marginAddSizeLeft = marginRight < 0 ? -marginRight : 0;
-    }
-    // Flex basis takes priority over main size in flex item when flex-grow or flex-shrink not work.
-    if (renderStyle.isParentRenderFlexLayout()) {
-      CSSRenderStyle? parentRenderStyle = renderStyle.getParentRenderStyle();
-      double? flexBasis = renderStyle.flexBasis == CSSLengthValue.auto ? null : renderStyle.flexBasis?.computedValue;
-      if (flexBasis != null) {
-        if (CSSFlex.isHorizontalFlexDirection(parentRenderStyle!.flexDirection)) {
-          if (!hasOverrideContentLogicalWidth) {
-            specifiedContentWidth = _getContentWidth(flexBasis);
-          }
-        } else {
-          if (!hasOverrideContentLogicalHeight) {
-            specifiedContentHeight = _getContentHeight(flexBasis);
-          }
-        }
-      }
-    }
-
-    if (specifiedContentWidth != null) {
-      finalContentWidth = math.max(specifiedContentWidth, contentWidth);
-    }
-    if(parent is RenderFlexLayout && marginAddSizeLeft > 0 && marginAddSizeRight > 0 ||
-        parent is RenderFlowLayout && (marginAddSizeRight > 0 || marginAddSizeLeft > 0)) {
-      finalContentWidth += marginAddSizeLeft;
-      finalContentWidth += marginAddSizeRight;
-    }
-    if (specifiedContentHeight != null) {
-      finalContentHeight = math.max(specifiedContentHeight, contentHeight);
-    }
-
-    CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
-    bool isInlineBlock = effectiveDisplay == CSSDisplay.inlineBlock;
-    bool isNotInline = effectiveDisplay != CSSDisplay.inline;
-    double? width = renderStyle.width.isAuto ? null : renderStyle.width.computedValue;
-    double? height = renderStyle.height.isAuto ? null : renderStyle.height.computedValue;
-    double? minWidth = renderStyle.minWidth.isAuto ? null : renderStyle.minWidth.computedValue;
-    double? maxWidth = renderStyle.maxWidth.isNone ? null : renderStyle.maxWidth.computedValue;
-    double? minHeight = renderStyle.minHeight.isAuto ? null : renderStyle.minHeight.computedValue;
-    double? maxHeight = renderStyle.maxHeight.isNone ? null : renderStyle.maxHeight.computedValue;
-
-    // Constrain to min-width or max-width if width not exists.
-    if (isInlineBlock && maxWidth != null && width == null) {
-      double maxContentWidth = _getContentWidth(maxWidth);
-      finalContentWidth = finalContentWidth > maxContentWidth ? maxContentWidth : finalContentWidth;
-    } else if (isInlineBlock && minWidth != null && width == null) {
-      double minContentWidth = _getContentWidth(minWidth);
-      finalContentWidth = finalContentWidth < minContentWidth ? minContentWidth : finalContentWidth;
-    }
-
-    // Constrain to min-height or max-height if height not exists.
-    if (isNotInline && maxHeight != null && height == null) {
-      double maxContentHeight = _getContentHeight(maxHeight);
-      finalContentHeight = finalContentHeight > maxContentHeight ? maxContentHeight : finalContentHeight;
-    } else if (isNotInline && minHeight != null && height == null) {
-      double minContentHeight = _getContentHeight(minHeight);
-      finalContentHeight = finalContentHeight < minContentHeight ? minContentHeight : finalContentHeight;
-    }
-
-    Size finalContentSize = Size(finalContentWidth, finalContentHeight);
-    return finalContentSize;
-  }
-
-  double _getContentWidth(double width) {
-    return width -
-        (renderStyle.borderLeftWidth?.computedValue ?? 0) -
-        (renderStyle.borderRightWidth?.computedValue ?? 0) -
-        renderStyle.paddingLeft.computedValue -
-        renderStyle.paddingRight.computedValue;
-  }
-
-  double _getContentHeight(double height) {
-    return height -
-        (renderStyle.borderTopWidth?.computedValue ?? 0) -
-        (renderStyle.borderBottomWidth?.computedValue ?? 0) -
-        renderStyle.paddingTop.computedValue -
-        renderStyle.paddingBottom.computedValue;
-  }
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty('paintingOrder', paintingOrder));
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-
-    stickyChildren.clear();
-  }
-}
-
 mixin RenderBoxModelBase on RenderBox {
-  late CSSRenderStyle renderStyle;
+  CSSRenderStyle get renderStyle;
 }
 
-class RenderBoxModel extends RenderBox
+abstract class RenderBoxModel extends RenderBox
     with
         RenderBoxModelBase,
         RenderBoxDecorationMixin,
@@ -637,6 +107,31 @@ class RenderBoxModel extends RenderBox
   RenderBoxModel({
     required this.renderStyle,
   }) : super();
+
+  // Cached CSS baselines computed during this render object's own layout.
+  // These represent distances from the top padding edge (including border-top) to the text baselines
+  // according to CSS semantics (first/last line box when applicable).
+  double? _cssFirstBaseline;
+  double? _cssLastBaseline;
+
+  // Expose read-only accessors for parents to consume during their layout
+  // without triggering any new baseline computation.
+  double? computeCssFirstBaseline() => _cssFirstBaseline;
+
+  double? computeCssLastBaseline() => _cssLastBaseline;
+
+  // Baseline accessor by type; currently returns the same cached values for
+  // both alphabetic and ideographic, and can be specialized as support grows.
+  double? computeCssFirstBaselineOf(TextBaseline baseline) => _cssFirstBaseline;
+
+  double? computeCssLastBaselineOf(TextBaseline baseline) => _cssLastBaseline;
+
+  // Utilities for children to update baseline caches during their own layout.
+  @protected
+  void setCssBaselines({double? first, double? last}) {
+    _cssFirstBaseline = first;
+    _cssLastBaseline = last ?? first;
+  }
 
   @override
   bool get alwaysNeedsCompositing {
@@ -659,15 +154,7 @@ class RenderBoxModel extends RenderBox
     }
   }
 
-  BoxConstraints? _contentConstraints;
-
-  BoxConstraints? get contentConstraints {
-    return _contentConstraints;
-  }
-
-  set contentConstraints(BoxConstraints? constraints) {
-    _contentConstraints = constraints;
-  }
+  BoxConstraints? contentConstraints;
 
   bool _needsRecalculateStyle = false;
 
@@ -676,13 +163,12 @@ class RenderBoxModel extends RenderBox
     _needsRecalculateStyle = true;
   }
 
-  // Cached positioned children for apply offsets when self had layout
-  final Set<RenderBoxModel> positionedChildren = {};
+  // Positioned children are now handled directly during the containing
+  // block's layout; no cached set is maintained at this level.
 
   @override
   String toStringShort() {
-    return super.toStringShort() +
-        ' ${renderStyle.target}[managedByFlutter=${renderStyle.target.managedByFlutterWidget}]';
+    return '${super.toStringShort()} ${renderStyle.target}';
   }
 
   bool get isSizeTight {
@@ -745,9 +231,7 @@ class RenderBoxModel extends RenderBox
   /// Whether current box is the root of the document which corresponds to HTML element in dom tree.
   bool get isDocumentRootBox {
     // Get the outer box of overflow scroll box
-    RenderBoxModel currentBox = this;
-    // Root element of document is the child of viewport.
-    return currentBox.parent is RootRenderViewportBox || currentBox.parent is RouterViewViewportBox;
+    return renderStyle.target is HTMLElement || renderStyle.target is RouterLinkElement;
   }
 
   // Width/height is overrided by flex-grow or flex-shrink in flex layout.
@@ -770,6 +254,7 @@ class RenderBoxModel extends RenderBox
   // box constraint errors during flex item resizing. This flag is automatically cleared
   // after the text box reads it in getConstraints().
   bool isFlexRelayout = false;
+
   // Whether it needs relayout due to percentage calculation.
   bool needsRelayout = false;
 
@@ -782,6 +267,7 @@ class RenderBoxModel extends RenderBox
       parent.needsRelayout = true;
     }
   }
+
   void markNeedsRelayout() {
     needsRelayout = true;
   }
@@ -832,14 +318,10 @@ class RenderBoxModel extends RenderBox
   void _syncChildNeedsLayoutFlag(RenderObject child) {
     if (child is RenderBoxModel) {
       child.syncNeedsLayoutFlag();
-    } else if (child is RenderTextBox) {
-      child.syncNeedsLayoutFlag();
     }
   }
 
-  LogicInlineBox createLogicInlineBox() {
-    return LogicInlineBox(renderObject: this);
-  }
+  void calculateBaseline();
 
   @override
   void layout(Constraints newConstraints, {bool parentUsesSize = false}) {
@@ -858,18 +340,6 @@ class RenderBoxModel extends RenderBox
     // Clear length cache when no renderBox is in layout.
     if (renderBoxInLayoutHashCodes.isEmpty) {
       clearComputedValueCache();
-    }
-  }
-
-  void markAdjacentRenderParagraphNeedsLayout() {
-    if (parent != null && parent is RenderFlowLayout && parentData is RenderLayoutParentData) {
-      if ((parentData as RenderLayoutParentData).nextSibling is RenderTextBox) {
-        ((parentData as RenderLayoutParentData).nextSibling as RenderTextBox).markRenderParagraphNeedsLayout();
-      }
-
-      if ((parentData as RenderLayoutParentData).previousSibling is RenderTextBox) {
-        ((parentData as RenderLayoutParentData).previousSibling as RenderTextBox).markRenderParagraphNeedsLayout();
-      }
     }
   }
 
@@ -896,21 +366,72 @@ class RenderBoxModel extends RenderBox
         renderStyle.paddingRight.computedValue;
 
     double? parentBoxContentConstraintsWidth;
-    if (renderStyle.isParentRenderBoxModel() && (this is RenderLayoutBox || this is RenderWidget)) {
-      RenderBoxModel parentRenderBoxModel = (parent as RenderBoxModel);
-      parentBoxContentConstraintsWidth =
-          parentRenderBoxModel.renderStyle.deflateMarginConstraints(parentRenderBoxModel.contentConstraints!).maxWidth;
+    if (renderStyle.isParentRenderBoxModel() &&
+        (renderStyle.isSelfRenderLayoutBox() || renderStyle.isSelfRenderWidget())) {
+      RenderBoxModel parentRenderBoxModel = (renderStyle.getParentRenderStyle()!.attachedRenderBoxModel!);
 
-      // When inner minimal content size are larger that parent's constraints,
-      // still use parent constraints but ensure minConstraintWidth is properly handled later
-      if (parentBoxContentConstraintsWidth < minConstraintWidth) {
-        // Don't nullify parent constraints, let the constraint resolution handle this
-        // parentBoxContentConstraintsWidth will be used as maxConstraintWidth
+      // Inline-block shrink-to-fit: when the parent is inline-block with auto width,
+      // do not bound block children by the parent's finite content width. This allows
+      // the child to compute its own natural width and lets the parent shrink-wrap.
+      bool parentIsInlineBlockAutoWidth = parentRenderBoxModel.renderStyle.effectiveDisplay == CSSDisplay.inlineBlock &&
+          parentRenderBoxModel.renderStyle.width.isAuto;
+
+      if (parentIsInlineBlockAutoWidth) {
+          parentBoxContentConstraintsWidth = double.infinity;
+      } else {
+        // Prefer the actual layout parent's content constraints if available,
+        // because CSS parent may not yet have computed contentConstraints during IFC layout.
+        BoxConstraints? candidate;
+        if (parent is RenderBoxModel) {
+          candidate = (parent as RenderBoxModel).contentConstraints;
+        }
+        candidate ??= parentRenderBoxModel.contentConstraints;
+
+        if (candidate != null) {
+          // When using CSS parent constraints, deflate with the current element's margins
+          // to match previous behavior; otherwise use the raw layout parent's constraints.
+          if (identical(candidate, parentRenderBoxModel.contentConstraints)) {
+            parentBoxContentConstraintsWidth =
+                parentRenderBoxModel.renderStyle.deflateMarginConstraints(candidate).maxWidth;
+          } else {
+            parentBoxContentConstraintsWidth = candidate.maxWidth;
+          }
+
+          // When inner minimal content size are larger that parent's constraints,
+          // still use parent constraints but ensure minConstraintWidth is properly handled later
+          if (parentBoxContentConstraintsWidth < minConstraintWidth) {
+            // Keep parentBoxContentConstraintsWidth; resolution happens below.
+          }
+        }
       }
 
-      // FlexItems with flex:none won't inherit parent box's constraints
-      if (parent is RenderFlexLayout && (parent as RenderFlexLayout).isFlexNone(this)) {
-        parentBoxContentConstraintsWidth = null;
+      // Flex context adjustments
+      if (renderStyle.isParentRenderFlexLayout()) {
+        final RenderFlexLayout flexParent =
+            renderStyle.getParentRenderStyle()!.attachedRenderBoxModel! as RenderFlexLayout;
+        // FlexItems with flex:none won't inherit parent box's constraints
+        if (flexParent.isFlexNone(this)) {
+          parentBoxContentConstraintsWidth = null;
+        }
+
+        // In a column-direction flex container, a flex item with auto cross-size (width)
+        // that is not stretched in the cross axis should not inherit the container's
+        // bounded width during its own constraint computation. Let it shrink-to-fit
+        // its contents instead (so percentage paddings resolve against the item's
+        // own width rather than the container width).
+        final bool isColumn = !CSSFlex.isHorizontalFlexDirection(flexParent.renderStyle.flexDirection);
+        if (isColumn) {
+          // Determine if this flex item would be stretched in the cross axis.
+          final AlignSelf self = renderStyle.alignSelf;
+          final bool parentStretch = flexParent.renderStyle.alignItems == AlignItems.stretch;
+          final bool shouldStretch = self == AlignSelf.auto ? parentStretch : self == AlignSelf.stretch;
+          final bool crossAuto = renderStyle.width.isAuto;
+
+          if (!shouldStretch && crossAuto) {
+            // Do not adopt the parent's bounded width; use intrinsic sizing.
+            parentBoxContentConstraintsWidth = null;
+          }
+        }
       }
     } else if (isDisplayInline && parent is RenderFlowLayout) {
       // For inline elements inside a flow layout, check if we should inherit parent's constraints
@@ -918,7 +439,8 @@ class RenderBoxModel extends RenderBox
 
       // Skip constraint inheritance if parent is a flex item with flex: none (flex-grow: 0, flex-shrink: 0)
       if (parentFlow.renderStyle.isParentRenderFlexLayout()) {
-        RenderFlexLayout flexParent = parentFlow.renderStyle.getParentRenderStyle()!.attachedRenderBoxModel as RenderFlexLayout;
+        RenderFlexLayout flexParent =
+            parentFlow.renderStyle.getParentRenderStyle()!.attachedRenderBoxModel as RenderFlexLayout;
         if (flexParent.isFlexNone(parentFlow)) {
           // Don't inherit constraints for flex: none items
           parentBoxContentConstraintsWidth = null;
@@ -999,6 +521,18 @@ class RenderBoxModel extends RenderBox
       }
     }
 
+    // Normalize constraints to satisfy Flutter's requirement: min <= max.
+    // This can happen when the computed minimum width from border/padding
+    // exceeds the available max width from the parent (e.g., inline-block
+    // with large horizontal padding inside a narrow container). In such
+    // cases, cap the minimum to the maximum so constraints are valid.
+    if (minConstraintWidth > maxConstraintWidth) {
+      minConstraintWidth = maxConstraintWidth;
+    }
+    if (minConstraintHeight > maxConstraintHeight) {
+      minConstraintHeight = maxConstraintHeight;
+    }
+
     BoxConstraints constraints = BoxConstraints(
       minWidth: minConstraintWidth,
       maxWidth: maxConstraintWidth,
@@ -1011,15 +545,21 @@ class RenderBoxModel extends RenderBox
 
   /// Set the size of scrollable overflow area of renderBoxModel
   void setMaxScrollableSize(Size contentSize) {
-    // Scrollable area includes right and bottom padding
-    scrollableSize = Size(contentSize.width + renderStyle.paddingLeft.computedValue,
-        contentSize.height + renderStyle.paddingTop.computedValue);
+    // Scrollable area includes trailing (end) padding per axis.
+    // When there is no child content, the scrollable overflow region should
+    // extend to include end-side padding so that the container can scroll
+    // enough for its padded edge to be reachable. Using the leading padding
+    // here (left/top) was incorrect and could overestimate the visible start
+    // and leave extra space at the bottom/right.
+    scrollableSize = Size(
+      contentSize.width + renderStyle.paddingRight.computedValue,
+      contentSize.height + renderStyle.paddingBottom.computedValue,
+    );
   }
 
   // Box size equals to RenderBox.size to avoid flutter complain when read size property.
   Size? _boxSize;
 
-  @override
   Size? get boxSize {
     assert(_boxSize != null, 'box does not have laid out.');
     return _boxSize;
@@ -1044,12 +584,12 @@ class RenderBoxModel extends RenderBox
     return constraints.constrain(borderBoxSize);
   }
 
-  Size wrapOutContentSizeRight (Size contentSize) {
+  Size wrapOutContentSizeRight(Size contentSize) {
     Size paddingBoxSize = renderStyle.wrapPaddingSizeRight(contentSize);
     return renderStyle.wrapBorderSizeRight(paddingBoxSize);
   }
 
-  Size wrapOutContentSize (Size contentSize) {
+  Size wrapOutContentSize(Size contentSize) {
     Size paddingBoxSize = renderStyle.wrapPaddingSize(contentSize);
     return renderStyle.wrapBorderSize(paddingBoxSize);
   }
@@ -1076,15 +616,44 @@ class RenderBoxModel extends RenderBox
   // Base layout methods to compute content constraints before content box layout.
   // Call this method before content box layout.
   void beforeLayout() {
-    BoxConstraints contentConstraints = parent is RenderBoxModel ? constraints : getConstraints();
+    BoxConstraints contentConstraints =
+        (parent is RenderEventListener ? (parent as RenderEventListener).parent : parent) is RenderBoxModel
+            ? constraints
+            : getConstraints();
 
     // Deflate border constraints.
     contentConstraints = renderStyle.deflateBorderConstraints(contentConstraints);
     // Deflate padding constraints.
     contentConstraints = renderStyle.deflatePaddingConstraints(contentConstraints);
-    _contentConstraints = contentConstraints;
+
+    // Fix for text-overflow ellipsis: when content constraints become unbounded
+    // but the original constraints were bounded, and the element needs ellipsis,
+    // restore bounded width to allow proper text truncation.
+    if (renderStyle.effectiveOverflowX != CSSOverflowType.visible &&
+        renderStyle.effectiveTextOverflow == TextOverflow.ellipsis &&
+        contentConstraints.maxWidth.isInfinite &&
+        constraints.hasBoundedWidth) {
+      // Recalculate the content constraints using the original bounded constraints
+      BoxConstraints boundedConstraints = renderStyle.deflateBorderConstraints(constraints);
+      boundedConstraints = renderStyle.deflatePaddingConstraints(boundedConstraints);
+
+      contentConstraints = BoxConstraints(
+        minWidth: contentConstraints.minWidth,
+        maxWidth: boundedConstraints.maxWidth,
+        minHeight: contentConstraints.minHeight,
+        maxHeight: contentConstraints.maxHeight,
+      );
+    }
+
+    this.contentConstraints = contentConstraints;
     clearOverflowLayout();
     isSelfSizeChanged = false;
+
+    // Reset cached CSS baselines before a new layout pass. They will be
+    // updated by subclasses that can establish inline formatting context
+    // or have well-defined CSS baselines (e.g., replaced elements).
+    _cssFirstBaseline = null;
+    _cssLastBaseline = null;
   }
 
   /// Find scroll container
@@ -1179,16 +748,21 @@ class RenderBoxModel extends RenderBox
 
   set scrollableSize(Size value) {
     assert(value.isFinite);
-    _maxScrollableSize = value;
+    if (_maxScrollableSize != value) {
+      // Verbose logging to diagnose scrollable sizing
+      FlowLog.log(
+        impl: FlowImpl.overflow,
+        feature: FlowFeature.scrollable,
+        message: () =>
+            'set scrollableSize from=${_maxScrollableSize.width.toStringAsFixed(2)}×${_maxScrollableSize.height.toStringAsFixed(2)} to=${value.width.toStringAsFixed(2)}×${value.height.toStringAsFixed(2)} for <${renderStyle.target.tagName.toLowerCase()}> overflowX=${renderStyle.effectiveOverflowX} overflowY=${renderStyle.effectiveOverflowY}',
+      );
+      _maxScrollableSize = value;
+    } else {
+      _maxScrollableSize = value;
+    }
   }
 
-  Size _scrollableViewportSize = Size.zero;
-
-  Size get scrollableViewportSize => _scrollableViewportSize;
-
-  set scrollableViewportSize(Size value) {
-    _scrollableViewportSize = value;
-  }
+  Size scrollableViewportSize = Size.zero;
 
   /// Extend max scrollable size of renderBoxModel by offset of positioned child,
   /// get the max scrollable size of children of normal flow and single positioned child.
@@ -1205,57 +779,95 @@ class RenderBoxModel extends RenderBox
     }
 
     Matrix4? transform = (childRenderStyle as CSSRenderStyle).transformMatrix;
-    double maxScrollableX = childRenderStyle.left.computedValue + childScrollableSize!.width;
 
-    // maxScrollableX could be infinite due to the percentage value which depends on the parent box size,
-    // but in this stage, the parent's size will always to zero during the first initial layout.
-    if (maxScrollableX.isInfinite) return;
-
-    if (transform != null) {
-      maxScrollableX += transform.getTranslation()[0];
-    }
-
-    if (childRenderStyle.right.isNotAuto && parent is RenderBoxModel) {
-      if ((parent as RenderBoxModel).widthSizeType == BoxSizeType.specified) {
-        RenderBoxModel overflowContainerBox = parent as RenderBoxModel;
-        maxScrollableX = math.max(
-            maxScrollableX,
-            -childRenderStyle.right.computedValue +
-                overflowContainerBox.renderStyle.width.computedValue -
-                overflowContainerBox.renderStyle.effectiveBorderLeftWidth.computedValue -
-                overflowContainerBox.renderStyle.effectiveBorderRightWidth.computedValue);
-      } else {
-        maxScrollableX = math.max(maxScrollableX, -childRenderStyle.right.computedValue + _contentSize!.width);
+    // Determine container content box size for positioned computations.
+    double containerContentWidth = _contentSize!.width;
+    double containerContentHeight = _contentSize!.height;
+    if (parent is RenderBoxModel) {
+      final RenderBoxModel p = parent as RenderBoxModel;
+      if (p.widthSizeType == BoxSizeType.specified) {
+        containerContentWidth = p.renderStyle.width.computedValue -
+            p.renderStyle.effectiveBorderLeftWidth.computedValue -
+            p.renderStyle.effectiveBorderRightWidth.computedValue;
+      }
+      if (p.heightSizeType == BoxSizeType.specified) {
+        containerContentHeight = p.renderStyle.height.computedValue -
+            p.renderStyle.effectiveBorderTopWidth.computedValue -
+            p.renderStyle.effectiveBorderBottomWidth.computedValue;
       }
     }
 
-    double maxScrollableY = childRenderStyle.top.computedValue + childScrollableSize.height;
-
-    // maxScrollableX could be infinite due to the percentage value which depends on the parent box size,
-    // but in this stage, the parent's size will always to zero during the first initial layout.
-    if (maxScrollableY.isInfinite) return;
+    // Compute positioned box edges relative to the content (padding) box origin.
+    final Size childSize = childScrollableSize!;
+    double childLeft;
+    if (childRenderStyle.left.isNotAuto) {
+      childLeft = childRenderStyle.left.computedValue;
+    } else if (childRenderStyle.right.isNotAuto) {
+      childLeft = containerContentWidth - childSize.width - childRenderStyle.right.computedValue;
+    } else {
+      childLeft = 0;
+    }
+    double childTop;
+    if (childRenderStyle.top.isNotAuto) {
+      childTop = childRenderStyle.top.computedValue;
+    } else if (childRenderStyle.bottom.isNotAuto) {
+      childTop = containerContentHeight - childSize.height - childRenderStyle.bottom.computedValue;
+    } else {
+      childTop = 0;
+    }
 
     if (transform != null) {
-      maxScrollableY += transform.getTranslation()[1];
-    }
-    if (childRenderStyle.bottom.isNotAuto && parent is RenderBoxModel) {
-      if ((parent as RenderBoxModel).heightSizeType == BoxSizeType.specified) {
-        RenderBoxModel overflowContainerBox = parent as RenderBoxModel;
-        maxScrollableY = math.max(
-            maxScrollableY,
-            -childRenderStyle.bottom.computedValue +
-                overflowContainerBox.renderStyle.height.computedValue -
-                overflowContainerBox.renderStyle.effectiveBorderTopWidth.computedValue -
-                overflowContainerBox.renderStyle.effectiveBorderBottomWidth.computedValue);
-      } else {
-        maxScrollableY = math.max(maxScrollableY, -childRenderStyle.bottom.computedValue + _contentSize!.height);
-      }
+      childLeft += transform.getTranslation()[0];
+      childTop += transform.getTranslation()[1];
     }
 
-    maxScrollableX = math.max(maxScrollableX, scrollableSize.width);
-    maxScrollableY = math.max(maxScrollableY, scrollableSize.height);
+    final double childRight = childLeft + childSize.width;
+    final double childBottom = childTop + childSize.height;
+
+    FlowLog.log(
+      impl: FlowImpl.overflow,
+      feature: FlowFeature.scrollable,
+      level: Level.FINER,
+      message: () => 'extend scrollable by positioned <'+child.renderStyle.target.tagName.toLowerCase()+'> '
+          'containerContent='+containerContentWidth.toStringAsFixed(2)+'×'+containerContentHeight.toStringAsFixed(2)+' '
+          'childPos=(' + childLeft.toStringAsFixed(2) + ',' + childTop.toStringAsFixed(2) + ')-('+
+          childRight.toStringAsFixed(2) + ',' + childBottom.toStringAsFixed(2) + ') '
+          'childSize='+childSize.width.toStringAsFixed(2)+'×'+childSize.height.toStringAsFixed(2),
+    );
+
+    // Extend scroll area when the positioned box reaches or crosses the
+    // scrollport (padding box) boundary.
+    // For LTR, treat boxes that start exactly at the trailing edge as contributing
+    // (<=) so users can scroll to reveal them. For RTL, keep strict (<) to avoid
+    // shifting initial visual alignment for cases like right:-N content.
+    final bool parentIsRTL = renderStyle.direction == TextDirection.rtl;
+    final bool intersectsH =
+        childRight > 0 && (parentIsRTL ? (childLeft < containerContentWidth) : (childLeft <= containerContentWidth));
+    final bool intersectsV = childBottom > 0 && childTop <= containerContentHeight;
+
+    double maxScrollableX = scrollableSize.width;
+    double maxScrollableY = scrollableSize.height;
+
+    if (intersectsH) {
+      maxScrollableX = math.max(maxScrollableX, math.max(containerContentWidth, childRight));
+    }
+    // Only extend vertical scroll when the positioned box also intersects (or
+    // reaches) the scrollport horizontally. Purely off-axis content should not
+    // create scroll in the other axis.
+    if (intersectsV && intersectsH) {
+      maxScrollableY = math.max(maxScrollableY, math.max(containerContentHeight, childBottom));
+    }
 
     scrollableSize = Size(maxScrollableX, maxScrollableY);
+
+    FlowLog.log(
+      impl: FlowImpl.overflow,
+      feature: FlowFeature.scrollable,
+      level: Level.FINER,
+      message: () => 'positioned extend result scrollable='+maxScrollableX.toStringAsFixed(2)+'×'+
+          maxScrollableY.toStringAsFixed(2)+' intersectsH='+intersectsH.toString()+' intersectsV='+
+          intersectsV.toString(),
+    );
   }
 
   // iterate add child to overflowLayout
@@ -1267,10 +879,22 @@ class RenderBoxModel extends RenderBox
 
   void addOverflowLayoutFromChild(RenderBox child) {
     final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-    // TODO not support custom element and inline element overflowRect
     if (!child.hasSize || (child is! RenderBoxModel && child is! RenderReplaced)) {
       return;
     }
+    // Out-of-flow positioned descendants (absolute/fixed) do not expand the
+    // scrollable overflow area of a scroll container per CSS overflow/positioning
+    // expectations. They are clipped to the padding edge and scrolled as a part
+    // of the content, but must not affect the scroll range calculation.
+    if (this is RenderBoxModel) {
+      final RenderBoxModel self = this as RenderBoxModel;
+      final bool isScrollContainer = self.renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
+          self.renderStyle.effectiveOverflowY != CSSOverflowType.visible;
+      if (isScrollContainer && child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
+        return;
+      }
+    }
+
     CSSRenderStyle style = (child as RenderBoxModel).renderStyle;
     Rect overflowRect = Rect.fromLTWH(
         childParentData.offset.dx, childParentData.offset.dy, child.boxSize!.width, child.boxSize!.height);
@@ -1302,35 +926,22 @@ class RenderBoxModel extends RenderBox
 
   // Hooks when content box had layout.
   void didLayout() {
-    for (RenderBoxModel child in positionedChildren) {
-      if (child.attached) {
-        CSSPositionedLayout.applyPositionedChildOffset(this, child);
-      }
-    }
-
     scrollableViewportSize = constraints.constrain(Size(
         _contentSize!.width + renderStyle.paddingLeft.computedValue + renderStyle.paddingRight.computedValue,
         _contentSize!.height + renderStyle.paddingTop.computedValue + renderStyle.paddingBottom.computedValue));
 
     setUpOverflowScroller(scrollableSize, scrollableViewportSize);
+    FlowLog.log(
+      impl: FlowImpl.overflow,
+      feature: FlowFeature.setup,
+      message: () =>
+          'didLayout <${renderStyle.target.tagName.toLowerCase()}> box=${size.width.toStringAsFixed(2)}×${size.height.toStringAsFixed(2)} content=${_contentSize!.width.toStringAsFixed(2)}×${_contentSize!.height.toStringAsFixed(2)} viewport=${scrollableViewportSize.width.toStringAsFixed(2)}×${scrollableViewportSize.height.toStringAsFixed(2)} scrollable=${scrollableSize.width.toStringAsFixed(2)}×${scrollableSize.height.toStringAsFixed(2)} overflowX=${renderStyle.effectiveOverflowX} overflowY=${renderStyle.effectiveOverflowY}',
+    );
 
     if (positionedHolder != null && renderStyle.position != CSSPositionType.sticky) {
       // Make position holder preferred size equal to current element boundary size except sticky element.
       positionedHolder!.preferredSize = Size.copy(size);
     }
-
-    // // Positioned renderBoxModel will not trigger parent to relayout. Needs to update it's offset for itself.
-    // if (parentData is RenderLayoutParentData) {
-    //   RenderLayoutParentData selfParentData = parentData as RenderLayoutParentData;
-    //   RenderObject? parentBox = parent;
-    //   if (parentBox is RenderEventListener) {
-    //     parentBox = parentBox.parent;
-    //   }
-    //
-    //   if (selfParentData.isPositioned && parentBox is RenderBoxModel && parentBox.hasSize) {
-    //     CSSPositionedLayout.applyPositionedChildOffset(this, parentBox);
-    //   }
-    // }
 
     needsLayout = false;
     dispatchResize(contentSize, boxSize ?? Size.zero);
@@ -1375,8 +986,7 @@ class RenderBoxModel extends RenderBox
       informationCollector: () => <DiagnosticsNode>[
         // debugCreator should always be null outside of debugMode, but we want
         // the tree shaker to notice this.
-        if (kDebugMode && debugCreator != null)
-          DiagnosticsDebugCreator(debugCreator!),
+        if (kDebugMode && debugCreator != null) DiagnosticsDebugCreator(debugCreator!),
         describeForError('The following RenderObject was being processed when the exception was fired'),
         // TODO(jacobr): this error message has a code smell. Consider whether
         // displaying the truncated children is really useful for command line
@@ -1391,15 +1001,19 @@ class RenderBoxModel extends RenderBox
   void _paintLayoutError(PaintingContext context, Offset offset) {
     final Canvas canvas = context.canvas;
 
-    // Draw a red background to indicate error
-    final Paint errorPaint = Paint()
-      ..color = const Color(0xFFFF0000).withOpacity(0.7);
-    canvas.drawRect(offset & size, errorPaint);
+    // Determine the maximum area we can use to display the error.
+    // Prefer the viewport size; fall back to our current size.
+    final Size viewportSize = renderStyle.target.ownerView.viewport?.boxSize ?? size;
 
-    // Draw error message text
+    // Expand within the visible viewport starting from our own paint origin.
+    final double maxPaintWidth = math.max(0, viewportSize.width - offset.dx);
+    final double maxPaintHeight = math.max(0, viewportSize.height - offset.dy);
+
+    // Prepare error text
+    final String errorSummary = layoutExceptions!.split('\n').take(3).join('\n');
     final TextPainter textPainter = TextPainter(
       text: TextSpan(
-        text: 'LAYOUT ERROR\n${layoutExceptions!.split('\n').take(3).join('\n')}',
+        text: 'LAYOUT ERROR\n$errorSummary',
         style: const TextStyle(
           color: Color(0xFFFFFFFF),
           fontSize: 14.0,
@@ -1407,11 +1021,23 @@ class RenderBoxModel extends RenderBox
         ),
       ),
       textDirection: TextDirection.ltr,
-      maxLines: 4,
-      ellipsis: '...',
     );
-    textPainter.layout(maxWidth: size.width - 20);
-    textPainter.paint(canvas, offset + Offset(10, 10));
+
+    // Layout text with expanded width budget
+    const double kPadding = 10.0;
+    final double textMaxWidth = math.max(0, maxPaintWidth - kPadding * 2);
+    textPainter.layout(maxWidth: textMaxWidth);
+
+    // Compute background height to fit text, clamp to viewport height
+    final double bgHeight = math.min(maxPaintHeight, textPainter.height + kPadding * 2);
+
+    // Draw a red translucent background spanning the expanded area
+    final Paint errorPaint = Paint()..color = const Color(0xFFFF0000).withOpacity(0.7);
+    final Rect bgRect = Rect.fromLTWH(offset.dx, offset.dy, maxPaintWidth, bgHeight);
+    canvas.drawRect(bgRect, errorPaint);
+
+    // Paint error text with padding
+    textPainter.paint(canvas, offset + const Offset(kPadding, kPadding));
   }
 
   void debugPaintOverlay(PaintingContext context, Offset offset) {
@@ -1486,7 +1112,7 @@ class RenderBoxModel extends RenderBox
         renderStyle.effectiveBorderLeftWidth.computedValue,
         renderStyle.effectiveBorderTopWidth.computedValue,
         renderStyle.effectiveBorderRightWidth.computedValue,
-        renderStyle.effectiveBorderLeftWidth.computedValue);
+        renderStyle.effectiveBorderBottomWidth.computedValue);
     CSSBoxDecoration? decoration = renderStyle.decoration;
 
     bool hasLocalAttachment = _hasLocalBackgroundImage(renderStyle);
@@ -1515,11 +1141,6 @@ class RenderBoxModel extends RenderBox
     }
   }
 
-  /// Compute distance to baseline
-  double? computeDistanceToBaseline() {
-    return null;
-  }
-
   // Get the layout offset of renderObject to its ancestor which does not include the paint offset
   // such as scroll or transform.getLayoutTransformTo
   Offset getOffsetToAncestor(Offset point, RenderBoxModel ancestor,
@@ -1532,10 +1153,6 @@ class RenderBoxModel extends RenderBox
     }
 
     return getLayoutTransformTo(this, ancestor, excludeScrollOffset: excludeScrollOffset) + point - ancestorBorderWidth;
-  }
-
-  Offset getOffsetToRenderObjectAncestor(Offset point, RenderObject ancestor, {bool excludeScrollOffset = false}) {
-    return getLayoutTransformTo(this, ancestor, excludeScrollOffset: excludeScrollOffset) + point;
   }
 
   bool _hasLocalBackgroundImage(CSSRenderStyle renderStyle) {
@@ -1568,7 +1185,7 @@ class RenderBoxModel extends RenderBox
     // Evict render decoration image cache.
     renderStyle.backgroundImage?.image?.evict();
 
-    positionedChildren.clear();
+    // no-op: no positioned children cache
   }
 
   Offset getTotalScrollOffset() {
@@ -1623,8 +1240,10 @@ class RenderBoxModel extends RenderBox
       transform: renderStyle.effectiveTransformMatrix,
       position: position,
       hitTest: (BoxHitTestResult result, Offset transformPosition) {
+        // Apply the same paint scroll offset used during painting so hit testing aligns in RTL/LTR.
+        final Offset scrollPaintOffset = this.paintScrollOffset;
         return result.addWithPaintOffset(
-            offset: (scrollLeft != 0.0 || scrollTop != 0.0) ? Offset(-scrollLeft, -scrollTop) : null,
+            offset: (scrollPaintOffset.dx != 0.0 || scrollPaintOffset.dy != 0.0) ? scrollPaintOffset : null,
             position: transformPosition,
             hitTest: (BoxHitTestResult result, Offset position) {
               // CSSPositionType positionType = renderStyle.position;
@@ -1701,15 +1320,16 @@ class RenderBoxModel extends RenderBox
     properties.add(renderStyle.toDiagnosticsNode(name: 'renderStyle'));
     properties.add(DiagnosticsProperty('creatorElement', renderStyle.target));
     properties.add(DiagnosticsProperty('contentSize', _contentSize));
-    properties.add(DiagnosticsProperty('contentConstraints', _contentConstraints, missingIfNull: true));
+    properties.add(DiagnosticsProperty('contentConstraints', contentConstraints, missingIfNull: true));
     properties.add(DiagnosticsProperty('maxScrollableSize', scrollableSize, missingIfNull: true));
     properties.add(DiagnosticsProperty('scrollableViewportSize', scrollableViewportSize, missingIfNull: true));
     properties.add(DiagnosticsProperty('needsLayout', needsLayout, missingIfNull: true));
     properties.add(DiagnosticsProperty('isSizeTight', isSizeTight));
     properties.add(DiagnosticsProperty(
         'additionalPaintOffset', Offset(additionalPaintOffsetX ?? 0.0, additionalPaintOffsetY ?? 0.0)));
-    if (renderPositionPlaceholder != null)
+    if (renderPositionPlaceholder != null) {
       properties.add(DiagnosticsProperty('renderPositionHolder', renderPositionPlaceholder));
+    }
     debugOverflowProperties(properties);
     debugOpacityProperties(properties);
   }

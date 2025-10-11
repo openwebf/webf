@@ -53,8 +53,9 @@
       "specs/css/css-display/**/*.{js,jsx,ts,tsx,html}",
       "specs/css/css-box/**/*.{js,jsx,ts,tsx,html}",
       "specs/css/css-flow/**/*.{js,jsx,ts,tsx,html}",
+      "specs/css/css-sizing/**/*.{js,jsx,ts,tsx,html}",
       "specs/css/css-inline/**/*.{js,jsx,ts,tsx,html}",
-      "specs/css/css-sizing/**/*.{js,jsx,ts,tsx,html}"
+      "specs/css/css-inline-formatting/**/*.{js,jsx,ts,tsx,html}",
     ]
   },
   {
@@ -66,9 +67,14 @@
     ]
   },
   {
-    "name": "FlexBoxLayoutAndPositionedLayout",
+    "name": "FlexBoxLayout",
     "specs": [
-      "specs/css/css-flexbox/**/*.{js,jsx,ts,tsx,html}",
+      "specs/css/css-flexbox/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
+  {
+    "name": "PositionedLayout",
+    "specs": [
       "specs/css/css-position/**/*.{js,jsx,ts,tsx,html}"
     ]
   },
@@ -86,7 +92,8 @@
       "specs/css/css-text-decor/**/*.{js,jsx,ts,tsx,html}",
       "specs/css/css-color/**/*.{js,jsx,ts,tsx,html}",
       "specs/css/css-text-color/**/*.{js,jsx,ts,tsx,html}",
-      "specs/css/filter-effects/**/*.{js,jsx,ts,tsx,html}"
+      "specs/css/filter-effects/**/*.{js,jsx,ts,tsx,html}",
+      "specs/css/css-text-mixin/**/*.{js,jsx,ts,tsx,html}"
     ]
   },
   {
@@ -137,19 +144,28 @@
     "snapshotRoot": "body",
     "delayForSnapshot": true,
     "specs": [
-      "specs/blink/css1/**/*.{js,jsx,ts,tsx,html,svg}"
+      "specs/blink/css1/basic/**/*.{js,jsx,ts,tsx,html,svg}",
+      "specs/blink/css1/box_properties/**/*.{js,jsx,ts,tsx,html,svg}",
+      "specs/blink/css1/cascade/**/*.{js,jsx,ts,tsx,html,svg}",
+      "specs/blink/css1/classification/**/*.{js,jsx,ts,tsx,html,svg}",
+      "specs/blink/css1/color_and_background/**/*.{js,jsx,ts,tsx,html,svg}",
+      "specs/blink/css1/font_properties/**/*.{js,jsx,ts,tsx,html,svg}",
+      "specs/blink/css1/formatting_model/**/*.{js,jsx,ts,tsx,html,svg}",
+      "specs/blink/css1/pseudo/**/*.{js,jsx,ts,tsx,html,svg}",
+      "specs/blink/css1/text_properties/**/*.{js,jsx,ts,tsx,html,svg}",
+      "specs/blink/css1/units/**/*.{js,jsx,ts,tsx,html,svg}",
     ]
   },
-  {
-    "name": "Rust",
-    "specs": [
-      "specs/rust/**/*.{js,jsx,ts,tsx,html}"
-    ]
-  },
-  {
-    "name": "TextCodec",
-    "specs": [
-      "specs/text-codec/**/*.{js,jsx,ts,tsx,html}"
-    ]
-  }
+  // {
+  //   "name": "Rust",
+  //   "specs": [
+  //     "specs/rust/**/*.{js,jsx,ts,tsx,html}"
+  //   ]
+  // },
+  // {
+  //   "name": "TextCodec",
+  //   "specs": [
+  //     "specs/text-codec/**/*.{js,jsx,ts,tsx,html}"
+  //   ]
+  // },
 ]

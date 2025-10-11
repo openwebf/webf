@@ -4,6 +4,9 @@
  */
 
 import 'package:quiver/core.dart';
+import 'package:flutter/foundation.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/css.dart';
 
 /// https://drafts.csswg.org/cssom/#the-cssstylerule-interface
@@ -26,6 +29,17 @@ class CSSStyleRule extends CSSRule {
   bool operator ==(Object other) {
     return hashCode == other.hashCode;
   }
+}
+
+/// https://drafts.csswg.org/cssom/#the-cssimportrule-interface
+class CSSImportRule extends CSSRule {
+  final String href;
+  final String? media;
+
+  CSSImportRule(this.href, {this.media});
+
+  @override
+  int get type => CSSRule.IMPORT_RULE;
 }
 
 class KeyFrameBlock {
@@ -106,7 +120,9 @@ class CSSMediaDirective extends CSSRule {
 
   List<CSSRule>? getValidMediaRules(double? windowWidth, double? windowHeight, bool isDarkMode) {
     List<CSSRule>? _mediaRules = [];
-    // print('--------- --------- --------- --------- CSSMediaDirective start--------- --------- --------- --------- ');
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[media] evaluate media: type=' + (cssMediaQuery?._mediaType?.name ?? 'none') + ' exprs=' + (cssMediaQuery?.expressions.length.toString() ?? '0') + ' darkMode=' + isDarkMode.toString());
+    }
     if (rules == null) {
       return _mediaRules;
     }
@@ -170,6 +186,9 @@ class CSSMediaDirective extends CSSRule {
         if (prefersColorScheme != null) {
           bool isMediaDarkMode = prefersColorScheme == 'dark';
           bool condition = isMediaDarkMode == isDarkMode;
+          if (kDebugMode && DebugFlags.enableCssLogs) {
+            cssLogger.fine('[media] prefers-color-scheme: media=' + prefersColorScheme.toString() + ' isDarkMode=' + isDarkMode.toString() + ' -> ' + condition.toString());
+          }
           conditions.add(condition);
           ops.add(expression.op == MediaOperator.AND);
         }
@@ -185,10 +204,12 @@ class CSSMediaDirective extends CSSRule {
         isValid = isValid || con;
       }
     }
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[media] result: ' + isValid.toString());
+    }
     if (isValid) {
       _mediaRules = rules;
     }
-    // print('--------- --------- --------- --------- CSSMediaDirective end--------- --------- --------- --------- ');
     return _mediaRules;
   }
 

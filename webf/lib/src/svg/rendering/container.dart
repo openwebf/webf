@@ -17,6 +17,9 @@ class RenderSVGContainer extends RenderBoxModel
   SVGElement get element => renderStyle.target as SVGElement;
 
   @override
+  void calculateBaseline() {}
+
+  @override
   double? computeDistanceToActualBaseline(TextBaseline baseline) {
     return null;
   }

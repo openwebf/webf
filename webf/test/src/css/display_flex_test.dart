@@ -539,10 +539,10 @@ void main() {
 
       // Container should respect min-height
       expect(container.offsetHeight, equals(100.0));
-      
+
       // Red div should stretch to container height (98px), not green div height (50px)
       expect(redDiv.offsetHeight, equals(98.0));
-      
+
       // Green div should keep its explicit height
       expect(greenDiv.offsetHeight, equals(50.0));
     });
@@ -584,12 +584,12 @@ void main() {
 
       // Container should be at least min-width (200px), may be larger due to viewport
       expect(container.offsetWidth, greaterThanOrEqualTo(200.0));
-      
+
       // Red div should stretch to container content width (container width - 2px border), not green div width (80px)
       double expectedRedWidth = container.offsetWidth - 2.0; // Account for border
       expect(redDiv.offsetWidth, equals(expectedRedWidth));
       expect(redDiv.offsetWidth, greaterThan(80.0)); // Should be wider than green div
-      
+
       // Green div should keep its explicit width
       expect(greenDiv.offsetWidth, equals(80.0));
     });
@@ -639,7 +639,7 @@ void main() {
       // 2 × 5px padding = 10px padding
       // 2 × 1px border = 2px border
       // Total = 122px
-      
+
       expect(container.offsetWidth, equals(122.0));
     });
 
@@ -683,10 +683,10 @@ void main() {
 
       // Expected calculation without gap:
       // 3 children × 30px = 90px content
-      // 2 × 5px padding = 10px padding  
+      // 2 × 5px padding = 10px padding
       // 2 × 1px border = 2px border
       // Total = 102px
-      
+
       expect(container.offsetWidth, equals(102.0));
     });
 
@@ -697,7 +697,7 @@ void main() {
         html: '''
           <html>
             <body style="margin: 0; padding: 0; font-size: 16px;">
-              Items with gap: 
+              Items with gap:
               <div id="container" style="
                 display: inline-flex;
                 gap: 10px;
@@ -739,17 +739,17 @@ void main() {
       final redRect = redDiv.getBoundingClientRect();
       final greenRect = greenDiv.getBoundingClientRect();
       final blueRect = blueDiv.getBoundingClientRect();
-      
+
       print('=== DEBUG INLINE-FLEX OVERFLOW ===');
       print('Container offsetWidth: ${container.offsetWidth}');
       print('Container rect: left=${containerRect.left}, right=${containerRect.right}, width=${containerRect.width}');
       print('Red rect: left=${redRect.left}, right=${redRect.right}');
-      print('Green rect: left=${greenRect.left}, right=${greenRect.right}'); 
+      print('Green rect: left=${greenRect.left}, right=${greenRect.right}');
       print('Blue rect: left=${blueRect.left}, right=${blueRect.right}');
       print('Blue overflows container? ${blueRect.right > containerRect.right}');
-      
+
       // The key test: blue item should NOT overflow the container
-      expect(blueRect.right, lessThanOrEqualTo(containerRect.right), 
+      expect(blueRect.right, lessThanOrEqualTo(containerRect.right),
              reason: 'Blue item should not overflow the lightyellow container');
     });
   });

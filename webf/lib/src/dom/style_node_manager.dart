@@ -3,6 +3,9 @@
  */
 
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:webf/src/foundation/logger.dart';
 import 'package:collection/collection.dart';
 
 import 'package:webf/css.dart';
@@ -32,7 +35,19 @@ class StyleNodeManager {
 
   void addStyleSheetCandidateNode(Node node) {
     if (!node.isConnected) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[style] skip add candidate: ${node.runtimeType} (not connected)');
+      }
       return;
+    }
+    if (_styleSheetCandidateNodes.contains(node)) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[style] candidate already tracked: ${node.runtimeType}');
+      }
+      return;
+    }
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[style] add candidate node: ' + node.runtimeType.toString());
     }
     if (_styleSheetCandidateNodes.isEmpty) {
       _styleSheetCandidateNodes.add(node);
@@ -56,22 +71,31 @@ class StyleNodeManager {
 
   void removeStyleSheetCandidateNode(Node node) {
     _styleSheetCandidateNodes.remove(node);
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[style] remove candidate node: ' + node.runtimeType.toString());
+    }
     _isStyleSheetCandidateNodeChanged = true;
   }
 
   void appendPendingStyleSheet(CSSStyleSheet styleSheet) {
     _pendingStyleSheets.add(styleSheet);
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[style] append pending sheet: total=${_pendingStyleSheets.length}');
+    }
   }
 
   void removePendingStyleSheet(CSSStyleSheet styleSheet) {
     _pendingStyleSheets.removeWhere((element) => element == styleSheet);
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[style] remove pending sheet: remaining=${_pendingStyleSheets.length}');
+    }
   }
 
   // TODO(jiangzhou): cache stylesheet
   bool updateActiveStyleSheets({bool rebuild = false}) {
     List<CSSStyleSheet> newSheets = _collectActiveStyleSheets();
-    if (newSheets.isEmpty) {
-      return false;
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[style] updateActiveStyleSheets: candidates=' + _styleSheetCandidateNodes.length.toString() + ' -> newSheets=' + newSheets.length.toString() + ' (rebuild=' + rebuild.toString() + ')');
     }
     newSheets = newSheets.where((element) => element.cssRules.isNotEmpty).toList();
     if (rebuild == false) {
@@ -95,11 +119,17 @@ class StyleNodeManager {
   List<CSSStyleSheet> _collectActiveStyleSheets() {
     List<CSSStyleSheet> styleSheetsForStyleSheetsList = [];
     for (Node node in _styleSheetCandidateNodes) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[style] inspect candidate: ${node.runtimeType} connected=${node.isConnected} hasSheet=${node is StyleElementMixin ? node.styleSheet != null : node is LinkElement ? node.styleSheet != null : false}');
+      }
       if (node is LinkElement && !node.disabled && !node.loading && node.styleSheet != null) {
         styleSheetsForStyleSheetsList.add(node.styleSheet!);
       } else if (node is StyleElementMixin && node.styleSheet != null) {
         styleSheetsForStyleSheetsList.add(node.styleSheet!);
       }
+    }
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[style] _collectActiveStyleSheets: ' + styleSheetsForStyleSheetsList.length.toString());
     }
     return styleSheetsForStyleSheetsList;
   }

@@ -2,9 +2,12 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/foundation.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/webf.dart';
@@ -27,6 +30,80 @@ class HeadElement extends Element {
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
+}
+
+// Resolve @import rules within a stylesheet by fetching and inlining imported rules.
+Future<void> _resolveCSSImports(Document document, CSSStyleSheet sheet) async {
+  // Determine environment for parsing imported sheets
+  double windowWidth = document.viewport?.viewportSize.width ?? document.preloadViewportSize?.width ?? -1;
+  double windowHeight = document.viewport?.viewportSize.height ?? document.preloadViewportSize?.height ?? -1;
+  bool isDarkMode = document.controller.view.rootController.isDarkMode ?? false;
+
+  // Base URL to resolve relative imports
+  String base = sheet.href ?? document.controller.url;
+
+  // Walk through rules and inline imported sheets
+  int i = 0;
+  while (i < sheet.cssRules.length) {
+    final rule = sheet.cssRules[i];
+    if (rule is CSSImportRule) {
+      String href = rule.href.trim();
+      if (href.isEmpty) {
+        // Remove empty @import to avoid infinite loops
+        sheet.cssRules.removeAt(i);
+        continue;
+      }
+
+      // Resolve URL relative to stylesheet/document
+      Uri resolved = document.controller.uriParser!.resolve(Uri.parse(base), Uri.parse(href));
+
+      // Load CSS text
+      WebFBundle bundle = document.controller.getPreloadBundleFromUrl(resolved.toString()) ?? WebFBundle.fromUrl(resolved.toString());
+      try {
+        // Track network activity
+        document.incrementRequestCount();
+        await bundle.resolve(baseUrl: document.controller.url, uriParser: document.controller.uriParser);
+        await bundle.obtainData(document.ownerView.contextId);
+
+        final String cssText = await resolveStringFromData(bundle.data!);
+
+        // Parse imported sheet with its own href so url() inside resolves correctly
+        CSSStyleSheet imported = CSSParser(cssText, href: resolved.toString())
+            .parse(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: isDarkMode);
+        imported.href = resolved.toString();
+
+        // Recursively resolve nested imports
+        await _resolveCSSImports(document, imported);
+
+        // Replace @import with imported rules (flatten)
+        sheet.cssRules.removeAt(i);
+        if (imported.cssRules.isNotEmpty) {
+          sheet.cssRules.insertAll(i, imported.cssRules);
+          i += imported.cssRules.length;
+        }
+
+        // Mark this stylesheet as pending so StyleNodeManager will re-index
+        // even if the candidate set is unchanged. This ensures newly inlined
+        // @import rules take effect.
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[style] @import flattened into sheet href=' + (sheet.href?.toString() ?? 'inline') +
+              '; marking sheet pending for update');
+        }
+        document.styleNodeManager.appendPendingStyleSheet(sheet);
+        // Mark style dirty and trigger update after resolution
+        document.markElementStyleDirty(document.documentElement!);
+        document.updateStyleIfNeeded();
+      } catch (e) {
+        // On failure, drop the import to avoid blocking style application
+        sheet.cssRules.removeAt(i);
+      } finally {
+        document.decrementRequestCount();
+        bundle.dispose();
+      }
+    } else {
+      i++;
+    }
+  }
 }
 
 const String REL_STYLESHEET = 'stylesheet';
@@ -150,22 +227,47 @@ class LinkElement extends Element {
   String? _cachedStyleSheetText;
 
   void reloadStyle() {
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      debugPrint('[webf][style] <link rel=stylesheet> reloadStyle href=' + (_resolvedHyperlink?.toString() ?? href));
+    }
     if (_cachedStyleSheetText == null) {
       _fetchAndApplyCSSStyle();
       return;
     }
 
     if (_styleSheet != null) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        debugPrint('[webf][style] <link> replaceSync (darkMode=' + ownerView.rootController.isDarkMode.toString() + ')');
+      }
+      // Ensure the stylesheet carries an absolute href for correct URL resolution
+      if (_resolvedHyperlink != null) {
+        _styleSheet!.href = _resolvedHyperlink.toString();
+      } else if (href != null) {
+        _styleSheet!.href = href;
+      }
       _styleSheet!.replaceSync(_cachedStyleSheetText!,
           windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
     } else {
-      _styleSheet = CSSParser(_cachedStyleSheetText!)
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        debugPrint('[webf][style] <link> parse (darkMode=' + ownerView.rootController.isDarkMode.toString() + ')');
+      }
+      final String? sheetHref = _resolvedHyperlink?.toString() ?? href;
+      _styleSheet = CSSParser(_cachedStyleSheetText!, href: sheetHref)
           .parse(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
+      _styleSheet?.href = sheetHref;
     }
     if (_styleSheet != null) {
       ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
       ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
       ownerDocument.updateStyleIfNeeded();
+      // Re-resolve @import for reloaded stylesheet
+      () async {
+        if (_styleSheet != null) {
+          await _resolveCSSImports(ownerDocument, _styleSheet!);
+          ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
+          ownerDocument.updateStyleIfNeeded();
+        }
+      }();
     }
   }
 
@@ -275,10 +377,22 @@ class LinkElement extends Element {
         ownerDocument.decrementRequestCount();
 
         final String cssString = _cachedStyleSheetText = await resolveStringFromData(bundle.data!);
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          debugPrint('[webf][style] <link> fetched href=' + href + ' len=' + cssString.length.toString());
+        }
 
-        _styleSheet = CSSParser(cssString, href: href).parse(
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          debugPrint('[webf][style] <link> parse (darkMode=' + ownerView.rootController.isDarkMode.toString() + ')');
+        }
+        final String? sheetHref = _resolvedHyperlink?.toString() ?? href;
+        _styleSheet = CSSParser(cssString, href: sheetHref).parse(
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
-        _styleSheet?.href = href;
+        _styleSheet?.href = sheetHref;
+
+        // Resolve and inline any @import rules before applying
+        await _resolveCSSImports(ownerDocument, _styleSheet!);
+        // Ensure style manager re-indexes rules after imports
+        ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
 
         ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
@@ -322,6 +436,9 @@ class LinkElement extends Element {
       if (rel == REL_PRELOAD) {
         _handlePreload();
       } else if (rel == REL_STYLESHEET) {
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[style] <link> connected: fetch+apply href=' + (_resolvedHyperlink?.toString() ?? href));
+        }
         _fetchAndApplyCSSStyle();
       }
     }
@@ -472,12 +589,31 @@ mixin StyleElementMixin on Element {
     // Question3: Animation timeline should send a command to c++ side to recalculate style or we just do it in dart side?
 
     if (text != null) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[style] <style> recalc begin (len=${text.length}, connected=$isConnected, tracked=${ownerDocument.styleNodeManager.styleSheetCandidateNodes.contains(this)})');
+      }
       if (_styleSheet != null) {
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[style] <style> replaceSync (len=' + text.length.toString() + ', darkMode=' + (ownerView.rootController.isDarkMode?.toString() ?? 'null') + ')');
+        }
         _styleSheet!.replaceSync(text,
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
       } else {
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[style] <style> parse (len=' + text.length.toString() + ', darkMode=' + (ownerView.rootController.isDarkMode?.toString() ?? 'null') + ')');
+        }
         _styleSheet = CSSParser(text).parse(
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
+        // Resolve @import in the parsed inline stylesheet asynchronously
+        () async {
+          if (_styleSheet != null) {
+            await _resolveCSSImports(ownerDocument, _styleSheet!);
+            // Mark sheet pending so changes are picked up without candidate changes
+            ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
+            ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
+            ownerDocument.updateStyleIfNeeded();
+          }
+        }();
       }
       if (_styleSheet != null) {
         ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
@@ -521,6 +657,9 @@ mixin StyleElementMixin on Element {
     super.connectedCallback();
     if (_type == _CSS_MIME) {
       if (_styleSheet == null) {
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[style] <style> connected -> recalc');
+        }
         _recalculateStyle();
       }
       ownerDocument.styleNodeManager.addStyleSheetCandidateNode(this);
@@ -532,6 +671,9 @@ mixin StyleElementMixin on Element {
     if (_styleSheet != null) {
       ownerDocument.styleNodeManager.removePendingStyleSheet(_styleSheet!);
       ownerDocument.styleNodeManager.removeStyleSheetCandidateNode(this);
+    }
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[style] <style> disconnected');
     }
     super.disconnectedCallback();
   }

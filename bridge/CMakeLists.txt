@@ -381,10 +381,12 @@ execute_process(
 string(REPLACE \n "" GIT_HEAD ${GIT_HEAD}) # Remove last \n
 add_definitions(-DAPP_REV="${GIT_HEAD}") # Read from git head sha1
 
-add_compile_definitions(IS_TEST=true)
-include(./test/css_unittests.cmake)
-# Always include test.cmake to make webf_unit_test target available
-include(./test/test.cmake)
+# Only include test.cmake on desktop platforms (macOS, Windows, Linux)
+if (APPLE OR WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  add_compile_definitions(IS_TEST=true)
+  include(./test/css_unittests.cmake)
+  include(./test/test.cmake)
+endif ()
 
 #if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
 #  install(TARGETS webf

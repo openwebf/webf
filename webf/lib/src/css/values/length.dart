@@ -19,8 +19,11 @@ const _1mm = _1cm / 10; // 1mm = 1/10th of 1cm
 const _1Q = _1cm / 40; // 1Q = 1/40th of 1cm
 const _1pc = _1in / 6; // 1pc = 1/6th of 1in
 const _1pt = _1in / 72; // 1pt = 1/72th of 1in
+// Approximate x-height ratio to em when font metrics are not available.
+// Many UAs approximate 1ex ≈ 0.5em for generic fonts.
+const double _exToEmFallbackRatio = 0.5;
 
-final String _unitRegStr = '(px|rpx|vw|vh|vmin|vmax|rem|em|in|cm|mm|pc|pt)';
+final String _unitRegStr = '(px|rpx|vw|vh|vmin|vmax|rem|em|ex|in|cm|mm|pc|pt|q)';
 final _lengthRegExp = RegExp(r'^[+-]?(\d+)?(\.\d+)?' + _unitRegStr + r'$', caseSensitive: false);
 final _negativeZeroRegExp = RegExp(r'^-(0+)?(\.0+)?' + _unitRegStr + r'$', caseSensitive: false);
 final _nonNegativeLengthRegExp = RegExp(r'^[+]?(\d+)?(\.\d+)?' + _unitRegStr + r'$', caseSensitive: false);
@@ -31,6 +34,7 @@ enum CSSLengthType {
   RPX,
   // relative units
   EM, // em,
+  EX, // ex (x-height of the element's font)
   REM, // rem
   VH, // vh
   VW, // vw
@@ -46,6 +50,8 @@ enum CSSLengthType {
   // normal
   NORMAL,
   INITIAL,
+  // flex-basis: content keyword (CSS Sizing-3)
+  CONTENT,
 }
 
 class CSSLengthValue {
@@ -60,6 +66,8 @@ class CSSLengthValue {
   CSSLengthValue(this.value, this.type, [this.renderStyle, this.propertyName, this.axisType]) : calcValue = null {
     if (propertyName != null) {
       if (type == CSSLengthType.EM) {
+        renderStyle!.addFontRelativeProperty(propertyName!);
+      } else if (type == CSSLengthType.EX) {
         renderStyle!.addFontRelativeProperty(propertyName!);
       } else if (type == CSSLengthType.REM) {
         renderStyle!.addRootFontRelativeProperty(propertyName!);
@@ -79,6 +87,7 @@ class CSSLengthValue {
     switch (type) {
       case CSSLengthType.PX:
       case CSSLengthType.EM:
+      case CSSLengthType.EX:
         return '${computedValue.cssText()}px';
       case CSSLengthType.REM:
         return '${value?.cssText()}rem';
@@ -101,6 +110,8 @@ class CSSLengthValue {
       case CSSLengthType.NORMAL:
       case CSSLengthType.INITIAL:
         break;
+      case CSSLengthType.CONTENT:
+        return 'content';
     }
     return '';
   }
@@ -122,16 +133,40 @@ class CSSLengthValue {
   double? _computedValue;
 
   static bool _isPercentageRelativeContainerRenderStyle(RenderStyle renderStyle) {
-    bool isBlockLevelBox = renderStyle.display == CSSDisplay.block || renderStyle.display == CSSDisplay.flex;
-    bool isBlockInlineHaveSize = (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock ||
-            renderStyle.effectiveDisplay == CSSDisplay.inlineFlex) &&
-        renderStyle.width.value != null;
-    // Inline-block with auto width should also be a percentage container
-    // This follows CSS spec where inline-block establishes a containing block
-    bool isInlineBlockAutoWidth = (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock ||
-            renderStyle.effectiveDisplay == CSSDisplay.inlineFlex) &&
-        renderStyle.width.isAuto;
-    return isBlockLevelBox || isBlockInlineHaveSize || isInlineBlockAutoWidth;
+    // Use effectiveDisplay so that blockification/inlinification is respected
+    // per CSS Display spec. In particular, absolutely/fixed positioned boxes
+    // are blockified and should act as percentage containers for their
+    // positioned descendants.
+    final CSSDisplay eff = renderStyle.effectiveDisplay;
+
+    // Block-level containers establish percentage reference sizes.
+    final bool isBlockLevelBox = eff == CSSDisplay.block || eff == CSSDisplay.flex;
+
+    // Inline-block/inline-flex with explicit width also establish a percentage container.
+    final bool isInlineWithExplicitSize =
+        (eff == CSSDisplay.inlineBlock || eff == CSSDisplay.inlineFlex) && renderStyle.width.value != null;
+
+    // Inline-block/inline-flex with auto width still establish a containing block;
+    // percentages resolve against the available inline size determined by ancestors.
+    final bool isInlineBlockAutoWidth =
+        (eff == CSSDisplay.inlineBlock || eff == CSSDisplay.inlineFlex) && renderStyle.width.isAuto;
+
+    return isBlockLevelBox || isInlineWithExplicitSize || isInlineBlockAutoWidth;
+  }
+
+  // Whether the container has a definite inline (horizontal) size that
+  // percentages can resolve against. Avoid depending solely on contentConstraints,
+  // which may be null on the first layout. Instead, use contentMaxConstraintsWidth
+  // which falls back to the nearest ancestor with a computed logical width, or
+  // check explicit non-percentage width on the element.
+  static bool _hasDefiniteInlineSize(RenderStyle rs) {
+    if (rs is CSSRenderStyle) {
+      final double cmw = rs.contentMaxConstraintsWidth;
+      if (cmw != double.infinity) return true;
+      // As a fallback, treat explicit non-percentage width as definite.
+      if (rs.width.isNotAuto && !rs.width.isPercentage) return true;
+    }
+    return false;
   }
 
   // Note return value of double.infinity means the value is resolved as the initial value
@@ -176,6 +211,22 @@ class CSSLengthValue {
         } else {
           _computedValue = value! * renderStyle!.fontSize.computedValue;
         }
+        break;
+      case CSSLengthType.EX:
+        // Approximate 1ex via a 0.5em fallback. For font-size itself, resolve
+        // against the parent font size to avoid recursion (per CSS: em/ex in
+        // font-size are relative to the inherited font-size).
+        double baseEmPx;
+        if (realPropertyName == FONT_SIZE) {
+          if (renderStyle!.getParentRenderStyle() == null) {
+            baseEmPx = 16; // default root font size baseline
+          } else {
+            baseEmPx = renderStyle!.getParentRenderStyle()!.fontSize.computedValue;
+          }
+        } else {
+          baseEmPx = renderStyle!.fontSize.computedValue;
+        }
+        _computedValue = value! * (baseEmPx * _exToEmFallbackRatio);
         break;
       case CSSLengthType.REM:
         // If root element set fontSize as rem unit.
@@ -273,6 +324,29 @@ class CSSLengthValue {
               _computedValue = value! * renderStyle!.getParentRenderStyle()!.fontSize.computedValue;
             }
             break;
+          case TEXT_INDENT:
+            // Percentages for text-indent refer to the width of the containing block.
+            // Use the parent content box width for in-flow elements.
+            if (relativeParentWidth != null && relativeParentWidth.isFinite) {
+              _computedValue = value! * relativeParentWidth;
+            } else if (parentRenderStyle != null) {
+              double? cbLogicalW = parentRenderStyle.contentBoxLogicalWidth;
+              if (cbLogicalW != null && cbLogicalW.isFinite) {
+                _computedValue = value! * cbLogicalW;
+              } else {
+                // Fallback to constraints or viewport width if needed.
+                final rbox = parentRenderStyle.attachedRenderBoxModel;
+                if (rbox != null && rbox.hasSize && rbox.constraints.maxWidth.isFinite) {
+                  _computedValue = value! * rbox.constraints.maxWidth;
+                } else {
+                  _computedValue = value! * renderStyle!.viewportSize.width;
+                }
+              }
+            } else {
+              // Root-level: resolve against viewport.
+              _computedValue = value! * renderStyle!.viewportSize.width;
+            }
+            break;
           case LINE_HEIGHT:
             // Relative to the font size of the element itself.
             _computedValue = value! * renderStyle!.fontSize.computedValue;
@@ -280,8 +354,44 @@ class CSSLengthValue {
           case WIDTH:
           case MIN_WIDTH:
           case MAX_WIDTH:
+            // Only resolve percent widths when the containing block has a definite inline size.
+            if (!isPositioned && parentRenderStyle != null && !_hasDefiniteInlineSize(parentRenderStyle)) {
+              _computedValue = double.infinity;
+              break;
+            }
+            // For inline-block (or inline-flex) with width:auto (shrink-to-fit), the containing block
+            // inline size is not yet definite for in-flow children. Per CSS, percentage widths here
+            // compute to auto. However, once the inline-block’s shrink-to-fit content width becomes
+            // definite, percentage widths of descendants MUST resolve against that width.
+            if (!isPositioned &&
+                parentRenderStyle != null &&
+                (parentRenderStyle.effectiveDisplay == CSSDisplay.inlineBlock ||
+                    parentRenderStyle.effectiveDisplay == CSSDisplay.inlineFlex) &&
+                parentRenderStyle.width.isAuto) {
+              // Treat as indefinite only if the parent has no definite logical content width yet.
+              final double? cbLogicalW = (parentRenderStyle is CSSRenderStyle)
+                  ? (parentRenderStyle as CSSRenderStyle).contentBoxLogicalWidth
+                  : parentRenderStyle.contentBoxLogicalWidth;
+              if (cbLogicalW == null) {
+                _computedValue = double.infinity;
+                break;
+              }
+            }
             if (relativeParentWidth != null) {
               _computedValue = value! * relativeParentWidth;
+              // Do not upscale replaced elements inside shrink-to-fit inline-block containers.
+              if (!isPositioned &&
+                  parentRenderStyle != null &&
+                  parentRenderStyle.effectiveDisplay == CSSDisplay.inlineBlock &&
+                  parentRenderStyle.width.isAuto &&
+                  renderStyle != null &&
+                  renderStyle!.isSelfRenderReplaced() &&
+                  _computedValue != null) {
+                final double iw = renderStyle!.intrinsicWidth;
+                if (iw > 0 && _computedValue! > iw) {
+                  _computedValue = iw;
+                }
+              }
             } else {
               // Attempt to force parent width computation before giving up
               if (parentRenderStyle != null && parentRenderStyle is CSSRenderStyle) {
@@ -293,6 +403,17 @@ class CSSLengthValue {
 
                 if (recomputedParentWidth != null) {
                   _computedValue = value! * recomputedParentWidth;
+                  if (!isPositioned &&
+                      parentRenderStyle.effectiveDisplay == CSSDisplay.inlineBlock &&
+                      parentRenderStyle.width.isAuto &&
+                      renderStyle != null &&
+                      renderStyle!.isSelfRenderReplaced() &&
+                      _computedValue != null) {
+                    final double iw = renderStyle!.intrinsicWidth;
+                    if (iw > 0 && _computedValue! > iw) {
+                      _computedValue = iw;
+                    }
+                  }
                 } else {
                   // Last resort: use available constraint width or mark for relayout
                   RenderBox? parentRenderBox = parentRenderStyle.attachedRenderBoxModel;
@@ -300,11 +421,24 @@ class CSSLengthValue {
                     double constraintWidth = parentRenderBox.constraints.maxWidth;
                     if (constraintWidth != double.infinity) {
                       _computedValue = value! * constraintWidth;
+                      if (!isPositioned &&
+                          parentRenderStyle.effectiveDisplay == CSSDisplay.inlineBlock &&
+                          parentRenderStyle.width.isAuto &&
+                          renderStyle != null &&
+                          renderStyle!.isSelfRenderReplaced() &&
+                          _computedValue != null) {
+                        final double iw = renderStyle!.intrinsicWidth;
+                        if (iw > 0 && _computedValue! > iw) {
+                          _computedValue = iw;
+                        }
+                      }
                     } else {
+                      // Avoid spurious relayout loops for shrink-to-fit inline-block cycles
                       renderStyle?.markParentNeedsRelayout();
                       _computedValue = double.infinity;
                     }
                   } else {
+                    // Parent not laid out yet; mark once and return auto for now
                     renderStyle?.markParentNeedsRelayout();
                     _computedValue = double.infinity;
                   }
@@ -509,6 +643,12 @@ class CSSLengthValue {
             }
             break;
         }
+        break;
+      case CSSLengthType.CONTENT:
+        // The 'content' keyword is only valid for certain properties like flex-basis.
+        // Defer resolution to the layout algorithm; treat as 0 length here so callers
+        // that incorrectly query computedValue don't crash. Layout code must special-case.
+        _computedValue = 0;
         break;
       default:
         // @FIXME: Type AUTO not always resolves to 0, in cases such as `margin: auto`, `width: auto`.
@@ -717,12 +857,18 @@ class CSSLength {
       return CSSLengthValue.auto;
     } else if (text == NONE) {
       return CSSLengthValue.none;
+    } else if (text.toLowerCase() == 'content') {
+      // flex-basis: content
+      return CSSLengthValue(null, CSSLengthType.CONTENT, renderStyle, propertyName, axisType);
     } else if (text.endsWith(REM)) {
       value = double.tryParse(text.split(REM)[0]);
       unit = CSSLengthType.REM;
     } else if (text.endsWith(EM)) {
       value = double.tryParse(text.split(EM)[0]);
       unit = CSSLengthType.EM;
+    } else if (text.endsWith(EX)) {
+      value = double.tryParse(text.split(EX)[0]);
+      unit = CSSLengthType.EX;
     } else if (text.endsWith(RPX)) {
       value = double.tryParse(text.split(RPX)[0]);
       unit = CSSLengthType.RPX;

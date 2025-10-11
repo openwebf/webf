@@ -98,9 +98,6 @@ mixin CSSPositionMixin on RenderStyle {
     _markContainingBlockNeedsLayout();
     // Position change may affect transformed display
     // https://www.w3.org/TR/css-display-3/#transformations
-
-    // The position changes of the node may affect the whitespace of the nextSibling and previousSibling text node so prev and next node require layout.
-    markAdjacentRenderParagraphNeedsLayout();
   }
 
   void _markNeedsSort() {

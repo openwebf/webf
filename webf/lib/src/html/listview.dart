@@ -49,10 +49,42 @@ class WebFListViewElement extends WebFListViewBindings {
   }
 
   @override
-  bool get allowsInfiniteWidth => true;
+  bool get allowsInfiniteWidth =>
+      // Only loosen horizontal constraints when the list scrolls horizontally;
+      // vertical lists need a bounded cross-axis width to satisfy Flutter's
+      // shrink-wrapping viewport requirements.
+      axis == Axis.horizontal;
 
-  /// The scroll direction for the list view (vertical by default)
-  Axis scrollDirection = Axis.vertical;
+  /// Internal Flutter scroll axis (vertical by default)
+  Axis _axis = Axis.vertical;
+
+  /// Expose Flutter axis for internal engine usage
+  Axis get axis => _axis;
+
+  @override
+  WebFListViewScrollDirection? get scrollDirection =>
+      _axis == Axis.horizontal ? WebFListViewScrollDirection.horizontal : WebFListViewScrollDirection.vertical;
+
+  @override
+  set scrollDirection(value) {
+    // Accept enum or string for robustness
+    WebFListViewScrollDirection? dir;
+    if (value == null) {
+      dir = null;
+    } else if (value is WebFListViewScrollDirection) {
+      dir = value;
+    } else if (value is String) {
+      dir = WebFListViewScrollDirection.parse(value);
+    }
+
+    if (dir != null) {
+      final nextAxis = dir == WebFListViewScrollDirection.horizontal ? Axis.horizontal : Axis.vertical;
+      if (nextAxis != _axis) {
+        _axis = nextAxis;
+        state?.requestUpdateState();
+      }
+    }
+  }
 
   bool _shrinkWrap = true;
 
@@ -74,7 +106,7 @@ class WebFListViewElement extends WebFListViewBindings {
   /// Returns the horizontal scroll controller if this is a horizontal list
   @override
   ScrollController? get scrollControllerX {
-    return scrollDirection == Axis.horizontal ? _scrollController : null;
+    return _axis == Axis.horizontal ? _scrollController : null;
   }
 
   /// Returns the underlying scroll controller from the state
@@ -85,7 +117,7 @@ class WebFListViewElement extends WebFListViewBindings {
   /// Returns the vertical scroll controller if this is a vertical list
   @override
   ScrollController? get scrollControllerY {
-    return scrollDirection == Axis.vertical ? _scrollController : null;
+    return _axis == Axis.vertical ? _scrollController : null;
   }
 
   /// Indicates that this element can be scrolled
@@ -100,6 +132,25 @@ class WebFListViewElement extends WebFListViewBindings {
   @override
   WebFWidgetElementState createState() {
     return WebFListViewState(this);
+  }
+
+  // Accept style/attribute updates to control scroll direction for this custom element.
+  // Supports both 'scroll-direction' and 'scrollDirection'. Values: 'horizontal' | 'vertical'.
+  void _updateScrollDirectionFromValue(String value) {
+    final v = value.trim().toLowerCase();
+    if (v == 'horizontal' || v == 'row' || v == 'x' || v == 'h') {
+      scrollDirection = WebFListViewScrollDirection.horizontal;
+    } else {
+      scrollDirection = WebFListViewScrollDirection.vertical;
+    }
+  }
+
+  @override
+  void attributeDidUpdate(String key, String value) {
+    super.attributeDidUpdate(key, value);
+    if (key == 'scroll-direction' || key == 'scrollDirection') {
+      _updateScrollDirectionFromValue(value);
+    }
   }
 
   /// Parses a string indicator result to the corresponding EasyRefresh IndicatorResult enum
@@ -386,19 +437,28 @@ class WebFListViewState extends WebFWidgetElementState {
     // Build the ListView
     Widget listView = ListView.builder(
         controller: scrollController,
-        scrollDirection: widgetElement.scrollDirection,
+        scrollDirection: widgetElement.axis,
         shrinkWrap: widgetElement.shrinkWrap,
         itemCount: widgetElement.childNodes.length,
         itemBuilder: (context, index) {
           return buildListViewItemByIndex(index);
         });
 
+    // Honor CSS 'direction' for horizontal lists by providing a Directionality
+    // so Flutter computes axisDirection = left for RTL and right for LTR.
+    if (widgetElement.axis == Axis.horizontal) {
+      listView = Directionality(
+        textDirection: widgetElement.renderStyle.direction,
+        child: listView,
+      );
+    }
+
     // Wrap the ListView with NestedScrollCoordinator to handle incoming scroll from nested elements
     // This allows the ListView to receive scroll events from nested overflow containers or ListViews
     Widget result = listView;
     if (scrollController != null) {
       result = NestedScrollCoordinator(
-        axis: widgetElement.scrollDirection,
+        axis: widgetElement.axis,
         controller: scrollController!,
         child: result,
       );
@@ -418,8 +478,8 @@ class WebFListViewState extends WebFWidgetElementState {
     // This allows nested overflow containers and ListViews to find this controller
     if (scrollController != null) {
       result = NestedScrollForwarder(
-        verticalController: widgetElement.scrollDirection == Axis.vertical ? scrollController : null,
-        horizontalController: widgetElement.scrollDirection == Axis.horizontal ? scrollController : null,
+        verticalController: widgetElement.axis == Axis.vertical ? scrollController : null,
+        horizontalController: widgetElement.axis == Axis.horizontal ? scrollController : null,
         child: result,
       );
     }

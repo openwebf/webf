@@ -7,12 +7,15 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/html.dart';
 import 'package:webf/css.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/rendering.dart';
 
@@ -139,15 +142,7 @@ mixin CSSBackgroundMixin on RenderStyle {
 
   set backgroundClip(CSSBackgroundBoundary? value) {
     if (value == _backgroundClip) return;
-    final isTextLayout = _backgroundClip == CSSBackgroundBoundary.text || value == CSSBackgroundBoundary.text;
     _backgroundClip = value;
-    if (isTextLayout) {
-      visitChildren((child) {
-        if (child is RenderTextBox) {
-          child.markRenderParagraphNeedsLayout();
-        }
-      });
-    }
     markNeedsPaint();
     resetBoxDecoration();
   }
@@ -171,6 +166,9 @@ mixin CSSBackgroundMixin on RenderStyle {
   set backgroundColor(CSSColor? value) {
     if (value == _backgroundColor) return;
     _backgroundColor = value;
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[background] set backgroundColor <- ' + (value?.cssText() ?? 'null'));
+    }
     markNeedsPaint();
     resetBoxDecoration();
   }
@@ -304,8 +302,16 @@ class CSSBackgroundImage {
 
         Uri uri = Uri.parse(url);
         if (url.isNotEmpty) {
-          uri = controller.uriParser!.resolve(Uri.parse(baseHref ?? controller.url), uri);
+          final String base = baseHref ?? controller.url;
+          if (kDebugMode && DebugFlags.enableCssLogs) {
+            cssLogger.fine('[background] resolve base: ' + base + ' value=url(' + url + ') for <' +
+                renderStyle.target.tagName.toLowerCase() + '>');
+          }
+          uri = controller.uriParser!.resolve(Uri.parse(base), uri);
           FlutterView ownerFlutterView = controller.ownerFlutterView!;
+          if (kDebugMode && DebugFlags.enableCssLogs) {
+            cssLogger.fine('[background] resolve image url: ' + uri.toString());
+          }
           return _image = BoxFitImage(
             boxFit: renderStyle.backgroundSize.fit,
             url: uri,
@@ -316,6 +322,9 @@ class CSSBackgroundImage {
             devicePixelRatio: ownerFlutterView.devicePixelRatio);
         }
       }
+    }
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[background] no image/gradient found');
     }
     return null;
   }
@@ -494,30 +503,26 @@ class CSSBackgroundImage {
   }
 
   String cssText() {
-    if (image != null) {
-      switch (image.runtimeType) {
-        case NetworkImage:
-          return (image as NetworkImage).url;
-        case FileImage:
-          return (image as FileImage).file.uri.path;
-        case MemoryImage:
-          return 'data:image/png;base64, ${base64Encode((image as MemoryImage).bytes)}';
-        case AssetImage:
-          return 'assets://${(image as AssetImage).assetName}';
-        default:
-          return 'none';
-      }
-    }
-    if (gradient != null) {
-      switch (gradient!.runtimeType) {
-        case CSSLinearGradient:
-          return (gradient as CSSLinearGradient).cssText();
-        case CSSRadialGradient:
-          return (gradient as CSSRadialGradient).cssText();
-        case CSSConicGradient:
-          return (gradient as CSSConicGradient).cssText();
-        default:
-          return 'none';
+    // Prefer stable serialization from functions rather than provider types.
+    for (final method in functions) {
+      switch (method.name) {
+        case 'url':
+          String url = method.args.isNotEmpty ? method.args[0] : '';
+          url = removeQuotationMark(url);
+          if (url.isEmpty) return 'none';
+          // Resolve against baseHref/controller.url for computed style output
+          final resolved = controller.uriParser!
+              .resolve(Uri.parse(baseHref ?? controller.url), Uri.parse(url))
+              .toString();
+          return 'url($resolved)';
+        case 'linear-gradient':
+        case 'repeating-linear-gradient':
+          return (gradient as CSSLinearGradient?)?.cssText() ?? 'none';
+        case 'radial-gradient':
+        case 'repeating-radial-gradient':
+          return (gradient as CSSRadialGradient?)?.cssText() ?? 'none';
+        case 'conic-gradient':
+          return (gradient as CSSConicGradient?)?.cssText() ?? 'none';
       }
     }
     return 'none';
@@ -616,6 +621,8 @@ class CSSBackground {
   }
 
   static bool isValidBackgroundImageValue(String value) {
+    // According to CSS Backgrounds spec, 'none' is a valid <bg-image> keyword.
+    if (value == 'none') return true;
     return (value.lastIndexOf(')') == value.length - 1) &&
         (value.startsWith('url(') ||
             value.startsWith('linear-gradient(') ||
@@ -749,9 +756,24 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
   List<String> strings = [];
   List<CSSColorStop> colorGradients = [];
   // rgba may contain space, color should handle special
-  if (src.startsWith('rgba(') || src.startsWith('rgb(')) {
-    int indexOfRgbaEnd = src.lastIndexOf(')');
-    strings.add(src.substring(0, indexOfRgbaEnd + 1));
+  if (src.startsWith('rgba(') || src.startsWith('rgb(') || src.startsWith('hsl(') || src.startsWith('hsla(')) {
+    // Treat functional color notations as a single token, since their arguments may include spaces.
+    // This mirrors the special handling already in place for rgb/rgba and fixes gradients using hsl()/hsla().
+    int indexOfEnd = src.lastIndexOf(')');
+    if (indexOfEnd != -1) {
+      strings.add(src.substring(0, indexOfEnd + 1));
+      // If there are trailing tokens after the color function (e.g., "hsl(...) 30%"),
+      // keep them by splitting the remainder by spaces and appending.
+      if (indexOfEnd + 1 < src.length) {
+        final String remainder = src.substring(indexOfEnd + 1).trim();
+        if (remainder.isNotEmpty) {
+          strings.addAll(remainder.split(' '));
+        }
+      }
+    } else {
+      // Fallback: unable to find a closing ')', split by spaces.
+      strings = src.split(' ');
+    }
   } else {
     strings = src.split(' ');
   }

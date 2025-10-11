@@ -54,12 +54,7 @@ class RenderEventListener extends RenderBoxModel
 
   @override
   double? computeDistanceToActualBaseline(TextBaseline baseline) {
-    return computeDistanceToBaseline();
-  }
-
-  @override
-  double? computeDistanceToBaseline() {
-    return renderStyle.attachedRenderBoxModel!.computeDistanceToBaseline();
+    return computeCssFirstBaseline();
   }
 
   @override
@@ -128,6 +123,7 @@ class RenderEventListener extends RenderBoxModel
     size = (child?..layout(constraints, parentUsesSize: true))?.size
         ?? computeSizeForNoChild(constraints);
 
+    calculateBaseline();
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
 
     // Set the size of scrollable overflow area for Portal.
@@ -141,6 +137,17 @@ class RenderEventListener extends RenderBoxModel
     super.handleEvent(event, entry);
 
     _gestureDispatcher?.handlePointerEvent(event);
+  }
+
+  @override
+  void calculateBaseline() {
+    double? childBase = child?.getDistanceToBaseline(TextBaseline.alphabetic);
+    // Convert child's local baseline to this wrapper's coordinate system
+    if (childBase != null && child is RenderBox) {
+      final BoxParentData pd = (child as RenderBox).parentData as BoxParentData;
+      childBase += pd.offset.dy;
+    }
+    setCssBaselines(first: childBase, last: childBase);
   }
 }
 

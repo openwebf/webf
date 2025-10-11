@@ -160,27 +160,9 @@ abstract class LifecycleCallbacks {
 }
 
 abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCallbacks {
-  /// WebF nodes could be wrapped by [WebFRenderLayoutWidgetAdaptor] and the renderObject of this node is managed by Flutter framework.
-  /// So if managedByFlutterWidget is true, WebF DOM can not disposed Node's renderObject directly.
-  bool _managedByFlutterWidget = false;
-
-  bool get managedByFlutterWidget => _managedByFlutterWidget;
-
   // Determine if this node or element was created by flutter widget
   // If this value is true, this node won't participate the DOM event system.
   bool isWidgetOwned = false;
-
-  set managedByFlutterWidget(bool value) {
-    if (_managedByFlutterWidget) return;
-
-    _managedByFlutterWidget = true;
-
-    Node? first = firstChild;
-    while (first != null) {
-      first.managedByFlutterWidget = true;
-      first = first.nextSibling;
-    }
-  }
 
   @pragma('vm:prefer-inline')
   /// The Node.parentNode read-only property returns the parent of the specified node in the DOM tree.
@@ -331,9 +313,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   // Is child renderObject attached.
   bool get isRendererAttached;
 
-  // Is child renderObject attached to the render object tree segment, and may be this segment are not attached to flutter.
-  bool get isRendererAttachedToSegmentTree;
-
   bool isDescendantOf(Node? other) {
     // Return true if other is an ancestor of this, otherwise false
     if (other == null || isConnected != other.isConnected) {
@@ -357,9 +336,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   void dispose() async {
     if (isConnected) {
       parentNode?.removeChild(this);
-    }
-    if (this is! Document && !managedByFlutterWidget) {
-      assert(!isRendererAttachedToSegmentTree, 'Should unmount $this before calling dispose.');
     }
     super.dispose();
   }
@@ -475,10 +451,8 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty('nodeType', nodeType));
     properties.add(DiagnosticsProperty('nodeName', nodeName));
-    properties.add(DiagnosticsProperty('managedByFlutterWidget', managedByFlutterWidget));
     properties.add(DiagnosticsProperty('isConnected', isConnected));
     properties.add(DiagnosticsProperty('isRendererAttached', isRendererAttached));
-    properties.add(DiagnosticsProperty('isRendererAttachedToSegmentTree', isRendererAttachedToSegmentTree));
     properties.add(DiagnosticsProperty('renderObjectManagerType', renderObjectManagerType));
   }
 

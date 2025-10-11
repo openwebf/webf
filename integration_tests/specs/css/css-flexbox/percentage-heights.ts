@@ -1,19 +1,17 @@
 /*auto generated*/
 describe('percentage', () => {
-  it('heights', async () => {
+  // Group 1: Basic Column Wrap Heights
+  it("basic column wrap heights", async () => {
     let log;
     let flexbox;
-    let flexbox_1;
-    let flexbox_2;
-    let flexbox_3;
-    let flexbox_4;
-    let flexbox_5;
+
     log = createElement('div', {
       id: 'log',
       style: {
         'box-sizing': 'border-box',
       },
     });
+
     flexbox = createElement(
       'div',
       {
@@ -65,6 +63,24 @@ describe('percentage', () => {
         }),
       ]
     );
+
+    BODY.appendChild(log);
+    BODY.appendChild(flexbox);
+    await snapshot();
+  });
+
+  // Group 2: Column Wrap with Margins
+  it("column wrap with margins", async () => {
+    let log;
+    let flexbox_1;
+
+    log = createElement('div', {
+      id: 'log',
+      style: {
+        'box-sizing': 'border-box',
+      },
+    });
+
     flexbox_1 = createElement(
       'div',
       {
@@ -118,6 +134,24 @@ describe('percentage', () => {
         }),
       ]
     );
+
+    BODY.appendChild(log);
+    BODY.appendChild(flexbox_1);
+    await snapshot();
+  });
+
+  // Group 3: Column Wrap with Flex Properties
+  it("column wrap with flex properties", async () => {
+    let log;
+    let flexbox_2;
+
+    log = createElement('div', {
+      id: 'log',
+      style: {
+        'box-sizing': 'border-box',
+      },
+    });
+
     flexbox_2 = createElement(
       'div',
       {
@@ -172,6 +206,24 @@ describe('percentage', () => {
         }),
       ]
     );
+
+    BODY.appendChild(log);
+    BODY.appendChild(flexbox_2);
+    await snapshot();
+  });
+
+  // Group 4: Vertical Writing Mode Basic
+  it("vertical writing mode basic column wrap", async () => {
+    let log;
+    let flexbox_3;
+
+    log = createElement('div', {
+      id: 'log',
+      style: {
+        'box-sizing': 'border-box',
+      },
+    });
+
     flexbox_3 = createElement(
       'div',
       {
@@ -224,6 +276,24 @@ describe('percentage', () => {
         }),
       ]
     );
+
+    BODY.appendChild(log);
+    BODY.appendChild(flexbox_3);
+    await snapshot();
+  });
+
+  // Group 5: Vertical Writing Mode with Margins
+  it("vertical writing mode with margins", async () => {
+    let log;
+    let flexbox_4;
+
+    log = createElement('div', {
+      id: 'log',
+      style: {
+        'box-sizing': 'border-box',
+      },
+    });
+
     flexbox_4 = createElement(
       'div',
       {
@@ -278,6 +348,24 @@ describe('percentage', () => {
         }),
       ]
     );
+
+    BODY.appendChild(log);
+    BODY.appendChild(flexbox_4);
+    await snapshot();
+  });
+
+  // Group 6: Vertical Writing Mode with Flex Properties
+  it("vertical writing mode with flex properties", async () => {
+    let log;
+    let flexbox_5;
+
+    log = createElement('div', {
+      id: 'log',
+      style: {
+        'box-sizing': 'border-box',
+      },
+    });
+
     flexbox_5 = createElement(
       'div',
       {
@@ -333,14 +421,9 @@ describe('percentage', () => {
         }),
       ]
     );
-    BODY.appendChild(log);
-    BODY.appendChild(flexbox);
-    BODY.appendChild(flexbox_1);
-    BODY.appendChild(flexbox_2);
-    BODY.appendChild(flexbox_3);
-    BODY.appendChild(flexbox_4);
-    BODY.appendChild(flexbox_5);
 
+    BODY.appendChild(log);
+    BODY.appendChild(flexbox_5);
     await snapshot();
   });
 });

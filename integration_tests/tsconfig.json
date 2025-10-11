@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "jsx": "react",
     "module": "es6",
     "target": "esnext",
     "lib": [

@@ -4,6 +4,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
+import 'package:webf/rendering.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/dom.dart' as dom;
 import '../../setup.dart';
@@ -117,6 +118,81 @@ void main() {
       // item2 keeps its specified height
       expect(item2.offsetHeight, equals(50.0));
     });
+
+    testWidgets('flex stretched item respects cross margins', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'flex-stretch-margin-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div style="
+                display: flex;
+                width: 300px;
+                height: 80px;
+                background-color: #eee;
+                border: 1px solid black;
+                box-sizing: border-box;
+                justify-content: space-around;
+              ">
+                <span id="item" style="
+                  flex: 1 0 0%;
+                  margin: 10px;
+                  background: white;
+                  display: inline-block;
+                  box-sizing: border-box;
+                ">one</span>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final item = prepared.getElementById('item');
+
+      // Container content box is 78px tall (80px border-box with 1px border), so
+      // stretching subtracts the item's 10px top and bottom margins: 78 - 20 = 58.
+      expect(item.offsetHeight, equals(58.0));
+    });
+
+    testWidgets('inline flex column baseline uses bottom edge', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'inline-flex-column-baseline-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0; font-family: sans-serif;">
+              <div id="container" style="box-sizing: border-box;">
+                before text
+                <div class="inline-flexbox column" style="
+                  display: inline-flex;
+                  flex-direction: column;
+                  background-color: lightgrey;
+                  margin-top: 5px;
+                  box-sizing: border-box;
+                ">
+                  <div class="first" style="box-sizing: border-box;">baseline</div>
+                  <div class="second" style="box-sizing: border-box;">above</div>
+                </div>
+                after text
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final inlineFlex = prepared.document.querySelector(['.inline-flexbox']) as dom.Element;
+      final RenderBoxModel flexRenderBox = inlineFlex.renderStyle.attachedRenderBoxModel!;
+
+      final double? containerBaseline = flexRenderBox.computeCssFirstBaseline();
+      final double borderBoxHeight = flexRenderBox.size.height;
+
+      expect(containerBaseline, isNotNull);
+      expect(
+        containerBaseline,
+        closeTo(12, 0.01),
+      );
+    });
   });
 
   group('Flex Sizing', () {
@@ -176,7 +252,7 @@ void main() {
                 <div id="item1" style="
                   flex-shrink: 1;
                   flex-basis: 150px;
-                  min-width:0;
+                  min-width: 0;
                   height: 50px;
                   background-color: red;
                 ">Shrink 1</div>

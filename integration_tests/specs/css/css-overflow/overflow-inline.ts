@@ -49,6 +49,10 @@ describe('overflow-inline', () => {
     BODY.appendChild(container);
 
     await snapshot();
+
+    container.scroll(0, 1000);
+
+    await snapshot(1);
   });
 
   it('box size is correct with position absolute child', async () => {

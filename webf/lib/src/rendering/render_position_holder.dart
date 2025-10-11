@@ -5,14 +5,16 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/css.dart';
+import 'package:webf/src/foundation/positioned_layout_logging.dart';
 
 /// A placeholder for positioned RenderBox
 class RenderPositionPlaceholder extends RenderPreferredSize {
   RenderPositionPlaceholder({
-    required Size preferredSize,
+    required super.preferredSize,
     this.positioned,
-    RenderBox? child,
-  }) : super(preferredSize: preferredSize, child: child);
+    super.child,
+  });
 
   // Real position of this renderBox.
   RenderBoxModel? positioned;
@@ -34,8 +36,51 @@ class RenderPositionPlaceholder extends RenderPreferredSize {
   @override
   void performLayout() {
     super.performLayout();
+
+    // For sticky positioned elements, the placeholder must reserve space in the
+    // normal flow equivalent to the element's own used size so that subsequent
+    // content does not collapse upward. Absolute/fixed placeholders remain size 0.
+    final RenderBoxModel? rbm = positioned;
+    final bool isSticky = rbm != null && rbm.renderStyle.position == CSSPositionType.sticky;
+    if (isSticky) {
+      double phWidth = size.width;
+      double phHeight = size.height;
+
+      // Prefer explicit CSS width/height if specified; otherwise fall back to any
+      // known box size from a previous layout, but only when the positioned box
+      // has a valid size. Avoid reading boxSize before the child has laid out to
+      // prevent assertion failures.
+      final CSSRenderStyle rs = rbm!.renderStyle;
+      if (rs.width.isNotAuto) {
+        phWidth = rs.width.computedValue;
+      } else if (rbm.hasSize && rbm.boxSize != null) {
+        phWidth = rbm.boxSize!.width;
+      }
+
+      if (rs.height.isNotAuto) {
+        phHeight = rs.height.computedValue;
+      } else if (rbm.hasSize && rbm.boxSize != null) {
+        phHeight = rbm.boxSize!.height;
+      }
+
+      // Constrain to incoming constraints if any (typically unconstrained in flow).
+      final BoxConstraints c = constraints;
+      final Size desired = Size(phWidth, phHeight);
+      size = c.constrain(desired);
+    }
     // The relative offset of positioned renderBox are depends on positionHolder' offset.
     // When the placeHolder got layout, should notify the positioned renderBox to layout again.
+    try {
+      final String mapped = positioned?.renderStyle.target.tagName.toLowerCase() ?? '';
+      final Offset? off = (parentData is RenderLayoutParentData) ? (parentData as RenderLayoutParentData).offset : null;
+      PositionedLayoutLog.log(
+        impl: PositionedImpl.placeholder,
+        feature: PositionedFeature.layout,
+        message: () => 'layout size=${size.width.toStringAsFixed(2)}×${size.height.toStringAsFixed(2)} '
+            'offset=${off == null ? 'null' : '${off.dx.toStringAsFixed(2)},${off.dy.toStringAsFixed(2)}'} '
+            'mappedTo=<$mapped>',
+      );
+    } catch (_) {}
     SchedulerBinding.instance.scheduleFrameCallback((_) {
       if (positioned?.disposed == false) {
         positioned?.markNeedsLayout();
