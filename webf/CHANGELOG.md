@@ -1,3 +1,55 @@
+## 0.23.2
+
+Next‑gen text layout/rendering and CSS feature upgrades
+
+### Highlights
+
+- New pseudo‑elements: ::first-line and ::first-letter with correct range computation and per‑range
+  overrides.
+- Text transforms: none/capitalize/uppercase/lowercase applied during text collection with proper
+  word boundary handling (incl. NBSP and ampersand cases).
+- Gradient text: background-clip:text for inline content with per‑line glyph masking; robust
+  gradient color-stop parsing (incl. hsl()/hsla()).
+- Units and metrics: support for ex unit and improvements to % for text-indent; avoid recursion for
+  ex‑based font-size and resolve against parent.
+- Line height behavior: inherit percentage line-height as used px to stabilize nested spacing while
+  preserving unitless multipliers.
+- Text decoration: multiple line values supported and correct propagation to descendants; default
+  color resolves to currentColor.
+- Layout correctness: fixes for block‑in‑inline line breaking/merging, CJK shrink in inline‑flex,
+  align-items:center using margin-box on cross‑axis.
+- Stacking context: implement z-index ordering and paint phases across positioned/stacking elements;
+  covered by new integration specs.
+- URL resolution: @import handling with correct URL resolution for CSS.
+
+### Features
+
+- Full support of inline box model
+- Add RTL (right-to-left) text direction support
+- Implement W3C-compliant whitespace processing with language-aware segment breaks
+- Add place-items shorthand and flex-safe semantics
+- Support @import with correct URL resolution
+- Add text-transform (none/capitalize/uppercase/lowercase) with collection-time application and tests
+- Support ex unit; apply to text-indent; add tests for ex and %
+- Add ::first-line pseudo-element support
+- Add ::first-letter pseudo-element support
+- Add support for <tt> element
+- Support inline background-clip:text with per-line glyph masking
+- Add list-style-type support for LI (decimal/alpha/roman)
+- Support displaying SVG via <img> and CSS background-image
+- tooling: enhance snapshot comparator and Chrome runner
+- Add stacking contexts and z-index ordering support
+- Optimize font-face loading
+
+### Fixes
+
+- Fix: make document.currentScript null in microtasks and modules
+- Fix: align pre tabs with tab-size; adjust flex-basis tests
+- Fix: freeze inherited percentage line-height to px to prevent nested spacing
+- Fix: handle hsl/hsla stops in gradients for background-clip:text
+- Fix: honor dir attribute and keep gradient text visible
+
+
 ## 0.23.1
 
 ### Features
