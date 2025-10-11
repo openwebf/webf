@@ -755,7 +755,28 @@ class RenderFlexLayout extends RenderLayoutBox {
     // by any definite min and max cross size properties converted through the aspect ratio, and then further
     // clamped by the max main size property if that is definite.
     // https://www.w3.org/TR/css-flexbox-1/#content-size-suggestion
-    double contentSize = _isHorizontalFlexDirection ? child.minContentWidth : child.minContentHeight;
+    // Prefer IFC-driven min-intrinsic width/height for flow content to avoid
+    // overestimating the automatic minimum size (which can cause unintended
+    // overflow). Fall back to cached minContentWidth/Height when IFC is not
+    // established or values are unavailable.
+    double contentSize;
+    if (_isHorizontalFlexDirection) {
+      if (child is RenderFlowLayout && child.inlineFormattingContext != null) {
+        final double ifcMin = child.inlineFormattingContext!.paragraphMinIntrinsicWidth;
+        contentSize = (ifcMin.isFinite && ifcMin > 0) ? ifcMin : child.minContentWidth;
+      } else {
+        contentSize = child.minContentWidth;
+      }
+    } else {
+      if (child is RenderFlowLayout && child.inlineFormattingContext != null) {
+        // For column direction, use IFC height only when that context exists; otherwise use cached minContentHeight.
+        // Note: Paragraph min-intrinsic height is effectively the single-line height.
+        // Our cached minContentHeight is produced by flow layout and is already suitable here.
+        contentSize = child.minContentHeight;
+      } else {
+        contentSize = child.minContentHeight;
+      }
+    }
 
     CSSLengthValue childCrossSize = _isHorizontalFlexDirection ? childRenderStyle.height : childRenderStyle.width;
 

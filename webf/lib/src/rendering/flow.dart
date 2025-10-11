@@ -1175,12 +1175,18 @@ class RenderFlowLayout extends RenderLayoutBox {
     double runMainExtent = 0;
     void iterateRunChildren(RenderBox runChild) {
       double runChildMainSize = 0.0;
-      // Should add horizontal margin of child to the main axis auto size of parent.
+      // For automatic minimum size, use each child's min-content contribution
+      // in border-box, plus horizontal margins, instead of the child's used size.
       if (runChild is RenderBoxModel) {
-        runChildMainSize = runChild.boxSize?.width ?? 0.0;
-        double childMarginLeft = runChild.renderStyle.marginLeft.computedValue;
-        double childMarginRight = runChild.renderStyle.marginRight.computedValue;
-        runChildMainSize += childMarginLeft + childMarginRight;
+        final double childMarginLeft = runChild.renderStyle.marginLeft.computedValue;
+        final double childMarginRight = runChild.renderStyle.marginRight.computedValue;
+        final double childPaddingBorderH = runChild.renderStyle.padding.horizontal + runChild.renderStyle.border.horizontal;
+        double childMinContent = runChild.minContentWidth + childPaddingBorderH;
+        if (!childMinContent.isFinite || childMinContent <= 0) {
+          // Fallback to current used width when min-content is unavailable.
+          childMinContent = runChild.boxSize?.width ?? 0.0;
+        }
+        runChildMainSize = childMinContent + childMarginLeft + childMarginRight;
       }
       runMainExtent += runChildMainSize;
     }
