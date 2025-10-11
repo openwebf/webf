@@ -754,12 +754,7 @@ jobs:
 
           # macOS binaries (skip on Linux CI, would fail)
           echo "📦 macOS binaries..."
-          # Note: macOS script requires macOS platform, copy manually on Linux
-          if [ -d "bridge/build/macos/lib/universal" ]; then
-            mkdir -p webf/macos
-            cp bridge/build/macos/lib/universal/*.dylib webf/macos/ 2>/dev/null || true
-            echo "✅ macOS binaries copied manually"
-          fi
+          npm run use-prebuilt:macos
 
           # iOS binaries
           echo "📦 iOS binaries..."
