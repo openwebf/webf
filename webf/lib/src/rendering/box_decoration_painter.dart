@@ -624,6 +624,21 @@ class BoxDecorationPainter extends BoxPainter {
   }
 
   void _paintBackgroundColor(Canvas canvas, Rect rect, TextDirection? textDirection) {
+    // Special handling: CSS gradients respect background-size/position/repeat per layer.
+    // When background-image uses gradient functions, Flutter's BoxDecoration.gradient
+    // paints full-rect and ignores background-size/position. To emulate CSS,
+    // detect gradient usage and paint per-layer with clipping based on
+    // background-size and background-position values.
+    final hasGradientBgImage = renderStyle.backgroundImage != null &&
+        renderStyle.backgroundImage!.functions.any((f) => f.name.contains('gradient'));
+
+    if (hasGradientBgImage) {
+      _paintLayeredGradients(canvas, rect, textDirection);
+      // Report FP for non-default backgrounds
+      renderStyle.target.ownerDocument.controller.reportFP();
+      return;
+    }
+
     if (_decoration.color != null || _decoration.gradient != null) {
       _paintBox(canvas, rect, _getBackgroundPaint(rect, textDirection), textDirection);
 
@@ -635,6 +650,192 @@ class BoxDecorationPainter extends BoxPainter {
         // Gradients always count as non-default backgrounds
         renderStyle.target.ownerDocument.controller.reportFP();
       }
+    }
+  }
+
+  // Split a CSS list by top-level commas, ignoring nested function commas.
+  List<String> _splitByTopLevelCommas(String input) {
+    final List<String> out = [];
+    int depth = 0;
+    int start = 0;
+    for (int i = 0; i < input.length; i++) {
+      final ch = input[i];
+      if (ch == '(') depth++;
+      if (ch == ')') depth = depth > 0 ? depth - 1 : 0;
+      if (ch == ',' && depth == 0) {
+        out.add(input.substring(start, i).trim());
+        start = i + 1;
+      }
+    }
+    if (start < input.length) {
+      out.add(input.substring(start).trim());
+    }
+    return out.where((s) => s.isNotEmpty).toList();
+  }
+
+  // Parse per-layer background-position list; replicate last if shorter than count.
+  List<(CSSBackgroundPosition, CSSBackgroundPosition)> _parsePositions(int count) {
+    final String raw = renderStyle.target.style.getPropertyValue(BACKGROUND_POSITION);
+    final List<String> layers = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
+    final List<(CSSBackgroundPosition, CSSBackgroundPosition)> result = [];
+    for (int i = 0; i < count; i++) {
+      final String layerText = (layers.isNotEmpty)
+          ? (i < layers.length ? layers[i] : layers.last)
+          : '$LEFT $TOP'; // initial: 0% 0% (left top)
+      // Use CSSPosition helper to expand shorthand and resolve X/Y
+      final List<String> pair = CSSPosition.parsePositionShorthand(layerText);
+      final x = CSSPosition.resolveBackgroundPosition(pair[0], renderStyle, BACKGROUND_POSITION_X, true);
+      final y = CSSPosition.resolveBackgroundPosition(pair[1], renderStyle, BACKGROUND_POSITION_Y, false);
+      result.add((x, y));
+    }
+    return result;
+  }
+
+  // Parse per-layer background-size list; replicate last if shorter than count.
+  List<CSSBackgroundSize> _parseSizes(int count) {
+    final String raw = renderStyle.target.style.getPropertyValue(BACKGROUND_SIZE);
+    // When fewer sizes than images, CSS repeats the last size to match.
+    final List<String> layers = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
+    final List<CSSBackgroundSize> result = [];
+    for (int i = 0; i < count; i++) {
+      final String layerText = (layers.isNotEmpty)
+          ? (i < layers.length ? layers[i] : layers.last)
+          : AUTO;
+      result.add(CSSBackground.resolveBackgroundSize(layerText, renderStyle, BACKGROUND_SIZE));
+    }
+    return result;
+  }
+
+  // Parse per-layer background-repeat list; replicate last if shorter than count.
+  List<ImageRepeat> _parseRepeats(int count) {
+    final String raw = renderStyle.target.style.getPropertyValue(BACKGROUND_REPEAT);
+    final List<String> layers = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
+    final List<ImageRepeat> result = [];
+    for (int i = 0; i < count; i++) {
+      final String layerText = (layers.isNotEmpty)
+          ? (i < layers.length ? layers[i] : layers.last)
+          : REPEAT; // initial value
+      result.add(CSSBackground.resolveBackgroundRepeat(layerText).imageRepeat());
+    }
+    return result;
+  }
+
+  // Compute destination size for a gradient layer from background-size.
+  Size _computeGradientDestinationSize(Rect rect, CSSBackgroundSize size) {
+    // Only support explicit width/height or contain/cover/auto heuristics similar to _paintImage.
+    CSSLengthValue? backgroundWidth = size.width;
+    CSSLengthValue? backgroundHeight = size.height;
+    BoxFit fit = size.fit;
+
+    Size outputSize = rect.size;
+    Size destinationSize = outputSize;
+
+    if (backgroundWidth != null &&
+        !backgroundWidth.isAuto &&
+        backgroundWidth.computedValue > 0 &&
+        (backgroundHeight == null || backgroundHeight.isAuto)) {
+      double width = backgroundWidth.computedValue;
+      destinationSize = Size(width, outputSize.height);
+    } else if (backgroundWidth != null &&
+        backgroundWidth.isAuto &&
+        backgroundHeight != null &&
+        !backgroundHeight.isAuto &&
+        backgroundHeight.computedValue > 0) {
+      double height = backgroundHeight.computedValue;
+      destinationSize = Size(outputSize.width, height);
+    } else if (backgroundWidth != null &&
+        !backgroundWidth.isAuto &&
+        backgroundWidth.computedValue > 0 &&
+        backgroundHeight != null &&
+        !backgroundHeight.isAuto &&
+        backgroundHeight.computedValue > 0) {
+      destinationSize = Size(backgroundWidth.computedValue, backgroundHeight.computedValue);
+    } else {
+      // contain/cover/auto: for gradients, treat as no scaling (cover full rect for cover/auto).
+      // contain behaves similar to cover for gradients as there's no intrinsic size.
+      switch (fit) {
+        case BoxFit.contain:
+        case BoxFit.cover:
+        case BoxFit.none:
+        default:
+          destinationSize = outputSize;
+      }
+    }
+    return destinationSize;
+  }
+
+  // Compute destination rect from position and size, similar to _paintImage logic.
+  Rect _computeDestinationRect(Rect rect, Size destSize, CSSBackgroundPosition posX, CSSBackgroundPosition posY) {
+    final Size outputSize = rect.size;
+    final double halfWidthDelta = (outputSize.width - destSize.width) / 2.0;
+    final double halfHeightDelta = (outputSize.height - destSize.height) / 2.0;
+
+    final double dx = posX.calcValue != null
+        ? (posX.calcValue!.computedValue(BACKGROUND_POSITION_X) ?? 0)
+        : posX.length != null
+            ? posX.length!.computedValue
+            : halfWidthDelta + posX.percentage! * halfWidthDelta;
+    final double dy = posY.calcValue != null
+        ? (posY.calcValue!.computedValue(BACKGROUND_POSITION_Y) ?? 0)
+        : posY.length != null
+            ? posY.length!.computedValue
+            : halfHeightDelta + posY.percentage! * halfHeightDelta;
+
+    return (rect.topLeft.translate(dx, dy)) & destSize;
+  }
+
+  void _paintLayeredGradients(Canvas canvas, Rect rect, TextDirection? textDirection) {
+    final img = renderStyle.backgroundImage;
+    if (img == null) return;
+
+    // Extract gradient functions (each represents a layer)
+    final List<CSSFunctionalNotation> fns = img.functions.where((f) => f.name.contains('gradient')).toList();
+    if (fns.isEmpty) return;
+
+    // Resolve per-layer lists
+    final positions = _parsePositions(fns.length);
+    final sizes = _parseSizes(fns.length);
+    final repeats = _parseRepeats(fns.length);
+
+    // Paint from bottom-most (last) to top-most (first) per CSS layering rules.
+    for (int i = fns.length - 1; i >= 0; i--) {
+      final fn = fns[i];
+      // Build a temporary CSSBackgroundImage for this single function to reuse parsing logic.
+      final single = CSSBackgroundImage([fn], renderStyle, renderStyle.target.ownerDocument.controller,
+          baseHref: renderStyle.target.style.getPropertyBaseHref(BACKGROUND_IMAGE));
+      final Gradient? gradient = single.gradient;
+      if (gradient == null) continue;
+
+      final (CSSBackgroundPosition px, CSSBackgroundPosition py) = positions[i];
+      final CSSBackgroundSize size = sizes[i];
+      final ImageRepeat repeat = repeats[i];
+
+      // Compute destination size and rect
+      final Size destSize = _computeGradientDestinationSize(rect, size);
+      Rect destRect = _computeDestinationRect(rect, destSize, px, py);
+
+      // Clip to background painting area. Respect border-radius when present to
+      // avoid leaking color outside rounded corners (matches CSS background-clip).
+      canvas.save();
+      if (_decoration.hasBorderRadius && _decoration.borderRadius != null) {
+        final Path rounded = Path()..addRRect(_decoration.borderRadius!.toRRect(rect));
+        canvas.clipPath(rounded);
+      } else {
+        canvas.clipRect(rect);
+      }
+
+      if (repeat == ImageRepeat.noRepeat) {
+        final paint = Paint()..shader = gradient.createShader(destRect, textDirection: textDirection);
+        canvas.drawRect(destRect, paint);
+      } else {
+        // Tile the gradient rect similar to image tiling.
+        final paint = Paint()..shader = gradient.createShader(destRect, textDirection: textDirection);
+        for (final Rect tile in _generateImageTileRects(rect, destRect, repeat)) {
+          canvas.drawRect(tile, paint);
+        }
+      }
+
+      canvas.restore();
     }
   }
 

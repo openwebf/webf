@@ -55,6 +55,8 @@ describe('Body default content height (issue #149)', () => {
     document.body.appendChild(title);
     document.body.appendChild(container);
 
+    await waitForOnScreen(container);
+
     // Basic sanity checks for the scenario
     const csBody = getComputedStyle(document.body);
     expect(csBody.backgroundColor).toBe('rgb(30, 144, 255)'); // var(--blue)
