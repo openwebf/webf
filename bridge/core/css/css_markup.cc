@@ -124,6 +124,39 @@ String SerializeString(const String& string) {
   return builder.ReleaseString();
 }
 
+// TODO: May not be right
+void SerializeRaw(const String& string, StringBuilder& append_to) {
+  unsigned index = 0;
+  while (index < string.length()) {
+    UCharCodePoint c = string.CharacterStartingAt(index);
+    if (c == 0) {
+      // Handle potential lone surrogate where CharacterStartingAt may not return a code point
+      c = string[index];
+    }
+
+    index += U16_LENGTH(c);
+
+    if (c == 0) {
+      // Replace NUL with replacement character
+      append_to.Append(static_cast<UCharCodePoint>(0xfffd));
+    } else if (c <= 0x1f || c == 0x7f) {
+      // Control characters are escaped as code points
+      SerializeCharacterAsCodePoint(c, append_to);
+    } else if (c == 0x5c) {  // '\\'
+      // Escape backslash
+      SerializeCharacter(c, append_to);
+    } else {
+      append_to.Append(c);
+    }
+  }
+}
+
+String SerializeRaw(const String& string) {
+  StringBuilder builder;
+  SerializeRaw(string, builder);
+  return builder.ReleaseString();
+}
+
 String SerializeURI(const String& string) {
   StringBuilder builder;
   builder.Append("url("_s);

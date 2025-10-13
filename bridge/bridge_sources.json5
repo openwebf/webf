@@ -294,6 +294,7 @@
     "core/css/css_value_pool.cc",
     "core/css/cssom_utils.cc",
     "core/css/css_string_value.cc",
+    "core/css/css_raw_value.cc",
     "core/css/css_initial_value.cc",
     "core/css/css_numeric_literal_value",
     "core/css/css_color.cc",
