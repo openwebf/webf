@@ -33,6 +33,7 @@ list(APPEND WEBF_TEST_SOURCE
   ./core/html/custom/widget_element_test.cc
   ./core/html/html_style_element_test.cc
   ./core/html/html_meta_element_test.cc
+  ./core/html/html_link_element_rel_list_test.cc
   ./core/timing/performance_test.cc
   ./foundation/shared_ui_command_test.cc
   ./foundation/ui_command_ring_buffer_test.cc
