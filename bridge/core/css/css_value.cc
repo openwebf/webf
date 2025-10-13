@@ -70,6 +70,7 @@
 #include "core/css/css_revert_value.h"
 #include "core/css/css_scroll_value.h"
 #include "core/css/css_shadow_value.h"
+#include "core/css/css_raw_value.h"
 #include "core/css/css_string_value.h"
 #include "core/css/css_timing_function_value.h"
 #include "core/css/css_unparsed_declaration_value.h"
@@ -188,6 +189,8 @@ String CSSValue::CssText() const {
       return To<CSSShadowValue>(this)->CustomCSSText();
     case kStringClass:
       return To<CSSStringValue>(this)->CustomCSSText();
+    case kRawClass:
+      return To<CSSRawValue>(this)->CustomCSSText();
     case kLinearTimingFunctionClass:
       return To<cssvalue::CSSLinearTimingFunctionValue>(this)->CustomCSSText();
     case kCubicBezierTimingFunctionClass:

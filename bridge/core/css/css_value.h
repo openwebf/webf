@@ -99,6 +99,7 @@ class CSSValue : public std::enable_shared_from_this<CSSValue> {
   bool IsReflectValue() const { return class_type_ == kReflectClass; }
   bool IsShadowValue() const { return class_type_ == kShadowClass; }
   bool IsStringValue() const { return class_type_ == kStringClass; }
+  bool IsRawValue() const { return class_type_ == kRawClass; }
   bool IsURIValue() const { return class_type_ == kURIClass; }
   bool IsLinearTimingFunctionValue() const { return class_type_ == kLinearTimingFunctionClass; }
   bool IsCubicBezierTimingFunctionValue() const { return class_type_ == kCubicBezierTimingFunctionClass; }
@@ -164,6 +165,7 @@ class CSSValue : public std::enable_shared_from_this<CSSValue> {
     kQuadClass,                               // future
     kCustomIdentClass,                        // done
     kStringClass,                             // done
+    kRawClass,                                // new: raw, unquoted CSS text
     kURIClass,                                // future
     kValuePairClass,                          // done
     kLightDarkValuePairClass,                 // done
