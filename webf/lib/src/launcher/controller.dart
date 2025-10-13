@@ -943,9 +943,9 @@ class WebFController with Diagnosticable {
 
     if (currentPageId == null) return null;
 
-    if (isFlutterAttached) {
-      throw FlutterError('Could not reload a attached controller');
-    }
+    // if (isFlutterAttached) {
+    //   throw FlutterError('Could not reload a attached controller');
+    // }
 
     return WebFControllerManager.instance
         .addOrUpdateControllerWithLoading(name: currentPageId, bundle: entrypoint!, forceReplace: true, mode: mode);
