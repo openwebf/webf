@@ -7,6 +7,50 @@
 
 namespace webf {
 
+namespace {
+struct MicrotaskFunctionPayload {
+  ExecutingContext* context;
+  std::shared_ptr<Function> handler;
+};
+}  // namespace
+
+void WindowOrWorkerGlobalScope::queueMicrotask(ExecutingContext* context,
+                                               const std::shared_ptr<Function>& handler,
+                                               ExceptionState& exception) {
+  if (handler == nullptr) {
+    exception.ThrowException(context->ctx(), ErrorType::TypeError, "Failed to execute 'queueMicrotask': callback is null");
+    return;
+  }
+
+  // Capture the handler for execution in microtask checkpoint.
+  auto* payload = new MicrotaskFunctionPayload{context, handler};
+  context->EnqueueMicrotask(
+      [](void* data) {
+        auto* payload = static_cast<MicrotaskFunctionPayload*>(data);
+        auto* ctx = payload->context;
+
+        if (!ctx->IsContextValid()) {
+          delete payload;
+          return;
+        }
+
+        if (auto* callback = DynamicTo<QJSFunction>(payload->handler.get())) {
+          if (callback->IsFunction(ctx->ctx())) {
+            ScriptValue return_value = callback->Invoke(ctx->ctx(), ScriptValue::Empty(ctx->ctx()), 0, nullptr);
+            if (return_value.IsException()) {
+              ctx->HandleException(&return_value);
+            }
+          }
+        } else if (auto* native_callback = DynamicTo<WebFNativeFunction>(payload->handler.get())) {
+          native_callback->Invoke(ctx, 0, nullptr);
+          ctx->RunRustFutureTasks();
+        }
+
+        delete payload;
+      },
+      payload);
+}
+
 static void handleTimerCallback(DOMTimer* timer, char* errmsg) {
   auto* context = timer->context();
 

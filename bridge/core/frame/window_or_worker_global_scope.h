@@ -14,6 +14,9 @@ namespace webf {
 
 class WindowOrWorkerGlobalScope {
  public:
+  static void queueMicrotask(ExecutingContext* context,
+                             const std::shared_ptr<Function>& handler,
+                             ExceptionState& exception);
   static int setTimeout(ExecutingContext* context,
                         const std::shared_ptr<Function>& handler,
                         int32_t timeout,

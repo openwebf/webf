@@ -27,6 +27,7 @@ list(APPEND WEBF_TEST_SOURCE
   ./core/html/html_collection_test.cc
   ./core/dom/element_test.cc
   ./core/frame/dom_timer_test.cc
+  ./core/frame/queue_microtask_test.cc
   ./core/frame/window_test.cc
   ./core/html/html_element_test.cc
   ./core/html/custom/widget_element_test.cc
