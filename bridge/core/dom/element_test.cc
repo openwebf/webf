@@ -109,6 +109,42 @@ console.log(div.outerHTML, div.innerHTML, document.body.innerHTML);
   EXPECT_EQ(errorCalled, false);
 }
 
+TEST(Element, preserveWhitespaceInButtonContent) {
+  bool static errorCalled = false;
+  bool static logCalled = false;
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+    logCalled = true;
+    EXPECT_STREQ(message.c_str(), "true true true true true true");
+  };
+
+  auto env = TEST_init([](double contextId, const char* errmsg) {
+    WEBF_LOG(VERBOSE) << errmsg;
+    errorCalled = true;
+  });
+
+  std::string code = R"(
+    // Template fragment parsing should preserve whitespace text inside <button>
+    const t = document.createElement('template');
+    t.innerHTML = '<button> </button>';
+    const b1 = t.content.firstChild;
+    const r1 = !!b1 && b1.childNodes.length === 1 && b1.firstChild.nodeType === 3 && b1.firstChild.nodeValue === ' ';
+
+    // Element innerHTML parsing should also preserve whitespace inside <button>
+    const d = document.createElement('div');
+    d.innerHTML = '<button> </button>';
+    const b2 = d.firstChild;
+    const r2 = !!b2 && b2.childNodes.length === 1 && b2.firstChild.nodeType === 3 && b2.firstChild.nodeValue === ' ';
+
+    console.log(b1.childNodes.length === 1, b1.firstChild.nodeType === 3, b1.firstChild.nodeValue === ' ',
+                b2.childNodes.length === 1, b2.firstChild.nodeType === 3, b2.firstChild.nodeValue === ' ');
+  )";
+
+  env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
+
+  EXPECT_EQ(errorCalled, false);
+  EXPECT_EQ(logCalled, true);
+}
+
 // TEST(Element, style) {
 //  bool static errorCalled = false;
 //  bool static logCalled = false;

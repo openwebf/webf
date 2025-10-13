@@ -301,6 +301,41 @@ TEST(Node, nestedNode) {
   EXPECT_EQ(logCalled, true);
 }
 
+TEST(Node, cloneAnchorWithImgDeep) {
+  // Repro: const t = document.createElement('div');
+  // t.innerHTML = '<a><img></a>';
+  // const a = t.firstChild; const c = a.cloneNode(true);
+  // console.log(!!c.firstChild) // should be true
+
+  bool static errorCalled = false;
+  bool static logCalled = false;
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+    logCalled = true;
+    // Expect "true" when firstChild exists on the deep-cloned anchor.
+    EXPECT_STREQ(message.c_str(), "true");
+  };
+
+  auto env = TEST_init([](double contextId, const char* errmsg) {
+    WEBF_LOG(VERBOSE) << errmsg;
+    errorCalled = true;
+  });
+  auto context = env->page()->executingContext();
+
+  std::string code = R"(
+    const t = document.createElement('div');
+    t.innerHTML = '<a><img></a>';
+    const a = t.firstChild;
+    const c = a.cloneNode(true);
+    console.log(!!c.firstChild);
+
+  )";
+
+  env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
+
+  EXPECT_EQ(errorCalled, false);
+  EXPECT_EQ(logCalled, true);
+}
+
 TEST(Node, isConnected) {
   std::string code = R"(
 const el = document.createElement('div');
