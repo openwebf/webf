@@ -89,12 +89,8 @@ WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::CreateElementNSW
   webf::AtomicString uri_atomic = webf::AtomicString::CreateFromUTF8(uri);
   webf::AtomicString tag_name_atomic = webf::AtomicString::CreateFromUTF8(tag_name);
 
-  std::string value = std::string(R"({"is":")") + options.is + "\"}";
-  const char* value_cstr = value.c_str();
-  webf::ScriptValue options_value = webf::ScriptValue::CreateJsonObject(document->ctx(), value_cstr, value.length());
-
   Element* new_element =
-      document->createElementNS(uri_atomic, tag_name_atomic, options_value, shared_exception_state->exception_state);
+      document->createElementNS(uri_atomic, tag_name_atomic, nullptr, shared_exception_state->exception_state);
   if (shared_exception_state->exception_state.HasException()) {
     return WebFValue<Element, ElementPublicMethods>::Null();
   }
