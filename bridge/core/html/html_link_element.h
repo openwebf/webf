@@ -7,6 +7,8 @@
 #define WEBF_CORE_HTML_HTML_LINK_ELEMENT_H_
 
 #include "html_element.h"
+#include "core/dom/dom_token_list.h"
+#include "html_element_type_helper.h"
 
 namespace webf {
 
@@ -22,8 +24,17 @@ class HTMLLinkElement : public HTMLElement {
 
   NativeValue parseAuthorStyleSheet(AtomicString& cssString, AtomicString& href);
 
+  // https://html.spec.whatwg.org/multipage/semantics.html#htmllinkelement
+  // Expose tokenized view of the `rel` attribute.
+  DOMTokenList* relList();
+
+  void Trace(webf::GCVisitor* visitor) const override;
+
  protected:
   NativeValue HandleParseAuthorStyleSheet(int32_t argc, const NativeValue* argv, Dart_Handle dart_object);
+
+ private:
+  mutable Member<DOMTokenList> rel_list_;
 };
 
 }  // namespace webf

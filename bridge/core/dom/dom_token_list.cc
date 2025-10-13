@@ -27,9 +27,12 @@
  */
 
 #include "dom_token_list.h"
+#include <unordered_set>
+#include <string>
 #include "core/base/strings/string_number_conversions.h"
 #include "core/css/parser/css_parser_idioms.h"
 #include "element.h"
+#include "html_names.h"
 
 namespace webf {
 
@@ -271,7 +274,21 @@ void DOMTokenList::setValue(const AtomicString& new_value, ExceptionState& excep
 }
 
 // https://dom.spec.whatwg.org/#concept-domtokenlist-validation
-bool DOMTokenList::ValidateTokenValue(const AtomicString&, ExceptionState& exception_state) const {
+bool DOMTokenList::ValidateTokenValue(const AtomicString& token, ExceptionState& exception_state) const {
+  // Provide supported-tokens semantics for specific DOMTokenList instances.
+  // For unknown lists, throw per spec.
+  if (attribute_name_ == html_names::kRelAttr) {
+    static const std::unordered_set<std::string> kSupportedRelTokens = {
+        "alternate",    "author",       "bookmark",   "canonical",   "dns-prefetch", "external",
+        "help",         "icon",         "license",    "manifest",    "me",           "modulepreload",
+        "next",         "nofollow",     "noopener",   "noreferrer",  "pingback",     "preconnect",
+        "prefetch",     "preload",      "prerender",  "prev",        "search",       "stylesheet"};
+
+    // token is already lower-cased by supports() caller.
+    auto key = token.ToUTF8String();
+    return kSupportedRelTokens.find(key) != kSupportedRelTokens.end();
+  }
+
   exception_state.ThrowException(element_->ctx(), ErrorType::TypeError, "DOMTokenList has no supported tokens.");
   return false;
 }

@@ -24,7 +24,7 @@ NativeValue HTMLLinkElement::HandleCallFromDartSide(const webf::AtomicString& me
     return HandleParseAuthorStyleSheet(argc, argv, dart_object);
   }
 
-  EventTarget::HandleCallFromDartSide(method, argc, argv, dart_object);
+  HTMLElement::HandleCallFromDartSide(method, argc, argv, dart_object);
 
   return Native_NewNull();
 };
@@ -44,5 +44,20 @@ NativeValue HTMLLinkElement::parseAuthorStyleSheet(AtomicString& cssString, Atom
 
   return Native_NewNull();
 };
+
+DOMTokenList* HTMLLinkElement::relList() {
+  if (!rel_list_) {
+    rel_list_ = MakeGarbageCollected<DOMTokenList>(this, html_names::kRelAttr);
+    // Initialize token set from current attribute value
+    AtomicString relValue = getAttribute(html_names::kRelAttr, ASSERT_NO_EXCEPTION());
+    rel_list_->DidUpdateAttributeValue(g_null_atom, relValue);
+  }
+  return rel_list_.Get();
+}
+
+void HTMLLinkElement::Trace(webf::GCVisitor* visitor) const {
+  visitor->TraceMember(rel_list_);
+  HTMLElement::Trace(visitor);
+}
 
 }  // namespace webf
