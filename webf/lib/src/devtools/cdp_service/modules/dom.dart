@@ -10,7 +10,6 @@ import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/launcher.dart';
-import 'package:webf/svg.dart';
 import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
 
 const int DOCUMENT_NODE_ID = 0;
@@ -100,8 +99,7 @@ class InspectDOMModule extends UIInspectorModule {
     }
     // find real img element.
     if (hitPath.first.target is WebFRenderImage ||
-        (hitPath.first.target is RenderSVGRoot &&
-            (hitPath.first.target as RenderBoxModel)
+        ((hitPath.first.target as RenderBoxModel)
                     .renderStyle
                     .target
                     .pointer ==

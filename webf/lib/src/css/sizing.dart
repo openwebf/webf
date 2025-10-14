@@ -194,7 +194,6 @@ mixin CSSSizingMixin on RenderStyle {
   void _markSelfAndParentNeedsLayout() {
     if (!hasRenderBox()) return;
     markNeedsLayout();
-    markSVGShapeNeedsUpdate();
 
     // Sizing may affect parent size, mark parent as needsLayout in case
     // renderBoxModel has tight constraints which will prevent parent from marking.

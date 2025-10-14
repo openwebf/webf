@@ -18,9 +18,7 @@ import 'package:webf/rendering.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/css/css_animation.dart';
-import 'package:webf/src/svg/rendering/shape.dart';
 
-import 'svg.dart';
 import 'package:logging/logging.dart' show Level;
 
 typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObject);
@@ -388,43 +386,6 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   double get effectiveTransformScale;
 
-  // SVG
-  CSSPaint get fill;
-
-  CSSPaint get stroke;
-
-  CSSLengthValue get x;
-
-  CSSLengthValue get y;
-
-  CSSLengthValue get rx;
-
-  CSSLengthValue get ry;
-
-  CSSLengthValue get cx;
-
-  CSSLengthValue get cy;
-
-  CSSLengthValue get r;
-
-  CSSLengthValue get strokeWidth;
-
-  CSSPath get d;
-
-  CSSFillRule get fillRule;
-
-  CSSStrokeLinecap get strokeLinecap;
-
-  CSSStrokeLinejoin get strokeLinejoin;
-
-  CSSLengthValue get x1;
-
-  CSSLengthValue get y1;
-
-  CSSLengthValue get x2;
-
-  CSSLengthValue get y2;
-
   void addFontRelativeProperty(String propertyName);
 
   void addRootFontRelativeProperty(String propertyName);
@@ -657,12 +618,6 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   bool isSelfAnonymousFlowLayout() {
     return everyAttachedRenderObjectByTypeAndMatch(RenderObjectGetType.self,
         (renderObject, _) => renderObject is RenderBoxModel && renderObject.renderStyle.target.tagName == 'Anonymous');
-  }
-
-  @pragma('vm:prefer-inline')
-  bool isSelfRenderSVGShape() {
-    return everyAttachedRenderObjectByTypeAndMatch(
-        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderSVGShape);
   }
 
   @pragma('vm:prefer-inline')
@@ -960,16 +915,6 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   void markPositionHolderParentNeedsLayout() {
     everyAttachedWidgetRenderBox((element, renderObject) {
       renderObject.renderPositionPlaceholder?.parent?.markNeedsLayout();
-      return true;
-    });
-  }
-
-  @pragma('vm:prefer-inline')
-  void markSVGShapeNeedsUpdate() {
-    everyAttachedWidgetRenderBox((element, renderObject) {
-      if (renderObject is RenderSVGShape) {
-        renderObject.markNeedUpdateShape();
-      }
       return true;
     });
   }
@@ -1303,8 +1248,7 @@ class CSSRenderStyle extends RenderStyle
         CSSOpacityMixin,
         CSSTransitionMixin,
         CSSVariableMixin,
-        CSSAnimationMixin,
-        CSSSvgMixin {
+        CSSAnimationMixin {
   CSSRenderStyle({required this.target});
 
   // Transient flag for painting: when true on a container, its local painting
@@ -2014,60 +1958,6 @@ class CSSRenderStyle extends RenderStyle
       case CARETCOLOR:
         caretColor = (value as CSSColor).value;
         break;
-      case FILL:
-        fill = value;
-        break;
-      case STROKE:
-        stroke = value;
-        break;
-      case STROKE_WIDTH:
-        strokeWidth = value;
-        break;
-      case X:
-        x = value;
-        break;
-      case Y:
-        y = value;
-        break;
-      case RX:
-        rx = value;
-        break;
-      case RY:
-        ry = value;
-        break;
-      case CX:
-        cx = value;
-        break;
-      case CY:
-        cy = value;
-        break;
-      case R:
-        r = value;
-        break;
-      case X1:
-        x1 = value;
-        break;
-      case X2:
-        x2 = value;
-        break;
-      case Y1:
-        y1 = value;
-        break;
-      case Y2:
-        y2 = value;
-        break;
-      case D:
-        d = value;
-        break;
-      case FILL_RULE:
-        fillRule = value;
-        break;
-      case STROKE_LINECAP:
-        strokeLinecap = value;
-        break;
-      case STROKE_LINEJOIN:
-        strokeLinejoin = value;
-        break;
     }
   }
 
@@ -2436,15 +2326,6 @@ class CSSRenderStyle extends RenderStyle
         break;
       case D:
         value = CSSPath.parseValue(propertyValue);
-        break;
-      case FILL_RULE:
-        value = CSSSvgMixin.resolveFillRule(propertyValue);
-        break;
-      case STROKE_LINECAP:
-        value = CSSSvgMixin.resolveStrokeLinecap(propertyValue);
-        break;
-      case STROKE_LINEJOIN:
-        value = CSSSvgMixin.resolveStrokeLinejoin(propertyValue);
         break;
     }
 

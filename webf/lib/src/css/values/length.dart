@@ -10,7 +10,6 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
 import 'package:quiver/collection.dart';
-import 'package:webf/svg.dart';
 
 // https://drafts.csswg.org/css-values-3/#absolute-lengths
 const _1in = 96; // 1in = 2.54cm = 96px
@@ -619,26 +618,6 @@ class CSSLengthValue {
                 _computedValue = value! * containerContentWidth;
               } else {
                 _computedValue = 0;
-              }
-            }
-            break;
-
-          case RX:
-            final target = renderStyle!.target;
-            if (target is SVGElement) {
-              final viewBox = target.findRoot()?.viewBox;
-              if (viewBox != null) {
-                _computedValue = viewBox.width * value!;
-              }
-            }
-            break;
-
-          case RY:
-            final target = renderStyle!.target;
-            if (target is SVGElement) {
-              final viewBox = target.findRoot()?.viewBox;
-              if (viewBox != null) {
-                _computedValue = viewBox.height * value!;
               }
             }
             break;

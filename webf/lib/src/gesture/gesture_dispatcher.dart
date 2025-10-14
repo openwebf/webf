@@ -11,7 +11,6 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/rendering.dart';
-import 'package:webf/svg.dart';
 
 class GestureDispatcher {
   dom.Element target;
@@ -54,10 +53,6 @@ class GestureDispatcher {
 
   EventTarget getCurrentEventTarget() {
     EventTarget currentTarget = target;
-
-    if (currentTarget is SVGElement && currentTarget.hostingImageElement != null) {
-      currentTarget = currentTarget.hostingImageElement!;
-    }
 
     return currentTarget;
   }

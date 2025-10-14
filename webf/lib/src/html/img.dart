@@ -20,8 +20,6 @@ import 'package:webf/painting.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/scheduler/debounce.dart';
-import 'package:webf/svg.dart';
-import 'package:webf/src/foundation/debug_flags.dart';
 
 void _imgLog(String message) {
   if (kDebugMode && DebugFlags.enableImageLogs) {
@@ -286,7 +284,7 @@ class ImageElement extends Element {
 
     // Stop and remove image stream reference.
     _stopListeningStream();
-    
+
     // Safely dispose completer handle
     try {
       _completerHandle?.dispose();
@@ -304,7 +302,7 @@ class ImageElement extends Element {
     _imageStreamListener = null;
     _cachedImageStream = null;
     _cachedImageInfo = null;
-    
+
     // Safely evict image provider
     try {
       _currentImageProvider?.evict(configuration: _currentImageConfig ?? ImageConfiguration.empty);
@@ -318,7 +316,7 @@ class ImageElement extends Element {
         rethrow;
       }
     }
-    
+
     _currentImageConfig = null;
     _currentImageProvider = null;
     _svgBytes = null;
@@ -496,7 +494,7 @@ class ImageElement extends Element {
     if (keepStreamAlive && _completerHandle == null && _cachedImageStream?.completer != null) {
       _completerHandle = _cachedImageStream!.completer!.keepAlive();
     }
-    
+
     // Safely remove listener to prevent accessing disposed native peers
     try {
       _cachedImageStream?.removeListener(_listener);

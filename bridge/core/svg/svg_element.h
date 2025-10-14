@@ -14,13 +14,13 @@ class SVGElement : public Element {
 
  public:
   using ImplType = SVGElement*;
-  SVGElement(const AtomicString& tag_name, Document* document, ConstructionType = kCreateHTMLElement);
+  SVGElement(const AtomicString& tag_name, Document* document, ConstructionType = kCreateSVGElement);
 
   void SetNeedsStyleRecalcForInstances(StyleChangeType, const StyleChangeReasonForTracing&);
 
  private:
-  bool IsSVGElement() const = delete;     // This will catch anyone doing an unnecessary check.
-  bool IsStyledElement() const = delete;  // This will catch anyone doing an unnecessary check.
+  bool IsSVGElement() const;     // This will catch anyone doing an unnecessary check.
+  bool IsStyledElement() const;  // This will catch anyone doing an unnecessary check.
 };
 
 template <typename T>
