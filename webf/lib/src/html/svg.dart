@@ -9,7 +9,7 @@ import 'package:webf/widget.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/css.dart';
 
-const String SVG = 'SVG';
+const String SVG = 'svg';
 
 class FlutterSvgElement extends WidgetElement {
   FlutterSvgElement(super.context);
@@ -145,10 +145,31 @@ class _FlutterSvgElementState extends WebFWidgetElementState {
       return const SizedBox.shrink();
     }
 
-    final Widget svg = SvgPicture.string(
+    // Resolve width/height for the inner picture:
+    // - If CSS width/height are explicitly set, let layout constraints drive sizing.
+    // - Otherwise, try to honor root <svg> width/height attributes for intrinsic size.
+    final bool cssWidthSet = widgetElement.renderStyle.width.isNotAuto;
+    final bool cssHeightSet = widgetElement.renderStyle.height.isNotAuto;
+
+    final double? attrWidthPx = cssWidthSet ? null : _attributeLengthPx(widgetElement, 'width', Axis.horizontal);
+    final double? attrHeightPx = cssHeightSet ? null : _attributeLengthPx(widgetElement, 'height', Axis.vertical);
+
+    Widget svg = SvgPicture.string(
       rawSvg,
       allowDrawingOutsideViewBox: true,
+      width: attrWidthPx,
+      height: attrHeightPx,
+      fit: BoxFit.contain,
     );
+
+    // If no explicit dimensions from CSS or attributes and a valid viewBox exists,
+    // wrap with AspectRatio so height follows available width.
+    if (!cssWidthSet && !cssHeightSet && attrWidthPx == null && attrHeightPx == null) {
+      final double? ratio = _parseViewBoxAspectRatio(widgetElement.getAttribute('viewBox'));
+      if (ratio != null && ratio > 0) {
+        svg = AspectRatio(aspectRatio: ratio, child: svg);
+      }
+    }
 
     return svg;
   }
@@ -192,7 +213,7 @@ class _FlutterSvgElementState extends WebFWidgetElementState {
   }
 
   void _serializeElement(StringBuffer sb, dom.Element el) {
-    final String tag = el.tagName.toLowerCase();
+    final String tag = el.tagName;
     sb
       ..write('<')
       ..write(tag);
@@ -248,5 +269,34 @@ class _FlutterSvgElementState extends WebFWidgetElementState {
         .replaceAll("'", '&apos;')
         .replaceAll('<', '&lt;')
         .replaceAll('>', '&gt;');
+  }
+
+  double? _attributeLengthPx(dom.Element el, String name, [Axis? axis]) {
+    final String? v = el.getAttribute(name);
+    if (v == null || v.isEmpty) return null;
+    final CSSLengthValue parsed = CSSLength.parseLength(v, el.renderStyle, name, axis);
+    // Ignore unknown/auto/none for intrinsic sizing purposes.
+    if (parsed == CSSLengthValue.unknown ||
+        parsed == CSSLengthValue.auto ||
+        parsed == CSSLengthValue.none ||
+        parsed == CSSLengthValue.initial) {
+      return null;
+    }
+    // computedValue handles px/unit translations.
+    final double px = parsed.computedValue;
+    if (px.isNaN || !px.isFinite) return null;
+    // Avoid zero which can collapse rendering; respect explicit 0 though.
+    if (px < 0) return null;
+    return px;
+  }
+
+  double? _parseViewBoxAspectRatio(String? viewBox) {
+    if (viewBox == null) return null;
+    final parts = viewBox.trim().split(RegExp(r'\s+'));
+    if (parts.length != 4) return null;
+    final double? w = double.tryParse(parts[2]);
+    final double? h = double.tryParse(parts[3]);
+    if (w == null || h == null || h == 0) return null;
+    return w / h;
   }
 }

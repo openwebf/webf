@@ -407,7 +407,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   void createElementNS(Pointer<NativeBindingObject> nativePtr, String uri, String tagName) {
     assert(!hasBindingObject(nativePtr), 'ERROR: Can not create element with same id "$nativePtr"');
     document.createElementNS(
-        uri, tagName.toUpperCase(), BindingContext(document.controller.view, _contextId, nativePtr));
+        uri, tagName, BindingContext(document.controller.view, _contextId, nativePtr));
   }
 
   void createTextNode(Pointer<NativeBindingObject> nativePtr, String data) {
