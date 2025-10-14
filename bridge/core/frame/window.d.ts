@@ -25,9 +25,7 @@ interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
   postMessage(message: any, targetOrigin: string): void;
   postMessage(message: any): void;
 
-  requestAnimationFrame(callback: Function): double;
   __requestIdleCallback__(callback: Function, options?: WindowIdleRequestOptions): int64;
-  cancelAnimationFrame(request_id: int64): void;
 
   getComputedStyle(element: Element, pseudoElt?: string): SupportAsync<WindowComputedStyleVariant>;
 

@@ -4,6 +4,8 @@
  */
 #include "window_or_worker_global_scope.h"
 #include "core/frame/dom_timer.h"
+#include "core/dom/document.h"
+#include "core/dom/frame_request_callback_collection.h"
 
 namespace webf {
 
@@ -208,6 +210,28 @@ void WindowOrWorkerGlobalScope::clearTimeout(ExecutingContext* context, int32_t 
 void WindowOrWorkerGlobalScope::clearInterval(ExecutingContext* context, int32_t timerId, ExceptionState& exception) {
   context->dartMethodPtr()->clearTimeout(context->isDedicated(), context->contextId(), timerId);
   context->Timers()->forceStopTimeoutById(timerId);
+}
+
+
+double WindowOrWorkerGlobalScope::requestAnimationFrame(ExecutingContext* context, const std::shared_ptr<Function>& callback, ExceptionState& exception_state) {
+  auto frame_callback = FrameCallback::Create(context, callback);
+  uint32_t request_id = context->document()->RequestAnimationFrame(frame_callback, exception_state);
+  // Add finish recording to force trigger a frame update.
+  context->uiCommandBuffer()->AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
+  // `-1` represents some error occurred.
+  if (request_id == -1) {
+    exception_state.ThrowException(
+        context->ctx(), ErrorType::InternalError,
+        "Failed to execute 'requestAnimationFrame': dart method (requestAnimationFrame) executed "
+        "with unexpected error.");
+    return 0;
+  }
+  return request_id;
+}
+
+
+void WindowOrWorkerGlobalScope::cancelAnimationFrame(ExecutingContext* context, double request_id, ExceptionState& exception_state) {
+  context->document()->CancelAnimationFrame(static_cast<uint32_t>(request_id), exception_state);
 }
 
 void WindowOrWorkerGlobalScope::__gc__(ExecutingContext* context, ExceptionState& exception) {

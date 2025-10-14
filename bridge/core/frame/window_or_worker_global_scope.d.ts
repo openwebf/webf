@@ -14,6 +14,12 @@ declare const clearTimeout: (handle: double) => void;
 declare const clearInterval: (handle: double) => void;
 
 // @ts-ignore
+declare const requestAnimationFrame: (callback: Function) => double;
+
+// @ts-ignore
+declare const cancelAnimationFrame: (request_id: int64) => void;
+
+// @ts-ignore
 
 declare const __gc__: () => void;
 
