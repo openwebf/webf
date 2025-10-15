@@ -32,12 +32,12 @@ class InspectDOMModule extends UIInspectorModule {
   @override
   void receiveFromFrontend(
       int? id, String method, Map<String, dynamic>? params) {
-    if (DebugFlags.enableDevToolsLogs) {
-      devToolsLogger.fine('[DevTools] DOM.$method');
-    }
     switch (method) {
       case 'getDocument':
         onGetDocument(id, method, params);
+        break;
+      case 'requestChildNodes':
+        onRequestChildNodes(id, params!);
         break;
       case 'getBoxModel':
         onGetBoxModel(id, params!);
@@ -75,6 +75,55 @@ class InspectDOMModule extends UIInspectorModule {
         onResolveNode(id, params!);
         break;
     }
+  }
+
+  void onRequestChildNodes(int? id, Map<String, dynamic> params) {
+    // https://chromedevtools.github.io/devtools-protocol/tot/DOM/#method-requestChildNodes
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] DOM.requestChildNodes nodeId=${params['nodeId']} depth=${params['depth']}');
+    }
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    final int? frontendNodeId = params['nodeId'];
+    if (frontendNodeId == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    final targetId = ctx.getTargetIdByNodeId(frontendNodeId);
+    if (targetId == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    final Node? parent = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
+    if (parent == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    // Build immediate children list
+    final children = <Map>[];
+    for (final child in parent.childNodes) {
+      // Filter to Elements and non-empty Text nodes for readability
+      if (child is Element || (child is TextNode && child.data.isNotEmpty)) {
+        children.add(InspectorNode(child).toJson());
+      }
+    }
+
+    if (devtoolsService is ChromeDevToolsService) {
+      final pId = ctx.forDevtoolsNodeId(parent);
+      ChromeDevToolsService.unifiedService
+          .sendEventToFrontend(DOMSetChildNodesEvent(parentId: pId, nodes: children));
+      if (DebugFlags.enableDevToolsProtocolLogs) {
+        devToolsProtocolLogger
+            .finer('[DevTools] -> DOM.setChildNodes parent=$pId count=${children.length}');
+      }
+    }
+    // Respond to the method call with empty result
+    sendToFrontend(id, JSONEncodableMap({}));
   }
 
   void onGetNodeForLocation(int? id, Map<String, dynamic> params) {
@@ -520,17 +569,19 @@ class InspectorNode extends JSONEncodable {
 
   /// The BackendNodeId for this node.
   /// Unique DOM node identifier used to reference a node that may not have been pushed to
-  /// the front-end.
-  int backendNodeId = 0;
+  /// the front-end. Use native pointer address when available.
+  int get backendNodeId => referencedNode.pointer?.address ?? 0;
 
   /// [Node]'s nodeType.
   int get nodeType => getNodeTypeValue(referencedNode.nodeType);
 
-  /// Node's nodeName.
-  String get nodeName => referencedNode.nodeName.toLowerCase();
+  /// Node's nodeName (CDP expects uppercase tag for HTML elements).
+  String get nodeName => referencedNode.nodeName;
 
   /// Node's localName.
-  String? localName;
+  String? get localName => referencedNode is Element
+      ? (referencedNode as Element).tagName.toLowerCase()
+      : null;
 
   /// Node's nodeValue.
   String get nodeValue {

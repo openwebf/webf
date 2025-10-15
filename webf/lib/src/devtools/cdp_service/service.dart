@@ -21,9 +21,12 @@ import 'package:shelf/shelf_io.dart' as io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:webf/webf.dart';
+import 'package:webf/dom.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/dom.dart';
 import 'modules/page.dart';
+import 'modules/dom.dart';
 import 'debugging_context.dart';
 import 'inspector.dart'; // Import for DOMClearEvent and DOMEmptyDocumentEvent
 import 'modules/css.dart';
@@ -86,40 +89,107 @@ abstract class DevToolsService {
     // Incremental mutation callbacks (only used by new DOM incremental update logic).
     context.debugChildNodeInserted = (parent, node, previousSibling) {
       if (this is ChromeDevToolsService) {
+        // Ensure the parent has an established children list in DevTools.
+        try {
+          final pId = context.forDevtoolsNodeId(parent);
+          if (!ChromeDevToolsService.unifiedService._isParentSeeded(pId)) {
+            final children = <Map>[];
+            for (final c in parent.childNodes) {
+              if (c is Element || (c is TextNode && c.data.isNotEmpty)) {
+                children.add(InspectorNode(c).toJson());
+              }
+            }
+            ChromeDevToolsService.unifiedService.sendEventToFrontend(
+                DOMSetChildNodesEvent(parentId: pId, nodes: children));
+            if (DebugFlags.enableDevToolsProtocolLogs) {
+              try {
+                final ids = children.map((m) => m['nodeId']).toList();
+                devToolsProtocolLogger.finer(
+                    '[DevTools] -> DOM.setChildNodes parent=$pId count=${children.length} (seed) ids=$ids');
+              } catch (_) {
+                devToolsProtocolLogger
+                    .finer('[DevTools] -> DOM.setChildNodes parent=$pId count=${children.length} (seed)');
+              }
+            }
+            ChromeDevToolsService.unifiedService._markParentSeeded(pId);
+          }
+        } catch (_) {}
+        if (DebugFlags.enableDevToolsProtocolLogs) {
+          try {
+            final pId = context.forDevtoolsNodeId(parent);
+            final nId = context.forDevtoolsNodeId(node);
+            final prevId = previousSibling != null ? context.forDevtoolsNodeId(previousSibling) : 0;
+            final name = node.nodeName;
+            devToolsProtocolLogger.finer(
+                '[DevTools] -> DOM.childNodeInserted parent=$pId prev=$prevId node=$nId name=$name');
+          } catch (_) {}
+        }
         ChromeDevToolsService.unifiedService
             .sendEventToFrontend(DOMChildNodeInsertedEvent(
           parent: parent,
           node: node,
           previousSibling: previousSibling,
         ));
-        if (DebugFlags.enableDevToolsProtocolLogs) {
-          devToolsProtocolLogger.finer('[DevTools] -> DOM.childNodeInserted');
-        }
       }
     };
     context.debugChildNodeRemoved = (parent, node) {
       if (this is ChromeDevToolsService) {
+        // Ensure the parent has an established children list in DevTools.
+        try {
+          final pId = context.forDevtoolsNodeId(parent);
+          if (!ChromeDevToolsService.unifiedService._isParentSeeded(pId)) {
+            final children = <Map>[];
+            for (final c in parent.childNodes) {
+              if (c is Element || (c is TextNode && c.data.isNotEmpty)) {
+                children.add(InspectorNode(c).toJson());
+              }
+            }
+            ChromeDevToolsService.unifiedService.sendEventToFrontend(
+                DOMSetChildNodesEvent(parentId: pId, nodes: children));
+            if (DebugFlags.enableDevToolsProtocolLogs) {
+              try {
+                final ids = children.map((m) => m['nodeId']).toList();
+                devToolsProtocolLogger.finer(
+                    '[DevTools] -> DOM.setChildNodes parent=$pId count=${children.length} (seed) ids=$ids');
+              } catch (_) {
+                devToolsProtocolLogger
+                    .finer('[DevTools] -> DOM.setChildNodes parent=$pId count=${children.length} (seed)');
+              }
+            }
+            ChromeDevToolsService.unifiedService._markParentSeeded(pId);
+          }
+        } catch (_) {}
+        if (DebugFlags.enableDevToolsProtocolLogs) {
+          try {
+            final pId = context.forDevtoolsNodeId(parent);
+            final nId = context.forDevtoolsNodeId(node);
+            final name = node.nodeName;
+            devToolsProtocolLogger
+                .finer('[DevTools] -> DOM.childNodeRemoved parent=$pId node=$nId name=$name');
+          } catch (_) {}
+        }
         ChromeDevToolsService.unifiedService
             .sendEventToFrontend(DOMChildNodeRemovedEvent(
           parent: parent,
           node: node,
         ));
-        if (DebugFlags.enableDevToolsProtocolLogs) {
-          devToolsProtocolLogger.finer('[DevTools] -> DOM.childNodeRemoved');
-        }
       }
     };
     context.debugAttributeModified = (element, name, value) {
       if (this is ChromeDevToolsService) {
+        if (DebugFlags.enableDevToolsProtocolLogs) {
+          try {
+            final id = context.forDevtoolsNodeId(element);
+            devToolsProtocolLogger
+                .finer('[DevTools] -> DOM.attributeModified node=$id name=$name value=${value ?? ''}');
+          } catch (_) {}
+        }
         ChromeDevToolsService.unifiedService
             .sendEventToFrontend(DOMAttributeModifiedEvent(
           element: element,
           name: name,
           value: value,
         ));
-        if (DebugFlags.enableDevToolsProtocolLogs) {
-          devToolsProtocolLogger.finer('[DevTools] -> DOM.attributeModified name=$name');
-        }
         // Also notify CSS module tracking that the element's computed style may be updated
         final cssModule = uiInspector?.moduleRegistrar['CSS'];
         if (cssModule is InspectCSSModule) {
@@ -147,13 +217,20 @@ abstract class DevToolsService {
     };
     context.debugCharacterDataModified = (textNode) {
       if (this is ChromeDevToolsService) {
+        if (DebugFlags.enableDevToolsProtocolLogs) {
+          try {
+            final id = context.forDevtoolsNodeId(textNode);
+            final preview = textNode.data.length > 30
+                ? textNode.data.substring(0, 30) + '…'
+                : textNode.data;
+            devToolsProtocolLogger
+                .finer('[DevTools] -> DOM.characterDataModified node=$id data="$preview"');
+          } catch (_) {}
+        }
         ChromeDevToolsService.unifiedService
             .sendEventToFrontend(DOMCharacterDataModifiedEvent(
           node: textNode,
         ));
-        if (DebugFlags.enableDevToolsProtocolLogs) {
-          devToolsProtocolLogger.finer('[DevTools] -> DOM.characterDataModified');
-        }
         final cssModule = uiInspector?.moduleRegistrar['CSS'];
         if (cssModule is InspectCSSModule) {
           final nodeId = context.forDevtoolsNodeId(textNode);
@@ -291,6 +368,9 @@ class UnifiedChromeDevToolsService {
 
   // Flag to indicate if we're in the middle of a context switch
   bool _isContextSwitching = false;
+
+  // Track which parent nodes have had their child lists seeded to the frontend
+  final Set<int> _seededParentIds = {};
 
   // Queue of incoming messages (decoded) received before a context exists, to replay after first context selection.
   final List<Map<String, dynamic>> _preContextMessageQueue = [];
@@ -459,12 +539,14 @@ class UnifiedChromeDevToolsService {
     if (isContextSwitch) {
       Future.delayed(Duration(milliseconds: 200), () {
         _isContextSwitching = false; // Clear the switching flag
+        _seededParentIds.clear();
         sendEventToFrontend(DOMUpdatedEvent());
       });
     } else {
       _isContextSwitching = false; // Ensure flag is cleared
       // Send DOM update immediately for new context attach
       Future.delayed(Duration(milliseconds: 100), () {
+        _seededParentIds.clear();
         sendEventToFrontend(DOMUpdatedEvent());
       });
     }
@@ -992,15 +1074,6 @@ class UnifiedChromeDevToolsService {
     final message = jsonEncode(response);
 
     connection?.sink.add(message);
-    if (DebugFlags.enableDevToolsProtocolLogs) {
-      final preview = () {
-        try {
-          final s = jsonEncode(result);
-          return s.length > 300 ? s.substring(0, 300) + '…' : s;
-        } catch (_) { return '<result>'; }
-      }();
-      devToolsProtocolLogger.finer('[DevTools] -> (resp) id=$id result=$preview');
-    }
   }
 
   void _sendErrorResponse(String connectionId, int? id, String message) {
@@ -1037,12 +1110,6 @@ class UnifiedChromeDevToolsService {
         print('Error sending event: $e');
       }
     }
-    if (DebugFlags.enableDevToolsProtocolLogs) {
-      try {
-        final m = event.method;
-        devToolsProtocolLogger.finer('[DevTools] -> $m');
-      } catch (_) {}
-    }
   }
 
   void sendMethodResult(int id, Map<String, dynamic> result) {
@@ -1062,9 +1129,6 @@ class UnifiedChromeDevToolsService {
         print('Error sending result: $e');
       }
     }
-    if (DebugFlags.enableDevToolsProtocolLogs) {
-      devToolsProtocolLogger.finer('[DevTools] -> (resp-broadcast) id=$id');
-    }
   }
 
   void _broadcastTargetListUpdate() {
@@ -1077,13 +1141,11 @@ class UnifiedChromeDevToolsService {
   void _sendDOMClearEvent() {
     // Set context switching flag
     _isContextSwitching = true;
+    _seededParentIds.clear();
 
     // Send DOM.documentUpdated to clear the existing DOM tree
     // Chrome DevTools will then request DOM.getDocument, and we can return empty/null
     sendEventToFrontend(DOMClearEvent());
-    if (DebugFlags.enableDevToolsProtocolLogs) {
-      devToolsProtocolLogger.finer('[DevTools] -> DOM.documentUpdated (clear)');
-    }
   }
 
   /// Public method to clear DOM panel (called from controller detach)
@@ -1111,6 +1173,10 @@ class UnifiedChromeDevToolsService {
 
   /// Returns true if currently switching between contexts
   bool get isContextSwitching => _isContextSwitching;
+
+  // Parent seed tracking helpers
+  bool _isParentSeeded(int nodeId) => _seededParentIds.contains(nodeId);
+  void _markParentSeeded(int nodeId) => _seededParentIds.add(nodeId);
 
   // Backward compatibility
   WebFController? get currentController {

@@ -194,9 +194,6 @@ class InspectPageModule extends UIInspectorModule {
 
   @override
   void receiveFromFrontend(int? id, String method, Map<String, dynamic>? params) async {
-    if (DebugFlags.enableDevToolsLogs) {
-      devToolsLogger.fine('[DevTools] Page.$method');
-    }
     switch (method) {
       case 'getResourceTree':
         handleGetFrameResourceTree(id, params!);
@@ -205,16 +202,10 @@ class InspectPageModule extends UIInspectorModule {
         sendToFrontend(id, null);
         _devToolsMaxWidth = params?['maxWidth'] ?? 0;
         _devToolsMaxHeight = params?['maxHeight'] ?? 0;
-        if (DebugFlags.enableDevToolsLogs) {
-          devToolsLogger.info('[DevTools] Page.startScreencast max=${_devToolsMaxWidth}x${_devToolsMaxHeight}');
-        }
         startScreenCast();
         break;
       case 'stopScreencast':
         sendToFrontend(id, null);
-        if (DebugFlags.enableDevToolsLogs) {
-          devToolsLogger.info('[DevTools] Page.stopScreencast');
-        }
         stopScreenCast();
         break;
       case 'screencastFrameAck':

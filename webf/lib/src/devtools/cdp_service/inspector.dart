@@ -47,9 +47,11 @@ class DOMChildNodeInsertedEvent extends InspectorEvent {
   @override
   JSONEncodable? get params => JSONEncodableMap({
         'parentNodeId': parent.ownerView.forDevtoolsNodeId(parent),
+        // Chrome DevTools expects a numeric NodeId here. For insert-as-first-child,
+        // use 0 instead of null to ensure the event is applied.
         'previousNodeId': previousSibling != null
             ? parent.ownerView.forDevtoolsNodeId(previousSibling!)
-            : null,
+            : 0,
         'node': InspectorNode(node).toJson(),
       });
 }
@@ -117,6 +119,23 @@ class DOMCharacterDataModifiedEvent extends InspectorEvent {
   JSONEncodable? get params => JSONEncodableMap({
         'nodeId': node.ownerView.forDevtoolsNodeId(node),
         'characterData': node.data,
+      });
+}
+
+// Event to seed the children list of a parent node
+class DOMSetChildNodesEvent extends InspectorEvent {
+  final int parentId;
+  final List<Map> nodes;
+
+  DOMSetChildNodesEvent({required this.parentId, required this.nodes});
+
+  @override
+  String get method => 'DOM.setChildNodes';
+
+  @override
+  JSONEncodable? get params => JSONEncodableMap({
+        'parentId': parentId,
+        'nodes': nodes,
       });
 }
 
@@ -196,9 +215,6 @@ class UIInspector {
 
   void messageRouter(
       int? id, String module, String method, Map<String, dynamic>? params) {
-    if (DebugFlags.enableDevToolsLogs) {
-      devToolsLogger.fine('[DevTools] route -> $module.$method');
-    }
     if (moduleRegistrar.containsKey(module)) {
       moduleRegistrar[module]!.invoke(id, method, params);
     }
