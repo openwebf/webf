@@ -26,6 +26,7 @@ import 'package:webf/foundation.dart';
 import 'modules/page.dart';
 import 'debugging_context.dart';
 import 'inspector.dart'; // Import for DOMClearEvent and DOMEmptyDocumentEvent
+import 'modules/css.dart';
 
 /// Abstract base class for implementing DevTools debugging services for WebF content.
 ///
@@ -119,6 +120,12 @@ abstract class DevToolsService {
         if (DebugFlags.enableDevToolsProtocolLogs) {
           devToolsProtocolLogger.finer('[DevTools] -> DOM.attributeModified name=$name');
         }
+        // Also notify CSS module tracking that the element's computed style may be updated
+        final cssModule = uiInspector?.moduleRegistrar['CSS'];
+        if (cssModule is InspectCSSModule) {
+          final nodeId = context.forDevtoolsNodeId(element);
+          cssModule.markComputedStyleDirtyByNodeId(nodeId);
+        }
       }
     };
     context.debugAttributeRemoved = (element, name) {
@@ -131,6 +138,11 @@ abstract class DevToolsService {
         if (DebugFlags.enableDevToolsProtocolLogs) {
           devToolsProtocolLogger.finer('[DevTools] -> DOM.attributeRemoved name=$name');
         }
+        final cssModule = uiInspector?.moduleRegistrar['CSS'];
+        if (cssModule is InspectCSSModule) {
+          final nodeId = context.forDevtoolsNodeId(element);
+          cssModule.markComputedStyleDirtyByNodeId(nodeId);
+        }
       }
     };
     context.debugCharacterDataModified = (textNode) {
@@ -141,6 +153,11 @@ abstract class DevToolsService {
         ));
         if (DebugFlags.enableDevToolsProtocolLogs) {
           devToolsProtocolLogger.finer('[DevTools] -> DOM.characterDataModified');
+        }
+        final cssModule = uiInspector?.moduleRegistrar['CSS'];
+        if (cssModule is InspectCSSModule) {
+          final nodeId = context.forDevtoolsNodeId(textNode);
+          cssModule.markComputedStyleDirtyByNodeId(nodeId);
         }
       }
     };

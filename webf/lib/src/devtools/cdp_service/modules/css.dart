@@ -21,6 +21,19 @@ class InspectCSSModule extends UIInspectorModule {
 
   InspectCSSModule(DevToolsService devtoolsService) : super(devtoolsService);
 
+  // Tracking support for CSS.computedStyleUpdates
+  bool _trackComputedUpdates = false;
+  final Set<int> _pendingComputedUpdates = <int>{};
+
+  void _trackNodeComputedUpdate(int nodeId) {
+    if (_trackComputedUpdates) {
+      _pendingComputedUpdates.add(nodeId);
+    }
+  }
+
+  // Exposed for other modules to signal a node's computed style may have changed.
+  void markComputedStyleDirtyByNodeId(int nodeId) => _trackNodeComputedUpdate(nodeId);
+
   @override
   String get name => 'CSS';
 
@@ -31,19 +44,20 @@ class InspectCSSModule extends UIInspectorModule {
         handleGetMatchedStylesForNode(id, params!);
         break;
       case 'trackComputedStyleUpdates':
-        // Ack tracking request; we don't push updates proactively yet.
+        _trackComputedUpdates = true;
         sendToFrontend(id, JSONEncodableMap({}));
         break;
       case 'takeComputedStyleUpdates':
-        // Return empty until we wire incremental updates.
-        sendToFrontend(id, JSONEncodableMap({'computedStyleUpdates': <int>[]}));
+        final updates = _pendingComputedUpdates.toList();
+        _pendingComputedUpdates.clear();
+        sendToFrontend(id, JSONEncodableMap({'computedStyleUpdates': updates}));
         break;
       case 'trackComputedStyleUpdatesForNode':
-        // Chrome may probe this; respond with ack.
+        final nodeId = params?['nodeId'];
+        if (nodeId is int) _trackNodeComputedUpdate(nodeId);
         sendToFrontend(id, JSONEncodableMap({}));
         break;
       case 'getEnvironmentVariables':
-        // Not supported; return empty set to satisfy UI queries.
         sendToFrontend(id, JSONEncodableMap({'variables': <Map<String, String>>[]}));
         break;
       case 'getAnimatedStylesForNode':
@@ -147,17 +161,25 @@ class InspectCSSModule extends UIInspectorModule {
       // Use styleSheetId to identify element (handles inline:<nodeId> or numeric).
       final dynamic rawStyleSheetId = edit['styleSheetId'];
       int? nodeId;
+      int? frontendNodeId;
       if (rawStyleSheetId is int) {
+        frontendNodeId = rawStyleSheetId;
         nodeId = ctx.getTargetIdByNodeId(rawStyleSheetId);
       } else if (rawStyleSheetId is String) {
         String sid = rawStyleSheetId;
         if (sid.startsWith('inline:')) {
           final String rest = sid.substring('inline:'.length);
           final int? nid = int.tryParse(rest);
-          if (nid != null) nodeId = ctx.getTargetIdByNodeId(nid);
+          if (nid != null) {
+            frontendNodeId = nid;
+            nodeId = ctx.getTargetIdByNodeId(nid);
+          }
         } else {
           final int? nid = int.tryParse(sid);
-          if (nid != null) nodeId = ctx.getTargetIdByNodeId(nid);
+          if (nid != null) {
+            frontendNodeId = nid;
+            nodeId = ctx.getTargetIdByNodeId(nid);
+          }
         }
       }
       String text = edit['text'] ?? '';
@@ -178,6 +200,9 @@ class InspectCSSModule extends UIInspectorModule {
           }
         }
         styles.add(buildInlineStyle(element));
+        if (frontendNodeId != null) {
+          _trackNodeComputedUpdate(frontendNodeId);
+        }
       } else {
         styles.add(null);
       }
@@ -295,7 +320,8 @@ class InspectCSSModule extends UIInspectorModule {
       sendToFrontend(id, null);
       return;
     }
-    int? nodeId = params['nodeId'] != null ? ctx.getTargetIdByNodeId(params['nodeId']) : null;
+    final int? frontendNodeIdParam = params['nodeId'] as int?;
+    int? nodeId = frontendNodeIdParam != null ? ctx.getTargetIdByNodeId(frontendNodeIdParam) : null;
     String? propertyName = params['propertyName'];
     String? value = params['value'];
 
@@ -307,6 +333,9 @@ class InspectCSSModule extends UIInspectorModule {
     }
 
     sendToFrontend(id, null);
+    if (frontendNodeIdParam != null) {
+      _trackNodeComputedUpdate(frontendNodeIdParam);
+    }
   }
 }
 

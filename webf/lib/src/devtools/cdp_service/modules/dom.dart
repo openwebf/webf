@@ -11,6 +11,7 @@ import 'package:webf/rendering.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
+import 'package:webf/src/devtools/cdp_service/modules/css.dart';
 import 'package:webf/foundation.dart';
 
 const int DOCUMENT_NODE_ID = 0;
@@ -155,6 +156,11 @@ class InspectDOMModule extends UIInspectorModule {
     }
     if (node != null) {
       inspectedNode = node;
+      // Signal CSS module that computed style for this node may need refresh
+      final cssModule = devtoolsService.uiInspector?.moduleRegistrar['CSS'];
+      if (cssModule is InspectCSSModule) {
+        cssModule.markComputedStyleDirtyByNodeId(nodeId);
+      }
     }
     sendToFrontend(id, null);
   }
