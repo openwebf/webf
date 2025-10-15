@@ -1,53 +1,65 @@
-describe("css id selector", () => {
-  it("001", async () => {
-    const style = <style>{`#div1 { color: green; }`}</style>;
-    const div = <div id="div1">001 green Filler Text</div>;
-    
+describe('css id selector', () => {
+  it('001', async () => {
+    const style = document.createElement('style');
+    style.textContent = '#div1 { color: green; }';
+    const div = document.createElement('div');
+    div.id = 'div1';
+    div.textContent = '001 green Filler Text';
     document.head.appendChild(style);
     document.body.appendChild(div);
     await snapshot();
   });
 
-  it("002", async () => {
-    const style = <style>{`# div1 { color: green; }`}</style>;
-    const div = <div id="div1">002 black Filler Text</div>;
-    
+  it('002', async () => {
+    const style = document.createElement('style');
+    style.textContent = '# div1 { color: green; }';
+    const div = document.createElement('div');
+    div.id = 'div1';
+    div.textContent = '002 black Filler Text';
     document.head.appendChild(style);
     document.body.appendChild(div);
     await snapshot();
   });
 
-  it("003", async () => {
-    const style = <style>{`div { color: red; } #-div1 { color: green; }`}</style>;
-    const div = <div id="-div1">003 green Filler Text</div>;
-    
+  it('003', async () => {
+    const style = document.createElement('style');
+    style.textContent = 'div { color: red; } #-div1 { color: green; }';
+    const div = document.createElement('div');
+    div.id = '-div1';
+    div.textContent = '003 green Filler Text';
     document.head.appendChild(style);
     document.body.appendChild(div);
     await snapshot();
   });
 
-  xit("004", async () => {
-    const style = <style>{`#1digit { color: red; }`}</style>;
-    const div = <div id="1digit">004 black Filler Text</div>;
-    
+  it('004', async () => {
+    const style = document.createElement('style');
+    style.textContent = '#1digit { color: red; }';
+    const div = document.createElement('div');
+    div.id = '1digit';
+    div.textContent = '004 black Filler Text';
     document.head.appendChild(style);
     document.body.appendChild(div);
     await snapshot();
   });
 
-  it("005", async () => {
-    const style = <style>{`div[id=div1] { color: red; } div#div1 { color: green; }`}</style>;
-    const div = <div id="div1">005 green Filler Text</div>;
-    
+  it('005', async () => {
+    const style = document.createElement('style');
+    style.textContent = 'div[id=div1] { color: red; } div#div1 { color: green; }';
+    const div = document.createElement('div');
+    div.id = 'div1';
+    div.textContent = '005 green Filler Text';
     document.head.appendChild(style);
     document.body.appendChild(div);
     await snapshot();
   });
 
-  it("006", async () => {
-    const style = <style>{`div[id=div1] { color: red; } div#div1 { color: green; }`}</style>;
-    const div = <div id="div1">006 green Filler Text</div>;
-    
+  it('006', async () => {
+    const style = document.createElement('style');
+    style.textContent = 'div[id=div1] { color: red; } div#div1 { color: green; }';
+    const div = document.createElement('div');
+    div.id = 'div1';
+    div.textContent = '006 green Filler Text';
     document.head.appendChild(style);
     document.body.appendChild(div);
     await snapshot();
