@@ -14,6 +14,9 @@ abstract class _InspectorModule {
   bool _enable = false;
 
   void invoke(int? id, String method, Map<String, dynamic>? params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] ${name}.$method id=${id ?? '-'}');
+    }
     switch (method) {
       case 'enable':
         _enable = true;
@@ -86,6 +89,9 @@ abstract class UIInspectorModule extends _InspectorModule {
       // Cast the Map to ensure it's Map<String, dynamic>
       ChromeDevToolsService.unifiedService
           .sendMethodResult(id ?? 0, Map<String, dynamic>.from(resultMap));
+      if (DebugFlags.enableDevToolsProtocolLogs) {
+        devToolsProtocolLogger.finer('[DevTools] -> (module resp) ${name} id=${id ?? '-'}');
+      }
     }
   }
 
@@ -94,6 +100,9 @@ abstract class UIInspectorModule extends _InspectorModule {
     // For the unified service, send directly through the service
     if (devtoolsService is ChromeDevToolsService) {
       ChromeDevToolsService.unifiedService.sendEventToFrontend(event);
+      if (DebugFlags.enableDevToolsProtocolLogs) {
+        devToolsProtocolLogger.finer('[DevTools] -> (module event) ${event.method}');
+      }
     }
   }
 

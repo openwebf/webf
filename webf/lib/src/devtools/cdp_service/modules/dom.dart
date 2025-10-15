@@ -11,6 +11,7 @@ import 'package:webf/rendering.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
+import 'package:webf/foundation.dart';
 
 const int DOCUMENT_NODE_ID = 0;
 const String DEFAULT_FRAME_ID = 'main_frame';
@@ -30,6 +31,9 @@ class InspectDOMModule extends UIInspectorModule {
   @override
   void receiveFromFrontend(
       int? id, String method, Map<String, dynamic>? params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] DOM.$method');
+    }
     switch (method) {
       case 'getDocument':
         onGetDocument(id, method, params);
@@ -73,6 +77,9 @@ class InspectDOMModule extends UIInspectorModule {
   }
 
   void onGetNodeForLocation(int? id, Map<String, dynamic> params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] DOM.getNodeForLocation x=${params['x']} y=${params['y']}');
+    }
     int x = params['x'];
     int y = params['y'];
 
@@ -132,6 +139,9 @@ class InspectDOMModule extends UIInspectorModule {
   Node? inspectedNode;
 
   void onSetInspectedNode(int? id, Map<String, dynamic> params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] DOM.setInspectedNode nodeId=${params['nodeId']}');
+    }
     int? nodeId = params['nodeId'];
     final ctx = dbgContext;
     if (nodeId == null || ctx == null) {
@@ -151,6 +161,9 @@ class InspectDOMModule extends UIInspectorModule {
 
   /// https://chromedevtools.github.io/devtools-protocol/tot/DOM/#method-getDocument
   void onGetDocument(int? id, String method, Map<String, dynamic>? params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] DOM.getDocument');
+    }
     // Check if we're using the unified service and if it's in the middle of a context switch
     if (devtoolsService is ChromeDevToolsService) {
       final unifiedService = ChromeDevToolsService.unifiedService;
@@ -180,6 +193,9 @@ class InspectDOMModule extends UIInspectorModule {
   }
 
   void onGetBoxModel(int? id, Map<String, dynamic> params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] DOM.getBoxModel nodeId=${params['nodeId']}');
+    }
     int? nodeId = params['nodeId'];
     final ctx = dbgContext;
     if (nodeId == null || ctx == null) {
@@ -265,6 +281,9 @@ class InspectDOMModule extends UIInspectorModule {
   }
 
   void onRemoveNode(int? id, Map<String, dynamic> params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] DOM.removeNode nodeId=${params['nodeId']}');
+    }
     int? nodeId = params['nodeId'];
     final ctx = dbgContext;
     if (nodeId == null || ctx == null) {
@@ -283,6 +302,9 @@ class InspectDOMModule extends UIInspectorModule {
   }
 
   void onSetAttributesAsText(int? id, Map<String, dynamic> params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] DOM.setAttributesAsText nodeId=${params['nodeId']}');
+    }
     int? nodeId = params['nodeId'];
     String? text = params['text'];
     final ctx = dbgContext;
@@ -314,6 +336,9 @@ class InspectDOMModule extends UIInspectorModule {
   }
 
   void onGetOuterHTML(int? id, Map<String, dynamic> params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] DOM.getOuterHTML nodeId=${params['nodeId']}');
+    }
     int? nodeId = params['nodeId'];
     final ctx = dbgContext;
     if (nodeId == null || ctx == null) return;
@@ -362,6 +387,9 @@ class InspectDOMModule extends UIInspectorModule {
   }
 
   void onSetNodeValue(int? id, Map<String, dynamic> params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] DOM.setNodeValue nodeId=${params['nodeId']}');
+    }
     int? nodeId = params['nodeId'];
     String? value = params['value'];
     final ctx = dbgContext;

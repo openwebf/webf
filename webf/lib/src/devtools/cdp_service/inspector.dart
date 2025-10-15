@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:webf/devtools.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 
 const String INSPECTOR_URL = 'devtools://devtools/bundled/inspector.html';
 const int INSPECTOR_DEFAULT_PORT = 9222;
@@ -188,10 +189,16 @@ class UIInspector {
     print('WebF DevTool listening at ws://$remoteAddress:$port');
     print('Open Chrome/Edge and enter following url to your navigator:');
     print('    $inspectorURL');
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.info('[DevTools] Server started ws=$remoteAddress:$port');
+    }
   }
 
   void messageRouter(
       int? id, String module, String method, Map<String, dynamic>? params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] route -> $module.$method');
+    }
     if (moduleRegistrar.containsKey(module)) {
       moduleRegistrar[module]!.invoke(id, method, params);
     }
@@ -202,6 +209,9 @@ class UIInspector {
     if (devtoolsService is ChromeDevToolsService) {
       ChromeDevToolsService.unifiedService
           .sendEventToFrontend(DOMUpdatedEvent());
+      if (DebugFlags.enableDevToolsProtocolLogs) {
+        devToolsProtocolLogger.finer('[DevTools] -> DOM.documentUpdated (treeChanged)');
+      }
     } else {}
   }
 

@@ -8,6 +8,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
+import 'package:webf/foundation.dart';
 
 class InspectOverlayModule extends UIInspectorModule {
   @override
@@ -22,6 +23,9 @@ class InspectOverlayModule extends UIInspectorModule {
 
   @override
   void receiveFromFrontend(int? id, String method, Map<String, dynamic>? params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] Overlay.$method');
+    }
     switch (method) {
       case 'highlightNode':
         onHighlightNode(id, params!);

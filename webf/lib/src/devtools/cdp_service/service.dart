@@ -22,6 +22,7 @@ import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
+import 'package:webf/foundation.dart';
 import 'modules/page.dart';
 import 'debugging_context.dart';
 import 'inspector.dart'; // Import for DOMClearEvent and DOMEmptyDocumentEvent
@@ -76,6 +77,9 @@ abstract class DevToolsService {
     _contextDevToolMap[context.contextId] = this;
     _context = context;
     _uiInspector = UIInspector(this);
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] initWithContext: ctx=${context.contextId} url=${context.url ?? ''}');
+    }
     // Legacy full refresh callback
     context.debugDOMTreeChanged = () => uiInspector!.onDOMTreeChanged();
     // Incremental mutation callbacks (only used by new DOM incremental update logic).
@@ -87,6 +91,9 @@ abstract class DevToolsService {
           node: node,
           previousSibling: previousSibling,
         ));
+        if (DebugFlags.enableDevToolsProtocolLogs) {
+          devToolsProtocolLogger.finer('[DevTools] -> DOM.childNodeInserted');
+        }
       }
     };
     context.debugChildNodeRemoved = (parent, node) {
@@ -96,6 +103,9 @@ abstract class DevToolsService {
           parent: parent,
           node: node,
         ));
+        if (DebugFlags.enableDevToolsProtocolLogs) {
+          devToolsProtocolLogger.finer('[DevTools] -> DOM.childNodeRemoved');
+        }
       }
     };
     context.debugAttributeModified = (element, name, value) {
@@ -106,6 +116,9 @@ abstract class DevToolsService {
           name: name,
           value: value,
         ));
+        if (DebugFlags.enableDevToolsProtocolLogs) {
+          devToolsProtocolLogger.finer('[DevTools] -> DOM.attributeModified name=$name');
+        }
       }
     };
     context.debugAttributeRemoved = (element, name) {
@@ -115,6 +128,9 @@ abstract class DevToolsService {
           element: element,
           name: name,
         ));
+        if (DebugFlags.enableDevToolsProtocolLogs) {
+          devToolsProtocolLogger.finer('[DevTools] -> DOM.attributeRemoved name=$name');
+        }
       }
     };
     context.debugCharacterDataModified = (textNode) {
@@ -123,6 +139,9 @@ abstract class DevToolsService {
             .sendEventToFrontend(DOMCharacterDataModifiedEvent(
           node: textNode,
         ));
+        if (DebugFlags.enableDevToolsProtocolLogs) {
+          devToolsProtocolLogger.finer('[DevTools] -> DOM.characterDataModified');
+        }
       }
     };
   }
@@ -163,6 +182,9 @@ abstract class DevToolsService {
     if (this is ChromeDevToolsService) {
       ChromeDevToolsService.unifiedService
           .sendEventToFrontend(DOMUpdatedEvent());
+      if (DebugFlags.enableDevToolsProtocolLogs) {
+        devToolsProtocolLogger.finer('[DevTools] -> DOM.documentUpdated (didReload)');
+      }
     }
   }
 
@@ -171,6 +193,9 @@ abstract class DevToolsService {
   /// Cleans up the UI inspector, removes context mappings, and terminates
   /// the inspector isolate server.
   void dispose() {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] dispose context=${_context?.contextId}');
+    }
     _uiInspector?.dispose();
     if (_context != null) {
       _contextDevToolMap.remove(_context!.contextId);
@@ -267,6 +292,9 @@ class UnifiedChromeDevToolsService {
   void _registerContext(
       DebuggingContext context, ChromeDevToolsService service) {
     _contextServices[context] = service;
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] register context=${context.contextId} total=${_contextServices.length}');
+    }
 
     // If this context comes from a controller, track the mapping
     if (context is WebFControllerDebuggingAdapter) {
@@ -284,6 +312,9 @@ class UnifiedChromeDevToolsService {
 
   void _unregisterContext(DebuggingContext context) {
     _contextServices.remove(context);
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] unregister context=${context.contextId} remaining=${_contextServices.length}');
+    }
 
     // Remove controller mapping if exists
     if (context is WebFControllerDebuggingAdapter) {
@@ -316,6 +347,9 @@ class UnifiedChromeDevToolsService {
 
     // If switching between different contexts, clear DOM first
     bool isContextSwitch = _currentContext != null && _currentContext != context;
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] select context=${context.contextId} switch=$isContextSwitch');
+    }
     if (isContextSwitch) {
       _sendDOMClearEvent();
     }
@@ -443,6 +477,9 @@ class UnifiedChromeDevToolsService {
 
     _address = address ?? _address;
     _port = port ?? _port;
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.info('[DevTools] Starting CDP server address=$_address port=$_port');
+    }
 
     // Initialize modules
     _initializeModules();
@@ -456,6 +493,9 @@ class UnifiedChromeDevToolsService {
   /// Stop the DevTools server
   Future<void> stop() async {
     if (!_isRunning) return;
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.info('[DevTools] Stopping CDP server');
+    }
 
     // Close all WebSocket connections
     for (final connection in _connections.values) {
@@ -561,6 +601,9 @@ class UnifiedChromeDevToolsService {
 
   Future<shelf.Response> _handleRequest(shelf.Request request) async {
     final path = request.url.path;
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] HTTP ${request.method} /$path');
+    }
 
     if (path == '') {
       final handler = webSocketHandler(_handleWebSocket);
@@ -573,15 +616,24 @@ class UnifiedChromeDevToolsService {
   void _handleWebSocket(WebSocketChannel webSocket) {
     final connectionId = DateTime.now().millisecondsSinceEpoch.toString();
     _connections[connectionId] = webSocket;
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.info('[DevTools] WS connected id=$connectionId active=${_connections.length}');
+    }
 
     webSocket.stream.listen(
       (message) => _handleWebSocketMessage(connectionId, message),
       onError: (error) {
         print('WebSocket error: $error');
         _connections.remove(connectionId);
+        if (DebugFlags.enableDevToolsLogs) {
+          devToolsLogger.warning('[DevTools] WS error id=$connectionId err=$error');
+        }
       },
       onDone: () {
         _connections.remove(connectionId);
+        if (DebugFlags.enableDevToolsLogs) {
+          devToolsLogger.info('[DevTools] WS closed id=$connectionId active=${_connections.length}');
+        }
       },
     );
   }
@@ -769,6 +821,9 @@ class UnifiedChromeDevToolsService {
       Map<String, dynamic>? params) {
     switch (method) {
       case 'getTargets':
+        if (DebugFlags.enableDevToolsLogs) {
+          devToolsLogger.fine('[DevTools] Target.getTargets');
+        }
         _sendResponse(connectionId, id, {
           'targetInfos': _getTargetList(),
         });
@@ -777,10 +832,16 @@ class UnifiedChromeDevToolsService {
       case 'setDiscoverTargets':
       case 'setRemoteLocations':
         // Gracefully acknowledge unimplemented Target features so frontend doesn't spam errors pre-context.
+        if (DebugFlags.enableDevToolsLogs) {
+          devToolsLogger.fine('[DevTools] Target.$method');
+        }
         _sendResponse(connectionId, id, {});
         break;
 
       case 'attachToTarget':
+        if (DebugFlags.enableDevToolsLogs) {
+          devToolsLogger.fine('[DevTools] Target.attachToTarget tid=${params?['targetId']}');
+        }
         final targetId = params?['targetId'] as String?;
         if (targetId != null) {
           final context = _findContextById(targetId);
@@ -914,6 +975,15 @@ class UnifiedChromeDevToolsService {
     final message = jsonEncode(response);
 
     connection?.sink.add(message);
+    if (DebugFlags.enableDevToolsProtocolLogs) {
+      final preview = () {
+        try {
+          final s = jsonEncode(result);
+          return s.length > 300 ? s.substring(0, 300) + '…' : s;
+        } catch (_) { return '<result>'; }
+      }();
+      devToolsProtocolLogger.finer('[DevTools] -> (resp) id=$id result=$preview');
+    }
   }
 
   void _sendErrorResponse(String connectionId, int? id, String message) {
@@ -931,6 +1001,9 @@ class UnifiedChromeDevToolsService {
     final result = jsonEncode(response);
 
     connection?.sink.add(result);
+    if (DebugFlags.enableDevToolsProtocolLogs) {
+      devToolsProtocolLogger.finer('[DevTools] -> (error) id=$id $message');
+    }
   }
 
   void sendEventToFrontend(InspectorEvent event) {
@@ -946,6 +1019,12 @@ class UnifiedChromeDevToolsService {
       } catch (e) {
         print('Error sending event: $e');
       }
+    }
+    if (DebugFlags.enableDevToolsProtocolLogs) {
+      try {
+        final m = event.method;
+        devToolsProtocolLogger.finer('[DevTools] -> $m');
+      } catch (_) {}
     }
   }
 
@@ -966,6 +1045,9 @@ class UnifiedChromeDevToolsService {
         print('Error sending result: $e');
       }
     }
+    if (DebugFlags.enableDevToolsProtocolLogs) {
+      devToolsProtocolLogger.finer('[DevTools] -> (resp-broadcast) id=$id');
+    }
   }
 
   void _broadcastTargetListUpdate() {
@@ -982,6 +1064,9 @@ class UnifiedChromeDevToolsService {
     // Send DOM.documentUpdated to clear the existing DOM tree
     // Chrome DevTools will then request DOM.getDocument, and we can return empty/null
     sendEventToFrontend(DOMClearEvent());
+    if (DebugFlags.enableDevToolsProtocolLogs) {
+      devToolsProtocolLogger.finer('[DevTools] -> DOM.documentUpdated (clear)');
+    }
   }
 
   /// Public method to clear DOM panel (called from controller detach)
