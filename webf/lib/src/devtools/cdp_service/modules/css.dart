@@ -128,8 +128,22 @@ class InspectCSSModule extends UIInspectorModule {
     // @TODO: diff the inline style edits.
     // @TODO: support comments for inline style.
     for (Map<String, dynamic> edit in edits) {
-      // Use styleSheetId to identity element.
-      int? nodeId = ctx.getTargetIdByNodeId(edit['styleSheetId']);
+      // Use styleSheetId to identify element (handles inline:<nodeId> or numeric).
+      final dynamic rawStyleSheetId = edit['styleSheetId'];
+      int? nodeId;
+      if (rawStyleSheetId is int) {
+        nodeId = ctx.getTargetIdByNodeId(rawStyleSheetId);
+      } else if (rawStyleSheetId is String) {
+        String sid = rawStyleSheetId;
+        if (sid.startsWith('inline:')) {
+          final String rest = sid.substring('inline:'.length);
+          final int? nid = int.tryParse(rest);
+          if (nid != null) nodeId = ctx.getTargetIdByNodeId(nid);
+        } else {
+          final int? nid = int.tryParse(sid);
+          if (nid != null) nodeId = ctx.getTargetIdByNodeId(nid);
+        }
+      }
       String text = edit['text'] ?? '';
       List<String> texts = text.split(';');
       if (nodeId == null) {
@@ -182,9 +196,8 @@ class InspectCSSModule extends UIInspectorModule {
     }
 
     return CSSStyle(
-        // Absent for user agent stylesheet and user-specified stylesheet rules.
-        // Use hash code id to identity which element the rule belongs to.
-        styleSheetId: element.ownerView.forDevtoolsNodeId(element),
+        // For inline style, provide a string StyleSheetId per CDP expectations.
+        styleSheetId: 'inline:${element.ownerView.forDevtoolsNodeId(element)}',
         cssProperties: cssProperties,
         shorthandEntries: <ShorthandEntry>[],
         cssText: cssText,
@@ -213,9 +226,8 @@ class InspectCSSModule extends UIInspectorModule {
     });
 
     return CSSStyle(
-        // Absent for user agent stylesheet and user-specified stylesheet rules.
-        // Use hash code id to identity which element the rule belongs to.
-        styleSheetId: element.ownerView.forDevtoolsNodeId(element),
+        // For inline style, provide a string StyleSheetId per CDP expectations.
+        styleSheetId: 'inline:${element.ownerView.forDevtoolsNodeId(element)}',
         cssProperties: cssProperties,
         shorthandEntries: <ShorthandEntry>[],
         cssText: cssText,
@@ -313,7 +325,8 @@ class MatchedStyles extends JSONEncodable {
 }
 
 class CSSStyle extends JSONEncodable {
-  int? styleSheetId;
+  // CDP StyleSheetId is a string. For inline styles, we encode as "inline:<nodeId>".
+  String? styleSheetId;
   List<CSSProperty> cssProperties;
   List<ShorthandEntry> shorthandEntries;
   String? cssText;
