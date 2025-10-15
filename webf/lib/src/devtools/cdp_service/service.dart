@@ -89,6 +89,17 @@ abstract class DevToolsService {
     // Incremental mutation callbacks (only used by new DOM incremental update logic).
     context.debugChildNodeInserted = (parent, node, previousSibling) {
       if (this is ChromeDevToolsService) {
+        // Skip whitespace-only text nodes to keep Elements clean
+        try {
+          if (node is TextNode && node.data.trim().isEmpty) {
+            if (DebugFlags.enableDevToolsProtocolLogs) {
+              final pId = context.forDevtoolsNodeId(parent);
+              devToolsProtocolLogger.finer(
+                  '[DevTools] (skip) DOM.childNodeInserted whitespace-only text under parent=$pId');
+            }
+            return;
+          }
+        } catch (_) {}
         // Ensure the parent has an established children list in DevTools.
         try {
           final pId = context.forDevtoolsNodeId(parent);
@@ -134,6 +145,17 @@ abstract class DevToolsService {
     };
     context.debugChildNodeRemoved = (parent, node) {
       if (this is ChromeDevToolsService) {
+        // Skip whitespace-only text nodes (never sent to frontend)
+        try {
+          if (node is TextNode && node.data.trim().isEmpty) {
+            if (DebugFlags.enableDevToolsProtocolLogs) {
+              final pId = context.forDevtoolsNodeId(parent);
+              devToolsProtocolLogger.finer(
+                  '[DevTools] (skip) DOM.childNodeRemoved whitespace-only text under parent=$pId');
+            }
+            return;
+          }
+        } catch (_) {}
         // Ensure the parent has an established children list in DevTools.
         try {
           final pId = context.forDevtoolsNodeId(parent);
@@ -217,6 +239,17 @@ abstract class DevToolsService {
     };
     context.debugCharacterDataModified = (textNode) {
       if (this is ChromeDevToolsService) {
+        // Ignore modifications that make a text node whitespace-only
+        try {
+          if (textNode.data.trim().isEmpty) {
+            if (DebugFlags.enableDevToolsProtocolLogs) {
+              final id = context.forDevtoolsNodeId(textNode);
+              devToolsProtocolLogger
+                  .finer('[DevTools] (skip) DOM.characterDataModified node=$id (whitespace-only)');
+            }
+            return;
+          }
+        } catch (_) {}
         if (DebugFlags.enableDevToolsProtocolLogs) {
           try {
             final id = context.forDevtoolsNodeId(textNode);

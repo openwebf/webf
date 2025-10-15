@@ -104,11 +104,10 @@ class InspectDOMModule extends UIInspectorModule {
       return;
     }
 
-    // Build immediate children list
+    // Build immediate children list (filter whitespace-only text nodes)
     final children = <Map>[];
     for (final child in parent.childNodes) {
-      // Filter to Elements and non-empty Text nodes for readability
-      if (child is Element || (child is TextNode && child.data.isNotEmpty)) {
+      if (child is Element || (child is TextNode && child.data.trim().isNotEmpty)) {
         children.add(InspectorNode(child).toJson());
       }
     }
@@ -628,7 +627,7 @@ class InspectorNode extends JSONEncodable {
         'children': referencedNode.childNodes
             .where((node) {
               return node is Element ||
-                  (node is TextNode && node.data.isNotEmpty);
+                  (node is TextNode && node.data.trim().isNotEmpty);
             })
             .map((Node node) => InspectorNode(node).toJson())
             .toList(),
