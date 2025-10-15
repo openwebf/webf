@@ -30,6 +30,22 @@ class InspectCSSModule extends UIInspectorModule {
       case 'getMatchedStylesForNode':
         handleGetMatchedStylesForNode(id, params!);
         break;
+      case 'trackComputedStyleUpdates':
+        // Ack tracking request; we don't push updates proactively yet.
+        sendToFrontend(id, JSONEncodableMap({}));
+        break;
+      case 'takeComputedStyleUpdates':
+        // Return empty until we wire incremental updates.
+        sendToFrontend(id, JSONEncodableMap({'computedStyleUpdates': <int>[]}));
+        break;
+      case 'trackComputedStyleUpdatesForNode':
+        // Chrome may probe this; respond with ack.
+        sendToFrontend(id, JSONEncodableMap({}));
+        break;
+      case 'getEnvironmentVariables':
+        // Not supported; return empty set to satisfy UI queries.
+        sendToFrontend(id, JSONEncodableMap({'variables': <Map<String, String>>[]}));
+        break;
       case 'getAnimatedStylesForNode':
         sendToFrontend(id, JSONEncodableMap({'animationStyles': [], 'inherited': []}));
         break;
