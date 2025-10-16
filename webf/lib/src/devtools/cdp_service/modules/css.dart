@@ -97,6 +97,9 @@ class InspectCSSModule extends UIInspectorModule {
       case 'collectClassNames':
         handleCollectClassNames(id, params!);
         break;
+      case 'createStyleSheet':
+        handleCreateStyleSheet(id, params ?? const {});
+        break;
     }
   }
 
@@ -279,6 +282,50 @@ class InspectCSSModule extends UIInspectorModule {
     if (frontendNodeId != null) {
       _trackNodeComputedUpdate(frontendNodeId);
     }
+  }
+
+  /// https://chromedevtools.github.io/devtools-protocol/tot/CSS/#method-createStyleSheet
+  /// Creates a new via-inspector stylesheet and attaches it to the document (preferably <head>).
+  /// Returns a StyleSheetId which we encode as "inline:<frontendNodeId>" for the created <style> element.
+  void handleCreateStyleSheet(int? id, Map<String, dynamic> params) {
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, JSONEncodableMap({}));
+      return;
+    }
+
+    final controller = ctx.getController() ?? devtoolsService.controller;
+    final doc = document;
+    if (controller == null || doc == null || doc.documentElement == null) {
+      sendToFrontend(id, JSONEncodableMap({}));
+      return;
+    }
+
+    // Create a new <style> element via the bridge so DevTools incremental events can flow if needed
+    final ptr = allocateNewBindingObject();
+    controller.view.createElement(ptr, 'style');
+    final Element? styleEl = ctx.getBindingObject(ptr) as Element?;
+    if (styleEl == null) {
+      sendToFrontend(id, JSONEncodableMap({}));
+      return;
+    }
+
+    // Attach to <head> if present; otherwise append to <html>
+    Element attachTarget = (doc.documentElement?.querySelector(['head']) as Element?) ?? doc.documentElement!;
+    try {
+      controller.view.insertAdjacentNode(attachTarget.pointer!, 'beforeend', ptr);
+    } catch (_) {
+      // Fallback direct append (no incremental events)
+      attachTarget.appendChild(styleEl);
+    }
+
+    // Build a StyleSheetId consistent with our inline handling
+    final frontendNodeId = ctx.forDevtoolsNodeId(styleEl);
+    final styleSheetId = 'inline:$frontendNodeId';
+    if (DebugFlags.enableDevToolsProtocolLogs) {
+      devToolsProtocolLogger.finer('[DevTools] CSS.createStyleSheet id=$styleSheetId');
+    }
+    sendToFrontend(id, JSONEncodableMap({'styleSheetId': styleSheetId}));
   }
 
   // Adds a CSS rule to a stylesheet. We support only inline stylesheets on <style> elements.
