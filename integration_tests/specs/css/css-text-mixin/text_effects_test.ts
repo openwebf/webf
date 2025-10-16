@@ -28,11 +28,11 @@ describe('CSS Text Effects with Paint Support', () => {
       const rect = gradientText.getBoundingClientRect();
       expect(rect.height).toBeGreaterThan(0);
       expect(rect.width).toBeGreaterThan(0);
-      
+
       // Verify background-clip is applied
       const computedStyle = window.getComputedStyle(gradientText);
       expect(computedStyle.color).toBe('rgba(0, 0, 0, 0)');
-      
+
       await snapshot();
       document.body.removeChild(container);
       done();
@@ -63,7 +63,7 @@ describe('CSS Text Effects with Paint Support', () => {
       const rect = p.getBoundingClientRect();
       expect(rect.height).toBeGreaterThan(0);
       expect(rect.width).toBeGreaterThan(0);
-      
+
       await snapshot();
       document.body.removeChild(container);
       done();
@@ -87,7 +87,7 @@ describe('CSS Text Effects with Paint Support', () => {
 
     const div = container.querySelector('div') as HTMLElement;
     const span = container.querySelector('span') as HTMLElement;
-    
+
     div.style.padding = '10px';
     span.style.display = 'block';
 
@@ -96,7 +96,7 @@ describe('CSS Text Effects with Paint Support', () => {
       const rect = span.getBoundingClientRect();
       expect(rect.height).toBeGreaterThan(0);
       expect(rect.width).toBeGreaterThan(0);
-      
+
       await snapshot();
       document.body.removeChild(container);
       done();
@@ -118,7 +118,7 @@ describe('CSS Text Effects with Paint Support', () => {
         ">
           Combined Text Effects
         </h1>
-        
+
         <p style="
           background: radial-gradient(circle, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
           background-clip: text;
@@ -136,7 +136,7 @@ describe('CSS Text Effects with Paint Support', () => {
 
     const h1 = container.querySelector('h1') as HTMLElement;
     const p = container.querySelector('p') as HTMLElement;
-    
+
     h1.style.margin = '20px 0';
     p.style.margin = '15px 0';
 
@@ -144,12 +144,12 @@ describe('CSS Text Effects with Paint Support', () => {
       // Verify combined effects render correctly
       const h1Rect = h1.getBoundingClientRect();
       const pRect = p.getBoundingClientRect();
-      
+
       expect(h1Rect.height).toBeGreaterThan(0);
       expect(h1Rect.width).toBeGreaterThan(0);
       expect(pRect.height).toBeGreaterThan(0);
       expect(pRect.width).toBeGreaterThan(0);
-      
+
       await snapshot();
       document.body.removeChild(container);
       done();
@@ -183,13 +183,13 @@ describe('CSS Text Effects with Paint Support', () => {
 
       // Change background gradient
       dynamicText.style.background = 'linear-gradient(90deg, #a8edea 0%, #fed6e3 100%)';
-      
+
       requestAnimationFrame(async () => {
         // Verify text still renders with new background
         const rect2 = dynamicText.getBoundingClientRect();
         expect(rect2.height).toBeGreaterThan(0);
         expect(rect2.width).toBeGreaterThan(0);
-        
+
         await snapshot();
         document.body.removeChild(container);
         done();
@@ -203,8 +203,8 @@ describe('CSS Text Effects with Paint Support', () => {
       <div class="gradient-collection">
         ${Array.from({length: 8}, (_, i) => `
           <div class="gradient-item-${i}" style="
-            background: linear-gradient(${45 * i}deg, 
-              hsl(${i * 45}, 70%, 60%), 
+            background: linear-gradient(${45 * i}deg,
+              hsl(${i * 45}, 70%, 60%),
               hsl(${(i * 45 + 120) % 360}, 70%, 60%)
             );
             background-clip: text;
@@ -229,7 +229,7 @@ describe('CSS Text Effects with Paint Support', () => {
         expect(rect.height).toBeGreaterThan(0);
         expect(rect.width).toBeGreaterThan(0);
       });
-      
+
       await snapshot();
       document.body.removeChild(container);
       done();
@@ -250,7 +250,7 @@ describe('CSS Text Effects with Paint Support', () => {
         ">
           Horizontal Text (LTR)
         </div>
-        
+
         <div lang="ar" dir="rtl" style="
           writing-mode: horizontal-tb;
           background: linear-gradient(to left, #ffecd2, #fcb69f);
@@ -278,7 +278,7 @@ describe('CSS Text Effects with Paint Support', () => {
         expect(rect.height).toBeGreaterThan(0);
         expect(rect.width).toBeGreaterThan(0);
       });
-      
+
       await snapshot();
       document.body.removeChild(container);
       done();
@@ -317,19 +317,19 @@ describe('CSS Text Effects with Paint Support', () => {
       if (animationStep < animations.length) {
         animations[animationStep]();
         animationStep++;
-        
+
         setTimeout(() => {
           // Verify text still renders during animation
           const rect = animatedText.getBoundingClientRect();
           expect(rect.height).toBeGreaterThan(0);
           expect(rect.width).toBeGreaterThan(0);
-          
+
           runAnimation();
         }, 100);
       } else {
         // Final verification
         requestAnimationFrame(async () => {
-          await snapshot();
+          await snapshot(1);
           document.body.removeChild(container);
           done();
         });
@@ -341,7 +341,7 @@ describe('CSS Text Effects with Paint Support', () => {
       const rect = animatedText.getBoundingClientRect();
       expect(rect.height).toBeGreaterThan(0);
       expect(rect.width).toBeGreaterThan(0);
-      
+
       runAnimation();
     });
   });
@@ -369,11 +369,11 @@ describe('CSS Text Effects with Paint Support', () => {
       const rect = fallbackText.getBoundingClientRect();
       expect(rect.height).toBeGreaterThan(0);
       expect(rect.width).toBeGreaterThan(0);
-      
+
       // Text should be visible in either case
       const computedStyle = window.getComputedStyle(fallbackText);
       expect(computedStyle.color).toBeTruthy();
-      
+
       await snapshot();
       document.body.removeChild(container);
       done();

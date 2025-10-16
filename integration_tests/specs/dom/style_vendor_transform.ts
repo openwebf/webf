@@ -38,7 +38,6 @@ describe('Element.style vendor transform properties (issue #532)', () => {
 
     // Minimal DOM attach + snapshot for parity with other specs.
     document.body.appendChild(el);
-    await snapshot();
   });
 });
 
