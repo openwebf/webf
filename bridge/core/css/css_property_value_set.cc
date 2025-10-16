@@ -78,7 +78,7 @@ String CSSPropertyValueSet::GetPropertyValue(const T& property) const {
   }
   const std::shared_ptr<const CSSValue>* value = GetPropertyCSSValue(property);
   if (value) {
-    return value->get()->CssText();
+    return value->get()->CssTextForSerialization();
   }
   return String::EmptyString();
 }
@@ -114,7 +114,7 @@ const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::GetPropertyCSSValueW
 String CSSPropertyValueSet::GetPropertyValueWithHint(const AtomicString& property_name, unsigned int index) const {
   const std::shared_ptr<const CSSValue>* value = GetPropertyCSSValueWithHint(property_name, index);
   if (value) {
-    return value->get()->CssText();
+    return value->get()->CssTextForSerialization();
   }
   return String::EmptyString();
 }
@@ -626,7 +626,7 @@ bool MutableCSSPropertyValueSet::RemovePropertyAtIndex(int property_index, Strin
   }
 
   if (return_text) {
-    *return_text = PropertyAt(property_index).Value()->get()->CssText();
+    *return_text = PropertyAt(property_index).Value()->get()->CssTextForSerialization();
   }
 
   // A more efficient removal strategy would involve marking entries as empty

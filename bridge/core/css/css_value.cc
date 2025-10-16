@@ -237,6 +237,16 @@ String CSSValue::CssText() const {
   }
 }
 
+String CSSValue::CssTextForSerialization() const {
+  // WEBF_LOG(VERBOSE) << "The type that have raw text: " << GetClassTypeName();
+  if (HasRawText()) {
+    return RawText();
+  }
+
+  WEBF_LOG(VERBOSE) << "The type that didn't have raw text: " << GetClassTypeName();
+  return CssText();
+}
+
 bool CSSValue::HasFailedOrCanceledSubresources() const {
   //  if (IsValueList()) {
   //    return To<CSSValueList>(this)->HasFailedOrCanceledSubresources();
@@ -280,6 +290,177 @@ void CSSValue::ReResolveUrl(const Document& document) const {
   //    To<CSSValueList>(*this).ReResolveUrl(document);
   //    return;
   //  }
+}
+
+const char* CSSValue::GetClassTypeName() const {
+  switch (GetClassType()) {
+    case kNumericLiteralClass:
+      return "NumericLiteral";
+    case kMathFunctionClass:
+      return "MathFunction";
+    case kIdentifierClass:
+      return "Identifier";
+    case kColorClass:
+      return "Color";
+    case kColorMixClass:
+      return "ColorMix";
+    case kCounterClass:
+      return "Counter";
+    case kQuadClass:
+      return "Quad";
+    case kCustomIdentClass:
+      return "CustomIdent";
+    case kStringClass:
+      return "String";
+    case kRawClass:
+      return "Raw";
+    case kURIClass:
+      return "URI";
+    case kValuePairClass:
+      return "ValuePair";
+    case kLightDarkValuePairClass:
+      return "LightDarkValuePair";
+    case kAppearanceAutoBaseSelectValuePairClass:
+      return "AppearanceAutoBaseSelectValuePair";
+    case kScrollClass:
+      return "Scroll";
+    case kViewClass:
+      return "View";
+    case kRatioClass:
+      return "Ratio";
+
+    // Basic shapes
+    case kBasicShapeCircleClass:
+      return "BasicShapeCircle";
+    case kBasicShapeEllipseClass:
+      return "BasicShapeEllipse";
+    case kBasicShapePolygonClass:
+      return "BasicShapePolygon";
+    case kBasicShapeInsetClass:
+      return "BasicShapeInset";
+    case kBasicShapeRectClass:
+      return "BasicShapeRect";
+    case kBasicShapeXYWHClass:
+      return "BasicShapeXYWH";
+
+    // Images
+    case kImageClass:
+      return "Image";
+    case kCursorImageClass:
+      return "CursorImage";
+
+    // Image generators
+    case kCrossfadeClass:
+      return "Crossfade";
+    case kPaintClass:
+      return "Paint";
+    case kLinearGradientClass:
+      return "LinearGradient";
+    case kRadialGradientClass:
+      return "RadialGradient";
+    case kConicGradientClass:
+      return "ConicGradient";
+    case kConstantGradientClass:
+      return "ConstantGradient";
+
+    // Timing functions
+    case kLinearTimingFunctionClass:
+      return "LinearTimingFunction";
+    case kCubicBezierTimingFunctionClass:
+      return "CubicBezierTimingFunction";
+    case kStepsTimingFunctionClass:
+      return "StepsTimingFunction";
+
+    // Other
+    case kBorderImageSliceClass:
+      return "BorderImageSlice";
+    case kDynamicRangeLimitMixClass:
+      return "DynamicRangeLimitMix";
+    case kFontFeatureClass:
+      return "FontFeature";
+    case kFontFaceSrcClass:
+      return "FontFaceSrc";
+    case kFontFamilyClass:
+      return "FontFamily";
+    case kFontStyleRangeClass:
+      return "FontStyleRange";
+    case kFontVariationClass:
+      return "FontVariation";
+    case kAlternateClass:
+      return "Alternate";
+
+    case kInheritedClass:
+      return "Inherited";
+    case kInitialClass:
+      return "Initial";
+    case kUnsetClass:
+      return "Unset";
+    case kRevertClass:
+      return "Revert";
+    case kRevertLayerClass:
+      return "RevertLayer";
+
+    case kReflectClass:
+      return "Reflect";
+    case kShadowClass:
+      return "Shadow";
+    case kUnicodeRangeClass:
+      return "UnicodeRange";
+    case kGridTemplateAreasClass:
+      return "GridTemplateAreas";
+    case kPaletteMixClass:
+      return "PaletteMix";
+    case kPathClass:
+      return "Path";
+    case kRayClass:
+      return "Ray";
+    case kUnparsedDeclarationClass:
+      return "UnparsedDeclaration";
+    case kPendingSubstitutionValueClass:
+      return "PendingSubstitutionValue";
+    case kPendingSystemFontValueClass:
+      return "PendingSystemFontValue";
+    case kInvalidVariableValueClass:
+      return "InvalidVariableValue";
+    case kCyclicVariableValueClass:
+      return "CyclicVariableValue";
+    case kFlipRevertClass:
+      return "FlipRevert";
+    case kLayoutFunctionClass:
+      return "LayoutFunction";
+
+    case kCSSContentDistributionClass:
+      return "CSSContentDistribution";
+
+    case kKeyframeShorthandClass:
+      return "KeyframeShorthand";
+    case kInitialColorValueClass:
+      return "InitialColorValue";
+
+    case kImageSetOptionClass:
+      return "ImageSetOption";
+    case kImageSetTypeClass:
+      return "ImageSetType";
+
+    case kRepeatStyleClass:
+      return "RepeatStyle";
+
+    case kValueListClass:
+      return "ValueList";
+    case kFunctionClass:
+      return "Function";
+    case kImageSetClass:
+      return "ImageSet";
+    case kGridLineNamesClass:
+      return "GridLineNames";
+    case kGridAutoRepeatClass:
+      return "GridAutoRepeat";
+    case kGridIntegerRepeatClass:
+      return "GridIntegerRepeat";
+    case kAxisClass:
+      return "Axis";
+  }
+  return "UnknownCSSValue";
 }
 
 std::shared_ptr<const CSSValue> CSSValue::PopulateWithTreeScope(const webf::TreeScope* tree_scope) const {

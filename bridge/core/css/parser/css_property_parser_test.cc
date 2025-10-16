@@ -698,6 +698,7 @@ TEST(CSSPropertyParserRawTextTest, StoresRawTextForLonghandValue) {
   const auto* value_ptr = property.Value();
   ASSERT_TRUE(value_ptr && *value_ptr);
   EXPECT_EQ((*value_ptr)->RawText(), "rgba(255, 0, 0, 0.5)"_s);
+  EXPECT_EQ(style->GetPropertyValue(CSSPropertyID::kColor), "rgba(255, 0, 0, 0.5)"_s);
 }
 
 TEST(CSSPropertyParserRawTextTest, TrimsLeadingWhitespace) {
@@ -710,6 +711,7 @@ TEST(CSSPropertyParserRawTextTest, TrimsLeadingWhitespace) {
   const auto* value_ptr = property.Value();
   ASSERT_TRUE(value_ptr && *value_ptr);
   EXPECT_EQ((*value_ptr)->RawText(), "blue"_s);
+  EXPECT_EQ(style->GetPropertyValue(CSSPropertyID::kColor), "blue"_s);
 }
 
 TEST(CSSPropertyParserRawTextTest, StripsImportantFromRawText) {
@@ -723,6 +725,7 @@ TEST(CSSPropertyParserRawTextTest, StripsImportantFromRawText) {
   const auto* value_ptr = property.Value();
   ASSERT_TRUE(value_ptr && *value_ptr);
   EXPECT_EQ((*value_ptr)->RawText(), "red"_s);
+  EXPECT_EQ(style->GetPropertyValue(CSSPropertyID::kColor), "red"_s);
 }
 
 TEST(CSSPropertyParserRawTextTest, ShorthandRawTextPreservedOnExpansion) {
@@ -737,6 +740,7 @@ TEST(CSSPropertyParserRawTextTest, ShorthandRawTextPreservedOnExpansion) {
     ASSERT_TRUE(value_ptr && *value_ptr);
     EXPECT_EQ((*value_ptr)->RawText(), "10px 20px"_s);
   }
+  EXPECT_EQ(style->GetPropertyValue(CSSPropertyID::kMargin), "10px 20px"_s);
 }
 
 TEST(CSSPropertyParserRawTextTest, CssWideKeywordRawText) {
@@ -749,6 +753,7 @@ TEST(CSSPropertyParserRawTextTest, CssWideKeywordRawText) {
   const auto* value_ptr = property.Value();
   ASSERT_TRUE(value_ptr && *value_ptr);
   EXPECT_EQ((*value_ptr)->RawText(), "inherit"_s);
+  EXPECT_EQ(style->GetPropertyValue(CSSPropertyID::kColor), "inherit"_s);
 }
 
 TEST(CSSPropertyParserRawTextTest, VariableReferenceRawText) {
@@ -761,6 +766,7 @@ TEST(CSSPropertyParserRawTextTest, VariableReferenceRawText) {
   const auto* value_ptr = property.Value();
   ASSERT_TRUE(value_ptr && *value_ptr);
   EXPECT_EQ((*value_ptr)->RawText(), "var(--accent)"_s);
+  EXPECT_EQ(style->GetPropertyValue(CSSPropertyID::kColor), "var(--accent)"_s);
 }
 
 }  // namespace webf
