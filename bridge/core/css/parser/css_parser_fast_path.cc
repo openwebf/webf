@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "core/css/css_raw_value.h"
 #ifdef __SSE2__
 #include <immintrin.h>
 #elif defined(__ARM_NEON__)
@@ -1731,27 +1732,27 @@ static std::shared_ptr<const CSSValue> ParseSimpleTransform(CSSPropertyID proper
 std::shared_ptr<const CSSValue> CSSParserFastPaths::MaybeParseValue(CSSPropertyID property_id,
                                                                     StringView string,
                                                                     std::shared_ptr<const CSSParserContext> context) {
-  if (auto length = ParseSimpleLengthValue(property_id, string, context->Mode())) {
-    return length;
-  }
-  if (IsColorPropertyID(property_id)) {
-    Color color;
-    CSSValueID color_id;
-    switch (webf::ParseColor(property_id, StringView(string), context->Mode(), color, color_id)) {
-      case ParseColorResult::kFailure:
-        break;
-      case ParseColorResult::kKeyword:
-        return CSSIdentifierValue::Create(color_id);
-      case ParseColorResult::kColor:
-        return cssvalue::CSSColor::Create(color);
-    }
-  }
-  if (auto keyword = ParseKeywordValue(property_id, StringView(string), context)) {
-    return keyword;
-  }
-  if (auto transform = ParseSimpleTransform(property_id, StringView(string))) {
-    return transform;
-  }
+  // if (auto length = ParseSimpleLengthValue(property_id, string, context->Mode())) {
+  //   return length;
+  // }
+  // if (IsColorPropertyID(property_id)) {
+  //   Color color;
+  //   CSSValueID color_id;
+  //   switch (webf::ParseColor(property_id, StringView(string), context->Mode(), color, color_id)) {
+  //     case ParseColorResult::kFailure:
+  //       break;
+  //     case ParseColorResult::kKeyword:
+  //       return CSSIdentifierValue::Create(color_id);
+  //     case ParseColorResult::kColor:
+  //       return cssvalue::CSSColor::Create(color);
+  //   }
+  // }
+  // if (auto keyword = ParseKeywordValue(property_id, StringView(string), context)) {
+  //   return keyword;
+  // }
+  // if (auto transform = ParseSimpleTransform(property_id, StringView(string))) {
+  //   return transform;
+  // }
   return nullptr;
 }
 

@@ -321,6 +321,11 @@ std::shared_ptr<const CSSValue> ParseLonghand(CSSPropertyID unresolved_property,
                                               CSSPropertyID current_shorthand,
                                               std::shared_ptr<const CSSParserContext>,
                                               CSSParserTokenStream& stream);
+// only parse property value as CSSRawValue
+std::shared_ptr<const CSSValue> ParseRawLonghand(CSSPropertyID unresolved_property,
+                                              CSSPropertyID current_shorthand,
+                                              std::shared_ptr<const CSSParserContext> context,
+                                              CSSParserTokenStream& stream);
 
 void WarnInvalidKeywordPropertyUsage(CSSPropertyID, std::shared_ptr<const CSSParserContext> context, CSSValueID);
 

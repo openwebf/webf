@@ -53,10 +53,15 @@
 #include "foundation/macros.h"
 #include "style_property_shorthand.h"
 #include "foundation/logging.h"
+// For raw-capture of declaration values
+#include "core/css/parser/css_parser_impl.h"
+#include "core/css/css_raw_value.h"
 
 #include <cmath>
 #include <memory>
 #include <utility>
+
+#include "core/css/css_raw_value.h"
 
 namespace webf {
 namespace css_parsing_utils {
@@ -1490,6 +1495,21 @@ std::shared_ptr<const CSSValue> ParseLonghand(CSSPropertyID unresolved_property,
   std::shared_ptr<const CSSValue> result =
       To<Longhand>(CSSProperty::Get(property_id)).ParseSingleValue(stream, context, local_context);
   return result;
+}
+
+// only parse property value as CSSRawValue
+std::shared_ptr<const CSSValue> ParseRawLonghand(CSSPropertyID unresolved_property,
+                                              CSSPropertyID current_shorthand,
+                                              std::shared_ptr<const CSSParserContext> context,
+                                              CSSParserTokenStream& stream) {
+  // Capture exactly the component value for this declaration (without trailing ';' or '}' )
+  // and strip any trailing !important from the raw text so the caller can
+  // handle importance flags separately.
+  CSSTokenizedValue tokenized = CSSParserImpl::ConsumeRestrictedPropertyValue(stream);
+  // Remove a trailing !important (if present) from both tokens and text
+  CSSParserImpl::RemoveImportantAnnotationIfPresent(tokenized);
+  // Wrap the remaining raw text as a CSSRawValue
+  return std::make_shared<CSSRawValue>(String(tokenized.text));
 }
 
 void WarnInvalidKeywordPropertyUsage(CSSPropertyID property,

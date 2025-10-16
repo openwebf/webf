@@ -41,6 +41,11 @@ class CSSValue : public std::enable_shared_from_this<CSSValue> {
 
   String CssText() const;
 
+  const String& RawText() const { return raw_text_; }
+  bool HasRawText() const { return !raw_text_.IsNull() && raw_text_.length(); }
+  void SetRawText(const String& raw_text) const { raw_text_ = raw_text; }
+  void ClearRawText() const { raw_text_ = String(); }
+
   [[nodiscard]] bool IsNumericLiteralValue() const { return class_type_ == kNumericLiteralClass; }
   bool IsMathFunctionValue() const { return class_type_ == kMathFunctionClass; }
   bool IsPrimitiveValue() const { return IsNumericLiteralValue() || IsMathFunctionValue(); }
@@ -288,6 +293,7 @@ class CSSValue : public std::enable_shared_from_this<CSSValue> {
   uint8_t needs_tree_scope_population_ : 1;  // NOLINT
 
  private:
+  mutable String raw_text_;
   const uint8_t class_type_;  // ClassType
 };
 

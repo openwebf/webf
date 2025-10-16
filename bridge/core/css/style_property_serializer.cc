@@ -263,6 +263,20 @@ String StylePropertySerializer::AsText() const {
 
   unsigned size = property_set_.PropertyCount();
 
+  // If the property set contains any raw values (CSSRawValue), we avoid
+  // shorthand serialization. Raw values indicate we intentionally preserved
+  // the textual form without structured expansion, and many shorthand
+  // serializers (e.g., font) assume the presence of a complete set of
+  // longhands and will DCHECK otherwise.
+  bool contains_raw_values = false;
+  for (unsigned i = 0; i < size && !contains_raw_values; ++i) {
+    auto prop = property_set_.PropertyAt(i);
+    const std::shared_ptr<const CSSValue>* v = prop.Value();
+    if (v && *v && (*v)->IsRawValue()) {
+      contains_raw_values = true;
+    }
+  }
+
   // Build a canonical serialization order:
   // 1) Custom properties (in original order)
   // 2) Physical inset longhands in TRBL order: top, right, bottom, left
@@ -355,44 +369,46 @@ String StylePropertySerializer::AsText() const {
     shorthands.reserve(4);
     getMatchingShorthandsForLonghand(property_id, &shorthands);
     bool serialized_as_shorthand = false;
-    for (const StylePropertyShorthand& shorthand : shorthands) {
-      // Some aliases are implemented as a shorthand, in which case
-      // we prefer to not use the shorthand.
-      if (shorthand.length() == 1) {
-        continue;
-      }
-
-      CSSPropertyID shorthand_property = shorthand.id();
-      int shorthand_property_index = GetCSSPropertyIDIndex(shorthand_property);
-      // We already tried serializing as this shorthand
-      if (shorthand_appeared.test(shorthand_property_index)) {
-        continue;
-      }
-
-      shorthand_appeared.set(shorthand_property_index);
-      bool serialized_other_longhand = false;
-      for (unsigned i = 0; i < shorthand.length(); i++) {
-        if (longhand_serialized.test(GetCSSPropertyIDIndex(shorthand.properties()[i]->PropertyID()))) {
-          serialized_other_longhand = true;
-          break;
+    if (!contains_raw_values) {
+      for (const StylePropertyShorthand& shorthand : shorthands) {
+        // Some aliases are implemented as a shorthand, in which case
+        // we prefer to not use the shorthand.
+        if (shorthand.length() == 1) {
+          continue;
         }
-      }
-      if (serialized_other_longhand) {
-        continue;
-      }
 
-      String shorthand_result = SerializeShorthand(shorthand_property);
-      if (shorthand_result.IsEmpty()) {
-        continue;
-      }
+        CSSPropertyID shorthand_property = shorthand.id();
+        int shorthand_property_index = GetCSSPropertyIDIndex(shorthand_property);
+        // We already tried serializing as this shorthand
+        if (shorthand_appeared.test(shorthand_property_index)) {
+          continue;
+        }
 
-      result.Append(GetPropertyText(CSSProperty::Get(shorthand_property).GetCSSPropertyName(), shorthand_result,
-                                    property.IsImportant(), num_decls++));
-      serialized_as_shorthand = true;
-      for (unsigned i = 0; i < shorthand.length(); i++) {
-        longhand_serialized.set(GetCSSPropertyIDIndex(shorthand.properties()[i]->PropertyID()));
+        shorthand_appeared.set(shorthand_property_index);
+        bool serialized_other_longhand = false;
+        for (unsigned i = 0; i < shorthand.length(); i++) {
+          if (longhand_serialized.test(GetCSSPropertyIDIndex(shorthand.properties()[i]->PropertyID()))) {
+            serialized_other_longhand = true;
+            break;
+          }
+        }
+        if (serialized_other_longhand) {
+          continue;
+        }
+
+        String shorthand_result = SerializeShorthand(shorthand_property);
+        if (shorthand_result.IsEmpty()) {
+          continue;
+        }
+
+        result.Append(GetPropertyText(CSSProperty::Get(shorthand_property).GetCSSPropertyName(), shorthand_result,
+                                      property.IsImportant(), num_decls++));
+        serialized_as_shorthand = true;
+        for (unsigned i = 0; i < shorthand.length(); i++) {
+          longhand_serialized.set(GetCSSPropertyIDIndex(shorthand.properties()[i]->PropertyID()));
+        }
+        break;
       }
-      break;
     }
 
     if (serialized_as_shorthand) {
