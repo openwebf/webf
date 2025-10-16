@@ -512,4 +512,31 @@ void main() {
     expect(obj['subtype'], 'node');
     expect(obj['objectId'], nodeId.toString());
   });
+
+  testWidgets('DOM.describeNode returns node with limited depth', (tester) async {
+    final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+      tester: tester,
+      controllerName: 'dom-describe-node',
+      html: '<html><body><div id="p"><span id="a">A</span><span id="b"><i>I</i></span></div></body></html>',
+    );
+
+    final svc = _TestDevToolsService();
+    svc.initWithContext(WebFControllerDebuggingAdapter(prepared.controller));
+    final inspector = svc.uiInspector!;
+    final domProbe = _DOMProbe(svc);
+    inspector.moduleRegistrar['DOM'] = domProbe;
+    domProbe.invoke(0, 'enable', {});
+
+    final parent = prepared.document.getElementById(['p'])!;
+    final nodeId = prepared.controller.view.forDevtoolsNodeId(parent);
+
+    domProbe.invoke(14, 'describeNode', {'nodeId': nodeId, 'depth': 1});
+    final res = domProbe.lastResults[14]!;
+    final node = res['node'] as Map;
+    expect(node['nodeName'], 'DIV');
+    final children = (node['children'] as List).cast<Map>();
+    // Depth 1: should include immediate SPAN children, not deeper <i>
+    expect(children.any((n) => n['nodeName'] == 'SPAN'), isTrue);
+    expect(children.any((n) => n['nodeName'] == 'I'), isFalse);
+  });
 }

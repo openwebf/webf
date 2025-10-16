@@ -77,7 +77,86 @@ class InspectDOMModule extends UIInspectorModule {
       case 'resolveNode':
         onResolveNode(id, params!);
         break;
+      case 'describeNode':
+        onDescribeNode(id, params ?? const {});
+        break;
     }
+  }
+
+  void onDescribeNode(int? id, Map<String, dynamic> params) {
+    // https://chromedevtools.github.io/devtools-protocol/tot/DOM/#method-describeNode
+    // Supports identifying by nodeId or backendNodeId. objectId is ignored for now.
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    Node? target;
+    // Prefer nodeId if provided
+    final int? nodeId = params['nodeId'];
+    if (nodeId != null) {
+      final targetId = ctx.getTargetIdByNodeId(nodeId);
+      if (targetId != null && targetId != 0) {
+        target = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
+      }
+    }
+
+    // Fallback to backendNodeId
+    if (target == null) {
+      final int? backendNodeId = params['backendNodeId'];
+      if (backendNodeId != null && backendNodeId != 0) {
+        target = ctx.getBindingObject(Pointer.fromAddress(backendNodeId)) as Node?;
+      }
+    }
+
+    if (target == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    final int depth = (params['depth'] is int) ? (params['depth'] as int) : 1;
+
+    Map<String, dynamic> toJsonWithDepth(Node n, int d) {
+      final base = <String, dynamic>{
+        'nodeId': n.ownerView.forDevtoolsNodeId(n),
+        'backendNodeId': n.pointer?.address ?? 0,
+        'nodeType': getNodeTypeValue(n.nodeType),
+        'localName': n is Element ? n.tagName.toLowerCase() : null,
+        'nodeName': n.nodeName,
+        'nodeValue': n is TextNode
+            ? (n as TextNode).data
+            : (n is Comment ? (n as Comment).data : ''),
+        'parentId': n.parentNode != null ? n.ownerView.forDevtoolsNodeId(n.parentNode!) : 0,
+        'childNodeCount': n.childNodes.length,
+        'attributes': n is Element
+            ? (() {
+                final attrs = <String>[];
+                (n as Element).attributes.forEach((k, v) {
+                  attrs.add(k);
+                  attrs.add(v.toString());
+                });
+                return attrs;
+              })()
+            : null,
+      };
+      // Remove nulls to match prior InspectorNode encoding
+      base.removeWhere((k, v) => v == null);
+
+      if (d > 0 && n.childNodes.isNotEmpty) {
+        final list = <Map<String, dynamic>>[];
+        for (final c in n.childNodes) {
+          if (c is Element || (c is TextNode && c.data.trim().isNotEmpty)) {
+            list.add(toJsonWithDepth(c, d - 1));
+          }
+        }
+        if (list.isNotEmpty) base['children'] = list;
+      }
+      return base;
+    }
+
+    final result = {'node': toJsonWithDepth(target, depth)};
+    sendToFrontend(id, JSONEncodableMap(result));
   }
 
   void onRequestChildNodes(int? id, Map<String, dynamic> params) {
