@@ -789,7 +789,17 @@ class InspectDOMModule extends UIInspectorModule {
     }
     final Node? node = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
     if (node is Element) {
-      node.setAttribute(name, value);
+      // Prefer controller bridge to emit incremental attributeModified events
+      final controller = ctx.getController() ?? devtoolsService.controller;
+      if (controller != null) {
+        try {
+          controller.view.setAttribute(node.pointer!, name, value);
+        } catch (_) {
+          node.setAttribute(name, value);
+        }
+      } else {
+        node.setAttribute(name, value);
+      }
     }
     sendToFrontend(id, null);
   }
@@ -818,7 +828,16 @@ class InspectDOMModule extends UIInspectorModule {
     }
     final Node? node = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
     if (node is Element) {
-      node.removeAttribute(name);
+      final controller = ctx.getController() ?? devtoolsService.controller;
+      if (controller != null) {
+        try {
+          controller.view.removeAttribute(node.pointer!, name);
+        } catch (_) {
+          node.removeAttribute(name);
+        }
+      } else {
+        node.removeAttribute(name);
+      }
     }
     sendToFrontend(id, null);
   }
