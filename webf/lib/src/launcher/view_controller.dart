@@ -556,13 +556,9 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
         _debugDOMTreeChanged();
       }
     } else if (target is TextNode && (key == 'data' || key == 'nodeValue')) {
+      // TextNode.data setter will emit DevTools DOM.characterDataModified when hooks are present.
       target.data = value;
-      final cb2 = devtoolsCharacterDataModified;
-      if (cb2 != null) {
-        try {
-          cb2(target);
-        } catch (_) {}
-      } else {
+      if (devtoolsCharacterDataModified == null) {
         _debugDOMTreeChanged();
       }
 
@@ -603,14 +599,9 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
         _debugDOMTreeChanged();
       }
     } else if (target is TextNode && (key == 'data' || key == 'nodeValue')) {
-      // @TODO: property is not attribute.
+      // property is not attribute; TextNode.data setter will emit DevTools event if hooks present.
       target.data = '';
-      final cb2 = devtoolsCharacterDataModified;
-      if (cb2 != null) {
-        try {
-          cb2(target);
-        } catch (_) {}
-      } else {
+      if (devtoolsCharacterDataModified == null) {
         _debugDOMTreeChanged();
       }
     } else {

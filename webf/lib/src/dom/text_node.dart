@@ -66,6 +66,16 @@ class TextNode extends CharacterData {
         oldText: oldData,
       ));
     }
+
+    // Notify DevTools (CDP) listeners about characterData modifications
+    try {
+      final cb = ownerDocument.controller.view.devtoolsCharacterDataModified;
+      if (cb != null) {
+        cb(this);
+      } else {
+        ownerDocument.controller.view.debugDOMTreeChanged?.call();
+      }
+    } catch (_) {}
   }
 
   @override
