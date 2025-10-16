@@ -461,6 +461,46 @@ abstract class RenderBoxModel extends RenderBox
 
     double maxConstraintWidth =
         renderStyle.borderBoxLogicalWidth ?? parentBoxContentConstraintsWidth ?? double.infinity;
+
+    // For absolutely/fixed positioned non-replaced elements with both left and right specified
+    // and width:auto, compute the used border-box width from the containing block at layout time.
+    // This handles cases where style-tree logical widths are unavailable (e.g., parent inline-block
+    // with auto width) but the containing block has been measured. See:
+    // https://www.w3.org/TR/css-position-3/#abs-non-replaced-width
+    final bool isAbsOrFixed = renderStyle.position == CSSPositionType.absolute ||
+        renderStyle.position == CSSPositionType.fixed;
+    if (maxConstraintWidth == double.infinity &&
+        isAbsOrFixed &&
+        !renderStyle.isSelfRenderReplaced() &&
+        renderStyle.width.isAuto &&
+        renderStyle.left.isNotAuto &&
+        renderStyle.right.isNotAuto &&
+        parent is RenderBoxModel) {
+      final RenderBoxModel cb = parent as RenderBoxModel;
+      double? parentPaddingBoxWidth;
+      // Use the parent's content constraints (plus padding) as the containing block width.
+      // Avoid using parent.size or style-tree logical widths here to prevent feedback loops
+      // in flex/inline-block shrink-to-fit scenarios.
+      final BoxConstraints? pcc = cb.contentConstraints;
+      if (pcc != null && pcc.maxWidth.isFinite) {
+        parentPaddingBoxWidth = pcc.maxWidth +
+            cb.renderStyle.paddingLeft.computedValue +
+            cb.renderStyle.paddingRight.computedValue;
+      }
+      if (parentPaddingBoxWidth != null && parentPaddingBoxWidth.isFinite) {
+        // Solve the horizontal insets equation for the child border-box width.
+        double solvedBorderBoxWidth = parentPaddingBoxWidth -
+            renderStyle.left.computedValue -
+            renderStyle.right.computedValue -
+            renderStyle.marginLeft.computedValue -
+            renderStyle.marginRight.computedValue;
+        // Guard against negative sizes.
+        solvedBorderBoxWidth = math.max(0, solvedBorderBoxWidth);
+        // Use a tight width so empty positioned boxes still fill the available space.
+        minConstraintWidth = solvedBorderBoxWidth;
+        maxConstraintWidth = solvedBorderBoxWidth;
+      }
+    }
     // Height should be not smaller than border and padding in vertical direction
     // when box-sizing is border-box which is only supported.
     double minConstraintHeight = renderStyle.effectiveBorderTopWidth.computedValue +

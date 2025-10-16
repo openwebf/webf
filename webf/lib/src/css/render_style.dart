@@ -2358,12 +2358,14 @@ class CSSRenderStyle extends RenderStyle
         // https://www.w3.org/TR/css-position-3/#abs-non-replaced-width
         if (renderStyle.isParentRenderBoxModel()) {
           RenderStyle parentRenderStyle = renderStyle.getParentRenderStyle()!;
-          // Width of positioned element should subtract its horizontal margin.
-          logicalWidth = (parentRenderStyle.paddingBoxLogicalWidth ?? 0) -
-              renderStyle.left.computedValue -
-              renderStyle.right.computedValue -
-              renderStyle.marginLeft.computedValue -
-              renderStyle.marginRight.computedValue;
+          if (parentRenderStyle.paddingBoxLogicalWidth != null) {
+            // Width of positioned element should subtract its horizontal margin.
+            logicalWidth = (parentRenderStyle.paddingBoxLogicalWidth!) -
+                renderStyle.left.computedValue -
+                renderStyle.right.computedValue -
+                renderStyle.marginLeft.computedValue -
+                renderStyle.marginRight.computedValue;
+          }
         } else {
           logicalWidth = null;
         }
