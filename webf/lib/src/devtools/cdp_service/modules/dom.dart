@@ -64,6 +64,9 @@ class InspectDOMModule extends UIInspectorModule {
       case 'setAttributeValue':
         onSetAttributeValue(id, params!);
         break;
+      case 'removeAttribute':
+        onRemoveAttribute(id, params ?? const {});
+        break;
       case 'querySelector':
         onQuerySelector(id, params ?? const {});
         break;
@@ -748,6 +751,35 @@ class InspectDOMModule extends UIInspectorModule {
     final Node? node = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
     if (node is Element) {
       node.setAttribute(name, value);
+    }
+    sendToFrontend(id, null);
+  }
+
+  void onRemoveAttribute(int? id, Map<String, dynamic> params) {
+    // https://chromedevtools.github.io/devtools-protocol/tot/DOM/#method-removeAttribute
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger
+          .finer('[DevTools] DOM.removeAttribute nodeId=${params['nodeId']} name=${params['name']}');
+    }
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    int? nodeId = params['nodeId'];
+    String? name = params['name'];
+    if (nodeId == null || name == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    final targetId = ctx.getTargetIdByNodeId(nodeId);
+    if (targetId == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    final Node? node = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
+    if (node is Element) {
+      node.removeAttribute(name);
     }
     sendToFrontend(id, null);
   }

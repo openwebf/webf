@@ -442,6 +442,29 @@ void main() {
     expect(text.data, 'Hello');
   });
 
+  testWidgets('DOM.removeAttribute removes attribute', (tester) async {
+    final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+      tester: tester,
+      controllerName: 'dom-remove-attr',
+      html: '<html><body><div id="x" data-a="1">T</div></body></html>',
+    );
+
+    final svc = _TestDevToolsService();
+    svc.initWithContext(WebFControllerDebuggingAdapter(prepared.controller));
+    final inspector = svc.uiInspector!;
+    final domProbe = _DOMProbe(svc);
+    inspector.moduleRegistrar['DOM'] = domProbe;
+    domProbe.invoke(0, 'enable', {});
+
+    final el = prepared.document.getElementById(['x'])!;
+    final nodeId = prepared.controller.view.forDevtoolsNodeId(el);
+
+    // Remove attribute via CDP module
+    domProbe.invoke(19, 'removeAttribute', {'nodeId': nodeId, 'name': 'data-a'});
+
+    expect(el.getAttribute('data-a'), isNull);
+  });
+
   testWidgets('DOM.pushNodesByBackendIdsToFrontend maps to nodeIds', (tester) async {
     final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
       tester: tester,
