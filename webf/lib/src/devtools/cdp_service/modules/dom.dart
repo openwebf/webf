@@ -12,6 +12,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
 import 'package:webf/src/devtools/cdp_service/modules/css.dart';
+import 'package:webf/src/devtools/cdp_service/modules/overlay.dart';
 import 'package:webf/foundation.dart';
 
 const int DOCUMENT_NODE_ID = 0;
@@ -67,12 +68,21 @@ class InspectDOMModule extends UIInspectorModule {
         onPushNodesByBackendIdsToFrontend(id, params!);
         break;
       case 'highlightNode':
-        // Highlighting is handled by overlay module
-        sendToFrontend(id, null);
+        // Forward to Overlay.highlightNode for compatibility with clients
+        final overlay = devtoolsService.uiInspector?.moduleRegistrar['Overlay'];
+        if (overlay is InspectOverlayModule) {
+          overlay.onHighlightNode(id, params ?? const {});
+        } else {
+          sendToFrontend(id, null);
+        }
         break;
       case 'hideHighlight':
-        // Highlighting is handled by overlay module
-        sendToFrontend(id, null);
+        final overlay = devtoolsService.uiInspector?.moduleRegistrar['Overlay'];
+        if (overlay is InspectOverlayModule) {
+          overlay.onHideHighlight(id);
+        } else {
+          sendToFrontend(id, null);
+        }
         break;
       case 'resolveNode':
         onResolveNode(id, params!);
