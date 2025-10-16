@@ -40,6 +40,7 @@ class CSSValue : public std::enable_shared_from_this<CSSValue> {
   static std::shared_ptr<const CSSValue> Create(const Length& value, float zoom);
 
   String CssText() const;
+  String CssTextForSerialization() const;
 
   const String& RawText() const { return raw_text_; }
   bool HasRawText() const { return !raw_text_.IsNull() && raw_text_.length(); }
@@ -258,6 +259,8 @@ class CSSValue : public std::enable_shared_from_this<CSSValue> {
   };
 
   ClassType GetClassType() const { return static_cast<ClassType>(class_type_); }
+  // for debug
+  const char* GetClassTypeName() const;
 
   std::shared_ptr<const CSSValue> PopulateWithTreeScope(const TreeScope*) const;
 

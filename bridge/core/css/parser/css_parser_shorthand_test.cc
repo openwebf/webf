@@ -4,12 +4,14 @@
 
 #include "gtest/gtest.h"
 #include <cstring>
+#include "core/css/css_primitive_value.h"
 #include "core/css/parser/css_parser.h"
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/style_sheet_contents.h"
 #include "core/css/style_rule.h"
 #include "core/css/css_property_value_set.h"
 #include "core/css/css_value.h"
+#include "foundation/casting.h"
 #include "test/webf_test_env.h"
 
 namespace webf {
@@ -57,7 +59,9 @@ TEST_F(CSSParserShorthandTest, MarginShorthand) {
   auto* top_value = props.GetPropertyCSSValue(CSSPropertyID::kMarginTop);
   ASSERT_NE(top_value, nullptr);
   ASSERT_NE(*top_value, nullptr);
-  EXPECT_EQ((*top_value)->CssText(), "10px");
+  const auto* top_primitive = DynamicTo<CSSPrimitiveValue>(top_value->get());
+  ASSERT_NE(top_primitive, nullptr);
+  EXPECT_EQ(top_primitive->CustomCSSText(), "10px");
 }
 
 // Test margin with different values
@@ -98,10 +102,21 @@ TEST_F(CSSParserShorthandTest, MarginShorthandMultipleValues) {
     ASSERT_NE(bottom, nullptr) << "Failed for: " << test.css;
     ASSERT_NE(left, nullptr) << "Failed for: " << test.css;
     
-    EXPECT_EQ((*top)->CssText(), test.expected_top) << "Failed for: " << test.css;
-    EXPECT_EQ((*right)->CssText(), test.expected_right) << "Failed for: " << test.css;
-    EXPECT_EQ((*bottom)->CssText(), test.expected_bottom) << "Failed for: " << test.css;
-    EXPECT_EQ((*left)->CssText(), test.expected_left) << "Failed for: " << test.css;
+    const auto* top_primitive = DynamicTo<CSSPrimitiveValue>(top->get());
+    ASSERT_NE(top_primitive, nullptr) << "Failed for: " << test.css;
+    EXPECT_EQ(top_primitive->CustomCSSText(), test.expected_top) << "Failed for: " << test.css;
+
+    const auto* right_primitive = DynamicTo<CSSPrimitiveValue>(right->get());
+    ASSERT_NE(right_primitive, nullptr) << "Failed for: " << test.css;
+    EXPECT_EQ(right_primitive->CustomCSSText(), test.expected_right) << "Failed for: " << test.css;
+
+    const auto* bottom_primitive = DynamicTo<CSSPrimitiveValue>(bottom->get());
+    ASSERT_NE(bottom_primitive, nullptr) << "Failed for: " << test.css;
+    EXPECT_EQ(bottom_primitive->CustomCSSText(), test.expected_bottom) << "Failed for: " << test.css;
+
+    const auto* left_primitive = DynamicTo<CSSPrimitiveValue>(left->get());
+    ASSERT_NE(left_primitive, nullptr) << "Failed for: " << test.css;
+    EXPECT_EQ(left_primitive->CustomCSSText(), test.expected_left) << "Failed for: " << test.css;
   }
 }
 
