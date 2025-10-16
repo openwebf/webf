@@ -59,6 +59,9 @@ class InspectNetworkModule extends UIInspectorModule {
   @override
   void onEnabled() {
     // On Network.enable, replay past requests for this controller.
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] Network.enable');
+    }
     _replayPastRequests();
   }
 
@@ -190,6 +193,9 @@ class InspectNetworkModule extends UIInspectorModule {
 
   @override
   void receiveFromFrontend(int? id, String method, Map<String, dynamic>? params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] Network.$method');
+    }
     switch (method) {
       case 'setCacheDisabled':
         bool cacheDisabled = params?['cacheDisabled'];

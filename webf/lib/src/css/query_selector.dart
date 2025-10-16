@@ -105,66 +105,126 @@ class SelectorEvaluator extends SelectorVisitor {
   @override
   bool visitSelector(Selector node) {
     final old = _element;
-    var result = true;
 
-    // Note: evaluate selectors right-to-left as it's more efficient.
-    int? combinator;
-    for (var s in node.simpleSelectorSequences.reversed) {
-      if (combinator == null) {
-        result = s.simpleSelector.visit(this) as bool;
-      } else if (combinator == TokenKind.COMBINATOR_DESCENDANT) {
-        // descendant combinator
-        // http://dev.w3.org/csswg/selectors-4/#descendant-combinators
-        do {
-          _element = _element!.parentElement;
-        } while (_element != null && !(s.simpleSelector.visit(this) as bool));
+    // Build right-to-left groups of compound selectors (simple selectors joined
+    // with COMBINATOR_NONE), and the combinator that connects each group to the
+    // next group on the left.
+    final List<List<SimpleSelector>> groups = <List<SimpleSelector>>[];
+    final List<int> groupCombinators = <int>[]; // combinator from this group to the next (left) group
 
-        if (_element == null) result = false;
-      } else if (combinator == TokenKind.COMBINATOR_TILDE) {
-        // Following-sibling combinator
-        // http://dev.w3.org/csswg/selectors-4/#general-sibling-combinators
-        do {
-          _element = _element!.previousElementSibling;
-        } while (_element != null && !(s.simpleSelector.visit(this) as bool));
-
-        if (_element == null) result = false;
+    {
+      List<SimpleSelector> current = <SimpleSelector>[];
+      for (final seq in node.simpleSelectorSequences.reversed) {
+        current.add(seq.simpleSelector);
+        if (seq.combinator != TokenKind.COMBINATOR_NONE) {
+          groups.add(current);
+          groupCombinators.add(seq.combinator);
+          current = <SimpleSelector>[];
+        }
       }
+      if (current.isNotEmpty) {
+        groups.add(current);
+        // No combinator to the left of the leftmost group
+        groupCombinators.add(TokenKind.COMBINATOR_NONE);
+      }
+    }
 
-      if (!result) break;
+    bool matchesCompound(Element? element, List<SimpleSelector> compound) {
+      // Save and restore _element so nested selector checks work correctly.
+      final saved = _element;
+      _element = element;
+      bool ok = true;
+      for (final sel in compound) {
+        if (!(sel.visit(this) as bool)) {
+          ok = false;
+          break;
+        }
+      }
+      _element = saved;
+      return ok;
+    }
 
-      switch (s.combinator) {
-        case TokenKind.COMBINATOR_PLUS:
-          // Next-sibling combinator
-          // http://dev.w3.org/csswg/selectors-4/#adjacent-sibling-combinators
-          _element = _element!.previousElementSibling;
+    bool result = true;
+    Element? cursor = _element;
+    if (cursor == null) return false;
+
+    // The rightmost group must match the element itself.
+    if (!matchesCompound(cursor, groups[0])) {
+      _element = old;
+      return false;
+    }
+
+    // Walk groups leftwards, honoring the combinator between groups.
+    for (int gi = 0; gi < groups.length - 1; gi++) {
+      final int combinator = groupCombinators[gi];
+      final List<SimpleSelector> nextGroup = groups[gi + 1];
+
+      switch (combinator) {
+        case TokenKind.COMBINATOR_DESCENDANT: {
+          Element? ancestor = cursor?.parentElement;
+          bool found = false;
+          while (ancestor != null) {
+            if (matchesCompound(ancestor, nextGroup)) {
+              found = true;
+              cursor = ancestor;
+              break;
+            }
+            ancestor = ancestor.parentElement;
+          }
+          if (!found) {
+            result = false;
+          }
           break;
-        case TokenKind.COMBINATOR_GREATER:
-          // Child combinator
-          // http://dev.w3.org/csswg/selectors-4/#child-combinators
-          _element = _element!.parentElement;
+        }
+        case TokenKind.COMBINATOR_GREATER: {
+          final Element? parent = cursor?.parentElement;
+          if (parent == null || !matchesCompound(parent, nextGroup)) {
+            result = false;
+          } else {
+            cursor = parent;
+          }
           break;
-        case TokenKind.COMBINATOR_DESCENDANT:
-        case TokenKind.COMBINATOR_TILDE:
-          // We need to iterate through all siblings or parents.
-          // For now, just remember what the combinator was.
-          combinator = s.combinator;
+        }
+        case TokenKind.COMBINATOR_PLUS: {
+          final Element? prev = cursor?.previousElementSibling;
+          if (prev == null || !matchesCompound(prev, nextGroup)) {
+            result = false;
+          } else {
+            cursor = prev;
+          }
           break;
+        }
+        case TokenKind.COMBINATOR_TILDE: {
+          Element? prev = cursor?.previousElementSibling;
+          bool found = false;
+          while (prev != null) {
+            if (matchesCompound(prev, nextGroup)) {
+              found = true;
+              cursor = prev;
+              break;
+            }
+            prev = prev.previousElementSibling;
+          }
+          if (!found) {
+            result = false;
+          }
+          break;
+        }
         case TokenKind.COMBINATOR_NONE:
-          combinator = null;
+          // No combinator – the next group must match the same element.
+          if (!matchesCompound(cursor, nextGroup)) {
+            result = false;
+          }
           break;
         default:
           if (kDebugMode) throw _unsupported(node);
       }
 
-      if (_element == null) {
-        result = false;
-        break;
-      }
+      if (!result) break;
     }
 
     _element = old;
-    if (result)
-      _selectorGroup?.matchSpecificity = node.specificity;
+    if (result) _selectorGroup?.matchSpecificity = node.specificity;
     return result;
   }
 
@@ -226,6 +286,16 @@ class SelectorEvaluator extends SelectorVisitor {
           }
 
           return false;
+        } else {
+          // No element parent (e.g., the root element). Per spec, the root is the
+          // only element child of the document, so it is simultaneously first-of-type,
+          // last-of-type and only-of-type.
+          switch (node.name) {
+            case 'first-of-type':
+            case 'last-of-type':
+            case 'only-of-type':
+              return true;
+          }
         }
 
         break;

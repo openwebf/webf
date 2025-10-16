@@ -21,10 +21,15 @@ import 'package:shelf/shelf_io.dart' as io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:webf/webf.dart';
+import 'package:webf/dom.dart';
 import 'package:webf/devtools.dart';
+import 'package:webf/foundation.dart';
+import 'package:webf/dom.dart';
 import 'modules/page.dart';
+import 'modules/dom.dart';
 import 'debugging_context.dart';
 import 'inspector.dart'; // Import for DOMClearEvent and DOMEmptyDocumentEvent
+import 'modules/css.dart';
 
 /// Abstract base class for implementing DevTools debugging services for WebF content.
 ///
@@ -76,11 +81,60 @@ abstract class DevToolsService {
     _contextDevToolMap[context.contextId] = this;
     _context = context;
     _uiInspector = UIInspector(this);
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] initWithContext: ctx=${context.contextId} url=${context.url ?? ''}');
+    }
     // Legacy full refresh callback
     context.debugDOMTreeChanged = () => uiInspector!.onDOMTreeChanged();
     // Incremental mutation callbacks (only used by new DOM incremental update logic).
     context.debugChildNodeInserted = (parent, node, previousSibling) {
       if (this is ChromeDevToolsService) {
+        // Skip whitespace-only text nodes to keep Elements clean
+        try {
+          if (node is TextNode && node.data.trim().isEmpty) {
+            if (DebugFlags.enableDevToolsProtocolLogs) {
+              final pId = context.forDevtoolsNodeId(parent);
+              devToolsProtocolLogger.finer(
+                  '[DevTools] (skip) DOM.childNodeInserted whitespace-only text under parent=$pId');
+            }
+            return;
+          }
+        } catch (_) {}
+        // Ensure the parent has an established children list in DevTools.
+        try {
+          final pId = context.forDevtoolsNodeId(parent);
+          if (!ChromeDevToolsService.unifiedService._isParentSeeded(pId)) {
+            final children = <Map>[];
+            for (final c in parent.childNodes) {
+              if (c is Element || (c is TextNode && c.data.isNotEmpty)) {
+                children.add(InspectorNode(c).toJson());
+              }
+            }
+            ChromeDevToolsService.unifiedService.sendEventToFrontend(
+                DOMSetChildNodesEvent(parentId: pId, nodes: children));
+            if (DebugFlags.enableDevToolsProtocolLogs) {
+              try {
+                final ids = children.map((m) => m['nodeId']).toList();
+                devToolsProtocolLogger.finer(
+                    '[DevTools] -> DOM.setChildNodes parent=$pId count=${children.length} (seed) ids=$ids');
+              } catch (_) {
+                devToolsProtocolLogger
+                    .finer('[DevTools] -> DOM.setChildNodes parent=$pId count=${children.length} (seed)');
+              }
+            }
+            ChromeDevToolsService.unifiedService._markParentSeeded(pId);
+          }
+        } catch (_) {}
+        if (DebugFlags.enableDevToolsProtocolLogs) {
+          try {
+            final pId = context.forDevtoolsNodeId(parent);
+            final nId = context.forDevtoolsNodeId(node);
+            final prevId = previousSibling != null ? context.forDevtoolsNodeId(previousSibling) : 0;
+            final name = node.nodeName;
+            devToolsProtocolLogger.finer(
+                '[DevTools] -> DOM.childNodeInserted parent=$pId prev=$prevId node=$nId name=$name');
+          } catch (_) {}
+        }
         ChromeDevToolsService.unifiedService
             .sendEventToFrontend(DOMChildNodeInsertedEvent(
           parent: parent,
@@ -91,6 +145,51 @@ abstract class DevToolsService {
     };
     context.debugChildNodeRemoved = (parent, node) {
       if (this is ChromeDevToolsService) {
+        // Skip whitespace-only text nodes (never sent to frontend)
+        try {
+          if (node is TextNode && node.data.trim().isEmpty) {
+            if (DebugFlags.enableDevToolsProtocolLogs) {
+              final pId = context.forDevtoolsNodeId(parent);
+              devToolsProtocolLogger.finer(
+                  '[DevTools] (skip) DOM.childNodeRemoved whitespace-only text under parent=$pId');
+            }
+            return;
+          }
+        } catch (_) {}
+        // Ensure the parent has an established children list in DevTools.
+        try {
+          final pId = context.forDevtoolsNodeId(parent);
+          if (!ChromeDevToolsService.unifiedService._isParentSeeded(pId)) {
+            final children = <Map>[];
+            for (final c in parent.childNodes) {
+              if (c is Element || (c is TextNode && c.data.isNotEmpty)) {
+                children.add(InspectorNode(c).toJson());
+              }
+            }
+            ChromeDevToolsService.unifiedService.sendEventToFrontend(
+                DOMSetChildNodesEvent(parentId: pId, nodes: children));
+            if (DebugFlags.enableDevToolsProtocolLogs) {
+              try {
+                final ids = children.map((m) => m['nodeId']).toList();
+                devToolsProtocolLogger.finer(
+                    '[DevTools] -> DOM.setChildNodes parent=$pId count=${children.length} (seed) ids=$ids');
+              } catch (_) {
+                devToolsProtocolLogger
+                    .finer('[DevTools] -> DOM.setChildNodes parent=$pId count=${children.length} (seed)');
+              }
+            }
+            ChromeDevToolsService.unifiedService._markParentSeeded(pId);
+          }
+        } catch (_) {}
+        if (DebugFlags.enableDevToolsProtocolLogs) {
+          try {
+            final pId = context.forDevtoolsNodeId(parent);
+            final nId = context.forDevtoolsNodeId(node);
+            final name = node.nodeName;
+            devToolsProtocolLogger
+                .finer('[DevTools] -> DOM.childNodeRemoved parent=$pId node=$nId name=$name');
+          } catch (_) {}
+        }
         ChromeDevToolsService.unifiedService
             .sendEventToFrontend(DOMChildNodeRemovedEvent(
           parent: parent,
@@ -100,12 +199,25 @@ abstract class DevToolsService {
     };
     context.debugAttributeModified = (element, name, value) {
       if (this is ChromeDevToolsService) {
+        if (DebugFlags.enableDevToolsProtocolLogs) {
+          try {
+            final id = context.forDevtoolsNodeId(element);
+            devToolsProtocolLogger
+                .finer('[DevTools] -> DOM.attributeModified node=$id name=$name value=${value ?? ''}');
+          } catch (_) {}
+        }
         ChromeDevToolsService.unifiedService
             .sendEventToFrontend(DOMAttributeModifiedEvent(
           element: element,
           name: name,
           value: value,
         ));
+        // Also notify CSS module tracking that the element's computed style may be updated
+        final cssModule = uiInspector?.moduleRegistrar['CSS'];
+        if (cssModule is InspectCSSModule) {
+          final nodeId = context.forDevtoolsNodeId(element);
+          cssModule.markComputedStyleDirtyByNodeId(nodeId);
+        }
       }
     };
     context.debugAttributeRemoved = (element, name) {
@@ -115,14 +227,48 @@ abstract class DevToolsService {
           element: element,
           name: name,
         ));
+        if (DebugFlags.enableDevToolsProtocolLogs) {
+          devToolsProtocolLogger.finer('[DevTools] -> DOM.attributeRemoved name=$name');
+        }
+        final cssModule = uiInspector?.moduleRegistrar['CSS'];
+        if (cssModule is InspectCSSModule) {
+          final nodeId = context.forDevtoolsNodeId(element);
+          cssModule.markComputedStyleDirtyByNodeId(nodeId);
+        }
       }
     };
     context.debugCharacterDataModified = (textNode) {
       if (this is ChromeDevToolsService) {
+        // Ignore modifications that make a text node whitespace-only
+        try {
+          if (textNode.data.trim().isEmpty) {
+            if (DebugFlags.enableDevToolsProtocolLogs) {
+              final id = context.forDevtoolsNodeId(textNode);
+              devToolsProtocolLogger
+                  .finer('[DevTools] (skip) DOM.characterDataModified node=$id (whitespace-only)');
+            }
+            return;
+          }
+        } catch (_) {}
+        if (DebugFlags.enableDevToolsProtocolLogs) {
+          try {
+            final id = context.forDevtoolsNodeId(textNode);
+            final preview = textNode.data.length > 30
+                ? textNode.data.substring(0, 30) + '…'
+                : textNode.data;
+            devToolsProtocolLogger
+                .finer('[DevTools] -> DOM.characterDataModified node=$id data="$preview"');
+          } catch (_) {}
+        }
         ChromeDevToolsService.unifiedService
             .sendEventToFrontend(DOMCharacterDataModifiedEvent(
           node: textNode,
         ));
+        final cssModule = uiInspector?.moduleRegistrar['CSS'];
+        if (cssModule is InspectCSSModule) {
+          final nodeId = context.forDevtoolsNodeId(textNode);
+          cssModule.markComputedStyleDirtyByNodeId(nodeId);
+        }
       }
     };
   }
@@ -163,6 +309,9 @@ abstract class DevToolsService {
     if (this is ChromeDevToolsService) {
       ChromeDevToolsService.unifiedService
           .sendEventToFrontend(DOMUpdatedEvent());
+      if (DebugFlags.enableDevToolsProtocolLogs) {
+        devToolsProtocolLogger.finer('[DevTools] -> DOM.documentUpdated (didReload)');
+      }
     }
   }
 
@@ -171,6 +320,9 @@ abstract class DevToolsService {
   /// Cleans up the UI inspector, removes context mappings, and terminates
   /// the inspector isolate server.
   void dispose() {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] dispose context=${_context?.contextId}');
+    }
     _uiInspector?.dispose();
     if (_context != null) {
       _contextDevToolMap.remove(_context!.contextId);
@@ -250,6 +402,9 @@ class UnifiedChromeDevToolsService {
   // Flag to indicate if we're in the middle of a context switch
   bool _isContextSwitching = false;
 
+  // Track which parent nodes have had their child lists seeded to the frontend
+  final Set<int> _seededParentIds = {};
+
   // Queue of incoming messages (decoded) received before a context exists, to replay after first context selection.
   final List<Map<String, dynamic>> _preContextMessageQueue = [];
 
@@ -267,6 +422,9 @@ class UnifiedChromeDevToolsService {
   void _registerContext(
       DebuggingContext context, ChromeDevToolsService service) {
     _contextServices[context] = service;
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] register context=${context.contextId} total=${_contextServices.length}');
+    }
 
     // If this context comes from a controller, track the mapping
     if (context is WebFControllerDebuggingAdapter) {
@@ -284,6 +442,9 @@ class UnifiedChromeDevToolsService {
 
   void _unregisterContext(DebuggingContext context) {
     _contextServices.remove(context);
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] unregister context=${context.contextId} remaining=${_contextServices.length}');
+    }
 
     // Remove controller mapping if exists
     if (context is WebFControllerDebuggingAdapter) {
@@ -316,6 +477,9 @@ class UnifiedChromeDevToolsService {
 
     // If switching between different contexts, clear DOM first
     bool isContextSwitch = _currentContext != null && _currentContext != context;
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] select context=${context.contextId} switch=$isContextSwitch');
+    }
     if (isContextSwitch) {
       _sendDOMClearEvent();
     }
@@ -408,12 +572,14 @@ class UnifiedChromeDevToolsService {
     if (isContextSwitch) {
       Future.delayed(Duration(milliseconds: 200), () {
         _isContextSwitching = false; // Clear the switching flag
+        _seededParentIds.clear();
         sendEventToFrontend(DOMUpdatedEvent());
       });
     } else {
       _isContextSwitching = false; // Ensure flag is cleared
       // Send DOM update immediately for new context attach
       Future.delayed(Duration(milliseconds: 100), () {
+        _seededParentIds.clear();
         sendEventToFrontend(DOMUpdatedEvent());
       });
     }
@@ -443,6 +609,9 @@ class UnifiedChromeDevToolsService {
 
     _address = address ?? _address;
     _port = port ?? _port;
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.info('[DevTools] Starting CDP server address=$_address port=$_port');
+    }
 
     // Initialize modules
     _initializeModules();
@@ -456,6 +625,9 @@ class UnifiedChromeDevToolsService {
   /// Stop the DevTools server
   Future<void> stop() async {
     if (!_isRunning) return;
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.info('[DevTools] Stopping CDP server');
+    }
 
     // Close all WebSocket connections
     for (final connection in _connections.values) {
@@ -561,6 +733,9 @@ class UnifiedChromeDevToolsService {
 
   Future<shelf.Response> _handleRequest(shelf.Request request) async {
     final path = request.url.path;
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] HTTP ${request.method} /$path');
+    }
 
     if (path == '') {
       final handler = webSocketHandler(_handleWebSocket);
@@ -573,15 +748,24 @@ class UnifiedChromeDevToolsService {
   void _handleWebSocket(WebSocketChannel webSocket) {
     final connectionId = DateTime.now().millisecondsSinceEpoch.toString();
     _connections[connectionId] = webSocket;
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.info('[DevTools] WS connected id=$connectionId active=${_connections.length}');
+    }
 
     webSocket.stream.listen(
       (message) => _handleWebSocketMessage(connectionId, message),
       onError: (error) {
         print('WebSocket error: $error');
         _connections.remove(connectionId);
+        if (DebugFlags.enableDevToolsLogs) {
+          devToolsLogger.warning('[DevTools] WS error id=$connectionId err=$error');
+        }
       },
       onDone: () {
         _connections.remove(connectionId);
+        if (DebugFlags.enableDevToolsLogs) {
+          devToolsLogger.info('[DevTools] WS closed id=$connectionId active=${_connections.length}');
+        }
       },
     );
   }
@@ -769,6 +953,9 @@ class UnifiedChromeDevToolsService {
       Map<String, dynamic>? params) {
     switch (method) {
       case 'getTargets':
+        if (DebugFlags.enableDevToolsLogs) {
+          devToolsLogger.fine('[DevTools] Target.getTargets');
+        }
         _sendResponse(connectionId, id, {
           'targetInfos': _getTargetList(),
         });
@@ -777,10 +964,16 @@ class UnifiedChromeDevToolsService {
       case 'setDiscoverTargets':
       case 'setRemoteLocations':
         // Gracefully acknowledge unimplemented Target features so frontend doesn't spam errors pre-context.
+        if (DebugFlags.enableDevToolsLogs) {
+          devToolsLogger.fine('[DevTools] Target.$method');
+        }
         _sendResponse(connectionId, id, {});
         break;
 
       case 'attachToTarget':
+        if (DebugFlags.enableDevToolsLogs) {
+          devToolsLogger.fine('[DevTools] Target.attachToTarget tid=${params?['targetId']}');
+        }
         final targetId = params?['targetId'] as String?;
         if (targetId != null) {
           final context = _findContextById(targetId);
@@ -931,6 +1124,9 @@ class UnifiedChromeDevToolsService {
     final result = jsonEncode(response);
 
     connection?.sink.add(result);
+    if (DebugFlags.enableDevToolsProtocolLogs) {
+      devToolsProtocolLogger.finer('[DevTools] -> (error) id=$id $message');
+    }
   }
 
   void sendEventToFrontend(InspectorEvent event) {
@@ -978,6 +1174,7 @@ class UnifiedChromeDevToolsService {
   void _sendDOMClearEvent() {
     // Set context switching flag
     _isContextSwitching = true;
+    _seededParentIds.clear();
 
     // Send DOM.documentUpdated to clear the existing DOM tree
     // Chrome DevTools will then request DOM.getDocument, and we can return empty/null
@@ -1009,6 +1206,10 @@ class UnifiedChromeDevToolsService {
 
   /// Returns true if currently switching between contexts
   bool get isContextSwitching => _isContextSwitching;
+
+  // Parent seed tracking helpers
+  bool _isParentSeeded(int nodeId) => _seededParentIds.contains(nodeId);
+  void _markParentSeeded(int nodeId) => _seededParentIds.add(nodeId);
 
   // Backward compatibility
   WebFController? get currentController {

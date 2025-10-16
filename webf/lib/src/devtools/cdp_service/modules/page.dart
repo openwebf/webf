@@ -14,6 +14,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart' show RenderViewportBox;
 import 'package:webf/launcher.dart';
 import 'package:webf/devtools.dart';
+import 'package:webf/foundation.dart';
 
 String enumKey(String key) {
   return key.split('.').last;
@@ -227,6 +228,9 @@ class InspectPageModule extends UIInspectorModule {
 
   void handleReloadPage() async {
     try {
+      if (DebugFlags.enableDevToolsLogs) {
+        devToolsLogger.info('[DevTools] Page.reload');
+      }
       if (devtoolsService is ChromeDevToolsService) {
         await ChromeDevToolsService.unifiedService.currentController?.reload();
       } else if (devtoolsService.controller != null) {

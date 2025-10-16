@@ -423,6 +423,46 @@ void main() {
       // The main element should still be visible
       expect(div.renderStyle.display, isNot(equals(CSSDisplay.none)));
     });
+
+    testWidgets(':root of-type pseudos on descendants', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'root-of-type-descendant-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <head>
+              <style>
+                :root:first-child #a { color: green; }
+                :root:nth-child(n) #b { color: green; }
+                :root:first-of-type #c { color: green; }
+                :root:nth-of-type(1) #d { color: green; }
+                :root:last-of-type #e { color: green; }
+                :root:last-child #f { color: green; }
+                :root:nth-last-child(1) #g { color: green; }
+                :root:nth-last-of-type(n) #h { color: green; }
+                #i { color: green; }
+                :root:nth-last-child(2) #i { color: red; }
+              </style>
+            </head>
+            <body style="margin: 0; padding: 0;">
+              <p id="a">a</p>
+              <p id="b">b</p>
+              <p id="c">c</p>
+              <p id="d">d</p>
+              <p id="e">e</p>
+              <p id="f">f</p>
+              <p id="g">g</p>
+              <p id="h">h</p>
+              <p id="i">i</p>
+            </body>
+          </html>
+        ''',
+      );
+
+      final c = prepared.getElementById('c');
+      // Ensure :root:first-of-type descendant matched
+      expect(c.renderStyle.color, isNotNull);
+    });
   });
 
   group('Descendant Selectors', () {
@@ -490,6 +530,36 @@ void main() {
       if (shallowColor != null) {
         expect(shallowColor.value.value, equals(0xFF000000)); // default black
       }
+    });
+
+
+    testWidgets('descendant with compound ancestor (attribute + class)', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'descendant-compound-ancestor-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <head>
+              <style>
+                h1[_ngcontent-abc] { margin: 0; }
+                .content[_ngcontent-abc] h1[_ngcontent-abc] { margin-top: 20px; }
+              </style>
+            </head>
+            <body style="margin: 0; padding: 0;">
+              <div class="content" _ngcontent-abc>
+                <div class="left-side" _ngcontent-abc>
+                  <h1 id="title" _ngcontent-abc>Hello</h1>
+                </div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final h1 = prepared.getElementById('title');
+      // Should pick the ancestor that matches BOTH the attribute and the class
+      // and therefore apply the more specific margin-top.
+      expect(h1.renderStyle.marginTop?.computedValue, equals(20.0));
     });
   });
 

@@ -64,7 +64,7 @@ class Document : public ContainerNode, public TreeScope {
   Element* createElementNS(const AtomicString& uri, const AtomicString& name, ExceptionState& exception_state);
   Element* createElementNS(const AtomicString& uri,
                            const AtomicString& name,
-                           const ScriptValue& options,
+                           const std::shared_ptr<QJSUnionElementCreationOptionsDomString>& options,
                            ExceptionState& exception_state);
   Text* createTextNode(const AtomicString& value, ExceptionState& exception_state);
   DocumentFragment* createDocumentFragment(ExceptionState& exception_state);

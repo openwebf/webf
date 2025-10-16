@@ -383,29 +383,6 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
         final matrix4 = style.transformMatrix;
         return matrix4?.cssText() ?? 'none';
 
-      case CSSPropertyID.Stroke:
-        return style.stroke.cssText();
-      case CSSPropertyID.StrokeWidth:
-        return style.strokeWidth.cssText();
-      case CSSPropertyID.StrokeLinecap:
-        return style.strokeLinecap.toString();
-      case CSSPropertyID.StrokeLinejoin:
-        return style.strokeLinejoin.toString();
-      case CSSPropertyID.X:
-        return style.x.cssText();
-      case CSSPropertyID.Y:
-        return style.y.cssText();
-      case CSSPropertyID.RX:
-        return style.rx.cssText();
-      case CSSPropertyID.RY:
-        return style.ry.cssText();
-      case CSSPropertyID.Fill:
-        return style.fill.cssText();
-      case CSSPropertyID.FillRule:
-        return style.fillRule.toString();
-      case CSSPropertyID.D:
-        return style.d.value;
-
       case CSSPropertyID.TransformOrigin:
       case CSSPropertyID.TransformOriginX:
       case CSSPropertyID.TransformOriginY:
@@ -525,6 +502,17 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.WritingMode:
       case CSSPropertyID.BoxShadow:
       case CSSPropertyID.TableLayout:
+      case CSSPropertyID.Fill:
+      case CSSPropertyID.FillRule:
+      case CSSPropertyID.Stroke:
+      case CSSPropertyID.StrokeLinecap:
+      case CSSPropertyID.StrokeLinejoin:
+      case CSSPropertyID.StrokeWidth:
+      case CSSPropertyID.X:
+      case CSSPropertyID.Y:
+      case CSSPropertyID.RX:
+      case CSSPropertyID.RY:
+      case CSSPropertyID.D:
         break;
     }
     return '';
@@ -825,6 +813,9 @@ extension WhiteSpaceText on WhiteSpace {
     }
   }
 }
+
+// CSS word-break
+enum WordBreak { normal, breakAll, keepAll, breakWord }
 
 extension Matrix4CSSText on Matrix4 {
   String cssText() {

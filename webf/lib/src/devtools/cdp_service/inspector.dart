@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:webf/devtools.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 
 const String INSPECTOR_URL = 'devtools://devtools/bundled/inspector.html';
 const int INSPECTOR_DEFAULT_PORT = 9222;
@@ -46,9 +47,11 @@ class DOMChildNodeInsertedEvent extends InspectorEvent {
   @override
   JSONEncodable? get params => JSONEncodableMap({
         'parentNodeId': parent.ownerView.forDevtoolsNodeId(parent),
+        // Chrome DevTools expects a numeric NodeId here. For insert-as-first-child,
+        // use 0 instead of null to ensure the event is applied.
         'previousNodeId': previousSibling != null
             ? parent.ownerView.forDevtoolsNodeId(previousSibling!)
-            : null,
+            : 0,
         'node': InspectorNode(node).toJson(),
       });
 }
@@ -116,6 +119,23 @@ class DOMCharacterDataModifiedEvent extends InspectorEvent {
   JSONEncodable? get params => JSONEncodableMap({
         'nodeId': node.ownerView.forDevtoolsNodeId(node),
         'characterData': node.data,
+      });
+}
+
+// Event to seed the children list of a parent node
+class DOMSetChildNodesEvent extends InspectorEvent {
+  final int parentId;
+  final List<Map> nodes;
+
+  DOMSetChildNodesEvent({required this.parentId, required this.nodes});
+
+  @override
+  String get method => 'DOM.setChildNodes';
+
+  @override
+  JSONEncodable? get params => JSONEncodableMap({
+        'parentId': parentId,
+        'nodes': nodes,
       });
 }
 
@@ -188,6 +208,9 @@ class UIInspector {
     print('WebF DevTool listening at ws://$remoteAddress:$port');
     print('Open Chrome/Edge and enter following url to your navigator:');
     print('    $inspectorURL');
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.info('[DevTools] Server started ws=$remoteAddress:$port');
+    }
   }
 
   void messageRouter(
@@ -202,6 +225,9 @@ class UIInspector {
     if (devtoolsService is ChromeDevToolsService) {
       ChromeDevToolsService.unifiedService
           .sendEventToFrontend(DOMUpdatedEvent());
+      if (DebugFlags.enableDevToolsProtocolLogs) {
+        devToolsProtocolLogger.finer('[DevTools] -> DOM.documentUpdated (treeChanged)');
+      }
     } else {}
   }
 

@@ -132,7 +132,7 @@ Element* Document::createElementNS(const AtomicString& uri, const AtomicString& 
 
 Element* Document::createElementNS(const AtomicString& uri,
                                    const AtomicString& name,
-                                   const ScriptValue& options,
+                                   const std::shared_ptr<QJSUnionElementCreationOptionsDomString>& options,
                                    ExceptionState& exception_state) {
   return createElementNS(uri, name, exception_state);
 }

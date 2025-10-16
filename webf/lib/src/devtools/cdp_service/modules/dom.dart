@@ -10,8 +10,9 @@ import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/launcher.dart';
-import 'package:webf/svg.dart';
 import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
+import 'package:webf/src/devtools/cdp_service/modules/css.dart';
+import 'package:webf/foundation.dart';
 
 const int DOCUMENT_NODE_ID = 0;
 const String DEFAULT_FRAME_ID = 'main_frame';
@@ -35,6 +36,9 @@ class InspectDOMModule extends UIInspectorModule {
       case 'getDocument':
         onGetDocument(id, method, params);
         break;
+      case 'requestChildNodes':
+        onRequestChildNodes(id, params!);
+        break;
       case 'getBoxModel':
         onGetBoxModel(id, params!);
         break;
@@ -56,6 +60,9 @@ class InspectDOMModule extends UIInspectorModule {
       case 'setNodeValue':
         onSetNodeValue(id, params!);
         break;
+      case 'setAttributeValue':
+        onSetAttributeValue(id, params!);
+        break;
       case 'pushNodesByBackendIdsToFrontend':
         onPushNodesByBackendIdsToFrontend(id, params!);
         break;
@@ -73,7 +80,58 @@ class InspectDOMModule extends UIInspectorModule {
     }
   }
 
+  void onRequestChildNodes(int? id, Map<String, dynamic> params) {
+    // https://chromedevtools.github.io/devtools-protocol/tot/DOM/#method-requestChildNodes
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] DOM.requestChildNodes nodeId=${params['nodeId']} depth=${params['depth']}');
+    }
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    final int? frontendNodeId = params['nodeId'];
+    if (frontendNodeId == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    final targetId = ctx.getTargetIdByNodeId(frontendNodeId);
+    if (targetId == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    final Node? parent = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
+    if (parent == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    // Build immediate children list (filter whitespace-only text nodes)
+    final children = <Map>[];
+    for (final child in parent.childNodes) {
+      if (child is Element || (child is TextNode && child.data.trim().isNotEmpty)) {
+        children.add(InspectorNode(child).toJson());
+      }
+    }
+
+    if (devtoolsService is ChromeDevToolsService) {
+      final pId = ctx.forDevtoolsNodeId(parent);
+      ChromeDevToolsService.unifiedService
+          .sendEventToFrontend(DOMSetChildNodesEvent(parentId: pId, nodes: children));
+      if (DebugFlags.enableDevToolsProtocolLogs) {
+        devToolsProtocolLogger
+            .finer('[DevTools] -> DOM.setChildNodes parent=$pId count=${children.length}');
+      }
+    }
+    // Respond to the method call with empty result
+    sendToFrontend(id, JSONEncodableMap({}));
+  }
+
   void onGetNodeForLocation(int? id, Map<String, dynamic> params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] DOM.getNodeForLocation x=${params['x']} y=${params['y']}');
+    }
     int x = params['x'];
     int y = params['y'];
 
@@ -100,8 +158,7 @@ class InspectDOMModule extends UIInspectorModule {
     }
     // find real img element.
     if (hitPath.first.target is WebFRenderImage ||
-        (hitPath.first.target is RenderSVGRoot &&
-            (hitPath.first.target as RenderBoxModel)
+        ((hitPath.first.target as RenderBoxModel)
                     .renderStyle
                     .target
                     .pointer ==
@@ -134,6 +191,9 @@ class InspectDOMModule extends UIInspectorModule {
   Node? inspectedNode;
 
   void onSetInspectedNode(int? id, Map<String, dynamic> params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] DOM.setInspectedNode nodeId=${params['nodeId']}');
+    }
     int? nodeId = params['nodeId'];
     final ctx = dbgContext;
     if (nodeId == null || ctx == null) {
@@ -147,12 +207,20 @@ class InspectDOMModule extends UIInspectorModule {
     }
     if (node != null) {
       inspectedNode = node;
+      // Signal CSS module that computed style for this node may need refresh
+      final cssModule = devtoolsService.uiInspector?.moduleRegistrar['CSS'];
+      if (cssModule is InspectCSSModule) {
+        cssModule.markComputedStyleDirtyByNodeId(nodeId);
+      }
     }
     sendToFrontend(id, null);
   }
 
   /// https://chromedevtools.github.io/devtools-protocol/tot/DOM/#method-getDocument
   void onGetDocument(int? id, String method, Map<String, dynamic>? params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] DOM.getDocument');
+    }
     // Check if we're using the unified service and if it's in the middle of a context switch
     if (devtoolsService is ChromeDevToolsService) {
       final unifiedService = ChromeDevToolsService.unifiedService;
@@ -182,6 +250,9 @@ class InspectDOMModule extends UIInspectorModule {
   }
 
   void onGetBoxModel(int? id, Map<String, dynamic> params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] DOM.getBoxModel nodeId=${params['nodeId']}');
+    }
     int? nodeId = params['nodeId'];
     final ctx = dbgContext;
     if (nodeId == null || ctx == null) {
@@ -267,6 +338,9 @@ class InspectDOMModule extends UIInspectorModule {
   }
 
   void onRemoveNode(int? id, Map<String, dynamic> params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] DOM.removeNode nodeId=${params['nodeId']}');
+    }
     int? nodeId = params['nodeId'];
     final ctx = dbgContext;
     if (nodeId == null || ctx == null) {
@@ -285,6 +359,9 @@ class InspectDOMModule extends UIInspectorModule {
   }
 
   void onSetAttributesAsText(int? id, Map<String, dynamic> params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] DOM.setAttributesAsText nodeId=${params['nodeId']}');
+    }
     int? nodeId = params['nodeId'];
     String? text = params['text'];
     final ctx = dbgContext;
@@ -316,6 +393,9 @@ class InspectDOMModule extends UIInspectorModule {
   }
 
   void onGetOuterHTML(int? id, Map<String, dynamic> params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] DOM.getOuterHTML nodeId=${params['nodeId']}');
+    }
     int? nodeId = params['nodeId'];
     final ctx = dbgContext;
     if (nodeId == null || ctx == null) return;
@@ -364,6 +444,9 @@ class InspectDOMModule extends UIInspectorModule {
   }
 
   void onSetNodeValue(int? id, Map<String, dynamic> params) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] DOM.setNodeValue nodeId=${params['nodeId']}');
+    }
     int? nodeId = params['nodeId'];
     String? value = params['value'];
     final ctx = dbgContext;
@@ -375,6 +458,35 @@ class InspectDOMModule extends UIInspectorModule {
     }
     if (node is TextNode && value != null) {
       node.data = value;
+    }
+    sendToFrontend(id, null);
+  }
+
+  void onSetAttributeValue(int? id, Map<String, dynamic> params) {
+    // https://chromedevtools.github.io/devtools-protocol/tot/DOM/#method-setAttributeValue
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] DOM.setAttributeValue nodeId=${params['nodeId']} name=${params['name']}');
+    }
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    int? nodeId = params['nodeId'];
+    String? name = params['name'];
+    String? value = params['value'];
+    if (nodeId == null || name == null || value == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    final targetId = ctx.getTargetIdByNodeId(nodeId);
+    if (targetId == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    final Node? node = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
+    if (node is Element) {
+      node.setAttribute(name, value);
     }
     sendToFrontend(id, null);
   }
@@ -488,17 +600,19 @@ class InspectorNode extends JSONEncodable {
 
   /// The BackendNodeId for this node.
   /// Unique DOM node identifier used to reference a node that may not have been pushed to
-  /// the front-end.
-  int backendNodeId = 0;
+  /// the front-end. Use native pointer address when available.
+  int get backendNodeId => referencedNode.pointer?.address ?? 0;
 
   /// [Node]'s nodeType.
   int get nodeType => getNodeTypeValue(referencedNode.nodeType);
 
-  /// Node's nodeName.
-  String get nodeName => referencedNode.nodeName.toLowerCase();
+  /// Node's nodeName (CDP expects uppercase tag for HTML elements).
+  String get nodeName => referencedNode.nodeName;
 
   /// Node's localName.
-  String? localName;
+  String? get localName => referencedNode is Element
+      ? (referencedNode as Element).tagName.toLowerCase()
+      : null;
 
   /// Node's nodeValue.
   String get nodeValue {
@@ -545,7 +659,7 @@ class InspectorNode extends JSONEncodable {
         'children': referencedNode.childNodes
             .where((node) {
               return node is Element ||
-                  (node is TextNode && node.data.isNotEmpty);
+                  (node is TextNode && node.data.trim().isNotEmpty);
             })
             .map((Node node) => InspectorNode(node).toJson())
             .toList(),

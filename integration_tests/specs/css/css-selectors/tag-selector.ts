@@ -1,11 +1,12 @@
-describe("css tag selector", () => {
-  it("001", async () => {
-    const style = <style>{`p { color: green; }`}</style>;
-    const p1 = <p>001 This sentence must be green.</p>;
-    const p2 = <p>This sentence must be green.</p>;
-    const p3 = <p>This sentence must be green.</p>;
-    const p4 = <p>This sentence must be green.</p>;
-    const p5 = <p>This sentence must be green.</p>;
+describe('css tag selector', () => {
+  it('001', async () => {
+    const style = document.createElement('style');
+    style.textContent = 'p { color: green; }';
+    const p1 = document.createElement('p'); p1.textContent = '001 This sentence must be green.';
+    const p2 = document.createElement('p'); p2.textContent = 'This sentence must be green.';
+    const p3 = document.createElement('p'); p3.textContent = 'This sentence must be green.';
+    const p4 = document.createElement('p'); p4.textContent = 'This sentence must be green.';
+    const p5 = document.createElement('p'); p5.textContent = 'This sentence must be green.';
     
     document.head.appendChild(style);
     document.body.appendChild(p1);
@@ -16,11 +17,12 @@ describe("css tag selector", () => {
     await snapshot();
   });
 
-  it("002", async () => {
-    const style = <style>{`div, blockquote, p { color: green; }`}</style>;
-    const p = <p>Test passes if the "Filler Text" below is green.</p>;
-    const blockquote = <blockquote>Filler Text</blockquote>;
-    const div = <div> 002 Filler Text</div>;
+  it('002', async () => {
+    const style = document.createElement('style');
+    style.textContent = 'div, blockquote, p { color: green; }';
+    const p = document.createElement('p'); p.textContent = 'Test passes if the "Filler Text" below is green.';
+    const blockquote = document.createElement('blockquote'); blockquote.textContent = 'Filler Text';
+    const div = document.createElement('div'); div.textContent = ' 002 Filler Text';
     
     document.head.appendChild(style);
     document.body.appendChild(p);
@@ -29,24 +31,26 @@ describe("css tag selector", () => {
     await snapshot();
   });
 
-  it("003", async () => {
-    const style = <style>{`DIV { color: green; }`}</style>;
-    const div = <div> 003 Filler Text</div>;
+  it('003', async () => {
+    const style = document.createElement('style');
+    style.textContent = 'DIV { color: green; }';
+    const div = document.createElement('div'); div.textContent = ' 003 Filler Text';
     
     document.head.appendChild(style);
     document.body.appendChild(div);
     await snapshot();
   });
 
-  it("004", async () => {
-    const style = <style>{`body * { color: green; }`}</style>;
-    const e1 = <p>This text should be green. (element)</p>;
-    const e2 = <div>This text should be green. (class)</div>
-    const e3 = <div>This text should be green. (id)</div>
-    const e4 = <div>This text should be green. (child)</div>
-    const e5 = <div>This text should be green. (descendant)</div>
-    const e6 = <blockquote>This text should be green. (sibling)</blockquote>
-    const e7 = <div>This text should be green. (attribute)</div>
+  it('004', async () => {
+    const style = document.createElement('style');
+    style.textContent = 'body * { color: green; }';
+    const e1 = document.createElement('p'); e1.textContent = 'This text should be green. (element)';
+    const e2 = document.createElement('div'); e2.textContent = 'This text should be green. (class)';
+    const e3 = document.createElement('div'); e3.textContent = 'This text should be green. (id)';
+    const e4 = document.createElement('div'); e4.textContent = 'This text should be green. (child)';
+    const e5 = document.createElement('div'); e5.textContent = 'This text should be green. (descendant)';
+    const e6 = document.createElement('blockquote'); e6.textContent = 'This text should be green. (sibling)';
+    const e7 = document.createElement('div'); e7.textContent = 'This text should be green. (attribute)';
     
     document.head.appendChild(style);
     document.body.appendChild(e1);
@@ -59,10 +63,11 @@ describe("css tag selector", () => {
     await snapshot();
   });
 
-  it("005", async () => {
-    const style = <style>{` body { color: green; }`}</style>;
-    const p = <p>Test passes if all text on this page is green.</p>;
-    const div = <div>005 Filler Text</div>;
+  it('005', async () => {
+    const style = document.createElement('style');
+    style.textContent = ' body { color: green; }';
+    const p = document.createElement('p'); p.textContent = 'Test passes if all text on this page is green.';
+    const div = document.createElement('div'); div.textContent = '005 Filler Text';
     
     document.head.appendChild(style);
     document.body.appendChild(p);
@@ -70,10 +75,11 @@ describe("css tag selector", () => {
     await snapshot();
   });
 
-  it("006", async () => {
-    const style = <style>{` * { color: green; }`}</style>;
-    const p = <p>Test passes if all text on this page is green.</p>;
-    const div = <div>006 Filler Text</div>;
+  it('006', async () => {
+    const style = document.createElement('style');
+    style.textContent = ' * { color: green; }';
+    const p = document.createElement('p'); p.textContent = 'Test passes if all text on this page is green.';
+    const div = document.createElement('div'); div.textContent = '006 Filler Text';
     
     document.head.appendChild(style);
     document.body.appendChild(p);
@@ -81,10 +87,11 @@ describe("css tag selector", () => {
     await snapshot();
   });
 
-  it("007", async () => {
-    const style = <style>{` html, div { color: green; }`}</style>;
-    const p = <p>Test passes if all text on this page is green.</p>;
-    const div = <div>007 Filler Text</div>;
+  it('007', async () => {
+    const style = document.createElement('style');
+    style.textContent = ' html, div { color: green; }';
+    const p = document.createElement('p'); p.textContent = 'Test passes if all text on this page is green.';
+    const div = document.createElement('div'); div.textContent = '007 Filler Text';
     
     document.head.appendChild(style);
     document.body.appendChild(p);

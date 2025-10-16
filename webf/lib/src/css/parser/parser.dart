@@ -700,17 +700,22 @@ class CSSParser {
 
   SelectorGroup? processSelectorGroup() {
     var selectors = <Selector>[];
+    var groupInvalid = false;
 
     tokenizer.inSelector = true;
     do {
       var selector = processSelector();
       if (selector != null) {
+        if (selector.hasInvalid) groupInvalid = true;
         selectors.add(selector);
+      } else {
+        // A failed selector in a list invalidates the entire rule per spec.
+        groupInvalid = true;
       }
     } while (_maybeEat(TokenKind.COMMA));
     tokenizer.inSelector = false;
 
-    if (selectors.isNotEmpty) {
+    if (selectors.isNotEmpty && !groupInvalid) {
       return SelectorGroup(selectors);
     }
     return null;
@@ -879,7 +884,7 @@ class CSSParser {
 
         if (_anyWhiteSpaceBeforePeekToken(TokenKind.HASH)) {
           _error('Not a valid ID selector expected #id', location: _makeSpan(start));
-          return null;
+          return InvalidSelector(Identifier(''));
         }
         return IdSelector(identifier());
       case TokenKind.DOT:
@@ -887,7 +892,7 @@ class CSSParser {
 
         if (_anyWhiteSpaceBeforePeekToken(TokenKind.DOT)) {
           _error('Not a valid class selector expected .className', location: _makeSpan(start));
-          return null;
+          return InvalidSelector(Identifier(''));
         }
         return ClassSelector(identifier());
       case TokenKind.COLON:
@@ -898,7 +903,7 @@ class CSSParser {
       case TokenKind.DOUBLE:
         _error('name must start with a alpha character, but found a number');
         _next();
-        break;
+        return InvalidSelector(Identifier(''));
     }
     return null;
   }
@@ -1033,9 +1038,10 @@ class CSSParser {
   //     SUFFIXMATCH:      '$='
   //
   //     SUBSTRMATCH:      '*='
-  AttributeSelector? processAttribute() {
+  SimpleSelector? processAttribute() {
     if (_maybeEat(TokenKind.LBRACK)) {
       var attrName = identifier();
+      bool invalid = attrName.name.isEmpty;
 
       int op;
       switch (_peek()) {
@@ -1068,6 +1074,9 @@ class CSSParser {
 
       _eat(TokenKind.RBRACK);
 
+      if (invalid) {
+        return InvalidSelector(Identifier(''));
+      }
       return AttributeSelector(attrName, op, value);
     }
     return null;

@@ -14,6 +14,9 @@ namespace webf {
 
 class WindowOrWorkerGlobalScope {
  public:
+  static void queueMicrotask(ExecutingContext* context,
+                             const std::shared_ptr<Function>& handler,
+                             ExceptionState& exception);
   static int setTimeout(ExecutingContext* context,
                         const std::shared_ptr<Function>& handler,
                         int32_t timeout,
@@ -26,6 +29,11 @@ class WindowOrWorkerGlobalScope {
   static int setInterval(ExecutingContext* context, std::shared_ptr<Function> handler, ExceptionState& exception);
   static void clearTimeout(ExecutingContext* context, int32_t timerId, ExceptionState& exception);
   static void clearInterval(ExecutingContext* context, int32_t timerId, ExceptionState& exception);
+
+  static double requestAnimationFrame(ExecutingContext* context, const std::shared_ptr<Function>& callback, ExceptionState& exception_state);
+  static void cancelAnimationFrame(ExecutingContext* context, double request_id, ExceptionState& exception_state);
+
+
   static void __gc__(ExecutingContext* context, ExceptionState& exception);
   static ScriptValue __memory_usage__(ExecutingContext* context, ExceptionState& exception_state);
 };

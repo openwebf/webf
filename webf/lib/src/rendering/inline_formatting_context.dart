@@ -2999,6 +2999,32 @@ class InlineFormattingContext {
       return sb.toString();
     }
 
+    // Insert ZERO WIDTH SPACE (U+200B) between code units to create soft
+    // break opportunities. This approximates CSS word-break: break-all and is
+    // sufficient for ASCII test cases. We avoid inserting between surrogate
+    // pairs by checking for high-surrogate/low-surrogate boundaries.
+    String _insertZeroWidthBreaks(String input) {
+      if (input.isEmpty) return input;
+      final StringBuffer out = StringBuffer();
+      int i = 0;
+      while (i < input.length) {
+        final int cu = input.codeUnitAt(i);
+        out.writeCharCode(cu);
+        // If next code unit exists and current is not a high surrogate and next is not a low surrogate,
+        // insert ZWSP between them to allow break.
+        if (i + 1 < input.length) {
+          final int next = input.codeUnitAt(i + 1);
+          final bool isHigh = (cu & 0xFC00) == 0xD800;
+          final bool isNextLow = (next & 0xFC00) == 0xDC00;
+          if (!(isHigh && isNextLow)) {
+            out.write('\u200B');
+          }
+        }
+        i++;
+      }
+      return out.toString();
+    }
+
     // Avoid breaking within ASCII words when:
     // - this container itself clips or scrolls horizontally (overflow-x != visible), or
     // - any ancestor (excluding HTML/BODY) scrolls horizontally.
@@ -3234,6 +3260,12 @@ class InlineFormattingContext {
         // overflow horizontally and can be scrolled instead of wrapping.
         if (_avoidWordBreakInScrollableX && _whiteSpaceEligibleForNoWordBreak(item.style!.whiteSpace)) {
           text = _insertWordJoinersForAsciiWords(text);
+        }
+        // Apply CSS word-break: break-all by inserting soft break opportunities
+        // between grapheme clusters when white-space allows wrapping.
+        final WhiteSpace ws = item.style!.whiteSpace;
+        if (style.wordBreak == WordBreak.breakAll && ws != WhiteSpace.pre && ws != WhiteSpace.nowrap) {
+          text = _insertZeroWidthBreaks(text);
         }
         // If the nearest enclosing inline element specifies vertical-align other than baseline,
         // represent this text segment as a placeholder so Flutter positions it by alignment.
@@ -3489,8 +3521,11 @@ class InlineFormattingContext {
       }
     }
     // Respect CSS white-space: nowrap/pre (handled later), but for other modes treat CJK as breakable.
+    // Respect CSS word-break. break-all introduces break opportunities between
+    // grapheme clusters; treat content as breakable.
+    final bool _breakAll = style.wordBreak == WordBreak.breakAll;
     final bool _preferZeroWidthShaping =
-        _hasAtomicInlines || _hasExplicitBreaks || _hasWhitespaceInText || _hasCJKBreaks;
+        _hasAtomicInlines || _hasExplicitBreaks || _hasWhitespaceInText || _hasCJKBreaks || _breakAll;
     InlineLayoutLog.log(
       impl: InlineImpl.paragraphIFC,
       feature: InlineFeature.sizing,
@@ -3563,7 +3598,8 @@ class InlineFormattingContext {
         !_hasExplicitBreaks &&
         !_hasInteriorWhitespaceInText &&
         !_hasBreakablePunctuationInText &&
-        !_hasCJKBreaks;
+        !_hasCJKBreaks &&
+        !_breakAll;
     // Always avoid per-character wrapping for truly unbreakable content by shaping wide.
     // This matches browser behavior where a single long word overflows horizontally
     // instead of wrapping at arbitrary character boundaries.

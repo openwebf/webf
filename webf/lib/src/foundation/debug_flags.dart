@@ -51,4 +51,11 @@ class DebugFlags {
 
   // Enable verbose DOM logs (tree walks, counters, pseudo, etc.)
   static bool enableDomLogs = false;
+
+  // Enable general DevTools/CDP service logs (lifecycle, routing, targets)
+  static bool enableDevToolsLogs = false;
+
+  // Enable verbose CDP protocol logs (incoming/outgoing messages and params)
+  // Use with care; this can be very chatty during screencast/network activity.
+  static bool enableDevToolsProtocolLogs = false;
 }

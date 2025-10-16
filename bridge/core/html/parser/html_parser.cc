@@ -8,6 +8,7 @@
 #include "core/dom/document.h"
 #include "core/dom/element.h"
 #include "core/dom/text.h"
+#include "core/dom/comment.h"
 #include "core/executing_context.h"
 #include "element_namespace_uris.h"
 #include "core/html/html_element.h"
@@ -190,8 +191,8 @@ bool HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
         // Parse attributes
         parseProperty(element, &child->v.element);
 
-      } else if (child->type == GUMBO_NODE_TEXT) {
-        // Handle text nodes
+      } else if (child->type == GUMBO_NODE_TEXT || child->type == GUMBO_NODE_WHITESPACE) {
+        // Handle text and whitespace-only text nodes
         const char* text_content = child->v.text.text;
         if (text_content != nullptr) {
           ExceptionState exception_state;
@@ -201,6 +202,18 @@ bool HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
           } else if (exception_state.HasException()) {
             context->HandleException(exception_state);
           }
+        }
+      } else if (child->type == GUMBO_NODE_COMMENT) {
+        // Preserve HTML comments. Svelte and other frameworks use comments as anchors (e.g., <!>). Dropping them
+        // breaks DOM insertion points.
+        const char* comment_content = child->v.text.text;
+        ExceptionState exception_state;
+        auto* comment = context->document()->createComment(
+            AtomicString::CreateFromUTF8(comment_content ? comment_content : ""), exception_state);
+        if (!exception_state.HasException() && comment != nullptr) {
+          root_container->AppendChild(comment);
+        } else if (exception_state.HasException()) {
+          context->HandleException(exception_state);
         }
       } else if (child->type == GUMBO_NODE_CDATA) {
         // Handle CDATA sections as text

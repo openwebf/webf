@@ -6,6 +6,7 @@
 import 'package:webf/devtools.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
+import 'package:webf/foundation.dart';
 
 class InspectLogModule extends UIInspectorModule {
   InspectLogModule(DevToolsService server) : super(server) {
@@ -28,6 +29,9 @@ class InspectLogModule extends UIInspectorModule {
   @override
   void onEnabled() {
     super.onEnabled();
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] Log.enable');
+    }
     _setupLogHandler();
   }
 
@@ -45,6 +49,9 @@ class InspectLogModule extends UIInspectorModule {
   }
 
   void handleMessage(int level, String message) {
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] Log.entry level=$level "$message"');
+    }
     sendEventToFrontend(LogEntryEvent(
       text: message,
       level: getLevelStr(level),
@@ -79,6 +86,9 @@ class InspectLogModule extends UIInspectorModule {
   @override
   void receiveFromFrontend(int? id, String method, Map<String, dynamic>? params) {
     // callNativeInspectorMethod(id, method, params);
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] Log.$method');
+    }
   }
 
   @override

@@ -10,7 +10,7 @@ import 'package:webf/src/html/table_cell.dart';
 import 'package:webf/src/html/table_header.dart';
 import 'package:webf/src/html/table_row.dart';
 import 'package:webf/src/html/text.dart';
-import 'package:webf/svg.dart';
+import 'package:webf/src/html/svg.dart';
 import 'package:webf/gesture.dart';
 
 typedef ElementCreator = Element Function(BindingContext? context);
@@ -22,8 +22,6 @@ final mathmlElementUri = 'http://www.w3.org/1998/Math/MathML';
 final Map<String, ElementCreator> _htmlRegistry = {};
 final Map<String, ElementCreator> _widgetElements = {};
 final Map<String, ElementCreator> _overrideWidgetElements = {};
-
-final Map<String, ElementCreator> _svgRegistry = {};
 
 final Map<String, Map<String, ElementCreator>> _registries = {};
 
@@ -95,13 +93,11 @@ Element createElement(String name, [BindingContext? context]) {
 }
 
 Element createSvgElement(String name, [BindingContext? context]) {
-  ElementCreator? creator = _svgRegistry[name];
   Element element;
-  if (creator == null) {
-    debugPrint('Unexpected SVG element "$name"');
-    element = SVGUnknownElement(context);
+  if (name == SVG) {
+    element = FlutterSvgElement(context);
   } else {
-    element = creator(context);
+    element = FlutterSVGChildElement(context);
   }
 
   element.tagName = name;
@@ -238,7 +234,6 @@ void defineBuiltInElements() {
   // Hybrid Routers
   defineElement(ROUTER_LINK, (context) => RouterLinkElement(context));
 
-  svgElementsRegistry.forEach((key, value) {
-    _svgRegistry[key.toUpperCase()] = value;
-  });
+  // SVG Elements
+  defineElement(SVG, (context) => FlutterSvgElement(context));
 }

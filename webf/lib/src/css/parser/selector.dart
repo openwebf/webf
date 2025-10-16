@@ -107,6 +107,9 @@ class Selector extends TreeNode {
     }
     return specificity;
   }
+
+  // True if any component simple selector is invalid.
+  bool get hasInvalid => simpleSelectorSequences.any((s) => s.simpleSelector is InvalidSelector);
 }
 
 class SimpleSelectorSequence extends TreeNode {
@@ -160,6 +163,17 @@ abstract class SimpleSelector extends TreeNode {
   bool get isWildcard => _name is Wildcard;
 
   bool get isThis => _name is ThisOperator;
+
+  @override
+  dynamic visit(Visitor visitor) => visitor.visitSimpleSelector(this);
+}
+
+// Marker for an invalid simple selector so selector lists can be discarded.
+class InvalidSelector extends SimpleSelector {
+  InvalidSelector(Identifier name) : super(name);
+
+  @override
+  String toString() => '';
 
   @override
   dynamic visit(Visitor visitor) => visitor.visitSimpleSelector(this);

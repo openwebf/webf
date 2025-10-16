@@ -1401,6 +1401,9 @@ JSModuleDef* ExecutingContext::ModuleLoader(JSContext* ctx, const char* module_n
 
       // Set up enhanced import.meta object
       SetupImportMeta(ctx, result, module_name, context);
+
+      // The module is already referenced by the runtime; free our local JSValue
+      JS_FreeValue(ctx, compiled);
       // Bytes will be automatically freed by ModuleContentGuard destructor
     }
   } else {

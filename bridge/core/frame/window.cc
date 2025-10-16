@@ -332,21 +332,6 @@ WindowComputedStyle Window::getComputedStyle(Element* element,
   return getComputedStyle(element, exception_state);
 }
 
-double Window::requestAnimationFrame(const std::shared_ptr<Function>& callback, ExceptionState& exception_state) {
-  auto frame_callback = FrameCallback::Create(GetExecutingContext(), callback);
-  uint32_t request_id = GetExecutingContext()->document()->RequestAnimationFrame(frame_callback, exception_state);
-  // Add finish recording to force trigger a frame update.
-  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
-  // `-1` represents some error occurred.
-  if (request_id == -1) {
-    exception_state.ThrowException(
-        ctx(), ErrorType::InternalError,
-        "Failed to execute 'requestAnimationFrame': dart method (requestAnimationFrame) executed "
-        "with unexpected error.");
-    return 0;
-  }
-  return request_id;
-}
 
 double Window::___requestIdleCallback__(const std::shared_ptr<QJSFunction>& callback,
                                         webf::ExceptionState& exception_state) {
@@ -372,9 +357,6 @@ int64_t Window::___requestIdleCallback__(const std::shared_ptr<QJSFunction>& cal
   return request_id;
 }
 
-void Window::cancelAnimationFrame(double request_id, ExceptionState& exception_state) {
-  GetExecutingContext()->document()->CancelAnimationFrame(static_cast<uint32_t>(request_id), exception_state);
-}
 
 void Window::cancelIdleCallback(int64_t idle_id, webf::ExceptionState& exception_state) {
   WindowIdleTasks::cancelIdleCallback(*this, idle_id);

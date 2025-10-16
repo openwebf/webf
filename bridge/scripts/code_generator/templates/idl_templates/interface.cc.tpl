@@ -165,6 +165,7 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
 }
 <% } else { %>
   auto* <%= blob.filename %> = toScriptWrappable<<% if (className.startsWith('Legacy')) { %>legacy::<% } %><%= className %>>(this_val);
+  if (<%= blob.filename %> == nullptr) return JS_NULL;
   assert(<%= blob.filename %> != nullptr);
   ExecutingContext* context = ExecutingContext::From(ctx);
   if (!context->IsContextValid()) return JS_NULL;
@@ -261,7 +262,7 @@ static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst
 <% _.forEach(object.props, function(prop, index) { %>
 static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   auto* <%= blob.filename %> = toScriptWrappable<<% if (className.startsWith('Legacy')) { %>legacy::<% } %><%= className %>>(this_val);
-  assert(<%= blob.filename %> != nullptr);
+  if (<%= blob.filename %> == nullptr) return JS_NULL;
   ExecutingContext* context = ExecutingContext::From(ctx);
   if (!context->IsContextValid()) return JS_NULL;
   MemberMutationScope scope{context};

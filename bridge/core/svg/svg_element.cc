@@ -9,6 +9,14 @@ namespace webf {
 SVGElement::SVGElement(const AtomicString& tag_name, Document* document, ConstructionType type)
     : Element(element_namespace_uris::ksvg, tag_name, AtomicString::Null(), document, type) {}
 
+bool SVGElement::IsSVGElement() const {
+  return true;
+}
+
+bool SVGElement::IsStyledElement() const {
+  return false;
+}
+
 void SVGElement::SetNeedsStyleRecalcForInstances(StyleChangeType change_type,
                                                  const StyleChangeReasonForTracing& reason) {
   /* // TODO(guopengfei)：未支持

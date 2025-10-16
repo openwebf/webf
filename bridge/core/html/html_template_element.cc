@@ -24,6 +24,7 @@ DocumentFragment* HTMLTemplateElement::ContentInternal() const {
 
 void HTMLTemplateElement::Trace(webf::GCVisitor* visitor) const {
   visitor->TraceMember(content_);
+  HTMLElement::Trace(visitor);
 }
 
 }  // namespace webf

@@ -177,14 +177,20 @@ class SelectorTextVisitor extends Visitor {
   @override
   void visitPseudoClassFunctionSelector(PseudoClassFunctionSelector node) {
     emit(':${node.name}(');
-    node.argument.visit(this);
+    final arg = node.argument;
+    if (arg is Selector) {
+      arg.visit(this);
+    } else if (arg is List<String>) {
+      // Join nth-expressions or other function args back into text.
+      emit(arg.join(''));
+    }
     emit(')');
   }
 
   @override
   void visitPseudoElementFunctionSelector(PseudoElementFunctionSelector node) {
     emit('::${node.name}(');
-    node.expression.join(' , ');
+    emit(node.expression.join(', '));
     emit(')');
   }
 

@@ -37,7 +37,7 @@ interface Document extends Node, ParentNode, GlobalEventHandlers {
 
   createElement(tagName: string): HTMLElement;
   createElement(tagName: string, options: ElementCreationOptions | string | null): HTMLElement;
-  createElementNS(uri: string | null, tagName: string): Element;
+  createElementNS(uri: string | null, tagName: string, options?: ElementCreationOptions | string | null): Element;
   createTextNode(value: string): Text;
   createDocumentFragment(): DocumentFragment;
   createComment(data: string): Comment;

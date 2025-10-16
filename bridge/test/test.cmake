@@ -27,11 +27,13 @@ list(APPEND WEBF_TEST_SOURCE
   ./core/html/html_collection_test.cc
   ./core/dom/element_test.cc
   ./core/frame/dom_timer_test.cc
+  ./core/frame/queue_microtask_test.cc
   ./core/frame/window_test.cc
   ./core/html/html_element_test.cc
   ./core/html/custom/widget_element_test.cc
   ./core/html/html_style_element_test.cc
   ./core/html/html_meta_element_test.cc
+  ./core/html/html_link_element_rel_list_test.cc
   ./core/timing/performance_test.cc
   ./foundation/shared_ui_command_test.cc
   ./foundation/ui_command_ring_buffer_test.cc

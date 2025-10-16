@@ -317,7 +317,12 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
           }
           break;
         case BACKGROUND_POSITION:
+          // Expand to X/Y longhands for computed usage, but also preserve the raw
+          // comma-separated value so layered painters can retrieve per-layer positions.
           CSSStyleProperty.setShorthandBackgroundPosition(longhandProperties, normalizedValue);
+          // Preserve original list for layered backgrounds (not consumed by renderStyle).
+          // Store directly to pending map during expansion to avoid recursive shorthand handling.
+          _pendingProperties[BACKGROUND_POSITION] = CSSPropertyValue(normalizedValue, baseHref: baseHref);
           break;
         case BORDER_RADIUS:
           CSSStyleProperty.setShorthandBorderRadius(longhandProperties, normalizedValue);
