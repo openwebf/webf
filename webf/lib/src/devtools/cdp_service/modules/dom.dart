@@ -60,6 +60,9 @@ class InspectDOMModule extends UIInspectorModule {
       case 'setNodeValue':
         onSetNodeValue(id, params!);
         break;
+      case 'setAttributeValue':
+        onSetAttributeValue(id, params!);
+        break;
       case 'pushNodesByBackendIdsToFrontend':
         onPushNodesByBackendIdsToFrontend(id, params!);
         break;
@@ -455,6 +458,35 @@ class InspectDOMModule extends UIInspectorModule {
     }
     if (node is TextNode && value != null) {
       node.data = value;
+    }
+    sendToFrontend(id, null);
+  }
+
+  void onSetAttributeValue(int? id, Map<String, dynamic> params) {
+    // https://chromedevtools.github.io/devtools-protocol/tot/DOM/#method-setAttributeValue
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.finer('[DevTools] DOM.setAttributeValue nodeId=${params['nodeId']} name=${params['name']}');
+    }
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    int? nodeId = params['nodeId'];
+    String? name = params['name'];
+    String? value = params['value'];
+    if (nodeId == null || name == null || value == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    final targetId = ctx.getTargetIdByNodeId(nodeId);
+    if (targetId == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    final Node? node = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
+    if (node is Element) {
+      node.setAttribute(name, value);
     }
     sendToFrontend(id, null);
   }

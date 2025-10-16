@@ -7,6 +7,7 @@ import 'dart:ffi';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/devtools.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
@@ -40,6 +41,14 @@ class InspectCSSModule extends UIInspectorModule {
   @override
   void receiveFromFrontend(int? id, String method, Map<String, dynamic>? params) {
     switch (method) {
+      case 'enable':
+        // No-op; return success so DevTools proceeds
+        sendToFrontend(id, JSONEncodableMap({}));
+        break;
+      case 'disable':
+        // No-op for now
+        sendToFrontend(id, JSONEncodableMap({}));
+        break;
       case 'getMatchedStylesForNode':
         handleGetMatchedStylesForNode(id, params!);
         break;
@@ -71,6 +80,9 @@ class InspectCSSModule extends UIInspectorModule {
         break;
       case 'setStyleTexts':
         handleSetStyleTexts(id, params!);
+        break;
+      case 'setStyleSheetText':
+        handleSetStyleSheetText(id, params!);
         break;
       case 'getBackgroundColors':
         handleGetBackgroundColors(id, params!);
@@ -155,8 +167,7 @@ class InspectCSSModule extends UIInspectorModule {
     List edits = params['edits'];
     List<CSSStyle?> styles = [];
 
-    // @TODO: diff the inline style edits.
-    // @TODO: support comments for inline style.
+    // Apply inline style edits by replacing the full inline style text of the target.
     for (Map<String, dynamic> edit in edits) {
       // Use styleSheetId to identify element (handles inline:<nodeId> or numeric).
       final dynamic rawStyleSheetId = edit['styleSheetId'];
@@ -182,23 +193,15 @@ class InspectCSSModule extends UIInspectorModule {
           }
         }
       }
-      String text = edit['text'] ?? '';
-      List<String> texts = text.split(';');
+      String text = (edit['text'] ?? '').toString();
       if (nodeId == null) {
         styles.add(null);
         continue;
       }
       BindingObject? element = ctx.getBindingObject(Pointer.fromAddress(nodeId));
       if (element is Element) {
-        for (String kv in texts) {
-          kv = kv.trim();
-          List<String> _kv = kv.split(':');
-          if (_kv.length == 2) {
-            String name = _kv[0].trim();
-            String value = _kv[1].trim();
-            element.setInlineStyle(camelize(name), value);
-          }
-        }
+        // Replace full inline style with the provided text.
+        _applyInlineStyleText(element, text);
         styles.add(buildInlineStyle(element));
         if (frontendNodeId != null) {
           _trackNodeComputedUpdate(frontendNodeId);
@@ -208,11 +211,130 @@ class InspectCSSModule extends UIInspectorModule {
       }
     }
 
+    if (DebugFlags.enableDevToolsProtocolLogs) {
+      try {
+        final appliedCount = styles.where((s) => s != null).fold<int>(0, (acc, s) => acc + (s!.cssProperties.length));
+        devToolsProtocolLogger.finer('[DevTools] CSS.setStyleTexts edits=${edits.length} appliedProps=$appliedCount');
+      } catch (_) {}
+    }
     sendToFrontend(
         id,
         JSONEncodableMap({
           'styles': styles,
         }));
+  }
+
+  void handleSetStyleSheetText(int? id, Map<String, dynamic> params) {
+    // DevTools may call this for inline styles too (styleSheetId: "inline:<nodeId>")
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    final dynamic rawStyleSheetId = params['styleSheetId'];
+    final String text = (params['text'] ?? '').toString();
+
+    int? nodeId;
+    int? frontendNodeId;
+    if (rawStyleSheetId is int) {
+      frontendNodeId = rawStyleSheetId;
+      nodeId = ctx.getTargetIdByNodeId(rawStyleSheetId);
+    } else if (rawStyleSheetId is String) {
+      String sid = rawStyleSheetId;
+      if (sid.startsWith('inline:')) {
+        final String rest = sid.substring('inline:'.length);
+        final int? nid = int.tryParse(rest);
+        if (nid != null) {
+          frontendNodeId = nid;
+          nodeId = ctx.getTargetIdByNodeId(nid);
+        }
+      } else {
+        final int? nid = int.tryParse(sid);
+        if (nid != null) {
+          frontendNodeId = nid;
+          nodeId = ctx.getTargetIdByNodeId(nid);
+        }
+      }
+    }
+
+    if (nodeId != null) {
+      BindingObject? element = ctx.getBindingObject(Pointer.fromAddress(nodeId));
+      if (element is Element) {
+        _applyInlineStyleText(element, text);
+      }
+    }
+
+    if (DebugFlags.enableDevToolsProtocolLogs) {
+      devToolsProtocolLogger.finer('[DevTools] CSS.setStyleSheetText styleSheetId=$rawStyleSheetId len=${text.length}');
+    }
+    sendToFrontend(id, JSONEncodableMap({}));
+    if (frontendNodeId != null) {
+      _trackNodeComputedUpdate(frontendNodeId);
+    }
+  }
+
+  // Replace inline style with declarations parsed from text
+  void _applyInlineStyleText(Element element, String text) {
+    // Clear all existing inline styles
+    element.clearInlineStyle();
+    if (text.trim().isEmpty) return;
+
+    // Naive split on semicolons not inside parentheses or quotes
+    // Accept simple cases used by inline style editing
+    final List<String> decls = _splitDeclarations(text);
+    for (String decl in decls) {
+      final int colon = decl.indexOf(':');
+      if (colon <= 0) continue;
+      final String name = decl.substring(0, colon).trim();
+      String value = decl.substring(colon + 1).trim();
+      // Drop optional trailing !important marker – inline styles already have highest priority
+      if (value.endsWith('!important')) {
+        value = value.substring(0, value.length - '!important'.length).trim();
+      }
+      if (name.isEmpty) continue;
+      element.setInlineStyle(camelize(name), value);
+    }
+  }
+
+  List<String> _splitDeclarations(String text) {
+    final List<String> out = <String>[];
+    final StringBuffer buf = StringBuffer();
+    int depth = 0; // parentheses depth
+    String? quote; // ' or "
+    for (int i = 0; i < text.length; i++) {
+      final String ch = text[i];
+      if (quote != null) {
+        buf.write(ch);
+        if (ch == quote) quote = null;
+        continue;
+      }
+      if (ch == '"' || ch == '\'') {
+        quote = ch;
+        buf.write(ch);
+        continue;
+      }
+      if (ch == '(') {
+        depth++;
+        buf.write(ch);
+        continue;
+      }
+      if (ch == ')') {
+        if (depth > 0) depth--;
+        buf.write(ch);
+        continue;
+      }
+      if (ch == ';' && depth == 0) {
+        final String part = buf.toString().trim();
+        if (part.isNotEmpty) out.add(part);
+        buf.clear();
+        continue;
+      }
+      buf.write(ch);
+    }
+    final String tail = buf.toString().trim();
+    if (tail.isNotEmpty) out.add(tail);
+    return out;
   }
 
   static CSSStyle? buildMatchedStyle(Element element) {
