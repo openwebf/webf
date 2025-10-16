@@ -64,6 +64,9 @@ class InspectDOMModule extends UIInspectorModule {
       case 'setAttributeValue':
         onSetAttributeValue(id, params!);
         break;
+      case 'querySelector':
+        onQuerySelector(id, params ?? const {});
+        break;
       case 'moveTo':
         onMoveTo(id, params ?? const {});
         break;
@@ -560,6 +563,48 @@ class InspectDOMModule extends UIInspectorModule {
       node.data = value;
     }
     sendToFrontend(id, null);
+  }
+
+  /// https://chromedevtools.github.io/devtools-protocol/tot/DOM/#method-querySelector
+  /// Returns the nodeId of the first element that matches the selector under the given node.
+  void onQuerySelector(int? id, Map<String, dynamic> params) {
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    final int? baseNodeId = params['nodeId'];
+    final String? selector = params['selector'];
+    if (baseNodeId == null || selector == null || selector.isEmpty) {
+      sendToFrontend(id, JSONEncodableMap({'nodeId': 0}));
+      return;
+    }
+
+    final basePtr = ctx.getTargetIdByNodeId(baseNodeId);
+    if (basePtr == null || basePtr == 0) {
+      sendToFrontend(id, JSONEncodableMap({'nodeId': 0}));
+      return;
+    }
+
+    final Node? baseNode = ctx.getBindingObject(Pointer.fromAddress(basePtr)) as Node?;
+    Element? matched;
+    try {
+      if (baseNode is Element) {
+        matched = baseNode.querySelector([selector]);
+      } else if (baseNode is Document) {
+        matched = baseNode.querySelector([selector]);
+      } else if (baseNode?.parentNode is Element) {
+        matched = (baseNode!.parentNode as Element).querySelector([selector]);
+      }
+    } catch (_) {}
+
+    if (matched != null) {
+      final nid = ctx.forDevtoolsNodeId(matched);
+      sendToFrontend(id, JSONEncodableMap({'nodeId': nid}));
+    } else {
+      sendToFrontend(id, JSONEncodableMap({'nodeId': 0}));
+    }
   }
 
   /// https://chromedevtools.github.io/devtools-protocol/tot/DOM/#method-moveTo

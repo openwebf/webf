@@ -552,6 +552,35 @@ void main() {
     expect(obj['objectId'], nodeId.toString());
   });
 
+  testWidgets('DOM.querySelector returns nodeId for match', (tester) async {
+    final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+      tester: tester,
+      controllerName: 'dom-query-selector',
+      html: '<html><body><div id="box"><span class="c">X</span></div></body></html>',
+    );
+
+    final svc = _TestDevToolsService();
+    svc.initWithContext(WebFControllerDebuggingAdapter(prepared.controller));
+    final inspector = svc.uiInspector!;
+    final domProbe = _DOMProbe(svc);
+    inspector.moduleRegistrar['DOM'] = domProbe;
+    domProbe.invoke(0, 'enable', {});
+
+    final base = prepared.document.documentElement!; // query under <html>
+    final baseId = prepared.controller.view.forDevtoolsNodeId(base);
+
+    domProbe.invoke(15, 'querySelector', {'nodeId': baseId, 'selector': '#box'});
+    final res = domProbe.lastResults[15]!;
+    final matchedNodeId = res['nodeId'] as int;
+    final box = prepared.document.getElementById(['box'])!;
+    expect(matchedNodeId, prepared.controller.view.forDevtoolsNodeId(box));
+
+    // Not found should return 0
+    domProbe.invoke(16, 'querySelector', {'nodeId': baseId, 'selector': '#nope'});
+    final res2 = domProbe.lastResults[16]!;
+    expect(res2['nodeId'], 0);
+  });
+
   testWidgets('DOM.describeNode returns node with limited depth', (tester) async {
     final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
       tester: tester,
