@@ -467,6 +467,45 @@ void main() {
     expect(nodeIds[1], prepared.controller.view.forDevtoolsNodeId(b));
   });
 
+  testWidgets('DOM.moveTo moves node before anchor', (tester) async {
+    final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+      tester: tester,
+      controllerName: 'dom-move-to',
+      html:
+          '<html><body><div id="p1"><span id="a">A</span><span id="b">B</span></div><div id="p2"><span id="c">C</span></div></body></html>',
+    );
+
+    final svc = _TestDevToolsService();
+    svc.initWithContext(WebFControllerDebuggingAdapter(prepared.controller));
+    final inspector = svc.uiInspector!;
+    final domProbe = _DOMProbe(svc);
+    inspector.moduleRegistrar['DOM'] = domProbe;
+    domProbe.invoke(0, 'enable', {});
+
+    final doc = prepared.document;
+    final b = doc.getElementById(['b'])!;
+    final p2 = doc.getElementById(['p2'])!;
+    final c = doc.getElementById(['c'])!;
+
+    final nodeId = prepared.controller.view.forDevtoolsNodeId(b);
+    final targetNodeId = prepared.controller.view.forDevtoolsNodeId(p2);
+    final insertBeforeNodeId = prepared.controller.view.forDevtoolsNodeId(c);
+
+    domProbe.invoke(21, 'moveTo', {
+      'nodeId': nodeId,
+      'targetNodeId': targetNodeId,
+      'insertBeforeNodeId': insertBeforeNodeId,
+    });
+
+    // After move: p1 should only have <span id=a>, p2 should have <span id=b> before <span id=c>
+    final p1 = doc.getElementById(['p1'])!;
+    expect((p1.childNodes.first as dom.Element).id, 'a');
+    expect((p1.childNodes.length), 2 - 1); // originally 2, now 1
+
+    final p2ChildrenIds = p2.childNodes.whereType<dom.Element>().map((e) => e.id).toList();
+    expect(p2ChildrenIds, ['b', 'c']);
+  });
+
   testWidgets('DOM.getNodeForLocation returns node at point', (tester) async {
     final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
       tester: tester,

@@ -64,6 +64,9 @@ class InspectDOMModule extends UIInspectorModule {
       case 'setAttributeValue':
         onSetAttributeValue(id, params!);
         break;
+      case 'moveTo':
+        onMoveTo(id, params ?? const {});
+        break;
       case 'pushNodesByBackendIdsToFrontend':
         onPushNodesByBackendIdsToFrontend(id, params!);
         break;
@@ -557,6 +560,81 @@ class InspectDOMModule extends UIInspectorModule {
       node.data = value;
     }
     sendToFrontend(id, null);
+  }
+
+  /// https://chromedevtools.github.io/devtools-protocol/tot/DOM/#method-moveTo
+  /// Moves the node identified by nodeId into the new container (targetNodeId),
+  /// optionally before insertBeforeNodeId when provided. Returns the nodeId.
+  void onMoveTo(int? id, Map<String, dynamic> params) {
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    final int? nodeId = params['nodeId'];
+    final int? targetNodeId = params['targetNodeId'];
+    // Spec uses insertBeforeNodeId; accept alternative keys for compatibility.
+    final int? insertBeforeNodeId = params['insertBeforeNodeId'] ?? params['anchorNodeId'];
+
+    if (nodeId == null || targetNodeId == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    final nodePtrAddr = ctx.getTargetIdByNodeId(nodeId);
+    final targetPtrAddr = ctx.getTargetIdByNodeId(targetNodeId);
+    final beforePtrAddr = insertBeforeNodeId != null ? ctx.getTargetIdByNodeId(insertBeforeNodeId) : null;
+
+    if (nodePtrAddr == null || targetPtrAddr == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    final node = ctx.getBindingObject(Pointer.fromAddress(nodePtrAddr)) as Node?;
+    final target = ctx.getBindingObject(Pointer.fromAddress(targetPtrAddr)) as Node?;
+    final before = (beforePtrAddr != null && beforePtrAddr != 0)
+        ? ctx.getBindingObject(Pointer.fromAddress(beforePtrAddr)) as Node?
+        : null;
+
+    if (node == null || target == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    // Use controller view bridge to ensure DevTools incremental callbacks fire.
+    final controller = ctx.getController() ?? devtoolsService.controller;
+    if (controller == null) {
+      // Fallback to raw DOM operations if controller not present
+      try {
+        // Remove from old parent
+        node.parentNode?.removeChild(node);
+        // Insert before anchor if provided else append
+        if (before != null && before.parentNode == target) {
+          target.insertBefore(node, before);
+        } else if (target is ContainerNode) {
+          target.appendChild(node);
+        }
+      } catch (_) {}
+    } else {
+      final view = controller.view;
+      try {
+        // Emit removal from old parent
+        if (node.parentNode != null) {
+          view.removeNode(node.pointer!);
+        }
+        // Insert before anchor or append to target
+        if (before != null) {
+          // Insert before the given reference node
+          view.insertAdjacentNode(before.pointer!, 'beforebegin', node.pointer!);
+        } else {
+          // Append as last child of target
+          view.insertAdjacentNode(target.pointer!, 'beforeend', node.pointer!);
+        }
+      } catch (_) {}
+    }
+
+    sendToFrontend(id, JSONEncodableMap({'nodeId': nodeId}));
   }
 
   void onSetAttributeValue(int? id, Map<String, dynamic> params) {
