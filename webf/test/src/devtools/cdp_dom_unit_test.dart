@@ -528,6 +528,32 @@ void main() {
     expect(el.hasAttribute('data-c'), isFalse);
   });
 
+  testWidgets('DOM.setOuterHTML renames, sets attributes, and text content', (tester) async {
+    final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+      tester: tester,
+      controllerName: 'dom-set-outer-html',
+      html: '<html><body><div id="x">Old</div></body></html>',
+    );
+
+    final svc = _TestDevToolsService();
+    svc.initWithContext(WebFControllerDebuggingAdapter(prepared.controller));
+    final inspector = svc.uiInspector!;
+    final domProbe = _DOMProbe(svc);
+    inspector.moduleRegistrar['DOM'] = domProbe;
+    domProbe.invoke(0, 'enable', {});
+
+    final el = prepared.document.getElementById(['x'])!;
+    final nodeId = prepared.controller.view.forDevtoolsNodeId(el);
+
+    domProbe.invoke(27, 'setOuterHTML', {'nodeId': nodeId, 'outerHTML': '<section id="x" class="c">Hello</section>'});
+
+    final renamed = prepared.document.getElementById(['x']);
+    expect(renamed, isNotNull);
+    expect(renamed!.tagName.toLowerCase(), 'section');
+    expect(renamed.getAttribute('class'), 'c');
+    expect((renamed.firstChild as dom.TextNode).data, contains('Hello'));
+  });
+
   testWidgets('DOM.pushNodesByBackendIdsToFrontend maps to nodeIds', (tester) async {
     final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
       tester: tester,

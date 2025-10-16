@@ -59,6 +59,9 @@ class InspectDOMModule extends UIInspectorModule {
       case 'getOuterHTML':
         onGetOuterHTML(id, params!);
         break;
+      case 'setOuterHTML':
+        onSetOuterHTML(id, params ?? const {});
+        break;
       case 'setNodeValue':
         onSetNodeValue(id, params!);
         break;
@@ -593,6 +596,128 @@ class InspectDOMModule extends UIInspectorModule {
             'outerHTML': '',
           }));
     }
+  }
+
+  /// https://chromedevtools.github.io/devtools-protocol/tot/DOM/#method-setOuterHTML
+  /// Sets outer HTML for an element. Simplified parser that supports tag, attributes,
+  /// and plain text content. Nested markup in content will be treated as text.
+  void onSetOuterHTML(int? id, Map<String, dynamic> params) {
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    final int? nodeId = params['nodeId'];
+    final String? outer = params['outerHTML'];
+    if (nodeId == null || outer == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    final targetId = ctx.getTargetIdByNodeId(nodeId);
+    if (targetId == null || targetId == 0) {
+      sendToFrontend(id, null);
+      return;
+    }
+    final Node? baseNode = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
+    if (baseNode is! Element) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    // Parse minimal outerHTML: <tag attrs>content</tag> or <tag attrs/> self-closing
+    final selfClose = RegExp(r"""^\s*<\s*([a-zA-Z0-9-]+)([^>]*)/\s*>\s*$""");
+    final normal = RegExp(r"""^\s*<\s*([a-zA-Z0-9-]+)([^>]*)>([\s\S]*)<\/\s*\1\s*>\s*$""");
+    String? tag;
+    String attrs = '';
+    String content = '';
+    RegExpMatch? m = normal.firstMatch(outer);
+    if (m != null) {
+      tag = m.group(1);
+      attrs = m.group(2)?.trim() ?? '';
+      content = m.group(3) ?? '';
+    } else {
+      m = selfClose.firstMatch(outer);
+      if (m != null) {
+        tag = m.group(1);
+        attrs = m.group(2)?.trim() ?? '';
+        content = '';
+      }
+    }
+
+    if (tag == null || tag.isEmpty) {
+      // Fallback: ignore invalid markup
+      sendToFrontend(id, null);
+      return;
+    }
+
+    final controller = ctx.getController() ?? devtoolsService.controller;
+    if (controller == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    // Prepare working element reference; rename if needed and update nodeId
+    Element workingEl = baseNode;
+    int workingNodeId = nodeId;
+    if (baseNode.tagName.toLowerCase() != tag.toLowerCase()) {
+      final newPtr = allocateNewBindingObject();
+      try {
+        controller.view.createElement(newPtr, tag);
+        // Copy attributes/inline style
+        controller.view.cloneNode(baseNode.pointer!, newPtr);
+        final Element? newEl = ctx.getBindingObject(newPtr) as Element?;
+        if (newEl != null) {
+          // Move children from old to new
+          while (baseNode.firstChild != null) {
+            newEl.appendChild(baseNode.firstChild!);
+          }
+          // Insert new next to old and remove old
+          controller.view.insertAdjacentNode(baseNode.pointer!, 'afterend', newPtr);
+          controller.view.removeNode(baseNode.pointer!);
+          workingEl = newEl;
+          workingNodeId = ctx.forDevtoolsNodeId(newEl);
+        }
+      } catch (_) {
+        // fall back: keep baseNode
+      }
+    }
+
+    // Apply attributes
+    if (attrs.isNotEmpty) {
+      onSetAttributesAsText(null, {'nodeId': workingNodeId, 'text': attrs});
+    } else {
+      // Clear attributes (preserve id if present in original) – keep it simple: leave as-is when empty
+    }
+
+    // Replace children with plain text content
+    try {
+      // Remove all existing children via view bridge to emit events
+      while (workingEl.firstChild != null) {
+        final child = workingEl.firstChild!;
+        controller.view.removeNode(child.pointer!);
+      }
+    } catch (_) {
+      // Fallback: direct removal
+      while (workingEl.firstChild != null) {
+        workingEl.removeChild(workingEl.firstChild!);
+      }
+    }
+
+    final trimmed = content.trim();
+    if (trimmed.isNotEmpty) {
+      // If content contains markup, treat as text
+      final textPtr = allocateNewBindingObject();
+      controller.view.createTextNode(textPtr, trimmed);
+      try {
+        controller.view.insertAdjacentNode(workingEl.pointer!, 'beforeend', textPtr);
+      } catch (_) {
+        final tnode = ctx.getBindingObject(textPtr) as Node?;
+        if (tnode != null) workingEl.appendChild(tnode);
+      }
+    }
+
+    sendToFrontend(id, null);
   }
 
   void onSetNodeValue(int? id, Map<String, dynamic> params) {
