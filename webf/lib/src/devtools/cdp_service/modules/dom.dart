@@ -461,8 +461,20 @@ class InspectDOMModule extends UIInspectorModule {
     if (targetId != null) {
       node = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
     }
-    if (node != null && node.parentNode != null) {
-      node.parentNode!.removeChild(node);
+    if (node != null) {
+      // Prefer controller bridge to emit incremental CDP events (childNodeRemoved)
+      final controller = ctx.getController() ?? devtoolsService.controller;
+      if (controller != null) {
+        try {
+          controller.view.removeNode(node.pointer!);
+        } catch (_) {
+          if (node.parentNode != null) {
+            node.parentNode!.removeChild(node);
+          }
+        }
+      } else if (node.parentNode != null) {
+        node.parentNode!.removeChild(node);
+      }
     }
     sendToFrontend(id, null);
   }
