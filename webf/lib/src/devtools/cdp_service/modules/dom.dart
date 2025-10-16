@@ -488,6 +488,7 @@ class InspectDOMModule extends UIInspectorModule {
     }
     int? nodeId = params['nodeId'];
     String? text = params['text'];
+    String? name = params['name'];
     final ctx = dbgContext;
     if (nodeId == null || ctx == null) {
       sendToFrontend(id, null);
@@ -499,17 +500,40 @@ class InspectDOMModule extends UIInspectorModule {
       node = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
     }
     if (node is Element && text != null) {
-      // Parse attribute text (format: attr1="value1" attr2="value2")
-      // For now, just clear and set new attributes
-      node.attributes.clear();
-
-      // Simple parsing - this could be improved
-      final regex = RegExp(r'(\w+)="([^"]*)"');
-      for (final match in regex.allMatches(text)) {
-        final attrName = match.group(1);
-        final attrValue = match.group(2);
-        if (attrName != null && attrValue != null) {
-          node.setAttribute(attrName, attrValue);
+      final el = node as Element;
+      if (name != null && name.isNotEmpty) {
+        // Update single attribute case
+        if (text.isEmpty) {
+          el.removeAttribute(name);
+        } else {
+          el.setAttribute(name, text);
+        }
+      } else {
+        // Replace attributes from text string
+        el.attributes.clear();
+        // Match name="value" or name='value', allow hyphens/colons in attribute name
+        final pair = RegExp(r"""([^\s=]+)\s*=\s*("([^"]*)"|'([^']*)')""");
+        for (final m in pair.allMatches(text)) {
+          final attrName = m.group(1);
+          final dv = m.group(3); // double-quoted value
+          final sv = m.group(4); // single-quoted value
+          final attrValue = dv ?? sv ?? '';
+          if (attrName != null) {
+            el.setAttribute(attrName, attrValue);
+          }
+        }
+        // Also handle boolean attributes present without =value
+        // by scanning leftover tokens that look like names
+        final consumed = pair.allMatches(text).map((m) => m.group(0)!).join(' ');
+        final remainder = text.replaceAll(consumed, ' ').trim();
+        if (remainder.isNotEmpty) {
+          // Split by whitespace and set empty string for each token not containing '='
+          for (final token in remainder.split(RegExp(r'\s+'))) {
+            if (token.isEmpty) continue;
+            if (!token.contains('=')) {
+              el.setAttribute(token, '');
+            }
+          }
         }
       }
     }
