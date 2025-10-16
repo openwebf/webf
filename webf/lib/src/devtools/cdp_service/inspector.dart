@@ -122,6 +122,22 @@ class DOMCharacterDataModifiedEvent extends InspectorEvent {
       });
 }
 
+class DOMChildNodeCountUpdatedEvent extends InspectorEvent {
+  final Node node;
+  final int childNodeCount;
+
+  DOMChildNodeCountUpdatedEvent({required this.node, required this.childNodeCount});
+
+  @override
+  String get method => 'DOM.childNodeCountUpdated';
+
+  @override
+  JSONEncodable? get params => JSONEncodableMap({
+        'nodeId': node.ownerView.forDevtoolsNodeId(node),
+        'childNodeCount': childNodeCount,
+      });
+}
+
 // Event to seed the children list of a parent node
 class DOMSetChildNodesEvent extends InspectorEvent {
   final int parentId;

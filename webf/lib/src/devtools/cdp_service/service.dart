@@ -157,7 +157,18 @@ abstract class DevToolsService {
         } catch (_) {}
 
         // If we just seeded the children list, do not also emit an insert for the same node.
-        if (didSeed) return;
+        if (didSeed) {
+          // Still update child count since structure changed
+          try {
+            final pId = context.forDevtoolsNodeId(parent);
+            final count = parent.childNodes
+                .where((c) => c is Element || (c is TextNode && c.data.trim().isNotEmpty))
+                .length;
+            ChromeDevToolsService.unifiedService.sendEventToFrontend(
+                DOMChildNodeCountUpdatedEvent(node: parent, childNodeCount: count));
+          } catch (_) {}
+          return;
+        }
         if (DebugFlags.enableDevToolsProtocolLogs) {
           try {
             final pId = context.forDevtoolsNodeId(parent);
@@ -174,6 +185,14 @@ abstract class DevToolsService {
           node: node,
           previousSibling: previousSibling,
         ));
+        // Update child count for the parent
+        try {
+          final count = parent.childNodes
+              .where((c) => c is Element || (c is TextNode && c.data.trim().isNotEmpty))
+              .length;
+          ChromeDevToolsService.unifiedService.sendEventToFrontend(
+              DOMChildNodeCountUpdatedEvent(node: parent, childNodeCount: count));
+        } catch (_) {}
       }
     };
     context.debugChildNodeRemoved = (parent, node) {
@@ -217,8 +236,17 @@ abstract class DevToolsService {
           }
         } catch (_) {}
         // If we just seeded with the current children (which no longer includes the removed node),
-        // there's no need to also emit a removal event for an unknown node.
-        if (didSeed) return;
+        // still update the count and skip removal event for unknown node.
+        if (didSeed) {
+          try {
+            final count = parent.childNodes
+                .where((c) => c is Element || (c is TextNode && c.data.trim().isNotEmpty))
+                .length;
+            ChromeDevToolsService.unifiedService.sendEventToFrontend(
+                DOMChildNodeCountUpdatedEvent(node: parent, childNodeCount: count));
+          } catch (_) {}
+          return;
+        }
         if (DebugFlags.enableDevToolsProtocolLogs) {
           try {
             final pId = context.forDevtoolsNodeId(parent);
@@ -233,6 +261,14 @@ abstract class DevToolsService {
           parent: parent,
           node: node,
         ));
+        // Update child count for the parent
+        try {
+          final count = parent.childNodes
+              .where((c) => c is Element || (c is TextNode && c.data.trim().isNotEmpty))
+              .length;
+          ChromeDevToolsService.unifiedService.sendEventToFrontend(
+              DOMChildNodeCountUpdatedEvent(node: parent, childNodeCount: count));
+        } catch (_) {}
       }
     };
     context.debugAttributeModified = (element, name, value) {
