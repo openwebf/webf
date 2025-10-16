@@ -160,15 +160,16 @@ bool CSSStyleDeclaration::AnonymousNamedSetter(const webf::AtomicString& name, c
   if (!IsValidCSSPropertyID(unresolved_property)) {
     return false;
   }
+  // We don't need this as we are not going to parse value at all.
   ExceptionState exception_state;
-  if (value.IsNumber()) {
-    double double_value = value.ToDouble(ctx());
-    if (FastPathSetProperty(unresolved_property, double_value)) {
-      return true;
-    }
-    // The fast path failed, e.g. because the property was a longhand,
-    // so let the normal string handling deal with it.
-  }
+  // if (value.IsNumber()) {
+  //   double double_value = value.ToDouble(ctx());
+  //   if (FastPathSetProperty(unresolved_property, double_value)) {
+  //     return true;
+  //   }
+  //   // The fast path failed, e.g. because the property was a longhand,
+  //   // so let the normal string handling deal with it.
+  // }
 
   if (value.IsString()) {
     auto string = value.ToString(ctx());

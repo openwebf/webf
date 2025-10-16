@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "core/css/parser/css_property_parser.h"
+#include "core/css/css_property_value_set.h"
 #include "core/css/css_grid_integer_repeat_value.h"
 #include "core/css/css_image_set_value.h"
 #include "core/css/css_repeat_style_value.h"
@@ -685,6 +686,81 @@ TEST(CSSPropertyParserTest, RepeatStyleRoundViaShorthand) {
 
 TEST(CSSPropertyParserTest, RepeatStyle2ValViaShorthand) {
   TestRepeatStyleViaShorthandsParsing("url(foo) space repeat"_s, "space repeat"_s);
+}
+
+TEST(CSSPropertyParserRawTextTest, StoresRawTextForLonghandValue) {
+  auto style = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+  auto result = CSSParser::ParseValue(style.get(), CSSPropertyID::kColor, "rgba(255, 0, 0, 0.5)"_s,
+                                      false /* important */, nullptr);
+  EXPECT_EQ(result, MutableCSSPropertyValueSet::kChangedPropertySet);
+  ASSERT_EQ(style->PropertyCount(), 1u);
+  auto property = style->PropertyAt(0);
+  const auto* value_ptr = property.Value();
+  ASSERT_TRUE(value_ptr && *value_ptr);
+  EXPECT_EQ((*value_ptr)->RawText(), "rgba(255, 0, 0, 0.5)"_s);
+}
+
+TEST(CSSPropertyParserRawTextTest, TrimsLeadingWhitespace) {
+  auto style = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+  auto result = CSSParser::ParseValue(style.get(), CSSPropertyID::kColor, "   blue"_s,
+                                      false /* important */, nullptr);
+  EXPECT_EQ(result, MutableCSSPropertyValueSet::kChangedPropertySet);
+  ASSERT_EQ(style->PropertyCount(), 1u);
+  auto property = style->PropertyAt(0);
+  const auto* value_ptr = property.Value();
+  ASSERT_TRUE(value_ptr && *value_ptr);
+  EXPECT_EQ((*value_ptr)->RawText(), "blue"_s);
+}
+
+TEST(CSSPropertyParserRawTextTest, StripsImportantFromRawText) {
+  auto style = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+  auto result = CSSParser::ParseValue(style.get(), CSSPropertyID::kColor, "red   !important"_s,
+                                      false /* important */, nullptr);
+  EXPECT_EQ(result, MutableCSSPropertyValueSet::kChangedPropertySet);
+  ASSERT_EQ(style->PropertyCount(), 1u);
+  auto property = style->PropertyAt(0);
+  EXPECT_TRUE(property.IsImportant());
+  const auto* value_ptr = property.Value();
+  ASSERT_TRUE(value_ptr && *value_ptr);
+  EXPECT_EQ((*value_ptr)->RawText(), "red"_s);
+}
+
+TEST(CSSPropertyParserRawTextTest, ShorthandRawTextPreservedOnExpansion) {
+  auto style = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+  auto result = CSSParser::ParseValue(style.get(), CSSPropertyID::kMargin, "10px 20px"_s,
+                                      false /* important */, nullptr);
+  EXPECT_EQ(result, MutableCSSPropertyValueSet::kChangedPropertySet);
+  ASSERT_GT(style->PropertyCount(), 0u);
+  for (unsigned i = 0; i < style->PropertyCount(); ++i) {
+    auto property = style->PropertyAt(i);
+    const auto* value_ptr = property.Value();
+    ASSERT_TRUE(value_ptr && *value_ptr);
+    EXPECT_EQ((*value_ptr)->RawText(), "10px 20px"_s);
+  }
+}
+
+TEST(CSSPropertyParserRawTextTest, CssWideKeywordRawText) {
+  auto style = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+  auto result = CSSParser::ParseValue(style.get(), CSSPropertyID::kColor, "inherit"_s,
+                                      false /* important */, nullptr);
+  EXPECT_EQ(result, MutableCSSPropertyValueSet::kChangedPropertySet);
+  ASSERT_EQ(style->PropertyCount(), 1u);
+  auto property = style->PropertyAt(0);
+  const auto* value_ptr = property.Value();
+  ASSERT_TRUE(value_ptr && *value_ptr);
+  EXPECT_EQ((*value_ptr)->RawText(), "inherit"_s);
+}
+
+TEST(CSSPropertyParserRawTextTest, VariableReferenceRawText) {
+  auto style = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+  auto result = CSSParser::ParseValue(style.get(), CSSPropertyID::kColor, "var(--accent)"_s,
+                                      false /* important */, nullptr);
+  EXPECT_EQ(result, MutableCSSPropertyValueSet::kChangedPropertySet);
+  ASSERT_EQ(style->PropertyCount(), 1u);
+  auto property = style->PropertyAt(0);
+  const auto* value_ptr = property.Value();
+  ASSERT_TRUE(value_ptr && *value_ptr);
+  EXPECT_EQ((*value_ptr)->RawText(), "var(--accent)"_s);
 }
 
 }  // namespace webf

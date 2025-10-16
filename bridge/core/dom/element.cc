@@ -20,6 +20,7 @@
 #include "core/css/parser/css_parser.h"
 #include "core/css/style_engine.h"
 #include "core/css/style_scope_data.h"
+#include "core/css/white_space.h"
 #include "core/dom/document_fragment.h"
 #include "core/dom/element_rare_data_vector.h"
 #include "core/fileapi/blob.h"
@@ -481,16 +482,58 @@ void Element::NotifyInlineStyleMutation() {
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, bindingObject(), nullptr);
 
   // Emit each declared property as raw CSS string value for Dart to process.
+  // Combine white-space longhands into shorthand to keep Dart side consistent.
   unsigned count = inline_style->PropertyCount();
+  bool have_ws_collapse = false;
+  bool have_text_wrap = false;
+  WhiteSpaceCollapse ws_collapse_enum = WhiteSpaceCollapse::kCollapse;  // initial
+  TextWrap text_wrap_enum = TextWrap::kWrap;                             // initial
+
   for (unsigned i = 0; i < count; ++i) {
     auto property = inline_style->PropertyAt(i);
+    CSSPropertyID id = property.Id();
     AtomicString prop_name = property.Name().ToAtomicString();
     String value_string = inline_style->GetPropertyValueWithHint(prop_name, i);
-    AtomicString value_atom(value_string);
 
+    if (id == CSSPropertyID::kWhiteSpaceCollapse) {
+      std::string sv = value_string.ToUTF8String();
+      if (sv == "collapse") { ws_collapse_enum = WhiteSpaceCollapse::kCollapse; have_ws_collapse = true; }
+      else if (sv == "preserve") { ws_collapse_enum = WhiteSpaceCollapse::kPreserve; have_ws_collapse = true; }
+      else if (sv == "preserve-breaks") { ws_collapse_enum = WhiteSpaceCollapse::kPreserveBreaks; have_ws_collapse = true; }
+      else if (sv == "break-spaces") { ws_collapse_enum = WhiteSpaceCollapse::kBreakSpaces; have_ws_collapse = true; }
+      continue; // Defer emission; will emit shorthand later.
+    }
+    if (id == CSSPropertyID::kTextWrap) {
+      std::string sv = value_string.ToUTF8String();
+      if (sv == "wrap") { text_wrap_enum = TextWrap::kWrap; have_text_wrap = true; }
+      else if (sv == "nowrap") { text_wrap_enum = TextWrap::kNoWrap; have_text_wrap = true; }
+      else if (sv == "balance") { text_wrap_enum = TextWrap::kBalance; have_text_wrap = true; }
+      else if (sv == "pretty") { text_wrap_enum = TextWrap::kPretty; have_text_wrap = true; }
+      continue; // Defer emission; will emit shorthand later.
+    }
+
+    AtomicString value_atom(value_string);
     std::unique_ptr<SharedNativeString> args_01 = prop_name.ToStylePropertyNameNativeString();
     GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(),
                                                          value_atom.ToNativeString().release());
+  }
+
+  if (have_ws_collapse || have_text_wrap) {
+    EWhiteSpace ws = ToWhiteSpace(ws_collapse_enum, text_wrap_enum);
+    String ws_value;
+    switch (ws) {
+      case EWhiteSpace::kNormal: ws_value = String("normal"); break;
+      case EWhiteSpace::kNowrap: ws_value = String("nowrap"); break;
+      case EWhiteSpace::kPre: ws_value = String("pre"); break;
+      case EWhiteSpace::kPreLine: ws_value = String("pre-line"); break;
+      case EWhiteSpace::kPreWrap: ws_value = String("pre-wrap"); break;
+      case EWhiteSpace::kBreakSpaces: ws_value = String("break-spaces"); break;
+    }
+    auto ws_prop = AtomicString::CreateFromUTF8("white-space");
+    auto ws_key = ws_prop.ToStylePropertyNameNativeString();
+    AtomicString ws_value_atom(ws_value);
+    GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(ws_key), bindingObject(),
+                                                         ws_value_atom.ToNativeString().release());
   }
 }
 

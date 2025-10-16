@@ -8,6 +8,7 @@
 
 #include "css_parser.h"
 #include "core/base/memory/shared_ptr.h"
+#include "core/base/notreached.h"
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_parser_fast_path.h"
 #include "core/css/parser/css_parser_token_stream.h"
@@ -18,9 +19,9 @@
 #include "core/css/parser/css_variable_parser.h"
 #include "core/css/properties/css_parsing_utils.h"
 #include "core/css/style_sheet_contents.h"
-#include "foundation/string/wtf_string.h"
 #include "css_parser_impl.h"
 #include "foundation/logging.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -105,6 +106,9 @@ MutableCSSPropertyValueSet::SetResult CSSParser::ParseValue(MutableCSSPropertyVa
                                                             const String& string,
                                                             bool important,
                                                             std::shared_ptr<const CSSParserContext> context) {
+  if (!context) {
+    context = std::make_shared<CSSParserContext>(declaration->CssParserMode());
+  }
   return CSSParserImpl::ParseValue(declaration, unresolved_property, string, important, context);
 }
 
@@ -122,29 +126,16 @@ MutableCSSPropertyValueSet::SetResult CSSParser::ParseValue(MutableCSSPropertyVa
   CSSParserMode parser_mode = declaration->CssParserMode();
   std::shared_ptr<const CSSParserContext> context = GetParserContext(style_sheet, execution_context, parser_mode);
 
+  // Skip the fast path as we aren't going to parse the value at all.
   // See if this property has a specific fast-path parser.
-  std::shared_ptr<const CSSValue> value = CSSParserFastPaths::MaybeParseValue(resolved_property, StringView(string), context);
-  if (value) {
-    return declaration->SetLonghandProperty(CSSPropertyValue(CSSPropertyName(resolved_property), value, important));
-  }
+  // std::shared_ptr<const CSSValue> value = CSSParserFastPaths::MaybeParseValue(resolved_property, StringView(string), context);
+  // if (value) {
+  //   return declaration->SetLonghandProperty(CSSPropertyValue(CSSPropertyName(resolved_property), value, important));
+  // }
 
-  // OK, that didn't work (either the property doesn't have a fast path,
-  // or the string is on some form that the fast-path parser doesn't support,
-  // e.g. a parse error). See if the value we are looking for is a longhand;
-  // if so, we can use a faster parsing function. In particular, we don't need
-  // to set up a vector for the results, since there will be only one.
-  //
-  // We only allow this path in standards mode, which rules out situations
-  // like @font-face parsing etc. (which have their own rules).
-  const CSSProperty& property = CSSProperty::Get(resolved_property);
-  if (parser_mode == kHTMLStandardMode && property.IsProperty() && !property.IsShorthand()) {
-    CSSTokenizer tokenizer(string);
-    CSSParserTokenStream stream(tokenizer);
-    value = CSSPropertyParser::ParseSingleValue(resolved_property, stream, context);
-    if (value != nullptr) {
-      return declaration->SetLonghandProperty(CSSPropertyValue(CSSPropertyName(resolved_property), value, important));
-    }
-  }
+  // Skip the longhand single-value path to ensure we preserve raw text for
+  // all values (we do not want to construct structured CSSValue trees here).
+  // Fall through to the full parser which we have wired to capture raw text.
 
   // OK, that didn't work either, so we'll need the full-blown parser.
   return ParseValue(declaration, unresolved_property, string, important, context);

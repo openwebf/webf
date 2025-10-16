@@ -32,6 +32,7 @@
 #include "foundation/string/wtf_string.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_markup.h"
+#include "core/css/css_value.h"
 #include "core/css/parser/css_parser.h"
 #include "core/css/properties/css_property.h"
 #include "core/css/property_set_css_style_declaration.h"
@@ -104,11 +105,14 @@ const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::GetPropertyCSSValueW
     const AtomicString& property_name,
     unsigned index) const {
   assert(property_name == PropertyAt(index).Name().ToAtomicString());
-  return PropertyAt(index).Value();
+  auto value = PropertyAt(index).Value();
+  // CSSRawValue was abandoned.
+  // DCHECK(value->get()->IsRawValue());
+  return value;
 }
 
 String CSSPropertyValueSet::GetPropertyValueWithHint(const AtomicString& property_name, unsigned int index) const {
-  auto value = GetPropertyCSSValueWithHint(property_name, index);
+  const std::shared_ptr<const CSSValue>* value = GetPropertyCSSValueWithHint(property_name, index);
   if (value) {
     return value->get()->CssText();
   }
@@ -390,6 +394,8 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetPro
   // When replacing an existing property value, this moves the property to the
   // end of the list. Firefox preserves the position, and MSIE moves the
   // property to the beginning.
+  auto name = CSSPropertyName(unresolved_property);
+  WEBF_LOG(ERROR) << "The property: " << name.ToAtomicString().ToUTF8String() << "=" << value.ToUTF8String();
   return CSSParser::ParseValue(this, unresolved_property, value, important, context_style_sheet);
 }
 

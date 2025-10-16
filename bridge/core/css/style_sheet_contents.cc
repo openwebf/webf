@@ -237,12 +237,12 @@ void StyleSheetContents::ParserAppendRule(std::shared_ptr<StyleRuleBase> rule) {
     WEBF_COND_LOG(STYLESHEET, VERBOSE) << "[StyleSheet] Rule property count: " << props.PropertyCount();
     for (unsigned i = 0; i < props.PropertyCount(); ++i) {
       auto prop = props.PropertyAt(i);
-      const auto* vptr = prop.Value();
+      const auto vptr = prop.Value();
       std::string name = prop.Name().IsCustomProperty()
                              ? prop.Name().ToAtomicString().ToUTF8String()
                              : CSSProperty::Get(prop.Id()).GetPropertyNameString().ToUTF8String();
       WEBF_COND_LOG(STYLESHEET, VERBOSE) << "  - " << name << ": '"
-                                          << (vptr && *vptr ? (*vptr)->CssText().ToUTF8String() : std::string("<null>"))
+                                          << ((vptr && *vptr) ? (*vptr)->CssText().ToUTF8String() : std::string("<null>"))
                                           << "'";
     }
   }

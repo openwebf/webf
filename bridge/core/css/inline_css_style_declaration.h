@@ -48,6 +48,10 @@ class InlineCssStyleDeclaration : public AbstractPropertySetCSSStyleDeclaration 
 
   void DidMutate(MutationType) override;
 
+  // Inline style should not take the numeric fast-path; we want to preserve
+  // the raw textual value for all properties.
+  bool FastPathSetProperty(CSSPropertyID unresolved_property, double value) override { return false; }
+
   Member<Element> parent_element_;
 };
 

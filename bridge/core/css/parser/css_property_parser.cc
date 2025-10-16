@@ -12,6 +12,7 @@
 #include "core/css/css_unparsed_declaration_value.h"
 #include "core/css/hash_tools.h"
 #include "core/css/parser/at_rule_descriptor_parser.h"
+#include "core/css/parser/css_parser_idioms.h"
 #include "core/css/parser/css_parser_impl.h"
 #include "core/css/parser/css_parser.h"
 #include "core/css/parser/css_tokenized_value.h"
@@ -25,6 +26,14 @@
 namespace webf {
 
 namespace {
+
+StringView StripRawTextWhitespace(StringView text) {
+  StringView trimmed = CSSVariableParser::StripTrailingWhitespaceAndComments(text);
+  while (!trimmed.Empty() && IsHTMLSpace(trimmed[0])) {
+    trimmed = trimmed.substr(1);
+  }
+  return trimmed;
+}
 
 bool IsPropertyAllowedInRule(const CSSProperty& property, StyleRule::RuleType rule_type) {
   // This function should be called only when parsing a property. Shouldn't
@@ -122,15 +131,38 @@ std::shared_ptr<const CSSValue> CSSPropertyParser::ConsumeCSSWideKeyword(CSSPars
   return value;
 }
 
-bool CSSPropertyParser::ParseCSSWideKeyword(CSSPropertyID unresolved_property, bool allow_important_annotation) {
+bool CSSPropertyParser::ParseCSSWideKeyword(CSSPropertyID unresolved_property,
+                                            bool allow_important_annotation,
+                                            StyleRule::RuleType rule_type) {
+  stream_.EnsureLookAhead();
+  CSSParserTokenStream::State savepoint = stream_.Save();
+  bool has_raw_value_text = false;
+  bool raw_value_had_important = false;
+  String raw_value_text;
+  {
+    CSSTokenizedValue raw_tokenized = CSSParserImpl::ConsumeRestrictedPropertyValue(stream_);
+    if (raw_tokenized.range.size() || raw_tokenized.text.length()) {
+      raw_value_had_important |= CSSParserImpl::RemoveImportantAnnotationIfPresent(raw_tokenized);
+      raw_tokenized.text = StripRawTextWhitespace(raw_tokenized.text);
+      raw_value_text = String(raw_tokenized.text);
+      has_raw_value_text = true;
+    }
+    stream_.EnsureLookAhead();
+    stream_.Restore(savepoint);
+  }
   bool important;
   auto value = ConsumeCSSWideKeyword(stream_, allow_important_annotation, important);
   if (!value) {
     return false;
   }
+  if (value && has_raw_value_text) {
+    value->SetRawText(raw_value_text);
+  }
+  bool force_important = raw_value_had_important && !allow_important_annotation && rule_type == StyleRule::kStyle;
 
   CSSPropertyID property = ResolveCSSPropertyID(unresolved_property);
   const StylePropertyShorthand& shorthand = shorthandForProperty(property);
+  size_t start_index = parsed_properties_->size();
   if (!shorthand.length()) {
     if (!CSSProperty::Get(property).IsProperty()) {
       return false;
@@ -140,6 +172,17 @@ bool CSSPropertyParser::ParseCSSWideKeyword(CSSPropertyID unresolved_property, b
   } else {
     css_parsing_utils::AddExpandedPropertyForValue(property, value, important, *parsed_properties_);
   }
+  if (has_raw_value_text) {
+    for (size_t idx = start_index; idx < parsed_properties_->size(); ++idx) {
+      const std::shared_ptr<const CSSValue>* value_ptr = (*parsed_properties_)[idx].Value();
+      if (value_ptr && *value_ptr) {
+        (*value_ptr)->SetRawText(raw_value_text);
+      }
+      if (force_important) {
+        (*parsed_properties_)[idx].SetImportant();
+      }
+    }
+  }
   return true;
 }
 
@@ -147,11 +190,40 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
                                         bool allow_important_annotation,
                                         StyleRule::RuleType rule_type) {
   // Correctly pass allow_important_annotation instead of rule_type
-  if (ParseCSSWideKeyword(unresolved_property, allow_important_annotation)) {
+  if (ParseCSSWideKeyword(unresolved_property, allow_important_annotation, rule_type)) {
     return true;
   }
 
+  stream_.EnsureLookAhead();
   CSSParserTokenStream::State savepoint = stream_.Save();
+  bool has_raw_value_text = false;
+  bool raw_value_had_important = false;
+  String raw_value_text;
+  {
+    CSSTokenizedValue raw_tokenized = CSSParserImpl::ConsumeRestrictedPropertyValue(stream_);
+    if (raw_tokenized.range.size() || raw_tokenized.text.length()) {
+      raw_value_had_important |= CSSParserImpl::RemoveImportantAnnotationIfPresent(raw_tokenized);
+      raw_tokenized.text = StripRawTextWhitespace(raw_tokenized.text);
+      raw_value_text = String(raw_tokenized.text);
+      has_raw_value_text = true;
+    }
+    stream_.EnsureLookAhead();
+    stream_.Restore(savepoint);
+  }
+  auto assign_raw_text = [&](size_t from_index) {
+    if (!has_raw_value_text) {
+      return;
+    }
+    for (size_t idx = from_index; idx < parsed_properties_->size(); ++idx) {
+      const std::shared_ptr<const CSSValue>* value_ptr = (*parsed_properties_)[idx].Value();
+      if (value_ptr && *value_ptr) {
+        (*value_ptr)->SetRawText(raw_value_text);
+      }
+      if (raw_value_had_important && !allow_important_annotation && rule_type == StyleRule::kStyle) {
+        (*parsed_properties_)[idx].SetImportant();
+      }
+    }
+  };
 
   CSSPropertyID property_id = ResolveCSSPropertyID(unresolved_property);
   const CSSProperty& property = CSSProperty::Get(property_id);
@@ -193,6 +265,7 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
             (*parsed_properties_)[property_idx].SetImportant();
           }
         }
+        assign_raw_text(static_cast<size_t>(parsed_properties_size));
         return true;
       }
     }
@@ -205,12 +278,31 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
       parsed_properties_->erase(parsed_properties_->begin() + parsed_properties_size, parsed_properties_->end());
     }
   } else {
+    if (raw_value_had_important && has_raw_value_text && !raw_value_text.IsEmpty()) {
+      CSSTokenizer sanitized_tokenizer(raw_value_text);
+      CSSParserTokenStream sanitized_stream(sanitized_tokenizer);
+      if (std::shared_ptr<const CSSValue> parsed_value = css_parsing_utils::ParseLonghand(
+              unresolved_property, CSSPropertyID::kInvalid, context_, sanitized_stream)) {
+        if (sanitized_stream.AtEnd()) {
+          stream_.EnsureLookAhead();
+          CSSParserImpl::ConsumeRestrictedPropertyValue(stream_);
+          AddProperty(property_id, CSSPropertyID::kInvalid, std::move(parsed_value),
+                      raw_value_had_important && allow_important_annotation,
+                      css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
+          assign_raw_text(static_cast<size_t>(parsed_properties_size));
+          return true;
+        }
+      }
+      stream_.EnsureLookAhead();
+      stream_.Restore(savepoint);
+    }
     if (std::shared_ptr<const CSSValue> parsed_value =
             css_parsing_utils::ParseLonghand(unresolved_property, CSSPropertyID::kInvalid, context_, stream_)) {
       bool important = css_parsing_utils::MaybeConsumeImportant(stream_, allow_important_annotation);
       if (stream_.AtEnd()) {
         AddProperty(property_id, CSSPropertyID::kInvalid, std::move(parsed_value), important,
                     css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
+        assign_raw_text(static_cast<size_t>(parsed_properties_size));
         return true;
       }
     }
@@ -231,7 +323,12 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
   }
 
   const bool important = CSSParserImpl::RemoveImportantAnnotationIfPresent(value);
-  value.text = CSSVariableParser::StripTrailingWhitespaceAndComments(value.text);
+  value.text = StripRawTextWhitespace(value.text);
+  raw_value_text = String(value.text);
+  if (important) {
+    raw_value_had_important = true;
+  }
+  has_raw_value_text = true;
 
   if (CSSVariableParser::ContainsValidVariableReferences(value.range, context_->GetExecutingContext())) {
     WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] PendingSubstitution fallback for '"
@@ -253,6 +350,7 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
       AddProperty(property_id, CSSPropertyID::kInvalid, variable, important,
                   css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
     }
+    assign_raw_text(static_cast<size_t>(parsed_properties_size));
     return true;
   }
 
@@ -260,10 +358,15 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
   // Only attempt a reparse if normalization actually changes the text to avoid recursion.
   if (is_shorthand && property_id == CSSPropertyID::kBackground) {
     String text = String(value.text);
+    raw_value_text = text;
+    has_raw_value_text = true;
     String normalized = NormalizeGradientCommas(text);
     if (normalized != text) {
       // Detect and remove !important if present (value already had it removed)
       bool imp2 = CSSParserImpl::RemoveImportantAnnotationIfPresent(value);
+      if (imp2) {
+        raw_value_had_important = true;
+      }
       auto tmp = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
       auto ctx = context_;
       auto res = CSSParser::ParseValue(tmp.get(), property_id, normalized, imp2, ctx);
@@ -275,12 +378,57 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
             parsed_properties_->emplace_back(CSSPropertyValue(p.PropertyMetadata(), *v));
           }
         }
+        assign_raw_text(static_cast<size_t>(parsed_properties_size));
         return true;
       }
     }
   }
 
   return false;
+}
+
+bool CSSPropertyParser::_ParseValueStart(CSSPropertyID unresolved_property,
+                                        bool allow_important_annotation,
+                                        StyleRule::RuleType rule_type) {
+  // Do not preserve CSS-wide keywords as structured values; we only capture
+  // raw declaration text.
+
+  CSSParserTokenStream::State savepoint = stream_.Save();
+
+  CSSPropertyID property_id = ResolveCSSPropertyID(unresolved_property);
+  const CSSProperty& property = CSSProperty::Get(property_id);
+
+  if (property.IsLonghand()) {
+    if (std::shared_ptr<const CSSValue> parsed_value =
+            css_parsing_utils::ParseRawLonghand(unresolved_property, CSSPropertyID::kInvalid, context_, stream_)) {
+      bool important = css_parsing_utils::MaybeConsumeImportant(stream_, allow_important_annotation);
+      if (stream_.AtEnd()) {
+        AddProperty(property_id, CSSPropertyID::kInvalid, std::move(parsed_value), important,
+                    css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // short-hand
+  DCHECK(property.IsShorthand());
+  const auto local_context = CSSParserLocalContext()
+                                 .WithAliasParsing(IsPropertyAlias(unresolved_property))
+                                 .WithCurrentShorthand(property_id);
+
+  // TODO: switch on the shorthand id, and get the longhand list
+
+  if (To<Shorthand>(property).ParseRawShorthand(
+          /*important=*/false, stream_, context_, local_context, *parsed_properties_)) {
+    bool important = css_parsing_utils::MaybeConsumeImportant(stream_, allow_important_annotation);
+    if (stream_.AtEnd()) {
+      if (important) {
+        for (size_t property_idx = parsed_properties_->size(); property_idx < parsed_properties_->size();
+             ++property_idx) {}
+      }
+    }
+  }
 }
 
 bool CSSPropertyParser::ParseValue(CSSPropertyID unresolved_property,
@@ -308,10 +456,9 @@ std::shared_ptr<const CSSValue> CSSPropertyParser::ParseSingleValue(CSSPropertyI
   assert(context);
   stream.ConsumeWhitespace();
 
-  std::shared_ptr<const CSSValue> value = css_parsing_utils::ConsumeCSSWideKeyword(stream);
-  if (!value) {
-    value = css_parsing_utils::ParseLonghand(property, CSSPropertyID::kInvalid, std::move(context), stream);
-  }
+  // Always parse a single longhand as raw text.
+  std::shared_ptr<const CSSValue> value =
+      css_parsing_utils::ParseRawLonghand(property, CSSPropertyID::kInvalid, std::move(context), stream);
   if (!value || !stream.AtEnd()) {
     return nullptr;
   }

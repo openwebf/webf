@@ -54,6 +54,7 @@
 #include "foundation/dart_readable.h"
 #include "core/style/computed_style_constants.h"
 #include "foundation/native_string.h"
+#include "core/css/white_space.h"
 
 namespace webf {
 
@@ -383,6 +384,87 @@ void StyleEngine::RecalcStyle(Document& document) {
         WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] PropertySet sizing: width=" << (has_width ? "present" : "missing")
                           << ", height=" << (has_height ? "present" : "missing");
 
+        // Pre-scan to collect white-space longhands so we can emit shorthand.
+        bool have_ws_collapse = false;
+        bool have_text_wrap = false;
+        WhiteSpaceCollapse ws_collapse_enum = WhiteSpaceCollapse::kCollapse;  // initial
+        TextWrap text_wrap_enum = TextWrap::kWrap;                             // initial
+
+        for (unsigned i = 0; i < count; ++i) {
+          auto prop = property_set->PropertyAt(i);
+          CSSPropertyID id = prop.Id();
+          if (id == CSSPropertyID::kInvalid) continue;
+          const auto* value_ptr = prop.Value();
+          if (!value_ptr || !(*value_ptr)) continue;
+          const CSSValue& value = *(*value_ptr);
+          if (id == CSSPropertyID::kWhiteSpaceCollapse) {
+            // value.CssText() returns identifiers like "collapse", "preserve", "preserve-breaks", "break-spaces"
+            String v = value.CssText();
+            std::string sv = v.ToUTF8String();
+            if (sv == "collapse") {
+              ws_collapse_enum = WhiteSpaceCollapse::kCollapse;
+              have_ws_collapse = true;
+            } else if (sv == "preserve") {
+              ws_collapse_enum = WhiteSpaceCollapse::kPreserve;
+              have_ws_collapse = true;
+            } else if (sv == "preserve-breaks") {
+              ws_collapse_enum = WhiteSpaceCollapse::kPreserveBreaks;
+              have_ws_collapse = true;
+            } else if (sv == "break-spaces") {
+              ws_collapse_enum = WhiteSpaceCollapse::kBreakSpaces;
+              have_ws_collapse = true;
+            }
+          } else if (id == CSSPropertyID::kTextWrap) {
+            // value.CssText() returns identifiers like "wrap", "nowrap", "balance", "pretty"
+            String v = value.CssText();
+            std::string sv = v.ToUTF8String();
+            if (sv == "wrap") {
+              text_wrap_enum = TextWrap::kWrap;
+              have_text_wrap = true;
+            } else if (sv == "nowrap") {
+              text_wrap_enum = TextWrap::kNoWrap;
+              have_text_wrap = true;
+            } else if (sv == "balance") {
+              text_wrap_enum = TextWrap::kBalance;
+              have_text_wrap = true;
+            } else if (sv == "pretty") {
+              text_wrap_enum = TextWrap::kPretty;
+              have_text_wrap = true;
+            }
+          }
+        }
+
+        // Whether we should emit white-space shorthand: if either longhand appears in this set,
+        // synthesize a shorthand value to keep Dart side stable.
+        bool emit_white_space_shorthand = have_ws_collapse || have_text_wrap;
+        // Compute shorthand textual value if possible.
+        String white_space_value_str;
+        if (emit_white_space_shorthand) {
+          // Combine longhands; unspecified ones use initial values.
+          EWhiteSpace ws = ToWhiteSpace(ws_collapse_enum, text_wrap_enum);
+          // Map to standard keyword when it matches a defined shorthand value.
+          switch (ws) {
+            case EWhiteSpace::kNormal:
+              white_space_value_str = String("normal");
+              break;
+            case EWhiteSpace::kNowrap:
+              white_space_value_str = String("nowrap");
+              break;
+            case EWhiteSpace::kPre:
+              white_space_value_str = String("pre");
+              break;
+            case EWhiteSpace::kPreLine:
+              white_space_value_str = String("pre-line");
+              break;
+            case EWhiteSpace::kPreWrap:
+              white_space_value_str = String("pre-wrap");
+              break;
+            case EWhiteSpace::kBreakSpaces:
+              white_space_value_str = String("break-spaces");
+              break;
+          }
+        }
+
         for (unsigned i = 0; i < count; ++i) {
           auto prop = property_set->PropertyAt(i);
           CSSPropertyID id = prop.Id();
@@ -535,12 +617,34 @@ void StyleEngine::RecalcStyle(Document& document) {
             cleared = true;
           }
 
-          AtomicString value_atom(value_string);
-          std::unique_ptr<SharedNativeString> args_01 = prop_name.ToStylePropertyNameNativeString();
-          WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Emitting property '" << prop_name.ToUTF8String() << "' = '"
-                            << value_string.ToUTF8String() << "'";
-          ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), element->bindingObject(),
-                                             value_atom.ToNativeString().release());
+          // If we plan to emit shorthand, skip the longhand emissions here.
+          if (emit_white_space_shorthand &&
+              (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap)) {
+            // Defer to shorthand emission below.
+          } else {
+            AtomicString value_atom(value_string);
+            std::unique_ptr<SharedNativeString> args_01 = prop_name.ToStylePropertyNameNativeString();
+            WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Emitting property '" << prop_name.ToUTF8String() << "' = '"
+                              << value_string.ToUTF8String() << "'";
+            ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), element->bindingObject(),
+                                               value_atom.ToNativeString().release());
+          }
+        }
+
+        // Emit white-space shorthand at the end to replace skipped longhands.
+        if (emit_white_space_shorthand) {
+          if (!cleared) {
+            WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Clear inline styles before applying first property";
+            ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
+            cleared = true;
+          }
+          auto ws_prop = AtomicString::CreateFromUTF8("white-space");
+          auto ws_key = ws_prop.ToStylePropertyNameNativeString();
+          AtomicString ws_value_atom(white_space_value_str);
+          WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Emitting shorthand 'white-space' = '"
+                            << white_space_value_str.ToUTF8String() << "'";
+          ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(ws_key), element->bindingObject(),
+                                             ws_value_atom.ToNativeString().release());
         }
 
         // After applying element styles, collect and emit minimal pseudo styles.

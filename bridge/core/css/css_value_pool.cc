@@ -42,10 +42,11 @@ CSSValuePool::CSSValuePool()
       color_transparent_(std::make_shared<cssvalue::CSSColor>(Color::kTransparent)),
       color_white_(std::make_shared<cssvalue::CSSColor>(Color::kWhite)),
       color_black_(std::make_shared<cssvalue::CSSColor>(Color::kBlack)) {
-  identifier_value_cache_.resize(kMaximumCacheableIntegerValue);
-  pixel_value_cache_.resize(kMaximumCacheableIntegerValue);
-  percent_value_cache_.resize(kMaximumCacheableIntegerValue);
-  number_value_cache_.resize(kMaximumCacheableIntegerValue);
+  const auto cache_capacity = kMaximumCacheableIntegerValue + 1;
+  identifier_value_cache_.resize(cache_capacity);
+  pixel_value_cache_.resize(cache_capacity);
+  percent_value_cache_.resize(cache_capacity);
+  number_value_cache_.resize(cache_capacity);
 }
 
 CSSValuePool& CssValuePool() {

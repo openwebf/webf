@@ -51,6 +51,14 @@ bool CSSParserTokenStream::ConsumeCommentOrNothing() {
   return true;
 }
 
+CSSParserTokenRange CSSParserTokenStream::ConsumeRawValueUntilSemi() {
+  assert(HasLookAhead());
+
+  // Return tokens up to (but not including) the next top-level semicolon,
+  // leaving the semicolon in lookahead for the caller.
+  return ConsumeUntilPeekedTypeIs<kSemicolonToken>();
+}
+
 void CSSParserTokenStream::UncheckedConsumeComponentValue() {
   assert(HasLookAhead());
 

@@ -16,6 +16,7 @@
 #include "core/base/strings/string_util.h"
 #include "core/css/css_keyframes_rule.h"
 #include "core/css/css_property_value.h"
+#include "core/css/css_raw_value.h"
 #include "core/css/css_selector.h"
 #include "core/css/css_style_sheet.h"
 #include "core/css/css_unparsed_declaration_value.h"
@@ -42,8 +43,8 @@
 #include "css_variable_parser.h"
 #include "find_length_of_declaration_list-inl.h"
 #include "foundation/casting.h"
-#include "foundation/string/wtf_string.h"
 #include "foundation/logging.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -139,7 +140,7 @@ MutableCSSPropertyValueSet::SetResult CSSParserImpl::ParseValue(MutableCSSProper
   CSSTokenizer tokenizer(string);
   CSSParserTokenStream stream(tokenizer);
   parser.ConsumeDeclarationValue(stream, unresolved_property,
-                                 /*is_in_declaration_list=*/false, rule_type);
+                                 /*is_in_declaration_list=*/true, rule_type);
   if (parser.parsed_properties_.empty()) {
     return MutableCSSPropertyValueSet::kParseError;
   }
@@ -846,7 +847,7 @@ static std::shared_ptr<ImmutableCSSPropertyValueSet> CreateCSSPropertyValueSet(
     WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] Declarations before set (count=" << parsed_properties.size() << ")";
     for (const auto& pp : parsed_properties) {
       const CSSPropertyName& n = pp.Name();
-      const auto* vptr = pp.Value();
+      const auto vptr = pp.Value();
     WEBF_COND_LOG(PARSER, VERBOSE) << "  - " << (n.IsCustomProperty() ? n.ToAtomicString().ToUTF8String()
                             : CSSProperty::Get(n.Id()).GetPropertyNameString().ToUTF8String())
                       << ": '" << (vptr && *vptr ? (*vptr)->CssText().ToUTF8String() : std::string("<null>")) << "'";
@@ -947,10 +948,10 @@ std::shared_ptr<StyleRule> CSSParserImpl::CreateInvisibleRule(const CSSSelector*
                     << ") count=" << invisible_declarations.size();
   for (const auto& pp : invisible_declarations) {
     const CSSPropertyName& n = pp.Name();
-    const auto* vptr = pp.Value();
+    const auto vptr = pp.Value();
     WEBF_COND_LOG(PARSER, VERBOSE) << "  * " << (n.IsCustomProperty() ? n.ToAtomicString().ToUTF8String()
                                                     : CSSProperty::Get(n.Id()).GetPropertyNameString().ToUTF8String())
-                      << ": '" << (vptr && *vptr ? (*vptr)->CssText().ToUTF8String() : std::string("<null>")) << "'";
+                      << ": '" << ((vptr && *vptr) ? (*vptr)->CssText().ToUTF8String() : std::string("<null>")) << "'";
   }
 
   // Copy the selector list, and mark each CSSSelector (top-level) as invisible.
@@ -1006,26 +1007,13 @@ CSSTokenizedValue CSSParserImpl::ConsumeUnrestrictedPropertyValue(CSSParserToken
 bool CSSParserImpl::ConsumeVariableValue(CSSParserTokenStream& stream,
                                          const AtomicString& variable_name,
                                          bool allow_important_annotation,
-                                         bool is_animation_tainted) {
+                                         bool /*is_animation_tainted*/) {
+  // Preserve custom property values as raw text and strip trailing !important
+  // so we can record importance separately.
   stream.EnsureLookAhead();
-
-  // First, see if this is (only) a CSS-wide keyword.
-  bool important;
-  std::shared_ptr<const CSSValue> value =
-      CSSPropertyParser::ConsumeCSSWideKeyword(stream, allow_important_annotation, important);
-  if (!value) {
-    // It was not, so try to parse it as an unparsed declaration value
-    // (which is pretty free-form).
-    std::shared_ptr<CSSVariableData> variable_data = CSSVariableParser::ConsumeUnparsedDeclaration(
-        stream, allow_important_annotation, is_animation_tainted,
-        /*must_contain_variable_reference=*/false,
-        /*restricted_value=*/false, /*comma_ends_declaration=*/false, important, context_->GetExecutingContext());
-    if (!variable_data) {
-      return false;
-    }
-
-    value = std::make_shared<CSSUnparsedDeclarationValue>(variable_data, context_);
-  }
+  CSSTokenizedValue tokenized_value = ConsumeRestrictedPropertyValue(stream);
+  bool important = RemoveImportantAnnotationIfPresent(tokenized_value);
+  std::shared_ptr<const CSSValue> value = std::make_shared<CSSRawValue>(String(tokenized_value.text));
   parsed_properties_.emplace_back(CSSPropertyName(variable_name), value, important);
   return true;
 }
