@@ -465,6 +465,69 @@ void main() {
     expect(el.getAttribute('data-a'), isNull);
   });
 
+  testWidgets('DOM.setNodeName renames element and preserves attributes/children', (tester) async {
+    final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+      tester: tester,
+      controllerName: 'dom-set-nodename',
+      html: '<html><body><div id="x"><span id="c">T</span></div></body></html>',
+    );
+
+    final svc = _TestDevToolsService();
+    svc.initWithContext(WebFControllerDebuggingAdapter(prepared.controller));
+    final inspector = svc.uiInspector!;
+    final domProbe = _DOMProbe(svc);
+    inspector.moduleRegistrar['DOM'] = domProbe;
+    domProbe.invoke(0, 'enable', {});
+
+    final el = prepared.document.getElementById(['x'])!;
+    final child = prepared.document.getElementById(['c'])!;
+    final nodeId = prepared.controller.view.forDevtoolsNodeId(el);
+
+    domProbe.invoke(26, 'setNodeName', {'nodeId': nodeId, 'name': 'section'});
+    final res = domProbe.lastResults[26]!;
+    final newId = res['nodeId'] as int;
+
+    // Verify new element exists with same id/class and contains the child
+    // The id should persist via clone helper; look up by id
+    final renamed = prepared.document.getElementById(['x']);
+    expect(renamed, isNotNull);
+    expect(renamed!.tagName.toLowerCase(), 'section');
+    expect(renamed.firstChild, equals(child));
+    expect(newId, prepared.controller.view.forDevtoolsNodeId(renamed));
+  });
+
+  testWidgets('DOM.setAttributesAsText replaces attributes string', (tester) async {
+    final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+      tester: tester,
+      controllerName: 'dom-set-attrs-text',
+      html: '<html><body><div id="x" data-a="1" data-b="y">T</div></body></html>',
+    );
+
+    final svc = _TestDevToolsService();
+    svc.initWithContext(WebFControllerDebuggingAdapter(prepared.controller));
+    final inspector = svc.uiInspector!;
+    final domProbe = _DOMProbe(svc);
+    inspector.moduleRegistrar['DOM'] = domProbe;
+    domProbe.invoke(0, 'enable', {});
+
+    final el = prepared.document.getElementById(['x'])!;
+    final nodeId = prepared.controller.view.forDevtoolsNodeId(el);
+
+    // Replace with new attributes (including boolean attribute)
+    domProbe.invoke(23, 'setAttributesAsText', {'nodeId': nodeId, 'text': 'data-c="3" checked'});
+    expect(el.getAttribute('data-a'), isNull);
+    expect(el.getAttribute('data-b'), isNull);
+    expect(el.getAttribute('data-c'), '3');
+    expect(el.hasAttribute('checked'), isTrue);
+
+    // Update single attribute via name + text
+    domProbe.invoke(24, 'setAttributesAsText', {'nodeId': nodeId, 'name': 'data-c', 'text': '9'});
+    expect(el.getAttribute('data-c'), '9');
+    // Empty text removes the attribute
+    domProbe.invoke(25, 'setAttributesAsText', {'nodeId': nodeId, 'name': 'data-c', 'text': ''});
+    expect(el.hasAttribute('data-c'), isFalse);
+  });
+
   testWidgets('DOM.pushNodesByBackendIdsToFrontend maps to nodeIds', (tester) async {
     final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
       tester: tester,

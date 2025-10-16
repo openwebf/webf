@@ -14,6 +14,7 @@ import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
 import 'package:webf/src/devtools/cdp_service/modules/css.dart';
 import 'package:webf/src/devtools/cdp_service/modules/overlay.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/src/bridge/native_types.dart';
 
 const int DOCUMENT_NODE_ID = 0;
 const String DEFAULT_FRAME_ID = 'main_frame';
@@ -60,6 +61,9 @@ class InspectDOMModule extends UIInspectorModule {
         break;
       case 'setNodeValue':
         onSetNodeValue(id, params!);
+        break;
+      case 'setNodeName':
+        onSetNodeName(id, params ?? const {});
         break;
       case 'setAttributeValue':
         onSetAttributeValue(id, params!);
@@ -608,6 +612,79 @@ class InspectDOMModule extends UIInspectorModule {
       node.data = value;
     }
     sendToFrontend(id, null);
+  }
+
+  /// https://chromedevtools.github.io/devtools-protocol/tot/DOM/#method-setNodeName
+  /// Renames a node (typically an element) to the provided tag name, returning the new nodeId.
+  void onSetNodeName(int? id, Map<String, dynamic> params) {
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    final int? nodeId = params['nodeId'];
+    final String? name = params['name'];
+    if (nodeId == null || name == null || name.isEmpty) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    final targetId = ctx.getTargetIdByNodeId(nodeId);
+    if (targetId == null || targetId == 0) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    final Node? node = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
+    if (node is! Element) {
+      // Only elements can be renamed by tag
+      sendToFrontend(id, JSONEncodableMap({'nodeId': nodeId}));
+      return;
+    }
+
+    final controller = ctx.getController() ?? devtoolsService.controller;
+    if (controller == null) {
+      sendToFrontend(id, JSONEncodableMap({'nodeId': nodeId}));
+      return;
+    }
+
+    // Create new native element for the new tag name
+    final newPtr = allocateNewBindingObject();
+    try {
+      controller.view.createElement(newPtr, name);
+    } catch (e) {
+      sendToFrontend(id, JSONEncodableMap({'nodeId': nodeId}));
+      return;
+    }
+
+    // Copy attributes/inline styles/id/class via clone helper
+    try {
+      controller.view.cloneNode(node.pointer!, newPtr);
+    } catch (_) {}
+
+    // Move children to the new element (DOM-level; will be included in inserted node payload)
+    final Element? newEl = ctx.getBindingObject(newPtr) as Element?;
+    if (newEl != null) {
+      while (node.firstChild != null) {
+        newEl.appendChild(node.firstChild!);
+      }
+      // Insert new element after the original, then remove original to trigger CDP events
+      try {
+        controller.view.insertAdjacentNode(node.pointer!, 'afterend', newPtr);
+      } catch (_) {}
+      try {
+        controller.view.removeNode(node.pointer!);
+      } catch (_) {
+        node.parentNode?.removeChild(node);
+      }
+
+      final newId = ctx.forDevtoolsNodeId(newEl);
+      sendToFrontend(id, JSONEncodableMap({'nodeId': newId}));
+      return;
+    }
+
+    // Fallback
+    sendToFrontend(id, JSONEncodableMap({'nodeId': nodeId}));
   }
 
   /// https://chromedevtools.github.io/devtools-protocol/tot/DOM/#method-querySelector
