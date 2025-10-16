@@ -575,6 +575,34 @@ void main() {
     expect(obj['objectId'], nodeId.toString());
   });
 
+  testWidgets('DOM.requestNode maps objectId to nodeId', (tester) async {
+    final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+      tester: tester,
+      controllerName: 'dom-request-node',
+      html: '<html><body><div id="r">R</div></body></html>',
+    );
+
+    final svc = _TestDevToolsService();
+    svc.initWithContext(WebFControllerDebuggingAdapter(prepared.controller));
+    final inspector = svc.uiInspector!;
+    final domProbe = _DOMProbe(svc);
+    inspector.moduleRegistrar['DOM'] = domProbe;
+    domProbe.invoke(0, 'enable', {});
+
+    final el = prepared.document.getElementById(['r'])!;
+    final nodeId = prepared.controller.view.forDevtoolsNodeId(el);
+    // First get objectId via resolveNode
+    domProbe.invoke(13, 'resolveNode', {'nodeId': nodeId});
+    final resolved = domProbe.lastResults[13]!;
+    final object = resolved['object'] as Map;
+    final objectId = object['objectId'];
+
+    // Then requestNode to map back to nodeId
+    domProbe.invoke(22, 'requestNode', {'objectId': objectId});
+    final res = domProbe.lastResults[22]!;
+    expect(res['nodeId'], nodeId);
+  });
+
   testWidgets('DOM.querySelector returns nodeId for match', (tester) async {
     final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
       tester: tester,

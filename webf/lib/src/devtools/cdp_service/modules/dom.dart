@@ -107,6 +107,9 @@ class InspectDOMModule extends UIInspectorModule {
       case 'resolveNode':
         onResolveNode(id, params!);
         break;
+      case 'requestNode':
+        onRequestNode(id, params ?? const {});
+        break;
       case 'describeNode':
         onDescribeNode(id, params ?? const {});
         break;
@@ -851,6 +854,35 @@ class InspectDOMModule extends UIInspectorModule {
     } else {
       sendToFrontend(id, null);
     }
+  }
+
+  /// https://chromedevtools.github.io/devtools-protocol/tot/DOM/#method-requestNode
+  /// Returns nodeId for a given objectId (from Runtime.evaluate/resolveNode).
+  void onRequestNode(int? id, Map<String, dynamic> params) {
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    final dynamic objectId = params['objectId'];
+    int parsedNodeId = 0;
+    if (objectId is String) {
+      // Our resolveNode encodes nodeId as string objectId
+      parsedNodeId = int.tryParse(objectId) ?? 0;
+    } else if (objectId is int) {
+      parsedNodeId = objectId;
+    }
+
+    // Validate that the node exists in mapping
+    if (parsedNodeId != 0) {
+      final targetId = ctx.getTargetIdByNodeId(parsedNodeId);
+      if (targetId == null || targetId == 0) {
+        parsedNodeId = 0;
+      }
+    }
+
+    sendToFrontend(id, JSONEncodableMap({'nodeId': parsedNodeId}));
   }
 }
 
