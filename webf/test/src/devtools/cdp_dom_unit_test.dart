@@ -692,6 +692,44 @@ void main() {
     expect(res['nodeId'], nodeId);
   });
 
+  testWidgets('CSS.addRule appends to <style> and affects computed style', (tester) async {
+    final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+      tester: tester,
+      controllerName: 'css-add-rule',
+      html:
+          '<html><head><style id="s"></style></head><body><div id="box" style="width:50px;height:20px">T</div></body></html>',
+    );
+
+    final svc = _TestDevToolsService();
+    svc.initWithContext(WebFControllerDebuggingAdapter(prepared.controller));
+    final inspector = svc.uiInspector!;
+    final cssProbe = _CSSProbe(svc);
+    inspector.moduleRegistrar['CSS'] = cssProbe;
+    cssProbe.invoke(0, 'enable', {});
+
+    // Target the <style> element by nodeId in styleSheetId
+    final styleEl = prepared.document.getElementById(['s'])!;
+    final styleId = prepared.controller.view.forDevtoolsNodeId(styleEl);
+    // Add a rule that overrides box width
+    cssProbe.invoke(28, 'addRule', {
+      'styleSheetId': 'inline:$styleId',
+      'ruleText': '#box { width: 123px !important; }',
+      'location': {}
+    });
+
+    // Allow stylesheet to recalc
+    await tester.pump(const Duration(milliseconds: 50));
+
+    // Verify computed width updated
+    final box = prepared.document.getElementById(['box'])!;
+    final nodeId = prepared.controller.view.forDevtoolsNodeId(box);
+    cssProbe.invoke(29, 'getComputedStyleForNode', {'nodeId': nodeId});
+    final computed = cssProbe.lastResults[29]!;
+    final list = (computed['computedStyle'] as List).cast<Map>();
+    bool hasWidth123 = list.any((p) => p['name'] == 'width' && (p['value'] as String).contains('123'));
+    expect(hasWidth123, isTrue);
+  });
+
   testWidgets('DOM.querySelector returns nodeId for match', (tester) async {
     final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
       tester: tester,

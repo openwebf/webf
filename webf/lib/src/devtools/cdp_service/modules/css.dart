@@ -9,6 +9,7 @@ import 'package:webf/css.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/html.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
 
@@ -83,6 +84,9 @@ class InspectCSSModule extends UIInspectorModule {
         break;
       case 'setStyleSheetText':
         handleSetStyleSheetText(id, params!);
+        break;
+      case 'addRule':
+        handleAddRule(id, params!);
         break;
       case 'getBackgroundColors':
         handleGetBackgroundColors(id, params!);
@@ -272,6 +276,63 @@ class InspectCSSModule extends UIInspectorModule {
     if (frontendNodeId != null) {
       _trackNodeComputedUpdate(frontendNodeId);
     }
+  }
+
+  // Adds a CSS rule to a stylesheet. We support only inline stylesheets on <style> elements.
+  // Expected params: { styleSheetId: 'inline:<nodeId>' | <nodeId>, ruleText: 'selector { props }', location?: {...} }
+  void handleAddRule(int? id, Map<String, dynamic> params) {
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    final dynamic rawStyleSheetId = params['styleSheetId'];
+    final String ruleText = (params['ruleText'] ?? '').toString();
+
+    if (ruleText.trim().isEmpty) {
+      sendToFrontend(id, JSONEncodableMap({'rule': {}}));
+      return;
+    }
+
+    int? nodeId;
+    if (rawStyleSheetId is int) {
+      nodeId = ctx.getTargetIdByNodeId(rawStyleSheetId);
+    } else if (rawStyleSheetId is String) {
+      String sid = rawStyleSheetId;
+      if (sid.startsWith('inline:')) {
+        final String rest = sid.substring('inline:'.length);
+        final int? nid = int.tryParse(rest);
+        if (nid != null) {
+          nodeId = ctx.getTargetIdByNodeId(nid);
+        }
+      } else {
+        final int? nid = int.tryParse(sid);
+        if (nid != null) {
+          nodeId = ctx.getTargetIdByNodeId(nid);
+        }
+      }
+    }
+
+    if (nodeId == null) {
+      sendToFrontend(id, JSONEncodableMap({'rule': {}}));
+      return;
+    }
+    final BindingObject? obj = ctx.getBindingObject(Pointer.fromAddress(nodeId));
+    if (obj is Element && obj is StyleElementMixin) {
+      // Append text node with the rule; StyleElementMixin reacts and recalculates styles
+      final Element styleEl = obj;
+      final Document doc = styleEl.ownerDocument;
+      final textNode = doc.createTextNode('\n$ruleText\n',
+          BindingContext(doc.controller.view, doc.controller.view.contextId, allocateNewBindingObject()));
+      styleEl.appendChild(textNode);
+      // Respond with a minimal rule object
+      sendToFrontend(id, JSONEncodableMap({'rule': {}}));
+      return;
+    }
+
+    // Fallback: unsupported stylesheet target; no-op success
+    sendToFrontend(id, JSONEncodableMap({'rule': {}}));
   }
 
   // Replace inline style with declarations parsed from text
