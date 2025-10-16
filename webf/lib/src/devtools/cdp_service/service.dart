@@ -1241,15 +1241,15 @@ class UnifiedChromeDevToolsService {
   }
 
   void sendEventToFrontend(InspectorEvent event) {
-    if (_connections.isEmpty) {
-      // Still notify test listeners even if no websocket clients are connected
+    final bool hasConnections = _connections.isNotEmpty;
+
+    // Notify test listeners when there are no websocket clients
+    if (!hasConnections) {
       try {
         for (final tap in _testEventListeners) {
           tap(event);
         }
       } catch (_) {}
-      // Continue bookkeeping below as usual
-      // and return after listener notification to avoid WS work.
     }
 
     // Maintain known-node bookkeeping for incremental DOM coherence
@@ -1273,20 +1273,24 @@ class UnifiedChromeDevToolsService {
       }
     } catch (_) {}
 
-    // Notify test listeners alongside real clients
-    try {
-      for (final tap in _testEventListeners) {
-        tap(event);
-      }
-    } catch (_) {}
-
-    final message = jsonEncode(event.toJson());
-
-    for (final connection in _connections.values) {
+    // If there are active websocket clients, also mirror events to test listeners
+    if (hasConnections) {
       try {
-        connection.sink.add(message);
-      } catch (e) {
-        print('Error sending event: $e');
+        for (final tap in _testEventListeners) {
+          tap(event);
+        }
+      } catch (_) {}
+    }
+
+    // Broadcast to websocket clients
+    if (hasConnections) {
+      final message = jsonEncode(event.toJson());
+      for (final connection in _connections.values) {
+        try {
+          connection.sink.add(message);
+        } catch (e) {
+          print('Error sending event: $e');
+        }
       }
     }
   }

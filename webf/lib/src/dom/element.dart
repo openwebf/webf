@@ -1203,13 +1203,31 @@ abstract class Element extends ContainerNode
   }
 
   void internalSetAttribute(String qualifiedName, String value) {
+    // Track previous value to avoid redundant DevTools events
+    final String? oldValue = attributes[qualifiedName];
+    final bool changed = oldValue != value;
+
     attributes[qualifiedName] = value;
     if (qualifiedName == 'class') {
+      // className setter performs necessary style recalculation
       className = value;
-      return;
+    } else {
+      final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
+      recalculateStyle(rebuildNested: isNeedRecalculate);
     }
-    final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
-    recalculateStyle(rebuildNested: isNeedRecalculate);
+
+    // Emit CDP DOM.attributeModified for DevTools if something actually changed
+    if (changed) {
+      try {
+        final cb = ownerDocument.controller.view.devtoolsAttributeModified;
+        if (cb != null) {
+          cb(this, qualifiedName, value);
+        } else {
+          // Fallback to full tree refresh when incremental hooks are not set
+          ownerDocument.controller.view.debugDOMTreeChanged?.call();
+        }
+      } catch (_) {}
+    }
   }
 
   @mustCallSuper
@@ -1224,6 +1242,17 @@ abstract class Element extends ContainerNode
       attributes.remove(qualifiedName);
       final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
       recalculateStyle(rebuildNested: isNeedRecalculate);
+
+      // Emit CDP DOM.attributeRemoved for DevTools
+      try {
+        final cb = ownerDocument.controller.view.devtoolsAttributeRemoved;
+        if (cb != null) {
+          cb(this, qualifiedName);
+        } else {
+          // Fallback to full tree refresh when incremental hooks are not set
+          ownerDocument.controller.view.debugDOMTreeChanged?.call();
+        }
+      } catch (_) {}
     }
   }
 
