@@ -730,6 +730,30 @@ void main() {
     expect(hasWidth123, isTrue);
   });
 
+  testWidgets('CSS.collectClassNames returns classes from stylesheet', (tester) async {
+    final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+      tester: tester,
+      controllerName: 'css-collect-classes',
+      html:
+          '<html><head><style id="s">.a {color:red;} #x .b:hover {}</style></head><body><div id="x"><div class="c"></div></div></body></html>',
+    );
+
+    final svc = _TestDevToolsService();
+    svc.initWithContext(WebFControllerDebuggingAdapter(prepared.controller));
+    final inspector = svc.uiInspector!;
+    final cssProbe = _CSSProbe(svc);
+    inspector.moduleRegistrar['CSS'] = cssProbe;
+    cssProbe.invoke(0, 'enable', {});
+
+    final styleEl = prepared.document.getElementById(['s'])!;
+    final styleId = prepared.controller.view.forDevtoolsNodeId(styleEl);
+    cssProbe.invoke(30, 'collectClassNames', {'styleSheetId': 'inline:$styleId'});
+    final res = cssProbe.lastResults[30]!;
+    final classes = (res['classNames'] as List).cast<String>().toSet();
+    expect(classes.contains('a'), isTrue);
+    expect(classes.contains('b'), isTrue);
+  });
+
   testWidgets('DOM.querySelector returns nodeId for match', (tester) async {
     final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
       tester: tester,

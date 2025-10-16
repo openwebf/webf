@@ -94,6 +94,9 @@ class InspectCSSModule extends UIInspectorModule {
       case 'setEffectivePropertyValueForNode':
         handleSetEffectivePropertyValueForNode(id, params!);
         break;
+      case 'collectClassNames':
+        handleCollectClassNames(id, params!);
+        break;
     }
   }
 
@@ -518,6 +521,74 @@ class InspectCSSModule extends UIInspectorModule {
     sendToFrontend(id, null);
     if (frontendNodeIdParam != null) {
       _trackNodeComputedUpdate(frontendNodeIdParam);
+    }
+  }
+
+  // Returns all class names from the specified stylesheet.
+  // We support only inline stylesheets targeted by styleSheetId: 'inline:<nodeId>' or numeric nodeId.
+  void handleCollectClassNames(int? id, Map<String, dynamic> params) {
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    final dynamic rawStyleSheetId = params['styleSheetId'];
+    int? nodeId;
+    if (rawStyleSheetId is int) {
+      nodeId = ctx.getTargetIdByNodeId(rawStyleSheetId);
+    } else if (rawStyleSheetId is String) {
+      String sid = rawStyleSheetId;
+      if (sid.startsWith('inline:')) {
+        final String rest = sid.substring('inline:'.length);
+        final int? nid = int.tryParse(rest);
+        if (nid != null) nodeId = ctx.getTargetIdByNodeId(nid);
+      } else {
+        final int? nid = int.tryParse(sid);
+        if (nid != null) nodeId = ctx.getTargetIdByNodeId(nid);
+      }
+    }
+
+    final Set<String> classNames = <String>{};
+    if (nodeId != null) {
+      final BindingObject? obj = ctx.getBindingObject(Pointer.fromAddress(nodeId));
+      if (obj is Element && obj is StyleElementMixin) {
+        CSSStyleSheet? sheet = (obj as StyleElementMixin).styleSheet;
+        // If sheet not parsed yet, parse from text content
+        if (sheet == null) {
+          final String? text = obj.collectElementChildText();
+          if (text != null) {
+            sheet = CSSParser(text).parse(
+                windowWidth: obj.windowWidth,
+                windowHeight: obj.windowHeight,
+                isDarkMode: obj.ownerView.rootController.isDarkMode);
+          }
+        }
+        if (sheet != null) {
+          _collectClassesFromRules(sheet.cssRules, classNames);
+        }
+      }
+    }
+
+    sendToFrontend(id, JSONEncodableMap({'classNames': classNames.toList()}));
+  }
+
+  void _collectClassesFromRules(List<CSSRule>? rules, Set<String> out) {
+    if (rules == null) return;
+    for (final CSSRule rule in rules) {
+      if (rule is CSSStyleRule) {
+        for (final selector in rule.selectorGroup.selectors) {
+          for (final seq in selector.simpleSelectorSequences) {
+            final simple = seq.simpleSelector;
+            if (simple is ClassSelector) {
+              // simple.name returns class name string
+              out.add(simple.name);
+            }
+          }
+        }
+      } else if (rule is CSSMediaDirective) {
+        _collectClassesFromRules(rule.getValidMediaRules(null, null, false), out);
+      }
     }
   }
 }
