@@ -27,6 +27,9 @@ class InspectCSSModule extends UIInspectorModule {
   bool _trackComputedUpdates = false;
   final Set<int> _pendingComputedUpdates = <int>{};
 
+  // Track forced pseudo states per frontend nodeId (e.g., ['hover','active'])
+  final Map<int, Set<String>> _forcedPseudoStates = <int, Set<String>>{};
+
   void _trackNodeComputedUpdate(int nodeId) {
     if (_trackComputedUpdates) {
       _pendingComputedUpdates.add(nodeId);
@@ -99,6 +102,9 @@ class InspectCSSModule extends UIInspectorModule {
         break;
       case 'createStyleSheet':
         handleCreateStyleSheet(id, params ?? const {});
+        break;
+      case 'forcePseudoState':
+        handleForcePseudoState(id, params ?? const {});
         break;
     }
   }
@@ -326,6 +332,51 @@ class InspectCSSModule extends UIInspectorModule {
       devToolsProtocolLogger.finer('[DevTools] CSS.createStyleSheet id=$styleSheetId');
     }
     sendToFrontend(id, JSONEncodableMap({'styleSheetId': styleSheetId}));
+  }
+
+  /// https://chromedevtools.github.io/devtools-protocol/tot/CSS/#method-forcePseudoState
+  /// Enables or disables forcing certain pseudo classes for the given node.
+  /// Params: { nodeId: <frontendNodeId>, forcedPseudoClasses: [ 'hover', 'active', ... ] }
+  void handleForcePseudoState(int? id, Map<String, dynamic> params) {
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, JSONEncodableMap({}));
+      return;
+    }
+
+    final int? frontendNodeId = params['nodeId'] as int?;
+    final List<dynamic>? forced = params['forcedPseudoClasses'] as List<dynamic>?;
+    if (frontendNodeId == null || forced == null) {
+      sendToFrontend(id, JSONEncodableMap({}));
+      return;
+    }
+
+    final states = <String>{};
+    for (final v in forced) {
+      if (v is String && v.isNotEmpty) states.add(v.toLowerCase());
+    }
+    _forcedPseudoStates[frontendNodeId] = states;
+
+    // If element exists, request style recalculation to reflect potential pseudo state effects
+    try {
+      final targetId = ctx.getTargetIdByNodeId(frontendNodeId);
+      if (targetId != null && targetId != 0) {
+        final BindingObject? obj = ctx.getBindingObject(Pointer.fromAddress(targetId));
+        if (obj is Element) {
+          obj.ownerDocument.markElementStyleDirty(obj);
+          obj.ownerDocument.updateStyleIfNeeded();
+        }
+      }
+    } catch (_) {}
+
+    // Signal computed style subscribers
+    _trackNodeComputedUpdate(frontendNodeId);
+
+    if (DebugFlags.enableDevToolsProtocolLogs) {
+      devToolsProtocolLogger
+          .finer('[DevTools] CSS.forcePseudoState node=$frontendNodeId states=${states.join(',')}');
+    }
+    sendToFrontend(id, JSONEncodableMap({}));
   }
 
   // Adds a CSS rule to a stylesheet. We support only inline stylesheets on <style> elements.
