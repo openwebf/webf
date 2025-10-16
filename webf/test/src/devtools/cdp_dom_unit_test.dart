@@ -581,6 +581,40 @@ void main() {
     expect(res2['nodeId'], 0);
   });
 
+  testWidgets('DOM.querySelectorAll returns all matching nodeIds', (tester) async {
+    final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+      tester: tester,
+      controllerName: 'dom-query-selector-all',
+      html: '<html><body><div id="box"><span id="a">A</span><span id="b">B</span></div></body></html>',
+    );
+
+    final svc = _TestDevToolsService();
+    svc.initWithContext(WebFControllerDebuggingAdapter(prepared.controller));
+    final inspector = svc.uiInspector!;
+    final domProbe = _DOMProbe(svc);
+    inspector.moduleRegistrar['DOM'] = domProbe;
+    domProbe.invoke(0, 'enable', {});
+
+    final box = prepared.document.getElementById(['box'])!;
+    final baseId = prepared.controller.view.forDevtoolsNodeId(box);
+
+    domProbe.invoke(17, 'querySelectorAll', {'nodeId': baseId, 'selector': 'span'});
+    final res = domProbe.lastResults[17]!;
+    final ids = (res['nodeIds'] as List).cast<int>();
+    final a = prepared.document.getElementById(['a'])!;
+    final b = prepared.document.getElementById(['b'])!;
+    final expected = {
+      prepared.controller.view.forDevtoolsNodeId(a),
+      prepared.controller.view.forDevtoolsNodeId(b),
+    };
+    expect(ids.toSet(), expected);
+
+    // Not found returns empty list
+    domProbe.invoke(18, 'querySelectorAll', {'nodeId': baseId, 'selector': 'div.none'});
+    final res2 = domProbe.lastResults[18]!;
+    expect((res2['nodeIds'] as List).isEmpty, isTrue);
+  });
+
   testWidgets('DOM.describeNode returns node with limited depth', (tester) async {
     final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
       tester: tester,
