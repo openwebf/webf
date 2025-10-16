@@ -89,6 +89,7 @@ abstract class DevToolsService {
     // Incremental mutation callbacks (only used by new DOM incremental update logic).
     context.debugChildNodeInserted = (parent, node, previousSibling) {
       if (this is ChromeDevToolsService) {
+        bool didSeed = false;
         // Skip whitespace-only text nodes to keep Elements clean
         try {
           if (node is TextNode && node.data.trim().isEmpty) {
@@ -97,6 +98,34 @@ abstract class DevToolsService {
               devToolsProtocolLogger.finer(
                   '[DevTools] (skip) DOM.childNodeInserted whitespace-only text under parent=$pId');
             }
+            // Even if skipping the insertion event, ensure the parent is seeded
+            // so that any subsequent characterDataModified for this text node
+            // references a node already known by the frontend.
+            try {
+              final pId = context.forDevtoolsNodeId(parent);
+              if (!ChromeDevToolsService.unifiedService._isParentSeeded(pId)) {
+                final children = <Map>[];
+                for (final c in parent.childNodes) {
+                  if (c is Element || (c is TextNode && c.data.trim().isNotEmpty)) {
+                    children.add(InspectorNode(c).toJson());
+                  }
+                }
+                ChromeDevToolsService.unifiedService.sendEventToFrontend(
+                    DOMSetChildNodesEvent(parentId: pId, nodes: children));
+                if (DebugFlags.enableDevToolsProtocolLogs) {
+                  try {
+                    final ids = children.map((m) => m['nodeId']).toList();
+                    devToolsProtocolLogger.finer(
+                        '[DevTools] -> DOM.setChildNodes parent=$pId count=${children.length} (seed) ids=$ids');
+                  } catch (_) {
+                    devToolsProtocolLogger.finer(
+                        '[DevTools] -> DOM.setChildNodes parent=$pId count=${children.length} (seed)');
+                  }
+                }
+                ChromeDevToolsService.unifiedService._markParentSeeded(pId);
+                didSeed = true;
+              }
+            } catch (_) {}
             return;
           }
         } catch (_) {}
@@ -106,7 +135,7 @@ abstract class DevToolsService {
           if (!ChromeDevToolsService.unifiedService._isParentSeeded(pId)) {
             final children = <Map>[];
             for (final c in parent.childNodes) {
-              if (c is Element || (c is TextNode && c.data.isNotEmpty)) {
+              if (c is Element || (c is TextNode && c.data.trim().isNotEmpty)) {
                 children.add(InspectorNode(c).toJson());
               }
             }
@@ -123,8 +152,12 @@ abstract class DevToolsService {
               }
             }
             ChromeDevToolsService.unifiedService._markParentSeeded(pId);
+            didSeed = true;
           }
         } catch (_) {}
+
+        // If we just seeded the children list, do not also emit an insert for the same node.
+        if (didSeed) return;
         if (DebugFlags.enableDevToolsProtocolLogs) {
           try {
             final pId = context.forDevtoolsNodeId(parent);
@@ -145,6 +178,7 @@ abstract class DevToolsService {
     };
     context.debugChildNodeRemoved = (parent, node) {
       if (this is ChromeDevToolsService) {
+        bool didSeed = false;
         // Skip whitespace-only text nodes (never sent to frontend)
         try {
           if (node is TextNode && node.data.trim().isEmpty) {
@@ -162,7 +196,7 @@ abstract class DevToolsService {
           if (!ChromeDevToolsService.unifiedService._isParentSeeded(pId)) {
             final children = <Map>[];
             for (final c in parent.childNodes) {
-              if (c is Element || (c is TextNode && c.data.isNotEmpty)) {
+              if (c is Element || (c is TextNode && c.data.trim().isNotEmpty)) {
                 children.add(InspectorNode(c).toJson());
               }
             }
@@ -179,8 +213,12 @@ abstract class DevToolsService {
               }
             }
             ChromeDevToolsService.unifiedService._markParentSeeded(pId);
+            didSeed = true;
           }
         } catch (_) {}
+        // If we just seeded with the current children (which no longer includes the removed node),
+        // there's no need to also emit a removal event for an unknown node.
+        if (didSeed) return;
         if (DebugFlags.enableDevToolsProtocolLogs) {
           try {
             final pId = context.forDevtoolsNodeId(parent);
@@ -248,6 +286,65 @@ abstract class DevToolsService {
                   .finer('[DevTools] (skip) DOM.characterDataModified node=$id (whitespace-only)');
             }
             return;
+          }
+        } catch (_) {}
+        // Ensure parent is seeded so frontend knows the text node
+        try {
+          final parent = textNode.parentNode;
+          if (parent != null) {
+            final pId = context.forDevtoolsNodeId(parent);
+            if (!ChromeDevToolsService.unifiedService._isParentSeeded(pId)) {
+              final children = <Map>[];
+              for (final c in parent.childNodes) {
+                if (c is Element || (c is TextNode && c.data.trim().isNotEmpty)) {
+                  children.add(InspectorNode(c).toJson());
+                }
+              }
+              ChromeDevToolsService.unifiedService.sendEventToFrontend(
+                  DOMSetChildNodesEvent(parentId: pId, nodes: children));
+              if (DebugFlags.enableDevToolsProtocolLogs) {
+                try {
+                  final ids = children.map((m) => m['nodeId']).toList();
+                  devToolsProtocolLogger.finer(
+                      '[DevTools] -> DOM.setChildNodes parent=$pId count=${children.length} (seed) ids=$ids');
+                } catch (_) {
+                  devToolsProtocolLogger.finer(
+                      '[DevTools] -> DOM.setChildNodes parent=$pId count=${children.length} (seed)');
+                }
+              }
+              ChromeDevToolsService.unifiedService._markParentSeeded(pId);
+            }
+            // If the text node hasn't been announced yet (e.g., was whitespace when inserted),
+            // send an insertion now before characterDataModified so the frontend can track it.
+            try {
+              final nId = context.forDevtoolsNodeId(textNode);
+              if (!ChromeDevToolsService.unifiedService._isNodeKnown(nId)) {
+                Node? prev = textNode.previousSibling;
+                Node? chosenPrev;
+                while (prev != null) {
+                  try {
+                    final pid = context.forDevtoolsNodeId(prev);
+                    if (ChromeDevToolsService.unifiedService._isNodeKnown(pid)) {
+                      chosenPrev = prev;
+                      break;
+                    }
+                  } catch (_) {}
+                  prev = prev.previousSibling;
+                }
+                ChromeDevToolsService.unifiedService.sendEventToFrontend(
+                    DOMChildNodeInsertedEvent(
+                        parent: parent,
+                        node: textNode,
+                        previousSibling: chosenPrev));
+                if (DebugFlags.enableDevToolsProtocolLogs) {
+                  try {
+                    final prevId = chosenPrev != null ? context.forDevtoolsNodeId(chosenPrev) : 0;
+                    devToolsProtocolLogger.finer(
+                        '[DevTools] -> DOM.childNodeInserted parent=$pId prev=$prevId node=$nId name=#text');
+                  } catch (_) {}
+                }
+              }
+            } catch (_) {}
           }
         } catch (_) {}
         if (DebugFlags.enableDevToolsProtocolLogs) {
@@ -392,6 +489,15 @@ class UnifiedChromeDevToolsService {
   // WebSocket connections
   final Map<String, WebSocketChannel> _connections = {};
 
+  // Test hooks: listeners to observe outbound events without a WS client
+  final List<void Function(InspectorEvent)> _testEventListeners = [];
+  void addEventListenerForTest(void Function(InspectorEvent) listener) {
+    _testEventListeners.add(listener);
+  }
+  void clearEventListenersForTest() {
+    _testEventListeners.clear();
+  }
+
   // Inspector modules (both UI and isolate modules unified)
   final Map<String, dynamic> _modules = {};
 
@@ -404,6 +510,9 @@ class UnifiedChromeDevToolsService {
 
   // Track which parent nodes have had their child lists seeded to the frontend
   final Set<int> _seededParentIds = {};
+
+  // Track nodes that the frontend already knows about (via setChildNodes/childNodeInserted)
+  final Set<int> _knownNodeIds = {};
 
   // Queue of incoming messages (decoded) received before a context exists, to replay after first context selection.
   final List<Map<String, dynamic>> _preContextMessageQueue = [];
@@ -573,6 +682,7 @@ class UnifiedChromeDevToolsService {
       Future.delayed(Duration(milliseconds: 200), () {
         _isContextSwitching = false; // Clear the switching flag
         _seededParentIds.clear();
+        _knownNodeIds.clear();
         sendEventToFrontend(DOMUpdatedEvent());
       });
     } else {
@@ -580,6 +690,7 @@ class UnifiedChromeDevToolsService {
       // Send DOM update immediately for new context attach
       Future.delayed(Duration(milliseconds: 100), () {
         _seededParentIds.clear();
+        _knownNodeIds.clear();
         sendEventToFrontend(DOMUpdatedEvent());
       });
     }
@@ -1131,8 +1242,43 @@ class UnifiedChromeDevToolsService {
 
   void sendEventToFrontend(InspectorEvent event) {
     if (_connections.isEmpty) {
-      return;
+      // Still notify test listeners even if no websocket clients are connected
+      try {
+        for (final tap in _testEventListeners) {
+          tap(event);
+        }
+      } catch (_) {}
+      // Continue bookkeeping below as usual
+      // and return after listener notification to avoid WS work.
     }
+
+    // Maintain known-node bookkeeping for incremental DOM coherence
+    try {
+      if (event is DOMSetChildNodesEvent) {
+        final ids = <int>[];
+        for (final n in event.nodes) {
+          final v = n['nodeId'];
+          if (v is int) ids.add(v);
+        }
+        if (ids.isNotEmpty) _markNodesKnown(ids);
+      } else if (event is DOMChildNodeInsertedEvent) {
+        final id = event.node.ownerView.forDevtoolsNodeId(event.node);
+        _markNodeKnown(id);
+      } else if (event is DOMChildNodeRemovedEvent) {
+        final id = event.node.ownerView.forDevtoolsNodeId(event.node);
+        _unmarkNodeKnown(id);
+      } else if (event is DOMClearEvent || event is DOMUpdatedEvent) {
+        _knownNodeIds.clear();
+        _seededParentIds.clear();
+      }
+    } catch (_) {}
+
+    // Notify test listeners alongside real clients
+    try {
+      for (final tap in _testEventListeners) {
+        tap(event);
+      }
+    } catch (_) {}
 
     final message = jsonEncode(event.toJson());
 
@@ -1175,6 +1321,7 @@ class UnifiedChromeDevToolsService {
     // Set context switching flag
     _isContextSwitching = true;
     _seededParentIds.clear();
+    _knownNodeIds.clear();
 
     // Send DOM.documentUpdated to clear the existing DOM tree
     // Chrome DevTools will then request DOM.getDocument, and we can return empty/null
@@ -1210,6 +1357,12 @@ class UnifiedChromeDevToolsService {
   // Parent seed tracking helpers
   bool _isParentSeeded(int nodeId) => _seededParentIds.contains(nodeId);
   void _markParentSeeded(int nodeId) => _seededParentIds.add(nodeId);
+
+  // Known node helpers
+  bool _isNodeKnown(int nodeId) => _knownNodeIds.contains(nodeId);
+  void _markNodeKnown(int nodeId) => _knownNodeIds.add(nodeId);
+  void _markNodesKnown(Iterable<int> nodeIds) => _knownNodeIds.addAll(nodeIds);
+  void _unmarkNodeKnown(int nodeId) => _knownNodeIds.remove(nodeId);
 
   // Backward compatibility
   WebFController? get currentController {
