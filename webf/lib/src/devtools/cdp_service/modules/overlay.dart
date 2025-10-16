@@ -4,9 +4,11 @@
  */
 
 import 'dart:ffi';
+import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/rendering.dart';
 import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
 import 'package:webf/foundation.dart';
 
@@ -26,6 +28,9 @@ class InspectOverlayModule extends UIInspectorModule {
     switch (method) {
       case 'highlightNode':
         onHighlightNode(id, params!);
+        break;
+      case 'highlightRect':
+        onHighlightRect(id, params ?? const {});
         break;
       case 'hideHighlight':
         onHideHighlight(id);
@@ -61,6 +66,58 @@ class InspectOverlayModule extends UIInspectorModule {
   void onHideHighlight(int? id) {
     _highlightElement?.debugHideHighlight();
     _highlightElement = null;
+    sendToFrontend(id, null);
+  }
+
+  /// Approximate Overlay.highlightRect behavior by hit-testing the rect center
+  /// and applying element highlight. This keeps implementation minimal and
+  /// non-invasive to the render pipeline.
+  void onHighlightRect(int? id, Map<String, dynamic> params) {
+    _highlightElement?.debugHideHighlight();
+
+    final ctx = dbgContext;
+    if (ctx == null || document == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+
+    // Accept either int or double values
+    double _toDouble(dynamic v) {
+      if (v is int) return v.toDouble();
+      if (v is double) return v;
+      return 0.0;
+    }
+
+    final double x = _toDouble(params['x'] ?? params['left']);
+    final double y = _toDouble(params['y'] ?? params['top']);
+    final double w = _toDouble(params['width']);
+    final double h = _toDouble(params['height']);
+
+    final double cx = x + (w > 0 ? w / 2 : 0);
+    final double cy = y + (h > 0 ? h / 2 : 0);
+
+    try {
+      final rootRenderObject = document!.viewport!;
+      final result = BoxHitTestResult();
+      rootRenderObject.hitTest(result, position: Offset(cx, cy));
+      var hitPath = result.path;
+      if (hitPath.isNotEmpty) {
+        // Skip non-element render targets
+        final firstTarget = hitPath.first.target;
+        if (firstTarget is WebFRenderImage ||
+            (firstTarget is RenderBoxModel && firstTarget.renderStyle.target.pointer == null)) {
+          hitPath = hitPath.skip(1);
+        }
+
+        if (hitPath.isNotEmpty && hitPath.first.target is RenderBoxModel) {
+          final ro = hitPath.first.target as RenderBoxModel;
+          final element = ro.renderStyle.target;
+          element.debugHighlight();
+          _highlightElement = element;
+        }
+      }
+    } catch (_) {}
+
     sendToFrontend(id, null);
   }
 }

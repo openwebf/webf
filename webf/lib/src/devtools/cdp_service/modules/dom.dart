@@ -84,6 +84,14 @@ class InspectDOMModule extends UIInspectorModule {
           sendToFrontend(id, null);
         }
         break;
+      case 'highlightRect':
+        final overlay = devtoolsService.uiInspector?.moduleRegistrar['Overlay'];
+        if (overlay is InspectOverlayModule) {
+          overlay.onHighlightRect(id, params ?? const {});
+        } else {
+          sendToFrontend(id, null);
+        }
+        break;
       case 'resolveNode':
         onResolveNode(id, params!);
         break;
