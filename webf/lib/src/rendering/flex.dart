@@ -3890,7 +3890,9 @@ class RenderFlexLayout extends RenderLayoutBox {
       // For single-line flex containers, prefer the container’s definite inner cross size
       // (content-box) when available. This includes cases where the container’s cross size
       // is established by its parent (e.g., align-items:stretch on the parent), even if the
-      // container’s own cross-size property is auto.
+      // container’s own cross-size property is auto. Per CSS Flexbox §9.4, for single-line
+      // flex containers the flex line’s cross size equals the flex container’s inner cross size
+      // when that size is definite.
       // https://www.w3.org/TR/css-flexbox-1/#algo-cross-line
       double? explicitContainerCross;   // from explicit non-auto width/height
       double? resolvedContainerCross;   // resolved cross size for block-level flex when auto
@@ -3947,14 +3949,15 @@ class RenderFlexLayout extends RenderLayoutBox {
       if (explicitContainerCross != null && explicitContainerCross.isFinite) {
         return explicitContainerCross;
       }
-      // Prefer the measured inner cross size from this layout pass when available,
-      // but never reduce below the max cross size contributed by items.
-      if (containerInnerCross != null && containerInnerCross.isFinite) {
-        return math.max(runCrossAxisExtent, containerInnerCross);
-      }
-      // For block-level flex, use resolved container cross size when available.
-      if (!isInlineFlex && hasDefiniteContainerCross && resolvedContainerCross != null && resolvedContainerCross.isFinite) {
-        return resolvedContainerCross;
+      // For single-line containers with a definite cross size, the line cross size equals
+      // the container’s inner cross size.
+      if (hasDefiniteContainerCross) {
+        if (containerInnerCross != null && containerInnerCross.isFinite) {
+          return containerInnerCross;
+        }
+        if (!isInlineFlex && resolvedContainerCross != null && resolvedContainerCross.isFinite) {
+          return resolvedContainerCross;
+        }
       }
       // Otherwise clamp to min-cross if present.
       if (minCrossFromConstraints != null && minCrossFromConstraints.isFinite) {
