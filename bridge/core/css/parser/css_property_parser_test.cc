@@ -4,6 +4,7 @@
 
 #include "core/css/parser/css_property_parser.h"
 #include "core/css/css_property_value_set.h"
+#include "core/css/css_raw_value.h"
 #include "core/css/css_grid_integer_repeat_value.h"
 #include "core/css/css_image_set_value.h"
 #include "core/css/css_repeat_style_value.h"
@@ -767,6 +768,11 @@ TEST(CSSPropertyParserRawTextTest, VariableReferenceRawText) {
   ASSERT_TRUE(value_ptr && *value_ptr);
   EXPECT_EQ((*value_ptr)->RawText(), "var(--accent)"_s);
   EXPECT_EQ(style->GetPropertyValue(CSSPropertyID::kColor), "var(--accent)"_s);
+}
+
+TEST(CSSValueSerializationTest, SanitizesRawTextForSerialization) {
+  auto raw_value = std::make_shared<CSSRawValue>("var(--accent); padding: 12px"_s);
+  EXPECT_EQ(raw_value->CssTextForSerialization(), "var(--accent)"_s);
 }
 
 }  // namespace webf

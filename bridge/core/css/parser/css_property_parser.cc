@@ -35,6 +35,20 @@ StringView StripRawTextWhitespace(StringView text) {
   return trimmed;
 }
 
+inline bool ShouldAssignRawText(const std::shared_ptr<const CSSValue>& value) {
+  if (!value) {
+    return false;
+  }
+  if (value->HasRawText()) {
+    return false;
+  }
+  if (value->IsInitialValue() || value->IsInheritedValue() || value->IsUnsetValue() || value->IsRevertValue() ||
+      value->IsRevertLayerValue()) {
+    return false;
+  }
+  return true;
+}
+
 bool IsPropertyAllowedInRule(const CSSProperty& property, StyleRule::RuleType rule_type) {
   // This function should be called only when parsing a property. Shouldn't
   // reach here with a descriptor.
@@ -176,7 +190,9 @@ bool CSSPropertyParser::ParseCSSWideKeyword(CSSPropertyID unresolved_property,
     for (size_t idx = start_index; idx < parsed_properties_->size(); ++idx) {
       const std::shared_ptr<const CSSValue>* value_ptr = (*parsed_properties_)[idx].Value();
       if (value_ptr && *value_ptr) {
-        (*value_ptr)->SetRawText(raw_value_text);
+        if (ShouldAssignRawText(*value_ptr)) {
+          (*value_ptr)->SetRawText(raw_value_text);
+        }
       }
       if (force_important) {
         (*parsed_properties_)[idx].SetImportant();
@@ -214,10 +230,18 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
     if (!has_raw_value_text) {
       return;
     }
+    if (parsed_properties_->size() <= from_index) {
+      return;
+    }
+    if (parsed_properties_->size() - from_index != 1) {
+      return;
+    }
     for (size_t idx = from_index; idx < parsed_properties_->size(); ++idx) {
       const std::shared_ptr<const CSSValue>* value_ptr = (*parsed_properties_)[idx].Value();
       if (value_ptr && *value_ptr) {
-        (*value_ptr)->SetRawText(raw_value_text);
+        if (ShouldAssignRawText(*value_ptr)) {
+          (*value_ptr)->SetRawText(raw_value_text);
+        }
       }
       if (raw_value_had_important && !allow_important_annotation && rule_type == StyleRule::kStyle) {
         (*parsed_properties_)[idx].SetImportant();
@@ -301,6 +325,19 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
       bool important = css_parsing_utils::MaybeConsumeImportant(stream_, allow_important_annotation);
       if (stream_.AtEnd()) {
         AddProperty(property_id, CSSPropertyID::kInvalid, std::move(parsed_value), important,
+                    css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
+        assign_raw_text(static_cast<size_t>(parsed_properties_size));
+        return true;
+      }
+    }
+    stream_.EnsureLookAhead();
+    stream_.Restore(savepoint);
+    if (std::shared_ptr<const CSSValue> raw_value =
+            css_parsing_utils::ParseRawLonghand(unresolved_property, CSSPropertyID::kInvalid, context_, stream_)) {
+      stream_.ConsumeWhitespace();
+      if (stream_.AtEnd()) {
+        bool important = raw_value_had_important && allow_important_annotation;
+        AddProperty(property_id, CSSPropertyID::kInvalid, std::move(raw_value), important,
                     css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
         assign_raw_text(static_cast<size_t>(parsed_properties_size));
         return true;
