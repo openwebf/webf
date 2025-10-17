@@ -391,13 +391,13 @@ class InspectCSSModule extends UIInspectorModule {
   void handleResolveValues(int? id, Map<String, dynamic> params) {
     final ctx = dbgContext;
     if (ctx == null) {
-      sendToFrontend(id, JSONEncodableMap({'resolved': []}));
+      sendToFrontend(id, JSONEncodableMap({'results': [], 'resolved': []}));
       return;
     }
 
     final int? frontendNodeId = params['nodeId'] as int?;
     if (frontendNodeId == null) {
-      sendToFrontend(id, JSONEncodableMap({'resolved': []}));
+      sendToFrontend(id, JSONEncodableMap({'results': [], 'resolved': []}));
       return;
     }
 
@@ -407,10 +407,42 @@ class InspectCSSModule extends UIInspectorModule {
         : null;
     final Element? element = obj is Element ? obj : null;
     if (element == null) {
-      sendToFrontend(id, JSONEncodableMap({'resolved': []}));
+      sendToFrontend(id, JSONEncodableMap({'results': [], 'resolved': []}));
       return;
     }
 
+    // Spec path: values + optional propertyName
+    if (params['values'] is List) {
+      final List<dynamic> values = params['values'] as List<dynamic>;
+      final String? propNameRaw = params['propertyName'] as String?;
+      final String? propName =
+          (propNameRaw != null && propNameRaw.isNotEmpty) ? camelize(propNameRaw) : null;
+      final results = <String>[];
+      for (final v0 in values) {
+        final input = v0?.toString() ?? '';
+        String out = input;
+        try {
+          dynamic resolved;
+          if (propName != null) {
+            resolved = element.renderStyle
+                .resolveValue(propName, input, baseHref: element.ownerDocument.controller.url);
+          } else {
+            // Combined syntax fallback not fully supported; leave as-is.
+            resolved = null;
+          }
+          if (resolved is CSSLengthValue) {
+            out = resolved.cssText();
+          } else if (resolved != null) {
+            out = resolved.toString();
+          }
+        } catch (_) {}
+        results.add(out);
+      }
+      sendToFrontend(id, JSONEncodableMap({'results': results}));
+      return;
+    }
+
+    // Backward-compat path: declarations/text (non-standard)
     List<Map<String, String>> pairs = [];
     final decls = params['declarations'];
     if (decls is List) {
@@ -458,7 +490,7 @@ class InspectCSSModule extends UIInspectorModule {
         devToolsProtocolLogger.finer('[DevTools] CSS.resolveValues node=$frontendNodeId count=${resolved.length}');
       } catch (_) {}
     }
-    sendToFrontend(id, JSONEncodableMap({'resolved': resolved}));
+    sendToFrontend(id, JSONEncodableMap({'results': resolved.map((e) => e['value']).toList(), 'resolved': resolved}));
   }
 
   // Adds a CSS rule to a stylesheet. We support only inline stylesheets on <style> elements.

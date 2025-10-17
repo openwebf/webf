@@ -31,7 +31,7 @@ void main() {
   setupTest();
 
   group('CSS.resolveValues', () {
-    test('resolves simple declarations for a node', () async {
+    test('resolves simple values with propertyName for a node', () async {
       final controller = WebFController(
         viewportWidth: 320,
         viewportHeight: 640,
@@ -52,27 +52,34 @@ void main() {
 
       final nodeId = controller.view.forDevtoolsNodeId(el);
 
+      // Opacity
       css.handleResolveValues(1, {
         'nodeId': nodeId,
-        'declarations': [
-          {'name': 'opacity', 'value': '0.3'},
-          {'name': 'width', 'value': '10px'},
-        ]
+        'propertyName': 'opacity',
+        'values': ['0.3']
       });
-
-      final result = css.lastResult;
+      var result = css.lastResult;
       expect(result, isNotNull);
-      final resolved = (result!['resolved'] as List).cast<Map>();
-      expect(resolved.length, 2);
-      final opacity = resolved.firstWhere((m) => m['name'] == 'opacity')['value'] as String;
-      expect(opacity, contains('0.3'));
-      final width = resolved.firstWhere((m) => m['name'] == 'width')['value'] as String;
-      expect(width, contains('px'));
+      var results = (result!['results'] as List).cast<String>();
+      expect(results.length, 1);
+      expect(results.first, contains('0.3'));
+
+      // Width
+      css.handleResolveValues(2, {
+        'nodeId': nodeId,
+        'propertyName': 'width',
+        'values': ['10px']
+      });
+      result = css.lastResult;
+      expect(result, isNotNull);
+      results = (result!['results'] as List).cast<String>();
+      expect(results.length, 1);
+      expect(results.first, contains('px'));
 
       await controller.dispose();
     });
 
-    test('parses style text and resolves', () async {
+    test('resolves calc() with propertyName', () async {
       final controller = WebFController(
         viewportWidth: 320,
         viewportHeight: 640,
@@ -91,19 +98,54 @@ void main() {
       body.appendChild(el);
 
       final nodeId = controller.view.forDevtoolsNodeId(el);
-      css.handleResolveValues(2, {
+      css.handleResolveValues(3, {
         'nodeId': nodeId,
-        'text': 'height: 24px; opacity: 0.5;'
+        'propertyName': 'width',
+        'values': ['calc(1px + 2px)']
       });
-
       final result = css.lastResult;
       expect(result, isNotNull);
-      final resolved = (result!['resolved'] as List).cast<Map>();
-      expect(resolved.length, greaterThanOrEqualTo(2));
-      final height = resolved.firstWhere((m) => m['name'] == 'height')['value'] as String;
-      expect(height, contains('24'));
-      final opacity = resolved.firstWhere((m) => m['name'] == 'opacity')['value'] as String;
-      expect(opacity, contains('0.5'));
+      final results = (result!['results'] as List).cast<String>();
+      expect(results.length, 1);
+      expect(results.first, contains('3px'));
+
+      await controller.dispose();
+    });
+
+    test('resolves 1em relative to element font-size', () async {
+      final controller = WebFController(
+        viewportWidth: 320,
+        viewportHeight: 640,
+        bundle: WebFBundle.fromContent('<html><body>Test</body></html>'),
+      );
+      await controller.controlledInitCompleter.future;
+
+      final dev = _FakeDevToolsService();
+      dev.initWithContext(WebFControllerDebuggingAdapter(controller));
+      final css = _TestCSSModule(dev);
+
+      final Pointer<NativeBindingObject> ptr = allocateNewBindingObject();
+      controller.view.createElement(ptr, 'div');
+      final Element el = controller.view.getBindingObject<Element>(ptr)!;
+      final Element body = controller.view.document.documentElement!.querySelector(['body']) as Element;
+      body.appendChild(el);
+
+      // Set font-size to a known value and force recalc
+      el.setInlineStyle('fontSize', '20px');
+      el.recalculateStyle(rebuildNested: false, forceRecalculate: true);
+      el.ownerDocument.updateStyleIfNeeded();
+
+      final nodeId = controller.view.forDevtoolsNodeId(el);
+      css.handleResolveValues(4, {
+        'nodeId': nodeId,
+        'propertyName': 'width',
+        'values': ['1em']
+      });
+      final result = css.lastResult;
+      expect(result, isNotNull);
+      final results = (result!['results'] as List).cast<String>();
+      expect(results.length, 1);
+      expect(results.first, contains('20px'));
 
       await controller.dispose();
     });
