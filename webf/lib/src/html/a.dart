@@ -42,13 +42,14 @@ class HTMLAnchorElement extends Element {
 
   @override
   Map<String, dynamic> get defaultStyle {
+    // Anchors are inline-level by default in HTML.
+    // If an href is present, apply typical UA link styling; otherwise
+    // keep it inline without forcing block layout.
     String? href = attributes['href'];
     if (href != null && href.isNotEmpty) {
       return _linkStyle;
     }
-    return {
-      DISPLAY: BLOCK
-    };
+    return { DISPLAY: INLINE };
   }
 
   WebFNavigationType _getNavigationType(String scheme) {
