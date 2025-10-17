@@ -42,7 +42,7 @@ describe('flex-auto-min-text-wrap', () => {
     BODY.appendChild(viewport);
 
     // Force layout
-    document.body.offsetWidth;
+    await waitForOnScreen(root);
 
     // Assert no horizontal overflow: scrollWidth must equal clientWidth
     expect(viewport.scrollWidth).toBe(viewport.clientWidth);

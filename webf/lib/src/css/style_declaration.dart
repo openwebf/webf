@@ -275,43 +275,10 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
           if (kDebugMode && DebugFlags.enableCssLogs) {
             cssLogger.fine('[background] expand shorthand: "' + normalizedValue + '"');
           }
-          // Purge existing background longhands to avoid stale reapplication
-          // when mixing separate longhands with a new background shorthand.
-          // This mirrors how a shorthand overwrites subproperties in the same
-          // declaration block.
-          const bgKeys = [
-            BACKGROUND_COLOR,
-            BACKGROUND_IMAGE,
-            BACKGROUND_REPEAT,
-            BACKGROUND_ATTACHMENT,
-            BACKGROUND_POSITION,
-            BACKGROUND_POSITION_X,
-            BACKGROUND_POSITION_Y,
-            BACKGROUND_SIZE,
-            BACKGROUND_CLIP,
-            BACKGROUND_ORIGIN,
-          ];
-          for (final k in bgKeys) {
-            _pendingProperties.remove(k);
-            _properties.remove(k);
-            _sheetStyle.remove(k);
-          }
-          // Keep inlineStyle map in sync with JS style.* assignments so
-          // subsequent _applyInlineStyle won't resurrect old values.
-          if (target != null) {
-            for (final k in bgKeys) {
-              target!.inlineStyle.remove(k);
-            }
-          }
+          // Expand shorthand into longhands for this declaration block only.
+          // Do not mutate target.inlineStyle here: stylesheet declarations must
+          // never overwrite author inline styles.
           CSSStyleProperty.setShorthandBackground(longhandProperties, normalizedValue);
-          if (target != null) {
-            // Write expanded longhands back to inlineStyle so it's the new source of truth.
-            longhandProperties.forEach((String k, String? v) {
-              if (v != null) {
-                target!.inlineStyle[k] = v;
-              }
-            });
-          }
           if (kDebugMode && DebugFlags.enableCssLogs) {
             cssLogger.fine('[background] longhands: ' + longhandProperties.toString());
           }

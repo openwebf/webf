@@ -519,12 +519,20 @@ class KeyframeEffect extends AnimationEffect {
     return _propertySpecificKeyframeGroups.keys;
   }
 
-  static _defaultParse(value) {
+  // Default parser used when a property has no specialized transition handler.
+  // Keep signature compatible with transition parsers: (value, renderStyle, property).
+  static _defaultParse(value, RenderStyle? renderStyle, String? property) {
     return value;
   }
 
-  static _defaultLerp(start, end, double progress) {
-    return progress < 0.5 ? start : end;
+  // Default lerp: step at 50% and assign via style so shorthand properties work.
+  // Signature matches update handlers: (begin, end, t, property, renderStyle).
+  static _defaultLerp(start, end, double progress, String property, CSSRenderStyle renderStyle) {
+    final selected = progress < 0.5 ? start : end;
+    // Fallback path uses CSSStyleDeclaration to expand shorthands when needed.
+    // This keeps layered values (e.g., background-position lists) in sync.
+    renderStyle.target.style.setProperty(property, selected?.toString() ?? '');
+    return selected;
   }
 
   static List<_Interpolation> _makeInterpolations(
@@ -630,10 +638,11 @@ class KeyframeEffect extends AnimationEffect {
           scaledLocalTime = 1;
         }
 
-        // RenderBoxModel? renderBoxModel = target!.renderBoxModel;
-        if (renderStyle.hasRenderBox() && interpolation.begin != null && interpolation.end != null) {
+        // Apply interpolation regardless of render box availability so
+        // computed styles reflect animated values prior to first layout.
+        if (interpolation.begin != null && interpolation.end != null) {
           interpolation.lerp(
-              interpolation.begin, interpolation.end, scaledLocalTime, property, renderStyle);
+              interpolation.begin, interpolation.end, scaledLocalTime, property, renderStyle as CSSRenderStyle);
         }
       }
     }

@@ -678,11 +678,18 @@ class BoxDecorationPainter extends BoxPainter {
     final String raw = renderStyle.target.style.getPropertyValue(BACKGROUND_POSITION);
     final List<String> layers = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
     final List<(CSSBackgroundPosition, CSSBackgroundPosition)> result = [];
+
+    // If shorthand is not present, fall back to renderStyle longhands so
+    // animations/JS-driven changes on backgroundPositionX/Y still take effect.
+    if (layers.isEmpty) {
+      for (int i = 0; i < count; i++) {
+        result.add((renderStyle.backgroundPositionX, renderStyle.backgroundPositionY));
+      }
+      return result;
+    }
+
     for (int i = 0; i < count; i++) {
-      final String layerText = (layers.isNotEmpty)
-          ? (i < layers.length ? layers[i] : layers.last)
-          : '$LEFT $TOP'; // initial: 0% 0% (left top)
-      // Use CSSPosition helper to expand shorthand and resolve X/Y
+      final String layerText = i < layers.length ? layers[i] : layers.last;
       final List<String> pair = CSSPosition.parsePositionShorthand(layerText);
       final x = CSSPosition.resolveBackgroundPosition(pair[0], renderStyle, BACKGROUND_POSITION_X, true);
       final y = CSSPosition.resolveBackgroundPosition(pair[1], renderStyle, BACKGROUND_POSITION_Y, false);

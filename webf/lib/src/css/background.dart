@@ -561,6 +561,10 @@ class CSSBackgroundPosition {
     }
     return '';
   }
+
+  String toString() {
+    return cssText();
+  }
 }
 
 class CSSBackgroundSize {

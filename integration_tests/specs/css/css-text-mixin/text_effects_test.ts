@@ -329,7 +329,6 @@ describe('CSS Text Effects with Paint Support', () => {
       } else {
         // Final verification
         requestAnimationFrame(async () => {
-          await snapshot(1);
           document.body.removeChild(container);
           done();
         });

@@ -1959,13 +1959,14 @@ abstract class Element extends ContainerNode
   }
 
   CSSRenderStyle? computedStyle(String? pseudoElementSpecifier) {
-    recalculateStyle();
-
-    if (!renderStyle.hasRenderBox()) {
-      return null;
-    }
-
-    return renderStyle;
+    // Do not trigger recalculateStyle() here. Callers (e.g., getComputedStyle)
+    // should first invoke Document.updateStyleIfNeeded(), which flushes pending
+    // stylesheet or inline changes. Re-entering recalc from here can clobber
+    // in-flight animation values (e.g., background-position) by re-expanding
+    // shorthands and resetting longhands to initial values.
+    // Also, permit access even before a render box is attached so computed
+    // properties like backgroundPosition can be observed during animation.
+    return renderStyle as CSSRenderStyle;
   }
 }
 

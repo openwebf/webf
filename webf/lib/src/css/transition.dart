@@ -12,7 +12,9 @@ import 'package:webf/dom.dart';
 const String _0s = '0s';
 
 Color? _parseColor(String color, RenderStyle renderStyle, String propertyName) {
-  return CSSColor.resolveColor(color, renderStyle, propertyName)?.value;
+  return CSSColor
+      .resolveColor(color, renderStyle, propertyName)
+      ?.value;
 }
 
 String _stringifyColor(Color color) {
@@ -26,15 +28,17 @@ Color _updateColor(Color oldColor, Color newColor, double progress, String prope
 }
 
 double _parseLength(String length, RenderStyle renderStyle, String property) {
-  return CSSLength.parseLength(length, renderStyle, property).computedValue;
+  return CSSLength
+      .parseLength(length, renderStyle, property)
+      .computedValue;
 }
 
 String _stringifyLength(double value) {
   return '${value}px';
 }
 
-double _updateLength(
-    double oldLengthValue, double newLengthValue, double progress, String property, CSSRenderStyle renderStyle) {
+double _updateLength(double oldLengthValue, double newLengthValue, double progress, String property,
+    CSSRenderStyle renderStyle) {
   double value = oldLengthValue * (1 - progress) + newLengthValue * progress;
   renderStyle.target.setRenderStyleProperty(property, CSSLengthValue(value, CSSLengthType.PX));
   return value;
@@ -48,14 +52,16 @@ String _stringifyBorderLength(CSSBorderRadius? value) {
   return value?.toString() ?? '';
 }
 
-CSSBorderRadius? _updateBorderLength(
-    CSSBorderRadius startRadius, CSSBorderRadius endRadius, double progress, String property, CSSRenderStyle renderStyle) {
+CSSBorderRadius? _updateBorderLength(CSSBorderRadius startRadius, CSSBorderRadius endRadius, double progress,
+    String property, CSSRenderStyle renderStyle) {
   Radius? radius = Radius.lerp(startRadius.computedRadius, endRadius.computedRadius, progress);
   if (radius != null) {
     CSSLengthValue oldX = startRadius.x;
     CSSLengthValue oldY = startRadius.y;
-    CSSLengthValue newX = CSSLength.parseLength(_stringifyLength(radius.x), oldX.renderStyle, oldX.propertyName, oldX.axisType);
-    CSSLengthValue newY = CSSLength.parseLength(_stringifyLength(radius.y), oldY.renderStyle, oldY.propertyName, oldY.axisType);
+    CSSLengthValue newX = CSSLength.parseLength(
+        _stringifyLength(radius.x), oldX.renderStyle, oldX.propertyName, oldX.axisType);
+    CSSLengthValue newY = CSSLength.parseLength(
+        _stringifyLength(radius.y), oldY.renderStyle, oldY.propertyName, oldY.axisType);
     CSSBorderRadius newRadius = CSSBorderRadius(newX, newY);
     //fix optimization current value and the last value have not changed
     dynamic lastValueObj = renderStyle.getProperty(property);
@@ -79,8 +85,8 @@ String _stringifyFontWeight(FontWeight fontWeight) {
   return fontWeight.cssText();
 }
 
-FontWeight _updateFontWeight(
-    FontWeight oldValue, FontWeight newValue, double progress, String property, CSSRenderStyle renderStyle) {
+FontWeight _updateFontWeight(FontWeight oldValue, FontWeight newValue, double progress, String property,
+    CSSRenderStyle renderStyle) {
   FontWeight? fontWeight = FontWeight.lerp(oldValue, newValue, progress) ?? FontWeight.normal;
   switch (property) {
     case FONT_WEIGHT:
@@ -113,14 +119,17 @@ double _parseLineHeight(String lineHeight, RenderStyle renderStyle, String prope
   if (CSSNumber.isNumber(lineHeight)) {
     return CSSLengthValue(CSSNumber.parseNumber(lineHeight), CSSLengthType.EM, renderStyle, LINE_HEIGHT).computedValue;
   }
-  return CSSLength.parseLength(lineHeight, renderStyle, LINE_HEIGHT).computedValue;
+  return CSSLength
+      .parseLength(lineHeight, renderStyle, LINE_HEIGHT)
+      .computedValue;
 }
 
 String _stringifyLineHeight(CSSLengthValue lineNumber) {
   return '${lineNumber.value}px';
 }
 
-CSSLengthValue _updateLineHeight(double oldValue, double newValue, double progress, String property, CSSRenderStyle renderStyle) {
+CSSLengthValue _updateLineHeight(double oldValue, double newValue, double progress, String property,
+    CSSRenderStyle renderStyle) {
   CSSLengthValue lengthValue = CSSLengthValue(_getNumber(oldValue, newValue, progress), CSSLengthType.PX);
   renderStyle.lineHeight = lengthValue;
   return lengthValue;
@@ -134,7 +143,8 @@ String _stringifyTransform(Matrix4 value) {
   return value.cssText();
 }
 
-Matrix4 _updateTransform(TransformAnimationValue begin, TransformAnimationValue end, double t, String property, CSSRenderStyle renderStyle) {
+Matrix4 _updateTransform(TransformAnimationValue begin, TransformAnimationValue end, double t, String property,
+    CSSRenderStyle renderStyle) {
   var beginMatrix = CSSMatrix.computeTransformMatrix(begin.value, renderStyle);
   var endMatrix = CSSMatrix.computeTransformMatrix(end.value, renderStyle);
 
@@ -155,8 +165,8 @@ String _stringifyTransformOrigin(CSSOrigin value) {
   return 'CSSOrigin(${value.offset.dx},${value.offset.dy},${value.alignment.x},${value.alignment.y})';
 }
 
-CSSOrigin _updateTransformOrigin(
-    CSSOrigin begin, CSSOrigin end, double progress, String property, CSSRenderStyle renderStyle) {
+CSSOrigin _updateTransformOrigin(CSSOrigin begin, CSSOrigin end, double progress, String property,
+    CSSRenderStyle renderStyle) {
   Offset offset = begin.offset + (end.offset - begin.offset) * progress;
   Alignment alignment = begin.alignment + (end.alignment - begin.alignment) * progress;
   CSSOrigin result = CSSOrigin(offset, alignment);
@@ -171,11 +181,126 @@ const List<Function> _fontWeightHandler = [_parseFontWeight, _updateFontWeight, 
 const List<Function> _numberHandler = [_parseNumber, _updateNumber, _stringifyNumber];
 const List<Function> _lineHeightHandler = [_parseLineHeight, _updateLineHeight, _stringifyLineHeight];
 const List<Function> _transformHandler = [_parseTransform, _updateTransform, _stringifyTransform];
-const List<Function> _transformOriginHandler = [_parseTransformOrigin, _updateTransformOrigin, _stringifyTransformOrigin];
+const List<Function> _transformOriginHandler = [
+  _parseTransformOrigin,
+  _updateTransformOrigin,
+  _stringifyTransformOrigin
+];
+
+// background-position handler: parses "<pos-x> <pos-y>" and interpolates per-axis.
+List<CSSBackgroundPosition> _parseBackgroundPosition(String value, RenderStyle renderStyle, String property) {
+  final List<String> pair = CSSPosition.parsePositionShorthand(value);
+  final CSSBackgroundPosition x = CSSPosition.resolveBackgroundPosition(
+      pair[0], renderStyle, BACKGROUND_POSITION_X, true);
+  final CSSBackgroundPosition y = CSSPosition.resolveBackgroundPosition(
+      pair[1], renderStyle, BACKGROUND_POSITION_Y, false);
+  return [x, y];
+}
+
+String _stringifyBackgroundPosition(List<CSSBackgroundPosition> pair) {
+  final x = pair[0];
+  final y = pair[1];
+  return '${x.cssText()} ${y.cssText()}';
+}
+
+List<CSSBackgroundPosition> _updateBackgroundPosition(List<CSSBackgroundPosition> begin,
+    List<CSSBackgroundPosition> end,
+    double progress,
+    String property,
+    CSSRenderStyle renderStyle) {
+  CSSBackgroundPosition _lerpOne(CSSBackgroundPosition a, CSSBackgroundPosition b, bool isX) {
+    // Prefer numeric interpolation when both sides are numeric (length/calc).
+    final String axisProperty = isX ? BACKGROUND_POSITION_X : BACKGROUND_POSITION_Y;
+    final bool aNumeric = a.length != null || a.calcValue != null;
+    final bool bNumeric = b.length != null || b.calcValue != null;
+    if (aNumeric && bNumeric) {
+      double ax = a.length != null
+          ? a.length!.computedValue
+          : (a.calcValue!.computedValue(axisProperty) ?? 0);
+      double bx = b.length != null
+          ? b.length!.computedValue
+          : (b.calcValue!.computedValue(axisProperty) ?? 0);
+      final double v = ax * (1 - progress) + bx * progress;
+      return CSSBackgroundPosition(length: CSSLengthValue(v, CSSLengthType.PX));
+    }
+    // Percentage interpolation when both are percentages.
+    if (a.percentage != null && b.percentage != null) {
+      final double v = a.percentage! * (1 - progress) + b.percentage! * progress;
+      return CSSBackgroundPosition(percentage: v);
+    }
+    // Mixed types: fallback to step at half.
+    return progress < 0.5 ? a : b;
+  }
+
+  final CSSBackgroundPosition x = _lerpOne(begin[0], end[0], true);
+  final CSSBackgroundPosition y = _lerpOne(begin[1], end[1], false);
+
+  // Update render style longhands to drive painting.
+  renderStyle.target.setRenderStyleProperty(BACKGROUND_POSITION_X, x);
+  renderStyle.target.setRenderStyleProperty(BACKGROUND_POSITION_Y, y);
+  // Update longhand values in CSSStyleDeclaration for direct style reads.
+  renderStyle.target.style.setProperty(BACKGROUND_POSITION_X, x.cssText());
+  renderStyle.target.style.setProperty(BACKGROUND_POSITION_Y, y.cssText());
+
+  return [x, y];
+}
+
+// background-position-x/y handlers for cases where keyframes use longhands
+CSSBackgroundPosition _parseBackgroundPositionX(String value, RenderStyle renderStyle, String property) {
+  return CSSPosition.resolveBackgroundPosition(value, renderStyle, BACKGROUND_POSITION_X, true);
+}
+
+CSSBackgroundPosition _parseBackgroundPositionY(String value, RenderStyle renderStyle, String property) {
+  return CSSPosition.resolveBackgroundPosition(value, renderStyle, BACKGROUND_POSITION_Y, false);
+}
+
+String _stringifyBackgroundPositionAxis(CSSBackgroundPosition pos) {
+  return pos.cssText();
+}
+
+CSSBackgroundPosition _lerpBackgroundPositionAxis(CSSBackgroundPosition a, CSSBackgroundPosition b, double progress,
+    bool isX) {
+  final String axisProperty = isX ? BACKGROUND_POSITION_X : BACKGROUND_POSITION_Y;
+  final bool aNumeric = a.length != null || a.calcValue != null;
+  final bool bNumeric = b.length != null || b.calcValue != null;
+  if (aNumeric && bNumeric) {
+    double av = a.length != null ? a.length!.computedValue : (a.calcValue!.computedValue(axisProperty) ?? 0);
+    double bv = b.length != null ? b.length!.computedValue : (b.calcValue!.computedValue(axisProperty) ?? 0);
+    final double v = av * (1 - progress) + bv * progress;
+    return CSSBackgroundPosition(length: CSSLengthValue(v, CSSLengthType.PX));
+  }
+  if (a.percentage != null && b.percentage != null) {
+    final double v = a.percentage! * (1 - progress) + b.percentage! * progress;
+    return CSSBackgroundPosition(percentage: v);
+  }
+  return progress < 0.5 ? a : b;
+}
+
+CSSBackgroundPosition _updateBackgroundPositionX(CSSBackgroundPosition begin, CSSBackgroundPosition end,
+    double progress, String property, CSSRenderStyle renderStyle) {
+  final CSSBackgroundPosition x = _lerpBackgroundPositionAxis(begin, end, progress, true);
+  // Preserve existing Y to keep shorthand consistent.
+  final CSSBackgroundPosition y = renderStyle.backgroundPositionY;
+  renderStyle.target.setRenderStyleProperty(BACKGROUND_POSITION_X, x);
+  renderStyle.target.style.setProperty(BACKGROUND_POSITION_X, x.cssText());
+  return x;
+}
+
+CSSBackgroundPosition _updateBackgroundPositionY(CSSBackgroundPosition begin, CSSBackgroundPosition end,
+    double progress, String property, CSSRenderStyle renderStyle) {
+  final CSSBackgroundPosition y = _lerpBackgroundPositionAxis(begin, end, progress, false);
+  final CSSBackgroundPosition x = renderStyle.backgroundPositionX;
+  renderStyle.target.setRenderStyleProperty(BACKGROUND_POSITION_Y, y);
+  renderStyle.target.style.setProperty(BACKGROUND_POSITION_Y, y.cssText());
+  return y;
+}
 
 Map<String, List<Function>> CSSTransitionHandlers = {
   COLOR: _colorHandler,
   BACKGROUND_COLOR: _colorHandler,
+  BACKGROUND_POSITION: [_parseBackgroundPosition, _updateBackgroundPosition, _stringifyBackgroundPosition],
+  BACKGROUND_POSITION_X: [_parseBackgroundPositionX, _updateBackgroundPositionX, _stringifyBackgroundPositionAxis],
+  BACKGROUND_POSITION_Y: [_parseBackgroundPositionY, _updateBackgroundPositionY, _stringifyBackgroundPositionAxis],
   BORDER_BOTTOM_COLOR: _colorHandler,
   BORDER_LEFT_COLOR: _colorHandler,
   BORDER_RIGHT_COLOR: _colorHandler,
@@ -249,6 +374,7 @@ mixin CSSTransitionMixin on RenderStyle {
   // Canonical order: per grammar
   // Animation type: not animatable
   List<String>? _transitionProperty;
+
   set transitionProperty(List<String>? value) {
     _transitionProperty = value;
     _effectiveTransitions = null;
@@ -273,6 +399,7 @@ mixin CSSTransitionMixin on RenderStyle {
   // Canonical order: per grammar
   // Animation type: not animatable
   List<String>? _transitionDuration;
+
   set transitionDuration(List<String>? value) {
     _transitionDuration = value;
     _effectiveTransitions = null;
@@ -292,6 +419,7 @@ mixin CSSTransitionMixin on RenderStyle {
   // Canonical order: per grammar
   // Animation type: not animatable
   List<String>? _transitionTimingFunction;
+
   set transitionTimingFunction(List<String>? value) {
     _transitionTimingFunction = value;
     _effectiveTransitions = null;
@@ -311,6 +439,7 @@ mixin CSSTransitionMixin on RenderStyle {
   // Canonical order: per grammar
   // Animation type: not animatable
   List<String>? _transitionDelay;
+
   set transitionDelay(List<String>? value) {
     _transitionDelay = value;
     _effectiveTransitions = null;
@@ -320,6 +449,7 @@ mixin CSSTransitionMixin on RenderStyle {
   List<String> get transitionDelay => _transitionDelay ?? const [_0s];
 
   Map<String, List>? _effectiveTransitions;
+
   Map<String, List> get effectiveTransitions {
     if (_effectiveTransitions != null) return _effectiveTransitions!;
     Map<String, List> transitions = {};
@@ -328,7 +458,7 @@ mixin CSSTransitionMixin on RenderStyle {
       String property = camelize(transitionProperty[i]);
       String duration = transitionDuration.length == 1 ? transitionDuration[0] : transitionDuration[i];
       String function =
-          transitionTimingFunction.length == 1 ? transitionTimingFunction[0] : transitionTimingFunction[i];
+      transitionTimingFunction.length == 1 ? transitionTimingFunction[0] : transitionTimingFunction[i];
       String delay = transitionDelay.length == 1 ? transitionDelay[0] : transitionDelay[i];
       transitions[property] = [duration, function, delay];
     }
@@ -374,7 +504,8 @@ mixin CSSTransitionMixin on RenderStyle {
         var interpolation = effect.interpolations.firstWhere((interpolation) => interpolation.property == propertyName);
         var stringifyFunc = CSSTransitionHandlers[propertyName]![2];
         // Matrix4 begin, Matrix4 end, double t, String property, CSSRenderStyle renderStyle
-        begin = stringifyFunc(interpolation.lerp(interpolation.begin, interpolation.end, animation.progress, propertyName, this));
+        begin = stringifyFunc(
+            interpolation.lerp(interpolation.begin, interpolation.end, animation.progress, propertyName, this));
       }
 
       animation.cancel();
