@@ -668,13 +668,11 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   void setPseudoProperty(String type, String propertyName, String value) {
     switch (type) {
       case 'before':
-        cssLogger.fine("[style_declaration::setPseudoProperty] hit before with key=$propertyName, value=$value");
         pseudoBeforeStyle ??= CSSStyleDeclaration();
         pseudoBeforeStyle!.setProperty(propertyName, value, isImportant: true);
         target?.markBeforePseudoElementNeedsUpdate();
         break;
       case 'after':
-        cssLogger.fine("[style_declaration::setPseudoProperty] hit after with key=$propertyName, value=$value");
         pseudoAfterStyle ??= CSSStyleDeclaration();
         pseudoAfterStyle!.setProperty(propertyName, value, isImportant: true);
         target?.markAfterPseudoElementNeedsUpdate();
