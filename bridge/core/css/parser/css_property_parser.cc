@@ -8,7 +8,8 @@
 
 #include "css_property_parser.h"
 #include "foundation/string/character_visitor.h"
-#include "core/css/css_pending_substitution_value.h"
+#include "core/css/css_property_value.h"
+#include "core/css/css_property_name.h"
 #include "core/css/css_unparsed_declaration_value.h"
 #include "core/css/hash_tools.h"
 #include "core/css/parser/at_rule_descriptor_parser.h"
@@ -368,27 +369,26 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
   has_raw_value_text = true;
 
   if (CSSVariableParser::ContainsValidVariableReferences(value.range, context_->GetExecutingContext())) {
-    WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] PendingSubstitution fallback for '"
-                      << CSSProperty::Get(property_id).GetPropertyNameString().ToUTF8String() << "' text='"
-                      << String(value.text).ToUTF8String() << "'";
-    if (value.text.length() > CSSVariableData::kMaxVariableBytes) {
-      return false;
-    }
-
-    bool is_animation_tainted = false;
-    auto variable = std::make_shared<CSSUnparsedDeclarationValue>(
-        CSSVariableData::Create(value, is_animation_tainted, true), context_);
-
+    // Do not create PendingSubstitution. Expand shorthand into longhands using raw components.
     if (is_shorthand) {
-      std::shared_ptr<cssvalue::CSSPendingSubstitutionValue> pending_value =
-          std::make_shared<cssvalue::CSSPendingSubstitutionValue>(property_id, variable);
-      css_parsing_utils::AddExpandedPropertyForValue(property_id, pending_value, important, *parsed_properties_);
+      CSSTokenizer tokenizer(raw_value_text);
+      CSSParserTokenStream tmp_stream(tokenizer);
+      const StylePropertyShorthand& shorthand = shorthandForProperty(property_id);
+      if (css_parsing_utils::ConsumeShorthandGreedilyViaLonghands(shorthand, important, context_, tmp_stream,
+                                                                  *parsed_properties_)) {
+        assign_raw_text(static_cast<size_t>(parsed_properties_size));
+        return true;
+      }
     } else {
+      // Non-shorthand: preserve as unparsed declaration value (raw text), without resolving var().
+      bool is_animation_tainted = false;
+      auto variable = std::make_shared<CSSUnparsedDeclarationValue>(
+          CSSVariableData::Create(value, is_animation_tainted, true), context_);
       AddProperty(property_id, CSSPropertyID::kInvalid, variable, important,
                   css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
+      assign_raw_text(static_cast<size_t>(parsed_properties_size));
+      return true;
     }
-    assign_raw_text(static_cast<size_t>(parsed_properties_size));
-    return true;
   }
 
   // Tolerant fallback for gradients without commas between adjacent stops.
