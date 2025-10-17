@@ -398,8 +398,8 @@ void StyleEngine::RecalcStyle(Document& document) {
           if (!value_ptr || !(*value_ptr)) continue;
           const CSSValue& value = *(*value_ptr);
           if (id == CSSPropertyID::kWhiteSpaceCollapse) {
-            // value.CssText() returns identifiers like "collapse", "preserve", "preserve-breaks", "break-spaces"
-            String v = value.CssText();
+            // value.CssTextForSerialization() returns identifiers like "collapse", "preserve", "preserve-breaks", "break-spaces"
+            String v = value.CssTextForSerialization();
             std::string sv = v.ToUTF8String();
             if (sv == "collapse") {
               ws_collapse_enum = WhiteSpaceCollapse::kCollapse;
@@ -415,8 +415,8 @@ void StyleEngine::RecalcStyle(Document& document) {
               have_ws_collapse = true;
             }
           } else if (id == CSSPropertyID::kTextWrap) {
-            // value.CssText() returns identifiers like "wrap", "nowrap", "balance", "pretty"
-            String v = value.CssText();
+            // value.CssTextForSerialization() returns identifiers like "wrap", "nowrap", "balance", "pretty"
+            String v = value.CssTextForSerialization();
             std::string sv = v.ToUTF8String();
             if (sv == "wrap") {
               text_wrap_enum = TextWrap::kWrap;
@@ -479,7 +479,7 @@ void StyleEngine::RecalcStyle(Document& document) {
 
           const CSSValue& value = *(*value_ptr);
           AtomicString prop_name = prop.Name().ToAtomicString();
-          String value_string = value.CssText();
+          String value_string = value.CssTextForSerialization();
 
           // Forward custom properties (CSS variables) to UI and record them for local substitution.
           // Custom properties are represented with kVariable.
@@ -534,9 +534,8 @@ void StyleEngine::RecalcStyle(Document& document) {
                 shorthand_text = shorthand_text.Substring(0, semi_pos);
               }
               // Resolve var(...) usages using current custom property map.
-              String resolved = ResolveVarsInCssText(shorthand_text, custom_vars);
               // Normalize gradient arguments to insert missing commas in color-stops.
-              resolved = NormalizeGradientArguments(resolved);
+              String resolved = NormalizeGradientArguments(shorthand_text);
               resolved = TrimAsciiWhitespace(resolved);
               // Emit the shorthand 'background' once and skip individual longhands.
               if (!cleared) {
@@ -572,7 +571,6 @@ void StyleEngine::RecalcStyle(Document& document) {
               if (semi_pos < value_string.length()) {
                 value_string = value_string.Substring(0, semi_pos);
               }
-              value_string = ResolveVarsInCssText(value_string, custom_vars);
               value_string = NormalizeGradientArguments(value_string);
               value_string = TrimAsciiWhitespace(value_string);
               WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Using shorthand text for background-image: "

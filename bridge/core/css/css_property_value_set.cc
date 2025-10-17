@@ -114,7 +114,11 @@ const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::GetPropertyCSSValueW
 String CSSPropertyValueSet::GetPropertyValueWithHint(const AtomicString& property_name, unsigned int index) const {
   const std::shared_ptr<const CSSValue>* value = GetPropertyCSSValueWithHint(property_name, index);
   if (value) {
-    return value->get()->CssTextForSerialization();
+    const CSSValue& css_value = *(*value);
+    if (css_value.HasRawText()) {
+      return css_value.RawText();
+    }
+    return css_value.CssTextForSerialization();
   }
   return String::EmptyString();
 }
@@ -394,7 +398,7 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetPro
   // When replacing an existing property value, this moves the property to the
   // end of the list. Firefox preserves the position, and MSIE moves the
   // property to the beginning.
-  auto name = CSSPropertyName(unresolved_property);
+  auto name = CSSPropertyName(ResolveCSSPropertyID(unresolved_property));
   WEBF_LOG(ERROR) << "The property: " << name.ToAtomicString().ToUTF8String() << "=" << value.ToUTF8String();
   return CSSParser::ParseValue(this, unresolved_property, value, important, context_style_sheet);
 }
