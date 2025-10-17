@@ -73,7 +73,7 @@ String nativeStringToString(Pointer<NativeString> pointer) {
   return uint16ToString(pointer.ref.string, pointer.ref.length);
 }
 
-({String key, String value}) nativePairToPairRecord(Pointer<NativePair> pointer) {
+({String key, String value}) nativePairToPairRecord(Pointer<NativePair> pointer, {bool free = false}) {
   if (pointer != nullptr) {
     final keyPtr = pointer.ref.key;
     final valuePtr = pointer.ref.value;
@@ -84,14 +84,19 @@ String nativeStringToString(Pointer<NativeString> pointer) {
     if (keyPtr != nullptr) {
       final nativeKey = keyPtr.cast<NativeString>();
       key = nativeStringToString(nativeKey);
-      freeNativeString(nativeKey);
+      if (free)
+        freeNativeString(nativeKey);
     }
 
     if (valuePtr != nullptr) {
       final nativeValue = valuePtr.cast<NativeString>();
       value = nativeStringToString(nativeValue);
-      freeNativeString(nativeValue);
+      if (free)
+        freeNativeString(nativeValue);
     }
+
+    if (free)
+      malloc.free(pointer);
 
     return (key: key, value: value);
   }

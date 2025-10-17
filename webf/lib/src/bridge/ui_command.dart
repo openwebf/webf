@@ -112,8 +112,14 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} key: ${command.args} value: ${command.nativePtr2 != nullptr ? nativeStringToString(command.nativePtr2.cast<NativeString>()) : null}';
           break;
         case UICommandType.setPseudoStyle:
-          printMsg =
-              'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} cssText: ${command.nativePtr2 != nullptr ? nativeStringToString(command.nativePtr2.cast<NativeString>()) : null}';
+          if (command.nativePtr2 != null) {
+            final (:key, :value) = nativePairToPairRecord(command.nativePtr2.cast());
+            printMsg =
+              'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} property: $key=$value';
+          } else {
+            printMsg =
+              'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} property: <null>';
+          }
           break;
         case UICommandType.removePseudoStyle:
           printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} remove: ${command.nativePtr2 != nullptr ? nativeStringToString(command.nativePtr2.cast<NativeString>()) : null}';
@@ -212,9 +218,9 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           break;
         case UICommandType.setPseudoStyle:
           if (command.nativePtr2 != nullptr) {
-            final keyValue = nativePairToPairRecord(command.nativePtr2.cast());
-            if (keyValue.key.isNotEmpty) {
-              view.setPseudoStyle(nativePtr, command.args, keyValue.key, keyValue.value);
+            final (:key, :value) = nativePairToPairRecord(command.nativePtr2.cast(), free: true);
+            if (key.isNotEmpty) {
+              view.setPseudoStyle(nativePtr, command.args, key, value);
             }
           }
           break;
