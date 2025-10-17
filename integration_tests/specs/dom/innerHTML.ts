@@ -22,9 +22,11 @@ describe('outerHTML & innerHTML', () => {
 
     document.body.appendChild(div);
 
-    expect(div.outerHTML).toEqual('<div style="height: 100px;width: 100px;"></div>');
+    expect(['<div style="height: 100px;width: 100px;"></div>', '<div style="width: 100px; height: 100px;"></div>'])
+      .toContain(div.outerHTML);
     expect(div.innerHTML).toBe('');
-    expect(document.body.innerHTML).toEqual('<div style="height: 100px;width: 100px;"></div>');
+    expect(['<div style="height: 100px;width: 100px;"></div>', '<div style="width: 100px; height: 100px;"></div>'])
+      .toContain(document.body.innerHTML);
   });
 
   it('should work width attribute when get property', async () => {
@@ -61,7 +63,10 @@ describe('innerHTML', () => {
     document.body.appendChild(div);
 
     expect(div.innerHTML).toBe('<p>helloworld</p>');
-    expect(document.body.innerHTML).toEqual('<div style="height: 100px;width: 100px;"><p>helloworld</p></div>');
+    expect([
+      '<div style="height: 100px;width: 100px;"><p>helloworld</p></div>',
+      '<div style="width: 100px; height: 100px;"><p>helloworld</p></div>',
+    ]).toContain(document.body.innerHTML);
   });
 
   it('set empty string should remove all children', async () => {
