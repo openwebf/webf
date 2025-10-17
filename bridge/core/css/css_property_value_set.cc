@@ -371,6 +371,7 @@ void MutableCSSPropertyValueSet::SetProperty(CSSPropertyID property_id,
     property_vector_.emplace_back(CSSPropertyValue(longhand_name, value, important));
   }
 }
+
 void MutableCSSPropertyValueSet::SetProperty(const CSSPropertyName& name,
                                              std::shared_ptr<const CSSValue> value,
                                              bool important) {

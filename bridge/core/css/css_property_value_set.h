@@ -258,6 +258,7 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   // Convenience wrapper around the above that also supports custom properties.
   void SetProperty(const CSSPropertyName&, std::shared_ptr<const CSSValue>, bool important = false);
 
+
   // Also a convenience wrapper around SetProperty(), parsing the value from a
   // string before setting it. If the value is empty, the property is removed.
   // Only for non-custom properties.

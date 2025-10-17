@@ -1015,6 +1015,17 @@ ConsumeColorInternal(T& range,
   if constexpr (std::is_same_v<T, CSSParserTokenStream>) {
     range.EnsureLookAhead();
     raw_start = range.Offset();
+    // Treat var(...) as raw text without attempting typed color parsing; consume only var().
+    if (range.Peek().FunctionId() == CSSValueID::kVar) {
+      CSSParserSavePoint savepoint(range);
+      CSSParserTokenRange args = ConsumeFunction(range);
+      savepoint.Release();
+      StringBuilder sb;
+      sb.Append("var("_s);
+      sb.Append(args.Serialize());
+      sb.Append(")"_s);
+      return std::make_shared<CSSRawValue>(sb.ReleaseString());
+    }
   }
   CSSValueID id = range.Peek().Id();
   if ((id == CSSValueID::kAccentcolor || id == CSSValueID::kAccentcolortext)) {
@@ -1453,6 +1464,18 @@ std::shared_ptr<const CSSValue> ConsumeBorderWidth(CSSParserTokenStream& stream,
                                                    UnitlessQuirk unitless) {
   stream.EnsureLookAhead();
   uint32_t raw_start = stream.Offset();
+  // If the next component starts with var(...), capture only the var() function text.
+  if (stream.Peek().FunctionId() == CSSValueID::kVar) {
+    CSSParserSavePoint savepoint(stream);
+    CSSParserTokenRange args = ConsumeFunction(stream);  // consumes var(...)
+    savepoint.Release();
+    // Reconstruct "var(<args>)" exactly.
+    StringBuilder sb;
+    sb.Append("var("_s);
+    sb.Append(args.Serialize());
+    sb.Append(")"_s);
+    return std::make_shared<CSSRawValue>(sb.ReleaseString());
+  }
   if (stream.Peek().FunctionId() == CSSValueID::kInternalAppearanceAutoBaseSelect) {
     CSSParserSavePoint savepoint(stream);
     CSSParserTokenRange arg_range = ConsumeFunction(stream);
@@ -1546,6 +1569,18 @@ std::shared_ptr<const CSSValue> ParseLonghand(CSSPropertyID unresolved_property,
   CSSValueID value_id = stream.Peek().Id();
   uint32_t raw_start = capture_raw_text ? stream.Offset() : 0;
   assert(!CSSProperty::Get(property_id).IsShorthand());
+  // If the next token is a var(...) function, do not attempt typed parsing.
+  // Consume only var(...) and return it as CSSRawValue.
+  if (stream.Peek().FunctionId() == CSSValueID::kVar) {
+    CSSParserSavePoint savepoint(stream);
+    CSSParserTokenRange args = ConsumeFunction(stream);
+    savepoint.Release();
+    StringBuilder sb;
+    sb.Append("var("_s);
+    sb.Append(args.Serialize());
+    sb.Append(")"_s);
+    return std::make_shared<CSSRawValue>(sb.ReleaseString());
+  }
   if (CSSParserFastPaths::IsHandledByKeywordFastPath(property_id)) {
     if (CSSParserFastPaths::IsValidKeywordPropertyAndValue(property_id, stream.Peek().Id(), context->Mode())) {
       std::shared_ptr<const CSSValue> keyword = ConsumeIdent(stream);
