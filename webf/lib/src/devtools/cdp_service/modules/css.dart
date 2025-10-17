@@ -441,7 +441,13 @@ class InspectCSSModule extends UIInspectorModule {
       final value = p['value']!;
       try {
         final v = element.renderStyle.resolveValue(camel, value, baseHref: element.ownerDocument.controller.url);
-        resolved.add({'name': origName, 'value': v?.toString() ?? value});
+        String text;
+        if (v is CSSLengthValue) {
+          text = v.cssText();
+        } else {
+          text = v?.toString() ?? value;
+        }
+        resolved.add({'name': origName, 'value': text});
       } catch (_) {
         resolved.add({'name': origName, 'value': value});
       }
