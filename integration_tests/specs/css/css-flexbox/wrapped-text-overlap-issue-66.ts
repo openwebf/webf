@@ -2,7 +2,7 @@
 // Wrapped multi-line text in a flex row with a leading dot icon should not overlap.
 
 describe('flex text wrapping without overlap (enterprise #66)', () => {
-  fit('items-start with bullet + break-words text wraps cleanly', async () => {
+  it('items-start with bullet + break-words text wraps cleanly', async () => {
     document.body.style.margin = '0';
 
     // <div class="flex items-start" style="background:red">

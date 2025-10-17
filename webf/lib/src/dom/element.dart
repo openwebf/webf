@@ -1579,7 +1579,7 @@ abstract class Element extends ContainerNode
       // Special handling for inline elements that participate in inline formatting context
       if (renderStyle.display == CSSDisplay.inline && !renderStyle.isSelfRenderReplaced()) {
         // Check if this element participates in an inline formatting context
-        RenderBox? parent = renderStyle.attachedRenderBoxModel?.parent as RenderBox?;
+        RenderObject? parent = renderStyle.attachedRenderBoxModel?.parent;
         while (parent != null) {
           if (parent is RenderFlowLayout && parent.establishIFC && parent.inlineFormattingContext != null) {
             // Get bounds from the inline formatting context
@@ -1614,7 +1614,7 @@ abstract class Element extends ContainerNode
             }
             break;
           }
-          parent = parent.parent as RenderBox?;
+          parent = (parent as RenderObject).parent;
         }
       }
 
