@@ -106,6 +106,9 @@ class InspectCSSModule extends UIInspectorModule {
       case 'forcePseudoState':
         handleForcePseudoState(id, params ?? const {});
         break;
+      case 'resolveValues':
+        handleResolveValues(id, params ?? const {});
+        break;
     }
   }
 
@@ -377,6 +380,79 @@ class InspectCSSModule extends UIInspectorModule {
           .finer('[DevTools] CSS.forcePseudoState node=$frontendNodeId states=${states.join(',')}');
     }
     sendToFrontend(id, JSONEncodableMap({}));
+  }
+
+  /// Resolves a list of CSS property values in the context of a node's render style.
+  /// Params:
+  ///   - nodeId: frontend node id
+  ///   - declarations: [{ name: 'width', value: '50%' }, ...] OR
+  ///   - text: 'width:50%; height: 10px;'
+  /// Returns: { resolved: [{ name: 'width', value: '160px' }, ...] }
+  void handleResolveValues(int? id, Map<String, dynamic> params) {
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, JSONEncodableMap({'resolved': []}));
+      return;
+    }
+
+    final int? frontendNodeId = params['nodeId'] as int?;
+    if (frontendNodeId == null) {
+      sendToFrontend(id, JSONEncodableMap({'resolved': []}));
+      return;
+    }
+
+    final targetId = ctx.getTargetIdByNodeId(frontendNodeId);
+    final BindingObject? obj = targetId != null && targetId != 0
+        ? ctx.getBindingObject(Pointer.fromAddress(targetId))
+        : null;
+    final Element? element = obj is Element ? obj : null;
+    if (element == null) {
+      sendToFrontend(id, JSONEncodableMap({'resolved': []}));
+      return;
+    }
+
+    List<Map<String, String>> pairs = [];
+    final decls = params['declarations'];
+    if (decls is List) {
+      for (final d in decls) {
+        if (d is Map && d['name'] is String && d['value'] is String) {
+          pairs.add({'name': d['name'] as String, 'value': d['value'] as String});
+        }
+      }
+    } else {
+      final text = params['text'];
+      if (text is String && text.trim().isNotEmpty) {
+        final parts = _splitDeclarations(text);
+        for (final decl in parts) {
+          final int colon = decl.indexOf(':');
+          if (colon <= 0) continue;
+          final name = decl.substring(0, colon).trim();
+          final value = decl.substring(colon + 1).trim();
+          if (name.isEmpty) continue;
+          pairs.add({'name': name, 'value': value});
+        }
+      }
+    }
+
+    List<Map<String, String>> resolved = [];
+    for (final p in pairs) {
+      final origName = p['name']!;
+      final camel = camelize(origName);
+      final value = p['value']!;
+      try {
+        final v = element.renderStyle.resolveValue(camel, value, baseHref: element.ownerDocument.controller.url);
+        resolved.add({'name': origName, 'value': v?.toString() ?? value});
+      } catch (_) {
+        resolved.add({'name': origName, 'value': value});
+      }
+    }
+
+    if (DebugFlags.enableDevToolsProtocolLogs) {
+      try {
+        devToolsProtocolLogger.finer('[DevTools] CSS.resolveValues node=$frontendNodeId count=${resolved.length}');
+      } catch (_) {}
+    }
+    sendToFrontend(id, JSONEncodableMap({'resolved': resolved}));
   }
 
   // Adds a CSS rule to a stylesheet. We support only inline stylesheets on <style> elements.
