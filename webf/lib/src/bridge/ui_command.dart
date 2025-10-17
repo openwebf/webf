@@ -112,7 +112,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} key: ${command.args} value: ${command.nativePtr2 != nullptr ? nativeStringToString(command.nativePtr2.cast<NativeString>()) : null}';
           break;
         case UICommandType.setPseudoStyle:
-          if (command.nativePtr2 != null) {
+          if (command.nativePtr2 != nullptr) {
             final (:key, :value) = nativePairToPairRecord(command.nativePtr2.cast());
             printMsg =
               'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} property: $key=$value';
