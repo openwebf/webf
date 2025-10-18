@@ -234,8 +234,11 @@ class _CSSCalcParser {
     nodes.add(firstNode);
     while (_peek() != TokenKind.END_OF_FILE) {
       String operator = _peekToken.text;
+      // Stop summation when encountering a non-sum token (e.g. ')' in nested expressions).
+      // Do not treat this as a parse failure; the caller (e.g., processFunction) will
+      // consume the closing parenthesis.
       if (_peekToken.text != '+' && _peekToken.text != '-') {
-        return null;
+        break;
       }
       _next();
       secondNode = processCalcProduct();
