@@ -1,3 +1,62 @@
+## 0.23.3
+
+DevTools/CDP coverage, CSS APIs, SVG refactor, stability fixes
+
+### Highlights
+
+- DevTools: significantly expanded Chrome DevTools Protocol coverage across DOM, CSS, Overlay,
+  Page, Network, and Log modules with robust node events and editing flows.
+- CSS APIs: new `CSS.createStyleSheet`, `CSS.forcePseudoState`, and `CSS.resolveValues` to resolve
+  property values in a node context.
+- Runtime: upgrade QuickJS to the latest release and add `queueMicrotask` on the global scope.
+- Layout/Rendering: correctness fixes in flexbox (single-line cross-size), absolute positioning
+  width resolution, and background-position animations; improved selector correctness and calc() parsing.
+- SVG: remove legacy in-engine SVG implementation and integrate `flutter_svg` for the `<svg>` element.
+
+### Features
+
+- DevTools (CDP)
+  - DOM: `describeNode`, `requestNode`, `querySelector`, `querySelectorAll`, `moveTo`, `setNodeName`,
+    `removeNode`, `removeAttribute`, `setAttributeValue` (bridge emits attributeModified),
+    `setChildNodes` seeding; node highlight helpers `highlightNode`, `hideHighlight`, `highlightRect`.
+  - Events: `DOM.attributeModified`/`DOM.attributeRemoved`, `DOM.characterDataModified`,
+    `DOM.childNodeCountUpdated`.
+  - CSS: `addRule` for inline `<style>` sheets and `collectClassNames`.
+  - CSS tracking: `trackComputedStyleUpdates`/`takeComputedStyleUpdates` to unblock Styles panel.
+- Runtime/Bridge
+  - Add `queueMicrotask` to the global scope.
+  - Upgrade QuickJS engine to latest release.
+- DOM/HTML
+  - `HTMLLinkElement.relList` property support.
+
+### Fixes
+
+- CSS
+  - Correctly parse nested `calc()` sums by stopping at the closing parenthesis.
+  - Selector correctness: compound descendant matching, `:root` of-type pseudos, pseudo-function text,
+    and invalid attribute name handling.
+  - Vendor-prefixed transform keys on `Element.style` now return `undefined` (spec compliance).
+- Layout/Rendering (webf)
+  - Flexbox: for single-line flex containers with a definite cross-size, use container inner cross-size
+    (fixes header height/alignment issues); subtract margins in cross-axis sizing.
+  - Absolute positioning: resolve width with left+right from containing block constraints to avoid
+    feedback loops and ensure coverage.
+  - Backgrounds: preserve animated `background-position` in computed style and add X/Y animation handlers;
+    honor layered gradient size/position and clip to border-radius.
+  - Text/Inline: implement `word-break: break-all` wrapping; anchors are inline by default.
+  - Crash: prevent `RenderBox` cast crash in `getBoundingClientRect`.
+- DOM/Parser
+  - Fragment parsing preserves whitespace and comment nodes; fix missing `<!>` anchor that broke
+    dynamic insertion.
+  - `document.createElementNS` third-parameter compatibility.
+- Runtime/Modules
+  - Fix ES Module leaks and ensure `requestAnimationFrame`/`cancelAnimationFrame` are own properties
+    on the global object.
+- DevTools (CDP)
+  - Improve Styles panel responsiveness via computed style tracking.
+  - Ensure text nodes appear correctly; avoid duplicate insertions; correct inline stylesheet IDs
+    (now String) and support `inline:<nodeId>` in `CSS.setStyleTexts`.
+
 ## 0.23.2
 
 Next‑gen text layout/rendering and CSS feature upgrades
