@@ -570,6 +570,7 @@ class InspectCSSModule extends UIInspectorModule {
       }
       if (name.isEmpty) continue;
       element.setInlineStyle(camelize(name), value);
+      element.recalculateStyle();
     }
   }
 
