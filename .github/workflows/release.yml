@@ -530,7 +530,7 @@ jobs:
           # Get branch name from GitHub context
           BRANCH_NAME="${{ github.ref_name }}"
           echo "📋 Current branch: $BRANCH_NAME"
-          
+
           # Extract version from branch name or use input version
           if [[ "$BRANCH_NAME" == release/* ]]; then
             VERSION="${BRANCH_NAME#release/}"
@@ -540,8 +540,15 @@ jobs:
             # Fallback to branch name itself
             VERSION="$BRANCH_NAME"
           fi
-          
+
           echo "📋 Using version: $VERSION"
+
+          # Pick available 7-Zip binary
+          SEVENZIP_BIN="$(command -v 7z || command -v 7zz || command -v 7za || true)"
+          if [[ -z "$SEVENZIP_BIN" ]]; then
+            echo "❌ 7-Zip binary not found (7z/7zz/7za)"
+            exit 1
+          fi
 
           # Create version-based directory structure
           mkdir -p "debug-symbols/$VERSION"
@@ -549,26 +556,36 @@ jobs:
           # Process and compress each platform's debug symbols
           for platform in windows linux macos ios android; do
             artifact_dir="debug-artifacts/debug-symbols-${platform}"
-            
-            if [ -d "$artifact_dir" ] && [ "$(ls -A $artifact_dir 2>/dev/null)" ]; then
+
+            if [[ -d "$artifact_dir" ]] && find "$artifact_dir" -type f -print -quit | grep -q .; then
               echo "📦 Compressing $platform debug symbols..."
-              
+
               # Count files
-              file_count=$(find "$artifact_dir" -type f | wc -l)
-              
-              if [ "$file_count" -gt 0 ]; then
+              file_count=$(find "$artifact_dir" -type f | wc -l | tr -d '[:space:]')
+
+              if [[ "$file_count" -gt 0 ]]; then
                 # Get size before compression
                 size_before=$(du -sh "$artifact_dir" | cut -f1)
-                
-                # Compress directly from artifact directory with descriptive name
-                7z a -t7z -m0=lzma2 -mx=9 -mfb=64 -md=32m -ms=on \
-                  "debug-symbols/$VERSION/${platform}-debug-symbols.7z" \
-                  "$artifact_dir"/* > /dev/null
-                
-                # Get size after compression
-                size_after=$(du -sh "debug-symbols/$VERSION/${platform}-debug-symbols.7z" | cut -f1)
-                
-                echo "  ✅ $platform: $file_count files, $size_before → $size_after"
+
+                dest="debug-symbols/$VERSION/${platform}-debug-symbols.7z"
+                tmp="${dest}.tmp"
+
+                # Remove any stale/corrupt outputs first
+                rm -f "$tmp" "$dest"
+
+                # Compress the directory (safer than using '*'), force overwrite with -y
+                "$SEVENZIP_BIN" a -t7z -m0=lzma2 -mx=9 -mfb=64 -md=32m -ms=on -y \
+                  "$tmp" "$artifact_dir" >/dev/null
+
+                # Validate and finalize atomically
+                if "$SEVENZIP_BIN" t "$tmp" >/dev/null 2>&1; then
+                  mv -f "$tmp" "$dest"
+                  size_after=$(du -sh "$dest" | cut -f1)
+                  echo "  ✅ $platform: $file_count files, $size_before → $size_after"
+                else
+                  echo "  ❌ $platform: archive validation failed"
+                  rm -f "$tmp"
+                fi
               fi
             else
               echo "  ⚠️  No $platform debug symbols found"
@@ -583,24 +600,22 @@ jobs:
             # List all compressed debug symbols
             echo "📋 Compressed debug symbols summary for version $VERSION:"
             ls -lh "debug-symbols/$VERSION"/*.7z
-            
+
             # Calculate total size
             total_size=$(du -sh "debug-symbols/$VERSION" | cut -f1)
             echo "💾 Total compressed size: $total_size"
 
-            # Setup Git LFS tracking for 7z files if not already done
-            if ! grep -q "debug-symbols/\*\*/\*\.7z.*filter=lfs" .gitattributes; then
-              git lfs track "debug-symbols/**/*.7z"
-            fi
+            # Setup Git LFS tracking (idempotent)
+            git lfs track "debug-symbols/**/*.7z" >/dev/null 2>&1 || true
 
             # Add all debug symbols
             git add .gitattributes
             git add debug-symbols/
 
-            # Get branch name from GitHub context (the branch that triggered this action)
+            # Branch that triggered this action
             TRIGGER_BRANCH="${{ github.ref_name }}"
             echo "📋 Triggered from branch: $TRIGGER_BRANCH"
-            
+
             # Extract version for commit message
             if [[ "$TRIGGER_BRANCH" == release/* ]]; then
               VERSION="${TRIGGER_BRANCH#release/}"
@@ -610,12 +625,14 @@ jobs:
               VERSION="$TRIGGER_BRANCH"
             fi
 
-            # Commit compressed debug symbols
-            git commit -m "Add compressed debug symbols for release $VERSION"
-
-            # Push to the branch that triggered this action
-            git push origin HEAD:refs/heads/$TRIGGER_BRANCH
-            echo "✅ Successfully uploaded compressed debug symbols to Git LFS on branch: $TRIGGER_BRANCH"
+            # Commit and push only if there are changes
+            if git diff --staged --quiet; then
+              echo "ℹ️  No changes to commit"
+            else
+              git commit -m "Add compressed debug symbols for release $VERSION"
+              git push origin HEAD:refs/heads/$TRIGGER_BRANCH
+              echo "✅ Successfully uploaded compressed debug symbols to Git LFS on branch: $TRIGGER_BRANCH"
+            fi
           else
             echo "⚠️  No debug symbols found to upload"
           fi
