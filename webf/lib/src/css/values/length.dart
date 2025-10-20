@@ -503,9 +503,13 @@ class CSSLengthValue {
           case FLEX_BASIS:
             // Flex-basis computation is called in RenderFlexLayout which
             // will ensure parent exists.
-            RenderStyle parentRenderStyle = renderStyle!.getParentRenderStyle()!;
+            RenderStyle? parentRenderStyle = renderStyle!.getParentRenderStyle();
+            if (parentRenderStyle == null) {
+              _computedValue = 0;
+              break;
+            }
             double? mainContentSize =
-                parentRenderStyle.flexDirection == FlexDirection.row ? parentContentBoxWidth : parentContentBoxHeight;
+                parentRenderStyle!.flexDirection == FlexDirection.row ? parentContentBoxWidth : parentContentBoxHeight;
             if (mainContentSize != null) {
               _computedValue = mainContentSize * value!;
             } else {
