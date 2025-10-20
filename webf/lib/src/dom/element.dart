@@ -160,13 +160,19 @@ abstract class Element extends ContainerNode
 
   @pragma('vm:prefer-inline')
   set className(String className) {
-    List<String> classList = className.split(classNameSplitRegExp);
-    final checkKeys = (_classList + classList).where((key) => !_classList.contains(key) || !classList.contains(key));
-    final isNeedRecalculate = _checkRecalculateStyle(List.from(checkKeys));
-    _classList.clear();
-    if (classList.isNotEmpty) {
-      _classList.addAll(classList);
-    }
+    final List<String> classList = className.split(classNameSplitRegExp).where((e) => e.isNotEmpty).toList();
+    final List<String> oldClasses = List.from(_classList);
+    final Iterable<String> checkKeys = (oldClasses + classList)
+        .where((key) => !oldClasses.contains(key) || !classList.contains(key));
+    final bool isNeedRecalculate = _checkRecalculateStyle(List.from(checkKeys));
+
+    // Update internal class list
+    _classList
+      ..clear()
+      ..addAll(classList);
+
+    // Maintain document indices for classes when connected
+    _updateClassIndex(oldClasses, _classList);
     recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
@@ -1087,6 +1093,47 @@ abstract class Element extends ContainerNode
     }
   }
 
+  void _updateClassIndex(List<String> oldClasses, List<String> newClasses) {
+    // Remove old classes no longer present
+    if (oldClasses.isNotEmpty) {
+      for (final cls in oldClasses) {
+        if (!newClasses.contains(cls)) {
+          final list = ownerDocument.elementsByClass[cls];
+          if (list != null) {
+            list.remove(this);
+            ownerDocument.elementsByClass[cls] = list;
+          }
+        }
+      }
+    }
+    // Add new classes
+    if (isConnected && newClasses.isNotEmpty) {
+      for (final cls in newClasses) {
+        if (!oldClasses.contains(cls)) {
+          final list = ownerDocument.elementsByClass[cls] ?? <Element>[];
+          if (!list.contains(this)) list.add(this);
+          ownerDocument.elementsByClass[cls] = list;
+        }
+      }
+    }
+  }
+
+  void _updateAttrPresenceIndex(String attrName, {required bool present}) {
+    // Indexing is keyed by uppercase attribute name to align with RuleSet.attributeRules
+    final String key = attrName.toUpperCase();
+    if (present && isConnected) {
+      final list = ownerDocument.elementsByAttr[key] ?? <Element>[];
+      if (!list.contains(this)) list.add(this);
+      ownerDocument.elementsByAttr[key] = list;
+    } else {
+      final list = ownerDocument.elementsByAttr[key];
+      if (list != null) {
+        list.remove(this);
+        ownerDocument.elementsByAttr[key] = list;
+      }
+    }
+  }
+
   void _updateNameMap(String? newName, {String? oldName}) {
     if (oldName != null && oldName.isNotEmpty) {
       final elements = ownerDocument.elementsByName[oldName];
@@ -1123,6 +1170,14 @@ abstract class Element extends ContainerNode
     super.connectedCallback();
     _updateNameMap(getAttribute(_nameAttr));
     _updateIDMap(_id);
+    // Index classes for connected element
+    _updateClassIndex(const <String>[], _classList);
+    // Index all present attributes for connected element
+    if (attributes.isNotEmpty) {
+      for (final name in attributes.keys) {
+        _updateAttrPresenceIndex(name, present: true);
+      }
+    }
   }
 
   @override
@@ -1130,6 +1185,16 @@ abstract class Element extends ContainerNode
     super.disconnectedCallback();
     _updateIDMap(null, oldID: _id);
     _updateNameMap(null, oldName: getAttribute(_nameAttr));
+    // Remove from class index
+    if (_classList.isNotEmpty) {
+      _updateClassIndex(List.from(_classList), const <String>[]);
+    }
+    // Remove all attribute presence indices
+    if (attributes.isNotEmpty) {
+      for (final name in attributes.keys) {
+        _updateAttrPresenceIndex(name, present: false);
+      }
+    }
     if (renderStyle.position == CSSPositionType.fixed ||
         renderStyle.position == CSSPositionType.absolute ||
         renderStyle.position == CSSPositionType.sticky) {
@@ -1218,6 +1283,11 @@ abstract class Element extends ContainerNode
       recalculateStyle(rebuildNested: isNeedRecalculate);
     }
 
+    // Maintain attribute presence index (ignore special cases handled elsewhere)
+    if (qualifiedName != _classNameAttr && qualifiedName != _idAttr && qualifiedName != _nameAttr) {
+      _updateAttrPresenceIndex(qualifiedName, present: true);
+    }
+
     // Emit CDP DOM.attributeModified for DevTools if something actually changed
     if (changed) {
       try {
@@ -1244,6 +1314,11 @@ abstract class Element extends ContainerNode
       attributes.remove(qualifiedName);
       final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
       recalculateStyle(rebuildNested: isNeedRecalculate);
+
+      // Maintain attribute presence index
+      if (qualifiedName != _classNameAttr && qualifiedName != _idAttr && qualifiedName != _nameAttr) {
+        _updateAttrPresenceIndex(qualifiedName, present: false);
+      }
 
       // Emit CDP DOM.attributeRemoved for DevTools
       try {
@@ -1430,8 +1505,49 @@ abstract class Element extends ContainerNode
   }
 
   void _applySheetStyle(CSSStyleDeclaration style) {
-    CSSStyleDeclaration matchRule = _elementRuleCollector.collectionFromRuleSet(ownerDocument.ruleSet, this);
+    CSSStyleDeclaration matchRule = _collectMatchedRulesWithCache();
     style.union(matchRule);
+  }
+
+  // Lightweight memoization for matched rules
+  int? _cachedRuleSetVersion;
+  String? _matchedKeyFingerprint;
+  CSSStyleDeclaration? _matchedRulesCache;
+
+  CSSStyleDeclaration _collectMatchedRulesWithCache() {
+    if (DebugFlags.enableCssMemoization) {
+      final int currentVersion = ownerDocument.ruleSetVersion;
+      final String fp = _buildMatchFingerprint();
+      if (_cachedRuleSetVersion == currentVersion && _matchedKeyFingerprint == fp && _matchedRulesCache != null) {
+        if (DebugFlags.enableCssTrace) {
+          cssLogger.info('[trace][memo] hit ${tagName}${id != null && id!.isNotEmpty ? '#$id' : ''}');
+        }
+        return _matchedRulesCache!;
+      }
+      final CSSStyleDeclaration computed =
+          _elementRuleCollector.collectionFromRuleSet(ownerDocument.ruleSet, this);
+      _cachedRuleSetVersion = currentVersion;
+      _matchedKeyFingerprint = fp;
+      _matchedRulesCache = computed;
+      if (DebugFlags.enableCssTrace) {
+        cssLogger.info('[trace][memo] miss ${tagName}${id != null && id!.isNotEmpty ? '#$id' : ''}');
+      }
+      return computed;
+    }
+    return _elementRuleCollector.collectionFromRuleSet(ownerDocument.ruleSet, this);
+  }
+
+  String _buildMatchFingerprint() {
+    // Keys affecting selector matching: tag, id, classes, presence of attributes.
+    final String idPart = id ?? '';
+    final String classPart = (List<String>.from(_classList)..sort()).join('.');
+    final String attrPart = (attributes.keys
+          .where((n) => n != _idAttr && n != _classNameAttr) // ignore id/class as already covered
+          .map((n) => n.toUpperCase())
+          .toList()
+          ..sort())
+        .join(',');
+    return '$tagName#$idPart.$classPart[$attrPart]';
   }
 
   bool _scheduledRunTransitions = false;

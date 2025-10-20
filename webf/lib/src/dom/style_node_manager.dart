@@ -135,20 +135,82 @@ class StyleNodeManager {
   }
 
   void invalidateElementStyle(RuleSet changedRuleSet) {
-    ElementRuleCollector collector = ElementRuleCollector();
-    List<Node> stack = [document];
-    while (stack.isNotEmpty) {
-      Node node = stack.removeLast();
-      if (node is! Element) {
-        continue;
+    // Targeted invalidation using fast indices on Document
+    final Set<Element> dirty = <Element>{};
+    final Map<Element, List<String>> reasons = <Element, List<String>>{};
+    void addReason(Element el, String r) {
+      dirty.add(el);
+      final list = reasons.putIfAbsent(el, () => <String>[]);
+      list.add(r);
+    }
+
+    // 1) ID-based rules
+    if (changedRuleSet.idRules.isNotEmpty) {
+      for (final id in changedRuleSet.idRules.keys) {
+        final list = document.elementsByID[id];
+        if (list != null && list.isNotEmpty) {
+          for (final el in list) {
+            addReason(el, 'id:$id');
+          }
+        }
       }
-      final rules = collector.matchedRules(changedRuleSet, node);
-      if (rules.isNotEmpty) {
-        document.markElementStyleDirty(node);
+    }
+
+    // 2) Class-based rules
+    if (changedRuleSet.classRules.isNotEmpty) {
+      for (final cls in changedRuleSet.classRules.keys) {
+        final list = document.elementsByClass[cls];
+        if (list != null && list.isNotEmpty) {
+          for (final el in list) {
+            addReason(el, 'class:$cls');
+          }
+        }
       }
-      if (node.childNodes.isNotEmpty) {
-        stack.addAll(node.childNodes);
+    }
+
+    // 3) Attribute presence-based rules (keys are uppercased in RuleSet)
+    if (changedRuleSet.attributeRules.isNotEmpty) {
+      for (final attr in changedRuleSet.attributeRules.keys) {
+        final list = document.elementsByAttr[attr];
+        if (list != null && list.isNotEmpty) {
+          for (final el in list) {
+            addReason(el, 'attr:$attr');
+          }
+        }
       }
+    }
+
+    // 4) Fallback cases: tag/universal/pseudo changes.
+    // Prefer a bounded scan using the collector rather than forcing a root recalc.
+    int fallbackVisited = 0;
+    int fallbackMatched = 0;
+    if (changedRuleSet.tagRules.isNotEmpty ||
+        changedRuleSet.universalRules.isNotEmpty ||
+        changedRuleSet.pseudoRules.isNotEmpty) {
+      final ElementRuleCollector collector = ElementRuleCollector();
+      final List<Node> stack = <Node>[document];
+      while (stack.isNotEmpty) {
+        final Node node = stack.removeLast();
+        if (node is Element) {
+          fallbackVisited++;
+          final rules = collector.matchedRules(changedRuleSet, node);
+          if (rules.isNotEmpty) {
+            fallbackMatched++;
+            addReason(node, 'fallback');
+          }
+        }
+        if (node.childNodes.isNotEmpty) {
+          stack.addAll(node.childNodes);
+        }
+      }
+    }
+
+    if (DebugFlags.enableCssTrace) {
+      cssLogger.info('[trace][invalidate] ids=${changedRuleSet.idRules.length} classes=${changedRuleSet.classRules.length} attrs=${changedRuleSet.attributeRules.length} tags=${changedRuleSet.tagRules.length} universals=${changedRuleSet.universalRules.length} pseudo=${changedRuleSet.pseudoRules.length} ' +
+          'dirty=${dirty.length} fallbackVisited=$fallbackVisited fallbackMatched=$fallbackMatched');
+    }
+    for (final el in dirty) {
+      document.markElementStyleDirty(el, reason: reasons[el]?.join('|'));
     }
   }
 

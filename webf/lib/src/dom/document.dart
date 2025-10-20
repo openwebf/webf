@@ -31,13 +31,24 @@ class Document extends ContainerNode {
   late AnimationTimeline animationTimeline;
   Map<String, List<Element>> elementsByID = {};
   Map<String, List<Element>> elementsByName = {};
+  // Fast indices to support targeted invalidation
+  // - elementsByClass: maps a class token to connected elements with that class
+  // - elementsByAttr: maps an attribute name (UPPERCASED) to connected elements where that attribute is present
+  // These indices are maintained by Element on connect/disconnect and attribute/class changes.
+  Map<String, List<Element>> elementsByClass = {};
+  Map<String, List<Element>> elementsByAttr = {};
 
   final List<AsyncCallback> pendingPreloadingScriptCallbacks = [];
 
   final Set<int> _styleDirtyElements = {};
 
-  void markElementStyleDirty(Element element) {
+  void markElementStyleDirty(Element element, {String? reason}) {
     _styleDirtyElements.add(element.pointer!.address);
+    if (DebugFlags.enableCssTrace) {
+      final id = element.id != null && element.id!.isNotEmpty ? '#${element.id}' : '';
+      final classes = element.classList.isNotEmpty ? '.${element.classList.join('.')}' : '';
+      cssLogger.info('[trace][dirty] ${element.tagName}$id$classes reason=${reason ?? 'unspecified'}');
+    }
   }
 
   void clearElementStyleDirty(Element element) {
@@ -52,6 +63,8 @@ class Document extends ContainerNode {
   late StyleNodeManager _styleNodeManager;
 
   late RuleSet ruleSet;
+  // Bumps on every handleStyleSheets() to invalidate element-level memoization.
+  int ruleSetVersion = 0;
 
   String? _domain;
   final String _compatMode = 'CSS1Compat';
@@ -494,6 +507,8 @@ class Document extends ContainerNode {
       ruleCount += sheet.cssRules.length;
       ruleSet.addRules(sheet.cssRules, baseHref: sheet.href);
     }
+    // Increment the ruleset version to bust element-level caches.
+    ruleSetVersion++;
     if (perf && sw != null) {
       CSSPerf.recordHandleStyleSheets(
           durationMs: sw.elapsedMilliseconds, sheetCount: sheets.length, ruleCount: ruleCount);
@@ -536,23 +551,16 @@ class Document extends ContainerNode {
     final bool perf = DebugFlags.enableCssPerf;
     final Stopwatch? sw = perf ? (Stopwatch()..start()) : null;
     final int dirtyAtStart = _styleDirtyElements.length;
-    if (_styleDirtyElements.isEmpty) {
+    // Always attempt to update active stylesheets first so changedRuleSet can
+    // mark targeted elements dirty (even if we had no prior dirty set).
+    final bool sheetsUpdated = styleNodeManager.updateActiveStyleSheets(rebuild: rebuild);
+    // Recompute dirty count after stylesheets may have targeted elements.
+    final int dirtyAfterSheets = _styleDirtyElements.length;
+    if (dirtyAfterSheets == 0 && !sheetsUpdated) {
       if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine(
-            '[style] flushStyle: no dirty elements (pending=${styleNodeManager.hasPendingStyleSheet} candidates=${styleNodeManager.styleSheetCandidateNodes.length})');
+        cssLogger.fine('[style] flushStyle: nothing to do (no dirty, no sheet changes)');
       }
       _recalculating = false;
-      if (perf && sw != null) {
-        CSSPerf.recordFlush(durationMs: sw.elapsedMilliseconds, dirtyCount: dirtyAtStart, recalcFromRoot: false);
-      }
-      return;
-    }
-    if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[style] flushStyle: no active stylesheet update');
-      }
-      _recalculating = false;
-      _styleDirtyElements.clear();
       if (perf && sw != null) {
         CSSPerf.recordFlush(durationMs: sw.elapsedMilliseconds, dirtyCount: dirtyAtStart, recalcFromRoot: false);
       }
@@ -563,6 +571,9 @@ class Document extends ContainerNode {
           return bindingObject is HeadElement || bindingObject is HTMLElement;
         }) ||
         rebuild;
+    if (DebugFlags.enableCssTrace) {
+      cssLogger.info('[trace][flush] dirty=${_styleDirtyElements.length} sheetsUpdated=$sheetsUpdated recalcFromRoot=$recalcFromRoot');
+    }
     if (recalcFromRoot) {
       if (kDebugMode && DebugFlags.enableCssLogs) {
         cssLogger.fine('[style] flushStyle: recalculating from root');
@@ -616,6 +627,8 @@ class Document extends ContainerNode {
     pendingPreloadingScriptCallbacks.clear();
     elementsByID.clear();
     elementsByName.clear();
+    elementsByClass.clear();
+    elementsByAttr.clear();
     _documentElement = null;
     // Dispose animation timeline to stop ticker and prevent memory leaks
     animationTimeline.dispose();

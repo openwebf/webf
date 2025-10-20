@@ -4,6 +4,7 @@
  */
 import 'package:flutter/foundation.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/html.dart';
 
 typedef InsertNodeHandler = void Function(ContainerNode container, Node child, Node? next);
 
@@ -88,9 +89,13 @@ abstract class ContainerNode extends Node {
     // 5. Insert node into parent before reference child.
     _insertNode(targets, referenceNode, _adoptAndInsertBefore);
 
-    // 6. Mark this element to dirty elements.
+    // 6. Mark this element dirty only when it can influence selector matching.
+    // Avoid marking <head> and <html> which otherwise force root recalcs.
     if (this is Element) {
-      ownerDocument.markElementStyleDirty(this as Element);
+      final Element el = this as Element;
+      if (el is! HeadElement && el is! HTMLElement) {
+        ownerDocument.markElementStyleDirty(el, reason: 'childList-insert');
+      }
     }
 
     // 7. Trigger connected callback
@@ -169,7 +174,10 @@ abstract class ContainerNode extends Node {
   @override
   Node? removeChild(Node child) {
     if (this is Element) {
-      ownerDocument.markElementStyleDirty(this as Element);
+      final Element el = this as Element;
+      if (el is! HeadElement && el is! HTMLElement) {
+        ownerDocument.markElementStyleDirty(el, reason: 'childList-remove');
+      }
     }
 
     bool isOldChildConnected = child.isConnected;
@@ -212,7 +220,10 @@ abstract class ContainerNode extends Node {
     _insertNode(targets, null, _adoptAndAppendChild);
 
     if (this is Element) {
-      ownerDocument.markElementStyleDirty(this as Element);
+      final Element el = this as Element;
+      if (el is! HeadElement && el is! HTMLElement) {
+        ownerDocument.markElementStyleDirty(el, reason: 'childList-append');
+      }
     }
 
     if (child.isConnected) {

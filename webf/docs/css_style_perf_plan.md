@@ -1,7 +1,7 @@
 # CSS Stylesheet & Style Recalc – Performance Plan
 
 Owner: webf/css
-Status: Draft
+Status: In Progress — Workstream 1 delivered
 Scope: Dart CSS pipeline (parse → index → match → cascade → recalc)
 
 ## Goals
@@ -35,6 +35,7 @@ Plan:
 
 Expected impact:
 - Large drop in “match calls” and candidate counts during stylesheet updates.
+- Reduce style recalculation work to only impacted elements.
 
 Risk/Notes:
 - Index maintenance must respect Node connectivity (only index connected elements).
@@ -88,6 +89,42 @@ Success criteria (qualitative):
 - Significant decrease in match candidates and match ms total for stylesheet changes.
 - Decrease in recalc calls and recalc ms total over common interactions.
 
+## Progress To Date
+
+Changes landed (W1):
+- Added Document indices: elementsByClass, elementsByAttr for targeted invalidation.
+- Maintained indices in Element on connect/disconnect and class/attribute changes.
+- StyleNodeManager now invalidates by id/class/attr via indices; uses bounded fallback scan for tag/universal/pseudo.
+- Flush ordering updates active stylesheets before consulting dirty set (so only impacted nodes are marked).
+- Suppressed generic childList dirty marks for <head>/<html> to avoid unintended root-wide recalcs.
+- @import rules flattened; sheet marked pending and routed through targeted invalidation (no root mark).
+- Tracing flag added for deep diagnostics; optional memoization flag in place (off by default).
+
+Current metrics (representative):
+- CSS summary: parseCalls=5 rules=51 style=50 media=0 keyframes=1 fontFace=0 parseMs=24
+- Index: addCalls=19 addRules=166 handleCalls=5 handleRules=117 handleMs=0
+- Match: calls=453 candidates=1555 matched=286 ms=0
+- Recalc/Flush: recalc calls=292 recalcMs=32 flush calls=25 dirtyTotal=26 rootCount=2 flushMs=25
+
+Previously observed (pre‑W1):
+- Match: calls=428 candidates=1700 matched=240 ms=1
+- Recalc/Flush: recalc calls=462 recalcMs=209 flush calls=25 dirtyTotal=45 rootCount=5 flushMs=203
+
+Observed impact:
+- Recalc calls ↓ ~37% (462 → 292); recalcMs ↓ from 209ms → 32ms.
+- FlushMs ↓ from ~203ms → ~25ms; dirtyTotal ↓ (45 → 26); rootCount ↓ (5 → 2).
+- Match candidates slightly ↓ (1700 → 1555); overall match cost remains negligible.
+
+## Flags & Instrumentation
+- DebugFlags.enableCssTrace: verbose [trace] logs for dirty reasons, invalidation summaries, memo hits, flush decisions.
+- DebugFlags.enableCssMemoization: per‑element matched‑rules cache keyed by (ruleSetVersion, tag, id, classes, attr presence).
+
+## Next Steps
+- Workstream 2 (Memoization): enable behind flag in dev; add tests; measure match reductions; consider default‑on.
+- Workstream 3 (Micro‑optimizations): reuse evaluator, cheap ancestry pre‑checks for descendant combinators.
+- Workstream 4 (Batch recalc – guarded): optionally defer recalc to flushStyle(); ensure getComputedStyle triggers update.
+- Optional index follow‑ups: elementsByTag for tag‑rule invalidation; pseudo anchors tracking if needed.
+
 ## Rollout & Safety
 - Keep targeted invalidation on by default once validated with tests.
 - Memoization behind a runtime flag initially; enable progressively.
@@ -108,4 +145,3 @@ Success criteria (qualitative):
 2) Memoization + guard flag + tests → measure.
 3) Micro-optimizations → measure.
 4) Batch recalc flag → phased enable.
-

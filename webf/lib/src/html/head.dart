@@ -90,8 +90,8 @@ Future<void> _resolveCSSImports(Document document, CSSStyleSheet sheet) async {
               '; marking sheet pending for update');
         }
         document.styleNodeManager.appendPendingStyleSheet(sheet);
-        // Also mark root dirty to ensure full recalculation when needed
-        document.markElementStyleDirty(document.documentElement!);
+        // Trigger a style update; flushStyle() will update active sheets first
+        // and mark only impacted elements dirty.
         document.updateStyleIfNeeded();
       } catch (e) {
         // On failure, drop the import to avoid blocking style application
@@ -257,14 +257,12 @@ class LinkElement extends Element {
       _styleSheet?.href = sheetHref;
     }
     if (_styleSheet != null) {
-      ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
       ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
       ownerDocument.updateStyleIfNeeded();
       // Re-resolve @import for reloaded stylesheet
       () async {
         if (_styleSheet != null) {
           await _resolveCSSImports(ownerDocument, _styleSheet!);
-          ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
           ownerDocument.updateStyleIfNeeded();
         }
       }();
@@ -392,9 +390,6 @@ class LinkElement extends Element {
         // Resolve and inline any @import rules before applying
         await _resolveCSSImports(ownerDocument, _styleSheet!);
         // Ensure style manager re-indexes rules after imports
-        ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
-
-        ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
         ownerDocument.updateStyleIfNeeded();
 
@@ -610,13 +605,11 @@ mixin StyleElementMixin on Element {
             await _resolveCSSImports(ownerDocument, _styleSheet!);
             // Mark sheet pending so changes are picked up without candidate changes
             ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
-            ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
             ownerDocument.updateStyleIfNeeded();
           }
         }();
       }
       if (_styleSheet != null) {
-        ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
         ownerDocument.updateStyleIfNeeded();
       }

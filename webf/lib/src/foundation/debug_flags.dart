@@ -9,6 +9,14 @@ class DebugFlags {
   // Enables lightweight CSS performance counters and timing when true.
   // When disabled, instrumentation code is a fast no-op.
   static bool enableCssPerf = false;
+  // Enable per-element matched rules memoization to reduce selector matching
+  // cost when selector-relevant keys (tag/id/class/attr presence) are stable.
+  static bool enableCssMemoization = false;
+
+  // Ultra-detailed CSS tracing for investigations. When true, emit
+  // [trace] logs for dirty marking, invalidation sources, cache hits, and
+  // root recalcs. Intended for short profiling sessions.
+  static bool enableCssTrace = false;
 
   // Controls verbose IMG element logs added for diagnostics.
   static bool enableImageLogs = false;
