@@ -62,8 +62,7 @@ class Document extends ContainerNode {
   @override
   bool get isConnected => true;
 
-  Document(BindingContext context, {required this.controller})
-      : super(NodeType.DOCUMENT_NODE, context) {
+  Document(BindingContext context, {required this.controller}) : super(NodeType.DOCUMENT_NODE, context) {
     _styleNodeManager = StyleNodeManager(this);
     _scriptRunner = ScriptRunner(this, context.contextId);
     ruleSet = RuleSet(this);
@@ -165,6 +164,7 @@ class Document extends ContainerNode {
     CookieManager cookieManager = controller.cookieManager;
     return cookieManager.getCookieString(controller.url);
   }
+
   set cookie(Object? value) {
     if (value is! String) return;
     CookieManager cookieManager = controller.cookieManager;
@@ -366,6 +366,7 @@ class Document extends ContainerNode {
   }
 
   HTMLElement? _documentElement;
+
   HTMLElement? get documentElement => _documentElement;
 
   set documentElement(Element? element) {
@@ -470,16 +471,32 @@ class Document extends ContainerNode {
 
   void handleStyleSheets(List<CSSStyleSheet> sheets) {
     if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[style] handleStyleSheets: new sheets=' + sheets.length.toString() + ' (old=' + styleSheets.length.toString() + ')');
+      cssLogger.fine('[style] handleStyleSheets: new sheets=' +
+          sheets.length.toString() +
+          ' (old=' +
+          styleSheets.length.toString() +
+          ')');
     }
     styleSheets.clear();
     styleSheets.addAll(sheets.map((e) => e.clone()));
+    // Indexing timing (debug)
+    final bool perf = DebugFlags.enableCssPerf;
+    final Stopwatch? sw = perf ? (Stopwatch()..start()) : null;
     ruleSet.reset();
+    int ruleCount = 0;
     for (var sheet in sheets) {
       if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[style] adding rules from sheet href=' + (sheet.href?.toString() ?? 'inline') + ' rules=' + sheet.cssRules.length.toString());
+        cssLogger.fine('[style] adding rules from sheet href=' +
+            (sheet.href?.toString() ?? 'inline') +
+            ' rules=' +
+            sheet.cssRules.length.toString());
       }
+      ruleCount += sheet.cssRules.length;
       ruleSet.addRules(sheet.cssRules, baseHref: sheet.href);
+    }
+    if (perf && sw != null) {
+      CSSPerf.recordHandleStyleSheets(
+          durationMs: sw.elapsedMilliseconds, sheetCount: sheets.length, ruleCount: ruleCount);
     }
   }
 
@@ -488,7 +505,8 @@ class Document extends ContainerNode {
   void updateStyleIfNeeded() {
     if (!styleNodeManager.hasPendingStyleSheet && !styleNodeManager.isStyleSheetCandidateNodeChanged) {
       if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[style] updateStyleIfNeeded: no pending or candidate changes (candidates=${styleNodeManager.styleSheetCandidateNodes.length})');
+        cssLogger.fine(
+            '[style] updateStyleIfNeeded: no pending or candidate changes (candidates=${styleNodeManager.styleSheetCandidateNodes.length})');
       }
       return;
     }
@@ -501,38 +519,51 @@ class Document extends ContainerNode {
     _recalculating = true;
     if (styleSheets.isEmpty && styleNodeManager.hasPendingStyleSheet) {
       if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[style] updateStyleIfNeeded: empty styleSheets with pending, flushStyle(rebuild: true) pending=${styleNodeManager.hasPendingStyleSheet} candidates=${styleNodeManager.styleSheetCandidateNodes.length}');
+        cssLogger.fine(
+            '[style] updateStyleIfNeeded: empty styleSheets with pending, flushStyle(rebuild: true) pending=${styleNodeManager.hasPendingStyleSheet} candidates=${styleNodeManager.styleSheetCandidateNodes.length}');
       }
       flushStyle(rebuild: true);
       return;
     }
     if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[style] updateStyleIfNeeded: flushStyle() pending=${styleNodeManager.hasPendingStyleSheet} candidates=${styleNodeManager.styleSheetCandidateNodes.length}');
+      cssLogger.fine(
+          '[style] updateStyleIfNeeded: flushStyle() pending=${styleNodeManager.hasPendingStyleSheet} candidates=${styleNodeManager.styleSheetCandidateNodes.length}');
     }
     flushStyle();
   }
 
   void flushStyle({bool rebuild = false}) {
+    final bool perf = DebugFlags.enableCssPerf;
+    final Stopwatch? sw = perf ? (Stopwatch()..start()) : null;
+    final int dirtyAtStart = _styleDirtyElements.length;
     if (_styleDirtyElements.isEmpty) {
       if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[style] flushStyle: no dirty elements (pending=${styleNodeManager.hasPendingStyleSheet} candidates=${styleNodeManager.styleSheetCandidateNodes.length})');
+        cssLogger.fine(
+            '[style] flushStyle: no dirty elements (pending=${styleNodeManager.hasPendingStyleSheet} candidates=${styleNodeManager.styleSheetCandidateNodes.length})');
       }
       _recalculating = false;
+      if (perf && sw != null) {
+        CSSPerf.recordFlush(durationMs: sw.elapsedMilliseconds, dirtyCount: dirtyAtStart, recalcFromRoot: false);
+      }
       return;
     }
     if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
       if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[style] flushStyle: no active stylesheet update');
+        cssLogger.fine('[style] flushStyle: no active stylesheet update');
+      }
+      _recalculating = false;
+      _styleDirtyElements.clear();
+      if (perf && sw != null) {
+        CSSPerf.recordFlush(durationMs: sw.elapsedMilliseconds, dirtyCount: dirtyAtStart, recalcFromRoot: false);
+      }
+      return;
     }
-    _recalculating = false;
-    _styleDirtyElements.clear();
-    return;
-    }
-    if (_styleDirtyElements.any((address) {
+    bool recalcFromRoot = _styleDirtyElements.any((address) {
           BindingObject bindingObject = ownerView.getBindingObject(Pointer.fromAddress(address));
           return bindingObject is HeadElement || bindingObject is HTMLElement;
         }) ||
-        rebuild) {
+        rebuild;
+    if (recalcFromRoot) {
       if (kDebugMode && DebugFlags.enableCssLogs) {
         cssLogger.fine('[style] flushStyle: recalculating from root');
       }
@@ -541,13 +572,19 @@ class Document extends ContainerNode {
       for (int address in _styleDirtyElements) {
         Element? element = ownerView.getBindingObject(Pointer.fromAddress(address)) as Element?;
         if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[style] flushStyle: recalc element ' + (element?.tagName ?? '') + '#' + (element?.hashCode.toString() ?? ''));
+          cssLogger.fine('[style] flushStyle: recalc element ' +
+              (element?.tagName ?? '') +
+              '#' +
+              (element?.hashCode.toString() ?? ''));
         }
         element?.recalculateStyle();
       }
     }
     _styleDirtyElements.clear();
     _recalculating = false;
+    if (perf && sw != null) {
+      CSSPerf.recordFlush(durationMs: sw.elapsedMilliseconds, dirtyCount: dirtyAtStart, recalcFromRoot: recalcFromRoot);
+    }
   }
 
   void recalculateStyleImmediately() {
@@ -577,6 +614,8 @@ class Document extends ContainerNode {
     adoptedStyleSheets.clear();
     _styleDirtyElements.clear();
     pendingPreloadingScriptCallbacks.clear();
+    elementsByID.clear();
+    elementsByName.clear();
     _documentElement = null;
     // Dispose animation timeline to stop ticker and prevent memory leaks
     animationTimeline.dispose();

@@ -6,6 +6,10 @@ class DebugFlags {
   // Controls verbose CSS/media/variables/style logs added for diagnostics.
   static bool enableCssLogs = false;
 
+  // Enables lightweight CSS performance counters and timing when true.
+  // When disabled, instrumentation code is a fast no-op.
+  static bool enableCssPerf = false;
+
   // Controls verbose IMG element logs added for diagnostics.
   static bool enableImageLogs = false;
 

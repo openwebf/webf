@@ -1,0 +1,111 @@
+# CSS Stylesheet & Style Recalc – Performance Plan
+
+Owner: webf/css
+Status: Draft
+Scope: Dart CSS pipeline (parse → index → match → cascade → recalc)
+
+## Goals
+- Reduce total selector matching work per flush/recalc.
+- Reduce style recalculation overhead without sacrificing correctness.
+- Keep changes incremental, guarded by flags where appropriate.
+
+## Baseline (from CSSPerf counters)
+- Parser: fast; not a primary bottleneck.
+- Indexing: fast; negligible cost.
+- Matching: heavy (many candidates examined, high total ms).
+- Recalc: dominant total cost; many element-level recalcs outside flush.
+
+## Workstream 1: Targeted Invalidation (High ROI)
+Problem: StyleNodeManager walks the entire tree to find affected elements when stylesheets change.
+
+Plan:
+1) Add fast indices on Document:
+   - elementsByClass: Map<String, List<Element>>
+   - elementsByAttr: Map<String, List<Element>> (keyed by attribute name)
+   (elementsByID already exists.)
+
+2) Maintain indices:
+   - Update in Element.className setter (add/remove classes).
+   - Update in Element.internalSetAttribute/removeAttribute (attribute presence keys).
+
+3) In StyleNodeManager.invalidateElementStyle():
+   - From changedRuleSet, collect impacted keys by category (id, class, attribute).
+   - Mark only those elements dirty via indices.
+   - Fallback: for tag/universal impacts, retain current full-tree scan.
+
+Expected impact:
+- Large drop in “match calls” and candidate counts during stylesheet updates.
+
+Risk/Notes:
+- Index maintenance must respect Node connectivity (only index connected elements).
+- Attribute value-dependent selectors (e.g., [attr^=val]) still require evaluator; we only prefilter by presence key.
+
+## Workstream 2: Matched-Rules Memoization (Medium ROI)
+Problem: Recalculations re-run matching even when selector-relevant keys for an element didn’t change.
+
+Plan:
+1) Add per-element cache entry keyed by:
+   - (ruleSetVersion, tagName, id, sorted class list, sorted attribute name list used in selectors)
+2) On _applySheetStyle(): reuse cached matched rule list when fingerprint unchanged; otherwise re-match and update cache.
+
+Expected impact:
+- Reduce match time for inherited or external changes (e.g., viewport/dark-mode toggles) where element keys are stable.
+
+Risk/Notes:
+- Memory footprint; cap cache size (LRU) and/or attach to Element with limited entries.
+- Ensure cache invalidated when ruleSetVersion changes (after stylesheet updates).
+
+## Workstream 3: Selector Matching Micro-optimizations (Supportive)
+Plan:
+- Reuse a single SelectorEvaluator per matchedRules() call.
+- Pre-check ancestry keys for descendant combinators before heavy matching (cheap walk to detect required id/class/tag).
+
+Expected impact:
+- Lower cost per match, especially in deep trees.
+
+## Workstream 4: Batch Recalc Triggers (Guarded)
+Problem: Many immediate recalc calls from attribute/class/id setters.
+
+Plan:
+- Introduce an optional code path to mark element dirty and defer to Document.flushStyle(), instead of immediate recalc.
+- Gate behind a feature flag; keep current behavior as default for safety.
+
+Expected impact:
+- Fewer total recalc calls; more work processed in batches.
+
+Risk/Notes:
+- Must ensure synchronous APIs depending on computed style are still correct (Window.getComputedStyle triggers updateStyleIfNeeded()).
+
+## Measurement
+Use CSSPerf counters (DebugFlags.enableCssPerf):
+- Parser: parseCalls/parseMs (already low; track regressions only).
+- Indexing: handleCalls/handleMs.
+- Matching: match calls, candidates, matched, ms; pseudo matching stats.
+- Recalc: calls, ms.
+- Flush: calls, dirty total, rootCount, ms.
+
+Success criteria (qualitative):
+- Significant decrease in match candidates and match ms total for stylesheet changes.
+- Decrease in recalc calls and recalc ms total over common interactions.
+
+## Rollout & Safety
+- Keep targeted invalidation on by default once validated with tests.
+- Memoization behind a runtime flag initially; enable progressively.
+- Batch recalc behind a flag; enable in test apps and measure.
+
+## Implementation Notes (touch points)
+- Indices: lib/src/dom/document.dart (maps), lib/src/dom/element.dart (maintenance), lib/src/dom/style_node_manager.dart (invalidate).
+- Memoization: lib/src/dom/element.dart (_applySheetStyle), lib/src/css/element_rule_collector.dart.
+- Micro-optimizations: lib/src/css/element_rule_collector.dart, lib/src/css/query_selector.dart.
+- Batch recalc: lib/src/dom/element.dart setters → Document mark dirty.
+
+## Out of Scope (for now)
+- Blink/C++ resolver path integration.
+- Cascade layers/@scope/container queries.
+
+## Milestones
+1) Targeted invalidation + tests → measure.
+2) Memoization + guard flag + tests → measure.
+3) Micro-optimizations → measure.
+4) Batch recalc flag → phased enable.
+

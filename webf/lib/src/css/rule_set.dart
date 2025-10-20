@@ -37,8 +37,13 @@ class RuleSet {
   int _lastPosition = 0;
 
   void addRules(List<CSSRule> rules, { required String? baseHref }) {
+    final bool perf = DebugFlags.enableCssPerf;
+    final Stopwatch? sw = perf ? (Stopwatch()..start()) : null;
     for (CSSRule rule in rules) {
       addRule(rule, baseHref: baseHref);
+    }
+    if (perf && sw != null) {
+      CSSPerf.recordIndexAddRules(durationMs: sw.elapsedMilliseconds, addedRules: rules.length);
     }
     if (kDebugMode && DebugFlags.enableCssLogs) {
       cssLogger.fine('[ruleset] indexed: id=' + idRules.length.toString() +

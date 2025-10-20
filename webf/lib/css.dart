@@ -70,3 +70,4 @@ export 'src/css/values/calc.dart';
 export 'src/css/values/paint.dart';
 export 'src/css/values/path.dart';
 export 'src/css/pseudo.dart';
+export 'src/css/css_perf.dart';

@@ -90,7 +90,7 @@ Future<void> _resolveCSSImports(Document document, CSSStyleSheet sheet) async {
               '; marking sheet pending for update');
         }
         document.styleNodeManager.appendPendingStyleSheet(sheet);
-        // Mark style dirty and trigger update after resolution
+        // Also mark root dirty to ensure full recalculation when needed
         document.markElementStyleDirty(document.documentElement!);
         document.updateStyleIfNeeded();
       } catch (e) {

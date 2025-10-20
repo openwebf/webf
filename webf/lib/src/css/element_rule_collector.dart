@@ -20,8 +20,13 @@ class ElementRuleCollector {
     if (ruleSet.pseudoRules.isEmpty) {
       return [];
     }
+    final bool perf = DebugFlags.enableCssPerf;
+    final Stopwatch? sw = perf ? (Stopwatch()..start()) : null;
     List<CSSRule> rules = _collectMatchingRulesForList(ruleSet.pseudoRules, element);
     final list = rules.map((e) => e as CSSStyleRule).toList();
+    if (perf && sw != null) {
+      CSSPerf.recordPseudoMatch(durationMs: sw.elapsedMilliseconds, matchedCount: list.length);
+    }
     if (kDebugMode && DebugFlags.enableCssLogs && list.isNotEmpty) {
       final examples = list.take(2).map((r) => r.selectorGroup.selectorText).toList();
       cssLogger.fine('[match] <' + element.tagName + '> pseudo matched=' + list.length.toString() +
@@ -32,6 +37,9 @@ class ElementRuleCollector {
 
   List<CSSRule> matchedRules(RuleSet ruleSet, Element element) {
     List<CSSRule> matchedRules = [];
+    final bool perf = DebugFlags.enableCssPerf;
+    final Stopwatch? sw = perf ? (Stopwatch()..start()) : null;
+    int candidateCount = 0;
 
     if (ruleSet.isEmpty) {
       return matchedRules;
@@ -40,24 +48,37 @@ class ElementRuleCollector {
     // #id
     String? id = element.id;
     if (id != null) {
-      matchedRules.addAll(_collectMatchingRulesForList(ruleSet.idRules[id], element));
+      final list = ruleSet.idRules[id];
+      candidateCount += (list?.length ?? 0);
+      matchedRules.addAll(_collectMatchingRulesForList(list, element));
     }
 
     // .class
     for (String className in element.classList) {
-      matchedRules.addAll(_collectMatchingRulesForList(ruleSet.classRules[className], element));
+      final list = ruleSet.classRules[className];
+      candidateCount += (list?.length ?? 0);
+      matchedRules.addAll(_collectMatchingRulesForList(list, element));
     }
 
     // attribute selector
     for (String attribute in element.attributes.keys) {
-      matchedRules.addAll(_collectMatchingRulesForList(ruleSet.attributeRules[attribute.toUpperCase()], element));
+      final list = ruleSet.attributeRules[attribute.toUpperCase()];
+      candidateCount += (list?.length ?? 0);
+      matchedRules.addAll(_collectMatchingRulesForList(list, element));
     }
 
     // tag
-    matchedRules.addAll(_collectMatchingRulesForList(ruleSet.tagRules[element.tagName], element));
+    final listTag = ruleSet.tagRules[element.tagName];
+    candidateCount += (listTag?.length ?? 0);
+    matchedRules.addAll(_collectMatchingRulesForList(listTag, element));
 
     // universal
+    candidateCount += ruleSet.universalRules.length;
     matchedRules.addAll(_collectMatchingRulesForList(ruleSet.universalRules, element));
+
+    if (perf && sw != null) {
+      CSSPerf.recordMatch(durationMs: sw.elapsedMilliseconds, candidateCount: candidateCount, matchedCount: matchedRules.length);
+    }
 
     return matchedRules;
   }

@@ -1146,6 +1146,8 @@ abstract class Element extends ContainerNode
     return ownerDocument.controller.currentBuildContext?.context.findRenderObject() as RenderViewportBox?;
   }
 
+
+
   RenderBoxModel? getRootRenderBoxModel() {
     return getRootViewport()?.firstChild as RenderBoxModel?;
   }
@@ -1533,6 +1535,8 @@ abstract class Element extends ContainerNode
     bool shouldUpdateCSSVariables = rebuildNested && renderStyle.display == CSSDisplay.none;
 
     if (forceRecalculate || renderStyle.display != CSSDisplay.none || shouldUpdateCSSVariables) {
+      final bool perf = DebugFlags.enableCssPerf;
+      final Stopwatch? sw = perf ? (Stopwatch()..start()) : null;
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
@@ -1547,6 +1551,9 @@ abstract class Element extends ContainerNode
         for (final Element child in children) {
           child.recalculateStyle(rebuildNested: rebuildNested, forceRecalculate: forceRecalculate);
         }
+      }
+      if (perf && sw != null) {
+        CSSPerf.recordRecalc(durationMs: sw.elapsedMilliseconds);
       }
     }
   }
