@@ -134,6 +134,7 @@ DOMTokenList* HTMLLinkElement::relList() {
 
 void HTMLLinkElement::Trace(webf::GCVisitor* visitor) const {
   visitor->TraceMember(rel_list_);
+  visitor->TraceMember(sheet_);
   HTMLElement::Trace(visitor);
 }
 
