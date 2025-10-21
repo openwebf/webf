@@ -33,6 +33,13 @@ class InlineCssStyleDeclaration : public AbstractPropertySetCSSStyleDeclaration 
   bool IsInlineCssStyleDeclaration() const override;
   const InlineCssStyleDeclarationPublicMethods* inlineCssStyleDeclarationPublicMethods();
 
+  // Snapshot of the last inline styles emitted to the UI layer for this
+  // element, used to compute granular diffs without clearing all styles.
+  // Keys are hyphen-case CSS property names (e.g., "border-bottom-color" or
+  // custom properties like "--img-size"). Values are serialized CSS texts.
+  std::unordered_map<std::string, std::string>& MutableLastSentSnapshot() { return last_sent_snapshot_; }
+  const std::unordered_map<std::string, std::string>& LastSentSnapshot() const { return last_sent_snapshot_; }
+
   String ToString() const;
 
   // Support bracket assignment/deletion via generated QuickJS string property hooks.
@@ -53,6 +60,9 @@ class InlineCssStyleDeclaration : public AbstractPropertySetCSSStyleDeclaration 
   bool FastPathSetProperty(CSSPropertyID unresolved_property, double value) override { return false; }
 
   Member<Element> parent_element_;
+
+  // Stores last-sent inline style map for diffing.
+  std::unordered_map<std::string, std::string> last_sent_snapshot_{};
 };
 
 template <>
