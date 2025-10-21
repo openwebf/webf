@@ -22,10 +22,6 @@ class HTMLLinkElement : public HTMLElement {
 
  public:
  explicit HTMLLinkElement(Document& document);
-  void Trace(GCVisitor* visitor) const override {
-    HTMLElement::Trace(visitor);
-    visitor->TraceMember(sheet_);
-  }
   CSSStyleSheet* sheet() const { return sheet_.Get(); }
   NativeValue HandleCallFromDartSide(const webf::AtomicString& method,
                                      int32_t argc,
