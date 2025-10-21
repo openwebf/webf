@@ -171,6 +171,14 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     return css;
   }
 
+  /// Whether the given property is marked as `!important` on this declaration.
+  ///
+  /// Exposed for components (e.g., CSS variable resolver) that need to
+  /// preserve importance when updating dependent properties.
+  bool isImportant(String propertyName) {
+    return _importants[propertyName] == true;
+  }
+
   bool get hasInheritedPendingProperty {
     return _pendingProperties.keys.any((key) => isInheritedPropertyString(_kebabize(key)));
   }
