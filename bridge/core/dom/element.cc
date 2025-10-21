@@ -471,23 +471,29 @@ void Element::NotifyInlineStyleMutation() {
 
   // Read current inline style property set from element data.
   const std::shared_ptr<const CSSPropertyValueSet> inline_style = EnsureUniqueElementData().inline_style_;
+  // Diff-based emission:
+  // - If inline style is empty: clear and reset snapshot.
+  // - Otherwise: compute granular removals/updates vs last-sent snapshot and emit only diffs.
 
-  // When there is no inline style or it's empty, clear styles on Dart side.
+  InlineCssStyleDeclaration* decl = inlineStyleForBlink();
   if (!inline_style || inline_style->IsEmpty()) {
+    // Clear only when inline styles are entirely removed.
     GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, bindingObject(), nullptr);
+    if (decl) {
+      decl->MutableLastSentSnapshot().clear();
+    }
     return;
   }
 
-  // Always clear existing inline styles before applying updates to avoid stale properties.
-  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, bindingObject(), nullptr);
-
-  // Emit each declared property as raw CSS string value for Dart to process.
-  // Combine white-space longhands into shorthand to keep Dart side consistent.
+  // Build current property map from inline style.
   unsigned count = inline_style->PropertyCount();
   bool have_ws_collapse = false;
   bool have_text_wrap = false;
   WhiteSpaceCollapse ws_collapse_enum = WhiteSpaceCollapse::kCollapse;  // initial
   TextWrap text_wrap_enum = TextWrap::kWrap;                             // initial
+
+  std::unordered_map<std::string, std::string> current_props;
+  current_props.reserve(count + 1);
 
   for (unsigned i = 0; i < count; ++i) {
     auto property = inline_style->PropertyAt(i);
@@ -512,10 +518,7 @@ void Element::NotifyInlineStyleMutation() {
       continue; // Defer emission; will emit shorthand later.
     }
 
-    AtomicString value_atom(value_string);
-    std::unique_ptr<SharedNativeString> args_01 = prop_name.ToStylePropertyNameNativeString();
-    GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(),
-                                                         value_atom.ToNativeString().release());
+    current_props[prop_name.ToUTF8String()] = value_string.ToUTF8String();
   }
 
   if (have_ws_collapse || have_text_wrap) {
@@ -529,12 +532,35 @@ void Element::NotifyInlineStyleMutation() {
       case EWhiteSpace::kPreWrap: ws_value = String("pre-wrap"); break;
       case EWhiteSpace::kBreakSpaces: ws_value = String("break-spaces"); break;
     }
-    auto ws_prop = AtomicString::CreateFromUTF8("white-space");
-    auto ws_key = ws_prop.ToStylePropertyNameNativeString();
-    AtomicString ws_value_atom(ws_value);
-    GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(ws_key), bindingObject(),
-                                                         ws_value_atom.ToNativeString().release());
+    current_props["white-space"] = ws_value.ToUTF8String();
   }
+
+  // Retrieve the last-sent snapshot and compute diffs.
+  auto& last = decl->MutableLastSentSnapshot();
+
+  // Removals: properties present before but absent now.
+  for (const auto& kv : last) {
+    if (current_props.find(kv.first) == current_props.end()) {
+      AtomicString prop = AtomicString::CreateFromUTF8(kv.first);
+      std::unique_ptr<SharedNativeString> args_01 = prop.ToStylePropertyNameNativeString();
+      GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(), nullptr);
+    }
+  }
+
+  // Additions/updates.
+  for (const auto& kv : current_props) {
+    auto it = last.find(kv.first);
+    if (it == last.end() || it->second != kv.second) {
+      AtomicString prop = AtomicString::CreateFromUTF8(kv.first);
+      AtomicString value_atom = AtomicString::CreateFromUTF8(kv.second);
+      std::unique_ptr<SharedNativeString> args_01 = prop.ToStylePropertyNameNativeString();
+      GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(),
+                                                           value_atom.ToNativeString().release());
+    }
+  }
+
+  // Update snapshot.
+  last = std::move(current_props);
 }
 
 void Element::CloneNonAttributePropertiesFrom(const Element& other, CloneChildrenFlag) {
