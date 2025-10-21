@@ -737,7 +737,8 @@ void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange& c
       change.affects_elements == ChildrenChangeAffectsElements::kYes) {
     GetDocument().EnsureStyleEngine().RecalcStyle(GetDocument());
     // Flush UI commands so Dart applies inline styles before observers/snapshots run.
-    GetDocument().GetExecutingContext()->FlushUICommand(this, FlushUICommandReason::kDependentsAll);
+    // NOTE(CGQAQ): this should not be happened, FlushUICommand should not be called at all.
+    // GetDocument().GetExecutingContext()->FlushUICommand(this, FlushUICommandReason::kDependentsAll);
   }
 }
 

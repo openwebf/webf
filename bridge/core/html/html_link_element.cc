@@ -107,7 +107,8 @@ NativeValue HTMLLinkElement::parseAuthorStyleSheet(AtomicString& cssString, Atom
   document.EnsureStyleEngine().RecalcStyle(document);
 
   // Ensure UI commands (inline styles) are flushed to Dart before dispatching 'load'.
-  GetExecutingContext()->FlushUICommand(this, FlushUICommandReason::kDependentsAll);
+  // NOTE(CGQAQ): this should not be happened, FlushUICommand should not be called at all.
+  // GetExecutingContext()->FlushUICommand(this, FlushUICommandReason::kDependentsAll);
 
   // Dispatch 'load' synchronously after flush. FlushUICommand is sync, so any
   // UICommandType.addEvent has already arrived. Fire now to ensure native
