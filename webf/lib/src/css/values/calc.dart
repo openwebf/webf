@@ -189,6 +189,7 @@ class _CSSCalcParser {
   _CSSCalcParser(this.propertyName, this._renderStyle, String text, {int start = 0})
       : tokenizer = Tokenizer(SourceFile.fromString(text), text, true, start) {
     _peekToken = tokenizer.next();
+    _skipIgnorableTokens();
   }
 
   CalcExpressionNode? processCalcExpression() {
@@ -232,12 +233,18 @@ class _CSSCalcParser {
       return null;
     }
     nodes.add(firstNode);
-    while (_peek() != TokenKind.END_OF_FILE) {
+    while (true) {
+      _skipIgnorableTokens();
+      final int kind = _peek();
+      if (kind == TokenKind.END_OF_FILE || kind == TokenKind.RPAREN || kind == TokenKind.COMMA) {
+        break;
+      }
       String operator = _peekToken.text;
-      if (_peekToken.text != '+' && _peekToken.text != '-') {
+      if (operator != '+' && operator != '-') {
         return null;
       }
       _next();
+      _skipIgnorableTokens();
       secondNode = processCalcProduct();
       if (secondNode == null) {
         return null;
@@ -265,12 +272,18 @@ class _CSSCalcParser {
       return null;
     }
     nodes.add(firstNode);
-    while (_peek() != TokenKind.END_OF_FILE) {
+    while (true) {
+      _skipIgnorableTokens();
+      final int kind = _peek();
+      if (kind == TokenKind.END_OF_FILE || kind == TokenKind.RPAREN || kind == TokenKind.COMMA) {
+        break;
+      }
       String operator = _peekToken.text;
       if (_peekToken.text != '*' && _peekToken.text != '/') {
         break;
       }
       _next();
+      _skipIgnorableTokens();
       secondNode = processCalcValue();
       if (secondNode == null) {
         return null;
@@ -290,6 +303,7 @@ class _CSSCalcParser {
   }
 
   CalcExpressionNode? processCalcValue() {
+    _skipIgnorableTokens();
     CalcExpressionNode? func = processFunction();
     if (func != null) {
       return func;
@@ -317,15 +331,23 @@ class _CSSCalcParser {
   Token _next({bool unicodeRange = false}) {
     final next = _peekToken;
     _peekToken = tokenizer.next(unicodeRange: unicodeRange);
+    _skipIgnorableTokens();
     return next;
   }
 
   bool _maybeEat(int kind, {bool unicodeRange = false}) {
     if (_peekToken.kind == kind) {
       _peekToken = tokenizer.next(unicodeRange: unicodeRange);
+      _skipIgnorableTokens();
       return true;
     } else {
       return false;
+    }
+  }
+
+  void _skipIgnorableTokens() {
+    while (_peekToken.kind == TokenKind.WHITESPACE || _peekToken.kind == TokenKind.COMMENT) {
+      _peekToken = tokenizer.next();
     }
   }
 }
