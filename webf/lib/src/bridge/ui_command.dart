@@ -216,6 +216,10 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           view.setInlineStyle(nativePtr, command.args, value);
           pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
+        case UICommandType.clearStyle:
+          view.clearInlineStyle(nativePtr);
+          pendingStylePropertiesTargets[nativePtr.address] = true;
+          break;
         case UICommandType.setPseudoStyle:
           if (command.nativePtr2 != nullptr) {
             final (:key, :value) = nativePairToPairRecord(command.nativePtr2.cast(), free: true);
@@ -234,10 +238,6 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           break;
         case UICommandType.clearPseudoStyle:
           view.clearPseudoStyle(nativePtr, command.args);
-          break;
-        case UICommandType.clearStyle:
-          view.clearInlineStyle(nativePtr);
-          pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
         case UICommandType.setAttribute:
           Pointer<NativeString> nativeKey = command.nativePtr2.cast<NativeString>();
