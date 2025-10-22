@@ -107,6 +107,13 @@ class StyleEngine final {
   // In Phase 1 this is a no-op placeholder.
   void RecalcStyle(Document&);
 
+  // Recalculate styles for a specific subtree rooted at |root|, applying the
+  // same cascade/export/emission as RecalcStyle(Document&), but limiting the
+  // traversal to the given element and its descendants. This is useful for
+  // localized updates, such as when inline styles are removed and the element
+  // needs to fall back to stylesheet rules.
+  void RecalcStyleForSubtree(Element& root);
+
   bool MarkReattachAllowed() const;
   bool MarkStyleDirtyAllowed() const;
 
