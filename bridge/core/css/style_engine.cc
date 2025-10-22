@@ -364,13 +364,18 @@ void StyleEngine::RecalcStyle(Document& document) {
           }
         }
 
+        auto* ctx = document.GetExecutingContext();
+        // Always clear previously-sent inline styles to avoid stale values when
+        // rule winners change (e.g., stylesheet removed). This ensures elements
+        // with no currently-declared properties drop old inline values.
+        ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
+        bool cleared = true;
+
         if (!property_set || property_set->IsEmpty()) {
           return parent_state;
         }
 
-        auto* ctx = document.GetExecutingContext();
         unsigned count = property_set->PropertyCount();
-        bool cleared = false;
         InheritedValueMap inherited_values(parent_state.inherited_values);
         CustomVarMap custom_vars(parent_state.custom_vars);
         bool emitted_background_shorthand = false;
@@ -609,12 +614,6 @@ void StyleEngine::RecalcStyle(Document& document) {
             value_string = String("");
           }
 
-          if (!cleared) {
-            WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Clear inline styles before applying first property";
-            ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
-            cleared = true;
-          }
-
           // If we plan to emit shorthand, skip the longhand emissions here.
           if (emit_white_space_shorthand &&
               (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap)) {
@@ -631,11 +630,6 @@ void StyleEngine::RecalcStyle(Document& document) {
 
         // Emit white-space shorthand at the end to replace skipped longhands.
         if (emit_white_space_shorthand) {
-          if (!cleared) {
-            WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Clear inline styles before applying first property";
-            ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
-            cleared = true;
-          }
           auto ws_prop = AtomicString::CreateFromUTF8("white-space");
           auto ws_key = ws_prop.ToStylePropertyNameNativeString();
           AtomicString ws_value_atom(white_space_value_str);
