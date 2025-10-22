@@ -482,18 +482,28 @@ void Element::NotifyInlineStyleMutation() {
     if (decl) {
       decl->MutableLastSentSnapshot().clear();
     }
+    // Inline styles are now empty. The element should fall back to matched
+    // stylesheet rules. Trigger a style recalc so computed styles are
+    // re-emitted to the UI side (which stores computed styles as inline
+    // overrides).
+    GetDocument().EnsureStyleEngine().RecalcStyleForSubtree(*this);
     return;
   }
 
-  // Build current property map from inline style.
+  // Build diff directly against snapshot to avoid constructing a full
+  // current_props map. Track present keys to detect removals.
   unsigned count = inline_style->PropertyCount();
   bool have_ws_collapse = false;
   bool have_text_wrap = false;
   WhiteSpaceCollapse ws_collapse_enum = WhiteSpaceCollapse::kCollapse;  // initial
   TextWrap text_wrap_enum = TextWrap::kWrap;                             // initial
 
-  std::unordered_map<std::string, std::string> current_props;
-  current_props.reserve(count + 1);
+  auto& last = decl->MutableLastSentSnapshot();
+
+  std::unordered_set<std::string> present;
+  present.reserve(count + 1);
+  std::vector<std::pair<std::string, std::string>> updates;
+  updates.reserve(count + 1);
 
   for (unsigned i = 0; i < count; ++i) {
     auto property = inline_style->PropertyAt(i);
@@ -507,7 +517,7 @@ void Element::NotifyInlineStyleMutation() {
       else if (sv == "preserve") { ws_collapse_enum = WhiteSpaceCollapse::kPreserve; have_ws_collapse = true; }
       else if (sv == "preserve-breaks") { ws_collapse_enum = WhiteSpaceCollapse::kPreserveBreaks; have_ws_collapse = true; }
       else if (sv == "break-spaces") { ws_collapse_enum = WhiteSpaceCollapse::kBreakSpaces; have_ws_collapse = true; }
-      continue; // Defer emission; will emit shorthand later.
+      continue; // Defer to shorthand.
     }
     if (id == CSSPropertyID::kTextWrap) {
       std::string sv = value_string.ToUTF8String();
@@ -515,12 +525,19 @@ void Element::NotifyInlineStyleMutation() {
       else if (sv == "nowrap") { text_wrap_enum = TextWrap::kNoWrap; have_text_wrap = true; }
       else if (sv == "balance") { text_wrap_enum = TextWrap::kBalance; have_text_wrap = true; }
       else if (sv == "pretty") { text_wrap_enum = TextWrap::kPretty; have_text_wrap = true; }
-      continue; // Defer emission; will emit shorthand later.
+      continue; // Defer to shorthand.
     }
 
-    current_props[prop_name.ToUTF8String()] = value_string.ToUTF8String();
+    std::string key = prop_name.ToUTF8String();
+    present.insert(key);
+    std::string val = value_string.ToUTF8String();
+    auto it = last.find(key);
+    if (it == last.end() || it->second != val) {
+      updates.emplace_back(std::move(key), std::move(val));
+    }
   }
 
+  // Compose white-space shorthand if needed and diff it.
   if (have_ws_collapse || have_text_wrap) {
     EWhiteSpace ws = ToWhiteSpace(ws_collapse_enum, text_wrap_enum);
     String ws_value;
@@ -532,35 +549,54 @@ void Element::NotifyInlineStyleMutation() {
       case EWhiteSpace::kPreWrap: ws_value = String("pre-wrap"); break;
       case EWhiteSpace::kBreakSpaces: ws_value = String("break-spaces"); break;
     }
-    current_props["white-space"] = ws_value.ToUTF8String();
+    std::string k = "white-space";
+    present.insert(k);
+    std::string v = ws_value.ToUTF8String();
+    auto it = last.find(k);
+    if (it == last.end() || it->second != v) {
+      updates.emplace_back(std::move(k), std::move(v));
+    }
   }
 
-  // Retrieve the last-sent snapshot and compute diffs.
-  auto& last = decl->MutableLastSentSnapshot();
-
-  // Removals: properties present before but absent now.
+  // Compute removals by scanning last for keys not present now.
+  std::vector<std::string> removals;
+  removals.reserve(last.size());
   for (const auto& kv : last) {
-    if (current_props.find(kv.first) == current_props.end()) {
-      AtomicString prop = AtomicString::CreateFromUTF8(kv.first);
-      std::unique_ptr<SharedNativeString> args_01 = prop.ToStylePropertyNameNativeString();
-      GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(), nullptr);
+    if (present.find(kv.first) == present.end()) {
+      removals.push_back(kv.first);
     }
   }
 
-  // Additions/updates.
-  for (const auto& kv : current_props) {
-    auto it = last.find(kv.first);
-    if (it == last.end() || it->second != kv.second) {
-      AtomicString prop = AtomicString::CreateFromUTF8(kv.first);
-      AtomicString value_atom = AtomicString::CreateFromUTF8(kv.second);
-      std::unique_ptr<SharedNativeString> args_01 = prop.ToStylePropertyNameNativeString();
-      GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(),
-                                                           value_atom.ToNativeString().release());
-    }
+  // Early out if no changes at all.
+  if (updates.empty() && removals.empty()) {
+    return;
   }
 
-  // Update snapshot.
-  last = std::move(current_props);
+  bool had_removals = !removals.empty();
+
+  // Emit removals first so subsequent computed styles (if any) can take effect.
+  for (const auto& key : removals) {
+    AtomicString prop = AtomicString::CreateFromUTF8(key);
+    std::unique_ptr<SharedNativeString> args_01 = prop.ToStylePropertyNameNativeString();
+    GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(), nullptr);
+    // Update snapshot incrementally.
+    last.erase(key);
+  }
+
+  // Emit updates/additions.
+  for (const auto& kv : updates) {
+    AtomicString prop = AtomicString::CreateFromUTF8(kv.first);
+    AtomicString value_atom = AtomicString::CreateFromUTF8(kv.second);
+    std::unique_ptr<SharedNativeString> args_01 = prop.ToStylePropertyNameNativeString();
+    GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(),
+                                                         value_atom.ToNativeString().release());
+    // Update snapshot incrementally.
+    last[kv.first] = kv.second;
+  }
+
+  if (had_removals) {
+    GetDocument().EnsureStyleEngine().RecalcStyleForSubtree(*this);
+  }
 }
 
 void Element::CloneNonAttributePropertiesFrom(const Element& other, CloneChildrenFlag) {
