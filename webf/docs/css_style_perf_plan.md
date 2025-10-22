@@ -103,7 +103,8 @@ Changes landed (W1):
 
 Workstream 2 progress:
 - Element-level matched rule memoization seeded behind `DebugFlags.enableCssMemoization`; fingerprint keyed by ruleSetVersion, tag, id, classes, and targeted attribute/value pairs.
-- CSSPerf now tracks memo hits/misses and reports per-flush trace summaries when tracing is enabled.
+- Per-element LRU cache (capacity=4) for matched rules replaces single-entry cache; version-aware pruning on `ruleSetVersion` changes; guarded by the same flag.
+- CSSPerf now tracks memo hits/misses plus evictions and average per-element cache size (`memoEvict`, `memoAvgSize`); flush trace includes totals when tracing is enabled.
 - Added widget regression coverage (`test/src/css/memoization_test.dart`) verifying cache hits on stable keys and busts on attribute changes.
 - Added defensive invalidation for late-arriving `html/body` tag selectors + expanded trace logging to simplify regression analysis; full test suite now passes.
 
@@ -134,9 +135,9 @@ Observed impact:
 - DebugFlags.enableCssMemoization: per‑element matched‑rules cache keyed by (ruleSetVersion, tag, id, classes, attr presence).
 
 ## Next Steps
-- Workstream 2 (Memoization rollout): gather perf samples via new trace logs/counters, implement cache eviction strategy (LRU or size cap), and decide default-on criteria.
-- Workstream 3 (Matching micro-optimizations): reuse evaluator instances, add ancestry key fast-path, benchmark hot selectors.
-- Workstream 4 (Batch recalc – guarded): prototype deferred recalc flag, validate synchronous APIs, add targeted tests.
+- Workstream 2 (Memoization rollout): collect perf samples with `memoHits/memoMisses`, `memoEvict`, and `memoAvgSize`; validate steady-state hit rates in app scenarios (with stable stylesheets). Tune LRU capacity if needed (current = 4) and consider exposing a debug knob.
+- Workstream 3 (Matching micro-optimizations): reuse a single `SelectorEvaluator` instance per `matchedRules()` call; add ancestry-key fast-path for descendant combinators; benchmark hot selectors.
+- Workstream 4 (Batch recalc – guarded): prototype deferred recalc flag, validate synchronous APIs (getComputedStyle triggers `updateStyleIfNeeded()`), add targeted tests.
 - Optional index follow-ups: evaluate elementsByTag or pseudo anchor tracking once W2 data collected.
 
 ## Rollout & Safety

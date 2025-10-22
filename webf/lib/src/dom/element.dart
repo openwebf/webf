@@ -5,6 +5,7 @@
 
 import 'dart:async';
 import 'dart:ui';
+import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
@@ -1623,41 +1624,65 @@ abstract class Element extends ContainerNode
     style.union(matchRule);
   }
 
-  // Lightweight memoization for matched rules
-  _MatchedRulesCacheEntry? _matchedRulesCache;
+  // Lightweight memoization for matched rules (per-element LRU cache).
+  // Guarded by DebugFlags.enableCssMemoization.
+  // Capacity kept intentionally tiny to bound memory: 4 entries by default.
+  static const int _kMatchedRulesCacheCapacity = 4;
+  LinkedHashMap<_MatchFingerprint, _MatchedRulesCacheEntry>? _matchedRulesLRU;
 
   CSSStyleDeclaration _collectMatchedRulesWithCache() {
     final RuleSet ruleSet = ownerDocument.ruleSet;
     if (!DebugFlags.enableCssMemoization) {
-      _matchedRulesCache = null;
+      _matchedRulesLRU = null;
       return _elementRuleCollector.collectionFromRuleSet(ruleSet, this);
     }
 
-    final _MatchFingerprint fingerprint = _computeMatchFingerprint(ruleSet);
     final int version = ownerDocument.ruleSetVersion;
-    final _MatchedRulesCacheEntry? cache = _matchedRulesCache;
+    final _MatchFingerprint fingerprint = _computeMatchFingerprint(ruleSet);
+    final LinkedHashMap<_MatchFingerprint, _MatchedRulesCacheEntry> cache =
+        _matchedRulesLRU ??= LinkedHashMap<_MatchFingerprint, _MatchedRulesCacheEntry>();
 
-    if (cache != null &&
-        cache.matches(version: version, fingerprint: fingerprint)) {
-      CSSPerf.recordMemo(hit: true);
-      if (DebugFlags.enableCssTrace) {
-        cssLogger.info(
-            '[trace][memo] hit ${tagName}${id != null && id!.isNotEmpty ? '#$id' : ''}');
+    // Prune stale entries from previous RuleSet versions (capacity is tiny).
+    if (cache.isNotEmpty) {
+      final List<_MatchFingerprint> toRemove = <_MatchFingerprint>[];
+      cache.forEach((fp, entry) {
+        if (entry.version != version) toRemove.add(fp);
+      });
+      for (final fp in toRemove) {
+        cache.remove(fp);
       }
-      return cache.style;
     }
 
+    final _MatchedRulesCacheEntry? hitEntry = cache[fingerprint];
+    if (hitEntry != null && hitEntry.version == version) {
+      // LRU refresh: move to most-recent by reinserting.
+      cache.remove(fingerprint);
+      cache[fingerprint] = hitEntry;
+      CSSPerf.recordMemo(hit: true);
+      CSSPerf.recordMemoCacheSample(size: cache.length);
+      if (DebugFlags.enableCssTrace) {
+        cssLogger.info('[trace][memo] hit ${tagName}${id != null && id!.isNotEmpty ? '#$id' : ''}');
+      }
+      return hitEntry.style;
+    }
+
+    // Cache miss: compute and insert, enforce capacity with LRU eviction.
     final CSSStyleDeclaration computed =
         _elementRuleCollector.collectionFromRuleSet(ruleSet, this);
-    _matchedRulesCache = _MatchedRulesCacheEntry(
+    if (cache.length >= _kMatchedRulesCacheCapacity) {
+      final _MatchFingerprint oldest = cache.keys.first;
+      cache.remove(oldest);
+      CSSPerf.recordMemoEviction();
+    }
+    cache[fingerprint] = _MatchedRulesCacheEntry(
       version: version,
       fingerprint: fingerprint,
       style: computed,
     );
     CSSPerf.recordMemo(hit: false);
+    CSSPerf.recordMemoCacheSample(size: cache.length);
     if (DebugFlags.enableCssTrace) {
-      cssLogger.info(
-          '[trace][memo] miss ${tagName}${id != null && id!.isNotEmpty ? '#$id' : ''}');
+      cssLogger.info('[trace][memo] miss ${tagName}${id != null && id!.isNotEmpty ? '#$id' : ''}');
     }
     return computed;
   }

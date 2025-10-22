@@ -42,6 +42,9 @@ class CSSPerf {
   // Memoization metrics
   static int _memoHits = 0;
   static int _memoMisses = 0;
+  static int _memoEvictions = 0;
+  static int _memoCacheSamples = 0;
+  static int _memoCacheSizeTotal = 0;
 
   // Recalc and flush metrics
   static int _recalcCalls = 0;
@@ -133,6 +136,24 @@ class CSSPerf {
     }
   }
 
+  // Records an LRU eviction for matched-rules memoization.
+  static void recordMemoEviction() {
+    if (!enabled) return;
+    _memoEvictions++;
+  }
+
+  // Records a sample of current per-element memo cache size to build a rough
+  // average across calls. Keep this lightweight.
+  static void recordMemoCacheSample({required int size}) {
+    if (!enabled) return;
+    _memoCacheSamples++;
+    _memoCacheSizeTotal += size;
+  }
+
+  static int get memoEvictions => _memoEvictions;
+  static double get memoAvgCacheSize =>
+      _memoCacheSamples == 0 ? 0.0 : _memoCacheSizeTotal / _memoCacheSamples;
+
   static int get memoHits => _memoHits;
   static int get memoMisses => _memoMisses;
 
@@ -190,6 +211,9 @@ class CSSPerf {
 
     _memoHits = 0;
     _memoMisses = 0;
+    _memoEvictions = 0;
+    _memoCacheSamples = 0;
+    _memoCacheSizeTotal = 0;
 
     _flushCalls = 0;
     _flushDirtyTotal = 0;
@@ -210,7 +234,8 @@ class CSSPerf {
     cssLogger.fine(
         '[perf] match calls=$_matchCalls candidates=$_matchCandidatesTotal matched=$_matchMatchedTotal ms=$_matchMsTotal'
         ' pseudoCalls=$_pseudoMatchCalls pseudoMatched=$_pseudoMatchedTotal pseudoMs=$_pseudoMatchMsTotal'
-        ' memoHits=$_memoHits memoMisses=$_memoMisses');
+        ' memoHits=$_memoHits memoMisses=$_memoMisses memoEvict=$_memoEvictions memoAvgSize=' +
+            memoAvgCacheSize.toStringAsFixed(2));
     cssLogger.fine('[perf] recalc calls=$_recalcCalls recalcMs=$_recalcMsTotal'
         ' flush calls=$_flushCalls dirtyTotal=$_flushDirtyTotal rootCount=$_flushRootRecalcCount flushMs=$_flushMsTotal');
   }

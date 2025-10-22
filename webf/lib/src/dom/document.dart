@@ -633,8 +633,7 @@ class Document extends ContainerNode {
       cssLogger.info('[trace][flush] dirty=${_styleDirtyElements.length} sheetsUpdated=$sheetsUpdated recalcFromRoot=$recalcFromRoot');
     }
     if (DebugFlags.enableCssTrace && DebugFlags.enableCssMemoization) {
-      cssLogger
-          .info('[trace][memo] totals hits=${CSSPerf.memoHits} misses=${CSSPerf.memoMisses} dirty=${_styleDirtyElements.length}');
+      cssLogger.info('[trace][memo] totals hits=${CSSPerf.memoHits} misses=${CSSPerf.memoMisses} evict=${CSSPerf.memoEvictions} dirty=${_styleDirtyElements.length}');
     }
     if (recalcFromRoot) {
       if (kDebugMode && DebugFlags.enableCssLogs) {
