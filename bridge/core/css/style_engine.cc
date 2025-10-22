@@ -725,6 +725,219 @@ void StyleEngine::RecalcStyle(Document& document) {
   walk(document.documentElement(), InheritedState());
 }
 
+void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
+  Document& document = GetDocument();
+  if (!document.GetExecutingContext()->isBlinkEnabled()) {
+    return;
+  }
+
+  std::function<InheritedState(Element*, const InheritedState&)> apply_for_element =
+      [&](Element* element, const InheritedState& parent_state) -> InheritedState {
+        if (!element || !element->IsStyledElement()) {
+          return parent_state;
+        }
+
+        StyleResolver& resolver = EnsureStyleResolver();
+        StyleResolverState state(document, *element);
+        ElementRuleCollector collector(state, SelectorChecker::kQueryingRules);
+        resolver.CollectAllRules(state, collector, /*include_smil_properties*/ false);
+        collector.SortAndTransferMatchedRules();
+
+        StyleCascade cascade(state);
+        for (const auto& entry : collector.GetMatchResult().GetMatchedProperties()) {
+          if (entry.is_inline_style) {
+            cascade.MutableMatchResult().AddInlineStyleProperties(entry.properties);
+          } else {
+            cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
+          }
+        }
+
+        std::shared_ptr<MutableCSSPropertyValueSet> property_set = cascade.ExportWinningPropertySet();
+
+        auto inline_style = const_cast<Element&>(*element).EnsureMutableInlineStyle();
+        if (inline_style && inline_style->PropertyCount() > 0) {
+          if (!property_set) {
+            property_set = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+          }
+          unsigned icount = inline_style->PropertyCount();
+          for (unsigned i = 0; i < icount; ++i) {
+            auto in_prop = inline_style->PropertyAt(i);
+            CSSPropertyID id = in_prop.Id();
+            if (id == CSSPropertyID::kInvalid || id == CSSPropertyID::kVariable) {
+              continue;
+            }
+            if (!property_set->HasProperty(id)) {
+              const auto* vptr = in_prop.Value();
+              if (vptr && *vptr) {
+                property_set->SetProperty(id, *vptr, in_prop.IsImportant());
+              }
+            }
+          }
+        }
+
+        if (!property_set || property_set->IsEmpty()) {
+          return parent_state;
+        }
+
+        auto* ctx = document.GetExecutingContext();
+        // Always clear to drop previously-sent inline values if winners changed.
+        ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
+        bool cleared = true;
+
+        if (!property_set || property_set->IsEmpty()) {
+          InheritedState next_state;
+          next_state.inherited_values = parent_state.inherited_values;
+          next_state.custom_vars = parent_state.custom_vars;
+          return next_state;
+        }
+
+        unsigned count = property_set->PropertyCount();
+        InheritedValueMap inherited_values(parent_state.inherited_values);
+        CustomVarMap custom_vars(parent_state.custom_vars);
+
+        // Pre-scan white-space longhands
+        bool have_ws_collapse = false;
+        bool have_text_wrap = false;
+        WhiteSpaceCollapse ws_collapse_enum = WhiteSpaceCollapse::kCollapse;
+        TextWrap text_wrap_enum = TextWrap::kWrap;
+        for (unsigned i = 0; i < count; ++i) {
+          auto prop = property_set->PropertyAt(i);
+          CSSPropertyID id = prop.Id();
+          if (id == CSSPropertyID::kInvalid) continue;
+          const auto* value_ptr = prop.Value();
+          if (!value_ptr || !(*value_ptr)) continue;
+          const CSSValue& value = *(*value_ptr);
+          if (id == CSSPropertyID::kWhiteSpaceCollapse) {
+            std::string sv = value.CssTextForSerialization().ToUTF8String();
+            if (sv == "collapse") { ws_collapse_enum = WhiteSpaceCollapse::kCollapse; have_ws_collapse = true; }
+            else if (sv == "preserve") { ws_collapse_enum = WhiteSpaceCollapse::kPreserve; have_ws_collapse = true; }
+            else if (sv == "preserve-breaks") { ws_collapse_enum = WhiteSpaceCollapse::kPreserveBreaks; have_ws_collapse = true; }
+            else if (sv == "break-spaces") { ws_collapse_enum = WhiteSpaceCollapse::kBreakSpaces; have_ws_collapse = true; }
+          } else if (id == CSSPropertyID::kTextWrap) {
+            std::string sv = value.CssTextForSerialization().ToUTF8String();
+            if (sv == "wrap") { text_wrap_enum = TextWrap::kWrap; have_text_wrap = true; }
+            else if (sv == "nowrap") { text_wrap_enum = TextWrap::kNoWrap; have_text_wrap = true; }
+            else if (sv == "balance") { text_wrap_enum = TextWrap::kBalance; have_text_wrap = true; }
+            else if (sv == "pretty") { text_wrap_enum = TextWrap::kPretty; have_text_wrap = true; }
+          }
+        }
+
+        bool emit_white_space_shorthand = have_ws_collapse || have_text_wrap;
+        String white_space_value_str;
+        if (emit_white_space_shorthand) {
+          EWhiteSpace ws = ToWhiteSpace(ws_collapse_enum, text_wrap_enum);
+          switch (ws) {
+            case EWhiteSpace::kNormal: white_space_value_str = String("normal"); break;
+            case EWhiteSpace::kNowrap: white_space_value_str = String("nowrap"); break;
+            case EWhiteSpace::kPre: white_space_value_str = String("pre"); break;
+            case EWhiteSpace::kPreLine: white_space_value_str = String("pre-line"); break;
+            case EWhiteSpace::kPreWrap: white_space_value_str = String("pre-wrap"); break;
+            case EWhiteSpace::kBreakSpaces: white_space_value_str = String("break-spaces"); break;
+          }
+        }
+
+        for (unsigned i = 0; i < count; ++i) {
+          auto prop = property_set->PropertyAt(i);
+          CSSPropertyID id = prop.Id();
+          if (id == CSSPropertyID::kInvalid) continue;
+          const auto* value_ptr = prop.Value();
+          if (!value_ptr || !(*value_ptr)) continue;
+
+          AtomicString prop_name = prop.Name().ToAtomicString();
+          String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
+          if (value_string.IsNull()) value_string = String("");
+
+          // Skip white-space longhands; will emit shorthand later
+          if (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap) {
+            continue;
+          }
+
+          // Already cleared above.
+
+          auto key_ns = prop_name.ToStylePropertyNameNativeString();
+          AtomicString value_atom(value_string);
+          ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(key_ns), element->bindingObject(),
+                                             value_atom.ToNativeString().release());
+        }
+
+        if (emit_white_space_shorthand) {
+          // Already cleared above.
+          auto ws_prop = AtomicString::CreateFromUTF8("white-space");
+          auto ws_key = ws_prop.ToStylePropertyNameNativeString();
+          AtomicString ws_value_atom(white_space_value_str);
+          ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(ws_key), element->bindingObject(),
+                                             ws_value_atom.ToNativeString().release());
+        }
+
+        // Pseudo emission (only minimal content properties as in RecalcStyle)
+        auto send_pseudo_for = [&](PseudoId pseudo_id, const char* pseudo_name) {
+          ElementRuleCollector pseudo_collector(state, SelectorChecker::kResolvingStyle);
+          pseudo_collector.SetPseudoElementStyleRequest(PseudoElementStyleRequest(pseudo_id));
+          resolver.CollectAllRules(state, pseudo_collector, /*include_smil_properties*/ false);
+          pseudo_collector.SortAndTransferMatchedRules();
+
+          StyleCascade pseudo_cascade(state);
+          for (const auto& entry : pseudo_collector.GetMatchResult().GetMatchedProperties()) {
+            if (entry.is_inline_style) {
+              pseudo_cascade.MutableMatchResult().AddInlineStyleProperties(entry.properties);
+            } else {
+              pseudo_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
+            }
+          }
+
+          std::shared_ptr<MutableCSSPropertyValueSet> pseudo_set = pseudo_cascade.ExportWinningPropertySet();
+          if (!pseudo_set || pseudo_set->PropertyCount() == 0) return;
+          {
+            auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
+            auto pseudo_ns = pseudo_atom.ToNativeString();
+            ctx->uiCommandBuffer()->AddCommand(UICommand::kClearPseudoStyle, std::move(pseudo_ns),
+                                               element->bindingObject(), nullptr);
+          }
+          for (unsigned i = 0; i < pseudo_set->PropertyCount(); ++i) {
+            auto prop = pseudo_set->PropertyAt(i);
+            AtomicString prop_name = prop.Name().ToAtomicString();
+            String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
+            if (value_string.IsNull()) value_string = String("");
+
+            auto key_ns = prop_name.ToStylePropertyNameNativeString();
+            AtomicString value_atom(value_string);
+            auto val_ns = value_atom.ToNativeString();
+            auto* pair = reinterpret_cast<NativePair*>(dart_malloc(sizeof(NativePair)));
+            pair->key = key_ns.release();
+            pair->value = val_ns.release();
+
+            auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
+            auto pseudo_ns = pseudo_atom.ToNativeString();
+            ctx->uiCommandBuffer()->AddCommand(UICommand::kSetPseudoStyle, std::move(pseudo_ns),
+                                               element->bindingObject(), pair);
+          }
+        };
+
+        send_pseudo_for(PseudoId::kPseudoIdBefore, "before");
+        send_pseudo_for(PseudoId::kPseudoIdAfter, "after");
+
+        InheritedState next_state;
+        next_state.inherited_values = std::move(inherited_values);
+        next_state.custom_vars = std::move(custom_vars);
+        return next_state;
+      };
+
+  std::function<void(Node*, const InheritedState&)> walk =
+      [&](Node* node, const InheritedState& inherited_state) {
+        if (!node) return;
+        InheritedState current_state = inherited_state;
+        if (node->IsElementNode()) {
+          current_state = apply_for_element(static_cast<Element*>(node), inherited_state);
+        }
+        for (Node* child = node->firstChild(); child; child = child->nextSibling()) {
+          walk(child, current_state);
+        }
+      };
+
+  InheritedState root_state;
+  walk(&root_element, root_state);
+}
+
 void StyleEngine::Trace(GCVisitor* visitor) {}
 
 }  // namespace webf
