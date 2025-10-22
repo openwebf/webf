@@ -113,6 +113,13 @@ Current metrics (representative):
 - Match: calls=453 candidates=1555 matched=286 ms=0
 - Recalc/Flush: recalc calls=292 recalcMs=32 flush calls=25 dirtyTotal=26 rootCount=2 flushMs=25
 
+Latest telemetry (with css trace + memo instrumentation enabled on Blink CSS1 suite):
+- CSS summary: parseCalls=49 rules=1614 style=1571 media=0 keyframes=28 fontFace=15 parseMs=81
+- Index: addCalls=1273 addRules=44698 handleCalls=49 handleRules=43086 handleMs=0
+- Match: calls=2605 candidates=227919 matched=682 matchMs=3202 (memoHits=1216 memoMisses=1462)
+- Recalc/Flush: recalc calls=2386 recalcMs=8202 flush calls=148 dirtyTotal=52 rootCount=36 flushMs=2826
+- Notes: numbers reflect heavy debug instrumentation and repeated stylesheet reloads during CSS1 snapshots; keep as sanity baseline for memo hit/miss tracking rather than perf gate.
+
 Previously observed (pre‑W1):
 - Match: calls=428 candidates=1700 matched=240 ms=1
 - Recalc/Flush: recalc calls=462 recalcMs=209 flush calls=25 dirtyTotal=45 rootCount=5 flushMs=203
