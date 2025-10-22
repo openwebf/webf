@@ -78,9 +78,15 @@ class StyleNodeManager {
   }
 
   void appendPendingStyleSheet(CSSStyleSheet styleSheet) {
+    if (_pendingStyleSheets.contains(styleSheet)) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[style] append pending sheet skipped (already pending) hash=${styleSheet.hashCode}');
+      }
+      return;
+    }
     _pendingStyleSheets.add(styleSheet);
     if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[style] append pending sheet: total=${_pendingStyleSheets.length}');
+      cssLogger.fine('[style] append pending sheet: total=${_pendingStyleSheets.length} hash=${styleSheet.hashCode} rules=${styleSheet.cssRules.length}');
     }
   }
 
@@ -95,13 +101,24 @@ class StyleNodeManager {
   bool updateActiveStyleSheets({bool rebuild = false}) {
     List<CSSStyleSheet> newSheets = _collectActiveStyleSheets();
     if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[style] updateActiveStyleSheets: candidates=' + _styleSheetCandidateNodes.length.toString() + ' -> newSheets=' + newSheets.length.toString() + ' (rebuild=' + rebuild.toString() + ')');
+      cssLogger.fine('[style] updateActiveStyleSheets: candidates=${_styleSheetCandidateNodes.length} -> newSheets=${newSheets.length} '
+          '(rebuild=$rebuild pending=${_pendingStyleSheets.length})');
     }
     newSheets = newSheets.where((element) => element.cssRules.isNotEmpty).toList();
     if (rebuild == false) {
       RuleSet changedRuleSet = analyzeStyleSheetChangeRuleSet(document.styleSheets, newSheets);
       if (changedRuleSet.isEmpty) {
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[style] updateActiveStyleSheets: no rule changes detected');
+        }
+        _pendingStyleSheets.clear();
+        _isStyleSheetCandidateNodeChanged = false;
         return false;
+      }
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[style] updateActiveStyleSheets: changed rules ' +
+            'id=${changedRuleSet.idRules.length} class=${changedRuleSet.classRules.length} attr=${changedRuleSet.attributeRules.length} '
+            'tag=${changedRuleSet.tagRules.length} universal=${changedRuleSet.universalRules.length} pseudo=${changedRuleSet.pseudoRules.length}');
       }
       invalidateElementStyle(changedRuleSet);
     } else {
@@ -111,6 +128,10 @@ class StyleNodeManager {
       }
     }
     document.handleStyleSheets(newSheets);
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      final hashes = newSheets.map((s) => s.hashCode).toList();
+      cssLogger.fine('[style] updateActiveStyleSheets: applied sheets hashes=$hashes');
+    }
     _pendingStyleSheets.clear();
     _isStyleSheetCandidateNodeChanged = false;
     return true;

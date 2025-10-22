@@ -84,6 +84,7 @@ class HTMLElement extends Element {
 
   @override
   void setRenderStyle(String property, String present, {String? baseHref}) {
+    final bool affectsViewportBackground = _affectsViewportBackground(property);
     switch (property) {
       // Visible should be interpreted as auto and clip should be interpreted as hidden when overflow apply to html.
       // https://drafts.csswg.org/css-overflow-3/#overflow-propagation
@@ -101,6 +102,10 @@ class HTMLElement extends Element {
         break;
     }
     super.setRenderStyle(property, present);
+
+    if (affectsViewportBackground) {
+      ownerDocument.syncViewportBackground();
+    }
   }
 
   void flushPendingStylePropertiesForWholeTree() {
@@ -112,4 +117,8 @@ class HTMLElement extends Element {
     }
     runner(this);
   }
+}
+
+bool _affectsViewportBackground(String property) {
+  return property == BACKGROUND || property.startsWith('background');
 }

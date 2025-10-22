@@ -976,12 +976,16 @@ class ImageState extends flutter.State<WebFImage> {
   flutter.Widget build(flutter.BuildContext context) {
     flutter.Widget child;
     if (!imageElement._isSVGImage) {
+      // Let the RenderImage size itself from parent constraints so CSS
+      // controlled width/height (and intrinsic aspect-ratio adjustments)
+      // take effect. Supplying the natural width/height here would override
+      // the box size computed by RenderReplaced and break rules like
+      // “height: 100px” which should scale width using the intrinsic ratio.
       child = WebFRawImage(
-          image: imageElement._cachedImageInfo?.image,
-          width: imageElement.naturalWidth.toDouble(),
-          fit: imageElement.renderStyle.objectFit,
-          alignment: imageElement.renderStyle.objectPosition,
-          height: imageElement.naturalHeight.toDouble());
+        image: imageElement._cachedImageInfo?.image,
+        fit: imageElement.renderStyle.objectFit,
+        alignment: imageElement.renderStyle.objectPosition,
+      );
     } else {
       child = SvgPicture.memory(
         imageElement._svgBytes!,

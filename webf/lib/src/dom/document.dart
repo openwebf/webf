@@ -396,6 +396,47 @@ class Document extends ContainerNode {
     _documentElement = element as HTMLElement?;
   }
 
+  BodyElement? get bodyElement {
+    final HTMLElement? root = _documentElement;
+    if (root == null) return null;
+    Node? child = root.firstChild;
+    while (child != null) {
+      if (child is BodyElement) {
+        return child;
+      }
+      child = child.nextSibling;
+    }
+    return null;
+  }
+
+  void syncViewportBackground() {
+    final RootRenderViewportBox? vp = viewport;
+    if (vp == null) {
+      return;
+    }
+
+    ui.Color? resolved;
+
+    final BodyElement? body = bodyElement;
+    final ui.Color? bodyColor = body?.renderStyle.backgroundColor?.value;
+    final bool bodyHasColor = bodyColor != null && bodyColor.alpha != 0;
+
+    if (bodyHasColor) {
+      resolved = bodyColor;
+    } else {
+      final ui.Color? htmlColor = documentElement?.renderStyle.backgroundColor?.value;
+      final bool htmlHasColor = htmlColor != null && htmlColor.alpha != 0;
+      if (htmlHasColor) {
+        resolved = htmlColor;
+      }
+    }
+
+    if (vp.background != resolved) {
+      vp.background = resolved;
+      vp.markNeedsPaint();
+    }
+  }
+
   @override
   Node appendChild(Node child) {
     if (child is Element) {
@@ -567,7 +608,10 @@ class Document extends ContainerNode {
       return;
     }
     bool recalcFromRoot = _styleDirtyElements.any((address) {
-          BindingObject bindingObject = ownerView.getBindingObject(Pointer.fromAddress(address));
+          final BindingObject? bindingObject = ownerView.getBindingObject(Pointer.fromAddress(address));
+          if (bindingObject == null) {
+            return false;
+          }
           return bindingObject is HeadElement || bindingObject is HTMLElement;
         }) ||
         rebuild;

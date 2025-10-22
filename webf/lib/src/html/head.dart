@@ -559,6 +559,11 @@ mixin StyleElementMixin on Element {
 
   CSSStyleSheet? get styleSheet => _styleSheet;
 
+  // Cache signature of the last parsed stylesheet so we can skip redundant
+  // replaceSync()/appendPendingStyleSheet cycles when neither the inline CSS
+  // text nor the evaluation context (viewport size / dark mode) has changed.
+  int? _lastStyleSheetSignature;
+
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     super.initializeProperties(properties);
@@ -584,6 +589,24 @@ mixin StyleElementMixin on Element {
     // Question3: Animation timeline should send a command to c++ side to recalculate style or we just do it in dart side?
 
     if (text != null) {
+      // Inline stylesheet parsing depends on the raw CSS text plus runtime
+      // context (viewport size + dark mode). If none of these inputs changed,
+      // we can skip scheduling another stylesheet update entirely.
+      final bool? darkMode = ownerView.rootController.isDarkMode;
+      final double w = windowWidth;
+      final double h = windowHeight;
+      final int newSignature = Object.hash(text, w, h, darkMode);
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[style] <style> recalc signature old=${_lastStyleSheetSignature} new=$newSignature '
+            'len=${text.length} viewport=${w.toStringAsFixed(2)}x${h.toStringAsFixed(2)} dark=$darkMode');
+      }
+      if (_styleSheet != null && _lastStyleSheetSignature == newSignature) {
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[style] <style> recalc skipped (no text/context change)');
+        }
+        return;
+      }
+
       if (kDebugMode && DebugFlags.enableCssLogs) {
         cssLogger.fine('[style] <style> recalc begin (len=${text.length}, connected=$isConnected, tracked=${ownerDocument.styleNodeManager.styleSheetCandidateNodes.contains(this)})');
       }
@@ -609,10 +632,17 @@ mixin StyleElementMixin on Element {
           }
         }();
       }
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[style] <style> recalc applying new sheet signature=$newSignature');
+      }
+      _lastStyleSheetSignature = newSignature;
       if (_styleSheet != null) {
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
         ownerDocument.updateStyleIfNeeded();
       }
+    } else {
+      // No inline CSS text → drop the cache so future additions re-parse.
+      _lastStyleSheetSignature = null;
     }
   }
 

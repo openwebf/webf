@@ -28,6 +28,7 @@ class BodyElement extends Element {
 
   @override
   void setRenderStyle(String property, String present, { String? baseHref }) {
+    final bool affectsViewportBackground = _affectsViewportBackground(property);
     switch (property) {
       // The overflow of body should apply to html.
       // https://drafts.csswg.org/css-overflow-3/#overflow-propagation
@@ -49,5 +50,13 @@ class BodyElement extends Element {
       default:
         super.setRenderStyle(property, present);
     }
+
+    if (affectsViewportBackground) {
+      ownerDocument.syncViewportBackground();
+    }
   }
+}
+
+bool _affectsViewportBackground(String property) {
+  return property == BACKGROUND || property.startsWith('background');
 }
