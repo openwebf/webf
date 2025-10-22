@@ -1,7 +1,7 @@
 # CSS Stylesheet & Style Recalc – Performance Plan
 
 Owner: webf/css
-Status: In Progress — Workstream 1 delivered
+Status: Workstream 1 delivered & validated — Workstream 2 (flagged) in progress
 Scope: Dart CSS pipeline (parse → index → match → cascade → recalc)
 
 ## Goals
@@ -99,6 +99,13 @@ Changes landed (W1):
 - Suppressed generic childList dirty marks for <head>/<html> to avoid unintended root-wide recalcs.
 - @import rules flattened; sheet marked pending and routed through targeted invalidation (no root mark).
 - Tracing flag added for deep diagnostics; optional memoization flag in place (off by default).
+- Validation: Full Flutter/webf test suite passes with targeted invalidation enabled.
+
+Workstream 2 progress:
+- Element-level matched rule memoization seeded behind `DebugFlags.enableCssMemoization`; fingerprint keyed by ruleSetVersion, tag, id, classes, and targeted attribute/value pairs.
+- CSSPerf now tracks memo hits/misses and reports per-flush trace summaries when tracing is enabled.
+- Added widget regression coverage (`test/src/css/memoization_test.dart`) verifying cache hits on stable keys and busts on attribute changes.
+- Added defensive invalidation for late-arriving `html/body` tag selectors + expanded trace logging to simplify regression analysis; full test suite now passes.
 
 Current metrics (representative):
 - CSS summary: parseCalls=5 rules=51 style=50 media=0 keyframes=1 fontFace=0 parseMs=24
@@ -120,10 +127,10 @@ Observed impact:
 - DebugFlags.enableCssMemoization: per‑element matched‑rules cache keyed by (ruleSetVersion, tag, id, classes, attr presence).
 
 ## Next Steps
-- Workstream 2 (Memoization): enable behind flag in dev; add tests; measure match reductions; consider default‑on.
-- Workstream 3 (Micro‑optimizations): reuse evaluator, cheap ancestry pre‑checks for descendant combinators.
-- Workstream 4 (Batch recalc – guarded): optionally defer recalc to flushStyle(); ensure getComputedStyle triggers update.
-- Optional index follow‑ups: elementsByTag for tag‑rule invalidation; pseudo anchors tracking if needed.
+- Workstream 2 (Memoization rollout): gather perf samples via new trace logs/counters, implement cache eviction strategy (LRU or size cap), and decide default-on criteria.
+- Workstream 3 (Matching micro-optimizations): reuse evaluator instances, add ancestry key fast-path, benchmark hot selectors.
+- Workstream 4 (Batch recalc – guarded): prototype deferred recalc flag, validate synchronous APIs, add targeted tests.
+- Optional index follow-ups: evaluate elementsByTag or pseudo anchor tracking once W2 data collected.
 
 ## Rollout & Safety
 - Keep targeted invalidation on by default once validated with tests.

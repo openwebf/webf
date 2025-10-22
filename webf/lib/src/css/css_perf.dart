@@ -39,6 +39,10 @@ class CSSPerf {
   static int _pseudoMatchedTotal = 0;
   static int _pseudoMatchMsTotal = 0;
 
+  // Memoization metrics
+  static int _memoHits = 0;
+  static int _memoMisses = 0;
+
   // Recalc and flush metrics
   static int _recalcCalls = 0;
   static int _recalcMsTotal = 0;
@@ -69,28 +73,36 @@ class CSSPerf {
     _parserFontFaceTotal += fontFace;
   }
 
-  static void recordParseInlineStyle({required int durationMs, required int propertyCount}) {
+  static void recordParseInlineStyle(
+      {required int durationMs, required int propertyCount}) {
     if (!enabled) return;
     _parserInlineCalls++;
     _parserInlineMsTotal += durationMs;
     _parserInlinePropsTotal += propertyCount;
   }
 
-  static void recordIndexAddRules({required int durationMs, required int addedRules}) {
+  static void recordIndexAddRules(
+      {required int durationMs, required int addedRules}) {
     if (!enabled) return;
     _indexAddRulesCalls++;
     _indexAddMsTotal += durationMs;
     _indexRulesAddedTotal += addedRules;
   }
 
-  static void recordHandleStyleSheets({required int durationMs, required int sheetCount, required int ruleCount}) {
+  static void recordHandleStyleSheets(
+      {required int durationMs,
+      required int sheetCount,
+      required int ruleCount}) {
     if (!enabled) return;
     _handleSheetsCalls++;
     _handleSheetsMsTotal += durationMs;
     _handleSheetsRulesTotal += ruleCount;
   }
 
-  static void recordMatch({required int durationMs, required int candidateCount, required int matchedCount}) {
+  static void recordMatch(
+      {required int durationMs,
+      required int candidateCount,
+      required int matchedCount}) {
     if (!enabled) return;
     _matchCalls++;
     _matchMsTotal += durationMs;
@@ -98,7 +110,8 @@ class CSSPerf {
     _matchMatchedTotal += matchedCount;
   }
 
-  static void recordPseudoMatch({required int durationMs, required int matchedCount}) {
+  static void recordPseudoMatch(
+      {required int durationMs, required int matchedCount}) {
     if (!enabled) return;
     _pseudoMatchCalls++;
     _pseudoMatchMsTotal += durationMs;
@@ -111,7 +124,22 @@ class CSSPerf {
     _recalcMsTotal += durationMs;
   }
 
-  static void recordFlush({required int durationMs, required int dirtyCount, required bool recalcFromRoot}) {
+  static void recordMemo({required bool hit}) {
+    if (!enabled) return;
+    if (hit) {
+      _memoHits++;
+    } else {
+      _memoMisses++;
+    }
+  }
+
+  static int get memoHits => _memoHits;
+  static int get memoMisses => _memoMisses;
+
+  static void recordFlush(
+      {required int durationMs,
+      required int dirtyCount,
+      required bool recalcFromRoot}) {
     if (!enabled) return;
     _flushCalls++;
     _flushMsTotal += durationMs;
@@ -121,8 +149,9 @@ class CSSPerf {
     // Emit a concise one-line summary per flush while perf is enabled
     // to observe live behavior without overwhelming logs.
     if (DebugFlags.enableCssLogs) {
-      cssLogger.fine('[perf] flush dt=${durationMs}ms dirty=$dirtyCount root=$recalcFromRoot' +
-          ' (recalc calls total=$_recalcCalls, match calls total=$_matchCalls)');
+      cssLogger.fine(
+          '[perf] flush dt=${durationMs}ms dirty=$dirtyCount root=$recalcFromRoot' +
+              ' (recalc calls total=$_recalcCalls, match calls total=$_matchCalls)');
     }
   }
 
@@ -159,6 +188,9 @@ class CSSPerf {
     _recalcCalls = 0;
     _recalcMsTotal = 0;
 
+    _memoHits = 0;
+    _memoMisses = 0;
+
     _flushCalls = 0;
     _flushDirtyTotal = 0;
     _flushRootRecalcCount = 0;
@@ -172,12 +204,14 @@ class CSSPerf {
         ' media=$_parserMediaRulesTotal keyframes=$_parserKeyframesTotal fontFace=$_parserFontFaceTotal'
         ' parseMs=$_parserParseMsTotal inlineCalls=$_parserInlineCalls inlineProps=$_parserInlinePropsTotal'
         ' inlineMs=$_parserInlineMsTotal');
-    cssLogger.fine('[perf] index addCalls=$_indexAddRulesCalls addRules=$_indexRulesAddedTotal addMs=$_indexAddMsTotal'
+    cssLogger.fine(
+        '[perf] index addCalls=$_indexAddRulesCalls addRules=$_indexRulesAddedTotal addMs=$_indexAddMsTotal'
         ' handleCalls=$_handleSheetsCalls handleRules=$_handleSheetsRulesTotal handleMs=$_handleSheetsMsTotal');
-    cssLogger.fine('[perf] match calls=$_matchCalls candidates=$_matchCandidatesTotal matched=$_matchMatchedTotal ms=$_matchMsTotal'
-        ' pseudoCalls=$_pseudoMatchCalls pseudoMatched=$_pseudoMatchedTotal pseudoMs=$_pseudoMatchMsTotal');
+    cssLogger.fine(
+        '[perf] match calls=$_matchCalls candidates=$_matchCandidatesTotal matched=$_matchMatchedTotal ms=$_matchMsTotal'
+        ' pseudoCalls=$_pseudoMatchCalls pseudoMatched=$_pseudoMatchedTotal pseudoMs=$_pseudoMatchMsTotal'
+        ' memoHits=$_memoHits memoMisses=$_memoMisses');
     cssLogger.fine('[perf] recalc calls=$_recalcCalls recalcMs=$_recalcMsTotal'
         ' flush calls=$_flushCalls dirtyTotal=$_flushDirtyTotal rootCount=$_flushRootRecalcCount flushMs=$_flushMsTotal');
   }
 }
-

@@ -67,8 +67,9 @@ class ElementRuleCollector {
       matchedRules.addAll(_collectMatchingRulesForList(list, element));
     }
 
-    // tag
-    final listTag = ruleSet.tagRules[element.tagName];
+    // tag selectors are stored uppercase; normalize element tag for lookup.
+    final String tagLookup = element.tagName.toUpperCase();
+    final listTag = ruleSet.tagRules[tagLookup];
     candidateCount += (listTag?.length ?? 0);
     matchedRules.addAll(_collectMatchingRulesForList(listTag, element));
 

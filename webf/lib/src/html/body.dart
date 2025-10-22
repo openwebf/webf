@@ -5,6 +5,7 @@
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
+import 'package:webf/foundation.dart';
 
 const String BODY = 'BODY';
 
@@ -29,6 +30,9 @@ class BodyElement extends Element {
   @override
   void setRenderStyle(String property, String present, { String? baseHref }) {
     final bool affectsViewportBackground = _affectsViewportBackground(property);
+    if (DebugFlags.enableCssTrace) {
+      cssLogger.info('[trace][body] setRenderStyle property=$property value=$present affectsViewportBackground=$affectsViewportBackground');
+    }
     switch (property) {
       // The overflow of body should apply to html.
       // https://drafts.csswg.org/css-overflow-3/#overflow-propagation
@@ -52,6 +56,9 @@ class BodyElement extends Element {
     }
 
     if (affectsViewportBackground) {
+      if (DebugFlags.enableCssTrace) {
+        cssLogger.info('[trace][body] syncing viewport background after $property');
+      }
       ownerDocument.syncViewportBackground();
     }
   }

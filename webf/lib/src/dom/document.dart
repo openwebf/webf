@@ -434,6 +434,11 @@ class Document extends ContainerNode {
     if (vp.background != resolved) {
       vp.background = resolved;
       vp.markNeedsPaint();
+      if (DebugFlags.enableCssTrace) {
+        cssLogger.info('[trace][viewport-bg] resolved=${resolved?.toString() ?? 'null'} bodyHasColor=$bodyHasColor');
+      }
+    } else if (DebugFlags.enableCssTrace) {
+      cssLogger.info('[trace][viewport-bg] no change (resolved=${resolved?.toString() ?? 'null'})');
     }
   }
 
@@ -531,6 +536,9 @@ class Document extends ContainerNode {
           styleSheets.length.toString() +
           ')');
     }
+    if (DebugFlags.enableCssTrace) {
+      cssLogger.info('[trace][sheets] applying count=${sheets.length} previous=${styleSheets.length}');
+    }
     styleSheets.clear();
     styleSheets.addAll(sheets.map((e) => e.clone()));
     // Indexing timing (debug)
@@ -539,6 +547,9 @@ class Document extends ContainerNode {
     ruleSet.reset();
     int ruleCount = 0;
     for (var sheet in sheets) {
+      if (DebugFlags.enableCssTrace) {
+        cssLogger.info('[trace][sheets] indexing href=${sheet.href ?? 'inline'} rules=${sheet.cssRules.length}');
+      }
       if (kDebugMode && DebugFlags.enableCssLogs) {
         cssLogger.fine('[style] adding rules from sheet href=' +
             (sheet.href?.toString() ?? 'inline') +
@@ -550,6 +561,9 @@ class Document extends ContainerNode {
     }
     // Increment the ruleset version to bust element-level caches.
     ruleSetVersion++;
+    if (DebugFlags.enableCssTrace) {
+      cssLogger.info('[trace][sheets] applied; ruleSetVersion=$ruleSetVersion ruleCount=$ruleCount');
+    }
     if (perf && sw != null) {
       CSSPerf.recordHandleStyleSheets(
           durationMs: sw.elapsedMilliseconds, sheetCount: sheets.length, ruleCount: ruleCount);
@@ -617,6 +631,10 @@ class Document extends ContainerNode {
         rebuild;
     if (DebugFlags.enableCssTrace) {
       cssLogger.info('[trace][flush] dirty=${_styleDirtyElements.length} sheetsUpdated=$sheetsUpdated recalcFromRoot=$recalcFromRoot');
+    }
+    if (DebugFlags.enableCssTrace && DebugFlags.enableCssMemoization) {
+      cssLogger
+          .info('[trace][memo] totals hits=${CSSPerf.memoHits} misses=${CSSPerf.memoMisses} dirty=${_styleDirtyElements.length}');
     }
     if (recalcFromRoot) {
       if (kDebugMode && DebugFlags.enableCssLogs) {

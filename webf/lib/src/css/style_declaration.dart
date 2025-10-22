@@ -505,6 +505,10 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       return _expandShorthand(propertyName, normalizedValue, isImportant, baseHref: baseHref);
     }
 
+    if (DebugFlags.enableCssTrace) {
+      cssLogger.info('[trace][css] setProperty name=$propertyName value=$normalizedValue important=$isImportant baseHref=$baseHref target=${target?.tagName ?? 'detached'}');
+    }
+
     // From style sheet mark the property important as false.
     if (isImportant == false) {
       _sheetStyle[propertyName] = normalizedValue;
@@ -807,6 +811,10 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
   void _emitPropertyChanged(String property, String? original, String present, {String? baseHref}) {
     if (original == present && (!CSSVariable.isCSSVariableValue(present))) return;
+
+    if (DebugFlags.enableCssTrace) {
+      cssLogger.info('[trace][css] emitPropertyChanged name=$property original=${original ?? 'null'} present=$present baseHref=$baseHref target=${target?.tagName ?? 'detached'}');
+    }
 
     if (onStyleChanged != null) {
       if (kDebugMode && DebugFlags.enableCssLogs && (property == COLOR || property == BACKGROUND_COLOR)) {

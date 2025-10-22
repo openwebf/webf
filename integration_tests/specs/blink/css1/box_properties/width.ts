@@ -27,6 +27,6 @@ TABLE {width: 50%;}
       <p class="two">This paragraph should be half the width of its parent element (either the body or the table, which should itself be half as wide as the body element). This is extra text included to ensure that this will be a fair test of the <code>width</code> property without the need for the user to resize the viewing window.</p>
     `;
 
-    await snapshot();
+    await snapshot(1);
   });
 });
