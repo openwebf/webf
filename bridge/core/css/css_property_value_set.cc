@@ -40,6 +40,8 @@
 #include "core/css/style_sheet_contents.h"
 #include "css_style_declaration.h"
 #include "foundation/macros.h"
+#include "core/dart_isolate_context.h"
+#include "foundation/metrics_registry.h"
 #include "property_bitsets.h"
 #include "style_property_shorthand.h"
 
@@ -112,10 +114,16 @@ const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::GetPropertyCSSValueW
 }
 
 String CSSPropertyValueSet::GetPropertyValueWithHint(const AtomicString& property_name, unsigned int index) const {
+  if (auto* isolate = GetCurrentDartIsolateContext()) {
+    isolate->metrics()->Increment(MetricsEnum::kTotalGetPropertyValueWithHint);
+  }
   const std::shared_ptr<const CSSValue>* value = GetPropertyCSSValueWithHint(property_name, index);
   if (value) {
     const CSSValue& css_value = *(*value);
     if (css_value.HasRawText()) {
+      if (auto* isolate = GetCurrentDartIsolateContext()) {
+        isolate->metrics()->Increment(MetricsEnum::kGetPropertyValueWithHintWithRawText);
+      }
       return css_value.RawText();
     }
     return css_value.CssTextForSerialization();
