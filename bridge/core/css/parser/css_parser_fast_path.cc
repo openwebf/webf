@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "core/css/css_raw_value.h"
 #ifdef __SSE2__
 #include <immintrin.h>
 #elif defined(__ARM_NEON__)
@@ -23,7 +22,6 @@
 #include "core/css/properties/css_parsing_utils.h"
 #include "core/css/style_color.h"
 #include "css_parser_fast_path.h"
-#include <type_traits>
 #include "style_property_shorthand.h"
 
 namespace webf {
@@ -114,19 +112,8 @@ static std::shared_ptr<const CSSValue> ParseSimpleLengthValue(CSSPropertyID prop
   double number;
   CSSPrimitiveValue::UnitType unit = CSSPrimitiveValue::UnitType::kNumber;
 
-  // Ensure we pass 8-bit characters to the simple length parser.
-  std::vector<LChar> simple_tmp;
-  const LChar* simple_chars = webf::VisitCharacters(string, [&](auto chars) {
-    using CharT = typename std::decay_t<decltype(chars)>::value_type;
-    if constexpr (std::is_same_v<CharT, LChar>) {
-      return reinterpret_cast<const LChar*>(chars.data());
-    } else {
-      simple_tmp.resize(chars.size());
-      for (size_t i = 0; i < chars.size(); ++i) simple_tmp[i] = static_cast<LChar>(chars[i] & 0xFF);
-      return reinterpret_cast<const LChar*>(simple_tmp.data());
-    }
-  });
-  const bool parsed_simple_length = ParseSimpleLength(simple_chars, string.length(), unit, number);
+  const bool parsed_simple_length =
+      ParseSimpleLength(string.Characters8(), string.length(), unit, number);
   if (!parsed_simple_length) {
     return nullptr;
   }
@@ -1016,19 +1003,8 @@ static ParseColorResult ParseColor(CSSPropertyID property_id,
   // Fast path for hex colors and rgb()/rgba()/hsl()/hsla() colors.
   // Note that ParseColor may be called from external contexts,
   // i.e., when parsing style sheets, so we need the Unicode path here.
-  // Ensure we pass a contiguous 8-bit buffer to the fast color parser.
-  std::vector<uint8_t> color_tmp;
-  const uint8_t* color_bytes = webf::VisitCharacters(string, [&](auto chars) {
-    using CharT = typename std::decay_t<decltype(chars)>::value_type;
-    if constexpr (std::is_same_v<CharT, LChar>) {
-      return reinterpret_cast<const uint8_t*>(chars.data());
-    } else {
-      color_tmp.resize(chars.size());
-      for (size_t i = 0; i < chars.size(); ++i) color_tmp[i] = static_cast<uint8_t>(chars[i] & 0xFF);
-      return reinterpret_cast<const uint8_t*>(color_tmp.data());
-    }
-  });
-  const bool parsed = FastParseColorInternal(out_color, color_bytes, string.length(), quirks_mode);
+  const bool parsed =
+      FastParseColorInternal(out_color, string.Is8Bit() ? string.Characters8() : reinterpret_cast<const uint8_t*>(string.Characters16()), string.length(), quirks_mode);
   return parsed ? ParseColorResult::kColor : ParseColorResult::kFailure;
 }
 
@@ -1408,19 +1384,8 @@ static std::shared_ptr<const CSSValue> ParseKeywordValue(CSSPropertyID property_
                                                          std::shared_ptr<const CSSParserContext> context) {
   DCHECK(!string.IsEmpty());
 
-  // Prepare 8-bit buffer for wide keyword parsing
-  std::vector<uint8_t> kw_tmp;
-  const uint8_t* kw_bytes = webf::VisitCharacters(string, [&](auto chars) {
-    using CharT = typename std::decay_t<decltype(chars)>::value_type;
-    if constexpr (std::is_same_v<CharT, LChar>) {
-      return reinterpret_cast<const uint8_t*>(chars.data());
-    } else {
-      kw_tmp.resize(chars.size());
-      for (size_t i = 0; i < chars.size(); ++i) kw_tmp[i] = static_cast<uint8_t>(chars[i] & 0xFF);
-      return reinterpret_cast<const uint8_t*>(kw_tmp.data());
-    }
-  });
-  std::shared_ptr<const CSSValue> css_wide_keyword = ParseCSSWideKeywordValue(kw_bytes, string.length());
+  std::shared_ptr<const CSSValue> css_wide_keyword =
+      ParseCSSWideKeywordValue(string.Is8Bit() ? string.Characters8() : reinterpret_cast<const uint8_t*>(string.Characters16()), string.length());
 
   if (!CSSParserFastPaths::IsHandledByKeywordFastPath(property_id)) {
     // This isn't a property we have a fast path for, but even
@@ -1692,19 +1657,8 @@ static std::shared_ptr<const CSSValue> ParseSimpleTransform(CSSPropertyID proper
     return nullptr;
   }
 
-  // Prepare an 8-bit view over the input for transform fast-path parsing.
+  const uint8_t* pos = reinterpret_cast<const uint8_t*>(string.data());
   unsigned length = string.length();
-  std::vector<uint8_t> buf;
-  const uint8_t* pos = webf::VisitCharacters(string, [&](auto chars) {
-    using CharT = typename std::decay_t<decltype(chars)>::value_type;
-    if constexpr (std::is_same_v<CharT, LChar>) {
-      return reinterpret_cast<const uint8_t*>(chars.data());
-    } else {
-      buf.resize(chars.size());
-      for (size_t i = 0; i < chars.size(); ++i) buf[i] = static_cast<uint8_t>(chars[i] & 0xFF);
-      return reinterpret_cast<const uint8_t*>(buf.data());
-    }
-  });
   if (!TransformCanLikelyUseFastPath(pos, length)) {
     return nullptr;
   }
@@ -1732,27 +1686,27 @@ static std::shared_ptr<const CSSValue> ParseSimpleTransform(CSSPropertyID proper
 std::shared_ptr<const CSSValue> CSSParserFastPaths::MaybeParseValue(CSSPropertyID property_id,
                                                                     StringView string,
                                                                     std::shared_ptr<const CSSParserContext> context) {
-  // if (auto length = ParseSimpleLengthValue(property_id, string, context->Mode())) {
-  //   return length;
-  // }
-  // if (IsColorPropertyID(property_id)) {
-  //   Color color;
-  //   CSSValueID color_id;
-  //   switch (webf::ParseColor(property_id, StringView(string), context->Mode(), color, color_id)) {
-  //     case ParseColorResult::kFailure:
-  //       break;
-  //     case ParseColorResult::kKeyword:
-  //       return CSSIdentifierValue::Create(color_id);
-  //     case ParseColorResult::kColor:
-  //       return cssvalue::CSSColor::Create(color);
-  //   }
-  // }
-  // if (auto keyword = ParseKeywordValue(property_id, StringView(string), context)) {
-  //   return keyword;
-  // }
-  // if (auto transform = ParseSimpleTransform(property_id, StringView(string))) {
-  //   return transform;
-  // }
+  if (auto length = ParseSimpleLengthValue(property_id, string, context->Mode())) {
+    return length;
+  }
+  if (IsColorPropertyID(property_id)) {
+    Color color;
+    CSSValueID color_id;
+    switch (webf::ParseColor(property_id, StringView(string), context->Mode(), color, color_id)) {
+      case ParseColorResult::kFailure:
+        break;
+      case ParseColorResult::kKeyword:
+        return CSSIdentifierValue::Create(color_id);
+      case ParseColorResult::kColor:
+        return cssvalue::CSSColor::Create(color);
+    }
+  }
+  if (auto keyword = ParseKeywordValue(property_id, StringView(string), context)) {
+    return keyword;
+  }
+  if (auto transform = ParseSimpleTransform(property_id, StringView(string))) {
+    return transform;
+  }
   return nullptr;
 }
 

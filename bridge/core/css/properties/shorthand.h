@@ -11,11 +11,6 @@
 
 #include "core/css/properties/css_property.h"
 #include "foundation/casting.h"
-#include "style_property_shorthand.h"
-// Added for raw-value shorthand parsing
-#include "core/css/css_raw_value.h"
-#include "core/css/parser/css_parser_impl.h"
-#include "core/css/properties/css_parsing_utils.h"
 
 namespace webf {
 
@@ -48,24 +43,6 @@ class Shorthand : public CSSProperty {
                               std::vector<CSSPropertyValue>& properties) const {
     assert_m(false, "NOTREACHED_IN_MIGRATION");
     return false;
-  }
-
-  // Parse property value as CSSRawValue
-  bool ParseRawShorthand(bool important,
-                            CSSParserTokenStream& stream,
-                            std::shared_ptr<const CSSParserContext> context,
-                            const CSSParserLocalContext&,
-                            std::vector<CSSPropertyValue>& properties) const {
-    // Consume the raw value for this shorthand without consuming the trailing
-    // semicolon, and strip a trailing !important from the raw text.
-    CSSTokenizedValue tokenized = CSSParserImpl::ConsumeRestrictedPropertyValue(stream);
-    bool has_important = CSSParserImpl::RemoveImportantAnnotationIfPresent(tokenized);
-
-    // Wrap the raw text (post !important removal) and expand to longhands.
-    auto raw_value = std::make_shared<CSSRawValue>(tokenized.text);
-    css_parsing_utils::AddExpandedPropertyForValue(this->PropertyID(), raw_value, has_important || important,
-                                                   properties);
-    return true;
   }
 
  protected:
