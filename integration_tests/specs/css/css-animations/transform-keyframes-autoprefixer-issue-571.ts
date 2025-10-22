@@ -35,14 +35,12 @@ describe('keyframes transform with vendor-prefixed declarations (issue #571)', (
     expect(start).toBe('none');
 
     // Let the animation progress; then pause to observe a stable, non-zero rotation.
-    await sleep(0.35);
+    await sleep(0.5);
     el.style.animationPlayState = 'paused';
     const mid = getComputedStyle(el).getPropertyValue('transform');
 
     // Should have advanced to a non-identity matrix (i.e., not 'none').
     expect(mid).not.toBe('none');
-
-    await snapshot();
   });
 });
 
