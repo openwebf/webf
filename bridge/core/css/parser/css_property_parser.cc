@@ -8,14 +8,11 @@
 
 #include "css_property_parser.h"
 #include "foundation/string/character_visitor.h"
-#include "core/css/css_property_value.h"
-#include "core/css/css_property_name.h"
+#include "core/css/css_pending_substitution_value.h"
 #include "core/css/css_unparsed_declaration_value.h"
 #include "core/css/hash_tools.h"
 #include "core/css/parser/at_rule_descriptor_parser.h"
-#include "core/css/parser/css_parser_idioms.h"
 #include "core/css/parser/css_parser_impl.h"
-#include "core/css/parser/css_parser.h"
 #include "core/css/parser/css_tokenized_value.h"
 #include "core/css/parser/css_variable_parser.h"
 #include "core/css/properties/css_bitset.h"
@@ -27,28 +24,6 @@
 namespace webf {
 
 namespace {
-
-StringView StripRawTextWhitespace(StringView text) {
-  StringView trimmed = CSSVariableParser::StripTrailingWhitespaceAndComments(text);
-  while (!trimmed.Empty() && IsHTMLSpace(trimmed[0])) {
-    trimmed = trimmed.substr(1);
-  }
-  return trimmed;
-}
-
-inline bool ShouldAssignRawText(const std::shared_ptr<const CSSValue>& value) {
-  if (!value) {
-    return false;
-  }
-  if (value->HasRawText()) {
-    return false;
-  }
-  if (value->IsInitialValue() || value->IsInheritedValue() || value->IsUnsetValue() || value->IsRevertValue() ||
-      value->IsRevertLayerValue()) {
-    return false;
-  }
-  return true;
-}
 
 bool IsPropertyAllowedInRule(const CSSProperty& property, StyleRule::RuleType rule_type) {
   // This function should be called only when parsing a property. Shouldn't
@@ -73,48 +48,6 @@ bool IsPropertyAllowedInRule(const CSSProperty& property, StyleRule::RuleType ru
 }
 
 }  // namespace
-
-// Normalize gradient arguments by inserting missing commas between adjacent
-// color-stops when a stop value (e.g. 75%) is followed by a color token with
-// only whitespace between. This helps with inputs like
-// "green 75% green 100%" by transforming to "green 75%, green 100%".
-static String NormalizeGradientCommas(const String& input) {
-  std::string s = input.ToUTF8String();
-  auto normalize_in_fn = [&](size_t fn_start, const char* fn) {
-    size_t lp = s.find('(', fn_start + strlen(fn) - 1);
-    if (lp == std::string::npos) return;
-    int depth = 1;
-    size_t i = lp + 1;
-    while (i < s.size() && depth > 0) {
-      if (s[i] == '(') depth++;
-      else if (s[i] == ')') depth--;
-      i++;
-    }
-    if (depth != 0) return; // unbalanced
-    size_t rp = i - 1;
-    for (size_t k = lp + 1; k + 2 < rp; ++k) {
-      if (s[k] == '%' && (s[k + 1] == ' ' || s[k + 1] == '\t') &&
-          ((s[k + 2] >= 'A' && s[k + 2] <= 'Z') || (s[k + 2] >= 'a' && s[k + 2] <= 'z') || s[k + 2] == '#')) {
-        // insert ", " between stop and next color token
-        s.replace(k + 1, 1, ", ");
-        rp += 1; // account for increased length
-      }
-    }
-  };
-
-  const char* fns[] = {"linear-gradient(", "repeating-linear-gradient(", "radial-gradient(",
-                       "repeating-radial-gradient(", "conic-gradient("};
-  for (const char* fn : fns) {
-    size_t pos = 0;
-    while (true) {
-      size_t idx = s.find(fn, pos);
-      if (idx == std::string::npos) break;
-      normalize_in_fn(idx, fn);
-      pos = idx + strlen(fn);
-    }
-  }
-  return String::FromUTF8(s.c_str(), s.size());
-}
 
 CSSPropertyParser::CSSPropertyParser(CSSParserTokenStream& stream,
                                      std::shared_ptr<const CSSParserContext> context,
@@ -146,38 +79,15 @@ std::shared_ptr<const CSSValue> CSSPropertyParser::ConsumeCSSWideKeyword(CSSPars
   return value;
 }
 
-bool CSSPropertyParser::ParseCSSWideKeyword(CSSPropertyID unresolved_property,
-                                            bool allow_important_annotation,
-                                            StyleRule::RuleType rule_type) {
-  stream_.EnsureLookAhead();
-  CSSParserTokenStream::State savepoint = stream_.Save();
-  bool has_raw_value_text = false;
-  bool raw_value_had_important = false;
-  String raw_value_text;
-  {
-    CSSTokenizedValue raw_tokenized = CSSParserImpl::ConsumeRestrictedPropertyValue(stream_);
-    if (raw_tokenized.range.size() || raw_tokenized.text.length()) {
-      raw_value_had_important |= CSSParserImpl::RemoveImportantAnnotationIfPresent(raw_tokenized);
-      raw_tokenized.text = StripRawTextWhitespace(raw_tokenized.text);
-      raw_value_text = String(raw_tokenized.text);
-      has_raw_value_text = true;
-    }
-    stream_.EnsureLookAhead();
-    stream_.Restore(savepoint);
-  }
+bool CSSPropertyParser::ParseCSSWideKeyword(CSSPropertyID unresolved_property, bool allow_important_annotation) {
   bool important;
   auto value = ConsumeCSSWideKeyword(stream_, allow_important_annotation, important);
   if (!value) {
     return false;
   }
-  if (value && has_raw_value_text) {
-    value->SetRawText(raw_value_text);
-  }
-  bool force_important = raw_value_had_important && !allow_important_annotation && rule_type == StyleRule::kStyle;
 
   CSSPropertyID property = ResolveCSSPropertyID(unresolved_property);
   const StylePropertyShorthand& shorthand = shorthandForProperty(property);
-  size_t start_index = parsed_properties_->size();
   if (!shorthand.length()) {
     if (!CSSProperty::Get(property).IsProperty()) {
       return false;
@@ -187,68 +97,17 @@ bool CSSPropertyParser::ParseCSSWideKeyword(CSSPropertyID unresolved_property,
   } else {
     css_parsing_utils::AddExpandedPropertyForValue(property, value, important, *parsed_properties_);
   }
-  if (has_raw_value_text) {
-    for (size_t idx = start_index; idx < parsed_properties_->size(); ++idx) {
-      const std::shared_ptr<const CSSValue>* value_ptr = (*parsed_properties_)[idx].Value();
-      if (value_ptr && *value_ptr) {
-        if (ShouldAssignRawText(*value_ptr)) {
-          (*value_ptr)->SetRawText(raw_value_text);
-        }
-      }
-      if (force_important) {
-        (*parsed_properties_)[idx].SetImportant();
-      }
-    }
-  }
   return true;
 }
 
 bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
                                         bool allow_important_annotation,
                                         StyleRule::RuleType rule_type) {
-  // Correctly pass allow_important_annotation instead of rule_type
-  if (ParseCSSWideKeyword(unresolved_property, allow_important_annotation, rule_type)) {
+  if (ParseCSSWideKeyword(unresolved_property, rule_type)) {
     return true;
   }
 
-  stream_.EnsureLookAhead();
   CSSParserTokenStream::State savepoint = stream_.Save();
-  bool has_raw_value_text = false;
-  bool raw_value_had_important = false;
-  String raw_value_text;
-  {
-    CSSTokenizedValue raw_tokenized = CSSParserImpl::ConsumeRestrictedPropertyValue(stream_);
-    if (raw_tokenized.range.size() || raw_tokenized.text.length()) {
-      raw_value_had_important |= CSSParserImpl::RemoveImportantAnnotationIfPresent(raw_tokenized);
-      raw_tokenized.text = StripRawTextWhitespace(raw_tokenized.text);
-      raw_value_text = String(raw_tokenized.text);
-      has_raw_value_text = true;
-    }
-    stream_.EnsureLookAhead();
-    stream_.Restore(savepoint);
-  }
-  auto assign_raw_text = [&](size_t from_index) {
-    if (!has_raw_value_text) {
-      return;
-    }
-    if (parsed_properties_->size() <= from_index) {
-      return;
-    }
-    if (parsed_properties_->size() - from_index != 1) {
-      return;
-    }
-    for (size_t idx = from_index; idx < parsed_properties_->size(); ++idx) {
-      const std::shared_ptr<const CSSValue>* value_ptr = (*parsed_properties_)[idx].Value();
-      if (value_ptr && *value_ptr) {
-        if (ShouldAssignRawText(*value_ptr)) {
-          (*value_ptr)->SetRawText(raw_value_text);
-        }
-      }
-      if (raw_value_had_important && !allow_important_annotation && rule_type == StyleRule::kStyle) {
-        (*parsed_properties_)[idx].SetImportant();
-      }
-    }
-  };
 
   CSSPropertyID property_id = ResolveCSSPropertyID(unresolved_property);
   const CSSProperty& property = CSSProperty::Get(property_id);
@@ -290,57 +149,21 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
             (*parsed_properties_)[property_idx].SetImportant();
           }
         }
-        assign_raw_text(static_cast<size_t>(parsed_properties_size));
         return true;
       }
     }
 
     // Remove any properties that may have been added by ParseShorthand()
-    // during a failing parse earlier. Only remove the entries appended
-    // after we started parsing this shorthand, not the previously parsed
-    // declarations.
-    if (parsed_properties_->size() > static_cast<size_t>(parsed_properties_size)) {
-      parsed_properties_->erase(parsed_properties_->begin() + parsed_properties_size, parsed_properties_->end());
-    }
+    // during a failing parse earlier.
+    parsed_properties_->erase(parsed_properties_->begin(), parsed_properties_->begin() + parsed_properties_size);
+    parsed_properties_->shrink_to_fit();
   } else {
-    if (raw_value_had_important && has_raw_value_text && !raw_value_text.IsEmpty()) {
-      CSSTokenizer sanitized_tokenizer(raw_value_text);
-      CSSParserTokenStream sanitized_stream(sanitized_tokenizer);
-      if (std::shared_ptr<const CSSValue> parsed_value = css_parsing_utils::ParseLonghand(
-              unresolved_property, CSSPropertyID::kInvalid, context_, sanitized_stream)) {
-        if (sanitized_stream.AtEnd()) {
-          stream_.EnsureLookAhead();
-          CSSParserImpl::ConsumeRestrictedPropertyValue(stream_);
-          AddProperty(property_id, CSSPropertyID::kInvalid, std::move(parsed_value),
-                      raw_value_had_important && allow_important_annotation,
-                      css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
-          assign_raw_text(static_cast<size_t>(parsed_properties_size));
-          return true;
-        }
-      }
-      stream_.EnsureLookAhead();
-      stream_.Restore(savepoint);
-    }
     if (std::shared_ptr<const CSSValue> parsed_value =
             css_parsing_utils::ParseLonghand(unresolved_property, CSSPropertyID::kInvalid, context_, stream_)) {
       bool important = css_parsing_utils::MaybeConsumeImportant(stream_, allow_important_annotation);
       if (stream_.AtEnd()) {
         AddProperty(property_id, CSSPropertyID::kInvalid, std::move(parsed_value), important,
                     css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
-        assign_raw_text(static_cast<size_t>(parsed_properties_size));
-        return true;
-      }
-    }
-    stream_.EnsureLookAhead();
-    stream_.Restore(savepoint);
-    if (std::shared_ptr<const CSSValue> raw_value =
-            css_parsing_utils::ParseRawLonghand(unresolved_property, CSSPropertyID::kInvalid, context_, stream_)) {
-      stream_.ConsumeWhitespace();
-      if (stream_.AtEnd()) {
-        bool important = raw_value_had_important && allow_important_annotation;
-        AddProperty(property_id, CSSPropertyID::kInvalid, std::move(raw_value), important,
-                    css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
-        assign_raw_text(static_cast<size_t>(parsed_properties_size));
         return true;
       }
     }
@@ -361,111 +184,29 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
   }
 
   const bool important = CSSParserImpl::RemoveImportantAnnotationIfPresent(value);
-  value.text = StripRawTextWhitespace(value.text);
-  raw_value_text = String(value.text);
-  if (important) {
-    raw_value_had_important = true;
-  }
-  has_raw_value_text = true;
+  value.text = CSSVariableParser::StripTrailingWhitespaceAndComments(value.text);
 
   if (CSSVariableParser::ContainsValidVariableReferences(value.range, context_->GetExecutingContext())) {
-    // Do not create PendingSubstitution. Expand shorthand into longhands using raw components.
+    if (value.text.length() > CSSVariableData::kMaxVariableBytes) {
+      return false;
+    }
+
+    bool is_animation_tainted = false;
+    auto variable = std::make_shared<CSSUnparsedDeclarationValue>(
+        CSSVariableData::Create(value, is_animation_tainted, true), context_);
+
     if (is_shorthand) {
-      CSSTokenizer tokenizer(raw_value_text);
-      CSSParserTokenStream tmp_stream(tokenizer);
-      const StylePropertyShorthand& shorthand = shorthandForProperty(property_id);
-      if (css_parsing_utils::ConsumeShorthandGreedilyViaLonghands(shorthand, important, context_, tmp_stream,
-                                                                  *parsed_properties_)) {
-        assign_raw_text(static_cast<size_t>(parsed_properties_size));
-        return true;
-      }
+      std::shared_ptr<cssvalue::CSSPendingSubstitutionValue> pending_value =
+          std::make_shared<cssvalue::CSSPendingSubstitutionValue>(property_id, variable);
+      css_parsing_utils::AddExpandedPropertyForValue(property_id, pending_value, important, *parsed_properties_);
     } else {
-      // Non-shorthand: preserve as unparsed declaration value (raw text), without resolving var().
-      bool is_animation_tainted = false;
-      auto variable = std::make_shared<CSSUnparsedDeclarationValue>(
-          CSSVariableData::Create(value, is_animation_tainted, true), context_);
       AddProperty(property_id, CSSPropertyID::kInvalid, variable, important,
                   css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
-      assign_raw_text(static_cast<size_t>(parsed_properties_size));
-      return true;
     }
-  }
-
-  // Tolerant fallback for gradients without commas between adjacent stops.
-  // Only attempt a reparse if normalization actually changes the text to avoid recursion.
-  if (is_shorthand && property_id == CSSPropertyID::kBackground) {
-    String text = String(value.text);
-    raw_value_text = text;
-    has_raw_value_text = true;
-    String normalized = NormalizeGradientCommas(text);
-    if (normalized != text) {
-      // Detect and remove !important if present (value already had it removed)
-      bool imp2 = CSSParserImpl::RemoveImportantAnnotationIfPresent(value);
-      if (imp2) {
-        raw_value_had_important = true;
-      }
-      auto tmp = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
-      auto ctx = context_;
-      auto res = CSSParser::ParseValue(tmp.get(), property_id, normalized, imp2, ctx);
-      if (res != MutableCSSPropertyValueSet::kParseError && tmp->PropertyCount() > 0) {
-        for (unsigned i = 0; i < tmp->PropertyCount(); ++i) {
-          auto p = tmp->PropertyAt(i);
-          const auto* v = p.Value();
-          if (v && *v) {
-            parsed_properties_->emplace_back(CSSPropertyValue(p.PropertyMetadata(), *v));
-          }
-        }
-        assign_raw_text(static_cast<size_t>(parsed_properties_size));
-        return true;
-      }
-    }
+    return true;
   }
 
   return false;
-}
-
-bool CSSPropertyParser::_ParseValueStart(CSSPropertyID unresolved_property,
-                                        bool allow_important_annotation,
-                                        StyleRule::RuleType rule_type) {
-  // Do not preserve CSS-wide keywords as structured values; we only capture
-  // raw declaration text.
-
-  CSSParserTokenStream::State savepoint = stream_.Save();
-
-  CSSPropertyID property_id = ResolveCSSPropertyID(unresolved_property);
-  const CSSProperty& property = CSSProperty::Get(property_id);
-
-  if (property.IsLonghand()) {
-    if (std::shared_ptr<const CSSValue> parsed_value =
-            css_parsing_utils::ParseRawLonghand(unresolved_property, CSSPropertyID::kInvalid, context_, stream_)) {
-      bool important = css_parsing_utils::MaybeConsumeImportant(stream_, allow_important_annotation);
-      if (stream_.AtEnd()) {
-        AddProperty(property_id, CSSPropertyID::kInvalid, std::move(parsed_value), important,
-                    css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
-        return true;
-      }
-    }
-    return false;
-  }
-
-  // short-hand
-  DCHECK(property.IsShorthand());
-  const auto local_context = CSSParserLocalContext()
-                                 .WithAliasParsing(IsPropertyAlias(unresolved_property))
-                                 .WithCurrentShorthand(property_id);
-
-  // TODO: switch on the shorthand id, and get the longhand list
-
-  if (To<Shorthand>(property).ParseRawShorthand(
-          /*important=*/false, stream_, context_, local_context, *parsed_properties_)) {
-    bool important = css_parsing_utils::MaybeConsumeImportant(stream_, allow_important_annotation);
-    if (stream_.AtEnd()) {
-      if (important) {
-        for (size_t property_idx = parsed_properties_->size(); property_idx < parsed_properties_->size();
-             ++property_idx) {}
-      }
-    }
-  }
 }
 
 bool CSSPropertyParser::ParseValue(CSSPropertyID unresolved_property,
@@ -493,9 +234,10 @@ std::shared_ptr<const CSSValue> CSSPropertyParser::ParseSingleValue(CSSPropertyI
   assert(context);
   stream.ConsumeWhitespace();
 
-  // Always parse a single longhand as raw text.
-  std::shared_ptr<const CSSValue> value =
-      css_parsing_utils::ParseRawLonghand(property, CSSPropertyID::kInvalid, std::move(context), stream);
+  std::shared_ptr<const CSSValue> value = css_parsing_utils::ConsumeCSSWideKeyword(stream);
+  if (!value) {
+    value = css_parsing_utils::ParseLonghand(property, CSSPropertyID::kInvalid, std::move(context), stream);
+  }
   if (!value || !stream.AtEnd()) {
     return nullptr;
   }
@@ -606,21 +348,15 @@ CSSValueID CssValueKeywordID(const StringView& string) {
   }
 
   char buffer[maxCSSValueKeywordLength + 1];  // 1 for null character
-  if (string.Is8Bit()) {
-    if (!QuasiLowercaseIntoBuffer(string.Characters8() , length, buffer)) {
-      return CSSValueID::kInvalid;
-    }
-  } else {
-    if (!QuasiLowercaseIntoBuffer(string.Characters16() , length, buffer)) {
-      return CSSValueID::kInvalid;
-    }
+  if (!QuasiLowercaseIntoBuffer(string.data() , length, buffer)) {
+    return CSSValueID::kInvalid;
   }
 
   const Value* hash_table_entry = FindValue(buffer, length);
 #if DDEBUG
   // Verify that we get the same answer with standard lowercasing.
   for (unsigned i = 0; i < length; ++i) {
-    buffer[i] = ToASCIILower(string[i]);
+    buffer[i] = ToASCIILower(string.data()[i]);
   }
   assert(hash_table_entry == FindValue(buffer, length));
 #endif

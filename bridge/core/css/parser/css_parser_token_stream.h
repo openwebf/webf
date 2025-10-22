@@ -217,10 +217,6 @@ class CSSParserTokenStream {
   // token and return false.
   bool ConsumeCommentOrNothing();
 
-  // Consume raw tokens up to but not including ';'.
-  // Leaves the semicolon in lookahead for the caller.
-  CSSParserTokenRange ConsumeRawValueUntilSemi();
-
   // Consume tokens until one of these is true:
   //
   //  - EOF is reached.

@@ -85,15 +85,10 @@ class CSSPropertyParser {
   CSSPropertyParser(CSSParserTokenStream&, std::shared_ptr<const CSSParserContext>, std::vector<CSSPropertyValue>*);
 
   // TODO(timloh): Rename once the CSSParserValue-based parseValue is removed
-  bool _ParseValueStart(CSSPropertyID unresolved_property,
+  bool ParseValueStart(CSSPropertyID unresolved_property,
                        bool allow_important_annotation,
                        StyleRule::RuleType rule_type);
-  bool ParseValueStart(CSSPropertyID unresolved_property,
-                     bool allow_important_annotation,
-                     StyleRule::RuleType rule_type);
-  bool ParseCSSWideKeyword(CSSPropertyID unresolved_property,
-                           bool allow_important_annotation,
-                           StyleRule::RuleType rule_type);
+  bool ParseCSSWideKeyword(CSSPropertyID unresolved_property, bool allow_important_annotation);
   bool ParseFontFaceDescriptor(CSSPropertyID);
 
  private:

@@ -52,66 +52,13 @@
 #include "core/style/grid_area.h"
 #include "foundation/macros.h"
 #include "style_property_shorthand.h"
-#include "foundation/logging.h"
-// For raw-capture of declaration values
-#include "core/css/parser/css_parser_impl.h"
-#include "core/css/css_raw_value.h"
 
 #include <cmath>
 #include <memory>
 #include <utility>
-#include <type_traits>
-
-#include "core/css/css_raw_value.h"
 
 namespace webf {
 namespace css_parsing_utils {
-
-namespace {
-
-inline bool ShouldCaptureRawTextForValue(const std::shared_ptr<const CSSValue>& value) {
-  if (!value) {
-    return false;
-  }
-  if (value->HasRawText()) {
-    return false;
-  }
-  if (value->IsInitialValue() || value->IsInheritedValue() || value->IsUnsetValue() || value->IsRevertValue() ||
-      value->IsRevertLayerValue()) {
-    return false;
-  }
-  return true;
-}
-
-inline void AssignRawTextFromStream(CSSParserTokenStream& stream,
-                                    uint32_t start_offset,
-                                    const std::shared_ptr<const CSSValue>& value) {
-  if (!ShouldCaptureRawTextForValue(value)) {
-    return;
-  }
-  uint32_t end_offset = stream.Offset();
-  if (end_offset <= start_offset) {
-    return;
-  }
-  size_t length = static_cast<size_t>(end_offset - start_offset);
-  StringView range = stream.StringRangeAt(start_offset, length);
-  value->SetRawText(String(range));
-}
-
-template <typename Range>
-inline void AssignRawTextFromRangeIfStream(Range& range,
-                                           uint32_t start_offset,
-                                           const std::shared_ptr<const CSSValue>& value) {
-  if constexpr (std::is_same_v<Range, CSSParserTokenStream>) {
-    AssignRawTextFromStream(range, start_offset, value);
-  } else {
-    (void)range;
-    (void)start_offset;
-    (void)value;
-  }
-}
-
-}  // namespace
 
 // https://drafts.csswg.org/css-syntax/#typedef-any-value
 bool IsTokenAllowedForAnyValue(const CSSParserToken& token) {
@@ -1011,22 +958,6 @@ ConsumeColorInternal(T& range,
                      std::shared_ptr<const CSSParserContext> context,
                      bool accept_quirky_colors,
                      AllowedColors allowed_colors) {
-  uint32_t raw_start = 0;
-  if constexpr (std::is_same_v<T, CSSParserTokenStream>) {
-    range.EnsureLookAhead();
-    raw_start = range.Offset();
-    // Treat var(...) as raw text without attempting typed color parsing; consume only var().
-    if (range.Peek().FunctionId() == CSSValueID::kVar) {
-      CSSParserSavePoint savepoint(range);
-      CSSParserTokenRange args = ConsumeFunction(range);
-      savepoint.Release();
-      StringBuilder sb;
-      sb.Append("var("_s);
-      sb.Append(args.Serialize());
-      sb.Append(")"_s);
-      return std::make_shared<CSSRawValue>(sb.ReleaseString());
-    }
-  }
   CSSValueID id = range.Peek().Id();
   if ((id == CSSValueID::kAccentcolor || id == CSSValueID::kAccentcolortext)) {
     return nullptr;
@@ -1041,29 +972,23 @@ ConsumeColorInternal(T& range,
       return nullptr;
     }
     auto color = ConsumeIdent(range);
-    AssignRawTextFromRangeIfStream(range, raw_start, color);
     return color;
   }
 
   Color color = Color::kTransparent;
   if (ParseHexColor(range, color, accept_quirky_colors)) {
-    auto css_color = cssvalue::CSSColor::Create(color);
-    AssignRawTextFromRangeIfStream(range, raw_start, css_color);
-    return css_color;
+    return cssvalue::CSSColor::Create(color);
   }
 
   // Parses the color inputs rgb(), rgba(), hsl(), hsla(), hwb(), lab(),
   // oklab(), lch(), oklch() and color(). https://www.w3.org/TR/css-color-4/
   ColorFunctionParser parser;
   if (auto functional_syntax_color = parser.ConsumeFunctionalSyntaxColor(range, context)) {
-    AssignRawTextFromRangeIfStream(range, raw_start, functional_syntax_color);
     return functional_syntax_color;
   }
 
   if (allowed_colors == AllowedColors::kAll) {
-    auto light_dark = ConsumeLightDark(ConsumeColor<CSSParserTokenRange>, range, context);
-    AssignRawTextFromRangeIfStream(range, raw_start, light_dark);
-    return light_dark;
+    return ConsumeLightDark(ConsumeColor<CSSParserTokenRange>, range, context);
   }
   return nullptr;
 }
@@ -1462,20 +1387,6 @@ bool ConsumeBorderShorthand(CSSParserTokenStream& stream,
 std::shared_ptr<const CSSValue> ConsumeBorderWidth(CSSParserTokenStream& stream,
                                                    std::shared_ptr<const CSSParserContext> context,
                                                    UnitlessQuirk unitless) {
-  stream.EnsureLookAhead();
-  uint32_t raw_start = stream.Offset();
-  // If the next component starts with var(...), capture only the var() function text.
-  if (stream.Peek().FunctionId() == CSSValueID::kVar) {
-    CSSParserSavePoint savepoint(stream);
-    CSSParserTokenRange args = ConsumeFunction(stream);  // consumes var(...)
-    savepoint.Release();
-    // Reconstruct "var(<args>)" exactly.
-    StringBuilder sb;
-    sb.Append("var("_s);
-    sb.Append(args.Serialize());
-    sb.Append(")"_s);
-    return std::make_shared<CSSRawValue>(sb.ReleaseString());
-  }
   if (stream.Peek().FunctionId() == CSSValueID::kInternalAppearanceAutoBaseSelect) {
     CSSParserSavePoint savepoint(stream);
     CSSParserTokenRange arg_range = ConsumeFunction(stream);
@@ -1488,13 +1399,9 @@ std::shared_ptr<const CSSValue> ConsumeBorderWidth(CSSParserTokenStream& stream,
       return nullptr;
     }
     savepoint.Release();
-    auto pair = std::make_shared<CSSAppearanceAutoBaseSelectValuePair>(auto_value, base_select_value);
-    AssignRawTextFromStream(stream, raw_start, pair);
-    return pair;
+    return std::make_shared<CSSAppearanceAutoBaseSelectValuePair>(auto_value, base_select_value);
   }
-  std::shared_ptr<const CSSValue> value = ConsumeLineWidth(stream, context, unitless);
-  AssignRawTextFromStream(stream, raw_start, value);
-  return value;
+  return ConsumeLineWidth(stream, context, unitless);
 }
 
 std::shared_ptr<const CSSValue> ParseBorderWidthSide(CSSParserTokenStream& stream,
@@ -1565,29 +1472,11 @@ std::shared_ptr<const CSSValue> ParseLonghand(CSSPropertyID unresolved_property,
                                               std::shared_ptr<const CSSParserContext> context,
                                               CSSParserTokenStream& stream) {
   CSSPropertyID property_id = ResolveCSSPropertyID(unresolved_property);
-  bool capture_raw_text = current_shorthand != CSSPropertyID::kInvalid;
   CSSValueID value_id = stream.Peek().Id();
-  uint32_t raw_start = capture_raw_text ? stream.Offset() : 0;
   assert(!CSSProperty::Get(property_id).IsShorthand());
-  // If the next token is a var(...) function, do not attempt typed parsing.
-  // Consume only var(...) and return it as CSSRawValue.
-  if (stream.Peek().FunctionId() == CSSValueID::kVar) {
-    CSSParserSavePoint savepoint(stream);
-    CSSParserTokenRange args = ConsumeFunction(stream);
-    savepoint.Release();
-    StringBuilder sb;
-    sb.Append("var("_s);
-    sb.Append(args.Serialize());
-    sb.Append(")"_s);
-    return std::make_shared<CSSRawValue>(sb.ReleaseString());
-  }
   if (CSSParserFastPaths::IsHandledByKeywordFastPath(property_id)) {
     if (CSSParserFastPaths::IsValidKeywordPropertyAndValue(property_id, stream.Peek().Id(), context->Mode())) {
-      std::shared_ptr<const CSSValue> keyword = ConsumeIdent(stream);
-      if (capture_raw_text) {
-        AssignRawTextFromStream(stream, raw_start, keyword);
-      }
-      return keyword;
+      return ConsumeIdent(stream);
     }
     WarnInvalidKeywordPropertyUsage(property_id, context, value_id);
     return nullptr;
@@ -1599,25 +1488,7 @@ std::shared_ptr<const CSSValue> ParseLonghand(CSSPropertyID unresolved_property,
 
   std::shared_ptr<const CSSValue> result =
       To<Longhand>(CSSProperty::Get(property_id)).ParseSingleValue(stream, context, local_context);
-  if (capture_raw_text) {
-    AssignRawTextFromStream(stream, raw_start, result);
-  }
   return result;
-}
-
-// only parse property value as CSSRawValue
-std::shared_ptr<const CSSValue> ParseRawLonghand(CSSPropertyID unresolved_property,
-                                              CSSPropertyID current_shorthand,
-                                              std::shared_ptr<const CSSParserContext> context,
-                                              CSSParserTokenStream& stream) {
-  // Capture exactly the component value for this declaration (without trailing ';' or '}' )
-  // and strip any trailing !important from the raw text so the caller can
-  // handle importance flags separately.
-  CSSTokenizedValue tokenized = CSSParserImpl::ConsumeRestrictedPropertyValue(stream);
-  // Remove a trailing !important (if present) from both tokens and text
-  CSSParserImpl::RemoveImportantAnnotationIfPresent(tokenized);
-  // Wrap the remaining raw text as a CSSRawValue
-  return std::make_shared<CSSRawValue>(String(tokenized.text));
 }
 
 void WarnInvalidKeywordPropertyUsage(CSSPropertyID property,
@@ -2459,10 +2330,6 @@ void AddProperty(CSSPropertyID resolved_property,
     }
   }
 
-  WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] AddProperty name='"
-                    << CSSProperty::Get(resolved_property).GetPropertyNameString().ToUTF8String() << "' from_sh="
-                    << (set_from_shorthand ? "1" : "0") << " value='"
-                    << (value ? value->CssText().ToUTF8String() : std::string("<null>")) << "'";
   properties.emplace_back(CSSPropertyValue(CSSPropertyName(resolved_property), value, important, set_from_shorthand,
                                            shorthand_index, implicit == IsImplicitProperty::kImplicit));
 }
@@ -2547,10 +2414,6 @@ std::shared_ptr<const CSSValue> ConsumeBackgroundSize(CSSParserTokenRange& range
   if (!range.AtEnd()) {
     if (range.Peek().Id() == CSSValueID::kAuto) {  // `auto' is the default
       range.ConsumeIncludingWhitespace();
-      const auto* horizontal_identifier = DynamicTo<CSSIdentifierValue>(horizontal.get());
-      if (!horizontal_identifier || horizontal_identifier->GetValueID() != CSSValueID::kAuto) {
-        vertical = CSSIdentifierValue::Create(CSSValueID::kAuto);
-      }
     } else {
       vertical = ConsumeLengthOrPercentCountNegative(range, context);
     }
@@ -2584,10 +2447,6 @@ std::shared_ptr<const CSSValue> ConsumeBackgroundSize(CSSParserTokenStream& stre
   if (!stream.AtEnd()) {
     if (stream.Peek().Id() == CSSValueID::kAuto) {  // `auto' is the default
       stream.ConsumeIncludingWhitespace();
-      const auto* horizontal_identifier = DynamicTo<CSSIdentifierValue>(horizontal.get());
-      if (!horizontal_identifier || horizontal_identifier->GetValueID() != CSSValueID::kAuto) {
-        vertical = CSSIdentifierValue::Create(CSSValueID::kAuto);
-      }
     } else {
       vertical = ConsumeLengthOrPercentCountNegative(stream, context);
     }
@@ -3738,19 +3597,11 @@ bool ConsumeShorthandVia4Longhands(const StylePropertyShorthand& shorthand,
     left = right;
   }
 
-  WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] AddProperty from shorthand '" << CSSProperty::Get(shorthand.id()).GetPropertyNameString().ToUTF8String()
-                    << "' longhand '" << CSSProperty::Get(longhands[0]->PropertyID()).GetPropertyNameString().ToUTF8String() << "'";
   AddProperty(longhands[0]->PropertyID(), shorthand.id(), top, important, IsImplicitProperty::kNotImplicit, properties);
-  WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] AddProperty from shorthand '" << CSSProperty::Get(shorthand.id()).GetPropertyNameString().ToUTF8String()
-                    << "' longhand '" << CSSProperty::Get(longhands[1]->PropertyID()).GetPropertyNameString().ToUTF8String() << "'";
   AddProperty(longhands[1]->PropertyID(), shorthand.id(), right, important, IsImplicitProperty::kNotImplicit,
               properties);
-  WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] AddProperty from shorthand '" << CSSProperty::Get(shorthand.id()).GetPropertyNameString().ToUTF8String()
-                    << "' longhand '" << CSSProperty::Get(longhands[2]->PropertyID()).GetPropertyNameString().ToUTF8String() << "'";
   AddProperty(longhands[2]->PropertyID(), shorthand.id(), bottom, important, IsImplicitProperty::kNotImplicit,
               properties);
-  WEBF_COND_LOG(PARSER, VERBOSE) << "[CSSParser] AddProperty from shorthand '" << CSSProperty::Get(shorthand.id()).GetPropertyNameString().ToUTF8String()
-                    << "' longhand '" << CSSProperty::Get(longhands[3]->PropertyID()).GetPropertyNameString().ToUTF8String() << "'";
   AddProperty(longhands[3]->PropertyID(), shorthand.id(), left, important, IsImplicitProperty::kNotImplicit,
               properties);
 
