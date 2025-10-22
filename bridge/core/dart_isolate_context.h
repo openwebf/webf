@@ -14,6 +14,7 @@
 #include "bindings/qjs/value_cache.h"
 #include "dart_methods.h"
 #include "multiple_threading/dispatcher.h"
+#include "foundation/metrics_registry.h"
 
 namespace webf {
 
@@ -52,6 +53,9 @@ bool IsDartWireAlive(DartWireContext* wire);
 void DeleteDartWire(DartWireContext* wire);
 bool IsWebFDefinedClass(JSClassID class_id);
 
+// Get the current DartIsolateContext bound to this JS thread, if any.
+DartIsolateContext* GetCurrentDartIsolateContext();
+
 // DartIsolateContext has a 1:1 correspondence with a dart isolates.
 class DartIsolateContext {
  public:
@@ -65,6 +69,8 @@ class DartIsolateContext {
     dispatcher_ = std::move(dispatcher);
   }
   FORCE_INLINE StringCache* stringCache() const { return string_cache_.get(); }
+  FORCE_INLINE MetricsRegistry* metrics() { return &metrics_; }
+  FORCE_INLINE const MetricsRegistry* metrics() const { return &metrics_; }
 
   void InitializeGlobalsPerThread();
 
@@ -127,6 +133,8 @@ class DartIsolateContext {
   std::unique_ptr<multi_threading::Dispatcher> dispatcher_ = nullptr;
   // Dart methods ptr should keep alive when ExecutingContext is disposing.
   const std::unique_ptr<DartMethodPointer> dart_method_ptr_ = nullptr;
+  // Per-isolate metrics shared across all pages in the isolate.
+  MetricsRegistry metrics_{};
 };
 
 }  // namespace webf

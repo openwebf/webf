@@ -1,5 +1,6 @@
 {
   BRIDGE_SOURCE: [
+    "foundation/metrics_registry.cc",
     "foundation/logging.cc",
     "foundation/ios_logger.mm",
     "foundation/native_string.cc",
