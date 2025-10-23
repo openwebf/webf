@@ -1958,12 +1958,12 @@ abstract class Element extends ContainerNode
     inlineStyle.clear();
   }
 
-  // Set pseudo element(::before, ::after) style.
+  // Set pseudo element (::before, ::after, ::first-letter, ::first-line) style.
   void setPseudoStyle(String type, String property, String value) {
     style.setPseudoProperty(type, property, value);
   }
 
-  // Remove pseudo element(::before, ::after) style.
+  // Remove pseudo element (::before, ::after, ::first-letter, ::first-line) style.
   void removePseudoStyle(String type, String property) {
     style.removePseudoProperty(type, property);
   }

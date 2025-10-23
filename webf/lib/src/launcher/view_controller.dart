@@ -654,9 +654,9 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
     switch(args) {
       case 'before':
-        target.setPseudoStyle(args, key, value);
-        break;
       case 'after':
+      case 'first-letter':
+      case 'first-line':
         target.setPseudoStyle(args, key, value);
         break;
 
@@ -676,9 +676,9 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
     switch(args) {
       case 'before':
-        target.removePseudoStyle(args, key);
-        break;
       case 'after':
+      case 'first-letter':
+      case 'first-line':
         target.removePseudoStyle(args, key);
         break;
       default:
@@ -697,10 +697,10 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
     switch (args) {
       case 'before':
-        target.clearPseudoStyle('before');
-        break;
       case 'after':
-        target.clearPseudoStyle('after');
+      case 'first-letter':
+      case 'first-line':
+        target.clearPseudoStyle(args);
         break;
       default:
         debugPrint("[clearPseudoStyle] Not supported pseudo element: $args");

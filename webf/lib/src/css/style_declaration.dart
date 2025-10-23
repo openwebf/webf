@@ -642,7 +642,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
   }
 
-  // Set a style property on a pseudo element (before/after) for this element.
+  // Set a style property on a pseudo element (before/after/first-letter/first-line) for this element.
   // Values set here are treated as inline on the pseudo element and marked important
   // to override stylesheet rules when applicable.
   void setPseudoProperty(String type, String propertyName, String value) {
@@ -657,10 +657,20 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         pseudoAfterStyle!.setProperty(propertyName, value, isImportant: true);
         target?.markAfterPseudoElementNeedsUpdate();
         break;
+      case 'first-letter':
+        pseudoFirstLetterStyle ??= CSSStyleDeclaration();
+        pseudoFirstLetterStyle!.setProperty(propertyName, value, isImportant: true);
+        target?.markFirstLetterPseudoNeedsUpdate();
+        break;
+      case 'first-line':
+        pseudoFirstLineStyle ??= CSSStyleDeclaration();
+        pseudoFirstLineStyle!.setProperty(propertyName, value, isImportant: true);
+        target?.markFirstLinePseudoNeedsUpdate();
+        break;
     }
   }
 
-  // Remove a style property from a pseudo element (before/after) for this element.
+  // Remove a style property from a pseudo element (before/after/first-letter/first-line) for this element.
   void removePseudoProperty(String type, String propertyName) {
     switch (type) {
       case 'before':
@@ -676,6 +686,18 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         }
         target?.markAfterPseudoElementNeedsUpdate();
         break;
+      case 'first-letter':
+        if (pseudoFirstLetterStyle != null) {
+          pseudoFirstLetterStyle!.removeProperty(propertyName, true);
+        }
+        target?.markFirstLetterPseudoNeedsUpdate();
+        break;
+      case 'first-line':
+        if (pseudoFirstLineStyle != null) {
+          pseudoFirstLineStyle!.removeProperty(propertyName, true);
+        }
+        target?.markFirstLinePseudoNeedsUpdate();
+        break;
     }
   }
 
@@ -688,6 +710,14 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       case 'after':
         pseudoAfterStyle = null;
         target?.markAfterPseudoElementNeedsUpdate();
+        break;
+      case 'first-letter':
+        pseudoFirstLetterStyle = null;
+        target?.markFirstLetterPseudoNeedsUpdate();
+        break;
+      case 'first-line':
+        pseudoFirstLineStyle = null;
+        target?.markFirstLinePseudoNeedsUpdate();
         break;
     }
   }

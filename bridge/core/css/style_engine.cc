@@ -48,6 +48,9 @@
 #include "core/css/element_rule_collector.h"
 #include "core/css/resolver/style_resolver_state.h"
 #include "core/css/resolver/style_cascade.h"
+// Extra includes for post-pass background resolution
+#include "core/css/resolver/style_recalc_context.h"
+#include "core/html/html_body_element.h"
 // Logging and pending substitution value support
 #include "foundation/logging.h"
 #include "core/css/css_pending_substitution_value.h"
@@ -212,7 +215,6 @@ static String TrimAsciiWhitespace(const String& input) {
 }  // namespace
 
 StyleEngine::StyleEngine(Document& document) : document_(&document) {
-  WEBF_LOG(VERBOSE) << &document;
   CreateResolver();
 }
 
@@ -365,15 +367,72 @@ void StyleEngine::RecalcStyle(Document& document) {
         }
 
         auto* ctx = document.GetExecutingContext();
-        // Always clear previously-sent inline styles to avoid stale values when
-        // rule winners change (e.g., stylesheet removed). This ensures elements
-        // with no currently-declared properties drop old inline values.
-        ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
-        bool cleared = true;
 
+        // If there are no winning declared values for this element, we may still
+        // need to emit pseudo styles (e.g., ::before/::after/::first-letter/::first-line)
+        // when they have declarations. In that case, emit pseudo styles only and skip
+        // element inline overrides.
         if (!property_set || property_set->IsEmpty()) {
+          auto* ctx = document.GetExecutingContext();
+          auto emit_pseudo_if_any = [&](PseudoId pseudo_id, const char* pseudo_name) {
+            ElementRuleCollector pseudo_collector(state, SelectorChecker::kResolvingStyle);
+            pseudo_collector.SetPseudoElementStyleRequest(PseudoElementStyleRequest(pseudo_id));
+            resolver.CollectAllRules(state, pseudo_collector, /*include_smil_properties*/ false);
+            pseudo_collector.SortAndTransferMatchedRules();
+
+            StyleCascade pseudo_cascade(state);
+            for (const auto& entry : pseudo_collector.GetMatchResult().GetMatchedProperties()) {
+              if (entry.is_inline_style) {
+                pseudo_cascade.MutableMatchResult().AddInlineStyleProperties(entry.properties);
+              } else {
+                pseudo_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
+              }
+            }
+
+            std::shared_ptr<MutableCSSPropertyValueSet> pseudo_set = pseudo_cascade.ExportWinningPropertySet();
+            if (!pseudo_set || pseudo_set->PropertyCount() == 0) return false;
+
+            // Clear then emit each winning property for this pseudo.
+            {
+              auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
+              auto pseudo_ns = pseudo_atom.ToNativeString();
+              ctx->uiCommandBuffer()->AddCommand(UICommand::kClearPseudoStyle, std::move(pseudo_ns),
+                                                 element->bindingObject(), nullptr);
+            }
+            for (unsigned i = 0; i < pseudo_set->PropertyCount(); ++i) {
+              auto prop = pseudo_set->PropertyAt(i);
+              AtomicString prop_name = prop.Name().ToAtomicString();
+              String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
+              if (value_string.IsNull()) value_string = String("");
+              auto key_ns = prop_name.ToStylePropertyNameNativeString();
+              AtomicString value_atom(value_string);
+              auto val_ns = value_atom.ToNativeString();
+              auto* pair = reinterpret_cast<NativePair*>(dart_malloc(sizeof(NativePair)));
+              pair->key = key_ns.release();
+              pair->value = val_ns.release();
+              auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
+              auto pseudo_ns = pseudo_atom.ToNativeString();
+              ctx->uiCommandBuffer()->AddCommand(UICommand::kSetPseudoStyle, std::move(pseudo_ns),
+                                                 element->bindingObject(), pair);
+            }
+            return true;
+          };
+
+          bool emitted_any_pseudo = false;
+          emitted_any_pseudo |= emit_pseudo_if_any(PseudoId::kPseudoIdBefore, "before");
+          emitted_any_pseudo |= emit_pseudo_if_any(PseudoId::kPseudoIdAfter, "after");
+          emitted_any_pseudo |= emit_pseudo_if_any(PseudoId::kPseudoIdFirstLetter, "first-letter");
+          emitted_any_pseudo |= emit_pseudo_if_any(PseudoId::kPseudoIdFirstLine, "first-line");
+
+          // Regardless of whether we emitted, return parent state since there
+          // are no element-level properties to override.
           return parent_state;
         }
+
+        // We do have properties to apply; clear existing inline overrides first
+        // so subsequent SetStyle updates replace them deterministically.
+        ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
+        bool cleared = true;
 
         unsigned count = property_set->PropertyCount();
         InheritedValueMap inherited_values(parent_state.inherited_values);
@@ -660,7 +719,7 @@ void StyleEngine::RecalcStyle(Document& document) {
           std::shared_ptr<MutableCSSPropertyValueSet> pseudo_set = pseudo_cascade.ExportWinningPropertySet();
           if (!pseudo_set || pseudo_set->PropertyCount() == 0) return;
 
-          // Clear any existing pseudo style overrides before applying current ones.
+          // Clear existing pseudo styles only when we have winners to apply.
           {
             auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
             auto pseudo_ns = pseudo_atom.ToNativeString();
@@ -690,9 +749,11 @@ void StyleEngine::RecalcStyle(Document& document) {
           }
         };
 
-        // Emit for ::before and ::after
+        // Emit for ::before, ::after, ::first-letter and ::first-line
         send_pseudo_for(PseudoId::kPseudoIdBefore, "before");
         send_pseudo_for(PseudoId::kPseudoIdAfter, "after");
+        send_pseudo_for(PseudoId::kPseudoIdFirstLetter, "first-letter");
+        send_pseudo_for(PseudoId::kPseudoIdFirstLine, "first-line");
 
         InheritedState next_state;
         next_state.inherited_values = std::move(inherited_values);
@@ -770,11 +831,66 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
         }
 
         if (!property_set || property_set->IsEmpty()) {
-          return parent_state;
+          // Even if there are no element-level winners, emit pseudo styles if any exist.
+          auto* ctx = document.GetExecutingContext();
+          auto emit_pseudo_if_any = [&](PseudoId pseudo_id, const char* pseudo_name) {
+            ElementRuleCollector pseudo_collector(state, SelectorChecker::kResolvingStyle);
+            pseudo_collector.SetPseudoElementStyleRequest(PseudoElementStyleRequest(pseudo_id));
+            resolver.CollectAllRules(state, pseudo_collector, /*include_smil_properties*/ false);
+            pseudo_collector.SortAndTransferMatchedRules();
+
+            StyleCascade pseudo_cascade(state);
+            for (const auto& entry : pseudo_collector.GetMatchResult().GetMatchedProperties()) {
+              if (entry.is_inline_style) {
+                pseudo_cascade.MutableMatchResult().AddInlineStyleProperties(entry.properties);
+              } else {
+                pseudo_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
+              }
+            }
+
+            std::shared_ptr<MutableCSSPropertyValueSet> pseudo_set = pseudo_cascade.ExportWinningPropertySet();
+            if (!pseudo_set || pseudo_set->PropertyCount() == 0) return false;
+
+            {
+              auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
+              auto pseudo_ns = pseudo_atom.ToNativeString();
+              ctx->uiCommandBuffer()->AddCommand(UICommand::kClearPseudoStyle, std::move(pseudo_ns),
+                                                 element->bindingObject(), nullptr);
+            }
+            for (unsigned i = 0; i < pseudo_set->PropertyCount(); ++i) {
+              auto prop = pseudo_set->PropertyAt(i);
+              AtomicString prop_name = prop.Name().ToAtomicString();
+              String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
+              if (value_string.IsNull()) value_string = String("");
+              auto key_ns = prop_name.ToStylePropertyNameNativeString();
+              AtomicString value_atom(value_string);
+              auto val_ns = value_atom.ToNativeString();
+              auto* pair = reinterpret_cast<NativePair*>(dart_malloc(sizeof(NativePair)));
+              pair->key = key_ns.release();
+              pair->value = val_ns.release();
+              auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
+              auto pseudo_ns = pseudo_atom.ToNativeString();
+              ctx->uiCommandBuffer()->AddCommand(UICommand::kSetPseudoStyle, std::move(pseudo_ns),
+                                                 element->bindingObject(), pair);
+            }
+            return true;
+          };
+
+          (void)emit_pseudo_if_any(PseudoId::kPseudoIdBefore, "before");
+          (void)emit_pseudo_if_any(PseudoId::kPseudoIdAfter, "after");
+          (void)emit_pseudo_if_any(PseudoId::kPseudoIdFirstLetter, "first-letter");
+          (void)emit_pseudo_if_any(PseudoId::kPseudoIdFirstLine, "first-line");
+
+          InheritedState next_state;
+          next_state.inherited_values = parent_state.inherited_values;
+          next_state.custom_vars = parent_state.custom_vars;
+          return next_state;
         }
 
         auto* ctx = document.GetExecutingContext();
-        // Always clear to drop previously-sent inline values if winners changed.
+        // Only clear when we actually have properties to apply; otherwise we
+        // might clear a previously-sent snapshot and leave the element with no
+        // inline overrides (e.g., BODY background), causing incorrect paint.
         ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
         bool cleared = true;
 
@@ -880,6 +996,8 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
           }
 
           std::shared_ptr<MutableCSSPropertyValueSet> pseudo_set = pseudo_cascade.ExportWinningPropertySet();
+          WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Pseudo '" << pseudo_name << "' count="
+                            << (pseudo_set ? static_cast<int>(pseudo_set->PropertyCount()) : -1);
           if (!pseudo_set || pseudo_set->PropertyCount() == 0) return;
           {
             auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
@@ -909,6 +1027,8 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
 
         send_pseudo_for(PseudoId::kPseudoIdBefore, "before");
         send_pseudo_for(PseudoId::kPseudoIdAfter, "after");
+        send_pseudo_for(PseudoId::kPseudoIdFirstLetter, "first-letter");
+        send_pseudo_for(PseudoId::kPseudoIdFirstLine, "first-line");
 
         InheritedState next_state;
         next_state.inherited_values = std::move(inherited_values);
