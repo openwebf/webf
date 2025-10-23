@@ -22,7 +22,14 @@ class ElementRuleCollector {
     }
     final bool perf = DebugFlags.enableCssPerf;
     final Stopwatch? sw = perf ? (Stopwatch()..start()) : null;
-    List<CSSRule> rules = _collectMatchingRulesForList(ruleSet.pseudoRules, element);
+    // A fresh evaluator per pseudo match set is fine; these are separate passes.
+    final SelectorEvaluator evaluator = SelectorEvaluator();
+    List<CSSRule> rules = _collectMatchingRulesForList(
+      ruleSet.pseudoRules,
+      element,
+      evaluator: evaluator,
+      enableAncestryFastPath: false, // Pseudo rules often don't benefit from ancestry prechecks.
+    );
     final list = rules.map((e) => e as CSSStyleRule).toList();
     if (perf && sw != null) {
       CSSPerf.recordPseudoMatch(durationMs: sw.elapsedMilliseconds, matchedCount: list.length);
@@ -40,6 +47,13 @@ class ElementRuleCollector {
     final bool perf = DebugFlags.enableCssPerf;
     final Stopwatch? sw = perf ? (Stopwatch()..start()) : null;
     int candidateCount = 0;
+    // Reuse a single evaluator per matchedRules() to avoid repeated allocations.
+    final SelectorEvaluator evaluator = SelectorEvaluator();
+    // Build ancestor token sets once per call if fast-path is enabled, to avoid
+    // repeatedly walking the ancestor chain for each candidate rule.
+    final _AncestorTokenSet? ancestorTokens = DebugFlags.enableCssAncestryFastPath
+        ? _buildAncestorTokens(element)
+        : null;
 
     if (ruleSet.isEmpty) {
       return matchedRules;
@@ -50,32 +64,62 @@ class ElementRuleCollector {
     if (id != null) {
       final list = ruleSet.idRules[id];
       candidateCount += (list?.length ?? 0);
-      matchedRules.addAll(_collectMatchingRulesForList(list, element));
+      matchedRules.addAll(_collectMatchingRulesForList(
+        list,
+        element,
+        evaluator: evaluator,
+        enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
+        ancestorTokens: ancestorTokens,
+      ));
     }
 
     // .class
     for (String className in element.classList) {
       final list = ruleSet.classRules[className];
       candidateCount += (list?.length ?? 0);
-      matchedRules.addAll(_collectMatchingRulesForList(list, element));
+      matchedRules.addAll(_collectMatchingRulesForList(
+        list,
+        element,
+        evaluator: evaluator,
+        enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
+        ancestorTokens: ancestorTokens,
+      ));
     }
 
     // attribute selector
     for (String attribute in element.attributes.keys) {
       final list = ruleSet.attributeRules[attribute.toUpperCase()];
       candidateCount += (list?.length ?? 0);
-      matchedRules.addAll(_collectMatchingRulesForList(list, element));
+      matchedRules.addAll(_collectMatchingRulesForList(
+        list,
+        element,
+        evaluator: evaluator,
+        enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
+        ancestorTokens: ancestorTokens,
+      ));
     }
 
     // tag selectors are stored uppercase; normalize element tag for lookup.
     final String tagLookup = element.tagName.toUpperCase();
     final listTag = ruleSet.tagRules[tagLookup];
     candidateCount += (listTag?.length ?? 0);
-    matchedRules.addAll(_collectMatchingRulesForList(listTag, element));
+    matchedRules.addAll(_collectMatchingRulesForList(
+      listTag,
+      element,
+      evaluator: evaluator,
+      enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
+      ancestorTokens: ancestorTokens,
+    ));
 
     // universal
     candidateCount += ruleSet.universalRules.length;
-    matchedRules.addAll(_collectMatchingRulesForList(ruleSet.universalRules, element));
+    matchedRules.addAll(_collectMatchingRulesForList(
+      ruleSet.universalRules,
+      element,
+      evaluator: evaluator,
+      enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
+      ancestorTokens: ancestorTokens,
+    ));
 
     if (perf && sw != null) {
       CSSPerf.recordMatch(durationMs: sw.elapsedMilliseconds, candidateCount: candidateCount, matchedCount: matchedRules.length);
@@ -121,15 +165,31 @@ class ElementRuleCollector {
     return declaration;
   }
 
-  List<CSSRule> _collectMatchingRulesForList(List<CSSRule>? rules, Element element) {
+  List<CSSRule> _collectMatchingRulesForList(
+    List<CSSRule>? rules,
+    Element element, {
+    required SelectorEvaluator evaluator,
+    bool enableAncestryFastPath = true,
+    _AncestorTokenSet? ancestorTokens,
+  }) {
     if (rules == null || rules.isEmpty) {
       return [];
     }
     List<CSSRule> matchedRules = [];
-    SelectorEvaluator evaluator = SelectorEvaluator();
     for (CSSRule rule in rules) {
       if (rule is! CSSStyleRule) {
         continue;
+      }
+      // Cheap ancestry key precheck for descendant combinators: if a selector
+      // requires an ancestor ID/class/tag that's not present in the chain, skip
+      // the expensive evaluator entirely.
+      if (enableAncestryFastPath) {
+        final _AncestorHints hints = _collectDescendantAncestorHints(rule.selectorGroup);
+        if (!hints.isEmpty) {
+          if (!_ancestorChainSatisfiesHints(element, hints, tokens: ancestorTokens)) {
+            continue;
+          }
+        }
       }
       try {
         if (evaluator.matchSelector(rule.selectorGroup, element)) {
@@ -143,4 +203,87 @@ class ElementRuleCollector {
     }
     return matchedRules;
   }
+
+  // A minimal hint collector that gathers ancestor ID/class/tag tokens from
+  // groups that are connected via DESCENDANT combinators. Used for an early
+  // presence check along the ancestor chain.
+  _AncestorHints _collectDescendantAncestorHints(SelectorGroup selectorGroup) {
+    final hints = _AncestorHints();
+    for (final Selector selector in selectorGroup.selectors) {
+      // Build right-to-left groups as in SelectorEvaluator.
+      final List<List<SimpleSelector>> groups = <List<SimpleSelector>>[];
+      final List<int> groupCombinators = <int>[];
+      List<SimpleSelector> current = <SimpleSelector>[];
+      for (final seq in selector.simpleSelectorSequences.reversed) {
+        current.add(seq.simpleSelector);
+        if (seq.combinator != TokenKind.COMBINATOR_NONE) {
+          groups.add(current);
+          groupCombinators.add(seq.combinator);
+          current = <SimpleSelector>[];
+        }
+      }
+      if (current.isNotEmpty) {
+        groups.add(current);
+        groupCombinators.add(TokenKind.COMBINATOR_NONE);
+      }
+
+      // Walk combinators; when it’s a descendant combinator from the rightmost
+      // to the next group, collect simple tokens from that ancestor group.
+      for (int gi = 0; gi < groups.length - 1; gi++) {
+        final int combinator = groupCombinators[gi];
+        if (combinator == TokenKind.COMBINATOR_DESCENDANT) {
+          final List<SimpleSelector> ancestorGroup = groups[gi + 1];
+          for (final SimpleSelector s in ancestorGroup) {
+            if (s is IdSelector) {
+              hints.ids.add(s.name);
+            } else if (s is ClassSelector) {
+              hints.classes.add(s.name);
+            } else if (s is ElementSelector && !s.isWildcard) {
+              hints.tags.add(s.name.toUpperCase());
+            }
+          }
+        }
+      }
+    }
+    return hints;
+  }
+
+  bool _ancestorChainSatisfiesHints(Element element, _AncestorHints hints, { _AncestorTokenSet? tokens }) {
+    if (hints.isEmpty) return true;
+    final _AncestorTokenSet localTokens = tokens ?? _buildAncestorTokens(element);
+    // All required tokens must be present somewhere in the chain.
+    if (hints.ids.isNotEmpty && !localTokens.ids.containsAll(hints.ids)) return false;
+    if (hints.classes.isNotEmpty && !localTokens.classes.containsAll(hints.classes)) return false;
+    if (hints.tags.isNotEmpty && !localTokens.tags.containsAll(hints.tags)) return false;
+    return true;
+  }
+
+  _AncestorTokenSet _buildAncestorTokens(Element element) {
+    final Set<String> ids = {};
+    final Set<String> classes = {};
+    final Set<String> tags = {};
+    Element? cursor = element.parentElement;
+    while (cursor != null) {
+      if (cursor.id != null && cursor.id!.isNotEmpty) ids.add(cursor.id!);
+      if (cursor.classList.isNotEmpty) classes.addAll(cursor.classList);
+      tags.add(cursor.tagName.toUpperCase());
+      cursor = cursor.parentElement;
+    }
+    return _AncestorTokenSet(ids: ids, classes: classes, tags: tags);
+  }
+}
+
+class _AncestorHints {
+  final Set<String> ids = {};
+  final Set<String> classes = {};
+  final Set<String> tags = {};
+
+  bool get isEmpty => ids.isEmpty && classes.isEmpty && tags.isEmpty;
+}
+
+class _AncestorTokenSet {
+  final Set<String> ids;
+  final Set<String> classes;
+  final Set<String> tags;
+  _AncestorTokenSet({required this.ids, required this.classes, required this.tags});
 }

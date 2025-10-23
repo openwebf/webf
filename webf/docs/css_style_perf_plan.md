@@ -61,8 +61,15 @@ Plan:
 - Reuse a single SelectorEvaluator per matchedRules() call.
 - Pre-check ancestry keys for descendant combinators before heavy matching (cheap walk to detect required id/class/tag).
 
+Progress:
+- Reuse implemented: matchedRules() now constructs one SelectorEvaluator and reuses it across candidate lists.
+- Ancestry fast-path added (flagged): for selectors with descendant combinators, collect ancestor id/class/tag hints and skip evaluator if the chain lacks required tokens. Guarded by `DebugFlags.enableCssAncestryFastPath` (default OFF) due to micro-regressions observed in CSS1 snapshot runs.
+
 Expected impact:
-- Lower cost per match, especially in deep trees.
+- Lower cost per match, especially in deep trees and for selectors with ancestor constraints.
+
+Notes/Telemetry:
+- In CSS1 snapshot scenario with frequent stylesheet reloads and deep debug instrumentation, ancestry fast-path did not reduce total match ms; keeping it off by default while we evaluate on real app workloads with many descendant selectors.
 
 ## Workstream 4: Batch Recalc Triggers (Guarded)
 Problem: Many immediate recalc calls from attribute/class/id setters.

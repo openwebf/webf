@@ -18,6 +18,11 @@ class DebugFlags {
   // root recalcs. Intended for short profiling sessions.
   static bool enableCssTrace = false;
 
+  // Guard for selector matching micro-optimization that performs a cheap
+  // ancestry key precheck for descendant combinators. This may help in deep
+  // trees with heavy descendant selectors, but can add overhead otherwise.
+  static bool enableCssAncestryFastPath = true;
+
   // Controls verbose IMG element logs added for diagnostics.
   static bool enableImageLogs = false;
 
