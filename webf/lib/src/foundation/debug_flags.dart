@@ -54,6 +54,15 @@ class DebugFlags {
   static bool enableCssInvalidateUniversalHeuristics = false;
   static int cssInvalidateUniversalSkipThreshold = 128;
 
+  // Detailed logging for selector matching: logs each matchesCompound()
+  // evaluation with timing, selector summary, and early-fail position/type.
+  // Useful to pinpoint slow selector patterns.
+  static bool enableCssMatchDetail = false;
+
+  // When > 0, emit a match-detail log only when a single matchesCompound()
+  // evaluation takes at least this many milliseconds.
+  static int cssMatchCompoundLogThresholdMs = 0;
+
   // Ultra-detailed CSS tracing for investigations. When true, emit
   // [trace] logs for dirty marking, invalidation sources, cache hits, and
   // root recalcs. Intended for short profiling sessions.

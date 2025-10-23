@@ -32,6 +32,8 @@ import 'package:flutter/foundation.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 import 'package:webf/html.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:webf/src/css/css_perf.dart';
 
 typedef IndexCounter = int Function(Element element);
 
@@ -130,14 +132,38 @@ class SelectorEvaluator extends SelectorVisitor {
     }
 
     bool matchesCompound(Element? element, List<SimpleSelector> compound) {
+      if (element == null) return false;
       // Save and restore _element so nested selector checks work correctly.
       final saved = _element;
       _element = element;
+
+      // Optional timing/logging for diagnostics.
+      final bool wantDetail = DebugFlags.enableCssMatchDetail || (DebugFlags.cssMatchCompoundLogThresholdMs > 0);
+      final bool perf = DebugFlags.enableCssPerf;
+      final Stopwatch? sw = (wantDetail || perf) ? (Stopwatch()..start()) : null;
       bool ok = true;
-      for (final sel in compound) {
-        if (!(sel.visit(this) as bool)) {
+      int failIndex = -1;
+      String failType = '';
+      for (int i = 0; i < compound.length; i++) {
+        final sel = compound[i];
+        final bool matched = sel.visit(this) as bool;
+        if (!matched) {
           ok = false;
+          failIndex = i;
+          failType = _simpleSelectorType(sel);
           break;
+        }
+      }
+      final int elapsed = sw?.elapsedMilliseconds ?? 0;
+      if (perf && sw != null) CSSPerf.recordMatchCompound(durationMs: elapsed);
+      if (wantDetail) {
+        final int threshold = DebugFlags.cssMatchCompoundLogThresholdMs;
+        final bool overThreshold = threshold > 0 && elapsed >= threshold;
+        if (DebugFlags.enableCssMatchDetail || overThreshold) {
+          final String elemDesc = _describeElement(element);
+          final String sels = compound.map(_simpleSelectorType).join(',');
+          cssLogger.info('[match][compound] elem=$elemDesc parts=${compound.length} ok=$ok ms=$elapsed'
+              '${ok ? '' : ' failAt=$failIndex failType=$failType'} selTypes=[$sels]');
         }
       }
       _element = saved;
@@ -226,6 +252,25 @@ class SelectorEvaluator extends SelectorVisitor {
     _element = old;
     if (result) _selectorGroup?.matchSpecificity = node.specificity;
     return result;
+  }
+
+  String _describeElement(Element e) {
+    final String id = (e.id != null && e.id!.isNotEmpty) ? '#${e.id}' : '';
+    final String cls = e.classList.isNotEmpty ? '.${e.classList.join('.')}' : '';
+    return '<${e.tagName}$id$cls>';
+  }
+
+  String _simpleSelectorType(SimpleSelector s) {
+    if (s is IdSelector) return 'ID';
+    if (s is ClassSelector) return 'CLASS';
+    if (s is ElementSelector) return s.isWildcard ? 'TAG(*)' : 'TAG';
+    if (s is AttributeSelector) return 'ATTR';
+    if (s is NegationSelector) return 'NEGATION';
+    if (s is PseudoClassSelector) return 'PSEUDO';
+    if (s is PseudoClassFunctionSelector) return 'PSEUDO_FUNC';
+    if (s is PseudoElementSelector) return 'PSEUDO_EL';
+    if (s is PseudoElementFunctionSelector) return 'PSEUDO_EL_FUNC';
+    return s.runtimeType.toString();
   }
 
   @override

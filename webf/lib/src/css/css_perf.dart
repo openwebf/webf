@@ -39,6 +39,10 @@ class CSSPerf {
   static int _pseudoMatchedTotal = 0;
   static int _pseudoMatchMsTotal = 0;
 
+  // Granular matching diagnostics
+  static int _matchCompoundCalls = 0; // number of matchesCompound() evaluations
+  static int _matchCompoundMsTotal = 0; // total time across matchesCompound()
+
   // Memoization metrics
   static int _memoHits = 0;
   static int _memoMisses = 0;
@@ -183,6 +187,13 @@ class CSSPerf {
     _pseudoMatchedTotal += matchedCount;
   }
 
+  // Records timing for a single matchesCompound() evaluation.
+  static void recordMatchCompound({required int durationMs}) {
+    if (!enabled) return;
+    _matchCompoundCalls++;
+    _matchCompoundMsTotal += durationMs;
+  }
+
   static void recordRecalc({required int durationMs}) {
     if (!enabled) return;
     _recalcCalls++;
@@ -273,6 +284,9 @@ class CSSPerf {
     _pseudoMatchedTotal = 0;
     _pseudoMatchMsTotal = 0;
 
+    _matchCompoundCalls = 0;
+    _matchCompoundMsTotal = 0;
+
     _recalcCalls = 0;
     _recalcMsTotal = 0;
     _recalcDeferredMarks = 0;
@@ -317,6 +331,7 @@ class CSSPerf {
     cssLogger.fine(
         '[perf] match calls=$_matchCalls candidates=$_matchCandidatesTotal matched=$_matchMatchedTotal ms=$_matchMsTotal'
         ' pseudoCalls=$_pseudoMatchCalls pseudoMatched=$_pseudoMatchedTotal pseudoMs=$_pseudoMatchMsTotal'
+        ' compoundCalls=$_matchCompoundCalls compoundMs=$_matchCompoundMsTotal'
         ' memoHits=$_memoHits memoMisses=$_memoMisses memoEvict=$_memoEvictions memoAvgSize=' +
             memoAvgCacheSize.toStringAsFixed(2));
     cssLogger.fine('[perf] recalc calls=$_recalcCalls recalcMs=$_recalcMsTotal'
