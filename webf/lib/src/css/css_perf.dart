@@ -61,6 +61,18 @@ class CSSPerf {
   static int _styleFlushesBatched = 0; // flushes triggered by scheduled batch
   static int _styleFlushesImmediate = 0; // flushes without batch scheduling
 
+  // Style update breakdown (to diagnose <head> bursts)
+  static int _sheetsUpdateCalls = 0;
+  static int _sheetsUpdateMsTotal = 0;
+  static int _sheetsDiffCalls = 0;
+  static int _sheetsDiffMsTotal = 0;
+  static int _invalidateCalls = 0;
+  static int _invalidateMsTotal = 0;
+  static int _invalidateDirtyTotal = 0;
+  static int _invalidateFallbackVisitedTotal = 0;
+  static int _invalidateFallbackMatchedTotal = 0;
+  static int _flushDirtyAddedTotal = 0;
+
   static bool get enabled => DebugFlags.enableCssPerf;
 
   // Recorders
@@ -120,6 +132,36 @@ class CSSPerf {
     } else {
       _styleFlushesImmediate++;
     }
+  }
+
+  // Records total time spent in StyleNodeManager.updateActiveStyleSheets()
+  static void recordSheetsUpdate({required int durationMs}) {
+    if (!enabled) return;
+    _sheetsUpdateCalls++;
+    _sheetsUpdateMsTotal += durationMs;
+  }
+
+  // Records time spent diffing old/new stylesheets to build a changed RuleSet.
+  static void recordSheetsDiff({required int durationMs}) {
+    if (!enabled) return;
+    _sheetsDiffCalls++;
+    _sheetsDiffMsTotal += durationMs;
+  }
+
+  // Records time spent invalidating elements against the changed RuleSet.
+  static void recordSheetsInvalidate({required int durationMs, required int dirtyCount, int fallbackVisited = 0, int fallbackMatched = 0}) {
+    if (!enabled) return;
+    _invalidateCalls++;
+    _invalidateMsTotal += durationMs;
+    _invalidateDirtyTotal += dirtyCount;
+    _invalidateFallbackVisitedTotal += fallbackVisited;
+    _invalidateFallbackMatchedTotal += fallbackMatched;
+  }
+
+  // Records how many elements became newly dirty due to stylesheet updates within a flush.
+  static void recordFlushDirtyAdded({required int added}) {
+    if (!enabled) return;
+    if (added > 0) _flushDirtyAddedTotal += added;
   }
 
   static void recordMatch(
@@ -249,6 +291,17 @@ class CSSPerf {
     _styleAdds = 0;
     _styleFlushesBatched = 0;
     _styleFlushesImmediate = 0;
+
+    _sheetsUpdateCalls = 0;
+    _sheetsUpdateMsTotal = 0;
+    _sheetsDiffCalls = 0;
+    _sheetsDiffMsTotal = 0;
+    _invalidateCalls = 0;
+    _invalidateMsTotal = 0;
+    _invalidateDirtyTotal = 0;
+    _invalidateFallbackVisitedTotal = 0;
+    _invalidateFallbackMatchedTotal = 0;
+    _flushDirtyAddedTotal = 0;
   }
 
   static void dumpSummary() {
@@ -270,5 +323,10 @@ class CSSPerf {
         ' deferredMarks=$_recalcDeferredMarks'
         ' flush calls=$_flushCalls dirtyTotal=$_flushDirtyTotal rootCount=$_flushRootRecalcCount flushMs=$_flushMsTotal'
         ' styleAdds=$_styleAdds styleFlushes(batched=$_styleFlushesBatched immediate=$_styleFlushesImmediate)');
+    cssLogger.fine('[perf] style-upd sheetsUpdate calls=$_sheetsUpdateCalls ms=$_sheetsUpdateMsTotal'
+        ' diff calls=$_sheetsDiffCalls ms=$_sheetsDiffMsTotal'
+        ' invalidate calls=$_invalidateCalls dirty=$_invalidateDirtyTotal ms=$_invalidateMsTotal'
+        ' fallbackVisited=$_invalidateFallbackVisitedTotal fallbackMatched=$_invalidateFallbackMatchedTotal'
+        ' flushDirtyAdded=$_flushDirtyAddedTotal');
   }
 }

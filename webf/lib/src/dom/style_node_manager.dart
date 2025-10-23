@@ -34,6 +34,10 @@ class StyleNodeManager {
 
   StyleNodeManager(this.document);
 
+  // Diagnostics: capture last invalidation fallback traversal counts
+  int _lastInvalidateFallbackVisited = 0;
+  int _lastInvalidateFallbackMatched = 0;
+
   void addStyleSheetCandidateNode(Node node) {
     if (!node.isConnected) {
       if (kDebugMode && DebugFlags.enableCssLogs) {
@@ -117,7 +121,17 @@ class StyleNodeManager {
     }
     newSheets = newSheets.where((element) => element.cssRules.isNotEmpty).toList();
     if (rebuild == false) {
+      final Stopwatch? swDiff = DebugFlags.enableCssStyleUpdateBreakdown ? (Stopwatch()..start()) : null;
       RuleSet changedRuleSet = analyzeStyleSheetChangeRuleSet(document.styleSheets, newSheets);
+      if (swDiff != null) {
+        final int ms = swDiff.elapsedMilliseconds;
+        if (DebugFlags.enableCssStyleUpdateBreakdown) {
+          cssLogger.info('[breakdown][sheetsDiff] ms=$ms');
+        }
+        if (DebugFlags.enableCssPerf) {
+          CSSPerf.recordSheetsDiff(durationMs: ms);
+        }
+      }
       final bool shouldForceHtml = !changedRuleSet.tagRules.containsKey('HTML') && _sheetsContainTagDifference(document.styleSheets, newSheets, 'HTML');
       final bool shouldForceBody = !changedRuleSet.tagRules.containsKey('BODY') && _sheetsContainTagDifference(document.styleSheets, newSheets, 'BODY');
       if (changedRuleSet.isEmpty) {
@@ -133,7 +147,21 @@ class StyleNodeManager {
             'id=${changedRuleSet.idRules.length} class=${changedRuleSet.classRules.length} attr=${changedRuleSet.attributeRules.length} '
             'tag=${changedRuleSet.tagRules.length} universal=${changedRuleSet.universalRules.length} pseudo=${changedRuleSet.pseudoRules.length}');
       }
-      invalidateElementStyle(changedRuleSet);
+      int invalidateMs = 0;
+      int invalidateDirty = 0;
+      final Stopwatch? swInvalidate = DebugFlags.enableCssStyleUpdateBreakdown ? (Stopwatch()..start()) : null;
+      invalidateDirty = invalidateElementStyle(changedRuleSet);
+      final int fbVisited = _lastInvalidateFallbackVisited;
+      final int fbMatched = _lastInvalidateFallbackMatched;
+      if (swInvalidate != null) {
+        invalidateMs = swInvalidate.elapsedMilliseconds;
+        if (DebugFlags.enableCssStyleUpdateBreakdown) {
+          cssLogger.info('[breakdown][sheetsInvalidate] ms=$invalidateMs dirty=$invalidateDirty fallbackVisited=$fbVisited fallbackMatched=$fbMatched');
+        }
+        if (DebugFlags.enableCssPerf) {
+          CSSPerf.recordSheetsInvalidate(durationMs: invalidateMs, dirtyCount: invalidateDirty, fallbackVisited: fbVisited, fallbackMatched: fbMatched);
+        }
+      }
       if (shouldForceHtml) {
         final HTMLElement? root = document.documentElement;
         if (root != null) {
@@ -158,7 +186,15 @@ class StyleNodeManager {
         document.markElementStyleDirty(root);
       }
     }
+    int indexMs = 0;
+    final Stopwatch? swIndex = DebugFlags.enableCssStyleUpdateBreakdown ? (Stopwatch()..start()) : null;
     document.handleStyleSheets(newSheets);
+    if (swIndex != null) {
+      indexMs = swIndex.elapsedMilliseconds;
+      if (DebugFlags.enableCssStyleUpdateBreakdown) {
+        cssLogger.info('[breakdown][sheetsIndex] ms=$indexMs sheets=${newSheets.length}');
+      }
+    }
     if (kDebugMode && DebugFlags.enableCssLogs) {
       final hashes = newSheets.map((s) => s.hashCode).toList();
       cssLogger.fine('[style] updateActiveStyleSheets: applied sheets hashes=$hashes');
@@ -168,25 +204,10 @@ class StyleNodeManager {
     return true;
   }
 
-  List<CSSStyleSheet> _collectActiveStyleSheets() {
-    List<CSSStyleSheet> styleSheetsForStyleSheetsList = [];
-    for (Node node in _styleSheetCandidateNodes) {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[style] inspect candidate: ${node.runtimeType} connected=${node.isConnected} hasSheet=${node is StyleElementMixin ? node.styleSheet != null : node is LinkElement ? node.styleSheet != null : false}');
-      }
-      if (node is LinkElement && !node.disabled && !node.loading && node.styleSheet != null) {
-        styleSheetsForStyleSheetsList.add(node.styleSheet!);
-      } else if (node is StyleElementMixin && node.styleSheet != null) {
-        styleSheetsForStyleSheetsList.add(node.styleSheet!);
-      }
-    }
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[style] _collectActiveStyleSheets: ' + styleSheetsForStyleSheetsList.length.toString());
-    }
-    return styleSheetsForStyleSheetsList;
-  }
-
-  void invalidateElementStyle(RuleSet changedRuleSet) {
+  // Marks elements dirty based on the changed rules and returns the number of
+  // unique elements marked during this call.
+  int invalidateElementStyle(RuleSet changedRuleSet) {
+    int marked = 0;
     // Targeted invalidation using fast indices on Document
     final Set<Element> dirty = <Element>{};
     final Map<Element, List<String>> reasons = <Element, List<String>>{};
@@ -237,7 +258,7 @@ class StyleNodeManager {
     int fallbackVisited = 0;
     int fallbackMatched = 0;
     final bool hasTagRules = changedRuleSet.tagRules.isNotEmpty;
-    if (DebugFlags.enableCssTrace) {
+    if (DebugFlags.enableCssTrace || DebugFlags.enableCssInvalidateDetail) {
       cssLogger.info('[trace][invalidate] changed tags=${changedRuleSet.tagRules.keys.join(',')} universals=${changedRuleSet.universalRules.length} pseudo=${changedRuleSet.pseudoRules.length}');
     }
     if (hasTagRules ||
@@ -293,14 +314,40 @@ class StyleNodeManager {
       }
     }
 
-    if (DebugFlags.enableCssTrace) {
+    if (DebugFlags.enableCssTrace || DebugFlags.enableCssInvalidateDetail) {
       cssLogger.info('[trace][invalidate] ids=${changedRuleSet.idRules.length} classes=${changedRuleSet.classRules.length} attrs=${changedRuleSet.attributeRules.length} tags=${changedRuleSet.tagRules.length} universals=${changedRuleSet.universalRules.length} pseudo=${changedRuleSet.pseudoRules.length} ' +
           'dirty=${dirty.length} fallbackVisited=$fallbackVisited fallbackMatched=$fallbackMatched');
+      if (DebugFlags.enableCssInvalidateDetail && changedRuleSet.tagRules.isNotEmpty) {
+        cssLogger.info('[trace][invalidate] tag keys: ${changedRuleSet.tagRules.keys.join(',')}');
+      }
     }
     for (final el in dirty) {
       document.markElementStyleDirty(el, reason: reasons[el]?.join('|'));
     }
+    marked = dirty.length;
+    _lastInvalidateFallbackVisited = fallbackVisited;
+    _lastInvalidateFallbackMatched = fallbackMatched;
+    return marked;
   }
+
+  List<CSSStyleSheet> _collectActiveStyleSheets() {
+    List<CSSStyleSheet> styleSheetsForStyleSheetsList = [];
+    for (Node node in _styleSheetCandidateNodes) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[style] inspect candidate: ${node.runtimeType} connected=${node.isConnected} hasSheet=${node is StyleElementMixin ? node.styleSheet != null : node is LinkElement ? node.styleSheet != null : false}');
+      }
+      if (node is LinkElement && !node.disabled && !node.loading && node.styleSheet != null) {
+        styleSheetsForStyleSheetsList.add(node.styleSheet!);
+      } else if (node is StyleElementMixin && node.styleSheet != null) {
+        styleSheetsForStyleSheetsList.add(node.styleSheet!);
+      }
+    }
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[style] _collectActiveStyleSheets: ' + styleSheetsForStyleSheetsList.length.toString());
+    }
+    return styleSheetsForStyleSheetsList;
+  }
+
 
   RuleSet analyzeStyleSheetChangeRuleSet(List<CSSStyleSheet> oldSheets, List<CSSStyleSheet> newSheets) {
     RuleSet ruleSet = RuleSet(document);

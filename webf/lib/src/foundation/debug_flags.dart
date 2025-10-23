@@ -18,6 +18,35 @@ class DebugFlags {
   // Values <= 0 are treated as 1 internally.
   static int cssMatchedRulesCacheCapacity = 4;
 
+  // Emit a per-flush/style-update breakdown to help diagnose hotspots when many
+  // <style> elements are appended (e.g., in <head>). When true, logs timing for
+  // style diff, invalidation, indexing, and flush along with dirty counts.
+  static bool enableCssStyleUpdateBreakdown = false;
+
+  // When true, prints more detailed invalidation info during stylesheet updates:
+  // counts by rule category (id/class/attr/tag/universal/pseudo), fallback walk
+  // visited/matched counts, and top-level tag keys involved. Use with the
+  // breakdown flag to correlate timings.
+  static bool enableCssInvalidateDetail = false;
+
+  // Dangerous: disables recalc-from-root fallback during flush, forcing only
+  // targeted recalculation of dirty elements. Useful to isolate whether full
+  // root recalc is the hotspot, but may lead to incorrect styles. Debug only.
+  static bool enableCssDisableRootRecalc = false;
+
+  // In stylesheet invalidation, skip evaluating universal selectors in the
+  // fallback walk. This can significantly reduce cost when many universal
+  // selectors change. Debug-only; may hide matches.
+  static bool enableCssInvalidateSkipUniversal = false;
+
+  // In stylesheet invalidation, skip evaluating tag selectors in the fallback
+  // walk (e.g., DIV, SPAN, etc.). Debug-only; may hide matches.
+  static bool enableCssInvalidateSkipTag = false;
+
+  // Optional cap for how many universal rules to evaluate during invalidation
+  // (0 or negative means no cap). Useful for probing cost sensitivity.
+  static int cssInvalidateUniversalCap = 0;
+
   // Ultra-detailed CSS tracing for investigations. When true, emit
   // [trace] logs for dirty marking, invalidation sources, cache hits, and
   // root recalcs. Intended for short profiling sessions.

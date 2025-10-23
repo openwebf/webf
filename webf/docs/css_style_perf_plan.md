@@ -153,11 +153,14 @@ Observed impact:
 - DebugFlags.enableCssMemoization: per‑element matched‑rules cache keyed by (ruleSetVersion, tag, id, classes, attr presence). Default ON.
 - DebugFlags.cssMatchedRulesCacheCapacity: LRU capacity for per‑element matched‑rules memoization. Default 4.
 - DebugFlags.enableCssAncestryFastPath: selector ancestry precheck for descendant combinators. Default ON.
+ - DebugFlags.enableCssStyleUpdateBreakdown: emits per‑flush/style‑update timing breakdowns (diff/invalidate/index/flush) and dirty counts; useful for diagnosing many `<style>` insertions in `<head>`. Default OFF.
  - DebugFlags.enableCssBatchRecalc: defer element recalc from id/class/attr setters and batch in flush. Default OFF.
  - DebugFlags.enableCssBatchStyleUpdates: batch `<style>/<link>` driven updates. Default OFF.
  - DebugFlags.enableCssBatchStyleUpdatesPerFrame: frame-coalesce stylesheet updates (requires enableCssBatchStyleUpdates). Default OFF.
  - DebugFlags.cssBatchStyleUpdatesDebounceMs: time-based coalescing across frames (requires enableCssBatchStyleUpdates). Default 0.
  - DebugFlags.enableCssMultiStyleTrace: emits extra logs for bursts of <style> insertions and stylesheet flushes; CSSPerf tracks styleAdds and styleFlushes. Default OFF.
+  - DebugFlags.enableCssInvalidateDetail: logs detailed invalidation info including fallback traversal counts and tag keys. Default OFF.
+  - DebugFlags.enableCssDisableRootRecalc: forces targeted recalculation only (disables root recalc) to isolate hotspots; may be incorrect. Default OFF.
 
 ## Next Steps
 - Workstream 2 (Memoization rollout): collect perf samples with `memoHits/memoMisses`, `memoEvict`, and `memoAvgSize`; validate steady-state hit rates in app scenarios (with stable stylesheets). Tune LRU capacity via `cssMatchedRulesCacheCapacity` as needed.

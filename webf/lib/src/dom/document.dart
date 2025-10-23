@@ -616,13 +616,27 @@ class Document extends ContainerNode {
     final int dirtyAtStart = _styleDirtyElements.length;
     // Always attempt to update active stylesheets first so changedRuleSet can
     // mark targeted elements dirty (even if we had no prior dirty set).
+    int sheetsMs = 0;
+    final Stopwatch? swSheets = DebugFlags.enableCssStyleUpdateBreakdown ? (Stopwatch()..start()) : null;
     final bool sheetsUpdated = styleNodeManager.updateActiveStyleSheets(rebuild: rebuild);
+    if (swSheets != null) {
+      sheetsMs = swSheets.elapsedMilliseconds;
+      if (DebugFlags.enableCssStyleUpdateBreakdown) {
+        cssLogger.info('[breakdown][sheetsUpdate] ms=$sheetsMs');
+      }
+    }
+    if (perf && sheetsMs > 0) {
+      CSSPerf.recordSheetsUpdate(durationMs: sheetsMs);
+    }
     if (DebugFlags.enableCssMultiStyleTrace) {
       cssLogger.info('[trace][multi-style][flush] sheetsUpdated=$sheetsUpdated pendingNow=${styleNodeManager.pendingStyleSheetCount} '
           'candidates=${styleNodeManager.styleSheetCandidateNodes.length} dirtyAtStart=$dirtyAtStart');
     }
     // Recompute dirty count after stylesheets may have targeted elements.
     final int dirtyAfterSheets = _styleDirtyElements.length;
+    if (perf && dirtyAfterSheets > dirtyAtStart) {
+      CSSPerf.recordFlushDirtyAdded(added: dirtyAfterSheets - dirtyAtStart);
+    }
     if (dirtyAfterSheets == 0 && !sheetsUpdated) {
       if (kDebugMode && DebugFlags.enableCssLogs) {
         cssLogger.fine('[style] flushStyle: nothing to do (no dirty, no sheet changes)');
@@ -641,11 +655,22 @@ class Document extends ContainerNode {
           return bindingObject is HeadElement || bindingObject is HTMLElement;
         }) ||
         rebuild;
+    if (DebugFlags.enableCssDisableRootRecalc && recalcFromRoot) {
+      if (DebugFlags.enableCssStyleUpdateBreakdown) {
+        cssLogger.info('[breakdown][flush] override recalcFromRoot=false (debug flag)');
+      }
+      recalcFromRoot = false;
+    }
     if (DebugFlags.enableCssTrace) {
       cssLogger.info('[trace][flush] dirty=${_styleDirtyElements.length} sheetsUpdated=$sheetsUpdated recalcFromRoot=$recalcFromRoot');
     }
     if (DebugFlags.enableCssTrace && DebugFlags.enableCssMemoization) {
       cssLogger.info('[trace][memo] totals hits=${CSSPerf.memoHits} misses=${CSSPerf.memoMisses} evict=${CSSPerf.memoEvictions} dirty=${_styleDirtyElements.length}');
+    }
+    if (DebugFlags.enableCssStyleUpdateBreakdown) {
+      final int newDirty = dirtyAfterSheets - dirtyAtStart;
+      cssLogger.info('[breakdown][flush] scheduled=$scheduled sheetsUpdated=$sheetsUpdated sheetsMs=$sheetsMs '
+          'dirtyAtStart=$dirtyAtStart newDirty=$newDirty recalcFromRoot=$recalcFromRoot');
     }
     if (recalcFromRoot) {
       if (kDebugMode && DebugFlags.enableCssLogs) {
