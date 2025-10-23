@@ -1646,8 +1646,7 @@ abstract class Element extends ContainerNode
 
   // Lightweight memoization for matched rules (per-element LRU cache).
   // Guarded by DebugFlags.enableCssMemoization.
-  // Capacity kept intentionally tiny to bound memory: 4 entries by default.
-  static const int _kMatchedRulesCacheCapacity = 4;
+  // Capacity kept intentionally tiny to bound memory (default via DebugFlags).
   LinkedHashMap<_MatchFingerprint, _MatchedRulesCacheEntry>? _matchedRulesLRU;
 
   CSSStyleDeclaration _collectMatchedRulesWithCache() {
@@ -1689,7 +1688,9 @@ abstract class Element extends ContainerNode
     // Cache miss: compute and insert, enforce capacity with LRU eviction.
     final CSSStyleDeclaration computed =
         _elementRuleCollector.collectionFromRuleSet(ruleSet, this);
-    if (cache.length >= _kMatchedRulesCacheCapacity) {
+    final int _capRaw = DebugFlags.cssMatchedRulesCacheCapacity;
+    final int _capacity = _capRaw <= 0 ? 1 : _capRaw;
+    if (cache.length >= _capacity) {
       final _MatchFingerprint oldest = cache.keys.first;
       cache.remove(oldest);
       CSSPerf.recordMemoEviction();

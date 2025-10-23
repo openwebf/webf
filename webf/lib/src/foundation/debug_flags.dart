@@ -13,6 +13,11 @@ class DebugFlags {
   // cost when selector-relevant keys (tag/id/class/attr presence) are stable.
   static bool enableCssMemoization = true;
 
+  // Capacity for per-element matched-rules memoization LRU cache.
+  // Kept intentionally small to bound memory. Adjust during perf validation.
+  // Values <= 0 are treated as 1 internally.
+  static int cssMatchedRulesCacheCapacity = 4;
+
   // Ultra-detailed CSS tracing for investigations. When true, emit
   // [trace] logs for dirty marking, invalidation sources, cache hits, and
   // root recalcs. Intended for short profiling sessions.

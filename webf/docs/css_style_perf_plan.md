@@ -151,6 +151,7 @@ Observed impact:
 ## Flags & Instrumentation
 - DebugFlags.enableCssTrace: verbose [trace] logs for dirty reasons, invalidation summaries, memo hits, flush decisions.
 - DebugFlags.enableCssMemoization: per‑element matched‑rules cache keyed by (ruleSetVersion, tag, id, classes, attr presence). Default ON.
+- DebugFlags.cssMatchedRulesCacheCapacity: LRU capacity for per‑element matched‑rules memoization. Default 4.
 - DebugFlags.enableCssAncestryFastPath: selector ancestry precheck for descendant combinators. Default ON.
  - DebugFlags.enableCssBatchRecalc: defer element recalc from id/class/attr setters and batch in flush. Default OFF.
  - DebugFlags.enableCssBatchStyleUpdates: batch `<style>/<link>` driven updates. Default OFF.
@@ -159,7 +160,7 @@ Observed impact:
  - DebugFlags.enableCssMultiStyleTrace: emits extra logs for bursts of <style> insertions and stylesheet flushes; CSSPerf tracks styleAdds and styleFlushes. Default OFF.
 
 ## Next Steps
-- Workstream 2 (Memoization rollout): collect perf samples with `memoHits/memoMisses`, `memoEvict`, and `memoAvgSize`; validate steady-state hit rates in app scenarios (with stable stylesheets). Tune LRU capacity if needed (current = 4) and consider exposing a debug knob.
+- Workstream 2 (Memoization rollout): collect perf samples with `memoHits/memoMisses`, `memoEvict`, and `memoAvgSize`; validate steady-state hit rates in app scenarios (with stable stylesheets). Tune LRU capacity via `cssMatchedRulesCacheCapacity` as needed.
 - Workstream 3 (Matching micro-optimizations): reuse a single `SelectorEvaluator` instance per `matchedRules()` call; add ancestry-key fast-path for descendant combinators; benchmark hot selectors.
 - Workstream 4 (Batch recalc – guarded): prototype deferred recalc flag, validate synchronous APIs (getComputedStyle triggers `updateStyleIfNeeded()`), add targeted tests.
 - Optional index follow-ups: evaluate elementsByTag or pseudo anchor tracking once W2 data collected.
