@@ -958,6 +958,12 @@ ConsumeColorInternal(T& range,
                      std::shared_ptr<const CSSParserContext> context,
                      bool accept_quirky_colors,
                      AllowedColors allowed_colors) {
+  // Capture raw source slice for CSSParserTokenStream to preserve author input.
+  size_t raw_start = 0;
+  if constexpr (std::is_same_v<T, CSSParserTokenStream>) {
+    range.EnsureLookAhead();
+    raw_start = range.LookAheadOffset();
+  }
   CSSValueID id = range.Peek().Id();
   if ((id == CSSValueID::kAccentcolor || id == CSSValueID::kAccentcolortext)) {
     return nullptr;
@@ -972,23 +978,57 @@ ConsumeColorInternal(T& range,
       return nullptr;
     }
     auto color = ConsumeIdent(range);
+    if (color) {
+      if constexpr (std::is_same_v<T, CSSParserTokenStream>) {
+        size_t raw_end = range.Offset();
+        if (raw_end > raw_start) {
+          String raw = String(range.StringRangeAt(raw_start, raw_end - raw_start));
+          color->SetRawText(raw);
+        }
+      }
+    }
     return color;
   }
 
   Color color = Color::kTransparent;
   if (ParseHexColor(range, color, accept_quirky_colors)) {
-    return cssvalue::CSSColor::Create(color);
+    auto v = cssvalue::CSSColor::Create(color);
+    if constexpr (std::is_same_v<T, CSSParserTokenStream>) {
+      size_t raw_end = range.Offset();
+      if (raw_end > raw_start) {
+        String raw = String(range.StringRangeAt(raw_start, raw_end - raw_start));
+        v->SetRawText(raw);
+      }
+    }
+    return v;
   }
 
   // Parses the color inputs rgb(), rgba(), hsl(), hsla(), hwb(), lab(),
   // oklab(), lch(), oklch() and color(). https://www.w3.org/TR/css-color-4/
   ColorFunctionParser parser;
   if (auto functional_syntax_color = parser.ConsumeFunctionalSyntaxColor(range, context)) {
+    if constexpr (std::is_same_v<T, CSSParserTokenStream>) {
+      size_t raw_end = range.Offset();
+      if (raw_end > raw_start) {
+        String raw = String(range.StringRangeAt(raw_start, raw_end - raw_start));
+        functional_syntax_color->SetRawText(raw);
+      }
+    }
     return functional_syntax_color;
   }
 
   if (allowed_colors == AllowedColors::kAll) {
-    return ConsumeLightDark(ConsumeColor<CSSParserTokenRange>, range, context);
+    auto v = ConsumeLightDark(ConsumeColor<CSSParserTokenRange>, range, context);
+    if (v) {
+      if constexpr (std::is_same_v<T, CSSParserTokenStream>) {
+        size_t raw_end = range.Offset();
+        if (raw_end > raw_start) {
+          String raw = String(range.StringRangeAt(raw_start, raw_end - raw_start));
+          v->SetRawText(raw);
+        }
+      }
+    }
+    return v;
   }
   return nullptr;
 }
