@@ -85,107 +85,6 @@
 
 namespace webf {
 
-namespace {
-
-String SanitizeRawTextForSerialization(const String& raw_text) {
-  if (raw_text.IsNull() || raw_text.IsEmpty()) {
-    return raw_text;
-  }
-
-  StringView view(raw_text);
-  size_t start = 0;
-  size_t end = view.length();
-
-  // Trim leading whitespace.
-  while (start < end && IsHTMLSpace(view[start])) {
-    ++start;
-  }
-  // Trim trailing whitespace.
-  while (end > start && IsHTMLSpace(view[end - 1])) {
-    --end;
-  }
-
-  size_t clip = end;
-  int paren_depth = 0;
-  int bracket_depth = 0;
-  int brace_depth = 0;
-  bool in_single_quote = false;
-  bool in_double_quote = false;
-
-  for (size_t i = start; i < end; ++i) {
-    UChar ch = view[i];
-
-    if (in_single_quote) {
-      if (ch == '\'' && (i == start || view[i - 1] != '\\')) {
-        in_single_quote = false;
-      }
-      continue;
-    }
-    if (in_double_quote) {
-      if (ch == '"' && (i == start || view[i - 1] != '\\')) {
-        in_double_quote = false;
-      }
-      continue;
-    }
-
-    switch (ch) {
-      case '\'':
-        in_single_quote = true;
-        break;
-      case '"':
-        in_double_quote = true;
-        break;
-      case '(':
-        ++paren_depth;
-        break;
-      case ')':
-        if (paren_depth > 0) {
-          --paren_depth;
-        }
-        break;
-      case '[':
-        ++bracket_depth;
-        break;
-      case ']':
-        if (bracket_depth > 0) {
-          --bracket_depth;
-        }
-        break;
-      case '{':
-        ++brace_depth;
-        break;
-      case '}':
-        if (brace_depth > 0) {
-          --brace_depth;
-        } else {
-          clip = i;
-          i = end;
-        }
-        break;
-      case ';':
-        if (paren_depth == 0 && bracket_depth == 0 && brace_depth == 0) {
-          clip = i;
-          i = end;
-        }
-        break;
-      default:
-        break;
-    }
-  }
-
-  if (clip < end) {
-    end = clip;
-  }
-
-  if (start == 0 && end == view.length()) {
-    return raw_text;
-  }
-
-  return String(StringView(view, start, end - start));
-}
-
-}  // namespace
-
 std::shared_ptr<const CSSValue> CSSValue::Create(const webf::Length& value, float zoom) {
   switch (value.GetType()) {
     case Length::kAuto:
@@ -342,13 +241,9 @@ String CSSValue::CssText() const {
 
 String CSSValue::CssTextForSerialization() const {
   if (HasRawText()) {
-    String sanitized = SanitizeRawTextForSerialization(RawText());
-    if (!sanitized.IsEmpty()) {
-      return sanitized;
-    }
     return RawText();
   }
-  WEBF_LOG(VERBOSE) << "The type that didn't have raw text: " << GetClassTypeName();
+  // WEBF_LOG(VERBOSE) << "The type that didn't have raw text: " << GetClassTypeName();
   return CssText();
 }
 
