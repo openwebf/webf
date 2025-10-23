@@ -31,6 +31,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import 'package:flutter/foundation.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/html.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/src/css/css_perf.dart';
@@ -159,7 +160,8 @@ class SelectorEvaluator extends SelectorVisitor {
       if (wantDetail) {
         final int threshold = DebugFlags.cssMatchCompoundLogThresholdMs;
         final bool overThreshold = threshold > 0 && elapsed >= threshold;
-        if (DebugFlags.enableCssMatchDetail || overThreshold) {
+        final bool withinBudget = CSSPerf.consumeMatchCompoundLogBudget();
+        if ((DebugFlags.enableCssMatchDetail || overThreshold) && withinBudget) {
           final String elemDesc = _describeElement(element);
           final String sels = compound.map(_simpleSelectorType).join(',');
           cssLogger.info('[match][compound] elem=$elemDesc parts=${compound.length} ok=$ok ms=$elapsed'

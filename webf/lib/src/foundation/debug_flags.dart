@@ -63,6 +63,11 @@ class DebugFlags {
   // evaluation takes at least this many milliseconds.
   static int cssMatchCompoundLogThresholdMs = 0;
 
+  // Maximum number of [match][compound] logs to emit per style flush.
+  // 0 or negative disables the cap (unlimited). Use to keep logs readable
+  // when investigating in large apps.
+  static int cssMatchCompoundMaxLogsPerFlush = 0;
+
   // Ultra-detailed CSS tracing for investigations. When true, emit
   // [trace] logs for dirty marking, invalidation sources, cache hits, and
   // root recalcs. Intended for short profiling sessions.

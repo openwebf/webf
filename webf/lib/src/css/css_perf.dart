@@ -42,6 +42,7 @@ class CSSPerf {
   // Granular matching diagnostics
   static int _matchCompoundCalls = 0; // number of matchesCompound() evaluations
   static int _matchCompoundMsTotal = 0; // total time across matchesCompound()
+  static int _matchCompoundLogsPerFlush = 0; // emitted logs during current flush
 
   // Memoization metrics
   static int _memoHits = 0;
@@ -194,6 +195,20 @@ class CSSPerf {
     _matchCompoundMsTotal += durationMs;
   }
 
+  // Begin a new style-flush logging scope for compound logs.
+  static void beginFlushScope() {
+    _matchCompoundLogsPerFlush = 0;
+  }
+
+  // Returns true if we still have budget to emit a match-compound log in this flush.
+  static bool consumeMatchCompoundLogBudget() {
+    final int cap = DebugFlags.cssMatchCompoundMaxLogsPerFlush;
+    if (cap <= 0) return true; // unlimited
+    if (_matchCompoundLogsPerFlush >= cap) return false;
+    _matchCompoundLogsPerFlush++;
+    return true;
+  }
+
   static void recordRecalc({required int durationMs}) {
     if (!enabled) return;
     _recalcCalls++;
@@ -286,6 +301,7 @@ class CSSPerf {
 
     _matchCompoundCalls = 0;
     _matchCompoundMsTotal = 0;
+    _matchCompoundLogsPerFlush = 0;
 
     _recalcCalls = 0;
     _recalcMsTotal = 0;

@@ -609,6 +609,9 @@ class Document extends ContainerNode {
   }
 
   void flushStyle({bool rebuild = false}) {
+    if (DebugFlags.enableCssPerf) {
+      CSSPerf.beginFlushScope();
+    }
     // Capture whether this flush was triggered by a scheduled batch.
     final bool scheduled = _styleUpdateScheduled;
     final bool perf = DebugFlags.enableCssPerf;
