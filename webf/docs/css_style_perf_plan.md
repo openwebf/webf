@@ -161,6 +161,9 @@ Observed impact:
  - DebugFlags.enableCssMultiStyleTrace: emits extra logs for bursts of <style> insertions and stylesheet flushes; CSSPerf tracks styleAdds and styleFlushes. Default OFF.
   - DebugFlags.enableCssInvalidateDetail: logs detailed invalidation info including fallback traversal counts and tag keys. Default OFF.
   - DebugFlags.enableCssDisableRootRecalc: forces targeted recalculation only (disables root recalc) to isolate hotspots; may be incorrect. Default OFF.
+  - DebugFlags.enableCssInvalidateSkipUniversal: skip evaluating universal selectors during stylesheet invalidation fallback walk. Default OFF.
+  - DebugFlags.enableCssInvalidateSkipTag: skip evaluating tag selectors during stylesheet invalidation fallback. Default OFF.
+  - DebugFlags.cssInvalidateUniversalCap: cap universal-rule evaluations during invalidation (0 = no cap). Default 0.
 
 ## Next Steps
 - Workstream 2 (Memoization rollout): collect perf samples with `memoHits/memoMisses`, `memoEvict`, and `memoAvgSize`; validate steady-state hit rates in app scenarios (with stable stylesheets). Tune LRU capacity via `cssMatchedRulesCacheCapacity` as needed.

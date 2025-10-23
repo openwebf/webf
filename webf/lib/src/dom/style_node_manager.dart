@@ -270,7 +270,7 @@ class StyleNodeManager {
         final Node node = stack.removeLast();
         if (node is Element) {
           fallbackVisited++;
-          final rules = collector.matchedRules(changedRuleSet, node);
+          final rules = collector.matchedRulesForInvalidate(changedRuleSet, node);
           if (rules.isNotEmpty) {
             fallbackMatched++;
             if (DebugFlags.enableCssTrace) {
