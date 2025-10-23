@@ -30,6 +30,25 @@ class HeadElement extends Element {
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
+
+  @override
+  void childrenChanged(ChildrenChange change) {
+    // Coalesce stylesheet-related updates when batching is enabled.
+    if (DebugFlags.enableCssBatchStyleUpdates) {
+      final Node? node = change.siblingChanged;
+      final bool isStyleNode = node is StyleElementMixin || node is LinkElement;
+      final bool isStyleText = change.type == ChildrenChangeType.TEXT_CHANGE &&
+          node != null && node.parentNode is StyleElementMixin;
+      if (isStyleNode || isStyleText || change.isChildElementChange()) {
+        if (DebugFlags.enableCssMultiStyleTrace) {
+          cssLogger.info('[trace][multi-style][head] childrenChanged type=${change.type} scheduling style update');
+        }
+        ownerDocument.scheduleStyleUpdate();
+        return;
+      }
+    }
+    super.childrenChanged(change);
+  }
 }
 
 // Resolve @import rules within a stylesheet by fetching and inlining imported rules.
@@ -92,7 +111,11 @@ Future<void> _resolveCSSImports(Document document, CSSStyleSheet sheet) async {
         document.styleNodeManager.appendPendingStyleSheet(sheet);
         // Trigger a style update; flushStyle() will update active sheets first
         // and mark only impacted elements dirty.
-        document.updateStyleIfNeeded();
+        if (DebugFlags.enableCssBatchStyleUpdates) {
+          document.scheduleStyleUpdate();
+        } else {
+          document.updateStyleIfNeeded();
+        }
       } catch (e) {
         // On failure, drop the import to avoid blocking style application
         sheet.cssRules.removeAt(i);
@@ -256,17 +279,25 @@ class LinkElement extends Element {
           .parse(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
       _styleSheet?.href = sheetHref;
     }
-    if (_styleSheet != null) {
-      ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
-      ownerDocument.updateStyleIfNeeded();
-      // Re-resolve @import for reloaded stylesheet
-      () async {
-        if (_styleSheet != null) {
-          await _resolveCSSImports(ownerDocument, _styleSheet!);
+      if (_styleSheet != null) {
+        ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
+        if (DebugFlags.enableCssBatchStyleUpdates) {
+          ownerDocument.scheduleStyleUpdate();
+        } else {
           ownerDocument.updateStyleIfNeeded();
         }
-      }();
-    }
+        // Re-resolve @import for reloaded stylesheet
+        () async {
+          if (_styleSheet != null) {
+            await _resolveCSSImports(ownerDocument, _styleSheet!);
+          if (DebugFlags.enableCssBatchStyleUpdates) {
+            ownerDocument.scheduleStyleUpdate();
+          } else {
+            ownerDocument.updateStyleIfNeeded();
+          }
+          }
+        }();
+      }
   }
 
   Future<void> _resolveHyperlink() async {
@@ -391,7 +422,11 @@ class LinkElement extends Element {
         await _resolveCSSImports(ownerDocument, _styleSheet!);
         // Ensure style manager re-indexes rules after imports
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
-        ownerDocument.updateStyleIfNeeded();
+        if (DebugFlags.enableCssBatchStyleUpdates) {
+          ownerDocument.scheduleStyleUpdate();
+        } else {
+          ownerDocument.updateStyleIfNeeded();
+        }
 
         // Successful load.
         SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -580,6 +615,20 @@ mixin StyleElementMixin on Element {
     _recalculateStyle();
   }
 
+  @override
+  void childrenChanged(ChildrenChange change) {
+    // Text changes within <style> often occur as incremental DOM operations.
+    // When batching is enabled, defer style updates to the scheduler.
+    if (DebugFlags.enableCssBatchStyleUpdates) {
+      if (DebugFlags.enableCssMultiStyleTrace) {
+        cssLogger.info('[trace][multi-style][style] childrenChanged type=${change.type} scheduling style update');
+      }
+      ownerDocument.scheduleStyleUpdate();
+      return;
+    }
+    super.childrenChanged(change);
+  }
+
   void _recalculateStyle() {
     String? text = collectElementChildText();
 
@@ -628,7 +677,11 @@ mixin StyleElementMixin on Element {
             await _resolveCSSImports(ownerDocument, _styleSheet!);
             // Mark sheet pending so changes are picked up without candidate changes
             ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
-            ownerDocument.updateStyleIfNeeded();
+            if (DebugFlags.enableCssBatchStyleUpdates) {
+              ownerDocument.scheduleStyleUpdate();
+            } else {
+              ownerDocument.updateStyleIfNeeded();
+            }
           }
         }();
       }
@@ -637,8 +690,16 @@ mixin StyleElementMixin on Element {
       }
       _lastStyleSheetSignature = newSignature;
       if (_styleSheet != null) {
+        if (DebugFlags.enableCssMultiStyleTrace) {
+          final parentTag = parentElement?.tagName ?? 'UNKNOWN';
+          cssLogger.info('[trace][multi-style][style] apply sheet (parent=$parentTag)');
+        }
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
-        ownerDocument.updateStyleIfNeeded();
+        if (DebugFlags.enableCssBatchStyleUpdates) {
+          ownerDocument.scheduleStyleUpdate();
+        } else {
+          ownerDocument.updateStyleIfNeeded();
+        }
       }
     } else {
       // No inline CSS text → drop the cache so future additions re-parse.

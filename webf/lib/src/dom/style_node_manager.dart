@@ -26,6 +26,7 @@ class StyleNodeManager {
   final List<CSSStyleSheet> _pendingStyleSheets = [];
 
   bool get hasPendingStyleSheet => _pendingStyleSheets.isNotEmpty;
+  int get pendingStyleSheetCount => _pendingStyleSheets.length;
   bool _isStyleSheetCandidateNodeChanged = false;
   bool get isStyleSheetCandidateNodeChanged => _isStyleSheetCandidateNodeChanged;
 
@@ -85,8 +86,15 @@ class StyleNodeManager {
       return;
     }
     _pendingStyleSheets.add(styleSheet);
+    if (DebugFlags.enableCssPerf) {
+      CSSPerf.recordStyleAdded();
+    }
     if (kDebugMode && DebugFlags.enableCssLogs) {
       cssLogger.fine('[style] append pending sheet: total=${_pendingStyleSheets.length} hash=${styleSheet.hashCode} rules=${styleSheet.cssRules.length}');
+    }
+    if (DebugFlags.enableCssMultiStyleTrace) {
+      cssLogger.info('[trace][multi-style][add] pending=${_pendingStyleSheets.length} candidates=${_styleSheetCandidateNodes.length} ' +
+          'hash=${styleSheet.hashCode}');
     }
   }
 
@@ -103,6 +111,9 @@ class StyleNodeManager {
     if (kDebugMode && DebugFlags.enableCssLogs) {
       cssLogger.fine('[style] updateActiveStyleSheets: candidates=${_styleSheetCandidateNodes.length} -> newSheets=${newSheets.length} '
           '(rebuild=$rebuild pending=${_pendingStyleSheets.length})');
+    }
+    if (DebugFlags.enableCssMultiStyleTrace) {
+      cssLogger.info('[trace][multi-style][update] pending=${_pendingStyleSheets.length} candidates=${_styleSheetCandidateNodes.length} rebuild=$rebuild');
     }
     newSheets = newSheets.where((element) => element.cssRules.isNotEmpty).toList();
     if (rebuild == false) {

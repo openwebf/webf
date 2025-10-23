@@ -49,11 +49,17 @@ class CSSPerf {
   // Recalc and flush metrics
   static int _recalcCalls = 0;
   static int _recalcMsTotal = 0;
+  static int _recalcDeferredMarks = 0;
 
   static int _flushCalls = 0;
   static int _flushDirtyTotal = 0;
   static int _flushRootRecalcCount = 0;
   static int _flushMsTotal = 0;
+
+  // Stylesheet activities
+  static int _styleAdds = 0; // pending stylesheets appended
+  static int _styleFlushesBatched = 0; // flushes triggered by scheduled batch
+  static int _styleFlushesImmediate = 0; // flushes without batch scheduling
 
   static bool get enabled => DebugFlags.enableCssPerf;
 
@@ -102,6 +108,20 @@ class CSSPerf {
     _handleSheetsRulesTotal += ruleCount;
   }
 
+  static void recordStyleAdded() {
+    if (!enabled) return;
+    _styleAdds++;
+  }
+
+  static void recordStyleFlush({required bool batched}) {
+    if (!enabled) return;
+    if (batched) {
+      _styleFlushesBatched++;
+    } else {
+      _styleFlushesImmediate++;
+    }
+  }
+
   static void recordMatch(
       {required int durationMs,
       required int candidateCount,
@@ -125,6 +145,11 @@ class CSSPerf {
     if (!enabled) return;
     _recalcCalls++;
     _recalcMsTotal += durationMs;
+  }
+
+  static void recordRecalcDeferredMark() {
+    if (!enabled) return;
+    _recalcDeferredMarks++;
   }
 
   static void recordMemo({required bool hit}) {
@@ -208,6 +233,7 @@ class CSSPerf {
 
     _recalcCalls = 0;
     _recalcMsTotal = 0;
+    _recalcDeferredMarks = 0;
 
     _memoHits = 0;
     _memoMisses = 0;
@@ -219,6 +245,10 @@ class CSSPerf {
     _flushDirtyTotal = 0;
     _flushRootRecalcCount = 0;
     _flushMsTotal = 0;
+
+    _styleAdds = 0;
+    _styleFlushesBatched = 0;
+    _styleFlushesImmediate = 0;
   }
 
   static void dumpSummary() {
@@ -237,6 +267,8 @@ class CSSPerf {
         ' memoHits=$_memoHits memoMisses=$_memoMisses memoEvict=$_memoEvictions memoAvgSize=' +
             memoAvgCacheSize.toStringAsFixed(2));
     cssLogger.fine('[perf] recalc calls=$_recalcCalls recalcMs=$_recalcMsTotal'
-        ' flush calls=$_flushCalls dirtyTotal=$_flushDirtyTotal rootCount=$_flushRootRecalcCount flushMs=$_flushMsTotal');
+        ' deferredMarks=$_recalcDeferredMarks'
+        ' flush calls=$_flushCalls dirtyTotal=$_flushDirtyTotal rootCount=$_flushRootRecalcCount flushMs=$_flushMsTotal'
+        ' styleAdds=$_styleAdds styleFlushes(batched=$_styleFlushesBatched immediate=$_styleFlushesImmediate)');
   }
 }

@@ -71,18 +71,29 @@ Expected impact:
 Notes/Telemetry:
 - In CSS1 snapshot runs, total match ms changes are within noise. In app scenarios with many descendant selectors, enablement remains beneficial; flag remains available for targeted disable if needed.
 
-## Workstream 4: Batch Recalc Triggers (Guarded)
-Problem: Many immediate recalc calls from attribute/class/id setters.
+## Workstream 4: Batch Recalc & Stylesheet Batching (Guarded)
+Problem: Many immediate recalcs and per-insert stylesheet flushes cause overhead during bursts.
 
 Plan:
-- Introduce an optional code path to mark element dirty and defer to Document.flushStyle(), instead of immediate recalc.
-- Gate behind a feature flag; keep current behavior as default for safety.
+- Element-level: optional code path to mark element dirty from id/class/attr setters and defer to `Document.flushStyle()`.
+- Stylesheet-level: batch `<style>/<link>` inserts; schedule style updates via frame or time debounce instead of flushing per insert.
+- Gate both behind feature flags; keep defaults conservative.
+
+Progress:
+- Element batch recalc implemented (flagged):
+  - `DebugFlags.enableCssBatchRecalc` defers recompute in `Element.id`, `className`, `internalSetAttribute` and `removeAttribute` paths.
+  - CSSPerf counter `deferredMarks` added; flush summary shows deferred count.
+- Stylesheet batching implemented (flagged):
+  - Central scheduling in `Document.scheduleStyleUpdate()` with three modes: microtask, frame, and debounce window.
+  - Head/style signals filter: only schedules for `<style>`, `<link rel=stylesheet>`, or text changes inside `<style>`.
+  - Multi-style diagnostics and CSSPerf `styleAdds`/`styleFlushes(batched|immediate)` added.
 
 Expected impact:
-- Fewer total recalc calls; more work processed in batches.
+- Collapse many incremental recalcs into batched flushes; reduce per-insert stylesheet flushes to one per frame or one per debounce window.
 
 Risk/Notes:
-- Must ensure synchronous APIs depending on computed style are still correct (Window.getComputedStyle triggers updateStyleIfNeeded()).
+- Synchronous APIs remain correct: `getComputedStyle()` calls `Document.updateStyleIfNeeded()`.
+- Debounce trades latency for throughput; tune window in debug.
 
 ## Measurement
 Use CSSPerf counters (DebugFlags.enableCssPerf):
@@ -141,6 +152,11 @@ Observed impact:
 - DebugFlags.enableCssTrace: verbose [trace] logs for dirty reasons, invalidation summaries, memo hits, flush decisions.
 - DebugFlags.enableCssMemoization: per‑element matched‑rules cache keyed by (ruleSetVersion, tag, id, classes, attr presence). Default ON.
 - DebugFlags.enableCssAncestryFastPath: selector ancestry precheck for descendant combinators. Default ON.
+ - DebugFlags.enableCssBatchRecalc: defer element recalc from id/class/attr setters and batch in flush. Default OFF.
+ - DebugFlags.enableCssBatchStyleUpdates: batch `<style>/<link>` driven updates. Default OFF.
+ - DebugFlags.enableCssBatchStyleUpdatesPerFrame: frame-coalesce stylesheet updates (requires enableCssBatchStyleUpdates). Default OFF.
+ - DebugFlags.cssBatchStyleUpdatesDebounceMs: time-based coalescing across frames (requires enableCssBatchStyleUpdates). Default 0.
+ - DebugFlags.enableCssMultiStyleTrace: emits extra logs for bursts of <style> insertions and stylesheet flushes; CSSPerf tracks styleAdds and styleFlushes. Default OFF.
 
 ## Next Steps
 - Workstream 2 (Memoization rollout): collect perf samples with `memoHits/memoMisses`, `memoEvict`, and `memoAvgSize`; validate steady-state hit rates in app scenarios (with stable stylesheets). Tune LRU capacity if needed (current = 4) and consider exposing a debug knob.
@@ -152,7 +168,7 @@ Observed impact:
 - Targeted invalidation ON by default (validated).
 - Memoization ON by default; retain flag to disable if regressions are observed.
 - Ancestry fast-path ON by default; retain flag to disable in edge cases.
-- Batch recalc behind a flag; enable in test apps and measure.
+- Batch recalc and stylesheet batching behind flags; enable in test apps and measure.
 
 ## Implementation Notes (touch points)
 - Indices: lib/src/dom/document.dart (maps), lib/src/dom/element.dart (maintenance), lib/src/dom/style_node_manager.dart (invalidate).

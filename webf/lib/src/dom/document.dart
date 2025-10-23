@@ -4,10 +4,12 @@
  */
 
 import 'dart:collection';
+import 'dart:async';
 import 'dart:ffi';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -65,6 +67,10 @@ class Document extends ContainerNode {
   late RuleSet ruleSet;
   // Bumps on every handleStyleSheets() to invalidate element-level memoization.
   int ruleSetVersion = 0;
+
+  bool _styleUpdateScheduled = false;
+  bool _styleUpdateTriggeredByScheduler = false;
+  Timer? _styleUpdateDebounceTimer;
 
   String? _domain;
   final String _compatMode = 'CSS1Compat';
@@ -603,12 +609,18 @@ class Document extends ContainerNode {
   }
 
   void flushStyle({bool rebuild = false}) {
+    // Capture whether this flush was triggered by a scheduled batch.
+    final bool scheduled = _styleUpdateScheduled;
     final bool perf = DebugFlags.enableCssPerf;
     final Stopwatch? sw = perf ? (Stopwatch()..start()) : null;
     final int dirtyAtStart = _styleDirtyElements.length;
     // Always attempt to update active stylesheets first so changedRuleSet can
     // mark targeted elements dirty (even if we had no prior dirty set).
     final bool sheetsUpdated = styleNodeManager.updateActiveStyleSheets(rebuild: rebuild);
+    if (DebugFlags.enableCssMultiStyleTrace) {
+      cssLogger.info('[trace][multi-style][flush] sheetsUpdated=$sheetsUpdated pendingNow=${styleNodeManager.pendingStyleSheetCount} '
+          'candidates=${styleNodeManager.styleSheetCandidateNodes.length} dirtyAtStart=$dirtyAtStart');
+    }
     // Recompute dirty count after stylesheets may have targeted elements.
     final int dirtyAfterSheets = _styleDirtyElements.length;
     if (dirtyAfterSheets == 0 && !sheetsUpdated) {
@@ -656,6 +668,73 @@ class Document extends ContainerNode {
     _recalculating = false;
     if (perf && sw != null) {
       CSSPerf.recordFlush(durationMs: sw.elapsedMilliseconds, dirtyCount: dirtyAtStart, recalcFromRoot: recalcFromRoot);
+    }
+    if (perf) {
+      CSSPerf.recordStyleFlush(batched: scheduled);
+    }
+  }
+
+  void scheduleStyleUpdate() {
+    final bool useDebounce = DebugFlags.enableCssBatchStyleUpdates && DebugFlags.cssBatchStyleUpdatesDebounceMs > 0;
+    if (useDebounce) {
+      // Debounce across frames/time: reset the timer on each call.
+      _styleUpdateScheduled = true;
+      _styleUpdateDebounceTimer?.cancel();
+      if (DebugFlags.enableCssMultiStyleTrace) {
+        cssLogger.info('[trace][multi-style][schedule] style update scheduled via debounce(${DebugFlags.cssBatchStyleUpdatesDebounceMs}ms)');
+      }
+      _styleUpdateDebounceTimer = Timer(Duration(milliseconds: DebugFlags.cssBatchStyleUpdatesDebounceMs), () {
+        // Skip if nothing pending.
+        if (!styleNodeManager.hasPendingStyleSheet && !styleNodeManager.isStyleSheetCandidateNodeChanged) {
+          _styleUpdateScheduled = false;
+          return;
+        }
+        if (DebugFlags.enableCssMultiStyleTrace) {
+          cssLogger.info('[trace][multi-style][schedule] style update running (debounce)');
+        }
+        _styleUpdateTriggeredByScheduler = true;
+        updateStyleIfNeeded();
+        _styleUpdateTriggeredByScheduler = false;
+        _styleUpdateScheduled = false;
+      });
+      return;
+    }
+
+    if (_styleUpdateScheduled) return;
+    _styleUpdateScheduled = true;
+    final bool perFrame = DebugFlags.enableCssBatchStyleUpdatesPerFrame && DebugFlags.enableCssBatchStyleUpdates;
+    if (DebugFlags.enableCssMultiStyleTrace) {
+      cssLogger.info('[trace][multi-style][schedule] style update scheduled via ' + (perFrame ? 'frame' : 'microtask'));
+    }
+    if (perFrame) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (!styleNodeManager.hasPendingStyleSheet && !styleNodeManager.isStyleSheetCandidateNodeChanged) {
+          _styleUpdateScheduled = false;
+          return;
+        }
+        if (DebugFlags.enableCssMultiStyleTrace) {
+          cssLogger.info('[trace][multi-style][schedule] style update running (frame)');
+        }
+        _styleUpdateTriggeredByScheduler = true;
+        updateStyleIfNeeded();
+        _styleUpdateTriggeredByScheduler = false;
+        _styleUpdateScheduled = false;
+      });
+      SchedulerBinding.instance.scheduleFrame();
+    } else {
+      scheduleMicrotask(() {
+        if (!styleNodeManager.hasPendingStyleSheet && !styleNodeManager.isStyleSheetCandidateNodeChanged) {
+          _styleUpdateScheduled = false;
+          return;
+        }
+        if (DebugFlags.enableCssMultiStyleTrace) {
+          cssLogger.info('[trace][multi-style][schedule] style update running (microtask)');
+        }
+        _styleUpdateTriggeredByScheduler = true;
+        updateStyleIfNeeded();
+        _styleUpdateTriggeredByScheduler = false;
+        _styleUpdateScheduled = false;
+      });
     }
   }
 

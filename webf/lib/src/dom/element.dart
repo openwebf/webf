@@ -100,6 +100,11 @@ abstract class Element extends ContainerNode
     final isNeedRecalculate = _checkRecalculateStyle([id, _id]);
     _updateIDMap(id, oldID: _id);
     _id = id;
+    if (DebugFlags.enableCssBatchRecalc) {
+      ownerDocument.markElementStyleDirty(this, reason: 'batch:id');
+      if (DebugFlags.enableCssPerf) CSSPerf.recordRecalcDeferredMark();
+      return;
+    }
     recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
@@ -182,6 +187,11 @@ abstract class Element extends ContainerNode
 
     // Maintain document indices for classes when connected
     _updateClassIndex(oldClasses, _classList);
+    if (DebugFlags.enableCssBatchRecalc) {
+      ownerDocument.markElementStyleDirty(this, reason: 'batch:class');
+      if (DebugFlags.enableCssPerf) CSSPerf.recordRecalcDeferredMark();
+      return;
+    }
     recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
@@ -1374,7 +1384,12 @@ abstract class Element extends ContainerNode
       className = value;
     } else {
       final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
-      recalculateStyle(rebuildNested: isNeedRecalculate);
+      if (DebugFlags.enableCssBatchRecalc) {
+        ownerDocument.markElementStyleDirty(this, reason: 'batch:attr:$qualifiedName');
+        if (DebugFlags.enableCssPerf) CSSPerf.recordRecalcDeferredMark();
+      } else {
+        recalculateStyle(rebuildNested: isNeedRecalculate);
+      }
     }
 
     // Maintain attribute presence index (ignore special cases handled elsewhere)
@@ -1410,7 +1425,12 @@ abstract class Element extends ContainerNode
     if (hasAttribute(qualifiedName)) {
       attributes.remove(qualifiedName);
       final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
-      recalculateStyle(rebuildNested: isNeedRecalculate);
+      if (DebugFlags.enableCssBatchRecalc) {
+        ownerDocument.markElementStyleDirty(this, reason: 'batch:remove:$qualifiedName');
+        if (DebugFlags.enableCssPerf) CSSPerf.recordRecalcDeferredMark();
+      } else {
+        recalculateStyle(rebuildNested: isNeedRecalculate);
+      }
 
       // Maintain attribute presence index
       if (qualifiedName != _classNameAttr &&

@@ -23,6 +23,35 @@ class DebugFlags {
   // trees with heavy descendant selectors, but can add overhead otherwise.
   static bool enableCssAncestryFastPath = true;
 
+  // Guard for batching style recalculation: when true, class/id/attribute
+  // setters will mark the element dirty and defer style recalculation to the
+  // next Document.flushStyle() or updateStyleIfNeeded() call.
+  static bool enableCssBatchRecalc = false;
+
+  // Extra diagnostics for bursts of <style> insertions and stylesheet flushes.
+  // When true, logs multi-style add/flush details to help analyze overhead
+  // when multiple style elements are appended quickly (e.g., in <head>).
+  static bool enableCssMultiStyleTrace = false;
+
+  // Batch multiple <style>/<link rel=stylesheet> insertions into a single
+  // stylesheet update + flush per microtask to reduce repeated diffs/recalcs
+  // during bursts. When true, style/link code schedules a deferred
+  // updateStyleIfNeeded() instead of calling it immediately after each
+  // appendPendingStyleSheet().
+  static bool enableCssBatchStyleUpdates = false;
+
+  // If true, batch stylesheet updates to the end of the current frame instead
+  // of the current microtask. This can coalesce bursts across multiple
+  // microtasks (e.g., async insertions) into a single flush per frame. Only
+  // applied when enableCssBatchStyleUpdates is also true.
+  static bool enableCssBatchStyleUpdatesPerFrame = false;
+
+  // Optional debounce window (milliseconds) for batching stylesheet updates
+  // across multiple frames. When > 0 and enableCssBatchStyleUpdates is true,
+  // style/link updates are debounced by this window and flushed once when
+  // no further updates arrive within the interval.
+  static int cssBatchStyleUpdatesDebounceMs = 0;
+
   // Controls verbose IMG element logs added for diagnostics.
   static bool enableImageLogs = false;
 
