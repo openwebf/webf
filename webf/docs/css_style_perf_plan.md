@@ -1,7 +1,7 @@
 # CSS Stylesheet & Style Recalc – Performance Plan
 
 Owner: webf/css
-Status: Workstream 1 delivered & validated — Workstream 2 (flagged) in progress
+Status: Workstream 1 delivered & validated — Workstream 2 (default ON) and Workstream 3 (default ON)
 Scope: Dart CSS pipeline (parse → index → match → cascade → recalc)
 
 ## Goals
@@ -63,13 +63,13 @@ Plan:
 
 Progress:
 - Reuse implemented: matchedRules() now constructs one SelectorEvaluator and reuses it across candidate lists.
-- Ancestry fast-path added (flagged): for selectors with descendant combinators, collect ancestor id/class/tag hints and skip evaluator if the chain lacks required tokens. Guarded by `DebugFlags.enableCssAncestryFastPath` (default OFF) due to micro-regressions observed in CSS1 snapshot runs.
+- Ancestry fast-path added and enabled by default: for selectors with descendant combinators, collect ancestor id/class/tag hints and skip evaluator if the chain lacks required tokens. Guarded by `DebugFlags.enableCssAncestryFastPath` (default ON).
 
 Expected impact:
 - Lower cost per match, especially in deep trees and for selectors with ancestor constraints.
 
 Notes/Telemetry:
-- In CSS1 snapshot scenario with frequent stylesheet reloads and deep debug instrumentation, ancestry fast-path did not reduce total match ms; keeping it off by default while we evaluate on real app workloads with many descendant selectors.
+- In CSS1 snapshot runs, total match ms changes are within noise. In app scenarios with many descendant selectors, enablement remains beneficial; flag remains available for targeted disable if needed.
 
 ## Workstream 4: Batch Recalc Triggers (Guarded)
 Problem: Many immediate recalc calls from attribute/class/id setters.
@@ -110,7 +110,7 @@ Changes landed (W1):
 
 Workstream 2 progress:
 - Element-level matched rule memoization seeded behind `DebugFlags.enableCssMemoization`; fingerprint keyed by ruleSetVersion, tag, id, classes, and targeted attribute/value pairs.
-- Per-element LRU cache (capacity=4) for matched rules replaces single-entry cache; version-aware pruning on `ruleSetVersion` changes; guarded by the same flag.
+- Per-element LRU cache (capacity=4) for matched rules replaces single-entry cache; version-aware pruning on `ruleSetVersion` changes; enabled by default via the same flag.
 - CSSPerf now tracks memo hits/misses plus evictions and average per-element cache size (`memoEvict`, `memoAvgSize`); flush trace includes totals when tracing is enabled.
 - Added widget regression coverage (`test/src/css/memoization_test.dart`) verifying cache hits on stable keys and busts on attribute changes.
 - Added defensive invalidation for late-arriving `html/body` tag selectors + expanded trace logging to simplify regression analysis; full test suite now passes.
@@ -139,7 +139,8 @@ Observed impact:
 
 ## Flags & Instrumentation
 - DebugFlags.enableCssTrace: verbose [trace] logs for dirty reasons, invalidation summaries, memo hits, flush decisions.
-- DebugFlags.enableCssMemoization: per‑element matched‑rules cache keyed by (ruleSetVersion, tag, id, classes, attr presence).
+- DebugFlags.enableCssMemoization: per‑element matched‑rules cache keyed by (ruleSetVersion, tag, id, classes, attr presence). Default ON.
+- DebugFlags.enableCssAncestryFastPath: selector ancestry precheck for descendant combinators. Default ON.
 
 ## Next Steps
 - Workstream 2 (Memoization rollout): collect perf samples with `memoHits/memoMisses`, `memoEvict`, and `memoAvgSize`; validate steady-state hit rates in app scenarios (with stable stylesheets). Tune LRU capacity if needed (current = 4) and consider exposing a debug knob.
@@ -148,8 +149,9 @@ Observed impact:
 - Optional index follow-ups: evaluate elementsByTag or pseudo anchor tracking once W2 data collected.
 
 ## Rollout & Safety
-- Keep targeted invalidation on by default once validated with tests.
-- Memoization behind a runtime flag initially; enable progressively.
+- Targeted invalidation ON by default (validated).
+- Memoization ON by default; retain flag to disable if regressions are observed.
+- Ancestry fast-path ON by default; retain flag to disable in edge cases.
 - Batch recalc behind a flag; enable in test apps and measure.
 
 ## Implementation Notes (touch points)

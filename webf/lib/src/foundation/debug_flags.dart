@@ -11,7 +11,7 @@ class DebugFlags {
   static bool enableCssPerf = false;
   // Enable per-element matched rules memoization to reduce selector matching
   // cost when selector-relevant keys (tag/id/class/attr presence) are stable.
-  static bool enableCssMemoization = false;
+  static bool enableCssMemoization = true;
 
   // Ultra-detailed CSS tracing for investigations. When true, emit
   // [trace] logs for dirty marking, invalidation sources, cache hits, and
