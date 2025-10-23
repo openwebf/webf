@@ -75,42 +75,6 @@ void UICommandBuffer::AddCommand(UICommand type,
     return;
   }
 
-  if (type == UICommand::kSetStyle || type == UICommand::kSetPseudoStyle) {
-    UTF8String name = args_01 ? UTF8Codecs::EncodeUTF16(
-                                    UTF16StringView(reinterpret_cast<const char16_t*>(args_01->string()),
-                                                    args_01->length()))
-                              : std::string("<null>");
-    std::string value;
-    if (nativePtr2 != nullptr) {
-      auto* s = reinterpret_cast<SharedNativeString*>(nativePtr2);
-      value = UTF8Codecs::EncodeUTF16({reinterpret_cast<const char16_t*>(s->string()), s->length()});
-    }
-
-    if (type == UICommand::kSetStyle) {
-      WEBF_COND_LOG(COMMAND, VERBOSE) << "[UICommandBuffer] kSetStyle key: " << name << ", value: " << value;
-    } else {
-      WEBF_COND_LOG(COMMAND, VERBOSE) << "[UICommandBuffer] kSetPseudoStyle pseudo: " << name
-                                      << ", cssText: " << value;
-    }
-  }
-  if (type == UICommand::kRemovePseudoStyle) {
-    UTF8String name = args_01 ? UTF8Codecs::EncodeUTF16(
-                                    UTF16StringView(reinterpret_cast<const char16_t*>(args_01->string()),
-                                                    args_01->length()))
-                              : std::string("<null>");
-    WEBF_COND_LOG(COMMAND, VERBOSE) << "[UICommandBuffer] kRemovePseudoStyle pseudo: " << name;
-  }
-  if (type == UICommand::kClearStyle) {
-    WEBF_COND_LOG(COMMAND, VERBOSE) << "[UICommandBuffer] kClearStyle";
-  }
-  if (type == UICommand::kClearPseudoStyle) {
-    UTF8String name = args_01 ? UTF8Codecs::EncodeUTF16(
-                                    UTF16StringView(reinterpret_cast<const char16_t*>(args_01->string()),
-                                                    args_01->length()))
-                              : std::string("<null>");
-    WEBF_COND_LOG(COMMAND, VERBOSE) << "[UICommandBuffer] kClearPseudoStyle pseudo: " << name;
-  }
-
   UICommandItem item{static_cast<int32_t>(type), args_01, nativePtr, nativePtr2};
   updateFlags(type);
   addCommand(item, request_ui_update);
