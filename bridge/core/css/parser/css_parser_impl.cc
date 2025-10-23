@@ -19,6 +19,7 @@
 #include "core/css/css_selector.h"
 #include "core/css/css_style_sheet.h"
 #include "core/css/css_unparsed_declaration_value.h"
+#include "core/css/css_raw_value.h"
 #include "core/css/css_value_list.h"
 #include "core/css/parser/at_rule_descriptor_parser.h"
 #include "core/css/parser/css_at_rule_id.h"
@@ -987,8 +988,9 @@ bool CSSParserImpl::ConsumeVariableValue(CSSParserTokenStream& stream,
     if (!variable_data) {
       return false;
     }
-
-    value = std::make_shared<CSSUnparsedDeclarationValue>(variable_data, context_);
+    // Preserve the raw user text of the custom property value so downstream
+    // sees exactly what was authored (e.g., "100px"), without further resolution.
+    value = std::make_shared<CSSRawValue>(variable_data->Serialize());
   }
   parsed_properties_.emplace_back(CSSPropertyName(variable_name), value, important);
   return true;
@@ -1095,11 +1097,17 @@ bool CSSParserImpl::ConsumeDeclaration(CSSParserTokenStream& stream, StyleRule::
         if (rule_type != StyleRule::kStyle && rule_type != StyleRule::kKeyframe) {
           return false;
         }
+        // Peek value once to detect/strip !important without advancing the
+        // stream for the real consumption below.
+        CSSParserTokenStream::State savepoint = stream.Save();
         CSSTokenizedValue tokenized_value = ConsumeUnrestrictedPropertyValue(stream);
         important = RemoveImportantAnnotationIfPresent(tokenized_value);
         if (important && (rule_type == StyleRule::kKeyframe)) {
           return false;
         }
+        // Restore so ConsumeVariableValue can read the actual value.
+        stream.Restore(savepoint);
+
         AtomicString variable_name = lhs.Value().ToAtomicString();
         bool allow_important_annotation = (rule_type != StyleRule::kKeyframe);
         bool is_animation_tainted = rule_type == StyleRule::kKeyframe;

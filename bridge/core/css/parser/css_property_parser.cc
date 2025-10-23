@@ -188,17 +188,13 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
   value.text = CSSVariableParser::StripTrailingWhitespaceAndComments(value.text);
 
   if (CSSVariableParser::ContainsValidVariableReferences(value.range, context_->GetExecutingContext())) {
-    // Preserve the raw user text for var() expressions without creating
-    // CSSVariableData/CSSUnparsedDeclarationValue, so downstream doesn't try
-    // to resolve it. This keeps the original CSS intact for serialization and
-    // Dart-side evaluation.
+    // Preserve raw user text for var() references to avoid downstream resolution.
     if (value.text.length() > CSSVariableData::kMaxVariableBytes) {
       return false;
     }
 
     auto raw = std::make_shared<CSSRawValue>(String(value.text));
     if (is_shorthand) {
-      // Expand to longhands using the same raw text for each longhand.
       css_parsing_utils::AddExpandedPropertyForValue(property_id, raw, important, *parsed_properties_);
     } else {
       AddProperty(property_id, CSSPropertyID::kInvalid, raw, important,
