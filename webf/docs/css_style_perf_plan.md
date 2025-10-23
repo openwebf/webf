@@ -164,6 +164,8 @@ Observed impact:
   - DebugFlags.enableCssInvalidateSkipUniversal: skip evaluating universal selectors during stylesheet invalidation fallback walk. Default OFF.
   - DebugFlags.enableCssInvalidateSkipTag: skip evaluating tag selectors during stylesheet invalidation fallback. Default OFF.
   - DebugFlags.cssInvalidateUniversalCap: cap universal-rule evaluations during invalidation (0 = no cap). Default 0.
+  - DebugFlags.enableCssInvalidateUniversalHeuristics: auto-skip universal evaluation during invalidation when changed universal rules exceed a threshold. Default OFF.
+  - DebugFlags.cssInvalidateUniversalSkipThreshold: threshold for heuristic (default 128).
 
 ## Next Steps
 - Workstream 2 (Memoization rollout): collect perf samples with `memoHits/memoMisses`, `memoEvict`, and `memoAvgSize`; validate steady-state hit rates in app scenarios (with stable stylesheets). Tune LRU capacity via `cssMatchedRulesCacheCapacity` as needed.

@@ -47,6 +47,13 @@ class DebugFlags {
   // (0 or negative means no cap). Useful for probing cost sensitivity.
   static int cssInvalidateUniversalCap = 0;
 
+  // Heuristic: when the number of changed universal selectors exceeds this
+  // threshold, treat universal evaluation during invalidation as too costly and
+  // skip it automatically (equivalent to enableCssInvalidateSkipUniversal).
+  // Only applied when enableCssInvalidateUniversalHeuristics is true.
+  static bool enableCssInvalidateUniversalHeuristics = false;
+  static int cssInvalidateUniversalSkipThreshold = 128;
+
   // Ultra-detailed CSS tracing for investigations. When true, emit
   // [trace] logs for dirty marking, invalidation sources, cache hits, and
   // root recalcs. Intended for short profiling sessions.

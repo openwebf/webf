@@ -128,6 +128,113 @@ class ElementRuleCollector {
     return matchedRules;
   }
 
+  // Variant used by stylesheet invalidation fallback. Allows skipping certain
+  // categories (e.g., universal/tag) and capping universal evaluations to help
+  // diagnose hotspots when many rules change at once.
+  List<CSSRule> matchedRulesForInvalidate(RuleSet ruleSet, Element element) {
+    List<CSSRule> matchedRules = [];
+    final bool perf = DebugFlags.enableCssPerf;
+    final Stopwatch? sw = perf ? (Stopwatch()..start()) : null;
+    // Reuse a single evaluator per call.
+    final SelectorEvaluator evaluator = SelectorEvaluator();
+    final _AncestorTokenSet? ancestorTokens = DebugFlags.enableCssAncestryFastPath
+        ? _buildAncestorTokens(element)
+        : null;
+
+    if (ruleSet.isEmpty) return matchedRules;
+
+    // #id
+    String? id = element.id;
+    if (id != null) {
+      final list = ruleSet.idRules[id];
+      matchedRules.addAll(_collectMatchingRulesForList(
+        list,
+        element,
+        evaluator: evaluator,
+        enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
+        ancestorTokens: ancestorTokens,
+      ));
+      if (matchedRules.isNotEmpty) gotoReturn(matchedRules, sw);
+    }
+
+    // .class
+    for (String className in element.classList) {
+      final list = ruleSet.classRules[className];
+      matchedRules.addAll(_collectMatchingRulesForList(
+        list,
+        element,
+        evaluator: evaluator,
+        enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
+        ancestorTokens: ancestorTokens,
+      ));
+      if (matchedRules.isNotEmpty) gotoReturn(matchedRules, sw);
+    }
+
+    // attribute selector
+    for (String attribute in element.attributes.keys) {
+      final list = ruleSet.attributeRules[attribute.toUpperCase()];
+      matchedRules.addAll(_collectMatchingRulesForList(
+        list,
+        element,
+        evaluator: evaluator,
+        enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
+        ancestorTokens: ancestorTokens,
+      ));
+      if (matchedRules.isNotEmpty) gotoReturn(matchedRules, sw);
+    }
+
+    // tag selectors (optional)
+    if (!DebugFlags.enableCssInvalidateSkipTag) {
+      final String tagLookup = element.tagName.toUpperCase();
+      final listTag = ruleSet.tagRules[tagLookup];
+      matchedRules.addAll(_collectMatchingRulesForList(
+        listTag,
+        element,
+        evaluator: evaluator,
+        enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
+        ancestorTokens: ancestorTokens,
+      ));
+      if (matchedRules.isNotEmpty) gotoReturn(matchedRules, sw);
+    }
+
+    // universal (optional + capped or heuristic skip)
+    final bool skipUniversal = DebugFlags.enableCssInvalidateSkipUniversal ||
+        (DebugFlags.enableCssInvalidateUniversalHeuristics &&
+            ruleSet.universalRules.length > DebugFlags.cssInvalidateUniversalSkipThreshold);
+    if (!skipUniversal) {
+      final int cap = DebugFlags.cssInvalidateUniversalCap;
+      if (cap > 0 && ruleSet.universalRules.length > cap) {
+        matchedRules.addAll(_collectMatchingRulesForList(
+          ruleSet.universalRules.take(cap).toList(),
+          element,
+          evaluator: evaluator,
+          enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
+          ancestorTokens: ancestorTokens,
+        ));
+      } else {
+        matchedRules.addAll(_collectMatchingRulesForList(
+          ruleSet.universalRules,
+          element,
+          evaluator: evaluator,
+          enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
+          ancestorTokens: ancestorTokens,
+        ));
+      }
+    }
+
+    if (sw != null) {
+      // We do not record candidateCount breakdown here to keep overhead low.
+      CSSPerf.recordMatch(durationMs: sw.elapsedMilliseconds, candidateCount: 0, matchedCount: matchedRules.length);
+    }
+    return matchedRules;
+  }
+
+  void gotoReturn(List<CSSRule> matchedRules, Stopwatch? sw) {
+    if (sw != null) {
+      CSSPerf.recordMatch(durationMs: sw.elapsedMilliseconds, candidateCount: 0, matchedCount: matchedRules.length);
+    }
+  }
+
   CSSStyleDeclaration collectionFromRuleSet(RuleSet ruleSet, Element element) {
     final rules = matchedRules(ruleSet, element);
     CSSStyleDeclaration declaration = CSSStyleDeclaration();
