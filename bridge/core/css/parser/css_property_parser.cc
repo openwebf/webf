@@ -10,6 +10,7 @@
 #include "foundation/string/character_visitor.h"
 #include "core/css/css_pending_substitution_value.h"
 #include "core/css/css_unparsed_declaration_value.h"
+#include "core/css/css_raw_value.h"
 #include "core/css/hash_tools.h"
 #include "core/css/parser/at_rule_descriptor_parser.h"
 #include "core/css/parser/css_parser_impl.h"
@@ -187,20 +188,20 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
   value.text = CSSVariableParser::StripTrailingWhitespaceAndComments(value.text);
 
   if (CSSVariableParser::ContainsValidVariableReferences(value.range, context_->GetExecutingContext())) {
+    // Preserve the raw user text for var() expressions without creating
+    // CSSVariableData/CSSUnparsedDeclarationValue, so downstream doesn't try
+    // to resolve it. This keeps the original CSS intact for serialization and
+    // Dart-side evaluation.
     if (value.text.length() > CSSVariableData::kMaxVariableBytes) {
       return false;
     }
 
-    bool is_animation_tainted = false;
-    auto variable = std::make_shared<CSSUnparsedDeclarationValue>(
-        CSSVariableData::Create(value, is_animation_tainted, true), context_);
-
+    auto raw = std::make_shared<CSSRawValue>(String(value.text));
     if (is_shorthand) {
-      std::shared_ptr<cssvalue::CSSPendingSubstitutionValue> pending_value =
-          std::make_shared<cssvalue::CSSPendingSubstitutionValue>(property_id, variable);
-      css_parsing_utils::AddExpandedPropertyForValue(property_id, pending_value, important, *parsed_properties_);
+      // Expand to longhands using the same raw text for each longhand.
+      css_parsing_utils::AddExpandedPropertyForValue(property_id, raw, important, *parsed_properties_);
     } else {
-      AddProperty(property_id, CSSPropertyID::kInvalid, variable, important,
+      AddProperty(property_id, CSSPropertyID::kInvalid, raw, important,
                   css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
     }
     return true;
