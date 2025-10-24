@@ -143,45 +143,8 @@ class ElementRuleCollector {
 
     if (ruleSet.isEmpty) return matchedRules;
 
-    // #id
-    String? id = element.id;
-    if (id != null) {
-      final list = ruleSet.idRules[id];
-      matchedRules.addAll(_collectMatchingRulesForList(
-        list,
-        element,
-        evaluator: evaluator,
-        enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
-        ancestorTokens: ancestorTokens,
-      ));
-      if (matchedRules.isNotEmpty) gotoReturn(matchedRules, sw);
-    }
-
-    // .class
-    for (String className in element.classList) {
-      final list = ruleSet.classRules[className];
-      matchedRules.addAll(_collectMatchingRulesForList(
-        list,
-        element,
-        evaluator: evaluator,
-        enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
-        ancestorTokens: ancestorTokens,
-      ));
-      if (matchedRules.isNotEmpty) gotoReturn(matchedRules, sw);
-    }
-
-    // attribute selector
-    for (String attribute in element.attributes.keys) {
-      final list = ruleSet.attributeRules[attribute.toUpperCase()];
-      matchedRules.addAll(_collectMatchingRulesForList(
-        list,
-        element,
-        evaluator: evaluator,
-        enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
-        ancestorTokens: ancestorTokens,
-      ));
-      if (matchedRules.isNotEmpty) gotoReturn(matchedRules, sw);
-    }
+    // NOTE: id/class/attribute selectors are handled via document indices in
+    // StyleNodeManager.invalidateElementStyle(). Do not evaluate them here.
 
     // tag selectors (optional)
     if (!DebugFlags.enableCssInvalidateSkipTag) {
@@ -220,6 +183,19 @@ class ElementRuleCollector {
           ancestorTokens: ancestorTokens,
         ));
       }
+      if (matchedRules.isNotEmpty) gotoReturn(matchedRules, sw);
+    }
+
+    // Legacy pseudo rules (e.g., ::before/::after)
+    if (ruleSet.pseudoRules.isNotEmpty) {
+      matchedRules.addAll(_collectMatchingRulesForList(
+        ruleSet.pseudoRules,
+        element,
+        evaluator: evaluator,
+        enableAncestryFastPath: false,
+        ancestorTokens: null,
+      ));
+      if (matchedRules.isNotEmpty) gotoReturn(matchedRules, sw);
     }
 
     if (sw != null) {

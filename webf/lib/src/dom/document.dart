@@ -701,7 +701,7 @@ class Document extends ContainerNode {
       CSSPerf.recordStyleFlush(batched: scheduled);
     }
   }
-
+  
   void scheduleStyleUpdate() {
     final bool useDebounce = DebugFlags.enableCssBatchStyleUpdates && DebugFlags.cssBatchStyleUpdatesDebounceMs > 0;
     if (useDebounce) {
