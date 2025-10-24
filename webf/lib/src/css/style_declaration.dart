@@ -771,17 +771,23 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       }
     }
 
+    // Merge pseudo-element styles. Ensure target side is initialized so rules from
+    // 'other' are not dropped when this side is null.
     if (other.pseudoBeforeStyle != null) {
-      pseudoBeforeStyle?.merge(other.pseudoBeforeStyle!);
+      pseudoBeforeStyle ??= CSSStyleDeclaration();
+      pseudoBeforeStyle!.merge(other.pseudoBeforeStyle!);
     }
     if (other.pseudoAfterStyle != null) {
-      pseudoAfterStyle?.merge(other.pseudoAfterStyle!);
+      pseudoAfterStyle ??= CSSStyleDeclaration();
+      pseudoAfterStyle!.merge(other.pseudoAfterStyle!);
     }
     if (other.pseudoFirstLetterStyle != null) {
-      pseudoFirstLetterStyle?.merge(other.pseudoFirstLetterStyle!);
+      pseudoFirstLetterStyle ??= CSSStyleDeclaration();
+      pseudoFirstLetterStyle!.merge(other.pseudoFirstLetterStyle!);
     }
     if (other.pseudoFirstLineStyle != null) {
-      pseudoFirstLineStyle?.merge(other.pseudoFirstLineStyle!);
+      pseudoFirstLineStyle ??= CSSStyleDeclaration();
+      pseudoFirstLineStyle!.merge(other.pseudoFirstLineStyle!);
     }
 
     return updateStatus;
