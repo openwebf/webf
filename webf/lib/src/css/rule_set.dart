@@ -97,34 +97,43 @@ class RuleSet {
           // Invalid selector like `P:first-line.three`; drop this rule.
           return;
         }
-        // At most one pseudo-element; any additional would be handled by parser.
         break;
       }
     }
 
-    String? id, className, attributeName, tagName, pseudoName;
+    // Choose the best indexing key from the RIGHTMOST COMPOUND only, with
+    // priority: id > class > attribute > tag > legacy pseudo > universal.
+    // Build the rightmost compound by walking from the end until a combinator
+    // boundary.
+    final List<SimpleSelector> rightmost = <SimpleSelector>[];
+    for (final seq in seqs.reversed) {
+      rightmost.add(seq.simpleSelector);
+      if (seq.combinator != TokenKind.COMBINATOR_NONE) break;
+    }
 
-    for (final simpleSelectorSequence in selector.simpleSelectorSequences.reversed) {
-      final simpleSelector = simpleSelectorSequence.simpleSelector;
-      if (simpleSelector.runtimeType == IdSelector) {
-        id = simpleSelector.name;
-      } else if (simpleSelector.runtimeType == ClassSelector) {
-        className = simpleSelector.name;
-      } else if (simpleSelector.runtimeType == AttributeSelector) {
-        attributeName = simpleSelector.name;
-      } else if (simpleSelector.runtimeType == ElementSelector) {
-        if (simpleSelector.isWildcard) {
-          break;
-        }
-        tagName = simpleSelector.name;
-      } else if (simpleSelector.runtimeType == PseudoClassSelector ||
-          simpleSelector.runtimeType == PseudoElementSelector ||
-          simpleSelector.runtimeType == PseudoClassFunctionSelector) {
-        pseudoName = simpleSelector.name;
-      }
+    String? id;
+    String? className;
+    String? attributeName;
+    String? tagName;
+    String? legacyPseudo;
 
-      if (id != null || className != null || attributeName != null || tagName != null || pseudoName != null) {
-        break;
+    // Scan for best key across the compound (no early break on pseudo).
+    for (final simple in rightmost) {
+      if (simple is IdSelector) {
+        id ??= simple.name;
+      } else if (simple is ClassSelector) {
+        className ??= simple.name;
+      } else if (simple is AttributeSelector) {
+        attributeName ??= simple.name;
+      } else if (simple is ElementSelector && !simple.isWildcard) {
+        tagName ??= simple.name;
+      } else if (simple is PseudoClassSelector || simple is PseudoElementSelector) {
+        final name = (simple as dynamic).name as String; // both have name
+        if (_isLegacyPsuedoClass(name)) legacyPseudo ??= name;
+      } else if (simple is PseudoClassFunctionSelector) {
+        // ignore function pseudos for bucketing
+      } else if (simple is NegationSelector) {
+        // ignore :not() for bucketing; prefer other keys if present
       }
     }
 
@@ -134,27 +143,27 @@ class RuleSet {
       map[key] = rules;
     }
 
-    if (id != null && id.isNotEmpty == true) {
+    if (id != null && id.isNotEmpty) {
       insertRule(id, rule, idRules);
       return;
     }
 
-    if (className != null && className.isNotEmpty == true) {
+    if (className != null && className.isNotEmpty) {
       insertRule(className, rule, classRules);
       return;
     }
 
-    if (attributeName != null && attributeName.isNotEmpty == true) {
+    if (attributeName != null && attributeName.isNotEmpty) {
       insertRule(attributeName.toUpperCase(), rule, attributeRules);
       return;
     }
 
-    if (tagName != null && tagName.isNotEmpty == true) {
+    if (tagName != null && tagName.isNotEmpty) {
       insertRule(tagName.toUpperCase(), rule, tagRules);
       return;
     }
 
-    if (pseudoName != null && _isLegacyPsuedoClass(pseudoName)) {
+    if (legacyPseudo != null) {
       pseudoRules.add(rule);
       return;
     }
