@@ -188,15 +188,17 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
   value.text = CSSVariableParser::StripTrailingWhitespaceAndComments(value.text);
 
   if (CSSVariableParser::ContainsValidVariableReferences(value.range, context_->GetExecutingContext())) {
-    // Preserve raw user text for var() references to avoid downstream resolution.
     if (value.text.length() > CSSVariableData::kMaxVariableBytes) {
       return false;
     }
-
-    auto raw = std::make_shared<CSSRawValue>(String(value.text));
     if (is_shorthand) {
-      css_parsing_utils::AddExpandedPropertyForValue(property_id, raw, important, *parsed_properties_);
+      bool is_animation_tainted = false;
+      auto variable = std::make_shared<CSSUnparsedDeclarationValue>(
+          CSSVariableData::Create(value, is_animation_tainted, true), context_);
+      auto pending = std::make_shared<cssvalue::CSSPendingSubstitutionValue>(property_id, variable);
+      css_parsing_utils::AddExpandedPropertyForValue(property_id, pending, important, *parsed_properties_);
     } else {
+      auto raw = std::make_shared<CSSRawValue>(String(value.text));
       AddProperty(property_id, CSSPropertyID::kInvalid, raw, important,
                   css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
     }

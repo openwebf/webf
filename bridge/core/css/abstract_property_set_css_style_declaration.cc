@@ -196,10 +196,8 @@ void AbstractPropertySetCSSStyleDeclaration::SetPropertyInternal(CSSPropertyID u
 
   MutableCSSPropertyValueSet::SetResult result;
   if (unresolved_property == CSSPropertyID::kVariable) {
-    AtomicString atomic_name(custom_property_name);
-
     bool is_animation_tainted = IsKeyframeStyle();
-    result = PropertySet().ParseAndSetCustomProperty(atomic_name, String(value), important, ContextStyleSheet(),
+    result = PropertySet().ParseAndSetCustomProperty(custom_property_name, String(value), important, ContextStyleSheet(),
                                                      is_animation_tainted);
   } else {
     result =
