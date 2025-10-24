@@ -5,6 +5,8 @@
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
 #include "core/css/properties/css_parsing_utils.h"
+#include "core/css/parser/css_parser_save_point.h"
+#include "core/css/css_raw_value.h"
 #include "core/base/containers/span.h"
 #include "core/css/css_appearance_auto_base_select_value_pair.h"
 #include "core/css/css_axis_value.h"
@@ -59,6 +61,9 @@
 
 namespace webf {
 namespace css_parsing_utils {
+
+// Forward declaration used by certain component consumers to preserve var() as raw text.
+static std::shared_ptr<const CSSValue> ConsumeVarFunctionAsRaw(CSSParserTokenStream&);
 
 // https://drafts.csswg.org/css-syntax/#typedef-any-value
 bool IsTokenAllowedForAnyValue(const CSSParserToken& token) {
@@ -1427,6 +1432,9 @@ bool ConsumeBorderShorthand(CSSParserTokenStream& stream,
 std::shared_ptr<const CSSValue> ConsumeBorderWidth(CSSParserTokenStream& stream,
                                                    std::shared_ptr<const CSSParserContext> context,
                                                    UnitlessQuirk unitless) {
+  if (auto raw = ConsumeVarFunctionAsRaw(stream)) {
+    return raw;
+  }
   if (stream.Peek().FunctionId() == CSSValueID::kInternalAppearanceAutoBaseSelect) {
     CSSParserSavePoint savepoint(stream);
     CSSParserTokenRange arg_range = ConsumeFunction(stream);
@@ -1456,6 +1464,9 @@ std::shared_ptr<const CSSValue> ParseBorderWidthSide(CSSParserTokenStream& strea
 
 std::shared_ptr<const CSSValue> ParseBorderStyleSide(CSSParserTokenStream& stream,
                                                      std::shared_ptr<const CSSParserContext> context) {
+  if (auto raw = ConsumeVarFunctionAsRaw(stream)) {
+    return raw;
+  }
   if (stream.Peek().FunctionId() == CSSValueID::kInternalAppearanceAutoBaseSelect) {
     CSSParserSavePoint savepoint(stream);
     CSSParserTokenRange arg_range = ConsumeFunction(stream);
@@ -1497,6 +1508,9 @@ ConsumeAppearanceAutoBaseSelectColor(T& range, std::shared_ptr<const CSSParserCo
 std::shared_ptr<const CSSValue> ConsumeBorderColorSide(CSSParserTokenStream& stream,
                                                        std::shared_ptr<const CSSParserContext> context,
                                                        const CSSParserLocalContext& local_context) {
+  if (auto raw = ConsumeVarFunctionAsRaw(stream)) {
+    return raw;
+  }
   CSSPropertyID shorthand = local_context.CurrentShorthand();
   bool allow_quirky_colors = IsQuirksModeBehavior(context->Mode()) &&
                              (shorthand == CSSPropertyID::kInvalid || shorthand == CSSPropertyID::kBorderColor);
@@ -1514,6 +1528,10 @@ std::shared_ptr<const CSSValue> ParseLonghand(CSSPropertyID unresolved_property,
   CSSPropertyID property_id = ResolveCSSPropertyID(unresolved_property);
   CSSValueID value_id = stream.Peek().Id();
   assert(!CSSProperty::Get(property_id).IsShorthand());
+  // Preserve var() as raw text for later serialization if present as the value.
+  if (auto raw = ConsumeVarFunctionAsRaw(stream)) {
+    return raw;
+  }
   if (CSSParserFastPaths::IsHandledByKeywordFastPath(property_id)) {
     if (CSSParserFastPaths::IsValidKeywordPropertyAndValue(property_id, stream.Peek().Id(), context->Mode())) {
       return ConsumeIdent(stream);
@@ -6185,6 +6203,23 @@ bool MaybeConsumeImportant(CSSParserTokenStream& stream, bool allow_important_an
 
   savepoint.Release();
   return true;
+}
+
+// When encountering a var() function while parsing a component of a shorthand,
+// return it as a CSSRawValue preserving the original text so we can serialize
+// the raw var(...) later. This is used to keep var() for longhand expansion
+// when the variable cannot be resolved at parse-time.
+static std::shared_ptr<const CSSValue> ConsumeVarFunctionAsRaw(CSSParserTokenStream& stream) {
+  if (stream.Peek().GetType() != kFunctionToken || stream.Peek().FunctionId() != CSSValueID::kVar) {
+    return nullptr;
+  }
+  CSSParserSavePoint savepoint(stream);
+  CSSParserTokenRange arg_range = ConsumeFunction(stream);
+  // Serialize the exact inner tokens as CSS text.
+  String inner = arg_range.Serialize();
+  String full = String::FromUTF8("var(") + inner + String::FromUTF8(")");
+  savepoint.Release();
+  return std::make_shared<CSSRawValue>(full);
 }
 
 }  // namespace css_parsing_utils
