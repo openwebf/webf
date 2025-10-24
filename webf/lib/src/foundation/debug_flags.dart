@@ -81,7 +81,7 @@ class DebugFlags {
   // Guard for batching style recalculation: when true, class/id/attribute
   // setters will mark the element dirty and defer style recalculation to the
   // next Document.flushStyle() or updateStyleIfNeeded() call.
-  static bool enableCssBatchRecalc = false;
+  static bool enableCssBatchRecalc = true;
 
   // Extra diagnostics for bursts of <style> insertions and stylesheet flushes.
   // When true, logs multi-style add/flush details to help analyze overhead
@@ -93,7 +93,7 @@ class DebugFlags {
   // during bursts. When true, style/link code schedules a deferred
   // updateStyleIfNeeded() instead of calling it immediately after each
   // appendPendingStyleSheet().
-  static bool enableCssBatchStyleUpdates = false;
+  static bool enableCssBatchStyleUpdates = true;
 
   // If true, batch stylesheet updates to the end of the current frame instead
   // of the current microtask. This can coalesce bursts across multiple
@@ -105,7 +105,7 @@ class DebugFlags {
   // across multiple frames. When > 0 and enableCssBatchStyleUpdates is true,
   // style/link updates are debounced by this window and flushed once when
   // no further updates arrive within the interval.
-  static int cssBatchStyleUpdatesDebounceMs = 0;
+  static int cssBatchStyleUpdatesDebounceMs = 32;
 
   // Controls verbose IMG element logs added for diagnostics.
   static bool enableImageLogs = false;

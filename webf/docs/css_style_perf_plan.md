@@ -1,7 +1,7 @@
 # CSS Stylesheet & Style Recalc – Performance Plan
 
 Owner: webf/css
-Status: Workstream 1 delivered & validated — Workstream 2 (default ON) and Workstream 3 (default ON)
+Status: Workstream 1 delivered & validated — Workstream 2 (default ON), Workstream 3 (default ON), Workstream 4 (default ON)
 Scope: Dart CSS pipeline (parse → index → match → cascade → recalc)
 
 ## Goals
@@ -71,13 +71,13 @@ Expected impact:
 Notes/Telemetry:
 - In CSS1 snapshot runs, total match ms changes are within noise. In app scenarios with many descendant selectors, enablement remains beneficial; flag remains available for targeted disable if needed.
 
-## Workstream 4: Batch Recalc & Stylesheet Batching (Guarded)
+## Workstream 4: Batch Recalc & Stylesheet Batching (Default ON)
 Problem: Many immediate recalcs and per-insert stylesheet flushes cause overhead during bursts.
 
 Plan:
 - Element-level: optional code path to mark element dirty from id/class/attr setters and defer to `Document.flushStyle()`.
 - Stylesheet-level: batch `<style>/<link>` inserts; schedule style updates via frame or time debounce instead of flushing per insert.
-- Gate both behind feature flags; keep defaults conservative.
+- Gate both behind feature flags; defaults now ON.
 
 Progress:
 - Element batch recalc implemented (flagged):
@@ -154,10 +154,10 @@ Observed impact:
 - DebugFlags.cssMatchedRulesCacheCapacity: LRU capacity for per‑element matched‑rules memoization. Default 4.
 - DebugFlags.enableCssAncestryFastPath: selector ancestry precheck for descendant combinators. Default ON.
  - DebugFlags.enableCssStyleUpdateBreakdown: emits per‑flush/style‑update timing breakdowns (diff/invalidate/index/flush) and dirty counts; useful for diagnosing many `<style>` insertions in `<head>`. Default OFF.
- - DebugFlags.enableCssBatchRecalc: defer element recalc from id/class/attr setters and batch in flush. Default OFF.
- - DebugFlags.enableCssBatchStyleUpdates: batch `<style>/<link>` driven updates. Default OFF.
+ - DebugFlags.enableCssBatchRecalc: defer element recalc from id/class/attr setters and batch in flush. Default ON.
+ - DebugFlags.enableCssBatchStyleUpdates: batch `<style>/<link>` driven updates. Default ON.
  - DebugFlags.enableCssBatchStyleUpdatesPerFrame: frame-coalesce stylesheet updates (requires enableCssBatchStyleUpdates). Default OFF.
- - DebugFlags.cssBatchStyleUpdatesDebounceMs: time-based coalescing across frames (requires enableCssBatchStyleUpdates). Default 0.
+ - DebugFlags.cssBatchStyleUpdatesDebounceMs: time-based coalescing across frames (requires enableCssBatchStyleUpdates). Default 32.
  - DebugFlags.enableCssMultiStyleTrace: emits extra logs for bursts of <style> insertions and stylesheet flushes; CSSPerf tracks styleAdds and styleFlushes. Default OFF.
   - DebugFlags.enableCssInvalidateDetail: logs detailed invalidation info including fallback traversal counts and tag keys. Default OFF.
   - DebugFlags.enableCssDisableRootRecalc: forces targeted recalculation only (disables root recalc) to isolate hotspots; may be incorrect. Default OFF.
@@ -166,6 +166,9 @@ Observed impact:
   - DebugFlags.cssInvalidateUniversalCap: cap universal-rule evaluations during invalidation (0 = no cap). Default 0.
   - DebugFlags.enableCssInvalidateUniversalHeuristics: auto-skip universal evaluation during invalidation when changed universal rules exceed a threshold. Default OFF.
   - DebugFlags.cssInvalidateUniversalSkipThreshold: threshold for heuristic (default 128).
+  - DebugFlags.enableCssMatchDetail: detailed [match][compound] logs for slow paths. Default OFF.
+  - DebugFlags.cssMatchCompoundLogThresholdMs: only log a compound when it takes ≥N ms (0 = all when detail enabled). Default 0.
+  - DebugFlags.cssMatchCompoundMaxLogsPerFlush: cap number of [match][compound] logs per flush (0 = unlimited). Default 0.
 
 ## Next Steps
 - Workstream 2 (Memoization rollout): collect perf samples with `memoHits/memoMisses`, `memoEvict`, and `memoAvgSize`; validate steady-state hit rates in app scenarios (with stable stylesheets). Tune LRU capacity via `cssMatchedRulesCacheCapacity` as needed.
@@ -177,13 +180,15 @@ Observed impact:
 - Targeted invalidation ON by default (validated).
 - Memoization ON by default; retain flag to disable if regressions are observed.
 - Ancestry fast-path ON by default; retain flag to disable in edge cases.
-- Batch recalc and stylesheet batching behind flags; enable in test apps and measure.
+- Batch recalc and stylesheet batching ON by default; retain flags to disable if regressions are observed.
 
 ## Implementation Notes (touch points)
 - Indices: lib/src/dom/document.dart (maps), lib/src/dom/element.dart (maintenance), lib/src/dom/style_node_manager.dart (invalidate).
 - Memoization: lib/src/dom/element.dart (_applySheetStyle), lib/src/css/element_rule_collector.dart.
 - Micro-optimizations: lib/src/css/element_rule_collector.dart, lib/src/css/query_selector.dart.
-- Batch recalc: lib/src/dom/element.dart setters → Document mark dirty.
+- Invalidation (fallback path): lib/src/css/element_rule_collector.dart.matchedRulesForInvalidate only evaluates tag/universal/pseudo; skips id/class/attr which are already handled by indices.
+- Indexing improvement: lib/src/css/rule_set.dart indexes by rightmost compound with priority id>class>attr>tag>legacy‑pseudo>universal to reduce universal bucket size.
+- Diagnostics: lib/src/dom/document.dart begins per‑flush scope for log caps; lib/src/css/css_perf.dart adds sheets* breakdown and compoundCalls/compoundMs; lib/src/css/query_selector.dart emits [match][compound] logs with threshold and per‑flush cap.
 
 ## Out of Scope (for now)
 - Blink/C++ resolver path integration.
