@@ -990,40 +990,40 @@ abstract class Element extends ContainerNode
 
   PseudoElement _createOrUpdatePseudoElement(String contentValue,
       PseudoKind kind, PseudoElement? previousPseudoElement) {
-    var pseudoValue = CSSPseudo.resolveContent(contentValue);
+    // Resolve CSS content value first so we can update text correctly.
+    final pseudoValue = CSSPseudo.resolveContent(contentValue);
 
-    bool shouldMutateBeforeElement = previousPseudoElement == null ||
-        ((previousPseudoElement.firstChild as TextNode).data == pseudoValue);
-
+    // Ensure we have a pseudo element instance to work with.
     previousPseudoElement ??= PseudoElement(
         kind,
         this,
         BindingContext(ownerDocument.controller.view, contextId!,
             allocateNewBindingObject()));
+
+    // Merge pseudo-specific style rules collected on the parent onto the pseudo element.
     previousPseudoElement.style.merge(kind == PseudoKind.kPseudoBefore
         ? style.pseudoBeforeStyle!
         : style.pseudoAfterStyle!);
 
-    if (shouldMutateBeforeElement) {
-      switch (kind) {
-        case PseudoKind.kPseudoBefore:
-          if (previousPseudoElement.parentNode == null) {
-            if (firstChild != null) {
-              insertBefore(previousPseudoElement, firstChild!);
-            } else {
-              appendChild(previousPseudoElement);
-            }
-          }
-          break;
-        case PseudoKind.kPseudoAfter:
-          if (previousPseudoElement.parentNode == null) {
+    // Attach the pseudo element to the correct position in the DOM tree if not already attached.
+    switch (kind) {
+      case PseudoKind.kPseudoBefore:
+        if (previousPseudoElement.parentNode == null) {
+          if (firstChild != null) {
+            insertBefore(previousPseudoElement, firstChild!);
+          } else {
             appendChild(previousPseudoElement);
           }
-          break;
-      }
+        }
+        break;
+      case PseudoKind.kPseudoAfter:
+        if (previousPseudoElement.parentNode == null) {
+          appendChild(previousPseudoElement);
+        }
+        break;
     }
 
-    // Support quoted strings, and minimal function handling for counter().
+    // Support quoted strings and minimal function handling for counter().
     String? textContent;
     if (pseudoValue is QuoteStringContentValue) {
       textContent = pseudoValue.value;
@@ -1045,6 +1045,7 @@ abstract class Element extends ContainerNode
       }
     }
 
+    // Flush style changes so renderStyle picks up the new properties.
     previousPseudoElement.style.flushPendingProperties();
 
     return previousPseudoElement;
@@ -1858,6 +1859,16 @@ abstract class Element extends ContainerNode
 
   void recalculateStyle(
       {bool rebuildNested = false, bool forceRecalculate = false}) {
+    // Pseudo elements (::before/::after) are styled via their parent's
+    // matched pseudo rules. A full recalc using the standard element
+    // pipeline would discard those properties (only defaults/inline apply).
+    // Skip full recalc here to preserve pseudo-specific styles, which are
+    // refreshed via markBefore/AfterPseudoElementNeedsUpdate on the parent.
+    if (this is PseudoElement) {
+      // Still flush any pending inline or merged properties if present.
+      style.flushPendingProperties();
+      return;
+    }
     // Always update CSS variables even for display:none elements when rebuilding nested
     bool shouldUpdateCSSVariables =
         rebuildNested && renderStyle.display == CSSDisplay.none;
