@@ -134,24 +134,23 @@ mixin CSSVariableMixin on RenderStyle {
     propertyNamesWithPattern?.forEach((String propertyNameWithPattern) {
       List<String> group = propertyNameWithPattern.split('_');
       String propertyName = group[0];
-      String? variableString;
-      if (group.length > 1) {
-        variableString = group[1];
-      }
-
-      String propertyValue = target.style.getPropertyValue(propertyName);
-      if (target.style.contains(propertyName) && CSSVariable.isCSSVariableValue(propertyValue)) {
-        String propertyValue = variableString ?? value;
+      // Retrieve current CSS text for the property. If it still contains var(),
+      // re-apply the exact same CSS text to trigger recomputation with the
+      // updated variable value, preserving dependency on the variable.
+      final String cssText = target.style.getPropertyValue(propertyName);
+      if (target.style.contains(propertyName) && CSSVariable.isCSSVariableValue(cssText)) {
         if (kDebugMode && DebugFlags.enableCssLogs) {
-          debugPrint('[webf][var] update property due to var change: ' + propertyName + ' <- ' + propertyValue + ' (variable=' + identifier + ')');
+          debugPrint('[webf][var] update property due to var change: ' + propertyName + ' <- ' + cssText + ' (variable=' + identifier + ')');
         }
-        if (CSSColor.isColor(propertyValue)) {
+        // Clear color cache conservatively when the CSS value is a bare color.
+        // For var(...) patterns, fallback cache clears below handle it.
+        if (CSSColor.isColor(cssText)) {
           if (kDebugMode && DebugFlags.enableCssLogs) {
-            debugPrint('[webf][var] clear color cache: ' + propertyValue);
+            debugPrint('[webf][var] clear color cache: ' + cssText);
           }
-          CSSColor.clearCachedColorValue(propertyValue);
+          CSSColor.clearCachedColorValue(cssText);
         }
-        target.style.setProperty(propertyName, propertyValue);
+        target.style.setProperty(propertyName, cssText);
         target.style.flushPendingProperties();
       }
     });

@@ -856,19 +856,20 @@ describe('CSS Variable Inheritance and Dependencies', () => {
       // Change container class
       container.className = 'base theme-blue';
       
-      await wait(20);
+      // Wait long enough to cover batched style debounce (32ms default)
+      await wait(40);
       await snapshot();
       
       // Set individual target to override theme
       targetElements[1].classList.add('theme-green');
       
-      await wait(20);
+      await wait(40);
       await snapshot();
       
       // Change container class again
       container.className = 'base theme-green';
       
-      await wait(20);
+      await wait(40);
       await snapshot();
       
       done();

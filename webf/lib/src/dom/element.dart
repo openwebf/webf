@@ -1367,21 +1367,33 @@ abstract class Element extends ContainerNode
   void setAttribute(String qualifiedName, String value) {
     ElementAttributeProperty? propertyHandler =
         _attributeProperties[qualifiedName];
-    if (propertyHandler != null && propertyHandler.setter != null) {
-      propertyHandler.setter!(value);
+    final bool invokedByPropertyHandler =
+        propertyHandler != null && propertyHandler.setter != null;
+    if (invokedByPropertyHandler) {
+      // Let the property handler perform the actual mutation (e.g., className setter)
+      propertyHandler!.setter!(value);
     }
-    internalSetAttribute(qualifiedName, value);
+    // Persist attribute map + emit DevTools events exactly once and avoid
+    // redundant style work when the property handler already did it.
+    internalSetAttribute(qualifiedName, value,
+        invokedByAttributeSetter: invokedByPropertyHandler);
   }
 
-  void internalSetAttribute(String qualifiedName, String value) {
+  void internalSetAttribute(String qualifiedName, String value,
+      {bool invokedByAttributeSetter = false}) {
     // Track previous value to avoid redundant DevTools events
     final String? oldValue = attributes[qualifiedName];
     final bool changed = oldValue != value;
 
     attributes[qualifiedName] = value;
     if (qualifiedName == 'class') {
-      // className setter performs necessary style recalculation
-      className = value;
+      // When called from setAttribute() and a property handler already ran
+      // (i.e., className setter), skip re-entering className to avoid double
+      // recalculation and duplicate index updates.
+      if (!invokedByAttributeSetter) {
+        // className setter performs necessary style recalculation
+        className = value;
+      }
     } else {
       final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
       if (DebugFlags.enableCssBatchRecalc) {
