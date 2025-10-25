@@ -110,6 +110,15 @@ mixin CSSAnimationMixin on RenderStyle {
       }
       final fillMode = camelize(_getSingleString(animationFillMode, i));
       List<Keyframe>? keyframes = _getKeyFrames(name);
+      // In some cases, inline styles are flushed before pending stylesheets
+      // are applied/indexed (e.g., immediately after appending a <style> node).
+      // If keyframes are not yet available but there are pending stylesheets,
+      // update styles synchronously so that @keyframes rules are indexed.
+      if (keyframes == null && target.ownerDocument.styleNodeManager.hasPendingStyleSheet) {
+        // Apply pending stylesheets so Document.ruleSet.keyframesRules is up-to-date.
+        target.ownerDocument.updateStyleIfNeeded();
+        keyframes = _getKeyFrames(name);
+      }
       if (keyframes == null) {
         return;
       }
@@ -173,6 +182,10 @@ mixin CSSAnimationMixin on RenderStyle {
       );
 
       List<Keyframe>? keyframes = _getKeyFrames(name);
+      if (keyframes == null && target.ownerDocument.styleNodeManager.hasPendingStyleSheet) {
+        target.ownerDocument.updateStyleIfNeeded();
+        keyframes = _getKeyFrames(name);
+      }
 
       if (keyframes != null) {
         KeyframeEffect effect = KeyframeEffect(this, keyframes, options);
