@@ -51,6 +51,9 @@ class Document extends ContainerNode {
       final classes = element.classList.isNotEmpty ? '.${element.classList.join('.')}' : '';
       cssLogger.info('[trace][dirty] ${element.tagName}$id$classes reason=${reason ?? 'unspecified'}');
     }
+    // Ensure a future flush runs even when only element-level changes occur
+    // (no stylesheet updates). This coalesces via the existing scheduler.
+    scheduleStyleUpdate();
   }
 
   void clearElementStyleDirty(Element element) {
@@ -579,7 +582,13 @@ class Document extends ContainerNode {
   bool _recalculating = false;
 
   void updateStyleIfNeeded() {
-    if (!styleNodeManager.hasPendingStyleSheet && !styleNodeManager.isStyleSheetCandidateNodeChanged) {
+    // Only early-return when there are truly no pending updates of any kind:
+    // - no pending stylesheet changes
+    // - no candidate sheet node changes
+    // - no element-level dirty marks
+    if (!styleNodeManager.hasPendingStyleSheet &&
+        !styleNodeManager.isStyleSheetCandidateNodeChanged &&
+        _styleDirtyElements.isEmpty) {
       if (kDebugMode && DebugFlags.enableCssLogs) {
         cssLogger.fine(
             '[style] updateStyleIfNeeded: no pending or candidate changes (candidates=${styleNodeManager.styleSheetCandidateNodes.length})');
@@ -712,8 +721,10 @@ class Document extends ContainerNode {
         cssLogger.info('[trace][multi-style][schedule] style update scheduled via debounce(${DebugFlags.cssBatchStyleUpdatesDebounceMs}ms)');
       }
       _styleUpdateDebounceTimer = Timer(Duration(milliseconds: DebugFlags.cssBatchStyleUpdatesDebounceMs), () {
-        // Skip if nothing pending.
-        if (!styleNodeManager.hasPendingStyleSheet && !styleNodeManager.isStyleSheetCandidateNodeChanged) {
+        // Skip if nothing pending (including element-level dirties).
+        if (!styleNodeManager.hasPendingStyleSheet &&
+            !styleNodeManager.isStyleSheetCandidateNodeChanged &&
+            _styleDirtyElements.isEmpty) {
           _styleUpdateScheduled = false;
           return;
         }
@@ -736,7 +747,9 @@ class Document extends ContainerNode {
     }
     if (perFrame) {
       SchedulerBinding.instance.addPostFrameCallback((_) {
-        if (!styleNodeManager.hasPendingStyleSheet && !styleNodeManager.isStyleSheetCandidateNodeChanged) {
+        if (!styleNodeManager.hasPendingStyleSheet &&
+            !styleNodeManager.isStyleSheetCandidateNodeChanged &&
+            _styleDirtyElements.isEmpty) {
           _styleUpdateScheduled = false;
           return;
         }
@@ -751,7 +764,9 @@ class Document extends ContainerNode {
       SchedulerBinding.instance.scheduleFrame();
     } else {
       scheduleMicrotask(() {
-        if (!styleNodeManager.hasPendingStyleSheet && !styleNodeManager.isStyleSheetCandidateNodeChanged) {
+        if (!styleNodeManager.hasPendingStyleSheet &&
+            !styleNodeManager.isStyleSheetCandidateNodeChanged &&
+            _styleDirtyElements.isEmpty) {
           _styleUpdateScheduled = false;
           return;
         }
