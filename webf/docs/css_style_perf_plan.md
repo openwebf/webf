@@ -107,6 +107,38 @@ Success criteria (qualitative):
 - Significant decrease in match candidates and match ms total for stylesheet changes.
 - Decrease in recalc calls and recalc ms total over common interactions.
 
+## Results (Final vs Original)
+- Final summary:
+  - CSS: parseCalls=1 rules=1786 style=1743 keyframes=28 fontFace=15 parseMs=151
+  - Index: addCalls=1 addRules=1786 addMs=8; handleCalls=1 handleRules=1786 handleMs=8
+  - Match: calls=291 candidates=31454 matched=355 ms=10
+    - pseudoCalls=649 pseudoMatched=0 pseudoMs=5
+    - compoundCalls=184712 compoundMs=0
+    - memoHits=293 memoMisses=356 memoEvict=0 memoAvgSize=1.00
+  - Recalc: calls=355 recalcMs=91
+    - deferredMarks=599; flush calls=5 dirtyTotal=291 rootCount=2 flushMs=82
+    - styleAdds=1 styleFlushes(batched=5 immediate=0)
+
+- Original summary:
+  - CSS: parseCalls=1 rules=1786 style=1743 keyframes=28 fontFace=15 parseMs=139
+  - Index: addCalls=1 addRules=1786 addMs=6; handleCalls=1 handleRules=1786 handleMs=6
+  - Match: calls=1496 candidates=412074 matched=2360 ms=302
+    - pseudoCalls=1496 pseudoMatched=0 pseudoMs=0
+  - Recalc: calls=1328 recalcMs=1991
+    - flush calls=3 dirtyTotal=7 rootCount=1 flushMs=95
+
+- Delta highlights:
+  - Match ms: 302 -> 10 (-96.7%)
+  - Match calls: 1496 -> 291 (-80.5%); candidates: 412074 -> 31454 (-92.4%)
+  - Recalc ms: 1991 -> 91 (-95.4%); recalc calls: 1328 -> 355 (-73.3%)
+  - Flush: 3 -> 5 calls; flushMs: 95 -> 82 (-13.7%); batched=5 immediate=0
+  - Memoization active: hits=293, misses=356, evict=0 (avg size ~1)
+
+- Attribution (by workstream):
+  - Targeted invalidation reduced match candidates and overall match load.
+  - Matched-rules memoization cut repeated matching on stable fingerprints.
+  - Batch/deferred recalc increased flush batching (more flush calls) while dropping total recalc time.
+
 ## Progress To Date
 
 Changes landed (W1):
