@@ -302,4 +302,74 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
   @override
   bool get alwaysNeedsCompositing => false;
+
+  // Provide meaningful intrinsic sizes so IntrinsicWidth/Height can query text nodes
+  // when they paint themselves outside an IFC (e.g., absolute/fixed positioned contexts).
+  TextPainter _prepareIntrinsicTextPainter({double? maxWidth}) {
+    final span = _buildTextSpan();
+    // Respect CSS white-space/line-clamp/ellipsis in intrinsic measurement.
+    final bool nowrap = renderStyle.whiteSpace == WhiteSpace.nowrap;
+    final bool ellipsis = renderStyle.effectiveTextOverflow == TextOverflow.ellipsis;
+    final int? effectiveMaxLines = renderStyle.lineClamp ?? (nowrap && ellipsis ? 1 : null);
+
+    // Map CSS line-height to StrutStyle when explicit.
+    final lh = renderStyle.lineHeight;
+    StrutStyle? _strut;
+    if (lh.type != CSSLengthType.NORMAL) {
+      final double fs = renderStyle.fontSize.computedValue;
+      final double multiple = lh.computedValue / fs;
+      if (multiple.isFinite && multiple > 0) {
+        _strut = StrutStyle(
+          fontSize: fs,
+          height: multiple,
+          fontFamilyFallback: renderStyle.fontFamily,
+          fontStyle: renderStyle.fontStyle,
+          fontWeight: renderStyle.fontWeight,
+          forceStrutHeight: false,
+        );
+      }
+    }
+
+    final tp = TextPainter(
+      text: span,
+      textAlign: renderStyle.textAlign,
+      textDirection: renderStyle.direction,
+      ellipsis: ellipsis ? '…' : null,
+      maxLines: effectiveMaxLines,
+      strutStyle: _strut,
+      textHeightBehavior: const TextHeightBehavior(
+        applyHeightToFirstAscent: true,
+        applyHeightToLastDescent: true,
+        leadingDistribution: TextLeadingDistribution.even,
+      ),
+    );
+    tp.layout(minWidth: 0, maxWidth: maxWidth ?? double.infinity);
+    return tp;
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) {
+    // Min intrinsic for text approximates the width of the longest unbreakable piece.
+    final tp = _prepareIntrinsicTextPainter();
+    // TextPainter exposes minIntrinsicWidth/maxIntrinsicWidth metrics.
+    return tp.minIntrinsicWidth;
+  }
+
+  @override
+  double computeMaxIntrinsicWidth(double height) {
+    final tp = _prepareIntrinsicTextPainter();
+    return tp.maxIntrinsicWidth;
+  }
+
+  @override
+  double computeMinIntrinsicHeight(double width) {
+    final tp = _prepareIntrinsicTextPainter(maxWidth: width.isFinite ? width : double.infinity);
+    return tp.height;
+  }
+
+  @override
+  double computeMaxIntrinsicHeight(double width) {
+    final tp = _prepareIntrinsicTextPainter(maxWidth: width.isFinite ? width : double.infinity);
+    return tp.height;
+  }
 }

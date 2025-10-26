@@ -249,6 +249,96 @@ class RenderWidget extends RenderBoxModel
     _cachedPaintingOrder = null;
   }
 
+  // Intrinsic sizing for WidgetElement containers: forward to the primary
+  // non-positioned child, including paddings and borders.
+  @override
+  double computeMinIntrinsicWidth(double height) {
+    double content = 0.0;
+    RenderBox? child = firstChild;
+    while (child != null) {
+      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+      final bool positioned = child is RenderBoxModel &&
+          ((child as RenderBoxModel).renderStyle.isSelfPositioned() ||
+              (child as RenderBoxModel).renderStyle.isSelfStickyPosition());
+      if (!positioned) {
+        content = child.getMinIntrinsicWidth(height);
+        break; // Only the primary flow child contributes to intrinsic width.
+      }
+      child = pd.nextSibling;
+    }
+    final double padding = (renderStyle.paddingLeft.computedValue + renderStyle.paddingRight.computedValue);
+    final double border = (renderStyle.effectiveBorderLeftWidth.computedValue +
+        renderStyle.effectiveBorderRightWidth.computedValue);
+    if (content == 0.0) content = super.computeMinIntrinsicWidth(height) - padding - border;
+    return content + padding + border;
+  }
+
+  @override
+  double computeMinIntrinsicHeight(double width) {
+    double content = 0.0;
+    RenderBox? child = firstChild;
+    while (child != null) {
+      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+      final bool positioned = child is RenderBoxModel &&
+          ((child as RenderBoxModel).renderStyle.isSelfPositioned() ||
+              (child as RenderBoxModel).renderStyle.isSelfStickyPosition());
+      if (!positioned) {
+        content = child.getMinIntrinsicHeight(width);
+        break;
+      }
+      child = pd.nextSibling;
+    }
+    final double padding = (renderStyle.paddingTop.computedValue + renderStyle.paddingBottom.computedValue);
+    final double border = (renderStyle.effectiveBorderTopWidth.computedValue +
+        renderStyle.effectiveBorderBottomWidth.computedValue);
+    if (content == 0.0) content = super.computeMinIntrinsicHeight(width) - padding - border;
+    return content + padding + border;
+  }
+
+  @override
+  double computeMaxIntrinsicWidth(double height) {
+    double content = 0.0;
+    RenderBox? child = firstChild;
+    while (child != null) {
+      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+      final bool positioned = child is RenderBoxModel &&
+          ((child as RenderBoxModel).renderStyle.isSelfPositioned() ||
+              (child as RenderBoxModel).renderStyle.isSelfStickyPosition());
+      if (!positioned) {
+        content = child.getMaxIntrinsicWidth(height);
+        break;
+      }
+      child = pd.nextSibling;
+    }
+    final double padding = (renderStyle.paddingLeft.computedValue + renderStyle.paddingRight.computedValue);
+    final double border = (renderStyle.effectiveBorderLeftWidth.computedValue +
+        renderStyle.effectiveBorderRightWidth.computedValue);
+    if (content == 0.0) content = super.computeMaxIntrinsicWidth(height) - padding - border;
+    return content + padding + border;
+  }
+
+  @override
+  double computeMaxIntrinsicHeight(double width) {
+    double content = 0.0;
+    RenderBox? child = firstChild;
+    while (child != null) {
+      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+      final bool positioned = child is RenderBoxModel &&
+          ((child as RenderBoxModel).renderStyle.isSelfPositioned() ||
+              (child as RenderBoxModel).renderStyle.isSelfStickyPosition());
+      if (!positioned) {
+        content = child.getMaxIntrinsicHeight(width);
+        break;
+      }
+      child = pd.nextSibling;
+    }
+    final double padding = (renderStyle.paddingTop.computedValue + renderStyle.paddingBottom.computedValue);
+    final double border = (renderStyle.effectiveBorderTopWidth.computedValue +
+        renderStyle.effectiveBorderBottomWidth.computedValue);
+    if (content == 0.0) content = super.computeMaxIntrinsicHeight(width) - padding - border;
+    return content + padding + border;
+  }
+
   @override
   void insert(RenderBox child, {RenderBox? after}) {
     super.insert(child, after: after);

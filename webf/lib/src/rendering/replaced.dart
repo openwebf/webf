@@ -22,6 +22,78 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
     return widthDefined ? BoxSizeType.specified : BoxSizeType.intrinsic;
   }
 
+  // Replaced elements provide atomic intrinsic sizes derived from
+  // specified width/height, intrinsic sizes, and aspect-ratio.
+  @override
+  double computeMinIntrinsicWidth(double height) {
+    double content = 0.0;
+    // 1) Specified width wins if non-auto and finite.
+    if (renderStyle.width.isNotAuto) {
+      final double w = renderStyle.width.computedValue;
+      if (w.isFinite && w > 0) content = w;
+    } else {
+      // 2) Use aspect-ratio with given height when available.
+      final double? ratio = renderStyle.aspectRatio;
+      if (ratio != null && height.isFinite && height > 0) {
+        content = height * ratio;
+      }
+      // 3) Fall back to intrinsic width if known.
+      if (content == 0.0 && renderStyle.intrinsicWidth.isFinite && renderStyle.intrinsicWidth > 0) {
+        content = renderStyle.intrinsicWidth;
+      }
+      // 4) Respect min/max-width from style if present.
+      if (renderStyle.minWidth.isNotAuto) {
+        content = content < renderStyle.minWidth.computedValue ? renderStyle.minWidth.computedValue : content;
+      }
+      if (renderStyle.maxWidth.isNotNone) {
+        content = content > renderStyle.maxWidth.computedValue ? renderStyle.maxWidth.computedValue : content;
+      }
+    }
+    final double padding = (renderStyle.paddingLeft.computedValue + renderStyle.paddingRight.computedValue);
+    final double border = (renderStyle.effectiveBorderLeftWidth.computedValue +
+        renderStyle.effectiveBorderRightWidth.computedValue);
+    return content + padding + border;
+  }
+
+  @override
+  double computeMinIntrinsicHeight(double width) {
+    double content = 0.0;
+    if (renderStyle.height.isNotAuto) {
+      final double h = renderStyle.height.computedValue;
+      if (h.isFinite && h > 0) content = h;
+    } else {
+      final double? ratio = renderStyle.aspectRatio;
+      if (ratio != null && width.isFinite && width > 0) {
+        content = width / ratio;
+      }
+      if (content == 0.0 && renderStyle.intrinsicHeight.isFinite && renderStyle.intrinsicHeight > 0) {
+        content = renderStyle.intrinsicHeight;
+      }
+      if (renderStyle.minHeight.isNotAuto) {
+        content = content < renderStyle.minHeight.computedValue ? renderStyle.minHeight.computedValue : content;
+      }
+      if (renderStyle.maxHeight.isNotNone) {
+        content = content > renderStyle.maxHeight.computedValue ? renderStyle.maxHeight.computedValue : content;
+      }
+    }
+    final double padding = (renderStyle.paddingTop.computedValue + renderStyle.paddingBottom.computedValue);
+    final double border = (renderStyle.effectiveBorderTopWidth.computedValue +
+        renderStyle.effectiveBorderBottomWidth.computedValue);
+    return content + padding + border;
+  }
+
+  @override
+  double computeMaxIntrinsicWidth(double height) {
+    // For replaced elements, min/max intrinsic widths are the same preferred width
+    // derived from specified size, aspect-ratio, or intrinsic width when available.
+    return computeMinIntrinsicWidth(height);
+  }
+
+  @override
+  double computeMaxIntrinsicHeight(double width) {
+    return computeMinIntrinsicHeight(width);
+  }
+
   @override
   BoxSizeType get heightSizeType {
     bool heightDefined = renderStyle.height.isNotAuto || renderStyle.minHeight.isNotAuto;

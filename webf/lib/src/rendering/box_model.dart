@@ -238,6 +238,95 @@ abstract class RenderBoxModel extends RenderBox
   bool hasOverrideContentLogicalWidth = false;
   bool hasOverrideContentLogicalHeight = false;
 
+  // --- Intrinsic sizing -----------------------------------------------------
+  // Provide conservative intrinsic size estimates based on CSS box properties
+  // and known intrinsic hints on the render style.
+  @override
+  double computeMinIntrinsicWidth(double height) {
+    // Prefer explicit width if available, else min-width, else intrinsic hint.
+    double content = 0.0;
+    try {
+      if (renderStyle.width.isNotAuto) {
+        final double w = renderStyle.width.computedValue;
+        if (w.isFinite && w > 0) content = w;
+      } else if (renderStyle.minWidth.isNotAuto) {
+        final double w = renderStyle.minWidth.computedValue;
+        if (w.isFinite && w > 0) content = math.max(content, w);
+      } else if (renderStyle.intrinsicWidth.isFinite && renderStyle.intrinsicWidth > 0) {
+        content = math.max(content, renderStyle.intrinsicWidth);
+      }
+    } catch (_) {}
+
+    // Add horizontal paddings and borders to reach border-box for RenderBox.
+    final double padding = (renderStyle.paddingLeft.computedValue + renderStyle.paddingRight.computedValue);
+    final double border = (renderStyle.effectiveBorderLeftWidth.computedValue +
+        renderStyle.effectiveBorderRightWidth.computedValue);
+    return content + padding + border;
+  }
+
+  @override
+  double computeMinIntrinsicHeight(double width) {
+    double content = 0.0;
+    try {
+      if (renderStyle.height.isNotAuto) {
+        final double h = renderStyle.height.computedValue;
+        if (h.isFinite && h > 0) content = h;
+      } else if (renderStyle.minHeight.isNotAuto) {
+        final double h = renderStyle.minHeight.computedValue;
+        if (h.isFinite && h > 0) content = math.max(content, h);
+      } else if (renderStyle.intrinsicHeight.isFinite && renderStyle.intrinsicHeight > 0) {
+        content = math.max(content, renderStyle.intrinsicHeight);
+      }
+    } catch (_) {}
+
+    final double padding = (renderStyle.paddingTop.computedValue + renderStyle.paddingBottom.computedValue);
+    final double border = (renderStyle.effectiveBorderTopWidth.computedValue +
+        renderStyle.effectiveBorderBottomWidth.computedValue);
+    return content + padding + border;
+  }
+
+  @override
+  double computeMaxIntrinsicWidth(double height) {
+    double content = 0.0;
+    try {
+      if (renderStyle.width.isNotAuto) {
+        final double w = renderStyle.width.computedValue;
+        if (w.isFinite && w > 0) content = w;
+      } else if (renderStyle.maxWidth.isNotNone) {
+        final double w = renderStyle.maxWidth.computedValue;
+        if (w.isFinite && w > 0) content = math.max(content, w);
+      } else if (renderStyle.intrinsicWidth.isFinite && renderStyle.intrinsicWidth > 0) {
+        content = math.max(content, renderStyle.intrinsicWidth);
+      }
+    } catch (_) {}
+
+    final double padding = (renderStyle.paddingLeft.computedValue + renderStyle.paddingRight.computedValue);
+    final double border = (renderStyle.effectiveBorderLeftWidth.computedValue +
+        renderStyle.effectiveBorderRightWidth.computedValue);
+    return content + padding + border;
+  }
+
+  @override
+  double computeMaxIntrinsicHeight(double width) {
+    double content = 0.0;
+    try {
+      if (renderStyle.height.isNotAuto) {
+        final double h = renderStyle.height.computedValue;
+        if (h.isFinite && h > 0) content = h;
+      } else if (renderStyle.maxHeight.isNotNone) {
+        final double h = renderStyle.maxHeight.computedValue;
+        if (h.isFinite && h > 0) content = math.max(content, h);
+      } else if (renderStyle.intrinsicHeight.isFinite && renderStyle.intrinsicHeight > 0) {
+        content = math.max(content, renderStyle.intrinsicHeight);
+      }
+    } catch (_) {}
+
+    final double padding = (renderStyle.paddingTop.computedValue + renderStyle.paddingBottom.computedValue);
+    final double border = (renderStyle.effectiveBorderTopWidth.computedValue +
+        renderStyle.effectiveBorderBottomWidth.computedValue);
+    return content + padding + border;
+  }
+
   void clearOverrideContentSize() {
     hasOverrideContentLogicalWidth = false;
     hasOverrideContentLogicalHeight = false;
