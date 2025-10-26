@@ -100,6 +100,9 @@ abstract class Element extends ContainerNode
     final isNeedRecalculate = _checkRecalculateStyle([id, _id]);
     _updateIDMap(id, oldID: _id);
     _id = id;
+    // Maintain attribute presence index for [id] selectors.
+    // Treat any non-null assignment (including empty string) as presence=true.
+    _updateAttrPresenceIndex(_idAttr, present: id != null);
     if (DebugFlags.enableCssBatchRecalc) {
       ownerDocument.markElementStyleDirty(this, reason: 'batch:id');
       if (DebugFlags.enableCssPerf) CSSPerf.recordRecalcDeferredMark();
@@ -187,6 +190,8 @@ abstract class Element extends ContainerNode
 
     // Maintain document indices for classes when connected
     _updateClassIndex(oldClasses, _classList);
+    // Maintain attribute presence index for [class] selectors.
+    _updateAttrPresenceIndex(_classNameAttr, present: true);
     if (DebugFlags.enableCssBatchRecalc) {
       ownerDocument.markElementStyleDirty(this, reason: 'batch:class');
       if (DebugFlags.enableCssPerf) CSSPerf.recordRecalcDeferredMark();
@@ -1405,12 +1410,9 @@ abstract class Element extends ContainerNode
       }
     }
 
-    // Maintain attribute presence index (ignore special cases handled elsewhere)
-    if (qualifiedName != _classNameAttr &&
-        qualifiedName != _idAttr &&
-        qualifiedName != _nameAttr) {
-      _updateAttrPresenceIndex(qualifiedName, present: true);
-    }
+    // Maintain attribute presence index for presence selectors like [attr].
+    // Include class/id/name as well so stylesheet invalidation can target them.
+    _updateAttrPresenceIndex(qualifiedName, present: true);
 
     // Emit CDP DOM.attributeModified for DevTools if something actually changed
     if (changed) {
@@ -1446,11 +1448,7 @@ abstract class Element extends ContainerNode
       }
 
       // Maintain attribute presence index
-      if (qualifiedName != _classNameAttr &&
-          qualifiedName != _idAttr &&
-          qualifiedName != _nameAttr) {
-        _updateAttrPresenceIndex(qualifiedName, present: false);
-      }
+      _updateAttrPresenceIndex(qualifiedName, present: false);
 
       // Emit CDP DOM.attributeRemoved for DevTools
       try {
