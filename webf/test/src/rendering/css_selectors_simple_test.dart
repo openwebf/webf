@@ -129,7 +129,7 @@ void main() {
 
       final div1 = prepared.getElementById('test1');
       final div2 = prepared.getElementById('test2');
-      
+
       expect(div1.offsetWidth, equals(100.0));
       // Last class rule wins for width
       expect(div2.offsetWidth, equals(200.0));
@@ -159,11 +159,11 @@ void main() {
 
       final nested = prepared.getElementById('nested');
       final outside = prepared.getElementById('outside');
-      
+
       // Nested span should have padding
       expect(nested.renderStyle.paddingTop?.computedValue, equals(5.0));
       expect(nested.renderStyle.paddingLeft?.computedValue, equals(5.0));
-      
+
       // Outside span should not have padding
       expect(outside.renderStyle.paddingTop?.computedValue ?? 0, equals(0.0));
       expect(outside.renderStyle.paddingLeft?.computedValue ?? 0, equals(0.0));
@@ -194,10 +194,10 @@ void main() {
 
       final direct = prepared.getElementById('direct');
       final nested = prepared.getElementById('nested');
-      
+
       // Direct child should have margin
       expect(direct.renderStyle.marginTop?.computedValue, equals(10.0));
-      
+
       // Nested span should not have margin from the selector
       expect(nested.renderStyle.marginTop?.computedValue ?? 0, equals(0.0));
     });
@@ -226,7 +226,7 @@ void main() {
       final box = prepared.getElementById('box');
       final panel = prepared.getElementById('panel');
       final plain = prepared.getElementById('plain');
-      
+
       expect(box.renderStyle.paddingTop?.computedValue, equals(15.0));
       expect(panel.renderStyle.paddingTop?.computedValue, equals(20.0));
       expect(plain.renderStyle.paddingTop?.computedValue ?? 0, equals(0.0));
@@ -253,11 +253,11 @@ void main() {
       );
 
       final div = prepared.getElementById('test');
-      
+
       // The element should have the base dimensions
       expect(div.offsetWidth, equals(100.0));
       expect(div.offsetHeight, equals(50.0));
-      
+
       // Note: WebF may render pseudo elements but we can't directly access them
       // We just verify the main element is styled correctly
     });
@@ -283,7 +283,7 @@ void main() {
       );
 
       final div = prepared.getElementById('specific');
-      
+
       // ID selector should win (highest specificity)
       expect(div.offsetWidth, equals(300.0));
     });
@@ -308,15 +308,15 @@ void main() {
       );
 
       final div = prepared.getElementById('test');
-      
+
       // Initially small
       expect(div.offsetWidth, equals(100.0));
       expect(div.offsetHeight, equals(100.0));
-      
+
       // Change to large
       div.className = 'large';
       await tester.pump();
-      
+
       expect(div.offsetWidth, equals(200.0));
       expect(div.offsetHeight, equals(200.0));
     });

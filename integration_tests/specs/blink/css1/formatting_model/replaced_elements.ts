@@ -41,6 +41,6 @@ IMG.five {display: block;
       <p>The above image should be a square resized so its width is 50% of its parent element, and aligned at the right edge of the parent element: the document body in the first half, and the table in the second.</p>
     `;
 
-      await snapshot();
+      await snapshot(1);
   });
 });

@@ -582,6 +582,12 @@ class Document extends ContainerNode {
   bool _recalculating = false;
 
   void updateStyleIfNeeded() {
+    // If a debounced update was previously scheduled, cancel it now since we are
+    // about to run a synchronous update. This prevents stray pending timers in
+    // tests when callers explicitly flush styles (e.g., after class changes).
+    _styleUpdateDebounceTimer?.cancel();
+    _styleUpdateDebounceTimer = null;
+    _styleUpdateScheduled = false;
     // Only early-return when there are truly no pending updates of any kind:
     // - no pending stylesheet changes
     // - no candidate sheet node changes
@@ -712,7 +718,17 @@ class Document extends ContainerNode {
   }
   
   void scheduleStyleUpdate() {
-    final bool useDebounce = DebugFlags.enableCssBatchStyleUpdates && DebugFlags.cssBatchStyleUpdatesDebounceMs > 0;
+    // If only element-level dirties are pending (e.g., class/id/attr mutations)
+    // and there are no stylesheet loads or candidate node changes, avoid the
+    // debounce window so tests and interactive style changes observe updates
+    // promptly within the next microtask/frame.
+    final bool elementOnlyDirty = _styleDirtyElements.isNotEmpty &&
+        !styleNodeManager.hasPendingStyleSheet &&
+        !styleNodeManager.isStyleSheetCandidateNodeChanged;
+
+    final bool useDebounce = DebugFlags.enableCssBatchStyleUpdates &&
+        DebugFlags.cssBatchStyleUpdatesDebounceMs > 0 &&
+        !elementOnlyDirty;
     if (useDebounce) {
       // Debounce across frames/time: reset the timer on each call.
       _styleUpdateScheduled = true;
@@ -806,6 +822,10 @@ class Document extends ContainerNode {
     styleSheets.clear();
     nthIndexCache.clearAll();
     adoptedStyleSheets.clear();
+    // Cancel any pending scheduled style updates to avoid leaking timers in tests.
+    _styleUpdateDebounceTimer?.cancel();
+    _styleUpdateDebounceTimer = null;
+    _styleUpdateScheduled = false;
     _styleDirtyElements.clear();
     pendingPreloadingScriptCallbacks.clear();
     elementsByID.clear();

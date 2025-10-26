@@ -43,6 +43,6 @@ BODY {
       <p><em>CSS1 core:</em> UAs may treat 'fixed' as 'scroll'. However, it is recommended they interpret 'fixed' correctly, at least on the HTML and BODY elements, since there is no way for an author to provide an image only for those browsers that support 'fixed'.</p>
     `;
 
-      await snapshot();
+      await snapshot(1);
   });
 });
