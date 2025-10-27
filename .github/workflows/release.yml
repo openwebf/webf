@@ -12,7 +12,7 @@ jobs:
 
     env:
       nodeVersion: "22"
-      cmakeVersion: "3.28.1"
+      cmakeVersion: "4.0.3"
 
     steps:
       - name: Checkout repository
@@ -159,7 +159,7 @@ jobs:
 
     env:
       nodeVersion: "22"
-      cmakeVersion: "3.28.1"
+      cmakeVersion: "4.0.3"
 
     steps:
       - name: Checkout repository
@@ -256,7 +256,7 @@ jobs:
 
     env:
       nodeVersion: "22"
-      cmakeVersion: "3.28.1"
+      cmakeVersion: "4.0.3"
 
     steps:
       - name: Checkout repository
@@ -338,7 +338,7 @@ jobs:
 
     env:
       nodeVersion: "22"
-      cmakeVersion: "3.28.1"
+      cmakeVersion: "4.0.3"
 
     steps:
       - name: Checkout repository
@@ -407,7 +407,7 @@ jobs:
 
     env:
       nodeVersion: "22"
-      cmakeVersion: "3.28.1"
+      cmakeVersion: "4.0.3"
 
     steps:
       - name: Checkout repository
