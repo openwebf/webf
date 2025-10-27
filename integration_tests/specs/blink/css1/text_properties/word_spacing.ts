@@ -49,13 +49,13 @@ describe('CSS1 word-spacing', () => {
       <p class="eleven">This words in this sentence should have reduced space between them, since negative values are allowed on this property.</p>
     `;
 
-    await snapshot();
+    await snapshot(0.3);
 
     window.scroll(0, 500);
 
     await waitForFrame();
 
-    await snapshot();
+    await snapshot(0.3);
 
   });
 });

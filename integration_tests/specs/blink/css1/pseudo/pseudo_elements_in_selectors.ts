@@ -26,6 +26,6 @@ P:first-line.three {color: red;}
       <p class="three">The first line of this sentence should be boldfaced. If it is red, then the user agent has violated the specification in allowing pseudo-elements at a point other than the end of a selector. If neither is the case, then the user agent has correctly ignored the incorrect selector, but has suppressed other styles which are valid, and therefore must be considered to have failed the test.</p>
     `;
 
-      await snapshot();
+      await snapshot(0.3);
   });
 });

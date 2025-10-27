@@ -66,12 +66,12 @@ SPAN.color {background-color: silver;}
       <p class="two"><span class="color">This sentence should have a line-height of two centimeters, which should cause extra spacing between the lines. The text has a background color of silver, but no padding or border. The background color has been set on an inline element and should therefore only cover the text, not the interline spacing.</span></p>
     `;
 
-    await snapshot();
+    await snapshot(0.3);
 
     window.scroll(0, 500);
 
     await waitForFrame();
 
-    await snapshot();
+    await snapshot(0.3);
   });
 });

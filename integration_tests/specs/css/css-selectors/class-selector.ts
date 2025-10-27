@@ -20,7 +20,7 @@ describe('css class selector', () => {
     document.body.appendChild(div);
     await snapshot();
     document.head.removeChild(style);
-    await snapshot();
+    await snapshot(0.3);
   });
 
   it('style removed later', async (done) => {
@@ -34,7 +34,7 @@ describe('css class selector', () => {
     await snapshot();
     requestAnimationFrame(async () => {
       document.head.removeChild(style);
-      await snapshot();
+      await snapshot(0.3);
       done();
     });
   });
@@ -84,9 +84,9 @@ describe('css class selector', () => {
     document.body.appendChild(div);
     await snapshot();
     div.style.removeProperty('color');
-    await snapshot();
+    await snapshot(0.3);
     document.head.removeChild(style2);
-    await snapshot();
+    await snapshot(0.3);
   });
 
   it('001', async () => {

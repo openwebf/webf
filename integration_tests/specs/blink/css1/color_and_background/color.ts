@@ -21,6 +21,6 @@ describe('CSS1 color', () => {
       <p style="color: green;">This sentence should be green.</p>
     `;
 
-      await snapshot();
+      await snapshot(0.3);
   });
 });

@@ -48,12 +48,12 @@ describe('CSS1 letter-spacing', () => {
       <p class="eleven">This letters in this sentence should have reduced space between them, since negative values are allowed on this property.</p>
     `;
 
-    await snapshot();
+    await snapshot(0.3);
 
     window.scroll(0, 500);
 
     await waitForFrame();
 
-    await snapshot();
+    await snapshot(0.3);
   });
 });

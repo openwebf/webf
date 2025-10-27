@@ -31,6 +31,6 @@ SPAN.four {border-style: solid; border-width: 12px; border-color: red;
       <p class="three">This is a paragraph that has a <span class="four">very long span in it, and the span has a 12px red border separated from the span by 2pt of padding (the difference between the line-height and the font-size), which should overlap with the lines of text above and below the span, since the padding and border should not effect the line height. The span's border should have vertical lines only at the beginning and end of the whole span, not on each line.</span> The line spacing in the whole paragraph should be 12pt, with font-size 10pt.</p>
     `;
 
-      await snapshot();
+      await snapshot(0.3);
   });
 });

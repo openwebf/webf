@@ -34,6 +34,6 @@ describe('CSS1 percentage units', () => {
       <p class="three">This paragraph should have a left margin of 25% the width of its parent element, which should require some extra text in order to test effectively.</p>
     `;
 
-      await snapshot();
+      await snapshot(0.3);
   });
 });

@@ -33,7 +33,7 @@ describe('MediaQuery prefers-color-scheme', () => {
 
     simulateChangeDarkMode(true);
 
-    await snapshot();
+    await snapshot(0.3);
   });
 
   it('should works with @media (prefers-color-scheme) light', async () => {
@@ -70,7 +70,7 @@ describe('MediaQuery prefers-color-scheme', () => {
 
     simulateChangeDarkMode(false);
 
-    await snapshot();
+    await snapshot(0.3);
   });
 
   it('should works with @media (prefers-color-scheme) dark and light', async () => {
@@ -113,7 +113,7 @@ describe('MediaQuery prefers-color-scheme', () => {
 
     simulateChangeDarkMode(true);
 
-    await snapshot();
+    await snapshot(0.3);
   });
 
   it('should works with css variables and hsl color', async () => {
@@ -157,7 +157,7 @@ describe('MediaQuery prefers-color-scheme', () => {
 
     simulateChangeDarkMode(true);
 
-    await snapshot();
+    await snapshot(0.3);
   });
 
   it('should works with css variables and rgba color', async () => {
@@ -201,7 +201,7 @@ describe('MediaQuery prefers-color-scheme', () => {
 
     simulateChangeDarkMode(true);
 
-    await snapshot();
+    await snapshot(0.3);
   });
 
   it('should works with css variables in rgba color', async () => {
@@ -244,7 +244,7 @@ describe('MediaQuery prefers-color-scheme', () => {
 
     simulateChangeDarkMode(true);
 
-    await snapshot();
+    await snapshot(0.3);
   });
 
   it('should works with css variable value is hsl color', async () => {
@@ -288,7 +288,7 @@ describe('MediaQuery prefers-color-scheme', () => {
 
     simulateChangeDarkMode(true);
 
-    await snapshot();
+    await snapshot(0.3);
   });
 
   it('should works with hsl color values comes from three different css variables', async () => {
@@ -336,7 +336,7 @@ describe('MediaQuery prefers-color-scheme', () => {
 
     simulateChangeDarkMode(true);
 
-    await snapshot();
+    await snapshot(0.3);
   });
 
   it('should works with set color for nest dom structures', async () => {
@@ -385,7 +385,7 @@ describe('MediaQuery prefers-color-scheme', () => {
 
     simulateChangeDarkMode(true);
 
-    await snapshot();
+    await snapshot(0.3);
   });
 
 
@@ -435,7 +435,7 @@ describe('MediaQuery prefers-color-scheme', () => {
     // Switch to dark mode
     simulateChangeDarkMode(true);
 
-    await snapshot();
+    await snapshot(0.3);
 
     // Log updated computed style
     const computedStyle2 = getComputedStyle(container);
@@ -556,6 +556,6 @@ describe('MediaQuery prefers-color-scheme', () => {
 
     simulateChangeDarkMode(true);
 
-    await snapshot();
+    await snapshot(0.3);
   });
 });

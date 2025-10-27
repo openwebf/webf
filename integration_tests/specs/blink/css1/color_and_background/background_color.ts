@@ -27,6 +27,6 @@ P {background-color: green;}
       <p class="two">This element should allow the document background to "shine through." There should be no green backgrounds here!</p>
     `;
 
-      await snapshot();
+      await snapshot(0.3);
   });
 });

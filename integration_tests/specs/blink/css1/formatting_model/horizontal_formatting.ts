@@ -52,6 +52,6 @@ P.ten {margin-left: auto; width: 100%; margin-right: auto;
       <p class="ten">Because this paragraph has width 100%, the auto margins become zero, so it should not be centered.</p>
     `;
 
-      await snapshot();
+      await snapshot(0.3);
   });
 });

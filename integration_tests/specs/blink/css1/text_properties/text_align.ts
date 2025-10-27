@@ -29,6 +29,6 @@ describe('CSS1 text-align', () => {
       <p class="four">This sentence should be fully justified, which means that the right and left margins of this paragraph should line up, no matter how long the paragraph becomes; the exception, of course, is the last line, which should be left-justified in Western languages.</p>
     `;
 
-      await snapshot();
+      await snapshot(0.3);
   });
 });

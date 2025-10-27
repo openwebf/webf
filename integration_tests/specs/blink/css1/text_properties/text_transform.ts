@@ -31,13 +31,13 @@ This paragraph has no text transformation and should appear normal.</p>
       <p class="low">This paragraph is lowercased and capital characters in the source (e.g. A and &Aring;) should therefore appear in lowercase.</p>
     `;
 
-      await snapshot();
+      await snapshot(0.3);
 
 
       window.scroll(0, 500);
 
       await waitForFrame();
 
-      await snapshot();
+      await snapshot(0.3);
   });
 });

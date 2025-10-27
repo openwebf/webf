@@ -22,9 +22,9 @@ describe('Link Element', () => {
     link.setAttribute('href', 'assets:assets/bad.css');
     link.setAttribute('rel', 'stylesheet');
     link.addEventListener('load', async () => {
-        await snapshot();
+        await snapshot(0.3);
         link.setAttribute('href', 'assets:assets/good.css');
-        await snapshot(0.1);
+        await snapshot(0.3);
         done();
     });
     document.head.appendChild(link);

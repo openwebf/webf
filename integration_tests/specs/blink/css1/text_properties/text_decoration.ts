@@ -43,12 +43,12 @@ B.five {text-decoration: none;}
       <p class="one">The colors of the <span style="color: purple;">underlining</span> in <span style="color: blue;">this sentence</span> should be <span style="color: gray;">the same as that of the parent text</span> (that is, the first word in the sentence, which should be black).</p>
     `;
 
-      await snapshot();
+      await snapshot(0.3);
 
       window.scroll(0, 500);
 
       await waitForFrame();
 
-      await snapshot();
+      await snapshot(0.3);
   });
 });

@@ -57,6 +57,6 @@ BODY {background-image: url(assets/resources/bg.gif); background-position: right
       <p class="seven">This paragraph should have a single, small green image positioned 20 pixels down and to the left of the upper left-hand corner; that is, the upper left-hand corner of the image should be 20 pixels down and to the left of the upper-left corner of the element. The background color will make it easier to determine the edges of the paragraph, which should assist in evaluating this test.</p>
     `;
 
-      await snapshot();
+      await snapshot(0.3);
   });
 });

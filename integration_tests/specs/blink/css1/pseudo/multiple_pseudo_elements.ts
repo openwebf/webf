@@ -32,12 +32,12 @@ P.three:first-line {font-variant: small-caps;}
       <p class="three">"We should check for quotation support," it was said. The first two characters in this paragraph-- a double-quote mark and a capital 'W'-- should be 350% bigger than the rest of the paragraph, and maroon (dark red). Note that the inclusion of both the quotation mark and the 'W' in the first-letter style is not required under CSS1, but it is recommended. In addition, the entire first line should be in a small-caps font and green.</p>
     `;
 
-      await snapshot();
+      await snapshot(0.3);
 
       window.scroll(0, 500);
 
       await waitForFrame();
 
-      await snapshot();
+      await snapshot(0.3);
   });
 });

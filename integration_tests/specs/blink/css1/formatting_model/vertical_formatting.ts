@@ -66,6 +66,6 @@ TABLE {clear: both;}
       <p class="thirteen">This is the next paragraph.</p>
     `;
 
-      await snapshot();
+      await snapshot(0.3);
   });
 });

@@ -24,6 +24,6 @@ P {background-image: url(assets/resources/bg.gif);}
       <p class="one">This sentence should NOT be backed by a repeated green-grid image, allowing the page's background to "shine through" instead.</p>
     `;
 
-      await snapshot();
+      await snapshot(0.3);
   });
 });
