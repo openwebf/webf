@@ -1,3 +1,26 @@
+## 0.23.4
+
+CSS performance overhaul, diagnostics, and reliability fixes
+
+- Measured impact:
+  recalcMs ↓ 209ms → 32ms (~84.7% reduction), flushMs ↓ ~203ms → ~25ms
+  (~87.8% reduction); recalc calls ↓ ~37% (462 → 292); dirtyTotal ↓ 45 → 26;
+  rootCount ↓ 5 → 2.
+
+### Performance
+
+- Enable CSS batching by default (batch recalc, stylesheet batching, 32ms
+  debounce) with counters for deferred/flush events.
+- Targeted invalidation via id/class/attr indices; suppress root-wide dirties
+  from head/html churn; flattened @import handling.
+- Index selectors by rightmost compound; reuse SelectorEvaluator; enable
+  memoization and ancestry fast-path by default.
+
+### Fixes
+
+- Parsing/layout: tolerate whitespace in calc(); guard null parentRenderStyle in
+  flex-basis computation; sync image sizing and viewport background.
+
 ## 0.23.3
 
 DevTools/CDP coverage, CSS APIs, SVG refactor, stability fixes

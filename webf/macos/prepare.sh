@@ -12,24 +12,29 @@ copy_library() {
   local lib_name=$1
   local target_file="$ROOT/$lib_name"
   
-  # Remove existing file or symlink
-  if [ -e "$target_file" ] || [ -L "$target_file" ]; then
-    rm -f "$target_file"
-  fi
-  
-  # Try universal binary first
+  # Resolve a valid source path first; only then remove/copy
+  local src_file=""
+  # Prefer universal binary if available
   if [ -f "$BRIDGE_BUILD_DIR/universal/$lib_name" ]; then
+    src_file="$BRIDGE_BUILD_DIR/universal/$lib_name"
     echo "Copying universal $lib_name"
-    cp "$BRIDGE_BUILD_DIR/universal/$lib_name" "$target_file"
   # Fallback to architecture-specific library based on current architecture
   elif [ "$(uname -m)" = "arm64" ] && [ -f "$BRIDGE_BUILD_DIR/arm64/$lib_name" ]; then
+    src_file="$BRIDGE_BUILD_DIR/arm64/$lib_name"
     echo "Copying arm64 $lib_name"
-    cp "$BRIDGE_BUILD_DIR/arm64/$lib_name" "$target_file"
   elif [ "$(uname -m)" = "x86_64" ] && [ -f "$BRIDGE_BUILD_DIR/x86_64/$lib_name" ]; then
+    src_file="$BRIDGE_BUILD_DIR/x86_64/$lib_name"
     echo "Copying x86_64 $lib_name"
-    cp "$BRIDGE_BUILD_DIR/x86_64/$lib_name" "$target_file"
+  fi
+
+  if [ -n "$src_file" ]; then
+    # Only remove existing file or symlink if a valid source exists
+    if [ -e "$target_file" ] || [ -L "$target_file" ]; then
+      rm -f "$target_file"
+    fi
+    cp "$src_file" "$target_file"
   else
-    echo "Warning: Could not find $lib_name in $BRIDGE_BUILD_DIR"
+    echo "Warning: Could not find source for $lib_name in $BRIDGE_BUILD_DIR"
     echo "Available architectures:"
     ls -la "$BRIDGE_BUILD_DIR/" 2>/dev/null || echo "Bridge build directory not found"
   fi
