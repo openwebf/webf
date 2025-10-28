@@ -43,10 +43,11 @@ class HTMLAnchorElement extends Element {
   @override
   Map<String, dynamic> get defaultStyle {
     // Anchors are inline-level by default in HTML.
-    // If an href is present, apply typical UA link styling; otherwise
-    // keep it inline without forcing block layout.
-    String? href = attributes['href'];
-    if (href != null && href.isNotEmpty) {
+    // If an href is present (attribute or IDL property), apply typical UA link styling.
+    final String? attrHref = attributes['href'];
+    final bool hasHrefAttr = attrHref != null && attrHref.isNotEmpty;
+    final bool hasHrefIDL = _resolvedHyperlink != null; // href property was set/resolved
+    if (hasHrefAttr || hasHrefIDL) {
       return _linkStyle;
     }
     return { DISPLAY: INLINE };
@@ -152,6 +153,8 @@ class HTMLAnchorElement extends Element {
 
   set href(String value) {
     _resolveHyperlink(value);
+    // Ensure default UA styles are recalculated based on href presence via IDL.
+    recalculateStyle();
     // Set href will not reflect to attribute href.
   }
 

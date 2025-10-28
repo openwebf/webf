@@ -136,6 +136,7 @@ class ImageElement extends Element {
     properties['src'] = BindingObjectProperty(getter: () => src, setter: (value) => src = castToType<String>(value));
     properties['loading'] =
         BindingObjectProperty(getter: () => loading, setter: (value) => loading = castToType<String>(value));
+    properties['alt'] = BindingObjectProperty(getter: () => alt, setter: (value) => alt = castToType<String>(value));
     properties['width'] = BindingObjectProperty(getter: () => width, setter: (value) => width = value);
     properties['height'] = BindingObjectProperty(getter: () => height, setter: (value) => height = value);
     properties['scaling'] =
@@ -151,6 +152,8 @@ class ImageElement extends Element {
 
     attributes['src'] = ElementAttributeProperty(setter: (value) => src = attributeToProperty<String>(value));
     attributes['loading'] = ElementAttributeProperty(setter: (value) => loading = attributeToProperty<String>(value));
+    attributes['alt'] = ElementAttributeProperty(
+        setter: (value) => alt = attributeToProperty<String>(value));
     attributes['width'] = ElementAttributeProperty(setter: (value) {
       CSSLengthValue input = CSSLength.parseLength(attributeToProperty<String>(value), renderStyle);
       if (input.value != null) {
@@ -198,6 +201,12 @@ class ImageElement extends Element {
   }
 
   String get src => _resolvedUri?.toString() ?? '';
+
+  // Expose alt as a reflected content attribute.
+  String get alt => attributes['alt'] ?? '';
+  set alt(String value) {
+    internalSetAttribute('alt', value);
+  }
 
   set src(String value) {
     internalSetAttribute('src', value);

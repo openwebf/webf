@@ -79,7 +79,8 @@ class FlutterInputElement extends WidgetElement
         return (this as BaseRadioElement).radioValue;
       case 'button':
       case 'submit':
-        return getAttribute('value') ?? '';
+        // Avoid recursion via attribute getter mapping; return raw attribute.
+        return attributes['value'] ?? '';
       default:
         return elementValue; // BaseInputElement storage
     }
@@ -187,6 +188,12 @@ class FlutterInputElement extends WidgetElement
     super.initializeAttributes(attributes);
 
     attributes['value'] = dom.ElementAttributeProperty(getter: () => value, setter: (value) => this.value = value);
+    attributes['type'] = dom.ElementAttributeProperty(
+        getter: () => (this.attributes['type'] ?? 'text'),
+        setter: (value) {
+          // Route through the type setter so default UA style resets appropriately.
+          type = value;
+        });
     attributes['disabled'] =
         dom.ElementAttributeProperty(getter: () => disabled.toString(), setter: (value) => (this as dynamic).disabled = value);
     attributes['checked'] = dom.ElementAttributeProperty(

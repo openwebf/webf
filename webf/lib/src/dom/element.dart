@@ -1427,6 +1427,9 @@ abstract class Element extends ContainerNode
         }
       } catch (_) {}
     }
+
+    // Mark semantics dirty for accessibility-relevant attributes.
+    if (changed) _markSemanticsDirtyIfNeeded(qualifiedName);
   }
 
   @mustCallSuper
@@ -1461,6 +1464,35 @@ abstract class Element extends ContainerNode
           ownerDocument.controller.view.debugDOMTreeChanged?.call();
         }
       } catch (_) {}
+
+      // Mark semantics dirty for accessibility-relevant attributes.
+      _markSemanticsDirtyIfNeeded(qualifiedName);
+    }
+  }
+
+  void _markSemanticsDirtyIfNeeded(String qualifiedName) {
+    // Common accessibility attributes that affect semantics
+    const Set<String> a11yAttrs = {
+      'role',
+      'aria-label',
+      'aria-labelledby',
+      'aria-hidden',
+      'aria-disabled',
+      'aria-checked',
+      'aria-selected',
+      'title',
+      'alt',
+      // Form+interactive hints
+      'type',
+      'href',
+      'value',
+      'tabindex',
+      'disabled',
+    };
+    if (!a11yAttrs.contains(qualifiedName)) return;
+    final render = renderStyle.attachedRenderBoxModel;
+    if (render != null) {
+      render.markNeedsSemanticsUpdate();
     }
   }
 

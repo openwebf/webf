@@ -9,7 +9,13 @@ import 'package:webf/bridge.dart';
 const String LABEL = 'LABEL';
 const String BUTTON = 'BUTTON';
 
-const Map<String, dynamic> _defaultStyle = {DISPLAY: INLINE_BLOCK};
+// UA default styling for <button>: inline-block with a visible border and padding.
+// We keep values conservative and consistent with input[type=button] UA defaults.
+const Map<String, dynamic> _defaultStyle = {
+  DISPLAY: INLINE_BLOCK,
+  BORDER: '2px solid rgb(118, 118, 118)',
+  PADDING: '1px 6px',
+};
 
 class LabelElement extends Element {
   LabelElement([BindingContext? context]) : super(context);

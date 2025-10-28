@@ -35,6 +35,7 @@ class WebFWidgetTestUtils {
     double viewportWidth = 360,
     double viewportHeight = 640,
     Map<String, dynamic>? windowProperties,
+    Widget Function(Widget child)? wrap,
   }) async {
     final name = controllerName ?? 'test-${DateTime.now().millisecondsSinceEpoch}';
     WebFController? controller;
@@ -55,7 +56,7 @@ class WebFWidgetTestUtils {
     });
 
     final webf = WebF.fromControllerName(controllerName: name);
-    await tester.pumpWidget(webf);
+    await tester.pumpWidget(wrap != null ? wrap(webf) : webf);
 
     // Wait for initial rendering
     await tester.pump();
@@ -94,6 +95,7 @@ class WebFWidgetTestUtils {
     required WebFController Function() createController,
     required WebFBundle bundle,
     String? controllerName,
+    Widget Function(Widget child)? wrap,
   }) async {
     final name = controllerName ?? 'test-${DateTime.now().millisecondsSinceEpoch}';
     WebFController? controller;
@@ -108,7 +110,7 @@ class WebFWidgetTestUtils {
     });
 
     final webf = WebF.fromControllerName(controllerName: name);
-    await tester.pumpWidget(webf);
+    await tester.pumpWidget(wrap != null ? wrap(webf) : webf);
 
     // Wait for initial rendering
     await tester.pump();
