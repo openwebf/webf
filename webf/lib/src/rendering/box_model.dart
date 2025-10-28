@@ -17,7 +17,7 @@ import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 import 'box_overflow.dart';
 import 'debug_overlay.dart';
-
+import 'package:webf/src/accessibility/semantics.dart';
 // The hashCode of all the renderBox which is in layout.
 List<int> renderBoxInLayoutHashCodes = [];
 
@@ -133,6 +133,13 @@ abstract class RenderBoxModel extends RenderBox
   @override
   bool get alwaysNeedsCompositing {
     return intersectionObserverAlwaysNeedsCompositing() || opacityAlwaysNeedsCompositing();
+  }
+
+  @override
+  void describeSemanticsConfiguration(SemanticsConfiguration config) {
+    super.describeSemanticsConfiguration(config);
+    // Apply ARIA → Semantics mapping for generic WebF elements.
+    WebFAccessibility.applyToRenderBoxModel(this, config);
   }
 
   RenderPositionPlaceholder? renderPositionPlaceholder;

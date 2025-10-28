@@ -51,6 +51,9 @@ mixin BaseInputElement on WidgetElement implements FormElementBase {
       case 'text':
       case 'password':
       case 'time':
+      case 'button':
+      case 'submit':
+      case 'reset':
         return _inputDefaultStyle;
       case 'radio':
       case 'checkbox':
