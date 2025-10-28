@@ -418,7 +418,7 @@ describe('CSS Text Comprehensive Integration', () => {
       } else {
         // Final verification
         requestAnimationFrame(async () => {
-          await snapshot(0.3);
+          await snapshot();
           document.body.removeChild(container);
           done();
         });
