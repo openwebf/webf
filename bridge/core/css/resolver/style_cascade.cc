@@ -616,22 +616,7 @@ const CSSValue* StyleCascade::ResolvePendingSubstitution(
     return cssvalue::CSSUnsetValue::Create().get();
   }
 
-  // Fetch original shorthand text and trim/sanitize to detect var-only.
-  auto sanitize_trim = [](String s) -> String {
-    // Drop anything after a stray '}' or ';' which may have leaked in raw text
-    size_t brace_pos = s.Find('}');
-    if (brace_pos < s.length()) s = s.Substring(0, brace_pos);
-    size_t semi_pos = s.RFind(';');
-    if (semi_pos < s.length()) s = s.Substring(0, semi_pos);
-    // Trim ASCII whitespace (begin/end)
-    std::string u8 = s.ToUTF8String();
-    auto isspace_ascii = [](unsigned char c) { return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '\f'; };
-    size_t start = 0; while (start < u8.size() && isspace_ascii(static_cast<unsigned char>(u8[start]))) start++;
-    size_t end = u8.size(); while (end > start && isspace_ascii(static_cast<unsigned char>(u8[end-1]))) end--;
-    return String::FromUTF8(u8.c_str() + start, end - start);
-  };
-
-  String shorthand_text = sanitize_trim(String(data->OriginalText()));
+  String shorthand_text = String(data->OriginalText());
 
   // Otherwise, resolve variables to text and re-parse like Blink.
   using CustomVarMap = std::unordered_map<AtomicString, String, AtomicString::KeyHasher>;
