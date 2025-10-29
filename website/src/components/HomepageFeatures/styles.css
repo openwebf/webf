@@ -39,7 +39,7 @@
   }
 }
 
-.feature_wrapper .title {
+.feature_wrapper .title, .sponsor .title {
   font-size: 40px;
   font-weight: 500;
   margin-bottom: 1.75rem;
@@ -62,7 +62,7 @@
 
 @media (min-width: 1024px) {
 
-  .feature_wrapper .title {
+  .feature_wrapper .title, .sponsor .title {
     font-size: 52px;
     text-align: center;
     margin-left: auto;

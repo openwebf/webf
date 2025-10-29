@@ -27,6 +27,25 @@ function HomepageHeader() {
   );
 }
 
+function HomepageSponsors() {
+  return (
+    <div className='sponsor' style={{ textAlign: 'center', marginTop: '24px' }}>
+      <h2 className='title' style={{ marginBottom: '12px' }}>Sponsors</h2>
+      <p style={{ fontSize: '21px', color: 'black' }}>
+        Browser testing via{' '}
+        <a href="https://www.lambdatest.com/?utm_source=openwebf&utm_medium=sponsor" target="_blank">
+          <img
+            src="https://www.lambdatest.com/blue-logo.png"
+            style={{ verticalAlign: 'middle' }}
+            width={250}
+            height={45}
+          />
+        </a>
+      </p>
+    </div>
+  );
+}
+
 function HomepageFooter() {
   return (
     <div className={clsx(styles.footer_container)}>
@@ -68,6 +87,7 @@ export default function Home(): JSX.Element {
       <main className={styles.feature_container}>
         <HomepageFeatures/>
       </main>
+      <HomepageSponsors/>
       <HomepageFooter/>
     </Layout>
   );

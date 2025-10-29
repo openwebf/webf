@@ -78,6 +78,14 @@ Additionally, your **DOM elements and CSS UI share the same rendering context as
 <img width="4452" height="3601" alt="Browser Engine Pipeline" src="https://github.com/user-attachments/assets/5f945b66-fbcd-47b8-9eba-078ee3417610" />
 
 
+## Sponsors
+
+<p style="font-size:21px; color:black;">Browser testing via 
+        <a href="https://www.lambdatest.com/?utm_source=openwebf&utm_medium=sponsor" target="_blank">
+            <img src="https://www.lambdatest.com/blue-logo.png" style="vertical-align: middle;" width="250" height="45" />
+        </a>
+    </p>
+
 ## License
 
 The open source code is licensed under Apache-2.0.
