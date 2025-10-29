@@ -89,18 +89,21 @@ NativeValue HTMLLinkElement::parseAuthorStyleSheet(AtomicString& cssString, Atom
   auto contents = sheet_->Contents();
   auto ruleset = contents->EnsureRuleSet(evaluator);
 
-  WEBF_LOG(VERBOSE) << "SOURCE: " << cssString.ToUTF8String();
-  WEBF_LOG(VERBOSE) << "Dumping rules (" << contents->RuleCount() << "):";
+  WEBF_LOG(VERBOSE) << "[HTMLLinkElement] SOURCE: " << cssString.ToUTF8String();
+  WEBF_LOG(VERBOSE) << "[HTMLLinkElement] Dumping rules (" << contents->RuleCount() << "):";
   const auto& child_rules = contents->ChildRules();
   for (const auto& base : child_rules) {
     if (!base || !base->IsStyleRule()) continue;
     auto base_nc = std::const_pointer_cast<StyleRuleBase>(base);
     auto sr = std::static_pointer_cast<StyleRule>(base_nc);
     String sel = sr->SelectorsText();
-    String decls = sr->Properties().AsText();  // forces parse
-    WEBF_LOG(VERBOSE) << "  " << sel.ToUTF8String() << " { " << decls.ToUTF8String() << " }";
+    const auto& prop_set = sr->Properties();
+    String decls = prop_set.AsText();  // forces parse
+    WEBF_LOG(VERBOSE) << "[HTMLLinkElement]   " << sel.ToUTF8String() << " { " << decls.ToUTF8String()
+                      << " } (count=" << prop_set.PropertyCount() << ")";
   }
 
+  WEBF_LOG(VERBOSE) << "[HTMLLinkElement] Registering author stylesheet and triggering style recalc.";
   document.EnsureStyleEngine().RegisterAuthorSheet(new_sheet);
 
   // Recalculate style to apply the new rules.
@@ -119,6 +122,7 @@ NativeValue HTMLLinkElement::parseAuthorStyleSheet(AtomicString& cssString, Atom
     MemberMutationScope scope(GetExecutingContext());
     ExceptionState exception_state;
     Event* load_event = Event::Create(GetExecutingContext(), event_type_names::kload, exception_state);
+    WEBF_LOG(VERBOSE) << "[HTMLLinkElement] Dispatching 'load' event after applying stylesheet.";
     dispatchEvent(load_event, exception_state);
   }
 
@@ -149,6 +153,8 @@ void HTMLLinkElement::ParseAttribute(const webf::Element::AttributeModificationP
   // If rel/href/type/disabled attributes change, trigger style recalc.
   if (params.name == html_names::kRelAttr || params.name == html_names::kHrefAttr || params.name == html_names::kTypeAttr ||
       params.name == html_names::kDisabledAttr) {
+    WEBF_LOG(VERBOSE) << "[HTMLLinkElement] Attribute changed: " << params.name.ToUTF8String()
+                      << ", old='" << params.old_value.ToUTF8String() << "' new='" << params.new_value.ToUTF8String() << "'";
     GetDocument().EnsureStyleEngine().RecalcStyle(GetDocument());
   }
 }
@@ -156,6 +162,7 @@ void HTMLLinkElement::ParseAttribute(const webf::Element::AttributeModificationP
 Node::InsertionNotificationRequest HTMLLinkElement::InsertedInto(webf::ContainerNode& insertion_point) {
   HTMLElement::InsertedInto(insertion_point);
   if (isConnected() && GetExecutingContext()->isBlinkEnabled()) {
+    WEBF_LOG(VERBOSE) << "[HTMLLinkElement] InsertedInto document; triggering style recalc.";
     GetDocument().EnsureStyleEngine().RecalcStyle(GetDocument());
   }
   return kInsertionDone;
@@ -165,6 +172,7 @@ void HTMLLinkElement::RemovedFrom(webf::ContainerNode& insertion_point) {
   HTMLElement::RemovedFrom(insertion_point);
   if (GetExecutingContext()->isBlinkEnabled()) {
     if (sheet_) {
+      WEBF_LOG(VERBOSE) << "[HTMLLinkElement] RemovedFrom document; unregistering author stylesheet.";
       GetDocument().EnsureStyleEngine().UnregisterAuthorSheet(sheet_.Get());
       sheet_.Release()->ClearOwnerNode();
     }
