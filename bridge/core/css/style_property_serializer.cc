@@ -36,6 +36,7 @@
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_markup.h"
 #include "core/css/css_repeat_style_value.h"
+#include "core/css/css_pending_substitution_value.h"
 #include "core/css/css_value_pair.h"
 #include "core/css/css_value_pool.h"
 #include "core/css/properties/css_property.h"
@@ -360,6 +361,47 @@ String StylePropertySerializer::AsText() const {
         continue;
       default:
         break;
+    }
+
+    // If this longhand holds a pending substitution for a shorthand like
+    // background: var(--prop), serialize the original shorthand text once
+    // and mark its longhands as consumed. This preserves author input and
+    // avoids emitting broken placeholders like " / ".
+    if (const auto* pending = DynamicTo<cssvalue::CSSPendingSubstitutionValue>(property.Value()->get())) {
+      CSSPropertyID shorthand_id = pending->ShorthandPropertyId();
+      int shorthand_property_index = GetCSSPropertyIDIndex(shorthand_id);
+      if (!shorthand_appeared.test(shorthand_property_index)) {
+        // Emit the shorthand with its original text (e.g. var(--prop)).
+        String shorthand_value = pending->ShorthandValue()->CssTextForSerialization();
+
+        // We intentionally handle pending shorthand substitutions here.
+        // When a shorthand was authored with a variable (e.g. `background: var(--x)`),
+        // each corresponding longhand carries a CSSPendingSubstitutionValue placeholder.
+        // For serialization we preserve the authored shorthand once and mark its
+        // longhands as consumed to avoid emitting incomplete placeholders like " / ".
+        if (!shorthand_value.IsEmpty()) {
+          result.Append(GetPropertyText(CSSProperty::Get(shorthand_id).GetCSSPropertyName(), shorthand_value,
+                                        property.IsImportant(), num_decls++));
+        }
+        shorthand_appeared.set(shorthand_property_index);
+        // Mark all longhands of this shorthand as serialized to avoid
+        // duplicate emission later in the loop.
+        std::vector<StylePropertyShorthand> sh_list;
+        getMatchingShorthandsForLonghand(property_id, &sh_list);
+        // Find the matching shorthand entry for shorthand_id.
+        for (const StylePropertyShorthand& sh : sh_list) {
+          if (sh.id() != shorthand_id) {
+            continue;
+          }
+          for (unsigned i = 0; i < sh.length(); i++) {
+            longhand_serialized.set(GetCSSPropertyIDIndex(sh.properties()[i]->PropertyID()));
+          }
+          break;
+        }
+      }
+      // Skip normal processing for this property regardless, since either we
+      // emitted the shorthand just now or it was already emitted earlier.
+      continue;
     }
     if (longhand_serialized.test(GetCSSPropertyIDIndex(property_id))) {
       continue;
