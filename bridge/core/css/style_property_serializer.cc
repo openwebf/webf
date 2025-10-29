@@ -453,6 +453,66 @@ String StylePropertySerializer::AsText() const {
       }
     }
 
+    // If the property set contains CSSRawValue entries (e.g. due to var()),
+    // we still want to serialize a single shorthand when all its longhands
+    // have the same var(...) text and importance. This preserves author input
+    // like "margin: var(--x)" instead of emitting four longhands.
+    if (!serialized_as_shorthand && contains_raw_values) {
+      for (const StylePropertyShorthand& shorthand : shorthands) {
+        if (shorthand.length() == 1) {
+          continue;
+        }
+        CSSPropertyID shorthand_property = shorthand.id();
+        int shorthand_property_index = GetCSSPropertyIDIndex(shorthand_property);
+        if (shorthand_appeared.test(shorthand_property_index)) {
+          continue;
+        }
+        bool all_present = true;
+        bool same_text = true;
+        bool consistent_important = true;
+        String common_value;
+        bool important_flag = property.IsImportant();
+        for (unsigned i = 0; i < shorthand.length(); ++i) {
+          int idx = property_set_.FindPropertyIndex(*shorthand.properties()[i]);
+          if (idx == -1) {
+            all_present = false;
+            break;
+          }
+          PropertyValueForSerializer pv = property_set_.PropertyAt(idx);
+          const CSSValue* v = pv.Value()->get();
+          String s = v->CssTextForSerialization();
+          if (i == 0) {
+            common_value = s;
+          } else if (s != common_value) {
+            same_text = false;
+            break;
+          }
+          if (pv.IsImportant() != important_flag) {
+            consistent_important = false;
+            break;
+          }
+          // Avoid serializing as shorthand if longhands use CSS-wide values.
+          if (v->IsCSSWideKeyword()) {
+            same_text = false;
+            break;
+          }
+        }
+        // Only coalesce when everything is present, consistent, and clearly var(...).
+        if (all_present && same_text && consistent_important && !common_value.IsEmpty() &&
+            common_value.length() >= 4 && common_value[0] == 'v' && common_value[1] == 'a' &&
+            common_value[2] == 'r' && common_value[3] == '(') {
+          result.Append(GetPropertyText(CSSProperty::Get(shorthand_property).GetCSSPropertyName(), common_value,
+                                        important_flag, num_decls++));
+          serialized_as_shorthand = true;
+          shorthand_appeared.set(shorthand_property_index);
+          for (unsigned i = 0; i < shorthand.length(); ++i) {
+            longhand_serialized.set(GetCSSPropertyIDIndex(shorthand.properties()[i]->PropertyID()));
+          }
+          break;
+        }
+      }
+    }
+
     if (serialized_as_shorthand) {
       continue;
     }
