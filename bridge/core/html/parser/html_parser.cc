@@ -179,6 +179,12 @@ bool HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
           continue;
         }
 
+        // Apply attributes (e.g., style) before attaching children so that
+        // newly created elements have their inline styles ready during subtree build.
+        // This avoids cases where late-applied attributes on the last sibling
+        // are not reflected visually in the same frame.
+        parseProperty(element, &child->v.element);
+
         element->BeginParsingChildren();
 
         // Recursively traverse children
@@ -191,9 +197,6 @@ bool HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
         root_container->AppendChild(element);
 
         element->FinishParsingChildren();
-
-        // Parse attributes
-        parseProperty(element, &child->v.element);
 
       } else if (child->type == GUMBO_NODE_TEXT || child->type == GUMBO_NODE_WHITESPACE) {
         // Handle text and whitespace-only text nodes
