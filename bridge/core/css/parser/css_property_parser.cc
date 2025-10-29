@@ -104,7 +104,8 @@ bool CSSPropertyParser::ParseCSSWideKeyword(CSSPropertyID unresolved_property, b
 bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
                                         bool allow_important_annotation,
                                         StyleRule::RuleType rule_type) {
-  if (ParseCSSWideKeyword(unresolved_property, rule_type)) {
+  // Match Blink: pass allow_important_annotation when checking CSS-wide keywords.
+  if (ParseCSSWideKeyword(unresolved_property, allow_important_annotation)) {
     return true;
   }
 
@@ -155,9 +156,10 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
     }
 
     // Remove any properties that may have been added by ParseShorthand()
-    // during a failing parse earlier.
-    parsed_properties_->erase(parsed_properties_->begin(), parsed_properties_->begin() + parsed_properties_size);
-    parsed_properties_->shrink_to_fit();
+    // during a failing parse earlier. Only drop properties appended during
+    // this attempt, preserving previously parsed properties. Avoid std::vector::resize
+    // to not require default-constructible CSSPropertyValue in libc++.
+    parsed_properties_->erase(parsed_properties_->begin() + parsed_properties_size, parsed_properties_->end());
   } else {
     if (std::shared_ptr<const CSSValue> parsed_value =
             css_parsing_utils::ParseLonghand(unresolved_property, CSSPropertyID::kInvalid, context_, stream_)) {
@@ -337,6 +339,25 @@ CSSPropertyID UnresolvedCSSPropertyID(const ExecutingContext* context,
   });
 }
 
+template <typename CharacterType>
+static CSSValueID CssValueKeywordID(tcb::span<const CharacterType> value_keyword) {
+  char buffer[maxCSSValueKeywordLength + 1];
+  if (!QuasiLowercaseIntoBuffer(value_keyword.data(), static_cast<unsigned>(value_keyword.size()), buffer)) {
+    return CSSValueID::kInvalid;
+  }
+
+  unsigned length = static_cast<unsigned>(value_keyword.size());
+  const Value* hash_table_entry = FindValue(buffer, length);
+#if DDEBUG
+  // Verify that we get the same answer with standard lowercasing.
+  for (unsigned i = 0; i < length; ++i) {
+    buffer[i] = ToASCIILower(value_keyword[i]);
+  }
+  assert(hash_table_entry == FindValue(buffer, length));
+#endif
+  return hash_table_entry ? static_cast<CSSValueID>(hash_table_entry->id) : CSSValueID::kInvalid;
+}
+
 CSSValueID CssValueKeywordID(const StringView& string) {
   unsigned length = string.length();
   if (!length) {
@@ -346,20 +367,7 @@ CSSValueID CssValueKeywordID(const StringView& string) {
     return CSSValueID::kInvalid;
   }
 
-  char buffer[maxCSSValueKeywordLength + 1];  // 1 for null character
-  if (!QuasiLowercaseIntoBuffer(string.data() , length, buffer)) {
-    return CSSValueID::kInvalid;
-  }
-
-  const Value* hash_table_entry = FindValue(buffer, length);
-#if DDEBUG
-  // Verify that we get the same answer with standard lowercasing.
-  for (unsigned i = 0; i < length; ++i) {
-    buffer[i] = ToASCIILower(string.data()[i]);
-  }
-  assert(hash_table_entry == FindValue(buffer, length));
-#endif
-  return hash_table_entry ? static_cast<CSSValueID>(hash_table_entry->id) : CSSValueID::kInvalid;
+  return string.Is8Bit() ? CssValueKeywordID(string.Span8()) : CssValueKeywordID(string.Span16());
 }
 
 bool CSSPropertyParser::ParseFontFaceDescriptor(CSSPropertyID resolved_property) {
