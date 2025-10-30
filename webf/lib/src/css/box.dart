@@ -84,6 +84,7 @@ mixin CSSBoxMixin on RenderStyle {
       cssLogger.fine('[background] build decoration: '
           'color=' + (built.color?.toString() ?? 'null') + ', '
           'image=' + (image != null ? backgroundImage?.cssText() ?? 'none' : 'none') + ', '
+          'gradient=' + (gradient != null ? 'yes' : 'no') + ', '
           'repeat=' + backgroundRepeat.cssText() + ', '
           'position=' + backgroundPositionX.cssText() + ' ' + backgroundPositionY.cssText() + ', '
           'size=' + backgroundSize.cssText() + ', '

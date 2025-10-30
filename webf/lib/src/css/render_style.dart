@@ -1965,6 +1965,13 @@ class CSSRenderStyle extends RenderStyle
   dynamic resolveValue(String propertyName, String propertyValue, {String? baseHref}) {
     RenderStyle renderStyle = this;
 
+    // For CSS custom properties (variables), do not attempt to interpret
+    // or coerce values. Preserve the raw string verbatim so comma-separated
+    // lists like "var(--a), var(--b)" are stored intact.
+    if (CSSVariable.isCSSSVariableProperty(propertyName)) {
+      return propertyValue;
+    }
+
     // Map logical properties to physical properties based on current direction
     String mappedPropertyName = propertyName;
     final bool isRTL = direction == TextDirection.rtl;
@@ -2041,7 +2048,7 @@ class CSSRenderStyle extends RenderStyle
       propertyValue = CSSInitialValues[propertyName] ?? propertyValue;
     }
 
-    // Process CSSVariable.
+    // Process CSSVariable for non-custom properties only.
     dynamic value = CSSVariable.tryParse(renderStyle, propertyValue);
     if (value != null) {
       return value;
@@ -2327,12 +2334,6 @@ class CSSRenderStyle extends RenderStyle
       case D:
         value = CSSPath.parseValue(propertyValue);
         break;
-    }
-
-    // --x: foo;
-    // Directly passing the value, not to resolve now.
-    if (CSSVariable.isCSSSVariableProperty(propertyName)) {
-      return propertyValue;
     }
 
     return value;

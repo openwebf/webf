@@ -24,9 +24,6 @@ mixin CSSVariableMixin on RenderStyle {
     } else if (!dep.contains(propertyName)) {
       dep.add(propertyName);
     }
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      debugPrint('[webf][var] add dep: ' + identifier + ' -> ' + propertyName);
-    }
   }
 
   @override
@@ -53,10 +50,6 @@ mixin CSSVariableMixin on RenderStyle {
       }
       return variable!.defaultValue;
     }
-    // Inherits from renderStyle tree.
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      debugPrint('[webf][var] inherit: ' + identifier + ' (from parent)');
-    }
     return getParentRenderStyle()?.getCSSVariable(identifier, propertyName);
   }
 
@@ -80,17 +73,56 @@ mixin CSSVariableMixin on RenderStyle {
     return storage[fast.identifier] ?? fast;
   }
 
+  // Only treat as an alias when the value is exactly a single outer var(...) wrapper
+  // with no extra tokens outside. This preserves comma-separated lists like
+  //   --tw-gradient-stops: var(--from), var(--to)
+  // as raw strings.
+  bool isSingleVarFunction(String v) {
+    int i = 0;
+    final s = v.trimLeft();
+    // Must begin with 'var('
+    if (!s.startsWith('var(')) return false;
+    // Find the position of the opening '(' after 'var'
+    int start = s.indexOf('(');
+    int depth = 0;
+    for (i = start; i < s.length; i++) {
+      final ch = s.codeUnitAt(i);
+      if (ch == 40) { // '('
+        depth++;
+      } else if (ch == 41) { // ')'
+        depth--;
+        if (depth == 0) {
+          // i is the matching closing ')'. Ensure the rest is only whitespace.
+          final rest = s.substring(i + 1).trim();
+          return rest.isEmpty;
+        }
+      }
+    }
+    return false;
+  }
+
   // --x: red
   // key: --x
   // value: red
   @override
   void setCSSVariable(String identifier, String value) {
-    CSSVariable? variable = CSSVariable.tryParse(this, value);
-    if (variable != null) {
-      _variableStorage ??= HashMap<String, CSSVariable>();
-      _variableStorage![identifier] = variable;
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        debugPrint('[webf][var] set: ' + identifier + ' = CSSVariable(' + variable.identifier + (variable.defaultValue != null ? (',' + variable.defaultValue!) : '') + ')');
+    // Snapshot old value before mutation for transition heuristics.
+    String? prevRaw = _identifierStorage != null ? _identifierStorage![identifier] : null;
+
+    if (isSingleVarFunction(value)) {
+      CSSVariable? variable = CSSVariable.tryParse(this, value);
+      if (variable != null) {
+        _variableStorage ??= HashMap<String, CSSVariable>();
+        _variableStorage![identifier] = variable;
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          debugPrint('[webf][var] set: ' + identifier + ' = CSSVariable(' + variable.identifier + (variable.defaultValue != null ? (',' + variable.defaultValue!) : '') + ')');
+        }
+      } else {
+        _identifierStorage ??= HashMap<String, String>();
+        _identifierStorage![identifier] = value;
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          debugPrint('[webf][var] set: ' + identifier + ' = ' + value);
+        }
       }
     } else {
       _identifierStorage ??= HashMap<String, String>();
@@ -150,8 +182,13 @@ mixin CSSVariableMixin on RenderStyle {
           }
           CSSColor.clearCachedColorValue(cssText);
         }
-        target.style.setProperty(propertyName, cssText);
-        target.style.flushPendingProperties();
+        // Apply directly to computed style to avoid re-entrant pending queue issues.
+        // This guarantees immediate recomputation using latest var values.
+        final String? baseHref = target.style.getPropertyBaseHref(propertyName);
+        target.setRenderStyle(propertyName, cssText, baseHref: baseHref);
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          debugPrint('[webf][var] applied var-affected property via setRenderStyle: ' + propertyName);
+        }
       }
     });
 

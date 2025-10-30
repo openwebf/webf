@@ -691,8 +691,59 @@ class CSSBackground {
 
   static resolveBackgroundImage(
       String present, RenderStyle renderStyle, String property, WebFController controller, String? baseHref) {
-    List<CSSFunctionalNotation> functions = CSSFunction.parseFunction(present);
+    // Expand CSS variables inside the background-image string so that
+    // values like linear-gradient(..., var(--tw-gradient-stops)) work.
+    // Tailwind sets --tw-gradient-stops to a comma-separated list
+    // (e.g., "var(--tw-gradient-from), var(--tw-gradient-to)") which
+    // must be expanded before parsing function args, otherwise only the
+    // first token would be seen and gradients would be dropped.
+    String expanded = _expandBackgroundVars(present, renderStyle);
+    List<CSSFunctionalNotation> functions = CSSFunction.parseFunction(expanded);
     return CSSBackgroundImage(functions, renderStyle, controller, baseHref: baseHref);
+  }
+
+  // Regex adapted from color var handling to match var(...) including
+  // simple nesting cases: var( ... var(...) ... )
+  static final RegExp _varFunctionRegExp = RegExp(r'var\(([^()]*\(.*?\)[^()]*)\)|var\(([^()]*)\)');
+
+  // Expand CSS custom properties within a background-image string.
+  // This performs textual substitution using the raw variable value
+  // (not property-typed resolution) and repeats until no var() remains
+  // or a small guard limit is reached.
+  static String _expandBackgroundVars(String input, RenderStyle renderStyle) {
+    if (!input.contains('var(')) return input;
+    String result = input;
+    // Limit to avoid infinite loops on pathological input.
+    int guard = 0;
+    while (result.contains('var(') && guard++ < 8) {
+      final original = result;
+      result = result.replaceAllMapped(_varFunctionRegExp, (Match match) {
+        final String? varString = match[0];
+        if (varString == null) return '';
+        // Parse the var() expression to get identifier and (optional) fallback.
+        final CSSVariable? variable = CSSVariable.tryParse(renderStyle, varString);
+        if (variable == null) {
+          return '';
+        }
+        // Track dependency on this variable for backgroundImage recomputation.
+        final depKey = '${BACKGROUND_IMAGE}_$input';
+        final dynamic raw = renderStyle.getCSSVariable(variable.identifier, depKey);
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[background] var resolve: ' + varString + ' -> ' + (raw?.toString() ?? 'null'));
+        }
+        if (raw == null || raw == INITIAL) {
+          // Use fallback defined in var(--x, <fallback>) if provided.
+          final fallback = variable.defaultValue;
+          return fallback?.toString() ?? '';
+        }
+        return raw.toString();
+      });
+      if (result == original) break;
+    }
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[background] expand vars done: ' + input + ' -> ' + result);
+    }
+    return result;
   }
 
   static CSSBackgroundRepeatType resolveBackgroundRepeat(String value) {
@@ -745,6 +796,9 @@ void _applyColorAndStops(
     for (int i = start; i < args.length; i++) {
       List<CSSColorStop> colorGradients =
           _parseColorAndStop(args[i].trim(), renderStyle, propertyName, (i - start) * grow, gradientLength);
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[background] parse color-stop: src=' + args[i].trim() + ' -> count=' + colorGradients.length.toString());
+      }
       for (var colorStop in colorGradients) {
         if (colorStop.color != null) {
           colors.add(colorStop.color!);
@@ -759,6 +813,9 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
     [double? defaultStop, double? gradientLength]) {
   List<String> strings = [];
   List<CSSColorStop> colorGradients = [];
+  if (kDebugMode && DebugFlags.enableCssLogs) {
+    cssLogger.fine('[background] parseColorStop input=' + src);
+  }
   // rgba may contain space, color should handle special
   if (src.startsWith('rgba(') || src.startsWith('rgb(') || src.startsWith('hsl(') || src.startsWith('hsla(')) {
     // Treat functional color notations as a single token, since their arguments may include spaces.
@@ -806,6 +863,9 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
       CSSColor? color = CSSColor.resolveColor(strings[0], renderStyle, propertyName);
       colorGradients.add(CSSColorStop(color?.value, stop));
     }
+  }
+  if (kDebugMode && DebugFlags.enableCssLogs) {
+    cssLogger.fine('[background] parseColorStop result count=' + colorGradients.length.toString());
   }
   return colorGradients;
 }
