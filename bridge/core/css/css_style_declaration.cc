@@ -131,11 +131,17 @@ CSSStyleDeclaration::CSSStyleDeclaration(ExecutingContext* context) : BindingObj
 
 ScriptValue CSSStyleDeclaration::item(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
   AtomicString result = AnonymousNamedGetter(key);
+  if (result.IsNull()) {
+    return ScriptValue::Undefined(ctx());
+  }
   return ScriptValue(ctx(), result);
 }
 
 ScriptValue CSSStyleDeclaration::item(webf::AtomicString&& key, webf::ExceptionState& exception_state) {
   AtomicString result = AnonymousNamedGetter(key);
+  if (result.IsNull()) {
+    return ScriptValue::Undefined(ctx());
+  }
   return ScriptValue(ctx(), result);
 }
 
@@ -145,7 +151,7 @@ AtomicString CSSStyleDeclaration::AnonymousNamedGetter(const webf::AtomicString&
 
   // Do not handle non-property names.
   if (!IsValidCSSPropertyID(unresolved_property)) {
-    return AtomicString::Empty();
+    return AtomicString::Null();
   }
 
   return GetPropertyValueInternal(ResolveCSSPropertyID(unresolved_property));
