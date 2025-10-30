@@ -601,13 +601,13 @@ void CSSGradientValue::AppendCSSTextForColorStops(StringBuilder& result, bool re
     }
 
     if (stop.color_) {
-      // Prefer hex serialization for opaque colors inside gradients to avoid
-      // emitting rgb()/rgba() tokens that some downstream parsers split
-      // incorrectly when followed by a stop value (e.g. "rgb(...) 50%").
-      if (auto* css_color = DynamicTo<cssvalue::CSSColor>(stop.color_.get())) {
+      // Preserve author-specified color text when safe. When a stop offset
+      // follows, prefer hex/rgb canonicalization to avoid downstream
+      // tokenization issues with "rgb(...) 50%" in some parsers.
+      if (!stop.offset_ && stop.color_->HasRawText()) {
+        result.Append(stop.color_->CssTextForSerialization());
+      } else if (auto* css_color = DynamicTo<cssvalue::CSSColor>(stop.color_.get())) {
         Color color = css_color->Value();
-        // Canvas-style serialization yields #RRGGBB for opaque colors and
-        // falls back to functional syntax when alpha is present.
         result.Append(color.SerializeAsCanvasColor());
       } else {
         result.Append(stop.color_->CssText());
@@ -628,17 +628,17 @@ void CSSGradientValue::AppendCSSTextForDeprecatedColorStops(StringBuilder& resul
     result.Append(", "_s);
     if (stop.offset_->IsZero() == CSSPrimitiveValue::BoolStatus::kTrue) {
       result.Append("from("_s);
-      result.Append(stop.color_->CssText());
+      result.Append(stop.color_->CssTextForSerialization());
       result.Append(')');
     } else if (stop.offset_->IsOne() == CSSPrimitiveValue::BoolStatus::kTrue) {
       result.Append("to("_s);
-      result.Append(stop.color_->CssText());
+      result.Append(stop.color_->CssTextForSerialization());
       result.Append(')');
     } else {
       result.Append("color-stop("_s);
       result.Append(stop.offset_->CssText());
       result.Append(", "_s);
-      result.Append(stop.color_->CssText());
+      result.Append(stop.color_->CssTextForSerialization());
       result.Append(')');
     }
   }

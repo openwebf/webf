@@ -314,7 +314,9 @@ class CSSConstantGradientValue final : public CSSGradientValue {
   explicit CSSConstantGradientValue(std::shared_ptr<const CSSValue> color)
       : CSSGradientValue(kConstantGradientClass, kNonRepeating, kCSSConstantGradient), color_(color) {}
 
-  String CustomCSSText() const { return color_->CssText(); }
+  String CustomCSSText() const { return color_->CssTextForSerialization(); }
+  // Prefer preserving raw text if available for color constants.
+  String CustomCSSTextForSerialization() const { return color_->CssTextForSerialization(); }
 
   // Create the gradient for a given size.
   std::shared_ptr<Gradient> CreateGradient(const CSSToLengthConversionData&,
