@@ -67,9 +67,14 @@ class StyleEngine final {
     text_to_sheet_cache_.clear();
   }
   CSSStyleSheet* CreateSheet(Element&, const String& text);
+  // Create a stylesheet with an explicit base URL for resolving relative URLs
+  // inside the sheet (e.g., url(...) in external CSS). When provided, caching
+  // will be keyed by both text and base_href to avoid cross-base reuse.
+  CSSStyleSheet* CreateSheet(Element&, const String& text, const AtomicString& base_href);
   Document& GetDocument() const;
   void Trace(GCVisitor* visitor);
   CSSStyleSheet* ParseSheet(Element&, const String& text);
+  CSSStyleSheet* ParseSheet(Element&, const String& text, const AtomicString& base_href);
 
   bool InRebuildLayoutTree() const { return in_layout_tree_rebuild_; }
   bool InDOMRemoval() const { return in_dom_removal_; }

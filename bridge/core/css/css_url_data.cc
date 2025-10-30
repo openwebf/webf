@@ -108,7 +108,10 @@ bool CSSUrlData::IsLocal(const Document& document) const {
 }
 
 String CSSUrlData::CssText() const {
-  return SerializeURI(relative_url_.GetString());
+  // Prefer absolute URL on serialization when available and not a local fragment-only URL.
+  // This ensures url() values resolve to a full URL when emitted.
+  const AtomicString& serialize_value = ValueForSerialization();
+  return SerializeURI(serialize_value.GetString());
 }
 
 bool CSSUrlData::operator==(const CSSUrlData& other) const {

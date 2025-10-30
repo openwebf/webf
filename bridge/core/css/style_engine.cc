@@ -268,6 +268,49 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text) {
   return style_sheet;
 }
 
+CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text, const AtomicString& base_href) {
+  assert(GetDocument().GetExecutingContext()->isBlinkEnabled());
+  CSSStyleSheet* style_sheet = nullptr;
+
+  // Build a cache key that incorporates base href to avoid cross-base reuse.
+  // If the text is large, reuse the hashed form like the other path.
+  String key;
+  if (text.length() >= 1024) {
+    StringBuilder builder;
+    builder.AppendNumber(text.Impl() ? text.Impl()->GetHash() : 0);
+    builder.Append("|base="_s);
+    builder.Append(base_href.GetString());
+    key = builder.ReleaseString();
+  } else {
+    StringBuilder builder;
+    builder.Append(text);
+    builder.Append("|base="_s);
+    builder.Append(base_href.GetString());
+    key = builder.ReleaseString();
+  }
+
+  if (text_to_sheet_cache_.count(key) == 0 || !text_to_sheet_cache_[key]->IsCacheableForStyleElement()) {
+    style_sheet = ParseSheet(element, text, base_href);
+    assert(style_sheet != nullptr);
+    if (style_sheet->Contents()->IsCacheableForStyleElement()) {
+      text_to_sheet_cache_[key] = style_sheet->Contents();
+    }
+  } else {
+    auto contents = text_to_sheet_cache_[key];
+    assert(contents != nullptr);
+    assert(contents->IsCacheableForStyleElement());
+    assert(contents->HasSingleOwnerDocument());
+
+    contents->SetIsUsedFromTextCache();
+    contents->SetDidLoadErrorOccur(false);
+
+    style_sheet = CSSStyleSheet::CreateInline(element.GetExecutingContext(), contents, element);
+  }
+
+  assert(style_sheet);
+  return style_sheet;
+}
+
 CSSStyleSheet* StyleEngine::ParseSheet(Element& element, const String& text) {
   assert(GetDocument().GetExecutingContext()->isBlinkEnabled());
   // Create parser context without Document to avoid circular references
@@ -277,6 +320,19 @@ CSSStyleSheet* StyleEngine::ParseSheet(Element& element, const String& text) {
   // For style elements (inline CSS), ensure no load error is flagged
   contents->SetDidLoadErrorOccur(false);
   
+  CSSStyleSheet* style_sheet = CSSStyleSheet::CreateInline(element.GetExecutingContext(), contents, element);
+  return style_sheet;
+}
+
+CSSStyleSheet* StyleEngine::ParseSheet(Element& element, const String& text, const AtomicString& base_href) {
+  assert(GetDocument().GetExecutingContext()->isBlinkEnabled());
+  // Create parser context that uses the provided base URL for resolving URLs in CSS.
+  Document& doc = GetDocument();
+  auto parser_context = std::make_shared<CSSParserContext>(doc, base_href.ToUTF8String());
+  auto contents = std::make_shared<StyleSheetContents>(parser_context, base_href.GetString());
+  contents->ParseString(text);
+  contents->SetDidLoadErrorOccur(false);
+
   CSSStyleSheet* style_sheet = CSSStyleSheet::CreateInline(element.GetExecutingContext(), contents, element);
   return style_sheet;
 }

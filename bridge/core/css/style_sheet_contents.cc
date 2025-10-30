@@ -89,7 +89,14 @@ StyleSheetContents::~StyleSheetContents() = default;
 ParseSheetResult StyleSheetContents::ParseString(const String& sheet_text,
                                                  bool allow_import_rules,
                                                  CSSDeferPropertyParsing defer_property_parsing) {
-  std::shared_ptr<CSSParserContext> context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
+  // Use the parser context associated with this StyleSheetContents so relative
+  // URLs resolve against the correct base (e.g., the stylesheet href).
+  std::shared_ptr<CSSParserContext> context;
+  if (parser_context_) {
+    context = std::make_shared<CSSParserContext>(parser_context_.get(), this);
+  } else {
+    context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
+  }
   return CSSParser::ParseSheet(context, shared_from_this(), sheet_text, defer_property_parsing, allow_import_rules);
 }
 

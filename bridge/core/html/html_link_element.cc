@@ -82,7 +82,13 @@ NativeValue HTMLLinkElement::parseAuthorStyleSheet(AtomicString& cssString, Atom
     sheet_.Release()->ClearOwnerNode();
   }
 
-  CSSStyleSheet* new_sheet = document.EnsureStyleEngine().CreateSheet(*this, cssString.GetString());
+  CSSStyleSheet* new_sheet = nullptr;
+  if (!href.IsEmpty()) {
+    // Use href as base URL so relative url() inside the CSS resolve against the stylesheet URL.
+    new_sheet = document.EnsureStyleEngine().CreateSheet(*this, cssString.GetString(), href);
+  } else {
+    new_sheet = document.EnsureStyleEngine().CreateSheet(*this, cssString.GetString());
+  }
   sheet_ = new_sheet;
 
   MediaQueryEvaluator evaluator("screen");
