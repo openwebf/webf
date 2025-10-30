@@ -2587,7 +2587,8 @@ CSSParserToken ConsumeUrlAsToken(CSSParserTokenStream& stream, std::shared_ptr<c
 
 CSSUrlData CollectUrlData(const String& url, std::shared_ptr<const CSSParserContext> context) {
   AtomicString atomic_url(url);
-  return CSSUrlData(atomic_url, context->CompleteNonEmptyURL(url));
+  KURL resolved = context->CompleteNonEmptyURL(url);
+  return CSSUrlData(atomic_url, resolved);
 }
 
 static std::shared_ptr<const CSSImageValue> CreateCSSImageValueWithReferrer(
