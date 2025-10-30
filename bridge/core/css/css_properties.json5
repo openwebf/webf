@@ -9987,10 +9987,15 @@
       name: "-webkit-text-size-adjust",
       alias_for: "text-size-adjust",
     },
-    {
-      name: "-webkit-transform",
-      alias_for: "transform",
-    },
+    // NOTE: Disabled alias for compatibility hardening.
+    // -webkit-transform used to alias to unprefixed 'transform'.
+    // Leaving commented so it's easy to restore if needed.
+    // To re-enable, uncomment the block and run codegen:
+    //   node scripts/generate_binding_code.js (from repo root)
+    // {
+    //   name: "-webkit-transform",
+    //   alias_for: "transform",
+    // },
     {
       name: "-webkit-transform-origin",
       alias_for: "transform-origin",
