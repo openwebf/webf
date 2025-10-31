@@ -313,13 +313,15 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text, co
 
 CSSStyleSheet* StyleEngine::ParseSheet(Element& element, const String& text) {
   assert(GetDocument().GetExecutingContext()->isBlinkEnabled());
-  // Create parser context without Document to avoid circular references
-  auto parser_context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
-  auto contents = std::make_shared<StyleSheetContents>(parser_context, NullURL().GetString());
+  // Create parser context with the document and its base URL so relative
+  // URLs (including @import) inside inline <style> resolve correctly.
+  Document& doc = GetDocument();
+  auto parser_context = std::make_shared<CSSParserContext>(doc, doc.BaseURL().GetString());
+  auto contents = std::make_shared<StyleSheetContents>(parser_context, doc.BaseURL().GetString());
   contents->ParseString(text);
   // For style elements (inline CSS), ensure no load error is flagged
   contents->SetDidLoadErrorOccur(false);
-  
+
   CSSStyleSheet* style_sheet = CSSStyleSheet::CreateInline(element.GetExecutingContext(), contents, element);
   return style_sheet;
 }
