@@ -12,8 +12,15 @@ const Alignment _DEFAULT_TRANSFORM_ALIGNMENT = Alignment.center;
 
 // A temporary value
 class TransformAnimationValue {
+  // The parsed transform functions list (e.g., [translateX(100%), ...]).
   dynamic value;
-  TransformAnimationValue(this.value);
+  // Optional matrix snapshot resolved at transition setup time. When present,
+  // updateTransform() prefers this over re-resolving against the evolving
+  // layout state so that percentage-based transforms remain stable relative
+  // to the start/end reference box.
+  Matrix4? frozenMatrix;
+
+  TransformAnimationValue(this.value, {this.frozenMatrix});
 }
 
 // CSS Transforms: https://drafts.csswg.org/css-transforms/
@@ -59,9 +66,17 @@ mixin CSSTransformMixin on RenderStyle {
     return CSSFunction.parseFunction(present);
   }
 
-  static TransformAnimationValue resolveTransformForAnimation(String present) {
-    List<CSSFunctionalNotation>? notation = resolveTransform(present);
-    return TransformAnimationValue(notation);
+  static TransformAnimationValue resolveTransformForAnimation(String present, RenderStyle renderStyle) {
+    final List<CSSFunctionalNotation>? notation = resolveTransform(present);
+    Matrix4? initialMatrix;
+    if (notation != null) {
+      // Try to resolve once at setup time to capture a stable reference for
+      // percentage-based transforms. If resolution is not yet possible
+      // (e.g., awaiting layout), we leave it null and fall back to dynamic
+      // resolution during ticks.
+      initialMatrix = CSSMatrix.computeTransformMatrix(notation, renderStyle);
+    }
+    return TransformAnimationValue(notation, frozenMatrix: initialMatrix);
   }
 
   Matrix4? _transformMatrix;
@@ -77,6 +92,16 @@ mixin CSSTransformMixin on RenderStyle {
   }
 
   void markTransformMatrixNeedsUpdate() {
+    // If a transform transition is running, do not clobber the per‑tick
+    // animation-driven transformMatrix; let the transition own updates.
+    // When no transform transition is active, invalidate cached matrix so
+    // percentage-based transforms recompute after layout size changes.
+    if (this is CSSRenderStyle) {
+      final CSSRenderStyle rs = this as CSSRenderStyle;
+      if (rs.isTransitionRunning(TRANSFORM)) {
+        return;
+      }
+    }
     _transformMatrix = null;
   }
 

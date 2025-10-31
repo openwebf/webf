@@ -5,8 +5,11 @@
 
 import 'package:flutter/rendering.dart';
 import 'package:flutter/animation.dart' show Curve;
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/src/foundation/logger.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
 
 // CSS Transitions: https://drafts.csswg.org/css-transitions/
 const String _0s = '0s';
@@ -136,7 +139,10 @@ CSSLengthValue _updateLineHeight(double oldValue, double newValue, double progre
 }
 
 TransformAnimationValue _parseTransform(String value, RenderStyle renderStyle, String property) {
-  return CSSTransformMixin.resolveTransformForAnimation(value);
+  // Capture a frozen matrix at setup so percentage-based transforms like
+  // translateX(100%) don’t re-resolve against an evolving width/height
+  // while other properties (e.g., width) are simultaneously animating.
+  return CSSTransformMixin.resolveTransformForAnimation(value, renderStyle);
 }
 
 String _stringifyTransform(Matrix4 value) {
@@ -145,11 +151,37 @@ String _stringifyTransform(Matrix4 value) {
 
 Matrix4 _updateTransform(TransformAnimationValue begin, TransformAnimationValue end, double t, String property,
     CSSRenderStyle renderStyle) {
-  var beginMatrix = CSSMatrix.computeTransformMatrix(begin.value, renderStyle);
-  var endMatrix = CSSMatrix.computeTransformMatrix(end.value, renderStyle);
+  // Resolve transform matrices against the start/end reference sizes to avoid
+  // mid-flight drift when other properties (e.g., right/width) also animate.
+  // Use the frozen matrices captured at transition start; fall back to a
+  // one-shot resolve if not available.
+  Matrix4? beginMatrix = begin.frozenMatrix;
+  beginMatrix ??= CSSMatrix.computeTransformMatrix(begin.value, renderStyle) ?? Matrix4.identity();
+
+  Matrix4? endMatrix = end.frozenMatrix;
+  if (endMatrix == null) {
+    endMatrix = end.value == null ? Matrix4.identity() : (CSSMatrix.computeTransformMatrix(end.value, renderStyle) ?? Matrix4.identity());
+  }
 
   if (beginMatrix != null && endMatrix != null) {
     Matrix4 newMatrix4 = CSSMatrix.lerpMatrix(beginMatrix, endMatrix, t);
+    // Extra debug to help diagnose percent-based translate resolution.
+    if (kDebugMode && DebugFlags.enableTransitionValueLogs) {
+      final double beginTx = beginMatrix.storage[12];
+      final double endTx = endMatrix.storage[12];
+      final double curTx = newMatrix4.storage[12];
+      final double w = renderStyle.width.computedValue;
+      final double? boxW = renderStyle.borderBoxLogicalWidth ?? renderStyle.borderBoxWidth;
+      cssLogger.fine('[transition][transform][calc] tag=' +
+          renderStyle.target.tagName +
+          ' t=' + t.toStringAsFixed(3) +
+          ' width=' + w.toStringAsFixed(3) +
+          ' boxLogicalW=' + (renderStyle.borderBoxLogicalWidth?.toStringAsFixed(3) ?? 'null') +
+          ' boxW=' + (boxW?.toStringAsFixed(3) ?? 'null') +
+          ' beginTx=' + beginTx.toStringAsFixed(3) +
+          ' endTx=' + endTx.toStringAsFixed(3) +
+          ' curTx=' + curTx.toStringAsFixed(3));
+    }
     renderStyle.transformMatrix = newMatrix4;
     return newMatrix4;
   }
@@ -186,6 +218,57 @@ const List<Function> _transformOriginHandler = [
   _updateTransformOrigin,
   _stringifyTransformOrigin
 ];
+
+// background-size handler: parses "<bg-size>" and interpolates width/height when numeric/percentage.
+CSSBackgroundSize _parseBackgroundSize(String value, RenderStyle renderStyle, String property) {
+  return CSSBackground.resolveBackgroundSize(value, renderStyle, property);
+}
+
+String _stringifyBackgroundSize(CSSBackgroundSize size) {
+  return size.cssText();
+}
+
+CSSBackgroundSize _updateBackgroundSize(CSSBackgroundSize begin, CSSBackgroundSize end, double progress,
+    String property, CSSRenderStyle renderStyle) {
+  // If either uses a non-numeric fit (cover/contain/none mismatch), fallback to step at half.
+  final BoxFit fb = begin.fit;
+  final BoxFit fe = end.fit;
+  if (fb != BoxFit.none || fe != BoxFit.none) {
+    // Only interpolate numeric sizes when both are none; else step.
+    final CSSBackgroundSize chosen = progress < 0.5 ? begin : end;
+    renderStyle.target.setRenderStyleProperty(BACKGROUND_SIZE, chosen);
+    // Do not write to inline style during transitions to avoid reentrancy.
+    return chosen;
+  }
+
+  CSSLengthValue? _lerpLen(CSSLengthValue? a, CSSLengthValue? b, bool isX) {
+    if (a == null && b == null) return null;
+    if (a == null || b == null) return progress < 0.5 ? a : b;
+    // When both percentages, interpolate the percent.
+    if (a.type == CSSLengthType.PERCENTAGE && b.type == CSSLengthType.PERCENTAGE) {
+      final double av = a.value ?? 0;
+      final double bv = b.value ?? 0;
+      final double v = av * (1 - progress) + bv * progress;
+      return CSSLengthValue(v, CSSLengthType.PERCENTAGE, renderStyle, BACKGROUND_SIZE, isX ? Axis.horizontal : Axis.vertical);
+    }
+    // When both absolute lengths, lerp in px.
+    if (a.type != CSSLengthType.PERCENTAGE && b.type != CSSLengthType.PERCENTAGE) {
+      final double av = a.computedValue;
+      final double bv = b.computedValue;
+      final double v = av * (1 - progress) + bv * progress;
+      return CSSLengthValue(v, CSSLengthType.PX);
+    }
+    // Mixed types: fallback to step.
+    return progress < 0.5 ? a : b;
+  }
+
+  final CSSLengthValue? w = _lerpLen(begin.width, end.width, true);
+  final CSSLengthValue? h = _lerpLen(begin.height, end.height, false);
+  final CSSBackgroundSize result = CSSBackgroundSize(fit: BoxFit.none, width: w, height: h);
+
+  renderStyle.target.setRenderStyleProperty(BACKGROUND_SIZE, result);
+  return result;
+}
 
 // background-position handler: parses "<pos-x> <pos-y>" and interpolates per-axis.
 List<CSSBackgroundPosition> _parseBackgroundPosition(String value, RenderStyle renderStyle, String property) {
@@ -238,9 +321,6 @@ List<CSSBackgroundPosition> _updateBackgroundPosition(List<CSSBackgroundPosition
   // Update render style longhands to drive painting.
   renderStyle.target.setRenderStyleProperty(BACKGROUND_POSITION_X, x);
   renderStyle.target.setRenderStyleProperty(BACKGROUND_POSITION_Y, y);
-  // Update longhand values in CSSStyleDeclaration for direct style reads.
-  renderStyle.target.style.setProperty(BACKGROUND_POSITION_X, x.cssText());
-  renderStyle.target.style.setProperty(BACKGROUND_POSITION_Y, y.cssText());
 
   return [x, y];
 }
@@ -279,19 +359,14 @@ CSSBackgroundPosition _lerpBackgroundPositionAxis(CSSBackgroundPosition a, CSSBa
 CSSBackgroundPosition _updateBackgroundPositionX(CSSBackgroundPosition begin, CSSBackgroundPosition end,
     double progress, String property, CSSRenderStyle renderStyle) {
   final CSSBackgroundPosition x = _lerpBackgroundPositionAxis(begin, end, progress, true);
-  // Preserve existing Y to keep shorthand consistent.
-  final CSSBackgroundPosition y = renderStyle.backgroundPositionY;
   renderStyle.target.setRenderStyleProperty(BACKGROUND_POSITION_X, x);
-  renderStyle.target.style.setProperty(BACKGROUND_POSITION_X, x.cssText());
   return x;
 }
 
 CSSBackgroundPosition _updateBackgroundPositionY(CSSBackgroundPosition begin, CSSBackgroundPosition end,
     double progress, String property, CSSRenderStyle renderStyle) {
   final CSSBackgroundPosition y = _lerpBackgroundPositionAxis(begin, end, progress, false);
-  final CSSBackgroundPosition x = renderStyle.backgroundPositionX;
   renderStyle.target.setRenderStyleProperty(BACKGROUND_POSITION_Y, y);
-  renderStyle.target.style.setProperty(BACKGROUND_POSITION_Y, y.cssText());
   return y;
 }
 
@@ -301,6 +376,7 @@ Map<String, List<Function>> CSSTransitionHandlers = {
   BACKGROUND_POSITION: [_parseBackgroundPosition, _updateBackgroundPosition, _stringifyBackgroundPosition],
   BACKGROUND_POSITION_X: [_parseBackgroundPositionX, _updateBackgroundPositionX, _stringifyBackgroundPositionAxis],
   BACKGROUND_POSITION_Y: [_parseBackgroundPositionY, _updateBackgroundPositionY, _stringifyBackgroundPositionAxis],
+  BACKGROUND_SIZE: [_parseBackgroundSize, _updateBackgroundSize, _stringifyBackgroundSize],
   BORDER_BOTTOM_COLOR: _colorHandler,
   BORDER_LEFT_COLOR: _colorHandler,
   BORDER_RIGHT_COLOR: _colorHandler,
@@ -363,6 +439,18 @@ enum CSSTransitionEvent {
 }
 
 mixin CSSTransitionMixin on RenderStyle {
+  // Map longhand properties to their canonical transition key so that
+  // a shorthand like `background-position` drives transitions for
+  // `background-position-x`/`-y` changes.
+  static String _canonicalTransitionKey(String property) {
+    switch (property) {
+      case BACKGROUND_POSITION_X:
+      case BACKGROUND_POSITION_Y:
+        return BACKGROUND_POSITION;
+      default:
+        return property;
+    }
+  }
   // https://drafts.csswg.org/css-transitions/#transition-property-property
   // Name: transition-property
   // Value: none | <single-transition-property>#
@@ -475,8 +563,11 @@ mixin CSSTransitionMixin on RenderStyle {
     // Transition does not work when renderBoxModel has not been layout yet.
     if (hasRenderBox() &&
         isBoxModelHaveSize() &&
-        CSSTransitionHandlers[property] != null &&
-        (effectiveTransitions.containsKey(property) || effectiveTransitions.containsKey(ALL))) {
+        CSSTransitionHandlers[property] != null) {
+      final String key = _canonicalTransitionKey(property);
+      if (!(effectiveTransitions.containsKey(key) || effectiveTransitions.containsKey(ALL))) {
+        return false;
+      }
       bool shouldTransition = false;
       // Transition will be disabled when all transition has transitionDuration as 0.
       effectiveTransitions.forEach((String transitionKey, List transitionOptions) {
@@ -493,6 +584,13 @@ mixin CSSTransitionMixin on RenderStyle {
   final Map<String, Animation> _propertyRunningTransition = {};
 
   bool _hasRunningTransition(String property) {
+    return _propertyRunningTransition.containsKey(property);
+  }
+
+  // Public guard for other subsystems (layout/transform) to query whether a
+  // transition for a given property is currently running. Avoids clobbering
+  // animation-driven interim values during layout invalidations.
+  bool isTransitionRunning(String property) {
     return _propertyRunningTransition.containsKey(property);
   }
 
@@ -530,7 +628,7 @@ mixin CSSTransitionMixin on RenderStyle {
       Keyframe(propertyName, begin, 0, LINEAR),
       Keyframe(propertyName, end, 1, LINEAR),
     ];
-    KeyframeEffect effect = KeyframeEffect(this, keyframes, options);
+    KeyframeEffect effect = KeyframeEffect(this, keyframes, options, isTransition: true);
     Animation animation = Animation(effect, target.ownerDocument.animationTimeline);
     _propertyRunningTransition[propertyName] = animation;
 
@@ -572,7 +670,8 @@ mixin CSSTransitionMixin on RenderStyle {
   }
 
   EffectTiming? getTransitionEffectTiming(String property) {
-    List? transitionOptions = effectiveTransitions[property] ?? effectiveTransitions[ALL];
+    final String key = _canonicalTransitionKey(property);
+    List? transitionOptions = effectiveTransitions[key] ?? effectiveTransitions[ALL];
     // [duration, function, delay]
     if (transitionOptions != null) {
       return EffectTiming(

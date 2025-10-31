@@ -6,6 +6,11 @@ class DebugFlags {
   // Controls verbose CSS/media/variables/style logs added for diagnostics.
   static bool enableCssLogs = false;
 
+  // Emit per-tick progress/value logs for CSS transition animations.
+  // When enabled (debug only), logs the interpolated value of transitioning
+  // properties each frame to help diagnose animation issues.
+  static bool enableTransitionValueLogs = false;
+
   // Enables lightweight CSS performance counters and timing when true.
   // When disabled, instrumentation code is a fast no-op.
   static bool enableCssPerf = false;

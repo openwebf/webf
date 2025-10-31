@@ -4,6 +4,7 @@
  */
 
 import 'package:flutter/rendering.dart';
+import 'package:vector_math/vector_math_64.dart';
 import 'dart:math' as math;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -726,6 +727,24 @@ class CSSPositionedLayout {
       childParentData.offset = finalOffset;
     }
 
+    // Diagnostics: compute instantaneous on-screen right edge and parent bounds to detect overflow.
+    try {
+      // Parent padding-right edge in parent's border-box coordinate space.
+      final double parentPadRightX = parent.boxSize!.width - parentBorderRightWidth.computedValue;
+      // Child transform translation applied at paint time.
+      final Matrix4 eff = child.renderStyle.effectiveTransformMatrix;
+      final Vector3 tr = eff.getTranslation();
+      final double tx = tr.x;
+      final double rightEdgeX = finalOffset.dx + tx + size.width;
+      PositionedLayoutLog.log(
+        impl: PositionedImpl.layout,
+        feature: PositionedFeature.offsets,
+        message: () => 'bounds check: childRight=${rightEdgeX.toStringAsFixed(2)} '
+            'parentPadRight=${parentPadRightX.toStringAsFixed(2)} '
+            'overflowX=${(rightEdgeX - parentPadRightX).toStringAsFixed(2)}',
+      );
+    } catch (_) {}
+
     try {
       PositionedLayoutLog.log(
         impl: PositionedImpl.layout,
@@ -1227,6 +1246,19 @@ class CSSPositionedLayout {
         offset = offset - parentBorderBeforeWidth.computedValue - parentPaddingBefore.computedValue;
       }
     }
+
+    try {
+      PositionedLayoutLog.log(
+        impl: PositionedImpl.layout,
+        feature: PositionedFeature.offsets,
+        message: () => 'axis=${axis == Axis.horizontal ? 'X' : 'Y'} '
+            'CB=${containingBlockLength.toStringAsFixed(2)} len=${length.toStringAsFixed(2)} '
+            'static=${staticPosition.toStringAsFixed(2)} '
+            'insetBefore=${insetBefore.cssText()} insetAfter=${insetAfter.cssText()} '
+            'marginBefore=${marginBefore.cssText()} marginAfter=${marginAfter.cssText()} '
+            '→ offset=${offset.toStringAsFixed(2)}',
+      );
+    } catch (_) {}
 
     return offset;
   }

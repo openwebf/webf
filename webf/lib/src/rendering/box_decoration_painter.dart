@@ -679,21 +679,19 @@ class BoxDecorationPainter extends BoxPainter {
     final List<String> layers = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
     final List<(CSSBackgroundPosition, CSSBackgroundPosition)> result = [];
 
-    // If shorthand is not present, fall back to renderStyle longhands so
-    // animations/JS-driven changes on backgroundPositionX/Y still take effect.
-    if (layers.isEmpty) {
-      for (int i = 0; i < count; i++) {
-        result.add((renderStyle.backgroundPositionX, renderStyle.backgroundPositionY));
-      }
-      return result;
-    }
-
+    final bool singleLayer = count == 1;
     for (int i = 0; i < count; i++) {
-      final String layerText = i < layers.length ? layers[i] : layers.last;
-      final List<String> pair = CSSPosition.parsePositionShorthand(layerText);
-      final x = CSSPosition.resolveBackgroundPosition(pair[0], renderStyle, BACKGROUND_POSITION_X, true);
-      final y = CSSPosition.resolveBackgroundPosition(pair[1], renderStyle, BACKGROUND_POSITION_Y, false);
-      result.add((x, y));
+      if (singleLayer) {
+        // Single layer: prefer current computed longhands so transition-driven updates are visible.
+        result.add((renderStyle.backgroundPositionX, renderStyle.backgroundPositionY));
+      } else {
+        // Multi-layer: use per-layer parsed values exclusively from shorthand.
+        final String layerText = (layers.isNotEmpty) ? (i < layers.length ? layers[i] : layers.last) : '0% 0%';
+        final List<String> pair = CSSPosition.parsePositionShorthand(layerText);
+        final x = CSSPosition.resolveBackgroundPosition(pair[0], renderStyle, BACKGROUND_POSITION_X, true);
+        final y = CSSPosition.resolveBackgroundPosition(pair[1], renderStyle, BACKGROUND_POSITION_Y, false);
+        result.add((x, y));
+      }
     }
     return result;
   }
@@ -704,11 +702,16 @@ class BoxDecorationPainter extends BoxPainter {
     // When fewer sizes than images, CSS repeats the last size to match.
     final List<String> layers = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
     final List<CSSBackgroundSize> result = [];
+    final bool singleLayer = count == 1;
     for (int i = 0; i < count; i++) {
-      final String layerText = (layers.isNotEmpty)
-          ? (i < layers.length ? layers[i] : layers.last)
-          : AUTO;
-      result.add(CSSBackground.resolveBackgroundSize(layerText, renderStyle, BACKGROUND_SIZE));
+      if (singleLayer) {
+        result.add(renderStyle.backgroundSize);
+      } else {
+        final String layerText = (layers.isNotEmpty)
+            ? (i < layers.length ? layers[i] : layers.last)
+            : AUTO;
+        result.add(CSSBackground.resolveBackgroundSize(layerText, renderStyle, BACKGROUND_SIZE));
+      }
     }
     return result;
   }

@@ -1510,7 +1510,7 @@ class CSSRenderStyle extends RenderStyle
 
   setProperty(String name, value) {
     if (kDebugMode && DebugFlags.enableCssLogs) {
-      debugPrint('[webf][render-style] setProperty: ' +
+      print('[webf][render-style] setProperty: ' +
           name +
           ' <- ' +
           (value is CSSColor ? value.cssText() : value.toString()));

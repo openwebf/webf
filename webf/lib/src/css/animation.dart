@@ -8,8 +8,10 @@ import 'dart:math';
 
 import 'package:flutter/animation.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 
 // https://drafts.csswg.org/web-animations/#enumdef-animationplaystate
 enum AnimationPlayState { idle, running, paused, finished }
@@ -90,6 +92,57 @@ class AnimationTimeline {
   void _onTick(Duration timeStamp) {
     _currentTime = timeStamp.inMicroseconds / 1000;
     _animations = _getActiveAnimations();
+    // Ensure deterministic ordering for CSS transitions whose properties depend on
+    // other properties in the same element (e.g., transform percentages depending
+    // on width/height). Within the same target element, apply size-affecting
+    // transitions before positional, and transforms last.
+    if (_animations.isNotEmpty) {
+      int _priorityForProperty(String p) {
+        const sizeProps = <String>{
+          WIDTH,
+          HEIGHT,
+          MIN_WIDTH,
+          MAX_WIDTH,
+          MIN_HEIGHT,
+          MAX_HEIGHT,
+          PADDING_LEFT,
+          PADDING_RIGHT,
+          PADDING_TOP,
+          PADDING_BOTTOM,
+          BORDER_LEFT_WIDTH,
+          BORDER_RIGHT_WIDTH,
+          BORDER_TOP_WIDTH,
+          BORDER_BOTTOM_WIDTH
+        };
+        const transformProps = <String>{TRANSFORM, TRANSFORM_ORIGIN};
+        if (sizeProps.contains(p)) return 0;
+        if (transformProps.contains(p)) return 2;
+        return 1;
+      }
+
+      int _animationPriority(Animation a) {
+        final effect = a.effect;
+        if (effect is KeyframeEffect && effect.isTransition && effect.interpolations.isNotEmpty) {
+          final prop = effect.interpolations.first.property;
+          return _priorityForProperty(prop);
+        }
+        return 1;
+      }
+
+      _animations.sort((a, b) {
+        // Only enforce ordering for animations on the same element.
+        final ea = a.effect;
+        final eb = b.effect;
+        if (ea is KeyframeEffect && eb is KeyframeEffect) {
+          if (ea.renderStyle.target == eb.renderStyle.target) {
+            final pa = _animationPriority(a);
+            final pb = _animationPriority(b);
+            if (pa != pb) return pa - pb;
+          }
+        }
+        return 0;
+      });
+    }
     if (_animations.isEmpty) {
       if (_ticker.isActive) {
         _ticker.stop();
@@ -501,6 +554,7 @@ class KeyframeEffect extends AnimationEffect {
   double? _progress;
   double? _activeTime;
   late Map<String, List<Keyframe>> _propertySpecificKeyframeGroups;
+  final bool isTransition;
 
   // Speed control.
   // The rate of play of an animation can be controlled by setting its playback rate.
@@ -508,11 +562,16 @@ class KeyframeEffect extends AnimationEffect {
   // Similarly, a playback rate of -1 will cause the animation’s current time to decrease at the same rate as the time values from its timeline increase.
   double _playbackRate = 1;
 
-  KeyframeEffect(this.renderStyle, List<Keyframe> keyframes, EffectTiming? options) {
+  KeyframeEffect(this.renderStyle, List<Keyframe> keyframes, EffectTiming? options, {this.isTransition = false}) {
     timing = options ?? EffectTiming();
 
     _propertySpecificKeyframeGroups = _makePropertySpecificKeyframeGroups(keyframes);
     _interpolations = _makeInterpolations(_propertySpecificKeyframeGroups, renderStyle);
+
+    if (kDebugMode && isTransition && DebugFlags.enableTransitionValueLogs) {
+      final ordered = _interpolations.map((i) => i.property).join(',');
+      cssLogger.fine('[transition][setup] propsOrder=' + ordered);
+    }
   }
 
   Iterable<String> get properties {
@@ -578,8 +637,41 @@ class KeyframeEffect extends AnimationEffect {
       }
     });
 
-    interpolations.sort((_Interpolation leftInterpolation, _Interpolation rightInterpolation) {
-      return leftInterpolation.startOffset - rightInterpolation.startOffset < 0 ? -1 : 1;
+    // Sort by start offset, and for equal offsets, apply a stable dependency
+    // order so transform values see width/height updates of the same tick.
+    int _priorityForProperty(String p) {
+      // Lower number = applied earlier within the same offset bucket.
+      // Ensure size-affecting properties run before transforms.
+      const sizeProps = <String>{
+        WIDTH,
+        HEIGHT,
+        MIN_WIDTH,
+        MAX_WIDTH,
+        MIN_HEIGHT,
+        MAX_HEIGHT,
+        PADDING_LEFT,
+        PADDING_RIGHT,
+        PADDING_TOP,
+        PADDING_BOTTOM,
+        BORDER_LEFT_WIDTH,
+        BORDER_RIGHT_WIDTH,
+        BORDER_TOP_WIDTH,
+        BORDER_BOTTOM_WIDTH
+      };
+      const transformProps = <String>{TRANSFORM, TRANSFORM_ORIGIN};
+      if (sizeProps.contains(p)) return 0;
+      if (transformProps.contains(p)) return 2;
+      return 1;
+    }
+
+    interpolations.sort((_Interpolation a, _Interpolation b) {
+      if (a.startOffset != b.startOffset) {
+        return a.startOffset < b.startOffset ? -1 : 1;
+      }
+      final pa = _priorityForProperty(a.property);
+      final pb = _priorityForProperty(b.property);
+      if (pa != pb) return pa < pb ? -1 : 1;
+      return 0;
     });
 
     return interpolations;
@@ -641,8 +733,28 @@ class KeyframeEffect extends AnimationEffect {
         // Apply interpolation regardless of render box availability so
         // computed styles reflect animated values prior to first layout.
         if (interpolation.begin != null && interpolation.end != null) {
-          interpolation.lerp(
+          final current = interpolation.lerp(
               interpolation.begin, interpolation.end, scaledLocalTime, property, renderStyle as CSSRenderStyle);
+
+          // Debug: Log current transition value per tick when enabled.
+          if (kDebugMode && isTransition && DebugFlags.enableTransitionValueLogs) {
+            String valueText;
+            final handlers = CSSTransitionHandlers[property];
+            if (handlers != null && handlers.length >= 3) {
+              final stringify = handlers[2];
+              try {
+                valueText = stringify(current).toString();
+              } catch (_) {
+                valueText = current?.toString() ?? '';
+              }
+            } else {
+              valueText = current?.toString() ?? '';
+            }
+            final target = renderStyle.target;
+            final tag = (target is Element) ? target.tagName : target.runtimeType.toString();
+            cssLogger.fine('[transition][value] ${tag}#${target.hashCode} property=$property t=' +
+                scaledLocalTime.toStringAsFixed(3) + ' value=' + valueText);
+          }
         }
       }
     }

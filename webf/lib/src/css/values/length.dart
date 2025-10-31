@@ -8,6 +8,9 @@ import 'dart:ui';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/src/foundation/logger.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:webf/rendering.dart';
 import 'package:quiver/collection.dart';
 
@@ -555,18 +558,40 @@ class CSSLengthValue {
           case BORDER_BOTTOM_RIGHT_RADIUS:
             // Percentages for the horizontal axis refer to the width of the box.
             // Percentages for the vertical axis refer to the height of the box.
+            // Prefer actual laid-out border box size in order to stay consistent with
+            // positioned offset calculations performed during layout. Fallback to
+            // logical sizes when layout size is not yet available (e.g., pre-layout).
             double? borderBoxWidth = renderStyle!.borderBoxWidth ?? renderStyle!.borderBoxLogicalWidth;
             double? borderBoxHeight = renderStyle!.borderBoxHeight ?? renderStyle!.borderBoxLogicalHeight;
             double? borderBoxDimension = axisType == Axis.horizontal ? borderBoxWidth : borderBoxHeight;
 
             if (borderBoxDimension != null) {
               _computedValue = value! * borderBoxDimension;
+              if (kDebugMode && DebugFlags.enableTransitionValueLogs) {
+                final tag = renderStyle!.target.tagName;
+                cssLogger.fine('[translate][resolve] ' + tag +
+                    ' axis=' + (axisType == Axis.horizontal ? 'x' : 'y') +
+                    ' percent=' + (value! * 100).toStringAsFixed(3) + '% ' +
+                    'boxLogicalW=' + (renderStyle!.borderBoxLogicalWidth?.toStringAsFixed(3) ?? 'null') +
+                    ' boxW=' + (renderStyle!.borderBoxWidth?.toStringAsFixed(3) ?? 'null') +
+                    ' boxLogicalH=' + (renderStyle!.borderBoxLogicalHeight?.toStringAsFixed(3) ?? 'null') +
+                    ' boxH=' + (renderStyle!.borderBoxHeight?.toStringAsFixed(3) ?? 'null') +
+                    ' used=' + borderBoxDimension.toStringAsFixed(3) +
+                    ' result=' + _computedValue!.toStringAsFixed(3));
+              }
             } else {
               _computedValue = propertyName == TRANSLATE
                   // Transform will be cached once resolved, so avoid resolve if width not defined.
                   // Use double.infinity to indicate percentage not resolved.
                   ? double.infinity
                   : 0;
+              if (_computedValue == double.infinity && kDebugMode && DebugFlags.enableTransitionValueLogs) {
+                final tag = renderStyle!.target.tagName;
+                cssLogger.fine('[translate][resolve] ' + tag +
+                    ' axis=' + (axisType == Axis.horizontal ? 'x' : 'y') +
+                    ' percent=' + (value! * 100).toStringAsFixed(3) + '% ' +
+                    ' used=indefinite -> infinity (await layout)');
+              }
             }
             break;
           case BACKGROUND_POSITION_X:
