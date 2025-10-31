@@ -49,6 +49,9 @@ using AsyncBlobCallback =
     void (*)(void* callback_context, double context_id, char* error, uint8_t* bytes, int32_t length);
 using FetchJavaScriptESMModuleCallback =
     void (*)(void* callback_context, double context_id, char* error, uint8_t* bytes, int32_t length);
+// CSS @import: fetch imported stylesheet content (Bridge -> Dart)
+using FetchImportCSSContentCallback =
+    void (*)(void* callback_context, double context_id, char* error, uint8_t* bytes, int32_t length);
 typedef NativeValue* (*InvokeModule)(void* callback_context,
                                      double context_id,
                                      SharedNativeString* moduleName,
@@ -100,6 +103,11 @@ typedef void (*FetchJavaScriptESMModule)(void* callback_context,
                                          double context_id,
                                          SharedNativeString* module_url,
                                          FetchJavaScriptESMModuleCallback callback);
+typedef void (*FetchImportCSSContent)(void* callback_context,
+                                      double context_id,
+                                      SharedNativeString* base_href,
+                                      SharedNativeString* import_href,
+                                      FetchImportCSSContentCallback callback);
 
 using MatchImageSnapshotCallback = void (*)(void* callback_context, double context_id, int8_t, char* errmsg);
 using MatchImageSnapshot = void (*)(void* callback_context,
@@ -223,6 +231,14 @@ class DartMethodPointer {
                                 SharedNativeString* module_url,
                                 FetchJavaScriptESMModuleCallback callback);
 
+  // Bridge -> Dart: fetch CSS @import content
+  void fetchImportCSSContent(bool is_dedicated,
+                             void* callback_context,
+                             double context_id,
+                             SharedNativeString* base_href,
+                             SharedNativeString* import_href,
+                             FetchImportCSSContentCallback callback);
+
   void onJSError(bool is_dedicated, double context_id, const char*);
   void onJSLog(bool is_dedicated, double context_id, int32_t level, const char*);
   void onJSLogStructured(bool is_dedicated, double context_id, int32_t level, int32_t argc, NativeValue* argv);
@@ -277,6 +293,7 @@ class DartMethodPointer {
   CreateBindingObject create_binding_object_{nullptr};
   LoadNativeLibrary load_native_library_{nullptr};
   FetchJavaScriptESMModule fetch_javascript_esm_module_{nullptr};
+  FetchImportCSSContent fetch_import_css_content_{nullptr};
   OnJSError on_js_error_{nullptr};
   OnJSLog on_js_log_{nullptr};
   OnJSLogStructured on_js_log_structured_{nullptr};

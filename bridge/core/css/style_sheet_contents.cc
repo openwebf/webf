@@ -36,6 +36,7 @@
 #include "core/css/media_query_evaluator.h"
 #include "element_namespace_uris.h"
 #include "foundation/logging.h"
+#include <functional>
 // #include "core/css/parser/css_"
 
 namespace webf {
@@ -388,23 +389,46 @@ std::shared_ptr<RuleSet> StyleSheetContents::EnsureRuleSet(const MediaQueryEvalu
   
   if (!rule_set_) {
     rule_set_ = std::make_shared<RuleSet>();
-    
-    
-    // Add all style rules from child_rules_ to the rule set
-    for (const auto& rule : child_rules_) {
-      if (rule->IsStyleRule()) {
-        // Since we can't use dynamic_pointer_cast without RTTI, use static_pointer_cast
-        // after we've already checked the type with IsStyleRule()
-        auto style_rule_ptr = std::static_pointer_cast<StyleRule>(rule);
-        rule_set_->AddStyleRule(style_rule_ptr, kRuleHasNoSpecialState);
+
+    // Recursively add rules from this sheet and any imported sheets
+    std::function<void(std::shared_ptr<StyleSheetContents>)> add_from_sheet;
+    add_from_sheet = [&](std::shared_ptr<StyleSheetContents> sheet) {
+      if (!sheet) return;
+
+      // Add this sheet's style rules
+      const auto& children = sheet->ChildRules();
+      for (const auto& rule : children) {
+        if (rule && rule->IsStyleRule()) {
+          auto style_rule_ptr = std::static_pointer_cast<StyleRule>(rule);
+          rule_set_->AddStyleRule(style_rule_ptr, kRuleHasNoSpecialState);
+        }
+        // TODO(CGQAQ): Handle @media, @supports, and others when implemented
       }
-      // TODO: Handle other rule types like @media, @supports, etc.
-    }
-    
-    // Also process imported stylesheets
-    for (const auto& import_rule : import_rules_) {
-      // TODO: Handle @import rules
-    }
+
+      // Recurse into imported sheets when their media queries match
+      const auto& imports = sheet->ImportRules();
+      for (const auto& imp : imports) {
+        if (!imp) continue;
+
+        // Honor media queries on the @import
+        auto mq = imp->MediaQueries();
+        if (mq && !medium.Eval(*mq)) {
+          continue;
+        }
+
+        // Skip if @supports on the import evaluated to false
+        if (!imp->IsSupported()) {
+          continue;
+        }
+
+        auto child = imp->GetStyleSheet();
+        if (child) {
+          add_from_sheet(child);
+        }
+      }
+    };
+
+    add_from_sheet(shared_from_this());
   }
   return rule_set_;
 }

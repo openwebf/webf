@@ -42,6 +42,8 @@ DartMethodPointer::DartMethodPointer(DartIsolateContext* dart_isolate_context,
   on_js_error_ = reinterpret_cast<OnJSError>(dart_methods[i++]);
   on_js_log_ = reinterpret_cast<OnJSLog>(dart_methods[i++]);
   on_js_log_structured_ = reinterpret_cast<OnJSLogStructured>(dart_methods[i++]);
+  // New: fetch CSS @import content
+  fetch_import_css_content_ = reinterpret_cast<FetchImportCSSContent>(dart_methods[i++]);
 
   assert_m(i == dart_methods_length, "Dart native methods count is not equal with C++ side method registrations.");
 }
@@ -267,6 +269,24 @@ void DartMethodPointer::fetchJavaScriptESMModule(bool is_dedicated,
 
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::fetchJavaScriptESMModule ASYNC call END";
+#endif
+}
+
+void DartMethodPointer::fetchImportCSSContent(bool is_dedicated,
+                                              void* callback_context,
+                                              double context_id,
+                                              webf::SharedNativeString* base_href,
+                                              webf::SharedNativeString* import_href,
+                                              FetchImportCSSContentCallback callback) {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::fetchImportCSSContent ASYNC call START";
+#endif
+
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, fetch_import_css_content_, callback_context,
+                                                  context_id, base_href, import_href, callback);
+
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::fetchImportCSSContent ASYNC call END";
 #endif
 }
 

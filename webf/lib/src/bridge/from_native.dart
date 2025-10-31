@@ -799,27 +799,109 @@ void _onJSLogStructured(double contextId, int level, int argc, Pointer<NativeVal
   malloc.free(argv);
 }
 
-final Pointer<NativeFunction<NativeOnJSLogStructured>> _nativeOnJSLogStructured = Pointer.fromFunction(_onJSLogStructured);
+  final Pointer<NativeFunction<NativeOnJSLogStructured>> _nativeOnJSLogStructured = Pointer.fromFunction(_onJSLogStructured);
 
-final List<int> _dartNativeMethods = [
-  _nativeInvokeModule.address,
-  _nativeRequestBatchUpdate.address,
-  _nativeReloadApp.address,
-  _nativeSetTimeout.address,
-  _nativeSetInterval.address,
-  _nativeClearTimeout.address,
-  _nativeRequestIdleCallback.address,
-  _nativeCancelAnimationFrame.address,
-  _nativeCancelIdleCallback.address,
-  _nativeToBlob.address,
-  _nativeFlushUICommand.address,
-  _nativeCreateBindingObject.address,
-  _nativeLoadLibrary.address,
-  _nativeFetchJavaScriptESMModule.address,
-  _nativeOnJsError.address,
-  _nativeOnJsLog.address,
-  _nativeOnJSLogStructured.address
-];
+// ===== CSS @import fetch (Bridge -> Dart) =====
+// C++ requests CSS content for @import; Dart resolves URL and fetches, then
+// calls back with bytes or error.
+typedef NativeFetchImportCSSContentCallback = Void Function(
+    Pointer<Void> callbackContext,
+    Double contextId,
+    Pointer<Utf8> error,
+    Pointer<Uint8> bytes,
+    Int32 length);
+typedef DartFetchImportCSSContentCallback = void Function(
+    Pointer<Void> callbackContext,
+    double contextId,
+    Pointer<Utf8> error,
+    Pointer<Uint8> bytes,
+    int length);
+
+typedef NativeFetchImportCSSContent = Void Function(
+    Pointer<Void> callbackContext,
+    Double contextId,
+    Pointer<NativeString> baseHref,
+    Pointer<NativeString> importHref,
+    Pointer<NativeFunction<NativeFetchImportCSSContentCallback>> callback);
+
+void _fetchImportCSSContent(
+    Pointer<Void> callbackContext,
+    double contextId,
+    Pointer<NativeString> nativeBaseHref,
+    Pointer<NativeString> nativeImportHref,
+    Pointer<NativeFunction<NativeFetchImportCSSContentCallback>> nativeCallback) async {
+  DartFetchImportCSSContentCallback callback = nativeCallback.asFunction(isLeaf: true);
+
+  try {
+    WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
+    if (controller == null) {
+      bridgeLogger.severe('[@import] no controller for context $contextId');
+      callback(callbackContext, contextId, 'No controller for context'.toNativeUtf8(), nullptr, 0);
+      return;
+    }
+
+    final String baseHrefRaw = nativeStringToString(nativeBaseHref);
+    final String importHref = nativeStringToString(nativeImportHref);
+    // Resolve relative import URL against the stylesheet base href
+    // Fallback: if base is empty or 'about:*', use the document URL as base.
+    String effectiveBase = baseHrefRaw;
+    if (effectiveBase.isEmpty || effectiveBase.startsWith('about:')) {
+      effectiveBase = controller.url ?? '';
+    }
+    Uri resolved = controller.uriParser!.resolve(Uri.parse(effectiveBase), Uri.parse(importHref));
+    bridgeLogger.fine('[@import] fetchImportCSSContent base=$baseHrefRaw (effective=$effectiveBase) import=$importHref -> $resolved');
+
+    final String url = resolved.toString();
+    WebFBundle bundle = controller.getPreloadBundleFromUrl(url) ?? WebFBundle.fromUrl(url);
+    try {
+      await bundle.resolve(baseUrl: controller.url, uriParser: controller.uriParser);
+      await bundle.obtainData(controller.view.contextId);
+
+      final String cssText = await resolveStringFromData(bundle.data!);
+      bridgeLogger.fine('[@import] fetched ${cssText.length} bytes from $resolved');
+      final bytes = utf8.encode(cssText);
+      Pointer<Uint8> ptr = malloc.allocate(sizeOf<Uint8>() * bytes.length);
+      ptr.asTypedList(bytes.length).setAll(0, bytes);
+      callback(callbackContext, contextId, nullptr, ptr, bytes.length);
+    } catch (e, stack) {
+      final msg = '[@import] fetch error for $resolved: $e\n$stack';
+      bridgeLogger.severe(msg);
+      final err = (msg).toNativeUtf8();
+      callback(callbackContext, contextId, err, nullptr, 0);
+    } finally {
+      bundle.dispose();
+    }
+  } catch (e, stack) {
+    final msg = '[@import] unexpected error: $e\n$stack';
+    bridgeLogger.severe(msg);
+    final err = (msg).toNativeUtf8();
+    callback(callbackContext, contextId, err, nullptr, 0);
+  }
+}
+
+final Pointer<NativeFunction<NativeFetchImportCSSContent>> _nativeFetchImportCSSContent =
+    Pointer.fromFunction(_fetchImportCSSContent);
+
+  final List<int> _dartNativeMethods = [
+    _nativeInvokeModule.address,
+    _nativeRequestBatchUpdate.address,
+    _nativeReloadApp.address,
+    _nativeSetTimeout.address,
+    _nativeSetInterval.address,
+    _nativeClearTimeout.address,
+    _nativeRequestIdleCallback.address,
+    _nativeCancelAnimationFrame.address,
+    _nativeCancelIdleCallback.address,
+    _nativeToBlob.address,
+    _nativeFlushUICommand.address,
+    _nativeCreateBindingObject.address,
+    _nativeLoadLibrary.address,
+    _nativeFetchJavaScriptESMModule.address,
+    _nativeOnJsError.address,
+    _nativeOnJsLog.address,
+    _nativeOnJSLogStructured.address,
+    _nativeFetchImportCSSContent.address
+  ];
 
 List<int> makeDartMethodsData() {
   return _dartNativeMethods;
