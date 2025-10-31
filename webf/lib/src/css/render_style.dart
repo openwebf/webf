@@ -1510,7 +1510,7 @@ class CSSRenderStyle extends RenderStyle
 
   setProperty(String name, value) {
     if (kDebugMode && DebugFlags.enableCssLogs) {
-      print('[webf][render-style] setProperty: ' +
+      cssLogger.fine('[render-style] setProperty: ' +
           name +
           ' <- ' +
           (value is CSSColor ? value.cssText() : value.toString()));
@@ -1709,8 +1709,7 @@ class CSSRenderStyle extends RenderStyle
       // Background
       case BACKGROUND_COLOR:
         if (kDebugMode && DebugFlags.enableCssLogs) {
-          debugPrint(
-              '[webf][render-style] backgroundColor <- ' + (value is CSSColor ? value.cssText() : value.toString()));
+          cssLogger.fine('[render-style] backgroundColor <- ' + (value is CSSColor ? value.cssText() : value.toString()));
         }
         backgroundColor = value;
         break;
