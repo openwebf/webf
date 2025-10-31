@@ -1725,6 +1725,15 @@ class WebFController with Diagnosticable {
       }
     });
     SchedulerBinding.instance.scheduleFrame();
+
+    // In prerendering mode, consider DOMContentLoaded as the completion signal.
+    // This avoids blocking on image/network requests so that
+    // WebFControllerManager.addWithPrerendering can resolve promptly.
+    if (mode == WebFLoadingMode.preRendering) {
+      if (!controllerPreRenderingCompleter.isCompleted) {
+        controllerPreRenderingCompleter.complete();
+      }
+    }
   }
 
   bool _loadEventDispatched = false;
