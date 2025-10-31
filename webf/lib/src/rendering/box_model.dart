@@ -1077,6 +1077,9 @@ abstract class RenderBoxModel extends RenderBox
 
     if (isSelfSizeChanged) {
       renderStyle.markTransformMatrixNeedsUpdate();
+      // Rebuild box decoration when size changes so percentage-based border-radius
+      // (and other size-dependent decoration fields) recompute with the new box size.
+      renderStyle.resetBoxDecoration();
     }
   }
 
