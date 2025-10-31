@@ -1819,7 +1819,7 @@ class CSSRenderStyle extends RenderStyle
       // Text
       case COLOR:
         if (kDebugMode && DebugFlags.enableCssLogs) {
-          debugPrint('[webf][render-style] color <- ' + (value is CSSColor ? value.cssText() : value.toString()));
+          cssLogger.fine('[render-style] color <- ' + (value is CSSColor ? value.cssText() : value.toString()));
         }
         color = value;
         break;

@@ -251,7 +251,7 @@ class LinkElement extends Element {
 
   void reloadStyle() {
     if (kDebugMode && DebugFlags.enableCssLogs) {
-      debugPrint('[webf][style] <link rel=stylesheet> reloadStyle href=' + (_resolvedHyperlink?.toString() ?? href));
+      cssLogger.fine('[style] <link rel=stylesheet> reloadStyle href=' + (_resolvedHyperlink?.toString() ?? href));
     }
     if (_cachedStyleSheetText == null) {
       _fetchAndApplyCSSStyle();
@@ -260,7 +260,7 @@ class LinkElement extends Element {
 
     if (_styleSheet != null) {
       if (kDebugMode && DebugFlags.enableCssLogs) {
-        debugPrint('[webf][style] <link> replaceSync (darkMode=' + ownerView.rootController.isDarkMode.toString() + ')');
+        cssLogger.fine('[style] <link> replaceSync (darkMode=' + ownerView.rootController.isDarkMode.toString() + ')');
       }
       // Ensure the stylesheet carries an absolute href for correct URL resolution
       if (_resolvedHyperlink != null) {
@@ -272,7 +272,7 @@ class LinkElement extends Element {
           windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
     } else {
       if (kDebugMode && DebugFlags.enableCssLogs) {
-        debugPrint('[webf][style] <link> parse (darkMode=' + ownerView.rootController.isDarkMode.toString() + ')');
+        cssLogger.fine('[style] <link> parse (darkMode=' + ownerView.rootController.isDarkMode.toString() + ')');
       }
       final String? sheetHref = _resolvedHyperlink?.toString() ?? href;
       _styleSheet = CSSParser(_cachedStyleSheetText!, href: sheetHref)
@@ -407,11 +407,11 @@ class LinkElement extends Element {
 
         final String cssString = _cachedStyleSheetText = await resolveStringFromData(bundle.data!);
         if (kDebugMode && DebugFlags.enableCssLogs) {
-          debugPrint('[webf][style] <link> fetched href=' + href + ' len=' + cssString.length.toString());
+          cssLogger.fine('[style] <link> fetched href=' + href + ' len=' + cssString.length.toString());
         }
 
         if (kDebugMode && DebugFlags.enableCssLogs) {
-          debugPrint('[webf][style] <link> parse (darkMode=' + ownerView.rootController.isDarkMode.toString() + ')');
+          cssLogger.fine('[style] <link> parse (darkMode=' + ownerView.rootController.isDarkMode.toString() + ')');
         }
         final String? sheetHref = _resolvedHyperlink?.toString() ?? href;
         _styleSheet = CSSParser(cssString, href: sheetHref).parse(

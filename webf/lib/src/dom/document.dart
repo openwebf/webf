@@ -804,13 +804,13 @@ class Document extends ContainerNode {
     }
     for (final element in styleSheetNodes) {
       if (element is StyleElementMixin) {
-        if (kDebugMode) {
-          debugPrint('[webf][style] recalc <style> node');
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[style] recalc <style> node');
         }
         element.reloadStyle();
       } else if (element is LinkElement && element.isCSSStyleSheetLoaded()) {
-        if (kDebugMode) {
-          debugPrint('[webf][style] recalc <link> node href=' + element.href);
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[style] recalc <link> node href=' + element.href);
         }
         element.reloadStyle();
       }
