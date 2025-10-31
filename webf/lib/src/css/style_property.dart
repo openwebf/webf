@@ -311,6 +311,99 @@ class CSSStyleProperty {
   }
 
   static void setShorthandBorder(Map<String, String?> properties, String property, String shorthandValue) {
+    // If the entire shorthand is a single var(...) function, defer parsing to
+    // compute time by assigning the same var(...) token to all relevant
+    // longhands for the affected edges. Each longhand will later resolve the
+    // var to a full shorthand string (e.g., "2px solid red") and extract its
+    // own component.
+    bool _isEntireVarFunction(String s) {
+      final String trimmed = s.trimLeft();
+      if (!trimmed.startsWith('var(')) return false;
+      int start = trimmed.indexOf('(');
+      int depth = 0;
+      for (int i = start; i < trimmed.length; i++) {
+        final int ch = trimmed.codeUnitAt(i);
+        if (ch == 40) {
+          depth++;
+        } else if (ch == 41) {
+          depth--;
+          if (depth == 0) {
+            final rest = trimmed.substring(i + 1).trim();
+            return rest.isEmpty;
+          }
+        }
+      }
+      return false;
+    }
+
+    if (property == BORDER ||
+        property == BORDER_TOP ||
+        property == BORDER_RIGHT ||
+        property == BORDER_BOTTOM ||
+        property == BORDER_LEFT ||
+        property == BORDER_INLINE_START ||
+        property == BORDER_INLINE_END ||
+        property == BORDER_BLOCK_START ||
+        property == BORDER_BLOCK_END) {
+      if (_isEntireVarFunction(shorthandValue)) {
+        // Apply the same var(...) to width/style/color for the specified edges.
+        void applyEdge(String edge) {
+          switch (edge) {
+            case 'top':
+              properties[BORDER_TOP_WIDTH] = shorthandValue;
+              properties[BORDER_TOP_STYLE] = shorthandValue;
+              properties[BORDER_TOP_COLOR] = shorthandValue;
+              break;
+            case 'right':
+              properties[BORDER_RIGHT_WIDTH] = shorthandValue;
+              properties[BORDER_RIGHT_STYLE] = shorthandValue;
+              properties[BORDER_RIGHT_COLOR] = shorthandValue;
+              break;
+            case 'bottom':
+              properties[BORDER_BOTTOM_WIDTH] = shorthandValue;
+              properties[BORDER_BOTTOM_STYLE] = shorthandValue;
+              properties[BORDER_BOTTOM_COLOR] = shorthandValue;
+              break;
+            case 'left':
+              properties[BORDER_LEFT_WIDTH] = shorthandValue;
+              properties[BORDER_LEFT_STYLE] = shorthandValue;
+              properties[BORDER_LEFT_COLOR] = shorthandValue;
+              break;
+            case 'inlineStart':
+              properties[BORDER_INLINE_START_WIDTH] = shorthandValue;
+              properties[BORDER_INLINE_START_STYLE] = shorthandValue;
+              properties[BORDER_INLINE_START_COLOR] = shorthandValue;
+              break;
+            case 'inlineEnd':
+              properties[BORDER_INLINE_END_WIDTH] = shorthandValue;
+              properties[BORDER_INLINE_END_STYLE] = shorthandValue;
+              properties[BORDER_INLINE_END_COLOR] = shorthandValue;
+              break;
+            case 'blockStart':
+              properties[BORDER_BLOCK_START_WIDTH] = shorthandValue;
+              properties[BORDER_BLOCK_START_STYLE] = shorthandValue;
+              properties[BORDER_BLOCK_START_COLOR] = shorthandValue;
+              break;
+            case 'blockEnd':
+              properties[BORDER_BLOCK_END_WIDTH] = shorthandValue;
+              properties[BORDER_BLOCK_END_STYLE] = shorthandValue;
+              properties[BORDER_BLOCK_END_COLOR] = shorthandValue;
+              break;
+          }
+        }
+
+        if (property == BORDER || property == BORDER_TOP) applyEdge('top');
+        if (property == BORDER || property == BORDER_RIGHT) applyEdge('right');
+        if (property == BORDER || property == BORDER_BOTTOM) applyEdge('bottom');
+        if (property == BORDER || property == BORDER_LEFT) applyEdge('left');
+        if (property == BORDER_INLINE_START) applyEdge('inlineStart');
+        if (property == BORDER_INLINE_END) applyEdge('inlineEnd');
+        if (property == BORDER_BLOCK_START) applyEdge('blockStart');
+        if (property == BORDER_BLOCK_END) applyEdge('blockEnd');
+        return;
+      }
+    }
+
     String? borderTopColor;
     String? borderRightColor;
     String? borderBottomColor;
@@ -564,6 +657,13 @@ class CSSStyleProperty {
     }
 
     return values;
+  }
+
+  // Public helper to parse a border shorthand string (e.g., "2px solid red")
+  // into [width, style, color] tokens. This mirrors _getBorderValues but is
+  // exposed for compute-time parsing of var() expanded shorthands.
+  static List<String?>? parseBorderTriple(String shorthandProperty) {
+    return _getBorderValues(shorthandProperty);
   }
 
   static List<String?>? _getBorderRaidusValues(String shorthandProperty) {

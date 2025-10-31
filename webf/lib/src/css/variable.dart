@@ -21,8 +21,14 @@ mixin CSSVariableMixin on RenderStyle {
     List<String>? dep = _propertyDependencies[identifier];
     if (dep == null) {
       _propertyDependencies[identifier] = [propertyName];
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[var] dep add: ' + identifier + ' <- ' + propertyName);
+      }
     } else if (!dep.contains(propertyName)) {
       dep.add(propertyName);
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[var] dep add: ' + identifier + ' <- ' + propertyName);
+      }
     }
   }
 
@@ -50,7 +56,15 @@ mixin CSSVariableMixin on RenderStyle {
       }
       return variable!.defaultValue;
     }
-    return getParentRenderStyle()?.getCSSVariable(identifier, propertyName);
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[var] miss local: ' + identifier + ' (prop=' + propertyName + '), bubble to parent');
+    }
+    final parent = getParentRenderStyle();
+    final dyn = parent?.getCSSVariable(identifier, propertyName);
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[var] parent ' + (parent == null ? 'none' : 'hit') + ': ' + identifier + ' = ' + (dyn?.toString() ?? 'null'));
+    }
+    return dyn;
   }
 
   CSSVariable? _getRawVariable(String identifier) {
@@ -67,6 +81,9 @@ mixin CSSVariableMixin on RenderStyle {
       fast = storage[storage[fast.identifier]!.identifier]!;
       slow = storage[slow.identifier]!;
       if (fast == slow) {
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.warning('[var] cycle detected for: ' + identifier);
+        }
         return null;
       }
     }
@@ -140,6 +157,9 @@ mixin CSSVariableMixin on RenderStyle {
       // No dependencies recorded yet (e.g., first parse may have used a cached color string).
       // Clear common color cache keys so next parse recomputes with the new variable value.
       _clearColorCacheForVariable(identifier);
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[var] no deps tracked for: ' + identifier + ' (cleared color caches)');
+      }
     }
   }
 

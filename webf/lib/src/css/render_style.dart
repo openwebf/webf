@@ -2047,12 +2047,29 @@ class CSSRenderStyle extends RenderStyle
       propertyValue = CSSInitialValues[propertyName] ?? propertyValue;
     }
 
-    // Process CSSVariable for non-custom properties only.
-    dynamic value = CSSVariable.tryParse(renderStyle, propertyValue);
-    if (value != null) {
-      return value;
+    // Process CSSVariable only when the entire value is a single var(...)
+    // wrapper. For mixed tokens (e.g., 'var(--a) solid var(--b)'), do not
+    // return a CSSVariable here; instead expand inline below and parse.
+    if (CSSWritingModeMixin._isEntireVarFunction(propertyValue)) {
+      dynamic value = CSSVariable.tryParse(renderStyle, propertyValue);
+      if (value != null) {
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[var] parse: ' + propertyName + ' <- ' + propertyValue);
+        }
+        return value;
+      }
     }
 
+    // Expand inline var(...) occurrences embedded within a value string (e.g.,
+    // 'red var(--b)') so property-specific parsers see fully-resolved tokens.
+    // If a referenced variable cannot be resolved (and has no fallback), the
+    // var(...) is left intact so the property parser fails and the property
+    // becomes invalid at computed-value time per spec (inherited or initial).
+    if (propertyValue.contains('var(')) {
+      propertyValue = CSSWritingModeMixin._expandInlineVars(propertyValue, renderStyle, propertyName);
+    }
+
+    dynamic value;
     switch (propertyName) {
       case DISPLAY:
         value = CSSDisplayMixin.resolveDisplay(propertyValue);
@@ -2204,13 +2221,29 @@ class CSSRenderStyle extends RenderStyle
       case BORDER_TOP_WIDTH:
       case BORDER_RIGHT_WIDTH:
       case BORDER_BOTTOM_WIDTH:
-        value = CSSBorderSide.resolveBorderWidth(propertyValue, renderStyle, propertyName);
+        // If the value looks like a full border shorthand expanded via var()
+        // (e.g., "2px solid red"), extract the width token and parse it.
+        if (propertyValue.contains(' ')) {
+          final triple = CSSStyleProperty.parseBorderTriple(propertyValue);
+          final widthToken = triple != null ? triple[0] : null;
+          value = widthToken != null
+              ? CSSBorderSide.resolveBorderWidth(widthToken, renderStyle, propertyName)
+              : CSSBorderSide.resolveBorderWidth(propertyValue, renderStyle, propertyName);
+        } else {
+          value = CSSBorderSide.resolveBorderWidth(propertyValue, renderStyle, propertyName);
+        }
         break;
       case BORDER_LEFT_STYLE:
       case BORDER_TOP_STYLE:
       case BORDER_RIGHT_STYLE:
       case BORDER_BOTTOM_STYLE:
-        value = CSSBorderSide.resolveBorderStyle(propertyValue);
+        if (propertyValue.contains(' ')) {
+          final triple = CSSStyleProperty.parseBorderTriple(propertyValue);
+          final styleToken = triple != null ? triple[1] : null;
+          value = CSSBorderSide.resolveBorderStyle(styleToken ?? propertyValue);
+        } else {
+          value = CSSBorderSide.resolveBorderStyle(propertyValue);
+        }
         break;
       case COLOR:
       case CARETCOLOR:
@@ -2220,7 +2253,13 @@ class CSSRenderStyle extends RenderStyle
       case BORDER_TOP_COLOR:
       case BORDER_RIGHT_COLOR:
       case BORDER_BOTTOM_COLOR:
-        value = CSSColor.resolveColor(propertyValue, renderStyle, propertyName);
+        if (propertyValue.contains(' ')) {
+          final triple = CSSStyleProperty.parseBorderTriple(propertyValue);
+          final colorToken = triple != null ? triple[2] : null;
+          value = CSSColor.resolveColor(colorToken ?? propertyValue, renderStyle, propertyName);
+        } else {
+          value = CSSColor.resolveColor(propertyValue, renderStyle, propertyName);
+        }
         break;
       case STROKE:
       case FILL:
@@ -3269,6 +3308,85 @@ mixin CSSWritingModeMixin on RenderStyle {
     if (isSelfRenderFlexLayout()) {
       markNeedsLayout();
     }
+  }
+
+  // Regex matching var(...) with minimal nesting support.
+  static final RegExp _inlineVarFunctionRegExp = RegExp(r'var\(([^()]*\(.*?\)[^()]*)\)|var\(([^()]*)\)');
+
+  static bool _isEntireVarFunction(String s) {
+    final String trimmed = s.trimLeft();
+    if (!trimmed.startsWith('var(')) return false;
+    int start = trimmed.indexOf('(');
+    int depth = 0;
+    for (int i = start; i < trimmed.length; i++) {
+      final int ch = trimmed.codeUnitAt(i);
+      if (ch == 40) {
+        depth++;
+      } else if (ch == 41) {
+        depth--;
+        if (depth == 0) {
+          final rest = trimmed.substring(i + 1).trim();
+          return rest.isEmpty;
+        }
+      }
+    }
+    return false;
+  }
+
+  static String _expandInlineVars(String input, RenderStyle renderStyle, String propertyName) {
+    if (!input.contains('var(')) return input;
+    String result = input;
+    int guard = 0;
+    while (result.contains('var(') && guard++ < 8) {
+      final before = result;
+      result = result.replaceAllMapped(_inlineVarFunctionRegExp, (Match match) {
+        final String? varString = match[0];
+        if (varString == null) return '';
+        final CSSVariable? variable = CSSVariable.tryParse(renderStyle, varString);
+        if (variable == null) return varString; // keep as-is
+
+        final depKey = propertyName + '_' + input;
+        final dynamic raw = renderStyle.getCSSVariable(variable.identifier, depKey);
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[var] inline resolve: ' + varString + ' -> ' + (raw?.toString() ?? 'null'));
+        }
+        if (raw == null || raw == INITIAL) {
+          // Use fallback if provided; otherwise preserve var(...) so the
+          // property fails to parse and becomes invalid/inherited.
+          final fallback = variable.defaultValue;
+          return fallback?.toString() ?? varString;
+        }
+        // Avoid accidental token concatenation per CSS Variables spec: substitution
+        // must not re-tokenize. When the replacement's boundary characters and
+        // surrounding characters are ident-like, insert whitespace to keep tokens
+        // separate (e.g., var(--b)red -> 'orange red', not 'orangered').
+        bool isIdentCode(int c) {
+          return (c >= 48 && c <= 57) || // 0-9
+              (c >= 65 && c <= 90) || // A-Z
+              (c >= 97 && c <= 122) || // a-z
+              c == 45 || // '-'
+              c == 95; // '_'
+        }
+        final int start = match.start;
+        final int end = match.end;
+        final int? leftChar = start > 0 ? before.codeUnitAt(start - 1) : null;
+        final int? rightChar = end < before.length ? before.codeUnitAt(end) : null;
+        String rep = raw.toString();
+        String trimmed = rep.trim();
+        final int? repFirst = trimmed.isNotEmpty ? trimmed.codeUnitAt(0) : null;
+        final int? repLast = trimmed.isNotEmpty ? trimmed.codeUnitAt(trimmed.length - 1) : null;
+        final bool addLeftSpace = leftChar != null && repFirst != null && isIdentCode(leftChar) && isIdentCode(repFirst);
+        final bool addRightSpace = rightChar != null && repLast != null && isIdentCode(repLast) && isIdentCode(rightChar);
+        if (addLeftSpace) rep = ' ' + rep;
+        if (addRightSpace) rep = rep + ' ';
+        return rep;
+      });
+      if (result == before) break;
+    }
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[var] inline expand done: ' + input + ' -> ' + result);
+    }
+    return result;
   }
 
   static CSSWritingMode resolveWritingMode(String raw) {
