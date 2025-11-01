@@ -14,10 +14,10 @@ const Alignment _DEFAULT_TRANSFORM_ALIGNMENT = Alignment.center;
 class TransformAnimationValue {
   // The parsed transform functions list (e.g., [translateX(100%), ...]).
   dynamic value;
-  // Optional matrix snapshot resolved at transition setup time. When present,
-  // updateTransform() prefers this over re-resolving against the evolving
-  // layout state so that percentage-based transforms remain stable relative
-  // to the start/end reference box.
+  // We intentionally avoid freezing a matrix at setup time so percentage-based
+  // transforms (e.g., translateX(100%)) resolve against the current reference
+  // box on each animation tick. This matches browser behavior where transform
+  // percentages track the element’s evolving box during transitions.
   Matrix4? frozenMatrix;
 
   TransformAnimationValue(this.value, {this.frozenMatrix});
@@ -68,15 +68,10 @@ mixin CSSTransformMixin on RenderStyle {
 
   static TransformAnimationValue resolveTransformForAnimation(String present, RenderStyle renderStyle) {
     final List<CSSFunctionalNotation>? notation = resolveTransform(present);
-    Matrix4? initialMatrix;
-    if (notation != null) {
-      // Try to resolve once at setup time to capture a stable reference for
-      // percentage-based transforms. If resolution is not yet possible
-      // (e.g., awaiting layout), we leave it null and fall back to dynamic
-      // resolution during ticks.
-      initialMatrix = CSSMatrix.computeTransformMatrix(notation, renderStyle);
-    }
-    return TransformAnimationValue(notation, frozenMatrix: initialMatrix);
+    // Do not freeze a matrix here. Let transition ticks resolve percentages
+    // against the current renderStyle so changes to width/height during the
+    // same transition do not cause drift or overflow.
+    return TransformAnimationValue(notation, frozenMatrix: null);
   }
 
   Matrix4? _transformMatrix;

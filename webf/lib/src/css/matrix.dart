@@ -5,9 +5,11 @@
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:vector_math/vector_math_64.dart';
+import 'package:webf/foundation.dart';
 
 double? _determinant(m) {
   return m[0][0] * m[1][1] * m[2][2] +
@@ -608,13 +610,25 @@ class CSSMatrix {
   static Matrix4? _computeMatrix(CSSFunctionalNotation method, RenderStyle renderStyle) {
     final methodName = method.name.toLowerCase();
 
-    // resolve var arg
+    // Resolve var() inside transform arguments without typed coercion.
+    // We record dependency against TRANSFORM but substitute the raw string
+    // value so function parsers (e.g., scale/translate) receive the expected
+    // token. This avoids incorrectly trying to treat the var value as a full
+    // transform property (e.g., resolving '2' as transform).
     var methodArgs = method.args;
     for (int i = 0; i < methodArgs.length; i++) {
-      String arg = methodArgs[i];
-      final varValue = CSSVariable.tryParse(renderStyle, arg)?.computedValue(TRANSFORM).toString();
-      if (varValue != null) {
-        methodArgs[i] = varValue;
+      final String arg = methodArgs[i];
+      final CSSVariable? varNode = CSSVariable.tryParse(renderStyle, arg);
+      if (varNode != null) {
+        // Track dependency on this variable for transform recomputation.
+        final dynamic raw = renderStyle.getCSSVariable(varNode.identifier, TRANSFORM);
+        final dynamic val = (raw == null || raw == INITIAL) ? varNode.defaultValue : raw;
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[transform] var resolve: ' + arg + ' -> ' + (val?.toString() ?? 'null'));
+        }
+        if (val != null) {
+          methodArgs[i] = val.toString();
+        }
       }
     }
 

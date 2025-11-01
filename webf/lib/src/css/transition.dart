@@ -151,17 +151,14 @@ String _stringifyTransform(Matrix4 value) {
 
 Matrix4 _updateTransform(TransformAnimationValue begin, TransformAnimationValue end, double t, String property,
     CSSRenderStyle renderStyle) {
-  // Resolve transform matrices against the start/end reference sizes to avoid
-  // mid-flight drift when other properties (e.g., right/width) also animate.
-  // Use the frozen matrices captured at transition start; fall back to a
-  // one-shot resolve if not available.
-  Matrix4? beginMatrix = begin.frozenMatrix;
-  beginMatrix ??= CSSMatrix.computeTransformMatrix(begin.value, renderStyle) ?? Matrix4.identity();
-
-  Matrix4? endMatrix = end.frozenMatrix;
-  if (endMatrix == null) {
-    endMatrix = end.value == null ? Matrix4.identity() : (CSSMatrix.computeTransformMatrix(end.value, renderStyle) ?? Matrix4.identity());
-  }
+  // Resolve transform matrices dynamically on each tick so percentage-based
+  // transforms (e.g., translateX(100%)) are evaluated against the element’s
+  // current reference box while other properties (like width/left) are
+  // simultaneously animating.
+  Matrix4 beginMatrix = CSSMatrix.computeTransformMatrix(begin.value, renderStyle) ?? Matrix4.identity();
+  Matrix4 endMatrix = end.value == null
+      ? Matrix4.identity()
+      : (CSSMatrix.computeTransformMatrix(end.value, renderStyle) ?? Matrix4.identity());
 
   if (beginMatrix != null && endMatrix != null) {
     Matrix4 newMatrix4 = CSSMatrix.lerpMatrix(beginMatrix, endMatrix, t);

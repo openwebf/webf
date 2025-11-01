@@ -2066,7 +2066,7 @@ class CSSRenderStyle extends RenderStyle
     // var(...) is left intact so the property parser fails and the property
     // becomes invalid at computed-value time per spec (inherited or initial).
     if (propertyValue.contains('var(')) {
-      propertyValue = CSSWritingModeMixin._expandInlineVars(propertyValue, renderStyle, propertyName);
+      propertyValue = CSSWritingModeMixin.expandInlineVars(propertyValue, renderStyle, propertyName);
     }
 
     dynamic value;
@@ -3333,7 +3333,7 @@ mixin CSSWritingModeMixin on RenderStyle {
     return false;
   }
 
-  static String _expandInlineVars(String input, RenderStyle renderStyle, String propertyName) {
+  static String expandInlineVars(String input, RenderStyle renderStyle, String propertyName) {
     if (!input.contains('var(')) return input;
     String result = input;
     int guard = 0;
