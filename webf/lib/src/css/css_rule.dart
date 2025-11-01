@@ -60,18 +60,43 @@ class CSSKeyframesRule extends CSSRule {
   CSSKeyframesRule(this._keyframeName, this.name) : super();
 
   void add(KeyFrameBlock block) {
-    double? offset;
-    final keyText = block.blockSelectors[0];
-    if (keyText == 'from') {
-      offset = 0;
-    } else if (keyText == 'to') {
-      offset = 1;
-    } else {
-      offset = CSSPercentage.parsePercentage(keyText);
-    }
+    // Support per-keyframe easing via `animation-timing-function` declared
+    // inside the keyframe block. This easing applies to the segment starting
+    // at this keyframe and ending at the next keyframe for the same property.
+    // Default to linear if not specified.
+    String easingForThisKeyframe = LINEAR;
+
+    // First pass: detect block-level animation-timing-function if present.
     for (MapEntry<String, CSSPropertyValue> entry in block.declarations) {
-      final property = camelize(entry.key);
-      keyframes.add(Keyframe(property, entry.value.value, offset ?? 0, LINEAR));
+      final propName = camelize(entry.key);
+      if (propName == 'animationTimingFunction') {
+        easingForThisKeyframe = entry.value.value;
+        break;
+      }
+    }
+
+    // For combined selectors like "0%, 100%", create keyframes for each.
+    for (final String rawSel in block.blockSelectors) {
+      final String keyText = rawSel.trim();
+      double? offset;
+      if (keyText == 'from') {
+        offset = 0;
+      } else if (keyText == 'to') {
+        offset = 1;
+      } else {
+        offset = CSSPercentage.parsePercentage(keyText);
+      }
+
+      // Add keyframes for animatable properties, skipping the block-level timing function.
+      for (MapEntry<String, CSSPropertyValue> entry in block.declarations) {
+        final property = camelize(entry.key);
+        if (property == 'animationTimingFunction') {
+          continue; // already captured as easing
+        }
+        keyframes.add(Keyframe(property, entry.value.value, offset ?? 0, easingForThisKeyframe));
+      }
+
+      // (removed) verbose keyframe parse diagnostics
     }
   }
 

@@ -183,6 +183,7 @@ mixin CSSAnimationMixin on RenderStyle {
 
     for (var i = 0; i < animationName.length; i++) {
       final name = animationName[i];
+
       if (name == NONE) {
         continue;
       }
@@ -219,6 +220,8 @@ mixin CSSAnimationMixin on RenderStyle {
 
       if (keyframes != null) {
         KeyframeEffect effect = KeyframeEffect(this, keyframes, options);
+
+        // (removed) detailed interpolation summary diagnostics
 
         Animation? animation = _runningAnimation[name];
 

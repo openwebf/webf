@@ -154,6 +154,8 @@ class AnimationTimeline {
     }
   }
 
+  
+
   List<Animation> _getActiveAnimations() {
     List<Animation> activeAnimations = [];
 
@@ -735,6 +737,15 @@ class KeyframeEffect extends AnimationEffect {
       }
     }
 
+    // Ensure keyframes for each property are processed in offset order so
+    // segments are built as ascending intervals (e.g., 0 -> 0.5 -> 1). This
+    // fixes cases where combined selectors like "0%, 100%" appear before a
+    // middle stop (50%), which would otherwise produce 0->1 then 1->0.5 pairs
+    // and get filtered out at runtime.
+    propertySpecificKeyframeGroups.forEach((String property, List<Keyframe> list) {
+      list.sort((a, b) => a.offset.compareTo(b.offset));
+    });
+
     return propertySpecificKeyframeGroups;
   }
 
@@ -766,6 +777,8 @@ class KeyframeEffect extends AnimationEffect {
         if (1 - scaledLocalTime < _timeEpsilon) {
           scaledLocalTime = 1;
         }
+
+        // (removed) segment-enter diagnostic logging
 
         // Apply interpolation regardless of render box availability so
         // computed styles reflect animated values prior to first layout.
@@ -1066,6 +1079,8 @@ class KeyframeEffect extends AnimationEffect {
     PlaybackDirection? currentDirection = _calculateCurrentDirection(currentIteration);
     double? directedProgress = _calculateDirectedProgress(currentIteration, currentDirection, simpleIterationProgress);
     double? progress = _calculateTransformedProgress(phase, activeTime, directedProgress, currentDirection);
+
+    // (removed) deep timing diagnostic logs
 
     _activeTime = activeTime;
     _progress = progress;
