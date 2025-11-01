@@ -1751,30 +1751,40 @@ abstract class Element extends ContainerNode
     );
   }
 
-  bool _scheduledRunTransitions = false;
-  // Track per-property pending schedules to avoid duplicate schedules within
-  // the same frame for the same property.
+  // Whether a post-frame callback has been queued to run transition batch.
+  bool _queuedTransitionBatch = false;
+  // Track per-property pending schedules to avoid duplicate schedules within the same frame.
   final Set<String> _pendingTransitionProps = <String>{};
+  // Collect transition requests arriving in the same frame so we can start
+  // all of them together on the next frame.
+  final List<({String property, String? prev, String curr})> _pendingTransitionQueue = <({String property, String? prev, String curr})>[];
 
-  void scheduleRunTransitionAnimations(
-      String propertyName, String? prevValue, String currentValue) {
-    if (_scheduledRunTransitions) {
-      // Already queued a transition batch for this element in this frame.
-      return;
-    }
+  void scheduleRunTransitionAnimations(String propertyName, String? prevValue, String currentValue) {
     if (_pendingTransitionProps.contains(propertyName)) {
       // Prevent duplicate schedules for the same property within this frame.
       return;
     }
-    _scheduledRunTransitions = true;
     _pendingTransitionProps.add(propertyName);
+    _pendingTransitionQueue.add((property: propertyName, prev: prevValue, curr: currentValue));
     if (kDebugMode && DebugFlags.enableTransitionLogs) {
       cssLogger.fine('[transition][schedule] <' + tagName + '> property=' + propertyName + ' prev=' + (prevValue ?? 'null') + ' next=' + currentValue);
     }
-    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-      renderStyle.runTransition(propertyName, prevValue, currentValue);
-      _scheduledRunTransitions = false;
-      _pendingTransitionProps.remove(propertyName);
+    if (_queuedTransitionBatch) return;
+    _queuedTransitionBatch = true;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      // Drain queue in insertion order so related properties (e.g., width, left, transform)
+      // start in the same frame, improving sync.
+      final items = List<({String property, String? prev, String curr})>.from(_pendingTransitionQueue);
+      _pendingTransitionQueue.clear();
+      _queuedTransitionBatch = false;
+      for (final item in items) {
+        if (kDebugMode && DebugFlags.enableTransitionLogs) {
+          cssLogger.fine('[transition][run-batch] <' + tagName + '> property=' + item.property +
+              ' prev=' + (item.prev ?? 'null') + ' next=' + item.curr);
+        }
+        renderStyle.runTransition(item.property, item.prev, item.curr);
+        _pendingTransitionProps.remove(item.property);
+      }
     });
     SchedulerBinding.instance.scheduleFrame();
   }
