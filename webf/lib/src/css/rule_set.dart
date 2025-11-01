@@ -63,6 +63,9 @@ class RuleSet {
       }
     } else if (rule is CSSKeyframesRule) {
       keyframesRules[rule.name] = rule;
+      if (kDebugMode && DebugFlags.enableAnimationLogs) {
+        cssLogger.fine('[animation][keyframes] added name=' + rule.name + ' frames=' + rule.keyframes.length.toString());
+      }
     } else if (rule is CSSFontFaceRule) {
       CSSFontFace.resolveFontFaceRules(rule, ownerDocument.contextId!, baseHref);
     } else if (rule is CSSMediaDirective) {

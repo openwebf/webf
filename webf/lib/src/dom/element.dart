@@ -1856,6 +1856,9 @@ abstract class Element extends ContainerNode
 
   void _onStyleFlushed(List<String> properties) {
     if (renderStyle.shouldAnimation(properties)) {
+      if (kDebugMode && DebugFlags.enableAnimationLogs) {
+        cssLogger.fine('[animation][flush] <' + tagName + '> props=' + properties.join(','));
+      }
       runAnimation() {
         renderStyle.beforeRunningAnimation();
         if (renderStyle.isBoxModelHaveSize()) {

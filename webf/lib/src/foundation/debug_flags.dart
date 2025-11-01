@@ -24,6 +24,17 @@ class DebugFlags {
   /// resolution, or batching/scheduling of transform transitions.
   static bool enableTransformLogs = false;
 
+  // High-level CSS animation decision and lifecycle logs (setup, play/pause,
+  // start/end/cancel, keyframes lookup). Use to diagnose issues like a class
+  // toggle (e.g., Tailwind animate-spin) not starting an animation.
+  static bool enableAnimationLogs = false;
+
+  // Per-tick animated value logs for CSS animations (similar to
+  // enableTransitionValueLogs but for non-transition animations). When true,
+  // logs interpolated value and progress for each property as the animation
+  // runs. Chatty; use for focused debugging sessions.
+  static bool enableAnimationValueLogs = false;
+
   // Enables lightweight CSS performance counters and timing when true.
   // When disabled, instrumentation code is a fast no-op.
   static bool enableCssPerf = false;

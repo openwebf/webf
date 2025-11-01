@@ -2,8 +2,11 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:webf/src/foundation/logger.dart';
 
 // CSS Animation: https://drafts.csswg.org/css-animations/
 
@@ -87,6 +90,9 @@ mixin CSSAnimationMixin on RenderStyle {
     if (properties.any((element) => element.startsWith('animation'))) {
       shouldAnimation = true;
     }
+    if (kDebugMode && DebugFlags.enableAnimationLogs && shouldAnimation) {
+      cssLogger.fine('[animation][should] <' + target.tagName + '> props=' + properties.join(','));
+    }
     return shouldAnimation;
   }
 
@@ -116,11 +122,20 @@ mixin CSSAnimationMixin on RenderStyle {
       // update styles synchronously so that @keyframes rules are indexed.
       if (keyframes == null && target.ownerDocument.styleNodeManager.hasPendingStyleSheet) {
         // Apply pending stylesheets so Document.ruleSet.keyframesRules is up-to-date.
+        if (kDebugMode && DebugFlags.enableAnimationLogs) {
+          cssLogger.fine('[animation][setup] <' + target.tagName + '> name=' + name + ' note=flush-pending-stylesheets');
+        }
         target.ownerDocument.updateStyleIfNeeded();
         keyframes = _getKeyFrames(name);
       }
       if (keyframes == null) {
+        if (kDebugMode && DebugFlags.enableAnimationLogs) {
+          cssLogger.fine('[animation][setup] <' + target.tagName + '> name=' + name + ' keyframes=none (skip)');
+        }
         return;
+      }
+      if (kDebugMode && DebugFlags.enableAnimationLogs) {
+        cssLogger.fine('[animation][setup] <' + target.tagName + '> name=' + name + ' keyframes=' + keyframes.length.toString() + ' fill=' + fillMode);
       }
       FillMode mode = FillMode.values.firstWhere((element) {
         return element.toString().split('.').last == fillMode;
@@ -134,6 +149,9 @@ mixin CSSAnimationMixin on RenderStyle {
         final styles = getAnimationInitStyle(keyframes);
 
         styles.forEach((property, value) {
+          if (kDebugMode && DebugFlags.enableAnimationLogs) {
+            cssLogger.fine('[animation][init-style] <' + target.tagName + '> ' + property + ' = ' + value);
+          }
           String? originStyle = target.inlineStyle[property];
           if (originStyle != null) {
             _cacheOriginProperties.putIfAbsent(property, () => originStyle);
@@ -183,6 +201,9 @@ mixin CSSAnimationMixin on RenderStyle {
 
       List<Keyframe>? keyframes = _getKeyFrames(name);
       if (keyframes == null && target.ownerDocument.styleNodeManager.hasPendingStyleSheet) {
+        if (kDebugMode && DebugFlags.enableAnimationLogs) {
+          cssLogger.fine('[animation][run] <' + target.tagName + '> name=' + name + ' note=flush-pending-stylesheets');
+        }
         target.ownerDocument.updateStyleIfNeeded();
         keyframes = _getKeyFrames(name);
       }
@@ -198,16 +219,25 @@ mixin CSSAnimationMixin on RenderStyle {
           animation = Animation(effect, target.ownerDocument.animationTimeline);
 
           animation.onstart = () {
+            if (kDebugMode && DebugFlags.enableAnimationLogs) {
+              cssLogger.fine('[animation][start] <' + target.tagName + '> name=' + name);
+            }
             target.dispatchEvent(AnimationEvent(EVENT_ANIMATION_START, animationName: name));
           };
 
           animation.oncancel = (AnimationPlaybackEvent event) {
+            if (kDebugMode && DebugFlags.enableAnimationLogs) {
+              cssLogger.fine('[animation][cancel] <' + target.tagName + '> name=' + name);
+            }
             target.dispatchEvent(AnimationEvent(EVENT_ANIMATION_END, animationName: name));
             _runningAnimation.remove(name);
             animation?.dispose();
           };
 
           animation.onfinish = (AnimationPlaybackEvent event) {
+            if (kDebugMode && DebugFlags.enableAnimationLogs) {
+              cssLogger.fine('[animation][end] <' + target.tagName + '> name=' + name);
+            }
             if (isBackwardsFillModeAnimation(animation!)) {
               _revertOriginProperty(_runningAnimation[name]!);
             }
@@ -220,12 +250,24 @@ mixin CSSAnimationMixin on RenderStyle {
           _runningAnimation[name] = animation;
         }
 
+        if (kDebugMode && DebugFlags.enableAnimationLogs) {
+          cssLogger.fine('[animation][run] <' + target.tagName + '> name=' + name +
+              ' duration=' + duration + ' delay=' + delay + ' timing=' + timingFunction +
+              ' iter=' + iterationCount + ' dir=' + direction + ' fill=' + fillMode + ' playState=' + playState);
+        }
+
         if (playState == 'running' &&
             animation.playState != AnimationPlayState.running &&
             animation.playState != AnimationPlayState.finished) {
+          if (kDebugMode && DebugFlags.enableAnimationLogs) {
+            cssLogger.fine('[animation][play] <' + target.tagName + '> name=' + name);
+          }
           animation.play();
         } else {
           if (playState == 'paused' && animation.playState != AnimationPlayState.paused) {
+            if (kDebugMode && DebugFlags.enableAnimationLogs) {
+              cssLogger.fine('[animation][pause] <' + target.tagName + '> name=' + name);
+            }
             animation.pause();
           }
         }
