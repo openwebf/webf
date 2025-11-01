@@ -612,7 +612,7 @@ class CSSMatrix {
     var methodArgs = method.args;
     for (int i = 0; i < methodArgs.length; i++) {
       String arg = methodArgs[i];
-      final varValue = CSSVariable.tryParse(renderStyle, arg)?.computedValue('').toString();
+      final varValue = CSSVariable.tryParse(renderStyle, arg)?.computedValue(TRANSFORM).toString();
       if (varValue != null) {
         methodArgs[i] = varValue;
       }

@@ -1752,13 +1752,29 @@ abstract class Element extends ContainerNode
   }
 
   bool _scheduledRunTransitions = false;
+  // Track per-property pending schedules to avoid duplicate schedules within
+  // the same frame for the same property.
+  final Set<String> _pendingTransitionProps = <String>{};
 
   void scheduleRunTransitionAnimations(
       String propertyName, String? prevValue, String currentValue) {
-    if (_scheduledRunTransitions) return;
+    if (_scheduledRunTransitions) {
+      // Already queued a transition batch for this element in this frame.
+      return;
+    }
+    if (_pendingTransitionProps.contains(propertyName)) {
+      // Prevent duplicate schedules for the same property within this frame.
+      return;
+    }
+    _scheduledRunTransitions = true;
+    _pendingTransitionProps.add(propertyName);
+    if (kDebugMode && DebugFlags.enableTransitionLogs) {
+      cssLogger.fine('[transition][schedule] <' + tagName + '> property=' + propertyName + ' prev=' + (prevValue ?? 'null') + ' next=' + currentValue);
+    }
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
       renderStyle.runTransition(propertyName, prevValue, currentValue);
       _scheduledRunTransitions = false;
+      _pendingTransitionProps.remove(propertyName);
     });
     SchedulerBinding.instance.scheduleFrame();
   }
@@ -1768,9 +1784,24 @@ abstract class Element extends ContainerNode
       {String? baseHref}) {
     if (renderStyle.shouldTransition(propertyName, prevValue, currentValue)) {
       scheduleRunTransitionAnimations(propertyName, prevValue, currentValue);
-    } else {
-      setRenderStyle(propertyName, currentValue, baseHref: baseHref);
+      return;
     }
+    // If a transition for this property is pending in this frame or currently
+    // running, avoid applying the immediate setRenderStyle which would clobber
+    // the animation-driven value. The scheduled/active transition will drive
+    // updates.
+    final bool pending = _pendingTransitionProps.contains(propertyName);
+    final bool running = (renderStyle is CSSRenderStyle)
+        ? (renderStyle as CSSRenderStyle).isTransitionRunning(propertyName)
+        : false;
+    if (pending || running) {
+      if (kDebugMode && DebugFlags.enableTransitionLogs) {
+        cssLogger.fine('[transition][intercept] <' + tagName + '> property=' + propertyName +
+            ' pending=' + pending.toString() + ' running=' + running.toString());
+      }
+      return;
+    }
+    setRenderStyle(propertyName, currentValue, baseHref: baseHref);
   }
 
   void _onStyleFlushed(List<String> properties) {

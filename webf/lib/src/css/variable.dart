@@ -12,6 +12,9 @@ import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
 
+// Local matcher for var(...) occurrences (supports simple nesting patterns).
+final RegExp _inlineVarFnRegExp = RegExp(r'var\(([^()]*\(.*?\)[^()]*)\)|var\(([^()]*)\)');
+
 mixin CSSVariableMixin on RenderStyle {
   Map<String, String>? _identifierStorage;
   Map<String, CSSVariable>? _variableStorage;
@@ -152,7 +155,7 @@ mixin CSSVariableMixin on RenderStyle {
       if (kDebugMode && DebugFlags.enableCssLogs) {
         cssLogger.fine('[var] notify deps: ' + identifier + ' -> ' + _propertyDependencies[identifier]!.join(','));
       }
-      _notifyCSSVariableChanged(identifier, value);
+      _notifyCSSVariableChanged(identifier, value, prevRaw);
     } else {
       // No dependencies recorded yet (e.g., first parse may have used a cached color string).
       // Clear common color cache keys so next parse recomputes with the new variable value.
@@ -181,9 +184,96 @@ mixin CSSVariableMixin on RenderStyle {
     }
   }
 
-  void _notifyCSSVariableChanged(String identifier, String value) {
-    List<String>? propertyNamesWithPattern = _propertyDependencies[identifier];
-    propertyNamesWithPattern?.forEach((String propertyNameWithPattern) {
+  // Expand only the target variable identifier to the provided override value,
+  // preserving token boundaries so neighboring identifiers do not merge.
+  String _expandVarWithOverride(String input, String identifier, String override) {
+    if (!input.contains('var(')) return input;
+    String result = input;
+    final before = result;
+    result = result.replaceAllMapped(_inlineVarFnRegExp, (Match match) {
+      final String? varString = match[0];
+      if (varString == null) return '';
+      final CSSVariable? variable = CSSVariable.tryParse(this, varString);
+      if (variable == null) return varString;
+      if (variable.identifier != identifier) return varString;
+
+      bool isIdentCode(int c) {
+        return (c >= 48 && c <= 57) || // 0-9
+            (c >= 65 && c <= 90) || // A-Z
+            (c >= 97 && c <= 122) || // a-z
+            c == 45 || // '-'
+            c == 95; // '_'
+      }
+      final int start = match.start;
+      final int end = match.end;
+      final int? leftChar = start > 0 ? before.codeUnitAt(start - 1) : null;
+      final int? rightChar = end < before.length ? before.codeUnitAt(end) : null;
+      String rep = override;
+      String trimmed = rep.trim();
+      final int? repFirst = trimmed.isNotEmpty ? trimmed.codeUnitAt(0) : null;
+      final int? repLast = trimmed.isNotEmpty ? trimmed.codeUnitAt(trimmed.length - 1) : null;
+      final bool addLeftSpace = leftChar != null && repFirst != null && isIdentCode(leftChar) && isIdentCode(repFirst);
+      final bool addRightSpace = rightChar != null && repLast != null && isIdentCode(repLast) && isIdentCode(rightChar);
+      if (addLeftSpace) rep = ' ' + rep;
+      if (addRightSpace) rep = rep + ' ';
+      return rep;
+    });
+    return result;
+  }
+
+  // Expand all var(...) occurrences in the input using current renderStyle
+  // variable values, preserving token boundaries to avoid accidental
+  // retokenization when adjacent to identifiers.
+  String _expandAllVars(String input) {
+    if (!input.contains('var(')) return input;
+    String result = input;
+    int guard = 0;
+    while (result.contains('var(') && guard++ < 8) {
+      final before = result;
+      result = result.replaceAllMapped(_inlineVarFnRegExp, (Match match) {
+        final String? varString = match[0];
+        if (varString == null) return '';
+        final CSSVariable? variable = CSSVariable.tryParse(this, varString);
+        if (variable == null) return varString;
+        final dynamic raw = getCSSVariable(variable.identifier, '');
+        if (raw == null || raw == INITIAL) {
+          final fallback = variable.defaultValue;
+          if (fallback == null) return varString; // keep unresolved if no fallback
+          return fallback.toString();
+        }
+        // Insert spaces when replacement touches ident-like neighbors
+        bool isIdentCode(int c) {
+          return (c >= 48 && c <= 57) || // 0-9
+              (c >= 65 && c <= 90) || // A-Z
+              (c >= 97 && c <= 122) || // a-z
+              c == 45 || // '-'
+              c == 95; // '_'
+        }
+        final int start = match.start;
+        final int end = match.end;
+        final int? leftChar = start > 0 ? before.codeUnitAt(start - 1) : null;
+        final int? rightChar = end < before.length ? before.codeUnitAt(end) : null;
+        String rep = raw.toString();
+        String trimmed = rep.trim();
+        final int? repFirst = trimmed.isNotEmpty ? trimmed.codeUnitAt(0) : null;
+        final int? repLast = trimmed.isNotEmpty ? trimmed.codeUnitAt(trimmed.length - 1) : null;
+        final bool addLeftSpace = leftChar != null && repFirst != null && isIdentCode(leftChar) && isIdentCode(repFirst);
+        final bool addRightSpace = rightChar != null && repLast != null && isIdentCode(repLast) && isIdentCode(rightChar);
+        if (addLeftSpace) rep = ' ' + rep;
+        if (addRightSpace) rep = rep + ' ';
+        return rep;
+      });
+      if (result == before) break;
+    }
+    return result;
+  }
+
+  void _notifyCSSVariableChanged(String identifier, String value, [String? prevVarValue]) {
+    // Snapshot to avoid concurrent modification if dependencies mutate during iteration.
+    final List<String> propertyNamesWithPattern = _propertyDependencies[identifier] != null
+        ? List<String>.from(_propertyDependencies[identifier]!)
+        : const <String>[];
+    for (final String propertyNameWithPattern in propertyNamesWithPattern) {
       List<String> group = propertyNameWithPattern.split('_');
       String propertyName = group[0];
       // Retrieve current CSS text for the property. If it still contains var(),
@@ -193,6 +283,40 @@ mixin CSSVariableMixin on RenderStyle {
       if (target.style.contains(propertyName) && CSSVariable.isCSSVariableValue(cssText)) {
         if (kDebugMode && DebugFlags.enableCssLogs) {
           cssLogger.fine('[var] update property due to var change: ' + propertyName + ' <- ' + cssText + ' (variable=' + identifier + ')');
+        }
+        // If transitions are configured and this property is animatable, schedule a
+        // transition from the previous var-resolved value to the new one.
+        bool handledByTransition = false;
+        if (prevVarValue != null && this is CSSRenderStyle && CSSTransitionHandlers[propertyName] != null) {
+          try {
+            final CSSRenderStyle rs = this as CSSRenderStyle;
+            final bool configured = rs.effectiveTransitions.containsKey(propertyName) || rs.effectiveTransitions.containsKey(ALL);
+            if (configured) {
+              // Resolve begin and end to numeric strings so transform transitions
+              // have stable matrices for forward and backward animations.
+              final String prevText = _expandAllVars(_expandVarWithOverride(cssText, identifier, prevVarValue));
+              final String endText = _expandAllVars(cssText);
+              if (prevText != endText) {
+                if (kDebugMode && DebugFlags.enableTransitionLogs) {
+                  final prevComputed = getProperty(propertyName);
+                  final prospective = resolveValue(propertyName, endText);
+                  cssLogger.fine('[transition][var] property=' + propertyName +
+                      ' prev=' + (prevComputed?.toString() ?? 'null') +
+                      ' next=' + (prospective?.toString() ?? 'null') +
+                      ' configured=true note=schedule');
+                }
+                target.scheduleRunTransitionAnimations(propertyName, prevText, endText);
+                handledByTransition = true;
+              } else {
+                if (kDebugMode && DebugFlags.enableTransitionLogs) {
+                  cssLogger.fine('[transition][var] property=' + propertyName + ' note=skip-schedule-same-begin-end');
+                }
+              }
+            }
+          } catch (_) {}
+        }
+        if (handledByTransition) {
+          return; // let the scheduled transition apply updates
         }
         // Clear color cache conservatively when the CSS value is a bare color.
         // For var(...) patterns, fallback cache clears below handle it.
@@ -210,7 +334,7 @@ mixin CSSVariableMixin on RenderStyle {
           cssLogger.fine('[var] applied var-affected property via setRenderStyle: ' + propertyName);
         }
       }
-    });
+    }
 
     // Fallback: clear common color cache patterns for this variable to avoid stale cache hits
     // even if we failed to record explicit dependencies (e.g., due to prior cache hits).
@@ -235,7 +359,7 @@ mixin CSSVariableMixin on RenderStyle {
         if (kDebugMode && DebugFlags.enableCssLogs) {
           cssLogger.fine('[var] propagate to child: ' + child.renderStyle.target.tagName);
         }
-        child.renderStyle._notifyCSSVariableChanged(identifier, value);
+        child.renderStyle._notifyCSSVariableChanged(identifier, value, prevVarValue);
       } else {
         child.visitChildren(notifyCSSVariableChangedRecursive);
       }

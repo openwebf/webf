@@ -11,6 +11,11 @@ class DebugFlags {
   // properties each frame to help diagnose animation issues.
   static bool enableTransitionValueLogs = false;
 
+  // High-level transition decision logs. When enabled, logs when a transition
+  // is considered for a property, including reasons it is skipped or scheduled
+  // (e.g., not animatable, auto values, no layout size, property not in list).
+  static bool enableTransitionLogs = false;
+
   // Enables lightweight CSS performance counters and timing when true.
   // When disabled, instrumentation code is a fast no-op.
   static bool enableCssPerf = false;
