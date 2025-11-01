@@ -16,6 +16,14 @@ class DebugFlags {
   // (e.g., not animatable, auto values, no layout size, property not in list).
   static bool enableTransitionLogs = false;
 
+  /// Focused diagnostics for transform-related behavior (parsing, transition
+  /// eligibility, and per-tick interpolation). When true (in debug mode),
+  /// transform-specific code paths will emit additional logs even if the
+  /// general transition logs are disabled. Useful for investigating issues
+  /// like "transition-transform" not taking effect, percent-based translate/scale
+  /// resolution, or batching/scheduling of transform transitions.
+  static bool enableTransformLogs = false;
+
   // Enables lightweight CSS performance counters and timing when true.
   // When disabled, instrumentation code is a fast no-op.
   static bool enableCssPerf = false;

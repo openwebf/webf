@@ -1761,12 +1761,24 @@ abstract class Element extends ContainerNode
 
   void scheduleRunTransitionAnimations(String propertyName, String? prevValue, String currentValue) {
     if (_pendingTransitionProps.contains(propertyName)) {
-      // Prevent duplicate schedules for the same property within this frame.
+      // Already scheduled this property in current frame; coalesce by updating
+      // the pending item's current (end) value so we run once with the latest
+      // destination while preserving the earliest prev.
+      for (int i = _pendingTransitionQueue.length - 1; i >= 0; i--) {
+        final item = _pendingTransitionQueue[i];
+        if (item.property == propertyName) {
+          _pendingTransitionQueue[i] = (property: propertyName, prev: item.prev, curr: currentValue);
+          if (kDebugMode && DebugFlags.enableTransitionLogs) {
+            cssLogger.fine('[transition][coalesce] <' + tagName + '> property=' + propertyName + ' newNext=' + currentValue);
+          }
+          break;
+        }
+      }
       return;
     }
     _pendingTransitionProps.add(propertyName);
     _pendingTransitionQueue.add((property: propertyName, prev: prevValue, curr: currentValue));
-    if (kDebugMode && DebugFlags.enableTransitionLogs) {
+    if (kDebugMode && (DebugFlags.enableTransitionLogs || (DebugFlags.enableTransformLogs && propertyName == TRANSFORM))) {
       cssLogger.fine('[transition][schedule] <' + tagName + '> property=' + propertyName + ' prev=' + (prevValue ?? 'null') + ' next=' + currentValue);
     }
     if (_queuedTransitionBatch) return;
@@ -1778,12 +1790,12 @@ abstract class Element extends ContainerNode
       _pendingTransitionQueue.clear();
       _queuedTransitionBatch = false;
       for (final item in items) {
-        if (kDebugMode && DebugFlags.enableTransitionLogs) {
-          cssLogger.fine('[transition][run-batch] <' + tagName + '> property=' + item.property +
-              ' prev=' + (item.prev ?? 'null') + ' next=' + item.curr);
-        }
-        renderStyle.runTransition(item.property, item.prev, item.curr);
-        _pendingTransitionProps.remove(item.property);
+      if (kDebugMode && (DebugFlags.enableTransitionLogs || (DebugFlags.enableTransformLogs && item.property == TRANSFORM))) {
+        cssLogger.fine('[transition][run-batch] <' + tagName + '> property=' + item.property +
+            ' prev=' + (item.prev ?? 'null') + ' next=' + item.curr);
+      }
+      renderStyle.runTransition(item.property, item.prev, item.curr);
+      _pendingTransitionProps.remove(item.property);
       }
     });
     SchedulerBinding.instance.scheduleFrame();
@@ -1829,7 +1841,7 @@ abstract class Element extends ContainerNode
         ? (renderStyle as CSSRenderStyle).isTransitionRunning(propertyName)
         : false;
     if (pending || running) {
-      if (kDebugMode && DebugFlags.enableTransitionLogs) {
+      if (kDebugMode && (DebugFlags.enableTransitionLogs || (DebugFlags.enableTransformLogs && propertyName == TRANSFORM))) {
         cssLogger.fine('[transition][intercept] <' + tagName + '> property=' + propertyName +
             ' pending=' + pending.toString() + ' running=' + running.toString());
       }

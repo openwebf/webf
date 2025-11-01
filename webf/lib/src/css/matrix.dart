@@ -779,10 +779,24 @@ class CSSMatrix {
       // Animation type: by computed value, but see below for none
       case SCALE:
         if (methodArgs.isNotEmpty && methodArgs.length <= 2) {
-          double x = double.tryParse(methodArgs[0].trim()) ?? 1.0;
+          double _parseCssNumber(String s, double fallback) {
+            String t = s.trim();
+            if (t.startsWith('-.')) {
+              t = '-0' + t.substring(1);
+            } else if (t.startsWith('+.')) {
+              t = '+0' + t.substring(1);
+            } else if (t.startsWith('.')) {
+              t = '0' + t;
+            }
+            return double.tryParse(t) ?? fallback;
+          }
+          double x = _parseCssNumber(methodArgs[0], 1.0);
           double y = x;
           if (methodArgs.length == 2) {
-            y = double.tryParse(methodArgs[1].trim()) ?? x;
+            y = _parseCssNumber(methodArgs[1], x);
+          }
+          if (kDebugMode && DebugFlags.enableTransformLogs) {
+            cssLogger.fine('[transform][parse] scale(' + methodArgs.join(',') + ') -> x=' + x.toString() + ' y=' + y.toString());
           }
           return Matrix4.identity()..scale(x, y, 1);
         }
@@ -793,9 +807,23 @@ class CSSMatrix {
         //   0, 0, scaleY, 0,
         //   0, 0, 0, 1]
         if (methodArgs.length == 3) {
-          double x = double.tryParse(methodArgs[0].trim()) ?? 1.0;
-          double y = double.tryParse(methodArgs[1].trim()) ?? 1.0;
-          double z = double.tryParse(methodArgs[2].trim()) ?? 1.0;
+          double _parseCssNumber(String s, double fallback) {
+            String t = s.trim();
+            if (t.startsWith('-.')) {
+              t = '-0' + t.substring(1);
+            } else if (t.startsWith('+.')) {
+              t = '+0' + t.substring(1);
+            } else if (t.startsWith('.')) {
+              t = '0' + t;
+            }
+            return double.tryParse(t) ?? fallback;
+          }
+          double x = _parseCssNumber(methodArgs[0], 1.0);
+          double y = _parseCssNumber(methodArgs[1], 1.0);
+          double z = _parseCssNumber(methodArgs[2], 1.0);
+          if (kDebugMode && DebugFlags.enableTransformLogs) {
+            cssLogger.fine('[transform][parse] scale3d(' + methodArgs.join(',') + ') -> x=' + x.toString() + ' y=' + y.toString() + ' z=' + z.toString());
+          }
           return Matrix4.identity()..scale(x, y, z);
         }
         break;
@@ -803,14 +831,26 @@ class CSSMatrix {
       case SCALE_Y:
       case SCALE_Z:
         if (methodArgs.length == 1) {
-          double scale = double.tryParse(methodArgs[0].trim()) ?? 1.0;
+          String t = methodArgs[0].trim();
+          if (t.startsWith('-.')) {
+            t = '-0' + t.substring(1);
+          } else if (t.startsWith('+.')) {
+            t = '+0' + t.substring(1);
+          } else if (t.startsWith('.')) {
+            t = '0' + t;
+          }
+          double scale = double.tryParse(t) ?? 1.0;
           double x = 1.0, y = 1.0, z = 1.0;
-          if (method.name == SCALE_X) {
+          // Use lowercased methodName to avoid case mismatches (e.g., 'scaleX').
+          if (methodName == SCALE_X) {
             x = scale;
-          } else if (method.name == SCALE_Y) {
+          } else if (methodName == SCALE_Y) {
             y = scale;
           } else {
             z = scale;
+          }
+          if (kDebugMode && DebugFlags.enableTransformLogs) {
+            cssLogger.fine('[transform][parse] ' + method.name + '(' + methodArgs[0] + ') -> x=' + x.toString() + ' y=' + y.toString() + ' z=' + z.toString());
           }
           return Matrix4.identity()..scale(x, y, z);
         }
