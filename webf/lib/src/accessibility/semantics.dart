@@ -11,10 +11,9 @@ import 'package:webf/rendering.dart';
 
 /// Minimal ARIA → Flutter Semantics bridge for WebF.
 ///
-/// Goals (MVP):
-/// - Map common roles/HTML elements to Semantics flags/actions.
-/// - Compute basic accessible names from aria-label/aria-labelledby/fallbacks.
-/// - Avoid overriding semantics provided by embedded Flutter widgets.
+/// - Maps common roles/HTML elements to Semantics flags/actions.
+/// - Computes accessible names from aria-label/aria-labelledby/fallbacks.
+/// - Avoids overriding semantics provided by embedded Flutter widgets.
 class WebFAccessibility {
   /// Apply semantics for a generic WebF render object based on its DOM element.
   static void applyToRenderBoxModel(RenderBoxModel renderObject, SemanticsConfiguration config) {
@@ -22,20 +21,16 @@ class WebFAccessibility {
 
     // Skip if this element hosts a Flutter widget subtree; let child semantics speak.
     if (element.isWidgetElement) {
-      // Ensure we don't cut off child semantics.
       config.isSemanticBoundary = false;
       return;
     }
 
     // Set a text direction so labeled nodes satisfy Semantics assertions.
-    // Use CSS resolved direction for the element.
     config.textDirection = renderObject.renderStyle.direction;
 
-    // aria-hidden
+    // aria-hidden → hide node from a11y tree
     final String? ariaHidden = element.getAttribute('aria-hidden');
     if (ariaHidden != null && _isTruthy(ariaHidden)) {
-      // Hide from accessibility tree.
-      // Keep children visitable if needed by Flutter; setting hidden suffices.
       config.isHidden = true;
       return;
     }
@@ -56,18 +51,20 @@ class WebFAccessibility {
       config.isEnabled = false;
     }
 
-    // Map flags by role
+    // Map flags/actions by role
     switch (role) {
       case _Role.button:
         config.isButton = true;
-        if (!disabled) {
-          config.onTap = () => _dispatchClick(element);
-        }
+        if (!disabled) config.onTap = () => _dispatchClick(element);
         break;
       case _Role.link:
         config.isLink = true;
-        if (!disabled) {
-          config.onTap = () => _dispatchClick(element);
+        if (!disabled) config.onTap = () => _dispatchClick(element);
+        // aria-current indicates the current item within a set (e.g., nav)
+        final String? ariaCurrent = element.getAttribute('aria-current');
+        if (ariaCurrent != null && ariaCurrent.trim().toLowerCase() != 'false') {
+          final String v = ariaCurrent.trim().toLowerCase();
+          config.value = (v == 'page') ? 'Current page' : 'Current';
         }
         break;
       case _Role.tab:
@@ -79,7 +76,6 @@ class WebFAccessibility {
             config.value = config.isSelected ? 'Selected' : 'Not selected';
           }
         }
-        // Tabs are actionable and mutually exclusive within a tablist.
         config.isButton = true;
         break;
       case _Role.image:
@@ -90,7 +86,6 @@ class WebFAccessibility {
         if (ariaChecked != null) {
           final v = ariaChecked.trim().toLowerCase();
           if (v == 'mixed') {
-            // Tri-state
             config.isCheckStateMixed = true;
           } else {
             config.isChecked = _isTruthy(ariaChecked);
@@ -98,11 +93,8 @@ class WebFAccessibility {
         }
         break;
       case _Role.radio:
-        // Radio is a mutually-exclusive selection; map to checked state.
         final String? ariaChecked = element.getAttribute('aria-checked');
-        if (ariaChecked != null) {
-          config.isChecked = _isTruthy(ariaChecked);
-        }
+        if (ariaChecked != null) config.isChecked = _isTruthy(ariaChecked);
         break;
       case _Role.textbox:
         config.isTextField = true;
@@ -116,25 +108,31 @@ class WebFAccessibility {
         config.isHeader = true;
         break;
       case _Role.none:
-        // No-op; let children provide semantics.
         break;
     }
 
-    // Basic focusability for tabbable elements
     if (_isFocusable(element)) {
       config.isFocusable = true;
     }
 
-    // Do not create an artificial boundary by default.
     config.isSemanticBoundary = false;
   }
 
-  /// Compute a simple accessible name for an element.
+  /// Compute accessible name for an element.
   /// Order:
   /// 1) aria-label
-  /// 2) aria-labelledby (concatenate referenced texts)
+  /// 2) aria-labelledby (concatenate referenced elements' names)
   /// 3) role-based fallbacks: img.alt, input[value]/button text, anchor text
+  /// 4) title
+  /// 5) generic text content (e.g., DIV textContent)
   static String? computeAccessibleName(dom.Element element) {
+    return _computeAccessibleNameInternal(element, <dom.Element>{});
+  }
+
+  static String? _computeAccessibleNameInternal(dom.Element element, Set<dom.Element> visited) {
+    if (visited.contains(element)) return null;
+    visited.add(element);
+
     // aria-label
     final String? ariaLabel = element.getAttribute('aria-label');
     if (ariaLabel != null && ariaLabel.trim().isNotEmpty) {
@@ -149,12 +147,11 @@ class WebFAccessibility {
       for (final id in ids) {
         final list = element.ownerDocument.elementsByID[id];
         if (list != null && list.isNotEmpty) {
-          // Choose the first in tree order
           final dom.Element ref = list.first;
-          final String text = _collectText(ref);
-          if (text.isNotEmpty) {
+          final String? refName = _computeAccessibleNameInternal(ref, visited) ?? _collectText(ref);
+          if (refName != null && refName.isNotEmpty) {
             if (buffer.isNotEmpty) buffer.write(' ');
-            buffer.write(text);
+            buffer.write(refName);
           }
         }
       }
@@ -167,19 +164,15 @@ class WebFAccessibility {
       final String? alt = element.getAttribute('alt');
       if (alt != null && alt.trim().isNotEmpty) return alt.trim();
     }
-
     if (tag == ANCHOR) {
       final String text = _collectText(element);
       if (text.isNotEmpty) return text;
     }
-
     if (tag == BUTTON) {
       final String text = _collectText(element);
       if (text.isNotEmpty) return text;
     }
-
     if (tag == INPUT) {
-      // Prefer raw attribute value for input[type=button|submit] to avoid getter recursion.
       final String type = element.getAttribute('type')?.toLowerCase() ?? 'text';
       final String? v = element.attributes['value'];
       if ((type == 'button' || type == 'submit') && v != null && v.trim().isNotEmpty) {
@@ -187,11 +180,36 @@ class WebFAccessibility {
       }
     }
 
-    // title as final fallback
+    // title as fallback
     final String? title = element.getAttribute('title');
     if (title != null && title.trim().isNotEmpty) return title.trim();
 
+    // generic text content (e.g., DIV textContent)
+    if (tag == DIV) {
+      final String text = _collectText(element);
+      if (text.isNotEmpty) return text;
+    }
     return null;
+  }
+
+  /// Compute accessible description from aria-describedby (space-separated idrefs).
+  static String? computeAccessibleDescription(dom.Element element) {
+    final String? describedby = element.getAttribute('aria-describedby');
+    if (describedby == null || describedby.trim().isEmpty) return null;
+    final ids = describedby.trim().split(RegExp(r'\s+'));
+    final buffer = StringBuffer();
+    for (final id in ids) {
+      final list = element.ownerDocument.elementsByID[id];
+      if (list != null && list.isNotEmpty) {
+        final dom.Element ref = list.first;
+        final String text = _collectText(ref);
+        if (text.isNotEmpty) {
+          if (buffer.isNotEmpty) buffer.write(' ');
+          buffer.write(text);
+        }
+      }
+    }
+    return buffer.isNotEmpty ? buffer.toString() : null;
   }
 
   // Infer role from explicit role, tag, and attributes.
@@ -214,8 +232,7 @@ class WebFAccessibility {
       case 'searchbox':
         return _Role.textbox;
       case 'heading':
-        // Use header role without level
-        return _Role.header1; // treat as header
+        return _Role.header1;
     }
 
     final String tag = element.tagName.toUpperCase();
@@ -251,9 +268,7 @@ class WebFAccessibility {
   }
 
   static bool _isDisabled(dom.Element element) {
-    // HTML disabled attribute; common on form controls and buttons.
     if (element.hasAttribute('disabled')) return true;
-    // aria-disabled="true"
     final String? ariaDisabled = element.getAttribute('aria-disabled');
     if (ariaDisabled != null && _isTruthy(ariaDisabled)) return true;
     return false;
@@ -285,7 +300,6 @@ class WebFAccessibility {
       element.dispatchEvent(dom.Event(dom.EVENT_CLICK));
     } catch (e) {
       if (kDebugMode) {
-        // Best-effort; avoid crashing semantics action.
         debugPrint('[webf][a11y] dispatch click failed: $e');
       }
     }
@@ -329,3 +343,4 @@ enum _Role {
   header5,
   header6,
 }
+
