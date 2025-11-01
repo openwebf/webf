@@ -111,7 +111,13 @@ mixin CSSAnimationMixin on RenderStyle {
   void beforeRunningAnimation() {
     for (var i = 0; i < animationName.length; i++) {
       final name = animationName[i];
+      if (kDebugMode && DebugFlags.enableAnimationLogs) {
+        cssLogger.fine('[animation][setup] <' + target.tagName + '> consider name=' + name);
+      }
       if (name == NONE) {
+        if (kDebugMode && DebugFlags.enableAnimationLogs) {
+          cssLogger.fine('[animation][setup] <' + target.tagName + '> name=' + name + ' skip=none');
+        }
         return;
       }
       final fillMode = camelize(_getSingleString(animationFillMode, i));
@@ -170,6 +176,9 @@ mixin CSSAnimationMixin on RenderStyle {
       Animation animation = _runningAnimation[key]!;
       _runningAnimation.remove(key);
       animation.cancel();
+      if (kDebugMode && DebugFlags.enableAnimationLogs) {
+        cssLogger.fine('[animation][cancel-stale] <' + target.tagName + '> name=' + key);
+      }
     });
 
     for (var i = 0; i < animationName.length; i++) {
@@ -215,6 +224,9 @@ mixin CSSAnimationMixin on RenderStyle {
 
         if (animation != null) {
           animation.effect = effect;
+          if (kDebugMode && DebugFlags.enableAnimationLogs) {
+            cssLogger.fine('[animation][update] <' + target.tagName + '> name=' + name + ' (updated effect)');
+          }
         } else {
           animation = Animation(effect, target.ownerDocument.animationTimeline);
 

@@ -95,8 +95,13 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   void resumeAnimationTimeline() {
+    if (kDebugMode && DebugFlags.enableAnimationLogs) {
+      cssLogger.fine('[animation][timeline] resume; draining pending=' + _pendingAnimationTimesLines.length.toString());
+    }
     _pendingAnimationTimesLines.forEach((callback) {
-      callback();
+      try {
+        callback();
+      } catch (_) {}
     });
     _pendingAnimationTimesLines.clear();
     _isAnimationTimelineStopped = false;
@@ -255,7 +260,12 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   void attachToFlutter(BuildContext context) {
     _registerPlatformBrightnessChange();
     // Resume animation timeline when attached back to Flutter
+    if (kDebugMode && DebugFlags.enableAnimationLogs) {
+      cssLogger.fine('[animation][timeline] attachToFlutter -> resume timeline + drain pending');
+    }
     document.animationTimeline.resume();
+    // Also clear the stopped guard and run any pending animation starters.
+    resumeAnimationTimeline();
     for (int i = 0; i < _onFlutterAttached.length; i++) {
       _onFlutterAttached[i]();
     }

@@ -603,6 +603,39 @@ class KeyframeEffect extends AnimationEffect {
     List<_Interpolation> interpolations = [];
 
     propertySpecificKeyframeGroups.forEach((String property, List<Keyframe> keyframes) {
+      // Handle single-end keyframe (e.g., only `to { ... }`) by synthesizing a
+      // begin frame from the current computed style at offset 0 per spec.
+      if (keyframes.length == 1) {
+        String left = renderStyle?.target.style.getPropertyValue(property) ?? CSSInitialValues[property] ?? '';
+        String? right = keyframes[0].value;
+        if (left == INITIAL) left = CSSInitialValues[property] ?? left;
+        if (right == INITIAL) right = CSSInitialValues[property];
+
+        List? handlers = CSSTransitionHandlers[property];
+        handlers ??= [_defaultParse, _defaultLerp];
+        Function parseProperty = handlers[0];
+
+        double startOffset = 0.0;
+        double endOffset = (keyframes[0].offset == 0.0) ? 1.0 : keyframes[0].offset;
+
+        _Interpolation interpolation = _Interpolation(
+            property: property,
+            startOffset: startOffset,
+            endOffset: endOffset,
+            easing: _parseEasing(keyframes[0].easing),
+            begin: parseProperty(left, renderStyle, property),
+            end: parseProperty(right, renderStyle, property),
+            lerp: handlers[1]);
+
+        interpolations.add(interpolation);
+        if (kDebugMode && DebugFlags.enableAnimationLogs) {
+          final target = renderStyle?.target;
+          final tag = (target is Element) ? target.tagName : (target?.runtimeType.toString() ?? 'detached');
+          cssLogger.fine('[animation][synth] <' + tag + '> property=' + property + ' begin=' + left + ' end=' + (right ?? '') + ' offsets=0->' + endOffset.toString());
+        }
+        return; // move to next property group
+      }
+
       for (int i = 0; i < keyframes.length - 1; i++) {
         int startIndex = i;
         int endIndex = i + 1;

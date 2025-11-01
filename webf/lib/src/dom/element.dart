@@ -1857,16 +1857,21 @@ abstract class Element extends ContainerNode
   void _onStyleFlushed(List<String> properties) {
     if (renderStyle.shouldAnimation(properties)) {
       if (kDebugMode && DebugFlags.enableAnimationLogs) {
-        cssLogger.fine('[animation][flush] <' + tagName + '> props=' + properties.join(','));
+        final bool stopped = ownerDocument.ownerView.isAnimationTimelineStopped;
+        cssLogger.fine('[animation][flush] <' + tagName + '> props=' + properties.join(',') + ' timelineStopped=' + stopped.toString());
       }
       runAnimation() {
         renderStyle.beforeRunningAnimation();
         if (renderStyle.isBoxModelHaveSize()) {
           renderStyle.runAnimation();
         } else {
+          if (kDebugMode && DebugFlags.enableAnimationLogs) {
+            cssLogger.fine('[animation][defer] <' + tagName + '> reason=no-layout-size (post-frame run)');
+          }
           SchedulerBinding.instance.addPostFrameCallback((callback) {
             renderStyle.runAnimation();
           });
+          SchedulerBinding.instance.scheduleFrame();
         }
       }
 
