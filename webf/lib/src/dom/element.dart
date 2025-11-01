@@ -1782,7 +1782,31 @@ abstract class Element extends ContainerNode
   void _onStyleChanged(
       String propertyName, String? prevValue, String currentValue,
       {String? baseHref}) {
+    // Eagerly expand var() for color-bearing properties so that downstream
+    // parsing and color caches see concrete values after variable changes
+    // (e.g., hsl(var(--x)) -> hsl(12 100% 50%)). This complements the
+    // variable-notify path and also covers normal stylesheet flushes.
+    if (currentValue.contains('var(')) {
+      final bool isColorProp = propertyName == COLOR ||
+          propertyName == BACKGROUND_COLOR ||
+          propertyName == TEXT_DECORATION_COLOR ||
+          propertyName == BORDER_LEFT_COLOR ||
+          propertyName == BORDER_TOP_COLOR ||
+          propertyName == BORDER_RIGHT_COLOR ||
+          propertyName == BORDER_BOTTOM_COLOR;
+      if (isColorProp) {
+        try {
+          currentValue = CSSWritingModeMixin.expandInlineVars(
+              currentValue, renderStyle, propertyName);
+        } catch (_) {}
+      }
+    }
+
     if (renderStyle.shouldTransition(propertyName, prevValue, currentValue)) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[style][onChange] <' + tagName + '> transition-eligible property=' + propertyName +
+            ' prev=' + (prevValue ?? 'null') + ' curr=' + currentValue);
+      }
       scheduleRunTransitionAnimations(propertyName, prevValue, currentValue);
       return;
     }
@@ -1800,6 +1824,10 @@ abstract class Element extends ContainerNode
             ' pending=' + pending.toString() + ' running=' + running.toString());
       }
       return;
+    }
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[style][onChange] <' + tagName + '> apply property=' + propertyName +
+          ' value=' + currentValue + (baseHref != null ? ' baseHref=' + baseHref : ''));
     }
     setRenderStyle(propertyName, currentValue, baseHref: baseHref);
   }

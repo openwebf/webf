@@ -5,9 +5,10 @@
 
 import 'dart:async';
 import 'dart:collection';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/widgets.dart' hide Element;
 import 'package:flutter/foundation.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
@@ -21,6 +22,9 @@ mixin CSSVariableMixin on RenderStyle {
   final Map<String, List<String>> _propertyDependencies = {};
 
   void _addDependency(String identifier, String propertyName) {
+    // Avoid recording empty dependency keys (produced by some expansion paths),
+    // which can pollute the map and complicate later notifications.
+    if (propertyName.isEmpty) return;
     List<String>? dep = _propertyDependencies[identifier];
     if (dep == null) {
       _propertyDependencies[identifier] = [propertyName];
@@ -224,7 +228,7 @@ mixin CSSVariableMixin on RenderStyle {
   // Expand all var(...) occurrences in the input using current renderStyle
   // variable values, preserving token boundaries to avoid accidental
   // retokenization when adjacent to identifiers.
-  String _expandAllVars(String input) {
+  String _expandAllVars(String input, {String? depContext}) {
     if (!input.contains('var(')) return input;
     String result = input;
     int guard = 0;
@@ -235,7 +239,8 @@ mixin CSSVariableMixin on RenderStyle {
         if (varString == null) return '';
         final CSSVariable? variable = CSSVariable.tryParse(this, varString);
         if (variable == null) return varString;
-        final dynamic raw = getCSSVariable(variable.identifier, '');
+        final String ctx = depContext ?? '';
+        final dynamic raw = getCSSVariable(variable.identifier, ctx);
         if (raw == null || raw == INITIAL) {
           final fallback = variable.defaultValue;
           if (fallback == null) return varString; // keep unresolved if no fallback
@@ -287,15 +292,48 @@ mixin CSSVariableMixin on RenderStyle {
         // If transitions are configured and this property is animatable, schedule a
         // transition from the previous var-resolved value to the new one.
         bool handledByTransition = false;
+        // Proactively clear color cache entries for previously-resolved values
+        // like hsl(<prev>) / hsla(<prev>) / rgb(<prev>) / rgba(<prev>) to avoid
+        // stale cache hits when a var() inside a color function changes.
+        if (prevVarValue != null) {
+          final List<String> priorColorKeys = <String>[
+            'hsl($prevVarValue)',
+            'hsla($prevVarValue)',
+            'rgb($prevVarValue)',
+            'rgba($prevVarValue)',
+          ];
+          for (final key in priorColorKeys) {
+            if (CSSColor.isColor(key)) {
+              if (kDebugMode && DebugFlags.enableCssLogs) {
+                cssLogger.fine('[color] cache cleared (prev): ' + key);
+              }
+              CSSColor.clearCachedColorValue(key);
+            }
+          }
+        }
         if (prevVarValue != null && this is CSSRenderStyle && CSSTransitionHandlers[propertyName] != null) {
           try {
             final CSSRenderStyle rs = this as CSSRenderStyle;
             final bool configured = rs.effectiveTransitions.containsKey(propertyName) || rs.effectiveTransitions.containsKey(ALL);
-            if (configured) {
+            // Mirror shouldTransition() logic: only schedule when some relevant transition has non-zero duration.
+            bool anyNonZero = false;
+            rs.effectiveTransitions.forEach((String key, List options) {
+              if (key == propertyName || key == ALL) {
+                int? duration = CSSTime.parseTime(options[0]);
+                if (duration != null && duration != 0) anyNonZero = true;
+              }
+            });
+            if (configured && anyNonZero) {
               // Resolve begin and end to numeric strings so transform transitions
               // have stable matrices for forward and backward animations.
-              final String prevText = _expandAllVars(_expandVarWithOverride(cssText, identifier, prevVarValue));
-              final String endText = _expandAllVars(cssText);
+              final String prevText = _expandAllVars(
+                  _expandVarWithOverride(cssText, identifier, prevVarValue),
+                  depContext: propertyName + '_' + cssText,
+              );
+              final String endText = _expandAllVars(
+                  cssText,
+                  depContext: propertyName + '_' + cssText,
+              );
               if (prevText != endText) {
                 if (kDebugMode && DebugFlags.enableTransitionLogs) {
                   final prevComputed = getProperty(propertyName);
@@ -303,7 +341,7 @@ mixin CSSVariableMixin on RenderStyle {
                   cssLogger.fine('[transition][var] property=' + propertyName +
                       ' prev=' + (prevComputed?.toString() ?? 'null') +
                       ' next=' + (prospective?.toString() ?? 'null') +
-                      ' configured=true note=schedule');
+                      ' configured=true anyNonZeroDuration=' + anyNonZero.toString() + ' note=schedule');
                 }
                 target.scheduleRunTransitionAnimations(propertyName, prevText, endText);
                 handledByTransition = true;
@@ -327,9 +365,31 @@ mixin CSSVariableMixin on RenderStyle {
           CSSColor.clearCachedColorValue(cssText);
         }
         // Apply directly to computed style to avoid re-entrant pending queue issues.
-        // This guarantees immediate recomputation using latest var values.
+        // For color-bearing properties, eagerly expand all var(...) before applying to
+        // bypass stale color cache hits for hsl()/rgb() strings that still contain var().
+        String cssTextToApply = cssText;
+        bool isColorProperty = propertyName == COLOR ||
+            propertyName == BACKGROUND_COLOR ||
+            propertyName == TEXT_DECORATION_COLOR ||
+            propertyName == BORDER_LEFT_COLOR ||
+            propertyName == BORDER_TOP_COLOR ||
+            propertyName == BORDER_RIGHT_COLOR ||
+            propertyName == BORDER_BOTTOM_COLOR;
+        if (isColorProperty && cssTextToApply.contains('var(')) {
+          cssTextToApply = _expandAllVars(
+            cssTextToApply,
+            depContext: propertyName + '_' + cssText,
+          );
+        }
         final String? baseHref = target.style.getPropertyBaseHref(propertyName);
-        target.setRenderStyle(propertyName, cssText, baseHref: baseHref);
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[var] applying to renderStyle: ' + propertyName + ' <- ' + cssTextToApply);
+        }
+        target.setRenderStyle(propertyName, cssTextToApply, baseHref: baseHref);
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          final applied = getProperty(propertyName);
+          cssLogger.fine('[var] applied computed: ' + propertyName + ' = ' + (applied?.toString() ?? 'null'));
+        }
         if (kDebugMode && DebugFlags.enableCssLogs) {
           cssLogger.fine('[var] applied var-affected property via setRenderStyle: ' + propertyName);
         }
@@ -354,17 +414,15 @@ mixin CSSVariableMixin on RenderStyle {
       }
     }
 
-    notifyCSSVariableChangedRecursive(RenderObject child) {
-      if (child is RenderBoxModel && child is! RenderEventListener) {
+    // Propagate via DOM tree instead of render tree so display:none descendants
+    // (which have no render objects) also receive variable updates.
+    target.visitChildren((Node node) {
+      if (node is Element) {
         if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[var] propagate to child: ' + child.renderStyle.target.tagName);
+          cssLogger.fine('[var] propagate to child: ' + node.tagName);
         }
-        child.renderStyle._notifyCSSVariableChanged(identifier, value, prevVarValue);
-      } else {
-        child.visitChildren(notifyCSSVariableChangedRecursive);
+        node.renderStyle._notifyCSSVariableChanged(identifier, value, prevVarValue);
       }
-    }
-
-    visitChildren(notifyCSSVariableChangedRecursive);
+    });
   }
 }
