@@ -1476,10 +1476,12 @@ abstract class Element extends ContainerNode
       'role',
       'aria-label',
       'aria-labelledby',
+      'aria-describedby',
       'aria-hidden',
       'aria-disabled',
       'aria-checked',
       'aria-selected',
+      'aria-current',
       'title',
       'alt',
       // Form+interactive hints
