@@ -149,6 +149,16 @@ class RenderEventListener extends RenderBoxModel
     }
     setCssBaselines(first: childBase, last: childBase);
   }
+
+  @override
+  void describeSemanticsConfiguration(SemanticsConfiguration config) {
+    // Intentionally do NOT call super (RenderBoxModel) here.
+    // Applying WebFAccessibility semantics at both this wrapper and the inner
+    // layout box causes duplicate announcements (e.g., label text read twice).
+    // Delegate semantics to the child render box and keep this wrapper
+    // transparent to the semantics tree.
+    config.isSemanticBoundary = false;
+  }
 }
 
 class RenderTouchEventListener extends RenderEventListener {
