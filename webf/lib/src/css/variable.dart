@@ -131,7 +131,12 @@ mixin CSSVariableMixin on RenderStyle {
   @override
   void setCSSVariable(String identifier, String value) {
     // Snapshot old value before mutation for transition heuristics.
+    // Prefer the exact prior token text, including alias var(...) if present.
     String? prevRaw = _identifierStorage != null ? _identifierStorage![identifier] : null;
+    if (prevRaw == null && _variableStorage != null && _variableStorage![identifier] != null) {
+      // Preserve the alias token form, e.g., 'var(--a[, fallback])'.
+      prevRaw = _variableStorage![identifier]!.toString();
+    }
 
     if (isSingleVarFunction(value)) {
       CSSVariable? variable = CSSVariable.tryParse(this, value);
