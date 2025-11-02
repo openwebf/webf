@@ -464,8 +464,13 @@ mixin BaseInputState on WebFWidgetElementState {
     bool isAutoHeight = widgetElement.renderStyle.height.isAuto;
     bool isAutoWidth = widgetElement.renderStyle.width.isAuto;
 
+    // Compute accessible name (ARIA or native <label>) and feed into
+    // InputDecoration so EditableText provides correct semantics natively.
+    final String? accessibleName = WebFAccessibility.computeAccessibleName(widgetElement);
+
     InputDecoration decoration = InputDecoration(
         label: widgetElement.label != null ? Text(widgetElement.label!) : null,
+        labelText: (accessibleName != null && accessibleName.isNotEmpty) ? accessibleName : null,
         border: InputBorder.none,
         isDense: true,
         // Changed to false for better text baseline handling
