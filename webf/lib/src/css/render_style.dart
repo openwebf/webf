@@ -1249,6 +1249,7 @@ class CSSRenderStyle extends RenderStyle
         CSSTransformMixin,
         CSSVisibilityMixin,
         CSSContentVisibilityMixin,
+        CSSGridMixin,
         CSSFlexboxMixin,
         CSSOrderMixin,
         CSSGapMixin,
@@ -1369,6 +1370,10 @@ class CSSRenderStyle extends RenderStyle
         return flexWrap;
       case ALIGN_CONTENT:
         return alignContent;
+      case GRID_TEMPLATE_COLUMNS:
+        return gridTemplateColumns;
+      case GRID_TEMPLATE_ROWS:
+        return gridTemplateRows;
       case ALIGN_ITEMS:
         return alignItems;
       case JUSTIFY_CONTENT:
@@ -1687,6 +1692,12 @@ class CSSRenderStyle extends RenderStyle
         break;
       case ALIGN_CONTENT:
         alignContent = value;
+        break;
+      case GRID_TEMPLATE_COLUMNS:
+        gridTemplateColumns = value;
+        break;
+      case GRID_TEMPLATE_ROWS:
+        gridTemplateRows = value;
         break;
       case ALIGN_ITEMS:
         alignItems = value;
@@ -2359,6 +2370,12 @@ class CSSRenderStyle extends RenderStyle
         break;
       case WORD_BREAK:
         value = CSSText.resolveWordBreak(propertyValue);
+        break;
+      case GRID_TEMPLATE_COLUMNS:
+        value = CSSGridParser.parseTrackList(propertyValue, this, propertyName, Axis.horizontal);
+        break;
+      case GRID_TEMPLATE_ROWS:
+        value = CSSGridParser.parseTrackList(propertyValue, this, propertyName, Axis.vertical);
         break;
       case TEXT_TRANSFORM:
         value = CSSText.resolveTextTransform(propertyValue);

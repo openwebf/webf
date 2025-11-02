@@ -155,6 +155,9 @@ const String ALIGN_SELF = 'alignSelf';
 const String ALIGN_CONTENT = 'alignContent';
 // Shorthand: place-items -> align-items + justify-content (WebF extension maps justify to justify-content)
 const String PLACE_ITEMS = 'placeItems';
+// Grid longhands (subset for MVP)
+const String GRID_TEMPLATE_COLUMNS = 'gridTemplateColumns';
+const String GRID_TEMPLATE_ROWS = 'gridTemplateRows';
 
 const String DIRECTION = 'direction';
 const String UNICODE_BIDI = 'unicodeBidi';
@@ -256,6 +259,8 @@ const String INLINE = 'inline';
 const String BLOCK = 'block';
 const String INLINE_BLOCK = 'inline-block';
 const String INLINE_FLEX = 'inline-flex';
+const String GRID = 'grid';
+const String INLINE_GRID = 'inline-grid';
 
 // Position
 const String RELATIVE = 'relative';
