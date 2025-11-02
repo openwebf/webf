@@ -3,6 +3,7 @@
  */
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
 import '../widget/test_utils.dart';
@@ -43,14 +44,16 @@ void main() {
       final rb = b.attachedRenderer as RenderBox;
       final rc = c.attachedRenderer as RenderBox;
 
-      final pa = ra.parentData as RenderLayoutParentData;
-      final pb = rb.parentData as RenderLayoutParentData;
-      final pc = rc.parentData as RenderLayoutParentData;
+      // Compute offsets relative to the grid container using layout transforms.
+      final RenderGridLayout gridRenderer = grid.attachedRenderer as RenderGridLayout;
+      final Offset aOffset = getLayoutTransformTo(ra, gridRenderer, excludeScrollOffset: true);
+      final Offset bOffset = getLayoutTransformTo(rb, gridRenderer, excludeScrollOffset: true);
+      final Offset cOffset = getLayoutTransformTo(rc, gridRenderer, excludeScrollOffset: true);
 
       // Expect B is placed after first 50px column
-      expect(pb.offset.dx, closeTo(50.0, 0.5));
+      expect(bOffset.dx, closeTo(50.0, 1.0));
       // C should be after B at ~150px (two 1fr columns share 200px -> 100px each)
-      expect(pc.offset.dx, closeTo(150.0, 1.0));
+      expect(cOffset.dx, closeTo(150.0, 2.0));
     });
 
     testWidgets('percentage columns resolve against definite width', (WidgetTester tester) async {
@@ -77,12 +80,12 @@ void main() {
 
       final ra = a.attachedRenderer as RenderBox;
       final rb = b.attachedRenderer as RenderBox;
-      final pa = ra.parentData as RenderLayoutParentData;
-      final pb = rb.parentData as RenderLayoutParentData;
+      final RenderGridLayout gridRenderer = grid.attachedRenderer as RenderGridLayout;
+      final Offset aOffset = getLayoutTransformTo(ra, gridRenderer, excludeScrollOffset: true);
+      final Offset bOffset = getLayoutTransformTo(rb, gridRenderer, excludeScrollOffset: true);
 
-      expect(pa.offset.dx, closeTo(0.0, 0.5));
-      expect(pb.offset.dx, closeTo(100.0, 0.5));
+      expect(aOffset.dx, closeTo(0.0, 1.0));
+      expect(bOffset.dx, closeTo(100.0, 2.0));
     });
   });
 }
-

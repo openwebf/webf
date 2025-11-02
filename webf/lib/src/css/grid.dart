@@ -6,7 +6,9 @@ import 'package:flutter/rendering.dart' show Axis;
 import 'package:webf/css.dart';
 
 /// Grid track size model for CSS Grid (subset for MVP).
-abstract class GridTrackSize {}
+abstract class GridTrackSize {
+  const GridTrackSize();
+}
 
 class GridFixed extends GridTrackSize {
   final CSSLengthValue length; // may be px or percentage
@@ -19,7 +21,7 @@ class GridFraction extends GridTrackSize {
 }
 
 class GridAuto extends GridTrackSize {
-  const GridAuto();
+  const GridAuto() : super();
 }
 
 class CSSGridParser {
@@ -97,4 +99,3 @@ mixin CSSGridMixin on RenderStyle {
     if (isSelfRenderGridLayout()) markNeedsLayout();
   }
 }
-

@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/css/grid.dart';
+import 'package:webf/dom.dart';
 
 /// Temporary Grid render object scaffold.
 ///
@@ -98,8 +99,38 @@ class RenderGridLayout extends RenderLayoutBox {
     final double? innerMaxHeight = hasBH ? math.max(0.0, constraints.maxHeight - verticalPaddingBorder) : null;
 
     // Resolve tracks
-    final List<GridTrackSize> colsDef = renderStyle.gridTemplateColumns;
-    final List<GridTrackSize> rowsDef = renderStyle.gridTemplateRows;
+    // Resolve explicit track definitions from render style; if not yet materialized
+    // (e.g., very early layout), fall back to parsing inline style string once.
+    List<GridTrackSize> colsDef = renderStyle.gridTemplateColumns;
+    List<GridTrackSize> rowsDef = renderStyle.gridTemplateRows;
+    if (colsDef.isEmpty) {
+      String raw = renderStyle.target.style.getPropertyValue(GRID_TEMPLATE_COLUMNS);
+      if (raw.isEmpty) {
+        final String? styleAttr = (renderStyle.target as Element).getAttribute('style');
+        if (styleAttr != null) {
+          final RegExp re = RegExp(r'grid-template-columns\s*:\s*([^;]+)', caseSensitive: false);
+          final m = re.firstMatch(styleAttr);
+          if (m != null) raw = m.group(1)!.trim();
+        }
+      }
+      if (raw.isNotEmpty) {
+        colsDef = CSSGridParser.parseTrackList(raw, renderStyle, GRID_TEMPLATE_COLUMNS, Axis.horizontal);
+      }
+    }
+    if (rowsDef.isEmpty) {
+      String raw = renderStyle.target.style.getPropertyValue(GRID_TEMPLATE_ROWS);
+      if (raw.isEmpty) {
+        final String? styleAttr = (renderStyle.target as Element).getAttribute('style');
+        if (styleAttr != null) {
+          final RegExp re = RegExp(r'grid-template-rows\s*:\s*([^;]+)', caseSensitive: false);
+          final m = re.firstMatch(styleAttr);
+          if (m != null) raw = m.group(1)!.trim();
+        }
+      }
+      if (raw.isNotEmpty) {
+        rowsDef = CSSGridParser.parseTrackList(raw, renderStyle, GRID_TEMPLATE_ROWS, Axis.vertical);
+      }
+    }
     final int colCount = colsDef.isEmpty ? 1 : colsDef.length;
 
     final List<double> colSizes = _resolveTracks(colsDef.isEmpty ? [const GridAuto()] : colsDef, innerMaxWidth, Axis.horizontal);
@@ -189,5 +220,26 @@ class RenderGridLayout extends RenderLayoutBox {
     final double desiredWidth = usedContentWidth + horizontalPaddingBorder;
     final double desiredHeight = usedContentHeight + verticalPaddingBorder;
     size = constraints.constrain(Size(desiredWidth, desiredHeight));
+
+    // Compute and cache CSS baselines for the grid container
+    calculateBaseline();
+  }
+
+  @override
+  void calculateBaseline() {
+    // MVP baseline behavior: use the bottom border edge as baseline when inline-level.
+    // For block-level grid containers, baseline is generally not used; we still cache
+    // a reasonable value to satisfy callers.
+    final double baseline = boxSize?.height ?? size.height;
+    setCssBaselines(first: baseline, last: baseline);
+  }
+
+  @override
+  double? computeDistanceToActualBaseline(TextBaseline baseline) {
+    final double? first = computeCssFirstBaselineOf(baseline);
+    if (first != null) return first;
+    final double? last = computeCssLastBaselineOf(baseline);
+    if (last != null) return last;
+    return boxSize?.height;
   }
 }

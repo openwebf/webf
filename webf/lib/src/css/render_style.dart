@@ -2455,7 +2455,9 @@ class CSSRenderStyle extends RenderStyle
     if (effectiveDisplay == CSSDisplay.inline && !renderStyle.isSelfRenderReplaced()) {
       _contentBoxLogicalWidth = null;
       return;
-    } else if (effectiveDisplay == CSSDisplay.block || effectiveDisplay == CSSDisplay.flex) {
+    } else if (effectiveDisplay == CSSDisplay.block ||
+        effectiveDisplay == CSSDisplay.flex ||
+        effectiveDisplay == CSSDisplay.grid) {
       CSSRenderStyle? parentStyle = renderStyle.getParentRenderStyle();
       if (logicalWidth == null && renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
@@ -2552,6 +2554,7 @@ class CSSRenderStyle extends RenderStyle
       }
     } else if (effectiveDisplay == CSSDisplay.inlineBlock ||
         effectiveDisplay == CSSDisplay.inlineFlex ||
+        effectiveDisplay == CSSDisplay.inlineGrid ||
         effectiveDisplay == CSSDisplay.inline) {
       if (logicalWidth == null && renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
