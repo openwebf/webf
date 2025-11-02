@@ -111,11 +111,20 @@ class WebFAccessibility {
         break;
     }
 
-    if (_isFocusable(element)) {
+    final bool focusable = _isFocusable(element);
+    if (focusable) {
       config.isFocusable = true;
     }
 
-    config.isSemanticBoundary = false;
+    // Expose standalone static text nodes (like DIVs with text) as separate
+    // semantics nodes so they are read in traversal even when adjacent to
+    // interactive controls. This mirrors how browsers expose text nodes.
+    // Only do this for non-interactive roles with a computed name.
+    bool boundary = false;
+    if (!focusable && role == _Role.none && (config.label != null && config.label!.isNotEmpty)) {
+      boundary = true;
+    }
+    config.isSemanticBoundary = boundary;
   }
 
   /// Compute accessible name for an element.
@@ -178,6 +187,51 @@ class WebFAccessibility {
       if ((type == 'button' || type == 'submit') && v != null && v.trim().isNotEmpty) {
         return v.trim();
       }
+
+      // HTML label association (host-language labeling per accname spec):
+      // 1) <label for="id"> ... </label>
+      // 2) <label> ... <input> ... </label> (ancestor label)
+      try {
+        final String? id = element.id;
+        if (id != null && id.isNotEmpty) {
+          final labels = element.ownerDocument.querySelectorAll(['label[for="' + id + '"]']);
+          if (labels is List && labels.isNotEmpty) {
+            final dom.Element labelEl = labels.first as dom.Element;
+            final String text = _collectText(labelEl);
+            if (text.isNotEmpty) {
+              if (kDebugMode) {
+                debugPrint('[webf][a11y] name via <label for> on <input#${id}>: "$text"');
+              }
+              return text;
+            }
+          }
+        }
+        // Ancestor <label>
+        final labelAncestor = element.closest(['label']);
+        if (labelAncestor is dom.Element) {
+          final String text = _collectText(labelAncestor);
+          if (text.isNotEmpty) {
+            if (kDebugMode) {
+              debugPrint('[webf][a11y] name via ancestor <label> on <input#${element.id}>: "$text"');
+            }
+            return text;
+          }
+        }
+      } catch (_) {}
+
+      // Pragmatic fallback: use placeholder as accessible name when no other
+      // name sources are present. Many browsers/AT announce placeholder as the
+      // control's name when unlabeled.
+      final String? placeholder = element.getAttribute('placeholder');
+      if (placeholder != null && placeholder.trim().isNotEmpty) {
+        if (kDebugMode) {
+          try {
+            debugPrint('[webf][a11y] fallback name via placeholder on <input#${element.id}>: "${placeholder.trim()}"');
+          } catch (_) {}
+        }
+        return placeholder.trim();
+      }
+      // Note: the `name`/`id` attributes are not used for accessible name per spec.
     }
 
     // title as fallback
@@ -343,4 +397,3 @@ enum _Role {
   header5,
   header6,
 }
-
