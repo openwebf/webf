@@ -470,6 +470,7 @@ mixin BaseInputState on WebFWidgetElementState {
 
     InputDecoration decoration = InputDecoration(
         label: widgetElement.label != null ? Text(widgetElement.label!) : null,
+        labelText: (accessibleName != null && accessibleName.isNotEmpty) ? accessibleName : null,
         border: InputBorder.none,
         isDense: true,
         // Changed to false for better text baseline handling
