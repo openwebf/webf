@@ -16,7 +16,7 @@ mixin CSSGapMixin on RenderStyle {
       return;
     }
     _rowGap = value;
-    if (isSelfRenderFlexLayout()) {
+    if (isSelfRenderFlexLayout() || isSelfRenderGridLayout()) {
       markNeedsLayout();
     }
   }
@@ -30,7 +30,7 @@ mixin CSSGapMixin on RenderStyle {
       return;
     }
     _columnGap = value;
-    if (isSelfRenderFlexLayout()) {
+    if (isSelfRenderFlexLayout() || isSelfRenderGridLayout()) {
       markNeedsLayout();
     }
   }
@@ -44,7 +44,7 @@ mixin CSSGapMixin on RenderStyle {
       return;
     }
     _gap = value;
-    if (isSelfRenderFlexLayout()) {
+    if (isSelfRenderFlexLayout() || isSelfRenderGridLayout()) {
       markNeedsLayout();
     }
   }

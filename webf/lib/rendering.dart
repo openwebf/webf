@@ -8,6 +8,7 @@ export 'src/rendering/box_decoration_painter.dart';
 export 'src/rendering/fallback_view.dart';
 export 'src/rendering/flex.dart';
 export 'src/rendering/flow.dart';
+export 'src/rendering/grid.dart';
 export 'src/rendering/intersection_observer.dart';
 export 'src/rendering/resize_observer.dart';
 export 'src/rendering/box_model.dart';

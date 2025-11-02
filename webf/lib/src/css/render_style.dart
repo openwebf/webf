@@ -505,6 +505,11 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   @pragma('vm:prefer-inline')
+  bool isParentRenderGridLayout() {
+    return getParentRenderStyle()?.isSelfRenderGridLayout() == true;
+  }
+
+  @pragma('vm:prefer-inline')
   bool isParentRenderFlowLayout() {
     return getParentRenderStyle()?.isSelfRenderFlowLayout() == true;
   }
@@ -606,6 +611,12 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   bool isSelfRenderFlexLayout() {
     return everyAttachedRenderObjectByTypeAndMatch(
         RenderObjectGetType.self, (renderObject, _) => renderObject is RenderFlexLayout);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isSelfRenderGridLayout() {
+    return everyAttachedRenderObjectByTypeAndMatch(
+        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderGridLayout);
   }
 
   @pragma('vm:prefer-inline')
@@ -997,9 +1008,12 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
       return true;
     }
 
-    // Flex items with non-auto z-index
+    // Flex or Grid items with non-auto z-index
     final CSSRenderStyle? parent = getParentRenderStyle();
-    if (parent != null && (parent.display == CSSDisplay.flex || parent.display == CSSDisplay.inlineFlex) && zIndex != null) {
+    if (parent != null &&
+        ((parent.display == CSSDisplay.flex || parent.display == CSSDisplay.inlineFlex) ||
+            (parent.display == CSSDisplay.grid || parent.display == CSSDisplay.inlineGrid)) &&
+        zIndex != null) {
       return true;
     }
 
@@ -2951,6 +2965,12 @@ class CSSRenderStyle extends RenderStyle
           renderStyle: this,
         );
       }
+    } else if (display == CSSDisplay.grid || display == CSSDisplay.inlineGrid) {
+      // Grid containers: create the grid render layout. For MVP, RenderGridLayout
+      // inherits flow behavior and will be extended in subsequent steps.
+      nextRenderLayoutBox = RenderGridLayout(
+        renderStyle: this,
+      );
     } else if (display == CSSDisplay.block ||
         display == CSSDisplay.none ||
         display == CSSDisplay.inline ||

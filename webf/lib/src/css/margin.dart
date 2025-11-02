@@ -193,7 +193,7 @@ mixin CSSMarginMixin on RenderStyle {
     // must not collapse with the flex item itself. If our parent is a flex item
     // (i.e., its own parent is a flex container), do not collapse this element's
     // top margin with that parent.
-    if (parentRenderStyle.isParentRenderFlexLayout()) {
+    if (parentRenderStyle.isParentRenderFlexLayout() || parentRenderStyle.isParentRenderGridLayout()) {
       return marginTop;
     }
     // Positioned parent guard: margins of in-flow children do not collapse
@@ -421,7 +421,7 @@ mixin CSSMarginMixin on RenderStyle {
     // Flex item guard: when the parent is a flex item (its own parent is a
     // flex container), the child's bottom margin must not collapse with the
     // parent. Preserve the child's bottom margin contribution.
-    if (parentRenderStyle.isParentRenderFlexLayout()) {
+    if (parentRenderStyle.isParentRenderFlexLayout() || parentRenderStyle.isParentRenderGridLayout()) {
       return marginBottom;
     }
     // Positioned parent guard: do not collapse the last in-flow child's bottom

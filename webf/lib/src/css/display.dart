@@ -13,6 +13,10 @@ enum CSSDisplay {
   flex,
   inlineFlex,
 
+  // Grid containers
+  grid,
+  inlineGrid,
+
   none
 }
 
@@ -47,6 +51,10 @@ mixin CSSDisplayMixin on RenderStyle {
         return CSSDisplay.flex;
       case 'inline-flex':
         return CSSDisplay.inlineFlex;
+      case 'grid':
+        return CSSDisplay.grid;
+      case 'inline-grid':
+        return CSSDisplay.inlineGrid;
       case 'inline':
       default:
         return CSSDisplay.inline;
@@ -99,11 +107,11 @@ mixin CSSDisplayMixin on RenderStyle {
           transformedDisplay = blockifyDisplay(transformedDisplay);
         }
 
-        // 4. Grid items would be blockified here when grid is supported
-        // if (parentRenderStyle.display == CSSDisplay.grid ||
-        //     parentRenderStyle.display == CSSDisplay.inlineGrid) {
-        //   transformedDisplay = blockifyDisplay(transformedDisplay);
-        // }
+        // 4. Grid items are blockified
+        if (parentRenderStyle.display == CSSDisplay.grid ||
+            parentRenderStyle.display == CSSDisplay.inlineGrid) {
+          transformedDisplay = blockifyDisplay(transformedDisplay);
+        }
       }
     }
 
