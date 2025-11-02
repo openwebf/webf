@@ -12,6 +12,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:webf/src/foundation/logger.dart';
 
 // Local matcher for var(...) occurrences (supports simple nesting patterns).
 final RegExp _inlineVarFnRegExp = RegExp(r'var\(([^()]*\(.*?\)[^()]*)\)|var\(([^()]*)\)');
@@ -28,10 +29,14 @@ mixin CSSVariableMixin on RenderStyle {
     List<String>? dep = _propertyDependencies[identifier];
     if (dep == null) {
       _propertyDependencies[identifier] = [propertyName];
-      
+      if (DebugFlags.enableCssVarAndTransitionLogs) {
+        cssLogger.info('[var][dep] id=$identifier +$propertyName');
+      }
     } else if (!dep.contains(propertyName)) {
       dep.add(propertyName);
-      
+      if (DebugFlags.enableCssVarAndTransitionLogs) {
+        cssLogger.info('[var][dep] id=$identifier +$propertyName');
+      }
     }
   }
 
@@ -114,6 +119,9 @@ mixin CSSVariableMixin on RenderStyle {
   // value: red
   @override
   void setCSSVariable(String identifier, String value) {
+    if (DebugFlags.enableCssVarAndTransitionLogs) {
+      cssLogger.info('[var][set] id=$identifier new="$value" target=${target.tagName}');
+    }
     // Snapshot old value before mutation for transition heuristics.
     // Prefer the exact prior token text, including alias var(...) if present.
     String? prevRaw = _identifierStorage != null ? _identifierStorage![identifier] : null;
@@ -127,24 +135,39 @@ mixin CSSVariableMixin on RenderStyle {
       if (variable != null) {
         _variableStorage ??= HashMap<String, CSSVariable>();
         _variableStorage![identifier] = variable;
+        if (DebugFlags.enableCssVarAndTransitionLogs) {
+          cssLogger.info('[var][set] id=$identifier stored-as=alias prev=${prevRaw ?? 'null'}');
+        }
         
       } else {
         _identifierStorage ??= HashMap<String, String>();
         _identifierStorage![identifier] = value;
+        if (DebugFlags.enableCssVarAndTransitionLogs) {
+          cssLogger.info('[var][set] id=$identifier stored-as=raw prev=${prevRaw ?? 'null'}');
+        }
         
       }
     } else {
       _identifierStorage ??= HashMap<String, String>();
       _identifierStorage![identifier] = value;
+      if (DebugFlags.enableCssVarAndTransitionLogs) {
+        cssLogger.info('[var][set] id=$identifier stored-as=raw prev=${prevRaw ?? 'null'}');
+      }
       
     }
     if (_propertyDependencies.containsKey(identifier)) {
+      if (DebugFlags.enableCssVarAndTransitionLogs) {
+        cssLogger.info('[var][notify] id=$identifier deps=${_propertyDependencies[identifier]?.join(',') ?? '[]'}');
+      }
       
       _notifyCSSVariableChanged(identifier, value, prevRaw);
     } else {
       // No dependencies recorded yet (e.g., first parse may have used a cached color string).
       // Clear common color cache keys so next parse recomputes with the new variable value.
       _clearColorCacheForVariable(identifier);
+      if (DebugFlags.enableCssVarAndTransitionLogs) {
+        cssLogger.info('[var][notify] id=$identifier no-deps; cleared-color-cache-only');
+      }
       
     }
   }
@@ -251,6 +274,9 @@ mixin CSSVariableMixin on RenderStyle {
   }
 
   void _notifyCSSVariableChanged(String identifier, String value, [String? prevVarValue]) {
+    if (DebugFlags.enableCssVarAndTransitionLogs) {
+      cssLogger.info('[var][notify] id=$identifier target=${target.tagName} new="$value" prev=${prevVarValue ?? 'null'}');
+    }
     // Snapshot to avoid concurrent modification if dependencies mutate during iteration.
     final List<String> propertyNamesWithPattern = _propertyDependencies[identifier] != null
         ? List<String>.from(_propertyDependencies[identifier]!)
@@ -262,7 +288,12 @@ mixin CSSVariableMixin on RenderStyle {
       // re-apply the exact same CSS text to trigger recomputation with the
       // updated variable value, preserving dependency on the variable.
       final String cssText = target.style.getPropertyValue(propertyName);
-      if (target.style.contains(propertyName) && CSSVariable.isCSSVariableValue(cssText)) {
+      final bool containsProp = target.style.contains(propertyName);
+      final bool hasVarFn = CSSVariable.isCSSVariableValue(cssText);
+      if (DebugFlags.enableCssVarAndTransitionLogs) {
+        cssLogger.info('[var][notify] -> property=$propertyName contains=$containsProp hasVar=$hasVarFn cssText="$cssText"');
+      }
+      if (containsProp && hasVarFn) {
         // If transitions are configured and this property is animatable, schedule a
         // transition from the previous var-resolved value to the new one.
         bool handledByTransition = false;
@@ -313,18 +344,14 @@ mixin CSSVariableMixin on RenderStyle {
               canonicalKey = 'margin';
             }
             final bool configuredCanonical = rs.effectiveTransitions.containsKey(canonicalKey) || rs.effectiveTransitions.containsKey(ALL);
-            // Mirror shouldTransition() logic: consider both the raw longhand and
-            // its canonical shorthand key (e.g., background-position-x -> background-position)
-            // when checking for a non-zero duration configuration.
-            bool anyNonZero = false;
-            rs.effectiveTransitions.forEach((String key, List options) {
-              if (key == propertyName || key == canonicalKey || key == ALL) {
-                int? duration = CSSTime.parseTime(options[0]);
-                if (duration != null && duration != 0) anyNonZero = true;
-              }
-            });
-            
-            if ((configuredRaw || configuredCanonical) && anyNonZero) {
+            if (DebugFlags.enableCssVarAndTransitionLogs) {
+              cssLogger.info('[var][notify] property=$propertyName configuredRaw=$configuredRaw canonicalKey=$canonicalKey configuredCanonical=$configuredCanonical');
+            }
+            // Option A: If the property is configured for transition (raw or canonical),
+            // schedule the transition regardless of whether duration is currently non-zero.
+            // The queued transition drains post-frame, after transition-* properties flush,
+            // so it will see the final effectiveTransitions.
+            if (configuredRaw || configuredCanonical) {
               // Resolve begin and end to numeric strings so transform transitions
               // have stable matrices for forward and backward animations.
               final String prevText = _expandAllVars(
@@ -335,19 +362,29 @@ mixin CSSVariableMixin on RenderStyle {
                   cssText,
                   depContext: propertyName + '_' + cssText,
               );
+              if (DebugFlags.enableCssVarAndTransitionLogs) {
+                cssLogger.info('[var][transition] property=$propertyName prevText="$prevText" endText="$endText"');
+              }
               if (prevText != endText) {
-                
+                if (DebugFlags.enableCssVarAndTransitionLogs) {
+                  cssLogger.info('[var][transition] schedule property=$propertyName');
+                }
                 target.scheduleRunTransitionAnimations(propertyName, prevText, endText);
                 handledByTransition = true;
               } else {
-                
+                if (DebugFlags.enableCssVarAndTransitionLogs) {
+                  cssLogger.info('[var][transition] skip-equal property=$propertyName');
+                }
               }
             }
           } catch (_) {}
         }
         
         if (handledByTransition) {
-          return; // let the scheduled transition apply updates
+          if (DebugFlags.enableCssVarAndTransitionLogs) {
+            cssLogger.info('[var][notify] property=$propertyName handledByTransition=true; continue dependencies');
+          }
+          continue; // schedule next dependent property as well
         }
         // Clear color cache conservatively when the CSS value is a bare color.
         // For var(...) patterns, fallback cache clears below handle it.
@@ -373,6 +410,9 @@ mixin CSSVariableMixin on RenderStyle {
         }
         final String? baseHref = target.style.getPropertyBaseHref(propertyName);
         
+        if (DebugFlags.enableCssVarAndTransitionLogs) {
+          cssLogger.info('[var][notify] property=$propertyName direct-set value="$cssTextToApply" baseHref=${baseHref ?? 'null'}');
+        }
         target.setRenderStyle(propertyName, cssTextToApply, baseHref: baseHref);
         
       }

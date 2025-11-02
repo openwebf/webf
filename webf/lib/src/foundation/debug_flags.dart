@@ -142,4 +142,13 @@ class DebugFlags {
   // Enable verbose CDP protocol logs (incoming/outgoing messages and params)
   // Use with care; this can be very chatty during screencast/network activity.
   static bool enableDevToolsProtocolLogs = false;
+
+  // Verbose tracing for CSS variables and transitions decision points.
+  // When true, logs:
+  // - setCSSVariable/_notifyCSSVariableChanged flow
+  // - Element._onStyleChanged routing and pending/running checks
+  // - shouldTransition() decisions
+  // - scheduleRunTransitionAnimations() batching
+  // - runTransition() begin/end values and cancellation
+  static bool enableCssVarAndTransitionLogs = false;
 }
