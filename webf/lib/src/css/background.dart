@@ -166,9 +166,6 @@ mixin CSSBackgroundMixin on RenderStyle {
   set backgroundColor(CSSColor? value) {
     if (value == _backgroundColor) return;
     _backgroundColor = value;
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[background] set backgroundColor <- ' + (value?.cssText() ?? 'null'));
-    }
     markNeedsPaint();
     resetBoxDecoration();
   }
@@ -303,15 +300,10 @@ class CSSBackgroundImage {
         Uri uri = Uri.parse(url);
         if (url.isNotEmpty) {
           final String base = baseHref ?? controller.url;
-          if (kDebugMode && DebugFlags.enableCssLogs) {
-            cssLogger.fine('[background] resolve base: ' + base + ' value=url(' + url + ') for <' +
-                renderStyle.target.tagName.toLowerCase() + '>');
-          }
+          
           uri = controller.uriParser!.resolve(Uri.parse(base), uri);
           FlutterView ownerFlutterView = controller.ownerFlutterView!;
-          if (kDebugMode && DebugFlags.enableCssLogs) {
-            cssLogger.fine('[background] resolve image url: ' + uri.toString());
-          }
+          
           return _image = BoxFitImage(
             boxFit: renderStyle.backgroundSize.fit,
             url: uri,
@@ -323,9 +315,7 @@ class CSSBackgroundImage {
         }
       }
     }
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[background] no image/gradient found');
-    }
+    
     return null;
   }
 
@@ -728,9 +718,7 @@ class CSSBackground {
         // Track dependency on this variable for backgroundImage recomputation.
         final depKey = '${BACKGROUND_IMAGE}_$input';
         final dynamic raw = renderStyle.getCSSVariable(variable.identifier, depKey);
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[background] var resolve: ' + varString + ' -> ' + (raw?.toString() ?? 'null'));
-        }
+        
         if (raw == null || raw == INITIAL) {
           // Use fallback defined in var(--x, <fallback>) if provided.
           final fallback = variable.defaultValue;
@@ -740,9 +728,7 @@ class CSSBackground {
       });
       if (result == original) break;
     }
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[background] expand vars done: ' + input + ' -> ' + result);
-    }
+    
     return result;
   }
 
@@ -796,9 +782,7 @@ void _applyColorAndStops(
     for (int i = start; i < args.length; i++) {
       List<CSSColorStop> colorGradients =
           _parseColorAndStop(args[i].trim(), renderStyle, propertyName, (i - start) * grow, gradientLength);
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[background] parse color-stop: src=' + args[i].trim() + ' -> count=' + colorGradients.length.toString());
-      }
+      
       for (var colorStop in colorGradients) {
         if (colorStop.color != null) {
           colors.add(colorStop.color!);
@@ -813,9 +797,7 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
     [double? defaultStop, double? gradientLength]) {
   List<String> strings = [];
   List<CSSColorStop> colorGradients = [];
-  if (kDebugMode && DebugFlags.enableCssLogs) {
-    cssLogger.fine('[background] parseColorStop input=' + src);
-  }
+  
   // rgba may contain space, color should handle special
   if (src.startsWith('rgba(') || src.startsWith('rgb(') || src.startsWith('hsl(') || src.startsWith('hsla(')) {
     // Treat functional color notations as a single token, since their arguments may include spaces.
@@ -864,8 +846,6 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
       colorGradients.add(CSSColorStop(color?.value, stop));
     }
   }
-  if (kDebugMode && DebugFlags.enableCssLogs) {
-    cssLogger.fine('[background] parseColorStop result count=' + colorGradients.length.toString());
-  }
+  
   return colorGradients;
 }

@@ -411,9 +411,6 @@ class RenderFlowLayout extends RenderLayoutBox {
       CSSFontFace.ensureFontLoaded(families[0], rs.fontWeight, rs);
     }
     final bool clipText = rs.backgroundClip == CSSBackgroundBoundary.text;
-    if (kDebugMode && DebugFlags.enableCssLogs && clipText) {
-      cssLogger.fine('[text] build style with clip=text; suppress normal color fill (color=' + rs.color.value.toString() + ')');
-    }
     return ui.TextStyle(
       color: clipText ? null : rs.color.value,
       decoration: rs.textDecorationLine,

@@ -565,33 +565,15 @@ class CSSLengthValue {
             double? borderBoxHeight = renderStyle!.borderBoxHeight ?? renderStyle!.borderBoxLogicalHeight;
             double? borderBoxDimension = axisType == Axis.horizontal ? borderBoxWidth : borderBoxHeight;
 
-            if (borderBoxDimension != null) {
-              _computedValue = value! * borderBoxDimension;
-              if (kDebugMode && DebugFlags.enableTransitionValueLogs) {
-                final tag = renderStyle!.target.tagName;
-                cssLogger.fine('[translate][resolve] ' + tag +
-                    ' axis=' + (axisType == Axis.horizontal ? 'x' : 'y') +
-                    ' percent=' + (value! * 100).toStringAsFixed(3) + '% ' +
-                    'boxLogicalW=' + (renderStyle!.borderBoxLogicalWidth?.toStringAsFixed(3) ?? 'null') +
-                    ' boxW=' + (renderStyle!.borderBoxWidth?.toStringAsFixed(3) ?? 'null') +
-                    ' boxLogicalH=' + (renderStyle!.borderBoxLogicalHeight?.toStringAsFixed(3) ?? 'null') +
-                    ' boxH=' + (renderStyle!.borderBoxHeight?.toStringAsFixed(3) ?? 'null') +
-                    ' used=' + borderBoxDimension.toStringAsFixed(3) +
-                    ' result=' + _computedValue!.toStringAsFixed(3));
-              }
-            } else {
-              _computedValue = propertyName == TRANSLATE
-                  // Transform will be cached once resolved, so avoid resolve if width not defined.
-                  // Use double.infinity to indicate percentage not resolved.
-                  ? double.infinity
-                  : 0;
-              if (_computedValue == double.infinity && kDebugMode && DebugFlags.enableTransitionValueLogs) {
-                final tag = renderStyle!.target.tagName;
-                cssLogger.fine('[translate][resolve] ' + tag +
-                    ' axis=' + (axisType == Axis.horizontal ? 'x' : 'y') +
-                    ' percent=' + (value! * 100).toStringAsFixed(3) + '% ' +
-                    ' used=indefinite -> infinity (await layout)');
-              }
+              if (borderBoxDimension != null) {
+                _computedValue = value! * borderBoxDimension;
+              } else {
+                _computedValue = propertyName == TRANSLATE
+                    // Transform will be cached once resolved, so avoid resolve if width not defined.
+                    // Use double.infinity to indicate percentage not resolved.
+                    ? double.infinity
+                    : 0;
+              
             }
             break;
           case BACKGROUND_POSITION_X:

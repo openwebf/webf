@@ -623,9 +623,7 @@ class CSSMatrix {
         // Track dependency on this variable for transform recomputation.
         final dynamic raw = renderStyle.getCSSVariable(varNode.identifier, TRANSFORM);
         final dynamic val = (raw == null || raw == INITIAL) ? varNode.defaultValue : raw;
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[transform] var resolve: ' + arg + ' -> ' + (val?.toString() ?? 'null'));
-        }
+        
         if (val != null) {
           methodArgs[i] = val.toString();
         }
@@ -795,9 +793,7 @@ class CSSMatrix {
           if (methodArgs.length == 2) {
             y = _parseCssNumber(methodArgs[1], x);
           }
-          if (kDebugMode && DebugFlags.enableTransformLogs) {
-            cssLogger.fine('[transform][parse] scale(' + methodArgs.join(',') + ') -> x=' + x.toString() + ' y=' + y.toString());
-          }
+          
           return Matrix4.identity()..scale(x, y, 1);
         }
         break;
@@ -821,9 +817,7 @@ class CSSMatrix {
           double x = _parseCssNumber(methodArgs[0], 1.0);
           double y = _parseCssNumber(methodArgs[1], 1.0);
           double z = _parseCssNumber(methodArgs[2], 1.0);
-          if (kDebugMode && DebugFlags.enableTransformLogs) {
-            cssLogger.fine('[transform][parse] scale3d(' + methodArgs.join(',') + ') -> x=' + x.toString() + ' y=' + y.toString() + ' z=' + z.toString());
-          }
+          
           return Matrix4.identity()..scale(x, y, z);
         }
         break;
@@ -849,9 +843,7 @@ class CSSMatrix {
           } else {
             z = scale;
           }
-          if (kDebugMode && DebugFlags.enableTransformLogs) {
-            cssLogger.fine('[transform][parse] ' + method.name + '(' + methodArgs[0] + ') -> x=' + x.toString() + ' y=' + y.toString() + ' z=' + z.toString());
-          }
+          
           return Matrix4.identity()..scale(x, y, z);
         }
         break;

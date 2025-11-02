@@ -104,10 +104,7 @@ Future<void> _resolveCSSImports(Document document, CSSStyleSheet sheet) async {
         // Mark this stylesheet as pending so StyleNodeManager will re-index
         // even if the candidate set is unchanged. This ensures newly inlined
         // @import rules take effect.
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[style] @import flattened into sheet href=' + (sheet.href?.toString() ?? 'inline') +
-              '; marking sheet pending for update');
-        }
+        
         document.styleNodeManager.appendPendingStyleSheet(sheet);
         // Trigger a style update; flushStyle() will update active sheets first
         // and mark only impacted elements dirty.
@@ -250,18 +247,12 @@ class LinkElement extends Element {
   String? _cachedStyleSheetText;
 
   void reloadStyle() {
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[style] <link rel=stylesheet> reloadStyle href=' + (_resolvedHyperlink?.toString() ?? href));
-    }
     if (_cachedStyleSheetText == null) {
       _fetchAndApplyCSSStyle();
       return;
     }
 
     if (_styleSheet != null) {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[style] <link> replaceSync (darkMode=' + ownerView.rootController.isDarkMode.toString() + ')');
-      }
       // Ensure the stylesheet carries an absolute href for correct URL resolution
       if (_resolvedHyperlink != null) {
         _styleSheet!.href = _resolvedHyperlink.toString();
@@ -271,9 +262,6 @@ class LinkElement extends Element {
       _styleSheet!.replaceSync(_cachedStyleSheetText!,
           windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
     } else {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[style] <link> parse (darkMode=' + ownerView.rootController.isDarkMode.toString() + ')');
-      }
       final String? sheetHref = _resolvedHyperlink?.toString() ?? href;
       _styleSheet = CSSParser(_cachedStyleSheetText!, href: sheetHref)
           .parse(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
@@ -406,13 +394,9 @@ class LinkElement extends Element {
         ownerDocument.decrementRequestCount();
 
         final String cssString = _cachedStyleSheetText = await resolveStringFromData(bundle.data!);
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[style] <link> fetched href=' + href + ' len=' + cssString.length.toString());
-        }
+        
 
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[style] <link> parse (darkMode=' + ownerView.rootController.isDarkMode.toString() + ')');
-        }
+        
         final String? sheetHref = _resolvedHyperlink?.toString() ?? href;
         _styleSheet = CSSParser(cssString, href: sheetHref).parse(
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
@@ -466,9 +450,7 @@ class LinkElement extends Element {
       if (rel == REL_PRELOAD) {
         _handlePreload();
       } else if (rel == REL_STYLESHEET) {
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[style] <link> connected: fetch+apply href=' + (_resolvedHyperlink?.toString() ?? href));
-        }
+        
         _fetchAndApplyCSSStyle();
       }
     }
@@ -645,30 +627,19 @@ mixin StyleElementMixin on Element {
       final double w = windowWidth;
       final double h = windowHeight;
       final int newSignature = Object.hash(text, w, h, darkMode);
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[style] <style> recalc signature old=${_lastStyleSheetSignature} new=$newSignature '
-            'len=${text.length} viewport=${w.toStringAsFixed(2)}x${h.toStringAsFixed(2)} dark=$darkMode');
-      }
+      
       if (_styleSheet != null && _lastStyleSheetSignature == newSignature) {
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[style] <style> recalc skipped (no text/context change)');
-        }
+        
         return;
       }
 
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[style] <style> recalc begin (len=${text.length}, connected=$isConnected, tracked=${ownerDocument.styleNodeManager.styleSheetCandidateNodes.contains(this)})');
-      }
+      
       if (_styleSheet != null) {
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[style] <style> replaceSync (len=' + text.length.toString() + ', darkMode=' + (ownerView.rootController.isDarkMode?.toString() ?? 'null') + ')');
-        }
+        
         _styleSheet!.replaceSync(text,
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
       } else {
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[style] <style> parse (len=' + text.length.toString() + ', darkMode=' + (ownerView.rootController.isDarkMode?.toString() ?? 'null') + ')');
-        }
+        
         _styleSheet = CSSParser(text).parse(
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
         // Resolve @import in the parsed inline stylesheet asynchronously
@@ -685,9 +656,7 @@ mixin StyleElementMixin on Element {
           }
         }();
       }
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[style] <style> recalc applying new sheet signature=$newSignature');
-      }
+      
       _lastStyleSheetSignature = newSignature;
       if (_styleSheet != null) {
         if (DebugFlags.enableCssMultiStyleTrace) {
@@ -741,9 +710,6 @@ mixin StyleElementMixin on Element {
     super.connectedCallback();
     if (_type == _CSS_MIME) {
       if (_styleSheet == null) {
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[style] <style> connected -> recalc');
-        }
         _recalculateStyle();
       }
       ownerDocument.styleNodeManager.addStyleSheetCandidateNode(this);
@@ -755,9 +721,6 @@ mixin StyleElementMixin on Element {
     if (_styleSheet != null) {
       ownerDocument.styleNodeManager.removePendingStyleSheet(_styleSheet!);
       ownerDocument.styleNodeManager.removeStyleSheetCandidateNode(this);
-    }
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[style] <style> disconnected');
     }
     super.disconnectedCallback();
   }

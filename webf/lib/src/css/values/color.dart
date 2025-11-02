@@ -243,9 +243,6 @@ class CSSColor with Diagnosticable {
 
   static void clearCachedColorValue(String color) {
     _cachedParsedColor.remove(color.toLowerCase());
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[color] cache cleared: ' + color.toLowerCase());
-    }
   }
 
   static CSSColor? resolveColor(String color, RenderStyle renderStyle, String propertyName) {
@@ -273,16 +270,12 @@ class CSSColor with Diagnosticable {
 
       if (variable is CSSVariable) {
         String? resolved = renderStyle.getCSSVariable(variable.identifier, propertyName + '_' + fullColor)?.toString();
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[color] var resolve: ' + varString + ' -> ' + (resolved ?? 'null'));
-        }
+        
         return resolved ?? '';
       }
       return '';
     });
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[color] rgba var input: ' + fullColor + ' body: ' + input + ' -> ' + replaced);
-    }
+    
     return replaced;
   }
 
@@ -293,9 +286,6 @@ class CSSColor with Diagnosticable {
     if (color == TRANSPARENT) {
       return CSSColor.transparent;
     } else if (_cachedParsedColor.containsKey(color)) {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[color] cache hit: ' + color + ' = ' + _cachedParsedColor[color]!.toString());
-      }
       return _cachedParsedColor[color];
     }
 
@@ -343,9 +333,6 @@ class CSSColor with Diagnosticable {
         final double? rgbO = rgbMatch[5] != null ? _parseColorPart(rgbMatch[5]!, 0, 1, renderStyle) : 1;
         if (rgbR != null && rgbG != null && rgbB != null && rgbO != null) {
           parsed = Color.fromRGBO(rgbR.round(), rgbG.round(), rgbB.round(), rgbO);
-          if (kDebugMode && DebugFlags.enableCssLogs) {
-            cssLogger.fine('[color] parsed rgba: r=' + rgbR.toString() + ' g=' + rgbG.toString() + ' b=' + rgbB.toString() + ' a=' + rgbO.toString());
-          }
         }
       }
     } else if (color.startsWith(HSL)) {

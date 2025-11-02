@@ -128,10 +128,7 @@ class CSSStyleProperty {
     List<String?>? values = _getBackgroundValues(shorthandValue);
     if (values == null) return;
 
-    // Debug: log shorthand parsing input/output
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[background] shorthand input="' + shorthandValue + '" parsed=' + values.toString());
-    }
+    // Debug logging removed
 
     // Per CSS Backgrounds spec, unspecified subproperties reset to their initial values.
     // Initials: color=transparent, image=none, repeat=repeat, attachment=scroll,
@@ -158,16 +155,7 @@ class CSSStyleProperty {
     }
     properties[BACKGROUND_SIZE] = size;
 
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[background] expanded -> ' +
-          'color=' + properties[BACKGROUND_COLOR]!.toString() + ', ' +
-          'image=' + properties[BACKGROUND_IMAGE]!.toString() + ', ' +
-          'repeat=' + properties[BACKGROUND_REPEAT]!.toString() + ', ' +
-          'attachment=' + properties[BACKGROUND_ATTACHMENT]!.toString() + ', ' +
-          'position-x=' + properties[BACKGROUND_POSITION_X]!.toString() + ', ' +
-          'position-y=' + properties[BACKGROUND_POSITION_Y]!.toString() + ', ' +
-          'size=' + properties[BACKGROUND_SIZE]!.toString());
-    }
+    
   }
 
   static void removeShorthandBackground(CSSStyleDeclaration style, [bool? isImportant]) {

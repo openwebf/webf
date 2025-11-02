@@ -662,24 +662,11 @@ class WebFController with Diagnosticable {
     bool? after = isDarkMode;
 
     if (before != after) {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[color-scheme] darkModeOverride changed: before=$before after=$after');
-      }
       view.window.dispatchEvent(ColorSchemeChangeEvent(after == true ? 'dark' : 'light'));
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[style] Recalculate after darkModeOverride change');
-      }
       view.document.recalculateStyleImmediately();
     } else {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[color-scheme] darkModeOverride unchanged: before=$before after=$after');
-      }
-    }
-  }
 
-  // Toggle CSS debug logs at runtime.
-  void setCssDebugLogs(bool enabled) {
-    DebugFlags.enableCssLogs = enabled;
+    }
   }
 
   get darkModeOverride => _darkModeOverride;

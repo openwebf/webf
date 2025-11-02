@@ -95,9 +95,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   void resumeAnimationTimeline() {
-    if (kDebugMode && DebugFlags.enableAnimationLogs) {
-      cssLogger.fine('[animation][timeline] resume; draining pending=' + _pendingAnimationTimesLines.length.toString());
-    }
+    
     _pendingAnimationTimesLines.forEach((callback) {
       try {
         callback();
@@ -260,9 +258,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   void attachToFlutter(BuildContext context) {
     _registerPlatformBrightnessChange();
     // Resume animation timeline when attached back to Flutter
-    if (kDebugMode && DebugFlags.enableAnimationLogs) {
-      cssLogger.fine('[animation][timeline] attachToFlutter -> resume timeline + drain pending');
-    }
+    
     document.animationTimeline.resume();
     // Also clear the stopped guard and run any pending animation starters.
     resumeAnimationTimeline();
@@ -365,13 +361,9 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     if (_originalOnPlatformBrightnessChanged != null) {
       _originalOnPlatformBrightnessChanged!();
     }
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[color-scheme] Platform brightness changed -> ' + window.colorScheme);
-    }
+    
     window.dispatchEvent(ColorSchemeChangeEvent(window.colorScheme));
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[style] Recalculate after platform brightness change');
-    }
+    
     // Recalculate styles so prefers-color-scheme media queries re-evaluate
     document.recalculateStyleImmediately();
   }

@@ -538,33 +538,20 @@ class Document extends ContainerNode {
   final List<CSSStyleSheet> styleSheets = [];
 
   void handleStyleSheets(List<CSSStyleSheet> sheets) {
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[style] handleStyleSheets: new sheets=' +
-          sheets.length.toString() +
-          ' (old=' +
-          styleSheets.length.toString() +
-          ')');
-    }
+
     if (DebugFlags.enableCssTrace) {
       cssLogger.info('[trace][sheets] applying count=${sheets.length} previous=${styleSheets.length}');
     }
     styleSheets.clear();
     styleSheets.addAll(sheets.map((e) => e.clone()));
-    // Indexing timing (debug)
-    final bool perf = DebugFlags.enableCssPerf;
-    final Stopwatch? sw = perf ? (Stopwatch()..start()) : null;
+
     ruleSet.reset();
     int ruleCount = 0;
     for (var sheet in sheets) {
       if (DebugFlags.enableCssTrace) {
         cssLogger.info('[trace][sheets] indexing href=${sheet.href ?? 'inline'} rules=${sheet.cssRules.length}');
       }
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[style] adding rules from sheet href=' +
-            (sheet.href?.toString() ?? 'inline') +
-            ' rules=' +
-            sheet.cssRules.length.toString());
-      }
+
       ruleCount += sheet.cssRules.length;
       ruleSet.addRules(sheet.cssRules, baseHref: sheet.href);
     }
@@ -573,10 +560,7 @@ class Document extends ContainerNode {
     if (DebugFlags.enableCssTrace) {
       cssLogger.info('[trace][sheets] applied; ruleSetVersion=$ruleSetVersion ruleCount=$ruleCount');
     }
-    if (perf && sw != null) {
-      CSSPerf.recordHandleStyleSheets(
-          durationMs: sw.elapsedMilliseconds, sheetCount: sheets.length, ruleCount: ruleCount);
-    }
+
   }
 
   bool _recalculating = false;
@@ -595,74 +579,42 @@ class Document extends ContainerNode {
     if (!styleNodeManager.hasPendingStyleSheet &&
         !styleNodeManager.isStyleSheetCandidateNodeChanged &&
         _styleDirtyElements.isEmpty) {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine(
-            '[style] updateStyleIfNeeded: no pending or candidate changes (candidates=${styleNodeManager.styleSheetCandidateNodes.length})');
-      }
+
       return;
     }
     if (_recalculating) {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[style] updateStyleIfNeeded: already recalculating, skip');
-      }
+
       return;
     }
     _recalculating = true;
     if (styleSheets.isEmpty && styleNodeManager.hasPendingStyleSheet) {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine(
-            '[style] updateStyleIfNeeded: empty styleSheets with pending, flushStyle(rebuild: true) pending=${styleNodeManager.hasPendingStyleSheet} candidates=${styleNodeManager.styleSheetCandidateNodes.length}');
-      }
       flushStyle(rebuild: true);
       return;
     }
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine(
-          '[style] updateStyleIfNeeded: flushStyle() pending=${styleNodeManager.hasPendingStyleSheet} candidates=${styleNodeManager.styleSheetCandidateNodes.length}');
-    }
+
     flushStyle();
   }
 
   void flushStyle({bool rebuild = false}) {
-    if (DebugFlags.enableCssPerf) {
-      CSSPerf.beginFlushScope();
-    }
+
     // Capture whether this flush was triggered by a scheduled batch.
     final bool scheduled = _styleUpdateScheduled;
-    final bool perf = DebugFlags.enableCssPerf;
-    final Stopwatch? sw = perf ? (Stopwatch()..start()) : null;
     final int dirtyAtStart = _styleDirtyElements.length;
     // Always attempt to update active stylesheets first so changedRuleSet can
     // mark targeted elements dirty (even if we had no prior dirty set).
     int sheetsMs = 0;
-    final Stopwatch? swSheets = DebugFlags.enableCssStyleUpdateBreakdown ? (Stopwatch()..start()) : null;
     final bool sheetsUpdated = styleNodeManager.updateActiveStyleSheets(rebuild: rebuild);
-    if (swSheets != null) {
-      sheetsMs = swSheets.elapsedMilliseconds;
-      if (DebugFlags.enableCssStyleUpdateBreakdown) {
-        cssLogger.info('[breakdown][sheetsUpdate] ms=$sheetsMs');
-      }
-    }
-    if (perf && sheetsMs > 0) {
-      CSSPerf.recordSheetsUpdate(durationMs: sheetsMs);
-    }
+
     if (DebugFlags.enableCssMultiStyleTrace) {
       cssLogger.info('[trace][multi-style][flush] sheetsUpdated=$sheetsUpdated pendingNow=${styleNodeManager.pendingStyleSheetCount} '
           'candidates=${styleNodeManager.styleSheetCandidateNodes.length} dirtyAtStart=$dirtyAtStart');
     }
     // Recompute dirty count after stylesheets may have targeted elements.
     final int dirtyAfterSheets = _styleDirtyElements.length;
-    if (perf && dirtyAfterSheets > dirtyAtStart) {
-      CSSPerf.recordFlushDirtyAdded(added: dirtyAfterSheets - dirtyAtStart);
-    }
+
     if (dirtyAfterSheets == 0 && !sheetsUpdated) {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[style] flushStyle: nothing to do (no dirty, no sheet changes)');
-      }
+
       _recalculating = false;
-      if (perf && sw != null) {
-        CSSPerf.recordFlush(durationMs: sw.elapsedMilliseconds, dirtyCount: dirtyAtStart, recalcFromRoot: false);
-      }
       return;
     }
     bool recalcFromRoot = _styleDirtyElements.any((address) {
@@ -674,49 +626,26 @@ class Document extends ContainerNode {
         }) ||
         rebuild;
     if (DebugFlags.enableCssDisableRootRecalc && recalcFromRoot) {
-      if (DebugFlags.enableCssStyleUpdateBreakdown) {
-        cssLogger.info('[breakdown][flush] override recalcFromRoot=false (debug flag)');
-      }
       recalcFromRoot = false;
     }
     if (DebugFlags.enableCssTrace) {
       cssLogger.info('[trace][flush] dirty=${_styleDirtyElements.length} sheetsUpdated=$sheetsUpdated recalcFromRoot=$recalcFromRoot');
     }
-    if (DebugFlags.enableCssTrace && DebugFlags.enableCssMemoization) {
-      cssLogger.info('[trace][memo] totals hits=${CSSPerf.memoHits} misses=${CSSPerf.memoMisses} evict=${CSSPerf.memoEvictions} dirty=${_styleDirtyElements.length}');
-    }
-    if (DebugFlags.enableCssStyleUpdateBreakdown) {
-      final int newDirty = dirtyAfterSheets - dirtyAtStart;
-      cssLogger.info('[breakdown][flush] scheduled=$scheduled sheetsUpdated=$sheetsUpdated sheetsMs=$sheetsMs '
-          'dirtyAtStart=$dirtyAtStart newDirty=$newDirty recalcFromRoot=$recalcFromRoot');
-    }
+
     if (recalcFromRoot) {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[style] flushStyle: recalculating from root');
-      }
+
       documentElement?.recalculateStyle(rebuildNested: true);
     } else {
       for (int address in _styleDirtyElements) {
         Element? element = ownerView.getBindingObject(Pointer.fromAddress(address)) as Element?;
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[style] flushStyle: recalc element ' +
-              (element?.tagName ?? '') +
-              '#' +
-              (element?.hashCode.toString() ?? ''));
-        }
         element?.recalculateStyle();
       }
     }
     _styleDirtyElements.clear();
     _recalculating = false;
-    if (perf && sw != null) {
-      CSSPerf.recordFlush(durationMs: sw.elapsedMilliseconds, dirtyCount: dirtyAtStart, recalcFromRoot: recalcFromRoot);
-    }
-    if (perf) {
-      CSSPerf.recordStyleFlush(batched: scheduled);
-    }
+
   }
-  
+
   void scheduleStyleUpdate() {
     // If only element-level dirties are pending (e.g., class/id/attr mutations)
     // and there are no stylesheet loads or candidate node changes, avoid the
@@ -799,19 +728,13 @@ class Document extends ContainerNode {
 
   void recalculateStyleImmediately() {
     var styleSheetNodes = styleNodeManager.styleSheetCandidateNodes;
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[style] recalculateStyleImmediately: candidates=' + styleSheetNodes.length.toString());
-    }
+
     for (final element in styleSheetNodes) {
       if (element is StyleElementMixin) {
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[style] recalc <style> node');
-        }
+
         element.reloadStyle();
       } else if (element is LinkElement && element.isCSSStyleSheetLoaded()) {
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[style] recalc <link> node href=' + element.href);
-        }
+
         element.reloadStyle();
       }
     }

@@ -77,19 +77,7 @@ mixin CSSBoxMixin on RenderStyle {
       gradient: gradient,
     );
 
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      // Log the final decoration that will be used by box painters. When background-clip:text is set,
-      // gradients are intentionally omitted from BoxDecoration (painted later by IFC), so this log helps
-      // explain why no gradient/image is present here.
-      cssLogger.fine('[background] build decoration: '
-          'color=' + (built.color?.toString() ?? 'null') + ', '
-          'image=' + (image != null ? backgroundImage?.cssText() ?? 'none' : 'none') + ', '
-          'gradient=' + (gradient != null ? 'yes' : 'no') + ', '
-          'repeat=' + backgroundRepeat.cssText() + ', '
-          'position=' + backgroundPositionX.cssText() + ' ' + backgroundPositionY.cssText() + ', '
-          'size=' + backgroundSize.cssText() + ', '
-          'clip=' + (backgroundClip?.cssText() ?? 'border-box'));
-    }
+    
 
     return _cachedDecoration = built;
   }

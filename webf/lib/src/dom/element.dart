@@ -19,7 +19,6 @@ import 'package:webf/bridge.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/css/query_selector.dart' as query_selector;
-import 'package:webf/src/css/css_perf.dart';
 
 final RegExp classNameSplitRegExp = RegExp(r'\s+');
 const String _oneSpace = ' ';
@@ -105,7 +104,7 @@ abstract class Element extends ContainerNode
     _updateAttrPresenceIndex(_idAttr, present: id != null);
     if (DebugFlags.enableCssBatchRecalc) {
       ownerDocument.markElementStyleDirty(this, reason: 'batch:id');
-      if (DebugFlags.enableCssPerf) CSSPerf.recordRecalcDeferredMark();
+
       return;
     }
     recalculateStyle(rebuildNested: isNeedRecalculate);
@@ -194,7 +193,7 @@ abstract class Element extends ContainerNode
     _updateAttrPresenceIndex(_classNameAttr, present: true);
     if (DebugFlags.enableCssBatchRecalc) {
       ownerDocument.markElementStyleDirty(this, reason: 'batch:class');
-      if (DebugFlags.enableCssPerf) CSSPerf.recordRecalcDeferredMark();
+
       return;
     }
     recalculateStyle(rebuildNested: isNeedRecalculate);
@@ -1404,7 +1403,7 @@ abstract class Element extends ContainerNode
       final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
       if (DebugFlags.enableCssBatchRecalc) {
         ownerDocument.markElementStyleDirty(this, reason: 'batch:attr:$qualifiedName');
-        if (DebugFlags.enableCssPerf) CSSPerf.recordRecalcDeferredMark();
+
       } else {
         recalculateStyle(rebuildNested: isNeedRecalculate);
       }
@@ -1442,7 +1441,7 @@ abstract class Element extends ContainerNode
       final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
       if (DebugFlags.enableCssBatchRecalc) {
         ownerDocument.markElementStyleDirty(this, reason: 'batch:remove:$qualifiedName');
-        if (DebugFlags.enableCssPerf) CSSPerf.recordRecalcDeferredMark();
+
       } else {
         recalculateStyle(rebuildNested: isNeedRecalculate);
       }
@@ -1557,26 +1556,13 @@ abstract class Element extends ContainerNode
   }
 
   void setRenderStyle(String property, String present, {String? baseHref}) {
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      final idPart = _id != null ? '#$_id' : '';
-      final baseHrefPart = baseHref != null ? ' (baseHref=$baseHref)' : '';
-      cssLogger.fine(
-          '[style] <${tagName.toLowerCase()}$idPart> set $property <- ${present.isEmpty ? 'null' : present}$baseHrefPart');
-    }
 
-    if (property == 'transform') {
-      print(2);
-    }
 
     dynamic value = present.isEmpty
         ? null
         : renderStyle.resolveValue(property, present, baseHref: baseHref);
 
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      final idPart = _id != null ? '#$_id' : '';
-      cssLogger.fine(
-          '[style] <${tagName.toLowerCase()}$idPart> resolved $property = ${value?.toString() ?? 'null'}');
-    }
+
 
     setRenderStyleProperty(property, value);
   }
@@ -1637,13 +1623,6 @@ abstract class Element extends ContainerNode
 
   void _applyInlineStyle(CSSStyleDeclaration style) {
     if (inlineStyle.isNotEmpty) {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[inline] <' +
-            tagName +
-            '> apply ' +
-            inlineStyle.length.toString() +
-            ' props');
-      }
       inlineStyle.forEach((propertyName, value) {
         if (DebugFlags.enableCssTrace) {
           cssLogger.info('[trace][element] <$tagName> inline $propertyName=$value');
@@ -1692,8 +1671,7 @@ abstract class Element extends ContainerNode
       // LRU refresh: move to most-recent by reinserting.
       cache.remove(fingerprint);
       cache[fingerprint] = hitEntry;
-      CSSPerf.recordMemo(hit: true);
-      CSSPerf.recordMemoCacheSample(size: cache.length);
+
       if (DebugFlags.enableCssTrace) {
         cssLogger.info('[trace][memo] hit ${tagName}${id != null && id!.isNotEmpty ? '#$id' : ''}');
       }
@@ -1708,15 +1686,14 @@ abstract class Element extends ContainerNode
     if (cache.length >= _capacity) {
       final _MatchFingerprint oldest = cache.keys.first;
       cache.remove(oldest);
-      CSSPerf.recordMemoEviction();
+
     }
     cache[fingerprint] = _MatchedRulesCacheEntry(
       version: version,
       fingerprint: fingerprint,
       style: computed,
     );
-    CSSPerf.recordMemo(hit: false);
-    CSSPerf.recordMemoCacheSample(size: cache.length);
+
     if (DebugFlags.enableCssTrace) {
       cssLogger.info('[trace][memo] miss ${tagName}${id != null && id!.isNotEmpty ? '#$id' : ''}');
     }
@@ -1772,9 +1749,7 @@ abstract class Element extends ContainerNode
         final item = _pendingTransitionQueue[i];
         if (item.property == propertyName) {
           _pendingTransitionQueue[i] = (property: propertyName, prev: item.prev, curr: currentValue);
-          if (kDebugMode && DebugFlags.enableTransitionLogs) {
-            cssLogger.fine('[transition][coalesce] <' + tagName + '> property=' + propertyName + ' newNext=' + currentValue);
-          }
+
           break;
         }
       }
@@ -1782,9 +1757,7 @@ abstract class Element extends ContainerNode
     }
     _pendingTransitionProps.add(propertyName);
     _pendingTransitionQueue.add((property: propertyName, prev: prevValue, curr: currentValue));
-    if (kDebugMode && (DebugFlags.enableTransitionLogs || (DebugFlags.enableTransformLogs && propertyName == TRANSFORM))) {
-      cssLogger.fine('[transition][schedule] <' + tagName + '> property=' + propertyName + ' prev=' + (prevValue ?? 'null') + ' next=' + currentValue);
-    }
+
     if (_queuedTransitionBatch) return;
     _queuedTransitionBatch = true;
     SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -1794,10 +1767,7 @@ abstract class Element extends ContainerNode
       _pendingTransitionQueue.clear();
       _queuedTransitionBatch = false;
       for (final item in items) {
-      if (kDebugMode && (DebugFlags.enableTransitionLogs || (DebugFlags.enableTransformLogs && item.property == TRANSFORM))) {
-        cssLogger.fine('[transition][run-batch] <' + tagName + '> property=' + item.property +
-            ' prev=' + (item.prev ?? 'null') + ' next=' + item.curr);
-      }
+
       renderStyle.runTransition(item.property, item.prev, item.curr);
       _pendingTransitionProps.remove(item.property);
       }
@@ -1829,10 +1799,6 @@ abstract class Element extends ContainerNode
     }
 
     if (renderStyle.shouldTransition(propertyName, prevValue, currentValue)) {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[style][onChange] <' + tagName + '> transition-eligible property=' + propertyName +
-            ' prev=' + (prevValue ?? 'null') + ' curr=' + currentValue);
-      }
       scheduleRunTransitionAnimations(propertyName, prevValue, currentValue);
       return;
     }
@@ -1845,33 +1811,18 @@ abstract class Element extends ContainerNode
         ? (renderStyle as CSSRenderStyle).isTransitionRunning(propertyName)
         : false;
     if (pending || running) {
-      if (kDebugMode && (DebugFlags.enableTransitionLogs || (DebugFlags.enableTransformLogs && propertyName == TRANSFORM))) {
-        cssLogger.fine('[transition][intercept] <' + tagName + '> property=' + propertyName +
-            ' pending=' + pending.toString() + ' running=' + running.toString());
-      }
       return;
-    }
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[style][onChange] <' + tagName + '> apply property=' + propertyName +
-          ' value=' + currentValue + (baseHref != null ? ' baseHref=' + baseHref : ''));
     }
     setRenderStyle(propertyName, currentValue, baseHref: baseHref);
   }
 
   void _onStyleFlushed(List<String> properties) {
     if (renderStyle.shouldAnimation(properties)) {
-      if (kDebugMode && DebugFlags.enableAnimationLogs) {
-        final bool stopped = ownerDocument.ownerView.isAnimationTimelineStopped;
-        cssLogger.fine('[animation][flush] <' + tagName + '> props=' + properties.join(',') + ' timelineStopped=' + stopped.toString());
-      }
       runAnimation() {
         renderStyle.beforeRunningAnimation();
         if (renderStyle.isBoxModelHaveSize()) {
           renderStyle.runAnimation();
         } else {
-          if (kDebugMode && DebugFlags.enableAnimationLogs) {
-            cssLogger.fine('[animation][defer] <' + tagName + '> reason=no-layout-size (post-frame run)');
-          }
           SchedulerBinding.instance.addPostFrameCallback((callback) {
             renderStyle.runAnimation();
           });
@@ -1891,10 +1842,7 @@ abstract class Element extends ContainerNode
   void setInlineStyle(String property, String value) {
     // Current only for mark property is setting by inline style.
     inlineStyle[property] = value;
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      final String v = value.length > 80 ? value.substring(0, 80) + '…' : value;
-      cssLogger.fine('[inline] <' + tagName + '> set ' + property + ' = ' + v);
-    }
+
     // recalculate matching styles for element when inline styles are removed.
     if (value.isEmpty) {
       style.removeProperty(property, true);
@@ -1905,13 +1853,7 @@ abstract class Element extends ContainerNode
   }
 
   void clearInlineStyle() {
-    if (kDebugMode && DebugFlags.enableCssLogs && inlineStyle.isNotEmpty) {
-      cssLogger.fine('[inline] <' +
-          tagName +
-          '> clear ' +
-          inlineStyle.length.toString() +
-          ' props');
-    }
+
     for (var key in inlineStyle.keys) {
       style.removeProperty(key, true);
     }
@@ -1967,8 +1909,7 @@ abstract class Element extends ContainerNode
     if (forceRecalculate ||
         renderStyle.display != CSSDisplay.none ||
         shouldUpdateCSSVariables) {
-      final bool perf = DebugFlags.enableCssPerf;
-      final Stopwatch? sw = perf ? (Stopwatch()..start()) : null;
+
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
@@ -1985,9 +1926,7 @@ abstract class Element extends ContainerNode
               rebuildNested: rebuildNested, forceRecalculate: forceRecalculate);
         }
       }
-      if (perf && sw != null) {
-        CSSPerf.recordRecalc(durationMs: sw.elapsedMilliseconds);
-      }
+
     }
   }
 

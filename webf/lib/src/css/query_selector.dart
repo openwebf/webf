@@ -34,7 +34,6 @@ import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/html.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
-import 'package:webf/src/css/css_perf.dart';
 
 typedef IndexCounter = int Function(Element element);
 
@@ -140,8 +139,7 @@ class SelectorEvaluator extends SelectorVisitor {
 
       // Optional timing/logging for diagnostics.
       final bool wantDetail = DebugFlags.enableCssMatchDetail || (DebugFlags.cssMatchCompoundLogThresholdMs > 0);
-      final bool perf = DebugFlags.enableCssPerf;
-      final Stopwatch? sw = (wantDetail || perf) ? (Stopwatch()..start()) : null;
+      final Stopwatch? sw = wantDetail ? (Stopwatch()..start()) : null;
       bool ok = true;
       int failIndex = -1;
       String failType = '';
@@ -156,12 +154,10 @@ class SelectorEvaluator extends SelectorVisitor {
         }
       }
       final int elapsed = sw?.elapsedMilliseconds ?? 0;
-      if (perf && sw != null) CSSPerf.recordMatchCompound(durationMs: elapsed);
       if (wantDetail) {
         final int threshold = DebugFlags.cssMatchCompoundLogThresholdMs;
         final bool overThreshold = threshold > 0 && elapsed >= threshold;
-        final bool withinBudget = CSSPerf.consumeMatchCompoundLogBudget();
-        if ((DebugFlags.enableCssMatchDetail || overThreshold) && withinBudget) {
+        if (DebugFlags.enableCssMatchDetail || overThreshold) {
           final String elemDesc = _describeElement(element);
           final String sels = compound.map(_simpleSelectorType).join(',');
           cssLogger.info('[match][compound] elem=$elemDesc parts=${compound.length} ok=$ok ms=$elapsed'

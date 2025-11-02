@@ -41,9 +41,7 @@ mixin CSSTextMixin on RenderStyle {
   set color(CSSColor? value) {
     if (_color == value) return;
     _color = value?.value;
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[text] set color <- ' + (value?.cssText() ?? 'null'));
-    }
+    
     // Update all the children text with specified style property not set due to style inheritance.
     _markChildrenTextNeedsLayout(this, COLOR);
   }

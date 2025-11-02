@@ -272,16 +272,11 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
           CSSStyleProperty.setShorthandMargin(longhandProperties, normalizedValue);
           break;
         case BACKGROUND:
-          if (kDebugMode && DebugFlags.enableCssLogs) {
-            cssLogger.fine('[background] expand shorthand: "' + normalizedValue + '"');
-          }
           // Expand shorthand into longhands for this declaration block only.
           // Do not mutate target.inlineStyle here: stylesheet declarations must
           // never overwrite author inline styles.
           CSSStyleProperty.setShorthandBackground(longhandProperties, normalizedValue);
-          if (kDebugMode && DebugFlags.enableCssLogs) {
-            cssLogger.fine('[background] longhands: ' + longhandProperties.toString());
-          }
+          
           break;
         case BACKGROUND_POSITION:
           // Expand to X/Y longhands for computed usage, but also preserve the raw
@@ -540,9 +535,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       CSSPropertyValue currentValue = _pendingProperties[DISPLAY]!;
       _properties[DISPLAY] = currentValue;
       _pendingProperties.remove(DISPLAY);
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[display] <' + (_target.tagName) + '> ' + (prevValue?.value ?? 'null') + ' -> ' + currentValue.value);
-      }
+      
       _emitPropertyChanged(DISPLAY, prevValue?.value, currentValue.value, baseHref: currentValue.baseHref);
     }
   }
@@ -595,26 +588,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       return 0;
     });
 
-    // Group debug: background-related properties flush summary
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      final bgKeys = <String>{
-        BACKGROUND,
-        BACKGROUND_COLOR,
-        BACKGROUND_IMAGE,
-        BACKGROUND_REPEAT,
-        BACKGROUND_ATTACHMENT,
-        BACKGROUND_POSITION,
-        BACKGROUND_POSITION_X,
-        BACKGROUND_POSITION_Y,
-        BACKGROUND_SIZE,
-        BACKGROUND_CLIP,
-        BACKGROUND_ORIGIN,
-      };
-      final List<String> bgChanged = propertyNames.where((k) => bgKeys.contains(k)).toList();
-      if (bgChanged.isNotEmpty) {
-        cssLogger.fine('[background] flush begin: ' + bgChanged.join(', '));
-      }
-    }
+    
 
     for (String propertyName in propertyNames) {
       CSSPropertyValue? prevValue = prevValues[propertyName];
@@ -623,9 +597,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
 
     onStyleFlushed?.call(propertyNames);
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[style] updateStyleIfNeeded: flushed ' + propertyNames.length.toString() + ' properties');
-    }
+    
   }
 
   // Inserts the style of the given Declaration into the current Declaration.
@@ -823,9 +795,6 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
 
     if (onStyleChanged != null) {
-      if (kDebugMode && DebugFlags.enableCssLogs && (property == COLOR || property == BACKGROUND_COLOR)) {
-        cssLogger.fine('[style] emit change: ' + property + ' prev=' + (original ?? 'null') + ' curr=' + present);
-      }
       onStyleChanged!(property, original, present, baseHref: baseHref);
     }
 

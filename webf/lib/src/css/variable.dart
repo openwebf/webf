@@ -28,14 +28,10 @@ mixin CSSVariableMixin on RenderStyle {
     List<String>? dep = _propertyDependencies[identifier];
     if (dep == null) {
       _propertyDependencies[identifier] = [propertyName];
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[var] dep add: ' + identifier + ' <- ' + propertyName);
-      }
+      
     } else if (!dep.contains(propertyName)) {
       dep.add(propertyName);
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[var] dep add: ' + identifier + ' <- ' + propertyName);
-      }
+      
     }
   }
 
@@ -47,30 +43,20 @@ mixin CSSVariableMixin on RenderStyle {
       String originalIdentifier = identifier;
       identifier = variable.identifier.trim();
       _addDependency(identifier, originalIdentifier);
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[var] indirection: ' + originalIdentifier + ' -> ' + identifier);
-      }
+      
     }
     if (_identifierStorage != null && _identifierStorage![identifier] != null) {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[var] hit: ' + identifier + ' = ' + _identifierStorage![identifier]!);
-      }
+      
       return _identifierStorage![identifier];
     }
     if (variable?.defaultValue != null) {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[var] default: ' + identifier + ' = ' + variable!.defaultValue!);
-      }
+      
       return variable!.defaultValue;
     }
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[var] miss local: ' + identifier + ' (prop=' + propertyName + '), bubble to parent');
-    }
+    
     final parent = getParentRenderStyle();
     final dyn = parent?.getCSSVariable(identifier, propertyName);
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[var] parent ' + (parent == null ? 'none' : 'hit') + ': ' + identifier + ' = ' + (dyn?.toString() ?? 'null'));
-    }
+    
     return dyn;
   }
 
@@ -88,9 +74,7 @@ mixin CSSVariableMixin on RenderStyle {
       fast = storage[storage[fast.identifier]!.identifier]!;
       slow = storage[slow.identifier]!;
       if (fast == slow) {
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.warning('[var] cycle detected for: ' + identifier);
-        }
+        
         return null;
       }
     }
@@ -143,35 +127,25 @@ mixin CSSVariableMixin on RenderStyle {
       if (variable != null) {
         _variableStorage ??= HashMap<String, CSSVariable>();
         _variableStorage![identifier] = variable;
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[var] set: ' + identifier + ' = CSSVariable(' + variable.identifier + (variable.defaultValue != null ? (',' + variable.defaultValue!) : '') + ')');
-        }
+        
       } else {
         _identifierStorage ??= HashMap<String, String>();
         _identifierStorage![identifier] = value;
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[var] set: ' + identifier + ' = ' + value);
-        }
+        
       }
     } else {
       _identifierStorage ??= HashMap<String, String>();
       _identifierStorage![identifier] = value;
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[var] set: ' + identifier + ' = ' + value);
-      }
+      
     }
     if (_propertyDependencies.containsKey(identifier)) {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[var] notify deps: ' + identifier + ' -> ' + _propertyDependencies[identifier]!.join(','));
-      }
+      
       _notifyCSSVariableChanged(identifier, value, prevRaw);
     } else {
       // No dependencies recorded yet (e.g., first parse may have used a cached color string).
       // Clear common color cache keys so next parse recomputes with the new variable value.
       _clearColorCacheForVariable(identifier);
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[var] no deps tracked for: ' + identifier + ' (cleared color caches)');
-      }
+      
     }
   }
 
@@ -185,9 +159,7 @@ mixin CSSVariableMixin on RenderStyle {
     ];
     for (final key in maybeColorKeys) {
       if (CSSColor.isColor(key)) {
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[var] fallback clear color cache (set): ' + key);
-        }
+        
         CSSColor.clearCachedColorValue(key);
       }
     }
@@ -279,10 +251,6 @@ mixin CSSVariableMixin on RenderStyle {
   }
 
   void _notifyCSSVariableChanged(String identifier, String value, [String? prevVarValue]) {
-    if (kDebugMode && DebugFlags.enableTransitionLogs) {
-      cssLogger.fine('[transition][var][notify] id=' + identifier +
-          ' prevVar=' + (prevVarValue ?? 'null') + ' nextVar=' + value);
-    }
     // Snapshot to avoid concurrent modification if dependencies mutate during iteration.
     final List<String> propertyNamesWithPattern = _propertyDependencies[identifier] != null
         ? List<String>.from(_propertyDependencies[identifier]!)
@@ -295,9 +263,6 @@ mixin CSSVariableMixin on RenderStyle {
       // updated variable value, preserving dependency on the variable.
       final String cssText = target.style.getPropertyValue(propertyName);
       if (target.style.contains(propertyName) && CSSVariable.isCSSVariableValue(cssText)) {
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[var] update property due to var change: ' + propertyName + ' <- ' + cssText + ' (variable=' + identifier + ')');
-        }
         // If transitions are configured and this property is animatable, schedule a
         // transition from the previous var-resolved value to the new one.
         bool handledByTransition = false;
@@ -313,9 +278,6 @@ mixin CSSVariableMixin on RenderStyle {
           ];
           for (final key in priorColorKeys) {
             if (CSSColor.isColor(key)) {
-              if (kDebugMode && DebugFlags.enableCssLogs) {
-                cssLogger.fine('[color] cache cleared (prev): ' + key);
-              }
               CSSColor.clearCachedColorValue(key);
             }
           }
@@ -361,17 +323,7 @@ mixin CSSVariableMixin on RenderStyle {
                 if (duration != null && duration != 0) anyNonZero = true;
               }
             });
-            if (kDebugMode && DebugFlags.enableTransitionLogs) {
-              final keys = rs.effectiveTransitions.keys.join(',');
-              cssLogger.fine('[transition][var][config] property=' + propertyName +
-                  ' canonicalKey=' + canonicalKey +
-                  ' configuredRaw=' + configuredRaw.toString() +
-                  ' configuredCanonical=' + configuredCanonical.toString() +
-                  ' anyNonZero=' + anyNonZero.toString() +
-                  ' handlersRaw=' + (CSSTransitionHandlers[propertyName] != null).toString() +
-                  ' handlersCanonical=' + (CSSTransitionHandlers[canonicalKey] != null).toString() +
-                  ' effectiveKeys=[' + keys + ']');
-            }
+            
             if ((configuredRaw || configuredCanonical) && anyNonZero) {
               // Resolve begin and end to numeric strings so transform transitions
               // have stable matrices for forward and backward animations.
@@ -384,39 +336,22 @@ mixin CSSVariableMixin on RenderStyle {
                   depContext: propertyName + '_' + cssText,
               );
               if (prevText != endText) {
-                if (kDebugMode && DebugFlags.enableTransitionLogs) {
-                  final prevComputed = getProperty(propertyName);
-                  final prospective = resolveValue(propertyName, endText);
-                  cssLogger.fine('[transition][var] property=' + propertyName +
-                      ' prev=' + (prevComputed?.toString() ?? 'null') +
-                      ' next=' + (prospective?.toString() ?? 'null') +
-                      ' configured=' + (configuredRaw || configuredCanonical).toString() +
-                      ' anyNonZeroDuration=' + anyNonZero.toString() +
-                      ' prevText=' + prevText + ' endText=' + endText +
-                      ' note=schedule');
-                }
+                
                 target.scheduleRunTransitionAnimations(propertyName, prevText, endText);
                 handledByTransition = true;
               } else {
-                if (kDebugMode && DebugFlags.enableTransitionLogs) {
-                  cssLogger.fine('[transition][var] property=' + propertyName + ' note=skip-schedule-same-begin-end');
-                }
+                
               }
             }
           } catch (_) {}
         }
-        if (prevVarValue == null && kDebugMode && DebugFlags.enableTransitionLogs) {
-          cssLogger.fine('[transition][var] property=' + propertyName + ' note=skip-schedule-no-prev');
-        }
+        
         if (handledByTransition) {
           return; // let the scheduled transition apply updates
         }
         // Clear color cache conservatively when the CSS value is a bare color.
         // For var(...) patterns, fallback cache clears below handle it.
         if (CSSColor.isColor(cssText)) {
-          if (kDebugMode && DebugFlags.enableCssLogs) {
-            cssLogger.fine('[var] clear color cache: ' + cssText);
-          }
           CSSColor.clearCachedColorValue(cssText);
         }
         // Apply directly to computed style to avoid re-entrant pending queue issues.
@@ -437,17 +372,9 @@ mixin CSSVariableMixin on RenderStyle {
           );
         }
         final String? baseHref = target.style.getPropertyBaseHref(propertyName);
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[var] applying to renderStyle: ' + propertyName + ' <- ' + cssTextToApply);
-        }
+        
         target.setRenderStyle(propertyName, cssTextToApply, baseHref: baseHref);
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          final applied = getProperty(propertyName);
-          cssLogger.fine('[var] applied computed: ' + propertyName + ' = ' + (applied?.toString() ?? 'null'));
-        }
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[var] applied var-affected property via setRenderStyle: ' + propertyName);
-        }
+        
       }
     }
 
@@ -462,9 +389,6 @@ mixin CSSVariableMixin on RenderStyle {
     ];
     for (final key in maybeColorKeys) {
       if (CSSColor.isColor(key)) {
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[var] fallback clear color cache: $key');
-        }
         CSSColor.clearCachedColorValue(key);
       }
     }
@@ -473,9 +397,6 @@ mixin CSSVariableMixin on RenderStyle {
     // (which have no render objects) also receive variable updates.
     target.visitChildren((Node node) {
       if (node is Element) {
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[var] propagate to child: ' + node.tagName);
-        }
         node.renderStyle._notifyCSSVariableChanged(identifier, value, prevVarValue);
       }
     });

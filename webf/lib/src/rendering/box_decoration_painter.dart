@@ -868,17 +868,11 @@ class BoxDecorationPainter extends BoxPainter {
         if (_decoration.hasBorderRadius) clipPath = Path()..addRRect(_decoration.borderRadius!.toRRect(rect));
         break;
     }
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[background] paint image: rect=' + rect.toString());
-    }
+    
     _imagePainter!.paint(canvas, rect, clipPath, configuration);
 
     // Report FCP when background image is painted (excluding CSS gradients)
     if (_imagePainter!._image != null && !rect.isEmpty) {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[background] painted image ' +
-            'size=' + _imagePainter!._image!.image.width.toString() + 'x' + _imagePainter!._image!.image.height.toString());
-      }
       // Report FP first (if not already reported)
       renderStyle.target.ownerDocument.controller.reportFP();
       renderStyle.target.ownerDocument.controller.reportFCP();
@@ -913,9 +907,6 @@ class BoxDecorationPainter extends BoxPainter {
     // to glyphs only (handled in InlineFormattingContext). Skip painting box
     // background color/image here to avoid a solid rectangle behind the text.
     if (renderStyle.backgroundClip == CSSBackgroundBoundary.text) {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[background] skip box background (clip=text), defer to IFC gradient text');
-      }
       return;
     }
 
@@ -1038,10 +1029,7 @@ class BoxDecorationPainter extends BoxPainter {
     if (!hasLocalAttachment) {
       if (renderStyle.backgroundClip != CSSBackgroundBoundary.text) {
         Rect backgroundClipRect = _getBackgroundClipRect(offset, configuration);
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[background] paint color: rect=' + backgroundClipRect.toString() +
-              ' color=' + (_decoration.color?.toString() ?? 'null'));
-        }
+        
         _paintBackgroundColor(canvas, backgroundClipRect, textDirection);
 
         Rect backgroundOriginRect = _getBackgroundOriginRect(offset, configuration);
@@ -1478,14 +1466,7 @@ void _paintImage({
   final Offset destinationPosition = rect.topLeft.translate(dx, dy);
   final Rect destinationRect = destinationPosition & destinationSize;
 
-  if (kDebugMode && DebugFlags.enableCssLogs) {
-    cssLogger.fine('[background] layout image: ' +
-        'outputSize=' + outputSize.toString() +
-        ' destSize=' + destinationSize.toString() +
-        ' posX=' + positionX.cssText() + ' posY=' + positionY.cssText() +
-        ' dx=' + dx.toStringAsFixed(2) + ' dy=' + dy.toStringAsFixed(2) +
-        ' repeat=' + repeat.toString());
-  }
+  
 
   // Set to true if we added a saveLayer to the canvas to invert/flip the image.
   bool invertedCanvas = false;

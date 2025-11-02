@@ -58,31 +58,15 @@ class CSSVariable {
   dynamic computedValue(String propertyName) {
     dynamic value = _renderStyle.getCSSVariable(identifier, propertyName);
     if (value == null || value == INITIAL) {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[var] computed miss: ' + identifier + ' for ' + propertyName + (defaultValue != null ? ' (use default)' : ''));
-      }
       value = defaultValue;
-    } else if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[var] computed hit: ' + identifier + ' for ' + propertyName + ' = ' + value.toString());
     }
 
-    if (value == null) {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[var] computed null: ' + identifier + ' for ' + propertyName);
-      }
-      return null;
-    }
+    if (value == null) return null;
 
     if (value is CSSVariable) {
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[var] alias compute: ' + identifier + ' -> ' + value.identifier + ' for ' + propertyName);
-      }
       return value.computedValue(propertyName);
     } else if (propertyName.isNotEmpty) {
       final resolved = _renderStyle.resolveValue(propertyName, value);
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[var] typed resolve: ' + propertyName + ' <- ' + value.toString() + ' => ' + (resolved?.toString() ?? 'null'));
-      }
       return resolved;
     } else {
       return value;

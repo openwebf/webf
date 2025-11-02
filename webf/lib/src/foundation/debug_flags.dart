@@ -3,41 +3,6 @@
  */
 
 class DebugFlags {
-  // Controls verbose CSS/media/variables/style logs added for diagnostics.
-  static bool enableCssLogs = false;
-
-  // Emit per-tick progress/value logs for CSS transition animations.
-  // When enabled (debug only), logs the interpolated value of transitioning
-  // properties each frame to help diagnose animation issues.
-  static bool enableTransitionValueLogs = false;
-
-  // High-level transition decision logs. When enabled, logs when a transition
-  // is considered for a property, including reasons it is skipped or scheduled
-  // (e.g., not animatable, auto values, no layout size, property not in list).
-  static bool enableTransitionLogs = false;
-
-  /// Focused diagnostics for transform-related behavior (parsing, transition
-  /// eligibility, and per-tick interpolation). When true (in debug mode),
-  /// transform-specific code paths will emit additional logs even if the
-  /// general transition logs are disabled. Useful for investigating issues
-  /// like "transition-transform" not taking effect, percent-based translate/scale
-  /// resolution, or batching/scheduling of transform transitions.
-  static bool enableTransformLogs = false;
-
-  // High-level CSS animation decision and lifecycle logs (setup, play/pause,
-  // start/end/cancel, keyframes lookup). Use to diagnose issues like a class
-  // toggle (e.g., Tailwind animate-spin) not starting an animation.
-  static bool enableAnimationLogs = false;
-
-  // Per-tick animated value logs for CSS animations (similar to
-  // enableTransitionValueLogs but for non-transition animations). When true,
-  // logs interpolated value and progress for each property as the animation
-  // runs. Chatty; use for focused debugging sessions.
-  static bool enableAnimationValueLogs = false;
-
-  // Enables lightweight CSS performance counters and timing when true.
-  // When disabled, instrumentation code is a fast no-op.
-  static bool enableCssPerf = false;
   // Enable per-element matched rules memoization to reduce selector matching
   // cost when selector-relevant keys (tag/id/class/attr presence) are stable.
   static bool enableCssMemoization = true;
@@ -46,17 +11,6 @@ class DebugFlags {
   // Kept intentionally small to bound memory. Adjust during perf validation.
   // Values <= 0 are treated as 1 internally.
   static int cssMatchedRulesCacheCapacity = 4;
-
-  // Emit a per-flush/style-update breakdown to help diagnose hotspots when many
-  // <style> elements are appended (e.g., in <head>). When true, logs timing for
-  // style diff, invalidation, indexing, and flush along with dirty counts.
-  static bool enableCssStyleUpdateBreakdown = false;
-
-  // When true, prints more detailed invalidation info during stylesheet updates:
-  // counts by rule category (id/class/attr/tag/universal/pseudo), fallback walk
-  // visited/matched counts, and top-level tag keys involved. Use with the
-  // breakdown flag to correlate timings.
-  static bool enableCssInvalidateDetail = false;
 
   // Dangerous: disables recalc-from-root fallback during flush, forcing only
   // targeted recalculation of dirty elements. Useful to isolate whether full

@@ -95,8 +95,6 @@ class CSSParser {
   }
 
   Map<String, dynamic> parseInlineStyle() {
-    final bool perf = DebugFlags.enableCssPerf;
-    final Stopwatch? sw = perf ? (Stopwatch()..start()) : null;
     Map<String, dynamic> style = {};
     do {
       if (TokenKind.isIdentifier(_peekToken.kind)) {
@@ -133,19 +131,11 @@ class CSSParser {
         _next();
       }
     } while (_maybeEat(TokenKind.SEMICOLON));
-    if (perf && sw != null) {
-      CSSPerf.recordParseInlineStyle(durationMs: sw.elapsedMilliseconds, propertyCount: style.length);
-    }
     return style;
   }
 
   List<CSSRule> parseRules({double? windowWidth, double? windowHeight, bool? isDarkMode}) {
     var rules = <CSSRule>[];
-    final bool perf = DebugFlags.enableCssPerf;
-    final Stopwatch? sw = perf ? (Stopwatch()..start()) : null;
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[parse] begin parseRules');
-    }
     while (!_maybeEat(TokenKind.END_OF_FILE)) {
       final data = processRule();
       if (data != null) {
@@ -164,48 +154,7 @@ class CSSParser {
       }
     }
     checkEndOfFile();
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      final int styleCount = rules.where((r) => r is CSSStyleRule).length;
-      final int mediaCount = rules.where((r) => r is CSSMediaDirective).length;
-      final int keyframesCount = rules.where((r) => r is CSSKeyframesRule).length;
-      final int fontFaceCount = rules.where((r) => r is CSSFontFaceRule).length;
-      cssLogger.fine('[parse] parsed: total=' + rules.length.toString() +
-          ' style=' + styleCount.toString() +
-          ' media=' + mediaCount.toString() +
-          ' keyframes=' + keyframesCount.toString() +
-          ' font-face=' + fontFaceCount.toString());
-      if (perf && sw != null) {
-        CSSPerf.recordParseRules(
-          durationMs: sw.elapsedMilliseconds,
-          totalRules: rules.length,
-          styleRules: styleCount,
-          mediaRules: mediaCount,
-          keyframes: keyframesCount,
-          fontFace: fontFaceCount,
-        );
-      }
-    } else if (perf && sw != null) {
-      int styleCount = 0, mediaCount = 0, keyframesCount = 0, fontFaceCount = 0;
-      for (final r in rules) {
-        if (r is CSSStyleRule) {
-          styleCount++;
-        } else if (r is CSSMediaDirective) {
-          mediaCount++;
-        } else if (r is CSSKeyframesRule) {
-          keyframesCount++;
-        } else if (r is CSSFontFaceRule) {
-          fontFaceCount++;
-        }
-      }
-      CSSPerf.recordParseRules(
-        durationMs: sw.elapsedMilliseconds,
-        totalRules: rules.length,
-        styleRules: styleCount,
-        mediaRules: mediaCount,
-        keyframes: keyframesCount,
-        fontFace: fontFaceCount,
-      );
-    }
+
     return rules;
   }
 

@@ -1573,11 +1573,7 @@ class InlineFormattingContext {
     try {
       final CSSRenderStyle containerStyle = (container as RenderBoxModel).renderStyle;
       final bool _clipText = containerStyle.backgroundClip == CSSBackgroundBoundary.text;
-      if (kDebugMode && DebugFlags.enableCssLogs) {
-        cssLogger.fine('[IFC] paint container=${container.hashCode} clipText=${_clipText} '
-            'bgImg=' + (containerStyle.backgroundImage?.cssText() ?? 'none') + ' bgColor='
-            + (containerStyle.backgroundColor?.value.toString() ?? 'null'));
-      }
+      
 
 
       // Interleave line background and text painting so that later lines can
@@ -2000,11 +1996,7 @@ class InlineFormattingContext {
       if (_para != null) {
         final Gradient? _grad = _rs.backgroundImage?.gradient;
         final Color? _bgc = _rs.backgroundColor?.value;
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[IFC][bg-clip:text] container pass: gradient=' + (_grad != null ? 'yes' : 'no') +
-              ' bgColor=' + ((_bgc != null && _bgc.alpha != 0) ? _bgc.toString() : 'none') +
-              ' longest=' + _para.longestLine.toStringAsFixed(2) + ' height=' + _para.height.toStringAsFixed(2));
-        }
+        
         if (_grad != null || (_bgc != null && _bgc.alpha != 0)) {
           final double intrinsicLineWidth = _para.longestLine;
           final double layoutWidth = _para.width;
@@ -2022,9 +2014,7 @@ class InlineFormattingContext {
             final double contTop = offset.dy - padT - borT;
             final Rect contRect = Rect.fromLTWH(contLeft, contTop, container.size.width, container.size.height);
 
-            if (kDebugMode && DebugFlags.enableCssLogs) {
-              cssLogger.fine('[IFC][bg-clip:text] container layer=' + layer.toString() + ' shaderRect=' + contRect.toString());
-            }
+            
 
             // Use a layer so we can mask the background with glyph alpha using srcIn.
             context.canvas.saveLayer(layer, Paint());
@@ -2248,9 +2238,7 @@ class InlineFormattingContext {
         }
         paintedCount++;
       });
-      if (kDebugMode && DebugFlags.enableCssLogs && paintedCount > 0) {
-        cssLogger.fine('[IFC][bg-clip:text] painted inline clip-text elements: $paintedCount');
-      }
+      
     }
 
     // Paint atomic inline children using parentData.offset for consistency.

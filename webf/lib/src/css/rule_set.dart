@@ -37,21 +37,8 @@ class RuleSet {
   int _lastPosition = 0;
 
   void addRules(List<CSSRule> rules, { required String? baseHref }) {
-    final bool perf = DebugFlags.enableCssPerf;
-    final Stopwatch? sw = perf ? (Stopwatch()..start()) : null;
     for (CSSRule rule in rules) {
       addRule(rule, baseHref: baseHref);
-    }
-    if (perf && sw != null) {
-      CSSPerf.recordIndexAddRules(durationMs: sw.elapsedMilliseconds, addedRules: rules.length);
-    }
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[ruleset] indexed: id=' + idRules.length.toString() +
-          ' class=' + classRules.length.toString() +
-          ' attr=' + attributeRules.length.toString() +
-          ' tag=' + tagRules.length.toString() +
-          ' universal=' + universalRules.length.toString() +
-          ' pseudo=' + pseudoRules.length.toString());
     }
   }
 
@@ -63,9 +50,6 @@ class RuleSet {
       }
     } else if (rule is CSSKeyframesRule) {
       keyframesRules[rule.name] = rule;
-      if (kDebugMode && DebugFlags.enableAnimationLogs) {
-        cssLogger.fine('[animation][keyframes] added name=' + rule.name + ' frames=' + rule.keyframes.length.toString());
-      }
     } else if (rule is CSSFontFaceRule) {
       CSSFontFace.resolveFontFaceRules(rule, ownerDocument.contextId!, baseHref);
     } else if (rule is CSSMediaDirective) {

@@ -162,37 +162,7 @@ Matrix4 _updateTransform(TransformAnimationValue begin, TransformAnimationValue 
 
   if (beginMatrix != null && endMatrix != null) {
     Matrix4 newMatrix4 = CSSMatrix.lerpMatrix(beginMatrix, endMatrix, t);
-    // Extra debug to help diagnose percent-based translate resolution.
-    if (kDebugMode && (DebugFlags.enableTransitionValueLogs || DebugFlags.enableTransformLogs)) {
-      final double beginTx = beginMatrix.storage[12];
-      final double endTx = endMatrix.storage[12];
-      final double curTx = newMatrix4.storage[12];
-      try {
-        final List b2d = CSSMatrix.decompose2DMatrix(beginMatrix);
-        final List e2d = CSSMatrix.decompose2DMatrix(endMatrix);
-        final List<double> bScale = (b2d[1] as List<double>);
-        final List<double> eScale = (e2d[1] as List<double>);
-        cssLogger.fine('[transition][transform][begin/end scale] bsx=' + bScale[0].toStringAsFixed(3) +
-            ' bsy=' + bScale[1].toStringAsFixed(3) + ' esx=' + eScale[0].toStringAsFixed(3) + ' esy=' + eScale[1].toStringAsFixed(3));
-      } catch (_) {}
-      final double w = renderStyle.width.computedValue;
-      final double? boxW = renderStyle.borderBoxLogicalWidth ?? renderStyle.borderBoxWidth;
-      cssLogger.fine('[transition][transform][calc] tag=' +
-          renderStyle.target.tagName +
-          ' t=' + t.toStringAsFixed(3) +
-          ' width=' + w.toStringAsFixed(3) +
-          ' boxLogicalW=' + (renderStyle.borderBoxLogicalWidth?.toStringAsFixed(3) ?? 'null') +
-          ' boxW=' + (boxW?.toStringAsFixed(3) ?? 'null') +
-          ' beginTx=' + beginTx.toStringAsFixed(3) +
-          ' endTx=' + endTx.toStringAsFixed(3) +
-          ' curTx=' + curTx.toStringAsFixed(3));
-      // Also log computed scale factors to verify that scale() is applied.
-      try {
-        final List lerp2D = CSSMatrix.decompose2DMatrix(newMatrix4);
-        final List<double> scale = (lerp2D[1] as List<double>);
-        cssLogger.fine('[transition][transform][scale] sx=' + scale[0].toStringAsFixed(3) + ' sy=' + scale[1].toStringAsFixed(3));
-      } catch (_) {}
-    }
+    
     renderStyle.transformMatrix = newMatrix4;
     return newMatrix4;
   }
@@ -601,16 +571,11 @@ mixin CSSTransitionMixin on RenderStyle {
   }
 
   bool shouldTransition(String property, String? prevValue, String nextValue) {
-    if (kDebugMode && (DebugFlags.enableTransitionLogs || (DebugFlags.enableTransformLogs && property == TRANSFORM))) {
-      cssLogger.fine('[transition][check] property=' + property + ' prev=' + (prevValue ?? 'null') + ' next=' + nextValue);
-    }
+    
     // Custom properties (CSS variables) are not animatable. Their changes may
     // indirectly drive transitions on animatable properties (e.g., transform)
     // via the CSSVariableMixin path. Skip here to avoid confusing logs.
     if (CSSVariable.isCSSSVariableProperty(property)) {
-      if (kDebugMode && DebugFlags.enableTransitionLogs) {
-        cssLogger.fine('[transition][skip] property=' + property + ' reason=custom-property');
-      }
       return false;
     }
     // When begin propertyValue is AUTO, skip animation and trigger style update directly.
@@ -619,15 +584,9 @@ mixin CSSTransitionMixin on RenderStyle {
     // changes may be handled by the CSSVariableMixin path that schedules a
     // transition with an explicit prev substitution.
     if (prevValue == nextValue) {
-      if (kDebugMode && DebugFlags.enableTransitionLogs) {
-        cssLogger.fine('[transition][skip] property=' + property + ' reason=same-value');
-      }
       return false;
     }
     if (CSSLength.isAuto(prevValue) || CSSLength.isAuto(nextValue)) {
-      if (kDebugMode && DebugFlags.enableTransitionLogs) {
-        cssLogger.fine('[transition][skip] property=' + property + ' reason=auto-value');
-      }
       return false;
     }
 
@@ -637,14 +596,7 @@ mixin CSSTransitionMixin on RenderStyle {
         CSSTransitionHandlers[property] != null) {
       final String key = _canonicalTransitionKey(property);
       final bool configured = effectiveTransitions.containsKey(key) || effectiveTransitions.containsKey(ALL);
-      if (kDebugMode && (DebugFlags.enableTransitionLogs || (DebugFlags.enableTransformLogs && property == TRANSFORM))) {
-        final keys = effectiveTransitions.keys.join(',');
-        cssLogger.fine('[transition][eligible] property=' + property + ' canonicalKey=' + key + ' configured=' + configured.toString() + ' effectiveKeys=[' + keys + ']');
-      }
       if (!configured) {
-        if (kDebugMode && (DebugFlags.enableTransitionLogs || (DebugFlags.enableTransformLogs && property == TRANSFORM))) {
-          cssLogger.fine('[transition][skip] property=' + property + ' reason=not-in-transition-list');
-        }
         return false;
       }
       bool shouldTransition = false;
@@ -655,19 +607,9 @@ mixin CSSTransitionMixin on RenderStyle {
           shouldTransition = true;
         }
       });
-      if (kDebugMode && (DebugFlags.enableTransitionLogs || (DebugFlags.enableTransformLogs && property == TRANSFORM))) {
-        cssLogger.fine('[transition][' + (shouldTransition ? 'start' : 'skip') + '] property=' + property +
-            (shouldTransition ? '' : ' reason=all-zero-duration'));
-      }
       return shouldTransition;
     }
-    if (kDebugMode && (DebugFlags.enableTransitionLogs || (DebugFlags.enableTransformLogs && property == TRANSFORM))) {
-      if (!hasRenderBox() || !isBoxModelHaveSize()) {
-        cssLogger.fine('[transition][skip] property=' + property + ' reason=no-layout-size');
-      } else if (CSSTransitionHandlers[property] == null) {
-        cssLogger.fine('[transition][skip] property=' + property + ' reason=not-animatable');
-      }
-    }
+    
     return false;
   }
 
@@ -685,24 +627,6 @@ mixin CSSTransitionMixin on RenderStyle {
   }
 
   void runTransition(String propertyName, begin, end) {
-    if (kDebugMode && (DebugFlags.enableTransitionLogs || DebugFlags.enableTransformLogs)) {
-      cssLogger.fine('[transition][run] property=' + propertyName + ' begin=' + (begin?.toString() ?? 'null') + ' end=' + (end?.toString() ?? 'null'));
-      // For transform, log resolved begin/end matrices (tx,ty) to aid debugging.
-      if (propertyName == TRANSFORM) {
-        try {
-          final TransformAnimationValue b = _parseTransform(begin.toString(), this, propertyName);
-          final TransformAnimationValue e = _parseTransform(end.toString(), this, propertyName);
-          final Matrix4? bm = CSSMatrix.computeTransformMatrix(b.value, this);
-          final Matrix4? em = CSSMatrix.computeTransformMatrix(e.value, this);
-          final double btx = bm?.storage[12] ?? double.nan;
-          final double bty = bm?.storage[13] ?? double.nan;
-          final double etx = em?.storage[12] ?? double.nan;
-          final double ety = em?.storage[13] ?? double.nan;
-          cssLogger.fine('[transition][transform][begin/end] tx=' + btx.toStringAsFixed(3) + ',' + bty.toStringAsFixed(3) +
-              ' -> tx=' + etx.toStringAsFixed(3) + ',' + ety.toStringAsFixed(3));
-        } catch (_) {}
-      }
-    }
     if (_hasRunningTransition(propertyName)) {
       Animation animation = _propertyRunningTransition[propertyName]!;
       if (CSSTransitionHandlers.containsKey(propertyName) && animation.effect is KeyframeEffect) {
@@ -716,9 +640,6 @@ mixin CSSTransitionMixin on RenderStyle {
 
       animation.cancel();
       // An Event fired when a CSS transition has been cancelled.
-      if (kDebugMode && (DebugFlags.enableTransitionLogs || DebugFlags.enableTransformLogs)) {
-        cssLogger.fine('[transition][cancel] property=' + propertyName);
-      }
       target.dispatchEvent(Event(EVENT_TRANSITION_CANCEL));
     }
 
@@ -754,16 +675,12 @@ mixin CSSTransitionMixin on RenderStyle {
       _propertyRunningTransition.remove(propertyName);
       target.setRenderStyle(propertyName, end);
       // An Event fired when a CSS transition has finished playing.
-      if (kDebugMode && (DebugFlags.enableTransitionLogs || DebugFlags.enableTransformLogs)) {
-        cssLogger.fine('[transition][end] property=' + propertyName + ' end=' + (end?.toString() ?? ''));
-      }
+      
       target.dispatchEvent(Event(EVENT_TRANSITION_END));
     };
 
     target.dispatchEvent(Event(EVENT_TRANSITION_RUN));
-    if (kDebugMode && (DebugFlags.enableTransitionLogs || DebugFlags.enableTransformLogs)) {
-      cssLogger.fine('[transition][run-dispatch] property=' + propertyName);
-    }
+    
 
     animation.play();
   }
@@ -791,9 +708,6 @@ mixin CSSTransitionMixin on RenderStyle {
     List? transitionOptions = effectiveTransitions[key] ?? effectiveTransitions[ALL];
     // [duration, function, delay]
     if (transitionOptions != null) {
-      if (kDebugMode && (DebugFlags.enableTransitionLogs || (DebugFlags.enableTransformLogs && property == TRANSFORM))) {
-        cssLogger.fine('[transition][timing] property=' + property + ' canonicalKey=' + key + ' duration=' + (CSSTime.parseNotNegativeTime(transitionOptions[0])?.toString() ?? 'null') + ' easing=' + transitionOptions[1] + ' delay=' + (CSSTime.parseTime(transitionOptions[2])?.toString() ?? 'null'));
-      }
       return EffectTiming(
         duration: CSSTime.parseNotNegativeTime(transitionOptions[0])!.toDouble(),
         easing: transitionOptions[1],

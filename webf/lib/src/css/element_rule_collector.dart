@@ -17,8 +17,7 @@ class ElementRuleCollector {
   }
 
   List<CSSStyleRule> matchedPseudoRules(RuleSet ruleSet, Element element) {
-    final bool perf = DebugFlags.enableCssPerf;
-    final Stopwatch? sw = perf ? (Stopwatch()..start()) : null;
+
     final SelectorEvaluator evaluator = SelectorEvaluator();
 
     // Collect candidates from all indexed buckets because many pseudo-element
@@ -98,21 +97,13 @@ class ElementRuleCollector {
       }
     }
 
-    if (perf && sw != null) {
-      CSSPerf.recordPseudoMatch(durationMs: sw.elapsedMilliseconds, matchedCount: list.length);
-    }
-    if (kDebugMode && DebugFlags.enableCssLogs && list.isNotEmpty) {
-      final examples = list.take(2).map((r) => r.selectorGroup.selectorText).toList();
-      cssLogger.fine('[match] <' + element.tagName + '> pseudo matched=' + list.length.toString() +
-          (examples.isNotEmpty ? ' e.g. ' + examples.join(', ') : ''));
-    }
+
     return list;
   }
 
   List<CSSRule> matchedRules(RuleSet ruleSet, Element element) {
     List<CSSRule> matchedRules = [];
-    final bool perf = DebugFlags.enableCssPerf;
-    final Stopwatch? sw = perf ? (Stopwatch()..start()) : null;
+
     int candidateCount = 0;
     // Reuse a single evaluator per matchedRules() to avoid repeated allocations.
     final SelectorEvaluator evaluator = SelectorEvaluator();
@@ -188,9 +179,7 @@ class ElementRuleCollector {
       ancestorTokens: ancestorTokens,
     ));
 
-    if (perf && sw != null) {
-      CSSPerf.recordMatch(durationMs: sw.elapsedMilliseconds, candidateCount: candidateCount, matchedCount: matchedRules.length);
-    }
+
 
     return matchedRules;
   }
@@ -200,8 +189,6 @@ class ElementRuleCollector {
   // diagnose hotspots when many rules change at once.
   List<CSSRule> matchedRulesForInvalidate(RuleSet ruleSet, Element element) {
     List<CSSRule> matchedRules = [];
-    final bool perf = DebugFlags.enableCssPerf;
-    final Stopwatch? sw = perf ? (Stopwatch()..start()) : null;
     // Reuse a single evaluator per call.
     final SelectorEvaluator evaluator = SelectorEvaluator();
     final _AncestorTokenSet? ancestorTokens = DebugFlags.enableCssAncestryFastPath
@@ -224,7 +211,7 @@ class ElementRuleCollector {
         enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
         ancestorTokens: ancestorTokens,
       ));
-      if (matchedRules.isNotEmpty) gotoReturn(matchedRules, sw);
+      if (matchedRules.isNotEmpty) gotoReturn(matchedRules);
     }
 
     // universal (optional + capped or heuristic skip)
@@ -250,7 +237,7 @@ class ElementRuleCollector {
           ancestorTokens: ancestorTokens,
         ));
       }
-      if (matchedRules.isNotEmpty) gotoReturn(matchedRules, sw);
+      if (matchedRules.isNotEmpty) gotoReturn(matchedRules);
     }
 
     // Legacy pseudo rules (e.g., ::before/::after)
@@ -263,20 +250,15 @@ class ElementRuleCollector {
         ancestorTokens: null,
         includePseudo: true,
       ));
-      if (matchedRules.isNotEmpty) gotoReturn(matchedRules, sw);
+      if (matchedRules.isNotEmpty) gotoReturn(matchedRules);
     }
 
-    if (sw != null) {
-      // We do not record candidateCount breakdown here to keep overhead low.
-      CSSPerf.recordMatch(durationMs: sw.elapsedMilliseconds, candidateCount: 0, matchedCount: matchedRules.length);
-    }
+
     return matchedRules;
   }
 
-  void gotoReturn(List<CSSRule> matchedRules, Stopwatch? sw) {
-    if (sw != null) {
-      CSSPerf.recordMatch(durationMs: sw.elapsedMilliseconds, candidateCount: 0, matchedCount: matchedRules.length);
-    }
+  void gotoReturn(List<CSSRule> matchedRules) {
+
   }
 
   CSSStyleDeclaration collectionFromRuleSet(RuleSet ruleSet, Element element) {
@@ -286,14 +268,7 @@ class ElementRuleCollector {
       return declaration;
     }
 
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      final examples = rules.whereType<CSSStyleRule>()
-          .take(3)
-          .map((r) => r.selectorGroup.selectorText)
-          .toList();
-      cssLogger.fine('[match] <' + element.tagName + '> matched rules=' + rules.length.toString() +
-          (examples.isNotEmpty ? ' e.g. ' + examples.join(', ') : ''));
-    }
+
 
     // sort selector
     rules.sort((leftRule, rightRule) {

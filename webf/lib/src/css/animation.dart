@@ -570,14 +570,7 @@ class KeyframeEffect extends AnimationEffect {
     _propertySpecificKeyframeGroups = _makePropertySpecificKeyframeGroups(keyframes);
     _interpolations = _makeInterpolations(_propertySpecificKeyframeGroups, renderStyle);
 
-    if (kDebugMode && isTransition && DebugFlags.enableTransitionValueLogs) {
-      final ordered = _interpolations.map((i) => i.property).join(',');
-      cssLogger.fine('[transition][setup] propsOrder=' + ordered);
-    }
-    if (kDebugMode && !isTransition && DebugFlags.enableAnimationLogs) {
-      final ordered = _interpolations.map((i) => i.property).join(',');
-      cssLogger.fine('[animation][setup] propsOrder=' + ordered);
-    }
+    
   }
 
   Iterable<String> get properties {
@@ -630,11 +623,6 @@ class KeyframeEffect extends AnimationEffect {
             lerp: handlers[1]);
 
         interpolations.add(interpolation);
-        if (kDebugMode && DebugFlags.enableAnimationLogs) {
-          final target = renderStyle?.target;
-          final tag = (target is Element) ? target.tagName : (target?.runtimeType.toString() ?? 'detached');
-          cssLogger.fine('[animation][synth] <' + tag + '> property=' + property + ' begin=' + left + ' end=' + (right ?? '') + ' offsets=0->' + endOffset.toString());
-        }
         return; // move to next property group
       }
 
@@ -786,43 +774,7 @@ class KeyframeEffect extends AnimationEffect {
           final current = interpolation.lerp(
               interpolation.begin, interpolation.end, scaledLocalTime, property, renderStyle as CSSRenderStyle);
 
-          // Debug: Log current value per tick when enabled.
-          if (kDebugMode && isTransition && DebugFlags.enableTransitionValueLogs) {
-            String valueText;
-            final handlers = CSSTransitionHandlers[property];
-            if (handlers != null && handlers.length >= 3) {
-              final stringify = handlers[2];
-              try {
-                valueText = stringify(current).toString();
-              } catch (_) {
-                valueText = current?.toString() ?? '';
-              }
-            } else {
-              valueText = current?.toString() ?? '';
-            }
-            final target = renderStyle.target;
-            final tag = (target is Element) ? target.tagName : target.runtimeType.toString();
-            cssLogger.fine('[transition][value] ${tag}#${target.hashCode} property=$property t=' +
-                scaledLocalTime.toStringAsFixed(3) + ' value=' + valueText);
-          }
-          if (kDebugMode && !isTransition && DebugFlags.enableAnimationValueLogs) {
-            String valueText;
-            final handlers = CSSTransitionHandlers[property];
-            if (handlers != null && handlers.length >= 3) {
-              final stringify = handlers[2];
-              try {
-                valueText = stringify(current).toString();
-              } catch (_) {
-                valueText = current?.toString() ?? '';
-              }
-            } else {
-              valueText = current?.toString() ?? '';
-            }
-            final target = renderStyle.target;
-            final tag = (target is Element) ? target.tagName : target.runtimeType.toString();
-            cssLogger.fine('[animation][value] ${tag}#${target.hashCode} property=$property t=' +
-                scaledLocalTime.toStringAsFixed(3) + ' value=' + valueText);
-          }
+          // Debug logging removed
         }
       }
     }

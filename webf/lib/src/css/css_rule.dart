@@ -145,9 +145,6 @@ class CSSMediaDirective extends CSSRule {
 
   List<CSSRule>? getValidMediaRules(double? windowWidth, double? windowHeight, bool isDarkMode) {
     List<CSSRule>? _mediaRules = [];
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[media] evaluate media: type=' + (cssMediaQuery?._mediaType?.name ?? 'none') + ' exprs=' + (cssMediaQuery?.expressions.length.toString() ?? '0') + ' darkMode=' + isDarkMode.toString());
-    }
     if (rules == null) {
       return _mediaRules;
     }
@@ -211,9 +208,6 @@ class CSSMediaDirective extends CSSRule {
         if (prefersColorScheme != null) {
           bool isMediaDarkMode = prefersColorScheme == 'dark';
           bool condition = isMediaDarkMode == isDarkMode;
-          if (kDebugMode && DebugFlags.enableCssLogs) {
-            cssLogger.fine('[media] prefers-color-scheme: media=' + prefersColorScheme.toString() + ' isDarkMode=' + isDarkMode.toString() + ' -> ' + condition.toString());
-          }
           conditions.add(condition);
           ops.add(expression.op == MediaOperator.AND);
         }
@@ -228,9 +222,6 @@ class CSSMediaDirective extends CSSRule {
       } else {
         isValid = isValid || con;
       }
-    }
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[media] result: ' + isValid.toString());
     }
     if (isValid) {
       _mediaRules = rules;

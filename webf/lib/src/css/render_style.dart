@@ -1509,12 +1509,7 @@ class CSSRenderStyle extends RenderStyle
   }
 
   setProperty(String name, value) {
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[render-style] setProperty: ' +
-          name +
-          ' <- ' +
-          (value is CSSColor ? value.cssText() : value.toString()));
-    }
+    
     // Memorize the variable value to renderStyle object.
     if (CSSVariable.isCSSSVariableProperty(name)) {
       setCSSVariable(name, value.toString());
@@ -1708,9 +1703,6 @@ class CSSRenderStyle extends RenderStyle
         break;
       // Background
       case BACKGROUND_COLOR:
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[render-style] backgroundColor <- ' + (value is CSSColor ? value.cssText() : value.toString()));
-        }
         backgroundColor = value;
         break;
       case BACKGROUND_ATTACHMENT:
@@ -1817,9 +1809,6 @@ class CSSRenderStyle extends RenderStyle
         break;
       // Text
       case COLOR:
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[render-style] color <- ' + (value is CSSColor ? value.cssText() : value.toString()));
-        }
         color = value;
         break;
       case TEXT_DECORATION_LINE:
@@ -2053,9 +2042,7 @@ class CSSRenderStyle extends RenderStyle
     if (CSSWritingModeMixin._isEntireVarFunction(propertyValue)) {
       dynamic value = CSSVariable.tryParse(renderStyle, propertyValue);
       if (value != null) {
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[var] parse: ' + propertyName + ' <- ' + propertyValue);
-        }
+        
         return value;
       }
     }
@@ -3347,9 +3334,7 @@ mixin CSSWritingModeMixin on RenderStyle {
 
         final depKey = propertyName + '_' + input;
         final dynamic raw = renderStyle.getCSSVariable(variable.identifier, depKey);
-        if (kDebugMode && DebugFlags.enableCssLogs) {
-          cssLogger.fine('[var] inline resolve: ' + varString + ' -> ' + (raw?.toString() ?? 'null'));
-        }
+        
         if (raw == null || raw == INITIAL) {
           // Use fallback if provided; otherwise preserve var(...) so the
           // property fails to parse and becomes invalid/inherited.
@@ -3383,9 +3368,7 @@ mixin CSSWritingModeMixin on RenderStyle {
       });
       if (result == before) break;
     }
-    if (kDebugMode && DebugFlags.enableCssLogs) {
-      cssLogger.fine('[var] inline expand done: ' + input + ' -> ' + result);
-    }
+    
     return result;
   }
 
