@@ -6,6 +6,7 @@
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:vector_math/vector_math_64.dart';
+import 'package:webf/foundation.dart';
 
 const Offset _DEFAULT_TRANSFORM_OFFSET = Offset.zero;
 const Alignment _DEFAULT_TRANSFORM_ALIGNMENT = Alignment.center;
@@ -39,10 +40,21 @@ mixin CSSTransformMixin on RenderStyle {
   @override
   List<CSSFunctionalNotation>? get transform => _transform;
   set transform(List<CSSFunctionalNotation>? value) {
-    // Transform should converted to matrix4 value to compare cause case such as
-    // `translate3d(750rpx, 0rpx, 0rpx)` and `translate3d(100vw, 0vw, 0vw)` should considered to be equal.
-    // Note this comparison cannot be done in style listener cause prevValue cannot be get in animation case.
-    if (_transform == value) return;
+    // Even if the transform value has not changed, ensure the cached
+    // transformMatrix is cleared so any animation-driven state is dropped
+    // and the effective transform recomputes from the current value.
+    if (_transform == value) {
+      // If a transform transition is currently running, let the
+      // animation own matrix updates.
+      if (this is CSSRenderStyle && (this as CSSRenderStyle).isTransitionRunning(TRANSFORM)) {
+        return;
+      }
+      // Otherwise, clear cached matrix and repaint so the effective transform
+      // recomputes from the current value (handles var()/percent changes).
+      _transformMatrix = null;
+      markNeedsPaint();
+      return;
+    }
     _transform = value;
     _transformMatrix = null;
 
@@ -98,6 +110,9 @@ mixin CSSTransformMixin on RenderStyle {
       }
     }
     _transformMatrix = null;
+    if (DebugFlags.enableCssVarAndTransitionLogs) {
+      cssLogger.info('[transform][clear-matrix]');
+    }
   }
 
   // Transform animation drived by transformMatrix.

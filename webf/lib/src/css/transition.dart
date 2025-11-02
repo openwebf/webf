@@ -162,7 +162,7 @@ Matrix4 _updateTransform(TransformAnimationValue begin, TransformAnimationValue 
 
   if (beginMatrix != null && endMatrix != null) {
     Matrix4 newMatrix4 = CSSMatrix.lerpMatrix(beginMatrix, endMatrix, t);
-    
+
     renderStyle.transformMatrix = newMatrix4;
     return newMatrix4;
   }
@@ -574,7 +574,7 @@ mixin CSSTransitionMixin on RenderStyle {
     if (DebugFlags.enableCssVarAndTransitionLogs) {
       cssLogger.info('[transition][check] property=$property prev=${prevValue ?? 'null'} next=$nextValue');
     }
-    
+
     // Custom properties (CSS variables) are not animatable. Their changes may
     // indirectly drive transitions on animatable properties (e.g., transform)
     // via the CSSVariableMixin path. Skip here to avoid confusing logs.
@@ -624,7 +624,7 @@ mixin CSSTransitionMixin on RenderStyle {
       }
       return shouldTransition;
     }
-    
+
     return false;
   }
 
@@ -723,10 +723,35 @@ mixin CSSTransitionMixin on RenderStyle {
 
   void cancelRunningTransition() {
     if (_propertyRunningTransition.isNotEmpty) {
-      for (Animation animation in _propertyRunningTransition.values) {
-        animation.cancel();
+      final List<String> props = _propertyRunningTransition.keys.toList();
+      for (final String prop in props) {
+        final Animation? animation = _propertyRunningTransition.remove(prop);
+        if (animation != null) {
+          if (DebugFlags.enableCssVarAndTransitionLogs) {
+            cssLogger.info('[transition][cancel] property=$prop (bulk)');
+          }
+          animation.cancel();
+        }
+        // After cancel, re-apply the current computed property value to ensure
+        // any animation-driven value is cleared immediately. The property
+        // setter should clear any cached animation state when re-applying.
+        final String computed = target.style.getPropertyValue(prop);
+        target.setRenderStyle(prop, computed);
       }
-      _propertyRunningTransition.clear();
+    }
+  }
+
+  // Cancel a running transition for a specific property, if any.
+  // Dispatches a transitioncancel event to mirror runTransition()'s cancel path.
+  void cancelTransitionFor(String propertyName) {
+    final Animation? animation = _propertyRunningTransition.remove(propertyName);
+    if (animation != null) {
+      if (DebugFlags.enableCssVarAndTransitionLogs) {
+        cssLogger.info('[transition][cancel] property=$propertyName');
+      }
+      animation.cancel();
+      // Align with runTransition() which explicitly fires transitioncancel on cancel.
+      target.dispatchEvent(Event(EVENT_TRANSITION_CANCEL));
     }
   }
 
@@ -771,6 +796,8 @@ mixin CSSTransitionMixin on RenderStyle {
         value == STEP_START ||
         CSSFunction.isFunction(value);
   }
+
+  // No-op placeholder for future property-specific cancel cleanup hooks.
 }
 
 class CSSStepCurve extends Curve {
