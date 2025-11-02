@@ -71,17 +71,36 @@ src/
 
 1. Install dependencies:
    ```bash
+   # with npm
    npm install
+   # or with yarn
+   yarn install
    ```
 
-2. Start the development server:
+2. Start the development server (Vite):
    ```bash
+   # with npm
+   npm run dev
+   # or for compatibility
    npm start
+   # with yarn
+   yarn dev
    ```
 
-3. Build for production:
+3. Build for production (Vite):
    ```bash
+   # with npm
    npm run build
+   # with yarn
+   yarn build
+   ```
+
+4. Preview the production build locally:
+   ```bash
+   # with npm
+   npm run preview
+   # with yarn
+   yarn preview
    ```
 
 ## Navigation
@@ -98,6 +117,23 @@ The app uses WebF's routing system with the following routes:
 - WebF custom elements are wrapped using the `createComponent` utility
 - Event handling is converted from Vue's event system to React's synthetic events
 - **CSS Modules** are used to prevent styling conflicts between components
+- Tailwind CSS v3 powers styles going forward (Vite + PostCSS). HomePage migrated as a reference implementation.
+- Tailwind color tokens mapped to CSS variables (use `text-fg-primary`, `text-fg-secondary`, `bg-surface`, `bg-surface-secondary`, `divide-line`, etc.)
+
+## Tailwind Design Tokens
+
+- Foreground (text)
+  - `text-fg` → `var(--font-color)`
+  - `text-fg-primary` → `var(--font-color-primary)`
+  - `text-fg-secondary` → `var(--font-color-secondary)`
+- Surface (backgrounds)
+  - `bg-surface` → `var(--background-primary)`
+  - `bg-surface-secondary` → `var(--background-secondary)`
+  - `bg-surface-tertiary` → `var(--background-tertiary)`
+- Lines (borders/dividers)
+  - `border-line` / `divide-line` → `var(--border-color)`
+  - `border-line-primary` → `var(--border-primary)`
+  - `border-line-secondary` → `var(--border-secondary)`
 - All styling uses CSS custom properties for theming support
 - **Enhanced Event Handling**: Improved `createComponent` utility to properly handle WebF custom element events
 - The project maintains the same functionality as the original Vue version
@@ -125,7 +161,7 @@ import styles from './ComponentName.module.css';
 ```
 
 ### File Structure
-- `HomePage.module.css` - HomePage component styles
+- `HomePage.module.css` - removed; HomePage now uses Tailwind classes
 - `ShowCasePage.module.css` - ShowCasePage component styles
 - `ListviewPage.module.css` - ListviewPage component styles
 - `FormPage.module.css` - FormPage component styles

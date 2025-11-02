@@ -19,7 +19,10 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["@openwebf/webf-enterprise-typings"]
+    "types": [
+      "@openwebf/webf-enterprise-typings",
+      "vite/client"
+    ]
   },
   "include": [
     "src"

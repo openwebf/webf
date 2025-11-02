@@ -88,13 +88,13 @@ function App() {
         <Route path="/theme-toggle" title="Theme Toggle" element={<ThemeTogglePage />} />
         <Route path="/accessibility" title="Accessibility" element={<AccessibilityPage />} />
         <Route path="/gesture" title="Gesture Detection" element={<GesturePage />} />
-        
+
         {/* Advanced Web APIs */}
         <Route path="/resize-observer" title="ResizeObserver API" element={<ResizeObserverPage />} />
         <Route path="/mutation-observer" title="MutationObserver API" element={<MutationObserverPage />} />
         <Route path="/web-storage" title="Web Storage API" element={<WebStoragePage />} />
         <Route path="/dom-bounding-rect" title="DOM Measurements API" element={<DOMBoundingRectPage />} />
-        
+
         {/* CSS Showcase */}
         <Route path="/css-showcase" title="CSS Showcase" element={<CSSShowcasePage />} />
         <Route path="/css/bg" title="Background" element={<BGPage />} />
@@ -109,7 +109,7 @@ function App() {
         <Route path="/css/keyframes" title="Keyframes" element={<KeyframesPage />} />
         <Route path="/css/clip-path" title="Clip Path" element={<ClipPathPage />} />
         <Route path="/css/border-background-shadow" title="Border Background Shadow" element={<BorderBackgroundShadowPage />} />
-        
+
         {/* Dynamic Routes */}
         <Route path="/user/:userId" title="User Details" element={<UserDetailsPage />} />
         <Route path="/dashboard/:year/:month/reports/:reportId" title="Report Details" element={<ReportDetailsPage />} />
