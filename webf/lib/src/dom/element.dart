@@ -1564,6 +1564,10 @@ abstract class Element extends ContainerNode
           '[style] <${tagName.toLowerCase()}$idPart> set $property <- ${present.isEmpty ? 'null' : present}$baseHrefPart');
     }
 
+    if (property == 'transform') {
+      print(2);
+    }
+
     dynamic value = present.isEmpty
         ? null
         : renderStyle.resolveValue(property, present, baseHref: baseHref);

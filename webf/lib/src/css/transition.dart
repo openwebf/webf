@@ -458,6 +458,42 @@ mixin CSSTransitionMixin on RenderStyle {
       case BACKGROUND_POSITION_X:
       case BACKGROUND_POSITION_Y:
         return BACKGROUND_POSITION;
+      // Border colors → border-color shorthand
+      case BORDER_TOP_COLOR:
+      case BORDER_RIGHT_COLOR:
+      case BORDER_BOTTOM_COLOR:
+      case BORDER_LEFT_COLOR:
+        return BORDER_COLOR;
+      // Border widths → border-width shorthand
+      case BORDER_TOP_WIDTH:
+      case BORDER_RIGHT_WIDTH:
+      case BORDER_BOTTOM_WIDTH:
+      case BORDER_LEFT_WIDTH:
+        return BORDER_WIDTH;
+      // Border styles → border-style shorthand
+      case BORDER_TOP_STYLE:
+      case BORDER_RIGHT_STYLE:
+      case BORDER_BOTTOM_STYLE:
+      case BORDER_LEFT_STYLE:
+        return BORDER_STYLE;
+      // Border radii → border-radius shorthand
+      case BORDER_TOP_LEFT_RADIUS:
+      case BORDER_TOP_RIGHT_RADIUS:
+      case BORDER_BOTTOM_RIGHT_RADIUS:
+      case BORDER_BOTTOM_LEFT_RADIUS:
+        return BORDER_RADIUS;
+      // Padding longhands → padding shorthand
+      case PADDING_LEFT:
+      case PADDING_RIGHT:
+      case PADDING_TOP:
+      case PADDING_BOTTOM:
+        return 'padding';
+      // Margin longhands → margin shorthand
+      case MARGIN_LEFT:
+      case MARGIN_RIGHT:
+      case MARGIN_TOP:
+      case MARGIN_BOTTOM:
+        return 'margin';
       default:
         return property;
     }
@@ -602,7 +638,8 @@ mixin CSSTransitionMixin on RenderStyle {
       final String key = _canonicalTransitionKey(property);
       final bool configured = effectiveTransitions.containsKey(key) || effectiveTransitions.containsKey(ALL);
       if (kDebugMode && (DebugFlags.enableTransitionLogs || (DebugFlags.enableTransformLogs && property == TRANSFORM))) {
-        cssLogger.fine('[transition][eligible] property=' + property + ' configured=' + configured.toString());
+        final keys = effectiveTransitions.keys.join(',');
+        cssLogger.fine('[transition][eligible] property=' + property + ' canonicalKey=' + key + ' configured=' + configured.toString() + ' effectiveKeys=[' + keys + ']');
       }
       if (!configured) {
         if (kDebugMode && (DebugFlags.enableTransitionLogs || (DebugFlags.enableTransformLogs && property == TRANSFORM))) {
@@ -754,6 +791,9 @@ mixin CSSTransitionMixin on RenderStyle {
     List? transitionOptions = effectiveTransitions[key] ?? effectiveTransitions[ALL];
     // [duration, function, delay]
     if (transitionOptions != null) {
+      if (kDebugMode && (DebugFlags.enableTransitionLogs || (DebugFlags.enableTransformLogs && property == TRANSFORM))) {
+        cssLogger.fine('[transition][timing] property=' + property + ' canonicalKey=' + key + ' duration=' + (CSSTime.parseNotNegativeTime(transitionOptions[0])?.toString() ?? 'null') + ' easing=' + transitionOptions[1] + ' delay=' + (CSSTime.parseTime(transitionOptions[2])?.toString() ?? 'null'));
+      }
       return EffectTiming(
         duration: CSSTime.parseNotNegativeTime(transitionOptions[0])!.toDouble(),
         easing: transitionOptions[1],

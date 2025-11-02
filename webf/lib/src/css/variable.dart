@@ -274,6 +274,10 @@ mixin CSSVariableMixin on RenderStyle {
   }
 
   void _notifyCSSVariableChanged(String identifier, String value, [String? prevVarValue]) {
+    if (kDebugMode && DebugFlags.enableTransitionLogs) {
+      cssLogger.fine('[transition][var][notify] id=' + identifier +
+          ' prevVar=' + (prevVarValue ?? 'null') + ' nextVar=' + value);
+    }
     // Snapshot to avoid concurrent modification if dependencies mutate during iteration.
     final List<String> propertyNamesWithPattern = _propertyDependencies[identifier] != null
         ? List<String>.from(_propertyDependencies[identifier]!)
@@ -314,16 +318,56 @@ mixin CSSVariableMixin on RenderStyle {
         if (prevVarValue != null && this is CSSRenderStyle && CSSTransitionHandlers[propertyName] != null) {
           try {
             final CSSRenderStyle rs = this as CSSRenderStyle;
-            final bool configured = rs.effectiveTransitions.containsKey(propertyName) || rs.effectiveTransitions.containsKey(ALL);
-            // Mirror shouldTransition() logic: only schedule when some relevant transition has non-zero duration.
+            // Raw configured check (current behavior)
+            final bool configuredRaw = rs.effectiveTransitions.containsKey(propertyName) || rs.effectiveTransitions.containsKey(ALL);
+            // Canonical key check to mirror transitions behavior for shorthands
+            String canonicalKey = propertyName;
+            // Canonicalize longhands to their shorthands so transition-property: <shorthand>
+            // covers the corresponding longhand updates driven by var(...).
+            if (propertyName == BACKGROUND_POSITION_X || propertyName == BACKGROUND_POSITION_Y) {
+              canonicalKey = BACKGROUND_POSITION;
+            } else if (propertyName == BORDER_TOP_COLOR || propertyName == BORDER_RIGHT_COLOR ||
+                propertyName == BORDER_BOTTOM_COLOR || propertyName == BORDER_LEFT_COLOR) {
+              canonicalKey = BORDER_COLOR;
+            } else if (propertyName == BORDER_TOP_WIDTH || propertyName == BORDER_RIGHT_WIDTH ||
+                propertyName == BORDER_BOTTOM_WIDTH || propertyName == BORDER_LEFT_WIDTH) {
+              canonicalKey = BORDER_WIDTH;
+            } else if (propertyName == BORDER_TOP_STYLE || propertyName == BORDER_RIGHT_STYLE ||
+                propertyName == BORDER_BOTTOM_STYLE || propertyName == BORDER_LEFT_STYLE) {
+              canonicalKey = BORDER_STYLE;
+            } else if (propertyName == BORDER_TOP_LEFT_RADIUS || propertyName == BORDER_TOP_RIGHT_RADIUS ||
+                propertyName == BORDER_BOTTOM_RIGHT_RADIUS || propertyName == BORDER_BOTTOM_LEFT_RADIUS) {
+              canonicalKey = BORDER_RADIUS;
+            } else if (propertyName == PADDING_LEFT || propertyName == PADDING_RIGHT ||
+                propertyName == PADDING_TOP || propertyName == PADDING_BOTTOM) {
+              canonicalKey = 'padding';
+            } else if (propertyName == MARGIN_LEFT || propertyName == MARGIN_RIGHT ||
+                propertyName == MARGIN_TOP || propertyName == MARGIN_BOTTOM) {
+              canonicalKey = 'margin';
+            }
+            final bool configuredCanonical = rs.effectiveTransitions.containsKey(canonicalKey) || rs.effectiveTransitions.containsKey(ALL);
+            // Mirror shouldTransition() logic: consider both the raw longhand and
+            // its canonical shorthand key (e.g., background-position-x -> background-position)
+            // when checking for a non-zero duration configuration.
             bool anyNonZero = false;
             rs.effectiveTransitions.forEach((String key, List options) {
-              if (key == propertyName || key == ALL) {
+              if (key == propertyName || key == canonicalKey || key == ALL) {
                 int? duration = CSSTime.parseTime(options[0]);
                 if (duration != null && duration != 0) anyNonZero = true;
               }
             });
-            if (configured && anyNonZero) {
+            if (kDebugMode && DebugFlags.enableTransitionLogs) {
+              final keys = rs.effectiveTransitions.keys.join(',');
+              cssLogger.fine('[transition][var][config] property=' + propertyName +
+                  ' canonicalKey=' + canonicalKey +
+                  ' configuredRaw=' + configuredRaw.toString() +
+                  ' configuredCanonical=' + configuredCanonical.toString() +
+                  ' anyNonZero=' + anyNonZero.toString() +
+                  ' handlersRaw=' + (CSSTransitionHandlers[propertyName] != null).toString() +
+                  ' handlersCanonical=' + (CSSTransitionHandlers[canonicalKey] != null).toString() +
+                  ' effectiveKeys=[' + keys + ']');
+            }
+            if ((configuredRaw || configuredCanonical) && anyNonZero) {
               // Resolve begin and end to numeric strings so transform transitions
               // have stable matrices for forward and backward animations.
               final String prevText = _expandAllVars(
@@ -341,7 +385,10 @@ mixin CSSVariableMixin on RenderStyle {
                   cssLogger.fine('[transition][var] property=' + propertyName +
                       ' prev=' + (prevComputed?.toString() ?? 'null') +
                       ' next=' + (prospective?.toString() ?? 'null') +
-                      ' configured=true anyNonZeroDuration=' + anyNonZero.toString() + ' note=schedule');
+                      ' configured=' + (configuredRaw || configuredCanonical).toString() +
+                      ' anyNonZeroDuration=' + anyNonZero.toString() +
+                      ' prevText=' + prevText + ' endText=' + endText +
+                      ' note=schedule');
                 }
                 target.scheduleRunTransitionAnimations(propertyName, prevText, endText);
                 handledByTransition = true;
@@ -352,6 +399,9 @@ mixin CSSVariableMixin on RenderStyle {
               }
             }
           } catch (_) {}
+        }
+        if (prevVarValue == null && kDebugMode && DebugFlags.enableTransitionLogs) {
+          cssLogger.fine('[transition][var] property=' + propertyName + ' note=skip-schedule-no-prev');
         }
         if (handledByTransition) {
           return; // let the scheduled transition apply updates
