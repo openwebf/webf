@@ -1667,12 +1667,6 @@ class WebFController with Diagnosticable {
 
     dispatchWindowLoadEvent();
     _view!.document.readyState = DocumentReadyState.complete;
-
-    if (mode == WebFLoadingMode.preRendering) {
-      if (!controllerPreRenderingCompleter.isCompleted) {
-        controllerPreRenderingCompleter.complete();
-      }
-    }
   }
 
   // Check whether the load was complete in preload mode.

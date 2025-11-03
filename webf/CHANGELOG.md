@@ -1,3 +1,41 @@
+## 0.23.5
+
+Highlights
+
+- Robust var-driven CSS transitions and transform behavior: canonicalized shorthand handling, alias
+  var() previous-value tracking, coalesced transform transitions, and consistent same-frame
+  scheduling for multiple properties.
+- CSS animations and timeline stability: parse combined keyframe selectors, resume view animation
+  timeline on attach, and improved debugging/trace logs.
+- Feature: add Flutter intrinsic size support for custom elements.
+- Stability and correctness fixes for percent-based transitions, background layering, gradients, and
+  color-scheme driven CSS variable updates.
+- Build and release hygiene: fix CMake build and add compressed debug symbols for previous release.
+
+Features
+
+- Add intrinsic size support for custom elements
+
+Fixed
+
+- Transitions/Animations (webf/css)
+  - Reset style on cancel and clear transform cache when transition config changes; cancel running
+    transitions instead of finishing.
+  - Schedule all property transitions in the same frame (not first-only) for consistency.
+  - Canonicalize var-driven transition config and honor shorthand mappings (background-position,
+    border-*, border-radius, padding, margin).
+  - Correct percent-based transition resolution and background layering.
+  - Coalesce transform transitions and parse scale decimals correctly.
+  - Resolve var() inside transform() arguments using raw custom property value.
+  - Parse combined keyframe selectors and ensure offset-sorted segments.
+- CSS Variables
+  - Capture alias previous values for var() to enable correct var-driven transitions.
+  - Improve robustness of var() expansion and border var() handling.
+  - Correct CSS variable updates for hsl() on color-scheme changes.
+- Rendering/Painting
+  - Refresh box decoration on size changes so percentage border-radius updates with width/height
+    transitions.
+
 ## 0.23.4
 
 CSS performance overhaul, diagnostics, and reliability fixes
