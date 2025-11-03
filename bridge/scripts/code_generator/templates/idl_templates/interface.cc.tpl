@@ -10,12 +10,9 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     ExceptionState exception_state;
     ExecutingContext* context = ExecutingContext::From(ctx);
     if (!context->IsContextValid()) return false;
-    auto* wrapper_type_info = <% if (className.startsWith('Legacy')) { %>legacy::<% } %><%= className %>::GetStaticWrapperTypeInfo();
+    auto* wrapper_type_info = DOMTokenList::GetStaticWrapperTypeInfo();
     MemberMutationScope scope{context};
     JSValue prototype = context->contextData()->prototypeForType(wrapper_type_info);
-    // If the property exists on the prototype (e.g., methods like setProperty),
-    // report it as present so operations like `'prop' in obj` return true,
-    // while still allowing prototype lookup to resolve the value.
     if (JS_HasProperty(ctx, prototype, key)) return true;
     bool result = self->NamedPropertyQuery(AtomicString(ctx, key), exception_state);
     if (UNLIKELY(exception_state.HasException())) {
@@ -67,24 +64,6 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     ExecutingContext* context = ExecutingContext::From(ctx);
     if (!context->IsContextValid()) return JS_NULL;
     MemberMutationScope scope{context};
-    // First, if an own dynamic property exists, return it to allow overriding built-ins.
-    auto* wrapper_type_info = <% if (className.startsWith('Legacy')) { %>legacy::<% } %><%= className %>::GetStaticWrapperTypeInfo();
-    bool has_own = self->NamedPropertyQuery(AtomicString(ctx, key), exception_state);
-    if (UNLIKELY(exception_state.HasException())) {
-      return exception_state.ToQuickJS();
-    }
-    if (has_own) {
-      ${generateCoreTypeValue(object.indexedProp.type)} own_result = self->item(AtomicString(ctx, key), exception_state);
-      if (UNLIKELY(exception_state.HasException())) {
-        return exception_state.ToQuickJS();
-      }
-      return Converter<<%= generateIDLTypeConverter(object.indexedProp.type, object.indexedProp.optional) %>>::ToValue(ctx, own_result);
-    }
-    // Otherwise, if the property exists on the prototype, yield to prototype lookup by returning undefined.
-    JSValue prototype = context->contextData()->prototypeForType(wrapper_type_info);
-    if (JS_HasProperty(ctx, prototype, key)) {
-      return JS_UNDEFINED;
-    }
     ${generateCoreTypeValue(object.indexedProp.type)} result = self->item(AtomicString(ctx, key), exception_state);
     if (UNLIKELY(exception_state.HasException())) {
       return exception_state.ToQuickJS();
