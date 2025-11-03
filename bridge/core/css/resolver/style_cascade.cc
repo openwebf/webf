@@ -478,12 +478,14 @@ std::shared_ptr<MutableCSSPropertyValueSet> StyleCascade::BuildWinningPropertySe
       }
     }
 
-    // Set property by ID, using resolved shared_ptr when available.
-    result->SetProperty(id, to_set, important);
+    // Preserve the declared property name (logical/physical) when exporting
+    // so the UICommand receives the original logical names unchanged.
+    CSSPropertyName declared_name = prop_ref.Name();
+    result->SetProperty(declared_name, to_set, important);
 
     // Log the exported property/value for debugging.
-    WEBF_COND_LOG(CASCADE, VERBOSE) << "[Cascade] Exporting '"
-                       << CSSProperty::Get(id).GetPropertyNameString().ToUTF8String() << "' = '"
+    WEBF_LOG(VERBOSE) << "[Cascade] Exporting '"
+                       << declared_name.ToAtomicString().ToUTF8String() << "' = '"
                        << (to_set ? to_set->CssText().ToUTF8String() : std::string("<null>")) << "'"
                        << (important ? " !important" : "");
   }
