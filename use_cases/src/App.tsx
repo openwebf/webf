@@ -63,8 +63,6 @@ import {SelectorsPage} from './pages/css/SelectorsPage';
 import {ValuesUnitsPage} from './pages/css/ValuesUnitsPage';
 import { DOMEventsPage } from './pages/dom/DOMEventsPage';
 import { DOMGeometryPage } from './pages/dom/DOMGeometryPage';
-import { DOMDatasetPage } from './pages/dom/DOMDatasetPage';
-import { DOMNodesPage } from './pages/dom/DOMNodesPage';
 import { DOMOffsetsPage } from './pages/dom/DOMOffsetsPage';
 import { DOMClassListPage } from './pages/dom/DOMClassListPage';
 import { DOMInnerHTMLPage } from './pages/dom/DOMInnerHTMLPage';
@@ -92,10 +90,9 @@ function App() {
         <Route path="/css-showcase" title="CSS Showcase" element={<CSSShowcasePage />} />
         <Route path="/web-storage" title="Web Storage API" element={<WebStoragePage />} />
         <Route path="/dom-bounding-rect" title="DOM getBoundingClientRect API" element={<DOMBoundingRectPage />} />
+        <Route path="/mutation-observer" title="MutationObserver API" element={<MutationObserverPage />} />
         <Route path="/dom/events" title="DOM Events" element={<DOMEventsPage />} />
         <Route path="/dom/geometry" title="DOM Geometry" element={<DOMGeometryPage />} />
-        <Route path="/dom/dataset" title="DOM dataset" element={<DOMDatasetPage />} />
-        <Route path="/dom/nodes" title="DOM Nodes" element={<DOMNodesPage />} />
         <Route path="/dom/offsets" title="DOM Offsets" element={<DOMOffsetsPage />} />
         <Route path="/dom/classlist" title="DOMTokenList (classList)" element={<DOMClassListPage />} />
         <Route path="/dom/innerhtml" title="innerHTML vs textContent" element={<DOMInnerHTMLPage />} />

@@ -60,8 +60,8 @@ export const DOMGeometryPage: React.FC = () => {
           {support && geom && (
             <div className="bg-surface-secondary border border-line rounded-xl p-4 mb-6">
               <div className="text-lg font-medium text-fg-primary mb-3">Interactive Matrix Builder</div>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-fg-primary mb-2">Transform Controls</div>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
@@ -91,15 +91,15 @@ export const DOMGeometryPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-fg-primary mb-2">Matrix (2D components)</div>
-                  <div className="grid grid-cols-3 gap-2 text-sm font-mono">
-                    <div className="p-2 bg-white rounded border">a: {geom.matrix2d.a.toFixed(4)}</div>
-                    <div className="p-2 bg-white rounded border">b: {geom.matrix2d.b.toFixed(4)}</div>
-                    <div className="p-2 bg-white rounded border">c: {geom.matrix2d.c.toFixed(4)}</div>
-                    <div className="p-2 bg-white rounded border">d: {geom.matrix2d.d.toFixed(4)}</div>
-                    <div className="p-2 bg-white rounded border">e: {geom.matrix2d.e.toFixed(4)}</div>
-                    <div className="p-2 bg-white rounded border">f: {geom.matrix2d.f.toFixed(4)}</div>
+                  <div className="flex flex-wrap gap-2 text-sm font-mono">
+                    <div className="p-2 bg-white rounded border flex-1 min-w-[120px]">a: {geom.matrix2d.a.toFixed(4)}</div>
+                    <div className="p-2 bg-white rounded border flex-1 min-w-[120px]">b: {geom.matrix2d.b.toFixed(4)}</div>
+                    <div className="p-2 bg-white rounded border flex-1 min-w-[120px]">c: {geom.matrix2d.c.toFixed(4)}</div>
+                    <div className="p-2 bg-white rounded border flex-1 min-w-[120px]">d: {geom.matrix2d.d.toFixed(4)}</div>
+                    <div className="p-2 bg-white rounded border flex-1 min-w-[120px]">e: {geom.matrix2d.e.toFixed(4)}</div>
+                    <div className="p-2 bg-white rounded border flex-1 min-w-[120px]">f: {geom.matrix2d.f.toFixed(4)}</div>
                   </div>
                   <div className="flex gap-2 text-xs text-fg-secondary mt-2">
                     <span className="px-2 py-1 bg-white rounded border">is2D: {String(geom.is2D)}</span>
@@ -108,8 +108,8 @@ export const DOMGeometryPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mt-4 grid md:grid-cols-2 gap-4">
-                <div>
+              <div className="mt-4 flex flex-col md:flex-row gap-4">
+                <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-fg-primary mb-2">Transform a Point</div>
                   <div className="flex items-center gap-3 mb-3">
                     <label className="text-xs text-fg-secondary w-24">Point (x, y)</label>
@@ -118,7 +118,7 @@ export const DOMGeometryPage: React.FC = () => {
                   </div>
                   <pre className="font-mono text-xs bg-surface rounded border border-line p-2">{JSON.stringify({ from: geom.point, to: geom.transformed, inverseBack: geom.roundTrip }, null, 2)}</pre>
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-fg-primary mb-2">Apply to Element</div>
                   <div className="relative h-40 border border-dashed border-line rounded bg-white overflow-hidden">
                     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 border-2 border-rose-500/40 rounded pointer-events-none" />
