@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
-import styles from './WebStoragePage.module.css';
 
 interface StorageItem {
   key: string;
@@ -135,45 +134,28 @@ export const WebStoragePage: React.FC = () => {
     const usage = getStorageUsage(items);
 
     return (
-      <div className={styles.storageSection}>
-        <div className={styles.storageHeader}>
-          <div className={styles.storageTitle}>
+      <div className="mt-4">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="text-base font-medium text-fg-primary">
             {type === 'local' ? 'localStorage' : 'sessionStorage'}
           </div>
-          <div className={styles.storageUsage}>
-            {usage.count} items • {usage.sizeFormatted}
-          </div>
-          <button 
-            className={styles.clearButton}
-            onClick={() => clearStorage(type)}
-          >
-            Clear All
-          </button>
+          <div className="text-sm text-fg-secondary">{usage.count} items • {usage.sizeFormatted}</div>
+          <button className="ml-auto px-3 py-1.5 rounded border border-line hover:bg-surface-hover" onClick={() => clearStorage(type)}>Clear All</button>
         </div>
-        
-        <div className={styles.storageTable}>
+        <div className="space-y-2">
           {filteredItems.length === 0 ? (
-            <div className={styles.emptyState}>
+            <div className="text-sm text-fg-secondary border border-dashed border-line rounded p-3">
               {items.length === 0 ? 'No items stored' : 'No items match your search'}
             </div>
           ) : (
             filteredItems.map((item, index) => (
-              <div key={`${item.key}-${index}`} className={styles.storageRow}>
-                <div className={styles.storageKey}>
-                  <span className={styles.keyText}>{item.key}</span>
-                  <span className={styles.keySize}>{formatBytes(item.size)}</span>
+              <div key={`${item.key}-${index}`} className="border border-line rounded p-3 bg-surface">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-medium text-fg-primary break-all">{item.key}</span>
+                  <span className="text-xs text-fg-secondary">{formatBytes(item.size)}</span>
+                  <button className="ml-auto px-2 py-1 rounded border border-line hover:bg-surface-hover" onClick={() => removeStorageItem(item.key, type)}>Remove</button>
                 </div>
-                <div className={styles.storageValue}>
-                  <pre className={styles.valueText}>{formatValue(item.value)}</pre>
-                </div>
-                <div className={styles.storageActions}>
-                  <button
-                    className={styles.removeButton}
-                    onClick={() => removeStorageItem(item.key, type)}
-                  >
-                    Remove
-                  </button>
-                </div>
+                <pre className="text-sm bg-surface rounded border border-line p-2 overflow-auto">{formatValue(item.value)}</pre>
               </div>
             ))
           )}
@@ -183,143 +165,77 @@ export const WebStoragePage: React.FC = () => {
   };
 
   return (
-    <div id="main">
-      <WebFListView className={styles.list}>
-        <div className={styles.componentSection}>
-          <div className={styles.sectionTitle}>Web Storage API</div>
-          <div className={styles.componentBlock}>
+    <div id="main" className="min-h-screen w-full bg-surface">
+      <WebFListView className="w-full px-3 md:px-6">
+        <div className="max-w-4xl mx-auto py-6">
+          <h1 className="text-2xl font-semibold text-fg-primary mb-4">Web Storage API</h1>
+          <div className="flex flex-col gap-6">
             
             {/* Add New Item */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Add Storage Item</div>
-              <div className={styles.itemDesc}>Add key-value pairs to localStorage or sessionStorage</div>
-              <div className={styles.addForm}>
-                <div className={styles.storageTypeButtons}>
-                  <button
-                    className={`${styles.typeButton} ${storageType === 'local' ? styles.active : ''}`}
-                    onClick={() => setStorageType('local')}
-                  >
-                    localStorage
-                  </button>
-                  <button
-                    className={`${styles.typeButton} ${storageType === 'session' ? styles.active : ''}`}
-                    onClick={() => setStorageType('session')}
-                  >
-                    sessionStorage
-                  </button>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary">Add Storage Item</div>
+              <div className="text-sm text-fg-secondary mb-3">Add key-value pairs to localStorage or sessionStorage</div>
+              <div className="space-y-3">
+                <div className="flex gap-2 flex-wrap">
+                  <button className={`px-3 py-1.5 rounded border border-line ${storageType === 'local' ? 'bg-black text-white' : 'hover:bg-surface-hover'}`} onClick={() => setStorageType('local')}>localStorage</button>
+                  <button className={`px-3 py-1.5 rounded border border-line ${storageType === 'session' ? 'bg-black text-white' : 'hover:bg-surface-hover'}`} onClick={() => setStorageType('session')}>sessionStorage</button>
                 </div>
-                <div className={styles.formRow}>
-                  <input
-                    type="text"
-                    value={newKey}
-                    onChange={(e) => setNewKey(e.target.value)}
-                    placeholder="Enter key..."
-                    className={styles.textInput}
-                  />
-                  <input
-                    type="text"
-                    value={newValue}
-                    onChange={(e) => setNewValue(e.target.value)}
-                    placeholder="Enter value..."
-                    className={styles.textInput}
-                  />
+                <div className="flex gap-2 flex-wrap">
+                  <input type="text" value={newKey} onChange={(e) => setNewKey(e.target.value)} placeholder="Enter key..." className="rounded border border-line px-3 py-2 bg-surface flex-1 min-w-[200px]" />
+                  <input type="text" value={newValue} onChange={(e) => setNewValue(e.target.value)} placeholder="Enter value..." className="rounded border border-line px-3 py-2 bg-surface flex-1 min-w-[200px]" />
                 </div>
-                <div className={styles.formActions}>
-                  <button className={styles.actionButton} onClick={addStorageItem}>
-                    Add Item
-                  </button>
-                  <button className={styles.actionButton} onClick={generateSampleData}>
-                    Generate Sample Data
-                  </button>
+                <div className="flex gap-2 flex-wrap">
+                  <button className="px-3 py-2 rounded border border-line hover:bg-surface-hover" onClick={addStorageItem}>Add Item</button>
+                  <button className="px-3 py-2 rounded border border-line hover:bg-surface-hover" onClick={generateSampleData}>Generate Sample Data</button>
                 </div>
               </div>
             </div>
 
             {/* Search */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Search Storage</div>
-              <div className={styles.itemDesc}>Search through stored keys and values in both localStorage and sessionStorage</div>
-              <div className={styles.searchContainer}>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search keys and values..."
-                  className={styles.searchInput}
-                />
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary">Search Storage</div>
+              <div className="text-sm text-fg-secondary mb-3">Search through stored keys and values in both localStorage and sessionStorage</div>
+              <div>
+                <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search keys and values..." className="w-full rounded border border-line px-3 py-2 bg-surface" />
                 {searchTerm && (
-                  <div className={styles.searchResults}>
-                    <div className={styles.searchSummary}>
-                      Found {filterItems(localStorageItems).length} items in localStorage, {filterItems(sessionStorageItems).length} items in sessionStorage
-                    </div>
-                    <button 
-                      className={styles.clearSearchButton}
-                      onClick={() => setSearchTerm('')}
-                    >
-                      Clear Search
-                    </button>
+                  <div className="flex items-center justify-between text-sm text-fg-secondary mt-2">
+                    <div>Found {filterItems(localStorageItems).length} items in localStorage, {filterItems(sessionStorageItems).length} items in sessionStorage</div>
+                    <button className="px-3 py-1.5 rounded border border-line hover:bg-surface-hover" onClick={() => setSearchTerm('')}>Clear Search</button>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Storage Tables */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Storage Contents</div>
-              <div className={styles.itemDesc}>View and manage stored data</div>
-              
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary">Storage Contents</div>
+              <div className="text-sm text-fg-secondary mb-2">View and manage stored data</div>
               {renderStorageTable(localStorageItems, 'local')}
               {renderStorageTable(sessionStorageItems, 'session')}
             </div>
 
             {/* Storage Info */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Storage Information</div>
-              <div className={styles.itemDesc}>Browser storage capabilities and limits</div>
-              <div className={styles.infoGrid}>
-                <div className={styles.infoCard}>
-                  <div className={styles.infoTitle}>localStorage</div>
-                  <div className={styles.infoContent}>
-                    <div className={styles.infoStat}>
-                      Items: {localStorageItems.length}
-                    </div>
-                    <div className={styles.infoStat}>
-                      Size: {getStorageUsage(localStorageItems).sizeFormatted}
-                    </div>
-                    <div className={styles.infoDesc}>
-                      Persistent storage that survives browser restarts
-                    </div>
-                  </div>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary">Storage Information</div>
+              <div className="text-sm text-fg-secondary mb-3">Browser storage capabilities and limits</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="border border-line rounded p-3 bg-surface">
+                  <div className="font-medium mb-2">localStorage</div>
+                  <div className="text-sm">Items: {localStorageItems.length}</div>
+                  <div className="text-sm">Size: {getStorageUsage(localStorageItems).sizeFormatted}</div>
+                  <div className="text-sm text-fg-secondary mt-1">Persistent storage that survives browser restarts</div>
                 </div>
-                
-                <div className={styles.infoCard}>
-                  <div className={styles.infoTitle}>sessionStorage</div>
-                  <div className={styles.infoContent}>
-                    <div className={styles.infoStat}>
-                      Items: {sessionStorageItems.length}
-                    </div>
-                    <div className={styles.infoStat}>
-                      Size: {getStorageUsage(sessionStorageItems).sizeFormatted}
-                    </div>
-                    <div className={styles.infoDesc}>
-                      Temporary storage that clears when tab closes
-                    </div>
-                  </div>
+                <div className="border border-line rounded p-3 bg-surface">
+                  <div className="font-medium mb-2">sessionStorage</div>
+                  <div className="text-sm">Items: {sessionStorageItems.length}</div>
+                  <div className="text-sm">Size: {getStorageUsage(sessionStorageItems).sizeFormatted}</div>
+                  <div className="text-sm text-fg-secondary mt-1">Temporary storage that clears when tab closes</div>
                 </div>
-                
-                <div className={styles.infoCard}>
-                  <div className={styles.infoTitle}>Typical Limits</div>
-                  <div className={styles.infoContent}>
-                    <div className={styles.infoStat}>
-                      localStorage: ~5-10MB
-                    </div>
-                    <div className={styles.infoStat}>
-                      sessionStorage: ~5-10MB
-                    </div>
-                    <div className={styles.infoDesc}>
-                      Varies by browser and available disk space
-                    </div>
-                  </div>
+                <div className="border border-line rounded p-3 bg-surface">
+                  <div className="font-medium mb-2">Typical Limits</div>
+                  <div className="text-sm">localStorage: ~5-10MB</div>
+                  <div className="text-sm">sessionStorage: ~5-10MB</div>
+                  <div className="text-sm text-fg-secondary mt-1">Varies by browser and available disk space</div>
                 </div>
               </div>
             </div>

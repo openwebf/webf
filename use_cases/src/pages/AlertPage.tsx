@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
 import { FlutterCupertinoButton, FlutterCupertinoAlert } from '@openwebf/react-cupertino-ui';
-import styles from './AlertPage.module.css';
+// Tailwind migration: replaced module CSS with utilities
 
 export const AlertPage: React.FC = () => {
   const basicAlertRef = useRef<any>(null);
@@ -51,47 +51,47 @@ export const AlertPage: React.FC = () => {
   };
 
   return (
-    <div id="main">
-      <WebFListView className={styles.list}>
-        <div className={styles.componentSection}>
-          <div className={styles.sectionTitle}>Alert</div>
-          <div className={styles.componentBlock}>
+    <div id="main" className="min-h-screen w-full bg-surface">
+      <WebFListView className="w-full px-3 md:px-6">
+        <div className="max-w-3xl mx-auto py-6">
+          <h1 className="text-2xl font-semibold text-fg-primary mb-4">Alert</h1>
+          <div className="flex flex-col gap-4">
             
             {/* Basic Usage */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Basic Usage</div>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary mb-2">Basic Usage</div>
               <FlutterCupertinoButton variant="filled" onClick={showBasicAlert}>
                 Show Basic Alert
               </FlutterCupertinoButton>
             </div>
 
             {/* With Title and Buttons */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>With Title and Buttons</div>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary mb-2">With Title and Buttons</div>
               <FlutterCupertinoButton variant="filled" onClick={showConfirmAlert}>
                 Show Confirm Alert
               </FlutterCupertinoButton>
             </div>
 
             {/* With Title and Message */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>With Title and Message</div>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary mb-2">With Title and Message</div>
               <FlutterCupertinoButton variant="filled" onClick={showCustomAlert}>
                 Show Title and Message
               </FlutterCupertinoButton>
             </div>
 
             {/* Destructive Action */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Destructive Action</div>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary mb-2">Destructive Action</div>
               <FlutterCupertinoButton variant="filled" onClick={showDestructiveAlert}>
                 Show Destructive Alert
               </FlutterCupertinoButton>
             </div>
 
             {/* Default Button */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Default Button</div>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary mb-2">Default Button</div>
               <FlutterCupertinoButton variant="filled" onClick={showDefaultButtonAlert}>
                 Show Default Button Alert
               </FlutterCupertinoButton>

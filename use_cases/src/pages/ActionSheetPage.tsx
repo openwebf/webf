@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
 import { FlutterCupertinoButton, FlutterCupertinoActionSheet } from '@openwebf/react-cupertino-ui';
-import styles from './ActionSheetPage.module.css';
+// Tailwind migration
 
 export const ActionSheetPage: React.FC = () => {
   const basicActionSheetRef = useRef<any>(null);
@@ -75,17 +75,17 @@ export const ActionSheetPage: React.FC = () => {
   };
 
   return (
-    <div id="main">
-      <WebFListView className={styles.list}>
-        <div className={styles.componentSection}>
-          <div className={styles.sectionTitle}>Action Sheet Showcase</div>
-          <div className={styles.componentBlock}>
+    <div id="main" className="min-h-screen w-full bg-surface">
+      <WebFListView className="w-full px-3 md:px-6">
+        <div className="max-w-3xl mx-auto py-6">
+          <h1 className="text-2xl font-semibold text-fg-primary mb-4">Action Sheet Showcase</h1>
+          <div className="flex flex-col gap-4">
             
             {/* Basic Action Sheet */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Basic Action Sheet</div>
-              <div className={styles.itemDesc}>Simple action sheet with multiple options and cancel button</div>
-              <div className={styles.actionContainer}>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary">Basic Action Sheet</div>
+              <div className="text-sm text-fg-secondary mb-3">Simple action sheet with multiple options and cancel button</div>
+              <div className="bg-surface border border-line rounded p-3">
                 <FlutterCupertinoButton variant="filled" onClick={showBasicActionSheet}>
                   Show Basic Action Sheet
                 </FlutterCupertinoButton>
@@ -98,10 +98,10 @@ export const ActionSheetPage: React.FC = () => {
             </div>
 
             {/* Destructive Action Sheet */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Destructive Action Sheet</div>
-              <div className={styles.itemDesc}>Action sheet with destructive actions highlighted in red</div>
-              <div className={styles.actionContainer}>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary">Destructive Action Sheet</div>
+              <div className="text-sm text-fg-secondary mb-3">Action sheet with destructive actions highlighted in red</div>
+              <div className="bg-surface border border-line rounded p-3">
                 <FlutterCupertinoButton variant="filled" onClick={showDestructiveActionSheet}>
                   Show Destructive Actions
                 </FlutterCupertinoButton>
@@ -114,10 +114,10 @@ export const ActionSheetPage: React.FC = () => {
             </div>
 
             {/* Custom Action Sheet */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Custom Action Sheet</div>
-              <div className={styles.itemDesc}>Action sheet with icons and custom styling</div>
-              <div className={styles.actionContainer}>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary">Custom Action Sheet</div>
+              <div className="text-sm text-fg-secondary mb-3">Action sheet with icons and custom styling</div>
+              <div className="bg-surface border border-line rounded p-3">
                 <FlutterCupertinoButton variant="filled" onClick={showCustomActionSheet}>
                   Show Custom Action Sheet
                 </FlutterCupertinoButton>
@@ -130,10 +130,10 @@ export const ActionSheetPage: React.FC = () => {
             </div>
 
             {/* Long List Action Sheet */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Long List Action Sheet</div>
-              <div className={styles.itemDesc}>Action sheet with many options that can scroll</div>
-              <div className={styles.actionContainer}>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary">Long List Action Sheet</div>
+              <div className="text-sm text-fg-secondary mb-3">Action sheet with many options that can scroll</div>
+              <div className="bg-surface border border-line rounded p-3">
                 <FlutterCupertinoButton variant="filled" onClick={showLongListActionSheet}>
                   Show Long List
                 </FlutterCupertinoButton>

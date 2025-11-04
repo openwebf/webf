@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
-import styles from './NetworkPage.module.css';
 
 interface RequestResult {
   status: number;
@@ -280,45 +279,41 @@ export const NetworkPage: React.FC = () => {
 
     if (typeof result === 'string') {
       return (
-        <div className={styles.resultContainer}>
-          <div className={styles.resultLabel}>Result:</div>
-          <div className={styles.errorText}>{result}</div>
+        <div className="mt-3 bg-surface border border-line rounded p-3">
+          <div className="text-sm font-medium text-fg-primary mb-1">Result:</div>
+          <div className="text-sm text-red-600">{result}</div>
         </div>
       );
     }
 
     return (
-      <div className={styles.resultContainer}>
-        <div className={styles.resultMeta}>
-          <div className={styles.statusBadge}>
-            <span className={`${styles.statusCode} ${result.status >= 200 && result.status < 300 ? styles.success : styles.error}`}>
-              {result.status}
-            </span>
-            <span className={styles.statusText}>{result.statusText}</span>
+      <div className="mt-3">
+        <div className="flex items-center justify-between text-sm mb-1">
+          <div className="flex items-center gap-2">
+            <span className={`px-2 py-0.5 rounded text-white text-xs font-semibold ${result.status >= 200 && result.status < 300 ? 'bg-emerald-500' : 'bg-red-500'}`}>{result.status}</span>
+            <span className="text-fg-secondary">{result.statusText}</span>
           </div>
-          <div className={styles.duration}>{result.duration}ms</div>
+          <div className="text-fg-secondary">{result.duration}ms</div>
         </div>
-        <div className={styles.resultData}>
-          <pre>{JSON.stringify(result.data, null, 2)}</pre>
-        </div>
+        <pre className="text-sm bg-surface border border-line rounded p-2 overflow-auto">{JSON.stringify(result.data, null, 2)}</pre>
       </div>
     );
   };
 
   return (
-    <div id="main">
-      <WebFListView className={styles.list}>
-        <div className={styles.componentSection}>
-          <div className={styles.sectionTitle}>Network Requests Showcase</div>
-          <div className={styles.componentBlock}>
+    <div id="main" className="min-h-screen w-full bg-surface">
+      <WebFListView className="w-full px-3 md:px-6">
+        <div className="max-w-3xl mx-auto py-6">
+          <h1 className="text-2xl font-semibold text-fg-primary mb-4">Network Requests Showcase</h1>
+          <div className="flex flex-col gap-6">
             
             {/* GET Request */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>GET Request</div>
-              <div className={styles.itemDesc}>Fetch data from a REST API endpoint</div>
-              <div className={styles.actionContainer}>
-                <button 
-                  className={`${styles.actionButton} ${isLoading.get ? styles.loading : ''}`}
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary">GET Request</div>
+              <div className="text-sm text-fg-secondary mb-3">Fetch data from a REST API endpoint</div>
+              <div className="bg-surface border border-line rounded p-3">
+                <button
+                  className={`px-4 py-2 rounded bg-black text-white hover:bg-neutral-700 disabled:opacity-60 disabled:cursor-not-allowed ${isLoading.get ? 'animate-pulse' : ''}`}
                   onClick={testGetRequest}
                   disabled={isLoading.get}
                 >
@@ -329,12 +324,12 @@ export const NetworkPage: React.FC = () => {
             </div>
 
             {/* POST Request */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>POST Request with JSON</div>
-              <div className={styles.itemDesc}>Send JSON data to create a new resource</div>
-              <div className={styles.actionContainer}>
-                <button 
-                  className={`${styles.actionButton} ${isLoading.post ? styles.loading : ''}`}
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary">POST Request with JSON</div>
+              <div className="text-sm text-fg-secondary mb-3">Send JSON data to create a new resource</div>
+              <div className="bg-surface border border-line rounded p-3">
+                <button
+                  className={`px-4 py-2 rounded bg-black text-white hover:bg-neutral-700 disabled:opacity-60 disabled:cursor-not-allowed ${isLoading.post ? 'animate-pulse' : ''}`}
                   onClick={testPostRequest}
                   disabled={isLoading.post}
                 >
@@ -345,12 +340,12 @@ export const NetworkPage: React.FC = () => {
             </div>
 
             {/* PUT Request */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>PUT Request</div>
-              <div className={styles.itemDesc}>Update an existing resource with new data</div>
-              <div className={styles.actionContainer}>
-                <button 
-                  className={`${styles.actionButton} ${isLoading.put ? styles.loading : ''}`}
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary">PUT Request</div>
+              <div className="text-sm text-fg-secondary mb-3">Update an existing resource with new data</div>
+              <div className="bg-surface border border-line rounded p-3">
+                <button
+                  className={`px-4 py-2 rounded bg-black text-white hover:bg-neutral-700 disabled:opacity-60 disabled:cursor-not-allowed ${isLoading.put ? 'animate-pulse' : ''}`}
                   onClick={testPutRequest}
                   disabled={isLoading.put}
                 >
@@ -361,12 +356,12 @@ export const NetworkPage: React.FC = () => {
             </div>
 
             {/* DELETE Request */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>DELETE Request</div>
-              <div className={styles.itemDesc}>Remove a resource from the server</div>
-              <div className={styles.actionContainer}>
-                <button 
-                  className={`${styles.actionButton} ${styles.deleteButton} ${isLoading.delete ? styles.loading : ''}`}
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary">DELETE Request</div>
+              <div className="text-sm text-fg-secondary mb-3">Remove a resource from the server</div>
+              <div className="bg-surface border border-line rounded p-3">
+                <button
+                  className={`px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed ${isLoading.delete ? 'animate-pulse' : ''}`}
                   onClick={testDeleteRequest}
                   disabled={isLoading.delete}
                 >
@@ -377,12 +372,12 @@ export const NetworkPage: React.FC = () => {
             </div>
 
             {/* FormData Request */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>FormData Request</div>
-              <div className={styles.itemDesc}>Send form data including files using FormData</div>
-              <div className={styles.actionContainer}>
-                <button 
-                  className={`${styles.actionButton} ${isLoading.formdata ? styles.loading : ''}`}
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary">FormData Request</div>
+              <div className="text-sm text-fg-secondary mb-3">Send form data including files using FormData</div>
+              <div className="bg-surface border border-line rounded p-3">
+                <button
+                  className={`px-4 py-2 rounded bg-black text-white hover:bg-neutral-700 disabled:opacity-60 disabled:cursor-not-allowed ${isLoading.formdata ? 'animate-pulse' : ''}`}
                   onClick={testFormDataRequest}
                   disabled={isLoading.formdata}
                 >
@@ -393,12 +388,12 @@ export const NetworkPage: React.FC = () => {
             </div>
 
             {/* Custom Headers */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Custom Headers</div>
-              <div className={styles.itemDesc}>Send requests with custom headers for authentication and metadata</div>
-              <div className={styles.actionContainer}>
-                <button 
-                  className={`${styles.actionButton} ${isLoading.headers ? styles.loading : ''}`}
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary">Custom Headers</div>
+              <div className="text-sm text-fg-secondary mb-3">Send requests with custom headers for authentication and metadata</div>
+              <div className="bg-surface border border-line rounded p-3">
+                <button
+                  className={`px-4 py-2 rounded bg-black text-white hover:bg-neutral-700 disabled:opacity-60 disabled:cursor-not-allowed ${isLoading.headers ? 'animate-pulse' : ''}`}
                   onClick={testCustomHeaders}
                   disabled={isLoading.headers}
                 >
@@ -409,12 +404,12 @@ export const NetworkPage: React.FC = () => {
             </div>
 
             {/* Concurrent Requests */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Concurrent Requests</div>
-              <div className={styles.itemDesc}>Execute multiple requests simultaneously for better performance</div>
-              <div className={styles.actionContainer}>
-                <button 
-                  className={`${styles.actionButton} ${isLoading.concurrent ? styles.loading : ''}`}
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary">Concurrent Requests</div>
+              <div className="text-sm text-fg-secondary mb-3">Execute multiple requests simultaneously for better performance</div>
+              <div className="bg-surface border border-line rounded p-3">
+                <button
+                  className={`px-4 py-2 rounded bg-black text-white hover:bg-neutral-700 disabled:opacity-60 disabled:cursor-not-allowed ${isLoading.concurrent ? 'animate-pulse' : ''}`}
                   onClick={testConcurrentRequests}
                   disabled={isLoading.concurrent}
                 >

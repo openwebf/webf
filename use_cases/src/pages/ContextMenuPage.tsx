@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
 import { FlutterCupertinoIcon, FlutterCupertinoSwitch, FlutterCupertinoContextMenu } from '@openwebf/react-cupertino-ui';
-import styles from './ContextMenuPage.module.css';
+// Tailwind migration
 
 export const ContextMenuPage: React.FC = () => {
   const menu0Ref = useRef<any>(null);
@@ -86,109 +86,109 @@ export const ContextMenuPage: React.FC = () => {
   const onSelect = (e: any) => console.log('Select event', e.detail);
 
   return (
-    <div id="main">
-      <WebFListView className={styles.list}>
-        <div className={styles.componentSection}>
-          <div className={styles.sectionTitle}>Context Menu</div>
-          <div className={styles.componentBlock}>
+    <div id="main" className="min-h-screen w-full bg-surface">
+      <WebFListView className="w-full px-3 md:px-6">
+        <div className="max-w-3xl mx-auto py-6">
+          <h1 className="text-2xl font-semibold text-fg-primary mb-4">Context Menu</h1>
+          <div className="flex flex-col gap-4">
             
             {/* Example 0: No setActions called (initially no menu) */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>No setActions called (initially no menu)</div>
-              <div className={styles.menuContainer}>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary mb-2">No setActions called (initially no menu)</div>
+              <div className="p-3 border border-line rounded bg-surface">
                 <FlutterCupertinoContextMenu ref={menu0Ref}>
-                  <div className={styles.previewBox}>
+                  <div className="flex flex-col items-center justify-center p-6">
                     <FlutterCupertinoIcon type="star" style={{fontSize: '48px'}} />
-                    <div className={styles.previewText}>Initial no menu</div>
+                    <div className="mt-2 text-sm text-fg-secondary">Initial no menu</div>
                   </div>
                 </FlutterCupertinoContextMenu>
               </div>
             </div>
 
             {/* Example 1: Controlled by Switch */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Switch controls menu configuration</div>
-              <div className={styles.controlRow}>
-                <span>Configure menu:</span>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary mb-2">Switch controls menu configuration</div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-sm">Configure menu:</span>
                 <FlutterCupertinoSwitch 
                   checked={menu1HasActions}
                   onChange={handleMenu1SwitchChange}
                 />
               </div>
-              <div className={styles.menuContainer}>
+              <div className="p-3 border border-line rounded bg-surface">
                 <FlutterCupertinoContextMenu 
                   ref={menu1Ref} 
                   onSelect={onSelect}
                 >
-                  <div className={styles.previewBox}>
+                  <div className="flex flex-col items-center justify-center p-6">
                     <FlutterCupertinoIcon type="photo" style={{fontSize: '48px'}} />
-                    <div className={styles.previewText}>Switch controlled</div>
+                    <div className="mt-2 text-sm text-fg-secondary">Switch controlled</div>
                   </div>
                 </FlutterCupertinoContextMenu>
               </div>
             </div>
 
             {/* Example 2: Custom Menu Items */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Custom Menu Items</div>
-              <div className={styles.menuContainer}>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary mb-2">Custom Menu Items</div>
+              <div className="p-3 border border-line rounded bg-surface">
                 <FlutterCupertinoContextMenu
                   onSelect={onSelect}
                   ref={menu2Ref} 
                 >
-                  <div className={styles.previewBox}>
+                  <div className="flex flex-col items-center justify-center p-6">
                     <FlutterCupertinoIcon type="heart" style={{fontSize: '48px'}} />
-                    <div className={styles.previewText}>Custom menu item</div>
+                    <div className="mt-2 text-sm text-fg-secondary">Custom menu item</div>
                   </div>
                 </FlutterCupertinoContextMenu>
               </div>
             </div>
 
             {/* Example 3: With Destructive Action */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>With Destructive Action</div>
-              <div className={styles.menuContainer}>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary mb-2">With Destructive Action</div>
+              <div className="p-3 border border-line rounded bg-surface">
                 <FlutterCupertinoContextMenu 
                   ref={menu3Ref} 
                   enableHapticFeedback 
                   onSelect={onSelect}
                 >
-                  <div className={styles.previewBox}>
+                  <div className="flex flex-col items-center justify-center p-6">
                     <FlutterCupertinoIcon type="doc_text" style={{fontSize: '48px'}} />
-                    <div className={styles.previewText}>Document action</div>
+                    <div className="mt-2 text-sm text-fg-secondary">Document action</div>
                   </div>
                 </FlutterCupertinoContextMenu>
               </div>
             </div>
 
             {/* Example 4: With Default Action */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>With Default Action</div>
-              <div className={styles.menuContainer}>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary mb-2">With Default Action</div>
+              <div className="p-3 border border-line rounded bg-surface">
                 <FlutterCupertinoContextMenu 
                   ref={menu4Ref} 
                   enableHapticFeedback 
                   onSelect={onSelect}
                 >
-                  <div className={styles.previewBox}>
+                  <div className="flex flex-col items-center justify-center p-6">
                     <FlutterCupertinoIcon type="person_circle" style={{fontSize: '48px'}} />
-                    <div className={styles.previewText}>Contact</div>
+                    <div className="mt-2 text-sm text-fg-secondary">Contact</div>
                   </div>
                 </FlutterCupertinoContextMenu>
               </div>
             </div>
 
             {/* Example 5: setActions called with empty array */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>setActions([]) (no menu)</div>
-              <div className={styles.menuContainer}>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary mb-2">setActions([]) (no menu)</div>
+              <div className="p-3 border border-line rounded bg-surface">
                 <FlutterCupertinoContextMenu 
                   ref={menu5Ref}
                   onSelect={onSelect}
                 >
-                  <div className={styles.previewBox}>
+                  <div className="flex flex-col items-center justify-center p-6">
                     <FlutterCupertinoIcon type="xmark_circle" style={{fontSize: '48px'}} />
-                    <div className={styles.previewText}>Empty menu</div>
+                    <div className="mt-2 text-sm text-fg-secondary">Empty menu</div>
                   </div>
                 </FlutterCupertinoContextMenu>
               </div>

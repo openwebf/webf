@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
 import { FlutterCupertinoButton, FlutterCupertinoModalPopup } from '@openwebf/react-cupertino-ui';
-import styles from './ModalPopupPage.module.css';
+// Tailwind migration
 
 export const ModalPopupPage: React.FC = () => {
   const basicPopupRef = useRef<any>(null);
@@ -46,47 +46,47 @@ export const ModalPopupPage: React.FC = () => {
   };
 
   return (
-    <div id="main">
-      <WebFListView className={styles.list}>
-        <div className={styles.componentSection}>
-          <div className={styles.sectionTitle}>Modal Popup</div>
-          <div className={styles.componentBlock}>
+    <div id="main" className="min-h-screen w-full bg-surface">
+      <WebFListView className="w-full px-3 md:px-6">
+        <div className="max-w-3xl mx-auto py-6">
+          <h1 className="text-2xl font-semibold text-fg-primary mb-4">Modal Popup</h1>
+          <div className="flex flex-col gap-4">
             
             {/* Basic Usage */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Basic Usage</div>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary mb-2">Basic Usage</div>
               <FlutterCupertinoButton variant="filled" onClick={showBasicPopup}>
                 Show Basic Popup
               </FlutterCupertinoButton>
             </div>
 
             {/* Custom Content */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Custom Content</div>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary mb-2">Custom Content</div>
               <FlutterCupertinoButton variant="filled" onClick={showCustomPopup}>
                 Show Custom Popup
               </FlutterCupertinoButton>
             </div>
 
             {/* Custom Height */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Custom Height</div>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary mb-2">Custom Height</div>
               <FlutterCupertinoButton variant="filled" onClick={showHeightPopup}>
                 Show 400px Height Popup
               </FlutterCupertinoButton>
             </div>
 
             {/* Disable Mask Close */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Disable Mask Close</div>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary mb-2">Disable Mask Close</div>
               <FlutterCupertinoButton variant="filled" onClick={showNoMaskClosePopup}>
                 Show Non-maskClosable Popup
               </FlutterCupertinoButton>
             </div>
 
             {/* Custom Style */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Custom Style</div>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4">
+              <div className="text-lg font-medium text-fg-primary mb-2">Custom Style</div>
               <FlutterCupertinoButton variant="filled" onClick={showCustomStylePopup}>
                 Show Custom Style Popup
               </FlutterCupertinoButton>
@@ -100,9 +100,9 @@ export const ModalPopupPage: React.FC = () => {
           height={200}
           onClose={onPopupClose}
         >
-          <div className={styles.popupContent}>
-            <div className={styles.popupTitle}>Basic Popup</div>
-            <div className={styles.popupText}>This is a basic popup example</div>
+          <div className="p-4">
+            <div className="text-lg font-semibold text-fg-primary mb-1">Basic Popup</div>
+            <div className="text-sm text-fg-secondary">This is a basic popup example</div>
           </div>
         </FlutterCupertinoModalPopup>
 
@@ -112,12 +112,12 @@ export const ModalPopupPage: React.FC = () => {
           height={300}
           onClose={onPopupClose}
         >
-          <div className={styles.popupContent}>
-            <div className={styles.popupTitle}>Share to</div>
-            <div className={styles.shareGrid}>
+          <div className="p-4">
+            <div className="text-lg font-semibold text-fg-primary mb-2">Share to</div>
+            <div className="grid grid-cols-4 gap-3">
               {shareItems.map((item) => (
-                <div key={item.icon} className={styles.shareItem}>
-                  <div className={styles.shareLabel}>{item.label}</div>
+                <div key={item.icon} className="text-center">
+                  <div className="text-sm text-fg-secondary">{item.label}</div>
                 </div>
               ))}
             </div>
@@ -130,9 +130,9 @@ export const ModalPopupPage: React.FC = () => {
           height={400}
           onClose={onPopupClose}
         >
-          <div className={styles.popupContent}>
-            <div className={styles.popupTitle}>Custom Height</div>
-            <div className={styles.popupText}>This popup has a height of 400px</div>
+          <div className="p-4">
+            <div className="text-lg font-semibold text-fg-primary mb-1">Custom Height</div>
+            <div className="text-sm text-fg-secondary">This popup has a height of 400px</div>
           </div>
         </FlutterCupertinoModalPopup>
 
@@ -144,12 +144,12 @@ export const ModalPopupPage: React.FC = () => {
           backgroundOpacity={0.6}
           onClose={onPopupClose}
         >
-          <div className={styles.popupContent}>
-            <div className={styles.popupTitle}>Disable Mask Close</div>
-            <div className={styles.popupText}>
+          <div className="p-4">
+            <div className="text-lg font-semibold text-fg-primary mb-1">Disable Mask Close</div>
+            <div className="text-sm text-fg-secondary">
               This popup has disabled mask close functionality, can only be closed by other means
             </div>
-            <div className={styles.popupFooter}>
+            <div className="pt-3">
               <FlutterCupertinoButton variant="filled" onClick={hideNoMaskClosePopup}>
                 Close
               </FlutterCupertinoButton>
@@ -165,9 +165,9 @@ export const ModalPopupPage: React.FC = () => {
           backgroundOpacity={0.2}
           onClose={onPopupClose}
         >
-          <div className={`${styles.popupContent} ${styles.customStyle}`}>
-            <div className={styles.popupTitle}>Custom Style</div>
-            <div className={styles.popupText}>
+          <div className="p-4">
+            <div className="text-lg font-semibold text-fg-primary mb-1">Custom Style</div>
+            <div className="text-sm text-fg-secondary">
               This is a custom styled popup example with disabled background and semi-transparent mask
             </div>
           </div>
