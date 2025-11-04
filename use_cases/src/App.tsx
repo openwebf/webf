@@ -36,7 +36,6 @@ import {GesturePage} from './pages/GesturePage';
 import {ShowCasePage} from './pages/ShowCasePage';
 import {ListviewPage} from './pages/ListviewPage';
 import {FormPage} from './pages/FormPage';
-import {ResizeObserverPage} from './pages/ResizeObserverPage';
 import {MutationObserverPage} from './pages/MutationObserverPage';
 import {WebStoragePage} from './pages/WebStoragePage';
 import {DOMBoundingRectPage} from './pages/DOMBoundingRectPage';
@@ -91,8 +90,6 @@ function App() {
 
         {/* Re-enabled showcases to match Feature Catalog links */}
         <Route path="/css-showcase" title="CSS Showcase" element={<CSSShowcasePage />} />
-        <Route path="/resize-observer" title="ResizeObserver API" element={<ResizeObserverPage />} />
-        <Route path="/mutation-observer" title="MutationObserver API" element={<MutationObserverPage />} />
         <Route path="/web-storage" title="Web Storage API" element={<WebStoragePage />} />
         <Route path="/dom-bounding-rect" title="DOM getBoundingClientRect API" element={<DOMBoundingRectPage />} />
         <Route path="/dom/events" title="DOM Events" element={<DOMEventsPage />} />

@@ -11,7 +11,6 @@ const sections: Section[] = [
     items: [
       { label: 'DOM Measurements (getBoundingClientRect)', path: '/dom-bounding-rect' },
       { label: 'MutationObserver', path: '/mutation-observer' },
-      { label: 'ResizeObserver', path: '/resize-observer' },
       { label: 'Events (mouse/touch/scroll/CustomEvent)', path: '/dom/events' },
       { label: 'Geometry (DOMMatrix/DOMPoint)', path: '/dom/geometry' },
       { label: 'Global Attributes (dataset)', path: '/dom/dataset' },
