@@ -2593,17 +2593,50 @@ class RenderFlexLayout extends RenderLayoutBox {
       if (maxMainSize != null) {
         initialFreeSpace = maxMainSize! - totalSpace;
       } else {
-        // If the container's main size is indefinite but it has a definite
-        // min-main-size (e.g., min-height for column), treat that as the
-        // available main size for the purpose of free-space distribution.
-        // This ensures a single flex item with flex-grow can expand to the
-        // container's min size, matching browser behavior.
-        final double layoutContentMainSize = _isHorizontalFlexDirection ? contentSize.width : contentSize.height;
-        final double minMainAxisSize = _getMinMainAxisSize(this);
-        final double inferredMain = math.max(minMainAxisSize, layoutContentMainSize);
-        if (inferredMain > 0) {
+        // Indefinite main-size (e.g., width:auto in row, height:auto in column).
+        // Do NOT synthesize positive free space from the flex container's
+        // automatic minimum size (which includes its own padding/border).
+        // Per CSS Flexbox, when the available main size is indefinite, treat
+        // the initial free space as 0 unless the container has a definite
+        // CSS min-main-size. This prevents erroneously adding the container's
+        // padding/border to the distributable space (e.g., +42px in the sample).
+        final double layoutContentMainSize =
+            _isHorizontalFlexDirection ? contentSize.width : contentSize.height;
+
+        // Only honor a definite author-specified min-main-size on the container.
+        double containerStyleMin = 0.0;
+        if (_isHorizontalFlexDirection) {
+          if (renderStyle.minWidth.isNotAuto) containerStyleMin = renderStyle.minWidth.computedValue;
+        } else {
+          if (renderStyle.minHeight.isNotAuto) containerStyleMin = renderStyle.minHeight.computedValue;
+        }
+
+        // If a definite min is set, treat that as the available main size headroom.
+        // Otherwise, keep the container's main size content-driven with zero
+        // distributable positive free space.
+        if (containerStyleMin > 0) {
+          final double inferredMain = math.max(containerStyleMin, layoutContentMainSize);
           maxMainSize = inferredMain;
           initialFreeSpace = inferredMain - totalSpace;
+          FlexLog.log(
+            impl: FlexImpl.flex,
+            feature: FlexFeature.runs,
+            level: Level.FINER,
+            message: () => 'indef main-size: honor container definite min '
+                '(min=${containerStyleMin.toStringAsFixed(1)} layout=${layoutContentMainSize.toStringAsFixed(1)}) '
+                '→ maxMain=${maxMainSize!.toStringAsFixed(1)} initialFree=${initialFreeSpace.toStringAsFixed(1)}',
+          );
+        } else {
+          // No definite min → do not create positive free space.
+          maxMainSize = layoutContentMainSize;
+          initialFreeSpace = 0;
+          FlexLog.log(
+            impl: FlexImpl.flex,
+            feature: FlexFeature.runs,
+            level: Level.FINER,
+            message: () => 'indef main-size: no definite min, suppress positive free space '
+                '(layout=${layoutContentMainSize.toStringAsFixed(1)})',
+          );
         }
       }
 
@@ -2618,22 +2651,40 @@ class RenderFlexLayout extends RenderLayoutBox {
       );
 
       double layoutContentMainSize = _isHorizontalFlexDirection ? contentSize.width : contentSize.height;
-      double minMainAxisSize = _getMinMainAxisSize(this);
-      // Flexbox with minSize on main axis when maxMainSize < minSize && maxMainSize < RenderBox.Size, adapt freeSpace
-      if (maxMainSize != null &&
-          (maxMainSize < minMainAxisSize || maxMainSize < layoutContentMainSize) &&
-          initialFreeSpace == 0) {
-        maxMainSize = math.max(layoutContentMainSize, minMainAxisSize);
+      // Only consider an author-specified (definite) min-main-size on the flex container here.
+      // Do not use the automatic min size, which includes padding/border, to synthesize
+      // positive free space; that incorrectly inflates the container (e.g., to 360).
+      double containerStyleMin = 0.0;
+      if (_isHorizontalFlexDirection) {
+        if (renderStyle.minWidth.isNotAuto) containerStyleMin = renderStyle.minWidth.computedValue;
+      } else {
+        if (renderStyle.minHeight.isNotAuto) containerStyleMin = renderStyle.minHeight.computedValue;
+      }
+      // Adapt free space only when the container has a definite CSS min-main-size.
+      if (maxMainSize != null && initialFreeSpace == 0) {
+        final double minTarget = containerStyleMin > 0
+            ? math.max(layoutContentMainSize, containerStyleMin)
+            : layoutContentMainSize;
+        if (maxMainSize < minTarget) {
+          maxMainSize = minTarget;
 
-        double maxMainConstraints =
-        _isHorizontalFlexDirection ? contentConstraints!.maxWidth : contentConstraints!.maxHeight;
-        // determining isScrollingContentBox is to reduce the scope of influence
-        if (renderStyle.isSelfScrollingContainer() && maxMainConstraints.isFinite) {
-          maxMainSize = totalFlexShrink > 0 ? math.min(maxMainSize, maxMainConstraints) : maxMainSize;
-          maxMainSize = totalFlexGrow > 0 ? math.max(maxMainSize, maxMainConstraints) : maxMainSize;
+          double maxMainConstraints =
+              _isHorizontalFlexDirection ? contentConstraints!.maxWidth : contentConstraints!.maxHeight;
+          // determining isScrollingContentBox is to reduce the scope of influence
+          if (renderStyle.isSelfScrollingContainer() && maxMainConstraints.isFinite) {
+            maxMainSize = totalFlexShrink > 0 ? math.min(maxMainSize, maxMainConstraints) : maxMainSize;
+            maxMainSize = totalFlexGrow > 0 ? math.max(maxMainSize, maxMainConstraints) : maxMainSize;
+          }
+
+          initialFreeSpace = maxMainSize - totalSpace;
+          FlexLog.log(
+            impl: FlexImpl.flex,
+            feature: FlexFeature.runs,
+            level: Level.FINER,
+            message: () => 'auto main-size adjust with definite min: styleMin=${containerStyleMin.toStringAsFixed(1)} '
+                'newMaxMain=${maxMainSize!.toStringAsFixed(1)} usedFree=${initialFreeSpace.toStringAsFixed(1)}',
+          );
         }
-
-        initialFreeSpace = maxMainSize - totalSpace;
       }
 
       // For auto main-size bounded only by a max constraint, browsers do not treat
