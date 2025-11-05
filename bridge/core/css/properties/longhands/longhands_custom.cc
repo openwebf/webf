@@ -910,6 +910,36 @@ std::shared_ptr<const CSSValue> Content::ParseSingleValue(CSSParserTokenStream& 
     CSSParserSavePoint savepoint(stream);
     std::shared_ptr<const CSSValue> parsed_value = css_parsing_utils::ConsumeImage(stream, context);
     if (!parsed_value) {
+      // Support counter() / counters() in content.
+      if (stream.Peek().GetType() == kFunctionToken &&
+          (stream.Peek().FunctionId() == CSSValueID::kCounter || stream.Peek().FunctionId() == CSSValueID::kCounters)) {
+        CSSValueID fid = stream.Peek().FunctionId();
+        CSSParserTokenRange args = css_parsing_utils::ConsumeFunction(stream);
+        auto func = std::make_shared<CSSFunctionValue>(fid);
+        // Parse first <custom-ident>
+        if (auto name = css_parsing_utils::ConsumeCustomIdent(args, context)) {
+          func->Append(name);
+          // Optionally parse remaining simple arguments: <string> or <ident>
+          // This is a minimal implementation sufficient for counter(name).
+          if (!args.AtEnd()) {
+            if (auto sep = css_parsing_utils::ConsumeString(args)) {
+              func->Append(sep);
+            }
+          }
+          if (!args.AtEnd()) {
+            if (auto style_ident = css_parsing_utils::ConsumeIdent(args)) {
+              func->Append(style_ident);
+            }
+          }
+          args.ConsumeWhitespace();
+          parsed_value = func;
+        } else {
+          // Failed to parse a valid name; treat as invalid for this item.
+          parsed_value = nullptr;
+        }
+      }
+    }
+    if (!parsed_value) {
       parsed_value = css_parsing_utils::ConsumeIdent<CSSValueID::kOpenQuote, CSSValueID::kCloseQuote,
                                                      CSSValueID::kNoOpenQuote, CSSValueID::kNoCloseQuote>(stream);
     }
@@ -956,6 +986,41 @@ std::shared_ptr<const CSSValue> Content::ParseSingleValue(CSSParserTokenStream& 
 }
 
 const int kCounterIncrementDefaultValue = 1;
+
+// CSS Counter properties
+std::shared_ptr<const CSSValue> CounterReset::ParseSingleValue(CSSParserTokenStream& stream,
+                                                              std::shared_ptr<const CSSParserContext> context,
+                                                              const CSSParserLocalContext&) const {
+  // Syntax: none | [ <custom-ident> <integer>? ]+ (space-separated pairs)
+  // Default value for <integer> part is 0 for counter-reset.
+  return css_parsing_utils::ConsumeCounter(stream, context, /*default_value=*/0);
+}
+
+std::shared_ptr<const CSSValue> CounterReset::InitialValue() const {
+  return CSSIdentifierValue::Create(CSSValueID::kNone);
+}
+
+std::shared_ptr<const CSSValue> CounterIncrement::ParseSingleValue(CSSParserTokenStream& stream,
+                                                                  std::shared_ptr<const CSSParserContext> context,
+                                                                  const CSSParserLocalContext&) const {
+  // Syntax: none | [ <custom-ident> <integer>? ]+ (space-separated pairs)
+  // Default value for <integer> part is 1 for counter-increment.
+  return css_parsing_utils::ConsumeCounter(stream, context, kCounterIncrementDefaultValue);
+}
+
+std::shared_ptr<const CSSValue> CounterIncrement::InitialValue() const {
+  return CSSIdentifierValue::Create(CSSValueID::kNone);
+}
+
+// Style builder stubs for counter properties: WebF forwards these as textual
+// inline styles to the UI side, so applying them to ComputedStyle is a no-op.
+void CounterReset::ApplyInitial(StyleResolverState&) const {}
+void CounterReset::ApplyInherit(StyleResolverState&) const {}
+void CounterReset::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
+
+void CounterIncrement::ApplyInitial(StyleResolverState&) const {}
+void CounterIncrement::ApplyInherit(StyleResolverState&) const {}
+void CounterIncrement::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
 
 // std::shared_ptr<const CSSValue> Cursor::ParseSingleValue(CSSParserTokenStream& stream,
 //                                                          std::shared_ptr<const CSSParserContext> context,

@@ -1145,6 +1145,28 @@
       // Animation properites are never incremental.
       supports_incremental_style: false,
     },
+    // CSS Counters
+    {
+      name: "counter-reset",
+      // Parsing and initial value only – forwarded to Dart via UICommand kSetStyle
+      property_methods: [
+        "ParseSingleValue",
+        "InitialValue"
+      ],
+      // No style builder; render side consumes the textual value
+      style_builder_template: "empty",
+      // kNone is the initial value per spec
+      keywords: ["none"],
+    },
+    {
+      name: "counter-increment",
+      property_methods: [
+        "ParseSingleValue",
+        "InitialValue"
+      ],
+      style_builder_template: "empty",
+      keywords: ["none"],
+    },
     {
       name: "transition-duration",
       property_methods: [
