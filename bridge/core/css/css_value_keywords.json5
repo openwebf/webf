@@ -503,6 +503,12 @@
     "disclosure-open",
     "disclosure-closed",
     "decimal",
+    // Extended types for ordered lists
+    // alpha/roman types are required by tests
+    "lower-alpha",
+    "upper-alpha",
+    "lower-roman",
+    "upper-roman",
     //none
     //
     // The order must match the order found in IsDisplayOutside().

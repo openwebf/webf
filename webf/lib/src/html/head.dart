@@ -436,9 +436,6 @@ class LinkElement extends Element {
         if (ownerView.enableBlink) {
           await _sendStyleSheetToNative(cssString, href: href);
         } else {
-          if (kDebugMode && DebugFlags.enableCssLogs) {
-            debugPrint('[webf][style] <link> parse (darkMode=' + ownerView.rootController.isDarkMode.toString() + ')');
-          }
           final String? sheetHref = _resolvedHyperlink?.toString() ?? href;
           _styleSheet = CSSParser(cssString, href: sheetHref).parse(
               windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);

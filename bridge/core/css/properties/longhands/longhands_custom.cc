@@ -1022,6 +1022,12 @@ void CounterIncrement::ApplyInitial(StyleResolverState&) const {}
 void CounterIncrement::ApplyInherit(StyleResolverState&) const {}
 void CounterIncrement::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
 
+// list-style-type is forwarded as a textual inline style to the UI side.
+// It is not stored on ComputedStyle in WebF; applying it here is a no-op.
+void ListStyleType::ApplyInitial(StyleResolverState&) const {}
+void ListStyleType::ApplyInherit(StyleResolverState&) const {}
+void ListStyleType::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
+
 // std::shared_ptr<const CSSValue> Cursor::ParseSingleValue(CSSParserTokenStream& stream,
 //                                                          std::shared_ptr<const CSSParserContext> context,
 //                                                          const CSSParserLocalContext&) const {

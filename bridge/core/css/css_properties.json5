@@ -1126,6 +1126,33 @@
 //      supports_incremental_style: false,
 //    },
     {
+      name: "list-style-type",
+      // Parsing and initial value only – forwarded to Dart via UICommand kSetStyle
+      // We don't currently store this on ComputedStyle; values are emitted from the inline
+      // property set during style resolution.
+      field_template: "keyword",
+      type_name: "EListStyleType",
+      // The initial value per CSS is 'disc'. UA rules override this for <ol> to 'decimal'.
+      default_value: "disc",
+      inherited: true,
+      // Valid value keywords. Keep in sync with css_value_keywords.json5 list-style-type entries.
+      keywords: [
+        "disc",
+        "circle",
+        "square",
+        "disclosure-open",
+        "disclosure-closed",
+        "decimal",
+        "lower-alpha",
+        "upper-alpha",
+        "lower-roman",
+        "upper-roman",
+        "none",
+      ],
+      // Avoid generating style builder application; values are forwarded as strings to UI.
+      style_builder_template: "empty",
+    },
+    {
       name: "transition-delay",
       property_methods: [
         "ParseSingleValue",
