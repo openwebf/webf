@@ -19,14 +19,30 @@ class CSSCalcValue {
 
   // Try to parse CSSCalcValue.
   static CSSCalcValue? tryParse(RenderStyle renderStyle, String propertyName, String propertyValue) {
+    // calc()
     if (CSSFunction.isFunction(propertyValue, functionName: CALC)) {
-      List<CSSFunctionalNotation> fns = CSSFunction.parseFunction(propertyValue);
+      final List<CSSFunctionalNotation> fns = CSSFunction.parseFunction(propertyValue);
       if (fns.isNotEmpty && fns.first.args.isNotEmpty) {
         assert(fns.first.args.length == 1, 'Calc parameters count must be = 1');
         final expression = fns.first.args.first;
         final _CSSCalcParser parser = _CSSCalcParser(propertyName, renderStyle, expression);
-        CalcExpressionNode? node = parser.processCalcExpression();
+        final CalcExpressionNode? node = parser.processCalcExpression();
         return CSSCalcValue(node);
+      }
+    }
+
+    // clamp(min, preferred, max)
+    if (CSSFunction.isFunction(propertyValue, functionName: 'clamp')) {
+      final List<CSSFunctionalNotation> fns = CSSFunction.parseFunction(propertyValue);
+      if (fns.isNotEmpty) {
+        final CSSFunctionalNotation fn = fns.first;
+        // Gracefully ignore invalid arity; leave parsing to other paths.
+        if (fn.args.length == 3) {
+          final CSSLengthValue minV = CSSLength.parseLength(fn.args[0].trim(), renderStyle, '${propertyName}_min');
+          final CSSLengthValue prefV = CSSLength.parseLength(fn.args[1].trim(), renderStyle, '${propertyName}_pref');
+          final CSSLengthValue maxV = CSSLength.parseLength(fn.args[2].trim(), renderStyle, '${propertyName}_max');
+          return CSSCalcValue(_ClampExpressionNode(minV, prefV, maxV));
+        }
       }
     }
     return null;
@@ -177,6 +193,38 @@ class CalcOperationExpressionNode extends CalcExpressionNode {
   @override
   String toString()  => 'CalcOperationExpressionNode(operator: ${operator == TokenKind.PLUS ? '+' : '*'}, '
       'leftNode: $leftNode, rightNode: $rightNode)';
+}
+
+// Evaluates clamp(min, preferred, max) with CSS length/percentage semantics.
+// If the preferred value cannot be resolved yet (e.g., percentage against
+// an indefinite container), propagate double.infinity so width/height
+// fall back to auto and a subsequent layout pass can resolve it.
+class _ClampExpressionNode extends CalcExpressionNode {
+  final CSSLengthValue minValue;
+  final CSSLengthValue prefValue;
+  final CSSLengthValue maxValue;
+
+  _ClampExpressionNode(this.minValue, this.prefValue, this.maxValue);
+
+  @override
+  double get computedValue {
+    final double minV = minValue.computedValue;
+    final double prefV = prefValue.computedValue;
+    final double maxV = maxValue.computedValue;
+
+    // Defer when preferred is unresolved.
+    if (prefV == double.infinity) return double.infinity;
+
+    // Normalize min/max bounds if unresolved.
+    final double lower = (minV == double.infinity) ? 0.0 : minV;
+    final double upper = (maxV == double.infinity) ? double.infinity : maxV;
+
+    // Clamp preferred between lower and upper.
+    double v = prefV;
+    if (v < lower) v = lower;
+    if (v > upper) v = upper;
+    return v;
+  }
 }
 
 class _CSSCalcParser {
