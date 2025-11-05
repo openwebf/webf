@@ -1573,7 +1573,7 @@ class InlineFormattingContext {
     try {
       final CSSRenderStyle containerStyle = (container as RenderBoxModel).renderStyle;
       final bool _clipText = containerStyle.backgroundClip == CSSBackgroundBoundary.text;
-      
+
 
 
       // Interleave line background and text painting so that later lines can
@@ -1996,7 +1996,7 @@ class InlineFormattingContext {
       if (_para != null) {
         final Gradient? _grad = _rs.backgroundImage?.gradient;
         final Color? _bgc = _rs.backgroundColor?.value;
-        
+
         if (_grad != null || (_bgc != null && _bgc.alpha != 0)) {
           final double intrinsicLineWidth = _para.longestLine;
           final double layoutWidth = _para.width;
@@ -2014,7 +2014,7 @@ class InlineFormattingContext {
             final double contTop = offset.dy - padT - borT;
             final Rect contRect = Rect.fromLTWH(contLeft, contTop, container.size.width, container.size.height);
 
-            
+
 
             // Use a layer so we can mask the background with glyph alpha using srcIn.
             context.canvas.saveLayer(layer, Paint());
@@ -2238,7 +2238,7 @@ class InlineFormattingContext {
         }
         paintedCount++;
       });
-      
+
     }
 
     // Paint atomic inline children using parentData.offset for consistency.
@@ -5119,8 +5119,10 @@ class InlineFormattingContext {
     switch (va) {
       case VerticalAlign.baseline:
         return ui.PlaceholderAlignment.baseline;
+      case VerticalAlign.textTop:
       case VerticalAlign.top:
         return ui.PlaceholderAlignment.top;
+      case VerticalAlign.textBottom:
       case VerticalAlign.bottom:
         return ui.PlaceholderAlignment.bottom;
       case VerticalAlign.middle:

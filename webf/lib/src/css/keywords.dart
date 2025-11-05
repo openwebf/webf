@@ -271,6 +271,8 @@ const String BOTTOM = 'bottom';
 const String TEXT_BOTTOM = 'text-bottom';
 const String TEXT_TOP = 'text-top';
 const String MIDDLE = 'middle';
+const String SUPER = 'super';
+const String SUB = 'sub';
 
 const String CENTER = 'center';
 

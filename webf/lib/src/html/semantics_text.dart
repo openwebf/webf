@@ -32,12 +32,28 @@ const String KBD = 'KBD';
 const String DFN = 'DFN';
 const String BR = 'BR';
 const String HR = 'HR';
+const String SUB = 'SUB';
+const String SUP = 'SUP';
 
 const Map<String, dynamic> _uDefaultStyle = {TEXT_DECORATION: UNDERLINE};
 
 const Map<String, dynamic> _sDefaultStyle = {TEXT_DECORATION: LINE_THROUGH};
 
 const Map<String, dynamic> _smallDefaultStyle = {FONT_SIZE: SMALLER};
+
+const Map<String, dynamic> _subDefaultStyle = {
+  DISPLAY: INLINE,
+  // UA stylesheet behavior: subscripts are smaller and lowered
+  FONT_SIZE: SMALLER,
+  VERTICAL_ALIGN: TEXT_BOTTOM,
+};
+
+const Map<String, dynamic> _supDefaultStyle = {
+  DISPLAY: INLINE,
+  // UA stylesheet behavior: superscripts are smaller and raised
+  FONT_SIZE: SMALLER,
+  VERTICAL_ALIGN: TEXT_TOP,
+};
 
 const Map<String, dynamic> _codeDefaultStyle = {
   DISPLAY: INLINE,
@@ -209,4 +225,22 @@ class HRElement extends Element {
 
   @override
   Map<String, dynamic> get defaultStyle => _hrDefaultStyle;
+}
+
+// https://developer.mozilla.org/en-US/docs/Web/HTML/Element/sub
+// Render subscripts with smaller font size and lowered baseline.
+class SubscriptElement extends Element {
+  SubscriptElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _subDefaultStyle;
+}
+
+// https://developer.mozilla.org/en-US/docs/Web/HTML/Element/sup
+// Render superscripts with smaller font size and raised baseline.
+class SuperscriptElement extends Element {
+  SuperscriptElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _supDefaultStyle;
 }

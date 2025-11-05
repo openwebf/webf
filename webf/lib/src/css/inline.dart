@@ -40,6 +40,10 @@ mixin CSSInlineMixin on RenderStyle {
 
   static VerticalAlign resolveVerticalAlign(String verticalAlign) {
     switch (verticalAlign) {
+      case 'super':
+        return VerticalAlign.textTop;
+      case 'sub':
+        return VerticalAlign.textBottom;
       case TOP:
         return VerticalAlign.top;
       case BOTTOM:

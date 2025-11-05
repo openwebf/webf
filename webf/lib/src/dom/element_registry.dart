@@ -157,6 +157,8 @@ void defineBuiltInElements() {
   defineElement(Q, (context) => QuoteElement(context));
   defineElement(KBD, (context) => KeyboardElement(context));
   defineElement(DFN, (context) => DefinitionElement(context));
+  defineElement(SUB, (context) => SubscriptElement(context));
+  defineElement(SUP, (context) => SuperscriptElement(context));
   defineElement(SPAN, (context) => SpanElement(context));
   defineElement(ANCHOR, (context) => HTMLAnchorElement(context));
   // Content
