@@ -1057,6 +1057,13 @@ bool CSSParserFastPaths::IsValidKeywordPropertyAndValue(CSSPropertyID property_i
     case CSSPropertyID::kColorRendering:
       return value_id == CSSValueID::kAuto || value_id == CSSValueID::kOptimizespeed ||
              value_id == CSSValueID::kOptimizequality;
+    case CSSPropertyID::kListStyleType:
+      // Accept common list markers including alpha/roman variants and none.
+      return value_id == CSSValueID::kNone || value_id == CSSValueID::kDisc || value_id == CSSValueID::kCircle ||
+             value_id == CSSValueID::kSquare || value_id == CSSValueID::kDisclosureOpen ||
+             value_id == CSSValueID::kDisclosureClosed || value_id == CSSValueID::kDecimal ||
+             value_id == CSSValueID::kLowerAlpha || value_id == CSSValueID::kUpperAlpha ||
+             value_id == CSSValueID::kLowerRoman || value_id == CSSValueID::kUpperRoman;
     case CSSPropertyID::kDirection:
       return value_id == CSSValueID::kLtr || value_id == CSSValueID::kRtl;
     case CSSPropertyID::kDominantBaseline:
@@ -1318,6 +1325,8 @@ CSSBitset CSSParserFastPaths::handled_by_keyword_fast_paths_properties_{{
     CSSPropertyID::kTextDecorationStyle,
     CSSPropertyID::kTextDecorationSkipInk,
     CSSPropertyID::kTextOrientation,
+    // Support keyword-only parsing for list-style-type.
+    CSSPropertyID::kListStyleType,
     CSSPropertyID::kWebkitTextOrientation,
     CSSPropertyID::kTextOverflow,
     CSSPropertyID::kTextRendering,
