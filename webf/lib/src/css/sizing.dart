@@ -16,6 +16,31 @@ import 'package:webf/rendering.dart';
 /// - min-height
 
 mixin CSSSizingMixin on RenderStyle {
+  // Parse aspect-ratio according to CSS Sizing Level 4
+  // Grammar: auto | <number> | <number> [ '/' <number> ]
+  // Returns a double ratio (width/height) or null for 'auto' / invalid.
+  static double? resolveAspectRatio(String input) {
+    final String value = input.trim();
+    if (value.isEmpty) return null;
+    if (value.toLowerCase() == 'auto') return null;
+
+    // Try fraction form: a / b (allow spaces around slash)
+    final int slash = value.indexOf('/');
+    if (slash != -1) {
+      final String a = value.substring(0, slash).trim();
+      final String b = value.substring(slash + 1).trim();
+      final double? num = double.tryParse(a);
+      final double? den = double.tryParse(b);
+      if (num == null || den == null) return null;
+      if (den == 0) return null;
+      return num / den;
+    }
+
+    // Single number form
+    final double? single = double.tryParse(value);
+    if (single == null) return null;
+    return single.isFinite && single > 0 ? single : null;
+  }
   // https://drafts.csswg.org/css-sizing-3/#preferred-size-properties
   // Name: width, height
   // Value: auto | <length-percentage> | min-content | max-content | fit-content(<length-percentage>)

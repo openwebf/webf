@@ -21,6 +21,9 @@ const String MAX_HEIGHT = 'maxHeight';
 const String MIN_WIDTH = 'minWidth';
 const String MAX_WIDTH = 'maxWidth';
 
+// Sizing 4
+const String ASPECT_RATIO = 'aspectRatio';
+
 const String OVERFLOW = 'overflow';
 const String OVERFLOW_X = 'overflowX';
 const String OVERFLOW_Y = 'overflowY';

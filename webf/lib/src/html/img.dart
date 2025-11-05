@@ -467,10 +467,15 @@ class ImageElement extends Element {
     renderStyle.intrinsicWidth = naturalWidth.toDouble();
     renderStyle.intrinsicHeight = naturalHeight.toDouble();
 
-    if (naturalWidth == 0.0 || naturalHeight == 0.0) {
-      renderStyle.aspectRatio = null;
-    } else {
-      renderStyle.aspectRatio = naturalWidth / naturalHeight;
+    // Respect author-specified aspect-ratio if present; otherwise set intrinsic.
+    final String arDecl = style.getPropertyValue(ASPECT_RATIO);
+    final bool cssHasAspectRatio = arDecl.isNotEmpty && arDecl.toLowerCase() != 'auto';
+    if (!cssHasAspectRatio) {
+      if (naturalWidth == 0.0 || naturalHeight == 0.0) {
+        renderStyle.aspectRatio = null;
+      } else {
+        renderStyle.aspectRatio = naturalWidth / naturalHeight;
+      }
     }
 
     // // Force a relayout when image dimensions are available

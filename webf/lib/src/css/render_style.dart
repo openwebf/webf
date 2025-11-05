@@ -1660,6 +1660,10 @@ class CSSRenderStyle extends RenderStyle
       case MAX_HEIGHT:
         maxHeight = value;
         break;
+      case ASPECT_RATIO:
+        // Preferred aspect ratio (width/height). Null means 'auto'.
+        aspectRatio = value as double?;
+        break;
       // Flex
       case FLEX_DIRECTION:
         flexDirection = value;
@@ -2096,6 +2100,9 @@ class CSSRenderStyle extends RenderStyle
       case STROKE_WIDTH:
         value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
         break;
+      case ASPECT_RATIO:
+        value = CSSSizingMixin.resolveAspectRatio(propertyValue);
+        break;
       case GAP:
       case ROW_GAP:
       case COLUMN_GAP:
@@ -2407,6 +2414,12 @@ class CSSRenderStyle extends RenderStyle
       CSSRenderStyle? parentStyle = renderStyle.getParentRenderStyle();
       if (logicalWidth == null && renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
+      } else if (logicalWidth == null && aspectRatio != null && renderStyle.height.isNotAuto) {
+        // Prefer aspect-ratio when height is definite and width is auto.
+        double contentH = renderStyle.height.computedValue - renderStyle.border.vertical - renderStyle.padding.vertical;
+        contentH = math.max(0, contentH);
+        final double contentW = contentH * aspectRatio!;
+        logicalWidth = contentW + renderStyle.border.horizontal + renderStyle.padding.horizontal;
       } else if (logicalWidth == null && renderStyle.isSelfHTMLElement()) {
         // Avoid defaulting to the viewport width when this element participates
         // in an inline-block shrink-to-fit context. Children of an inline-block
@@ -2493,9 +2506,17 @@ class CSSRenderStyle extends RenderStyle
       }
     }
 
-    // Get width by aspect ratio for replaced element if width is auto.
+    // Get width by aspect ratio if width is auto.
     if (logicalWidth == null && aspectRatio != null) {
-      logicalWidth = renderStyle.getWidthByAspectRatio();
+      // If a definite height is specified, prefer converting via the preferred aspect-ratio.
+      if (renderStyle.height.isNotAuto) {
+        double contentH = renderStyle.height.computedValue - renderStyle.border.vertical - renderStyle.padding.vertical;
+        contentH = math.max(0, contentH);
+        final double contentW = contentH * aspectRatio!;
+        logicalWidth = contentW + renderStyle.border.horizontal + renderStyle.padding.horizontal;
+      }
+      // Fallback for replaced/intrinsic scenarios.
+      logicalWidth ??= renderStyle.getWidthByAspectRatio();
     }
 
     // Constrain width by min-width and max-width.
@@ -2539,6 +2560,12 @@ class CSSRenderStyle extends RenderStyle
     } else {
       if (renderStyle.height.isNotAuto) {
         logicalHeight = renderStyle.height.computedValue;
+      } else if (aspectRatio != null && renderStyle.width.isNotAuto) {
+        // Prefer aspect-ratio when width is definite and height is auto.
+        double contentW = renderStyle.width.computedValue - renderStyle.border.horizontal - renderStyle.padding.horizontal;
+        contentW = math.max(0, contentW);
+        final double contentH = contentW / aspectRatio!;
+        logicalHeight = contentH + renderStyle.border.vertical + renderStyle.padding.vertical;
       } else if (renderStyle.isSelfHTMLElement()) {
         logicalHeight = renderStyle.target.ownerView.viewport!.boxSize!.height;
       } else if ((renderStyle.position == CSSPositionType.absolute || renderStyle.position == CSSPositionType.fixed) &&
@@ -2591,9 +2618,17 @@ class CSSRenderStyle extends RenderStyle
       }
     }
 
-    // Get height by aspect ratio for replaced element if height is auto.
+    // Get height by aspect ratio if height is auto.
     if (logicalHeight == null && aspectRatio != null) {
-      logicalHeight = renderStyle.getHeightByAspectRatio();
+      // If a definite width is specified, prefer converting via the preferred aspect-ratio.
+      if (renderStyle.width.isNotAuto) {
+        double contentW = renderStyle.width.computedValue - renderStyle.border.horizontal - renderStyle.padding.horizontal;
+        contentW = math.max(0, contentW);
+        final double contentH = contentW / aspectRatio!;
+        logicalHeight = contentH + renderStyle.border.vertical + renderStyle.padding.vertical;
+      }
+      // Fallback for replaced/intrinsic scenarios.
+      logicalHeight ??= renderStyle.getHeightByAspectRatio();
     }
 
     // Constrain height by min-height and max-height.

@@ -52,6 +52,9 @@ Map CSSInitialValues = {
   VISIBILITY: VISIBLE,
   WORD_SPACING: NORMAL,
   Z_INDEX: AUTO
+  ,
+  // CSS Sizing Level 4
+  ASPECT_RATIO: AUTO
 };
 
 // https://drafts.css-houdini.org/css-properties-values-api/#dependency-cycles
