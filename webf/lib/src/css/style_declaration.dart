@@ -494,23 +494,6 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
     String normalizedValue = _toLowerCase(propertyName, value.toString().trim());
 
-    // Handle width: fit-content(<length-percentage>) by mapping to
-    // width:auto + max-width:<arg>. This matches CSS Sizing semantics:
-    // used inline size is clamped to the argument while still shrinking to content.
-    // Keeping this transform at declaration level ensures downstream layout
-    // receives a definite, interoperable pair of properties.
-    if (propertyName == WIDTH && CSSFunction.isFunction(normalizedValue, functionName: 'fit-content')) {
-      final functions = CSSFunction.parseFunction(normalizedValue);
-      if (functions.isNotEmpty && functions.first.name == 'fit-content' && functions.first.args.isNotEmpty) {
-        final String arg = functions.first.args.first.trim();
-        // Rewrite as width:auto and max-width:<arg> with the same importance/baseHref.
-        // Order matters: set max-width first so width:auto doesn't get overridden.
-        setProperty(MAX_WIDTH, arg, isImportant: isImportant, baseHref: baseHref);
-        setProperty(WIDTH, AUTO, isImportant: isImportant, baseHref: baseHref);
-        return;
-      }
-    }
-
     if (!_isValidValue(propertyName, normalizedValue)) return;
 
     if (_CSSShorthandProperty[propertyName] != null) {
