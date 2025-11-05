@@ -56,9 +56,6 @@ class BodyElement extends Element {
     }
 
     if (affectsViewportBackground) {
-      if (DebugFlags.enableCssTrace) {
-        cssLogger.info('[trace][body] syncing viewport background after $property');
-      }
       ownerDocument.syncViewportBackground();
     }
   }

@@ -83,7 +83,7 @@ class StyleNodeManager {
 
   void removePendingStyleSheet(CSSStyleSheet styleSheet) {
     _pendingStyleSheets.removeWhere((element) => element == styleSheet);
-    
+
   }
 
   // TODO(jiangzhou): cache stylesheet
@@ -109,18 +109,12 @@ class StyleNodeManager {
         final HTMLElement? root = document.documentElement;
         if (root != null) {
           document.markElementStyleDirty(root, reason: 'tag-detect:HTML');
-          if (DebugFlags.enableCssTrace) {
-            cssLogger.info('[trace][invalidate] tag-detect forcing root dirty (HTML)');
-          }
         }
       }
       if (shouldForceBody) {
         final BodyElement? body = document.bodyElement;
         if (body != null) {
           document.markElementStyleDirty(body, reason: 'tag-detect:BODY');
-          if (DebugFlags.enableCssTrace) {
-            cssLogger.info('[trace][invalidate] tag-detect forcing body dirty (BODY)');
-          }
         }
       }
     } else {
@@ -190,9 +184,6 @@ class StyleNodeManager {
     int fallbackVisited = 0;
     int fallbackMatched = 0;
     final bool hasTagRules = changedRuleSet.tagRules.isNotEmpty;
-    if (DebugFlags.enableCssTrace) {
-      cssLogger.info('[trace][invalidate] changed tags=${changedRuleSet.tagRules.keys.join(',')} universals=${changedRuleSet.universalRules.length} pseudo=${changedRuleSet.pseudoRules.length}');
-    }
     if (hasTagRules ||
         changedRuleSet.universalRules.isNotEmpty ||
         changedRuleSet.pseudoRules.isNotEmpty) {
@@ -205,9 +196,6 @@ class StyleNodeManager {
           final rules = collector.matchedRulesForInvalidate(changedRuleSet, node);
           if (rules.isNotEmpty) {
             fallbackMatched++;
-            if (DebugFlags.enableCssTrace) {
-              cssLogger.info('[trace][invalidate][fallback-match] ${node.tagName}#${node.hashCode}');
-            }
             addReason(node, 'fallback');
           }
         }
@@ -221,16 +209,10 @@ class StyleNodeManager {
     if (hasTagRules) {
       final HTMLElement? root = document.documentElement;
       if (root != null && changedRuleSet.tagRules.containsKey(root.tagName.toUpperCase())) {
-        if (DebugFlags.enableCssTrace) {
-          cssLogger.info('[trace][invalidate] forcing root dirty for tag ${root.tagName}');
-        }
         addReason(root, 'tag:${root.tagName}');
       }
       final BodyElement? body = document.bodyElement;
       if (body != null && changedRuleSet.tagRules.containsKey('BODY')) {
-        if (DebugFlags.enableCssTrace) {
-          cssLogger.info('[trace][invalidate] forcing body dirty for tag BODY');
-        }
         addReason(body, 'tag:BODY');
       }
     }
@@ -244,11 +226,6 @@ class StyleNodeManager {
       if (body != null) {
         addReason(body, 'fallback-root');
       }
-    }
-
-    if (DebugFlags.enableCssTrace) {
-      cssLogger.info('[trace][invalidate] ids=${changedRuleSet.idRules.length} classes=${changedRuleSet.classRules.length} attrs=${changedRuleSet.attributeRules.length} tags=${changedRuleSet.tagRules.length} universals=${changedRuleSet.universalRules.length} pseudo=${changedRuleSet.pseudoRules.length} ' +
-          'dirty=${dirty.length} fallbackVisited=$fallbackVisited fallbackMatched=$fallbackMatched');
     }
     for (final el in dirty) {
       document.markElementStyleDirty(el, reason: reasons[el]?.join('|'));
@@ -331,13 +308,6 @@ class StyleNodeManager {
 
       ruleSet.addRules(sheet1.cssRules, baseHref: sheet1.href);
       ruleSet.addRules(sheet2.cssRules, baseHref: sheet2.href);
-    }
-
-    if (DebugFlags.enableCssTrace) {
-      cssLogger.info('[trace][sheets][diff] totals: id=${ruleSet.idRules.length} class=${ruleSet.classRules.length} attr=${ruleSet.attributeRules.length} tag=${ruleSet.tagRules.length} universal=${ruleSet.universalRules.length} pseudo=${ruleSet.pseudoRules.length}');
-      if (ruleSet.tagRules.isNotEmpty) {
-        cssLogger.info('[trace][sheets][diff] tag keys: ${ruleSet.tagRules.keys.join(',')}');
-      }
     }
     return ruleSet;
   }

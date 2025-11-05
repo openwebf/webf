@@ -77,7 +77,7 @@ mixin CSSBoxMixin on RenderStyle {
       gradient: gradient,
     );
 
-    
+
 
     return _cachedDecoration = built;
   }

@@ -276,7 +276,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
           // Do not mutate target.inlineStyle here: stylesheet declarations must
           // never overwrite author inline styles.
           CSSStyleProperty.setShorthandBackground(longhandProperties, normalizedValue);
-          
+
           break;
         case BACKGROUND_POSITION:
           // Expand to X/Y longhands for computed usage, but also preserve the raw
@@ -500,10 +500,6 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       return _expandShorthand(propertyName, normalizedValue, isImportant, baseHref: baseHref);
     }
 
-    if (DebugFlags.enableCssTrace) {
-      cssLogger.info('[trace][css] setProperty name=$propertyName value=$normalizedValue important=$isImportant baseHref=$baseHref target=${target?.tagName ?? 'detached'}');
-    }
-
     // From style sheet mark the property important as false.
     if (isImportant == false) {
       _sheetStyle[propertyName] = normalizedValue;
@@ -535,7 +531,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       CSSPropertyValue currentValue = _pendingProperties[DISPLAY]!;
       _properties[DISPLAY] = currentValue;
       _pendingProperties.remove(DISPLAY);
-      
+
       _emitPropertyChanged(DISPLAY, prevValue?.value, currentValue.value, baseHref: currentValue.baseHref);
     }
   }
@@ -588,7 +584,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       return 0;
     });
 
-    
+
 
     for (String propertyName in propertyNames) {
       CSSPropertyValue? prevValue = prevValues[propertyName];
@@ -597,7 +593,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
 
     onStyleFlushed?.call(propertyNames);
-    
+
   }
 
   // Inserts the style of the given Declaration into the current Declaration.
@@ -789,10 +785,6 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
   void _emitPropertyChanged(String property, String? original, String present, {String? baseHref}) {
     if (original == present && (!CSSVariable.isCSSVariableValue(present))) return;
-
-    if (DebugFlags.enableCssTrace) {
-      cssLogger.info('[trace][css] emitPropertyChanged name=$property original=${original ?? 'null'} present=$present baseHref=$baseHref target=${target?.tagName ?? 'detached'}');
-    }
 
     if (onStyleChanged != null) {
       onStyleChanged!(property, original, present, baseHref: baseHref);

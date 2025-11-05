@@ -155,7 +155,7 @@ class CSSStyleProperty {
     }
     properties[BACKGROUND_SIZE] = size;
 
-    
+
   }
 
   static void removeShorthandBackground(CSSStyleDeclaration style, [bool? isImportant]) {

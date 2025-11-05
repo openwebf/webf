@@ -294,11 +294,11 @@ class ElementRuleCollector {
   List<CSSRule> _collectMatchingRulesForList(
     List<CSSRule>? rules,
     Element element, {
-    required SelectorEvaluator evaluator,
-    bool enableAncestryFastPath = true,
-    _AncestorTokenSet? ancestorTokens,
-    bool includePseudo = false,
-  }) {
+      required SelectorEvaluator evaluator,
+      bool enableAncestryFastPath = true,
+      _AncestorTokenSet? ancestorTokens,
+      bool includePseudo = false,
+    }) {
     if (rules == null || rules.isEmpty) {
       return [];
     }
@@ -321,10 +321,36 @@ class ElementRuleCollector {
       try {
         if (evaluator.matchSelector(rule.selectorGroup, element)) {
           final bool hasPseudo = _selectorGroupHasPseudoElement(rule.selectorGroup);
+          final bool hasNonPseudo = _selectorGroupHasNonPseudoElement(rule.selectorGroup);
           if (includePseudo) {
             if (hasPseudo) matchedRules.add(rule);
           } else {
-            if (!hasPseudo) matchedRules.add(rule);
+            // For normal elements, only include the rule if there exists at least
+            // one non-pseudo selector in the group that matches the element on its
+            // own. This avoids accidentally including pseudo-element selectors like
+            // ".angle::before" for the base element when the evaluator treats legacy
+            // pseudos as matching.
+            bool matchedByNonPseudo = false;
+            if (hasNonPseudo) {
+              for (final Selector sel in rule.selectorGroup.selectors) {
+                final bool selHasPseudo = _selectorHasPseudoElement(sel);
+                if (!selHasPseudo) {
+                  final SelectorGroup single = SelectorGroup(<Selector>[sel]);
+                  if (evaluator.matchSelector(single, element)) {
+                    matchedByNonPseudo = true;
+                    break;
+                  }
+                }
+              }
+            }
+            if (matchedByNonPseudo) {
+              matchedRules.add(rule);
+            } else {
+              if (DebugFlags.enableCssTrace) {
+                final selText = rule.selectorGroup.selectorText;
+                cssLogger.finer('[CSS/Match] skip non-pseudo include for ${element.tagName} due to only-pseudo match: "$selText"');
+              }
+            }
           }
         }
       } catch (error) {
@@ -343,6 +369,30 @@ class ElementRuleCollector {
         if (simple is PseudoElementSelector || simple is PseudoElementFunctionSelector) {
           return true;
         }
+      }
+    }
+    return false;
+  }
+
+  bool _selectorGroupHasNonPseudoElement(SelectorGroup selectorGroup) {
+    for (final Selector selector in selectorGroup.selectors) {
+      for (final SimpleSelectorSequence seq in selector.simpleSelectorSequences) {
+        final simple = seq.simpleSelector;
+        // Any non-pseudo simple selector (including universal '*', tag, class, id, attribute)
+        // indicates the group targets normal elements as well.
+        if (simple is! PseudoElementSelector && simple is! PseudoElementFunctionSelector) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  bool _selectorHasPseudoElement(Selector selector) {
+    for (final SimpleSelectorSequence seq in selector.simpleSelectorSequences) {
+      final simple = seq.simpleSelector;
+      if (simple is PseudoElementSelector || simple is PseudoElementFunctionSelector) {
+        return true;
       }
     }
     return false;

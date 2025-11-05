@@ -46,11 +46,6 @@ class Document extends ContainerNode {
 
   void markElementStyleDirty(Element element, {String? reason}) {
     _styleDirtyElements.add(element.pointer!.address);
-    if (DebugFlags.enableCssTrace) {
-      final id = element.id != null && element.id!.isNotEmpty ? '#${element.id}' : '';
-      final classes = element.classList.isNotEmpty ? '.${element.classList.join('.')}' : '';
-      cssLogger.info('[trace][dirty] ${element.tagName}$id$classes reason=${reason ?? 'unspecified'}');
-    }
     // Ensure a future flush runs even when only element-level changes occur
     // (no stylesheet updates). This coalesces via the existing scheduler.
     scheduleStyleUpdate();
@@ -443,11 +438,6 @@ class Document extends ContainerNode {
     if (vp.background != resolved) {
       vp.background = resolved;
       vp.markNeedsPaint();
-      if (DebugFlags.enableCssTrace) {
-        cssLogger.info('[trace][viewport-bg] resolved=${resolved?.toString() ?? 'null'} bodyHasColor=$bodyHasColor');
-      }
-    } else if (DebugFlags.enableCssTrace) {
-      cssLogger.info('[trace][viewport-bg] no change (resolved=${resolved?.toString() ?? 'null'})');
     }
   }
 
@@ -538,28 +528,17 @@ class Document extends ContainerNode {
   final List<CSSStyleSheet> styleSheets = [];
 
   void handleStyleSheets(List<CSSStyleSheet> sheets) {
-
-    if (DebugFlags.enableCssTrace) {
-      cssLogger.info('[trace][sheets] applying count=${sheets.length} previous=${styleSheets.length}');
-    }
     styleSheets.clear();
     styleSheets.addAll(sheets.map((e) => e.clone()));
 
     ruleSet.reset();
     int ruleCount = 0;
     for (var sheet in sheets) {
-      if (DebugFlags.enableCssTrace) {
-        cssLogger.info('[trace][sheets] indexing href=${sheet.href ?? 'inline'} rules=${sheet.cssRules.length}');
-      }
-
       ruleCount += sheet.cssRules.length;
       ruleSet.addRules(sheet.cssRules, baseHref: sheet.href);
     }
     // Increment the ruleset version to bust element-level caches.
     ruleSetVersion++;
-    if (DebugFlags.enableCssTrace) {
-      cssLogger.info('[trace][sheets] applied; ruleSetVersion=$ruleSetVersion ruleCount=$ruleCount');
-    }
 
   }
 
@@ -627,9 +606,6 @@ class Document extends ContainerNode {
         rebuild;
     if (DebugFlags.enableCssDisableRootRecalc && recalcFromRoot) {
       recalcFromRoot = false;
-    }
-    if (DebugFlags.enableCssTrace) {
-      cssLogger.info('[trace][flush] dirty=${_styleDirtyElements.length} sheetsUpdated=$sheetsUpdated recalcFromRoot=$recalcFromRoot');
     }
 
     if (recalcFromRoot) {

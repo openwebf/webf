@@ -1618,9 +1618,6 @@ abstract class Element extends ContainerNode
     if (defaultStyle.isNotEmpty) {
       defaultStyle.forEach((propertyName, value) {
         if (style.contains(propertyName) == false) {
-          if (DebugFlags.enableCssTrace) {
-            cssLogger.info('[trace][element] <$tagName> apply default $propertyName=$value');
-          }
           style.setProperty(propertyName, value);
         }
       });
@@ -1630,9 +1627,6 @@ abstract class Element extends ContainerNode
   void _applyInlineStyle(CSSStyleDeclaration style) {
     if (inlineStyle.isNotEmpty) {
       inlineStyle.forEach((propertyName, value) {
-        if (DebugFlags.enableCssTrace) {
-          cssLogger.info('[trace][element] <$tagName> inline $propertyName=$value');
-        }
         // Force inline style to be applied as important priority.
         style.setProperty(propertyName, value, isImportant: true);
       });
@@ -1677,10 +1671,6 @@ abstract class Element extends ContainerNode
       // LRU refresh: move to most-recent by reinserting.
       cache.remove(fingerprint);
       cache[fingerprint] = hitEntry;
-
-      if (DebugFlags.enableCssTrace) {
-        cssLogger.info('[trace][memo] hit ${tagName}${id != null && id!.isNotEmpty ? '#$id' : ''}');
-      }
       return hitEntry.style;
     }
 
@@ -1699,10 +1689,6 @@ abstract class Element extends ContainerNode
       fingerprint: fingerprint,
       style: computed,
     );
-
-    if (DebugFlags.enableCssTrace) {
-      cssLogger.info('[trace][memo] miss ${tagName}${id != null && id!.isNotEmpty ? '#$id' : ''}');
-    }
     return computed;
   }
 
