@@ -19,6 +19,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:path/path.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/css.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/panel/console_store.dart';
 
@@ -70,7 +71,15 @@ double uInt64ToDouble(int value) {
 }
 
 String nativeStringToString(Pointer<NativeString> pointer) {
-  return uint16ToString(pointer.ref.string, pointer.ref.length);
+  final int len = pointer.ref.length;
+  if (len == 0) {
+    return '';
+  }
+  final ptr = pointer.ref.string;
+  if (ptr == nullptr) {
+    return '';
+  }
+  return uint16ToString(ptr, len);
 }
 
 ({String key, String value}) nativePairToPairRecord(Pointer<NativePair> pointer, {bool free = false}) {
@@ -900,8 +909,83 @@ final Pointer<NativeFunction<NativeFetchImportCSSContent>> _nativeFetchImportCSS
     _nativeOnJsError.address,
     _nativeOnJsLog.address,
     _nativeOnJSLogStructured.address,
-    _nativeFetchImportCSSContent.address
+    _nativeFetchImportCSSContent.address,
+    _nativeRegisterFontFace.address,
+    _nativeUnregisterFontFace.address
   ];
+
+// ===== FontFace registration (Bridge -> Dart) =====
+typedef NativeRegisterFontFace = Void Function(
+    Double contextId,
+    Pointer<NativeString> sheetId,
+    Pointer<NativeString> fontFamily,
+    Pointer<NativeString> src,
+    Pointer<NativeString> fontWeight,
+    Pointer<NativeString> fontStyle,
+    Pointer<NativeString> baseHref);
+
+void _registerFontFace(
+  double contextId,
+  Pointer<NativeString> nativeSheetId,
+  Pointer<NativeString> nativeFontFamily,
+  Pointer<NativeString> nativeSrc,
+  Pointer<NativeString> nativeFontWeight,
+  Pointer<NativeString> nativeFontStyle,
+  Pointer<NativeString> nativeBaseHref,
+) {
+  try {
+    final String sheetId = nativeStringToString(nativeSheetId);
+    final String fontFamily = nativeStringToString(nativeFontFamily);
+    final String src = nativeStringToString(nativeSrc);
+    final String fontWeight = nativeStringToString(nativeFontWeight);
+    final String fontStyle = nativeStringToString(nativeFontStyle);
+    final String baseHref = nativeStringToString(nativeBaseHref);
+
+    // Debug
+    try {
+      final String srcPreview = src.length > 120 ? src.substring(0, 120) + '…' : src;
+      bridgeLogger.info('[font-face][dart] register sheet=$sheetId family=$fontFamily weight=$fontWeight style=$fontStyle base=${baseHref.isEmpty ? 'null' : baseHref} src="$srcPreview"');
+    } catch (_) {}
+
+    CSSFontFace.registerFromBridge(
+      sheetId: sheetId,
+      fontFamily: fontFamily,
+      src: src,
+      fontWeight: fontWeight.isEmpty ? null : fontWeight,
+      fontStyle: fontStyle.isEmpty ? null : fontStyle,
+      contextId: contextId,
+      baseHref: baseHref.isEmpty ? null : baseHref,
+    );
+  } catch (e, stack) {
+    bridgeLogger.severe('[font-face] register error: $e\n$stack');
+  } finally {
+    // Free native strings allocated on C++ side.
+    if (nativeSheetId != nullptr) freeNativeString(nativeSheetId);
+    if (nativeFontFamily != nullptr) freeNativeString(nativeFontFamily);
+    if (nativeSrc != nullptr) freeNativeString(nativeSrc);
+    if (nativeFontWeight != nullptr) freeNativeString(nativeFontWeight);
+    if (nativeFontStyle != nullptr) freeNativeString(nativeFontStyle);
+    if (nativeBaseHref != nullptr) freeNativeString(nativeBaseHref);
+  }
+}
+
+final Pointer<NativeFunction<NativeRegisterFontFace>> _nativeRegisterFontFace = Pointer.fromFunction(_registerFontFace);
+
+typedef NativeUnregisterFontFace = Void Function(Double contextId, Pointer<NativeString> sheetId);
+
+void _unregisterFontFace(double contextId, Pointer<NativeString> nativeSheetId) {
+  try {
+    final String sheetId = nativeStringToString(nativeSheetId);
+    CSSFontFace.unregisterFromSheet(sheetId);
+  } catch (e, stack) {
+    bridgeLogger.severe('[font-face] unregister error: $e\n$stack');
+  } finally {
+    if (nativeSheetId != nullptr) freeNativeString(nativeSheetId);
+  }
+}
+
+final Pointer<NativeFunction<NativeUnregisterFontFace>> _nativeUnregisterFontFace =
+    Pointer.fromFunction(_unregisterFontFace);
 
 List<int> makeDartMethodsData() {
   return _dartNativeMethods;

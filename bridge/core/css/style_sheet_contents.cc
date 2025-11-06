@@ -236,7 +236,7 @@ void StyleSheetContents::ParserAppendRule(std::shared_ptr<StyleRuleBase> rule) {
   //    return;
   //  }
 
-  // Debug: log appended style rules and their properties
+  // Debug: log appended style rules and @font-face rules and their properties
   if (rule && rule->IsStyleRule()) {
     auto style_rule = std::static_pointer_cast<StyleRule>(rule);
     String selectors_text = style_rule->SelectorsText();
@@ -252,6 +252,21 @@ void StyleSheetContents::ParserAppendRule(std::shared_ptr<StyleRuleBase> rule) {
       WEBF_COND_LOG(STYLESHEET, VERBOSE) << "  - " << name << ": '"
                                           << ((vptr && *vptr) ? (*vptr)->CssText().ToUTF8String() : std::string("<null>"))
                                           << "'";
+    }
+  } else if (rule && rule->IsFontFaceRule()) {
+    auto ff = std::static_pointer_cast<StyleRuleFontFace>(rule);
+    const CSSPropertyValueSet& props = ff->Properties();
+    WEBF_LOG(INFO) << "[font-face][parse] appended @font-face (base=" << parser_context_->BaseURL().GetString() << ")"
+                   << " props=" << props.PropertyCount();
+    for (unsigned i = 0; i < props.PropertyCount(); ++i) {
+      auto prop = props.PropertyAt(i);
+      const auto vptr = prop.Value();
+      std::string name = prop.Name().IsCustomProperty()
+                             ? prop.Name().ToAtomicString().ToUTF8String()
+                             : CSSProperty::Get(prop.Id()).GetPropertyNameString().ToUTF8String();
+      std::string value = (vptr && *vptr) ? (*vptr)->CssText().ToUTF8String() : std::string("<null>");
+      if (value.size() > 200) value = value.substr(0, 200) + "…";
+      WEBF_LOG(INFO) << "  - " << name << ": '" << value << "'";
     }
   }
 

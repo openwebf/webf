@@ -44,6 +44,9 @@ DartMethodPointer::DartMethodPointer(DartIsolateContext* dart_isolate_context,
   on_js_log_structured_ = reinterpret_cast<OnJSLogStructured>(dart_methods[i++]);
   // New: fetch CSS @import content
   fetch_import_css_content_ = reinterpret_cast<FetchImportCSSContent>(dart_methods[i++]);
+  // FontFace registration
+  register_font_face_ = reinterpret_cast<RegisterFontFace>(dart_methods[i++]);
+  unregister_font_face_ = reinterpret_cast<UnregisterFontFace>(dart_methods[i++]);
 
   assert_m(i == dart_methods_length, "Dart native methods count is not equal with C++ side method registrations.");
 }
@@ -83,6 +86,28 @@ void DartMethodPointer::requestBatchUpdate(bool is_dedicated, double context_id)
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, request_batch_update_, context_id);
+}
+
+void DartMethodPointer::registerFontFace(bool is_dedicated,
+                                         double context_id,
+                                         SharedNativeString* sheet_id,
+                                         SharedNativeString* font_family,
+                                         SharedNativeString* src,
+                                         SharedNativeString* font_weight,
+                                         SharedNativeString* font_style,
+                                         SharedNativeString* base_href) {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::registerFontFace Call";
+#endif
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, register_font_face_, context_id, sheet_id, font_family,
+                                                  src, font_weight, font_style, base_href);
+}
+
+void DartMethodPointer::unregisterFontFace(bool is_dedicated, double context_id, SharedNativeString* sheet_id) {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::unregisterFontFace Call";
+#endif
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, unregister_font_face_, context_id, sheet_id);
 }
 
 void DartMethodPointer::reloadApp(bool is_dedicated, double context_id) {

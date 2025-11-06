@@ -14,6 +14,7 @@ import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'dart:convert';
+import 'package:webf/src/foundation/logger.dart';
 
 final List<String> supportedFonts = [
   'ttc',
@@ -41,6 +42,8 @@ class FontFaceDescriptor {
   final _Font font;
   final double contextId;
   final String? baseHref;
+  // Optional owner sheet identifier from bridge (for unregister on sheet removal)
+  final String? sheetId;
   bool isLoaded = false;
 
   FontFaceDescriptor({
@@ -50,12 +53,15 @@ class FontFaceDescriptor {
     required this.font,
     required this.contextId,
     this.baseHref,
+    this.sheetId,
   });
 }
 
 class CSSFontFace {
   // Store font face descriptors indexed by font family
   static final Map<String, List<FontFaceDescriptor>> _fontFaceRegistry = {};
+  // Track descriptors by stylesheet for unregister
+  static final Map<String, List<FontFaceDescriptor>> _sheetRegistry = {};
 
   // Cache loaded font combinations
   static final Set<String> _loadedFonts = {};
@@ -65,7 +71,10 @@ class CSSFontFace {
   }
   static Uri? _resolveFontSource(double contextId, String source, String? base) {
     WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
-    base = base ?? controller.url;
+    // Treat about:* or empty base as absent so we fallback to document URL.
+    if (base == null || base.isEmpty || base.startsWith('about:')) {
+      base = controller.url;
+    }
     try {
       return controller.uriParser!.resolve(Uri.parse(base), Uri.parse(source));
     } catch (_) {
@@ -132,9 +141,91 @@ class CSSFontFace {
         font: targetFont,
         contextId: contextId,
         baseHref: srcBaseHref,
+        sheetId: null,
       );
 
       _fontFaceRegistry.putIfAbsent(cleanFontFamily, () => []).add(descriptor);
+    }
+  }
+
+  // Bridge API: register a parsed @font-face coming from C++ side.
+  // The src string may contain one or more url()/local()/data: entries, we will
+  // pick the first supported source similar to resolveFontFaceRules.
+  static void registerFromBridge({
+    required String sheetId,
+    required String fontFamily,
+    required String src,
+    required String? fontWeight,
+    required String? fontStyle,
+    required double contextId,
+    String? baseHref,
+  }) {
+    cssLogger.info('[font-face][register] incoming sheet=$sheetId family=$fontFamily weight=${fontWeight ?? 'null'} style=${fontStyle ?? 'null'} base=${baseHref ?? 'null'}');
+
+    if (fontFamily.isEmpty || src.isEmpty) return;
+
+    final String cleanFamily = removeQuotationMark(fontFamily);
+
+    final FontWeight weight = _parseFontWeight(fontWeight);
+    final FontStyle style = (fontStyle == 'italic') ? FontStyle.italic : FontStyle.normal;
+
+    List<CSSFunctionalNotation> functions = CSSFunction.parseFunction(src);
+    List<_Font> fonts = [];
+    for (final CSSFunctionalNotation notation in functions) {
+      if (notation.name == 'url' && notation.args.isNotEmpty) {
+        String tmpSrc = removeQuotationMark(notation.args[0]);
+        cssLogger.fine('[font-face][register] candidate src=$tmpSrc');
+        if (tmpSrc.startsWith('data')) {
+          // data:...;base64,<...>
+          String tmpContent = tmpSrc.split(';').last;
+          if (tmpContent.startsWith('base64')) {
+            String base64 = tmpSrc.split(',').last;
+            try {
+              Uint8List decoded = base64Decode(base64);
+              if (decoded.isNotEmpty) {
+                fonts.add(_Font.content(decoded));
+              }
+            } catch (_) {}
+          }
+        } else {
+          String formatFromExt = tmpSrc.split('.').last;
+          fonts.add(_Font(tmpSrc, formatFromExt));
+        }
+      }
+    }
+
+    _Font? targetFont = fonts.firstWhereOrNull((f) => supportedFonts.contains(f.format));
+    if (targetFont == null) {
+      cssLogger.warning('[font-face][register] no supported font format in src (sheet=$sheetId family=$cleanFamily)');
+      return;
+    }
+
+    final descriptor = FontFaceDescriptor(
+      fontFamily: cleanFamily,
+      fontWeight: weight,
+      fontStyle: style,
+      font: targetFont,
+      contextId: contextId,
+      baseHref: baseHref,
+      sheetId: sheetId,
+    );
+
+    _fontFaceRegistry.putIfAbsent(cleanFamily, () => []).add(descriptor);
+    _sheetRegistry.putIfAbsent(sheetId, () => []).add(descriptor);
+    cssLogger.info('[font-face][register] stored family=$cleanFamily formats=${fonts.map((f)=>f.format).join(',')} chosen=${targetFont.format} registryFamilies=${_fontFaceRegistry.keys.join('|')}');
+  }
+
+  // Bridge API: unregister all font-faces associated with a stylesheet id.
+  static void unregisterFromSheet(String sheetId) {
+    final list = _sheetRegistry.remove(sheetId);
+    if (list == null) return;
+    for (final desc in list) {
+      final familyList = _fontFaceRegistry[desc.fontFamily];
+      if (familyList == null) continue;
+      familyList.removeWhere((d) => identical(d, desc) || d.sheetId == sheetId);
+      if (familyList.isEmpty) {
+        _fontFaceRegistry.remove(desc.fontFamily);
+      }
     }
   }
 
@@ -193,6 +284,7 @@ class CSSFontFace {
 
   // Load font on demand when it's actually used
   static Future<void> ensureFontLoaded(String fontFamily, FontWeight fontWeight, CSSRenderStyle renderStyle) async {
+    cssLogger.info('[font-face][ensure] request family=$fontFamily weight=${fontWeight.index}');
     String fontKey = _getFontKey(fontFamily, fontWeight);
 
     // Already loaded
@@ -208,13 +300,19 @@ class CSSFontFace {
     // Find matching font descriptor
     List<FontFaceDescriptor>? descriptors = _fontFaceRegistry[fontFamily];
     if (descriptors == null || descriptors.isEmpty) {
+      cssLogger.warning('[font-face][ensure] no descriptors for family="$fontFamily". Known families=${_fontFaceRegistry.keys.join('|')}');
       return;
     }
 
     // Find exact weight match or closest fallback
     FontFaceDescriptor? descriptor = _findBestMatchingDescriptor(descriptors, fontWeight);
 
-    if (descriptor == null || descriptor.isLoaded) {
+    if (descriptor == null) {
+      cssLogger.warning('[font-face][ensure] no matching descriptor for weight=${fontWeight.index}. availableWeights=${descriptors.map((d)=>d.fontWeight.index).join(',')}');
+      return;
+    }
+    if (descriptor.isLoaded) {
+      cssLogger.fine('[font-face][ensure] already loaded for family=${descriptor.fontFamily} weight=${descriptor.fontWeight.index}');
       return;
     }
 
@@ -330,6 +428,7 @@ class CSSFontFace {
   // Clear font cache (useful for testing or memory management)
   static void clearFontCache() {
     _fontFaceRegistry.clear();
+    _sheetRegistry.clear();
     _loadedFonts.clear();
   }
 }
