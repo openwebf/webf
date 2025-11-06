@@ -46,6 +46,13 @@ class BoxDecorationPainter extends BoxPainter {
   CSSRenderStyle renderStyle;
   CSSBoxDecoration get _decoration => renderStyle.decoration!;
 
+  // Whether background-image contains any gradient layers.
+  bool _hasGradientLayers() {
+    final img = renderStyle.backgroundImage;
+    if (img == null) return false;
+    return img.functions.any((f) => f.name.contains('gradient'));
+  }
+
   Size? get backgroundImageSize {
     ui.Image? image = _imagePainter?._image?.image;
     if (image == null) {
@@ -629,8 +636,7 @@ class BoxDecorationPainter extends BoxPainter {
     // paints full-rect and ignores background-size/position. To emulate CSS,
     // detect gradient usage and paint per-layer with clipping based on
     // background-size and background-position values.
-    final hasGradientBgImage = renderStyle.backgroundImage != null &&
-        renderStyle.backgroundImage!.functions.any((f) => f.name.contains('gradient'));
+    final hasGradientBgImage = _hasGradientLayers();
 
     if (hasGradientBgImage) {
       _paintLayeredGradients(canvas, rect, textDirection);
@@ -680,15 +686,30 @@ class BoxDecorationPainter extends BoxPainter {
   ) {
     final String raw = renderStyle.target.style.getPropertyValue(BACKGROUND_POSITION);
     final List<String> tokens = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
+
+    // Prefer computed longhands when a transition is actively running for
+    // background-position or its axes, so that animation-driven values take
+    // effect even if the shorthand string was authored in stylesheet.
+    final bool animatingPos = (renderStyle is CSSRenderStyle)
+        ? (renderStyle as CSSRenderStyle).isTransitionRunning(BACKGROUND_POSITION) ||
+            (renderStyle as CSSRenderStyle).isTransitionRunning(BACKGROUND_POSITION_X) ||
+            (renderStyle as CSSRenderStyle).isTransitionRunning(BACKGROUND_POSITION_Y)
+        : false;
+
     // Build full list first
     final List<(CSSBackgroundPosition, CSSBackgroundPosition)> full = [];
     for (int j = 0; j < fullCount; j++) {
-      // Per spec, if there are fewer values than images, unspecified layers use initial value (0% 0%).
-      final String token = (j < tokens.length) ? tokens[j] : '0% 0%';
-      final List<String> pair = CSSPosition.parsePositionShorthand(token);
-      final x = CSSPosition.resolveBackgroundPosition(pair[0], renderStyle, BACKGROUND_POSITION_X, true);
-      final y = CSSPosition.resolveBackgroundPosition(pair[1], renderStyle, BACKGROUND_POSITION_Y, false);
-      full.add((x, y));
+      if (!animatingPos && tokens.isNotEmpty) {
+        // Cycle provided list across images.
+        final String token = tokens[j % tokens.length];
+        final List<String> pair = CSSPosition.parsePositionShorthand(token);
+        final x = CSSPosition.resolveBackgroundPosition(pair[0], renderStyle, BACKGROUND_POSITION_X, true);
+        final y = CSSPosition.resolveBackgroundPosition(pair[1], renderStyle, BACKGROUND_POSITION_Y, false);
+        full.add((x, y));
+      } else {
+        // Use computed longhands (animated or computed) and apply to all layers.
+        full.add((renderStyle.backgroundPositionX, renderStyle.backgroundPositionY));
+      }
     }
     // Map to gradient-only order
     final List<(CSSBackgroundPosition, CSSBackgroundPosition)> mapped =
@@ -700,11 +721,19 @@ class BoxDecorationPainter extends BoxPainter {
   List<CSSBackgroundSize> _parseSizesMapped(List<int> gradientIndices, int fullCount) {
     final String raw = renderStyle.target.style.getPropertyValue(BACKGROUND_SIZE);
     final List<String> tokens = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
+    final bool animatingSize = (renderStyle is CSSRenderStyle)
+        ? (renderStyle as CSSRenderStyle).isTransitionRunning(BACKGROUND_SIZE)
+        : false;
     final List<CSSBackgroundSize> full = [];
     for (int j = 0; j < fullCount; j++) {
-      // Match browsers: if list is shorter than images, repeat the list cyclically.
-      final String token = tokens.isNotEmpty ? tokens[j % tokens.length] : AUTO;
-      full.add(CSSBackground.resolveBackgroundSize(token, renderStyle, BACKGROUND_SIZE));
+      if (!animatingSize && tokens.isNotEmpty) {
+        // Repeat list cyclically.
+        final String token = tokens[j % tokens.length];
+        full.add(CSSBackground.resolveBackgroundSize(token, renderStyle, BACKGROUND_SIZE));
+      } else {
+        // Use computed single background-size and apply to all layers.
+        full.add(renderStyle.backgroundSize);
+      }
     }
     final List<CSSBackgroundSize> mapped = gradientIndices.map((idx) => full[idx]).toList(growable: false);
     return mapped;
@@ -716,9 +745,13 @@ class BoxDecorationPainter extends BoxPainter {
     final List<String> tokens = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
     final List<ImageRepeat> full = [];
     for (int j = 0; j < fullCount; j++) {
-      // Match browsers: cycle the provided list to match image count.
-      final String token = tokens.isNotEmpty ? tokens[j % tokens.length] : REPEAT;
-      full.add(CSSBackground.resolveBackgroundRepeat(token).imageRepeat());
+      if (tokens.isNotEmpty) {
+        final String token = tokens[j % tokens.length];
+        full.add(CSSBackground.resolveBackgroundRepeat(token).imageRepeat());
+      } else {
+        // Use computed single repeat and apply to all layers.
+        full.add(renderStyle.backgroundRepeat.imageRepeat());
+      }
     }
     final List<ImageRepeat> mapped = gradientIndices.map((idx) => full[idx]).toList(growable: false);
     return mapped;
@@ -807,6 +840,8 @@ class BoxDecorationPainter extends BoxPainter {
     final sizes = _parseSizesMapped(gIndices, fullFns.length);
     final repeats = _parseRepeatsMapped(gIndices, fullFns.length);
 
+    
+
     // Paint from bottom-most (last) to top-most (first) per CSS layering rules.
     for (int i = fns.length - 1; i >= 0; i--) {
       final fn = fns[i];
@@ -823,6 +858,8 @@ class BoxDecorationPainter extends BoxPainter {
       // Compute destination size and rect
       final Size destSize = _computeGradientDestinationSize(rect, size);
       Rect destRect = _computeDestinationRect(rect, destSize, px, py);
+
+      
 
       // Clip to background painting area. Respect border-radius when present to
       // avoid leaking color outside rounded corners (matches CSS background-clip).
@@ -872,7 +909,6 @@ class BoxDecorationPainter extends BoxPainter {
         if (_decoration.hasBorderRadius) clipPath = Path()..addRRect(_decoration.borderRadius!.toRRect(rect));
         break;
     }
-    
     _imagePainter!.paint(canvas, rect, clipPath, configuration);
 
     // Report FCP when background image is painted (excluding CSS gradients)
@@ -914,17 +950,23 @@ class BoxDecorationPainter extends BoxPainter {
       return;
     }
 
-    // Rect of background color
+    // Rects for color and image
     Rect backgroundColorRect = _getBackgroundClipRect(baseOffset, configuration);
-    _paintBackgroundColor(canvas, backgroundColorRect, textDirection);
-
     // Background image of background-attachment local scroll with content
     Offset backgroundImageOffset = hasLocalAttachment ? offset : baseOffset;
     // Rect of background image
     Rect backgroundClipRect = _getBackgroundClipRect(backgroundImageOffset, configuration);
     Rect backgroundOriginRect = _getBackgroundOriginRect(backgroundImageOffset, configuration);
     Rect backgroundImageRect = backgroundClipRect.intersect(backgroundOriginRect);
-    _paintBackgroundImage(canvas, backgroundImageRect, configuration);
+
+    final bool hasGradients = _hasGradientLayers();
+    if (hasGradients) {
+      _paintBackgroundImage(canvas, backgroundImageRect, configuration);
+      _paintBackgroundColor(canvas, backgroundColorRect, textDirection);
+    } else {
+      _paintBackgroundColor(canvas, backgroundColorRect, textDirection);
+      _paintBackgroundImage(canvas, backgroundImageRect, configuration);
+    }
   }
 
   Rect _getBackgroundOriginRect(Offset offset, ImageConfiguration configuration) {
@@ -1032,14 +1074,18 @@ class BoxDecorationPainter extends BoxPainter {
     bool hasLocalAttachment = _hasLocalBackgroundImage();
     if (!hasLocalAttachment) {
       if (renderStyle.backgroundClip != CSSBackgroundBoundary.text) {
+        final bool hasGradients = _hasGradientLayers();
         Rect backgroundClipRect = _getBackgroundClipRect(offset, configuration);
-        
-        _paintBackgroundColor(canvas, backgroundClipRect, textDirection);
-
         Rect backgroundOriginRect = _getBackgroundOriginRect(offset, configuration);
         Rect backgroundImageRect = backgroundClipRect.intersect(backgroundOriginRect);
 
-        _paintBackgroundImage(canvas, backgroundImageRect, configuration);
+        if (hasGradients) {
+          _paintBackgroundImage(canvas, backgroundImageRect, configuration);
+          _paintBackgroundColor(canvas, backgroundClipRect, textDirection);
+        } else {
+          _paintBackgroundColor(canvas, backgroundClipRect, textDirection);
+          _paintBackgroundImage(canvas, backgroundImageRect, configuration);
+        }
       }
     }
 
