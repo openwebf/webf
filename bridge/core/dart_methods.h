@@ -109,6 +109,16 @@ typedef void (*FetchImportCSSContent)(void* callback_context,
                                       SharedNativeString* import_href,
                                       FetchImportCSSContentCallback callback);
 
+// FontFace registration (Bridge -> Dart)
+typedef void (*RegisterFontFace)(double context_id,
+                                 SharedNativeString* sheet_id,
+                                 SharedNativeString* font_family,
+                                 SharedNativeString* src,
+                                 SharedNativeString* font_weight,
+                                 SharedNativeString* font_style,
+                                 SharedNativeString* base_href);
+typedef void (*UnregisterFontFace)(double context_id, SharedNativeString* sheet_id);
+
 using MatchImageSnapshotCallback = void (*)(void* callback_context, double context_id, int8_t, char* errmsg);
 using MatchImageSnapshot = void (*)(void* callback_context,
                                     double context_id,
@@ -239,6 +249,17 @@ class DartMethodPointer {
                              SharedNativeString* import_href,
                              FetchImportCSSContentCallback callback);
 
+  // Bridge -> Dart: font-face registration
+  void registerFontFace(bool is_dedicated,
+                        double context_id,
+                        SharedNativeString* sheet_id,
+                        SharedNativeString* font_family,
+                        SharedNativeString* src,
+                        SharedNativeString* font_weight,
+                        SharedNativeString* font_style,
+                        SharedNativeString* base_href);
+  void unregisterFontFace(bool is_dedicated, double context_id, SharedNativeString* sheet_id);
+
   void onJSError(bool is_dedicated, double context_id, const char*);
   void onJSLog(bool is_dedicated, double context_id, int32_t level, const char*);
   void onJSLogStructured(bool is_dedicated, double context_id, int32_t level, int32_t argc, NativeValue* argv);
@@ -303,6 +324,8 @@ class DartMethodPointer {
   SimulateChangeDartMode simulate_change_dart_mode_{nullptr};
   SimulatePointer simulate_pointer_{nullptr};
   SimulateInputText simulate_input_text_{nullptr};
+  RegisterFontFace register_font_face_{nullptr};
+  UnregisterFontFace unregister_font_face_{nullptr};
 };
 
 }  // namespace webf

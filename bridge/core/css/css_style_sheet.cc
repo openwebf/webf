@@ -13,11 +13,15 @@
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_parser_impl.h"
 #include "core/css/style_sheet_contents.h"
+#include "core/css/style_rule.h"
+#include "core/css/css_property_value_set.h"
+#include "bindings/qjs/native_string_utils.h"
 #include "core/dom/document.h"
 #include "core/html/html_link_element.h"
 #include "core/html/html_style_element.h"
 #include "core/svg/svg_style_element.h"
 #include "html_element_type_helper.h"
+#include <functional>
 
 #include <utility>
 #include "css_rule.h"
@@ -312,6 +316,17 @@ void CSSStyleSheet::ClearOwnerNode() {
   if (owner_node_) {
     contents_->UnregisterClient(this);
   }
+  // Unregister font-faces for this sheet on DOM removal.
+  Document* doc = OwnerDocument();
+  if (doc) {
+    ExecutingContext* exe_ctx = doc->GetExecutingContext();
+    if (exe_ctx && exe_ctx->dartMethodPtr()) {
+      std::string sheet_id = std::to_string(reinterpret_cast<uintptr_t>(this));
+      auto sheetIdNative = stringToNativeString(sheet_id).release();
+      WEBF_LOG(INFO) << "[font-face][unregister] sheetId=" << sheet_id << " ctx=" << exe_ctx->contextId();
+      exe_ctx->dartMethodPtr()->unregisterFontFace(exe_ctx->isDedicated(), exe_ctx->contextId(), sheetIdNative);
+    }
+  }
   owner_node_ = nullptr;
 }
 
@@ -524,6 +539,8 @@ void CSSStyleSheet::SetText(const AtomicString& text, CSSImportRules import_rule
                          "https://github.com/WICG/construct-stylesheets/issues/"
                          "119#issuecomment-588352418.";
   }
+
+  // Font-face registration for inline stylesheets is handled in StyleEngine::CreateSheet.
 }
 
 void CSSStyleSheet::SetAlternateFromConstructor(bool alternate_from_constructor) {
