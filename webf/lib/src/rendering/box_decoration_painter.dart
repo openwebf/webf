@@ -11,7 +11,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/src/foundation/logger.dart';
+// logger import removed (no direct logging in this file)
 
 // A circular list implementation that allows access in a circular fashion.
 class CircularIntervalList<T> {
@@ -673,61 +673,55 @@ class BoxDecorationPainter extends BoxPainter {
     return out.where((s) => s.isNotEmpty).toList();
   }
 
-  // Parse per-layer background-position list; replicate last if shorter than count.
-  List<(CSSBackgroundPosition, CSSBackgroundPosition)> _parsePositions(int count) {
+  // Parse background-position for the full layer list and map to gradient layers by index.
+  List<(CSSBackgroundPosition, CSSBackgroundPosition)> _parsePositionsMapped(
+    List<int> gradientIndices,
+    int fullCount,
+  ) {
     final String raw = renderStyle.target.style.getPropertyValue(BACKGROUND_POSITION);
-    final List<String> layers = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
-    final List<(CSSBackgroundPosition, CSSBackgroundPosition)> result = [];
-
-    final bool singleLayer = count == 1;
-    for (int i = 0; i < count; i++) {
-      if (singleLayer) {
-        // Single layer: prefer current computed longhands so transition-driven updates are visible.
-        result.add((renderStyle.backgroundPositionX, renderStyle.backgroundPositionY));
-      } else {
-        // Multi-layer: use per-layer parsed values exclusively from shorthand.
-        final String layerText = (layers.isNotEmpty) ? (i < layers.length ? layers[i] : layers.last) : '0% 0%';
-        final List<String> pair = CSSPosition.parsePositionShorthand(layerText);
-        final x = CSSPosition.resolveBackgroundPosition(pair[0], renderStyle, BACKGROUND_POSITION_X, true);
-        final y = CSSPosition.resolveBackgroundPosition(pair[1], renderStyle, BACKGROUND_POSITION_Y, false);
-        result.add((x, y));
-      }
+    final List<String> tokens = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
+    // Build full list first
+    final List<(CSSBackgroundPosition, CSSBackgroundPosition)> full = [];
+    for (int j = 0; j < fullCount; j++) {
+      // Per spec, if there are fewer values than images, unspecified layers use initial value (0% 0%).
+      final String token = (j < tokens.length) ? tokens[j] : '0% 0%';
+      final List<String> pair = CSSPosition.parsePositionShorthand(token);
+      final x = CSSPosition.resolveBackgroundPosition(pair[0], renderStyle, BACKGROUND_POSITION_X, true);
+      final y = CSSPosition.resolveBackgroundPosition(pair[1], renderStyle, BACKGROUND_POSITION_Y, false);
+      full.add((x, y));
     }
-    return result;
+    // Map to gradient-only order
+    final List<(CSSBackgroundPosition, CSSBackgroundPosition)> mapped =
+        gradientIndices.map((idx) => full[idx]).toList(growable: false);
+    return mapped;
   }
 
-  // Parse per-layer background-size list; replicate last if shorter than count.
-  List<CSSBackgroundSize> _parseSizes(int count) {
+  // Parse background-size for the full layer list and map to gradient layers by index.
+  List<CSSBackgroundSize> _parseSizesMapped(List<int> gradientIndices, int fullCount) {
     final String raw = renderStyle.target.style.getPropertyValue(BACKGROUND_SIZE);
-    // When fewer sizes than images, CSS repeats the last size to match.
-    final List<String> layers = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
-    final List<CSSBackgroundSize> result = [];
-    final bool singleLayer = count == 1;
-    for (int i = 0; i < count; i++) {
-      if (singleLayer) {
-        result.add(renderStyle.backgroundSize);
-      } else {
-        final String layerText = (layers.isNotEmpty)
-            ? (i < layers.length ? layers[i] : layers.last)
-            : AUTO;
-        result.add(CSSBackground.resolveBackgroundSize(layerText, renderStyle, BACKGROUND_SIZE));
-      }
+    final List<String> tokens = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
+    final List<CSSBackgroundSize> full = [];
+    for (int j = 0; j < fullCount; j++) {
+      // Match browsers: if list is shorter than images, repeat the list cyclically.
+      final String token = tokens.isNotEmpty ? tokens[j % tokens.length] : AUTO;
+      full.add(CSSBackground.resolveBackgroundSize(token, renderStyle, BACKGROUND_SIZE));
     }
-    return result;
+    final List<CSSBackgroundSize> mapped = gradientIndices.map((idx) => full[idx]).toList(growable: false);
+    return mapped;
   }
 
-  // Parse per-layer background-repeat list; replicate last if shorter than count.
-  List<ImageRepeat> _parseRepeats(int count) {
+  // Parse background-repeat for the full layer list and map to gradient layers by index.
+  List<ImageRepeat> _parseRepeatsMapped(List<int> gradientIndices, int fullCount) {
     final String raw = renderStyle.target.style.getPropertyValue(BACKGROUND_REPEAT);
-    final List<String> layers = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
-    final List<ImageRepeat> result = [];
-    for (int i = 0; i < count; i++) {
-      final String layerText = (layers.isNotEmpty)
-          ? (i < layers.length ? layers[i] : layers.last)
-          : REPEAT; // initial value
-      result.add(CSSBackground.resolveBackgroundRepeat(layerText).imageRepeat());
+    final List<String> tokens = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
+    final List<ImageRepeat> full = [];
+    for (int j = 0; j < fullCount; j++) {
+      // Match browsers: cycle the provided list to match image count.
+      final String token = tokens.isNotEmpty ? tokens[j % tokens.length] : REPEAT;
+      full.add(CSSBackground.resolveBackgroundRepeat(token).imageRepeat());
     }
-    return result;
+    final List<ImageRepeat> mapped = gradientIndices.map((idx) => full[idx]).toList(growable: false);
+    return mapped;
   }
 
   // Compute destination size for a gradient layer from background-size.
@@ -799,13 +793,19 @@ class BoxDecorationPainter extends BoxPainter {
     if (img == null) return;
 
     // Extract gradient functions (each represents a layer)
-    final List<CSSFunctionalNotation> fns = img.functions.where((f) => f.name.contains('gradient')).toList();
+    final List<CSSFunctionalNotation> fullFns = img.functions;
+    final List<CSSFunctionalNotation> fns = fullFns.where((f) => f.name.contains('gradient')).toList();
+    // Map each gradient to its index in the full background list
+    final List<int> gIndices = [];
+    for (int i = 0; i < fullFns.length; i++) {
+      if (fullFns[i].name.contains('gradient')) gIndices.add(i);
+    }
     if (fns.isEmpty) return;
 
     // Resolve per-layer lists
-    final positions = _parsePositions(fns.length);
-    final sizes = _parseSizes(fns.length);
-    final repeats = _parseRepeats(fns.length);
+    final positions = _parsePositionsMapped(gIndices, fullFns.length);
+    final sizes = _parseSizesMapped(gIndices, fullFns.length);
+    final repeats = _parseRepeatsMapped(gIndices, fullFns.length);
 
     // Paint from bottom-most (last) to top-most (first) per CSS layering rules.
     for (int i = fns.length - 1; i >= 0; i--) {
@@ -834,13 +834,17 @@ class BoxDecorationPainter extends BoxPainter {
         canvas.clipRect(rect);
       }
 
-      if (repeat == ImageRepeat.noRepeat) {
+      if (destRect.isEmpty) {
+        // Nothing to paint for empty destination.
+      } else if (repeat == ImageRepeat.noRepeat) {
         final paint = Paint()..shader = gradient.createShader(destRect, textDirection: textDirection);
         canvas.drawRect(destRect, paint);
       } else {
         // Tile the gradient rect similar to image tiling.
-        final paint = Paint()..shader = gradient.createShader(destRect, textDirection: textDirection);
+        // Important: per CSS, each tile's image space restarts at the tile origin.
+        // Create a shader per tile so the gradient aligns with the tile's rect.
         for (final Rect tile in _generateImageTileRects(rect, destRect, repeat)) {
+          final paint = Paint()..shader = gradient.createShader(tile, textDirection: textDirection);
           canvas.drawRect(tile, paint);
         }
       }
@@ -1465,6 +1469,7 @@ void _paintImage({
 
   final Offset destinationPosition = rect.topLeft.translate(dx, dy);
   final Rect destinationRect = destinationPosition & destinationSize;
+  
 
   
 

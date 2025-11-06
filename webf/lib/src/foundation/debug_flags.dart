@@ -151,4 +151,5 @@ class DebugFlags {
   // - scheduleRunTransitionAnimations() batching
   // - runTransition() begin/end values and cancellation
   static bool enableCssVarAndTransitionLogs = false;
+
 }

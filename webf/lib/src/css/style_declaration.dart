@@ -461,7 +461,16 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         if (!CSSBackground.isValidBackgroundImageValue(normalizedValue)) return false;
         break;
       case BACKGROUND_REPEAT:
-        if (!CSSBackground.isValidBackgroundRepeatValue(normalizedValue)) return false;
+        // Accept single token or comma-separated list of repeat keywords for layered backgrounds.
+        if (normalizedValue.contains(',')) {
+          final parts = normalizedValue.split(',');
+          for (final p in parts) {
+            final token = p.trim();
+            if (token.isEmpty || !CSSBackground.isValidBackgroundRepeatValue(token)) return false;
+          }
+        } else {
+          if (!CSSBackground.isValidBackgroundRepeatValue(normalizedValue)) return false;
+        }
         break;
       case FONT_SIZE:
         // font-size does not allow negative values.

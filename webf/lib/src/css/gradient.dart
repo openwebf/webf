@@ -49,9 +49,17 @@ class CSSLinearGradient extends LinearGradient with BorderGradientMixin {
 
     double width = rect.width;
     double height = rect.height;
-    // If width/height is null, x/y can be infinite.
+    // If the rect is degenerate, still create a valid gradient including
+    // implied stops to avoid the engine's "colorStops omitted" assertion.
     if (width == 0 || height == 0) {
-      return ui.Gradient.linear(Offset.zero, Offset.zero, colors);
+      return ui.Gradient.linear(
+        Offset.zero,
+        Offset.zero,
+        colors,
+        _impliedStops(),
+        tileMode,
+        _resolveTransform(rect, textDirection),
+      );
     }
 
     double length = (sin * width).abs() + (cos * height).abs();
