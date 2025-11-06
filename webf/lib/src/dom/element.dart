@@ -1525,6 +1525,13 @@ abstract class Element extends ContainerNode
     if (DebugFlags.enableCssVarAndTransitionLogs) {
       cssLogger.info('[style][apply-prop] ${tagName}.$name value=${value is CSSColor ? (value as CSSColor).cssText() : value}');
     }
+    if (DebugFlags.enableBackgroundLogs && (name == BACKGROUND_POSITION_X || name == BACKGROUND_POSITION_Y)) {
+      try {
+        final CSSBackgroundPosition p = value as CSSBackgroundPosition;
+        renderingLogger.finer('[Background] apply $name cssText=${p.cssText()} ' 
+            '(len=${p.length != null} pct=${p.percentage != null} calc=${p.calcValue != null})');
+      } catch (_) {}
+    }
     renderStyle.setProperty(name, value);
 
     switch (name) {

@@ -59,13 +59,56 @@ class BoxDecorationPainter extends BoxPainter {
     return img.functions.any((f) => f.name == 'url') && _decoration.image != null;
   }
 
+  // Report the destination background-image size after applying background-size.
+  // This is used by percentage resolution of background-position to compute the
+  // remaining space (container - destination). If the background-size is keyword
+  // based (auto/contain/cover) and the container size is needed, we fall back to
+  // the intrinsic image size since the final destination will be resolved during
+  // paint with the actual rect.
   Size? get backgroundImageSize {
-    ui.Image? image = _imagePainter?._image?.image;
-    if (image == null) {
-      return null;
+    final ui.Image? image = _imagePainter?._image?.image;
+    if (image == null) return null;
+
+    final double imageWidth = image.width.toDouble();
+    final double imageHeight = image.height.toDouble();
+    final double aspectRatio = imageWidth / imageHeight;
+
+    final CSSBackgroundSize bs = renderStyle.backgroundSize;
+    final CSSLengthValue? backgroundWidth = bs.width;
+    final CSSLengthValue? backgroundHeight = bs.height;
+
+    // Only width is set (e.g., `100px` or `100px auto`).
+    if (backgroundWidth != null &&
+        !backgroundWidth.isAuto &&
+        backgroundWidth.computedValue > 0 &&
+        (backgroundHeight == null || backgroundHeight.isAuto)) {
+      final double w = backgroundWidth.computedValue;
+      final double h = w / aspectRatio;
+      return Size(w, h);
     }
-    double imageWidth = image.width.toDouble();
-    double imageHeight = image.height.toDouble();
+
+    // Only height is set (e.g., `auto 100px`).
+    if (backgroundHeight != null &&
+        !backgroundHeight.isAuto &&
+        backgroundHeight.computedValue > 0 &&
+        (backgroundWidth == null || backgroundWidth.isAuto)) {
+      final double h = backgroundHeight.computedValue;
+      final double w = h * aspectRatio;
+      return Size(w, h);
+    }
+
+    // Both width and height are set (e.g., `100px 100px`).
+    if (backgroundWidth != null &&
+        !backgroundWidth.isAuto &&
+        backgroundWidth.computedValue > 0 &&
+        backgroundHeight != null &&
+        !backgroundHeight.isAuto &&
+        backgroundHeight.computedValue > 0) {
+      return Size(backgroundWidth.computedValue, backgroundHeight.computedValue);
+    }
+
+    // For keyword values (auto/contain/cover) we cannot compute without the
+    // painting rect; return intrinsic size as a fallback.
     return Size(imageWidth, imageHeight);
   }
 
@@ -1049,6 +1092,12 @@ class BoxDecorationPainter extends BoxPainter {
     } else {
       _imagePainter!.image = _decoration.image!;
     }
+    if (DebugFlags.enableBackgroundLogs) {
+      final px = renderStyle.backgroundPositionX;
+      final py = renderStyle.backgroundPositionY;
+      renderingLogger.finer('[Background] before painter: posX=${px.cssText()} (len=${px.length != null} pct=${px.percentage != null} calc=${px.calcValue != null}) '
+          'posY=${py.cssText()} (len=${py.length != null} pct=${py.percentage != null} calc=${py.calcValue != null})');
+    }
     _imagePainter ??= BoxDecorationImagePainter._(_decoration.image!, renderStyle, onChanged!);
     Path? clipPath;
     switch (_decoration.shape) {
@@ -1108,6 +1157,16 @@ class BoxDecorationPainter extends BoxPainter {
     Rect backgroundClipRect = _getBackgroundClipRect(backgroundImageOffset, configuration);
     Rect backgroundOriginRect = _getBackgroundOriginRect(backgroundImageOffset, configuration);
     Rect backgroundImageRect = backgroundClipRect.intersect(backgroundOriginRect);
+
+    if (DebugFlags.enableBackgroundLogs) {
+      final clip = renderStyle.backgroundClip;
+      final origin = renderStyle.backgroundOrigin;
+      final rep = renderStyle.backgroundRepeat;
+      renderingLogger.finer('[Background] container=${configuration.size} offset=$offset ' 
+          'clipRect=$backgroundClipRect originRect=$backgroundOriginRect imageRect=$backgroundImageRect ' 
+          'clip=${clip ?? CSSBackgroundBoundary.borderBox} origin=${origin ?? CSSBackgroundBoundary.paddingBox} ' 
+          'repeat=${rep.cssText()}');
+    }
 
     final bool hasGradients = _hasGradientLayers();
     final bool hasImages = _hasImageLayers();
@@ -1485,12 +1544,41 @@ class BoxDecorationImagePainter {
       _imageStream = newImageStream;
       _imageStream!.addListener(listener);
     }
-    if (_image == null) return;
+    if (_image == null) {
+      if (DebugFlags.enableBackgroundLogs) {
+        renderingLogger.finer('[Background] awaiting image load stream=${newImageStream.key} rect=$rect');
+      }
+      return;
+    }
 
     if (clipPath != null) {
       canvas.save();
       canvas.clipPath(clipPath);
     }
+    // Prefer computed longhands. If they appear to be default (e.g., 0%/left)
+    // but the author-specified shorthand exists, resolve from the raw shorthand
+    // as a defensive fallback to avoid stale/default axes.
+    CSSBackgroundPosition px = _backgroundPositionX;
+    CSSBackgroundPosition py = _backgroundPositionY;
+    bool _isDefault(CSSBackgroundPosition p) =>
+        p.length == null && p.calcValue == null && (p.percentage ?? -1) == -1;
+    final String rawPos = _renderStyle.target.style.getPropertyValue(BACKGROUND_POSITION);
+    if (rawPos.isNotEmpty && (_isDefault(px) || _isDefault(py))) {
+      try {
+        final List<String> pair = CSSPosition.parsePositionShorthand(rawPos);
+        final CSSBackgroundPosition ax = CSSPosition.resolveBackgroundPosition(
+            pair[0], _renderStyle, BACKGROUND_POSITION_X, true);
+        final CSSBackgroundPosition ay = CSSPosition.resolveBackgroundPosition(
+            pair[1], _renderStyle, BACKGROUND_POSITION_Y, false);
+        if (_isDefault(px)) px = ax;
+        if (_isDefault(py)) py = ay;
+        if (DebugFlags.enableBackgroundLogs) {
+          renderingLogger.finer('[Background] fallback axes from shorthand: raw="$rawPos" -> '
+              'x=${ax.cssText()} y=${ay.cssText()}');
+        }
+      } catch (_) {}
+    }
+
     _paintImage(
       canvas: canvas,
       rect: rect,
@@ -1498,8 +1586,8 @@ class BoxDecorationImagePainter {
       debugImageLabel: _image!.debugLabel,
       scale: _details.scale * _image!.scale,
       colorFilter: _details.colorFilter,
-      positionX: _backgroundPositionX,
-      positionY: _backgroundPositionY,
+      positionX: px,
+      positionY: py,
       backgroundSize: _backgroundSize,
       centerSlice: _details.centerSlice,
       repeat: _details.repeat,
@@ -1629,9 +1717,15 @@ void _paintImage({
 
     // Keyword values are set(contain|cover|auto), eg `contain`, `auto auto`.
   } else {
-    final FittedSizes fittedSizes = applyBoxFit(fit, inputSize / scale, outputSize);
-    sourceSize = fittedSizes.source * scale;
-    destinationSize = fittedSizes.destination;
+    // Default background-size: auto (no scaling). When fit is BoxFit.none and
+    // both width/height are null, use the intrinsic image size as destination.
+    if (fit == BoxFit.none && backgroundWidth == null && backgroundHeight == null) {
+      destinationSize = inputSize; // draw at intrinsic size; clipping handled by clip rect
+    } else {
+      final FittedSizes fittedSizes = applyBoxFit(fit, inputSize / scale, outputSize);
+      sourceSize = fittedSizes.source * scale;
+      destinationSize = fittedSizes.destination;
+    }
   }
 
   if (centerSlice != null) {
@@ -1669,8 +1763,11 @@ void _paintImage({
 
   final Offset destinationPosition = rect.topLeft.translate(dx, dy);
   final Rect destinationRect = destinationPosition & destinationSize;
-  
-
+  if (DebugFlags.enableBackgroundLogs) {
+    renderingLogger.finer('[Background] paintImage rect=$rect srcSize=$inputSize dstSize=$destinationSize '
+        'dx=${dx.toStringAsFixed(2)} dy=${dy.toStringAsFixed(2)} destRect=$destinationRect ' 
+        'posX=${positionX.cssText()} posY=${positionY.cssText()} fit=$backgroundSize');
+  }
   
 
   // Set to true if we added a saveLayer to the canvas to invert/flip the image.

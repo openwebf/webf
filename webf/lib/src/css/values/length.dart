@@ -583,6 +583,10 @@ class CSSLengthValue {
                       (renderBox, _) => renderBox.boxPainter?.backgroundImageSize?.width.toDouble()) ??
                   0;
               _computedValue = (borderBoxWidth - destinationWidth) * value!;
+              if (DebugFlags.enableBackgroundLogs) {
+                renderingLogger.finer('[Background] resolve BACKGROUND_POSITION_X: containerW=' +
+                    '${borderBoxWidth.toStringAsFixed(2)} destW=${destinationWidth.toStringAsFixed(2)} pct=${(value! * 100).toStringAsFixed(1)}% -> ${_computedValue!.toStringAsFixed(2)}');
+              }
             } else {
               _computedValue = value!;
             }
@@ -594,6 +598,10 @@ class CSSLengthValue {
                       (renderBox, _) => renderBox.boxPainter?.backgroundImageSize?.height.toDouble()) ??
                   0;
               _computedValue = (borderBoxHeight - destinationHeight) * value!;
+              if (DebugFlags.enableBackgroundLogs) {
+                renderingLogger.finer('[Background] resolve BACKGROUND_POSITION_Y: containerH=' +
+                    '${borderBoxHeight.toStringAsFixed(2)} destH=${destinationHeight.toStringAsFixed(2)} pct=${(value! * 100).toStringAsFixed(1)}% -> ${_computedValue!.toStringAsFixed(2)}');
+              }
             } else {
               _computedValue = value!;
             }

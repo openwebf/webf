@@ -1720,9 +1720,23 @@ class CSSRenderStyle extends RenderStyle
         break;
       case BACKGROUND_POSITION_X:
         backgroundPositionX = value;
+        if (DebugFlags.enableBackgroundLogs) {
+          try {
+            final CSSBackgroundPosition p = value as CSSBackgroundPosition;
+            renderingLogger.finer('[Background] set BACKGROUND_POSITION_X -> ${p.cssText()} ' 
+                '(len=${p.length != null} pct=${p.percentage != null} calc=${p.calcValue != null})');
+          } catch (_) {}
+        }
         break;
       case BACKGROUND_POSITION_Y:
         backgroundPositionY = value;
+        if (DebugFlags.enableBackgroundLogs) {
+          try {
+            final CSSBackgroundPosition p = value as CSSBackgroundPosition;
+            renderingLogger.finer('[Background] set BACKGROUND_POSITION_Y -> ${p.cssText()} ' 
+                '(len=${p.length != null} pct=${p.percentage != null} calc=${p.calcValue != null})');
+          } catch (_) {}
+        }
         break;
       case BACKGROUND_SIZE:
         backgroundSize = value;

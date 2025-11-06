@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/html.dart';
 import 'package:webf/css.dart';
@@ -298,10 +299,10 @@ class CSSBackgroundImage {
         Uri uri = Uri.parse(url);
         if (url.isNotEmpty) {
           final String base = baseHref ?? controller.url;
-          
+
           uri = controller.uriParser!.resolve(Uri.parse(base), uri);
           FlutterView ownerFlutterView = controller.ownerFlutterView!;
-          
+
           return _image = BoxFitImage(
             boxFit: renderStyle.backgroundSize.fit,
             url: uri,
@@ -313,7 +314,7 @@ class CSSBackgroundImage {
         }
       }
     }
-    
+
     return null;
   }
 
@@ -539,6 +540,13 @@ class CSSBackgroundPosition {
 
   String cssText() {
     if (length != null) {
+      // For computed style serialization of background-position axes, prefer
+      // the authored absolute length for PX to avoid mixing in any cached
+      // or layout-dependent adjustments. Other units (em/rem/%) still resolve
+      // to absolute pixels via CSSLengthValue.cssText().
+      if (length!.type == CSSLengthType.PX && length!.value != null) {
+        return '${length!.value!.cssText()}px';
+      }
       return length!.cssText();
     }
     if (percentage != null) {
@@ -687,6 +695,16 @@ class CSSBackground {
     // first token would be seen and gradients would be dropped.
     String expanded = _expandBackgroundVars(present, renderStyle);
     List<CSSFunctionalNotation> functions = CSSFunction.parseFunction(expanded);
+    if (DebugFlags.enableBackgroundLogs) {
+      for (final f in functions) {
+        if (f.name == 'url') {
+          final raw = f.args.isNotEmpty ? f.args[0] : '';
+          renderingLogger.finer('[Background] resolve image url raw=$raw baseHref=${baseHref ?? controller.url}');
+        } else if (f.name.contains('gradient')) {
+          renderingLogger.finer('[Background] resolve gradient ${f.name} args=${f.args.length}');
+        }
+      }
+    }
     return CSSBackgroundImage(functions, renderStyle, controller, baseHref: baseHref);
   }
 
@@ -716,7 +734,7 @@ class CSSBackground {
         // Track dependency on this variable for backgroundImage recomputation.
         final depKey = '${BACKGROUND_IMAGE}_$input';
         final dynamic raw = renderStyle.getCSSVariable(variable.identifier, depKey);
-        
+
         if (raw == null || raw == INITIAL) {
           // Use fallback defined in var(--x, <fallback>) if provided.
           final fallback = variable.defaultValue;
@@ -726,7 +744,7 @@ class CSSBackground {
       });
       if (result == original) break;
     }
-    
+
     return result;
   }
 
@@ -780,7 +798,7 @@ void _applyColorAndStops(
     for (int i = start; i < args.length; i++) {
       List<CSSColorStop> colorGradients =
           _parseColorAndStop(args[i].trim(), renderStyle, propertyName, (i - start) * grow, gradientLength);
-      
+
       for (var colorStop in colorGradients) {
         if (colorStop.color != null) {
           colors.add(colorStop.color!);
@@ -795,7 +813,7 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
     [double? defaultStop, double? gradientLength]) {
   List<String> strings = [];
   List<CSSColorStop> colorGradients = [];
-  
+
   // rgba may contain space, color should handle special
   if (src.startsWith('rgba(') || src.startsWith('rgb(') || src.startsWith('hsl(') || src.startsWith('hsla(')) {
     // Treat functional color notations as a single token, since their arguments may include spaces.
@@ -844,6 +862,6 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
       colorGradients.add(CSSColorStop(color?.value, stop));
     }
   }
-  
+
   return colorGradients;
 }

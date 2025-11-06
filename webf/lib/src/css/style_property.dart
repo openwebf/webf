@@ -128,7 +128,7 @@ class CSSStyleProperty {
     List<String?>? values = _getBackgroundValues(shorthandValue);
     if (values == null) return;
 
-    // Debug logging removed
+    cssLogger.fine('[CSSStyleProperty] Expanding background shorthand: "$shorthandValue"');
 
     // Per CSS Backgrounds spec, unspecified subproperties reset to their initial values.
     // Initials: color=transparent, image=none, repeat=repeat, attachment=scroll,
@@ -145,9 +145,16 @@ class CSSStyleProperty {
     properties[BACKGROUND_REPEAT] = repeat;
     properties[BACKGROUND_ATTACHMENT] = attachment;
     if (positionShorthand != null) {
-      List<String> positions = CSSPosition.parsePositionShorthand(positionShorthand);
-      properties[BACKGROUND_POSITION_X] = positions[0];
-      properties[BACKGROUND_POSITION_Y] = positions[1];
+      final List<String> positions = CSSPosition.parsePositionShorthand(positionShorthand);
+      if (positions.length >= 2) {
+        properties[BACKGROUND_POSITION_X] = positions[0];
+        properties[BACKGROUND_POSITION_Y] = positions[1];
+      } else {
+        cssLogger.warning('[CSSStyleProperty] Failed to parse background-position in shorthand: '
+            '"$positionShorthand". Fallback to 0% 0%.');
+        properties[BACKGROUND_POSITION_X] = '0%';
+        properties[BACKGROUND_POSITION_Y] = '0%';
+      }
     } else {
       // Reset to initial when not specified
       properties[BACKGROUND_POSITION_X] = '0%';
@@ -168,9 +175,17 @@ class CSSStyleProperty {
   }
 
   static void setShorthandBackgroundPosition(Map<String, String?> properties, String shorthandValue) {
-    List<String> positions = CSSPosition.parsePositionShorthand(shorthandValue);
-    properties[BACKGROUND_POSITION_X] = positions[0];
-    properties[BACKGROUND_POSITION_Y] = positions[1];
+    cssLogger.fine('[CSSStyleProperty] Expanding background-position: "$shorthandValue"');
+    final List<String> positions = CSSPosition.parsePositionShorthand(shorthandValue);
+    if (positions.length >= 2) {
+      properties[BACKGROUND_POSITION_X] = positions[0];
+      properties[BACKGROUND_POSITION_Y] = positions[1];
+    } else {
+      cssLogger.severe('[CSSStyleProperty] Invalid background-position, got tokens="$positions" from '
+          '"$shorthandValue". Using fallback 0% 0% to avoid crash.');
+      properties[BACKGROUND_POSITION_X] = '0%';
+      properties[BACKGROUND_POSITION_Y] = '0%';
+    }
   }
 
   static void removeShorthandBackgroundPosition(CSSStyleDeclaration style, [bool? isImportant]) {
@@ -692,72 +707,85 @@ class CSSStyleProperty {
   static List<String?>? _getBackgroundValues(String shorthandProperty) {
     // Convert 40%/10em -> 40% / 10em
     shorthandProperty = shorthandProperty.replaceAll(_slashRegExp, ' / ');
-    List<String> values = _splitBySpace(shorthandProperty);
+    List<String> tokens = _splitBySpace(shorthandProperty);
 
     String? color;
     String? image;
     String? repeat;
     String? attachment;
-    String? positionX;
-    String? positionY;
-    String? sizeWidth;
-    String? sizeHeight;
 
-    String? position;
-    String? size;
-    bool isPositionEndAndSizeStart = false;
+    // Accumulate position tokens before '/'
+    final List<String> posTokens = <String>[];
+    // Accumulate size tokens after '/'
+    final List<String> sizeTokens = <String>[];
 
-    for (String value in values) {
-      final bool isValueVariableFunction = CSSFunction.isFunction(value, functionName: VAR);
-      if (color == null && (isValueVariableFunction || CSSColor.isColor(value))) {
-        color = value;
-      } else if (image == null && (isValueVariableFunction || CSSBackground.isValidBackgroundImageValue(value))) {
-        image = value;
-      } else if (repeat == null && (isValueVariableFunction || CSSBackground.isValidBackgroundRepeatValue(value))) {
-        repeat = value;
-      } else if (attachment == null &&
-          (isValueVariableFunction || CSSBackground.isValidBackgroundAttachmentValue(value))) {
-        attachment = value;
-      } else if (positionX == null &&
-          !isPositionEndAndSizeStart &&
-          (isValueVariableFunction || CSSBackground.isValidBackgroundPositionValue(value))) {
-        positionX = value;
-      } else if (positionY == null &&
-          !isPositionEndAndSizeStart &&
-          (isValueVariableFunction || CSSBackground.isValidBackgroundPositionValue(value))) {
-        positionY = value;
-      } else if (value == '/') {
-        isPositionEndAndSizeStart = true;
+    bool isAfterSlash = false;
+
+    bool _isPositionToken(String t) {
+      // Accept keywords, length/percentage, and var()/calc() functions.
+      return CSSBackground.isValidBackgroundPositionValue(t) || CSSFunction.isFunction(t);
+    }
+    bool _isSizeToken(String t) {
+      return CSSBackground.isValidBackgroundSizeValue(t) || CSSFunction.isFunction(t);
+    }
+
+    for (final String t in tokens) {
+      final bool isVarFn = CSSFunction.isFunction(t, functionName: VAR);
+      if (t == '/') {
+        isAfterSlash = true;
         continue;
-      } else if (sizeWidth == null && (isValueVariableFunction || CSSBackground.isValidBackgroundSizeValue(value))) {
-        sizeWidth = value;
-      } else if (sizeHeight == null && (isValueVariableFunction || CSSBackground.isValidBackgroundSizeValue(value))) {
-        sizeHeight = value;
+      }
+
+      // Color can appear anywhere
+      if (color == null && (isVarFn || CSSColor.isColor(t))) {
+        color = t;
+        continue;
+      }
+      // Image can appear anywhere
+      if (image == null && (isVarFn || CSSBackground.isValidBackgroundImageValue(t))) {
+        image = t;
+        continue;
+      }
+      // Repeat can appear anywhere
+      if (repeat == null && (isVarFn || CSSBackground.isValidBackgroundRepeatValue(t))) {
+        repeat = t;
+        continue;
+      }
+      // Attachment can appear anywhere
+      if (attachment == null && (isVarFn || CSSBackground.isValidBackgroundAttachmentValue(t))) {
+        attachment = t;
+        continue;
+      }
+
+      if (!isAfterSlash) {
+        // Position tokens only before slash
+        if (_isPositionToken(t)) {
+          posTokens.add(t);
+          continue;
+        }
+        // Unknown token before slash: ignore gracefully
+        continue;
       } else {
-        break;
+        // Size tokens only after slash
+        if (_isSizeToken(t)) {
+          sizeTokens.add(t);
+          continue;
+        }
+        // Unknown token after slash: ignore gracefully
+        continue;
       }
     }
 
-    // Before `/` must have one position value, after `/` must have on size value
-    if (isPositionEndAndSizeStart &&
-        ((positionX == null && positionY == null) || (sizeWidth == null && sizeHeight == null))) {
+    // If slash appears, require at least one position token before and one size token after.
+    if (tokens.contains('/') && (posTokens.isEmpty || sizeTokens.isEmpty)) {
       return null;
     }
 
-    if (positionX != null) {
-      position = positionX;
-    }
-
-    if (positionY != null) {
-      position = position! + (' ' + positionY);
-    }
-
-    if (sizeWidth != null) {
-      size = sizeWidth;
-    }
-
-    if (sizeHeight != null) {
-      size = size! + (' ' + sizeHeight);
+    String? position = posTokens.isNotEmpty ? posTokens.join(' ') : null;
+    String? size;
+    if (sizeTokens.isNotEmpty) {
+      // Allow one or two tokens after slash per spec.
+      size = sizeTokens.take(2).join(' ');
     }
 
     return [color, image, repeat, attachment, position, size];
