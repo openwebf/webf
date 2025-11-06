@@ -942,7 +942,7 @@ class BoxDecorationPainter extends BoxPainter {
   void _paintLayeredMixedBackgrounds(
     Canvas canvas,
     Rect clipRect,
-    Rect imageRect,
+    Rect originRect,
     ImageConfiguration configuration,
     TextDirection? textDirection,
   ) {
@@ -997,7 +997,7 @@ class BoxDecorationPainter extends BoxPainter {
         // Ensure stream is resolved; BoxDecorationImagePainter.paint() handles that.
         // If image not yet available, trigger resolve and skip this frame.
         if (_imagePainter!._image == null) {
-          _imagePainter!.paint(canvas, imageRect, null, configuration);
+          _imagePainter!.paint(canvas, originRect, null, configuration);
           continue;
         }
         final ui.Image img = _imagePainter!._image!.image;
@@ -1013,17 +1013,17 @@ class BoxDecorationPainter extends BoxPainter {
 
         // Clip to background painting area (respect border-radius) per layer.
         canvas.save();
-        if (_decoration.hasBorderRadius) {
-          final Path rounded = Path()..addRRect(_decoration.borderRadius!.toRRect(imageRect));
+        if (_decoration.hasBorderRadius && _decoration.borderRadius != null) {
+          final Path rounded = Path()..addRRect(_decoration.borderRadius!.toRRect(clipRect));
           canvas.clipPath(rounded);
         } else {
-          canvas.clipRect(imageRect);
+          canvas.clipRect(clipRect);
         }
 
         // Paint the image with per-layer overrides.
         _paintImage(
           canvas: canvas,
-          rect: imageRect,
+          rect: originRect,
           image: img,
           debugImageLabel: _imagePainter!._image!.debugLabel,
           scale: scale,
@@ -1040,7 +1040,8 @@ class BoxDecorationPainter extends BoxPainter {
         canvas.restore();
 
         if (DebugFlags.enableBackgroundLogs) {
-          renderingLogger.finer('[Background] layer(url) i=$i pos=(${px.cssText()}, ${py.cssText()}) size=${size.cssText()} repeat=$repeat rect=$imageRect');
+          renderingLogger.finer('[Background] layer(url) i=$i pos=(${px.cssText()}, ${py.cssText()}) size=${size.cssText()} '
+              'repeat=$repeat originRect=$originRect clipRect=$clipRect');
         }
         continue;
       }
@@ -1085,7 +1086,7 @@ class BoxDecorationPainter extends BoxPainter {
 
   BoxDecorationImagePainter? _imagePainter;
 
-  void _paintBackgroundImage(Canvas canvas, Rect rect, ImageConfiguration configuration) {
+  void _paintBackgroundImage(Canvas canvas, Rect clipRect, Rect originRect, ImageConfiguration configuration) {
     if (_decoration.image == null) return;
     if (_imagePainter == null) {
       _imagePainter = BoxDecorationImagePainter._(_decoration.image!, renderStyle, onChanged!);
@@ -1096,29 +1097,35 @@ class BoxDecorationPainter extends BoxPainter {
       final px = renderStyle.backgroundPositionX;
       final py = renderStyle.backgroundPositionY;
       renderingLogger.finer('[Background] before painter: posX=${px.cssText()} (len=${px.length != null} pct=${px.percentage != null} calc=${px.calcValue != null}) '
-          'posY=${py.cssText()} (len=${py.length != null} pct=${py.percentage != null} calc=${py.calcValue != null})');
+          'posY=${py.cssText()} (len=${py.length != null} pct=${py.percentage != null} calc=${py.calcValue != null}) '
+          'originRect=$originRect clipRect=$clipRect');
     }
     _imagePainter ??= BoxDecorationImagePainter._(_decoration.image!, renderStyle, onChanged!);
     Path? clipPath;
     switch (_decoration.shape) {
       case BoxShape.circle:
-        clipPath = Path()..addOval(rect);
+        clipPath = Path()..addOval(clipRect);
         break;
       case BoxShape.rectangle:
-        if (_decoration.hasBorderRadius) clipPath = Path()..addRRect(_decoration.borderRadius!.toRRect(rect));
+        if (_decoration.hasBorderRadius && _decoration.borderRadius != null) {
+          clipPath = Path()..addRRect(_decoration.borderRadius!.toRRect(clipRect));
+        } else {
+          // Clip to rectangular content/padding/border box when no radius.
+          clipPath = Path()..addRect(clipRect);
+        }
         break;
     }
-    _imagePainter!.paint(canvas, rect, clipPath, configuration);
+    _imagePainter!.paint(canvas, originRect, clipPath, configuration);
 
     // Report FCP when background image is painted (excluding CSS gradients)
-    if (_imagePainter!._image != null && !rect.isEmpty) {
+    if (_imagePainter!._image != null && !originRect.isEmpty) {
       // Report FP first (if not already reported)
       renderStyle.target.ownerDocument.controller.reportFP();
       renderStyle.target.ownerDocument.controller.reportFCP();
 
       // Report LCP candidate for background images
       // Calculate the visible area of the background image
-      double visibleArea = rect.width * rect.height;
+      double visibleArea = originRect.width * originRect.height;
       if (visibleArea > 0) {
         renderStyle.target.ownerDocument.controller.reportLCPCandidate(renderStyle.target, visibleArea);
       }
@@ -1171,12 +1178,12 @@ class BoxDecorationPainter extends BoxPainter {
     final bool hasGradients = _hasGradientLayers();
     final bool hasImages = _hasImageLayers();
     if (hasGradients && hasImages) {
-      _paintLayeredMixedBackgrounds(canvas, backgroundClipRect, backgroundImageRect, configuration, textDirection);
+      _paintLayeredMixedBackgrounds(canvas, backgroundClipRect, backgroundOriginRect, configuration, textDirection);
     } else if (hasGradients) {
       _paintBackgroundColor(canvas, backgroundColorRect, textDirection);
     } else {
       _paintBackgroundColor(canvas, backgroundColorRect, textDirection);
-      _paintBackgroundImage(canvas, backgroundImageRect, configuration);
+      _paintBackgroundImage(canvas, backgroundClipRect, backgroundOriginRect, configuration);
     }
   }
 
@@ -1292,12 +1299,12 @@ class BoxDecorationPainter extends BoxPainter {
         Rect backgroundImageRect = backgroundClipRect.intersect(backgroundOriginRect);
 
         if (hasGradients && hasImages) {
-          _paintLayeredMixedBackgrounds(canvas, backgroundClipRect, backgroundImageRect, configuration, textDirection);
+          _paintLayeredMixedBackgrounds(canvas, backgroundClipRect, backgroundOriginRect, configuration, textDirection);
         } else if (hasGradients) {
           _paintBackgroundColor(canvas, backgroundClipRect, textDirection);
         } else {
           _paintBackgroundColor(canvas, backgroundClipRect, textDirection);
-          _paintBackgroundImage(canvas, backgroundImageRect, configuration);
+          _paintBackgroundImage(canvas, backgroundClipRect, backgroundOriginRect, configuration);
         }
       }
     }
