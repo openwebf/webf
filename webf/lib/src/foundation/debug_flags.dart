@@ -152,4 +152,8 @@ class DebugFlags {
   // - runTransition() begin/end values and cancellation
   static bool enableCssVarAndTransitionLogs = false;
 
+  // Background paint diagnostics: when true, logs background layering order,
+  // per-layer size/position/repeat, and chosen rects for gradients/images.
+  static bool enableBackgroundLogs = false;
+
 }

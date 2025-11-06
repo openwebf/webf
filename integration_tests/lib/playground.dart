@@ -31,14 +31,13 @@ void main() async {
   // InlineLayoutLog.enableFeatures({
   //   InlineFeature.sizing,
   // });
-  // DebugFlags.enableDomLogs = true;
-  InlineLayoutLog.enableAll();
-  FlexLog.enableAll();
-  FlowLog.enableAll();
-  PositionedLayoutLog.enableAll();
+  // InlineLayoutLog.enableAll();
+  // FlexLog.enableAll();
+  // FlowLog.enableAll();
+  // PositionedLayoutLog.enableAll();
 
   // debugPaintBaselinesEnabled = true;
-  DebugFlags.enableDomLogs = true;
+  // DebugFlags.enableDomLogs = true;
   // DebugFlags.enableCssLogs = true;
   // DebugFlags.debugPaintInlineLayoutEnabled = true;
   // Flow layout baseline logs
