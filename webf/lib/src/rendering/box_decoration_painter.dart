@@ -45,6 +45,10 @@ class BoxDecorationPainter extends BoxPainter {
   EdgeInsets? padding;
   CSSRenderStyle renderStyle;
   CSSBoxDecoration get _decoration => renderStyle.decoration!;
+  // Override destination size for the current layer when resolving
+  // percentages in background-position calc(). Layered backgrounds can
+  // have different destination sizes per layer.
+  Size? _currentLayerDestSizeForPercent;
 
   // Whether background-image contains any gradient layers.
   bool _hasGradientLayers() {
@@ -66,6 +70,10 @@ class BoxDecorationPainter extends BoxPainter {
   // the intrinsic image size since the final destination will be resolved during
   // paint with the actual rect.
   Size? get backgroundImageSize {
+    // Prefer the per-layer destination size when provided by the painter.
+    if (_currentLayerDestSizeForPercent != null) {
+      return _currentLayerDestSizeForPercent;
+    }
     final ui.Image? image = _imagePainter?._image?.image;
     if (image == null) return null;
 
@@ -735,6 +743,9 @@ class BoxDecorationPainter extends BoxPainter {
   ) {
     final String raw = renderStyle.target.style.getPropertyValue(BACKGROUND_POSITION);
     final List<String> tokens = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
+    if (DebugFlags.enableBackgroundLogs) {
+      renderingLogger.finer('[Background] parse positions raw="$raw" tokens=${tokens.length > 0 ? tokens : <String>['<none>']} fullCount=$fullCount mapIdx=${gradientIndices.toString()}');
+    }
 
     // Prefer computed longhands when a transition is actively running for
     // background-position or its axes, so that animation-driven values take
@@ -770,6 +781,9 @@ class BoxDecorationPainter extends BoxPainter {
   List<CSSBackgroundSize> _parseSizesMapped(List<int> gradientIndices, int fullCount) {
     final String raw = renderStyle.target.style.getPropertyValue(BACKGROUND_SIZE);
     final List<String> tokens = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
+    if (DebugFlags.enableBackgroundLogs) {
+      renderingLogger.finer('[Background] parse sizes raw="$raw" tokens=${tokens.length > 0 ? tokens : <String>['<none>']} fullCount=$fullCount mapIdx=${gradientIndices.toString()}');
+    }
     final bool animatingSize = (renderStyle is CSSRenderStyle)
         ? (renderStyle as CSSRenderStyle).isTransitionRunning(BACKGROUND_SIZE)
         : false;
@@ -792,6 +806,9 @@ class BoxDecorationPainter extends BoxPainter {
   List<ImageRepeat> _parseRepeatsMapped(List<int> gradientIndices, int fullCount) {
     final String raw = renderStyle.target.style.getPropertyValue(BACKGROUND_REPEAT);
     final List<String> tokens = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
+    if (DebugFlags.enableBackgroundLogs) {
+      renderingLogger.finer('[Background] parse repeats raw="$raw" tokens=${tokens.length > 0 ? tokens : <String>['<none>']} fullCount=$fullCount mapIdx=${gradientIndices.toString()}');
+    }
     final List<ImageRepeat> full = [];
     for (int j = 0; j < fullCount; j++) {
       if (tokens.isNotEmpty) {
@@ -884,10 +901,22 @@ class BoxDecorationPainter extends BoxPainter {
     }
     if (fns.isEmpty) return;
 
-    // Resolve per-layer lists
-    final positions = _parsePositionsMapped(gIndices, fullFns.length);
-    final sizes = _parseSizesMapped(gIndices, fullFns.length);
-    final repeats = _parseRepeatsMapped(gIndices, fullFns.length);
+    // Resolve per-layer lists separately for gradients and images.
+    // Build image layer indices in full list order.
+    final List<int> imgIndices = [];
+    for (int i = 0; i < fullFns.length; i++) {
+      if (fullFns[i].name == 'url') imgIndices.add(i);
+    }
+
+    // Gradients mapping
+    final positionsGrad = _parsePositionsMapped(gIndices, fullFns.length);
+    final sizesGrad = _parseSizesMapped(gIndices, fullFns.length);
+    final repeatsGrad = _parseRepeatsMapped(gIndices, fullFns.length);
+
+    // Images mapping
+    final positionsImg = _parsePositionsMapped(imgIndices, fullFns.length);
+    final sizesImg = _parseSizesMapped(imgIndices, fullFns.length);
+    final repeatsImg = _parseRepeatsMapped(imgIndices, fullFns.length);
 
     
 
@@ -900,9 +929,10 @@ class BoxDecorationPainter extends BoxPainter {
       final Gradient? gradient = single.gradient;
       if (gradient == null) continue;
 
-      final (CSSBackgroundPosition px, CSSBackgroundPosition py) = positions[i];
-      final CSSBackgroundSize size = sizes[i];
-      final ImageRepeat repeat = repeats[i];
+      // Mapping this gradient layer's positioning/size/repeat from precomputed lists.
+      final (CSSBackgroundPosition px, CSSBackgroundPosition py) = positionsGrad[i];
+      final CSSBackgroundSize size = sizesGrad[i];
+      final ImageRepeat repeat = repeatsGrad[i];
 
       // Compute destination size and rect
       final Size destSize = _computeGradientDestinationSize(rect, size);
@@ -951,6 +981,38 @@ class BoxDecorationPainter extends BoxPainter {
     final List<CSSFunctionalNotation> fullFns = bg.functions;
     final int count = fullFns.length;
     if (count == 0) return;
+    if (DebugFlags.enableBackgroundLogs) {
+      final names = fullFns.map((f) => f.name).toList();
+      renderingLogger.finer('[Background] layered begin count=$count layers=$names');
+    }
+
+    // If there are image layers, resolve the stream once now. If unresolved,
+    // we still paint color/gradients and skip url layers this frame.
+    final bool hasUrlLayer = fullFns.any((f) => f.name == 'url');
+    bool canPaintUrl = true;
+    if (hasUrlLayer) {
+      if (_decoration.image == null) {
+        canPaintUrl = false;
+      } else {
+        _imagePainter ??= BoxDecorationImagePainter._(_decoration.image!, renderStyle, onChanged!);
+        _imagePainter!.image = _decoration.image!;
+        if (_imagePainter!._image == null) {
+          final ImageStream newImageStream = _imagePainter!._details.image.resolve(configuration);
+          if (newImageStream.key != _imagePainter!._imageStream?.key) {
+            final ImageStreamListener listener = ImageStreamListener(
+              _imagePainter!._handleImage,
+              onError: _imagePainter!._details.onError,
+            );
+            _imagePainter!._imageStream = newImageStream;
+            _imagePainter!._imageStream!.addListener(listener);
+          }
+          canPaintUrl = _imagePainter!._image != null;
+          if (DebugFlags.enableBackgroundLogs) {
+            renderingLogger.finer('[Background] layered pre-resolve: image ' + (canPaintUrl ? 'resolved synchronously' : 'unresolved; painting only non-url layers'));
+          }
+        }
+      }
+    }
 
     // Resolve full per-layer lists (not filtered) with fallback to computed values during animation.
     final List<int> allIdx = List<int>.generate(count, (i) => i);
@@ -983,23 +1045,18 @@ class BoxDecorationPainter extends BoxPainter {
       renderingLogger.finer('[Background] mixed layering count=$count paint order bottom->top=${order.join(' -> ')}');
     }
 
-    // Iterate from bottom-most (last) to top-most (first).
+    // Paint from bottom-most (last) to top-most (first) per CSS layering rules.
     for (int i = count - 1; i >= 0; i--) {
       final name = fullFns[i].name;
-      final (CSSBackgroundPosition px, CSSBackgroundPosition py) = positions[i];
-      final CSSBackgroundSize size = sizes[i];
-      final ImageRepeat repeat = repeats[i];
+      var pair = positions[i];
+      CSSBackgroundPosition px = pair.$1;
+      CSSBackgroundPosition py = pair.$2;
+      CSSBackgroundSize size = sizes[i];
+      ImageRepeat repeat = repeats[i];
 
       if (name == 'url') {
-        // Ensure image painter is set up.
-        if (_decoration.image == null) continue;
-        _imagePainter ??= BoxDecorationImagePainter._(_decoration.image!, renderStyle, onChanged!);
-        // Ensure stream is resolved; BoxDecorationImagePainter.paint() handles that.
-        // If image not yet available, trigger resolve and skip this frame.
-        if (_imagePainter!._image == null) {
-          _imagePainter!.paint(canvas, originRect, null, configuration);
-          continue;
-        }
+        if (!canPaintUrl) continue;
+        // Stream should already be resolved by the pre-check above; paint all url layers now.
         final ui.Image img = _imagePainter!._image!.image;
         final double scale = _decoration.image!.scale * _imagePainter!._image!.scale;
         bool flipHorizontally = false;
@@ -1022,6 +1079,7 @@ class BoxDecorationPainter extends BoxPainter {
 
         // Paint the image with per-layer overrides.
         _paintImage(
+          painterRef: this,
           canvas: canvas,
           rect: originRect,
           image: img,
@@ -1296,15 +1354,14 @@ class BoxDecorationPainter extends BoxPainter {
         final bool hasImages = _hasImageLayers();
         Rect backgroundClipRect = _getBackgroundClipRect(offset, configuration);
         Rect backgroundOriginRect = _getBackgroundOriginRect(offset, configuration);
-        Rect backgroundImageRect = backgroundClipRect.intersect(backgroundOriginRect);
 
-        if (hasGradients && hasImages) {
+        if (hasImages) {
+          // Paint layered images (and gradients if present) in proper order.
           _paintLayeredMixedBackgrounds(canvas, backgroundClipRect, backgroundOriginRect, configuration, textDirection);
         } else if (hasGradients) {
           _paintBackgroundColor(canvas, backgroundClipRect, textDirection);
         } else {
           _paintBackgroundColor(canvas, backgroundClipRect, textDirection);
-          _paintBackgroundImage(canvas, backgroundClipRect, backgroundOriginRect, configuration);
         }
       }
     }
@@ -1587,6 +1644,7 @@ class BoxDecorationImagePainter {
     }
 
     _paintImage(
+      painterRef: null,
       canvas: canvas,
       rect: rect,
       image: _image!.image,
@@ -1613,6 +1671,9 @@ class BoxDecorationImagePainter {
     }
     _image?.dispose();
     _image = value;
+    if (DebugFlags.enableBackgroundLogs) {
+      renderingLogger.finer('[Background] image stream delivered (sync=$synchronousCall) size=${value.image.width}x${value.image.height}');
+    }
     if (!synchronousCall) _onChanged();
   }
 
@@ -1650,6 +1711,7 @@ Set<ImageSizeInfo> _lastFrameImageSizeInfo = <ImageSizeInfo>{};
 // https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/painting/decoration_image.dart#L419
 // Add positionX and positionY parameter to add the ability to specify absolute position of background image.
 void _paintImage({
+  BoxDecorationPainter? painterRef,
   required Canvas canvas,
   required Rect rect,
   required ui.Image image,
@@ -1756,6 +1818,11 @@ void _paintImage({
   final double halfWidthDelta = (outputSize.width - destinationSize.width) / 2.0;
   final double halfHeightDelta = (outputSize.height - destinationSize.height) / 2.0;
 
+  // Provide layer destination size for percentage resolution inside calc().
+  if (painterRef != null) {
+    painterRef._currentLayerDestSizeForPercent = destinationSize;
+  }
+
   // Use position as length type if specified in positionX/ positionY, otherwise use as percentage type.
   final double dx = positionX.calcValue != null
       ? positionX.calcValue!.computedValue(BACKGROUND_POSITION_X) ?? 0
@@ -1775,7 +1842,10 @@ void _paintImage({
         'dx=${dx.toStringAsFixed(2)} dy=${dy.toStringAsFixed(2)} destRect=$destinationRect ' 
         'posX=${positionX.cssText()} posY=${positionY.cssText()} fit=$backgroundSize');
   }
-  
+  // Clear override after computing offsets to avoid affecting unrelated callers.
+  if (painterRef != null) {
+    painterRef._currentLayerDestSizeForPercent = null;
+  }
 
   // Set to true if we added a saveLayer to the canvas to invert/flip the image.
   bool invertedCanvas = false;
