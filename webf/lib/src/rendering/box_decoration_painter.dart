@@ -986,7 +986,12 @@ class BoxDecorationPainter extends BoxPainter {
       final Rect layerClipRect = propagateToViewport ? viewportRect : rect;
 
       final Size destSize = _computeGradientDestinationSize(positioningRect, size);
-      final double? lengthHint = _linearGradientLengthHint(fn, destSize);
+      double? lengthHint;
+      if (fn.name.contains('linear-gradient')) {
+        lengthHint = _linearGradientLengthHint(fn, destSize);
+      } else if (fn.name.contains('radial-gradient')) {
+        lengthHint = _radialGradientLengthHint(fn, positioningRect);
+      }
 
       final single = CSSBackgroundImage([fn], renderStyle, renderStyle.target.ownerDocument.controller,
           baseHref: renderStyle.target.style.getPropertyBaseHref(BACKGROUND_IMAGE), gradientLengthHint: lengthHint);
@@ -1090,6 +1095,59 @@ class BoxDecorationPainter extends BoxPainter {
     }
     // First token is a color stop: default orientation is vertical.
     return destSize.height;
+  }
+
+  // Compute a radial-gradient length hint (device px) for px stops normalization.
+  // Approximates the shader's effective radius (farthest-corner with radius=0.5)
+  // based on the positioning rect and optional "at <position>" prelude.
+  double _radialGradientLengthHint(CSSFunctionalNotation fn, Rect positioningRect) {
+    double atX = 0.5;
+    double atY = 0.5;
+    if (fn.args.isNotEmpty) {
+      final String prelude = fn.args[0].trim();
+      if (prelude.isNotEmpty) {
+        final List<String> tokens = prelude.split(splitRegExp).where((s) => s.isNotEmpty).toList();
+        final int atIndex = tokens.indexOf('at');
+        if (atIndex != -1) {
+          List<String> pos = tokens.sublist(atIndex + 1);
+          double parseX(String s) {
+            if (s == LEFT) return 0.0;
+            if (s == CENTER) return 0.5;
+            if (s == RIGHT) return 1.0;
+            if (CSSPercentage.isPercentage(s)) return CSSPercentage.parsePercentage(s)!;
+            return 0.5;
+          }
+          double parseY(String s) {
+            if (s == TOP) return 0.0;
+            if (s == CENTER) return 0.5;
+            if (s == BOTTOM) return 1.0;
+            if (CSSPercentage.isPercentage(s)) return CSSPercentage.parsePercentage(s)!;
+            return 0.5;
+          }
+          if (pos.isNotEmpty) {
+            if (pos.length == 1) {
+              final String v = pos.first;
+              if (v == TOP || v == BOTTOM) {
+                atY = parseY(v);
+                atX = 0.5;
+              } else {
+                atX = parseX(v);
+                atY = 0.5;
+              }
+            } else {
+              atX = parseX(pos[0]);
+              atY = parseY(pos[1]);
+            }
+          }
+        }
+      }
+    }
+
+    final double cx = positioningRect.left + atX * positioningRect.width;
+    final double cy = positioningRect.top + atY * positioningRect.height;
+    final double w = math.max((cx - positioningRect.left).abs(), (positioningRect.right - cx).abs());
+    final double h = math.max((cy - positioningRect.top).abs(), (positioningRect.bottom - cy).abs());
+    return math.sqrt(w * w + h * h);
   }
 
   void _paintLayeredMixedBackgrounds(
@@ -1257,7 +1315,12 @@ class BoxDecorationPainter extends BoxPainter {
         final CSSFunctionalNotation fn = fullFns[i];
         // Compute destination size now to derive a per-layer length hint for px stops.
         final Size destSize = _computeGradientDestinationSize(positioningRect, size);
-        final double? lengthHint = _linearGradientLengthHint(fn, destSize);
+        double? lengthHint;
+        if (fn.name.contains('linear-gradient')) {
+          lengthHint = _linearGradientLengthHint(fn, destSize);
+        } else if (fn.name.contains('radial-gradient')) {
+          lengthHint = _radialGradientLengthHint(fn, positioningRect);
+        }
 
         final single = CSSBackgroundImage([fn], renderStyle, renderStyle.target.ownerDocument.controller,
             baseHref: renderStyle.target.style.getPropertyBaseHref(BACKGROUND_IMAGE), gradientLengthHint: lengthHint);

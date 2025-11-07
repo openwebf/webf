@@ -145,7 +145,11 @@ class CSSRadialGradient extends RadialGradient with BorderGradientMixin {
     List<double>? stops,
     TileMode tileMode = TileMode.clamp,
     GradientTransform? transform,
-  }) : super(center: center, radius: radius, colors: colors, stops: stops, tileMode: tileMode, transform: transform);
+    double? repeatPeriod,
+  })  : _repeatPeriod = repeatPeriod,
+        super(center: center, radius: radius, colors: colors, stops: stops, tileMode: tileMode, transform: transform);
+
+  final double? _repeatPeriod; // in device px; when repeated, sets the 0..1 span
 
   @override
   Shader createShader(Rect rect, {TextDirection? textDirection}) {
@@ -174,11 +178,17 @@ class CSSRadialGradient extends RadialGradient with BorderGradientMixin {
     double width = math.max((centerX - rect.left), (rect.right - centerX));
     double height = math.max((centerY - rect.top), (rect.bottom - centerY));
     double radiusValue = radius * 2 * math.sqrt(width * width + height * height);
+    if (tileMode == TileMode.repeated && _repeatPeriod != null && _repeatPeriod! > 0) {
+      radiusValue = _repeatPeriod!;
+    }
 
     if (DebugFlags.enableBackgroundLogs) {
       final sampleStops = stops?.map((s) => s.toStringAsFixed(4)).toList();
+      final rp = (tileMode == TileMode.repeated && _repeatPeriod != null && _repeatPeriod! > 0)
+          ? ' period=${_repeatPeriod!.toStringAsFixed(2)}'
+          : '';
       renderingLogger.finer('[Background] shader(radial) rect=${rect.size} center=${centerOffset.dx.toStringAsFixed(2)},${centerOffset.dy.toStringAsFixed(2)} '
-          'radius=${radiusValue.toStringAsFixed(2)} stops=${sampleStops ?? const []}');
+          'radius=${radiusValue.toStringAsFixed(2)}'+rp+' stops=${sampleStops ?? const []}');
     }
     return ui.Gradient.radial(
       centerOffset,

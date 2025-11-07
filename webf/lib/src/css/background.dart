@@ -591,17 +591,23 @@ class CSSBackgroundImage {
               if (hasPrelude) start = 1;
             }
           }
-          _applyColorAndStops(start, method.args, colors, stops, renderStyle, BACKGROUND_IMAGE);
+          // Normalize px stops using painter-provided length hint when available.
+          _applyColorAndStops(start, method.args, colors, stops, renderStyle, BACKGROUND_IMAGE, gradientLengthHint);
           // For repeating-radial-gradient, normalize to one cycle [0..1] for tile repetition.
+          double? repeatPeriodPx;
           if (method.name == 'repeating-radial-gradient' && stops.isNotEmpty) {
             final double first = stops.first;
             final double last = stops.last;
             double range = last - first;
             if (DebugFlags.enableBackgroundLogs) {
+              final double periodPx = (gradientLengthHint != null && range > 0) ? (range * gradientLengthHint!) : -1;
               renderingLogger.finer('[Background] repeating-radial normalize: first=${first.toStringAsFixed(4)} last=${last.toStringAsFixed(4)} '
-                  'range=${range.toStringAsFixed(4)}');
+                  'range=${range.toStringAsFixed(4)} periodPx=${periodPx >= 0 ? periodPx.toStringAsFixed(2) : '<unknown>'}');
             }
             if (range > 0) {
+              if (gradientLengthHint != null) {
+                repeatPeriodPx = range * gradientLengthHint!;
+              }
               for (int i = 0; i < stops.length; i++) {
                 stops[i] = ((stops[i] - first) / range).clamp(0.0, 1.0);
               }
@@ -624,6 +630,7 @@ class CSSBackgroundImage {
               colors: colors,
               stops: stops,
               tileMode: method.name == 'radial-gradient' ? TileMode.clamp : TileMode.repeated,
+              repeatPeriod: repeatPeriodPx,
             );
             return _gradient;
           }
