@@ -11,18 +11,50 @@
 
 namespace webf {
 
+
+// Helper that mirrors Blink's logic for checking selector filters
+// in :nth-child(... of <selector>) and :nth-last-child(... of <selector>).
+bool NthIndexCache::MatchesFilter(Element* element,
+                                  const CSSSelectorList* selector_list,
+                                  const SelectorChecker* checker,
+                                  const void* context) {
+  if (!selector_list) {
+    return true;  // No filter => all elements count
+  }
+  // Build a sub-context based on the caller's context, as Blink does.
+  const auto* original = static_cast<const SelectorChecker::SelectorCheckingContext*>(context);
+  if (!original) {
+    return false;
+  }
+
+  SelectorChecker::SelectorCheckingContext sub_context(*original);
+  sub_context.element = element;
+  sub_context.is_sub_selector = true;
+  sub_context.in_nested_complex_selector = true;
+  sub_context.pseudo_id = kPseudoIdNone;
+
+  for (sub_context.selector = selector_list->First(); sub_context.selector;
+       sub_context.selector = CSSSelectorList::Next(*sub_context.selector)) {
+    SelectorChecker::MatchResult dummy_result;
+    // As in Blink, use MatchSelector to avoid propagating flags.
+    if (checker->MatchSelector(sub_context, dummy_result) == SelectorChecker::kSelectorMatches) {
+      return true;
+    }
+  }
+  return false;
+}
+
 unsigned NthIndexCache::NthChildIndex(const Element& element,
                                       const CSSSelectorList* selector_list,
                                       const SelectorChecker* checker,
                                       const void* context) {
-  // Count previous siblings
+  // Count previous siblings that match the optional filter.
   unsigned count = 1;
-  for (Element* sibling = ElementTraversal::PreviousSibling(element);
-       sibling; sibling = ElementTraversal::PreviousSibling(*sibling)) {
-    // If selector_list is provided, only count elements that match
-    // For now, we count all siblings (simplified implementation)
-    // TODO: Implement selector matching for nth-child(An+B of selector)
-    ++count;
+  for (Element* sibling = ElementTraversal::PreviousSibling(element); sibling;
+       sibling = ElementTraversal::PreviousSibling(*sibling)) {
+    if (MatchesFilter(sibling, selector_list, checker, context)) {
+      ++count;
+    }
   }
   return count;
 }
@@ -43,14 +75,13 @@ unsigned NthIndexCache::NthLastChildIndex(const Element& element,
                                           const CSSSelectorList* selector_list,
                                           const SelectorChecker* checker,
                                           const void* context) {
-  // Count following siblings
+  // Count following siblings that match the optional filter.
   unsigned count = 1;
-  for (Element* sibling = ElementTraversal::NextSibling(element);
-       sibling; sibling = ElementTraversal::NextSibling(*sibling)) {
-    // If selector_list is provided, only count elements that match
-    // For now, we count all siblings (simplified implementation)
-    // TODO: Implement selector matching for nth-last-child(An+B of selector)
-    ++count;
+  for (Element* sibling = ElementTraversal::NextSibling(element); sibling;
+       sibling = ElementTraversal::NextSibling(*sibling)) {
+    if (MatchesFilter(sibling, selector_list, checker, context)) {
+      ++count;
+    }
   }
   return count;
 }

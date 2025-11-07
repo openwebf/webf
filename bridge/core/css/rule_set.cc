@@ -235,7 +235,8 @@ RuleSet::RuleDataVector* RuleSet::FindBestRuleSetForSelector(
     }
   }
 
-  // Scan the entire rightmost compound for ID/class/tag.
+  // Scan only the rightmost compound for ID/class/tag. Stop when leaving the
+  // current compound (i.e., when encountering a combinator relation).
   const CSSSelector* found_id = nullptr;
   const CSSSelector* found_class = nullptr;
   const CSSSelector* found_tag = nullptr;
@@ -254,6 +255,10 @@ RuleSet::RuleDataVector* RuleSet::FindBestRuleSetForSelector(
         break;
       default:
         break;
+    }
+    CSSSelector::RelationType rel = s->Relation();
+    if (rel != CSSSelector::kSubSelector && rel != CSSSelector::kScopeActivation) {
+      break;  // End of rightmost compound
     }
   }
 
