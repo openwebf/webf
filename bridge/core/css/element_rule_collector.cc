@@ -45,8 +45,29 @@
 #include "core/css/selector_filter.h"
 #include "core/css/style_rule.h"
 #include "core/dom/element.h"
+#include "foundation/string/ascii_types.h"
+#include "foundation/string/string_view.h"
 
 namespace webf {
+
+// Fast prefilter: if the rightmost compound contains a type selector,
+// ensure the candidate element’s tag matches it. This avoids falsely
+// matching ID- or class-bucketed rules like "P#three" against PRE#three.
+static bool RightmostCompoundTagMatchesElement(const RuleData& rule_data,
+                                               const Element& element) {
+  if (!rule_data.HasRightmostType()) {
+    return true;
+  }
+  const AtomicString& expected = rule_data.RightmostTag();
+  const AtomicString& actual = element.localName();
+  if (expected == CSSSelector::UniversalSelectorAtom()) {
+    return true;
+  }
+  if (element.IsHTMLElement()) {
+    return EqualIgnoringASCIICase(StringView(expected), StringView(actual));
+  }
+  return element.TagQName().LocalNameUpper() == actual.UpperASCII();
+}
 
 ElementRuleCollector::ElementRuleCollector(StyleResolverState& state, SelectorChecker::Mode mode)
     : state_(state),
@@ -106,10 +127,29 @@ void ElementRuleCollector::CollectRuleSetMatchingRules(
   if (element_->HasID()) {
     const auto& id_rules = rule_set->IdRules(element_->id());
     if (!id_rules.empty()) {
-      CollectMatchingRulesForList(id_rules,
-                                 cascade_origin,
-                                 cascade_layer,
-                                 match_request);
+      // Blink does not materialize a bare #id from a typed compound (e.g., P#id).
+      // If any typed compounds exist for this id, only match those and ignore
+      // any pure #id variants that may have been created elsewhere.
+      bool typed_exists = false;
+      for (const auto& rd : id_rules) {
+        if (rd && rd->HasRightmostType()) { typed_exists = true; break; }
+      }
+      if (typed_exists) {
+        std::vector<std::shared_ptr<RuleData>> typed_only;
+        typed_only.reserve(id_rules.size());
+        for (const auto& rd : id_rules) {
+          if (rd && rd->HasRightmostType()) typed_only.push_back(rd);
+        }
+        CollectMatchingRulesForList(typed_only,
+                                   cascade_origin,
+                                   cascade_layer,
+                                   match_request);
+      } else {
+        CollectMatchingRulesForList(id_rules,
+                                   cascade_origin,
+                                   cascade_layer,
+                                   match_request);
+      }
     }
   }
   
@@ -137,6 +177,33 @@ void ElementRuleCollector::CollectMatchingRulesForList(
   // Safety check - don't process too many rules to prevent hangs
   size_t processed_count = 0;
   const size_t MAX_RULES_TO_PROCESS = 1000;
+
+  // If this is an ID bucket (rules all target the element's id), and there are
+  // typed compounds (e.g. P#id), prefer those and ignore pure-id variants. This
+  // guards against accidental id-only entries created upstream and aligns with
+  // Blink behavior for compound matching specificity.
+  auto extract_rightmost_id = [](const CSSSelector& sel) -> AtomicString {
+    const CSSSelector* s = &sel;
+    while (s) {
+      if (s->Match() == CSSSelector::kId) {
+        return s->Value();
+      }
+      s = s->NextSimpleSelector();
+    }
+    return g_null_atom;
+  };
+
+  bool maybe_id_bucket = false;
+  if (!rules.empty() && rules.front()) {
+    AtomicString idv = extract_rightmost_id(rules.front()->Selector());
+    maybe_id_bucket = !idv.IsNull() && element_->HasID() && idv == element_->id();
+  }
+  bool typed_exists_in_bucket = false;
+  if (maybe_id_bucket) {
+    for (const auto& rd : rules) {
+      if (rd && rd->HasRightmostType()) { typed_exists_in_bucket = true; break; }
+    }
+  }
   
   for (const auto& rule_data : rules) {
     if (!rule_data) {
@@ -148,9 +215,21 @@ void ElementRuleCollector::CollectMatchingRulesForList(
       break;
     }
     
+    // Skip pure-id variants if we have typed compounds in the same ID bucket.
+    if (maybe_id_bucket && typed_exists_in_bucket && !rule_data->HasRightmostType()) {
+      continue;
+    }
+
     // Check if selector matches element
     SelectorChecker::SelectorCheckingContext context(element_);
     context.selector = &rule_data->Selector();
+
+    // Blink-style prefilter: if the rightmost compound has a type selector,
+    // ensure the element's tag matches before invoking the full matcher.
+    bool type_ok = RightmostCompoundTagMatchesElement(*rule_data, *element_);
+    if (!type_ok) {
+      continue;
+    }
     
     // Safety check: skip malformed selectors
     if (!context.selector) {
