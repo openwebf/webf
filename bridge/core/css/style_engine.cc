@@ -552,10 +552,17 @@ void StyleEngine::RecalcStyle(Document& document) {
 
         // If there are no winning declared values for this element, we may still
         // need to emit pseudo styles (e.g., ::before/::after/::first-letter/::first-line)
-        // when they have declarations. In that case, emit pseudo styles only and skip
-        // element inline overrides.
+        // when they have declarations. In that case, ensure any previously-emitted
+        // inline overrides are cleared so stale styles (from prior matching sheets)
+        // are removed, then emit pseudo styles only and skip element overrides.
         if (!property_set || property_set->IsEmpty()) {
           auto* ctx = document.GetExecutingContext();
+          // Only clear when there is no author inline style present. Inline styles
+          // are handled via Element::NotifyInlineStyleMutation and should not be
+          // cleared by stylesheet recomputation.
+          if (!(inline_style && inline_style->PropertyCount() > 0)) {
+            ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
+          }
           auto emit_pseudo_if_any = [&](PseudoId pseudo_id, const char* pseudo_name) {
             ElementRuleCollector pseudo_collector(state, SelectorChecker::kResolvingStyle);
             pseudo_collector.SetPseudoElementStyleRequest(PseudoElementStyleRequest(pseudo_id));
@@ -1013,8 +1020,12 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
         }
 
         if (!property_set || property_set->IsEmpty()) {
-          // Even if there are no element-level winners, emit pseudo styles if any exist.
+          // Even if there are no element-level winners, clear any previously-sent
+          // overrides (to avoid stale styles) and emit pseudo styles if any exist.
           auto* ctx = document.GetExecutingContext();
+          if (!(inline_style && inline_style->PropertyCount() > 0)) {
+            ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
+          }
           auto emit_pseudo_if_any = [&](PseudoId pseudo_id, const char* pseudo_name) {
             ElementRuleCollector pseudo_collector(state, SelectorChecker::kResolvingStyle);
             pseudo_collector.SetPseudoElementStyleRequest(PseudoElementStyleRequest(pseudo_id));
