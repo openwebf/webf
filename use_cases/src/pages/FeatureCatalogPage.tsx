@@ -125,11 +125,11 @@ export const FeatureCatalogPage: React.FC = () => {
               <div key={section.title} className="w-full md:w-1/2 px-2 mb-4">
                 <div className="bg-surface-secondary rounded-xl border border-line p-4 h-full">
                   <h2 className="text-lg font-medium text-fg-primary mb-2">{section.title}</h2>
-                  <ul className="divide-y divide-line">
+                  <div className="divide-y divide-line">
                     {section.items.map((item) => (
-                      <li
+                      <div
                         key={item.path}
-                        className="-mx-2 px-2 py-2 cursor-pointer hover:bg-surface-hover rounded-md transition"
+                        className="-mx-2 px-2 py-2 cursor-pointer hover:bg-surface-hover rounded-md transition "
                         onClick={() => navigate(item.path)}
                       >
                         <div className="flex items-center justify-between">
@@ -139,9 +139,9 @@ export const FeatureCatalogPage: React.FC = () => {
                         {item.desc && (
                           <p className="text-sm text-fg-secondary mt-1">{item.desc}</p>
                         )}
-                      </li>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               </div>
             ))}

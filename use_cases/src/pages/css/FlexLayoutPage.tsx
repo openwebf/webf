@@ -6,7 +6,7 @@ export const FlexLayoutPage: React.FC = () => {
   const [wrapDemoHeight, setWrapDemoHeight] = useState<'auto' | '50%'>('auto');
   return (
     <div id="main">
-      <div className={styles.list}>
+      <WebFListView className={styles.list}>
         <div className={styles.wrapper}>
           <div className={`${styles.headerTitle} ${styles.colorWidth}`}>
             Flex layout
@@ -338,7 +338,7 @@ export const FlexLayoutPage: React.FC = () => {
             ))}
           </div>
         </div>
-      </div>
+      </WebFListView>
     </div>
   );
 };
