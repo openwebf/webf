@@ -484,30 +484,73 @@ class CSSBackgroundImage {
             return _gradient;
           }
           break;
-        // @TODO just support circle radial
+        // Radial gradients: support "[<shape> || <size>] [at <position>]" prelude.
+        // Current implementation treats shape as circle and size as farthest-corner by default,
+        // but we do parse the optional "at <position>" correctly, including single-value forms
+        // like "at 100%" meaning x=100%, y=center.
         case 'radial-gradient':
         case 'repeating-radial-gradient':
           double? atX = 0.5;
           double? atY = 0.5;
-          double radius = 0.5;
+          double radius = 0.5; // normalized factor; 0.5 -> farthest-corner in CSSRadialGradient
 
-          if (method.args[0].contains(CSSPercentage.PERCENTAGE)) {
-            List<String> positionAndRadius = method.args[0].trim().split(' ');
-            if (positionAndRadius.isNotEmpty) {
-              if (CSSPercentage.isPercentage(positionAndRadius[0])) {
-                radius = CSSPercentage.parsePercentage(positionAndRadius[0])! * 0.5;
-                start = 1;
+          if (method.args.isNotEmpty) {
+            final String prelude = method.args[0].trim();
+            if (prelude.isNotEmpty) {
+              // Split by whitespace while collapsing multiple spaces.
+              final List<String> tokens = prelude.split(splitRegExp).where((s) => s.isNotEmpty).toList();
+
+              // Detect and parse "at <position>" anywhere in prelude.
+              final int atIndex = tokens.indexOf('at');
+              if (atIndex != -1) {
+                // Position tokens follow 'at'. They can be 1 or 2 tokens.
+                final List<String> pos = tokens.sublist(atIndex + 1);
+                if (pos.isNotEmpty) {
+                  double parseX(String s) {
+                    if (s == LEFT) return 0.0;
+                    if (s == CENTER) return 0.5;
+                    if (s == RIGHT) return 1.0;
+                    if (CSSPercentage.isPercentage(s)) return CSSPercentage.parsePercentage(s)!;
+                    return 0.5;
+                  }
+                  double parseY(String s) {
+                    if (s == TOP) return 0.0;
+                    if (s == CENTER) return 0.5;
+                    if (s == BOTTOM) return 1.0;
+                    if (CSSPercentage.isPercentage(s)) return CSSPercentage.parsePercentage(s)!;
+                    return 0.5;
+                  }
+
+                  if (pos.length == 1) {
+                    // Single-value position: percentage or a keyword on one axis.
+                    final String v = pos.first;
+                    if (v == TOP || v == BOTTOM) {
+                      atY = parseY(v);
+                      atX = 0.5;
+                    } else {
+                      atX = parseX(v);
+                      atY = 0.5;
+                    }
+                  } else {
+                    // Two-value position: x y.
+                    atX = parseX(pos[0]);
+                    atY = parseY(pos[1]);
+                  }
+                }
               }
 
-              if ((positionAndRadius.length - start) >= 2 && positionAndRadius[start] == 'at') {
-                if (CSSPercentage.isPercentage(positionAndRadius[start + 1])) {
-                  atX = CSSPercentage.parsePercentage(positionAndRadius[start + 1]);
-                }
-                if (positionAndRadius.length >= 3 && CSSPercentage.isPercentage(positionAndRadius[start + 2])) {
-                  atY = CSSPercentage.parsePercentage(positionAndRadius[start + 2]);
-                }
-                start = 1;
-              }
+              // Prelude indicates presence of non-color-stop tokens (shape/size/position),
+              // so skip it when parsing color stops.
+              // Recognize common prelude markers.
+              final bool hasPrelude = tokens.contains('circle') ||
+                  tokens.contains('ellipse') ||
+                  tokens.contains('closest-side') ||
+                  tokens.contains('closest-corner') ||
+                  tokens.contains('farthest-side') ||
+                  tokens.contains('farthest-corner') ||
+                  atIndex != -1 ||
+                  tokens.any((t) => CSSPercentage.isPercentage(t));
+              if (hasPrelude) start = 1;
             }
           }
           _applyColorAndStops(start, method.args, colors, stops, renderStyle, BACKGROUND_IMAGE);
