@@ -18,6 +18,7 @@ class WebFAccessibility {
   /// Apply semantics for a generic WebF render object based on its DOM element.
   static void applyToRenderBoxModel(RenderBoxModel renderObject, SemanticsConfiguration config) {
     final dom.Element element = renderObject.renderStyle.target;
+    final CSSRenderStyle rs = renderObject.renderStyle as CSSRenderStyle;
 
     // Skip if this element hosts a Flutter widget subtree; let child semantics speak.
     if (element.isWidgetElement) {
@@ -27,6 +28,17 @@ class WebFAccessibility {
 
     // Set a text direction so labeled nodes satisfy Semantics assertions.
     config.textDirection = renderObject.renderStyle.direction;
+
+    // CSS-driven visibility → hide from a11y tree
+    // - display:none
+    // - visibility:hidden
+    // - content-visibility:hidden
+    if (rs.display == CSSDisplay.none ||
+        rs.visibility == Visibility.hidden ||
+        rs.contentVisibility == ContentVisibility.hidden) {
+      config.isHidden = true;
+      return;
+    }
 
     // aria-hidden → hide node from a11y tree
     final String? ariaHidden = element.getAttribute('aria-hidden');
@@ -39,10 +51,14 @@ class WebFAccessibility {
     final String? explicitRole = element.getAttribute('role')?.toLowerCase();
     final _Role role = _inferRole(element, explicitRole);
 
-    // Compute accessible name.
+    // Compute accessible name and description.
     final String? name = computeAccessibleName(element);
+    final String? hint = computeAccessibleDescription(element);
     if (name != null && name.trim().isNotEmpty) {
       config.label = name.trim();
+    }
+    if (hint != null && hint.trim().isNotEmpty) {
+      config.hint = hint.trim();
     }
 
     // Disabled/enabled

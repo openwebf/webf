@@ -27,6 +27,8 @@ mixin CSSContentVisibilityMixin on RenderStyle {
     if (value == _contentVisibility) return;
     _contentVisibility = value;
     markNeedsPaint();
+    // content-visibility:hidden should hide semantics.
+    attachedRenderBoxModel?.markNeedsSemanticsUpdate();
   }
 
   static ContentVisibility resolveContentVisibility(String value) {

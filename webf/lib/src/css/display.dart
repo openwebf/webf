@@ -25,6 +25,8 @@ mixin CSSDisplayMixin on RenderStyle {
     if (_display != value) {
       _display = value;
       markNeedsLayout();
+      // CSS display affects accessibility visibility (e.g., display:none)
+      attachedRenderBoxModel?.markNeedsSemanticsUpdate();
     }
   }
 
