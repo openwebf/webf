@@ -617,7 +617,8 @@ class CSSBackground {
   }
 
   static bool isValidBackgroundAttachmentValue(String value) {
-    return value == SCROLL || value == LOCAL;
+    // Support all standard attachment keywords: scroll | fixed | local
+    return value == SCROLL || value == LOCAL || value == FIXED;
   }
 
   static bool isValidBackgroundImageValue(String value) {

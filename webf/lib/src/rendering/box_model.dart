@@ -1288,7 +1288,20 @@ abstract class RenderBoxModel extends RenderBox
   }
 
   bool _hasLocalBackgroundImage(CSSRenderStyle renderStyle) {
-    return renderStyle.backgroundImage != null && renderStyle.backgroundAttachment == CSSBackgroundAttachmentType.local;
+    if (renderStyle.backgroundImage == null) return false;
+    // Prefer checking raw comma-separated list so that any layer with 'local'
+    // opts this element into the overflow painting path that scrolls backgrounds
+    // with content. Falls back to single computed value when raw is absent.
+    final String raw = renderStyle.target.style.getPropertyValue(BACKGROUND_ATTACHMENT);
+    if (raw.isEmpty) {
+      return renderStyle.backgroundAttachment == CSSBackgroundAttachmentType.local;
+    }
+    for (final t in raw.split(',')) {
+      if (CSSBackground.resolveBackgroundAttachment(t.trim()) == CSSBackgroundAttachmentType.local) {
+        return true;
+      }
+    }
+    return false;
   }
 
   bool _disposed = false;

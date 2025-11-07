@@ -1,6 +1,6 @@
 describe('Background-attachment multilayer', () => {
   // Different attachment per-layer; keep skipped until supported.
-  xit('fixed and local attachments on two layers', async () => {
+  it('fixed and local attachments on two layers', async () => {
     const scroller = createElement('div', {
       style: {
         width: '260px',

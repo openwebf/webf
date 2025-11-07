@@ -57,6 +57,18 @@ class BoxDecorationPainter extends BoxPainter {
     return img.functions.any((f) => f.name.contains('gradient'));
   }
 
+  // Returns true when the element should propagate fixed backgrounds to the
+  // viewport clip (root/background propagation behavior). We treat <html> and
+  // <body> as root targets.
+  bool _isRootBackgroundTarget(dynamic element) {
+    try {
+      final String tag = element.tagName;
+      return tag == 'HTML' || tag == 'BODY' || element is RouterLinkElement;
+    } catch (_) {
+      return false;
+    }
+  }
+
   bool _hasImageLayers() {
     final img = renderStyle.backgroundImage;
     if (img == null) return false;
@@ -823,6 +835,28 @@ class BoxDecorationPainter extends BoxPainter {
     return mapped;
   }
 
+  // Parse background-attachment for the full layer list and map by index.
+  // Supports comma-separated list. If fewer tokens than layers, values repeat cyclically.
+  List<CSSBackgroundAttachmentType> _parseAttachmentsMapped(List<int> mapIndices, int fullCount) {
+    final String raw = renderStyle.target.style.getPropertyValue(BACKGROUND_ATTACHMENT);
+    final List<String> tokens = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
+    if (DebugFlags.enableBackgroundLogs) {
+      renderingLogger.finer('[Background] parse attachments raw="$raw" tokens=${tokens.length > 0 ? tokens : <String>['<none>']} fullCount=$fullCount mapIdx=${mapIndices.toString()}');
+    }
+    final List<CSSBackgroundAttachmentType> full = [];
+    for (int j = 0; j < fullCount; j++) {
+      if (tokens.isNotEmpty) {
+        final String token = tokens[j % tokens.length].trim();
+        full.add(CSSBackground.resolveBackgroundAttachment(token));
+      } else {
+        // Default initial value per spec
+        full.add(CSSBackgroundAttachmentType.scroll);
+      }
+    }
+    final List<CSSBackgroundAttachmentType> mapped = mapIndices.map((idx) => full[idx]).toList(growable: false);
+    return mapped;
+  }
+
   // Compute destination size for a gradient layer from background-size.
   Size _computeGradientDestinationSize(Rect rect, CSSBackgroundSize size) {
     // Only support explicit width/height or contain/cover/auto heuristics similar to _paintImage.
@@ -918,7 +952,7 @@ class BoxDecorationPainter extends BoxPainter {
     final sizesImg = _parseSizesMapped(imgIndices, fullFns.length);
     final repeatsImg = _parseRepeatsMapped(imgIndices, fullFns.length);
 
-    
+
 
     // Paint from bottom-most (last) to top-most (first) per CSS layering rules.
     for (int i = fns.length - 1; i >= 0; i--) {
@@ -938,7 +972,7 @@ class BoxDecorationPainter extends BoxPainter {
       final Size destSize = _computeGradientDestinationSize(rect, size);
       Rect destRect = _computeDestinationRect(rect, destSize, px, py);
 
-      
+
 
       // Clip to background painting area. Respect border-radius when present to
       // avoid leaking color outside rounded corners (matches CSS background-clip).
@@ -1019,6 +1053,7 @@ class BoxDecorationPainter extends BoxPainter {
     final positions = _parsePositionsMapped(allIdx, count);
     final sizes = _parseSizesMapped(allIdx, count);
     final repeats = _parseRepeatsMapped(allIdx, count);
+    final attachments = _parseAttachmentsMapped(allIdx, count);
 
     // Paint background-color under all layers if present.
     final Color? bgColor = renderStyle.backgroundColor?.value;
@@ -1069,19 +1104,33 @@ class BoxDecorationPainter extends BoxPainter {
         }
 
         // Clip to background painting area (respect border-radius) per layer.
+        // For root/background propagation targets with fixed attachment, expand
+        // the clip to the viewport so the row at top is visible (matches UA behavior).
+        final CSSBackgroundAttachmentType attach = attachments[i];
+        final bool useViewport = attach == CSSBackgroundAttachmentType.fixed;
+        final Rect viewportRect = Offset.zero & (renderStyle.target.ownerDocument.viewport?.viewportSize ?? configuration.size!);
+        final bool propagateToViewport = useViewport && _isRootBackgroundTarget(renderStyle.target);
+        final Rect layerClipRect = propagateToViewport ? viewportRect : clipRect;
+
         canvas.save();
-        if (_decoration.hasBorderRadius && _decoration.borderRadius != null) {
-          final Path rounded = Path()..addRRect(_decoration.borderRadius!.toRRect(clipRect));
+        if (_decoration.hasBorderRadius && _decoration.borderRadius != null && !propagateToViewport) {
+          final Path rounded = Path()..addRRect(_decoration.borderRadius!.toRRect(layerClipRect));
           canvas.clipPath(rounded);
         } else {
-          canvas.clipRect(clipRect);
+          canvas.clipRect(layerClipRect);
         }
+
+        // For attachment: fixed, position relative to the viewport (initial containing block),
+        // while still clipping to the element's background painting area.
+        final Rect positioningRect = useViewport
+            ? (Offset.zero & (renderStyle.target.ownerDocument.viewport?.viewportSize ?? configuration.size!))
+            : originRect;
 
         // Paint the image with per-layer overrides.
         _paintImage(
           painterRef: this,
           canvas: canvas,
-          rect: originRect,
+          rect: positioningRect,
           image: img,
           debugImageLabel: _imagePainter!._image!.debugLabel,
           scale: scale,
@@ -1099,7 +1148,7 @@ class BoxDecorationPainter extends BoxPainter {
 
         if (DebugFlags.enableBackgroundLogs) {
           renderingLogger.finer('[Background] layer(url) i=$i pos=(${px.cssText()}, ${py.cssText()}) size=${size.cssText()} '
-              'repeat=$repeat originRect=$originRect clipRect=$clipRect');
+              'repeat=$repeat originRect=$originRect clipRect=${layerClipRect} attachRect=${positioningRect} attach=${attach.cssText()}');
         }
         continue;
       }
@@ -1111,15 +1160,27 @@ class BoxDecorationPainter extends BoxPainter {
         final Gradient? gradient = single.gradient;
         if (gradient == null) continue;
 
-        final Size destSize = _computeGradientDestinationSize(clipRect, size);
-        Rect destRect = _computeDestinationRect(clipRect, destSize, px, py);
+        // For attachment: fixed, compute destination relative to the viewport
+        // (positioning area). For root/background propagation targets, also expand
+        // the clip to the viewport so the top row is visible.
+        final CSSBackgroundAttachmentType attach = attachments[i];
+        final bool useViewport = attach == CSSBackgroundAttachmentType.fixed;
+        final Rect viewportRect = Offset.zero & (renderStyle.target.ownerDocument.viewport?.viewportSize ?? configuration.size!);
+        final bool propagateToViewport = useViewport && _isRootBackgroundTarget(renderStyle.target);
+        final Rect positioningRect = useViewport
+            ? (Offset.zero & (renderStyle.target.ownerDocument.viewport?.viewportSize ?? configuration.size!))
+            : clipRect;
+
+        final Size destSize = _computeGradientDestinationSize(positioningRect, size);
+        Rect destRect = _computeDestinationRect(positioningRect, destSize, px, py);
 
         canvas.save();
-        if (_decoration.hasBorderRadius && _decoration.borderRadius != null) {
-          final Path rounded = Path()..addRRect(_decoration.borderRadius!.toRRect(clipRect));
+        final Rect layerClipRect = propagateToViewport ? viewportRect : clipRect;
+        if (_decoration.hasBorderRadius && _decoration.borderRadius != null && !propagateToViewport) {
+          final Path rounded = Path()..addRRect(_decoration.borderRadius!.toRRect(layerClipRect));
           canvas.clipPath(rounded);
         } else {
-          canvas.clipRect(clipRect);
+          canvas.clipRect(layerClipRect);
         }
 
         if (destRect.isEmpty) {
@@ -1136,7 +1197,7 @@ class BoxDecorationPainter extends BoxPainter {
         canvas.restore();
 
         if (DebugFlags.enableBackgroundLogs) {
-          renderingLogger.finer('[Background] layer(gradient) i=$i pos=(${px.cssText()}, ${py.cssText()}) size=${size.cssText()} repeat=$repeat rect=$destRect');
+          renderingLogger.finer('[Background] layer(gradient) i=$i pos=(${px.cssText()}, ${py.cssText()}) size=${size.cssText()} repeat=$repeat rect=$destRect attachRect=${positioningRect} attach=${attach.cssText()}');
         }
       }
     }
@@ -1156,7 +1217,7 @@ class BoxDecorationPainter extends BoxPainter {
       final py = renderStyle.backgroundPositionY;
       renderingLogger.finer('[Background] before painter: posX=${px.cssText()} (len=${px.length != null} pct=${px.percentage != null} calc=${px.calcValue != null}) '
           'posY=${py.cssText()} (len=${py.length != null} pct=${py.percentage != null} calc=${py.calcValue != null}) '
-          'originRect=$originRect clipRect=$clipRect');
+          'originRect=$originRect clipRect=$clipRect attach=${renderStyle.backgroundAttachment?.cssText() ?? 'scroll'}');
     }
     _imagePainter ??= BoxDecorationImagePainter._(_decoration.image!, renderStyle, onChanged!);
     Path? clipPath;
@@ -1173,7 +1234,14 @@ class BoxDecorationPainter extends BoxPainter {
         }
         break;
     }
-    _imagePainter!.paint(canvas, originRect, clipPath, configuration);
+    // For attachment: fixed, use the viewport as the positioning rect so that
+    // background-position is relative to the viewport (initial containing block).
+    final bool useViewport = renderStyle.backgroundAttachment == CSSBackgroundAttachmentType.fixed;
+    final Rect positioningRect = useViewport
+        ? (Offset.zero & (renderStyle.target.ownerDocument.viewport?.viewportSize ?? configuration.size!))
+        : originRect;
+
+    _imagePainter!.paint(canvas, positioningRect, clipPath, configuration);
 
     // Report FCP when background image is painted (excluding CSS gradients)
     if (_imagePainter!._image != null && !originRect.isEmpty) {
@@ -1197,7 +1265,17 @@ class BoxDecorationPainter extends BoxPainter {
   }
 
   bool _hasLocalBackgroundImage() {
-    return renderStyle.backgroundImage != null && renderStyle.backgroundAttachment == CSSBackgroundAttachmentType.local;
+    if (renderStyle.backgroundImage == null) return false;
+    final String raw = renderStyle.target.style.getPropertyValue(BACKGROUND_ATTACHMENT);
+    if (raw.isEmpty) return renderStyle.backgroundAttachment == CSSBackgroundAttachmentType.local;
+    // Check comma-separated list for any 'local'.
+    final List<String> tokens = _splitByTopLevelCommas(raw);
+    for (final t in tokens) {
+      if (CSSBackground.resolveBackgroundAttachment(t.trim()) == CSSBackgroundAttachmentType.local) {
+        return true;
+      }
+    }
+    return false;
   }
 
   void paintBackground(Canvas canvas, Offset offset, ImageConfiguration configuration) {
@@ -1227,9 +1305,9 @@ class BoxDecorationPainter extends BoxPainter {
       final clip = renderStyle.backgroundClip;
       final origin = renderStyle.backgroundOrigin;
       final rep = renderStyle.backgroundRepeat;
-      renderingLogger.finer('[Background] container=${configuration.size} offset=$offset ' 
-          'clipRect=$backgroundClipRect originRect=$backgroundOriginRect imageRect=$backgroundImageRect ' 
-          'clip=${clip ?? CSSBackgroundBoundary.borderBox} origin=${origin ?? CSSBackgroundBoundary.paddingBox} ' 
+      renderingLogger.finer('[Background] container=${configuration.size} offset=$offset '
+          'clipRect=$backgroundClipRect originRect=$backgroundOriginRect imageRect=$backgroundImageRect '
+          'clip=${clip ?? CSSBackgroundBoundary.borderBox} origin=${origin ?? CSSBackgroundBoundary.paddingBox} '
           'repeat=${rep.cssText()}');
     }
 
@@ -1839,7 +1917,7 @@ void _paintImage({
   final Rect destinationRect = destinationPosition & destinationSize;
   if (DebugFlags.enableBackgroundLogs) {
     renderingLogger.finer('[Background] paintImage rect=$rect srcSize=$inputSize dstSize=$destinationSize '
-        'dx=${dx.toStringAsFixed(2)} dy=${dy.toStringAsFixed(2)} destRect=$destinationRect ' 
+        'dx=${dx.toStringAsFixed(2)} dy=${dy.toStringAsFixed(2)} destRect=$destinationRect '
         'posX=${positionX.cssText()} posY=${positionY.cssText()} fit=$backgroundSize');
   }
   // Clear override after computing offsets to avoid affecting unrelated callers.
