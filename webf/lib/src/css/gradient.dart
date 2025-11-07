@@ -10,6 +10,7 @@ import 'dart:ui' as ui show Gradient;
 import 'package:flutter/painting.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
+import 'package:vector_math/vector_math_64.dart' as vm;
 
 // ignore: must_be_immutable
 class CSSLinearGradient extends LinearGradient with BorderGradientMixin {
@@ -222,6 +223,40 @@ class CSSRadialGradient extends RadialGradient with BorderGradientMixin {
       colorTexts.add(text);
     }
     return '$function($radiusText${colorTexts.join(', ')})';
+  }
+}
+
+/// Gradient transform to emulate ellipse shape for radial gradients by scaling the
+/// Y axis relative to X around the gradient center.
+class CSSGradientEllipseTransform extends GradientTransform {
+  const CSSGradientEllipseTransform(this.atX, this.atY);
+
+  final double atX;
+  final double atY;
+
+  @override
+  vm.Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
+    final double cx = bounds.left + atX * bounds.width;
+    final double cy = bounds.top + atY * bounds.height;
+    final double left = bounds.left;
+    final double top = bounds.top;
+    final double right = bounds.right;
+    final double bottom = bounds.bottom;
+    final double dxL = (cx - left).abs();
+    final double dxR = (right - cx).abs();
+    final double dyT = (cy - top).abs();
+    final double dyB = (bottom - cy).abs();
+    final double rx = dxL > dxR ? dxL : dxR; // max horizontal reach
+    final double ry = dyT > dyB ? dyT : dyB; // max vertical reach
+    // Scale Y so that a unit circle becomes an ellipse matching rx:ry.
+    // Using sy = ry/rx makes the circle appear stretched vertically to ellipse ratio.
+    final double sx = 1.0;
+    final double sy = (rx == 0) ? 1.0 : (ry / rx);
+    final vm.Matrix4 m = vm.Matrix4.identity();
+    m.translate(cx, cy);
+    m.scale(sx, sy, 1.0);
+    m.translate(-cx, -cy);
+    return m;
   }
 }
 

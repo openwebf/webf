@@ -531,6 +531,7 @@ class CSSBackgroundImage {
           double? atX = 0.5;
           double? atY = 0.5;
           double radius = 0.5; // normalized factor; 0.5 -> farthest-corner in CSSRadialGradient
+          bool isEllipse = false;
 
           if (method.args.isNotEmpty) {
             final String prelude = method.args[0].trim();
@@ -538,6 +539,8 @@ class CSSBackgroundImage {
               // Split by whitespace while collapsing multiple spaces.
               final List<String> tokens = prelude.split(splitRegExp).where((s) => s.isNotEmpty).toList();
 
+              // Detect ellipse/circle keywords
+              isEllipse = tokens.contains('ellipse');
               // Detect and parse "at <position>" anywhere in prelude.
               final int atIndex = tokens.indexOf('at');
               if (atIndex != -1) {
@@ -624,12 +627,15 @@ class CSSBackgroundImage {
                 'center=(${atX!.toStringAsFixed(3)},${atY!.toStringAsFixed(3)}) radius=$radius');
           }
           if (colors.length >= 2) {
+            // Apply an ellipse transform when requested.
+            final GradientTransform? xf = isEllipse ? CSSGradientEllipseTransform(atX!, atY!) : null;
             _gradient = CSSRadialGradient(
               center: FractionalOffset(atX!, atY!),
               radius: radius,
               colors: colors,
               stops: stops,
               tileMode: method.name == 'radial-gradient' ? TileMode.clamp : TileMode.repeated,
+              transform: xf,
               repeatPeriod: repeatPeriodPx,
             );
             return _gradient;

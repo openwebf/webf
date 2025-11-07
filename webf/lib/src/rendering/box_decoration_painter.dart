@@ -1103,10 +1103,12 @@ class BoxDecorationPainter extends BoxPainter {
   double _radialGradientLengthHint(CSSFunctionalNotation fn, Rect positioningRect) {
     double atX = 0.5;
     double atY = 0.5;
+    bool isEllipse = false;
     if (fn.args.isNotEmpty) {
       final String prelude = fn.args[0].trim();
       if (prelude.isNotEmpty) {
         final List<String> tokens = prelude.split(splitRegExp).where((s) => s.isNotEmpty).toList();
+        isEllipse = tokens.contains('ellipse');
         final int atIndex = tokens.indexOf('at');
         if (atIndex != -1) {
           List<String> pos = tokens.sublist(atIndex + 1);
@@ -1145,9 +1147,14 @@ class BoxDecorationPainter extends BoxPainter {
 
     final double cx = positioningRect.left + atX * positioningRect.width;
     final double cy = positioningRect.top + atY * positioningRect.height;
-    final double w = math.max((cx - positioningRect.left).abs(), (positioningRect.right - cx).abs());
-    final double h = math.max((cy - positioningRect.top).abs(), (positioningRect.bottom - cy).abs());
-    return math.sqrt(w * w + h * h);
+    final double rx = math.max((cx - positioningRect.left).abs(), (positioningRect.right - cx).abs());
+    final double ry = math.max((cy - positioningRect.top).abs(), (positioningRect.bottom - cy).abs());
+    final double hint = isEllipse ? rx : math.sqrt(rx * rx + ry * ry);
+    if (DebugFlags.enableBackgroundLogs) {
+      renderingLogger.finer('[Background] radial length hint: ellipse=$isEllipse at=(${atX.toStringAsFixed(3)},${atY.toStringAsFixed(3)}) '
+          'rx=${rx.toStringAsFixed(2)} ry=${ry.toStringAsFixed(2)} hint=${hint.toStringAsFixed(2)}');
+    }
+    return hint;
   }
 
   void _paintLayeredMixedBackgrounds(
