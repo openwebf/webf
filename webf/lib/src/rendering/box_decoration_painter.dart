@@ -4,6 +4,7 @@
  */
 
 import 'dart:ui' as ui show Image, PathMetrics;
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
@@ -959,18 +960,20 @@ class BoxDecorationPainter extends BoxPainter {
     for (int i = fns.length - 1; i >= 0; i--) {
       final fn = fns[i];
       // Build a temporary CSSBackgroundImage for this single function to reuse parsing logic.
-      final single = CSSBackgroundImage([fn], renderStyle, renderStyle.target.ownerDocument.controller,
-          baseHref: renderStyle.target.style.getPropertyBaseHref(BACKGROUND_IMAGE));
-      final Gradient? gradient = single.gradient;
-      if (gradient == null) continue;
-
-      // Mapping this gradient layer's positioning/size/repeat from precomputed lists.
+      // Compute destination size and rect first to derive a length hint for px stops.
       final (CSSBackgroundPosition px, CSSBackgroundPosition py) = positionsGrad[i];
       final CSSBackgroundSize size = sizesGrad[i];
       final ImageRepeat repeat = repeatsGrad[i];
 
-      // Compute destination size and rect
       final Size destSize = _computeGradientDestinationSize(rect, size);
+      final double? lengthHint = _linearGradientLengthHint(fn, destSize);
+
+      final single = CSSBackgroundImage([fn], renderStyle, renderStyle.target.ownerDocument.controller,
+          baseHref: renderStyle.target.style.getPropertyBaseHref(BACKGROUND_IMAGE), gradientLengthHint: lengthHint);
+      final Gradient? gradient = single.gradient;
+      if (gradient == null) continue;
+
+      // Mapping this gradient layer's positioning/size/repeat from precomputed lists.
       Rect destRect = _computeDestinationRect(rect, destSize, px, py);
 
       if (DebugFlags.enableBackgroundLogs) {
@@ -1032,6 +1035,33 @@ class BoxDecorationPainter extends BoxPainter {
 
       canvas.restore();
     }
+  }
+
+  // Compute a per-layer linear-gradient length hint from the tile dest size.
+  // This allows px color-stops to normalize against the final tile instead of
+  // the element box. Follows the same projection as shader (|sin|*w + |cos|*h).
+  double? _linearGradientLengthHint(CSSFunctionalNotation fn, Size destSize) {
+    if (!fn.name.contains('linear-gradient')) return null;
+    if (fn.args.isEmpty) return destSize.height; // default top->bottom
+    final String arg0 = fn.args[0].trim();
+    if (CSSAngle.isAngle(arg0)) {
+      final double angle = CSSAngle.parseAngle(arg0)!;
+      final double sin = math.sin(angle).abs();
+      final double cos = math.cos(angle).abs();
+      return sin * destSize.width + cos * destSize.height;
+    }
+    if (arg0.startsWith('to ')) {
+      final parts = arg0.split(splitRegExp);
+      bool toH = parts.contains(LEFT) || parts.contains(RIGHT);
+      bool toV = parts.contains(TOP) || parts.contains(BOTTOM);
+      if (toH && toV) {
+        return math.sqrt(destSize.width * destSize.width + destSize.height * destSize.height);
+      }
+      if (toH) return destSize.width;
+      if (toV) return destSize.height;
+    }
+    // First token is a color stop: default orientation is vertical.
+    return destSize.height;
   }
 
   void _paintLayeredMixedBackgrounds(
@@ -1185,12 +1215,6 @@ class BoxDecorationPainter extends BoxPainter {
       }
 
       if (name.contains('gradient')) {
-        // Build gradient for this layer and paint.
-        final single = CSSBackgroundImage([fullFns[i]], renderStyle, renderStyle.target.ownerDocument.controller,
-            baseHref: renderStyle.target.style.getPropertyBaseHref(BACKGROUND_IMAGE));
-        final Gradient? gradient = single.gradient;
-        if (gradient == null) continue;
-
         // For attachment: fixed, compute destination relative to the viewport
         // (positioning area). For root/background propagation targets, also expand
         // the clip to the viewport so the top row is visible.
@@ -1201,8 +1225,17 @@ class BoxDecorationPainter extends BoxPainter {
         final Rect positioningRect = useViewport
             ? (Offset.zero & (renderStyle.target.ownerDocument.viewport?.viewportSize ?? configuration.size!))
             : clipRect;
-
+        // Build gradient for this layer and paint.
+        final CSSFunctionalNotation fn = fullFns[i];
+        // Compute destination size now to derive a per-layer length hint for px stops.
         final Size destSize = _computeGradientDestinationSize(positioningRect, size);
+        final double? lengthHint = _linearGradientLengthHint(fn, destSize);
+
+        final single = CSSBackgroundImage([fn], renderStyle, renderStyle.target.ownerDocument.controller,
+            baseHref: renderStyle.target.style.getPropertyBaseHref(BACKGROUND_IMAGE), gradientLengthHint: lengthHint);
+        final Gradient? gradient = single.gradient;
+        if (gradient == null) continue;
+
         Rect destRect = _computeDestinationRect(positioningRect, destSize, px, py);
         if (DebugFlags.enableBackgroundLogs) {
           List<String> cs = const [];

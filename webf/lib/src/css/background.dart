@@ -258,8 +258,10 @@ class CSSBackgroundImage {
   RenderStyle renderStyle;
   WebFController controller;
   String? baseHref;
+  // Optional per-layer length hint to normalize px stops, provided by painter.
+  final double? gradientLengthHint;
 
-  CSSBackgroundImage(this.functions, this.renderStyle, this.controller, {this.baseHref});
+  CSSBackgroundImage(this.functions, this.renderStyle, this.controller, {this.baseHref, this.gradientLengthHint});
 
   ImageProvider? _image;
 
@@ -332,7 +334,7 @@ class CSSBackgroundImage {
           Alignment begin = Alignment.topCenter;
           Alignment end = Alignment.bottomCenter;
           String arg0 = method.args[0].trim();
-          double? gradientLength;
+          double? gradientLength = gradientLengthHint;
           if (DebugFlags.enableBackgroundLogs) {
             renderingLogger.finer('[Background] parse ${method.name}: rawArgs=${method.args}');
           }
@@ -408,7 +410,7 @@ class CSSBackgroundImage {
             linearAngle = CSSAngle.parseAngle(arg0);
             start = 1;
           }
-          // If no explicit gradientLength was resolved from direction keywords,
+          // If no explicit gradientLength was resolved from painter hint or direction keywords,
           // try to derive it from background-size so px color-stops normalize
           // against the actual tile dimension instead of the element box.
           if (gradientLength == null) {
@@ -446,6 +448,9 @@ class CSSBackgroundImage {
                   '${gradientLength?.toStringAsFixed(2) ?? '<none>'} (w=${bs.width?.computedValue.toStringAsFixed(2) ?? 'auto'}, '
                   'h=${bs.height?.computedValue.toStringAsFixed(2) ?? 'auto'})');
             }
+          }
+          if (gradientLengthHint != null && DebugFlags.enableBackgroundLogs) {
+            renderingLogger.finer('[Background] linear-gradient using painter length hint = ${gradientLengthHint!.toStringAsFixed(2)}');
           }
           _applyColorAndStops(start, method.args, colors, stops, renderStyle, BACKGROUND_IMAGE, gradientLength);
           if (DebugFlags.enableBackgroundLogs) {
