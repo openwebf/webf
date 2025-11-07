@@ -9,6 +9,7 @@ import 'dart:ui' as ui show Gradient;
 
 import 'package:flutter/painting.dart';
 import 'package:webf/css.dart';
+import 'package:webf/foundation.dart';
 
 // ignore: must_be_immutable
 class CSSLinearGradient extends LinearGradient with BorderGradientMixin {
@@ -75,6 +76,13 @@ class CSSLinearGradient extends LinearGradient with BorderGradientMixin {
       rect.left + halfWidth + x * halfWidth,
       rect.top + halfHeight - y * halfHeight,
     );
+    if (DebugFlags.enableBackgroundLogs) {
+      final sampleStops = stops?.map((s) => s.toStringAsFixed(4)).toList();
+      renderingLogger.finer('[Background] shader(linear) rect=${rect.size} angle=${(angle * 180 / math.pi).toStringAsFixed(1)}deg '
+          'begin=${beginOffset.dx.toStringAsFixed(2)},${beginOffset.dy.toStringAsFixed(2)} '
+          'end=${endOffset.dx.toStringAsFixed(2)},${endOffset.dy.toStringAsFixed(2)} '
+          'stops=${sampleStops ?? const []}');
+    }
     return ui.Gradient.linear(
         beginOffset, endOffset, colors, _impliedStops(), tileMode, _resolveTransform(rect, textDirection));
   }
@@ -155,6 +163,11 @@ class CSSRadialGradient extends RadialGradient with BorderGradientMixin {
     double height = math.max((centerY - rect.top), (rect.bottom - centerY));
     double radiusValue = radius * 2 * math.sqrt(width * width + height * height);
 
+    if (DebugFlags.enableBackgroundLogs) {
+      final sampleStops = stops?.map((s) => s.toStringAsFixed(4)).toList();
+      renderingLogger.finer('[Background] shader(radial) rect=${rect.size} center=${centerOffset.dx.toStringAsFixed(2)},${centerOffset.dy.toStringAsFixed(2)} '
+          'radius=${radiusValue.toStringAsFixed(2)} stops=${sampleStops ?? const []}');
+    }
     return ui.Gradient.radial(
       centerOffset,
       radiusValue,
@@ -208,6 +221,10 @@ class CSSConicGradient extends SweepGradient with BorderGradientMixin {
     if (borderEdge != null) {
       rect = Rect.fromLTRB(rect.left - borderEdge!.left, rect.top - borderEdge!.top, rect.right - borderEdge!.right,
           rect.bottom - borderEdge!.bottom);
+    }
+    if (DebugFlags.enableBackgroundLogs) {
+      final sampleStops = stops?.map((s) => s.toStringAsFixed(4)).toList();
+      renderingLogger.finer('[Background] shader(conic) rect=${rect.size} center=${center.toString()} stops=${sampleStops ?? const []}');
     }
     return super.createShader(rect, textDirection: textDirection);
   }

@@ -10,6 +10,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 // logger import removed (no direct logging in this file)
 
@@ -972,7 +973,30 @@ class BoxDecorationPainter extends BoxPainter {
       final Size destSize = _computeGradientDestinationSize(rect, size);
       Rect destRect = _computeDestinationRect(rect, destSize, px, py);
 
-
+      if (DebugFlags.enableBackgroundLogs) {
+        // Extract a compact view of colors/stops if available
+        List<String> cs = const [];
+        List<String>? st;
+        if (gradient is LinearGradient) {
+          cs = gradient.colors
+              .map((c) => 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})')
+              .toList();
+          st = gradient.stops?.map((v) => v.toStringAsFixed(4)).toList();
+        } else if (gradient is RadialGradient) {
+          cs = gradient.colors
+              .map((c) => 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})')
+              .toList();
+          st = gradient.stops?.map((v) => v.toStringAsFixed(4)).toList();
+        } else if (gradient is SweepGradient) {
+          cs = gradient.colors
+              .map((c) => 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})')
+              .toList();
+          st = gradient.stops?.map((v) => v.toStringAsFixed(4)).toList();
+        }
+        renderingLogger.finer('[Background] layer(gradient) i=$i fn=${fn.name} rect=${rect.size} '
+            'destRect=${destRect.size} pos=(${px.cssText()}, ${py.cssText()}) size=${size.cssText()} repeat=$repeat '
+            'colors=${cs} stops=${st ?? const []}');
+      }
 
       // Clip to background painting area. Respect border-radius when present to
       // avoid leaking color outside rounded corners (matches CSS background-clip).
@@ -993,9 +1017,16 @@ class BoxDecorationPainter extends BoxPainter {
         // Tile the gradient rect similar to image tiling.
         // Important: per CSS, each tile's image space restarts at the tile origin.
         // Create a shader per tile so the gradient aligns with the tile's rect.
+        int tCount = 0;
         for (final Rect tile in _generateImageTileRects(rect, destRect, repeat)) {
           final paint = Paint()..shader = gradient.createShader(tile, textDirection: textDirection);
           canvas.drawRect(tile, paint);
+          if (DebugFlags.enableBackgroundLogs) {
+            tCount++;
+          }
+        }
+        if (DebugFlags.enableBackgroundLogs) {
+          renderingLogger.finer('[Background]   tiled ${tCount} rects for gradient layer');
         }
       }
 
@@ -1173,6 +1204,29 @@ class BoxDecorationPainter extends BoxPainter {
 
         final Size destSize = _computeGradientDestinationSize(positioningRect, size);
         Rect destRect = _computeDestinationRect(positioningRect, destSize, px, py);
+        if (DebugFlags.enableBackgroundLogs) {
+          List<String> cs = const [];
+          List<String>? st;
+          if (gradient is LinearGradient) {
+            cs = gradient.colors
+                .map((c) => 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})')
+                .toList();
+            st = gradient.stops?.map((v) => v.toStringAsFixed(4)).toList();
+          } else if (gradient is RadialGradient) {
+            cs = gradient.colors
+                .map((c) => 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})')
+                .toList();
+            st = gradient.stops?.map((v) => v.toStringAsFixed(4)).toList();
+          } else if (gradient is SweepGradient) {
+            cs = gradient.colors
+                .map((c) => 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})')
+                .toList();
+            st = gradient.stops?.map((v) => v.toStringAsFixed(4)).toList();
+          }
+          renderingLogger.finer('[Background] layer(gradient) i=$i fn=${fullFns[i].name} rect=${positioningRect.size} '
+              'destRect=${destRect.size} pos=(${px.cssText()}, ${py.cssText()}) size=${size.cssText()} repeat=$repeat '
+              'colors=${cs} stops=${st ?? const []}');
+        }
 
         canvas.save();
         final Rect layerClipRect = propagateToViewport ? viewportRect : clipRect;
@@ -1189,9 +1243,14 @@ class BoxDecorationPainter extends BoxPainter {
           final paint = Paint()..shader = gradient.createShader(destRect, textDirection: textDirection);
           canvas.drawRect(destRect, paint);
         } else {
+          int tCount = 0;
           for (final Rect tile in _generateImageTileRects(clipRect, destRect, repeat)) {
             final paint = Paint()..shader = gradient.createShader(tile, textDirection: textDirection);
             canvas.drawRect(tile, paint);
+            if (DebugFlags.enableBackgroundLogs) tCount++;
+          }
+          if (DebugFlags.enableBackgroundLogs) {
+            renderingLogger.finer('[Background]   tiled ${tCount} rects for gradient layer');
           }
         }
         canvas.restore();
