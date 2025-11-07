@@ -58,6 +58,7 @@
 #include "foundation/string/atomic_string.h"
 #include "foundation/casting.h"
 #include "foundation/logging.h"
+#include "bindings/qjs/exception_state.h"
 
 namespace webf {
 
@@ -755,82 +756,116 @@ static bool AttributeValueMatches(const Attribute& attribute_item,
  }
 }
 static bool AnyAttributeMatches(Element& element, CSSSelector::MatchType match, const CSSSelector& selector) {
- const QualifiedName& selector_attr = selector.Attribute();
- // Should not be possible from the CSS grammar.
- DCHECK_NE(selector_attr.LocalName(), CSSSelector::UniversalSelectorAtom());
- WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Try '[" << selector_attr.LocalName().ToUTF8String()
+  const QualifiedName& selector_attr = selector.Attribute();
+  // Should not be possible from the CSS grammar.
+  DCHECK_NE(selector_attr.LocalName(), CSSSelector::UniversalSelectorAtom());
+  WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Try '[" << selector_attr.LocalName().ToUTF8String()
                    << "]' match type " << static_cast<int>(match)
                    << " ns='" << selector_attr.NamespaceURI().ToUTF8String() << "'"
                    << " value='" << selector.Value().ToUTF8String() << "' on "
                    << DescribeElementForLog(&element);
- // Synchronize the attribute in case it is lazy-computed.
- // Currently all lazy properties have a null namespace, so only pass
- // localName().
- element.SynchronizeAttribute(selector_attr.LocalName());
- // NOTE: For kAttributeSet, this is a bogus pointer but never used.
- const AtomicString& selector_value = selector.Value();
- TextCaseSensitivity case_sensitivity =
-     (selector.AttributeMatch() == CSSSelector::AttributeMatchType::kCaseInsensitive) ? kTextCaseASCIIInsensitive
-                                                                                      : kTextCaseSensitive;
- // Get attributes from element
- AttributeCollection attributes = element.Attributes();
- if (!attributes.IsEmpty()) {
-   WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Scanning " << attributes.size() << " attribute(s)";
-   for (const auto& attribute_item : attributes) {
-     WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Candidate '"
-                       << attribute_item.GetName().LocalName().ToUTF8String() << "'='"
-                       << attribute_item.Value().ToUTF8String() << "'";
-     if (!attribute_item.Matches(selector_attr)) {
-       if (element.IsHTMLElement()) {
-         continue;
-       }
-       // Non-html attributes in html documents are normalized to their camel-
-       // cased version during parsing if applicable. Yet, attribute selectors
-       // are lower-cased for selectors in html documents. Compare the selector
-       // and the attribute local name insensitively to e.g. allow matching SVG
-       // attributes like viewBox.
-       //
-       // NOTE: If changing this behavior, be sure to also update the bucketing
-       // in ElementRuleCollector::CollectMatchingRules() accordingly.
-       if (!attribute_item.MatchesCaseInsensitive(selector_attr)) {
-         continue;
-       }
-     }
-     if (AttributeValueMatches(attribute_item, match, selector_value, case_sensitivity)) {
-       WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Matched by AttributeCollection";
-       return true;
-     }
-     if (case_sensitivity == kTextCaseASCIIInsensitive) {
-       if (selector_attr.NamespaceURI() != g_star_atom) {
-         return false;
-       }
-       continue;
-     }
-     // Legacy dictates that values of some attributes should be compared in
-     // a case-insensitive manner regardless of whether the case insensitive
-     // flag is set or not.
-     bool legacy_case_insensitive = element.IsHTMLElement() && !selector.IsCaseSensitiveAttribute();
-     // If case-insensitive, re-check, and count if result differs.
-     if (legacy_case_insensitive &&
-         AttributeValueMatches(attribute_item, match, selector_value, kTextCaseASCIIInsensitive)) {
-       // If the `s` modifier is in the attribute selector, return false
-       // despite of legacy_case_insensitive.
-       if (selector.AttributeMatch() == CSSSelector::AttributeMatchType::kCaseSensitiveAlways) {
-         // Case sensitive modifier takes precedence
-         return false;
-       }
-       // Legacy case insensitive match succeeded
-       WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Matched by legacy ASCII-insensitive";
-       return true;
-     }
-     if (selector_attr.NamespaceURI() != g_star_atom) {
-       return false;
-     }
-   }
- }
- // Fallback for core attributes that are tracked outside AttributeCollection.
- // This allows selectors like [id="..."] and [class="..."] to work even if
- // ElementData isn't storing raw attributes.
+  // Synchronize the attribute in case it is lazy-computed.
+  // Currently all lazy properties have a null namespace, so only pass
+  // localName().
+  element.SynchronizeAttribute(selector_attr.LocalName());
+  // NOTE: For kAttributeSet, this is a bogus pointer but never used.
+  const AtomicString& selector_value = selector.Value();
+  TextCaseSensitivity case_sensitivity =
+      (selector.AttributeMatch() == CSSSelector::AttributeMatchType::kCaseInsensitive) ? kTextCaseASCIIInsensitive
+                                                                                       : kTextCaseSensitive;
+  // Get attributes from element
+  AttributeCollection attributes = element.Attributes();
+  if (!attributes.IsEmpty()) {
+    WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Scanning " << attributes.size() << " attribute(s)";
+    for (const auto& attribute_item : attributes) {
+      WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Candidate '"
+                        << attribute_item.GetName().LocalName().ToUTF8String() << "'='"
+                        << attribute_item.Value().ToUTF8String() << "'";
+      if (!attribute_item.Matches(selector_attr)) {
+        if (element.IsHTMLElement()) {
+          continue;
+        }
+        // Non-html attributes in html documents are normalized to their camel-
+        // cased version during parsing if applicable. Yet, attribute selectors
+        // are lower-cased for selectors in html documents. Compare the selector
+        // and the attribute local name insensitively to e.g. allow matching SVG
+        // attributes like viewBox.
+        //
+        // NOTE: If changing this behavior, be sure to also update the bucketing
+        // in ElementRuleCollector::CollectMatchingRules() accordingly.
+        if (!attribute_item.MatchesCaseInsensitive(selector_attr)) {
+          continue;
+        }
+      }
+      if (AttributeValueMatches(attribute_item, match, selector_value, case_sensitivity)) {
+        WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Matched by AttributeCollection";
+        return true;
+      }
+      if (case_sensitivity == kTextCaseASCIIInsensitive) {
+        if (selector_attr.NamespaceURI() != g_star_atom) {
+          return false;
+        }
+        continue;
+      }
+      // Legacy dictates that values of some attributes should be compared in
+      // a case-insensitive manner regardless of whether the case insensitive
+      // flag is set or not.
+      bool legacy_case_insensitive = element.IsHTMLElement() && !selector.IsCaseSensitiveAttribute();
+      // If case-insensitive, re-check, and count if result differs.
+      if (legacy_case_insensitive &&
+          AttributeValueMatches(attribute_item, match, selector_value, kTextCaseASCIIInsensitive)) {
+        // If the `s` modifier is in the attribute selector, return false
+        // despite of legacy_case_insensitive.
+        if (selector.AttributeMatch() == CSSSelector::AttributeMatchType::kCaseSensitiveAlways) {
+          // Case sensitive modifier takes precedence
+          return false;
+        }
+        // Legacy case insensitive match succeeded
+        WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Matched by legacy ASCII-insensitive";
+        return true;
+      }
+      if (selector_attr.NamespaceURI() != g_star_atom) {
+        return false;
+      }
+    }
+  }
+  // Fallback: ElementData may not store all attributes (runtime mutations
+  // and non-style-affecting attributes may live only in ElementAttributes).
+  // To make attribute selectors like [data-x] or [role="button"] work,
+  // consult ElementAttributes when namespace constraints allow.
+  {
+    const bool any_ns = selector_attr.NamespaceURI() == g_star_atom || selector_attr.NamespaceURI().IsNull();
+    if (any_ns) {
+      const AtomicString& local = selector_attr.LocalName();
+      ExceptionState exception_state;  // No exception expected for attribute access.
+      if (match == CSSSelector::kAttributeSet) {
+        if (element.hasAttribute(local, exception_state)) {
+          WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Matched by ElementAttributes presence";
+          return true;
+        }
+      } else {
+        AtomicString attr_value = element.getAttribute(local, exception_state);
+        if (!attr_value.IsNull()) {
+          Attribute fake(QualifiedName(g_null_atom, local, g_star_atom), attr_value);
+          if (AttributeValueMatches(fake, match, selector_value, case_sensitivity)) {
+            WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Matched by ElementAttributes value";
+            return true;
+          }
+          // Legacy ASCII-insensitive fallback for HTML when needed.
+          if (element.IsHTMLElement() && !selector.IsCaseSensitiveAttribute() &&
+              AttributeValueMatches(fake, match, selector_value, kTextCaseASCIIInsensitive)) {
+            if (selector.AttributeMatch() != CSSSelector::AttributeMatchType::kCaseSensitiveAlways) {
+              WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Matched by ElementAttributes legacy ASCII-insensitive";
+              return true;
+            }
+          }
+        }
+      }
+    }
+  }
+  // Fallback for core attributes that are tracked outside AttributeCollection.
+  // This allows selectors like [id="..."] and [class="..."] to work even if
+  // ElementData isn't storing raw attributes.
   const bool any_ns = selector_attr.NamespaceURI() == g_star_atom || selector_attr.NamespaceURI().IsNull();
   if (any_ns) {
     const AtomicString& local = selector_attr.LocalName();
