@@ -431,13 +431,12 @@ SelectorChecker::MatchStatus SelectorChecker::MatchForRelation(const SelectorChe
        }
      }
      return kSelectorFailsCompletely;
-   case CSSSelector::kRelativeChild:
-     DCHECK(result.has_argument_leftmost_compound_matches);
-     result.has_argument_leftmost_compound_matches->push_back(context.element);
-     [[fallthrough]];
-  case CSSSelector::kChild: {
+  case CSSSelector::kRelativeChild:
+    DCHECK(result.has_argument_leftmost_compound_matches);
+    result.has_argument_leftmost_compound_matches->push_back(context.element);
+    [[fallthrough]];
+ case CSSSelector::kChild: {
     next_context.element = ParentElement(next_context);
-    WEBF_COND_LOG(SELECTOR, VERBOSE) << "[Selector] Child: parent is " << DescribeElementForLog(next_context.element);
     if (!next_context.element) {
       return kSelectorFailsCompletely;
     }
@@ -1523,54 +1522,54 @@ bool SelectorChecker::CheckPseudoClass(const SelectorCheckingContext& context, M
      //   return text_control->IsPlaceholderVisible();
      // }
      break;
-   case CSSSelector::kPseudoNthChild:
-     if (mode_ == kResolvingStyle) {
-       if (ContainerNode* parent = element.ParentElementOrDocumentFragment()) {
-         parent->SetChildrenAffectedByForwardPositionalRules();
-       }
-     }
-     if (selector.SelectorList()) {
-       // Check if the element itself matches the “of” selector.
-       // Note that this will also propagate the correct MatchResult flags,
-       // so NthIndexCache does not have to do that.
-       if (!MatchesAnyInList(context, selector.SelectorList()->First(), result)) {
-         return false;
-       }
-     }
-     return selector.MatchNth(NthIndexCache::NthChildIndex(element, selector.SelectorList(), this, &context));
-   case CSSSelector::kPseudoNthOfType:
-     if (mode_ == kResolvingStyle) {
-       if (ContainerNode* parent = element.ParentElementOrDocumentFragment()) {
-         parent->SetChildrenAffectedByForwardPositionalRules();
-       }
-     }
-     return selector.MatchNth(NthIndexCache::NthOfTypeIndex(element));
-   case CSSSelector::kPseudoNthLastChild: {
-     ContainerNode* parent = element.ParentElementOrDocumentFragment();
-     if (mode_ == kResolvingStyle && parent) {
-       parent->SetChildrenAffectedByBackwardPositionalRules();
-     }
-     if (mode_ != kQueryingRules && parent && !parent->IsFinishedParsingChildren()) {
-       return false;
-     }
-     if (selector.SelectorList()) {
-       // Check if the element itself matches the “of” selector.
-       if (!MatchesAnyInList(context, selector.SelectorList()->First(), result)) {
-         return false;
-       }
-     }
-     return selector.MatchNth(NthIndexCache::NthLastChildIndex(element, selector.SelectorList(), this, &context));
-   }
-   case CSSSelector::kPseudoNthLastOfType: {
-     ContainerNode* parent = element.ParentElementOrDocumentFragment();
-     if (mode_ == kResolvingStyle && parent) {
-       parent->SetChildrenAffectedByBackwardPositionalRules();
-     }
-     if (mode_ != kQueryingRules && parent && !parent->IsFinishedParsingChildren()) {
-       return false;
-     }
-     return selector.MatchNth(NthIndexCache::NthLastOfTypeIndex(element));
-   }
+  case CSSSelector::kPseudoNthChild:
+    if (mode_ == kResolvingStyle) {
+      if (ContainerNode* parent = element.ParentElementOrDocumentFragment()) {
+        parent->SetChildrenAffectedByForwardPositionalRules();
+      }
+    }
+    if (selector.SelectorList()) {
+      // Check if the element itself matches the “of” selector.
+      // Note that this will also propagate the correct MatchResult flags,
+      // so NthIndexCache does not have to do that.
+      if (!MatchesAnyInList(context, selector.SelectorList()->First(), result)) {
+        return false;
+      }
+    }
+    return selector.MatchNth(NthIndexCache::NthChildIndex(element, selector.SelectorList(), this, &context));
+  case CSSSelector::kPseudoNthOfType:
+    if (mode_ == kResolvingStyle) {
+      if (ContainerNode* parent = element.ParentElementOrDocumentFragment()) {
+        parent->SetChildrenAffectedByForwardPositionalRules();
+      }
+    }
+    return selector.MatchNth(NthIndexCache::NthOfTypeIndex(element));
+  case CSSSelector::kPseudoNthLastChild: {
+    ContainerNode* parent = element.ParentElementOrDocumentFragment();
+    if (mode_ == kResolvingStyle && parent) {
+      parent->SetChildrenAffectedByBackwardPositionalRules();
+    }
+    if (mode_ != kQueryingRules && parent && !parent->IsFinishedParsingChildren()) {
+      return false;
+    }
+    if (selector.SelectorList()) {
+      // Check if the element itself matches the “of” selector.
+      if (!MatchesAnyInList(context, selector.SelectorList()->First(), result)) {
+        return false;
+      }
+    }
+    return selector.MatchNth(NthIndexCache::NthLastChildIndex(element, selector.SelectorList(), this, &context));
+  }
+  case CSSSelector::kPseudoNthLastOfType: {
+    ContainerNode* parent = element.ParentElementOrDocumentFragment();
+    if (mode_ == kResolvingStyle && parent) {
+      parent->SetChildrenAffectedByBackwardPositionalRules();
+    }
+    if (mode_ != kQueryingRules && parent && !parent->IsFinishedParsingChildren()) {
+      return false;
+    }
+    return selector.MatchNth(NthIndexCache::NthLastOfTypeIndex(element));
+  }
    case CSSSelector::kPseudoSelectorFragmentAnchor:
      return MatchesSelectorFragmentAnchorPseudoClass(element);
    case CSSSelector::kPseudoTarget:

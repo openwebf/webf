@@ -36,6 +36,14 @@ class NthIndexCache {
   
   // Calculate the index from the end among siblings of the same type (1-based)
   static unsigned NthLastOfTypeIndex(const Element& element);
+ 
+ private:
+  // Helper: when a selector list is provided for :nth-child(... of S),
+  // only siblings matching that selector list are counted.
+  static bool MatchesFilter(Element* element,
+                            const CSSSelectorList* selector_list,
+                            const SelectorChecker* checker,
+                            const void* context);
 };
 
 }  // namespace webf
