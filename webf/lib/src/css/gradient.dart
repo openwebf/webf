@@ -21,15 +21,18 @@ class CSSLinearGradient extends LinearGradient with BorderGradientMixin {
     Alignment begin = Alignment.centerLeft,
     Alignment end = Alignment.centerRight,
     double? angle,
+    double? repeatPeriod,
     required List<Color> colors,
     // A list of values from 0.0 to 1.0 that denote fractions along the gradient.
     List<double>? stops,
     TileMode tileMode = TileMode.clamp,
     GradientTransform? transform,
   })  : _angle = angle,
+        _repeatPeriod = repeatPeriod,
         super(begin: begin, end: end, colors: colors, stops: stops, tileMode: tileMode, transform: transform);
 
   final double? _angle;
+  final double? _repeatPeriod; // in device px along gradient line when repeated
 
   @override
   Shader createShader(Rect rect, {TextDirection? textDirection}) {
@@ -63,7 +66,13 @@ class CSSLinearGradient extends LinearGradient with BorderGradientMixin {
       );
     }
 
-    double length = (sin * width).abs() + (cos * height).abs();
+    double deviceLength = (sin * width).abs() + (cos * height).abs();
+    double length = deviceLength;
+    if (tileMode == TileMode.repeated && _repeatPeriod != null && _repeatPeriod! > 0) {
+      // Shrink the 0..1 span to the intended repeating period so TileMode.repeated
+      // repeats every _repeatPeriod device pixels along the gradient axis.
+      length = _repeatPeriod!;
+    }
     double x = sin * length / width;
     double y = cos * length / height;
     final double halfWidth = rect.width / 2.0;
@@ -78,7 +87,10 @@ class CSSLinearGradient extends LinearGradient with BorderGradientMixin {
     );
     if (DebugFlags.enableBackgroundLogs) {
       final sampleStops = stops?.map((s) => s.toStringAsFixed(4)).toList();
-      renderingLogger.finer('[Background] shader(linear) rect=${rect.size} angle=${(angle * 180 / math.pi).toStringAsFixed(1)}deg '
+      final rp = (tileMode == TileMode.repeated && _repeatPeriod != null && _repeatPeriod! > 0)
+          ? ' period=${_repeatPeriod!.toStringAsFixed(2)}'
+          : '';
+      renderingLogger.finer('[Background] shader(linear) rect=${rect.size} angle=${(angle * 180 / math.pi).toStringAsFixed(1)}deg'+rp+' '
           'begin=${beginOffset.dx.toStringAsFixed(2)},${beginOffset.dy.toStringAsFixed(2)} '
           'end=${endOffset.dx.toStringAsFixed(2)},${endOffset.dy.toStringAsFixed(2)} '
           'stops=${sampleStops ?? const []}');

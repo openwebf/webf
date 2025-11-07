@@ -426,42 +426,79 @@ class CSSBackgroundImage {
             final CSSBackgroundSize bs = renderStyle.backgroundSize;
             double? bsW = (bs.width != null && !bs.width!.isAuto) ? bs.width!.computedValue : null;
             double? bsH = (bs.height != null && !bs.height!.isAuto) ? bs.height!.computedValue : null;
+            // Fallbacks when background-size is auto or layout not finalized yet.
+            final double fbW = renderStyle.paddingBoxWidth ??
+                (renderStyle.target.ownerDocument.viewport?.viewportSize.width ?? 0.0);
+            final double fbH = renderStyle.paddingBoxHeight ??
+                (renderStyle.target.ownerDocument.viewport?.viewportSize.height ?? 0.0);
             if (linearAngle != null) {
               // For angle-based gradients, approximate the gradient line length
               // using the tile size and the same projection used at shader time.
-              if (bsW != null || bsH != null) {
-                final double sin = math.sin(linearAngle);
-                final double cos = math.cos(linearAngle);
-                final double w = bsW ?? renderStyle.paddingBoxWidth!;
-                final double h = bsH ?? renderStyle.paddingBoxHeight!;
-                gradientLength = (sin.abs() * w) + (cos.abs() * h);
-              }
+              final double sin = math.sin(linearAngle);
+              final double cos = math.cos(linearAngle);
+              final double w = bsW ?? fbW;
+              final double h = bsH ?? fbH;
+              gradientLength = (sin.abs() * w) + (cos.abs() * h);
             } else {
               // No angle provided: infer axis from begin/end and use the
-              // background-size along that axis when available.
+              // background-size along that axis when available, else fall back to box/viewport.
               bool isVertical = (begin == Alignment.topCenter || begin == Alignment.bottomCenter) &&
                   (end == Alignment.topCenter || end == Alignment.bottomCenter);
               bool isHorizontal = (begin == Alignment.centerLeft || begin == Alignment.centerRight) &&
                   (end == Alignment.centerLeft || end == Alignment.centerRight);
-              if (isVertical && bsH != null) {
-                gradientLength = bsH;
-              } else if (isHorizontal && bsW != null) {
-                gradientLength = bsW;
-              } else if (bsW != null && bsH != null) {
-                // Diagonal without an angle: fall back to diagonal length of tile.
-                gradientLength = math.sqrt(bsW * bsW + bsH * bsH);
+              if (isVertical) {
+                gradientLength = bsH ?? fbH;
+              } else if (isHorizontal) {
+                gradientLength = bsW ?? fbW;
+              } else {
+                // Diagonal without an explicit angle; use diagonal of available size.
+                final double w = bsW ?? fbW;
+                final double h = bsH ?? fbH;
+                gradientLength = math.sqrt(w * w + h * h);
               }
             }
             if (DebugFlags.enableBackgroundLogs) {
-              renderingLogger.finer('[Background] linear-gradient choose gradientLength from bg-size = '
-                  '${gradientLength?.toStringAsFixed(2) ?? '<none>'} (w=${bs.width?.computedValue.toStringAsFixed(2) ?? 'auto'}, '
-                  'h=${bs.height?.computedValue.toStringAsFixed(2) ?? 'auto'})');
+              renderingLogger.finer('[Background] linear-gradient choose gradientLength = '
+                  '${gradientLength?.toStringAsFixed(2)} (bg-size: w=${bs.width?.computedValue.toStringAsFixed(2) ?? 'auto'}, '
+                  'h=${bs.height?.computedValue.toStringAsFixed(2) ?? 'auto'}; fb: w=${fbW.toStringAsFixed(2)}, h=${fbH.toStringAsFixed(2)})');
             }
           }
           if (gradientLengthHint != null && DebugFlags.enableBackgroundLogs) {
             renderingLogger.finer('[Background] linear-gradient using painter length hint = ${gradientLengthHint!.toStringAsFixed(2)}');
           }
           _applyColorAndStops(start, method.args, colors, stops, renderStyle, BACKGROUND_IMAGE, gradientLength);
+          double? repeatPeriodPx;
+          // For repeating-linear-gradient, normalize the stop range to one cycle [0..1]
+          // so Flutter's TileMode.repeated repeats the intended segment length.
+          if (method.name == 'repeating-linear-gradient' && stops.isNotEmpty) {
+            final double first = stops.first;
+            final double last = stops.last;
+            double range = last - first;
+            if (DebugFlags.enableBackgroundLogs) {
+              final double? gl = gradientLength;
+              final double periodPx = (gl != null && range > 0) ? (range * gl) : -1;
+              renderingLogger.finer('[Background] repeating-linear normalize: first=${first.toStringAsFixed(4)} last=${last.toStringAsFixed(4)} '
+                  'range=${range.toStringAsFixed(4)} periodPx=${periodPx >= 0 ? periodPx.toStringAsFixed(2) : '<unknown>'}');
+            }
+            if (range <= 0) {
+              // Guard: invalid or zero-length cycle; fall back to full [0..1]
+              // Keep stops as-is to avoid division by zero.
+            } else {
+              // Capture period in device pixels for shader scaling.
+              if (gradientLength != null) {
+                repeatPeriodPx = range * gradientLength!;
+                if (DebugFlags.enableBackgroundLogs) {
+                  renderingLogger.finer('[Background] repeating-linear periodPx=${repeatPeriodPx!.toStringAsFixed(2)}');
+                }
+              }
+              for (int i = 0; i < stops.length; i++) {
+                stops[i] = ((stops[i] - first) / range).clamp(0.0, 1.0);
+              }
+              if (DebugFlags.enableBackgroundLogs) {
+                renderingLogger.finer('[Background] repeating-linear normalized stops=${stops.map((s)=>s.toStringAsFixed(4)).toList()}');
+              }
+            }
+          }
           if (DebugFlags.enableBackgroundLogs) {
             final cs = colors
                 .map((c) => 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})')
@@ -478,6 +515,7 @@ class CSSBackgroundImage {
                 begin: begin,
                 end: end,
                 angle: linearAngle,
+                repeatPeriod: repeatPeriodPx,
                 colors: colors,
                 stops: stops,
                 tileMode: method.name == 'linear-gradient' ? TileMode.clamp : TileMode.repeated);
@@ -554,6 +592,24 @@ class CSSBackgroundImage {
             }
           }
           _applyColorAndStops(start, method.args, colors, stops, renderStyle, BACKGROUND_IMAGE);
+          // For repeating-radial-gradient, normalize to one cycle [0..1] for tile repetition.
+          if (method.name == 'repeating-radial-gradient' && stops.isNotEmpty) {
+            final double first = stops.first;
+            final double last = stops.last;
+            double range = last - first;
+            if (DebugFlags.enableBackgroundLogs) {
+              renderingLogger.finer('[Background] repeating-radial normalize: first=${first.toStringAsFixed(4)} last=${last.toStringAsFixed(4)} '
+                  'range=${range.toStringAsFixed(4)}');
+            }
+            if (range > 0) {
+              for (int i = 0; i < stops.length; i++) {
+                stops[i] = ((stops[i] - first) / range).clamp(0.0, 1.0);
+              }
+              if (DebugFlags.enableBackgroundLogs) {
+                renderingLogger.finer('[Background] repeating-radial normalized stops=${stops.map((s)=>s.toStringAsFixed(4)).toList()}');
+              }
+            }
+          }
           if (DebugFlags.enableBackgroundLogs) {
             final cs = colors
                 .map((c) => 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})')
