@@ -66,11 +66,19 @@ class RuleData {
   unsigned Position() const { return position_; }
   unsigned SelectorSpecificity() const { return specificity_; }
 
+  // Prefilter metadata for rightmost compound's type selector.
+  bool HasRightmostType() const { return has_rightmost_type_; }
+  const AtomicString& RightmostTag() const { return rightmost_tag_; }
+
  private:
   std::shared_ptr<StyleRule> rule_;
   unsigned selector_index_;
   unsigned position_;  // Position in the original stylesheet
   unsigned specificity_;
+
+  // Whether the rightmost compound has a type selector and its localName.
+  bool has_rightmost_type_ = false;
+  AtomicString rightmost_tag_;
 };
 
 // Container for rules organized by selector characteristics

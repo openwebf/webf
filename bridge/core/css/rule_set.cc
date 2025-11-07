@@ -58,6 +58,17 @@ RuleData::RuleData(std::shared_ptr<StyleRule> rule,
   if (rule_) {
     const CSSSelector& selector = rule_->SelectorAt(selector_index_);
     specificity_ = selector.Specificity();
+
+    // Compute rightmost compound's type selector, if any.
+    const CSSSelector* simple = &selector;
+    while (simple) {
+      if (simple->Match() == CSSSelector::kTag) {
+        has_rightmost_type_ = true;
+        rightmost_tag_ = simple->TagQName().LocalName();
+        break;
+      }
+      simple = simple->NextSimpleSelector();
+    }
   }
 }
 
@@ -209,39 +220,61 @@ void RuleSet::CompactRulesIfNeeded() {
 
 RuleSet::RuleDataVector* RuleSet::FindBestRuleSetForSelector(
     const CSSSelector& selector) {
-  
-  // Start with the rightmost selector
-  const CSSSelector* current = &selector;
-  
-  // Skip pseudo elements
-  for (; current->Match() == CSSSelector::kPseudoElement; 
-       current = current->NextSimpleSelector()) {
-    if (!current->NextSimpleSelector()) {
+  // Bucket by the rightmost compound, prioritizing ID > class > tag.
+  // This mirrors Blink’s approach so compound selectors like "P#three"
+  // are indexed by ID and still require the type to match during checking.
+
+  // Start at the rightmost compound's first simple selector.
+  const CSSSelector* simple = &selector;
+
+  // Skip over leading pseudo-elements (they don't bucket well on their own).
+  for (; simple && simple->Match() == CSSSelector::kPseudoElement; simple = simple->NextSimpleSelector()) {
+    if (!simple->NextSimpleSelector()) {
+      // Only a pseudo-element: bucket into universal; relation context will handle.
       return &universal_rules_;
     }
   }
-  
-  // Check for ID selector
-  if (current->Match() == CSSSelector::kId) {
-    const AtomicString& id = current->Value();
+
+  // Scan the entire rightmost compound for ID/class/tag.
+  const CSSSelector* found_id = nullptr;
+  const CSSSelector* found_class = nullptr;
+  const CSSSelector* found_tag = nullptr;
+
+  for (const CSSSelector* s = simple; s; s = s->NextSimpleSelector()) {
+    switch (s->Match()) {
+      case CSSSelector::kId:
+        // Prefer the first ID we see in the rightmost compound.
+        if (!found_id) found_id = s;
+        break;
+      case CSSSelector::kClass:
+        if (!found_class) found_class = s;
+        break;
+      case CSSSelector::kTag:
+        if (!found_tag) found_tag = s;
+        break;
+      default:
+        break;
+    }
+  }
+
+  if (found_id) {
+    const AtomicString& id = found_id->Value();
     if (id_rules_.find(id) == id_rules_.end()) {
       id_rules_[id] = std::make_unique<RuleDataVector>();
     }
     return id_rules_[id].get();
   }
-  
-  // Check for class selector
-  if (current->Match() == CSSSelector::kClass) {
-    const AtomicString& class_name = current->Value();
+
+  if (found_class) {
+    const AtomicString& class_name = found_class->Value();
     if (class_rules_.find(class_name) == class_rules_.end()) {
       class_rules_[class_name] = std::make_unique<RuleDataVector>();
     }
     return class_rules_[class_name].get();
   }
-  
-  // Check for tag selector
-  if (current->Match() == CSSSelector::kTag) {
-    const AtomicString& tag_name = current->TagQName().LocalName();
+
+  if (found_tag) {
+    const AtomicString& tag_name = found_tag->TagQName().LocalName();
     if (!tag_name.IsNull() && tag_name != "*") {
       AtomicString bucket = tag_name;
       if (bucket.Is8Bit()) {
@@ -253,10 +286,10 @@ RuleSet::RuleDataVector* RuleSet::FindBestRuleSetForSelector(
       return tag_rules_[bucket].get();
     }
   }
-  
-  // Check for pseudo class
-  if (current->Match() == CSSSelector::kPseudoClass) {
-    switch (current->GetPseudoType()) {
+
+  // Fall back to known pseudo-class buckets if applicable.
+  if (simple && simple->Match() == CSSSelector::kPseudoClass) {
+    switch (simple->GetPseudoType()) {
       case CSSSelector::kPseudoLink:
       case CSSSelector::kPseudoVisited:
       case CSSSelector::kPseudoAnyLink:
@@ -269,8 +302,8 @@ RuleSet::RuleDataVector* RuleSet::FindBestRuleSetForSelector(
         break;
     }
   }
-  
-  // Default to universal rules
+
+  // Default to universal rules when no better bucket applies.
   return &universal_rules_;
 }
 
