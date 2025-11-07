@@ -645,19 +645,43 @@ class CSSBackgroundImage {
           double? from = 0.0;
           double? atX = 0.5;
           double? atY = 0.5;
-          if (method.args[0].contains('from ') || method.args[0].contains('at ')) {
-            List<String> fromAt = method.args[0].trim().split(' ');
-            int fromIndex = fromAt.indexOf('from');
-            int atIndex = fromAt.indexOf('at');
-            if (fromIndex != -1 && fromIndex + 1 < fromAt.length) {
-              from = CSSAngle.parseAngle(fromAt[fromIndex + 1]);
+          if (method.args.isNotEmpty && (method.args[0].contains('from ') || method.args[0].contains('at '))) {
+            final List<String> tokens = method.args[0].trim().split(splitRegExp).where((s) => s.isNotEmpty).toList();
+            final int fromIndex = tokens.indexOf('from');
+            final int atIndex = tokens.indexOf('at');
+            if (fromIndex != -1 && fromIndex + 1 < tokens.length) {
+              from = CSSAngle.parseAngle(tokens[fromIndex + 1]);
             }
             if (atIndex != -1) {
-              if (atIndex + 1 < fromAt.length && CSSPercentage.isPercentage(fromAt[atIndex + 1])) {
-                atX = CSSPercentage.parsePercentage(fromAt[atIndex + 1]);
+              double parseX(String s) {
+                if (s == LEFT) return 0.0;
+                if (s == CENTER) return 0.5;
+                if (s == RIGHT) return 1.0;
+                if (CSSPercentage.isPercentage(s)) return CSSPercentage.parsePercentage(s)!;
+                return 0.5;
               }
-              if (atIndex + 2 < fromAt.length && CSSPercentage.isPercentage(fromAt[atIndex + 2])) {
-                atY = CSSPercentage.parsePercentage(fromAt[atIndex + 2]);
+              double parseY(String s) {
+                if (s == TOP) return 0.0;
+                if (s == CENTER) return 0.5;
+                if (s == BOTTOM) return 1.0;
+                if (CSSPercentage.isPercentage(s)) return CSSPercentage.parsePercentage(s)!;
+                return 0.5;
+              }
+              final List<String> pos = tokens.sublist(atIndex + 1);
+              if (pos.isNotEmpty) {
+                if (pos.length == 1) {
+                  final String v = pos.first;
+                  if (v == TOP || v == BOTTOM) {
+                    atY = parseY(v);
+                    atX = 0.5;
+                  } else {
+                    atX = parseX(v);
+                    atY = 0.5;
+                  }
+                } else {
+                  atX = parseX(pos[0]);
+                  atY = parseY(pos[1]);
+                }
               }
             }
             start = 1;
