@@ -710,6 +710,15 @@ class BoxDecorationPainter extends BoxPainter {
     final hasGradientBgImage = _hasGradientLayers();
 
     if (hasGradientBgImage) {
+      if (DebugFlags.enableBackgroundLogs) {
+        try {
+          final el = renderStyle.target;
+          final id = (el.id != null && el.id!.isNotEmpty) ? '#${el.id}' : '';
+          final cls = (el.className != null && el.className!.isNotEmpty) ? '.${el.className}' : '';
+          final rawAttach = el.style.getPropertyValue(BACKGROUND_ATTACHMENT);
+          renderingLogger.finer('[Background] gradient-only path for <${el.tagName.toLowerCase()}$id$cls> rect=$rect raw-attachment="$rawAttach"');
+        } catch (_) {}
+      }
       _paintLayeredGradients(canvas, rect, textDirection);
       // Report FP for non-default backgrounds
       renderStyle.target.ownerDocument.controller.reportFP();
@@ -948,6 +957,8 @@ class BoxDecorationPainter extends BoxPainter {
     final positionsGrad = _parsePositionsMapped(gIndices, fullFns.length);
     final sizesGrad = _parseSizesMapped(gIndices, fullFns.length);
     final repeatsGrad = _parseRepeatsMapped(gIndices, fullFns.length);
+    // Also map background-attachment per gradient layer for debugging (and future correctness).
+    final attachmentsGrad = _parseAttachmentsMapped(gIndices, fullFns.length);
 
     // Images mapping
     final positionsImg = _parsePositionsMapped(imgIndices, fullFns.length);
@@ -964,8 +975,17 @@ class BoxDecorationPainter extends BoxPainter {
       final (CSSBackgroundPosition px, CSSBackgroundPosition py) = positionsGrad[i];
       final CSSBackgroundSize size = sizesGrad[i];
       final ImageRepeat repeat = repeatsGrad[i];
+      final CSSBackgroundAttachmentType attach = attachmentsGrad[i];
+      final bool useViewport = attach == CSSBackgroundAttachmentType.fixed;
+      final Rect viewportRect = Offset.zero & (renderStyle.target.ownerDocument.viewport?.viewportSize ?? rect.size);
+      final bool propagateToViewport = useViewport && _isRootBackgroundTarget(renderStyle.target);
 
-      final Size destSize = _computeGradientDestinationSize(rect, size);
+      // When fixed, anchor to viewport for positioning; otherwise use the element clip rect.
+      final Rect positioningRect = useViewport ? viewportRect : rect;
+      // For root background propagation with fixed, expand clip to viewport; otherwise clip to element rect.
+      final Rect layerClipRect = propagateToViewport ? viewportRect : rect;
+
+      final Size destSize = _computeGradientDestinationSize(positioningRect, size);
       final double? lengthHint = _linearGradientLengthHint(fn, destSize);
 
       final single = CSSBackgroundImage([fn], renderStyle, renderStyle.target.ownerDocument.controller,
@@ -974,7 +994,7 @@ class BoxDecorationPainter extends BoxPainter {
       if (gradient == null) continue;
 
       // Mapping this gradient layer's positioning/size/repeat from precomputed lists.
-      Rect destRect = _computeDestinationRect(rect, destSize, px, py);
+      Rect destRect = _computeDestinationRect(positioningRect, destSize, px, py);
 
       if (DebugFlags.enableBackgroundLogs) {
         // Extract a compact view of colors/stops if available
@@ -996,19 +1016,27 @@ class BoxDecorationPainter extends BoxPainter {
               .toList();
           st = gradient.stops?.map((v) => v.toStringAsFixed(4)).toList();
         }
-        renderingLogger.finer('[Background] layer(gradient) i=$i fn=${fn.name} rect=${rect.size} '
-            'destRect=${destRect.size} pos=(${px.cssText()}, ${py.cssText()}) size=${size.cssText()} repeat=$repeat '
-            'colors=${cs} stops=${st ?? const []}');
+        final tag = () {
+          try {
+            final el = renderStyle.target;
+            final id = (el.id != null && el.id!.isNotEmpty) ? '#${el.id}' : '';
+            final cls = (el.className != null && el.className!.isNotEmpty) ? '.${el.className}' : '';
+            return '<${el.tagName.toLowerCase()}$id$cls>';
+          } catch (_) { return '<unknown>'; }
+        }();
+        renderingLogger.finer('[Background] layer(gradient) i=$i target=$tag fn=${fn.name} attach=${attach.cssText()} useViewport=$useViewport '
+            'clip=${layerClipRect} positionRect=${positioningRect} viewport=${viewportRect} pos=(${px.cssText()}, ${py.cssText()}) size=${size.cssText()} repeat=$repeat');
+        renderingLogger.finer('[Background]   dest=${destRect} colors=${cs} stops=${st ?? const []}');
       }
 
       // Clip to background painting area. Respect border-radius when present to
       // avoid leaking color outside rounded corners (matches CSS background-clip).
       canvas.save();
-      if (_decoration.hasBorderRadius && _decoration.borderRadius != null) {
-        final Path rounded = Path()..addRRect(_decoration.borderRadius!.toRRect(rect));
+      if (_decoration.hasBorderRadius && _decoration.borderRadius != null && !propagateToViewport) {
+        final Path rounded = Path()..addRRect(_decoration.borderRadius!.toRRect(layerClipRect));
         canvas.clipPath(rounded);
       } else {
-        canvas.clipRect(rect);
+        canvas.clipRect(layerClipRect);
       }
 
       if (destRect.isEmpty) {
@@ -1021,7 +1049,7 @@ class BoxDecorationPainter extends BoxPainter {
         // Important: per CSS, each tile's image space restarts at the tile origin.
         // Create a shader per tile so the gradient aligns with the tile's rect.
         int tCount = 0;
-        for (final Rect tile in _generateImageTileRects(rect, destRect, repeat)) {
+        for (final Rect tile in _generateImageTileRects(layerClipRect, destRect, repeat)) {
           final paint = Paint()..shader = gradient.createShader(tile, textDirection: textDirection);
           canvas.drawRect(tile, paint);
           if (DebugFlags.enableBackgroundLogs) {

@@ -33,7 +33,7 @@ describe('CSS Transition + vars canonicalization', () => {
       done();
     });
 
-    await snapshot();
+    await snapshot(1);
 
     requestAnimationFrame(() => {
       // Change the variable to move X from 0% -> 100%.

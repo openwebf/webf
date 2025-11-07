@@ -229,6 +229,15 @@ mixin CSSBackgroundMixin on RenderStyle {
   set backgroundAttachment(CSSBackgroundAttachmentType? value) {
     if (value == _backgroundAttachment) return;
     _backgroundAttachment = value;
+    if (DebugFlags.enableBackgroundLogs) {
+      try {
+        final el = target;
+        final id = (el.id != null && el.id!.isNotEmpty) ? '#${el.id}' : '';
+        final cls = (el.className != null && el.className!.isNotEmpty) ? '.${el.className}' : '';
+        renderingLogger.finer('[Background] set BACKGROUND_ATTACHMENT on <${el.tagName.toLowerCase()}$id$cls> -> '
+            '${_backgroundAttachment?.cssText() ?? 'null'}');
+      } catch (_) {}
+    }
     markNeedsPaint();
     resetBoxDecoration();
   }
