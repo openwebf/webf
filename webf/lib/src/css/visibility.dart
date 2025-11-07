@@ -16,6 +16,8 @@ mixin CSSVisibilityMixin on RenderStyle {
     if (_visibility == value) return;
     _visibility = value;
     markNeedsPaint();
+    // CSS visibility impacts semantics exposure.
+    attachedRenderBoxModel?.markNeedsSemanticsUpdate();
   }
 
   @override
