@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { FlutterCupertinoTabBar, FlutterCupertinoTabBarItem } from '@openwebf/react-cupertino-ui';
 import { RoutingDemo } from '../components/RoutingDemo';
 import { EnhancedRoutingDemo } from '../components/EnhancedRoutingDemo';
-import { WebFRouter } from '@openwebf/react-router';
+import { WebFRouter } from '../router';
 import TabBarManager from '../utils/tabBarManager';
 
 

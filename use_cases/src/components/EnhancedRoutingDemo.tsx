@@ -1,6 +1,6 @@
 import React from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
-import { WebFRouter } from '@openwebf/react-router';
+import { WebFRouter } from '../router';
 
 export const EnhancedRoutingDemo: React.FC = () => {
   const testDynamicRoutes = () => {

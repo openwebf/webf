@@ -1,5 +1,5 @@
 import React, { useState, ReactNode } from 'react';
-import { WebFRouterLink } from '@openwebf/react-router';
+import { WebFRouterLink } from '../router';
 
 interface RouterViewProps {
   path: string;

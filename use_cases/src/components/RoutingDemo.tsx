@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
-import { WebFRouter } from '@openwebf/react-router';
+import { WebFRouter } from '../router';
 import TabBarManager from '../utils/tabBarManager';
 import styles from './RoutingDemo.module.css';
 

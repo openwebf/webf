@@ -1,4 +1,4 @@
-import { WebFRouter } from '@openwebf/react-router';
+import { WebFRouter } from '../router';
 
 class TabBarManager {
     private static instance: TabBarManager | null = null;

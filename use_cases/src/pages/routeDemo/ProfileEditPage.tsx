@@ -1,7 +1,6 @@
 import React from 'react';
-import { useLocation } from '@openwebf/react-router';
+import { useLocation, WebFRouter } from '../../router';
 import { WebFListView } from '@openwebf/react-core-ui';
-import { WebFRouter } from '@openwebf/react-router';
 
 export const ProfileEditPage: React.FC = () => {
   const location = useLocation();

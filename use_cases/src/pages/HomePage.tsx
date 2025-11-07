@@ -1,5 +1,5 @@
 import React from 'react';
-import { WebFRouter } from '@openwebf/react-router';
+import { WebFRouter } from '../router';
 import { WebFListView } from '@openwebf/react-core-ui';
 
 // Lean, curated homepage with catalog + quick demos
