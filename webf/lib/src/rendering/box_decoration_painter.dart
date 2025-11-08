@@ -1996,8 +1996,9 @@ class BoxDecorationPainter extends BoxPainter {
           return;
         }
 
-        // New special-case: solid borders with uniform width, possibly different colors,
-        // and a circular radius (rounded-full). Paint per-side arcs to respect radius.
+        // New special-cases for solid borders with uniform width (possibly different colors):
+        // - Circle (rounded-full): paint per-side centered 90° arcs.
+        // - General rounded-rect (non-circle): paint each side with half-corner arcs + straight segment.
         if (allSolid && uniformWidthCheck && b.top.width > 0.0) {
           // Treat as a circle when the box is square and all corner radii are
           // at least half of the side (handles "rounded-full" like 9999px).
@@ -2039,13 +2040,16 @@ class BoxDecorationPainter extends BoxPainter {
             _paintSolidPerSideCircleBorder(canvas, rect, b);
             renderStyle.target.ownerDocument.controller.reportFP();
             return;
-          } else {
+          } else if (!sameColor) {
             if (DebugFlags.enableBorderRadiusLogs) {
               try {
                 final el = renderStyle.target;
-                renderingLogger.finer('[BorderRadius] solid per-side with radius: non-circle rrect; fallback to Flutter painter for <${el.tagName.toLowerCase()}>');
+                renderingLogger.finer('[BorderRadius] solid per-side rounded-rect painter for <${el.tagName.toLowerCase()}>');
               } catch (_) {}
             }
+            _paintSolidPerSideRoundedRect(canvas, rect, b);
+            renderStyle.target.ownerDocument.controller.reportFP();
+            return;
           }
         }
       }
@@ -2220,6 +2224,96 @@ class BoxDecorationPainter extends BoxPainter {
           renderingLogger.finer('[BorderRadius] paint circle side=left w=${w.toStringAsFixed(2)} on <${el.tagName.toLowerCase()}>');
         } catch (_) {}
       }
+    }
+  }
+
+  // Paint solid per-side colors with uniform width on a general rounded-rect (non-circle).
+  // Each side owns a straight segment plus half-corner arcs.
+  void _paintSolidPerSideRoundedRect(Canvas canvas, Rect rect, Border border) {
+    final double w = border.top.width;
+    if (w <= 0) return;
+
+    final double inset = w / 2.0;
+    final RRect rr = _decoration.borderRadius!.toRRect(rect).deflate(inset);
+
+    Paint _p(Color c) => Paint()
+      ..color = c
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w
+      ..strokeCap = StrokeCap.butt
+      ..strokeJoin = StrokeJoin.miter;
+
+    // Convenience ovals for corner arcs.
+    Rect tlOval = Rect.fromLTWH(rr.left, rr.top, rr.tlRadiusX * 2.0, rr.tlRadiusY * 2.0);
+    Rect trOval = Rect.fromLTWH(rr.right - rr.trRadiusX * 2.0, rr.top, rr.trRadiusX * 2.0, rr.trRadiusY * 2.0);
+    Rect brOval = Rect.fromLTWH(rr.right - rr.brRadiusX * 2.0, rr.bottom - rr.brRadiusY * 2.0, rr.brRadiusX * 2.0, rr.brRadiusY * 2.0);
+    Rect blOval = Rect.fromLTWH(rr.left, rr.bottom - rr.blRadiusY * 2.0, rr.blRadiusX * 2.0, rr.blRadiusY * 2.0);
+
+    // Top side: TL half-arc (225°->270°), straight top, TR half-arc (270°->315°)
+    if ((border.top as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid && border.top.width > 0) {
+      final Path topPath = Path();
+      if (rr.tlRadiusX > 0 && rr.tlRadiusY > 0) {
+        topPath.addArc(tlOval, 5.0 * math.pi / 4.0, math.pi / 4.0); // 225 -> 270
+      } else {
+        topPath.moveTo(rr.left, rr.top);
+      }
+      topPath.lineTo(rr.right - rr.trRadiusX, rr.top);
+      if (rr.trRadiusX > 0 && rr.trRadiusY > 0) {
+        topPath.addArc(trOval, 1.5 * math.pi, math.pi / 4.0); // 270 -> 315
+      }
+      canvas.drawPath(topPath, _p(border.top.color));
+    }
+
+    // Right side: TR half-arc (315°->360°), straight right, BR half-arc (0°->45°)
+    if ((border.right as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid && border.right.width > 0) {
+      final Path rightPath = Path();
+      if (rr.trRadiusX > 0 && rr.trRadiusY > 0) {
+        rightPath.addArc(trOval, 1.75 * math.pi, math.pi / 4.0); // 315 -> 360
+      } else {
+        rightPath.moveTo(rr.right, rr.top);
+      }
+      rightPath.lineTo(rr.right, rr.bottom - rr.brRadiusY);
+      if (rr.brRadiusX > 0 && rr.brRadiusY > 0) {
+        rightPath.addArc(brOval, 0.0, math.pi / 4.0); // 0 -> 45
+      }
+      canvas.drawPath(rightPath, _p(border.right.color));
+    }
+
+    // Bottom side: BR half-arc (45°->90°), straight bottom, BL half-arc (90°->135°)
+    if ((border.bottom as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid && border.bottom.width > 0) {
+      final Path bottomPath = Path();
+      if (rr.brRadiusX > 0 && rr.brRadiusY > 0) {
+        bottomPath.addArc(brOval, math.pi / 4.0, math.pi / 4.0); // 45 -> 90
+      } else {
+        bottomPath.moveTo(rr.right, rr.bottom);
+      }
+      bottomPath.lineTo(rr.left + rr.blRadiusX, rr.bottom);
+      if (rr.blRadiusX > 0 && rr.blRadiusY > 0) {
+        bottomPath.addArc(blOval, math.pi / 2.0, math.pi / 4.0); // 90 -> 135
+      }
+      canvas.drawPath(bottomPath, _p(border.bottom.color));
+    }
+
+    // Left side: BL half-arc (135°->180°), straight left, TL half-arc (180°->225°)
+    if ((border.left as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid && border.left.width > 0) {
+      final Path leftPath = Path();
+      if (rr.blRadiusX > 0 && rr.blRadiusY > 0) {
+        leftPath.addArc(blOval, 3.0 * math.pi / 4.0, math.pi / 4.0); // 135 -> 180
+      } else {
+        leftPath.moveTo(rr.left, rr.bottom);
+      }
+      leftPath.lineTo(rr.left, rr.top + rr.tlRadiusY);
+      if (rr.tlRadiusX > 0 && rr.tlRadiusY > 0) {
+        leftPath.addArc(tlOval, math.pi, math.pi / 4.0); // 180 -> 225
+      }
+      canvas.drawPath(leftPath, _p(border.left.color));
+    }
+
+    if (DebugFlags.enableBorderRadiusLogs) {
+      try {
+        final el = renderStyle.target;
+        renderingLogger.finer('[BorderRadius] paint per-side rounded-rect (uniform width) on <${el.tagName.toLowerCase()}>');
+      } catch (_) {}
     }
   }
 
