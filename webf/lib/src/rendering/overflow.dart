@@ -263,6 +263,13 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
           double paddingTop = renderStyle.paddingTop.computedValue;
           clipRRect = clipRRect.deflate(paddingTop);
         }
+        if (DebugFlags.enableBorderRadiusLogs) {
+          try {
+            final el = renderStyle.target;
+            renderingLogger.finer('[BorderRadius] overflow clip <${el.tagName.toLowerCase()}> clipRect=${clipRect.size} '
+                'tl=(${clipRRect.tlRadiusX.toStringAsFixed(2)},${clipRRect.tlRadiusY.toStringAsFixed(2)})');
+          } catch (_) {}
+        }
         _clipRRectLayer.layer = context.pushClipRRect(_needsCompositing, offset, clipRect, clipRRect, painter,
             oldLayer: _clipRRectLayer.layer);
       } else {

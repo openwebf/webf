@@ -156,4 +156,8 @@ class DebugFlags {
   // per-layer size/position/repeat, and chosen rects for gradients/images.
   static bool enableBackgroundLogs = false;
 
+  // Border/border-radius diagnostics: when true, logs parsing, resolution,
+  // and painting decisions for border-radius (including clip/painter paths).
+  static bool enableBorderRadiusLogs = false;
+
 }

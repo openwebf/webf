@@ -5,6 +5,8 @@
 import 'dart:core';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/src/foundation/logger.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
 
 // Initial border value: medium
 final CSSLengthValue _mediumWidth = CSSLengthValue(3, CSSLengthType.PX);
@@ -466,7 +468,15 @@ class CSSBorderRadius {
         String verticalRadius = values.length == 1 ? values[0] : values[1];
         CSSLengthValue x = CSSLength.parseLength(horizontalRadius, renderStyle, propertyName, Axis.horizontal);
         CSSLengthValue y = CSSLength.parseLength(verticalRadius, renderStyle, propertyName, Axis.vertical);
-        return CSSBorderRadius(x, y);
+        final rr = CSSBorderRadius(x, y);
+        if (DebugFlags.enableBorderRadiusLogs) {
+          try {
+            final el = renderStyle.target;
+            cssLogger.finer('[BorderRadius] parse ${propertyName} for <${el.tagName.toLowerCase()}>: '
+                'raw="$radius" -> (${x.cssText()}, ${y.cssText()})');
+          } catch (_) {}
+        }
+        return rr;
       }
     }
     return null;

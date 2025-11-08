@@ -5,6 +5,8 @@
 import 'dart:ui';
 
 import 'package:webf/css.dart';
+import 'package:webf/src/foundation/logger.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
 
 mixin CSSBorderRadiusMixin on RenderStyle {
   CSSBorderRadius? _borderTopLeftRadius;
@@ -13,6 +15,13 @@ mixin CSSBorderRadiusMixin on RenderStyle {
     _borderTopLeftRadius = value;
     markNeedsPaint();
     resetBoxDecoration();
+    if (DebugFlags.enableBorderRadiusLogs) {
+      try {
+        final el = target;
+        cssLogger.finer('[BorderRadius] set border-top-left-radius on <${el.tagName.toLowerCase()}> -> '
+            '${value?.cssText() ?? 'unset'}');
+      } catch (_) {}
+    }
   }
 
   @override
@@ -24,6 +33,13 @@ mixin CSSBorderRadiusMixin on RenderStyle {
     _borderTopRightRadius = value;
     markNeedsPaint();
     resetBoxDecoration();
+    if (DebugFlags.enableBorderRadiusLogs) {
+      try {
+        final el = target;
+        cssLogger.finer('[BorderRadius] set border-top-right-radius on <${el.tagName.toLowerCase()}> -> '
+            '${value?.cssText() ?? 'unset'}');
+      } catch (_) {}
+    }
   }
 
   @override
@@ -35,6 +51,13 @@ mixin CSSBorderRadiusMixin on RenderStyle {
     _borderBottomRightRadius = value;
     markNeedsPaint();
     resetBoxDecoration();
+    if (DebugFlags.enableBorderRadiusLogs) {
+      try {
+        final el = target;
+        cssLogger.finer('[BorderRadius] set border-bottom-right-radius on <${el.tagName.toLowerCase()}> -> '
+            '${value?.cssText() ?? 'unset'}');
+      } catch (_) {}
+    }
   }
 
   @override
@@ -46,6 +69,13 @@ mixin CSSBorderRadiusMixin on RenderStyle {
     _borderBottomLeftRadius = value;
     markNeedsPaint();
     resetBoxDecoration();
+    if (DebugFlags.enableBorderRadiusLogs) {
+      try {
+        final el = target;
+        cssLogger.finer('[BorderRadius] set border-bottom-left-radius on <${el.tagName.toLowerCase()}> -> '
+            '${value?.cssText() ?? 'unset'}');
+      } catch (_) {}
+    }
   }
 
   @override
@@ -58,13 +88,29 @@ mixin CSSBorderRadiusMixin on RenderStyle {
         borderBottomRightRadius != CSSBorderRadius.zero ||
         borderBottomLeftRadius != CSSBorderRadius.zero;
 
-    return hasBorderRadius
-        ? [
-            borderTopLeftRadius.computedRadius,
-            borderTopRightRadius.computedRadius,
-            borderBottomRightRadius.computedRadius,
-            borderBottomLeftRadius.computedRadius
-          ]
-        : null;
+    if (!hasBorderRadius) return null;
+
+    final radii = <Radius>[
+      borderTopLeftRadius.computedRadius,
+      borderTopRightRadius.computedRadius,
+      borderBottomRightRadius.computedRadius,
+      borderBottomLeftRadius.computedRadius,
+    ];
+
+    if (DebugFlags.enableBorderRadiusLogs) {
+      try {
+        final el = target;
+        final double? bw = borderBoxWidth ?? borderBoxLogicalWidth;
+        final double? bh = borderBoxHeight ?? borderBoxLogicalHeight;
+        renderingLogger.finer('[BorderRadius] compute for <${el.tagName.toLowerCase()}> ' 
+            'borderBox=${bw?.toStringAsFixed(2) ?? 'null'}×${bh?.toStringAsFixed(2) ?? 'null'} ' 
+            'tl=(${radii[0].x.toStringAsFixed(2)},${radii[0].y.toStringAsFixed(2)}) '
+            'tr=(${radii[1].x.toStringAsFixed(2)},${radii[1].y.toStringAsFixed(2)}) '
+            'br=(${radii[2].x.toStringAsFixed(2)},${radii[2].y.toStringAsFixed(2)}) '
+            'bl=(${radii[3].x.toStringAsFixed(2)},${radii[3].y.toStringAsFixed(2)})');
+      } catch (_) {}
+    }
+
+    return radii;
   }
 }

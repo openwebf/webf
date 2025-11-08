@@ -171,7 +171,18 @@ class BoxDecorationPainter extends BoxPainter {
         if (!_decoration.hasBorderRadius) {
           canvas.drawRect(rect, paint!);
         } else {
-          canvas.drawRRect(_decoration.borderRadius!.toRRect(rect), paint!);
+          final rrect = _decoration.borderRadius!.toRRect(rect);
+          if (DebugFlags.enableBorderRadiusLogs) {
+            try {
+              final el = renderStyle.target;
+              renderingLogger.finer('[BorderRadius] paint box <${el.tagName.toLowerCase()}> rect=${rect.size} '
+                  'rrect: tl=(${rrect.tlRadiusX.toStringAsFixed(2)},${rrect.tlRadiusY.toStringAsFixed(2)}), '
+                  'tr=(${rrect.trRadiusX.toStringAsFixed(2)},${rrect.trRadiusY.toStringAsFixed(2)}), '
+                  'br=(${rrect.brRadiusX.toStringAsFixed(2)},${rrect.brRadiusY.toStringAsFixed(2)}), '
+                  'bl=(${rrect.blRadiusX.toStringAsFixed(2)},${rrect.blRadiusY.toStringAsFixed(2)})');
+            } catch (_) {}
+          }
+          canvas.drawRRect(rrect, paint!);
         }
         break;
     }
@@ -573,9 +584,17 @@ class BoxDecorationPainter extends BoxPainter {
       shadowPath = Path()..addRect(shadowRect);
       shadowBlurPath = Path()..addRect(shadowBlurRect);
     } else {
-      borderPath = Path()..addRRect(_decoration.borderRadius!.toRRect(rect));
+      final rrect = _decoration.borderRadius!.toRRect(rect);
+      borderPath = Path()..addRRect(rrect);
       shadowPath = Path()..addRRect(_decoration.borderRadius!.resolve(textDirection).toRRect(shadowRect));
       shadowBlurPath = Path()..addRRect(_decoration.borderRadius!.resolve(textDirection).toRRect(shadowBlurRect));
+      if (DebugFlags.enableBorderRadiusLogs) {
+        try {
+          final el = renderStyle.target;
+          renderingLogger.finer('[BorderRadius] box-shadow clip <${el.tagName.toLowerCase()}> '
+              'tl=(${rrect.tlRadiusX.toStringAsFixed(2)},${rrect.tlRadiusY.toStringAsFixed(2)})');
+        } catch (_) {}
+      }
     }
 
     // Path of shadow blur rect subtract border rect of which the box shadow should paint
@@ -616,6 +635,14 @@ class BoxDecorationPainter extends BoxPainter {
       double uniformBorderWidth = renderStyle.effectiveBorderTopWidth.computedValue;
       RRect paddingBoxRRect = borderBoxRRect.deflate(uniformBorderWidth);
       paddingBoxPath = Path()..addRRect(paddingBoxRRect);
+      if (DebugFlags.enableBorderRadiusLogs) {
+        try {
+          final el = renderStyle.target;
+          renderingLogger.finer('[BorderRadius] inset-shadow padding clip <${el.tagName.toLowerCase()}> '
+              'deflate=${uniformBorderWidth.toStringAsFixed(2)} '
+              'tl=(${borderBoxRRect.tlRadiusX.toStringAsFixed(2)},${borderBoxRRect.tlRadiusY.toStringAsFixed(2)})');
+        } catch (_) {}
+      }
     }
 
     // 1. Create a shadow rect shifted by boxShadow and spread radius and get the
@@ -1038,8 +1065,16 @@ class BoxDecorationPainter extends BoxPainter {
       // avoid leaking color outside rounded corners (matches CSS background-clip).
       canvas.save();
       if (_decoration.hasBorderRadius && _decoration.borderRadius != null && !propagateToViewport) {
-        final Path rounded = Path()..addRRect(_decoration.borderRadius!.toRRect(layerClipRect));
+        final rrect = _decoration.borderRadius!.toRRect(layerClipRect);
+        final Path rounded = Path()..addRRect(rrect);
         canvas.clipPath(rounded);
+        if (DebugFlags.enableBorderRadiusLogs) {
+          try {
+            final el = renderStyle.target;
+            renderingLogger.finer('[BorderRadius] background clip layer <${el.tagName.toLowerCase()}> '
+                'clipRect=${layerClipRect.size} tl=(${rrect.tlRadiusX.toStringAsFixed(2)},${rrect.tlRadiusY.toStringAsFixed(2)})');
+          } catch (_) {}
+        }
       } else {
         canvas.clipRect(layerClipRect);
       }
@@ -1268,8 +1303,16 @@ class BoxDecorationPainter extends BoxPainter {
 
         canvas.save();
         if (_decoration.hasBorderRadius && _decoration.borderRadius != null && !propagateToViewport) {
-          final Path rounded = Path()..addRRect(_decoration.borderRadius!.toRRect(layerClipRect));
+          final rrect = _decoration.borderRadius!.toRRect(layerClipRect);
+          final Path rounded = Path()..addRRect(rrect);
           canvas.clipPath(rounded);
+          if (DebugFlags.enableBorderRadiusLogs) {
+            try {
+              final el = renderStyle.target;
+              renderingLogger.finer('[BorderRadius] background(url) layer clip <${el.tagName.toLowerCase()}> '
+                  'clipRect=${layerClipRect.size} tl=(${rrect.tlRadiusX.toStringAsFixed(2)},${rrect.tlRadiusY.toStringAsFixed(2)})');
+            } catch (_) {}
+          }
         } else {
           canvas.clipRect(layerClipRect);
         }
@@ -1362,8 +1405,16 @@ class BoxDecorationPainter extends BoxPainter {
         canvas.save();
         final Rect layerClipRect = propagateToViewport ? viewportRect : clipRect;
         if (_decoration.hasBorderRadius && _decoration.borderRadius != null && !propagateToViewport) {
-          final Path rounded = Path()..addRRect(_decoration.borderRadius!.toRRect(layerClipRect));
+          final rrect = _decoration.borderRadius!.toRRect(layerClipRect);
+          final Path rounded = Path()..addRRect(rrect);
           canvas.clipPath(rounded);
+          if (DebugFlags.enableBorderRadiusLogs) {
+            try {
+              final el = renderStyle.target;
+              renderingLogger.finer('[BorderRadius] background(gradient) layer clip <${el.tagName.toLowerCase()}> '
+                  'clipRect=${layerClipRect.size} tl=(${rrect.tlRadiusX.toStringAsFixed(2)},${rrect.tlRadiusY.toStringAsFixed(2)})');
+            } catch (_) {}
+          }
         } else {
           canvas.clipRect(layerClipRect);
         }
@@ -1417,7 +1468,15 @@ class BoxDecorationPainter extends BoxPainter {
         break;
       case BoxShape.rectangle:
         if (_decoration.hasBorderRadius && _decoration.borderRadius != null) {
-          clipPath = Path()..addRRect(_decoration.borderRadius!.toRRect(clipRect));
+          final rrect = _decoration.borderRadius!.toRRect(clipRect);
+          clipPath = Path()..addRRect(rrect);
+          if (DebugFlags.enableBorderRadiusLogs) {
+            try {
+              final el = renderStyle.target;
+              renderingLogger.finer('[BorderRadius] background(url) clipPath <${el.tagName.toLowerCase()}> '
+                  'clipRect=${clipRect.size} tl=(${rrect.tlRadiusX.toStringAsFixed(2)},${rrect.tlRadiusY.toStringAsFixed(2)})');
+            } catch (_) {}
+          }
         } else {
           // Clip to rectangular content/padding/border box when no radius.
           clipPath = Path()..addRect(clipRect);
@@ -1664,25 +1723,118 @@ class BoxDecorationPainter extends BoxPainter {
       hasDoubleBorder = topDouble || rightDouble || bottomDouble || leftDouble;
     }
 
-    // Prefer dashed painter, then double painter, else fallback to Flutter
+    // Prefer dashed painter, then double painter, then solid non-uniform+radius fallback, else Flutter
     if (hasDashedBorder) {
       _paintDashedBorder(canvas, rect, textDirection);
       renderStyle.target.ownerDocument.controller.reportFP();
     } else if (hasDoubleBorder) {
       _paintDoubleBorder(canvas, rect, textDirection);
       renderStyle.target.ownerDocument.controller.reportFP();
+    } else if (_decoration.border != null && _decoration.hasBorderRadius && _decoration.borderRadius != null) {
+      final b = _decoration.border as Border;
+      final bool allSolid = b.top is ExtendedBorderSide &&
+          b.right is ExtendedBorderSide &&
+          b.bottom is ExtendedBorderSide &&
+          b.left is ExtendedBorderSide &&
+          (b.top as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid &&
+          (b.right as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid &&
+          (b.bottom as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid &&
+          (b.left as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid;
+      final bool sameColor = b.top.color == b.right.color && b.top.color == b.bottom.color && b.top.color == b.left.color;
+
+      // If non-uniform widths and solid with uniform color, paint a proper rounded band.
+      final bool nonUniformWidth = !(b.isUniform);
+      if (allSolid && sameColor && nonUniformWidth) {
+        _paintSolidNonUniformBorderWithRadius(canvas, rect, b);
+        renderStyle.target.ownerDocument.controller.reportFP();
+        return;
+      }
     } else if (_decoration.border != null) {
+      // Only pass borderRadius to Flutter's Border.paint when the border is
+      // uniform. Flutter does not support non-uniform borders with radius.
+      BorderRadius? borderRadiusForPaint;
+      final b = _decoration.border;
+      if (b is Border && b.isUniform) {
+        borderRadiusForPaint = _decoration.borderRadius;
+      } else {
+        borderRadiusForPaint = null;
+        if (DebugFlags.enableBorderRadiusLogs && _decoration.borderRadius != null) {
+          try {
+            final el = renderStyle.target;
+            renderingLogger.finer('[BorderRadius] skip passing radius to border painter for <${el.tagName.toLowerCase()}> '
+                'due to non-uniform border');
+          } catch (_) {}
+        }
+      }
+
       _decoration.border?.paint(
         canvas,
         rect,
         shape: _decoration.shape,
-        borderRadius: _decoration.borderRadius,
+        borderRadius: borderRadiusForPaint,
         textDirection: configuration.textDirection,
       );
       renderStyle.target.ownerDocument.controller.reportFP();
     }
 
     _paintShadows(canvas, rect, textDirection);
+  }
+
+  // Paint solid, non-uniform border widths with rounded corners by stroking
+  // the band between an outer RRect (border box) and an inner RRect (content box).
+  void _paintSolidNonUniformBorderWithRadius(Canvas canvas, Rect rect, Border border) {
+    final RRect outer = _decoration.borderRadius!.toRRect(rect);
+    final double t = border.top.width;
+    final double r = border.right.width;
+    final double b = border.bottom.width;
+    final double l = border.left.width;
+
+    final Rect innerRect = Rect.fromLTRB(rect.left + l, rect.top + t, rect.right - r, rect.bottom - b);
+
+    // Compute inner corner radii per CSS by subtracting corresponding side widths.
+    final RRect inner = RRect.fromLTRBAndCorners(
+      innerRect.left,
+      innerRect.top,
+      innerRect.right,
+      innerRect.bottom,
+      topLeft: Radius.elliptical(
+        math.max(outer.tlRadiusX - l, 0),
+        math.max(outer.tlRadiusY - t, 0),
+      ),
+      topRight: Radius.elliptical(
+        math.max(outer.trRadiusX - r, 0),
+        math.max(outer.trRadiusY - t, 0),
+      ),
+      bottomRight: Radius.elliptical(
+        math.max(outer.brRadiusX - r, 0),
+        math.max(outer.brRadiusY - b, 0),
+      ),
+      bottomLeft: Radius.elliptical(
+        math.max(outer.blRadiusX - l, 0),
+        math.max(outer.blRadiusY - b, 0),
+      ),
+    );
+
+    final Path ring = Path.combine(
+      PathOperation.difference,
+      Path()..addRRect(outer),
+      Path()..addRRect(inner),
+    );
+
+    final Color color = border.top.color; // uniform color validated by caller
+    final Paint p = Paint()..style = PaintingStyle.fill..color = color;
+
+    if (DebugFlags.enableBorderRadiusLogs) {
+      try {
+        final el = renderStyle.target;
+        renderingLogger.finer('[BorderRadius] paint solid non-uniform+radius <${el.tagName.toLowerCase()}> '
+            'w=[${l.toStringAsFixed(1)},${t.toStringAsFixed(1)},${r.toStringAsFixed(1)},${b.toStringAsFixed(1)}] '
+            'outer.tl=(${outer.tlRadiusX.toStringAsFixed(1)},${outer.tlRadiusY.toStringAsFixed(1)}) '
+            'inner.tl=(${inner.tlRadiusX.toStringAsFixed(1)},${inner.tlRadiusY.toStringAsFixed(1)})');
+      } catch (_) {}
+    }
+
+    canvas.drawPath(ring, p);
   }
 
   // Paint CSS double borders. Two parallel bands per side inside the border area.
@@ -1757,16 +1909,40 @@ class BoxDecorationPainter extends BoxPainter {
         ..color = color;
       if (w < 3.0) {
         p.strokeWidth = w;
-        canvas.drawRRect(rr.deflate(w / 2.0), p);
+        final r = rr.deflate(w / 2.0);
+        if (DebugFlags.enableBorderRadiusLogs) {
+          try {
+            final el = renderStyle.target;
+            renderingLogger.finer('[BorderRadius] paint double border(rrect) <${el.tagName.toLowerCase()}> w=${w.toStringAsFixed(2)} '
+                'tl=(${r.tlRadiusX.toStringAsFixed(2)},${r.tlRadiusY.toStringAsFixed(2)})');
+          } catch (_) {}
+        }
+        canvas.drawRRect(r, p);
         return;
       }
       final double band = (w / 3.0).floorToDouble().clamp(1.0, w);
       final double gap = (w - 2 * band).clamp(0.0, w);
       // Outer band (near border edge)
       p.strokeWidth = band;
-      canvas.drawRRect(rr.deflate(band / 2.0), p);
+      final rOuter = rr.deflate(band / 2.0);
+      if (DebugFlags.enableBorderRadiusLogs) {
+        try {
+          final el = renderStyle.target;
+          renderingLogger.finer('[BorderRadius] paint double border outer <${el.tagName.toLowerCase()}> band=${band.toStringAsFixed(2)} '
+              'tl=(${rOuter.tlRadiusX.toStringAsFixed(2)},${rOuter.tlRadiusY.toStringAsFixed(2)})');
+        } catch (_) {}
+      }
+      canvas.drawRRect(rOuter, p);
       // Inner band (near content)
-      canvas.drawRRect(rr.deflate(band + gap + band / 2.0), p);
+      final rInner = rr.deflate(band + gap + band / 2.0);
+      if (DebugFlags.enableBorderRadiusLogs) {
+        try {
+          final el = renderStyle.target;
+          renderingLogger.finer('[BorderRadius] paint double border inner <${el.tagName.toLowerCase()}> band=${band.toStringAsFixed(2)} '
+              'tl=(${rInner.tlRadiusX.toStringAsFixed(2)},${rInner.tlRadiusY.toStringAsFixed(2)})');
+        } catch (_) {}
+      }
+      canvas.drawRRect(rInner, p);
       return;
     }
 

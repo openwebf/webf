@@ -6,9 +6,9 @@
 import 'dart:core';
 
 import 'package:flutter/rendering.dart';
-import 'package:flutter/foundation.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
 
 // CSS Box Model: https://drafts.csswg.org/css-box-4/
 mixin CSSBoxMixin on RenderStyle {
@@ -44,14 +44,28 @@ mixin CSSBoxMixin on RenderStyle {
     }
 
     BorderRadius? borderRadius;
-    // Flutter border radius only works when border is uniform.
-    if (radius != null && (border == null || border.isUniform)) {
+    // Always compute a BorderRadius when radii exist. We will still avoid
+    // passing it to Flutter's Border.paint when the border is non-uniform,
+    // but backgrounds, shadows and overflow clipping can still use it.
+    if (radius != null) {
       borderRadius = BorderRadius.only(
         topLeft: radius[0],
         topRight: radius[1],
         bottomRight: radius[2],
         bottomLeft: radius[3],
       );
+      if (DebugFlags.enableBorderRadiusLogs) {
+        try {
+          final el = target;
+          final nonUniform = border != null && !border.isUniform;
+          final scope = nonUniform ? ' (bg/clip only; border non-uniform)' : '';
+          renderingLogger.finer('[BorderRadius] apply in decoration for <${el.tagName.toLowerCase()}>$scope '
+              'tl=(${radius[0].x.toStringAsFixed(2)},${radius[0].y.toStringAsFixed(2)}) '
+              'tr=(${radius[1].x.toStringAsFixed(2)},${radius[1].y.toStringAsFixed(2)}) '
+              'br=(${radius[2].x.toStringAsFixed(2)},${radius[2].y.toStringAsFixed(2)}) '
+              'bl=(${radius[3].x.toStringAsFixed(2)},${radius[3].y.toStringAsFixed(2)})');
+        } catch (_) {}
+      }
     }
 
     Gradient? gradient = backgroundClip != CSSBackgroundBoundary.text ? backgroundImage?.gradient : null;
