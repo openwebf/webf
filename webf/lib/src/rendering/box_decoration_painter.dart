@@ -1980,10 +1980,73 @@ class BoxDecorationPainter extends BoxPainter {
             (b.left as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid;
         final bool sameColor = b.top.color == b.right.color && b.top.color == b.bottom.color && b.top.color == b.left.color;
         final bool nonUniformWidth = !(b.isUniform);
+        final bool uniformWidthCheck = b.top.width == b.right.width && b.top.width == b.bottom.width && b.top.width == b.left.width;
+
+        if (DebugFlags.enableBorderRadiusLogs) {
+          try {
+            final el = renderStyle.target;
+            renderingLogger.finer('[BorderRadius] border solid/uniform checks on <${el.tagName.toLowerCase()}> ' 
+                'allSolid=$allSolid sameColor=$sameColor b.isUniform=${b.isUniform} uniformWidth=$uniformWidthCheck '
+                'w=[${b.left.width},${b.top.width},${b.right.width},${b.bottom.width}]');
+          } catch (_) {}
+        }
         if (allSolid && sameColor && nonUniformWidth) {
           _paintSolidNonUniformBorderWithRadius(canvas, rect, b);
           renderStyle.target.ownerDocument.controller.reportFP();
           return;
+        }
+
+        // New special-case: solid borders with uniform width, possibly different colors,
+        // and a circular radius (rounded-full). Paint per-side arcs to respect radius.
+        if (allSolid && uniformWidthCheck && b.top.width > 0.0) {
+          // Treat as a circle when the box is square and all corner radii are
+          // at least half of the side (handles "rounded-full" like 9999px).
+          bool _isCircleByBorderRadius(BorderRadius br, Rect r, {double tol = 0.5}) {
+            final double w = r.width;
+            final double h = r.height;
+            if ((w - h).abs() > tol) return false;
+            final double half = w / 2.0;
+            final List<Radius> corners = [br.topLeft, br.topRight, br.bottomRight, br.bottomLeft];
+            for (final c in corners) {
+              if (c.x + tol < half || c.y + tol < half) return false;
+            }
+            return true;
+          }
+
+          final BorderRadius br = _decoration.borderRadius!;
+          final bool isCircle = _isCircleByBorderRadius(br, rect);
+
+          if (DebugFlags.enableBorderRadiusLogs) {
+            try {
+              final el = renderStyle.target;
+              final r0 = br.topLeft; final r1 = br.topRight; final r2 = br.bottomRight; final r3 = br.bottomLeft;
+              renderingLogger.finer('[BorderRadius] circle detect(solid) <${el.tagName.toLowerCase()}> ' 
+                  'w=${rect.width.toStringAsFixed(2)} h=${rect.height.toStringAsFixed(2)} '
+                  'tl=(${r0.x.toStringAsFixed(2)},${r0.y.toStringAsFixed(2)}) '
+                  'tr=(${r1.x.toStringAsFixed(2)},${r1.y.toStringAsFixed(2)}) '
+                  'br=(${r2.x.toStringAsFixed(2)},${r2.y.toStringAsFixed(2)}) '
+                  'bl=(${r3.x.toStringAsFixed(2)},${r3.y.toStringAsFixed(2)}) isCircle=$isCircle');
+            } catch (_) {}
+          }
+
+          if (isCircle) {
+            if (DebugFlags.enableBorderRadiusLogs) {
+              try {
+                final el = renderStyle.target;
+                renderingLogger.finer('[BorderRadius] solid per-side circle border painter for <${el.tagName.toLowerCase()}>');
+              } catch (_) {}
+            }
+            _paintSolidPerSideCircleBorder(canvas, rect, b);
+            renderStyle.target.ownerDocument.controller.reportFP();
+            return;
+          } else {
+            if (DebugFlags.enableBorderRadiusLogs) {
+              try {
+                final el = renderStyle.target;
+                renderingLogger.finer('[BorderRadius] solid per-side with radius: non-circle rrect; fallback to Flutter painter for <${el.tagName.toLowerCase()}>');
+              } catch (_) {}
+            }
+          }
         }
       }
 
@@ -2092,6 +2155,72 @@ class BoxDecorationPainter extends BoxPainter {
     }
 
     canvas.drawPath(_cachedNonUniformRing!, p);
+  }
+
+  // Paint solid per-side colors with uniform width when the rounded rect is a circle.
+  // Each side owns a centered 90° arc.
+  void _paintSolidPerSideCircleBorder(Canvas canvas, Rect rect, Border border) {
+    final double w = border.top.width;
+    if (w <= 0) return;
+
+    final double inset = w / 2.0;
+    final RRect rr = _decoration.borderRadius!.toRRect(rect).deflate(inset);
+    final Rect circleOval = rr.outerRect;
+
+    Paint _p(Color c) => Paint()
+      ..color = c
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w
+      ..strokeCap = StrokeCap.butt
+      ..strokeJoin = StrokeJoin.miter;
+
+    // Top: 225°..315°
+    if ((border.top as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid && border.top.width > 0) {
+      final p = _p(border.top.color);
+      canvas.drawArc(circleOval, 5.0 * math.pi / 4.0, math.pi / 2.0, false, p);
+      if (DebugFlags.enableBorderRadiusLogs) {
+        try {
+          final el = renderStyle.target;
+          renderingLogger.finer('[BorderRadius] paint circle side=top w=${w.toStringAsFixed(2)} on <${el.tagName.toLowerCase()}>');
+        } catch (_) {}
+      }
+    }
+
+    // Right: -45°..45°
+    if ((border.right as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid && border.right.width > 0) {
+      final p = _p(border.right.color);
+      canvas.drawArc(circleOval, -math.pi / 4.0, math.pi / 2.0, false, p);
+      if (DebugFlags.enableBorderRadiusLogs) {
+        try {
+          final el = renderStyle.target;
+          renderingLogger.finer('[BorderRadius] paint circle side=right w=${w.toStringAsFixed(2)} on <${el.tagName.toLowerCase()}>');
+        } catch (_) {}
+      }
+    }
+
+    // Bottom: 45°..135°
+    if ((border.bottom as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid && border.bottom.width > 0) {
+      final p = _p(border.bottom.color);
+      canvas.drawArc(circleOval, math.pi / 4.0, math.pi / 2.0, false, p);
+      if (DebugFlags.enableBorderRadiusLogs) {
+        try {
+          final el = renderStyle.target;
+          renderingLogger.finer('[BorderRadius] paint circle side=bottom w=${w.toStringAsFixed(2)} on <${el.tagName.toLowerCase()}>');
+        } catch (_) {}
+      }
+    }
+
+    // Left: 135°..225°
+    if ((border.left as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid && border.left.width > 0) {
+      final p = _p(border.left.color);
+      canvas.drawArc(circleOval, 3.0 * math.pi / 4.0, math.pi / 2.0, false, p);
+      if (DebugFlags.enableBorderRadiusLogs) {
+        try {
+          final el = renderStyle.target;
+          renderingLogger.finer('[BorderRadius] paint circle side=left w=${w.toStringAsFixed(2)} on <${el.tagName.toLowerCase()}>');
+        } catch (_) {}
+      }
+    }
   }
 
   // Paint CSS double borders. Two parallel bands per side inside the border area.
