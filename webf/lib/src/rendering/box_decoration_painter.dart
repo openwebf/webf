@@ -52,6 +52,14 @@ class BoxDecorationPainter extends BoxPainter {
   // have different destination sizes per layer.
   Size? _currentLayerDestSizeForPercent;
 
+  // Cache for non-uniform solid + radius border ring path to avoid
+  // rebuilding Path.combine(PathOperation.difference, outer, inner)
+  // every frame when nothing changed.
+  Path? _cachedNonUniformRing;
+  Rect? _cachedNonUniformRingRect;
+  RRect? _cachedNonUniformRingOuter;
+  double? _cachedWTop, _cachedWRight, _cachedWBottom, _cachedWLeft;
+
   // Whether background-image contains any gradient layers.
   bool _hasGradientLayers() {
     final img = renderStyle.backgroundImage;
@@ -402,46 +410,23 @@ class BoxDecorationPainter extends BoxPainter {
       // Align stroke inside by deflating half the stroke width
       final double inset = side.width / 2.0;
       final RRect rr = rrect.deflate(inset);
-      // Handle rounded corners. Assign corner arcs only to horizontal sides
-      // (top and bottom) to avoid duplication and direction reversals.
+      // Draw only the straight segment between the corner tangency points.
+      // This matches common UA behavior for single-sided dashed borders with border-radius,
+      // avoiding corner arcs when adjacent sides are not dashed.
       switch (direction) {
         case _BorderDirection.top:
-          // Include both top-left and top-right arcs on the top side.
-          borderPath.moveTo(rr.left, rr.top + rr.tlRadiusY);
-          borderPath.arcToPoint(
-            Offset(rr.left + rr.tlRadiusX, rr.top),
-            radius: Radius.elliptical(rr.tlRadiusX, rr.tlRadiusY),
-            clockwise: false,
-          );
+          borderPath.moveTo(rr.left + rr.tlRadiusX, rr.top);
           borderPath.lineTo(rr.right - rr.trRadiusX, rr.top);
-          borderPath.arcToPoint(
-            Offset(rr.right, rr.top + rr.trRadiusY),
-            radius: Radius.elliptical(rr.trRadiusX, rr.trRadiusY),
-            clockwise: true,
-          );
           break;
         case _BorderDirection.right:
-          // Vertical segment only; corner arcs handled by top/bottom.
           borderPath.moveTo(rr.right, rr.top + rr.trRadiusY);
           borderPath.lineTo(rr.right, rr.bottom - rr.brRadiusY);
           break;
         case _BorderDirection.bottom:
-          // Include both bottom-right and bottom-left arcs on the bottom side.
-          borderPath.moveTo(rr.right, rr.bottom - rr.brRadiusY);
-          borderPath.arcToPoint(
-            Offset(rr.right - rr.brRadiusX, rr.bottom),
-            radius: Radius.elliptical(rr.brRadiusX, rr.brRadiusY),
-            clockwise: true,
-          );
+          borderPath.moveTo(rr.right - rr.brRadiusX, rr.bottom);
           borderPath.lineTo(rr.left + rr.blRadiusX, rr.bottom);
-          borderPath.arcToPoint(
-            Offset(rr.left, rr.bottom - rr.blRadiusY),
-            radius: Radius.elliptical(rr.blRadiusX, rr.blRadiusY),
-            clockwise: true,
-          );
           break;
         case _BorderDirection.left:
-          // Vertical segment only; corner arcs handled by top/bottom.
           borderPath.moveTo(rr.left, rr.bottom - rr.blRadiusY);
           borderPath.lineTo(rr.left, rr.top + rr.tlRadiusY);
           break;
@@ -1723,48 +1708,44 @@ class BoxDecorationPainter extends BoxPainter {
       hasDoubleBorder = topDouble || rightDouble || bottomDouble || leftDouble;
     }
 
-    // Prefer dashed painter, then double painter, then solid non-uniform+radius fallback, else Flutter
+    // Prefer dashed painter, then double painter, then general border painting
+    // (with a special-case path for solid non-uniform widths + radius).
     if (hasDashedBorder) {
       _paintDashedBorder(canvas, rect, textDirection);
       renderStyle.target.ownerDocument.controller.reportFP();
     } else if (hasDoubleBorder) {
       _paintDoubleBorder(canvas, rect, textDirection);
       renderStyle.target.ownerDocument.controller.reportFP();
-    } else if (_decoration.border != null && _decoration.hasBorderRadius && _decoration.borderRadius != null) {
-      final b = _decoration.border as Border;
-      final bool allSolid = b.top is ExtendedBorderSide &&
-          b.right is ExtendedBorderSide &&
-          b.bottom is ExtendedBorderSide &&
-          b.left is ExtendedBorderSide &&
-          (b.top as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid &&
-          (b.right as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid &&
-          (b.bottom as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid &&
-          (b.left as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid;
-      final bool sameColor = b.top.color == b.right.color && b.top.color == b.bottom.color && b.top.color == b.left.color;
-
-      // If non-uniform widths and solid with uniform color, paint a proper rounded band.
-      final bool nonUniformWidth = !(b.isUniform);
-      if (allSolid && sameColor && nonUniformWidth) {
-        _paintSolidNonUniformBorderWithRadius(canvas, rect, b);
-        renderStyle.target.ownerDocument.controller.reportFP();
-        return;
-      }
     } else if (_decoration.border != null) {
-      // Only pass borderRadius to Flutter's Border.paint when the border is
-      // uniform. Flutter does not support non-uniform borders with radius.
-      BorderRadius? borderRadiusForPaint;
-      final b = _decoration.border;
-      if (b is Border && b.isUniform) {
-        borderRadiusForPaint = _decoration.borderRadius;
-      } else {
-        borderRadiusForPaint = null;
-        if (DebugFlags.enableBorderRadiusLogs && _decoration.borderRadius != null) {
-          try {
-            final el = renderStyle.target;
-            renderingLogger.finer('[BorderRadius] skip passing radius to border painter for <${el.tagName.toLowerCase()}> '
-                'due to non-uniform border');
-          } catch (_) {}
+      final b = _decoration.border as Border;
+
+      // Special-case: solid, uniform color, non-uniform widths with radius -> paint ring ourselves.
+      if (_decoration.hasBorderRadius && _decoration.borderRadius != null) {
+        final bool allSolid = b.top is ExtendedBorderSide &&
+            b.right is ExtendedBorderSide &&
+            b.bottom is ExtendedBorderSide &&
+            b.left is ExtendedBorderSide &&
+            (b.top as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid &&
+            (b.right as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid &&
+            (b.bottom as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid &&
+            (b.left as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid;
+        final bool sameColor = b.top.color == b.right.color && b.top.color == b.bottom.color && b.top.color == b.left.color;
+        final bool nonUniformWidth = !(b.isUniform);
+        if (allSolid && sameColor && nonUniformWidth) {
+          _paintSolidNonUniformBorderWithRadius(canvas, rect, b);
+          renderStyle.target.ownerDocument.controller.reportFP();
+          return;
         }
+      }
+
+      // Fallback: use Flutter's Border.paint. Only pass radius when border is uniform.
+      final BorderRadius? borderRadiusForPaint = b.isUniform ? _decoration.borderRadius : null;
+      if (!b.isUniform && _decoration.borderRadius != null && DebugFlags.enableBorderRadiusLogs) {
+        try {
+          final el = renderStyle.target;
+          renderingLogger.finer('[BorderRadius] skip passing radius to border painter for <${el.tagName.toLowerCase()}> '
+              'due to non-uniform border');
+        } catch (_) {}
       }
 
       _decoration.border?.paint(
@@ -1789,37 +1770,55 @@ class BoxDecorationPainter extends BoxPainter {
     final double b = border.bottom.width;
     final double l = border.left.width;
 
-    final Rect innerRect = Rect.fromLTRB(rect.left + l, rect.top + t, rect.right - r, rect.bottom - b);
+    bool canReuse = false;
+    if (_cachedNonUniformRing != null &&
+        _cachedNonUniformRingRect == rect &&
+        _cachedNonUniformRingOuter != null &&
+        _cachedNonUniformRingOuter!.toString() == outer.toString() &&
+        _cachedWTop == t && _cachedWRight == r && _cachedWBottom == b && _cachedWLeft == l) {
+      canReuse = true;
+    }
 
-    // Compute inner corner radii per CSS by subtracting corresponding side widths.
-    final RRect inner = RRect.fromLTRBAndCorners(
-      innerRect.left,
-      innerRect.top,
-      innerRect.right,
-      innerRect.bottom,
-      topLeft: Radius.elliptical(
-        math.max(outer.tlRadiusX - l, 0),
-        math.max(outer.tlRadiusY - t, 0),
-      ),
-      topRight: Radius.elliptical(
-        math.max(outer.trRadiusX - r, 0),
-        math.max(outer.trRadiusY - t, 0),
-      ),
-      bottomRight: Radius.elliptical(
-        math.max(outer.brRadiusX - r, 0),
-        math.max(outer.brRadiusY - b, 0),
-      ),
-      bottomLeft: Radius.elliptical(
-        math.max(outer.blRadiusX - l, 0),
-        math.max(outer.blRadiusY - b, 0),
-      ),
-    );
+    if (!canReuse) {
+      final Rect innerRect = Rect.fromLTRB(rect.left + l, rect.top + t, rect.right - r, rect.bottom - b);
 
-    final Path ring = Path.combine(
-      PathOperation.difference,
-      Path()..addRRect(outer),
-      Path()..addRRect(inner),
-    );
+      // Compute inner corner radii per CSS by subtracting corresponding side widths.
+      final RRect inner = RRect.fromLTRBAndCorners(
+        innerRect.left,
+        innerRect.top,
+        innerRect.right,
+        innerRect.bottom,
+        topLeft: Radius.elliptical(
+          math.max(outer.tlRadiusX - l, 0),
+          math.max(outer.tlRadiusY - t, 0),
+        ),
+        topRight: Radius.elliptical(
+          math.max(outer.trRadiusX - r, 0),
+          math.max(outer.trRadiusY - t, 0),
+        ),
+        bottomRight: Radius.elliptical(
+          math.max(outer.brRadiusX - r, 0),
+          math.max(outer.brRadiusY - b, 0),
+        ),
+        bottomLeft: Radius.elliptical(
+          math.max(outer.blRadiusX - l, 0),
+          math.max(outer.blRadiusY - b, 0),
+        ),
+      );
+
+      _cachedNonUniformRing = Path.combine(
+        PathOperation.difference,
+        Path()..addRRect(outer),
+        Path()..addRRect(inner),
+      );
+
+      _cachedNonUniformRingRect = rect;
+      _cachedNonUniformRingOuter = outer;
+      _cachedWTop = t;
+      _cachedWRight = r;
+      _cachedWBottom = b;
+      _cachedWLeft = l;
+    }
 
     final Color color = border.top.color; // uniform color validated by caller
     final Paint p = Paint()..style = PaintingStyle.fill..color = color;
@@ -1827,14 +1826,16 @@ class BoxDecorationPainter extends BoxPainter {
     if (DebugFlags.enableBorderRadiusLogs) {
       try {
         final el = renderStyle.target;
+        final double innerTlX = math.max(outer.tlRadiusX - l, 0);
+        final double innerTlY = math.max(outer.tlRadiusY - t, 0);
         renderingLogger.finer('[BorderRadius] paint solid non-uniform+radius <${el.tagName.toLowerCase()}> '
             'w=[${l.toStringAsFixed(1)},${t.toStringAsFixed(1)},${r.toStringAsFixed(1)},${b.toStringAsFixed(1)}] '
             'outer.tl=(${outer.tlRadiusX.toStringAsFixed(1)},${outer.tlRadiusY.toStringAsFixed(1)}) '
-            'inner.tl=(${inner.tlRadiusX.toStringAsFixed(1)},${inner.tlRadiusY.toStringAsFixed(1)})');
+            'inner.tl=(${innerTlX.toStringAsFixed(1)},${innerTlY.toStringAsFixed(1)})');
       } catch (_) {}
     }
 
-    canvas.drawPath(ring, p);
+    canvas.drawPath(_cachedNonUniformRing!, p);
   }
 
   // Paint CSS double borders. Two parallel bands per side inside the border area.
