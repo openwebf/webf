@@ -1,4 +1,4 @@
-fdescribe('border-radius with non-uniform borders', () => {
+describe('border-radius with non-uniform borders', () => {
   it('paints rounded corners with non-uniform solid widths', async () => {
     const box = createElement('div', {
       style: {

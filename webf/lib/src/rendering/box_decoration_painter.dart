@@ -223,6 +223,13 @@ class BoxDecorationPainter extends BoxPainter {
     // Check if borders are uniform (same style, width, and color for all sides)
     bool isUniform = _isUniformDashedBorder(border);
 
+    if (DebugFlags.enableBorderRadiusLogs) {
+      try {
+        final el = renderStyle.target;
+        renderingLogger.finer('[BorderRadius] dashed: isUniform=$isUniform on <${el.tagName.toLowerCase()}>');
+      } catch (_) {}
+    }
+
     if (isUniform) {
       // Uniform borders: if rounded corners are present, paint as a single
       // continuous dashed path around the rounded rectangle to match browsers
@@ -245,6 +252,14 @@ class BoxDecorationPainter extends BoxPainter {
         final Path borderPath = Path()..addRRect(rr);
         final double baseDash = (side.width * _kDashedBorderAvgUnitRatio).clamp(side.width, double.infinity);
         final dashArray = CircularIntervalList<double>([baseDash, baseDash]);
+
+        if (DebugFlags.enableBorderRadiusLogs) {
+          try {
+            final el = renderStyle.target;
+            renderingLogger.finer('[BorderRadius] paint dashed(uniform+rrect) <${el.tagName.toLowerCase()}> '
+                'w=${side.width.toStringAsFixed(2)} tl=(${rr.tlRadiusX.toStringAsFixed(2)},${rr.tlRadiusY.toStringAsFixed(2)})');
+          } catch (_) {}
+        }
 
         canvas.drawPath(
           dashPath(borderPath, dashArray: dashArray),
@@ -278,6 +293,14 @@ class BoxDecorationPainter extends BoxPainter {
 
       // Return early if no dashed borders
       if (!hasTopDashedBorder && !hasRightDashedBorder && !hasBottomDashedBorder && !hasLeftDashedBorder) return;
+
+      if (DebugFlags.enableBorderRadiusLogs) {
+        try {
+          final el = renderStyle.target;
+          renderingLogger.finer('[BorderRadius] dashed(non-uniform) sides on <${el.tagName.toLowerCase()}> '
+              'top=$hasTopDashedBorder right=$hasRightDashedBorder bottom=$hasBottomDashedBorder left=$hasLeftDashedBorder');
+        } catch (_) {}
+      }
 
       // Handle border radius
       RRect? rrect;
@@ -410,26 +433,245 @@ class BoxDecorationPainter extends BoxPainter {
       // Align stroke inside by deflating half the stroke width
       final double inset = side.width / 2.0;
       final RRect rr = rrect.deflate(inset);
-      // Draw only the straight segment between the corner tangency points.
-      // This matches common UA behavior for single-sided dashed borders with border-radius,
-      // avoiding corner arcs when adjacent sides are not dashed.
-      switch (direction) {
-        case _BorderDirection.top:
-          borderPath.moveTo(rr.left + rr.tlRadiusX, rr.top);
-          borderPath.lineTo(rr.right - rr.trRadiusX, rr.top);
-          break;
-        case _BorderDirection.right:
-          borderPath.moveTo(rr.right, rr.top + rr.trRadiusY);
-          borderPath.lineTo(rr.right, rr.bottom - rr.brRadiusY);
-          break;
-        case _BorderDirection.bottom:
-          borderPath.moveTo(rr.right - rr.brRadiusX, rr.bottom);
-          borderPath.lineTo(rr.left + rr.blRadiusX, rr.bottom);
-          break;
-        case _BorderDirection.left:
-          borderPath.moveTo(rr.left, rr.bottom - rr.blRadiusY);
-          borderPath.lineTo(rr.left, rr.top + rr.tlRadiusY);
-          break;
+
+      // Determine if the straight segment collapses (e.g., circle: 50% radius)
+      // If it collapses, draw corner arcs to ensure visible dashed border.
+      bool drewArcFallback = false;
+      const double eps = 0.01;
+
+      if (direction == _BorderDirection.top || direction == _BorderDirection.bottom) {
+        final double leftRadiusX = direction == _BorderDirection.top ? rr.tlRadiusX : rr.blRadiusX;
+        final double rightRadiusX = direction == _BorderDirection.top ? rr.trRadiusX : rr.brRadiusX;
+        final double segLen = (rr.outerRect.width) - (leftRadiusX + rightRadiusX);
+
+        if (DebugFlags.enableBorderRadiusLogs) {
+          try {
+            final el = renderStyle.target;
+            renderingLogger.finer('[BorderRadius] dashed side(${direction.toString().split('.').last}) rrect '
+                'w=${rr.outerRect.width.toStringAsFixed(2)} leftRx=${leftRadiusX.toStringAsFixed(2)} '
+                'rightRx=${rightRadiusX.toStringAsFixed(2)} segLen=${segLen.toStringAsFixed(2)}');
+          } catch (_) {}
+        }
+
+        if (segLen <= eps) {
+          // Fallback when straight segment collapses.
+          drewArcFallback = true;
+          // Prefer a centered 90° arc when the rrect is effectively a circle.
+          final bool isCircle = (rr.outerRect.width - rr.outerRect.height).abs() < eps &&
+              (rr.tlRadiusX - rr.trRadiusX).abs() < eps &&
+              (rr.tlRadiusX - rr.brRadiusX).abs() < eps &&
+              (rr.tlRadiusX - rr.blRadiusX).abs() < eps &&
+              (rr.tlRadiusY - rr.trRadiusY).abs() < eps &&
+              (rr.tlRadiusY - rr.brRadiusY).abs() < eps &&
+              (rr.tlRadiusY - rr.blRadiusY).abs() < eps &&
+              (rr.outerRect.width - (2.0 * rr.tlRadiusX)).abs() < eps &&
+              (rr.outerRect.height - (2.0 * rr.tlRadiusY)).abs() < eps;
+
+          if (isCircle) {
+            final Rect circleOval = rr.outerRect;
+            switch (direction) {
+              case _BorderDirection.top:
+                // Centered on top: 225° -> 315° (5π/4 -> 7π/4)
+                borderPath.addArc(circleOval, 5.0 * math.pi / 4.0, math.pi / 2.0);
+                if (DebugFlags.enableBorderRadiusLogs) {
+                  try {
+                    final el = renderStyle.target;
+                    renderingLogger.finer('[BorderRadius] dashed circle-arc side=top angles=225°..315° for <${el.tagName.toLowerCase()}>');
+                  } catch (_) {}
+                }
+                break;
+              case _BorderDirection.bottom:
+                // Centered on bottom: 45° -> 135° (π/4 -> 3π/4)
+                borderPath.addArc(circleOval, math.pi / 4.0, math.pi / 2.0);
+                if (DebugFlags.enableBorderRadiusLogs) {
+                  try {
+                    final el = renderStyle.target;
+                    renderingLogger.finer('[BorderRadius] dashed circle-arc side=bottom angles=45°..135° for <${el.tagName.toLowerCase()}>');
+                  } catch (_) {}
+                }
+                break;
+              case _BorderDirection.right:
+                // Centered on right: -45° -> 45° (-π/4 -> π/4)
+                borderPath.addArc(circleOval, -math.pi / 4.0, math.pi / 2.0);
+                if (DebugFlags.enableBorderRadiusLogs) {
+                  try {
+                    final el = renderStyle.target;
+                    renderingLogger.finer('[BorderRadius] dashed circle-arc side=right angles=-45°..45° for <${el.tagName.toLowerCase()}>');
+                  } catch (_) {}
+                }
+                break;
+              case _BorderDirection.left:
+                // Centered on left: 135° -> 225° (3π/4 -> 5π/4)
+                borderPath.addArc(circleOval, 3.0 * math.pi / 4.0, math.pi / 2.0);
+                if (DebugFlags.enableBorderRadiusLogs) {
+                  try {
+                    final el = renderStyle.target;
+                    renderingLogger.finer('[BorderRadius] dashed circle-arc side=left angles=135°..225° for <${el.tagName.toLowerCase()}>');
+                  } catch (_) {}
+                }
+                break;
+            }
+          } else {
+            // Non-circle: use half-corner arcs so a single side covers ≤ 90° total.
+            if (direction == _BorderDirection.top) {
+              if (rr.tlRadiusX > 0 && rr.tlRadiusY > 0) {
+                final Rect tlOval = Rect.fromLTWH(rr.left, rr.top, rr.tlRadiusX * 2.0, rr.tlRadiusY * 2.0);
+                borderPath.arcTo(tlOval, math.pi, math.pi / 4.0, true);
+              }
+              if (rr.trRadiusX > 0 && rr.trRadiusY > 0) {
+                final Rect trOval = Rect.fromLTWH(rr.right - rr.trRadiusX * 2.0, rr.top, rr.trRadiusX * 2.0, rr.trRadiusY * 2.0);
+                borderPath.arcTo(trOval, 1.75 * math.pi, math.pi / 4.0, true);
+              }
+            } else {
+              if (direction == _BorderDirection.bottom) {
+                if (rr.brRadiusX > 0 && rr.brRadiusY > 0) {
+                  final Rect brOval = Rect.fromLTWH(rr.right - rr.brRadiusX * 2.0, rr.bottom - rr.brRadiusY * 2.0,
+                      rr.brRadiusX * 2.0, rr.brRadiusY * 2.0);
+                  borderPath.arcTo(brOval, math.pi / 4.0, math.pi / 4.0, true);
+                }
+                if (rr.blRadiusX > 0 && rr.blRadiusY > 0) {
+                  final Rect blOval = Rect.fromLTWH(rr.left, rr.bottom - rr.blRadiusY * 2.0, rr.blRadiusX * 2.0, rr.blRadiusY * 2.0);
+                  borderPath.arcTo(blOval, math.pi / 2.0, math.pi / 4.0, true);
+                }
+              }
+            }
+          }
+
+          if (DebugFlags.enableBorderRadiusLogs) {
+            try {
+              final el = renderStyle.target;
+              renderingLogger.finer('[BorderRadius] dashed side(${direction.toString().split('.').last}) '
+                  'fallback arcs drawn for <${el.tagName.toLowerCase()}>');
+            } catch (_) {}
+          }
+        }
+      } else if (direction == _BorderDirection.left || direction == _BorderDirection.right) {
+        final double topRadiusY = direction == _BorderDirection.right ? rr.trRadiusY : rr.tlRadiusY;
+        final double bottomRadiusY = direction == _BorderDirection.right ? rr.brRadiusY : rr.blRadiusY;
+        final double segLen = (rr.outerRect.height) - (topRadiusY + bottomRadiusY);
+
+        if (DebugFlags.enableBorderRadiusLogs) {
+          try {
+            final el = renderStyle.target;
+            renderingLogger.finer('[BorderRadius] dashed side(${direction.toString().split('.').last}) rrect '
+                'h=${rr.outerRect.height.toStringAsFixed(2)} topRy=${topRadiusY.toStringAsFixed(2)} '
+                'bottomRy=${bottomRadiusY.toStringAsFixed(2)} segLen=${segLen.toStringAsFixed(2)}');
+          } catch (_) {}
+        }
+
+        if (segLen <= eps) {
+          drewArcFallback = true;
+          final bool isCircle = (rr.outerRect.width - rr.outerRect.height).abs() < eps &&
+              (rr.tlRadiusX - rr.trRadiusX).abs() < eps &&
+              (rr.tlRadiusX - rr.brRadiusX).abs() < eps &&
+              (rr.tlRadiusX - rr.blRadiusX).abs() < eps &&
+              (rr.tlRadiusY - rr.trRadiusY).abs() < eps &&
+              (rr.tlRadiusY - rr.brRadiusY).abs() < eps &&
+              (rr.tlRadiusY - rr.blRadiusY).abs() < eps &&
+              (rr.outerRect.width - (2.0 * rr.tlRadiusX)).abs() < eps &&
+              (rr.outerRect.height - (2.0 * rr.tlRadiusY)).abs() < eps;
+
+          if (isCircle) {
+            final Rect circleOval = rr.outerRect;
+            switch (direction) {
+              case _BorderDirection.right:
+                // -45° -> 45°
+                borderPath.addArc(circleOval, -math.pi / 4.0, math.pi / 2.0);
+                if (DebugFlags.enableBorderRadiusLogs) {
+                  try {
+                    final el = renderStyle.target;
+                    renderingLogger.finer('[BorderRadius] dashed circle-arc side=right angles=-45°..45° for <${el.tagName.toLowerCase()}>');
+                  } catch (_) {}
+                }
+                break;
+              case _BorderDirection.left:
+                // 135° -> 225°
+                borderPath.addArc(circleOval, 3.0 * math.pi / 4.0, math.pi / 2.0);
+                if (DebugFlags.enableBorderRadiusLogs) {
+                  try {
+                    final el = renderStyle.target;
+                    renderingLogger.finer('[BorderRadius] dashed circle-arc side=left angles=135°..225° for <${el.tagName.toLowerCase()}>');
+                  } catch (_) {}
+                }
+                break;
+              case _BorderDirection.top:
+                // Already handled in previous branch; keep for completeness.
+                borderPath.addArc(circleOval, 5.0 * math.pi / 4.0, math.pi / 2.0);
+                if (DebugFlags.enableBorderRadiusLogs) {
+                  try {
+                    final el = renderStyle.target;
+                    renderingLogger.finer('[BorderRadius] dashed circle-arc side=top angles=225°..315° for <${el.tagName.toLowerCase()}>');
+                  } catch (_) {}
+                }
+                break;
+              case _BorderDirection.bottom:
+                borderPath.addArc(circleOval, math.pi / 4.0, math.pi / 2.0);
+                if (DebugFlags.enableBorderRadiusLogs) {
+                  try {
+                    final el = renderStyle.target;
+                    renderingLogger.finer('[BorderRadius] dashed circle-arc side=bottom angles=45°..135° for <${el.tagName.toLowerCase()}>');
+                  } catch (_) {}
+                }
+                break;
+            }
+          } else {
+            if (direction == _BorderDirection.right) {
+              if (rr.trRadiusX > 0 && rr.trRadiusY > 0) {
+                final Rect trOval = Rect.fromLTWH(
+                    rr.right - rr.trRadiusX * 2.0, rr.top, rr.trRadiusX * 2.0, rr.trRadiusY * 2.0);
+                borderPath.arcTo(trOval, 1.5 * math.pi, math.pi / 4.0, true);
+              }
+              if (rr.brRadiusX > 0 && rr.brRadiusY > 0) {
+                final Rect brOval = Rect.fromLTWH(
+                    rr.right - rr.brRadiusX * 2.0, rr.bottom - rr.brRadiusY * 2.0, rr.brRadiusX * 2.0, rr.brRadiusY * 2.0);
+                borderPath.arcTo(brOval, 0.0, math.pi / 4.0, true);
+              }
+            } else {
+              // left
+              if (rr.blRadiusX > 0 && rr.blRadiusY > 0) {
+                final Rect blOval = Rect.fromLTWH(
+                    rr.left, rr.bottom - rr.blRadiusY * 2.0, rr.blRadiusX * 2.0, rr.blRadiusY * 2.0);
+                borderPath.arcTo(blOval, 3.0 * math.pi / 4.0, math.pi / 4.0, true);
+              }
+              if (rr.tlRadiusX > 0 && rr.tlRadiusY > 0) {
+                final Rect tlOval = Rect.fromLTWH(rr.left, rr.top, rr.tlRadiusX * 2.0, rr.tlRadiusY * 2.0);
+                borderPath.arcTo(tlOval, 1.25 * math.pi, math.pi / 4.0, true);
+              }
+            }
+          }
+
+          if (DebugFlags.enableBorderRadiusLogs) {
+            try {
+              final el = renderStyle.target;
+              renderingLogger.finer('[BorderRadius] dashed side(${direction.toString().split('.').last}) '
+                  'fallback arcs drawn for <${el.tagName.toLowerCase()}>');
+            } catch (_) {}
+          }
+        }
+      }
+
+      if (!drewArcFallback) {
+        // Default: Draw only the straight segment between the corner tangency points.
+        // This matches common UA behavior for single-sided dashed borders with border-radius,
+        // avoiding corner arcs when adjacent sides are not dashed.
+        switch (direction) {
+          case _BorderDirection.top:
+            borderPath.moveTo(rr.left + rr.tlRadiusX, rr.top);
+            borderPath.lineTo(rr.right - rr.trRadiusX, rr.top);
+            break;
+          case _BorderDirection.right:
+            borderPath.moveTo(rr.right, rr.top + rr.trRadiusY);
+            borderPath.lineTo(rr.right, rr.bottom - rr.brRadiusY);
+            break;
+          case _BorderDirection.bottom:
+            borderPath.moveTo(rr.right - rr.brRadiusX, rr.bottom);
+            borderPath.lineTo(rr.left + rr.blRadiusX, rr.bottom);
+            break;
+          case _BorderDirection.left:
+            borderPath.moveTo(rr.left, rr.bottom - rr.blRadiusY);
+            borderPath.lineTo(rr.left, rr.top + rr.tlRadiusY);
+            break;
+        }
       }
     } else {
       // Handle non-rounded corners
@@ -454,6 +696,13 @@ class BoxDecorationPainter extends BoxPainter {
     }
 
     // Draw the dashed border for this side
+    if (DebugFlags.enableBorderRadiusLogs) {
+      try {
+        final el = renderStyle.target;
+        renderingLogger.finer('[BorderRadius] dashed drawPath side=${direction.toString().split('.').last} '
+            'w=${side.width.toStringAsFixed(2)} on <${el.tagName.toLowerCase()}>');
+      } catch (_) {}
+    }
     canvas.drawPath(
       dashPath(
         borderPath,
@@ -1748,6 +1997,13 @@ class BoxDecorationPainter extends BoxPainter {
         } catch (_) {}
       }
 
+      if (DebugFlags.enableBorderRadiusLogs) {
+        try {
+          final el = renderStyle.target;
+          renderingLogger.finer('[BorderRadius] call Flutter Border.paint for <${el.tagName.toLowerCase()}> '
+              'uniform=${b.isUniform} passRadius=${borderRadiusForPaint != null}');
+        } catch (_) {}
+      }
       _decoration.border?.paint(
         canvas,
         rect,
