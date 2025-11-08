@@ -580,22 +580,41 @@ class CSSBackgroundImage {
                 }
               }
 
-              // Prelude indicates presence of non-color-stop tokens (shape/size/position),
-              // so skip it when parsing color stops.
-              // Recognize common prelude markers.
-              final bool hasPrelude = tokens.contains('circle') ||
+              // Only treat arg[0] as a radial prelude when it does NOT start with a color token.
+              // Previously, the presence of a percentage (e.g., "black 50%") caused arg[0]
+              // to be misclassified as a prelude and skipped. Guard against that by checking
+              // whether the first token looks like a color (named/hex/rgb[a]/hsl[a]/var()).
+              final String firstToken = tokens.isNotEmpty ? tokens.first : '';
+              final bool firstLooksLikeColor = CSSColor.isColor(firstToken) || firstToken.startsWith('var(');
+
+              // Recognize common prelude markers when the first token is not a color.
+              final bool hasPrelude = !firstLooksLikeColor && (
+                  tokens.contains('circle') ||
                   tokens.contains('ellipse') ||
                   tokens.contains('closest-side') ||
                   tokens.contains('closest-corner') ||
                   tokens.contains('farthest-side') ||
                   tokens.contains('farthest-corner') ||
                   atIndex != -1 ||
-                  tokens.any((t) => CSSPercentage.isPercentage(t));
+                  // Allow explicit numeric size in prelude only if arg[0] doesn't start with a color.
+                  tokens.any((t) => CSSPercentage.isPercentage(t) || CSSLength.isLength(t))
+              );
               if (hasPrelude) start = 1;
             }
           }
           // Normalize px stops using painter-provided length hint when available.
           _applyColorAndStops(start, method.args, colors, stops, renderStyle, BACKGROUND_IMAGE, gradientLengthHint);
+          // Ensure non-decreasing stops per CSS Images spec when explicit positions are out of order.
+          if (stops.isNotEmpty) {
+            double last = stops[0].clamp(0.0, 1.0);
+            stops[0] = last;
+            for (int i = 1; i < stops.length; i++) {
+              double s = stops[i].clamp(0.0, 1.0);
+              if (s < last) s = last;
+              stops[i] = s;
+              last = s;
+            }
+          }
           // For repeating-radial-gradient, normalize to one cycle [0..1] for tile repetition.
           double? repeatPeriodPx;
           if (method.name == 'repeating-radial-gradient' && stops.isNotEmpty) {
