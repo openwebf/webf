@@ -249,6 +249,8 @@ describe('Accessibility: ARIA attributes reflection', () => {
     btn.setAttribute('aria-pressed', 'false');
     document.body.appendChild(btn);
     expect(btn.getAttribute('aria-pressed')).toBe('false');
+    btn.setAttribute('aria-pressed', 'mixed');
+    expect(btn.getAttribute('aria-pressed')).toBe('mixed');
     btn.setAttribute('aria-pressed', 'true');
     expect(btn.getAttribute('aria-pressed')).toBe('true');
     done();
