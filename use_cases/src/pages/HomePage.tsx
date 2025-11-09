@@ -40,8 +40,6 @@ export const HomePage: React.FC = () => {
           <Row title="Tailwind CSS" desc="Utility-first UI with WebF tokens." to="/tailwind" />
           <Row title="CSS Animations" desc="Fade, slide, scale, rotate, bounce, pulse." to="/animation" />
           <Row title="CSS Showcase" desc="Layouts, effects and advanced styling." to="/css-showcase" />
-          <Row title="WebSocket" desc="Echo server connect/send/receive demo." to="/websocket" />
-          <Row title="Web Storage" desc="localStorage and sessionStorage examples." to="/web-storage" />
           <Row title="Native Interaction" desc="Screenshot, share and platform features." to="/native-interaction" />
         </div>
       </WebFListView>

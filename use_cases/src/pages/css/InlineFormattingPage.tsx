@@ -101,34 +101,34 @@ export const InlineFormattingPage: React.FC = () => {
             </div>
           </div>
 
-          <h2 className="text-lg font-medium text-fg-primary mb-2">Images as inline (replaced) elements</h2>
-          <div className="bg-surface-secondary border border-line rounded-xl p-4 mb-6">
-            <div className="text-sm text-fg-secondary mb-3">Images sit on the baseline and leave a small descender gap. Align bottom or make them block to remove the gap.</div>
-            <div className="space-y-2">
-              <div className="border border-dashed border-line rounded p-2">
-                <div className="text-xs text-fg-secondary mb-1">default (baseline)</div>
-                <span className="text-[18px]">Text
-                  <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjNjRCNUY2Ii8+PC9zdmc+" alt="img" className="inline h-6 w-6 mx-2"/>
-                  after
-                </span>
-              </div>
-              <div className="border border-dashed border-line rounded p-2">
-                <div className="text-xs text-fg-secondary mb-1">align-bottom</div>
-                <span className="text-[18px]">Text
-                  <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjRTU3MzczIi8+PC9zdmc+" alt="img" className="inline h-6 w-6 mx-2 align-bottom"/>
-                  after
-                </span>
-              </div>
-              <div className="border border-dashed border-line rounded p-2">
-                <div className="text-xs text-fg-secondary mb-1">block image</div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[18px]">Above</span>
-                  <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjODFDNzg0Ii8+PC9zdmc+" alt="img" className="block h-6 w-6"/>
-                  <span className="text-[18px]">Below</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/*<h2 className="text-lg font-medium text-fg-primary mb-2">Images as inline (replaced) elements</h2>*/}
+          {/*<div className="bg-surface-secondary border border-line rounded-xl p-4 mb-6">*/}
+          {/*  <div className="text-sm text-fg-secondary mb-3">Images sit on the baseline and leave a small descender gap. Align bottom or make them block to remove the gap.</div>*/}
+          {/*  <div className="space-y-2">*/}
+          {/*    <div className="border border-dashed border-line rounded p-2">*/}
+          {/*      <div className="text-xs text-fg-secondary mb-1">default (baseline)</div>*/}
+          {/*      <span className="text-[18px]">Text*/}
+          {/*        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjNjRCNUY2Ii8+PC9zdmc+" alt="img" className="inline h-6 w-6 mx-2"/>*/}
+          {/*        after*/}
+          {/*      </span>*/}
+          {/*    </div>*/}
+          {/*    <div className="border border-dashed border-line rounded p-2">*/}
+          {/*      <div className="text-xs text-fg-secondary mb-1">align-bottom</div>*/}
+          {/*      <span className="text-[18px]">Text*/}
+          {/*        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjRTU3MzczIi8+PC9zdmc+" alt="img" className="inline h-6 w-6 mx-2 align-bottom"/>*/}
+          {/*        after*/}
+          {/*      </span>*/}
+          {/*    </div>*/}
+          {/*    <div className="border border-dashed border-line rounded p-2">*/}
+          {/*      <div className="text-xs text-fg-secondary mb-1">block image</div>*/}
+          {/*      <div className="flex items-center gap-2">*/}
+          {/*        <span className="text-[18px]">Above</span>*/}
+          {/*        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjODFDNzg0Ii8+PC9zdmc+" alt="img" className="block h-6 w-6"/>*/}
+          {/*        <span className="text-[18px]">Below</span>*/}
+          {/*      </div>*/}
+          {/*    </div>*/}
+          {/*  </div>*/}
+          {/*</div>*/}
 
           <h2 className="text-lg font-medium text-fg-primary mb-2">Line boxes and background highlight</h2>
           <div className="bg-surface-secondary border border-line rounded-xl p-4 mb-6">

@@ -45,7 +45,7 @@ import {BGGradientPage} from './pages/css/BGGradientPage';
 import {BGImagePage} from './pages/css/BGImagePage';
 import {BGRadialPage} from './pages/css/BGRadialPage';
 import {BorderPage} from './pages/css/BorderPage';
-import {BorderRadiusPage} from './pages/css/BorderRadiusPage';
+import BorderRadiusPage from './pages/css/BorderRadiusPage';
 import {BoxShadowPage} from './pages/css/BoxShadowPage';
 import {FilterPage} from './pages/css/FilterPage';
 import {FlexLayoutPage} from './pages/css/FlexLayoutPage';
