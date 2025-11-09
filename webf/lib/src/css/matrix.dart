@@ -618,7 +618,8 @@ class CSSMatrix {
     var methodArgs = method.args;
     for (int i = 0; i < methodArgs.length; i++) {
       final String arg = methodArgs[i];
-      final CSSVariable? varNode = CSSVariable.tryParse(renderStyle, arg);
+      final String argTrim = arg.trim();
+      final CSSVariable? varNode = CSSVariable.tryParse(renderStyle, argTrim);
       if (varNode != null) {
         // Track dependency on this variable for transform recomputation.
         final dynamic raw = renderStyle.getCSSVariable(varNode.identifier, TRANSFORM);
@@ -671,6 +672,11 @@ class CSSMatrix {
           CSSLengthValue x = CSSLength.parseLength(methodArgs[0].trim(), renderStyle, TRANSLATE, Axis.horizontal);
           if (x.computedValue == double.infinity || y.computedValue == double.infinity) return null;
           x.renderStyle = y.renderStyle = renderStyle;
+          if (DebugFlags.shouldLogTransitionForProp(TRANSFORM)) {
+            try {
+              cssLogger.info('[transform][resolve] translate x=${x.computedValue} y=${y.computedValue} args=${methodArgs.join(', ')}');
+            } catch (_) {}
+          }
           return Matrix4.identity()..translate(x.computedValue, y.computedValue);
         }
         break;
@@ -713,6 +719,9 @@ class CSSMatrix {
           // Double.infinity indicates translate not resolved due to renderBox not layout yet
           // in percentage case.
           if (computedValue == double.infinity) return null;
+          if (DebugFlags.shouldLogTransitionForProp(TRANSFORM)) {
+            try { cssLogger.info('[transform][resolve] translateY y=$computedValue arg=${methodArgs[0]}'); } catch (_) {}
+          }
           return Matrix4.identity()..translate(0.0, computedValue);
         }
         break;

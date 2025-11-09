@@ -16,7 +16,7 @@ describe('Scrollable text width with padding and centered text (issue #251)', ()
     document.body.appendChild(box);
 
     // Force layout
-    document.body.offsetWidth;
+    await waitForOnScreen(box);
 
     // Expected: text wraps within content width; no horizontal overflow
     expect(box.scrollWidth).toBe(box.clientWidth);

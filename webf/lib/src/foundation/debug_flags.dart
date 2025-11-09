@@ -152,6 +152,42 @@ class DebugFlags {
   // - runTransition() begin/end values and cancellation
   static bool enableCssVarAndTransitionLogs = false;
 
+  // Optional: narrow transition/variable logs to specific CSS properties.
+  // Put camelCase property names here (e.g., 'transform', 'backgroundColor').
+  // When empty, all properties are logged (subject to enableCssVarAndTransitionLogs).
+  static Set<String> watchedTransitionProperties = <String>{};
+
+  // Helper to decide if we should emit logs for a specific CSS property.
+  static bool shouldLogTransitionForProp(String property) {
+    if (!enableCssVarAndTransitionLogs) return false;
+    if (watchedTransitionProperties.isEmpty) return true;
+    return watchedTransitionProperties.contains(property);
+  }
+
+  // Optional: narrow variable logs to specific CSS custom properties.
+  // Use raw variable identifiers including leading dashes, e.g., '--tw-translate-x'.
+  static Set<String> watchedCssVariables = <String>{};
+
+  // Decide whether to log a CSS variable event. If deps are provided, this will
+  // allow logging only when the variable feeds into a watched CSS property.
+  static bool shouldLogCssVar(String identifier, [Iterable<String>? deps]) {
+    if (!enableCssVarAndTransitionLogs) return false;
+    if (watchedCssVariables.isNotEmpty) return watchedCssVariables.contains(identifier);
+    // If no explicit var whitelist, only log when it affects watched properties.
+    if (watchedTransitionProperties.isEmpty) return false;
+    if (deps != null) {
+      for (final String s in deps) {
+        final String prop = s.contains('_') ? s.split('_').first : s;
+        if (shouldLogTransitionForProp(prop)) return true;
+      }
+    }
+    return false;
+  }
+
+  // When true, emit [var][dep] logs for variable-to-property dependency tracking.
+  // Defaults to false to reduce noise; enable only when diagnosing var() chains.
+  static bool enableCssVarDependencyLogs = false;
+
   // Background paint diagnostics: when true, logs background layering order,
   // per-layer size/position/repeat, and chosen rects for gradients/images.
   static bool enableBackgroundLogs = false;

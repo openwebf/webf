@@ -1522,7 +1522,7 @@ abstract class Element extends ContainerNode
         break;
     }
 
-    if (DebugFlags.enableCssVarAndTransitionLogs) {
+    if (DebugFlags.shouldLogTransitionForProp(name)) {
       cssLogger.info('[style][apply-prop] ${tagName}.$name value=${value is CSSColor ? (value as CSSColor).cssText() : value}');
     }
     if (DebugFlags.enableBackgroundLogs && (name == BACKGROUND_POSITION_X || name == BACKGROUND_POSITION_Y)) {
@@ -1568,7 +1568,7 @@ abstract class Element extends ContainerNode
   }
 
   void setRenderStyle(String property, String present, {String? baseHref}) {
-    if (DebugFlags.enableCssVarAndTransitionLogs) {
+    if (DebugFlags.shouldLogTransitionForProp(property)) {
       cssLogger.info('[style][apply] ${tagName}.$property present="$present" baseHref=${baseHref ?? 'null'}');
     }
     dynamic value = present.isEmpty
@@ -1740,7 +1740,7 @@ abstract class Element extends ContainerNode
   final List<({String property, String? prev, String curr})> _pendingTransitionQueue = <({String property, String? prev, String curr})>[];
 
   void scheduleRunTransitionAnimations(String propertyName, String? prevValue, String currentValue) {
-    if (DebugFlags.enableCssVarAndTransitionLogs) {
+    if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
       cssLogger.info('[transition][queue] ${tagName}.$propertyName prev=${prevValue ?? 'null'} -> curr=$currentValue');
     }
     if (_pendingTransitionProps.contains(propertyName)) {
@@ -1751,7 +1751,7 @@ abstract class Element extends ContainerNode
         final item = _pendingTransitionQueue[i];
         if (item.property == propertyName) {
           _pendingTransitionQueue[i] = (property: propertyName, prev: item.prev, curr: currentValue);
-          if (DebugFlags.enableCssVarAndTransitionLogs) {
+          if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
             cssLogger.info('[transition][queue] coalesce property=$propertyName prev=${item.prev ?? 'null'} new-curr=$currentValue');
           }
 
@@ -1772,7 +1772,7 @@ abstract class Element extends ContainerNode
       _pendingTransitionQueue.clear();
       _queuedTransitionBatch = false;
       for (final item in items) {
-      if (DebugFlags.enableCssVarAndTransitionLogs) {
+      if (DebugFlags.shouldLogTransitionForProp(item.property)) {
         cssLogger.info('[transition][drain] run property=${item.property} prev=${item.prev ?? 'null'} curr=${item.curr}');
       }
       renderStyle.runTransition(item.property, item.prev, item.curr);
@@ -1785,7 +1785,7 @@ abstract class Element extends ContainerNode
   void _onStyleChanged(
       String propertyName, String? prevValue, String currentValue,
       {String? baseHref}) {
-    if (DebugFlags.enableCssVarAndTransitionLogs) {
+    if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
       cssLogger.info('[style][change] ${tagName}.$propertyName prev=${prevValue ?? 'null'} curr=$currentValue');
     }
     // Eagerly expand var() for color-bearing properties so that downstream
@@ -1809,7 +1809,7 @@ abstract class Element extends ContainerNode
     }
 
     final bool shouldTrans = renderStyle.shouldTransition(propertyName, prevValue, currentValue);
-    if (DebugFlags.enableCssVarAndTransitionLogs) {
+    if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
       cssLogger.info('[style][route] ${tagName}.$propertyName shouldTransition=$shouldTrans');
     }
     if (shouldTrans) {
@@ -1824,13 +1824,13 @@ abstract class Element extends ContainerNode
     final bool running = (renderStyle is CSSRenderStyle)
         ? (renderStyle as CSSRenderStyle).isTransitionRunning(propertyName)
         : false;
-    if (DebugFlags.enableCssVarAndTransitionLogs) {
+    if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
       cssLogger.info('[style][route] ${tagName}.$propertyName pending=$pending running=$running');
     }
     if (pending || running) {
       return;
     }
-    if (DebugFlags.enableCssVarAndTransitionLogs) {
+    if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
       cssLogger.info('[style][apply] ${tagName}.$propertyName direct-set value=$currentValue');
     }
     setRenderStyle(propertyName, currentValue, baseHref: baseHref);

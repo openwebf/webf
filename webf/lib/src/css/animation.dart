@@ -774,7 +774,27 @@ class KeyframeEffect extends AnimationEffect {
           final current = interpolation.lerp(
               interpolation.begin, interpolation.end, scaledLocalTime, property, renderStyle as CSSRenderStyle);
 
-          // Debug logging removed
+          if (DebugFlags.shouldLogTransitionForProp(property)) {
+            String valueText = '';
+            try {
+              final handlers = CSSTransitionHandlers[property];
+              if (handlers != null && handlers.length >= 3) {
+                final stringify = handlers[2];
+                valueText = stringify(current).toString();
+              } else {
+                // Fallback: try style map or toString of current
+                final maybe = renderStyle.target.style.getPropertyValue(property);
+                valueText = (maybe.isNotEmpty ? maybe : (current?.toString() ?? ''));
+              }
+            } catch (_) {
+              try {
+                final maybe = renderStyle.target.style.getPropertyValue(property);
+                valueText = (maybe.isNotEmpty ? maybe : (current?.toString() ?? ''));
+              } catch (_) {}
+            }
+            cssLogger.info('[transition][tick] ${renderStyle.target.tagName}.$property t=' +
+                scaledLocalTime.toStringAsFixed(3) + ' value=' + (valueText.isEmpty ? '""' : valueText));
+          }
         }
       }
     }

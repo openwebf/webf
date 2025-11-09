@@ -80,10 +80,13 @@ mixin CSSTransformMixin on RenderStyle {
 
   static TransformAnimationValue resolveTransformForAnimation(String present, RenderStyle renderStyle) {
     final List<CSSFunctionalNotation>? notation = resolveTransform(present);
-    // Do not freeze a matrix here. Let transition ticks resolve percentages
-    // against the current renderStyle so changes to width/height during the
-    // same transition do not cause drift or overflow.
-    return TransformAnimationValue(notation, frozenMatrix: null);
+    // Freeze a snapshot matrix for this value at setup so the end values used
+    // for interpolation include the current var() substitutions and absolute
+    // lengths (e.g., rem). This avoids cases where var-driven transforms (like
+    // Tailwind’s --tw-translate-y) don’t reflect the intended target during the
+    // transition.
+    final Matrix4? frozen = notation != null ? CSSMatrix.computeTransformMatrix(notation, renderStyle) : null;
+    return TransformAnimationValue(notation, frozenMatrix: frozen);
   }
 
   Matrix4? _transformMatrix;

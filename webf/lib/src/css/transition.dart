@@ -155,10 +155,10 @@ Matrix4 _updateTransform(TransformAnimationValue begin, TransformAnimationValue 
   // transforms (e.g., translateX(100%)) are evaluated against the element’s
   // current reference box while other properties (like width/left) are
   // simultaneously animating.
-  Matrix4 beginMatrix = CSSMatrix.computeTransformMatrix(begin.value, renderStyle) ?? Matrix4.identity();
-  Matrix4 endMatrix = end.value == null
+  Matrix4 beginMatrix = begin.frozenMatrix ?? (CSSMatrix.computeTransformMatrix(begin.value, renderStyle) ?? Matrix4.identity());
+  Matrix4 endMatrix = end.frozenMatrix ?? (end.value == null
       ? Matrix4.identity()
-      : (CSSMatrix.computeTransformMatrix(end.value, renderStyle) ?? Matrix4.identity());
+      : (CSSMatrix.computeTransformMatrix(end.value, renderStyle) ?? Matrix4.identity()));
 
   if (beginMatrix != null && endMatrix != null) {
     Matrix4 newMatrix4 = CSSMatrix.lerpMatrix(beginMatrix, endMatrix, t);
@@ -571,7 +571,7 @@ mixin CSSTransitionMixin on RenderStyle {
   }
 
   bool shouldTransition(String property, String? prevValue, String nextValue) {
-    if (DebugFlags.enableCssVarAndTransitionLogs) {
+    if (DebugFlags.shouldLogTransitionForProp(property)) {
       cssLogger.info('[transition][check] property=$property prev=${prevValue ?? 'null'} next=$nextValue');
     }
 
@@ -587,13 +587,13 @@ mixin CSSTransitionMixin on RenderStyle {
     // changes may be handled by the CSSVariableMixin path that schedules a
     // transition with an explicit prev substitution.
     if (prevValue == nextValue) {
-      if (DebugFlags.enableCssVarAndTransitionLogs) {
+      if (DebugFlags.shouldLogTransitionForProp(property)) {
         cssLogger.info('[transition][check] property=$property skip: same-serialized');
       }
       return false;
     }
     if (CSSLength.isAuto(prevValue) || CSSLength.isAuto(nextValue)) {
-      if (DebugFlags.enableCssVarAndTransitionLogs) {
+      if (DebugFlags.shouldLogTransitionForProp(property)) {
         cssLogger.info('[transition][check] property=$property skip: auto');
       }
       return false;
@@ -606,10 +606,14 @@ mixin CSSTransitionMixin on RenderStyle {
       final String key = _canonicalTransitionKey(property);
       final bool configured = effectiveTransitions.containsKey(key) || effectiveTransitions.containsKey(ALL);
       if (!configured) {
-        if (DebugFlags.enableCssVarAndTransitionLogs) {
+        if (DebugFlags.shouldLogTransitionForProp(property)) {
           cssLogger.info('[transition][check] property=$property skip: not-configured (key=$key)');
         }
         return false;
+      }
+      if (DebugFlags.shouldLogTransitionForProp(property)) {
+        final List? opts = effectiveTransitions[key] ?? effectiveTransitions[ALL];
+        cssLogger.info('[transition][check] property=$property key=$key opts=${opts != null ? '{duration: ${opts[0]}, easing: ${opts[1]}, delay: ${opts[2]}}' : 'null'}');
       }
       bool shouldTransition = false;
       // Transition will be disabled when all transition has transitionDuration as 0.
@@ -619,7 +623,7 @@ mixin CSSTransitionMixin on RenderStyle {
           shouldTransition = true;
         }
       });
-      if (DebugFlags.enableCssVarAndTransitionLogs) {
+      if (DebugFlags.shouldLogTransitionForProp(property)) {
         cssLogger.info('[transition][check] property=$property configured key=$key result=$shouldTransition');
       }
       return shouldTransition;
@@ -642,7 +646,7 @@ mixin CSSTransitionMixin on RenderStyle {
   }
 
   void runTransition(String propertyName, begin, end) {
-    if (DebugFlags.enableCssVarAndTransitionLogs) {
+    if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
       cssLogger.info('[transition][run] property=$propertyName begin=${begin ?? 'null'} end=$end');
     }
     if (_hasRunningTransition(propertyName)) {
@@ -656,7 +660,7 @@ mixin CSSTransitionMixin on RenderStyle {
             interpolation.lerp(interpolation.begin, interpolation.end, animation.progress, propertyName, this));
       }
 
-      if (DebugFlags.enableCssVarAndTransitionLogs) {
+      if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
         cssLogger.info('[transition][run] cancel-existing property=$propertyName progress=${animation.progress.toStringAsFixed(3)}');
       }
       animation.cancel();
@@ -681,7 +685,7 @@ mixin CSSTransitionMixin on RenderStyle {
     // creating a no-op animation that never fires finish.
     final double durationMs = options?.duration ?? 0;
     if (durationMs <= 0) {
-      if (DebugFlags.enableCssVarAndTransitionLogs) {
+      if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
         cssLogger.info('[transition][run] property=$propertyName duration=0; direct-apply "$end"');
       }
       target.setRenderStyle(propertyName, end);
@@ -707,15 +711,15 @@ mixin CSSTransitionMixin on RenderStyle {
       _propertyRunningTransition.remove(propertyName);
       target.setRenderStyle(propertyName, end);
       // An Event fired when a CSS transition has finished playing.
-      if (DebugFlags.enableCssVarAndTransitionLogs) {
+      if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
         cssLogger.info('[transition][finish] property=$propertyName applied-end "$end"');
       }
       target.dispatchEvent(Event(EVENT_TRANSITION_END));
     };
 
     target.dispatchEvent(Event(EVENT_TRANSITION_RUN));
-    if (DebugFlags.enableCssVarAndTransitionLogs) {
-      cssLogger.info('[transition][run] play property=$propertyName');
+    if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
+      cssLogger.info('[transition][run] play property=$propertyName duration=${options?.duration} easing=${options?.easing} delay=${options?.delay}');
     }
 
     animation.play();
@@ -727,7 +731,7 @@ mixin CSSTransitionMixin on RenderStyle {
       for (final String prop in props) {
         final Animation? animation = _propertyRunningTransition.remove(prop);
         if (animation != null) {
-          if (DebugFlags.enableCssVarAndTransitionLogs) {
+          if (DebugFlags.shouldLogTransitionForProp(prop)) {
             cssLogger.info('[transition][cancel] property=$prop (bulk)');
           }
           animation.cancel();
@@ -746,7 +750,7 @@ mixin CSSTransitionMixin on RenderStyle {
   void cancelTransitionFor(String propertyName) {
     final Animation? animation = _propertyRunningTransition.remove(propertyName);
     if (animation != null) {
-      if (DebugFlags.enableCssVarAndTransitionLogs) {
+      if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
         cssLogger.info('[transition][cancel] property=$propertyName');
       }
       animation.cancel();
@@ -769,7 +773,7 @@ mixin CSSTransitionMixin on RenderStyle {
     List? transitionOptions = effectiveTransitions[key] ?? effectiveTransitions[ALL];
     // [duration, function, delay]
     if (transitionOptions != null) {
-      return EffectTiming(
+      final EffectTiming timing = EffectTiming(
         duration: CSSTime.parseNotNegativeTime(transitionOptions[0])!.toDouble(),
         easing: transitionOptions[1],
         delay: CSSTime.parseTime(transitionOptions[2])!.toDouble(),
@@ -777,6 +781,10 @@ mixin CSSTransitionMixin on RenderStyle {
         // such that the original CSS value applied prior to the transition is used for a negative current time.
         fill: FillMode.backwards,
       );
+      if (DebugFlags.shouldLogTransitionForProp(property)) {
+        cssLogger.info('[transition][opts] property=$property key=$key duration=${timing.duration} easing=${timing.easing} delay=${timing.delay}');
+      }
+      return timing;
     }
 
     return null;

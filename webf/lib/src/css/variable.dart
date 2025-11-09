@@ -29,12 +29,14 @@ mixin CSSVariableMixin on RenderStyle {
     List<String>? dep = _propertyDependencies[identifier];
     if (dep == null) {
       _propertyDependencies[identifier] = [propertyName];
-      if (DebugFlags.enableCssVarAndTransitionLogs) {
+      final String p = propertyName.contains('_') ? propertyName.split('_').first : propertyName;
+      if (DebugFlags.enableCssVarDependencyLogs && DebugFlags.shouldLogTransitionForProp(p)) {
         cssLogger.info('[var][dep] id=$identifier +$propertyName');
       }
     } else if (!dep.contains(propertyName)) {
       dep.add(propertyName);
-      if (DebugFlags.enableCssVarAndTransitionLogs) {
+      final String p = propertyName.contains('_') ? propertyName.split('_').first : propertyName;
+      if (DebugFlags.enableCssVarDependencyLogs && DebugFlags.shouldLogTransitionForProp(p)) {
         cssLogger.info('[var][dep] id=$identifier +$propertyName');
       }
     }
@@ -119,7 +121,8 @@ mixin CSSVariableMixin on RenderStyle {
   // value: red
   @override
   void setCSSVariable(String identifier, String value) {
-    if (DebugFlags.enableCssVarAndTransitionLogs) {
+    final List<String>? deps = _propertyDependencies[identifier];
+    if (DebugFlags.shouldLogCssVar(identifier, deps)) {
       cssLogger.info('[var][set] id=$identifier new="$value" target=${target.tagName}');
     }
     // Snapshot old value before mutation for transition heuristics.
@@ -135,14 +138,14 @@ mixin CSSVariableMixin on RenderStyle {
       if (variable != null) {
         _variableStorage ??= HashMap<String, CSSVariable>();
         _variableStorage![identifier] = variable;
-        if (DebugFlags.enableCssVarAndTransitionLogs) {
+        if (DebugFlags.shouldLogCssVar(identifier, deps)) {
           cssLogger.info('[var][set] id=$identifier stored-as=alias prev=${prevRaw ?? 'null'}');
         }
         
       } else {
         _identifierStorage ??= HashMap<String, String>();
         _identifierStorage![identifier] = value;
-        if (DebugFlags.enableCssVarAndTransitionLogs) {
+        if (DebugFlags.shouldLogCssVar(identifier, deps)) {
           cssLogger.info('[var][set] id=$identifier stored-as=raw prev=${prevRaw ?? 'null'}');
         }
         
@@ -150,13 +153,13 @@ mixin CSSVariableMixin on RenderStyle {
     } else {
       _identifierStorage ??= HashMap<String, String>();
       _identifierStorage![identifier] = value;
-      if (DebugFlags.enableCssVarAndTransitionLogs) {
+      if (DebugFlags.shouldLogCssVar(identifier, deps)) {
         cssLogger.info('[var][set] id=$identifier stored-as=raw prev=${prevRaw ?? 'null'}');
       }
       
     }
     if (_propertyDependencies.containsKey(identifier)) {
-      if (DebugFlags.enableCssVarAndTransitionLogs) {
+      if (DebugFlags.shouldLogCssVar(identifier, _propertyDependencies[identifier])) {
         cssLogger.info('[var][notify] id=$identifier deps=${_propertyDependencies[identifier]?.join(',') ?? '[]'}');
       }
       
@@ -165,7 +168,7 @@ mixin CSSVariableMixin on RenderStyle {
       // No dependencies recorded yet (e.g., first parse may have used a cached color string).
       // Clear common color cache keys so next parse recomputes with the new variable value.
       _clearColorCacheForVariable(identifier);
-      if (DebugFlags.enableCssVarAndTransitionLogs) {
+      if (DebugFlags.shouldLogCssVar(identifier)) {
         cssLogger.info('[var][notify] id=$identifier no-deps; cleared-color-cache-only');
       }
       
@@ -274,13 +277,13 @@ mixin CSSVariableMixin on RenderStyle {
   }
 
   void _notifyCSSVariableChanged(String identifier, String value, [String? prevVarValue]) {
-    if (DebugFlags.enableCssVarAndTransitionLogs) {
-      cssLogger.info('[var][notify] id=$identifier target=${target.tagName} new="$value" prev=${prevVarValue ?? 'null'}');
-    }
     // Snapshot to avoid concurrent modification if dependencies mutate during iteration.
     final List<String> propertyNamesWithPattern = _propertyDependencies[identifier] != null
         ? List<String>.from(_propertyDependencies[identifier]!)
         : const <String>[];
+    if (DebugFlags.shouldLogCssVar(identifier, propertyNamesWithPattern)) {
+      cssLogger.info('[var][notify] id=$identifier target=${target.tagName} new="$value" prev=${prevVarValue ?? 'null'}');
+    }
     for (final String propertyNameWithPattern in propertyNamesWithPattern) {
       List<String> group = propertyNameWithPattern.split('_');
       String propertyName = group[0];
@@ -290,7 +293,7 @@ mixin CSSVariableMixin on RenderStyle {
       final String cssText = target.style.getPropertyValue(propertyName);
       final bool containsProp = target.style.contains(propertyName);
       final bool hasVarFn = CSSVariable.isCSSVariableValue(cssText);
-      if (DebugFlags.enableCssVarAndTransitionLogs) {
+      if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
         cssLogger.info('[var][notify] -> property=$propertyName contains=$containsProp hasVar=$hasVarFn cssText="$cssText"');
       }
       if (containsProp && hasVarFn) {
@@ -344,7 +347,7 @@ mixin CSSVariableMixin on RenderStyle {
               canonicalKey = 'margin';
             }
             final bool configuredCanonical = rs.effectiveTransitions.containsKey(canonicalKey) || rs.effectiveTransitions.containsKey(ALL);
-            if (DebugFlags.enableCssVarAndTransitionLogs) {
+            if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
               cssLogger.info('[var][notify] property=$propertyName configuredRaw=$configuredRaw canonicalKey=$canonicalKey configuredCanonical=$configuredCanonical');
             }
             // Option A: If the property is configured for transition (raw or canonical),
@@ -362,17 +365,17 @@ mixin CSSVariableMixin on RenderStyle {
                   cssText,
                   depContext: propertyName + '_' + cssText,
               );
-              if (DebugFlags.enableCssVarAndTransitionLogs) {
+              if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
                 cssLogger.info('[var][transition] property=$propertyName prevText="$prevText" endText="$endText"');
               }
               if (prevText != endText) {
-                if (DebugFlags.enableCssVarAndTransitionLogs) {
+                if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
                   cssLogger.info('[var][transition] schedule property=$propertyName');
                 }
                 target.scheduleRunTransitionAnimations(propertyName, prevText, endText);
                 handledByTransition = true;
               } else {
-                if (DebugFlags.enableCssVarAndTransitionLogs) {
+                if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
                   cssLogger.info('[var][transition] skip-equal property=$propertyName');
                 }
               }
@@ -381,7 +384,7 @@ mixin CSSVariableMixin on RenderStyle {
         }
         
         if (handledByTransition) {
-          if (DebugFlags.enableCssVarAndTransitionLogs) {
+          if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
             cssLogger.info('[var][notify] property=$propertyName handledByTransition=true; continue dependencies');
           }
           continue; // schedule next dependent property as well
