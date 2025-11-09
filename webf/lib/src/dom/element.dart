@@ -1480,6 +1480,7 @@ abstract class Element extends ContainerNode
       'aria-hidden',
       'aria-disabled',
       'aria-checked',
+      'aria-pressed',
       'aria-selected',
       'aria-current',
       'title',

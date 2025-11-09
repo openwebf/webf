@@ -57,6 +57,13 @@ class WebFAccessibility {
     if (name != null && name.trim().isNotEmpty) {
       config.label = name.trim();
     }
+    final String? ariaDescribedBy = element.getAttribute('aria-describedby');
+    if (ariaDescribedBy != null && ariaDescribedBy.trim().isNotEmpty) {
+      final String? hint = computeAccessibleDescription(element);
+      if (hint != null && hint.trim().isNotEmpty) {
+        config.hint = hint.trim();
+      }
+    }
     if (hint != null && hint.trim().isNotEmpty) {
       config.hint = hint.trim();
     }
@@ -72,6 +79,36 @@ class WebFAccessibility {
       case _Role.button:
         config.isButton = true;
         if (!disabled) config.onTap = () => _dispatchClick(element);
+        final String? ariaPressed = element.getAttribute('aria-pressed');
+        if (ariaPressed != null) {
+          final String v = ariaPressed.trim().toLowerCase();
+          bool? toggled;
+          switch (v) {
+            case 'mixed':
+              toggled = true;
+              config.isCheckStateMixed = true;
+              config.value = 'Mixed';
+              break;
+            case 'true':
+            case '1':
+            case 'yes':
+              toggled = true;
+              config.value = 'Pressed';
+              break;
+            case 'false':
+            case '0':
+            case 'no':
+              toggled = false;
+              config.value = 'Not pressed';
+              break;
+            default:
+              toggled = _isTruthy(ariaPressed);
+              config.value = toggled ? 'Pressed' : 'Not pressed';
+          }
+          if (toggled != null) {
+            config.isToggled = toggled;
+          }
+        }
         break;
       case _Role.link:
         config.isLink = true;
