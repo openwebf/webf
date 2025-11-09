@@ -1,0 +1,367 @@
+.pageWrapper {
+  position: relative;
+  min-height: 100vh;
+  background: var(--background-color, #f5f5f5);
+}
+
+.skipLink {
+  position: absolute;
+  left: 16px;
+  top: -48px;
+  background: var(--accent-color, #007aff);
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: top 0.2s ease, box-shadow 0.2s ease;
+  z-index: 10;
+}
+
+.skipLink:focus {
+  top: 16px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.introHeader {
+  padding: 32px 20px 0;
+  text-align: center;
+  color: var(--primary-text-color, #1f1f1f);
+}
+
+.pageTitle {
+  font-size: 32px;
+  margin: 0 0 12px;
+}
+
+.pageSubtitle {
+  margin: 0 auto;
+  max-width: 720px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--secondary-text-color, #555555);
+}
+
+.list {
+  flex: 1;
+  padding: 0;
+  margin: 0;
+}
+
+.componentSection {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto 60px;
+  box-sizing: border-box;
+}
+
+.componentBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.componentItem {
+  background: var(--card-background, #ffffff);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-color, #e5e5e5);
+}
+
+.itemLabel {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary-text-color, #1f1f1f);
+  margin: 0 0 8px;
+}
+
+.itemDesc {
+  font-size: 14px;
+  color: var(--secondary-text-color, #5b5b5b);
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+
+.landmarkExample {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  background: #f8f9fb;
+  border-radius: 10px;
+  border: 1px solid #e9ecef;
+  padding: 20px;
+}
+
+.landmarkExample strong {
+  display: block;
+  font-size: 14px;
+  color: var(--accent-color, #007aff);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.landmarkHeader,
+.landmarkNav,
+.landmarkMain,
+.landmarkAside,
+.landmarkFooter {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #edf1f5;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.landmarkNavList {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.landmarkNavList a {
+  color: var(--link-color, #0b5fff);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.landmarkNavList a:hover,
+.landmarkNavList a:focus-visible {
+  text-decoration: underline;
+}
+
+.menuContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 720px) {
+  .menuContainer {
+    flex-direction: row;
+    align-items: stretch;
+  }
+}
+
+.menu {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #f1f5fb;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid #d7e3ff;
+}
+
+.menuButton {
+  background: #ffffff;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-text-color, #1f1f1f);
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.menuButton:hover {
+  background: #f0f4ff;
+}
+
+.menuButton:focus-visible {
+  outline: none;
+  border-color: var(--accent-color, #007aff);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.3);
+}
+
+.menuButtonActive {
+  background: var(--accent-color, #007aff);
+  color: #ffffff;
+}
+
+.menuSummary {
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e3e9f4;
+  padding: 18px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  flex: 1;
+}
+
+.menuSummaryTitle {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.menuSummaryBody {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.menuHint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--secondary-text-color, #5b5b5b);
+}
+
+.feedbackForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formLabel {
+  font-weight: 600;
+  color: var(--primary-text-color, #1f1f1f);
+}
+
+.textInput,
+.textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 8px;
+  border: 1px solid #d9d9d9;
+  padding: 12px 14px;
+  font-size: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background: #ffffff;
+  color: var(--primary-text-color, #1f1f1f);
+}
+
+.textInput:focus-visible,
+.textarea:focus-visible {
+  outline: none;
+  border-color: var(--accent-color, #007aff);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.25);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.formHint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--secondary-text-color, #5b5b5b);
+}
+
+.errorMessage {
+  background: #ffe9eb;
+  color: #b00020;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  border: 1px solid #ffcdd2;
+}
+
+.successMessage {
+  background: #e6f4ea;
+  color: #146c2e;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  border: 1px solid #b7dfc1;
+}
+
+.submitButton {
+  align-self: flex-start;
+  background: var(--accent-color, #007aff);
+  color: #ffffff;
+  font-weight: 600;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 24px;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.submitButton:hover {
+  background: #005fcc;
+}
+
+.submitButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.35);
+}
+
+.faqToggle {
+  background: #ffffff;
+  border-radius: 999px;
+  border: 2px solid var(--accent-color, #007aff);
+  color: var(--accent-color, #007aff);
+  padding: 10px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.faqToggle:hover {
+  background: rgba(0, 122, 255, 0.1);
+}
+
+.faqToggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.3);
+}
+
+.faqContent {
+  margin-top: 16px;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #dfe4ec;
+  background: #f9fbff;
+  line-height: 1.6;
+}
+
+.faqContentVisible {
+  animation: fadeInExpand 0.25s ease;
+}
+
+.faqTitle {
+  margin: 0 0 12px;
+  font-size: 18px;
+  color: var(--primary-text-color, #1f1f1f);
+}
+
+.faqList {
+  margin: 12px 0 0;
+  padding-left: 20px;
+}
+
+.faqList li {
+  margin-bottom: 6px;
+}
+
+.liveRegion {
+  margin-top: 36px;
+  padding: 16px 20px;
+  border-radius: 10px;
+  border: 1px solid #ccd6eb;
+  background: #f1f5ff;
+  font-size: 14px;
+  color: var(--primary-text-color, #1f1f1f);
+}
+
+@keyframes fadeInExpand {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
