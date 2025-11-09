@@ -15,6 +15,7 @@ mixin CSSBorderRadiusMixin on RenderStyle {
     _borderTopLeftRadius = value;
     markNeedsPaint();
     resetBoxDecoration();
+    _invalidateBorderRadiusCache();
     if (DebugFlags.enableBorderRadiusLogs) {
       try {
         final el = target;
@@ -33,6 +34,7 @@ mixin CSSBorderRadiusMixin on RenderStyle {
     _borderTopRightRadius = value;
     markNeedsPaint();
     resetBoxDecoration();
+    _invalidateBorderRadiusCache();
     if (DebugFlags.enableBorderRadiusLogs) {
       try {
         final el = target;
@@ -51,6 +53,7 @@ mixin CSSBorderRadiusMixin on RenderStyle {
     _borderBottomRightRadius = value;
     markNeedsPaint();
     resetBoxDecoration();
+    _invalidateBorderRadiusCache();
     if (DebugFlags.enableBorderRadiusLogs) {
       try {
         final el = target;
@@ -69,6 +72,7 @@ mixin CSSBorderRadiusMixin on RenderStyle {
     _borderBottomLeftRadius = value;
     markNeedsPaint();
     resetBoxDecoration();
+    _invalidateBorderRadiusCache();
     if (DebugFlags.enableBorderRadiusLogs) {
       try {
         final el = target;
@@ -83,27 +87,57 @@ mixin CSSBorderRadiusMixin on RenderStyle {
 
   @override
   List<Radius>? get borderRadius {
-    bool hasBorderRadius = borderTopLeftRadius != CSSBorderRadius.zero ||
-        borderTopRightRadius != CSSBorderRadius.zero ||
-        borderBottomRightRadius != CSSBorderRadius.zero ||
-        borderBottomLeftRadius != CSSBorderRadius.zero;
+    // Fast path: if all corners are zero, no radii.
+    final CSSBorderRadius tl = _borderTopLeftRadius ?? CSSBorderRadius.zero;
+    final CSSBorderRadius tr = _borderTopRightRadius ?? CSSBorderRadius.zero;
+    final CSSBorderRadius br = _borderBottomRightRadius ?? CSSBorderRadius.zero;
+    final CSSBorderRadius bl = _borderBottomLeftRadius ?? CSSBorderRadius.zero;
 
-    if (!hasBorderRadius) return null;
+    final bool hasAnyRadius = !(tl == CSSBorderRadius.zero && tr == CSSBorderRadius.zero &&
+        br == CSSBorderRadius.zero && bl == CSSBorderRadius.zero);
+    if (!hasAnyRadius) return null;
+
+    // Cache to avoid recomputing per paint phase.
+    // When any axis uses percentages, the result depends on the border box size.
+    final bool tlPct = tl.x.isPercentage || tl.y.isPercentage;
+    final bool trPct = tr.x.isPercentage || tr.y.isPercentage;
+    final bool brPct = br.x.isPercentage || br.y.isPercentage;
+    final bool blPct = bl.x.isPercentage || bl.y.isPercentage;
+    final bool anyPct = tlPct || trPct || brPct || blPct;
+
+    final double? bw = borderBoxWidth ?? borderBoxLogicalWidth;
+    final double? bh = borderBoxHeight ?? borderBoxLogicalHeight;
+
+    // Reuse cached radii when inputs are identical and the size anchor (for %) is unchanged.
+    if (_cachedComputedBorderRadius != null &&
+        identical(_cachedTLRef, _borderTopLeftRadius) &&
+        identical(_cachedTRRef, _borderTopRightRadius) &&
+        identical(_cachedBRRef, _borderBottomRightRadius) &&
+        identical(_cachedBLRef, _borderBottomLeftRadius) &&
+        (!anyPct || (_cachedBorderRadiusW == bw && _cachedBorderRadiusH == bh))) {
+      return _cachedComputedBorderRadius;
+    }
 
     final radii = <Radius>[
-      borderTopLeftRadius.computedRadius,
-      borderTopRightRadius.computedRadius,
-      borderBottomRightRadius.computedRadius,
-      borderBottomLeftRadius.computedRadius,
+      tl.computedRadius,
+      tr.computedRadius,
+      br.computedRadius,
+      bl.computedRadius,
     ];
+
+    _cachedComputedBorderRadius = radii;
+    _cachedBorderRadiusW = anyPct ? bw : _cachedBorderRadiusW; // only bind size when needed
+    _cachedBorderRadiusH = anyPct ? bh : _cachedBorderRadiusH;
+    _cachedTLRef = _borderTopLeftRadius;
+    _cachedTRRef = _borderTopRightRadius;
+    _cachedBRRef = _borderBottomRightRadius;
+    _cachedBLRef = _borderBottomLeftRadius;
 
     if (DebugFlags.enableBorderRadiusLogs) {
       try {
         final el = target;
-        final double? bw = borderBoxWidth ?? borderBoxLogicalWidth;
-        final double? bh = borderBoxHeight ?? borderBoxLogicalHeight;
         renderingLogger.finer('[BorderRadius] compute for <${el.tagName.toLowerCase()}> ' 
-            'borderBox=${bw?.toStringAsFixed(2) ?? 'null'}×${bh?.toStringAsFixed(2) ?? 'null'} ' 
+            'borderBox=${(bw)?.toStringAsFixed(2) ?? 'null'}×${(bh)?.toStringAsFixed(2) ?? 'null'} ' 
             'tl=(${radii[0].x.toStringAsFixed(2)},${radii[0].y.toStringAsFixed(2)}) '
             'tr=(${radii[1].x.toStringAsFixed(2)},${radii[1].y.toStringAsFixed(2)}) '
             'br=(${radii[2].x.toStringAsFixed(2)},${radii[2].y.toStringAsFixed(2)}) '
@@ -113,4 +147,23 @@ mixin CSSBorderRadiusMixin on RenderStyle {
 
     return radii;
   }
+
+  // Cached computed radii + inputs used to compute them.
+  List<Radius>? _cachedComputedBorderRadius;
+  double? _cachedBorderRadiusW;
+  double? _cachedBorderRadiusH;
+  CSSBorderRadius? _cachedTLRef, _cachedTRRef, _cachedBRRef, _cachedBLRef;
+
+  void _invalidateBorderRadiusCache() {
+    _cachedComputedBorderRadius = null;
+    _cachedBorderRadiusW = null;
+    _cachedBorderRadiusH = null;
+    _cachedTLRef = null;
+    _cachedTRRef = null;
+    _cachedBRRef = null;
+    _cachedBLRef = null;
+  }
+
+  // Invalidate cache when any individual corner radius changes.
+  // Call from setters.
 }
