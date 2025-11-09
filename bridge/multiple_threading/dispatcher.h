@@ -12,6 +12,7 @@
 #include <memory>
 #include <set>
 #include <unordered_map>
+#include <mutex>
 
 #include "logging.h"
 #include "looper.h"
@@ -104,17 +105,26 @@ class Dispatcher {
     };
 
     DartWork* work_ptr = new DartWork(work);
-    pending_dart_tasks_.insert(work_ptr);
+    {
+      std::lock_guard<std::mutex> lock(pending_dart_tasks_mutex_);
+      pending_dart_tasks_.insert(work_ptr);
+    }
 
     bool success = NotifyDart(work_ptr, true);
     if (!success) {
-      pending_dart_tasks_.erase(work_ptr);
+      {
+        std::lock_guard<std::mutex> lock(pending_dart_tasks_mutex_);
+        pending_dart_tasks_.erase(work_ptr);
+      }
       return std::invoke(std::forward<Func>(func), true, std::forward<Args>(args)...);
     }
 
     looper->is_blocked_ = true;
     task->wait();
-    pending_dart_tasks_.erase(work_ptr);
+    {
+      std::lock_guard<std::mutex> lock(pending_dart_tasks_mutex_);
+      pending_dart_tasks_.erase(work_ptr);
+    }
 
     return task->getResult();
   }
@@ -187,6 +197,7 @@ class Dispatcher {
   Dart_Port dart_port_;
   std::unordered_map<int32_t, std::unique_ptr<Looper>> js_threads_;
   std::set<DartWork*> pending_dart_tasks_;
+  std::mutex pending_dart_tasks_mutex_;
   friend Looper;
 };
 

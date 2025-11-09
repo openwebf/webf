@@ -7,6 +7,7 @@
 #include "core/dart_isolate_context.h"
 #include "core/page.h"
 #include "foundation/logging.h"
+#include <vector>
 
 using namespace webf;
 
@@ -68,9 +69,17 @@ void Dispatcher::Dispose(webf::multi_threading::Callback callback) {
     }
   }
 
-  std::set<DartWork*> pending_tasks = pending_dart_tasks_;
+  // Snapshot pending dart tasks under lock to avoid concurrent modification.
+  std::vector<DartWork*> pending_tasks;
+  {
+    std::lock_guard<std::mutex> lock(pending_dart_tasks_mutex_);
+    pending_tasks.reserve(pending_dart_tasks_.size());
+    for (auto* t : pending_dart_tasks_) {
+      pending_tasks.push_back(t);
+    }
+  }
 
-  for (auto task : pending_tasks) {
+  for (auto* task : pending_tasks) {
     const DartWork dart_work = *task;
 #if ENABLE_LOG
     WEBF_LOG(VERBOSE) << "[Dispatcher]: BEGIN EXEC SYNC DART WORKER";
