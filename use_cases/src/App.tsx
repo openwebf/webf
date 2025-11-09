@@ -36,6 +36,7 @@ import { MutationObserverPage } from './pages/MutationObserverPage';
 import { WebStoragePage } from './pages/WebStoragePage';
 import { DOMBoundingRectPage } from './pages/DOMBoundingRectPage';
 import { CSSShowcasePage } from './pages/CSSShowcasePage';
+import { AccessibilityPage } from './pages/AccessibilityPage';
 import { BGPage } from './pages/css/BGPage';
 import { BGGradientPage } from './pages/css/BGGradientPage';
 import { BGImagePage } from './pages/css/BGImagePage';
@@ -85,6 +86,7 @@ function App() {
         <Route path="/alert" title="Alert" element={<AlertPage />} />
         <Route path="/image-preload" title="Image Preload" element={<ImagePreloadPage />} />
         <Route path="/theme-toggle" title="Theme Toggle" element={<ThemeTogglePage />} />
+        <Route path="/accessibility" title="Accessibility" element={<AccessibilityPage />} />
         <Route path="/gesture" title="Gesture Detection" element={<GesturePage />} />
         
         {/* Advanced Web APIs */}

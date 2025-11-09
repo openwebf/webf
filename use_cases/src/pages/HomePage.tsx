@@ -99,6 +99,20 @@ export const HomePage: React.FC = () => {
             </div>
           </div>
 
+          {/* Accessibility */}
+          <div className={styles.sectionTitle}>Accessibility</div>
+          <div className={`${styles.componentBlock} ${styles.categoryBlock}`}>
+            <div className={styles.componentItem} onClick={() => navigateTo('/accessibility')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>Accessibility Toolkit</div>
+                <div className={styles.itemDesc}>
+                  Skip links, keyboard navigation, live announcements, and inclusive forms in action.
+                </div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
+          </div>
+
           {/* Native UI Components Category */}
           <div className={styles.sectionTitle}>Native UI Components</div>
           <div className={`${styles.componentBlock} ${styles.categoryBlock}`}>
