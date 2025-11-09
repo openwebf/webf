@@ -18,6 +18,8 @@ class WebFAccessibility {
   /// Apply semantics for a generic WebF render object based on its DOM element.
   static void applyToRenderBoxModel(RenderBoxModel renderObject, SemanticsConfiguration config) {
     final dom.Element element = renderObject.renderStyle.target;
+    final CSSRenderStyle rs = renderObject.renderStyle as CSSRenderStyle;
+
     // Skip if this element hosts a Flutter widget subtree; let child semantics speak.
     if (element.isWidgetElement) {
       config.isSemanticBoundary = false;
@@ -26,6 +28,17 @@ class WebFAccessibility {
 
     // Set a text direction so labeled nodes satisfy Semantics assertions.
     config.textDirection = renderObject.renderStyle.direction;
+
+    // CSS-driven visibility → hide from a11y tree
+    // - display:none
+    // - visibility:hidden
+    // - content-visibility:hidden
+    if (rs.display == CSSDisplay.none ||
+        rs.visibility == Visibility.hidden ||
+        rs.contentVisibility == ContentVisibility.hidden) {
+      config.isHidden = true;
+      return;
+    }
 
     // aria-hidden → hide node from a11y tree
     final String? ariaHidden = element.getAttribute('aria-hidden');
@@ -38,27 +51,14 @@ class WebFAccessibility {
     final String? explicitRole = element.getAttribute('role')?.toLowerCase();
     final _Role role = _inferRole(element, explicitRole);
 
-    // Compute accessible name.
+    // Compute accessible name and description.
     final String? name = computeAccessibleName(element);
+    final String? hint = computeAccessibleDescription(element);
     if (name != null && name.trim().isNotEmpty) {
       config.label = name.trim();
     }
-
-    // Hide non-interactive nodes that only serve as aria-labelledby sources to
-    // avoid duplicate announcements when referenced by another element.
-    if (!_isFocusable(element) && role == _Role.none && _isReferencedByAriaLabelledby(element)) {
-      config.isHidden = true;
-      return;
-    }
-
-    // Hide zero-sized, non-focusable elements that only convey an accessible
-    // name visually. Prevents empty targets from announcing via aria-labelledby.
-    if (!_isFocusable(element) &&
-        role == _Role.none &&
-        renderObject.hasSize &&
-        (renderObject.size.isEmpty || renderObject.size.width == 0.0 && renderObject.size.height == 0.0)) {
-      config.isHidden = true;
-      return;
+    if (hint != null && hint.trim().isNotEmpty) {
+      config.hint = hint.trim();
     }
 
     // Disabled/enabled
@@ -82,11 +82,6 @@ class WebFAccessibility {
           final String v = ariaCurrent.trim().toLowerCase();
           config.value = (v == 'page') ? 'Current page' : 'Current';
         }
-        // Treat each link as a separate semantics node to avoid sibling merging
-        // in inline navigation contexts.
-        config.isSemanticBoundary = true;
-        // Don't merge child semantics into link; use the link's own label.
-        config.explicitChildNodes = true;
         break;
       case _Role.tab:
         final String? ariaSel = element.getAttribute('aria-selected');
@@ -137,7 +132,15 @@ class WebFAccessibility {
       config.isFocusable = true;
     }
 
-    // Do not force semantic boundaries here; rely on Flutter's default behavior.
+    // Expose standalone static text nodes (like DIVs with text) as separate
+    // semantics nodes so they are read in traversal even when adjacent to
+    // interactive controls. This mirrors how browsers expose text nodes.
+    // Only do this for non-interactive roles with a computed name.
+    bool boundary = false;
+    if (!focusable && role == _Role.none && (config.label != null && config.label!.isNotEmpty)) {
+      boundary = true;
+    }
+    config.isSemanticBoundary = boundary;
   }
 
   /// Compute accessible name for an element.
@@ -305,16 +308,8 @@ class WebFAccessibility {
     final String tag = element.tagName.toUpperCase();
     if (tag == BUTTON) return _Role.button;
     if (tag == ANCHOR) {
-      // Treat either attribute or IDL property href as indicating a link.
-      String hrefVal = element.getAttribute('href') ?? '';
-      try {
-        // HTMLAnchorElement.href returns resolved URL when set via IDL.
-        if (element is HTMLAnchorElement) {
-          final String propHref = (element as HTMLAnchorElement).href;
-          if (hrefVal.isEmpty && propHref.isNotEmpty) hrefVal = propHref;
-        }
-      } catch (_) {}
-      if (hrefVal.isNotEmpty) return _Role.link;
+      final String? href = element.getAttribute('href');
+      if (href != null && href.isNotEmpty) return _Role.link;
     }
     if (tag == IMAGE) return _Role.image;
     if (tag == INPUT) {
@@ -399,22 +394,6 @@ class WebFAccessibility {
 
     walk(node);
     return buffer.toString().trim();
-  }
-
-  static bool _isReferencedByAriaLabelledby(dom.Element element) {
-    final String? id = element.id;
-    if (id == null || id.isEmpty) return false;
-    try {
-      final result = element.ownerDocument.querySelectorAll(['[aria-labelledby~="$id"]']);
-      if (result is List) {
-        for (final dynamic node in result) {
-          if (node is dom.Element && !identical(node, element)) {
-            return true;
-          }
-        }
-      }
-    } catch (_) {}
-    return false;
   }
 }
 
