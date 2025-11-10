@@ -2,33 +2,61 @@
 
 This is a React implementation of the WebF use cases demo.
 
+## Prerequisites
+
+You need the WebF Go app to run these apps.
+
+**iOS**
+
+- Download from the App Store: [WebF Go](https://apps.apple.com/us/app/webf-go/id6754608818)
+
 ## Features
 
-The demo includes the following use cases:
+The demo includes the following feature areas (reflecting the current implementation). Open the Feature Catalog in the app to explore each:
 
-### 1. Homepage
-- Navigation menu with links to different demos
-- Custom ListView component integration
+- DOM Core
+  - DOM measurements (getBoundingClientRect), MutationObserver
+  - Events (mouse/touch/scroll/CustomEvent), Geometry (DOMMatrix/DOMPoint)
+  - Offsets (offsetWidth/Height/Top/Left), DOMTokenList (classList)
+  - HTML API (innerHTML vs textContent), Style API (element.style)
 
-### 2. Show Case Page
-- Showcase/Highlight component demonstrations
-- Multiple examples of tooltip positioning
-- Interactive and non-interactive background controls
-- Multi-step guided tours
-- Button-controlled showcases
+- CSS
+  - Layout: Flexbox, Display/Flow/Box, Positioned layout
+  - Visuals: Backgrounds (image/gradient/radial), Border/Radius, Box Shadow
+  - Effects: Transforms, Transitions, Animations (Keyframes), Clip Path, Filter Effects
+  - Text & sizing: Inline formatting, Sizing, Selectors, Values & Units
+  - CSS showcase and animation demos
 
-### 3. ListView Page
-- Custom ListView with refresh and load more functionality
-- Cupertino style refresh indicators
-- Material design refresh indicators
-- Custom refresh indicator styles
+- Tailwind CSS
+  - Tailwind showcase and tokenized design system
 
-### 4. Form Page
-- Form validation demonstrations
-- Multiple input types (text, email, number, url, password)
-- Layout switching (vertical/horizontal)
-- Real-time validation with custom rules
-- Form submission and reset functionality
+- Networking
+  - Fetch / XHR / FormData, WebSocket echo
+
+- Storage
+  - Web Storage (localStorage / sessionStorage), Cookies
+
+- URL & Encoding
+  - URL, Base64, TextEncoder/TextDecoder
+
+- SVG & Media
+  - SVG via <img>, Image preload, Video player, Image basics
+
+- Modules & Ecosystem
+  - Routing & navigation, Deep links
+  - Flutter interaction, Native interaction
+
+- UI Components & Interactions
+  - Showcase/highlight tooltips, Action sheets, Context menu, Modal popup, Loading, Alerts, Gestures
+
+- Lists & Tables
+  - ListView with refresh/load more, Tables
+
+- Forms
+  - Basic form, Basic form elements, Input sizing, Advanced forms & validation
+
+- Typography & Theme
+  - Typography, FontFace, Responsive layouts, Theme toggle
 
 ## Project Structure
 
@@ -46,26 +74,6 @@ src/
 ├── App.tsx                     # Main application component
 └── index.tsx                   # Application entry point
 ```
-
-## Key Differences from Vue Version
-
-1. **Component Creation**: Uses a `createComponent` utility to wrap WebF custom elements for React
-2. **State Management**: Uses React hooks (`useState`, `useRef`) instead of Vue's reactive data
-3. **Event Handling**: Converts Vue's `@event` syntax to React's `onEvent` props
-4. **Refs**: Uses `useRef` instead of Vue's `$refs` for accessing component instances
-5. **Lifecycle**: Uses `useEffect` instead of Vue lifecycle methods
-6. **CSS Modules**: Uses CSS Modules (`.module.css`) to prevent styling conflicts between components
-
-## WebF Components Used
-
-- `webf-router-link` - Routing navigation
-- `webf-listview` - Custom scrollable lists
-- `flutter-cupertino-button` - iOS-style buttons
-- `flutter-showcase-view` - Highlight/tooltip components
-- `flutter-form` - Form validation wrapper
-- `flutter-form-field` - Individual form fields
-- `flutter-cupertino-switch` - iOS-style toggle switches
-- `flutter-cupertino-list-section` - List section headers
 
 ## Getting Started
 
@@ -102,67 +110,3 @@ src/
    # with yarn
    yarn preview
    ```
-
-## Navigation
-
-The app uses WebF's routing system with the following routes:
-- `/` - Homepage with navigation menu
-- `/show_case` - Showcase component demonstrations
-- `/listview` - ListView examples
-- `/form` - Form validation examples
-
-## Technical Notes
-
-- This project uses TypeScript for type safety
-- WebF custom elements are wrapped using the `createComponent` utility
-- Event handling is converted from Vue's event system to React's synthetic events
-- **CSS Modules** are used to prevent styling conflicts between components
-- Tailwind CSS v3 powers styles going forward (Vite + PostCSS). HomePage migrated as a reference implementation.
-- Tailwind color tokens mapped to CSS variables (use `text-fg-primary`, `text-fg-secondary`, `bg-surface`, `bg-surface-secondary`, `divide-line`, etc.)
-
-## Tailwind Design Tokens
-
-- Foreground (text)
-  - `text-fg` → `var(--font-color)`
-  - `text-fg-primary` → `var(--font-color-primary)`
-  - `text-fg-secondary` → `var(--font-color-secondary)`
-- Surface (backgrounds)
-  - `bg-surface` → `var(--background-primary)`
-  - `bg-surface-secondary` → `var(--background-secondary)`
-  - `bg-surface-tertiary` → `var(--background-tertiary)`
-- Lines (borders/dividers)
-  - `border-line` / `divide-line` → `var(--border-color)`
-  - `border-line-primary` → `var(--border-primary)`
-  - `border-line-secondary` → `var(--border-secondary)`
-- All styling uses CSS custom properties for theming support
-- **Enhanced Event Handling**: Improved `createComponent` utility to properly handle WebF custom element events
-- The project maintains the same functionality as the original Vue version
-
-## CSS Modules Implementation
-
-This project uses CSS Modules to avoid styling conflicts:
-
-### Benefits
-- **Scoped Styles**: Each component's styles are automatically scoped
-- **No Naming Conflicts**: Multiple components can use same class names without conflicts
-- **Better Maintainability**: Easy to identify which styles belong to which component
-- **Type Safety**: TypeScript can provide autocomplete for CSS class names
-
-### Usage Pattern
-```tsx
-// Import styles as an object
-import styles from './ComponentName.module.css';
-
-// Use styles with object notation
-<div className={styles.container}>
-  <h1 className={styles.title}>Title</h1>
-  <button className={styles.button}>Click me</button>
-</div>
-```
-
-### File Structure
-- `HomePage.module.css` - removed; HomePage now uses Tailwind classes
-- `ShowCasePage.module.css` - ShowCasePage component styles
-- `ListviewPage.module.css` - ListviewPage component styles
-- `FormPage.module.css` - FormPage component styles
-- `CommonStyles.module.css` - Shared component styles (example)
