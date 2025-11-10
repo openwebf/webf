@@ -10,9 +10,10 @@
 #include <condition_variable>
 #include <functional>
 #include <memory>
-#include <set>
+#include <unordered_set>
 #include <unordered_map>
 #include <mutex>
+#include <atomic>
 
 #include "logging.h"
 #include "looper.h"
@@ -94,29 +95,36 @@ class Dispatcher {
         std::make_shared<ConcreteSyncTask<Func, Args...>>(std::forward<Func>(func), std::forward<Args>(args)...);
     auto thread_group_id = static_cast<int32_t>(js_context_id);
     auto& looper = js_threads_[thread_group_id];
-    const DartWork work = [task, &looper](bool cancel) {
+    // Guard against double invocation from both Dispose() cancellation and Dart callback.
+    auto executed = std::make_shared<std::atomic<bool>>(false);
+    const DartWork work = [task, &looper, executed](bool cancel) {
 #if ENABLE_LOG
       WEBF_LOG(WARN) << " BLOCKED THREAD " << std::this_thread::get_id() << " HAD BEEN RESUMED"
                      << " is_cancel: " << cancel;
 #endif
-
+      // Only execute once even if invoked multiple times.
+      if (executed->exchange(true)) {
+        return;
+      }
       looper->is_blocked_ = false;
       (*task)(cancel);
     };
 
     DartWork* work_ptr = new DartWork(work);
-    {
-      std::lock_guard<std::mutex> lock(pending_dart_tasks_mutex_);
-      pending_dart_tasks_.insert(work_ptr);
-    }
-
     bool success = NotifyDart(work_ptr, true);
     if (!success) {
       {
         std::lock_guard<std::mutex> lock(pending_dart_tasks_mutex_);
+        // Not inserted on failure path; ensure no stale entry remains.
         pending_dart_tasks_.erase(work_ptr);
       }
       return std::invoke(std::forward<Func>(func), true, std::forward<Args>(args)...);
+    }
+
+    // Only track pending tasks that were successfully posted to Dart.
+    {
+      std::lock_guard<std::mutex> lock(pending_dart_tasks_mutex_);
+      pending_dart_tasks_.insert(work_ptr);
     }
 
     looper->is_blocked_ = true;
@@ -196,7 +204,7 @@ class Dispatcher {
  private:
   Dart_Port dart_port_;
   std::unordered_map<int32_t, std::unique_ptr<Looper>> js_threads_;
-  std::set<DartWork*> pending_dart_tasks_;
+  std::unordered_set<DartWork*> pending_dart_tasks_;
   std::mutex pending_dart_tasks_mutex_;
   friend Looper;
 };

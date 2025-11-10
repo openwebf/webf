@@ -90,6 +90,14 @@ void Dispatcher::Dispose(webf::multi_threading::Callback callback) {
 #endif
   }
 
+  // After forcing completion, clean them from the pending set to avoid later erasure races.
+  {
+    std::lock_guard<std::mutex> lock(pending_dart_tasks_mutex_);
+    for (auto* t : pending_tasks) {
+      pending_dart_tasks_.erase(t);
+    }
+  }
+
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dispatcher]: BEGIN FINALIZE ALL JS THREAD";
 #endif
