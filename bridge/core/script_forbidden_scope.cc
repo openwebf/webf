@@ -6,6 +6,6 @@
 
 namespace webf {
 
-unsigned ScriptForbiddenScope::g_main_thread_counter_ = 0;
+thread_local unsigned ScriptForbiddenScope::g_main_thread_counter_ = 0;
 
 }

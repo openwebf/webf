@@ -26,7 +26,8 @@ class EventDispatchForbiddenScope {
   static bool IsEventDispatchForbidden() { return count_; }
 
  private:
-  static unsigned count_;
+  // Per-thread counter to isolate nested scopes across JS workers.
+  static thread_local unsigned count_;
 };
 
 }  // namespace webf

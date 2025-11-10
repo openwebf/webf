@@ -29,7 +29,8 @@ class ScriptForbiddenScope final {
     --g_main_thread_counter_;
   }
 
-  static unsigned g_main_thread_counter_;
+  // Maintain counter per-thread to avoid cross-thread interference.
+  static thread_local unsigned g_main_thread_counter_;
 };
 
 }  // namespace webf

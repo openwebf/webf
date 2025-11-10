@@ -6,6 +6,6 @@
 
 namespace webf {
 
-unsigned EventDispatchForbiddenScope::count_ = 0;
+thread_local unsigned EventDispatchForbiddenScope::count_ = 0;
 
 }
