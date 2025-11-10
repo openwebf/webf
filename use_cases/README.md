@@ -1,6 +1,6 @@
 # WebF React Use Cases
 
-This is a React implementation of the WebF use cases demo, converted from the original Vue.js version. It demonstrates various WebF components and functionality using React instead of Vue.
+This is a React implementation of the WebF use cases demo.
 
 ## Features
 

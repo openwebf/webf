@@ -136,20 +136,20 @@ export const TailwindShowcasePage: React.FC = () => {
           </section>
 
           {/* Object Fit & Position */}
-          <section className="mb-6 bg-surface-secondary border border-line rounded-xl p-4">
-            <h2 className="text-lg font-medium text-fg-primary mb-3">Object Fit & Position</h2>
-            <div className="flex flex-wrap gap-3">
-              <div className="w-[220px] h-[120px] rounded border border-line bg-white overflow-hidden">
-                <img className="w-full h-full object-cover object-center" src="https://picsum.photos/400/300" alt="cover" />
-              </div>
-              <div className="w-[220px] h-[120px] rounded border border-line bg-white overflow-hidden">
-                <img className="w-full h-full object-contain object-bottom" src="https://picsum.photos/400/300" alt="contain" />
-              </div>
-              <div className="w-[220px] h-[120px] rounded border border-line bg-white overflow-hidden">
-                <img className="w-full h-full object-none object-left-top" src="https://picsum.photos/400/300" alt="none" />
-              </div>
-            </div>
-          </section>
+          {/*<section className="mb-6 bg-surface-secondary border border-line rounded-xl p-4">*/}
+          {/*  <h2 className="text-lg font-medium text-fg-primary mb-3">Object Fit & Position</h2>*/}
+          {/*  <div className="flex flex-wrap gap-3">*/}
+          {/*    <div className="w-[220px] h-[120px] rounded border border-line bg-white overflow-hidden">*/}
+          {/*      <img className="w-full h-full object-cover object-center" src="https://picsum.photos/400/300" alt="cover" />*/}
+          {/*    </div>*/}
+          {/*    <div className="w-[220px] h-[120px] rounded border border-line bg-white overflow-hidden">*/}
+          {/*      <img className="w-full h-full object-contain object-bottom" src="https://picsum.photos/400/300" alt="contain" />*/}
+          {/*    </div>*/}
+          {/*    <div className="w-[220px] h-[120px] rounded border border-line bg-white overflow-hidden">*/}
+          {/*      <img className="w-full h-full object-none object-left-top" src="https://picsum.photos/400/300" alt="none" />*/}
+          {/*    </div>*/}
+          {/*  </div>*/}
+          {/*</section>*/}
 
           {/* Lists & Tables */}
           <section className="mb-6 bg-surface-secondary border border-line rounded-xl p-4">

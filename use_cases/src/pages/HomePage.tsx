@@ -1,6 +1,6 @@
 import React from 'react';
-import { WebFRouter } from '../router';
-import { WebFListView } from '@openwebf/react-core-ui';
+import {WebFRouter} from '../router';
+import {WebFListView} from '@openwebf/react-core-ui';
 
 // Lean, curated homepage with catalog + quick demos
 export const HomePage: React.FC = () => {
@@ -35,12 +35,12 @@ export const HomePage: React.FC = () => {
         </div>
 
         {/* Quick Demos */}
-        <div className="text-lg sm:text-xl md:text-2xl font-semibold text-fg-primary mb-2">Quick Demos</div>
+        <div className="text-lg sm:text-xl md:text-2xl font-semibold text-fg-primary mb-2 bg-red-400">Quick Demos</div>
         <div className="bg-surface-secondary rounded-xl px-3 sm:px-4 md:px-5 mb-8 divide-y divide-line">
-          <Row title="Tailwind CSS" desc="Utility-first UI with WebF tokens." to="/tailwind" />
-          <Row title="CSS Animations" desc="Fade, slide, scale, rotate, bounce, pulse." to="/animation" />
-          <Row title="CSS Showcase" desc="Layouts, effects and advanced styling." to="/css-showcase" />
-          <Row title="Native Interaction" desc="Screenshot, share and platform features." to="/native-interaction" />
+          <Row title="Tailwind CSS" desc="Utility-first UI with WebF tokens." to="/tailwind"/>
+          <Row title="CSS Animations" desc="Fade, slide, scale, rotate, bounce, pulse." to="/animation"/>
+          <Row title="CSS Showcase" desc="Layouts, effects and advanced styling." to="/css-showcase"/>
+          <Row title="Native Interaction" desc="Screenshot, share and platform features." to="/native-interaction"/>
         </div>
       </WebFListView>
     </div>
