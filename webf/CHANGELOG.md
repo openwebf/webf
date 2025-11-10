@@ -1,3 +1,67 @@
+## 0.23.6
+
+Highlights
+
+- Backgrounds and gradients fidelity and layering: robust layered background parsing with per-layer
+  size/position, calc() support, correct paint order, and viewport-fixed/background-origin/clip
+  behavior; improved radial/conic prelude parsing and repeating-linear/-radial normalization.
+- Var-driven transitions and transforms: browser-aligned triggering and coalescing, deep var chain
+  expansion, color interpolation in premultiplied linear sRGB, and correct transform var() resolution
+  with snapshot-based interpolation.
+- New CSS APIs: `aspect-ratio` property and `clamp()` functional notation.
+- Rendering/layout: per-side solid borders with non-uniform border-radius; vertical-align
+  super/sub and <sub>/<sup>; flexbox positive free space suppression for indefinite main-size.
+- Stability and platform: multiple bridge threading guards; iOS bundle packaging fix.
+
+Features
+
+- CSS: support `aspect-ratio` property.
+- CSS Values: implement `clamp()` functional notation for lengths.
+- Rendering: paint per-side solid borders with non-uniform `border-radius`.
+
+Fixed
+
+- Backgrounds/Gradients
+  - Parse `radial-gradient` prelude and position (including `ellipse`, `at <position>`), and include
+    the first color stop when it starts with a color or var(...).
+  - Parse `conic-gradient` `at` position keywords.
+  - Normalize repeating-linear/-radial stops to a single cycle and derive pixel period for shader tiling.
+  - Respect `background-attachment: fixed` (anchor to viewport) and per-layer attachment; maintain layer
+    paint order for images and gradients.
+  - Position via `background-origin` and clip by `background-clip` (e.g., content-box).
+  - Support 3–4 token `background-position`, accept `calc()` tokens per axis, and stabilize computed
+    pixel serialization.
+  - Preserve `background-size: auto` intrinsic size and resolve per-layer size for px-stop normalization.
+  - Resolve layered shorthand without crashing; robust multi-image handling with per-layer position/size.
+
+- Transitions/Vars/Transforms
+  - Defer var-driven style updates to end-of-frame; treat as transitioning only when duration > 0.
+  - Prefer concrete previous values when coalescing; restrict fallback previous to colors only.
+  - Interpolate colors in premultiplied linear sRGB for browser-like midpoints.
+  - Deep var() chain expansion with overrides for correct previous resolution.
+  - Trim `transform()` args before var() parsing; resolve transform var() correctly.
+  - Freeze begin/end transform matrices at transition start and interpolate snapshots; only freeze when
+    no percentage or var() is present so % transforms still track layout.
+
+- Rendering/Layout/Text
+  - Correct background layering order; animate background-position/size during transitions.
+  - Support `<sub>`/`<sup>` and `vertical-align: super|sub`; avoid baseline placeholder crash.
+  - Flexbox: do not synthesize positive free space from automatic min main-size when container main size
+    is indefinite.
+  - Borders: dashed/rounded combinations fixed; remove stale inner reference in non-uniform border logs.
+
+- Selectors
+  - Exclude pseudo-only selectors from matching base elements in grouped selectors; keep `*,::before,::after`
+    working by matching `*` explicitly.
+
+- CSS Values/Size
+  - Support `width: fit-content(<length-percentage>)` via width:auto + max-width mapping.
+
+- Bridge/Platform
+  - Make forbidden-scope counters thread_local to prevent cross-thread imbalance.
+  - Guard `PostToDartSync` from double invocation and harden pending task tracking.
+  - Prevent concurrent mutation crash in `Dispatcher::Dispose`.
+
 ## 0.23.5
 
 Highlights
