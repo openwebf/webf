@@ -15,10 +15,11 @@ const Alignment _DEFAULT_TRANSFORM_ALIGNMENT = Alignment.center;
 class TransformAnimationValue {
   // The parsed transform functions list (e.g., [translateX(100%), ...]).
   dynamic value;
-  // We intentionally avoid freezing a matrix at setup time so percentage-based
-  // transforms (e.g., translateX(100%)) resolve against the current reference
-  // box on each animation tick. This matches browser behavior where transform
-  // percentages track the element’s evolving box during transitions.
+  // Optional snapshot of the computed transform matrix captured at
+  // animation setup time. When present, transition ticks will prefer this
+  // frozen matrix to ensure stable interpolation for values that do not
+  // depend on the evolving reference box (e.g., absolute lengths and
+  // var()-driven resolutions where we want start/end snapshots).
   Matrix4? frozenMatrix;
 
   TransformAnimationValue(this.value, {this.frozenMatrix});
@@ -78,14 +79,47 @@ mixin CSSTransformMixin on RenderStyle {
     return CSSFunction.parseFunction(present);
   }
 
+  // Heuristic: only freeze when the transform does NOT contain percentage- or
+  // var()-based arguments that should track layout changes during the
+  // transition. Percentage-based translations should resolve against the
+  // current reference box on each tick to match browser behavior.
+  static bool _shouldFreeze(List<CSSFunctionalNotation>? notation) {
+    if (notation == null) return false;
+    for (final CSSFunctionalNotation fn in notation) {
+      final String name = fn.name.toLowerCase();
+      // Only translation-related functions can meaningfully use percentages.
+      // translate(), translateX(), translateY(), translate3d() (x/y may be %).
+      final bool isTranslate = name == 'translate' || name == 'translatex' ||
+          name == 'translatey' || name == 'translate3d';
+
+      for (final String rawArg in fn.args) {
+        final String arg = rawArg.trim();
+        // If any argument contains var(), avoid freezing since var() could
+        // resolve to percentage or dynamic lengths tied to layout.
+        if (arg.contains('var(')) return false;
+        // If any argument contains an explicit percentage, avoid freezing to
+        // allow it to follow the changing reference box.
+        if (arg.contains('%') && isTranslate) return false;
+        // calc() may include percentages; take the conservative path and do
+        // not freeze when calc is present in a translate function.
+        if (arg.contains('calc(') && isTranslate) return false;
+      }
+    }
+    return true;
+  }
+
   static TransformAnimationValue resolveTransformForAnimation(String present, RenderStyle renderStyle) {
     final List<CSSFunctionalNotation>? notation = resolveTransform(present);
-    // Freeze a snapshot matrix for this value at setup so the end values used
-    // for interpolation include the current var() substitutions and absolute
-    // lengths (e.g., rem). This avoids cases where var-driven transforms (like
-    // Tailwind’s --tw-translate-y) don’t reflect the intended target during the
-    // transition.
-    final Matrix4? frozen = notation != null ? CSSMatrix.computeTransformMatrix(notation, renderStyle) : null;
+    Matrix4? frozen;
+    if (_shouldFreeze(notation)) {
+      // Snapshot the matrix so absolute-length or variable-driven transforms
+      // interpolate deterministically between start/end.
+      frozen = notation != null ? CSSMatrix.computeTransformMatrix(notation, renderStyle) : null;
+    } else {
+      // Leave unfrozen so percentage-based transforms (or calc/var that may
+      // include percentages) re-resolve against the current reference box.
+      frozen = null;
+    }
     return TransformAnimationValue(notation, frozenMatrix: frozen);
   }
 
