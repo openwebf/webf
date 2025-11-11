@@ -12,6 +12,7 @@ export type HybridRouterChangeEventHandler = EventHandler<HybridRouterChangeEven
 export interface WebFHybridRouterProps {
   path: string;
   title?: string;
+  theme?: 'material' | 'cupertino';
   onScreen?: HybridRouterChangeEventHandler;
   offScreen?: HybridRouterChangeEventHandler;
   children?: ReactNode;
@@ -24,10 +25,10 @@ export interface WebFRouterLinkElement extends WebFElementWithMethods<{}> {}
 const RawWebFRouterLink = createWebFComponent<WebFRouterLinkElement, WebFHybridRouterProps>({
   tagName: 'webf-router-link',
   displayName: 'WebFRouterLink',
-  
+
   // Map props to attributes
-  attributeProps: ['path', 'title'],
-  
+  attributeProps: ['path', 'title', 'theme'],
+
   // Event handlers
   events: [
     {
@@ -54,14 +55,14 @@ export const WebFRouterLink: FC<WebFHybridRouterProps> = function (props: WebFHy
 
   const handleOnScreen = (event: HybridRouterChangeEvent) => {
     enableRender(true);
-    
+
     if (props.onScreen) {
       props.onScreen(event);
     }
   };
 
   return (
-    <RawWebFRouterLink title={props.title} path={props.path} onScreen={handleOnScreen} offScreen={props.offScreen}>
+    <RawWebFRouterLink title={props.title} path={props.path} theme={props.theme} onScreen={handleOnScreen} offScreen={props.offScreen}>
       {isRender ? props.children : null}
     </RawWebFRouterLink>
   );

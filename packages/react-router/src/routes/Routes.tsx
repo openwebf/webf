@@ -179,6 +179,12 @@ export interface RouteObject {
    */
   prerender?: boolean;
   /**
+   * Theme for this route
+   *
+   * @default "material"
+   */
+  theme?: 'material' | 'cupertino';
+  /**
    * Child routes (not supported yet)
    */
   children?: RouteObject[];
@@ -383,6 +389,7 @@ export function useRoutes(routes: RouteObject[]): React.ReactElement | null {
           path={route.path}
           element={route.element}
           prerender={route.prerender}
+          theme={route.theme}
         />
       );
     });

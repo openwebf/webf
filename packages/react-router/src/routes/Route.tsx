@@ -40,6 +40,13 @@ export interface RouteProps {
    * The actual page component to render
    */
   element: React.ReactNode
+  /**
+   * Theme for this route
+   * Controls the visual style of the navigation bar and page
+   *
+   * @default "material"
+   */
+  theme?: 'material' | 'cupertino'
 }
 
 /**
@@ -47,7 +54,7 @@ export interface RouteProps {
  *
  * Responsible for managing page rendering, lifecycle and navigation bar
  */
-export function Route({path, prerender = false, element, title }: RouteProps) {
+export function Route({path, prerender = false, element, title, theme = 'material' }: RouteProps) {
   // Mark whether the page has been rendered
   const [hasRendered, updateRender] = useState(false)
 
@@ -71,7 +78,7 @@ export function Route({path, prerender = false, element, title }: RouteProps) {
   })
 
   return (
-    <WebFRouterLink path={path} title={title} onScreen={handleOnScreen} offScreen={handleOffScreen}>
+    <WebFRouterLink path={path} title={title} theme={theme} onScreen={handleOnScreen} offScreen={handleOffScreen}>
       {shouldRenderChildren ? element : null}
     </WebFRouterLink>
   )
