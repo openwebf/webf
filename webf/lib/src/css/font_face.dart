@@ -286,7 +286,6 @@ class CSSFontFace {
 
   // Load font on demand when it's actually used
   static Future<void> ensureFontLoaded(String fontFamily, FontWeight fontWeight, CSSRenderStyle renderStyle) async {
-    cssLogger.info('[font-face][ensure] request family=$fontFamily weight=${fontWeight.index}');
     String fontKey = _getFontKey(fontFamily, fontWeight);
 
     // Already loaded
@@ -314,7 +313,6 @@ class CSSFontFace {
       return;
     }
     if (descriptor.isLoaded) {
-      cssLogger.fine('[font-face][ensure] already loaded for family=${descriptor.fontFamily} weight=${descriptor.fontWeight.index}');
       return;
     }
 
