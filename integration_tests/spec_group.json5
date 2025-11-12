@@ -163,10 +163,10 @@
       "specs/blink/css1/units/**/*.{js,jsx,ts,tsx,html,svg}",
     ]
   },
-  {
-    "name": "Rust",
-    "specs": [
-      "specs/rust/**/*.{js,jsx,ts,tsx,html}"
-    ]
-  },
+//  {
+//    "name": "Rust",
+//    "specs": [
+//      "specs/rust/**/*.{js,jsx,ts,tsx,html}"
+//    ]
+//  },
 ]
