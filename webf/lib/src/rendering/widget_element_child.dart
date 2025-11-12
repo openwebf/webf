@@ -6,6 +6,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/foundation/flow_logging.dart';
+import 'package:logging/logging.dart' show Level;
 
 /// A widget that passes outer constraints to inner WebF HTMLElement children.
 ///
@@ -58,5 +60,30 @@ class RenderWidgetElementChild extends RenderProxyBox {
       (child as RenderBoxModel).renderStyle.computeContentBoxLogicalHeight();
     }
     super.performLayout();
+
+    FlowLog.log(
+      impl: FlowImpl.flow,
+      feature: FlowFeature.layout,
+      message: () => '[WidgetElementChild] performLayout size=${_fmtS(size)} c=${_fmtC(constraints)} childSize=${child?.hasSize == true ? _fmtS((child as RenderBox).size) : 'n/a'}',
+      level: Level.FINER,
+    );
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    FlowLog.log(
+      impl: FlowImpl.flow,
+      feature: FlowFeature.painting,
+      message: () => '[WidgetElementChild] paint at=${_fmtO(offset)} size=${_fmtS(size)}',
+      level: Level.FINER,
+    );
+    super.paint(context, offset);
   }
 }
+
+// Local helpers for compact logs
+String _fmtC(BoxConstraints c) =>
+    'C[minW=${c.minWidth.toStringAsFixed(1)}, maxW=${c.maxWidth.isFinite ? c.maxWidth.toStringAsFixed(1) : '∞'}, '
+    'minH=${c.minHeight.toStringAsFixed(1)}, maxH=${c.maxHeight.isFinite ? c.maxHeight.toStringAsFixed(1) : '∞'}]';
+String _fmtS(Size s) => 'S(${s.width.toStringAsFixed(1)}×${s.height.toStringAsFixed(1)})';
+String _fmtO(Offset o) => 'O(${o.dx.toStringAsFixed(1)},${o.dy.toStringAsFixed(1)})';

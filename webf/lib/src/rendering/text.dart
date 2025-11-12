@@ -6,7 +6,10 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/foundation/inline_layout_logging.dart';
+import 'package:logging/logging.dart' show Level;
 import 'package:webf/src/rendering/box_model.dart';
 import 'package:webf/src/css/whitespace_processor.dart';
 
@@ -138,6 +141,13 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   }
 
   void _layoutText(BoxConstraints constraints) {
+    InlineLayoutLog.log(
+      impl: InlineImpl.flow,
+      feature: InlineFeature.sizing,
+      message: () =>
+          '[RenderTextBox] layout begin data="${_data.replaceAll('\n', '↵')}" c=${_fmtC(constraints)} paintsSelf=${_paintsSelf}',
+      level: Level.FINER,
+    );
     final span = _buildTextSpan();
     _textPainter ??= TextPainter(text: span, textDirection: renderStyle.direction);
     // Determine effective maxLines based on CSS semantics:
@@ -187,6 +197,17 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
         minWidth: constraints.minWidth.clamp(0.0, double.infinity),
         maxWidth: constraints.hasBoundedWidth ? constraints.maxWidth : double.infinity,
       );
+
+    InlineLayoutLog.log(
+      impl: InlineImpl.flow,
+      feature: InlineFeature.metrics,
+      message: () {
+        final tp = _textPainter!;
+        return '[RenderTextBox] layout end size=${_fmtS(Size(tp.width, tp.height))} '
+            'maxLines=${tp.maxLines?.toString() ?? '∞'} ellipsis=${tp.ellipsis != null} ';
+      },
+      level: Level.FINER,
+    );
   }
 
   @override
@@ -208,11 +229,23 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       final w = _textPainter?.width ?? 0.0;
       final h = _textPainter?.height ?? 0.0;
       size = constraints.constrain(Size(w, h));
+      InlineLayoutLog.log(
+        impl: InlineImpl.flow,
+        feature: InlineFeature.sizing,
+        message: () => '[RenderTextBox] performLayout paintsSelf size=${_fmtS(size)} c=${_fmtC(constraints)}',
+        level: Level.FINER,
+      );
     } else {
       // Layout any child if present (though text nodes typically don't have children)
       if (child != null) {
         child!.layout(constraints, parentUsesSize: true);
       }
+      InlineLayoutLog.log(
+        impl: InlineImpl.flow,
+        feature: InlineFeature.sizing,
+        message: () => '[RenderTextBox] performLayout (IFC) size=${_fmtS(size)} c=${_fmtC(constraints)}',
+        level: Level.FINER,
+      );
     }
   }
 
@@ -237,8 +270,11 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     if (_textPainter == null) return;
     // Apply horizontal alignment manually when painting within a bounded box.
     double dx = 0.0;
-    if (constraints.hasBoundedWidth && _textPainter != null) {
-      final double availableWidth = constraints.maxWidth;
+    if (_textPainter != null) {
+      // Use the actual laid-out box width for alignment decisions.
+      // Using constraints.maxWidth here can cause painting outside the allocated box
+      // when maxWidth >> size.width (e.g., under RenderPositionedBox/Align).
+      final double availableWidth = size.width.isFinite ? size.width : (_textPainter!.width);
       final double lineWidth = _textPainter!.width;
       TextAlign align = renderStyle.textAlign;
       if (align == TextAlign.start) {
@@ -260,7 +296,25 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       }
       if (dx.isNaN || !dx.isFinite) dx = 0.0;
     }
+    InlineLayoutLog.log(
+      impl: InlineImpl.flow,
+      feature: InlineFeature.painting,
+      message: () => '[RenderTextBox] paint at=${_fmtO(offset)} size=${_fmtS(size)} tpSize=${_fmtS(Size(_textPainter!.width, _textPainter!.height))} '
+          'dx=${dx.toStringAsFixed(2)} align=${renderStyle.textAlign} dir=${renderStyle.direction}',
+      level: Level.FINER,
+    );
+
     _textPainter!.paint(context.canvas, offset + Offset(dx, 0));
+
+    // Optional debug painting for text bounds/baseline when enabled globally.
+    if (DebugFlags.debugPaintInlineLayoutEnabled) {
+      final Paint outline = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..color = const Color(0xFF00AAFF);
+      final Rect r = offset & size;
+      context.canvas.drawRect(r, outline);
+    }
   }
 
   // Text node need hittest self to trigger scroll
@@ -372,4 +426,11 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     final tp = _prepareIntrinsicTextPainter(maxWidth: width.isFinite ? width : double.infinity);
     return tp.height;
   }
+
+  // Debug helpers
+  static String _fmtC(BoxConstraints c) =>
+      'C[minW=' + c.minWidth.toStringAsFixed(1) + ', maxW=' + (c.maxWidth.isFinite ? c.maxWidth.toStringAsFixed(1) : '∞') +
+      ', minH=' + c.minHeight.toStringAsFixed(1) + ', maxH=' + (c.maxHeight.isFinite ? c.maxHeight.toStringAsFixed(1) : '∞') + ']';
+  static String _fmtS(Size s) => 'S(' + s.width.toStringAsFixed(1) + '×' + s.height.toStringAsFixed(1) + ')';
+  static String _fmtO(Offset o) => 'O(' + o.dx.toStringAsFixed(1) + ',' + o.dy.toStringAsFixed(1) + ')';
 }
