@@ -1,6 +1,6 @@
 {
   "name": "@openwebf/react-router",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "React Router implementation for WebF using hybrid history API",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
