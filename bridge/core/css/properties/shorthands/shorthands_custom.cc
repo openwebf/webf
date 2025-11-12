@@ -32,11 +32,9 @@ namespace {
 // New animation-* properties are  "reset only":
 // https://github.com/w3c/csswg-drafts/issues/6946#issuecomment-1233190360
 bool IsResetOnlyAnimationProperty(CSSPropertyID property) {
+  // Only timeline and range-* are reset-only. Those properties may not be
+  // enabled in this build; safely return false for all others.
   switch (property) {
-      //    case CSSPropertyID::kAnimationTimeline:
-      //    case CSSPropertyID::kAnimationRangeStart:
-      //    case CSSPropertyID::kAnimationRangeEnd:
-      //      return true;
     default:
       return false;
   }
@@ -47,36 +45,28 @@ std::shared_ptr<const CSSValue> ConsumeAnimationValue(CSSPropertyID property,
                                                       CSSParserTokenStream& stream,
                                                       std::shared_ptr<const CSSParserContext> context,
                                                       bool use_legacy_parsing) {
-  //  switch (property) {
-  //    case CSSPropertyID::kAnimationDelay:
-  //      return css_parsing_utils::ConsumeTime(stream, context, CSSPrimitiveValue::ValueRange::kAll);
-  //    case CSSPropertyID::kAnimationDirection:
-  //      return css_parsing_utils::ConsumeIdent<CSSValueID::kNormal, CSSValueID::kAlternate, CSSValueID::kReverse,
-  //                                             CSSValueID::kAlternateReverse>(stream);
-  //    case CSSPropertyID::kAnimationDuration:
-  //      return css_parsing_utils::ConsumeAnimationDuration(stream, context);
-  //    case CSSPropertyID::kAnimationFillMode:
-  //      return css_parsing_utils::ConsumeIdent<CSSValueID::kNone, CSSValueID::kForwards, CSSValueID::kBackwards,
-  //                                             CSSValueID::kBoth>(stream);
-  //    case CSSPropertyID::kAnimationIterationCount:
-  //      return css_parsing_utils::ConsumeAnimationIterationCount(stream, context);
-  //    case CSSPropertyID::kAnimationName:
-  //      return css_parsing_utils::ConsumeAnimationName(stream, context, use_legacy_parsing);
-  //    case CSSPropertyID::kAnimationPlayState:
-  //      return css_parsing_utils::ConsumeIdent<CSSValueID::kRunning, CSSValueID::kPaused>(stream);
-  //    case CSSPropertyID::kAnimationTimingFunction:
-  //      return css_parsing_utils::ConsumeAnimationTimingFunction(stream, context);
-  //    case CSSPropertyID::kAnimationTimeline:
-  //    case CSSPropertyID::kAnimationRangeStart:
-  //    case CSSPropertyID::kAnimationRangeEnd:
-  //      // New animation-* properties are  "reset only", see
-  //      // IsResetOnlyAnimationProperty.
-  //      return nullptr;
-  //    default:
-  //      NOTREACHED_IN_MIGRATION();
-  //      return nullptr;
-  //  }
-  return nullptr;
+  switch (property) {
+    case CSSPropertyID::kAnimationDelay:
+      return css_parsing_utils::ConsumeTime(stream, context, CSSPrimitiveValue::ValueRange::kAll);
+    case CSSPropertyID::kAnimationDirection:
+      return css_parsing_utils::ConsumeIdent<CSSValueID::kNormal, CSSValueID::kAlternate, CSSValueID::kReverse,
+                                             CSSValueID::kAlternateReverse>(stream);
+    case CSSPropertyID::kAnimationDuration:
+      return css_parsing_utils::ConsumeAnimationDuration(stream, context);
+    case CSSPropertyID::kAnimationFillMode:
+      return css_parsing_utils::ConsumeIdent<CSSValueID::kNone, CSSValueID::kForwards, CSSValueID::kBackwards,
+                                             CSSValueID::kBoth>(stream);
+    case CSSPropertyID::kAnimationIterationCount:
+      return css_parsing_utils::ConsumeAnimationIterationCount(stream, context);
+    case CSSPropertyID::kAnimationName:
+      return css_parsing_utils::ConsumeAnimationName(stream, context, use_legacy_parsing);
+    case CSSPropertyID::kAnimationPlayState:
+      return css_parsing_utils::ConsumeIdent<CSSValueID::kRunning, CSSValueID::kPaused>(stream);
+    case CSSPropertyID::kAnimationTimingFunction:
+      return css_parsing_utils::ConsumeAnimationTimingFunction(stream, context);
+    default:
+      return nullptr;
+  }
 }
 
 bool ParseAnimationShorthand(const StylePropertyShorthand& shorthand,
@@ -184,15 +174,13 @@ bool ParseBackgroundOrMaskPosition(const StylePropertyShorthand& shorthand,
 
 }  // namespace
 //
-// bool Animation::ParseShorthand(
-//    bool important,
-//    CSSParserTokenStream& stream,
-//    std::shared_ptr<const CSSParserContext> context,
-//    const CSSParserLocalContext& local_context,
-//    std::vector<CSSPropertyValue>& properties) const {
-//  return ParseAnimationShorthand(animationShorthand(), important, stream,
-//                                 context, local_context, properties);
-//}
+bool Animation::ParseShorthand(bool important,
+                               CSSParserTokenStream& stream,
+                               std::shared_ptr<const CSSParserContext> context,
+                               const CSSParserLocalContext& local_context,
+                               std::vector<CSSPropertyValue>& properties) const {
+  return ParseAnimationShorthand(animationShorthand(), important, stream, context, local_context, properties);
+}
 //
 // std::shared_ptr<const CSSValue> Animation::CSSValueFromComputedStyleInternal(
 //    const ComputedStyle& style,

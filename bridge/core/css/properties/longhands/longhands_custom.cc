@@ -108,6 +108,99 @@ std::shared_ptr<const CSSValue> AlignSelf::ParseSingleValue(CSSParserTokenStream
   return css_parsing_utils::ConsumeSelfPositionOverflowPosition(stream, css_parsing_utils::IsSelfPositionKeyword);
 }
 
+// Animation longhands parsing and no-op application.
+
+std::shared_ptr<const CSSValue> AnimationDelay::ParseSingleValue(CSSParserTokenStream& stream,
+                                                                 std::shared_ptr<const CSSParserContext> context,
+                                                                 const CSSParserLocalContext&) const {
+  return css_parsing_utils::ConsumeTime(stream, context, CSSPrimitiveValue::ValueRange::kAll);
+}
+
+std::shared_ptr<const CSSValue> AnimationDelay::InitialValue() const { return CSSInitialValue::Create(); }
+void AnimationDelay::ApplyInitial(StyleResolverState&) const {}
+void AnimationDelay::ApplyInherit(StyleResolverState&) const {}
+void AnimationDelay::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
+
+std::shared_ptr<const CSSValue> AnimationDirection::ParseSingleValue(CSSParserTokenStream& stream,
+                                                                     std::shared_ptr<const CSSParserContext>,
+                                                                     const CSSParserLocalContext&) const {
+  return css_parsing_utils::ConsumeIdent<CSSValueID::kNormal, CSSValueID::kAlternate, CSSValueID::kReverse,
+                                         CSSValueID::kAlternateReverse>(stream);
+}
+
+std::shared_ptr<const CSSValue> AnimationDirection::InitialValue() const { return CSSInitialValue::Create(); }
+void AnimationDirection::ApplyInitial(StyleResolverState&) const {}
+void AnimationDirection::ApplyInherit(StyleResolverState&) const {}
+void AnimationDirection::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
+
+std::shared_ptr<const CSSValue> AnimationDuration::ParseSingleValue(CSSParserTokenStream& stream,
+                                                                    std::shared_ptr<const CSSParserContext> context,
+                                                                    const CSSParserLocalContext&) const {
+  return css_parsing_utils::ConsumeAnimationDuration(stream, context);
+}
+
+std::shared_ptr<const CSSValue> AnimationDuration::InitialValue() const { return CSSInitialValue::Create(); }
+void AnimationDuration::ApplyInitial(StyleResolverState&) const {}
+void AnimationDuration::ApplyInherit(StyleResolverState&) const {}
+void AnimationDuration::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
+
+std::shared_ptr<const CSSValue> AnimationFillMode::ParseSingleValue(CSSParserTokenStream& stream,
+                                                                    std::shared_ptr<const CSSParserContext>,
+                                                                    const CSSParserLocalContext&) const {
+  return css_parsing_utils::ConsumeIdent<CSSValueID::kNone, CSSValueID::kForwards, CSSValueID::kBackwards,
+                                         CSSValueID::kBoth>(stream);
+}
+
+std::shared_ptr<const CSSValue> AnimationFillMode::InitialValue() const { return CSSInitialValue::Create(); }
+void AnimationFillMode::ApplyInitial(StyleResolverState&) const {}
+void AnimationFillMode::ApplyInherit(StyleResolverState&) const {}
+void AnimationFillMode::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
+
+std::shared_ptr<const CSSValue> AnimationIterationCount::ParseSingleValue(CSSParserTokenStream& stream,
+                                                                          std::shared_ptr<const CSSParserContext> context,
+                                                                          const CSSParserLocalContext&) const {
+  return css_parsing_utils::ConsumeAnimationIterationCount(stream, context);
+}
+
+std::shared_ptr<const CSSValue> AnimationIterationCount::InitialValue() const { return CSSInitialValue::Create(); }
+void AnimationIterationCount::ApplyInitial(StyleResolverState&) const {}
+void AnimationIterationCount::ApplyInherit(StyleResolverState&) const {}
+void AnimationIterationCount::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
+
+std::shared_ptr<const CSSValue> AnimationName::ParseSingleValue(CSSParserTokenStream& stream,
+                                                                std::shared_ptr<const CSSParserContext> context,
+                                                                const CSSParserLocalContext&) const {
+  // Allow quoted names for legacy compatibility.
+  return css_parsing_utils::ConsumeAnimationName(stream, context, /*allow_quoted_name=*/true);
+}
+
+std::shared_ptr<const CSSValue> AnimationName::InitialValue() const { return CSSInitialValue::Create(); }
+void AnimationName::ApplyInitial(StyleResolverState&) const {}
+void AnimationName::ApplyInherit(StyleResolverState&) const {}
+void AnimationName::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
+
+std::shared_ptr<const CSSValue> AnimationPlayState::ParseSingleValue(CSSParserTokenStream& stream,
+                                                                     std::shared_ptr<const CSSParserContext>,
+                                                                     const CSSParserLocalContext&) const {
+  return css_parsing_utils::ConsumeIdent<CSSValueID::kRunning, CSSValueID::kPaused>(stream);
+}
+
+std::shared_ptr<const CSSValue> AnimationPlayState::InitialValue() const { return CSSInitialValue::Create(); }
+void AnimationPlayState::ApplyInitial(StyleResolverState&) const {}
+void AnimationPlayState::ApplyInherit(StyleResolverState&) const {}
+void AnimationPlayState::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
+
+std::shared_ptr<const CSSValue> AnimationTimingFunction::ParseSingleValue(CSSParserTokenStream& stream,
+                                                                          std::shared_ptr<const CSSParserContext> context,
+                                                                          const CSSParserLocalContext&) const {
+  return css_parsing_utils::ConsumeAnimationTimingFunction(stream, context);
+}
+
+std::shared_ptr<const CSSValue> AnimationTimingFunction::InitialValue() const { return CSSInitialValue::Create(); }
+void AnimationTimingFunction::ApplyInitial(StyleResolverState&) const {}
+void AnimationTimingFunction::ApplyInherit(StyleResolverState&) const {}
+void AnimationTimingFunction::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
+
 // anchor-name: none | <dashed-ident>#
 std::shared_ptr<const CSSValue> AnchorName::ParseSingleValue(CSSParserTokenStream& stream,
                                                              std::shared_ptr<const CSSParserContext> context,
