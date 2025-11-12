@@ -43,7 +43,7 @@ class FontFaceDescriptor {
   final double contextId;
   final String? baseHref;
   // Optional owner sheet identifier from bridge (for unregister on sheet removal)
-  final String? sheetId;
+  final int? sheetId;
   bool isLoaded = false;
 
   FontFaceDescriptor({
@@ -61,7 +61,7 @@ class CSSFontFace {
   // Store font face descriptors indexed by font family
   static final Map<String, List<FontFaceDescriptor>> _fontFaceRegistry = {};
   // Track descriptors by stylesheet for unregister
-  static final Map<String, List<FontFaceDescriptor>> _sheetRegistry = {};
+  static final Map<int, List<FontFaceDescriptor>> _sheetRegistry = {};
 
   // Cache loaded font combinations
   static final Set<String> _loadedFonts = {};
@@ -152,7 +152,7 @@ class CSSFontFace {
   // The src string may contain one or more url()/local()/data: entries, we will
   // pick the first supported source similar to resolveFontFaceRules.
   static void registerFromBridge({
-    required String sheetId,
+    required int sheetId,
     required String fontFamily,
     required String src,
     required String? fontWeight,
@@ -216,7 +216,7 @@ class CSSFontFace {
   }
 
   // Bridge API: unregister all font-faces associated with a stylesheet id.
-  static void unregisterFromSheet(String sheetId) {
+  static void unregisterFromSheet(int sheetId) {
     final list = _sheetRegistry.remove(sheetId);
     if (list == null) return;
     for (final desc in list) {

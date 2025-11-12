@@ -111,13 +111,13 @@ typedef void (*FetchImportCSSContent)(void* callback_context,
 
 // FontFace registration (Bridge -> Dart)
 typedef void (*RegisterFontFace)(double context_id,
-                                 SharedNativeString* sheet_id,
+                                 int64_t sheet_id,
                                  SharedNativeString* font_family,
                                  SharedNativeString* src,
                                  SharedNativeString* font_weight,
                                  SharedNativeString* font_style,
                                  SharedNativeString* base_href);
-typedef void (*UnregisterFontFace)(double context_id, SharedNativeString* sheet_id);
+typedef void (*UnregisterFontFace)(double context_id, int64_t sheet_id);
 
 using MatchImageSnapshotCallback = void (*)(void* callback_context, double context_id, int8_t, char* errmsg);
 using MatchImageSnapshot = void (*)(void* callback_context,
@@ -252,13 +252,24 @@ class DartMethodPointer {
   // Bridge -> Dart: font-face registration
   void registerFontFace(bool is_dedicated,
                         double context_id,
-                        SharedNativeString* sheet_id,
+                        int64_t sheet_id,
                         SharedNativeString* font_family,
                         SharedNativeString* src,
                         SharedNativeString* font_weight,
                         SharedNativeString* font_style,
                         SharedNativeString* base_href);
-  void unregisterFontFace(bool is_dedicated, double context_id, SharedNativeString* sheet_id);
+  void unregisterFontFace(bool is_dedicated, double context_id, int64_t sheet_id);
+
+  // Bridge -> Dart: @keyframes registration
+  // Sends full serialized @keyframes text along with its name. The `is_prefixed`
+  // flag indicates if the rule was declared as @-webkit-keyframes.
+  void registerKeyframes(bool is_dedicated,
+                         double context_id,
+                         int64_t sheet_id,
+                         SharedNativeString* name,
+                         SharedNativeString* css_text,
+                         int32_t is_prefixed);
+  void unregisterKeyframes(bool is_dedicated, double context_id, int64_t sheet_id);
 
   void onJSError(bool is_dedicated, double context_id, const char*);
   void onJSLog(bool is_dedicated, double context_id, int32_t level, const char*);
