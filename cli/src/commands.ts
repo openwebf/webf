@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { dartGen, reactGen, vueGen } from './generator';
+import { glob } from 'glob';
 import _ from 'lodash';
 import inquirer from 'inquirer';
 import yaml from 'yaml';
@@ -220,6 +221,53 @@ function readFlutterPackageMetadata(packagePath: string): FlutterPackageMetadata
   }
 }
 
+// Copy markdown docs that match .d.ts basenames from source to the built dist folder
+async function copyMarkdownDocsToDist(params: {
+  sourceRoot: string;
+  distRoot: string;
+  exclude?: string[];
+}): Promise<{ copied: number; skipped: number }> {
+  const { sourceRoot, distRoot, exclude } = params;
+
+  // Ensure dist exists
+  if (!fs.existsSync(distRoot)) {
+    return { copied: 0, skipped: 0 };
+  }
+
+  // Default ignore patterns similar to generator
+  const defaultIgnore = ['**/node_modules/**', '**/dist/**', '**/build/**', '**/example/**'];
+  const ignore = exclude && exclude.length ? [...defaultIgnore, ...exclude] : defaultIgnore;
+
+  // Find all .d.ts files and check for sibling .md files
+  const dtsFiles = glob.globSync('**/*.d.ts', { cwd: sourceRoot, ignore });
+  let copied = 0;
+  let skipped = 0;
+
+  for (const relDts of dtsFiles) {
+    if (path.basename(relDts) === 'global.d.ts') {
+      continue;
+    }
+
+    const relMd = relDts.replace(/\.d\.ts$/i, '.md');
+    const absMd = path.join(sourceRoot, relMd);
+    if (!fs.existsSync(absMd)) {
+      skipped++;
+      continue;
+    }
+
+    // Copy into dist preserving relative path
+    const destPath = path.join(distRoot, relMd);
+    const destDir = path.dirname(destPath);
+    if (!fs.existsSync(destDir)) {
+      fs.mkdirSync(destDir, { recursive: true });
+    }
+    fs.copyFileSync(absMd, destPath);
+    copied++;
+  }
+
+  return { copied, skipped };
+}
+
 function validateTypeScriptEnvironment(projectPath: string): { isValid: boolean; errors: string[] } {
   const errors: string[] = [];
   
@@ -310,7 +358,7 @@ function createCommand(target: string, options: { framework: string; packageName
       // Leave merge to the codegen step which appends exports safely
     }
 
-    spawnSync(NPM, ['install', '--omit=peer'], {
+    spawnSync(NPM, ['install'], {
       cwd: target,
       stdio: 'inherit'
     });
@@ -602,7 +650,9 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
       target: resolvedDistPath,
       command,
       exclude: options.exclude,
-      packageName: reactPackageName,
+      // Prefer CLI-provided packageName (validated/sanitized above),
+      // fallback to detected name from package.json
+      packageName: packageName || reactPackageName,
     });
   } else if (framework === 'vue') {
     await vueGen({
@@ -619,6 +669,18 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
   if (framework) {
     try {
       await buildPackage(resolvedDistPath);
+      // After building React package, copy any matching .md docs next to built JS files
+      if (framework === 'react' && options.flutterPackageSrc) {
+        const distOut = path.join(resolvedDistPath, 'dist');
+        const { copied } = await copyMarkdownDocsToDist({
+          sourceRoot: options.flutterPackageSrc,
+          distRoot: distOut,
+          exclude: options.exclude,
+        });
+        if (copied > 0) {
+          console.log(`📄 Copied ${copied} markdown docs to dist`);
+        }
+      }
     } catch (error) {
       console.error('\nWarning: Build failed:', error);
       // Don't exit here since generation was successful

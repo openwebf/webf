@@ -225,13 +225,8 @@ export async function dartGen({ source, target, command, exclude }: GenerateOpti
     }
   });
   
-  // Generate index.d.ts file with references to all .d.ts files
-  const indexDtsContent = generateTypeScriptIndex(blobs, normalizedTarget);
-  const indexDtsPath = path.join(normalizedTarget, 'index.d.ts');
-  if (writeFileIfChanged(indexDtsPath, indexDtsContent)) {
-    filesChanged++;
-    debug('Generated: index.d.ts');
-  }
+  // Note: We no longer generate a root index.d.ts for Dart codegen
+  // as it is not necessary for the codegen workflow.
   
   timeEnd('dartGen');
   success(`Dart code generation completed. ${filesChanged} files changed.`);

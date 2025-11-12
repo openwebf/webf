@@ -148,10 +148,6 @@ Publishing workflow:
 When running `dartGen`:
 - Dart binding files are generated with `_bindings_generated.dart` suffix
 - Original `.d.ts` files are copied to the output directory maintaining their structure
-- An `index.d.ts` file is generated with:
-  - TypeScript triple-slash references to all `.d.ts` files
-  - ES module exports for all type definitions
-  - Package metadata from `pubspec.yaml` in documentation comments
 - Directory structure from source is preserved in the output
 
 ## Development Workflow
