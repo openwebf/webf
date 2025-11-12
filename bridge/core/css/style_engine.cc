@@ -270,12 +270,10 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text) {
   if (style_sheet && element.GetDocument().GetExecutingContext() &&
       element.GetDocument().GetExecutingContext()->dartMethodPtr()) {
     ExecutingContext* exe_ctx = element.GetDocument().GetExecutingContext();
-    std::string sheet_id = std::to_string(reinterpret_cast<uintptr_t>(style_sheet));
-    auto sheetIdNative = stringToNativeString(sheet_id).release();
+    int64_t sheet_id_val = std::bit_cast<int64_t>(style_sheet);
     auto contents = style_sheet->Contents();
     std::string base_href = contents->BaseURL().GetString();
-    auto baseHrefNative = stringToNativeString(base_href).release();
-    WEBF_LOG(INFO) << "[font-face][CreateSheet] begin sheetId=" << sheet_id << " baseHref=" << base_href;
+    WEBF_LOG(INFO) << "[font-face][CreateSheet] begin sheetId=" << sheet_id_val << " baseHref=" << base_href;
 
     const auto& top = contents->ChildRules();
     std::vector<std::shared_ptr<const StyleRuleBase>> childVec;
@@ -299,11 +297,12 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text) {
             std::string srcUtf8 = src.ToUTF8String();
             if (srcUtf8.size() > 160) srcUtf8 = srcUtf8.substr(0, 160) + "…";
             WEBF_LOG(INFO) << "[font-face][found] family='" << familyUtf8 << "' src='" << srcUtf8 << "'";
+            auto baseHrefNative = stringToNativeString(base_href).release();
             auto familyNative = stringToNativeString(familyUtf8).release();
             auto srcNative = stringToNativeString(src.ToUTF8String()).release();
             auto weightNative = stringToNativeString(weight.ToUTF8String()).release();
             auto styleNative = stringToNativeString(style.ToUTF8String()).release();
-            exe_ctx->dartMethodPtr()->registerFontFace(exe_ctx->isDedicated(), exe_ctx->contextId(), sheetIdNative,
+            exe_ctx->dartMethodPtr()->registerFontFace(exe_ctx->isDedicated(), exe_ctx->contextId(), sheet_id_val,
                                                        familyNative, srcNative, weightNative, styleNative, baseHrefNative);
             WEBF_LOG(INFO) << "[font-face][register] dispatched to Dart (ctx=" << exe_ctx->contextId() << ")"
                            << " family='" << familyUtf8 << "'";
@@ -371,11 +370,9 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text, co
   if (style_sheet && element.GetDocument().GetExecutingContext() &&
       element.GetDocument().GetExecutingContext()->dartMethodPtr()) {
     ExecutingContext* exe_ctx = element.GetDocument().GetExecutingContext();
-    std::string sheet_id = std::to_string(reinterpret_cast<uintptr_t>(style_sheet));
-    auto sheetIdNative = stringToNativeString(sheet_id).release();
+    int64_t sheet_id_val = std::bit_cast<int64_t>(style_sheet);
     auto contents = style_sheet->Contents();
     std::string baseHrefStr = base_href.ToUTF8String();
-    auto baseHrefNative = stringToNativeString(baseHrefStr).release();
     const auto& top = contents->ChildRules();
     // Helper to walk group rules without allocating temporary vectors.
     auto walk_group = [&](const StyleRuleGroup& grp, const auto& self_ref) -> void {
@@ -392,11 +389,12 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text, co
           String style = props.GetPropertyValue(CSSPropertyID::kFontStyle);
           if (!family.IsEmpty() && !src.IsEmpty()) {
             String familyLower = family.LowerASCII();
+            auto baseHrefNative = stringToNativeString(baseHrefStr).release();
             auto familyNative = stringToNativeString(familyLower.ToUTF8String()).release();
             auto srcNative = stringToNativeString(src.ToUTF8String()).release();
             auto weightNative = stringToNativeString(weight.ToUTF8String()).release();
             auto styleNative = stringToNativeString(style.ToUTF8String()).release();
-            exe_ctx->dartMethodPtr()->registerFontFace(exe_ctx->isDedicated(), exe_ctx->contextId(), sheetIdNative,
+            exe_ctx->dartMethodPtr()->registerFontFace(exe_ctx->isDedicated(), exe_ctx->contextId(), sheet_id_val,
                                                        familyNative, srcNative, weightNative, styleNative, baseHrefNative);
           }
         } else if (r->IsMediaRule() || r->IsSupportsRule() || r->IsLayerBlockRule() || r->IsContainerRule() ||
@@ -418,11 +416,12 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text, co
         String style = props.GetPropertyValue(CSSPropertyID::kFontStyle);
         if (!family.IsEmpty() && !src.IsEmpty()) {
           String familyLower = family.LowerASCII();
+          auto baseHrefNative = stringToNativeString(baseHrefStr).release();
           auto familyNative = stringToNativeString(familyLower.ToUTF8String()).release();
           auto srcNative = stringToNativeString(src.ToUTF8String()).release();
           auto weightNative = stringToNativeString(weight.ToUTF8String()).release();
           auto styleNative = stringToNativeString(style.ToUTF8String()).release();
-          exe_ctx->dartMethodPtr()->registerFontFace(exe_ctx->isDedicated(), exe_ctx->contextId(), sheetIdNative,
+          exe_ctx->dartMethodPtr()->registerFontFace(exe_ctx->isDedicated(), exe_ctx->contextId(), sheet_id_val,
                                                      familyNative, srcNative, weightNative, styleNative, baseHrefNative);
         }
       } else if (r->IsMediaRule() || r->IsSupportsRule() || r->IsLayerBlockRule() || r->IsContainerRule() ||

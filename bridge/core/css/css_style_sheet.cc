@@ -325,6 +325,9 @@ void CSSStyleSheet::ClearOwnerNode() {
       auto sheetIdNative = stringToNativeString(sheet_id).release();
       WEBF_LOG(INFO) << "[font-face][unregister] sheetId=" << sheet_id << " ctx=" << exe_ctx->contextId();
       exe_ctx->dartMethodPtr()->unregisterFontFace(exe_ctx->isDedicated(), exe_ctx->contextId(), sheetIdNative);
+      auto sheet_id_val = std::bit_cast<int64_t>(this);
+      WEBF_LOG(INFO) << "[font-face][unregister] sheetId=" << sheet_id_val << " ctx=" << exe_ctx->contextId();
+      exe_ctx->dartMethodPtr()->unregisterFontFace(exe_ctx->isDedicated(), exe_ctx->contextId(), sheet_id_val);
     }
   }
   owner_node_ = nullptr;

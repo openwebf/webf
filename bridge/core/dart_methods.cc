@@ -90,7 +90,7 @@ void DartMethodPointer::requestBatchUpdate(bool is_dedicated, double context_id)
 
 void DartMethodPointer::registerFontFace(bool is_dedicated,
                                          double context_id,
-                                         SharedNativeString* sheet_id,
+                                         int64_t sheet_id,
                                          SharedNativeString* font_family,
                                          SharedNativeString* src,
                                          SharedNativeString* font_weight,
@@ -103,7 +103,7 @@ void DartMethodPointer::registerFontFace(bool is_dedicated,
                                                   src, font_weight, font_style, base_href);
 }
 
-void DartMethodPointer::unregisterFontFace(bool is_dedicated, double context_id, SharedNativeString* sheet_id) {
+void DartMethodPointer::unregisterFontFace(bool is_dedicated, double context_id, int64_t sheet_id) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::unregisterFontFace Call";
 #endif

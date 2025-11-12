@@ -884,7 +884,7 @@ final Pointer<NativeFunction<NativeFetchImportCSSContent>> _nativeFetchImportCSS
 // ===== FontFace registration (Bridge -> Dart) =====
 typedef NativeRegisterFontFace = Void Function(
     Double contextId,
-    Pointer<NativeString> sheetId,
+    Int64 sheetId,
     Pointer<NativeString> fontFamily,
     Pointer<NativeString> src,
     Pointer<NativeString> fontWeight,
@@ -893,7 +893,7 @@ typedef NativeRegisterFontFace = Void Function(
 
 void _registerFontFace(
   double contextId,
-  Pointer<NativeString> nativeSheetId,
+  int sheetId,
   Pointer<NativeString> nativeFontFamily,
   Pointer<NativeString> nativeSrc,
   Pointer<NativeString> nativeFontWeight,
@@ -901,7 +901,6 @@ void _registerFontFace(
   Pointer<NativeString> nativeBaseHref,
 ) {
   try {
-    final String sheetId = nativeStringToString(nativeSheetId);
     final String fontFamily = nativeStringToString(nativeFontFamily);
     final String src = nativeStringToString(nativeSrc);
     final String fontWeight = nativeStringToString(nativeFontWeight);
@@ -927,7 +926,6 @@ void _registerFontFace(
     bridgeLogger.severe('[font-face] register error: $e\n$stack');
   } finally {
     // Free native strings allocated on C++ side.
-    if (nativeSheetId != nullptr) freeNativeString(nativeSheetId);
     if (nativeFontFamily != nullptr) freeNativeString(nativeFontFamily);
     if (nativeSrc != nullptr) freeNativeString(nativeSrc);
     if (nativeFontWeight != nullptr) freeNativeString(nativeFontWeight);
@@ -938,16 +936,13 @@ void _registerFontFace(
 
 final Pointer<NativeFunction<NativeRegisterFontFace>> _nativeRegisterFontFace = Pointer.fromFunction(_registerFontFace);
 
-typedef NativeUnregisterFontFace = Void Function(Double contextId, Pointer<NativeString> sheetId);
+typedef NativeUnregisterFontFace = Void Function(Double contextId, Int64 sheetId);
 
-void _unregisterFontFace(double contextId, Pointer<NativeString> nativeSheetId) {
+void _unregisterFontFace(double contextId, int sheetId) {
   try {
-    final String sheetId = nativeStringToString(nativeSheetId);
     CSSFontFace.unregisterFromSheet(sheetId);
   } catch (e, stack) {
     bridgeLogger.severe('[font-face] unregister error: $e\n$stack');
-  } finally {
-    if (nativeSheetId != nullptr) freeNativeString(nativeSheetId);
   }
 }
 
