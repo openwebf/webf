@@ -34,6 +34,7 @@
 #include "core/css/style_rule_import.h"
 #include "core/css/rule_set.h"
 #include "core/css/media_query_evaluator.h"
+#include "core/css/css_keyframes_rule.h"
 #include "element_namespace_uris.h"
 #include "foundation/logging.h"
 #include <functional>
@@ -268,6 +269,10 @@ void StyleSheetContents::ParserAppendRule(std::shared_ptr<StyleRuleBase> rule) {
       if (value.size() > 200) value = value.substr(0, 200) + "…";
       WEBF_LOG(INFO) << "  - " << name << ": '" << value << "'";
     }
+  } else if (rule && rule->IsKeyframesRule()) {
+    auto kf = std::static_pointer_cast<StyleRuleKeyframes>(rule);
+    WEBF_COND_LOG(STYLESHEET, VERBOSE) << "[keyframes][parse] appended @keyframes name='" << String(kf->GetName()).ToUTF8String()
+                                       << "' prefixed=" << (kf->IsVendorPrefixed() ? "true" : "false");
   }
 
   child_rules_.push_back(rule);

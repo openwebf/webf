@@ -22,6 +22,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/css.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/panel/console_store.dart';
+import 'package:webf/src/css/keyframes_bridge.dart';
 
 import '../../foundation.dart';
 
@@ -911,7 +912,9 @@ final Pointer<NativeFunction<NativeFetchImportCSSContent>> _nativeFetchImportCSS
     _nativeOnJSLogStructured.address,
     _nativeFetchImportCSSContent.address,
     _nativeRegisterFontFace.address,
-    _nativeUnregisterFontFace.address
+    _nativeUnregisterFontFace.address,
+    _nativeRegisterKeyframes.address,
+    _nativeUnregisterKeyframes.address,
   ];
 
 // ===== FontFace registration (Bridge -> Dart) =====
@@ -985,3 +988,56 @@ final Pointer<NativeFunction<NativeUnregisterFontFace>> _nativeUnregisterFontFac
 List<int> makeDartMethodsData() {
   return _dartNativeMethods;
 }
+
+// ===== Keyframes registration (Bridge -> Dart) =====
+typedef NativeRegisterKeyframes = Void Function(
+  Double contextId,
+  Int64 sheetId,
+  Pointer<NativeString> name,
+  Pointer<NativeString> cssText,
+  Int32 isPrefixed,
+);
+
+void _registerKeyframes(
+  double contextId,
+  int sheetId,
+  Pointer<NativeString> nativeName,
+  Pointer<NativeString> nativeCssText,
+  int isPrefixed,
+) {
+  try {
+    final String name = nativeStringToString(nativeName);
+    final String cssText = nativeStringToString(nativeCssText);
+
+    bridgeLogger.info('[keyframes][dart] register sheet=$sheetId name=$name prefixed=${isPrefixed == 1}');
+
+    CSSKeyframesBridge.registerFromBridge(
+      contextId: contextId,
+      sheetId: sheetId,
+      name: name,
+      cssText: cssText,
+      isPrefixed: isPrefixed == 1,
+    );
+  } catch (e, stack) {
+    bridgeLogger.severe('[keyframes] register error: $e\n$stack');
+  } finally {
+    if (nativeName != nullptr) freeNativeString(nativeName);
+    if (nativeCssText != nullptr) freeNativeString(nativeCssText);
+  }
+}
+
+final Pointer<NativeFunction<NativeRegisterKeyframes>> _nativeRegisterKeyframes =
+    Pointer.fromFunction(_registerKeyframes);
+
+typedef NativeUnregisterKeyframes = Void Function(Double contextId, Int64 sheetId);
+
+void _unregisterKeyframes(double contextId, int sheetId) {
+  try {
+    CSSKeyframesBridge.unregisterFromSheet(contextId: contextId, sheetId: sheetId);
+  } catch (e, stack) {
+    bridgeLogger.severe('[keyframes] unregister error: $e\n$stack');
+  } finally {}
+}
+
+final Pointer<NativeFunction<NativeUnregisterKeyframes>> _nativeUnregisterKeyframes =
+    Pointer.fromFunction(_unregisterKeyframes);
