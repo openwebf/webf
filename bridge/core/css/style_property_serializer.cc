@@ -646,8 +646,8 @@ String StylePropertySerializer::SerializeShorthand(CSSPropertyID property_id) co
   }
 
   switch (property_id) {
-      //    case CSSPropertyID::kAnimation:
-      //      return GetLayeredShorthandValue(animationShorthand());
+    case CSSPropertyID::kAnimation:
+      return GetLayeredShorthandValue(animationShorthand());
       //    case CSSPropertyID::kAlternativeAnimationWithTimeline:
       //      return GetLayeredShorthandValue(
       //          alternativeAnimationWithTimelineShorthand());
