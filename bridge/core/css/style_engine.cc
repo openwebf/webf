@@ -60,6 +60,9 @@
 #include "core/style/computed_style_constants.h"
 #include "foundation/native_string.h"
 #include "core/css/white_space.h"
+// Keyframes support
+#include "core/css/css_keyframes_rule.h"
+#include "core/css/style_rule_keyframe.h"
 
 namespace webf {
 
@@ -307,6 +310,32 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text) {
             WEBF_LOG(INFO) << "[font-face][register] dispatched to Dart (ctx=" << exe_ctx->contextId() << ")"
                            << " family='" << familyUtf8 << "'";
           }
+        } else if (r->IsKeyframesRule()) {
+          auto kf = std::static_pointer_cast<const StyleRuleKeyframes>(r);
+          const AtomicString& name = kf->GetName();
+          bool is_prefixed = kf->IsVendorPrefixed();
+          // Serialize @keyframes similar to CSSKeyframesRule::cssText()
+          StringBuilder kb;
+          if (is_prefixed) {
+            kb.Append("@-webkit-keyframes "_s);
+          } else {
+            kb.Append("@keyframes "_s);
+          }
+          kb.Append(String(name));
+          kb.Append(" { \n"_s);
+          const auto& frames = kf->Keyframes();
+          for (size_t i = 0; i < frames.size(); ++i) {
+            kb.Append("  "_s);
+            kb.Append(frames[i]->CssText());
+            kb.Append('\n');
+          }
+          kb.Append('}');
+          std::string cssText = kb.ReleaseString().ToUTF8String();
+          auto nameNative = stringToNativeString(String(name).ToUTF8String()).release();
+          auto cssNative = stringToNativeString(cssText).release();
+          exe_ctx->dartMethodPtr()->registerKeyframes(exe_ctx->isDedicated(), exe_ctx->contextId(), sheet_id_val,
+                                                      nameNative, cssNative, is_prefixed ? 1 : 0);
+          WEBF_LOG(INFO) << "[keyframes][register] name='" << String(name).ToUTF8String() << "'";
         } else if (r->IsMediaRule() || r->IsSupportsRule() || r->IsLayerBlockRule() || r->IsContainerRule() ||
                    r->IsScopeRule() || r->IsStartingStyleRule()) {
           auto group = std::static_pointer_cast<const StyleRuleGroup>(r);
@@ -320,7 +349,7 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text) {
     };
     WEBF_LOG(INFO) << "[font-face][CreateSheet] walking top-level rules count=" << childVec.size();
     walk(childVec);
-    WEBF_LOG(INFO) << "[font-face][CreateSheet] end sheetId=" << sheet_id;
+    WEBF_LOG(INFO) << "[font-face][CreateSheet] end sheetId=" << sheet_id_val;
   }
 
   return style_sheet;
@@ -424,6 +453,31 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text, co
           exe_ctx->dartMethodPtr()->registerFontFace(exe_ctx->isDedicated(), exe_ctx->contextId(), sheet_id_val,
                                                      familyNative, srcNative, weightNative, styleNative, baseHrefNative);
         }
+      } else if (r->IsKeyframesRule()) {
+        auto kf = std::static_pointer_cast<const StyleRuleKeyframes>(r);
+        const AtomicString& name = kf->GetName();
+        bool is_prefixed = kf->IsVendorPrefixed();
+        // Serialize @keyframes similar to CSSKeyframesRule::cssText()
+        StringBuilder kb;
+        if (is_prefixed) {
+          kb.Append("@-webkit-keyframes "_s);
+        } else {
+          kb.Append("@keyframes "_s);
+        }
+        kb.Append(String(name));
+        kb.Append(" { \n"_s);
+        const auto& frames = kf->Keyframes();
+        for (size_t i = 0; i < frames.size(); ++i) {
+          kb.Append("  "_s);
+          kb.Append(frames[i]->CssText());
+          kb.Append('\n');
+        }
+        kb.Append('}');
+        std::string cssText = kb.ReleaseString().ToUTF8String();
+        auto nameNative = stringToNativeString(String(name).ToUTF8String()).release();
+        auto cssNative = stringToNativeString(cssText).release();
+        exe_ctx->dartMethodPtr()->registerKeyframes(exe_ctx->isDedicated(), exe_ctx->contextId(), sheet_id_val,
+                                                    nameNative, cssNative, is_prefixed ? 1 : 0);
       } else if (r->IsMediaRule() || r->IsSupportsRule() || r->IsLayerBlockRule() || r->IsContainerRule() ||
                  r->IsScopeRule() || r->IsStartingStyleRule()) {
         const auto group = std::static_pointer_cast<const StyleRuleGroup>(r);

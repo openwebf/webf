@@ -337,6 +337,15 @@ class DartMethodPointer {
   SimulateInputText simulate_input_text_{nullptr};
   RegisterFontFace register_font_face_{nullptr};
   UnregisterFontFace unregister_font_face_{nullptr};
+  // Optional (may be null if older Dart side): @keyframes bridge
+  typedef void (*RegisterKeyframes)(double context_id,
+                                    int64_t sheet_id,
+                                    SharedNativeString* name,
+                                    SharedNativeString* css_text,
+                                    int32_t is_prefixed);
+  typedef void (*UnregisterKeyframes)(double context_id, int64_t sheet_id);
+  RegisterKeyframes register_keyframes_{nullptr};
+  UnregisterKeyframes unregister_keyframes_{nullptr};
 };
 
 }  // namespace webf
