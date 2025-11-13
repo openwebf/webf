@@ -1,3 +1,12 @@
+## 0.23.6+1
+
+- Fixed
+  - webf/rendering: align `RenderTextBox` painting to its size; add guarded layout/paint logs.
+
+- Chore
+  - Add annotations for `WebFSubView`.
+  - Remove macOS prebuilt dynamic libs from repo.
+
 ## 0.23.6
 
 Highlights
