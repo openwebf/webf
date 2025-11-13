@@ -69,22 +69,8 @@ export const WebFRouterLink: React.FC<WebFRouterLinkProps> = isWebF
       return <RRDLink to={path}>{children}</RRDLink>;
     };
 
-// WebFRouter API shim for browser
-type WebFRouterAPI = {
-  pushState: (state: any, path: string) => void;
-  replaceState: (state: any, path: string) => void;
-  back: () => void;
-  // Additional convenience APIs used in demos
-  push?: (path: string, state?: any) => Promise<any>;
-  replace?: (path: string, state?: any) => Promise<any>;
-  popAndPushNamed?: (path: string, state?: any) => Promise<any>;
-  canPop?: () => boolean;
-  maybePop?: (opts?: { cancelled?: boolean }) => boolean;
-  restorablePopAndPushNamed?: (path: string, state?: any) => Promise<number>;
-};
-
-export const WebFRouter: WebFRouterAPI = isWebF
-  ? ((WebFLib as any).WebFRouter as WebFRouterAPI)
+export const WebFRouter = isWebF
+  ? ((WebFLib as any).WebFRouter)
   : {
       pushState: (state: any, path: string) => navigateImpl(path, { state }),
       replaceState: (state: any, path: string) => navigateImpl(path, { replace: true, state }),

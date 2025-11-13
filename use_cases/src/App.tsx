@@ -68,6 +68,49 @@ import { DOMClassListPage } from './pages/dom/DOMClassListPage';
 import { DOMInnerHTMLPage } from './pages/dom/DOMInnerHTMLPage';
 import { DOMStylePage } from './pages/dom/DOMStylePage';
 import { TailwindShowcasePage } from './pages/TailwindShowcasePage';
+import { CupertinoShowcasePage } from './pages/CupertinoShowcasePage';
+import CupertinoButtonsPage from './pages/cupertino/CupertinoButtonsPage';
+import { CupertinoNavBarPage } from './pages/cupertino/CupertinoNavBarPage';
+import { CupertinoActionSheetPage } from './pages/cupertino/CupertinoActionSheetPage';
+import { CupertinoAlertPage } from './pages/cupertino/CupertinoAlertPage';
+import { CupertinoControlsPage } from './pages/cupertino/CupertinoControlsPage';
+import CupertinoColorsPage from './pages/cupertino/CupertinoColorsPage';
+import { CupertinoSliverNavigationBarPage } from './pages/cupertino/CupertinoSliverNavigationBarPage';
+import { CupertinoTabsPage } from './pages/cupertino/CupertinoTabsPage';
+import { CupertinoPageScaffoldPage } from './pages/cupertino/CupertinoPageScaffoldPage';
+import { CupertinoPagePage } from './pages/cupertino/CupertinoPagePage';
+import { CupertinoPageRoutePage } from './pages/cupertino/CupertinoPageRoutePage';
+import { CupertinoDialogRoutePage } from './pages/cupertino/CupertinoDialogRoutePage';
+import { CupertinoModalPopupRoutePage } from './pages/cupertino/CupertinoModalPopupRoutePage';
+import { CupertinoPageTransitionPage } from './pages/cupertino/CupertinoPageTransitionPage';
+import { CupertinoFullscreenDialogTransitionPage } from './pages/cupertino/CupertinoFullscreenDialogTransitionPage';
+import { CupertinoPopupSurfacePage } from './pages/cupertino/CupertinoPopupSurfacePage';
+import { CupertinoContextMenuPage } from './pages/cupertino/CupertinoContextMenuPage';
+import { CupertinoListSectionPage } from './pages/cupertino/CupertinoListSectionPage';
+import { CupertinoListTilePage } from './pages/cupertino/CupertinoListTilePage';
+import { CupertinoFormSectionPage } from './pages/cupertino/CupertinoFormSectionPage';
+import { CupertinoTextFieldPage } from './pages/cupertino/CupertinoTextFieldPage';
+import { CupertinoTextFormFieldRowPage } from './pages/cupertino/CupertinoTextFormFieldRowPage';
+import { CupertinoSearchTextFieldPage } from './pages/cupertino/CupertinoSearchTextFieldPage';
+import { CupertinoAdaptiveTextSelectionToolbarPage } from './pages/cupertino/CupertinoAdaptiveTextSelectionToolbarPage';
+import { CupertinoTextSelectionToolbarPage } from './pages/cupertino/CupertinoTextSelectionToolbarPage';
+import { CupertinoDesktopTextSelectionToolbarPage } from './pages/cupertino/CupertinoDesktopTextSelectionToolbarPage';
+import { CupertinoTextSelectionControlsPage } from './pages/cupertino/CupertinoTextSelectionControlsPage';
+import { CupertinoMagnifierPage } from './pages/cupertino/CupertinoMagnifierPage';
+import { CupertinoSpellCheckSuggestionsToolbarPage } from './pages/cupertino/CupertinoSpellCheckSuggestionsToolbarPage';
+import { CupertinoDatePickerPage } from './pages/cupertino/CupertinoDatePickerPage';
+import { CupertinoTimerPickerPage } from './pages/cupertino/CupertinoTimerPickerPage';
+import { CupertinoPickerPage } from './pages/cupertino/CupertinoPickerPage';
+import { CupertinoSwitchPage } from './pages/cupertino/CupertinoSwitchPage';
+import { CupertinoSliderPage } from './pages/cupertino/CupertinoSliderPage';
+import { CupertinoSlidingSegmentedControlPage } from './pages/cupertino/CupertinoSlidingSegmentedControlPage';
+import { CupertinoCheckBoxPage } from './pages/cupertino/CupertinoCheckBoxPage';
+import { CupertinoRadioPage } from './pages/cupertino/CupertinoRadioPage';
+import { CupertinoThumbPainterPage } from './pages/cupertino/CupertinoThumbPainterPage';
+import { CupertinoScrollbarPage } from './pages/cupertino/CupertinoScrollbarPage';
+import { CupertinoScrollBehaviorPage } from './pages/cupertino/CupertinoScrollBehaviorPage';
+import { CupertinoSliverRefreshControlPage } from './pages/cupertino/CupertinoSliverRefreshControlPage';
+import { CupertinoActivityIndicatorPage } from './pages/cupertino/CupertinoActivityIndicatorPage';
 // import {UserDetailsPage} from './pages/routeDemo/UserDetailsPage';
 // import {ReportDetailsPage} from './pages/routeDemo/ReportDetailsPage';
 // import {ProfileEditPage} from './pages/routeDemo/ProfileEditPage';
@@ -79,38 +122,23 @@ function App() {
       <Routes>
         <Route path="/" title="Home" element={<HomePage/>}/>
         <Route path="/features" title="Features" element={<FeatureCatalogPage/>}/>
-        <Route path="/animation" title="Animations" element={<AnimationPage/>}/>
+
+        <Route path="/tailwind" title="Tailwind CSS Showcase" element={<TailwindShowcasePage />} />
+
         {/* Feature catalog routes */}
         <Route path="/cookies" title="Cookies" element={<CookiesPage/>}/>
         <Route path="/url-encoding" title="URL & Encoding" element={<UrlEncodingPage/>}/>
         <Route path="/websocket" title="WebSocket" element={<WebSocketPage/>}/>
         <Route path="/svg-image" title="SVG via Img" element={<SvgImagePage/>}/>
 
-        {/* Re-enabled showcases to match Feature Catalog links */}
-        <Route path="/css-showcase" title="CSS Showcase" element={<CSSShowcasePage />} />
-        <Route path="/web-storage" title="Web Storage API" element={<WebStoragePage />} />
-        <Route path="/dom-bounding-rect" title="DOM getBoundingClientRect API" element={<DOMBoundingRectPage />} />
-        <Route path="/mutation-observer" title="MutationObserver API" element={<MutationObserverPage />} />
         <Route path="/dom/events" title="DOM Events" element={<DOMEventsPage />} />
         <Route path="/dom/geometry" title="DOM Geometry" element={<DOMGeometryPage />} />
         <Route path="/dom/offsets" title="DOM Offsets" element={<DOMOffsetsPage />} />
         <Route path="/dom/classlist" title="DOMTokenList (classList)" element={<DOMClassListPage />} />
         <Route path="/dom/innerhtml" title="innerHTML vs textContent" element={<DOMInnerHTMLPage />} />
         <Route path="/dom/style" title="element.style" element={<DOMStylePage />} />
-        <Route path="/tailwind" title="Tailwind CSS Showcase" element={<TailwindShowcasePage />} />
-        <Route path="/image-preload" title="Image Preload" element={<ImagePreloadPage />} />
-        <Route path="/routing" title="Routing & Navigation" element={<RoutingPage />} />
-        <Route path="/deep-link" title="Deep Links" element={<DeepLinkPage />} />
-        <Route path="/flutter-interaction" title="Flutter Interaction" element={<FlutterInteractionPage />} />
-        <Route path="/native-interaction" title="Native Interaction" element={<NativeInteractionPage />} />
-        <Route path="/network" title="Network Requests" element={<NetworkPage />} />
-        <Route path="/image" title="Image Gallery" element={<ImagePage />} />
-        <Route path="/typography" title="Typography" element={<TypographyPage />} />
-        <Route path="/fontface" title="Custom Fonts" element={<FontFacePage />} />
-        <Route path="/responsive" title="Responsive Design" element={<ResponsivePage />} />
-        <Route path="/alert" title="Alert" element={<AlertPage />} />
-        <Route path="/theme-toggle" title="Theme Toggle" element={<ThemeTogglePage />} />
-        <Route path="/gesture" title="Gesture Detection" element={<GesturePage />} />
+
+        <Route path="/css-showcase" title="CSS Showcase" element={<CSSShowcasePage />} />
         <Route path="/css/bg" title="Background" element={<BGPage />} />
         <Route path="/css/bg-gradient" title="Background Gradient" element={<BGGradientPage />} />
         <Route path="/css/bg-image" title="Background Image" element={<BGImagePage />} />
@@ -125,6 +153,7 @@ function App() {
         <Route path="/css/border-background-shadow" title="Border Background Shadow" element={<BorderBackgroundShadowPage />} />
         <Route path="/css/overflow" title="Overflow" element={<OverflowPage />} />
         <Route path="/css/transforms" title="Transforms" element={<TransformsPage />} />
+        <Route path="/css/animation" title="Animations" element={<AnimationPage/>}/>
         <Route path="/css/transitions" title="Transitions" element={<TransitionsPage />} />
         <Route path="/css/display-flow" title="Display & Flow" element={<DisplayFlowPage />} />
         <Route path="/css/sizing" title="Sizing" element={<SizingPage />} />
@@ -132,19 +161,85 @@ function App() {
         <Route path="/css/position" title="Positioned Layout" element={<PositionPage />} />
         <Route path="/css/selectors" title="Selectors" element={<SelectorsPage />} />
         <Route path="/css/values-units" title="Values & Units" element={<ValuesUnitsPage />} />
-        <Route path="/show_case" title="Show Case" element={<ShowCasePage />} />
-        <Route path="/listview" title="Listview" element={<ListviewPage />} />
-        <Route path="/form" title="Form" element={<FormPage />} />
-        <Route path="/basic-form-elements" title="Basic Form Elements" element={<BasicFormElementsPage />} />
-        <Route path="/input-sizing" title="Input Sizing" element={<InputSizingPage />} />
-        <Route path="/advanced-form" title="Advanced Form" element={<FormAdvancedPage />} />
-        <Route path="/table" title="Tables" element={<TablePage />} />
-        <Route path="/actionsheet" title="Action Sheets" element={<ActionSheetPage />} />
-        <Route path="/video" title="Video Player" element={<VideoPage />} />
-        <Route path="/qrcode" title="QR Code Generator" element={<QRCodePage />} />
-        <Route path="/contextmenu" title="Context Menu" element={<ContextMenuPage />} />
-        <Route path="/modalpopup" title="Modal Popup" element={<ModalPopupPage />} />
-        <Route path="/loading" title="Loading" element={<LoadingPage />} />
+
+
+        <Route path="/web-storage" title="Web Storage API" element={<WebStoragePage />} />
+        <Route path="/dom-bounding-rect" title="DOM getBoundingClientRect API" element={<DOMBoundingRectPage />} />
+        <Route path="/mutation-observer" title="MutationObserver API" element={<MutationObserverPage />} />
+
+
+        <Route path="/cupertino-showcase" title="Cupertino UI Showcase" theme={'cupertino'} element={<CupertinoShowcasePage />} />
+        <Route path="/cupertino/buttons" title="Cupertino Buttons" theme={'cupertino'} element={<CupertinoButtonsPage />} />
+        <Route path="/cupertino/navbar" title="Cupertino Navigation Bar" theme={'cupertino'} element={<CupertinoNavBarPage />} />
+        <Route path="/cupertino/actionsheet" title="Cupertino Action Sheet" theme={'cupertino'} element={<CupertinoActionSheetPage />} />
+        <Route path="/cupertino/alert" title="Cupertino Alert Dialog" theme={'cupertino'} element={<CupertinoAlertPage />} />
+        <Route path="/cupertino/controls" title="Cupertino Switches & Sliders" theme={'cupertino'} element={<CupertinoControlsPage />} />
+        <Route path="/cupertino/colors" title="Cupertino Colors" theme={'cupertino'} element={<CupertinoColorsPage />} />
+        <Route path="/cupertino/sliver-navbar" title="Cupertino Sliver Navigation Bar" theme={'cupertino'} element={<CupertinoSliverNavigationBarPage />} />
+        <Route path="/cupertino/tabs" title="Cupertino Tabs" theme={'cupertino'} element={<CupertinoTabsPage />} />
+        <Route path="/cupertino/page-scaffold" title="Cupertino Page Scaffold" theme={'cupertino'} element={<CupertinoPageScaffoldPage />} />
+        <Route path="/cupertino/page" title="Cupertino Page" theme={'cupertino'} element={<CupertinoPagePage />} />
+        <Route path="/cupertino/page-route" title="Cupertino PageRoute" theme={'cupertino'} element={<CupertinoPageRoutePage />} />
+        <Route path="/cupertino/dialog-route" title="Cupertino DialogRoute" theme={'cupertino'} element={<CupertinoDialogRoutePage />} />
+        <Route path="/cupertino/modal-popup-route" title="Cupertino ModalPopupRoute" theme={'cupertino'} element={<CupertinoModalPopupRoutePage />} />
+        <Route path="/cupertino/page-transition" title="Cupertino Page Transition" theme={'cupertino'} element={<CupertinoPageTransitionPage />} />
+        <Route path="/cupertino/fullscreen-dialog-transition" title="Cupertino Fullscreen Dialog Transition" theme={'cupertino'} element={<CupertinoFullscreenDialogTransitionPage />} />
+        <Route path="/cupertino/popup-surface" title="Cupertino Popup Surface" theme={'cupertino'} element={<CupertinoPopupSurfacePage />} />
+        <Route path="/cupertino/context-menu" title="Cupertino Context Menu" theme={'cupertino'} element={<CupertinoContextMenuPage />} />
+        <Route path="/cupertino/list-section" title="Cupertino List Section" theme={'cupertino'} element={<CupertinoListSectionPage />} />
+        <Route path="/cupertino/list-tile" title="Cupertino List Tile" theme={'cupertino'} element={<CupertinoListTilePage />} />
+        <Route path="/cupertino/form-section" title="Cupertino Form Section" theme={'cupertino'} element={<CupertinoFormSectionPage />} />
+        <Route path="/cupertino/text-field" title="Cupertino Text Field" theme={'cupertino'} element={<CupertinoTextFieldPage />} />
+        <Route path="/cupertino/text-form-field-row" title="Cupertino TextFormFieldRow" theme={'cupertino'} element={<CupertinoTextFormFieldRowPage />} />
+        <Route path="/cupertino/search-text-field" title="Cupertino Search Text Field" theme={'cupertino'} element={<CupertinoSearchTextFieldPage />} />
+        <Route path="/cupertino/adaptive-text-selection-toolbar" title="Adaptive Text Selection Toolbar" theme={'cupertino'} element={<CupertinoAdaptiveTextSelectionToolbarPage />} />
+        <Route path="/cupertino/text-selection-toolbar" title="Text Selection Toolbar" theme={'cupertino'} element={<CupertinoTextSelectionToolbarPage />} />
+        <Route path="/cupertino/desktop-text-selection-toolbar" title="Desktop Text Selection Toolbar" theme={'cupertino'} element={<CupertinoDesktopTextSelectionToolbarPage />} />
+        <Route path="/cupertino/text-selection-controls" title="Text Selection Controls" theme={'cupertino'} element={<CupertinoTextSelectionControlsPage />} />
+        <Route path="/cupertino/magnifier" title="Cupertino Magnifier" theme={'cupertino'} element={<CupertinoMagnifierPage />} />
+        <Route path="/cupertino/spell-check-suggestions-toolbar" title="Spell Check Suggestions Toolbar" theme={'cupertino'} element={<CupertinoSpellCheckSuggestionsToolbarPage />} />
+        <Route path="/cupertino/date-picker" title="Cupertino Date Picker" theme={'cupertino'} element={<CupertinoDatePickerPage />} />
+        <Route path="/cupertino/timer-picker" title="Cupertino Timer Picker" theme={'cupertino'} element={<CupertinoTimerPickerPage />} />
+        <Route path="/cupertino/picker" title="Cupertino Picker" theme={'cupertino'} element={<CupertinoPickerPage />} />
+        <Route path="/cupertino/switch" title="Cupertino Switch" theme={'cupertino'} element={<CupertinoSwitchPage />} />
+        <Route path="/cupertino/slider" title="Cupertino Slider" theme={'cupertino'} element={<CupertinoSliderPage />} />
+        <Route path="/cupertino/sliding-segmented-control" title="Sliding Segmented Control" theme={'cupertino'} element={<CupertinoSlidingSegmentedControlPage />} />
+        <Route path="/cupertino/checkbox" title="Cupertino CheckBox" theme={'cupertino'} element={<CupertinoCheckBoxPage />} />
+        <Route path="/cupertino/radio" title="Cupertino Radio" theme={'cupertino'} element={<CupertinoRadioPage />} />
+        <Route path="/cupertino/thumb-painter" title="Cupertino Thumb Painter" theme={'cupertino'} element={<CupertinoThumbPainterPage />} />
+        <Route path="/cupertino/scrollbar" title="Cupertino Scrollbar" theme={'cupertino'} element={<CupertinoScrollbarPage />} />
+        <Route path="/cupertino/scroll-behavior" title="Cupertino Scroll Behavior" theme={'cupertino'} element={<CupertinoScrollBehaviorPage />} />
+        <Route path="/cupertino/sliver-refresh-control" title="Cupertino Sliver Refresh Control" theme={'cupertino'} element={<CupertinoSliverRefreshControlPage />} />
+        <Route path="/cupertino/activity-indicator" title="Cupertino Activity Indicator" theme={'cupertino'} element={<CupertinoActivityIndicatorPage />} />
+
+
+        <Route path="/image-preload" title="Image Preload" element={<ImagePreloadPage />} />
+        <Route path="/routing" title="Routing & Navigation" element={<RoutingPage />} />
+        <Route path="/deep-link" title="Deep Links" element={<DeepLinkPage />} />
+        <Route path="/flutter-interaction" title="Flutter Interaction" element={<FlutterInteractionPage />} />
+        <Route path="/native-interaction" title="Native Interaction" element={<NativeInteractionPage />} />
+        <Route path="/network" title="Network Requests" element={<NetworkPage />} />
+        <Route path="/image" title="Image Gallery" element={<ImagePage />} />
+        <Route path="/typography" title="Typography" element={<TypographyPage />} />
+        <Route path="/fontface" title="Custom Fonts" element={<FontFacePage />} />
+        <Route path="/responsive" title="Responsive Design" element={<ResponsivePage />} />
+        <Route path="/alert" title="Alert" element={<AlertPage />} />
+        <Route path="/theme-toggle" title="Theme Toggle" element={<ThemeTogglePage />} />
+        <Route path="/gesture" title="Gesture Detection" element={<GesturePage />} />
+
+        {/*<Route path="/show_case" title="Show Case" element={<ShowCasePage />} />*/}
+        {/*<Route path="/listview" title="Listview" element={<ListviewPage />} />*/}
+        {/*<Route path="/form" title="Form" element={<FormPage />} />*/}
+        {/*<Route path="/basic-form-elements" title="Basic Form Elements" element={<BasicFormElementsPage />} />*/}
+        {/*<Route path="/input-sizing" title="Input Sizing" element={<InputSizingPage />} />*/}
+        {/*<Route path="/advanced-form" title="Advanced Form" element={<FormAdvancedPage />} />*/}
+        {/*<Route path="/table" title="Tables" element={<TablePage />} />*/}
+        {/*<Route path="/actionsheet" title="Action Sheets" element={<ActionSheetPage />} />*/}
+        {/*<Route path="/video" title="Video Player" element={<VideoPage />} />*/}
+        {/*<Route path="/qrcode" title="QR Code Generator" element={<QRCodePage />} />*/}
+        {/*<Route path="/contextmenu" title="Context Menu" element={<ContextMenuPage />} />*/}
+        {/*<Route path="/modalpopup" title="Modal Popup" element={<ModalPopupPage />} />*/}
+        {/*<Route path="/loading" title="Loading" element={<LoadingPage />} />*/}
       </Routes>
     </div>
   );

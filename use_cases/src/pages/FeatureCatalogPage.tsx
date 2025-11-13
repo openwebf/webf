@@ -43,7 +43,7 @@ const sections: Section[] = [
       { label: 'Positioned Layout', path: '/css/position' },
       { label: 'Selectors', path: '/css/selectors' },
       { label: 'Values & Units', path: '/css/values-units' },
-      { label: 'Animations', path: '/animation' },
+      { label: 'Animations', path: '/css/animation' },
     ],
   },
   {
@@ -89,9 +89,18 @@ const sections: Section[] = [
     ],
   },
   {
+    title: 'Cupertino UI',
+    items: [
+      { label: 'Cupertino Buttons', path: '/cupertino/buttons' },
+      { label: 'Cupertino Navigation Bar', path: '/cupertino/navbar' },
+      { label: 'Cupertino Action Sheet', path: '/cupertino/actionsheet' },
+      { label: 'Cupertino Alert Dialog', path: '/cupertino/alert' },
+      { label: 'Cupertino Switches & Sliders', path: '/cupertino/controls' },
+    ],
+  },
+  {
     title: 'Others',
     items: [
-      { label: 'Showcase', path: '/show_case' },
       { label: 'Listview', path: '/listview' },
       { label: 'Form (Basic)', path: '/form' },
       { label: 'Basic Form Elements', path: '/basic-form-elements' },

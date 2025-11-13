@@ -18,7 +18,7 @@ export const RoutingDemo: React.FC = () => {
   useEffect(() => {
     // Initialize current route state
     updateCurrentRoute();
-    
+
     // Listen for history changes (if supported)
     const handlePopState = () => {
       updateCurrentRoute();
@@ -33,7 +33,7 @@ export const RoutingDemo: React.FC = () => {
     console.log('updateCurrentRoute', url);
     const urlObj = new URL(url);
     const params: {[key: string]: any} = {};
-    
+
     urlObj.searchParams.forEach((value, key) => {
       params[key] = value;
     });
@@ -80,8 +80,8 @@ export const RoutingDemo: React.FC = () => {
         source: 'forward_demo',
         timestamp: Date.now()
       };
-      WebFRouter.pushState(forwardState, '/animation');
-      
+      WebFRouter.pushState(forwardState, '/css/animation');
+
       // Update local route state for display
     } catch (error) {
     } finally {
@@ -102,16 +102,16 @@ export const RoutingDemo: React.FC = () => {
         }
       } else if (delta > 0) {
         // Navigate to showcase and animation pages as forward examples
-        const forwardPages = ['/show_case', '/animation'];
+        const forwardPages = ['/show_case', '/css/animation'];
         const pagesToVisit = Math.min(delta, forwardPages.length);
-        
+
         for (let i = 0; i < pagesToVisit; i++) {
-          const stateParams = { 
-            source: 'delta_navigation', 
+          const stateParams = {
+            source: 'delta_navigation',
             step: i + 1,
             timestamp: Date.now()
           };
-          WebFRouter.pushState(stateParams, forwardPages[i]);          
+          WebFRouter.pushState(stateParams, forwardPages[i]);
         }
       }
     } catch (error) {
@@ -193,7 +193,7 @@ export const RoutingDemo: React.FC = () => {
 
   const demoRoutes = [
     {
-      path: '/animation',
+      path: '/css/animation',
       title: 'Animation Page',
       description: 'Navigate to the animation page',
       params: { source: 'routing_demo' }
@@ -219,28 +219,28 @@ export const RoutingDemo: React.FC = () => {
               <div className={styles.itemDesc}>Navigate through browser history using WebF hybrid history API</div>
               <div className={styles.historyContainer}>
                 <div className={styles.historyControls}>
-                  <button 
+                  <button
                     className={`${styles.historyButton} ${isNavigating.back ? styles.loading : ''}`}
                     onClick={goBack}
                     disabled={isNavigating.back}
                   >
                     {isNavigating.back ? 'Going Back...' : '← Back'}
                   </button>
-                  <button 
+                  <button
                     className={`${styles.historyButton} ${isNavigating.forward ? styles.loading : ''}`}
                     onClick={goForward}
                     disabled={isNavigating.forward}
                   >
                     {isNavigating.forward ? 'Going Forward...' : 'Forward →'}
                   </button>
-                  <button 
+                  <button
                     className={`${styles.historyButton} ${styles.deltaButton} ${isNavigating.delta ? styles.loading : ''}`}
                     onClick={() => goToHistoryDelta(-2)}
                     disabled={isNavigating.delta}
                   >
                     {isNavigating.delta ? 'Navigating...' : 'Go Back 2 Steps'}
                   </button>
-                  <button 
+                  <button
                     className={`${styles.historyButton} ${styles.deltaButton} ${isNavigating.delta ? styles.loading : ''}`}
                     onClick={() => goToHistoryDelta(2)}
                     disabled={isNavigating.delta}
@@ -271,14 +271,14 @@ export const RoutingDemo: React.FC = () => {
                       ))}
                     </div>
                     <div className={styles.routeActions}>
-                      <button 
+                      <button
                         className={`${styles.routeButton} ${isNavigating.navigate ? styles.loading : ''}`}
                         onClick={() => navigateToRoute(route.path, route.params)}
                         disabled={isNavigating.navigate}
                       >
                         {isNavigating.navigate ? 'Navigating...' : 'Push State'}
                       </button>
-                      <button 
+                      <button
                         className={`${styles.routeButton} ${styles.replaceButton} ${isNavigating.navigate ? styles.loading : ''}`}
                         onClick={() => navigateToRoute(route.path, route.params, {replace: true})}
                         disabled={isNavigating.navigate}
@@ -295,10 +295,10 @@ export const RoutingDemo: React.FC = () => {
             <div className={styles.componentItem}>
               <div className={styles.itemLabel}>TabBar Integration</div>
               <div className={styles.itemDesc}>Test TabBar switching from within the routing demo</div>
-              
-              <div className={styles.tabBarDemo}>     
+
+              <div className={styles.tabBarDemo}>
                 <div className={styles.tabBarControls}>
-                  <button 
+                  <button
                     className={styles.tabButton}
                     onClick={() => {
                       TabBarManager.switchTab('/search');
@@ -306,8 +306,8 @@ export const RoutingDemo: React.FC = () => {
                   >
                     Switch to Search Tab
                   </button>
-                  
-                  <button 
+
+                  <button
                     className={styles.tabButton}
                     onClick={() => {
                       console.log('Demo page: Switching to My tab');
@@ -316,8 +316,8 @@ export const RoutingDemo: React.FC = () => {
                   >
                     Switch to My Tab
                   </button>
-                  
-                  <button 
+
+                  <button
                     className={`${styles.tabButton} ${styles.navigateButton}`}
                     onClick={() => {
                       console.log('Demo page: Navigating to TabBar with My tab');
@@ -334,42 +334,42 @@ export const RoutingDemo: React.FC = () => {
             <div className={styles.componentItem}>
               <div className={styles.itemLabel}>Advanced Hybrid History</div>
               <div className={styles.itemDesc}>Flutter-style navigation methods with named routes and state management</div>
-              
+
               <div className={styles.hybridDemo}>
                 <div className={styles.hybridControls}>
-                  <button 
+                  <button
                     className={`${styles.hybridButton} ${isNavigating.pushNamed ? styles.loading : ''}`}
                     onClick={testPushNamed}
                     disabled={isNavigating.pushNamed}
                   >
                     {isNavigating.pushNamed ? 'Pushing...' : 'Push Named Route'}
                   </button>
-                  
-                  <button 
+
+                  <button
                     className={`${styles.hybridButton} ${isNavigating.pushReplacement ? styles.loading : ''}`}
                     onClick={testPushReplacementNamed}
                     disabled={isNavigating.pushReplacement}
                   >
                     {isNavigating.pushReplacement ? 'Replacing...' : 'Push Replacement'}
                   </button>
-                  
-                  <button 
+
+                  <button
                     className={`${styles.hybridButton} ${isNavigating.popAndPush ? styles.loading : ''}`}
                     onClick={testPopAndPushNamed}
                     disabled={isNavigating.popAndPush}
                   >
                     {isNavigating.popAndPush ? 'Navigating...' : 'Pop and Push'}
                   </button>
-                  
-                  <button 
+
+                  <button
                     className={`${styles.hybridButton} ${isNavigating.canPop ? styles.loading : ''}`}
                     onClick={testCanPopAndMaybePop}
                     disabled={isNavigating.canPop}
                   >
                     {isNavigating.canPop ? 'Checking...' : 'Can Pop / Maybe Pop'}
                   </button>
-                  
-                  <button 
+
+                  <button
                     className={`${styles.hybridButton} ${isNavigating.restorable ? styles.loading : ''}`}
                     onClick={testRestorablePopAndPush}
                     disabled={isNavigating.restorable}
@@ -377,7 +377,7 @@ export const RoutingDemo: React.FC = () => {
                     {isNavigating.restorable ? 'Creating...' : 'Restorable Navigation'}
                   </button>
                 </div>
-                
+
                 {hybridHistoryState.lastRestorationId && (
                   <div className={styles.resultContainer}>
                     <div className={styles.resultText}>

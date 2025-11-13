@@ -55,6 +55,7 @@ export const CSSShowcasePage: React.FC = () => {
               <Item label="Transforms" desc="Translate, scale, rotate, skew" to="/css/transforms" />
               <Item label="Transitions" desc="Smooth property changes" to="/css/transitions" />
               <Item label="Animations (Keyframes)" desc="Timeline-based animations" to="/css/keyframes" />
+              <Item label="CSS Animations" desc="Fade, slide, scale, rotate, bounce, pulse" to="/animation" />
               <Item label="Clip Path" desc="Custom shapes and clipping" to="/css/clip-path" />
               <Item label="Filter Effects" desc="Blur, brightness, contrast and more" to="/css/filter" />
             </div>
