@@ -2,7 +2,7 @@ import { EventTarget } from './event_target';
 import { EventInit } from './event_init';
 
 interface Event {
-  /**s
+  /**
   * Returns true or false depending on how event was initialized. True if event goes through its target's ancestors in reverse tree order, and false otherwise.
   */
   readonly bubbles: boolean;
