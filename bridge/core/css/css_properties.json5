@@ -8098,6 +8098,34 @@
       affected_by_zoom: true,
     },
     {
+      name: "word-break",
+      property_methods: [
+        /* "CSSValueFromComputedStyleInternal" */
+      ],
+      inherited: true,
+      field_group: "*",
+      field_template: "keyword",
+      // The order of keywords must align with EWordBreak in
+      // core/style/computed_style_base_constants.h
+      keywords: [
+        "normal",
+        "break-all",
+        "keep-all",
+        "auto-phrase",
+        "break-word"
+      ],
+      default_value: "normal",
+      type_name: "EWordBreak",
+      typedom_types: [
+        "Keyword"
+      ],
+      valid_for_marker: true,
+      invalidate: [
+        "layout",
+        "paint"
+      ],
+    },
+    {
       name: "z-index",
       property_methods: [
         "ParseSingleValue",

@@ -880,7 +880,12 @@ class ComputedStyle : public std::enable_shared_from_this<ComputedStyle> {
   // Line break
   LineBreak GetLineBreak() const { return line_break_; }
   void SetLineBreak(LineBreak line_break) { line_break_ = line_break; }
-  
+
+  // Word break
+  EWordBreak WordBreak() const { return word_break_; }
+  EWordBreak GetWordBreak() const { return word_break_; }
+  void SetWordBreak(EWordBreak wb) { word_break_ = wb; }
+
   // Webkit line clamp
   int WebkitLineClamp() const { return webkit_line_clamp_; }
   void SetWebkitLineClamp(int clamp) { webkit_line_clamp_ = clamp; }
@@ -1131,6 +1136,7 @@ class ComputedStyle : public std::enable_shared_from_this<ComputedStyle> {
   EOverflowAnchor overflow_anchor_ = EOverflowAnchor::kAuto;
   std::optional<StyleOverflowClipMargin> overflow_clip_margin_ = std::nullopt;
   EOverflowWrap overflow_wrap_ = EOverflowWrap::kNormal;
+  EWordBreak word_break_ = EWordBreak::kNormal;
   EOverlay overlay_ = EOverlay::kNone;
   StyleColor outline_color_ = StyleColor::CurrentColor();
   
@@ -2218,6 +2224,11 @@ class ComputedStyleBuilder {
   
   ComputedStyleBuilder& SetOverflowWrap(EOverflowWrap wrap) {
     style_->SetOverflowWrap(wrap);
+    return *this;
+  }
+
+  ComputedStyleBuilder& SetWordBreak(EWordBreak wb) {
+    style_->SetWordBreak(wb);
     return *this;
   }
   
