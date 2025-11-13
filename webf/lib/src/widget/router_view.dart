@@ -61,7 +61,7 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   void didPop() {
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
-    
+
     // CRITICAL FIX: Use widget.path instead of route.settings.name for consistency
     String path = widget.path;
 
@@ -78,7 +78,7 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   void didPopNext() {
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
-    
+
     // CRITICAL FIX: Use widget.path instead of route.settings.name for consistency
     String path = widget.path;
     dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPopNext', path: path);
@@ -93,8 +93,8 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   void didPush() {
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
-    
-    // CRITICAL FIX: Use widget.path (the actual route path) instead of route.settings.name 
+
+    // CRITICAL FIX: Use widget.path (the actual route path) instead of route.settings.name
     // because go_router's universal catch-all route always returns 'universal-webf-route' as the name
     String path = widget.path;
 
@@ -111,8 +111,8 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   void didPushNext() {
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
-    
-    // CRITICAL FIX: Use widget.path (the actual route path) instead of route.settings.name 
+
+    // CRITICAL FIX: Use widget.path (the actual route path) instead of route.settings.name
     // because go_router's universal catch-all route always returns 'universal-webf-route' as the name
     String path = widget.path;
     // Create event with the actual navigation path (widget.path)
@@ -151,7 +151,7 @@ class WebFRouterView extends StatefulWidget {
         errorBuilder: errorBuilder);
   }
 
-  WebFRouterView({required this.controller, required this.path, this.defaultViewBuilder});
+  const WebFRouterView({super.key, required this.controller, required this.path, this.defaultViewBuilder});
 
   @override
   State<StatefulWidget> createState() {
@@ -182,7 +182,7 @@ class _WebFRouterViewElement extends StatefulElement {
     // Store widget reference before unmounting to avoid null access
     final path = widget.path;
     final controller = widget.controller;
-    
+
     controller.popBuildContext(context: this, routePath: path);
     super.unmount();
   }
