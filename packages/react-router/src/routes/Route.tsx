@@ -54,7 +54,7 @@ export interface RouteProps {
  *
  * Responsible for managing page rendering, lifecycle and navigation bar
  */
-export function Route({path, prerender = false, element, title, theme = 'material' }: RouteProps) {
+export function Route({path, prerender = false, element, title, theme}: RouteProps) {
   // Mark whether the page has been rendered
   const [hasRendered, updateRender] = useState(false)
 
