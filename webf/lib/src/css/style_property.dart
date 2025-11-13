@@ -128,8 +128,6 @@ class CSSStyleProperty {
     List<String?>? values = _getBackgroundValues(shorthandValue);
     if (values == null) return;
 
-    cssLogger.fine('[CSSStyleProperty] Expanding background shorthand: "$shorthandValue"');
-
     // Per CSS Backgrounds spec, unspecified subproperties reset to their initial values.
     // Initials: color=transparent, image=none, repeat=repeat, attachment=scroll,
     // position=0% 0%, size=auto. Origin/clip not parsed here.
