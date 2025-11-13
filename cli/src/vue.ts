@@ -2,7 +2,7 @@ import _ from "lodash";
 import fs from 'fs';
 import path from 'path';
 import {ParameterType} from "./analyzer";
-import {ClassObject, FunctionArgumentType, FunctionDeclaration} from "./declaration";
+import {ClassObject, FunctionArgumentType, FunctionDeclaration, ConstObject, EnumObject} from "./declaration";
 import {IDLBlob} from "./IDLBlob";
 import {getPointerType, isPointerType} from "./utils";
 
@@ -188,6 +188,31 @@ export function generateVueTypings(blobs: IDLBlob[]) {
     return component.length > 0;
   }).join('\n\n');
 
+  // Collect declare consts across blobs and render as exported ambient declarations
+  const consts = blobs
+    .flatMap(blob => blob.objects)
+    .filter(obj => obj instanceof ConstObject) as ConstObject[];
+
+  // Deduplicate by name keeping first occurrence
+  const uniqueConsts = new Map<string, ConstObject>();
+  consts.forEach(c => {
+    if (!uniqueConsts.has(c.name)) uniqueConsts.set(c.name, c);
+  });
+
+  const constDeclarations = Array.from(uniqueConsts.values())
+    .map(c => `export declare const ${c.name}: ${c.type};`)
+    .join('\n');
+
+  // Collect declare enums across blobs
+  const enums = blobs
+    .flatMap(blob => blob.objects)
+    .filter(obj => obj instanceof EnumObject) as EnumObject[];
+
+  const enumDeclarations = enums.map(e => {
+    const members = e.members.map(m => m.initializer ? `${m.name} = ${m.initializer}` : `${m.name}`).join(', ');
+    return `export declare enum ${e.name} { ${members} }`;
+  }).join('\n');
+
   // Build mapping of template tag names to class names for GlobalComponents
   const componentMetas = componentNames.map(className => ({
     className,
@@ -202,6 +227,8 @@ export function generateVueTypings(blobs: IDLBlob[]) {
     componentNames,
     componentMetas,
     components,
+    consts: constDeclarations,
+    enums: enumDeclarations,
   });
 
   return content.split('\n').filter(str => {

@@ -89,3 +89,18 @@ export class TypeAliasObject {
   name: string;
   type: string;
 }
+
+export class ConstObject {
+  name: string;
+  type: string;
+}
+
+export class EnumMemberObject {
+  name: string;
+  initializer?: string;
+}
+
+export class EnumObject {
+  name: string;
+  members: EnumMemberObject[] = [];
+}

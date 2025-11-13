@@ -206,3 +206,19 @@ Name your .d.ts files to match the Dart file:
 - `button.dart` → `button.d.ts`
 - `switch.dart` → `switch.d.ts`
 - `tab.dart` → `tab.d.ts`
+
+## Declaring Constants
+
+You can declare ambient constants in your .d.ts files:
+
+```typescript
+declare const WEBF_SOME_SYMBOL: unique symbol;
+```
+
+When generating Vue typings, these constants are carried over into the generated `index.d.ts` as `export declare const` declarations so they are available to consumers:
+
+```typescript
+export declare const WEBF_SOME_SYMBOL: unique symbol;
+```
+
+This is useful for symbol-based typings or other shared constants referenced by your interfaces.

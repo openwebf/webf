@@ -19,6 +19,9 @@ type VueEventListeners<T extends EventMap> = {
   [K in keyof T as `on${Capitalize<string & K>}`]?: (event: T[K]) => any
 }
 
+<%= consts %>
+<%= enums %>
+
 type DefineCustomElement<
   ElementType,
   Events extends EventMap = {},

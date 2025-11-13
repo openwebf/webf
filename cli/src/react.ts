@@ -2,7 +2,7 @@ import _ from "lodash";
 import fs from 'fs';
 import path from 'path';
 import {ParameterType} from "./analyzer";
-import {ClassObject, FunctionArgumentType, FunctionDeclaration, TypeAliasObject} from "./declaration";
+import {ClassObject, FunctionArgumentType, FunctionDeclaration, TypeAliasObject, ConstObject, EnumObject} from "./declaration";
 import {IDLBlob} from "./IDLBlob";
 import {getPointerType, isPointerType, isUnionType} from "./utils";
 
@@ -125,6 +125,8 @@ export function toWebFTagName(className: string): string {
 export function generateReactComponent(blob: IDLBlob, packageName?: string, relativeDir?: string) {
   const classObjects = blob.objects.filter(obj => obj instanceof ClassObject) as ClassObject[];
   const typeAliases = blob.objects.filter(obj => obj instanceof TypeAliasObject) as TypeAliasObject[];
+  const constObjects = blob.objects.filter(obj => obj instanceof ConstObject) as ConstObject[];
+  const enumObjects = blob.objects.filter(obj => obj instanceof EnumObject) as EnumObject[];
   
   const classObjectDictionary = Object.fromEntries(
     classObjects.map(object => {
@@ -153,8 +155,19 @@ export function generateReactComponent(blob: IDLBlob, packageName?: string, rela
     return `type ${typeAlias.name} = ${typeAlias.type};`;
   }).join('\n');
   
+  // Include declare const values as ambient exports for type usage (e.g., unique symbol branding)
+  const constDeclarations = constObjects.map(c => `export declare const ${c.name}: ${c.type};`).join('\n');
+  
+  // Include enums
+  const enumDeclarations = enumObjects.map(e => {
+    const members = e.members.map(m => m.initializer ? `${m.name} = ${m.initializer}` : `${m.name}`).join(', ');
+    return `export declare enum ${e.name} { ${members} }`;
+  }).join('\n');
+  
   const dependencies = [
     typeAliasDeclarations,
+    constDeclarations,
+    enumDeclarations,
     // Include Methods interfaces as dependencies
     methods.map(object => {
       const methodDeclarations = object.methods.map(method => {

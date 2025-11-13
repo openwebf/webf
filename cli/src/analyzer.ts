@@ -8,6 +8,9 @@ import {
   FunctionArgumentType,
   FunctionDeclaration,
   FunctionObject,
+  ConstObject,
+  EnumObject,
+  EnumMemberObject,
   IndexedPropertyDeclaration,
   ParameterMode,
   PropsDeclaration,
@@ -76,7 +79,7 @@ export function analyzer(blob: IDLBlob, definedPropertyCollector: DefinedPropert
           return null;
         }
       })
-      .filter(o => o instanceof ClassObject || o instanceof FunctionObject || o instanceof TypeAliasObject) as (FunctionObject | ClassObject | TypeAliasObject)[];
+      .filter(o => o instanceof ClassObject || o instanceof FunctionObject || o instanceof TypeAliasObject || o instanceof ConstObject || o instanceof EnumObject) as (FunctionObject | ClassObject | TypeAliasObject | ConstObject | EnumObject)[];
   } catch (error) {
     console.error(`Error analyzing ${blob.source}:`, error);
     throw new Error(`Failed to analyze ${blob.source}: ${error instanceof Error ? error.message : String(error)}`);
@@ -635,6 +638,9 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, sourceFile: ts.Sour
       
     case ts.SyntaxKind.TypeAliasDeclaration:
       return processTypeAliasDeclaration(statement as ts.TypeAliasDeclaration, blob);
+    
+    case ts.SyntaxKind.EnumDeclaration:
+      return processEnumDeclaration(statement as ts.EnumDeclaration, blob);
       
     default:
       return null;
@@ -653,6 +659,48 @@ function processTypeAliasDeclaration(
   typeAlias.type = printer.printNode(ts.EmitHint.Unspecified, statement.type, statement.getSourceFile());
   
   return typeAlias;
+}
+
+function processEnumDeclaration(
+  statement: ts.EnumDeclaration,
+  blob: IDLBlob
+): EnumObject {
+  const enumObj = new EnumObject();
+  enumObj.name = statement.name.text;
+
+  const printer = ts.createPrinter();
+  enumObj.members = statement.members.map(m => {
+    const mem = new EnumMemberObject();
+    if (ts.isIdentifier(m.name)) {
+      mem.name = m.name.text;
+    } else if (ts.isStringLiteral(m.name)) {
+      // Preserve quotes in output
+      mem.name = `'${m.name.text}'`;
+    } else if (ts.isNumericLiteral(m.name)) {
+      // Numeric literal preserves hex form via .text
+      mem.name = m.name.text;
+    } else {
+      // Fallback to toString of node kind
+      mem.name = m.name.getText ? m.name.getText() : String(m.name);
+    }
+    if (m.initializer) {
+      // Preserve original literal text (e.g., hex) by slicing from the raw source
+      try {
+        // pos/end are absolute offsets into the source
+        const start = (m.initializer as any).pos ?? 0;
+        const end = (m.initializer as any).end ?? 0;
+        if (start >= 0 && end > start) {
+          mem.initializer = blob.raw.substring(start, end).trim();
+        }
+      } catch {
+        // Fallback to printer (may normalize to decimal)
+        mem.initializer = printer.printNode(ts.EmitHint.Unspecified, m.initializer, statement.getSourceFile());
+      }
+    }
+    return mem;
+  });
+
+  return enumObj;
 }
 
 function processInterfaceDeclaration(
@@ -906,30 +954,42 @@ function processConstructSignature(
 function processVariableStatement(
   statement: VariableStatement,
   unionTypeCollector: UnionTypeCollector
-): FunctionObject | null {
+): FunctionObject | ConstObject | null {
   const declaration = statement.declarationList.declarations[0];
-  
+
+  if (!declaration) return null;
+
   if (!ts.isIdentifier(declaration.name)) {
     console.warn('Variable declaration with non-identifier name is not supported');
     return null;
   }
-  
-  const methodName = declaration.name.text;
-  const type = declaration.type;
-  
-  if (!type || !ts.isFunctionTypeNode(type)) {
+
+  const varName = declaration.name.text;
+  const typeNode = declaration.type;
+
+  if (!typeNode) {
     return null;
   }
-  
-  const functionObject = new FunctionObject();
-  functionObject.declare = new FunctionDeclaration();
-  functionObject.declare.name = methodName;
-  functionObject.declare.args = type.parameters.map(param => 
-    paramsNodeToArguments(param, unionTypeCollector)
-  );
-  functionObject.declare.returnType = getParameterType(type.type, unionTypeCollector);
-  
-  return functionObject;
+
+  // Handle function type declarations: declare const fn: (args) => ret
+  if (ts.isFunctionTypeNode(typeNode)) {
+    const functionObject = new FunctionObject();
+    functionObject.declare = new FunctionDeclaration();
+    functionObject.declare.name = varName;
+    functionObject.declare.args = typeNode.parameters.map(param =>
+      paramsNodeToArguments(param, unionTypeCollector)
+    );
+    functionObject.declare.returnType = getParameterType(typeNode.type, unionTypeCollector);
+    return functionObject;
+  }
+
+  // Otherwise, capture as a const declaration with its type text
+  const printer = ts.createPrinter();
+  const typeText = printer.printNode(ts.EmitHint.Unspecified, typeNode, typeNode.getSourceFile());
+  const constObj = new ConstObject();
+  constObj.name = varName;
+  constObj.type = typeText;
+  return constObj;
 }
 
 // Clear caches when needed (e.g., between runs)

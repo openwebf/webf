@@ -1,4 +1,4 @@
-import {ClassObject, FunctionObject, TypeAliasObject} from "./declaration";
+import {ClassObject, FunctionObject, TypeAliasObject, EnumObject} from "./declaration";
 
 export class IDLBlob {
   raw: string = '';
@@ -7,7 +7,7 @@ export class IDLBlob {
   filename: string;
   implement: string;
   relativeDir: string = '';
-  objects: (ClassObject | FunctionObject | TypeAliasObject)[] = [];
+  objects: (ClassObject | FunctionObject | TypeAliasObject | EnumObject)[] = [];
 
   constructor(source: string, dist: string, filename: string, implement: string, relativeDir: string = '') {
     this.source = source;
