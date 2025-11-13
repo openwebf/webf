@@ -21,6 +21,8 @@ class FlutterCupertinoContextMenu extends WidgetElement {
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
 
+    CupertinoColors;
+
     // Enable haptic feedback
     attributes['enable-haptic-feedback'] = ElementAttributeProperty(
         getter: () => _enableHapticFeedback.toString(),
@@ -174,7 +176,7 @@ class FlutterCupertinoContextMenuState extends WebFWidgetElementState {
             'destructive': isDestructive,
             'default': isDefault,
           };
-          
+
           // Always dispatch 'select' event with detail containing the action info
           widgetElement.dispatchEvent(CustomEvent('select', detail: detail));
 

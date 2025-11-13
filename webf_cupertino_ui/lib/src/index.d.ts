@@ -1,4 +1,6 @@
 /// <reference path="./global.d.ts" />
+/// <reference path="./cupertino_colors.d.ts" />
+/// <reference path="./color.d.ts" />
 /// <reference path="./action-sheet.d.ts" />
 /// <reference path="./alert.d.ts" />
 /// <reference path="./button.d.ts" />
@@ -34,6 +36,8 @@
 
 export * from './action-sheet';
 export * from './alert';
+export * from './cupertino_colors';
+export * from './color';
 export * from './button';
 export * from './checkbox';
 export * from './context-menu';
