@@ -785,7 +785,8 @@ void StyleEngine::RecalcStyle(Document& document) {
 
           const CSSValue& value = *(*value_ptr);
           AtomicString prop_name = prop.Name().ToAtomicString();
-          String value_string = value.CssTextForSerialization();
+          // Use property_set->GetPropertyValueWithHint so property-specific normalizations (e.g. initial) apply.
+          String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
 
           // Forward custom properties (CSS variables) to UI and record them for local substitution.
           // Custom properties are represented with kVariable.
@@ -1191,6 +1192,8 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
             case EWhiteSpace::kBreakSpaces: white_space_value_str = String("break-spaces"); break;
           }
         }
+
+        
 
         for (unsigned i = 0; i < count; ++i) {
           auto prop = property_set->PropertyAt(i);
