@@ -158,10 +158,10 @@ export function generateReactComponent(blob: IDLBlob, packageName?: string, rela
   // Include declare const values as ambient exports for type usage (e.g., unique symbol branding)
   const constDeclarations = constObjects.map(c => `export declare const ${c.name}: ${c.type};`).join('\n');
   
-  // Include enums
+  // Include enums as concrete exports (no declare) so they are usable as values
   const enumDeclarations = enumObjects.map(e => {
     const members = e.members.map(m => m.initializer ? `${m.name} = ${m.initializer}` : `${m.name}`).join(', ');
-    return `export declare enum ${e.name} { ${members} }`;
+    return `export enum ${e.name} { ${members} }`;
   }).join('\n');
   
   const dependencies = [

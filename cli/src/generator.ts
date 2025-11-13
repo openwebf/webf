@@ -411,7 +411,7 @@ export async function reactGen({ source, target, exclude, packageName }: Generat
   info(`Output directory: ${normalizedTarget}`);
   info('You can now import these components in your React project.');
 
-  // Aggregate standalone type declarations (consts/enums/type aliases) into a single types.d.ts
+  // Aggregate standalone type declarations (consts/enums/type aliases) into a single types.ts
   try {
     const consts = blobs.flatMap(b => b.objects.filter(o => o instanceof ConstObject) as ConstObject[]);
     const enums = blobs.flatMap(b => b.objects.filter(o => o instanceof EnumObject) as EnumObject[]);
@@ -429,7 +429,7 @@ export async function reactGen({ source, target, exclude, packageName }: Generat
         .map(c => `export declare const ${c.name}: ${c.type};`)
         .join('\n');
       const enumDecl = enums
-        .map(e => `export declare enum ${e.name} { ${e.members.map(m => m.initializer ? `${m.name} = ${m.initializer}` : `${m.name}`).join(', ')} }`)
+        .map(e => `export enum ${e.name} { ${e.members.map(m => m.initializer ? `${m.name} = ${m.initializer}` : `${m.name}`).join(', ')} }`)
         .join('\n');
       const typeAliasDecl = Array.from(typeAliasMap.values())
         .map(t => `export type ${t.name} = ${t.type};`)
@@ -443,32 +443,31 @@ export async function reactGen({ source, target, exclude, packageName }: Generat
         ''
       ].filter(Boolean).join('\n');
 
-      const typesPath = path.join(normalizedTarget, 'src', 'types.d.ts');
+      const typesPath = path.join(normalizedTarget, 'src', 'types.ts');
       if (writeFileIfChanged(typesPath, typesContent)) {
         filesChanged++;
-        debug(`Generated: src/types.d.ts`);
+        debug(`Generated: src/types.ts`);
       }
 
-      // Try to help TypeScript pick up additional declarations by adding a reference comment.
-      // This avoids bundler resolution errors from importing a .d.ts file.
+      // Ensure index.ts re-exports these types so consumers get them on import.
       const indexFilePath = path.join(normalizedTarget, 'src', 'index.ts');
       try {
+        let current = '';
         if (fs.existsSync(indexFilePath)) {
-          let current = fs.readFileSync(indexFilePath, 'utf-8');
-          const refLine = `/// <reference path="./types.d.ts" />`;
-          if (!current.includes(refLine)) {
-            // Place the reference at the very top, before any code
-            const updated = `${refLine}\n${current}`;
-            if (writeFileIfChanged(indexFilePath, updated)) {
-              filesChanged++;
-              debug(`Updated: src/index.ts with reference to types.d.ts`);
-            }
+          current = fs.readFileSync(indexFilePath, 'utf-8');
+        }
+        const exportLine = `export * from './types';`;
+        if (!current.includes(exportLine)) {
+          const updated = current.trim().length ? `${current.trim()}\n${exportLine}\n` : `${exportLine}\n`;
+          if (writeFileIfChanged(indexFilePath, updated)) {
+            filesChanged++;
+            debug(`Updated: src/index.ts to export aggregated types`);
           }
         }
       } catch {}
     }
   } catch (e) {
-    warn('Failed to generate aggregated React types.d.ts');
+    warn('Failed to generate aggregated React types');
   }
 }
 

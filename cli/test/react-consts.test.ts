@@ -25,6 +25,6 @@ describe('React generator - declare const support', () => {
     blob.objects = [eo as any];
 
     const output = generateReactComponent(blob);
-    expect(output).toContain("export declare enum CupertinoColors { 'red' = 0x0f, 'bbb' = 0x00 }");
+    expect(output).toContain("export enum CupertinoColors { 'red' = 0x0f, 'bbb' = 0x00 }");
   });
 });
