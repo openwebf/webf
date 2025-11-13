@@ -120,6 +120,21 @@ String CSSPropertyValueSet::GetPropertyValueWithHint(const AtomicString& propert
   const std::shared_ptr<const CSSValue>* value = GetPropertyCSSValueWithHint(property_name, index);
   if (value) {
     const CSSValue& css_value = *(*value);
+    // Normalize CSS-wide 'initial' for select properties to concrete specified values.
+    // This is important for properties where the UI side expects resolved values
+    // instead of the CSS-wide keyword 'initial'.
+    if (css_value.IsInitialValue()) {
+      // Property names here are canonical CSS names (kebab-case).
+      if (property_name == AtomicString::CreateFromUTF8("flex-grow")) {
+        return String("0");
+      }
+      if (property_name == AtomicString::CreateFromUTF8("flex-shrink")) {
+        return String("1");
+      }
+      if (property_name == AtomicString::CreateFromUTF8("flex-basis")) {
+        return String("auto");
+      }
+    }
     if (css_value.HasRawText()) {
       if (auto* isolate = GetCurrentDartIsolateContext()) {
         isolate->metrics()->Increment(MetricsEnum::kGetPropertyValueWithHintWithRawText);
