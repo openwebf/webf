@@ -1067,7 +1067,12 @@ void Element::ParseAttribute(const webf::Element::AttributeModificationParams& p
     if (v.IsNull() || v.empty()) {
       EnsureUniqueElementData().ClearClass();
     } else {
-      EnsureUniqueElementData().SetClassFoldingCase(ctx(), v);
+      // Class selectors in HTML are case-sensitive per the CSS Selectors spec
+      // (unless modified by document compat/quirks handling). Lowercasing here
+      // prevents matching author rules like `.j4Cp { ... }` against an element
+      // with class="j4Cp". Store class tokens verbatim so selector matching can
+      // use the exact author-specified case.
+      EnsureUniqueElementData().SetClass(v);
     }
   } else if (params.name == html_names::kStyleAttr) {
     // Update inline style from style attribute
