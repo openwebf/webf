@@ -19,13 +19,16 @@ export 'src/search_input.dart';
 export 'src/segmented_tab.dart';
 export 'src/slider.dart';
 export 'src/switch.dart';
-export 'src/tab.dart';
-export 'src/tab_bar.dart';
 export 'src/textarea.dart';
 export 'src/timer_picker.dart';
 export 'src/toast.dart';
+export 'src/tab_bar.dart';
+export 'src/tab_scaffold.dart';
+export 'src/tab_view.dart';
 
 import 'package:webf/webf.dart';
+
+import 'src/tab_scaffold.dart';
 import 'src/action_sheet.dart';
 import 'src/alert.dart';
 import 'src/button.dart';
@@ -47,17 +50,18 @@ import 'src/search_input.dart';
 import 'src/segmented_tab.dart';
 import 'src/slider.dart';
 import 'src/switch.dart';
-import 'src/tab.dart';
-import 'src/tab_bar.dart';
 import 'src/textarea.dart';
 import 'src/timer_picker.dart';
 import 'src/toast.dart';
+import 'src/tab_bar.dart';
+import 'src/tab_scaffold.dart';
+import 'src/tab_view.dart';
 
 /// Installs all Cupertino UI custom elements for WebF.
-/// 
+///
 /// Call this function in your main() before running your WebF application
 /// to register all available Cupertino-style custom elements.
-/// 
+///
 /// Example:
 /// ```dart
 /// void main() {
@@ -68,8 +72,6 @@ import 'src/toast.dart';
 void installWebFCupertinoUI() {
   WebF.defineCustomElement('flutter-cupertino-button', (context) => FlutterCupertinoButton(context));
   WebF.defineCustomElement('flutter-cupertino-input', (context) => FlutterCupertinoInput(context));
-  WebF.defineCustomElement('flutter-cupertino-tab', (context) => FlutterCupertinoTab(context));
-  WebF.defineCustomElement('flutter-cupertino-tab-item', (context) => FlutterCupertinoTabItem(context));
   WebF.defineCustomElement('flutter-cupertino-segmented-tab', (context) => FlutterCupertinoSegmentedTab(context));
   WebF.defineCustomElement(
       'flutter-cupertino-segmented-tab-item', (context) => FlutterCupertinoSegmentedTabItem(context));
@@ -84,8 +86,6 @@ void installWebFCupertinoUI() {
   WebF.defineCustomElement('flutter-cupertino-toast', (context) => FlutterCupertinoToast(context));
   WebF.defineCustomElement('flutter-cupertino-loading', (context) => FlutterCupertinoLoading(context));
   WebF.defineCustomElement('flutter-cupertino-textarea', (context) => FlutterCupertinoTextArea(context));
-  WebF.defineCustomElement('flutter-cupertino-tab-bar', (context) => FlutterTabBar(context));
-  WebF.defineCustomElement('flutter-cupertino-tab-bar-item', (context) => FlutterCupertinoTabBarItem(context));
   WebF.defineCustomElement('flutter-cupertino-slider', (context) => FlutterCupertinoSlider(context));
   WebF.defineCustomElement('flutter-cupertino-context-menu', (context) => FlutterCupertinoContextMenu(context));
   WebF.defineCustomElement('flutter-cupertino-checkbox', (context) => FlutterCupertinoCheckbox(context));
@@ -109,4 +109,9 @@ void installWebFCupertinoUI() {
   WebF.defineCustomElement('flutter-cupertino-list-tile-subtitle', (context) => FlutterCupertinoListTileSubtitle(context));
   WebF.defineCustomElement('flutter-cupertino-list-tile-additional-info', (context) => FlutterCupertinoListTileAdditionalInfo(context));
   WebF.defineCustomElement('flutter-cupertino-list-tile-trailing', (context) => FlutterCupertinoListTileTrailing(context));
+  WebF.defineCustomElement('flutter-cupertino-tab-scaffold', (context) => FlutterCupertinoTabScaffold(context));
+  WebF.defineCustomElement('flutter-cupertino-tab-scaffold-tab', (context) => FlutterCupertinoTabScaffoldTab(context));
+  WebF.defineCustomElement('flutter-cupertino-tab-bar', (context) => FlutterCupertinoTabBar(context));
+  WebF.defineCustomElement('flutter-cupertino-tab-bar-item', (context) => FlutterCupertinoTabBarItem(context));
+  WebF.defineCustomElement('flutter-cupertino-tab-view', (context) => FlutterCupertinoTabView(context));
 }

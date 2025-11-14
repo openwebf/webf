@@ -10,7 +10,7 @@
 import 'package:webf/webf.dart';
 abstract class FlutterCupertinoTabBarBindings extends WidgetElement {
   FlutterCupertinoTabBarBindings(super.context);
-  String? get currentIndex;
+  int? get currentIndex;
   set currentIndex(value);
   String? get backgroundColor;
   set backgroundColor(value);
@@ -18,17 +18,17 @@ abstract class FlutterCupertinoTabBarBindings extends WidgetElement {
   set activeColor(value);
   String? get inactiveColor;
   set inactiveColor(value);
-  String? get iconSize;
+  double? get iconSize;
   set iconSize(value);
-  String? get height;
-  set height(value);
+  bool get noTopBorder;
+  set noTopBorder(value);
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
     attributes['current-index'] = ElementAttributeProperty(
       getter: () => currentIndex?.toString(),
-      setter: (value) => currentIndex = value,
-      deleter: () => currentIndex = null
+      setter: (value) => currentIndex = int.tryParse(value) ?? 0,
+      deleter: () => currentIndex = 0
     );
     attributes['background-color'] = ElementAttributeProperty(
       getter: () => backgroundColor?.toString(),
@@ -47,13 +47,13 @@ abstract class FlutterCupertinoTabBarBindings extends WidgetElement {
     );
     attributes['icon-size'] = ElementAttributeProperty(
       getter: () => iconSize?.toString(),
-      setter: (value) => iconSize = value,
-      deleter: () => iconSize = null
+      setter: (value) => iconSize = double.tryParse(value) ?? 0.0,
+      deleter: () => iconSize = 0.0
     );
-    attributes['height'] = ElementAttributeProperty(
-      getter: () => height?.toString(),
-      setter: (value) => height = value,
-      deleter: () => height = null
+    attributes['no-top-border'] = ElementAttributeProperty(
+      getter: () => noTopBorder.toString(),
+      setter: (value) => noTopBorder = value == 'true' || value == '',
+      deleter: () => noTopBorder = false
     );
   }
   static StaticDefinedBindingPropertyMap flutterCupertinoTabBarProperties = {
@@ -82,10 +82,10 @@ abstract class FlutterCupertinoTabBarBindings extends WidgetElement {
       setter: (element, value) =>
       castToType<FlutterCupertinoTabBarBindings>(element).iconSize = value,
     ),
-    'height': StaticDefinedBindingProperty(
-      getter: (element) => castToType<FlutterCupertinoTabBarBindings>(element).height,
+    'noTopBorder': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterCupertinoTabBarBindings>(element).noTopBorder,
       setter: (element, value) =>
-      castToType<FlutterCupertinoTabBarBindings>(element).height = value,
+      castToType<FlutterCupertinoTabBarBindings>(element).noTopBorder = value,
     ),
   };
   @override

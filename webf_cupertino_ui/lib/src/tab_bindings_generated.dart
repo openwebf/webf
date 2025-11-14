@@ -8,19 +8,29 @@
 // ignore_for_file: library_private_types_in_public_api
 // ignore_for_file: prefer_void_to_null
 import 'package:webf/webf.dart';
-abstract class FlutterCupertinoTabBindings extends WidgetElement {
-  FlutterCupertinoTabBindings(super.context);
-  void switchTab(List<dynamic> args);
-  static StaticDefinedSyncBindingObjectMethodMap flutterCupertinoTabMethods = {
-    'switchTab': StaticDefinedSyncBindingObjectMethod(
-      call: (element, args) {
-        return castToType<FlutterCupertinoTabBindings>(element).switchTab(args);
-      },
+abstract class FlutterCupertinoTabBarItemBindings extends WidgetElement {
+  FlutterCupertinoTabBarItemBindings(super.context);
+  String? get title;
+  set title(value);
+  @override
+  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
+    super.initializeAttributes(attributes);
+    attributes['title'] = ElementAttributeProperty(
+      getter: () => title?.toString(),
+      setter: (value) => title = value,
+      deleter: () => title = null
+    );
+  }
+  static StaticDefinedBindingPropertyMap flutterCupertinoTabBarItemProperties = {
+    'title': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterCupertinoTabBarItemBindings>(element).title,
+      setter: (element, value) =>
+      castToType<FlutterCupertinoTabBarItemBindings>(element).title = value,
     ),
   };
   @override
-  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
-    ...super.methods,
-    flutterCupertinoTabMethods,
+  List<StaticDefinedBindingPropertyMap> get properties => [
+    ...super.properties,
+    flutterCupertinoTabBarItemProperties,
   ];
 }
