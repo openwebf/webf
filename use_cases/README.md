@@ -47,7 +47,7 @@ The demo includes the following feature areas (reflecting the current implementa
   - Flutter interaction, Native interaction
 
 - Cupertino UI
-  - Cupertino Buttons, Navigation Bar, Action Sheet, Alert Dialog, Switches & Sliders
+  - Cupertino Buttons, Action Sheet, Alert Dialog, Switches & Sliders
 
 - UI Components & Interactions
   - Showcase/highlight tooltips, Action sheets, Context menu, Modal popup, Loading, Alerts, Gestures

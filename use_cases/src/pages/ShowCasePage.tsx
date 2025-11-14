@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
 import { FlutterShowcaseView, FlutterShowcaseDescription } from '@openwebf/react-ui-kit';
-import { FlutterCupertinoButton, FlutterCupertinoIcon } from '@openwebf/react-cupertino-ui';
+import {CupertinoIcons, FlutterCupertinoButton, FlutterCupertinoIcon} from '@openwebf/react-cupertino-ui';
 import styles from './ShowCasePage.module.css';
 
 export const ShowCasePage: React.FC = () => {
@@ -138,7 +138,7 @@ export const ShowCasePage: React.FC = () => {
                 </FlutterCupertinoButton>
                 <FlutterShowcaseView ref={basicShowcaseRef} onFinish={onBasicFinish} className={styles.showcaseView}>
                   <div className={`${styles.targetElement} ${styles.blueBg} ${styles.basicTarget}`}>
-                    <FlutterCupertinoIcon style={{fontSize: '30px', color: '#ffffff'}} type="info_circle_fill" />
+                    <FlutterCupertinoIcon style={{fontSize: '30px', color: '#ffffff'}} type={CupertinoIcons.circle_fill} />
                     <span>Basic Target</span>
                   </div>
                   <FlutterShowcaseDescription>
@@ -167,9 +167,9 @@ export const ShowCasePage: React.FC = () => {
               <div className={styles.showcaseRow}>
                 {/* Allow background click showcase */}
                 <div className={styles.showcaseItem}>
-                  <FlutterShowcaseView 
-                    ref={interactiveShowcaseRef} 
-                    onFinish={onInteractiveFinish} 
+                  <FlutterShowcaseView
+                    ref={interactiveShowcaseRef}
+                    onFinish={onInteractiveFinish}
                     className={styles.showcaseView}
                   >
                     <div className={`${styles.targetElement} ${styles.blueBg}`}>
@@ -185,13 +185,13 @@ export const ShowCasePage: React.FC = () => {
                     </FlutterShowcaseDescription>
                   </FlutterShowcaseView>
                 </div>
-                
+
                 {/* Disable Background Click */}
                 <div className={styles.showcaseItem}>
-                  <FlutterShowcaseView 
-                    ref={nonInteractiveShowcaseRef} 
+                  <FlutterShowcaseView
+                    ref={nonInteractiveShowcaseRef}
                     disableBarrierInteraction={true}
-                    onFinish={onNonInteractiveFinish} 
+                    onFinish={onNonInteractiveFinish}
                     className={styles.showcaseView}
                   >
                     <div className={`${styles.targetElement} ${styles.redBg}`}>
@@ -233,10 +233,10 @@ export const ShowCasePage: React.FC = () => {
               <div className={styles.showcaseRow}>
                 {/* Tooltip at top */}
                 <div className={styles.showcaseItem}>
-                  <FlutterShowcaseView 
-                    ref={topShowcaseRef} 
+                  <FlutterShowcaseView
+                    ref={topShowcaseRef}
                     tooltipPosition="top"
-                    onFinish={onTopFinish} 
+                    onFinish={onTopFinish}
                     className={styles.showcaseView}
                   >
                     <div className={`${styles.targetElement} ${styles.blueBg}`}>
@@ -251,13 +251,13 @@ export const ShowCasePage: React.FC = () => {
                     </FlutterShowcaseDescription>
                   </FlutterShowcaseView>
                 </div>
-                
+
                 {/* Tooltip At Bottom */}
                 <div className={styles.showcaseItem}>
-                  <FlutterShowcaseView 
-                    ref={bottomShowcaseRef} 
+                  <FlutterShowcaseView
+                    ref={bottomShowcaseRef}
                     tooltipPosition="bottom"
-                    onFinish={onBottomFinish} 
+                    onFinish={onBottomFinish}
                     className={styles.showcaseView}
                   >
                     <div className={`${styles.targetElement} ${styles.greenBg}`}>
@@ -272,12 +272,12 @@ export const ShowCasePage: React.FC = () => {
                     </FlutterShowcaseDescription>
                   </FlutterShowcaseView>
                 </div>
-                
+
                 {/* Auto Position */}
                 <div className={styles.showcaseItem}>
-                  <FlutterShowcaseView 
+                  <FlutterShowcaseView
                     ref={autoShowcaseRef}
-                    onFinish={onAutoFinish} 
+                    onFinish={onAutoFinish}
                     className={styles.showcaseView}
                   >
                     <div className={`${styles.targetElement} ${styles.orangeBg}`}>
@@ -420,11 +420,11 @@ export const ShowCasePage: React.FC = () => {
                   Start Showcase
                 </FlutterCupertinoButton>
                 <div className={styles.showcaseRow}>
-                  <FlutterShowcaseView 
-                    ref={buttonShowcaseRef} 
+                  <FlutterShowcaseView
+                    ref={buttonShowcaseRef}
                     disableBarrierInteraction={true}
                     tooltipPosition="top"
-                    onFinish={onButtonDemoFinish} 
+                    onFinish={onButtonDemoFinish}
                     className={styles.showcaseView}
                   >
                     <div className={`${styles.targetElement} ${styles.purpleBg}`}>

@@ -70,15 +70,12 @@ import { DOMStylePage } from './pages/dom/DOMStylePage';
 import { TailwindShowcasePage } from './pages/TailwindShowcasePage';
 import { CupertinoShowcasePage } from './pages/CupertinoShowcasePage';
 import CupertinoButtonsPage from './pages/cupertino/CupertinoButtonsPage';
-import { CupertinoNavBarPage } from './pages/cupertino/CupertinoNavBarPage';
 import { CupertinoActionSheetPage } from './pages/cupertino/CupertinoActionSheetPage';
 import { CupertinoAlertPage } from './pages/cupertino/CupertinoAlertPage';
 import { CupertinoControlsPage } from './pages/cupertino/CupertinoControlsPage';
 import CupertinoColorsPage from './pages/cupertino/CupertinoColorsPage';
-import { CupertinoSliverNavigationBarPage } from './pages/cupertino/CupertinoSliverNavigationBarPage';
+import { CupertinoIconsPage } from './pages/cupertino/CupertinoIconsPage';
 import { CupertinoTabsPage } from './pages/cupertino/CupertinoTabsPage';
-import { CupertinoPageScaffoldPage } from './pages/cupertino/CupertinoPageScaffoldPage';
-import { CupertinoPagePage } from './pages/cupertino/CupertinoPagePage';
 import { CupertinoPageRoutePage } from './pages/cupertino/CupertinoPageRoutePage';
 import { CupertinoDialogRoutePage } from './pages/cupertino/CupertinoDialogRoutePage';
 import { CupertinoModalPopupRoutePage } from './pages/cupertino/CupertinoModalPopupRoutePage';
@@ -170,15 +167,12 @@ function App() {
 
         <Route path="/cupertino-showcase" title="Cupertino UI Showcase" theme={'cupertino'} element={<CupertinoShowcasePage />} />
         <Route path="/cupertino/buttons" title="Cupertino Buttons" theme={'cupertino'} element={<CupertinoButtonsPage />} />
-        <Route path="/cupertino/navbar" title="Cupertino Navigation Bar" theme={'cupertino'} element={<CupertinoNavBarPage />} />
         <Route path="/cupertino/actionsheet" title="Cupertino Action Sheet" theme={'cupertino'} element={<CupertinoActionSheetPage />} />
         <Route path="/cupertino/alert" title="Cupertino Alert Dialog" theme={'cupertino'} element={<CupertinoAlertPage />} />
         <Route path="/cupertino/controls" title="Cupertino Switches & Sliders" theme={'cupertino'} element={<CupertinoControlsPage />} />
         <Route path="/cupertino/colors" title="Cupertino Colors" theme={'cupertino'} element={<CupertinoColorsPage />} />
-        <Route path="/cupertino/sliver-navbar" title="Cupertino Sliver Navigation Bar" theme={'cupertino'} element={<CupertinoSliverNavigationBarPage />} />
+        <Route path="/cupertino/icons" title="Cupertino Icons" theme={'cupertino'} element={<CupertinoIconsPage />} />
         <Route path="/cupertino/tabs" title="Cupertino Tabs" theme={'cupertino'} element={<CupertinoTabsPage />} />
-        <Route path="/cupertino/page-scaffold" title="Cupertino Page Scaffold" theme={'cupertino'} element={<CupertinoPageScaffoldPage />} />
-        <Route path="/cupertino/page" title="Cupertino Page" theme={'cupertino'} element={<CupertinoPagePage />} />
         <Route path="/cupertino/page-route" title="Cupertino PageRoute" theme={'cupertino'} element={<CupertinoPageRoutePage />} />
         <Route path="/cupertino/dialog-route" title="Cupertino DialogRoute" theme={'cupertino'} element={<CupertinoDialogRoutePage />} />
         <Route path="/cupertino/modal-popup-route" title="Cupertino ModalPopupRoute" theme={'cupertino'} element={<CupertinoModalPopupRoutePage />} />

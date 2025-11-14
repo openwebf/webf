@@ -1,6 +1,6 @@
 import React from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
-import { CupertinoColors  } from '@openwebf/react-cupertino-ui';
+import { CupertinoColors, CupertinoIcons } from '@openwebf/react-cupertino-ui';
 
 const CupertinoColorsPage: React.FC = () => {
   const ColorSwatch = ({ name, color, description }: { name: string; color: string; description?: string }) => (

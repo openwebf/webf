@@ -33,15 +33,12 @@ export const CupertinoShowcasePage: React.FC = () => {
             <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Theme & Colors</h2>
             <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
               <Item label="Cupertino Colors" desc="Static and dynamic Cupertino colors" to="/cupertino/colors" />
+              <Item label="Cupertino Icons" desc="iOS SF Symbols icon set" to="/cupertino/icons" />
             </div>
 
             <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Navigation, Tabs & Pages</h2>
             <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
-              <Item label="Navigation Bar" desc="CupertinoNavigationBar & BackButton" to="/cupertino/navbar" />
-              <Item label="Sliver Navigation Bar" desc="Large titles with scroll behavior" to="/cupertino/sliver-navbar" />
               <Item label="Tabs" desc="TabScaffold · TabBar · TabView · Controller" to="/cupertino/tabs" />
-              <Item label="Page Scaffold" desc="Basic page layout structure" to="/cupertino/page-scaffold" />
-              <Item label="CupertinoPage" desc="Navigator 2.0 Cupertino page" to="/cupertino/page" />
             </div>
 
             <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Routes & Transitions</h2>
