@@ -103,4 +103,5 @@ export class EnumMemberObject {
 export class EnumObject {
   name: string;
   members: EnumMemberObject[] = [];
+  static globalEnumSet: Set<string> = new Set<string>();
 }

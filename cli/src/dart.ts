@@ -2,7 +2,7 @@ import _ from "lodash";
 import fs from 'fs';
 import path from 'path';
 import {ParameterType} from "./analyzer";
-import {ClassObject, FunctionArgumentType, FunctionDeclaration, TypeAliasObject, PropsDeclaration} from "./declaration";
+import {ClassObject, FunctionArgumentType, FunctionDeclaration, TypeAliasObject, PropsDeclaration, EnumObject} from "./declaration";
 import {IDLBlob} from "./IDLBlob";
 import {getPointerType, isPointerType} from "./utils";
 
@@ -92,10 +92,25 @@ function generateReturnType(type: ParameterType, enumName?: string) {
 
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
+    // Map TS typeof expressions to Dart dynamic
+    if (typeof pointerType === 'string' && pointerType.startsWith('typeof ')) {
+      return 'dynamic';
+    }
+    // Map references to known string enums to String in Dart
+    if (typeof pointerType === 'string' && EnumObject.globalEnumSet.has(pointerType)) {
+      return 'String';
+    }
     return pointerType;
   }
   if (type.isArray && typeof type.value === 'object' && !Array.isArray(type.value)) {
-    return `${getPointerType(type.value)}[]`;
+    const elem = getPointerType(type.value);
+    if (typeof elem === 'string' && elem.startsWith('typeof ')) {
+      return `dynamic[]`;
+    }
+    if (typeof elem === 'string' && EnumObject.globalEnumSet.has(elem)) {
+      return 'String[]';
+    }
+    return `${elem}[]`;
   }
   
   // Handle when type.value is a ParameterType object (nested type)
@@ -112,7 +127,8 @@ function generateReturnType(type: ParameterType, enumName?: string) {
       return 'double';
     }
     case FunctionArgumentType.any: {
-      return 'any';
+      // Dart doesn't have `any`; use `dynamic`.
+      return 'dynamic';
     }
     case FunctionArgumentType.boolean: {
       return 'bool';
@@ -218,6 +234,10 @@ function generateMethodDeclaration(method: FunctionDeclaration) {
 function shouldMakeNullable(prop: any): boolean {
   // Boolean properties should never be nullable in Dart, even if optional in TypeScript
   if (prop.type.value === FunctionArgumentType.boolean) {
+    return false;
+  }
+  // Dynamic (any) should not use nullable syntax; dynamic already allows null
+  if (prop.type.value === FunctionArgumentType.any) {
     return false;
   }
   // Other optional properties remain nullable

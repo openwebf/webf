@@ -286,6 +286,20 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
     return basicType;
   }
 
+  // Handle `typeof SomeIdentifier` (TypeQuery) by preserving the textual form
+  // so React/Vue can keep strong typing (e.g., `typeof CupertinoIcons`).
+  // Dart mapping will convert this to `dynamic` later.
+  if (type.kind === ts.SyntaxKind.TypeQuery) {
+    const tq = type as ts.TypeQueryNode;
+    const getEntityNameText = (name: ts.EntityName): string => {
+      if (ts.isIdentifier(name)) return name.text;
+      // Qualified name: A.B.C
+      return `${getEntityNameText(name.left)}.${name.right.text}`;
+    };
+    const nameText = getEntityNameText(tq.exprName);
+    return `typeof ${nameText}`;
+  }
+
   if (type.kind === ts.SyntaxKind.TypeReference) {
     const typeReference = type as ts.TypeReferenceNode;
     const typeName = typeReference.typeName;
@@ -699,7 +713,11 @@ function processEnumDeclaration(
     }
     return mem;
   });
-
+  
+  // Register globally for cross-file lookups (e.g., Dart mapping decisions)
+  try {
+    EnumObject.globalEnumSet.add(enumObj.name);
+  } catch {}
   return enumObj;
 }
 

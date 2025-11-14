@@ -315,6 +315,8 @@ export async function reactGen({ source, target, exclude, packageName }: Generat
       if (writeFileIfChanged(fullPath, result)) {
         filesChanged++;
         debug(`Generated: ${path.basename(fullPath)}`);
+        // Emit a short preview for debugging when WEBF_DEBUG is on
+        debug(`Preview (${path.basename(fullPath)}):\n` + result.split('\n').slice(0, 12).join('\n'));
       }
     } catch (err) {
       error(`Error generating React component for ${blob.filename}`, err);
@@ -447,6 +449,13 @@ export async function reactGen({ source, target, exclude, packageName }: Generat
       if (writeFileIfChanged(typesPath, typesContent)) {
         filesChanged++;
         debug(`Generated: src/types.ts`);
+        try {
+          const constNames = Array.from(constMap.keys());
+          const aliasNames = Array.from(typeAliasMap.keys());
+          const enumNames = enums.map(e => e.name);
+          debug(`[react] Aggregated types - consts: ${constNames.join(', ') || '(none)'}; typeAliases: ${aliasNames.join(', ') || '(none)'}; enums: ${enumNames.join(', ') || '(none)'}\n`);
+          debug(`[react] src/types.ts preview:\n` + typesContent.split('\n').slice(0, 20).join('\n'));
+        } catch {}
       }
 
       // Ensure index.ts re-exports these types so consumers get them on import.

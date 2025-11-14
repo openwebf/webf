@@ -4,6 +4,7 @@ import path from 'path';
 import {ParameterType} from "./analyzer";
 import {ClassObject, FunctionArgumentType, FunctionDeclaration, ConstObject, EnumObject} from "./declaration";
 import {IDLBlob} from "./IDLBlob";
+import { debug } from './logger';
 import {getPointerType, isPointerType} from "./utils";
 
 function readTemplate(name: string) {
@@ -13,10 +14,22 @@ function readTemplate(name: string) {
 function generateReturnType(type: ParameterType) {
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
+    // Map Dart's `Type` (from TS typeof) to TS `any`
+    if (pointerType === 'Type') return 'any';
+    if (typeof pointerType === 'string' && pointerType.startsWith('typeof ')) {
+      const ident = pointerType.substring('typeof '.length).trim();
+      return `typeof __webfTypes.${ident}`;
+    }
     return pointerType;
   }
   if (type.isArray && typeof type.value === 'object' && !Array.isArray(type.value)) {
-    return `${getPointerType(type.value)}[]`;
+    const elemType = getPointerType(type.value);
+    if (elemType === 'Type') return 'any[]';
+    if (typeof elemType === 'string' && elemType.startsWith('typeof ')) {
+      const ident = elemType.substring('typeof '.length).trim();
+      return `(typeof __webfTypes.${ident})[]`;
+    }
+    return `${elemType}[]`;
   }
   switch (type.value) {
     case FunctionArgumentType.int:
@@ -213,6 +226,10 @@ export function generateVueTypings(blobs: IDLBlob[]) {
     return `export declare enum ${e.name} { ${members} }`;
   }).join('\n');
 
+  // Always import the types namespace to support typeof references
+  const typesImport = `import * as __webfTypes from './src/types';`;
+  debug(`[vue] Generating typings; importing types from ./src/types`);
+
   // Build mapping of template tag names to class names for GlobalComponents
   const componentMetas = componentNames.map(className => ({
     className,
@@ -229,6 +246,7 @@ export function generateVueTypings(blobs: IDLBlob[]) {
     components,
     consts: constDeclarations,
     enums: enumDeclarations,
+    typesImport,
   });
 
   return content.split('\n').filter(str => {

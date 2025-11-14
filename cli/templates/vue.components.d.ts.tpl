@@ -5,6 +5,8 @@
 // https://vuejs.org/guide/extras/web-components
 import { EmitFn, PublicProps, HTMLAttributes } from 'vue';
 
+<%= typesImport %>
+
 type EventMap = {
   [event: string]: Event
 }

@@ -5,6 +5,7 @@ import {ParameterType} from "./analyzer";
 import {ClassObject, FunctionArgumentType, FunctionDeclaration, TypeAliasObject, ConstObject, EnumObject} from "./declaration";
 import {IDLBlob} from "./IDLBlob";
 import {getPointerType, isPointerType, isUnionType} from "./utils";
+import { debug } from './logger';
 
 function readTemplate(name: string) {
   return fs.readFileSync(path.join(__dirname, '../templates/' + name + '.tpl'), {encoding: 'utf-8'});
@@ -16,10 +17,18 @@ function generateReturnType(type: ParameterType) {
   }
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
+    // Map Dart's `Type` (from TS typeof) to TS `any`
+    if (pointerType === 'Type') return 'any';
     return pointerType;
   }
   if (type.isArray && typeof type.value === 'object' && !Array.isArray(type.value)) {
-    return `${getPointerType(type.value)}[]`;
+    const elemType = getPointerType(type.value);
+    // Map arrays of Dart `Type` to `any[]` in TS; parenthesize typeof
+    if (elemType === 'Type') return 'any[]';
+    if (typeof elemType === 'string' && elemType.startsWith('typeof ')) {
+      return `(${elemType})[]`;
+    }
+    return `${elemType}[]`;
   }
   switch (type.value) {
     case FunctionArgumentType.int:
@@ -164,6 +173,14 @@ export function generateReactComponent(blob: IDLBlob, packageName?: string, rela
     return `export enum ${e.name} { ${members} }`;
   }).join('\n');
   
+  // Names declared within this blob (so we shouldn't prefix them with __webfTypes)
+  const localTypeNames = new Set<string>([
+    ...others.map(o => o.name),
+    ...typeAliases.map(t => t.name),
+    ...constObjects.map(c => c.name),
+    ...enumObjects.map(e => e.name),
+  ]);
+
   const dependencies = [
     typeAliasDeclarations,
     constDeclarations,
@@ -262,17 +279,91 @@ interface ${object.name} {
         createWebFComponentImport
       );
     
-    const content = _.template(templateContent)({
+    // Generate return type mapping; always use __webfTypes namespace for typeof
+    const genRT = (type: ParameterType) => {
+      if (isUnionType(type)) {
+        return (type.value as ParameterType[]).map(v => `'${v.value}'`).join(' | ');
+      }
+      if (isPointerType(type)) {
+        const pointerType = getPointerType(type);
+        if (pointerType === 'Type') return 'any';
+        if (typeof pointerType === 'string' && pointerType.startsWith('typeof ')) {
+          const ident = pointerType.substring('typeof '.length).trim();
+          return `typeof __webfTypes.${ident}`;
+        }
+        // Prefix external pointer types with __webfTypes unless locally declared
+        if (typeof pointerType === 'string' && /^(?:[A-Za-z_][A-Za-z0-9_]*)(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/.test(pointerType)) {
+          const base = pointerType.split('.')[0];
+          if (!localTypeNames.has(base)) {
+            return `__webfTypes.${pointerType}`;
+          }
+        }
+        return pointerType;
+      }
+      if (type.isArray && typeof type.value === 'object' && !Array.isArray(type.value)) {
+        const elemType = getPointerType(type.value);
+        if (elemType === 'Type') return 'any[]';
+        if (typeof elemType === 'string' && elemType.startsWith('typeof ')) {
+          const ident = elemType.substring('typeof '.length).trim();
+          return `(typeof __webfTypes.${ident})[]`;
+        }
+        if (typeof elemType === 'string' && /^(?:[A-Za-z_][A-Za-z0-9_]*)(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/.test(elemType)) {
+          const base = elemType.split('.')[0];
+          if (!localTypeNames.has(base)) {
+            return `__webfTypes.${elemType}[]`;
+          }
+        }
+        return `${elemType}[]`;
+      }
+      switch (type.value) {
+        case FunctionArgumentType.int:
+        case FunctionArgumentType.double:
+          return 'number';
+        case FunctionArgumentType.any:
+          return 'any';
+        case FunctionArgumentType.boolean:
+          return 'boolean';
+        case FunctionArgumentType.dom_string:
+          return 'string';
+        case FunctionArgumentType.void:
+        default:
+          return 'void';
+      }
+    };
+
+    // Compute relative import path to src/types
+    const depth = (relativeDir || '').split('/').filter(p => p).length;
+    const upPath = '../'.repeat(depth);
+    // Always import the types namespace for typeof references
+    const typesImport = `import * as __webfTypes from "${upPath}types";\n\n`;
+
+    // Debug: collect typeof references from props for this component
+    const typeofRefs = new Set<string>();
+    if (component.properties) {
+      component.properties.props.forEach(p => {
+        const t = p.type;
+        if (!t) return;
+        if (!t.isArray && typeof (t.value as any) === 'string' && String((t.value as any)).startsWith('typeof ')) {
+          const ident = String((t.value as any)).substring('typeof '.length).trim();
+          typeofRefs.add(ident);
+        }
+      });
+    }
+    debug(`[react] Generating ${className} (${blob.relativeDir}/${blob.filename}.tsx) typeof refs: ${Array.from(typeofRefs).join(', ') || '(none)'}; types import: ${upPath}types`);
+
+    const dependenciesWithImports = `${typesImport}${dependencies}`;
+
+    let content = _.template(templateContent)({
       className: className,
       properties: component.properties,
       events: component.events,
       methods: component.methods,
       classObjectDictionary,
-      dependencies,
+      dependencies: dependenciesWithImports,
       blob,
       toReactEventName,
       toWebFTagName,
-      generateReturnType,
+      generateReturnType: genRT,
       generateMethodDeclaration,
       generateMethodDeclarationWithDocs,
       generateEventHandlerType,
@@ -302,6 +393,56 @@ interface ${object.name} {
   }
   
   componentEntries.forEach(([className, component]) => {
+    const genRT = (type: ParameterType) => {
+      if (isUnionType(type)) {
+        return (type.value as ParameterType[]).map(v => `'${v.value}'`).join(' | ');
+      }
+      if (isPointerType(type)) {
+        const pointerType = getPointerType(type);
+        if (pointerType === 'Type') return 'any';
+        if (typeof pointerType === 'string' && pointerType.startsWith('typeof ')) {
+          const ident = pointerType.substring('typeof '.length).trim();
+          return `typeof __webfTypes.${ident}`;
+        }
+        if (typeof pointerType === 'string' && /^(?:[A-Za-z_][A-Za-z0-9_]*)(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/.test(pointerType)) {
+          const base = pointerType.split('.')[0];
+          if (!localTypeNames.has(base)) {
+            return `__webfTypes.${pointerType}`;
+          }
+        }
+        return pointerType;
+      }
+      if (type.isArray && typeof type.value === 'object' && !Array.isArray(type.value)) {
+        const elemType = getPointerType(type.value);
+        if (elemType === 'Type') return 'any[]';
+        if (typeof elemType === 'string' && elemType.startsWith('typeof ')) {
+          const ident = elemType.substring('typeof '.length).trim();
+          return `(typeof __webfTypes.${ident})[]`;
+        }
+        if (typeof elemType === 'string' && /^(?:[A-Za-z_][A-Za-z0-9_]*)(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/.test(elemType)) {
+          const base = elemType.split('.')[0];
+          if (!localTypeNames.has(base)) {
+            return `__webfTypes.${elemType}[]`;
+          }
+        }
+        return `${elemType}[]`;
+      }
+      switch (type.value) {
+        case FunctionArgumentType.int:
+        case FunctionArgumentType.double:
+          return 'number';
+        case FunctionArgumentType.any:
+          return 'any';
+        case FunctionArgumentType.boolean:
+          return 'boolean';
+        case FunctionArgumentType.dom_string:
+          return 'string';
+        case FunctionArgumentType.void:
+        default:
+          return 'void';
+      }
+    };
+
     const content = _.template(readTemplate('react.component.tsx'))({
       className: className,
       properties: component.properties,
@@ -312,7 +453,7 @@ interface ${object.name} {
       blob,
       toReactEventName,
       toWebFTagName,
-      generateReturnType,
+      generateReturnType: genRT,
       generateMethodDeclaration,
       generateMethodDeclarationWithDocs,
       generateEventHandlerType,
@@ -329,15 +470,23 @@ interface ${object.name} {
   });
   
   // Combine with shared imports at the top
-  const result = [
+  // Compute relative import path to src/types and always include namespace import
+  const depth = (relativeDir || '').split('/').filter(p => p).length;
+  const upPath = '../'.repeat(depth);
+  const typesImport = `import * as __webfTypes from "${upPath}types";`;
+
+  debug(`[react] Generating combined components for ${blob.filename}.tsx; types import: ${upPath}types`);
+
+  let result = [
     'import React from "react";',
     createWebFComponentImport,
+    typesImport,
     '',
     dependencies,
     '',
     ...componentDefinitions
   ].filter(line => line !== undefined).join('\n');
-  
+
   return result.split('\n').filter(str => {
     return str.trim().length > 0;
   }).join('\n');
