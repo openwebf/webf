@@ -16,6 +16,7 @@ The goals:
   - Example: `input: CustomEvent<string>;`, `tabchange: CustomEvent<number>;`, `click: Event;`
 - If the component exposes callable methods, list them in a dedicated `ComponentMethods` section (or document them to be added to the element type).
 - Use the shared aliases `type int = number; type double = number;` from `lib/src/global.d.ts` where needed.
+- After adding or updating a `.d.ts` file, run `webf codegen --dart-only` from the package root to regenerate `*_bindings_generated.dart` before implementing or changing the Dart `WidgetElement` so the Dart API stays in sync with the typings.
 
 Example (Button):
 ```ts
@@ -128,7 +129,9 @@ return <Foo ref={ref} />;
 
 ## 8) Documentation Pattern (lib/src/<component>.md)
 
-For each component, create `lib/src/<component>.md` with React-only usage:
+For each migrated component, you must create `lib/src/<component>.md` alongside the `.d.ts` and Dart files; migrations are not considered complete without this doc.
+
+Each `lib/src/<component>.md` should contain React-only usage:
 - Import statement for the generated React component
 - Quick start snippet
 - Props examples (variants, sizes, states)
@@ -136,19 +139,20 @@ For each component, create `lib/src/<component>.md` with React-only usage:
 - Styling example
 - Notes (Flutter differences, width/padding interactions, etc.)
 
-Use `lib/src/button.md` as a reference.
+Use `lib/src/button.md` as a reference and keep structure consistent across all components.
 
 ## 9) Checklist for Each Component
 
 1. Ensure .d.ts uses hyphen-case for non-standard attributes.
 2. Add/verify events interface with correct payload typing.
 3. If methods exist, list them and plan element typing.
-4. Implement/verify Dart component maps those attributes/events/methods.
-5. Generate React wrapper with:
+4. Run `webf codegen --dart-only` so Dart bindings reflect the latest typings.
+5. Implement/verify Dart component maps those attributes/events/methods using the generated bindings.
+6. Generate React wrapper with:
    - attributeProps and attributeMap (camelCase → hyphen-case)
    - events mapping (onX → DOM event)
    - defaultProps as needed
-6. Author React usage doc in `lib/src/<component>.md`.
+7. Author React usage doc in `lib/src/<component>.md` and keep it in sync with the actual API before merging.
 
 ## 10) JS vs Flutter State Ownership
 
