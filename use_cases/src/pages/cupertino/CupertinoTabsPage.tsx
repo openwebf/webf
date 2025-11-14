@@ -17,8 +17,7 @@ export const CupertinoTabsPage: React.FC = () => {
   const [navTabIndex, setNavTabIndex] = useState(0);
   return (
     <div id="main" className="min-h-screen w-full bg-surface">
-      <WebFListView className="w-full px-3 md:px-6">
-        <div className="max-w-4xl mx-auto py-6">
+      <WebFListView className="w-full px-3 md:px-6 max-w-4xl mx-auto py-6">
           <h1 className="text-2xl md:text-3xl font-semibold text-fg-primary mb-4">Cupertino Tabs</h1>
           <p className="text-fg-secondary mb-6">iOS-style tab bars, scaffolds, and per-tab navigation.</p>
 
@@ -305,7 +304,6 @@ export const CupertinoTabsPage: React.FC = () => {
               </ul>
             </div>
           </section>
-        </div>
       </WebFListView>
     </div>
   );

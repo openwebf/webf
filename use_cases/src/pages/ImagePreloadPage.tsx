@@ -32,8 +32,7 @@ export const ImagePreloadPage: React.FC = () => {
 
   return (
     <div id="main">
-      <WebFListView className={styles.list}>
-        <div className={styles.container}>
+      <WebFListView className={`${styles.list} ${styles.container}`}>
           <h1 className={styles.title}>Image Preload Performance Test</h1>
           
           <div className={styles.description}>
@@ -44,8 +43,7 @@ export const ImagePreloadPage: React.FC = () => {
           <div className={styles.imageDisplay}>
             <div className={styles.imageSection}>
               <h3 className={styles.sectionTitle}>Preloaded (1-50)</h3>
-              <WebFListView className={styles.scrollContainer}>
-                <div className={styles.imageGrid}>
+              <WebFListView className={`${styles.scrollContainer} ${styles.imageGrid}`}>
                   {imageUrls
                     .filter(img => img.isPreloaded)
                     .map(img => (
@@ -59,14 +57,12 @@ export const ImagePreloadPage: React.FC = () => {
                       </div>
                     ))
                   }
-                </div>
               </WebFListView>
             </div>
 
             <div className={styles.imageSection}>
               <h3 className={styles.sectionTitle}>Normal Loading (51-100)</h3>
-              <WebFListView className={styles.scrollContainer}>
-                <div className={styles.imageGrid}>
+              <WebFListView className={`${styles.scrollContainer} ${styles.imageGrid}`}>
                   {imageUrls
                     .filter(img => !img.isPreloaded)
                     .map(img => (
@@ -80,11 +76,9 @@ export const ImagePreloadPage: React.FC = () => {
                       </div>
                     ))
                   }
-                </div>
               </WebFListView>
             </div>
           </div>
-        </div>
       </WebFListView>
     </div>
   );

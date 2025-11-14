@@ -8,21 +8,20 @@ export const UserDetailsPage: React.FC = () => {
   const location = useLocation();
 
   return (
-    <WebFListView style={{ padding: '20px' }}>
-      <div style={{
-        backgroundColor: 'var(--background-secondary)',
-        borderRadius: '12px',
-        padding: '24px',
-        marginBottom: '20px',
-        border: '1px solid var(--border-color)'
+    <WebFListView style={{
+      padding: '20px',
+      backgroundColor: 'var(--background-secondary)',
+      borderRadius: '12px',
+      marginBottom: '20px',
+      border: '1px solid var(--border-color)'
+    }}>
+      <h1 style={{
+        fontSize: '24px',
+        marginBottom: '16px',
+        color: 'var(--font-color-primary)'
       }}>
-        <h1 style={{ 
-          fontSize: '24px', 
-          marginBottom: '16px',
-          color: 'var(--font-color-primary)'
-        }}>
-          User Details
-        </h1>
+        User Details
+      </h1>
         
         <div style={{ marginBottom: '20px' }}>
           <h2 style={{ 
@@ -136,7 +135,6 @@ export const UserDetailsPage: React.FC = () => {
         >
           Go User Details 888
         </button>
-      </div>
     </WebFListView>
   );
 };

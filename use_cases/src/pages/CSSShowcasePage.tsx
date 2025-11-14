@@ -20,8 +20,7 @@ export const CSSShowcasePage: React.FC = () => {
 
   return (
     <div id="main" className="min-h-screen w-full bg-surface">
-      <WebFListView className="w-full px-3 md:px-6">
-        <div className="max-w-4xl mx-auto py-6">
+      <WebFListView className="w-full px-3 md:px-6 max-w-4xl mx-auto py-6">
           <div className="w-full flex justify-center items-center">
             <div className="bg-gradient-to-tr from-indigo-500 to-purple-600 p-6 rounded-2xl text-white shadow">
               <h1 className="text-[28px] font-bold mb-2 drop-shadow">CSS Showcase</h1>
@@ -77,7 +76,6 @@ export const CSSShowcasePage: React.FC = () => {
               <Item label="Media Queries" desc="Responsive design patterns" to="/responsive" />
             </div>
           </div>
-        </div>
       </WebFListView>
     </div>
   );

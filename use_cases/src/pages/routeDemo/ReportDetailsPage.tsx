@@ -7,21 +7,20 @@ export const ReportDetailsPage: React.FC = () => {
   const location = useLocation();
 
   return (
-    <WebFListView style={{ padding: '20px' }}>
-      <div style={{
-        backgroundColor: 'var(--background-secondary)',
-        borderRadius: '12px',
-        padding: '24px',
-        marginBottom: '20px',
-        border: '1px solid var(--border-color)'
+    <WebFListView style={{
+      padding: '20px',
+      backgroundColor: 'var(--background-secondary)',
+      borderRadius: '12px',
+      marginBottom: '20px',
+      border: '1px solid var(--border-color)'
+    }}>
+      <h1 style={{
+        fontSize: '24px',
+        marginBottom: '16px',
+        color: 'var(--font-color-primary)'
       }}>
-        <h1 style={{ 
-          fontSize: '24px', 
-          marginBottom: '16px',
-          color: 'var(--font-color-primary)'
-        }}>
-          Report Details
-        </h1>
+        Report Details
+      </h1>
         
         <div style={{ marginBottom: '20px' }}>
           <h2 style={{ fontSize: '18px', marginBottom: '12px', color: 'var(--font-color-primary)' }}>
@@ -122,7 +121,6 @@ export const ReportDetailsPage: React.FC = () => {
             Back to Home
           </button>
         </div>
-      </div>
     </WebFListView>
   );
 };

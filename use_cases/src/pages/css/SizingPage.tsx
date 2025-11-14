@@ -4,8 +4,7 @@ import { WebFListView } from '@openwebf/react-core-ui';
 export const SizingPage: React.FC = () => {
   return (
     <div id="main" className="min-h-screen w-full bg-surface">
-      <WebFListView className="w-full px-3 md:px-6">
-        <div className="max-w-3xl mx-auto py-6">
+      <WebFListView className="w-full px-3 md:px-6 max-w-3xl mx-auto py-6">
           <h1 className="text-2xl font-semibold text-fg-primary mb-4">Sizing</h1>
           <div className="bg-surface-secondary border border-line rounded-xl p-4 mb-6">
             <h2 className="text-lg font-medium text-fg-primary mb-2">Width / Height</h2>
@@ -86,7 +85,6 @@ export const SizingPage: React.FC = () => {
               <div className="bg-lime-100 border border-line rounded p-2 text-fg-secondary" style={{ width: 'clamp(140px, 50%, 280px)' }}>width: clamp(140px, 50%, 280px)</div>
             </div>
           </div>
-        </div>
       </WebFListView>
     </div>
   );

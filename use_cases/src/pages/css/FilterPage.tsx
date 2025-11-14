@@ -5,8 +5,7 @@ import styles from './FilterPage.module.css';
 export const FilterPage: React.FC = () => {
   return (
     <div id="main">
-      <WebFListView className={styles.list}>
-        <div className={styles.container}>
+      <WebFListView className={`${styles.list} ${styles.container}`}>
           <div className={styles.grey}>
             <div
               style={{
@@ -16,7 +15,6 @@ export const FilterPage: React.FC = () => {
               }}
             />
           </div>
-        </div>
       </WebFListView>
     </div>
   );

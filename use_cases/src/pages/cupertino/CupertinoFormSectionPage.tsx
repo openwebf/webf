@@ -4,15 +4,13 @@ import { WebFListView } from '@openwebf/react-core-ui';
 export const CupertinoFormSectionPage: React.FC = () => {
   return (
     <div id="main" className="min-h-screen w-full bg-surface">
-      <WebFListView className="w-full px-3 md:px-6">
-        <div className="max-w-4xl mx-auto py-6">
+      <WebFListView className="w-full px-3 md:px-6 max-w-4xl mx-auto py-6">
           <h1 className="text-2xl md:text-3xl font-semibold text-fg-primary mb-4">Cupertino Form Section</h1>
           <p className="text-fg-secondary mb-6">Form rows and section groupings.</p>
 
           <div className="bg-surface-secondary rounded-xl p-6 border border-line">
             <p className="text-fg-secondary">Coming soon...</p>
           </div>
-        </div>
       </WebFListView>
     </div>
   );

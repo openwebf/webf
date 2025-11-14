@@ -94,8 +94,7 @@ export const BorderPage: React.FC = () => {
 
   return (
     <div id="main" className="min-h-screen">
-      <WebFListView className="px-3 md:px-6 bg-[#f8f9fa]">
-        <div className="max-w-5xl mx-auto py-4">
+      <WebFListView className="px-3 md:px-6 bg-[#f8f9fa] max-w-5xl mx-auto py-4">
           <div className="w-full flex justify-center items-center">
             <div className="bg-gradient-to-tr from-indigo-500 to-purple-600 p-4 rounded-2xl text-white shadow">
               <h1 className="text-[22px] font-bold mb-1 drop-shadow">Border</h1>
@@ -137,7 +136,6 @@ export const BorderPage: React.FC = () => {
               <DemoBox key={`mx-${i}`} label={c.label} style={c.style} />
             ))}
           </div>
-        </div>
       </WebFListView>
     </div>
   );

@@ -36,8 +36,7 @@ export const DOMEventsPage: React.FC = () => {
 
   return (
     <div id="main" className="min-h-screen w-full bg-surface">
-      <WebFListView className="w-full px-3 md:px-6">
-        <div className="max-w-3xl mx-auto py-6 pb-40">
+      <WebFListView className="w-full px-3 md:px-6 max-w-3xl mx-auto py-6 pb-40">
           <h1 className="text-2xl font-semibold text-fg-primary mb-4">DOM Events</h1>
 
           <WebFTouchArea
@@ -86,7 +85,6 @@ export const DOMEventsPage: React.FC = () => {
             </div>
           </div>
           {/* Log moved to fixed bottom panel */}
-        </div>
       </WebFListView>
       {/* Fixed Bottom Event Log Panel */}
       <div className="fixed bottom-0 left-0 right-0 z-50">

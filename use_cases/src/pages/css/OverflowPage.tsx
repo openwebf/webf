@@ -11,8 +11,7 @@ export const OverflowPage: React.FC = () => {
 
   return (
     <div id="main" className="min-h-screen w-full bg-surface">
-      <WebFListView className="w-full px-3 md:px-6">
-        <div className="max-w-3xl mx-auto py-6">
+      <WebFListView className="w-full px-3 md:px-6 max-w-3xl mx-auto py-6">
           <h1 className="text-2xl font-semibold text-fg-primary mb-4">Overflow</h1>
 
           <div className="bg-surface-secondary border border-line rounded-xl p-4 mb-4">
@@ -38,7 +37,6 @@ export const OverflowPage: React.FC = () => {
               <div className="w-40 h-24 border border-dashed border-line rounded bg-surface overflow-scroll">{content}</div>
             </div>
           </div>
-        </div>
       </WebFListView>
     </div>
   );

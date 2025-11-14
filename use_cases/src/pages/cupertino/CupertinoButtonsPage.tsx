@@ -7,8 +7,7 @@ const CupertinoButtonsPage: React.FC = () => {
 
   return (
     <div id="main" className="min-h-screen w-full bg-surface">
-      <WebFListView className="w-full px-3 md:px-6">
-        <div className="max-w-4xl mx-auto py-6">
+      <WebFListView className="w-full px-3 md:px-6 max-w-4xl mx-auto py-6">
           <h1 className="text-2xl md:text-3xl font-semibold text-fg-primary mb-4">Cupertino Buttons</h1>
           <p className="text-fg-secondary mb-6">iOS-style buttons with haptic feedback</p>
 
@@ -316,7 +315,6 @@ const CupertinoButtonsPage: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
       </WebFListView>
     </div>
   );

@@ -208,10 +208,9 @@ export const RoutingDemo: React.FC = () => {
 
   return (
     <div id="main">
-      <WebFListView className={styles.list}>
-        <div className={styles.componentSection}>
-          <div className={styles.sectionTitle}>Routing & Navigation Showcase</div>
-          <div className={styles.componentBlock}>
+      <WebFListView className={`${styles.list} ${styles.componentSection}`}>
+        <div className={styles.sectionTitle}>Routing & Navigation Showcase</div>
+        <div className={styles.componentBlock}>
 
             {/* History Navigation */}
             <div className={styles.componentItem}>
@@ -388,7 +387,6 @@ export const RoutingDemo: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
       </WebFListView>
     </div>
   );

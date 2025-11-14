@@ -6,7 +6,7 @@ export const FlexLayoutPage: React.FC = () => {
   const [wrapDemoHeight, setWrapDemoHeight] = useState<'auto' | '50%'>('auto');
   return (
     <div id="main">
-      <WebFListView className={styles.list}>
+      <WebFListView className="w-full px-3 md:px-6 max-w-3xl mx-auto py-6">
         <div className={styles.wrapper}>
           <div className={`${styles.headerTitle} ${styles.colorWidth}`}>
             Flex layout

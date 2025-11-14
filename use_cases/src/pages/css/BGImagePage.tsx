@@ -5,8 +5,7 @@ import styles from './BGImagePage.module.css';
 export const BGImagePage: React.FC = () => {
   return (
     <div id="main">
-      <WebFListView className={styles.list}>
-        <div className={styles.fixedArea}>
+      <WebFListView className={`${styles.list} ${styles.fixedArea}`}>
           <div
             className={`${styles.container} ${styles.image1}`}
             style={{
@@ -46,7 +45,6 @@ export const BGImagePage: React.FC = () => {
             }}
           >
           </div>
-        </div>
       </WebFListView>
     </div>
   );

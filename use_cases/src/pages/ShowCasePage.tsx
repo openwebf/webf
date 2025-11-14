@@ -124,10 +124,9 @@ export const ShowCasePage: React.FC = () => {
 
   return (
     <div id="main">
-      <WebFListView className={styles.list}>
-        <div className={styles.componentSection}>
-          <div className={styles.sectionTitle}>Showcase</div>
-          <div className={styles.componentBlock}>
+      <WebFListView className={`${styles.list} ${styles.componentSection}`}>
+        <div className={styles.sectionTitle}>Showcase</div>
+        <div className={styles.componentBlock}>
             {/* Basic Example */}
             <div className={styles.componentItem}>
               <div className={styles.itemLabel}>Basic Example</div>
@@ -447,7 +446,6 @@ export const ShowCasePage: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
       </WebFListView>
     </div>
   );
