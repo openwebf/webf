@@ -4,8 +4,9 @@
  */
 import 'package:flutter/cupertino.dart';
 import 'package:webf/webf.dart';
+import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
+import '../logger.dart';
 import 'checkbox_bindings_generated.dart';
-import 'logger.dart';
 
 class FlutterCupertinoCheckbox extends FlutterCupertinoCheckboxBindings {
   FlutterCupertinoCheckbox(super.context);

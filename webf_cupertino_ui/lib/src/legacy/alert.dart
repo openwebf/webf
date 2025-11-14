@@ -5,7 +5,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:webf/webf.dart';
 import 'dart:convert';
-import 'logger.dart';
+import '../logger.dart';
 
 mixin FlutterCupertinoAlertMixin on WidgetElement {
   // Define static method map

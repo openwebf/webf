@@ -5,7 +5,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:webf/webf.dart';
 import 'radio_bindings_generated.dart';
-import 'logger.dart';
+import '../logger.dart';
 
 class FlutterCupertinoRadio extends FlutterCupertinoRadioBindings {
   FlutterCupertinoRadio(super.context);

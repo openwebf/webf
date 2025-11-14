@@ -173,12 +173,6 @@ function App() {
         <Route path="/cupertino/colors" title="Cupertino Colors" theme={'cupertino'} element={<CupertinoColorsPage />} />
         <Route path="/cupertino/icons" title="Cupertino Icons" theme={'cupertino'} element={<CupertinoIconsPage />} />
         <Route path="/cupertino/tabs" title="Cupertino Tabs" theme={'cupertino'} element={<CupertinoTabsPage />} />
-        <Route path="/cupertino/page-route" title="Cupertino PageRoute" theme={'cupertino'} element={<CupertinoPageRoutePage />} />
-        <Route path="/cupertino/dialog-route" title="Cupertino DialogRoute" theme={'cupertino'} element={<CupertinoDialogRoutePage />} />
-        <Route path="/cupertino/modal-popup-route" title="Cupertino ModalPopupRoute" theme={'cupertino'} element={<CupertinoModalPopupRoutePage />} />
-        <Route path="/cupertino/page-transition" title="Cupertino Page Transition" theme={'cupertino'} element={<CupertinoPageTransitionPage />} />
-        <Route path="/cupertino/fullscreen-dialog-transition" title="Cupertino Fullscreen Dialog Transition" theme={'cupertino'} element={<CupertinoFullscreenDialogTransitionPage />} />
-        <Route path="/cupertino/popup-surface" title="Cupertino Popup Surface" theme={'cupertino'} element={<CupertinoPopupSurfacePage />} />
         <Route path="/cupertino/context-menu" title="Cupertino Context Menu" theme={'cupertino'} element={<CupertinoContextMenuPage />} />
         <Route path="/cupertino/list-section" title="Cupertino List Section" theme={'cupertino'} element={<CupertinoListSectionPage />} />
         <Route path="/cupertino/list-tile" title="Cupertino List Tile" theme={'cupertino'} element={<CupertinoListTilePage />} />

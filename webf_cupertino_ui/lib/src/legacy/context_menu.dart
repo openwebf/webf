@@ -6,7 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart' as dom;
-import 'logger.dart';
+import '../logger.dart';
 
 class FlutterCupertinoContextMenu extends WidgetElement {
   FlutterCupertinoContextMenu(super.context) {

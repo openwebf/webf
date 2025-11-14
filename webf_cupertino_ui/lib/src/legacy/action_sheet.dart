@@ -5,7 +5,7 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:webf/webf.dart';
-import 'logger.dart';
+import '../logger.dart';
 // import 'package:webf/launcher.dart'; // Not needed if using context directly
 
 class FlutterCupertinoActionSheet extends WidgetElement {
@@ -155,7 +155,7 @@ class FlutterCupertinoActionSheetState extends WebFWidgetElementState {
         if (index != null) {
           detail['index'] = index;
         }
-        
+
         // Always dispatch 'select' event with detail containing the action info
         widgetElement.dispatchEvent(CustomEvent('select', detail: detail));
         Navigator.pop(dialogContext); // Pop using the builder's context

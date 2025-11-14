@@ -150,7 +150,14 @@ Use `lib/src/button.md` as a reference.
    - defaultProps as needed
 6. Author React usage doc in `lib/src/<component>.md`.
 
-## 10) Common Pitfalls
+## 10) JS vs Flutter State Ownership
+
+- Treat the WebF `WidgetElement` subclass as the single source of truth for any state that is observable or controlled from JavaScript (attributes, properties, method-driven state).
+- Store JS-visible state as fields on the `WidgetElement`, not only inside `WebFWidgetElementState`. The `State` object may hold transient/UI-only state (animations, focus flags, controllers) but should always rebuild from the element’s fields.
+- When JavaScript updates state (via attributes or properties), update the element fields first in the generated/hand-written setters and then notify `state` (`state?.setState(() {})` or dedicated helpers).
+- When Flutter-side interactions change JS-visible state (like tab index), update the element fields and dispatch the appropriate DOM events so React/JS can observe the change.
+
+## 11) Common Pitfalls
 
 - Boolean attributes: DOM presence implies true. Ensure the wrapper sets/removes attribute correctly for `true/false`.
 - Hyphen-case vs camelCase: Keep hyphen-case in .d.ts; expose camelCase in React via `attributeMap`.
@@ -160,4 +167,3 @@ Use `lib/src/button.md` as a reference.
 ---
 
 Following these rules keeps the WebF custom elements authoritative while offering a clean, predictable React developer experience.
-

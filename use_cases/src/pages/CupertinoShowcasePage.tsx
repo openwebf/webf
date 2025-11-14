@@ -40,16 +40,6 @@ export const CupertinoShowcasePage: React.FC = () => {
               <Item label="Tabs" desc="TabScaffold · TabBar · TabView · Controller" to="/cupertino/tabs" />
             </div>
 
-            <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Routes & Transitions</h2>
-            <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
-              <Item label="CupertinoPageRoute" desc="iOS-style page route" to="/cupertino/page-route" />
-              <Item label="CupertinoDialogRoute" desc="Route for dialogs and popups" to="/cupertino/dialog-route" />
-              <Item label="CupertinoModalPopupRoute" desc="Modal popup presentation" to="/cupertino/modal-popup-route" />
-              <Item label="Page Transition" desc="Cupertino page transitions" to="/cupertino/page-transition" />
-              <Item label="Fullscreen Dialog Transition" desc="Fullscreen dialog animations" to="/cupertino/fullscreen-dialog-transition" />
-              <Item label="CupertinoPopupSurface" desc="Blurred popup surface style" to="/cupertino/popup-surface" />
-            </div>
-
             <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Dialogs, Sheets & Menus</h2>
             <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
               <Item label="Cupertino Alert Dialog" desc="Alerts & dialog actions" to="/cupertino/alert" />

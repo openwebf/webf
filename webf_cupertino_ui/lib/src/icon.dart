@@ -5,7 +5,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:webf/webf.dart';
 import 'icon_bindings_generated.dart';
-import 'cupertino_icons_map_generated.dart';
+import 'legacy/cupertino_icons_map_generated.dart';
 
 class FlutterCupertinoIcon extends FlutterCupertinoIconBindings {
   FlutterCupertinoIcon(super.context);

@@ -5,7 +5,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:webf/webf.dart';
 import 'timer_picker_bindings_generated.dart';
-import 'logger.dart';
+import '../logger.dart';
 
 class FlutterCupertinoTimerPicker extends FlutterCupertinoTimerPickerBindings {
   FlutterCupertinoTimerPicker(super.context);

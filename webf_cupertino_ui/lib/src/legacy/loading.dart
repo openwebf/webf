@@ -4,7 +4,7 @@
  */
 import 'package:flutter/cupertino.dart';
 import 'package:webf/webf.dart';
-import 'logger.dart';
+import '../logger.dart';
 
 class FlutterCupertinoLoading extends WidgetElement {
   FlutterCupertinoLoading(super.context);
