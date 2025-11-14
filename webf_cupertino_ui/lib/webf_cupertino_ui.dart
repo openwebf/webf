@@ -1,12 +1,14 @@
 import 'package:webf/webf.dart';
 
 export 'src/alert.dart';
+export 'src/action_sheet.dart';
 export 'src/button.dart';
 export 'src/icon.dart';
 export 'src/tab_bar.dart';
 export 'src/tab_scaffold.dart';
 export 'src/tab_view.dart';
 import 'src/alert.dart';
+import 'src/action_sheet.dart';
 import 'src/tab_scaffold.dart';
 import 'src/button.dart';
 import 'src/icon.dart';
@@ -29,6 +31,7 @@ import 'src/tab_view.dart';
 void installWebFCupertinoUI() {
   WebF.defineCustomElement('flutter-cupertino-button', (context) => FlutterCupertinoButton(context));
   WebF.defineCustomElement('flutter-cupertino-alert', (context) => FlutterCupertinoAlert(context));
+  WebF.defineCustomElement('flutter-cupertino-action-sheet', (context) => FlutterCupertinoActionSheet(context));
   WebF.defineCustomElement('flutter-cupertino-tab-scaffold', (context) => FlutterCupertinoTabScaffold(context));
   WebF.defineCustomElement('flutter-cupertino-tab-scaffold-tab', (context) => FlutterCupertinoTabScaffoldTab(context));
   WebF.defineCustomElement('flutter-cupertino-tab-bar', (context) => FlutterCupertinoTabBar(context));
