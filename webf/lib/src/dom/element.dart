@@ -1148,6 +1148,12 @@ abstract class Element extends ContainerNode
   void childrenChanged(ChildrenChange change) {
     super.childrenChanged(change);
     renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
+    // Children mutations (e.g., text nodes inserted or updated) can alter the
+    // accessible name/description. Ensure semantics pick up the change.
+    final renderBoxModel = renderStyle.attachedRenderBoxModel;
+    if (renderBoxModel != null) {
+      renderBoxModel.markNeedsSemanticsUpdate();
+    }
   }
 
   @override

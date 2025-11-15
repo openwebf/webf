@@ -47,6 +47,84 @@ void main() {
     });
   });
 
+  testWidgets('paragraph text surfaces to semantics traversal', (WidgetTester tester) async {
+    final html = '''
+      <p id="plain-text">Paragraph text should be read aloud.</p>
+    ''';
+
+    await WebFWidgetTestUtils.prepareWidgetTest(
+      tester: tester,
+      html: '<body>$html</body>',
+      controllerName: 'a11y-p-${DateTime.now().millisecondsSinceEpoch}',
+      wrap: (child) => MaterialApp(home: Scaffold(body: child)),
+    );
+
+    final handle = tester.ensureSemantics();
+    try {
+      await tester.pump();
+      expect(find.bySemanticsLabel('Paragraph text should be read aloud.'), findsOneWidget);
+    } finally {
+      handle.dispose();
+    }
+  });
+
+  testWidgets('dynamically inserted paragraphs become readable', (WidgetTester tester) async {
+    final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+      tester: tester,
+      html: '<body></body>',
+      controllerName: 'a11y-p-dynamic-${DateTime.now().millisecondsSinceEpoch}',
+      wrap: (child) => MaterialApp(home: Scaffold(body: child)),
+    );
+
+    await prepared.controller.view.evaluateJavaScripts('''
+      const p = document.createElement('p');
+      p.id = 'dynamic-p';
+      p.textContent = 'Dynamic paragraph text should be announced.';
+      document.body.appendChild(p);
+    ''');
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final handle = tester.ensureSemantics();
+    try {
+      await tester.pump();
+      expect(find.bySemanticsLabel('Dynamic paragraph text should be announced.'), findsOneWidget);
+    } finally {
+      handle.dispose();
+    }
+  });
+
+  testWidgets('section landmark exposes heading and description text', (WidgetTester tester) async {
+    final html = '''
+      <section id="landmark" class="componentItem" aria-labelledby="landmark-demo-title">
+        <h2 id="landmark-demo-title" class="itemLabel">Landmarks & Skip Navigation</h2>
+        <p id="landmark-desc" class="itemDesc">
+          Structure pages so assistive technologies can offer shortcuts. Skip links paired with semantic landmarks let keyboard users move directly to the content they need.
+        </p>
+        <div class="landmarkExample"></div>
+      </section>
+    ''';
+
+    final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+      tester: tester,
+      html: '<body>$html</body>',
+      controllerName: 'a11y-landmark-${DateTime.now().millisecondsSinceEpoch}',
+      wrap: (child) => MaterialApp(home: Scaffold(body: child)),
+    );
+
+    final dom.Element section = prepared.getElementById('landmark');
+    final dom.Element heading = prepared.getElementById('landmark-demo-title');
+    final dom.Element description = prepared.getElementById('landmark-desc');
+
+    expect(WebFAccessibility.computeAccessibleName(heading), equals('Landmarks & Skip Navigation'));
+    expect(WebFAccessibility.computeAccessibleName(section), equals('Landmarks & Skip Navigation'));
+    expect(
+      WebFAccessibility.computeAccessibleName(description),
+      startsWith('Structure pages so assistive technologies can offer shortcuts.'),
+    );
+  });
+
   testWidgets('navigation links read separately with correct labels', (WidgetTester tester) async {
     final html = '''
       <nav>
