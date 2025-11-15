@@ -31,8 +31,11 @@ class RenderGridLayout extends RenderLayoutBox {
   }
 
   List<double> _resolveTracks(List<GridTrackSize> tracks, double? innerAvailable, Axis axis) {
-    final List<double> sizes = List.filled(tracks.length, 0.0);
-    if (tracks.isEmpty) return sizes;
+    if (tracks.isEmpty) {
+      return <double>[];
+    }
+
+    final List<double> sizes = List<double>.filled(tracks.length, 0.0, growable: true);
 
     double fixed = 0.0;
     double frSum = 0.0;
