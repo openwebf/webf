@@ -191,5 +191,47 @@ describe('React Generator', () => {
       expect(result).toContain('children?: React.ReactNode;');
       expect(result).toContain('className?: string;');
     });
+
+    it('should preserve JSDoc for supporting option interfaces', () => {
+      const blob = new IDLBlob('/test/source', '/test/target', 'TestComponent', 'test', '');
+      
+      const properties = new ClassObject();
+      properties.name = 'TestComponentProperties';
+      properties.kind = ClassObjectKind.interface;
+
+      const options = new ClassObject();
+      options.name = 'TestComponentOptions';
+      options.kind = ClassObjectKind.interface;
+
+      const titleProp = new PropsDeclaration();
+      titleProp.name = 'title';
+      titleProp.type = { value: 'string' } as any;
+      titleProp.optional = true;
+      titleProp.documentation = 'Optional override title for this show() call.';
+      titleProp.readonly = false;
+      titleProp.typeMode = {};
+
+      const messageProp = new PropsDeclaration();
+      messageProp.name = 'message';
+      messageProp.type = { value: 'string' } as any;
+      messageProp.optional = true;
+      messageProp.documentation = 'Optional override message for this show() call.';
+      messageProp.readonly = false;
+      messageProp.typeMode = {};
+
+      options.props = [titleProp, messageProp];
+
+      blob.objects = [properties, options];
+      
+      const result = generateReactComponent(blob);
+
+      expect(result).toContain('interface TestComponentOptions');
+      expect(result).toMatch(
+        /interface TestComponentOptions[\s\S]*?\/\*\*[\s\S]*?Optional override title for this show\(\) call\.[\s\S]*?\*\/\s*\n\s*title\?:/
+      );
+      expect(result).toMatch(
+        /interface TestComponentOptions[\s\S]*?\/\*\*[\s\S]*?Optional override message for this show\(\) call\.[\s\S]*?\*\/\s*\n\s*message\?:/
+      );
+    });
   });
 });

@@ -25,6 +25,7 @@ webf codegen [output-dir] [options]
 - `--flutter-package-src <path>`: Flutter package source path containing TypeScript definitions
 - `--framework <framework>`: Target framework - 'react' or 'vue'
 - `--package-name <name>`: Package name for the webf typings
+- `--dart-only`: Only generate Dart bindings in the Flutter package (skip React/Vue code and npm package generation)
 - `--publish-to-npm`: Automatically publish the generated package to npm
 - `--npm-registry <url>`: Custom npm registry URL (defaults to https://registry.npmjs.org/)
 
@@ -40,6 +41,9 @@ webf codegen my-vue-app --flutter-package-src=./flutter_pkg --framework=vue --pa
 
 # Use temporary directory (auto-created)
 webf codegen --flutter-package-src=../webf_cupertino_ui
+
+# Generate only Dart bindings inside the Flutter package
+webf codegen --flutter-package-src=../webf_cupertino_ui --dart-only
 ```
 
 **Create a new project without code generation:**

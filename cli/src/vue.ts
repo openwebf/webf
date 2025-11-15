@@ -107,20 +107,43 @@ function generateVueComponent(blob: IDLBlob) {
   });
 
   const dependencies = others.map(object => {
-    if (!object || !object.props) {
+    if (!object || !object.props || object.props.length === 0) {
       return '';
     }
-    const props = object.props.map(prop => {
-      if (prop.optional) {
-        return `${prop.name}?: ${generateReturnType(prop.type)};`;
-      }
-      return `${prop.name}: ${generateReturnType(prop.type)};`;
-    }).join('\n  ');
 
-    return `
-interface ${object.name} {
-  ${props}
-}`;
+    const interfaceLines: string[] = [];
+
+    if (object.documentation && object.documentation.trim().length > 0) {
+      interfaceLines.push('/**');
+      object.documentation.split('\n').forEach(line => {
+        interfaceLines.push(` * ${line}`);
+      });
+      interfaceLines.push(' */');
+    }
+
+    interfaceLines.push(`interface ${object.name} {`);
+
+    const propLines = object.props.map(prop => {
+      const lines: string[] = [];
+
+      if (prop.documentation && prop.documentation.trim().length > 0) {
+        lines.push('  /**');
+        prop.documentation.split('\n').forEach(line => {
+          lines.push(`   * ${line}`);
+        });
+        lines.push('   */');
+      }
+
+      const optionalToken = prop.optional ? '?' : '';
+      lines.push(`  ${prop.name}${optionalToken}: ${generateReturnType(prop.type)};`);
+
+      return lines.join('\n');
+    });
+
+    interfaceLines.push(propLines.join('\n'));
+    interfaceLines.push('}');
+
+    return interfaceLines.join('\n');
   }).filter(dep => dep.trim() !== '').join('\n\n');
 
   const componentProperties = properties.length > 0 ? properties[0] : undefined;

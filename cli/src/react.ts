@@ -191,28 +191,60 @@ export function generateReactComponent(blob: IDLBlob, packageName?: string, rela
         return generateMethodDeclarationWithDocs(method, '  ');
       }).join('\n');
 
-      let interfaceDoc = '';
-      if (object.documentation) {
-        interfaceDoc = `/**\n${object.documentation.split('\n').map(line => ` * ${line}`).join('\n')}\n */\n`;
+      const lines: string[] = [];
+      if (object.documentation && object.documentation.trim().length > 0) {
+        lines.push('/**');
+        object.documentation.split('\n').forEach(line => {
+          lines.push(` * ${line}`);
+        });
+        lines.push(' */');
       }
 
-      return `${interfaceDoc}interface ${object.name} {
-${methodDeclarations}
-}`;
+      lines.push(`interface ${object.name} {`);
+      lines.push(methodDeclarations);
+      lines.push('}');
+
+      return lines.join('\n');
     }).join('\n\n'),
     others.map(object => {
-      const props = object.props.map(prop => {
-        if (prop.optional) {
-          return `${prop.name}?: ${generateReturnType(prop.type)};`;
-        }
-        return `${prop.name}: ${generateReturnType(prop.type)};`;
-      }).join('\n  ');
+      if (!object || !object.props || object.props.length === 0) {
+        return '';
+      }
 
-      return `
-interface ${object.name} {
-  ${props}
-}`;
-    }).join('\n\n')
+      const interfaceLines: string[] = [];
+
+      if (object.documentation && object.documentation.trim().length > 0) {
+        interfaceLines.push('/**');
+        object.documentation.split('\n').forEach(line => {
+          interfaceLines.push(` * ${line}`);
+        });
+        interfaceLines.push(' */');
+      }
+
+      interfaceLines.push(`interface ${object.name} {`);
+
+      const propLines = object.props.map(prop => {
+        const lines: string[] = [];
+
+        if (prop.documentation && prop.documentation.trim().length > 0) {
+          lines.push('  /**');
+          prop.documentation.split('\n').forEach(line => {
+            lines.push(`   * ${line}`);
+          });
+          lines.push('   */');
+        }
+
+        const optionalToken = prop.optional ? '?' : '';
+        lines.push(`  ${prop.name}${optionalToken}: ${generateReturnType(prop.type)};`);
+
+        return lines.join('\n');
+      });
+
+      interfaceLines.push(propLines.join('\n'));
+      interfaceLines.push('}');
+
+      return interfaceLines.join('\n');
+    }).filter(Boolean).join('\n\n')
   ].filter(Boolean).join('\n\n');
 
   // Generate all components from this file

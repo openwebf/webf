@@ -356,6 +356,36 @@ describe('Commands', () => {
       consoleSpy.mockRestore();
     });
 
+    it('should generate only Dart bindings when dartOnly is set', async () => {
+      const options = {
+        flutterPackageSrc: '/flutter/src',
+        dartOnly: true,
+      };
+      
+      // Mock TypeScript validation
+      mockTypeScriptValidation('/flutter/src');
+      
+      await generateCommand('/dist', options as any);
+      
+      // Should call dartGen for the Flutter package, but not reactGen/vueGen
+      expect(mockGenerator.dartGen).toHaveBeenCalledWith({
+        source: '/flutter/src',
+        target: '/flutter/src',
+        command: expect.stringContaining('webf codegen'),
+        exclude: undefined,
+      });
+      expect(mockGenerator.reactGen).not.toHaveBeenCalled();
+      expect(mockGenerator.vueGen).not.toHaveBeenCalled();
+      
+      // Should not attempt to build or run npm scripts
+      const spawnCalls = (mockSpawnSync as jest.Mock).mock.calls;
+      const buildOrPublishCalls = spawnCalls.filter(call => {
+        const args = call[1] as any;
+        return Array.isArray(args) && (args.includes('run') || args.includes('publish') || args.includes('install'));
+      });
+      expect(buildOrPublishCalls).toHaveLength(0);
+    });
+
     it('should show instructions when --flutter-package-src is missing', async () => {
       const options = { framework: 'react' };
       
@@ -420,11 +450,11 @@ describe('Commands', () => {
       
       await generateCommand('/dist', options);
 
-      expect(mockGenerator.reactGen).toHaveBeenCalledWith({
+      expect(mockGenerator.reactGen).toHaveBeenCalledWith(expect.objectContaining({
         source: '/flutter/src',
         target: path.resolve('/dist'),
         command: expect.stringContaining('webf codegen')
-      });
+      }));
     });
 
     it('should create new project if package.json not found', async () => {
