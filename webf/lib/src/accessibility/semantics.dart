@@ -51,14 +51,18 @@ class WebFAccessibility {
     final String? explicitRole = element.getAttribute('role')?.toLowerCase();
     final _Role role = _inferRole(element, explicitRole);
 
+    final bool suppressSelfLabel = _shouldSuppressAutoLabel(element, role);
+
     // Compute accessible name and description.
-    final String? name = computeAccessibleName(element)?.trim();
-    if (name != null && name.isNotEmpty) {
-      config.label = name;
-    }
-    final String? hint = computeAccessibleDescription(element)?.trim();
-    if (hint != null && hint.isNotEmpty) {
-      config.hint = hint;
+    if (!suppressSelfLabel) {
+      final String? name = computeAccessibleName(element)?.trim();
+      if (name != null && name.isNotEmpty) {
+        config.label = name;
+      }
+      final String? hint = computeAccessibleDescription(element)?.trim();
+      if (hint != null && hint.isNotEmpty) {
+        config.hint = hint;
+      }
     }
 
     // Disabled/enabled
@@ -393,6 +397,31 @@ class WebFAccessibility {
   static bool _isTruthy(String value) {
     final v = value.trim().toLowerCase();
     return v == 'true' || v == '1' || v == 'yes';
+  }
+
+  static bool _shouldSuppressAutoLabel(dom.Element element, _Role role) {
+    if (role != _Role.none) return false;
+    final String tag = element.tagName.toUpperCase();
+    switch (tag) {
+      case LI:
+      case DT:
+      case DD:
+        return _hasFocusableDescendant(element);
+      default:
+        return false;
+    }
+  }
+
+  static bool _hasFocusableDescendant(dom.Element element) {
+    dom.Node? child = element.firstChild;
+    while (child != null) {
+      if (child is dom.Element) {
+        if (_isFocusable(child)) return true;
+        if (_hasFocusableDescendant(child)) return true;
+      }
+      child = child.nextSibling;
+    }
+    return false;
   }
 
   static void _dispatchClick(dom.Element element) {
