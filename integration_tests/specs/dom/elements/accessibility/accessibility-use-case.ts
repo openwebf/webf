@@ -69,6 +69,168 @@ describe('Accessibility use case patterns', () => {
     await snapshot();
   });
 
+  it('builds landmark structure with nav, article, and aside regions', async () => {
+    document.body.innerHTML = '';
+
+    const container = document.createElement('section');
+    container.className = 'landmarkExample';
+
+    const nav = document.createElement('nav');
+    nav.setAttribute('aria-label', 'Section navigation');
+    nav.textContent = 'Navigation landmark';
+
+    const article = document.createElement('article');
+    article.id = 'accessibility-main-demo';
+    article.setAttribute('aria-label', 'Main content');
+    article.textContent = 'Main landmark';
+
+    const aside = document.createElement('aside');
+    aside.setAttribute('aria-label', 'Helpful resources');
+    aside.textContent = 'Complementary landmark';
+
+    container.appendChild(nav);
+    container.appendChild(article);
+    container.appendChild(aside);
+
+    document.body.appendChild(container);
+
+    expect(nav.tagName).toBe('NAV');
+    expect(nav.getAttribute('aria-label')).toBe('Section navigation');
+
+    expect(article.tagName).toBe('ARTICLE');
+    expect(article.getAttribute('aria-label')).toBe('Main content');
+    expect(article.id).toBe('accessibility-main-demo');
+
+    expect(aside.tagName).toBe('ASIDE');
+    expect(aside.getAttribute('aria-label')).toBe('Helpful resources');
+
+    const landmarks = Array.from(container.children).map((element) => element.tagName);
+    expect(landmarks).toEqual(['NAV', 'ARTICLE', 'ASIDE']);
+    await snapshot();
+  });
+
+  it('links the landmark demo section heading and landmark roles', async () => {
+    document.body.innerHTML = '';
+
+    const section = document.createElement('section');
+    section.className = 'componentItem';
+    section.setAttribute('aria-labelledby', 'landmark-demo-title');
+
+    const heading = document.createElement('h2');
+    heading.id = 'landmark-demo-title';
+    heading.className = 'itemLabel';
+    heading.textContent = 'Landmarks & Skip Navigation';
+
+    const description = document.createElement('p');
+    description.className = 'itemDesc';
+    description.id = 'landmark-demo-desc';
+    description.id = 'landmark-demo-desc';
+    description.textContent =
+      'Structure pages so assistive technologies can offer shortcuts. Skip links paired with semantic landmarks let keyboard users move directly to the content they need.';
+
+    const landmarksContainer = document.createElement('div');
+    landmarksContainer.className = 'landmarkExample';
+
+    const header = document.createElement('header');
+    header.className = 'landmarkHeader';
+    header.setAttribute('aria-label', 'Example site header');
+    header.appendChild(document.createElement('strong')).textContent = 'Header';
+    header.appendChild(document.createElement('p')).textContent =
+      'Contains the brand, search box, and global navigation entry points.';
+
+    const nav = document.createElement('nav');
+    nav.className = 'landmarkNav';
+    nav.setAttribute('aria-label', 'Section navigation');
+    nav.appendChild(document.createElement('strong')).textContent = 'Navigation';
+
+    const navList = document.createElement('ul');
+    navList.className = 'landmarkNavList';
+
+    [
+      ['#accessibility-main-demo', 'Landmark demo'],
+      ['#keyboard-menu-demo', 'Keyboard menu'],
+      ['#feedback-form-demo', 'Feedback form'],
+    ].forEach(([href, label]) => {
+      const li = document.createElement('li');
+      const anchor = document.createElement('a');
+      anchor.setAttribute('href', href);
+      anchor.textContent = label;
+      li.appendChild(anchor);
+      navList.appendChild(li);
+    });
+
+    nav.appendChild(navList);
+
+    const article = document.createElement('article');
+    article.id = 'accessibility-main-demo';
+    article.className = 'landmarkMain';
+    article.setAttribute('aria-label', 'Main content');
+    article.appendChild(document.createElement('strong')).textContent = 'Main';
+    article.appendChild(document.createElement('p')).textContent =
+      'Serves the primary user goal. Landmarks make it easy to find with a single shortcut.';
+
+    const aside = document.createElement('aside');
+    aside.className = 'landmarkAside';
+    aside.setAttribute('aria-label', 'Helpful resources');
+    aside.appendChild(document.createElement('strong')).textContent = 'Complementary';
+    aside.appendChild(document.createElement('p')).textContent =
+      'Holds related resources that support, but do not replace, the main task flow.';
+
+    const footer = document.createElement('footer');
+    footer.className = 'landmarkFooter';
+    footer.setAttribute('aria-label', 'Example footer');
+    footer.appendChild(document.createElement('strong')).textContent = 'Footer';
+    footer.appendChild(document.createElement('p')).textContent =
+      'Provides persistent help links and secondary navigation.';
+
+    landmarksContainer.appendChild(header);
+    landmarksContainer.appendChild(nav);
+    landmarksContainer.appendChild(article);
+    landmarksContainer.appendChild(aside);
+    landmarksContainer.appendChild(footer);
+
+    section.appendChild(heading);
+    section.appendChild(description);
+    section.setAttribute('aria-describedby', 'landmark-demo-desc');
+    section.setAttribute('aria-describedby', 'landmark-demo-desc');
+    section.appendChild(landmarksContainer);
+
+    document.body.appendChild(section);
+
+    expect(section.tagName).toBe('SECTION');
+    expect(section.getAttribute('aria-labelledby')).toBe('landmark-demo-title');
+    expect(section.getAttribute('aria-describedby')).toBe('landmark-demo-desc');
+    expect(section.getAttribute('aria-describedby')).toBe('landmark-demo-desc');
+    expect(heading.textContent).toBe('Landmarks & Skip Navigation');
+    expect(description.textContent?.startsWith('Structure pages so assistive technologies')).toBeTrue();
+
+    expect(header.tagName).toBe('HEADER');
+    expect(header.getAttribute('aria-label')).toBe('Example site header');
+
+    expect(nav.tagName).toBe('NAV');
+    expect(nav.getAttribute('aria-label')).toBe('Section navigation');
+    expect(nav.querySelectorAll('a').length).toBe(3);
+
+    expect(article.tagName).toBe('ARTICLE');
+    expect(article.getAttribute('aria-label')).toBe('Main content');
+    expect(article.id).toBe('accessibility-main-demo');
+
+    expect(aside.tagName).toBe('ASIDE');
+    expect(aside.getAttribute('aria-label')).toBe('Helpful resources');
+
+    expect(footer.tagName).toBe('FOOTER');
+    expect(footer.getAttribute('aria-label')).toBe('Example footer');
+    expect(Array.from(landmarksContainer.children).map((child) => child.tagName)).toEqual([
+      'HEADER',
+      'NAV',
+      'ARTICLE',
+      'ASIDE',
+      'FOOTER',
+    ]);
+
+    await snapshot();
+  });
+
   it('supports roving tabindex menu interactions with live announcements', async () => {
     type MenuItem = { label: string; description: string };
 

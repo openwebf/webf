@@ -52,20 +52,13 @@ class WebFAccessibility {
     final _Role role = _inferRole(element, explicitRole);
 
     // Compute accessible name and description.
-    final String? name = computeAccessibleName(element);
-    final String? hint = computeAccessibleDescription(element);
-    if (name != null && name.trim().isNotEmpty) {
-      config.label = name.trim();
+    final String? name = computeAccessibleName(element)?.trim();
+    if (name != null && name.isNotEmpty) {
+      config.label = name;
     }
-    final String? ariaDescribedBy = element.getAttribute('aria-describedby');
-    if (ariaDescribedBy != null && ariaDescribedBy.trim().isNotEmpty) {
-      final String? hint = computeAccessibleDescription(element);
-      if (hint != null && hint.trim().isNotEmpty) {
-        config.hint = hint.trim();
-      }
-    }
-    if (hint != null && hint.trim().isNotEmpty) {
-      config.hint = hint.trim();
+    final String? hint = computeAccessibleDescription(element)?.trim();
+    if (hint != null && hint.isNotEmpty) {
+      config.hint = hint;
     }
 
     // Disabled/enabled
@@ -222,6 +215,7 @@ class WebFAccessibility {
 
     // Role-based fallbacks
     final String tag = element.tagName.toUpperCase();
+    final String? explicitRole = element.getAttribute('role')?.toLowerCase();
     if (tag == IMAGE) {
       final String? alt = element.getAttribute('alt');
       if (alt != null && alt.trim().isNotEmpty) return alt.trim();
@@ -291,8 +285,7 @@ class WebFAccessibility {
     final String? title = element.getAttribute('title');
     if (title != null && title.trim().isNotEmpty) return title.trim();
 
-    // generic text content (e.g., DIV textContent)
-    if (tag == DIV) {
+    if (_allowsNameFromContent(tag, explicitRole)) {
       final String text = _collectText(element);
       if (text.isNotEmpty) return text;
     }
@@ -432,7 +425,57 @@ class WebFAccessibility {
     walk(node);
     return buffer.toString().trim();
   }
+
+  static bool _allowsNameFromContent(String tag, String? explicitRole) {
+    if (_nameFromContentTags.contains(tag)) {
+      return true;
+    }
+    if (explicitRole != null && _nameFromContentRoles.contains(explicitRole)) {
+      return true;
+    }
+    return false;
+  }
 }
+
+const Set<String> _nameFromContentTags = <String>{
+  DIV,
+  SPAN,
+  PARAGRAPH,
+  H1,
+  H2,
+  H3,
+  H4,
+  H5,
+  H6,
+  SECTION,
+  ARTICLE,
+  ASIDE,
+  NAV,
+  MAIN,
+  HEADER,
+  FOOTER,
+  FIGCAPTION,
+  LI,
+  DT,
+  DD,
+};
+
+const Set<String> _nameFromContentRoles = <String>{
+  'heading',
+  'region',
+  'group',
+  'article',
+  'navigation',
+  'main',
+  'complementary',
+  'contentinfo',
+  'banner',
+  'note',
+  'figure',
+  'listitem',
+  'term',
+  'definition',
+};
 
 enum _Role {
   none,
