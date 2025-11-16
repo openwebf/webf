@@ -46,4 +46,29 @@ void main() {
       expect(WebFAccessibility.computeAccessibleName(ib), equals('Press'));
     });
   });
+
+  testWidgets('navigation links read separately with correct labels', (WidgetTester tester) async {
+    final html = '''
+      <nav>
+        <a id="home" href="/home" aria-current="page">Home</a>
+        <a id="about" href="/about">About</a>
+      </nav>
+    ''';
+
+    await WebFWidgetTestUtils.prepareWidgetTest(
+      tester: tester,
+      html: '<body>$html</body>',
+      controllerName: 'a11y-nav-${DateTime.now().millisecondsSinceEpoch}',
+      wrap: (child) => MaterialApp(home: Scaffold(body: child)),
+    );
+
+    final handle = tester.ensureSemantics();
+    try {
+      await tester.pump();
+      expect(find.bySemanticsLabel('Home'), findsOneWidget);
+      expect(find.bySemanticsLabel('About'), findsOneWidget);
+    } finally {
+      handle.dispose();
+    }
+  });
 }
