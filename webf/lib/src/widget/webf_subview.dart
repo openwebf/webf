@@ -15,7 +15,7 @@ import 'package:webf/widget.dart';
 /// The [title] is typically sourced from the current [RouterLinkElement]'s
 /// `title` attribute. The [routeLinkElement] provides access to other
 /// attributes on the route node.
-typedef OnAppBarCreated = AppBar Function(String title, RouterLinkElement routeLinkElement);
+typedef OnAppBarCreated = PreferredSizeWidget Function(String title, RouterLinkElement routeLinkElement);
 
 class WebFSubView extends StatefulWidget {
   /// Subview container that renders a WebF route by [path].
