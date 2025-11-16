@@ -70,7 +70,9 @@ class RenderWidget extends RenderBoxModel
         minWidth: contentConstraints!.minWidth,
         maxWidth: contentConstraints!.maxWidth,
         minHeight: contentConstraints!.minHeight,
-        maxHeight: contentConstraints!.maxHeight,
+        maxHeight: (contentConstraints!.hasTightHeight || (renderStyle.target as WidgetElement).allowsInfiniteHeight)
+            ? contentConstraints!.maxHeight
+            : math.min(viewportSize.height, contentConstraints!.maxHeight)
       );
     } else {
       childConstraints = BoxConstraints(
@@ -421,9 +423,6 @@ class RenderWidget extends RenderBoxModel
 
   @override
   void performLayout() {
-    if (renderStyle.target.tagName == 'FLUTTER-CUPERTINO-SLIDER') {
-      print(1);
-    }
     beforeLayout();
 
     List<RenderBoxModel> _positionedChildren = [];
