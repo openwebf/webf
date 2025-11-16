@@ -8,97 +8,77 @@
 // ignore_for_file: library_private_types_in_public_api
 // ignore_for_file: prefer_void_to_null
 import 'package:webf/webf.dart';
-
 abstract class FlutterCupertinoSliderBindings extends WidgetElement {
   FlutterCupertinoSliderBindings(super.context);
-
   double? get val;
   set val(value);
-
   double? get min;
   set min(value);
-
   double? get max;
   set max(value);
-
   int? get step;
   set step(value);
-
   bool get disabled;
   set disabled(value);
-
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
     attributes['val'] = ElementAttributeProperty(
       getter: () => val?.toString(),
-      setter: (value) =>
-          val = double.tryParse(value) ?? 0.0,
-      deleter: () => val = 0.0,
+      setter: (value) => val = double.tryParse(value) ?? 0.0,
+      deleter: () => val = 0.0
     );
     attributes['min'] = ElementAttributeProperty(
       getter: () => min?.toString(),
-      setter: (value) =>
-          min = double.tryParse(value) ?? 0.0,
-      deleter: () => min = 0.0,
+      setter: (value) => min = double.tryParse(value) ?? 0.0,
+      deleter: () => min = 0.0
     );
     attributes['max'] = ElementAttributeProperty(
       getter: () => max?.toString(),
-      setter: (value) =>
-          max = double.tryParse(value) ?? 0.0,
-      deleter: () => max = 0.0,
+      setter: (value) => max = double.tryParse(value) ?? 0.0,
+      deleter: () => max = 0.0
     );
     attributes['step'] = ElementAttributeProperty(
       getter: () => step?.toString(),
-      setter: (value) =>
-          step = int.tryParse(value) ?? 0,
-      deleter: () => step = 0,
+      setter: (value) => step = int.tryParse(value) ?? 0,
+      deleter: () => step = 0
     );
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => disabled.toString(),
-      setter: (value) =>
-          disabled = value == 'true' || value == '',
-      deleter: () => disabled = false,
+      setter: (value) => disabled = value == 'true' || value == '',
+      deleter: () => disabled = false
     );
   }
-
   static StaticDefinedBindingPropertyMap flutterCupertinoSliderProperties = {
     'val': StaticDefinedBindingProperty(
-      getter: (element) =>
-          castToType<FlutterCupertinoSliderBindings>(element).val,
+      getter: (element) => castToType<FlutterCupertinoSliderBindings>(element).val,
       setter: (element, value) =>
-          castToType<FlutterCupertinoSliderBindings>(element).val = value,
+      castToType<FlutterCupertinoSliderBindings>(element).val = value,
     ),
     'min': StaticDefinedBindingProperty(
-      getter: (element) =>
-          castToType<FlutterCupertinoSliderBindings>(element).min,
+      getter: (element) => castToType<FlutterCupertinoSliderBindings>(element).min,
       setter: (element, value) =>
-          castToType<FlutterCupertinoSliderBindings>(element).min = value,
+      castToType<FlutterCupertinoSliderBindings>(element).min = value,
     ),
     'max': StaticDefinedBindingProperty(
-      getter: (element) =>
-          castToType<FlutterCupertinoSliderBindings>(element).max,
+      getter: (element) => castToType<FlutterCupertinoSliderBindings>(element).max,
       setter: (element, value) =>
-          castToType<FlutterCupertinoSliderBindings>(element).max = value,
+      castToType<FlutterCupertinoSliderBindings>(element).max = value,
     ),
     'step': StaticDefinedBindingProperty(
-      getter: (element) =>
-          castToType<FlutterCupertinoSliderBindings>(element).step,
+      getter: (element) => castToType<FlutterCupertinoSliderBindings>(element).step,
       setter: (element, value) =>
-          castToType<FlutterCupertinoSliderBindings>(element).step = value,
+      castToType<FlutterCupertinoSliderBindings>(element).step = value,
     ),
     'disabled': StaticDefinedBindingProperty(
-      getter: (element) =>
-          castToType<FlutterCupertinoSliderBindings>(element).disabled,
+      getter: (element) => castToType<FlutterCupertinoSliderBindings>(element).disabled,
       setter: (element, value) =>
-          castToType<FlutterCupertinoSliderBindings>(element).disabled = value,
+      castToType<FlutterCupertinoSliderBindings>(element).disabled = value,
     ),
   };
-
   @override
   List<StaticDefinedBindingPropertyMap> get properties => [
-        ...super.properties,
-        flutterCupertinoSliderProperties,
-      ];
+    ...super.properties,
+    flutterCupertinoSliderProperties,
+  ];
 }
-

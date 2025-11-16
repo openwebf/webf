@@ -9,7 +9,7 @@ Actions are configured via the `setActions(actions)` method, and the first child
 
 ```tsx
 // Replace the import path with where your generated component is exported from
-import { FlutterCupertinoContextMenu } from 'your-react-bindings';
+import { FlutterCupertinoContextMenu } from '@openwebf/react-cupertino-ui';
 ```
 
 ### Quick Start

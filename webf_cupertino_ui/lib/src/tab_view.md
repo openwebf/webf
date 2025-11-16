@@ -7,7 +7,7 @@ Provides an iOS‑style per‑tab Navigator. Use inside `FlutterCupertinoTabScaf
 ### Import
 
 ```tsx
-import { FlutterCupertinoTabView } from 'your-react-bindings';
+import { FlutterCupertinoTabView } from '@openwebf/react-cupertino-ui';
 ```
 
 ### Quick Start

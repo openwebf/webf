@@ -9,7 +9,7 @@ The component is controlled imperatively via a `ref`.
 
 ```tsx
 // Replace the import path with where your generated component is exported from
-import { FlutterCupertinoAlert } from 'your-react-bindings';
+import { FlutterCupertinoAlert } from '@openwebf/react-cupertino-ui';
 ```
 
 ### Quick Start

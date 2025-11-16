@@ -8,7 +8,7 @@ Use the generated React component to render an iOS-style slider powered by WebF 
 
 ```tsx
 // Replace the import path with where your generated component is exported from
-import { FlutterCupertinoSlider } from 'your-react-bindings';
+import { FlutterCupertinoSlider } from '@openwebf/react-cupertino-ui';
 ```
 
 ### Quick Start

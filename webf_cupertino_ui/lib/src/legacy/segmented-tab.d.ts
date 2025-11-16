@@ -5,3 +5,9 @@ interface FlutterCupertinoSegmentedTabProperties {
 interface FlutterCupertinoSegmentedTabEvents {
   change: CustomEvent<number>;
 }
+
+interface FlutterCupertinoSegmentedTabItemProperties {
+  title?: string;
+}
+
+interface FlutterCupertinoSegmentedTabItemEvents {}

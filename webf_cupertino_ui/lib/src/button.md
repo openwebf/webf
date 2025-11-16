@@ -11,7 +11,7 @@ attributes.
 
 ```tsx
 // Replace the import path with where your generated component is exported from
-import { FlutterCupertinoButton } from 'your-react-bindings';
+import { FlutterCupertinoButton } from '@openwebf/react-cupertino-ui';
 ```
 
 ### Quick Start

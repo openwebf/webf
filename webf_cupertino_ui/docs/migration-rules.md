@@ -127,6 +127,13 @@ return <Foo ref={ref} />;
 - Encourage `className` and `style` props on the React wrapper. They apply to the host element.
 - The underlying element may read CSS (padding, min-height, border-radius, text-align, background-color). Document per component.
 
+### Layout Responsibilities
+
+- Keep migrated custom elements as layout-neutral as possible: they should render the underlying Flutter widget, not impose additional layout (no extra `Column`, `Expanded`, page sections, etc.).
+- Let the surrounding DOM/CSS control layout (width, height, margins, flex/grid placement). Use `renderStyle` only to adapt to layout, not to introduce new structure.
+- If a legacy implementation bundled layout (for example, segmented control + content column), move that composition into higher-level widgets/pages or React usage examples instead of the core custom element.
+- For content created from standard WebF/HTML elements, avoid manually reading their width/height to drive Flutter layout; rely on Flutter defaults and CSS layout, and restrict `renderStyle` usage to styling concerns (typography, colors, simple spacing) where necessary.
+
 ## 8) Documentation Pattern (lib/src/<component>.md)
 
 For each migrated component, you must create `lib/src/<component>.md` alongside the `.d.ts` and Dart files; migrations are not considered complete without this doc.
@@ -167,6 +174,7 @@ Use `lib/src/button.md` as a reference and keep structure consistent across all 
 - Hyphen-case vs camelCase: Keep hyphen-case in .d.ts; expose camelCase in React via `attributeMap`.
 - CustomEvent typing: When passing to callbacks, use `CustomEvent<any>` or a precise generic if known.
 - Fixed width + padding: Some components remove internal padding if width is fixed—document it.
+- Over-structuring: avoid wrapping controls in layout widgets that applications can provide themselves; keep the core element focused on behavior, styling hooks, and state/events.
 
 ---
 

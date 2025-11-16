@@ -8,7 +8,7 @@ Use the generated React component to render an iOS-style toggle switch powered b
 
 ```tsx
 // Replace the import path with where your generated component is exported from
-import { FlutterCupertinoSwitch } from 'your-react-bindings';
+import { FlutterCupertinoSwitch } from '@openwebf/react-cupertino-ui';
 ```
 
 ### Quick Start

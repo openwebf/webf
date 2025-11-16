@@ -12,7 +12,7 @@ import {
   FlutterCupertinoTabBar,
   FlutterCupertinoTabBarItem,
   FlutterCupertinoIcon,
-} from 'your-react-bindings';
+} from '@openwebf/react-cupertino-ui';
 ```
 
 ### Quick Start

@@ -9,7 +9,7 @@ The component is controlled imperatively via a `ref` and a `show(options)` call.
 
 ```tsx
 // Replace the import path with where your generated component is exported from
-import { FlutterCupertinoActionSheet } from 'your-react-bindings';
+import { FlutterCupertinoActionSheet } from '@openwebf/react-cupertino-ui';
 ```
 
 ### Quick Start
