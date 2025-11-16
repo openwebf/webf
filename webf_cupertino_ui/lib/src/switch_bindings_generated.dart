@@ -8,80 +8,65 @@
 // ignore_for_file: library_private_types_in_public_api
 // ignore_for_file: prefer_void_to_null
 import 'package:webf/webf.dart';
-
 abstract class FlutterCupertinoSwitchBindings extends WidgetElement {
   FlutterCupertinoSwitchBindings(super.context);
-
   bool get checked;
   set checked(value);
-
   bool get disabled;
   set disabled(value);
-
   String? get activeColor;
   set activeColor(value);
-
   String? get inactiveColor;
   set inactiveColor(value);
-
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
     attributes['checked'] = ElementAttributeProperty(
       getter: () => checked.toString(),
       setter: (value) => checked = value == 'true' || value == '',
-      deleter: () => checked = false,
+      deleter: () => checked = false
     );
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => disabled.toString(),
       setter: (value) => disabled = value == 'true' || value == '',
-      deleter: () => disabled = false,
+      deleter: () => disabled = false
     );
     attributes['active-color'] = ElementAttributeProperty(
       getter: () => activeColor?.toString(),
       setter: (value) => activeColor = value,
-      deleter: () => activeColor = null,
+      deleter: () => activeColor = null
     );
     attributes['inactive-color'] = ElementAttributeProperty(
       getter: () => inactiveColor?.toString(),
       setter: (value) => inactiveColor = value,
-      deleter: () => inactiveColor = null,
+      deleter: () => inactiveColor = null
     );
   }
-
   static StaticDefinedBindingPropertyMap flutterCupertinoSwitchProperties = {
     'checked': StaticDefinedBindingProperty(
-      getter: (element) =>
-          castToType<FlutterCupertinoSwitchBindings>(element).checked,
+      getter: (element) => castToType<FlutterCupertinoSwitchBindings>(element).checked,
       setter: (element, value) =>
-          castToType<FlutterCupertinoSwitchBindings>(element).checked = value,
+      castToType<FlutterCupertinoSwitchBindings>(element).checked = value,
     ),
     'disabled': StaticDefinedBindingProperty(
-      getter: (element) =>
-          castToType<FlutterCupertinoSwitchBindings>(element).disabled,
+      getter: (element) => castToType<FlutterCupertinoSwitchBindings>(element).disabled,
       setter: (element, value) =>
-          castToType<FlutterCupertinoSwitchBindings>(element).disabled = value,
+      castToType<FlutterCupertinoSwitchBindings>(element).disabled = value,
     ),
     'activeColor': StaticDefinedBindingProperty(
-      getter: (element) =>
-          castToType<FlutterCupertinoSwitchBindings>(element).activeColor,
+      getter: (element) => castToType<FlutterCupertinoSwitchBindings>(element).activeColor,
       setter: (element, value) =>
-          castToType<FlutterCupertinoSwitchBindings>(element).activeColor =
-              value,
+      castToType<FlutterCupertinoSwitchBindings>(element).activeColor = value,
     ),
     'inactiveColor': StaticDefinedBindingProperty(
-      getter: (element) =>
-          castToType<FlutterCupertinoSwitchBindings>(element).inactiveColor,
+      getter: (element) => castToType<FlutterCupertinoSwitchBindings>(element).inactiveColor,
       setter: (element, value) =>
-          castToType<FlutterCupertinoSwitchBindings>(element).inactiveColor =
-              value,
+      castToType<FlutterCupertinoSwitchBindings>(element).inactiveColor = value,
     ),
   };
-
   @override
   List<StaticDefinedBindingPropertyMap> get properties => [
-        ...super.properties,
-        flutterCupertinoSwitchProperties,
-      ];
+    ...super.properties,
+    flutterCupertinoSwitchProperties,
+  ];
 }
-
