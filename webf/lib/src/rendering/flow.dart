@@ -4,7 +4,7 @@
  */
 import 'dart:math' as math;
 import 'dart:ui' as ui
-    show Paragraph, ParagraphBuilder, ParagraphConstraints, ParagraphStyle, TextStyle, TextHeightBehavior, LineMetrics, TextLeadingDistribution;
+    show Paragraph, ParagraphBuilder, ParagraphConstraints, ParagraphStyle, TextStyle, TextHeightBehavior, LineMetrics, TextLeadingDistribution, Rect;
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -57,6 +57,21 @@ class RenderFlowLayout extends RenderLayoutBox {
     required CSSRenderStyle renderStyle,
   }) : super(renderStyle: renderStyle) {
     addAll(children);
+  }
+
+  ui.Rect? _ifcSemanticBounds;
+
+  @override
+  ui.Rect get semanticBounds {
+    final ui.Rect? rect = _ifcSemanticBounds;
+    if (rect != null) {
+      return rect;
+    }
+    return super.semanticBounds;
+  }
+
+  void _updateIFCSemanticBounds(ui.Rect? rect) {
+    _ifcSemanticBounds = rect;
   }
 
   // Public helper: for IFC containers, compute the inline horizontal advance
@@ -729,6 +744,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       // Set the size of scrollable overflow area for inline formatting context.
       _setMaxScrollableSizeFromIFC();
+      _positionInlineAnchorsFromIFC(children);
     } else {
       // Layout children to compute metrics of lines.
       _doRegularFlowLayout(children);
@@ -772,6 +788,41 @@ class RenderFlowLayout extends RenderLayoutBox {
         newMain += RenderFlowLayout.getPureMainAxisExtent(child);
       }
       _lineMetrics[i] = RunMetrics(newMain, run.crossAxisExtent, run.runChildren, baseline: run.baseline);
+    }
+  }
+
+  void _positionInlineAnchorsFromIFC(List<RenderBox> children) {
+    if (!_establishIFC || _inlineFormattingContext == null) return;
+    final double contentLeft = renderStyle.paddingLeft.computedValue +
+        renderStyle.effectiveBorderLeftWidth.computedValue;
+    final double contentTop = renderStyle.paddingTop.computedValue +
+        renderStyle.effectiveBorderTopWidth.computedValue;
+
+    for (final RenderBox child in children) {
+      RenderBoxModel? inlineBox;
+      RenderBox assignTarget = child;
+      if (child is RenderEventListener) {
+        final RenderBox? inner = child.child;
+        if (inner is RenderBoxModel) {
+          inlineBox = inner;
+        }
+      } else if (child is RenderBoxModel) {
+        inlineBox = child;
+      }
+
+      if (inlineBox == null) continue;
+      if (inlineBox.renderStyle.effectiveDisplay != CSSDisplay.inline) continue;
+      final String tag = inlineBox.renderStyle.target.tagName.toUpperCase();
+      if (tag != 'A') continue;
+
+      final ui.Rect? rect = _inlineFormattingContext!.inlineElementBoundingRect(inlineBox);
+      if (rect == null) continue;
+
+      final RenderLayoutParentData parentData = assignTarget.parentData as RenderLayoutParentData;
+      parentData.offset = Offset(contentLeft + rect.left, contentTop + rect.top);
+      if (inlineBox is RenderFlowLayout) {
+        inlineBox._updateIFCSemanticBounds(ui.Rect.fromLTWH(0, 0, rect.width, rect.height));
+      }
     }
   }
 
@@ -1153,9 +1204,9 @@ class RenderFlowLayout extends RenderLayoutBox {
     final RenderBoxModel? p = renderStyle.getParentRenderStyle()?.attachedRenderBoxModel;
     if (isInlineSelf && p is RenderFlowLayout && p.establishIFC && p.inlineFormattingContext != null) {
       final InlineFormattingContext ifc = p.inlineFormattingContext!;
-      // Width: max per-line fragment width of this inline element.
+        // Width: max per-line fragment width of this inline element.
       double w = ifc.inlineElementMaxLineWidth(this);
-      // Height: sum of unique line heights that the element spans.
+        // Height: sum of unique line heights that the element spans.
       double h = ifc.inlineElementTotalHeight(this);
       // Fallback to legacy metrics if IFC did not record a range for this element.
       if ((w <= 0 || !w.isFinite) || (h <= 0 || !h.isFinite)) {
@@ -1163,8 +1214,8 @@ class RenderFlowLayout extends RenderLayoutBox {
           _setContainerSizeWithNoChild();
           return;
         }
-        w = _getRunsMaxMainSize(_lineMetrics);
-        h = _getRunsCrossSizeWithCollapse(_lineMetrics);
+          w = _getRunsMaxMainSize(_lineMetrics);
+          h = _getRunsCrossSizeWithCollapse(_lineMetrics);
       }
 
       Size layoutContentSize = getContentSize(

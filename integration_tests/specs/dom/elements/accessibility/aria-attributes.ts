@@ -194,6 +194,122 @@ describe('Accessibility: ARIA attributes reflection', () => {
     done();
   });
 
+  it('should support aria-labelledby on input with placeholder', async (done) => {
+    const label = document.createElement('div');
+    label.id = 'my-label';
+    label.textContent = 'Email Address';
+    // Optional CSS: label could be hidden and still serve as an accessible name source
+    label.style.display = 'block';
+    document.body.appendChild(label);
+
+    const input = document.createElement('input');
+    input.placeholder = 'enter email';
+    input.setAttribute('aria-labelledby', 'my-label');
+    document.body.appendChild(input);
+
+    expect(input.getAttribute('aria-labelledby')).toBe('my-label');
+    expect(input.getAttribute('placeholder')).toBe('enter email');
+    done();
+  });
+
+  it('should support aria-describedby on input', async (done) => {
+    const help = document.createElement('div');
+    help.id = 'email-help';
+    help.textContent = 'We will not share your email.';
+    document.body.appendChild(help);
+
+    const input = document.createElement('input');
+    input.setAttribute('aria-describedby', 'email-help');
+    document.body.appendChild(input);
+
+    expect(input.getAttribute('aria-describedby')).toBe('email-help');
+    done();
+  });
+
+  it('should support multiple aria-labelledby ids on input', async (done) => {
+    const l1 = document.createElement('div');
+    l1.id = 'l1';
+    l1.textContent = 'Email';
+    const l2 = document.createElement('div');
+    l2.id = 'l2';
+    l2.textContent = 'Address';
+    document.body.appendChild(l1);
+    document.body.appendChild(l2);
+
+    const input = document.createElement('input');
+    input.setAttribute('aria-labelledby', 'l1 l2');
+    document.body.appendChild(input);
+
+    expect(input.getAttribute('aria-labelledby')).toBe('l1 l2');
+    done();
+  });
+
+  it('should reflect aria-pressed on toggle button', async (done) => {
+    const btn = document.createElement('button');
+    btn.setAttribute('aria-pressed', 'false');
+    document.body.appendChild(btn);
+    expect(btn.getAttribute('aria-pressed')).toBe('false');
+    btn.setAttribute('aria-pressed', 'true');
+    expect(btn.getAttribute('aria-pressed')).toBe('true');
+    done();
+  });
+
+  it('should allow hidden label used by aria-labelledby', async (done) => {
+    const label = document.createElement('div');
+    label.id = 'hidden-label';
+    label.textContent = 'Hidden Email Label';
+    label.style.display = 'none';
+    document.body.appendChild(label);
+
+    const input = document.createElement('input');
+    input.placeholder = 'enter email';
+    input.setAttribute('aria-labelledby', 'hidden-label');
+    document.body.appendChild(input);
+
+    expect(input.getAttribute('aria-labelledby')).toBe('hidden-label');
+    expect(input.getAttribute('placeholder')).toBe('enter email');
+    done();
+  });
+
+  it('should support aria-readonly on input', async (done) => {
+    const input = document.createElement('input');
+    input.setAttribute('aria-readonly', 'true');
+    document.body.appendChild(input);
+    expect(input.getAttribute('aria-readonly')).toBe('true');
+    done();
+  });
+
+  it('should update aria-labelledby dynamically', async (done) => {
+    const l1 = document.createElement('div');
+    l1.id = 'dyn-l1';
+    l1.textContent = 'First';
+    const l2 = document.createElement('div');
+    l2.id = 'dyn-l2';
+    l2.textContent = 'Second';
+    document.body.appendChild(l1);
+    document.body.appendChild(l2);
+
+    const input = document.createElement('input');
+    input.setAttribute('aria-labelledby', 'dyn-l1');
+    document.body.appendChild(input);
+    expect(input.getAttribute('aria-labelledby')).toBe('dyn-l1');
+
+    input.setAttribute('aria-labelledby', 'dyn-l2');
+    expect(input.getAttribute('aria-labelledby')).toBe('dyn-l2');
+    done();
+  });
+
+  it('should reflect empty alt on images', async (done) => {
+    const img = document.createElement('img');
+    img.src = 'assets/100x100-green.png';
+    img.setAttribute('alt', '');
+    document.body.appendChild(img);
+    onImageLoad(img, async () => {
+      expect(img.getAttribute('alt')).toBe('');
+      done();
+    });
+  });
+
   // Navigation
   it('should support aria-current', async (done) => {
     const nav = document.createElement('nav');
@@ -296,4 +412,3 @@ describe('Accessibility: ARIA attributes reflection', () => {
     done();
   });
 });
-

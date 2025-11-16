@@ -15,6 +15,7 @@ import 'dart:ui' as ui
         TextLeadingDistribution,
         StrutStyle,
         Path,
+        Rect,
         ImageFilter,
         PathOperation;
 import 'dart:developer' as developer;
@@ -727,6 +728,75 @@ class InlineFormattingContext {
       if (ph.kind == _PHKind.rightExtra && ph.owner == box) return true;
     }
     return false;
+  }
+
+  ui.Rect? inlineElementBoundingRect(RenderBoxModel box) {
+    if (_paragraph == null) return null;
+    final (int start, int end)? range = _elementRanges[box];
+    if (range == null) return null;
+    List<ui.TextBox> rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+    bool synthesized = false;
+    if (rects.isEmpty) {
+      rects = _synthesizeRectsForEmptySpan(box);
+      if (rects.isEmpty) return null;
+      synthesized = true;
+    }
+
+    final CSSRenderStyle style = box.renderStyle;
+    final double padL = style.paddingLeft.computedValue;
+    final double padR = style.paddingRight.computedValue;
+    final double padT = style.paddingTop.computedValue;
+    final double padB = style.paddingBottom.computedValue;
+    final double borderL = style.effectiveBorderLeftWidth.computedValue;
+    final double borderR = style.effectiveBorderRightWidth.computedValue;
+    final double borderT = style.effectiveBorderTopWidth.computedValue;
+    final double borderB = style.effectiveBorderBottomWidth.computedValue;
+    final double marginL = style.marginLeft.computedValue;
+    final double marginR = style.marginRight.computedValue;
+    final double marginT = style.marginTop.computedValue;
+    final double marginB = style.marginBottom.computedValue;
+
+    double left = double.infinity;
+    double top = double.infinity;
+    double right = double.negativeInfinity;
+    double bottom = double.negativeInfinity;
+
+    for (int i = 0; i < rects.length; i++) {
+      final ui.TextBox tb = rects[i];
+      final bool isFirst = i == 0;
+      final bool isLast = i == rects.length - 1;
+      double l = tb.left;
+      double r = tb.right;
+      double t = tb.top;
+      double b = tb.bottom;
+
+      if (!synthesized) {
+        if (isFirst) l -= (padL + borderL + marginL);
+        if (isLast) r += (padR + borderR + marginR);
+        t -= (padT + borderT + marginT);
+        b += (padB + borderB + marginB);
+      } else {
+        l -= (padL + borderL + marginL);
+        r += (padR + borderR + marginR);
+        t -= (padT + borderT + marginT);
+        b += (padB + borderB + marginB);
+      }
+
+      if (l < left) left = l;
+      if (t < top) top = t;
+      if (r > right) right = r;
+      if (b > bottom) bottom = b;
+    }
+
+    if (!left.isFinite || !right.isFinite || !top.isFinite || !bottom.isFinite) {
+      return null;
+    }
+
+    final double shiftX = _paragraphMinLeft.isFinite ? _paragraphMinLeft : 0.0;
+    left -= shiftX;
+    right -= shiftX;
+
+    return ui.Rect.fromLTRB(left, top, right, bottom);
   }
 
   // Return the line band's top, bottom and baseline for a given line index.
