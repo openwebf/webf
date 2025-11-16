@@ -4,6 +4,7 @@
  */
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Color;
+import 'package:webf/css.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
 
@@ -68,15 +69,7 @@ class FlutterCupertinoSlidingSegmentedControl
 
   Color? _parseColor(String? colorString) {
     if (colorString == null || colorString.isEmpty) return null;
-    if (!colorString.startsWith('#')) return null;
-    String hex = colorString.substring(1);
-    if (hex.length == 6) {
-      hex = 'FF$hex';
-    }
-    if (hex.length != 8) return null;
-    final int? parsed = int.tryParse(hex, radix: 16);
-    if (parsed == null) return null;
-    return Color(parsed);
+    return CSSColor.parseColor(colorString);
   }
 
   @override
@@ -192,6 +185,7 @@ class FlutterCupertinoSlidingSegmentedControlItemState
     final host = widgetElement as FlutterCupertinoSlidingSegmentedControlItem;
     return Text(
       host.title ?? '',
+      style: CSSTextMixin.createTextStyle(widgetElement.renderStyle),
       textAlign: TextAlign.center,
     );
   }

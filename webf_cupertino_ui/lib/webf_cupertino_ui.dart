@@ -11,6 +11,7 @@ export 'src/icon.dart';
 export 'src/tab_bar.dart';
 export 'src/tab_scaffold.dart';
 export 'src/tab_view.dart';
+export 'src/sliding_segmented_control.dart';
 import 'src/alert.dart';
 import 'src/action_sheet.dart';
 import 'src/context_menu.dart';
@@ -23,6 +24,7 @@ import 'src/icon.dart';
 import 'src/tab_bar.dart';
 import 'src/tab_scaffold.dart';
 import 'src/tab_view.dart';
+import 'src/sliding_segmented_control.dart';
 
 /// Installs all Cupertino UI custom elements for WebF.
 ///
@@ -52,6 +54,12 @@ void installWebFCupertinoUI() {
   WebF.defineCustomElement('flutter-cupertino-tab-bar-item', (context) => FlutterCupertinoTabBarItem(context));
   WebF.defineCustomElement('flutter-cupertino-tab-view', (context) => FlutterCupertinoTabView(context));
   WebF.defineCustomElement('flutter-cupertino-icon', (context) => FlutterCupertinoIcon(context));
+  WebF.defineCustomElement(
+      'flutter-cupertino-sliding-segmented-control',
+      (context) => FlutterCupertinoSlidingSegmentedControl(context));
+  WebF.defineCustomElement(
+      'flutter-cupertino-sliding-segmented-control-item',
+      (context) => FlutterCupertinoSlidingSegmentedControlItem(context));
 
 
   // WebF.defineCustomElement('flutter-cupertino-input', (context) => FlutterCupertinoInput(context));
