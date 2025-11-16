@@ -50,6 +50,8 @@ dependency_overrides:
   webf:
     path: ../
   adaptive_theme: 3.7.0
+  form_builder_validators: ^11.2.0
+  intl: ^0.20.2
 
 # The following section is specific to Flutter.
 flutter:

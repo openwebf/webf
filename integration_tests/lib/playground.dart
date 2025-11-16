@@ -5,6 +5,8 @@ import 'dart:async';
 import 'dart:ffi';
 import 'dart:io';
 
+import 'package:webf/foundation.dart';
+
 import 'package:ansicolor/ansicolor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -14,6 +16,7 @@ import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
 
 import 'bridge/from_native.dart';
 import 'bridge/test_input.dart';
@@ -41,6 +44,14 @@ void main() async {
   // DebugFlags.enableCssLogs = true;
   // DebugFlags.debugPaintInlineLayoutEnabled = true;
   // Flow layout baseline logs
+
+  installWebFCupertinoUI();
+
+  WidgetLog.enableImpls([WidgetImpl.widget]);
+  WidgetLog.enableFeatures([
+    WidgetFeature.constraints,
+    WidgetFeature.sizing,
+  ]);
 
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(

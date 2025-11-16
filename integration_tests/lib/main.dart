@@ -17,6 +17,7 @@ import 'test_module.dart';
 import 'local_http_server.dart';
 import 'utils/mem_leak_detector.dart';
 import 'webf_tester.dart';
+import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
 import 'modules/array_buffer_module.dart';
 
 String? pass = (AnsiPen()..green())('[TEST PASS]');
@@ -64,6 +65,7 @@ void main() async {
       }));
 
   defineWebFCustomElements();
+  installWebFCupertinoUI();
 
   int mockServerPort = await findAvailablePort();
 

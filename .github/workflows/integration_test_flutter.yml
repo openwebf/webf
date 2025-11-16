@@ -5,7 +5,7 @@ on: [workflow_dispatch, pull_request]
 env:
   nodeVersion: "16"
   cmakeVersion: "4.0.3"
-  flutter: "3.27.0"
+  flutter: "3.38.0"
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:

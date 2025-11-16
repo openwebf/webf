@@ -19,6 +19,8 @@ environment:
 dependency_overrides:
   webf:
     path: ../webf
+  form_builder_validators: ^11.2.0
+  intl: ^0.20.2
 
 dependencies:
   ffi: ^2.0.1
@@ -32,6 +34,8 @@ dependencies:
   card_swiper: ^3.0.1
   rust_native_api_tests:
     path: rust_builder
+  webf_cupertino_ui:
+    path: ../opensource/webf_cupertino_ui
 
 dev_dependencies:
   flutter_test:
