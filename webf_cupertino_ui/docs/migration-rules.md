@@ -160,6 +160,7 @@ Use `lib/src/button.md` as a reference and keep structure consistent across all 
    - events mapping (onX → DOM event)
    - defaultProps as needed
 7. Author React usage doc in `lib/src/<component>.md` and keep it in sync with the actual API before merging.
+   - Whenever you change a component’s attributes, events, or behavior, update the corresponding `lib/src/<component>.md` in the same PR so docs always reflect the implementation.
 
 ## 10) JS vs Flutter State Ownership
 
