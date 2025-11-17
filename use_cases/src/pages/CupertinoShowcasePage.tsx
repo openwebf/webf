@@ -51,32 +51,32 @@ export const CupertinoShowcasePage: React.FC = () => {
             <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
               <Item label="CupertinoListSection" desc="Grouped list sections" to="/cupertino/list-section" />
               <Item label="CupertinoListTile" desc="iOS-style list tiles" to="/cupertino/list-tile" />
-              <Item label="CupertinoFormSection" desc="Form rows and groupings" to="/cupertino/form-section" />
+              {/*<Item label="CupertinoFormSection" desc="Form rows and groupings" to="/cupertino/form-section" />*/}
             </div>
 
-            <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Text Input & Search</h2>
-            <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
-              <Item label="CupertinoTextField" desc="iOS text field" to="/cupertino/text-field" />
-              <Item label="CupertinoTextFormFieldRow" desc="Form row with text field" to="/cupertino/text-form-field-row" />
-              <Item label="CupertinoSearchTextField" desc="Search field with iOS style" to="/cupertino/search-text-field" />
-            </div>
+            {/*<h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Text Input & Search</h2>*/}
+            {/*<div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">*/}
+            {/*  <Item label="CupertinoTextField" desc="iOS text field" to="/cupertino/text-field" />*/}
+            {/*  <Item label="CupertinoTextFormFieldRow" desc="Form row with text field" to="/cupertino/text-form-field-row" />*/}
+            {/*  <Item label="CupertinoSearchTextField" desc="Search field with iOS style" to="/cupertino/search-text-field" />*/}
+            {/*</div>*/}
 
-            <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Selection & Toolbars</h2>
-            <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
-              <Item label="Adaptive Text Selection Toolbar" desc="Auto adapts to platform" to="/cupertino/adaptive-text-selection-toolbar" />
-              <Item label="Text Selection Toolbar" desc="iOS text selection toolbar" to="/cupertino/text-selection-toolbar" />
-              <Item label="Desktop Text Selection Toolbar" desc="Desktop variant of toolbar" to="/cupertino/desktop-text-selection-toolbar" />
-              <Item label="Text Selection Controls" desc="Selection handles and behaviors" to="/cupertino/text-selection-controls" />
-              <Item label="Magnifier" desc="Text magnifier widgets" to="/cupertino/magnifier" />
-              <Item label="Spell Check Suggestions" desc="Spell check suggestion toolbar" to="/cupertino/spell-check-suggestions-toolbar" />
-            </div>
+            {/*<h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Selection & Toolbars</h2>*/}
+            {/*<div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">*/}
+            {/*  <Item label="Adaptive Text Selection Toolbar" desc="Auto adapts to platform" to="/cupertino/adaptive-text-selection-toolbar" />*/}
+            {/*  <Item label="Text Selection Toolbar" desc="iOS text selection toolbar" to="/cupertino/text-selection-toolbar" />*/}
+            {/*  <Item label="Desktop Text Selection Toolbar" desc="Desktop variant of toolbar" to="/cupertino/desktop-text-selection-toolbar" />*/}
+            {/*  <Item label="Text Selection Controls" desc="Selection handles and behaviors" to="/cupertino/text-selection-controls" />*/}
+            {/*  <Item label="Magnifier" desc="Text magnifier widgets" to="/cupertino/magnifier" />*/}
+            {/*  <Item label="Spell Check Suggestions" desc="Spell check suggestion toolbar" to="/cupertino/spell-check-suggestions-toolbar" />*/}
+            {/*</div>*/}
 
-            <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Pickers</h2>
-            <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
-              <Item label="CupertinoDatePicker" desc="iOS date & time picker" to="/cupertino/date-picker" />
-              <Item label="CupertinoTimerPicker" desc="Countdown & timer picker" to="/cupertino/timer-picker" />
-              <Item label="CupertinoPicker" desc="Wheel picker and overlays" to="/cupertino/picker" />
-            </div>
+            {/*<h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Pickers</h2>*/}
+            {/*<div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">*/}
+            {/*  <Item label="CupertinoDatePicker" desc="iOS date & time picker" to="/cupertino/date-picker" />*/}
+            {/*  <Item label="CupertinoTimerPicker" desc="Countdown & timer picker" to="/cupertino/timer-picker" />*/}
+            {/*  <Item label="CupertinoPicker" desc="Wheel picker and overlays" to="/cupertino/picker" />*/}
+            {/*</div>*/}
 
             <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Controls</h2>
             <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
@@ -86,16 +86,8 @@ export const CupertinoShowcasePage: React.FC = () => {
               <Item label="Sliding Segmented Control" desc="Segmented control with sliding thumb" to="/cupertino/sliding-segmented-control" />
               <Item label="CupertinoCheckBox" desc="iOS checkbox" to="/cupertino/checkbox" />
               <Item label="CupertinoRadio" desc="iOS radio button" to="/cupertino/radio" />
-              <Item label="CupertinoThumbPainter" desc="Utility for control thumbs" to="/cupertino/thumb-painter" />
             </div>
 
-            <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Scrolling & Progress</h2>
-            <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
-              <Item label="CupertinoScrollbar" desc="iOS-style scrollbar" to="/cupertino/scrollbar" />
-              <Item label="CupertinoScrollBehavior" desc="Scroll physics and behavior" to="/cupertino/scroll-behavior" />
-              <Item label="CupertinoSliverRefreshControl" desc="Pull to refresh control" to="/cupertino/sliver-refresh-control" />
-              <Item label="CupertinoActivityIndicator" desc="Activity progress indicator" to="/cupertino/activity-indicator" />
-            </div>
           </div>
       </WebFListView>
     </div>

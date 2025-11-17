@@ -103,11 +103,6 @@ import { CupertinoSliderPage } from './pages/cupertino/CupertinoSliderPage';
 import { CupertinoSlidingSegmentedControlPage } from './pages/cupertino/CupertinoSlidingSegmentedControlPage';
 import { CupertinoCheckBoxPage } from './pages/cupertino/CupertinoCheckBoxPage';
 import { CupertinoRadioPage } from './pages/cupertino/CupertinoRadioPage';
-import { CupertinoThumbPainterPage } from './pages/cupertino/CupertinoThumbPainterPage';
-import { CupertinoScrollbarPage } from './pages/cupertino/CupertinoScrollbarPage';
-import { CupertinoScrollBehaviorPage } from './pages/cupertino/CupertinoScrollBehaviorPage';
-import { CupertinoSliverRefreshControlPage } from './pages/cupertino/CupertinoSliverRefreshControlPage';
-import { CupertinoActivityIndicatorPage } from './pages/cupertino/CupertinoActivityIndicatorPage';
 // import {UserDetailsPage} from './pages/routeDemo/UserDetailsPage';
 // import {ReportDetailsPage} from './pages/routeDemo/ReportDetailsPage';
 // import {ProfileEditPage} from './pages/routeDemo/ProfileEditPage';
@@ -194,11 +189,6 @@ function App() {
         <Route path="/cupertino/sliding-segmented-control" title="Sliding Segmented Control" theme={'cupertino'} element={<CupertinoSlidingSegmentedControlPage />} />
         <Route path="/cupertino/checkbox" title="Cupertino CheckBox" theme={'cupertino'} element={<CupertinoCheckBoxPage />} />
         <Route path="/cupertino/radio" title="Cupertino Radio" theme={'cupertino'} element={<CupertinoRadioPage />} />
-        <Route path="/cupertino/thumb-painter" title="Cupertino Thumb Painter" theme={'cupertino'} element={<CupertinoThumbPainterPage />} />
-        <Route path="/cupertino/scrollbar" title="Cupertino Scrollbar" theme={'cupertino'} element={<CupertinoScrollbarPage />} />
-        <Route path="/cupertino/scroll-behavior" title="Cupertino Scroll Behavior" theme={'cupertino'} element={<CupertinoScrollBehaviorPage />} />
-        <Route path="/cupertino/sliver-refresh-control" title="Cupertino Sliver Refresh Control" theme={'cupertino'} element={<CupertinoSliverRefreshControlPage />} />
-        <Route path="/cupertino/activity-indicator" title="Cupertino Activity Indicator" theme={'cupertino'} element={<CupertinoActivityIndicatorPage />} />
 
 
         <Route path="/image-preload" title="Image Preload" element={<ImagePreloadPage />} />
