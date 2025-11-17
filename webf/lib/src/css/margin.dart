@@ -7,8 +7,6 @@ import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/src/foundation/logger.dart';
-import 'package:webf/src/foundation/flow_logging.dart';
 
 mixin CSSMarginMixin on RenderStyle {
   /// The amount to margin the child in each dimension.
@@ -95,41 +93,13 @@ mixin CSSMarginMixin on RenderStyle {
     // approach used to anchor static position of positioned siblings, and
     // preserves expected spacing when a positioned sibling precedes.
     final bool hasPrevInFlow = isPreviousSiblingAreRenderObject();
-    // Debug info for previous sibling context affecting parent-top collapsing
-    try {
-      final bool prevIsBlockLike = isPreviousSiblingStyleMatch(
-          (rs) => rs.effectiveDisplay == CSSDisplay.block || rs.effectiveDisplay == CSSDisplay.flex);
-      final bool prevIsPositioned = isPreviousSiblingStyleMatch((rs) => rs.isSelfPositioned());
-      final tag = target.tagName.toLowerCase();
-      FlowLog.log(
-        impl: FlowImpl.flow,
-        feature: FlowFeature.marginCollapse,
-        message: () => '<$tag> prevSibling: exists=$hasPrevInFlow blockLike=$prevIsBlockLike positioned=$prevIsPositioned',
-      );
-    } catch (_) {}
     if (!hasPrevInFlow) {
       // First in-flow child: may collapse with parent top
       _marginTop = _collapsedMarginTopWithParent;
-      try {
-        final tag = target.tagName.toLowerCase();
-        FlowLog.log(
-          impl: FlowImpl.flow,
-          feature: FlowFeature.marginCollapse,
-          message: () => '<$tag> first in-flow child; use collapse-with-parent top = ${_marginTop.toStringAsFixed(2)}',
-        );
-      } catch (_) {}
     } else {
       // Subsequent in-flow child: do not collapse with previous sibling here.
       // Parent layout combines prev bottom and this top per spec.
       _marginTop = _collapsedMarginTopWithFirstChild;
-      try {
-        final tag = target.tagName.toLowerCase();
-        FlowLog.log(
-          impl: FlowImpl.flow,
-          feature: FlowFeature.marginCollapse,
-          message: () => '<$tag> not first in-flow child; ownTopIgnoringParent = ${_marginTop.toStringAsFixed(2)}',
-        );
-      } catch (_) {}
     }
 
     return _marginTop;
@@ -248,14 +218,6 @@ mixin CSSMarginMixin on RenderStyle {
         isParentNotRenderWidget &&
         parentRenderStyle.effectiveBorderTopWidth.computedValue == 0 &&
         parentRenderStyle.isParentBoxModelMatch((renderBoxModel, _) => renderBoxModel is RenderFlowLayout || renderBoxModel is RenderLayoutBoxWrapper)) {
-      try {
-        final tag = target.tagName.toLowerCase();
-        FlowLog.log(
-          impl: FlowImpl.flow,
-          feature: FlowFeature.marginCollapse,
-          message: () => '<$tag> collapse top with parent (no padding/border/bfc) -> 0',
-        );
-      } catch (_) {}
       return 0;
     }
     return marginTop;

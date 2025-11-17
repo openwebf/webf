@@ -519,8 +519,6 @@ abstract class RenderLayoutBox extends RenderBoxModel
           'display=$disp parent=$pType';
       if (renderStyle.isParentRenderFlexLayout()) {
         FlexLog.log(impl: FlexImpl.flex, feature: FlexFeature.container, message: msg);
-      } else {
-        FlowLog.log(impl: FlowImpl.flow, feature: FlowFeature.sizing, message: msg);
       }
     } catch (_) {}
     double finalContentWidth = contentWidth;
@@ -648,8 +646,6 @@ abstract class RenderLayoutBox extends RenderBoxModel
           'padH=${(paddL + paddR).toStringAsFixed(2)} borderH=${(bordL + bordR).toStringAsFixed(2)}';
       if (renderStyle.isParentRenderFlexLayout()) {
         FlexLog.log(impl: FlexImpl.flex, feature: FlexFeature.container, message: msg);
-      } else {
-        FlowLog.log(impl: FlowImpl.flow, feature: FlowFeature.sizing, message: msg);
       }
     } catch (_) {}
     return finalContentSize;

@@ -142,22 +142,9 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
 
     _scrollableSize = scrollableSize;
     _viewportSize = viewportSize;
-    // Debug: report setup parameters
-    FlowLog.log(
-      impl: FlowImpl.overflow,
-      feature: FlowFeature.setup,
-      message: () =>
-          '<${renderStyle.target.tagName.toLowerCase()}> viewport=${viewportSize.width.toStringAsFixed(2)}×${viewportSize.height.toStringAsFixed(2)} scrollable=${scrollableSize.width.toStringAsFixed(2)}×${scrollableSize.height.toStringAsFixed(2)} overflowX=${renderStyle.effectiveOverflowX} overflowY=${renderStyle.effectiveOverflowY}',
-    );
     if (_scrollOffsetX != null) {
       _setUpScrollX();
       final double maxX = math.max(0.0, _scrollableSize!.width - _viewportSize!.width);
-      FlowLog.log(
-        impl: FlowImpl.overflow,
-        feature: FlowFeature.setup,
-        message: () =>
-            'X controller maxScroll=${maxX.toStringAsFixed(2)} viewportW=${_viewportSize!.width.toStringAsFixed(2)} contentW=${_scrollableSize!.width.toStringAsFixed(2)}',
-      );
       // Do not auto-jump scroll position for RTL containers.
       // Per CSS/UA expectations, initial scroll position is the start edge
       // of the scroll range, and user agent should not forcibly move it to
@@ -168,12 +155,6 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     if (_scrollOffsetY != null) {
       _setUpScrollY();
       final double maxY = math.max(0.0, _scrollableSize!.height - _viewportSize!.height);
-      FlowLog.log(
-        impl: FlowImpl.overflow,
-        feature: FlowFeature.setup,
-        message: () =>
-            'Y controller maxScroll=${maxY.toStringAsFixed(2)} viewportH=${_viewportSize!.height.toStringAsFixed(2)} contentH=${_scrollableSize!.height.toStringAsFixed(2)}',
-      );
     }
 
     // After computing viewport/content dimensions, update sticky descendants so their

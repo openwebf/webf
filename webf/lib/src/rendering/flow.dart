@@ -18,14 +18,8 @@ import 'inline_formatting_context.dart';
 import 'text.dart';
 import 'event_listener.dart';
 import 'package:webf/src/foundation/logger.dart';
-import 'package:webf/src/foundation/flow_logging.dart';
 import 'package:logging/logging.dart' show Level;
 import 'package:webf/src/foundation/inline_layout_logging.dart';
-
-// Pretty format for BoxConstraints in debug logs.
-String _fmtC(BoxConstraints c) =>
-    'C[minW=${c.minWidth.toStringAsFixed(1)}, maxW=${c.maxWidth.isFinite ? c.maxWidth.toStringAsFixed(1) : '∞'}, '
-        'minH=${c.minHeight.toStringAsFixed(1)}, maxH=${c.maxHeight.isFinite ? c.maxHeight.toStringAsFixed(1) : '∞'}]';
 
 // Position and size of each run (line box) in flow layout.
 // https://www.w3.org/TR/css-inline-3/#line-boxes
@@ -79,11 +73,6 @@ class RenderFlowLayout extends RenderLayoutBox {
     // Ask IFC to compute advance for this descendant based on its owning inline element
     try {
       final double adv = _inlineFormattingContext!.inlineAdvanceForDescendant(marker);
-      FlowLog.log(
-        impl: FlowImpl.ifc,
-        feature: FlowFeature.layout,
-        message: () => 'inlineAdvanceBefore marker=${marker.runtimeType} adv=${adv.toStringAsFixed(2)}',
-      );
       return adv;
     } catch (_) {
       // Fall back gracefully if anything goes wrong.
@@ -206,22 +195,6 @@ class RenderFlowLayout extends RenderLayoutBox {
       final contentOffset = Offset(
         offset.dx + renderStyle.paddingLeft.computedValue + renderStyle.effectiveBorderLeftWidth.computedValue,
         offset.dy + renderStyle.paddingTop.computedValue + renderStyle.effectiveBorderTopWidth.computedValue,
-      );
-
-      FlowLog.log(
-        impl: FlowImpl.ifc,
-        feature: FlowFeature.painting,
-        level: Level.FINER,
-        message: () {
-          final String tag = renderStyle.target.tagName.toLowerCase();
-          double shift = 0.0;
-          try {
-            shift = _inlineFormattingContext?.paragraphLeftShift ?? 0.0;
-          } catch (_) {}
-          return '<'+tag+'> paint IFC content at ('+
-              contentOffset.dx.toStringAsFixed(2)+', '+contentOffset.dy.toStringAsFixed(2)+') '+
-              'paragraphLeftShift='+shift.toStringAsFixed(2);
-        },
       );
 
       // Paint the inline formatting context content
@@ -577,13 +550,6 @@ class RenderFlowLayout extends RenderLayoutBox {
     beforeLayout();
 
     _establishIFC = renderStyle.shouldEstablishInlineFormattingContext();
-    FlowLog.log(
-      impl: FlowImpl.flow,
-      feature: FlowFeature.constraints,
-      level: Level.FINE,
-      message: () => '<${renderStyle.target.tagName.toLowerCase()}>'
-          ' establishIFC=$_establishIFC constraints=$constraints contentConstraints=$contentConstraints',
-    );
     if (_establishIFC) {
       _inlineFormattingContext = InlineFormattingContext(container: this);
     }
@@ -662,12 +628,6 @@ class RenderFlowLayout extends RenderLayoutBox {
   void _setContainerSizeFromIFC(Size ifcSize) {
     InlineFormattingContext inlineFormattingContext = _inlineFormattingContext!;
     double usedContentWidth = ifcSize.width;
-    FlowLog.log(
-      impl: FlowImpl.ifc,
-      feature: FlowFeature.sizing,
-      message: () => '<${renderStyle.target.tagName.toLowerCase()}> IFC usedContentWidth init='
-          '${usedContentWidth.toStringAsFixed(2)}',
-    );
     // CSS shrink-to-fit width for inline-block with auto width:
     // used = min( max(min-content, available), max-content )
     if (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock && renderStyle.width.isAuto) {
@@ -696,23 +656,7 @@ class RenderFlowLayout extends RenderLayoutBox {
           // Make this container a definite percentage reference for descendants.
           renderStyle.contentBoxLogicalWidth = usedContentWidth;
           inlineFormattingContext.relayoutParagraphToWidth(usedContentWidth);
-          FlowLog.log(
-            impl: FlowImpl.ifc,
-            feature: FlowFeature.shrinkToFit,
-            level: Level.FINER,
-            message: () => '<${renderStyle.target.tagName.toLowerCase()}>'
-                ' IFC reflow paragraph: shapedW='+shapedWidth.toStringAsFixed(2)+
-                ' → usedW='+usedContentWidth.toStringAsFixed(2),
-          );
         }
-        FlowLog.log(
-          impl: FlowImpl.ifc,
-          feature: FlowFeature.shrinkToFit,
-          level: Level.FINER,
-          message: () => '<${renderStyle.target.tagName.toLowerCase()}>'
-              ' IFC shrink-to-fit: avail=${avail.toStringAsFixed(2)} min=${clampedMin.toStringAsFixed(
-              2)} max=${clampedMax.toStringAsFixed(2)} → used=${usedContentWidth.toStringAsFixed(2)}',
-        );
       }
     }
 
@@ -723,22 +667,6 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     size = getBoxSize(layoutContentSize);
 
-    try {
-      FlowLog.log(
-        impl: FlowImpl.ifc,
-        feature: FlowFeature.widthBreakdown,
-        level: Level.FINER,
-        message: () => '<${renderStyle.target.tagName.toLowerCase()}>'
-            ' IFC width breakdown: paraW=${ifcSize.width.toStringAsFixed(2)} usedW=${usedContentWidth.toStringAsFixed(
-            2)} contentW=${layoutContentSize.width.toStringAsFixed(2)} '
-            'padH=${(renderStyle.paddingLeft.computedValue + renderStyle.paddingRight.computedValue).toStringAsFixed(
-            2)} '
-            'borderH=${(renderStyle.effectiveBorderLeftWidth.computedValue +
-            renderStyle.effectiveBorderRightWidth.computedValue).toStringAsFixed(2)} '
-            'boxW=${size.width.toStringAsFixed(2)}',
-      );
-    } catch (_) {}
-
     // For IFC, min-content width should reflect the paragraph's
     // min intrinsic width (approximate CSS min-content), not the
     // max-content width (longestLine). Using longestLine here would
@@ -747,16 +675,6 @@ class RenderFlowLayout extends RenderLayoutBox {
     minContentWidth = minIntrW;
     minContentHeight = ifcSize.height;
 
-    FlowLog.log(
-      impl: FlowImpl.ifc,
-      feature: FlowFeature.sizing,
-      level: Level.FINE,
-      message: () => 'IFC size=${ifcSize.width.toStringAsFixed(1)}×${ifcSize.height.toStringAsFixed(1)} '
-          'contentConstraints=${contentConstraints == null ? 'null' : contentConstraints!.toString()} '
-          'final contentSize=${layoutContentSize.width.toStringAsFixed(1)}×${layoutContentSize.height.toStringAsFixed(
-          1)} '
-          'box=${size.width.toStringAsFixed(1)}×${size.height.toStringAsFixed(1)}',
-    );
   }
 
   // There are 3 steps for layout children.
@@ -801,13 +719,6 @@ class RenderFlowLayout extends RenderLayoutBox {
       }
 
       Size layoutSize = _inlineFormattingContext!.layout(ifcConstraints);
-
-      FlowLog.log(
-        impl: FlowImpl.ifc,
-        feature: FlowFeature.layout,
-        level: Level.FINER,
-        message: () => 'IFC layout with constraints=${ifcConstraints} -> ${layoutSize}',
-      );
 
       // Ensure all render objects inside IFC are laid out to avoid
       // devtools/semantics traversals encountering NEEDS-LAYOUT nodes.
@@ -921,14 +832,6 @@ class RenderFlowLayout extends RenderLayoutBox {
         minHeight: preservedMinH,
         maxHeight: double.infinity,
       );
-      FlowLog.log(
-        impl: FlowImpl.flow,
-        feature: FlowFeature.child,
-        level: Level.FINER,
-        message: () =>
-        '-> reflow block auto-width child ${child.runtimeType} to contentWidth=${targetWidth.toStringAsFixed(
-            2)} with ${_fmtC(stretch)}',
-      );
       // Layout the visible wrapper so offsets/painting use the updated size.
       child.layout(stretch, parentUsesSize: true);
       any = true;
@@ -997,11 +900,6 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       if (isChildNeedsLayout) {
         bool parentUseSize = !(child is RenderBoxModel && child.isSizeTight || child is RenderPositionPlaceholder);
-        FlowLog.log(
-          impl: FlowImpl.flow,
-          feature: FlowFeature.layout,
-          message: () => '-> layout child ${child.runtimeType} with ${_fmtC(childConstraints)} parentUsesSize=$parentUseSize',
-        );
         child.layout(childConstraints, parentUsesSize: parentUseSize);
       }
 
@@ -1014,16 +912,6 @@ class RenderFlowLayout extends RenderLayoutBox {
         if (childRenderBoxModel != null) {
           if (childRenderBoxModel.renderStyle.isSelfPositioned()) {
             childMainAxisExtent = childCrossAxisExtent = 0;
-            try {
-              final tag = childRenderBoxModel.renderStyle.target.tagName.toLowerCase();
-              FlowLog.log(
-                impl: FlowImpl.flow,
-                feature: FlowFeature.runs,
-                level: Level.FINER,
-                message: () => 'encounter placeholder for positioned <$tag>; '
-                    'exclude from run sizing (main=cross=0)'
-              );
-            } catch (_) {}
           }
         }
       }
@@ -1066,16 +954,6 @@ class RenderFlowLayout extends RenderLayoutBox {
     double? lastPrevCollapsedBottom;
     for (int i = 0; i < runMetrics.length; i++) {
       final RunMetrics run = runMetrics[i];
-      try {
-        FlowLog.log(
-          impl: FlowImpl.flow,
-          feature: FlowFeature.runs,
-          level: Level.FINER,
-          message: () => 'run index=$i carriedPrevBottom=${carriedPrevCollapsedBottom?.toStringAsFixed(2) ?? 'null'} '
-              'runCrossAxisExtent=${run.crossAxisExtent.toStringAsFixed(2)} '
-              'runMainAxisExtent=${run.mainAxisExtent.toStringAsFixed(2)}',
-        );
-      } catch (_) {}
 
       // Track previous child's collapsed bottom within the run,
       // seeded from the previous run's carry.
@@ -1097,15 +975,6 @@ class RenderFlowLayout extends RenderLayoutBox {
           final CSSPositionType? pos = child.positioned?.renderStyle.position;
           final bool isStickyPH = pos == CSSPositionType.sticky;
           if (!isStickyPH) {
-            try {
-              final tag = child.positioned?.renderStyle.target.tagName.toLowerCase() ?? '';
-              FlowLog.log(
-                impl: FlowImpl.flow,
-                feature: FlowFeature.marginCollapse,
-                level: Level.FINER,
-                message: () => 'skip placeholder mapped to <$tag> in collapse accounting',
-              );
-            } catch (_) {}
             continue;
           }
         }
@@ -1382,15 +1251,6 @@ class RenderFlowLayout extends RenderLayoutBox {
       double runFirstOwnTop = 0;
       double runFirstTopContribution = 0;
       bool firstOwnTopCaptured = false;
-
-      FlowLog.log(
-        impl: FlowImpl.flow,
-        feature: FlowFeature.runs,
-        level: Level.FINER,
-        message: () =>
-        'run index=$i carriedPrevBottom=${carriedPrevCollapsedBottom?.toStringAsFixed(2) ??
-            'null'} runCrossAxisExtent=${runCrossAxisExtent.toStringAsFixed(2)}',
-      );
       for (RenderBox child in metrics.runChildren) {
         final double childMainAxisExtent = _getMainAxisExtent(child);
         final double childCrossAxisExtent = _getCrossAxisExtent(child);
@@ -1495,42 +1355,8 @@ class RenderFlowLayout extends RenderLayoutBox {
             // Absolute/fixed placeholders do not participate in vertical margin collapsing.
             childMarginTop = 0;
             childMarginBottom = 0;
-            try {
-              final tag = (child as RenderPositionPlaceholder).positioned?.renderStyle.target.tagName.toLowerCase() ?? '';
-              FlowLog.log(
-                impl: FlowImpl.flow,
-                feature: FlowFeature.marginCollapse,
-                message: () => 'placeholder mapped to <$tag>: marginTop=0 marginBottom=0 (skipped in collapsing)',
-              );
-            } catch (_) {}
           }
           if (!isPlaceholder || isStickyPlaceholder) {
-            if (prevCollapsedBottom != null) {
-              final tag = rs.target.tagName.toLowerCase();
-              final double p = prevCollapsedBottom!;
-              final double st = dbgSelfTopIgnoringParent ?? 0;
-              final double currTop = (st >= 0 && p >= 0)
-                  ? math.max(st, p)
-                  : (st <= 0 && p <= 0)
-                  ? math.min(st, p)
-                  : st;
-              FlowLog.log(
-                impl: FlowImpl.flow,
-                feature: FlowFeature.marginCollapse,
-                level: Level.FINER,
-                message: () =>
-                'prevBottom=${p.toStringAsFixed(2)} currTop=${currTop.toStringAsFixed(
-                    2)} contrib=${(dbgTopContribution ?? 0).toStringAsFixed(2)} child=<$tag>',
-              );
-            }
-            FlowLog.log(
-              impl: FlowImpl.flow,
-              feature: FlowFeature.child,
-              level: Level.FINER,
-              message: () =>
-              '<${rs.target.tagName.toLowerCase()}> collapsedTop=${(dbgOwnTopInExtent ?? 0).toStringAsFixed(
-                  2)} collapsedBottom=${(childMarginBottom ?? 0).toStringAsFixed(2)}',
-            );
           }
         }
 
@@ -1560,14 +1386,6 @@ class RenderFlowLayout extends RenderLayoutBox {
       // both top and bottom margins of the previous run when computing the next run's start.
       final double crossAdvance = (runCrossAxisExtent - runFirstOwnTop + runFirstTopContribution) + runBetweenSpace;
       crossAxisOffset += crossAdvance;
-      FlowLog.log(
-        impl: FlowImpl.flow,
-        feature: FlowFeature.runs,
-        level: Level.FINER,
-        message: () =>
-        'runEnd index=$i runFirstOwnTop=${runFirstOwnTop.toStringAsFixed(2)} crossAdvance=${crossAdvance
-            .toStringAsFixed(2)} newCarryPrevBottom=${prevCollapsedBottom?.toStringAsFixed(2) ?? 'null'}',
-      );
       // Carry over prev collapsed bottom margin to next run
       carriedPrevCollapsedBottom = prevCollapsedBottom;
     }
@@ -1613,14 +1431,6 @@ class RenderFlowLayout extends RenderLayoutBox {
       final double extraX = _inlineFormattingContext!.additionalPositiveXOverflowFromAtomicPlaceholders();
       maxScrollableWidth = paraWidth + extraX;
       maxScrollableHeight = paraHeight + extraY;
-      FlowLog.log(
-        impl: FlowImpl.ifc,
-        feature: FlowFeature.scrollable,
-        message: () => 'scrollable from IFC paragraph: visualLongest=${paraWidth.toStringAsFixed(2)} '
-            'baseH=${paraHeight.toStringAsFixed(2)} extraY.rel=${extraRelTransform.toStringAsFixed(2)} '
-            'extraY.overflow=${extraAtomicOverflow.toStringAsFixed(2)} totalH=${maxScrollableHeight.toStringAsFixed(2)} '
-            'extraX=${extraX.toStringAsFixed(2)}',
-      );
     }
 
     // Add padding to scrollable size
@@ -1665,16 +1475,6 @@ class RenderFlowLayout extends RenderLayoutBox {
     }
 
     scrollableSize = Size(finalScrollableWidth, finalScrollableHeight);
-
-    FlowLog.log(
-      impl: FlowImpl.ifc,
-      feature: FlowFeature.scrollable,
-      message: () => 'scrollable from IFC: width=${finalScrollableWidth.toStringAsFixed(2)} '
-          'height=${finalScrollableHeight.toStringAsFixed(2)} '
-          'viewport=(${viewportW.toStringAsFixed(2)}×${viewportH.toStringAsFixed(2)}) '
-          'overflowX=${renderStyle.effectiveOverflowX} overflowY=${renderStyle.effectiveOverflowY} '
-          'via=paragraph',
-    );
   }
 
   // Set the size of scrollable overflow area for flow layout.

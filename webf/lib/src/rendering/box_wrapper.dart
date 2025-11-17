@@ -2,13 +2,11 @@
  * Copyright (C) 2024 The OpenWebF(Cayman) Company . All rights reserved.
  */
 
-import 'package:flutter/widgets.dart';
 import 'dart:math' as math;
+import 'package:flutter/widgets.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/html.dart';
-import 'package:webf/foundation.dart';
-import 'package:webf/src/foundation/flow_logging.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart' as dom;
 
@@ -95,14 +93,6 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
 
     childConstraints = _intersect(childConstraints, constraints);
 
-    try {
-      final tag = renderStyle.target.tagName.toLowerCase();
-      FlowLog.log(
-        impl: FlowImpl.flow,
-        feature: FlowFeature.layout,
-        message: () => '[Wrapper] <$tag> layout child ${c.runtimeType} with $childConstraints',
-      );
-    } catch (_) {}
     c.layout(childConstraints, parentUsesSize: true);
 
     if (c is RenderBoxModel) {
@@ -141,15 +131,6 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
       }
 
       size = constraints.constrain(Size(wrapperWidth, wrapperHeight));
-
-      try {
-        final tag = renderStyle.target.tagName.toLowerCase();
-        FlowLog.log(
-          impl: FlowImpl.flow,
-          feature: FlowFeature.sizing,
-          message: () => '[Wrapper] <$tag> childSize=${c.size} scrollable=${contentScrollable} -> wrapperSize=$size',
-        );
-      } catch (_) {}
 
       if (renderStyle.isSelfPositioned() || renderStyle.isSelfStickyPosition()) {
         CSSPositionedLayout.applyPositionedChildOffset(this, c);
