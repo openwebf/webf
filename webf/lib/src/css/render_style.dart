@@ -2467,16 +2467,6 @@ class CSSRenderStyle extends RenderStyle
           final RenderBoxModel? parentBox = parentStyle.attachedRenderBoxModel;
           final BoxConstraints? pcc = parentBox?.contentConstraints;
           if (pcc != null && pcc.hasBoundedWidth && pcc.maxWidth.isFinite) {
-            try {
-              final tag = target.tagName.toLowerCase();
-              FlexLog.log(
-                impl: FlexImpl.flex,
-                feature: FlexFeature.container,
-                message: () => '[Style] <$tag> computeContentBoxLogicalWidth: '
-                    'inherit from flex-item parent contentConstraints.maxW='
-                    '${pcc.maxWidth.toStringAsFixed(2)} marginH=${renderStyle.margin.horizontal.toStringAsFixed(2)}',
-              );
-            } catch (_) {}
             logicalWidth = pcc.maxWidth - renderStyle.margin.horizontal;
           }
 
