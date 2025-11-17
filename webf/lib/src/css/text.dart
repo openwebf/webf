@@ -26,6 +26,7 @@ mixin CSSTextMixin on RenderStyle {
   CSSColor get currentColor => color;
 
   Color? _color;
+
   @override
   CSSColor get color {
     // Get style from self or closest parent if specified style property is not set
@@ -41,7 +42,7 @@ mixin CSSTextMixin on RenderStyle {
   set color(CSSColor? value) {
     if (_color == value) return;
     _color = value?.value;
-    
+
     // Update all the children text with specified style property not set due to style inheritance.
     _markChildrenTextNeedsLayout(this, COLOR);
   }
@@ -232,8 +233,8 @@ mixin CSSTextMixin on RenderStyle {
       if (parentLengthValue.type == CSSLengthType.PERCENTAGE) {
         // Resolve percentage against the parent’s own font-size, then inherit as px.
         final double usedPx = parentLengthValue.computedValue;
-        return CSSLengthValue(usedPx, CSSLengthType.PX, this, parentLengthValue.propertyName,
-            parentLengthValue.axisType);
+        return CSSLengthValue(
+            usedPx, CSSLengthType.PX, this, parentLengthValue.propertyName, parentLengthValue.axisType);
       }
       return CSSLengthValue(parentLengthValue.value, parentLengthValue.type, this, parentLengthValue.propertyName,
           parentLengthValue.axisType);
@@ -594,21 +595,7 @@ mixin CSSTextMixin on RenderStyle {
     }
   }
 
-  static TextSpan createTextSpan(
-    String? text,
-    CSSRenderStyle renderStyle, {
-    Color? color,
-    double? height,
-    TextSpan? oldTextSpan,
-  }) {
-    // Ensure font is loaded for the specific weight before creating TextStyle
-    List<String>? fontFamilies = renderStyle.fontFamily;
-    if (fontFamilies != null && fontFamilies.isNotEmpty) {
-      String primaryFontFamily = fontFamilies[0];
-      // Fire and forget - the font will be available for the next frame
-      CSSFontFace.ensureFontLoaded(primaryFontFamily, renderStyle.fontWeight, renderStyle);
-    }
-
+  static TextStyle createTextStyle(CSSRenderStyle renderStyle, {double? height, Color? color}) {
     // Creates a new TextStyle object.
     //   color: The color to use when painting the text. If this is specified, foreground must be null.
     //   decoration: The decorations to paint near the text (e.g., an underline).
@@ -625,19 +612,21 @@ mixin CSSTextMixin on RenderStyle {
     //   background: The paint drawn as a background for the text.
     //   foreground: The paint used to draw the text. If this is specified, color must be null.
     // Respect visibility:hidden: do not paint text or its decorations but keep layout.
-    final bool _hidden = renderStyle.isVisibilityHidden;
-    final Color? _effectiveColor = _hidden
+    final bool hidden = renderStyle.isVisibilityHidden;
+    final Color? effectiveColor = hidden
         ? const Color(0x00000000)
         : (renderStyle.backgroundClip != CSSBackgroundBoundary.text ? color ?? renderStyle.color.value : null);
 
     TextStyle textStyle = TextStyle(
-        color: _effectiveColor,
-        decoration: _hidden ? TextDecoration.none : renderStyle.textDecorationLine,
-        decorationColor: _hidden ? const Color(0x00000000) : renderStyle.textDecorationColor?.value,
+        color: effectiveColor,
+        decoration: hidden ? TextDecoration.none : renderStyle.textDecorationLine,
+        decorationColor: hidden ? const Color(0x00000000) : renderStyle.textDecorationColor?.value,
         decorationStyle: renderStyle.textDecorationStyle,
         fontWeight: renderStyle.fontWeight,
         fontStyle: renderStyle.fontStyle,
-        fontFamily: (renderStyle.fontFamily != null && renderStyle.fontFamily!.isNotEmpty) ? renderStyle.fontFamily!.first : null,
+        fontFamily: (renderStyle.fontFamily != null && renderStyle.fontFamily!.isNotEmpty)
+            ? renderStyle.fontFamily!.first
+            : null,
         fontFamilyFallback: renderStyle.fontFamily,
         fontSize: renderStyle.fontSize.computedValue,
         letterSpacing: renderStyle.letterSpacing?.computedValue,
@@ -649,6 +638,25 @@ mixin CSSTextMixin on RenderStyle {
         background: CSSText.getBackground(),
         foreground: CSSText.getForeground(),
         height: height);
+    return textStyle;
+  }
+
+  static TextSpan createTextSpan(
+    String? text,
+    CSSRenderStyle renderStyle, {
+    Color? color,
+    double? height,
+    TextSpan? oldTextSpan,
+  }) {
+    // Ensure font is loaded for the specific weight before creating TextStyle
+    List<String>? fontFamilies = renderStyle.fontFamily;
+    if (fontFamilies != null && fontFamilies.isNotEmpty) {
+      String primaryFontFamily = fontFamilies[0];
+      // Fire and forget - the font will be available for the next frame
+      CSSFontFace.ensureFontLoaded(primaryFontFamily, renderStyle.fontWeight, renderStyle);
+    }
+
+    TextStyle textStyle = createTextStyle(renderStyle, height: height, color: color);
     if (oldTextSpan != null && oldTextSpan.text == text && oldTextSpan.style == textStyle) {
       return oldTextSpan;
     }
@@ -1142,4 +1150,5 @@ class CSSText {
     return textShadows;
   }
 }
+
 enum TextTransform { none, capitalize, uppercase, lowercase }
