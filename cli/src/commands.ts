@@ -222,7 +222,8 @@ function readFlutterPackageMetadata(packagePath: string): FlutterPackageMetadata
   }
 }
 
-// Copy markdown docs that match .d.ts basenames from source to the built dist folder
+// Copy markdown docs that match .d.ts basenames from source to the built dist folder,
+// and generate an aggregated README.md in the dist directory.
 async function copyMarkdownDocsToDist(params: {
   sourceRoot: string;
   distRoot: string;
@@ -243,6 +244,7 @@ async function copyMarkdownDocsToDist(params: {
   const dtsFiles = glob.globSync('**/*.d.ts', { cwd: sourceRoot, ignore });
   let copied = 0;
   let skipped = 0;
+  const readmeSections: { title: string; relPath: string; content: string }[] = [];
 
   for (const relDts of dtsFiles) {
     if (path.basename(relDts) === 'global.d.ts') {
@@ -256,6 +258,13 @@ async function copyMarkdownDocsToDist(params: {
       continue;
     }
 
+    let content = '';
+    try {
+      content = fs.readFileSync(absMd, 'utf-8');
+    } catch {
+      // If we cannot read the file, still attempt to copy it and skip README aggregation for this entry.
+    }
+
     // Copy into dist preserving relative path
     const destPath = path.join(distRoot, relMd);
     const destDir = path.dirname(destPath);
@@ -264,6 +273,64 @@ async function copyMarkdownDocsToDist(params: {
     }
     fs.copyFileSync(absMd, destPath);
     copied++;
+
+    if (content) {
+      const base = path.basename(relMd, '.md');
+      const title = base
+        .split(/[-_]+/)
+        .filter(Boolean)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+      readmeSections.push({
+        title: title || base,
+        relPath: relMd,
+        content
+      });
+    }
+  }
+
+  // Generate an aggregated README.md inside distRoot so consumers can see component docs easily.
+  if (readmeSections.length > 0) {
+    const readmePath = path.join(distRoot, 'README.md');
+    let existing = '';
+    if (fs.existsSync(readmePath)) {
+      try {
+        existing = fs.readFileSync(readmePath, 'utf-8');
+      } catch {
+        existing = '';
+      }
+    }
+
+    const headerLines: string[] = [
+      '# WebF Component Documentation',
+      '',
+      '> This README is generated from markdown docs co-located with TypeScript definitions in the Flutter package.',
+      ''
+    ];
+
+    const sectionBlocks = readmeSections.map(section => {
+      const lines: string[] = [];
+      lines.push(`## ${section.title}`);
+      lines.push('');
+      lines.push(`_Source: \`./${section.relPath}\`_`);
+      lines.push('');
+      lines.push(section.content.trim());
+      lines.push('');
+      return lines.join('\n');
+    }).join('\n');
+
+    let finalContent: string;
+    if (existing && existing.trim().length > 0) {
+      finalContent = `${existing.trim()}\n\n---\n\n${headerLines.join('\n')}${sectionBlocks}\n`;
+    } else {
+      finalContent = `${headerLines.join('\n')}${sectionBlocks}\n`;
+    }
+
+    try {
+      fs.writeFileSync(readmePath, finalContent, 'utf-8');
+    } catch {
+      // If README generation fails, do not affect overall codegen.
+    }
   }
 
   return { copied, skipped };
@@ -359,6 +426,7 @@ function createCommand(target: string, options: { framework: string; packageName
       // Leave merge to the codegen step which appends exports safely
     }
 
+    // !no '--omit=peer' here.
     spawnSync(NPM, ['install'], {
       cwd: target,
       stdio: 'inherit'

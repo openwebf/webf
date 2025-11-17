@@ -419,7 +419,45 @@ function handleCustomEventType(typeReference: ts.TypeReferenceNode): ParameterBa
   const argument = typeReference.typeArguments[0];
   let genericType: string;
   
-  if (ts.isTypeReferenceNode(argument) && ts.isIdentifier(argument.typeName)) {
+  // Preserve simple union/compound generic types (e.g., boolean | null)
+  if (ts.isUnionTypeNode(argument) || ts.isIntersectionTypeNode(argument)) {
+    const unionTypes = (argument as ts.UnionTypeNode | ts.IntersectionTypeNode).types ?? [];
+    const parts = unionTypes.map(t => {
+      // Literal union members: handle null/undefined explicitly
+      if (ts.isLiteralTypeNode(t)) {
+        const lit = t.literal;
+        if (lit.kind === ts.SyntaxKind.NullKeyword) return 'null';
+        if (lit.kind === ts.SyntaxKind.UndefinedKeyword) return 'undefined';
+        if (ts.isStringLiteral(lit)) return JSON.stringify(lit.text);
+        return 'any';
+      }
+      // Basic keywords: boolean, string, number, null, undefined
+      const basic = BASIC_TYPE_MAP[t.kind];
+      if (basic !== undefined) {
+        switch (basic) {
+          case FunctionArgumentType.boolean:
+            return 'boolean';
+          case FunctionArgumentType.dom_string:
+            return 'string';
+          case FunctionArgumentType.double:
+          case FunctionArgumentType.int:
+            return 'number';
+          case FunctionArgumentType.null:
+            return 'null';
+          case FunctionArgumentType.undefined:
+            return 'undefined';
+          default:
+            return 'any';
+        }
+      }
+      // Literal null/undefined keywords that BASIC_TYPE_MAP may not cover
+      if (t.kind === ts.SyntaxKind.NullKeyword) return 'null';
+      if (t.kind === ts.SyntaxKind.UndefinedKeyword) return 'undefined';
+      // Fallback: rely on toString of node kind
+      return 'any';
+    });
+    genericType = parts.join(' | ');
+  } else if (ts.isTypeReferenceNode(argument) && ts.isIdentifier(argument.typeName)) {
     const typeName = argument.typeName.text;
     
     // Check if it's a mapped type reference like 'int' or 'double'

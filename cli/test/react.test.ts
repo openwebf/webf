@@ -181,9 +181,9 @@ describe('React Generator', () => {
       
       const result = generateReactComponent(blob);
       
-      // Should include custom props (dom_string is not converted in raw output)
-      expect(result).toContain('title: dom_string;');
-      expect(result).toContain('disabled?: boolean;');
+      // Should include custom props with generated TS types
+      expect(result).toContain('title: __webfTypes.dom_string;');
+      expect(result).toContain('disabled?: __webfTypes.boolean;');
       
       // And still include standard HTML props
       expect(result).toContain('id?: string;');
