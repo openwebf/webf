@@ -25,6 +25,9 @@ class FlutterCupertinoListSection extends FlutterCupertinoListSectionBindings {
   bool get insetGrouped => _insetGrouped;
 
   @override
+  bool get allowsInfiniteHeight => true;
+
+  @override
   set insetGrouped(value) {
     final bool next = value == true;
     if (next != _insetGrouped) {
@@ -133,10 +136,7 @@ class FlutterCupertinoListSectionState extends WebFWidgetElementState {
       );
     }
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[sectionWidget],
-    );
+    return sectionWidget;
   }
 }
 

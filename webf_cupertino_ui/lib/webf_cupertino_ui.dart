@@ -29,6 +29,7 @@ import 'src/tab_bar.dart';
 import 'src/tab_scaffold.dart';
 import 'src/tab_view.dart';
 import 'src/sliding_segmented_control.dart';
+import 'src/list_tile.dart';
 
 /// Installs all Cupertino UI custom elements for WebF.
 ///
@@ -66,6 +67,17 @@ void installWebFCupertinoUI() {
   WebF.defineCustomElement(
       'flutter-cupertino-sliding-segmented-control-item',
       (context) => FlutterCupertinoSlidingSegmentedControlItem(context));
+  WebF.defineCustomElement(
+      'flutter-cupertino-list-tile', (context) => FlutterCupertinoListTile(context));
+  WebF.defineCustomElement(
+      'flutter-cupertino-list-tile-leading', (context) => FlutterCupertinoListTileLeading(context));
+  WebF.defineCustomElement(
+      'flutter-cupertino-list-tile-subtitle', (context) => FlutterCupertinoListTileSubtitle(context));
+  WebF.defineCustomElement(
+      'flutter-cupertino-list-tile-additional-info',
+      (context) => FlutterCupertinoListTileAdditionalInfo(context));
+  WebF.defineCustomElement(
+      'flutter-cupertino-list-tile-trailing', (context) => FlutterCupertinoListTileTrailing(context));
 
 
   // WebF.defineCustomElement('flutter-cupertino-input', (context) => FlutterCupertinoInput(context));
@@ -100,9 +112,4 @@ void installWebFCupertinoUI() {
   // WebF.defineCustomElement('flutter-cupertino-list-section', (context) => FlutterCupertinoListSection(context));
   // WebF.defineCustomElement('flutter-cupertino-list-section-header', (context) => FlutterCupertinoListSectionHeader(context));
   // WebF.defineCustomElement('flutter-cupertino-list-section-footer', (context) => FlutterCupertinoListSectionFooter(context));
-  // WebF.defineCustomElement('flutter-cupertino-list-tile', (context) => FlutterCupertinoListTile(context));
-  // WebF.defineCustomElement('flutter-cupertino-list-tile-leading', (context) => FlutterCupertinoListTileLeading(context));
-  // WebF.defineCustomElement('flutter-cupertino-list-tile-subtitle', (context) => FlutterCupertinoListTileSubtitle(context));
-  // WebF.defineCustomElement('flutter-cupertino-list-tile-additional-info', (context) => FlutterCupertinoListTileAdditionalInfo(context));
-  // WebF.defineCustomElement('flutter-cupertino-list-tile-trailing', (context) => FlutterCupertinoListTileTrailing(context));
 }
