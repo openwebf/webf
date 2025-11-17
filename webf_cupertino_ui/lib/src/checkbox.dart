@@ -33,7 +33,7 @@ class FlutterCupertinoCheckbox extends FlutterCupertinoCheckboxBindings {
     final bool next = value == true;
     if (_value != next) {
       _value = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -45,7 +45,7 @@ class FlutterCupertinoCheckbox extends FlutterCupertinoCheckboxBindings {
     final bool next = value == true;
     if (next != _disabled) {
       _disabled = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -57,7 +57,7 @@ class FlutterCupertinoCheckbox extends FlutterCupertinoCheckboxBindings {
     final bool next = value == true;
     if (next != _tristate) {
       _tristate = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -69,7 +69,7 @@ class FlutterCupertinoCheckbox extends FlutterCupertinoCheckboxBindings {
     final String? next = value?.toString();
     if (next != _activeColor) {
       _activeColor = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -81,7 +81,7 @@ class FlutterCupertinoCheckbox extends FlutterCupertinoCheckboxBindings {
     final String? next = value?.toString();
     if (next != _checkColor) {
       _checkColor = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -93,7 +93,7 @@ class FlutterCupertinoCheckbox extends FlutterCupertinoCheckboxBindings {
     final String? next = value?.toString();
     if (next != _focusColor) {
       _focusColor = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -105,7 +105,7 @@ class FlutterCupertinoCheckbox extends FlutterCupertinoCheckboxBindings {
     final String? next = value?.toString();
     if (next != _fillColorSelected) {
       _fillColorSelected = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -117,7 +117,7 @@ class FlutterCupertinoCheckbox extends FlutterCupertinoCheckboxBindings {
     final String? next = value?.toString();
     if (next != _fillColorDisabled) {
       _fillColorDisabled = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -129,7 +129,7 @@ class FlutterCupertinoCheckbox extends FlutterCupertinoCheckboxBindings {
     final bool next = value == true;
     if (next != _autofocus) {
       _autofocus = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -141,7 +141,7 @@ class FlutterCupertinoCheckbox extends FlutterCupertinoCheckboxBindings {
     final String? next = value?.toString();
     if (next != _semanticLabel) {
       _semanticLabel = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 

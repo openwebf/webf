@@ -39,7 +39,7 @@ class FlutterCupertinoSlidingSegmentedControl
     }
     if (next != _currentIndex) {
       _currentIndex = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -51,7 +51,7 @@ class FlutterCupertinoSlidingSegmentedControl
     final String? next = value?.toString();
     if (next != _backgroundColor) {
       _backgroundColor = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -63,7 +63,7 @@ class FlutterCupertinoSlidingSegmentedControl
     final String? next = value?.toString();
     if (next != _thumbColor) {
       _thumbColor = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -150,11 +150,11 @@ class FlutterCupertinoSlidingSegmentedControlItem extends WidgetElement {
       getter: () => _title,
       setter: (value) {
         _title = value;
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       },
       deleter: () {
         _title = null;
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       },
     );
   }

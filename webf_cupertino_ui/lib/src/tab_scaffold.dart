@@ -48,7 +48,7 @@ class FlutterCupertinoTabScaffold extends WidgetElement {
             s.setIndexFromAttribute(_currentIndex);
           } else {
             // Fallback if state not ready yet
-            state?.setState(() {});
+            state?.requestUpdateState(() {});
           }
         }
       },
@@ -59,12 +59,12 @@ class FlutterCupertinoTabScaffold extends WidgetElement {
         final bool newVal = value == 'true' || value == '';
         if (newVal != _resizeToAvoidBottomInset) {
           _resizeToAvoidBottomInset = newVal;
-          state?.setState(() {});
+          state?.requestUpdateState(() {});
         }
       },
       deleter: () {
         _resizeToAvoidBottomInset = true;
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       }
     );
   }
@@ -285,11 +285,11 @@ class FlutterCupertinoTabScaffoldTab extends WidgetElement {
       getter: () => _title,
       setter: (value) {
         _title = value;
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       },
       deleter: () {
         _title = null;
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       },
     );
   }

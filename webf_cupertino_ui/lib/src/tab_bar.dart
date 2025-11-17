@@ -40,55 +40,55 @@ class FlutterCupertinoTabBar extends WidgetElement {
       getter: () => _backgroundColor,
       setter: (value) {
         _backgroundColor = value;
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       },
       deleter: () {
         _backgroundColor = null;
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       },
     );
     attributes['active-color'] = ElementAttributeProperty(
       getter: () => _activeColor,
       setter: (value) {
         _activeColor = value;
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       },
       deleter: () {
         _activeColor = null;
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       },
     );
     attributes['inactive-color'] = ElementAttributeProperty(
       getter: () => _inactiveColor,
       setter: (value) {
         _inactiveColor = value;
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       },
       deleter: () {
         _inactiveColor = null;
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       },
     );
     attributes['icon-size'] = ElementAttributeProperty(
       getter: () => _iconSize?.toString(),
       setter: (value) {
         _iconSize = double.tryParse(value);
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       },
       deleter: () {
         _iconSize = null;
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       },
     );
     attributes['no-top-border'] = ElementAttributeProperty(
       getter: () => _noTopBorder.toString(),
       setter: (value) {
         _noTopBorder = value == 'true' || value == '';
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       },
       deleter: () {
         _noTopBorder = false;
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       },
     );
   }
@@ -207,11 +207,11 @@ class FlutterCupertinoTabBarItem extends WidgetElement {
       getter: () => _title,
       setter: (value) {
         _title = value;
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       },
       deleter: () {
         _title = null;
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       },
     );
   }

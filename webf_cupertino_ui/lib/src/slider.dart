@@ -47,7 +47,7 @@ class FlutterCupertinoSlider extends FlutterCupertinoSliderBindings {
     final next = _parseDouble(value, _value).clamp(_min, _max);
     if (next != _value) {
       _value = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -60,7 +60,7 @@ class FlutterCupertinoSlider extends FlutterCupertinoSliderBindings {
     if (next != _min) {
       _min = next;
       _value = _value.clamp(_min, _max);
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -73,7 +73,7 @@ class FlutterCupertinoSlider extends FlutterCupertinoSliderBindings {
     if (next != _max) {
       _max = next;
       _value = _value.clamp(_min, _max);
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -85,7 +85,7 @@ class FlutterCupertinoSlider extends FlutterCupertinoSliderBindings {
     final next = _parseInt(value, _step);
     if (next != _step) {
       _step = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -97,7 +97,7 @@ class FlutterCupertinoSlider extends FlutterCupertinoSliderBindings {
     final next = value == true;
     if (next != _disabled) {
       _disabled = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -112,7 +112,7 @@ class FlutterCupertinoSlider extends FlutterCupertinoSliderBindings {
     final next = _parseDouble(args[0], _value).clamp(_min, _max);
     if (next != _value) {
       _value = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -165,4 +165,3 @@ class FlutterCupertinoSliderState extends WebFWidgetElementState {
     );
   }
 }
-

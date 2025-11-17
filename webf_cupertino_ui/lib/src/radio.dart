@@ -33,7 +33,7 @@ class FlutterCupertinoRadio extends FlutterCupertinoRadioBindings {
     final String? next = value?.toString();
     if (next != _val) {
       _val = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -45,7 +45,7 @@ class FlutterCupertinoRadio extends FlutterCupertinoRadioBindings {
     final String? next = value?.toString();
     if (next != _groupValue) {
       _groupValue = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -57,7 +57,7 @@ class FlutterCupertinoRadio extends FlutterCupertinoRadioBindings {
     final bool next = value == true;
     if (next != _disabled) {
       _disabled = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -69,7 +69,7 @@ class FlutterCupertinoRadio extends FlutterCupertinoRadioBindings {
     final bool next = value == true;
     if (next != _toggleable) {
       _toggleable = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -81,7 +81,7 @@ class FlutterCupertinoRadio extends FlutterCupertinoRadioBindings {
     final bool next = value == true;
     if (next != _useCheckmarkStyle) {
       _useCheckmarkStyle = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -93,7 +93,7 @@ class FlutterCupertinoRadio extends FlutterCupertinoRadioBindings {
     final String? next = value?.toString();
     if (next != _activeColor) {
       _activeColor = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -105,7 +105,7 @@ class FlutterCupertinoRadio extends FlutterCupertinoRadioBindings {
     final String? next = value?.toString();
     if (next != _inactiveColor) {
       _inactiveColor = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 

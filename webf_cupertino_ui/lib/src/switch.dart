@@ -27,7 +27,7 @@ class FlutterCupertinoSwitch extends FlutterCupertinoSwitchBindings {
     final bool next = value == true;
     if (next != _checked) {
       _checked = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -39,7 +39,7 @@ class FlutterCupertinoSwitch extends FlutterCupertinoSwitchBindings {
     final bool next = value == true;
     if (next != _disabled) {
       _disabled = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -51,7 +51,7 @@ class FlutterCupertinoSwitch extends FlutterCupertinoSwitchBindings {
     final String? next = value?.toString();
     if (next != _activeColor) {
       _activeColor = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -63,7 +63,7 @@ class FlutterCupertinoSwitch extends FlutterCupertinoSwitchBindings {
     final String? next = value?.toString();
     if (next != _inactiveColor) {
       _inactiveColor = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -117,4 +117,3 @@ class FlutterCupertinoSwitchState extends WebFWidgetElementState {
     );
   }
 }
-

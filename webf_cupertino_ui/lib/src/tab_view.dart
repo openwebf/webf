@@ -25,22 +25,22 @@ class FlutterCupertinoTabView extends WidgetElement {
       getter: () => _defaultTitle,
       setter: (value) {
         _defaultTitle = value;
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       },
       deleter: () {
         _defaultTitle = null;
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       },
     );
     attributes['restoration-scope-id'] = ElementAttributeProperty(
       getter: () => _restorationScopeId,
       setter: (value) {
         _restorationScopeId = value;
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       },
       deleter: () {
         _restorationScopeId = null;
-        state?.setState(() {});
+        state?.requestUpdateState(() {});
       },
     );
   }

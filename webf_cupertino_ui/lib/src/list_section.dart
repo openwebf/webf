@@ -29,7 +29,7 @@ class FlutterCupertinoListSection extends FlutterCupertinoListSectionBindings {
     final bool next = value == true;
     if (next != _insetGrouped) {
       _insetGrouped = next;
-      state?.setState(() {});
+      state?.requestUpdateState(() {});
     }
   }
 
