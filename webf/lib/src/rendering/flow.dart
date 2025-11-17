@@ -19,7 +19,6 @@ import 'text.dart';
 import 'event_listener.dart';
 import 'package:webf/src/foundation/logger.dart';
 import 'package:logging/logging.dart' show Level;
-import 'package:webf/src/foundation/inline_layout_logging.dart';
 
 // Position and size of each run (line box) in flow layout.
 // https://www.w3.org/TR/css-inline-3/#line-boxes
@@ -1771,14 +1770,6 @@ class RenderFlowLayout extends RenderLayoutBox {
     if (paraLines.isNotEmpty) {
       firstBaseline = paraLines.first.baseline + paddingTop + borderTop;
       lastBaseline = paraLines.last.baseline + paddingTop + borderTop;
-      InlineLayoutLog.log(
-        impl: InlineImpl.paragraphIFC,
-        feature: InlineFeature.baselines,
-        level: Level.FINE,
-        message: () => 'setCssBaselines first=${firstBaseline!.toStringAsFixed(2)} '
-            'last=${lastBaseline!.toStringAsFixed(2)} paddingTop=${paddingTop.toStringAsFixed(2)} '
-            'borderTop=${borderTop.toStringAsFixed(2)}',
-      );
     } else {
       // Fallback: no line boxes produced (empty content). Synthesize from bottom margin edge for inline-block.
       final double marginBottom = renderStyle.marginBottom.computedValue;

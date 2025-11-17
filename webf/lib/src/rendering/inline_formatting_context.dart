@@ -2940,13 +2940,9 @@ class InlineFormattingContext {
         final mR = rbStyle.marginRight.computedValue;
         final mT = rbStyle.marginTop.computedValue;
         final mB = rbStyle.marginBottom.computedValue;
-        final width = (rb is RenderBoxModel)
-            ? ((rb.boxSize?.width ?? (rb.hasSize ? rb.size.width : 0.0)) + mL + mR)
-            : (rb.hasSize ? rb.size.width : 0.0) + mL + mR;
+        final width = ((rb.boxSize?.width ?? (rb.hasSize ? rb.boxSize!.width : 0.0)) + mL + mR);
         // Include vertical margins in placeholder height
-        final borderBoxHeight = (rb is RenderBoxModel)
-            ? (rb.boxSize?.height ?? (rb.hasSize ? rb.size.height : 0.0))
-            : (rb.hasSize ? rb.size.height : 0.0);
+        final borderBoxHeight = (rb.boxSize?.height ?? (rb.hasSize ? rb.boxSize!.height : 0.0));
         final height = borderBoxHeight + mT + mB;
 
         // Baseline offset for inline-block: use the element's own cached CSS baseline.
@@ -3011,9 +3007,6 @@ class InlineFormattingContext {
           _atomicBuildIndex += 1;
         }
         paraPos += 1; // placeholder adds a single object replacement char
-
-        final bw = rb.boxSize?.width ?? (rb.hasSize ? rb.size.width : 0.0);
-        final bh = rb.boxSize?.height ?? (rb.hasSize ? rb.size.height : 0.0);
       } else if (item.isText) {
         String text = item.getText(_textContent);
         if (text.isEmpty || item.style == null) continue;
@@ -3507,7 +3500,7 @@ class InlineFormattingContext {
           final double mR = rbStyle.marginRight.computedValue;
           final double mT = rbStyle.marginTop.computedValue;
           final double mB = rbStyle.marginBottom.computedValue;
-          final double width = math.max(0.0, (rb.boxSize?.width ?? (rb.hasSize ? rb.size.width : 0.0)) + mL + mR);
+          final double width = math.max(0.0, (rb.boxSize?.width ?? (rb.hasSize ? rb.boxSize!.width : 0.0)) + mL + mR);
           final ui.PlaceholderAlignment align = _placeholderAlignmentFromCss(rbStyle.verticalAlign);
           double? baseline = baselineOffset;
           if (baseline == null) baseline = height; // fallback
@@ -3736,7 +3729,7 @@ class InlineFormattingContext {
             final (double height, double? baselineOffset) = _measureParagraphTextMetricsFor(rbStyle);
             final double mL = rbStyle.marginLeft.computedValue;
             final double mR = rbStyle.marginRight.computedValue;
-            final double width = math.max(0.0, (rb.boxSize?.width ?? (rb.hasSize ? rb.size.width : 0.0)) + mL + mR);
+            final double width = math.max(0.0, (rb.boxSize?.width ?? (rb.hasSize ? rb.boxSize!.width : 0.0)) + mL + mR);
             final ui.PlaceholderAlignment align = _placeholderAlignmentFromCss(rbStyle.verticalAlign);
             final double base = baselineOffset ?? height;
             pb3.addPlaceholder(width, height, align, baseline: TextBaseline.alphabetic, baselineOffset: base);
