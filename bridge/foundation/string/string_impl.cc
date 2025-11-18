@@ -363,6 +363,54 @@ size_t StringImpl::HashSlowCase() const {
   return ExistingHash();
 }
 
+static inline bool IsCSSSpaceChar(char16_t c) {
+  switch (c) {
+    case ' ':
+    case '\t':
+    case '\n':
+    case '\r':
+    case '\f':
+      return true;
+    default:
+      return false;
+  }
+}
+
+std::shared_ptr<StringImpl> StringImpl::StripWhiteSpace(const std::shared_ptr<StringImpl>& str) {
+  if (!str || !str->length_) {
+    return str;
+  }
+
+  size_t start = 0;
+  size_t end = str->length_;
+
+  if (str->Is8Bit()) {
+    const LChar* chars = str->Characters8();
+    while (start < end && IsCSSSpaceChar(chars[start])) {
+      ++start;
+    }
+    while (end > start && IsCSSSpaceChar(chars[end - 1])) {
+      --end;
+    }
+    if (start == 0 && end == str->length_) {
+      return str;
+    }
+    return Create(chars + start, end - start);
+  }
+
+  const UChar* chars16 = str->Characters16();
+  while (start < end && IsCSSSpaceChar(chars16[start])) {
+    ++start;
+  }
+  while (end > start && IsCSSSpaceChar(chars16[end - 1])) {
+    --end;
+  }
+  if (start == 0 && end == str->length_) {
+    return str;
+  }
+  return Create(chars16 + start, end - start);
+}
+
 // Helper function to decode UTF-8 character
 static inline uint32_t DecodeUTF8Char(const uint8_t*& p, const uint8_t* end) {
   uint32_t c = *p++;
