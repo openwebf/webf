@@ -2460,14 +2460,31 @@ class CSSRenderStyle extends RenderStyle
         final bool thisIsFlexItem = this.isParentRenderFlexLayout();
 
         // Case A: inside a flex item — stretch block-level auto width to the flex item's measured width.
+        // For WebF widget elements (custom elements backed by Flutter widgets), only use the
+        // direct constraints exposed via `WebFWidgetElementChild` instead of inferring from
+        // the RenderWidget's own content constraints, which can vary by adapter implementation.
         if (parentIsFlexItem && !thisIsFlexItem &&
             !renderStyle.isSelfRenderReplaced() &&
             renderStyle.position != CSSPositionType.absolute &&
             renderStyle.position != CSSPositionType.fixed) {
-          final RenderBoxModel? parentBox = parentStyle.attachedRenderBoxModel;
-          final BoxConstraints? pcc = parentBox?.contentConstraints;
-          if (pcc != null && pcc.hasBoundedWidth && pcc.maxWidth.isFinite) {
-            logicalWidth = pcc.maxWidth - renderStyle.margin.horizontal;
+          if (parentStyle.isSelfRenderWidget()) {
+            RenderWidgetElementChild? childWrapper = target.attachedRenderer?.findWidgetElementChild();
+            double? maxConstraintWidth;
+            try {
+              maxConstraintWidth = childWrapper?.constraints.maxWidth;
+            } catch (_) {}
+
+            if (childWrapper != null && maxConstraintWidth != null) {
+              logicalWidth = maxConstraintWidth;
+            }
+            // If there is no WebFWidgetElementChild (or no constraints yet),
+            // fall through and let the parent (flex) constraints logic handle it.
+          } else {
+            final RenderBoxModel? parentBox = parentStyle.attachedRenderBoxModel;
+            final BoxConstraints? pcc = parentBox?.contentConstraints;
+            if (pcc != null && pcc.hasBoundedWidth && pcc.maxWidth.isFinite) {
+              logicalWidth = pcc.maxWidth - renderStyle.margin.horizontal;
+            }
           }
 
         // Case B: normal flow (not inside a flex item) — find the nearest non-inline ancestor
