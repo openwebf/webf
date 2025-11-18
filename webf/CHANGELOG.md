@@ -1,3 +1,19 @@
+## 0.23.7
+
+- Highlights
+  - Improved absolute positioning correctness, widget layout integration, and inline formatting
+    performance for self-owned elements.
+  - Simplified inline formatting context with new profiling hooks and reduced noisy layout logs.
+
+- Fixed
+  - CSS positioning: align absolute-positioned element sizing and auto-height resolution with spec;
+    fix sizing in flex overlay scenarios.
+  - Widgets/layout: respect widget child constraints for flex popups; honor CSS `width` for widgets;
+    fix `maxHeight` constraints for custom elements.
+
+- Performance
+  - Optimize the performance of self-owned elements and inline formatting context.
+
 ## 0.23.6+1
 
 - Fixed
