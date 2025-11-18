@@ -521,6 +521,28 @@ abstract class RenderBoxModel extends RenderBox
           }
         }
       }
+      // For absolutely/fixed positioned elements inside a flex container, avoid collapsing
+      // their intrinsic width to 0 solely because the flex item has a content constraint
+      // width of 0 (e.g., auto-width flex item whose only child is out-of-flow).
+      // In such cases, the containing block still exists, but the abspos box should size
+      // from its own content rather than the flex item's zero content width.
+      final bool isAbsOrFixed = renderStyle.position == CSSPositionType.absolute ||
+          renderStyle.position == CSSPositionType.fixed;
+      if (isAbsOrFixed &&
+          renderStyle.width.isAuto &&
+          renderStyle.isParentRenderFlexLayout() &&
+          parentBoxContentConstraintsWidth != null &&
+          parentBoxContentConstraintsWidth == 0) {
+        try {
+          final tag = renderStyle.target.tagName.toLowerCase();
+          PositionedLayoutLog.log(
+            impl: PositionedImpl.layout,
+            feature: PositionedFeature.layout,
+            message: () => '<$tag> abs/fixed under flex: ignore zero parent content width for intrinsic sizing',
+          );
+        } catch (_) {}
+        parentBoxContentConstraintsWidth = null;
+      }
     } else if (isDisplayInline && parent is RenderFlowLayout) {
       // For inline elements inside a flow layout, check if we should inherit parent's constraints
       RenderFlowLayout parentFlow = parent as RenderFlowLayout;

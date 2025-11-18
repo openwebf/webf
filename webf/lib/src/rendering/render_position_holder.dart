@@ -81,11 +81,11 @@ class RenderPositionPlaceholder extends RenderPreferredSize {
             'mappedTo=<$mapped>',
       );
     } catch (_) {}
-    SchedulerBinding.instance.scheduleFrameCallback((_) {
-      if (positioned?.disposed == false) {
-        positioned?.markNeedsLayout();
-      }
-    });
+    // SchedulerBinding.instance.scheduleFrameCallback((_) {
+    //   if (positioned?.disposed == false) {
+    //     positioned?.markNeedsLayout();
+    //   }
+    // });
   }
 
   @override
