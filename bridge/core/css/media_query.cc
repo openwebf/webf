@@ -42,6 +42,10 @@ namespace webf {
 
 // https://drafts.csswg.org/cssom/#serialize-a-media-query
 String MediaQuery::Serialize() const {
+  if (raw_condition_) {
+    return raw_condition_->CustomCSSText();
+  }
+
   StringBuilder result;
   switch (Restrictor()) {
     case RestrictorType::kOnly:
@@ -82,6 +86,7 @@ MediaQuery::MediaQuery(RestrictorType restrictor,
                        std::shared_ptr<const MediaQueryExpNode> exp_node)
     : media_type_(media_type.LowerASCII()),
       exp_node_(exp_node),
+      raw_condition_(nullptr),
       restrictor_(restrictor),
       has_unknown_(exp_node_ ? exp_node_->HasUnknown() : false) {}
 
@@ -89,6 +94,7 @@ MediaQuery::MediaQuery(const MediaQuery& o)
     : media_type_(o.media_type_),
       serialization_cache_(o.serialization_cache_),
       exp_node_(o.exp_node_),
+      raw_condition_(o.raw_condition_),
       restrictor_(o.restrictor_),
       has_unknown_(o.has_unknown_) {}
 

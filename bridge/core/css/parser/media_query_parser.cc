@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 #include "media_query_parser.h"
+
 #include "core/base/strings/string_util.h"
+#include "core/css/css_raw_value.h"
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/css/parser/css_parser_token_stream.h"
 #include "core/css/parser/css_variable_parser.h"
@@ -56,53 +58,68 @@ class MediaQueryFeatureSet : public MediaQueryParser::FeatureSet {
 
 std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseMediaQuerySet(const String& query_string,
                                                                     const ExecutingContext* execution_context) {
-  CSSTokenizer tokenizer{query_string.ToStringView()};
-  auto [tokens, raw_offsets] = tokenizer.TokenizeToEOFWithOffsets();
-  auto pair = tokenizer.TokenizeToEOFWithOffsets();
-  CSSParserTokenRange range(tokens);
-  CSSParserTokenOffsets offsets(tokens, raw_offsets, StringView(query_string));
-  return ParseMediaQuerySet(range, offsets, execution_context);
+  std::vector<std::shared_ptr<const MediaQuery>> queries;
+
+  std::string utf8 = query_string.ToUTF8String();
+  size_t start = 0;
+
+  while (start <= utf8.size()) {
+    size_t comma = utf8.find(',', start);
+    size_t len = (comma == std::string::npos) ? utf8.size() - start : comma - start;
+    std::string part = utf8.substr(start, len);
+
+    String part_str = String::FromUTF8(part.c_str(), part.size()).StripWhiteSpace();
+    if (!part_str.IsEmpty()) {
+      auto mq = std::make_shared<MediaQuery>(MediaQuery::RestrictorType::kNone,
+                                             String(media_type_names_atomicstring::kAll),
+                                             nullptr);
+      mq->SetRawCondition(std::make_shared<CSSRawValue>(part_str));
+      queries.push_back(mq);
+    }
+
+    if (comma == std::string::npos) {
+      break;
+    }
+    start = comma + 1;
+  }
+
+  return std::make_shared<MediaQuerySet>(std::move(queries));
 }
 
 std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseMediaQuerySet(CSSParserTokenRange range,
                                                                     const CSSParserTokenOffsets& offsets,
                                                                     const ExecutingContext* execution_context) {
-  return MediaQueryParser(kMediaQuerySetParser, kHTMLStandardMode, execution_context).ParseImpl(range, offsets);
+  String serialized = range.Serialize();
+  return ParseMediaQuerySet(serialized, execution_context);
 }
 
 std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseMediaQuerySet(CSSParserTokenStream& stream,
                                                                     const ExecutingContext* execution_context) {
-  // For now, convert stream to range - this will be fully migrated later
   CSSParserTokenRange range = stream.ConsumeUntilPeekedTypeIs<>();
-  // Create empty offsets for now - proper offset tracking will be added when fully migrated to streams
-  std::vector<size_t> dummy_offsets(range.end() - range.begin() + 1, 0);
-  CSSParserTokenOffsets offsets(tcb::span<const CSSParserToken>(range.begin(), range.end()), 
-                                std::move(dummy_offsets), StringView());
-  return MediaQueryParser(kMediaQuerySetParser, kHTMLStandardMode, execution_context).ParseImpl(range, offsets);
+  String serialized = range.Serialize();
+  return ParseMediaQuerySet(serialized, execution_context);
 }
 
 std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseMediaQuerySetInMode(CSSParserTokenRange range,
                                                                           const CSSParserTokenOffsets& offsets,
                                                                           CSSParserMode mode,
                                                                           const ExecutingContext* execution_context) {
-  return MediaQueryParser(kMediaQuerySetParser, mode, execution_context).ParseImpl(range, offsets);
+  String serialized = range.Serialize();
+  return ParseMediaQuerySet(serialized, execution_context);
 }
 
 std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseMediaCondition(CSSParserTokenRange range,
                                                                      const CSSParserTokenOffsets& offsets,
                                                                      const ExecutingContext* execution_context) {
-  return MediaQueryParser(kMediaConditionParser, kHTMLStandardMode, execution_context).ParseImpl(range, offsets);
+  String serialized = range.Serialize();
+  return ParseMediaQuerySet(serialized, execution_context);
 }
 
 std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseMediaCondition(CSSParserTokenStream& stream,
                                                                      const ExecutingContext* execution_context) {
-  // Convert stream to range for now - this is a temporary approach during migration
   CSSParserTokenRange range = stream.ConsumeUntilPeekedTypeIs<>();
-  // Create empty offsets for now - proper offset tracking will be added when fully migrated to streams
-  std::vector<size_t> dummy_offsets(range.end() - range.begin() + 1, 0);
-  CSSParserTokenOffsets offsets(tcb::span<const CSSParserToken>(range.begin(), range.end()), 
-                                std::move(dummy_offsets), StringView());
-  return MediaQueryParser(kMediaConditionParser, kHTMLStandardMode, execution_context).ParseImpl(range, offsets);
+  String serialized = range.Serialize();
+  return ParseMediaQuerySet(serialized, execution_context);
 }
 
 MediaQueryParser::MediaQueryParser(ParserType parser_type,
@@ -721,20 +738,9 @@ std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeGeneralEnclose
 std::shared_ptr<MediaQuerySet> MediaQueryParser::ConsumeSingleCondition(CSSParserTokenRange range,
                                                                         const CSSParserTokenOffsets& offsets) {
   DCHECK_EQ(parser_type_, kMediaConditionParser);
-  DCHECK(!range.AtEnd());
 
-  std::shared_ptr<const MediaQueryExpNode> node = ConsumeCondition(range, offsets);
-
-  std::vector<std::shared_ptr<const MediaQuery>> queries;
-
-  if (!node || !range.AtEnd()) {
-    queries.push_back(MediaQuery::CreateNotAll());
-  } else {
-    queries.push_back(
-        std::make_shared<MediaQuery>(MediaQuery::RestrictorType::kNone, String(media_type_names_atomicstring::kAll), node));
-  }
-
-  return std::make_shared<MediaQuerySet>(std::move(queries));
+  String serialized = range.Serialize();
+  return ParseMediaQuerySet(serialized, execution_context_);
 }
 
 std::shared_ptr<MediaQuery> MediaQueryParser::ConsumeQuery(CSSParserTokenRange& range,

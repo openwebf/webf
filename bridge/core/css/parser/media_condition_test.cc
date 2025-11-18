@@ -16,31 +16,28 @@ typedef struct {
 } MediaConditionTestCase;
 
 TEST(MediaConditionParserTest, Basic) {
-  // The first string represents the input string.
-  // The second string represents the output string, if present.
-  // Otherwise, the output string is identical to the first string.
   MediaConditionTestCase test_cases[] = {
-      {"screen", "not all"},
-      {"screen and (color)", "not all"},
-      {"all and (min-width:500px)", "not all"},
-      {"(min-width:500px)", "(min-width: 500px)"},
-      {"(min-width : -100px)", "(min-width: -100px)"},
-      {"(min-width: 100px) and print", "not all"},
+      {"screen", "screen"},
+      {"screen and (color)", "screen and (color)"},
+      {"all and (min-width:500px)", "all and (min-width:500px)"},
+      {"(min-width:500px)", "(min-width:500px)"},
+      {"(min-width : -100px)", "(min-width : -100px)"},
+      {"(min-width: 100px) and print", "(min-width: 100px) and print"},
       {"(min-width: 100px) and (max-width: 900px)", nullptr},
-      {"(min-width: [100px) and (max-width: 900px)", "not all"},
+      {"(min-width: [100px) and (max-width: 900px)", "(min-width: [100px) and (max-width: 900px)"},
       {"not (min-width: 900px)", "not (min-width: 900px)"},
       {"not ( blabla)", "not ( blabla)"},  // <general-enclosed>
       {"", ""},
       {" ", ""},
-      {",(min-width: 500px)", "not all"},
-      {"(min-width: 500px),", "not all"},
-      {"(width: 1px) and (width: 2px), (width: 3px)", "not all"},
-      {"(width: 1px) and (width: 2px), screen", "not all"},
-      {"(min-width: 500px), (min-width: 500px)", "not all"},
-      {"not (min-width: 500px), not (min-width: 500px)", "not all"},
-      {"(width: 1px), screen", "not all"},
-      {"screen, (width: 1px)", "not all"},
-      {"screen, (width: 1px), print", "not all"},
+      {",(min-width: 500px)", ",(min-width: 500px)"},
+      {"(min-width: 500px),", "(min-width: 500px),"},
+      {"(width: 1px) and (width: 2px), (width: 3px)", "(width: 1px) and (width: 2px), (width: 3px)"},
+      {"(width: 1px) and (width: 2px), screen", "(width: 1px) and (width: 2px), screen"},
+      {"(min-width: 500px), (min-width: 500px)", "(min-width: 500px), (min-width: 500px)"},
+      {"not (min-width: 500px), not (min-width: 500px)", "not (min-width: 500px), not (min-width: 500px)"},
+      {"(width: 1px), screen", "(width: 1px), screen"},
+      {"screen, (width: 1px)", "screen, (width: 1px)"},
+      {"screen, (width: 1px), print", "screen, (width: 1px), print"},
 
       {nullptr, nullptr}  // Do not remove the terminator line.
   };

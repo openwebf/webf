@@ -125,20 +125,16 @@ ContainerQueryParser::ContainerQueryParser(const CSSParserContext& context)
                           MediaQueryParser::SyntaxLevel::kLevel4) {}
 
 std::shared_ptr<const MediaQueryExpNode> ContainerQueryParser::ParseCondition(const String& value) {
-  CSSTokenizer tokenizer(value);
-  CSSParserTokenStream stream(tokenizer);
-  return ParseCondition(stream);
+  // Do not parse the container condition semantically; keep it as a raw
+  // expression node so higher layers can interpret it as needed.
+  return std::make_shared<MediaQueryUnknownExpNode>(value);
 }
 
 // Stream implementations
 std::shared_ptr<const MediaQueryExpNode> ContainerQueryParser::ParseCondition(CSSParserTokenStream& stream) {
-  stream.ConsumeWhitespace();
-  std::shared_ptr<const MediaQueryExpNode> node = ConsumeContainerCondition(stream);
-  stream.ConsumeWhitespace();  // Consume any trailing whitespace
-  if (!stream.AtEnd()) {
-    return nullptr;
-  }
-  return node;
+  CSSParserTokenRange range = stream.ConsumeUntilPeekedTypeIs<>();
+  String serialized = range.Serialize();
+  return std::make_shared<MediaQueryUnknownExpNode>(serialized);
 }
 
 // <query-in-parens> = ( <container-condition> )

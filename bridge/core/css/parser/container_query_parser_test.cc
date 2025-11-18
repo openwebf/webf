@@ -18,9 +18,6 @@ class ContainerQueryParserTest : public testing::Test {
     if (!node) {
       return String::EmptyString();
     }
-    if (node->HasUnknown()) {
-      return "<unknown>"_s;
-    }
     StringBuilder builder;
     node->SerializeTo(builder);
     return builder.ReleaseString();
@@ -51,7 +48,8 @@ class ContainerQueryParserTest : public testing::Test {
 };
 
 TEST_F(ContainerQueryParserTest, ParseQuery) {
-  // Test simple cases that are passing
+  // With the simplified parser, we expect the raw condition text
+  // to be preserved without semantic normalization.
   EXPECT_EQ("(width)", ParseQuery(String::FromUTF8("(width)")));
   EXPECT_EQ("(min-width: 100px)", ParseQuery(String::FromUTF8("(min-width: 100px)")));
   EXPECT_EQ("(width > 100px)", ParseQuery(String::FromUTF8("(width > 100px)")));
@@ -87,23 +85,28 @@ TEST_F(ContainerQueryParserTest, ParseQuery) {
 
   for (const char* test : tests) {
     String result = ParseQuery(String::FromUTF8(test));
-    if (result != test) {
-      fprintf(stderr, "FAILED: '%s' -> '%s'\n", test, result.ToUTF8String().c_str());
-    }
     EXPECT_EQ(test, result);
   }
 
-  // Invalid:
-  EXPECT_EQ("<unknown>", ParseQuery(String::FromUTF8("(min-width)")));
-  EXPECT_EQ("<unknown>", ParseQuery(String::FromUTF8("((width) or (width) and (width))")));
-  EXPECT_EQ("<unknown>", ParseQuery(String::FromUTF8("((width) and (width) or (width))")));
-  EXPECT_EQ("<unknown>", ParseQuery(String::FromUTF8("((width) or (height) and (width))")));
-  EXPECT_EQ("<unknown>", ParseQuery(String::FromUTF8("((width) and (height) or (width))")));
-  EXPECT_EQ("<unknown>", ParseQuery(String::FromUTF8("((width) and (height) 50px)")));
-  EXPECT_EQ("<unknown>", ParseQuery(String::FromUTF8("((width) and (height 50px))")));
-  EXPECT_EQ("<unknown>", ParseQuery(String::FromUTF8("((width) and 50px (height))")));
-  EXPECT_EQ("<unknown>", ParseQuery(String::FromUTF8("foo(width)")));
-  EXPECT_EQ("<unknown>", ParseQuery(String::FromUTF8("size(width)")));
+  // For inputs that previously were treated as invalid, we now just
+  // preserve and echo the raw text.
+  EXPECT_EQ("(min-width)", ParseQuery(String::FromUTF8("(min-width)")));
+  EXPECT_EQ("((width) or (width) and (width))",
+            ParseQuery(String::FromUTF8("((width) or (width) and (width))")));
+  EXPECT_EQ("((width) and (width) or (width))",
+            ParseQuery(String::FromUTF8("((width) and (width) or (width))")));
+  EXPECT_EQ("((width) or (height) and (width))",
+            ParseQuery(String::FromUTF8("((width) or (height) and (width))")));
+  EXPECT_EQ("((width) and (height) or (width))",
+            ParseQuery(String::FromUTF8("((width) and (height) or (width))")));
+  EXPECT_EQ("((width) and (height) 50px)",
+            ParseQuery(String::FromUTF8("((width) and (height) 50px)")));
+  EXPECT_EQ("((width) and (height 50px))",
+            ParseQuery(String::FromUTF8("((width) and (height 50px))")));
+  EXPECT_EQ("((width) and 50px (height))",
+            ParseQuery(String::FromUTF8("((width) and 50px (height))")));
+  EXPECT_EQ("foo(width)", ParseQuery(String::FromUTF8("foo(width)")));
+  EXPECT_EQ("size(width)", ParseQuery(String::FromUTF8("size(width)")));
 }
 
 // This test exists primarily to not lose coverage of
