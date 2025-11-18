@@ -1528,7 +1528,7 @@ abstract class Element extends ContainerNode
     if (DebugFlags.enableBackgroundLogs && (name == BACKGROUND_POSITION_X || name == BACKGROUND_POSITION_Y)) {
       try {
         final CSSBackgroundPosition p = value as CSSBackgroundPosition;
-        renderingLogger.finer('[Background] apply $name cssText=${p.cssText()} ' 
+        renderingLogger.finer('[Background] apply $name cssText=${p.cssText()} '
             '(len=${p.length != null} pct=${p.percentage != null} calc=${p.calcValue != null})');
       } catch (_) {}
     }
@@ -1621,7 +1621,7 @@ abstract class Element extends ContainerNode
     }
   }
 
-  void _applyDefaultStyle(CSSStyleDeclaration style) {
+  void applyDefaultStyle(CSSStyleDeclaration style) {
     if (defaultStyle.isNotEmpty) {
       defaultStyle.forEach((propertyName, value) {
         if (style.contains(propertyName) == false) {
@@ -1631,7 +1631,7 @@ abstract class Element extends ContainerNode
     }
   }
 
-  void _applyInlineStyle(CSSStyleDeclaration style) {
+  void applyInlineStyle(CSSStyleDeclaration style) {
     if (inlineStyle.isNotEmpty) {
       inlineStyle.forEach((propertyName, value) {
         // Force inline style to be applied as important priority.
@@ -1888,12 +1888,12 @@ abstract class Element extends ContainerNode
 
   void applyStyle(CSSStyleDeclaration style) {
     // Apply default style.
-    _applyDefaultStyle(style);
+    applyDefaultStyle(style);
     // Init display from style directly cause renderStyle is not flushed yet.
     renderStyle.initDisplay(style);
 
     applyAttributeStyle(style);
-    _applyInlineStyle(style);
+    applyInlineStyle(style);
     _applySheetStyle(style);
     _applyPseudoStyle(style);
   }

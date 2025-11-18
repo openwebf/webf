@@ -76,7 +76,6 @@ class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectE
     inlineStyle.forEach((key, value) {
       _webFElement!.setInlineStyle(key, value);
     });
-    _webFElement!.recalculateStyle();
   }
 
   @override
@@ -92,7 +91,10 @@ class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectE
     if (widget.inlineStyle != null) {
       fullFillInlineStyle(widget.inlineStyle!);
     }
-    _webFElement!.applyStyle(_webFElement!.style);
+    _webFElement!.applyDefaultStyle(_webFElement!.style);
+    _webFElement!.renderStyle.initDisplay(_webFElement!.style);
+    _webFElement!.applyAttributeStyle(_webFElement!.style);
+    _webFElement!.applyInlineStyle(_webFElement!.style);
     element.style.flushDisplayProperties();
 
     super.mount(parent, newSlot);
