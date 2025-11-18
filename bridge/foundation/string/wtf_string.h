@@ -78,6 +78,12 @@ class String {
   String Substring(size_t pos, size_t len = UINT_MAX) const;
   String LowerASCII() const;
   String UpperASCII() const;
+  String StripWhiteSpace() const {
+    if (!impl_) {
+      return String();
+    }
+    return String(StringImpl::StripWhiteSpace(impl_));
+  }
 
   // Search operations
   size_t Find(UChar c, size_t start = 0) const;

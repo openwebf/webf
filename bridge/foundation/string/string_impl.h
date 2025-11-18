@@ -287,6 +287,7 @@ class StringImpl {
   static std::shared_ptr<StringImpl> RemoveCharacters(const std::shared_ptr<StringImpl>& str, CharacterMatchFunctionPtr);
   template <typename CharType>
   ALWAYS_INLINE static std::shared_ptr<StringImpl> RemoveCharacters(const std::shared_ptr<StringImpl>& str, const CharType* characters, CharacterMatchFunctionPtr);
+  static std::shared_ptr<StringImpl> StripWhiteSpace(const std::shared_ptr<StringImpl>& str);
 
   bool ContainsOnlyASCIIOrEmpty() const;
 
