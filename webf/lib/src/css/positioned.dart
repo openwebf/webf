@@ -155,6 +155,64 @@ class CSSPositionedLayout {
   static void layoutPositionedChild(RenderBoxModel parent, RenderBoxModel child, {bool needsRelayout = false}) {
     BoxConstraints childConstraints = child.getConstraints();
 
+    // For absolutely/fixed positioned non-replaced elements with both top and bottom specified
+    // and height:auto, compute the used border-box height from the containing block when the
+    // containing block's padding-box height is known. This mirrors the horizontal auto-width
+    // solver in RenderBoxModel.getConstraints and allows patterns like `top:0; bottom:0`
+    // overlays to stretch with the container height. Do this only when there are no explicit
+    // min/max height constraints so we don't override author-specified clamping (e.g., max-height).
+    final CSSRenderStyle rs = child.renderStyle;
+    final bool isAbsOrFixed = rs.position == CSSPositionType.absolute || rs.position == CSSPositionType.fixed;
+    final bool hasExplicitMaxHeight = !rs.maxHeight.isNone;
+    final bool hasExplicitMinHeight = !rs.minHeight.isAuto;
+    if (isAbsOrFixed &&
+        !rs.isSelfRenderReplaced() &&
+        rs.height.isAuto &&
+        rs.top.isNotAuto &&
+        rs.bottom.isNotAuto &&
+        !hasExplicitMaxHeight &&
+        !hasExplicitMinHeight &&
+        parent.hasSize &&
+        parent.boxSize != null) {
+      final CSSRenderStyle prs = parent.renderStyle;
+      final Size parentSize = parent.boxSize!;
+      final double cbHeight = math.max(
+        0.0,
+        parentSize.height -
+            prs.effectiveBorderTopWidth.computedValue -
+            prs.effectiveBorderBottomWidth.computedValue,
+      );
+      double solvedBorderBoxHeight = cbHeight -
+          rs.top.computedValue -
+          rs.bottom.computedValue -
+          rs.marginTop.computedValue -
+          rs.marginBottom.computedValue;
+      solvedBorderBoxHeight = math.max(0.0, solvedBorderBoxHeight);
+      if (solvedBorderBoxHeight.isFinite) {
+        childConstraints = BoxConstraints(
+          minWidth: childConstraints.minWidth,
+          maxWidth: childConstraints.maxWidth,
+          minHeight: solvedBorderBoxHeight,
+          maxHeight: solvedBorderBoxHeight,
+        );
+        try {
+          final String tag = rs.target.tagName.toLowerCase();
+          PositionedLayoutLog.log(
+            impl: PositionedImpl.layout,
+            feature: PositionedFeature.layout,
+            message: () => '<$tag> abs/fixed auto-height solved from CB '
+                'cbPaddingBoxH=${cbHeight.toStringAsFixed(2)} '
+                'top=${rs.top.computedValue.toStringAsFixed(2)} '
+                'bottom=${rs.bottom.computedValue.toStringAsFixed(2)} '
+                'marginT=${rs.marginTop.computedValue.toStringAsFixed(2)} '
+                'marginB=${rs.marginBottom.computedValue.toStringAsFixed(2)} '
+                'minH=${rs.minHeight.cssText()} maxH=${rs.maxHeight.cssText()} '
+                '→ usedBorderBoxH=${solvedBorderBoxHeight.toStringAsFixed(2)}',
+          );
+        } catch (_) {}
+      }
+    }
+
     // Whether child need to layout
     bool isChildNeedsLayout = true;
     if (child.hasSize && !needsRelayout && (childConstraints == child.constraints) && (!child.needsLayout)) {
@@ -219,6 +277,22 @@ class CSSPositionedLayout {
     CSSLengthValue marginRight = childRenderStyle.marginRight;
     CSSLengthValue marginTop = childRenderStyle.marginTop;
     CSSLengthValue marginBottom = childRenderStyle.marginBottom;
+
+    // Diagnostics: containing block and child sizing snapshot before resolving positioned offsets.
+    try {
+      final String pTag = parent.renderStyle.target.tagName.toLowerCase();
+      final String cTag = child.renderStyle.target.tagName.toLowerCase();
+      PositionedLayoutLog.log(
+        impl: PositionedImpl.layout,
+        feature: PositionedFeature.layout,
+        message: () => '<$cTag> applyPositionedChildOffset cb=(${containingBlockSize.width.toStringAsFixed(2)}×${containingBlockSize.height.toStringAsFixed(2)}) '
+            'parentSize=(${parentSize.width.toStringAsFixed(2)}×${parentSize.height.toStringAsFixed(2)}) '
+            'childSize=(${size.width.toStringAsFixed(2)}×${size.height.toStringAsFixed(2)}) '
+            'insets L=${left.cssText()} R=${right.cssText()} T=${top.cssText()} B=${bottom.cssText()} '
+            'margins L=${marginLeft.cssText()} R=${marginRight.cssText()} T=${marginTop.cssText()} B=${marginBottom.cssText()} '
+            'parent=<$pTag>',
+      );
+    } catch (_) {}
 
     // Fix side effects by render portal.
     if (child is RenderEventListener && child.child is RenderBoxModel) {
