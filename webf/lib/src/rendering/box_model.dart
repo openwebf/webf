@@ -569,6 +569,40 @@ abstract class RenderBoxModel extends RenderBox
       }
     }
 
+    // CSS abspos width for non-replaced boxes with width:auto follows the
+    // shrink-to-fit algorithm in CSS 2.1 §10.3.7 / CSS Position 3, except when
+    // both left and right are non-auto (in which case width is solved directly
+    // from the insets equation).
+    //
+    // Approximation: when width:auto and not (left & right both non-auto),
+    // do not clamp the positioned box by the parent's content max-width.
+    // Let the box measure to its intrinsic content width (subject to any
+    // explicit min/max-width), which matches shrink-to-fit in the common
+    // case where content width <= available width.
+    final bool _absOrFixedForWidth = renderStyle.position == CSSPositionType.absolute ||
+        renderStyle.position == CSSPositionType.fixed;
+    final bool _widthAutoForAbs = renderStyle.width.isAuto;
+    final bool _bothLRNonAuto = renderStyle.left.isNotAuto && renderStyle.right.isNotAuto;
+    if (_absOrFixedForWidth &&
+        !_bothLRNonAuto &&
+        _widthAutoForAbs &&
+        !renderStyle.isSelfRenderReplaced() &&
+        renderStyle.borderBoxLogicalWidth == null) {
+      if (parentBoxContentConstraintsWidth != null) {
+        try {
+          final tag = renderStyle.target.tagName.toLowerCase();
+          PositionedLayoutLog.log(
+            impl: PositionedImpl.layout,
+            feature: PositionedFeature.layout,
+            message: () => '<$tag> abs/fixed width:auto → shrink-to-fit; '
+                'ignore parentContentMaxW=${parentBoxContentConstraintsWidth!.toStringAsFixed(2)} '
+                'left=${renderStyle.left.cssText()} right=${renderStyle.right.cssText()}',
+          );
+        } catch (_) {}
+        parentBoxContentConstraintsWidth = null;
+      }
+    }
+
     double maxConstraintWidth =
         renderStyle.borderBoxLogicalWidth ?? parentBoxContentConstraintsWidth ?? double.infinity;
 

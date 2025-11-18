@@ -1351,6 +1351,28 @@ class RenderFlexLayout extends RenderLayoutBox {
       developer.Timeline.finishSync();
     }
 
+    // After flex container size is resolved, relayout absolute/fixed positioned
+    // children whose auto-height depends on top/bottom insets and the containing
+    // block height. The initial layout before flex items ensures placeholders
+    // get the correct intrinsic size; this second pass adjusts the actual
+    // positioned box to stretch vertically without affecting flex metrics.
+    for (RenderBoxModel child in _positionedChildren) {
+      final CSSRenderStyle rs = child.renderStyle;
+      final CSSPositionType pos = rs.position;
+      final bool isAbsOrFixed = pos == CSSPositionType.absolute || pos == CSSPositionType.fixed;
+      final bool hasExplicitMaxHeight = !rs.maxHeight.isNone;
+      final bool hasExplicitMinHeight = !rs.minHeight.isAuto;
+      if (isAbsOrFixed &&
+          !rs.isSelfRenderReplaced() &&
+          rs.height.isAuto &&
+          rs.top.isNotAuto &&
+          rs.bottom.isNotAuto &&
+          !hasExplicitMaxHeight &&
+          !hasExplicitMinHeight) {
+        CSSPositionedLayout.layoutPositionedChild(this, child, needsRelayout: true);
+      }
+    }
+
     if (!kReleaseMode) {
       developer.Timeline.startSync('RenderFlex.adjustPositionChildren');
     }
