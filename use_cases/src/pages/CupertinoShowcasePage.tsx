@@ -44,6 +44,7 @@ export const CupertinoShowcasePage: React.FC = () => {
             <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
               <Item label="Cupertino Alert Dialog" desc="Alerts & dialog actions" to="/cupertino/alert" />
               <Item label="Cupertino Action Sheet" desc="Action sheet and sheet actions" to="/cupertino/actionsheet" />
+              <Item label="Cupertino Modal Popup" desc="Bottom sheet style modal popup" to="/cupertino/modal-popup" />
               <Item label="Cupertino Context Menu" desc="Peek and pop context actions" to="/cupertino/context-menu" />
             </div>
 

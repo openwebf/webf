@@ -71,6 +71,7 @@ import { TailwindShowcasePage } from './pages/TailwindShowcasePage';
 import { CupertinoShowcasePage } from './pages/CupertinoShowcasePage';
 import CupertinoButtonsPage from './pages/cupertino/CupertinoButtonsPage';
 import { CupertinoActionSheetPage } from './pages/cupertino/CupertinoActionSheetPage';
+import { CupertinoModalPopupPage } from './pages/cupertino/CupertinoModalPopupPage';
 import { CupertinoAlertPage } from './pages/cupertino/CupertinoAlertPage';
 import { CupertinoControlsPage } from './pages/cupertino/CupertinoControlsPage';
 import CupertinoColorsPage from './pages/cupertino/CupertinoColorsPage';
@@ -162,6 +163,7 @@ function App() {
 
         <Route path="/cupertino-showcase" title="Cupertino UI Showcase" theme={'cupertino'} element={<CupertinoShowcasePage />} />
         <Route path="/cupertino/buttons" title="Cupertino Buttons" theme={'cupertino'} element={<CupertinoButtonsPage />} />
+        <Route path="/cupertino/modal-popup" title="Cupertino Modal Popup" theme={'cupertino'} element={<CupertinoModalPopupPage />} />
         <Route path="/cupertino/actionsheet" title="Cupertino Action Sheet" theme={'cupertino'} element={<CupertinoActionSheetPage />} />
         <Route path="/cupertino/alert" title="Cupertino Alert Dialog" theme={'cupertino'} element={<CupertinoAlertPage />} />
         <Route path="/cupertino/controls" title="Cupertino Switches & Sliders" theme={'cupertino'} element={<CupertinoControlsPage />} />
