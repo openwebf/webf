@@ -58,8 +58,8 @@ export const CupertinoShowcasePage: React.FC = () => {
             <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Text Input & Search</h2>
             <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
               <Item label="CupertinoTextField" desc="Single-line iOS-style text input" to="/cupertino/text-field" />
-              {/* <Item label="CupertinoTextFormFieldRow" desc="Form row with text field" to="/cupertino/text-form-field-row" /> */}
-              {/* <Item label="CupertinoSearchTextField" desc="Search field with iOS style" to="/cupertino/search-text-field" /> */}
+              <Item label="CupertinoTextFormFieldRow" desc="Inline text field row for forms" to="/cupertino/text-form-field-row" />
+              <Item label="CupertinoSearchTextField" desc="iOS-style search bar" to="/cupertino/search-text-field" />
             </div>
 
             {/*<h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Selection & Toolbars</h2>*/}

@@ -10,6 +10,7 @@ import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 
 import 'form_section_bindings_generated.dart';
+import 'text_form_field_row.dart';
 
 /// WebF custom element that wraps Flutter's [CupertinoFormSection].
 ///
@@ -104,7 +105,8 @@ class FlutterCupertinoFormSectionState extends WebFWidgetElementState {
                 slotName == 'error') {
               return false;
             }
-            return node is FlutterCupertinoFormRow;
+            return node is FlutterCupertinoFormRow ||
+                node is FlutterCupertinoTextFormFieldRow;
           }
           return false;
         })

@@ -3,6 +3,7 @@ import 'package:webf/webf.dart';
 export 'src/alert.dart';
 export 'src/action_sheet.dart';
 export 'src/context_menu.dart';
+export 'src/text_form_field_row.dart';
 export 'src/list_section.dart';
 export 'src/switch.dart';
 export 'src/slider.dart';
@@ -17,16 +18,17 @@ export 'src/sliding_segmented_control.dart';
 export 'src/modal_popup.dart';
 export 'src/form_section.dart';
 export 'src/input.dart';
+export 'src/search_text_field.dart';
 import 'src/alert.dart';
 import 'src/action_sheet.dart';
 import 'src/context_menu.dart';
 import 'src/list_section.dart';
 import 'src/switch.dart';
+import 'src/text_form_field_row.dart';
 import 'src/slider.dart';
 import 'src/modal_popup.dart';
 import 'src/form_section.dart';
 import 'src/input.dart';
-import 'src/tab_scaffold.dart';
 import 'src/checkbox.dart';
 import 'src/radio.dart';
 import 'src/button.dart';
@@ -36,6 +38,7 @@ import 'src/tab_scaffold.dart';
 import 'src/tab_view.dart';
 import 'src/sliding_segmented_control.dart';
 import 'src/list_tile.dart';
+import 'src/search_text_field.dart';
 
 /// Installs all Cupertino UI custom elements for WebF.
 ///
@@ -91,7 +94,13 @@ void installWebFCupertinoUI() {
   WebF.defineCustomElement(
       'flutter-cupertino-form-row', (context) => FlutterCupertinoFormRow(context));
   WebF.defineCustomElement(
+      'flutter-cupertino-text-form-field-row',
+      (context) => FlutterCupertinoTextFormFieldRow(context));
+  WebF.defineCustomElement(
       'flutter-cupertino-input', (context) => FlutterCupertinoInput(context));
+  WebF.defineCustomElement(
+      'flutter-cupertino-search-text-field',
+      (context) => FlutterCupertinoSearchTextField(context));
 
 
   // WebF.defineCustomElement('flutter-cupertino-input', (context) => FlutterCupertinoInput(context));
