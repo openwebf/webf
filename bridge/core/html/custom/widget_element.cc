@@ -85,12 +85,6 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
     return cached_properties_[key];
   }
 
-  // If the property is defined in the prototype for DOM built-in properties and methods,
-  // return undefined to let QuickJS look for this property value on its prototype.
-  if (IsPrototypeProperty(key)) {
-    return ScriptValue::Undefined(ctx());
-  }
-
   const WidgetElementShape* shape = GetExecutingContext()->GetWidgetElementShape(tagName());
 
   std::vector<char> async_key_string(key.length());
