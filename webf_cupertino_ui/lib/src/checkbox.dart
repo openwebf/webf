@@ -26,10 +26,19 @@ class FlutterCupertinoCheckbox extends FlutterCupertinoCheckboxBindings {
   String? _semanticLabel;
 
   @override
-  bool get checked => _value == true;
+  bool? get checked => _value == true;
 
   @override
   set checked(value) {
+    // Support nullable values when tristate is enabled.
+    if (_tristate && value == null) {
+      if (_value != null) {
+        _value = null;
+        state?.requestUpdateState(() {});
+      }
+      return;
+    }
+
     final bool next = value == true;
     if (_value != next) {
       _value = next;

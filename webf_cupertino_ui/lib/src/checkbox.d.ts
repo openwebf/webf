@@ -12,7 +12,7 @@ interface FlutterCupertinoCheckboxProperties {
    * Whether the checkbox is checked.
    * Default: false.
    */
-  checked?: boolean;
+  checked?: boolean | null;
 
   /**
    * Whether the checkbox is disabled.

@@ -10,7 +10,7 @@
 import 'package:webf/webf.dart';
 abstract class FlutterCupertinoCheckboxBindings extends WidgetElement {
   FlutterCupertinoCheckboxBindings(super.context);
-  bool get checked;
+  bool? get checked;
   set checked(value);
   bool get disabled;
   set disabled(value);
@@ -34,8 +34,8 @@ abstract class FlutterCupertinoCheckboxBindings extends WidgetElement {
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
     attributes['checked'] = ElementAttributeProperty(
-      getter: () => checked.toString(),
-      setter: (value) => checked = value == 'true' || value == '',
+      getter: () => checked?.toString(),
+      setter: (value) => checked = value == 'null' ? null : (value == 'true' || value == ''),
       deleter: () => checked = false
     );
     attributes['disabled'] = ElementAttributeProperty(
