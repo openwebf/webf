@@ -4,7 +4,9 @@ import {
   FlutterCupertinoListSection,
   FlutterCupertinoListSectionHeader,
   FlutterCupertinoListSectionFooter,
-  FlutterCupertinoSwitch
+  FlutterCupertinoSwitch,
+  FlutterCupertinoIcon,
+  CupertinoIcons,
 } from '@openwebf/react-cupertino-ui';
 
 export const CupertinoListSectionPage: React.FC = () => {
@@ -227,17 +229,23 @@ const [backgroundRefresh, setBackgroundRefresh] = useState(false);
                     </div>
                   </FlutterCupertinoListSectionHeader>
                   <div className="bg-white border-b border-gray-200 p-4 hover:bg-gray-50 cursor-pointer flex items-center gap-3">
-                    <span className="text-2xl">📱</span>
+                    <span className="text-2xl">
+                      <FlutterCupertinoIcon type={CupertinoIcons.device_phone_portrait} />
+                    </span>
                     <span className="flex-1 font-medium">iPhone 15 Pro</span>
                     <span className="text-gray-400">→</span>
                   </div>
                   <div className="bg-white border-b border-gray-200 p-4 hover:bg-gray-50 cursor-pointer flex items-center gap-3">
-                    <span className="text-2xl">💻</span>
+                    <span className="text-2xl">
+                      <FlutterCupertinoIcon type={CupertinoIcons.device_laptop} />
+                    </span>
                     <span className="flex-1 font-medium">MacBook Pro</span>
                     <span className="text-gray-400">→</span>
                   </div>
                   <div className="bg-white p-4 hover:bg-gray-50 cursor-pointer flex items-center gap-3">
-                    <span className="text-2xl">⌚</span>
+                    <span className="text-2xl">
+                      <FlutterCupertinoIcon type={CupertinoIcons.stopwatch_fill} />
+                    </span>
                     <span className="flex-1 font-medium">Apple Watch</span>
                     <span className="text-gray-400">→</span>
                   </div>
@@ -449,4 +457,3 @@ const [backgroundRefresh, setBackgroundRefresh] = useState(false);
     </div>
   );
 };
-

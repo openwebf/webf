@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
-import { FlutterCupertinoRadio } from '@openwebf/react-cupertino-ui';
+import { FlutterCupertinoRadio, FlutterCupertinoIcon, CupertinoIcons } from '@openwebf/react-cupertino-ui';
 
 type BasicOption = 'one' | 'two' | 'three';
 type SizeOption = 'small' | 'medium' | 'large';
@@ -352,37 +352,46 @@ const [value, setValue] = useState<Option>('one');
                   <div className="font-semibold mb-3">Payment Method</div>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
-                      <FlutterCupertinoRadio
-                        val="credit"
-                        groupValue={paymentValue}
-                        onChange={(e) => setPaymentValue(e.detail as PaymentOption)}
-                      />
-                      <div className="flex-1">
-                        <div className="font-medium">💳 Credit Card</div>
+                    <FlutterCupertinoRadio
+                      val="credit"
+                      groupValue={paymentValue}
+                      onChange={(e) => setPaymentValue(e.detail as PaymentOption)}
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium flex items-center gap-2">
+                        <FlutterCupertinoIcon type={CupertinoIcons.creditcard_fill} />
+                        <span>Credit Card</span>
+                      </div>
                         <div className="text-sm text-gray-600">Visa, Mastercard, Amex</div>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <FlutterCupertinoRadio
-                        val="debit"
-                        groupValue={paymentValue}
-                        onChange={(e) => setPaymentValue(e.detail as PaymentOption)}
-                      />
-                      <div className="flex-1">
-                        <div className="font-medium">💳 Debit Card</div>
+                    <FlutterCupertinoRadio
+                      val="debit"
+                      groupValue={paymentValue}
+                      onChange={(e) => setPaymentValue(e.detail as PaymentOption)}
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium flex items-center gap-2">
+                        <FlutterCupertinoIcon type={CupertinoIcons.creditcard_fill} />
+                        <span>Debit Card</span>
+                      </div>
                         <div className="text-sm text-gray-600">Direct bank payment</div>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <FlutterCupertinoRadio
-                        val="paypal"
-                        groupValue={paymentValue}
-                        onChange={(e) => setPaymentValue(e.detail as PaymentOption)}
-                      />
-                      <div className="flex-1">
-                        <div className="font-medium">🅿️ PayPal</div>
+                    <FlutterCupertinoRadio
+                      val="paypal"
+                      groupValue={paymentValue}
+                      onChange={(e) => setPaymentValue(e.detail as PaymentOption)}
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium flex items-center gap-2">
+                        <FlutterCupertinoIcon type={CupertinoIcons.money_dollar_circle_fill} />
+                        <span>PayPal</span>
+                      </div>
                         <div className="text-sm text-gray-600">Fast and secure</div>
                       </div>
                     </div>
@@ -399,7 +408,10 @@ const [value, setValue] = useState<Option>('one');
                         groupValue={themeValue}
                         onChange={(e) => setThemeValue(e.detail as ThemeOption)}
                       />
-                      <span className="font-medium">☀️ Light Mode</span>
+                      <span className="font-medium flex items-center gap-2">
+                        <FlutterCupertinoIcon type={CupertinoIcons.sun_max_fill} />
+                        <span>Light Mode</span>
+                      </span>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -408,7 +420,10 @@ const [value, setValue] = useState<Option>('one');
                         groupValue={themeValue}
                         onChange={(e) => setThemeValue(e.detail as ThemeOption)}
                       />
-                      <span className="font-medium">🌙 Dark Mode</span>
+                      <span className="font-medium flex items-center gap-2">
+                        <FlutterCupertinoIcon type={CupertinoIcons.moon_fill} />
+                        <span>Dark Mode</span>
+                      </span>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -417,7 +432,10 @@ const [value, setValue] = useState<Option>('one');
                         groupValue={themeValue}
                         onChange={(e) => setThemeValue(e.detail as ThemeOption)}
                       />
-                      <span className="font-medium">🔄 Auto (System)</span>
+                      <span className="font-medium flex items-center gap-2">
+                        <FlutterCupertinoIcon type={CupertinoIcons.arrow_2_circlepath} />
+                        <span>Auto (System)</span>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -811,4 +829,3 @@ const isPremiumUser = true;
     </div>
   );
 };
-

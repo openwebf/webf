@@ -7,6 +7,8 @@ import {
   FlutterCupertinoListTileAdditionalInfo,
   FlutterCupertinoListTileTrailing,
   FlutterCupertinoListSection,
+  FlutterCupertinoIcon,
+  CupertinoIcons,
 } from '@openwebf/react-cupertino-ui';
 
 export const CupertinoListTilePage: React.FC = () => {
@@ -77,8 +79,8 @@ export const CupertinoListTilePage: React.FC = () => {
                 <FlutterCupertinoListSection>
                   <FlutterCupertinoListTile showChevron={true}>
                     <FlutterCupertinoListTileLeading>
-                      <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm">
-                        📱
+                      <div id={"bug"} className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm">
+                        <FlutterCupertinoIcon type={CupertinoIcons.phone_fill} />
                       </div>
                     </FlutterCupertinoListTileLeading>
                     Phone
@@ -87,7 +89,7 @@ export const CupertinoListTilePage: React.FC = () => {
                   <FlutterCupertinoListTile showChevron={true}>
                     <FlutterCupertinoListTileLeading>
                       <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white text-sm">
-                        ✉️
+                        <FlutterCupertinoIcon type={CupertinoIcons.bubble_left_bubble_right_fill} />
                       </div>
                     </FlutterCupertinoListTileLeading>
                     Messages
@@ -99,7 +101,7 @@ export const CupertinoListTilePage: React.FC = () => {
                   <FlutterCupertinoListTile showChevron={true}>
                     <FlutterCupertinoListTileLeading>
                       <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white text-sm">
-                        ⚙️
+                        <FlutterCupertinoIcon type={CupertinoIcons.gear_alt_fill} />
                       </div>
                     </FlutterCupertinoListTileLeading>
                     Settings
@@ -129,7 +131,7 @@ export const CupertinoListTilePage: React.FC = () => {
                   <FlutterCupertinoListTile showChevron={true}>
                     <FlutterCupertinoListTileLeading>
                       <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm">
-                        🔔
+                        <FlutterCupertinoIcon type={CupertinoIcons.bell_fill} />
                       </div>
                     </FlutterCupertinoListTileLeading>
                     Notifications
@@ -144,7 +146,7 @@ export const CupertinoListTilePage: React.FC = () => {
                   <FlutterCupertinoListTile showChevron={true}>
                     <FlutterCupertinoListTileLeading>
                       <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center text-white text-sm">
-                        🔒
+                        <FlutterCupertinoIcon type={CupertinoIcons.lock_fill} />
                       </div>
                     </FlutterCupertinoListTileLeading>
                     Privacy & Security
@@ -156,7 +158,7 @@ export const CupertinoListTilePage: React.FC = () => {
                   <FlutterCupertinoListTile showChevron={true}>
                     <FlutterCupertinoListTileLeading>
                       <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white text-sm">
-                        🌐
+                        <FlutterCupertinoIcon type={CupertinoIcons.globe} />
                       </div>
                     </FlutterCupertinoListTileLeading>
                     Language & Region
@@ -195,7 +197,7 @@ export const CupertinoListTilePage: React.FC = () => {
                   <FlutterCupertinoListTile>
                     <FlutterCupertinoListTileLeading>
                       <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm">
-                        📶
+                        <FlutterCupertinoIcon type={CupertinoIcons.wifi} />
                       </div>
                     </FlutterCupertinoListTileLeading>
                     Wi-Fi
@@ -219,7 +221,7 @@ export const CupertinoListTilePage: React.FC = () => {
                   <FlutterCupertinoListTile>
                     <FlutterCupertinoListTileLeading>
                       <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-sm">
-                        🔵
+                        <FlutterCupertinoIcon type={CupertinoIcons.bluetooth} />
                       </div>
                     </FlutterCupertinoListTileLeading>
                     Bluetooth
@@ -243,7 +245,7 @@ export const CupertinoListTilePage: React.FC = () => {
                   <FlutterCupertinoListTile showChevron={true}>
                     <FlutterCupertinoListTileLeading>
                       <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center text-white text-sm">
-                        📮
+                        <FlutterCupertinoIcon type={CupertinoIcons.mail_solid} />
                       </div>
                     </FlutterCupertinoListTileLeading>
                     Mail
@@ -348,7 +350,7 @@ export const CupertinoListTilePage: React.FC = () => {
                   >
                     <FlutterCupertinoListTileLeading>
                       <div className="w-8 h-8 rounded-full bg-gray-500 flex items-center justify-center text-white text-sm">
-                        ⚙️
+                        <FlutterCupertinoIcon type={CupertinoIcons.gear_alt_fill} />
                       </div>
                     </FlutterCupertinoListTileLeading>
                     General
@@ -360,7 +362,7 @@ export const CupertinoListTilePage: React.FC = () => {
                   >
                     <FlutterCupertinoListTileLeading>
                       <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm">
-                        ☀️
+                        <FlutterCupertinoIcon type={CupertinoIcons.sun_max_fill} />
                       </div>
                     </FlutterCupertinoListTileLeading>
                     Display & Brightness
@@ -372,7 +374,7 @@ export const CupertinoListTilePage: React.FC = () => {
                   >
                     <FlutterCupertinoListTileLeading>
                       <div className="w-8 h-8 rounded-full bg-pink-500 flex items-center justify-center text-white text-sm">
-                        🔊
+                        <FlutterCupertinoIcon type={CupertinoIcons.speaker_3_fill} />
                       </div>
                     </FlutterCupertinoListTileLeading>
                     Sounds & Haptics
@@ -440,7 +442,7 @@ export const CupertinoListTilePage: React.FC = () => {
                   <FlutterCupertinoListTile>
                     <FlutterCupertinoListTileLeading>
                       <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm">
-                        ✈️
+                        <FlutterCupertinoIcon type={CupertinoIcons.airplane} />
                       </div>
                     </FlutterCupertinoListTileLeading>
                     Airplane Mode
@@ -461,7 +463,7 @@ export const CupertinoListTilePage: React.FC = () => {
                   <FlutterCupertinoListTile showChevron={true}>
                     <FlutterCupertinoListTileLeading>
                       <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm">
-                        📶
+                        <FlutterCupertinoIcon type={CupertinoIcons.wifi} />
                       </div>
                     </FlutterCupertinoListTileLeading>
                     Wi-Fi
@@ -473,7 +475,7 @@ export const CupertinoListTilePage: React.FC = () => {
                   <FlutterCupertinoListTile showChevron={true}>
                     <FlutterCupertinoListTileLeading>
                       <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm">
-                        🔵
+                        <FlutterCupertinoIcon type={CupertinoIcons.bluetooth} />
                       </div>
                     </FlutterCupertinoListTileLeading>
                     Bluetooth
@@ -485,7 +487,7 @@ export const CupertinoListTilePage: React.FC = () => {
                   <FlutterCupertinoListTile showChevron={true}>
                     <FlutterCupertinoListTileLeading>
                       <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white text-sm">
-                        📱
+                        <FlutterCupertinoIcon type={CupertinoIcons.device_phone_portrait} />
                       </div>
                     </FlutterCupertinoListTileLeading>
                     Cellular
@@ -494,7 +496,7 @@ export const CupertinoListTilePage: React.FC = () => {
                   <FlutterCupertinoListTile showChevron={true}>
                     <FlutterCupertinoListTileLeading>
                       <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm">
-                        🔥
+                        <FlutterCupertinoIcon type={CupertinoIcons.flame_fill} />
                       </div>
                     </FlutterCupertinoListTileLeading>
                     Personal Hotspot
@@ -512,7 +514,7 @@ export const CupertinoListTilePage: React.FC = () => {
                   <FlutterCupertinoListTile>
                     <FlutterCupertinoListTileLeading>
                       <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center text-white text-sm">
-                        🔔
+                        <FlutterCupertinoIcon type={CupertinoIcons.bell_fill} />
                       </div>
                     </FlutterCupertinoListTileLeading>
                     Notifications
@@ -536,7 +538,7 @@ export const CupertinoListTilePage: React.FC = () => {
                   <FlutterCupertinoListTile showChevron={true}>
                     <FlutterCupertinoListTileLeading>
                       <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white text-sm">
-                        🌙
+                        <FlutterCupertinoIcon type={CupertinoIcons.moon_fill} />
                       </div>
                     </FlutterCupertinoListTileLeading>
                     Focus
@@ -812,4 +814,3 @@ export const CupertinoListTilePage: React.FC = () => {
     </div>
   );
 };
-

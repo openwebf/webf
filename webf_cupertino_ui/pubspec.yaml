@@ -1,6 +1,6 @@
 name: webf_cupertino_ui
 description: "iOS-style UI components for WebF applications. This package provides Flutter's Cupertino widgets wrapped as HTML custom elements for use in WebF."
-version: 0.3.24
+version: 0.3.25
 homepage: https://openwebf.com
 environment:
   sdk: ^3.6.0
@@ -11,7 +11,7 @@ dependencies:
     sdk: flutter
   webf:
     hosted: https://dart.cloudsmith.io/openwebf/packages/
-    version: ^0.23.0
+    version: ^0.23.7
   logger: ^2.0.0
   collection: ^1.18.0
 

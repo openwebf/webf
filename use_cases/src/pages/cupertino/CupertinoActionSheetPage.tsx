@@ -81,7 +81,7 @@ ref.current?.show({
                 ref={destructiveRef}
                 onSelect={(e) => {
                   if (e.detail.isDestructive) {
-                    setLastAction(`⚠️ Destructive action: ${e.detail.text}`);
+                    setLastAction(`Destructive action: ${e.detail.text}`);
                   } else {
                     setLastAction(`Selected: ${e.detail.text}`);
                   }
@@ -130,7 +130,7 @@ ref.current?.show({
               <FlutterCupertinoActionSheet
                 ref={multiRef}
                 onSelect={(e) => {
-                  const prefix = e.detail.isDefault ? '⭐ Default: ' : '';
+                  const prefix = e.detail.isDefault ? 'Default: ' : '';
                   const suffix = e.detail.isDestructive ? ' (destructive)' : '';
                   setLastAction(`${prefix}${e.detail.text}${suffix}`);
                 }}
@@ -236,12 +236,12 @@ ref.current?.show({
                 ref={customEventsRef}
                 onSelect={(e) => {
                   const eventMap: Record<string, string> = {
-                    'edit': '✏️ Opening editor...',
-                    'duplicate': '📋 Creating duplicate...',
-                    'share': '📤 Opening share sheet...',
-                    'archive': '📦 Moving to archive...',
-                    'delete': '🗑️ Deleting item...',
-                    'cancel': '❌ Cancelled',
+                    'edit': 'Opening editor...',
+                    'duplicate': 'Creating duplicate...',
+                    'share': 'Opening share sheet...',
+                    'archive': 'Moving to archive...',
+                    'delete': 'Deleting item...',
+                    'cancel': 'Cancelled',
                   };
                   setLastAction(eventMap[e.detail.event] || `Unknown event: ${e.detail.event}`);
                 }}

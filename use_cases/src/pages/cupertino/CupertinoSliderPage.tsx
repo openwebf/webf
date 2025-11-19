@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
-import { FlutterCupertinoSlider } from '@openwebf/react-cupertino-ui';
+import { FlutterCupertinoSlider, FlutterCupertinoIcon, CupertinoIcons } from '@openwebf/react-cupertino-ui';
 
 export const CupertinoSliderPage: React.FC = () => {
   const [basicValue, setBasicValue] = useState(50);
@@ -164,7 +164,9 @@ export const CupertinoSliderPage: React.FC = () => {
                 {/* Volume Control */}
                 <div className="p-4">
                   <div className="flex items-center gap-3 mb-3">
-                    <span className="text-2xl">🔊</span>
+                    <span className="text-2xl">
+                      <FlutterCupertinoIcon type={CupertinoIcons.speaker_3_fill} />
+                    </span>
                     <div className="flex-1">
                       <div className="flex justify-between items-center mb-1">
                         <span className="font-semibold">Volume</span>
@@ -184,7 +186,9 @@ export const CupertinoSliderPage: React.FC = () => {
                 {/* Brightness Control */}
                 <div className="p-4">
                   <div className="flex items-center gap-3 mb-3">
-                    <span className="text-2xl">☀️</span>
+                    <span className="text-2xl">
+                      <FlutterCupertinoIcon type={CupertinoIcons.sun_max_fill} />
+                    </span>
                     <div className="flex-1">
                       <div className="flex justify-between items-center mb-1">
                         <span className="font-semibold">Brightness</span>
@@ -204,7 +208,9 @@ export const CupertinoSliderPage: React.FC = () => {
                 {/* Temperature Control */}
                 <div className="p-4">
                   <div className="flex items-center gap-3 mb-3">
-                    <span className="text-2xl">🌡️</span>
+                    <span className="text-2xl">
+                      <FlutterCupertinoIcon type={CupertinoIcons.thermometer} />
+                    </span>
                     <div className="flex-1">
                       <div className="flex justify-between items-center mb-1">
                         <span className="font-semibold">Temperature</span>
@@ -583,7 +589,9 @@ const [blue, setBlue] = useState(64);
               <div>
                 <h4 className="font-semibold text-fg-primary mb-2 text-sm">Settings Row with Icon</h4>
                 <pre className="text-xs overflow-x-auto bg-gray-50 p-3 rounded"><code>{`<div className="flex items-center gap-3">
-  <span className="text-2xl">🔊</span>
+  <span className="text-2xl">
+    <FlutterCupertinoIcon type={CupertinoIcons.speaker_3_fill} />
+  </span>
   <div className="flex-1">
     <div className="flex justify-between mb-1">
       <span className="font-semibold">Volume</span>
@@ -675,4 +683,3 @@ const resetToDefault = () => {
     </div>
   );
 };
-

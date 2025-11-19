@@ -1,6 +1,11 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
-import { FlutterCupertinoContextMenu, FlutterCupertinoContextMenuElement } from '@openwebf/react-cupertino-ui';
+import {
+  FlutterCupertinoContextMenu,
+  FlutterCupertinoContextMenuElement,
+  FlutterCupertinoIcon,
+  CupertinoIcons,
+} from '@openwebf/react-cupertino-ui';
 
 export const CupertinoContextMenuPage: React.FC = () => {
   const [lastAction, setLastAction] = useState('');
@@ -16,7 +21,7 @@ export const CupertinoContextMenuPage: React.FC = () => {
 
   const handleSelect = (e: CustomEvent<any>) => {
     const detail = e.detail;
-    const prefix = detail.default ? '⭐ Default: ' : '';
+    const prefix = detail.default ? 'Default: ' : '';
     const suffix = detail.destructive ? ' (destructive)' : '';
     setLastAction(`${prefix}${detail.text}${suffix} [index: ${detail.index}]`);
   };
@@ -109,7 +114,9 @@ export const CupertinoContextMenuPage: React.FC = () => {
                 onSelect={handleSelect}
               >
                 <div className="bg-blue-100 rounded-lg p-6 border-2 border-blue-300 text-center cursor-pointer select-none">
-                  <div className="text-2xl mb-2">📄</div>
+                  <div className="text-2xl mb-2">
+                    <FlutterCupertinoIcon type={CupertinoIcons.doc_text_fill} />
+                  </div>
                   <div className="font-semibold text-blue-900">Document.pdf</div>
                   <div className="text-sm text-blue-700 mt-1">Long-press to open menu</div>
                 </div>
@@ -145,7 +152,9 @@ export const CupertinoContextMenuPage: React.FC = () => {
                 onSelect={handleSelect}
               >
                 <div className="bg-purple-100 rounded-lg p-6 border-2 border-purple-300 text-center cursor-pointer select-none">
-                  <div className="text-2xl mb-2">🖼️</div>
+                  <div className="text-2xl mb-2">
+                    <FlutterCupertinoIcon type={CupertinoIcons.photo} />
+                  </div>
                   <div className="font-semibold text-purple-900">Image.jpg</div>
                   <div className="text-sm text-purple-700 mt-1">Long-press for options</div>
                 </div>
@@ -182,7 +191,9 @@ useEffect(() => {
                 onSelect={handleSelect}
               >
                 <div className="bg-red-100 rounded-lg p-6 border-2 border-red-300 text-center cursor-pointer select-none">
-                  <div className="text-2xl mb-2">📧</div>
+                  <div className="text-2xl mb-2">
+                    <FlutterCupertinoIcon type={CupertinoIcons.mail_solid} />
+                  </div>
                   <div className="font-semibold text-red-900">Spam Email</div>
                   <div className="text-sm text-red-700 mt-1">Long-press to manage</div>
                 </div>
@@ -215,7 +226,9 @@ useEffect(() => {
                 onSelect={handleSelect}
               >
                 <div className="bg-green-100 rounded-lg p-6 border-2 border-green-300 text-center cursor-pointer select-none">
-                  <div className="text-2xl mb-2">📁</div>
+                  <div className="text-2xl mb-2">
+                    <FlutterCupertinoIcon type={CupertinoIcons.folder_fill} />
+                  </div>
                   <div className="font-semibold text-green-900">Project Folder</div>
                   <div className="text-sm text-green-700 mt-1">Long-press for actions</div>
                 </div>
@@ -248,7 +261,9 @@ useEffect(() => {
                 onSelect={handleSelect}
               >
                 <div className="bg-yellow-100 rounded-lg p-6 border-2 border-yellow-300 text-center cursor-pointer select-none">
-                  <div className="text-2xl mb-2">⭐</div>
+                  <div className="text-2xl mb-2">
+                    <FlutterCupertinoIcon type={CupertinoIcons.star_fill} />
+                  </div>
                   <div className="font-semibold text-yellow-900">Dynamic Menu</div>
                   <div className="text-sm text-yellow-700 mt-1">Long-press to see current actions</div>
                 </div>
@@ -336,7 +351,9 @@ const updateActions = (mode: 'view' | 'edit') => {
                 onSelect={handleSelect}
               >
                 <div className="bg-indigo-100 rounded-lg p-6 border-2 border-indigo-300 text-center cursor-pointer select-none">
-                  <div className="text-2xl mb-2">📱</div>
+                  <div className="text-2xl mb-2">
+                    <FlutterCupertinoIcon type={CupertinoIcons.device_phone_portrait} />
+                  </div>
                   <div className="font-semibold text-indigo-900">Haptic Enabled</div>
                   <div className="text-sm text-indigo-700 mt-1">Long-press to feel haptic feedback</div>
                 </div>
@@ -369,7 +386,9 @@ const updateActions = (mode: 'view' | 'edit') => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FlutterCupertinoContextMenu ref={photoRef} onSelect={handleSelect}>
                   <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm cursor-pointer select-none">
-                    <div className="text-3xl mb-2">📸</div>
+                    <div className="text-3xl mb-2">
+                      <FlutterCupertinoIcon type={CupertinoIcons.camera_fill} />
+                    </div>
                     <div className="font-semibold text-sm">Photo.jpg</div>
                     <div className="text-xs text-gray-500 mt-1">2.4 MB</div>
                   </div>
@@ -377,7 +396,9 @@ const updateActions = (mode: 'view' | 'edit') => {
 
                 <FlutterCupertinoContextMenu ref={musicRef} onSelect={handleSelect}>
                   <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm cursor-pointer select-none">
-                    <div className="text-3xl mb-2">🎵</div>
+                    <div className="text-3xl mb-2">
+                      <FlutterCupertinoIcon type={CupertinoIcons.music_note_2} />
+                    </div>
                     <div className="font-semibold text-sm">Song.mp3</div>
                     <div className="text-xs text-gray-500 mt-1">4.8 MB</div>
                   </div>
@@ -385,7 +406,9 @@ const updateActions = (mode: 'view' | 'edit') => {
 
                 <FlutterCupertinoContextMenu ref={videoRef} onSelect={handleSelect}>
                   <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm cursor-pointer select-none">
-                    <div className="text-3xl mb-2">🎬</div>
+                    <div className="text-3xl mb-2">
+                      <FlutterCupertinoIcon type={CupertinoIcons.film_fill} />
+                    </div>
                     <div className="font-semibold text-sm">Video.mp4</div>
                     <div className="text-xs text-gray-500 mt-1">45.2 MB</div>
                   </div>
@@ -515,4 +538,3 @@ ref.current?.setActions([
     </div>
   );
 };
-
