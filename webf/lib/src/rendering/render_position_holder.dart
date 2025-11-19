@@ -68,24 +68,6 @@ class RenderPositionPlaceholder extends RenderPreferredSize {
       final Size desired = Size(phWidth, phHeight);
       size = c.constrain(desired);
     }
-    // The relative offset of positioned renderBox are depends on positionHolder' offset.
-    // When the placeHolder got layout, should notify the positioned renderBox to layout again.
-    try {
-      final String mapped = positioned?.renderStyle.target.tagName.toLowerCase() ?? '';
-      final Offset? off = (parentData is RenderLayoutParentData) ? (parentData as RenderLayoutParentData).offset : null;
-      PositionedLayoutLog.log(
-        impl: PositionedImpl.placeholder,
-        feature: PositionedFeature.layout,
-        message: () => 'layout size=${size.width.toStringAsFixed(2)}×${size.height.toStringAsFixed(2)} '
-            'offset=${off == null ? 'null' : '${off.dx.toStringAsFixed(2)},${off.dy.toStringAsFixed(2)}'} '
-            'mappedTo=<$mapped>',
-      );
-    } catch (_) {}
-    // SchedulerBinding.instance.scheduleFrameCallback((_) {
-    //   if (positioned?.disposed == false) {
-    //     positioned?.markNeedsLayout();
-    //   }
-    // });
   }
 
   @override

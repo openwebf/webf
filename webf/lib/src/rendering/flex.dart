@@ -13,7 +13,6 @@ import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/html/text.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
 
 String _fmtC(BoxConstraints c) =>
@@ -236,6 +235,14 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (child.parentData is! RenderLayoutParentData) {
       child.parentData = RenderLayoutParentData();
     }
+  }
+
+  // Whether this flex container lives under a WebFWidgetElementChild wrapper,
+  // meaning its outer constraints may come directly from a Flutter widget
+  // (e.g., ConstrainedBox) rather than pure CSS layout.
+  bool get _hasWidgetConstraintAncestor {
+    // return parent is RenderWidgetElementChild;
+    return (this as RenderBoxModel).findWidgetElementChild() != null;
   }
 
   bool get _isHorizontalFlexDirection {
@@ -3624,6 +3631,37 @@ class RenderFlexLayout extends RenderLayoutBox {
           : CSSWritingMode.horizontalTb;
       // Cross axis is horizontal when main is vertical, meaning cross property is physical width.
       final bool crossIsWidth = !_isHorizontalFlexDirection;
+      // Available inner cross size after applying outer constraints. Only used
+      // when this flex container is hosted under a WebFWidgetElementChild, so
+      // that line cross size is clamped to the visible inner box from Flutter
+      // constraints (e.g., a 40px-tall flex container clamped to 28px).
+      double? availableInnerCross;
+      if (_hasWidgetConstraintAncestor) {
+        if (_isHorizontalFlexDirection) {
+          // Row: cross axis is height.
+          final double maxH = constraints.maxHeight;
+          if (maxH.isFinite) {
+            final double borderV = renderStyle.effectiveBorderTopWidth.computedValue +
+                renderStyle.effectiveBorderBottomWidth.computedValue;
+            final double paddingV = renderStyle.paddingTop.computedValue + renderStyle.paddingBottom.computedValue;
+            availableInnerCross = math.max(0, maxH - borderV - paddingV);
+          }
+        } else {
+          // Column: cross axis is width.
+          final double maxW = constraints.maxWidth;
+          if (maxW.isFinite) {
+            final double borderH = renderStyle.effectiveBorderLeftWidth.computedValue +
+                renderStyle.effectiveBorderRightWidth.computedValue;
+            final double paddingH = renderStyle.paddingLeft.computedValue + renderStyle.paddingRight.computedValue;
+            availableInnerCross = math.max(0, maxW - borderH - paddingH);
+          }
+        }
+      }
+
+      double _clampToAvailable(double value) {
+        if (availableInnerCross == null || !availableInnerCross!.isFinite) return value;
+        return value > availableInnerCross! ? availableInnerCross! : value;
+      }
       if (_isHorizontalFlexDirection) {
         // Row: cross is height
         // Only treat as definite if height is explicitly specified (not auto)
@@ -3663,6 +3701,16 @@ class RenderFlexLayout extends RenderLayoutBox {
         if (contentConstraints != null && contentConstraints!.minWidth.isFinite && contentConstraints!.minWidth > 0) {
           minCrossFromConstraints = contentConstraints!.minWidth;
         }
+      }
+
+      if (explicitContainerCross != null && explicitContainerCross.isFinite) {
+        explicitContainerCross = _clampToAvailable(explicitContainerCross);
+      }
+      if (containerInnerCross != null && containerInnerCross.isFinite) {
+        containerInnerCross = _clampToAvailable(containerInnerCross);
+      }
+      if (resolvedContainerCross != null && resolvedContainerCross.isFinite) {
+        resolvedContainerCross = _clampToAvailable(resolvedContainerCross);
       }
       // If the container specified an explicit cross size, use it.
       if (explicitContainerCross != null && explicitContainerCross.isFinite) {
@@ -3705,15 +3753,75 @@ class RenderFlexLayout extends RenderLayoutBox {
     double runBetweenSpace = _runSpacingMap['between']!;
     // Cross axis offset of each flex line.
     double crossAxisOffset = runLeadingSpace;
+
     double mainAxisContentSize;
     double crossAxisContentSize;
 
-    if (_isHorizontalFlexDirection) {
-      mainAxisContentSize = contentSize.width;
-      crossAxisContentSize = contentSize.height;
+    if (_hasWidgetConstraintAncestor) {
+      // For flex containers hosted under a WebFWidgetElementChild, clamp the
+      // intrinsic contentSize to the actual inner box size from Flutter
+      // constraints so that alignment (justify-content/align-items) operates
+      // within the visible box instead of an unconstrained CSS height/width.
+      final double borderLeft = renderStyle.effectiveBorderLeftWidth.computedValue;
+      final double borderRight = renderStyle.effectiveBorderRightWidth.computedValue;
+      final double borderTop = renderStyle.effectiveBorderTopWidth.computedValue;
+      final double borderBottom = renderStyle.effectiveBorderBottomWidth.computedValue;
+      final double paddingLeft = renderStyle.paddingLeft.computedValue;
+      final double paddingRight = renderStyle.paddingRight.computedValue;
+      final double paddingTop = renderStyle.paddingTop.computedValue;
+      final double paddingBottom = renderStyle.paddingBottom.computedValue;
+
+      final double innerWidthFromSize =
+          math.max(0.0, size.width - borderLeft - borderRight - paddingLeft - paddingRight);
+      final double innerHeightFromSize =
+          math.max(0.0, size.height - borderTop - borderBottom - paddingTop - paddingBottom);
+
+      double contentMainExtent;
+      double contentCrossExtent;
+      double innerMainFromSize;
+      double innerCrossFromSize;
+
+      if (_isHorizontalFlexDirection) {
+        // Row: main axis is width, cross axis is height.
+        contentMainExtent = contentSize.width;
+        contentCrossExtent = contentSize.height;
+        innerMainFromSize = innerWidthFromSize;
+        innerCrossFromSize = innerHeightFromSize;
+      } else {
+        // Column: main axis is height, cross axis is width.
+        contentMainExtent = contentSize.height;
+        contentCrossExtent = contentSize.width;
+        innerMainFromSize = innerHeightFromSize;
+        innerCrossFromSize = innerWidthFromSize;
+      }
+
+      mainAxisContentSize = contentMainExtent;
+      if (innerMainFromSize.isFinite && innerMainFromSize > 0) {
+        if (!mainAxisContentSize.isFinite || mainAxisContentSize <= 0) {
+          mainAxisContentSize = innerMainFromSize;
+        } else {
+          mainAxisContentSize = math.min(mainAxisContentSize, innerMainFromSize);
+        }
+      }
+      crossAxisContentSize = contentCrossExtent;
+      if (innerCrossFromSize.isFinite && innerCrossFromSize > 0) {
+        if (!crossAxisContentSize.isFinite || crossAxisContentSize <= 0) {
+          crossAxisContentSize = innerCrossFromSize;
+        } else {
+          crossAxisContentSize = math.min(crossAxisContentSize, innerCrossFromSize);
+        }
+      }
     } else {
-      mainAxisContentSize = contentSize.height;
-      crossAxisContentSize = contentSize.width;
+      // Pure DOM flex: use the intrinsic contentSize for alignment, which
+      // matches browser flexbox behavior and is relied upon by existing
+      // layout tests (e.g., chat layout and flex algorithm tests).
+      if (_isHorizontalFlexDirection) {
+        mainAxisContentSize = contentSize.width;
+        crossAxisContentSize = contentSize.height;
+      } else {
+        mainAxisContentSize = contentSize.height;
+        crossAxisContentSize = contentSize.width;
+      }
     }
 
     // Set offset of children in each flex line.

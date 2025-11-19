@@ -6,6 +6,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/rendering/box_model.dart';
@@ -188,7 +189,6 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
         minWidth: constraints.minWidth.clamp(0.0, double.infinity),
         maxWidth: constraints.hasBoundedWidth ? constraints.maxWidth : double.infinity,
       );
-
   }
 
   @override

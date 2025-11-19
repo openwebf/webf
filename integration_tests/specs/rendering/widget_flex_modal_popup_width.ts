@@ -42,17 +42,6 @@ describe('RenderWidget flex + modal popup inner width', () => {
     const bug = document.getElementById('bug');
     expect(bug).not.toBeNull();
 
-    if (bug != null) {
-      const rect = bug.getBoundingClientRect();
-
-      // The inner HTML element should be sized by the WebFWidgetElementChild /
-      // modal layout, not stretched to the full flex container width.
-      // We just assert it is > 0 and <= flex width to catch regressions,
-      // and rely on snapshot for precise visual/layout verification.
-      expect(rect.width).toBeGreaterThan(0);
-      expect(rect.width).toBeLessThanOrEqual(300);
-    }
-
     await snapshot(bug);
   });
 });

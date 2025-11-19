@@ -15,8 +15,6 @@ import 'package:webf/css.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/src/foundation/positioned_layout_logging.dart';
-
 import 'box_overflow.dart';
 import 'debug_overlay.dart';
 
@@ -533,14 +531,6 @@ abstract class RenderBoxModel extends RenderBox
           renderStyle.isParentRenderFlexLayout() &&
           parentBoxContentConstraintsWidth != null &&
           parentBoxContentConstraintsWidth == 0) {
-        try {
-          final tag = renderStyle.target.tagName.toLowerCase();
-          PositionedLayoutLog.log(
-            impl: PositionedImpl.layout,
-            feature: PositionedFeature.layout,
-            message: () => '<$tag> abs/fixed under flex: ignore zero parent content width for intrinsic sizing',
-          );
-        } catch (_) {}
         parentBoxContentConstraintsWidth = null;
       }
     } else if (isDisplayInline && parent is RenderFlowLayout) {
@@ -587,20 +577,9 @@ abstract class RenderBoxModel extends RenderBox
         !_bothLRNonAuto &&
         _widthAutoForAbs &&
         !renderStyle.isSelfRenderReplaced() &&
-        renderStyle.borderBoxLogicalWidth == null) {
-      if (parentBoxContentConstraintsWidth != null) {
-        try {
-          final tag = renderStyle.target.tagName.toLowerCase();
-          PositionedLayoutLog.log(
-            impl: PositionedImpl.layout,
-            feature: PositionedFeature.layout,
-            message: () => '<$tag> abs/fixed width:auto → shrink-to-fit; '
-                'ignore parentContentMaxW=${parentBoxContentConstraintsWidth!.toStringAsFixed(2)} '
-                'left=${renderStyle.left.cssText()} right=${renderStyle.right.cssText()}',
-          );
-        } catch (_) {}
-        parentBoxContentConstraintsWidth = null;
-      }
+        renderStyle.borderBoxLogicalWidth == null &&
+        parentBoxContentConstraintsWidth != null) {
+      parentBoxContentConstraintsWidth = null;
     }
 
     double maxConstraintWidth =
@@ -643,20 +622,6 @@ abstract class RenderBoxModel extends RenderBox
         // Use a tight width so empty positioned boxes still fill the available space.
         minConstraintWidth = solvedBorderBoxWidth;
         maxConstraintWidth = solvedBorderBoxWidth;
-        try {
-          final tag = renderStyle.target.tagName.toLowerCase();
-          PositionedLayoutLog.log(
-            impl: PositionedImpl.layout,
-            feature: PositionedFeature.layout,
-            message: () => '<$tag> abs/fixed auto-width solved from CB '
-                'cbPaddingBoxW=${parentPaddingBoxWidth!.toStringAsFixed(2)} '
-                'left=${renderStyle.left.computedValue.toStringAsFixed(2)} '
-                'right=${renderStyle.right.computedValue.toStringAsFixed(2)} '
-                'marginL=${renderStyle.marginLeft.computedValue.toStringAsFixed(2)} '
-                'marginR=${renderStyle.marginRight.computedValue.toStringAsFixed(2)} '
-                '→ usedBorderBoxW=${solvedBorderBoxWidth.toStringAsFixed(2)}',
-          );
-        } catch (_) {}
       }
     }
     // Height should be not smaller than border and padding in vertical direction
@@ -737,24 +702,6 @@ abstract class RenderBoxModel extends RenderBox
       minHeight: minConstraintHeight,
       maxHeight: maxConstraintHeight,
     );
-
-    // Diagnostics: capture resolved constraints for positioned boxes.
-    try {
-      final CSSPositionType pos = renderStyle.position;
-      if (pos == CSSPositionType.absolute || pos == CSSPositionType.fixed || pos == CSSPositionType.sticky) {
-        final tag = renderStyle.target.tagName.toLowerCase();
-        final String posLabel = pos.toString().split('.').last;
-        PositionedLayoutLog.log(
-          impl: PositionedImpl.layout,
-          feature: PositionedFeature.layout,
-          message: () => '<$tag> getConstraints pos=$posLabel '
-              'cssWidth=${renderStyle.width.cssText()} cssHeight=${renderStyle.height.cssText()} '
-              'minW=${minConstraintWidth.toStringAsFixed(2)} maxW=${constraints.maxWidth.isFinite ? constraints.maxWidth.toStringAsFixed(2) : '∞'} '
-              'minH=${minConstraintHeight.toStringAsFixed(2)} maxH=${constraints.maxHeight.isFinite ? constraints.maxHeight.toStringAsFixed(2) : '∞'} '
-              'parentContentMaxW=${parentBoxContentConstraintsWidth == null ? 'null' : parentBoxContentConstraintsWidth!.toStringAsFixed(2)}',
-        );
-      }
-    } catch (_) {}
 
     return constraints;
   }

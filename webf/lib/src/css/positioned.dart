@@ -195,21 +195,6 @@ class CSSPositionedLayout {
           minHeight: solvedBorderBoxHeight,
           maxHeight: solvedBorderBoxHeight,
         );
-        try {
-          final String tag = rs.target.tagName.toLowerCase();
-          PositionedLayoutLog.log(
-            impl: PositionedImpl.layout,
-            feature: PositionedFeature.layout,
-            message: () => '<$tag> abs/fixed auto-height solved from CB '
-                'cbPaddingBoxH=${cbHeight.toStringAsFixed(2)} '
-                'top=${rs.top.computedValue.toStringAsFixed(2)} '
-                'bottom=${rs.bottom.computedValue.toStringAsFixed(2)} '
-                'marginT=${rs.marginTop.computedValue.toStringAsFixed(2)} '
-                'marginB=${rs.marginBottom.computedValue.toStringAsFixed(2)} '
-                'minH=${rs.minHeight.cssText()} maxH=${rs.maxHeight.cssText()} '
-                '→ usedBorderBoxH=${solvedBorderBoxHeight.toStringAsFixed(2)}',
-          );
-        } catch (_) {}
       }
     }
 
@@ -277,22 +262,6 @@ class CSSPositionedLayout {
     CSSLengthValue marginRight = childRenderStyle.marginRight;
     CSSLengthValue marginTop = childRenderStyle.marginTop;
     CSSLengthValue marginBottom = childRenderStyle.marginBottom;
-
-    // Diagnostics: containing block and child sizing snapshot before resolving positioned offsets.
-    try {
-      final String pTag = parent.renderStyle.target.tagName.toLowerCase();
-      final String cTag = child.renderStyle.target.tagName.toLowerCase();
-      PositionedLayoutLog.log(
-        impl: PositionedImpl.layout,
-        feature: PositionedFeature.layout,
-        message: () => '<$cTag> applyPositionedChildOffset cb=(${containingBlockSize.width.toStringAsFixed(2)}×${containingBlockSize.height.toStringAsFixed(2)}) '
-            'parentSize=(${parentSize.width.toStringAsFixed(2)}×${parentSize.height.toStringAsFixed(2)}) '
-            'childSize=(${size.width.toStringAsFixed(2)}×${size.height.toStringAsFixed(2)}) '
-            'insets L=${left.cssText()} R=${right.cssText()} T=${top.cssText()} B=${bottom.cssText()} '
-            'margins L=${marginLeft.cssText()} R=${marginRight.cssText()} T=${marginTop.cssText()} B=${marginBottom.cssText()} '
-            'parent=<$pTag>',
-      );
-    } catch (_) {}
 
     // Fix side effects by render portal.
     if (child is RenderEventListener && child.child is RenderBoxModel) {
@@ -1320,19 +1289,6 @@ class CSSPositionedLayout {
         offset = offset - parentBorderBeforeWidth.computedValue - parentPaddingBefore.computedValue;
       }
     }
-
-    try {
-      PositionedLayoutLog.log(
-        impl: PositionedImpl.layout,
-        feature: PositionedFeature.offsets,
-        message: () => 'axis=${axis == Axis.horizontal ? 'X' : 'Y'} '
-            'CB=${containingBlockLength.toStringAsFixed(2)} len=${length.toStringAsFixed(2)} '
-            'static=${staticPosition.toStringAsFixed(2)} '
-            'insetBefore=${insetBefore.cssText()} insetAfter=${insetAfter.cssText()} '
-            'marginBefore=${marginBefore.cssText()} marginAfter=${marginAfter.cssText()} '
-            '→ offset=${offset.toStringAsFixed(2)}',
-      );
-    } catch (_) {}
 
     return offset;
   }

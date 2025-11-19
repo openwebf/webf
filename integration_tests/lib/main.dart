@@ -20,14 +20,15 @@ import 'webf_tester.dart';
 import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
 import 'modules/array_buffer_module.dart';
 
-String? pass = (AnsiPen()..green())('[TEST PASS]');
-String? err = (AnsiPen()..red())('[TEST FAILED]');
+String? pass = (AnsiPen()
+  ..green())('[TEST PASS]');
+String? err = (AnsiPen()
+  ..red())('[TEST FAILED]');
 
 final String __dirname = path.dirname(Platform.script.path);
 String testDirectory = Platform.environment['WEBF_TEST_DIR'] ?? __dirname;
 
-Future<int> findAvailablePort(
-    {int startPort = 4000, int endPort = 5000}) async {
+Future<int> findAvailablePort({int startPort = 4000, int endPort = 5000}) async {
   for (var port = startPort; port <= endPort; port++) {
     try {
       final server = await ServerSocket.bind(InternetAddress.anyIPv4, port);
@@ -40,6 +41,7 @@ Future<int> findAvailablePort(
   }
   return -1;
 }
+
 
 Future<Process> startHttpMockServer(int port) async {
   if (Platform.isWindows) {
@@ -71,7 +73,7 @@ void main() async {
 
   ModuleManager.defineModule((moduleManager) => DemoModule(moduleManager));
   ModuleManager.defineModule(
-      (moduleManager) => ArrayBufferModule(moduleManager));
+          (moduleManager) => ArrayBufferModule(moduleManager));
   Process mockHttpServer = await startHttpMockServer(mockServerPort);
   sleep(Duration(seconds: 2));
 

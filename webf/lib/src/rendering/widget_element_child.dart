@@ -57,6 +57,7 @@ class RenderWidgetElementChild extends RenderProxyBox {
       (child as RenderBoxModel).renderStyle.computeContentBoxLogicalWidth();
       (child as RenderBoxModel).renderStyle.computeContentBoxLogicalHeight();
     }
+
     super.performLayout();
   }
 
