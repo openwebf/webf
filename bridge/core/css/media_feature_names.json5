@@ -49,6 +49,7 @@
     "min-height",
     "min-inline-size",
     "min-width",
-    "min-resolution"
+    "min-resolution",
+    "prefers-color-scheme"
   ],
 }

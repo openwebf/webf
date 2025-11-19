@@ -744,6 +744,32 @@ static bool MaxResolutionMediaFeatureEval(const MediaQueryExpValue& value,
   return ResolutionMediaFeatureEval(value, MediaQueryOperator::kLe, media_values);
 }
 
+static bool PrefersColorSchemeMediaFeatureEval(const MediaQueryExpValue& value,
+                                               MediaQueryOperator,
+                                               const MediaValues& media_values) {
+  // Boolean context: any supported value yields true.
+  if (!value.IsValid()) {
+    return true;
+  }
+
+  if (!value.IsId()) {
+    return false;
+  }
+
+  CSSValueID preferred = media_values.PreferredColorScheme();
+
+  switch (value.Id()) {
+    case CSSValueID::kDark:
+      return preferred == CSSValueID::kDark;
+    case CSSValueID::kLight:
+      return preferred == CSSValueID::kLight;
+    case CSSValueID::kNoPreference:
+      return preferred == CSSValueID::kNoPreference;
+    default:
+      return false;
+  }
+}
+
 static bool Transform3dMediaFeatureEval(const MediaQueryExpValue& value,
                                         MediaQueryOperator op,
                                         const MediaValues& media_values) {
