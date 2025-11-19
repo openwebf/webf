@@ -38,7 +38,7 @@ abstract class <%= className %>Bindings extends WidgetElement {
       <% var attributeName = _.kebabCase(prop.name); %>
       <% var propName = _.camelCase(prop.name); %>
     attributes['<%= attributeName %>'] = ElementAttributeProperty(
-      getter: () => <%= generateAttributeGetter(propName, prop.type, prop.optional) %>,
+      getter: () => <%= generateAttributeGetter(propName, prop.type, prop.optional, prop) %>,
       setter: (value) => <%= generateAttributeSetter(propName, prop.type) %>,
       deleter: () => <%= generateAttributeDeleter(propName, prop.type, prop.optional) %>
     );

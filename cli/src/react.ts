@@ -4,17 +4,47 @@ import path from 'path';
 import {ParameterType} from "./analyzer";
 import {ClassObject, FunctionArgumentType, FunctionDeclaration, TypeAliasObject, ConstObject, EnumObject} from "./declaration";
 import {IDLBlob} from "./IDLBlob";
-import {getPointerType, isPointerType, isUnionType} from "./utils";
+import {getPointerType, isPointerType, isUnionType, trimNullTypeFromType} from "./utils";
 import { debug } from './logger';
 
 function readTemplate(name: string) {
   return fs.readFileSync(path.join(__dirname, '../templates/' + name + '.tpl'), {encoding: 'utf-8'});
 }
 
-function generateReturnType(type: ParameterType) {
+function generateReturnType(type: ParameterType): string {
   if (isUnionType(type)) {
-    return (type.value as ParameterType[]).map(v => `'${v.value}'`).join(' | ');
+    const values = type.value as ParameterType[];
+    return values.map(v => {
+      if (v.value === FunctionArgumentType.null) {
+        return 'null';
+      }
+      // String literal unions: 'left' | 'center' | 'right'
+      if (typeof v.value === 'string') {
+        return `'${v.value}'`;
+      }
+      return 'any';
+    }).join(' | ');
   }
+
+  // Handle non-literal unions such as boolean | null, number | null, CustomType | null
+  if (Array.isArray(type.value)) {
+    const values = type.value as ParameterType[];
+    const hasNull = values.some(v => v.value === FunctionArgumentType.null);
+    if (hasNull) {
+      const nonNulls = values.filter(v => v.value !== FunctionArgumentType.null);
+      if (nonNulls.length === 0) {
+        return 'null';
+      }
+      const parts: string[] = nonNulls.map(v => generateReturnType(v));
+      // Deduplicate and append null
+      const unique: string[] = Array.from(new Set(parts));
+      unique.push('null');
+      return unique.join(' | ');
+    }
+    // Complex non-null unions are rare for React typings; fall back to any
+    return 'any';
+  }
+  
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
     // Map Dart's `Type` (from TS typeof) to TS `any`
@@ -312,9 +342,33 @@ export function generateReactComponent(blob: IDLBlob, packageName?: string, rela
       );
     
     // Generate return type mapping; always use __webfTypes namespace for typeof
-    const genRT = (type: ParameterType) => {
+    const genRT = (type: ParameterType): string => {
       if (isUnionType(type)) {
-        return (type.value as ParameterType[]).map(v => `'${v.value}'`).join(' | ');
+        const values = type.value as ParameterType[];
+        return values.map(v => {
+          if (v.value === FunctionArgumentType.null) {
+            return 'null';
+          }
+          if (typeof v.value === 'string') {
+            return `'${v.value}'`;
+          }
+          return 'any';
+        }).join(' | ');
+      }
+      if (Array.isArray(type.value)) {
+        const values = type.value as ParameterType[];
+        const hasNull = values.some(v => v.value === FunctionArgumentType.null);
+        if (hasNull) {
+          const nonNulls = values.filter(v => v.value !== FunctionArgumentType.null);
+          if (nonNulls.length === 0) {
+            return 'null';
+          }
+          const parts: string[] = nonNulls.map(v => genRT(v));
+          const unique: string[] = Array.from(new Set(parts));
+          unique.push('null');
+          return unique.join(' | ');
+        }
+        return 'any';
       }
       if (isPointerType(type)) {
         const pointerType = getPointerType(type);
@@ -425,9 +479,33 @@ export function generateReactComponent(blob: IDLBlob, packageName?: string, rela
   }
   
   componentEntries.forEach(([className, component]) => {
-    const genRT = (type: ParameterType) => {
+    const genRT = (type: ParameterType): string => {
       if (isUnionType(type)) {
-        return (type.value as ParameterType[]).map(v => `'${v.value}'`).join(' | ');
+        const values = type.value as ParameterType[];
+        return values.map(v => {
+          if (v.value === FunctionArgumentType.null) {
+            return 'null';
+          }
+          if (typeof v.value === 'string') {
+            return `'${v.value}'`;
+          }
+          return 'any';
+        }).join(' | ');
+      }
+      if (Array.isArray(type.value)) {
+        const values = type.value as ParameterType[];
+        const hasNull = values.some(v => v.value === FunctionArgumentType.null);
+        if (hasNull) {
+          const nonNulls = values.filter(v => v.value !== FunctionArgumentType.null);
+          if (nonNulls.length === 0) {
+            return 'null';
+          }
+          const parts: string[] = nonNulls.map(v => genRT(v));
+          const unique: string[] = Array.from(new Set(parts));
+          unique.push('null');
+          return unique.join(' | ');
+        }
+        return 'any';
       }
       if (isPointerType(type)) {
         const pointerType = getPointerType(type);
