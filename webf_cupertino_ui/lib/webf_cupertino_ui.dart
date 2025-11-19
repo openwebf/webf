@@ -16,6 +16,7 @@ export 'src/tab_view.dart';
 export 'src/sliding_segmented_control.dart';
 export 'src/modal_popup.dart';
 export 'src/form_section.dart';
+export 'src/input.dart';
 import 'src/alert.dart';
 import 'src/action_sheet.dart';
 import 'src/context_menu.dart';
@@ -24,6 +25,7 @@ import 'src/switch.dart';
 import 'src/slider.dart';
 import 'src/modal_popup.dart';
 import 'src/form_section.dart';
+import 'src/input.dart';
 import 'src/tab_scaffold.dart';
 import 'src/checkbox.dart';
 import 'src/radio.dart';
@@ -88,6 +90,8 @@ void installWebFCupertinoUI() {
       'flutter-cupertino-form-section', (context) => FlutterCupertinoFormSection(context));
   WebF.defineCustomElement(
       'flutter-cupertino-form-row', (context) => FlutterCupertinoFormRow(context));
+  WebF.defineCustomElement(
+      'flutter-cupertino-input', (context) => FlutterCupertinoInput(context));
 
 
   // WebF.defineCustomElement('flutter-cupertino-input', (context) => FlutterCupertinoInput(context));
