@@ -17,8 +17,6 @@ import 'package:webf/rendering.dart';
 import 'inline_formatting_context.dart';
 import 'text.dart';
 import 'event_listener.dart';
-import 'package:webf/src/foundation/logger.dart';
-import 'package:logging/logging.dart' show Level;
 
 // Position and size of each run (line box) in flow layout.
 // https://www.w3.org/TR/css-inline-3/#line-boxes
@@ -547,6 +545,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   void _doPerformLayout() {
     beforeLayout();
+
 
     _establishIFC = renderStyle.shouldEstablishInlineFormattingContext();
     if (_establishIFC) {

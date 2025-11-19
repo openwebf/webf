@@ -20,6 +20,7 @@ import 'flutter_nested_scroller.dart';
 import 'flutter_modal_popup.dart';
 import 'flutter_intrinsic_container.dart';
 import 'sample_container.dart';
+import 'native_flex_container.dart';
 
 void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-button',
@@ -50,4 +51,5 @@ void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-modal-popup', (context) => FlutterModalPopup(context));
   WebF.defineCustomElement('flutter-intrinsic-container', (context) => FlutterIntrinsicContainer(context));
   WebF.defineCustomElement('sample-container', (context) => SampleContainer(context));
+  WebF.defineCustomElement('native-flex', (context) => NativeFlexContainer(context));
 }

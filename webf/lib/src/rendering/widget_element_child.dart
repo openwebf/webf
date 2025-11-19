@@ -53,16 +53,41 @@ class WebFWidgetElementChild extends SingleChildRenderObjectWidget {
 class RenderWidgetElementChild extends RenderProxyBox {
   @override
   void performLayout() {
-    if (child is RenderBoxModel) {
-      (child as RenderBoxModel).renderStyle.computeContentBoxLogicalWidth();
-      (child as RenderBoxModel).renderStyle.computeContentBoxLogicalHeight();
+    final BoxConstraints incoming = constraints;
+    final RenderBox? c = child;
+
+    if (c is RenderBoxModel) {
+      c.renderStyle.computeContentBoxLogicalWidth();
+      c.renderStyle.computeContentBoxLogicalHeight();
     }
 
-    super.performLayout();
-  }
+    // When used inside layouts that provide unbounded constraints on one axis
+    // (e.g., a horizontal RenderFlex main axis), forwarding those unbounded
+    // constraints directly into WebF layout can lead to infinite sizes during
+    // IFC/flow sizing. Instead, collapse unbounded width to the child's
+    // intrinsic width so the WebF element behaves like a flex item whose size
+    // is driven by its content.
+    BoxConstraints effective = incoming;
+    if (c != null && !incoming.hasBoundedWidth) {
+      double intrinsicWidth = c.getMaxIntrinsicWidth(
+        incoming.maxHeight.isFinite ? incoming.maxHeight : 0,
+      );
+      if (!intrinsicWidth.isFinite || intrinsicWidth < 0) {
+        intrinsicWidth = 0;
+      }
+      effective = BoxConstraints(
+        minWidth: intrinsicWidth,
+        maxWidth: intrinsicWidth,
+        minHeight: incoming.minHeight,
+        maxHeight: incoming.maxHeight,
+      );
+    }
 
-  @override
-  void paint(PaintingContext context, Offset offset) {
-    super.paint(context, offset);
+    if (c != null) {
+      c.layout(effective, parentUsesSize: true);
+      size = c.size;
+    } else {
+      size = computeSizeForNoChild(incoming);
+    }
   }
 }
