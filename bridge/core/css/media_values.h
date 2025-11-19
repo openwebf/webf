@@ -46,6 +46,9 @@ class MediaValues : public CSSLengthResolver {
   virtual bool InvertedColors() const = 0;
   virtual bool ThreeDEnabled() const = 0;
   virtual const String MediaType() const = 0;
+  // Returns the preferred color scheme for evaluating prefers-color-scheme media queries.
+  // Defaults to light when not overridden.
+  virtual CSSValueID PreferredColorScheme() const { return CSSValueID::kLight; }
   virtual bool Resizable() const = 0;
   virtual bool StrictMode() const = 0;
   virtual Document* GetDocument() const = 0;

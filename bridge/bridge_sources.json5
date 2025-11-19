@@ -189,6 +189,7 @@
     "core/css/css_selector_list.cc",
     "core/css/css_value.cc",
     "core/css/media_list.cc",
+    "core/css/media_values_dynamic.cc",
     "core/css/media_values.cc",
     "core/css/style_scope.cc",
     "core/css/cascade_layer.cc",
