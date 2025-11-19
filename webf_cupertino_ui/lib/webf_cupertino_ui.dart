@@ -14,12 +14,14 @@ export 'src/tab_bar.dart';
 export 'src/tab_scaffold.dart';
 export 'src/tab_view.dart';
 export 'src/sliding_segmented_control.dart';
+export 'src/modal_popup.dart';
 import 'src/alert.dart';
 import 'src/action_sheet.dart';
 import 'src/context_menu.dart';
 import 'src/list_section.dart';
 import 'src/switch.dart';
 import 'src/slider.dart';
+import 'src/modal_popup.dart';
 import 'src/tab_scaffold.dart';
 import 'src/checkbox.dart';
 import 'src/radio.dart';
@@ -78,6 +80,8 @@ void installWebFCupertinoUI() {
       (context) => FlutterCupertinoListTileAdditionalInfo(context));
   WebF.defineCustomElement(
       'flutter-cupertino-list-tile-trailing', (context) => FlutterCupertinoListTileTrailing(context));
+  WebF.defineCustomElement(
+      'flutter-cupertino-modal-popup', (context) => FlutterCupertinoModalPopup(context));
 
 
   // WebF.defineCustomElement('flutter-cupertino-input', (context) => FlutterCupertinoInput(context));
@@ -88,7 +92,6 @@ void installWebFCupertinoUI() {
   // WebF.defineCustomElement('flutter-cupertino-picker', (context) => FlutterCupertinoPicker(context));
   // WebF.defineCustomElement('flutter-cupertino-picker-item', (context) => FlutterCupertinoPickerItem(context));
   // WebF.defineCustomElement('flutter-cupertino-date-picker', (context) => FlutterCupertinoDatePicker(context));
-  // WebF.defineCustomElement('flutter-cupertino-modal-popup', (context) => FlutterCupertinoModalPopup(context));
   // WebF.defineCustomElement('flutter-cupertino-search-input', (context) => FlutterCupertinoSearchInput(context));
   // WebF.defineCustomElement('flutter-cupertino-alert', (context) => FlutterCupertinoAlert(context));
   // WebF.defineCustomElement('flutter-cupertino-toast', (context) => FlutterCupertinoToast(context));
