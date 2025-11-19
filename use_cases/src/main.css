@@ -126,3 +126,11 @@ body {
 flutter-cupertino-button[variant="filled"]:not([disabled]) {
   color: var(--button-primary-text);
 }
+
+/* Demo-only: custom styling for Cupertino text input */
+.custom-cupertino-input-demo {
+  height: 56px;
+  border-radius: 20px;
+  padding: 0 20px;
+  text-align: right;
+}
