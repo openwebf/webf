@@ -135,8 +135,11 @@ class Window extends EventTarget {
     });
   }
 
-  String get colorScheme =>
-      document.controller.ownerFlutterView?.platformDispatcher.platformBrightness == Brightness.light ? 'light' : 'dark';
+  String get colorScheme {
+    // Prefer explicit override when present, falling back to platform brightness.
+    final bool? isDark = document.controller.isDarkMode;
+    return isDark == true ? 'dark' : 'light';
+  }
 
   double get devicePixelRatio {
     return document.controller.ownerFlutterView?.devicePixelRatio ?? 1.0;
