@@ -280,9 +280,24 @@ export function generateVueTypings(blobs: IDLBlob[]) {
     return `export declare enum ${e.name} { ${members} }`;
   }).join('\n');
 
+  // Compute relative import path from the generated typings file (index.d.ts at dist root)
+  // to the aggregated React types module (src/types.ts) when present.
+  let typesImportPath = './src/types';
+  try {
+    if (blobs.length > 0) {
+      const distRoot = blobs[0].dist;
+      const typingsDir = distRoot; // index.d.ts is written directly under distRoot
+      const typesFilePath = path.join(distRoot, 'src', 'types');
+      const rel = path.relative(typingsDir, typesFilePath).replace(/\\/g, '/');
+      typesImportPath = rel.startsWith('.') ? rel : `./${rel}`;
+    }
+  } catch {
+    typesImportPath = './src/types';
+  }
+
   // Always import the types namespace to support typeof references
-  const typesImport = `import * as __webfTypes from './src/types';`;
-  debug(`[vue] Generating typings; importing types from ./src/types`);
+  const typesImport = `import * as __webfTypes from '${typesImportPath}';`;
+  debug(`[vue] Generating typings; importing types from ${typesImportPath}`);
 
   // Build mapping of template tag names to class names for GlobalComponents
   const componentMetas = componentNames.map(className => ({

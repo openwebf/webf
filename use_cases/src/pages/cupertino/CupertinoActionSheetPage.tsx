@@ -9,6 +9,7 @@ export const CupertinoActionSheetPage: React.FC = () => {
   const multiRef = useRef<FlutterCupertinoActionSheetElement>(null);
   const noCancelRef = useRef<FlutterCupertinoActionSheetElement>(null);
   const customEventsRef = useRef<FlutterCupertinoActionSheetElement>(null);
+  const simpleRef = useRef<FlutterCupertinoActionSheetElement>(null);
 
   return (
     <div id="main" className="min-h-screen w-full bg-surface">
@@ -297,13 +298,13 @@ ref.current?.show({
 
             <div className="bg-surface-secondary rounded-xl p-6 border border-line mb-4">
               <FlutterCupertinoActionSheet
+                ref={simpleRef}
                 onSelect={(e) => setLastAction(`Quick action: ${e.detail.text}`)}
               />
               <button
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                 onClick={() => {
-                  const sheet = document.querySelectorAll('flutter-cupertino-action-sheet')[5] as any;
-                  sheet?.show({
+                  simpleRef.current?.show({
                     title: 'Quick Actions',
                     actions: [
                       { text: 'Copy', event: 'copy' },

@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import process from 'process';
 import _ from 'lodash';
-import { glob } from 'glob';
+import { globSync } from 'glob';
 import yaml from 'yaml';
 import { IDLBlob } from './IDLBlob';
 import { ClassObject, ConstObject, EnumObject, TypeAliasObject } from './declaration';
@@ -107,7 +107,7 @@ function getTypeFiles(source: string, excludePatterns?: string[]): string[] {
     const defaultIgnore = ['**/node_modules/**', '**/dist/**', '**/build/**', '**/example/**'];
     const ignore = excludePatterns ? [...defaultIgnore, ...excludePatterns] : defaultIgnore;
     
-    const files = glob.globSync("**/*.d.ts", {
+    const files = globSync("**/*.d.ts", {
       cwd: source,
       ignore: ignore
     });

@@ -2,18 +2,20 @@
 jest.mock('fs');
 jest.mock('child_process');
 jest.mock('../src/generator');
-jest.mock('glob');
+jest.mock('glob', () => ({
+  globSync: jest.fn(),
+}));
 jest.mock('inquirer');
 jest.mock('yaml');
 
 import fs from 'fs';
 import path from 'path';
 import { spawnSync } from 'child_process';
-import { glob } from 'glob';
+import { globSync } from 'glob';
 
 const mockFs = fs as jest.Mocked<typeof fs>;
 const mockSpawnSync = spawnSync as jest.MockedFunction<typeof spawnSync>;
-const mockGlob = glob as jest.Mocked<typeof glob>;
+const mockGlobSync = globSync as jest.MockedFunction<typeof globSync>;
 
 // Set up default mocks before importing commands
 mockFs.readFileSync = jest.fn().mockImplementation((filePath: any) => {
@@ -87,7 +89,7 @@ describe('Commands', () => {
     });
     // Default mock for readdirSync to avoid undefined
     mockFs.readdirSync.mockReturnValue([] as any);
-    mockGlob.globSync.mockReturnValue([]);
+    mockGlobSync.mockReturnValue([]);
   });
 
 
@@ -224,11 +226,11 @@ describe('Commands', () => {
         // Mock that required files don't exist
         mockFs.existsSync.mockReturnValue(false);
         
-        await generateCommand(target, options);
+      await generateCommand(target, options);
 
         expect(mockSpawnSync).toHaveBeenCalledWith(
           expect.stringMatching(/npm(\.cmd)?/),
-          ['install', '--omit=peer'],
+          ['install'],
           { cwd: target, stdio: 'inherit' }
         );
       });
@@ -471,8 +473,8 @@ describe('Commands', () => {
       // Mock TypeScript validation
       mockTypeScriptValidation('/flutter/src');
 
-       // Mock .d.ts files so copyMarkdownDocsToDist sees at least one entry
-      mockGlob.globSync.mockReturnValue(['lib/src/alert.d.ts'] as any);
+      // Mock .d.ts files so copyMarkdownDocsToDist sees at least one entry
+      mockGlobSync.mockReturnValue(['lib/src/alert.d.ts'] as any);
 
       const originalExistsSync = mockFs.existsSync as jest.Mock;
       mockFs.existsSync = jest.fn().mockImplementation((filePath: any) => {

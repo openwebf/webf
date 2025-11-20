@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { dartGen, reactGen, vueGen } from './generator';
-import { glob } from 'glob';
+import { globSync } from 'glob';
 import _ from 'lodash';
 import inquirer from 'inquirer';
 import yaml from 'yaml';
@@ -241,7 +241,7 @@ async function copyMarkdownDocsToDist(params: {
   const ignore = exclude && exclude.length ? [...defaultIgnore, ...exclude] : defaultIgnore;
 
   // Find all .d.ts files and check for sibling .md files
-  const dtsFiles = glob.globSync('**/*.d.ts', { cwd: sourceRoot, ignore });
+  const dtsFiles = globSync('**/*.d.ts', { cwd: sourceRoot, ignore });
   let copied = 0;
   let skipped = 0;
   const readmeSections: { title: string; relPath: string; content: string }[] = [];
@@ -426,7 +426,6 @@ function createCommand(target: string, options: { framework: string; packageName
       // Leave merge to the codegen step which appends exports safely
     }
 
-    // !no '--omit=peer' here.
     spawnSync(NPM, ['install'], {
       cwd: target,
       stdio: 'inherit'
