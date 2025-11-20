@@ -1,3 +1,7 @@
+## 0.23.8+1
+
+fix: fix mismatched root viewport box when switch pages.
+
 ## 0.23.8
 
 - Features

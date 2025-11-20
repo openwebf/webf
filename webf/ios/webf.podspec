@@ -29,8 +29,8 @@ Pod::Spec.new do |s|
     'LLVM_LTO' => 'YES', # Enable Link Time Optimization for release builds
     'GCC_OPTIMIZATION_LEVEL' => 's', # Enable optimization for size
     'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) ' +
-      'APP_REV=\\"74cbcb8fe\\" ' +
-      'APP_VERSION=\\"0.23.8\\" ' +
+      'APP_REV=\\"a20f10f32\\" ' +
+      'APP_VERSION=\\"0.23.8+1\\" ' +
       'CONFIG_VERSION=\\"2025-04-26\\" ' +
       'WEBF_QUICK_JS_ENGINE=1 ' +
       'FLUTTER_BACKEND=1 ' +
