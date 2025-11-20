@@ -27,6 +27,14 @@ impl HybridHistory {
     state_string.to_json()
   }
 
+  pub fn build_context_stack(&self, exception_state: &ExceptionState) -> Value {
+    let stack_string = self
+      .context()
+      .webf_invoke_module("HybridHistory", "buildContextStack", exception_state)
+      .unwrap();
+    stack_string.to_json()
+  }
+
   pub fn back(&self, exception_state: &ExceptionState) {
     self.context().webf_invoke_module("HybridHistory", "back", exception_state);
   }
