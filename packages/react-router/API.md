@@ -109,6 +109,7 @@ const WebFRouter: {
   // Properties
   state: any;                                    // Current route state
   path: string;                                  // Current route path
+  stack: { path: string; state: any }[];         // Full hybrid router stack from Flutter
   
   // Navigation methods
   push(path: string, state?: any): Promise<void>;

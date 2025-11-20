@@ -9,6 +9,15 @@ import { webf } from '@openwebf/webf-enterprise-typings';
 type RoutePath = string;
 
 /**
+ * Single entry in the hybrid router stack.
+ * Mirrors the data returned from webf.hybridHistory.buildContextStack.
+ */
+export interface HybridRouteStackEntry {
+  path: RoutePath;
+  state: any;
+}
+
+/**
  * WebF Router object - provides comprehensive navigation APIs
  * Combines web-like history management with Flutter-like navigation patterns
  */
@@ -18,6 +27,14 @@ export const WebFRouter = {
    */
   get state() {
     return webf.hybridHistory.state;
+  },
+
+  /**
+   * Get the full hybrid router build context stack.
+   * The stack is ordered from root route (index 0) to the current top route (last element).
+   */
+  get stack(): HybridRouteStackEntry[] {
+    return webf.hybridHistory.buildContextStack as HybridRouteStackEntry[];
   },
   
   /**
