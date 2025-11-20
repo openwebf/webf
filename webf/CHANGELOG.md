@@ -1,3 +1,18 @@
+## 0.23.8
+
+- Features
+  - Add `hybridHistory.buildContextStack()` API to expose the navigation context stack from the
+    bridge to Dart/Flutter.
+
+- Fixed
+  - CSS positioning: align absolute-positioned element sizing under flex containers for more
+    predictable widget and flex layout behavior.
+  - Widgets/layout: clamp `WebFWidgetElementChild` width under flex to respect container constraints
+    and avoid overflow.
+  - Routing/layout: fix layout errors that could occur when replacing the root route.
+  - Custom elements/bindings: ensure certain widget element binding properties are correctly wired
+    between bridge and Dart.
+
 ## 0.23.7
 
 - Highlights
