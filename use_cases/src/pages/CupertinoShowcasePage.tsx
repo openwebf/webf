@@ -62,12 +62,10 @@ export const CupertinoShowcasePage: React.FC = () => {
               <Item label="CupertinoSearchTextField" desc="iOS-style search bar" to="/cupertino/search-text-field" />
             </div>
 
-            {/*<h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Pickers</h2>*/}
-            {/*<div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">*/}
-            {/*  <Item label="CupertinoDatePicker" desc="iOS date & time picker" to="/cupertino/date-picker" />*/}
-            {/*  <Item label="CupertinoTimerPicker" desc="Countdown & timer picker" to="/cupertino/timer-picker" />*/}
-            {/*  <Item label="CupertinoPicker" desc="Wheel picker and overlays" to="/cupertino/picker" />*/}
-            {/*</div>*/}
+            <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Pickers</h2>
+            <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
+              <Item label="CupertinoDatePicker" desc="iOS date & time picker" to="/cupertino/date-picker" />
+            </div>
 
             <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Controls</h2>
             <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
