@@ -1,3 +1,7 @@
+## 0.23.8+2
+
+fix: resync impls from main
+
 ## 0.23.8+1
 
 fix: fix mismatched root viewport box when switch pages.
