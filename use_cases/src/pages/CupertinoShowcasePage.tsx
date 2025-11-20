@@ -62,16 +62,6 @@ export const CupertinoShowcasePage: React.FC = () => {
               <Item label="CupertinoSearchTextField" desc="iOS-style search bar" to="/cupertino/search-text-field" />
             </div>
 
-            {/*<h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Selection & Toolbars</h2>*/}
-            {/*<div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">*/}
-            {/*  <Item label="Adaptive Text Selection Toolbar" desc="Auto adapts to platform" to="/cupertino/adaptive-text-selection-toolbar" />*/}
-            {/*  <Item label="Text Selection Toolbar" desc="iOS text selection toolbar" to="/cupertino/text-selection-toolbar" />*/}
-            {/*  <Item label="Desktop Text Selection Toolbar" desc="Desktop variant of toolbar" to="/cupertino/desktop-text-selection-toolbar" />*/}
-            {/*  <Item label="Text Selection Controls" desc="Selection handles and behaviors" to="/cupertino/text-selection-controls" />*/}
-            {/*  <Item label="Magnifier" desc="Text magnifier widgets" to="/cupertino/magnifier" />*/}
-            {/*  <Item label="Spell Check Suggestions" desc="Spell check suggestion toolbar" to="/cupertino/spell-check-suggestions-toolbar" />*/}
-            {/*</div>*/}
-
             {/*<h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-blue-500">Pickers</h2>*/}
             {/*<div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">*/}
             {/*  <Item label="CupertinoDatePicker" desc="iOS date & time picker" to="/cupertino/date-picker" />*/}

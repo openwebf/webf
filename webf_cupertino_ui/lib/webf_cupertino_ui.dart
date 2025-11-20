@@ -19,6 +19,7 @@ export 'src/modal_popup.dart';
 export 'src/form_section.dart';
 export 'src/input.dart';
 export 'src/search_text_field.dart';
+export 'src/date_picker.dart';
 import 'src/alert.dart';
 import 'src/action_sheet.dart';
 import 'src/context_menu.dart';
@@ -29,6 +30,7 @@ import 'src/slider.dart';
 import 'src/modal_popup.dart';
 import 'src/form_section.dart';
 import 'src/input.dart';
+import 'src/date_picker.dart';
 import 'src/checkbox.dart';
 import 'src/radio.dart';
 import 'src/button.dart';
@@ -101,6 +103,9 @@ void installWebFCupertinoUI() {
   WebF.defineCustomElement(
       'flutter-cupertino-search-text-field',
       (context) => FlutterCupertinoSearchTextField(context));
+  WebF.defineCustomElement(
+      'flutter-cupertino-date-picker',
+      (context) => FlutterCupertinoDatePicker(context));
 
 
   // WebF.defineCustomElement('flutter-cupertino-input', (context) => FlutterCupertinoInput(context));
