@@ -86,6 +86,27 @@ class HybridHistoryModule extends BaseModule {
     pop();
   }
 
+  String getBuildContextStack() {
+    final stack = moduleManager!.controller.buildContextStack;
+
+    final serializedStack = stack.map((ctx) {
+      dynamic state = ctx.state;
+      if (state is Map || state is List || state is num || state is bool || state is String || state == null) {
+        // Use state as-is for JSON-encodable types.
+      } else {
+        // Fallback to string representation for non-JSON-encodable types.
+        state = state.toString();
+      }
+
+      return <String, dynamic>{
+        'path': ctx.path,
+        'state': state
+      };
+    }).toList();
+
+    return jsonEncode(serializedStack);
+  }
+
   /// Pop the current route - matches Flutter's Navigator.pop
   void pop([Object? result]) {
     if (_delegate != null) {
@@ -240,6 +261,8 @@ class HybridHistoryModule extends BaseModule {
       return path();
     } else if (method == 'state') {
       return getState();
+    } else if (method == 'buildContextStack') {
+      return getBuildContextStack();
     }
 
     if (_context == null) {

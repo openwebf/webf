@@ -49,6 +49,7 @@ function testHybridHistory() {
   // State access
   const currentState: any = webf.hybridHistory.state;
   const currentPath: string = webf.hybridHistory.path;
+  const stack = webf.hybridHistory.buildContextStack;
 
   // Navigation methods
   webf.hybridHistory.back();

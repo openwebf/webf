@@ -5,6 +5,11 @@
 
 import {webf} from './webf';
 
+export interface HybridRoutePageContextInfo {
+  path: string;
+  state: any;
+}
+
 /**
  * Interface for managing navigation history in hybrid applications
  * Provides both web-like history API and Flutter-like navigation methods
@@ -15,6 +20,8 @@ export interface HybridHistoryInterface {
   readonly state: any;
   /** Current path of the history entry */
   readonly path: string;
+  /** Current build context stack for the hybrid router */
+  readonly buildContextStack: HybridRoutePageContextInfo[];
 
   // Original API methods
   /**
@@ -136,6 +143,15 @@ class HybridHistory implements HybridHistoryInterface {
    */
   get path() {
     return webf.invokeModule('HybridHistory', 'path');
+  }
+
+  /**
+   * Get the current build context stack for the hybrid router.
+   * The stack is ordered from root route (index 0) to the current top route (last element).
+   * @returns Array of route context info objects
+   */
+  get buildContextStack(): HybridRoutePageContextInfo[] {
+    return JSON.parse(webf.invokeModule('HybridHistory', 'buildContextStack'));
   }
 
   // Original API methods - kept for backward compatibility
