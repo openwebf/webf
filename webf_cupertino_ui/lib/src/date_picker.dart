@@ -8,7 +8,6 @@ import 'package:webf/css.dart';
 import 'package:webf/webf.dart';
 
 import 'date_picker_bindings_generated.dart';
-import 'logger.dart';
 
 /// WebF custom element that wraps Flutter's [CupertinoDatePicker].
 ///
@@ -208,7 +207,6 @@ class FlutterCupertinoDatePickerState extends WebFWidgetElementState {
     try {
       return DateTime.parse(iso);
     } catch (_) {
-      devLogger.w('[CupertinoDatePicker] Failed to parse DateTime from "$iso"');
       return null;
     }
   }
@@ -282,16 +280,6 @@ class FlutterCupertinoDatePickerState extends WebFWidgetElementState {
       );
     }
 
-    devLogger.d(
-      '[CupertinoDatePicker] normalizeInitial '
-      'input=$candidate '
-      'normalized=$result '
-      'mode=$mode '
-      'minDate=$minimumDate maxDate=$maximumDate '
-      'minYear=$minimumYear maxYear=$maximumYear '
-      'minuteInterval=$minuteInterval',
-    );
-
     return result;
   }
 
@@ -319,7 +307,11 @@ class FlutterCupertinoDatePickerState extends WebFWidgetElementState {
         widgetElement.minuteInterval ?? 1;
 
     final bool use24hFormat = widgetElement.use24H;
-    final bool showDayOfWeek = widgetElement.showDayOfWeek;
+    final bool rawShowDayOfWeek = widgetElement.showDayOfWeek;
+    // Avoid Flutter internal issues when using showDayOfWeek in pure date mode
+    // by disabling the flag in that specific combination.
+    final bool effectiveShowDayOfWeek =
+        mode == CupertinoDatePickerMode.date ? false : rawShowDayOfWeek;
 
     final Color? backgroundColor =
         renderStyle.backgroundColor?.value;
@@ -337,20 +329,6 @@ class FlutterCupertinoDatePickerState extends WebFWidgetElementState {
     final double width = renderStyle.width.computedValue;
     final double height = renderStyle.height.computedValue;
 
-    devLogger.d(
-      '[CupertinoDatePicker] build '
-      'mode=$mode '
-      'rawInitial=$rawInitial '
-      'initial=$initialDateTime '
-      'value=${widgetElement.value} '
-      'minDate=$minimumDate maxDate=$maximumDate '
-      'minYear=$minimumYear maxYear=$maximumYear '
-      'minuteInterval=$minuteInterval '
-      'use24H=$use24hFormat showDayOfWeek=$showDayOfWeek '
-      'backgroundColor=$backgroundColor '
-      'width=$width height=$height',
-    );
-
     _currentValue ??= initialDateTime;
 
     final Widget innerPicker = CupertinoDatePicker(
@@ -362,15 +340,12 @@ class FlutterCupertinoDatePickerState extends WebFWidgetElementState {
       maximumYear: maximumYear,
       minuteInterval: minuteInterval,
       use24hFormat: use24hFormat,
-      showDayOfWeek: showDayOfWeek,
+      showDayOfWeek: effectiveShowDayOfWeek,
       backgroundColor: backgroundColor,
       onDateTimeChanged: (DateTime dateTime) {
         _currentValue = dateTime;
         final String iso = _formatDate(dateTime);
         widgetElement._value = iso;
-        devLogger.d(
-          '[CupertinoDatePicker] onDateTimeChanged -> $iso (mode=$mode)',
-        );
         widgetElement.dispatchEvent(
           CustomEvent('change', detail: iso),
         );
@@ -379,10 +354,6 @@ class FlutterCupertinoDatePickerState extends WebFWidgetElementState {
 
     final Widget picker = LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        devLogger.d(
-          '[CupertinoDatePicker] layout constraints=$constraints mode=$mode '
-          'heightConstraint=${constraints.minHeight}..${constraints.maxHeight}',
-        );
         return innerPicker;
       },
     );
