@@ -13,12 +13,6 @@ import 'package:webf/widget.dart';
 
 import '../../html.dart';
 
-String _fmtC(BoxConstraints c) =>
-    'C[minW=${c.minWidth.toStringAsFixed(1)}, maxW=${c.maxWidth.isFinite ? c.maxWidth.toStringAsFixed(1) : '∞'}, '
-    'minH=${c.minHeight.toStringAsFixed(1)}, maxH=${c.maxHeight.isFinite ? c.maxHeight.toStringAsFixed(1) : '∞'}]';
-
-String _fmtS(Size s) => 'S(${s.width.toStringAsFixed(1)}×${s.height.toStringAsFixed(1)})';
-
 /// RenderBox of a widget element whose content is rendering by Flutter Widgets.
 class RenderWidget extends RenderBoxModel
     with ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>> {
@@ -44,6 +38,17 @@ class RenderWidget extends RenderBoxModel
     child.parentData = RenderLayoutParentData();
   }
 
+  RenderViewportBox? getViewportBox() {
+    RenderObject? current = parent;
+    while (current != null) {
+      if (current is RenderViewportBox) {
+        return current;
+      }
+      current = current.parent;
+    }
+    return null;
+  }
+
   void _layoutChild(RenderBox child) {
     // Ensure logical content sizes are computed from CSS before deriving constraints
     // so that explicit width/height (e.g. h-8) can be honored.
@@ -63,7 +68,7 @@ class RenderWidget extends RenderBoxModel
     final bool hasExplicitInlineWidth =
         renderStyle.width.isNotAuto || renderStyle.minWidth.isNotAuto || renderStyle.maxWidth.isNotNone;
 
-    Size viewportSize = renderStyle.target.getRootViewport()!.viewportSize;
+    Size viewportSize = getViewportBox()!.viewportSize;
     BoxConstraints childConstraints;
     if (isInlineBlockAutoWidth || hasExplicitInlineWidth) {
       childConstraints = BoxConstraints(
@@ -115,43 +120,12 @@ class RenderWidget extends RenderBoxModel
       }
     }
 
-    WidgetLog.log(
-      impl: WidgetImpl.widget,
-      feature: WidgetFeature.constraints,
-      level: Level.FINER,
-      message: () {
-        final target = renderStyle.target;
-        final tag = target is Element ? target.tagName.toLowerCase() : target.nodeName;
-        final id = (target is Element && target.id != null && target.id!.isNotEmpty) ? '#${target.id}' : '';
-        final cls = (target is Element && target.className.isNotEmpty) ? '.${target.className}' : '';
-        return '<$tag$id$cls> RenderWidget childConstraints=${_fmtC(childConstraints)} '
-            'contentConstraints=${_fmtC(contentConstraints!)} viewport=${viewportSize.width.toStringAsFixed(1)}×'
-            '${viewportSize.height.toStringAsFixed(1)} '
-            'cssWidth=${renderStyle.width.isAuto ? 'auto' : renderStyle.width.computedValue.toStringAsFixed(1)} '
-            'cssHeight=${renderStyle.height.isAuto ? 'auto' : renderStyle.height.computedValue.toStringAsFixed(1)}';
-      },
-    );
-
     child.layout(childConstraints, parentUsesSize: true);
 
     Size childSize = child.size;
 
     setMaxScrollableSize(childSize);
     size = getBoxSize(childSize);
-
-    WidgetLog.log(
-      impl: WidgetImpl.widget,
-      feature: WidgetFeature.sizing,
-      level: Level.FINER,
-      message: () {
-        final target = renderStyle.target;
-        final tag = target is Element ? target.tagName.toLowerCase() : target.nodeName;
-        final id = (target is Element && target.id != null && target.id!.isNotEmpty) ? '#${target.id}' : '';
-        final cls = (target is Element && target.className.isNotEmpty) ? '.${target.className}' : '';
-        return '<$tag$id$cls> RenderWidget childSize=${_fmtS(childSize)} boxSize=${_fmtS(size)} '
-            'scrollable=${_fmtS(scrollableSize)}';
-      },
-    );
 
     minContentWidth = renderStyle.intrinsicWidth;
     minContentHeight = renderStyle.intrinsicHeight;
