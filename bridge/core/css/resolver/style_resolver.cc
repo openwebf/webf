@@ -323,7 +323,8 @@ void StyleResolver::MatchUARules(ElementRuleCollector& collector) {
     // Create a RuleSet from the stylesheet for matching
     // TODO: This should be cached for performance
     auto rule_set = std::make_shared<RuleSet>();
-    MediaQueryEvaluator evaluator("screen");
+    ExecutingContext* context = document_->GetExecutingContext();
+    MediaQueryEvaluator evaluator(context);
     rule_set->AddRulesFromSheet(html_style, evaluator, kRuleHasNoSpecialState);
     
     // Create match request and collect matching rules
@@ -392,8 +393,11 @@ void StyleResolver::MatchAuthorRules(
   // Start from document element
   findStyleElements(document.documentElement());
   
-  // Create a media query evaluator for the current document
-  MediaQueryEvaluator media_evaluator("screen");
+  // Create a media query evaluator for the current document so that
+  // media queries (including prefers-color-scheme) are evaluated against
+  // live environment values (viewport size, color scheme, etc.).
+  ExecutingContext* context = document.GetExecutingContext();
+  MediaQueryEvaluator media_evaluator(context);
   
   const auto& author_sheets = document.EnsureStyleEngine().AuthorSheets();
   unsigned inline_sheet_base = author_sheets.size();

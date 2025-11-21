@@ -120,6 +120,22 @@ void parseHTML(void* page,
                int32_t length,
                Dart_Handle dart_handle,
                ParseHTMLCallback result_callback);
+
+// Environment change callbacks: one media value per function.
+// These notify the native Blink CSS engine that the given value has changed
+// and pass the concrete value across the bridge; MediaValues will still
+// query the up-to-date environment from Dart when evaluating media queries.
+WEBF_EXPORT_C
+void onViewportSizeChanged(void* page, double inner_width, double inner_height);
+
+WEBF_EXPORT_C
+void onDevicePixelRatioChanged(void* page, double device_pixel_ratio);
+
+// |scheme| is a UTF-8 string such as "light" or "dark" (not null-terminated),
+// with explicit |length|.
+WEBF_EXPORT_C
+void onColorSchemeChanged(void* page, const char* scheme, int32_t length);
+
 WEBF_EXPORT_C
 void* parseSVGResult(const char* code, int32_t length);
 WEBF_EXPORT_C

@@ -273,6 +273,23 @@ void StyleSheetContents::ParserAppendRule(std::shared_ptr<StyleRuleBase> rule) {
     auto kf = std::static_pointer_cast<StyleRuleKeyframes>(rule);
     WEBF_COND_LOG(STYLESHEET, VERBOSE) << "[keyframes][parse] appended @keyframes name='" << String(kf->GetName()).ToUTF8String()
                                        << "' prefixed=" << (kf->IsVendorPrefixed() ? "true" : "false");
+  } else if (rule && rule->IsMediaRule()) {
+    // TODO: REMOVE THIS AFTER media query IS READY
+    // Debug logging for @media rules, including prefers-color-scheme.
+    auto media_rule = std::static_pointer_cast<StyleRuleMedia>(rule);
+    const MediaQuerySet* queries = media_rule->MediaQueries();
+    String mq_text = queries ? queries->MediaText() : String("[null]");
+    WEBF_LOG(INFO) << "[StyleSheet] Append @media rule: " << mq_text.ToUTF8String();
+    const auto& raw_children = media_rule->ChildRules().RawChildRules();
+    WEBF_LOG(INFO) << "[StyleSheet] @media child count: " << raw_children.size();
+    for (const auto& child : raw_children) {
+      if (!child || !child->IsStyleRule()) {
+        continue;
+      }
+      auto nested_style = std::static_pointer_cast<const StyleRule>(child);
+      WEBF_LOG(INFO) << "  - nested rule selectors: "
+                     << nested_style->SelectorsText().ToUTF8String();
+    }
   }
 
   child_rules_.push_back(rule);
@@ -406,49 +423,9 @@ void StyleSheetContents::ParserAddNamespace(const std::optional<String>& prefix,
 void StyleSheetContents::NotifyRemoveFontFaceRule(const webf::StyleRuleFontFace*) {}
 
 std::shared_ptr<RuleSet> StyleSheetContents::EnsureRuleSet(const MediaQueryEvaluator& medium) {
-  
   if (!rule_set_) {
     rule_set_ = std::make_shared<RuleSet>();
-
-    // Recursively add rules from this sheet and any imported sheets
-    std::function<void(std::shared_ptr<StyleSheetContents>)> add_from_sheet;
-    add_from_sheet = [&](std::shared_ptr<StyleSheetContents> sheet) {
-      if (!sheet) return;
-
-      // Add this sheet's style rules
-      const auto& children = sheet->ChildRules();
-      for (const auto& rule : children) {
-        if (rule && rule->IsStyleRule()) {
-          auto style_rule_ptr = std::static_pointer_cast<StyleRule>(rule);
-          rule_set_->AddStyleRule(style_rule_ptr, kRuleHasNoSpecialState);
-        }
-        // TODO(CGQAQ): Handle @media, @supports, and others when implemented
-      }
-
-      // Recurse into imported sheets when their media queries match
-      const auto& imports = sheet->ImportRules();
-      for (const auto& imp : imports) {
-        if (!imp) continue;
-
-        // Honor media queries on the @import
-        auto mq = imp->MediaQueries();
-        if (mq && !medium.Eval(*mq)) {
-          continue;
-        }
-
-        // Skip if @supports on the import evaluated to false
-        if (!imp->IsSupported()) {
-          continue;
-        }
-
-        auto child = imp->GetStyleSheet();
-        if (child) {
-          add_from_sheet(child);
-        }
-      }
-    };
-
-    add_from_sheet(shared_from_this());
+    rule_set_->AddRulesFromSheet(shared_from_this(), medium, kRuleHasNoSpecialState);
   }
   return rule_set_;
 }

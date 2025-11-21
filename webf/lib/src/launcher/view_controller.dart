@@ -929,6 +929,20 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   @override
   void didChangeMetrics() {
+    // Notify C++ Blink style engine about viewport and DPR changes so that
+    // media queries depending on width/height/device-size and resolution can
+    // be re-evaluated.
+    if (_inited && !_disposed && WebFController.getControllerOfJSContextId(_contextId) != null) {
+      final double width = window.innerWidth;
+      final double height = window.innerHeight;
+      final Pointer<Void>? page = getAllocatedPage(_contextId);
+      if (page != null) {
+        nativeOnViewportSizeChanged(page, width, height);
+        final double dpr = window.devicePixelRatio;
+        nativeOnDevicePixelRatioChanged(page, dpr);
+      }
+    }
+
     window.resizeViewportRelatedElements();
   }
 
@@ -936,6 +950,18 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   void didChangePlatformBrightness() {
     // If dark mode was override by the caller, watch the system platform changes to update platform brightness
     if (rootController.darkModeOverride == null) {
+      // Notify C++ Blink style engine that color-scheme changed, so
+      // prefers-color-scheme media queries can react to the new value.
+      if (_inited && !_disposed && WebFController.getControllerOfJSContextId(_contextId) != null) {
+        final Pointer<Void>? page = getAllocatedPage(_contextId);
+        if (page != null) {
+          final String scheme = window.colorScheme;
+          final Pointer<Utf8> schemePtr = scheme.toNativeUtf8();
+          nativeOnColorSchemeChanged(page, schemePtr, scheme.length);
+          malloc.free(schemePtr);
+        }
+      }
+
       document.recalculateStyleImmediately();
     }
   }

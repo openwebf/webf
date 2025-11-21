@@ -141,7 +141,11 @@ bool MediaQueryEvaluator::Eval(const MediaQuerySet& query_set, MediaQueryResultF
   // Iterate over queries, stop if any of them eval to true (OR semantics).
   bool result = false;
   for (size_t i = 0; i < queries.size() && !result; ++i) {
-    result = Eval(*queries[i], result_flags);
+    const MediaQuery& q = *queries[i];
+    bool q_result = Eval(q, result_flags);
+    WEBF_LOG(INFO) << "[MediaQueryEvaluator] Eval(MediaQuerySet) query[" << i << "]='"
+                   << q.CssText().ToUTF8String() << "' -> " << (q_result ? "true" : "false");
+    result = q_result;
   }
 
   return result;
@@ -758,6 +762,11 @@ static bool PrefersColorSchemeMediaFeatureEval(const MediaQueryExpValue& value,
 
   CSSValueID preferred = media_values.PreferredColorScheme();
 
+  WEBF_LOG(INFO) << "[MediaQueryEvaluator] PrefersColorSchemeMediaFeatureEval: queryId="
+                 << static_cast<int>(value.Id())
+                 << " preferredId="
+                 << static_cast<int>(preferred);
+
   switch (value.Id()) {
     case CSSValueID::kDark:
       return preferred == CSSValueID::kDark;
@@ -869,8 +878,14 @@ KleeneValue MediaQueryEvaluator::EvalFeature(const MediaQueryFeatureExpNode& fea
 
   // Call the media feature evaluation function. Assume no prefix and let
   // trampoline functions override the prefix if prefix is used.
-  auto it = g_function_map->find(feature.Name().Impl().get());
+  AtomicString name = feature.Name();
+  WEBF_LOG(INFO) << "[MediaQueryEvaluator] EvalFeature name='"
+                 << name.ToUTF8String() << "'";
+
+  auto it = g_function_map->find(name.Impl().get());
   if (it == g_function_map->end()) {
+    WEBF_LOG(INFO) << "[MediaQueryEvaluator] EvalFeature: no handler for '"
+                   << name.ToUTF8String() << "', returning false";
     return KleeneValue::kFalse;
   }
   

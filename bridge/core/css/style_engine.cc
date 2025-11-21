@@ -52,6 +52,8 @@
 // Extra includes for post-pass background resolution
 #include "core/css/resolver/style_recalc_context.h"
 #include "core/html/html_body_element.h"
+#include "core/html/html_style_element.h"
+#include "html_names.h"
 // Logging and pending substitution value support
 #include "foundation/logging.h"
 #include "bindings/qjs/native_string_utils.h"
@@ -1299,6 +1301,86 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
 
   InheritedState root_state;
   walk(&root_element, root_state);
+}
+
+void StyleEngine::MediaQueryAffectingValueChanged(MediaValueChange change) {
+  Document& document = GetDocument();
+  ExecutingContext* context = document.GetExecutingContext();
+  if (!context || !context->IsContextValid() || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  // Clear cached RuleSets for any author stylesheets that contain media
+  // queries so they will be rebuilt with a fresh MediaValues snapshot
+  // (including the updated environment input) the next time styles are
+  // resolved.
+  for (const auto& contents : author_sheets_) {
+    if (!contents) {
+      continue;
+    }
+    // For now we conservatively clear rule sets for all author
+    // stylesheets whenever an environment-dependent media value
+    // changes so that their media queries are re-evaluated using
+    // fresh MediaValues snapshots.
+    contents->ClearRuleSet();
+  }
+
+  // Also clear cached RuleSets for any style sheets cached by text
+  // (typically inline <style> elements). These contents may be reused
+  // across multiple HTMLStyleElement instances, so we must ensure their
+  // media queries (including prefers-color-scheme) are re-evaluated
+  // against the updated MediaValues on the next style resolution.
+  for (auto& entry : text_to_sheet_cache_) {
+    const auto& contents = entry.second;
+    if (contents) {
+      contents->ClearRuleSet();
+    }
+  }
+
+  // Additionally, walk the DOM to clear RuleSets for any inline
+  // <style> elements whose contents are not in the shared text cache.
+  // This ensures dynamically created inline stylesheets also respond
+  // to environment-dependent media value changes such as
+  // prefers-color-scheme.
+  Element* root_element = document.documentElement();
+  if (root_element) {
+    std::function<void(Node*)> walk = [&](Node* node) {
+      if (!node) {
+        return;
+      }
+
+      if (node->IsElementNode()) {
+        Element* elem = static_cast<Element*>(node);
+        if (elem->HasTagName(html_names::kStyle)) {
+          auto* html_style = static_cast<HTMLStyleElement*>(elem);
+          CSSStyleSheet* sheet = html_style->sheet();
+          if (sheet) {
+            auto contents = sheet->Contents();
+            if (contents) {
+              contents->ClearRuleSet();
+            }
+          }
+        }
+      }
+
+      for (Node* child = node->firstChild(); child; child = child->nextSibling()) {
+        walk(child);
+      }
+    };
+    walk(root_element);
+  }
+
+  // For now we conservatively trigger a full style recomputation for any
+  // media-value change. This ensures viewport- and device-dependent media
+  // queries are re-evaluated using up-to-date environment values provided
+  // by the Dart side (viewport size, devicePixelRatio, colorScheme, etc.).
+  switch (change) {
+    case MediaValueChange::kSize:
+    case MediaValueChange::kDynamicViewport:
+    case MediaValueChange::kOther:
+      RecalcStyle(document);
+      break;
+  }
 }
 
 void StyleEngine::Trace(GCVisitor* visitor) {}

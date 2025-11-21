@@ -267,6 +267,32 @@ final DartEvaluateScripts _evaluateModule =
 final DartParseHTML _parseHTML =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeParseHTML>>('parseHTML').asFunction();
 
+// Environment change callbacks into native (Blink CSS) side.
+// Each function targets a single media-relevant value and passes the
+// concrete value across the FFI boundary.
+typedef NativeOnViewportSizeChanged = Void Function(Pointer<Void>, Double innerWidth, Double innerHeight);
+typedef DartOnViewportSizeChanged = void Function(Pointer<Void>, double innerWidth, double innerHeight);
+
+typedef NativeOnDevicePixelRatioChanged = Void Function(Pointer<Void>, Double devicePixelRatio);
+typedef DartOnDevicePixelRatioChanged = void Function(Pointer<Void>, double devicePixelRatio);
+
+typedef NativeOnColorSchemeChanged = Void Function(Pointer<Void>, Pointer<Utf8> scheme, Int32 length);
+typedef DartOnColorSchemeChanged = void Function(Pointer<Void>, Pointer<Utf8> scheme, int length);
+
+// Public FFI entrypoints used by higher layers; keep names public (no leading
+// underscore) so they are visible outside this library.
+final DartOnViewportSizeChanged nativeOnViewportSizeChanged = WebFDynamicLibrary.ref
+    .lookup<NativeFunction<NativeOnViewportSizeChanged>>('onViewportSizeChanged')
+    .asFunction();
+
+final DartOnDevicePixelRatioChanged nativeOnDevicePixelRatioChanged = WebFDynamicLibrary.ref
+    .lookup<NativeFunction<NativeOnDevicePixelRatioChanged>>('onDevicePixelRatioChanged')
+    .asFunction();
+
+final DartOnColorSchemeChanged nativeOnColorSchemeChanged = WebFDynamicLibrary.ref
+    .lookup<NativeFunction<NativeOnColorSchemeChanged>>('onColorSchemeChanged')
+    .asFunction();
+
 typedef NativeParseSVGResult = Pointer<NativeGumboOutput> Function(Pointer<Utf8> code, Int32 length);
 typedef DartParseSVGResult = Pointer<NativeGumboOutput> Function(Pointer<Utf8> code, int length);
 
