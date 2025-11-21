@@ -2,9 +2,9 @@ import _ from "lodash";
 import fs from 'fs';
 import path from 'path';
 import {ParameterType} from "./analyzer";
-import {ClassObject, FunctionArgumentType, FunctionDeclaration, TypeAliasObject, PropsDeclaration} from "./declaration";
+import {ClassObject, FunctionArgumentType, FunctionDeclaration, TypeAliasObject, PropsDeclaration, EnumObject} from "./declaration";
 import {IDLBlob} from "./IDLBlob";
-import {getPointerType, isPointerType} from "./utils";
+import {getPointerType, isPointerType, trimNullTypeFromType} from "./utils";
 
 function readTemplate(name: string) {
   return fs.readFileSync(path.join(__dirname, '../templates/' + name + '.tpl'), {encoding: 'utf-8'});
@@ -82,20 +82,59 @@ ${enumValues};
 }`
 }
 
+function hasNullInUnion(type: ParameterType): boolean {
+  if (!Array.isArray(type.value)) return false;
+  return type.value.some(t => t.value === FunctionArgumentType.null);
+}
+
+function isBooleanType(type: ParameterType): boolean {
+  if (Array.isArray(type.value)) {
+    return type.value.some(t => t.value === FunctionArgumentType.boolean);
+  }
+  return type.value === FunctionArgumentType.boolean;
+}
+
 function generateReturnType(type: ParameterType, enumName?: string) {
   // Handle union types first (e.g., 'left' | 'center' | 'right')
   // so we don't incorrectly treat string literal unions as pointer types.
   if (Array.isArray(type.value)) {
-    // If we have an enum name, use it; otherwise fall back to String
-    return enumName || 'String';
+    // If we have an enum name, always use it (nullable handled separately)
+    if (enumName) {
+      return enumName;
+    }
+
+    // If this is a union that includes null and exactly one non-null type,
+    // generate the Dart type from the non-null part instead of falling back to String.
+    const trimmed = trimNullTypeFromType(type);
+    if (!Array.isArray(trimmed.value)) {
+      return generateReturnType(trimmed, enumName);
+    }
+
+    // Fallback for complex unions: use String
+    return 'String';
   }
 
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
+    // Map TS typeof expressions to Dart dynamic
+    if (typeof pointerType === 'string' && pointerType.startsWith('typeof ')) {
+      return 'dynamic';
+    }
+    // Map references to known string enums to String in Dart
+    if (typeof pointerType === 'string' && EnumObject.globalEnumSet.has(pointerType)) {
+      return 'String';
+    }
     return pointerType;
   }
   if (type.isArray && typeof type.value === 'object' && !Array.isArray(type.value)) {
-    return `${getPointerType(type.value)}[]`;
+    const elem = getPointerType(type.value);
+    if (typeof elem === 'string' && elem.startsWith('typeof ')) {
+      return `dynamic[]`;
+    }
+    if (typeof elem === 'string' && EnumObject.globalEnumSet.has(elem)) {
+      return 'String[]';
+    }
+    return `${elem}[]`;
   }
   
   // Handle when type.value is a ParameterType object (nested type)
@@ -112,7 +151,8 @@ function generateReturnType(type: ParameterType, enumName?: string) {
       return 'double';
     }
     case FunctionArgumentType.any: {
-      return 'any';
+      // Dart doesn't have `any`; use `dynamic`.
+      return 'dynamic';
     }
     case FunctionArgumentType.boolean: {
       return 'bool';
@@ -143,13 +183,23 @@ function generateEventHandlerType(type: ParameterType) {
 
 function generateAttributeSetter(propName: string, type: ParameterType, enumName?: string): string {
   // Attributes from HTML are always strings, so we need to convert them
-  
+
+  const unionHasNull = hasNullInUnion(type);
+
   // Handle enum types
   if (enumName && Array.isArray(type.value)) {
+    if (unionHasNull) {
+      return `${propName} = value == 'null' ? null : ${enumName}.parse(value)`;
+    }
     return `${propName} = ${enumName}.parse(value)`;
   }
-  
-  switch (type.value) {
+
+  const effectiveType: ParameterType = Array.isArray(type.value) && unionHasNull
+    ? trimNullTypeFromType(type)
+    : type;
+
+  const baseSetter = (() => {
+    switch (effectiveType.value) {
     case FunctionArgumentType.boolean:
       return `${propName} = value == 'true' || value == ''`;
     case FunctionArgumentType.int:
@@ -159,30 +209,43 @@ function generateAttributeSetter(propName: string, type: ParameterType, enumName
     default:
       // String and other types can be assigned directly
       return `${propName} = value`;
+    }
+  })();
+
+  if (unionHasNull) {
+    const assignmentPrefix = `${propName} = `;
+    const rhs = baseSetter.startsWith(assignmentPrefix)
+      ? baseSetter.slice(assignmentPrefix.length)
+      : 'value';
+    return `${propName} = value == 'null' ? null : (${rhs})`;
   }
+
+  return baseSetter;
 }
 
-function generateAttributeGetter(propName: string, type: ParameterType, optional: boolean, enumName?: string): string {
+function generateAttributeGetter(propName: string, type: ParameterType, isNullable: boolean, enumName?: string): string {
   // Handle enum types
   if (enumName && Array.isArray(type.value)) {
-    return optional ? `${propName}?.value` : `${propName}.value`;
+    return isNullable ? `${propName}?.value` : `${propName}.value`;
   }
   
   // Handle nullable properties - they should return null if the value is null
-  if (optional && type.value !== FunctionArgumentType.boolean) {
+  if (isNullable) {
     // For nullable properties, we need to handle null values properly
     return `${propName}?.toString()`;
   }
-  // For non-nullable properties (including booleans), always convert to string
+  // For non-nullable properties, always convert to string
   return `${propName}.toString()`;
 }
 
 function generateAttributeDeleter(propName: string, type: ParameterType, optional: boolean): string {
   // When deleting an attribute, we should reset it to its default value
+  if (isBooleanType(type)) {
+    // Booleans (including unions with null) default to false
+    return `${propName} = false`;
+  }
+
   switch (type.value) {
-    case FunctionArgumentType.boolean:
-      // Booleans default to false
-      return `${propName} = false`;
     case FunctionArgumentType.int:
       // Integers default to 0
       return `${propName} = 0`;
@@ -216,9 +279,20 @@ function generateMethodDeclaration(method: FunctionDeclaration) {
 }
 
 function shouldMakeNullable(prop: any): boolean {
-  // Boolean properties should never be nullable in Dart, even if optional in TypeScript
-  if (prop.type.value === FunctionArgumentType.boolean) {
+  const type: ParameterType = prop.type;
+
+  // Boolean properties are only nullable in Dart when explicitly unioned with `null`.
+  if (isBooleanType(type)) {
+    return hasNullInUnion(type);
+  }
+  // Dynamic (any) should not use nullable syntax; dynamic already allows null
+  if (type.value === FunctionArgumentType.any) {
     return false;
+  }
+  // Properties with an explicit `null` in their type should be nullable,
+  // even if they are not marked optional in TypeScript.
+  if (hasNullInUnion(type)) {
+    return true;
   }
   // Other optional properties remain nullable
   return prop.optional;
@@ -317,8 +391,9 @@ interface ${object.name} {
     generateAttributeSetter: (propName: string, type: ParameterType) => {
       return generateAttributeSetter(propName, type, enumMap.get(propName));
     },
-    generateAttributeGetter: (propName: string, type: ParameterType, optional: boolean) => {
-      return generateAttributeGetter(propName, type, optional, enumMap.get(propName));
+    generateAttributeGetter: (propName: string, type: ParameterType, optional: boolean, prop?: PropsDeclaration) => {
+      const isNullable = prop ? shouldMakeNullable(prop) : optional;
+      return generateAttributeGetter(propName, type, isNullable, enumMap.get(propName));
     },
     generateAttributeDeleter,
     shouldMakeNullable,

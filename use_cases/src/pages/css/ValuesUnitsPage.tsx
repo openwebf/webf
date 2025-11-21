@@ -5,8 +5,7 @@ export const ValuesUnitsPage: React.FC = () => {
   const baseFont = 16;
   return (
     <div id="main" className="min-h-screen w-full bg-surface">
-      <WebFListView className="w-full px-3 md:px-6">
-        <div className="max-w-3xl mx-auto py-6">
+      <WebFListView className="w-full px-3 md:px-6 max-w-3xl mx-auto py-6">
           <h1 className="text-2xl font-semibold text-fg-primary mb-4">Absolute vs Relative Units</h1>
           <div className="bg-surface-secondary border border-line rounded-xl p-4 mb-6">
             <div className="flex gap-3 flex-wrap">
@@ -26,7 +25,6 @@ export const ValuesUnitsPage: React.FC = () => {
               <div className="bg-gray-200 border border-line rounded flex items-center justify-center text-[#111827]" style={{ width: 'calc(10rem + 10px)', height: 60 }}>calc(10rem + 10px)</div>
             </div>
           </div>
-        </div>
       </WebFListView>
     </div>
   );

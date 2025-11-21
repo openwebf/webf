@@ -43,7 +43,7 @@ const sections: Section[] = [
       { label: 'Positioned Layout', path: '/css/position' },
       { label: 'Selectors', path: '/css/selectors' },
       { label: 'Values & Units', path: '/css/values-units' },
-      { label: 'Animations', path: '/animation' },
+      { label: 'Animations', path: '/css/animation' },
     ],
   },
   {
@@ -89,9 +89,17 @@ const sections: Section[] = [
     ],
   },
   {
+    title: 'Cupertino UI',
+    items: [
+      { label: 'Cupertino Buttons', path: '/cupertino/buttons' },
+      { label: 'Cupertino Action Sheet', path: '/cupertino/actionsheet' },
+      { label: 'Cupertino Alert Dialog', path: '/cupertino/alert' },
+      { label: 'Cupertino Switches & Sliders', path: '/cupertino/controls' },
+    ],
+  },
+  {
     title: 'Others',
     items: [
-      { label: 'Showcase', path: '/show_case' },
       { label: 'Listview', path: '/listview' },
       { label: 'Form (Basic)', path: '/form' },
       { label: 'Basic Form Elements', path: '/basic-form-elements' },
@@ -115,8 +123,7 @@ export const FeatureCatalogPage: React.FC = () => {
 
   return (
     <div id="main" className="min-h-screen w-full bg-surface">
-      <WebFListView className="w-full px-3 md:px-6">
-        <div className="max-w-4xl mx-auto py-6">
+      <WebFListView className="w-full px-3 md:px-6 max-w-4xl mx-auto py-6">
           <h1 className="text-2xl md:text-3xl font-semibold text-fg-primary mb-4">WebF Feature Catalog</h1>
           <p className="text-fg-secondary mb-6">Browse showcases grouped by supported feature areas.</p>
 
@@ -146,7 +153,6 @@ export const FeatureCatalogPage: React.FC = () => {
               </div>
             ))}
           </div>
-        </div>
       </WebFListView>
     </div>
   );

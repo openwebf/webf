@@ -23,6 +23,7 @@
   "devDependencies": {
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.2",
+    "picomatch": "^4.0.2",
     "tsup": "^8.5.0",
     "typescript": "^5.8.3"
   }

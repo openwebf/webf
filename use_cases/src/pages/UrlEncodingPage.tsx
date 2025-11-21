@@ -45,8 +45,7 @@ export const UrlEncodingPage: React.FC = () => {
 
   return (
     <div id="main" className="min-h-screen w-full bg-surface">
-      <WebFListView className="w-full px-3 md:px-6">
-        <div className="max-w-3xl mx-auto py-6">
+      <WebFListView className="w-full px-3 md:px-6 max-w-3xl mx-auto py-6">
           <h1 className="text-2xl font-semibold text-fg-primary mb-4">URL & Encoding</h1>
           <p className="text-fg-secondary mb-4">Demonstrations for URL, Base64 and TextEncoder.</p>
 
@@ -100,7 +99,6 @@ export const UrlEncodingPage: React.FC = () => {
             <input className="w-full rounded border border-line px-3 py-2 bg-surface" value={text} onChange={(e) => setText(e.target.value)} />
             <div className="mt-3 text-sm break-all">{JSON.stringify(encoded)}</div>
           </div>
-        </div>
       </WebFListView>
     </div>
   );

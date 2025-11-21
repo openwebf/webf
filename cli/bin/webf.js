@@ -16,6 +16,7 @@ program
   .option('--flutter-package-src <src>', 'Flutter package source path (for code generation)')
   .option('--framework <framework>', 'Target framework (react or vue)')
   .option('--package-name <name>', 'Package name for the webf typings')
+  .option('--dart-only', 'Only generate Dart bindings in the Flutter package (skip React/Vue code and npm package generation)')
   .option('--publish-to-npm', 'Automatically publish the generated package to npm')
   .option('--npm-registry <url>', 'Custom npm registry URL (defaults to https://registry.npmjs.org/)')
   .option('--exclude <patterns...>', 'Additional glob patterns to exclude from code generation')

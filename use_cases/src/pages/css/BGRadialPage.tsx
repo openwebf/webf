@@ -4,8 +4,7 @@ import { WebFListView } from '@openwebf/react-core-ui';
 export const BGRadialPage: React.FC = () => {
   return (
     <div id="main" className="min-h-screen">
-      <WebFListView className="px-3 md:px-6 bg-[#f8f9fa]">
-        <div className="flex flex-col p-5">
+      <WebFListView className="px-3 md:px-6 bg-[#f8f9fa] flex flex-col p-5">
           <div className="text-sm text-gray-700 font-medium mb-1">radial-gradient default vs circle</div>
           <div className="mx-[5px] flex items-center justify-center text-center border border-red-500 w-[calc(100%_-_10px)] h-[100px] gap-[10px]">
             <div className="h-20 rounded w-1/2" style={{ backgroundImage: 'radial-gradient(red, blue)' }} />
@@ -65,7 +64,6 @@ export const BGRadialPage: React.FC = () => {
               }}
             />
           </div>
-        </div>
       </WebFListView>
     </div>
   );

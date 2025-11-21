@@ -4,8 +4,12 @@
  */
 import 'package:flutter/cupertino.dart';
 import 'package:webf/webf.dart';
+
 import 'slider_bindings_generated.dart';
 
+/// WebF custom element that wraps Flutter's [CupertinoSlider].
+///
+/// Exposed as `<flutter-cupertino-slider>` in the DOM.
 class FlutterCupertinoSlider extends FlutterCupertinoSliderBindings {
   FlutterCupertinoSlider(super.context);
 
@@ -15,53 +19,86 @@ class FlutterCupertinoSlider extends FlutterCupertinoSliderBindings {
   int? _step;
   bool _disabled = false;
 
+  double _parseDouble(dynamic value, double fallback) {
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      final parsed = double.tryParse(value);
+      if (parsed != null) return parsed;
+    }
+    return fallback;
+  }
+
+  int? _parseInt(dynamic value, int? fallback) {
+    if (value == null) return fallback;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      if (parsed != null) return parsed;
+    }
+    return fallback;
+  }
+
   @override
   double? get val => _value;
+
   @override
   set val(value) {
-    final newValue = double.tryParse(value) ?? _value;
-    if (newValue != _value) {
-      _value = newValue.clamp(_min, _max);
+    final next = _parseDouble(value, _value).clamp(_min, _max);
+    if (next != _value) {
+      _value = next;
+      state?.requestUpdateState(() {});
     }
   }
 
   @override
   double? get min => _min;
+
   @override
   set min(value) {
-    final newMin = double.tryParse(value) ?? _min;
-    if (newMin != _min) {
-      _min = newMin;
+    final next = _parseDouble(value, _min);
+    if (next != _min) {
+      _min = next;
       _value = _value.clamp(_min, _max);
+      state?.requestUpdateState(() {});
     }
   }
 
   @override
   double? get max => _max;
+
   @override
   set max(value) {
-    final newMax = double.tryParse(value) ?? _max;
-    if (newMax != _max) {
-      _max = newMax;
+    final next = _parseDouble(value, _max);
+    if (next != _max) {
+      _max = next;
       _value = _value.clamp(_min, _max);
+      state?.requestUpdateState(() {});
     }
   }
 
   @override
   int? get step => _step;
+
   @override
   set step(value) {
-    final steps = int.tryParse(value);
-    if (steps != _step) {
-      _step = steps;
+    final next = _parseInt(value, _step);
+    if (next != _step) {
+      _step = next;
+      state?.requestUpdateState(() {});
     }
   }
 
   @override
   bool get disabled => _disabled;
+
   @override
   set disabled(value) {
-    _disabled = value != 'false';
+    final next = value == true;
+    if (next != _disabled) {
+      _disabled = next;
+      state?.requestUpdateState(() {});
+    }
   }
 
   @override
@@ -71,9 +108,11 @@ class FlutterCupertinoSlider extends FlutterCupertinoSliderBindings {
 
   @override
   void setValue(List<dynamic> args) {
-    if (args.isNotEmpty) {
-      final newValue = double.tryParse(args[0].toString()) ?? _value;
-      _value = newValue.clamp(_min, _max);
+    if (args.isEmpty) return;
+    final next = _parseDouble(args[0], _value).clamp(_min, _max);
+    if (next != _value) {
+      _value = next;
+      state?.requestUpdateState(() {});
     }
   }
 
@@ -87,7 +126,8 @@ class FlutterCupertinoSliderState extends WebFWidgetElementState {
   FlutterCupertinoSliderState(super.widgetElement);
 
   @override
-  FlutterCupertinoSlider get widgetElement => super.widgetElement as FlutterCupertinoSlider;
+  FlutterCupertinoSlider get widgetElement =>
+      super.widgetElement as FlutterCupertinoSlider;
 
   @override
   Widget build(BuildContext context) {
@@ -99,19 +139,28 @@ class FlutterCupertinoSliderState extends WebFWidgetElementState {
       min: widgetElement._min,
       max: widgetElement._max,
       divisions: widgetElement._step,
-      activeColor: isDark ? CupertinoColors.activeBlue.darkColor : CupertinoColors.activeBlue,
+      activeColor: isDark
+          ? CupertinoColors.activeBlue.darkColor
+          : CupertinoColors.activeBlue,
       thumbColor: CupertinoColors.white,
-      onChanged: widgetElement._disabled ? null : (double value) {
-        setState(() {
-          widgetElement._value = value;
-        });
-        widgetElement.dispatchEvent(CustomEvent('change', detail: value));
-      },
+      onChanged: widgetElement._disabled
+          ? null
+          : (double value) {
+              widgetElement._value = value;
+              setState(() {});
+              widgetElement.dispatchEvent(
+                CustomEvent('change', detail: value),
+              );
+            },
       onChangeStart: (double value) {
-        widgetElement.dispatchEvent(CustomEvent('changestart', detail: value));
+        widgetElement.dispatchEvent(
+          CustomEvent('changestart', detail: value),
+        );
       },
       onChangeEnd: (double value) {
-        widgetElement.dispatchEvent(CustomEvent('changeend', detail: value));
+        widgetElement.dispatchEvent(
+          CustomEvent('changeend', detail: value),
+        );
       },
     );
   }

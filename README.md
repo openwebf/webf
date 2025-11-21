@@ -78,6 +78,26 @@ Additionally, your **DOM elements and CSS UI share the same rendering context as
 <img width="4452" height="3601" alt="Browser Engine Pipeline" src="https://github.com/user-attachments/assets/5f945b66-fbcd-47b8-9eba-078ee3417610" />
 
 
+## Repository Structure
+
+- `cli` - WebF CLI for code generation. Generates type-safe bindings from TypeScript to Dart and React/Vue components.
+- `legacy_impls` - Historical, unmaintained open-source implementations (bridge, integration tests, scripts, legacy `webf` package).
+- `packages` - JavaScript/TypeScript packages for WebF apps:
+  - `react-core-ui` - Core UI components for React (e.g., `<webf-listview>`, touch utilities).
+  - `react-router` - React Router built for WebF’s hybrid history/navigation.
+  - `vue-router` - Vue Router built for WebF’s hybrid history/navigation.
+  - `vue-core-ui` - Vue typings/glue for core WebF UI elements.
+  - `vue-cupertino-ui` - Vue typings/glue for Cupertino UI elements.
+  - `webf-deeplink` - JS SDK for deep links and URL schemes (pairs with `webf_deeplink`).
+  - `webf-share` - JS SDK for sharing text/images and saving screenshots (pairs with `webf_share`).
+- `playground_app` - Flutter playground app integrating WebF, Cupertino UI, deep link and share modules.
+- `use_cases` - React-based use cases demo showcasing WebF features (run with WebF host app).
+- `webf_apps` - Example apps and templates (React, Vue, Next.js, Tailwind, Vite) for WebF.
+- `webf_cupertino_ui` - Flutter package exposing Cupertino components as HTML custom elements for WebF.
+- `webf_modules` - Flutter modules that extend WebF (e.g., `webf_deeplink`, `webf_share`).
+- `website` - Docusaurus website and documentation for openwebf.com.
+
+
 ## Sponsors
 
 <p style="font-size:21px; color:black;">Browser testing via 

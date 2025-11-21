@@ -3,27 +3,32 @@
  * Licensed under GNU AGPL with Enterprise exception.
  */
 import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:webf/webf.dart';
-import 'logger.dart';
-// import 'package:webf/launcher.dart'; // Not needed if using context directly
 
+import 'logger.dart';
+
+/// WebF custom element that wraps Flutter's [CupertinoActionSheet].
+///
+/// Exposed as `<flutter-cupertino-action-sheet>` in the DOM.
 class FlutterCupertinoActionSheet extends WidgetElement {
-  // Constructor - removed isIntrinsicBox
   FlutterCupertinoActionSheet(super.context);
 
-  // Synchronous wrapper method to be bound
+  /// Imperative show() entry point from JavaScript.
+  ///
+  /// This is a synchronous binding that delegates to an async implementation
+  /// on the [WebFWidgetElementState].
   void _showSync(List<dynamic> args) {
-    state?._showActionSheetImpl(args); // Fire-and-forget async task
+    state?._showActionSheetImpl(args);
   }
 
-  // Method Binding using StaticDefinedSyncBindingObjectMethodMap
   static StaticDefinedSyncBindingObjectMethodMap actionSheetMethods = {
     'show': StaticDefinedSyncBindingObjectMethod(
       call: (element, args) {
         final actionSheetElement = castToType<FlutterCupertinoActionSheet>(element);
         actionSheetElement._showSync(args);
-        return null; // Sync method returns null
+        return null;
       },
     )
   };
@@ -35,7 +40,8 @@ class FlutterCupertinoActionSheet extends WidgetElement {
       ];
 
   @override
-  FlutterCupertinoActionSheetState? get state => super.state as FlutterCupertinoActionSheetState?;
+  FlutterCupertinoActionSheetState? get state =>
+      super.state as FlutterCupertinoActionSheetState?;
 
   @override
   WebFWidgetElementState createState() {
@@ -47,18 +53,21 @@ class FlutterCupertinoActionSheetState extends WebFWidgetElementState {
   FlutterCupertinoActionSheetState(super.widgetElement);
 
   @override
+  FlutterCupertinoActionSheet get widgetElement =>
+      super.widgetElement as FlutterCupertinoActionSheet;
+
+  @override
   Widget build(BuildContext context) {
-    // This element itself doesn't render anything visible
-    return const SizedBox();
+    // Host element itself doesn't render anything; the sheet is shown modally.
+    return const SizedBox.shrink();
   }
 
-  // Async implementation detail
   Future<void> _showActionSheetImpl(List<dynamic> args) async {
-    // --- Argument Parsing ---
     if (args.isEmpty) {
       logger.e('show ActionSheet requires configuration argument');
       return;
     }
+
     Map<String, dynamic> config = {};
     if (args[0] is Map) {
       config = Map<String, dynamic>.from(args[0]);
@@ -74,79 +83,78 @@ class FlutterCupertinoActionSheetState extends WebFWidgetElementState {
       return;
     }
 
-    // --- Get BuildContext ---
-    // Access BuildContext directly from the element's context property
-    final BuildContext? buildContext = this.context;
+    final BuildContext? buildContext = context;
     if (buildContext == null) {
       logger.e('Element BuildContext is null. Cannot show ActionSheet');
       return;
     }
-    // Ensure the context is still mounted
     if (!buildContext.mounted) {
       logger.e('BuildContext is not mounted. Cannot show ActionSheet');
       return;
     }
 
-    // --- Extract Config ---
-    String? title = config['title'] as String?;
-    String? message = config['message'] as String?;
-    List<dynamic> actionsRaw = config['actions'] is List ? config['actions'] : [];
-    Map<String, dynamic>? cancelButtonRaw =
-        config['cancelButton'] is Map ? Map<String, dynamic>.from(config['cancelButton']) : null;
+    final String? title = config['title'] as String?;
+    final String? message = config['message'] as String?;
+    final List<dynamic> actionsRaw =
+        config['actions'] is List ? config['actions'] : const [];
+    final Map<String, dynamic>? cancelButtonRaw =
+        config['cancelButton'] is Map
+            ? Map<String, dynamic>.from(config['cancelButton'])
+            : null;
 
-    // --- Prepare Configs (no context needed yet) ---
-    List<Map<String, dynamic>> actionConfigs = actionsRaw
-        .whereType<Map>() // Filters out non-map items safely
+    final List<Map<String, dynamic>> actionConfigs = actionsRaw
+        .whereType<Map>()
         .map((item) => Map<String, dynamic>.from(item))
         .toList();
-    Map<String, dynamic>? cancelActionConfig = cancelButtonRaw;
+    final Map<String, dynamic>? cancelActionConfig = cancelButtonRaw;
 
     if (actionConfigs.isEmpty && cancelActionConfig == null) {
       logger.w('ActionSheet shown with no actions or cancel button');
     }
 
-    // --- Show Popup ---
     try {
-      // Use rootNavigator: true to ensure it pops correctly, especially in nested Navigators
       await showCupertinoModalPopup<void>(
-          context: buildContext,
-          useRootNavigator: true,
-          builder: (BuildContext dialogContext) {
-            // Build actions *inside* the builder using the dialogContext
-            List<Widget> dialogActions = [];
-            for (int i = 0; i < actionConfigs.length; i++) {
-              var cfg = Map<String, dynamic>.from(actionConfigs[i]);
-              cfg['index'] = i; // Add index to each action config
-              dialogActions.add(_buildAction(cfg, dialogContext));
-            }
-            Widget? dialogCancelButton =
-                cancelActionConfig != null ? _buildAction(cancelActionConfig, dialogContext) : null;
+        context: buildContext,
+        useRootNavigator: true,
+        builder: (BuildContext dialogContext) {
+          final List<Widget> dialogActions = <Widget>[];
+          for (int i = 0; i < actionConfigs.length; i++) {
+            final cfg = Map<String, dynamic>.from(actionConfigs[i]);
+            cfg['index'] = i;
+            dialogActions.add(_buildAction(cfg, dialogContext));
+          }
+          final Widget? dialogCancelButton = cancelActionConfig != null
+              ? _buildAction(cancelActionConfig, dialogContext)
+              : null;
 
-            return CupertinoActionSheet(
-              title: title != null ? Text(title) : null,
-              message: message != null ? Text(message) : null,
-              actions: dialogActions.isNotEmpty ? dialogActions : null,
-              cancelButton: dialogCancelButton,
-            );
-          });
+          return CupertinoActionSheet(
+            title: title != null ? Text(title) : null,
+            message: message != null ? Text(message) : null,
+            actions: dialogActions.isNotEmpty ? dialogActions : null,
+            cancelButton: dialogCancelButton,
+          );
+        },
+      );
     } catch (e, stacktrace) {
-      logger.e('Error showing CupertinoActionSheet', error: e, stackTrace: stacktrace);
+      logger.e('Error showing CupertinoActionSheet',
+          error: e, stackTrace: stacktrace);
     }
   }
 
-  // Helper to parse action config and build CupertinoActionSheetAction
-  // Use the dialogContext provided by the builder for Navigator.pop
-  CupertinoActionSheetAction _buildAction(Map<String, dynamic> actionConfig, BuildContext dialogContext) {
-    String text = actionConfig['text'] as String? ?? 'Action';
-    bool isDefault = actionConfig['isDefault'] == true;
-    bool isDestructive = actionConfig['isDestructive'] == true;
-    String eventName = actionConfig['event'] as String? ?? text.toLowerCase().replaceAll(' ', '_');
-    int? index = actionConfig['index'] as int?;
+  CupertinoActionSheetAction _buildAction(
+    Map<String, dynamic> actionConfig,
+    BuildContext dialogContext,
+  ) {
+    final String text = actionConfig['text'] as String? ?? 'Action';
+    final bool isDefault = actionConfig['isDefault'] == true;
+    final bool isDestructive = actionConfig['isDestructive'] == true;
+    final String eventName =
+        actionConfig['event'] as String? ?? text.toLowerCase().replaceAll(' ', '_');
+    final int? index = actionConfig['index'] as int?;
 
     return CupertinoActionSheetAction(
       onPressed: () {
-        // Create a detail object with all relevant information
-        Map<String, dynamic> detail = {
+        final Map<String, dynamic> detail = <String, dynamic>{
           'text': text,
           'event': eventName,
           'isDefault': isDefault,
@@ -155,10 +163,9 @@ class FlutterCupertinoActionSheetState extends WebFWidgetElementState {
         if (index != null) {
           detail['index'] = index;
         }
-        
-        // Always dispatch 'select' event with detail containing the action info
+
         widgetElement.dispatchEvent(CustomEvent('select', detail: detail));
-        Navigator.pop(dialogContext); // Pop using the builder's context
+        Navigator.pop(dialogContext);
       },
       isDefaultAction: isDefault,
       isDestructiveAction: isDestructive,
@@ -166,3 +173,4 @@ class FlutterCupertinoActionSheetState extends WebFWidgetElementState {
     );
   }
 }
+

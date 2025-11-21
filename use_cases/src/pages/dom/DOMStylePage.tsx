@@ -14,8 +14,7 @@ export const DOMStylePage: React.FC = () => {
 
   return (
     <div id="main" className="min-h-screen w-full bg-surface">
-      <WebFListView className="w-full px-3 md:px-6">
-        <div className="max-w-3xl mx-auto py-6">
+      <WebFListView className="w-full px-3 md:px-6 max-w-3xl mx-auto py-6">
           <h1 className="text-2xl font-semibold text-fg-primary mb-4">element.style</h1>
           <div className="bg-surface-secondary border border-line rounded-xl p-4">
             <div className="flex gap-2 flex-wrap items-center">
@@ -27,7 +26,6 @@ export const DOMStylePage: React.FC = () => {
               <div className="h-20 border border-line rounded bg-gray-200 flex items-center justify-center" style={boxStyle}>target</div>
             </div>
           </div>
-        </div>
       </WebFListView>
     </div>
   );

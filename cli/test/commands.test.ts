@@ -2,15 +2,20 @@
 jest.mock('fs');
 jest.mock('child_process');
 jest.mock('../src/generator');
+jest.mock('glob', () => ({
+  globSync: jest.fn(),
+}));
 jest.mock('inquirer');
 jest.mock('yaml');
 
 import fs from 'fs';
 import path from 'path';
 import { spawnSync } from 'child_process';
+import { globSync } from 'glob';
 
 const mockFs = fs as jest.Mocked<typeof fs>;
 const mockSpawnSync = spawnSync as jest.MockedFunction<typeof spawnSync>;
+const mockGlobSync = globSync as jest.MockedFunction<typeof globSync>;
 
 // Set up default mocks before importing commands
 mockFs.readFileSync = jest.fn().mockImplementation((filePath: any) => {
@@ -84,6 +89,7 @@ describe('Commands', () => {
     });
     // Default mock for readdirSync to avoid undefined
     mockFs.readdirSync.mockReturnValue([] as any);
+    mockGlobSync.mockReturnValue([]);
   });
 
 
@@ -220,11 +226,11 @@ describe('Commands', () => {
         // Mock that required files don't exist
         mockFs.existsSync.mockReturnValue(false);
         
-        await generateCommand(target, options);
+      await generateCommand(target, options);
 
         expect(mockSpawnSync).toHaveBeenCalledWith(
           expect.stringMatching(/npm(\.cmd)?/),
-          ['install', '--omit=peer'],
+          ['install'],
           { cwd: target, stdio: 'inherit' }
         );
       });
@@ -356,6 +362,36 @@ describe('Commands', () => {
       consoleSpy.mockRestore();
     });
 
+    it('should generate only Dart bindings when dartOnly is set', async () => {
+      const options = {
+        flutterPackageSrc: '/flutter/src',
+        dartOnly: true,
+      };
+      
+      // Mock TypeScript validation
+      mockTypeScriptValidation('/flutter/src');
+      
+      await generateCommand('/dist', options as any);
+      
+      // Should call dartGen for the Flutter package, but not reactGen/vueGen
+      expect(mockGenerator.dartGen).toHaveBeenCalledWith({
+        source: '/flutter/src',
+        target: '/flutter/src',
+        command: expect.stringContaining('webf codegen'),
+        exclude: undefined,
+      });
+      expect(mockGenerator.reactGen).not.toHaveBeenCalled();
+      expect(mockGenerator.vueGen).not.toHaveBeenCalled();
+      
+      // Should not attempt to build or run npm scripts
+      const spawnCalls = (mockSpawnSync as jest.Mock).mock.calls;
+      const buildOrPublishCalls = spawnCalls.filter(call => {
+        const args = call[1] as any;
+        return Array.isArray(args) && (args.includes('run') || args.includes('publish') || args.includes('install'));
+      });
+      expect(buildOrPublishCalls).toHaveLength(0);
+    });
+
     it('should show instructions when --flutter-package-src is missing', async () => {
       const options = { framework: 'react' };
       
@@ -420,11 +456,57 @@ describe('Commands', () => {
       
       await generateCommand('/dist', options);
 
-      expect(mockGenerator.reactGen).toHaveBeenCalledWith({
+      expect(mockGenerator.reactGen).toHaveBeenCalledWith(expect.objectContaining({
         source: '/flutter/src',
         target: path.resolve('/dist'),
         command: expect.stringContaining('webf codegen')
+      }));
+    });
+
+    it('should generate an aggregated README in dist from markdown docs', async () => {
+      const options = {
+        flutterPackageSrc: '/flutter/src',
+        framework: 'react',
+        packageName: 'test-package'
+      };
+
+      // Mock TypeScript validation
+      mockTypeScriptValidation('/flutter/src');
+
+      // Mock .d.ts files so copyMarkdownDocsToDist sees at least one entry
+      mockGlobSync.mockReturnValue(['lib/src/alert.d.ts'] as any);
+
+      const originalExistsSync = mockFs.existsSync as jest.Mock;
+      mockFs.existsSync = jest.fn().mockImplementation((filePath: any) => {
+        const pathStr = filePath.toString();
+        const distRoot = path.join(path.resolve('/dist'), 'dist');
+        if (pathStr === distRoot) return true;
+        if (pathStr === path.join(path.resolve('/dist'), 'package.json')) return true;
+        if (pathStr === path.join(path.resolve('/dist'), 'global.d.ts')) return true;
+        if (pathStr === path.join(path.resolve('/dist'), 'tsconfig.json')) return true;
+        if (pathStr.endsWith('.md') && pathStr.includes('/flutter/src')) return true;
+        return originalExistsSync(filePath);
       });
+
+      // Ensure that reading a markdown file returns some content
+      const originalReadFileSync = mockFs.readFileSync as jest.Mock;
+      mockFs.readFileSync = jest.fn().mockImplementation((filePath: any, encoding?: any) => {
+        const pathStr = filePath.toString();
+        if (pathStr.endsWith('.md')) {
+          return '# Test Component\n\nThis is a test component doc.';
+        }
+        return originalReadFileSync(filePath, encoding);
+      });
+
+      await generateCommand('/dist', options);
+
+      // README.md should be written into dist directory
+      const writeCalls = (mockFs.writeFileSync as jest.Mock).mock.calls;
+      const readmeCall = writeCalls.find(call => {
+        const p = call[0].toString();
+        return p.endsWith(path.join('dist', 'README.md'));
+      });
+      expect(readmeCall).toBeDefined();
     });
 
     it('should create new project if package.json not found', async () => {

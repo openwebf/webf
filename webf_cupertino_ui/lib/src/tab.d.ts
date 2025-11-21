@@ -1,15 +1,15 @@
-interface FlutterCupertinoTabProperties {
-  // Methods
-  switchTab(index: int): void;
-}
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU AGPL with Enterprise exception.
+ */
 
-interface FlutterCupertinoTabEvents {
-  change: CustomEvent<int>;
-}
-
-interface FlutterCupertinoTabItemProperties {
+/**
+ * Properties for <flutter-cupertino-tab-bar-item>
+ * Child item used within the TabBar; provides title and icon.
+ */
+interface FlutterCupertinoTabBarItemProperties {
+  /** Label displayed under the icon for this item. */
   title?: string;
 }
 
-// Type alias for clarity
-type int = number;
+interface FlutterCupertinoTabBarItemEvents {}

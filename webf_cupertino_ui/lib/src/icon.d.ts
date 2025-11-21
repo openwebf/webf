@@ -1,4 +1,4 @@
 interface FlutterCupertinoIconProperties {
-  type?: string;
+  type?: CupertinoIcons;
   label?: string;
 }

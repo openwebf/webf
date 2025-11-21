@@ -3,78 +3,151 @@
  * Licensed under GNU AGPL with Enterprise exception.
  */
 import 'package:flutter/cupertino.dart';
+import 'package:webf/css.dart';
 import 'package:webf/webf.dart';
-import 'radio_bindings_generated.dart';
-import 'logger.dart';
 
+import 'radio_bindings_generated.dart';
+
+/// WebF custom element that wraps Flutter's [CupertinoRadio].
+///
+/// Exposed as `<flutter-cupertino-radio>` in the DOM.
 class FlutterCupertinoRadio extends FlutterCupertinoRadioBindings {
   FlutterCupertinoRadio(super.context);
 
   String? _val;
   String? _groupValue;
-  bool _useCheckmarkStyle = false;
   bool _disabled = false;
+  bool _toggleable = false;
+  bool _useCheckmarkStyle = false;
   String? _activeColor;
+  String? _inactiveColor;
+  String? _fillColor;
   String? _focusColor;
+  bool _autofocus = false;
 
   @override
   String? get val => _val;
+
   @override
   set val(value) {
-    _val = value;
+    final String? next = value?.toString();
+    if (next != _val) {
+      _val = next;
+      state?.requestUpdateState(() {});
+    }
   }
 
   @override
   String? get groupValue => _groupValue;
-  @override
-  set groupValue(value) {
-    _groupValue = value;
-  }
 
   @override
-  bool get useCheckmarkStyle => _useCheckmarkStyle;
-  @override
-  set useCheckmarkStyle(value) {
-    _useCheckmarkStyle = value != 'false';
+  set groupValue(value) {
+    final String? next = value?.toString();
+    if (next != _groupValue) {
+      _groupValue = next;
+      state?.requestUpdateState(() {});
+    }
   }
 
   @override
   bool get disabled => _disabled;
+
   @override
   set disabled(value) {
-    _disabled = value != 'false';
+    final bool next = value == true;
+    if (next != _disabled) {
+      _disabled = next;
+      state?.requestUpdateState(() {});
+    }
+  }
+
+  @override
+  bool get toggleable => _toggleable;
+
+  @override
+  set toggleable(value) {
+    final bool next = value == true;
+    if (next != _toggleable) {
+      _toggleable = next;
+      state?.requestUpdateState(() {});
+    }
+  }
+
+  @override
+  bool get useCheckmarkStyle => _useCheckmarkStyle;
+
+  @override
+  set useCheckmarkStyle(value) {
+    final bool next = value == true;
+    if (next != _useCheckmarkStyle) {
+      _useCheckmarkStyle = next;
+      state?.requestUpdateState(() {});
+    }
   }
 
   @override
   String? get activeColor => _activeColor;
+
   @override
   set activeColor(value) {
-    _activeColor = value;
+    final String? next = value?.toString();
+    if (next != _activeColor) {
+      _activeColor = next;
+      state?.requestUpdateState(() {});
+    }
+  }
+
+  @override
+  String? get inactiveColor => _inactiveColor;
+
+  @override
+  set inactiveColor(value) {
+    final String? next = value?.toString();
+    if (next != _inactiveColor) {
+      _inactiveColor = next;
+      state?.requestUpdateState(() {});
+    }
+  }
+
+  @override
+  String? get fillColor => _fillColor;
+
+  @override
+  set fillColor(value) {
+    final String? next = value?.toString();
+    if (next != _fillColor) {
+      _fillColor = next;
+      state?.requestUpdateState(() {});
+    }
   }
 
   @override
   String? get focusColor => _focusColor;
+
   @override
   set focusColor(value) {
-    _focusColor = value;
+    final String? next = value?.toString();
+    if (next != _focusColor) {
+      _focusColor = next;
+      state?.requestUpdateState(() {});
+    }
   }
 
-  Color? _parseColor(String? colorString) {
-    if (colorString == null || colorString.isEmpty) return null;
-    if (colorString.startsWith('#')) {
-      String hex = colorString.substring(1);
-      if (hex.length == 6) hex = 'FF$hex';
-      if (hex.length == 8) {
-        try {
-          return Color(int.parse(hex, radix: 16));
-        } catch (e) {
-          logger.e('Error parsing color: $colorString, Error: $e');
-          return null;
-        }
-      }
+  @override
+  bool get autofocus => _autofocus;
+
+  @override
+  set autofocus(value) {
+    final bool next = value == true;
+    if (next != _autofocus) {
+      _autofocus = next;
+      state?.requestUpdateState(() {});
     }
-    logger.w('Unsupported color format: $colorString');
-    return null;
+  }
+
+  Color? _parseColor(String? value) {
+    if (value == null || value.isEmpty) return null;
+    return CSSColor.parseColor(value);
   }
 
   @override
@@ -87,10 +160,20 @@ class FlutterCupertinoRadioState extends WebFWidgetElementState {
   FlutterCupertinoRadioState(super.widgetElement);
 
   @override
-  FlutterCupertinoRadio get widgetElement => super.widgetElement as FlutterCupertinoRadio;
+  FlutterCupertinoRadio get widgetElement =>
+      super.widgetElement as FlutterCupertinoRadio;
 
   @override
   Widget build(BuildContext context) {
+    final Color? active =
+        widgetElement._parseColor(widgetElement.activeColor);
+    final Color? inactive =
+        widgetElement._parseColor(widgetElement.inactiveColor);
+    final Color? fill =
+        widgetElement._parseColor(widgetElement.fillColor);
+    final Color? focus =
+        widgetElement._parseColor(widgetElement.focusColor);
+
     return IgnorePointer(
       ignoring: widgetElement.disabled,
       child: Opacity(
@@ -98,16 +181,22 @@ class FlutterCupertinoRadioState extends WebFWidgetElementState {
         child: CupertinoRadio<String>(
           value: widgetElement.val ?? '',
           groupValue: widgetElement.groupValue,
+          toggleable: widgetElement.toggleable,
           useCheckmarkStyle: widgetElement.useCheckmarkStyle,
-          activeColor: widgetElement._parseColor(widgetElement.activeColor),
-          focusColor: widgetElement._parseColor(widgetElement.focusColor),
+          activeColor: active,
+          inactiveColor: inactive,
+          fillColor: fill,
+          focusColor: focus,
+          autofocus: widgetElement.autofocus,
           onChanged: (String? newValue) {
-            if (newValue != null) {
-              widgetElement.dispatchEvent(CustomEvent('change', detail: newValue));
-            }
+            if (widgetElement.disabled) return;
+            final String next = newValue ?? '';
+            widgetElement.dispatchEvent(
+              CustomEvent('change', detail: next),
+            );
           },
         ),
-      )
+      ),
     );
   }
 }

@@ -2,21 +2,65 @@ import _ from "lodash";
 import fs from 'fs';
 import path from 'path';
 import {ParameterType} from "./analyzer";
-import {ClassObject, FunctionArgumentType, FunctionDeclaration} from "./declaration";
+import {ClassObject, FunctionArgumentType, FunctionDeclaration, ConstObject, EnumObject} from "./declaration";
 import {IDLBlob} from "./IDLBlob";
-import {getPointerType, isPointerType} from "./utils";
+import { debug } from './logger';
+import {getPointerType, isPointerType, isUnionType, trimNullTypeFromType} from "./utils";
 
 function readTemplate(name: string) {
   return fs.readFileSync(path.join(__dirname, '../templates/' + name + '.tpl'), {encoding: 'utf-8'});
 }
 
-function generateReturnType(type: ParameterType) {
+function generateReturnType(type: ParameterType): string {
+  if (isUnionType(type)) {
+    const values = type.value as ParameterType[];
+    return values.map(v => {
+      if (v.value === FunctionArgumentType.null) {
+        return 'null';
+      }
+      if (typeof v.value === 'string') {
+        return `'${v.value}'`;
+      }
+      return 'any';
+    }).join(' | ');
+  }
+
+  // Handle unions like boolean | null, number | null, CustomType | null
+  if (Array.isArray(type.value)) {
+    const values = type.value as ParameterType[];
+    const hasNull = values.some(v => v.value === FunctionArgumentType.null);
+    if (hasNull) {
+      const nonNulls = values.filter(v => v.value !== FunctionArgumentType.null);
+      if (nonNulls.length === 0) {
+        return 'null';
+      }
+      const parts: string[] = nonNulls.map(v => generateReturnType(v));
+      const unique: string[] = Array.from(new Set(parts));
+      unique.push('null');
+      return unique.join(' | ');
+    }
+    // Complex non-null unions are rare; fall back to any
+    return 'any';
+  }
+
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
+    // Map Dart's `Type` (from TS typeof) to TS `any`
+    if (pointerType === 'Type') return 'any';
+    if (typeof pointerType === 'string' && pointerType.startsWith('typeof ')) {
+      const ident = pointerType.substring('typeof '.length).trim();
+      return `typeof __webfTypes.${ident}`;
+    }
     return pointerType;
   }
   if (type.isArray && typeof type.value === 'object' && !Array.isArray(type.value)) {
-    return `${getPointerType(type.value)}[]`;
+    const elemType = getPointerType(type.value);
+    if (elemType === 'Type') return 'any[]';
+    if (typeof elemType === 'string' && elemType.startsWith('typeof ')) {
+      const ident = elemType.substring('typeof '.length).trim();
+      return `(typeof __webfTypes.${ident})[]`;
+    }
+    return `${elemType}[]`;
   }
   switch (type.value) {
     case FunctionArgumentType.int:
@@ -94,20 +138,43 @@ function generateVueComponent(blob: IDLBlob) {
   });
 
   const dependencies = others.map(object => {
-    if (!object || !object.props) {
+    if (!object || !object.props || object.props.length === 0) {
       return '';
     }
-    const props = object.props.map(prop => {
-      if (prop.optional) {
-        return `${prop.name}?: ${generateReturnType(prop.type)};`;
-      }
-      return `${prop.name}: ${generateReturnType(prop.type)};`;
-    }).join('\n  ');
 
-    return `
-interface ${object.name} {
-  ${props}
-}`;
+    const interfaceLines: string[] = [];
+
+    if (object.documentation && object.documentation.trim().length > 0) {
+      interfaceLines.push('/**');
+      object.documentation.split('\n').forEach(line => {
+        interfaceLines.push(` * ${line}`);
+      });
+      interfaceLines.push(' */');
+    }
+
+    interfaceLines.push(`interface ${object.name} {`);
+
+    const propLines = object.props.map(prop => {
+      const lines: string[] = [];
+
+      if (prop.documentation && prop.documentation.trim().length > 0) {
+        lines.push('  /**');
+        prop.documentation.split('\n').forEach(line => {
+          lines.push(`   * ${line}`);
+        });
+        lines.push('   */');
+      }
+
+      const optionalToken = prop.optional ? '?' : '';
+      lines.push(`  ${prop.name}${optionalToken}: ${generateReturnType(prop.type)};`);
+
+      return lines.join('\n');
+    });
+
+    interfaceLines.push(propLines.join('\n'));
+    interfaceLines.push('}');
+
+    return interfaceLines.join('\n');
   }).filter(dep => dep.trim() !== '').join('\n\n');
 
   const componentProperties = properties.length > 0 ? properties[0] : undefined;
@@ -188,6 +255,50 @@ export function generateVueTypings(blobs: IDLBlob[]) {
     return component.length > 0;
   }).join('\n\n');
 
+  // Collect declare consts across blobs and render as exported ambient declarations
+  const consts = blobs
+    .flatMap(blob => blob.objects)
+    .filter(obj => obj instanceof ConstObject) as ConstObject[];
+
+  // Deduplicate by name keeping first occurrence
+  const uniqueConsts = new Map<string, ConstObject>();
+  consts.forEach(c => {
+    if (!uniqueConsts.has(c.name)) uniqueConsts.set(c.name, c);
+  });
+
+  const constDeclarations = Array.from(uniqueConsts.values())
+    .map(c => `export declare const ${c.name}: ${c.type};`)
+    .join('\n');
+
+  // Collect declare enums across blobs
+  const enums = blobs
+    .flatMap(blob => blob.objects)
+    .filter(obj => obj instanceof EnumObject) as EnumObject[];
+
+  const enumDeclarations = enums.map(e => {
+    const members = e.members.map(m => m.initializer ? `${m.name} = ${m.initializer}` : `${m.name}`).join(', ');
+    return `export declare enum ${e.name} { ${members} }`;
+  }).join('\n');
+
+  // Compute relative import path from the generated typings file (index.d.ts at dist root)
+  // to the aggregated React types module (src/types.ts) when present.
+  let typesImportPath = './src/types';
+  try {
+    if (blobs.length > 0) {
+      const distRoot = blobs[0].dist;
+      const typingsDir = distRoot; // index.d.ts is written directly under distRoot
+      const typesFilePath = path.join(distRoot, 'src', 'types');
+      const rel = path.relative(typingsDir, typesFilePath).replace(/\\/g, '/');
+      typesImportPath = rel.startsWith('.') ? rel : `./${rel}`;
+    }
+  } catch {
+    typesImportPath = './src/types';
+  }
+
+  // Always import the types namespace to support typeof references
+  const typesImport = `import * as __webfTypes from '${typesImportPath}';`;
+  debug(`[vue] Generating typings; importing types from ${typesImportPath}`);
+
   // Build mapping of template tag names to class names for GlobalComponents
   const componentMetas = componentNames.map(className => ({
     className,
@@ -202,6 +313,9 @@ export function generateVueTypings(blobs: IDLBlob[]) {
     componentNames,
     componentMetas,
     components,
+    consts: constDeclarations,
+    enums: enumDeclarations,
+    typesImport,
   });
 
   return content.split('\n').filter(str => {

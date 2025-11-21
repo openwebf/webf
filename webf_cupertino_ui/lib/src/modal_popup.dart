@@ -3,73 +3,137 @@
  * Licensed under GNU AGPL with Enterprise exception.
  */
 import 'package:flutter/cupertino.dart';
-import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/webf.dart';
 
-class FlutterCupertinoModalPopup extends WidgetElement {
+import 'modal_popup_bindings_generated.dart';
+import 'logger.dart';
+
+/// WebF custom element that wraps Flutter's [showCupertinoModalPopup].
+///
+/// Exposed as `<flutter-cupertino-modal-popup>` in the DOM.
+/// The element's children are rendered as the popup content.
+class FlutterCupertinoModalPopup extends FlutterCupertinoModalPopupBindings {
   FlutterCupertinoModalPopup(super.context);
 
-  bool _isVisible = false;
-  NavigatorState? _navigator;
+  bool _visible = false;
+  double? _height;
+  bool _surfacePainted = true;
+  bool _maskClosable = true;
+  double _backgroundOpacity = 0.4;
 
   @override
-  FlutterCupertinoModalPopupState? get state => super.state as FlutterCupertinoModalPopupState?;
+  bool get visible => _visible;
 
   @override
-  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
-    super.initializeAttributes(attributes);
-
-    attributes['show'] = ElementAttributeProperty(
-        getter: () => _isVisible.toString(),
-        setter: (value) {
-          final shouldShow = value == 'true';
-          if (shouldShow != _isVisible) {
-            _isVisible = shouldShow;
-            _handleVisibilityChange();
-          }
-        });
-
-    // 高度，默认 300
-    attributes['height'] = ElementAttributeProperty();
-
-    // 是否显示背景色，默认 true
-    attributes['surface-painted'] = ElementAttributeProperty();
-
-    // 是否允许点击背景关闭，默认 true
-    attributes['mask-closable'] = ElementAttributeProperty();
-
-    // 背景颜色透明度，默认 0.4
-    attributes['background-opacity'] = ElementAttributeProperty();
+  set visible(value) {
+    final bool next = value == true;
+    if (next == _visible) {
+      return;
+    }
+    _visible = next;
+    if (state == null) {
+      return;
+    }
+    if (next) {
+      state!.showPopup();
+    } else {
+      state!.hidePopup();
+      // When JS explicitly hides the popup, fire close immediately.
+      dispatchEvent(CustomEvent('close'));
+    }
   }
 
-  static StaticDefinedSyncBindingObjectMethodMap modalPopupSyncMethods = {
+  void _onPopupClosedFromFlutter() {
+    if (!_visible) {
+      return;
+    }
+    _visible = false;
+    dispatchEvent(CustomEvent('close'));
+  }
+
+  @override
+  double? get height => _height;
+
+  @override
+  set height(value) {
+    if (value == null) {
+      _height = null;
+    } else if (value is num) {
+      _height = value.toDouble();
+    } else {
+      _height = double.tryParse(value.toString());
+    }
+  }
+
+  @override
+  bool get surfacePainted => _surfacePainted;
+
+  @override
+  set surfacePainted(value) {
+    _surfacePainted = value == true;
+  }
+
+  @override
+  bool get maskClosable => _maskClosable;
+
+  @override
+  set maskClosable(value) {
+    _maskClosable = value == true;
+  }
+
+  @override
+  double? get backgroundOpacity => _backgroundOpacity;
+
+  @override
+  set backgroundOpacity(value) {
+    if (value == null) {
+      _backgroundOpacity = 0.4;
+    } else if (value is num) {
+      _backgroundOpacity = value.toDouble().clamp(0.0, 1.0);
+    } else {
+      final double? parsed = double.tryParse(value.toString());
+      _backgroundOpacity = (parsed ?? 0.4).clamp(0.0, 1.0);
+    }
+  }
+
+  /// Imperative show() entry point from JavaScript.
+  void _showSync(List<dynamic> args) {
+    visible = true;
+  }
+
+  /// Imperative hide() entry point from JavaScript.
+  void _hideSync(List<dynamic> args) {
+    visible = false;
+  }
+
+  static StaticDefinedSyncBindingObjectMethodMap modalPopupMethods =
+      <String, StaticDefinedSyncBindingObjectMethod>{
     'show': StaticDefinedSyncBindingObjectMethod(
       call: (element, args) {
         final popup = castToType<FlutterCupertinoModalPopup>(element);
-        popup.setAttribute('show', 'true');
+        popup._showSync(args);
+        return null;
       },
     ),
     'hide': StaticDefinedSyncBindingObjectMethod(
       call: (element, args) {
         final popup = castToType<FlutterCupertinoModalPopup>(element);
-        popup.setAttribute('show', 'false');
+        popup._hideSync(args);
+        return null;
       },
     ),
   };
 
   @override
-  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => <StaticDefinedSyncBindingObjectMethodMap>[
         ...super.methods,
-        modalPopupSyncMethods,
+        modalPopupMethods,
       ];
 
-  void _handleVisibilityChange() {
-    if (_isVisible) {
-      state?._showModal();
-    } else {
-      _navigator?.pop();
-    }
-  }
+  @override
+  FlutterCupertinoModalPopupState? get state =>
+      super.state as FlutterCupertinoModalPopupState?;
 
   @override
   WebFWidgetElementState createState() {
@@ -81,57 +145,109 @@ class FlutterCupertinoModalPopupState extends WebFWidgetElementState {
   FlutterCupertinoModalPopupState(super.widgetElement);
 
   @override
-  FlutterCupertinoModalPopup get widgetElement => super.widgetElement as FlutterCupertinoModalPopup;
+  FlutterCupertinoModalPopup get widgetElement =>
+      super.widgetElement as FlutterCupertinoModalPopup;
 
-  void _showModal() {
-    final BuildContext? context = this.context as BuildContext?;
-    if (context == null) return;
+  bool _isShowing = false;
 
-    showCupertinoModalPopup(
-      context: context,
-      barrierDismissible: widgetElement.attributes['mask-closable'] != 'false',
-      barrierColor: CupertinoColors.black
-          .withOpacity(double.tryParse(widgetElement.attributes['backgroundOpacity'] ?? '0.4') ?? 0.4),
-      builder: (BuildContext context) {
-        widgetElement._navigator = Navigator.of(context);
-        return Container(
-          height: double.tryParse(widgetElement.attributes['height'] ?? '300'),
-          child: CupertinoPopupSurface(
-            isSurfacePainted: widgetElement.attributes['surfacePainted'] != 'false',
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: CupertinoColors.systemGrey.resolveFrom(context),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                Expanded(
-                  child:
-                      widgetElement.childNodes.isEmpty
-                          ? const SizedBox()
-                          : WebFWidgetElementChild(child: widgetElement.childNodes.first.toWidget()),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    ).then((_) {
-      setState(() {
-        widgetElement._isVisible = false;
-        widgetElement.setAttribute('show', 'false');
-        widgetElement.dispatchEvent(CustomEvent('close'));
-      });
-    });
+  Future<void> showPopup() async {
+    if (_isShowing) {
+      return;
+    }
+
+    final BuildContext? buildContext = context;
+    if (buildContext == null || !buildContext.mounted) {
+      logger.e('Element BuildContext is null or unmounted. Cannot show modal popup');
+      return;
+    }
+
+    _isShowing = true;
+
+    final bool maskClosable = widgetElement.maskClosable;
+    final double backgroundOpacity = widgetElement.backgroundOpacity ?? 0.4;
+
+    try {
+      await showCupertinoModalPopup<void>(
+        context: buildContext,
+        useRootNavigator: true,
+        barrierDismissible: maskClosable,
+        barrierColor: CupertinoColors.black.withOpacity(
+          backgroundOpacity.clamp(0.0, 1.0),
+        ),
+        builder: (BuildContext dialogContext) {
+          return _buildPopupContent(dialogContext);
+        },
+      );
+    } catch (e, stackTrace) {
+      logger.e(
+        'Error showing CupertinoModalPopup',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    } finally {
+      _isShowing = false;
+      widgetElement._onPopupClosedFromFlutter();
+    }
+  }
+
+  void hidePopup() {
+    if (!_isShowing) {
+      return;
+    }
+    final BuildContext? buildContext = context;
+    if (buildContext == null) {
+      return;
+    }
+    Navigator.of(buildContext, rootNavigator: true).pop();
+  }
+
+  Widget _buildPopupContent(BuildContext dialogContext) {
+    Widget child;
+    var node = widgetElement.childNodes.first;
+    if (widgetElement.childNodes.isEmpty) {
+      child = const SizedBox.shrink();
+    } else {
+      child = WebFWidgetElementChild(
+        child: WebFHTMLElement(
+          tagName: 'BUG',
+          controller: widgetElement.ownerDocument.controller,
+          parentElement: widgetElement,
+          children: widgetElement.childNodes.toWidgetList(),
+        ),
+      );
+    }
+
+    final double? fixedHeight = widgetElement.height;
+    Widget content = child;
+
+    if (fixedHeight != null && fixedHeight > 0) {
+      content = SizedBox(
+        height: fixedHeight,
+        width: double.infinity,
+        child: child,
+      );
+    }
+
+    if (widgetElement.surfacePainted) {
+      content = CupertinoPopupSurface(
+        isSurfacePainted: true,
+        child: content,
+      );
+    }
+
+    return SafeArea(
+      top: false,
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: content,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox.shrink();
+    // Host element itself does not render anything; the popup is shown modally.
+    return const SizedBox.shrink();
   }
 }
+

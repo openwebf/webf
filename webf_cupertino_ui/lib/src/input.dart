@@ -4,147 +4,180 @@
  */
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:webf/css.dart';
-import 'package:webf/webf.dart';
-import 'package:webf/rendering.dart';
-import 'package:collection/collection.dart';
 import 'package:webf/dom.dart' as dom;
+import 'package:webf/rendering.dart';
+import 'package:webf/webf.dart';
+
 import 'input_bindings_generated.dart';
 
+/// WebF custom element that wraps Flutter's [CupertinoTextField].
+///
+/// Exposed as `<flutter-cupertino-input>` in the DOM.
 class FlutterCupertinoInput extends FlutterCupertinoInputBindings {
   FlutterCupertinoInput(super.context);
 
-  String _placeholder = '';
+  String _val = '';
+  String? _placeholder;
   String _type = 'text';
   bool _disabled = false;
   bool _autofocus = false;
   bool _clearable = false;
-  int? _maxLength;
-  bool _readOnly = false;
+  int? _maxlength;
+  bool _readonly = false;
 
   @override
-  bool get disableBoxModelPaint => true;
+  String? get val => _val;
 
-  @override
-  String? get val => state?._controller.text;
   @override
   set val(value) {
-    if (value != state?._controller.text) {
-      state?._controller.text = value ?? '';
+    final String next = value?.toString() ?? '';
+    if (next != _val) {
+      _val = next;
+      state?.requestUpdateState(() {});
     }
   }
 
   @override
   String? get placeholder => _placeholder;
+
   @override
   set placeholder(value) {
-    _placeholder = value ?? '';
+    final String? next = value?.toString();
+    if (next != _placeholder) {
+      _placeholder = next;
+      state?.requestUpdateState(() {});
+    }
   }
 
   @override
   String? get type => _type;
+
   @override
   set type(value) {
-    _type = value ?? 'text';
+    final String next = (value?.toString() ?? 'text').toLowerCase();
+    if (next != _type) {
+      _type = next;
+      state?.requestUpdateState(() {});
+    }
   }
 
   @override
   bool get disabled => _disabled;
+
   @override
   set disabled(value) {
-    _disabled = value != 'false';
+    final bool next = value == true;
+    if (next != _disabled) {
+      _disabled = next;
+      state?.requestUpdateState(() {});
+    }
   }
 
   @override
   bool get autofocus => _autofocus;
+
   @override
   set autofocus(value) {
-    _autofocus = value;
+    final bool next = value == true;
+    if (next != _autofocus) {
+      _autofocus = next;
+      state?.requestUpdateState(() {});
+    }
   }
 
   @override
   bool get clearable => _clearable;
+
   @override
   set clearable(value) {
-    _clearable = value != 'false';
+    final bool next = value == true;
+    if (next != _clearable) {
+      _clearable = next;
+      state?.requestUpdateState(() {});
+    }
   }
 
   @override
-  int? get maxlength => _maxLength;
+  int? get maxlength => _maxlength;
+
   @override
   set maxlength(value) {
-    _maxLength = int.tryParse(value.toString());
+    if (value == null) {
+      _maxlength = null;
+    } else if (value is int) {
+      _maxlength = value > 0 ? value : null;
+    } else {
+      final int? parsed = int.tryParse(value.toString());
+      _maxlength = parsed != null && parsed > 0 ? parsed : null;
+    }
+    state?.requestUpdateState(() {});
   }
 
   @override
-  bool get readonly => _readOnly;
+  bool get readonly => _readonly;
+
   @override
   set readonly(value) {
-    _readOnly = value != 'false';
-  }
-
-  @override
-  FlutterCupertinoInputState? get state => super.state as FlutterCupertinoInputState?;
-
-  static TextInputType _getKeyboardType(String type) {
-    switch (type) {
-      case 'number':
-        return TextInputType.number;
-      case 'tel':
-        return TextInputType.phone;
-      case 'email':
-        return TextInputType.emailAddress;
-      case 'url':
-        return TextInputType.url;
-      case 'search':
-        return TextInputType.text;
-      case 'password':
-        return TextInputType.visiblePassword;
-      default:
-        return TextInputType.text;
+    final bool next = value == true;
+    if (next != _readonly) {
+      _readonly = next;
+      state?.requestUpdateState(() {});
     }
   }
 
-  List<TextInputFormatter>? _getInputFormatters(String type) {
-    final formatters = <TextInputFormatter>[];
-
-    switch (type) {
-      case 'number':
-        formatters.add(FilteringTextInputFormatter.digitsOnly);
-        break;
-      case 'tel':
-        formatters.add(FilteringTextInputFormatter.digitsOnly);
-        break;
-    }
-
-    if (_maxLength != null) {
-      formatters.add(LengthLimitingTextInputFormatter(_maxLength));
-    }
-
-    return formatters.isEmpty ? null : formatters;
-  }
-
-  @override
-  String getValue(List<dynamic> args) {
-    return state?._controller.text ?? '';
-  }
-
-  @override
-  void setValue(List<dynamic> args) {
-    if (args.isNotEmpty) {
-      state?._controller.text = args[0].toString();
+  void _updateValueFromController(String text) {
+    if (text != _val) {
+      _val = text;
     }
   }
 
-  @override
-  void focus(List<dynamic> args) {
-    state?._focusNode.requestFocus();
+  /// Imperative methods exposed to JavaScript.
+  void _focusSync(List<dynamic> args) {
+    state?._focus();
   }
 
-  @override
-  void blur(List<dynamic> args) {
-    state?._focusNode.unfocus();
+  void _blurSync(List<dynamic> args) {
+    state?._blur();
   }
+
+  void _clearSync(List<dynamic> args) {
+    state?._clear();
+  }
+
+  static StaticDefinedSyncBindingObjectMethodMap inputMethods =
+      <String, StaticDefinedSyncBindingObjectMethod>{
+    'focus': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        castToType<FlutterCupertinoInput>(element)._focusSync(args);
+        return null;
+      },
+    ),
+    'blur': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        castToType<FlutterCupertinoInput>(element)._blurSync(args);
+        return null;
+      },
+    ),
+    'clear': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        castToType<FlutterCupertinoInput>(element)._clearSync(args);
+        return null;
+      },
+    ),
+  };
+
+  @override
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods =>
+      <StaticDefinedSyncBindingObjectMethodMap>[
+        ...super.methods,
+        inputMethods,
+      ];
+
+  @override
+  FlutterCupertinoInputState? get state =>
+      super.state as FlutterCupertinoInputState?;
 
   @override
   WebFWidgetElementState createState() {
@@ -155,189 +188,191 @@ class FlutterCupertinoInput extends FlutterCupertinoInputBindings {
 class FlutterCupertinoInputState extends WebFWidgetElementState {
   FlutterCupertinoInputState(super.widgetElement);
 
-  final TextEditingController _controller = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
-  bool _isFocused = false;
-
   @override
-  FlutterCupertinoInput get widgetElement => super.widgetElement as FlutterCupertinoInput;
+  FlutterCupertinoInput get widgetElement =>
+      super.widgetElement as FlutterCupertinoInput;
+
+  late final TextEditingController _controller;
+  FocusNode? _focusNode;
 
   @override
   void initState() {
     super.initState();
-    _focusNode.addListener(_handleFocusChange);
-  }
-
-  void _handleFocusChange() {
-    setState(() {
-      _isFocused = _focusNode.hasFocus;
-    });
-  }
-
-  Border? _getBorder(CSSRenderStyle renderStyle) {
-    // Check if any border is defined by checking if any border has non-zero width
-    final hasTopBorder = renderStyle.effectiveBorderTopWidth.computedValue > 0;
-    final hasRightBorder = renderStyle.effectiveBorderRightWidth.computedValue > 0;
-    final hasBottomBorder = renderStyle.effectiveBorderBottomWidth.computedValue > 0;
-    final hasLeftBorder = renderStyle.effectiveBorderLeftWidth.computedValue > 0;
-
-    if (hasTopBorder || hasRightBorder || hasBottomBorder || hasLeftBorder) {
-      // Get the border width (assuming uniform border)
-      final borderWidth = renderStyle.effectiveBorderTopWidth.computedValue;
-
-      if (_isFocused) {
-        // Use blue color when focused
-        return Border.all(
-          color: CupertinoColors.activeBlue,
-          width: borderWidth,
-        );
+    _controller = TextEditingController(text: widgetElement.val ?? '');
+    _focusNode = FocusNode();
+    _focusNode!.addListener(() {
+      if (_focusNode!.hasFocus) {
+        widgetElement.dispatchEvent(CustomEvent('focus'));
       } else {
-        // Use the original border color when not focused
-        final borderColor = renderStyle.borderTopColor.value;
-        return Border.all(
-          color: borderColor,
-          width: borderWidth,
-        );
+        widgetElement.dispatchEvent(CustomEvent('blur'));
       }
-    }
-
-    // Default border behavior if no border is defined
-    if (_isFocused) {
-      return Border.all(
-        color: CupertinoColors.activeBlue,
-        width: 1.0,
-      );
-    }
-
-    return null;
-  }
-
-  Widget? _buildSlotWidget<T>(String slotName) {
-    final slotNode = widgetElement.childNodes.firstWhereOrNull((node) {
-      return node is T;
     });
-
-    if (slotNode != null) {
-      return SizedBox(
-        width: slotName == 'prefix' ? 60 : 100,
-        child: Center(
-          child: WebFWidgetElementChild(child: slotNode.toWidget()),
-        ),
-      );
-    }
-    return null;
   }
 
   @override
   void dispose() {
-    _focusNode.removeListener(_handleFocusChange);
+    _focusNode?.dispose();
     _controller.dispose();
-    _focusNode.dispose();
     super.dispose();
   }
 
+  void _focus() {
+    if (widgetElement.disabled) return;
+    final focusNode = _focusNode;
+    if (focusNode == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      FocusScope.of(context).requestFocus(focusNode);
+    });
+  }
+
+  void _blur() {
+    _focusNode?.unfocus();
+  }
+
+  void _clear() {
+    _controller.clear();
+    widgetElement._updateValueFromController('');
+    widgetElement.dispatchEvent(CustomEvent('clear'));
+    widgetElement.dispatchEvent(CustomEvent('input', detail: ''));
+  }
+
+  TextInputType _keyboardTypeFor(String? type) {
+    switch ((type ?? 'text').toLowerCase()) {
+      case 'number':
+        return const TextInputType.numberWithOptions(decimal: true);
+      case 'tel':
+        return TextInputType.phone;
+      case 'email':
+        return TextInputType.emailAddress;
+      case 'url':
+        return TextInputType.url;
+      default:
+        return TextInputType.text;
+    }
+  }
+
+  bool _obscureTextFor(String? type) {
+    return (type ?? 'text').toLowerCase() == 'password';
+  }
+
+  Widget? _getSlotChild(String slotName) {
+    for (final node in widgetElement.childNodes) {
+      if (node is dom.Element &&
+          node.getAttribute('slotName') == slotName) {
+        return WebFWidgetElementChild(child: node.toWidget());
+      }
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = CupertinoTheme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final CSSRenderStyle renderStyle = widgetElement.renderStyle;
 
-    // Get renderStyle
-    final renderStyle = widgetElement.renderStyle;
-    final hasHeight = renderStyle.height.value != null;
-    final hasBorderRadius = renderStyle.borderRadius != null;
-    final hasPadding = renderStyle.padding != EdgeInsets.zero;
-    final textAlign = renderStyle.textAlign;
+    // Keep controller text in sync with widgetElement.val.
+    final String elementText = widgetElement.val ?? '';
+    if (_controller.text != elementText) {
+      _controller.value = _controller.value.copyWith(
+        text: elementText,
+        selection:
+            TextSelection.collapsed(offset: elementText.length),
+      );
+    }
 
-    // Build prefix and suffix
-    final prefixWidget = _buildSlotWidget<FlutterCupertinoInputPrefix>('prefix');
-    final suffixWidget = _buildSlotWidget<FlutterCupertinoInputSuffix>('suffix');
+    final bool isDisabled = widgetElement.disabled;
+    final bool isReadOnly = widgetElement.readonly;
 
-    return SizedBox(
-      height: hasHeight ? renderStyle.height.value : 44.0,
-      child: CupertinoTextField(
-        controller: _controller,
-        focusNode: _focusNode,
-        placeholder: widgetElement.placeholder,
-        enabled: !widgetElement.disabled,
-        readOnly: widgetElement.readonly,
-        autofocus: widgetElement.autofocus,
-        obscureText: widgetElement.type == 'password',
-        keyboardType: FlutterCupertinoInput._getKeyboardType(widgetElement.type ?? 'text'),
-        textAlign: textAlign,
-        inputFormatters: widgetElement._getInputFormatters(widgetElement.type ?? 'text'),
-        onChanged: (value) {
-          widgetElement.dispatchEvent(CustomEvent('input', detail: value));
-        },
-        onSubmitted: (value) {
-          widgetElement.dispatchEvent(CustomEvent('submit', detail: value));
-        },
-        prefix: prefixWidget,
-        suffix: suffixWidget,
-        clearButtonMode: widgetElement.clearable ? OverlayVisibilityMode.editing : OverlayVisibilityMode.never,
-        decoration: BoxDecoration(
-          color: isDark ? CupertinoColors.systemGrey6.darkColor : CupertinoColors.white,
-          borderRadius: hasBorderRadius
-              ? BorderRadius.circular(renderStyle.borderRadius!.first.x)
-              : BorderRadius.circular(8),
-          border: _getBorder(renderStyle),
-        ),
-        style: TextStyle(
-            color: isDark ? CupertinoColors.white : CupertinoColors.black,
-            height: 1
-        ),
-        placeholderStyle: TextStyle(
-            color: isDark ? CupertinoColors.systemGrey : CupertinoColors.systemGrey,
-            height: 1
-        ),
-        padding: hasPadding ? renderStyle.padding : const EdgeInsets.symmetric(horizontal: 10),
-      ),
+    final TextInputType keyboardType =
+        _keyboardTypeFor(widgetElement.type);
+    final bool obscureText = _obscureTextFor(widgetElement.type);
+
+    final List<TextInputFormatter> inputFormatters = <TextInputFormatter>[];
+    final int? maxLength = widgetElement.maxlength;
+    if (maxLength != null && maxLength > 0) {
+      inputFormatters.add(LengthLimitingTextInputFormatter(maxLength));
+    }
+
+    final EdgeInsetsGeometry padding =
+        renderStyle.padding != EdgeInsets.zero
+            ? renderStyle.padding
+            : const EdgeInsets.symmetric(horizontal: 12, vertical: 8);
+
+    final Color? backgroundColor = renderStyle.backgroundColor?.value;
+    final BoxDecoration? decoration =
+        renderStyle.decoration as BoxDecoration?;
+    final BorderRadius borderRadius = renderStyle.borderRadius != null
+        ? BorderRadius.only(
+            topLeft: renderStyle.borderRadius![0],
+            topRight: renderStyle.borderRadius![1],
+            bottomRight: renderStyle.borderRadius![2],
+            bottomLeft: renderStyle.borderRadius![3],
+          )
+        : BorderRadius.circular(8);
+
+    final TextAlign textAlign = renderStyle.textAlign;
+
+    final Widget? prefix = _getSlotChild('prefix');
+    final Widget? suffix = _getSlotChild('suffix');
+
+    Widget textField = CupertinoTextField(
+      controller: _controller,
+      focusNode: _focusNode,
+      enabled: !isDisabled,
+      readOnly: isReadOnly,
+      autofocus: widgetElement.autofocus,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      placeholder: widgetElement.placeholder,
+      padding: padding,
+      decoration: decoration ??
+          BoxDecoration(
+            color:
+                backgroundColor ?? CupertinoColors.systemGrey6.resolveFrom(context),
+            borderRadius: borderRadius,
+          ),
+      prefix: prefix,
+      suffix: suffix ??
+          (widgetElement.clearable && _controller.text.isNotEmpty
+              ? GestureDetector(
+                  onTap: _clear,
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Icon(
+                      CupertinoIcons.clear_thick_circled,
+                      size: 18,
+                      color: CupertinoColors.secondaryLabel,
+                    ),
+                  ),
+                )
+              : null),
+      inputFormatters: inputFormatters,
+      textAlign: textAlign,
+      onChanged: (String value) {
+        widgetElement._updateValueFromController(value);
+        widgetElement.dispatchEvent(
+          CustomEvent('input', detail: value),
+        );
+      },
+      onSubmitted: (String value) {
+        widgetElement._updateValueFromController(value);
+        widgetElement.dispatchEvent(
+          CustomEvent('submit', detail: value),
+        );
+      },
     );
-  }
-}
 
-// Sub-component classes for input slots
-class FlutterCupertinoInputPrefix extends WidgetElement {
-  FlutterCupertinoInputPrefix(super.context);
+    final double height = renderStyle.height.computedValue;
+    if (height > 0) {
+      textField = SizedBox(
+        height: height,
+        child: Center(child: textField),
+      );
+    }
 
-  @override
-  WebFWidgetElementState createState() {
-    return FlutterCupertinoInputPrefixState(this);
-  }
-}
-
-class FlutterCupertinoInputPrefixState extends WebFWidgetElementState {
-  FlutterCupertinoInputPrefixState(super.widgetElement);
-
-  @override
-  Widget build(BuildContext context) {
-    return WebFWidgetElementChild(
-        child: WebFHTMLElement(
-            tagName: 'DIV',
-            controller: widgetElement.ownerDocument.controller,
-            parentElement: widgetElement,
-            children: widgetElement.childNodes.toWidgetList()));
-  }
-}
-
-class FlutterCupertinoInputSuffix extends WidgetElement {
-  FlutterCupertinoInputSuffix(super.context);
-
-  @override
-  WebFWidgetElementState createState() {
-    return FlutterCupertinoInputSuffixState(this);
-  }
-}
-
-class FlutterCupertinoInputSuffixState extends WebFWidgetElementState {
-  FlutterCupertinoInputSuffixState(super.widgetElement);
-
-  @override
-  Widget build(BuildContext context) {
-    return WebFWidgetElementChild(
-        child: WebFHTMLElement(
-            tagName: 'DIV',
-            controller: widgetElement.ownerDocument.controller,
-            parentElement: widgetElement,
-            children: widgetElement.childNodes.toWidgetList()));
+    return Opacity(
+      opacity: isDisabled ? 0.5 : 1.0,
+      child: textField,
+    );
   }
 }

@@ -4,8 +4,7 @@ import { WebFListView } from '@openwebf/react-core-ui';
 export const TailwindShowcasePage: React.FC = () => {
   return (
     <div id="main" className="min-h-screen w-full bg-surface">
-      <WebFListView className="w-full px-3 md:px-6">
-        <div className="max-w-4xl mx-auto py-6">
+      <WebFListView className="w-full px-3 md:px-6 max-w-4xl mx-auto py-6">
           <p className="text-fg-secondary mb-6">Demonstrates Tailwind utilities and tokenized theme support running on WebF.</p>
 
           {/* Design Tokens */}
@@ -315,7 +314,6 @@ export const TailwindShowcasePage: React.FC = () => {
               ))}
             </div>
           </section>
-        </div>
       </WebFListView>
     </div>
   );

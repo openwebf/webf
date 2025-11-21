@@ -16,6 +16,7 @@ class FlutterCupertinoButton extends FlutterCupertinoButtonBindings {
   String _sizeStyle = 'small'; // small | large
   bool _disabled = false;
   double _pressedOpacity = 0.4;
+  String? _disabledColor; // Hex color string like #RRGGBB or #AARRGGBB
 
   @override
   String get variant => _variant;
@@ -49,6 +50,14 @@ class FlutterCupertinoButton extends FlutterCupertinoButtonBindings {
     _pressedOpacity = double.tryParse(value) ?? 0.4;
   }
 
+  @override
+  String? get disabledColor => _disabledColor;
+
+  @override
+  set disabledColor(value) {
+    _disabledColor = value;
+  }
+
   double getDefaultMinSize() {
     return _sizeStyle == 'small' ? 32.0 : 44.0;
   }
@@ -68,6 +77,22 @@ class FlutterCupertinoButtonState extends WebFWidgetElementState {
   Color? _parseCSSColor(CSSColor? color) {
     if (color == null) return null;
     return color.value;
+  }
+
+  Color? _parseAttrColor(String? colorString) {
+    if (colorString == null || colorString.isEmpty) return null;
+    var v = colorString.trim();
+    if (v.startsWith('#')) {
+      var hex = v.substring(1);
+      if (hex.length == 6) {
+        hex = 'FF$hex';
+      }
+      final parsed = int.tryParse(hex, radix: 16);
+      if (parsed != null) {
+        return Color(parsed);
+      }
+    }
+    return null;
   }
 
   EdgeInsetsGeometry getDefaultPadding() {
@@ -106,6 +131,9 @@ class FlutterCupertinoButtonState extends WebFWidgetElementState {
 
     // Get the color of the disabled state
     Color getDisabledColor() {
+      // Attr override
+      final override = _parseAttrColor(widgetElement.disabledColor);
+      if (override != null) return override;
       switch (widgetElement._variant) {
         case 'filled':
           return isDark
@@ -132,12 +160,18 @@ class FlutterCupertinoButtonState extends WebFWidgetElementState {
           onPressed: widgetElement._disabled ? null : () {
             widgetElement.dispatchEvent(Event('click'));
           },
+          // Unify padding behavior: when width is fixed, remove internal padding
           padding: hasWidth ? EdgeInsets.zero : (hasPadding ? renderStyle.padding : getDefaultPadding()),
           disabledColor: getDisabledColor(),
           pressedOpacity: widgetElement._pressedOpacity,
-          borderRadius: hasBorderRadius
-              ? BorderRadius.circular(renderStyle.borderRadius!.first.x)
-              : BorderRadius.circular(8),
+          borderRadius: renderStyle.borderRadius != null
+              ? BorderRadius.only(
+                  topLeft: renderStyle.borderRadius![0],
+                  topRight: renderStyle.borderRadius![1],
+                  bottomRight: renderStyle.borderRadius![2],
+                  bottomLeft: renderStyle.borderRadius![3],
+                )
+              : BorderRadius.zero,
           minSize: hasMinHeight ? renderStyle.minHeight.value : widgetElement.getDefaultMinSize(),
           alignment: alignment,
           child: buttonChild,
@@ -151,10 +185,16 @@ class FlutterCupertinoButtonState extends WebFWidgetElementState {
           padding: hasWidth ? EdgeInsets.zero : (hasPadding ? renderStyle.padding : getDefaultPadding()),
           color: backgroundColor,
           disabledColor: getDisabledColor(),
-          pressedOpacity: widgetElement._pressedOpacity,
+          // Support asymmetric border radii
           borderRadius: hasBorderRadius
-              ? BorderRadius.circular(renderStyle.borderRadius!.first.x)
+              ? BorderRadius.only(
+                  topLeft: renderStyle.borderRadius![0],
+                  topRight: renderStyle.borderRadius![1],
+                  bottomRight: renderStyle.borderRadius![2],
+                  bottomLeft: renderStyle.borderRadius![3],
+                )
               : BorderRadius.circular(8),
+          pressedOpacity: widgetElement._pressedOpacity,
           minSize: hasMinHeight ? renderStyle.minHeight.value : widgetElement.getDefaultMinSize(),
           alignment: alignment,
           child: buttonChild,
@@ -168,10 +208,16 @@ class FlutterCupertinoButtonState extends WebFWidgetElementState {
           padding: hasWidth ? EdgeInsets.zero : (hasPadding ? renderStyle.padding : getDefaultPadding()),
           color: backgroundColor,
           disabledColor: getDisabledColor(),
-          pressedOpacity: widgetElement._pressedOpacity,
+          // Support asymmetric border radii
           borderRadius: hasBorderRadius
-              ? BorderRadius.circular(renderStyle.borderRadius!.first.x)
+              ? BorderRadius.only(
+                  topLeft: renderStyle.borderRadius![0],
+                  topRight: renderStyle.borderRadius![1],
+                  bottomRight: renderStyle.borderRadius![2],
+                  bottomLeft: renderStyle.borderRadius![3],
+                )
               : BorderRadius.circular(8),
+          pressedOpacity: widgetElement._pressedOpacity,
           minSize: hasMinHeight ? renderStyle.minHeight.value : widgetElement.getDefaultMinSize(),
           alignment: alignment,
           child: buttonChild,

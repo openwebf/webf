@@ -2,181 +2,254 @@
  * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
  * Licensed under GNU AGPL with Enterprise exception.
  */
+import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
-import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
-import 'package:collection/collection.dart'; // For firstWhereOrNull and whereNotNull
+import 'package:webf/webf.dart';
 
-// Element class: Handles attributes and creates state
-class FlutterCupertinoFormSection extends WidgetElement {
+import 'form_section_bindings_generated.dart';
+import 'text_form_field_row.dart';
+
+/// WebF custom element that wraps Flutter's [CupertinoFormSection].
+///
+/// Exposed as `<flutter-cupertino-form-section>` in the DOM, with optional
+/// header/footer slots and `<flutter-cupertino-form-row>` children.
+class FlutterCupertinoFormSection extends FlutterCupertinoFormSectionBindings {
   FlutterCupertinoFormSection(super.context);
 
   bool _insetGrouped = false;
+  String? _clipBehavior;
 
   @override
-  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
-    super.initializeAttributes(attributes);
-    attributes['inset-grouped'] = ElementAttributeProperty(
-      getter: () => _insetGrouped.toString(),
-      setter: (value) {
-        _insetGrouped = value == 'true';
-        // Rebuild the state when this attribute changes
-        state?.setState(() {}); 
-      }
-    );
-    // Clip behavior might be complex to map directly, using default for now.
-    attributes['clip-behavior'] = ElementAttributeProperty(
-      getter: () => 'none', // Defaulting, could expose if needed
-      setter: (value) { /* TODO: Implement if needed */ }
-    );
+  bool get insetGrouped => _insetGrouped;
+
+  @override
+  bool get allowsInfiniteHeight => true;
+
+  @override
+  set insetGrouped(value) {
+    final bool next = value == true;
+    if (next != _insetGrouped) {
+      _insetGrouped = next;
+      state?.requestUpdateState(() {});
+    }
   }
 
-  // Expose insetGrouped for the State class
   bool get isInsetGrouped => _insetGrouped;
 
   @override
-  FlutterCupertinoFormSectionState createState() => FlutterCupertinoFormSectionState(this);
+  String? get clipBehavior => _clipBehavior;
 
   @override
-  FlutterCupertinoFormSectionState? get state => super.state as FlutterCupertinoFormSectionState?;
+  set clipBehavior(value) {
+    final String? next = value?.toString();
+    if (next != _clipBehavior) {
+      _clipBehavior = next;
+      state?.requestUpdateState(() {});
+    }
+  }
+
+  Clip get resolvedClipBehavior {
+    switch ((_clipBehavior ?? 'hardEdge').trim()) {
+      case 'none':
+        return Clip.none;
+      case 'antiAlias':
+        return Clip.antiAlias;
+      case 'antiAliasWithSaveLayer':
+        return Clip.antiAliasWithSaveLayer;
+      case 'hardEdge':
+      default:
+        return Clip.hardEdge;
+    }
+  }
+
+  @override
+  FlutterCupertinoFormSectionState createState() =>
+      FlutterCupertinoFormSectionState(this);
+
+  @override
+  FlutterCupertinoFormSectionState? get state =>
+      super.state as FlutterCupertinoFormSectionState?;
 }
 
-// State class: Handles the actual building of the Flutter widget
 class FlutterCupertinoFormSectionState extends WebFWidgetElementState {
   FlutterCupertinoFormSectionState(super.widgetElement);
 
   @override
-  FlutterCupertinoFormSection get widgetElement => super.widgetElement as FlutterCupertinoFormSection;
+  FlutterCupertinoFormSection get widgetElement =>
+      super.widgetElement as FlutterCupertinoFormSection;
 
-  // Helper methods moved to State
-  Widget? _getChildOfType<T>() {
-    final childNode = widgetElement.childNodes.firstWhereOrNull((node) {
-      return node is T;
-    });
-    return WebFWidgetElementChild(child: childNode?.toWidget());
+  Widget? _getSlotChild(String slotName) {
+    final dom.Node? slotNode = widgetElement.childNodes.firstWhereOrNull(
+      (node) =>
+          node is dom.Element &&
+          node.getAttribute('slotName') == slotName,
+    );
+    if (slotNode == null) {
+      return null;
+    }
+    return WebFWidgetElementChild(child: slotNode.toWidget());
   }
 
-  List<Widget> _getChildrenWithoutSlots() {
+  List<Widget> _getFormRows() {
     return widgetElement.childNodes
         .where((node) {
           if (node is dom.Element) {
-            // Skip specific child component types
-            return !(node is FlutterCupertinoFormSectionHeader ||
-                     node is FlutterCupertinoFormSectionFooter);
+            // Exclude header/footer/helper/error slots and only keep rows.
+            final String? slotName = node.getAttribute('slotName');
+            if (slotName == 'header' ||
+                slotName == 'footer' ||
+                slotName == 'helper' ||
+                slotName == 'error') {
+              return false;
+            }
+            return node is FlutterCupertinoFormRow ||
+                node is FlutterCupertinoTextFormFieldRow;
           }
-          return false; // Ignore non-element nodes
+          return false;
         })
         .map((node) => WebFWidgetElementChild(child: node.toWidget()))
-        .nonNulls // Ensure toWidget didn't return null
+        .nonNulls
         .toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Get style properties
-    EdgeInsetsGeometry? styleMargin = widgetElement.renderStyle.margin;
-    Color? backgroundColor = widgetElement.renderStyle.backgroundColor?.value;
-    BoxDecoration? decoration = widgetElement.renderStyle.decoration as BoxDecoration?;
-    Clip clipBehavior = Clip.none; // Default
+    final CSSRenderStyle renderStyle = widgetElement.renderStyle;
 
-    Widget? headerWidget = _getChildOfType<FlutterCupertinoFormSectionHeader>();
-    Widget? footerWidget = _getChildOfType<FlutterCupertinoFormSectionFooter>();
-    List<Widget> childrenWidgets = _getChildrenWithoutSlots();
+    final EdgeInsetsGeometry styleMargin = renderStyle.margin;
+    final Color? backgroundColor = renderStyle.backgroundColor?.value;
+    final BoxDecoration? decoration =
+        renderStyle.decoration as BoxDecoration?;
+    final Clip clipBehavior = widgetElement.resolvedClipBehavior;
+
+    final Widget? headerWidget = _getSlotChild('header');
+    final Widget? footerWidget = _getSlotChild('footer');
+    final List<Widget> rows = _getFormRows();
 
     final bool useInsetGrouped = widgetElement.isInsetGrouped;
 
-    Widget sectionWidget;
+    // Only override margin when the author provided a non-zero margin.
+    // Otherwise rely on CupertinoFormSection's own defaults.
+    final EdgeInsetsGeometry? customMargin =
+        styleMargin != EdgeInsets.zero ? styleMargin : null;
+
+    final Widget sectionWidget;
     if (useInsetGrouped) {
-      // For insetGrouped, only pass margin if explicitly set to non-zero in style
-      if (styleMargin != EdgeInsets.zero) {
-         sectionWidget = CupertinoFormSection.insetGrouped(
-          key: ObjectKey(widgetElement), 
+      if (customMargin != null) {
+        sectionWidget = CupertinoFormSection.insetGrouped(
+          key: ObjectKey(widgetElement),
           header: headerWidget,
           footer: footerWidget,
-          margin: styleMargin, // Pass the specific non-zero margin from style
-          backgroundColor: backgroundColor ?? CupertinoColors.systemGroupedBackground.resolveFrom(context),
+          margin: customMargin,
+          backgroundColor:
+              backgroundColor ?? CupertinoColors.systemGroupedBackground.resolveFrom(context),
           decoration: decoration,
           clipBehavior: clipBehavior,
-          children: childrenWidgets,
+          children: rows,
         );
       } else {
-         // Omit margin parameter to use Flutter's default inset margin
-         sectionWidget = CupertinoFormSection.insetGrouped(
-          key: ObjectKey(widgetElement), 
+        sectionWidget = CupertinoFormSection.insetGrouped(
+          key: ObjectKey(widgetElement),
           header: headerWidget,
           footer: footerWidget,
-          // margin: is omitted here
-          backgroundColor: backgroundColor ?? CupertinoColors.systemGroupedBackground.resolveFrom(context),
+          backgroundColor:
+              backgroundColor ?? CupertinoColors.systemGroupedBackground.resolveFrom(context),
           decoration: decoration,
           clipBehavior: clipBehavior,
-          children: childrenWidgets,
+          children: rows,
         );
       }
     } else {
-      // For standard section, default margin is zero. Pass styleMargin if set, otherwise zero.
-      sectionWidget = CupertinoFormSection(
-        key: ObjectKey(widgetElement), 
-        header: headerWidget,
-        footer: footerWidget,
-        margin: (styleMargin != EdgeInsets.zero) ? styleMargin : EdgeInsets.zero,
-        backgroundColor: backgroundColor ?? CupertinoColors.systemGroupedBackground.resolveFrom(context),
-        decoration: decoration,
-        clipBehavior: clipBehavior,
-        children: childrenWidgets,
-      );
+      if (customMargin != null) {
+        sectionWidget = CupertinoFormSection(
+          key: ObjectKey(widgetElement),
+          header: headerWidget,
+          footer: footerWidget,
+          margin: customMargin,
+          backgroundColor:
+              backgroundColor ?? CupertinoColors.systemGroupedBackground.resolveFrom(context),
+          decoration: decoration,
+          clipBehavior: clipBehavior,
+          children: rows,
+        );
+      } else {
+        sectionWidget = CupertinoFormSection(
+          key: ObjectKey(widgetElement),
+          header: headerWidget,
+          footer: footerWidget,
+          backgroundColor:
+              backgroundColor ?? CupertinoColors.systemGroupedBackground.resolveFrom(context),
+          decoration: decoration,
+          clipBehavior: clipBehavior,
+          children: rows,
+        );
+      }
     }
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [sectionWidget],
+    return sectionWidget;
+  }
+}
+
+/// Single row inside a [FlutterCupertinoFormSection].
+///
+/// Exposed as `<flutter-cupertino-form-row>` in the DOM.
+class FlutterCupertinoFormRow extends WidgetElement {
+  FlutterCupertinoFormRow(super.context);
+
+  @override
+  bool get allowsInfiniteHeight => true;
+
+  @override
+  WebFWidgetElementState createState() => FlutterCupertinoFormRowState(this);
+}
+
+class FlutterCupertinoFormRowState extends WebFWidgetElementState {
+  FlutterCupertinoFormRowState(super.widgetElement);
+
+  Widget? _getSlotChild(String slotName) {
+    final dom.Node? slotNode = widgetElement.childNodes.firstWhereOrNull(
+      (node) =>
+          node is dom.Element &&
+          node.getAttribute('slotName') == slotName,
     );
+    if (slotNode == null) {
+      return null;
+    }
+    return WebFWidgetElementChild(child: slotNode.toWidget());
   }
-}
 
-// Sub-component classes for form section slots
-class FlutterCupertinoFormSectionHeader extends WidgetElement {
-  FlutterCupertinoFormSectionHeader(super.context);
-
-  @override
-  WebFWidgetElementState createState() {
-    return FlutterCupertinoFormSectionHeaderState(this);
+  Widget? _getDefaultChild() {
+    final dom.Node? defaultNode = widgetElement.childNodes.firstWhereOrNull(
+      (node) {
+        if (node is! dom.Element) return false;
+        final String? slotName = node.getAttribute('slotName');
+        return slotName == null ||
+            (slotName != 'prefix' &&
+                slotName != 'helper' &&
+                slotName != 'error');
+      },
+    );
+    if (defaultNode == null) {
+      return null;
+    }
+    return WebFWidgetElementChild(child: defaultNode.toWidget());
   }
-}
-
-class FlutterCupertinoFormSectionHeaderState extends WebFWidgetElementState {
-  FlutterCupertinoFormSectionHeaderState(super.widgetElement);
-
-  @override
-  Widget build(BuildContext context) {
-    return WebFWidgetElementChild(
-        child: WebFHTMLElement(
-            tagName: 'DIV',
-            controller: widgetElement.ownerDocument.controller,
-            parentElement: widgetElement,
-            children: widgetElement.childNodes.toWidgetList()));
-  }
-}
-
-class FlutterCupertinoFormSectionFooter extends WidgetElement {
-  FlutterCupertinoFormSectionFooter(super.context);
-
-  @override
-  WebFWidgetElementState createState() {
-    return FlutterCupertinoFormSectionFooterState(this);
-  }
-}
-
-class FlutterCupertinoFormSectionFooterState extends WebFWidgetElementState {
-  FlutterCupertinoFormSectionFooterState(super.widgetElement);
 
   @override
   Widget build(BuildContext context) {
-    return WebFWidgetElementChild(
-        child: WebFHTMLElement(
-            tagName: 'DIV',
-            controller: widgetElement.ownerDocument.controller,
-            parentElement: widgetElement,
-            children: widgetElement.childNodes.toWidgetList()));
+    final Widget? prefix = _getSlotChild('prefix');
+    final Widget? helper = _getSlotChild('helper');
+    final Widget? error = _getSlotChild('error');
+    final Widget? child = _getDefaultChild();
+
+    return CupertinoFormRow(
+      prefix: prefix,
+      helper: helper,
+      error: error,
+      child: child ?? const SizedBox.shrink(),
+    );
   }
 }

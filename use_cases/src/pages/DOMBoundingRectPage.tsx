@@ -69,8 +69,7 @@ export const DOMBoundingRectPage: React.FC = () => {
 
   return (
     <div id="main" className="min-h-screen w-full bg-surface">
-      <WebFListView className="w-full px-3 md:px-6">
-        <div className="max-w-4xl mx-auto py-6">
+      <WebFListView className="w-full px-3 md:px-6 max-w-4xl mx-auto py-6">
           <div className="flex flex-col gap-6">
             {/* Current Measurement moved to the top for immediate visibility */}
             <div className="bg-surface-secondary border border-line rounded-xl p-3">
@@ -159,7 +158,6 @@ export const DOMBoundingRectPage: React.FC = () => {
             {/* Current Measurement moved to top */}
 
           </div>
-        </div>
       </WebFListView>
     </div>
   );

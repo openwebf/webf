@@ -61,7 +61,7 @@ export const RoutingPage: React.FC = () => {
           <button 
             onClick={() => {
               console.log('My page: Navigating to /animation');
-              WebFRouter.pushState({}, '/animation');
+              WebFRouter.pushState({}, '/css/animation');
             }}
             style={{
               padding: '10px 20px',

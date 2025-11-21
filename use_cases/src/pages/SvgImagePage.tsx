@@ -17,8 +17,7 @@ export const SvgImagePage: React.FC = () => {
 
   return (
     <div id="main" className="min-h-screen w-full bg-surface">
-      <WebFListView className="w-full px-3 md:px-6">
-        <div className="max-w-3xl mx-auto py-6">
+      <WebFListView className="w-full px-3 md:px-6 max-w-3xl mx-auto py-6">
           <h1 className="text-2xl font-semibold text-fg-primary mb-4">SVG via &lt;img&gt;</h1>
           <p className="text-fg-secondary mb-4">Demonstrate rendering inline SVG data URLs and dynamic sizing.</p>
 
@@ -38,7 +37,6 @@ export const SvgImagePage: React.FC = () => {
           <div className="bg-surface-secondary border border-line rounded-xl p-4 flex items-center justify-center">
             <img src={src} alt="svg" style={{ width: size, height: size }} />
           </div>
-        </div>
       </WebFListView>
     </div>
   );

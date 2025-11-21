@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { glob } from 'glob';
+import { globSync } from 'glob';
 import { dartGen, reactGen, vueGen, clearAllCaches } from '../src/generator';
 import * as analyzer from '../src/analyzer';
 import * as dartGenerator from '../src/dart';
@@ -10,7 +10,9 @@ import { ClassObject } from '../src/declaration';
 
 // Mock dependencies
 jest.mock('fs');
-jest.mock('glob');
+jest.mock('glob', () => ({
+  globSync: jest.fn(),
+}));
 jest.mock('../src/analyzer');
 jest.mock('../src/dart');
 jest.mock('../src/react');
@@ -47,7 +49,7 @@ jest.mock('../src/logger', () => ({
 }));
 
 const mockFs = fs as jest.Mocked<typeof fs>;
-const mockGlob = glob as jest.Mocked<typeof glob>;
+const mockGlobSync = globSync as jest.MockedFunction<typeof globSync>;
 const mockAnalyzer = analyzer as jest.Mocked<typeof analyzer>;
 const mockDartGenerator = dartGenerator as jest.Mocked<typeof dartGenerator>;
 const mockReactGenerator = reactGenerator as jest.Mocked<typeof reactGenerator>;
@@ -65,7 +67,7 @@ describe('Generator', () => {
     mockFs.writeFileSync.mockImplementation(() => undefined);
     mockFs.mkdirSync.mockImplementation(() => undefined);
     
-    mockGlob.globSync.mockReturnValue(['test.d.ts', 'component.d.ts']);
+    mockGlobSync.mockReturnValue(['test.d.ts', 'component.d.ts']);
     
     mockAnalyzer.analyzer.mockImplementation(() => undefined);
     mockAnalyzer.clearCaches.mockImplementation(() => undefined);
@@ -84,7 +86,7 @@ describe('Generator', () => {
         command: 'test command'
       });
 
-      expect(mockGlob.globSync).toHaveBeenCalledWith('**/*.d.ts', {
+      expect(mockGlobSync).toHaveBeenCalledWith('**/*.d.ts', {
         cwd: '/test/source',
         ignore: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/example/**']
       });
@@ -101,14 +103,14 @@ describe('Generator', () => {
         command: 'test command'
       });
 
-      expect(mockGlob.globSync).toHaveBeenCalledWith('**/*.d.ts', {
+      expect(mockGlobSync).toHaveBeenCalledWith('**/*.d.ts', {
         cwd: expect.stringContaining('relative/source'),
         ignore: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/example/**']
       });
     });
 
     it('should filter out global.d.ts files', async () => {
-      mockGlob.globSync.mockReturnValue(['test.d.ts', 'global.d.ts', 'component.d.ts']);
+      mockGlobSync.mockReturnValue(['test.d.ts', 'global.d.ts', 'component.d.ts']);
       
       await dartGen({
         source: '/test/source',
@@ -122,7 +124,7 @@ describe('Generator', () => {
     });
 
     it('should handle empty type files', async () => {
-      mockGlob.globSync.mockReturnValue([]);
+      mockGlobSync.mockReturnValue([]);
       
       await dartGen({
         source: '/test/source',
@@ -135,7 +137,7 @@ describe('Generator', () => {
     });
 
     it('should continue processing if one file fails', async () => {
-      mockGlob.globSync.mockReturnValue(['test1.d.ts', 'test2.d.ts']);
+      mockGlobSync.mockReturnValue(['test1.d.ts', 'test2.d.ts']);
       mockAnalyzer.analyzer
         .mockImplementationOnce(() => { throw new Error('Parse error'); })
         .mockImplementationOnce(() => undefined);
@@ -216,7 +218,7 @@ describe('Generator', () => {
     });
     
     it('should generate index.d.ts with references and exports', async () => {
-      mockGlob.globSync.mockReturnValue(['components/button.d.ts', 'widgets/card.d.ts']);
+      mockGlobSync.mockReturnValue(['components/button.d.ts', 'widgets/card.d.ts']);
       mockFs.readFileSync.mockReturnValue('interface Test {}');
       mockFs.existsSync.mockImplementation((path) => {
         // Source directory exists
@@ -247,7 +249,7 @@ describe('Generator', () => {
     });
     
     it('should copy original .d.ts files to output directory', async () => {
-      mockGlob.globSync.mockReturnValue(['test.d.ts']);
+      mockGlobSync.mockReturnValue(['test.d.ts']);
       const originalContent = 'interface Original {}';
       mockFs.readFileSync.mockReturnValue(originalContent);
       mockFs.existsSync.mockImplementation((path) => {
@@ -279,7 +281,7 @@ describe('Generator', () => {
         exclude: ['**/test/**', '**/docs/**']
       });
 
-      expect(mockGlob.globSync).toHaveBeenCalledWith('**/*.d.ts', {
+      expect(mockGlobSync).toHaveBeenCalledWith('**/*.d.ts', {
         cwd: '/test/source',
         ignore: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/example/**', '**/test/**', '**/docs/**']
       });
@@ -419,7 +421,7 @@ describe('Generator', () => {
     });
 
     it('should only generate one index.d.ts file', async () => {
-      mockGlob.globSync.mockReturnValue(['comp1.d.ts', 'comp2.d.ts', 'comp3.d.ts']);
+      mockGlobSync.mockReturnValue(['comp1.d.ts', 'comp2.d.ts', 'comp3.d.ts']);
       
       await vueGen({
         source: '/test/source',
@@ -436,7 +438,7 @@ describe('Generator', () => {
 
   describe('Error handling', () => {
     it('should handle glob errors', async () => {
-      mockGlob.globSync.mockImplementation(() => {
+      mockGlobSync.mockImplementation(() => {
         throw new Error('Glob error');
       });
       

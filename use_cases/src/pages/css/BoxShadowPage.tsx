@@ -74,8 +74,7 @@ export const BoxShadowPage: React.FC = () => {
 
   return (
     <div id="main" className="min-h-screen">
-      <WebFListView className="px-3 md:px-6 bg-[#f8f9fa]">
-        <div className="max-w-5xl mx-auto py-4">
+      <WebFListView className="px-3 md:px-6 bg-[#f8f9fa] max-w-5xl mx-auto py-4">
           <div className="w-full flex justify-center items-center">
             <div className="bg-gradient-to-tr from-indigo-500 to-purple-600 p-4 rounded-2xl text-white shadow">
               <h1 className="text-[22px] font-bold mb-1 drop-shadow">Box Shadow</h1>
@@ -131,7 +130,6 @@ export const BoxShadowPage: React.FC = () => {
               <DemoBox key={`bg-${i}`} label={o.label} className={o.className} style={o.style} />
             ))}
           </div>
-        </div>
       </WebFListView>
     </div>
   );

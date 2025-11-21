@@ -2,13 +2,15 @@
  * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
  * Licensed under GNU AGPL with Enterprise exception.
  */
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:webf/webf.dart';
-import 'dart:convert';
+
+import 'alert_bindings_generated.dart';
 import 'logger.dart';
 
 mixin FlutterCupertinoAlertMixin on WidgetElement {
-  // Define static method map
   static StaticDefinedSyncBindingObjectMethodMap alertSyncMethods = {
     'show': StaticDefinedSyncBindingObjectMethod(
       call: (element, args) {
@@ -41,22 +43,120 @@ mixin FlutterCupertinoAlertMixin on WidgetElement {
 
   @override
   List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
-    ...super.methods,
-    alertSyncMethods,
-  ];
+        ...super.methods,
+        alertSyncMethods,
+      ];
 }
 
-class FlutterCupertinoAlert extends WidgetElement with FlutterCupertinoAlertMixin {
+/// WebF custom element that wraps Flutter's [CupertinoAlertDialog].
+///
+/// Exposed as `<flutter-cupertino-alert>` in the DOM.
+class FlutterCupertinoAlert extends FlutterCupertinoAlertBindings
+    with FlutterCupertinoAlertMixin {
   FlutterCupertinoAlert(super.context);
 
+  // Attribute-backed fields (JS-visible state).
+  String? _title;
+  String? _message;
+  String? _cancelText;
+  bool _cancelDestructive = false;
+  bool _cancelDefault = false;
+  String? _cancelTextStyle;
+  String? _confirmText;
+  bool _confirmDefault = true;
+  bool _confirmDestructive = false;
+  String? _confirmTextStyle;
+
+  // Per-show overrides coming from JS options.
   String? _tempTitle;
   String? _tempMessage;
+
   bool _isVisible = false;
 
+  @override
+  String? get title => _title;
+
+  @override
+  set title(value) {
+    _title = value?.toString();
+  }
+
+  @override
+  String? get message => _message;
+
+  @override
+  set message(value) {
+    _message = value?.toString();
+  }
+
+  @override
+  String? get cancelText => _cancelText;
+
+  @override
+  set cancelText(value) {
+    _cancelText = value?.toString();
+  }
+
+  @override
+  bool get cancelDestructive => _cancelDestructive;
+
+  @override
+  set cancelDestructive(value) {
+    _cancelDestructive = value == true;
+  }
+
+  @override
+  bool get cancelDefault => _cancelDefault;
+
+  @override
+  set cancelDefault(value) {
+    _cancelDefault = value == true;
+  }
+
+  @override
+  String? get cancelTextStyle => _cancelTextStyle;
+
+  @override
+  set cancelTextStyle(value) {
+    _cancelTextStyle = value?.toString();
+  }
+
+  @override
+  String? get confirmText => _confirmText;
+
+  @override
+  set confirmText(value) {
+    _confirmText = value?.toString();
+  }
+
+  @override
+  bool get confirmDefault => _confirmDefault;
+
+  @override
+  set confirmDefault(value) {
+    _confirmDefault = value == true;
+  }
+
+  @override
+  bool get confirmDestructive => _confirmDestructive;
+
+  @override
+  set confirmDestructive(value) {
+    _confirmDestructive = value == true;
+  }
+
+  @override
+  String? get confirmTextStyle => _confirmTextStyle;
+
+  @override
+  set confirmTextStyle(value) {
+    _confirmTextStyle = value?.toString();
+  }
+
+  bool get isVisible => _isVisible;
 
   void showDialog() {
     if (!_isVisible) return;
-
     if (state == null) return;
 
     showCupertinoDialog(
@@ -70,6 +170,10 @@ class FlutterCupertinoAlert extends WidgetElement with FlutterCupertinoAlertMixi
   }
 
   @override
+  FlutterCupertinoAlertState? get state =>
+      super.state as FlutterCupertinoAlertState?;
+
+  @override
   WebFWidgetElementState createState() {
     return FlutterCupertinoAlertState(this);
   }
@@ -78,19 +182,23 @@ class FlutterCupertinoAlert extends WidgetElement with FlutterCupertinoAlertMixi
 class FlutterCupertinoDialog extends StatelessWidget {
   final FlutterCupertinoAlert widgetElement;
 
-  FlutterCupertinoDialog(this.widgetElement);
+  const FlutterCupertinoDialog(this.widgetElement, {super.key});
 
-  TextStyle? _parseTextStyle(String attributeName) {
-    final styleStr = widgetElement.getAttribute(attributeName);
+  TextStyle? _parseTextStyle(String? styleStr) {
     if (styleStr == null) return null;
 
     try {
-      final Map<String, dynamic> styleMap = Map<String, dynamic>.from(const JsonDecoder().convert(styleStr));
+      final Map<String, dynamic> styleMap =
+          Map<String, dynamic>.from(const JsonDecoder().convert(styleStr));
 
       return TextStyle(
         color: styleMap['color'] != null ? parseColor(styleMap['color']) : null,
-        fontSize: styleMap['fontSize']?.toDouble(),
-        fontWeight: styleMap['fontWeight'] == 'bold' ? FontWeight.bold : FontWeight.normal,
+        fontSize: styleMap['fontSize'] != null
+            ? (styleMap['fontSize'] as num).toDouble()
+            : null,
+        fontWeight: styleMap['fontWeight'] == 'bold'
+            ? FontWeight.bold
+            : FontWeight.normal,
       );
     } catch (e) {
       logger.e('Error parsing text style: $e');
@@ -113,14 +221,14 @@ class FlutterCupertinoDialog extends StatelessWidget {
   List<Widget> _buildActions(BuildContext context) {
     final actions = <Widget>[];
 
-    // Cancel button, optional
-    final cancelText = widgetElement.getAttribute('cancel-text');
-    if (cancelText != null && cancelText != '') {
+    // Cancel button, optional.
+    final cancelText = widgetElement.cancelText;
+    if (cancelText != null && cancelText.isNotEmpty) {
       actions.add(
         CupertinoDialogAction(
-          isDestructiveAction: widgetElement.getAttribute('cancel-destructive') == 'true',
-          isDefaultAction: widgetElement.getAttribute('cancel-default') == 'true',
-          textStyle: _parseTextStyle('cancel-text-style'),
+          isDestructiveAction: widgetElement.cancelDestructive,
+          isDefaultAction: widgetElement.cancelDefault,
+          textStyle: _parseTextStyle(widgetElement.cancelTextStyle),
           onPressed: () {
             Navigator.of(context, rootNavigator: true).pop();
             widgetElement.dispatchEvent(CustomEvent('cancel'));
@@ -130,13 +238,13 @@ class FlutterCupertinoDialog extends StatelessWidget {
       );
     }
 
-    // Confirm button
-    final confirmText = widgetElement.getAttribute('confirm-text') ?? '确定';
+    // Confirm button.
+    final confirmText = widgetElement.confirmText ?? 'OK';
     actions.add(
       CupertinoDialogAction(
-        isDefaultAction: widgetElement.getAttribute('confirm-default') != 'false',
-        isDestructiveAction: widgetElement.getAttribute('confirm-destructive') == 'true',
-        textStyle: _parseTextStyle('confirm-text-style'),
+        isDefaultAction: widgetElement.confirmDefault,
+        isDestructiveAction: widgetElement.confirmDestructive,
+        textStyle: _parseTextStyle(widgetElement.confirmTextStyle),
         onPressed: () {
           Navigator.of(context, rootNavigator: true).pop();
           widgetElement.dispatchEvent(CustomEvent('confirm'));
@@ -150,20 +258,25 @@ class FlutterCupertinoDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!widgetElement._isVisible) {
+    if (!widgetElement.isVisible) {
       return const SizedBox.shrink();
     }
 
+    final titleText =
+        widgetElement._tempTitle ?? widgetElement.title ?? '';
+    final messageText =
+        widgetElement._tempMessage ?? widgetElement.message ?? '';
+
     return CupertinoAlertDialog(
       title: Text(
-        widgetElement._tempTitle ?? widgetElement.getAttribute('title') ?? '',
+        titleText,
         style: const TextStyle(
           fontSize: 17,
           fontWeight: FontWeight.w600,
         ),
       ),
       content: Text(
-        widgetElement._tempMessage ?? widgetElement.getAttribute('message') ?? '',
+        messageText,
         style: const TextStyle(
           fontSize: 13,
           color: CupertinoColors.black,
@@ -178,10 +291,13 @@ class FlutterCupertinoAlertState extends WebFWidgetElementState {
   FlutterCupertinoAlertState(super.widgetElement);
 
   @override
-  FlutterCupertinoAlert get widgetElement => super.widgetElement as FlutterCupertinoAlert;
+  FlutterCupertinoAlert get widgetElement =>
+      super.widgetElement as FlutterCupertinoAlert;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox.shrink();
+    // Host element itself does not render anything; dialog is shown via showCupertinoDialog.
+    return const SizedBox.shrink();
   }
 }
+

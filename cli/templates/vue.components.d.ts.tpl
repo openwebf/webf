@@ -5,6 +5,8 @@
 // https://vuejs.org/guide/extras/web-components
 import { EmitFn, PublicProps, HTMLAttributes } from 'vue';
 
+<%= typesImport %>
+
 type EventMap = {
   [event: string]: Event
 }
@@ -18,6 +20,9 @@ type VueEmit<T extends EventMap> = EmitFn<{
 type VueEventListeners<T extends EventMap> = {
   [K in keyof T as `on${Capitalize<string & K>}`]?: (event: T[K]) => any
 }
+
+<%= consts %>
+<%= enums %>
 
 type DefineCustomElement<
   ElementType,

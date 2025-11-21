@@ -8,11 +8,12 @@ import 'package:logger/logger.dart';
 final Logger logger = Logger(
   printer: PrettyPrinter(
     methodCount: 0,
-    errorMethodCount: 5,
+    errorMethodCount: 0,
     lineLength: 80,
     colors: true,
     printEmojis: true,
     dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+    noBoxingByDefault: true,
   ),
   level: Level.debug,
 );
@@ -20,12 +21,13 @@ final Logger logger = Logger(
 /// Logger specifically for development/debugging
 final Logger devLogger = Logger(
   printer: PrettyPrinter(
-    methodCount: 2,
-    errorMethodCount: 8,
+    methodCount: 0,
+    errorMethodCount: 0,
     lineLength: 120,
     colors: true,
     printEmojis: true,
     dateTimeFormat: DateTimeFormat.dateAndTime,
+    noBoxingByDefault: true,
   ),
   level: Level.trace,
 );

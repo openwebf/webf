@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { dartGen, reactGen, vueGen } from './generator';
+import { globSync } from 'glob';
 import _ from 'lodash';
 import inquirer from 'inquirer';
 import yaml from 'yaml';
@@ -14,6 +15,7 @@ interface GenerateOptions {
   publishToNpm?: boolean;
   npmRegistry?: string;
   exclude?: string[];
+  dartOnly?: boolean;
 }
 
 interface FlutterPackageMetadata {
@@ -38,12 +40,12 @@ interface FlutterPackageMetadata {
 function sanitizePackageName(name: string): string {
   // Remove any leading/trailing whitespace
   let sanitized = name.trim();
-  
+
   // Check if it's a scoped package
   const isScoped = sanitized.startsWith('@');
   let scope = '';
   let packageName = sanitized;
-  
+
   if (isScoped) {
     const parts = sanitized.split('/');
     if (parts.length >= 2) {
@@ -54,7 +56,7 @@ function sanitizePackageName(name: string): string {
       packageName = sanitized.substring(1);
     }
   }
-  
+
   // Sanitize scope if present
   if (scope) {
     scope = scope.toLowerCase();
@@ -64,7 +66,7 @@ function sanitizePackageName(name: string): string {
       scope = '@pkg'; // Default scope if only @ remains
     }
   }
-  
+
   // Sanitize package name part
   packageName = packageName.toLowerCase();
   packageName = packageName.replace(/\s+/g, '-');
@@ -73,20 +75,20 @@ function sanitizePackageName(name: string): string {
   packageName = packageName.replace(/[._]+$/, '');
   packageName = packageName.replace(/[-_.]{2,}/g, '-');
   packageName = packageName.replace(/^-+/, '').replace(/-+$/, '');
-  
+
   // Ensure package name is not empty
   if (!packageName) {
     packageName = 'package';
   }
-  
+
   // Ensure it starts with a letter or number
   if (!/^[a-z0-9]/.test(packageName)) {
     packageName = 'pkg-' + packageName;
   }
-  
+
   // Combine scope and package name
   let result = scope ? `${scope}/${packageName}` : packageName;
-  
+
   // Truncate to 214 characters (npm limit)
   if (result.length > 214) {
     if (scope) {
@@ -100,7 +102,7 @@ function sanitizePackageName(name: string): string {
       result = result.replace(/[._-]+$/, '');
     }
   }
-  
+
   return result;
 }
 
@@ -111,36 +113,36 @@ function isValidNpmPackageName(name: string): boolean {
   // Check basic rules
   if (!name || name.length === 0 || name.length > 214) return false;
   if (name.trim() !== name) return false;
-  
+
   // Check if it's a scoped package
   if (name.startsWith('@')) {
     const parts = name.split('/');
     if (parts.length !== 2) return false; // Scoped packages must have exactly one /
-    
+
     const scope = parts[0];
     const packageName = parts[1];
-    
+
     // Validate scope
     if (!/^@[a-z0-9][a-z0-9-]*$/.test(scope)) return false;
-    
+
     // Validate package name part
     return isValidNpmPackageName(packageName);
   }
-  
+
   // For non-scoped packages
   if (name !== name.toLowerCase()) return false;
   if (name.startsWith('.') || name.startsWith('_')) return false;
-  
+
   // Check for valid characters (letters, numbers, hyphens, underscores, dots)
   if (!/^[a-z0-9][a-z0-9\-_.]*$/.test(name)) return false;
-  
+
   // Check for URL-safe characters
   try {
     if (encodeURIComponent(name) !== name) return false;
   } catch {
     return false;
   }
-  
+
   return true;
 }
 
@@ -199,15 +201,15 @@ function readFlutterPackageMetadata(packagePath: string): FlutterPackageMetadata
       console.warn(`Warning: pubspec.yaml not found at ${pubspecPath}. Using default metadata.`);
       return null;
     }
-    
+
     const pubspecContent = fs.readFileSync(pubspecPath, 'utf-8');
     const pubspec = yaml.parse(pubspecContent);
-    
+
     // Validate required fields
     if (!pubspec.name) {
       console.warn(`Warning: Flutter package name not found in ${pubspecPath}. Using default name.`);
     }
-    
+
     return {
       name: pubspec.name || '',
       version: pubspec.version || '0.0.1',
@@ -220,42 +222,156 @@ function readFlutterPackageMetadata(packagePath: string): FlutterPackageMetadata
   }
 }
 
+// Copy markdown docs that match .d.ts basenames from source to the built dist folder,
+// and generate an aggregated README.md in the dist directory.
+async function copyMarkdownDocsToDist(params: {
+  sourceRoot: string;
+  distRoot: string;
+  exclude?: string[];
+}): Promise<{ copied: number; skipped: number }> {
+  const { sourceRoot, distRoot, exclude } = params;
+
+  // Ensure dist exists
+  if (!fs.existsSync(distRoot)) {
+    return { copied: 0, skipped: 0 };
+  }
+
+  // Default ignore patterns similar to generator
+  const defaultIgnore = ['**/node_modules/**', '**/dist/**', '**/build/**', '**/example/**'];
+  const ignore = exclude && exclude.length ? [...defaultIgnore, ...exclude] : defaultIgnore;
+
+  // Find all .d.ts files and check for sibling .md files
+  const dtsFiles = globSync('**/*.d.ts', { cwd: sourceRoot, ignore });
+  let copied = 0;
+  let skipped = 0;
+  const readmeSections: { title: string; relPath: string; content: string }[] = [];
+
+  for (const relDts of dtsFiles) {
+    if (path.basename(relDts) === 'global.d.ts') {
+      continue;
+    }
+
+    const relMd = relDts.replace(/\.d\.ts$/i, '.md');
+    const absMd = path.join(sourceRoot, relMd);
+    if (!fs.existsSync(absMd)) {
+      skipped++;
+      continue;
+    }
+
+    let content = '';
+    try {
+      content = fs.readFileSync(absMd, 'utf-8');
+    } catch {
+      // If we cannot read the file, still attempt to copy it and skip README aggregation for this entry.
+    }
+
+    // Copy into dist preserving relative path
+    const destPath = path.join(distRoot, relMd);
+    const destDir = path.dirname(destPath);
+    if (!fs.existsSync(destDir)) {
+      fs.mkdirSync(destDir, { recursive: true });
+    }
+    fs.copyFileSync(absMd, destPath);
+    copied++;
+
+    if (content) {
+      const base = path.basename(relMd, '.md');
+      const title = base
+        .split(/[-_]+/)
+        .filter(Boolean)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+      readmeSections.push({
+        title: title || base,
+        relPath: relMd,
+        content
+      });
+    }
+  }
+
+  // Generate an aggregated README.md inside distRoot so consumers can see component docs easily.
+  if (readmeSections.length > 0) {
+    const readmePath = path.join(distRoot, 'README.md');
+    let existing = '';
+    if (fs.existsSync(readmePath)) {
+      try {
+        existing = fs.readFileSync(readmePath, 'utf-8');
+      } catch {
+        existing = '';
+      }
+    }
+
+    const headerLines: string[] = [
+      '# WebF Component Documentation',
+      '',
+      '> This README is generated from markdown docs co-located with TypeScript definitions in the Flutter package.',
+      ''
+    ];
+
+    const sectionBlocks = readmeSections.map(section => {
+      const lines: string[] = [];
+      lines.push(`## ${section.title}`);
+      lines.push('');
+      lines.push(`_Source: \`./${section.relPath}\`_`);
+      lines.push('');
+      lines.push(section.content.trim());
+      lines.push('');
+      return lines.join('\n');
+    }).join('\n');
+
+    let finalContent: string;
+    if (existing && existing.trim().length > 0) {
+      finalContent = `${existing.trim()}\n\n---\n\n${headerLines.join('\n')}${sectionBlocks}\n`;
+    } else {
+      finalContent = `${headerLines.join('\n')}${sectionBlocks}\n`;
+    }
+
+    try {
+      fs.writeFileSync(readmePath, finalContent, 'utf-8');
+    } catch {
+      // If README generation fails, do not affect overall codegen.
+    }
+  }
+
+  return { copied, skipped };
+}
+
 function validateTypeScriptEnvironment(projectPath: string): { isValid: boolean; errors: string[] } {
   const errors: string[] = [];
-  
+
   // Check for TypeScript configuration
   const tsConfigPath = path.join(projectPath, 'tsconfig.json');
   if (!fs.existsSync(tsConfigPath)) {
     errors.push('Missing tsconfig.json - TypeScript configuration is required for type definitions');
   }
-  
+
   // Check for .d.ts files - this is critical
   const libPath = path.join(projectPath, 'lib');
   let hasDtsFiles = false;
-  
+
   if (fs.existsSync(libPath)) {
     // Check in lib directory
-    hasDtsFiles = fs.readdirSync(libPath).some(file => 
-      file.endsWith('.d.ts') || 
-      (fs.statSync(path.join(libPath, file)).isDirectory() && 
+    hasDtsFiles = fs.readdirSync(libPath).some(file =>
+      file.endsWith('.d.ts') ||
+      (fs.statSync(path.join(libPath, file)).isDirectory() &&
        fs.readdirSync(path.join(libPath, file)).some(f => f.endsWith('.d.ts')))
     );
   }
-  
+
   // Also check in root directory
   if (!hasDtsFiles) {
-    hasDtsFiles = fs.readdirSync(projectPath).some(file => 
-      file.endsWith('.d.ts') || 
-      (fs.statSync(path.join(projectPath, file)).isDirectory() && 
-       file !== 'node_modules' && 
+    hasDtsFiles = fs.readdirSync(projectPath).some(file =>
+      file.endsWith('.d.ts') ||
+      (fs.statSync(path.join(projectPath, file)).isDirectory() &&
+       file !== 'node_modules' &&
        fs.existsSync(path.join(projectPath, file, 'index.d.ts')))
     );
   }
-  
+
   if (!hasDtsFiles) {
     errors.push('No TypeScript definition files (.d.ts) found in the project - Please create .d.ts files for your components');
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors
@@ -265,8 +381,8 @@ function validateTypeScriptEnvironment(projectPath: string): { isValid: boolean;
 function createCommand(target: string, options: { framework: string; packageName: string; metadata?: FlutterPackageMetadata }): void {
   const { framework, metadata } = options;
   // Ensure package name is always valid
-  const packageName = isValidNpmPackageName(options.packageName) 
-    ? options.packageName 
+  const packageName = isValidNpmPackageName(options.packageName)
+    ? options.packageName
     : sanitizePackageName(options.packageName);
 
   if (!fs.existsSync(target)) {
@@ -310,7 +426,7 @@ function createCommand(target: string, options: { framework: string; packageName
       // Leave merge to the codegen step which appends exports safely
     }
 
-    spawnSync(NPM, ['install', '--omit=peer'], {
+    spawnSync(NPM, ['install'], {
       cwd: target,
       stdio: 'inherit'
     });
@@ -350,24 +466,30 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
   // If distPath is not provided or is '.', create a temporary directory
   let resolvedDistPath: string;
   let isTempDir = false;
-  
+  const isDartOnly = options.dartOnly;
+
   if (!distPath || distPath === '.') {
-    // Create a temporary directory for the generated package
-    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'webf-typings-'));
-    resolvedDistPath = tempDir;
-    isTempDir = true;
-    console.log(`\nUsing temporary directory: ${tempDir}`);
+    if (isDartOnly) {
+      // In Dart-only mode we don't need a temporary Node project directory
+      resolvedDistPath = path.resolve(distPath || '.');
+    } else {
+      // Create a temporary directory for the generated package
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'webf-typings-'));
+      resolvedDistPath = tempDir;
+      isTempDir = true;
+      console.log(`\nUsing temporary directory: ${tempDir}`);
+    }
   } else {
     resolvedDistPath = path.resolve(distPath);
   }
-  
+
   // First, check if we're in a Flutter package directory when flutter-package-src is not provided
   if (!options.flutterPackageSrc) {
     // Check if current directory or parent directories contain pubspec.yaml
     let currentDir = process.cwd();
     let foundPubspec = false;
     let pubspecDir = '';
-    
+
     // Search up to 3 levels up for pubspec.yaml
     for (let i = 0; i < 3; i++) {
       const pubspecPath = path.join(currentDir, 'pubspec.yaml');
@@ -380,141 +502,151 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
       if (parentDir === currentDir) break; // Reached root
       currentDir = parentDir;
     }
-    
+
     if (foundPubspec) {
       // Use the directory containing pubspec.yaml as the flutter package source
       options.flutterPackageSrc = pubspecDir;
       console.log(`\nDetected Flutter package at: ${pubspecDir}`);
     }
   }
-  
-  // Check if the directory exists and has required files
-  const packageJsonPath = path.join(resolvedDistPath, 'package.json');
-  const globalDtsPath = path.join(resolvedDistPath, 'global.d.ts');
-  const tsConfigPath = path.join(resolvedDistPath, 'tsconfig.json');
-  
-  const hasPackageJson = fs.existsSync(packageJsonPath);
-  const hasGlobalDts = fs.existsSync(globalDtsPath);
-  const hasTsConfig = fs.existsSync(tsConfigPath);
-  
-  // Determine if we need to create a new project
-  const needsProjectCreation = !hasPackageJson || !hasGlobalDts || !hasTsConfig;
-  
-  // Track if this is an existing project (has all required files)
-  const isExistingProject = hasPackageJson && hasGlobalDts && hasTsConfig;
-  
+
   let framework = options.framework;
   let packageName = options.packageName;
-  
-  // Validate and sanitize package name if provided
-  if (packageName && !isValidNpmPackageName(packageName)) {
-    console.warn(`Warning: Package name "${packageName}" is not valid for npm.`);
-    const sanitized = sanitizePackageName(packageName);
-    console.log(`Using sanitized name: "${sanitized}"`);
-    packageName = sanitized;
-  }
-  
-  if (needsProjectCreation) {
-    // If project needs creation but options are missing, prompt for them
-    if (!framework) {
-      const frameworkAnswer = await inquirer.prompt([{
-        type: 'list',
-        name: 'framework',
-        message: 'Which framework would you like to use?',
-        choices: ['react', 'vue']
-      }]);
-      framework = frameworkAnswer.framework;
+  let isExistingProject = false;
+
+  if (!isDartOnly) {
+    // Check if the directory exists and has required files
+    const packageJsonPath = path.join(resolvedDistPath, 'package.json');
+    const globalDtsPath = path.join(resolvedDistPath, 'global.d.ts');
+    const tsConfigPath = path.join(resolvedDistPath, 'tsconfig.json');
+
+    const hasPackageJson = fs.existsSync(packageJsonPath);
+    const hasGlobalDts = fs.existsSync(globalDtsPath);
+    const hasTsConfig = fs.existsSync(tsConfigPath);
+
+    // Determine if we need to create a new project
+    const needsProjectCreation = !hasPackageJson || !hasGlobalDts || !hasTsConfig;
+
+    // Track if this is an existing project (has all required files)
+    isExistingProject = hasPackageJson && hasGlobalDts && hasTsConfig;
+
+    // Validate and sanitize package name if provided
+    if (packageName && !isValidNpmPackageName(packageName)) {
+      console.warn(`Warning: Package name "${packageName}" is not valid for npm.`);
+      const sanitized = sanitizePackageName(packageName);
+      console.log(`Using sanitized name: "${sanitized}"`);
+      packageName = sanitized;
     }
-    
-    // Try to read Flutter package metadata if flutterPackageSrc is provided
-    let metadata: FlutterPackageMetadata | null = null;
-    if (options.flutterPackageSrc) {
-      metadata = readFlutterPackageMetadata(options.flutterPackageSrc);
-    }
-    
-    if (!packageName) {
-      // Use Flutter package name as default if available, sanitized for npm
-      const rawDefaultName = metadata?.name || path.basename(resolvedDistPath);
-      const defaultPackageName = sanitizePackageName(rawDefaultName);
-      
-      const packageNameAnswer = await inquirer.prompt([{
-        type: 'input',
-        name: 'packageName',
-        message: 'What is your package name?',
-        default: defaultPackageName,
-        validate: (input: string) => {
-          if (!input || input.trim() === '') {
-            return 'Package name is required';
+
+    if (needsProjectCreation) {
+      // If project needs creation but options are missing, prompt for them
+      if (!framework) {
+        const frameworkAnswer = await inquirer.prompt([{
+          type: 'list',
+          name: 'framework',
+          message: 'Which framework would you like to use?',
+          choices: ['react', 'vue']
+        }]);
+        framework = frameworkAnswer.framework;
+      }
+
+      // Try to read Flutter package metadata if flutterPackageSrc is provided
+      let metadata: FlutterPackageMetadata | null = null;
+      if (options.flutterPackageSrc) {
+        metadata = readFlutterPackageMetadata(options.flutterPackageSrc);
+      }
+
+      if (!packageName) {
+        // Use Flutter package name as default if available, sanitized for npm
+        const rawDefaultName = metadata?.name || path.basename(resolvedDistPath);
+        const defaultPackageName = sanitizePackageName(rawDefaultName);
+
+        const packageNameAnswer = await inquirer.prompt([{
+          type: 'input',
+          name: 'packageName',
+          message: 'What is your package name?',
+          default: defaultPackageName,
+          validate: (input: string) => {
+            if (!input || input.trim() === '') {
+              return 'Package name is required';
+            }
+
+            // Check if it's valid as-is
+            if (isValidNpmPackageName(input)) {
+              return true;
+            }
+
+            // If not valid, show what it would be sanitized to
+            const sanitized = sanitizePackageName(input);
+            return `Invalid npm package name. Would be sanitized to: "${sanitized}". Please enter a valid name.`;
           }
-          
-          // Check if it's valid as-is
-          if (isValidNpmPackageName(input)) {
-            return true;
+        }]);
+        packageName = packageNameAnswer.packageName;
+      }
+
+      console.log(`\nCreating new ${framework} project in ${resolvedDistPath}...`);
+      createCommand(resolvedDistPath, {
+        framework: framework!,
+        packageName: packageName!,
+        metadata: metadata || undefined
+      });
+    } else {
+      // Validate existing project structure
+      if (hasPackageJson) {
+        try {
+          const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+
+          // Detect framework from existing package.json
+          if (!framework) {
+            if (packageJson.dependencies?.react || packageJson.devDependencies?.react) {
+              framework = 'react';
+            } else if (packageJson.dependencies?.vue || packageJson.devDependencies?.vue) {
+              framework = 'vue';
+            } else {
+              // If can't detect, prompt for it
+              const frameworkAnswer = await inquirer.prompt([{
+                type: 'list',
+                name: 'framework',
+                message: 'Which framework are you using?',
+                choices: ['react', 'vue']
+              }]);
+              framework = frameworkAnswer.framework;
+            }
           }
-          
-          // If not valid, show what it would be sanitized to
-          const sanitized = sanitizePackageName(input);
-          return `Invalid npm package name. Would be sanitized to: "${sanitized}". Please enter a valid name.`;
+
+          console.log(`\nDetected existing ${framework} project in ${resolvedDistPath}`);
+        } catch (e) {
+          console.error('Error reading package.json:', e);
+          process.exit(1);
         }
-      }]);
-      packageName = packageNameAnswer.packageName;
-    }
-    
-    console.log(`\nCreating new ${framework} project in ${resolvedDistPath}...`);
-    createCommand(resolvedDistPath, {
-      framework: framework!,
-      packageName: packageName!,
-      metadata: metadata || undefined
-    });
-  } else {
-    // Validate existing project structure
-    if (hasPackageJson) {
-      try {
-        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-        
-        // Detect framework from existing package.json
-        if (!framework) {
-          if (packageJson.dependencies?.react || packageJson.devDependencies?.react) {
-            framework = 'react';
-          } else if (packageJson.dependencies?.vue || packageJson.devDependencies?.vue) {
-            framework = 'vue';
-          } else {
-            // If can't detect, prompt for it
-            const frameworkAnswer = await inquirer.prompt([{
-              type: 'list',
-              name: 'framework',
-              message: 'Which framework are you using?',
-              choices: ['react', 'vue']
-            }]);
-            framework = frameworkAnswer.framework;
-          }
-        }
-        
-        console.log(`\nDetected existing ${framework} project in ${resolvedDistPath}`);
-      } catch (e) {
-        console.error('Error reading package.json:', e);
-        process.exit(1);
       }
     }
+  } else {
+    // In Dart-only mode, framework/packageName are unused; ensure framework is not accidentally required later.
+    framework = options.framework;
   }
-  
+
   // Now proceed with code generation if flutter package source is provided
   if (!options.flutterPackageSrc) {
     console.log('\nProject is ready for code generation.');
     console.log('To generate code, run:');
     const displayPath = isTempDir ? '<output-dir>' : distPath;
-    console.log(`  webf codegen ${displayPath} --flutter-package-src=<path> --framework=${framework}`);
+    if (isDartOnly) {
+      console.log(`  webf codegen ${displayPath} --flutter-package-src=<path> --dart-only`);
+    } else {
+      console.log(`  webf codegen ${displayPath} --flutter-package-src=<path> --framework=${framework}`);
+    }
     if (isTempDir) {
       // Clean up temporary directory if we're not using it
       fs.rmSync(resolvedDistPath, { recursive: true, force: true });
     }
     return;
   }
-  
+
   // Validate TypeScript environment in the Flutter package
   console.log(`\nValidating TypeScript environment in ${options.flutterPackageSrc}...`);
   const validation = validateTypeScriptEnvironment(options.flutterPackageSrc);
-  
+
   if (!validation.isValid) {
     // Check specifically for missing tsconfig.json
     const tsConfigPath = path.join(options.flutterPackageSrc, 'tsconfig.json');
@@ -525,7 +657,7 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
         message: 'No tsconfig.json found. Would you like me to create one for you?',
         default: true
       }]);
-      
+
       if (createTsConfigAnswer.createTsConfig) {
         // Create a default tsconfig.json
         const defaultTsConfig = {
@@ -544,10 +676,10 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
           include: ['lib/**/*.d.ts', '**/*.d.ts'],
           exclude: ['node_modules', 'dist', 'build']
         };
-        
+
         fs.writeFileSync(tsConfigPath, JSON.stringify(defaultTsConfig, null, 2), 'utf-8');
         console.log('✅ Created tsconfig.json');
-        
+
         // Re-validate after creating tsconfig
         const newValidation = validateTypeScriptEnvironment(options.flutterPackageSrc);
         if (!newValidation.isValid) {
@@ -569,21 +701,40 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
       process.exit(1);
     }
   }
-  
-  const command = `webf codegen --flutter-package-src=${options.flutterPackageSrc} --framework=${framework} <distPath>`;
-  
+
+  const baseCommand = 'webf codegen';
+  const flutterPart = options.flutterPackageSrc ? ` --flutter-package-src=${options.flutterPackageSrc}` : '';
+  const modePart = isDartOnly
+    ? ' --dart-only'
+    : (framework ? ` --framework=${framework}` : '');
+  const command = `${baseCommand}${flutterPart}${modePart} <distPath>`;
+
+  if (isDartOnly) {
+    console.log(`\nGenerating Dart bindings from ${options.flutterPackageSrc}...`);
+
+    await dartGen({
+      source: options.flutterPackageSrc,
+      target: options.flutterPackageSrc,
+      command,
+      exclude: options.exclude,
+    });
+
+    console.log('\nDart code generation completed successfully!');
+    return;
+  }
+
   // Auto-initialize typings in the output directory if needed
   ensureInitialized(resolvedDistPath);
-  
+
   console.log(`\nGenerating ${framework} code from ${options.flutterPackageSrc}...`);
-  
+
   await dartGen({
     source: options.flutterPackageSrc,
     target: options.flutterPackageSrc,
     command,
     exclude: options.exclude,
   });
-  
+
   if (framework === 'react') {
     // Get the package name from package.json if it exists
     let reactPackageName: string | undefined;
@@ -596,13 +747,15 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
     } catch (e) {
       // Ignore errors
     }
-    
+
     await reactGen({
       source: options.flutterPackageSrc,
       target: resolvedDistPath,
       command,
       exclude: options.exclude,
-      packageName: reactPackageName,
+      // Prefer CLI-provided packageName (validated/sanitized above),
+      // fallback to detected name from package.json
+      packageName: packageName || reactPackageName,
     });
   } else if (framework === 'vue') {
     await vueGen({
@@ -612,19 +765,31 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
       exclude: options.exclude,
     });
   }
-  
+
   console.log('\nCode generation completed successfully!');
-  
+
   // Automatically build the generated package
   if (framework) {
     try {
       await buildPackage(resolvedDistPath);
+      // After building React package, copy any matching .md docs next to built JS files
+      if (framework === 'react' && options.flutterPackageSrc) {
+        const distOut = path.join(resolvedDistPath, 'dist');
+        const { copied } = await copyMarkdownDocsToDist({
+          sourceRoot: options.flutterPackageSrc,
+          distRoot: distOut,
+          exclude: options.exclude,
+        });
+        if (copied > 0) {
+          console.log(`📄 Copied ${copied} markdown docs to dist`);
+        }
+      }
     } catch (error) {
       console.error('\nWarning: Build failed:', error);
       // Don't exit here since generation was successful
     }
   }
-  
+
   // Handle npm publishing if requested via command line option
   if (options.publishToNpm && framework) {
     try {
@@ -641,7 +806,7 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
       message: 'Would you like to publish this package to npm?',
       default: false
     }]);
-    
+
     if (publishAnswer.publish) {
       // Ask for registry
       const registryAnswer = await inquirer.prompt([{
@@ -659,10 +824,10 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
           }
         }
       }]);
-      
+
       try {
         await buildAndPublishPackage(
-          resolvedDistPath, 
+          resolvedDistPath,
           registryAnswer.registry || undefined,
           isExistingProject
         );
@@ -672,7 +837,7 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
       }
     }
   }
-  
+
   // If using a temporary directory, remind the user where the files are
   if (isTempDir) {
     console.log(`\n📁 Generated files are in: ${resolvedDistPath}`);
@@ -694,19 +859,19 @@ function writeFileIfChanged(filePath: string, content: string) {
 function ensureInitialized(targetPath: string): void {
   const globalDtsPath = path.join(targetPath, 'global.d.ts');
   const tsConfigPath = path.join(targetPath, 'tsconfig.json');
-  
+
   // Check if initialization files already exist
   const needsInit = !fs.existsSync(globalDtsPath) || !fs.existsSync(tsConfigPath);
-  
+
   if (needsInit) {
     console.log('Initializing WebF typings...');
     fs.mkdirSync(targetPath, { recursive: true });
-    
+
     if (!fs.existsSync(globalDtsPath)) {
       fs.writeFileSync(globalDtsPath, gloabalDts, 'utf-8');
       console.log('Created global.d.ts');
     }
-    
+
     if (!fs.existsSync(tsConfigPath)) {
       fs.writeFileSync(tsConfigPath, tsConfig, 'utf-8');
       console.log('Created tsconfig.json');
@@ -716,7 +881,7 @@ function ensureInitialized(targetPath: string): void {
 
 async function buildPackage(packagePath: string): Promise<void> {
   const packageJsonPath = path.join(packagePath, 'package.json');
-  
+
   if (!fs.existsSync(packageJsonPath)) {
     // Skip the error in test environment to avoid console warnings
     if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined) {
@@ -724,34 +889,34 @@ async function buildPackage(packagePath: string): Promise<void> {
     }
     throw new Error(`No package.json found in ${packagePath}`);
   }
-  
+
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
   const packageName = packageJson.name;
   const packageVersion = packageJson.version;
-  
+
   // Check if node_modules exists
   const nodeModulesPath = path.join(packagePath, 'node_modules');
   if (!fs.existsSync(nodeModulesPath)) {
     console.log(`\n📦 Installing dependencies for ${packageName}...`);
-    
+
     // Check if yarn.lock exists to determine package manager
     const yarnLockPath = path.join(packagePath, 'yarn.lock');
     const useYarn = fs.existsSync(yarnLockPath);
-    
+
     const installCommand = useYarn ? 'yarn' : NPM;
     const installArgs = useYarn ? [] : ['install'];
-    
+
     const installResult = spawnSync(installCommand, installArgs, {
       cwd: packagePath,
       stdio: 'inherit'
     });
-    
+
     if (installResult.status !== 0) {
       throw new Error('Failed to install dependencies');
     }
     console.log('✅ Dependencies installed successfully!');
   }
-  
+
   // Check if package has a build script
   if (packageJson.scripts?.build) {
     console.log(`\nBuilding ${packageName}@${packageVersion}...`);
@@ -759,7 +924,7 @@ async function buildPackage(packagePath: string): Promise<void> {
       cwd: packagePath,
       stdio: 'inherit'
     });
-    
+
     if (buildResult.status !== 0) {
       throw new Error('Build failed');
     }
@@ -771,18 +936,18 @@ async function buildPackage(packagePath: string): Promise<void> {
 
 async function buildAndPublishPackage(packagePath: string, registry?: string, isExistingProject: boolean = false): Promise<void> {
   const packageJsonPath = path.join(packagePath, 'package.json');
-  
+
   if (!fs.existsSync(packageJsonPath)) {
     throw new Error(`No package.json found in ${packagePath}`);
   }
-  
+
   let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
   const packageName = packageJson.name;
   let packageVersion = packageJson.version;
-  
+
   // First, ensure dependencies are installed and build the package
   await buildPackage(packagePath);
-  
+
   // If this is an existing project, increment the patch version before publishing
   if (isExistingProject) {
     console.log(`\nIncrementing version for existing project...`);
@@ -791,18 +956,18 @@ async function buildAndPublishPackage(packagePath: string, registry?: string, is
       encoding: 'utf-8',
       stdio: 'pipe'
     });
-    
+
     if (versionResult.status !== 0) {
       console.error('Failed to increment version:', versionResult.stderr);
       throw new Error('Failed to increment version');
     }
-    
+
     // Re-read package.json to get the new version
     packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
     packageVersion = packageJson.version;
     console.log(`Version updated to ${packageVersion}`);
   }
-  
+
   // Set registry if provided
   if (registry) {
     console.log(`\nUsing npm registry: ${registry}`);
@@ -810,38 +975,38 @@ async function buildAndPublishPackage(packagePath: string, registry?: string, is
       cwd: packagePath,
       stdio: 'inherit'
     });
-    
+
     if (setRegistryResult.status !== 0) {
       throw new Error('Failed to set npm registry');
     }
   }
-  
+
   // Check if user is logged in to npm
   const whoamiResult = spawnSync(NPM, ['whoami'], {
     cwd: packagePath,
     encoding: 'utf-8'
   });
-  
+
   if (whoamiResult.status !== 0) {
     console.error('\nError: You must be logged in to npm to publish packages.');
     console.error('Please run "npm login" first.');
     throw new Error('Not logged in to npm');
   }
-  
+
   console.log(`\nPublishing ${packageName}@${packageVersion} to npm...`);
-  
+
   // Publish the package
   const publishResult = spawnSync(NPM, ['publish'], {
     cwd: packagePath,
     stdio: 'inherit'
   });
-  
+
   if (publishResult.status !== 0) {
     throw new Error('Publish failed');
   }
-  
+
   console.log(`\n✅ Successfully published ${packageName}@${packageVersion}`);
-  
+
   // Reset registry to default if it was changed
   if (registry) {
     spawnSync(NPM, ['config', 'delete', 'registry'], {

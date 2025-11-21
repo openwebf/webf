@@ -3,149 +3,171 @@
  * Licensed under GNU AGPL with Enterprise exception.
  */
 import 'package:flutter/cupertino.dart';
+import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
-import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
-import 'package:collection/collection.dart';
+import 'package:webf/webf.dart';
 
-// Element class
-class FlutterCupertinoListTile extends WidgetElement {
+import 'list_tile_bindings_generated.dart';
+
+/// WebF custom element that wraps Flutter's [CupertinoListTile].
+///
+/// Exposed as `<flutter-cupertino-list-tile>` in the DOM.
+class FlutterCupertinoListTile extends FlutterCupertinoListTileBindings {
   FlutterCupertinoListTile(super.context);
 
-  bool _notched = false;
   bool _showChevron = false;
+  bool _notched = false;
 
   @override
-  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
-    super.initializeAttributes(attributes);
-    attributes['notched'] = ElementAttributeProperty(
-      getter: () => _notched.toString(),
-      setter: (value) {
-        _notched = value == 'true';
-        state?.setState(() {});
-      }
-    );
-    attributes['show-chevron'] = ElementAttributeProperty(
-      getter: () => _showChevron.toString(),
-      setter: (value) {
-        _showChevron = value == 'true';
-        state?.setState(() {});
-      }
-    );
-    // Note: padding, background colors, leading size/spacing handled by Flutter defaults for now.
+  bool get showChevron => _showChevron;
+
+  @override
+  bool get allowsInfiniteHeight => true;
+
+  @override
+  set showChevron(value) {
+    final bool next = value == true;
+    if (next != _showChevron) {
+      _showChevron = next;
+      state?.requestUpdateState(() {});
+    }
+  }
+
+  @override
+  bool get notched => _notched;
+
+  @override
+  set notched(value) {
+    final bool next = value == true;
+    if (next != _notched) {
+      _notched = next;
+      state?.requestUpdateState(() {});
+    }
   }
 
   bool get isNotched => _notched;
+
   bool get shouldShowChevron => _showChevron;
 
   @override
-  FlutterCupertinoListTileState createState() => FlutterCupertinoListTileState(this);
+  FlutterCupertinoListTileState createState() =>
+      FlutterCupertinoListTileState(this);
 
   @override
-  FlutterCupertinoListTileState? get state => super.state as FlutterCupertinoListTileState?;
+  FlutterCupertinoListTileState? get state =>
+      super.state as FlutterCupertinoListTileState?;
 }
 
-// State class
 class FlutterCupertinoListTileState extends WebFWidgetElementState {
   FlutterCupertinoListTileState(super.widgetElement);
 
   @override
-  FlutterCupertinoListTile get widgetElement => super.widgetElement as FlutterCupertinoListTile;
+  FlutterCupertinoListTile get widgetElement =>
+      super.widgetElement as FlutterCupertinoListTile;
 
-  // --- Slot Helper ---
-  Widget? _getChildOfType<T>() {
-    final childNode = widgetElement.childNodes.firstWhereOrNull((node) {
-      return node is T;
-    });
-    return WebFWidgetElementChild(child: childNode?.toWidget());
-  }
-
-  // Title is the default slot (first element without specific component type)
-  Widget? _getDefaultChild() {
-    final defaultSlotNode = widgetElement.childNodes.firstWhereOrNull((node) {
-       if (node is dom.Element) {
-        // Skip specific child component types
-        return !(node is FlutterCupertinoListTileLeading ||
-                 node is FlutterCupertinoListTileSubtitle ||
-                 node is FlutterCupertinoListTileAdditionalInfo ||
-                 node is FlutterCupertinoListTileTrailing);
+  Widget? _buildSlotChild<T>() {
+    for (final node in widgetElement.childNodes) {
+      if (node is T) {
+        if (node is dom.Node) {
+          final widget = node.toWidget();
+          if (widget != null) {
+            return WebFWidgetElementChild(child: widget);
+          }
+        }
       }
-      // Allow simple text as title
-      if (node is dom.TextNode && node.data.trim().isNotEmpty) {
-        return true;
+    }
+    return null;
+  }
+
+  Widget? _buildTitle() {
+    final List<Widget> children = <Widget>[];
+
+    for (final node in widgetElement.childNodes) {
+      if (node is FlutterCupertinoListTileLeading ||
+          node is FlutterCupertinoListTileSubtitle ||
+          node is FlutterCupertinoListTileAdditionalInfo ||
+          node is FlutterCupertinoListTileTrailing) {
+        continue;
       }
-      return false;
-    });
-    // Wrap TextNode in a Text widget if found
-     if (defaultSlotNode is dom.TextNode) {
-       return Text(defaultSlotNode.data);
-     }
-    return WebFWidgetElementChild(child: defaultSlotNode?.toWidget());
-  }
-  // --- End Slot Helper ---
+      final widget = node.toWidget();
+      if (widget != null) {
+        children.add(WebFWidgetElementChild(child: widget));
+      }
+    }
 
-  // --- Event Handling ---
+    if (children.isEmpty) {
+      return null;
+    }
+    if (children.length == 1) {
+      return children.first;
+    }
 
-  void _handleTap() {
-    // Dispatch standard 'click' event
-    widgetElement.dispatchEvent(Event(EVENT_CLICK));
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: children,
+    );
   }
-  // --- End Event Handling ---
 
   @override
   Widget build(BuildContext context) {
-    Widget? leadingWidget = _getChildOfType<FlutterCupertinoListTileLeading>();
-    Widget? titleWidget = _getDefaultChild(); // Required
-    Widget? subtitleWidget = _getChildOfType<FlutterCupertinoListTileSubtitle>();
-    Widget? additionalInfoWidget = _getChildOfType<FlutterCupertinoListTileAdditionalInfo>();
-    Widget? trailingWidget = _getChildOfType<FlutterCupertinoListTileTrailing>();
+    final CSSRenderStyle renderStyle = widgetElement.renderStyle;
+    final Color? backgroundColor = renderStyle.backgroundColor?.value;
 
-    // Default to showing chevron if attribute is set and no trailing slot is provided
-    if (trailingWidget == null && widgetElement.shouldShowChevron) {
-      trailingWidget = const CupertinoListTileChevron();
+    final Widget? leading =
+        _buildSlotChild<FlutterCupertinoListTileLeading>();
+    final Widget? subtitle =
+        _buildSlotChild<FlutterCupertinoListTileSubtitle>();
+    final Widget? additionalInfo =
+        _buildSlotChild<FlutterCupertinoListTileAdditionalInfo>();
+    Widget? trailing =
+        _buildSlotChild<FlutterCupertinoListTileTrailing>();
+
+    if (trailing == null && widgetElement.shouldShowChevron) {
+      trailing = const CupertinoListTileChevron();
     }
 
-    // Build the actual list tile widget
-    Widget listTileWidget;
+    final Widget title = _buildTitle() ?? const SizedBox.shrink();
+
+    onTap() {
+      widgetElement.dispatchEvent(Event('click'));
+    }
+
     if (widgetElement.isNotched) {
-      listTileWidget = CupertinoListTile.notched(
-        key: ObjectKey(widgetElement),
-        title: titleWidget ?? const SizedBox(),
-        subtitle: subtitleWidget,
-        additionalInfo: additionalInfoWidget,
-        leading: leadingWidget,
-        trailing: trailingWidget,
-        onTap: _handleTap,
-      );
-    } else {
-      listTileWidget = CupertinoListTile(
-        key: ObjectKey(widgetElement),
-        title: titleWidget ?? const SizedBox(),
-        subtitle: subtitleWidget,
-        additionalInfo: additionalInfoWidget,
-        leading: leadingWidget,
-        trailing: trailingWidget,
-        onTap: _handleTap,
+      return CupertinoListTile.notched(
+        leading: leading,
+        title: title,
+        subtitle: subtitle,
+        additionalInfo: additionalInfo,
+        trailing: trailing,
+        backgroundColor: backgroundColor,
+        onTap: onTap,
       );
     }
 
-    // *** Wrap in Column with MainAxisSize.min to constrain height ***
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [listTileWidget],
+    return CupertinoListTile(
+      leading: leading,
+      title: title,
+      subtitle: subtitle,
+      additionalInfo: additionalInfo,
+      trailing: trailing,
+      backgroundColor: backgroundColor,
+      onTap: onTap,
     );
-    // *************************************************************
   }
 }
 
-// Sub-component classes for list tile slots
+/// Slot container for the leading widget of a list tile.
 class FlutterCupertinoListTileLeading extends WidgetElement {
   FlutterCupertinoListTileLeading(super.context);
 
   @override
-  WebFWidgetElementState createState() {
-    return FlutterCupertinoListTileLeadingState(this);
-  }
+  bool get allowsInfiniteHeight => true;
+
+
+  @override
+  WebFWidgetElementState createState() =>
+      FlutterCupertinoListTileLeadingState(this);
 }
 
 class FlutterCupertinoListTileLeadingState extends WebFWidgetElementState {
@@ -154,21 +176,22 @@ class FlutterCupertinoListTileLeadingState extends WebFWidgetElementState {
   @override
   Widget build(BuildContext context) {
     return WebFWidgetElementChild(
-        child: WebFHTMLElement(
-            tagName: 'DIV',
-            controller: widgetElement.ownerDocument.controller,
-            parentElement: widgetElement,
-            children: widgetElement.childNodes.toWidgetList()));
+      child: widgetElement.childNodes.firstOrNull?.toWidget(),
+    );
   }
 }
 
+/// Slot container for the subtitle widget of a list tile.
 class FlutterCupertinoListTileSubtitle extends WidgetElement {
   FlutterCupertinoListTileSubtitle(super.context);
 
   @override
-  WebFWidgetElementState createState() {
-    return FlutterCupertinoListTileSubtitleState(this);
-  }
+  bool get allowsInfiniteHeight => true;
+
+
+  @override
+  WebFWidgetElementState createState() =>
+      FlutterCupertinoListTileSubtitleState(this);
 }
 
 class FlutterCupertinoListTileSubtitleState extends WebFWidgetElementState {
@@ -177,44 +200,47 @@ class FlutterCupertinoListTileSubtitleState extends WebFWidgetElementState {
   @override
   Widget build(BuildContext context) {
     return WebFWidgetElementChild(
-        child: WebFHTMLElement(
-            tagName: 'DIV',
-            controller: widgetElement.ownerDocument.controller,
-            parentElement: widgetElement,
-            children: widgetElement.childNodes.toWidgetList()));
+      child: widgetElement.childNodes.firstOrNull?.toWidget(),
+    );
   }
 }
 
+/// Slot container for the additionalInfo widget of a list tile.
 class FlutterCupertinoListTileAdditionalInfo extends WidgetElement {
   FlutterCupertinoListTileAdditionalInfo(super.context);
 
   @override
-  WebFWidgetElementState createState() {
-    return FlutterCupertinoListTileAdditionalInfoState(this);
-  }
+  bool get allowsInfiniteHeight => true;
+
+
+  @override
+  WebFWidgetElementState createState() =>
+      FlutterCupertinoListTileAdditionalInfoState(this);
 }
 
-class FlutterCupertinoListTileAdditionalInfoState extends WebFWidgetElementState {
+class FlutterCupertinoListTileAdditionalInfoState
+    extends WebFWidgetElementState {
   FlutterCupertinoListTileAdditionalInfoState(super.widgetElement);
 
   @override
   Widget build(BuildContext context) {
     return WebFWidgetElementChild(
-        child: WebFHTMLElement(
-            tagName: 'DIV',
-            controller: widgetElement.ownerDocument.controller,
-            parentElement: widgetElement,
-            children: widgetElement.childNodes.toWidgetList()));
+      child: widgetElement.childNodes.firstOrNull?.toWidget(),
+    );
   }
 }
 
+/// Slot container for the trailing widget of a list tile.
 class FlutterCupertinoListTileTrailing extends WidgetElement {
   FlutterCupertinoListTileTrailing(super.context);
 
   @override
-  WebFWidgetElementState createState() {
-    return FlutterCupertinoListTileTrailingState(this);
-  }
+  bool get allowsInfiniteHeight => true;
+
+
+  @override
+  WebFWidgetElementState createState() =>
+      FlutterCupertinoListTileTrailingState(this);
 }
 
 class FlutterCupertinoListTileTrailingState extends WebFWidgetElementState {
@@ -223,10 +249,7 @@ class FlutterCupertinoListTileTrailingState extends WebFWidgetElementState {
   @override
   Widget build(BuildContext context) {
     return WebFWidgetElementChild(
-        child: WebFHTMLElement(
-            tagName: 'DIV',
-            controller: widgetElement.ownerDocument.controller,
-            parentElement: widgetElement,
-            children: widgetElement.childNodes.toWidgetList()));
+      child: widgetElement.childNodes.firstOrNull?.toWidget(),
+    );
   }
 }

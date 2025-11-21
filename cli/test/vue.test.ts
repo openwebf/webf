@@ -1,6 +1,6 @@
 import { generateVueTypings } from '../src/vue';
 import { IDLBlob } from '../src/IDLBlob';
-import { ClassObject, ClassObjectKind, PropsDeclaration } from '../src/declaration';
+import { ClassObject, ClassObjectKind, PropsDeclaration, ConstObject } from '../src/declaration';
 
 describe('Vue Generator', () => {
   describe('generateVueTypings', () => {
@@ -152,6 +152,38 @@ describe('Vue Generator', () => {
       expect(result).toContain("'id'?: string;");
       expect(result).toContain("'class'?: string;");
       expect(result).toContain("'style'?: string | Record<string, any>;");
+    });
+
+    it('should include declare const variables as exported declarations', () => {
+      const blob = new IDLBlob('/test/source', '/test/target', 'ConstOnly', 'test', '');
+
+      const constObj = new ConstObject();
+      constObj.name = 'WEBF_UNIQUE';
+      constObj.type = 'unique symbol';
+
+      blob.objects = [constObj as any];
+
+      const result = generateVueTypings([blob]);
+
+      expect(result).toContain('export declare const WEBF_UNIQUE: unique symbol;');
+    });
+
+    it('should include declare enum as exported declaration', () => {
+      const blob = new IDLBlob('/test/source', '/test/target', 'EnumOnly', 'test', '');
+      // Build a minimal faux EnumObject via analyzer by simulating ast is heavy; create a shape
+      // We'll reuse analyzer classes by importing EnumObject is cumbersome in test; instead
+      // craft an object literal compatible with instanceof check by constructing real class.
+      const { EnumObject, EnumMemberObject } = require('../src/declaration');
+      const e = new EnumObject();
+      e.name = 'CupertinoColors';
+      const m1 = new EnumMemberObject(); m1.name = "'red'"; m1.initializer = '0x0f';
+      const m2 = new EnumMemberObject(); m2.name = "'bbb'"; m2.initializer = '0x00';
+      e.members = [m1, m2];
+
+      blob.objects = [e as any];
+
+      const result = generateVueTypings([blob]);
+      expect(result).toContain("export declare enum CupertinoColors { 'red' = 0x0f, 'bbb' = 0x00 }");
     });
   });
 });

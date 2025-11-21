@@ -26,8 +26,7 @@ const DemoItem: React.FC<{ label: string; style?: CSSProps; className?: string }
 export const BGPage: React.FC = () => {
   return (
     <div id="main" className="min-h-screen">
-      <WebFListView className="px-3 md:px-6 bg-[#f8f9fa]">
-        <div className="max-w-5xl mx-auto py-4">
+      <WebFListView className="px-3 md:px-6 bg-[#f8f9fa] max-w-5xl mx-auto py-4">
           <SectionHeader title="Linear gradient directions" />
           <div className="flex flex-wrap gap-4 items-start">
             <DemoItem label="linear-gradient(red, blue)" className="w-[100px] h-[100px]" style={{ background: 'red linear-gradient(red, blue)' }} />
@@ -139,7 +138,6 @@ export const BGPage: React.FC = () => {
             </div>
           </div>
 
-        </div>
       </WebFListView>
     </div>
   );
