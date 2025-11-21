@@ -52,7 +52,7 @@ describe('Transition transform', () => {
     requestAnimationFrame(async () => {
       await snapshot();
       setElementStyle(container1, {
-        transform: 'matrix3d(0,1,1,1,10,10,1,0,0,1,1,1,1,1,0)',
+        transform: 'matrix3d(0,1,1,1,10,10,1,0,0,1,1,1,1,1,0,0)',
       });
     });
   });
