@@ -34,27 +34,130 @@
 
 #include "rule_set.h"
 
+#include <functional>
+
 #include "core/css/css_selector.h"
 #include "core/css/css_style_rule.h"
 #include "core/css/media_query_evaluator.h"
 #include "core/css/style_rule.h"
-#include "foundation/string/string_view.h"
+#include "core/css/style_rule_import.h"
 #include "core/css/style_sheet_contents.h"
+#include "foundation/string/string_view.h"
 #include "foundation/casting.h"
 #include "foundation/logging.h"
 
 namespace webf {
 
+namespace {
+
+using ChildRuleVector = StyleRuleBase::ChildRuleVector;
+
+void WalkRulesFromVector(RuleSet& rule_set,
+                         const MediaQueryEvaluator& medium,
+                         AddRuleFlags add_rule_flags,
+                         const std::vector<std::shared_ptr<StyleRuleBase>>& rules);
+void WalkRulesFromChildVector(RuleSet& rule_set,
+                              const MediaQueryEvaluator& medium,
+                              AddRuleFlags add_rule_flags,
+                              const ChildRuleVector& rules);
+
+void ProcessRule(RuleSet& rule_set,
+                 const MediaQueryEvaluator& medium,
+                 AddRuleFlags add_rule_flags,
+                 const std::shared_ptr<StyleRuleBase>& base_rule) {
+  if (!base_rule) {
+    return;
+  }
+
+  // Plain style rule: always add.
+  if (base_rule->IsStyleRule()) {
+    rule_set.AddStyleRule(std::static_pointer_cast<StyleRule>(base_rule), add_rule_flags);
+    return;
+  }
+
+  // @media rule: only include children when the media query list matches.
+  if (base_rule->IsMediaRule()) {
+    if (auto* media_rule = DynamicTo<StyleRuleMedia>(base_rule.get())) {
+      const MediaQuerySet* queries = media_rule->MediaQueries();
+      if (queries) {
+        bool match = medium.Eval(*queries);
+        WEBF_LOG(INFO) << "[RuleSet] @media block '" << queries->MediaText().ToUTF8String()
+                       << "' match=" << (match ? "true" : "false");
+        if (!match) {
+          return;
+        }
+      }
+      WalkRulesFromChildVector(rule_set, medium, add_rule_flags, media_rule->ChildRules());
+    }
+    return;
+  }
+
+  // @supports rule: only include when condition is supported.
+  if (base_rule->IsSupportsRule()) {
+    if (auto* supports_rule = DynamicTo<StyleRuleSupports>(base_rule.get())) {
+      if (!supports_rule->ConditionIsSupported()) {
+        return;
+      }
+      WalkRulesFromChildVector(rule_set, medium, add_rule_flags, supports_rule->ChildRules());
+    }
+    return;
+  }
+
+  // @container rule: WebF does not yet evaluate container queries
+  // during rule collection; conservatively include children so that
+  // nested @media rules still participate.
+  if (base_rule->IsContainerRule()) {
+    if (auto* container_rule = DynamicTo<StyleRuleContainer>(base_rule.get())) {
+      WalkRulesFromChildVector(rule_set, medium, add_rule_flags, container_rule->ChildRules());
+    }
+    return;
+  }
+
+  // Generic grouping rules that simply wrap child rules (e.g. @layer blocks,
+  // @scope, @starting-style). Always recurse into their children.
+  if (auto* group_rule = DynamicTo<StyleRuleGroup>(base_rule.get())) {
+    WalkRulesFromChildVector(rule_set, medium, add_rule_flags, group_rule->ChildRules());
+    return;
+  }
+}
+
+void WalkRulesFromVector(RuleSet& rule_set,
+                         const MediaQueryEvaluator& medium,
+                         AddRuleFlags add_rule_flags,
+                         const std::vector<std::shared_ptr<StyleRuleBase>>& rules) {
+  for (const auto& base_rule : rules) {
+    ProcessRule(rule_set, medium, add_rule_flags, base_rule);
+  }
+}
+
+void WalkRulesFromChildVector(RuleSet& rule_set,
+                              const MediaQueryEvaluator& medium,
+                              AddRuleFlags add_rule_flags,
+                              const ChildRuleVector& rules) {
+  // Iterate by index instead of relying on ChildRuleVector's iterator
+  // to avoid off-by-one issues and still respect invisible rules via
+  // AdjustedIndex() in operator[].
+  for (uint32_t i = 0; i < rules.size(); ++i) {
+    std::shared_ptr<const StyleRuleBase> base_const = rules[i];
+    if (!base_const) {
+      continue;
+    }
+    auto base_rule = std::const_pointer_cast<StyleRuleBase>(base_const);
+    ProcessRule(rule_set, medium, add_rule_flags, base_rule);
+  }
+}
+
+}  // namespace
+
 const std::vector<std::shared_ptr<RuleData>> RuleSet::empty_rule_data_vector_;
 
-RuleData::RuleData(std::shared_ptr<StyleRule> rule, 
-                   unsigned selector_index, 
+RuleData::RuleData(std::shared_ptr<StyleRule> rule,
+                   unsigned selector_index,
                    unsigned position)
     : rule_(rule),
       selector_index_(selector_index),
       position_(position),
       specificity_(0) {
-  
   if (rule_) {
     const CSSSelector& selector = rule_->SelectorAt(selector_index_);
     specificity_ = selector.Specificity();
@@ -76,23 +179,36 @@ RuleSet::RuleSet() = default;
 
 RuleSet::~RuleSet() = default;
 
-void RuleSet::AddRulesFromSheet(
-    std::shared_ptr<StyleSheetContents> sheet,
-    const MediaQueryEvaluator& medium,
-    AddRuleFlags add_rule_flags) {
-  
+void RuleSet::AddRulesFromSheet(std::shared_ptr<StyleSheetContents> sheet,
+                                const MediaQueryEvaluator& medium,
+                                AddRuleFlags add_rule_flags) {
   if (!sheet) {
     return;
   }
-  
-  // Process child rules
-  const auto& child_rules = sheet->ChildRules();
-  for (const auto& rule : child_rules) {
-    if (auto style_rule = DynamicTo<StyleRule>(rule.get())) {
-      // For style rules, add them to the RuleSet
-      AddStyleRule(std::static_pointer_cast<StyleRule>(rule), add_rule_flags);
+
+  // Start with this sheet's own rules.
+  WalkRulesFromVector(*this, medium, add_rule_flags, sheet->ChildRules());
+
+  // Then process any @import rules, honoring their media queries and support
+  // conditions before walking into the imported sheet.
+  const auto& imports = sheet->ImportRules();
+  for (const auto& imp : imports) {
+    if (!imp) {
+      continue;
     }
-    // TODO: Handle other rule types (@media, @supports, etc) when implemented
+
+    auto mq = imp->MediaQueries();
+    if (mq && !medium.Eval(*mq)) {
+      continue;
+    }
+    if (!imp->IsSupported()) {
+      continue;
+    }
+
+    std::shared_ptr<StyleSheetContents> child = imp->GetStyleSheet();
+    if (child) {
+      AddRulesFromSheet(child, medium, add_rule_flags);
+    }
   }
 }
 

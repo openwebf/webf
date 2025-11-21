@@ -11,6 +11,7 @@
 
 #include "../foundation/string/atomic_string.h"
 #include "bindings/qjs/binding_initializer.h"
+#include "core/css/style_engine.h"
 #include "core/dart_methods.h"
 #include "core/dom/document.h"
 #include "core/frame/window.h"
@@ -357,6 +358,75 @@ void WebFPage::DumpQuickJsByteCodeInternal(void* page_,
 
   dart_isolate_context->dispatcher()->PostToDart(page->isDedicated(), ReturnDumpByteCodeResultToDart, persistent_handle,
                                                  result_callback);
+}
+
+void WebFPage::OnViewportSizeChangedInternal(void* page_, double /*inner_width*/, double /*inner_height*/) {
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  if (!page) {
+    return;
+  }
+
+  assert(std::this_thread::get_id() == page->currentThread());
+
+  ExecutingContext* context = page->executingContext();
+  if (!context || !context->IsContextValid() || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  Document* document = context->document();
+  if (!document) {
+    return;
+  }
+
+  // Viewport size changes affect width/height/device-width/device-height
+  // media queries. Let the style engine react accordingly.
+  document->EnsureStyleEngine().MediaQueryAffectingValueChanged(MediaValueChange::kSize);
+}
+
+void WebFPage::OnDevicePixelRatioChangedInternal(void* page_, double /*device_pixel_ratio*/) {
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  if (!page) {
+    return;
+  }
+
+  assert(std::this_thread::get_id() == page->currentThread());
+
+  ExecutingContext* context = page->executingContext();
+  if (!context || !context->IsContextValid() || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  Document* document = context->document();
+  if (!document) {
+    return;
+  }
+
+  // DPR/resolution changes influence resolution/device-pixel-ratio media
+  // queries; treat them as "other" environment changes for now.
+  document->EnsureStyleEngine().MediaQueryAffectingValueChanged(MediaValueChange::kOther);
+}
+
+void WebFPage::OnColorSchemeChangedInternal(void* page_, const std::string& scheme/*scheme*/) {
+  WEBF_LOG(VERBOSE) << "WebFPage::OnColorSchemeChangedInternal called with value: " << scheme << std::endl;
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  if (!page) {
+    return;
+  }
+
+  assert(std::this_thread::get_id() == page->currentThread());
+
+  ExecutingContext* context = page->executingContext();
+  if (!context || !context->IsContextValid() || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  Document* document = context->document();
+  if (!document) {
+    return;
+  }
+
+  // prefers-color-scheme is modeled as an "other" media value change.
+  document->EnsureStyleEngine().MediaQueryAffectingValueChanged(MediaValueChange::kOther);
 }
 
 // static

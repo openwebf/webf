@@ -42,7 +42,29 @@
 namespace webf {
 
 static inline bool FeatureWithValidIdent(const String& media_feature, CSSValueID ident) {
-  if (media_feature == media_feature_names_atomicstring::kVideoDynamicRange) {
+  // orientation: portrait | landscape
+  if (media_feature == media_feature_names_atomicstring::kOrientation) {
+    return ident == CSSValueID::kPortrait || ident == CSSValueID::kLandscape;
+  }
+
+  // resizable: true | false
+  if (media_feature == media_feature_names_atomicstring::kResizable) {
+    return ident == CSSValueID::kTrue || ident == CSSValueID::kFalse;
+  }
+
+  // inverted-colors: inverted | none
+  if (media_feature == media_feature_names_atomicstring::kInvertedColors) {
+    return ident == CSSValueID::kInverted || ident == CSSValueID::kNone;
+  }
+
+  // prefers-color-scheme: dark | light | no-preference
+  if (media_feature == media_feature_names_atomicstring::kPrefersColorScheme) {
+    return ident == CSSValueID::kDark || ident == CSSValueID::kLight || ident == CSSValueID::kNoPreference;
+  }
+
+  // dynamic-range / video-dynamic-range: standard | high
+  if (media_feature == media_feature_names_atomicstring::kDynamicRange ||
+      media_feature == media_feature_names_atomicstring::kVideoDynamicRange) {
     return ident == CSSValueID::kStandard || ident == CSSValueID::kHigh;
   }
 

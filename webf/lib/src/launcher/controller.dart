@@ -637,7 +637,17 @@ class WebFController with Diagnosticable {
     bool? after = isDarkMode;
 
     if (before != after) {
-      view.window.dispatchEvent(ColorSchemeChangeEvent(after == true ? 'dark' : 'light'));
+      final String scheme = after == true ? 'dark' : 'light';
+      view.window.dispatchEvent(ColorSchemeChangeEvent(scheme));
+      // Notify native Blink CSS about the new color-scheme value so that
+      // prefers-color-scheme media queries re-evaluate against the updated
+      // environment, in addition to Dart-side style updates.
+      final Pointer<Void>? page = getAllocatedPage(view.contextId);
+      if (page != null) {
+        final Pointer<Utf8> schemePtr = scheme.toNativeUtf8();
+        nativeOnColorSchemeChanged(page, schemePtr, scheme.length);
+        malloc.free(schemePtr);
+      }
       view.document.recalculateStyleImmediately();
     } else {
 

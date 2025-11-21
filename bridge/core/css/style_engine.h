@@ -42,6 +42,7 @@
 #include "core/css/css_style_sheet.h"
 #include "core/css/invalidation/pending_invalidations.h"
 //#include "core/css/layout_tree_rebuild_root.h"
+#include "core/css/media_value_change.h"
 #include "core/css/resolver/style_resolver.h"
 //#include "core/css/style_invalidation_root.h"
 #include "core/css/style_recalc_root.h"
@@ -138,6 +139,13 @@ class StyleEngine final {
   }
   
   void CreateResolver();
+
+  // Notify the style engine that some environment-dependent media value
+  // (viewport size, dynamic viewport units, or other device state) has
+  // changed. For now this conservatively triggers a full style recalc
+  // when Blink CSS is enabled, but the hook allows more targeted
+  // invalidation later.
+  void MediaQueryAffectingValueChanged(MediaValueChange change);
 
  private:
   Document* document_;
