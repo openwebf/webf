@@ -5592,15 +5592,51 @@ std::shared_ptr<const CSSValue> ConsumeTransformValue(CSSParserTokenStream& stre
           return nullptr;
         }
         break;
-      case CSSValueID::kRotate3D:
-        if (!ConsumeNumbers(stream, context, transform_value, 3) || !ConsumeCommaIncludingWhitespace(stream)) {
-          return nullptr;
-        }
-        parsed_value = ConsumeAngle(stream, context);
-        if (!parsed_value) {
-          return nullptr;
+      case CSSValueID::kRotate3D: {
+        // Support both:
+        //   - Spec form: rotate3d(<number>, <number>, <number>, <angle>)
+        //   - Legacy form used in WebF tests: rotate3d(<angle>, <angle>, <angle>)
+        const CSSParserToken& first = stream.Peek();
+        if (first.GetType() == kNumberToken || first.GetType() == kFunctionToken) {
+          // Axis + angle syntax: <number>{3}, <angle>
+          if (!ConsumeNumbers(stream, context, transform_value, 3) || !ConsumeCommaIncludingWhitespace(stream)) {
+            return nullptr;
+          }
+          parsed_value = ConsumeAngle(stream, context);
+          if (!parsed_value) {
+            return nullptr;
+          }
+        } else {
+          // Triple-angle syntax: rotate3d(ax, ay, az)
+          // Parse three <angle> values separated by commas. These are
+          // forwarded as-is and interpreted on the Dart side.
+          std::shared_ptr<const CSSPrimitiveValue> angle_x = ConsumeAngle(stream, context);
+          if (!angle_x) {
+            return nullptr;
+          }
+          transform_value->Append(angle_x);
+
+          if (!ConsumeCommaIncludingWhitespace(stream)) {
+            return nullptr;
+          }
+
+          std::shared_ptr<const CSSPrimitiveValue> angle_y = ConsumeAngle(stream, context);
+          if (!angle_y) {
+            return nullptr;
+          }
+          transform_value->Append(angle_y);
+
+          if (!ConsumeCommaIncludingWhitespace(stream)) {
+            return nullptr;
+          }
+
+          parsed_value = ConsumeAngle(stream, context);
+          if (!parsed_value) {
+            return nullptr;
+          }
         }
         break;
+      }
       case CSSValueID::kTranslate3D:
         if (!ConsumeTranslate3d(stream, context, transform_value)) {
           return nullptr;
