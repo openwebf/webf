@@ -693,6 +693,10 @@ extension CSSDisplayText on CSSDisplay {
         return 'flex';
       case CSSDisplay.inlineFlex:
         return 'inline-flex';
+      case CSSDisplay.grid:
+        return 'grid';
+      case CSSDisplay.inlineGrid:
+        return 'inline-grid';
       case CSSDisplay.inline:
       default:
         return 'inline';
@@ -877,11 +881,70 @@ String _gridAutoFlowToCss(GridAutoFlow flow) {
   }
 }
 
+String _gridTrackSizeToCss(GridTrackSize track) {
+  if (track is GridFixed) {
+    return track.length.cssText();
+  }
+  if (track is GridFraction) {
+    return '${track.fr.cssText()}fr';
+  }
+  return 'auto';
+}
+
+String _gridTrackListToCss(List<GridTrackSize> tracks, {required bool templateList}) {
+  if (tracks.isEmpty) {
+    return templateList ? 'none' : 'auto';
+  }
+  return tracks.map(_gridTrackSizeToCss).join(' ');
+}
+
+String _gridPlacementToCss(GridPlacement placement) {
+  switch (placement.kind) {
+    case GridPlacementKind.span:
+      final int span = placement.span ?? 1;
+      return 'span ${span > 0 ? span : 1}';
+    case GridPlacementKind.line:
+      return (placement.line ?? 1).toString();
+    case GridPlacementKind.auto:
+    default:
+      return 'auto';
+  }
+}
+
+String _gridPlacementShorthand(GridPlacement start, GridPlacement end) {
+  final String startText = _gridPlacementToCss(start);
+  final String endText = _gridPlacementToCss(end);
+  return '$startText / $endText';
+}
+
 String? _valueForGridProperty(String propertyName, CSSRenderStyle style) {
-  switch (propertyName) {
-    case 'gridAutoFlow':
+  String normalized = propertyName.contains('-') ? propertyName : kebabize(propertyName);
+  if (normalized.startsWith('-')) {
+    normalized = normalized.substring(1);
+  }
+  switch (normalized) {
     case 'grid-auto-flow':
       return _gridAutoFlowToCss(style.gridAutoFlow);
+    case 'grid-template-columns':
+      return _gridTrackListToCss(style.gridTemplateColumns, templateList: true);
+    case 'grid-template-rows':
+      return _gridTrackListToCss(style.gridTemplateRows, templateList: true);
+    case 'grid-auto-columns':
+      return _gridTrackListToCss(style.gridAutoColumns, templateList: false);
+    case 'grid-auto-rows':
+      return _gridTrackListToCss(style.gridAutoRows, templateList: false);
+    case 'grid-column-start':
+      return _gridPlacementToCss(style.gridColumnStart);
+    case 'grid-column-end':
+      return _gridPlacementToCss(style.gridColumnEnd);
+    case 'grid-row-start':
+      return _gridPlacementToCss(style.gridRowStart);
+    case 'grid-row-end':
+      return _gridPlacementToCss(style.gridRowEnd);
+    case 'grid-column':
+      return _gridPlacementShorthand(style.gridColumnStart, style.gridColumnEnd);
+    case 'grid-row':
+      return _gridPlacementShorthand(style.gridRowStart, style.gridRowEnd);
   }
   return null;
 }

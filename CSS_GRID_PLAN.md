@@ -67,9 +67,11 @@
 - **Docs & Communication:** Keep `dev_css_grid_process.md` and CSS_GRID_PLAN.md updated; highlight new capabilities in release notes when features stabilize.
 
 **Next Steps**
-1. Finalize Phase 1 plumbing (display enum, mixin, shorthand parsing, helper adjustments) and ensure unit/integration tests pass.
-2. Expand computed-style helper coverage for grid properties (already started) and validate via integration specs.
-3. Begin `RenderGridLayout` core implementation, updating plan/process docs per milestone.
+Computed-style serialization + tests for grid templates/placements are now in tree (see `grid_computed_style_test.dart` and `css-grid/computed-style.ts`). Upcoming focus areas:
+
+1. Begin `RenderGridLayout` core implementation, wiring creation paths and scaffolding parent-data/instrumentation hooks.
+2. Layer Phase 3 track sizing & placement logic (explicit/implicit tracks, spans, gaps) once the skeleton lands.
+3. Capture layout/perf findings in `dev_css_grid_process.md` alongside new coverage as features flip on.
 
 **TODOs**
 - [x] Capture overview/goals/scope plus risks and rollout strategy.
@@ -78,5 +80,5 @@
 - [ ] Implement `RenderGridLayout` skeleton and hook creation paths.
 - [ ] Implement full track sizing/placement (Phase 3) with tests.
 - [ ] Extend alignment/template features (Phase 4) with serialization and coverage.
-- [ ] Complete computed-style serialization and integration specs for grid properties.
+- [x] Complete computed-style serialization and integration specs for grid properties.
 - [ ] Profile and harden grid layout (Phase 5), updating docs/examples.
