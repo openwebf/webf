@@ -104,6 +104,9 @@ class DebugFlags {
   // Emit verbose semantics dumps per element to troubleshoot a11y tree wiring.
   static bool debugLogSemanticsEnabled = false;
 
+  // Verbose logging for RenderGridLayout sizing/placement.
+  static bool debugLogGridEnabled = false;
+
   // Removed: Use FlexLog filters to enable flex logs.
 
   /// Debug flag to enable inline layout visualization.
@@ -198,5 +201,4 @@ class DebugFlags {
   // Border/border-radius diagnostics: when true, logs parsing, resolution,
   // and painting decisions for border-radius (including clip/painter paths).
   static bool enableBorderRadiusLogs = false;
-
 }

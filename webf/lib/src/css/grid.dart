@@ -24,6 +24,8 @@ class GridAuto extends GridTrackSize {
   const GridAuto() : super();
 }
 
+enum GridAutoFlow { row, column, rowDense, columnDense }
+
 class CSSGridParser {
   // Very simple whitespace splitter that ignores spaces inside parentheses.
   static List<String> _splitBySpacePreservingFunc(String input) {
@@ -47,6 +49,31 @@ class CSSGridParser {
     return res;
   }
 
+  static GridTrackSize? _parseSingleTrack(
+    String token,
+    RenderStyle renderStyle,
+    String propertyName,
+    Axis axis,
+  ) {
+    final String t = token.trim();
+    if (t.isEmpty) return null;
+    if (t == 'auto') {
+      return const GridAuto();
+    }
+    if (t.endsWith('fr')) {
+      final numStr = t.substring(0, t.length - 2).trim();
+      final fr = numStr.isEmpty ? 1.0 : double.tryParse(numStr);
+      if (fr != null && fr >= 0) {
+        return GridFraction(fr);
+      }
+    }
+    final CSSLengthValue len = CSSLength.parseLength(t, renderStyle, propertyName, axis);
+    if (len != CSSLengthValue.unknown) {
+      return GridFixed(len);
+    }
+    return null;
+  }
+
   static List<GridTrackSize> parseTrackList(
     String value,
     RenderStyle renderStyle,
@@ -56,29 +83,55 @@ class CSSGridParser {
     final tokens = _splitBySpacePreservingFunc(value.trim());
     final List<GridTrackSize> sizes = [];
     for (final tok in tokens) {
-      final t = tok.trim();
+      final String t = tok.trim();
       if (t.isEmpty) continue;
-      if (t == 'auto') {
-        sizes.add(const GridAuto());
-        continue;
-      }
-      if (t.endsWith('fr')) {
-        final numStr = t.substring(0, t.length - 2).trim();
-        final fr = numStr.isEmpty ? 1.0 : double.tryParse(numStr);
-        if (fr != null && fr >= 0) {
-          sizes.add(GridFraction(fr));
-          continue;
+
+      if (t.startsWith('repeat(') && t.endsWith(')')) {
+        final inner = t.substring(7, t.length - 1);
+        final commaIndex = inner.indexOf(',');
+        if (commaIndex != -1) {
+          final countStr = inner.substring(0, commaIndex).trim();
+          final trackToken = inner.substring(commaIndex + 1).trim();
+          final repeatCount = int.tryParse(countStr);
+          if (repeatCount != null && repeatCount > 0) {
+            for (int i = 0; i < repeatCount; i++) {
+              final GridTrackSize? parsed =
+                  _parseSingleTrack(trackToken, renderStyle, propertyName, axis);
+              if (parsed != null) {
+                sizes.add(parsed);
+              }
+            }
+            continue;
+          }
         }
       }
-      // Fallback to length/percentage
-      final CSSLengthValue len = CSSLength.parseLength(t, renderStyle, propertyName, axis);
-      if (len != CSSLengthValue.unknown) {
-        sizes.add(GridFixed(len));
-        continue;
+
+      final GridTrackSize? parsed =
+          _parseSingleTrack(t, renderStyle, propertyName, axis);
+      if (parsed != null) {
+        sizes.add(parsed);
       }
       // Ignore unsupported tokens (minmax(), min-content, max-content) for MVP
     }
     return sizes;
+  }
+
+  static GridAutoFlow parseAutoFlow(String value) {
+    final tokens = value
+        .split(RegExp(r'\s+'))
+        .map((e) => e.trim().toLowerCase())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    if (tokens.isEmpty) return GridAutoFlow.row;
+    bool dense = tokens.contains('dense');
+    bool column = tokens.contains('column');
+    if (column) {
+      return dense ? GridAutoFlow.columnDense : GridAutoFlow.column;
+    }
+    if (dense && tokens.length == 1) {
+      return GridAutoFlow.rowDense;
+    }
+    return dense ? GridAutoFlow.rowDense : GridAutoFlow.row;
   }
 }
 
@@ -97,5 +150,29 @@ mixin CSSGridMixin on RenderStyle {
     if (_gridTemplateRows == value) return;
     _gridTemplateRows = value;
     if (isSelfRenderGridLayout()) markNeedsLayout();
+  }
+
+  List<GridTrackSize>? _gridAutoRows;
+  List<GridTrackSize> get gridAutoRows => _gridAutoRows ?? const <GridTrackSize>[];
+  set gridAutoRows(List<GridTrackSize>? value) {
+    if (_gridAutoRows == value) return;
+    _gridAutoRows = value;
+    markNeedsLayout();
+  }
+
+  List<GridTrackSize>? _gridAutoColumns;
+  List<GridTrackSize> get gridAutoColumns => _gridAutoColumns ?? const <GridTrackSize>[];
+  set gridAutoColumns(List<GridTrackSize>? value) {
+    if (_gridAutoColumns == value) return;
+    _gridAutoColumns = value;
+    markNeedsLayout();
+  }
+
+  GridAutoFlow? _gridAutoFlow;
+  GridAutoFlow get gridAutoFlow => _gridAutoFlow ?? GridAutoFlow.row;
+  set gridAutoFlow(GridAutoFlow? value) {
+    if (_gridAutoFlow == value) return;
+    _gridAutoFlow = value;
+    markNeedsLayout();
   }
 }

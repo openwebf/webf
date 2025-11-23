@@ -1374,6 +1374,12 @@ class CSSRenderStyle extends RenderStyle
         return gridTemplateColumns;
       case GRID_TEMPLATE_ROWS:
         return gridTemplateRows;
+      case GRID_AUTO_ROWS:
+        return gridAutoRows;
+      case GRID_AUTO_COLUMNS:
+        return gridAutoColumns;
+      case GRID_AUTO_FLOW:
+        return gridAutoFlow;
       case ALIGN_ITEMS:
         return alignItems;
       case JUSTIFY_CONTENT:
@@ -1698,6 +1704,15 @@ class CSSRenderStyle extends RenderStyle
         break;
       case GRID_TEMPLATE_ROWS:
         gridTemplateRows = value;
+        break;
+      case GRID_AUTO_ROWS:
+        gridAutoRows = value;
+        break;
+      case GRID_AUTO_COLUMNS:
+        gridAutoColumns = value;
+        break;
+      case GRID_AUTO_FLOW:
+        gridAutoFlow = value;
         break;
       case ALIGN_ITEMS:
         alignItems = value;
@@ -2376,6 +2391,15 @@ class CSSRenderStyle extends RenderStyle
         break;
       case GRID_TEMPLATE_ROWS:
         value = CSSGridParser.parseTrackList(propertyValue, this, propertyName, Axis.vertical);
+        break;
+      case GRID_AUTO_ROWS:
+        value = CSSGridParser.parseTrackList(propertyValue, this, propertyName, Axis.vertical);
+        break;
+      case GRID_AUTO_COLUMNS:
+        value = CSSGridParser.parseTrackList(propertyValue, this, propertyName, Axis.horizontal);
+        break;
+      case GRID_AUTO_FLOW:
+        value = CSSGridParser.parseAutoFlow(propertyValue);
         break;
       case TEXT_TRANSFORM:
         value = CSSText.resolveTextTransform(propertyValue);

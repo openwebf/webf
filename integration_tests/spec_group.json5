@@ -74,6 +74,12 @@
     ]
   },
   {
+    "name": "GridLayout",
+    "specs": [
+      "specs/css/css-grid/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
+  {
     "name": "PositionedLayout",
     "specs": [
       "specs/css/css-position/**/*.{js,jsx,ts,tsx,html}"

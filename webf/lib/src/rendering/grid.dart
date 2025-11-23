@@ -8,6 +8,8 @@ import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/css/grid.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:webf/src/foundation/logger.dart';
 
 /// Temporary Grid render object scaffold.
 ///
@@ -30,6 +32,33 @@ class RenderGridLayout extends RenderLayoutBox {
     }
   }
 
+  void _gridLog(String Function() message) {
+    if (!DebugFlags.debugLogGridEnabled) return;
+    renderingLogger.finer('[Grid] ${message()}');
+  }
+
+  double _resolveTrackSize(GridTrackSize track, double? innerAvailable) {
+    if (track is GridFixed) {
+      final CSSLengthValue lv = track.length;
+      if (lv.type == CSSLengthType.PX) {
+        return lv.computedValue;
+      }
+      if (lv.type == CSSLengthType.PERCENTAGE) {
+        if (innerAvailable != null && innerAvailable.isFinite) {
+          return (lv.value ?? 0) * innerAvailable;
+        }
+        return 0;
+      }
+      return lv.computedValue;
+    } else if (track is GridFraction) {
+      if (innerAvailable != null && innerAvailable.isFinite && innerAvailable > 0) {
+        return innerAvailable * (track.fr / math.max(1.0, track.fr));
+      }
+      return 0;
+    }
+    return 0;
+  }
+
   List<double> _resolveTracks(List<GridTrackSize> tracks, double? innerAvailable, Axis axis) {
     if (tracks.isEmpty) {
       return <double>[];
@@ -39,41 +68,25 @@ class RenderGridLayout extends RenderLayoutBox {
 
     double fixed = 0.0;
     double frSum = 0.0;
-    // First pass: sum fixed and percentage (if available), count fr
     for (int i = 0; i < tracks.length; i++) {
       final t = tracks[i];
-      if (t is GridFixed) {
-        final lv = t.length;
-        if (lv.type == CSSLengthType.PX) {
-          sizes[i] = lv.computedValue;
-          fixed += sizes[i];
-        } else if (lv.type == CSSLengthType.PERCENTAGE) {
-          if (innerAvailable != null && innerAvailable.isFinite) {
-            sizes[i] = (lv.value ?? 0) * innerAvailable;
-            fixed += sizes[i];
-          } else {
-            sizes[i] = 0;
-          }
-        } else {
-          // Other lengths (vh/vw/etc.) resolve to computedValue; treat as fixed
-          sizes[i] = lv.computedValue;
-          fixed += sizes[i];
-        }
-      } else if (t is GridFraction) {
+      if (t is GridFraction) {
         frSum += t.fr;
+      } else if (t is GridFixed) {
+        sizes[i] = _resolveTrackSize(t, innerAvailable);
+        fixed += sizes[i];
       } else {
-        // auto/min-content/max-content -> 0 for MVP
         sizes[i] = 0;
       }
     }
 
-    // Second pass: distribute remaining to fr
     if (frSum > 0 && innerAvailable != null && innerAvailable.isFinite) {
-      final remaining = math.max(0.0, innerAvailable - fixed);
+      final double remaining = math.max(0.0, innerAvailable - fixed);
       for (int i = 0; i < tracks.length; i++) {
         final t = tracks[i];
         if (t is GridFraction) {
-          sizes[i] = remaining * (t.fr / frSum);
+          final portion = remaining * (t.fr / frSum);
+          sizes[i] = portion;
         }
       }
     }
@@ -83,6 +96,7 @@ class RenderGridLayout extends RenderLayoutBox {
 
   @override
   void performLayout() {
+    _gridLog(() => 'performLayout constraints=$constraints');
     // Compute inner available sizes (content box constraints)
     final double paddingLeft = renderStyle.paddingLeft.computedValue;
     final double paddingRight = renderStyle.paddingRight.computedValue;
@@ -106,6 +120,7 @@ class RenderGridLayout extends RenderLayoutBox {
     // (e.g., very early layout), fall back to parsing inline style string once.
     List<GridTrackSize> colsDef = renderStyle.gridTemplateColumns;
     List<GridTrackSize> rowsDef = renderStyle.gridTemplateRows;
+    final List<GridTrackSize> autoRowDefs = renderStyle.gridAutoRows;
     if (colsDef.isEmpty) {
       String raw = renderStyle.target.style.getPropertyValue(GRID_TEMPLATE_COLUMNS);
       if (raw.isEmpty) {
@@ -136,12 +151,20 @@ class RenderGridLayout extends RenderLayoutBox {
     }
     final int colCount = colsDef.isEmpty ? 1 : colsDef.length;
 
-    final List<double> colSizes = _resolveTracks(colsDef.isEmpty ? [const GridAuto()] : colsDef, innerMaxWidth, Axis.horizontal);
-    // For rows: if row definitions are present, resolve; else grow dynamically per content
-    List<double> rowSizes = _resolveTracks(rowsDef.isEmpty ? [const GridAuto()] : rowsDef, innerMaxHeight, Axis.vertical);
-
     final double colGap = renderStyle.columnGap.computedValue;
     final double rowGap = renderStyle.rowGap.computedValue;
+
+    double? adjustedInnerWidth = innerMaxWidth;
+    if (adjustedInnerWidth != null && adjustedInnerWidth.isFinite) {
+      final double totalColGap = colGap * math.max(0, colCount - 1);
+      adjustedInnerWidth = math.max(0.0, adjustedInnerWidth - totalColGap);
+    }
+    final List<double> colSizes = _resolveTracks(
+        colsDef.isEmpty ? <GridTrackSize>[const GridAuto()] : colsDef, adjustedInnerWidth, Axis.horizontal);
+    List<double> rowSizes =
+        rowsDef.isEmpty ? <double>[] : _resolveTracks(rowsDef, innerMaxHeight, Axis.vertical);
+    _gridLog(() =>
+        'tracks resolved columns=${colSizes.map((e) => e.toStringAsFixed(2)).join(', ')} rows=${rowSizes.map((e) => e.toStringAsFixed(2)).join(', ')} autoRows=${renderStyle.gridAutoRows.length} autoFlow=${renderStyle.gridAutoFlow}');
 
     // Layout children: simple auto-placement row-wise across explicit columns, create implicit rows as needed.
     int index = 0;
@@ -158,6 +181,12 @@ class RenderGridLayout extends RenderLayoutBox {
       if (rowIndex >= rowSizes.length) {
         rowSizes.add(0);
       }
+      if (rowsDef.isEmpty && rowSizes[rowIndex] <= 0) {
+        final double? autoSize = _resolveAutoTrackAt(autoRowDefs, rowIndex, innerMaxHeight);
+        if (autoSize != null) {
+          rowSizes[rowIndex] = autoSize;
+        }
+      }
       if (rowIndex >= implicitRowHeights.length) implicitRowHeights.add(0);
 
       double xOffset = xStart;
@@ -167,20 +196,21 @@ class RenderGridLayout extends RenderLayoutBox {
       }
 
       final double cellWidth = colSizes[colIndex];
-      final double cellHeight = (rowSizes[rowIndex] > 0 ? rowSizes[rowIndex] : double.nan);
+      final bool hasExplicitRowSize = rowSizes[rowIndex] > 0;
+      final double cellHeight = hasExplicitRowSize ? rowSizes[rowIndex] : double.nan;
       final BoxConstraints childConstraints = BoxConstraints(
-        minWidth: 0,
+        minWidth: cellWidth.isFinite ? cellWidth : 0,
         maxWidth: cellWidth.isFinite ? cellWidth : (innerMaxWidth ?? double.infinity),
-        minHeight: 0,
+        minHeight: cellHeight.isFinite ? cellHeight : 0,
         maxHeight: cellHeight.isFinite ? cellHeight : (innerMaxHeight ?? double.infinity),
       );
 
       child.layout(childConstraints, parentUsesSize: true);
 
+      final Size childSize = child.size;
       // Update implicit row height if needed
-      final double usedHeight = rowSizes[rowIndex] > 0 ? rowSizes[rowIndex] : child.size.height;
-      if (rowsDef.isEmpty) {
-        implicitRowHeights[rowIndex] = math.max(implicitRowHeights[rowIndex], usedHeight);
+      if (rowsDef.isEmpty && !hasExplicitRowSize) {
+        implicitRowHeights[rowIndex] = math.max(implicitRowHeights[rowIndex], childSize.height);
       }
 
       final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
@@ -189,12 +219,22 @@ class RenderGridLayout extends RenderLayoutBox {
       if (rowIndex > 0) {
         rowTop = paddingTop + borderTop;
         for (int r = 0; r < rowIndex; r++) {
-          final double rh = rowsDef.isEmpty ? implicitRowHeights[r] : rowSizes[r];
+          double rh;
+          if (rowsDef.isEmpty) {
+            final double assigned = (r < rowSizes.length && rowSizes[r] > 0) ? rowSizes[r] : 0;
+            rh = assigned > 0
+                ? assigned
+                : (r < implicitRowHeights.length ? implicitRowHeights[r] : 0);
+          } else {
+            rh = rowSizes[r];
+          }
           rowTop += rh;
           if (r < (rowIndex)) rowTop += rowGap;
         }
       }
       pd.offset = Offset(xOffset, rowTop);
+      _gridLog(() =>
+          'child#$index row=$rowIndex col=$colIndex offset=${pd.offset} childSize=$childSize constraints=$childConstraints explicitRow=$hasExplicitRowSize');
 
       index++;
       child = pd.nextSibling;
@@ -208,9 +248,16 @@ class RenderGridLayout extends RenderLayoutBox {
     }
     double usedContentHeight = 0;
     if (rowsDef.isEmpty) {
-      for (int r = 0; r < implicitRowHeights.length; r++) {
-        usedContentHeight += implicitRowHeights[r];
-        if (r < implicitRowHeights.length - 1) usedContentHeight += rowGap;
+      final int totalRows = math.max(rowSizes.length, implicitRowHeights.length);
+      for (int r = 0; r < totalRows; r++) {
+        double segment = 0;
+        if (r < rowSizes.length && rowSizes[r] > 0) {
+          segment = rowSizes[r];
+        } else if (r < implicitRowHeights.length) {
+          segment = implicitRowHeights[r];
+        }
+        usedContentHeight += segment;
+        if (r < totalRows - 1) usedContentHeight += rowGap;
       }
     } else {
       for (int r = 0; r < rowSizes.length; r++) {
@@ -223,6 +270,8 @@ class RenderGridLayout extends RenderLayoutBox {
     final double desiredWidth = usedContentWidth + horizontalPaddingBorder;
     final double desiredHeight = usedContentHeight + verticalPaddingBorder;
     size = constraints.constrain(Size(desiredWidth, desiredHeight));
+    _gridLog(() =>
+        'final size=$size content=${usedContentWidth.toStringAsFixed(2)}x${usedContentHeight.toStringAsFixed(2)} rows=${rowSizes.length} implicitRows=${implicitRowHeights.length}');
 
     // Compute and cache CSS baselines for the grid container
     calculateBaseline();
@@ -244,5 +293,12 @@ class RenderGridLayout extends RenderLayoutBox {
     final double? last = computeCssLastBaselineOf(baseline);
     if (last != null) return last;
     return boxSize?.height;
+  }
+  double? _resolveAutoTrackAt(List<GridTrackSize> tracks, int index, double? innerAvailable) {
+    if (tracks.isEmpty) return null;
+    final GridTrackSize track = tracks[index % tracks.length];
+    final double size = _resolveTrackSize(track, innerAvailable);
+    if (size > 0) return size;
+    return null;
   }
 }
