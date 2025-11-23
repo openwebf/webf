@@ -68,7 +68,8 @@ class RenderWidget extends RenderBoxModel
     final bool hasExplicitInlineWidth =
         renderStyle.width.isNotAuto || renderStyle.minWidth.isNotAuto || renderStyle.maxWidth.isNotNone;
 
-    Size viewportSize = getViewportBox()!.viewportSize;
+    RenderViewportBox viewportBox = getViewportBox() ?? renderStyle.target.getRootViewport()!;
+    Size viewportSize = viewportBox.viewportSize;
     BoxConstraints childConstraints;
     if (isInlineBlockAutoWidth || hasExplicitInlineWidth) {
       childConstraints = BoxConstraints(
