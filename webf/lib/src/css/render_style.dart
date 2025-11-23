@@ -323,6 +323,25 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   CSSLengthValue get columnGap;
 
+  // Grid
+  GridAutoFlow get gridAutoFlow;
+
+  List<GridTrackSize> get gridAutoRows;
+
+  List<GridTrackSize> get gridAutoColumns;
+
+  List<GridTrackSize> get gridTemplateRows;
+
+  List<GridTrackSize> get gridTemplateColumns;
+
+  GridPlacement get gridRowStart;
+
+  GridPlacement get gridRowEnd;
+
+  GridPlacement get gridColumnStart;
+
+  GridPlacement get gridColumnEnd;
+
   // Color
   CSSColor get color;
 
@@ -1380,6 +1399,14 @@ class CSSRenderStyle extends RenderStyle
         return gridAutoColumns;
       case GRID_AUTO_FLOW:
         return gridAutoFlow;
+      case GRID_ROW_START:
+        return gridRowStart;
+      case GRID_ROW_END:
+        return gridRowEnd;
+      case GRID_COLUMN_START:
+        return gridColumnStart;
+      case GRID_COLUMN_END:
+        return gridColumnEnd;
       case ALIGN_ITEMS:
         return alignItems;
       case JUSTIFY_CONTENT:
@@ -1713,6 +1740,18 @@ class CSSRenderStyle extends RenderStyle
         break;
       case GRID_AUTO_FLOW:
         gridAutoFlow = value;
+        break;
+      case GRID_ROW_START:
+        gridRowStart = value;
+        break;
+      case GRID_ROW_END:
+        gridRowEnd = value;
+        break;
+      case GRID_COLUMN_START:
+        gridColumnStart = value;
+        break;
+      case GRID_COLUMN_END:
+        gridColumnEnd = value;
         break;
       case ALIGN_ITEMS:
         alignItems = value;
@@ -2400,6 +2439,12 @@ class CSSRenderStyle extends RenderStyle
         break;
       case GRID_AUTO_FLOW:
         value = CSSGridParser.parseAutoFlow(propertyValue);
+        break;
+      case GRID_ROW_START:
+      case GRID_ROW_END:
+      case GRID_COLUMN_START:
+      case GRID_COLUMN_END:
+        value = CSSGridParser.parsePlacement(propertyValue);
         break;
       case TEXT_TRANSFORM:
         value = CSSText.resolveTextTransform(propertyValue);

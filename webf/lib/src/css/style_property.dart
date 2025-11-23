@@ -1181,6 +1181,40 @@ class CSSStyleProperty {
     if (style.contains(COLUMN_GAP)) style.removeProperty(COLUMN_GAP, isImportant);
   }
 
+  static void setShorthandGridRow(Map<String, String?> properties, String shorthandValue) {
+    List<String> parts = shorthandValue.split(_slashRegExp);
+    String start = parts.isNotEmpty ? parts[0].trim() : '';
+    String end = parts.length > 1 ? parts[1].trim() : '';
+
+    if (start.isEmpty) start = 'auto';
+    if (end.isEmpty) end = 'auto';
+
+    properties[GRID_ROW_START] = start;
+    properties[GRID_ROW_END] = end;
+  }
+
+  static void removeShorthandGridRow(CSSStyleDeclaration style, [bool? isImportant]) {
+    if (style.contains(GRID_ROW_START)) style.removeProperty(GRID_ROW_START, isImportant);
+    if (style.contains(GRID_ROW_END)) style.removeProperty(GRID_ROW_END, isImportant);
+  }
+
+  static void setShorthandGridColumn(Map<String, String?> properties, String shorthandValue) {
+    List<String> parts = shorthandValue.split(_slashRegExp);
+    String start = parts.isNotEmpty ? parts[0].trim() : '';
+    String end = parts.length > 1 ? parts[1].trim() : '';
+
+    if (start.isEmpty) start = 'auto';
+    if (end.isEmpty) end = 'auto';
+
+    properties[GRID_COLUMN_START] = start;
+    properties[GRID_COLUMN_END] = end;
+  }
+
+  static void removeShorthandGridColumn(CSSStyleDeclaration style, [bool? isImportant]) {
+    if (style.contains(GRID_COLUMN_START)) style.removeProperty(GRID_COLUMN_START, isImportant);
+    if (style.contains(GRID_COLUMN_END)) style.removeProperty(GRID_COLUMN_END, isImportant);
+  }
+
   static void setShorthandAnimation(Map<String, String?> properties, String shorthandValue) {
     List<String?>? values = _getAnimationValues(shorthandValue);
     if (values == null) return;

@@ -91,7 +91,13 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
   String getPropertyValue(String propertyName) {
     CSSPropertyID? propertyID = CSSPropertyNameMap[propertyName] ?? CSSPropertyNameMap[kebabize(propertyName)];
     if (propertyID == null) {
-      return '';
+      _element.ownerDocument.updateStyleIfNeeded();
+      CSSRenderStyle? style = _element.computedStyle(_pseudoElementName);
+      if (style == null) {
+        return '';
+      }
+      final String? gridValue = _valueForGridProperty(propertyName, style);
+      return gridValue ?? '';
     }
     return _valueForPropertyInStyle(propertyID, needUpdateStyle: true);
   }
@@ -855,4 +861,27 @@ extension Matrix4CSSText on Matrix4 {
       return 'matrix3d($m11, $m12, $m13, $m14, $m21, $m22, $m23, $m24, $m31, $m32, $m33, $m34, $m41, $m42, $m43, $m44)';
     }
   }
+}
+
+String _gridAutoFlowToCss(GridAutoFlow flow) {
+  switch (flow) {
+    case GridAutoFlow.column:
+      return 'column';
+    case GridAutoFlow.rowDense:
+      return 'row dense';
+    case GridAutoFlow.columnDense:
+      return 'column dense';
+    case GridAutoFlow.row:
+    default:
+      return 'row';
+  }
+}
+
+String? _valueForGridProperty(String propertyName, CSSRenderStyle style) {
+  switch (propertyName) {
+    case 'gridAutoFlow':
+    case 'grid-auto-flow':
+      return _gridAutoFlowToCss(style.gridAutoFlow);
+  }
+  return null;
 }

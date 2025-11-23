@@ -24,6 +24,19 @@ class GridAuto extends GridTrackSize {
   const GridAuto() : super();
 }
 
+enum GridPlacementKind { auto, line, span }
+
+class GridPlacement {
+  final GridPlacementKind kind;
+  final int? line;
+  final int? span;
+
+  const GridPlacement._(this.kind, {this.line, this.span});
+  const GridPlacement.auto() : this._(GridPlacementKind.auto);
+  const GridPlacement.line(int value) : this._(GridPlacementKind.line, line: value);
+  const GridPlacement.span(int value) : this._(GridPlacementKind.span, span: value);
+}
+
 enum GridAutoFlow { row, column, rowDense, columnDense }
 
 class CSSGridParser {
@@ -133,6 +146,30 @@ class CSSGridParser {
     }
     return dense ? GridAutoFlow.rowDense : GridAutoFlow.row;
   }
+
+  static GridPlacement parsePlacement(String value) {
+    final String trimmed = value.trim();
+    if (trimmed.isEmpty || trimmed.toLowerCase() == 'auto') {
+      return const GridPlacement.auto();
+    }
+
+    final String lower = trimmed.toLowerCase();
+    if (lower.startsWith('span')) {
+      final String number = lower.substring(4).trim();
+      final int? spanValue = int.tryParse(number);
+      if (spanValue != null && spanValue > 0) {
+        return GridPlacement.span(spanValue);
+      }
+      return const GridPlacement.span(1);
+    }
+
+    final int? lineValue = int.tryParse(trimmed);
+    if (lineValue != null) {
+      return GridPlacement.line(lineValue);
+    }
+
+    return const GridPlacement.auto();
+  }
 }
 
 mixin CSSGridMixin on RenderStyle {
@@ -173,6 +210,38 @@ mixin CSSGridMixin on RenderStyle {
   set gridAutoFlow(GridAutoFlow? value) {
     if (_gridAutoFlow == value) return;
     _gridAutoFlow = value;
+    markNeedsLayout();
+  }
+
+  GridPlacement? _gridColumnStart;
+  GridPlacement get gridColumnStart => _gridColumnStart ?? const GridPlacement.auto();
+  set gridColumnStart(GridPlacement? value) {
+    if (_gridColumnStart == value) return;
+    _gridColumnStart = value;
+    markNeedsLayout();
+  }
+
+  GridPlacement? _gridColumnEnd;
+  GridPlacement get gridColumnEnd => _gridColumnEnd ?? const GridPlacement.auto();
+  set gridColumnEnd(GridPlacement? value) {
+    if (_gridColumnEnd == value) return;
+    _gridColumnEnd = value;
+    markNeedsLayout();
+  }
+
+  GridPlacement? _gridRowStart;
+  GridPlacement get gridRowStart => _gridRowStart ?? const GridPlacement.auto();
+  set gridRowStart(GridPlacement? value) {
+    if (_gridRowStart == value) return;
+    _gridRowStart = value;
+    markNeedsLayout();
+  }
+
+  GridPlacement? _gridRowEnd;
+  GridPlacement get gridRowEnd => _gridRowEnd ?? const GridPlacement.auto();
+  set gridRowEnd(GridPlacement? value) {
+    if (_gridRowEnd == value) return;
+    _gridRowEnd = value;
     markNeedsLayout();
   }
 }
