@@ -2,6 +2,7 @@
  * Copyright (C) 2025-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
@@ -63,6 +64,42 @@ void main() {
       expect(afterSize.width, equals(beforeSize.width));
       expect(afterSize.height, greaterThan(0));
     });
+
+    testWidgets('parent data tracks resolved placement', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-parent-data-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; width: 200px; grid-template-columns: 100px 100px;">
+            <div id="item-a">A</div>
+            <div id="item-b">B</div>
+            <div id="item-c">C</div>
+            <div id="item-d" style="grid-column: span 2;">D</div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      GridLayoutParentData parentDataFor(String id) {
+        RenderObject? renderer = prepared.getElementById(id).attachedRenderer;
+        expect(renderer, isNotNull);
+        while (renderer != null && renderer.parent != grid.attachedRenderer) {
+          renderer = renderer.parent as RenderObject?;
+        }
+        expect(renderer, isA<RenderBox>());
+        return (renderer as RenderBox).parentData as GridLayoutParentData;
+      }
+
+      expect(parentDataFor('item-a').rowStart, equals(0));
+      expect(parentDataFor('item-a').columnStart, equals(0));
+      expect(parentDataFor('item-b').rowStart, equals(0));
+      expect(parentDataFor('item-b').columnStart, equals(1));
+      expect(parentDataFor('item-c').rowStart, equals(1));
+      expect(parentDataFor('item-c').columnStart, equals(0));
+      expect(parentDataFor('item-d').rowStart, greaterThanOrEqualTo(1));
+      expect(parentDataFor('item-d').columnSpan, equals(2));
+    });
   });
 }
-

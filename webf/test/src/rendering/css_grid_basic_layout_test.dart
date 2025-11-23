@@ -87,5 +87,45 @@ void main() {
       expect(aOffset.dx, closeTo(0.0, 1.0));
       expect(bOffset.dx, closeTo(100.0, 2.0));
     });
+
+    testWidgets('grid-auto-columns create implicit tracks', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-auto-cols-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; grid-template-columns: 80px; grid-auto-columns: 40px;">
+            <div id="item" style="height:20px; grid-column: 2 / span 2;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final item = prepared.getElementById('item');
+
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      expect(renderer.size.width, equals(360));
+
+      final Offset offset = getLayoutTransformTo(item.attachedRenderer as RenderBox, renderer, excludeScrollOffset: true);
+      expect(offset.dx, closeTo(80.0, 1.0));
+
+    });
+
+    testWidgets('auto width grid fills block container width', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-auto-width-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; padding: 12px; grid-template-columns: 80px; grid-auto-columns: 40px;"></div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      expect(renderer.size.width, equals(360));
+    });
   });
 }
