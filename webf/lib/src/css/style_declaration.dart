@@ -259,11 +259,15 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
 
     // If there is still no value, fall back to the CSS initial value for
-    // this property. This matches browser behavior where a removed
-    // declaration yields the initial computed value rather than an
-    // empty string/null (e.g., background-color → transparent).
+    // this property. To preserve inheritance semantics, we only do this for
+    // non-inherited properties. For inherited ones we prefer leaving the
+    // value empty so [RenderStyle] can pull from the parent instead.
     if (isNullOrEmptyValue(present) && CSSInitialValues.containsKey(propertyName)) {
-      present = CSSInitialValues[propertyName];
+      final String kebabName = _kebabize(propertyName);
+      final bool isInherited = isInheritedPropertyString(kebabName);
+      if (!isInherited) {
+        present = CSSInitialValues[propertyName];
+      }
     }
 
     // Update removed value by flush pending properties.
