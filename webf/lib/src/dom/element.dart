@@ -1787,13 +1787,29 @@ abstract class Element extends ContainerNode
     if (_pendingTransitionProps.contains(propertyName)) {
       // Already scheduled this property in current frame; coalesce by updating
       // the pending item's current (end) value so we run once with the latest
-      // destination while preserving the earliest prev.
+      // destination. For color properties, prefer the most recent, fully
+      // resolved previous value (from computed style) instead of the earlier
+      // raw serialized text (which may still contain var(...)).
       for (int i = _pendingTransitionQueue.length - 1; i >= 0; i--) {
         final item = _pendingTransitionQueue[i];
         if (item.property == propertyName) {
-          _pendingTransitionQueue[i] = (property: propertyName, prev: item.prev, curr: currentValue);
+          String? mergedPrev = item.prev;
+          // Color-bearing properties where we want the last, concrete
+          // previous value (e.g., 'rgb(...)' or 'rgba(...)') to win
+          // over earlier var(...) strings like 'rgb(... / null)'.
+          final bool isColorProp = propertyName == COLOR ||
+              propertyName == BACKGROUND_COLOR ||
+              propertyName == TEXT_DECORATION_COLOR ||
+              propertyName == BORDER_LEFT_COLOR ||
+              propertyName == BORDER_TOP_COLOR ||
+              propertyName == BORDER_RIGHT_COLOR ||
+              propertyName == BORDER_BOTTOM_COLOR;
+          if (isColorProp && prevValue != null && prevValue.isNotEmpty) {
+            mergedPrev = prevValue;
+          }
+          _pendingTransitionQueue[i] = (property: propertyName, prev: mergedPrev, curr: currentValue);
           if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
-            cssLogger.info('[transition][queue] coalesce property=$propertyName prev=${item.prev ?? 'null'} new-curr=$currentValue');
+            cssLogger.info('[transition][queue] coalesce property=$propertyName prevOld=${item.prev ?? 'null'} prevNew=${prevValue ?? 'null'} mergedPrev=${mergedPrev ?? 'null'} new-curr=$currentValue');
           }
 
           break;
@@ -1826,35 +1842,52 @@ abstract class Element extends ContainerNode
   void _onStyleChanged(
       String propertyName, String? prevValue, String currentValue,
       {String? baseHref}) {
+    // Identify color-bearing properties up front so we can normalize
+    // both the previous and current values to concrete colors for
+    // transition decisions, independent of any var(...) indirection.
+    final bool isColorProp = propertyName == COLOR ||
+        propertyName == BACKGROUND_COLOR ||
+        propertyName == TEXT_DECORATION_COLOR ||
+        propertyName == BORDER_LEFT_COLOR ||
+        propertyName == BORDER_TOP_COLOR ||
+        propertyName == BORDER_RIGHT_COLOR ||
+        propertyName == BORDER_BOTTOM_COLOR;
+
     if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
       cssLogger.info('[style][change] ${tagName}.$propertyName prev=${prevValue ?? 'null'} curr=$currentValue');
     }
+
+    // For color properties, prefer the previous *computed* color from
+    // renderStyle as the transition's begin value rather than the
+    // raw serialized CSS text (which may still contain var(...)).
+    String? prevForTransition = prevValue;
+    if (isColorProp) {
+      final dynamic prevComputed = renderStyle.getProperty(propertyName);
+      if (prevComputed is CSSColor) {
+        prevForTransition = prevComputed.cssText();
+        if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
+          cssLogger.info('[style][prev-computed] ${tagName}.$propertyName prevSerialized=${prevValue ?? 'null'} prevComputed=$prevForTransition');
+        }
+      }
+    }
+
     // Eagerly expand var() for color-bearing properties so that downstream
     // parsing and color caches see concrete values after variable changes
     // (e.g., hsl(var(--x)) -> hsl(12 100% 50%)). This complements the
     // variable-notify path and also covers normal stylesheet flushes.
-    if (currentValue.contains('var(')) {
-      final bool isColorProp = propertyName == COLOR ||
-          propertyName == BACKGROUND_COLOR ||
-          propertyName == TEXT_DECORATION_COLOR ||
-          propertyName == BORDER_LEFT_COLOR ||
-          propertyName == BORDER_TOP_COLOR ||
-          propertyName == BORDER_RIGHT_COLOR ||
-          propertyName == BORDER_BOTTOM_COLOR;
-      if (isColorProp) {
-        try {
-          currentValue = CSSWritingModeMixin.expandInlineVars(
-              currentValue, renderStyle, propertyName);
-        } catch (_) {}
-      }
+    if (currentValue.contains('var(') && isColorProp) {
+      try {
+        currentValue = CSSWritingModeMixin.expandInlineVars(
+            currentValue, renderStyle, propertyName);
+      } catch (_) {}
     }
 
-    final bool shouldTrans = renderStyle.shouldTransition(propertyName, prevValue, currentValue);
+    final bool shouldTrans = renderStyle.shouldTransition(propertyName, prevForTransition, currentValue);
     if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
       cssLogger.info('[style][route] ${tagName}.$propertyName shouldTransition=$shouldTrans');
     }
     if (shouldTrans) {
-      scheduleRunTransitionAnimations(propertyName, prevValue, currentValue);
+      scheduleRunTransitionAnimations(propertyName, prevForTransition, currentValue);
       return;
     }
     // If a transition for this property is pending in this frame or currently

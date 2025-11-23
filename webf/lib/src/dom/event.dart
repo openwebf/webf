@@ -503,6 +503,45 @@ class GestureEvent extends Event {
   }
 }
 
+/// https://drafts.csswg.org/css-transitions/#transitionevent
+class TransitionEvent extends Event {
+  final double elapsedTime;
+  final String propertyName;
+  final String pseudoElement;
+
+  TransitionEvent(
+    String type, {
+    this.elapsedTime = 0.0,
+    this.propertyName = '',
+    this.pseudoElement = '',
+    bool bubbles = true,
+    bool cancelable = true,
+    bool composed = false,
+  }) : super(type, bubbles: bubbles, cancelable: cancelable, composed: composed);
+
+  @override
+  Pointer<NativeType> toRaw([int extraLength = 0, bool isCustomEvent = false]) {
+    // Layout must match WebFTransitionEventInit in
+    // bridge/include/plugin_api/transition_event_init.h:
+    //   double elapsed_time;
+    //   const char* property_name;
+    //   const char* pseudo_element;
+    List<int> methods = [
+      doubleToUint64(elapsedTime),
+      stringToNativeString(propertyName).address,
+      stringToNativeString(pseudoElement).address,
+    ];
+
+    Pointer<RawEvent> rawEvent = super.toRaw(methods.length + extraLength).cast<RawEvent>();
+    int currentStructSize = rawEvent.ref.length + methods.length;
+    Uint64List bytes = rawEvent.ref.bytes.asTypedList(currentStructSize);
+    bytes.setAll(rawEvent.ref.length, methods);
+    rawEvent.ref.length = currentStructSize;
+
+    return rawEvent;
+  }
+}
+
 /// reference: http://dev.w3.org/2006/webapi/DOM-Level-3-Events/html/DOM3-Events.html#interface-CustomEvent
 /// Attention: Detail now only can be a string.
 class CustomEvent extends Event {

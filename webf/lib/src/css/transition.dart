@@ -25,7 +25,27 @@ String _stringifyColor(Color color) {
 }
 
 Color _updateColor(Color oldColor, Color newColor, double progress, String property, RenderStyle renderStyle) {
-  Color? result = Color.lerp(oldColor, newColor, progress);
+  // Heuristic for more intuitive color fades when one side is fully
+  // transparent (alpha == 0): treat the transparent endpoint as having
+  // the same RGB channels as the opaque endpoint so that we interpolate
+  // only alpha (red → transparent red) instead of passing through black.
+  Color effectiveOld = oldColor;
+  Color effectiveNew = newColor;
+  if (oldColor.opacity == 0.0 && newColor.opacity > 0.0) {
+    effectiveOld = Color.fromRGBO(newColor.red, newColor.green, newColor.blue, 0.0);
+  } else if (newColor.opacity == 0.0 && oldColor.opacity > 0.0) {
+    effectiveNew = Color.fromRGBO(oldColor.red, oldColor.green, oldColor.blue, 0.0);
+  }
+
+  Color? result = Color.lerp(effectiveOld, effectiveNew, progress);
+  if (DebugFlags.shouldLogTransitionForProp(property)) {
+    final cssOld = CSSColor(effectiveOld).cssText();
+    final cssNew = CSSColor(effectiveNew).cssText();
+    final cssCurrent = CSSColor(result!).cssText();
+    cssLogger.info(
+        '[transition][tick] ${renderStyle.target.tagName}.$property t=${progress.toStringAsFixed(3)} '
+        'from=$cssOld to=$cssNew value=$cssCurrent');
+  }
   renderStyle.target.setRenderStyleProperty(property, CSSColor(result!));
   return result;
 }
@@ -704,7 +724,11 @@ mixin CSSTransitionMixin on RenderStyle {
       // An Event fired when a CSS transition is created,
       // when it is added to a set of running transitions,
       // though not necessarily started.
-      target.dispatchEvent(Event(EVENT_TRANSITION_START));
+      target.dispatchEvent(TransitionEvent(
+        EVENT_TRANSITION_START,
+        propertyName: _toHyphenatedCSSProperty(propertyName),
+        elapsedTime: 0.0,
+      ));
     };
 
     animation.onfinish = (AnimationPlaybackEvent event) {
@@ -714,10 +738,24 @@ mixin CSSTransitionMixin on RenderStyle {
       if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
         cssLogger.info('[transition][finish] property=$propertyName applied-end "$end"');
       }
-      target.dispatchEvent(Event(EVENT_TRANSITION_END));
+      // elapsedTime is the time the transition has run, in seconds,
+      // excluding any transition-delay. Our EffectTiming stores duration
+      // in milliseconds.
+      final double durationMs = options?.duration ?? 0.0;
+      final double elapsedSec = durationMs > 0 ? durationMs / 1000.0 : 0.0;
+      target.dispatchEvent(TransitionEvent(
+        EVENT_TRANSITION_END,
+        propertyName: _toHyphenatedCSSProperty(propertyName),
+        elapsedTime: elapsedSec,
+      ));
     };
 
-    target.dispatchEvent(Event(EVENT_TRANSITION_RUN));
+    // For transitionrun, elapsedTime is always 0.
+    target.dispatchEvent(TransitionEvent(
+      EVENT_TRANSITION_RUN,
+      propertyName: _toHyphenatedCSSProperty(propertyName),
+      elapsedTime: 0.0,
+    ));
     if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
       cssLogger.info('[transition][run] play property=$propertyName duration=${options?.duration} easing=${options?.easing} delay=${options?.delay}');
     }
@@ -753,9 +791,25 @@ mixin CSSTransitionMixin on RenderStyle {
       if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
         cssLogger.info('[transition][cancel] property=$propertyName');
       }
+      // Compute elapsedTime at cancel as progress * duration (in seconds),
+      // excluding any transition-delay.
+      double elapsedSec = 0.0;
+      final EffectTiming? options = getTransitionEffectTiming(propertyName);
+      final double durationMs = options?.duration ?? 0.0;
+      if (durationMs > 0) {
+        try {
+          elapsedSec = (animation.progress * durationMs) / 1000.0;
+        } catch (_) {
+          elapsedSec = 0.0;
+        }
+      }
       animation.cancel();
       // Align with runTransition() which explicitly fires transitioncancel on cancel.
-      target.dispatchEvent(Event(EVENT_TRANSITION_CANCEL));
+      target.dispatchEvent(TransitionEvent(
+        EVENT_TRANSITION_CANCEL,
+        propertyName: _toHyphenatedCSSProperty(propertyName),
+        elapsedTime: elapsedSec,
+      ));
     }
   }
 
@@ -826,4 +880,24 @@ class CSSStepCurve extends Curve {
 
     return cur / step!;
   }
+}
+
+// Convert an internal camelCase property key (e.g., "backgroundColor")
+// to the standard CSS hyphenated form used in TransitionEvent.propertyName
+// (e.g., "background-color"). If the string already contains a hyphen, it is
+// returned as-is.
+String _toHyphenatedCSSProperty(String property) {
+  if (property.contains('-')) return property;
+  final StringBuffer sb = StringBuffer();
+  for (int i = 0; i < property.length; i++) {
+    final int code = property.codeUnitAt(i);
+    final bool isUpper = code >= 65 && code <= 90; // 'A'..'Z'
+    if (isUpper) {
+      if (i != 0) sb.write('-');
+      sb.writeCharCode(code + 32); // to lowercase
+    } else {
+      sb.writeCharCode(code);
+    }
+  }
+  return sb.toString();
 }

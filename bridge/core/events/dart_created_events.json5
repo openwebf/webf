@@ -117,14 +117,14 @@
 //        "mousewheel"
       ]
     },
-//    {
-//      "class": "TransitionEvent",
-//      "types": [
-//        "transitioncancel",
-//        "transitionend",
-//        "transitionrun",
-//        "transitionstart"
-//      ]
-//    }
+    {
+      "class": "TransitionEvent",
+      "types": [
+        "transitioncancel",
+        "transitionend",
+        "transitionrun",
+        "transitionstart"
+      ]
+    }
   ]
 }

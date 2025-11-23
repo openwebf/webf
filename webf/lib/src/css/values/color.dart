@@ -242,7 +242,42 @@ class CSSColor with Diagnosticable {
   }
 
   static void clearCachedColorValue(String color) {
-    _cachedParsedColor.remove(color.toLowerCase());
+    final String key = color.toLowerCase();
+    // Only log cache clears for var()-driven entries that reference a watched
+    // custom property. This keeps noise low while debugging specific
+    // CSS variable + transition interactions.
+    if (DebugFlags.enableCssVarAndTransitionLogs && key.contains('var(')) {
+      if (DebugFlags.watchedCssVariables.isNotEmpty) {
+        final String? identifier = _extractVarIdentifierFromCacheKey(key);
+        if (identifier != null && DebugFlags.watchedCssVariables.contains(identifier)) {
+          cssLogger.info('[color][cache-clear] key=$key var=$identifier');
+        }
+      }
+      // If watchedCssVariables is empty, skip logging entirely to avoid spam
+      // from generic Tailwind-style utility variables (blur, brightness, etc.).
+    }
+    _cachedParsedColor.remove(key);
+  }
+
+  // Best-effort extractor for the first CSS custom property identifier inside
+  // a cache key that contains a var(...) pattern, e.g.:
+  //   "rgb(var(--tw-bg-opacity))" -> "--tw-bg-opacity"
+  static String? _extractVarIdentifierFromCacheKey(String key) {
+    final int varIndex = key.indexOf('var(--');
+    if (varIndex == -1) return null;
+    final int start = varIndex + 4; // skip "var("
+    int end = start;
+    while (end < key.length) {
+      final int code = key.codeUnitAt(end);
+      if (code == 41 || // ')'
+          code == 44 || // ','
+          code == 32) { // space
+        break;
+      }
+      end++;
+    }
+    if (end <= start) return null;
+    return key.substring(start, end);
   }
 
   static CSSColor? resolveColor(String color, RenderStyle renderStyle, String propertyName) {
@@ -270,12 +305,12 @@ class CSSColor with Diagnosticable {
 
       if (variable is CSSVariable) {
         String? resolved = renderStyle.getCSSVariable(variable.identifier, propertyName + '_' + fullColor)?.toString();
-        
+
         return resolved ?? '';
       }
       return '';
     });
-    
+
     return replaced;
   }
 
@@ -283,9 +318,22 @@ class CSSColor with Diagnosticable {
     String originalColor = color.trim();
     color = originalColor.toLowerCase();
 
+    final String? prop = propertyName;
+    final bool trace = prop != null && DebugFlags.shouldLogTransitionForProp(prop);
+
+    if (trace) {
+      cssLogger.info('[color][parse] property=$prop input="$originalColor" key="$color"');
+    }
+
     if (color == TRANSPARENT) {
+      if (trace) {
+        cssLogger.info('[color][parse] property=$prop -> transparent');
+      }
       return CSSColor.transparent;
     } else if (_cachedParsedColor.containsKey(color)) {
+      if (trace) {
+        cssLogger.info('[color][cache-hit] property=$prop key="$color"');
+      }
       return _cachedParsedColor[color];
     }
 
@@ -294,7 +342,6 @@ class CSSColor with Diagnosticable {
       final hexMatch = _colorHexRegExp.firstMatch(color);
       if (hexMatch != null) {
         final hex = hexMatch[1]!.toUpperCase();
-        // https://drafts.csswg.org/css-color-4/#hex-notation
         switch (hex.length) {
           case 3:
             parsed = Color(int.parse('0xFF${_x2(hex)}'));
@@ -321,6 +368,10 @@ class CSSColor with Diagnosticable {
       final rgbMatch;
       if (renderStyle != null && colorBody.contains('var')) {
         final result = tryParserCSSColorWithVariable(originalColor, colorBody, renderStyle, propertyName ?? '');
+        if (trace) {
+          cssLogger
+              .info('[color][parse] property=$prop rgb-body="$colorBody" resolved="$result"');
+        }
         rgbMatch = _colorRgbRegExp.firstMatch(result);
       } else {
         rgbMatch = _colorRgbRegExp.firstMatch(colorBody);
@@ -334,6 +385,8 @@ class CSSColor with Diagnosticable {
         if (rgbR != null && rgbG != null && rgbB != null && rgbO != null) {
           parsed = Color.fromRGBO(rgbR.round(), rgbG.round(), rgbB.round(), rgbO);
         }
+      } else if (trace) {
+        cssLogger.info('[color][parse-failed] property=$prop rgb-body="$colorBody"');
       }
     } else if (color.startsWith(HSL)) {
       bool isHsla = color.startsWith(HSLA);
@@ -342,6 +395,10 @@ class CSSColor with Diagnosticable {
       final hslMatch;
       if (renderStyle != null && colorBody.contains('var')) {
         final result = tryParserCSSColorWithVariable(originalColor, colorBody, renderStyle, propertyName ?? '');
+        if (trace) {
+          cssLogger
+              .info('[color][parse] property=$prop hsl-body="$colorBody" resolved="$result"');
+        }
         hslMatch = _colorHslRegExp.firstMatch(result);
       } else {
         hslMatch = _colorHslRegExp.firstMatch(colorBody);
@@ -355,13 +412,21 @@ class CSSColor with Diagnosticable {
         if (hslH != null && hslS != null && hslL != null && hslA != null) {
           parsed = HSLColor.fromAHSL(hslA, hslH, hslS, hslL).toColor();
         }
+      } else if (trace) {
+        cssLogger.info('[color][parse-failed] property=$prop hsl-body="$colorBody"');
       }
     } else if (_namedColors.containsKey(color)) {
       parsed = Color(_namedColors[color]!);
     }
 
     if (parsed != null) {
+      if (trace) {
+        cssLogger.info(
+            '[color][parsed] property=$prop rgba=${parsed.red},${parsed.green},${parsed.blue},a=${parsed.opacity.cssText()}');
+      }
       _cachedParsedColor[color] = parsed;
+    } else if (trace) {
+      cssLogger.info('[color][parse-failed] property=$prop input="$originalColor" key="$color"');
     }
 
     return parsed;

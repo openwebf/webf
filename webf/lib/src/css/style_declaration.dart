@@ -253,9 +253,17 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       _sheetStyle.remove(propertyName);
     }
 
-    // Fallback to default style.
+    // Fallback to default style (UA / element default).
     if (isNullOrEmptyValue(present) && defaultStyle != null && defaultStyle!.containsKey(propertyName)) {
       present = defaultStyle![propertyName];
+    }
+
+    // If there is still no value, fall back to the CSS initial value for
+    // this property. This matches browser behavior where a removed
+    // declaration yields the initial computed value rather than an
+    // empty string/null (e.g., background-color → transparent).
+    if (isNullOrEmptyValue(present) && CSSInitialValues.containsKey(propertyName)) {
+      present = CSSInitialValues[propertyName];
     }
 
     // Update removed value by flush pending properties.
