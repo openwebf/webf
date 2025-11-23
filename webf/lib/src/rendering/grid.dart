@@ -271,6 +271,7 @@ class RenderGridLayout extends RenderLayoutBox {
 
     // Layout children using auto placement matrix.
     final List<List<bool>> occupancy = <List<bool>>[];
+    bool hasAnyChild = false;
     final _GridAutoCursor autoCursor = _GridAutoCursor(0, 0);
     final double xStart = paddingLeft + borderLeft;
     List<double> implicitRowHeights = [];
@@ -385,6 +386,7 @@ class RenderGridLayout extends RenderLayoutBox {
         rowTop += rowGap;
       }
       pd.offset = Offset(xOffset, rowTop);
+      hasAnyChild = true;
       _gridLog(() =>
           'child#$childIndex row=$rowIndex col=$colIndex span=${rowSpan}x$colSpan offset=${pd.offset} childSize=${childSize} constraints=${childConstraints} explicitRow=$hasExplicitRowSize');
 
@@ -419,6 +421,17 @@ class RenderGridLayout extends RenderLayoutBox {
     }
 
     // Final size constrained by constraints
+    if (usedContentWidth == 0 && innerMaxWidth != null && innerMaxWidth.isFinite) {
+      if (renderStyle.width.isNotAuto || !hasAnyChild) {
+        usedContentWidth = innerMaxWidth;
+      }
+    }
+    if (usedContentHeight == 0 && innerMaxHeight != null && innerMaxHeight.isFinite) {
+      if (renderStyle.height.isNotAuto || !hasAnyChild) {
+        usedContentHeight = innerMaxHeight;
+      }
+    }
+
     final double desiredWidth = usedContentWidth + horizontalPaddingBorder;
     final double desiredHeight = usedContentHeight + verticalPaddingBorder;
     size = constraints.constrain(Size(desiredWidth, desiredHeight));
