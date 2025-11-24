@@ -101,6 +101,9 @@ class DebugFlags {
   // Enable verbose baseline logging for flex baseline alignment.
   static bool debugLogFlexBaselineEnabled = false;
 
+  // Emit verbose semantics dumps per element to troubleshoot a11y tree wiring.
+  static bool debugLogSemanticsEnabled = false;
+
   // Removed: Use FlexLog filters to enable flex logs.
 
   /// Debug flag to enable inline layout visualization.
