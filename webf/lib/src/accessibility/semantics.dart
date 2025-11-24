@@ -155,9 +155,6 @@ class WebFAccessibility {
       case _Role.header4:
       case _Role.header5:
       case _Role.header6:
-        config.isHeader = true;
-        config.headingLevel = _headingLevelForRole(role);
-        break;
       case _Role.none:
         break;
     }
@@ -536,8 +533,6 @@ void _debugDumpSemantics(dom.Element element, _Role role, SemanticsConfiguration
     'role=$role',
     if (config.label != null) 'label="${config.label}"',
     'focusable=$focusable',
-    'isHeader=${config.isHeader}',
-    if (config.isHeader) 'headingLevel=${config.headingLevel}',
     'boundary=${config.isSemanticBoundary}',
     'explicitChildNodes=${config.explicitChildNodes}',
     'enabled=${config.isEnabled}',
