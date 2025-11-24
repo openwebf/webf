@@ -95,22 +95,27 @@ const sections: Section[] = [
     ],
   },
   {
-    title: 'Others',
+    title: 'Gestures',
     items: [
-      { label: 'Listview', path: '/listview' },
+      { label: 'FlutterGestureDetector', path: '/gesture', desc: 'Native gesture detection with tap, pan, pinch, and rotate' },
+    ],
+  },
+  {
+    title: 'Forms & Input',
+    items: [
       { label: 'Form (Basic)', path: '/form' },
       { label: 'Basic Form Elements', path: '/basic-form-elements' },
       { label: 'Input Sizing', path: '/input-sizing' },
       { label: 'Form (Advanced)', path: '/advanced-form' },
+    ],
+  },
+  {
+    title: 'Others',
+    items: [
+      { label: 'Listview', path: '/listview' },
       { label: 'Tables', path: '/table' },
       { label: 'QR Code Generator', path: '/qrcode' },
       { label: 'Video Player', path: '/video' },
-      { label: 'Action Sheets', path: '/actionsheet' },
-      { label: 'Context Menu', path: '/contextmenu' },
-      { label: 'Modal Popup', path: '/modalpopup' },
-      { label: 'Loading', path: '/loading' },
-      { label: 'Alert', path: '/alert' },
-      { label: 'Gestures', path: '/gesture' },
     ],
   },
 ];

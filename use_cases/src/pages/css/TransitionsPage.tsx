@@ -112,21 +112,21 @@ export const TransitionsPage: React.FC = () => {
             </div>
           </div>
 
-          {/*<SectionHeader title="Specific properties vs all" />*/}
-          {/*<div className="flex gap-4 flex-wrap">*/}
-          {/*  <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">*/}
-          {/*    <div onClick={() => setP1(v => !v)} className={[ 'w-20 h-20 bg-cyan-300 rounded transition-transform duration-500 cursor-pointer', p1 ? 'translate-y-4' : '' ].join(' ')} />*/}
-          {/*    <div className="text-sm text-fg-secondary mt-2">Only transform transitions (click)</div>*/}
-          {/*  </div>*/}
-          {/*  <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">*/}
-          {/*    <div onClick={() => setP2(v => !v)} className={[ 'w-20 h-20 rounded transition-colors duration-500 cursor-pointer', p2 ? 'bg-cyan-400' : 'bg-cyan-300' ].join(' ')} />*/}
-          {/*    <div className="text-sm text-fg-secondary mt-2">Only color transitions (click)</div>*/}
-          {/*  </div>*/}
-          {/*  <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">*/}
-          {/*    <div onClick={() => setP3(v => !v)} className={[ 'w-20 h-20 bg-cyan-300 rounded transition duration-500 cursor-pointer', p3 ? '-translate-y-2 bg-cyan-400' : '' ].join(' ')} />*/}
-          {/*    <div className="text-sm text-fg-secondary mt-2">All (transform + color) (click)</div>*/}
-          {/*  </div>*/}
-          {/*</div>*/}
+          <SectionHeader title="Specific properties vs all" />
+          <div className="flex gap-4 flex-wrap">
+            <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">
+              <div onClick={() => setP1(v => !v)} className={[ 'w-20 h-20 bg-cyan-300 rounded transition-transform duration-500 cursor-pointer', p1 ? 'translate-y-4' : '' ].join(' ')} />
+              <div className="text-sm text-fg-secondary mt-2">Only transform transitions (click)</div>
+            </div>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">
+              <div onClick={() => setP2(v => !v)} className={[ 'w-20 h-20 rounded transition-colors duration-500 cursor-pointer', p2 ? 'bg-cyan-400' : 'bg-cyan-300' ].join(' ')} />
+              <div className="text-sm text-fg-secondary mt-2">Only color transitions (click)</div>
+            </div>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">
+              <div onClick={() => setP3(v => !v)} className={[ 'w-20 h-20 bg-cyan-300 rounded transition duration-500 cursor-pointer', p3 ? '-translate-y-2 bg-cyan-400' : '' ].join(' ')} />
+              <div className="text-sm text-fg-secondary mt-2">All (transform + color) (click)</div>
+            </div>
+          </div>
 
           <SectionHeader title="Width/height transitions" />
           <div className="flex gap-4 flex-wrap">
@@ -169,13 +169,13 @@ export const TransitionsPage: React.FC = () => {
           {/*  </div>*/}
           {/*</div>*/}
 
-          {/*<SectionHeader title="Filter / shadow transitions" />*/}
-          {/*<div className="flex gap-4 flex-wrap">*/}
-          {/*  <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">*/}
-          {/*    <div onClick={() => setS1(v => !v)} className={['w-24 h-24 bg-white rounded transition-shadow duration-500 cursor-pointer', s1 ? 'shadow-xl' : ''].join(' ')} />*/}
-          {/*    <div className="text-sm text-fg-secondary mt-2">shadow transition (click)</div>*/}
-          {/*  </div>*/}
-          {/*</div>*/}
+          <SectionHeader title="Filter / shadow transitions" />
+          <div className="flex gap-4 flex-wrap">
+            <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">
+              <div onClick={() => setS1(v => !v)} className={['w-24 h-24 bg-white rounded transition-shadow duration-500 cursor-pointer', s1 ? 'shadow-xl' : ''].join(' ')} />
+              <div className="text-sm text-fg-secondary mt-2">shadow transition (click)</div>
+            </div>
+          </div>
       </WebFListView>
     </div>
   );
