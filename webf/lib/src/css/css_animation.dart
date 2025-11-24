@@ -109,7 +109,7 @@ mixin CSSAnimationMixin on RenderStyle {
   void beforeRunningAnimation() {
     for (var i = 0; i < animationName.length; i++) {
       final name = animationName[i];
-      
+
       if (name == NONE) {
         return;
       }
@@ -127,7 +127,6 @@ mixin CSSAnimationMixin on RenderStyle {
       if (keyframes == null) {
         return;
       }
-      
       FillMode mode = FillMode.values.firstWhere((element) {
         return element.toString().split('.').last == fillMode;
       });
@@ -158,7 +157,6 @@ mixin CSSAnimationMixin on RenderStyle {
       Animation animation = _runningAnimation[key]!;
       _runningAnimation.remove(key);
       animation.cancel();
-      
     });
 
     for (var i = 0; i < animationName.length; i++) {
@@ -191,7 +189,6 @@ mixin CSSAnimationMixin on RenderStyle {
 
       List<Keyframe>? keyframes = _getKeyFrames(name);
       if (keyframes == null && target.ownerDocument.styleNodeManager.hasPendingStyleSheet) {
-        
         target.ownerDocument.updateStyleIfNeeded();
         keyframes = _getKeyFrames(name);
       }
@@ -205,24 +202,20 @@ mixin CSSAnimationMixin on RenderStyle {
 
         if (animation != null) {
           animation.effect = effect;
-          
         } else {
           animation = Animation(effect, target.ownerDocument.animationTimeline);
 
           animation.onstart = () {
-            
             target.dispatchEvent(AnimationEvent(EVENT_ANIMATION_START, animationName: name));
           };
 
           animation.oncancel = (AnimationPlaybackEvent event) {
-            
             target.dispatchEvent(AnimationEvent(EVENT_ANIMATION_END, animationName: name));
             _runningAnimation.remove(name);
             animation?.dispose();
           };
 
           animation.onfinish = (AnimationPlaybackEvent event) {
-            
             if (isBackwardsFillModeAnimation(animation!)) {
               _revertOriginProperty(_runningAnimation[name]!);
             }
@@ -235,16 +228,12 @@ mixin CSSAnimationMixin on RenderStyle {
           _runningAnimation[name] = animation;
         }
 
-        
-
         if (playState == 'running' &&
             animation.playState != AnimationPlayState.running &&
             animation.playState != AnimationPlayState.finished) {
-          
           animation.play();
         } else {
           if (playState == 'paused' && animation.playState != AnimationPlayState.paused) {
-            
             animation.pause();
           }
         }
@@ -264,8 +253,8 @@ mixin CSSAnimationMixin on RenderStyle {
 
   void finishRunningAnimation() {
     if (_runningAnimation.isNotEmpty) {
-      for (String property in _runningAnimation.keys) {
-        _runningAnimation[property]!.finish();
+      for (String name in _runningAnimation.keys.toList()) {
+        _runningAnimation[name]!.finish();
       }
       _runningAnimation.clear();
     }

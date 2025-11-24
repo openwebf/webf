@@ -154,8 +154,6 @@ class AnimationTimeline {
     }
   }
 
-  
-
   List<Animation> _getActiveAnimations() {
     List<Animation> activeAnimations = [];
 
@@ -599,9 +597,20 @@ class KeyframeEffect extends AnimationEffect {
 
     propertySpecificKeyframeGroups.forEach((String property, List<Keyframe> keyframes) {
       // Handle single-end keyframe (e.g., only `to { ... }`) by synthesizing a
-      // begin frame from the current computed style at offset 0 per spec.
+      // begin frame from the current computed style at offset 0 per spec. When
+      // the keyframe offset is strictly between 0 and 1 (e.g., 50%), also
+      // synthesize a symmetric segment back to the underlying value so that
+      // each iteration is continuous (no visible jump) as required by the
+      // Web Animations processing model.
       if (keyframes.length == 1) {
-        String left = renderStyle?.target.style.getPropertyValue(property) ?? CSSInitialValues[property] ?? '';
+        // Use the current computed value as the synthesized start; if the
+        // author has not set this property explicitly, fall back to the
+        // CSS initial value for the property instead of treating the empty
+        // string as a real value.
+        String left = renderStyle?.target.style.getPropertyValue(property) ?? '';
+        if (left.isEmpty) {
+          left = CSSInitialValues[property] ?? '';
+        }
         String? right = keyframes[0].value;
         if (left == INITIAL) left = CSSInitialValues[property] ?? left;
         if (right == INITIAL) right = CSSInitialValues[property];
@@ -610,19 +619,51 @@ class KeyframeEffect extends AnimationEffect {
         handlers ??= [_defaultParse, _defaultLerp];
         Function parseProperty = handlers[0];
 
-        double startOffset = 0.0;
-        double endOffset = (keyframes[0].offset == 0.0) ? 1.0 : keyframes[0].offset;
+        double offset = keyframes[0].offset;
+        // Clamp offset to [0,1] to avoid degenerate intervals.
+        if (offset < 0.0) offset = 0.0;
+        if (offset > 1.0) offset = 1.0;
 
-        _Interpolation interpolation = _Interpolation(
-            property: property,
-            startOffset: startOffset,
-            endOffset: endOffset,
-            easing: _parseEasing(keyframes[0].easing),
-            begin: parseProperty(left, renderStyle, property),
-            end: parseProperty(right, renderStyle, property),
-            lerp: handlers[1]);
+        final parsedLeft = parseProperty(left, renderStyle, property);
+        final parsedRight = parseProperty(right, renderStyle, property);
 
-        interpolations.add(interpolation);
+        // For a mid-iteration keyframe (0 < offset < 1), synthesize two
+        // segments: underlying -> keyframe, then keyframe -> underlying.
+        if (offset > 0.0 && offset < 1.0) {
+          // 0 -> offset: left -> right
+          interpolations.add(_Interpolation(
+              property: property,
+              startOffset: 0.0,
+              endOffset: offset,
+              easing: _parseEasing(keyframes[0].easing),
+              begin: parsedLeft,
+              end: parsedRight,
+              lerp: handlers[1]));
+
+          // offset -> 1: right -> left
+          interpolations.add(_Interpolation(
+              property: property,
+              startOffset: offset,
+              endOffset: 1.0,
+              easing: _parseEasing(keyframes[0].easing),
+              begin: parsedRight,
+              end: parsedLeft,
+              lerp: handlers[1]));
+        } else {
+          // Fallback: when the single keyframe is at 0% or 100%, keep the
+          // original 0 -> 1 interpolation behavior.
+          double startOffset = 0.0;
+          double endOffset = 1.0;
+
+          interpolations.add(_Interpolation(
+              property: property,
+              startOffset: startOffset,
+              endOffset: endOffset,
+              easing: _parseEasing(keyframes[0].easing),
+              begin: parsedLeft,
+              end: parsedRight,
+              lerp: handlers[1]));
+        }
         return; // move to next property group
       }
 
@@ -797,6 +838,10 @@ class KeyframeEffect extends AnimationEffect {
           }
         }
       }
+
+      // Flush any pending inline style changes produced by keyframe interpolation
+      // so that renderStyle and layout see updated values each tick (e.g., opacity).
+      renderStyle.target.style.flushPendingProperties();
     }
   }
 
