@@ -73,6 +73,7 @@ void main() async {
     runApp(MaterialApp(
       title: 'webF Integration Tests',
       debugShowCheckedModeBanner: false,
+      // showSemanticsDebugger: true,
       home: Scaffold(
         appBar: AppBar(title: Text('WebF Integration Tests')),
         body: SimplePage(),

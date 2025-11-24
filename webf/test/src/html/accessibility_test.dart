@@ -71,4 +71,29 @@ void main() {
       handle.dispose();
     }
   });
+
+  testWidgets('inline strong text stays discoverable', (WidgetTester tester) async {
+    final html = '''
+      <section>
+        <p id="p_element">P element</p>
+        <strong id="strong_element">Strong element</strong>
+      </section>
+    ''';
+
+    await WebFWidgetTestUtils.prepareWidgetTest(
+      tester: tester,
+      html: '<body>$html</body>',
+      controllerName: 'a11y-strong-${DateTime.now().millisecondsSinceEpoch}',
+      wrap: (child) => MaterialApp(home: Scaffold(body: child)),
+    );
+
+    final handle = tester.ensureSemantics();
+    try {
+      await tester.pump();
+      expect(find.bySemanticsLabel('P element'), findsOneWidget);
+      expect(find.bySemanticsLabel('Strong element'), findsOneWidget);
+    } finally {
+      handle.dispose();
+    }
+  });
 }
