@@ -156,6 +156,7 @@ class WebFAccessibility {
       case _Role.header5:
       case _Role.header6:
         config.isHeader = true;
+        config.headingLevel = _headingLevelForRole(role);
         break;
       case _Role.none:
         break;
@@ -166,15 +167,22 @@ class WebFAccessibility {
       config.isFocusable = true;
     }
 
-    // Expose standalone static text nodes (like DIVs with text) as separate
-    // semantics nodes so they are read in traversal even when adjacent to
-    // interactive controls. This mirrors how browsers expose text nodes.
-    // Only do this for non-interactive roles with a computed name.
+    // Establish semantics boundaries so that standalone headings and static
+    // text nodes remain discoverable even inside larger containers.
     bool boundary = false;
-    if (!focusable && role == _Role.none && (config.label != null && config.label!.isNotEmpty)) {
+    bool explicitChildNodes = false;
+    if (_isHeadingRole(role)) {
       boundary = true;
+      // Keep heading text nodes explicit so screen readers treat them as standalone entries.
+      explicitChildNodes = true;
+    } else if (!focusable && role == _Role.none && (config.label != null && config.label!.isNotEmpty)) {
+      boundary = true;
+      explicitChildNodes = true;
     }
     config.isSemanticBoundary = boundary;
+    config.explicitChildNodes = explicitChildNodes;
+    config.isSemanticBoundary = boundary;
+    _debugDumpSemantics(element, role, config, focusable: focusable);
   }
 
   /// Compute accessible name for an element.
@@ -521,4 +529,62 @@ enum _Role {
   header4,
   header5,
   header6,
+}
+
+void _debugDumpSemantics(dom.Element element, _Role role, SemanticsConfiguration config, {required bool focusable}) {
+  final description = <String>[
+    'role=$role',
+    if (config.label != null) 'label="${config.label}"',
+    'focusable=$focusable',
+    'isHeader=${config.isHeader}',
+    if (config.isHeader) 'headingLevel=${config.headingLevel}',
+    'boundary=${config.isSemanticBoundary}',
+    'explicitChildNodes=${config.explicitChildNodes}',
+    'enabled=${config.isEnabled}',
+    'hidden=${config.isHidden}',
+  ].join(', ');
+  debugPrint('[webf][a11y] semantics ${_formatElement(element)} => $description');
+  debugDumpSemanticsTree(DebugSemanticsDumpOrder.traversalOrder);
+}
+
+String _formatElement(dom.Element element) {
+  final buffer = StringBuffer('<${element.tagName.toLowerCase()}');
+  if (element.id != null && element.id!.isNotEmpty) {
+    buffer.write('#${element.id}');
+  }
+  buffer.write('>');
+  return buffer.toString();
+}
+
+bool _isHeadingRole(_Role role) {
+  switch (role) {
+    case _Role.header1:
+    case _Role.header2:
+    case _Role.header3:
+    case _Role.header4:
+    case _Role.header5:
+    case _Role.header6:
+      return true;
+    default:
+      return false;
+  }
+}
+
+int _headingLevelForRole(_Role role) {
+  switch (role) {
+    case _Role.header1:
+      return 1;
+    case _Role.header2:
+      return 2;
+    case _Role.header3:
+      return 3;
+    case _Role.header4:
+      return 4;
+    case _Role.header5:
+      return 5;
+    case _Role.header6:
+      return 6;
+    default:
+      return 0;
+  }
 }
