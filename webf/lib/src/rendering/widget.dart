@@ -70,6 +70,20 @@ class RenderWidget extends RenderBoxModel
 
     RenderViewportBox viewportBox = getViewportBox() ?? renderStyle.target.getRootViewport()!;
     Size viewportSize = viewportBox.viewportSize;
+    // The content box of this RenderWidget is the area available to the hosted
+    // Flutter widget after accounting for CSS padding and borders. When we clamp
+    // the child's height against the viewport, we must subtract our own vertical
+    // padding and borders so that the resulting border-box (child content +
+    // padding + border) never exceeds the viewport height. Otherwise, elements
+    // like WebFListView would grow taller than the root viewport by exactly the
+    // amount of their vertical padding.
+    final double verticalPadding =
+        renderStyle.paddingTop.computedValue + renderStyle.paddingBottom.computedValue;
+    final double verticalBorder = renderStyle.effectiveBorderTopWidth.computedValue +
+        renderStyle.effectiveBorderBottomWidth.computedValue;
+    final double contentViewportHeight =
+        math.max(0.0, viewportSize.height - verticalPadding - verticalBorder);
+
     BoxConstraints childConstraints;
     if (isInlineBlockAutoWidth || hasExplicitInlineWidth) {
       childConstraints = BoxConstraints(
@@ -78,7 +92,7 @@ class RenderWidget extends RenderBoxModel
         minHeight: contentConstraints!.minHeight,
         maxHeight: (contentConstraints!.hasTightHeight || (renderStyle.target as WidgetElement).allowsInfiniteHeight)
             ? contentConstraints!.maxHeight
-            : math.min(viewportSize.height, contentConstraints!.maxHeight)
+            : math.min(contentViewportHeight, contentConstraints!.maxHeight)
       );
     } else {
       childConstraints = BoxConstraints(
@@ -89,7 +103,7 @@ class RenderWidget extends RenderBoxModel
           minHeight: contentConstraints!.minHeight,
           maxHeight: (contentConstraints!.hasTightHeight || (renderStyle.target as WidgetElement).allowsInfiniteHeight)
               ? contentConstraints!.maxHeight
-              : math.min(viewportSize.height, contentConstraints!.maxHeight));
+              : math.min(contentViewportHeight, contentConstraints!.maxHeight));
     }
 
     // If an explicit CSS width is specified (non-auto), tighten the child's
@@ -120,6 +134,11 @@ class RenderWidget extends RenderBoxModel
         childConstraints = childConstraints.tighten(height: clampedHeight);
       }
     }
+
+    // Deflate border constraints.
+    // childConstraints = renderStyle.deflateBorderConstraints(childConstraints);
+    // Deflate padding constraints.
+    // childConstraints = renderStyle.deflatePaddingConstraints(childConstraints);
 
     child.layout(childConstraints, parentUsesSize: true);
 
