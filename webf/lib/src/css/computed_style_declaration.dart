@@ -507,6 +507,17 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.VectorEffect:
       case CSSPropertyID.WritingMode:
       case CSSPropertyID.BoxShadow:
+        final List<CSSBoxShadow>? shadows = style.boxShadow;
+        if (shadows == null || shadows.isEmpty) {
+          return 'none';
+        }
+        final List<String> layers = <String>[];
+        for (final CSSBoxShadow shadow in shadows) {
+          layers.add(shadow.cssText());
+        }
+        // getShadowValues() reverses layers for internal storage; reverse here
+        // to present them in author-specified order.
+        return layers.reversed.join(', ');
       case CSSPropertyID.TableLayout:
       case CSSPropertyID.Fill:
       case CSSPropertyID.FillRule:

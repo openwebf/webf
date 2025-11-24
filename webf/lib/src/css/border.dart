@@ -524,6 +524,27 @@ class CSSBoxShadow {
   CSSLengthValue? blurRadius;
   CSSLengthValue? spreadRadius;
 
+  String cssText() {
+    final List<String> parts = <String>[];
+    // Follow browser-style serialization: color first, then four lengths,
+    // then optional inset keyword.
+    if (color != null) {
+      parts.add(CSSColor(color!).cssText());
+    }
+    final CSSLengthValue ox = offsetX ?? CSSLengthValue.zero;
+    final CSSLengthValue oy = offsetY ?? CSSLengthValue.zero;
+    final CSSLengthValue blur = blurRadius ?? CSSLengthValue.zero;
+    final CSSLengthValue spread = spreadRadius ?? CSSLengthValue.zero;
+    parts.add(ox.cssText());
+    parts.add(oy.cssText());
+    parts.add(blur.cssText());
+    parts.add(spread.cssText());
+    if (inset) {
+      parts.add(INSET);
+    }
+    return parts.join(' ');
+  }
+
   WebFBoxShadow get computedBoxShadow {
     color ??= const Color(0xFF000000);
     offsetX ??= CSSLengthValue.zero;

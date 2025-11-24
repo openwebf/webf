@@ -220,6 +220,123 @@ const List<Function> _transformOriginHandler = [
   _stringifyTransformOrigin
 ];
 
+// box-shadow handler: parses "<shadow-list>" and interpolates per-layer.
+List<CSSBoxShadow> _parseBoxShadowForTransition(String value, RenderStyle renderStyle, String property) {
+  // Expand inline var(...) so transition keyframes see the same resolved
+  // shadow lists as the normal computed style pipeline.
+  String expanded = value;
+  if (value.contains('var(')) {
+    try {
+      expanded = CSSWritingModeMixin.expandInlineVars(value, renderStyle, property);
+    } catch (_) {}
+  }
+
+  final List<CSSBoxShadow>? parsed = CSSBoxShadow.parseBoxShadow(expanded, renderStyle, property);
+  if (parsed == null) return const <CSSBoxShadow>[];
+  // Use a fresh list so we don't accidentally mutate cached instances.
+  return List<CSSBoxShadow>.from(parsed);
+}
+
+String _stringifyBoxShadowForTransition(List<CSSBoxShadow> shadows) {
+  if (shadows.isEmpty) return NONE;
+
+  final List<String> layers = <String>[];
+  for (final CSSBoxShadow shadow in shadows) {
+    layers.add(shadow.cssText());
+  }
+
+  // getShadowValues() reverses layers for internal storage; reverse again
+  // here so round-tripping through parse -> stringify -> parse preserves
+  // the same internal ordering.
+  return layers.reversed.join(', ');
+}
+
+List<CSSBoxShadow> _updateBoxShadowForTransition(
+    List<CSSBoxShadow> begin, List<CSSBoxShadow> end, double progress, String property, CSSRenderStyle renderStyle) {
+  if (begin.isEmpty && end.isEmpty) {
+    renderStyle.target.setRenderStyleProperty(BOX_SHADOW, null);
+    return const <CSSBoxShadow>[];
+  }
+
+  // When layer counts differ (e.g., from 'none' to a single shadow), treat
+  // missing entries as transparent shadows with matching geometry so we can
+  // smoothly fade them in/out instead of stepping at 50%.
+  final int maxLen = begin.length > end.length ? begin.length : end.length;
+
+  CSSLengthValue _lerpLen(CSSLengthValue? a, CSSLengthValue? b) {
+    final double av = a?.computedValue ?? 0.0;
+    final double bv = b?.computedValue ?? 0.0;
+    final double v = av * (1 - progress) + bv * progress;
+    return CSSLengthValue(v, CSSLengthType.PX);
+  }
+
+  final List<CSSBoxShadow> result = <CSSBoxShadow>[];
+  for (int i = 0; i < maxLen; i++) {
+    CSSBoxShadow _normalize(List<CSSBoxShadow> list, int index, {CSSBoxShadow? template, bool asTransparent = false}) {
+      if (index < list.length) {
+        final CSSBoxShadow s = list[index];
+        if (!asTransparent) return s;
+        final Color base = s.color ?? CSSColor.initial;
+        return CSSBoxShadow(
+          color: base.withOpacity(0.0),
+          offsetX: s.offsetX ?? CSSLengthValue.zero,
+          offsetY: s.offsetY ?? CSSLengthValue.zero,
+          blurRadius: s.blurRadius ?? CSSLengthValue.zero,
+          spreadRadius: s.spreadRadius ?? CSSLengthValue.zero,
+          inset: s.inset,
+        );
+      }
+      if (template != null) {
+        final CSSBoxShadow t = template;
+        final Color base = t.color ?? CSSColor.initial;
+        return CSSBoxShadow(
+          color: asTransparent ? base.withOpacity(0.0) : base,
+          offsetX: t.offsetX ?? CSSLengthValue.zero,
+          offsetY: t.offsetY ?? CSSLengthValue.zero,
+          blurRadius: t.blurRadius ?? CSSLengthValue.zero,
+          spreadRadius: t.spreadRadius ?? CSSLengthValue.zero,
+          inset: t.inset,
+        );
+      }
+      return CSSBoxShadow(
+        color: (asTransparent ? CSSColor.transparent : CSSColor.initial),
+        offsetX: CSSLengthValue.zero,
+        offsetY: CSSLengthValue.zero,
+        blurRadius: CSSLengthValue.zero,
+        spreadRadius: CSSLengthValue.zero,
+        inset: false,
+      );
+    }
+
+    // Choose templates so that missing shadows on one side fade from/to
+    // transparent versions of the opposite side's geometry.
+    final CSSBoxShadow? template = (i < begin.length ? begin[i] : (i < end.length ? end[i] : null));
+    final CSSBoxShadow sb =
+        _normalize(begin, i, template: template, asTransparent: begin.isEmpty || i >= begin.length);
+    final CSSBoxShadow se =
+        _normalize(end, i, template: template, asTransparent: end.isEmpty || i >= end.length);
+
+    final Color fromColor = sb.color ?? CSSColor.initial;
+    final Color toColor = se.color ?? CSSColor.initial;
+    final Color color = Color.lerp(fromColor, toColor, progress) ?? toColor;
+
+    final bool inset =
+        (sb.inset == se.inset) ? sb.inset : (progress < 0.5 ? sb.inset : se.inset);
+
+    result.add(CSSBoxShadow(
+      color: color,
+      offsetX: _lerpLen(sb.offsetX, se.offsetX),
+      offsetY: _lerpLen(sb.offsetY, se.offsetY),
+      blurRadius: _lerpLen(sb.blurRadius, se.blurRadius),
+      spreadRadius: _lerpLen(sb.spreadRadius, se.spreadRadius),
+      inset: inset,
+    ));
+  }
+
+  renderStyle.target.setRenderStyleProperty(BOX_SHADOW, result);
+  return result;
+}
+
 // background-size handler: parses "<bg-size>" and interpolates width/height when numeric/percentage.
 CSSBackgroundSize _parseBackgroundSize(String value, RenderStyle renderStyle, String property) {
   return CSSBackground.resolveBackgroundSize(value, renderStyle, property);
@@ -378,6 +495,7 @@ Map<String, List<Function>> CSSTransitionHandlers = {
   BACKGROUND_POSITION_X: [_parseBackgroundPositionX, _updateBackgroundPositionX, _stringifyBackgroundPositionAxis],
   BACKGROUND_POSITION_Y: [_parseBackgroundPositionY, _updateBackgroundPositionY, _stringifyBackgroundPositionAxis],
   BACKGROUND_SIZE: [_parseBackgroundSize, _updateBackgroundSize, _stringifyBackgroundSize],
+  BOX_SHADOW: [_parseBoxShadowForTransition, _updateBoxShadowForTransition, _stringifyBoxShadowForTransition],
   BORDER_BOTTOM_COLOR: _colorHandler,
   BORDER_LEFT_COLOR: _colorHandler,
   BORDER_RIGHT_COLOR: _colorHandler,
@@ -619,37 +737,52 @@ mixin CSSTransitionMixin on RenderStyle {
       return false;
     }
 
-    // Transition does not work when renderBoxModel has not been layout yet.
-    if (hasRenderBox() &&
-        isBoxModelHaveSize() &&
-        CSSTransitionHandlers[property] != null) {
-      final String key = _canonicalTransitionKey(property);
-      final bool configured = effectiveTransitions.containsKey(key) || effectiveTransitions.containsKey(ALL);
-      if (!configured) {
-        if (DebugFlags.shouldLogTransitionForProp(property)) {
-          cssLogger.info('[transition][check] property=$property skip: not-configured (key=$key)');
-        }
-        return false;
-      }
+    // Transition does not work when renderBoxModel has not been layout yet
+    // or when we don't have a transition handler for this property.
+    final bool hasRenderBoxModel = hasRenderBox();
+    final bool hasBoxSize = isBoxModelHaveSize();
+    final bool hasHandler = CSSTransitionHandlers[property] != null;
+
+    if (!hasRenderBoxModel || !hasBoxSize || !hasHandler) {
       if (DebugFlags.shouldLogTransitionForProp(property)) {
-        final List? opts = effectiveTransitions[key] ?? effectiveTransitions[ALL];
-        cssLogger.info('[transition][check] property=$property key=$key opts=${opts != null ? '{duration: ${opts[0]}, easing: ${opts[1]}, delay: ${opts[2]}}' : 'null'}');
-      }
-      bool shouldTransition = false;
-      // Transition will be disabled when all transition has transitionDuration as 0.
-      effectiveTransitions.forEach((String transitionKey, List transitionOptions) {
-        int? duration = CSSTime.parseTime(transitionOptions[0]);
-        if (duration != null && duration != 0) {
-          shouldTransition = true;
+        final String reason;
+        if (!hasRenderBoxModel || !hasBoxSize) {
+          reason = 'no-layout (hasRenderBox=$hasRenderBoxModel hasSize=$hasBoxSize)';
+        } else {
+          reason = 'no-handler';
         }
-      });
-      if (DebugFlags.shouldLogTransitionForProp(property)) {
-        cssLogger.info('[transition][check] property=$property configured key=$key result=$shouldTransition');
+        cssLogger.info('[transition][check] property=$property skip: $reason');
       }
-      return shouldTransition;
+      return false;
     }
 
-    return false;
+    final String key = _canonicalTransitionKey(property);
+    final bool configured = effectiveTransitions.containsKey(key) || effectiveTransitions.containsKey(ALL);
+    if (!configured) {
+      if (DebugFlags.shouldLogTransitionForProp(property)) {
+        cssLogger
+            .info('[transition][check] property=$property skip: not-configured (key=$key)');
+      }
+      return false;
+    }
+    if (DebugFlags.shouldLogTransitionForProp(property)) {
+      final List? opts = effectiveTransitions[key] ?? effectiveTransitions[ALL];
+      cssLogger.info(
+          '[transition][check] property=$property key=$key opts=${opts != null ? '{duration: ${opts[0]}, easing: ${opts[1]}, delay: ${opts[2]}}' : 'null'}');
+    }
+    bool shouldTransition = false;
+    // Transition will be disabled when all transition has transitionDuration as 0.
+    effectiveTransitions.forEach((String transitionKey, List transitionOptions) {
+      int? duration = CSSTime.parseTime(transitionOptions[0]);
+      if (duration != null && duration != 0) {
+        shouldTransition = true;
+      }
+    });
+    if (DebugFlags.shouldLogTransitionForProp(property)) {
+      cssLogger.info(
+          '[transition][check] property=$property configured key=$key result=$shouldTransition');
+    }
+    return shouldTransition;
   }
 
   final Map<String, Animation> _propertyRunningTransition = {};
@@ -668,6 +801,24 @@ mixin CSSTransitionMixin on RenderStyle {
   void runTransition(String propertyName, begin, end) {
     if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
       cssLogger.info('[transition][run] property=$propertyName begin=${begin ?? 'null'} end=$end');
+    }
+
+    // For box-shadow, prefer the current computed shadow list as the
+    // transition begin value when the previous CSS text is var()-based.
+    // This avoids snapping when variables are updated before the
+    // shorthand (e.g., Tailwind's --tw-shadow patterns).
+    if (propertyName == BOX_SHADOW && begin is String && begin.contains('var(')) {
+      final dynamic current = getProperty(propertyName);
+      if (current is List<CSSBoxShadow> && current.isNotEmpty) {
+        try {
+          begin = _stringifyBoxShadowForTransition(current);
+          if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
+            cssLogger.info('[transition][run] property=$propertyName override-begin-from-computed "$begin"');
+          }
+        } catch (_) {
+          // Fallback to string-based begin if serialization fails.
+        }
+      }
     }
     if (_hasRunningTransition(propertyName)) {
       Animation animation = _propertyRunningTransition[propertyName]!;
@@ -689,14 +840,23 @@ mixin CSSTransitionMixin on RenderStyle {
     }
 
     if (begin == null || (begin is String && begin.isEmpty)) {
-      begin = CSSInitialValues[propertyName];
+      begin = CSSInitialValues[propertyName] ?? '';
       if (begin == CURRENT_COLOR) {
         begin = currentColor;
       }
     }
 
-    if (end is String && end.isEmpty) {
-      end = CSSInitialValues[propertyName];
+    if (end == null || (end is String && end.isEmpty)) {
+      end = CSSInitialValues[propertyName] ?? '';
+    }
+
+    // Keyframe.value is typed as String; ensure our transition endpoints
+    // are always serialized strings before constructing keyframes.
+    if (begin is! String) {
+      begin = begin.toString();
+    }
+    if (end is! String) {
+      end = end.toString();
     }
 
     EffectTiming? options = getTransitionEffectTiming(propertyName);
