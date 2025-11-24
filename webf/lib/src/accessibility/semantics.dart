@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/css.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/html.dart' as html;
 import 'package:webf/rendering.dart';
 
@@ -179,7 +180,9 @@ class WebFAccessibility {
     config.isSemanticBoundary = boundary;
     config.explicitChildNodes = explicitChildNodes;
     config.isSemanticBoundary = boundary;
-    // _debugDumpSemantics(element, role, config, focusable: focusable);
+    if (kDebugMode && DebugFlags.debugLogSemanticsEnabled) {
+      _debugDumpSemantics(element, role, config, focusable: focusable);
+    }
   }
 
   /// Compute accessible name for an element.
