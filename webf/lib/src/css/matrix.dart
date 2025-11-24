@@ -615,7 +615,11 @@ class CSSMatrix {
     // value so function parsers (e.g., scale/translate) receive the expected
     // token. This avoids incorrectly trying to treat the var value as a full
     // transform property (e.g., resolving '2' as transform).
-    var methodArgs = method.args;
+    // IMPORTANT: work on a local copy so we never mutate the cached
+    // CSSFunctionalNotation.args held by CSSFunction.parseFunction.
+    // Mutating the shared list would corrupt later parses and break
+    // transition heuristics that rely on seeing raw 'var(...)' tokens.
+    final List<String> methodArgs = List<String>.from(method.args);
     for (int i = 0; i < methodArgs.length; i++) {
       final String arg = methodArgs[i];
       final String argTrim = arg.trim();
@@ -633,7 +637,7 @@ class CSSMatrix {
 
     switch (methodName) {
       case MATRIX:
-        if (method.args.length == 6) {
+        if (methodArgs.length == 6) {
           List<double?> args = List.filled(6, 0);
           for (int i = 0; i < 6; i++) {
             args[i] = double.tryParse(methodArgs[i].trim()) ?? 1.0;
