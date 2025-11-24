@@ -354,6 +354,122 @@ describe('flex algotithm', () => {
     await snapshot();
   });
 
+  it('024-flex-basis-0-percent-layout', async () => {
+    let log;
+    let flex;
+    log = createElement('div', { id: 'log', style: { 'box-sizing': 'border-box' } });
+    flex = createElement(
+      'div',
+      {
+        class: 'flexbox',
+        style: {
+          display: 'flex',
+          width: '600px',
+          'background-color': '#aaa',
+          position: 'relative',
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createElement('div', {
+          'data-expected-width': '75',
+          'data-offset-x': '0',
+          class: 'flex1-0-0',
+          style: {
+            height: '20px',
+            border: '0',
+            'background-color': 'blue',
+            flex: '1 0 0px',
+            'box-sizing': 'border-box',
+            margin: '0 auto',
+          },
+        }),
+        createElement('div', {
+          'data-expected-width': '350',
+          'data-offset-x': '75',
+          class: 'flex2-0-0',
+          style: {
+            height: '20px',
+            border: '0',
+            'background-color': 'green',
+            flex: '2 0 0px',
+            'box-sizing': 'border-box',
+            padding: '0 100px',
+          },
+        }),
+        createElement('div', {
+          'data-expected-width': '75',
+          'data-offset-x': '525',
+          class: 'flex1-0-0',
+          style: {
+            height: '20px',
+            border: '0',
+            'background-color': 'red',
+            flex: '1 0 0px',
+            'box-sizing': 'border-box',
+            'margin-left': '100px',
+          },
+        }),
+      ]
+    );
+    BODY.appendChild(log);
+    BODY.appendChild(flex);
+    await snapshot();
+  });
+
+  it('040-flex-basis-0-border-distribution', async () => {
+    let log;
+    let flex;
+    log = createElement('div', { id: 'log', style: { 'box-sizing': 'border-box' } });
+    flex = createElement(
+      'div',
+      {
+        class: 'flexbox',
+        style: { display: 'flex', width: '600px', 'box-sizing': 'border-box' },
+      },
+      [
+        createElement('div', {
+          'data-expected-width': '250',
+          class: 'flex1',
+          style: {
+            height: '20px',
+            border: '0',
+            'background-color': 'blue',
+            flex: '1',
+            'box-sizing': 'border-box',
+            'border-left': '150px solid black',
+          },
+        }),
+        createElement('div', {
+          'data-expected-width': '250',
+          class: 'flex1-0-0',
+          style: {
+            height: '20px',
+            border: '0',
+            'background-color': 'green',
+            flex: '1 0 0px',
+            'box-sizing': 'border-box',
+            'border-right': '150px solid orange',
+          },
+        }),
+        createElement('div', {
+          'data-expected-width': '100',
+          class: 'flex1-0-0',
+          style: {
+            height: '20px',
+            border: '0',
+            'background-color': 'red',
+            flex: '1 0 0px',
+            'box-sizing': 'border-box',
+          },
+        }),
+      ]
+    );
+    BODY.appendChild(log);
+    BODY.appendChild(flex);
+    await snapshot();
+  });
+
   it('020', async () => {
     let log;
     let flex;

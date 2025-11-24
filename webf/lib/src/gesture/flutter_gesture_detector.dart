@@ -21,6 +21,12 @@ class FlutterGestureDetector extends WidgetElement {
   };
 
   @override
+  bool get allowsInfiniteHeight => true;
+
+  @override
+  bool get allowsInfiniteWidth => true;
+
+  @override
   FlutterGestureDetectorState createState() => FlutterGestureDetectorState(this);
 }
 

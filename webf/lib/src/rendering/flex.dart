@@ -7,30 +7,12 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:logging/logging.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/html/text.dart';
 import 'package:webf/widget.dart';
-
-String _fmtC(BoxConstraints c) =>
-    'C[minW=${c.minWidth.toStringAsFixed(1)}, maxW=${c.maxWidth.isFinite ? c.maxWidth.toStringAsFixed(1) : '∞'}, '
-        'minH=${c.minHeight.toStringAsFixed(1)}, maxH=${c.maxHeight.isFinite ? c.maxHeight.toStringAsFixed(1) : '∞'}]';
-
-String _fmtS(Size s) => 'S(${s.width.toStringAsFixed(1)}×${s.height.toStringAsFixed(1)})';
-
-String _childDesc(RenderBox child) {
-  if (child is RenderBoxModel) {
-    final el = child.renderStyle.target;
-    final tag = el.tagName.toLowerCase();
-    final id = (el.id != null && el.id!.isNotEmpty) ? '#${el.id}' : '';
-    final cls = (el.className.isNotEmpty) ? '.${el.className}' : '';
-    return '$tag$id$cls@${child.hashCode.toRadixString(16)}';
-  }
-  return '${child.runtimeType}@${child.hashCode.toRadixString(16)}';
-}
 
 // Position and size info of each run (flex line) in flex layout.
 // https://www.w3.org/TR/css-flexbox-1/#flex-lines
@@ -1962,8 +1944,19 @@ class RenderFlexLayout extends RenderLayoutBox {
       double baseMainSize;
       double? basisForBase = _getUsedFlexBasis(child);
       if (basisForBase != null) {
-        // Used basis is already border-box (>= padding+border)
-        baseMainSize = basisForBase;
+        // Used basis is already border-box (>= padding+border) for non-zero bases.
+        // For flex-basis: 0% in the main axis, use a flex base size of 0 so equal-flex
+        // items share free space evenly regardless of padding/border, while the
+        // non-flex portion (padding/border) is accounted for separately in totalSpace.
+        RenderBoxModel? box = child is RenderBoxModel
+            ? child
+            : (child is RenderEventListener ? child.child as RenderBoxModel? : null);
+        final CSSLengthValue? fb = box?.renderStyle.flexBasis;
+        if (fb != null && fb.type == CSSLengthType.PERCENTAGE && fb.computedValue == 0) {
+          baseMainSize = 0;
+        } else {
+          baseMainSize = basisForBase;
+        }
       } else {
         // childSize is the intrinsic measurement from PASS 1 (pre-clamp).
         baseMainSize = _isHorizontalFlexDirection ? childSize.width : childSize.height;
@@ -1979,6 +1972,7 @@ class RenderFlexLayout extends RenderLayoutBox {
 
       final double flexGrow = _getFlexGrow(child);
       final double flexShrink = _getFlexShrink(child);
+
       if (flexGrow > 0) {
         totalFlexGrow += flexGrow;
       }
@@ -2331,12 +2325,25 @@ class RenderFlexLayout extends RenderLayoutBox {
         containerWidth = constraints.maxWidth;
       }
     }
+    // Prefer the actually imposed outer constraints when they are tighter than
+    // the content constraints (e.g., a flex item whose max inline-size is 172px
+    // but whose internal contentMaxConstraintsWidth is larger). This ensures
+    // the flex algorithm sees the correct available main size and will shrink
+    // items when content overflows.
+    if (constraints.hasBoundedWidth && constraints.maxWidth.isFinite) {
+      containerWidth =
+          (containerWidth == null) ? constraints.maxWidth : math.min(containerWidth!, constraints.maxWidth);
+    }
     if (containerHeight == null) {
       if ((contentConstraints?.hasBoundedHeight ?? false) && (contentConstraints?.maxHeight.isFinite ?? false)) {
         containerHeight = contentConstraints!.maxHeight;
       } else if (constraints.hasBoundedHeight && constraints.maxHeight.isFinite) {
         containerHeight = constraints.maxHeight;
       }
+    }
+    if (constraints.hasBoundedHeight && constraints.maxHeight.isFinite) {
+      containerHeight =
+          (containerHeight == null) ? constraints.maxHeight : math.min(containerHeight!, constraints.maxHeight);
     }
     if (contentBoxLogicalHeight != null) {
       containerHeight = contentBoxLogicalHeight;
@@ -2753,6 +2760,30 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     // Use stored percentage constraints if available, otherwise use current constraints
     BoxConstraints oldConstraints = _childrenOldConstraints[child.hashCode] ?? child.constraints;
+
+    // Row flex container + pure cross-axis stretch:
+    // Preserve the flex-resolved main size (oldConstraints.min/maxWidth) and
+    // only tighten the cross size to the stretched line height. This prevents
+    // align-items:stretch from inflating the main-axis size again.
+    if (_isHorizontalFlexDirection &&
+        childStretchedCrossSize != null &&
+        childFlexedMainSize == null &&
+        !child.renderStyle.isSelfRenderReplaced()) {
+      // Use the current constraints on the child, which already encode
+      // the flex-resolved main size from the previous pass (e.g., 172px),
+      // rather than the original percentage/min-width based constraints.
+      final BoxConstraints prev = child.constraints;
+      final double minW = prev.minWidth;
+      final double maxW = prev.maxWidth;
+      final double h = childStretchedCrossSize;
+      final BoxConstraints res = BoxConstraints(
+        minWidth: minW,
+        maxWidth: maxW,
+        minHeight: h,
+        maxHeight: h,
+      );
+      return res;
+    }
 
     // Compute safe used border-box sizes when overrides are present. In certain
     // multi-pass layouts (e.g., wrappers like RenderEventListener or when text
@@ -3351,8 +3382,9 @@ class RenderFlexLayout extends RenderLayoutBox {
       contentWidth: contentWidth,
       contentHeight: contentHeight,
     );
+    final Size boxSize = getBoxSize(layoutContentSize);
 
-    size = getBoxSize(layoutContentSize);
+    size = boxSize;
 
     // Set auto value of min-width and min-height based on size of flex items.
     if (_isHorizontalFlexDirection) {

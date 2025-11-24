@@ -24,4 +24,5 @@ export 'src/foundation/form_data/form_data.dart';
 export 'src/foundation/loading_state_registry.dart';
 export 'src/foundation/debug_flags.dart';
 export 'src/foundation/positioned_layout_logging.dart';
+export 'src/foundation/flex_layout_logging.dart';
 export 'src/foundation/widget_logging.dart';
