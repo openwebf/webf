@@ -91,10 +91,7 @@ const sections: Section[] = [
   {
     title: 'Cupertino UI',
     items: [
-      { label: 'Cupertino Buttons', path: '/cupertino/buttons' },
-      { label: 'Cupertino Action Sheet', path: '/cupertino/actionsheet' },
-      { label: 'Cupertino Alert Dialog', path: '/cupertino/alert' },
-      { label: 'Cupertino Switches & Sliders', path: '/cupertino/controls' },
+      { label: 'Cupertino Showcase', path: '/cupertino-showcase', desc: 'iOS-style components and interactions' },
     ],
   },
   {

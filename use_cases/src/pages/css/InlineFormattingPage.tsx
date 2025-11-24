@@ -129,6 +129,68 @@ export const InlineFormattingPage: React.FC = () => {
           {/*  </div>*/}
           {/*</div>*/}
 
+          <h2 className="text-lg font-medium text-fg-primary mb-2">RTL (Right-to-Left) Text Direction</h2>
+          <div className="bg-surface-secondary border border-line rounded-xl p-4 mb-6">
+            <div className="text-sm text-fg-secondary mb-3">Text direction affects inline flow, alignment, and ordering. Use <code>dir="rtl"</code> or <code>direction: rtl</code>.</div>
+
+            <div className="space-y-4">
+              <div className="border border-dashed border-line rounded p-3">
+                <div className="text-xs text-fg-secondary mb-2">LTR (Left-to-Right) - Default</div>
+                <p className="text-[16px] bg-blue-50 p-2 rounded" dir="ltr">
+                  This is English text flowing from left to right.
+                </p>
+              </div>
+
+              <div className="border border-dashed border-line rounded p-3">
+                <div className="text-xs text-fg-secondary mb-2">RTL (Right-to-Left) - Arabic/Hebrew</div>
+                <p className="text-[16px] bg-blue-50 p-2 rounded" dir="rtl">
+                  هذا نص عربي يتدفق من اليمين إلى اليسار
+                </p>
+              </div>
+
+              <div className="border border-dashed border-line rounded p-3">
+                <div className="text-xs text-fg-secondary mb-2">Mixed Bidirectional Text (Bidi)</div>
+                <p className="text-[16px] bg-blue-50 p-2 rounded" dir="rtl">
+                  This is English mixed with عربي (Arabic) and numbers 123.
+                </p>
+              </div>
+
+              <div className="border border-dashed border-line rounded p-3">
+                <div className="text-xs text-fg-secondary mb-2">RTL with Inline Elements</div>
+                <p className="text-[16px] bg-blue-50 p-2 rounded" dir="rtl">
+                  <span className="bg-yellow-200 px-1">مرحبا</span> بك في
+                  <strong className="text-blue-600">WebF</strong> و
+                  <span className="bg-green-200 px-1">اختبار RTL</span>
+                </p>
+              </div>
+
+              <div className="border border-dashed border-line rounded p-3">
+                <div className="text-xs text-fg-secondary mb-2">Text Alignment in RTL</div>
+                <div className="space-y-2">
+                  <p className="text-[14px] bg-purple-50 p-2 rounded text-right" dir="rtl">
+                    النص العربي - text-align: right (explicit)
+                  </p>
+                  <p className="text-[14px] bg-purple-50 p-2 rounded text-left" dir="rtl">
+                    النص العربي - text-align: left (overrides RTL default)
+                  </p>
+                  <p className="text-[14px] bg-purple-50 p-2 rounded text-center" dir="rtl">
+                    النص العربي - text-align: center
+                  </p>
+                </div>
+              </div>
+
+              <div className="border border-dashed border-line rounded p-3">
+                <div className="text-xs text-fg-secondary mb-2">Inline-block Elements in RTL</div>
+                <div className="text-[16px] bg-blue-50 p-2 rounded" dir="rtl">
+                  <span className="inline-block w-8 h-8 bg-red-300 mx-1" />
+                  <span className="inline-block w-8 h-8 bg-green-300 mx-1" />
+                  <span className="inline-block w-8 h-8 bg-blue-300 mx-1" />
+                  مربعات ملونة
+                </div>
+              </div>
+            </div>
+          </div>
+
           <h2 className="text-lg font-medium text-fg-primary mb-2">Line boxes and background highlight</h2>
           <div className="bg-surface-secondary border border-line rounded-xl p-4 mb-6">
             <div className="text-sm text-fg-secondary mb-3">Line boxes stack to form a paragraph box. Background fills the content area for each line.</div>
