@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/css.dart';
-import 'package:webf/html.dart';
+import 'package:webf/html.dart' as html;
 import 'package:webf/rendering.dart';
 
 /// Minimal ARIA → Flutter Semantics bridge for WebF.
@@ -225,19 +225,19 @@ class WebFAccessibility {
     // Role-based fallbacks
     final String tag = element.tagName.toUpperCase();
     final String? explicitRole = element.getAttribute('role')?.toLowerCase();
-    if (tag == IMAGE) {
+    if (tag == html.IMAGE) {
       final String? alt = element.getAttribute('alt');
       if (alt != null && alt.trim().isNotEmpty) return alt.trim();
     }
-    if (tag == ANCHOR) {
+    if (tag == html.ANCHOR) {
       final String text = _collectText(element);
       if (text.isNotEmpty) return text;
     }
-    if (tag == BUTTON) {
+    if (tag == html.BUTTON) {
       final String text = _collectText(element);
       if (text.isNotEmpty) return text;
     }
-    if (tag == INPUT) {
+    if (tag == html.INPUT) {
       final String type = element.getAttribute('type')?.toLowerCase() ?? 'text';
       final String? v = element.attributes['value'];
       if ((type == 'button' || type == 'submit') && v != null && v.trim().isNotEmpty) {
@@ -345,13 +345,13 @@ class WebFAccessibility {
     }
 
     final String tag = element.tagName.toUpperCase();
-    if (tag == BUTTON) return _Role.button;
-    if (tag == ANCHOR) {
+    if (tag == html.BUTTON) return _Role.button;
+    if (tag == html.ANCHOR) {
       final String? href = element.getAttribute('href');
       if (href != null && href.isNotEmpty) return _Role.link;
     }
-    if (tag == IMAGE) return _Role.image;
-    if (tag == INPUT) {
+    if (tag == html.IMAGE) return _Role.image;
+    if (tag == html.INPUT) {
       final String type = element.getAttribute('type')?.toLowerCase() ?? 'text';
       switch (type) {
         case 'button':
@@ -366,12 +366,12 @@ class WebFAccessibility {
           return _Role.textbox;
       }
     }
-    if (tag == H1) return _Role.header1;
-    if (tag == H2) return _Role.header2;
-    if (tag == H3) return _Role.header3;
-    if (tag == H4) return _Role.header4;
-    if (tag == H5) return _Role.header5;
-    if (tag == H6) return _Role.header6;
+    if (tag == html.H1) return _Role.header1;
+    if (tag == html.H2) return _Role.header2;
+    if (tag == html.H3) return _Role.header3;
+    if (tag == html.H4) return _Role.header4;
+    if (tag == html.H5) return _Role.header5;
+    if (tag == html.H6) return _Role.header6;
 
     return _Role.none;
   }
@@ -408,9 +408,9 @@ class WebFAccessibility {
     if (role != _Role.none) return false;
     final String tag = element.tagName.toUpperCase();
     switch (tag) {
-      case LI:
-      case DT:
-      case DD:
+      case html.LI:
+      case html.DT:
+      case html.DD:
         return _hasFocusableDescendant(element);
       default:
         return false;
@@ -472,26 +472,48 @@ class WebFAccessibility {
 }
 
 const Set<String> _nameFromContentTags = <String>{
-  DIV,
-  SPAN,
-  PARAGRAPH,
-  H1,
-  H2,
-  H3,
-  H4,
-  H5,
-  H6,
-  SECTION,
-  ARTICLE,
-  ASIDE,
-  NAV,
-  MAIN,
-  HEADER,
-  FOOTER,
-  FIGCAPTION,
-  LI,
-  DT,
-  DD,
+  html.DIV,
+  html.SPAN,
+  html.PARAGRAPH,
+  html.H1,
+  html.H2,
+  html.H3,
+  html.H4,
+  html.H5,
+  html.H6,
+  html.SECTION,
+  html.ARTICLE,
+  html.ASIDE,
+  html.NAV,
+  html.MAIN,
+  html.HEADER,
+  html.FOOTER,
+  html.FIGCAPTION,
+  html.LI,
+  html.DT,
+  html.DD,
+  // Phrasing content that HTML AAM maps to static text semantics.
+  html.STRONG,
+  html.B,
+  html.EM,
+  html.I,
+  html.MARK,
+  html.SMALL,
+  html.S,
+  html.U,
+  html.Q,
+  html.CITE,
+  html.CODE,
+  html.DATA,
+  html.KBD,
+  html.DFN,
+  html.TIME,
+  html.VAR,
+  html.ABBR,
+  html.SUB,
+  html.SUP,
+  html.SAMP,
+  html.TT,
 };
 
 const Set<String> _nameFromContentRoles = <String>{
