@@ -62,55 +62,55 @@ export const TransitionsPage: React.FC = () => {
               <div onClick={() => setO1(v => !v)} className={[ 'w-20 h-20 bg-emerald-300 rounded transition-opacity duration-500 ease-in-out cursor-pointer', o1 ? 'opacity-50' : '' ].join(' ')} />
               <div className="text-sm text-fg-secondary mt-2">Click square to toggle opacity (500ms).</div>
             </div>
-            {/*<div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">*/}
-            {/*  <button onClick={() => setBtn1(v => !v)} className={[ 'px-3 py-2 rounded border border-line transition-colors duration-200', btn1 ? 'bg-red-400' : 'bg-surface' ].join(' ')}>Click me</button>*/}
-            {/*  <div className="text-sm text-fg-secondary mt-2">Click button to toggle colors.</div>*/}
-            {/*</div>*/}
+            <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">
+              <button onClick={() => setBtn1(v => !v)} className={[ 'px-3 py-2 rounded border border-line transition-colors duration-200', btn1 ? 'bg-red-400' : 'bg-surface' ].join(' ')}>Click me</button>
+              <div className="text-sm text-fg-secondary mt-2">Click button to toggle colors.</div>
+            </div>
           </div>
 
-          {/*<SectionHeader title="Timing functions" />*/}
-          {/*<div className="flex gap-4 flex-wrap">*/}
-          {/*  <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">*/}
-          {/*    <div onClick={() => setT1(v => !v)} className={[ 'w-20 h-20 bg-fuchsia-300 rounded transition-transform duration-700 ease-linear cursor-pointer', t1 ? 'translate-x-6' : '' ].join(' ')} />*/}
-          {/*    <div className="text-sm text-fg-secondary mt-2">ease-linear (click)</div>*/}
-          {/*  </div>*/}
-          {/*  <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">*/}
-          {/*    <div onClick={() => setT2(v => !v)} className={[ 'w-20 h-20 bg-fuchsia-300 rounded transition-transform duration-700 ease-in cursor-pointer', t2 ? 'translate-x-6' : '' ].join(' ')} />*/}
-          {/*    <div className="text-sm text-fg-secondary mt-2">ease-in (click)</div>*/}
-          {/*  </div>*/}
-          {/*  <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">*/}
-          {/*    <div onClick={() => setT3(v => !v)} className={[ 'w-20 h-20 bg-fuchsia-300 rounded transition-transform duration-700 ease-out cursor-pointer', t3 ? 'translate-x-6' : '' ].join(' ')} />*/}
-          {/*    <div className="text-sm text-fg-secondary mt-2">ease-out (click)</div>*/}
-          {/*  </div>*/}
-          {/*  <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">*/}
-          {/*    <div onClick={() => setT4(v => !v)} className={[ 'w-20 h-20 bg-fuchsia-300 rounded transition-transform duration-700 ease-in-out cursor-pointer', t4 ? 'translate-x-6' : '' ].join(' ')} />*/}
-          {/*    <div className="text-sm text-fg-secondary mt-2">ease-in-out (click)</div>*/}
-          {/*  </div>*/}
-          {/*  <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">*/}
-          {/*    <div onClick={() => setT5(v => !v)} className={[ 'w-20 h-20 bg-fuchsia-300 rounded transition-transform duration-700 ease-[cubic-bezier(0.68,-0.55,0.27,1.55)] cursor-pointer', t5 ? 'translate-x-6' : '' ].join(' ')} />*/}
-          {/*    <div className="text-sm text-fg-secondary mt-2">cubic-bezier(0.68,-0.55,0.27,1.55) (click)</div>*/}
-          {/*  </div>*/}
-          {/*</div>*/}
+          <SectionHeader title="Timing functions" />
+          <div className="flex gap-4 flex-wrap">
+            <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">
+              <div onClick={() => setT1(v => !v)} className={[ 'w-20 h-20 bg-fuchsia-300 rounded transition-transform duration-700 ease-linear cursor-pointer', t1 ? 'translate-x-6' : '' ].join(' ')} />
+              <div className="text-sm text-fg-secondary mt-2">ease-linear (click)</div>
+            </div>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">
+              <div onClick={() => setT2(v => !v)} className={[ 'w-20 h-20 bg-fuchsia-300 rounded transition-transform duration-700 ease-in cursor-pointer', t2 ? 'translate-x-6' : '' ].join(' ')} />
+              <div className="text-sm text-fg-secondary mt-2">ease-in (click)</div>
+            </div>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">
+              <div onClick={() => setT3(v => !v)} className={[ 'w-20 h-20 bg-fuchsia-300 rounded transition-transform duration-700 ease-out cursor-pointer', t3 ? 'translate-x-6' : '' ].join(' ')} />
+              <div className="text-sm text-fg-secondary mt-2">ease-out (click)</div>
+            </div>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">
+              <div onClick={() => setT4(v => !v)} className={[ 'w-20 h-20 bg-fuchsia-300 rounded transition-transform duration-700 ease-in-out cursor-pointer', t4 ? 'translate-x-6' : '' ].join(' ')} />
+              <div className="text-sm text-fg-secondary mt-2">ease-in-out (click)</div>
+            </div>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">
+              <div onClick={() => setT5(v => !v)} className={[ 'w-20 h-20 bg-fuchsia-300 rounded transition-transform duration-700 ease-[cubic-bezier(0.68,-0.55,0.27,1.55)] cursor-pointer', t5 ? 'translate-x-6' : '' ].join(' ')} />
+              <div className="text-sm text-fg-secondary mt-2">cubic-bezier(0.68,-0.55,0.27,1.55) (click)</div>
+            </div>
+          </div>
 
-          {/*<SectionHeader title="Durations and delays" />*/}
-          {/*<div className="flex gap-4 flex-wrap">*/}
-          {/*  <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">*/}
-          {/*    <div onClick={() => setD1(v => !v)} className={[ 'w-20 h-20 bg-amber-300 rounded transition-transform duration-150 cursor-pointer', d1 ? 'translate-x-6' : '' ].join(' ')} />*/}
-          {/*    <div className="text-sm text-fg-secondary mt-2">duration-150 (click)</div>*/}
-          {/*  </div>*/}
-          {/*  <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">*/}
-          {/*    <div onClick={() => setD2(v => !v)} className={[ 'w-20 h-20 bg-amber-300 rounded transition-transform duration-500 cursor-pointer', d2 ? 'translate-x-6' : '' ].join(' ')} />*/}
-          {/*    <div className="text-sm text-fg-secondary mt-2">duration-500 (click)</div>*/}
-          {/*  </div>*/}
-          {/*  <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">*/}
-          {/*    <div onClick={() => setD3(v => !v)} className={[ 'w-20 h-20 bg-amber-300 rounded transition-transform duration-1000 cursor-pointer', d3 ? 'translate-x-6' : '' ].join(' ')} />*/}
-          {/*    <div className="text-sm text-fg-secondary mt-2">duration-1000 (click)</div>*/}
-          {/*  </div>*/}
-          {/*  <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">*/}
-          {/*    <div onClick={() => setD4(v => !v)} className={[ 'w-20 h-20 bg-amber-300 rounded transition-transform duration-700 delay-500 cursor-pointer', d4 ? 'translate-x-6' : '' ].join(' ')} />*/}
-          {/*    <div className="text-sm text-fg-secondary mt-2">delay-500 + duration-700 (click)</div>*/}
-          {/*  </div>*/}
-          {/*</div>*/}
+          <SectionHeader title="Durations and delays" />
+          <div className="flex gap-4 flex-wrap">
+            <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">
+              <div onClick={() => setD1(v => !v)} className={[ 'w-20 h-20 bg-amber-300 rounded transition-transform duration-150 cursor-pointer', d1 ? 'translate-x-6' : '' ].join(' ')} />
+              <div className="text-sm text-fg-secondary mt-2">duration-150 (click)</div>
+            </div>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">
+              <div onClick={() => setD2(v => !v)} className={[ 'w-20 h-20 bg-amber-300 rounded transition-transform duration-500 cursor-pointer', d2 ? 'translate-x-6' : '' ].join(' ')} />
+              <div className="text-sm text-fg-secondary mt-2">duration-500 (click)</div>
+            </div>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">
+              <div onClick={() => setD3(v => !v)} className={[ 'w-20 h-20 bg-amber-300 rounded transition-transform duration-1000 cursor-pointer', d3 ? 'translate-x-6' : '' ].join(' ')} />
+              <div className="text-sm text-fg-secondary mt-2">duration-1000 (click)</div>
+            </div>
+            <div className="bg-surface-secondary border border-line rounded-xl p-4 w-full md:w-[280px]">
+              <div onClick={() => setD4(v => !v)} className={[ 'w-20 h-20 bg-amber-300 rounded transition-transform duration-700 delay-500 cursor-pointer', d4 ? 'translate-x-6' : '' ].join(' ')} />
+              <div className="text-sm text-fg-secondary mt-2">delay-500 + duration-700 (click)</div>
+            </div>
+          </div>
 
           {/*<SectionHeader title="Specific properties vs all" />*/}
           {/*<div className="flex gap-4 flex-wrap">*/}
