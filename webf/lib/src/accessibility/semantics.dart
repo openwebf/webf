@@ -179,7 +179,7 @@ class WebFAccessibility {
     config.isSemanticBoundary = boundary;
     config.explicitChildNodes = explicitChildNodes;
     config.isSemanticBoundary = boundary;
-    _debugDumpSemantics(element, role, config, focusable: focusable);
+    // _debugDumpSemantics(element, role, config, focusable: focusable);
   }
 
   /// Compute accessible name for an element.
@@ -255,9 +255,6 @@ class WebFAccessibility {
             final dom.Element labelEl = labels.first as dom.Element;
             final String text = _collectText(labelEl);
             if (text.isNotEmpty) {
-              if (kDebugMode) {
-                debugPrint('[webf][a11y] name via <label for> on <input#${id}>: "$text"');
-              }
               return text;
             }
           }
@@ -267,9 +264,6 @@ class WebFAccessibility {
         if (labelAncestor is dom.Element) {
           final String text = _collectText(labelAncestor);
           if (text.isNotEmpty) {
-            if (kDebugMode) {
-              debugPrint('[webf][a11y] name via ancestor <label> on <input#${element.id}>: "$text"');
-            }
             return text;
           }
         }
@@ -280,11 +274,6 @@ class WebFAccessibility {
       // control's name when unlabeled.
       final String? placeholder = element.getAttribute('placeholder');
       if (placeholder != null && placeholder.trim().isNotEmpty) {
-        if (kDebugMode) {
-          try {
-            debugPrint('[webf][a11y] fallback name via placeholder on <input#${element.id}>: "${placeholder.trim()}"');
-          } catch (_) {}
-        }
         return placeholder.trim();
       }
       // Note: the `name`/`id` attributes are not used for accessible name per spec.
@@ -432,11 +421,7 @@ class WebFAccessibility {
   static void _dispatchClick(dom.Element element) {
     try {
       element.dispatchEvent(dom.Event(dom.EVENT_CLICK));
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[webf][a11y] dispatch click failed: $e');
-      }
-    }
+    } catch (_) {}
   }
 
   /// Collect plain text recursively from descendant text nodes.
