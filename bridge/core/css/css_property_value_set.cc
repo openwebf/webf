@@ -385,7 +385,7 @@ void MutableCSSPropertyValueSet::SetProperty(CSSPropertyID property_id,
     return;
   }
 
-  RemovePropertiesInSet(shorthand.properties(), shorthand.length());
+  // RemovePropertiesInSet(shorthand.properties(), shorthand.length());
 
   // The simple shorthand expansion below doesn't work for `white-space`.
   // DCHECK_NE(property_id, CSSPropertyID::kWhiteSpace);

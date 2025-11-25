@@ -582,27 +582,8 @@ void StyleEngine::RecalcStyle(Document& document) {
 
         std::shared_ptr<MutableCSSPropertyValueSet> property_set = cascade.ExportWinningPropertySet();
 
+        // TODO(CGQAQ): figure out we really need optimize here using inline style.
         auto inline_style = const_cast<Element&>(*element).EnsureMutableInlineStyle();
-        if (inline_style && inline_style->PropertyCount() > 0) {
-          if (!property_set) {
-            property_set = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
-          }
-          unsigned icount = inline_style->PropertyCount();
-          for (unsigned i = 0; i < icount; ++i) {
-            auto in_prop = inline_style->PropertyAt(i);
-            CSSPropertyID id = in_prop.Id();
-            if (id == CSSPropertyID::kInvalid || id == CSSPropertyID::kVariable) {
-              continue;
-            }
-            if (!property_set->HasProperty(id)) {
-              const auto* vptr = in_prop.Value();
-              if (vptr && *vptr) {
-                property_set->SetProperty(id, *vptr, in_prop.IsImportant());
-              }
-            }
-          }
-        }
-
         auto* ctx = document.GetExecutingContext();
 
         // If there are no winning declared values for this element, we may still

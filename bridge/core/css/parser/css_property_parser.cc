@@ -109,8 +109,6 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
     return true;
   }
 
-  CSSParserTokenStream::State savepoint = stream_.Save();
-
   CSSPropertyID property_id = ResolveCSSPropertyID(unresolved_property);
   const CSSProperty& property = CSSProperty::Get(property_id);
   // If a CSSPropertyID is only a known descriptor (@fontface, @property), not a
@@ -121,47 +119,7 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
   if (!IsPropertyAllowedInRule(property, rule_type)) {
     return false;
   }
-  int parsed_properties_size = parsed_properties_->size();
-
-  bool is_shorthand = property.IsShorthand();
   DCHECK(context_);
-
-  // NOTE: The first branch of the if here uses the tokenized form,
-  // and the second uses the streaming parser. This is only allowed
-  // since they start from the same place and we reset both below,
-  // so they cannot go out of sync.
-  if (is_shorthand) {
-    CSSTokenizedValue value = CSSParserImpl::ConsumeRestrictedPropertyValue(stream_);
-    if (!stream_.AtEnd()) {
-      return false;
-    }
-    const bool important = CSSParserImpl::RemoveImportantAnnotationIfPresent(value);
-    value.text = CSSVariableParser::StripTrailingWhitespaceAndComments(value.text);
-
-    auto raw = std::make_shared<CSSRawValue>(String(value.text));
-    AddProperty(property_id, CSSPropertyID::kInvalid, raw, important,
-                css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
-    return true;
-  } else {
-    if (std::shared_ptr<const CSSValue> parsed_value =
-            css_parsing_utils::ParseLonghand(unresolved_property, CSSPropertyID::kInvalid, context_, stream_)) {
-      bool important = css_parsing_utils::MaybeConsumeImportant(stream_, allow_important_annotation);
-      if (stream_.AtEnd()) {
-        AddProperty(property_id, CSSPropertyID::kInvalid, std::move(parsed_value), important,
-                    css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
-        return true;
-      }
-    }
-  }
-
-  // We did not parse properly without variable substitution,
-  // so rewind the stream, and see if parsing it as something
-  // containing variables will help.
-  //
-  // Note that if so, this needs the original text, so we need to take
-  // note of the original offsets so that we can see what we tokenized.
-  stream_.EnsureLookAhead();
-  stream_.Restore(savepoint);
 
   CSSTokenizedValue value = CSSParserImpl::ConsumeRestrictedPropertyValue(stream_);
   if (!stream_.AtEnd()) {
@@ -171,25 +129,10 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
   const bool important = CSSParserImpl::RemoveImportantAnnotationIfPresent(value);
   value.text = CSSVariableParser::StripTrailingWhitespaceAndComments(value.text);
 
-  if (CSSVariableParser::ContainsValidVariableReferences(value.range, context_->GetExecutingContext())) {
-    if (value.text.length() > CSSVariableData::kMaxVariableBytes) {
-      return false;
-    }
-    if (is_shorthand) {
-      bool is_animation_tainted = false;
-      auto variable = std::make_shared<CSSUnparsedDeclarationValue>(
-          CSSVariableData::Create(value, is_animation_tainted, true), context_);
-      auto pending = std::make_shared<cssvalue::CSSPendingSubstitutionValue>(property_id, variable);
-      css_parsing_utils::AddExpandedPropertyForValue(property_id, pending, important, *parsed_properties_);
-    } else {
-      auto raw = std::make_shared<CSSRawValue>(String(value.text));
-      AddProperty(property_id, CSSPropertyID::kInvalid, raw, important,
-                  css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
-    }
-    return true;
-  }
-
-  return false;
+  auto raw = std::make_shared<CSSRawValue>(String(value.text));
+  AddProperty(property_id, CSSPropertyID::kInvalid, raw, important,
+              css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
+  return true;
 }
 
 bool CSSPropertyParser::ParseValue(CSSPropertyID unresolved_property,

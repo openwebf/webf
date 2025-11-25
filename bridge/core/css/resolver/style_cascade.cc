@@ -524,11 +524,12 @@ std::shared_ptr<MutableCSSPropertyValueSet> StyleCascade::BuildWinningPropertySe
   for (const auto& prop : exported_properties) {
     result->SetProperty(prop.name, prop.value, prop.important);
 
-    WEBF_LOG(VERBOSE) << "[Cascade] Exporting '"
-                       << prop.name.ToAtomicString().ToUTF8String() << "' = '"
-                       << (prop.value ? prop.value->CssText().ToUTF8String()
-                                      : std::string("<null>"))
-                       << "'" << (prop.important ? " !important" : "");
+    WEBF_LOG(VERBOSE)
+        << "[Cascade] Exporting pos=" << prop.position
+        << " id=" << static_cast<unsigned>(prop.id) << " '"
+        << prop.name.ToAtomicString().ToUTF8String() << "' = '"
+        << (prop.value ? prop.value->CssText().ToUTF8String() : std::string("<null>"))
+        << "'" << (prop.important ? " !important" : "");
   }
 
   // Export custom properties
