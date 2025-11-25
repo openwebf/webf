@@ -378,7 +378,7 @@ void MutableCSSPropertyValueSet::SetProperty(CSSPropertyID property_id,
                                              std::shared_ptr<const CSSValue> value,
                                              bool important) {
   DCHECK_NE(property_id, CSSPropertyID::kVariable);
-  DCHECK_NE(property_id, CSSPropertyID::kWhiteSpace);
+  // DCHECK_NE(property_id, CSSPropertyID::kWhiteSpace);
   StylePropertyShorthand shorthand = shorthandForProperty(property_id);
   if (shorthand.length() == 0) {
     SetLonghandProperty(CSSPropertyValue(CSSPropertyName(property_id), std::move(value), important));
@@ -388,11 +388,8 @@ void MutableCSSPropertyValueSet::SetProperty(CSSPropertyID property_id,
   RemovePropertiesInSet(shorthand.properties(), shorthand.length());
 
   // The simple shorthand expansion below doesn't work for `white-space`.
-  DCHECK_NE(property_id, CSSPropertyID::kWhiteSpace);
-  for (int i = 0; i < shorthand.length(); i++) {
-    CSSPropertyName longhand_name(shorthand.properties()[i]->PropertyID());
-    property_vector_.emplace_back(CSSPropertyValue(longhand_name, value, important));
-  }
+  // DCHECK_NE(property_id, CSSPropertyID::kWhiteSpace);
+  property_vector_.emplace_back(CSSPropertyName(property_id), value, important);
 }
 
 void MutableCSSPropertyValueSet::SetProperty(const CSSPropertyName& name,
@@ -442,7 +439,8 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetCus
 
 MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::SetLonghandProperty(CSSPropertyValue property) {
   const CSSPropertyID id = property.Id();
-  DCHECK_EQ(shorthandForProperty(id).length(), 0u);
+  // Allow shorthand in CSSPropertyValueSet
+  // DCHECK_EQ(shorthandForProperty(id).length(), 0u);
   CSSPropertyValue* to_replace;
   if (id == CSSPropertyID::kVariable) {
     to_replace = const_cast<CSSPropertyValue*>(FindPropertyPointer(property.Name().ToAtomicString()));

@@ -347,7 +347,8 @@ String StylePropertySerializer::AsText() const {
       // Only web exposed properties should be part of the style.
       DCHECK(property_class.IsWebExposed());
       // All shorthand properties should have been expanded at parse time.
-      DCHECK(property_set_.IsDescriptorContext() || (property_class.IsProperty() && !property_class.IsShorthand()));
+      // We don't want to expand.
+      DCHECK(property_set_.IsDescriptorContext() || (property_class.IsProperty() /*&& !property_class.IsShorthand()*/));
       DCHECK(!property_set_.IsDescriptorContext() || property_class.IsDescriptor());
     }
 #endif  // DCHECK_IS_ON()
