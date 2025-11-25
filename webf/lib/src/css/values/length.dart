@@ -300,10 +300,19 @@ class CSSLengthValue {
           parentContentBoxWidth = parentWidgetConstraintWidth;
         }
 
-        // Percentage relative height priority: logical height > renderer height
-        double? parentPaddingBoxHeight = parentRenderStyle?.paddingBoxLogicalHeight ??
-            // Only use the previous layout size if there
-            (parentRenderStyle?.isSelfNeedsRelayout() == true ? null : parentRenderStyle?.paddingBoxHeight);
+        // Percentage relative height priority: logical height > renderer height.
+        // For positioned elements, allow resolving against the parent's rendered
+        // padding-box height even when the parent is in a relayout pass; this
+        // mirrors the horizontal behavior and ensures overlays like
+        // `top:0; height:100%` can track auto-height containers.
+        double? parentPaddingBoxHeight = parentRenderStyle?.paddingBoxLogicalHeight;
+        if (parentPaddingBoxHeight == null) {
+          if (isPositioned) {
+            parentPaddingBoxHeight = parentRenderStyle?.paddingBoxHeight;
+          } else if (parentRenderStyle?.isSelfNeedsRelayout() != true) {
+            parentPaddingBoxHeight = parentRenderStyle?.paddingBoxHeight;
+          }
+        }
         double? parentContentBoxHeight = parentRenderStyle?.contentBoxLogicalHeight ??
             (parentRenderStyle?.isSelfNeedsRelayout() == true ? null : parentRenderStyle?.contentBoxHeight);
         double? parentContentBoxLogicalHeight = parentRenderStyle?.contentBoxLogicalHeight;
@@ -403,8 +412,8 @@ class CSSLengthValue {
                 double? recomputedParentWidth =
                     isPositioned ? parentRenderStyle.paddingBoxLogicalWidth : parentRenderStyle.contentBoxLogicalWidth;
 
-                if (recomputedParentWidth != null) {
-                  _computedValue = value! * recomputedParentWidth;
+                  if (recomputedParentWidth != null) {
+                    _computedValue = value! * recomputedParentWidth;
                   if (!isPositioned &&
                       parentRenderStyle.effectiveDisplay == CSSDisplay.inlineBlock &&
                       parentRenderStyle.width.isAuto &&
@@ -412,11 +421,11 @@ class CSSLengthValue {
                       renderStyle!.isSelfRenderReplaced() &&
                       _computedValue != null) {
                     final double iw = renderStyle!.intrinsicWidth;
-                    if (iw > 0 && _computedValue! > iw) {
-                      _computedValue = iw;
+                      if (iw > 0 && _computedValue! > iw) {
+                        _computedValue = iw;
+                      }
                     }
-                  }
-                } else {
+                  } else {
                   // Last resort: use available constraint width or mark for relayout
                   RenderBox? parentRenderBox = parentRenderStyle.attachedRenderBoxModel;
                   if (parentRenderBox != null && parentRenderBox.hasSize) {

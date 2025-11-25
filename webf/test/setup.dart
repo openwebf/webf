@@ -11,6 +11,7 @@ import 'local_http_server.dart';
 final String __dirname = path.dirname(Platform.script.path);
 
 Directory setupTest() {
+  DebugFlags.enableCssGridLayout = true;
   // Setup environment.
   TestWidgetsFlutterBinding.ensureInitialized();
 

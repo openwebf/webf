@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/foundation.dart';
 import '../widget/test_utils.dart';
 import '../../setup.dart';
 
@@ -100,6 +101,31 @@ void main() {
       expect(parentDataFor('item-c').columnStart, equals(0));
       expect(parentDataFor('item-d').rowStart, greaterThanOrEqualTo(1));
       expect(parentDataFor('item-d').columnSpan, equals(2));
+    });
+
+    testWidgets('grid feature flag falls back to flow layout when disabled', (WidgetTester tester) async {
+      // Disable grid layout feature and ensure display:grid uses flow layout instead.
+      DebugFlags.enableCssGridLayout = false;
+      addTearDown(() {
+        DebugFlags.enableCssGridLayout = true;
+      });
+
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-flag-fallback-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; width: 200px; height: 100px;">
+            <div id="item1">A</div>
+            <div id="item2">B</div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      expect(grid.renderStyle.display, equals(CSSDisplay.grid));
+      expect(grid.attachedRenderer, isA<RenderFlowLayout>());
     });
   });
 }

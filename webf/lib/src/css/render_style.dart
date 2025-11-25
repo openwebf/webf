@@ -3057,9 +3057,23 @@ class CSSRenderStyle extends RenderStyle
     } else if (display == CSSDisplay.grid || display == CSSDisplay.inlineGrid) {
       // Grid containers: create the grid render layout. For MVP, RenderGridLayout
       // inherits flow behavior and will be extended in subsequent steps.
-      nextRenderLayoutBox = RenderGridLayout(
-        renderStyle: this,
-      );
+      //
+      // Behind a feature flag so that grid layout can be disabled if needed.
+      if (DebugFlags.enableCssGridLayout) {
+        nextRenderLayoutBox = RenderGridLayout(
+          renderStyle: this,
+        );
+      } else {
+        if (isRepaintBoundary) {
+          nextRenderLayoutBox = RenderRepaintBoundaryFlowLayoutNext(
+            renderStyle: this,
+          );
+        } else {
+          nextRenderLayoutBox = RenderFlowLayout(
+            renderStyle: this,
+          );
+        }
+      }
     } else if (display == CSSDisplay.block ||
         display == CSSDisplay.none ||
         display == CSSDisplay.inline ||
