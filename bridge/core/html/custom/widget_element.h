@@ -44,6 +44,8 @@ class WidgetElement : public HTMLElement {
 
   std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> cached_methods_;
   std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> async_cached_methods_;
+  // Cache for values set via async property setter to support sync reads via item().
+  std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> cached_properties_;
   std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> unimplemented_properties_;
 };
 
