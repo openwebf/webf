@@ -1,3 +1,19 @@
+## 0.22.18
+
+### Features
+
+- Add `hybridHistory.buildContextStack` API to expose the current hybrid navigation stack to
+  JavaScript for debugging and advanced routing.
+- Add JavaScript router API (`WebFRouter`) built on top of HybridHistory for SPA-style navigation
+  from React and other frameworks.
+
+### Fixes
+
+- Fix mismatched root viewport box when switching pages so `RenderWidget` children use the correct
+  viewport constraints.
+- Fix certain `WidgetElement` binding properties that previously did not propagate correctly between
+  Flutter widgets and the DOM.
+
 ## 0.22.17
 
 - Add support for android 16k.
