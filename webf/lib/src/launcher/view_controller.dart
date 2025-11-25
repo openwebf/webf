@@ -47,8 +47,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   bool firstLoad = true;
 
   // Idle cleanup state
-  static final List<Pointer> _pendingPointers = [];
-  static final List<Pointer> _pendingPointersWithEvents = [];
+  static final Map<double, List<Pointer>> _pendingPointers = {};
+  static final Map<double, List<Pointer>> _pendingPointersWithEvents = {};
   static bool _cleanupScheduled = false;
   static const int _batchThreshold = 2000;
   static const int _maxPointersPerIdle = 100;
@@ -333,10 +333,10 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     _targetIdToDevNodeIdMap.clear();
 
     // Force batch free all pending pointers when controller is disposed
-    _batchFreePointers();
+    _batchFreePointers(_contextId);
 
     // Also free pointers with pending events since controller is being disposed
-    _batchFreePointersWithEvents();
+    _batchFreePointersWithEvents(_contextId);
 
     // Dispose shared Dio client bound to this context
     disposeSharedDioForContext(_contextId);
@@ -720,10 +720,10 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     if (hasPendingEvents) {
       // Add to special list for pointers with pending events
       // These will only be freed when the controller is disposed
-      _pendingPointersWithEvents.add(pointer);
+      _addPendingPointerWithEvents(view._contextId, pointer);
     } else {
       // Regular cleanup for pointers without pending events
-      _schedulePointerCleanup(pointer);
+      _schedulePointerCleanup(view._contextId, pointer);
     }
   }
 
@@ -732,28 +732,44 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       Pointer pointer = bindingObject.pointer!;
       bindingObject.dispose();
       disposeTargetIdToDevNodeIdMap(bindingObject);
-      _schedulePointerCleanup(pointer);
+      _schedulePointerCleanup(contextId, pointer);
     });
     _nativeObjects.clear();
   }
 
+  static List<Pointer> _getOrCreatePendingPointers(double contextId) {
+    return _pendingPointers.putIfAbsent(contextId, () => <Pointer>[]);
+  }
+
+  static List<Pointer> _getOrCreatePendingPointersWithEvents(double contextId) {
+    return _pendingPointersWithEvents.putIfAbsent(contextId, () => <Pointer>[]);
+  }
+
+  static void _addPendingPointerWithEvents(double contextId, Pointer pointer) {
+    List<Pointer> pendingPointersWithEvents = _getOrCreatePendingPointersWithEvents(contextId);
+    pendingPointersWithEvents.add(pointer);
+  }
+
   /// Schedule a pointer to be freed in batch during idle time
-  static void _schedulePointerCleanup(Pointer pointer) {
-    _pendingPointers.add(pointer);
+  static void _schedulePointerCleanup(double contextId, Pointer pointer) {
+    List<Pointer> pendingPointers = _getOrCreatePendingPointers(contextId);
+    pendingPointers.add(pointer);
 
     // Only trigger immediate batch free when we hit the threshold
     // Do not schedule idle cleanup - pointers will be freed when controller is disposed or threshold is hit
-    if (_pendingPointers.length >= _batchThreshold) {
-      _batchFreePointers();
+    if (pendingPointers.length >= _batchThreshold) {
+      _batchFreePointers(contextId);
     }
   }
 
   /// Batch free all pending pointers immediately
-  static void _batchFreePointers() {
-    if (_pendingPointers.isEmpty) return;
+  static void _batchFreePointers(double contextId) {
+    List<Pointer>? pendingPointers = _pendingPointers[contextId];
+    if (pendingPointers == null || pendingPointers.isEmpty) return;
 
-    List<Pointer> pointersToFree = List.from(_pendingPointers);
-    _pendingPointers.clear();
+    List<Pointer> pointersToFree = List.from(pendingPointers);
+    pendingPointers.clear();
+    _pendingPointers.remove(contextId);
 
     try {
       _batchFreePointersArray(pointersToFree);
@@ -765,11 +781,13 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   /// Batch free all pending pointers with events
-  static void _batchFreePointersWithEvents() {
-    if (_pendingPointersWithEvents.isEmpty) return;
+  static void _batchFreePointersWithEvents(double contextId) {
+    List<Pointer>? pendingPointersWithEvents = _pendingPointersWithEvents[contextId];
+    if (pendingPointersWithEvents == null || pendingPointersWithEvents.isEmpty) return;
 
-    List<Pointer> pointersToFree = List.from(_pendingPointersWithEvents);
-    _pendingPointersWithEvents.clear();
+    List<Pointer> pointersToFree = List.from(pendingPointersWithEvents);
+    pendingPointersWithEvents.clear();
+    _pendingPointersWithEvents.remove(contextId);
 
     try {
       _batchFreePointersArray(pointersToFree);
