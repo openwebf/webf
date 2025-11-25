@@ -199,6 +199,7 @@ class WebF extends StatefulWidget {
       Map<String, dynamic>? initialState,
       Widget? loadingWidget,
       Widget Function(BuildContext context, Object? error)? errorBuilder,
+      bool forceLoad = false,
       // Parameters for auto-initialization if controller is not found
       WebFBundle? bundle,
       ControllerFactory? createController,
@@ -210,6 +211,7 @@ class WebF extends StatefulWidget {
     return AutoManagedWebF(
         controllerName: controllerName,
         loadingWidget: loadingWidget,
+        forceLoad: forceLoad,
         errorBuilder: errorBuilder,
         initialRoute: initialRoute,
         initialState: initialState,
@@ -281,8 +283,9 @@ class AutoManagedWebFState extends State<AutoManagedWebF> {
   Future<WebFController?> _getOrCreateController() async {
     WebFController? controller = await WebFControllerManager.instance.getController(widget.controllerName);
 
-    // If controller doesn't exist but we have enough info to create it
-    if (controller == null && widget.bundle != null) {
+    // If controller doesn't exist, or forceLoad is enabled and we have a bundle,
+    // create or replace the controller using the provided bundle.
+    if (widget.bundle != null && (controller == null || widget.forceLoad)) {
       // Create a controller factory if not provided
       ControllerFactory actualCreateController =
           widget.createController ?? (() => WebFController(initialRoute: widget.initialRoute ?? '/'));
@@ -360,6 +363,10 @@ class AutoManagedWebF extends StatefulWidget {
   final Map<String, dynamic>? initialState;
   final Widget Function(BuildContext context, Object? error)? errorBuilder;
 
+  /// When true, always reload the controller from bundle and
+  /// replace any existing controller with the same name.
+  final bool forceLoad;
+
   /// Callbacks for this controller of WebF had been disposed
   final VoidCallback? onDispose;
   final OnControllerCreated? onControllerCreated;
@@ -377,6 +384,7 @@ class AutoManagedWebF extends StatefulWidget {
       this.errorBuilder,
       this.initialRoute,
       this.initialState,
+      this.forceLoad = false,
       this.onDispose,
       this.onControllerCreated,
       this.onBuildSuccess,
