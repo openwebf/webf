@@ -1,3 +1,13 @@
+## 0.22.19
+
+### Features
+
+- Add `forceLoad` option to force loading a `WebFController` by name when constructing a `WebF` widget.
+
+### Fixes
+
+- Ensure pending native binding pointers are tracked per JavaScript context so multi-view setups do not share or cross-cleanup pointer batches.
+
 ## 0.22.18
 
 ### Features
