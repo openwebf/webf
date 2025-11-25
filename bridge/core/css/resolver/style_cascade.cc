@@ -429,33 +429,55 @@ std::shared_ptr<MutableCSSPropertyValueSet> StyleCascade::BuildWinningPropertySe
   // Export native properties (non-custom)
   // Resolve CSSPendingSubstitutionValue like Blink by re-parsing the shorthand
   // with variables substituted to produce concrete longhand values.
+  //
+  // To preserve declaration/cascade order when emitting to the UI layer,
+  // we first collect the winning properties with their encoded position
+  // and then sort by that position before inserting into the result set.
+  struct ExportedProperty {
+    CSSPropertyID id;
+    CSSPropertyName name;
+    std::shared_ptr<const CSSValue> value;
+    bool important;
+    uint32_t position;
+  };
+
+  std::vector<ExportedProperty> exported_properties;
+  exported_properties.reserve(map_.NativeBitset().Size());
+
   CascadeResolver resolver(CascadeFilter(), /*generation*/ 0);
   for (CSSPropertyID id : map_.NativeBitset()) {
     const CascadePriority* prio = map_.FindKnownToExist(id);
-    if (!prio) continue;
+    if (!prio) {
+      continue;
+    }
     uint32_t pos = prio->GetPosition();
     const StylePropertySet* set = nullptr;
     unsigned idx = 0;
-    CSSPropertyValueSet::PropertyReference prop_ref = CSSPropertyValueSet::PropertyReference(*result, 0);
+    CSSPropertyValueSet::PropertyReference prop_ref =
+        CSSPropertyValueSet::PropertyReference(*result, 0);
     if (!find_ref_at(pos, &set, &idx, &prop_ref)) {
       continue;
     }
 
     // Get shared CSSValue and importance.
     const std::shared_ptr<const CSSValue>* value_ptr = prop_ref.Value();
-    if (!value_ptr || !(*value_ptr)) continue;
+    if (!value_ptr || !(*value_ptr)) {
+      continue;
+    }
     bool important = prop_ref.PropertyMetadata().important_ || prio->IsImportant();
 
     const CSSProperty& property = CSSProperty::Get(id);
     std::shared_ptr<const CSSValue> to_set = *value_ptr;  // default to original shared value
     if (to_set && to_set->IsPendingSubstitutionValue()) {
       if (const auto* pending = DynamicTo<cssvalue::CSSPendingSubstitutionValue>(to_set.get())) {
-        // Populate resolver cache by resolving once
-        WEBF_COND_LOG(CASCADE, VERBOSE) << "[Cascade] Resolving pending substitution for '"
-                           << CSSProperty::Get(id).GetPropertyNameString().ToUTF8String() << "'";
+        // Populate resolver cache by resolving once.
+        WEBF_COND_LOG(CASCADE, VERBOSE)
+            << "[Cascade] Resolving pending substitution for '"
+            << CSSProperty::Get(id).GetPropertyNameString().ToUTF8String() << "'";
         (void)ResolvePendingSubstitution(property, *pending, resolver);
-        // Find the parsed longhand value matching this property and grab its shared_ptr
-        const CSSProperty* unvisited_property = property.IsVisited() ? property.GetUnvisitedProperty() : &property;
+        // Find the parsed longhand value matching this property and grab its shared_ptr.
+        const CSSProperty* unvisited_property =
+            property.IsVisited() ? property.GetUnvisitedProperty() : &property;
         bool matched = false;
         for (const auto& prop_val : resolver.shorthand_cache_.parsed_properties) {
           const CSSProperty& longhand = CSSProperty::Get(prop_val.Id());
@@ -463,9 +485,10 @@ std::shared_ptr<MutableCSSPropertyValueSet> StyleCascade::BuildWinningPropertySe
             const std::shared_ptr<const CSSValue>* stored = prop_val.Value();
             if (stored && *stored) {
               to_set = *stored;
-              WEBF_COND_LOG(CASCADE, VERBOSE) << "[Cascade] Resolved longhand '"
-                                 << CSSProperty::Get(id).GetPropertyNameString().ToUTF8String()
-                                 << "' = '" << to_set->CssText().ToUTF8String() << "'";
+              WEBF_COND_LOG(CASCADE, VERBOSE)
+                  << "[Cascade] Resolved longhand '"
+                  << CSSProperty::Get(id).GetPropertyNameString().ToUTF8String()
+                  << "' = '" << to_set->CssText().ToUTF8String() << "'";
             }
             matched = true;
             break;
@@ -481,13 +504,31 @@ std::shared_ptr<MutableCSSPropertyValueSet> StyleCascade::BuildWinningPropertySe
     // Preserve the declared property name (logical/physical) when exporting
     // so the UICommand receives the original logical names unchanged.
     CSSPropertyName declared_name = prop_ref.Name();
-    result->SetProperty(declared_name, to_set, important);
+    exported_properties.push_back(
+        ExportedProperty{id, declared_name, to_set, important, pos});
+  }
 
-    // Log the exported property/value for debugging.
+  // Sort by encoded position so that later declarations (including shorthands)
+  // are emitted after earlier ones, matching cascade/source order. This is
+  // important for consumers like the Dart style engine that replay SetStyle
+  // commands sequentially.
+  std::sort(exported_properties.begin(), exported_properties.end(),
+            [](const ExportedProperty& a, const ExportedProperty& b) {
+              if (a.position != b.position) {
+                return a.position < b.position;
+              }
+              // Tie-breaker: keep deterministic order by property id.
+              return static_cast<unsigned>(a.id) < static_cast<unsigned>(b.id);
+            });
+
+  for (const auto& prop : exported_properties) {
+    result->SetProperty(prop.name, prop.value, prop.important);
+
     WEBF_LOG(VERBOSE) << "[Cascade] Exporting '"
-                       << declared_name.ToAtomicString().ToUTF8String() << "' = '"
-                       << (to_set ? to_set->CssText().ToUTF8String() : std::string("<null>")) << "'"
-                       << (important ? " !important" : "");
+                       << prop.name.ToAtomicString().ToUTF8String() << "' = '"
+                       << (prop.value ? prop.value->CssText().ToUTF8String()
+                                      : std::string("<null>"))
+                       << "'" << (prop.important ? " !important" : "");
   }
 
   // Export custom properties

@@ -1195,8 +1195,6 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
           }
         }
 
-        
-
         for (unsigned i = 0; i < count; ++i) {
           auto prop = property_set->PropertyAt(i);
           CSSPropertyID id = prop.Id();
@@ -1214,7 +1212,6 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
           }
 
           // Already cleared above.
-
           auto key_ns = prop_name.ToStylePropertyNameNativeString();
           AtomicString value_atom(value_string);
           ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(key_ns), element->bindingObject(),
