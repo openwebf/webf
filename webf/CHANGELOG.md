@@ -1,3 +1,31 @@
+## 0.23.9
+
+- Features
+  - Runtime/Platform: add `forceLoad` options to force-loading named controllers and introduce a
+    semantic debug flag for targeted troubleshooting.
+
+- Fixed
+  - Layout/Rendering: stabilize CSS grid sizing and baselines, keep grid height stable when rows
+    span, clamp widget list view height to the viewport, fix flexbox sizing regressions, and prevent
+    popup modal crashes from `renderViewport` access.
+  - CSS/Animations: smooth single-keyframe `opacity` animations, support `box-shadow` transitions,
+    avoid mutating cached transform arguments, preserve inherited values when properties are
+    removed, fix var-driven `background-color` transitions, and resolve absolutely positioned
+    percentage heights against the padding box.
+  - Accessibility semantics: correct semantics labels and positions, align default styles and
+    snapshots for inputs/buttons, and clean up flaky timing in accessibility tests.
+
+- Chore
+  - Upgrade dependencies for Flutter 3.38.x compatibility
+
+- Experiment
+  - CSS Grid: add initial grid layout support with explicit track parsing (`px`/`%`/`fr`), MVP
+    layout across explicit columns, auto-placement scaffolding, and `grid-auto-flow`/`gridAutoFlow`
+    configuration exposed to JavaScript.
+  - Accessibility: wire more elements into the semantics tree (including `<nav>` and email inputs),
+    add `aria-pressed`, `headingLevel`, `explicitChildNodes`, and new diagnostics flags to debug
+    semantics behavior.
+
 ## 0.23.8+2
 
 fix: resync impls from main
