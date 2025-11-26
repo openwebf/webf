@@ -27,14 +27,12 @@ export const CupertinoIconsPage: React.FC = () => {
     {name: 'chevron_right', label: 'Chevron Right'},
     {name: 'photo_fill', label: 'Photo'},
     {name: 'camera_fill', label: 'Camera'},
-    {name: 'video_camera_fill', label: 'Video'},
     {name: 'music_note_2', label: 'Music'},
     {name: 'doc_text_fill', label: 'Document'},
     {name: 'folder_fill', label: 'Folder'},
     {name: 'calendar', label: 'Calendar'},
     {name: 'clock_fill', label: 'Clock'},
     {name: 'bell_fill', label: 'Notification'},
-    {name: 'mail_fill', label: 'Mail'},
     {name: 'bubble_left_bubble_right_fill', label: 'Chat'},
     {name: 'phone_fill', label: 'Phone'},
     {name: 'location_fill', label: 'Location'},
@@ -98,7 +96,7 @@ export const CupertinoIconsPage: React.FC = () => {
             <p className="text-fg-secondary mb-4">Commonly used icons in iOS applications.</p>
 
             <div className="bg-surface-secondary rounded-xl p-6 border border-line">
-              <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+              <div className="flex flex-wrap gap-4">
                 {popularIcons.map((icon) => (
                   <div
                     key={icon.name}
@@ -289,11 +287,11 @@ export const CupertinoIconsPage: React.FC = () => {
                     Found {filteredIcons.length} icon{filteredIcons.length !== 1 ? 's' : ''}
                   </div>
                   {filteredIcons.length > 0 ? (
-                    <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 max-h-96 overflow-y-auto">
+                    <div className="flex flex-wrap gap-3 max-h-96 overflow-y-auto">
                       {filteredIcons.slice(0, 50).map((iconName) => (
                         <div
                           key={iconName}
-                          className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-surface-tertiary transition-colors cursor-pointer"
+                          className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-surface-tertiary transition-colors cursor-pointer w-1/3 md:w-1/4 lg:w-1/6"
                           title={iconName}
                         >
                           <FlutterCupertinoIcon

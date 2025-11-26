@@ -8,6 +8,7 @@ import { CookiesPage } from './pages/CookiesPage';
 import { UrlEncodingPage } from './pages/UrlEncodingPage';
 import { WebSocketPage } from './pages/WebSocketPage';
 import { SvgImagePage } from './pages/SvgImagePage';
+import { AccessibilityPage } from './pages/AccessibilityPage';
 // cleaned: remove unused demo imports
 import {ImagePage} from './pages/ImagePage';
 import {AnimationPage} from './pages/AnimationPage';
@@ -123,6 +124,7 @@ function App() {
         <Route path="/url-encoding" title="URL & Encoding" element={<UrlEncodingPage/>}/>
         <Route path="/websocket" title="WebSocket" element={<WebSocketPage/>}/>
         <Route path="/svg-image" title="SVG via Img" element={<SvgImagePage/>}/>
+        <Route path="/accessibility" title="Accessibility Use Cases" element={<AccessibilityPage />} />
 
         <Route path="/dom/events" title="DOM Events" element={<DOMEventsPage />} />
         <Route path="/dom/geometry" title="DOM Geometry" element={<DOMGeometryPage />} />

@@ -149,10 +149,10 @@ export const CupertinoTabsPage: React.FC = () => {
                   </FlutterCupertinoTabBar>
 
                   <FlutterCupertinoTabScaffoldTab title="Chat">
-                    <div className="p-6">
+                    <div className="p-6 h-full overflow-auto">
                       <h3 className="text-lg font-semibold mb-2">Messages</h3>
                       <p className="text-gray-600 mb-4">Your conversations.</p>
-                      <div className="space-y-2">
+                      <div className="space-y-2 overflow-auto">
                         <div className="bg-blue-50 p-4 rounded-lg flex items-center gap-2">
                           <FlutterCupertinoIcon type={CupertinoIcons.bubble_left_bubble_right_fill}/>
                           <span>John Doe</span>
@@ -170,26 +170,26 @@ export const CupertinoTabsPage: React.FC = () => {
                   </FlutterCupertinoTabScaffoldTab>
 
                   <FlutterCupertinoTabScaffoldTab title="Photos">
-                    <div className="p-6">
+                    <div className="p-6 h-full overflow-auto">
                       <h3 className="text-lg font-semibold mb-2">Photo Library</h3>
                       <p className="text-gray-600 mb-4">Your photo collection.</p>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="bg-purple-100 aspect-square rounded-lg flex items-center justify-center">
+                      <div className="flex flex-wrap gap-2">
+                        <div className="bg-purple-100 aspect-square rounded-lg flex items-center justify-center w-1/3">
                           <FlutterCupertinoIcon type={CupertinoIcons.photo_fill}/>
                         </div>
-                        <div className="bg-purple-100 aspect-square rounded-lg flex items-center justify-center">
+                        <div className="bg-purple-100 aspect-square rounded-lg flex items-center justify-center w-1/3">
                           <FlutterCupertinoIcon type={CupertinoIcons.photo_fill}/>
                         </div>
-                        <div className="bg-purple-100 aspect-square rounded-lg flex items-center justify-center">
+                        <div className="bg-purple-100 aspect-square rounded-lg flex items-center justify-center w-1/3">
                           <FlutterCupertinoIcon type={CupertinoIcons.photo_fill}/>
                         </div>
-                        <div className="bg-purple-100 aspect-square rounded-lg flex items-center justify-center">
+                        <div className="bg-purple-100 aspect-square rounded-lg flex items-center justify-center w-1/3">
                           <FlutterCupertinoIcon type={CupertinoIcons.photo_fill}/>
                         </div>
-                        <div className="bg-purple-100 aspect-square rounded-lg flex items-center justify-center">
+                        <div className="bg-purple-100 aspect-square rounded-lg flex items-center justify-center w-1/3">
                           <FlutterCupertinoIcon type={CupertinoIcons.photo_fill}/>
                         </div>
-                        <div className="bg-purple-100 aspect-square rounded-lg flex items-center justify-center">
+                        <div className="bg-purple-100 aspect-square rounded-lg flex items-center justify-center w-1/3">
                           <FlutterCupertinoIcon type={CupertinoIcons.photo_fill}/>
                         </div>
                       </div>
@@ -197,7 +197,7 @@ export const CupertinoTabsPage: React.FC = () => {
                   </FlutterCupertinoTabScaffoldTab>
 
                   <FlutterCupertinoTabScaffoldTab title="Music">
-                    <div className="p-6">
+                    <div className="p-6 h-full overflow-auto">
                       <h3 className="text-lg font-semibold mb-2">Music Player</h3>
                       <p className="text-gray-600 mb-4">Your music library.</p>
                       <div className="space-y-2">

@@ -141,7 +141,9 @@ export const AccessibilityPage: React.FC = () => {
         Skip to main content
       </a>
       <header className={styles.introHeader} role="banner">
-        <h1 className={styles.pageTitle}>Accessibility Use Cases</h1>
+        <h1 id="accessibility-page-title" className={styles.pageTitle}>
+          Accessibility Use Cases
+        </h1>
         <p className={styles.pageSubtitle}>
           Explore practical accessibility patterns: meaningful landmarks, keyboard interactions, live announcements, and
           inclusive forms that work for everyone.
@@ -149,7 +151,12 @@ export const AccessibilityPage: React.FC = () => {
       </header>
 
       <WebFListView className={styles.list}>
-        <main id="accessibilityMainContent" className={styles.componentSection} role="main">
+        <main
+          id="accessibilityMainContent"
+          className={styles.componentSection}
+          role="main"
+          aria-labelledby="accessibility-page-title"
+        >
           <div className={styles.componentBlock}>
             <section className={styles.componentItem} aria-labelledby="landmark-demo-title">
               <h2 id="landmark-demo-title" className={styles.itemLabel}>
@@ -361,7 +368,13 @@ export const AccessibilityPage: React.FC = () => {
               </div>
             </section>
           </div>
-          <div className={styles.liveRegion} role="status" aria-live="polite" aria-atomic="true">
+          <div
+            className={styles.liveRegion}
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            aria-label="Accessibility announcements"
+          >
             {announcement}
           </div>
         </main>

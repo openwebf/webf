@@ -100,6 +100,16 @@ const sections: Section[] = [
       { label: 'FlutterGestureDetector', path: '/gesture', desc: 'Native gesture detection with tap, pan, pinch, and rotate' },
     ],
   },
+  // {
+  //   title: 'Accessibility',
+  //   items: [
+  //     {
+  //       label: 'Accessibility Use Cases',
+  //       path: '/accessibility',
+  //       desc: 'Landmarks, keyboard navigation, and accessible forms',
+  //     },
+  //   ],
+  // },
   {
     title: 'Forms & Input',
     items: [
