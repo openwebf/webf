@@ -715,6 +715,8 @@ void ExecutingContext::SetWidgetElementShape(NativeWidgetElementShape* native_wi
 }
 
 void ExecutingContext::EnableBlinkEngine() {
+  WEBF_LOG(INFO) << "=== The Blink engine is enabled ===";
+
   enable_blink_engine_ = true;
   document()->EnsureStyleEngine();
 }
