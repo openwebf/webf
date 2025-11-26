@@ -1635,7 +1635,7 @@ task('merge-bridge-typings', (done) => {
 
     let mergedContent = `/*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
- * Use of this source code is governed by a AGPL-3.0 license that can be
+ * Use of this source code is governed by a GPL-3.0 license that can be
  * found in the LICENSE file.
  */
 
@@ -1873,7 +1873,7 @@ declare namespace WEBF {
       // Create a minimal index.d.ts that imports webf.d.ts
       const minimalIndexContent = `/*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
- * Use of this source code is governed by a AGPL-3.0 license that can be
+ * Use of this source code is governed by a GPL-3.0 license that can be
  * found in the LICENSE file.
  */
 

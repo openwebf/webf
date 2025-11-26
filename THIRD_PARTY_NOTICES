@@ -1,0 +1,229 @@
+This project includes third-party software components. The following sections
+summarize those components, their licenses, and where to find the full license
+texts or headers in this repository.
+
+This file is informational only and does not modify the terms of any license.
+
+-------------------------------------------------------------------------------
+Dart SDK headers and Dart CSS parser code
+-------------------------------------------------------------------------------
+
+- Component: Dart embedding APIs (C/C++ headers) and Dart CSS parser code
+- Origin: Dart project authors
+- License: BSD-style, 3-clause
+- License text:
+  - third_party/dart/LICENSE
+  - bridge/third_party/dart/LICENSE
+- Representative source locations:
+  - bridge/third_party/dart/include/*
+  - webf/lib/src/css/parser/*
+  - opensource/legacy_impls/webf/lib/src/css/parser/*
+
+-------------------------------------------------------------------------------
+Flutter (FML and framework-derived code)
+-------------------------------------------------------------------------------
+
+- Component: Reference-counting utilities and other runtime helpers
+- Origin: Flutter (FML and framework)
+- License: BSD-style, 3-clause
+- License text:
+  - bridge/third_party/flutter/LICENSE
+- Representative source locations:
+  - bridge/foundation/ref_counter.h
+  - bridge/foundation/ref_ptr.h
+  - bridge/foundation/ref_counted_internal.h
+  - opensource/legacy_impls/bridge/foundation/*
+  - various gesture/rendering helpers in opensource/legacy_impls/webf/*
+
+-------------------------------------------------------------------------------
+Chromium / Blink derived code
+-------------------------------------------------------------------------------
+
+- Component: Base utilities, numerics, memory helpers, URL and CSS implementation
+- Origin: The Chromium Authors
+- License: BSD-style, 3-clause
+- License text:
+  - bridge/third_party/chromium/LICENSE
+- Representative source locations:
+  - bridge/core/base/*
+  - bridge/core/base/numerics/*
+  - bridge/core/base/memory/*
+  - bridge/core/base/strings/*
+  - bridge/core/css/*
+  - bridge/core/platform/url/*
+  - bridge/scripts/code_generator/templates/json_templates/*
+
+-------------------------------------------------------------------------------
+WebKit / Apple Inc. derived code
+-------------------------------------------------------------------------------
+
+- Component: DOM, CSS, URL, and math utilities
+- Origin: Apple Inc. and related WebKit contributors
+- License: BSD-style, 2- or 3-clause (text embedded in file headers)
+- License text:
+  - Embedded in individual source files (see per-file headers)
+- Representative source locations:
+  - bridge/core/platform/math_extras.h
+  - bridge/core/platform/url/kurl.cc
+  - bridge/core/css/*
+  - bridge/core/dom/*
+  - bridge/foundation/string/*
+  - bridge/scripts/code_generator/templates/json_templates/style_property_shorthand*.tpl
+
+-------------------------------------------------------------------------------
+WebKit dtoa implementation
+-------------------------------------------------------------------------------
+
+- Component: dtoa (double to string) utilities
+- Origin: Apple Inc. / WebKit
+- License: GNU Lesser General Public License, version 2.1 or later (LGPL-2.1+)
+- License text:
+  - COPYING.LIB (pointer to official LGPL-2.1 text)
+- Representative source locations:
+  - bridge/foundation/dtoa.cc
+  - bridge/foundation/dtoa.h
+
+-------------------------------------------------------------------------------
+Mozilla URL parser (nsURLParsers)
+-------------------------------------------------------------------------------
+
+- Component: URL parsing logic
+- Origin: Mozilla (Netscape Communications Corporation and contributors)
+- License: Tri-licensed MPL-1.1 / GPL-2.0-or-later / LGPL-2.1-or-later
+- License texts (references):
+  - licenses/MPL-1.1.txt
+  - licenses/GPL-2.0.txt
+  - COPYING.LIB (for LGPL-2.1)
+- Representative source locations:
+  - bridge/core/platform/url/url_parse.cc
+
+Note: This project uses the GPL path (GPL-2.0-or-later) for compatibility with
+the overall copyleft licensing.
+
+-------------------------------------------------------------------------------
+QuickJS JavaScript engine
+-------------------------------------------------------------------------------
+
+- Component: QuickJS JavaScript engine
+- Origin: Fabrice Bellard and Charlie Gordon
+- License: MIT
+- License text:
+  - third_party/quickjs/LICENSE
+  - bridge/third_party/quickjs/LICENSE
+- Representative source locations:
+  - third_party/quickjs/*
+  - bridge/third_party/quickjs/*
+  - webf/ios/Classes/third_party/quickjs/*
+
+-------------------------------------------------------------------------------
+double-conversion
+-------------------------------------------------------------------------------
+
+- Component: double-conversion floating-point routines
+- Origin: V8 project authors
+- License: BSD-style, 3-clause
+- License text:
+  - third_party/double_conversion/LICENSE
+  - bridge/third_party/double_conversion/LICENSE
+- Representative source locations:
+  - third_party/double_conversion/double-conversion/*
+  - bridge/third_party/double_conversion/double-conversion/*
+
+-------------------------------------------------------------------------------
+CityHash
+-------------------------------------------------------------------------------
+
+- Component: CityHash hashing functions
+- Origin: Google Inc.
+- License: MIT (text embedded in header)
+- License text:
+  - third_party/cityhash/city.h (header comment)
+  - bridge/third_party/cityhash/city.h (header comment)
+- Representative source locations:
+  - third_party/cityhash/*
+  - bridge/third_party/cityhash/*
+
+-------------------------------------------------------------------------------
+modp_b64
+-------------------------------------------------------------------------------
+
+- Component: High-performance Base64 encoder/decoder
+- Origin: Nick Galbreath / modp.com
+- License: BSD-style, 3-clause (text embedded in source)
+- License text:
+  - third_party/modp_b64/modp_b64.cc (header comment)
+  - bridge/third_party/modp_b64/modp_b64.cc (header comment)
+- Representative source locations:
+  - third_party/modp_b64/*
+  - bridge/third_party/modp_b64/*
+
+-------------------------------------------------------------------------------
+Gumbo-Parser
+-------------------------------------------------------------------------------
+
+- Component: HTML5 parsing library
+- Origin: Google Inc.
+- License: Apache License 2.0
+- License text:
+  - Header comments in bridge/third_party/gumbo-parser/src/*
+  - Header comments in third_party/gumbo-parser/src/*
+- Representative source locations:
+  - third_party/gumbo-parser/src/*
+  - bridge/third_party/gumbo-parser/src/*
+
+-------------------------------------------------------------------------------
+Google Benchmark
+-------------------------------------------------------------------------------
+
+- Component: microbenchmark support library
+- Origin: Google Inc.
+- License: Apache License 2.0
+- License text:
+  - bridge/third_party/benchmark/LICENSE
+- Representative source locations:
+  - bridge/third_party/benchmark/*
+
+-------------------------------------------------------------------------------
+GoogleTest
+-------------------------------------------------------------------------------
+
+- Component: C++ unit testing framework
+- Origin: Google Inc.
+- License: BSD-style, 3-clause
+- License text:
+  - bridge/third_party/googletest/LICENSE
+- Representative source locations:
+  - bridge/third_party/googletest/*
+
+-------------------------------------------------------------------------------
+ios-cmake toolchain
+-------------------------------------------------------------------------------
+
+- Component: CMake iOS toolchain file
+- Origin: ios-cmake project (multiple authors)
+- License: BSD-3-Clause (text embedded in file)
+- License text:
+  - bridge/cmake/ios.toolchain.cmake (header comment)
+- Representative source locations:
+  - bridge/cmake/ios.toolchain.cmake
+
+-------------------------------------------------------------------------------
+Node.js / JavaScript ecosystem dependencies
+-------------------------------------------------------------------------------
+
+The repository uses a number of JavaScript/TypeScript packages in
+development tools, CLI utilities, integration tests, and example apps.
+These dependencies are typically installed under:
+
+- bridge/polyfill/node_modules/*
+- integration_tests/node_modules/*
+- opensource/cli/node_modules/*
+- opensource/use_cases/node_modules/*
+- webf_apps/*/node_modules/*
+
+Most of these packages are licensed under permissive licenses such as MIT,
+BSD, Apache-2.0, or ISC; some data or utility packages may use CC0-1.0 or
+CC-BY-style licenses. The authoritative license for each package can be
+found in its own LICENSE file within node_modules or in the relevant lock
+files (package-lock.json, pnpm-lock.yaml).
+

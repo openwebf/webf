@@ -60,6 +60,12 @@ Further, financial contributions can pave the way for erstwhile members of the K
 If you or your team are interested in supporting us, please contact @andycall on our Discord channel.
 
 
+## License & Usage for App Developers
+
+- License: GPL-3.0-only with the OpenWebF Enterprise Exception (see `LICENSE`).
+- Using the WebF Flutter plugin in an app and distributing that app under the community license generally requires the app to be GPL-compatible and to provide source code.
+- Teams that need to keep their apps proprietary can use WebF under a separate commercial/enterprise agreement with OpenWebF, which grants additional rights consistent with the Enterprise Exception.
+
 ## How to use
 
 > All front-end frameworks based on the WhatWG DOM standard are supported; this time, we are using Vue as an example.
@@ -177,7 +183,7 @@ With WebF, Web Apps and Flutter Apps share the same rendering context. It means 
 
 ## 👏 Contributing [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/openwebf/webf/pulls)
 
-By contributing to WebF, you agree that your contributions will be licensed under its Apache-2.0 License.
+By contributing to this repository, you agree that your contributions will be licensed under its GPL-3.0-only license (with the OpenWebF Enterprise Exception as described in `LICENSE`).
 
 Read our [contributing guide](https://github.com/openwebf/webf/blob/main/.github/CONTRIBUTING.md) and let's build a better WebF project together.
 

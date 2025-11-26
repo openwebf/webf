@@ -1,0 +1,130 @@
+This file lists third-party components that are compiled into, or directly
+used by, the WebF Flutter plugin and its native bridge libraries. It is a
+subset of the project-wide THIRD_PARTY_NOTICES file.
+
+This file is informational only and does not modify the terms of any license.
+
+-------------------------------------------------------------------------------
+QuickJS JavaScript engine
+-------------------------------------------------------------------------------
+
+- Origin: Fabrice Bellard and Charlie Gordon
+- License: MIT
+- License text:
+  - third_party/quickjs/LICENSE
+  - bridge/third_party/quickjs/LICENSE
+- Representative usage:
+  - JavaScript execution engine embedded in the WebF runtime and native bridge
+    (e.g., webf/ios/Classes/third_party/quickjs/* and libwebf builds).
+
+-------------------------------------------------------------------------------
+double-conversion
+-------------------------------------------------------------------------------
+
+- Origin: V8 project authors
+- License: BSD-style, 3-clause
+- License text:
+  - third_party/double_conversion/LICENSE
+  - bridge/third_party/double_conversion/LICENSE
+- Representative usage:
+  - Floating-point formatting and parsing used by the bridge and runtime.
+
+-------------------------------------------------------------------------------
+CityHash
+-------------------------------------------------------------------------------
+
+- Origin: Google Inc.
+- License: MIT (text embedded in header)
+- License text:
+  - third_party/cityhash/city.h
+  - bridge/third_party/cityhash/city.h
+- Representative usage:
+  - Hashing utilities used inside native bridge components.
+
+-------------------------------------------------------------------------------
+modp_b64
+-------------------------------------------------------------------------------
+
+- Origin: Nick Galbreath / modp.com
+- License: BSD-style, 3-clause (text embedded in source)
+- License text:
+  - third_party/modp_b64/modp_b64.cc
+  - bridge/third_party/modp_b64/modp_b64.cc
+- Representative usage:
+  - Base64 encoding/decoding in native bridge code.
+
+-------------------------------------------------------------------------------
+Gumbo-Parser
+-------------------------------------------------------------------------------
+
+- Origin: Google Inc.
+- License: Apache License 2.0
+- License text:
+  - Header comments in third_party/gumbo-parser/src/*
+  - Header comments in bridge/third_party/gumbo-parser/src/*
+- Representative usage:
+  - HTML parsing support inside the WebF engine bridge.
+
+-------------------------------------------------------------------------------
+Dart SDK headers
+-------------------------------------------------------------------------------
+
+- Origin: Dart project authors
+- License: BSD-style, 3-clause
+- License text:
+  - third_party/dart/LICENSE
+  - bridge/third_party/dart/LICENSE
+- Representative usage:
+  - C/C++ embedding APIs used to interface with the Dart VM from native code.
+
+-------------------------------------------------------------------------------
+Flutter (FML and framework-derived utilities)
+-------------------------------------------------------------------------------
+
+- Origin: Flutter (FML and framework)
+- License: BSD-style, 3-clause
+- License text:
+  - bridge/third_party/flutter/LICENSE
+- Representative usage:
+  - Reference-counting, pointer, and utility classes reused in the bridge
+    implementation (e.g., bridge/foundation/ref_counter.h, ref_ptr.h, and
+    related files).
+
+-------------------------------------------------------------------------------
+Chromium / Blink derived code
+-------------------------------------------------------------------------------
+
+- Origin: The Chromium Authors
+- License: BSD-style, 3-clause
+- License text:
+  - bridge/third_party/chromium/LICENSE
+- Representative usage:
+  - Base utilities, numerics, URL processing, and CSS implementation used by
+    the native bridge and layout logic (e.g., bridge/core/base/*,
+    bridge/core/base/numerics/*, bridge/core/css/*).
+
+-------------------------------------------------------------------------------
+WebKit / Apple Inc. derived code
+-------------------------------------------------------------------------------
+
+- Origin: Apple Inc. and related WebKit contributors
+- License: BSD-style, 2- or 3-clause (text embedded in file headers)
+- License text:
+  - Embedded in individual source files within bridge/core and bridge/foundation
+- Representative usage:
+  - DOM, CSS, URL, and geometry helpers used in the bridge and layout engine.
+
+-------------------------------------------------------------------------------
+Mozilla URL parser (nsURLParsers)
+-------------------------------------------------------------------------------
+
+- Origin: Mozilla (Netscape Communications Corporation and contributors)
+- License: Tri-licensed MPL-1.1 / GPL-2.0-or-later / LGPL-2.1-or-later
+- License texts (references):
+  - licenses/MPL-1.1.txt
+  - licenses/GPL-2.0.txt
+  - COPYING.LIB (for LGPL-2.1)
+- Representative usage:
+  - URL parsing behavior in bridge/core/platform/url/url_parse.cc used by the
+    WebF engine.
+

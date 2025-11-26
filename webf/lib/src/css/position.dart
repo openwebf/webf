@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
- * Licensed under GNU AGPL with Enterprise exception.
+ * Licensed under GNU GPL with Enterprise exception.
  */
 
 import 'package:webf/css.dart';

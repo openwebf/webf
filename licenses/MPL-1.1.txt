@@ -1,0 +1,7 @@
+This project incorporates code originally licensed under the
+Mozilla Public License Version 1.1 (MPL-1.1).
+
+For the full license text, please see:
+
+  https://www.mozilla.org/MPL/1.1/
+

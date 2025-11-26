@@ -1,0 +1,8 @@
+This project incorporates code that is also made available under the terms
+of the GNU General Public License version 2 (GPL-2.0) or any later version.
+
+For the full GPL-2.0 license text, please see the official copy published by
+the Free Software Foundation at:
+
+  https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+
