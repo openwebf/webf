@@ -471,9 +471,6 @@ std::shared_ptr<MutableCSSPropertyValueSet> StyleCascade::BuildWinningPropertySe
     if (to_set && to_set->IsPendingSubstitutionValue()) {
       if (const auto* pending = DynamicTo<cssvalue::CSSPendingSubstitutionValue>(to_set.get())) {
         // Populate resolver cache by resolving once.
-        WEBF_COND_LOG(CASCADE, VERBOSE)
-            << "[Cascade] Resolving pending substitution for '"
-            << CSSProperty::Get(id).GetPropertyNameString().ToUTF8String() << "'";
         (void)ResolvePendingSubstitution(property, *pending, resolver);
         // Find the parsed longhand value matching this property and grab its shared_ptr.
         const CSSProperty* unvisited_property =
@@ -485,10 +482,6 @@ std::shared_ptr<MutableCSSPropertyValueSet> StyleCascade::BuildWinningPropertySe
             const std::shared_ptr<const CSSValue>* stored = prop_val.Value();
             if (stored && *stored) {
               to_set = *stored;
-              WEBF_COND_LOG(CASCADE, VERBOSE)
-                  << "[Cascade] Resolved longhand '"
-                  << CSSProperty::Get(id).GetPropertyNameString().ToUTF8String()
-                  << "' = '" << to_set->CssText().ToUTF8String() << "'";
             }
             matched = true;
             break;
@@ -523,13 +516,6 @@ std::shared_ptr<MutableCSSPropertyValueSet> StyleCascade::BuildWinningPropertySe
 
   for (const auto& prop : exported_properties) {
     result->SetProperty(prop.name, prop.value, prop.important);
-
-    WEBF_LOG(VERBOSE)
-        << "[Cascade] Exporting pos=" << prop.position
-        << " id=" << static_cast<unsigned>(prop.id) << " '"
-        << prop.name.ToAtomicString().ToUTF8String() << "' = '"
-        << (prop.value ? prop.value->CssText().ToUTF8String() : std::string("<null>"))
-        << "'" << (prop.important ? " !important" : "");
   }
 
   // Export custom properties
