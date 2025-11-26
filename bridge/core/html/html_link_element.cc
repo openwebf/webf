@@ -95,20 +95,6 @@ NativeValue HTMLLinkElement::parseAuthorStyleSheet(AtomicString& cssString, Atom
   auto contents = sheet_->Contents();
   auto ruleset = contents->EnsureRuleSet(evaluator);
 
-  WEBF_LOG(VERBOSE) << "[HTMLLinkElement] SOURCE: " << cssString.ToUTF8String();
-  WEBF_LOG(VERBOSE) << "[HTMLLinkElement] Dumping rules (" << contents->RuleCount() << "):";
-  const auto& child_rules = contents->ChildRules();
-  for (const auto& base : child_rules) {
-    if (!base || !base->IsStyleRule()) continue;
-    auto base_nc = std::const_pointer_cast<StyleRuleBase>(base);
-    auto sr = std::static_pointer_cast<StyleRule>(base_nc);
-    String sel = sr->SelectorsText();
-    const auto& prop_set = sr->Properties();
-    String decls = prop_set.AsText();  // forces parse
-    WEBF_LOG(VERBOSE) << "[HTMLLinkElement]   " << sel.ToUTF8String() << " { " << decls.ToUTF8String()
-                      << " } (count=" << prop_set.PropertyCount() << ")";
-  }
-
   WEBF_LOG(VERBOSE) << "[HTMLLinkElement] Registering author stylesheet and triggering style recalc.";
   document.EnsureStyleEngine().RegisterAuthorSheet(new_sheet);
 
