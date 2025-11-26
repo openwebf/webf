@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
- * Licensed under GNU AGPL with Enterprise exception.
+ * Licensed under GNU GPL with Enterprise exception.
  */
 import 'package:flutter/cupertino.dart';
 import 'package:webf/rendering.dart';
@@ -250,4 +250,3 @@ class FlutterCupertinoModalPopupState extends WebFWidgetElementState {
     return const SizedBox.shrink();
   }
 }
-

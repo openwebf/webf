@@ -511,8 +511,8 @@ read <http://www.gnu.org/philosophy/why-not-lgpl.html>.
 
 THE OPENWEBF ENTERPRISE EXCEPTION
 
-As a special exception to the terms and conditions of the GNU Affero General Public License version
-3 ("AGPL"), The OpenWebF Company and its affiliated entities grant you additional permission to use,
+As a special exception to the terms and conditions of the GNU General Public License version
+3 ("GPL"), The OpenWebF Company and its affiliated entities grant you additional permission to use,
 copy, modify, and distribute the software and documentation covered by this license, provided that:
 
 1. You are a current enterprise or professional subscriber who has signed the OpenWebF Software
@@ -520,12 +520,12 @@ copy, modify, and distribute the software and documentation covered by this lice
 2. Your use complies with all terms specified in that Agreement.
 
 This exception does not invalidate any other reason why a work based on this license might be
-covered by the GNU Affero GPL version 3.
+covered by the GNU GPL version 3.
 
-This exception is an additional permission under section 7 of the GNU Affero General Public License,
-version 3 ("AGPLv3").
+This exception is an additional permission under section 7 of the GNU General Public License,
+version 3 ("GPLv3").
 
-For any parts of the software not explicitly covered by this exception, the terms of the AGPL v3
+For any parts of the software not explicitly covered by this exception, the terms of the GPL v3
 continue to apply.
 
 END OF THE OPENWEBF ENTERPRISE EXCEPTION

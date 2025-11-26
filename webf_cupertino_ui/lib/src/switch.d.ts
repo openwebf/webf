@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
- * Licensed under GNU AGPL with Enterprise exception.
+ * Licensed under GNU GPL with Enterprise exception.
  */
 
 /**
@@ -37,4 +37,3 @@ interface FlutterCupertinoSwitchEvents {
   /** Fired when the switch value changes. detail = checked state */
   change: CustomEvent<boolean>;
 }
-
