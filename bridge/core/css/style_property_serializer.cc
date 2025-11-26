@@ -1131,65 +1131,66 @@ String StylePropertySerializer::FontValue() const {
     return (identifier_value && identifier_value->GetValueID() != initial_value_id);
   };
 
-  if (IsPropertyNonInitial(*ligatures_value, CSSValueID::kNormal) || ligatures_value->get()->IsValueList()) {
-    return String::EmptyString();
-  }
-
-  if (IsPropertyNonInitial(*numeric_value, CSSValueID::kNormal) || numeric_value->get()->IsValueList()) {
-    return String::EmptyString();
-  }
-
-  if (IsPropertyNonInitial(*east_asian_value, CSSValueID::kNormal) || east_asian_value->get()->IsValueList()) {
-    return String::EmptyString();
-  }
-
-  if (IsPropertyNonInitial(*font_kerning_property.Value(), CSSValueID::kAuto) ||
-      IsPropertyNonInitial(*font_optical_sizing_property.Value(), CSSValueID::kAuto)) {
-    return String::EmptyString();
-  }
-
-  if (IsPropertyNonInitial(*variation_settings_value, CSSValueID::kNormal) ||
-      variation_settings_value->get()->IsValueList()) {
-    return String::EmptyString();
-  }
-
-  if (IsPropertyNonInitial(*feature_settings_value, CSSValueID::kNormal) ||
-      feature_settings_value->get()->IsValueList()) {
-    return String::EmptyString();
-  }
-
-  int font_variant_alternates_property_index = property_set_.FindPropertyIndex(GetCSSPropertyFontVariantAlternates());
-  assert(font_variant_alternates_property_index != -1);
-  PropertyValueForSerializer font_variant_alternates_property =
-      property_set_.PropertyAt(font_variant_alternates_property_index);
-  const std::shared_ptr<const CSSValue>* alternates_value = font_variant_alternates_property.Value();
-  if (IsPropertyNonInitial(*alternates_value, CSSValueID::kNormal) || alternates_value->get()->IsValueList()) {
-    return String::EmptyString();
-  }
-
-  int font_variant_position_property_index = property_set_.FindPropertyIndex(GetCSSPropertyFontVariantPosition());
-  assert(font_variant_position_property_index != -1);
-  PropertyValueForSerializer font_variant_position_property =
-      property_set_.PropertyAt(font_variant_position_property_index);
-  if (IsPropertyNonInitial(*font_variant_position_property.Value(), CSSValueID::kNormal)) {
-    return String::EmptyString();
-  }
-
-  int font_variant_emoji_property_index = property_set_.FindPropertyIndex(GetCSSPropertyFontVariantEmoji());
-  assert(font_variant_emoji_property_index != -1);
-  PropertyValueForSerializer font_variant_emoji_property = property_set_.PropertyAt(font_variant_emoji_property_index);
-  if (IsPropertyNonInitial(*font_variant_emoji_property.Value(), CSSValueID::kNormal)) {
-    return String::EmptyString();
-  }
-
-  int font_size_adjust_property_index = property_set_.FindPropertyIndex(GetCSSPropertyFontSizeAdjust());
-  assert(font_size_adjust_property_index != -1);
-  PropertyValueForSerializer font_size_adjust_property = property_set_.PropertyAt(font_size_adjust_property_index);
-  const std::shared_ptr<const CSSValue>* size_adjust_value = font_size_adjust_property.Value();
-  if (IsPropertyNonInitial(*size_adjust_value, CSSValueID::kNone) ||
-      size_adjust_value->get()->IsNumericLiteralValue()) {
-    return String::EmptyString();
-  }
+  // FIXME: not support yet
+  // if (IsPropertyNonInitial(*ligatures_value, CSSValueID::kNormal) || ligatures_value->get()->IsValueList()) {
+  //   return String::EmptyString();
+  // }
+  //
+  // if (IsPropertyNonInitial(*numeric_value, CSSValueID::kNormal) || numeric_value->get()->IsValueList()) {
+  //   return String::EmptyString();
+  // }
+  //
+  // if (IsPropertyNonInitial(*east_asian_value, CSSValueID::kNormal) || east_asian_value->get()->IsValueList()) {
+  //   return String::EmptyString();
+  // }
+  //
+  // if (IsPropertyNonInitial(*font_kerning_property.Value(), CSSValueID::kAuto) ||
+  //     IsPropertyNonInitial(*font_optical_sizing_property.Value(), CSSValueID::kAuto)) {
+  //   return String::EmptyString();
+  // }
+  //
+  // if (IsPropertyNonInitial(*variation_settings_value, CSSValueID::kNormal) ||
+  //     variation_settings_value->get()->IsValueList()) {
+  //   return String::EmptyString();
+  // }
+  //
+  // if (IsPropertyNonInitial(*feature_settings_value, CSSValueID::kNormal) ||
+  //     feature_settings_value->get()->IsValueList()) {
+  //   return String::EmptyString();
+  // }
+  //
+  // int font_variant_alternates_property_index = property_set_.FindPropertyIndex(GetCSSPropertyFontVariantAlternates());
+  // assert(font_variant_alternates_property_index != -1);
+  // PropertyValueForSerializer font_variant_alternates_property =
+  //     property_set_.PropertyAt(font_variant_alternates_property_index);
+  // const std::shared_ptr<const CSSValue>* alternates_value = font_variant_alternates_property.Value();
+  // if (IsPropertyNonInitial(*alternates_value, CSSValueID::kNormal) || alternates_value->get()->IsValueList()) {
+  //   return String::EmptyString();
+  // }
+  //
+  // int font_variant_position_property_index = property_set_.FindPropertyIndex(GetCSSPropertyFontVariantPosition());
+  // assert(font_variant_position_property_index != -1);
+  // PropertyValueForSerializer font_variant_position_property =
+  //     property_set_.PropertyAt(font_variant_position_property_index);
+  // if (IsPropertyNonInitial(*font_variant_position_property.Value(), CSSValueID::kNormal)) {
+  //   return String::EmptyString();
+  // }
+  //
+  // int font_variant_emoji_property_index = property_set_.FindPropertyIndex(GetCSSPropertyFontVariantEmoji());
+  // assert(font_variant_emoji_property_index != -1);
+  // PropertyValueForSerializer font_variant_emoji_property = property_set_.PropertyAt(font_variant_emoji_property_index);
+  // if (IsPropertyNonInitial(*font_variant_emoji_property.Value(), CSSValueID::kNormal)) {
+  //   return String::EmptyString();
+  // }
+  //
+  // int font_size_adjust_property_index = property_set_.FindPropertyIndex(GetCSSPropertyFontSizeAdjust());
+  // assert(font_size_adjust_property_index != -1);
+  // PropertyValueForSerializer font_size_adjust_property = property_set_.PropertyAt(font_size_adjust_property_index);
+  // const std::shared_ptr<const CSSValue>* size_adjust_value = font_size_adjust_property.Value();
+  // if (IsPropertyNonInitial(*size_adjust_value, CSSValueID::kNone) ||
+  //     size_adjust_value->get()->IsNumericLiteralValue()) {
+  //   return String::EmptyString();
+  // }
 
   StringBuilder result;
   AppendFontLonghandValueIfNotNormal(GetCSSPropertyFontStyle(), result);
