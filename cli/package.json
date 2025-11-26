@@ -24,7 +24,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "type": "commonjs",
   "devDependencies": {
     "@types/inquirer": "^8.2.11",

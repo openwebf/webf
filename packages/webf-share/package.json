@@ -23,7 +23,7 @@
     "native"
   ],
   "author": "OpenWebF Team",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "homepage": "https://openwebf.com",
   "dependencies": {
     "@openwebf/webf-enterprise-typings": "^0.22.1"

@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
- * Licensed under GNU GPL with Enterprise exception.
+ * Licensed under the Apache License, Version 2.0.
  */
 import 'package:flutter/cupertino.dart';
 import 'package:webf/rendering.dart';
