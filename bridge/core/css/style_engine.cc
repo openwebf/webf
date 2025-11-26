@@ -559,6 +559,8 @@ void StyleEngine::RecalcStyle(Document& document) {
     return;
   }
 
+  auto begin_calc = std::chrono::steady_clock::now();
+
   std::function<InheritedState(Element*, const InheritedState&)> apply_for_element =
       [&](Element* element, const InheritedState& parent_state) -> InheritedState {
         if (!element || !element->IsStyledElement()) {
@@ -1004,6 +1006,10 @@ void StyleEngine::RecalcStyle(Document& document) {
       };
 
   walk(document.documentElement(), InheritedState());
+
+  auto end_calc = std::chrono::steady_clock::now();
+
+  WEBF_LOG(INFO) << "[StyleEngine] Finished Recalc styles(took " << std::chrono::duration_cast<std::chrono::milliseconds>(end_calc - begin_calc).count() << "ms)";
 }
 
 void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
@@ -1011,6 +1017,8 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
   if (!document.GetExecutingContext()->isBlinkEnabled()) {
     return;
   }
+
+  auto begin_calc = std::chrono::steady_clock::now();
 
   std::function<InheritedState(Element*, const InheritedState&)> apply_for_element =
       [&](Element* element, const InheritedState& parent_state) -> InheritedState {
@@ -1279,6 +1287,9 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
 
   InheritedState root_state;
   walk(&root_element, root_state);
+
+  auto end_calc = std::chrono::steady_clock::now();
+  WEBF_LOG(INFO) << "[StyleEngine] Finished Recalc subtree styles(took " << std::chrono::duration_cast<std::chrono::milliseconds>(end_calc - begin_calc).count() << "ms)";
 }
 
 void StyleEngine::MediaQueryAffectingValueChanged(MediaValueChange change) {
