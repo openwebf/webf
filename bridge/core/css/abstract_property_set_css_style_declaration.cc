@@ -29,6 +29,7 @@
 #include "core/css/css_style_sheet.h"
 #include "core/css/parser/css_property_parser.h"
 #include "core/css/style_attribute_mutation_scope.h"
+#include "code_gen/shorthands.h"
 
 namespace webf {
 
@@ -193,6 +194,18 @@ void AbstractPropertySetCSSStyleDeclaration::SetPropertyInternal(CSSPropertyID u
                                                                  ExceptionState&) {
   StyleAttributeMutationScope mutation_scope(this);
   WillMutate();
+
+  // When setting a shorthand (e.g. background, margin) via CSSOM inline
+  // style, clear any existing longhand declarations for that shorthand
+  // from the property set first. This prevents stale longhand values from
+  // continuing to win after a shorthand write.
+  if (unresolved_property != CSSPropertyID::kVariable) {
+    CSSPropertyID resolved = ResolveCSSPropertyID(unresolved_property);
+    StylePropertyShorthand shorthand = shorthandForProperty(resolved);
+    if (shorthand.length() > 0) {
+      PropertySet().RemoveShorthandProperty(resolved);
+    }
+  }
 
   MutableCSSPropertyValueSet::SetResult result;
   if (unresolved_property == CSSPropertyID::kVariable) {

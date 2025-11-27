@@ -783,8 +783,10 @@ void Node::ClearFlatTreeNodeDataIfHostChanged(const ContainerNode& parent) {
 }
 
 bool Node::InActiveDocument() const {
-  //  return isConnected() && GetDocument().IsActive();
-  return false;
+  // WebF does not yet expose a full DocumentLifecycle IsActive() hook here,
+  // but most style invalidation code only needs to know that the node is
+  // actually attached to a document. Treat any connected node as "active".
+  return isConnected();
 }
 
 void Node::SetNeedsStyleRecalc(StyleChangeType change_type, const StyleChangeReasonForTracing& reason) {

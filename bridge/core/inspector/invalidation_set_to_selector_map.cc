@@ -30,24 +30,14 @@ unsigned InvalidationSetToSelectorMap::IndexedSelector::GetSelectorIndex() const
 }
 
 std::string InvalidationSetToSelectorMap::IndexedSelector::GetSelectorText() const {
-  return style_rule_->SelectorAt(selector_index_).SelectorText();
+  return style_rule_->SelectorAt(selector_index_).SelectorText().ToUTF8String();
 }
 
 // static
 void InvalidationSetToSelectorMap::StartOrStopTrackingIfNeeded() {
-  // TODO(guopengfei)：先注释
-  // DEFINE_STATIC_LOCAL(
-  //    const unsigned char*, is_tracing_enabled,
-  //    (TRACE_EVENT_API_GET_CATEGORY_GROUP_ENABLED(TRACE_DISABLED_BY_DEFAULT(
-  //        "devtools.timeline.invalidationTracking"))));
-
-  const unsigned char* is_tracing_enabled = nullptr;
-  std::shared_ptr<InvalidationSetToSelectorMap>& instance = GetInstanceReference();
-  if (*is_tracing_enabled && instance == nullptr) {
-    instance = std::make_shared<InvalidationSetToSelectorMap>();
-  } else if (!*is_tracing_enabled && instance != nullptr) {
-    instance == nullptr;
-  }
+  // WebF currently does not toggle invalidation-set tracing dynamically.
+  // Keep the singleton instance managed by GetInstanceReference() and do
+  // nothing here.
 }
 
 // static
@@ -95,7 +85,12 @@ void InvalidationSetToSelectorMap::RecordInvalidationSetEntry(const Invalidation
     return;
   }
 
-  assert(instance->current_selector_ != nullptr);
+  // Mapping is only valid when we have an active selector context. In normal
+  // WebF builds we never enable invalidation tracing, so simply skip if no
+  // current selector has been set, instead of asserting.
+  if (!instance->current_selector_) {
+    return;
+  }
   auto result =
       instance->invalidation_set_map_->insert({invalidation_set, std::make_shared<InvalidationSetEntryMap>()});
   InvalidationSetEntryMap* entry_map = result.first->second.get();
@@ -185,6 +180,13 @@ InvalidationSetToSelectorMap::InvalidationSetToSelectorMap() {
 void InvalidationSetToSelectorMap::Trace(GCVisitor* visitor) const {
   // visitor->Trace(invalidation_set_map_);
   // visitor->Trace(current_selector_);
+}
+
+// static
+std::shared_ptr<InvalidationSetToSelectorMap>& InvalidationSetToSelectorMap::GetInstanceReference() {
+  thread_local static std::shared_ptr<InvalidationSetToSelectorMap> instance =
+      std::make_shared<InvalidationSetToSelectorMap>();
+  return instance;
 }
 
 }  // namespace webf

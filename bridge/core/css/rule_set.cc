@@ -222,9 +222,9 @@ void RuleSet::AddRule(std::shared_ptr<StyleRule> rule,
   
   auto rule_data = std::make_shared<RuleData>(rule, selector_index, rule_count_++);
   
-  // Update features
-  // TODO: Add feature tracking
-  // features_.Add(rule_data->Selector());
+  // Update selector / invalidation features used for RuleInvalidationData.
+  // We currently do not track style scopes here, so pass nullptr.
+  features_.CollectFeaturesFromSelector(rule_data->Selector(), nullptr);
   
   // Find the best rule set for this selector
   RuleDataVector* rules = FindBestRuleSetForSelector(rule_data->Selector());

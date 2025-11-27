@@ -33,6 +33,7 @@
  */
 
 #include "core/css/invalidation/invalidation_set.h"
+#include <cstring>
 #include <memory>
 #include <utility>
 #include "core/base/memory/values_equivalent.h"
@@ -475,9 +476,13 @@ String InvalidationSet::ToString() const {
     for (const auto& str : range) {
       if (!first) sb.Append(' ');
       first = false;
-      if (prefix && *prefix) sb.Append(prefix);
+      if (prefix && *prefix) {
+        sb.Append(reinterpret_cast<const LChar*>(prefix), static_cast<unsigned>(strlen(prefix)));
+      }
       sb.Append(str.GetString());
-      if (suffix && *suffix) sb.Append(suffix);
+      if (suffix && *suffix) {
+        sb.Append(reinterpret_cast<const LChar*>(suffix), static_cast<unsigned>(strlen(suffix)));
+      }
     }
     return sb.ReleaseString();
   };

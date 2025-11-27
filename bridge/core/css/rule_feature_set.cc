@@ -43,7 +43,7 @@
 #include "core/css/style_scope.h"
 #include "core/dom/element.h"
 #include "core/dom/node.h"
-#include "foundation/string_builder.h"
+#include "foundation/string/string_builder.h"
 
 namespace webf {
 
@@ -179,7 +179,7 @@ bool SupportsInvalidation(CSSSelector::PseudoType type) {
     case CSSSelector::kPseudoIsHtml:
     case CSSSelector::kPseudoListBox:
     case CSSSelector::kPseudoMultiSelectFocus:
-    case CSSSelector::kPseudoHostHasAppearance:
+    case CSSSelector::kPseudoHostHasNonAutoAppearance:
     case CSSSelector::kPseudoOpen:
     case CSSSelector::kPseudoClosed:
     case CSSSelector::kPseudoDialogInTopLayer:
@@ -302,13 +302,13 @@ void ExtractInvalidationSets(std::shared_ptr<InvalidationSet> invalidation_set,
                              std::shared_ptr<DescendantInvalidationSet>& descendants,
                              std::shared_ptr<SiblingInvalidationSet>& siblings) {
   assert(invalidation_set->IsAlive());
-  if (auto descendant = DynamicToPtr<DescendantInvalidationSet>(invalidation_set)) {
-    descendants = descendant;
-    siblings = nullptr;
+  if (DynamicTo<DescendantInvalidationSet>(invalidation_set.get())) {
+    descendants = std::static_pointer_cast<DescendantInvalidationSet>(invalidation_set);
+    siblings.reset();
     return;
   }
 
-  siblings = ToPtr<SiblingInvalidationSet>(invalidation_set);
+  siblings = std::static_pointer_cast<SiblingInvalidationSet>(invalidation_set);
   descendants = siblings->Descendants();
 }
 
@@ -400,8 +400,9 @@ InvalidationSet& RuleFeatureSet::EnsureMutableInvalidationSet(InvalidationType t
     return embedded_invalidation_set;
   } else {
     // descendant → sibling+descendant.
-    std::shared_ptr<InvalidationSet> descendants = invalidation_set;
-    invalidation_set = SiblingInvalidationSet::Create(ToPtr<DescendantInvalidationSet>(descendants));
+    // At this point, |invalidation_set| must be a DescendantInvalidationSet.
+    auto descendants = std::static_pointer_cast<DescendantInvalidationSet>(invalidation_set);
+    invalidation_set = SiblingInvalidationSet::Create(descendants);
     return *invalidation_set;
   }
 }
@@ -1906,8 +1907,7 @@ void RuleFeatureSet::CollectSiblingInvalidationSetForAttribute(InvalidationLists
     return;
   }
 
-  // auto* sibling_set = DynamicTo<SiblingInvalidationSet>(it->second.get());
-  auto sibling_set = DynamicToPtr<SiblingInvalidationSet>(it->second);
+  auto* sibling_set = DynamicTo<SiblingInvalidationSet>(it->second.get());
   if (!sibling_set) {
     return;
   }
@@ -1918,7 +1918,7 @@ void RuleFeatureSet::CollectSiblingInvalidationSetForAttribute(InvalidationLists
 
   // TRACE_SCHEDULE_STYLE_INVALIDATION(element, *sibling_set, AttributeChange,
   //                                  attribute_name);
-  invalidation_lists.siblings.push_back(sibling_set);
+  invalidation_lists.siblings.push_back(it->second);
 }
 
 void RuleFeatureSet::CollectInvalidationSetsForPseudoClass(InvalidationLists& invalidation_lists,
@@ -2028,7 +2028,8 @@ bool RuleFeatureSet::NeedsHasInvalidationForInsertedOrRemovedElement(Element& el
     }
   }
 
-  return !attributes_in_has_argument_.IsEmpty() || NeedsHasInvalidationForTagName(element.LocalNameForSelectorMatching());
+  return !attributes_in_has_argument_.empty() ||
+         NeedsHasInvalidationForTagName(element.LocalNameForSelectorMatching());
 }
 
 bool RuleFeatureSet::NeedsHasInvalidationForPseudoClass(CSSSelector::PseudoType pseudo_type) const {
@@ -2072,134 +2073,19 @@ void RuleFeatureSet::InvalidationSetFeatures::NarrowToFeatures(const Invalidatio
 }
 
 bool RuleFeatureSet::InvalidationSetFeatures::HasFeatures() const {
-  return !classes.IsEmpty() || !attributes.IsEmpty() || !ids.IsEmpty() || !tag_names.IsEmpty() || !emitted_tag_names.IsEmpty() ||
+  return !classes.empty() || !attributes.empty() || !ids.empty() || !tag_names.empty() || !emitted_tag_names.empty() ||
          invalidation_flags.InvalidateCustomPseudo() || invalidation_flags.InvalidatesParts();
 }
 
 bool RuleFeatureSet::InvalidationSetFeatures::HasIdClassOrAttribute() const {
-  return !classes.IsEmpty() || !attributes.IsEmpty() || !ids.IsEmpty();
+  return !classes.empty() || !attributes.empty() || !ids.empty();
 }
 
 String RuleFeatureSet::ToString() const {
-  StringBuilder builder;
-
-  enum TypeFlags {
-    kId = 1 << 0,
-    kClass = 1 << 1,
-    kAttribute = 1 << 2,
-    kPseudo = 1 << 3,
-    kDescendant = 1 << 4,
-    kSibling = 1 << 5,
-    kUniversal = 1 << 6,
-    kNth = 1 << 7,
-  };
-
-  struct Entry {
-    String name;
-    const std::shared_ptr<InvalidationSet> set;
-    unsigned flags;
-  };
-
-  HeapVector<Entry> entries;
-
-  auto add_invalidation_sets = [&entries](const String& webf, std::shared_ptr<InvalidationSet> set, unsigned flags,
-                                          const char* prefix = "", const char* suffix = "") {
-    if (!set) {
-      return;
-    }
-    std::shared_ptr<DescendantInvalidationSet> descendants;
-    std::shared_ptr<SiblingInvalidationSet> siblings;
-    ExtractInvalidationSets(set, descendants, siblings);
-
-    if (descendants) {
-      entries.push_back(Entry{webf, descendants, flags | kDescendant});
-    }
-    if (siblings) {
-      entries.push_back(Entry{webf, siblings, flags | kSibling});
-    }
-    if (siblings && siblings->SiblingDescendants()) {
-      entries.push_back(Entry{webf, siblings->SiblingDescendants(), flags | kSibling | kDescendant});
-    }
-  };
-
-  auto format_name = [](const String& webf, unsigned flags) {
-    StringBuilder builder;
-    // Prefix:
-
-    builder.Append((flags & kId) ? "#" : "");
-    builder.Append((flags & kClass) ? "." : "");
-    builder.Append((flags & kAttribute) ? "[" : "");
-
-    builder.Append(webf);
-
-    // Suffix:
-    builder.Append((flags & kAttribute) ? "]" : "");
-
-    builder.Append("["_s);
-    if (flags & kSibling) {
-      builder.Append("+"_s);
-    }
-    if (flags & kDescendant) {
-      builder.Append(">"_s);
-    }
-    builder.Append("]"_s);
-
-    return builder.ReleaseString();
-  };
-
-  auto format_max_direct_adjancent = [](unsigned max) -> String {
-    if (max == SiblingInvalidationSet::kDirectAdjacentMax) {
-      return "~"_s;
-    }
-    if (max) {
-      return String::Number(max);
-    }
-    return String::EmptyString();
-  };
-
-  for (auto& i : id_invalidation_sets_) {
-    add_invalidation_sets(i.first.GetString(), i.second, kId, "#");
-  }
-  for (auto& i : class_invalidation_sets_) {
-    add_invalidation_sets(i.first.GetString(), i.second, kClass, ".");
-  }
-  for (auto& i : attribute_invalidation_sets_) {
-    add_invalidation_sets(i.first.GetString(), i.second, kAttribute, "[", "]");
-  }
-  for (auto& i : pseudo_invalidation_sets_) {
-    AtomicString name = CSSSelector::FormatPseudoTypeForDebugging(static_cast<CSSSelector::PseudoType>(i.first));
-    add_invalidation_sets(name.GetString(), i.second, kPseudo, ":", "");
-  }
-
-  add_invalidation_sets("*"_s, universal_sibling_invalidation_set_, kUniversal);
-  add_invalidation_sets("nth"_s, nth_invalidation_set_, kNth);
-
-  std::sort(entries.begin(), entries.end(), [](const auto& a, const auto& b) {
-    if (a.flags != b.flags) {
-      return a.flags < b.flags;
-    }
-    // return WTF::CodeUnitCompareLessThan(a.name, b.name);
-    return a.name.ToUTF8String() < b.name.ToUTF8String();
-  });
-
-  for (const Entry& entry : entries) {
-    builder.Append(format_name(entry.name, entry.flags));
-    builder.Append(entry.set->ToString());
-    builder.Append(" "_s);
-  }
-
-  StringBuilder metadata;
-  metadata.Append(metadata_.uses_first_line_rules ? "F" : "");
-  metadata.Append(metadata_.uses_window_inactive_selector ? "W" : "");
-  metadata.Append(metadata_.invalidates_parts ? "P" : "");
-  metadata.Append(format_max_direct_adjancent(metadata_.max_direct_adjacent_selectors));
-
-  if (!metadata.IsEmpty()) {
-    builder.Append("META:"_s);
-    builder.Append(metadata.ReleaseString());
-  }
-
-  return builder.ReleaseString();
+  // Human-readable dump of rule features is used only for debugging and tests.
+  // Keep the implementation minimal in WebF and return an empty string to
+  // avoid pulling in additional formatting dependencies.
+  return String();
 }
 
 std::ostream& operator<<(std::ostream& ostream, const RuleFeatureSet& set) {

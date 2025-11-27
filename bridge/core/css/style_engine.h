@@ -119,6 +119,14 @@ class StyleEngine final {
   // localized updates, such as when inline styles are removed and the element
   // needs to fall back to stylesheet rules.
   void RecalcStyleForSubtree(Element& root);
+  // Recalculate styles for a single element only, without recursing into its
+  // descendants. This is used for fine-grained style change types such as
+  // kInlineIndependentStyleChange where descendants are not affected.
+  void RecalcStyleForElementOnly(Element& element);
+  // Incremental style recomputation driven by PendingInvalidations +
+  // StyleInvalidator. This walks only subtrees that have been marked dirty via
+  // selector-based invalidation (e.g., ID/class changes).
+  void RecalcInvalidatedStyles(Document&);
 
   bool MarkReattachAllowed() const;
   bool MarkStyleDirtyAllowed() const;
@@ -146,6 +154,27 @@ class StyleEngine final {
   // when Blink CSS is enabled, but the hook allows more targeted
   // invalidation later.
   void MediaQueryAffectingValueChanged(MediaValueChange change);
+
+  // Aggregate selector/invalidation features from all active author sheets.
+  void CollectFeaturesTo(RuleFeatureSet& features);
+
+  // Mirror Blink's StyleEngine::UpdateActiveStyleSheets at a high level: mark
+  // that active stylesheets have changed, refresh global selector/invalidation
+  // metadata, and mark the document for incremental style recomputation. The
+  // actual work is performed later via RecalcInvalidatedStyles().
+  void UpdateActiveStyleSheets();
+
+  // Minimal wiring for Blink-style invalidation: schedule invalidation sets
+  // for ID / class / attribute changes on an element. These currently
+  // complement, but do not replace, the full RecalcStyle() path.
+  void IdChangedForElement(const AtomicString& old_id,
+                           const AtomicString& new_id,
+                           Element&);
+  void ClassAttributeChangedForElement(const AtomicString& old_class_value,
+                                       const AtomicString& new_class_value,
+                                       Element&);
+  void AttributeChangedForElement(const AtomicString& attribute_local_name,
+                                  Element&);
 
  private:
   Document* document_;
@@ -202,6 +231,9 @@ class StyleEngine final {
       if (s.get() == contents.get()) return;
     }
     author_sheets_.push_back(contents);
+    if (global_rule_set_) {
+      global_rule_set_->MarkDirty();
+    }
   }
 
   void UnregisterAuthorSheet(CSSStyleSheet* sheet) {
@@ -212,10 +244,17 @@ class StyleEngine final {
         std::remove_if(author_sheets_.begin(), author_sheets_.end(),
                         [&](const std::shared_ptr<StyleSheetContents>& s) { return s.get() == contents.get(); }),
         author_sheets_.end());
+    if (global_rule_set_) {
+      global_rule_set_->MarkDirty();
+    }
   }
 
   const std::vector<std::shared_ptr<StyleSheetContents>>& AuthorSheets() const { return author_sheets_; }
 };
+
+// Helper used by PendingInvalidations to schedule nth-child style invalidation
+// on parents that are affected by positional pseudo-classes.
+void PossiblyScheduleNthPseudoInvalidations(Node& node);
 
 }  // namespace webf
 

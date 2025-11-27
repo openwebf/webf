@@ -23,6 +23,7 @@
 #include "core/dom/document.h"
 #include "core/dom/intersection_observer.h"
 #include "core/dom/mutation_observer.h"
+#include "core/css/style_engine.h"
 #include "core/events/error_event.h"
 #include "core/html/html_script_element.h"
 #include "core/events/promise_rejection_event.h"
@@ -534,6 +535,16 @@ void ExecutingContext::ReportError(JSValueConst error, char** rust_errmsg, uint3
 
 void ExecutingContext::DrainMicrotasks() {
   DrainPendingPromiseJobs();
+  // Right after all microtasks done, apply any pending incremental style
+  // invalidations so that DOM mutations affecting selector matching are
+  // reflected in the styles emitted for this frame.
+  if (isBlinkEnabled()) {
+    Document* doc = document();
+    if (doc) {
+      MemberMutationScope mutation_scope{this};
+      doc->EnsureStyleEngine().RecalcInvalidatedStyles(*doc);
+    }
+  }
 
   DrawCanvasElementIfNeeded();
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
@@ -729,6 +740,7 @@ void ExecutingContext::FlushUICommand(const BindingObject* self, uint32_t reason
 void ExecutingContext::FlushUICommand(const webf::BindingObject* self,
                                       uint32_t reason,
                                       std::vector<NativeBindingObject*>& deps) {
+
   if (SyncUICommandBuffer(self, reason, deps)) {
     dartMethodPtr()->flushUICommand(is_dedicated_, context_id_, self->bindingObject());
   }

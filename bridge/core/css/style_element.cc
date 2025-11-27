@@ -24,6 +24,7 @@
 
 #include "style_element.h"
 #include "core/css/css_style_sheet.h"
+#include "foundation/logging.h"
 // #include "core/dom/document.h"
 #include "core/css/style_engine.h"
 #include "core/css/style_sheet_contents.h"
@@ -90,6 +91,13 @@ StyleElement::ProcessingResult StyleElement::Process(Element& element) {
 
 void StyleElement::ClearSheet(Element& owner_element) {
   DCHECK(sheet_);
+  // Keep the StyleEngine's author stylesheet registry in sync when an inline
+  // <style> sheet is cleared (either due to content change or element removal).
+  // Otherwise, stale StyleSheetContents entries would remain in
+  // StyleEngine::author_sheets_ and continue to participate in rule matching
+  // even after the corresponding <style> element is removed from the DOM.
+  Document& document = owner_element.GetDocument();
+  document.EnsureStyleEngine().UnregisterAuthorSheet(sheet_.Get());
   sheet_.Release()->ClearOwnerNode();
 }
 
@@ -111,10 +119,17 @@ StyleElement::ProcessingResult StyleElement::CreateSheet(Element& element, const
   auto* new_sheet = document.EnsureStyleEngine().CreateSheet(element, text);
   sheet_ = new_sheet;
 
-  // After stylesheet is (re)created, run a style recalc that uses Blink's
-  // selector matching to produce declared values and send them to Dart via
-  // inline style if the element has no inline style.
-  document.EnsureStyleEngine().RecalcStyle(document);
+  // Keep the StyleEngine's author sheet registry in sync so that global
+  // selector / invalidation features include inline <style> rules as well.
+  if (new_sheet) {
+    document.EnsureStyleEngine().RegisterAuthorSheet(new_sheet);
+  }
+
+  // Active author stylesheets changed; mark the document for incremental
+  // style recomputation instead of doing a synchronous full recalc here.
+  WEBF_LOG(VERBOSE) << "[StyleEngine] UpdateActiveStyleSheets from StyleElement::CreateSheet tag="
+                    << element.localName().ToUTF8String();
+  document.EnsureStyleEngine().UpdateActiveStyleSheets();
 
   return kProcessingSuccessful;
 }

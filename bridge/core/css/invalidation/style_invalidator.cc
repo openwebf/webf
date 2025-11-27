@@ -195,7 +195,7 @@ void StyleInvalidator::PushInvalidationSetsForContainerNode(ContainerNode& node,
   }
   NodeInvalidationSets& pending_invalidations = pending_invalidations_iterator->second;
 
-  assert(pending_nth_sets_.IsEmpty());
+  assert(pending_nth_sets_.empty());
 
   for (const auto& invalidation_set : pending_invalidations.Siblings()) {
     assert(invalidation_set->IsAlive());
@@ -210,7 +210,7 @@ void StyleInvalidator::PushInvalidationSetsForContainerNode(ContainerNode& node,
     return;
   }
 
-  if (!pending_invalidations.Descendants().IsEmpty()) {
+  if (!pending_invalidations.Descendants().empty()) {
     for (const auto& invalidation_set : pending_invalidations.Descendants()) {
       assert(invalidation_set->IsAlive());
       PushInvalidationSet(*invalidation_set);
