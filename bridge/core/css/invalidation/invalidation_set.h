@@ -40,6 +40,9 @@
 
 #include "core/css/invalidation/invalidation_flags.h"
 #include "foundation/casting.h"
+#include "foundation/macros.h"
+#include "foundation/string/atomic_string.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -228,6 +231,8 @@ class InvalidationSet {
   union Backing {
     using Flags = BackingFlags;
     static_assert(static_cast<size_t>(type) < sizeof(BackingFlags::bits_) * 8, "Enough bits in BackingFlags");
+
+    Backing() : string_() {}
 
     ~Backing() {
       // Destruction is done by Clear(), since we don't know

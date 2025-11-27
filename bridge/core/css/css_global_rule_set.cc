@@ -58,32 +58,16 @@ void CSSGlobalRuleSet::UpdateDocumentRulesSelectorsRuleSet(Document& document) {
 }
 
 void CSSGlobalRuleSet::Update(Document& document) {
-  /*
-    if (!is_dirty_) {
-      return;
-    }
+  if (!is_dirty_) {
+    return;
+  }
 
-    is_dirty_ = false;
-    features_.Clear();
+  is_dirty_ = false;
+  features_.Clear();
 
-    CSSDefaultStyleSheets& default_style_sheets =
-        CSSDefaultStyleSheets::Instance();
-
-    has_fullscreen_ua_style_ = default_style_sheets.FullscreenStyleSheet();
-
-    default_style_sheets.CollectFeaturesTo(document, features_);
-
-    if (watched_selectors_rule_set_) {
-      features_.Merge(watched_selectors_rule_set_->Features());
-    }
-
-    if (document_rules_selectors_rule_set_) {
-      features_.Merge(document_rules_selectors_rule_set_->Features());
-    }
-
-    document.GetStyleEngine().CollectFeaturesTo(features_);
-
-   */
+  // UA / watched / document-rule selector features are currently not wired.
+  // We conservatively aggregate only author-sheet features via StyleEngine.
+  document.EnsureStyleEngine().CollectFeaturesTo(features_);
 }
 
 void CSSGlobalRuleSet::Dispose() {

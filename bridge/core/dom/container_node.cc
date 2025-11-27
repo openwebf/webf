@@ -28,6 +28,7 @@
 
 #include "container_node.h"
 #include "core/css/style_engine.h"
+#include "foundation/logging.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "foundation/string/string_builder.h"
 #include "core/dom/child_list_mutation_scope.h"
@@ -731,14 +732,53 @@ void ContainerNode::NotifyNodeRemoved(Node& root) {
 void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange& change) {
   InvalidateNodeListCachesInAncestors(nullptr, nullptr, &change);
 
-  // When Blink CSS is enabled, structural changes that affect elements should trigger
-  // a style recalculation so newly added/removed nodes get inline styles pushed to Dart.
+  // When Blink CSS is enabled, structural changes that affect elements should
+  // mark the affected subtree as needing style recomputation. The actual style
+  // update is performed later via StyleEngine::RecalcInvalidatedStyles() on
+  // the next frame / FlushUICommand, rather than doing a full synchronous
+  // RecalcStyle(Document&) here.
   if (GetDocument().GetExecutingContext()->isBlinkEnabled() &&
       change.affects_elements == ChildrenChangeAffectsElements::kYes) {
-    GetDocument().EnsureStyleEngine().RecalcStyle(GetDocument());
-    // Flush UI commands so Dart applies inline styles before observers/snapshots run.
-    // NOTE(CGQAQ): this should not be happened, FlushUICommand should not be called at all.
-    // GetDocument().GetExecutingContext()->FlushUICommand(this, FlushUICommandReason::kDependentsAll);
+    Document& document = GetDocument();
+
+    // Mirror Blink behavior: when a node is inserted into the document, assume
+    // its styles are potentially stale and force a subtree recalc starting
+    // from the root of the inserted subtree. For removals or non-element
+    // containers, fall back to marking the container (or document root).
+    Element* subtree_root = nullptr;
+
+    // For direct child insertions, prefer the inserted element itself as the
+    // subtree root. This matches Blink's kSubtreeStyleChange-on-host behavior
+    // for newly attached subtrees.
+    if (change.IsChildInsertion() && change.sibling_changed && change.sibling_changed->IsElementNode()) {
+      subtree_root = To<Element>(change.sibling_changed);
+      // Only treat as a style recalc root once the element is actually
+      // connected to the document tree.
+      if (!subtree_root->isConnected()) {
+        subtree_root = nullptr;
+      }
+    }
+
+    // If we did not identify a specific inserted host (e.g. removals, parser
+    // finish events, or non-element inserts), fall back to the container
+    // element, or ultimately the document element.
+    if (!subtree_root) {
+      if (IsElementNode()) {
+        subtree_root = To<Element>(this);
+      } else {
+        subtree_root = document.documentElement();
+      }
+    }
+
+    if (subtree_root && subtree_root->isConnected()) {
+      subtree_root->SetNeedsStyleRecalc(
+          kSubtreeStyleChange,
+          StyleChangeReasonForTracing::Create(style_change_reason::kRelatedStyleRule));
+    }
+
+    // Ensure StyleEngine::RecalcInvalidatedStyles() runs on the next flush by
+    // marking the document as having pending style invalidation work.
+    document.SetNeedsStyleInvalidation();
   }
 }
 

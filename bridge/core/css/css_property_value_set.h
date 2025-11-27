@@ -292,7 +292,7 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
 
   template <typename T>
   bool RemoveProperty(const T& property, String* return_text = nullptr);
-
+  bool RemoveShorthandProperty(CSSPropertyID);
   bool RemovePropertiesInSet(const CSSProperty* const set[], unsigned length);
   void RemoveEquivalentProperties(const CSSPropertyValueSet*);
   void RemoveEquivalentProperties(const legacy::LegacyCssStyleDeclaration*);
@@ -323,7 +323,6 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
 
   bool RemovePropertyAtIndex(int, String* return_text);
 
-  bool RemoveShorthandProperty(CSSPropertyID);
   bool RemoveShorthandProperty(const AtomicString& custom_property_name) { return false; }
   CSSPropertyValue* FindCSSPropertyWithName(const CSSPropertyName&);
   std::shared_ptr<PropertySetCSSStyleDeclaration> cssom_wrapper_;

@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
  */
 #include "element.h"
 
@@ -1026,10 +1028,22 @@ void Element::InvalidateStyleAttribute(bool only_changed_independent_properties)
   if (GetExecutingContext()->isBlinkEnabled()) {
     DCHECK(HasElementData());
     GetElementData()->SetStyleAttributeIsDirty(true);
+    StyleEngine& engine = GetDocument().EnsureStyleEngine();
+
+    // When there are no author stylesheets registered for this document,
+    // inline style mutations do not participate in selector-based
+    // invalidation. In that case we rely entirely on
+    // Element::NotifyInlineStyleMutation() to emit incremental UI style
+    // updates, and skip scheduling Blink's incremental style recomputation
+    // for inline-only changes. This keeps the behavior aligned with the
+    // pre-Blink pipeline and avoids redundant ClearStyle/SetStyle traffic
+    // that can perturb rendering (for example, in dynamic text layout tests).
+    if (engine.AuthorSheets().empty()) {
+      return;
+    }
+
     SetNeedsStyleRecalc(only_changed_independent_properties ? kInlineIndependentStyleChange : kLocalStyleChange,
                         StyleChangeReasonForTracing::Create(style_change_reason::kInlineCSSStyleMutated));
-    //  GetDocument().GetStyleEngine().AttributeChangedForElement(
-    //      html_names::kStyleAttr, *this);
   } else {
     EnsureUniqueElementData().SetStyleAttributeIsDirty(true);
   }
@@ -1048,10 +1062,20 @@ void Element::AttributeChanged(const AttributeModificationParams& params) {
     }
   }
 
-  // Trigger style recalc for selector-affecting attributes when Blink is enabled.
-  if (GetExecutingContext()->isBlinkEnabled()) {
-    if (name == html_names::kClassAttr || name == html_names::kIdAttr) {
-      GetDocument().EnsureStyleEngine().RecalcStyle(GetDocument());
+  // Trigger selector-based invalidation for attribute changes when Blink CSS
+  // is enabled. We only mark the DOM as needing style updates here; the actual
+  // incremental style recomputation is performed later (e.g., before flushing
+  // UI commands for the next frame).
+  if (GetExecutingContext()->isBlinkEnabled() && isConnected()) {
+    StyleEngine& engine = GetDocument().EnsureStyleEngine();
+    if (name == html_names::kIdAttr) {
+      engine.IdChangedForElement(params.old_value, params.new_value, *this);
+    } else if (name == html_names::kClassAttr) {
+      engine.ClassAttributeChangedForElement(params.old_value, params.new_value, *this);
+      // FIXME: find out correct way to trigger recalc on next frame
+      // engine.RecalcStyleForSubtree(*this);
+    } else if (name != html_names::kStyleAttr) {
+      engine.AttributeChangedForElement(name, *this);
     }
   }
 }

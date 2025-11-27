@@ -9,7 +9,7 @@
 #include "core/base/memory/values_equivalent.h"
 #include "core/dom/element.h"
 #include "core/dom/space_split_string.h"
-#include "foundation/string_builder.h"
+#include "foundation/string/string_builder.h"
 
 namespace webf {
 
@@ -312,7 +312,8 @@ bool RuleInvalidationData::NeedsHasInvalidationForInsertedOrRemovedElement(Eleme
     }
   }
 
-  return !attributes_in_has_argument.IsEmpty() || NeedsHasInvalidationForTagName(element.LocalNameForSelectorMatching());
+  return !attributes_in_has_argument.empty() ||
+         NeedsHasInvalidationForTagName(element.LocalNameForSelectorMatching());
 }
 
 bool RuleInvalidationData::NeedsHasInvalidationForPseudoClass(CSSSelector::PseudoType pseudo_type) const {
@@ -320,124 +321,10 @@ bool RuleInvalidationData::NeedsHasInvalidationForPseudoClass(CSSSelector::Pseud
 }
 
 String RuleInvalidationData::ToString() const {
-  StringBuilder builder;
-
-  enum TypeFlags {
-    kId = 1 << 0,
-    kClass = 1 << 1,
-    kAttribute = 1 << 2,
-    kPseudo = 1 << 3,
-    kDescendant = 1 << 4,
-    kSibling = 1 << 5,
-    kUniversal = 1 << 6,
-    kNth = 1 << 7,
-  };
-
-  struct Entry {
-    String name;
-    const InvalidationSet* set;
-    unsigned flags;
-  };
-
-  std::vector<Entry> entries;
-
-  auto add_invalidation_sets = [&entries](const String& base, InvalidationSet* set, unsigned flags,
-                                          const char* prefix = "", const char* suffix = "") {
-    if (!set) {
-      return;
-    }
-    DescendantInvalidationSet* descendants;
-    SiblingInvalidationSet* siblings;
-    RuleInvalidationData::ExtractInvalidationSets(set, descendants, siblings);
-
-    if (descendants) {
-      entries.push_back(Entry{base, descendants, flags | kDescendant});
-    }
-    if (siblings) {
-      entries.push_back(Entry{base, siblings, flags | kSibling});
-    }
-    if (siblings && siblings->SiblingDescendants()) {
-      entries.push_back(Entry{base, siblings->SiblingDescendants(), flags | kSibling | kDescendant});
-    }
-  };
-
-  auto format_name = [](const String& base, unsigned flags) {
-    StringBuilder builder;
-    // Prefix:
-
-    builder.Append((flags & kId) ? "#" : "");
-    builder.Append((flags & kClass) ? "." : "");
-    builder.Append((flags & kAttribute) ? "[" : "");
-
-    builder.Append(base);
-
-    // Suffix:
-    builder.Append((flags & kAttribute) ? "]" : "");
-
-    builder.Append("["_s);
-    if (flags & kSibling) {
-      builder.Append("+"_s);
-    }
-    if (flags & kDescendant) {
-      builder.Append(">"_s);
-    }
-    builder.Append("]"_s);
-
-    return builder.ReleaseString();
-  };
-
-  auto format_max_direct_adjancent = [](unsigned max) -> String {
-    if (max == SiblingInvalidationSet::kDirectAdjacentMax) {
-      return "~"_s;
-    }
-    if (max) {
-      return String::Number(max);
-    }
-    return String::EmptyString();
-  };
-
-  for (auto& i : id_invalidation_sets) {
-    add_invalidation_sets(i.first, i.second.get(), kId, "#");
-  }
-  for (auto& i : class_invalidation_sets) {
-    add_invalidation_sets(i.first, i.second.get(), kClass, ".");
-  }
-  for (auto& i : attribute_invalidation_sets) {
-    add_invalidation_sets(i.first, i.second.get(), kAttribute, "[", "]");
-  }
-  for (auto& i : pseudo_invalidation_sets) {
-    std::string name = CSSSelector::FormatPseudoTypeForDebugging(static_cast<CSSSelector::PseudoType>(i.first));
-    add_invalidation_sets(String::FromUTF8(name.c_str()), i.second.get(), kPseudo, ":", "");
-  }
-
-  add_invalidation_sets("*"_s, universal_sibling_invalidation_set.get(), kUniversal);
-  add_invalidation_sets("nth"_s, nth_invalidation_set.get(), kNth);
-
-  std::sort(entries.begin(), entries.end(), [](const auto& a, const auto& b) {
-    if (a.flags != b.flags) {
-      return a.flags < b.flags;
-    }
-    return a.name.ToUTF8String() < b.name.ToUTF8String();
-  });
-
-  for (const Entry& entry : entries) {
-    builder.Append(format_name(entry.name, entry.flags));
-    builder.Append(entry.set->ToString());
-    builder.Append(" "_s);
-  }
-
-  StringBuilder metadata;
-  if (uses_first_line_rules) metadata.Append("F"_s);
-  if (uses_window_inactive_selector) metadata.Append("W"_s);
-  if (invalidates_parts) metadata.Append("P"_s);
-  metadata.Append(format_max_direct_adjancent(max_direct_adjacent_selectors));
-
-  if (!metadata.IsEmpty()) {
-    builder.Append("META:"_s);
-    builder.Append(metadata.ReleaseString());
-  }
-
-  return builder.ReleaseString();
+  // Debug string formatting is not required for core style engine behavior in
+  // WebF. Return an empty string to keep the implementation minimal while
+  // preserving the interface.
+  return String();
 }
 
 // static
@@ -452,7 +339,8 @@ void RuleInvalidationData::ExtractInvalidationSets(InvalidationSet* invalidation
   }
 
   siblings = To<SiblingInvalidationSet>(invalidation_set);
-  descendants = siblings->Descendants();
+  std::shared_ptr<DescendantInvalidationSet> desc_shared = siblings->Descendants();
+  descendants = desc_shared.get();
 }
 
 }  // namespace webf

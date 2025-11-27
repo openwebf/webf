@@ -95,11 +95,11 @@ NativeValue HTMLLinkElement::parseAuthorStyleSheet(AtomicString& cssString, Atom
   auto contents = sheet_->Contents();
   auto ruleset = contents->EnsureRuleSet(evaluator);
 
-  WEBF_LOG(VERBOSE) << "[HTMLLinkElement] Registering author stylesheet and triggering style recalc.";
+  WEBF_LOG(VERBOSE) << "[HTMLLinkElement] Registering author stylesheet and marking active stylesheets dirty.";
   document.EnsureStyleEngine().RegisterAuthorSheet(new_sheet);
 
-  // Recalculate style to apply the new rules.
-  document.EnsureStyleEngine().RecalcStyle(document);
+  // Active stylesheets changed; schedule incremental style recomputation.
+  document.EnsureStyleEngine().UpdateActiveStyleSheets();
 
   // Ensure UI commands (inline styles) are flushed to Dart before dispatching 'load'.
   // This guarantees that stylesheet-driven winners (e.g., BODY background)
@@ -146,16 +146,17 @@ void HTMLLinkElement::ParseAttribute(const webf::Element::AttributeModificationP
   if (params.name == html_names::kRelAttr || params.name == html_names::kHrefAttr || params.name == html_names::kTypeAttr ||
       params.name == html_names::kDisabledAttr) {
     WEBF_LOG(VERBOSE) << "[HTMLLinkElement] Attribute changed: " << params.name.ToUTF8String()
-                      << ", old='" << params.old_value.ToUTF8String() << "' new='" << params.new_value.ToUTF8String() << "'";
-    GetDocument().EnsureStyleEngine().RecalcStyle(GetDocument());
+                      << ", old='" << params.old_value.ToUTF8String() << "' new='" << params.new_value.ToUTF8String()
+                      << "'. Marking active stylesheets dirty.";
+    GetDocument().EnsureStyleEngine().UpdateActiveStyleSheets();
   }
 }
 
 Node::InsertionNotificationRequest HTMLLinkElement::InsertedInto(webf::ContainerNode& insertion_point) {
   HTMLElement::InsertedInto(insertion_point);
   if (isConnected() && GetExecutingContext()->isBlinkEnabled()) {
-    WEBF_LOG(VERBOSE) << "[HTMLLinkElement] InsertedInto document; triggering style recalc.";
-    GetDocument().EnsureStyleEngine().RecalcStyle(GetDocument());
+    WEBF_LOG(VERBOSE) << "[HTMLLinkElement] InsertedInto document; marking active stylesheets dirty.";
+    GetDocument().EnsureStyleEngine().UpdateActiveStyleSheets();
   }
   return kInsertionDone;
 }
@@ -168,7 +169,7 @@ void HTMLLinkElement::RemovedFrom(webf::ContainerNode& insertion_point) {
       GetDocument().EnsureStyleEngine().UnregisterAuthorSheet(sheet_.Get());
       sheet_.Release()->ClearOwnerNode();
     }
-    GetDocument().EnsureStyleEngine().RecalcStyle(GetDocument());
+    GetDocument().EnsureStyleEngine().UpdateActiveStyleSheets();
   }
 }
 

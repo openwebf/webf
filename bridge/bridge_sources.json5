@@ -124,6 +124,14 @@
     "core/css/style_element.cc",
     "core/css/style_color.cc",
     "core/css/style_engine.cc",
+    "core/css/css_global_rule_set.cc",
+    "core/css/rule_feature_set.cc",
+    "core/css/invalidation/invalidation_flags.cc",
+    "core/css/invalidation/invalidation_set.cc",
+    "core/css/invalidation/pending_invalidations.cc",
+    "core/css/invalidation/rule_invalidation_data.cc",
+    "core/css/invalidation/style_invalidator.cc",
+    "core/inspector/invalidation_set_to_selector_map.cc",
 
     // Animation
     "core/animation/animation_time_delta.cc",

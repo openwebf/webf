@@ -40,6 +40,7 @@
 #include "core/css/css_property_value_set.h"
 #include "core/css/css_style_sheet.h"
 #include "core/css/css_value.h"
+#include "core/css/media_query_evaluator.h"
 #include "core/css/style_sheet_contents.h"
 #include "core/css/style_rule.h"
 #include "core/css/properties/css_property.h"
@@ -65,6 +66,10 @@
 // Keyframes support
 #include "core/css/css_keyframes_rule.h"
 #include "core/css/style_rule_keyframe.h"
+#include "core/css/invalidation/style_invalidator.h"
+#include "core/dom/container_node.h"
+#include "core/dom/element_traversal.h"
+#include "core/dom/qualified_name.h"
 
 namespace webf {
 
@@ -221,8 +226,24 @@ static String TrimAsciiWhitespace(const String& input) {
 }
 }  // namespace
 
+void PossiblyScheduleNthPseudoInvalidations(Node& node) {
+  if (!node.IsElementNode()) {
+    return;
+  }
+  ContainerNode* parent = node.parentNode();
+  if (!parent) {
+    return;
+  }
+
+  if ((parent->ChildrenAffectedByForwardPositionalRules() && node.nextSibling()) ||
+      (parent->ChildrenAffectedByBackwardPositionalRules() && node.previousSibling())) {
+    node.GetDocument().GetStyleEngine().ScheduleNthPseudoInvalidations(*parent);
+  }
+}
+
 StyleEngine::StyleEngine(Document& document) : document_(&document) {
   CreateResolver();
+  global_rule_set_ = std::make_shared<CSSGlobalRuleSet>();
 }
 
 CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text) {
@@ -552,6 +573,159 @@ bool StyleEngine::MarkStyleDirtyAllowed() const {
 
 void StyleEngine::CreateResolver() {
   resolver_ = std::make_shared<StyleResolver>(GetDocument());
+}
+
+void StyleEngine::CollectFeaturesTo(RuleFeatureSet& features) {
+  Document& document = GetDocument();
+  ExecutingContext* context = document.GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  MediaQueryEvaluator medium(context);
+
+  for (const auto& contents : author_sheets_) {
+    if (!contents) {
+      continue;
+    }
+    std::shared_ptr<RuleSet> rule_set = contents->EnsureRuleSet(medium);
+    if (!rule_set) {
+      continue;
+    }
+    features.Merge(rule_set->Features());
+  }
+}
+
+void StyleEngine::UpdateActiveStyleSheets() {
+  Document& document = GetDocument();
+  ExecutingContext* context = document.GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  // Mark the global RuleFeatureSet dirty so selector/invalidation metadata
+  // (ids, classes, attributes, nth, etc.) will be rebuilt from the current
+  // author sheets before the next invalidation-driven style recomputation.
+  if (global_rule_set_) {
+    global_rule_set_->MarkDirty();
+  }
+
+  Element* root = document.documentElement();
+  if (!root) {
+    return;
+  }
+
+  // Treat any change to the active stylesheet set (add/remove/modify <style>
+  // or <link rel=stylesheet>) as potentially affecting the entire document.
+  // Mark the root subtree as needing style recalc; RecalcInvalidatedStyles()
+  // will recompute styles starting from here on the next frame/flush.
+  root->SetNeedsStyleRecalc(
+      kSubtreeStyleChange,
+      StyleChangeReasonForTracing::Create(style_change_reason::kActiveStylesheetsUpdate));
+
+  // Also mark the document as having pending style invalidation work so that
+  // StyleInvalidator is invoked even if no selector-based invalidation sets
+  // have been scheduled yet.
+  document.SetNeedsStyleInvalidation();
+}
+
+void StyleEngine::IdChangedForElement(const AtomicString& old_id,
+                                      const AtomicString& new_id,
+                                      Element& element) {
+  if (!global_rule_set_) {
+    return;
+  }
+
+  Document& document = GetDocument();
+  ExecutingContext* context = document.GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  global_rule_set_->Update(document);
+  const RuleFeatureSet& features = global_rule_set_->GetRuleFeatureSet();
+
+  InvalidationLists invalidation_lists;
+
+  if (!old_id.IsNull() && !old_id.empty()) {
+    features.CollectInvalidationSetsForId(invalidation_lists, element, old_id);
+  }
+  if (!new_id.IsNull() && !new_id.empty()) {
+    features.CollectInvalidationSetsForId(invalidation_lists, element, new_id);
+  }
+
+  if (!invalidation_lists.descendants.empty() || !invalidation_lists.siblings.empty()) {
+    pending_invalidations_.ScheduleInvalidationSetsForNode(invalidation_lists, element);
+  }
+}
+
+void StyleEngine::ClassAttributeChangedForElement(const AtomicString& old_class_value,
+                                                  const AtomicString& new_class_value,
+                                                  Element& element) {
+  if (!global_rule_set_) {
+    return;
+  }
+
+  Document& document = GetDocument();
+  ExecutingContext* context = document.GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  global_rule_set_->Update(document);
+  const RuleFeatureSet& features = global_rule_set_->GetRuleFeatureSet();
+
+  InvalidationLists invalidation_lists;
+
+  auto collect_for_space_separated = [&](const AtomicString& value) {
+    if (value.IsNull() || value.empty()) {
+      return;
+    }
+    SpaceSplitString tokens(value);
+    uint32_t size = tokens.size();
+    for (uint32_t i = 0; i < size; ++i) {
+      const AtomicString& class_name = tokens[i];
+      if (class_name.empty()) {
+        continue;
+      }
+      features.CollectInvalidationSetsForClass(invalidation_lists, element, class_name);
+    }
+  };
+
+  collect_for_space_separated(old_class_value);
+  collect_for_space_separated(new_class_value);
+
+  if (!invalidation_lists.descendants.empty() || !invalidation_lists.siblings.empty()) {
+    pending_invalidations_.ScheduleInvalidationSetsForNode(invalidation_lists, element);
+  }
+}
+
+void StyleEngine::AttributeChangedForElement(const AtomicString& attribute_local_name,
+                                             Element& element) {
+  if (!global_rule_set_) {
+    return;
+  }
+
+  Document& document = GetDocument();
+  ExecutingContext* context = document.GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  if (attribute_local_name.IsNull() || attribute_local_name.empty()) {
+    return;
+  }
+
+  global_rule_set_->Update(document);
+  const RuleFeatureSet& features = global_rule_set_->GetRuleFeatureSet();
+
+  InvalidationLists invalidation_lists;
+  QualifiedName attr_name(attribute_local_name);
+  features.CollectInvalidationSetsForAttribute(invalidation_lists, element, attr_name);
+
+  if (!invalidation_lists.descendants.empty() || !invalidation_lists.siblings.empty()) {
+    pending_invalidations_.ScheduleInvalidationSetsForNode(invalidation_lists, element);
+  }
 }
 
 void StyleEngine::RecalcStyle(Document& document) {
@@ -1009,7 +1183,7 @@ void StyleEngine::RecalcStyle(Document& document) {
 
   auto end_calc = std::chrono::steady_clock::now();
 
-  WEBF_LOG(INFO) << "[StyleEngine] Finished Recalc styles(took " << std::chrono::duration_cast<std::chrono::milliseconds>(end_calc - begin_calc).count() << "ms)";
+  WEBF_LOG(INFO) << "[StyleEngine] 11Finished Recalc styles(took " << std::chrono::duration_cast<std::chrono::milliseconds>(end_calc - begin_calc).count() << "ms)";
 }
 
 void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
@@ -1290,6 +1464,332 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
 
   auto end_calc = std::chrono::steady_clock::now();
   WEBF_LOG(INFO) << "[StyleEngine] Finished Recalc subtree styles(took " << std::chrono::duration_cast<std::chrono::milliseconds>(end_calc - begin_calc).count() << "ms)";
+}
+
+void StyleEngine::RecalcStyleForElementOnly(Element& element) {
+  Document& document = GetDocument();
+  if (!document.GetExecutingContext()->isBlinkEnabled()) {
+    return;
+  }
+
+  auto begin_calc = std::chrono::steady_clock::now();
+
+  // Reuse the same per-element styling logic as RecalcStyleForSubtree, but do
+  // not recurse into children and ignore inherited/custom-var accumulation.
+  std::function<InheritedState(Element*, const InheritedState&)> apply_for_element =
+      [&](Element* el, const InheritedState& parent_state) -> InheritedState {
+        if (!el || !el->IsStyledElement()) {
+          return parent_state;
+        }
+
+        StyleResolver& resolver = EnsureStyleResolver();
+        StyleResolverState state(document, *el);
+        ElementRuleCollector collector(state, SelectorChecker::kQueryingRules);
+        resolver.CollectAllRules(state, collector, /*include_smil_properties*/ false);
+        collector.SortAndTransferMatchedRules();
+
+        StyleCascade cascade(state);
+        for (const auto& entry : collector.GetMatchResult().GetMatchedProperties()) {
+          if (entry.is_inline_style) {
+            cascade.MutableMatchResult().AddInlineStyleProperties(entry.properties);
+          } else {
+            cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
+          }
+        }
+
+        std::shared_ptr<MutableCSSPropertyValueSet> property_set = cascade.ExportWinningPropertySet();
+
+        auto inline_style = const_cast<Element&>(*el).EnsureMutableInlineStyle();
+        if (inline_style && inline_style->PropertyCount() > 0) {
+          if (!property_set) {
+            property_set = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+          }
+          unsigned icount = inline_style->PropertyCount();
+          for (unsigned i = 0; i < icount; ++i) {
+            auto in_prop = inline_style->PropertyAt(i);
+            CSSPropertyID id = in_prop.Id();
+            if (id == CSSPropertyID::kInvalid || id == CSSPropertyID::kVariable) {
+              continue;
+            }
+            if (!property_set->HasProperty(id)) {
+              const auto* vptr = in_prop.Value();
+              if (vptr && *vptr) {
+                property_set->SetProperty(id, *vptr, in_prop.IsImportant());
+              }
+            }
+          }
+        }
+
+        auto* ctx = document.GetExecutingContext();
+
+        if (!property_set || property_set->IsEmpty()) {
+          if (!(inline_style && inline_style->PropertyCount() > 0)) {
+            ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, el->bindingObject(), nullptr);
+          }
+
+          auto emit_pseudo_if_any = [&](PseudoId pseudo_id, const char* pseudo_name) {
+            ElementRuleCollector pseudo_collector(state, SelectorChecker::kResolvingStyle);
+            pseudo_collector.SetPseudoElementStyleRequest(PseudoElementStyleRequest(pseudo_id));
+            resolver.CollectAllRules(state, pseudo_collector, /*include_smil_properties*/ false);
+            pseudo_collector.SortAndTransferMatchedRules();
+
+            StyleCascade pseudo_cascade(state);
+            for (const auto& entry : pseudo_collector.GetMatchResult().GetMatchedProperties()) {
+              if (entry.is_inline_style) {
+                pseudo_cascade.MutableMatchResult().AddInlineStyleProperties(entry.properties);
+              } else {
+                pseudo_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
+              }
+            }
+
+            std::shared_ptr<MutableCSSPropertyValueSet> pseudo_set = pseudo_cascade.ExportWinningPropertySet();
+            if (!pseudo_set || pseudo_set->PropertyCount() == 0) return false;
+
+            auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
+            auto pseudo_ns = pseudo_atom.ToNativeString();
+            ctx->uiCommandBuffer()->AddCommand(UICommand::kClearPseudoStyle, std::move(pseudo_ns),
+                                               el->bindingObject(), nullptr);
+            for (unsigned i = 0; i < pseudo_set->PropertyCount(); ++i) {
+              auto prop = pseudo_set->PropertyAt(i);
+              AtomicString prop_name = prop.Name().ToAtomicString();
+              String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
+              if (value_string.IsNull()) value_string = String("");
+              auto key_ns = prop_name.ToStylePropertyNameNativeString();
+              AtomicString value_atom(value_string);
+              auto val_ns = value_atom.ToNativeString();
+              auto* pair = reinterpret_cast<NativePair*>(dart_malloc(sizeof(NativePair)));
+              pair->key = key_ns.release();
+              pair->value = val_ns.release();
+
+              auto pseudo_atom2 = AtomicString::CreateFromUTF8(pseudo_name);
+              auto pseudo_ns2 = pseudo_atom2.ToNativeString();
+              ctx->uiCommandBuffer()->AddCommand(UICommand::kSetPseudoStyle, std::move(pseudo_ns2),
+                                                 el->bindingObject(), pair);
+            }
+            return true;
+          };
+
+          (void)emit_pseudo_if_any(PseudoId::kPseudoIdBefore, "before");
+          (void)emit_pseudo_if_any(PseudoId::kPseudoIdAfter, "after");
+          (void)emit_pseudo_if_any(PseudoId::kPseudoIdFirstLetter, "first-letter");
+          (void)emit_pseudo_if_any(PseudoId::kPseudoIdFirstLine, "first-line");
+
+          InheritedState next_state;
+          next_state.inherited_values = parent_state.inherited_values;
+          next_state.custom_vars = parent_state.custom_vars;
+          return next_state;
+        }
+
+        // We have properties to apply. Clear existing overrides and emit winners.
+        ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, el->bindingObject(), nullptr);
+
+        unsigned count = property_set->PropertyCount();
+        InheritedValueMap inherited_values(parent_state.inherited_values);
+        CustomVarMap custom_vars(parent_state.custom_vars);
+
+        bool have_ws_collapse = false;
+        bool have_text_wrap = false;
+        WhiteSpaceCollapse ws_collapse_enum = WhiteSpaceCollapse::kCollapse;
+        TextWrap text_wrap_enum = TextWrap::kWrap;
+        for (unsigned i = 0; i < count; ++i) {
+          auto prop = property_set->PropertyAt(i);
+          CSSPropertyID id = prop.Id();
+          if (id == CSSPropertyID::kInvalid) continue;
+          const auto* value_ptr = prop.Value();
+          if (!value_ptr || !(*value_ptr)) continue;
+          const CSSValue& value = *(*value_ptr);
+          if (id == CSSPropertyID::kWhiteSpaceCollapse) {
+            std::string sv = value.CssTextForSerialization().ToUTF8String();
+            if (sv == "collapse") { ws_collapse_enum = WhiteSpaceCollapse::kCollapse; have_ws_collapse = true; }
+            else if (sv == "preserve") { ws_collapse_enum = WhiteSpaceCollapse::kPreserve; have_ws_collapse = true; }
+            else if (sv == "preserve-breaks") { ws_collapse_enum = WhiteSpaceCollapse::kPreserveBreaks; have_ws_collapse = true; }
+            else if (sv == "break-spaces") { ws_collapse_enum = WhiteSpaceCollapse::kBreakSpaces; have_ws_collapse = true; }
+          } else if (id == CSSPropertyID::kTextWrap) {
+            std::string sv = value.CssTextForSerialization().ToUTF8String();
+            if (sv == "wrap") { text_wrap_enum = TextWrap::kWrap; have_text_wrap = true; }
+            else if (sv == "nowrap") { text_wrap_enum = TextWrap::kNoWrap; have_text_wrap = true; }
+            else if (sv == "balance") { text_wrap_enum = TextWrap::kBalance; have_text_wrap = true; }
+            else if (sv == "pretty") { text_wrap_enum = TextWrap::kPretty; have_text_wrap = true; }
+          }
+        }
+
+        bool emit_white_space_shorthand = have_ws_collapse || have_text_wrap;
+        String white_space_value_str;
+        if (emit_white_space_shorthand) {
+          EWhiteSpace ws = ToWhiteSpace(ws_collapse_enum, text_wrap_enum);
+          switch (ws) {
+            case EWhiteSpace::kNormal: white_space_value_str = String("normal"); break;
+            case EWhiteSpace::kNowrap: white_space_value_str = String("nowrap"); break;
+            case EWhiteSpace::kPre: white_space_value_str = String("pre"); break;
+            case EWhiteSpace::kPreLine: white_space_value_str = String("pre-line"); break;
+            case EWhiteSpace::kPreWrap: white_space_value_str = String("pre-wrap"); break;
+            case EWhiteSpace::kBreakSpaces: white_space_value_str = String("break-spaces"); break;
+          }
+        }
+
+        for (unsigned i = 0; i < count; ++i) {
+          auto prop = property_set->PropertyAt(i);
+          CSSPropertyID id = prop.Id();
+          if (id == CSSPropertyID::kInvalid) continue;
+          const auto* value_ptr = prop.Value();
+          if (!value_ptr || !(*value_ptr)) continue;
+
+          AtomicString prop_name = prop.Name().ToAtomicString();
+          String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
+          if (value_string.IsNull()) value_string = String("");
+
+          if (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap) {
+            continue;
+          }
+
+          auto key_ns = prop_name.ToStylePropertyNameNativeString();
+          AtomicString value_atom(value_string);
+          ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(key_ns), el->bindingObject(),
+                                             value_atom.ToNativeString().release());
+        }
+
+        if (emit_white_space_shorthand) {
+          auto ws_prop = AtomicString::CreateFromUTF8("white-space");
+          auto ws_key = ws_prop.ToStylePropertyNameNativeString();
+          AtomicString ws_value_atom(white_space_value_str);
+          ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(ws_key), el->bindingObject(),
+                                             ws_value_atom.ToNativeString().release());
+        }
+
+        auto send_pseudo_for = [&](PseudoId pseudo_id, const char* pseudo_name) {
+          ElementRuleCollector pseudo_collector(state, SelectorChecker::kResolvingStyle);
+          pseudo_collector.SetPseudoElementStyleRequest(PseudoElementStyleRequest(pseudo_id));
+          resolver.CollectAllRules(state, pseudo_collector, /*include_smil_properties*/ false);
+          pseudo_collector.SortAndTransferMatchedRules();
+
+          StyleCascade pseudo_cascade(state);
+          for (const auto& entry : pseudo_collector.GetMatchResult().GetMatchedProperties()) {
+            if (entry.is_inline_style) {
+              pseudo_cascade.MutableMatchResult().AddInlineStyleProperties(entry.properties);
+            } else {
+              pseudo_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
+            }
+          }
+
+          std::shared_ptr<MutableCSSPropertyValueSet> pseudo_set = pseudo_cascade.ExportWinningPropertySet();
+          if (!pseudo_set || pseudo_set->PropertyCount() == 0) return;
+
+          auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
+          auto pseudo_ns = pseudo_atom.ToNativeString();
+          ctx->uiCommandBuffer()->AddCommand(UICommand::kClearPseudoStyle, std::move(pseudo_ns),
+                                             el->bindingObject(), nullptr);
+          for (unsigned i = 0; i < pseudo_set->PropertyCount(); ++i) {
+            auto prop = pseudo_set->PropertyAt(i);
+            AtomicString prop_name = prop.Name().ToAtomicString();
+            String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
+            if (value_string.IsNull()) value_string = String("");
+
+            auto key_ns = prop_name.ToStylePropertyNameNativeString();
+            AtomicString value_atom(value_string);
+            auto val_ns = value_atom.ToNativeString();
+            auto* pair = reinterpret_cast<NativePair*>(dart_malloc(sizeof(NativePair)));
+            pair->key = key_ns.release();
+            pair->value = val_ns.release();
+
+            auto pseudo_atom2 = AtomicString::CreateFromUTF8(pseudo_name);
+            auto pseudo_ns2 = pseudo_atom2.ToNativeString();
+            ctx->uiCommandBuffer()->AddCommand(UICommand::kSetPseudoStyle, std::move(pseudo_ns2),
+                                               el->bindingObject(), pair);
+          }
+        };
+
+        send_pseudo_for(PseudoId::kPseudoIdBefore, "before");
+        send_pseudo_for(PseudoId::kPseudoIdAfter, "after");
+        send_pseudo_for(PseudoId::kPseudoIdFirstLetter, "first-letter");
+        send_pseudo_for(PseudoId::kPseudoIdFirstLine, "first-line");
+
+        InheritedState next_state;
+        next_state.inherited_values = std::move(inherited_values);
+        next_state.custom_vars = std::move(custom_vars);
+        return next_state;
+      };
+
+  InheritedState empty_state;
+  apply_for_element(&element, empty_state);
+
+  auto end_calc = std::chrono::steady_clock::now();
+  WEBF_LOG(INFO) << "[StyleEngine] Finished Recalc element-only styles(took "
+                 << std::chrono::duration_cast<std::chrono::milliseconds>(end_calc - begin_calc).count() << "ms)";
+}
+
+void StyleEngine::RecalcInvalidatedStyles(Document& document) {
+  auto begin_calc = std::chrono::steady_clock::now();
+  ExecutingContext* context = document.GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  Element* root = document.documentElement();
+  if (!root) {
+    return;
+  }
+
+  PendingInvalidationMap& map = pending_invalidations_.GetPendingInvalidationMap();
+
+  if (map.empty() && !document.NeedsStyleInvalidation() && !document.ChildNeedsStyleInvalidation()) {
+    // Nothing scheduled via selector-based invalidation; nothing to do.
+    return;
+  }
+
+  // First, run the StyleInvalidator to translate InvalidationSets into
+  // StyleChangeType flags on individual elements.
+  {
+    StyleInvalidator invalidator(map);
+    invalidator.Invalidate(document, root);
+  }
+
+  // Then, walk the DOM starting at the document element and perform subtree
+  // style recomputation only for elements that have been marked dirty.
+  std::function<void(Node*)> clear_flags_for_subtree = [&](Node* node) {
+    if (!node) {
+      return;
+    }
+    node->ClearNeedsStyleRecalc();
+    node->ClearChildNeedsStyleRecalc();
+    for (Node* child = node->firstChild(); child; child = child->nextSibling()) {
+      clear_flags_for_subtree(child);
+    }
+  };
+
+  std::function<void(Node*)> walk = [&](Node* node) {
+    if (!node) {
+      return;
+    }
+
+    if (node->IsElementNode()) {
+      Element* element = static_cast<Element*>(node);
+      if (element->NeedsStyleRecalc()) {
+        StyleChangeType change_type = element->GetStyleChangeType();
+        if (change_type == kInlineIndependentStyleChange) {
+          // Inline-only independent style changes affect this element but not
+          // its descendants. Recompute style just for this element to keep
+          // selector results in sync with the rest of the pipeline.
+          RecalcStyleForElementOnly(*element);
+          element->ClearNeedsStyleRecalc();
+        } else {
+          // For local or subtree changes, recompute styles for this element and
+          // its descendants and then clear dirty bits in that subtree.
+          RecalcStyleForSubtree(*element);
+          clear_flags_for_subtree(element);
+          return;
+        }
+      }
+    }
+
+    for (Node* child = node->firstChild(); child; child = child->nextSibling()) {
+      walk(child);
+    }
+  };
+
+  walk(root);
+
+  auto end_calc = std::chrono::steady_clock::now();
+  WEBF_LOG(INFO) << "[StyleEngine] Finished RecalcInvalidatedStyles(took " << std::chrono::duration_cast<std::chrono::milliseconds>(end_calc - begin_calc).count() << "ms)";
 }
 
 void StyleEngine::MediaQueryAffectingValueChanged(MediaValueChange change) {

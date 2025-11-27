@@ -116,13 +116,6 @@ class InvalidationSetToSelectorMap {
   unsigned combine_recursion_depth_ = 0;
 };
 
-// static
-std::shared_ptr<InvalidationSetToSelectorMap>& InvalidationSetToSelectorMap::GetInstanceReference() {
-  thread_local static std::shared_ptr<InvalidationSetToSelectorMap> instance =
-      std::make_shared<InvalidationSetToSelectorMap>();
-  return instance;
-}
-
 }  // namespace webf
 
 #endif  // WEBF_CORE_INSPECTOR_INVALIDATION_SET_TO_SELECTOR_MAP_H_
