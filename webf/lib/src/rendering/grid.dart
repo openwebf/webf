@@ -66,24 +66,52 @@ class RenderGridLayout extends RenderLayoutBox {
     renderingLogger.finer('[Grid] ${message()}');
   }
 
-  int? _resolveLineIndex(GridPlacement placement) {
-    if (placement.kind == GridPlacementKind.line && placement.line != null) {
-      return math.max(0, placement.line! - 1);
+  int? _resolveGridLineNumber(GridPlacement placement, int trackCount) {
+    if (placement.kind != GridPlacementKind.line || placement.line == null) return null;
+    final int raw = placement.line!;
+    if (raw > 0) {
+      return raw;
     }
-    return null;
+    final int totalLines = math.max(trackCount, 0) + 1;
+    final int candidate = totalLines + 1 + raw;
+    return candidate.clamp(1, totalLines);
   }
 
-  int _resolveSpan(GridPlacement start, GridPlacement end) {
+  int? _resolveTrackIndexFromPlacement(GridPlacement placement, int trackCount) {
+    final int? lineNumber = _resolveGridLineNumber(placement, trackCount);
+    if (lineNumber == null) return null;
+    return math.max(0, lineNumber - 1);
+  }
+
+  int? _resolveLineRequirementIndex(GridPlacement placement, int trackCount) {
+    if (placement.kind != GridPlacementKind.line || placement.line == null) return null;
+    final int raw = placement.line!;
+    if (raw > 0) {
+      return raw - 1;
+    }
+    final int totalLines = math.max(trackCount, 0) + 1;
+    final int candidate = totalLines + 1 + raw;
+    return math.max(candidate - 1, 0);
+  }
+
+  int _resolveSpan(GridPlacement start, GridPlacement end, int trackCount) {
     if (end.kind == GridPlacementKind.span && end.span != null) {
       return math.max(1, end.span!);
     }
     if (start.kind == GridPlacementKind.span && start.span != null) {
       return math.max(1, start.span!);
     }
-    if (start.kind == GridPlacementKind.line && end.kind == GridPlacementKind.line &&
-        start.line != null && end.line != null) {
-      final int diff = end.line! - start.line!;
-      return diff > 0 ? diff : 1;
+    if (start.kind == GridPlacementKind.line &&
+        end.kind == GridPlacementKind.line &&
+        start.line != null &&
+        end.line != null) {
+      final int normalizedTracks = math.max(trackCount, 1);
+      final int? startLine = _resolveGridLineNumber(start, normalizedTracks);
+      final int? endLine = _resolveGridLineNumber(end, normalizedTracks);
+      if (startLine != null && endLine != null) {
+        final int diff = endLine - startLine;
+        return diff > 0 ? diff : 1;
+      }
     }
     return 1;
   }
@@ -422,18 +450,21 @@ class RenderGridLayout extends RenderLayoutBox {
       GridPlacement rowStart = childGridStyle?.gridRowStart ?? const GridPlacement.auto();
       GridPlacement rowEnd = childGridStyle?.gridRowEnd ?? const GridPlacement.auto();
 
-      int colSpan = _resolveSpan(columnStart, columnEnd);
-      int rowSpan = math.max(1, _resolveSpan(rowStart, rowEnd));
+      final int normalizedInitialCols = math.max(colSizes.length, 1);
+      final int normalizedInitialRows = math.max(rowSizes.length, 1);
+      int colSpan = _resolveSpan(columnStart, columnEnd, normalizedInitialCols);
+      int rowSpan = math.max(1, _resolveSpan(rowStart, rowEnd, normalizedInitialRows));
 
-      final int? explicitColumnEnd = columnEnd.kind == GridPlacementKind.line ? _resolveLineIndex(columnEnd) : null;
-
-      int? explicitColumn = _resolveLineIndex(columnStart);
-      int? explicitRow = _resolveLineIndex(rowStart);
       int neededColumns = colSizes.length;
-      if (explicitColumn != null) {
-        neededColumns = math.max(neededColumns, explicitColumn + colSpan);
-      } else if (explicitColumnEnd != null) {
-        neededColumns = math.max(neededColumns, explicitColumnEnd);
+      final int? columnStartRequirement =
+          _resolveLineRequirementIndex(columnStart, normalizedInitialCols);
+      if (columnStartRequirement != null) {
+        neededColumns = math.max(neededColumns, columnStartRequirement + colSpan);
+      }
+      final int? columnEndRequirement =
+          _resolveLineRequirementIndex(columnEnd, normalizedInitialCols);
+      if (columnEndRequirement != null) {
+        neededColumns = math.max(neededColumns, columnEndRequirement);
       }
       final bool rowFlow = autoFlow == GridAutoFlow.row || autoFlow == GridAutoFlow.rowDense;
       if (!rowFlow) {
@@ -448,9 +479,12 @@ class RenderGridLayout extends RenderLayoutBox {
       );
       final int colCount = colSizes.length;
       colSpan = colSpan.clamp(1, colCount);
+      final int rowTrackCountForPlacement = math.max(math.max(rowSizes.length, explicitRowCount), 1);
+      int? explicitColumn = _resolveTrackIndexFromPlacement(columnStart, colCount);
       if (explicitColumn != null) {
         explicitColumn = explicitColumn.clamp(0, math.max(0, colCount - colSpan));
       }
+      int? explicitRow = _resolveTrackIndexFromPlacement(rowStart, rowTrackCountForPlacement);
 
       final bool hasDefiniteColumn =
           columnStart.kind == GridPlacementKind.line || columnEnd.kind == GridPlacementKind.line;
@@ -471,7 +505,7 @@ class RenderGridLayout extends RenderLayoutBox {
         cursor: autoCursor,
         hasDefiniteColumn: hasDefiniteColumn,
         hasDefiniteRow: hasDefiniteRow,
-        explicitRowCount: explicitRowCount,
+        explicitRowCount: rowTrackCountForPlacement,
       );
 
       final int rowIndex = placement.row;

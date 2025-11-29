@@ -232,5 +232,55 @@ void main() {
       expect(cOffset.dy, closeTo(40, 1));
       expect(cOffset.dx, closeTo(0, 1));
     });
+
+    testWidgets('grid-column 1 / -1 spans all explicit columns', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-negative-column-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; width: 180px; grid-template-columns: 60px 60px 60px;">
+            <div id="span" style="grid-column: 1 / -1; height:30px;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final element = prepared.getElementById('span');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox renderSpan = element.attachedRenderer as RenderBox;
+
+      expect(renderer.size.width, equals(180));
+      expect(renderSpan.size.width, equals(180));
+      final Offset offset = getLayoutTransformTo(renderSpan, renderer, excludeScrollOffset: true);
+      expect(offset.dx, closeTo(0, 1));
+    });
+
+    testWidgets('grid-row with negative line targets last track', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-negative-row-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; grid-template-rows: 15px 15px 15px;">
+            <div id="first" style="height:15px;"></div>
+            <div id="last" style="grid-row: -1; height:15px;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox firstBox = prepared.getElementById('first').attachedRenderer as RenderBox;
+      final RenderBox lastBox = prepared.getElementById('last').attachedRenderer as RenderBox;
+
+      final Offset firstOffset = getLayoutTransformTo(firstBox, renderer, excludeScrollOffset: true);
+      final Offset lastOffset = getLayoutTransformTo(lastBox, renderer, excludeScrollOffset: true);
+
+      expect(firstOffset.dy, closeTo(0, 1));
+      expect(lastOffset.dy, closeTo(30, 1));
+    });
   });
 }
