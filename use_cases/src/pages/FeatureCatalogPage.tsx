@@ -24,6 +24,7 @@ const sections: Section[] = [
     items: [
       { label: 'CSS Showcase', path: '/css-showcase' },
       { label: 'Flexbox', path: '/css/flex-layout' },
+      { label: 'Positioned Layout', path: '/css/position' },
       { label: 'Display / Flow / Box', path: '/css/display-flow' },
       { label: 'Sizing', path: '/css/sizing' },
       { label: 'Inline & Inline Formatting', path: '/css/inline-formatting' },
@@ -38,9 +39,8 @@ const sections: Section[] = [
       { label: 'Transforms', path: '/css/transforms' },
       { label: 'Transitions', path: '/css/transitions' },
       { label: 'Animations (Keyframes)', path: '/css/keyframes' },
-      { label: 'Clip Path', path: '/css/clip-path' },
+      // { label: 'Clip Path', path: '/css/clip-path' },
       { label: 'Filter Effects', path: '/css/filter' },
-      { label: 'Positioned Layout', path: '/css/position' },
       { label: 'Selectors', path: '/css/selectors' },
       { label: 'Values & Units', path: '/css/values-units' },
       { label: 'Animations', path: '/css/animation' },
