@@ -68,7 +68,7 @@ function readBridgeSources(configPath, { verbose }) {
     }
     const list = Array.from(new Set(json.BRIDGE_SOURCE))
       .map((p) => p.trim())
-      .filter((p) => p && (p.endsWith('.cc') || p.endsWith('.c')));
+      .filter((p) => p && (p.endsWith('.cc') || p.endsWith('.c') || p.endsWith('.mm')));
     const qjs_list = Array.from(new Set(json.QUICKJS_SOURCE))
       .map((p) => p.trim())
       .filter((p) => p && (p.endsWith('.cc') || p.endsWith('.c')));
