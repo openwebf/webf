@@ -1,6 +1,7 @@
 {
   BRIDGE_SOURCE: [
     "foundation/logging.cc",
+    "foundation/ios_logger.mm",
     "foundation/native_string.cc",
     "foundation/ui_task_queue.cc",
     "foundation/shared_ui_command.cc",

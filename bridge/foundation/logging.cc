@@ -13,6 +13,11 @@
 #include <android/log.h>
 #elif defined(IS_IOS)
 #include <syslog.h>
+
+extern "C" void ios_nslog(const char* cstr);
+#include <string>
+void LogIOS(const std::string& s) { ios_nslog(s.c_str()); }
+
 #else
 #include <iostream>
 #endif
@@ -69,7 +74,7 @@ LogMessage::~LogMessage() {
   }
   __android_log_write(priority, "WEBF_NATIVE_LOG", stream_.str().c_str());
 #elif defined(IS_IOS)
-  syslog(LOG_ALERT, "%s", stream_.str().c_str());
+  LogIOS(stream_.str());
 #else
   if (severity_ == ERROR) {
     std::cerr << stream_.str() << std::endl;
