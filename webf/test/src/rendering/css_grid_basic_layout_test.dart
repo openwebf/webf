@@ -127,5 +127,110 @@ void main() {
       final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
       expect(renderer.size.width, equals(360));
     });
+
+    testWidgets('grid-auto-flow column fills columns first', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-auto-col-flow-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; grid-auto-flow: column; grid-template-rows: 30px 30px; grid-auto-columns: 50px; column-gap: 0; row-gap: 0;">
+            <div id="a" style="height:30px;"></div>
+            <div id="b" style="height:30px;"></div>
+            <div id="c" style="height:30px;"></div>
+            <div id="d" style="height:30px;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox renderA = prepared.getElementById('a').attachedRenderer as RenderBox;
+      final RenderBox renderB = prepared.getElementById('b').attachedRenderer as RenderBox;
+      final RenderBox renderC = prepared.getElementById('c').attachedRenderer as RenderBox;
+      final RenderBox renderD = prepared.getElementById('d').attachedRenderer as RenderBox;
+
+      expect(renderer.size.width, equals(100));
+
+      final Offset aOffset = getLayoutTransformTo(renderA, renderer, excludeScrollOffset: true);
+      final Offset bOffset = getLayoutTransformTo(renderB, renderer, excludeScrollOffset: true);
+      final Offset cOffset = getLayoutTransformTo(renderC, renderer, excludeScrollOffset: true);
+      final Offset dOffset = getLayoutTransformTo(renderD, renderer, excludeScrollOffset: true);
+
+      expect(aOffset.dx, closeTo(0, 1));
+      expect(aOffset.dy, closeTo(0, 1));
+      expect(bOffset.dx, closeTo(0, 1));
+      expect(bOffset.dy, closeTo(30, 1));
+      expect(cOffset.dx, closeTo(50, 1));
+      expect(cOffset.dy, closeTo(0, 1));
+      expect(dOffset.dx, closeTo(50, 1));
+      expect(dOffset.dy, closeTo(30, 1));
+    });
+
+    testWidgets('column auto-flow without explicit rows creates new columns', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-auto-col-default-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; grid-auto-flow: column; grid-auto-columns: 40px;">
+            <div id="a" style="height:20px;"></div>
+            <div id="b" style="height:20px;"></div>
+            <div id="c" style="height:20px;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox renderA = prepared.getElementById('a').attachedRenderer as RenderBox;
+      final RenderBox renderB = prepared.getElementById('b').attachedRenderer as RenderBox;
+      final RenderBox renderC = prepared.getElementById('c').attachedRenderer as RenderBox;
+
+      final Offset aOffset = getLayoutTransformTo(renderA, renderer, excludeScrollOffset: true);
+      final Offset bOffset = getLayoutTransformTo(renderB, renderer, excludeScrollOffset: true);
+      final Offset cOffset = getLayoutTransformTo(renderC, renderer, excludeScrollOffset: true);
+
+      expect(aOffset.dx, closeTo(0, 1));
+      expect(bOffset.dx, closeTo(40, 1));
+      expect(cOffset.dx, closeTo(80, 1));
+      expect(aOffset.dy, closeTo(0, 1));
+      expect(bOffset.dy, closeTo(0, 1));
+      expect(cOffset.dy, closeTo(0, 1));
+    });
+
+    testWidgets('column auto-flow reuses explicit implicit rows', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-auto-col-implicit-row-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; grid-auto-flow: column; grid-template-rows: 20px 20px; grid-auto-columns: 40px;">
+            <div id="extend" style="grid-column: 2; grid-row: 3; height:20px;"></div>
+            <div id="a" style="height:20px;"></div>
+            <div id="b" style="height:20px;"></div>
+            <div id="c" style="height:20px;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox renderA = prepared.getElementById('a').attachedRenderer as RenderBox;
+      final RenderBox renderB = prepared.getElementById('b').attachedRenderer as RenderBox;
+      final RenderBox renderC = prepared.getElementById('c').attachedRenderer as RenderBox;
+
+      final Offset aOffset = getLayoutTransformTo(renderA, renderer, excludeScrollOffset: true);
+      final Offset bOffset = getLayoutTransformTo(renderB, renderer, excludeScrollOffset: true);
+      final Offset cOffset = getLayoutTransformTo(renderC, renderer, excludeScrollOffset: true);
+
+      expect(aOffset.dy, closeTo(0, 1));
+      expect(bOffset.dy, closeTo(20, 1));
+      expect(cOffset.dy, closeTo(40, 1));
+      expect(cOffset.dx, closeTo(0, 1));
+    });
   });
 }

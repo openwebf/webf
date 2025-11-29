@@ -70,4 +70,79 @@ describe('CSS Grid auto placement', () => {
     expect(rect3.left).toBeCloseTo(rect1.left, 1);
     grid.remove();
   });
+
+  it('supports column auto-flow creating new columns', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridAutoFlow = 'column';
+    grid.style.gridTemplateRows = '40px 40px';
+    grid.style.gridAutoColumns = '64px';
+    grid.style.columnGap = '6px';
+    grid.style.rowGap = '4px';
+    grid.style.padding = '8px';
+    grid.style.backgroundColor = '#fdfdfd';
+
+    for (let i = 0; i < 4; i++) {
+      const cell = document.createElement('div');
+      cell.textContent = `Col ${i + 1}`;
+      cell.style.height = '40px';
+      cell.style.display = 'flex';
+      cell.style.alignItems = 'center';
+      cell.style.justifyContent = 'center';
+      cell.style.border = '1px solid #ddd';
+      grid.appendChild(cell);
+    }
+
+    document.body.appendChild(grid);
+
+    await snapshot();
+
+    const first = grid.children[0] as HTMLElement;
+    const third = grid.children[2] as HTMLElement;
+    const rectFirst = first.getBoundingClientRect();
+    const rectThird = third.getBoundingClientRect();
+
+    expect(rectThird.left).toBeGreaterThan(rectFirst.left);
+    expect(rectThird.top).toBeCloseTo(rectFirst.top, 1);
+    grid.remove();
+  });
+
+  it('uses implicit rows created by explicit placement in column flow', async () => {
+    const grid = document.createElement('div');
+    grid.id = 'grid-implicit-rows';
+    grid.style.display = 'grid';
+    grid.style.gridAutoFlow = 'column';
+    grid.style.gridTemplateRows = '24px 24px';
+    grid.style.gridAutoColumns = '48px';
+    grid.style.rowGap = '0px';
+    grid.style.columnGap = '0px';
+
+    const extender = document.createElement('div');
+    extender.style.gridColumn = '2';
+    extender.style.gridRow = '3';
+    extender.style.height = '24px';
+    grid.appendChild(extender);
+
+    for (let i = 0; i < 3; i++) {
+      const cell = document.createElement('div');
+      cell.style.height = '24px';
+      cell.textContent = `auto-${i}`;
+      grid.appendChild(cell);
+    }
+
+    document.body.appendChild(grid);
+
+    await snapshot();
+
+    const autoCells = grid.querySelectorAll('div:not([style*="grid-column"])');
+    expect(autoCells.length).toBe(3);
+    const third = autoCells[2] as HTMLElement;
+    const rect = third.getBoundingClientRect();
+    const first = autoCells[0] as HTMLElement;
+    const rectFirst = first.getBoundingClientRect();
+
+    expect(rect.left).toBeCloseTo(rectFirst.left, 1);
+    expect(rect.top).toBeGreaterThan(rectFirst.bottom);
+    grid.remove();
+  });
 });

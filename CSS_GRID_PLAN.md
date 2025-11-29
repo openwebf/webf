@@ -75,8 +75,8 @@ Computed-style serialization + tests for grid templates/placements are now in tr
 
 **TODOs**
 - [x] Capture overview/goals/scope plus risks and rollout strategy.
-- [ ] Land Phase 1 plumbing (display enum, CSSGridMixin, shorthand parsing, auxiliary helpers).
-- [ ] Add Phase 1 widget + integration tests (parsing/computed style) and wire to spec group.
+- [x] Land Phase 1 plumbing (display enum, CSSGridMixin, shorthand parsing, auxiliary helpers).
+- [x] Add Phase 1 widget + integration tests (parsing/computed style) and wire to spec group.
 - [x] Implement `RenderGridLayout` skeleton and hook creation paths.
 - [ ] Implement full track sizing/placement (Phase 3) with tests.
 - [ ] Extend alignment/template features (Phase 4) with serialization and coverage.

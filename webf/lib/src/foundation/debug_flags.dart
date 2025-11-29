@@ -116,9 +116,6 @@ class DebugFlags {
   // Default is true so grid is enabled by default.
   static bool enableCssGridLayout = true;
 
-  // Verbose logging for RenderGridLayout sizing/placement.
-  static bool debugLogGridEnabled = false;
-
   // Removed: Use FlexLog filters to enable flex logs.
 
   /// Debug flag to enable inline layout visualization.

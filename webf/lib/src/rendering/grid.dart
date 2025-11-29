@@ -62,7 +62,7 @@ class RenderGridLayout extends RenderLayoutBox {
   }
 
   void _gridLog(String Function() message) {
-    if (!DebugFlags.debugLogGridEnabled) return;
+    if (!DebugFlags.enableCssGridLayout) return;
     renderingLogger.finer('[Grid] ${message()}');
   }
 
@@ -128,7 +128,10 @@ class RenderGridLayout extends RenderLayoutBox {
 
   _GridCellPlacement _placeAutoItem({
     required List<List<bool>> occupancy,
-    required int columnCount,
+    required List<double> columnSizes,
+    required int explicitColumnCount,
+    required List<GridTrackSize> autoColumns,
+    required double? adjustedInnerWidth,
     required int columnSpan,
     required int rowSpan,
     required int? explicitRow,
@@ -136,47 +139,100 @@ class RenderGridLayout extends RenderLayoutBox {
     required GridAutoFlow autoFlow,
     required _GridAutoCursor cursor,
     required bool hasDefiniteColumn,
+    required bool hasDefiniteRow,
+    required int explicitRowCount,
   }) {
     final bool dense = autoFlow == GridAutoFlow.rowDense || autoFlow == GridAutoFlow.columnDense;
     final bool rowFlow = autoFlow == GridAutoFlow.row || autoFlow == GridAutoFlow.rowDense;
 
-    final int colSpan = columnSpan.clamp(1, columnCount);
+    int columnCount = columnSizes.length;
+    final int colSpan = columnSpan.clamp(1, math.max(1, columnCount));
     final int rowSpanClamped = math.max(1, rowSpan);
 
-    int startRow;
-    if (explicitRow != null) {
-      startRow = explicitRow;
-    } else if (rowFlow) {
-      if (dense || hasDefiniteColumn) {
+    if (rowFlow) {
+      int startRow;
+      if (explicitRow != null) {
+        startRow = explicitRow;
+      } else if (dense || hasDefiniteColumn) {
         startRow = 0;
       } else {
         startRow = cursor.row;
       }
-    } else {
-      startRow = cursor.row;
+      int row = math.max(0, startRow);
+
+      while (true) {
+        _ensureOccupancyRows(occupancy, row + rowSpanClamped, columnCount);
+        final int columnStart = explicitColumn ??
+            (!dense && explicitRow == null && !hasDefiniteColumn && row == cursor.row ? cursor.column : 0);
+
+        for (int col = math.max(0, columnStart); col <= columnCount - colSpan; col++) {
+          if (_canPlace(occupancy, row, col, rowSpanClamped, colSpan, columnCount)) {
+            _markPlacement(occupancy, row, col, rowSpanClamped, colSpan);
+            if (explicitRow == null && !hasDefiniteColumn) {
+              cursor.row = row;
+              cursor.column = col + colSpan;
+              if (cursor.column >= columnCount) {
+                cursor.row += 1;
+                cursor.column = 0;
+              }
+            }
+            return _GridCellPlacement(row, col);
+          }
+        }
+        row++;
+      }
     }
-    int row = math.max(0, startRow);
+
+    final bool useCursorColumn =
+        !dense && explicitRow == null && explicitColumn == null && !hasDefiniteRow;
+    int column = explicitColumn ?? (useCursorColumn ? cursor.column : 0);
+    bool cursorApplied = false;
 
     while (true) {
-      _ensureOccupancyRows(occupancy, row + rowSpanClamped, columnCount);
-      final int columnStart = explicitColumn ??
-          (rowFlow && !dense && explicitRow == null && row == cursor.row ? cursor.column : 0);
+      if (column < 0) column = 0;
+      if (column + colSpan > columnCount) {
+        _ensureImplicitColumns(
+          colSizes: columnSizes,
+          requiredCount: column + colSpan,
+          explicitCount: explicitColumnCount,
+          autoColumns: autoColumns,
+          innerAvailable: adjustedInnerWidth,
+        );
+        columnCount = columnSizes.length;
+      }
 
-      for (int col = math.max(0, columnStart); col <= columnCount - colSpan; col++) {
-        if (_canPlace(occupancy, row, col, rowSpanClamped, colSpan, columnCount)) {
-          _markPlacement(occupancy, row, col, rowSpanClamped, colSpan);
-          if (explicitRow == null && !hasDefiniteColumn && rowFlow) {
-            cursor.row = row;
-            cursor.column = col + colSpan;
-            if (cursor.column >= columnCount) {
-              cursor.row += 1;
-              cursor.column = 0;
+      final int rowStart = explicitRow ??
+          ((useCursorColumn && !cursorApplied && column == cursor.column) ? cursor.row : 0);
+      int row = math.max(0, rowStart);
+
+      while (true) {
+        _ensureOccupancyRows(occupancy, row + rowSpanClamped, columnCount);
+        final int rowLimit =
+            math.max(math.max(explicitRowCount, occupancy.length), rowSpanClamped);
+        if (_canPlace(occupancy, row, column, rowSpanClamped, colSpan, columnCount)) {
+          _markPlacement(occupancy, row, column, rowSpanClamped, colSpan);
+          if (explicitRow == null && !hasDefiniteRow) {
+            cursor.column = column;
+            cursor.row = row + rowSpanClamped;
+            final int wrapLimit =
+                math.max(math.max(explicitRowCount, occupancy.length), rowSpanClamped);
+            if (!dense && cursor.row >= wrapLimit) {
+              cursor.row = 0;
+              cursor.column = column + colSpan;
             }
           }
-          return _GridCellPlacement(row, col);
+          return _GridCellPlacement(row, column);
+        }
+
+        row++;
+        if (explicitRow == null &&
+            row >= math.max(math.max(explicitRowCount, occupancy.length), rowSpanClamped)) {
+          break;
         }
       }
-      row++;
+
+      cursorApplied = true;
+      column++;
     }
   }
 
@@ -239,6 +295,24 @@ class RenderGridLayout extends RenderLayoutBox {
 
   @override
   void performLayout() {
+    beforeLayout();
+    final BoxConstraints contentConstraints = this.contentConstraints ?? constraints;
+    try {
+      _performGridLayout(contentConstraints);
+      initOverflowLayout(
+        Rect.fromLTRB(0, 0, size.width, size.height),
+        Rect.fromLTRB(0, 0, size.width, size.height),
+      );
+      addOverflowLayoutFromChildren(_collectChildren());
+    } catch (error, stack) {
+      if (!kReleaseMode) {
+        renderingLogger.severe('RenderGridLayout.performLayout error: $error\n$stack');
+      }
+      rethrow;
+    }
+  }
+
+  void _performGridLayout(BoxConstraints contentConstraints) {
     _gridLog(() => 'performLayout constraints=$constraints');
     // Compute inner available sizes (content box constraints)
     final double paddingLeft = renderStyle.paddingLeft.computedValue;
@@ -253,10 +327,10 @@ class RenderGridLayout extends RenderLayoutBox {
     final double horizontalPaddingBorder = paddingLeft + paddingRight + borderLeft + borderRight;
     final double verticalPaddingBorder = paddingTop + paddingBottom + borderTop + borderBottom;
 
-    final bool hasBW = constraints.hasBoundedWidth;
-    final bool hasBH = constraints.hasBoundedHeight;
-    final double? innerMaxWidth = hasBW ? math.max(0.0, constraints.maxWidth - horizontalPaddingBorder) : null;
-    final double? innerMaxHeight = hasBH ? math.max(0.0, constraints.maxHeight - verticalPaddingBorder) : null;
+    final bool hasBW = contentConstraints.hasBoundedWidth;
+    final bool hasBH = contentConstraints.hasBoundedHeight;
+    final double? innerMaxWidth = hasBW ? math.max(0.0, contentConstraints.maxWidth) : null;
+    final double? innerMaxHeight = hasBH ? math.max(0.0, contentConstraints.maxHeight) : null;
 
     // Resolve tracks
     // Resolve explicit track definitions from render style; if not yet materialized
@@ -317,6 +391,7 @@ class RenderGridLayout extends RenderLayoutBox {
     }
     List<double> rowSizes =
         rowsDef.isEmpty ? <double>[] : _resolveTracks(rowsDef, innerMaxHeight, Axis.vertical);
+    final int explicitRowCount = rowsDef.isNotEmpty ? rowsDef.length : 1;
     _gridLog(() =>
         'tracks resolved columns=${colSizes.map((e) => e.toStringAsFixed(2)).join(', ')} rows=${rowSizes.map((e) => e.toStringAsFixed(2)).join(', ')} autoRows=${renderStyle.gridAutoRows.length} autoFlow=${renderStyle.gridAutoFlow}');
 
@@ -379,10 +454,15 @@ class RenderGridLayout extends RenderLayoutBox {
 
       final bool hasDefiniteColumn =
           columnStart.kind == GridPlacementKind.line || columnEnd.kind == GridPlacementKind.line;
+      final bool hasDefiniteRow =
+          rowStart.kind == GridPlacementKind.line || rowEnd.kind == GridPlacementKind.line;
 
       final _GridCellPlacement placement = _placeAutoItem(
         occupancy: occupancy,
-        columnCount: colCount,
+        columnSizes: colSizes,
+        explicitColumnCount: explicitColumnCount,
+        autoColumns: autoColDefs,
+        adjustedInnerWidth: adjustedInnerWidth,
         columnSpan: colSpan,
         rowSpan: rowSpan,
         explicitRow: explicitRow,
@@ -390,6 +470,8 @@ class RenderGridLayout extends RenderLayoutBox {
         autoFlow: autoFlow,
         cursor: autoCursor,
         hasDefiniteColumn: hasDefiniteColumn,
+        hasDefiniteRow: hasDefiniteRow,
+        explicitRowCount: explicitRowCount,
       );
 
       final int rowIndex = placement.row;
@@ -522,6 +604,17 @@ class RenderGridLayout extends RenderLayoutBox {
 
     // Compute and cache CSS baselines for the grid container
     calculateBaseline();
+  }
+
+  List<RenderBox> _collectChildren() {
+    final List<RenderBox> children = <RenderBox>[];
+    RenderBox? child = firstChild;
+    while (child != null) {
+      children.add(child);
+      final GridLayoutParentData pd = child.parentData as GridLayoutParentData;
+      child = pd.nextSibling;
+    }
+    return children;
   }
 
   @override
