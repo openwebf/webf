@@ -435,4 +435,23 @@ describe('CSS Grid auto placement', () => {
     expect(Math.round(namedRect.width)).toBeGreaterThanOrEqual(80);
     grid.remove();
   });
+
+    it('respects fit-content clamp on track sizing', async () => {
+    const grid = document.createElement('div');
+    grid.setAttribute('style', 'display:grid;width:200px;grid-template-columns:fit-content(80px);');
+    const cell = document.createElement('div');
+    cell.textContent = 'wider-than-fit';
+    cell.style.width = '150px';
+    cell.style.height = '30px';
+    cell.style.backgroundColor = 'rgba(244, 67, 54, 0.4)';
+    grid.appendChild(cell);
+    document.body.appendChild(grid);
+
+    await waitForFrame();
+    await snapshot();
+
+    const rect = cell.getBoundingClientRect();
+    expect(Math.round(rect.width)).toBeLessThanOrEqual(150);
+    grid.remove();
+  });
 });

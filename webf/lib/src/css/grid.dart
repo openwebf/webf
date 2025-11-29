@@ -55,6 +55,62 @@ class GridMinMax extends GridTrackSize {
   });
 }
 
+class GridFitContent extends GridTrackSize {
+  final CSSLengthValue limit;
+  GridFitContent(
+    this.limit, {
+    super.leadingLineNames,
+    super.trailingLineNames,
+  });
+}
+
+enum GridRepeatKind { count, autoFill, autoFit }
+
+class GridRepeat extends GridTrackSize {
+  final GridRepeatKind kind;
+  final int? count;
+  final List<GridTrackSize> tracks;
+  const GridRepeat._(
+    this.kind, {
+    this.count,
+    required this.tracks,
+    super.leadingLineNames,
+    super.trailingLineNames,
+  });
+  const GridRepeat.count(
+    int repeatCount,
+    List<GridTrackSize> tracks, {
+    List<String> leadingLineNames = const <String>[],
+    List<String> trailingLineNames = const <String>[],
+  }) : this._(
+          GridRepeatKind.count,
+          count: repeatCount,
+          tracks: tracks,
+          leadingLineNames: leadingLineNames,
+          trailingLineNames: trailingLineNames,
+        );
+  const GridRepeat.autoFill(
+    List<GridTrackSize> tracks, {
+    List<String> leadingLineNames = const <String>[],
+    List<String> trailingLineNames = const <String>[],
+  }) : this._(
+          GridRepeatKind.autoFill,
+          tracks: tracks,
+          leadingLineNames: leadingLineNames,
+          trailingLineNames: trailingLineNames,
+        );
+  const GridRepeat.autoFit(
+    List<GridTrackSize> tracks, {
+    List<String> leadingLineNames = const <String>[],
+    List<String> trailingLineNames = const <String>[],
+  }) : this._(
+          GridRepeatKind.autoFit,
+          tracks: tracks,
+          leadingLineNames: leadingLineNames,
+          trailingLineNames: trailingLineNames,
+        );
+}
+
 enum GridPlacementKind { auto, line, span }
 
 class GridPlacement {
@@ -179,6 +235,20 @@ class CSSGridParser {
         leadingLineNames: resolvedLeading,
         trailingLineNames: resolvedTrailing,
       );
+    } else if (source is GridFitContent) {
+      return GridFitContent(
+        source.limit,
+        leadingLineNames: resolvedLeading,
+        trailingLineNames: resolvedTrailing,
+      );
+    } else if (source is GridRepeat) {
+      return GridRepeat._(
+        source.kind,
+        count: source.count,
+        tracks: source.tracks,
+        leadingLineNames: resolvedLeading,
+        trailingLineNames: resolvedTrailing,
+      );
     }
     return source;
   }
@@ -203,6 +273,17 @@ class CSSGridParser {
       final fr = numStr.isEmpty ? 1.0 : double.tryParse(numStr);
       if (fr != null && fr >= 0) {
         return GridFraction(fr, leadingLineNames: resolvedLeading, trailingLineNames: resolvedTrailing);
+      }
+    }
+    if (t.startsWith('fit-content(') && t.endsWith(')')) {
+      final String inner = t.substring(12, t.length - 1).trim();
+      final CSSLengthValue limit = CSSLength.parseLength(inner, renderStyle, propertyName, axis);
+      if (limit != CSSLengthValue.unknown) {
+        return GridFitContent(
+          limit,
+          leadingLineNames: resolvedLeading,
+          trailingLineNames: resolvedTrailing,
+        );
       }
     }
     if (t.startsWith('minmax(') && t.endsWith(')')) {
@@ -232,32 +313,48 @@ class CSSGridParser {
     return null;
   }
 
-  static List<GridTrackSize> _parseRepeatTracks(
+  static GridRepeat? _parseRepeatComponent(
     String token,
     RenderStyle renderStyle,
     String propertyName,
-    Axis axis,
-  ) {
+    Axis axis, {
+    List<String>? leadingNames,
+  }) {
     final inner = token.substring(7, token.length - 1);
     final commaIndex = _topLevelCommaIndex(inner);
-    if (commaIndex == -1) return const <GridTrackSize>[];
+    if (commaIndex == -1) return null;
     final String countStr = inner.substring(0, commaIndex).trim();
-    final int? repeatCount = int.tryParse(countStr);
-    if (repeatCount == null || repeatCount <= 0) return const <GridTrackSize>[];
     final String trackContent = inner.substring(commaIndex + 1).trim();
-    if (trackContent.isEmpty) return const <GridTrackSize>[];
+    if (trackContent.isEmpty) return null;
 
     final List<GridTrackSize> innerTracks =
         _parseTrackListInternal(trackContent, renderStyle, propertyName, axis);
-    if (innerTracks.isEmpty) return const <GridTrackSize>[];
+    if (innerTracks.isEmpty) return null;
 
-    final List<GridTrackSize> expanded = <GridTrackSize>[];
-    for (int i = 0; i < repeatCount; i++) {
-      for (final track in innerTracks) {
-        expanded.add(_cloneTrackWithLineNames(track));
-      }
+    final List<String> resolvedLeading = leadingNames ?? const <String>[];
+    final String normalized = countStr.toLowerCase();
+    if (normalized == 'auto-fill') {
+      return GridRepeat.autoFill(
+        innerTracks,
+        leadingLineNames: resolvedLeading,
+      );
     }
-    return expanded;
+    if (normalized == 'auto-fit') {
+      return GridRepeat.autoFit(
+        innerTracks,
+        leadingLineNames: resolvedLeading,
+      );
+    }
+
+    final int? repeatCount = int.tryParse(countStr);
+    if (repeatCount != null && repeatCount > 0) {
+      return GridRepeat.count(
+        repeatCount,
+        innerTracks,
+        leadingLineNames: resolvedLeading,
+      );
+    }
+    return null;
   }
 
   static List<GridTrackSize> _parseTrackListInternal(
@@ -292,25 +389,19 @@ class CSSGridParser {
       }
 
       if (t.startsWith('repeat(') && t.endsWith(')')) {
-        final List<GridTrackSize> repeated =
-            _parseRepeatTracks(t, renderStyle, propertyName, axis);
-        if (repeated.isEmpty) {
+        final GridRepeat? repeatDef = _parseRepeatComponent(
+          t,
+          renderStyle,
+          propertyName,
+          axis,
+          leadingNames: pendingLeadingNames,
+        );
+        if (repeatDef != null) {
+          sizes.add(repeatDef);
+          pendingLeadingNames = <String>[];
+          pendingNamesAppliedAsTrailing = false;
           continue;
         }
-        if (pendingLeadingNames.isNotEmpty) {
-          final GridTrackSize first = repeated.removeAt(0);
-          repeated.insert(
-            0,
-            _cloneTrackWithLineNames(
-              first,
-              leading: <String>[...pendingLeadingNames, ...first.leadingLineNames],
-            ),
-          );
-        }
-        sizes.addAll(repeated);
-        pendingLeadingNames = <String>[];
-        pendingNamesAppliedAsTrailing = false;
-        continue;
       }
 
       final GridTrackSize? parsed = _parseSingleTrack(

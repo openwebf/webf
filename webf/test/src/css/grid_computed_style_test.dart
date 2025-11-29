@@ -110,5 +110,28 @@ void main() {
       expect(computed.getPropertyValue('grid-row-start'), equals('row-line 1'));
       expect(computed.getPropertyValue('grid-row-end'), equals('row-line 2'));
     });
+
+    testWidgets('serializes auto-fill repeat and fit-content templates', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-auto-repeat-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid"
+            style="
+              display:grid;
+              grid-template-columns: repeat(auto-fill, fit-content(80px));
+              grid-template-rows: repeat(2, 40px);
+            ">
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final computed = prepared.controller.view.window.getComputedStyle(grid);
+      expect(computed.getPropertyValue('grid-template-columns'), equals('repeat(auto-fill, fit-content(80px))'));
+      expect(computed.getPropertyValue('grid-template-rows'), equals('repeat(2, 40px)'));
+    });
   });
 }

@@ -908,6 +908,9 @@ String _gridTrackValueToCss(GridTrackSize track) {
     final String maxText = _gridTrackValueToCss(track.maxTrack);
     return 'minmax($minText, $maxText)';
   }
+  if (track is GridFitContent) {
+    return 'fit-content(${track.limit.cssText()})';
+  }
   return 'auto';
 }
 
@@ -921,6 +924,28 @@ String _gridTrackSizeToCss(GridTrackSize track) {
   if (track.leadingLineNames.isNotEmpty) {
     buffer.write(_gridLineNamesToCss(track.leadingLineNames));
     buffer.write(' ');
+  }
+  if (track is GridRepeat) {
+    buffer.write('repeat(');
+    switch (track.kind) {
+      case GridRepeatKind.count:
+        buffer.write(track.count?.toString() ?? '0');
+        break;
+      case GridRepeatKind.autoFill:
+        buffer.write('auto-fill');
+        break;
+      case GridRepeatKind.autoFit:
+        buffer.write('auto-fit');
+        break;
+    }
+    buffer.write(', ');
+    buffer.write(track.tracks.map(_gridTrackSizeToCss).join(' '));
+    buffer.write(')');
+    if (track.trailingLineNames.isNotEmpty) {
+      buffer.write(' ');
+      buffer.write(_gridLineNamesToCss(track.trailingLineNames));
+    }
+    return buffer.toString().trim();
   }
   buffer.write(_gridTrackValueToCss(track));
   if (track.trailingLineNames.isNotEmpty) {

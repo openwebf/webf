@@ -307,6 +307,130 @@ class RenderGridLayout extends RenderLayoutBox {
     }
   }
 
+  double? _preferredChildWidth(RenderStyle? childStyle) {
+    if (childStyle == null) return null;
+    if (childStyle.width.isAuto) return null;
+    return childStyle.width.computedValue;
+  }
+
+  List<GridTrackSize> _materializeTrackList(
+    List<GridTrackSize> tracks,
+    double? innerAvailable,
+    double gap,
+    Axis axis,
+  ) {
+    if (tracks.isEmpty) return const <GridTrackSize>[];
+    final List<GridTrackSize> resolved = <GridTrackSize>[];
+    for (final GridTrackSize track in tracks) {
+      if (track is GridRepeat) {
+        final int repeatCount = _repeatCountFor(track, innerAvailable, gap);
+        resolved.addAll(_expandRepeatTracks(track, repeatCount));
+      } else {
+        resolved.add(track);
+      }
+    }
+    return resolved;
+  }
+
+  bool _patternHasFlexibleTracks(List<GridTrackSize> tracks) {
+    for (final GridTrackSize track in tracks) {
+      if (track is GridFraction) return true;
+      if (track is GridMinMax && track.maxTrack is GridFraction) return true;
+      if (track is GridRepeat) return true;
+    }
+    return false;
+  }
+
+  double _measurePatternBreadth(List<GridTrackSize> tracks, double? innerAvailable, double gap) {
+    double total = 0;
+    for (int i = 0; i < tracks.length; i++) {
+      total += _resolveTrackSize(tracks[i], innerAvailable);
+      if (i < tracks.length - 1) {
+        total += gap;
+      }
+    }
+    return total;
+  }
+
+  int _repeatCountFor(GridRepeat repeat, double? innerAvailable, double gap) {
+    if (repeat.kind == GridRepeatKind.count) {
+      return math.max(1, repeat.count ?? 1);
+    }
+    if (innerAvailable == null || !innerAvailable.isFinite) return 1;
+    if (repeat.tracks.isEmpty) return 1;
+    if (_patternHasFlexibleTracks(repeat.tracks)) return 1;
+
+    final double patternBreadth = _measurePatternBreadth(repeat.tracks, innerAvailable, gap);
+    if (patternBreadth <= 0) return 1;
+    final double perPattern = patternBreadth + gap;
+    final double available = innerAvailable + gap;
+    final int repeatCount = math.max(1, (available / perPattern).floor());
+    return repeatCount.clamp(1, 100);
+  }
+
+  List<GridTrackSize> _expandRepeatTracks(GridRepeat repeat, int repeatCount) {
+    if (repeat.tracks.isEmpty || repeatCount <= 0) return const <GridTrackSize>[];
+    final List<GridTrackSize> expanded = <GridTrackSize>[];
+    for (int iteration = 0; iteration < repeatCount; iteration++) {
+      for (int i = 0; i < repeat.tracks.length; i++) {
+        List<String>? leading;
+        List<String>? trailing;
+        if (iteration == 0 && i == 0 && repeat.leadingLineNames.isNotEmpty) {
+          leading = <String>[...repeat.leadingLineNames, ...repeat.tracks[i].leadingLineNames];
+        }
+        if (iteration == repeatCount - 1 && i == repeat.tracks.length - 1 && repeat.trailingLineNames.isNotEmpty) {
+          trailing = <String>[...repeat.tracks[i].trailingLineNames, ...repeat.trailingLineNames];
+        }
+        expanded.add(_cloneTrackForRepeat(repeat.tracks[i], leading: leading, trailing: trailing));
+      }
+    }
+    return expanded;
+  }
+
+  GridTrackSize _cloneTrackForRepeat(
+    GridTrackSize source, {
+    List<String>? leading,
+    List<String>? trailing,
+  }) {
+    final List<String> resolvedLeading =
+        leading ?? (source.leadingLineNames.isEmpty ? const <String>[] : List<String>.from(source.leadingLineNames));
+    final List<String> resolvedTrailing =
+        trailing ?? (source.trailingLineNames.isEmpty ? const <String>[] : List<String>.from(source.trailingLineNames));
+
+    if (source is GridFixed) {
+      return GridFixed(
+        source.length,
+        leadingLineNames: resolvedLeading,
+        trailingLineNames: resolvedTrailing,
+      );
+    } else if (source is GridFraction) {
+      return GridFraction(
+        source.fr,
+        leadingLineNames: resolvedLeading,
+        trailingLineNames: resolvedTrailing,
+      );
+    } else if (source is GridAuto) {
+      return GridAuto(
+        leadingLineNames: resolvedLeading,
+        trailingLineNames: resolvedTrailing,
+      );
+    } else if (source is GridMinMax) {
+      return GridMinMax(
+        source.minTrack,
+        source.maxTrack,
+        leadingLineNames: resolvedLeading,
+        trailingLineNames: resolvedTrailing,
+      );
+    } else if (source is GridFitContent) {
+      return GridFitContent(
+        source.limit,
+        leadingLineNames: resolvedLeading,
+        trailingLineNames: resolvedTrailing,
+      );
+    }
+    return source;
+  }
+
   Map<String, List<int>>? _buildLineNameMap(List<GridTrackSize> tracks) {
     if (tracks.isEmpty) return null;
     final Map<String, List<int>> map = <String, List<int>>{};
@@ -434,6 +558,16 @@ class RenderGridLayout extends RenderLayoutBox {
     }
   }
 
+  double _resolveLengthValue(CSSLengthValue length, double? innerAvailable) {
+    if (length.type == CSSLengthType.PERCENTAGE) {
+      if (innerAvailable != null && innerAvailable.isFinite) {
+        return (length.value ?? 0) * innerAvailable;
+      }
+      return 0;
+    }
+    return length.computedValue;
+  }
+
   double _resolveTrackSize(GridTrackSize track, double? innerAvailable) {
     if (track is GridFixed) {
       final CSSLengthValue lv = track.length;
@@ -460,6 +594,12 @@ class RenderGridLayout extends RenderLayoutBox {
       final double minValue = _resolveTrackSize(track.minTrack, innerAvailable);
       final double maxValue = _resolveTrackSize(maxTrack, innerAvailable);
       return math.max(minValue, maxValue);
+    } else if (track is GridFitContent) {
+      final double limit = _resolveLengthValue(track.limit, innerAvailable);
+      if (innerAvailable != null && innerAvailable.isFinite) {
+        return math.min(limit, innerAvailable);
+      }
+      return limit;
     }
     return 0;
   }
@@ -603,15 +743,18 @@ class RenderGridLayout extends RenderLayoutBox {
     final double colGap = renderStyle.columnGap.computedValue;
     final double rowGap = renderStyle.rowGap.computedValue;
 
-    double? adjustedInnerWidth = innerMaxWidth;
-    if (adjustedInnerWidth != null && adjustedInnerWidth.isFinite && colsDef.isNotEmpty) {
-      final double totalColGap = colGap * math.max(0, colsDef.length - 1);
+    final double? contentAvailableWidth = innerMaxWidth;
+    final List<GridTrackSize> autoColDefs = renderStyle.gridAutoColumns;
+    final List<GridTrackSize> resolvedColumnDefs =
+        _materializeTrackList(colsDef, contentAvailableWidth, colGap, Axis.horizontal);
+    double? adjustedInnerWidth = contentAvailableWidth;
+    if (adjustedInnerWidth != null && adjustedInnerWidth.isFinite && resolvedColumnDefs.isNotEmpty) {
+      final double totalColGap = colGap * math.max(0, resolvedColumnDefs.length - 1);
       adjustedInnerWidth = math.max(0.0, adjustedInnerWidth - totalColGap);
     }
-    final List<GridTrackSize> autoColDefs = renderStyle.gridAutoColumns;
-    final bool hasExplicitCols = colsDef.isNotEmpty;
+    final bool hasExplicitCols = resolvedColumnDefs.isNotEmpty;
     final List<double> colSizes = hasExplicitCols
-        ? _resolveTracks(colsDef, adjustedInnerWidth, Axis.horizontal)
+        ? _resolveTracks(resolvedColumnDefs, adjustedInnerWidth, Axis.horizontal)
         : <double>[];
     final int explicitColumnCount = hasExplicitCols ? colSizes.length : 0;
     if (!hasExplicitCols) {
@@ -623,14 +766,22 @@ class RenderGridLayout extends RenderLayoutBox {
         innerAvailable: adjustedInnerWidth,
       );
     }
+    final double? contentAvailableHeight = innerMaxHeight;
+    final List<GridTrackSize> resolvedRowDefs =
+        _materializeTrackList(rowsDef, contentAvailableHeight, rowGap, Axis.vertical);
+    double? adjustedInnerHeight = contentAvailableHeight;
+    if (adjustedInnerHeight != null && adjustedInnerHeight.isFinite && resolvedRowDefs.isNotEmpty) {
+      final double totalRowGap = rowGap * math.max(0, resolvedRowDefs.length - 1);
+      adjustedInnerHeight = math.max(0.0, adjustedInnerHeight - totalRowGap);
+    }
     List<double> rowSizes =
-        rowsDef.isEmpty ? <double>[] : _resolveTracks(rowsDef, innerMaxHeight, Axis.vertical);
-    final int explicitRowCount = rowsDef.isNotEmpty ? rowsDef.length : 1;
+        resolvedRowDefs.isEmpty ? <double>[] : _resolveTracks(resolvedRowDefs, adjustedInnerHeight, Axis.vertical);
+    final int explicitRowCount = resolvedRowDefs.isNotEmpty ? resolvedRowDefs.length : 1;
     _gridLog(() =>
         'tracks resolved columns=${colSizes.map((e) => e.toStringAsFixed(2)).join(', ')} rows=${rowSizes.map((e) => e.toStringAsFixed(2)).join(', ')} autoRows=${renderStyle.gridAutoRows.length} autoFlow=${renderStyle.gridAutoFlow}');
 
-    final Map<String, List<int>>? columnLineNameMap = _buildLineNameMap(colsDef);
-    final Map<String, List<int>>? rowLineNameMap = _buildLineNameMap(rowsDef);
+    final Map<String, List<int>>? columnLineNameMap = _buildLineNameMap(resolvedColumnDefs);
+    final Map<String, List<int>>? rowLineNameMap = _buildLineNameMap(resolvedRowDefs);
     final GridAutoFlow autoFlow = renderStyle.gridAutoFlow;
 
     // Layout children using auto placement matrix.
@@ -751,6 +902,21 @@ class RenderGridLayout extends RenderLayoutBox {
             if (autoSize != null) {
               rowSizes[r] = autoSize;
             }
+          }
+        }
+      }
+
+      if (colSpan == 1 &&
+          colIndex < resolvedColumnDefs.length &&
+          resolvedColumnDefs[colIndex] is GridFitContent) {
+        final double? preferred = _preferredChildWidth(childGridStyle);
+        if (preferred != null && preferred.isFinite) {
+          final GridFitContent fitTrack = resolvedColumnDefs[colIndex] as GridFitContent;
+          final double limit = _resolveLengthValue(fitTrack.limit, adjustedInnerWidth);
+          final double target = math.max(limit, preferred);
+          if (target > colSizes[colIndex]) {
+            final double available = adjustedInnerWidth ?? target;
+            colSizes[colIndex] = math.min(target, available);
           }
         }
       }
