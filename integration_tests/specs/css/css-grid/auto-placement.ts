@@ -33,6 +33,7 @@ describe('CSS Grid auto placement', () => {
 
   it('lays out implicit rows', async () => {
     const grid = buildGrid(() => {});
+    await waitForFrame();
     await snapshot();
     grid.remove();
   });
@@ -48,6 +49,7 @@ describe('CSS Grid auto placement', () => {
 
     const computed = getComputedStyle(grid);
     expect(computed.gridAutoFlow).toEqual('row dense');
+    await waitForFrame();
     await snapshot();
     grid.remove();
   });
@@ -55,6 +57,7 @@ describe('CSS Grid auto placement', () => {
   it('places children across repeat columns', async () => {
     const grid = buildGrid(() => {});
 
+    await waitForFrame();
     await snapshot();
 
     const child1 = grid.children[0] as HTMLElement;
@@ -95,6 +98,7 @@ describe('CSS Grid auto placement', () => {
 
     document.body.appendChild(grid);
 
+    await waitForFrame();
     await snapshot();
 
     const first = grid.children[0] as HTMLElement;
@@ -134,6 +138,7 @@ describe('CSS Grid auto placement', () => {
 
     document.body.appendChild(grid);
 
+    await waitForFrame();
     await snapshot();
 
     const first = autoCells[0];
@@ -161,11 +166,60 @@ describe('CSS Grid auto placement', () => {
 
     document.body.appendChild(grid);
 
+    await waitForFrame();
     await snapshot();
 
     const rect = cell.getBoundingClientRect();
     expect(Math.round(rect.width)).toBeGreaterThanOrEqual(150);
     expect(Math.round(rect.height)).toBeGreaterThanOrEqual(60);
+    grid.remove();
+  });
+
+  it('honors justify-content center', async () => {
+    const grid = document.createElement('div');
+    grid.setAttribute(
+      'style',
+      'display:grid;min-width:200px;max-width:200px;grid-template-columns:50px 50px;justify-content:center;',
+    );
+
+    const cell = document.createElement('div');
+    cell.style.height = '20px';
+    cell.style.backgroundColor = 'red'
+    grid.appendChild(cell);
+
+    document.body.appendChild(grid);
+
+    await waitForFrame();
+    await snapshot();
+
+    const gridRect = grid.getBoundingClientRect();
+    const cellRect = cell.getBoundingClientRect();
+    expect(Math.round(cellRect.left - gridRect.left)).toBeGreaterThanOrEqual(50);
+    grid.remove();
+  });
+
+  it('honors align-content flex-end', async () => {
+    const grid = document.createElement('div');
+    grid.setAttribute(
+      'style',
+      'display:grid;min-height:200px;max-height:200px;grid-template-columns:60px;grid-template-rows:40px 40px;align-content:flex-end;',
+    );
+
+    for (let i = 0; i < 2; i++) {
+      const cell = document.createElement('div');
+      cell.style.height = '40px';
+      cell.style.backgroundColor = 'red'
+      grid.appendChild(cell);
+    }
+
+    document.body.appendChild(grid);
+
+    await waitForFrame();
+    await snapshot();
+
+    const gridRect = grid.getBoundingClientRect();
+    const firstRect = (grid.children[0] as HTMLElement).getBoundingClientRect();
+    expect(Math.round(firstRect.top - gridRect.top)).toBeGreaterThanOrEqual(119);
     grid.remove();
   });
 });

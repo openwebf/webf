@@ -135,6 +135,43 @@ class RenderGridLayout extends RenderLayoutBox {
     return implicit;
   }
 
+  double _resolveJustifyContentShift(JustifyContent justifyContent, double freeSpace) {
+    if (freeSpace <= 0) return 0;
+    switch (justifyContent) {
+      case JustifyContent.center:
+        return freeSpace / 2;
+      case JustifyContent.flexEnd:
+      case JustifyContent.end:
+        return freeSpace;
+      case JustifyContent.flexStart:
+      case JustifyContent.start:
+      case JustifyContent.spaceBetween:
+      case JustifyContent.spaceAround:
+      case JustifyContent.spaceEvenly:
+      default:
+        return 0;
+    }
+  }
+
+  double _resolveAlignContentShift(AlignContent alignContent, double freeSpace) {
+    if (freeSpace <= 0) return 0;
+    switch (alignContent) {
+      case AlignContent.center:
+        return freeSpace / 2;
+      case AlignContent.flexEnd:
+      case AlignContent.end:
+        return freeSpace;
+      case AlignContent.flexStart:
+      case AlignContent.start:
+      case AlignContent.spaceBetween:
+      case AlignContent.spaceAround:
+      case AlignContent.spaceEvenly:
+      case AlignContent.stretch:
+      default:
+        return 0;
+    }
+  }
+
   bool _canPlace(List<List<bool>> occupancy, int row, int column, int rowSpan, int colSpan, int columns) {
     if (column < 0 || column + colSpan > columns) return false;
     _ensureOccupancyRows(occupancy, row + rowSpan, columns);
@@ -605,28 +642,45 @@ class RenderGridLayout extends RenderLayoutBox {
     // Final size constrained by constraints
     final bool isBlockGrid =
         renderStyle.display == CSSDisplay.grid && renderStyle.effectiveDisplay == CSSDisplay.grid;
+    double layoutContentWidth = usedContentWidth;
+    double layoutContentHeight = usedContentHeight;
+
     if (renderStyle.width.isAuto && innerMaxWidth != null && innerMaxWidth.isFinite) {
       if (isBlockGrid) {
-        usedContentWidth = math.max(usedContentWidth, innerMaxWidth);
-      } else if (usedContentWidth == 0 && !hasAnyChild) {
-        usedContentWidth = innerMaxWidth;
+        layoutContentWidth = math.max(layoutContentWidth, innerMaxWidth);
+      } else if (layoutContentWidth == 0 && !hasAnyChild) {
+        layoutContentWidth = innerMaxWidth;
       }
-    } else if (usedContentWidth == 0 && innerMaxWidth != null && innerMaxWidth.isFinite) {
+    } else if (layoutContentWidth == 0 && innerMaxWidth != null && innerMaxWidth.isFinite) {
       if (renderStyle.width.isNotAuto || !hasAnyChild) {
-        usedContentWidth = innerMaxWidth;
+        layoutContentWidth = innerMaxWidth;
       }
     }
-    if (usedContentHeight == 0 && innerMaxHeight != null && innerMaxHeight.isFinite) {
+    if (layoutContentHeight == 0 && innerMaxHeight != null && innerMaxHeight.isFinite) {
       if (renderStyle.height.isNotAuto || !hasAnyChild) {
-        usedContentHeight = innerMaxHeight;
+        layoutContentHeight = innerMaxHeight;
       }
     }
 
-    final double desiredWidth = usedContentWidth + horizontalPaddingBorder;
-    final double desiredHeight = usedContentHeight + verticalPaddingBorder;
+    final double desiredWidth = layoutContentWidth + horizontalPaddingBorder;
+    final double desiredHeight = layoutContentHeight + verticalPaddingBorder;
     size = constraints.constrain(Size(desiredWidth, desiredHeight));
+    final double horizontalFree = math.max(0.0, size.width - horizontalPaddingBorder - usedContentWidth);
+    final double verticalFree = math.max(0.0, size.height - verticalPaddingBorder - usedContentHeight);
+    final double justifyShift = _resolveJustifyContentShift(renderStyle.justifyContent, horizontalFree);
+    final double alignShift = _resolveAlignContentShift(renderStyle.alignContent, verticalFree);
+
+    if (justifyShift != 0 || alignShift != 0) {
+      RenderBox? child = firstChild;
+      while (child != null) {
+        final GridLayoutParentData pd = child.parentData as GridLayoutParentData;
+        pd.offset += Offset(justifyShift, alignShift);
+        child = pd.nextSibling;
+      }
+    }
+
     _gridLog(() =>
-        'final size=$size content=${usedContentWidth.toStringAsFixed(2)}x${usedContentHeight.toStringAsFixed(2)} rows=${rowSizes.length} implicitRows=${implicitRowHeights.length}');
+        'final size=$size content=${usedContentWidth.toStringAsFixed(2)}x${usedContentHeight.toStringAsFixed(2)} rows=${rowSizes.length} implicitRows=${implicitRowHeights.length} free=${horizontalFree.toStringAsFixed(2)}x${verticalFree.toStringAsFixed(2)} alignShift=$alignShift justifyShift=$justifyShift');
 
     // Compute and cache CSS baselines for the grid container
     calculateBaseline();

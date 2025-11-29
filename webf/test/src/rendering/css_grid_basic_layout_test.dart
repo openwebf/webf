@@ -282,5 +282,48 @@ void main() {
       expect(firstOffset.dy, closeTo(0, 1));
       expect(lastOffset.dy, closeTo(30, 1));
     });
+
+    testWidgets('justify-content center shifts tracks', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-justify-center-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; width: 200px; justify-content: center; grid-template-columns: 50px 50px;">
+            <div id="a" style="height:20px;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox child = prepared.getElementById('a').attachedRenderer as RenderBox;
+      final Offset offset = getLayoutTransformTo(child, renderer, excludeScrollOffset: true);
+
+      expect(offset.dx, closeTo(50, 1));
+    });
+
+    testWidgets('align-content end pushes tracks to bottom', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-align-end-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; height: 200px; align-content: flex-end; grid-template-rows: 40px 40px;">
+            <div id="a" style="height:40px;"></div>
+            <div id="b" style="height:40px;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox child = prepared.getElementById('a').attachedRenderer as RenderBox;
+      final Offset offset = getLayoutTransformTo(child, renderer, excludeScrollOffset: true);
+
+      expect(offset.dy, closeTo(120, 1));
+    });
   });
 }
