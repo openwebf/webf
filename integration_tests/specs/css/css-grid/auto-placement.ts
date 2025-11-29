@@ -322,4 +322,55 @@ describe('CSS Grid auto placement', () => {
     expect(Math.round(cellRect.top - gridRect.top)).toBeGreaterThanOrEqual(90);
     grid.remove();
   });
+
+  it('applies place-content shorthand to both axes', async () => {
+    const grid = document.createElement('div');
+    grid.setAttribute(
+      'style',
+      'display:grid;min-width:200px;max-width:200px;min-height:200px;max-height:200px;grid-template-columns:50px 50px;grid-template-rows:40px 40px;place-content:flex-end center;',
+    );
+
+    const cell = document.createElement('div');
+    cell.style.width = '50px';
+    cell.style.height = '40px';
+    cell.style.backgroundColor = 'rgba(33, 150, 243, 0.6)';
+    grid.appendChild(cell);
+
+    document.body.appendChild(grid);
+
+    await waitForFrame();
+    await snapshot();
+
+    const gridRect = grid.getBoundingClientRect();
+    const cellRect = cell.getBoundingClientRect();
+    expect(Math.round(cellRect.left - gridRect.left)).toBeGreaterThanOrEqual(50);
+    expect(Math.round(cellRect.top - gridRect.top)).toBeGreaterThanOrEqual(119);
+    grid.remove();
+  });
+
+  it('applies place-self shorthand to grid items', async () => {
+    const grid = document.createElement('div');
+    grid.setAttribute(
+      'style',
+      'display:grid;width:100px;grid-template-columns:100px;grid-template-rows:120px;place-items:flex-start flex-start;',
+    );
+
+    const cell = document.createElement('div');
+    cell.style.width = '20px';
+    cell.style.height = '30px';
+    cell.style.backgroundColor = 'rgba(156, 39, 176, 0.6)';
+    cell.style.placeSelf = 'flex-end center';
+    grid.appendChild(cell);
+
+    document.body.appendChild(grid);
+
+    await waitForFrame();
+    await snapshot();
+
+    const gridRect = grid.getBoundingClientRect();
+    const cellRect = cell.getBoundingClientRect();
+    expect(Math.round(cellRect.left - gridRect.left)).toBeGreaterThanOrEqual(40);
+    expect(Math.round(cellRect.top - gridRect.top)).toBeGreaterThanOrEqual(90);
+    grid.remove();
+  });
 });

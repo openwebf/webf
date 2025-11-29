@@ -159,8 +159,10 @@ const String TEXT_ALIGN = 'textAlign';
 const String ALIGN_ITEMS = 'alignItems';
 const String ALIGN_SELF = 'alignSelf';
 const String ALIGN_CONTENT = 'alignContent';
-// Shorthand: place-items -> align-items + justify-content (WebF extension maps justify to justify-content)
+// Shorthands for CSS Box Alignment.
+const String PLACE_CONTENT = 'placeContent';
 const String PLACE_ITEMS = 'placeItems';
+const String PLACE_SELF = 'placeSelf';
 
 const String GRID_AUTO_FLOW = 'gridAutoFlow';
 const String GRID_AUTO_ROWS = 'gridAutoRows';

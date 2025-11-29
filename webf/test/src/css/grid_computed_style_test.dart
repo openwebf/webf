@@ -42,10 +42,10 @@ void main() {
               grid-auto-flow: column dense;
               grid-auto-rows: 60px auto;
               grid-auto-columns: 80px auto;
-              justify-items: center;
-              align-items: flex-end;
+              place-content: space-evenly flex-end;
+              place-items: center start;
             ">
-            <div id="child" style="height:20px; width: 30px; grid-column: 2 / span 2; grid-row-start: span 3; justify-self: end; align-self: center;"></div>
+            <div id="child" style="height:20px; width: 30px; grid-column: 2 / span 2; grid-row-start: span 3; place-self: stretch end;"></div>
           </div>
         ''',
       );
@@ -61,8 +61,10 @@ void main() {
       expect(gridComputed.getPropertyValue('grid-auto-columns'), equals('80px auto'));
       expect(gridComputed.getPropertyValue('grid-auto-rows'), equals('60px auto'));
       expect(gridComputed.getPropertyValue('grid-auto-flow'), equals('column dense'));
-      expect(gridComputed.getPropertyValue('justify-items'), equals('center'));
-      expect(gridComputed.getPropertyValue('align-items'), equals('flex-end'));
+      expect(gridComputed.getPropertyValue('justify-items'), equals('start'));
+      expect(gridComputed.getPropertyValue('align-items'), equals('center'));
+      expect(gridComputed.getPropertyValue('place-content'), equals('space-evenly flex-end'));
+      expect(gridComputed.getPropertyValue('place-items'), equals('center start'));
 
       final childComputed = prepared.controller.view.window.getComputedStyle(child);
       expect(childComputed.getPropertyValue('grid-column-start'), equals('2'));
@@ -72,7 +74,8 @@ void main() {
       expect(childComputed.getPropertyValue('grid-row-end'), equals('auto'));
       expect(childComputed.getPropertyValue('grid-row'), equals('span 3 / auto'));
       expect(childComputed.getPropertyValue('justify-self'), equals('end'));
-      expect(childComputed.getPropertyValue('align-self'), equals('center'));
+      expect(childComputed.getPropertyValue('align-self'), equals('stretch'));
+      expect(childComputed.getPropertyValue('place-self'), equals('stretch end'));
     });
   });
 }

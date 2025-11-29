@@ -69,7 +69,7 @@
 **Next Steps**
 Track sizing/placement for MVP grids now ships with widget + integration coverage, and per-item alignment plumbing is partially in-tree. Upcoming focus areas:
 
-1. Finish Phase 4 alignment/template work: finalize `place-items`/`justify-self` behavior, add template parsing for `repeat()/minmax()` + named lines, and serialize them via computed style.
+1. Continue Phase 4 alignment/template work: with `place-content`, `place-items`, and `place-self` shorthands now flowing through computed style + layout, focus next on template parsing for `repeat()/minmax()` + named lines and serialize them.
 2. Broaden coverage for dense auto-flow, fr/percentage mixes, and alignment overrides while documenting outcomes in the dev log.
 3. Start Phase 5 prep by profiling grid layout hot paths and outlining caching/intrinsic sizing fixes needed for release.
 

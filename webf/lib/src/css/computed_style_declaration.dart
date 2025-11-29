@@ -948,6 +948,100 @@ String _gridAxisAlignmentToCss(GridAxisAlignment alignment) {
   }
 }
 
+String _alignItemsToCss(AlignItems value) {
+  switch (value) {
+    case AlignItems.flexStart:
+      return 'flex-start';
+    case AlignItems.start:
+      return 'start';
+    case AlignItems.flexEnd:
+      return 'flex-end';
+    case AlignItems.end:
+      return 'end';
+    case AlignItems.center:
+      return 'center';
+    case AlignItems.baseline:
+      return 'baseline';
+    case AlignItems.stretch:
+    default:
+      return 'stretch';
+  }
+}
+
+String _alignSelfToCss(AlignSelf value) {
+  switch (value) {
+    case AlignSelf.auto:
+      return 'auto';
+    case AlignSelf.flexStart:
+      return 'flex-start';
+    case AlignSelf.start:
+      return 'start';
+    case AlignSelf.flexEnd:
+      return 'flex-end';
+    case AlignSelf.end:
+      return 'end';
+    case AlignSelf.center:
+      return 'center';
+    case AlignSelf.baseline:
+      return 'baseline';
+    case AlignSelf.stretch:
+    default:
+      return 'stretch';
+  }
+}
+
+String _alignContentToCss(AlignContent value) {
+  switch (value) {
+    case AlignContent.flexStart:
+      return 'flex-start';
+    case AlignContent.start:
+      return 'start';
+    case AlignContent.flexEnd:
+      return 'flex-end';
+    case AlignContent.end:
+      return 'end';
+    case AlignContent.center:
+      return 'center';
+    case AlignContent.spaceBetween:
+      return 'space-between';
+    case AlignContent.spaceAround:
+      return 'space-around';
+    case AlignContent.spaceEvenly:
+      return 'space-evenly';
+    case AlignContent.stretch:
+    default:
+      return 'stretch';
+  }
+}
+
+String _justifyContentToCss(JustifyContent value) {
+  switch (value) {
+    case JustifyContent.flexStart:
+      return 'flex-start';
+    case JustifyContent.start:
+      return 'start';
+    case JustifyContent.flexEnd:
+      return 'flex-end';
+    case JustifyContent.end:
+      return 'end';
+    case JustifyContent.center:
+      return 'center';
+    case JustifyContent.spaceBetween:
+      return 'space-between';
+    case JustifyContent.spaceAround:
+      return 'space-around';
+    case JustifyContent.spaceEvenly:
+      return 'space-evenly';
+    default:
+      return 'flex-start';
+  }
+}
+
+String _placeShorthandToCss(String primary, String secondary) {
+  if (primary == secondary) return primary;
+  return '$primary $secondary';
+}
+
 String? _valueForGridProperty(String propertyName, CSSRenderStyle style) {
   String normalized = propertyName.contains('-') ? propertyName : kebabize(propertyName);
   if (normalized.startsWith('-')) {
@@ -980,6 +1074,18 @@ String? _valueForGridProperty(String propertyName, CSSRenderStyle style) {
       return _gridAxisAlignmentToCss(style.justifyItems);
     case 'justify-self':
       return _gridAxisAlignmentToCss(style.justifySelf);
+    case 'place-items':
+      final alignItems = _alignItemsToCss(style.alignItems);
+      final justifyItems = _gridAxisAlignmentToCss(style.justifyItems);
+      return _placeShorthandToCss(alignItems, justifyItems);
+    case 'place-content':
+      final alignContent = _alignContentToCss(style.alignContent);
+      final justifyContent = _justifyContentToCss(style.justifyContent);
+      return _placeShorthandToCss(alignContent, justifyContent);
+    case 'place-self':
+      final alignSelf = _alignSelfToCss(style.alignSelf);
+      final justifySelf = _gridAxisAlignmentToCss(style.justifySelf);
+      return _placeShorthandToCss(alignSelf, justifySelf);
   }
   return null;
 }

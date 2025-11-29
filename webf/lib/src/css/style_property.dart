@@ -1233,10 +1233,25 @@ class CSSStyleProperty {
     properties[ANIMATION_NAME] = values[7];
   }
 
+  static void setShorthandPlaceContent(Map<String, String?> properties, String shorthandValue) {
+    shorthandValue = shorthandValue.replaceAll(_slashRegExp, ' ');
+    final List<String> values = _splitBySpace(shorthandValue);
+    if (values.isEmpty) return;
+
+    final String align = values[0];
+    final String justify = values.length > 1 ? values[1] : align;
+
+    properties[ALIGN_CONTENT] = align;
+    properties[JUSTIFY_CONTENT] = justify;
+  }
+
+  static void removeShorthandPlaceContent(CSSStyleDeclaration style, [bool? isImportant]) {
+    if (style.contains(ALIGN_CONTENT)) style.removeProperty(ALIGN_CONTENT, isImportant);
+    if (style.contains(JUSTIFY_CONTENT)) style.removeProperty(JUSTIFY_CONTENT, isImportant);
+  }
+
   // place-items shorthand
   // Spec: place-items: <'align-items'> [ / <'justify-items'> ]?
-  // In flexbox, 'justify-items' has no effect. For WebF (no Grid layout),
-  // we expand only to align-items and ignore the optional second value.
   static void setShorthandPlaceItems(Map<String, String?> properties, String shorthandValue) {
     // Normalize any slash separators and collapse whitespace
     shorthandValue = shorthandValue.replaceAll(_slashRegExp, ' ');
@@ -1254,5 +1269,22 @@ class CSSStyleProperty {
   static void removeShorthandPlaceItems(CSSStyleDeclaration style, [bool? isImportant]) {
     if (style.contains(ALIGN_ITEMS)) style.removeProperty(ALIGN_ITEMS, isImportant);
     if (style.contains(JUSTIFY_ITEMS)) style.removeProperty(JUSTIFY_ITEMS, isImportant);
+  }
+
+  static void setShorthandPlaceSelf(Map<String, String?> properties, String shorthandValue) {
+    shorthandValue = shorthandValue.replaceAll(_slashRegExp, ' ');
+    final List<String> values = _splitBySpace(shorthandValue);
+    if (values.isEmpty) return;
+
+    final String align = values[0];
+    final String justify = values.length > 1 ? values[1] : align;
+
+    properties[ALIGN_SELF] = align;
+    properties[JUSTIFY_SELF] = justify;
+  }
+
+  static void removeShorthandPlaceSelf(CSSStyleDeclaration style, [bool? isImportant]) {
+    if (style.contains(ALIGN_SELF)) style.removeProperty(ALIGN_SELF, isImportant);
+    if (style.contains(JUSTIFY_SELF)) style.removeProperty(JUSTIFY_SELF, isImportant);
   }
 }
