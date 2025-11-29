@@ -458,7 +458,10 @@ class RenderGridLayout extends RenderLayoutBox {
 
   _GridCellPlacement _placeAutoItem({
     required List<List<bool>> occupancy,
-    required int columnCount,
+    required List<double> columnSizes,
+    required int explicitColumnCount,
+    required List<GridTrackSize> autoColumns,
+    required double? adjustedInnerWidth,
     required int columnSpan,
     required int rowSpan,
     required int? explicitRow,
