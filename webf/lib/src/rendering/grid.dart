@@ -376,6 +376,14 @@ class RenderGridLayout extends RenderLayoutBox {
         return innerAvailable * (track.fr / math.max(1.0, track.fr));
       }
       return 0;
+    } else if (track is GridMinMax) {
+      final GridTrackSize maxTrack = track.maxTrack;
+      if (maxTrack is GridFraction) {
+        return _resolveTrackSize(track.minTrack, innerAvailable);
+      }
+      final double minValue = _resolveTrackSize(track.minTrack, innerAvailable);
+      final double maxValue = _resolveTrackSize(maxTrack, innerAvailable);
+      return math.max(minValue, maxValue);
     }
     return 0;
   }
@@ -386,28 +394,56 @@ class RenderGridLayout extends RenderLayoutBox {
     }
 
     final List<double> sizes = List<double>.filled(tracks.length, 0.0, growable: true);
+    final List<double> minFlexSizes = List<double>.filled(tracks.length, 0.0, growable: true);
+    final List<double> flexFactors = List<double>.filled(tracks.length, 0.0, growable: true);
 
     double fixed = 0.0;
     double frSum = 0.0;
     for (int i = 0; i < tracks.length; i++) {
       final t = tracks[i];
       if (t is GridFraction) {
-        frSum += t.fr;
+        final double fr = t.fr;
+        flexFactors[i] = fr;
+        frSum += fr;
+      } else if (t is GridMinMax && t.maxTrack is GridFraction) {
+        final double minSize = _resolveTrackSize(t.minTrack, innerAvailable);
+        minFlexSizes[i] = minSize;
+        final double fr = (t.maxTrack as GridFraction).fr;
+        flexFactors[i] = fr;
+        frSum += fr;
       } else if (t is GridFixed) {
         sizes[i] = _resolveTrackSize(t, innerAvailable);
         fixed += sizes[i];
       } else {
-        sizes[i] = 0;
+        sizes[i] = _resolveTrackSize(t, innerAvailable);
+        fixed += sizes[i];
       }
     }
 
-    if (frSum > 0 && innerAvailable != null && innerAvailable.isFinite) {
-      final double remaining = math.max(0.0, innerAvailable - fixed);
+    double remaining = 0.0;
+    if (innerAvailable != null && innerAvailable.isFinite) {
+      remaining = math.max(0.0, innerAvailable - fixed);
+    }
+
+    if (frSum > 0 && remaining > 0) {
       for (int i = 0; i < tracks.length; i++) {
-        final t = tracks[i];
+        if (flexFactors[i] <= 0) continue;
+        final double portion = remaining * (flexFactors[i] / frSum);
+        final GridTrackSize t = tracks[i];
         if (t is GridFraction) {
-          final portion = remaining * (t.fr / frSum);
           sizes[i] = portion;
+        } else if (t is GridMinMax && t.maxTrack is GridFraction) {
+          sizes[i] = math.max(portion, minFlexSizes[i]);
+        }
+      }
+    } else {
+      for (int i = 0; i < tracks.length; i++) {
+        if (flexFactors[i] <= 0) continue;
+        final GridTrackSize t = tracks[i];
+        if (t is GridFraction) {
+          sizes[i] = 0;
+        } else if (t is GridMinMax && t.maxTrack is GridFraction) {
+          sizes[i] = minFlexSizes[i];
         }
       }
     }

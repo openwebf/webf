@@ -36,9 +36,9 @@ void main() {
           <div id="grid"
             style="
               display:grid;
-              width:240px;
-              grid-template-columns: 40px 1fr auto;
-              grid-template-rows: 40px 50px;
+              width:320px;
+              grid-template-columns: [nav-start] minmax(40px, 1fr) [nav-end content-start] repeat(2, [content-line] 1fr) [content-end];
+              grid-template-rows: [row-start] 40px [row-middle] minmax(50px, 120px) [row-end];
               grid-auto-flow: column dense;
               grid-auto-rows: 60px auto;
               grid-auto-columns: 80px auto;
@@ -56,8 +56,14 @@ void main() {
       final child = prepared.getElementById('child');
 
       final gridComputed = prepared.controller.view.window.getComputedStyle(grid);
-      expect(gridComputed.getPropertyValue('grid-template-columns'), equals('40px 1fr auto'));
-      expect(gridComputed.getPropertyValue('grid-template-rows'), equals('40px 50px'));
+      expect(
+        gridComputed.getPropertyValue('grid-template-columns'),
+        equals('[nav-start] minmax(40px, 1fr) [nav-end content-start] [content-line] 1fr [content-line] 1fr [content-end]'),
+      );
+      expect(
+        gridComputed.getPropertyValue('grid-template-rows'),
+        equals('[row-start] 40px [row-middle] minmax(50px, 120px) [row-end]'),
+      );
       expect(gridComputed.getPropertyValue('grid-auto-columns'), equals('80px auto'));
       expect(gridComputed.getPropertyValue('grid-auto-rows'), equals('60px auto'));
       expect(gridComputed.getPropertyValue('grid-auto-flow'), equals('column dense'));

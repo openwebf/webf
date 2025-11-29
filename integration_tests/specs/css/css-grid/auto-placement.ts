@@ -373,4 +373,33 @@ describe('CSS Grid auto placement', () => {
     expect(Math.round(cellRect.top - gridRect.top)).toBeGreaterThanOrEqual(90);
     grid.remove();
   });
+
+  it('lays out minmax tracks with named lines', async () => {
+    const grid = document.createElement('div');
+    grid.setAttribute(
+      'style',
+      'display:grid;width:260px;grid-template-columns:[col-start] minmax(80px, 1fr) [col-mid col-line] repeat(2, [col-line] 1fr) [col-end];column-gap:0;row-gap:0;',
+    );
+
+    for (let i = 0; i < 3; i++) {
+      const cell = document.createElement('div');
+      cell.textContent = `cell-${i}`;
+      cell.style.height = '40px';
+      cell.style.backgroundColor = i === 0 ? 'rgba(0, 200, 83, 0.3)' : 'rgba(33, 150, 243, 0.3)';
+      grid.appendChild(cell);
+    }
+
+    document.body.appendChild(grid);
+
+    await waitForFrame();
+    await snapshot();
+
+    const first = grid.children[0] as HTMLElement;
+    const second = grid.children[1] as HTMLElement;
+    const rectFirst = first.getBoundingClientRect();
+    const rectSecond = second.getBoundingClientRect();
+    expect(Math.round(rectFirst.width)).toBeGreaterThanOrEqual(80);
+    expect(Math.round(rectSecond.left - rectFirst.right)).toBeGreaterThanOrEqual(0);
+    grid.remove();
+  });
 });

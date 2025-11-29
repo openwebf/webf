@@ -896,14 +896,38 @@ String _gridAutoFlowToCss(GridAutoFlow flow) {
   }
 }
 
-String _gridTrackSizeToCss(GridTrackSize track) {
+String _gridTrackValueToCss(GridTrackSize track) {
   if (track is GridFixed) {
     return track.length.cssText();
   }
   if (track is GridFraction) {
     return '${track.fr.cssText()}fr';
   }
+  if (track is GridMinMax) {
+    final String minText = _gridTrackValueToCss(track.minTrack);
+    final String maxText = _gridTrackValueToCss(track.maxTrack);
+    return 'minmax($minText, $maxText)';
+  }
   return 'auto';
+}
+
+String _gridLineNamesToCss(List<String> names) {
+  if (names.isEmpty) return '';
+  return names.map((name) => '[$name]').join(' ');
+}
+
+String _gridTrackSizeToCss(GridTrackSize track) {
+  final StringBuffer buffer = StringBuffer();
+  if (track.leadingLineNames.isNotEmpty) {
+    buffer.write(_gridLineNamesToCss(track.leadingLineNames));
+    buffer.write(' ');
+  }
+  buffer.write(_gridTrackValueToCss(track));
+  if (track.trailingLineNames.isNotEmpty) {
+    buffer.write(' ');
+    buffer.write(_gridLineNamesToCss(track.trailingLineNames));
+  }
+  return buffer.toString().trim();
 }
 
 String _gridTrackListToCss(List<GridTrackSize> tracks, {required bool templateList}) {
