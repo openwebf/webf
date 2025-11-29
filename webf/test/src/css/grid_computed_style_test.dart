@@ -83,5 +83,32 @@ void main() {
       expect(childComputed.getPropertyValue('align-self'), equals('stretch'));
       expect(childComputed.getPropertyValue('place-self'), equals('stretch end'));
     });
+
+    testWidgets('serializes named line placements', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-named-lines-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid"
+            style="
+              display:grid;
+              width:200px;
+              grid-template-columns: [content-line] 40px [content-line] 60px [content-line];
+              grid-template-rows: [row-line] 50px [row-line] 50px;
+            ">
+            <div id="named" style="grid-column: content-line 2 / content-line 3; grid-row: row-line 1 / row-line 2;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final named = prepared.getElementById('named');
+      final computed = prepared.controller.view.window.getComputedStyle(named);
+      expect(computed.getPropertyValue('grid-column-start'), equals('content-line 2'));
+      expect(computed.getPropertyValue('grid-column-end'), equals('content-line 3'));
+      expect(computed.getPropertyValue('grid-row-start'), equals('row-line 1'));
+      expect(computed.getPropertyValue('grid-row-end'), equals('row-line 2'));
+    });
   });
 }

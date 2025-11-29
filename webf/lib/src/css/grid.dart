@@ -60,11 +60,21 @@ enum GridPlacementKind { auto, line, span }
 class GridPlacement {
   final GridPlacementKind kind;
   final int? line;
+  final String? lineName;
+  final int lineNameOccurrence;
   final int? span;
 
-  const GridPlacement._(this.kind, {this.line, this.span});
+  const GridPlacement._(
+    this.kind, {
+    this.line,
+    this.lineName,
+    this.lineNameOccurrence = 1,
+    this.span,
+  });
   const GridPlacement.auto() : this._(GridPlacementKind.auto);
   const GridPlacement.line(int value) : this._(GridPlacementKind.line, line: value);
+  const GridPlacement.named(String name, {int occurrence = 1})
+      : this._(GridPlacementKind.line, lineName: name, lineNameOccurrence: occurrence);
   const GridPlacement.span(int value) : this._(GridPlacementKind.span, span: value);
 }
 
@@ -110,6 +120,14 @@ class CSSGridParser {
     final inner = token.substring(1, token.length - 1).trim();
     if (inner.isEmpty) return const <String>[];
     return inner.split(RegExp(r'\s+')).map((name) => name.trim()).where((name) => name.isNotEmpty).toList();
+  }
+
+  static final RegExp _customIdentRegExp = RegExp(r'^-?[_a-zA-Z][\w-]*$');
+  static bool _isCustomIdent(String token) {
+    if (token.isEmpty) return false;
+    final String lower = token.toLowerCase();
+    if (lower == 'auto' || lower == 'span') return false;
+    return _customIdentRegExp.hasMatch(token);
   }
 
   static int _topLevelCommaIndex(String input) {
@@ -385,6 +403,18 @@ class CSSGridParser {
     final int? lineValue = int.tryParse(trimmed);
     if (lineValue != null) {
       return GridPlacement.line(lineValue);
+    }
+
+    final List<String> tokens = trimmed.split(RegExp(r'\s+'));
+    if (tokens.length == 2) {
+      final int? occurrence = int.tryParse(tokens[1]);
+      if (occurrence != null && occurrence != 0 && _isCustomIdent(tokens[0])) {
+        return GridPlacement.named(tokens[0], occurrence: occurrence);
+      }
+    }
+
+    if (_isCustomIdent(trimmed)) {
+      return GridPlacement.named(trimmed);
     }
 
     return const GridPlacement.auto();

@@ -402,4 +402,37 @@ describe('CSS Grid auto placement', () => {
     expect(Math.round(rectSecond.left - rectFirst.right)).toBeGreaterThanOrEqual(0);
     grid.remove();
   });
+
+  it('places grid items using named lines', async () => {
+    const grid = document.createElement('div');
+    grid.setAttribute(
+      'style',
+      'display:grid;width:200px;grid-template-columns:[sidebar] 40px [content] 80px [utility] 80px [end];column-gap:0;row-gap:0;',
+    );
+
+    const sidebar = document.createElement('div');
+    sidebar.textContent = 'sidebar';
+    sidebar.style.height = '30px';
+    sidebar.style.backgroundColor = 'rgba(255, 152, 0, 0.4)';
+    grid.appendChild(sidebar);
+
+    const named = document.createElement('div');
+    named.id = 'named-line-cell';
+    named.textContent = 'content';
+    named.style.height = '30px';
+    named.style.backgroundColor = 'rgba(63, 81, 181, 0.4)';
+    named.style.gridColumn = 'content / utility';
+    grid.appendChild(named);
+
+    document.body.appendChild(grid);
+
+    await waitForFrame();
+    await snapshot();
+
+    const gridRect = grid.getBoundingClientRect();
+    const namedRect = named.getBoundingClientRect();
+    expect(Math.round(namedRect.left - gridRect.left)).toBeGreaterThanOrEqual(40);
+    expect(Math.round(namedRect.width)).toBeGreaterThanOrEqual(80);
+    grid.remove();
+  });
 });

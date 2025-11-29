@@ -943,6 +943,12 @@ String _gridPlacementToCss(GridPlacement placement) {
       final int span = placement.span ?? 1;
       return 'span ${span > 0 ? span : 1}';
     case GridPlacementKind.line:
+      if (placement.lineName != null) {
+        if (placement.lineNameOccurrence != 1) {
+          return '${placement.lineName} ${placement.lineNameOccurrence}';
+        }
+        return placement.lineName!;
+      }
       return (placement.line ?? 1).toString();
     case GridPlacementKind.auto:
     default:

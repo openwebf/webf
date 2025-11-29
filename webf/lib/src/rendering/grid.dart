@@ -66,8 +66,30 @@ class RenderGridLayout extends RenderLayoutBox {
     renderingLogger.finer('[Grid] ${message()}');
   }
 
-  int? _resolveGridLineNumber(GridPlacement placement, int trackCount) {
-    if (placement.kind != GridPlacementKind.line || placement.line == null) return null;
+  int? _resolveGridLineNumber(
+    GridPlacement placement,
+    int trackCount, {
+    Map<String, List<int>>? namedLines,
+  }) {
+    if (placement.kind != GridPlacementKind.line) return null;
+    if (placement.lineName != null && namedLines != null) {
+      final List<int>? indices = namedLines[placement.lineName!];
+      if (indices != null && indices.isNotEmpty) {
+        final int occurrence = placement.lineNameOccurrence;
+        if (occurrence == 0) return null;
+        int selectedIndex;
+        if (occurrence > 0) {
+          if (occurrence > indices.length) return null;
+          selectedIndex = indices[occurrence - 1];
+        } else {
+          final int absOccurrence = -occurrence;
+          if (absOccurrence > indices.length) return null;
+          selectedIndex = indices[indices.length - absOccurrence];
+        }
+        return selectedIndex + 1;
+      }
+    }
+    if (placement.line == null) return null;
     final int raw = placement.line!;
     if (raw > 0) {
       return raw;
@@ -77,14 +99,40 @@ class RenderGridLayout extends RenderLayoutBox {
     return candidate.clamp(1, totalLines);
   }
 
-  int? _resolveTrackIndexFromPlacement(GridPlacement placement, int trackCount) {
-    final int? lineNumber = _resolveGridLineNumber(placement, trackCount);
+  int? _resolveTrackIndexFromPlacement(
+    GridPlacement placement,
+    int trackCount, {
+    Map<String, List<int>>? namedLines,
+  }) {
+    final int? lineNumber = _resolveGridLineNumber(placement, trackCount, namedLines: namedLines);
     if (lineNumber == null) return null;
     return math.max(0, lineNumber - 1);
   }
 
-  int? _resolveLineRequirementIndex(GridPlacement placement, int trackCount) {
-    if (placement.kind != GridPlacementKind.line || placement.line == null) return null;
+  int? _resolveLineRequirementIndex(
+    GridPlacement placement,
+    int trackCount, {
+    Map<String, List<int>>? namedLines,
+  }) {
+    if (placement.kind != GridPlacementKind.line) return null;
+    if (placement.lineName != null && namedLines != null) {
+      final List<int>? indices = namedLines[placement.lineName!];
+      if (indices != null && indices.isNotEmpty) {
+        final int occurrence = placement.lineNameOccurrence;
+        if (occurrence == 0) return null;
+        int selectedIndex;
+        if (occurrence > 0) {
+          if (occurrence > indices.length) return null;
+          selectedIndex = indices[occurrence - 1];
+        } else {
+          final int absOccurrence = -occurrence;
+          if (absOccurrence > indices.length) return null;
+          selectedIndex = indices[indices.length - absOccurrence];
+        }
+        return selectedIndex;
+      }
+    }
+    if (placement.line == null) return null;
     final int raw = placement.line!;
     if (raw > 0) {
       return raw - 1;
@@ -94,20 +142,23 @@ class RenderGridLayout extends RenderLayoutBox {
     return math.max(candidate - 1, 0);
   }
 
-  int _resolveSpan(GridPlacement start, GridPlacement end, int trackCount) {
+  int _resolveSpan(
+    GridPlacement start,
+    GridPlacement end,
+    int trackCount, {
+    Map<String, List<int>>? namedLines,
+  }) {
     if (end.kind == GridPlacementKind.span && end.span != null) {
       return math.max(1, end.span!);
     }
     if (start.kind == GridPlacementKind.span && start.span != null) {
       return math.max(1, start.span!);
     }
-    if (start.kind == GridPlacementKind.line &&
-        end.kind == GridPlacementKind.line &&
-        start.line != null &&
-        end.line != null) {
+    if (start.kind == GridPlacementKind.line && end.kind == GridPlacementKind.line) {
       final int normalizedTracks = math.max(trackCount, 1);
-      final int? startLine = _resolveGridLineNumber(start, normalizedTracks);
-      final int? endLine = _resolveGridLineNumber(end, normalizedTracks);
+      final int? startLine =
+          _resolveGridLineNumber(start, normalizedTracks, namedLines: namedLines);
+      final int? endLine = _resolveGridLineNumber(end, normalizedTracks, namedLines: namedLines);
       if (startLine != null && endLine != null) {
         final int diff = endLine - startLine;
         return diff > 0 ? diff : 1;
@@ -254,6 +305,31 @@ class RenderGridLayout extends RenderLayoutBox {
       default:
         return 0;
     }
+  }
+
+  Map<String, List<int>>? _buildLineNameMap(List<GridTrackSize> tracks) {
+    if (tracks.isEmpty) return null;
+    final Map<String, List<int>> map = <String, List<int>>{};
+    int lineIndex = 0;
+
+    void addNames(List<String> names, int index) {
+      for (final name in names) {
+        map.putIfAbsent(name, () => <int>[]).add(index);
+      }
+    }
+
+    for (int i = 0; i < tracks.length; i++) {
+      final GridTrackSize track = tracks[i];
+      if (track.leadingLineNames.isNotEmpty) {
+        addNames(track.leadingLineNames, lineIndex);
+      }
+      lineIndex++;
+      if (track.trailingLineNames.isNotEmpty) {
+        addNames(track.trailingLineNames, lineIndex);
+      }
+    }
+
+    return map.isEmpty ? null : map;
   }
 
   _GridCellPlacement _placeAutoItem({
@@ -553,6 +629,8 @@ class RenderGridLayout extends RenderLayoutBox {
     _gridLog(() =>
         'tracks resolved columns=${colSizes.map((e) => e.toStringAsFixed(2)).join(', ')} rows=${rowSizes.map((e) => e.toStringAsFixed(2)).join(', ')} autoRows=${renderStyle.gridAutoRows.length} autoFlow=${renderStyle.gridAutoFlow}');
 
+    final Map<String, List<int>>? columnLineNameMap = _buildLineNameMap(colsDef);
+    final Map<String, List<int>>? rowLineNameMap = _buildLineNameMap(rowsDef);
     final GridAutoFlow autoFlow = renderStyle.gridAutoFlow;
 
     // Layout children using auto placement matrix.
@@ -582,17 +660,30 @@ class RenderGridLayout extends RenderLayoutBox {
 
       final int normalizedInitialCols = math.max(colSizes.length, 1);
       final int normalizedInitialRows = math.max(rowSizes.length, 1);
-      int colSpan = _resolveSpan(columnStart, columnEnd, normalizedInitialCols);
-      int rowSpan = math.max(1, _resolveSpan(rowStart, rowEnd, normalizedInitialRows));
+      int colSpan = _resolveSpan(
+        columnStart,
+        columnEnd,
+        normalizedInitialCols,
+        namedLines: columnLineNameMap,
+      );
+      int rowSpan = math.max(
+        1,
+        _resolveSpan(
+          rowStart,
+          rowEnd,
+          normalizedInitialRows,
+          namedLines: rowLineNameMap,
+        ),
+      );
 
       int neededColumns = colSizes.length;
       final int? columnStartRequirement =
-          _resolveLineRequirementIndex(columnStart, normalizedInitialCols);
+          _resolveLineRequirementIndex(columnStart, normalizedInitialCols, namedLines: columnLineNameMap);
       if (columnStartRequirement != null) {
         neededColumns = math.max(neededColumns, columnStartRequirement + colSpan);
       }
       final int? columnEndRequirement =
-          _resolveLineRequirementIndex(columnEnd, normalizedInitialCols);
+          _resolveLineRequirementIndex(columnEnd, normalizedInitialCols, namedLines: columnLineNameMap);
       if (columnEndRequirement != null) {
         neededColumns = math.max(neededColumns, columnEndRequirement);
       }
@@ -610,11 +701,16 @@ class RenderGridLayout extends RenderLayoutBox {
       final int colCount = colSizes.length;
       colSpan = colSpan.clamp(1, colCount);
       final int rowTrackCountForPlacement = math.max(math.max(rowSizes.length, explicitRowCount), 1);
-      int? explicitColumn = _resolveTrackIndexFromPlacement(columnStart, colCount);
+      int? explicitColumn =
+          _resolveTrackIndexFromPlacement(columnStart, colCount, namedLines: columnLineNameMap);
       if (explicitColumn != null) {
         explicitColumn = explicitColumn.clamp(0, math.max(0, colCount - colSpan));
       }
-      int? explicitRow = _resolveTrackIndexFromPlacement(rowStart, rowTrackCountForPlacement);
+      int? explicitRow = _resolveTrackIndexFromPlacement(
+        rowStart,
+        rowTrackCountForPlacement,
+        namedLines: rowLineNameMap,
+      );
 
       final bool hasDefiniteColumn =
           columnStart.kind == GridPlacementKind.line || columnEnd.kind == GridPlacementKind.line;
