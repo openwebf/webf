@@ -316,7 +316,7 @@ describe('CSS Grid auto placement', () => {
 
     await waitForFrame();
     await snapshot();
-    
+
     const gridRect = grid.getBoundingClientRect();
     const cellRect = cell.getBoundingClientRect();
     expect(Math.round(cellRect.top - gridRect.top)).toBeGreaterThanOrEqual(90);
