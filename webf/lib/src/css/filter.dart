@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/foundation.dart';
@@ -12,6 +13,12 @@ import 'package:webf/css.dart';
 const String GRAYSCALE = 'grayscale';
 const String SEPIA = 'sepia';
 const String BLUR = 'blur';
+const String BRIGHTNESS = 'brightness';
+const String CONTRAST = 'contrast';
+const String HUE_ROTATE = 'hue-rotate';
+const String INVERT = 'invert';
+const String SATURATE = 'saturate';
+const String DROP_SHADOW = 'drop-shadow';
 
 // Calc 5x5 matrix multiplcation.
 List<double> _multiplyMatrix5(List<double>? a, List<double> b) {
@@ -118,14 +125,12 @@ mixin CSSFilterEffectsMixin on RenderStyle {
     if (functions.isNotEmpty) {
       for (int i = 0; i < functions.length; i++) {
         CSSFunctionalNotation f = functions[i];
-        double amount = double.tryParse(f.args.first) ?? 1;
-        double oneMinusAmount = 1 - amount;
-
-        // oneMinusAmount should be range [0, 1]
-        oneMinusAmount = oneMinusAmount > 1 ? 1 : (oneMinusAmount < 0 ? 0 : oneMinusAmount);
-
-        switch (f.name.toLowerCase()) {
+        String normalizedName = _normalizeFilterFunctionName(f.name);
+        if (normalizedName.isEmpty) continue;
+        switch (normalizedName) {
           case GRAYSCALE:
+            double amount = _resolveColorFilterAmount(f, normalizedName);
+            double oneMinusAmount = (1 - amount).clamp(0.0, 1.0).toDouble();
             // Formula from: https://www.w3.org/TR/filter-effects-1/#grayscaleEquivalent
             matrix5 = _multiplyMatrix5(matrix5, <double>[
               (0.2126 + 0.7874 * oneMinusAmount),
@@ -155,7 +160,171 @@ mixin CSSFilterEffectsMixin on RenderStyle {
               1
             ]);
             break;
+          case BRIGHTNESS:
+            double amount = _resolveColorFilterAmount(f, normalizedName);
+            // Formula from: https://www.w3.org/TR/filter-effects-1/#brightnessEquivalent
+            matrix5 = _multiplyMatrix5(matrix5, <double>[
+              amount,
+              0,
+              0,
+              0,
+              0,
+              0,
+              amount,
+              0,
+              0,
+              0,
+              0,
+              0,
+              amount,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ]);
+            break;
+          case CONTRAST:
+            double amount = _resolveColorFilterAmount(f, normalizedName);
+            // Formula from: https://www.w3.org/TR/filter-effects-1/#contrastEquivalent
+            // Flutter's ColorFilter.matrix works in 0-255 color space, so translate
+            // the 0-1 constant by 255 to match expected CSS behavior.
+            double translate = 0.5 * (1 - amount) * 255;
+            matrix5 = _multiplyMatrix5(matrix5, <double>[
+              amount,
+              0,
+              0,
+              0,
+              translate,
+              0,
+              amount,
+              0,
+              0,
+              translate,
+              0,
+              0,
+              amount,
+              0,
+              translate,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ]);
+            break;
+          case INVERT:
+            double amount = _resolveColorFilterAmount(f, normalizedName);
+            // Formula from: https://www.w3.org/TR/filter-effects-1/#invertEquivalent
+            double diagonal = 1 - 2 * amount;
+            double offset = amount * 255;
+            matrix5 = _multiplyMatrix5(matrix5, <double>[
+              diagonal,
+              0,
+              0,
+              0,
+              offset,
+              0,
+              diagonal,
+              0,
+              0,
+              offset,
+              0,
+              0,
+              diagonal,
+              0,
+              offset,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ]);
+            break;
+          case HUE_ROTATE:
+            double amount = _resolveColorFilterAmount(f, normalizedName);
+            // Formula from: https://www.w3.org/TR/filter-effects-1/#huerotateEquivalent
+            double cosValue = math.cos(amount);
+            double sinValue = math.sin(amount);
+            matrix5 = _multiplyMatrix5(matrix5, <double>[
+              (0.213 + cosValue * 0.787 - sinValue * 0.213),
+              (0.715 - cosValue * 0.715 - sinValue * 0.715),
+              (0.072 - cosValue * 0.072 + sinValue * 0.928),
+              0,
+              0,
+              (0.213 - cosValue * 0.213 + sinValue * 0.143),
+              (0.715 + cosValue * 0.285 + sinValue * 0.140),
+              (0.072 - cosValue * 0.072 - sinValue * 0.283),
+              0,
+              0,
+              (0.213 - cosValue * 0.213 - sinValue * 0.787),
+              (0.715 - cosValue * 0.715 + sinValue * 0.715),
+              (0.072 + cosValue * 0.928 + sinValue * 0.072),
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ]);
+            break;
+          case SATURATE:
+            double amount = _resolveColorFilterAmount(f, normalizedName);
+            // Formula from: https://www.w3.org/TR/filter-effects-1/#saturateEquivalent
+            matrix5 = _multiplyMatrix5(matrix5, <double>[
+              (0.213 + 0.787 * amount),
+              (0.715 - 0.715 * amount),
+              (0.072 - 0.072 * amount),
+              0,
+              0,
+              (0.213 - 0.213 * amount),
+              (0.715 + 0.285 * amount),
+              (0.072 - 0.072 * amount),
+              0,
+              0,
+              (0.213 - 0.213 * amount),
+              (0.715 - 0.715 * amount),
+              (0.072 + 0.928 * amount),
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ]);
+            break;
           case SEPIA:
+            double amount = _resolveColorFilterAmount(f, normalizedName);
+            double oneMinusAmount = (1 - amount).clamp(0.0, 1.0).toDouble();
             // Formula from: https://www.w3.org/TR/filter-effects-1/#sepiaEquivalent
             matrix5 = _multiplyMatrix5(matrix5, <double>[
               (0.393 + 0.607 * oneMinusAmount),
@@ -194,12 +363,77 @@ mixin CSSFilterEffectsMixin on RenderStyle {
     return matrix5 != null ? ColorFilter.matrix(matrix5.sublist(0, 20)) : null;
   }
 
+  static String _normalizeFilterFunctionName(String rawName) {
+    String trimmed = rawName.trim();
+    int start = 0;
+    while (start < trimmed.length) {
+      final int code = trimmed.codeUnitAt(start);
+      final bool isAlphabet = (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+      final bool isDash = code == 45;
+      if (isAlphabet || isDash) {
+        break;
+      }
+      start++;
+    }
+    if (start >= trimmed.length) {
+      return '';
+    }
+    final String sliced = trimmed.substring(start);
+    return sliced.toLowerCase();
+  }
+
+  static double _resolveColorFilterAmount(CSSFunctionalNotation function, String normalizedName) {
+    if (function.args.isEmpty) {
+      double fallback = normalizedName == HUE_ROTATE ? 0 : 1;
+      return fallback;
+    }
+
+    final String rawArg = function.args.first.trim();
+    double? amount = double.tryParse(rawArg);
+
+    if (amount == null && normalizedName == HUE_ROTATE && CSSAngle.isAngle(rawArg)) {
+      amount = CSSAngle.parseAngle(rawArg);
+    }
+
+    if (amount == null && rawArg.endsWith('%')) {
+      final String percentValue = rawArg.substring(0, rawArg.length - 1).trim();
+      final double? asPercent = double.tryParse(percentValue);
+      if (asPercent != null) {
+        amount = asPercent / 100;
+      }
+    }
+
+    if (amount == null || amount.isNaN || !amount.isFinite) {
+      double fallback = normalizedName == HUE_ROTATE ? 0 : 1;
+      amount = fallback;
+    }
+
+    double resolved;
+    switch (normalizedName) {
+      case BRIGHTNESS:
+      case CONTRAST:
+      case SATURATE:
+        resolved = amount < 0 ? 0 : amount;
+        break;
+      case HUE_ROTATE:
+        resolved = amount;
+        break;
+      default:
+        resolved = amount.clamp(0.0, 1.0).toDouble();
+        break;
+    }
+
+    return resolved;
+  }
+
   // Get the image filter.
   ImageFilter? _parseImageFilters(List<CSSFunctionalNotation> functions) {
     if (functions.isNotEmpty) {
       for (int i = 0; i < functions.length; i++) {
         CSSFunctionalNotation f = functions[i];
-        switch (f.name.toLowerCase()) {
+        String normalizedName = _normalizeFilterFunctionName(f.name);
+        if (normalizedName.isEmpty) continue;
+        switch (normalizedName) {
           case BLUR:
             CSSLengthValue length = CSSLength.parseLength(f.args.first, this, FILTER);
             double amount = length.computedValue;
@@ -216,6 +450,11 @@ mixin CSSFilterEffectsMixin on RenderStyle {
   }
 
   ColorFilter? _cachedColorFilter;
+
+  List<CSSBoxShadow>? _filterDropShadows;
+
+  @override
+  List<CSSBoxShadow>? get filterDropShadows => _filterDropShadows;
 
   @override
   ColorFilter? get colorFilter {
@@ -249,6 +488,8 @@ mixin CSSFilterEffectsMixin on RenderStyle {
     // Clear cache when filter changed.
     _cachedColorFilter = null;
     _cachedImageFilter = null;
+    _filterDropShadows = functions != null ? _parseDropShadowFilters(functions) : null;
+    resetBoxDecoration();
 
     // Filter effect the stacking context.
     RenderStyle? parentRenderStyle = getParentRenderStyle();
@@ -260,11 +501,89 @@ mixin CSSFilterEffectsMixin on RenderStyle {
       ColorFilter? colorFilter = _parseColorFilters(functions);
       // RenderStyle renderStyle = this;
       ImageFilter? imageFilter = _parseImageFilters(functions);
-      if (imageFilter == null && colorFilter == null) {
+      final bool hasDropShadow = _filterDropShadows != null && _filterDropShadows!.isNotEmpty;
+      if (imageFilter == null && colorFilter == null && !hasDropShadow) {
         print('[WARNING] Parse CSS Filter failed or not supported: "$functions"');
-        String supportedFilters = '$GRAYSCALE $SEPIA $BLUR';
+        String supportedFilters =
+            '$GRAYSCALE $SEPIA $BRIGHTNESS $CONTRAST $HUE_ROTATE $INVERT $SATURATE $DROP_SHADOW $BLUR';
         print('WebF only support following filters: $supportedFilters');
       }
     }
+  }
+
+  List<CSSBoxShadow>? _parseDropShadowFilters(List<CSSFunctionalNotation> functions) {
+    List<CSSBoxShadow>? dropShadows;
+    for (final CSSFunctionalNotation function in functions) {
+      String normalizedName = _normalizeFilterFunctionName(function.name);
+      if (normalizedName != DROP_SHADOW) {
+        continue;
+      }
+      if (function.args.isEmpty) continue;
+      final String raw = function.args.join(' ').trim();
+      if (raw.isEmpty) continue;
+      final List<CSSBoxShadow> parsed = _parseDropShadowArgument(raw);
+      if (parsed.isEmpty) {
+        continue;
+      }
+      dropShadows ??= <CSSBoxShadow>[];
+      dropShadows.addAll(parsed);
+    }
+    return dropShadows;
+  }
+
+  List<CSSBoxShadow> _parseDropShadowArgument(String raw) {
+    final List<CSSBoxShadow> parsed = <CSSBoxShadow>[];
+    final List<List<String?>>? definitions = CSSStyleProperty.getShadowValues(raw);
+    if (definitions == null || definitions.isEmpty) {
+      return parsed;
+    }
+
+    for (final List<String?> definition in definitions) {
+      final CSSBoxShadow? shadow = _buildDropShadow(definition, raw);
+      if (shadow != null) {
+        parsed.add(shadow);
+      }
+    }
+    return parsed;
+  }
+
+  CSSBoxShadow? _buildDropShadow(List<String?> definition, String raw) {
+    if (definition.length < 6) {
+      return null;
+    }
+
+    if (definition[5] == INSET) {
+      return null;
+    }
+
+    if (definition[1] == null || definition[2] == null) {
+      return null;
+    }
+
+    CSSLengthValue? offsetX = CSSLength.parseLength(definition[1]!, this, FILTER);
+    CSSLengthValue? offsetY = CSSLength.parseLength(definition[2]!, this, FILTER);
+    if (offsetX == null || offsetY == null) return null;
+
+    CSSLengthValue blurRadius = CSSLengthValue.zero;
+    if (definition[3] != null) {
+      blurRadius = CSSLength.parseLength(definition[3]!, this, FILTER) ?? CSSLengthValue.zero;
+    }
+
+    // spread radius currently ignored
+
+    CSSColor? color;
+    if (definition[0] != null) {
+      color = CSSColor.resolveColor(definition[0]!, this, FILTER);
+    }
+    final Color shadowColor = (color?.value) ?? currentColor.value;
+
+    return CSSBoxShadow(
+      offsetX: offsetX,
+      offsetY: offsetY,
+      blurRadius: blurRadius,
+      spreadRadius: CSSLengthValue.zero,
+      color: shadowColor,
+      inset: false,
+    );
   }
 }

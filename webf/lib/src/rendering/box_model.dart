@@ -1211,11 +1211,23 @@ abstract class RenderBoxModel extends RenderBox
       double offsetY = additionalPaintOffsetY != null ? offset.dy + additionalPaintOffsetY! : offset.dy;
       double offsetX = additionalPaintOffsetX != null ? offset.dx + additionalPaintOffsetX! : offset.dx;
       offset = Offset(offsetX, offsetY);
-      paintColorFilter(context, offset, _chainPaintImageFilter);
+      _paintFilteredContent(context, offset);
+    }
+  }
+
+  void _paintFilteredContent(PaintingContext context, Offset offset, {bool skipDropShadow = false}) {
+    final bool previous = _paintingFilterContent;
+    if (skipDropShadow) {
+      _paintingFilterContent = true;
+    }
+    paintColorFilter(context, offset, _chainPaintImageFilter);
+    if (skipDropShadow) {
+      _paintingFilterContent = previous;
     }
   }
 
   final LayerHandle<ImageFilterLayer> _imageFilterLayer = LayerHandle<ImageFilterLayer>();
+  bool _paintingFilterContent = false;
 
   void paintImageFilter(PaintingContext context, Offset offset, PaintingContextCallback callback) {
     if (renderStyle.imageFilter != null) {
@@ -1228,7 +1240,69 @@ abstract class RenderBoxModel extends RenderBox
   }
 
   void _chainPaintImageFilter(PaintingContext context, Offset offset) {
-    paintImageFilter(context, offset, _chainPaintIntersectionObserver);
+    paintImageFilter(context, offset, _chainPaintFilterDropShadow);
+  }
+
+  void _chainPaintFilterDropShadow(PaintingContext context, Offset offset) {
+    if (_paintingFilterContent) {
+      _chainPaintIntersectionObserver(context, offset);
+      return;
+    }
+
+    final List<CSSBoxShadow>? dropShadows = renderStyle.filterDropShadows;
+    if (dropShadows == null || dropShadows.isEmpty) {
+      _chainPaintIntersectionObserver(context, offset);
+      return;
+    }
+
+    for (final CSSBoxShadow shadow in dropShadows) {
+      _paintFilterDropShadow(context, offset, shadow);
+    }
+
+    _chainPaintIntersectionObserver(context, offset);
+  }
+
+  void _paintFilterDropShadow(PaintingContext context, Offset offset, CSSBoxShadow shadow) {
+    final double dx = shadow.offsetX?.computedValue ?? 0.0;
+    final double dy = shadow.offsetY?.computedValue ?? 0.0;
+    final double blurRadius = shadow.blurRadius?.computedValue ?? 0.0;
+    final double sigma = blurRadius > 0 ? blurRadius : 0.0;
+    final Color color = shadow.color ?? const Color(0xFF000000);
+
+    // spread radius currently ignored
+
+    final Offset shadowOffset = offset + Offset(dx, dy);
+
+    final PaintingContextCallback drawContent = (innerContext, innerOffset) {
+      _paintFilteredContent(innerContext, innerOffset, skipDropShadow: true);
+    };
+
+    final ColorFilterLayer tintLayer = ColorFilterLayer(
+      colorFilter: ColorFilter.matrix(_createDropShadowColorMatrix(color)),
+    );
+
+    context.pushLayer(tintLayer, (colorContext, colorLayerOffset) {
+      if (sigma > 0) {
+        final ImageFilterLayer blurLayer = ImageFilterLayer()
+          ..imageFilter = ImageFilter.blur(sigmaX: sigma, sigmaY: sigma);
+        colorContext.pushLayer(blurLayer, drawContent, colorLayerOffset);
+      } else {
+        drawContent(colorContext, colorLayerOffset);
+      }
+    }, shadowOffset);
+  }
+
+  List<double> _createDropShadowColorMatrix(Color color) {
+    final double r = color.red / 255.0;
+    final double g = color.green / 255.0;
+    final double b = color.blue / 255.0;
+    final double a = color.alpha / 255.0;
+    return <double>[
+      0, 0, 0, r, 0,
+      0, 0, 0, g, 0,
+      0, 0, 0, b, 0,
+      0, 0, 0, a, 0,
+    ];
   }
 
   void _chainPaintIntersectionObserver(PaintingContext context, Offset offset) {

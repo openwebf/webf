@@ -196,6 +196,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   List<WebFBoxShadow>? get shadows;
 
+  List<CSSBoxShadow>? get filterDropShadows;
+
   // Decorations
   CSSColor? get backgroundColor;
 
