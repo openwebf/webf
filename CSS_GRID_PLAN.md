@@ -67,18 +67,18 @@
 - **Docs & Communication:** Keep `dev_css_grid_process.md` and CSS_GRID_PLAN.md updated; highlight new capabilities in release notes when features stabilize.
 
 **Next Steps**
-Computed-style serialization + tests for grid templates/placements are now in tree (see `grid_computed_style_test.dart` and `css-grid/computed-style.ts`). Upcoming focus areas:
+Track sizing/placement for MVP grids now ships with widget + integration coverage, and per-item alignment plumbing is partially in-tree. Upcoming focus areas:
 
-1. Continue Phase 3 track sizing/placement: add implicit rows + column-flow growth, improve gap accounting, and honor fr/percentage mixes for auto tracks.
-2. Add alignment/template serialization refinements plus docs as features land.
-3. Capture layout/perf findings in `dev_css_grid_process.md` alongside new coverage as features flip on.
+1. Finish Phase 4 alignment/template work: finalize `place-items`/`justify-self` behavior, add template parsing for `repeat()/minmax()` + named lines, and serialize them via computed style.
+2. Broaden coverage for dense auto-flow, fr/percentage mixes, and alignment overrides while documenting outcomes in the dev log.
+3. Start Phase 5 prep by profiling grid layout hot paths and outlining caching/intrinsic sizing fixes needed for release.
 
 **TODOs**
 - [x] Capture overview/goals/scope plus risks and rollout strategy.
 - [x] Land Phase 1 plumbing (display enum, CSSGridMixin, shorthand parsing, auxiliary helpers).
 - [x] Add Phase 1 widget + integration tests (parsing/computed style) and wire to spec group.
 - [x] Implement `RenderGridLayout` skeleton and hook creation paths.
-- [ ] Implement full track sizing/placement (Phase 3) with tests.
-- [ ] Extend alignment/template features (Phase 4) with serialization and coverage.
+- [x] Implement full track sizing/placement (Phase 3) with tests.
+- [ ] Extend alignment/template features (Phase 4) with serialization and coverage (per-item alignment + computed styles partially landed).
 - [x] Complete computed-style serialization and integration specs for grid properties.
 - [ ] Profile and harden grid layout (Phase 5), updating docs/examples.

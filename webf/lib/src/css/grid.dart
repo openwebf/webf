@@ -43,6 +43,14 @@ class GridPlacement {
 
 enum GridAutoFlow { row, column, rowDense, columnDense }
 
+enum GridAxisAlignment {
+  auto,
+  start,
+  end,
+  center,
+  stretch,
+}
+
 class CSSGridParser {
   // Very simple whitespace splitter that ignores spaces inside parentheses.
   static List<String> _splitBySpacePreservingFunc(String input) {
@@ -151,6 +159,27 @@ class CSSGridParser {
     return dense ? GridAutoFlow.rowDense : GridAutoFlow.row;
   }
 
+  static GridAxisAlignment parseAxisAlignment(String value, {bool allowAuto = false}) {
+    final String normalized = value.trim().toLowerCase();
+    switch (normalized) {
+      case 'auto':
+        return allowAuto ? GridAxisAlignment.auto : GridAxisAlignment.stretch;
+      case 'flex-start':
+      case 'self-start':
+      case 'start':
+        return GridAxisAlignment.start;
+      case 'flex-end':
+      case 'self-end':
+      case 'end':
+        return GridAxisAlignment.end;
+      case 'center':
+        return GridAxisAlignment.center;
+      case 'stretch':
+      default:
+        return GridAxisAlignment.stretch;
+    }
+  }
+
   static GridPlacement parsePlacement(String value) {
     final String trimmed = value.trim();
     if (trimmed.isEmpty || trimmed.toLowerCase() == 'auto') {
@@ -217,6 +246,22 @@ mixin CSSGridMixin on RenderStyle {
     markNeedsLayout();
   }
 
+  GridAxisAlignment? _justifyItems;
+  GridAxisAlignment get justifyItems => _normalizeAxisAlignmentValue(_justifyItems);
+  set justifyItems(GridAxisAlignment? value) {
+    if (_justifyItems == value) return;
+    _justifyItems = value;
+    if (isSelfRenderGridLayout()) markNeedsLayout();
+  }
+
+  GridAxisAlignment? _justifySelf;
+  GridAxisAlignment get justifySelf => _justifySelf ?? GridAxisAlignment.auto;
+  set justifySelf(GridAxisAlignment? value) {
+    if (_justifySelf == value) return;
+    _justifySelf = value;
+    if (isParentRenderGridLayout()) markNeedsLayout();
+  }
+
   GridPlacement? _gridColumnStart;
   GridPlacement get gridColumnStart => _gridColumnStart ?? const GridPlacement.auto();
   set gridColumnStart(GridPlacement? value) {
@@ -248,4 +293,9 @@ mixin CSSGridMixin on RenderStyle {
     _gridRowEnd = value;
     markNeedsLayout();
   }
+}
+
+GridAxisAlignment _normalizeAxisAlignmentValue(GridAxisAlignment? value) {
+  if (value == null || value == GridAxisAlignment.auto) return GridAxisAlignment.stretch;
+  return value;
 }

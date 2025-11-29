@@ -325,5 +325,89 @@ void main() {
 
       expect(offset.dy, closeTo(120, 1));
     });
+
+    testWidgets('justify-items center offsets child within cell', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-justify-items-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; width: 100px; grid-template-columns: 100px; justify-items: center;">
+            <div id="child" style="display:inline-block; width: 20px; height: 10px;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox child = prepared.getElementById('child').attachedRenderer as RenderBox;
+      final Offset offset = getLayoutTransformTo(child, renderer, excludeScrollOffset: true);
+
+      expect(offset.dx, closeTo(40, 1));
+    });
+
+    testWidgets('justify-self end overrides justify-items', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-justify-self-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; width: 100px; grid-template-columns: 100px; justify-items: start;">
+            <div id="child" style="display:inline-block; width: 20px; height: 10px; justify-self: end;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox child = prepared.getElementById('child').attachedRenderer as RenderBox;
+      final Offset offset = getLayoutTransformTo(child, renderer, excludeScrollOffset: true);
+
+      expect(offset.dx, closeTo(80, 1));
+    });
+
+    testWidgets('align-items center offsets child vertically', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-align-items-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; height: 120px; grid-template-rows: 120px; grid-template-columns: 60px; align-items: center;">
+            <div id="child" style="display:inline-block; height: 40px; width: 20px;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox child = prepared.getElementById('child').attachedRenderer as RenderBox;
+      final Offset offset = getLayoutTransformTo(child, renderer, excludeScrollOffset: true);
+
+      expect(offset.dy, closeTo(40, 1));
+    });
+
+    testWidgets('align-self flex-end overrides align-items', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-align-self-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; height: 120px; grid-template-rows: 120px; grid-template-columns: 60px; align-items: flex-start;">
+            <div id="child" style="display:inline-block; height: 30px; width: 20px; align-self: flex-end;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox child = prepared.getElementById('child').attachedRenderer as RenderBox;
+      final Offset offset = getLayoutTransformTo(child, renderer, excludeScrollOffset: true);
+
+      expect(offset.dy, closeTo(90, 1));
+    });
   });
 }

@@ -307,6 +307,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   FlexWrap get flexWrap;
 
   JustifyContent get justifyContent;
+  GridAxisAlignment get justifyItems;
+  GridAxisAlignment get justifySelf;
 
   AlignItems get alignItems;
 
@@ -1417,6 +1419,10 @@ class CSSRenderStyle extends RenderStyle
         return alignItems;
       case JUSTIFY_CONTENT:
         return justifyContent;
+      case JUSTIFY_ITEMS:
+        return justifyItems;
+      case JUSTIFY_SELF:
+        return justifySelf;
       case ALIGN_SELF:
         return alignSelf;
       case FLEX_GROW:
@@ -1764,6 +1770,12 @@ class CSSRenderStyle extends RenderStyle
         break;
       case JUSTIFY_CONTENT:
         justifyContent = value;
+        break;
+      case JUSTIFY_ITEMS:
+        justifyItems = value;
+        break;
+      case JUSTIFY_SELF:
+        justifySelf = value;
         break;
       case ALIGN_SELF:
         alignSelf = value;
@@ -2257,6 +2269,12 @@ class CSSRenderStyle extends RenderStyle
         break;
       case JUSTIFY_CONTENT:
         value = CSSFlexboxMixin.resolveJustifyContent(propertyValue);
+        break;
+      case JUSTIFY_ITEMS:
+        value = CSSGridParser.parseAxisAlignment(propertyValue, allowAuto: false);
+        break;
+      case JUSTIFY_SELF:
+        value = CSSGridParser.parseAxisAlignment(propertyValue, allowAuto: true);
         break;
       case ALIGN_SELF:
         value = CSSFlexboxMixin.resolveAlignSelf(propertyValue);

@@ -153,6 +153,8 @@ const String ROW_GAP = 'rowGap';
 const String COLUMN_GAP = 'columnGap';
 
 const String JUSTIFY_CONTENT = 'justifyContent';
+const String JUSTIFY_ITEMS = 'justifyItems';
+const String JUSTIFY_SELF = 'justifySelf';
 const String TEXT_ALIGN = 'textAlign';
 const String ALIGN_ITEMS = 'alignItems';
 const String ALIGN_SELF = 'alignSelf';

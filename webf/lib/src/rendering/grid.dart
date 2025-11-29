@@ -191,6 +191,71 @@ class RenderGridLayout extends RenderLayoutBox {
     }
   }
 
+  GridAxisAlignment _resolveJustifySelfAlignment(RenderStyle? childStyle) {
+    final GridAxisAlignment alignment = childStyle?.justifySelf ?? GridAxisAlignment.auto;
+    if (alignment == GridAxisAlignment.auto) {
+      return renderStyle.justifyItems;
+    }
+    return alignment;
+  }
+
+  GridAxisAlignment _resolveAlignSelfAlignment(RenderStyle? childStyle) {
+    final AlignSelf alignSelf = childStyle?.alignSelf ?? AlignSelf.auto;
+    if (alignSelf == AlignSelf.auto) {
+      return _convertAlignItemsToAxis(renderStyle.alignItems);
+    }
+    return _convertAlignSelfToAxis(alignSelf);
+  }
+
+  GridAxisAlignment _convertAlignItemsToAxis(AlignItems value) {
+    switch (value) {
+      case AlignItems.flexStart:
+      case AlignItems.start:
+        return GridAxisAlignment.start;
+      case AlignItems.flexEnd:
+      case AlignItems.end:
+        return GridAxisAlignment.end;
+      case AlignItems.center:
+      case AlignItems.baseline:
+        return GridAxisAlignment.center;
+      case AlignItems.stretch:
+      default:
+        return GridAxisAlignment.stretch;
+    }
+  }
+
+  GridAxisAlignment _convertAlignSelfToAxis(AlignSelf value) {
+    switch (value) {
+      case AlignSelf.flexStart:
+      case AlignSelf.start:
+        return GridAxisAlignment.start;
+      case AlignSelf.flexEnd:
+      case AlignSelf.end:
+        return GridAxisAlignment.end;
+      case AlignSelf.center:
+      case AlignSelf.baseline:
+        return GridAxisAlignment.center;
+      case AlignSelf.stretch:
+      default:
+        return GridAxisAlignment.stretch;
+    }
+  }
+
+  double _alignmentOffsetWithinCell(GridAxisAlignment alignment, double extraSpace) {
+    if (extraSpace <= 0) return 0;
+    switch (alignment) {
+      case GridAxisAlignment.end:
+        return extraSpace;
+      case GridAxisAlignment.center:
+        return extraSpace / 2;
+      case GridAxisAlignment.auto:
+      case GridAxisAlignment.start:
+      case GridAxisAlignment.stretch:
+      default:
+        return 0;
+    }
+  }
+
   _GridCellPlacement _placeAutoItem({
     required List<List<bool>> occupancy,
     required List<double> columnSizes,
@@ -589,11 +654,27 @@ class RenderGridLayout extends RenderLayoutBox {
         explicitItemHeight = childGridStyle.height.computedValue;
       }
 
+      final GridAxisAlignment justifySelfAlignment = _resolveJustifySelfAlignment(childGridStyle);
+      final GridAxisAlignment alignSelfAlignment = _resolveAlignSelfAlignment(childGridStyle);
+      final bool childWidthAuto = childGridStyle?.width.isAuto ?? true;
+      final bool childHeightAuto = childGridStyle?.height.isAuto ?? true;
+      final bool stretchWidth =
+          justifySelfAlignment == GridAxisAlignment.stretch && childWidthAuto && cellWidth.isFinite;
+      final bool stretchHeight = alignSelfAlignment == GridAxisAlignment.stretch && childHeightAuto &&
+          hasExplicitRowSize && explicitItemHeight == null;
+
+      final double minWidthConstraint = stretchWidth ? cellWidth : 0;
+      final double maxWidthConstraint = cellWidth.isFinite ? cellWidth : (innerMaxWidth ?? double.infinity);
+      final double minHeightConstraint =
+          explicitItemHeight ?? (stretchHeight && cellHeight.isFinite ? cellHeight : 0);
+      final double maxHeightConstraint =
+          explicitItemHeight ?? (cellHeight.isFinite ? cellHeight : (innerMaxHeight ?? double.infinity));
+
       final BoxConstraints childConstraints = BoxConstraints(
-        minWidth: cellWidth.isFinite ? cellWidth : 0,
-        maxWidth: cellWidth.isFinite ? cellWidth : (innerMaxWidth ?? double.infinity),
-        minHeight: explicitItemHeight ?? (cellHeight.isFinite ? cellHeight : 0),
-        maxHeight: explicitItemHeight ?? (cellHeight.isFinite ? cellHeight : (innerMaxHeight ?? double.infinity)),
+        minWidth: minWidthConstraint,
+        maxWidth: maxWidthConstraint,
+        minHeight: minHeightConstraint,
+        maxHeight: maxHeightConstraint,
       );
 
       child.layout(childConstraints, parentUsesSize: true);
@@ -611,7 +692,16 @@ class RenderGridLayout extends RenderLayoutBox {
         rowTop += rh;
         rowTop += rowGap;
       }
-      pd.offset = Offset(xOffset, rowTop);
+
+      final double horizontalExtra = cellWidth.isFinite ? math.max(0, cellWidth - childSize.width) : 0;
+      final double verticalExtra = hasExplicitRowSize && cellHeight.isFinite
+          ? math.max(0, cellHeight - childSize.height)
+          : 0;
+      final double horizontalInset = _alignmentOffsetWithinCell(justifySelfAlignment, horizontalExtra);
+      final double verticalInset = hasExplicitRowSize
+          ? _alignmentOffsetWithinCell(alignSelfAlignment, verticalExtra)
+          : 0;
+      pd.offset = Offset(xOffset + horizontalInset, rowTop + verticalInset);
       pd
         ..rowStart = rowIndex
         ..columnStart = colIndex

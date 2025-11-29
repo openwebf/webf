@@ -1245,12 +1245,14 @@ class CSSStyleProperty {
     if (values.isEmpty) return;
 
     String align = values[0];
+    String justify = values.length > 1 ? values[1] : align;
 
-    // Expand to longhand supported by WebF (align-items only).
     properties[ALIGN_ITEMS] = align;
+    properties[JUSTIFY_ITEMS] = justify;
   }
 
   static void removeShorthandPlaceItems(CSSStyleDeclaration style, [bool? isImportant]) {
     if (style.contains(ALIGN_ITEMS)) style.removeProperty(ALIGN_ITEMS, isImportant);
+    if (style.contains(JUSTIFY_ITEMS)) style.removeProperty(JUSTIFY_ITEMS, isImportant);
   }
 }

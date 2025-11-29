@@ -208,7 +208,7 @@ describe('CSS Grid auto placement', () => {
     for (let i = 0; i < 2; i++) {
       const cell = document.createElement('div');
       cell.style.height = '40px';
-      cell.style.backgroundColor = 'red'
+      cell.style.backgroundColor = 'red';
       grid.appendChild(cell);
     }
 
@@ -220,6 +220,106 @@ describe('CSS Grid auto placement', () => {
     const gridRect = grid.getBoundingClientRect();
     const firstRect = (grid.children[0] as HTMLElement).getBoundingClientRect();
     expect(Math.round(firstRect.top - gridRect.top)).toBeGreaterThanOrEqual(119);
+    grid.remove();
+  });
+
+  it('honors justify-items center for grid cells', async () => {
+    const grid = document.createElement('div');
+    grid.setAttribute(
+      'style',
+      'display:grid;width:100px;grid-template-columns:100px;justify-items:center;',
+    );
+
+    const cell = document.createElement('div');
+    cell.style.width = '20px';
+    cell.style.height = '10px';
+    cell.style.display = 'inline-block';
+    cell.style.backgroundColor = 'rgba(255, 0, 0, 0.6)';
+    grid.appendChild(cell);
+
+    document.body.appendChild(grid);
+
+    await waitForFrame();
+    await snapshot();
+
+    const gridRect = grid.getBoundingClientRect();
+    const cellRect = cell.getBoundingClientRect();
+    expect(Math.round(cellRect.left - gridRect.left)).toBeGreaterThanOrEqual(40);
+    grid.remove();
+  });
+
+  it('honors justify-self end overriding container items', async () => {
+    const grid = document.createElement('div');
+    grid.setAttribute(
+      'style',
+      'display:grid;width:100px;grid-template-columns:100px;justify-items:start;',
+    );
+
+    const cell = document.createElement('div');
+    cell.style.width = '20px';
+    cell.style.height = '10px';
+    cell.style.display = 'inline-block';
+    cell.style.backgroundColor = 'rgba(0, 128, 255, 0.6)';
+    cell.style.justifySelf = 'end';
+    grid.appendChild(cell);
+
+    document.body.appendChild(grid);
+
+    await waitForFrame();
+    await snapshot();
+
+    const gridRect = grid.getBoundingClientRect();
+    const cellRect = cell.getBoundingClientRect();
+    expect(Math.round(cellRect.left - gridRect.left)).toBeGreaterThanOrEqual(80);
+    grid.remove();
+  });
+
+  it('honors align-items center for explicit rows', async () => {
+    const grid = document.createElement('div');
+    grid.setAttribute(
+      'style',
+      'display:grid;height:120px;grid-template-columns:60px;grid-template-rows:120px;align-items:center;',
+    );
+
+    const cell = document.createElement('div');
+    cell.style.height = '40px';
+    cell.style.display = 'inline-block';
+    cell.style.backgroundColor = 'rgba(0, 200, 83, 0.6)';
+    grid.appendChild(cell);
+
+    document.body.appendChild(grid);
+
+    await waitForFrame();
+    await snapshot();
+
+    const gridRect = grid.getBoundingClientRect();
+    const cellRect = cell.getBoundingClientRect();
+    expect(Math.round(cellRect.top - gridRect.top)).toBeGreaterThanOrEqual(40);
+    grid.remove();
+  });
+
+  it('honors align-self flex-end overriding align-items', async () => {
+    const grid = document.createElement('div');
+    grid.setAttribute(
+      'style',
+      'display:grid;height:120px;grid-template-columns:60px;grid-template-rows:120px;align-items:flex-start;',
+    );
+
+    const cell = document.createElement('div');
+    cell.style.height = '30px';
+    cell.style.display = 'inline-block';
+    cell.style.backgroundColor = 'rgba(255, 193, 7, 0.6)';
+    cell.style.alignSelf = 'flex-end';
+    grid.appendChild(cell);
+
+    document.body.appendChild(grid);
+
+    await waitForFrame();
+    await snapshot();
+    
+    const gridRect = grid.getBoundingClientRect();
+    const cellRect = cell.getBoundingClientRect();
+    expect(Math.round(cellRect.top - gridRect.top)).toBeGreaterThanOrEqual(90);
     grid.remove();
   });
 });

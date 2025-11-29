@@ -932,6 +932,22 @@ String _gridPlacementShorthand(GridPlacement start, GridPlacement end) {
   return '$startText / $endText';
 }
 
+String _gridAxisAlignmentToCss(GridAxisAlignment alignment) {
+  switch (alignment) {
+    case GridAxisAlignment.start:
+      return 'start';
+    case GridAxisAlignment.end:
+      return 'end';
+    case GridAxisAlignment.center:
+      return 'center';
+    case GridAxisAlignment.stretch:
+      return 'stretch';
+    case GridAxisAlignment.auto:
+    default:
+      return 'auto';
+  }
+}
+
 String? _valueForGridProperty(String propertyName, CSSRenderStyle style) {
   String normalized = propertyName.contains('-') ? propertyName : kebabize(propertyName);
   if (normalized.startsWith('-')) {
@@ -960,6 +976,10 @@ String? _valueForGridProperty(String propertyName, CSSRenderStyle style) {
       return _gridPlacementShorthand(style.gridColumnStart, style.gridColumnEnd);
     case 'grid-row':
       return _gridPlacementShorthand(style.gridRowStart, style.gridRowEnd);
+    case 'justify-items':
+      return _gridAxisAlignmentToCss(style.justifyItems);
+    case 'justify-self':
+      return _gridAxisAlignmentToCss(style.justifySelf);
   }
   return null;
 }

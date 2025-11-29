@@ -69,3 +69,4 @@ pubspec.lock
 .fvm
 
 **/.claude/settings.local.json
+.preview-bundles/*
