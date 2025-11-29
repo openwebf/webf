@@ -1,4 +1,4 @@
-fdescribe('CSS Grid auto placement', () => {
+describe('CSS Grid auto placement', () => {
   const buildGrid = (configure: (grid: HTMLDivElement, cells: HTMLDivElement[]) => void) => {
     const grid = document.createElement('div');
     grid.style.width = '320px';
@@ -136,17 +136,14 @@ fdescribe('CSS Grid auto placement', () => {
 
     await snapshot();
 
-    const third = autoCells[2];
-    const rect = third.getBoundingClientRect();
     const first = autoCells[0];
+    const third = autoCells[2];
     const rectFirst = first.getBoundingClientRect();
+    const rectThird = third.getBoundingClientRect();
 
-    console.log("rect.left:", rect.left, "rectFirst.left:", rectFirst.left)
-    console.log("rect.top:", rect.top, "rectFirst.bottom:", rectFirst.bottom)
-
-    // expect(rect.left).toBeCloseTo(rectFirst.left, 1);
-    // expect(rect.top).toBeGreaterThan(rectFirst.bottom);
-    // grid.remove();
+    expect(rectThird.left).toBeCloseTo(rectFirst.left, 1);
+    expect(rectThird.top).toBeGreaterThan(rectFirst.bottom);
+    grid.remove();
   });
 
   it('spans grid using negative line numbers', async () => {

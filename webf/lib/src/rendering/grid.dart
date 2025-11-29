@@ -235,16 +235,12 @@ class RenderGridLayout extends RenderLayoutBox {
 
       while (true) {
         _ensureOccupancyRows(occupancy, row + rowSpanClamped, columnCount);
-        final int rowLimit =
-            math.max(math.max(explicitRowCount, occupancy.length), rowSpanClamped);
         if (_canPlace(occupancy, row, column, rowSpanClamped, colSpan, columnCount)) {
           _markPlacement(occupancy, row, column, rowSpanClamped, colSpan);
           if (explicitRow == null && !hasDefiniteRow) {
             cursor.column = column;
             cursor.row = row + rowSpanClamped;
-            final int wrapLimit =
-                math.max(math.max(explicitRowCount, occupancy.length), rowSpanClamped);
-            if (!dense && cursor.row >= wrapLimit) {
+            if (!dense && cursor.row >= math.max(explicitRowCount, occupancy.length)) {
               cursor.row = 0;
               cursor.column = column + colSpan;
             }
@@ -253,10 +249,6 @@ class RenderGridLayout extends RenderLayoutBox {
         }
 
         row++;
-        if (explicitRow == null &&
-            row >= math.max(math.max(explicitRowCount, occupancy.length), rowSpanClamped)) {
-          break;
-        }
       }
 
       cursorApplied = true;
