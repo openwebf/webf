@@ -68,7 +68,7 @@ export const Canvas2dPage: React.FC = () => {
         </p>
 
         <SectionTitle>Basic Shapes & Styles</SectionTitle>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex flex-wrap justify-center gap-4">
           <CanvasCard
             title="Rectangles (Fill & Stroke)"
             draw={(ctx) => {
@@ -114,7 +114,7 @@ export const Canvas2dPage: React.FC = () => {
         </div>
 
         <SectionTitle>Styles & Text</SectionTitle>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex flex-wrap justify-center gap-4">
           <CanvasCard
             title="Gradients & Patterns"
             draw={(ctx) => {
@@ -156,7 +156,7 @@ export const Canvas2dPage: React.FC = () => {
         </div>
 
         <SectionTitle>Transformations</SectionTitle>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex flex-wrap justify-center gap-4">
            <CanvasCard
             title="Rotate & Translate"
             draw={(ctx) => {
@@ -196,7 +196,7 @@ export const Canvas2dPage: React.FC = () => {
         </div>
 
         <SectionTitle>Animation</SectionTitle>
-        <div className="grid grid-cols-1 gap-4">
+        <div className="flex flex-wrap justify-center gap-4">
           <CanvasCard
             title="Animated Solar System"
             animated={true}
