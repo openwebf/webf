@@ -1213,10 +1213,8 @@ class WebFController with Diagnosticable {
         if (isTimeout) return;
 
         // Stop the animation frame
-        module.pauseAnimationFrame();
-
         // Pause the animation timeline.
-        view.stopAnimationsTimeLine();
+        pause();
 
         view.window.addEventListener(EVENT_LOAD, (event) async {
           _preRenderingStatus = PreRenderingStatus.done;
