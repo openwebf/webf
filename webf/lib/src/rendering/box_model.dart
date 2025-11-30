@@ -596,6 +596,13 @@ abstract class RenderBoxModel extends RenderBox
     double maxConstraintWidth =
         renderStyle.borderBoxLogicalWidth ?? parentBoxContentConstraintsWidth ?? double.infinity;
 
+    final bool hasDefiniteWidth = renderStyle.width.isNotAuto && renderStyle.borderBoxLogicalWidth != null;
+    if (hasDefiniteWidth) {
+      final double definiteWidth = renderStyle.borderBoxLogicalWidth!;
+      maxConstraintWidth = definiteWidth;
+      minConstraintWidth = definiteWidth;
+    }
+
     // For absolutely/fixed positioned non-replaced elements with both left and right specified
     // and width:auto, compute the used border-box width from the containing block at layout time.
     // This handles cases where style-tree logical widths are unavailable (e.g., parent inline-block
@@ -642,6 +649,13 @@ abstract class RenderBoxModel extends RenderBox
         renderStyle.paddingTop.computedValue +
         renderStyle.paddingBottom.computedValue;
     double maxConstraintHeight = renderStyle.borderBoxLogicalHeight ?? double.infinity;
+
+    final bool hasDefiniteHeight = renderStyle.height.isNotAuto && renderStyle.borderBoxLogicalHeight != null;
+    if (hasDefiniteHeight) {
+      final double definiteHeight = renderStyle.borderBoxLogicalHeight!;
+      maxConstraintHeight = definiteHeight;
+      minConstraintHeight = definiteHeight;
+    }
 
     // // Apply maxHeight constraint if specified
     // if (maxHeight != null && maxHeight < maxConstraintHeight) {

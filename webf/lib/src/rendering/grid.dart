@@ -75,7 +75,7 @@ class RenderGridLayout extends RenderLayoutBox {
     if (placement.lineName != null && namedLines != null) {
       final List<int>? indices = namedLines[placement.lineName!];
       if (indices != null && indices.isNotEmpty) {
-        final int occurrence = placement.lineNameOccurrence;
+        final int occurrence = placement.lineNameOccurrence ?? 1;
         if (occurrence == 0) return null;
         int selectedIndex;
         if (occurrence > 0) {
@@ -118,7 +118,7 @@ class RenderGridLayout extends RenderLayoutBox {
     if (placement.lineName != null && namedLines != null) {
       final List<int>? indices = namedLines[placement.lineName!];
       if (indices != null && indices.isNotEmpty) {
-        final int occurrence = placement.lineNameOccurrence;
+        final int occurrence = placement.lineNameOccurrence ?? 1;
         if (occurrence == 0) return null;
         int selectedIndex;
         if (occurrence > 0) {
@@ -862,6 +862,14 @@ class RenderGridLayout extends RenderLayoutBox {
         rowTrackCountForPlacement,
         namedLines: rowLineNameMap,
       );
+      if (explicitRow != null &&
+          rowStart.kind == GridPlacementKind.line &&
+          rowStart.line != null &&
+          rowStart.line! < 0 &&
+          rowEnd.kind == GridPlacementKind.auto &&
+          explicitRow >= rowTrackCountForPlacement) {
+        explicitRow = math.max(0, rowTrackCountForPlacement - rowSpan);
+      }
 
       final bool hasDefiniteColumn =
           columnStart.kind == GridPlacementKind.line || columnEnd.kind == GridPlacementKind.line;
@@ -915,8 +923,7 @@ class RenderGridLayout extends RenderLayoutBox {
           final double limit = _resolveLengthValue(fitTrack.limit, adjustedInnerWidth);
           final double target = math.max(limit, preferred);
           if (target > colSizes[colIndex]) {
-            final double available = adjustedInnerWidth ?? target;
-            colSizes[colIndex] = math.min(target, available);
+            colSizes[colIndex] = target;
           }
         }
       }

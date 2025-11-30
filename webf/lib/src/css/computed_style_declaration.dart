@@ -916,61 +916,103 @@ String _gridTrackValueToCss(GridTrackSize track) {
 
 String _gridLineNamesToCss(List<String> names) {
   if (names.isEmpty) return '';
-  return names.map((name) => '[$name]').join(' ');
+  return '[${names.join(' ')}]';
 }
 
-String _gridTrackSizeToCss(GridTrackSize track) {
+int _countLineNameOccurrences(List<GridTrackSize> tracks, String name) {
+  int count = 0;
+  void collect(List<GridTrackSize> list) {
+    for (final GridTrackSize track in list) {
+      if (track.leadingLineNames.contains(name)) count++;
+      if (track.trailingLineNames.contains(name)) count++;
+      if (track is GridRepeat) {
+        collect(track.tracks);
+      }
+    }
+  }
+
+  collect(tracks);
+  return count;
+}
+
+bool _shouldSerializeLineOccurrence(
+  GridPlacement placement,
+  CSSRenderStyle style, {
+  required bool isColumn,
+}) {
+  if (placement.lineName == null) return false;
+  if (placement.hasExplicitLineNameOccurrence) return true;
+  final List<GridTrackSize> tracks =
+      isColumn ? style.gridTemplateColumns : style.gridTemplateRows;
+  if (tracks.isEmpty) return false;
+  return _countLineNameOccurrences(tracks, placement.lineName!) > 1;
+}
+
+String _gridTrackListToCss(
+  List<GridTrackSize> tracks, {
+  required bool templateList,
+  bool includeTrailingEndNames = true,
+}) {
+  if (tracks.isEmpty) {
+    return templateList ? 'none' : 'auto';
+  }
   final StringBuffer buffer = StringBuffer();
-  if (track.leadingLineNames.isNotEmpty) {
-    buffer.write(_gridLineNamesToCss(track.leadingLineNames));
-    buffer.write(' ');
-  }
-  if (track is GridRepeat) {
-    buffer.write('repeat(');
-    switch (track.kind) {
-      case GridRepeatKind.count:
-        buffer.write(track.count?.toString() ?? '0');
-        break;
-      case GridRepeatKind.autoFill:
-        buffer.write('auto-fill');
-        break;
-      case GridRepeatKind.autoFit:
-        buffer.write('auto-fit');
-        break;
-    }
-    buffer.write(', ');
-    buffer.write(track.tracks.map(_gridTrackSizeToCss).join(' '));
-    buffer.write(')');
-    if (track.trailingLineNames.isNotEmpty) {
+  for (int i = 0; i < tracks.length; i++) {
+    final GridTrackSize track = tracks[i];
+    if (track.leadingLineNames.isNotEmpty) {
+      buffer.write(_gridLineNamesToCss(track.leadingLineNames));
       buffer.write(' ');
-      buffer.write(_gridLineNamesToCss(track.trailingLineNames));
     }
-    return buffer.toString().trim();
+    if (track is GridRepeat) {
+      buffer.write('repeat(');
+      switch (track.kind) {
+        case GridRepeatKind.count:
+          buffer.write(track.count?.toString() ?? '0');
+          break;
+        case GridRepeatKind.autoFill:
+          buffer.write('auto-fill');
+          break;
+        case GridRepeatKind.autoFit:
+          buffer.write('auto-fit');
+          break;
+      }
+      buffer.write(', ');
+      buffer.write(_gridTrackListToCss(
+        track.tracks,
+        templateList: false,
+        includeTrailingEndNames: false,
+      ));
+      buffer.write(')');
+    } else {
+      buffer.write(_gridTrackValueToCss(track));
+    }
+    if (i < tracks.length - 1) {
+      buffer.write(' ');
+    }
   }
-  buffer.write(_gridTrackValueToCss(track));
-  if (track.trailingLineNames.isNotEmpty) {
-    buffer.write(' ');
-    buffer.write(_gridLineNamesToCss(track.trailingLineNames));
+  if (includeTrailingEndNames) {
+    final GridTrackSize last = tracks.last;
+    if (last.trailingLineNames.isNotEmpty) {
+      buffer.write(' ');
+      buffer.write(_gridLineNamesToCss(last.trailingLineNames));
+    }
   }
   return buffer.toString().trim();
 }
 
-String _gridTrackListToCss(List<GridTrackSize> tracks, {required bool templateList}) {
-  if (tracks.isEmpty) {
-    return templateList ? 'none' : 'auto';
-  }
-  return tracks.map(_gridTrackSizeToCss).join(' ');
-}
-
-String _gridPlacementToCss(GridPlacement placement) {
+String _gridPlacementToCss(
+  GridPlacement placement, {
+  bool forceIncludeOccurrence = false,
+}) {
   switch (placement.kind) {
     case GridPlacementKind.span:
       final int span = placement.span ?? 1;
       return 'span ${span > 0 ? span : 1}';
     case GridPlacementKind.line:
       if (placement.lineName != null) {
-        if (placement.lineNameOccurrence != 1) {
-          return '${placement.lineName} ${placement.lineNameOccurrence}';
+        final int occurrence = placement.lineNameOccurrence ?? 1;
+        if (placement.hasExplicitLineNameOccurrence || forceIncludeOccurrence || occurrence != 1) {
+          return '${placement.lineName} $occurrence';
         }
         return placement.lineName!;
       }
@@ -981,9 +1023,15 @@ String _gridPlacementToCss(GridPlacement placement) {
   }
 }
 
-String _gridPlacementShorthand(GridPlacement start, GridPlacement end) {
-  final String startText = _gridPlacementToCss(start);
-  final String endText = _gridPlacementToCss(end);
+String _gridPlacementShorthand(
+  GridPlacement start,
+  GridPlacement end, {
+  bool forceStartOccurrence = false,
+  bool forceEndOccurrence = false,
+}) {
+  final String startText =
+      _gridPlacementToCss(start, forceIncludeOccurrence: forceStartOccurrence);
+  final String endText = _gridPlacementToCss(end, forceIncludeOccurrence: forceEndOccurrence);
   return '$startText / $endText';
 }
 
@@ -1114,17 +1162,75 @@ String? _valueForGridProperty(String propertyName, CSSRenderStyle style) {
     case 'grid-auto-rows':
       return _gridTrackListToCss(style.gridAutoRows, templateList: false);
     case 'grid-column-start':
-      return _gridPlacementToCss(style.gridColumnStart);
+      return _gridPlacementToCss(
+        style.gridColumnStart,
+        forceIncludeOccurrence: _shouldSerializeLineOccurrence(
+          style.gridColumnStart,
+          style,
+          isColumn: true,
+        ),
+      );
     case 'grid-column-end':
-      return _gridPlacementToCss(style.gridColumnEnd);
+      return _gridPlacementToCss(
+        style.gridColumnEnd,
+        forceIncludeOccurrence: _shouldSerializeLineOccurrence(
+          style.gridColumnEnd,
+          style,
+          isColumn: true,
+        ),
+      );
     case 'grid-row-start':
-      return _gridPlacementToCss(style.gridRowStart);
+      return _gridPlacementToCss(
+        style.gridRowStart,
+        forceIncludeOccurrence: _shouldSerializeLineOccurrence(
+          style.gridRowStart,
+          style,
+          isColumn: false,
+        ),
+      );
     case 'grid-row-end':
-      return _gridPlacementToCss(style.gridRowEnd);
+      return _gridPlacementToCss(
+        style.gridRowEnd,
+        forceIncludeOccurrence: _shouldSerializeLineOccurrence(
+          style.gridRowEnd,
+          style,
+          isColumn: false,
+        ),
+      );
     case 'grid-column':
-      return _gridPlacementShorthand(style.gridColumnStart, style.gridColumnEnd);
+      return _gridPlacementShorthand(
+        style.gridColumnStart,
+        style.gridColumnEnd,
+        forceStartOccurrence: _shouldSerializeLineOccurrence(
+          style.gridColumnStart,
+          style,
+          isColumn: true,
+        ),
+        forceEndOccurrence: _shouldSerializeLineOccurrence(
+          style.gridColumnEnd,
+          style,
+          isColumn: true,
+        ),
+      );
     case 'grid-row':
-      return _gridPlacementShorthand(style.gridRowStart, style.gridRowEnd);
+      return _gridPlacementShorthand(
+        style.gridRowStart,
+        style.gridRowEnd,
+        forceStartOccurrence: _shouldSerializeLineOccurrence(
+          style.gridRowStart,
+          style,
+          isColumn: false,
+        ),
+        forceEndOccurrence: _shouldSerializeLineOccurrence(
+          style.gridRowEnd,
+          style,
+          isColumn: false,
+        ),
+      );
+    case 'align-items':
+      return _alignItemsToCss(style.alignItems);
+    case 'align-self':
+      return _alignSelfToCss(style.alignSelf);
     case 'justify-items':
       return _gridAxisAlignmentToCss(style.justifyItems);
     case 'justify-self':

@@ -58,7 +58,7 @@ void main() {
       final gridComputed = prepared.controller.view.window.getComputedStyle(grid);
       expect(
         gridComputed.getPropertyValue('grid-template-columns'),
-        equals('[nav-start] minmax(40px, 1fr) [nav-end content-start] [content-line] 1fr [content-line] 1fr [content-end]'),
+        equals('[nav-start] minmax(40px, 1fr) [nav-end content-start] repeat(2, [content-line] 1fr) [content-end]'),
       );
       expect(
         gridComputed.getPropertyValue('grid-template-rows'),

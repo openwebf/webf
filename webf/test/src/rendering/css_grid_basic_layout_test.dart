@@ -151,7 +151,7 @@ void main() {
       final RenderBox renderC = prepared.getElementById('c').attachedRenderer as RenderBox;
       final RenderBox renderD = prepared.getElementById('d').attachedRenderer as RenderBox;
 
-      expect(renderer.size.width, equals(100));
+      expect(renderer.size.width, equals(360));
 
       final Offset aOffset = getLayoutTransformTo(renderA, renderer, excludeScrollOffset: true);
       final Offset bOffset = getLayoutTransformTo(renderB, renderer, excludeScrollOffset: true);

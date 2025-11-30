@@ -436,7 +436,7 @@ describe('CSS Grid auto placement', () => {
     grid.remove();
   });
 
-    it('respects fit-content clamp on track sizing', async () => {
+  it('respects fit-content clamp on track sizing', async () => {
     const grid = document.createElement('div');
     grid.setAttribute('style', 'display:grid;width:200px;grid-template-columns:fit-content(80px);');
     const cell = document.createElement('div');
@@ -451,7 +451,8 @@ describe('CSS Grid auto placement', () => {
     await snapshot();
 
     const rect = cell.getBoundingClientRect();
-    expect(Math.round(rect.width)).toBeLessThanOrEqual(150);
+    expect(Math.round(rect.width)).toBeGreaterThanOrEqual(149);
+    expect(Math.round(rect.width)).toBeLessThanOrEqual(151);
     grid.remove();
   });
 });

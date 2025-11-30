@@ -117,20 +117,30 @@ class GridPlacement {
   final GridPlacementKind kind;
   final int? line;
   final String? lineName;
-  final int lineNameOccurrence;
+  final int? lineNameOccurrence;
+  final bool hasExplicitLineNameOccurrence;
   final int? span;
 
   const GridPlacement._(
     this.kind, {
     this.line,
     this.lineName,
-    this.lineNameOccurrence = 1,
+    this.lineNameOccurrence,
+    this.hasExplicitLineNameOccurrence = false,
     this.span,
   });
   const GridPlacement.auto() : this._(GridPlacementKind.auto);
   const GridPlacement.line(int value) : this._(GridPlacementKind.line, line: value);
-  const GridPlacement.named(String name, {int occurrence = 1})
-      : this._(GridPlacementKind.line, lineName: name, lineNameOccurrence: occurrence);
+  const GridPlacement.named(
+    String name, {
+    int? occurrence,
+    bool explicitOccurrence = false,
+  }) : this._(
+          GridPlacementKind.line,
+          lineName: name,
+          lineNameOccurrence: occurrence,
+          hasExplicitLineNameOccurrence: explicitOccurrence,
+        );
   const GridPlacement.span(int value) : this._(GridPlacementKind.span, span: value);
 }
 
@@ -500,7 +510,11 @@ class CSSGridParser {
     if (tokens.length == 2) {
       final int? occurrence = int.tryParse(tokens[1]);
       if (occurrence != null && occurrence != 0 && _isCustomIdent(tokens[0])) {
-        return GridPlacement.named(tokens[0], occurrence: occurrence);
+        return GridPlacement.named(
+          tokens[0],
+          occurrence: occurrence,
+          explicitOccurrence: true,
+        );
       }
     }
 
