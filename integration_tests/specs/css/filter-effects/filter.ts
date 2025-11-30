@@ -14,7 +14,7 @@ function createFilterFixture(styles: Record<string, string> = {}): HTMLDivElemen
   return div;
 }
 
-fdescribe('CSS Filter Effects', () => {
+describe('CSS Filter Effects', () => {
   it('grayscale', async () => {
     const div = createFilterFixture();
     div.style.filter = 'grayscale(1)';
