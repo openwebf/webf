@@ -1,23 +1,26 @@
 import React, { useEffect, useRef } from 'react';
 import { WebFListView, useFlutterAttached } from '@openwebf/react-core-ui';
+import { isWebFEnvironment } from '../router';
 
 const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <h2 className="text-lg font-bold text-gray-800 mt-6 mb-3 px-1 border-b border-gray-200 pb-2">{children}</h2>
 );
 
 const CanvasCard: React.FC<{ title: string; draw: (ctx: CanvasRenderingContext2D) => void; animated?: boolean }> = ({ title, draw, animated = false }) => {
-
-  const onAttached = (element: HTMLCanvasElement) => {
-    const ctx = element.getContext('2d');
+  const onAttached = (element: HTMLCanvasElement | Event) => {
+    // Handle both HTMLCanvasElement (direct ref) and Event (onAttached callback)
+    const canvasEl = (element instanceof Event ? element.target : element) as HTMLCanvasElement;
+    
+    const ctx = canvasEl.getContext('2d');
     if (!ctx) return;
 
     // Handle high DPI displays
     const dpr = window.devicePixelRatio || 1;
-    const rect = element.getBoundingClientRect();
+    const rect = canvasEl.getBoundingClientRect();
     
     // Set actual size in memory (scaled to account for extra pixel density)
-    element.width = rect.width * dpr;
-    element.height = rect.height * dpr;
+    canvasEl.width = rect.width * dpr;
+    canvasEl.height = rect.height * dpr;
 
     // Normalize coordinate system to use css pixels.
     ctx.scale(dpr, dpr);
@@ -26,7 +29,7 @@ const CanvasCard: React.FC<{ title: string; draw: (ctx: CanvasRenderingContext2D
 
     if (animated) {
       const render = () => {
-        ctx.clearRect(0, 0, element.width / dpr, element.height / dpr);
+        ctx.clearRect(0, 0, canvasEl.width / dpr, canvasEl.height / dpr);
         draw(ctx);
         animationFrameId = requestAnimationFrame(render);
       };
@@ -38,18 +41,27 @@ const CanvasCard: React.FC<{ title: string; draw: (ctx: CanvasRenderingContext2D
   };
 
   const onDetached = () => {
-    // Optional: Add specific cleanup if needed, but animation cleanup is handled by onAttached return.
-    // console.log(`Canvas "${title}" detached`);
+    // Optional: Add specific cleanup if needed
   };
 
   const flutterCanvasRef = useFlutterAttached<HTMLCanvasElement>(onAttached, onDetached);
+  const browserCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    if (!isWebFEnvironment && browserCanvasRef.current) {
+      return onAttached(browserCanvasRef.current) as (() => void) | undefined;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const canvasRef = isWebFEnvironment ? flutterCanvasRef : browserCanvasRef;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex flex-col gap-3">
       <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
       <div className="w-full flex justify-center bg-gray-50 rounded border border-gray-100 overflow-hidden">
         <canvas
-          ref={flutterCanvasRef}
+          ref={canvasRef}
           style={{ width: '300px', height: '200px' }}
           className="w-[300px] h-[200px]"
         />
