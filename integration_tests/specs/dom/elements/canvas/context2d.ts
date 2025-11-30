@@ -201,10 +201,10 @@ describe('Canvas context 2d', () => {
   });
 
   it('should work with rotate and translate', async () => {
-    const canvas = <canvas />;
+    const canvas = document.createElement('canvas') as HTMLCanvasElement;
     document.body.appendChild(canvas);
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d')!;
     ctx.fillStyle = 'gray';
     ctx.fillRect(80, 60, 140, 30);
 
