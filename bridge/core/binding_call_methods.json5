@@ -91,6 +91,8 @@
     "miterLimit",
     "textAlign",
     "textBaseline",
+    "shadowOffsetX",
+    "shadowOffsetY",
     "arc",
     "arcTo",
     "beginPath",

@@ -398,6 +398,14 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
         getter: (context) => castToType<CanvasRenderingContext2D>(context).shadowBlur,
         setter: (context, value) =>
             castToType<CanvasRenderingContext2D>(context).shadowBlur = castToType<num>(value).toDouble()),
+    'shadowOffsetX': StaticDefinedBindingProperty(
+        getter: (context) => castToType<CanvasRenderingContext2D>(context)._shadowOffsetX,
+        setter: (context, value) =>
+            castToType<CanvasRenderingContext2D>(context)._shadowOffsetX = castToType<num>(value).toDouble()),
+    'shadowOffsetY': StaticDefinedBindingProperty(
+        getter: (context) => castToType<CanvasRenderingContext2D>(context)._shadowOffsetY,
+        setter: (context, value) =>
+            castToType<CanvasRenderingContext2D>(context)._shadowOffsetY = castToType<num>(value).toDouble()),
     'shadowColor': StaticDefinedBindingProperty(getter: (context) {
       return CSSColor.convertToHex(castToType<CanvasRenderingContext2D>(context).shadowColor);
     }, setter: (context, value) {
@@ -654,6 +662,9 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   Map<String, String?> _fontProperties = {};
   double? _fontSize;
 
+  double _shadowOffsetX = 0.0;
+  double _shadowOffsetY = 0.0;
+
   double _globalAlpha = 1.0;
   double get globalAlpha => _globalAlpha;
   set globalAlpha(double? value) {
@@ -797,8 +808,10 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
       _direction = state[9];
       _shadowBlur = state[10];
       _shadowColor = state[11];
-      _globalAlpha = state[12] as double;
-      _globalCompositeOperation = state[13] as String;
+      _shadowOffsetX = state[12] as double;
+      _shadowOffsetY = state[13] as double;
+      _globalAlpha = state[14] as double;
+      _globalCompositeOperation = state[15] as String;
       _globalBlendMode = _parseCompositeOperation(_globalCompositeOperation) ?? BlendMode.srcOver;
 
       canvas.restore();
@@ -823,6 +836,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
         direction,
         shadowBlur,
         shadowColor,
+        _shadowOffsetX,
+        _shadowOffsetY,
         _globalAlpha,
         _globalCompositeOperation,
       ]);
@@ -1125,7 +1140,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     _lineDash = segments;
   }
 
-  bool get _shouldPaintShadow => _shadowColor.alpha != 0 && _shadowBlur > 0;
+  bool get _shouldPaintShadow =>
+      _shadowColor.alpha != 0 && (_shadowBlur > 0 || _shadowOffsetX != 0.0 || _shadowOffsetY != 0.0);
 
   double _shadowSigmaFromRadius(double radius) {
     if (radius <= 0) return 0.0;
@@ -1148,7 +1164,12 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
         ..strokeWidth = lineWidth
         ..strokeMiterLimit = miterLimit;
     }
+    canvas.save();
+    if (_shadowOffsetX != 0.0 || _shadowOffsetY != 0.0) {
+      canvas.translate(_shadowOffsetX, _shadowOffsetY);
+    }
     canvas.drawPath(path, shadowPaint);
+    canvas.restore();
   }
 
   void _paintShadowForRect(Canvas canvas, Rect rect, {required PaintingStyle style}) {
@@ -1634,6 +1655,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     _miterLimit = 10.0;
     _shadowBlur = 0.0;
     _shadowColor = const Color(0x00000000);
+    _shadowOffsetX = 0.0;
+    _shadowOffsetY = 0.0;
     _globalAlpha = 1.0;
     _globalCompositeOperation = 'source-over';
     _globalBlendMode = BlendMode.srcOver;

@@ -17,6 +17,8 @@ interface CanvasRenderingContext2D extends CanvasRenderingContext {
     miterLimit: number;
     textAlign: string;
     textBaseline: string;
+    shadowOffsetX: number;
+    shadowOffsetY: number;
     shadowBlur: number;
     shadowColor: string;
     // @TODO: Following number should be double.

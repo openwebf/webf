@@ -1,4 +1,4 @@
-fdescribe('Canvas globalAlpha and globalCompositeOperation', () => {
+describe('Canvas globalAlpha and globalCompositeOperation', () => {
   it('should apply globalAlpha to subsequent drawing operations', async (done) => {
     const canvas = document.createElement('canvas');
     canvas.width = 200;
