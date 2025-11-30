@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { WebFListView } from '@openwebf/react-core-ui';
+import { WebFListView, useFlutterAttached } from '@openwebf/react-core-ui';
 
 const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <h2 className="text-lg font-bold text-gray-800 mt-6 mb-3 px-1 border-b border-gray-200 pb-2">{children}</h2>
@@ -7,8 +7,12 @@ const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
 const CanvasCard: React.FC<{ title: string; draw: (ctx: CanvasRenderingContext2D) => void; animated?: boolean }> = ({ title, draw, animated = false }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { isFlutterAttached } = useFlutterAttached();
 
   useEffect(() => {
+    if (!isFlutterAttached) {
+      return;
+    }
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -36,14 +40,13 @@ const CanvasCard: React.FC<{ title: string; draw: (ctx: CanvasRenderingContext2D
     } else {
       draw(ctx);
     }
-  }, [draw, animated]);
-
+  }, [draw, animated, isFlutterAttached]);
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex flex-col gap-3">
       <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
       <div className="w-full flex justify-center bg-gray-50 rounded border border-gray-100 overflow-hidden">
-        <canvas 
-          ref={canvasRef} 
+        <canvas
+          ref={canvasRef}
           style={{ width: '300px', height: '200px' }}
           className="w-[300px] h-[200px]"
         />
@@ -63,8 +66,8 @@ export const Canvas2dPage: React.FC = () => {
 
         <SectionTitle>Basic Shapes & Styles</SectionTitle>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <CanvasCard 
-            title="Rectangles (Fill & Stroke)" 
+          <CanvasCard
+            title="Rectangles (Fill & Stroke)"
             draw={(ctx) => {
               ctx.fillStyle = 'rgb(200, 0, 0)';
               ctx.fillRect(20, 20, 100, 100);
@@ -75,12 +78,12 @@ export const Canvas2dPage: React.FC = () => {
               ctx.strokeStyle = 'green';
               ctx.lineWidth = 5;
               ctx.strokeRect(100, 30, 80, 80);
-              
+
               ctx.clearRect(80, 80, 40, 40);
-            }} 
+            }}
           />
-          <CanvasCard 
-            title="Paths (Lines & Arcs)" 
+          <CanvasCard
+            title="Paths (Lines & Arcs)"
             draw={(ctx) => {
               // Triangle
               ctx.beginPath();
@@ -103,14 +106,14 @@ export const Canvas2dPage: React.FC = () => {
               ctx.arc(235, 70, 5, 0, Math.PI * 2, true);  // Right eye
               ctx.strokeStyle = '#36A2EB';
               ctx.stroke();
-            }} 
+            }}
           />
         </div>
 
         <SectionTitle>Styles & Text</SectionTitle>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <CanvasCard 
-            title="Gradients & Patterns" 
+          <CanvasCard
+            title="Gradients & Patterns"
             draw={(ctx) => {
                // Linear Gradient
                const lingrad = ctx.createLinearGradient(0, 0, 0, 150);
@@ -128,10 +131,10 @@ export const Canvas2dPage: React.FC = () => {
                radgrad.addColorStop(1, 'rgba(1, 159, 98, 0)');
                ctx.fillStyle = radgrad;
                ctx.fillRect(150, 0, 150, 150);
-            }} 
+            }}
           />
-          <CanvasCard 
-            title="Text Rendering" 
+          <CanvasCard
+            title="Text Rendering"
             draw={(ctx) => {
               ctx.font = '24px serif';
               ctx.fillStyle = 'black';
@@ -141,22 +144,22 @@ export const Canvas2dPage: React.FC = () => {
               ctx.lineWidth = 1;
               ctx.strokeStyle = 'red';
               ctx.strokeText('Stroke Text', 20, 100);
-              
+
               ctx.font = 'italic 20px monospace';
               ctx.fillStyle = 'blue';
               ctx.fillText('Monospace', 20, 140);
-            }} 
+            }}
           />
         </div>
 
         <SectionTitle>Transformations</SectionTitle>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-           <CanvasCard 
-            title="Rotate & Translate" 
+           <CanvasCard
+            title="Rotate & Translate"
             draw={(ctx) => {
               ctx.save();
               ctx.translate(150, 100); // Move to center
-              
+
               for (let i = 0; i < 6; i++) {
                 ctx.fillStyle = `rgba(${255 - 40 * i}, ${40 * i}, 255, 0.5)`;
                 for (let j = 0; j < i * 6; j++) {
@@ -167,37 +170,37 @@ export const Canvas2dPage: React.FC = () => {
                 }
               }
               ctx.restore();
-            }} 
+            }}
           />
-           <CanvasCard 
-            title="Scale" 
+           <CanvasCard
+            title="Scale"
             draw={(ctx) => {
               ctx.save();
               ctx.translate(20, 20);
               ctx.strokeStyle = 'purple';
               ctx.strokeRect(0, 0, 50, 50);
-              
+
               ctx.scale(2, 2);
               ctx.strokeStyle = 'orange';
               ctx.strokeRect(0, 0, 50, 50);
-              
+
               ctx.scale(1.5, 1.5);
               ctx.strokeStyle = 'green';
               ctx.strokeRect(0, 0, 50, 50);
               ctx.restore();
-            }} 
+            }}
           />
         </div>
 
         <SectionTitle>Animation</SectionTitle>
         <div className="grid grid-cols-1 gap-4">
-          <CanvasCard 
-            title="Animated Solar System" 
+          <CanvasCard
+            title="Animated Solar System"
             animated={true}
             draw={(ctx) => {
               const time = new Date();
               ctx.clearRect(0, 0, 300, 200);
-              
+
               ctx.save();
               ctx.translate(150, 100);
 
@@ -239,7 +242,7 @@ export const Canvas2dPage: React.FC = () => {
               ctx.fill();
 
               ctx.restore();
-            }} 
+            }}
           />
         </div>
 
