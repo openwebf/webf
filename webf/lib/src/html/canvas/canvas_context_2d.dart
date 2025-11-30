@@ -323,6 +323,14 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, _context2dSyncMethods];
 
   static final StaticDefinedBindingPropertyMap _context2dProperties = {
+    'globalAlpha': StaticDefinedBindingProperty(
+        getter: (context) => castToType<CanvasRenderingContext2D>(context).globalAlpha,
+        setter: (context, value) =>
+            castToType<CanvasRenderingContext2D>(context).globalAlpha = castToType<num>(value).toDouble()),
+    'globalCompositeOperation': StaticDefinedBindingProperty(
+        getter: (context) => castToType<CanvasRenderingContext2D>(context).globalCompositeOperation,
+        setter: (context, value) =>
+            castToType<CanvasRenderingContext2D>(context).globalCompositeOperation = castToType<String>(value)),
     'fillStyle': StaticDefinedBindingProperty(getter: (context) {
       if (castToType<CanvasRenderingContext2D>(context).fillStyle is CanvasGradient) {
         return castToType<CanvasRenderingContext2D>(context).fillStyle;
@@ -646,6 +654,95 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   Map<String, String?> _fontProperties = {};
   double? _fontSize;
 
+  double _globalAlpha = 1.0;
+  double get globalAlpha => _globalAlpha;
+  set globalAlpha(double? value) {
+    if (value == null) return;
+    final double alpha = value.clamp(0.0, 1.0);
+    addAction('globalAlpha', (Canvas canvas, Size size) {
+      _globalAlpha = alpha;
+    }, CanvasActionType.execute, {
+      'value': alpha,
+    });
+  }
+
+  String _globalCompositeOperation = 'source-over';
+  BlendMode _globalBlendMode = BlendMode.srcOver;
+
+  String get globalCompositeOperation => _globalCompositeOperation;
+
+  static BlendMode? _parseCompositeOperation(String value) {
+    switch (value) {
+      case 'source-over':
+        return BlendMode.srcOver;
+      case 'source-atop':
+        return BlendMode.srcATop;
+      case 'source-in':
+        return BlendMode.srcIn;
+      case 'source-out':
+        return BlendMode.srcOut;
+      case 'destination-over':
+        return BlendMode.dstOver;
+      case 'destination-atop':
+        return BlendMode.dstATop;
+      case 'destination-in':
+        return BlendMode.dstIn;
+      case 'destination-out':
+        return BlendMode.dstOut;
+      case 'lighter':
+        return BlendMode.plus;
+      case 'copy':
+        return BlendMode.src;
+      case 'xor':
+        return BlendMode.xor;
+      case 'multiply':
+        return BlendMode.multiply;
+      case 'screen':
+        return BlendMode.screen;
+      case 'overlay':
+        return BlendMode.overlay;
+      case 'darken':
+        return BlendMode.darken;
+      case 'lighten':
+        return BlendMode.lighten;
+      case 'color-dodge':
+        return BlendMode.colorDodge;
+      case 'color-burn':
+        return BlendMode.colorBurn;
+      case 'hard-light':
+        return BlendMode.hardLight;
+      case 'soft-light':
+        return BlendMode.softLight;
+      case 'difference':
+        return BlendMode.difference;
+      case 'exclusion':
+        return BlendMode.exclusion;
+      case 'hue':
+        return BlendMode.hue;
+      case 'saturation':
+        return BlendMode.saturation;
+      case 'color':
+        return BlendMode.color;
+      case 'luminosity':
+        return BlendMode.luminosity;
+    }
+    return null;
+  }
+
+  set globalCompositeOperation(String value) {
+    final BlendMode? mode = _parseCompositeOperation(value);
+    if (mode == null) {
+      // Ignore invalid composite operations per spec.
+      return;
+    }
+    addAction('globalCompositeOperation', (Canvas canvas, Size size) {
+      _globalCompositeOperation = value;
+      _globalBlendMode = mode;
+    }, CanvasActionType.execute, {
+      'value': value,
+    });
+  }
+
   bool _parseFont(String newValue) {
     Map<String, String?> properties = {};
     CSSStyleProperty.setShorthandFont(properties, newValue);
@@ -700,6 +797,9 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
       _direction = state[9];
       _shadowBlur = state[10];
       _shadowColor = state[11];
+      _globalAlpha = state[12] as double;
+      _globalCompositeOperation = state[13] as String;
+      _globalBlendMode = _parseCompositeOperation(_globalCompositeOperation) ?? BlendMode.srcOver;
 
       canvas.restore();
     }, CanvasActionType.execute, {
@@ -723,6 +823,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
         direction,
         shadowBlur,
         shadowColor,
+        _globalAlpha,
+        _globalCompositeOperation,
       ]);
       canvas.save();
     }, CanvasActionType.execute, {
@@ -754,19 +856,20 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
       if (fillStyle is! Color) {
         return;
       }
-
-      Paint paint = Paint()
-        ..color = fillStyle as Color
-        ..style = PaintingStyle.fill;
-      if (path != null) {
-        path.path.fillType = fillType;
-        _paintShadowForPath(canvas, path.path, paintingStyle: PaintingStyle.fill);
-        canvas.drawPath(path.path, paint);
-      } else {
-        path2d.path.fillType = fillType;
-        _paintShadowForPath(canvas, path2d.path, paintingStyle: PaintingStyle.fill);
-        canvas.drawPath(path2d.path, paint);
-      }
+      _drawWithGlobalCompositing(canvas, size, (Canvas drawCanvas) {
+        Paint paint = Paint()
+          ..color = fillStyle as Color
+          ..style = PaintingStyle.fill;
+        if (path != null) {
+          path.path.fillType = fillType;
+          _paintShadowForPath(drawCanvas, path.path, paintingStyle: PaintingStyle.fill);
+          drawCanvas.drawPath(path.path, paint);
+        } else {
+          path2d.path.fillType = fillType;
+          _paintShadowForPath(drawCanvas, path2d.path, paintingStyle: PaintingStyle.fill);
+          drawCanvas.drawPath(path2d.path, paint);
+        }
+      });
     }, CanvasActionType.execute, {
       'fillType': fillType.toString(),
       'pathProvided': path != null,
@@ -779,15 +882,17 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
       if (strokeStyle is! Color) {
         return;
       }
-      Paint paint = Paint()
-        ..color = strokeStyle as Color
-        ..strokeJoin = lineJoin
-        ..strokeCap = lineCap
-        ..strokeWidth = lineWidth
-        ..strokeMiterLimit = miterLimit
-        ..style = PaintingStyle.stroke;
-      _paintShadowForPath(canvas, path?.path ?? path2d.path, paintingStyle: PaintingStyle.stroke);
-      canvas.drawPath(path?.path ?? path2d.path, paint);
+      _drawWithGlobalCompositing(canvas, size, (Canvas drawCanvas) {
+        Paint paint = Paint()
+          ..color = strokeStyle as Color
+          ..strokeJoin = lineJoin
+          ..strokeCap = lineCap
+          ..strokeWidth = lineWidth
+          ..strokeMiterLimit = miterLimit
+          ..style = PaintingStyle.stroke;
+        _paintShadowForPath(drawCanvas, path?.path ?? path2d.path, paintingStyle: PaintingStyle.stroke);
+        drawCanvas.drawPath(path?.path ?? path2d.path, paint);
+      });
     }, CanvasActionType.execute, {
       'pathProvided': path != null,
       'style': _describeStyleValue(strokeStyle),
@@ -855,20 +960,22 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
       Image img = imgElement!.image!;
       // ctx.drawImage(image, dx, dy);
-      if (argumentCount == 3) {
-        canvas.drawImage(img, Offset(dx, dy), Paint());
-      } else {
-        if (argumentCount == 5) {
-          // ctx.drawImage(image, dx, dy, dWidth, dHeight);
-          sx = 0;
-          sy = 0;
-          sWidth = img.width.toDouble();
-          sHeight = img.height.toDouble();
-        }
+      _drawWithGlobalCompositing(canvas, size, (Canvas drawCanvas) {
+        if (argumentCount == 3) {
+          drawCanvas.drawImage(img, Offset(dx, dy), Paint());
+        } else {
+          if (argumentCount == 5) {
+            // ctx.drawImage(image, dx, dy, dWidth, dHeight);
+            sx = 0;
+            sy = 0;
+            sWidth = img.width.toDouble();
+            sHeight = img.height.toDouble();
+          }
 
-        canvas.drawImageRect(img, Rect.fromLTWH(sx, sy, sWidth, sHeight),
-            Rect.fromLTWH(dx, dy, dWidth, dHeight), Paint());
-      }
+          drawCanvas.drawImageRect(
+              img, Rect.fromLTWH(sx, sy, sWidth, sHeight), Rect.fromLTWH(dx, dy, dWidth, dHeight), Paint());
+        }
+      });
     });
   }
 
@@ -1050,6 +1157,19 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     _paintShadowForPath(canvas, rectPath, paintingStyle: style);
   }
 
+  void _drawWithGlobalCompositing(Canvas canvas, Size size, void Function(Canvas drawCanvas) draw, {Rect? bounds}) {
+    if (_globalAlpha == 1.0 && _globalBlendMode == BlendMode.srcOver) {
+      draw(canvas);
+      return;
+    }
+    final Paint layerPaint = Paint()
+      ..blendMode = _globalBlendMode
+      ..color = const Color(0xFFFFFFFF).withOpacity(_globalAlpha);
+    canvas.saveLayer(bounds, layerPaint);
+    draw(canvas);
+    canvas.restore();
+  }
+
   void translate(double x, double y) {
     addAction('translate', (Canvas canvas, Size size) {
       canvas.translate(x, y);
@@ -1207,84 +1327,85 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   void fillRect(double x, double y, double w, double h) {
     Rect rect = Rect.fromLTWH(x, y, w, h);
     addAction('fillRect', (Canvas canvas, Size size) {
-      Paint paint = Paint();
-      _paintShadowForRect(canvas, rect, style: PaintingStyle.fill);
-      if (fillStyle is Color || fillStyle is CanvasRadialGradient || fillStyle is CanvasLinearGradient) {
-        if (fillStyle is Color) {
-          paint..color = fillStyle as Color;
-        } else if (fillStyle is CanvasRadialGradient) {
-          paint..shader = _drawRadialGradient(fillStyle as CanvasRadialGradient, x, y, w, h).createShader(rect);
-        } else if (fillStyle is CanvasLinearGradient) {
-          paint..shader = _drawLinearGradient(fillStyle as CanvasLinearGradient, x, y, w, h).createShader(rect);
-        }
-        canvas.drawRect(rect, paint);
-      } else if (fillStyle is CanvasPattern) {
-        var canvasPattern = fillStyle as CanvasPattern;
-        if (canvasPattern.image.image_element == null && canvasPattern.image.canvas_element == null) {
-          throw AssertionError('CanvasPattern must be created from a canvas or image');
-        }
-
-        String repetition = canvasPattern.repetition;
-        int patternWidth = canvasPattern.image.image_element != null
-            ? canvasPattern.image.image_element!.width
-            : canvasPattern.image.canvas_element!.width;
-        int patternHeight = canvasPattern.image.image_element != null
-            ? canvasPattern.image.image_element!.height
-            : canvasPattern.image.canvas_element!.height;
-        double xRepeatNum = ((w - x) / patternWidth);
-        double yRepeatNum = ((h - y) / patternHeight);
-        // CanvasPattern created from an image
-        if (canvasPattern.image.image_element != null) {
-          Image? repeatImg =
-              canvasPattern.image.image_element?.image;
-
-          if (repetition == 'no-repeat') {
-            xRepeatNum = 1;
-            yRepeatNum = 1;
-          } else if (repetition == 'repeat-x') {
-            yRepeatNum = 1;
-          } else if (repetition == 'repeat-y') {
-            xRepeatNum = 1;
+      _drawWithGlobalCompositing(canvas, size, (Canvas drawCanvas) {
+        Paint paint = Paint();
+        _paintShadowForRect(drawCanvas, rect, style: PaintingStyle.fill);
+        if (fillStyle is Color || fillStyle is CanvasRadialGradient || fillStyle is CanvasLinearGradient) {
+          if (fillStyle is Color) {
+            paint..color = fillStyle as Color;
+          } else if (fillStyle is CanvasRadialGradient) {
+            paint..shader = _drawRadialGradient(fillStyle as CanvasRadialGradient, x, y, w, h).createShader(rect);
+          } else if (fillStyle is CanvasLinearGradient) {
+            paint..shader = _drawLinearGradient(fillStyle as CanvasLinearGradient, x, y, w, h).createShader(rect);
+          }
+          drawCanvas.drawRect(rect, paint);
+        } else if (fillStyle is CanvasPattern) {
+          var canvasPattern = fillStyle as CanvasPattern;
+          if (canvasPattern.image.image_element == null && canvasPattern.image.canvas_element == null) {
+            throw AssertionError('CanvasPattern must be created from a canvas or image');
           }
 
-          if (repeatImg != null) {
-            for (int i = 0; i < xRepeatNum; i++) {
-              for (int j = 0; j < yRepeatNum; j++) {
-                canvas.drawImage(repeatImg, Offset(x + i * patternWidth, y + j * patternHeight), paint);
-              }
+          String repetition = canvasPattern.repetition;
+          int patternWidth = canvasPattern.image.image_element != null
+              ? canvasPattern.image.image_element!.width
+              : canvasPattern.image.canvas_element!.width;
+          int patternHeight = canvasPattern.image.image_element != null
+              ? canvasPattern.image.image_element!.height
+              : canvasPattern.image.canvas_element!.height;
+          double xRepeatNum = ((w - x) / patternWidth);
+          double yRepeatNum = ((h - y) / patternHeight);
+          // CanvasPattern created from an image
+          if (canvasPattern.image.image_element != null) {
+            Image? repeatImg = canvasPattern.image.image_element?.image;
+
+            if (repetition == 'no-repeat') {
+              xRepeatNum = 1;
+              yRepeatNum = 1;
+            } else if (repetition == 'repeat-x') {
+              yRepeatNum = 1;
+            } else if (repetition == 'repeat-y') {
+              xRepeatNum = 1;
             }
-          }
-        } else {
-          // CanvasPattern created from a canvas
-          canvas.translate(x, y);
-          switch (repetition) {
-            case 'no-repeat':
-              canvasPattern.image.canvas_element?.context2d!.replayActions(canvas, size);
-              break;
-            case 'repeat-x':
-              for (int i = 0; i < xRepeatNum; i++) {
-                canvasPattern.image.canvas_element?.context2d!.replayActions(canvas, size);
-                canvas.translate(patternWidth.toDouble(), 0);
-              }
-              break;
-            case 'repeat-y':
-              for (int j = 0; j < yRepeatNum; j++) {
-                canvasPattern.image.canvas_element?.context2d!.replayActions(canvas, size);
-                canvas.translate(0, patternHeight.toDouble());
-              }
-              break;
-            case 'repeat':
+
+            if (repeatImg != null) {
               for (int i = 0; i < xRepeatNum; i++) {
                 for (int j = 0; j < yRepeatNum; j++) {
-                  canvasPattern.image.canvas_element?.context2d!.replayActions(canvas, size);
-                  canvas.translate(0, patternHeight.toDouble());
+                  drawCanvas.drawImage(repeatImg, Offset(x + i * patternWidth, y + j * patternHeight), paint);
                 }
-                canvas.translate(patternWidth.toDouble(), y - h);
               }
-              break;
+            }
+          } else {
+            // CanvasPattern created from a canvas
+            drawCanvas.translate(x, y);
+            switch (repetition) {
+              case 'no-repeat':
+                canvasPattern.image.canvas_element?.context2d!.replayActions(drawCanvas, size);
+                break;
+              case 'repeat-x':
+                for (int i = 0; i < xRepeatNum; i++) {
+                  canvasPattern.image.canvas_element?.context2d!.replayActions(drawCanvas, size);
+                  drawCanvas.translate(patternWidth.toDouble(), 0);
+                }
+                break;
+              case 'repeat-y':
+                for (int j = 0; j < yRepeatNum; j++) {
+                  canvasPattern.image.canvas_element?.context2d!.replayActions(drawCanvas, size);
+                  drawCanvas.translate(0, patternHeight.toDouble());
+                }
+                break;
+              case 'repeat':
+                for (int i = 0; i < xRepeatNum; i++) {
+                  for (int j = 0; j < yRepeatNum; j++) {
+                    canvasPattern.image.canvas_element?.context2d!.replayActions(drawCanvas, size);
+                    drawCanvas.translate(0, patternHeight.toDouble());
+                  }
+                  drawCanvas.translate(patternWidth.toDouble(), y - h);
+                }
+                break;
+            }
           }
         }
-      }
+      });
     }, CanvasActionType.execute, {
       'x': x,
       'y': y,
@@ -1297,22 +1418,24 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   void strokeRect(double x, double y, double w, double h) {
     Rect rect = Rect.fromLTWH(x, y, w, h);
     addAction('strokeRect', (Canvas canvas, Size size) {
-      Paint paint = Paint();
-      _paintShadowForRect(canvas, rect, style: PaintingStyle.stroke);
-      if (strokeStyle is Color) {
-        paint..color = strokeStyle as Color;
-      } else if (strokeStyle is CanvasRadialGradient) {
-        paint..shader = _drawRadialGradient(strokeStyle as CanvasRadialGradient, x, y, w, h).createShader(rect);
-      } else if (strokeStyle is CanvasLinearGradient) {
-        paint..shader = _drawLinearGradient(strokeStyle as CanvasLinearGradient, x, y, w, h).createShader(rect);
-      }
-      paint
-        ..strokeJoin = lineJoin
-        ..strokeCap = lineCap
-        ..strokeWidth = lineWidth
-        ..strokeMiterLimit = miterLimit
-        ..style = PaintingStyle.stroke;
-      canvas.drawRect(rect, paint);
+      _drawWithGlobalCompositing(canvas, size, (Canvas drawCanvas) {
+        Paint paint = Paint();
+        _paintShadowForRect(drawCanvas, rect, style: PaintingStyle.stroke);
+        if (strokeStyle is Color) {
+          paint..color = strokeStyle as Color;
+        } else if (strokeStyle is CanvasRadialGradient) {
+          paint..shader = _drawRadialGradient(strokeStyle as CanvasRadialGradient, x, y, w, h).createShader(rect);
+        } else if (strokeStyle is CanvasLinearGradient) {
+          paint..shader = _drawLinearGradient(strokeStyle as CanvasLinearGradient, x, y, w, h).createShader(rect);
+        }
+        paint
+          ..strokeJoin = lineJoin
+          ..strokeCap = lineCap
+          ..strokeWidth = lineWidth
+          ..strokeMiterLimit = miterLimit
+          ..style = PaintingStyle.stroke;
+        drawCanvas.drawRect(rect, paint);
+      });
     }, CanvasActionType.execute, {
       'x': x,
       'y': y,
@@ -1386,16 +1509,18 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
       if (fillStyle is! Color) {
         return;
       }
-      TextPainter textPainter = _getTextPainter(text, fillStyle as Color);
-      if (maxWidth != null) {
-        // FIXME: should scale down to a smaller font size in order to fit the text in the specified width.
-        textPainter.layout(maxWidth: maxWidth);
-      } else {
-        textPainter.layout();
-      }
-      // Paint text start with baseline.
-      double offsetToBaseline = textPainter.computeDistanceToActualBaseline(TextBaseline.alphabetic);
-      textPainter.paint(canvas, Offset(x, y - offsetToBaseline) - _getAlignOffset(textPainter.width));
+      _drawWithGlobalCompositing(canvas, size, (Canvas drawCanvas) {
+        TextPainter textPainter = _getTextPainter(text, fillStyle as Color);
+        if (maxWidth != null) {
+          // FIXME: should scale down to a smaller font size in order to fit the text in the specified width.
+          textPainter.layout(maxWidth: maxWidth);
+        } else {
+          textPainter.layout();
+        }
+        // Paint text start with baseline.
+        double offsetToBaseline = textPainter.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+        textPainter.paint(drawCanvas, Offset(x, y - offsetToBaseline) - _getAlignOffset(textPainter.width));
+      });
     });
   }
 
@@ -1404,17 +1529,19 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
       if (strokeStyle is! Color) {
         return;
       }
-      TextPainter textPainter = _getTextPainter(text, strokeStyle as Color, shouldStrokeText: true);
-      if (maxWidth != null) {
-        // FIXME: should scale down to a smaller font size in order to fit the text in the specified width.
-        textPainter.layout(maxWidth: maxWidth);
-      } else {
-        textPainter.layout();
-      }
+      _drawWithGlobalCompositing(canvas, size, (Canvas drawCanvas) {
+        TextPainter textPainter = _getTextPainter(text, strokeStyle as Color, shouldStrokeText: true);
+        if (maxWidth != null) {
+          // FIXME: should scale down to a smaller font size in order to fit the text in the specified width.
+          textPainter.layout(maxWidth: maxWidth);
+        } else {
+          textPainter.layout();
+        }
 
-      double offsetToBaseline = textPainter.computeDistanceToActualBaseline(TextBaseline.alphabetic);
-      // Paint text start with baseline.
-      textPainter.paint(canvas, Offset(x, y - offsetToBaseline) - _getAlignOffset(textPainter.width));
+        double offsetToBaseline = textPainter.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+        // Paint text start with baseline.
+        textPainter.paint(drawCanvas, Offset(x, y - offsetToBaseline) - _getAlignOffset(textPainter.width));
+      });
     });
   }
 
@@ -1507,6 +1634,9 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     _miterLimit = 10.0;
     _shadowBlur = 0.0;
     _shadowColor = const Color(0x00000000);
+    _globalAlpha = 1.0;
+    _globalCompositeOperation = 'source-over';
+    _globalBlendMode = BlendMode.srcOver;
     path2d = Path2D();
   }
 }

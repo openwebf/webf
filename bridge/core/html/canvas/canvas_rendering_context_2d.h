@@ -49,7 +49,13 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
                                const AtomicString& repetition,
                                ExceptionState& exception_state);
   std::shared_ptr<QJSUnionDomStringCanvasGradient> fillStyle();
- void setFillStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style, ExceptionState& exception_state);
+  void setFillStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style, ExceptionState& exception_state);
+
+  double globalAlpha();
+  void setGlobalAlpha(double global_alpha, ExceptionState& exception_state);
+  AtomicString globalCompositeOperation();
+  void setGlobalCompositeOperation(const AtomicString& global_composite_operation,
+                                   ExceptionState& exception_state);
 
   AtomicString direction();
   void setDirection(const AtomicString& direction, ExceptionState& exception_state);
@@ -194,6 +200,8 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   mutable bool _needsPaint = false;
   std::shared_ptr<QJSUnionDomStringCanvasGradient> fill_style_ = nullptr;
   std::shared_ptr<QJSUnionDomStringCanvasGradient> stroke_style_ = nullptr;
+  std::optional<double> global_alpha_cache_;
+  std::optional<AtomicString> global_composite_operation_cache_;
   std::optional<AtomicString> direction_cache_;
   std::optional<AtomicString> font_cache_;
   std::optional<AtomicString> line_cap_cache_;
