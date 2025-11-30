@@ -4,6 +4,8 @@ import {Path2D} from "./path_2d";
 import {CanvasPattern} from "./canvas_pattern";
 
 interface CanvasRenderingContext2D extends CanvasRenderingContext {
+    globalAlpha: number;
+    globalCompositeOperation: string;
     fillStyle: string | CanvasGradient | null;
     direction: string;
     font: string;

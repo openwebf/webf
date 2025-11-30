@@ -126,6 +126,36 @@ void CanvasRenderingContext2D::setFillStyle(const std::shared_ptr<QJSUnionDomStr
   fill_style_ = style;
 }
 
+double CanvasRenderingContext2D::globalAlpha() {
+  if (global_alpha_cache_.has_value())
+    return global_alpha_cache_.value();
+  NativeValue result = GetBindingProperty(binding_call_methods::kglobalAlpha,
+                                          FlushUICommandReason::kDependentsOnElement, ASSERT_NO_EXCEPTION());
+  return NativeValueConverter<NativeTypeDouble>::FromNativeValue(result);
+}
+
+void CanvasRenderingContext2D::setGlobalAlpha(double global_alpha, ExceptionState& exception_state) {
+  global_alpha_cache_ = global_alpha;
+  SetBindingPropertyAsync(binding_call_methods::kglobalAlpha,
+                          NativeValueConverter<NativeTypeDouble>::ToNativeValue(global_alpha), exception_state);
+}
+
+AtomicString CanvasRenderingContext2D::globalCompositeOperation() {
+  if (global_composite_operation_cache_.has_value())
+    return global_composite_operation_cache_.value();
+  NativeValue result = GetBindingProperty(binding_call_methods::kglobalCompositeOperation,
+                                          FlushUICommandReason::kDependentsOnElement, ASSERT_NO_EXCEPTION());
+  return NativeValueConverter<NativeTypeString>::FromNativeValue(std::move(result));
+}
+
+void CanvasRenderingContext2D::setGlobalCompositeOperation(const AtomicString& global_composite_operation,
+                                                           ExceptionState& exception_state) {
+  global_composite_operation_cache_ = global_composite_operation;
+  SetBindingPropertyAsync(binding_call_methods::kglobalCompositeOperation,
+                          NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), global_composite_operation),
+                          exception_state);
+}
+
 AtomicString CanvasRenderingContext2D::direction() {
   if (direction_cache_.has_value())
     return direction_cache_.value();
@@ -810,6 +840,8 @@ void CanvasRenderingContext2D::Trace(GCVisitor* visitor) const {
 }
 
 void CanvasRenderingContext2D::ClearPropertyCaches() {
+  global_alpha_cache_.reset();
+  global_composite_operation_cache_.reset();
   direction_cache_.reset();
   font_cache_.reset();
   line_cap_cache_.reset();

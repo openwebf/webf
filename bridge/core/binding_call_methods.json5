@@ -79,6 +79,8 @@
     "async",
     "getContext",
     "fillStyle",
+    "globalAlpha",
+    "globalCompositeOperation",
     "direction",
     "font",
     "strokeStyle",
