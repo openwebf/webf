@@ -371,12 +371,20 @@ class WebFCanvasPaint extends flutter.SingleChildRenderObjectWidget {
 
     double? scaleX;
     double? scaleY;
+
+    // Guard against zero bitmap dimensions (canvas width/height attributes) to
+    // avoid infinite scales when style width/height are non-zero. This can
+    // happen if JS sets canvas.width / canvas.height to 0 before layout.
+    final int canvasWidth = canvasElement.width;
+    final int canvasHeight = canvasElement.height;
+
     if (styleWidth != null) {
-      scaleX = paintingBounding.width / canvasElement.width;
+      scaleX = canvasWidth > 0 ? paintingBounding.width / canvasWidth : 1.0;
     }
     if (styleHeight != null) {
-      scaleY = paintingBounding.height / canvasElement.height;
+      scaleY = canvasHeight > 0 ? paintingBounding.height / canvasHeight : 1.0;
     }
+
     if (canvasElement.painter.scaleX != scaleX || canvasElement.painter.scaleY != scaleY) {
       canvasElement.painter
         ..scaleX = scaleX

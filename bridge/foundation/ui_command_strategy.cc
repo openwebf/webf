@@ -55,6 +55,7 @@ void UICommandSyncStrategy::RecordUICommand(UICommand type,
     case UICommand::kCreateDocument:
     case UICommand::kCreateWindow:
     case UICommand::kAsyncCaller:
+    case UICommand::kRequestCanvasPaint:
     case UICommand::kRequestAnimationFrame:
     case UICommand::kRemoveAttribute: {
       SyncToRingBuffer();

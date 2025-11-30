@@ -780,6 +780,7 @@ enum UICommandType {
   createSVGElement,
   createElementNS,
   asyncCaller,
+  requestCanvasPaint,
   requestAnimationFrame,
   finishRecordingCommand,
 }

@@ -46,6 +46,7 @@ enum class UICommand {
   kCreateSVGElement,
   kCreateElementNS,
   kAsyncCaller,
+  kRequestCanvasPaint,
   // Schedule a requestAnimationFrame on UI side
   kRequestAnimationFrame,
   kFinishRecordingCommand,

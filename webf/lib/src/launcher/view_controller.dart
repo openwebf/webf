@@ -11,6 +11,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:path/path.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/src/foundation/logger.dart';
 import 'package:flutter/scheduler.dart';
@@ -19,6 +20,7 @@ import 'package:ffi/ffi.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/html/canvas/canvas_context_2d.dart';
 import 'package:webf/src/html/text.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/src/foundation/dio_client.dart' show disposeSharedDioForContext;
@@ -95,7 +97,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   void resumeAnimationTimeline() {
-    
+
     _pendingAnimationTimesLines.forEach((callback) {
       try {
         callback();
@@ -258,7 +260,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   void attachToFlutter(BuildContext context) {
     _registerPlatformBrightnessChange();
     // Resume animation timeline when attached back to Flutter
-    
+
     document.animationTimeline.resume();
     // Also clear the stopped guard and run any pending animation starters.
     resumeAnimationTimeline();
@@ -361,9 +363,9 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     if (_originalOnPlatformBrightnessChanged != null) {
       _originalOnPlatformBrightnessChanged!();
     }
-    
+
     window.dispatchEvent(ColorSchemeChangeEvent(window.colorScheme));
-    
+
     // Recalculate styles so prefers-color-scheme media queries re-evaluate
     document.recalculateStyleImmediately();
   }
@@ -609,6 +611,12 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     } else {
       debugPrint('Only element has attributes, try removing $key from Node(#$selfPtr).');
     }
+  }
+
+  void requestCanvasPaint(Pointer selfPtr) {
+    assert(hasBindingObject(selfPtr), 'targetId: $selfPtr');
+    CanvasRenderingContext2D? context2d = getBindingObject<CanvasRenderingContext2D>(selfPtr);
+    context2d?.requestPaint();
   }
 
   void setInlineStyle(Pointer selfPtr, String key, String value) {

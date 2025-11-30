@@ -150,6 +150,9 @@ class DebugFlags {
   // Enable verbose DOM logs (tree walks, counters, pseudo, etc.)
   static bool enableDomLogs = false;
 
+  // Enable verbose Canvas 2D logs (action queue + paint scheduling).
+  static bool enableCanvasLogs = false;
+
   // Enable general DevTools/CDP service logs (lifecycle, routing, targets)
   static bool enableDevToolsLogs = false;
 

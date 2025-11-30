@@ -252,6 +252,34 @@ void CanvasRenderingContext2D::setTextBaseline(const AtomicString& text_baseline
                           NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), text_baseline), exception_state);
 }
 
+double CanvasRenderingContext2D::shadowBlur() {
+  if (shadow_blur_cache_.has_value())
+    return shadow_blur_cache_.value();
+  NativeValue result = GetBindingProperty(binding_call_methods::kshadowBlur,
+                                          FlushUICommandReason::kDependentsOnElement, ASSERT_NO_EXCEPTION());
+  return NativeValueConverter<NativeTypeDouble>::FromNativeValue(result);
+}
+
+void CanvasRenderingContext2D::setShadowBlur(double shadow_blur, ExceptionState& exception_state) {
+  shadow_blur_cache_ = shadow_blur;
+  SetBindingPropertyAsync(binding_call_methods::kshadowBlur,
+                          NativeValueConverter<NativeTypeDouble>::ToNativeValue(shadow_blur), exception_state);
+}
+
+AtomicString CanvasRenderingContext2D::shadowColor() {
+  if (shadow_color_cache_.has_value())
+    return shadow_color_cache_.value();
+  NativeValue result = GetBindingProperty(binding_call_methods::kshadowColor,
+                                          FlushUICommandReason::kDependentsOnElement, ASSERT_NO_EXCEPTION());
+  return NativeValueConverter<NativeTypeString>::FromNativeValue(std::move(result));
+}
+
+void CanvasRenderingContext2D::setShadowColor(const AtomicString& shadow_color, ExceptionState& exception_state) {
+  shadow_color_cache_ = shadow_color;
+  SetBindingPropertyAsync(binding_call_methods::kshadowColor,
+                          NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), shadow_color), exception_state);
+}
+
 std::shared_ptr<QJSUnionDomStringCanvasGradient> CanvasRenderingContext2D::strokeStyle() {
   return stroke_style_;
 }
@@ -716,7 +744,8 @@ void CanvasRenderingContext2D::needsPaint() const {
     return;
   if (!_needsPaint)
     return;
-  InvokeBindingMethod(binding_call_methods::kneedsPaint, 0, nullptr, kDependentsOnElement, ASSERT_NO_EXCEPTION());
+  _needsPaint = false;
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kRequestCanvasPaint, nullptr, bindingObject(), nullptr, true);
 }
 
 void CanvasRenderingContext2D::roundRect_async(double x,
@@ -790,6 +819,8 @@ void CanvasRenderingContext2D::ClearPropertyCaches() {
   miter_limit_cache_.reset();
   text_align_cache_.reset();
   text_baseline_cache_.reset();
+  shadow_blur_cache_.reset();
+  shadow_color_cache_.reset();
 }
 
 }  // namespace webf

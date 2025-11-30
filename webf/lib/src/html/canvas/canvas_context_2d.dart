@@ -317,9 +317,6 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
       return castToType<CanvasRenderingContext2D>(context)
           .createPattern(CanvasImageSource(args[0]), castToType<String>(args[1]));
     }),
-    'needsPaint': StaticDefinedSyncBindingObjectMethod(call: (context, args) {
-       castToType<CanvasRenderingContext2D>(context).needsPaint();
-    })
   };
 
   @override
@@ -388,7 +385,22 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     'textBaseline': StaticDefinedBindingProperty(
         getter: (context) => castToType<CanvasRenderingContext2D>(context).textBaseline.toString(),
         setter: (context, value) =>
-            castToType<CanvasRenderingContext2D>(context).textBaseline = parseTextBaseline(castToType<String>(value)))
+            castToType<CanvasRenderingContext2D>(context).textBaseline = parseTextBaseline(castToType<String>(value))),
+    'shadowBlur': StaticDefinedBindingProperty(
+        getter: (context) => castToType<CanvasRenderingContext2D>(context).shadowBlur,
+        setter: (context, value) =>
+            castToType<CanvasRenderingContext2D>(context).shadowBlur = castToType<num>(value).toDouble()),
+    'shadowColor': StaticDefinedBindingProperty(getter: (context) {
+      return CSSColor.convertToHex(castToType<CanvasRenderingContext2D>(context).shadowColor);
+    }, setter: (context, value) {
+      if (value is String) {
+        Color? color = CSSColor.parseColor(value,
+            renderStyle: castToType<CanvasRenderingContext2D>(context).canvas.renderStyle);
+        if (color != null) {
+          castToType<CanvasRenderingContext2D>(context).shadowColor = color;
+        }
+      }
+    })
   };
 
   @override
@@ -410,12 +422,35 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   List<CanvasAction> _actions = [];
   List<CanvasAction> _pendingActions = [];
 
+  // Transform actions (scale/rotate/translate/transform/setTransform/resetTransform)
+  // that are applied at the root state (outside any save/restore) before the
+  // first paint. These represent the persistent CTM that should be re-applied
+  // on every subsequent frame, so that transforms like `ctx.scale(dpr, dpr)`
+  // done once before an animation loop keep affecting all later frames, just
+  // like in browsers.
+  final List<CanvasAction> _persistentRootTransforms = [];
+
   bool isActionsNotEmpty() {
     return _actions.isNotEmpty;
   }
 
-  void addAction(String name, CanvasActionFn action, [CanvasActionType type = CanvasActionType.execute] ) {
+  void addAction(String name, CanvasActionFn action,
+      [CanvasActionType type = CanvasActionType.execute, Map<String, dynamic>? debugDetails]) {
     _actions.add(CanvasAction(name, action, type));
+  }
+
+  Map<String, dynamic>? _describeStyleValue(Object? value) {
+    if (value == null) return null;
+    if (value is Color) {
+      return {
+        'valueType': 'Color',
+        'value': CSSColor.convertToHex(value),
+      };
+    }
+    return {
+      'valueType': value.runtimeType.toString(),
+      'value': value.toString(),
+    };
   }
 
   // For CanvasRenderingContext2D: createPattern() method; Creating a pattern from a canvas need to replay the actions because the canvas element may be not drawn.
@@ -429,8 +464,10 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   }
 
   List<int> needsPaintIndexes = [];
-  void needsPaint() {
-    if (_actions.isEmpty || _actions.last.type == CanvasActionType.needsPaint) return;
+  void requestPaint() {
+    if (_actions.isEmpty || _actions.last.type == CanvasActionType.needsPaint) {
+      return;
+    }
     addAction('needsPaint', (p0, p1) { }, CanvasActionType.needsPaint);
 
     int needsPaintIndex = _actions.length - 1;
@@ -441,13 +478,67 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   // Perform canvas drawing.
   List<CanvasAction> performActions(Canvas canvas, Size size) {
-    if(needsPaintIndexes.isEmpty) {
+    if (needsPaintIndexes.isEmpty) {
       return [];
     }
 
     int needsPaintIndex = needsPaintIndexes[0];
     _pendingActions = _actions.sublist(0, needsPaintIndex);
     _actions = _actions.sublist(needsPaintIndex + 1);
+
+    // Detect root-level transform actions (outside any save/restore) that
+    // appear at the very start of the first painted frame and treat them as
+    // persistent CTM. Transforms that occur later (after any drawing at the
+    // root level) must NOT be treated as persistent, or they'd incorrectly
+    // affect earlier draws when replayed.
+    if (_persistentRootTransforms.isEmpty && _pendingActions.isNotEmpty) {
+      int stackDepth = 0;
+      final List<int> rootTransformIndexes = [];
+      bool seenNonTransformAtRoot = false;
+      for (int i = 0; i < _pendingActions.length && !seenNonTransformAtRoot; i++) {
+        final CanvasAction action = _pendingActions[i];
+        final String name = action.debugName;
+        if (name == 'save') {
+          stackDepth++;
+        } else if (name == 'restore') {
+          if (stackDepth > 0) stackDepth--;
+        } else if (stackDepth == 0) {
+          if (name == 'scale' ||
+              name == 'rotate' ||
+              name == 'translate' ||
+              name == 'transform' ||
+              name == 'setTransform' ||
+              name == 'resetTransform') {
+            _persistentRootTransforms.add(action);
+            rootTransformIndexes.add(i);
+          } else {
+            // First non-transform action at root level: stop collecting
+            // persistent transforms. Any transforms after this must be
+            // applied only where they appear.
+            seenNonTransformAtRoot = true;
+          }
+        }
+      }
+      // Remove those root-level transform actions from the first frame's
+      // pending list; they will be applied via _persistentRootTransforms
+      // instead. This avoids double-applying the same transform on the
+      // initial painted frame.
+      if (rootTransformIndexes.isNotEmpty) {
+        for (int i = rootTransformIndexes.length - 1; i >= 0; i--) {
+          _pendingActions.removeAt(rootTransformIndexes[i]);
+        }
+      }
+    }
+
+    // Apply persistent root transforms (if any) at the start of every frame,
+    // before running frame-specific actions. This restores the same CTM that
+    // was in effect when the first frame was painted.
+    if (_persistentRootTransforms.isNotEmpty) {
+      for (int i = 0; i < _persistentRootTransforms.length; i++) {
+        CanvasAction persistent = _persistentRootTransforms[i];
+        persistent.fn(canvas, size);
+      }
+    }
 
     for (int i = 0; i < _pendingActions.length; i++) {
       _pendingActions[i].fn(canvas, size);
@@ -607,8 +698,12 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
       _font = state[7];
       _textAlign = state[8];
       _direction = state[9];
+      _shadowBlur = state[10];
+      _shadowColor = state[11];
 
       canvas.restore();
+    }, CanvasActionType.execute, {
+      'stackDepthBefore': _states.length,
     });
   }
 
@@ -625,17 +720,24 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
         miterLimit,
         font,
         textAlign,
-        direction
+        direction,
+        shadowBlur,
+        shadowColor,
       ]);
       canvas.save();
+    }, CanvasActionType.execute, {
+      'stackDepthBefore': _states.length,
     });
   }
 
   Path2D path2d = Path2D();
 
   void beginPath() {
+    final Rect previousBounds = path2d.path.getBounds();
     addAction('beginPath', (Canvas canvas, Size size) {
       path2d = Path2D();
+    }, CanvasActionType.execute, {
+      'previousPathBounds': previousBounds.toString(),
     });
   }
 
@@ -658,11 +760,17 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
         ..style = PaintingStyle.fill;
       if (path != null) {
         path.path.fillType = fillType;
+        _paintShadowForPath(canvas, path.path, paintingStyle: PaintingStyle.fill);
         canvas.drawPath(path.path, paint);
       } else {
         path2d.path.fillType = fillType;
+        _paintShadowForPath(canvas, path2d.path, paintingStyle: PaintingStyle.fill);
         canvas.drawPath(path2d.path, paint);
       }
+    }, CanvasActionType.execute, {
+      'fillType': fillType.toString(),
+      'pathProvided': path != null,
+      'style': _describeStyleValue(fillStyle),
     });
   }
 
@@ -678,7 +786,12 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
         ..strokeWidth = lineWidth
         ..strokeMiterLimit = miterLimit
         ..style = PaintingStyle.stroke;
+      _paintShadowForPath(canvas, path?.path ?? path2d.path, paintingStyle: PaintingStyle.stroke);
       canvas.drawPath(path?.path ?? path2d.path, paint);
+    }, CanvasActionType.execute, {
+      'pathProvided': path != null,
+      'style': _describeStyleValue(strokeStyle),
+      'lineWidth': lineWidth,
     });
   }
 
@@ -696,6 +809,13 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     addAction('arc', (Canvas canvas, Size size) {
       path2d.arc(x, y, radius, startAngle, endAngle,
           anticlockwise: anticlockwise);
+    }, CanvasActionType.execute, {
+      'x': x,
+      'y': y,
+      'radius': radius,
+      'startAngle': startAngle,
+      'endAngle': endAngle,
+      'anticlockwise': anticlockwise,
     });
   }
 
@@ -854,6 +974,30 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   double get lineWidth => _lineWidth;
 
+  double _shadowBlur = 0.0;
+  set shadowBlur(double? value) {
+    if (value == null) return;
+    addAction('shadowBlur', (Canvas canvas, Size size) {
+      _shadowBlur = math.max(0.0, value);
+    }, CanvasActionType.execute, {
+      'value': value,
+    });
+  }
+
+  double get shadowBlur => _shadowBlur;
+
+  Color _shadowColor = const Color(0x00000000);
+  set shadowColor(Color? value) {
+    if (value == null) return;
+    addAction('shadowColor', (Canvas canvas, Size size) {
+      _shadowColor = value;
+    }, CanvasActionType.execute, {
+      'value': CSSColor.convertToHex(value),
+    });
+  }
+
+  Color get shadowColor => _shadowColor;
+
   double _miterLimit = 10.0; // (default 10)
   set miterLimit(double? value) {
     if (value == null) return;
@@ -874,15 +1018,52 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     _lineDash = segments;
   }
 
+  bool get _shouldPaintShadow => _shadowColor.alpha != 0 && _shadowBlur > 0;
+
+  double _shadowSigmaFromRadius(double radius) {
+    if (radius <= 0) return 0.0;
+    return radius;
+  }
+
+  void _paintShadowForPath(Canvas canvas, Path path, {required PaintingStyle paintingStyle}) {
+    if (!_shouldPaintShadow) return;
+    final Paint shadowPaint = Paint()
+      ..style = paintingStyle
+      ..color = _shadowColor;
+    if (_shadowBlur > 0) {
+      final double sigma = _shadowSigmaFromRadius(_shadowBlur);
+      shadowPaint.maskFilter = MaskFilter.blur(BlurStyle.normal, sigma);
+    }
+    if (paintingStyle == PaintingStyle.stroke) {
+      shadowPaint
+        ..strokeJoin = lineJoin
+        ..strokeCap = lineCap
+        ..strokeWidth = lineWidth
+        ..strokeMiterLimit = miterLimit;
+    }
+    canvas.drawPath(path, shadowPaint);
+  }
+
+  void _paintShadowForRect(Canvas canvas, Rect rect, {required PaintingStyle style}) {
+    if (!_shouldPaintShadow) return;
+    final Path rectPath = Path()..addRect(rect);
+    _paintShadowForPath(canvas, rectPath, paintingStyle: style);
+  }
+
   void translate(double x, double y) {
     addAction('translate', (Canvas canvas, Size size) {
       canvas.translate(x, y);
+    }, CanvasActionType.execute, {
+      'x': x,
+      'y': y,
     });
   }
 
   void rotate(double angle) {
     addAction('rotate', (Canvas canvas, Size size) {
       canvas.rotate(angle);
+    }, CanvasActionType.execute, {
+      'angle': angle,
     });
   }
 
@@ -896,6 +1077,9 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   void scale(double x, double y) {
     addAction('scale', (Canvas canvas, Size size) {
       canvas.scale(x, y);
+    }, CanvasActionType.execute, {
+      'x': x,
+      'y': y,
     });
   }
 
@@ -914,6 +1098,9 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
       Matrix4 m4 = Matrix4.inverted(curM4);
       canvas.transform(m4.storage);
       canvas.scale(canvasElement.painter.scaleX, canvasElement.painter.scaleY);
+    }, CanvasActionType.execute, {
+      'scaleX': canvasElement.painter.scaleX,
+      'scaleY': canvasElement.painter.scaleY,
     });
   }
 
@@ -948,6 +1135,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
     addAction('transform', (Canvas canvas, Size size) {
       canvas.transform(m4storage);
+    }, CanvasActionType.execute, {
+      'matrix': [a, b, c, d, e, f],
     });
   }
 
@@ -958,7 +1147,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     if (newValue == null) return;
     addAction('strokeStyle', (Canvas canvas, Size size) {
       _strokeStyle = newValue;
-    });
+    }, CanvasActionType.execute, _describeStyleValue(newValue));
   }
 
   Object _fillStyle = CSSColor.initial; // default black
@@ -968,7 +1157,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     if (newValue == null) return;
     addAction('fillStyle', (Canvas canvas, Size size) {
       _fillStyle = newValue;
-    });
+    }, CanvasActionType.execute, _describeStyleValue(newValue));
   }
 
   CanvasGradient createLinearGradient(double x0, double y0, double x1, double y1) {
@@ -987,12 +1176,31 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   void clearRect(double x, double y, double w, double h) {
     Rect rect = Rect.fromLTWH(x, y, w, h);
+
+    // If this clear covers the canvas content box, drop previously cached
+    // pictures so old frames don't keep compositing underneath new ones.
+    // This matches the common animation pattern of clearing the whole canvas
+    // each frame and redrawing everything.
+    CanvasElement canvasElement = canvas;
+    Size canvasSize = canvasElement.size;
+    if (x <= 0 &&
+        y <= 0 &&
+        w >= canvasSize.width &&
+        h >= canvasSize.height) {
+      canvasElement.painter.paintedPictures.clear();
+    }
+
     addAction('clearRect', (Canvas canvas, Size size) {
       // Must saveLayer before clear avoid there is a "black" background
       Paint paint = Paint()
         ..style = PaintingStyle.fill
         ..blendMode = BlendMode.clear;
       canvas.drawRect(rect, paint);
+    }, CanvasActionType.execute, {
+      'x': x,
+      'y': y,
+      'width': w,
+      'height': h,
     });
   }
 
@@ -1000,6 +1208,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     Rect rect = Rect.fromLTWH(x, y, w, h);
     addAction('fillRect', (Canvas canvas, Size size) {
       Paint paint = Paint();
+      _paintShadowForRect(canvas, rect, style: PaintingStyle.fill);
       if (fillStyle is Color || fillStyle is CanvasRadialGradient || fillStyle is CanvasLinearGradient) {
         if (fillStyle is Color) {
           paint..color = fillStyle as Color;
@@ -1076,6 +1285,12 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
           }
         }
       }
+    }, CanvasActionType.execute, {
+      'x': x,
+      'y': y,
+      'width': w,
+      'height': h,
+      'fillStyle': _describeStyleValue(_fillStyle),
     });
   }
 
@@ -1083,6 +1298,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     Rect rect = Rect.fromLTWH(x, y, w, h);
     addAction('strokeRect', (Canvas canvas, Size size) {
       Paint paint = Paint();
+      _paintShadowForRect(canvas, rect, style: PaintingStyle.stroke);
       if (strokeStyle is Color) {
         paint..color = strokeStyle as Color;
       } else if (strokeStyle is CanvasRadialGradient) {
@@ -1097,6 +1313,13 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
         ..strokeMiterLimit = miterLimit
         ..style = PaintingStyle.stroke;
       canvas.drawRect(rect, paint);
+    }, CanvasActionType.execute, {
+      'x': x,
+      'y': y,
+      'width': w,
+      'height': h,
+      'strokeStyle': _describeStyleValue(_strokeStyle),
+      'lineWidth': lineWidth,
     });
   }
 
@@ -1282,6 +1505,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     _lineDash = 'empty';
     _lineDashOffset = 0.0;
     _miterLimit = 10.0;
+    _shadowBlur = 0.0;
+    _shadowColor = const Color(0x00000000);
     path2d = Path2D();
   }
 }

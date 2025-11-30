@@ -68,5 +68,6 @@ final Logger bridgeLogger = WebFLogger.getLogger('WebF.Bridge');
 final Logger domLogger = WebFLogger.getLogger('WebF.DOM');
 final Logger cssLogger = WebFLogger.getLogger('WebF.CSS');
 final Logger renderingLogger = WebFLogger.getLogger('WebF.Rendering');
+final Logger canvasLogger = WebFLogger.getLogger('WebF.Canvas');
 final Logger devToolsLogger = WebFLogger.getLogger('WebF.DevTools');
 final Logger devToolsProtocolLogger = WebFLogger.getLogger('WebF.DevTools.CDP');

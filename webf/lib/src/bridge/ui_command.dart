@@ -241,6 +241,9 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
             command.nativePtr.cast<NativeBindingObject>(),
           );
           break;
+        case UICommandType.requestCanvasPaint:
+          view.requestCanvasPaint(nativePtr.cast<NativeBindingObject>());
+          break;
         default:
           break;
       }
