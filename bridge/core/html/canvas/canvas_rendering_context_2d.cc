@@ -282,6 +282,34 @@ void CanvasRenderingContext2D::setTextBaseline(const AtomicString& text_baseline
                           NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), text_baseline), exception_state);
 }
 
+double CanvasRenderingContext2D::shadowOffsetX() {
+  if (shadow_offset_x_cache_.has_value())
+    return shadow_offset_x_cache_.value();
+  NativeValue result = GetBindingProperty(binding_call_methods::kshadowOffsetX,
+                                          FlushUICommandReason::kDependentsOnElement, ASSERT_NO_EXCEPTION());
+  return NativeValueConverter<NativeTypeDouble>::FromNativeValue(result);
+}
+
+void CanvasRenderingContext2D::setShadowOffsetX(double shadow_offset_x, ExceptionState& exception_state) {
+  shadow_offset_x_cache_ = shadow_offset_x;
+  SetBindingPropertyAsync(binding_call_methods::kshadowOffsetX,
+                          NativeValueConverter<NativeTypeDouble>::ToNativeValue(shadow_offset_x), exception_state);
+}
+
+double CanvasRenderingContext2D::shadowOffsetY() {
+  if (shadow_offset_y_cache_.has_value())
+    return shadow_offset_y_cache_.value();
+  NativeValue result = GetBindingProperty(binding_call_methods::kshadowOffsetY,
+                                          FlushUICommandReason::kDependentsOnElement, ASSERT_NO_EXCEPTION());
+  return NativeValueConverter<NativeTypeDouble>::FromNativeValue(result);
+}
+
+void CanvasRenderingContext2D::setShadowOffsetY(double shadow_offset_y, ExceptionState& exception_state) {
+  shadow_offset_y_cache_ = shadow_offset_y;
+  SetBindingPropertyAsync(binding_call_methods::kshadowOffsetY,
+                          NativeValueConverter<NativeTypeDouble>::ToNativeValue(shadow_offset_y), exception_state);
+}
+
 double CanvasRenderingContext2D::shadowBlur() {
   if (shadow_blur_cache_.has_value())
     return shadow_blur_cache_.value();
@@ -851,6 +879,8 @@ void CanvasRenderingContext2D::ClearPropertyCaches() {
   miter_limit_cache_.reset();
   text_align_cache_.reset();
   text_baseline_cache_.reset();
+  shadow_offset_x_cache_.reset();
+  shadow_offset_y_cache_.reset();
   shadow_blur_cache_.reset();
   shadow_color_cache_.reset();
 }

@@ -75,6 +75,10 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   void setTextAlign(const AtomicString& text_align, ExceptionState& exception_state);
   AtomicString textBaseline();
   void setTextBaseline(const AtomicString& text_baseline, ExceptionState& exception_state);
+  double shadowOffsetX();
+  void setShadowOffsetX(double shadow_offset_x, ExceptionState& exception_state);
+  double shadowOffsetY();
+  void setShadowOffsetY(double shadow_offset_y, ExceptionState& exception_state);
   double shadowBlur();
   void setShadowBlur(double shadow_blur, ExceptionState& exception_state);
   AtomicString shadowColor();
@@ -211,6 +215,8 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   std::optional<double> miter_limit_cache_;
   std::optional<AtomicString> text_align_cache_;
   std::optional<AtomicString> text_baseline_cache_;
+  std::optional<double> shadow_offset_x_cache_;
+  std::optional<double> shadow_offset_y_cache_;
   std::optional<double> shadow_blur_cache_;
   std::optional<AtomicString> shadow_color_cache_;
 };
