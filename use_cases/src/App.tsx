@@ -68,6 +68,7 @@ import { DOMOffsetsPage } from './pages/dom/DOMOffsetsPage';
 import { DOMClassListPage } from './pages/dom/DOMClassListPage';
 import { DOMInnerHTMLPage } from './pages/dom/DOMInnerHTMLPage';
 import { DOMStylePage } from './pages/dom/DOMStylePage';
+import { Canvas2dPage } from './pages/Canvas2dPage';
 import { TailwindShowcasePage } from './pages/TailwindShowcasePage';
 import { CupertinoShowcasePage } from './pages/CupertinoShowcasePage';
 import CupertinoButtonsPage from './pages/cupertino/CupertinoButtonsPage';
@@ -133,6 +134,8 @@ function App() {
         <Route path="/dom/innerhtml" title="innerHTML vs textContent" element={<DOMInnerHTMLPage />} />
         <Route path="/dom/style" title="element.style" element={<DOMStylePage />} />
 
+        <Route path="/canvas-2d" title="Canvas 2D" element={<Canvas2dPage />} />
+
         <Route path="/css-showcase" title="CSS Showcase" element={<CSSShowcasePage />} />
         <Route path="/css/bg" title="Background" element={<BGPage />} />
         <Route path="/css/bg-gradient" title="Background Gradient" element={<BGGradientPage />} />
@@ -144,7 +147,7 @@ function App() {
         <Route path="/css/filter" title="Filter" element={<FilterPage />} />
         <Route path="/css/flex-layout" title="Flex Layout" element={<FlexLayoutPage />} />
         <Route path="/css/keyframes" title="Keyframes" element={<KeyframesPage />} />
-        <Route path="/css/clip-path" title="Clip Path" element={<ClipPathPage />} />
+        {/*<Route path="/css/clip-path" title="Clip Path" element={<ClipPathPage />} />*/}
         <Route path="/css/border-background-shadow" title="Border Background Shadow" element={<BorderBackgroundShadowPage />} />
         <Route path="/css/overflow" title="Overflow" element={<OverflowPage />} />
         <Route path="/css/transforms" title="Transforms" element={<TransformsPage />} />

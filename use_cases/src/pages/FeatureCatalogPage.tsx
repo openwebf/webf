@@ -73,8 +73,9 @@ const sections: Section[] = [
     ],
   },
   {
-    title: 'SVG',
+    title: 'Graphics',
     items: [
+      { label: 'Canvas 2D', path: '/canvas-2d' },
       { label: 'SVG via <img>', path: '/svg-image' },
       { label: 'Image Preload', path: '/image-preload' },
     ],
