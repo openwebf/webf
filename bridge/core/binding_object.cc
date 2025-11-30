@@ -263,6 +263,10 @@ ScriptPromise BindingObject::GetBindingPropertyAsync(const webf::AtomicString& p
 void BindingObject::SetBindingPropertyAsync(const webf::AtomicString& prop,
                                             NativeValue value,
                                             webf::ExceptionState& exception_state) {
+  if (auto* canvas_context = DynamicTo<CanvasRenderingContext2D>(this)) {
+    canvas_context->requestPaint();
+  }
+
   std::unique_ptr<SharedNativeString> args_01 = prop.ToNativeString();
 
   auto* args_02 = (NativeValue*)dart_malloc(sizeof(NativeValue));

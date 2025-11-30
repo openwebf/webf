@@ -15,6 +15,8 @@ interface CanvasRenderingContext2D extends CanvasRenderingContext {
     miterLimit: number;
     textAlign: string;
     textBaseline: string;
+    shadowBlur: number;
+    shadowColor: string;
     // @TODO: Following number should be double.
     // Reference https://html.spec.whatwg.org/multipage/canvas.html
     arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, anticlockwise?: boolean): void;
