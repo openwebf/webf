@@ -6,32 +6,27 @@ const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 );
 
 const CanvasCard: React.FC<{ title: string; draw: (ctx: CanvasRenderingContext2D) => void; animated?: boolean }> = ({ title, draw, animated = false }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { isFlutterAttached } = useFlutterAttached();
 
-  useEffect(() => {
-    if (!isFlutterAttached) {
-      return;
-    }
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+  const onAttached = (element: HTMLCanvasElement) => {
+    const ctx = element.getContext('2d');
     if (!ctx) return;
 
     // Handle high DPI displays
     const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
+    const rect = element.getBoundingClientRect();
     
     // Set actual size in memory (scaled to account for extra pixel density)
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
+    element.width = rect.width * dpr;
+    element.height = rect.height * dpr;
 
     // Normalize coordinate system to use css pixels.
     ctx.scale(dpr, dpr);
 
+    let animationFrameId: number;
+
     if (animated) {
-      let animationFrameId: number;
       const render = () => {
+        ctx.clearRect(0, 0, element.width / dpr, element.height / dpr);
         draw(ctx);
         animationFrameId = requestAnimationFrame(render);
       };
@@ -40,13 +35,21 @@ const CanvasCard: React.FC<{ title: string; draw: (ctx: CanvasRenderingContext2D
     } else {
       draw(ctx);
     }
-  }, [draw, animated, isFlutterAttached]);
+  };
+
+  const onDetached = () => {
+    // Optional: Add specific cleanup if needed, but animation cleanup is handled by onAttached return.
+    // console.log(`Canvas "${title}" detached`);
+  };
+
+  const flutterCanvasRef = useFlutterAttached<HTMLCanvasElement>(onAttached, onDetached);
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex flex-col gap-3">
       <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
       <div className="w-full flex justify-center bg-gray-50 rounded border border-gray-100 overflow-hidden">
         <canvas
-          ref={canvasRef}
+          ref={flutterCanvasRef}
           style={{ width: '300px', height: '200px' }}
           className="w-[300px] h-[200px]"
         />
