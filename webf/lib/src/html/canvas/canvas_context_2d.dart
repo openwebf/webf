@@ -1455,24 +1455,59 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     if (segments.isEmpty) {
       return source;
     }
-    final _CircularIntervalList<double> dashArray = _CircularIntervalList<double>(segments);
     final Path dest = Path();
-    for (final metric in source.computeMetrics()) {
+    final double patternLength = segments.fold(0.0, (double sum, double v) => sum + v);
+    if (patternLength == 0.0) {
+      return source;
+    }
+
+    double offset = _lineDashOffset;
+    if (!offset.isFinite) {
+      offset = 0.0;
+    }
+    offset = offset % patternLength;
+    if (offset < 0) {
+      offset += patternLength;
+    }
+
+    for (final PathMetric metric in source.computeMetrics()) {
       double distance = 0.0;
+
+      int index = 0;
       bool draw = true;
+      double segmentRemaining = segments[0];
+
+      double localOffset = offset;
+      while (localOffset > 0.0) {
+        if (localOffset > segmentRemaining) {
+          localOffset -= segmentRemaining;
+          index = (index + 1) % segments.length;
+          segmentRemaining = segments[index];
+          draw = !draw;
+        } else {
+          segmentRemaining -= localOffset;
+          localOffset = 0.0;
+        }
+      }
+
       while (distance < metric.length) {
-        final double len = dashArray.next;
-        final double next = distance + len;
-        if (draw) {
+        final double len = math.min(segmentRemaining, metric.length - distance);
+        if (draw && len > 0.0) {
           dest.addPath(
-            metric.extractPath(distance, next.clamp(0.0, metric.length)),
+            metric.extractPath(distance, distance + len),
             Offset.zero,
           );
         }
-        distance = next;
-        draw = !draw;
+        distance += len;
+        segmentRemaining -= len;
+        if (segmentRemaining <= 0.0) {
+          index = (index + 1) % segments.length;
+          segmentRemaining = segments[index];
+          draw = !draw;
+        }
       }
     }
+
     return dest;
   }
 
