@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
 #ifndef WEBF_CORE_PLATFORM_WTF_STD_LIB_EXTRAS_H_
 #define WEBF_CORE_PLATFORM_WTF_STD_LIB_EXTRAS_H_
 

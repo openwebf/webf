@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
 // Copyright 2024 The WebF authors. All rights reserved.
 // 
 // This file contains stub implementations for CSS types that are not yet

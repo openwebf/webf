@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
 import {DOMMatrixInit} from "./dom_matrix_init";
 import {DOMMatrix} from "./dom_matrix";
 import {DOMPoint} from "./dom_point";

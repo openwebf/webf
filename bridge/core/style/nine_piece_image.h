@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
 #ifndef WEBF_CORE_STYLE_NINE_PIECE_IMAGE_H_
 #define WEBF_CORE_STYLE_NINE_PIECE_IMAGE_H_
 

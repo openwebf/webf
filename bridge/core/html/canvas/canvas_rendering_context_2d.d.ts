@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
 import {HTMLImageElement} from "../html_image_element";
 import {ImageBitmap} from "../image_bitmap";
 import {HTMLCanvasElement} from "./html_canvas_element";

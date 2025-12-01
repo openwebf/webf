@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
 import {EventTarget} from "../dom/events/event_target";
 import {TouchInit} from "./touch_init";
 
