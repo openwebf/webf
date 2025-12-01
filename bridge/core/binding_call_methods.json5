@@ -216,6 +216,7 @@
     "set_blob",
     "parseAuthorStyleSheet",
     "shadowBlur",
-    "shadowColor"
+    "shadowColor",
+    "setLineDash"
   ]
 }

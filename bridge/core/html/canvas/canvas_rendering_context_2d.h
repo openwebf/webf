@@ -158,6 +158,8 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   void fillRect(double x, double y, double w, double h, ExceptionState& exception_state);
   void fillText(const AtomicString& text, double x, double y, ExceptionState& exception_state);
   void fillText(const AtomicString& text, double x, double y, double maxWidth, ExceptionState& exception_state);
+  void setLineDash(const std::vector<double>& segments, ExceptionState& exception_state);
+  std::vector<double> getLineDash(ExceptionState& exception_state);
   void lineTo(double x, double y, ExceptionState& exception_state);
   void moveTo(double x, double y, ExceptionState& exception_state);
   void rect(double x, double y, double w, double h, ExceptionState& exception_state);
@@ -184,7 +186,7 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
                  std::shared_ptr<const QJSUnionDoubleSequenceDouble> radii,
                  ExceptionState& exception_state);
 
-  void roundRect_async(double x,
+ void roundRect_async(double x,
                        double y,
                        double w,
                        double h,
@@ -204,6 +206,7 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   mutable bool _needsPaint = false;
   std::shared_ptr<QJSUnionDomStringCanvasGradient> fill_style_ = nullptr;
   std::shared_ptr<QJSUnionDomStringCanvasGradient> stroke_style_ = nullptr;
+  std::vector<double> line_dash_segments_;
   std::optional<double> global_alpha_cache_;
   std::optional<AtomicString> global_composite_operation_cache_;
   std::optional<AtomicString> direction_cache_;
