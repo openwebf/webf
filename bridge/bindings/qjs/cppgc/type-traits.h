@@ -1,8 +1,12 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
 // Copyright 2020 the V8 project authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Copyright (C) 2022-present The WebF authors. All rights reserved.
+// Copyright (C) 2022-2024 The WebF authors. All rights reserved.
 
 #ifndef BRIDGE_QJS_CPPGC_TYPE_TRAITS_H_
 #define BRIDGE_QJS_CPPGC_TYPE_TRAITS_H_
