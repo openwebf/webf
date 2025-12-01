@@ -1,5 +1,9 @@
 /*
- * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
+/*
+ * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
 /// Detects the script type of text for proper baseline adjustment
@@ -17,7 +21,7 @@ class TextScriptDetector {
   static const int _hangulSyllablesEnd = 0xD7AF;
   static const int _hangulJamoStart = 0x1100;
   static const int _hangulJamoEnd = 0x11FF;
-  
+
   static bool isCJKCharacter(int codePoint) {
     return (codePoint >= _cjkUnifiedIdeographsStart && codePoint <= _cjkUnifiedIdeographsEnd) ||
            (codePoint >= _cjkExtensionAStart && codePoint <= _cjkExtensionAEnd) ||
@@ -26,10 +30,10 @@ class TextScriptDetector {
            (codePoint >= _hangulSyllablesStart && codePoint <= _hangulSyllablesEnd) ||
            (codePoint >= _hangulJamoStart && codePoint <= _hangulJamoEnd);
   }
-  
+
   static bool containsCJK(String text) {
     if (text.isEmpty) return false;
-    
+
     for (int i = 0; i < text.length; i++) {
       int codePoint = text.codeUnitAt(i);
       // Handle surrogate pairs for characters outside BMP
@@ -40,22 +44,22 @@ class TextScriptDetector {
           i++; // Skip the low surrogate
         }
       }
-      
+
       if (isCJKCharacter(codePoint)) {
         return true;
       }
     }
     return false;
   }
-  
+
   /// Get the dominant script type for a text span
   /// Returns the ratio of CJK characters in the text
   static double getCJKRatio(String text) {
     if (text.isEmpty) return 0.0;
-    
+
     int cjkCount = 0;
     int totalCount = 0;
-    
+
     for (int i = 0; i < text.length; i++) {
       int codePoint = text.codeUnitAt(i);
       // Handle surrogate pairs
@@ -66,29 +70,29 @@ class TextScriptDetector {
           i++; // Skip the low surrogate
         }
       }
-      
+
       // Skip whitespace and punctuation for ratio calculation
       if (codePoint == 0x20 || codePoint == 0x09 || codePoint == 0x0A || codePoint == 0x0D) {
         continue;
       }
-      
+
       totalCount++;
       if (isCJKCharacter(codePoint)) {
         cjkCount++;
       }
     }
-    
+
     return totalCount > 0 ? cjkCount / totalCount.toDouble() : 0.0;
   }
-  
+
   /// Analyze text and return segments with their script types
   static List<TextScriptSegment> analyzeTextSegments(String text) {
     if (text.isEmpty) return [];
-    
+
     List<TextScriptSegment> segments = [];
     int start = 0;
     bool? currentIsCJK;
-    
+
     for (int i = 0; i < text.length; i++) {
       int codePoint = text.codeUnitAt(i);
       // Handle surrogate pairs
@@ -98,16 +102,16 @@ class TextScriptDetector {
           codePoint = 0x10000 + ((codePoint - 0xD800) << 10) + (low - 0xDC00);
         }
       }
-      
+
       // Skip neutral characters (space, punctuation)
       if (codePoint == 0x20 || codePoint == 0x09 || codePoint == 0x0A || codePoint == 0x0D ||
           (codePoint >= 0x21 && codePoint <= 0x2F) || // ASCII punctuation
           (codePoint >= 0x3A && codePoint <= 0x40)) { // More ASCII punctuation
         continue;
       }
-      
+
       bool isCJK = isCJKCharacter(codePoint);
-      
+
       if (currentIsCJK == null) {
         currentIsCJK = isCJK;
       } else if (currentIsCJK != isCJK) {
@@ -122,7 +126,7 @@ class TextScriptDetector {
         currentIsCJK = isCJK;
       }
     }
-    
+
     // Add the last segment
     if (start < text.length) {
       segments.add(TextScriptSegment(
@@ -132,7 +136,7 @@ class TextScriptDetector {
         isCJK: currentIsCJK ?? false,
       ));
     }
-    
+
     return segments;
   }
 }
@@ -142,7 +146,7 @@ class TextScriptSegment {
   final int end;
   final String text;
   final bool isCJK;
-  
+
   TextScriptSegment({
     required this.start,
     required this.end,

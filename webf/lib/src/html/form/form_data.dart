@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/src/foundation/form_data/multipart_file.dart';

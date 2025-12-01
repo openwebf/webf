@@ -1,6 +1,10 @@
 /*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
+/*
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
- * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 import 'dart:ui';
 
@@ -136,8 +140,8 @@ mixin CSSBorderRadiusMixin on RenderStyle {
     if (DebugFlags.enableBorderRadiusLogs) {
       try {
         final el = target;
-        renderingLogger.finer('[BorderRadius] compute for <${el.tagName.toLowerCase()}> ' 
-            'borderBox=${(bw)?.toStringAsFixed(2) ?? 'null'}×${(bh)?.toStringAsFixed(2) ?? 'null'} ' 
+        renderingLogger.finer('[BorderRadius] compute for <${el.tagName.toLowerCase()}> '
+            'borderBox=${(bw)?.toStringAsFixed(2) ?? 'null'}×${(bh)?.toStringAsFixed(2) ?? 'null'} '
             'tl=(${radii[0].x.toStringAsFixed(2)},${radii[0].y.toStringAsFixed(2)}) '
             'tr=(${radii[1].x.toStringAsFixed(2)},${radii[1].y.toStringAsFixed(2)}) '
             'br=(${radii[2].x.toStringAsFixed(2)},${radii[2].y.toStringAsFixed(2)}) '

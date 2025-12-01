@@ -1,6 +1,10 @@
 /*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
+/*
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
- * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
 import 'dart:ui' as ui show Image, PathMetrics;
@@ -1985,7 +1989,7 @@ class BoxDecorationPainter extends BoxPainter {
         if (DebugFlags.enableBorderRadiusLogs) {
           try {
             final el = renderStyle.target;
-            renderingLogger.finer('[BorderRadius] border solid/uniform checks on <${el.tagName.toLowerCase()}> ' 
+            renderingLogger.finer('[BorderRadius] border solid/uniform checks on <${el.tagName.toLowerCase()}> '
                 'allSolid=$allSolid sameColor=$sameColor b.isUniform=${b.isUniform} uniformWidth=$uniformWidthCheck '
                 'w=[${b.left.width},${b.top.width},${b.right.width},${b.bottom.width}]');
           } catch (_) {}
@@ -2021,7 +2025,7 @@ class BoxDecorationPainter extends BoxPainter {
             try {
               final el = renderStyle.target;
               final r0 = br.topLeft; final r1 = br.topRight; final r2 = br.bottomRight; final r3 = br.bottomLeft;
-              renderingLogger.finer('[BorderRadius] circle detect(solid) <${el.tagName.toLowerCase()}> ' 
+              renderingLogger.finer('[BorderRadius] circle detect(solid) <${el.tagName.toLowerCase()}> '
                   'w=${rect.width.toStringAsFixed(2)} h=${rect.height.toStringAsFixed(2)} '
                   'tl=(${r0.x.toStringAsFixed(2)},${r0.y.toStringAsFixed(2)}) '
                   'tr=(${r1.x.toStringAsFixed(2)},${r1.y.toStringAsFixed(2)}) '

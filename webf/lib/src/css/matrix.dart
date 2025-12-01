@@ -1,6 +1,10 @@
 /*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
+/*
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
- * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 import 'dart:math';
 import 'dart:typed_data';
@@ -628,7 +632,7 @@ class CSSMatrix {
         // Track dependency on this variable for transform recomputation.
         final dynamic raw = renderStyle.getCSSVariable(varNode.identifier, TRANSFORM);
         final dynamic val = (raw == null || raw == INITIAL) ? varNode.defaultValue : raw;
-        
+
         if (val != null) {
           methodArgs[i] = val.toString();
         }
@@ -806,7 +810,7 @@ class CSSMatrix {
           if (methodArgs.length == 2) {
             y = _parseCssNumber(methodArgs[1], x);
           }
-          
+
           return Matrix4.identity()..scale(x, y, 1);
         }
         break;
@@ -830,7 +834,7 @@ class CSSMatrix {
           double x = _parseCssNumber(methodArgs[0], 1.0);
           double y = _parseCssNumber(methodArgs[1], 1.0);
           double z = _parseCssNumber(methodArgs[2], 1.0);
-          
+
           return Matrix4.identity()..scale(x, y, z);
         }
         break;
@@ -856,7 +860,7 @@ class CSSMatrix {
           } else {
             z = scale;
           }
-          
+
           return Matrix4.identity()..scale(x, y, z);
         }
         break;

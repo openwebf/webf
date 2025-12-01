@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:webf/src/html/table_bindings_generated.dart';
