@@ -7,6 +7,7 @@
 
 #include <optional>
 
+#include "bindings/qjs/script_value.h"
 #include "canvas_gradient.h"
 #include "canvas_pattern.h"
 #include "canvas_rendering_context.h"
@@ -85,6 +86,38 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   AtomicString shadowColor();
   void setShadowColor(const AtomicString& shadow_color, ExceptionState& exception_state);
   bool IsCanvas2d() const override;
+
+  // ImageData APIs implemented purely on the C++ side.
+  ScriptValue createImageData(double sw, double sh, ExceptionState& exception_state);
+  ScriptValue createImageData(const ScriptValue& imagedata, ExceptionState& exception_state);
+  ScriptValue getImageData(double sx, double sy, double sw, double sh, ExceptionState& exception_state);
+  void putImageData(const ScriptValue& imagedata, double dx, double dy, ExceptionState& exception_state);
+  void putImageData(const ScriptValue& imagedata,
+                    double dx,
+                    double dy,
+                    double dirtyX,
+                    ExceptionState& exception_state);
+  void putImageData(const ScriptValue& imagedata,
+                    double dx,
+                    double dy,
+                    double dirtyX,
+                    double dirtyY,
+                    ExceptionState& exception_state);
+  void putImageData(const ScriptValue& imagedata,
+                    double dx,
+                    double dy,
+                    double dirtyX,
+                    double dirtyY,
+                    double dirtyWidth,
+                    ExceptionState& exception_state);
+  void putImageData(const ScriptValue& imagedata,
+                    double dx,
+                    double dy,
+                    double dirtyX,
+                    double dirtyY,
+                    double dirtyWidth,
+                    double dirtyHeight,
+                    ExceptionState& exception_state);
 
   void fill(ExceptionState& exception_state);
   void fill(std::shared_ptr<const QJSUnionPath2DDomString> pathOrPattern, ExceptionState& exception_state);

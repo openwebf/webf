@@ -3,6 +3,8 @@
  */
 
 #include "canvas_rendering_context_2d.h"
+#include <cmath>
+#include <limits>
 #include "binding_call_methods.h"
 #include "canvas_gradient.h"
 #include "core/html/canvas/html_canvas_element.h"
@@ -33,6 +35,312 @@ NativeValue CanvasRenderingContext2D::HandleCallFromDartSide(const AtomicString&
                                                              const NativeValue* argv,
                                                              Dart_Handle dart_object) {
   return Native_NewNull();
+}
+
+// --- ImageData APIs implemented on the C++ side ---
+
+namespace {
+
+// Helper to create a new ImageData-like JS object:
+// { width, height, data: Uint8ClampedArray(buffer) }
+ScriptValue CreateBlankImageDataObject(JSContext* ctx, int32_t width, int32_t height, ExceptionState& exception_state) {
+  if (width <= 0 || height <= 0) {
+    return ScriptValue::Empty(ctx);
+  }
+
+  size_t byte_length = static_cast<size_t>(width) * static_cast<size_t>(height) * 4u;
+
+  uint8_t* buffer = nullptr;
+  if (byte_length > 0) {
+#if defined(_WIN32)
+    buffer = static_cast<uint8_t*>(CoTaskMemAlloc(byte_length));
+#else
+    buffer = static_cast<uint8_t*>(malloc(byte_length));
+#endif
+  }
+
+  if (buffer == nullptr && byte_length > 0) {
+    exception_state.ThrowException(ctx, ErrorType::InternalError,
+                                   "Failed to allocate memory for ImageData.");
+    return ScriptValue::Empty(ctx);
+  }
+
+  if (byte_length > 0) {
+    memset(buffer, 0, byte_length);
+  }
+
+  auto free_func = [](JSRuntime* rt, void* opaque, void* ptr) {
+#if defined(_WIN32)
+    CoTaskMemFree(ptr);
+#else
+    free(ptr);
+#endif
+  };
+
+  JSValue array_buffer = JS_NewArrayBuffer(ctx, buffer, byte_length, free_func, nullptr, 0);
+  if (JS_IsException(array_buffer)) {
+    free_func(JS_GetRuntime(ctx), nullptr, buffer);
+    exception_state.ThrowException(ctx, array_buffer);
+    return ScriptValue::Empty(ctx);
+  }
+
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue ctor = JS_GetPropertyStr(ctx, global, "Uint8ClampedArray");
+  JS_FreeValue(ctx, global);
+
+  JSValue data;
+  if (JS_IsFunction(ctx, ctor)) {
+    JSValue argv[1] = {array_buffer};
+    data = JS_CallConstructor(ctx, ctor, 1, argv);
+  } else {
+    // Fallback: use plain ArrayBuffer when Uint8ClampedArray is missing.
+    data = JS_DupValue(ctx, array_buffer);
+  }
+  JS_FreeValue(ctx, ctor);
+  JS_FreeValue(ctx, array_buffer);
+
+  if (JS_IsException(data)) {
+    exception_state.ThrowException(ctx, data);
+    return ScriptValue::Empty(ctx);
+  }
+
+  JSValue image_data = JS_NewObject(ctx);
+  JS_DefinePropertyValueStr(ctx, image_data, "width", JS_NewInt32(ctx, width), JS_PROP_C_W_E);
+  JS_DefinePropertyValueStr(ctx, image_data, "height", JS_NewInt32(ctx, height), JS_PROP_C_W_E);
+  JS_DefinePropertyValueStr(ctx, image_data, "data", data, JS_PROP_C_W_E);
+
+  ScriptValue result(ctx, image_data);
+  JS_FreeValue(ctx, image_data);
+  return result;
+}
+
+// Extract width/height from an ImageData-like object.
+bool GetImageDataSize(JSContext* ctx, JSValue value, int32_t& width, int32_t& height) {
+  width = 0;
+  height = 0;
+  if (!JS_IsObject(value)) {
+    return false;
+  }
+
+  JSValue w = JS_GetPropertyStr(ctx, value, "width");
+  JSValue h = JS_GetPropertyStr(ctx, value, "height");
+  bool ok = true;
+  if (!JS_IsUndefined(w) && !JS_IsNull(w)) {
+    JS_ToInt32(ctx, &width, w);
+  } else {
+    ok = false;
+  }
+  if (!JS_IsUndefined(h) && !JS_IsNull(h)) {
+    JS_ToInt32(ctx, &height, h);
+  } else {
+    ok = false;
+  }
+  JS_FreeValue(ctx, w);
+  JS_FreeValue(ctx, h);
+  return ok && width > 0 && height > 0;
+}
+
+// Extract underlying byte buffer from ImageData.data (ArrayBuffer or TypedArray).
+// Returns a NativeValue that wraps NativeByteData so Dart receives a NativeByteData object.
+NativeValue ExtractImageDataBytes(JSContext* ctx,
+                                  JSValue image_data_value,
+                                  size_t& out_byte_length,
+                                  ExceptionState& exception_state) {
+  out_byte_length = 0;
+
+  if (!JS_IsObject(image_data_value)) {
+    exception_state.ThrowException(ctx, ErrorType::TypeError, "ImageData object expected.");
+    return Native_NewNull();
+  }
+
+  JSValue data = JS_GetPropertyStr(ctx, image_data_value, "data");
+  if (JS_IsException(data)) {
+    exception_state.ThrowException(ctx, data);
+    return Native_NewNull();
+  }
+
+  uint8_t* bytes = nullptr;
+  size_t byte_length = 0;
+
+  if (JS_IsArrayBuffer(data)) {
+    bytes = JS_GetArrayBuffer(ctx, &byte_length, data);
+    if (bytes == nullptr) {
+      JS_FreeValue(ctx, data);
+      exception_state.ThrowException(ctx, ErrorType::TypeError,
+                                     "Failed to read ImageData.data ArrayBuffer.");
+      return Native_NewNull();
+    }
+    NativeValue native_bytes =
+        NativeValueConverter<NativeTypePointer<uint8_t>>::ToNativeValue(ctx, data, bytes, byte_length);
+    out_byte_length = byte_length;
+    JS_FreeValue(ctx, data);
+    return native_bytes;
+  }
+
+  if (JS_IsArrayBufferView(data)) {
+    size_t byte_offset = 0;
+    size_t byte_per_element = 0;
+    JSValue array_buffer_obj = JS_GetTypedArrayBuffer(ctx, data, &byte_offset, &byte_length, &byte_per_element);
+    if (JS_IsException(array_buffer_obj)) {
+      JS_FreeValue(ctx, data);
+      exception_state.ThrowException(ctx, array_buffer_obj);
+      return Native_NewNull();
+    }
+
+    size_t total_length = 0;
+    uint8_t* base = JS_GetArrayBuffer(ctx, &total_length, array_buffer_obj);
+    if (base == nullptr || byte_offset + byte_length > total_length) {
+      JS_FreeValue(ctx, array_buffer_obj);
+      JS_FreeValue(ctx, data);
+      exception_state.ThrowException(ctx, ErrorType::TypeError, "Invalid ImageData.data view.");
+      return Native_NewNull();
+    }
+
+    bytes = base + byte_offset;
+    NativeValue native_bytes =
+        NativeValueConverter<NativeTypePointer<uint8_t>>::ToNativeValue(ctx, array_buffer_obj, bytes, byte_length);
+    out_byte_length = byte_length;
+    JS_FreeValue(ctx, array_buffer_obj);
+    JS_FreeValue(ctx, data);
+    return native_bytes;
+  }
+
+  JS_FreeValue(ctx, data);
+  exception_state.ThrowException(ctx, ErrorType::TypeError,
+                                 "ImageData.data must be an ArrayBuffer or TypedArray.");
+  return Native_NewNull();
+}
+
+}  // namespace
+
+ScriptValue CanvasRenderingContext2D::createImageData(double sw, double sh, ExceptionState& exception_state) {
+  JSContext* js_ctx = ctx();
+  int32_t width = static_cast<int32_t>(sw);
+  int32_t height = static_cast<int32_t>(sh);
+  if (width <= 0 || height <= 0) {
+    exception_state.ThrowException(js_ctx, ErrorType::RangeError,
+                                   "createImageData: width and height must be positive.");
+    return ScriptValue::Empty(js_ctx);
+  }
+  return CreateBlankImageDataObject(js_ctx, width, height, exception_state);
+}
+
+ScriptValue CanvasRenderingContext2D::createImageData(const ScriptValue& imagedata,
+                                                      ExceptionState& exception_state) {
+  JSContext* js_ctx = ctx();
+  JSValue value = imagedata.QJSValue();
+  int32_t width = 0;
+  int32_t height = 0;
+  if (!GetImageDataSize(js_ctx, value, width, height)) {
+    exception_state.ThrowException(js_ctx, ErrorType::TypeError,
+                                   "createImageData(ImageData): invalid source ImageData object.");
+    return ScriptValue::Empty(js_ctx);
+  }
+  return CreateBlankImageDataObject(js_ctx, width, height, exception_state);
+}
+
+ScriptValue CanvasRenderingContext2D::getImageData(double sx,
+                                                   double sy,
+                                                   double sw,
+                                                   double sh,
+                                                   ExceptionState& exception_state) {
+  JSContext* js_ctx = ctx();
+  // NOTE: Full pixel readback would require a canvas snapshot from Dart.
+  // For now, return a blank ImageData of the requested size.
+  int32_t width = static_cast<int32_t>(sw);
+  int32_t height = static_cast<int32_t>(sh);
+  if (width <= 0 || height <= 0) {
+    exception_state.ThrowException(js_ctx, ErrorType::RangeError,
+                                   "getImageData: width and height must be positive.");
+    return ScriptValue::Empty(js_ctx);
+  }
+  return CreateBlankImageDataObject(js_ctx, width, height, exception_state);
+}
+
+void CanvasRenderingContext2D::putImageData(const ScriptValue& imagedata,
+                                            double dx,
+                                            double dy,
+                                            ExceptionState& exception_state) {
+  putImageData(imagedata, dx, dy, 0.0, 0.0, std::numeric_limits<double>::quiet_NaN(),
+               std::numeric_limits<double>::quiet_NaN(), exception_state);
+}
+
+void CanvasRenderingContext2D::putImageData(const ScriptValue& imagedata,
+                                            double dx,
+                                            double dy,
+                                            double dirtyX,
+                                            ExceptionState& exception_state) {
+  putImageData(imagedata, dx, dy, dirtyX, 0.0, std::numeric_limits<double>::quiet_NaN(),
+               std::numeric_limits<double>::quiet_NaN(), exception_state);
+}
+
+void CanvasRenderingContext2D::putImageData(const ScriptValue& imagedata,
+                                            double dx,
+                                            double dy,
+                                            double dirtyX,
+                                            double dirtyY,
+                                            ExceptionState& exception_state) {
+  putImageData(imagedata, dx, dy, dirtyX, dirtyY, std::numeric_limits<double>::quiet_NaN(),
+               std::numeric_limits<double>::quiet_NaN(), exception_state);
+}
+
+void CanvasRenderingContext2D::putImageData(const ScriptValue& imagedata,
+                                            double dx,
+                                            double dy,
+                                            double dirtyX,
+                                            double dirtyY,
+                                            double dirtyWidth,
+                                            ExceptionState& exception_state) {
+  putImageData(imagedata, dx, dy, dirtyX, dirtyY, dirtyWidth, std::numeric_limits<double>::quiet_NaN(),
+               exception_state);
+}
+
+void CanvasRenderingContext2D::putImageData(const ScriptValue& imagedata,
+                                            double dx,
+                                            double dy,
+                                            double dirtyX,
+                                            double dirtyY,
+                                            double dirtyWidth,
+                                            double dirtyHeight,
+                                            ExceptionState& exception_state) {
+  JSContext* js_ctx = ctx();
+  JSValue image_data_value = imagedata.QJSValue();
+
+  int32_t width = 0;
+  int32_t height = 0;
+  if (!GetImageDataSize(js_ctx, image_data_value, width, height)) {
+    exception_state.ThrowException(js_ctx, ErrorType::TypeError,
+                                   "putImageData: invalid ImageData object.");
+    return;
+  }
+
+  size_t byte_length = 0;
+  NativeValue bytes_native = ExtractImageDataBytes(js_ctx, image_data_value, byte_length, exception_state);
+  if (exception_state.HasException() || byte_length == 0) {
+    return;
+  }
+
+  // Normalize dirty rectangle defaults according to the spec:
+  // dirtyX/Y default to 0; dirtyWidth/Height default to image width/height.
+  double local_dirtyX = dirtyX;
+  double local_dirtyY = dirtyY;
+  double local_dirtyWidth = std::isnan(dirtyWidth) ? static_cast<double>(width) : dirtyWidth;
+  double local_dirtyHeight = std::isnan(dirtyHeight) ? static_cast<double>(height) : dirtyHeight;
+
+  NativeValue arguments[] = {
+      bytes_native,
+      NativeValueConverter<NativeTypeInt64>::ToNativeValue(width),
+      NativeValueConverter<NativeTypeInt64>::ToNativeValue(height),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(dx),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(dy),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(local_dirtyX),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(local_dirtyY),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(local_dirtyWidth),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(local_dirtyHeight),
+  };
+
+  InvokeBindingMethodAsync(binding_call_methods::kputImageData, sizeof(arguments) / sizeof(NativeValue), arguments,
+                           exception_state);
 }
 
 CanvasGradient* CanvasRenderingContext2D::createLinearGradient(double x0,

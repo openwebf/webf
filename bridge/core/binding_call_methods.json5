@@ -97,6 +97,7 @@
     "arcTo",
     "beginPath",
     "bezierCurveTo",
+    "putImageData",
     "clearRect",
     "closePath",
     "clip",
