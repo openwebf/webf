@@ -7,17 +7,19 @@ const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 );
 
 const CanvasCard: React.FC<{ title: string; draw: (ctx: CanvasRenderingContext2D) => void; animated?: boolean }> = ({ title, draw, animated = false }) => {
+
+  let rafId = 0;
   const onAttached = (element: HTMLCanvasElement | Event) => {
     // Handle both HTMLCanvasElement (direct ref) and Event (onAttached callback)
     const canvasEl = (element instanceof Event ? element.target : element) as HTMLCanvasElement;
-    
+
     const ctx = canvasEl.getContext('2d');
     if (!ctx) return;
 
     // Handle high DPI displays
     const dpr = window.devicePixelRatio || 1;
     const rect = canvasEl.getBoundingClientRect();
-    
+
     // Set actual size in memory (scaled to account for extra pixel density)
     canvasEl.width = rect.width * dpr;
     canvasEl.height = rect.height * dpr;
@@ -25,23 +27,22 @@ const CanvasCard: React.FC<{ title: string; draw: (ctx: CanvasRenderingContext2D
     // Normalize coordinate system to use css pixels.
     ctx.scale(dpr, dpr);
 
-    let animationFrameId: number;
-
     if (animated) {
       const render = () => {
         ctx.clearRect(0, 0, canvasEl.width / dpr, canvasEl.height / dpr);
         draw(ctx);
-        animationFrameId = requestAnimationFrame(render);
+        rafId = requestAnimationFrame(render);
       };
       render();
-      return () => cancelAnimationFrame(animationFrameId);
+      // return () => cancelAnimationFrame(animationFrameId);
     } else {
       draw(ctx);
     }
   };
 
-  const onDetached = () => {
+  const onDetached = (event: Event) => {
     // Optional: Add specific cleanup if needed
+    cancelAnimationFrame(rafId);
   };
 
   const flutterCanvasRef = useFlutterAttached<HTMLCanvasElement>(onAttached, onDetached);
@@ -257,6 +258,8 @@ export const Canvas2dPage: React.FC = () => {
               ctx.fill();
 
               ctx.restore();
+
+              console.log('draw canvas');
             }}
           />
         </div>
