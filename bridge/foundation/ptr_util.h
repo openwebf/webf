@@ -1,8 +1,12 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
 // Copyright 2015 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Copyright (C) 2022-present The WebF authors. All rights reserved.
+// Copyright (C) 2022-2024 The WebF authors. All rights reserved.
 
 #ifndef BASE_MEMORY_PTR_UTIL_H_
 #define BASE_MEMORY_PTR_UTIL_H_
