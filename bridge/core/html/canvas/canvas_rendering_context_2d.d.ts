@@ -6,10 +6,10 @@ import {CanvasPattern} from "./canvas_pattern";
 interface CanvasRenderingContext2D extends CanvasRenderingContext {
     globalAlpha: number;
     globalCompositeOperation: string;
-    fillStyle: string | CanvasGradient | null;
+    fillStyle: string | CanvasGradient | CanvasPattern | null;
     direction: string;
     font: string;
-    strokeStyle: string | CanvasGradient | null;
+    strokeStyle: string | CanvasGradient | CanvasPattern | null;
     lineCap: string;
     lineDashOffset: number;
     lineJoin: string;

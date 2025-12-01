@@ -11,7 +11,7 @@
 #include "canvas_pattern.h"
 #include "canvas_rendering_context.h"
 #include "path_2d.h"
-#include "qjs_union_dom_stringcanvas_gradient.h"
+#include "qjs_union_dom_stringcanvas_gradientcanvas_pattern.h"
 #include "qjs_unionhtml_image_elementhtml_canvas_element.h"
 #include "qjs_unionpath_2_d_dom_string.h"
 #include "text_metrics.h"
@@ -48,8 +48,9 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   CanvasPattern* createPattern(const std::shared_ptr<QJSUnionHTMLImageElementHTMLCanvasElement>& init,
                                const AtomicString& repetition,
                                ExceptionState& exception_state);
-  std::shared_ptr<QJSUnionDomStringCanvasGradient> fillStyle();
-  void setFillStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style, ExceptionState& exception_state);
+  std::shared_ptr<QJSUnionDomStringCanvasGradientCanvasPattern> fillStyle();
+  void setFillStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradientCanvasPattern>& style,
+                    ExceptionState& exception_state);
 
   double globalAlpha();
   void setGlobalAlpha(double global_alpha, ExceptionState& exception_state);
@@ -90,8 +91,9 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   void fill(std::shared_ptr<const QJSUnionPath2DDomString> pathOrPattern,
             const AtomicString& fillRule,
             ExceptionState& exception_state);
-  std::shared_ptr<QJSUnionDomStringCanvasGradient> strokeStyle();
-  void setStrokeStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style, ExceptionState& exception_state);
+  std::shared_ptr<QJSUnionDomStringCanvasGradientCanvasPattern> strokeStyle();
+  void setStrokeStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradientCanvasPattern>& style,
+                      ExceptionState& exception_state);
 
   TextMetrics* measureText(const AtomicString& text, ExceptionState& exception_state);
   void arc(double x,
@@ -204,8 +206,8 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   void ClearPropertyCaches();
 
   mutable bool _needsPaint = false;
-  std::shared_ptr<QJSUnionDomStringCanvasGradient> fill_style_ = nullptr;
-  std::shared_ptr<QJSUnionDomStringCanvasGradient> stroke_style_ = nullptr;
+  std::shared_ptr<QJSUnionDomStringCanvasGradientCanvasPattern> fill_style_ = nullptr;
+  std::shared_ptr<QJSUnionDomStringCanvasGradientCanvasPattern> stroke_style_ = nullptr;
   std::vector<double> line_dash_segments_;
   std::optional<double> global_alpha_cache_;
   std::optional<AtomicString> global_composite_operation_cache_;

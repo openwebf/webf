@@ -13,6 +13,9 @@
 #include "core/css/media_list.h"
 #include "core/html/canvas/html_canvas_element.h"
 #include "core/html/canvas/path_2d.h"
+#include "core/html/canvas/canvas_pattern.h"
+#include "qjs_canvas_gradient.h"
+#include "qjs_canvas_pattern.h"
 #include "qjs_dom_point_init.h"
 
 namespace webf {

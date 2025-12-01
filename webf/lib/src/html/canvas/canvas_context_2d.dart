@@ -358,10 +358,12 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
         setter: (context, value) =>
             castToType<CanvasRenderingContext2D>(context).globalCompositeOperation = castToType<String>(value)),
     'fillStyle': StaticDefinedBindingProperty(getter: (context) {
-      if (castToType<CanvasRenderingContext2D>(context).fillStyle is CanvasGradient) {
-        return castToType<CanvasRenderingContext2D>(context).fillStyle;
+      final CanvasRenderingContext2D ctx2d = castToType<CanvasRenderingContext2D>(context);
+      final Object style = ctx2d.fillStyle;
+      if (style is CanvasGradient || style is CanvasPattern) {
+        return style;
       }
-      return CSSColor.convertToHex(castToType<CanvasRenderingContext2D>(context).fillStyle as Color);
+      return CSSColor.convertToHex(style as Color);
     }, setter: (context, value) {
       if (value is String) {
         Color? color = CSSColor.parseColor(castToType<String>(value),
@@ -379,17 +381,26 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
         getter: (context) => castToType<CanvasRenderingContext2D>(context).font,
         setter: (context, value) => castToType<CanvasRenderingContext2D>(context).font = castToType<String>(value)),
     'strokeStyle': StaticDefinedBindingProperty(getter: (context) {
-      if (castToType<CanvasRenderingContext2D>(context).strokeStyle is CanvasGradient) {
-        return castToType<CanvasRenderingContext2D>(context).strokeStyle;
+      final CanvasRenderingContext2D ctx2d = castToType<CanvasRenderingContext2D>(context);
+      final Object style = ctx2d.strokeStyle;
+      // ignore: avoid_print
+      print('[Canvas2D] getter strokeStyle, runtimeType=${style.runtimeType}');
+      if (style is CanvasGradient || style is CanvasPattern) {
+        return style;
       }
-      return CSSColor.convertToHex(castToType<CanvasRenderingContext2D>(context).strokeStyle as Color);
+      return CSSColor.convertToHex(style as Color);
     }, setter: (context, value) {
+      // ignore: avoid_print
+      print('[Canvas2D] setter strokeStyle, runtimeType=${value.runtimeType}');
       if (value is String) {
         Color? color = CSSColor.parseColor(castToType<String>(value),
             renderStyle: castToType<CanvasRenderingContext2D>(context).canvas.renderStyle);
         if (color != null) castToType<CanvasRenderingContext2D>(context).strokeStyle = color;
-      } else if (value is CanvasGradient) {
+      } else if (value is CanvasGradient || value is CanvasPattern) {
         castToType<CanvasRenderingContext2D>(context).strokeStyle = value;
+      } else {
+        // ignore: avoid_print
+        print('[Canvas2D] strokeStyle setter received unsupported value: $value');
       }
     }),
     'lineCap': StaticDefinedBindingProperty(
@@ -499,6 +510,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   void replayActions(Canvas canvas, Size size) {
     Path2D paintTemp = path2d;
     path2d = Path2D();
+    // ignore: avoid_print
+    print('[Canvas2D] replayActions: canvasSize=$size, actionsCount=${_actions.length}');
     _actions.forEach((action) {
       action.fn.call(canvas, size);
     });
@@ -920,21 +933,64 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   void stroke({Path2D? path}) {
     addAction('stroke', (Canvas canvas, Size size) {
-      if (strokeStyle is! Color) {
-        return;
-      }
+      // ignore: avoid_print
+      print(
+          '[Canvas2D] stroke() paint, strokeStyle.runtimeType=${strokeStyle.runtimeType}, lineWidth=$lineWidth, lineCap=$lineCap, lineJoin=$lineJoin');
       _drawWithGlobalCompositing(canvas, size, (Canvas drawCanvas) {
         final Path basePath = path?.path ?? path2d.path;
         final Path effectivePath = _applyLineDashIfNeeded(basePath);
-        Paint paint = Paint()
-          ..color = strokeStyle as Color
-          ..strokeJoin = lineJoin
-          ..strokeCap = lineCap
-          ..strokeWidth = lineWidth
-          ..strokeMiterLimit = miterLimit
-          ..style = PaintingStyle.stroke;
-        _paintShadowForPath(drawCanvas, effectivePath, paintingStyle: PaintingStyle.stroke);
-        drawCanvas.drawPath(effectivePath, paint);
+        if (strokeStyle is CanvasPattern) {
+          final CanvasPattern canvasPattern = strokeStyle as CanvasPattern;
+          final Rect pathBounds = effectivePath.getBounds();
+          // ignore: avoid_print
+          print('[Canvas2D] stroke() pattern branch, pathBounds=$pathBounds');
+          // Approximate the stroke region as a rectangular ring based on the
+          // path bounds and lineWidth, then clip the pattern to that ring. This
+          // confines the pattern to the lines instead of filling the interior.
+          final double halfWidth = lineWidth / 2.0;
+          final Rect outerRect = pathBounds.inflate(halfWidth);
+          final Rect innerRect = pathBounds.deflate(halfWidth);
+          final Path ring = Path()
+            ..fillType = PathFillType.evenOdd
+            ..addRect(outerRect)
+            ..addRect(innerRect);
+          drawCanvas.save();
+          drawCanvas.clipPath(ring);
+          _paintShadowForPath(drawCanvas, effectivePath, paintingStyle: PaintingStyle.stroke);
+          _drawPattern(drawCanvas, size, outerRect.left, outerRect.top, outerRect.width, outerRect.height,
+              canvasPattern);
+          drawCanvas.restore();
+        } else {
+          Paint paint = Paint();
+          if (strokeStyle is Color) {
+            paint..color = strokeStyle as Color;
+          } else if (strokeStyle is CanvasRadialGradient) {
+            final Rect bounds = effectivePath.getBounds();
+            paint
+              ..shader =
+                  _drawRadialGradient(strokeStyle as CanvasRadialGradient, bounds.left, bounds.top, bounds.width,
+                          bounds.height)
+                      .createShader(bounds);
+          } else if (strokeStyle is CanvasLinearGradient) {
+            final Rect bounds = effectivePath.getBounds();
+            paint
+              ..shader =
+                  _drawLinearGradient(strokeStyle as CanvasLinearGradient, bounds.left, bounds.top, bounds.width,
+                          bounds.height)
+                      .createShader(bounds);
+          } else {
+            // Unsupported stroke style type.
+            return;
+          }
+          paint
+            ..strokeJoin = lineJoin
+            ..strokeCap = lineCap
+            ..strokeWidth = lineWidth
+            ..strokeMiterLimit = miterLimit
+            ..style = PaintingStyle.stroke;
+          _paintShadowForPath(drawCanvas, effectivePath, paintingStyle: PaintingStyle.stroke);
+          drawCanvas.drawPath(effectivePath, paint);
+        }
       });
     }, CanvasActionType.execute, {
       'pathProvided': path != null,
@@ -1344,6 +1400,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   set strokeStyle(Object? newValue) {
     if (newValue == null) return;
+    // ignore: avoid_print
+    print('[Canvas2D] CanvasRenderingContext2D.strokeStyle setter newValue.runtimeType=${newValue.runtimeType}');
     addAction('strokeStyle', (Canvas canvas, Size size) {
       _strokeStyle = newValue;
     }, CanvasActionType.execute, _describeStyleValue(newValue));
@@ -1365,6 +1423,9 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   }
 
   CanvasPattern createPattern(CanvasImageSource image, String repetition) {
+    // ignore: avoid_print
+    print(
+        "[Canvas2D] createPattern: imageType=${image.image_element != null ? 'HTMLImageElement' : (image.canvas_element != null ? 'HTMLCanvasElement' : 'Unknown')}, repetition=$repetition");
     return CanvasPattern(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), image, repetition);
   }
 
@@ -1403,10 +1464,121 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     });
   }
 
+  void _drawPattern(
+      Canvas drawCanvas, Size size, double x, double y, double width, double height, CanvasPattern canvasPattern) {
+    // ignore: avoid_print
+    print(
+        '[Canvas2D] _drawPattern: repetition=${canvasPattern.repetition}, x=$x, y=$y, width=$width, height=$height');
+    if (canvasPattern.image.image_element == null && canvasPattern.image.canvas_element == null) {
+      throw AssertionError('CanvasPattern must be created from a canvas or image');
+    }
+
+    String repetition = canvasPattern.repetition;
+    int patternWidth = canvasPattern.image.image_element != null
+        ? canvasPattern.image.image_element!.width
+        : canvasPattern.image.canvas_element!.width;
+    int patternHeight = canvasPattern.image.image_element != null
+        ? canvasPattern.image.image_element!.height
+        : canvasPattern.image.canvas_element!.height;
+    // Compute repeat counts based on the full canvas size so that the pattern
+    // phase is always anchored at the canvas origin (0, 0), matching browser
+    // behavior. The requested (x, y, width, height) region is then applied
+    // via clipping so only that area is visible.
+    int xRepeatCount = math.max(1, (size.width / patternWidth).ceil());
+    int yRepeatCount = math.max(1, (size.height / patternHeight).ceil());
+    // ignore: avoid_print
+    print(
+        '[Canvas2D] _drawPattern metrics: patternWidth=$patternWidth, patternHeight=$patternHeight, '
+        'xRepeatCount=$xRepeatCount, yRepeatCount=$yRepeatCount');
+
+    final Rect clipRegion = Rect.fromLTWH(x, y, width, height);
+    drawCanvas.save();
+    drawCanvas.clipRect(clipRegion);
+
+    // CanvasPattern created from an image
+    if (canvasPattern.image.image_element != null) {
+      Image? repeatImg = canvasPattern.image.image_element?.image;
+
+      if (repetition == 'no-repeat') {
+        xRepeatCount = 1;
+        yRepeatCount = 1;
+      } else if (repetition == 'repeat-x') {
+        yRepeatCount = 1;
+      } else if (repetition == 'repeat-y') {
+        xRepeatCount = 1;
+      }
+
+      if (repeatImg != null) {
+        final Paint paint = Paint();
+        for (int i = 0; i < xRepeatCount; i++) {
+          for (int j = 0; j < yRepeatCount; j++) {
+            // ignore: avoid_print
+            print(
+                '[Canvas2D] _drawPattern image tile at (${i * patternWidth}, ${j * patternHeight}) [i=$i, j=$j]');
+            drawCanvas.drawImage(repeatImg, Offset(i * patternWidth.toDouble(), j * patternHeight.toDouble()), paint);
+          }
+        }
+      }
+    } else {
+      // CanvasPattern created from a canvas
+      final CanvasElement? patternCanvasElement = canvasPattern.image.canvas_element;
+      if (patternCanvasElement == null) {
+        throw AssertionError('CanvasPattern must be created from a canvas');
+      }
+      final Size patternSize = patternCanvasElement.size;
+      // ignore: avoid_print
+      print('[Canvas2D] _drawPattern canvas sourceSize=$patternSize, destSize=$size');
+
+      switch (repetition) {
+        case 'no-repeat':
+          // ignore: avoid_print
+          print('[Canvas2D] _drawPattern canvas no-repeat');
+          patternCanvasElement.context2d!.replayActions(drawCanvas, patternSize);
+          break;
+        case 'repeat-x':
+          for (int i = 0; i < xRepeatCount; i++) {
+            // ignore: avoid_print
+            print('[Canvas2D] _drawPattern canvas repeat-x column=$i');
+            drawCanvas.save();
+            drawCanvas.translate(i * patternWidth.toDouble(), 0);
+            patternCanvasElement.context2d!.replayActions(drawCanvas, patternSize);
+            drawCanvas.restore();
+          }
+          break;
+        case 'repeat-y':
+          for (int j = 0; j < yRepeatCount; j++) {
+            // ignore: avoid_print
+            print('[Canvas2D] _drawPattern canvas repeat-y row=$j');
+            drawCanvas.save();
+            drawCanvas.translate(0, j * patternHeight.toDouble());
+            patternCanvasElement.context2d!.replayActions(drawCanvas, patternSize);
+            drawCanvas.restore();
+          }
+          break;
+        case 'repeat':
+          for (int i = 0; i < xRepeatCount; i++) {
+            for (int j = 0; j < yRepeatCount; j++) {
+              // ignore: avoid_print
+              print('[Canvas2D] _drawPattern canvas repeat tile column=$i row=$j');
+              drawCanvas.save();
+              drawCanvas.translate(i * patternWidth.toDouble(), j * patternHeight.toDouble());
+              patternCanvasElement.context2d!.replayActions(drawCanvas, patternSize);
+              drawCanvas.restore();
+            }
+          }
+          break;
+      }
+    }
+    drawCanvas.restore();
+  }
+
   void fillRect(double x, double y, double w, double h) {
     Rect rect = Rect.fromLTWH(x, y, w, h);
     addAction('fillRect', (Canvas canvas, Size size) {
       _drawWithGlobalCompositing(canvas, size, (Canvas drawCanvas) {
+        // ignore: avoid_print
+        print(
+            '[Canvas2D] fillRect: rect=$rect, fillStyle.runtimeType=${fillStyle.runtimeType}, globalAlpha=$_globalAlpha, globalCompositeOperation=$_globalCompositeOperation');
         Paint paint = Paint();
         _paintShadowForRect(drawCanvas, rect, style: PaintingStyle.fill);
         if (fillStyle is Color || fillStyle is CanvasRadialGradient || fillStyle is CanvasLinearGradient) {
@@ -1420,69 +1592,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
           drawCanvas.drawRect(rect, paint);
         } else if (fillStyle is CanvasPattern) {
           var canvasPattern = fillStyle as CanvasPattern;
-          if (canvasPattern.image.image_element == null && canvasPattern.image.canvas_element == null) {
-            throw AssertionError('CanvasPattern must be created from a canvas or image');
-          }
-
-          String repetition = canvasPattern.repetition;
-          int patternWidth = canvasPattern.image.image_element != null
-              ? canvasPattern.image.image_element!.width
-              : canvasPattern.image.canvas_element!.width;
-          int patternHeight = canvasPattern.image.image_element != null
-              ? canvasPattern.image.image_element!.height
-              : canvasPattern.image.canvas_element!.height;
-          double xRepeatNum = ((w - x) / patternWidth);
-          double yRepeatNum = ((h - y) / patternHeight);
-          // CanvasPattern created from an image
-          if (canvasPattern.image.image_element != null) {
-            Image? repeatImg = canvasPattern.image.image_element?.image;
-
-            if (repetition == 'no-repeat') {
-              xRepeatNum = 1;
-              yRepeatNum = 1;
-            } else if (repetition == 'repeat-x') {
-              yRepeatNum = 1;
-            } else if (repetition == 'repeat-y') {
-              xRepeatNum = 1;
-            }
-
-            if (repeatImg != null) {
-              for (int i = 0; i < xRepeatNum; i++) {
-                for (int j = 0; j < yRepeatNum; j++) {
-                  drawCanvas.drawImage(repeatImg, Offset(x + i * patternWidth, y + j * patternHeight), paint);
-                }
-              }
-            }
-          } else {
-            // CanvasPattern created from a canvas
-            drawCanvas.translate(x, y);
-            switch (repetition) {
-              case 'no-repeat':
-                canvasPattern.image.canvas_element?.context2d!.replayActions(drawCanvas, size);
-                break;
-              case 'repeat-x':
-                for (int i = 0; i < xRepeatNum; i++) {
-                  canvasPattern.image.canvas_element?.context2d!.replayActions(drawCanvas, size);
-                  drawCanvas.translate(patternWidth.toDouble(), 0);
-                }
-                break;
-              case 'repeat-y':
-                for (int j = 0; j < yRepeatNum; j++) {
-                  canvasPattern.image.canvas_element?.context2d!.replayActions(drawCanvas, size);
-                  drawCanvas.translate(0, patternHeight.toDouble());
-                }
-                break;
-              case 'repeat':
-                for (int i = 0; i < xRepeatNum; i++) {
-                  for (int j = 0; j < yRepeatNum; j++) {
-                    canvasPattern.image.canvas_element?.context2d!.replayActions(drawCanvas, size);
-                    drawCanvas.translate(0, patternHeight.toDouble());
-                  }
-                  drawCanvas.translate(patternWidth.toDouble(), y - h);
-                }
-                break;
-            }
-          }
+          _drawPattern(drawCanvas, size, x, y, w, h, canvasPattern);
         }
       });
     }, CanvasActionType.execute, {
@@ -1498,6 +1608,9 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     Rect rect = Rect.fromLTWH(x, y, w, h);
     addAction('strokeRect', (Canvas canvas, Size size) {
       _drawWithGlobalCompositing(canvas, size, (Canvas drawCanvas) {
+        // ignore: avoid_print
+        print(
+            '[Canvas2D] strokeRect() paint, rect=$rect, strokeStyle.runtimeType=${strokeStyle.runtimeType}, lineWidth=$lineWidth, lineCap=$lineCap, lineJoin=$lineJoin');
         Paint paint = Paint();
         final Path rectPath = Path()..addRect(rect);
         final Path effectivePath = _applyLineDashIfNeeded(rectPath);

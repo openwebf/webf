@@ -8,6 +8,7 @@
 #include "core/html/canvas/html_canvas_element.h"
 #include "core/html/html_image_element.h"
 #include "foundation/native_value_converter.h"
+#include "foundation/logging.h"
 
 namespace webf {
 
@@ -88,6 +89,10 @@ CanvasPattern* CanvasRenderingContext2D::createPattern(
     ExceptionState& exception_state) {
   NativeValue arguments[2];
 
+  WEBF_LOG(INFO) << "[CanvasRenderingContext2D::createPattern] init type = "
+                 << (init->IsHTMLImageElement() ? "HTMLImageElement" : (init->IsHTMLCanvasElement() ? "HTMLCanvasElement" : "Unknown"))
+                 << ", repetition = " << repetition.ToUTF8String();
+
   if (init->IsHTMLImageElement()) {
     arguments[0] =
         NativeValueConverter<NativeTypePointer<HTMLImageElement>>::ToNativeValue(init->GetAsHTMLImageElement());
@@ -108,18 +113,25 @@ CanvasPattern* CanvasRenderingContext2D::createPattern(
   return MakeGarbageCollected<CanvasPattern>(GetExecutingContext(), native_binding_object);
 }
 
-std::shared_ptr<QJSUnionDomStringCanvasGradient> CanvasRenderingContext2D::fillStyle() {
+std::shared_ptr<QJSUnionDomStringCanvasGradientCanvasPattern> CanvasRenderingContext2D::strokeStyle() {
+  return stroke_style_;
+}
+
+std::shared_ptr<QJSUnionDomStringCanvasGradientCanvasPattern> CanvasRenderingContext2D::fillStyle() {
   return fill_style_;
 }
 
-void CanvasRenderingContext2D::setFillStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
-                                            ExceptionState& exception_state) {
+void CanvasRenderingContext2D::setFillStyle(
+    const std::shared_ptr<QJSUnionDomStringCanvasGradientCanvasPattern>& style,
+    ExceptionState& exception_state) {
   NativeValue value = Native_NewNull();
 
   if (style->IsDomString()) {
     value = NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), style->GetAsDomString());
   } else if (style->IsCanvasGradient()) {
     value = NativeValueConverter<NativeTypePointer<CanvasGradient>>::ToNativeValue(style->GetAsCanvasGradient());
+  } else if (style->IsCanvasPattern()) {
+    value = NativeValueConverter<NativeTypePointer<CanvasPattern>>::ToNativeValue(style->GetAsCanvasPattern());
   }
   SetBindingPropertyAsync(binding_call_methods::kfillStyle, value, exception_state);
 
@@ -338,18 +350,20 @@ void CanvasRenderingContext2D::setShadowColor(const AtomicString& shadow_color, 
                           NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), shadow_color), exception_state);
 }
 
-std::shared_ptr<QJSUnionDomStringCanvasGradient> CanvasRenderingContext2D::strokeStyle() {
-  return stroke_style_;
-}
-
-void CanvasRenderingContext2D::setStrokeStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
-                                              ExceptionState& exception_state) {
+void CanvasRenderingContext2D::setStrokeStyle(
+    const std::shared_ptr<QJSUnionDomStringCanvasGradientCanvasPattern>& style,
+    ExceptionState& exception_state) {
   NativeValue value = Native_NewNull();
+
+  WEBF_LOG(INFO) << "[CanvasRenderingContext2D::setStrokeStyle] content type = "
+                 << static_cast<int>(style->GetContentType());
 
   if (style->IsDomString()) {
     value = NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), style->GetAsDomString());
   } else if (style->IsCanvasGradient()) {
     value = NativeValueConverter<NativeTypePointer<CanvasGradient>>::ToNativeValue(style->GetAsCanvasGradient());
+  } else if (style->IsCanvasPattern()) {
+    value = NativeValueConverter<NativeTypePointer<CanvasPattern>>::ToNativeValue(style->GetAsCanvasPattern());
   }
 
   SetBindingPropertyAsync(binding_call_methods::kstrokeStyle, value, exception_state);
