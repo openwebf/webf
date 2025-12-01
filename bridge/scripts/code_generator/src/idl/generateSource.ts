@@ -529,9 +529,42 @@ ${optionalArgumentsInit.join('\n')}
 }
 
 function generateOverLoadSwitchBody(overloadMethods: FunctionDeclaration[]) {
-  let callBodyList = overloadMethods.map((overload, index) => {
-    return `if (${overload.args.length} == argc) {
-  return ${overload.name}_overload_${index}(ctx, this_val, argc, argv);
+  // Generic overload dispatcher that is aware of optional parameters.
+  // For each overload we compute the minimum required argument count and
+  // the maximum supported count (its full parameter list, unless it has
+  // a variadic "...args", in which case only the lower bound matters).
+  //
+  // We then sort overloads by increasing minRequired so that calls are
+  // preferentially routed to the overload that accepts fewer required
+  // arguments when multiple ranges match (e.g. for Canvas 2D
+  // isPointInPath, the (x, y, fillRule?) overload with 2 required args
+  // should win over the Path2D overload with 3 required args for a
+  // 3-argument call).
+  const overloadInfos = overloadMethods.map((overload, index) => {
+    let minRequired = 0;
+    overload.args.forEach(arg => {
+      if (arg.required && !arg.isDotDotDot) {
+        minRequired++;
+      }
+    });
+    const hasVariadic = overload.args.some(arg => arg.isDotDotDot);
+    const maxArgs = hasVariadic ? null : overload.args.length;
+    return { overload, index, minRequired, maxArgs };
+  });
+
+  overloadInfos.sort((a, b) => {
+    if (a.minRequired !== b.minRequired) {
+      return a.minRequired - b.minRequired;
+    }
+    // For the same minRequired, preserve original order to keep
+    // deterministic behavior.
+    return a.index - b.index;
+  });
+
+  let callBodyList = overloadInfos.map(info => {
+    const maxExpr = info.maxArgs == null ? '' : ` && argc <= ${info.maxArgs}`;
+    return `if (argc >= ${info.minRequired}${maxExpr}) {
+  return ${info.overload.name}_overload_${info.index}(ctx, this_val, argc, argv);
 }
     `;
   });

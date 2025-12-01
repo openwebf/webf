@@ -29,6 +29,9 @@ interface CanvasRenderingContext2D extends CanvasRenderingContext {
     createImageData(imagedata: any): any;
     getImageData(sx: number, sy: number, sw: number, sh: number): any;
     putImageData(imagedata: any, dx: number, dy: number, dirtyX?: number, dirtyY?: number, dirtyWidth?: number, dirtyHeight?: number): void;
+    isPointInPath(path: Path2D | number, x: number, y?: string | number, fillRule?: string): boolean;
+    isPointInStroke(path: Path2D, x: number, y: number): boolean;
+    isPointInStroke(x: number, y: number): boolean;
     arcTo(x1: number, y1: number, x2: number, y2: number, radius: number): void;
     beginPath(): void;
     bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): void;

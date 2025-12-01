@@ -1,4 +1,4 @@
-fdescribe('canvas ImageData APIs', () => {
+describe('canvas ImageData APIs', () => {
   it('putImageData draws solid red block', async () => {
     const canvas = document.createElement('canvas');
     canvas.width = 20;

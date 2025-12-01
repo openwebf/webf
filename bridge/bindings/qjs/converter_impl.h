@@ -520,13 +520,7 @@ struct Converter<T, typename std::enable_if_t<std::is_base_of<UnionBase, T>::val
                                              uint32_t argv_index,
                                              ExceptionState& exception_state) {
     assert(!JS_IsException(value));
-    const WrapperTypeInfo* wrapper_type_info = Node::GetStaticWrapperTypeInfo();
-    if (JS_IsInstanceOf(context->ctx(), value, context->contextData()->constructorForType(wrapper_type_info))) {
-      return FromValue(context->ctx(), value, exception_state);
-    }
-    exception_state.ThrowException(context->ctx(), ErrorType::TypeError,
-                                   ExceptionMessage::ArgumentNotOfType(argv_index, wrapper_type_info->className));
-    return nullptr;
+    return FromValue(context->ctx(), value, exception_state);
   }
   static JSValue ToValue(JSContext* ctx, typename T::ImplType value) {
     if (value == nullptr)

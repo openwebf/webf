@@ -15,6 +15,8 @@
 #include "qjs_union_dom_stringcanvas_gradientcanvas_pattern.h"
 #include "qjs_unionhtml_image_elementhtml_canvas_element.h"
 #include "qjs_unionpath_2_d_dom_string.h"
+#include "qjs_unionpath_2_d_double.h"
+#include "qjs_union_dom_string_double.h"
 #include "text_metrics.h"
 
 namespace webf {
@@ -129,6 +131,20 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
                       ExceptionState& exception_state);
 
   TextMetrics* measureText(const AtomicString& text, ExceptionState& exception_state);
+  bool isPointInPath(std::shared_ptr<const QJSUnionPath2DDouble> $1,
+                     double $2,
+                     ExceptionState &exception_state);
+  bool isPointInPath(std::shared_ptr<const QJSUnionPath2DDouble> $1,
+                     double $2,
+                     std::shared_ptr<const QJSUnionDomStringDouble> $3,
+                     ExceptionState &exception_state);
+  bool isPointInPath(std::shared_ptr<const QJSUnionPath2DDouble> $1,
+                     double $2,
+                     std::shared_ptr<const QJSUnionDomStringDouble> $3,
+                     const AtomicString &fillRule,
+                     ExceptionState &exception_state);
+  bool isPointInStroke(double x, double y, ExceptionState& exception_state);
+  bool isPointInStroke(Path2D* path, double x, double y, ExceptionState& exception_state);
   void arc(double x,
            double y,
            double radius,

@@ -691,6 +691,97 @@ TextMetrics* CanvasRenderingContext2D::measureText(const AtomicString& text, Exc
   return TextMetrics::Create(GetExecutingContext(), native_binding_object);
 }
 
+
+bool CanvasRenderingContext2D::isPointInPath(std::shared_ptr<const QJSUnionPath2DDouble> $1,
+                                             double $2,
+                                             ExceptionState &exception_state) {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue($1->GetAsDouble()),
+                             NativeValueConverter<NativeTypeDouble>::ToNativeValue($2)};
+  NativeValue result = InvokeBindingMethod(AtomicString::CreateFromUTF8("isPointInPath"),
+                                           sizeof(arguments) / sizeof(NativeValue), arguments,
+                                           FlushUICommandReason::kStandard, exception_state);
+  if (exception_state.HasException()) {
+    return false;
+  }
+  bool value = NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
+  return value;
+}
+
+bool CanvasRenderingContext2D::isPointInPath(std::shared_ptr<const QJSUnionPath2DDouble> $1,
+                                             double $2,
+                                             std::shared_ptr<const QJSUnionDomStringDouble> $3,
+                                             ExceptionState &exception_state) {
+  bool result = isPointInPath($1, $2, $3, AtomicString::CreateFromUTF8("nonzero"), exception_state);
+  return result;
+}
+
+bool CanvasRenderingContext2D::isPointInPath(std::shared_ptr<const QJSUnionPath2DDouble> $1,
+                                             double $2,
+                                             std::shared_ptr<const QJSUnionDomStringDouble> $3,
+                                             const AtomicString& fillRule,
+                                             ExceptionState& exception_state) {
+  if ($1->IsPath2D()) {
+    NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<Path2D>>::ToNativeValue($1->GetAsPath2D()),
+                               NativeValueConverter<NativeTypeDouble>::ToNativeValue($2),
+                               NativeValueConverter<NativeTypeDouble>::ToNativeValue($3->GetAsDouble()),
+                               NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), fillRule)};
+    NativeValue result = InvokeBindingMethod(AtomicString::CreateFromUTF8("isPointInPath"),
+                                             sizeof(arguments) / sizeof(NativeValue), arguments,
+                                             FlushUICommandReason::kStandard, exception_state);
+    if (exception_state.HasException()) {
+      return false;
+    }
+    bool value = NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
+    return value;
+  } else {
+    NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue($1->GetAsDouble()),
+                               NativeValueConverter<NativeTypeDouble>::ToNativeValue($2),
+                               NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), $3->GetAsDomString())};
+    NativeValue result = InvokeBindingMethod(AtomicString::CreateFromUTF8("isPointInPath"),
+                                             sizeof(arguments) / sizeof(NativeValue), arguments,
+                                             FlushUICommandReason::kStandard, exception_state);
+    bool value = NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
+
+    if (exception_state.HasException()) {
+      return false;
+    }
+
+    return value;
+  }
+}
+
+bool CanvasRenderingContext2D::isPointInStroke(double x,
+                                               double y,
+                                               ExceptionState& exception_state) {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
+                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(y)};
+  NativeValue result = InvokeBindingMethod(AtomicString::CreateFromUTF8("isPointInStroke"),
+                                           sizeof(arguments) / sizeof(NativeValue), arguments,
+                                           FlushUICommandReason::kStandard, exception_state);
+  if (exception_state.HasException()) {
+    return false;
+  }
+  bool value = NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
+  return value;
+}
+
+bool CanvasRenderingContext2D::isPointInStroke(Path2D* path,
+                                               double x,
+                                               double y,
+                                               ExceptionState& exception_state) {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<Path2D>>::ToNativeValue(path),
+                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
+                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(y)};
+  NativeValue result = InvokeBindingMethod(AtomicString::CreateFromUTF8("isPointInStroke"),
+                                           sizeof(arguments) / sizeof(NativeValue), arguments,
+                                           FlushUICommandReason::kStandard, exception_state);
+  if (exception_state.HasException()) {
+    return false;
+  }
+  bool value = NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
+  return value;
+}
+
 void CanvasRenderingContext2D::arc(double x,
                                    double y,
                                    double radius,
