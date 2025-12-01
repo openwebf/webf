@@ -24,6 +24,11 @@ interface CanvasRenderingContext2D extends CanvasRenderingContext {
     // @TODO: Following number should be double.
     // Reference https://html.spec.whatwg.org/multipage/canvas.html
     arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, anticlockwise?: boolean): void;
+    // Image data APIs (using `any` so they can be implemented purely on the C++ side without a dedicated IDL type)
+    createImageData(sw: number, sh: number): any;
+    createImageData(imagedata: any): any;
+    getImageData(sx: number, sy: number, sw: number, sh: number): any;
+    putImageData(imagedata: any, dx: number, dy: number, dirtyX?: number, dirtyY?: number, dirtyWidth?: number, dirtyHeight?: number): void;
     arcTo(x1: number, y1: number, x2: number, y2: number, radius: number): void;
     beginPath(): void;
     bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): void;

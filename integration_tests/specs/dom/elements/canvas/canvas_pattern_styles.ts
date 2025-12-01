@@ -1,4 +1,4 @@
-fdescribe('Canvas pattern styles', () => {
+describe('Canvas pattern styles', () => {
   it('fillStyle should round-trip a CanvasPattern created from a canvas', async () => {
     const canvas = document.createElement('canvas');
     canvas.width = 200;

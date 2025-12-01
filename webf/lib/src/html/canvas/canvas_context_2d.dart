@@ -201,6 +201,31 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
         return castToType<CanvasRenderingContext2D>(context).clip(fillType);
       }
     }),
+    'putImageData': StaticDefinedSyncBindingObjectMethod(call: (context, args) {
+      // Arguments bridged from C++:
+      // [0] NativeByteData bytes
+      // [1] width (int)
+      // [2] height (int)
+      // [3] dx
+      // [4] dy
+      // [5] dirtyX
+      // [6] dirtyY
+      // [7] dirtyWidth
+      // [8] dirtyHeight
+      final CanvasRenderingContext2D ctx2d = castToType<CanvasRenderingContext2D>(context);
+      final NativeByteData bytes = args[0] as NativeByteData;
+      final int width = castToType<num>(args[1]).toInt();
+      final int height = castToType<num>(args[2]).toInt();
+      final double dx = castToType<num>(args[3]).toDouble();
+      final double dy = castToType<num>(args[4]).toDouble();
+      final double dirtyX = castToType<num>(args[5]).toDouble();
+      final double dirtyY = castToType<num>(args[6]).toDouble();
+      final double dirtyWidth = castToType<num>(args[7]).toDouble();
+      final double dirtyHeight = castToType<num>(args[8]).toDouble();
+
+      ctx2d.putImageData(bytes, width, height, dx, dy,
+          dirtyX: dirtyX, dirtyY: dirtyY, dirtyWidth: dirtyWidth, dirtyHeight: dirtyHeight);
+    }),
     'closePath': StaticDefinedSyncBindingObjectMethod(call: (context, args) {
       return castToType<CanvasRenderingContext2D>(context).closePath();
     }),
@@ -1073,6 +1098,73 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
           drawCanvas.drawImageRect(
               img, Rect.fromLTWH(sx, sy, sWidth, sHeight), Rect.fromLTWH(dx, dy, dWidth, dHeight), Paint());
+        }
+      });
+    });
+  }
+
+  void putImageData(
+    NativeByteData nativeBytes,
+    int width,
+    int height,
+    double dx,
+    double dy, {
+    double? dirtyX,
+    double? dirtyY,
+    double? dirtyWidth,
+    double? dirtyHeight,
+  }) {
+    if (width <= 0 || height <= 0) return;
+
+    final Uint8List buffer = nativeBytes.bytes;
+    if (buffer.isEmpty) return;
+
+    final int expectedLength = width * height * 4;
+    if (buffer.length < expectedLength) return;
+
+    final double sx = dirtyX ?? 0.0;
+    final double sy = dirtyY ?? 0.0;
+    final double sw = dirtyWidth ?? width.toDouble();
+    final double sh = dirtyHeight ?? height.toDouble();
+
+    addAction('putImageData', (Canvas canvas, Size size) {
+      final int startX = sx.floor();
+      final int startY = sy.floor();
+      final int endX = (sx + sw).ceil();
+      final int endY = (sy + sh).ceil();
+
+      // Keep a strong reference to the NativeByteData so that the
+      // underlying memory stays alive for as long as this action exists.
+      // ignore: unused_local_variable
+      final NativeByteData keepAlive = nativeBytes;
+      final int stride = width * 4;
+      final Paint paint = Paint();
+
+      _drawWithGlobalCompositing(canvas, size, (Canvas drawCanvas) {
+        for (int y = startY; y < endY; y++) {
+          if (y < 0 || y >= height) continue;
+          for (int x = startX; x < endX; x++) {
+            if (x < 0 || x >= width) continue;
+            final int index = y * stride + x * 4;
+            final int r = buffer[index];
+            final int g = buffer[index + 1];
+            final int b = buffer[index + 2];
+            final int a = buffer[index + 3];
+
+            if (a == 0) {
+              // Fully transparent pixel, skip.
+              continue;
+            }
+
+            paint
+              ..color = Color.fromARGB(a, r, g, b)
+              ..blendMode = _globalBlendMode;
+
+            drawCanvas.drawRect(
+              Rect.fromLTWH(dx + x.toDouble(), dy + y.toDouble(), 1.0, 1.0),
+              paint,
+            );
+          }
         }
       });
     });
