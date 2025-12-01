@@ -4,10 +4,13 @@ import _ from "lodash";
 import {generateUnionTypeHeader} from "./generateHeader";
 import {
   generateCoreTypeValue,
-  generateUnionTypeSource, isDictionary,
+  generateUnionTypeSource,
+  isDictionary,
   isPointerType,
-  isTypeHaveNull, isUnionType,
-  trimNullTypeFromType
+  isTypeHaveNull,
+  isUnionType,
+  trimNullTypeFromType,
+  getPointerType
 } from "./generateSource";
 
 export function generateUnionTypeFileName(unionType: ParameterType[]) {
@@ -136,6 +139,13 @@ export function generateTypeRawChecker(unionType: ParameterType): string {
   if (unionType.isArray) {
     return `JS_IsArray(ctx, value)`;
   } else if (isPointerType(unionType)) {
+    const pointerType = getPointerType(unionType);
+    // For pointer types that have concrete QuickJS wrappers, prefer a
+    // wrapper-level instance check so different object union members
+    // (e.g. CanvasGradient vs CanvasPattern) can be distinguished.
+    if (pointerType === 'CanvasGradient' || pointerType === 'CanvasPattern') {
+      return `QJS${pointerType}::HasInstance(ExecutingContext::From(ctx), value)`;
+    }
     return `JS_IsObject(value)`;
   } else {
     unionType = trimNullTypeFromType(unionType);

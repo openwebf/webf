@@ -741,6 +741,7 @@
     "code_gen/qjs_union_double_sequencedouble.cc",
     "code_gen/qjs_unionhtml_image_elementhtml_canvas_element.cc",
     "code_gen/qjs_union_dom_stringcanvas_gradient.cc",
+    "code_gen/qjs_union_dom_stringcanvas_gradientcanvas_pattern.cc",
     "code_gen/qjs_union_sequencedoubledom_matrix_init.cc",
     "code_gen/qjs_union_doubledom_point_init.cc",
     "code_gen/canvas_types.cc",

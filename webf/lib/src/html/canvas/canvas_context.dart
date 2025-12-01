@@ -151,7 +151,8 @@ class CanvasPattern extends DynamicBindingObject {
 
   // opaque object
   void setTransform(DOMMatrix domMatrix) {
-    print('setTransform: $domMatrix');
+    // ignore: avoid_print
+    print('[CanvasPattern] setTransform called with matrix: $domMatrix');
   }
 
   @override
