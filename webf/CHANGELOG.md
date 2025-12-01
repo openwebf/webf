@@ -1,3 +1,25 @@
+## 0.23.10
+
+- Features
+  - Canvas 2D: add ImageData APIs (getImageData/putImageData), hit‑testing helpers (
+    isPointInPath/isPointInStroke), line dashes (with dash offset), shadow offsets, and global
+    compositing/alpha support to bring the 2D context
+    closer to modern browser behavior.
+  - Bridge/runtime: add ImageBitmap support and improve union type handling in the C++ bridge so
+    more web APIs and image flows can be wired through efficiently.
+- Fixed
+  - Canvas: honor Path2D line dash offset, clip CanvasPattern stroke styles correctly to the stroked
+    region, and optimize 2D context command batching for smoother rendering under heavy draw
+    workloads.
+  - Animation/prerendering: fix an issue where animations could remain incorrectly paused when pages
+    were prerendered.
+  - Filters: improve CSS filter effects and back them with additional tests for better visual
+    fidelity.
+  - Platform: fix iOS logging header configuration and clean up minor spec/test mismatches.
+- Docs & Chore
+  - Licensing: update the package metadata and docs to clearly indicate GPL‑3.0 licensing.
+
+
 ## 0.23.9
 
 - Features
