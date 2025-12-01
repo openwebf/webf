@@ -9,8 +9,7 @@
 <a href="https://openwebf.com" alt="openwebf-site">OpenWebF</a>
 </h1>
 <p align="center">
-  <b>A Web Rendering Engine Optimized for the Client.</b><br/>
-  Built using React/Vue and Tailwind CSS, rendered through Flutter.
+  <b>Glue everything between Web, Flutter and Native</b><br/>
 </p>
 <p align="center">
   <a href="https://openwebf.com/docs/tutorials/getting-started/quick-start">
@@ -37,156 +36,52 @@
   </a>
 </p>
 
-WebF presents a high-performance, cutting-edge web rendering engine built on top of Flutter, empowering web applications to operate natively within the Flutter ecosystem.
+## Why OpenWebF?
 
-- **Adherence to W3C Standards:** By leveraging HTML/CSS and JavaScript, WebF renders content on Flutter, ensuring impeccable alignment with standard browser rendering.
+**Build Fast. Ship Fast. Run Fast.**
 
-- **Compatible with Leading Front-End Frameworks:** Given its compliance with W3C standards, WebF seamlessly integrates with popular front-end frameworks, including [React](https://reactjs.org/) and [Vue](https://vuejs.org/).
+OpenWebF is the browser like runtime that brings web development's speed and flexibility directly to Flutter. Seamlessly glues Web, Flutter, and Native platforms together, enabling you to:
 
-- **Amplify Your Web Applications with Flutter:** WebF's adaptability shines through its customization capabilities. Craft bespoke HTML elements using Flutter Widgets or enhance your application by integrating a JavaScript API sourced from any Dart library on the `pub.dev` registry.
+- **Build Fast:** Dev with React or Vue + TailwindCSS, build with Vite, and deploy to Vercel - it all just works in WebF
+- **Ship Fast:** Deploy once across all Flutter-supported platforms from a single codebase  
+- **Run Fast:** Experience native-like performance that outpaces traditional WebView solutions
 
-- **Authentic Web Development Environment:** Experience a traditional web development setting with WebF. It facilitates DOM structure inspection, CSS style evaluations, and JavaScript debugging via Chrome DevTools.
+## Key Features
 
-- **Craft Once, Deploy Everywhere:** Harness the versatility of WebF to design your web application and launch it across any Flutter-compatible device. What's more, maintain the flexibility to execute your apps within Node.js or web browsers, all from a unified codebase.
-
-## Join Our Mission
-
-We envision providing web developers with an innovative web rendering engine, surpassing WebView in performance and adaptability across both mobile and desktop platforms.
-
-WebF's journey is ambitious and enduring. We believe in the strength of collective effort. If you share our dream of a superior alternative to WebView for the future, your expertise could be invaluable to us.
-
-Further, financial contributions can pave the way for erstwhile members of the Kraken team to rejoin our mission, bolstering our developmental pace and potential.
-
-If you or your team are interested in supporting us, please contact @andycall on our Discord channel.
-
-
-## License & Usage for App Developers
-
-- License: GPL-3.0-only with the OpenWebF Enterprise Exception (see `LICENSE`).
-- Using the WebF Flutter plugin in an app and distributing that app under the community license generally requires the app to be GPL-compatible and to provide source code.
-- Teams that need to keep their apps proprietary can use WebF under a separate commercial/enterprise agreement with OpenWebF, which grants additional rights consistent with the Enterprise Exception.
-
-## How to use
-
-> All front-end frameworks based on the WhatWG DOM standard are supported; this time, we are using Vue as an example.
-
-### 1. Use vue-cli to generate your front-end project
-
-> ES6 modules are not supported yet, so Vite is not supported.
-
-```bash
-vue create app
-cd app
-npm run serve
-```
-
-And the Vue development server will be hosted at `http://<yourip>:8080/`.
-
-### 2. Add webf as a dependency for your flutter apps.
-
-**packages.yaml**
-
-```yaml
-dependencies:
-  webf: <lastest version>
-```
-
-**import**
-
-```dart
-import 'package:webf/webf.dart';
-import 'package:webf/devtools.dart';
-```
-
-**init**
-
-```dart
-void main() {
-  runApp(MyApp());
-}
-```
+✅ **Optimized Rendering Architecture** - We solved browser engine bottlenecks - the magic that brings your React/Vue UI's LCP times to less than 100ms  
+✅ **DOM, Window, Document, CSS Selectors** - `document.querySelector()`, `window.localStorage`, `MutationObserver` - hundreds of web APIs just work  
+✅ **Core CSS Support** - Standard CSS Box Model, CSS inline formatting context, CSS Flexbox, Animations - these features make TailwindCSS just work in WebF  
+✅ **Framework Ready** - Your existing React hooks, Vue components, and npm packages work without modification  
+✅ **Modern Build Tools Support** - Vite and Webpack builds just work in WebF - HMR, tree-shaking, code splitting all supported  
+✅ **Popular Web Stack Ready** - Vercel, React, Next.js - the most popular web development workflows are ready for developing Flutter apps  
+✅ **Flutter Widget Integration** - Use our code_gen tools to generate a ready-to-use React or Vue UI component library from your Flutter widget components in just one click  
+✅ **Flutter Economy Access** - All Flutter plugins are available in WebF. Just tell us which Flutter packages you want from the [thousands available](https://fluttergems.dev/)  
+✅ **Core DevTools Support** - Element panel inspection and network debugging with Chrome DevTools  
+✅ **True Cross-Platform** - Same codebase runs on iOS, Android, Windows, macOS, Linux (web browser support coming soon)
 
 
-### 3. Initialize WebFControllerManager and add the WebF widget to run your web applications.
+## How It Works
 
-```dart
-class MyApp extends StatefulWidget {
-  @override
-  _MyAppState createState() => _MyAppState();
-}
+WebF uses **QuickJS** as its JavaScript runtime to execute your web code. On top of this, we’ve implemented **hundreds of essential DOM APIs**, ensuring that popular web frameworks and modern build tools work out of the box.
 
-class _MyAppState extends State<MyApp> {
-  @override
-  void initState() {
-    super.initState();
-    _initializeWebF();
-  }
+We’ve also created a **custom layout engine** that extends Flutter’s capabilities. This enables support for the **CSS box model, block/inline formatting contexts, and flexbox layouts** to align closely with W3C CSS specifications.
 
-  Future<void> _initializeWebF() async {
-    // Initialize WebFControllerManager
-    WebFControllerManager.instance.initialize(
-      WebFControllerManagerConfig(
-        maxAliveInstances: 4,
-        maxAttachedInstances: 2,
-      ),
-    );
+Your JavaScript runs in a **dedicated thread** and supports **headless mode** without attaching to the Flutter rendering context. The JavaScript runtime persists throughout the app’s entire lifecycle, starting up in sync with the Dart VM for optimal performance.
 
-    // Add controller with your web app
-    await WebFControllerManager.instance.addWithPreload(
-      name: 'vue_app',
-      bundle: WebFBundle.fromUrl('http://<yourip>:8080/'), // Your Vue app URL
-    );
-  }
+Additionally, your **DOM elements and CSS UI share the same rendering context as Flutter widgets**, allowing you to **seamlessly blend Flutter widgets with HTML elements**. This unified approach creates a native-like development experience where web technologies and Flutter coexist naturally.
 
-  @override
-  void dispose() {
-    WebFControllerManager.instance.disposeAll();
-    super.dispose();
-  }
+🚀 **Native-Like Speed** - No WebView overhead, runs directly on Flutter's rendering pipeline  
+⚡ **Fast Startup** - Lightweight runtime loads instantly compared to heavy browser engines  
+🎯 **Optimized Memory** - Efficient resource usage with shared rendering context  
+📱 **Smooth Animations** - 60fps performance across all platforms
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: WebF.fromControllerName(
-          controllerName: 'vue_app',
-        ),
-      ),
-    );
-  }
-}
-```
-
-### 4. Run
-
-```bash
-flutter run
-```
-
-<img src="https://user-images.githubusercontent.com/4409743/217754470-697b6998-4451-483c-b26e-bdb2740f3ea1.png" width="800" style="display: block; margin: 0 auto;" />
+<img width="4452" height="3601" alt="Browser Engine Pipeline" src="https://github.com/user-attachments/assets/5f945b66-fbcd-47b8-9eba-078ee3417610" />
 
 
-## How it works
+## Sponsors
 
-WebF provides a rendering engine which follows the W3C standards like web browsers do. It can render HTML/CSS and execute JavaScript. It's built on top of the flutter rendering pipelines and implements its own layout and painting algorithms.
-
-With WebF, Web Apps and Flutter Apps share the same rendering context. It means that you can use Flutter Widgets to define your HTML elements and embed your Web App as a Flutter Widget in your flutter apps.
-
-![Browser Engine Pipeline](https://github.com/user-attachments/assets/82b2ed53-f0d6-4f14-b22a-2fca50c697a5)
-
-
-
-
-## Contributors
-
-<a href="https://github.com/openwebf/webf/graphs/contributors"><img src="https://opencollective.com/webf/contributors.svg?width=890&button=false" /></a>
-
-## 👏 Contributing [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/openwebf/webf/pulls)
-
-By contributing to this repository, you agree that your contributions will be licensed under its GPL-3.0-only license (with the OpenWebF Enterprise Exception as described in `LICENSE`).
-
-Read our [contributing guide](https://github.com/openwebf/webf/blob/main/.github/CONTRIBUTING.md) and let's build a better WebF project together.
-
-Thank you to all the people who already contributed to [OpenWebF](https://github.com/openwebf) and [OpenKraken](https://github.com/openkraken)!
-
-Copyright (c) 2022-present, The OpenWebF authors.
+<p style="font-size:21px; color:black;">Browser testing via 
+  <a href="https://www.lambdatest.com/?utm_source=openwebf&utm_medium=sponsor" target="_blank">
+      <img src="https://www.lambdatest.com/blue-logo.png" style="vertical-align: middle;" width="250" height="45" />
+  </a>
+</p>
