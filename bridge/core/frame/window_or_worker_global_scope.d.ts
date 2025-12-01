@@ -20,9 +20,11 @@ declare const requestAnimationFrame: (callback: Function) => double;
 declare const cancelAnimationFrame: (request_id: int64) => void;
 
 // @ts-ignore
+declare const createImageBitmap: (image: any, sx?: double, sy?: double, sw?: double, sh?: double) => Promise<ImageBitmap>;
+
+// @ts-ignore
 
 declare const __gc__: () => void;
 
 // @ts-ignore
 declare const __memory_usage__: () => any;
-

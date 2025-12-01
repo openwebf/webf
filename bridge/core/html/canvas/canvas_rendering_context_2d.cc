@@ -9,6 +9,7 @@
 #include "canvas_gradient.h"
 #include "core/html/canvas/html_canvas_element.h"
 #include "core/html/html_image_element.h"
+#include "core/html/image_bitmap.h"
 #include "foundation/native_value_converter.h"
 #include "foundation/logging.h"
 
@@ -891,25 +892,99 @@ void CanvasRenderingContext2D::clip(Path2D* path, const AtomicString& fillRule, 
                            exception_state);
 }
 
-void CanvasRenderingContext2D::drawImage(HTMLImageElement* image, double dx, double dy, ExceptionState& exception_state) {
-  if (image == nullptr)
+namespace {
+
+struct ResolvedImageSource {
+  HTMLImageElement* image_element = nullptr;
+  ImageBitmap* bitmap = nullptr;
+};
+
+ResolvedImageSource ResolveImageSource(const std::shared_ptr<QJSUnionHTMLImageElementImageBitmap>& source) {
+  ResolvedImageSource result;
+  if (source == nullptr)
+    return result;
+
+  if (source->IsHTMLImageElement()) {
+    result.image_element = source->GetAsHTMLImageElement();
+    return result;
+  }
+
+  if (source->IsImageBitmap()) {
+    result.bitmap = source->GetAsImageBitmap();
+    if (result.bitmap != nullptr) {
+      result.image_element = result.bitmap->sourceImageElement();
+    }
+  }
+
+  return result;
+}
+
+}  // namespace
+
+void CanvasRenderingContext2D::drawImage(const std::shared_ptr<QJSUnionHTMLImageElementImageBitmap>& image,
+                                         double dx,
+                                         double dy,
+                                         ExceptionState& exception_state) {
+  ResolvedImageSource resolved = ResolveImageSource(image);
+  if (resolved.image_element == nullptr)
     return;
-  NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<HTMLImageElement>>::ToNativeValue(image),
+
+  // If the source is an ImageBitmap with a valid crop rect and intrinsic
+  // size, emulate drawImage(imageBitmap, dx, dy) by forwarding the stored
+  // crop rectangle to the 9-argument drawImage implementation.
+  if (resolved.bitmap != nullptr && resolved.bitmap->sw() > 0 && resolved.bitmap->sh() > 0 &&
+      resolved.bitmap->width() > 0 && resolved.bitmap->height() > 0) {
+    NativeValue arguments[] = {
+        NativeValueConverter<NativeTypePointer<HTMLImageElement>>::ToNativeValue(resolved.image_element),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(resolved.bitmap->sx()),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(resolved.bitmap->sy()),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(resolved.bitmap->sw()),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(resolved.bitmap->sh()),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(dx),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(dy),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(resolved.bitmap->width()),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(resolved.bitmap->height())};
+    InvokeBindingMethodAsync(binding_call_methods::kdrawImage, sizeof(arguments) / sizeof(NativeValue), arguments,
+                             exception_state);
+    return;
+  }
+
+  NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<HTMLImageElement>>::ToNativeValue(
+                                 resolved.image_element),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(dx),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(dy)};
   InvokeBindingMethodAsync(binding_call_methods::kdrawImage, sizeof(arguments) / sizeof(NativeValue), arguments,
                            exception_state);
 }
 
-void CanvasRenderingContext2D::drawImage(HTMLImageElement* image,
+void CanvasRenderingContext2D::drawImage(const std::shared_ptr<QJSUnionHTMLImageElementImageBitmap>& image,
                                          double dx,
                                          double dy,
                                          double dw,
                                          double dh,
                                          ExceptionState& exception_state) {
-  if (image == nullptr)
+  ResolvedImageSource resolved = ResolveImageSource(image);
+  if (resolved.image_element == nullptr)
     return;
-  NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<HTMLImageElement>>::ToNativeValue(image),
+
+  if (resolved.bitmap != nullptr && resolved.bitmap->sw() > 0 && resolved.bitmap->sh() > 0) {
+    NativeValue arguments[] = {
+        NativeValueConverter<NativeTypePointer<HTMLImageElement>>::ToNativeValue(resolved.image_element),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(resolved.bitmap->sx()),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(resolved.bitmap->sy()),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(resolved.bitmap->sw()),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(resolved.bitmap->sh()),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(dx),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(dy),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(dw),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(dh)};
+    InvokeBindingMethodAsync(binding_call_methods::kdrawImage, sizeof(arguments) / sizeof(NativeValue), arguments,
+                             exception_state);
+    return;
+  }
+
+  NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<HTMLImageElement>>::ToNativeValue(
+                                 resolved.image_element),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(dx),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(dy),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(dw),
@@ -918,7 +993,7 @@ void CanvasRenderingContext2D::drawImage(HTMLImageElement* image,
                            exception_state);
 }
 
-void CanvasRenderingContext2D::drawImage(HTMLImageElement* image,
+void CanvasRenderingContext2D::drawImage(const std::shared_ptr<QJSUnionHTMLImageElementImageBitmap>& image,
                                          double sx,
                                          double sy,
                                          double sw,
@@ -928,9 +1003,12 @@ void CanvasRenderingContext2D::drawImage(HTMLImageElement* image,
                                          double dw,
                                          double dh,
                                          ExceptionState& exception_state) {
-  if (image == nullptr)
+  ResolvedImageSource resolved = ResolveImageSource(image);
+  if (resolved.image_element == nullptr)
     return;
-  NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<HTMLImageElement>>::ToNativeValue(image),
+
+  NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<HTMLImageElement>>::ToNativeValue(
+                                 resolved.image_element),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(sx),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(sy),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(sw),

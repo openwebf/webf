@@ -14,9 +14,13 @@
 #include "core/html/canvas/html_canvas_element.h"
 #include "core/html/canvas/path_2d.h"
 #include "core/html/canvas/canvas_pattern.h"
+#include "core/html/image_bitmap.h"
 #include "qjs_canvas_gradient.h"
 #include "qjs_canvas_pattern.h"
 #include "qjs_dom_point_init.h"
+<% _.forEach(unionType, (type) => { if (isPointerType(type) && !isTypeHaveNull(type)) { const header = generateQJSWrapperHeaderFromPointerType(type); if (header) { %>
+#include "<%= header %>"
+<% } } }) %>
 
 namespace webf {
 

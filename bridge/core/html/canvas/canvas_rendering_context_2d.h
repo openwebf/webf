@@ -17,6 +17,7 @@
 #include "qjs_unionpath_2_d_dom_string.h"
 #include "qjs_unionpath_2_d_double.h"
 #include "qjs_union_dom_string_double.h"
+#include "qjs_unionhtml_image_elementimage_bitmap.h"
 #include "text_metrics.h"
 
 namespace webf {
@@ -172,14 +173,17 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   void clip(ExceptionState& exception_state);
   void clip(Path2D* path, ExceptionState& exception_state);
   void clip(Path2D* path, const AtomicString& fillRule, ExceptionState& exception_state);
-  void drawImage(HTMLImageElement* image, double dx, double dy, ExceptionState& exception_state);
-  void drawImage(HTMLImageElement* image,
+  void drawImage(const std::shared_ptr<QJSUnionHTMLImageElementImageBitmap>& image,
+                 double dx,
+                 double dy,
+                 ExceptionState& exception_state);
+  void drawImage(const std::shared_ptr<QJSUnionHTMLImageElementImageBitmap>& image,
                  double dx,
                  double dy,
                  double dw,
                  double dh,
                  ExceptionState& exception_state);
-  void drawImage(HTMLImageElement* image,
+  void drawImage(const std::shared_ptr<QJSUnionHTMLImageElementImageBitmap>& image,
                  double sx,
                  double sy,
                  double sw,

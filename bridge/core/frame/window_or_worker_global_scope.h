@@ -7,6 +7,8 @@
 
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/qjs_function.h"
+#include "bindings/qjs/script_promise.h"
+#include "bindings/qjs/script_value.h"
 #include "core/executing_context.h"
 #include "foundation/function.h"
 
@@ -33,6 +35,31 @@ class WindowOrWorkerGlobalScope {
   static double requestAnimationFrame(ExecutingContext* context, const std::shared_ptr<Function>& callback, ExceptionState& exception_state);
   static void cancelAnimationFrame(ExecutingContext* context, double request_id, ExceptionState& exception_state);
 
+  static ScriptPromise createImageBitmap(ExecutingContext* context,
+                                         const ScriptValue& image,
+                                         ExceptionState& exception_state);
+  static ScriptPromise createImageBitmap(ExecutingContext* context,
+                                         const ScriptValue& image,
+                                         double sx,
+                                         ExceptionState& exception_state);
+  static ScriptPromise createImageBitmap(ExecutingContext* context,
+                                         const ScriptValue& image,
+                                         double sx,
+                                         double sy,
+                                         ExceptionState& exception_state);
+  static ScriptPromise createImageBitmap(ExecutingContext* context,
+                                         const ScriptValue& image,
+                                         double sx,
+                                         double sy,
+                                         double sw,
+                                         ExceptionState& exception_state);
+  static ScriptPromise createImageBitmap(ExecutingContext* context,
+                                         const ScriptValue& image,
+                                         double sx,
+                                         double sy,
+                                         double sw,
+                                         double sh,
+                                         ExceptionState& exception_state);
 
   static void __gc__(ExecutingContext* context, ExceptionState& exception);
   static ScriptValue __memory_usage__(ExecutingContext* context, ExceptionState& exception_state);
