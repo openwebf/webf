@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
 export interface FormData {
   new(): FormData;
   append(name: string, value: (string | Blob), fileName?: string): void;

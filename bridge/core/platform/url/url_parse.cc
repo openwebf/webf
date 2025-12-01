@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
 /* Based on nsURLParsers.cc from Mozilla
  * -------------------------------------
  * The contents of this file are subject to the Mozilla Public License Version

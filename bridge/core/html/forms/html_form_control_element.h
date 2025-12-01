@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
 // Stub for HTMLFormControlElement - WebF doesn't have this yet
 #ifndef WEBF_CORE_HTML_FORMS_HTML_FORM_CONTROL_ELEMENT_H_
 #define WEBF_CORE_HTML_FORMS_HTML_FORM_CONTROL_ELEMENT_H_

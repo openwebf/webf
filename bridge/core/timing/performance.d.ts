@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
 import {PerformanceMarkOptions} from "./performance_mark_options";
 import {PerformanceMeasureOptions} from "./performance_measure_options";
 
