@@ -1,6 +1,10 @@
 /*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
+/*
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
- * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 import 'dart:async';
 import 'dart:io';
@@ -104,7 +108,7 @@ Future<void> _resolveCSSImports(Document document, CSSStyleSheet sheet) async {
         // Mark this stylesheet as pending so StyleNodeManager will re-index
         // even if the candidate set is unchanged. This ensures newly inlined
         // @import rules take effect.
-        
+
         document.styleNodeManager.appendPendingStyleSheet(sheet);
         // Trigger a style update; flushStyle() will update active sheets first
         // and mark only impacted elements dirty.
@@ -394,9 +398,9 @@ class LinkElement extends Element {
         ownerDocument.decrementRequestCount();
 
         final String cssString = _cachedStyleSheetText = await resolveStringFromData(bundle.data!);
-        
 
-        
+
+
         final String? sheetHref = _resolvedHyperlink?.toString() ?? href;
         _styleSheet = CSSParser(cssString, href: sheetHref).parse(
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
@@ -450,7 +454,7 @@ class LinkElement extends Element {
       if (rel == REL_PRELOAD) {
         _handlePreload();
       } else if (rel == REL_STYLESHEET) {
-        
+
         _fetchAndApplyCSSStyle();
       }
     }
@@ -627,19 +631,19 @@ mixin StyleElementMixin on Element {
       final double w = windowWidth;
       final double h = windowHeight;
       final int newSignature = Object.hash(text, w, h, darkMode);
-      
+
       if (_styleSheet != null && _lastStyleSheetSignature == newSignature) {
-        
+
         return;
       }
 
-      
+
       if (_styleSheet != null) {
-        
+
         _styleSheet!.replaceSync(text,
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
       } else {
-        
+
         _styleSheet = CSSParser(text).parse(
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
         // Resolve @import in the parsed inline stylesheet asynchronously
@@ -656,7 +660,7 @@ mixin StyleElementMixin on Element {
           }
         }();
       }
-      
+
       _lastStyleSheetSignature = newSignature;
       if (_styleSheet != null) {
         if (DebugFlags.enableCssMultiStyleTrace) {

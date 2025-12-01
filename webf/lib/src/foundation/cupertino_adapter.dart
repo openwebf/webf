@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
 import 'dart:typed_data' show Uint8List;
 
 import 'package:cupertino_http/cupertino_http.dart';

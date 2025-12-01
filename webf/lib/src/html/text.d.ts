@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
 /**
  * WebF Text component
  * A specialized text rendering element that provides Flutter text rendering capabilities

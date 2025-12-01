@@ -1,4 +1,8 @@
 /*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
+/*
 Copyright 2013, the Dart project authors.
 
 Redistribution and use in source and binary forms, with or without

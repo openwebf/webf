@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
 import 'package:flutter/rendering.dart';
 import 'package:webf/rendering.dart';
 import 'inline_formatting_context.dart';

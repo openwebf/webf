@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
 import 'dart:async' show Completer;
 import 'dart:convert' show ByteConversionSink;
 import 'dart:typed_data' show Uint8List;

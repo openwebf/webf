@@ -1,6 +1,10 @@
 /*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
+/*
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
- * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
 import 'dart:async';
@@ -50,20 +54,20 @@ mixin CSSVariableMixin on RenderStyle {
       String originalIdentifier = identifier;
       identifier = variable.identifier.trim();
       _addDependency(identifier, originalIdentifier);
-      
+
     }
     if (_identifierStorage != null && _identifierStorage![identifier] != null) {
-      
+
       return _identifierStorage![identifier];
     }
     if (variable?.defaultValue != null) {
-      
+
       return variable!.defaultValue;
     }
-    
+
     final parent = getParentRenderStyle();
     final dyn = parent?.getCSSVariable(identifier, propertyName);
-    
+
     return dyn;
   }
 
@@ -81,7 +85,7 @@ mixin CSSVariableMixin on RenderStyle {
       fast = storage[storage[fast.identifier]!.identifier]!;
       slow = storage[slow.identifier]!;
       if (fast == slow) {
-        
+
         return null;
       }
     }
@@ -141,14 +145,14 @@ mixin CSSVariableMixin on RenderStyle {
         if (DebugFlags.shouldLogCssVar(identifier, deps)) {
           cssLogger.info('[var][set] id=$identifier stored-as=alias prev=${prevRaw ?? 'null'}');
         }
-        
+
       } else {
         _identifierStorage ??= HashMap<String, String>();
         _identifierStorage![identifier] = value;
         if (DebugFlags.shouldLogCssVar(identifier, deps)) {
           cssLogger.info('[var][set] id=$identifier stored-as=raw prev=${prevRaw ?? 'null'}');
         }
-        
+
       }
     } else {
       _identifierStorage ??= HashMap<String, String>();
@@ -156,13 +160,13 @@ mixin CSSVariableMixin on RenderStyle {
       if (DebugFlags.shouldLogCssVar(identifier, deps)) {
         cssLogger.info('[var][set] id=$identifier stored-as=raw prev=${prevRaw ?? 'null'}');
       }
-      
+
     }
     if (_propertyDependencies.containsKey(identifier)) {
       if (DebugFlags.shouldLogCssVar(identifier, _propertyDependencies[identifier])) {
         cssLogger.info('[var][notify] id=$identifier deps=${_propertyDependencies[identifier]?.join(',') ?? '[]'}');
       }
-      
+
       _notifyCSSVariableChanged(identifier, value, prevRaw);
     } else {
       // No dependencies recorded yet (e.g., first parse may have used a cached color string).
@@ -171,7 +175,7 @@ mixin CSSVariableMixin on RenderStyle {
       if (DebugFlags.shouldLogCssVar(identifier)) {
         cssLogger.info('[var][notify] id=$identifier no-deps; cleared-color-cache-only');
       }
-      
+
     }
   }
 
@@ -185,7 +189,7 @@ mixin CSSVariableMixin on RenderStyle {
     ];
     for (final key in maybeColorKeys) {
       if (CSSColor.isColor(key)) {
-        
+
         CSSColor.clearCachedColorValue(key);
       }
     }
@@ -382,7 +386,7 @@ mixin CSSVariableMixin on RenderStyle {
             }
           } catch (_) {}
         }
-        
+
         if (handledByTransition) {
           if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
             cssLogger.info('[var][notify] property=$propertyName handledByTransition=true; continue dependencies');
@@ -412,12 +416,12 @@ mixin CSSVariableMixin on RenderStyle {
           );
         }
         final String? baseHref = target.style.getPropertyBaseHref(propertyName);
-        
+
         if (DebugFlags.enableCssVarAndTransitionLogs) {
           cssLogger.info('[var][notify] property=$propertyName direct-set value="$cssTextToApply" baseHref=${baseHref ?? 'null'}');
         }
         target.setRenderStyle(propertyName, cssTextToApply, baseHref: baseHref);
-        
+
       }
     }
 

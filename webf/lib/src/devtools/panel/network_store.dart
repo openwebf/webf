@@ -1,6 +1,10 @@
 /*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
+/*
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
- * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
 import 'dart:typed_data';
@@ -77,42 +81,42 @@ class NetworkRequest {
     // Use MIME type if available
     if (mimeType != null) {
       final lowerMimeType = mimeType!.toLowerCase();
-      
+
       // Document types
       if (lowerMimeType.contains('text/html') || lowerMimeType.contains('application/xhtml')) {
         return NetworkRequestType.document;
       }
-      
+
       // Stylesheet
       if (lowerMimeType.contains('text/css')) {
         return NetworkRequestType.stylesheet;
       }
-      
+
       // Script
       if (lowerMimeType.contains('javascript') || lowerMimeType.contains('ecmascript')) {
         return NetworkRequestType.script;
       }
-      
+
       // Images
       if (lowerMimeType.startsWith('image/')) {
         return NetworkRequestType.image;
       }
-      
+
       // Media (audio/video)
       if (lowerMimeType.startsWith('audio/') || lowerMimeType.startsWith('video/')) {
         return NetworkRequestType.media;
       }
-      
+
       // Fonts
       if (lowerMimeType.contains('font/') || lowerMimeType.contains('application/font')) {
         return NetworkRequestType.font;
       }
-      
+
       // JSON (likely API calls)
       if (lowerMimeType.contains('application/json')) {
         return NetworkRequestType.fetch;
       }
-      
+
       // Manifest
       if (lowerMimeType.contains('manifest')) {
         return NetworkRequestType.manifest;
@@ -121,47 +125,47 @@ class NetworkRequest {
 
     // Fallback to URL-based detection
     final lowerUrl = url.toLowerCase();
-    
+
     // Documents
-    if (lowerUrl.endsWith('.html') || lowerUrl.endsWith('.htm') || 
+    if (lowerUrl.endsWith('.html') || lowerUrl.endsWith('.htm') ||
         (lowerUrl.endsWith('/') && method.toUpperCase() == 'GET')) {
       return NetworkRequestType.document;
     }
-    
+
     // Stylesheets
     if (lowerUrl.endsWith('.css')) {
       return NetworkRequestType.stylesheet;
     }
-    
+
     // Scripts
     if (lowerUrl.endsWith('.js') || lowerUrl.endsWith('.mjs')) {
       return NetworkRequestType.script;
     }
-    
+
     // Images
     if (lowerUrl.endsWith('.png') || lowerUrl.endsWith('.jpg') || lowerUrl.endsWith('.jpeg') ||
         lowerUrl.endsWith('.gif') || lowerUrl.endsWith('.webp') || lowerUrl.endsWith('.svg') ||
         lowerUrl.endsWith('.ico') || lowerUrl.endsWith('.bmp')) {
       return NetworkRequestType.image;
     }
-    
+
     // Media
     if (lowerUrl.endsWith('.mp4') || lowerUrl.endsWith('.webm') || lowerUrl.endsWith('.mp3') ||
         lowerUrl.endsWith('.wav') || lowerUrl.endsWith('.ogg')) {
       return NetworkRequestType.media;
     }
-    
+
     // Fonts
     if (lowerUrl.endsWith('.woff') || lowerUrl.endsWith('.woff2') || lowerUrl.endsWith('.ttf') ||
         lowerUrl.endsWith('.otf') || lowerUrl.endsWith('.eot')) {
       return NetworkRequestType.font;
     }
-    
+
     // Manifest
     if (lowerUrl.endsWith('.json') && lowerUrl.contains('manifest')) {
       return NetworkRequestType.manifest;
     }
-    
+
     // Default to 'other'
     return NetworkRequestType.other;
   }

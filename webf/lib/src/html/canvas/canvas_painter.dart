@@ -1,6 +1,10 @@
 /*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
+/*
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
- * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 import 'dart:ui';
 
@@ -82,7 +86,7 @@ class CanvasPainter extends CustomPainter {
     Picture picture = pictureRecorder.endRecording();
     if (actionLen > 0) {
       paintedPictures.add(picture);
-      
+
       // Report FCP when canvas has content painted for the first time
       if (context != null && context!.canvas != null) {
         // Report FP first (if not already reported)

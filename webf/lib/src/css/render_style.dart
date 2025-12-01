@@ -1,6 +1,10 @@
 /*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
+ */
+/*
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
- * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
 import 'dart:async';
@@ -1563,7 +1567,7 @@ class CSSRenderStyle extends RenderStyle
   }
 
   setProperty(String name, value) {
-    
+
     // Memorize the variable value to renderStyle object.
     if (CSSVariable.isCSSSVariableProperty(name)) {
       setCSSVariable(name, value.toString());
@@ -1804,7 +1808,7 @@ class CSSRenderStyle extends RenderStyle
         if (DebugFlags.enableBackgroundLogs) {
           try {
             final CSSBackgroundPosition p = value as CSSBackgroundPosition;
-            renderingLogger.finer('[Background] set BACKGROUND_POSITION_X -> ${p.cssText()} ' 
+            renderingLogger.finer('[Background] set BACKGROUND_POSITION_X -> ${p.cssText()} '
                 '(len=${p.length != null} pct=${p.percentage != null} calc=${p.calcValue != null})');
           } catch (_) {}
         }
@@ -1814,7 +1818,7 @@ class CSSRenderStyle extends RenderStyle
         if (DebugFlags.enableBackgroundLogs) {
           try {
             final CSSBackgroundPosition p = value as CSSBackgroundPosition;
-            renderingLogger.finer('[Background] set BACKGROUND_POSITION_Y -> ${p.cssText()} ' 
+            renderingLogger.finer('[Background] set BACKGROUND_POSITION_Y -> ${p.cssText()} '
                 '(len=${p.length != null} pct=${p.percentage != null} calc=${p.calcValue != null})');
           } catch (_) {}
         }
@@ -2141,7 +2145,7 @@ class CSSRenderStyle extends RenderStyle
     if (CSSWritingModeMixin._isEntireVarFunction(propertyValue)) {
       dynamic value = CSSVariable.tryParse(renderStyle, propertyValue);
       if (value != null) {
-        
+
         return value;
       }
     }
@@ -3507,7 +3511,7 @@ mixin CSSWritingModeMixin on RenderStyle {
 
         final depKey = propertyName + '_' + input;
         final dynamic raw = renderStyle.getCSSVariable(variable.identifier, depKey);
-        
+
         if (raw == null || raw == INITIAL) {
           // Use fallback if provided; otherwise preserve var(...) so the
           // property fails to parse and becomes invalid/inherited.
@@ -3541,7 +3545,7 @@ mixin CSSWritingModeMixin on RenderStyle {
       });
       if (result == before) break;
     }
-    
+
     return result;
   }
 
