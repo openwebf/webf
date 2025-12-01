@@ -348,6 +348,79 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     'reset': StaticDefinedSyncBindingObjectMethod(call: (context, args) {
       return castToType<CanvasRenderingContext2D>(context).reset();
     }),
+    'isPointInPath': StaticDefinedSyncBindingObjectMethod(call: (context, args) {
+      final CanvasRenderingContext2D ctx2d = castToType<CanvasRenderingContext2D>(context);
+      Path2D? path;
+      int offset = 0;
+
+      if (args.isNotEmpty && args[0] is Path2D) {
+        path = args[0] as Path2D;
+        offset = 1;
+      }
+
+      if (args.length < offset + 2) {
+        return false;
+      }
+
+      final double x = castToType<num>(args[offset]).toDouble();
+      final double y = castToType<num>(args[offset + 1]).toDouble();
+
+      PathFillType fillType = PathFillType.nonZero;
+      if (args.length > offset + 2 && args[offset + 2] is String && args[offset + 2] == EVENODD) {
+        fillType = PathFillType.evenOdd;
+      }
+
+      // ignore: avoid_print
+      print(
+          '[Canvas2D] binding isPointInPath pathProvided=${path != null} x=$x y=$y fillType=$fillType rawArgs=$args');
+
+      if (path != null) {
+        path.path.fillType = fillType;
+        final Rect pathBounds = path.path.getBounds();
+        final bool result = path.path.contains(Offset(x, y));
+        // ignore: avoid_print
+        print('[Canvas2D] binding isPointInPath(path) bounds=$pathBounds result=$result');
+        return result;
+      }
+
+      final bool result = ctx2d.isPointInPath(x, y, fillType);
+      // ignore: avoid_print
+      print('[Canvas2D] binding isPointInPath(currentPath) result=$result');
+      return result;
+    }),
+    'isPointInStroke': StaticDefinedSyncBindingObjectMethod(call: (context, args) {
+      final CanvasRenderingContext2D ctx2d = castToType<CanvasRenderingContext2D>(context);
+      Path2D? path;
+      int offset = 0;
+
+      if (args.isNotEmpty && args[0] is Path2D) {
+        path = args[0] as Path2D;
+        offset = 1;
+      }
+
+      if (args.length < offset + 2) {
+        return false;
+      }
+
+      final double x = castToType<num>(args[offset]).toDouble();
+      final double y = castToType<num>(args[offset + 1]).toDouble();
+
+      // ignore: avoid_print
+      print('[Canvas2D] binding isPointInStroke pathProvided=${path != null} x=$x y=$y rawArgs=$args');
+
+      if (path != null) {
+        final Rect pathBounds = path.path.getBounds();
+        final bool result = path.path.contains(Offset(x, y));
+        // ignore: avoid_print
+        print('[Canvas2D] binding isPointInStroke(path) bounds=$pathBounds result=$result');
+        return result;
+      }
+
+      final bool result = ctx2d.isPointInStroke(x, y);
+      // ignore: avoid_print
+      print('[Canvas2D] binding isPointInStroke(currentPath) result=$result');
+      return result;
+    }),
     'createLinearGradient': StaticDefinedSyncBindingObjectMethod(call: (context, args) {
       return castToType<CanvasRenderingContext2D>(context).createLinearGradient(
           castToType<num>(args[0]).toDouble(),
@@ -1025,11 +1098,23 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   }
 
   bool isPointInPath(double x, double y, PathFillType fillRule) {
-    return path2d.path.contains(Offset(x, y));
+    final Rect bounds = path2d.path.getBounds();
+    // ignore: avoid_print
+    print('[Canvas2D] isPointInPath(currentPath) x=$x y=$y fillRule=$fillRule bounds=$bounds');
+    final bool result = path2d.path.contains(Offset(x, y));
+    // ignore: avoid_print
+    print('[Canvas2D] isPointInPath(currentPath) result=$result');
+    return result;
   }
 
   bool isPointInStroke(double x, double y) {
-    return path2d.path.contains(Offset(x, y));
+    final Rect bounds = path2d.path.getBounds();
+    // ignore: avoid_print
+    print('[Canvas2D] isPointInStroke(currentPath) x=$x y=$y bounds=$bounds');
+    final bool result = path2d.path.contains(Offset(x, y));
+    // ignore: avoid_print
+    print('[Canvas2D] isPointInStroke(currentPath) result=$result');
+    return result;
   }
 
   void arc(
@@ -1198,6 +1283,13 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   }
 
   void rect(double x, double y, double w, double h) {
+    // Update the current path immediately so APIs like
+    // isPointInPath() that operate on the "current path"
+    // can see the geometry without waiting for a paint.
+    path2d.rect(x, y, w, h);
+    // ignore: avoid_print
+    print('[Canvas2D] rect() updated current path: bounds=${path2d.path.getBounds()}');
+
     addAction('rect', (Canvas canvas, Size size) {
       path2d.rect(x, y, w, h);
     });
