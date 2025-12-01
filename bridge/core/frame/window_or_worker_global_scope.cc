@@ -3,9 +3,15 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "window_or_worker_global_scope.h"
-#include "core/frame/dom_timer.h"
+
+#include "bindings/qjs/script_promise_resolver.h"
+#include "bindings/qjs/script_wrappable.h"
 #include "core/dom/document.h"
 #include "core/dom/frame_request_callback_collection.h"
+#include "core/frame/dom_timer.h"
+#include "core/html/canvas/html_canvas_element.h"
+#include "core/html/html_image_element.h"
+#include "core/html/image_bitmap.h"
 
 namespace webf {
 
@@ -14,6 +20,58 @@ struct MicrotaskFunctionPayload {
   ExecutingContext* context;
   std::shared_ptr<Function> handler;
 };
+
+static void GetImageElementNaturalSize(JSContext* ctx,
+                                       JSValue js_value,
+                                       double& width,
+                                       double& height) {
+  width = 0;
+  height = 0;
+
+  JSValue w = JS_GetPropertyStr(ctx, js_value, "naturalWidth");
+  if (!JS_IsException(w) && !JS_IsUndefined(w) && !JS_IsNull(w)) {
+    double tmp = 0;
+    if (JS_ToFloat64(ctx, &tmp, w) == 0) {
+      width = tmp;
+    }
+  }
+  JS_FreeValue(ctx, w);
+
+  JSValue h = JS_GetPropertyStr(ctx, js_value, "naturalHeight");
+  if (!JS_IsException(h) && !JS_IsUndefined(h) && !JS_IsNull(h)) {
+    double tmp = 0;
+    if (JS_ToFloat64(ctx, &tmp, h) == 0) {
+      height = tmp;
+    }
+  }
+  JS_FreeValue(ctx, h);
+}
+
+static void GetCanvasElementSize(JSContext* ctx,
+                                 JSValue js_value,
+                                 double& width,
+                                 double& height) {
+  width = 0;
+  height = 0;
+
+  JSValue w = JS_GetPropertyStr(ctx, js_value, "width");
+  if (!JS_IsException(w) && !JS_IsUndefined(w) && !JS_IsNull(w)) {
+    double tmp = 0;
+    if (JS_ToFloat64(ctx, &tmp, w) == 0) {
+      width = tmp;
+    }
+  }
+  JS_FreeValue(ctx, w);
+
+  JSValue h = JS_GetPropertyStr(ctx, js_value, "height");
+  if (!JS_IsException(h) && !JS_IsUndefined(h) && !JS_IsNull(h)) {
+    double tmp = 0;
+    if (JS_ToFloat64(ctx, &tmp, h) == 0) {
+      height = tmp;
+    }
+  }
+  JS_FreeValue(ctx, h);
+}
 }  // namespace
 
 void WindowOrWorkerGlobalScope::queueMicrotask(ExecutingContext* context,
@@ -232,6 +290,137 @@ double WindowOrWorkerGlobalScope::requestAnimationFrame(ExecutingContext* contex
 
 void WindowOrWorkerGlobalScope::cancelAnimationFrame(ExecutingContext* context, double request_id, ExceptionState& exception_state) {
   context->document()->CancelAnimationFrame(static_cast<uint32_t>(request_id), exception_state);
+}
+
+ScriptPromise WindowOrWorkerGlobalScope::createImageBitmap(ExecutingContext* context,
+                                                           const ScriptValue& image,
+                                                           ExceptionState& exception_state) {
+  JSContext* js_ctx = context->ctx();
+
+  JSValue js_value = image.QJSValue();
+  HTMLImageElement* image_element = toScriptWrappable<HTMLImageElement>(js_value);
+  HTMLCanvasElement* canvas_element = nullptr;
+  if (image_element == nullptr) {
+    canvas_element = toScriptWrappable<HTMLCanvasElement>(js_value);
+  }
+
+  if (image_element == nullptr && canvas_element != nullptr) {
+    exception_state.ThrowException(js_ctx, ErrorType::TypeError,
+                                   "createImageBitmap: HTMLCanvasElement sources are not supported yet.");
+    return ScriptPromise();
+  }
+
+  if (image_element == nullptr && canvas_element == nullptr) {
+    exception_state.ThrowException(js_ctx, ErrorType::TypeError,
+                                   "createImageBitmap: unsupported image source type.");
+    return ScriptPromise();
+  }
+
+  double src_width = 0;
+  double src_height = 0;
+  if (image_element != nullptr) {
+    GetImageElementNaturalSize(js_ctx, js_value, src_width, src_height);
+  } else if (canvas_element != nullptr) {
+    GetCanvasElementSize(js_ctx, js_value, src_width, src_height);
+  }
+
+  auto resolver = ScriptPromiseResolver::Create(context);
+
+  ImageBitmap* bitmap =
+      ImageBitmap::Create(context, image_element, 0.0, 0.0, src_width, src_height, src_width, src_height,
+                          exception_state);
+  if (exception_state.HasException()) {
+    resolver->Reject(exception_state.ToQuickJS());
+  } else {
+    resolver->Resolve(bitmap);
+  }
+
+  return resolver->Promise();
+}
+
+ScriptPromise WindowOrWorkerGlobalScope::createImageBitmap(ExecutingContext* context,
+                                                           const ScriptValue& image,
+                                                           double sx,
+                                                           ExceptionState& exception_state) {
+  JSContext* js_ctx = context->ctx();
+  exception_state.ThrowException(
+      js_ctx, ErrorType::TypeError,
+      "createImageBitmap: invalid arguments; when providing a crop rectangle, sx, sy, sw, and sh must all be given.");
+  return ScriptPromise();
+}
+
+ScriptPromise WindowOrWorkerGlobalScope::createImageBitmap(ExecutingContext* context,
+                                                           const ScriptValue& image,
+                                                           double sx,
+                                                           double sy,
+                                                           ExceptionState& exception_state) {
+  JSContext* js_ctx = context->ctx();
+  exception_state.ThrowException(
+      js_ctx, ErrorType::TypeError,
+      "createImageBitmap: invalid arguments; when providing a crop rectangle, sx, sy, sw, and sh must all be given.");
+  return ScriptPromise();
+}
+
+ScriptPromise WindowOrWorkerGlobalScope::createImageBitmap(ExecutingContext* context,
+                                                           const ScriptValue& image,
+                                                           double sx,
+                                                           double sy,
+                                                           double sw,
+                                                           ExceptionState& exception_state) {
+  JSContext* js_ctx = context->ctx();
+  exception_state.ThrowException(
+      js_ctx, ErrorType::TypeError,
+      "createImageBitmap: invalid arguments; when providing a crop rectangle, sx, sy, sw, and sh must all be given.");
+  return ScriptPromise();
+}
+
+ScriptPromise WindowOrWorkerGlobalScope::createImageBitmap(ExecutingContext* context,
+                                                           const ScriptValue& image,
+                                                           double sx,
+                                                           double sy,
+                                                           double sw,
+                                                           double sh,
+                                                           ExceptionState& exception_state) {
+  JSContext* js_ctx = context->ctx();
+
+  JSValue js_value = image.QJSValue();
+  HTMLImageElement* image_element = toScriptWrappable<HTMLImageElement>(js_value);
+  HTMLCanvasElement* canvas_element = nullptr;
+  if (image_element == nullptr) {
+    canvas_element = toScriptWrappable<HTMLCanvasElement>(js_value);
+  }
+
+  if (image_element == nullptr && canvas_element != nullptr) {
+    exception_state.ThrowException(js_ctx, ErrorType::TypeError,
+                                   "createImageBitmap: HTMLCanvasElement sources are not supported yet.");
+    return ScriptPromise();
+  }
+
+  if (image_element == nullptr && canvas_element == nullptr) {
+    exception_state.ThrowException(js_ctx, ErrorType::TypeError,
+                                   "createImageBitmap: unsupported image source type.");
+    return ScriptPromise();
+  }
+
+  if (sw <= 0 || sh <= 0) {
+    exception_state.ThrowException(js_ctx, ErrorType::RangeError,
+                                   "createImageBitmap: sw and sh must be greater than zero.");
+    return ScriptPromise();
+  }
+
+  auto resolver = ScriptPromiseResolver::Create(context);
+
+  // For cropped bitmaps, width/height are the cropping width/height.
+  ImageBitmap* bitmap =
+      ImageBitmap::Create(context, image_element, sx, sy, sw, sh, sw, sh, exception_state);
+
+  if (exception_state.HasException()) {
+    resolver->Reject(exception_state.ToQuickJS());
+  } else {
+    resolver->Resolve(bitmap);
+  }
+
+  return resolver->Promise();
 }
 
 void WindowOrWorkerGlobalScope::__gc__(ExecutingContext* context, ExceptionState& exception) {

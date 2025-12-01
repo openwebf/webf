@@ -1,4 +1,5 @@
 import {HTMLImageElement} from "../html_image_element";
+import {ImageBitmap} from "../image_bitmap";
 import {HTMLCanvasElement} from "./html_canvas_element";
 import {Path2D} from "./path_2d";
 import {CanvasPattern} from "./canvas_pattern";
@@ -38,9 +39,9 @@ interface CanvasRenderingContext2D extends CanvasRenderingContext {
     clearRect(x: number, y: number, w: number, h: number): void;
     closePath(): void;
     clip(path?: Path2D, fillRule?: string): void;
-    drawImage(image: HTMLImageElement, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number): void;
-    drawImage(image: HTMLImageElement, dx: number, dy: number, dw: number, dh: number): void;
-    drawImage(image: HTMLImageElement, dx: number, dy: number): void;
+    drawImage(image: HTMLImageElement | ImageBitmap, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number): void;
+    drawImage(image: HTMLImageElement | ImageBitmap, dx: number, dy: number, dw: number, dh: number): void;
+    drawImage(image: HTMLImageElement | ImageBitmap, dx: number, dy: number): void;
     ellipse(x: number, y: number, radiusX: number, radiusY: number, rotation: number, startAngle: number, endAngle: number, anticlockwise?: boolean): void;
     fill(path?: Path2D | string, fillRule?: string): void;
     fillRect(x: number, y: number, w: number, h: number): void;

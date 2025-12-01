@@ -76,6 +76,23 @@ class CanvasAction {
   String debugName;
 }
 
+class ImageBitmap extends DynamicBindingObject {
+  ImageBitmap(BindingContext context)
+      : _pointer = context.pointer,
+        super(context);
+
+  final ffi.Pointer<NativeBindingObject> _pointer;
+
+  @override
+  get pointer => _pointer;
+
+  // Backing image snapshot used for drawing.
+  // For now this is populated implicitly via the associated HTMLImageElement.
+  // The bridge currently resolves ImageBitmap back to an ImageElement when
+  // drawing, so this field is mainly here for type completeness.
+  Image? image;
+}
+
 class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBindingObject {
   CanvasRenderingContext2D(BindingContext context, this.canvas)
       : _pointer = context.pointer,
@@ -230,8 +247,16 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
       return castToType<CanvasRenderingContext2D>(context).closePath();
     }),
     'drawImage': StaticDefinedSyncBindingObjectMethod(call: (context, args) {
-      BindingObject imageElement = args[0];
-      if (imageElement is ImageElement) {
+      BindingObject imageSource = args[0];
+      Image? image;
+
+      if (imageSource is ImageElement) {
+        image = imageSource.image;
+      } else if (imageSource is ImageBitmap) {
+        image = imageSource.image;
+      }
+
+      if (image != null) {
         double sx = 0.0, sy = 0.0, sWidth = 0.0, sHeight = 0.0, dx = 0.0, dy = 0.0, dWidth = 0.0, dHeight = 0.0;
 
         if (args.length == 3) {
@@ -254,7 +279,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
         }
 
         return castToType<CanvasRenderingContext2D>(context)
-            .drawImage(args.length, imageElement, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
+            .drawImage(args.length, image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
       }
     }),
     'fill': StaticDefinedSyncBindingObjectMethod(call: (context, args) {
@@ -1154,7 +1179,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   void drawImage(
       int argumentCount,
-      ImageElement? imgElement,
+      Image? img,
       double sx,
       double sy,
       double sWidth,
@@ -1165,9 +1190,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
       double dHeight) {
 
     addAction('drawImage', (Canvas canvas, Size size) {
-      if (imgElement?.image == null) return;
+      if (img == null) return;
 
-      Image img = imgElement!.image!;
       // ctx.drawImage(image, dx, dy);
       _drawWithGlobalCompositing(canvas, size, (Canvas drawCanvas) {
         if (argumentCount == 3) {

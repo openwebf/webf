@@ -138,15 +138,17 @@ export function generateTypeRawChecker(unionType: ParameterType): string {
 
   if (unionType.isArray) {
     return `JS_IsArray(ctx, value)`;
+  } else if (isDictionary(unionType)) {
+    // Dictionaries are structural object types and do not have QJS
+    // wrapper classes. Any non-null object is a potential match.
+    return `JS_IsObject(value)`;
   } else if (isPointerType(unionType)) {
     const pointerType = getPointerType(unionType);
-    // For pointer types that have concrete QuickJS wrappers, prefer a
-    // wrapper-level instance check so different object union members
-    // (e.g. CanvasGradient vs CanvasPattern) can be distinguished.
-    if (pointerType === 'CanvasGradient' || pointerType === 'CanvasPattern') {
-      return `QJS${pointerType}::HasInstance(ExecutingContext::From(ctx), value)`;
-    }
-    return `JS_IsObject(value)`;
+    // Map pointer type (e.g. HTMLImageElement, legacy::LegacyCssStyleDeclaration)
+    // to its QJS wrapper class name (QJSHTMLImageElement, QJSLegacyCssStyleDeclaration).
+    const baseName = pointerType.split('::').pop();
+    const qjsClass = `QJS${baseName}`;
+    return `${qjsClass}::HasInstance(ExecutingContext::From(ctx), value)`;
   } else {
     unionType = trimNullTypeFromType(unionType);
     switch (unionType.value) {
@@ -241,4 +243,35 @@ export function generateUnionPropertyHeaders(unionTypes: ParameterType[]) {
   }
   ${setter}`;
   }).join('\n  ');
+}
+
+// Helper: derive the QJS wrapper C++ class name from a pointer type.
+// Examples:
+//   HTMLImageElement      -> QJSHTMLImageElement
+//   legacy::LegacyFooBar  -> QJSLegacyFooBar
+export function generateQJSWrapperClassNameFromPointerType(unionType: ParameterType): string | null {
+  if (!isPointerType(unionType) || isDictionary(unionType)) return null;
+  const pointerType = getPointerType(unionType);
+  const baseName = pointerType.split('::').pop();
+  if (!baseName) return null;
+  return `QJS${baseName}`;
+}
+
+// Helper: derive the QJS wrapper header file from a pointer type.
+// Examples:
+//   HTMLImageElement      -> qjs_html_image_element.h
+//   legacy::LegacyFooBar  -> qjs_legacy_foo_bar.h
+export function generateQJSWrapperHeaderFromPointerType(unionType: ParameterType): string | null {
+  if (!isPointerType(unionType) || isDictionary(unionType)) return null;
+  const pointerType = getPointerType(unionType);
+  const baseName = pointerType.split('::').pop();
+  if (!baseName) return null;
+  // Special-case legacy naming for certain types whose generated
+  // QJS headers don't follow a pure snake_case of the class name.
+  // Path2D -> qjs_path_2d.h (not qjs_path_2_d.h)
+  if (baseName === 'Path2D') {
+    return 'qjs_path_2d.h';
+  }
+  const snake = _.snakeCase(baseName);
+  return `qjs_${snake}.h`;
 }

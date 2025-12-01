@@ -23,7 +23,9 @@ import {
   generateUnionTypeClear,
   generateUnionTypeFileName,
   generateUnionTypeSetter,
-  getUnionTypeName
+  getUnionTypeName,
+  generateQJSWrapperClassNameFromPointerType,
+  generateQJSWrapperHeaderFromPointerType
 } from "./generateUnionTypes";
 
 const dictionaryClasses: string[] = [];
@@ -859,7 +861,10 @@ export function generateUnionTypeSource(unionType: ParameterType): string {
     getUnionTypeName,
     isPointerType,
     isTypeHaveNull,
-    isTypeHaveString
+    isTypeHaveString,
+    getPointerType,
+    generateQJSWrapperClassNameFromPointerType,
+    generateQJSWrapperHeaderFromPointerType
   }).split('\n').filter(str => {
     return str.trim().length > 0;
   }).join('\n');

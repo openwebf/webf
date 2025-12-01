@@ -95,6 +95,7 @@
 #include "qjs_html_title_element.h"
 #include "qjs_html_ulist_element.h"
 #include "qjs_html_unknown_element.h"
+#include "qjs_image_bitmap.h"
 #include "qjs_hybrid_router_change_event.h"
 #include "qjs_idle_deadline.h"
 #include "qjs_image.h"
@@ -214,6 +215,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLButtonElement::Install(context);
   QJSHTMLFormElement::Install(context);
   QJSImage::Install(context);
+  QJSImageBitmap::Install(context);
   QJSHTMLScriptElement::Install(context);
   QJSHTMLLinkElement::Install(context);
   QJSHTMLUListElement::Install(context);
