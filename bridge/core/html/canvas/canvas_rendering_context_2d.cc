@@ -595,16 +595,29 @@ void CanvasRenderingContext2D::fillText(const AtomicString& text,
 }
 
 void CanvasRenderingContext2D::fillText(const AtomicString& text,
-                                        double x,
-                                        double y,
-                                        double maxWidth,
-                                        ExceptionState& exception_state) {
+                                         double x,
+                                         double y,
+                                         double maxWidth,
+                                         ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), text),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(maxWidth)};
   InvokeBindingMethodAsync(binding_call_methods::kfillText, sizeof(arguments) / sizeof(NativeValue), arguments,
+                            exception_state);
+}
+
+void CanvasRenderingContext2D::setLineDash(const std::vector<double>& segments, ExceptionState& exception_state) {
+  line_dash_segments_ = segments;
+  NativeValue arguments[] = {
+      NativeValueConverter<NativeTypeArray<NativeTypeDouble>>::ToNativeValue(segments),
+  };
+  InvokeBindingMethodAsync(binding_call_methods::ksetLineDash, sizeof(arguments) / sizeof(NativeValue), arguments,
                            exception_state);
+}
+
+std::vector<double> CanvasRenderingContext2D::getLineDash(ExceptionState& exception_state) {
+  return line_dash_segments_;
 }
 
 void CanvasRenderingContext2D::lineTo(double x, double y, ExceptionState& exception_state) {
@@ -870,6 +883,7 @@ void CanvasRenderingContext2D::Trace(GCVisitor* visitor) const {
 void CanvasRenderingContext2D::ClearPropertyCaches() {
   global_alpha_cache_.reset();
   global_composite_operation_cache_.reset();
+  line_dash_segments_.clear();
   direction_cache_.reset();
   font_cache_.reset();
   line_cap_cache_.reset();

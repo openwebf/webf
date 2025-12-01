@@ -37,6 +37,8 @@ interface CanvasRenderingContext2D extends CanvasRenderingContext {
     fill(path?: Path2D | string, fillRule?: string): void;
     fillRect(x: number, y: number, w: number, h: number): void;
     fillText(text: string, x: number, y: number, maxWidth?: number): void;
+    setLineDash(segments: number[]): void;
+    getLineDash(): number[];
     lineTo(x: number, y: number): void;
     measureText(text: string): TextMetrics;
     moveTo(x: number, y: number): void;

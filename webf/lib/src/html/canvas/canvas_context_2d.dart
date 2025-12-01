@@ -19,6 +19,24 @@ import 'package:webf/src/html/canvas/canvas_text_metrics.dart';
 import 'canvas_context.dart';
 import 'canvas_path_2d.dart';
 
+// Simple circular list helper for dashing.
+class _CircularIntervalList<T> {
+  _CircularIntervalList(this._values);
+
+  final List<T> _values;
+  int _index = 0;
+
+  T get next {
+    if (_values.isEmpty) {
+      throw StateError('CircularIntervalList is empty');
+    }
+    if (_index >= _values.length) {
+      _index = 0;
+    }
+    return _values[_index++];
+  }
+}
+
 const String _DEFAULT_FONT = '10px sans-serif';
 const String START = 'start';
 const String END = 'end';
@@ -102,6 +120,14 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
           castToType<num>(args[1]).toDouble(),
           castToType<num>(args[2]).toDouble(),
           castToType<num>(args[3]).toDouble());
+    }),
+    'setLineDash': StaticDefinedSyncBindingObjectMethod(call: (context, args) {
+      final List<num> list = List<num>.from(args[0] as List);
+      final List<double> segments = list.map((v) => v.toDouble()).toList();
+      castToType<CanvasRenderingContext2D>(context).setLineDash(segments);
+    }),
+    'getLineDash': StaticDefinedSyncBindingObjectMethod(call: (context, args) {
+      return castToType<CanvasRenderingContext2D>(context).getLineDash();
     }),
     'strokeRect': StaticDefinedSyncBindingObjectMethod(call: (context, args) {
       return castToType<CanvasRenderingContext2D>(context).strokeRect(
@@ -898,6 +924,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
         return;
       }
       _drawWithGlobalCompositing(canvas, size, (Canvas drawCanvas) {
+        final Path basePath = path?.path ?? path2d.path;
+        final Path effectivePath = _applyLineDashIfNeeded(basePath);
         Paint paint = Paint()
           ..color = strokeStyle as Color
           ..strokeJoin = lineJoin
@@ -905,8 +933,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
           ..strokeWidth = lineWidth
           ..strokeMiterLimit = miterLimit
           ..style = PaintingStyle.stroke;
-        _paintShadowForPath(drawCanvas, path?.path ?? path2d.path, paintingStyle: PaintingStyle.stroke);
-        drawCanvas.drawPath(path?.path ?? path2d.path, paint);
+        _paintShadowForPath(drawCanvas, effectivePath, paintingStyle: PaintingStyle.stroke);
+        drawCanvas.drawPath(effectivePath, paint);
       });
     }, CanvasActionType.execute, {
       'pathProvided': path != null,
@@ -1130,13 +1158,13 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   double get miterLimit => _miterLimit;
 
-  String _lineDash = 'empty'; // default empty
+  List<double> _lineDash = const <double>[];
 
-  String getLineDash() {
-    return _lineDash;
+  List<double> getLineDash() {
+    return List<double>.from(_lineDash);
   }
 
-  void setLineDash(String segments) {
+  void setLineDash(List<double> segments) {
     _lineDash = segments;
   }
 
@@ -1150,6 +1178,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   void _paintShadowForPath(Canvas canvas, Path path, {required PaintingStyle paintingStyle}) {
     if (!_shouldPaintShadow) return;
+    final Path shadowPath = paintingStyle == PaintingStyle.stroke ? _applyLineDashIfNeeded(path) : path;
     final Paint shadowPaint = Paint()
       ..style = paintingStyle
       ..color = _shadowColor;
@@ -1168,7 +1197,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     if (_shadowOffsetX != 0.0 || _shadowOffsetY != 0.0) {
       canvas.translate(_shadowOffsetX, _shadowOffsetY);
     }
-    canvas.drawPath(path, shadowPaint);
+    canvas.drawPath(shadowPath, shadowPaint);
     canvas.restore();
   }
 
@@ -1176,6 +1205,35 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     if (!_shouldPaintShadow) return;
     final Path rectPath = Path()..addRect(rect);
     _paintShadowForPath(canvas, rectPath, paintingStyle: style);
+  }
+
+  Path _applyLineDashIfNeeded(Path source) {
+    if (_lineDash.isEmpty) {
+      return source;
+    }
+    final List<double> segments = _lineDash.where((v) => v.isFinite && v > 0).toList();
+    if (segments.isEmpty) {
+      return source;
+    }
+    final _CircularIntervalList<double> dashArray = _CircularIntervalList<double>(segments);
+    final Path dest = Path();
+    for (final metric in source.computeMetrics()) {
+      double distance = 0.0;
+      bool draw = true;
+      while (distance < metric.length) {
+        final double len = dashArray.next;
+        final double next = distance + len;
+        if (draw) {
+          dest.addPath(
+            metric.extractPath(distance, next.clamp(0.0, metric.length)),
+            Offset.zero,
+          );
+        }
+        distance = next;
+        draw = !draw;
+      }
+    }
+    return dest;
   }
 
   void _drawWithGlobalCompositing(Canvas canvas, Size size, void Function(Canvas drawCanvas) draw, {Rect? bounds}) {
@@ -1441,7 +1499,9 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     addAction('strokeRect', (Canvas canvas, Size size) {
       _drawWithGlobalCompositing(canvas, size, (Canvas drawCanvas) {
         Paint paint = Paint();
-        _paintShadowForRect(drawCanvas, rect, style: PaintingStyle.stroke);
+        final Path rectPath = Path()..addRect(rect);
+        final Path effectivePath = _applyLineDashIfNeeded(rectPath);
+        _paintShadowForPath(drawCanvas, effectivePath, paintingStyle: PaintingStyle.stroke);
         if (strokeStyle is Color) {
           paint..color = strokeStyle as Color;
         } else if (strokeStyle is CanvasRadialGradient) {
@@ -1455,7 +1515,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
           ..strokeWidth = lineWidth
           ..strokeMiterLimit = miterLimit
           ..style = PaintingStyle.stroke;
-        drawCanvas.drawRect(rect, paint);
+        drawCanvas.drawPath(effectivePath, paint);
       });
     }, CanvasActionType.execute, {
       'x': x,
@@ -1650,7 +1710,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     _lineCap = StrokeCap.butt;
     _lineJoin = StrokeJoin.miter;
     _lineWidth = 1.0;
-    _lineDash = 'empty';
+    _lineDash = const <double>[];
     _lineDashOffset = 0.0;
     _miterLimit = 10.0;
     _shadowBlur = 0.0;
