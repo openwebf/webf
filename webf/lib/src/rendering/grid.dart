@@ -381,7 +381,12 @@ class RenderGridLayout extends RenderLayoutBox {
         if (iteration == repeatCount - 1 && i == repeat.tracks.length - 1 && repeat.trailingLineNames.isNotEmpty) {
           trailing = <String>[...repeat.tracks[i].trailingLineNames, ...repeat.trailingLineNames];
         }
-        expanded.add(_cloneTrackForRepeat(repeat.tracks[i], leading: leading, trailing: trailing));
+        expanded.add(_cloneTrackForRepeat(
+          repeat.tracks[i],
+          leading: leading,
+          trailing: trailing,
+          forceAutoFit: repeat.kind == GridRepeatKind.autoFit,
+        ));
       }
     }
     return expanded;
@@ -391,28 +396,33 @@ class RenderGridLayout extends RenderLayoutBox {
     GridTrackSize source, {
     List<String>? leading,
     List<String>? trailing,
+    bool forceAutoFit = false,
   }) {
     final List<String> resolvedLeading =
         leading ?? (source.leadingLineNames.isEmpty ? const <String>[] : List<String>.from(source.leadingLineNames));
     final List<String> resolvedTrailing =
         trailing ?? (source.trailingLineNames.isEmpty ? const <String>[] : List<String>.from(source.trailingLineNames));
+    final bool autoFit = forceAutoFit || source.isAutoFit;
 
     if (source is GridFixed) {
       return GridFixed(
         source.length,
         leadingLineNames: resolvedLeading,
         trailingLineNames: resolvedTrailing,
+        isAutoFit: autoFit,
       );
     } else if (source is GridFraction) {
       return GridFraction(
         source.fr,
         leadingLineNames: resolvedLeading,
         trailingLineNames: resolvedTrailing,
+        isAutoFit: autoFit,
       );
     } else if (source is GridAuto) {
       return GridAuto(
         leadingLineNames: resolvedLeading,
         trailingLineNames: resolvedTrailing,
+        isAutoFit: autoFit,
       );
     } else if (source is GridMinMax) {
       return GridMinMax(
@@ -420,12 +430,14 @@ class RenderGridLayout extends RenderLayoutBox {
         source.maxTrack,
         leadingLineNames: resolvedLeading,
         trailingLineNames: resolvedTrailing,
+        isAutoFit: autoFit,
       );
     } else if (source is GridFitContent) {
       return GridFitContent(
         source.limit,
         leadingLineNames: resolvedLeading,
         trailingLineNames: resolvedTrailing,
+        isAutoFit: autoFit,
       );
     }
     return source;
@@ -757,6 +769,14 @@ class RenderGridLayout extends RenderLayoutBox {
         ? _resolveTracks(resolvedColumnDefs, adjustedInnerWidth, Axis.horizontal)
         : <double>[];
     final int explicitColumnCount = hasExplicitCols ? colSizes.length : 0;
+    List<bool>? explicitAutoFitColumns;
+    if (explicitColumnCount > 0) {
+      explicitAutoFitColumns =
+          List<bool>.generate(explicitColumnCount, (int index) => resolvedColumnDefs[index].isAutoFit);
+      if (!explicitAutoFitColumns.contains(true)) {
+        explicitAutoFitColumns = null;
+      }
+    }
     if (!hasExplicitCols) {
       _ensureImplicitColumns(
         colSizes: colSizes,
@@ -790,6 +810,10 @@ class RenderGridLayout extends RenderLayoutBox {
     final _GridAutoCursor autoCursor = _GridAutoCursor(0, 0);
     final double xStart = paddingLeft + borderLeft;
     List<double> implicitRowHeights = [];
+    List<bool>? explicitAutoFitUsage;
+    if (explicitAutoFitColumns != null) {
+      explicitAutoFitUsage = List<bool>.filled(explicitColumnCount, false);
+    }
 
     int childIndex = 0;
     RenderBox? child = firstChild;
@@ -895,6 +919,12 @@ class RenderGridLayout extends RenderLayoutBox {
 
       final int rowIndex = placement.row;
       final int colIndex = placement.column;
+      if (explicitAutoFitUsage != null && colIndex < explicitColumnCount) {
+        final int usageEnd = math.min(explicitColumnCount, colIndex + colSpan);
+        for (int c = colIndex; c < usageEnd; c++) {
+          explicitAutoFitUsage[c] = true;
+        }
+      }
 
       while (rowSizes.length < rowIndex + rowSpan) {
         rowSizes.add(0);
@@ -1025,6 +1055,21 @@ class RenderGridLayout extends RenderLayoutBox {
     for (int c = 0; c < colSizes.length; c++) {
       usedContentWidth += colSizes[c];
       if (c < colSizes.length - 1) usedContentWidth += colGap;
+    }
+    if (explicitAutoFitColumns != null && explicitAutoFitUsage != null) {
+      double collapsedWidth = 0;
+      for (int i = explicitColumnCount - 1; i >= 0; i--) {
+        if (!explicitAutoFitColumns![i] || explicitAutoFitUsage[i]) {
+          break;
+        }
+        collapsedWidth += colSizes[i];
+        if (i > 0) {
+          collapsedWidth += colGap;
+        }
+      }
+      if (collapsedWidth > 0) {
+        usedContentWidth = math.max(0.0, usedContentWidth - collapsedWidth);
+      }
     }
     double usedContentHeight = 0;
     final int totalRows = math.max(rowSizes.length, implicitRowHeights.length);

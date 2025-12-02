@@ -112,6 +112,32 @@ void main() {
 
     });
 
+    testWidgets('auto-fit collapses unused tracks for justification', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-auto-fit-center-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; width: 200px; grid-template-columns: repeat(auto-fit, 40px); justify-content: center; column-gap: 0;">
+            <div id="a" style="height:20px;"></div>
+            <div id="b" style="height:20px;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox renderA = prepared.getElementById('a').attachedRenderer as RenderBox;
+      final RenderBox renderB = prepared.getElementById('b').attachedRenderer as RenderBox;
+
+      final Offset aOffset = getLayoutTransformTo(renderA, renderer, excludeScrollOffset: true);
+      final Offset bOffset = getLayoutTransformTo(renderB, renderer, excludeScrollOffset: true);
+
+      expect(aOffset.dx, closeTo(60, 1));
+      expect(bOffset.dx, closeTo(100, 1));
+    });
+
     testWidgets('auto width grid fills block container width', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,

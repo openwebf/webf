@@ -13,9 +13,11 @@ import 'package:webf/css.dart';
 abstract class GridTrackSize {
   final List<String> leadingLineNames;
   final List<String> trailingLineNames;
+  final bool isAutoFit;
   const GridTrackSize({
     this.leadingLineNames = const <String>[],
     this.trailingLineNames = const <String>[],
+    this.isAutoFit = false,
   });
 }
 
@@ -25,6 +27,7 @@ class GridFixed extends GridTrackSize {
     this.length, {
     super.leadingLineNames,
     super.trailingLineNames,
+    super.isAutoFit,
   });
 }
 
@@ -34,6 +37,7 @@ class GridFraction extends GridTrackSize {
     this.fr, {
     super.leadingLineNames,
     super.trailingLineNames,
+    super.isAutoFit,
   });
 }
 
@@ -41,6 +45,7 @@ class GridAuto extends GridTrackSize {
   const GridAuto({
     super.leadingLineNames,
     super.trailingLineNames,
+    super.isAutoFit,
   }) : super();
 }
 
@@ -52,6 +57,7 @@ class GridMinMax extends GridTrackSize {
     this.maxTrack, {
     super.leadingLineNames,
     super.trailingLineNames,
+    super.isAutoFit,
   });
 }
 
@@ -61,6 +67,7 @@ class GridFitContent extends GridTrackSize {
     this.limit, {
     super.leadingLineNames,
     super.trailingLineNames,
+    super.isAutoFit,
   });
 }
 
@@ -76,6 +83,7 @@ class GridRepeat extends GridTrackSize {
     required this.tracks,
     super.leadingLineNames,
     super.trailingLineNames,
+    super.isAutoFit,
   });
   const GridRepeat.count(
     int repeatCount,
@@ -108,6 +116,7 @@ class GridRepeat extends GridTrackSize {
           tracks: tracks,
           leadingLineNames: leadingLineNames,
           trailingLineNames: trailingLineNames,
+          isAutoFit: true,
         );
 }
 
