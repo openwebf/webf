@@ -17,6 +17,11 @@
 #include "foundation/native_value_converter.h"
 #include "foundation/logging.h"
 
+
+#if defined(_WIN32)
+#include <Windows.h>
+#endif
+
 namespace webf {
 
 bool CanvasRenderingContext2D::IsCanvas2d() const {
