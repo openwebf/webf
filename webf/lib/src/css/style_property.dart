@@ -1233,11 +1233,21 @@ class CSSStyleProperty {
     properties[GRID_COLUMN_START] = normalize(columnStart);
     properties[GRID_ROW_END] = normalize(rowEnd);
     properties[GRID_COLUMN_END] = normalize(columnEnd);
+    final String trimmed = shorthandValue.trim();
+    final bool hasSingleToken = parts.length <= 1;
+    if (hasSingleToken && CSSGridParser.isCustomIdent(trimmed)) {
+      properties[GRID_AREA_INTERNAL] = trimmed;
+    } else {
+      properties[GRID_AREA_INTERNAL] = 'auto';
+    }
   }
 
   static void removeShorthandGridArea(CSSStyleDeclaration style, [bool? isImportant]) {
     removeShorthandGridRow(style, isImportant);
     removeShorthandGridColumn(style, isImportant);
+    if (style.contains(GRID_AREA_INTERNAL)) {
+      style.removeProperty(GRID_AREA_INTERNAL, isImportant);
+    }
   }
 
   static void setShorthandAnimation(Map<String, String?> properties, String shorthandValue) {

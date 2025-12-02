@@ -724,6 +724,9 @@ class RenderGridLayout extends RenderLayoutBox {
     List<GridTrackSize> colsDef = renderStyle.gridTemplateColumns;
     List<GridTrackSize> rowsDef = renderStyle.gridTemplateRows;
     final List<GridTrackSize> autoRowDefs = renderStyle.gridAutoRows;
+    final GridTemplateAreasDefinition? templateAreasDef = renderStyle.gridTemplateAreasDefinition;
+    final Map<String, GridTemplateAreaRect>? templateAreaMap =
+        templateAreasDef != null && templateAreasDef.areas.isNotEmpty ? templateAreasDef.areas : null;
     if (colsDef.isEmpty) {
       String raw = renderStyle.target.style.getPropertyValue(GRID_TEMPLATE_COLUMNS);
       if (raw.isEmpty) {
@@ -844,6 +847,16 @@ class RenderGridLayout extends RenderLayoutBox {
       GridPlacement columnEnd = childGridStyle?.gridColumnEnd ?? const GridPlacement.auto();
       GridPlacement rowStart = childGridStyle?.gridRowStart ?? const GridPlacement.auto();
       GridPlacement rowEnd = childGridStyle?.gridRowEnd ?? const GridPlacement.auto();
+      // Honor grid-template-areas by mapping named areas to explicit line placements.
+      if (templateAreaMap != null && childGridStyle?.gridAreaName != null) {
+        final GridTemplateAreaRect? rect = templateAreaMap[childGridStyle!.gridAreaName!];
+        if (rect != null) {
+          columnStart = GridPlacement.line(rect.columnStart);
+          columnEnd = GridPlacement.line(rect.columnEnd);
+          rowStart = GridPlacement.line(rect.rowStart);
+          rowEnd = GridPlacement.line(rect.rowEnd);
+        }
+      }
 
       final int normalizedInitialCols = math.max(colSizes.length, 1);
       final int normalizedInitialRows = math.max(rowSizes.length, 1);

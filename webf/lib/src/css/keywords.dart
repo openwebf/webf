@@ -169,12 +169,14 @@ const String GRID_AUTO_ROWS = 'gridAutoRows';
 const String GRID_AUTO_COLUMNS = 'gridAutoColumns';
 const String GRID_TEMPLATE_ROWS = 'gridTemplateRows';
 const String GRID_TEMPLATE_COLUMNS = 'gridTemplateColumns';
+const String GRID_TEMPLATE_AREAS = 'gridTemplateAreas';
 const String GRID_ROW_START = 'gridRowStart';
 const String GRID_ROW_END = 'gridRowEnd';
 const String GRID_COLUMN_START = 'gridColumnStart';
 const String GRID_COLUMN_END = 'gridColumnEnd';
 const String GRID_ROW = 'gridRow';
 const String GRID_COLUMN = 'gridColumn';
+const String GRID_AREA_INTERNAL = '__gridAreaName';
 const String GRID_AREA = 'gridArea';
 
 const String DIRECTION = 'direction';

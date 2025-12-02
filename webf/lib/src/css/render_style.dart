@@ -342,6 +342,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   List<GridTrackSize> get gridTemplateColumns;
 
+  GridTemplateAreasDefinition? get gridTemplateAreasDefinition;
+
   GridPlacement get gridRowStart;
 
   GridPlacement get gridRowEnd;
@@ -349,6 +351,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   GridPlacement get gridColumnStart;
 
   GridPlacement get gridColumnEnd;
+
+  String? get gridAreaName;
 
   // Color
   CSSColor get color;
@@ -1401,6 +1405,8 @@ class CSSRenderStyle extends RenderStyle
         return gridTemplateColumns;
       case GRID_TEMPLATE_ROWS:
         return gridTemplateRows;
+      case GRID_TEMPLATE_AREAS:
+        return gridTemplateAreasDefinition;
       case GRID_AUTO_ROWS:
         return gridAutoRows;
       case GRID_AUTO_COLUMNS:
@@ -1415,6 +1421,8 @@ class CSSRenderStyle extends RenderStyle
         return gridColumnStart;
       case GRID_COLUMN_END:
         return gridColumnEnd;
+      case GRID_AREA_INTERNAL:
+        return gridAreaName;
       case ALIGN_ITEMS:
         return alignItems;
       case JUSTIFY_CONTENT:
@@ -1744,6 +1752,9 @@ class CSSRenderStyle extends RenderStyle
       case GRID_TEMPLATE_ROWS:
         gridTemplateRows = value;
         break;
+      case GRID_TEMPLATE_AREAS:
+        gridTemplateAreasDefinition = value;
+        break;
       case GRID_AUTO_ROWS:
         gridAutoRows = value;
         break;
@@ -1755,15 +1766,22 @@ class CSSRenderStyle extends RenderStyle
         break;
       case GRID_ROW_START:
         gridRowStart = value;
+        gridAreaName = null;
         break;
       case GRID_ROW_END:
         gridRowEnd = value;
+        gridAreaName = null;
         break;
       case GRID_COLUMN_START:
         gridColumnStart = value;
+        gridAreaName = null;
         break;
       case GRID_COLUMN_END:
         gridColumnEnd = value;
+        gridAreaName = null;
+        break;
+      case GRID_AREA_INTERNAL:
+        gridAreaName = value as String?;
         break;
       case ALIGN_ITEMS:
         alignItems = value;
@@ -2455,6 +2473,9 @@ class CSSRenderStyle extends RenderStyle
       case GRID_TEMPLATE_ROWS:
         value = CSSGridParser.parseTrackList(propertyValue, this, propertyName, Axis.vertical);
         break;
+      case GRID_TEMPLATE_AREAS:
+        value = CSSGridParser.parseTemplateAreas(propertyValue);
+        break;
       case GRID_AUTO_ROWS:
         value = CSSGridParser.parseTrackList(propertyValue, this, propertyName, Axis.vertical);
         break;
@@ -2469,6 +2490,9 @@ class CSSRenderStyle extends RenderStyle
       case GRID_COLUMN_START:
       case GRID_COLUMN_END:
         value = CSSGridParser.parsePlacement(propertyValue);
+        break;
+      case GRID_AREA_INTERNAL:
+        value = propertyValue == 'auto' ? null : propertyValue;
         break;
       case TEXT_TRANSFORM:
         value = CSSText.resolveTextTransform(propertyValue);

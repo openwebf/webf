@@ -285,6 +285,43 @@ void main() {
       expect(cOffset.dx, closeTo(0, 1));
     });
 
+    testWidgets('grid-template-areas maps named placements', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-template-areas-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; width: 180px; grid-template-columns: 60px 60px 60px; grid-template-rows: 40px 40px; grid-template-areas: &quot;header header side&quot; &quot;footer footer side&quot;;">
+            <div id="header" style="height: 40px; grid-area: header;"></div>
+            <div id="footer" style="height: 40px; grid-area: footer;"></div>
+            <div id="side" style="height: 80px; grid-area: side;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final header = prepared.getElementById('header');
+      final footer = prepared.getElementById('footer');
+      final side = prepared.getElementById('side');
+
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox headerBox = header.attachedRenderer as RenderBox;
+      final RenderBox footerBox = footer.attachedRenderer as RenderBox;
+      final RenderBox sideBox = side.attachedRenderer as RenderBox;
+
+      final Offset headerOffset = getLayoutTransformTo(headerBox, renderer, excludeScrollOffset: true);
+      final Offset footerOffset = getLayoutTransformTo(footerBox, renderer, excludeScrollOffset: true);
+      final Offset sideOffset = getLayoutTransformTo(sideBox, renderer, excludeScrollOffset: true);
+
+      expect(renderer.size.width, equals(180));
+      expect(headerOffset.dx, closeTo(0, 1));
+      expect(headerBox.size.width, closeTo(120, 1));
+      expect(footerOffset.dy, closeTo(40, 1));
+      expect(sideOffset.dx, closeTo(120, 1));
+      expect(sideBox.size.height, closeTo(80, 1));
+    });
+
     testWidgets('grid-area shorthand positions child', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,

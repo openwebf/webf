@@ -120,6 +120,29 @@ class GridRepeat extends GridTrackSize {
         );
 }
 
+class GridTemplateAreaRect {
+  final int rowStart;
+  final int rowEnd;
+  final int columnStart;
+  final int columnEnd;
+  const GridTemplateAreaRect(this.rowStart, this.rowEnd, this.columnStart, this.columnEnd);
+  int get rowSpan => rowEnd - rowStart;
+  int get columnSpan => columnEnd - columnStart;
+}
+
+class GridTemplateAreasDefinition {
+  final Map<String, GridTemplateAreaRect> areas;
+  final int rowCount;
+  final int columnCount;
+  final String cssText;
+  const GridTemplateAreasDefinition({
+    required this.areas,
+    required this.rowCount,
+    required this.columnCount,
+    required this.cssText,
+  });
+}
+
 enum GridPlacementKind { auto, line, span }
 
 class GridPlacement {
@@ -198,7 +221,7 @@ class CSSGridParser {
   }
 
   static final RegExp _customIdentRegExp = RegExp(r'^-?[_a-zA-Z][\w-]*$');
-  static bool _isCustomIdent(String token) {
+  static bool isCustomIdent(String token) {
     if (token.isEmpty) return false;
     final String lower = token.toLowerCase();
     if (lower == 'auto' || lower == 'span') return false;
@@ -518,7 +541,7 @@ class CSSGridParser {
     final List<String> tokens = trimmed.split(RegExp(r'\s+'));
     if (tokens.length == 2) {
       final int? occurrence = int.tryParse(tokens[1]);
-      if (occurrence != null && occurrence != 0 && _isCustomIdent(tokens[0])) {
+      if (occurrence != null && occurrence != 0 && isCustomIdent(tokens[0])) {
         return GridPlacement.named(
           tokens[0],
           occurrence: occurrence,
@@ -527,11 +550,95 @@ class CSSGridParser {
       }
     }
 
-    if (_isCustomIdent(trimmed)) {
+    if (isCustomIdent(trimmed)) {
       return GridPlacement.named(trimmed);
     }
 
     return const GridPlacement.auto();
+  }
+
+  static GridTemplateAreasDefinition? parseTemplateAreas(String value) {
+    final String trimmed = value.trim();
+    if (trimmed.isEmpty || trimmed.toLowerCase() == 'none') {
+      return const GridTemplateAreasDefinition(
+        areas: <String, GridTemplateAreaRect>{},
+        rowCount: 0,
+        columnCount: 0,
+        cssText: 'none',
+      );
+    }
+
+    final RegExp rowPattern = RegExp(r'"([^"]*)"');
+    final List<RegExpMatch> matches = rowPattern.allMatches(trimmed).toList();
+    if (matches.isEmpty) return null;
+
+    final List<List<String>> rows = <List<String>>[];
+    for (final RegExpMatch match in matches) {
+      final String rowText = match.group(1)!;
+      final String normalized = rowText.trim();
+      if (normalized.isEmpty) return null;
+      final List<String> tokens =
+          normalized.split(RegExp(r'\s+')).map((token) => token.trim()).where((token) => token.isNotEmpty).toList();
+      if (tokens.isEmpty) return null;
+      rows.add(tokens);
+    }
+
+    final int columnCount = rows.first.length;
+    if (columnCount == 0) return null;
+    for (final List<String> tokens in rows) {
+      if (tokens.length != columnCount) return null;
+    }
+
+    final Map<String, _GridAreaBuilder> builders = <String, _GridAreaBuilder>{};
+    for (int r = 0; r < rows.length; r++) {
+      final List<String> tokens = rows[r];
+      for (int c = 0; c < tokens.length; c++) {
+        final String name = tokens[c];
+        if (name == '.' || name.isEmpty) continue;
+        final _GridAreaBuilder builder = builders.putIfAbsent(name, () => _GridAreaBuilder(r + 1, c + 1));
+        builder.include(r + 1, c + 1);
+      }
+    }
+
+    final Map<String, GridTemplateAreaRect> rects = <String, GridTemplateAreaRect>{};
+    for (final MapEntry<String, _GridAreaBuilder> entry in builders.entries) {
+      final _GridAreaBuilder builder = entry.value;
+      for (int r = builder.minRow; r <= builder.maxRow; r++) {
+        for (int c = builder.minCol; c <= builder.maxCol; c++) {
+          if (rows[r - 1][c - 1] != entry.key) {
+            return null;
+          }
+        }
+      }
+      rects[entry.key] =
+          GridTemplateAreaRect(builder.minRow, builder.maxRow + 1, builder.minCol, builder.maxCol + 1);
+    }
+
+    return GridTemplateAreasDefinition(
+      areas: rects,
+      rowCount: rows.length,
+      columnCount: columnCount,
+      cssText: trimmed,
+    );
+  }
+}
+
+class _GridAreaBuilder {
+  int minRow;
+  int maxRow;
+  int minCol;
+  int maxCol;
+  _GridAreaBuilder(int row, int col)
+      : minRow = row,
+        maxRow = row,
+        minCol = col,
+        maxCol = col;
+
+  void include(int row, int col) {
+    if (row < minRow) minRow = row;
+    if (row > maxRow) maxRow = row;
+    if (col < minCol) minCol = col;
+    if (col > maxCol) maxCol = col;
   }
 }
 
@@ -622,6 +729,28 @@ mixin CSSGridMixin on RenderStyle {
     if (_gridRowEnd == value) return;
     _gridRowEnd = value;
     markNeedsLayout();
+  }
+
+  GridTemplateAreasDefinition? _gridTemplateAreasDefinition;
+  GridTemplateAreasDefinition? get gridTemplateAreasDefinition => _gridTemplateAreasDefinition;
+  set gridTemplateAreasDefinition(GridTemplateAreasDefinition? value) {
+    if (_gridTemplateAreasDefinition == value) return;
+    _gridTemplateAreasDefinition = value;
+    if (isSelfRenderGridLayout()) markNeedsLayout();
+  }
+
+  String? _gridAreaName;
+  String? get gridAreaName => _gridAreaName;
+  set gridAreaName(String? value) {
+    final String? normalized = value == null || value.isEmpty || value.toLowerCase() == 'auto' ? null : value;
+    if (_gridAreaName == normalized) return;
+    _gridAreaName = normalized;
+    markNeedsLayout();
+  }
+
+  GridTemplateAreaRect? resolveTemplateArea(String? name) {
+    if (name == null || _gridTemplateAreasDefinition == null) return null;
+    return _gridTemplateAreasDefinition!.areas[name];
   }
 }
 

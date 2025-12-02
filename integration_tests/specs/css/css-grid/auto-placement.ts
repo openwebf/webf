@@ -506,6 +506,51 @@ describe('CSS Grid auto placement', () => {
     grid.remove();
   });
 
+  it('positions items via grid-template-areas', async () => {
+    const grid = document.createElement('div');
+    grid.setAttribute(
+      'style',
+      'display:grid;width:180px;grid-template-columns:60px 60px 60px;grid-template-rows:40px 40px;grid-template-areas:"hero hero side" "footer footer side";row-gap:0;column-gap:0;',
+    );
+
+    const hero = document.createElement('div');
+    hero.textContent = 'hero';
+    hero.style.height = '40px';
+    hero.style.backgroundColor = 'rgba(0, 188, 212, 0.5)';
+    hero.style.gridArea = 'hero';
+    grid.appendChild(hero);
+
+    const footer = document.createElement('div');
+    footer.textContent = 'footer';
+    footer.style.height = '40px';
+    footer.style.backgroundColor = 'rgba(156, 39, 176, 0.4)';
+    footer.style.gridArea = 'footer';
+    grid.appendChild(footer);
+
+    const side = document.createElement('div');
+    side.textContent = 'side';
+    side.style.height = '80px';
+    side.style.backgroundColor = 'rgba(255, 193, 7, 0.4)';
+    side.style.gridArea = 'side';
+    grid.appendChild(side);
+
+    document.body.appendChild(grid);
+
+    await waitForFrame();
+    await snapshot();
+
+    const gridRect = grid.getBoundingClientRect();
+    const heroRect = hero.getBoundingClientRect();
+    const footerRect = footer.getBoundingClientRect();
+    const sideRect = side.getBoundingClientRect();
+    expect(Math.round(heroRect.left - gridRect.left)).toBeGreaterThanOrEqual(0);
+    expect(Math.round(heroRect.width)).toBeGreaterThanOrEqual(120);
+    expect(Math.round(footerRect.top - gridRect.top)).toBeGreaterThanOrEqual(40);
+    expect(Math.round(sideRect.left - gridRect.left)).toBeGreaterThanOrEqual(120);
+    expect(Math.round(sideRect.height)).toBeGreaterThanOrEqual(80);
+    grid.remove();
+  });
+
   it('positions items via grid-area shorthand', async () => {
     const grid = document.createElement('div');
     grid.setAttribute(

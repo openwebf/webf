@@ -134,5 +134,28 @@ void main() {
       expect(computed.getPropertyValue('grid-template-columns'), equals('repeat(auto-fill, fit-content(80px))'));
       expect(computed.getPropertyValue('grid-template-rows'), equals('repeat(2, 40px)'));
     });
+
+    testWidgets('serializes grid-template-areas definitions', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-template-areas-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid"
+            style="
+              display:grid;
+              grid-template-columns: 60px 60px 60px;
+              grid-template-rows: 40px 40px;
+              grid-template-areas: &quot;hero hero side&quot; &quot;footer footer side&quot;;
+            ">
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final computed = prepared.controller.view.window.getComputedStyle(grid);
+      expect(computed.getPropertyValue('grid-template-areas'), equals('"hero hero side" "footer footer side"'));
+    });
   });
 }

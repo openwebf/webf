@@ -1157,6 +1157,8 @@ String? _valueForGridProperty(String propertyName, CSSRenderStyle style) {
       return _gridTrackListToCss(style.gridTemplateColumns, templateList: true);
     case 'grid-template-rows':
       return _gridTrackListToCss(style.gridTemplateRows, templateList: true);
+    case 'grid-template-areas':
+      return style.gridTemplateAreasDefinition?.cssText ?? 'none';
     case 'grid-auto-columns':
       return _gridTrackListToCss(style.gridAutoColumns, templateList: false);
     case 'grid-auto-rows':
