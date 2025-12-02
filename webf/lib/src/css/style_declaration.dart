@@ -48,6 +48,7 @@ const Map<String, bool> _CSSShorthandProperty = {
   PLACE_SELF: true,
   GRID_ROW: true,
   GRID_COLUMN: true,
+  GRID_AREA: true,
   OVERFLOW: true,
   TRANSITION: true,
   TEXT_DECORATION: true,
@@ -230,6 +231,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         return CSSStyleProperty.removeShorthandGridRow(this, isImportant);
       case GRID_COLUMN:
         return CSSStyleProperty.removeShorthandGridColumn(this, isImportant);
+      case GRID_AREA:
+        return CSSStyleProperty.removeShorthandGridArea(this, isImportant);
       case BORDER:
       case BORDER_TOP:
       case BORDER_RIGHT:
@@ -346,6 +349,9 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
           break;
         case GRID_COLUMN:
           CSSStyleProperty.setShorthandGridColumn(longhandProperties, normalizedValue);
+          break;
+        case GRID_AREA:
+          CSSStyleProperty.setShorthandGridArea(longhandProperties, normalizedValue);
           break;
         case BORDER:
         case BORDER_TOP:

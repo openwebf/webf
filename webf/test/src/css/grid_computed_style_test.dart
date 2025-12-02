@@ -79,6 +79,7 @@ void main() {
       expect(childComputed.getPropertyValue('grid-row-start'), equals('span 3'));
       expect(childComputed.getPropertyValue('grid-row-end'), equals('auto'));
       expect(childComputed.getPropertyValue('grid-row'), equals('span 3 / auto'));
+      expect(childComputed.getPropertyValue('grid-area'), equals('span 3 / 2 / auto / span 2'));
       expect(childComputed.getPropertyValue('justify-self'), equals('end'));
       expect(childComputed.getPropertyValue('align-self'), equals('stretch'));
       expect(childComputed.getPropertyValue('place-self'), equals('stretch end'));

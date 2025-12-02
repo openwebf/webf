@@ -1219,6 +1219,27 @@ class CSSStyleProperty {
     if (style.contains(GRID_COLUMN_END)) style.removeProperty(GRID_COLUMN_END, isImportant);
   }
 
+  static void setShorthandGridArea(Map<String, String?> properties, String shorthandValue) {
+    List<String> parts = shorthandValue.split(_slashRegExp);
+
+    String rowStart = parts.isNotEmpty ? parts[0].trim() : '';
+    String columnStart = parts.length > 1 ? parts[1].trim() : '';
+    String rowEnd = parts.length > 2 ? parts[2].trim() : '';
+    String columnEnd = parts.length > 3 ? parts[3].trim() : '';
+
+    String normalize(String value) => value.isEmpty ? 'auto' : value;
+
+    properties[GRID_ROW_START] = normalize(rowStart);
+    properties[GRID_COLUMN_START] = normalize(columnStart);
+    properties[GRID_ROW_END] = normalize(rowEnd);
+    properties[GRID_COLUMN_END] = normalize(columnEnd);
+  }
+
+  static void removeShorthandGridArea(CSSStyleDeclaration style, [bool? isImportant]) {
+    removeShorthandGridRow(style, isImportant);
+    removeShorthandGridColumn(style, isImportant);
+  }
+
   static void setShorthandAnimation(Map<String, String?> properties, String shorthandValue) {
     List<String?>? values = _getAnimationValues(shorthandValue);
     if (values == null) return;

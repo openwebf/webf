@@ -505,4 +505,34 @@ describe('CSS Grid auto placement', () => {
     expect(Math.round(firstRect.top - gridRect.top)).toBeGreaterThanOrEqual(60);
     grid.remove();
   });
+
+  it('positions items via grid-area shorthand', async () => {
+    const grid = document.createElement('div');
+    grid.setAttribute(
+      'style',
+      'display:grid;width:120px;grid-template-columns:60px 60px;grid-template-rows:40px 40px;',
+    );
+
+    const filler = document.createElement('div');
+    filler.style.height = '40px';
+    grid.appendChild(filler);
+
+    const area = document.createElement('div');
+    area.id = 'grid-area-cell';
+    area.style.height = '40px';
+    area.style.backgroundColor = 'rgba(139, 195, 74, 0.4)';
+    area.style.gridArea = '2 / 1 / span 1 / span 2';
+    grid.appendChild(area);
+
+    document.body.appendChild(grid);
+
+    await waitForFrame();
+    await snapshot();
+
+    const gridRect = grid.getBoundingClientRect();
+    const areaRect = area.getBoundingClientRect();
+    expect(Math.round(areaRect.top - gridRect.top)).toBeGreaterThanOrEqual(40);
+    expect(Math.round(areaRect.width)).toBeGreaterThanOrEqual(120);
+    grid.remove();
+  });
 });

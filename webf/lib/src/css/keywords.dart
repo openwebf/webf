@@ -175,6 +175,7 @@ const String GRID_COLUMN_START = 'gridColumnStart';
 const String GRID_COLUMN_END = 'gridColumnEnd';
 const String GRID_ROW = 'gridRow';
 const String GRID_COLUMN = 'gridColumn';
+const String GRID_AREA = 'gridArea';
 
 const String DIRECTION = 'direction';
 const String UNICODE_BIDI = 'unicodeBidi';

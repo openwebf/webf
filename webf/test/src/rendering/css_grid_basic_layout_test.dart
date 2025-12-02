@@ -285,6 +285,29 @@ void main() {
       expect(cOffset.dx, closeTo(0, 1));
     });
 
+    testWidgets('grid-area shorthand positions child', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-area-sh-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; grid-template-columns: 60px 60px; grid-template-rows: 30px 30px;">
+            <div id="a" style="height:30px;"></div>
+            <div id="area" style="height:30px; grid-area: 2 / 1 / span 1 / span 2;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox renderArea = prepared.getElementById('area').attachedRenderer as RenderBox;
+      final Offset offset = getLayoutTransformTo(renderArea, renderer, excludeScrollOffset: true);
+
+      expect(offset.dy, closeTo(30, 1));
+      expect(renderArea.size.width, closeTo(120, 1));
+    });
+
     testWidgets('grid-column 1 / -1 spans all explicit columns', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,

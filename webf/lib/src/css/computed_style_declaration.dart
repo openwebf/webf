@@ -1227,6 +1227,40 @@ String? _valueForGridProperty(String propertyName, CSSRenderStyle style) {
           isColumn: false,
         ),
       );
+    case 'grid-area':
+      final String rowStartText = _gridPlacementToCss(
+        style.gridRowStart,
+        forceIncludeOccurrence: _shouldSerializeLineOccurrence(
+          style.gridRowStart,
+          style,
+          isColumn: false,
+        ),
+      );
+      final String columnStartText = _gridPlacementToCss(
+        style.gridColumnStart,
+        forceIncludeOccurrence: _shouldSerializeLineOccurrence(
+          style.gridColumnStart,
+          style,
+          isColumn: true,
+        ),
+      );
+      final String rowEndText = _gridPlacementToCss(
+        style.gridRowEnd,
+        forceIncludeOccurrence: _shouldSerializeLineOccurrence(
+          style.gridRowEnd,
+          style,
+          isColumn: false,
+        ),
+      );
+      final String columnEndText = _gridPlacementToCss(
+        style.gridColumnEnd,
+        forceIncludeOccurrence: _shouldSerializeLineOccurrence(
+          style.gridColumnEnd,
+          style,
+          isColumn: true,
+        ),
+      );
+      return '$rowStartText / $columnStartText / $rowEndText / $columnEndText';
     case 'align-items':
       return _alignItemsToCss(style.alignItems);
     case 'align-self':
