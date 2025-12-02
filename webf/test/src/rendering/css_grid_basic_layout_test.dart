@@ -138,6 +138,32 @@ void main() {
       expect(bOffset.dx, closeTo(100, 1));
     });
 
+    testWidgets('auto-fit rows collapse unused tracks for alignment', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-auto-fit-rows-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; height: 200px; grid-template-columns: 60px; grid-template-rows: repeat(auto-fit, 40px); align-content: center; row-gap: 0;">
+            <div id="a" style="height:20px;"></div>
+            <div id="b" style="height:20px;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox renderA = prepared.getElementById('a').attachedRenderer as RenderBox;
+      final RenderBox renderB = prepared.getElementById('b').attachedRenderer as RenderBox;
+
+      final Offset aOffset = getLayoutTransformTo(renderA, renderer, excludeScrollOffset: true);
+      final Offset bOffset = getLayoutTransformTo(renderB, renderer, excludeScrollOffset: true);
+
+      expect(aOffset.dy, closeTo(60, 1));
+      expect(bOffset.dy, closeTo(100, 1));
+    });
+
     testWidgets('auto width grid fills block container width', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,

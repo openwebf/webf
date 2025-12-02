@@ -480,4 +480,29 @@ describe('CSS Grid auto placement', () => {
     expect(Math.round(firstRect.left - gridRect.left)).toBeGreaterThanOrEqual(60);
     grid.remove();
   });
+
+  it('centers rows when auto-fit leaves empty slots', async () => {
+    const grid = document.createElement('div');
+    grid.setAttribute(
+      'style',
+      'display:grid;height:200px;grid-template-columns:60px;grid-template-rows:repeat(auto-fit,40px);align-content:center;row-gap:0;',
+    );
+
+    for (let i = 0; i < 2; i++) {
+      const cell = document.createElement('div');
+      cell.style.height = '20px';
+      cell.style.backgroundColor = 'rgba(103, 58, 183, 0.4)';
+      grid.appendChild(cell);
+    }
+
+    document.body.appendChild(grid);
+
+    await waitForFrame();
+    await snapshot();
+
+    const gridRect = grid.getBoundingClientRect();
+    const firstRect = (grid.children[0] as HTMLElement).getBoundingClientRect();
+    expect(Math.round(firstRect.top - gridRect.top)).toBeGreaterThanOrEqual(60);
+    grid.remove();
+  });
 });

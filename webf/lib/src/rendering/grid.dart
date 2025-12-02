@@ -797,6 +797,14 @@ class RenderGridLayout extends RenderLayoutBox {
     List<double> rowSizes =
         resolvedRowDefs.isEmpty ? <double>[] : _resolveTracks(resolvedRowDefs, adjustedInnerHeight, Axis.vertical);
     final int explicitRowCount = resolvedRowDefs.isNotEmpty ? resolvedRowDefs.length : 1;
+    List<bool>? explicitAutoFitRows;
+    if (resolvedRowDefs.isNotEmpty) {
+      explicitAutoFitRows =
+          List<bool>.generate(explicitRowCount, (int index) => resolvedRowDefs[index].isAutoFit);
+      if (!explicitAutoFitRows.contains(true)) {
+        explicitAutoFitRows = null;
+      }
+    }
     _gridLog(() =>
         'tracks resolved columns=${colSizes.map((e) => e.toStringAsFixed(2)).join(', ')} rows=${rowSizes.map((e) => e.toStringAsFixed(2)).join(', ')} autoRows=${renderStyle.gridAutoRows.length} autoFlow=${renderStyle.gridAutoFlow}');
 
@@ -810,9 +818,13 @@ class RenderGridLayout extends RenderLayoutBox {
     final _GridAutoCursor autoCursor = _GridAutoCursor(0, 0);
     final double xStart = paddingLeft + borderLeft;
     List<double> implicitRowHeights = [];
-    List<bool>? explicitAutoFitUsage;
+    List<bool>? explicitAutoFitColumnUsage;
     if (explicitAutoFitColumns != null) {
-      explicitAutoFitUsage = List<bool>.filled(explicitColumnCount, false);
+      explicitAutoFitColumnUsage = List<bool>.filled(explicitColumnCount, false);
+    }
+    List<bool>? explicitAutoFitRowUsage;
+    if (explicitAutoFitRows != null) {
+      explicitAutoFitRowUsage = List<bool>.filled(explicitRowCount, false);
     }
 
     int childIndex = 0;
@@ -919,10 +931,16 @@ class RenderGridLayout extends RenderLayoutBox {
 
       final int rowIndex = placement.row;
       final int colIndex = placement.column;
-      if (explicitAutoFitUsage != null && colIndex < explicitColumnCount) {
+      if (explicitAutoFitColumnUsage != null && colIndex < explicitColumnCount) {
         final int usageEnd = math.min(explicitColumnCount, colIndex + colSpan);
         for (int c = colIndex; c < usageEnd; c++) {
-          explicitAutoFitUsage[c] = true;
+          explicitAutoFitColumnUsage[c] = true;
+        }
+      }
+      if (explicitAutoFitRowUsage != null && rowIndex < explicitRowCount) {
+        final int usageEnd = math.min(explicitRowCount, rowIndex + rowSpan);
+        for (int r = rowIndex; r < usageEnd; r++) {
+          explicitAutoFitRowUsage[r] = true;
         }
       }
 
@@ -1056,10 +1074,10 @@ class RenderGridLayout extends RenderLayoutBox {
       usedContentWidth += colSizes[c];
       if (c < colSizes.length - 1) usedContentWidth += colGap;
     }
-    if (explicitAutoFitColumns != null && explicitAutoFitUsage != null) {
+    if (explicitAutoFitColumns != null && explicitAutoFitColumnUsage != null) {
       double collapsedWidth = 0;
       for (int i = explicitColumnCount - 1; i >= 0; i--) {
-        if (!explicitAutoFitColumns![i] || explicitAutoFitUsage[i]) {
+        if (!explicitAutoFitColumns![i] || explicitAutoFitColumnUsage[i]) {
           break;
         }
         collapsedWidth += colSizes[i];
@@ -1077,6 +1095,21 @@ class RenderGridLayout extends RenderLayoutBox {
       final double segment = _resolvedRowHeight(rowSizes, implicitRowHeights, r);
       usedContentHeight += segment;
       if (r < totalRows - 1) usedContentHeight += rowGap;
+    }
+    if (explicitAutoFitRows != null && explicitAutoFitRowUsage != null) {
+      double collapsedHeight = 0;
+      for (int i = explicitRowCount - 1; i >= 0; i--) {
+        if (!explicitAutoFitRows![i] || explicitAutoFitRowUsage[i]) {
+          break;
+        }
+        collapsedHeight += rowSizes[i];
+        if (i > 0) {
+          collapsedHeight += rowGap;
+        }
+      }
+      if (collapsedHeight > 0) {
+        usedContentHeight = math.max(0.0, usedContentHeight - collapsedHeight);
+      }
     }
 
     // Final size constrained by constraints
