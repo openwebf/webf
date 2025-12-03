@@ -133,12 +133,24 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           break;
         case UICommandType.setPseudoStyle:
           if (command.nativePtr2 != nullptr) {
-            final (:key, :value) = nativePairToPairRecord(command.nativePtr2.cast());
-            printMsg =
-              'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} property: $key=$value';
+            try {
+              final Pointer<NativePseudoStyleWithHref> payload =
+                  command.nativePtr2.cast<NativePseudoStyleWithHref>();
+              final Pointer<NativeString> keyPtr = payload.ref.key;
+              final Pointer<NativeString> valuePtr = payload.ref.value;
+              final Pointer<NativeString> hrefPtr = payload.ref.href;
+              final String key = keyPtr != nullptr ? nativeStringToString(keyPtr) : '';
+              final String value = valuePtr != nullptr ? nativeStringToString(valuePtr) : '';
+              final String? href = hrefPtr != nullptr ? nativeStringToString(hrefPtr) : null;
+              printMsg =
+                  'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} property: $key=$value baseHref: ${href ?? 'null'}';
+            } catch (_) {
+              printMsg =
+                  'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} property: <error>';
+            }
           } else {
             printMsg =
-              'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} property: <null>';
+                'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} property: <null>';
           }
           break;
         case UICommandType.removePseudoStyle:
@@ -255,9 +267,36 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           break;
         case UICommandType.setPseudoStyle:
           if (command.nativePtr2 != nullptr) {
-            final (:key, :value) = nativePairToPairRecord(command.nativePtr2.cast(), free: true);
+            final Pointer<NativePseudoStyleWithHref> payload =
+                command.nativePtr2.cast<NativePseudoStyleWithHref>();
+            final Pointer<NativeString> keyPtr = payload.ref.key;
+            final Pointer<NativeString> valuePtr = payload.ref.value;
+            final Pointer<NativeString> hrefPtr = payload.ref.href;
+
+            String key = '';
+            String value = '';
+            String? baseHref;
+
+            if (keyPtr != nullptr) {
+              final Pointer<NativeString> nativeKey = keyPtr.cast<NativeString>();
+              key = nativeStringToString(nativeKey);
+              freeNativeString(nativeKey);
+            }
+            if (valuePtr != nullptr) {
+              final Pointer<NativeString> nativeValue = valuePtr.cast<NativeString>();
+              value = nativeStringToString(nativeValue);
+              freeNativeString(nativeValue);
+            }
+            if (hrefPtr != nullptr) {
+              final Pointer<NativeString> nativeHref = hrefPtr.cast<NativeString>();
+              final String raw = nativeStringToString(nativeHref);
+              freeNativeString(nativeHref);
+              baseHref = raw.isEmpty ? null : raw;
+            }
+            malloc.free(payload);
+
             if (key.isNotEmpty) {
-              view.setPseudoStyle(nativePtr, command.args, key, value);
+              view.setPseudoStyle(nativePtr, command.args, key, value, baseHref: baseHref);
             }
           }
           break;

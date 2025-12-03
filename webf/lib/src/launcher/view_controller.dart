@@ -643,7 +643,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     }
   }
 
-  void setPseudoStyle(Pointer selfPtr, String args, String key, String value) {
+  void setPseudoStyle(Pointer selfPtr, String args, String key, String value, {String? baseHref}) {
     assert(hasBindingObject(selfPtr), 'id: $selfPtr');
     Node? target = getBindingObject<Node>(selfPtr);
     if (target == null) return;
@@ -657,7 +657,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       case 'after':
       case 'first-letter':
       case 'first-line':
-        target.setPseudoStyle(args, key, value);
+        target.setPseudoStyle(args, key, value, baseHref: baseHref);
         break;
 
       default:

@@ -645,26 +645,26 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   // Set a style property on a pseudo element (before/after/first-letter/first-line) for this element.
   // Values set here are treated as inline on the pseudo element and marked important
   // to override stylesheet rules when applicable.
-  void setPseudoProperty(String type, String propertyName, String value) {
+  void setPseudoProperty(String type, String propertyName, String value, {String? baseHref}) {
     switch (type) {
       case 'before':
         pseudoBeforeStyle ??= CSSStyleDeclaration();
-        pseudoBeforeStyle!.setProperty(propertyName, value, isImportant: true);
+        pseudoBeforeStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref);
         target?.markBeforePseudoElementNeedsUpdate();
         break;
       case 'after':
         pseudoAfterStyle ??= CSSStyleDeclaration();
-        pseudoAfterStyle!.setProperty(propertyName, value, isImportant: true);
+        pseudoAfterStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref);
         target?.markAfterPseudoElementNeedsUpdate();
         break;
       case 'first-letter':
         pseudoFirstLetterStyle ??= CSSStyleDeclaration();
-        pseudoFirstLetterStyle!.setProperty(propertyName, value, isImportant: true);
+        pseudoFirstLetterStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref);
         target?.markFirstLetterPseudoNeedsUpdate();
         break;
       case 'first-line':
         pseudoFirstLineStyle ??= CSSStyleDeclaration();
-        pseudoFirstLineStyle!.setProperty(propertyName, value, isImportant: true);
+        pseudoFirstLineStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref);
         target?.markFirstLinePseudoNeedsUpdate();
         break;
     }

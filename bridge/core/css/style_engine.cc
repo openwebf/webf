@@ -803,18 +803,25 @@ void StyleEngine::RecalcStyle(Document& document) {
             for (unsigned i = 0; i < pseudo_set->PropertyCount(); ++i) {
               auto prop = pseudo_set->PropertyAt(i);
               AtomicString prop_name = prop.Name().ToAtomicString();
-              String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
-              if (value_string.IsNull()) value_string = String("");
-              auto key_ns = prop_name.ToStylePropertyNameNativeString();
-              AtomicString value_atom(value_string);
-              auto val_ns = value_atom.ToNativeString();
-              auto* pair = reinterpret_cast<NativePair*>(dart_malloc(sizeof(NativePair)));
-              pair->key = key_ns.release();
-              pair->value = val_ns.release();
-              auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
-              auto pseudo_ns = pseudo_atom.ToNativeString();
-              ctx->uiCommandBuffer()->AddCommand(UICommand::kSetPseudoStyle, std::move(pseudo_ns),
-                                                 element->bindingObject(), pair);
+            String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
+            if (value_string.IsNull()) value_string = String("");
+            String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
+            auto key_ns = prop_name.ToStylePropertyNameNativeString();
+            AtomicString value_atom(value_string);
+            auto val_ns = value_atom.ToNativeString();
+            auto* payload =
+                reinterpret_cast<NativePseudoStyleWithHref*>(dart_malloc(sizeof(NativePseudoStyleWithHref)));
+            payload->key = key_ns.release();
+            payload->value = val_ns.release();
+            if (!base_href_string.IsEmpty()) {
+              payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
+            } else {
+              payload->href = nullptr;
+            }
+            auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
+            auto pseudo_ns = pseudo_atom.ToNativeString();
+            ctx->uiCommandBuffer()->AddCommand(UICommand::kSetPseudoStyle, std::move(pseudo_ns),
+                                               element->bindingObject(), payload);
             }
             return true;
           };
@@ -1160,19 +1167,26 @@ void StyleEngine::RecalcStyle(Document& document) {
 
             String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
             if (value_string.IsNull()) value_string = String("");
+            String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
 
             auto key_ns = prop_name.ToStylePropertyNameNativeString();
             AtomicString value_atom(value_string);
             auto val_ns = value_atom.ToNativeString();
 
-            auto* pair = reinterpret_cast<NativePair*>(dart_malloc(sizeof(NativePair)));
-            pair->key = key_ns.release();
-            pair->value = val_ns.release();
+            auto* payload =
+                reinterpret_cast<NativePseudoStyleWithHref*>(dart_malloc(sizeof(NativePseudoStyleWithHref)));
+            payload->key = key_ns.release();
+            payload->value = val_ns.release();
+            if (!base_href_string.IsEmpty()) {
+              payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
+            } else {
+              payload->href = nullptr;
+            }
 
             auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
             auto pseudo_ns = pseudo_atom.ToNativeString();
             ctx->uiCommandBuffer()->AddCommand(UICommand::kSetPseudoStyle, std::move(pseudo_ns),
-                                               element->bindingObject(), pair);
+                                               element->bindingObject(), payload);
           }
         };
 
@@ -1297,18 +1311,25 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
             for (unsigned i = 0; i < pseudo_set->PropertyCount(); ++i) {
               auto prop = pseudo_set->PropertyAt(i);
               AtomicString prop_name = prop.Name().ToAtomicString();
-              String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
-              if (value_string.IsNull()) value_string = String("");
-              auto key_ns = prop_name.ToStylePropertyNameNativeString();
-              AtomicString value_atom(value_string);
-              auto val_ns = value_atom.ToNativeString();
-              auto* pair = reinterpret_cast<NativePair*>(dart_malloc(sizeof(NativePair)));
-              pair->key = key_ns.release();
-              pair->value = val_ns.release();
+            String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
+            if (value_string.IsNull()) value_string = String("");
+            String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
+            auto key_ns = prop_name.ToStylePropertyNameNativeString();
+            AtomicString value_atom(value_string);
+            auto val_ns = value_atom.ToNativeString();
+            auto* payload =
+                reinterpret_cast<NativePseudoStyleWithHref*>(dart_malloc(sizeof(NativePseudoStyleWithHref)));
+            payload->key = key_ns.release();
+            payload->value = val_ns.release();
+            if (!base_href_string.IsEmpty()) {
+              payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
+            } else {
+              payload->href = nullptr;
+            }
               auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
               auto pseudo_ns = pseudo_atom.ToNativeString();
               ctx->uiCommandBuffer()->AddCommand(UICommand::kSetPseudoStyle, std::move(pseudo_ns),
-                                                 element->bindingObject(), pair);
+                                                 element->bindingObject(), payload);
             }
             return true;
           };
@@ -1457,18 +1478,25 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
             AtomicString prop_name = prop.Name().ToAtomicString();
             String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
             if (value_string.IsNull()) value_string = String("");
+            String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
 
             auto key_ns = prop_name.ToStylePropertyNameNativeString();
             AtomicString value_atom(value_string);
             auto val_ns = value_atom.ToNativeString();
-            auto* pair = reinterpret_cast<NativePair*>(dart_malloc(sizeof(NativePair)));
-            pair->key = key_ns.release();
-            pair->value = val_ns.release();
+            auto* payload =
+                reinterpret_cast<NativePseudoStyleWithHref*>(dart_malloc(sizeof(NativePseudoStyleWithHref)));
+            payload->key = key_ns.release();
+            payload->value = val_ns.release();
+            if (!base_href_string.IsEmpty()) {
+              payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
+            } else {
+              payload->href = nullptr;
+            }
 
             auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
             auto pseudo_ns = pseudo_atom.ToNativeString();
             ctx->uiCommandBuffer()->AddCommand(UICommand::kSetPseudoStyle, std::move(pseudo_ns),
-                                               element->bindingObject(), pair);
+                                               element->bindingObject(), payload);
           }
         };
 
@@ -1590,17 +1618,24 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
               AtomicString prop_name = prop.Name().ToAtomicString();
               String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
               if (value_string.IsNull()) value_string = String("");
+              String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
               auto key_ns = prop_name.ToStylePropertyNameNativeString();
               AtomicString value_atom(value_string);
               auto val_ns = value_atom.ToNativeString();
-              auto* pair = reinterpret_cast<NativePair*>(dart_malloc(sizeof(NativePair)));
-              pair->key = key_ns.release();
-              pair->value = val_ns.release();
+              auto* payload =
+                  reinterpret_cast<NativePseudoStyleWithHref*>(dart_malloc(sizeof(NativePseudoStyleWithHref)));
+              payload->key = key_ns.release();
+              payload->value = val_ns.release();
+              if (!base_href_string.IsEmpty()) {
+                payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
+              } else {
+                payload->href = nullptr;
+              }
 
               auto pseudo_atom2 = AtomicString::CreateFromUTF8(pseudo_name);
               auto pseudo_ns2 = pseudo_atom2.ToNativeString();
               ctx->uiCommandBuffer()->AddCommand(UICommand::kSetPseudoStyle, std::move(pseudo_ns2),
-                                                 el->bindingObject(), pair);
+                                                 el->bindingObject(), payload);
             }
             return true;
           };
@@ -1730,18 +1765,25 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
             AtomicString prop_name = prop.Name().ToAtomicString();
             String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
             if (value_string.IsNull()) value_string = String("");
+            String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
 
             auto key_ns = prop_name.ToStylePropertyNameNativeString();
             AtomicString value_atom(value_string);
             auto val_ns = value_atom.ToNativeString();
-            auto* pair = reinterpret_cast<NativePair*>(dart_malloc(sizeof(NativePair)));
-            pair->key = key_ns.release();
-            pair->value = val_ns.release();
+            auto* payload =
+                reinterpret_cast<NativePseudoStyleWithHref*>(dart_malloc(sizeof(NativePseudoStyleWithHref)));
+            payload->key = key_ns.release();
+            payload->value = val_ns.release();
+            if (!base_href_string.IsEmpty()) {
+              payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
+            } else {
+              payload->href = nullptr;
+            }
 
             auto pseudo_atom2 = AtomicString::CreateFromUTF8(pseudo_name);
             auto pseudo_ns2 = pseudo_atom2.ToNativeString();
             ctx->uiCommandBuffer()->AddCommand(UICommand::kSetPseudoStyle, std::move(pseudo_ns2),
-                                               el->bindingObject(), pair);
+                                               el->bindingObject(), payload);
           }
         };
 

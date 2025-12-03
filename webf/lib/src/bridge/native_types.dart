@@ -55,6 +55,14 @@ final class NativeStyleValueWithHref extends Struct {
   external Pointer<NativeString> href;
 }
 
+// Combined pseudo style property (key/value) + base href payload for
+// UICommandType.setPseudoStyle.
+final class NativePseudoStyleWithHref extends Struct {
+  external Pointer<NativeString> key;
+  external Pointer<NativeString> value;
+  external Pointer<NativeString> href;
+}
+
 // For memory compatibility between NativeEvent and other struct which inherit NativeEvent(exp: NativeTouchEvent, NativeGestureEvent),
 // We choose to make all this structs have same memory layout. But dart lang did't provide semantically syntax to achieve this (like inheritance a class which extends Struct
 // or declare struct memory by value).
