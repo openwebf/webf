@@ -88,6 +88,14 @@ struct NativeStyleValueWithHref : public DartReadable {
   SharedNativeString* href{nullptr};
 };
 
+// Combined pseudo style property (key/value) + base href payload for
+// UICommand::kSetPseudoStyle.
+struct NativePseudoStyleWithHref : public DartReadable {
+  SharedNativeString* key{nullptr};
+  SharedNativeString* value{nullptr};
+  SharedNativeString* href{nullptr};
+};
+
 }  // namespace webf
 
 #endif  // BRIDGE_FOUNDATION_NATIVE_TYPE_H_
