@@ -49,8 +49,8 @@ class FlutterSvgElement extends WidgetElement {
   }
 
   @override
-  void setInlineStyle(String property, String value) {
-    super.setInlineStyle(property, value);
+  void setInlineStyle(String property, String value, {String? baseHref}) {
+    super.setInlineStyle(property, value, baseHref: baseHref);
     _notifyAncestorSvgToRebuild();
   }
 
@@ -105,8 +105,8 @@ class FlutterSVGChildElement extends dom.Element {
   }
 
   @override
-  void setInlineStyle(String property, String value) {
-    super.setInlineStyle(property, value);
+  void setInlineStyle(String property, String value, {String? baseHref}) {
+    super.setInlineStyle(property, value, baseHref: baseHref);
     _notifyRootSvgToRebuild();
   }
 

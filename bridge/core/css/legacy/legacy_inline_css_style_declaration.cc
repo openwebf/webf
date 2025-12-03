@@ -305,8 +305,11 @@ bool LegacyInlineCssStyleDeclaration::InternalSetProperty(std::string& name, con
   properties_[name] = value;
 
   std::unique_ptr<SharedNativeString> args_01 = stringToNativeString(name);
-  GetExecutingContext()->uiCommandBuffer()->AddCommand(
-      UICommand::kSetStyle, std::move(args_01), owner_element_->bindingObject(), value.ToNativeString().release());
+  auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
+  payload->value = value.ToNativeString().release();
+  payload->href = nullptr;
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01),
+                                                       owner_element_->bindingObject(), payload);
 
   return true;
 }

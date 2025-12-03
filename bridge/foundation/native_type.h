@@ -80,6 +80,14 @@ struct NativeMap : public DartReadable {
   uint32_t length{0};
 };
 
+// Combined style value + base href payload for UICommand::kSetStyle.
+// - |value| holds the serialized CSS value (NativeString*).
+// - |href| holds an optional base href (NativeString*), or nullptr if absent.
+struct NativeStyleValueWithHref : public DartReadable {
+  SharedNativeString* value{nullptr};
+  SharedNativeString* href{nullptr};
+};
+
 }  // namespace webf
 
 #endif  // BRIDGE_FOUNDATION_NATIVE_TYPE_H_

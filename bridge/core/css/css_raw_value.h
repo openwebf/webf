@@ -12,6 +12,9 @@ class CSSRawValue : public CSSValue {
   explicit CSSRawValue(StringView raw) : CSSValue(kRawClass), raw_(raw) { SetRawText(raw_); }
 
   const String& Value() const { return raw_; }
+  const String& BaseHref() const { return base_href_; }
+  bool HasBaseHref() const { return !base_href_.IsNull() && base_href_.length(); }
+  void SetBaseHref(const String& base_href) { base_href_ = base_href; }
 
   String CustomCSSText() const;
 
@@ -21,6 +24,11 @@ class CSSRawValue : public CSSValue {
 
  private:
   String raw_;
+  // Optional base href for this declaration's value, derived from the
+  // CSSParserContext base URL at parse time. Used so consumers (e.g. Dart
+  // bridge) can resolve relative url(...) tokens consistently with the
+  // stylesheet that defined the declaration.
+  String base_href_;
 };
 
 template <>

@@ -32,6 +32,7 @@
 #include "foundation/string/wtf_string.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_markup.h"
+#include "core/css/css_raw_value.h"
 #include "core/css/css_value.h"
 #include "core/css/parser/css_parser.h"
 #include "core/css/properties/css_property.h"
@@ -143,6 +144,25 @@ String CSSPropertyValueSet::GetPropertyValueWithHint(const AtomicString& propert
     }
     return css_value.CssTextForSerialization();
   }
+  return String::EmptyString();
+}
+
+String CSSPropertyValueSet::GetPropertyBaseHrefWithHint(const AtomicString& property_name,
+                                                        unsigned int index) const {
+  const std::shared_ptr<const CSSValue>* value = GetPropertyCSSValueWithHint(property_name, index);
+  if (!value || !(*value)) {
+    return String::EmptyString();
+  }
+
+  const CSSValue& css_value = *(*value);
+  if (css_value.IsRawValue()) {
+    if (const auto* raw = DynamicTo<CSSRawValue>(&css_value)) {
+      if (raw->HasBaseHref()) {
+        return raw->BaseHref();
+      }
+    }
+  }
+
   return String::EmptyString();
 }
 

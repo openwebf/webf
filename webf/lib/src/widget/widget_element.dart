@@ -120,9 +120,9 @@ abstract class WidgetElement extends dom.Element {
   void didAttachRenderer([Element? flutterWidgetElement]) {}
 
   @override
-  void setInlineStyle(String property, String value) {
+  void setInlineStyle(String property, String value, {String? baseHref}) {
     bool shouldRebuild = shouldElementRebuild(property, style.getPropertyValue(property), value);
-    super.setInlineStyle(property, value);
+    super.setInlineStyle(property, value, baseHref: baseHref);
     if (state != null && shouldRebuild) {
       state!.requestUpdateState();
     }

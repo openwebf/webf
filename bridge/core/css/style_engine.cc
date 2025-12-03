@@ -946,6 +946,7 @@ void StyleEngine::RecalcStyle(Document& document) {
           AtomicString prop_name = prop.Name().ToAtomicString();
           // Use property_set->GetPropertyValueWithHint so property-specific normalizations (e.g. initial) apply.
           String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
+          String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
 
           // Forward custom properties (CSS variables) to UI and record them for local substitution.
           // Custom properties are represented with kVariable.
@@ -962,8 +963,15 @@ void StyleEngine::RecalcStyle(Document& document) {
                               << "' = '" << value_string.ToUTF8String() << "'";
             AtomicString value_atom_custom(value_string);
             std::unique_ptr<SharedNativeString> args_custom = prop_name.ToStylePropertyNameNativeString();
+            auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
+            payload->value = value_atom_custom.ToNativeString().release();
+            if (!base_href_string.IsEmpty()) {
+              payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
+            } else {
+              payload->href = nullptr;
+            }
             ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_custom), element->bindingObject(),
-                                               value_atom_custom.ToNativeString().release());
+                                               payload);
             // Update current custom var map (inheritance: variables inherit by default).
             if (!value_string.IsEmpty()) {
               custom_vars[prop_name] = value_string;
@@ -1012,8 +1020,15 @@ void StyleEngine::RecalcStyle(Document& document) {
               WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Emitting shorthand 'background' = '" << resolved.ToUTF8String() << "'";
               auto shorthand_name = "background"_as;
               std::unique_ptr<SharedNativeString> args_bg = shorthand_name.ToStylePropertyNameNativeString();
+              auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
+              payload->value = AtomicString(resolved).ToNativeString().release();
+              if (!base_href_string.IsEmpty()) {
+                payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
+              } else {
+                payload->href = nullptr;
+              }
               ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_bg), element->bindingObject(),
-                                                 AtomicString(resolved).ToNativeString().release());
+                                                 payload);
               emitted_background_shorthand = true;
               // After emitting shorthand, allow background-image longhand to emit too as a fallback,
               // but skip other background-* longhands.
@@ -1084,8 +1099,15 @@ void StyleEngine::RecalcStyle(Document& document) {
             std::unique_ptr<SharedNativeString> args_01 = prop_name.ToStylePropertyNameNativeString();
             WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Emitting property '" << prop_name.ToUTF8String() << "' = '"
                               << value_string.ToUTF8String() << "'";
+            auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
+            payload->value = value_atom.ToNativeString().release();
+            if (!base_href_string.IsEmpty()) {
+              payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
+            } else {
+              payload->href = nullptr;
+            }
             ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), element->bindingObject(),
-                                               value_atom.ToNativeString().release());
+                                               payload);
           }
         }
 
@@ -1096,8 +1118,11 @@ void StyleEngine::RecalcStyle(Document& document) {
           AtomicString ws_value_atom(white_space_value_str);
           WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Emitting shorthand 'white-space' = '"
                             << white_space_value_str.ToUTF8String() << "'";
+          auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
+          payload->value = ws_value_atom.ToNativeString().release();
+          payload->href = nullptr;
           ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(ws_key), element->bindingObject(),
-                                             ws_value_atom.ToNativeString().release());
+                                             payload);
         }
 
         // After applying element styles, collect and emit minimal pseudo styles.
@@ -1367,6 +1392,7 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
 
           AtomicString prop_name = prop.Name().ToAtomicString();
           String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
+          String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
           if (value_string.IsNull()) value_string = String("");
 
           // Skip white-space longhands; will emit shorthand later
@@ -1377,8 +1403,15 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
           // Already cleared above.
           auto key_ns = prop_name.ToStylePropertyNameNativeString();
           AtomicString value_atom(value_string);
+          auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
+          payload->value = value_atom.ToNativeString().release();
+          if (!base_href_string.IsEmpty()) {
+            payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
+          } else {
+            payload->href = nullptr;
+          }
           ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(key_ns), element->bindingObject(),
-                                             value_atom.ToNativeString().release());
+                                             payload);
         }
 
         if (emit_white_space_shorthand) {
@@ -1386,8 +1419,11 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
           auto ws_prop = AtomicString::CreateFromUTF8("white-space");
           auto ws_key = ws_prop.ToStylePropertyNameNativeString();
           AtomicString ws_value_atom(white_space_value_str);
+          auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
+          payload->value = ws_value_atom.ToNativeString().release();
+          payload->href = nullptr;
           ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(ws_key), element->bindingObject(),
-                                             ws_value_atom.ToNativeString().release());
+                                             payload);
         }
 
         // Pseudo emission (only minimal content properties as in RecalcStyle)
@@ -1636,6 +1672,7 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
 
           AtomicString prop_name = prop.Name().ToAtomicString();
           String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
+          String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
           if (value_string.IsNull()) value_string = String("");
 
           if (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap) {
@@ -1644,16 +1681,26 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
 
           auto key_ns = prop_name.ToStylePropertyNameNativeString();
           AtomicString value_atom(value_string);
+          auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
+          payload->value = value_atom.ToNativeString().release();
+          if (!base_href_string.IsEmpty()) {
+            payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
+          } else {
+            payload->href = nullptr;
+          }
           ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(key_ns), el->bindingObject(),
-                                             value_atom.ToNativeString().release());
+                                             payload);
         }
 
         if (emit_white_space_shorthand) {
           auto ws_prop = AtomicString::CreateFromUTF8("white-space");
           auto ws_key = ws_prop.ToStylePropertyNameNativeString();
           AtomicString ws_value_atom(white_space_value_str);
+          auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
+          payload->value = ws_value_atom.ToNativeString().release();
+          payload->href = nullptr;
           ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(ws_key), el->bindingObject(),
-                                             ws_value_atom.ToNativeString().release());
+                                             payload);
         }
 
         auto send_pseudo_for = [&](PseudoId pseudo_id, const char* pseudo_name) {
