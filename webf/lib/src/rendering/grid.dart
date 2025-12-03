@@ -854,7 +854,8 @@ class RenderGridLayout extends RenderLayoutBox {
             'grid.resolveRows',
             () => _resolveTracks(resolvedRowDefs, adjustedInnerHeight, Axis.vertical),
           );
-    final int explicitRowCount = resolvedRowDefs.isNotEmpty ? resolvedRowDefs.length : 1;
+    final int definedRowCount = resolvedRowDefs.length;
+    final int explicitRowCount = definedRowCount > 0 ? definedRowCount : 1;
     List<bool>? explicitAutoFitRows;
     if (resolvedRowDefs.isNotEmpty) {
       explicitAutoFitRows =
@@ -1022,10 +1023,12 @@ class RenderGridLayout extends RenderLayoutBox {
         implicitRowHeights.add(0);
       }
 
-      if (rowsDef.isEmpty) {
+      if (rowsDef.isEmpty || rowIndex + rowSpan > definedRowCount) {
         for (int r = rowIndex; r < rowIndex + rowSpan; r++) {
-          if (rowSizes[r] <= 0) {
-            final double? autoSize = _resolveAutoTrackAt(autoRowDefs, r, innerMaxHeight);
+          if (rowSizes[r] <= 0 && autoRowDefs.isNotEmpty) {
+            final int implicitOrdinal =
+                rowsDef.isEmpty ? r : math.max(0, r - definedRowCount);
+            final double? autoSize = _resolveAutoTrackAt(autoRowDefs, implicitOrdinal, innerMaxHeight);
             if (autoSize != null) {
               rowSizes[r] = autoSize;
             }
