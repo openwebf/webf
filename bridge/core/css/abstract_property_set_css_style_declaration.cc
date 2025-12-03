@@ -195,6 +195,11 @@ void AbstractPropertySetCSSStyleDeclaration::SetPropertyInternal(CSSPropertyID u
   StyleAttributeMutationScope mutation_scope(this);
   WillMutate();
 
+  // Capture the pre-mutation serialized inline style so we can detect
+  // no-op updates (e.g. setting a property to its current value) and
+  // avoid spurious MutationObserver callbacks.
+  AtomicString old_css_text = cssText();
+
   // When setting a shorthand (e.g. background, margin) via CSSOM inline
   // style, clear any existing longhand declarations for that shorthand
   // from the property set first. This prevents stale longhand values from
@@ -217,7 +222,21 @@ void AbstractPropertySetCSSStyleDeclaration::SetPropertyInternal(CSSPropertyID u
         PropertySet().ParseAndSetProperty(unresolved_property, String(value), important, ContextStyleSheet());
   }
 
-  if (result == MutableCSSPropertyValueSet::kParseError || result == MutableCSSPropertyValueSet::kUnchanged) {
+  if (result == MutableCSSPropertyValueSet::kParseError) {
+    DidMutate(kNoChanges);
+    return;
+  }
+
+  // Even if the underlying property set reports a change, if the
+  // serialized style attribute is identical before and after the
+  // operation, treat this as a no-op for the purposes of style
+  // invalidation and MutationObserver attribute records. This ensures
+  // that:
+  //   el.style.height = "100px";
+  //   el.style.height = "100px";
+  // only produces a single attributes mutation, while direct
+  // cssText assignments remain always observable.
+  if (cssText() == old_css_text || result == MutableCSSPropertyValueSet::kUnchanged) {
     DidMutate(kNoChanges);
     return;
   }
