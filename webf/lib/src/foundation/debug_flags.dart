@@ -115,6 +115,12 @@ class DebugFlags {
   // to flow layout for layout purposes while still exposing display:grid in style.
   // Default is true so grid is enabled by default.
   static bool enableCssGridLayout = true;
+  // Emit lightweight profiling logs from RenderGridLayout for track sizing and
+  // auto-placement hot paths. Intended for Phase 5 hardening work.
+  static bool enableCssGridProfiling = false;
+  // Minimum duration (ms) before a grid profiling span is logged. Helps reduce
+  // noise when profiling small grids.
+  static int cssGridProfilingMinMs = 2;
 
   // Removed: Use FlexLog filters to enable flex logs.
 

@@ -66,6 +66,24 @@ class RenderGridLayout extends RenderLayoutBox {
     renderingLogger.finer('[Grid] ${message()}');
   }
 
+  bool get _gridProfilingEnabled => DebugFlags.enableCssGridProfiling;
+
+  void _logGridProfile(String label, Duration elapsed) {
+    if (!_gridProfilingEnabled) return;
+    if (elapsed.inMilliseconds < DebugFlags.cssGridProfilingMinMs) return;
+    final double ms = elapsed.inMicroseconds / 1000.0;
+    renderingLogger.info('[GridProfile][$label] ${ms.toStringAsFixed(3)} ms');
+  }
+
+  T _profileGridSection<T>(String label, T Function() run) {
+    if (!_gridProfilingEnabled) return run();
+    final Stopwatch sw = Stopwatch()..start();
+    final T result = run();
+    sw.stop();
+    _logGridProfile(label, sw.elapsed);
+    return result;
+  }
+
   int? _resolveGridLineNumber(
     GridPlacement placement,
     int trackCount, {
@@ -724,6 +742,8 @@ class RenderGridLayout extends RenderLayoutBox {
 
   void _performGridLayout(BoxConstraints contentConstraints) {
     _gridLog(() => 'performLayout constraints=$constraints');
+    final bool profileGrid = _gridProfilingEnabled;
+    final Stopwatch? totalProfile = profileGrid ? (Stopwatch()..start()) : null;
     // Compute inner available sizes (content box constraints)
     final double paddingLeft = renderStyle.paddingLeft.computedValue;
     final double paddingRight = renderStyle.paddingRight.computedValue;
@@ -784,8 +804,10 @@ class RenderGridLayout extends RenderLayoutBox {
 
     final double? contentAvailableWidth = innerMaxWidth;
     final List<GridTrackSize> autoColDefs = renderStyle.gridAutoColumns;
-    final List<GridTrackSize> resolvedColumnDefs =
-        _materializeTrackList(colsDef, contentAvailableWidth, colGap, Axis.horizontal);
+    final List<GridTrackSize> resolvedColumnDefs = _profileGridSection(
+      'grid.materializeColumns',
+      () => _materializeTrackList(colsDef, contentAvailableWidth, colGap, Axis.horizontal),
+    );
     double? adjustedInnerWidth = contentAvailableWidth;
     if (adjustedInnerWidth != null && adjustedInnerWidth.isFinite && resolvedColumnDefs.isNotEmpty) {
       final double totalColGap = colGap * math.max(0, resolvedColumnDefs.length - 1);
@@ -793,7 +815,10 @@ class RenderGridLayout extends RenderLayoutBox {
     }
     final bool hasExplicitCols = resolvedColumnDefs.isNotEmpty;
     final List<double> colSizes = hasExplicitCols
-        ? _resolveTracks(resolvedColumnDefs, adjustedInnerWidth, Axis.horizontal)
+        ? _profileGridSection(
+            'grid.resolveColumns',
+            () => _resolveTracks(resolvedColumnDefs, adjustedInnerWidth, Axis.horizontal),
+          )
         : <double>[];
     final int explicitColumnCount = hasExplicitCols ? colSizes.length : 0;
     List<bool>? explicitAutoFitColumns;
@@ -814,15 +839,21 @@ class RenderGridLayout extends RenderLayoutBox {
       );
     }
     final double? contentAvailableHeight = innerMaxHeight;
-    final List<GridTrackSize> resolvedRowDefs =
-        _materializeTrackList(rowsDef, contentAvailableHeight, rowGap, Axis.vertical);
+    final List<GridTrackSize> resolvedRowDefs = _profileGridSection(
+      'grid.materializeRows',
+      () => _materializeTrackList(rowsDef, contentAvailableHeight, rowGap, Axis.vertical),
+    );
     double? adjustedInnerHeight = contentAvailableHeight;
     if (adjustedInnerHeight != null && adjustedInnerHeight.isFinite && resolvedRowDefs.isNotEmpty) {
       final double totalRowGap = rowGap * math.max(0, resolvedRowDefs.length - 1);
       adjustedInnerHeight = math.max(0.0, adjustedInnerHeight - totalRowGap);
     }
-    List<double> rowSizes =
-        resolvedRowDefs.isEmpty ? <double>[] : _resolveTracks(resolvedRowDefs, adjustedInnerHeight, Axis.vertical);
+    List<double> rowSizes = resolvedRowDefs.isEmpty
+        ? <double>[]
+        : _profileGridSection(
+            'grid.resolveRows',
+            () => _resolveTracks(resolvedRowDefs, adjustedInnerHeight, Axis.vertical),
+          );
     final int explicitRowCount = resolvedRowDefs.isNotEmpty ? resolvedRowDefs.length : 1;
     List<bool>? explicitAutoFitRows;
     if (resolvedRowDefs.isNotEmpty) {
@@ -855,6 +886,8 @@ class RenderGridLayout extends RenderLayoutBox {
     }
 
     int childIndex = 0;
+    final Stopwatch? placementStopwatch = profileGrid ? (Stopwatch()..start()) : null;
+    Duration childLayoutDuration = Duration.zero;
     RenderBox? child = firstChild;
     while (child != null) {
       RenderStyle? childGridStyle;
@@ -1068,7 +1101,13 @@ class RenderGridLayout extends RenderLayoutBox {
         maxHeight: maxHeightConstraint,
       );
 
+      Stopwatch? childLayoutSw;
+      if (profileGrid) childLayoutSw = Stopwatch()..start();
       child.layout(childConstraints, parentUsesSize: true);
+      if (childLayoutSw != null) {
+        childLayoutSw.stop();
+        childLayoutDuration += childLayoutSw.elapsed;
+      }
 
       final Size childSize = child.size;
       final double perRow = childSize.height / rowSpan;
@@ -1190,11 +1229,24 @@ class RenderGridLayout extends RenderLayoutBox {
       }
     }
 
+    placementStopwatch?.stop();
+    if (placementStopwatch != null) {
+      _logGridProfile('grid.autoPlacement', placementStopwatch.elapsed);
+    }
+    if (profileGrid && childLayoutDuration > Duration.zero) {
+      _logGridProfile('grid.childLayout', childLayoutDuration);
+    }
+
     _gridLog(() =>
         'final size=$size content=${usedContentWidth.toStringAsFixed(2)}x${usedContentHeight.toStringAsFixed(2)} rows=${rowSizes.length} implicitRows=${implicitRowHeights.length} free=${horizontalFree.toStringAsFixed(2)}x${verticalFree.toStringAsFixed(2)} alignShift=$alignShift justifyShift=$justifyShift');
 
     // Compute and cache CSS baselines for the grid container
     calculateBaseline();
+
+    totalProfile?.stop();
+    if (totalProfile != null) {
+      _logGridProfile('grid.total', totalProfile.elapsed);
+    }
   }
 
   List<RenderBox> _collectChildren() {
