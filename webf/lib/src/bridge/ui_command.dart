@@ -109,7 +109,27 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
       String printMsg;
       switch(command.type) {
         case UICommandType.setStyle:
-          printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} key: ${command.args} value: ${command.nativePtr2 != nullptr ? nativeStringToString(command.nativePtr2.cast<NativeString>()) : null}';
+          String? valueLog;
+          String? baseHrefLog;
+          if (command.nativePtr2 != nullptr) {
+            try {
+              final Pointer<NativeStyleValueWithHref> payload =
+                  command.nativePtr2.cast<NativeStyleValueWithHref>();
+              final Pointer<NativeString> valuePtr = payload.ref.value;
+              final Pointer<NativeString> hrefPtr = payload.ref.href;
+              if (valuePtr != nullptr) {
+                valueLog = nativeStringToString(valuePtr);
+              }
+              if (hrefPtr != nullptr) {
+                baseHrefLog = nativeStringToString(hrefPtr);
+              }
+            } catch (_) {
+              valueLog = '<error>';
+              baseHrefLog = '<error>';
+            }
+          }
+          printMsg =
+              'nativePtr: ${command.nativePtr} type: ${command.type} key: ${command.args} value: $valueLog baseHref: ${baseHrefLog ?? 'null'}';
           break;
         case UICommandType.setPseudoStyle:
           if (command.nativePtr2 != nullptr) {
@@ -205,15 +225,28 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           view.cloneNode(nativePtr.cast<NativeBindingObject>(), command.nativePtr2.cast<NativeBindingObject>());
           break;
         case UICommandType.setStyle:
-          String value;
+          String value = '';
+          String? baseHref;
           if (command.nativePtr2 != nullptr) {
-            Pointer<NativeString> nativeValue = command.nativePtr2.cast<NativeString>();
-            value = nativeStringToString(nativeValue);
-            freeNativeString(nativeValue);
-          } else {
-            value = '';
+            final Pointer<NativeStyleValueWithHref> payload =
+                command.nativePtr2.cast<NativeStyleValueWithHref>();
+            final Pointer<NativeString> valuePtr = payload.ref.value;
+            final Pointer<NativeString> hrefPtr = payload.ref.href;
+            if (valuePtr != nullptr) {
+              final Pointer<NativeString> nativeValue = valuePtr.cast<NativeString>();
+              value = nativeStringToString(nativeValue);
+              freeNativeString(nativeValue);
+            }
+            if (hrefPtr != nullptr) {
+              final Pointer<NativeString> nativeHref = hrefPtr.cast<NativeString>();
+              final String raw = nativeStringToString(nativeHref);
+              freeNativeString(nativeHref);
+              baseHref = raw.isEmpty ? null : raw;
+            }
+            malloc.free(payload);
           }
-          view.setInlineStyle(nativePtr, command.args, value);
+
+          view.setInlineStyle(nativePtr, command.args, value, baseHref: baseHref);
           pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
         case UICommandType.clearStyle:

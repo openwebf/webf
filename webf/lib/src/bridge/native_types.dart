@@ -47,6 +47,14 @@ final class NativeMap extends Struct {
   external int length;
 }
 
+// Combined style value + base href payload for UICommandType.setStyle.
+// - |value| is the CSS value as NativeString.
+// - |href| is an optional base href as NativeString (may be nullptr).
+final class NativeStyleValueWithHref extends Struct {
+  external Pointer<NativeString> value;
+  external Pointer<NativeString> href;
+}
+
 // For memory compatibility between NativeEvent and other struct which inherit NativeEvent(exp: NativeTouchEvent, NativeGestureEvent),
 // We choose to make all this structs have same memory layout. But dart lang did't provide semantically syntax to achieve this (like inheritance a class which extends Struct
 // or declare struct memory by value).

@@ -580,7 +580,8 @@ void Element::NotifyInlineStyleMutation() {
   for (const auto& key : removals) {
     AtomicString prop = AtomicString::CreateFromUTF8(key);
     std::unique_ptr<SharedNativeString> args_01 = prop.ToStylePropertyNameNativeString();
-    GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(), nullptr);
+    GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(),
+                                                         nullptr);
     // Update snapshot incrementally.
     last.erase(key);
   }
@@ -590,8 +591,11 @@ void Element::NotifyInlineStyleMutation() {
     AtomicString prop = AtomicString::CreateFromUTF8(kv.first);
     AtomicString value_atom = AtomicString::CreateFromUTF8(kv.second);
     std::unique_ptr<SharedNativeString> args_01 = prop.ToStylePropertyNameNativeString();
+    auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
+    payload->value = value_atom.ToNativeString().release();
+    payload->href = nullptr;
     GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(),
-                                                         value_atom.ToNativeString().release());
+                                                         payload);
     // Update snapshot incrementally.
     last[kv.first] = kv.second;
   }
@@ -1167,8 +1171,11 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
         // across the bridge. Custom properties starting with '--' are preserved
         // verbatim by ToStylePropertyNameNativeString().
         std::unique_ptr<SharedNativeString> args_01 = prop_name.ToStylePropertyNameNativeString();
+        auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
+        payload->value = value_atom.ToNativeString().release();
+        payload->href = nullptr;
         GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(),
-                                                             value_atom.ToNativeString().release());
+                                                             payload);
       }
     }
   } else {

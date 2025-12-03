@@ -19,6 +19,7 @@
 #include "core/css/properties/css_bitset.h"
 #include "core/css/properties/css_parsing_utils.h"
 #include "core/css/property_bitsets.h"
+#include "core/platform/url/kurl.h"
 #include "longhands.h"
 #include "shorthands.h"
 
@@ -130,6 +131,18 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
   value.text = CSSVariableParser::StripTrailingWhitespaceAndComments(value.text);
 
   auto raw = std::make_shared<CSSRawValue>(String(value.text));
+  // Record the parser context base URL as a base href on this raw value so
+  // that later pipeline stages (e.g. StyleEngine -> UICommand bridge) can
+  // resolve relative url() tokens consistently with the stylesheet URL.
+  // Treat about:blank as "no href" so consumers fall back to the document or
+  // controller URL rather than using a synthetic base.
+  if (context_) {
+    const KURL& base_url = context_->BaseURL();
+    std::string base = base_url.GetString();
+    if (!base_url.IsEmpty() && base_url.IsValid() && base != "about:blank") {
+      raw->SetBaseHref(String::FromUTF8(base));
+    }
+  }
   AddProperty(property_id, CSSPropertyID::kInvalid, raw, important,
               css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
   return true;

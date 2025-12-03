@@ -105,6 +105,9 @@ class CSSPropertyValueSet : public std::enable_shared_from_this<CSSPropertyValue
   const std::shared_ptr<const CSSValue>* GetPropertyCSSValueWithHint(const AtomicString& property_name,
                                                                      unsigned index) const;
   String GetPropertyValueWithHint(const AtomicString& property_name, unsigned index) const;
+  // Returns the base href associated with a property value (if any),
+  // derived from the underlying CSSValue (e.g. CSSRawValue).
+  String GetPropertyBaseHrefWithHint(const AtomicString& property_name, unsigned index) const;
   bool PropertyIsImportantWithHint(const AtomicString& property_name, unsigned index) const;
 
   bool ShorthandIsImportant(CSSPropertyID) const;
