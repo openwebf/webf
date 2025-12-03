@@ -397,10 +397,15 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
       targetHeight = naturalHeight;
     }
 
-    return descriptor.instantiateCodec(
+    final Codec rawCodec = await descriptor.instantiateCodec(
       targetWidth: targetWidth,
       targetHeight: targetHeight,
     );
+
+    // Wrap the underlying codec so that dispose() is resilient to races where
+    // the native image peer has already been collected (e.g. during aggressive
+    // teardown of WebF controllers while animated images are still decoding).
+    return _SafeImageCodec(rawCodec);
   }
 }
 
@@ -441,4 +446,48 @@ class DimensionedMultiFrameImageStreamCompleter extends MultiFrameImageStreamCom
       _dimensionCompleter.clear();
     }
   }
+}
+
+// Wrapper around a Codec that swallows the specific StateError thrown when the
+// underlying native peer has already been collected. This can happen when the
+// engine disposes native image/codec resources during controller teardown
+// while Flutter's MultiFrameImageStreamCompleter is still trying to dispose
+// or clean up its Codec.
+class _SafeImageCodec implements Codec {
+  _SafeImageCodec(this._inner);
+
+  final Codec _inner;
+
+  @override
+  int get frameCount => _inner.frameCount;
+
+  @override
+  int get repetitionCount => _inner.repetitionCount;
+
+  @override
+  Future<FrameInfo> getNextFrame() {
+    // Delegate directly; errors from getNextFrame are delivered via the
+    // returned Future, which MultiFrameImageStreamCompleter already routes
+    // through its error handling. We only need to guard dispose().
+    return _inner.getNextFrame();
+  }
+
+  @override
+  void dispose() {
+    try {
+      _inner.dispose();
+    } catch (e) {
+      // Ignore StateError for disposed native peers during controller disposal.
+      if (e is StateError && e.message.contains('native peer has been collected')) {
+        if (kDebugMode) {
+          debugPrint('SafeImageCodec: Native peer disposed before codec.dispose: ${e.message}');
+        }
+      } else {
+        rethrow;
+      }
+    }
+  }
+
+  @override
+  String toString() => _inner.toString();
 }
