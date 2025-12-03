@@ -10,3 +10,6 @@ bin
 
 # ignore blink soft link
 blink_source
+
+# ignore preview tools
+.preview-bundles
