@@ -285,6 +285,62 @@ void main() {
       expect(cOffset.dx, closeTo(0, 1));
     });
 
+    testWidgets('row dense auto-placement fills earlier gaps', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-row-dense-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; width: 180px; grid-auto-flow: row dense; grid-template-columns: 60px 60px 60px; grid-auto-rows: 40px; column-gap: 0; row-gap: 0;">
+            <div id="wide1" style="height:40px; grid-column: span 2;"></div>
+            <div id="wide2" style="height:40px; grid-column: span 2;"></div>
+            <div id="compact" style="height:40px;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox wide2 = prepared.getElementById('wide2').attachedRenderer as RenderBox;
+      final RenderBox compact = prepared.getElementById('compact').attachedRenderer as RenderBox;
+
+      final Offset wide2Offset = getLayoutTransformTo(wide2, renderer, excludeScrollOffset: true);
+      final Offset compactOffset = getLayoutTransformTo(compact, renderer, excludeScrollOffset: true);
+
+      expect(wide2Offset.dy, closeTo(40, 1));
+      expect(compactOffset.dy, closeTo(0, 1));
+      expect(compactOffset.dx, closeTo(120, 1));
+    });
+
+    testWidgets('column dense auto-placement fills earlier gaps', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-column-dense-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; grid-auto-flow: column dense; grid-template-rows: 40px 40px 40px; grid-auto-columns: 60px; column-gap: 0; row-gap: 0;">
+            <div id="tall1" style="width:60px; grid-row: span 2;"></div>
+            <div id="tall2" style="width:60px; grid-row: span 2;"></div>
+            <div id="short" style="width:60px; height:40px;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox tall2 = prepared.getElementById('tall2').attachedRenderer as RenderBox;
+      final RenderBox shortCell = prepared.getElementById('short').attachedRenderer as RenderBox;
+
+      final Offset tall2Offset = getLayoutTransformTo(tall2, renderer, excludeScrollOffset: true);
+      final Offset shortOffset = getLayoutTransformTo(shortCell, renderer, excludeScrollOffset: true);
+
+      expect(tall2Offset.dx, closeTo(60, 1));
+      expect(shortOffset.dx, closeTo(0, 1));
+      expect(shortOffset.dy, closeTo(80, 1));
+    });
+
     testWidgets('grid-template-areas maps named placements', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
@@ -519,6 +575,72 @@ void main() {
       final RenderBox child = prepared.getElementById('child').attachedRenderer as RenderBox;
       final Offset offset = getLayoutTransformTo(child, renderer, excludeScrollOffset: true);
 
+      expect(offset.dy, closeTo(90, 1));
+    });
+
+    testWidgets('place-content controls both axes', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-place-content-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; width: 200px; height: 200px; grid-template-columns: 60px 60px; grid-template-rows: 40px 40px; place-content: center flex-end;">
+            <div id="cell" style="height:40px;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox child = prepared.getElementById('cell').attachedRenderer as RenderBox;
+      final Offset offset = getLayoutTransformTo(child, renderer, excludeScrollOffset: true);
+
+      expect(offset.dx, closeTo(80, 1));
+      expect(offset.dy, closeTo(60, 1));
+    });
+
+    testWidgets('place-items applies align and justify axes', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-place-items-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; width: 120px; height: 120px; grid-template-columns: 120px; grid-template-rows: 120px; place-items: flex-end center;">
+            <div id="cell" style="display:inline-block; width: 20px; height: 20px;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox child = prepared.getElementById('cell').attachedRenderer as RenderBox;
+      final Offset offset = getLayoutTransformTo(child, renderer, excludeScrollOffset: true);
+
+      expect(offset.dx, closeTo(50, 1));
+      expect(offset.dy, closeTo(100, 1));
+    });
+
+    testWidgets('place-self overrides place-items on the child', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-place-self-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; width: 100px; height: 120px; grid-template-columns: 100px; grid-template-rows: 120px; place-items: flex-start flex-start;">
+            <div id="cell" style="display:inline-block; width: 20px; height: 30px; place-self: flex-end center;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox child = prepared.getElementById('cell').attachedRenderer as RenderBox;
+      final Offset offset = getLayoutTransformTo(child, renderer, excludeScrollOffset: true);
+
+      expect(offset.dx, closeTo(40, 1));
       expect(offset.dy, closeTo(90, 1));
     });
   });

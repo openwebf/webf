@@ -483,6 +483,7 @@ class RenderGridLayout extends RenderLayoutBox {
     required bool hasDefiniteColumn,
     required bool hasDefiniteRow,
     required int explicitRowCount,
+    required int rowTrackCountForPlacement,
   }) {
     final bool dense = autoFlow == GridAutoFlow.rowDense || autoFlow == GridAutoFlow.columnDense;
     final bool rowFlow = autoFlow == GridAutoFlow.row || autoFlow == GridAutoFlow.rowDense;
@@ -543,26 +544,49 @@ class RenderGridLayout extends RenderLayoutBox {
         columnCount = columnSizes.length;
       }
 
-      final int rowStart = explicitRow ??
-          ((useCursorColumn && !cursorApplied && column == cursor.column) ? cursor.row : 0);
-      int row = math.max(0, rowStart);
+      final int desiredRowStart =
+          explicitRow ?? ((useCursorColumn && !cursorApplied && column == cursor.column) ? cursor.row : 0);
+      final int rowTrackLimit =
+          math.max(rowTrackCountForPlacement, rowSpanClamped + math.max(0, desiredRowStart));
+      final int maxRowIndex = math.max(0, rowTrackLimit - rowSpanClamped);
 
-      while (true) {
+      int row = math.max(0, math.min(desiredRowStart, maxRowIndex));
+      bool placed = false;
+
+      while (row <= maxRowIndex) {
         _ensureOccupancyRows(occupancy, row + rowSpanClamped, columnCount);
         if (_canPlace(occupancy, row, column, rowSpanClamped, colSpan, columnCount)) {
-          _markPlacement(occupancy, row, column, rowSpanClamped, colSpan);
-          if (explicitRow == null && !hasDefiniteRow) {
-            cursor.column = column;
-            cursor.row = row + rowSpanClamped;
-            if (!dense && cursor.row >= math.max(explicitRowCount, occupancy.length)) {
-              cursor.row = 0;
-              cursor.column = column + colSpan;
-            }
-          }
-          return _GridCellPlacement(row, column);
+          placed = true;
+          break;
         }
-
         row++;
+      }
+
+      if (!placed && dense && explicitRow == null) {
+        int wrapRow = 0;
+        final int wrapLimit = math.min(math.max(0, desiredRowStart), maxRowIndex + 1);
+        while (wrapRow < wrapLimit) {
+          _ensureOccupancyRows(occupancy, wrapRow + rowSpanClamped, columnCount);
+          if (_canPlace(occupancy, wrapRow, column, rowSpanClamped, colSpan, columnCount)) {
+            row = wrapRow;
+            placed = true;
+            break;
+          }
+          wrapRow++;
+        }
+      }
+
+      if (placed) {
+        _markPlacement(occupancy, row, column, rowSpanClamped, colSpan);
+        if (explicitRow == null && !hasDefiniteRow) {
+          cursor.column = column;
+          cursor.row = row + rowSpanClamped;
+          if (!dense && cursor.row >= math.max(explicitRowCount, occupancy.length)) {
+            cursor.row = 0;
+            cursor.column = column + colSpan;
+          }
+        }
+        return _GridCellPlacement(row, column);
       }
 
       cursorApplied = true;
@@ -940,6 +964,7 @@ class RenderGridLayout extends RenderLayoutBox {
         hasDefiniteColumn: hasDefiniteColumn,
         hasDefiniteRow: hasDefiniteRow,
         explicitRowCount: rowTrackCountForPlacement,
+        rowTrackCountForPlacement: rowTrackCountForPlacement,
       );
 
       final int rowIndex = placement.row;

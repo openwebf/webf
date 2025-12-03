@@ -54,6 +54,88 @@ describe('CSS Grid auto placement', () => {
     grid.remove();
   });
 
+  it('fills earlier gaps when auto-flow row dense', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridAutoFlow = 'row dense';
+    grid.style.gridTemplateColumns = '60px 60px 60px';
+    grid.style.gridAutoRows = '40px';
+    grid.style.rowGap = '0';
+    grid.style.columnGap = '0';
+
+    const wide1 = document.createElement('div');
+    wide1.style.gridColumn = 'span 2';
+    wide1.style.height = '40px';
+    wide1.style.backgroundColor = 'rgba(33, 150, 243, 0.3)';
+    grid.appendChild(wide1);
+
+    const wide2 = document.createElement('div');
+    wide2.style.gridColumn = 'span 2';
+    wide2.style.height = '40px';
+    wide2.style.backgroundColor = 'rgba(0, 200, 83, 0.3)';
+    grid.appendChild(wide2);
+
+    const compact = document.createElement('div');
+    compact.className = 'column-dense-compact';
+    compact.style.height = '40px';
+    compact.style.backgroundColor = 'rgba(244, 67, 54, 0.4)';
+    grid.appendChild(compact);
+
+    document.body.appendChild(grid);
+
+    await waitForFrame();
+    await snapshot();
+
+    const wide2Rect = wide2.getBoundingClientRect();
+    const compactRect = compact.getBoundingClientRect();
+    expect(Math.round(wide2Rect.top - grid.getBoundingClientRect().top)).toBeGreaterThanOrEqual(40);
+    expect(Math.round(compactRect.left - grid.getBoundingClientRect().left)).toBeGreaterThanOrEqual(120);
+    expect(Math.round(compactRect.top - grid.getBoundingClientRect().top)).toBe(0);
+    grid.remove();
+  });
+
+  it('fills earlier gaps when auto-flow column dense', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridAutoFlow = 'column dense';
+    grid.style.gridTemplateRows = '40px 40px 40px';
+    grid.style.gridAutoColumns = '60px';
+    grid.style.rowGap = '0';
+    grid.style.columnGap = '0';
+
+    const tall1 = document.createElement('div');
+    tall1.style.gridRow = 'span 2';
+    tall1.style.width = '60px';
+    tall1.style.backgroundColor = 'rgba(255, 193, 7, 0.4)';
+    grid.appendChild(tall1);
+
+    const tall2 = document.createElement('div');
+    tall2.style.gridRow = 'span 2';
+    tall2.style.width = '60px';
+    tall2.style.backgroundColor = 'rgba(0, 188, 212, 0.4)';
+    grid.appendChild(tall2);
+
+    const shortCell = document.createElement('div');
+    shortCell.className = 'column-dense-short';
+    shortCell.style.height = '40px';
+    shortCell.style.backgroundColor = 'rgba(156, 39, 176, 0.4)';
+    grid.appendChild(shortCell);
+
+    document.body.appendChild(grid);
+
+    await waitForFrame();
+    await snapshot();
+
+    const gridRect = grid.getBoundingClientRect();
+    const tall2Rect = tall2.getBoundingClientRect();
+    const shortRect = shortCell.getBoundingClientRect();
+
+    expect(Math.round(tall2Rect.left - gridRect.left)).toBeGreaterThanOrEqual(60);
+    expect(Math.round(shortRect.left - gridRect.left)).toBe(0);
+    expect(Math.round(shortRect.top - gridRect.top)).toBeGreaterThanOrEqual(80);
+    grid.remove();
+  });
+
   it('places children across repeat columns', async () => {
     const grid = buildGrid(() => {});
 

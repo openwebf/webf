@@ -46,6 +46,7 @@
 - **Phase 4 – Alignment & Template Features**
   - Add `justify-content`, `align-content`, `justify-items`, `align-items`, per-item overrides, and template serialization (`grid-template-rows/columns`).
   - Extend parsing for `repeat()`, `minmax()`, and named lines/areas if planned for MVP.
+  - Status: per-item alignment plus `place-*` shorthands now have widget + integration coverage, and `grid-auto-flow: row|column dense` behavior is verified through layout assertions.
   - Tests: alignment-focused widget suites, computed-style integration checks.
 
 - **Phase 5 – Hardening & Docs**
@@ -69,9 +70,9 @@
 **Next Steps**
 Track sizing/placement for MVP grids now ships with widget + integration coverage, and per-item alignment plumbing is partially in-tree. Upcoming focus areas:
 
-1. Continue Phase 4 alignment/template work: `repeat()`/`minmax()` parsing plus named line serialization now land in computed style + layout; next focus on template keywords (`auto-fill/auto-fit`, `fit-content()`) and sharing line names with placement logic.
-2. Broaden coverage for dense auto-flow, fr/percentage mixes, and alignment overrides while documenting outcomes in the dev log.
-3. Start Phase 5 prep by profiling grid layout hot paths and outlining caching/intrinsic sizing fixes needed for release.
+1. Begin Phase 5 hardening by profiling `RenderGridLayout` hot paths (auto-placement + track resolution), enumerating slow cases, and sketching caching/intrinsic sizing fixes.
+2. Document profiling insights and mitigation plans in `dev_css_grid_process.md` (alongside this plan) plus update example apps/docs once optimizations land.
+3. Stress-test grid layouts inside representative app flows (dashboard, list virtualization) to validate performance/behavioral stability before GA.
 
 **TODOs**
 - [x] Capture overview/goals/scope plus risks and rollout strategy.
@@ -79,6 +80,6 @@ Track sizing/placement for MVP grids now ships with widget + integration coverag
 - [x] Add Phase 1 widget + integration tests (parsing/computed style) and wire to spec group.
 - [x] Implement `RenderGridLayout` skeleton and hook creation paths.
 - [x] Implement full track sizing/placement (Phase 3) with tests.
-- [ ] Extend alignment/template features (Phase 4) with serialization and coverage (per-item alignment + computed styles partially landed).
+- [x] Extend alignment/template features (Phase 4) with serialization and coverage (per-item alignment + computed styles partially landed).
 - [x] Complete computed-style serialization and integration specs for grid properties.
 - [ ] Profile and harden grid layout (Phase 5), updating docs/examples.
