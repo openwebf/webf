@@ -466,33 +466,33 @@ std::shared_ptr<MutableCSSPropertyValueSet> StyleCascade::BuildWinningPropertySe
     }
     bool important = prop_ref.PropertyMetadata().important_ || prio->IsImportant();
 
-    const CSSProperty& property = CSSProperty::Get(id);
+    // const CSSProperty& property = CSSProperty::Get(id);
     std::shared_ptr<const CSSValue> to_set = *value_ptr;  // default to original shared value
-    if (to_set && to_set->IsPendingSubstitutionValue()) {
-      if (const auto* pending = DynamicTo<cssvalue::CSSPendingSubstitutionValue>(to_set.get())) {
-        // Populate resolver cache by resolving once.
-        (void)ResolvePendingSubstitution(property, *pending, resolver);
-        // Find the parsed longhand value matching this property and grab its shared_ptr.
-        const CSSProperty* unvisited_property =
-            property.IsVisited() ? property.GetUnvisitedProperty() : &property;
-        bool matched = false;
-        for (const auto& prop_val : resolver.shorthand_cache_.parsed_properties) {
-          const CSSProperty& longhand = CSSProperty::Get(prop_val.Id());
-          if (&ResolveSurrogate(longhand) == unvisited_property) {
-            const std::shared_ptr<const CSSValue>* stored = prop_val.Value();
-            if (stored && *stored) {
-              to_set = *stored;
-            }
-            matched = true;
-            break;
-          }
-        }
-        if (!matched) {
-          // Longhand not present in parsed result; treat as unset for export.
-          to_set = cssvalue::CSSUnsetValue::Create();
-        }
-      }
-    }
+    // if (to_set && to_set->IsPendingSubstitutionValue()) {
+    //   if (const auto* pending = DynamicTo<cssvalue::CSSPendingSubstitutionValue>(to_set.get())) {
+    //     // Populate resolver cache by resolving once.
+    //     (void)ResolvePendingSubstitution(property, *pending, resolver);
+    //     // Find the parsed longhand value matching this property and grab its shared_ptr.
+    //     const CSSProperty* unvisited_property =
+    //         property.IsVisited() ? property.GetUnvisitedProperty() : &property;
+    //     bool matched = false;
+    //     for (const auto& prop_val : resolver.shorthand_cache_.parsed_properties) {
+    //       const CSSProperty& longhand = CSSProperty::Get(prop_val.Id());
+    //       if (&ResolveSurrogate(longhand) == unvisited_property) {
+    //         const std::shared_ptr<const CSSValue>* stored = prop_val.Value();
+    //         if (stored && *stored) {
+    //           to_set = *stored;
+    //         }
+    //         matched = true;
+    //         break;
+    //       }
+    //     }
+    //     if (!matched) {
+    //       // Longhand not present in parsed result; treat as unset for export.
+    //       to_set = cssvalue::CSSUnsetValue::Create();
+    //     }
+    //   }
+    // }
 
     // Preserve the declared property name (logical/physical) when exporting
     // so the UICommand receives the original logical names unchanged.
