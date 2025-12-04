@@ -1807,11 +1807,12 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
 }
 
 void StyleEngine::RecalcInvalidatedStyles(Document& document) {
-  auto begin_calc = std::chrono::steady_clock::now();
   ExecutingContext* context = document.GetExecutingContext();
   if (!context || !context->isBlinkEnabled()) {
     return;
   }
+  WEBF_LOG(INFO) << "[StyleEngine] Recalc invalidated styles starts...";
+  auto begin_calc = std::chrono::steady_clock::now();
 
   Element* root = document.documentElement();
   if (!root) {
@@ -1820,10 +1821,27 @@ void StyleEngine::RecalcInvalidatedStyles(Document& document) {
 
   PendingInvalidationMap& map = pending_invalidations_.GetPendingInvalidationMap();
 
-  if (map.empty() && !document.NeedsStyleInvalidation() && !document.ChildNeedsStyleInvalidation()) {
-    // Nothing scheduled via selector-based invalidation; nothing to do.
+  // In addition to selector-based invalidation (tracked via
+  // PendingInvalidationMap and the document's style invalidation flags),
+  // Blink-style invalidation may mark elements directly dirty for style
+  // recalc (e.g., SelfInvalidationSet for simple class changes) without
+  // populating PendingInvalidationMap or touching document-level flags.
+  // In that case the DOM subtree rooted at |root| still has
+  // NeedsStyleRecalc / ChildNeedsStyleRecalc bits set on elements, and we
+  // must not early-return here or those changes will never be applied.
+  //
+  // Mirror Blink's behavior by treating a dirty style subtree as sufficient
+  // reason to run the incremental style walk, even when there are no
+  // selector-based invalidations scheduled.
+  bool subtree_needs_style_recalc = root->NeedsStyleRecalc() || root->ChildNeedsStyleRecalc();
+
+  if (map.empty() && !document.NeedsStyleInvalidation() && !document.ChildNeedsStyleInvalidation() &&
+      !subtree_needs_style_recalc) {
+    WEBF_LOG(INFO) << "[StyleEngine] Nothing scheduled via selector-based invalidation; nothing to do.";
     return;
   }
+
+  WEBF_LOG(INFO) << "[StyleEngine] Recalc PendingInvalidationMap size: " << map.size();
 
   // First, run the StyleInvalidator to translate InvalidationSets into
   // StyleChangeType flags on individual elements.
