@@ -5,12 +5,13 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/module.dart';
+import 'share_module_bindings_generated.dart';
 
 /// WebF module for sharing content, text, and images
-/// 
+///
 /// This module provides functionality to share images, text, save screenshots,
 /// and create preview images for display.
-class ShareModule extends WebFBaseModule {
+class ShareModule extends ShareModuleBindings {
   ShareModule(super.moduleManager);
 
   @override
@@ -19,35 +20,45 @@ class ShareModule extends WebFBaseModule {
   }
 
   @override
-  invoke(String method, params) async {
-    switch (method) {
-      case 'share':
-        return await handleShare(params);
-      case 'shareText':
-        return await handleShareText(params);
-      case 'save':
-        return await handleSaveScreenshot(params);
-      case 'saveForPreview':
-        return await handleSaveForPreview(params);
-      default:
-        return {'success': false, 'error': 'Method not found: $method'};
-    }
+  Future<bool> share(NativeByteData imageData, dynamic text, dynamic subject) {
+    final textStr = (text ?? '').toString();
+    final subjectStr = (subject ?? '').toString();
+    return handleShare(imageData, textStr, subjectStr);
   }
 
-  /// Share an image with optional text and subject
-  /// 
-  /// Parameters:
-  /// - args[0]: NativeByteData - The image data to share
-  /// - args[1]: String - Text to include with the share
-  /// - args[2]: String - Subject line for the share
-  /// 
-  /// Returns true if successful, false otherwise
-  Future<bool> handleShare(List<dynamic> args) async {
-    try {
-      final snapshot = args[0] as NativeByteData;
-      String text = args[1];
-      String subject = args[2];
+  @override
+  Future<bool> shareText(ShareTextOptions? options) {
+    final title = options?.title ?? '';
+    var text = options?.text ?? '';
+    final url = options?.url;
+    return handleShareText(title, text, url: url);
+  }
 
+  @override
+  Future<ShareSaveResult> save(NativeByteData imageData, dynamic filename) async {
+    final effectiveFilename = filename?.toString();
+    return handleSaveScreenshot(
+      imageData,
+      effectiveFilename,
+    );
+  }
+
+  @override
+  Future<ShareSaveResult> saveForPreview(NativeByteData imageData, dynamic filename) async {
+    final effectiveFilename = filename?.toString();
+    return handleSaveForPreview(
+      imageData,
+      effectiveFilename,
+    );
+  }
+
+  /// Share an image with optional text and subject.
+  Future<bool> handleShare(
+    NativeByteData snapshot,
+    String text,
+    String subject,
+  ) async {
+    try {
       final downloadDir = await getTemporaryDirectory();
       final now = DateTime.now().millisecondsSinceEpoch;
       final filePath = '${downloadDir.path}/screenshot_$now.png';
@@ -68,35 +79,23 @@ class ShareModule extends WebFBaseModule {
   }
 
   /// Handle text-only sharing
-  /// 
+  ///
   /// Supports two formats:
   /// 1. [title, text] - legacy format
   /// 2. [{title, text, url}] - new format with URL support
-  /// 
+  ///
   /// Returns true if successful, false otherwise
-  Future<bool> handleShareText(List<dynamic> args) async {
+  Future<bool> handleShareText(
+    String title,
+    String text, {
+    String? url,
+  }) async {
     try {
-      String title = '';
-      String text = '';
-      String? url;
-      
-      if (args.isNotEmpty && args[0] is Map) {
-        // New format with structured data
-        final params = args[0] as Map;
-        title = params['title'] ?? '';
-        text = params['text'] ?? '';
-        url = params['url'];
-        
-        // Include URL in the text if provided
-        if (url != null && url.isNotEmpty) {
-          text = text.isEmpty ? url : '$text\n$url';
-        }
-      } else if (args.length >= 2) {
-        // Legacy format
-        title = args[0];
-        text = args[1];
+      // Include URL in the text if provided
+      if (url != null && url.isNotEmpty) {
+        text = text.isEmpty ? url : '$text\n$url';
       }
-      
+
       await Share.share(
         text,
         subject: title,
@@ -109,21 +108,23 @@ class ShareModule extends WebFBaseModule {
   }
 
   /// Save screenshot to device gallery/downloads
-  /// 
+  ///
   /// Parameters:
   /// - args[0]: NativeByteData - The image data to save
   /// - args[1]: String (optional) - Custom filename (without extension)
-  /// 
-  /// Returns a Map with success status and file information
-  Future<Map<String, String>> handleSaveScreenshot(List<dynamic> args) async {
+  ///
+  /// Returns a typed ShareSaveResult with success status and file information.
+  Future<ShareSaveResult> handleSaveScreenshot(
+    NativeByteData snapshot, [
+    String? filename,
+  ]) async {
     try {
-      final snapshot = args[0] as NativeByteData;
-      String filename = args.length > 1 ? args[1] : 'screenshot_${DateTime.now().millisecondsSinceEpoch}';
-      
+      filename ??= 'screenshot_${DateTime.now().millisecondsSinceEpoch}';
+
       // Get appropriate directory for saving
       Directory? directory;
       String platformInfo = '';
-      
+
       if (Platform.isAndroid) {
         // On Android, try to save to Downloads or Pictures
         directory = Directory('/storage/emulated/0/Download');
@@ -155,56 +156,54 @@ class ShareModule extends WebFBaseModule {
       final file = File(filePath);
       await file.writeAsBytes(snapshot.bytes);
 
-      
-      return {
-        'success': 'true',
-        'filePath': filePath,
-        'platformInfo': platformInfo,
-        'message': 'Screenshot saved successfully to $platformInfo'
-      };
+      return ShareSaveResult(
+        success: 'true',
+        filePath: filePath,
+        platformInfo: platformInfo,
+        message: 'Screenshot saved successfully to $platformInfo',
+      );
     } catch (e) {
-      return {
-        'success': 'false',
-        'error': e.toString(),
-        'message': 'Failed to save screenshot: ${e.toString()}'
-      };
+      return ShareSaveResult(
+        success: 'false',
+        message: 'Failed to save screenshot: ${e.toString()}',
+        error: e.toString(),
+      );
     }
   }
 
   /// Save screenshot for preview display (temporary file)
-  /// 
+  ///
   /// Parameters:
   /// - args[0]: NativeByteData - The image data to save
   /// - args[1]: String (optional) - Custom filename for preview
-  /// 
-  /// Returns a Map with file path for preview display
-  Future<Map<String, String>> handleSaveForPreview(List<dynamic> args) async {
+  ///
+  /// Returns a typed ShareSaveResult with file path for preview display.
+  Future<ShareSaveResult> handleSaveForPreview(
+    NativeByteData snapshot, [
+    String? filename,
+  ]) async {
     try {
-      final snapshot = args[0] as NativeByteData;
-      String filename = args.length > 1 ? args[1] : 'preview_${DateTime.now().millisecondsSinceEpoch}';
-      
+      filename ??= 'preview_${DateTime.now().millisecondsSinceEpoch}';
+
       // Save to temporary directory for preview
       final tempDir = await getTemporaryDirectory();
       final filePath = '${tempDir.path}/$filename.png';
       final file = File(filePath);
       await file.writeAsBytes(snapshot.bytes);
 
-      
       // Return file path for display
-      return {
-        'success': 'true',
-        'filePath': 'file://$filePath', // Use file:// protocol for local file access
-        'message': 'Preview saved successfully'
-      };
+      return ShareSaveResult(
+        success: 'true',
+        filePath: 'file://$filePath', // Use file:// protocol for local file access
+        message: 'Preview saved successfully',
+      );
     } catch (e) {
-      return {
-        'success': 'false',
-        'error': e.toString(),
-        'message': 'Failed to save preview'
-      };
+      return ShareSaveResult(
+        success: 'false',
+        message: 'Failed to save preview',
+        error: e.toString(),
+      );
     }
   }
 
-  @override
-  String get name => 'Share';
 }

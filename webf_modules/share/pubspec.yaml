@@ -1,6 +1,6 @@
 name: webf_share
 description: WebF Share module for sharing content, text, and images
-version: 1.0.0
+version: 1.0.1
 homepage: https://openwebf.com
 
 environment:
@@ -10,9 +10,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  webf: 
+  webf:
     hosted: https://dart.cloudsmith.io/openwebf/packages/
-    version: ^0.23.0
+    version: ^0.23.10
   share_plus: ^10.0.0
   path_provider: ^2.1.0
 
