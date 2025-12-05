@@ -225,4 +225,51 @@ TEST_F(StyleEngineTest, LargeSheetCaching) {
   EXPECT_EQ(sheet->Contents(), sheet2->Contents());
 }
 
+TEST_F(StyleEngineTest, MediaQuerySizeChangeSkipsRecalcWithoutQueries) {
+  MemberMutationScope mutation_scope{GetExecutingContext()};
+  GetExecutingContext()->EnableBlinkEngine();
+
+  StyleEngine& engine = GetStyleEngine();
+  EXPECT_EQ(engine.media_query_recalc_count_for_test(), 0);
+
+  // With no viewport-dependent media queries present, a size change should
+  // not trigger a style recomputation.
+  engine.MediaQueryAffectingValueChanged(MediaValueChange::kSize);
+  EXPECT_EQ(engine.media_query_recalc_count_for_test(), 0);
+}
+
+TEST_F(StyleEngineTest, MediaQuerySizeChangeGatedByViewportDependentQueries) {
+  MemberMutationScope mutation_scope{GetExecutingContext()};
+  GetExecutingContext()->EnableBlinkEngine();
+
+  auto* element = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
+  GetDocument()->body()->appendChild(element, ASSERT_NO_EXCEPTION());
+
+  // A simple viewport-dependent media query that always matches for typical
+  // test viewports; used to verify that repeated size notifications only
+  // trigger a single recomputation.
+  String css_text = R"(
+    @media (min-width: 1px) {
+      body { color: red; }
+    }
+  )"_s;
+
+  StyleEngine& engine = GetStyleEngine();
+  CSSStyleSheet* sheet = engine.CreateSheet(*element, css_text);
+  ASSERT_NE(sheet, nullptr);
+  engine.RegisterAuthorSheet(sheet);
+
+  EXPECT_EQ(engine.media_query_recalc_count_for_test(), 0);
+
+  // First size change with viewport-dependent media queries present should
+  // trigger a style recomputation and establish the baseline.
+  engine.MediaQueryAffectingValueChanged(MediaValueChange::kSize);
+  EXPECT_EQ(engine.media_query_recalc_count_for_test(), 1);
+
+  // Subsequent size changes without crossing any breakpoint should not
+  // trigger additional recomputations.
+  engine.MediaQueryAffectingValueChanged(MediaValueChange::kSize);
+  EXPECT_EQ(engine.media_query_recalc_count_for_test(), 1);
+}
+
 }  // namespace webf

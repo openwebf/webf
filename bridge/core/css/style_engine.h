@@ -40,6 +40,7 @@
 #include <algorithm>
 #include "core/css/css_global_rule_set.h"
 #include "core/css/css_style_sheet.h"
+#include "core/css/resolver/media_query_result.h"
 #include "core/css/invalidation/pending_invalidations.h"
 //#include "core/css/layout_tree_rebuild_root.h"
 #include "core/css/media_value_change.h"
@@ -217,15 +218,40 @@ class StyleEngine final {
   PendingInvalidations pending_invalidations_;
   std::shared_ptr<StyleResolver> resolver_;
   std::shared_ptr<CSSGlobalRuleSet> global_rule_set_;
-
-  // Active author stylesheets registered by link/style processing.
+  // Active author stylesheets registered by link/style processing. We track
+  // both the CSSStyleSheet wrapper (for top-level media lists) and the shared
+  // StyleSheetContents used for rule matching / invalidation.
+  std::vector<CSSStyleSheet*> author_css_sheets_;
   std::vector<std::shared_ptr<StyleSheetContents>> author_sheets_;
+  // Cached evaluation results for viewport-dependent media queries across all
+  // active author stylesheets. This is used as a gate in
+  // MediaQueryAffectingValueChanged(MediaValueChange::kSize) to skip full
+  // style recomputation when the active set of media queries has not changed.
+  std::vector<MediaQuerySetResult> size_media_query_results_;
+  // Test-only counter incremented when MediaQueryAffectingValueChanged ends up
+  // calling RecalcStyle(). This lets unit tests observe the optimization
+  // without wiring into logging or UI commands.
+  int media_query_recalc_count_for_test_{0};
 
  public:
+  int media_query_recalc_count_for_test() const { return media_query_recalc_count_for_test_; }
+
   void RegisterAuthorSheet(CSSStyleSheet* sheet) {
     if (!sheet) return;
     auto contents = sheet->Contents();
     if (!contents) return;
+    // Track the CSSStyleSheet wrapper so we can later inspect top-level media
+    // lists if needed.
+    bool have_sheet = false;
+    for (auto* s : author_css_sheets_) {
+      if (s == sheet) {
+        have_sheet = true;
+        break;
+      }
+    }
+    if (!have_sheet) {
+      author_css_sheets_.push_back(sheet);
+    }
     // Avoid duplicates
     for (auto& s : author_sheets_) {
       if (s.get() == contents.get()) return;
@@ -240,6 +266,9 @@ class StyleEngine final {
     if (!sheet) return;
     auto contents = sheet->Contents();
     if (!contents) return;
+    author_css_sheets_.erase(
+        std::remove(author_css_sheets_.begin(), author_css_sheets_.end(), sheet),
+        author_css_sheets_.end());
     author_sheets_.erase(
         std::remove_if(author_sheets_.begin(), author_sheets_.end(),
                         [&](const std::shared_ptr<StyleSheetContents>& s) { return s.get() == contents.get(); }),
