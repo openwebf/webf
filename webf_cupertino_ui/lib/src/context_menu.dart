@@ -26,6 +26,12 @@ class FlutterCupertinoContextMenu extends FlutterCupertinoContextMenuBindings {
   bool get enableHapticFeedback => _enableHapticFeedback;
 
   @override
+  bool get allowsInfiniteHeight => true;
+
+  @override
+  bool get allowsInfiniteWidth => true;
+
+  @override
   set enableHapticFeedback(value) {
     final bool next = value == true;
     if (next != _enableHapticFeedback) {

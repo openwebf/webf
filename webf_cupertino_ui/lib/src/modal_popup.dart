@@ -235,12 +235,9 @@ class FlutterCupertinoModalPopupState extends WebFWidgetElementState {
       );
     }
 
-    return SafeArea(
-      top: false,
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: content,
-      ),
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: content,
     );
   }
 
