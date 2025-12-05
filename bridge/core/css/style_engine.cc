@@ -65,6 +65,7 @@
 #include "core/css/white_space.h"
 // Keyframes support
 #include "core/css/css_keyframes_rule.h"
+#include "core/css/resolver/media_query_result.h"
 #include "core/css/style_rule_keyframe.h"
 #include "core/css/invalidation/style_invalidator.h"
 #include "core/dom/container_node.h"
@@ -223,6 +224,81 @@ static String TrimAsciiWhitespace(const String& input) {
   while (end > start && isspace(static_cast<unsigned char>(s[end - 1]))) end--;
   if (start == 0 && end == s.size()) return input;
   return String::FromUTF8(s.c_str() + start, end - start);
+}
+
+// Collect viewport-dependent media query evaluation results from a single
+// StyleSheetContents into |out_results| using the provided |evaluator|.
+// This walks @media rules (including nested group rules) and records only
+// those queries whose evaluation depends on viewport size. The order of
+// results is deterministic for a given stylesheet, which lets
+// MediaQueryAffectingValueChanged compare consecutive snapshots cheaply.
+static void CollectViewportDependentMediaQueryResults(
+    StyleSheetContents& contents,
+    const MediaQueryEvaluator& evaluator,
+    std::vector<MediaQuerySetResult>& out_results) {
+  if (!contents.HasMediaQueries()) {
+    return;
+  }
+
+  auto collect_from_child_vector =
+      [&](const StyleRuleBase::ChildRuleVector& child_rules,
+          const auto& self_ref) -> void {
+        uint32_t count = child_rules.size();
+        for (uint32_t i = 0; i < count; ++i) {
+          const std::shared_ptr<const StyleRuleBase>& base_rule_const = child_rules[i];
+          if (!base_rule_const) {
+            continue;
+          }
+          StyleRuleBase* base_rule = const_cast<StyleRuleBase*>(base_rule_const.get());
+
+          if (base_rule->IsMediaRule()) {
+            auto* media_rule = DynamicTo<StyleRuleMedia>(base_rule);
+            if (media_rule) {
+              const MediaQuerySet* queries = media_rule->MediaQueries();
+              if (queries) {
+                MediaQueryResultFlags flags;
+                bool match = evaluator.Eval(*queries, &flags);
+                if (flags.is_viewport_dependent) {
+                  out_results.emplace_back(*queries, match);
+                }
+              }
+              self_ref(media_rule->ChildRules(), self_ref);
+              continue;
+            }
+          }
+
+          if (auto* group_rule = DynamicTo<StyleRuleGroup>(base_rule)) {
+            self_ref(group_rule->ChildRules(), self_ref);
+          }
+        }
+      };
+
+  const auto& top_rules = contents.ChildRules();
+  for (const auto& base_rule : top_rules) {
+    if (!base_rule) {
+      continue;
+    }
+    StyleRuleBase* rule = base_rule.get();
+    if (rule->IsMediaRule()) {
+      auto* media_rule = DynamicTo<StyleRuleMedia>(rule);
+      if (media_rule) {
+        const MediaQuerySet* queries = media_rule->MediaQueries();
+        if (queries) {
+          MediaQueryResultFlags flags;
+          bool match = evaluator.Eval(*queries, &flags);
+          if (flags.is_viewport_dependent) {
+            out_results.emplace_back(*queries, match);
+          }
+        }
+        collect_from_child_vector(media_rule->ChildRules(), collect_from_child_vector);
+        continue;
+      }
+    }
+
+    if (auto* group_rule = DynamicTo<StyleRuleGroup>(rule)) {
+      collect_from_child_vector(group_rule->ChildRules(), collect_from_child_vector);
+    }
+  }
 }
 }  // namespace
 
@@ -614,6 +690,12 @@ void StyleEngine::UpdateActiveStyleSheets() {
   if (!root) {
     return;
   }
+
+  // Any structural change to the active stylesheet set (insert/remove/modify
+  // <style> / <link rel=stylesheet>) invalidates the cached media query
+  // evaluation snapshot used for viewport-size gating. The next
+  // MediaQueryAffectingValueChanged(kSize) call will rebuild it.
+  size_media_query_results_.clear();
 
   // Treat any change to the active stylesheet set (add/remove/modify <style>
   // or <link rel=stylesheet>) as potentially affecting the entire document.
@@ -1966,15 +2048,76 @@ void StyleEngine::MediaQueryAffectingValueChanged(MediaValueChange change) {
     walk(root_element);
   }
 
-  // For now we conservatively trigger a full style recomputation for any
-  // media-value change. This ensures viewport- and device-dependent media
-  // queries are re-evaluated using up-to-date environment values provided
-  // by the Dart side (viewport size, devicePixelRatio, colorScheme, etc.).
+  // For viewport size changes, mirror Blink's behavior and gate full style
+  // recomputation on whether the set of viewport-dependent media queries
+  // actually changed. This lets pure resize within a breakpoint range skip
+  // style recalc and rely on layout-only updates instead.
+  if (change == MediaValueChange::kSize) {
+    MediaQueryEvaluator evaluator(context);
+    std::vector<MediaQuerySetResult> new_results;
+
+    for (const auto& contents : author_sheets_) {
+      if (!contents) {
+        continue;
+      }
+      CollectViewportDependentMediaQueryResults(*contents, evaluator, new_results);
+    }
+
+    if (new_results.empty()) {
+      // No viewport-dependent media queries at all: resizing cannot change
+      // which stylesheets or @media blocks are active, so skip style recalc.
+      size_media_query_results_.clear();
+      WEBF_LOG(VERBOSE) << "[StyleEngine] MediaQueryAffectingValueChanged(kSize): "
+                           "no viewport-dependent media queries; skipping style recalc.";
+      return;
+    }
+
+    bool changed = false;
+    if (size_media_query_results_.empty()) {
+      // First time we see viewport-dependent queries for this document; force
+      // one style recomputation and establish a baseline for future resizes.
+      changed = true;
+    } else if (size_media_query_results_.size() != new_results.size()) {
+      changed = true;
+    } else {
+      for (size_t i = 0; i < new_results.size(); ++i) {
+        const MediaQuerySet& old_set = size_media_query_results_[i].MediaQueries();
+        const MediaQuerySet& new_set = new_results[i].MediaQueries();
+        // If the underlying MediaQuerySet objects differ, the stylesheet
+        // structure changed without going through UpdateActiveStyleSheets.
+        // Be conservative and treat this as changed.
+        if (&old_set != &new_set ||
+            size_media_query_results_[i].Result() != new_results[i].Result()) {
+          changed = true;
+          break;
+        }
+      }
+    }
+
+    size_media_query_results_ = std::move(new_results);
+
+    if (!changed) {
+      WEBF_LOG(VERBOSE) << "[StyleEngine] MediaQueryAffectingValueChanged(kSize): "
+                           "viewport-dependent media query set unchanged; skipping style recalc.";
+      return;
+    }
+
+    RecalcStyle(document);
+    ++media_query_recalc_count_for_test_;
+    return;
+  }
+
+  // For other media-value changes (dynamic viewport units, DPR, color-scheme,
+  // etc.) we conservatively trigger a full style recomputation to ensure all
+  // affected media queries are re-evaluated using fresh MediaValues.
   switch (change) {
-    case MediaValueChange::kSize:
     case MediaValueChange::kDynamicViewport:
     case MediaValueChange::kOther:
       RecalcStyle(document);
+      ++media_query_recalc_count_for_test_;
+      break;
+    case MediaValueChange::kSize:
+      // Handled above.
       break;
   }
 }
