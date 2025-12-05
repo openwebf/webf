@@ -31,10 +31,7 @@ export const NativeInteractionPage: React.FC = () => {
         if (!WebFShare.isAvailable()) {
           return '';
         }
-        const result = await WebFShare.saveForPreview({
-          imageData: arrayBuffer,
-          filename: `${fallbackPrefix}_${Date.now()}`
-        });
+        const result = await WebFShare.saveForPreview(arrayBuffer, `${fallbackPrefix}_${Date.now()}`);
 
         if (result && result.filePath) {
           return result.filePath;
@@ -56,10 +53,10 @@ export const NativeInteractionPage: React.FC = () => {
     // Clear previous results
     setScreenshotResult('');
     setScreenshotImage('');
-    
+
     // Add a small delay to ensure UI is ready
     await new Promise(resolve => setTimeout(resolve, 200));
-    
+
     try {
       if (!targetRef.current) {
         throw new Error('Target element not found');
@@ -67,14 +64,14 @@ export const NativeInteractionPage: React.FC = () => {
 
       // Get the element for screenshot
       const element = targetRef.current;
-      
+
       // Convert element to blob with device pixel ratio
       if (typeof (element as any).toBlob !== 'function') {
         throw new Error('toBlob method not available on this element');
       }
 
       const blob = await (element as any).toBlob(window.devicePixelRatio || 1.0);
-      
+
       // Convert to arrayBuffer for native method
       const arrayBuffer = await blob.arrayBuffer();
 
@@ -82,11 +79,8 @@ export const NativeInteractionPage: React.FC = () => {
       if (!WebFShare.isAvailable()) {
         return;
       }
-      const result = await WebFShare.saveScreenshot({
-        imageData: arrayBuffer,
-        filename: filename
-      });
-      
+      const result = await WebFShare.save(arrayBuffer, filename);
+
       if (result.success && result.filePath) {
         resultSetter(`Screenshot saved successfully!\nPath: ${result.filePath}`);
         // Display the saved screenshot using Flutter's file protocol
@@ -107,10 +101,10 @@ export const NativeInteractionPage: React.FC = () => {
     // Clear previous results
     setShareResult('');
     setShareImage('');
-    
+
     // Add a small delay to ensure UI is ready
     await new Promise(resolve => setTimeout(resolve, 200));
-    
+
     try {
       if (!targetRef.current) {
         throw new Error('Target element not found');
@@ -118,18 +112,18 @@ export const NativeInteractionPage: React.FC = () => {
 
       // Get the element for sharing
       const element = targetRef.current;
-      
+
       // Convert element to blob with device pixel ratio
       if (typeof (element as any).toBlob !== 'function') {
         throw new Error('toBlob method not available on this element');
       }
 
       const blob = await (element as any).toBlob(window.devicePixelRatio || 1.0);
-      
+
       // Create a URL for the blob to display it
       const blobUrl = await createDisplayableUrl(blob, 'share');
       setShareImage(blobUrl);
-      
+
       // Convert to arrayBuffer for native method
       const arrayBuffer = await blob.arrayBuffer();
 
@@ -139,11 +133,7 @@ export const NativeInteractionPage: React.FC = () => {
         return;
       }
       // Call native share module
-      const result = await WebFShare.shareImage({
-        imageData: arrayBuffer,
-        text,
-        subject
-      });
+      const result = await WebFShare.share(arrayBuffer, text, subject);
 
       console.log('Share result:', result);
       resultSetter('Content shared successfully');
@@ -164,7 +154,7 @@ export const NativeInteractionPage: React.FC = () => {
 
       const title = 'WebF React Demo';
       const text = 'This is a text-only share from the WebF React demo application. WebF enables seamless integration between React and Flutter native capabilities. Visit: https://github.com/openwebf/webf';
-      
+
       const result = await WebFShare.shareText({
         title,
         text
@@ -192,7 +182,7 @@ export const NativeInteractionPage: React.FC = () => {
         <div className={styles.componentSection}>
           <div className={styles.sectionTitle}>Native Interaction Showcase</div>
           <div className={styles.componentBlock}>
-            
+
 
 
             {/* Screenshot Save Demo */}
@@ -213,7 +203,7 @@ export const NativeInteractionPage: React.FC = () => {
                     <p>Timestamp: {new Date().toLocaleString()}</p>
                   </div>
                 </div>
-                <button 
+                <button
                   className={`${styles.actionButton} ${isProcessing.saveScreenshot ? styles.processing : ''}`}
                   onClick={() => saveScreenshotToLocal(screenshotTargetRef, setScreenshotResult)}
                   disabled={isProcessing.saveScreenshot}
@@ -232,9 +222,9 @@ export const NativeInteractionPage: React.FC = () => {
                       <>
                         <div className={styles.resultLabel}>Saved Screenshot:</div>
                         <div className={styles.imagePreview}>
-                          <img 
-                            src={screenshotImage} 
-                            alt="Saved screenshot" 
+                          <img
+                            src={screenshotImage}
+                            alt="Saved screenshot"
                             className={styles.previewImage}
                           />
                         </div>
@@ -276,14 +266,14 @@ export const NativeInteractionPage: React.FC = () => {
                   </div>
                 </div>
                 <div className={styles.buttonGroup}>
-                  <button 
+                  <button
                     className={`${styles.actionButton} ${isProcessing.share ? styles.processing : ''}`}
                     onClick={() => shareContent(shareTargetRef, setShareResult)}
                     disabled={isProcessing.share}
                   >
                     {isProcessing.share ? 'Sharing...' : 'Share as Image'}
                   </button>
-                  <button 
+                  <button
                     className={`${styles.actionButton} ${styles.secondaryButton} ${isProcessing.textShare ? styles.processing : ''}`}
                     onClick={shareTextOnly}
                     disabled={isProcessing.textShare}
@@ -303,9 +293,9 @@ export const NativeInteractionPage: React.FC = () => {
                       <>
                         <div className={styles.resultLabel}>Image to Share:</div>
                         <div className={styles.imagePreview}>
-                          <img 
-                            src={shareImage} 
-                            alt="Share preview" 
+                          <img
+                            src={shareImage}
+                            alt="Share preview"
                             className={styles.previewImage}
                           />
                         </div>
