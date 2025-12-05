@@ -64,6 +64,34 @@ webf codegen my-typings --flutter-package-src=../webf_ui --publish-to-npm
 webf codegen my-typings --flutter-package-src=../webf_ui --publish-to-npm --npm-registry=https://custom.registry.com/
 ```
 
+### Generate Module Packages
+
+The `webf module-codegen` command generates a typed npm package and Dart bindings for a WebF module based on a TypeScript interface file (`*.module.d.ts`) in your Flutter package.
+
+```bash
+webf module-codegen [output-dir] [options]
+```
+
+#### Options:
+- `--flutter-package-src <path>`: Flutter module package path containing `*.module.d.ts`
+- `--package-name <name>`: NPM package name for the module (defaults to a name derived from `pubspec.yaml`)
+- `--publish-to-npm`: Automatically publish the generated package to npm
+- `--npm-registry <url>`: Custom npm registry URL (defaults to https://registry.npmjs.org/)
+- `--exclude <patterns...>`: Additional glob patterns to exclude from scanning (e.g. build directories)
+
+#### Example:
+
+```bash
+# From the CLI repo root
+webf module-codegen ../packages/webf-share --flutter-package-src=../webf_modules/share --package-name=@openwebf/webf-share
+```
+
+This will:
+- Scaffold an npm package at `../packages/webf-share`
+- Read `*.module.d.ts` from `../webf_modules/share`
+- Generate `src/index.ts` and `src/types.ts` that wrap `webf.invokeModuleAsync('Share', ...)`
+- Generate Dart bindings in `../webf_modules/share/lib/src/share_module_bindings_generated.dart`
+
 ### Interactive Mode
 
 If you don't provide all required options, the CLI will prompt you interactively:

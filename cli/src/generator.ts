@@ -19,7 +19,7 @@ const fileContentCache = new Map<string, string>();
 // Cache for generated content to detect changes
 const generatedContentCache = new Map<string, string>();
 
-function writeFileIfChanged(filePath: string, content: string): boolean {
+export function writeFileIfChanged(filePath: string, content: string): boolean {
   // Check if content has changed by comparing with cache
   const cachedContent = generatedContentCache.get(filePath);
   if (cachedContent === content) {

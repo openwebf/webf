@@ -2,7 +2,7 @@
 
 const { Command } = require('commander');
 const version = require('../package.json').version;
-const { generateCommand } = require('../dist/commands');
+const { generateCommand, generateModuleCommand } = require('../dist/commands');
 
 const program = new Command();
 
@@ -23,5 +23,16 @@ program
   .argument('[distPath]', 'Path to output generated files', '.')
   .description('Generate dart abstract classes and React/Vue components (auto-creates project if needed)')
   .action(generateCommand);
+
+program
+  .command('module-codegen')
+  .option('--flutter-package-src <src>', 'Flutter module package source path (for module code generation)')
+  .option('--package-name <name>', 'NPM package name for the WebF module')
+  .option('--publish-to-npm', 'Automatically publish the generated module package to npm')
+  .option('--npm-registry <url>', 'Custom npm registry URL (defaults to https://registry.npmjs.org/)')
+  .option('--exclude <patterns...>', 'Additional glob patterns to exclude from code generation')
+  .argument('[distPath]', 'Path to output generated files', '.')
+  .description('Generate NPM package and Dart bindings for a WebF module from TypeScript interfaces (*.module.d.ts)')
+  .action(generateModuleCommand);
 
 program.parse();

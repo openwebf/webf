@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { dartGen, reactGen, vueGen } from './generator';
+import { generateModuleArtifacts } from './module';
 import { globSync } from 'glob';
 import _ from 'lodash';
 import inquirer from 'inquirer';
@@ -164,6 +165,20 @@ const gitignore = fs.readFileSync(
   'utf-8'
 );
 
+const modulePackageJson = fs.readFileSync(
+  path.resolve(__dirname, '../templates/module.package.json.tpl'),
+  'utf-8'
+);
+
+const moduleTsConfig = fs.readFileSync(
+  path.resolve(__dirname, '../templates/module.tsconfig.json.tpl'),
+  'utf-8'
+);
+
+const moduleTsUpConfig = fs.readFileSync(
+  path.resolve(__dirname, '../templates/module.tsup.config.ts.tpl'),
+  'utf-8'
+);
 const reactPackageJson = fs.readFileSync(
   path.resolve(__dirname, '../templates/react.package.json.tpl'),
   'utf-8'
@@ -460,6 +475,46 @@ function createCommand(target: string, options: { framework: string; packageName
   }
 
   console.log(`WebF ${framework} package created at: ${target}`);
+}
+
+function createModuleProject(target: string, options: { packageName: string; metadata?: FlutterPackageMetadata; skipGitignore?: boolean }): void {
+  const { metadata, skipGitignore } = options;
+  const packageName = isValidNpmPackageName(options.packageName)
+    ? options.packageName
+    : sanitizePackageName(options.packageName);
+
+  if (!fs.existsSync(target)) {
+    fs.mkdirSync(target, { recursive: true });
+  }
+
+  const packageJsonPath = path.join(target, 'package.json');
+  const packageJsonContent = _.template(modulePackageJson)({
+    packageName,
+    version: metadata?.version || '0.0.1',
+    description: metadata?.description || '',
+  });
+  writeFileIfChanged(packageJsonPath, packageJsonContent);
+
+  const tsConfigPath = path.join(target, 'tsconfig.json');
+  const tsConfigContent = _.template(moduleTsConfig)({});
+  writeFileIfChanged(tsConfigPath, tsConfigContent);
+
+  const tsupConfigPath = path.join(target, 'tsup.config.ts');
+  const tsupConfigContent = _.template(moduleTsUpConfig)({});
+  writeFileIfChanged(tsupConfigPath, tsupConfigContent);
+
+  if (!skipGitignore) {
+    const gitignorePath = path.join(target, '.gitignore');
+    const gitignoreContent = _.template(gitignore)({});
+    writeFileIfChanged(gitignorePath, gitignoreContent);
+  }
+
+  const srcDir = path.join(target, 'src');
+  if (!fs.existsSync(srcDir)) {
+    fs.mkdirSync(srcDir, { recursive: true });
+  }
+
+  console.log(`WebF module package scaffold created at: ${target}`);
 }
 
 async function generateCommand(distPath: string, options: GenerateOptions): Promise<void> {
@@ -845,6 +900,236 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
   }
 }
 
+async function generateModuleCommand(distPath: string, options: GenerateOptions): Promise<void> {
+  let resolvedDistPath: string;
+  let isTempDir = false;
+  if (!distPath || distPath === '.') {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'webf-module-'));
+    resolvedDistPath = tempDir;
+    isTempDir = true;
+    console.log(`\nUsing temporary directory for module package: ${tempDir}`);
+  } else {
+    resolvedDistPath = path.resolve(distPath);
+  }
+
+  // Detect Flutter package root if not provided
+  if (!options.flutterPackageSrc) {
+    let currentDir = process.cwd();
+    let foundPubspec = false;
+    let pubspecDir = '';
+
+    for (let i = 0; i < 3; i++) {
+      const pubspecPath = path.join(currentDir, 'pubspec.yaml');
+      if (fs.existsSync(pubspecPath)) {
+        foundPubspec = true;
+        pubspecDir = currentDir;
+        break;
+      }
+      const parentDir = path.dirname(currentDir);
+      if (parentDir === currentDir) break;
+      currentDir = parentDir;
+    }
+
+    if (!foundPubspec) {
+      console.error('Could not find pubspec.yaml. Please provide --flutter-package-src.');
+      process.exit(1);
+    }
+
+    options.flutterPackageSrc = pubspecDir;
+    console.log(`Detected Flutter package at: ${pubspecDir}`);
+  }
+
+  const flutterPackageSrc = path.resolve(options.flutterPackageSrc);
+
+  // Validate TS environment in the Flutter package
+  console.log(`\nValidating TypeScript environment in ${flutterPackageSrc}...`);
+  let validation = validateTypeScriptEnvironment(flutterPackageSrc);
+  if (!validation.isValid) {
+    const tsConfigPath = path.join(flutterPackageSrc, 'tsconfig.json');
+    if (!fs.existsSync(tsConfigPath)) {
+      const defaultTsConfig = {
+        compilerOptions: {
+          target: 'ES2020',
+          module: 'commonjs',
+          lib: ['ES2020'],
+          declaration: true,
+          strict: true,
+          esModuleInterop: true,
+          skipLibCheck: true,
+          forceConsistentCasingInFileNames: true,
+          resolveJsonModule: true,
+          moduleResolution: 'node',
+        },
+        include: ['lib/**/*.d.ts', '**/*.d.ts'],
+        exclude: ['node_modules', 'dist', 'build'],
+      };
+
+      fs.writeFileSync(tsConfigPath, JSON.stringify(defaultTsConfig, null, 2), 'utf-8');
+      console.log('✅ Created tsconfig.json for module package');
+
+      validation = validateTypeScriptEnvironment(flutterPackageSrc);
+    }
+
+    if (!validation.isValid) {
+      console.error('\n❌ TypeScript environment validation failed:');
+      validation.errors.forEach(err => console.error(`   - ${err}`));
+      console.error('\nPlease fix the above issues before running `webf module-codegen` again.');
+      process.exit(1);
+    }
+  }
+
+  // Read Flutter metadata for package.json
+  const metadata = readFlutterPackageMetadata(flutterPackageSrc);
+
+  // Determine package name
+  let packageName = options.packageName;
+  if (packageName && !isValidNpmPackageName(packageName)) {
+    console.warn(`Warning: Package name "${packageName}" is not valid for npm.`);
+    const sanitized = sanitizePackageName(packageName);
+    console.log(`Using sanitized name: "${sanitized}"`);
+    packageName = sanitized;
+  }
+
+  if (!packageName) {
+    const rawDefaultName = metadata?.name
+      ? `@openwebf/${metadata.name.replace(/^webf_/, 'webf-')}`
+      : '@openwebf/webf-module';
+
+    const defaultPackageName = isValidNpmPackageName(rawDefaultName)
+      ? rawDefaultName
+      : sanitizePackageName(rawDefaultName);
+
+    const packageNameAnswer = await inquirer.prompt([{
+      type: 'input',
+      name: 'packageName',
+      message: 'What is your npm package name for this module?',
+      default: defaultPackageName,
+      validate: (input: string) => {
+        if (!input || input.trim() === '') {
+          return 'Package name is required';
+        }
+
+        if (isValidNpmPackageName(input)) {
+          return true;
+        }
+
+        const sanitized = sanitizePackageName(input);
+        return `Invalid npm package name. Would be sanitized to: "${sanitized}". Please enter a valid name.`;
+      }
+    }]);
+    packageName = packageNameAnswer.packageName;
+  }
+
+  // Prevent npm scaffolding (package.json, tsup.config.ts, etc.) from being written into
+  // the Flutter package itself. Force users to choose a separate output directory.
+  if (resolvedDistPath === flutterPackageSrc) {
+    console.error('\n❌ Output directory must not be the Flutter package root.');
+    console.error('Please choose a separate directory for the generated npm package, for example:');
+    console.error('  webf module-codegen ../packages/webf-share --flutter-package-src=../webf_modules/share');
+    process.exit(1);
+  }
+
+  // Scaffold npm project for the module
+  if (!packageName) {
+    throw new Error('Package name could not be resolved for module package.');
+  }
+  createModuleProject(resolvedDistPath, {
+    packageName,
+    metadata: metadata || undefined,
+  });
+
+  // Locate module interface file (*.module.d.ts)
+  const defaultIgnore = ['**/node_modules/**', '**/dist/**', '**/build/**', '**/example/**'];
+  const ignore = options.exclude && options.exclude.length
+    ? [...defaultIgnore, ...options.exclude]
+    : defaultIgnore;
+
+  const candidates = globSync('**/*.module.d.ts', {
+    cwd: flutterPackageSrc,
+    ignore,
+  });
+
+  if (candidates.length === 0) {
+    console.error(
+      `\n❌ No module interface files (*.module.d.ts) found under ${flutterPackageSrc}.`
+    );
+    console.error('Please add a TypeScript interface file describing your module API.');
+    process.exit(1);
+  }
+
+  const moduleInterfaceRel = candidates[0];
+  const moduleInterfacePath = path.join(flutterPackageSrc, moduleInterfaceRel);
+
+  const command = `webf module-codegen --flutter-package-src=${flutterPackageSrc} <distPath>`;
+
+  console.log(`\nGenerating module npm package and Dart bindings from ${moduleInterfaceRel}...`);
+
+  generateModuleArtifacts({
+    moduleInterfacePath,
+    npmTargetDir: resolvedDistPath,
+    flutterPackageDir: flutterPackageSrc,
+    command,
+  });
+
+  console.log('\nModule code generation completed successfully!');
+
+  try {
+    await buildPackage(resolvedDistPath);
+  } catch (error) {
+    console.error('\nWarning: Build failed:', error);
+  }
+
+  if (options.publishToNpm) {
+    try {
+      await buildAndPublishPackage(resolvedDistPath, options.npmRegistry, false);
+    } catch (error) {
+      console.error('\nError during npm publish:', error);
+      process.exit(1);
+    }
+  } else {
+    const publishAnswer = await inquirer.prompt([{
+      type: 'confirm',
+      name: 'publish',
+      message: 'Would you like to publish this module package to npm?',
+      default: false
+    }]);
+
+    if (publishAnswer.publish) {
+      const registryAnswer = await inquirer.prompt([{
+        type: 'input',
+        name: 'registry',
+        message: 'NPM registry URL (leave empty for default npm registry):',
+        default: '',
+        validate: (input: string) => {
+          if (!input) return true;
+          try {
+            new URL(input);
+            return true;
+          } catch {
+            return 'Please enter a valid URL';
+          }
+        }
+      }]);
+
+      try {
+        await buildAndPublishPackage(
+          resolvedDistPath,
+          registryAnswer.registry || undefined,
+          false
+        );
+      } catch (error) {
+        console.error('\nError during npm publish:', error);
+        // Don't exit here since generation was successful
+      }
+    }
+  }
+
+  if (isTempDir) {
+    console.log(`\n📁 Generated module npm package is in: ${resolvedDistPath}`);
+    console.log('💡 To use it, copy this directory to your packages folder or publish it directly.');
+  }
+}
+
 function writeFileIfChanged(filePath: string, content: string) {
   if (fs.existsSync(filePath)) {
     const oldContent = fs.readFileSync(filePath, 'utf-8')
@@ -1015,4 +1300,4 @@ async function buildAndPublishPackage(packagePath: string, registry?: string, is
   }
 }
 
-export { generateCommand };
+export { generateCommand, generateModuleCommand };
