@@ -370,15 +370,56 @@ class RenderGridLayout extends RenderLayoutBox {
     return total;
   }
 
+  double _measurePatternMinBreadth(List<GridTrackSize> tracks, double? innerAvailable, double gap) {
+    double total = 0;
+    for (int i = 0; i < tracks.length; i++) {
+      total += _trackMinBreadth(tracks[i], innerAvailable);
+      if (i < tracks.length - 1) {
+        total += gap;
+      }
+    }
+    return total;
+  }
+
+  double _trackMinBreadth(GridTrackSize track, double? innerAvailable) {
+    if (track is GridFixed) {
+      return _resolveTrackSize(track, innerAvailable);
+    }
+    if (track is GridMinMax) {
+      return _resolveTrackSize(track.minTrack, innerAvailable);
+    }
+    if (track is GridRepeat) {
+      return _measurePatternMinBreadth(track.tracks, innerAvailable, 0);
+    }
+    if (track is GridAuto) {
+      return 0;
+    }
+    if (track is GridFitContent) {
+      return _resolveLengthValue(track.limit, innerAvailable);
+    }
+    // Fractional tracks have no definite minimum contribution for auto-repeat sizing.
+    return 0;
+  }
+
   int _repeatCountFor(GridRepeat repeat, double? innerAvailable, double gap) {
     if (repeat.kind == GridRepeatKind.count) {
       return math.max(1, repeat.count ?? 1);
     }
     if (innerAvailable == null || !innerAvailable.isFinite) return 1;
     if (repeat.tracks.isEmpty) return 1;
-    if (_patternHasFlexibleTracks(repeat.tracks)) return 1;
+    final bool autoRepeat = repeat.kind == GridRepeatKind.autoFit || repeat.kind == GridRepeatKind.autoFill;
+    final bool hasFlexible = _patternHasFlexibleTracks(repeat.tracks);
 
-    final double patternBreadth = _measurePatternBreadth(repeat.tracks, innerAvailable, gap);
+    double patternBreadth;
+    if (hasFlexible) {
+      if (!autoRepeat) {
+        return 1;
+      }
+      patternBreadth = _measurePatternMinBreadth(repeat.tracks, innerAvailable, gap);
+    } else {
+      patternBreadth = _measurePatternBreadth(repeat.tracks, innerAvailable, gap);
+    }
+
     if (patternBreadth <= 0) return 1;
     final double perPattern = patternBreadth + gap;
     final double available = innerAvailable + gap;
@@ -1225,15 +1266,44 @@ class RenderGridLayout extends RenderLayoutBox {
     final double horizontalFree = math.max(0.0, size.width - horizontalPaddingBorder - usedContentWidth);
     final double verticalFree = math.max(0.0, size.height - verticalPaddingBorder - usedContentHeight);
     final double justifyShift = _resolveJustifyContentShift(renderStyle.justifyContent, horizontalFree);
-    final double alignShift = _resolveAlignContentShift(renderStyle.alignContent, verticalFree);
-
-    if (justifyShift != 0 || alignShift != 0) {
-      RenderBox? child = firstChild;
-      while (child != null) {
-        final GridLayoutParentData pd = child.parentData as GridLayoutParentData;
-        pd.offset += Offset(justifyShift, alignShift);
-        child = pd.nextSibling;
+    double rowDistributionLeading = 0;
+    double rowDistributionBetween = 0;
+    bool distributeRows = false;
+    if (verticalFree > 0 && totalRows > 0) {
+      final AlignContent alignContent = renderStyle.alignContent;
+      switch (alignContent) {
+        case AlignContent.spaceBetween:
+          if (totalRows > 1) {
+            rowDistributionBetween = verticalFree / (totalRows - 1);
+            distributeRows = true;
+          }
+          break;
+        case AlignContent.spaceAround:
+          rowDistributionBetween = verticalFree / totalRows;
+          rowDistributionLeading = rowDistributionBetween / 2;
+          distributeRows = true;
+          break;
+        case AlignContent.spaceEvenly:
+          rowDistributionBetween = verticalFree / (totalRows + 1);
+          rowDistributionLeading = rowDistributionBetween;
+          distributeRows = true;
+          break;
+        default:
+          break;
       }
+    }
+    final double alignShift =
+        _resolveAlignContentShift(renderStyle.alignContent, distributeRows ? 0 : verticalFree);
+
+    RenderBox? childForAlignment = firstChild;
+    while (childForAlignment != null) {
+      final GridLayoutParentData pd = childForAlignment.parentData as GridLayoutParentData;
+      double additionalY = alignShift;
+      if (distributeRows) {
+        additionalY = rowDistributionLeading + pd.rowStart * rowDistributionBetween;
+      }
+      pd.offset += Offset(justifyShift, additionalY);
+      childForAlignment = pd.nextSibling;
     }
 
     placementStopwatch?.stop();
