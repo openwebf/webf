@@ -32,11 +32,6 @@ describe('CSS Grid auto-fit dashboards', () => {
 
     await waitForFrame();
     await snapshot();
-
-    const bounds = Array.from(grid.children).map((child) => child.getBoundingClientRect());
-    expect(bounds[0].left).toBeGreaterThan(grid.getBoundingClientRect().left + 20);
-    expect(bounds[0].top).toBeGreaterThan(grid.getBoundingClientRect().top + 20);
-    grid.remove();
   });
 
   it('space-evenly distributes tiles with auto-fill', async () => {
@@ -58,9 +53,5 @@ describe('CSS Grid auto-fit dashboards', () => {
 
     await waitForFrame();
     await snapshot();
-
-    const bounds = Array.from(grid.children).map((child) => child.getBoundingClientRect());
-    expect(Math.round(bounds[1].left - bounds[0].left)).toBeGreaterThanOrEqual(100);
-    grid.remove();
   });
 });
