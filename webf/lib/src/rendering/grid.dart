@@ -905,14 +905,18 @@ class RenderGridLayout extends RenderLayoutBox {
       GridPlacement columnEnd = childGridStyle?.gridColumnEnd ?? const GridPlacement.auto();
       GridPlacement rowStart = childGridStyle?.gridRowStart ?? const GridPlacement.auto();
       GridPlacement rowEnd = childGridStyle?.gridRowEnd ?? const GridPlacement.auto();
+      final String? areaName = childGridStyle?.gridAreaName;
       // Honor grid-template-areas by mapping named areas to explicit line placements.
-      if (templateAreaMap != null && childGridStyle?.gridAreaName != null) {
-        final GridTemplateAreaRect? rect = templateAreaMap[childGridStyle!.gridAreaName!];
+      if (templateAreaMap != null && areaName != null) {
+        final GridTemplateAreaRect? rect = templateAreaMap[areaName];
         if (rect != null) {
           columnStart = GridPlacement.line(rect.columnStart);
           columnEnd = GridPlacement.line(rect.columnEnd);
           rowStart = GridPlacement.line(rect.rowStart);
           rowEnd = GridPlacement.line(rect.rowEnd);
+          _gridLog(() => 'template-area match name=$areaName rect=$rect');
+        } else {
+          _gridLog(() => 'template-area fallback to auto placement name=$areaName');
         }
       }
 

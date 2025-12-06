@@ -74,6 +74,7 @@ Track sizing/placement for MVP grids now ships with widget + integration coverag
 2. Document profiling insights and mitigation plans in `dev_css_grid_process.md` (alongside this plan) plus update example apps/docs once optimizations land.
 3. Stress-test grid layouts inside representative app flows (dashboard, list virtualization) to validate performance/behavioral stability before GA.
 4. Flip on `DebugFlags.enableCssGridProfiling` during perf sessions to capture per-grid timing for materialization, placement, and child layout.
+5. Continue filling integration matrix: next targets are `grid-template-areas` edge cases (overlapping names, auto fallback) and responsive `repeat(auto-fit)` dashboards with `place-*` shorthands.
 
 **TODOs**
 - [x] Capture overview/goals/scope plus risks and rollout strategy.
