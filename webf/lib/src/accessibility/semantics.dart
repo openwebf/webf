@@ -4,6 +4,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/semantics.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
@@ -180,6 +181,12 @@ class WebFAccessibility {
     config.isSemanticBoundary = boundary;
     config.explicitChildNodes = explicitChildNodes;
     config.isSemanticBoundary = boundary;
+    if (kDebugMode && DebugFlags.debugLogSemanticsEnabled) {
+      // Attach focus logs to every semantics node without overriding custom handlers.
+      config.onDidGainAccessibilityFocus ??= () => _logSemanticsEvent(element, role, 'focus gained');
+      config.onDidLoseAccessibilityFocus ??= () => _logSemanticsEvent(element, role, 'focus lost');
+      config.addTagForChildren(_webfSemanticsLogTag);
+    }
     if (kDebugMode && DebugFlags.debugLogSemanticsEnabled) {
       _debugDumpSemantics(element, role, config, focusable: focusable);
     }
@@ -548,9 +555,15 @@ void _debugDumpSemantics(dom.Element element, _Role role, SemanticsConfiguration
     'enabled=${config.isEnabled}',
     'hidden=${config.isHidden}',
   ].join(', ');
-  debugPrint('[webf][a11y] semantics ${_formatElement(element)} => $description');
-  debugDumpSemanticsTree(DebugSemanticsDumpOrder.traversalOrder);
+  // debugPrint('[webf][a11y] semantics ${_formatElement(element)} => $description');
+  // debugDumpSemanticsTree(DebugSemanticsDumpOrder.traversalOrder);
 }
+
+void _logSemanticsEvent(dom.Element element, _Role role, String event) {
+  debugPrint('[webf][a11y] $event ${_formatElement(element)} role=$role');
+}
+
+const SemanticsTag _webfSemanticsLogTag = SemanticsTag('webf-a11y-log-focus');
 
 String _formatElement(dom.Element element) {
   final buffer = StringBuffer('<${element.tagName.toLowerCase()}');

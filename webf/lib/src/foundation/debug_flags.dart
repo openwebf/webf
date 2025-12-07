@@ -102,7 +102,7 @@ class DebugFlags {
   static bool debugLogFlexBaselineEnabled = false;
 
   // Emit verbose semantics dumps per element to troubleshoot a11y tree wiring.
-  static bool debugLogSemanticsEnabled = false;
+  static bool debugLogSemanticsEnabled = true;
 
   // Removed: Use FlexLog filters to enable flex logs.
 
