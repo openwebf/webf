@@ -106,7 +106,7 @@ class DebugFlags {
   static bool debugLogFlexBaselineEnabled = false;
 
   // Emit verbose semantics dumps per element to troubleshoot a11y tree wiring.
-  static bool debugLogSemanticsEnabled = false;
+  static bool debugLogSemanticsEnabled = true;
 
   // Emit lightweight profiling logs from RenderGridLayout for track sizing and
   // auto-placement hot paths. Intended for Phase 5 hardening work.
