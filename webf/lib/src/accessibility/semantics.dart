@@ -130,6 +130,12 @@ class WebFAccessibility {
         }
         config.isButton = true;
         break;
+      case _Role.menuitem:
+        config.isButton = true;
+        if (!disabled) config.onTap = () => _dispatchClick(element);
+        break;
+      case _Role.menubar:
+        break;
       case _Role.image:
         config.isImage = true;
         break;
@@ -175,6 +181,9 @@ class WebFAccessibility {
       // Keep heading text nodes explicit so screen readers treat them as standalone entries.
       explicitChildNodes = true;
     } else if (!focusable && role == _Role.none && (config.label != null && config.label!.isNotEmpty)) {
+      boundary = true;
+      explicitChildNodes = true;
+    } else if (role == _Role.menubar) {
       boundary = true;
       explicitChildNodes = true;
     }
@@ -341,6 +350,10 @@ class WebFAccessibility {
         return _Role.textbox;
       case 'heading':
         return _Role.header1;
+      case 'menubar':
+        return _Role.menubar;
+      case 'menuitem':
+        return _Role.menuitem;
     }
 
     final String tag = element.tagName.toUpperCase();
@@ -392,6 +405,8 @@ class WebFAccessibility {
       case _Role.radio:
       case _Role.textbox:
       case _Role.tab:
+      case _Role.menuitem:
+      case _Role.menubar:
         return true;
       default:
         return false;
@@ -401,6 +416,21 @@ class WebFAccessibility {
   static bool _isTruthy(String value) {
     final v = value.trim().toLowerCase();
     return v == 'true' || v == '1' || v == 'yes';
+  }
+
+  static bool _isLayoutOnlyContainer(RenderBoxModel renderObject, dom.Element element, _Role role,
+      {required bool focusable}) {
+    if (renderObject is! RenderFlexLayout && renderObject is! RenderFlowLayout) return false;
+    if (focusable) return false;
+    if (role != _Role.none) return false;
+    // Allow explicitly labeled/aria-described containers to remain in the tree.
+    if (element.hasAttribute('aria-label') ||
+        element.hasAttribute('aria-labelledby') ||
+        element.hasAttribute('aria-describedby') ||
+        element.hasAttribute('title')) {
+      return false;
+    }
+    return true;
   }
 
   static bool _shouldSuppressAutoLabel(dom.Element element, _Role role) {
@@ -537,6 +567,8 @@ const Set<String> _nameFromContentRoles = <String>{
   'listitem',
   'term',
   'definition',
+  'menubar',
+  'menuitem',
 };
 
 enum _Role {
@@ -548,6 +580,8 @@ enum _Role {
   radio,
   textbox,
   tab,
+  menuitem,
+  menubar,
   header1,
   header2,
   header3,
