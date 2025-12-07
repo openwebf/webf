@@ -28,9 +28,6 @@ class WebFAccessibility {
       return;
     }
 
-    // Set a text direction so labeled nodes satisfy Semantics assertions.
-    config.textDirection = renderObject.renderStyle.direction;
-
     // CSS-driven visibility → hide from a11y tree
     // - display:none
     // - visibility:hidden
@@ -52,6 +49,19 @@ class WebFAccessibility {
     // Determine explicit role and implicit role by tag/attributes.
     final String? explicitRole = element.getAttribute('role')?.toLowerCase();
     final _Role role = _inferRole(element, explicitRole);
+    final bool focusable = _isFocusable(element);
+
+    // Layout-only containers (e.g., vanilla div/section without labels or focus)
+    // should defer semantics to their children so VoiceOver/NVDA skip the node.
+    if (_isLayoutOnlyContainer(renderObject, element, role, focusable: focusable)) {
+      config.isSemanticBoundary = false;
+      config.explicitChildNodes = false;
+      return;
+    }
+
+    void ensureTextDirection() {
+      config.textDirection ??= renderObject.renderStyle.direction;
+    }
 
     final bool suppressSelfLabel = _shouldSuppressAutoLabel(element, role);
 
@@ -59,10 +69,12 @@ class WebFAccessibility {
     if (!suppressSelfLabel) {
       final String? name = computeAccessibleName(element)?.trim();
       if (name != null && name.isNotEmpty) {
+        ensureTextDirection();
         config.label = name;
       }
       final String? hint = computeAccessibleDescription(element)?.trim();
       if (hint != null && hint.isNotEmpty) {
+        ensureTextDirection();
         config.hint = hint;
       }
     }
@@ -80,6 +92,7 @@ class WebFAccessibility {
         if (!disabled) config.onTap = () => _dispatchClick(element);
         final String? ariaPressed = element.getAttribute('aria-pressed');
         if (ariaPressed != null) {
+          ensureTextDirection();
           final String v = ariaPressed.trim().toLowerCase();
           bool? toggled;
           switch (v) {
@@ -115,6 +128,7 @@ class WebFAccessibility {
         // aria-current indicates the current item within a set (e.g., nav)
         final String? ariaCurrent = element.getAttribute('aria-current');
         if (ariaCurrent != null && ariaCurrent.trim().toLowerCase() != 'false') {
+          ensureTextDirection();
           final String v = ariaCurrent.trim().toLowerCase();
           config.value = (v == 'page') ? 'Current page' : 'Current';
         }
@@ -125,6 +139,7 @@ class WebFAccessibility {
           final v = ariaSel.trim().toLowerCase();
           if (v == 'true' || v == 'false') {
             config.isSelected = (v == 'true');
+            ensureTextDirection();
             config.value = config.isSelected ? 'Selected' : 'Not selected';
           }
         }
@@ -163,11 +178,18 @@ class WebFAccessibility {
       case _Role.header4:
       case _Role.header5:
       case _Role.header6:
+        config.isHeader = true;
+        final int level = _headingLevelForRole(role);
+        if (level > 0) {
+          // headingLevel is available on newer Flutter SDKs; guard with dynamic for compatibility.
+          try {
+            (config as dynamic).headingLevel = level;
+          } catch (_) {}
+        }
       case _Role.none:
         break;
     }
 
-    final bool focusable = _isFocusable(element);
     if (focusable) {
       config.isFocusable = true;
     }
@@ -423,6 +445,8 @@ class WebFAccessibility {
     if (renderObject is! RenderFlexLayout && renderObject is! RenderFlowLayout) return false;
     if (focusable) return false;
     if (role != _Role.none) return false;
+    final String tag = element.tagName.toUpperCase();
+    if (!_layoutOnlyContainerTags.contains(tag)) return false;
     // Allow explicitly labeled/aria-described containers to remain in the tree.
     if (element.hasAttribute('aria-label') ||
         element.hasAttribute('aria-labelledby') ||
@@ -571,6 +595,17 @@ const Set<String> _nameFromContentRoles = <String>{
   'menuitem',
 };
 
+const Set<String> _layoutOnlyContainerTags = <String>{
+  html.DIV,
+  html.SECTION,
+  html.ARTICLE,
+  html.ASIDE,
+  html.NAV,
+  html.MAIN,
+  html.HEADER,
+  html.FOOTER,
+};
+
 enum _Role {
   none,
   button,
@@ -605,7 +640,17 @@ void _debugDumpSemantics(dom.Element element, _Role role, SemanticsConfiguration
 }
 
 void _logSemanticsEvent(dom.Element element, _Role role, String event) {
-  debugPrint('[webf][a11y] $event ${_formatElement(element)} role=$role');
+  String geom = '';
+  try {
+    final RenderBoxModel? render = element.renderStyle.attachedRenderBoxModel;
+    if (render != null && render.hasSize) {
+      final Rect local = render.semanticBounds;
+      final Rect global = MatrixUtils.transformRect(render.getTransformTo(null), local);
+      geom =
+          ' local=${_fmtRect(local)} global=${_fmtRect(global)} scroll=(${render.scrollLeft.toStringAsFixed(1)},${render.scrollTop.toStringAsFixed(1)})';
+    }
+  } catch (_) {}
+  debugPrint('[webf][a11y] $event ${_formatElement(element)} role=$role$geom');
 }
 
 const SemanticsTag _webfSemanticsLogTag = SemanticsTag('webf-a11y-log-focus');
@@ -650,4 +695,9 @@ int _headingLevelForRole(_Role role) {
     default:
       return 0;
   }
+}
+
+String _fmtRect(Rect rect) {
+  return '(${rect.left.toStringAsFixed(1)},${rect.top.toStringAsFixed(1)})'
+      '→(${rect.right.toStringAsFixed(1)},${rect.bottom.toStringAsFixed(1)})';
 }
