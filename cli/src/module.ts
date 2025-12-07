@@ -335,14 +335,14 @@ function mapTsParamTypeToDart(
   return { dartType: 'dynamic', isByteData: false };
 }
 
-function mapTsPropertyTypeToDart(type: ts.TypeNode): string {
+function mapTsPropertyTypeToDart(type: ts.TypeNode, optional: boolean): string {
   switch (type.kind) {
     case ts.SyntaxKind.StringKeyword:
-      return 'String?';
+      return optional ? 'String?' : 'String';
     case ts.SyntaxKind.NumberKeyword:
-      return 'num?';
+      return optional ? 'num?' : 'num';
     case ts.SyntaxKind.BooleanKeyword:
-      return 'bool?';
+      return optional ? 'bool?' : 'bool';
     default:
       return 'dynamic';
   }
@@ -380,16 +380,17 @@ function buildDartBindings(def: ModuleDefinition, command: string): string {
 
   for (const iface of optionInterfaces) {
     const name = iface.name.text;
-    const propInfos: { fieldName: string; key: string; dartType: string }[] = [];
+    const propInfos: { fieldName: string; key: string; dartType: string; optional: boolean }[] = [];
 
     for (const member of iface.members) {
       if (!ts.isPropertySignature(member) || !member.name) continue;
 
       const key = member.name.getText(def.sourceFile).replace(/['"]/g, '');
       const fieldName = key;
-      const dartType = member.type ? mapTsPropertyTypeToDart(member.type) : 'dynamic';
+      const optional = !!member.questionToken;
+      const dartType = member.type ? mapTsPropertyTypeToDart(member.type, optional) : 'dynamic';
 
-      propInfos.push({ fieldName, key, dartType });
+      propInfos.push({ fieldName, key, dartType, optional });
     }
 
     lines.push(`class ${name} {`);
@@ -398,23 +399,50 @@ function buildDartBindings(def: ModuleDefinition, command: string): string {
     }
     lines.push('');
 
-    const ctorParams = propInfos.map(p => `this.${p.fieldName}`).join(', ');
+    const ctorParams = propInfos.map(p => {
+      if (p.optional || p.dartType === 'dynamic') {
+        return `this.${p.fieldName}`;
+      }
+      return `required this.${p.fieldName}`;
+    }).join(', ');
     lines.push(`  const ${name}({${ctorParams}});`);
     lines.push('');
 
     lines.push(`  factory ${name}.fromMap(Map<String, dynamic> map) {`);
     lines.push(`    return ${name}(`);
     for (const prop of propInfos) {
-      if (prop.dartType.startsWith('String')) {
-        lines.push(`      ${prop.fieldName}: map['${prop.key}']?.toString(),`);
-      } else if (prop.dartType.startsWith('bool')) {
-        lines.push(
-          `      ${prop.fieldName}: map['${prop.key}'] is bool ? map['${prop.key}'] as bool : null,`
-        );
-      } else if (prop.dartType.startsWith('num')) {
-        lines.push(
-          `      ${prop.fieldName}: map['${prop.key}'] is num ? map['${prop.key}'] as num : null,`
-        );
+      const isString = prop.dartType.startsWith('String');
+      const isBool = prop.dartType.startsWith('bool');
+      const isNum = prop.dartType.startsWith('num');
+
+      if (isString) {
+        if (prop.optional) {
+          lines.push(`      ${prop.fieldName}: map['${prop.key}']?.toString(),`);
+        } else {
+          lines.push(
+            `      ${prop.fieldName}: map['${prop.key}']?.toString() ?? '',`
+          );
+        }
+      } else if (isBool) {
+        if (prop.optional) {
+          lines.push(
+            `      ${prop.fieldName}: map['${prop.key}'] is bool ? map['${prop.key}'] as bool : null,`
+          );
+        } else {
+          lines.push(
+            `      ${prop.fieldName}: map['${prop.key}'] is bool ? map['${prop.key}'] as bool : false,`
+          );
+        }
+      } else if (isNum) {
+        if (prop.optional) {
+          lines.push(
+            `      ${prop.fieldName}: map['${prop.key}'] is num ? map['${prop.key}'] as num : null,`
+          );
+        } else {
+          lines.push(
+            `      ${prop.fieldName}: map['${prop.key}'] is num ? map['${prop.key}'] as num : 0,`
+          );
+        }
       } else {
         lines.push(`      ${prop.fieldName}: map['${prop.key}'],`);
       }
@@ -426,9 +454,13 @@ function buildDartBindings(def: ModuleDefinition, command: string): string {
     lines.push('  Map<String, dynamic> toMap() {');
     lines.push('    final map = <String, dynamic>{};');
     for (const prop of propInfos) {
-      lines.push(
-        `    if (${prop.fieldName} != null) { map['${prop.key}'] = ${prop.fieldName}; }`
-      );
+      if (!prop.optional && (prop.dartType === 'String' || prop.dartType === 'bool' || prop.dartType === 'num')) {
+        lines.push(`    map['${prop.key}'] = ${prop.fieldName};`);
+      } else {
+        lines.push(
+          `    if (${prop.fieldName} != null) { map['${prop.key}'] = ${prop.fieldName}; }`
+        );
+      }
     }
     lines.push('    return map;');
     lines.push('  }');

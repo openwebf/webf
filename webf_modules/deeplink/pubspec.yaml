@@ -1,6 +1,6 @@
 name: webf_deeplink
 description: WebF Deep Link module for handling URL schemes and app navigation
-version: 1.0.0
+version: 1.0.1
 homepage: https://openwebf.com
 
 environment:

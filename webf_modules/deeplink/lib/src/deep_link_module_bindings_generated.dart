@@ -5,21 +5,21 @@
 import 'package:webf/module.dart';
 
 class OpenDeepLinkOptions {
-  final String? url;
+  final String url;
   final String? fallbackUrl;
 
-  const OpenDeepLinkOptions({this.url, this.fallbackUrl});
+  const OpenDeepLinkOptions({required this.url, this.fallbackUrl});
 
   factory OpenDeepLinkOptions.fromMap(Map<String, dynamic> map) {
     return OpenDeepLinkOptions(
-      url: map['url']?.toString(),
+      url: map['url']?.toString() ?? '',
       fallbackUrl: map['fallbackUrl']?.toString(),
     );
   }
 
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{};
-    if (url != null) { map['url'] = url; }
+    map['url'] = url;
     if (fallbackUrl != null) { map['fallbackUrl'] = fallbackUrl; }
     return map;
   }
@@ -28,18 +28,18 @@ class OpenDeepLinkOptions {
 }
 
 class OpenDeepLinkResult {
-  final bool? success;
+  final bool success;
   final String? url;
   final String? message;
   final bool? fallback;
   final String? error;
   final String? platform;
 
-  const OpenDeepLinkResult({this.success, this.url, this.message, this.fallback, this.error, this.platform});
+  const OpenDeepLinkResult({required this.success, this.url, this.message, this.fallback, this.error, this.platform});
 
   factory OpenDeepLinkResult.fromMap(Map<String, dynamic> map) {
     return OpenDeepLinkResult(
-      success: map['success'] is bool ? map['success'] as bool : null,
+      success: map['success'] is bool ? map['success'] as bool : false,
       url: map['url']?.toString(),
       message: map['message']?.toString(),
       fallback: map['fallback'] is bool ? map['fallback'] as bool : null,
@@ -50,7 +50,7 @@ class OpenDeepLinkResult {
 
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{};
-    if (success != null) { map['success'] = success; }
+    map['success'] = success;
     if (url != null) { map['url'] = url; }
     if (message != null) { map['message'] = message; }
     if (fallback != null) { map['fallback'] = fallback; }
@@ -63,21 +63,21 @@ class OpenDeepLinkResult {
 }
 
 class RegisterDeepLinkHandlerOptions {
-  final String? scheme;
+  final String scheme;
   final String? host;
 
-  const RegisterDeepLinkHandlerOptions({this.scheme, this.host});
+  const RegisterDeepLinkHandlerOptions({required this.scheme, this.host});
 
   factory RegisterDeepLinkHandlerOptions.fromMap(Map<String, dynamic> map) {
     return RegisterDeepLinkHandlerOptions(
-      scheme: map['scheme']?.toString(),
+      scheme: map['scheme']?.toString() ?? '',
       host: map['host']?.toString(),
     );
   }
 
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{};
-    if (scheme != null) { map['scheme'] = scheme; }
+    map['scheme'] = scheme;
     if (host != null) { map['host'] = host; }
     return map;
   }
@@ -86,22 +86,22 @@ class RegisterDeepLinkHandlerOptions {
 }
 
 class RegisterDeepLinkHandlerResult {
-  final bool? success;
-  final String? scheme;
+  final bool success;
+  final String scheme;
   final String? host;
-  final String? message;
+  final String message;
   final String? platform;
   final String? note;
   final String? error;
 
-  const RegisterDeepLinkHandlerResult({this.success, this.scheme, this.host, this.message, this.platform, this.note, this.error});
+  const RegisterDeepLinkHandlerResult({required this.success, required this.scheme, this.host, required this.message, this.platform, this.note, this.error});
 
   factory RegisterDeepLinkHandlerResult.fromMap(Map<String, dynamic> map) {
     return RegisterDeepLinkHandlerResult(
-      success: map['success'] is bool ? map['success'] as bool : null,
-      scheme: map['scheme']?.toString(),
+      success: map['success'] is bool ? map['success'] as bool : false,
+      scheme: map['scheme']?.toString() ?? '',
       host: map['host']?.toString(),
-      message: map['message']?.toString(),
+      message: map['message']?.toString() ?? '',
       platform: map['platform']?.toString(),
       note: map['note']?.toString(),
       error: map['error']?.toString(),
@@ -110,10 +110,10 @@ class RegisterDeepLinkHandlerResult {
 
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{};
-    if (success != null) { map['success'] = success; }
-    if (scheme != null) { map['scheme'] = scheme; }
+    map['success'] = success;
+    map['scheme'] = scheme;
     if (host != null) { map['host'] = host; }
-    if (message != null) { map['message'] = message; }
+    map['message'] = message;
     if (platform != null) { map['platform'] = platform; }
     if (note != null) { map['note'] = note; }
     if (error != null) { map['error'] = error; }
