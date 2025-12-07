@@ -409,12 +409,23 @@ class WebFAccessibility {
 
   static bool _shouldSuppressAutoLabel(dom.Element element, _Role role) {
     if (role != _Role.none) return false;
+    if (element.hasAttribute('aria-label') || element.hasAttribute('aria-labelledby')) return false;
     final String tag = element.tagName.toUpperCase();
     switch (tag) {
       case html.LI:
       case html.DT:
       case html.DD:
         return _hasFocusableDescendant(element);
+      // Structural containers should defer to their children unless explicitly labeled.
+      case html.DIV:
+      case html.HEADER:
+      case html.MAIN:
+      case html.NAV:
+      case html.SECTION:
+      case html.ARTICLE:
+      case html.ASIDE:
+      case html.FOOTER:
+        return true;
       default:
         return false;
     }
