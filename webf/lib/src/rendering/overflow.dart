@@ -114,6 +114,16 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       }
       final AxisDirection dir = (renderStyle.direction == TextDirection.rtl) ? AxisDirection.left : AxisDirection.right;
       scrollListener!(scrollOffsetX!.pixels, dir);
+      if (DebugFlags.debugLogSemanticsEnabled || DebugFlags.debugLogScrollableEnabled) {
+        debugPrint('[webf][a11y][scroll] ${renderStyle.target} '
+            'scrollX=${scrollOffsetX!.pixels.toStringAsFixed(2)} '
+            'viewport=${_viewportSize?.width.toStringAsFixed(1) ?? '?'} '
+            'content=${_scrollableSize?.width.toStringAsFixed(1) ?? '?'} '
+            '→ markNeedsSemanticsUpdate');
+      }
+      // Keep semantics tree in sync with new scroll offset so accessibility
+      // focus/geometry follows the visible content after programmatic scrolls.
+      markNeedsSemanticsUpdate();
       markNeedsPaint();
     }
   }
@@ -127,6 +137,14 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
             '${scrollOffsetY!.pixels.toStringAsFixed(2)} max=${maxY.toStringAsFixed(2)}');
       }
       scrollListener!(scrollOffsetY!.pixels, AxisDirection.down);
+      if (DebugFlags.debugLogSemanticsEnabled || DebugFlags.debugLogScrollableEnabled) {
+        debugPrint('[webf][a11y][scroll] ${renderStyle.target} '
+            'scrollY=${scrollOffsetY!.pixels.toStringAsFixed(2)} '
+            'viewport=${_viewportSize?.height.toStringAsFixed(1) ?? '?'} '
+            'content=${_scrollableSize?.height.toStringAsFixed(1) ?? '?'} '
+            '→ markNeedsSemanticsUpdate');
+      }
+      markNeedsSemanticsUpdate();
       markNeedsPaint();
     }
   }
