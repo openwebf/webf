@@ -7,6 +7,7 @@
 
 #include <string_view>
 #include <string>
+#include <foundation/string/string_view.h>
 
 #include "string_types.h"
 
