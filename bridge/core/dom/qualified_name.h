@@ -115,7 +115,7 @@ class QualifiedName {
     return impl_ == other.impl_ || (LocalName() == other.LocalName() && NamespaceURI() == other.NamespaceURI());
   }
 
-  bool HasPrefix() const { return impl_->prefix_ != AtomicString::Empty(); }
+  [[nodiscard]] bool HasPrefix() const { return !impl_->prefix_.IsNull(); }
   void SetPrefix(const AtomicString& prefix) { *this = QualifiedName(prefix, LocalName(), NamespaceURI()); }
 
   [[nodiscard]] const AtomicString& Prefix() const { return impl_->prefix_; }
@@ -143,7 +143,7 @@ class QualifiedName {
   static void InitAndReserveCapacityForSize(unsigned size);
 
   static const QualifiedName Null() {
-    return QualifiedName(AtomicString::Empty(), AtomicString::Empty(), AtomicString::Empty());
+    return QualifiedName(g_null_atom, g_null_atom, g_null_atom);
   }
 
   // The below methods are only for creating static global QNames that need no
