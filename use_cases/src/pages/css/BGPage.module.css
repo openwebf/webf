@@ -1,0 +1,368 @@
+.list {
+  padding: 20px;
+  margin: 0;
+  background-color: #f8f9fa;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  margin-top: 15px;
+}
+
+.sectionHeader {
+  margin-top: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.backgroundGradient {
+  margin-left: 5px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  width: 100px;
+  height: 100px;
+  background: red linear-gradient(red, blue);
+}
+
+.backgroundGradientHex {
+  margin-left: 5px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  width: 100px;
+  height: 100px;
+  background: red linear-gradient(#ff0000, #0000ff);
+}
+
+.backgroundGradientToTop {
+  margin-left: 5px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  width: 100px;
+  height: 100px;
+  background: red linear-gradient(to top, red, blue);
+}
+
+.backgroundGradientToBottom {
+  margin-left: 5px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 0, 0, 0.5) linear-gradient(to bottom, red, blue);
+}
+
+.backgroundGradientToLeft {
+  margin-left: 5px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 0, 0, 0.5) linear-gradient(to left, red, blue);
+}
+
+.backgroundGradientToRight {
+  margin-left: 5px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 0, 0, 0.5) linear-gradient(to right, red, blue);
+}
+
+.backgroundGradientToTopLeft {
+  margin-left: 5px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  width: 100px;
+  height: 100px;
+  background: red linear-gradient(to top left, rgba(255, 0, 0, 0.8), rgba(0, 0, 255, 0.8));
+}
+
+.backgroundGradientToTopRight {
+  margin-left: 5px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  width: 100px;
+  height: 100px;
+  background: red linear-gradient(to top right, rgba(255, 0, 0, 0.8), rgba(0, 0, 255, 0.8));
+}
+
+.backgroundGradientToBottomRight {
+  margin-left: 5px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  width: 100px;
+  height: 100px;
+  background: red linear-gradient(to bottom right, rgba(255, 0, 0, 0.8), rgba(0, 0, 255, 0.8));
+}
+
+.backgroundGradientToBottomLeft {
+  margin-left: 5px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  width: 100px;
+  height: 100px;
+  background: red linear-gradient(to bottom left, rgba(255, 0, 0, 0.8), rgba(0, 0, 255, 0.8));
+}
+
+.backgroundGradientGrad1Mix,
+.backgroundGradientGrad2Mix,
+.backgroundGradientGrad3Mix,
+.backgroundGradientGrad4Mix,
+.backgroundGradientGrad5Mix,
+.backgroundGradientGrad6Mix,
+.backgroundGradientGrad7Mix,
+.backgroundGradientGrad8Mix {
+  margin-left: 5px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  width: 300px;
+  height: 100px;
+  border: 1px solid red;
+}
+
+.backgroundGradientGrad1Mix {
+  background-image:
+    url("../../resource/bg_flower.gif"),
+    linear-gradient(to bottom, green, pink),
+    linear-gradient(to bottom left, red, yellow, blue);
+  background-size: 50px auto;
+  background-repeat: repeat, no-repeat;
+}
+
+.backgroundGradientGrad2Mix {
+  background-image:
+    url("../../resource/bg_flower.gif"),
+    linear-gradient(to bottom, green, pink),
+    linear-gradient(to top left, red, yellow, blue);
+  background-size: auto 50px;
+  background-repeat: repeat, no-repeat;
+}
+
+.backgroundGradientGrad3Mix {
+  background-image:
+    url("../../resource/bg_flower.gif"),
+    linear-gradient(to bottom, green, pink),
+    linear-gradient(to top right, red, yellow, blue);
+  background-size: 50px 50px;
+  background-repeat: repeat, no-repeat;
+}
+
+.backgroundGradientGrad4Mix {
+  background-image:
+    url("../../resource/bg_flower.gif"),
+    linear-gradient(to bottom, green, pink),
+    linear-gradient(to bottom right, red, yellow, blue);
+  background-size: 50px auto;
+  background-repeat: repeat, no-repeat;
+}
+
+.backgroundGradientGrad5Mix {
+  background-image:
+    url("../../resource/bg_flower.gif"),
+    linear-gradient(to bottom, green, pink),
+    linear-gradient(to left, red, yellow, blue);
+  background-size: contain, 150px;
+  background-repeat: repeat, no-repeat;
+}
+
+.backgroundGradientGrad6Mix {
+  background-image:
+    url("../../resource/bg_flower.gif"),
+    linear-gradient(to bottom, green, pink),
+    linear-gradient(to left, red, yellow, blue);
+  background-size: 150px, 100px, 100px;
+  background-repeat: repeat, no-repeat;
+}
+
+.backgroundGradientGrad7Mix {
+  background-image:
+    url("../../resource/bg_flower.gif"),
+    linear-gradient(30deg, red, yellow, blue),
+    linear-gradient(60deg, red, yellow, blue);
+  background-size: 150px, 100px, 100px;
+  background-repeat: repeat, no-repeat, repeat;
+}
+
+.backgroundGradientGrad8Mix {
+  background-image:
+    url("../../resource/bg_flower.gif"),
+    linear-gradient(-0.9rad, red, yellow, blue),
+    linear-gradient(-0.4rad, red, yellow, blue);
+  background-size: 50px, 100px, 100px;
+  background-repeat: repeat, no-repeat, repeat;
+}
+
+/* Background repeat demos */
+.backgroundRepeatRepeat,
+.backgroundRepeatX,
+.backgroundRepeatY,
+.backgroundNoRepeat,
+.backgroundRepeatSpace,
+.backgroundRepeatRound {
+  margin-left: 5px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  width: 220px;
+  height: 100px;
+  border: 1px dashed #bdbdbd;
+  background-image: url("../../resource/bg_flower.gif");
+  background-size: 40px 40px;
+}
+.backgroundRepeatRepeat { background-repeat: repeat; }
+.backgroundRepeatX { background-repeat: repeat-x; }
+.backgroundRepeatY { background-repeat: repeat-y; }
+.backgroundNoRepeat { background-repeat: no-repeat; }
+.backgroundRepeatSpace { background-repeat: space; }
+.backgroundRepeatRound { background-repeat: round; }
+
+/* Background position demos */
+.backgroundPositionLeftTop,
+.backgroundPositionCenter,
+.backgroundPositionRightOffset,
+.backgroundPositionPercentPx {
+  margin-left: 5px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  width: 220px;
+  height: 100px;
+  border: 1px dashed #bdbdbd;
+  background-image: url("../../resource/bg_flower.gif");
+  background-size: 50px 50px;
+  background-repeat: no-repeat;
+}
+.backgroundPositionLeftTop { background-position: left top; }
+.backgroundPositionCenter { background-position: center center; }
+.backgroundPositionRightOffset { background-position: right 20px bottom 10px; }
+.backgroundPositionPercentPx { background-position: 50% 10px; }
+
+/* Background size demos */
+.backgroundSizeAuto,
+.backgroundSizeCover,
+.backgroundSizeContain,
+.backgroundSize50Auto,
+.backgroundSizeAuto50 {
+  margin-left: 5px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  width: 220px;
+  height: 120px;
+  border: 1px dashed #bdbdbd;
+  background-image: url("../../resource/bg_flower.gif");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: #fafafa;
+}
+.backgroundSizeAuto { /* default auto */ }
+.backgroundSizeCover { background-size: cover; }
+.backgroundSizeContain { background-size: contain; }
+.backgroundSize50Auto { background-size: 50px auto; }
+.backgroundSizeAuto50 { background-size: auto 50px; }
+
+/* Background origin & clip demos */
+.backgroundOriginBorder,
+.backgroundOriginPadding,
+.backgroundOriginContent,
+.backgroundClipBorder,
+.backgroundClipPadding,
+.backgroundClipContent {
+  margin-left: 5px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  width: 220px;
+  height: 120px;
+  border: 10px solid #9e9e9e;
+  padding: 20px;
+  background-image: url("../../resource/bg_flower.gif");
+  background-repeat: no-repeat;
+  background-position: top left;
+  background-size: 60px 60px;
+  background-color: #fff7ed;
+}
+.backgroundOriginBorder { background-origin: border-box; }
+.backgroundOriginPadding { background-origin: padding-box; }
+.backgroundOriginContent { background-origin: content-box; }
+.backgroundClipBorder { background-clip: border-box; }
+.backgroundClipPadding { background-clip: padding-box; }
+.backgroundClipContent { background-clip: content-box; }
+
+/* Multiple backgrounds & debug overlay */
+.backgroundMultipleImages {
+  margin-left: 5px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  width: 240px;
+  height: 120px;
+  border: 1px dashed #bdbdbd;
+  background-color: #fef3c7;
+  background-image:
+    url("../../resource/bg_flower.gif"),
+    url("../../resource/bg_flower.gif");
+  background-repeat: no-repeat, no-repeat;
+  background-position: left 10px top 10px, right 10px bottom 10px;
+  background-size: 50px 50px, 70px 70px;
+}
+
+.backgroundDebugGrid {
+  margin-left: 5px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  width: 240px;
+  height: 120px;
+  border: 1px dashed #bdbdbd;
+  background-image:
+    url("../../resource/bg_flower.gif"),
+    linear-gradient(#0000 24px, rgba(0,0,0,0.15) 25px),
+    linear-gradient(90deg, #0000 24px, rgba(0,0,0,0.15) 25px);
+  background-repeat: no-repeat, repeat, repeat;
+  background-position: center, top left, top left;
+  background-size: 60px 60px, 25px 25px, 25px 25px;
+  background-color: #fff;
+}
+
+/* Attachment demos */
+.attachmentSection {
+  margin-top: 20px;
+}
+.attachmentTitle {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 8px;
+}
+.attachmentGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.attachmentBox {
+  height: 160px;
+  overflow: auto;
+  border: 1px solid #d1d5db;
+  position: relative;
+}
+.attachmentLabel {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  font-size: 12px;
+  color: #374151;
+  background: rgba(255,255,255,0.7);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.attachmentFiller {
+  height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #111827;
+}
+.backgroundAttachmentScroll,
+.backgroundAttachmentFixed {
+  background-image: linear-gradient(45deg, rgba(59,130,246,0.15) 25%, transparent 25%, transparent 50%, rgba(59,130,246,0.15) 50%, rgba(59,130,246,0.15) 75%, transparent 75%, transparent);
+  background-size: 32px 32px;
+}
+.backgroundAttachmentScroll { background-attachment: scroll; }
+.backgroundAttachmentFixed { background-attachment: fixed; }

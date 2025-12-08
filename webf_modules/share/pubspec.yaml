@@ -1,0 +1,33 @@
+name: webf_share
+description: WebF Share module for sharing content, text, and images
+version: 1.0.1
+homepage: https://openwebf.com
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  webf:
+    hosted: https://dart.cloudsmith.io/openwebf/packages/
+    version: ^0.23.10
+  share_plus: ^10.0.0
+  path_provider: ^2.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+
+# Information used by the publishing tool.
+publish_to: https://dart.cloudsmith.io/openwebf/packages/
+
+topics:
+  - webf
+  - share
+  - screenshot
+  - social

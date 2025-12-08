@@ -1,0 +1,75 @@
+.list {
+  padding: 20px;
+  margin: 0;
+  background-color: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 100vh;
+}
+
+.card {
+  background-color: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.cardTitle {
+  font-size: 16px;
+  color: #333;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.shapeContainer {
+  background: radial-gradient(circle at top left, rgb(255,53,26), rgb(0,235,235));
+  width: 150px;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clipInset {
+  clip-path: inset(10px 20px 30px 40px round 10px);
+}
+
+.clipCircle {
+  clip-path: circle(50% at 50% 50%);
+}
+
+.clipEllipse {
+  clip-path: ellipse(60% 40% at 50% 50%);
+}
+
+.clipTriangle {
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+
+.clipRhombus {
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+
+.clipStar {
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+.clipTrapezoid {
+  clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
+}
+
+.clipParallelogram {
+  clip-path: polygon(25% 0%, 100% 0%, 75% 100%, 0% 100%);
+}
+
+.text {
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}

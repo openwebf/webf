@@ -1,0 +1,594 @@
+/* Typography page styles */
+.list {
+  flex: 1;
+  padding: 0;
+  margin: 0;
+}
+
+.componentSection {
+  padding: 20px;
+  background-color: var(--background-color, #f5f5f5);
+  min-height: 100vh;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.sectionTitle {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.componentBlock {
+  display: flex;
+  flex-direction: column;
+}
+
+.componentItem {
+  background: var(--card-background, #ffffff);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-color, #e5e5e5);
+  margin-bottom: 32px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.itemLabel {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 8px;
+}
+
+.itemDesc {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.textContainer {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Basic text styles */
+.heading1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--primary-text-color, #333);
+  margin: 0 0 16px 0;
+  line-height: 1.2;
+}
+
+.heading2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin: 0 0 12px 0;
+  line-height: 1.3;
+}
+
+.heading3 {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--primary-text-color, #333);
+  margin: 0 0 10px 0;
+  line-height: 1.4;
+}
+
+.bodyText {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--primary-text-color, #333);
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+}
+
+.smallText {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--secondary-text-color, #666);
+  line-height: 1.5;
+  margin: 0 0 12px 0;
+}
+
+.boldText {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary-text-color, #333);
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+}
+
+.italicText {
+  font-size: 16px;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--primary-text-color, #333);
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+}
+
+/* Multilingual text styles */
+.multilingualSection {
+  margin-bottom: 24px;
+}
+
+.multilingualSection h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-color, #007aff);
+  margin: 0 0 8px 0;
+}
+
+.englishText {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--primary-text-color, #333);
+  margin: 0 0 16px 0;
+}
+
+.chineseText {
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--primary-text-color, #333);
+  margin: 0 0 16px 0;
+}
+
+.japaneseText {
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--primary-text-color, #333);
+  margin: 0 0 16px 0;
+}
+
+.mixedText {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--primary-text-color, #333);
+  margin: 0 0 16px 0;
+}
+
+/* Text and image layout using basic CSS */
+.flexLayout {
+  margin-bottom: 32px;
+}
+
+.flexLayout h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-color, #007aff);
+  margin: 0 0 12px 0;
+}
+
+/* Flexbox layouts */
+.flexContainer {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.flexContainerReverse {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: row-reverse;
+  margin-bottom: 24px;
+}
+
+.flexImage {
+  flex-shrink: 0;
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  object-fit: cover;
+  margin-right: 20px;
+}
+
+.flexContainerReverse .flexImage {
+  margin-right: 0;
+  margin-left: 20px;
+}
+
+.flexText {
+  flex: 1;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--primary-text-color, #333);
+  text-align: justify;
+  margin: 0;
+}
+
+/* Inline-block layout */
+.inlineLayout {
+  margin-bottom: 32px;
+}
+
+.inlineLayout h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-color, #007aff);
+  margin: 0 0 12px 0;
+}
+
+.inlineContainer {
+  font-size: 0; /* Remove whitespace between inline-block elements */
+  margin-bottom: 24px;
+}
+
+.inlineItem {
+  display: inline-block;
+  vertical-align: top;
+  width: 32%;
+  margin-right: 2%;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+  font-size: 16px; /* Reset font size */
+}
+
+.inlineItem:last-child {
+  margin-right: 0;
+}
+
+.inlineImage {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.inlineText {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--primary-text-color, #333);
+  margin: 0;
+}
+
+/* Magazine style layout */
+.magazineLayout {
+  margin-bottom: 32px;
+}
+
+.magazineLayout h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-color, #007aff);
+  margin: 0 0 12px 0;
+}
+
+.dropCapText {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--primary-text-color, #333);
+  text-align: justify;
+  margin: 0 0 16px 0;
+}
+
+.dropCap {
+  display: inline-block;
+  font-size: 72px;
+  line-height: 60px;
+  font-weight: 700;
+  margin: 0 8px -8px 0;
+  color: var(--accent-color, #007aff);
+  font-family: Georgia, serif;
+  vertical-align: top;
+}
+
+.magazineImageContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.magazineImage {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 200px;
+  height: auto;
+}
+
+.magazineCaption {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* Position-based overlapping layout */
+.overlapLayout {
+  margin-bottom: 32px;
+}
+
+.overlapLayout h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-color, #007aff);
+  margin: 0 0 12px 0;
+}
+
+.overlapContainer {
+  position: relative;
+  margin-bottom: 24px;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.overlapImage {
+  display: block;
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.overlapTextBox {
+  position: absolute;
+  bottom: 10px;
+  left: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.overlapText {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--primary-text-color, #333);
+  margin: 0;
+}
+
+/* Centered layout */
+.centeredLayout {
+  margin-bottom: 32px;
+}
+
+.centeredLayout h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-color, #007aff);
+  margin: 0 0 12px 0;
+}
+
+.centeredContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.centeredImage {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-bottom: 16px;
+}
+
+.centeredText {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--primary-text-color, #333);
+  margin: 0;
+  max-width: 100%;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+/* Text alignment */
+.alignmentSection p {
+  margin: 0 0 16px 0;
+  padding: 12px;
+  background: #ffffff;
+  border-radius: 6px;
+  border-left: 4px solid var(--accent-color, #007aff);
+}
+
+.textLeft {
+  text-align: left;
+}
+
+.textCenter {
+  text-align: center;
+}
+
+.textRight {
+  text-align: right;
+}
+
+.textJustify {
+  text-align: justify;
+}
+
+/* Line height and spacing */
+.spacingSection p {
+  margin: 0 0 20px 0;
+  padding: 16px;
+  background: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.tightSpacing {
+  line-height: 1.2;
+}
+
+.normalSpacing {
+  line-height: 1.6;
+}
+
+.looseSpacing {
+  line-height: 2.0;
+}
+
+/* Overflow handling */
+.overflowSection {
+  display: flex;
+  flex-wrap: wrap;
+  margin: -8px;
+}
+
+.overflowBox {
+  flex: 1 1 250px;
+  margin: 8px;
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+  min-height: 80px;
+  box-sizing: border-box;
+}
+
+.normalBreak {
+  word-wrap: break-word;
+  margin: 0;
+}
+
+.breakAll {
+  word-break: break-all;
+  margin: 0;
+}
+
+.ellipsisText {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+  .componentSection {
+    padding: 16px;
+  }
+
+  .heading1 {
+    font-size: 24px;
+  }
+
+  .heading2 {
+    font-size: 20px;
+  }
+
+  .heading3 {
+    font-size: 18px;
+  }
+
+  .flexContainer,
+  .flexContainerReverse {
+    flex-direction: column;
+  }
+
+  .flexImage {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+    align-self: center;
+    margin-right: 0;
+    margin-left: 0;
+    margin-bottom: 16px;
+  }
+  
+  .flexContainerReverse .flexImage {
+    margin-right: 0;
+    margin-left: 0;
+  }
+
+  .inlineItem {
+    display: block;
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 16px;
+  }
+
+  .overlapTextBox {
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    padding: 12px;
+  }
+
+  .overflowBox {
+    flex: 1 1 100%;
+  }
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .componentSection {
+    background-color: var(--dark-background-color, #1a1a1a);
+  }
+
+  .componentItem {
+    background: var(--dark-card-background, #2d2d2d);
+    border-color: var(--dark-border-color, #404040);
+  }
+
+  .textContainer {
+    background: #383838;
+    border-color: #555;
+  }
+
+  .sectionTitle,
+  .itemLabel,
+  .heading1,
+  .heading2,
+  .heading3,
+  .bodyText,
+  .boldText,
+  .italicText,
+  .englishText,
+  .chineseText,
+  .japaneseText,
+  .mixedText,
+  .flexText,
+  .dropCapText,
+  .inlineText,
+  .overlapText,
+  .centeredText {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .itemDesc,
+  .smallText {
+    color: var(--dark-secondary-text-color, #cccccc);
+  }
+
+  .alignmentSection p,
+  .spacingSection p,
+  .overflowBox,
+  .inlineItem {
+    background: #2d2d2d;
+    border-color: #555;
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+  
+  .overlapTextBox {
+    background: rgba(45, 45, 45, 0.95);
+  }
+  
+  .magazineCaption {
+    color: var(--dark-secondary-text-color, #cccccc);
+  }
+}

@@ -1,0 +1,391 @@
+.list {
+  flex: 1;
+  width: 100%;
+}
+
+.container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.description {
+  margin-bottom: 30px;
+  line-height: 1.6;
+}
+
+.description p {
+  margin-bottom: 10px;
+  color: #666;
+}
+
+.controls {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.runButton {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.runButton:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.runButton:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.results {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.resultCard {
+  flex: 1;
+  min-width: 300px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+}
+
+.resultCard h3 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.imageContainer {
+  width: 100%;
+  height: 300px;
+  background: #e9ecef;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.testImage {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.loadTime {
+  font-size: 24px;
+  font-weight: bold;
+  color: #007bff;
+}
+
+.comparison {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 30px;
+  border: 2px solid #e9ecef;
+}
+
+.comparison.positive {
+  background: #e8f4f8;
+  border-color: #28a745;
+}
+
+.comparison h3 {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.comparison p {
+  font-size: 18px;
+  color: #666;
+  font-weight: 500;
+}
+
+.comparison.positive p {
+  color: #28a745;
+}
+
+.codeExample {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+}
+
+.codeExample h3 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.codeExample pre {
+  background: #282c34;
+  color: #abb2bf;
+  padding: 15px;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.notes {
+  background: #fff3cd;
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 4px solid #ffc107;
+}
+
+.notes h3 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.notes ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.notes li {
+  margin-bottom: 8px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.resultDesc {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #999;
+  font-size: 14px;
+  text-align: center;
+}
+
+.codeBlock {
+  margin-bottom: 20px;
+}
+
+.codeBlock h4 {
+  margin-bottom: 10px;
+  color: #555;
+  font-size: 16px;
+}
+
+.additionalInfo {
+  margin-top: 30px;
+}
+
+.additionalInfo h3 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.useCase {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.useCase h4 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.useCase ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.useCase li {
+  margin-bottom: 8px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.note {
+  font-size: 14px;
+  color: #666;
+  margin-top: 10px;
+  font-style: italic;
+}
+
+.implementation {
+  background: #f0f8ff;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  border: 1px solid #d0e8ff;
+}
+
+.implementation h3 {
+  margin-bottom: 15px;
+  color: #0066cc;
+}
+
+.debugging {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 30px;
+}
+
+.debugging h3 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.debugging p {
+  margin-bottom: 15px;
+  color: #666;
+}
+
+.debugging ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.debugging li {
+  margin-bottom: 8px;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* New styles for two-column layout */
+.imageDisplay {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+  height: 70vh;
+  min-height: 500px;
+}
+
+.imageSection {
+  flex: 1;
+  width: 50%;
+  border: 3px solid #007bff;
+  border-radius: 10px;
+  padding: 10px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+.imageSection:first-child {
+  border-color: #28a745;
+}
+
+.imageSection:last-child {
+  border-color: #dc3545;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #fff;
+  text-align: center;
+  padding: 10px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.imageSection:first-child .sectionTitle {
+  background: #28a745;
+}
+
+.imageSection:last-child .sectionTitle {
+  background: #dc3545;
+}
+
+.scrollContainer {
+  flex: 1;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.imageGrid {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 5px;
+  margin: -3px;
+}
+
+.imageItem {
+  position: relative;
+  text-align: center;
+  margin: 3px;
+  flex: 0 0 auto;
+}
+
+.testImage {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+  background: #f8f9fa;
+  display: block;
+  margin: 0 auto;
+}
+
+.imageNumber {
+  display: block;
+  font-size: 9px;
+  color: #666;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .imageDisplay {
+    flex-direction: column;
+    height: auto;
+    gap: 15px;
+  }
+  
+  .imageSection {
+    width: 100%;
+    height: 300px;
+  }
+  
+  .imageGrid {
+    margin: -2px;
+  }
+  
+  .imageItem {
+    margin: 2px;
+  }
+  
+  .testImage {
+    width: 40px;
+    height: 40px;
+  }
+}

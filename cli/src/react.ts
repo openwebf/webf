@@ -1,0 +1,656 @@
+import _ from "lodash";
+import fs from 'fs';
+import path from 'path';
+import {ParameterType} from "./analyzer";
+import {ClassObject, FunctionArgumentType, FunctionDeclaration, TypeAliasObject, ConstObject, EnumObject} from "./declaration";
+import {IDLBlob} from "./IDLBlob";
+import {getPointerType, isPointerType, isUnionType, trimNullTypeFromType} from "./utils";
+import { debug } from './logger';
+
+function readTemplate(name: string) {
+  return fs.readFileSync(path.join(__dirname, '../templates/' + name + '.tpl'), {encoding: 'utf-8'});
+}
+
+function generateReturnType(type: ParameterType): string {
+  if (isUnionType(type)) {
+    const values = type.value as ParameterType[];
+    return values.map(v => {
+      if (v.value === FunctionArgumentType.null) {
+        return 'null';
+      }
+      // String literal unions: 'left' | 'center' | 'right'
+      if (typeof v.value === 'string') {
+        return `'${v.value}'`;
+      }
+      return 'any';
+    }).join(' | ');
+  }
+
+  // Handle non-literal unions such as boolean | null, number | null, CustomType | null
+  if (Array.isArray(type.value)) {
+    const values = type.value as ParameterType[];
+    const hasNull = values.some(v => v.value === FunctionArgumentType.null);
+    if (hasNull) {
+      const nonNulls = values.filter(v => v.value !== FunctionArgumentType.null);
+      if (nonNulls.length === 0) {
+        return 'null';
+      }
+      const parts: string[] = nonNulls.map(v => generateReturnType(v));
+      // Deduplicate and append null
+      const unique: string[] = Array.from(new Set(parts));
+      unique.push('null');
+      return unique.join(' | ');
+    }
+    // Complex non-null unions are rare for React typings; fall back to any
+    return 'any';
+  }
+  
+  if (isPointerType(type)) {
+    const pointerType = getPointerType(type);
+    // Map Dart's `Type` (from TS typeof) to TS `any`
+    if (pointerType === 'Type') return 'any';
+    return pointerType;
+  }
+  if (type.isArray && typeof type.value === 'object' && !Array.isArray(type.value)) {
+    const elemType = getPointerType(type.value);
+    // Map arrays of Dart `Type` to `any[]` in TS; parenthesize typeof
+    if (elemType === 'Type') return 'any[]';
+    if (typeof elemType === 'string' && elemType.startsWith('typeof ')) {
+      return `(${elemType})[]`;
+    }
+    return `${elemType}[]`;
+  }
+  switch (type.value) {
+    case FunctionArgumentType.int:
+    case FunctionArgumentType.double: {
+      return 'number';
+    }
+    case FunctionArgumentType.any: {
+      return 'any';
+    }
+    case FunctionArgumentType.boolean: {
+      return 'boolean';
+    }
+    case FunctionArgumentType.dom_string: {
+      return 'string';
+    }
+    case FunctionArgumentType.void:
+      return 'void';
+    default:
+      return 'void';
+  }
+}
+
+function generateEventHandlerType(type: ParameterType) {
+  if (!isPointerType(type)) {
+    throw new Error('Event type must be an instance of Event');
+  }
+  const pointerType = getPointerType(type);
+  if (pointerType === 'Event') {
+    return `EventHandler<SyntheticEvent<Element>>`;
+  }
+  if (pointerType === 'CustomEvent') {
+    return `EventHandler<SyntheticEvent<Element, CustomEvent>>`;
+  }
+  throw new Error('Unknown event type: ' + pointerType);
+}
+
+function getEventType(type: ParameterType) {
+  if (!isPointerType(type)) {
+    return 'Event';
+  }
+  const pointerType = getPointerType(type);
+  
+  // Handle CustomEvent with generic parameter
+  if (pointerType.startsWith('CustomEvent<') && pointerType.endsWith('>')) {
+    return pointerType;
+  }
+  
+  if (pointerType === 'CustomEvent') {
+    return 'CustomEvent';
+  }
+  // For specific event types like MouseEvent, TouchEvent, etc.
+  if (pointerType.endsWith('Event')) {
+    return pointerType;
+  }
+  return 'Event';
+}
+
+function generateMethodDeclaration(method: FunctionDeclaration) {
+  var methodName = method.name;
+  var args = method.args.map(arg => {
+    var argName = arg.name;
+    var argType = generateReturnType(arg.type);
+    return `${argName}: ${argType}`;
+  }).join(', ');
+  var returnType = generateReturnType(method.returnType);
+  return `${methodName}(${args}): ${returnType};`;
+}
+
+function generateMethodDeclarationWithDocs(method: FunctionDeclaration, indent: string = ''): string {
+  let result = '';
+  if (method.documentation) {
+    result += `${indent}/**\n`;
+    const docLines = method.documentation.split('\n');
+    docLines.forEach(line => {
+      result += `${indent} * ${line}\n`;
+    });
+    result += `${indent} */\n`;
+  }
+  result += `${indent}${generateMethodDeclaration(method)}`;
+  return result;
+}
+
+function toReactEventName(name: string) {
+  const eventName = 'on-' + name;
+  return _.camelCase(eventName);
+}
+
+export function toWebFTagName(className: string): string {
+  // Special handling for WebF prefix - treat it as a single unit
+  if (className.startsWith('WebF')) {
+    // Replace WebF with webf- and then kebab-case the rest
+    const withoutPrefix = className.substring(4);
+    return 'webf-' + _.kebabCase(withoutPrefix);
+  } else if (className.startsWith('Flutter')) {
+    // Handle Flutter prefix similarly
+    const withoutPrefix = className.substring(7);
+    return 'flutter-' + _.kebabCase(withoutPrefix);
+  }
+  // Default kebab-case for other components
+  return _.kebabCase(className);
+}
+
+export function generateReactComponent(blob: IDLBlob, packageName?: string, relativeDir?: string) {
+  const classObjects = blob.objects.filter(obj => obj instanceof ClassObject) as ClassObject[];
+  const typeAliases = blob.objects.filter(obj => obj instanceof TypeAliasObject) as TypeAliasObject[];
+  const constObjects = blob.objects.filter(obj => obj instanceof ConstObject) as ConstObject[];
+  const enumObjects = blob.objects.filter(obj => obj instanceof EnumObject) as EnumObject[];
+  
+  const classObjectDictionary = Object.fromEntries(
+    classObjects.map(object => {
+      return [object.name, object];
+    })
+  );
+
+  const properties = classObjects.filter(object => {
+    return object.name.endsWith('Properties');
+  });
+  const events = classObjects.filter(object => {
+    return object.name.endsWith('Events');
+  });
+  const methods = classObjects.filter(object => {
+    return object.name.endsWith('Methods');
+  });
+
+  const others = classObjects.filter(object => {
+    return !object.name.endsWith('Properties')
+      && !object.name.endsWith('Events')
+      && !object.name.endsWith('Methods');
+  });
+
+  // Include type aliases
+  const typeAliasDeclarations = typeAliases.map(typeAlias => {
+    return `type ${typeAlias.name} = ${typeAlias.type};`;
+  }).join('\n');
+  
+  // Include declare const values as ambient exports for type usage (e.g., unique symbol branding)
+  const constDeclarations = constObjects.map(c => `export declare const ${c.name}: ${c.type};`).join('\n');
+  
+  // Include enums as concrete exports (no declare) so they are usable as values
+  const enumDeclarations = enumObjects.map(e => {
+    const members = e.members.map(m => m.initializer ? `${m.name} = ${m.initializer}` : `${m.name}`).join(', ');
+    return `export enum ${e.name} { ${members} }`;
+  }).join('\n');
+  
+  // Names declared within this blob (so we shouldn't prefix them with __webfTypes)
+  const localTypeNames = new Set<string>([
+    ...others.map(o => o.name),
+    ...typeAliases.map(t => t.name),
+    ...constObjects.map(c => c.name),
+    ...enumObjects.map(e => e.name),
+  ]);
+
+  const dependencies = [
+    typeAliasDeclarations,
+    constDeclarations,
+    enumDeclarations,
+    // Include Methods interfaces as dependencies
+    methods.map(object => {
+      const methodDeclarations = object.methods.map(method => {
+        return generateMethodDeclarationWithDocs(method, '  ');
+      }).join('\n');
+
+      const lines: string[] = [];
+      if (object.documentation && object.documentation.trim().length > 0) {
+        lines.push('/**');
+        object.documentation.split('\n').forEach(line => {
+          lines.push(` * ${line}`);
+        });
+        lines.push(' */');
+      }
+
+      lines.push(`interface ${object.name} {`);
+      lines.push(methodDeclarations);
+      lines.push('}');
+
+      return lines.join('\n');
+    }).join('\n\n'),
+    others.map(object => {
+      if (!object || !object.props || object.props.length === 0) {
+        return '';
+      }
+
+      const interfaceLines: string[] = [];
+
+      if (object.documentation && object.documentation.trim().length > 0) {
+        interfaceLines.push('/**');
+        object.documentation.split('\n').forEach(line => {
+          interfaceLines.push(` * ${line}`);
+        });
+        interfaceLines.push(' */');
+      }
+
+      interfaceLines.push(`interface ${object.name} {`);
+
+      const propLines = object.props.map(prop => {
+        const lines: string[] = [];
+
+        if (prop.documentation && prop.documentation.trim().length > 0) {
+          lines.push('  /**');
+          prop.documentation.split('\n').forEach(line => {
+            lines.push(`   * ${line}`);
+          });
+          lines.push('   */');
+        }
+
+        const optionalToken = prop.optional ? '?' : '';
+        lines.push(`  ${prop.name}${optionalToken}: ${generateReturnType(prop.type)};`);
+
+        return lines.join('\n');
+      });
+
+      interfaceLines.push(propLines.join('\n'));
+      interfaceLines.push('}');
+
+      return interfaceLines.join('\n');
+    }).filter(Boolean).join('\n\n')
+  ].filter(Boolean).join('\n\n');
+
+  // Generate all components from this file
+  const components: string[] = [];
+  
+  // Create a map of component names to their properties, events, and methods
+  const componentMap = new Map<string, { properties?: ClassObject, events?: ClassObject, methods?: ClassObject }>();
+  
+  // Process all Properties interfaces
+  properties.forEach(prop => {
+    const componentName = prop.name.replace(/Properties$/, '');
+    if (!componentMap.has(componentName)) {
+      componentMap.set(componentName, {});
+    }
+    componentMap.get(componentName)!.properties = prop;
+  });
+  
+  // Process all Events interfaces
+  events.forEach(event => {
+    const componentName = event.name.replace(/Events$/, '');
+    if (!componentMap.has(componentName)) {
+      componentMap.set(componentName, {});
+    }
+    componentMap.get(componentName)!.events = event;
+  });
+  
+  // Process all Methods interfaces
+  methods.forEach(method => {
+    const componentName = method.name.replace(/Methods$/, '');
+    if (!componentMap.has(componentName)) {
+      componentMap.set(componentName, {});
+    }
+    componentMap.get(componentName)!.methods = method;
+  });
+  
+  // If we have multiple components, we need to generate a combined file
+  const componentEntries = Array.from(componentMap.entries());
+  
+  if (componentEntries.length === 0) {
+    return '';
+  }
+  
+  if (componentEntries.length === 1) {
+    // Single component - use existing template
+    const [className, component] = componentEntries[0];
+    
+    // Determine the import path for createWebFComponent
+    const isReactCoreUI = packageName === '@openwebf/react-core-ui';
+    let createWebFComponentImport: string;
+    
+    if (isReactCoreUI && relativeDir) {
+      // Calculate relative path from current file to utils/createWebFComponent
+      // Files are generated in src/<relativeDir>/ and need to import from src/utils/
+      const depth = relativeDir.split('/').filter(p => p).length;
+      const upPath = '../'.repeat(depth);
+      createWebFComponentImport = `import { createWebFComponent, WebFElementWithMethods } from "${upPath}utils/createWebFComponent";`;
+    } else {
+      createWebFComponentImport = `import { createWebFComponent, WebFElementWithMethods } from "@openwebf/react-core-ui";`;
+    }
+    
+    const templateContent = readTemplate('react.component.tsx')
+      .replace(
+        'import { createWebFComponent, WebFElementWithMethods } from "@openwebf/react-core-ui";',
+        createWebFComponentImport
+      );
+    
+    // Generate return type mapping; always use __webfTypes namespace for typeof
+    const genRT = (type: ParameterType): string => {
+      if (isUnionType(type)) {
+        const values = type.value as ParameterType[];
+        return values.map(v => {
+          if (v.value === FunctionArgumentType.null) {
+            return 'null';
+          }
+          if (typeof v.value === 'string') {
+            return `'${v.value}'`;
+          }
+          return 'any';
+        }).join(' | ');
+      }
+      if (Array.isArray(type.value)) {
+        const values = type.value as ParameterType[];
+        const hasNull = values.some(v => v.value === FunctionArgumentType.null);
+        if (hasNull) {
+          const nonNulls = values.filter(v => v.value !== FunctionArgumentType.null);
+          if (nonNulls.length === 0) {
+            return 'null';
+          }
+          const parts: string[] = nonNulls.map(v => genRT(v));
+          const unique: string[] = Array.from(new Set(parts));
+          unique.push('null');
+          return unique.join(' | ');
+        }
+        return 'any';
+      }
+      if (isPointerType(type)) {
+        const pointerType = getPointerType(type);
+        if (pointerType === 'Type') return 'any';
+        if (typeof pointerType === 'string' && pointerType.startsWith('typeof ')) {
+          const ident = pointerType.substring('typeof '.length).trim();
+          return `typeof __webfTypes.${ident}`;
+        }
+        // Prefix external pointer types with __webfTypes unless locally declared
+        if (typeof pointerType === 'string' && /^(?:[A-Za-z_][A-Za-z0-9_]*)(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/.test(pointerType)) {
+          const base = pointerType.split('.')[0];
+          if (!localTypeNames.has(base)) {
+            return `__webfTypes.${pointerType}`;
+          }
+        }
+        return pointerType;
+      }
+      if (type.isArray && typeof type.value === 'object' && !Array.isArray(type.value)) {
+        const elemType = getPointerType(type.value);
+        if (elemType === 'Type') return 'any[]';
+        if (typeof elemType === 'string' && elemType.startsWith('typeof ')) {
+          const ident = elemType.substring('typeof '.length).trim();
+          return `(typeof __webfTypes.${ident})[]`;
+        }
+        if (typeof elemType === 'string' && /^(?:[A-Za-z_][A-Za-z0-9_]*)(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/.test(elemType)) {
+          const base = elemType.split('.')[0];
+          if (!localTypeNames.has(base)) {
+            return `__webfTypes.${elemType}[]`;
+          }
+        }
+        return `${elemType}[]`;
+      }
+      switch (type.value) {
+        case FunctionArgumentType.int:
+        case FunctionArgumentType.double:
+          return 'number';
+        case FunctionArgumentType.any:
+          return 'any';
+        case FunctionArgumentType.boolean:
+          return 'boolean';
+        case FunctionArgumentType.dom_string:
+          return 'string';
+        case FunctionArgumentType.void:
+        default:
+          return 'void';
+      }
+    };
+
+    // Compute relative import path to src/types
+    const depth = (relativeDir || '').split('/').filter(p => p).length;
+    const upPath = '../'.repeat(depth);
+    // Always import the types namespace for typeof references
+    const typesImport = `import * as __webfTypes from "${upPath}types";\n\n`;
+
+    // Debug: collect typeof references from props for this component
+    const typeofRefs = new Set<string>();
+    if (component.properties) {
+      component.properties.props.forEach(p => {
+        const t = p.type;
+        if (!t) return;
+        if (!t.isArray && typeof (t.value as any) === 'string' && String((t.value as any)).startsWith('typeof ')) {
+          const ident = String((t.value as any)).substring('typeof '.length).trim();
+          typeofRefs.add(ident);
+        }
+      });
+    }
+    debug(`[react] Generating ${className} (${blob.relativeDir}/${blob.filename}.tsx) typeof refs: ${Array.from(typeofRefs).join(', ') || '(none)'}; types import: ${upPath}types`);
+
+    const dependenciesWithImports = `${typesImport}${dependencies}`;
+
+    let content = _.template(templateContent)({
+      className: className,
+      properties: component.properties,
+      events: component.events,
+      methods: component.methods,
+      classObjectDictionary,
+      dependencies: dependenciesWithImports,
+      blob,
+      toReactEventName,
+      toWebFTagName,
+      generateReturnType: genRT,
+      generateMethodDeclaration,
+      generateMethodDeclarationWithDocs,
+      generateEventHandlerType,
+      getEventType,
+    });
+
+    return content.split('\n').filter(str => {
+      return str.trim().length > 0;
+    }).join('\n');
+  }
+  
+  // Multiple components - generate with shared imports
+  const componentDefinitions: string[] = [];
+  
+  // Determine the import path for createWebFComponent
+  const isReactCoreUI = packageName === '@openwebf/react-core-ui';
+  let createWebFComponentImport: string;
+  
+  if (isReactCoreUI && relativeDir) {
+    // Calculate relative path from current file to utils/createWebFComponent
+    // Files are generated in src/<relativeDir>/ and need to import from src/utils/
+    const depth = relativeDir.split('/').filter(p => p).length;
+    const upPath = '../'.repeat(depth);
+    createWebFComponentImport = `import { createWebFComponent, WebFElementWithMethods } from "${upPath}utils/createWebFComponent";`;
+  } else {
+    createWebFComponentImport = `import { createWebFComponent, WebFElementWithMethods } from "@openwebf/react-core-ui";`;
+  }
+  
+  componentEntries.forEach(([className, component]) => {
+    const genRT = (type: ParameterType): string => {
+      if (isUnionType(type)) {
+        const values = type.value as ParameterType[];
+        return values.map(v => {
+          if (v.value === FunctionArgumentType.null) {
+            return 'null';
+          }
+          if (typeof v.value === 'string') {
+            return `'${v.value}'`;
+          }
+          return 'any';
+        }).join(' | ');
+      }
+      if (Array.isArray(type.value)) {
+        const values = type.value as ParameterType[];
+        const hasNull = values.some(v => v.value === FunctionArgumentType.null);
+        if (hasNull) {
+          const nonNulls = values.filter(v => v.value !== FunctionArgumentType.null);
+          if (nonNulls.length === 0) {
+            return 'null';
+          }
+          const parts: string[] = nonNulls.map(v => genRT(v));
+          const unique: string[] = Array.from(new Set(parts));
+          unique.push('null');
+          return unique.join(' | ');
+        }
+        return 'any';
+      }
+      if (isPointerType(type)) {
+        const pointerType = getPointerType(type);
+        if (pointerType === 'Type') return 'any';
+        if (typeof pointerType === 'string' && pointerType.startsWith('typeof ')) {
+          const ident = pointerType.substring('typeof '.length).trim();
+          return `typeof __webfTypes.${ident}`;
+        }
+        if (typeof pointerType === 'string' && /^(?:[A-Za-z_][A-Za-z0-9_]*)(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/.test(pointerType)) {
+          const base = pointerType.split('.')[0];
+          if (!localTypeNames.has(base)) {
+            return `__webfTypes.${pointerType}`;
+          }
+        }
+        return pointerType;
+      }
+      if (type.isArray && typeof type.value === 'object' && !Array.isArray(type.value)) {
+        const elemType = getPointerType(type.value);
+        if (elemType === 'Type') return 'any[]';
+        if (typeof elemType === 'string' && elemType.startsWith('typeof ')) {
+          const ident = elemType.substring('typeof '.length).trim();
+          return `(typeof __webfTypes.${ident})[]`;
+        }
+        if (typeof elemType === 'string' && /^(?:[A-Za-z_][A-Za-z0-9_]*)(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/.test(elemType)) {
+          const base = elemType.split('.')[0];
+          if (!localTypeNames.has(base)) {
+            return `__webfTypes.${elemType}[]`;
+          }
+        }
+        return `${elemType}[]`;
+      }
+      switch (type.value) {
+        case FunctionArgumentType.int:
+        case FunctionArgumentType.double:
+          return 'number';
+        case FunctionArgumentType.any:
+          return 'any';
+        case FunctionArgumentType.boolean:
+          return 'boolean';
+        case FunctionArgumentType.dom_string:
+          return 'string';
+        case FunctionArgumentType.void:
+        default:
+          return 'void';
+      }
+    };
+
+    const content = _.template(readTemplate('react.component.tsx'))({
+      className: className,
+      properties: component.properties,
+      events: component.events,
+      methods: component.methods,
+      classObjectDictionary,
+      dependencies: '', // Dependencies will be at the top
+      blob,
+      toReactEventName,
+      toWebFTagName,
+      generateReturnType: genRT,
+      generateMethodDeclaration,
+      generateMethodDeclarationWithDocs,
+      generateEventHandlerType,
+      getEventType,
+    });
+    
+    // Remove the import statements from all but the first component
+    const lines = content.split('\n');
+    const withoutImports = lines.filter(line => {
+      return !line.startsWith('import ');
+    }).join('\n');
+    
+    componentDefinitions.push(withoutImports);
+  });
+  
+  // Combine with shared imports at the top
+  // Compute relative import path to src/types and always include namespace import
+  const depth = (relativeDir || '').split('/').filter(p => p).length;
+  const upPath = '../'.repeat(depth);
+  const typesImport = `import * as __webfTypes from "${upPath}types";`;
+
+  debug(`[react] Generating combined components for ${blob.filename}.tsx; types import: ${upPath}types`);
+
+  let result = [
+    'import React from "react";',
+    createWebFComponentImport,
+    typesImport,
+    '',
+    dependencies,
+    '',
+    ...componentDefinitions
+  ].filter(line => line !== undefined).join('\n');
+
+  return result.split('\n').filter(str => {
+    return str.trim().length > 0;
+  }).join('\n');
+}
+
+export function generateReactIndex(blobs: IDLBlob[]) {
+  const components = blobs.flatMap(blob => {
+    const classObjects = blob.objects.filter(obj => obj instanceof ClassObject) as ClassObject[];
+
+    const properties = classObjects.filter(object => {
+      return object.name.endsWith('Properties');
+    });
+    const events = classObjects.filter(object => {
+      return object.name.endsWith('Events');
+    });
+
+    // Create a map of component names
+    const componentMap = new Map<string, boolean>();
+    
+    // Add all components from Properties interfaces
+    properties.forEach(prop => {
+      const componentName = prop.name.replace(/Properties$/, '');
+      componentMap.set(componentName, true);
+    });
+    
+    // Add all components from Events interfaces
+    events.forEach(event => {
+      const componentName = event.name.replace(/Events$/, '');
+      componentMap.set(componentName, true);
+    });
+    
+    // Return an array of all components from this file
+    return Array.from(componentMap.keys()).map(className => ({
+      className: className,
+      fileName: blob.filename,
+      relativeDir: blob.relativeDir,
+    }));
+  }).filter(component => {
+    return component.className.length > 0;
+  });
+  
+  // Deduplicate components by className, keeping the first occurrence
+  const deduplicatedComponents = new Map<string, { className: string; fileName: string; relativeDir: string }>();
+  components.forEach(component => {
+    if (!deduplicatedComponents.has(component.className)) {
+      deduplicatedComponents.set(component.className, component);
+    }
+  });
+  
+  const content = _.template(readTemplate('react.index.ts'))({
+    components: Array.from(deduplicatedComponents.values()),
+  });
+
+  return content.split('\n').filter(str => {
+    return str.trim().length > 0;
+  }).join('\n');
+}

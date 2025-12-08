@@ -1,0 +1,32 @@
+name: webf_deeplink
+description: WebF Deep Link module for handling URL schemes and app navigation
+version: 1.0.1
+homepage: https://openwebf.com
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  webf: 
+    hosted: https://dart.cloudsmith.io/openwebf/packages/
+    version: ^0.23.0
+  url_launcher: ^6.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+
+# Information used by the publishing tool.
+publish_to: https://dart.cloudsmith.io/openwebf/packages/
+
+topics:
+  - webf
+  - deeplink
+  - url-launcher
+  - navigation

@@ -1,0 +1,135 @@
+.list {
+  padding: 20px;
+  margin: 0;
+  background-color: #f8f9fa;
+  overflow-y: scroll;
+}
+
+.headerTitle {
+  font-size: 34px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.colorWidth {
+  border-width: 5px;
+  border-style: solid;
+  border-color: green red;
+}
+
+.wrapper {
+  display: flex;
+  font-weight: bold;
+  flex-direction: row;
+  flex-wrap: wrap;
+  row-gap: 20px;
+  align-items: center;
+  background-color: #f4f4f4;
+  padding: 20px;
+}
+
+.wrapper > * {
+  padding: 10px;
+  text-align: center;
+}
+
+.footer {
+  background: lightgreen;
+  flex: 1 100%;
+}
+
+.main {
+  background: deepskyblue;
+  flex: 1 100%;
+}
+
+.aside1 {
+  background: gold;
+  flex: 1 0 0;
+}
+
+.aside2 {
+  background: hotpink;
+  flex: 2 0 0;
+}
+
+.section {
+  margin: 20px 0;
+  padding: 16px;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.sectionTitle {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.sectionSubTitle {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.bulletList {
+  margin: 0 0 8px 16px;
+  padding: 0;
+  list-style: disc;
+  color: #374151;
+  text-align: left;
+}
+
+.note {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #6b7280;
+  text-align: left;
+}
+
+.btn {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #111827;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: #374151;
+}
+
+/* Generic demo helpers */
+.demoContainer {
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.demoItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111827;
+  font-size: 12px;
+  background: #dbeafe; /* light blue */
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+}
+
+.demoItem.alt1 { background: #fde68a; border-color: #fcd34d; }
+.demoItem.alt2 { background: #fecaca; border-color: #fca5a5; }
+.demoItem.alt3 { background: #bbf7d0; border-color: #86efac; }
+.demoItem.alt4 { background: #f5d0fe; border-color: #e9d5ff; }
+
+.variantTitle {
+  margin: 6px 0 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
