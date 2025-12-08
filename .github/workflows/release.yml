@@ -827,25 +827,25 @@ jobs:
             echo "⚠️ Android JNI libraries not found"
           fi
 
-      - name: Authenticate Cloudsmith for WebF
+      - name: Authenticate pub.dev for WebF
         run: |
-          echo "🔐 Setting up Cloudsmith authentication..."
+          echo "🔐 Setting up pub.dev authentication..."
 
-          # Add the Cloudsmith token for the WebF repository
-          echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/packages/
+          # Add the pub.dev token for publishing
+          echo '${{ secrets.PUB_DEV_TOKEN }}' | dart pub token add https://pub.dev
 
-          echo "✅ Cloudsmith authentication configured"
+          echo "✅ pub.dev authentication configured"
 
-      - name: Publish to Cloudsmith
+      - name: Publish to pub.dev
         run: |
-          echo "🚀 Publishing WebF to Cloudsmith..."
+          echo "🚀 Publishing WebF to pub.dev..."
 
           cd webf
 
           # Run Flutter pub get to ensure dependencies are resolved
           flutter pub get
 
-          # Publish to Cloudsmith repository (--force to skip confirmation)
+          # Publish to pub.dev (--force to skip confirmation)
           dart pub publish --force
 
           # Get version for success message
@@ -857,8 +857,8 @@ jobs:
           else
             VERSION="unknown"
           fi
-          
-          echo "✅ Successfully published WebF version $VERSION to Cloudsmith"
+
+          echo "✅ Successfully published WebF version $VERSION to pub.dev"
 
       - name: Summary
         run: |
@@ -877,7 +877,7 @@ jobs:
           echo "   - Version: $VERSION"
           echo "   - Branch: ${{ github.ref_name }}"
           echo "   - Commit: ${{ github.sha }}"
-          echo "   - Published to: Cloudsmith (https://dart.cloudsmith.io/openwebf/packages/)"
+          echo "   - Published to: pub.dev (https://pub.dev/packages/webf)"
           echo "   - Debug symbols stored in Git LFS"
 
   create-pr-to-main:
@@ -955,16 +955,16 @@ jobs:
           ### 📋 Release Information
           - **Version**: ${{ steps.version-info.outputs.version }}
           - **Branch**: ${{ steps.version-info.outputs.release_branch }}
-          - **Published to**: [Cloudsmith](https://dart.cloudsmith.io/openwebf/packages/)
+          - **Published to**: [pub.dev](https://pub.dev/packages/webf)
 
           ### ✅ Automated Checks Completed
           - All platform bridges built successfully
           - Debug symbols collected and stored in Git LFS
-          - Package published to Cloudsmith
+          - Package published to pub.dev
 
           ### 📝 Merge Checklist
           - [ ] Review the changes in this release
-          - [ ] Verify package is available on Cloudsmith
+          - [ ] Verify package is available on pub.dev
           - [ ] Confirm all CI checks pass
 
           ---
@@ -980,7 +980,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### ✅ Release Published" >> $GITHUB_STEP_SUMMARY
           echo "- **Version**: ${{ steps.version-info.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Package**: Published to [Cloudsmith](https://dart.cloudsmith.io/openwebf/packages/)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Package**: Published to [pub.dev](https://pub.dev/packages/webf)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🔄 Pull Request" >> $GITHUB_STEP_SUMMARY
           echo "A pull request has been created to merge the release changes back to main branch." >> $GITHUB_STEP_SUMMARY

@@ -167,9 +167,7 @@ WebF Enterprise is a closed-source product requiring subscription:
 
 ```yaml
 dependencies:
-  webf:
-    hosted: https://dart.cloudsmith.io/openwebf/webf-enterprise/
-    version: ^0.22.0
+  webf: ^0.23.10  # Enterprise version available on pub.dev
 ```
 
 ## 📊 WebF MCP Server
