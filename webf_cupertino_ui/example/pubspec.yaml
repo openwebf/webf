@@ -10,9 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.6
-  webf:
-    hosted: https://dart.cloudsmith.io/openwebf/packages/
-    version: ^0.23.0
+  webf: ^0.23.10  # Available on pub.dev
   webf_cupertino_ui:
     path: ../
 

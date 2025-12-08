@@ -3,7 +3,7 @@ description: W3C standards-compliant web rendering engine based on Flutter, allo
 version: 0.23.10
 homepage: https://openwebf.com
 license: GPL-3.0-only
-publish_to: https://dart.cloudsmith.io/openwebf/packages/
+publish_to: none
 environment:
   sdk: ">=3.0.0 <4.0.0"
   flutter: ">=3.13.0"

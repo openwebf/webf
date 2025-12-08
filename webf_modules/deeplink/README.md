@@ -16,8 +16,7 @@ Add this to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  webf_deeplink: ^0.1.0
-    hosted: https://dart.cloudsmith.io/openwebf/packages/
+  webf_deeplink: ^0.1.0  # Available on pub.dev
 ```
 
 ## Usage

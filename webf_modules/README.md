@@ -32,10 +32,8 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  webf_deeplink: ^1.0.0
-    hosted: https://dart.cloudsmith.io/openwebf/packages/
-  webf_share: ^1.0.0
-    hosted: https://dart.cloudsmith.io/openwebf/packages/
+  webf_deeplink: ^1.0.0  # Available on pub.dev
+  webf_share: ^1.0.0  # Available on pub.dev
 ```
 
 ## Quick Start
@@ -105,7 +103,7 @@ const result = await WebFShare.saveScreenshot({
 
 - **Flutter**: >=3.0.0
 - **Dart SDK**: >=3.0.0 <4.0.0
-- **WebF**: ^0.22.0 (from Cloudsmith)
+- **WebF**: ^0.23.0 (available on pub.dev)
 
 ## License
 

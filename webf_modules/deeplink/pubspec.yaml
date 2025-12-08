@@ -10,9 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  webf: 
-    hosted: https://dart.cloudsmith.io/openwebf/packages/
-    version: ^0.23.0
+  webf: ^0.23.10
   url_launcher: ^6.2.0
 
 dev_dependencies:
@@ -23,7 +21,7 @@ dev_dependencies:
 flutter:
 
 # Information used by the publishing tool.
-publish_to: https://dart.cloudsmith.io/openwebf/packages/
+publish_to: none
 
 topics:
   - webf
