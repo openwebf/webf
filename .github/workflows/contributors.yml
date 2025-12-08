@@ -1,4 +1,6 @@
 name: Create contributors
+permissions:
+  contents: read
 
 on: [workflow_dispatch]
 
