@@ -12,6 +12,7 @@
 #include "bindings/qjs/script_promise_resolver.h"
 #include "core/dom/document.h"
 #include "foundation/native_value_converter.h"
+#include "foundation/string/character_visitor.h"
 #include "widget_element_shape.h"
 
 namespace webf {
@@ -53,10 +54,6 @@ void WidgetElement::NamedPropertyEnumerator(std::vector<AtomicString>& names, Ex
 }
 
 static bool IsAsyncKey(const AtomicString& key, char* normal_string) {
-  if (!key.Is8Bit()) {
-    return false;
-  }
-
   const char* suffix = "_async";
   size_t str_len = key.length();
   size_t suffix_len = std::strlen(suffix);
@@ -65,18 +62,29 @@ static bool IsAsyncKey(const AtomicString& key, char* normal_string) {
     return false;  // String is shorter than the suffix
   }
 
-  const LChar* string = key.Characters8();
+  return VisitCharacters(key, [&](auto chars) -> bool {
+    using CharT = typename std::decay_t<decltype(chars)>::value_type;
 
-  // Compare the suffix part of the string
-  bool is_match = std::strcmp(reinterpret_cast<const char*>(string + (str_len - suffix_len)), suffix) == 0;
+    // Compare the suffix part of the string.
+    for (size_t i = 0; i < suffix_len; ++i) {
+      CharT ch = chars[str_len - suffix_len + i];
+      if (static_cast<char>(static_cast<unsigned char>(ch)) != suffix[i]) {
+        return false;
+      }
+    }
 
-  if (is_match) {
+    // Copy the prefix (without the suffix) into normal_string.
     size_t new_len = str_len - suffix_len;
-    std::strncpy(normal_string, reinterpret_cast<const char*>(string), new_len);
+    for (size_t i = 0; i < new_len; ++i) {
+      CharT ch = chars[i];
+      if (static_cast<unsigned char>(ch) > 0xFF) {
+        return false;
+      }
+      normal_string[i] = static_cast<char>(static_cast<unsigned char>(ch));
+    }
     normal_string[new_len] = '\0';
-  }
-
-  return is_match;
+    return true;
+  });
 }
 
 ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& exception_state) {

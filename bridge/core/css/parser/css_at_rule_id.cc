@@ -13,21 +13,18 @@
 #include <cassert>
 #include "../../../foundation/string/ascii_types.h"
 #include "../../../foundation/string/string_builder.h"
+#include "foundation/string/utf8_codecs.h"
 #include "core/css/parser/css_parser_context.h"
-#include "string/utf8_codecs.h"
 
 namespace webf {
 
 CSSAtRuleID CssAtRuleID(StringView name) {
-  // Convert StringView to std::string_view for comparison
-  UTF8String utf8_string;
-  if (!name.IsNull() && name.Is8Bit()) {
-    utf8_string = UTF8Codecs::Encode(name);
-  } else if (!name.IsNull()) {
-    // For 16-bit strings, we need to convert to 8-bit first
-    // For now, just return invalid for non-8bit strings
+  if (name.IsNull()) {
     return CSSAtRuleID::kCSSAtRuleInvalid;
   }
+
+  // Convert StringView to UTF-8 for comparison, regardless of backing width.
+  UTF8String utf8_string = UTF8Codecs::Encode(name);
   
   if (EqualIgnoringASCIICase(utf8_string, "view-transition")) {
     return CSSAtRuleID::kCSSAtRuleViewTransition;
