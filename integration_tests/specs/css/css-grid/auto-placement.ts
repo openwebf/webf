@@ -544,11 +544,16 @@ describe('CSS Grid auto placement', () => {
       'style',
       'display:grid;width:200px;grid-template-columns:repeat(auto-fit,40px);justify-content:center;column-gap:0;',
     );
+    grid.style.backgroundColor = 'lightgray'
 
     for (let i = 0; i < 2; i++) {
       const cell = document.createElement('div');
       cell.style.height = '20px';
-      cell.style.backgroundColor = 'rgba(233, 30, 99, 0.4)';
+      if  (i == 0) {
+        cell.style.backgroundColor = 'rgba(233, 30, 99, 0.4)';
+      } else {
+        cell.style.backgroundColor = 'rgba(0, 188, 212, 0.5)';
+      }
       grid.appendChild(cell);
     }
 
@@ -569,11 +574,16 @@ describe('CSS Grid auto placement', () => {
       'style',
       'display:grid;height:200px;grid-template-columns:60px;grid-template-rows:repeat(auto-fit,40px);align-content:center;row-gap:0;',
     );
+    grid.style.backgroundColor = 'lightgray'
 
     for (let i = 0; i < 2; i++) {
       const cell = document.createElement('div');
       cell.style.height = '20px';
-      cell.style.backgroundColor = 'rgba(103, 58, 183, 0.4)';
+      if  (i == 0) {
+        cell.style.backgroundColor = 'rgba(103, 58, 183, 0.4)';
+      } else {
+        cell.style.backgroundColor = 'rgba(0, 188, 212, 0.5)';
+      }
       grid.appendChild(cell);
     }
 
