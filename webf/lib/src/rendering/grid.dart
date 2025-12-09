@@ -1237,13 +1237,28 @@ class RenderGridLayout extends RenderLayoutBox {
       }
     }
 
-    // Final size constrained by constraints
+    // Final size constrained by constraints.
+    // For grid containers, the used border-box width/height come from:
+    //   - definite width/height if specified;
+    //   - otherwise, auto sizing rules using the available inner size.
     final bool isBlockGrid =
         renderStyle.display == CSSDisplay.grid && renderStyle.effectiveDisplay == CSSDisplay.grid;
     double layoutContentWidth = usedContentWidth;
     double layoutContentHeight = usedContentHeight;
 
-    if (renderStyle.width.isAuto && innerMaxWidth != null && innerMaxWidth.isFinite) {
+    // 1) Definite width: honor the specified border-box width from style tree.
+    //    This is required so that alignment properties (justify-content) operate
+    //    against the correct container width even when auto-fit collapses tracks.
+    final double? logicalBorderBoxWidth = renderStyle.borderBoxLogicalWidth;
+    if (renderStyle.width.isNotAuto &&
+        logicalBorderBoxWidth != null &&
+        logicalBorderBoxWidth.isFinite &&
+        logicalBorderBoxWidth > 0) {
+      layoutContentWidth = math.max(0.0, logicalBorderBoxWidth - horizontalPaddingBorder);
+    } else if (renderStyle.width.isAuto && innerMaxWidth != null && innerMaxWidth.isFinite) {
+      // 2) Auto width: for block-level grids, stretch to the available width
+      //    (similar to block and flow layout); for others, only adopt the
+      //    available width when empty so they still shrink-wrap contents.
       if (isBlockGrid) {
         layoutContentWidth = math.max(layoutContentWidth, innerMaxWidth);
       } else if (layoutContentWidth == 0 && !hasAnyChild) {
@@ -1254,7 +1269,15 @@ class RenderGridLayout extends RenderLayoutBox {
         layoutContentWidth = innerMaxWidth;
       }
     }
-    if (layoutContentHeight == 0 && innerMaxHeight != null && innerMaxHeight.isFinite) {
+
+    // Height follows existing auto rules but also respects definite height.
+    final double? logicalBorderBoxHeight = renderStyle.borderBoxLogicalHeight;
+    if (renderStyle.height.isNotAuto &&
+        logicalBorderBoxHeight != null &&
+        logicalBorderBoxHeight.isFinite &&
+        logicalBorderBoxHeight > 0) {
+      layoutContentHeight = math.max(0.0, logicalBorderBoxHeight - verticalPaddingBorder);
+    } else if (layoutContentHeight == 0 && innerMaxHeight != null && innerMaxHeight.isFinite) {
       if (renderStyle.height.isNotAuto || !hasAnyChild) {
         layoutContentHeight = innerMaxHeight;
       }
