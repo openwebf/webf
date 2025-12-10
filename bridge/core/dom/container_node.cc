@@ -734,9 +734,8 @@ void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange& c
 
   // When Blink CSS is enabled, structural changes that affect elements should
   // mark the affected subtree as needing style recomputation. The actual style
-  // update is performed later via StyleEngine::RecalcInvalidatedStyles() on
-  // the next frame / FlushUICommand, rather than doing a full synchronous
-  // RecalcStyle(Document&) here.
+  // update is performed later via StyleEngine::RecalcStyle() on the next
+  // frame / FlushUICommand, rather than doing a full synchronous recalc here.
   if (GetDocument().GetExecutingContext()->isBlinkEnabled() &&
       change.affects_elements == ChildrenChangeAffectsElements::kYes) {
     Document& document = GetDocument();

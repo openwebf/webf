@@ -440,7 +440,7 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetPro
   // end of the list. Firefox preserves the position, and MSIE moves the
   // property to the beginning.
   auto name = CSSPropertyName(ResolveCSSPropertyID(unresolved_property));
-  WEBF_LOG(ERROR) << "The property: " << name.ToAtomicString().ToUTF8String() << "=" << value.ToUTF8String();
+  WEBF_LOG(INFO) << "The property: " << name.ToAtomicString().ToUTF8String() << "=" << value.ToUTF8String();
   return CSSParser::ParseValue(this, unresolved_property, value, important, context_style_sheet);
 }
 

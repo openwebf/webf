@@ -187,6 +187,29 @@ class Document : public ContainerNode, public TreeScope {
   bool IsForMarkupSanitization() const { return is_for_markup_sanitization_; }
 
   bool InStyleRecalc() const;
+  // Blink-style entry point used by callers that need to ensure this document's
+  // style is fully up to date before proceeding. This mirrors the style
+  // portion of Blink's Document::UpdateStyleAndLayoutTreeForThisDocument but
+  // omits layout-tree work, since layout is handled in the Flutter engine.
+  void UpdateStyleForThisDocument();
+
+  // Placeholder hook mirroring Blink's Document::EvaluateMediaQueryListIfNeeded.
+  // WebF currently implements window.matchMedia via a JS polyfill, so this
+  // method is a no-op kept for API compatibility with Blink-style style
+  // update sequences.
+  void EvaluateMediaQueryListIfNeeded();
+
+  // Run selector-based style invalidation if there is a pending
+  // StyleInvalidationRoot tracked by the StyleEngine. This mirrors Blink's
+  // Document::UpdateStyleInvalidationIfNeeded at a high level, but is currently
+  // only used when Blink-style CSS is enabled.
+  void UpdateStyleInvalidationIfNeeded();
+
+  // Entry point used by UpdateStyleForThisDocument to perform a full declared
+  // value style recomputation for any dirty subtrees. This is a thin wrapper
+  // around StyleEngine::RecalcStyle and intentionally omits layout-tree
+  // updates, which are driven on the Dart side.
+  void UpdateStyle();
 
   StyleEngine& GetStyleEngine() const {
     assert(style_engine_.get());
@@ -223,6 +246,7 @@ class Document : public ContainerNode, public TreeScope {
   Page* GetPage() const { static Page dummy; return &dummy; }
 
  private:
+  friend class StyleEngine;
   int node_count_{0};
   Member<CSSStyleSheet> elem_sheet_;
   ScriptAnimationController script_animation_controller_;
@@ -245,6 +269,12 @@ class Document : public ContainerNode, public TreeScope {
   Member<HTMLScriptElement> current_script_{nullptr};
 
   std::unordered_set<Member<IntersectionObserver>, Member<IntersectionObserver>::KeyHasher> intersection_observers_;
+
+  // Minimal lifecycle flag used to mirror Blink's Document::InStyleRecalc
+  // semantics for StyleEngine integration. We do not yet expose the full
+  // DocumentLifecycle state machine, but this boolean allows StyleEngine to
+  // guard UpdateStyleRecalcRoot against marks coming from inside RecalcStyle.
+  mutable bool in_style_recalc_{false};
 };
 
 template <>

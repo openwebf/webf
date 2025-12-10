@@ -124,12 +124,12 @@ StyleElement::ProcessingResult StyleElement::CreateSheet(Element& element, const
   if (new_sheet) {
     document.EnsureStyleEngine().RegisterAuthorSheet(new_sheet);
   }
-
-  // Active author stylesheets changed; mark the document for incremental
-  // style recomputation instead of doing a synchronous full recalc here.
-  WEBF_LOG(VERBOSE) << "[StyleEngine] UpdateActiveStyleSheets from StyleElement::CreateSheet tag="
+  // Active author stylesheets changed; mirror Blink by marking the document as
+  // needing an active style update instead of doing a synchronous full recalc
+  // here. The actual recomputation happens later via StyleEngine::RecalcStyle().
+  WEBF_LOG(VERBOSE) << "[StyleEngine] SetNeedsActiveStyleUpdate from StyleElement::CreateSheet tag="
                     << element.localName().ToUTF8String();
-  document.EnsureStyleEngine().UpdateActiveStyleSheets();
+  document.EnsureStyleEngine().SetNeedsActiveStyleUpdate();
 
   return kProcessingSuccessful;
 }

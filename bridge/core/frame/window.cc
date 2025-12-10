@@ -323,7 +323,7 @@ legacy::LegacyComputedCssStyleDeclaration* Window::getComputedStyle(Element* ele
     Document* doc = context->document();
     if (doc) {
       MemberMutationScope mutation_scope{context};
-      doc->EnsureStyleEngine().RecalcInvalidatedStyles(*doc);
+      doc->UpdateStyleForThisDocument();
     }
   }
 

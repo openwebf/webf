@@ -16,6 +16,20 @@ void StyleTraversalRoot::Update(ContainerNode* common_ancestor, Node* dirty_node
   assert(dirty_node->isConnected());
   AssertRootNodeInvariants();
 
+  // In Blink's implementation the first call to Update() always arrives with
+  // |common_ancestor| == nullptr so that the initial dirty node becomes the
+  // single root. WebF can currently mark ancestors child-dirty from inside
+  // style recalc without having established a traversal root yet, which means
+  // the first external mark may arrive with a non-null |common_ancestor| but
+  // a null |root_node_|. Treat that as a degenerate "first mark" case and
+  // fall back to using |dirty_node| as the initial root instead of asserting.
+  if (common_ancestor && !root_node_) {
+    root_node_ = dirty_node;
+    root_type_ = RootType::kSingleRoot;
+    AssertRootNodeInvariants();
+    return;
+  }
+
   if (!common_ancestor) {
     // This is either first dirty node in which case we are using it as a
     // single root, or the document/documentElement which we set as a common

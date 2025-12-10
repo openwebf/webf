@@ -29,7 +29,7 @@ class Element;
 //
 //   auto it = pending_invalidation_map_.find(&node);
 //   which constructs a temporary Member<ContainerNode> key for the lookup.
-// - That runs inside RecalcInvalidatedStyles → FlushUICommand, with no MemberMutationScope on the stack, so Member::SetRaw hits the
+// - That runs inside RecalcStyle → FlushUICommand, with no MemberMutationScope on the stack, so Member::SetRaw hits the
 //   assertion you saw.
 //
 // You could fix this by wrapping every use of the map (all find/emplace paths in both PendingInvalidations and StyleInvalidator) in a
@@ -48,7 +48,7 @@ class Element;
 // instead of Member<ContainerNode>. With this:
 //
 // - No Member construction happens, so no MemberMutationScope is required.
-// - The lifetime is safe: we only hold raw ContainerNode*s between scheduling and the next RecalcInvalidatedStyles call, and
+// - The lifetime is safe: we only hold raw ContainerNode*s between scheduling and the next RecalcStyle call, and
 //   Invalidate() clears the map; on teardown, the map is destroyed with the StyleEngine before the nodes go away.
 //
 // So “just create MemberMutationScope when we need” is technically possible, but it’s heavier and more fragile than necessary for this

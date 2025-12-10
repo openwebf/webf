@@ -8,6 +8,7 @@
 
 #include <core/css/parser/css_selector_parser.h>
 
+#include <functional>
 #include <utility>
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_state.h"
@@ -20,8 +21,11 @@
 #include "core/css/inline_css_style_declaration.h"
 #include "core/css/legacy/legacy_inline_css_style_declaration.h"
 #include "core/css/parser/css_parser.h"
-#include "core/css/style_engine.h"
+#include "core/css/style_recalc_change.h"
+#include "core/css/style_recalc_context.h"
+#include "core/css/style_scope_frame.h"
 #include "core/css/style_scope_data.h"
+#include "core/css/style_engine.h"
 #include "core/css/white_space.h"
 #include "core/dom/document_fragment.h"
 #include "core/dom/element_rare_data_vector.h"
@@ -30,6 +34,7 @@
 #include "core/html/parser/html_parser.h"
 #include "element_attribute_names.h"
 #include "element_namespace_uris.h"
+#include "foundation/logging.h"
 #include "foundation/native_value_converter.h"
 #include "foundation/utility/make_visitor.h"
 #include "html_element_type_helper.h"
@@ -470,139 +475,6 @@ void Element::NotifyInlineStyleMutation() {
   if (!GetExecutingContext()->isBlinkEnabled()) {
     return;
   }
-
-  // Read current inline style property set from element data.
-  const std::shared_ptr<const CSSPropertyValueSet> inline_style = EnsureUniqueElementData().inline_style_;
-  // Diff-based emission:
-  // - If inline style is empty: clear and reset snapshot.
-  // - Otherwise: compute granular removals/updates vs last-sent snapshot and emit only diffs.
-
-  InlineCssStyleDeclaration* decl = inlineStyleForBlink();
-  if (!inline_style || inline_style->IsEmpty()) {
-    // Clear only when inline styles are entirely removed.
-    GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, bindingObject(), nullptr);
-    if (decl) {
-      decl->MutableLastSentSnapshot().clear();
-    }
-    // Inline styles are now empty. The element should fall back to matched
-    // stylesheet rules. Trigger a style recalc so computed styles are
-    // re-emitted to the UI side (which stores computed styles as inline
-    // overrides).
-    GetDocument().EnsureStyleEngine().RecalcStyleForSubtree(*this);
-    return;
-  }
-
-  // Build diff directly against snapshot to avoid constructing a full
-  // current_props map. Track present keys to detect removals.
-  unsigned count = inline_style->PropertyCount();
-  bool have_ws_collapse = false;
-  bool have_text_wrap = false;
-  WhiteSpaceCollapse ws_collapse_enum = WhiteSpaceCollapse::kCollapse;  // initial
-  TextWrap text_wrap_enum = TextWrap::kWrap;                             // initial
-
-  auto& last = decl->MutableLastSentSnapshot();
-
-  std::unordered_set<std::string> present;
-  present.reserve(count + 1);
-  std::vector<std::pair<std::string, std::string>> updates;
-  updates.reserve(count + 1);
-
-  for (unsigned i = 0; i < count; ++i) {
-    auto property = inline_style->PropertyAt(i);
-    CSSPropertyID id = property.Id();
-    AtomicString prop_name = property.Name().ToAtomicString();
-    String value_string = inline_style->GetPropertyValueWithHint(prop_name, i);
-
-    if (id == CSSPropertyID::kWhiteSpaceCollapse) {
-      std::string sv = value_string.ToUTF8String();
-      if (sv == "collapse") { ws_collapse_enum = WhiteSpaceCollapse::kCollapse; have_ws_collapse = true; }
-      else if (sv == "preserve") { ws_collapse_enum = WhiteSpaceCollapse::kPreserve; have_ws_collapse = true; }
-      else if (sv == "preserve-breaks") { ws_collapse_enum = WhiteSpaceCollapse::kPreserveBreaks; have_ws_collapse = true; }
-      else if (sv == "break-spaces") { ws_collapse_enum = WhiteSpaceCollapse::kBreakSpaces; have_ws_collapse = true; }
-      continue; // Defer to shorthand.
-    }
-    if (id == CSSPropertyID::kTextWrap) {
-      std::string sv = value_string.ToUTF8String();
-      if (sv == "wrap") { text_wrap_enum = TextWrap::kWrap; have_text_wrap = true; }
-      else if (sv == "nowrap") { text_wrap_enum = TextWrap::kNoWrap; have_text_wrap = true; }
-      else if (sv == "balance") { text_wrap_enum = TextWrap::kBalance; have_text_wrap = true; }
-      else if (sv == "pretty") { text_wrap_enum = TextWrap::kPretty; have_text_wrap = true; }
-      continue; // Defer to shorthand.
-    }
-
-    std::string key = prop_name.ToUTF8String();
-    present.insert(key);
-    std::string val = value_string.ToUTF8String();
-    auto it = last.find(key);
-    if (it == last.end() || it->second != val) {
-      updates.emplace_back(std::move(key), std::move(val));
-    }
-  }
-
-  // Compose white-space shorthand if needed and diff it.
-  if (have_ws_collapse || have_text_wrap) {
-    EWhiteSpace ws = ToWhiteSpace(ws_collapse_enum, text_wrap_enum);
-    String ws_value;
-    switch (ws) {
-      case EWhiteSpace::kNormal: ws_value = String("normal"); break;
-      case EWhiteSpace::kNowrap: ws_value = String("nowrap"); break;
-      case EWhiteSpace::kPre: ws_value = String("pre"); break;
-      case EWhiteSpace::kPreLine: ws_value = String("pre-line"); break;
-      case EWhiteSpace::kPreWrap: ws_value = String("pre-wrap"); break;
-      case EWhiteSpace::kBreakSpaces: ws_value = String("break-spaces"); break;
-    }
-    std::string k = "white-space";
-    present.insert(k);
-    std::string v = ws_value.ToUTF8String();
-    auto it = last.find(k);
-    if (it == last.end() || it->second != v) {
-      updates.emplace_back(std::move(k), std::move(v));
-    }
-  }
-
-  // Compute removals by scanning last for keys not present now.
-  std::vector<std::string> removals;
-  removals.reserve(last.size());
-  for (const auto& kv : last) {
-    if (present.find(kv.first) == present.end()) {
-      removals.push_back(kv.first);
-    }
-  }
-
-  // Early out if no changes at all.
-  if (updates.empty() && removals.empty()) {
-    return;
-  }
-
-  bool had_removals = !removals.empty();
-
-  // Emit removals first so subsequent computed styles (if any) can take effect.
-  for (const auto& key : removals) {
-    AtomicString prop = AtomicString::CreateFromUTF8(key);
-    std::unique_ptr<SharedNativeString> args_01 = prop.ToStylePropertyNameNativeString();
-    GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(),
-                                                         nullptr);
-    // Update snapshot incrementally.
-    last.erase(key);
-  }
-
-  // Emit updates/additions.
-  for (const auto& kv : updates) {
-    AtomicString prop = AtomicString::CreateFromUTF8(kv.first);
-    AtomicString value_atom = AtomicString::CreateFromUTF8(kv.second);
-    std::unique_ptr<SharedNativeString> args_01 = prop.ToStylePropertyNameNativeString();
-    auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
-    payload->value = value_atom.ToNativeString().release();
-    payload->href = nullptr;
-    GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(),
-                                                         payload);
-    // Update snapshot incrementally.
-    last[kv.first] = kv.second;
-  }
-
-  if (had_removals) {
-    GetDocument().EnsureStyleEngine().RecalcStyleForSubtree(*this);
-  }
 }
 
 void Element::CloneNonAttributePropertiesFrom(const Element& other, CloneChildrenFlag) {
@@ -1032,22 +904,19 @@ void Element::InvalidateStyleAttribute(bool only_changed_independent_properties)
   if (GetExecutingContext()->isBlinkEnabled()) {
     DCHECK(HasElementData());
     GetElementData()->SetStyleAttributeIsDirty(true);
-    StyleEngine& engine = GetDocument().EnsureStyleEngine();
-
-    // When there are no author stylesheets registered for this document,
-    // inline style mutations do not participate in selector-based
-    // invalidation. In that case we rely entirely on
-    // Element::NotifyInlineStyleMutation() to emit incremental UI style
-    // updates, and skip scheduling Blink's incremental style recomputation
-    // for inline-only changes. This keeps the behavior aligned with the
-    // pre-Blink pipeline and avoids redundant ClearStyle/SetStyle traffic
-    // that can perturb rendering (for example, in dynamic text layout tests).
-    if (engine.AuthorSheets().empty()) {
-      return;
-    }
-
     SetNeedsStyleRecalc(only_changed_independent_properties ? kInlineIndependentStyleChange : kLocalStyleChange,
                         StyleChangeReasonForTracing::Create(style_change_reason::kInlineCSSStyleMutated));
+    WEBF_LOG(VERBOSE) << "[StyleInvalidation] Inline style change on <"
+                      << tagName().ToUTF8String()
+                      << "> only_independent=" << only_changed_independent_properties
+                      << " in_active_document=" << InActiveDocument()
+                      << " style_change_type=" << static_cast<uint32_t>(GetStyleChangeType());
+    // Mirror Blink: treat inline style mutation as a style-attribute change
+    // for invalidation purposes so that selector-based features that look at
+    // style="" (e.g., :has() or attribute-dependent rules) see a consistent
+    // dirty root while still marking only this element as needing recalc.
+    StyleEngine& engine = GetDocument().EnsureStyleEngine();
+    engine.AttributeChangedForElement(html_names::kStyleAttr, *this);
   } else {
     EnsureUniqueElementData().SetStyleAttributeIsDirty(true);
   }
@@ -1069,8 +938,15 @@ void Element::AttributeChanged(const AttributeModificationParams& params) {
   // Trigger selector-based invalidation for attribute changes when Blink CSS
   // is enabled. We only mark the DOM as needing style updates here; the actual
   // incremental style recomputation is performed later (e.g., before flushing
-  // UI commands for the next frame).
-  if (GetExecutingContext()->isBlinkEnabled() && isConnected()) {
+  // UI commands for the next frame). Let the style engine decide whether the
+  // element should be skipped (e.g., disconnected, inactive document) rather
+  // than gating on isConnected() here.
+  if (GetExecutingContext()->isBlinkEnabled()) {
+    WEBF_LOG(VERBOSE) << "[StyleInvalidation] Attribute change name="
+                      << params.name.ToNativeString()
+                      << " old=" << params.old_value.ToNativeString()
+                      << " new=" << params.new_value.ToNativeString()
+                      << " on <" << tagName().ToNativeString() << ">";
     StyleEngine& engine = GetDocument().EnsureStyleEngine();
     if (name == html_names::kIdAttr) {
       engine.IdChangedForElement(params.old_value, params.new_value, *this);
@@ -1122,6 +998,23 @@ void Element::StyleAttributeChanged(const AtomicString& new_style_string,
     }
   } else {
     SetInlineStyleFromString(new_style_string);
+  }
+
+  // When Blink CSS is enabled, a change to the `style` attribute must also
+  // participate in Blink-style style recalc and invalidation, not just update
+  // the Dart-side inline style snapshot. Mirror Blink's behavior by clearing
+  // the lazy style-attribute dirty bit (if any) and marking this element as
+  // needing a local style recalc with the appropriate tracing reason.
+  if (GetExecutingContext()->isBlinkEnabled()) {
+    if (HasElementData()) {
+      GetElementData()->SetStyleAttributeIsDirty(false);
+    }
+    WEBF_LOG(VERBOSE) << "[StyleInvalidation] Style attribute changed on <"
+                      << tagName().ToUTF8String()
+                      << "> in_active_document=" << InActiveDocument();
+    SetNeedsStyleRecalc(
+        kLocalStyleChange,
+        StyleChangeReasonForTracing::Create(style_change_reason::kStyleAttributeChange));
   }
 }
 
@@ -1318,6 +1211,33 @@ StyleScopeData* Element::GetStyleScopeData() const {
     return data->GetStyleScopeData();
   }
   return nullptr;
+}
+
+void Element::RecalcStyle(const StyleRecalcChange change, const StyleRecalcContext& style_recalc_context) {
+  ExecutingContext* exec_ctx = GetExecutingContext();
+  if (!exec_ctx || !exec_ctx->isBlinkEnabled()) {
+    return;
+  }
+  if (!InActiveDocument()) {
+    return;
+  }
+
+  // Establish the @scope activation frame for this element, mirroring Blink's
+  // pattern of threading StyleScopeFrame through Element::RecalcStyle. WebF's
+  // current style pipeline still routes actual cascade / UI emission through
+  // StyleEngine::RecalcStyleFor(Subtree|ElementOnly); this hook is used for
+  // diagnostics and future Blink-alignment work.
+  StyleScopeFrame style_scope_frame(*this, style_recalc_context.style_scope_frame);
+  StyleRecalcContext local_context = style_recalc_context;
+  local_context.style_scope_frame = &style_scope_frame;
+
+  bool self_dirty = NeedsStyleRecalc();
+  bool child_dirty = ChildNeedsStyleRecalc();
+
+  WEBF_LOG(VERBOSE) << "[Element::RecalcStyle] tag=" << tagName().ToNativeString()
+                    << " self_dirty=" << self_dirty << " child_dirty=" << child_dirty
+                    << " recalc_descendants=" << change.RecalcDescendants()
+                    << " suppressed=" << change.IsSuppressed();
 }
 
 // inline ElementRareDataVector* Element::GetElementRareData() const {

@@ -50,8 +50,9 @@
 #include "core/css/element_rule_collector.h"
 #include "core/css/resolver/style_resolver_state.h"
 #include "core/css/resolver/style_cascade.h"
-// Extra includes for post-pass background resolution
-#include "core/css/resolver/style_recalc_context.h"
+// StyleRecalcChange / StyleRecalcContext API surface (Blink-style).
+#include "core/css/style_recalc_change.h"
+#include "core/css/style_recalc_context.h"
 #include "core/html/html_body_element.h"
 #include "core/html/html_style_element.h"
 #include "html_names.h"
@@ -69,6 +70,7 @@
 #include "core/css/style_rule_keyframe.h"
 #include "core/css/invalidation/style_invalidator.h"
 #include "core/dom/container_node.h"
+#include "core/dom/node_traversal.h"
 #include "core/dom/element_traversal.h"
 #include "core/dom/qualified_name.h"
 
@@ -621,20 +623,73 @@ Document& StyleEngine::GetDocument() const {
 
 
 void StyleEngine::UpdateStyleInvalidationRoot(ContainerNode* ancestor, Node* dirty_node) {
-  // Minimal placeholder: pending invalidations are already tracked on nodes.
-  // This hook exists to allow future optimizations and invalidation root tracking.
-  (void)ancestor;
-  (void)dirty_node;
+  Document& document = GetDocument();
+  ExecutingContext* context = document.GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  MemberMutationScope scope{context};
+
+  // When tearing down a DOM subtree, Blink falls back to using the document
+  // itself as the invalidation root so that subsequent SubtreeModified()
+  // calls can clear breadcrumbs correctly. Mirror that behavior here.
+  if (InDOMRemoval()) {
+    ancestor = nullptr;
+    dirty_node = &document;
+  }
+
+  style_invalidation_root_.Update(ancestor, dirty_node);
 }
 
 void StyleEngine::UpdateStyleRecalcRoot(ContainerNode* ancestor, Node* dirty_node) {
-  // Minimal placeholder: ancestor chain has been marked via Node::MarkAncestorsWithChildNeedsStyleRecalc.
-  // This hook can later maintain a compact set of recalc roots.
-  (void)ancestor;
-  (void)dirty_node;
+  Document& document = GetDocument();
+  ExecutingContext* context = document.GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  MemberMutationScope scope{context};
+
+  // During style recalc we may mark nodes dirty from inside the traversal
+  // (e.g., layout-driven updates). In that case Blink skips updating the
+  // StyleRecalcRoot and relies on the current traversal to visit the node.
+  if (document.InStyleRecalc()) {
+    assert(allow_mark_style_dirty_from_recalc_);
+    return;
+  }
+
+  // If we're tearing down the DOM subtree, treat the document as the root so
+  // that subsequent SubtreeModified() calls can clear breadcrumbs correctly.
+  if (InDOMRemoval()) {
+    ancestor = nullptr;
+    dirty_node = &document;
+  }
+
+  style_recalc_root_.Update(ancestor, dirty_node);
 }
 
 void StyleEngine::ScheduleNthPseudoInvalidations(ContainerNode& nth_parent) {}
+
+bool StyleEngine::ShouldSkipInvalidationFor(const Element& element) const {
+  // Only schedule invalidations using the StyleEngine of the Document that
+  // owns the element.
+  if (&element.GetDocument() != &GetDocument()) {
+    return true;
+  }
+  // Never schedule selector-based invalidations for elements that are not in
+  // the active document. PendingInvalidations expects ContainerNode to return
+  // true from InActiveDocument().
+  if (!element.InActiveDocument()) {
+    return true;
+  }
+  // Avoid scheduling new invalidations while we are already inside a style
+  // recalc traversal; those marks will be picked up by the ongoing walk.
+  if (GetDocument().InStyleRecalc()) {
+    return true;
+  }
+  return false;
+}
 
 bool StyleEngine::MarkReattachAllowed() const {
   return !InRebuildLayoutTree() || allow_mark_for_reattach_from_rebuild_layout_tree_;
@@ -649,6 +704,20 @@ bool StyleEngine::MarkStyleDirtyAllowed() const {
 
 void StyleEngine::CreateResolver() {
   resolver_ = std::make_shared<StyleResolver>(GetDocument());
+}
+
+void StyleEngine::InvalidateStyle() {
+  // Mirror Blink's StyleEngine::InvalidateStyle at a high level: use
+  // StyleInvalidator to translate PendingInvalidations into per-element
+  // style-change flags, starting from the current invalidation root.
+  PendingInvalidationMap& map = pending_invalidations_.GetPendingInvalidationMap();
+  if (map.empty() && !GetDocument().NeedsStyleInvalidation() && !GetDocument().ChildNeedsStyleInvalidation()) {
+    return;
+  }
+
+  StyleInvalidator style_invalidator(map);
+  style_invalidator.Invalidate(GetDocument(), style_invalidation_root_.RootElement());
+  style_invalidation_root_.Clear();
 }
 
 void StyleEngine::CollectFeaturesTo(RuleFeatureSet& features) {
@@ -672,7 +741,24 @@ void StyleEngine::CollectFeaturesTo(RuleFeatureSet& features) {
   }
 }
 
-void StyleEngine::UpdateActiveStyleSheets() {
+void StyleEngine::UpdateActiveStyle() {
+  Document& document = GetDocument();
+  ExecutingContext* context = document.GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  // In Blink this also updates viewport and per-TreeScope active stylesheet
+  // collections. WebF currently tracks author stylesheets incrementally via
+  // RegisterAuthorSheet / UnregisterAuthorSheet and uses CSSGlobalRuleSet to
+  // aggregate selector / invalidation metadata. Refresh that metadata here so
+  // subsequent invalidation passes see the latest rules.
+  if (global_rule_set_) {
+    global_rule_set_->Update(document);
+  }
+}
+
+void StyleEngine::SetNeedsActiveStyleUpdate() {
   Document& document = GetDocument();
   ExecutingContext* context = document.GetExecutingContext();
   if (!context || !context->isBlinkEnabled()) {
@@ -683,6 +769,7 @@ void StyleEngine::UpdateActiveStyleSheets() {
   // (ids, classes, attributes, nth, etc.) will be rebuilt from the current
   // author sheets before the next invalidation-driven style recomputation.
   if (global_rule_set_) {
+    WEBF_LOG(VERBOSE) << "[StyleInvalidation] GlobalRuleSet: active stylesheet set changed; marking features dirty.";
     global_rule_set_->MarkDirty();
   }
 
@@ -699,8 +786,8 @@ void StyleEngine::UpdateActiveStyleSheets() {
 
   // Treat any change to the active stylesheet set (add/remove/modify <style>
   // or <link rel=stylesheet>) as potentially affecting the entire document.
-  // Mark the root subtree as needing style recalc; RecalcInvalidatedStyles()
-  // will recompute styles starting from here on the next frame/flush.
+  // Mark the root subtree as needing style recalc; RecalcStyle() will
+  // recompute styles starting from here on the next frame/flush.
   root->SetNeedsStyleRecalc(
       kSubtreeStyleChange,
       StyleChangeReasonForTracing::Create(style_change_reason::kActiveStylesheetsUpdate));
@@ -709,6 +796,36 @@ void StyleEngine::UpdateActiveStyleSheets() {
   // StyleInvalidator is invoked even if no selector-based invalidation sets
   // have been scheduled yet.
   document.SetNeedsStyleInvalidation();
+}
+
+void StyleEngine::InvalidateViewportUnitStylesIfNeeded() {
+  Document& document = GetDocument();
+  ExecutingContext* context = document.GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  // Unlike Blink, WebF does not yet track per-element viewport-unit usage in
+  // computed styles. Viewport-driven style changes (e.g. media queries using
+  // viewport units) are currently handled via MediaQueryAffectingValueChanged,
+  // which may trigger a full RecalcStyle when needed. This hook is kept for
+  // API compatibility with Blink's style update pipeline and can be extended
+  // to perform targeted invalidation when viewport-unit tracking is wired up.
+}
+
+void StyleEngine::InvalidateEnvDependentStylesIfNeeded() {
+  Document& document = GetDocument();
+  ExecutingContext* context = document.GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  // Blink uses this to invalidate styles that depend on env() variables such
+  // as safe-area insets. WebF's style engine does not yet track such
+  // dependencies separately; environment-driven changes currently go through
+  // MediaQueryAffectingValueChanged and full style recomputation as needed.
+  // This no-op keeps the call graph compatible with Blink and provides a
+  // natural place to add more granular invalidation later.
 }
 
 void StyleEngine::IdChangedForElement(const AtomicString& old_id,
@@ -723,6 +840,15 @@ void StyleEngine::IdChangedForElement(const AtomicString& old_id,
   if (!context || !context->isBlinkEnabled()) {
     return;
   }
+
+  if (ShouldSkipInvalidationFor(element)) {
+    return;
+  }
+
+  WEBF_LOG(VERBOSE) << "[StyleInvalidation] IdChanged old="
+                    << old_id.ToNativeString()
+                    << " new=" << new_id.ToNativeString()
+                    << " on <" << element.tagName().ToNativeString() << ">";
 
   global_rule_set_->Update(document);
   const RuleFeatureSet& features = global_rule_set_->GetRuleFeatureSet();
@@ -753,6 +879,15 @@ void StyleEngine::ClassAttributeChangedForElement(const AtomicString& old_class_
   if (!context || !context->isBlinkEnabled()) {
     return;
   }
+
+  if (ShouldSkipInvalidationFor(element)) {
+    return;
+  }
+
+  WEBF_LOG(VERBOSE) << "[StyleInvalidation] ClassChanged old=\""
+                    << old_class_value.ToNativeString()
+                    << "\" new=\"" << new_class_value.ToNativeString()
+                    << "\" on <" << element.tagName().ToNativeString() << ">";
 
   global_rule_set_->Update(document);
   const RuleFeatureSet& features = global_rule_set_->GetRuleFeatureSet();
@@ -798,6 +933,14 @@ void StyleEngine::AttributeChangedForElement(const AtomicString& attribute_local
     return;
   }
 
+  if (ShouldSkipInvalidationFor(element)) {
+    return;
+  }
+
+  WEBF_LOG(VERBOSE) << "[StyleInvalidation] AttributeChanged name="
+                    << attribute_local_name.ToUTF8String()
+                    << " on <" << element.tagName().ToUTF8String() << ">";
+
   global_rule_set_->Update(document);
   const RuleFeatureSet& features = global_rule_set_->GetRuleFeatureSet();
 
@@ -808,503 +951,6 @@ void StyleEngine::AttributeChangedForElement(const AtomicString& attribute_local
   if (!invalidation_lists.descendants.empty() || !invalidation_lists.siblings.empty()) {
     pending_invalidations_.ScheduleInvalidationSetsForNode(invalidation_lists, element);
   }
-}
-
-void StyleEngine::RecalcStyle(Document& document) {
-  if (!document.GetExecutingContext()->isBlinkEnabled()) {
-    return;
-  }
-
-  auto begin_calc = std::chrono::steady_clock::now();
-
-  std::function<InheritedState(Element*, const InheritedState&)> apply_for_element =
-      [&](Element* element, const InheritedState& parent_state) -> InheritedState {
-        if (!element || !element->IsStyledElement()) {
-          return parent_state;
-        }
-
-        StyleResolver& resolver = EnsureStyleResolver();
-        StyleResolverState state(document, *element);
-        ElementRuleCollector collector(state, SelectorChecker::kQueryingRules);
-        resolver.CollectAllRules(state, collector, /*include_smil_properties*/ false);
-        collector.SortAndTransferMatchedRules();
-
-        StyleCascade cascade(state);
-        for (const auto& entry : collector.GetMatchResult().GetMatchedProperties()) {
-          if (entry.is_inline_style) {
-            cascade.MutableMatchResult().AddInlineStyleProperties(entry.properties);
-          } else {
-            cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
-          }
-        }
-
-        std::shared_ptr<MutableCSSPropertyValueSet> property_set = cascade.ExportWinningPropertySet();
-
-        // TODO(CGQAQ): figure out we really need optimize here using inline style.
-        auto inline_style = const_cast<Element&>(*element).EnsureMutableInlineStyle();
-        auto* ctx = document.GetExecutingContext();
-
-        // If there are no winning declared values for this element, we may still
-        // need to emit pseudo styles (e.g., ::before/::after/::first-letter/::first-line)
-        // when they have declarations. In that case, ensure any previously-emitted
-        // inline overrides are cleared so stale styles (from prior matching sheets)
-        // are removed, then emit pseudo styles only and skip element overrides.
-        if (!property_set || property_set->IsEmpty()) {
-          auto* ctx = document.GetExecutingContext();
-          // Only clear when there is no author inline style present. Inline styles
-          // are handled via Element::NotifyInlineStyleMutation and should not be
-          // cleared by stylesheet recomputation.
-          if (!(inline_style && inline_style->PropertyCount() > 0)) {
-            ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
-          }
-          auto emit_pseudo_if_any = [&](PseudoId pseudo_id, const char* pseudo_name) {
-            ElementRuleCollector pseudo_collector(state, SelectorChecker::kResolvingStyle);
-            pseudo_collector.SetPseudoElementStyleRequest(PseudoElementStyleRequest(pseudo_id));
-            resolver.CollectAllRules(state, pseudo_collector, /*include_smil_properties*/ false);
-            pseudo_collector.SortAndTransferMatchedRules();
-
-            StyleCascade pseudo_cascade(state);
-            for (const auto& entry : pseudo_collector.GetMatchResult().GetMatchedProperties()) {
-              if (entry.is_inline_style) {
-                pseudo_cascade.MutableMatchResult().AddInlineStyleProperties(entry.properties);
-              } else {
-                pseudo_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
-              }
-            }
-
-            std::shared_ptr<MutableCSSPropertyValueSet> pseudo_set = pseudo_cascade.ExportWinningPropertySet();
-            if (!pseudo_set || pseudo_set->PropertyCount() == 0) return false;
-
-            // Clear then emit each winning property for this pseudo.
-            {
-              auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
-              auto pseudo_ns = pseudo_atom.ToNativeString();
-              ctx->uiCommandBuffer()->AddCommand(UICommand::kClearPseudoStyle, std::move(pseudo_ns),
-                                                 element->bindingObject(), nullptr);
-            }
-            for (unsigned i = 0; i < pseudo_set->PropertyCount(); ++i) {
-              auto prop = pseudo_set->PropertyAt(i);
-              AtomicString prop_name = prop.Name().ToAtomicString();
-            String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
-            if (value_string.IsNull()) value_string = String("");
-            String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
-            auto key_ns = prop_name.ToStylePropertyNameNativeString();
-            AtomicString value_atom(value_string);
-            auto val_ns = value_atom.ToNativeString();
-            auto* payload =
-                reinterpret_cast<NativePseudoStyleWithHref*>(dart_malloc(sizeof(NativePseudoStyleWithHref)));
-            payload->key = key_ns.release();
-            payload->value = val_ns.release();
-            if (!base_href_string.IsEmpty()) {
-              payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
-            } else {
-              payload->href = nullptr;
-            }
-            auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
-            auto pseudo_ns = pseudo_atom.ToNativeString();
-            ctx->uiCommandBuffer()->AddCommand(UICommand::kSetPseudoStyle, std::move(pseudo_ns),
-                                               element->bindingObject(), payload);
-            }
-            return true;
-          };
-
-          bool emitted_any_pseudo = false;
-          emitted_any_pseudo |= emit_pseudo_if_any(PseudoId::kPseudoIdBefore, "before");
-          emitted_any_pseudo |= emit_pseudo_if_any(PseudoId::kPseudoIdAfter, "after");
-          emitted_any_pseudo |= emit_pseudo_if_any(PseudoId::kPseudoIdFirstLetter, "first-letter");
-          emitted_any_pseudo |= emit_pseudo_if_any(PseudoId::kPseudoIdFirstLine, "first-line");
-
-          // Regardless of whether we emitted, return parent state since there
-          // are no element-level properties to override.
-          return parent_state;
-        }
-
-        // We do have properties to apply; clear existing inline overrides first
-        // so subsequent SetStyle updates replace them deterministically.
-        ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
-        bool cleared = true;
-
-        unsigned count = property_set->PropertyCount();
-        InheritedValueMap inherited_values(parent_state.inherited_values);
-        CustomVarMap custom_vars(parent_state.custom_vars);
-        bool emitted_background_shorthand = false;
-
-        WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Applying styles for element tag='" << element->localName().ToUTF8String()
-                          << "' id='" << element->id().ToUTF8String() << "' class='"
-                          << element->className().ToUTF8String() << "'";
-        // Debug: check if common sizing properties exist
-        bool has_width = property_set->HasProperty(CSSPropertyID::kWidth);
-        bool has_height = property_set->HasProperty(CSSPropertyID::kHeight);
-        WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] PropertySet sizing: width=" << (has_width ? "present" : "missing")
-                          << ", height=" << (has_height ? "present" : "missing");
-
-        // Pre-scan to collect white-space longhands so we can emit shorthand.
-        bool have_ws_collapse = false;
-        bool have_text_wrap = false;
-        WhiteSpaceCollapse ws_collapse_enum = WhiteSpaceCollapse::kCollapse;  // initial
-        TextWrap text_wrap_enum = TextWrap::kWrap;                             // initial
-
-        for (unsigned i = 0; i < count; ++i) {
-          auto prop = property_set->PropertyAt(i);
-          CSSPropertyID id = prop.Id();
-          if (id == CSSPropertyID::kInvalid) continue;
-          const auto* value_ptr = prop.Value();
-          if (!value_ptr || !(*value_ptr)) continue;
-          const CSSValue& value = *(*value_ptr);
-          if (id == CSSPropertyID::kWhiteSpaceCollapse) {
-            // value.CssTextForSerialization() returns identifiers like "collapse", "preserve", "preserve-breaks", "break-spaces"
-            String v = value.CssTextForSerialization();
-            std::string sv = v.ToUTF8String();
-            if (sv == "collapse") {
-              ws_collapse_enum = WhiteSpaceCollapse::kCollapse;
-              have_ws_collapse = true;
-            } else if (sv == "preserve") {
-              ws_collapse_enum = WhiteSpaceCollapse::kPreserve;
-              have_ws_collapse = true;
-            } else if (sv == "preserve-breaks") {
-              ws_collapse_enum = WhiteSpaceCollapse::kPreserveBreaks;
-              have_ws_collapse = true;
-            } else if (sv == "break-spaces") {
-              ws_collapse_enum = WhiteSpaceCollapse::kBreakSpaces;
-              have_ws_collapse = true;
-            }
-          } else if (id == CSSPropertyID::kTextWrap) {
-            // value.CssTextForSerialization() returns identifiers like "wrap", "nowrap", "balance", "pretty"
-            String v = value.CssTextForSerialization();
-            std::string sv = v.ToUTF8String();
-            if (sv == "wrap") {
-              text_wrap_enum = TextWrap::kWrap;
-              have_text_wrap = true;
-            } else if (sv == "nowrap") {
-              text_wrap_enum = TextWrap::kNoWrap;
-              have_text_wrap = true;
-            } else if (sv == "balance") {
-              text_wrap_enum = TextWrap::kBalance;
-              have_text_wrap = true;
-            } else if (sv == "pretty") {
-              text_wrap_enum = TextWrap::kPretty;
-              have_text_wrap = true;
-            }
-          }
-        }
-
-        // Whether we should emit white-space shorthand: if either longhand appears in this set,
-        // synthesize a shorthand value to keep Dart side stable.
-        bool emit_white_space_shorthand = have_ws_collapse || have_text_wrap;
-        // Compute shorthand textual value if possible.
-        String white_space_value_str;
-        if (emit_white_space_shorthand) {
-          // Combine longhands; unspecified ones use initial values.
-          EWhiteSpace ws = ToWhiteSpace(ws_collapse_enum, text_wrap_enum);
-          // Map to standard keyword when it matches a defined shorthand value.
-          switch (ws) {
-            case EWhiteSpace::kNormal:
-              white_space_value_str = String("normal");
-              break;
-            case EWhiteSpace::kNowrap:
-              white_space_value_str = String("nowrap");
-              break;
-            case EWhiteSpace::kPre:
-              white_space_value_str = String("pre");
-              break;
-            case EWhiteSpace::kPreLine:
-              white_space_value_str = String("pre-line");
-              break;
-            case EWhiteSpace::kPreWrap:
-              white_space_value_str = String("pre-wrap");
-              break;
-            case EWhiteSpace::kBreakSpaces:
-              white_space_value_str = String("break-spaces");
-              break;
-          }
-        }
-
-        for (unsigned i = 0; i < count; ++i) {
-          auto prop = property_set->PropertyAt(i);
-          CSSPropertyID id = prop.Id();
-          if (id == CSSPropertyID::kInvalid) {
-            continue;
-          }
-
-          const auto* value_ptr = prop.Value();
-          if (!value_ptr || !(*value_ptr)) {
-            continue;
-          }
-
-          const CSSValue& value = *(*value_ptr);
-          AtomicString prop_name = prop.Name().ToAtomicString();
-          // Use property_set->GetPropertyValueWithHint so property-specific normalizations (e.g. initial) apply.
-          String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
-          String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
-
-          // Forward custom properties (CSS variables) to UI and record them for local substitution.
-          // Custom properties are represented with kVariable.
-          if (id == CSSPropertyID::kVariable) {
-            if (value_string.IsNull()) {
-              value_string = String("");
-            }
-            if (!cleared) {
-              WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Clear inline styles before applying variables";
-              ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
-              cleared = true;
-            }
-            WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Emitting custom property '" << prop_name.ToUTF8String()
-                              << "' = '" << value_string.ToUTF8String() << "'";
-            AtomicString value_atom_custom(value_string);
-            std::unique_ptr<SharedNativeString> args_custom = prop_name.ToStylePropertyNameNativeString();
-            auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
-            payload->value = value_atom_custom.ToNativeString().release();
-            if (!base_href_string.IsEmpty()) {
-              payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
-            } else {
-              payload->href = nullptr;
-            }
-            ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_custom), element->bindingObject(),
-                                               payload);
-            // Update current custom var map (inheritance: variables inherit by default).
-            if (!value_string.IsEmpty()) {
-              custom_vars[prop_name] = value_string;
-            } else {
-              custom_vars.erase(prop_name);
-            }
-            continue;
-          }
-
-          bool is_inherited_property = CSSProperty::Get(id).IsInherited();
-
-          // Pending substitution handling: when a shorthand containing var() was
-          // expanded to longhands, the longhand values are CSSPendingSubstitutionValue
-          // which serialize to empty strings. Mirror Blink by reusing the
-          // original shorthand text with variables resolved. For background,
-          // emit the shorthand once to ensure Dart parses a consistent set of
-          // longhands.
-          if (value.IsPendingSubstitutionValue()) {
-            const auto& pending = To<cssvalue::CSSPendingSubstitutionValue>(value);
-            WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] PendingSubstitution on property '"
-                              << prop_name.ToUTF8String() << "' from shorthand '"
-                              << CSSProperty::Get(pending.ShorthandPropertyId()).GetPropertyNameString().ToUTF8String()
-                              << "'";
-            if (!emitted_background_shorthand && pending.ShorthandValue() != nullptr &&
-                pending.ShorthandPropertyId() == CSSPropertyID::kBackground) {
-              String shorthand_text = pending.ShorthandValue()->CustomCSSText();
-              // Sanitize potential trailing tokens.
-              size_t brace_pos = shorthand_text.Find('}');
-              if (brace_pos < shorthand_text.length()) {
-                shorthand_text = shorthand_text.Substring(0, brace_pos);
-              }
-              size_t semi_pos = shorthand_text.RFind(';');
-              if (semi_pos < shorthand_text.length()) {
-                shorthand_text = shorthand_text.Substring(0, semi_pos);
-              }
-              // Resolve var(...) usages using current custom property map.
-              // Normalize gradient arguments to insert missing commas in color-stops.
-              String resolved = NormalizeGradientArguments(shorthand_text);
-              resolved = TrimAsciiWhitespace(resolved);
-              // Emit the shorthand 'background' once and skip individual longhands.
-              if (!cleared) {
-                WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Clear inline styles before applying background shorthand";
-                ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
-                cleared = true;
-              }
-              WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Emitting shorthand 'background' = '" << resolved.ToUTF8String() << "'";
-              auto shorthand_name = "background"_as;
-              std::unique_ptr<SharedNativeString> args_bg = shorthand_name.ToStylePropertyNameNativeString();
-              auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
-              payload->value = AtomicString(resolved).ToNativeString().release();
-              if (!base_href_string.IsEmpty()) {
-                payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
-              } else {
-                payload->href = nullptr;
-              }
-              ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_bg), element->bindingObject(),
-                                                 payload);
-              emitted_background_shorthand = true;
-              // After emitting shorthand, allow background-image longhand to emit too as a fallback,
-              // but skip other background-* longhands.
-              if (id != CSSPropertyID::kBackgroundImage) {
-                continue;
-              }
-            } else if (pending.ShorthandPropertyId() == CSSPropertyID::kBackground && emitted_background_shorthand) {
-              if (id != CSSPropertyID::kBackgroundImage) {
-                WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Skipping background longhand '" << prop_name.ToUTF8String()
-                                  << "' (shorthand already emitted)";
-                continue;
-              }
-            }
-            if (id == CSSPropertyID::kBackgroundImage && pending.ShorthandValue() != nullptr) {
-              value_string = pending.ShorthandValue()->CustomCSSText();
-              size_t brace_pos = value_string.Find('}');
-              if (brace_pos < value_string.length()) {
-                value_string = value_string.Substring(0, brace_pos);
-              }
-              size_t semi_pos = value_string.RFind(';');
-              if (semi_pos < value_string.length()) {
-                value_string = value_string.Substring(0, semi_pos);
-              }
-              value_string = NormalizeGradientArguments(value_string);
-              value_string = TrimAsciiWhitespace(value_string);
-              WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Using shorthand text for background-image: "
-                                << value_string.ToUTF8String();
-            } else {
-              continue;
-            }
-          }
-
-          if (is_inherited_property) {
-            if (value.IsInheritedValue() || value.IsUnsetValue() || value.IsRevertValue() ||
-                value.IsRevertLayerValue()) {
-              auto inherited_it = parent_state.inherited_values.find(id);
-              if (inherited_it != parent_state.inherited_values.end()) {
-                value_string = inherited_it->second;
-                if (!value_string.IsEmpty()) {
-                  inherited_values[id] = value_string;
-                } else {
-                  inherited_values.erase(id);
-                }
-              } else {
-                value_string = String();
-                inherited_values.erase(id);
-              }
-            } else {
-              inherited_values[id] = value_string;
-            }
-          } else {
-            if (value.IsInheritedValue() || value.IsUnsetValue() || value.IsRevertValue() ||
-                value.IsRevertLayerValue()) {
-              continue;
-            }
-          }
-
-          if (value_string.IsNull()) {
-            value_string = String("");
-          }
-
-          // If we plan to emit shorthand, skip the longhand emissions here.
-          if (emit_white_space_shorthand &&
-              (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap)) {
-            // Defer to shorthand emission below.
-          } else {
-            AtomicString value_atom(value_string);
-            std::unique_ptr<SharedNativeString> args_01 = prop_name.ToStylePropertyNameNativeString();
-            WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Emitting property '" << prop_name.ToUTF8String() << "' = '"
-                              << value_string.ToUTF8String() << "'";
-            auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
-            payload->value = value_atom.ToNativeString().release();
-            if (!base_href_string.IsEmpty()) {
-              payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
-            } else {
-              payload->href = nullptr;
-            }
-            ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), element->bindingObject(),
-                                               payload);
-          }
-        }
-
-        // Emit white-space shorthand at the end to replace skipped longhands.
-        if (emit_white_space_shorthand) {
-          auto ws_prop = AtomicString::CreateFromUTF8("white-space");
-          auto ws_key = ws_prop.ToStylePropertyNameNativeString();
-          AtomicString ws_value_atom(white_space_value_str);
-          WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Emitting shorthand 'white-space' = '"
-                            << white_space_value_str.ToUTF8String() << "'";
-          auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
-          payload->value = ws_value_atom.ToNativeString().release();
-          payload->href = nullptr;
-          ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(ws_key), element->bindingObject(),
-                                             payload);
-        }
-
-        // After applying element styles, collect and emit minimal pseudo styles.
-        // We currently emit only the 'content' property for ::before and ::after
-        // so that the UI side can create/update pseudo elements as needed.
-        auto send_pseudo_for = [&](PseudoId pseudo_id, const char* pseudo_name) {
-          ElementRuleCollector pseudo_collector(state, SelectorChecker::kResolvingStyle);
-          pseudo_collector.SetPseudoElementStyleRequest(PseudoElementStyleRequest(pseudo_id));
-          resolver.CollectAllRules(state, pseudo_collector, /*include_smil_properties*/ false);
-          pseudo_collector.SortAndTransferMatchedRules();
-
-          StyleCascade pseudo_cascade(state);
-          for (const auto& entry : pseudo_collector.GetMatchResult().GetMatchedProperties()) {
-            if (entry.is_inline_style) {
-              pseudo_cascade.MutableMatchResult().AddInlineStyleProperties(entry.properties);
-            } else {
-              pseudo_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
-            }
-          }
-
-          std::shared_ptr<MutableCSSPropertyValueSet> pseudo_set = pseudo_cascade.ExportWinningPropertySet();
-          if (!pseudo_set || pseudo_set->PropertyCount() == 0) return;
-
-          // Clear existing pseudo styles only when we have winners to apply.
-          {
-            auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
-            auto pseudo_ns = pseudo_atom.ToNativeString();
-            ctx->uiCommandBuffer()->AddCommand(UICommand::kClearPseudoStyle, std::move(pseudo_ns),
-                                               element->bindingObject(), nullptr);
-          }
-
-          for (unsigned i = 0; i < pseudo_set->PropertyCount(); ++i) {
-            auto prop = pseudo_set->PropertyAt(i);
-            AtomicString prop_name = prop.Name().ToAtomicString();
-
-            String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
-            if (value_string.IsNull()) value_string = String("");
-            String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
-
-            auto key_ns = prop_name.ToStylePropertyNameNativeString();
-            AtomicString value_atom(value_string);
-            auto val_ns = value_atom.ToNativeString();
-
-            auto* payload =
-                reinterpret_cast<NativePseudoStyleWithHref*>(dart_malloc(sizeof(NativePseudoStyleWithHref)));
-            payload->key = key_ns.release();
-            payload->value = val_ns.release();
-            if (!base_href_string.IsEmpty()) {
-              payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
-            } else {
-              payload->href = nullptr;
-            }
-
-            auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
-            auto pseudo_ns = pseudo_atom.ToNativeString();
-            ctx->uiCommandBuffer()->AddCommand(UICommand::kSetPseudoStyle, std::move(pseudo_ns),
-                                               element->bindingObject(), payload);
-          }
-        };
-
-        // Emit for ::before, ::after, ::first-letter and ::first-line
-        send_pseudo_for(PseudoId::kPseudoIdBefore, "before");
-        send_pseudo_for(PseudoId::kPseudoIdAfter, "after");
-        send_pseudo_for(PseudoId::kPseudoIdFirstLetter, "first-letter");
-        send_pseudo_for(PseudoId::kPseudoIdFirstLine, "first-line");
-
-        InheritedState next_state;
-        next_state.inherited_values = std::move(inherited_values);
-        next_state.custom_vars = std::move(custom_vars);
-        return next_state;
-      };
-
-  std::function<void(Node*, const InheritedState&)> walk =
-      [&](Node* node, const InheritedState& inherited_state) {
-        if (!node) {
-          return;
-        }
-
-        InheritedState current_state = inherited_state;
-        if (node->IsElementNode()) {
-          current_state = apply_for_element(static_cast<Element*>(node), inherited_state);
-        }
-
-        for (Node* child = node->firstChild(); child; child = child->nextSibling()) {
-          walk(child, current_state);
-        }
-      };
-
-  walk(document.documentElement(), InheritedState());
-
-  auto end_calc = std::chrono::steady_clock::now();
-
-  WEBF_LOG(INFO) << "[StyleEngine] 11Finished Recalc styles(took " << std::chrono::duration_cast<std::chrono::milliseconds>(end_calc - begin_calc).count() << "ms)";
 }
 
 void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
@@ -1888,15 +1534,36 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
                  << std::chrono::duration_cast<std::chrono::milliseconds>(end_calc - begin_calc).count() << "ms)";
 }
 
-void StyleEngine::RecalcInvalidatedStyles(Document& document) {
+void StyleEngine::RecalcStyle(StyleRecalcChange change, const StyleRecalcContext& style_recalc_context) {
+  Document& document = GetDocument();
   ExecutingContext* context = document.GetExecutingContext();
   if (!context || !context->isBlinkEnabled()) {
     return;
   }
-  WEBF_LOG(INFO) << "[StyleEngine] Recalc invalidated styles starts...";
+
+  // Mark the document as being in style recalc so that any style-dirty marks
+  // that occur during traversal do not try to update the StyleRecalcRoot.
+  // This mirrors Blink's Document::InStyleRecalc + UpdateStyleRecalcRoot
+  // interaction at a minimal level.
+  struct InStyleRecalcScope {
+    Document& doc;
+    explicit InStyleRecalcScope(Document& d) : doc(d) { doc.in_style_recalc_ = true; }
+    ~InStyleRecalcScope() { doc.in_style_recalc_ = false; }
+  } in_style_recalc_scope(document);
+
+  MemberMutationScope scope{context};
+
+  WEBF_LOG(INFO) << "[StyleEngine] RecalcStyle starts...";
   auto begin_calc = std::chrono::steady_clock::now();
 
-  Element* root = document.documentElement();
+  Element* root = nullptr;
+  if (style_recalc_root_.GetRootNode()) {
+    // When we have a tracked recalc root, start from there to avoid walking
+    // the entire document.
+    root = &style_recalc_root_.RootElement();
+  } else {
+    root = document.documentElement();
+  }
   if (!root) {
     return;
   }
@@ -1917,8 +1584,12 @@ void StyleEngine::RecalcInvalidatedStyles(Document& document) {
   // selector-based invalidations scheduled.
   bool subtree_needs_style_recalc = root->NeedsStyleRecalc() || root->ChildNeedsStyleRecalc();
 
+  // In Blink, a non-empty StyleRecalcChange is itself a signal that some work
+  // must be done, even if there are no pending invalidations or dirty bits
+  // (e.g., container-query driven updates). Mirror that by only bailing out
+  // when both the document/subtree are clean *and* the change is empty.
   if (map.empty() && !document.NeedsStyleInvalidation() && !document.ChildNeedsStyleInvalidation() &&
-      !subtree_needs_style_recalc) {
+      !subtree_needs_style_recalc && change.IsEmpty()) {
     WEBF_LOG(INFO) << "[StyleEngine] Nothing scheduled via selector-based invalidation; nothing to do.";
     return;
   }
@@ -1929,11 +1600,64 @@ void StyleEngine::RecalcInvalidatedStyles(Document& document) {
   // StyleChangeType flags on individual elements.
   {
     StyleInvalidator invalidator(map);
-    invalidator.Invalidate(document, root);
+    // Blink's StyleInvalidator expects that when the document itself has
+    // NeedsStyleInvalidation() set, invalidation starts from the root element
+    // (documentElement). Our RecalcStyle() can be invoked with a subtree root
+    // via StyleTraversalRoot, so make sure the invalidator still sees the
+    // documentElement in that case to keep its invariants while allowing
+    // RecalcStyle to limit recomputation to |root|.
+    Element* invalidation_root = root;
+    if (UNLIKELY(document.NeedsStyleInvalidation())) {
+      if (Element* doc_root = document.documentElement()) {
+        invalidation_root = doc_root;
+      }
+    }
+    invalidator.Invalidate(document, invalidation_root);
   }
 
-  // Then, walk the DOM starting at the document element and perform subtree
-  // style recomputation only for elements that have been marked dirty.
+  WEBF_LOG(VERBOSE) << "[StyleEngine] Recalc root="
+                    << root->tagName().ToUTF8String()
+                    << " needs_style=" << root->NeedsStyleRecalc()
+                    << " child_needs_style=" << root->ChildNeedsStyleRecalc()
+                    << " forced_descendants=" << change.RecalcDescendants();
+
+  // If the caller explicitly requested a full subtree recalc (e.g. via
+  // ForceRecalcDescendants in a Blink-style code path), honour that by
+  // recomputing styles for the entire subtree rooted at |root| regardless of
+  // which elements currently have NeedsStyleRecalc set. This is conservative
+  // but keeps behavior aligned with Blink: correctness first, with the option
+  // to optimize later.
+  if (change.RecalcDescendants()) {
+    std::function<void(Node*)> clear_flags_for_subtree_force = [&](Node* node) {
+      if (!node) {
+        return;
+      }
+      node->ClearNeedsStyleRecalc();
+      node->ClearChildNeedsStyleRecalc();
+      for (Node* child = node->firstChild(); child; child = child->nextSibling()) {
+        clear_flags_for_subtree_force(child);
+      }
+    };
+
+    RecalcStyleForSubtree(*root);
+    clear_flags_for_subtree_force(root);
+
+    for (ContainerNode* ancestor = root->GetStyleRecalcParent(); ancestor;
+         ancestor = ancestor->GetStyleRecalcParent()) {
+      ancestor->ClearChildNeedsStyleRecalc();
+    }
+
+    style_recalc_root_.Clear();
+
+    auto end_calc_force = std::chrono::steady_clock::now();
+    WEBF_LOG(INFO) << "[StyleEngine] Finished RecalcStyle(took "
+                   << std::chrono::duration_cast<std::chrono::milliseconds>(end_calc_force - begin_calc).count()
+                   << "ms) [forced descendants]";
+    return;
+  }
+
+  // Otherwise, walk the DOM starting at |root| and perform subtree style
+  // recomputation only for elements that have been marked dirty.
   std::function<void(Node*)> clear_flags_for_subtree = [&](Node* node) {
     if (!node) {
       return;
@@ -1954,6 +1678,9 @@ void StyleEngine::RecalcInvalidatedStyles(Document& document) {
       Element* element = static_cast<Element*>(node);
       if (element->NeedsStyleRecalc()) {
         StyleChangeType change_type = element->GetStyleChangeType();
+          WEBF_LOG(VERBOSE) << "[StyleEngine] Recalc element="
+                          << element->tagName().ToUTF8String()
+                          << " change_type=" << static_cast<uint32_t>(change_type);
         if (change_type == kInlineIndependentStyleChange) {
           // Inline-only independent style changes affect this element but not
           // its descendants. Recompute style just for this element to keep
@@ -1977,8 +1704,81 @@ void StyleEngine::RecalcInvalidatedStyles(Document& document) {
 
   walk(root);
 
+  // Clear breadcrumbs on the traversal root as well, not only its ancestors.
+  root->ClearChildNeedsStyleRecalc();
+
+  // If we started from an optimized root, ensure we didn't miss any other dirty
+  // nodes (e.g. sibling subtrees). Missing them would cause inline styles to
+  // never be exported, since later RecalcStyle() calls may early-return once
+  // breadcrumbs are cleared.
+  Element* doc_root = document.documentElement();
+  auto find_remaining_dirty_node = [&]() -> Node* {
+    if (!doc_root) {
+      return nullptr;
+    }
+    for (Node& node : NodeTraversal::InclusiveDescendantsOf(*doc_root)) {
+      if (node.NeedsStyleRecalc()) {
+        return &node;
+      }
+    }
+    return nullptr;
+  };
+
+  if (doc_root && root != doc_root) {
+    if (Node* remaining = find_remaining_dirty_node()) {
+      WEBF_LOG(WARN) << "[StyleEngine] Remaining dirty nodes after style walk; running full-document pass."
+                        << " walk_root=" << root->tagName().ToUTF8String()
+                        << " remaining_type=" << static_cast<int>(remaining->nodeType())
+                        << " remaining_change_type=" << static_cast<uint32_t>(remaining->GetStyleChangeType())
+                        << " remaining_tag=" << (remaining->IsElementNode()
+                                                    ? To<Element>(*remaining).tagName().ToUTF8String()
+                                                    : std::string(""));
+      walk(doc_root);
+      doc_root->ClearChildNeedsStyleRecalc();
+    }
+  }
+
+  // After a full style walk, clear child-dirty breadcrumbs on ancestors of
+  // |root| as well, mirroring Blink's StyleEngine::RecalcStyle. This ensures
+  // that StyleTraversalRoot sees a consistent sequence of roots and that the
+  // next style mark can safely establish a fresh recalc root.
+  for (ContainerNode* ancestor = root->GetStyleRecalcParent(); ancestor;
+       ancestor = ancestor->GetStyleRecalcParent()) {
+    ancestor->ClearChildNeedsStyleRecalc();
+  }
+
+  // After a full style walk and ancestor cleanup, reset the recalc root to
+  // allow a fresh root to be established on the next dirty mark.
+  style_recalc_root_.Clear();
+
   auto end_calc = std::chrono::steady_clock::now();
-  WEBF_LOG(INFO) << "[StyleEngine] Finished RecalcInvalidatedStyles(took " << std::chrono::duration_cast<std::chrono::milliseconds>(end_calc - begin_calc).count() << "ms)";
+  WEBF_LOG(INFO) << "[StyleEngine] Finished RecalcStyle(took "
+                 << std::chrono::duration_cast<std::chrono::milliseconds>(end_calc - begin_calc).count() << "ms)";
+}
+
+void StyleEngine::RecalcStyle() {
+  // Mirror Blink's pattern: the parameterless entry point computes a
+  // StyleRecalcContext from the current style_recalc_root_ and then
+  // forwards to the overload that accepts a StyleRecalcChange and
+  // StyleRecalcContext.
+  //
+  // When no explicit recalc root has been established yet, fall back to the
+  // documentElement() so we retain WebF's existing behavior of treating the
+  // whole document as dirty.
+  Document& document = GetDocument();
+  Element* root = nullptr;
+  if (style_recalc_root_.GetRootNode()) {
+    root = &style_recalc_root_.RootElement();
+  } else {
+    root = document.documentElement();
+  }
+  if (!root) {
+    return;
+  }
+
+  StyleRecalcChange change;
+  StyleRecalcContext context = StyleRecalcContext::FromAncestors(*root);
+  RecalcStyle(change, context);
 }
 
 void StyleEngine::MediaQueryAffectingValueChanged(MediaValueChange change) {
@@ -2084,7 +1884,7 @@ void StyleEngine::MediaQueryAffectingValueChanged(MediaValueChange change) {
         const MediaQuerySet& old_set = size_media_query_results_[i].MediaQueries();
         const MediaQuerySet& new_set = new_results[i].MediaQueries();
         // If the underlying MediaQuerySet objects differ, the stylesheet
-        // structure changed without going through UpdateActiveStyleSheets.
+        // structure changed without going through SetNeedsActiveStyleUpdate.
         // Be conservative and treat this as changed.
         if (&old_set != &new_set ||
             size_media_query_results_[i].Result() != new_results[i].Result()) {
@@ -2102,8 +1902,15 @@ void StyleEngine::MediaQueryAffectingValueChanged(MediaValueChange change) {
       return;
     }
 
-    RecalcStyle(document);
-    ++media_query_recalc_count_for_test_;
+    Element* root = document.documentElement();
+    if (root) {
+      root->SetNeedsStyleRecalc(
+          kSubtreeStyleChange,
+          StyleChangeReasonForTracing::Create(style_change_reason::kStyleRuleChange));
+      document.SetNeedsStyleInvalidation();
+      RecalcStyle();
+      ++media_query_recalc_count_for_test_;
+    }
     return;
   }
 
@@ -2113,8 +1920,14 @@ void StyleEngine::MediaQueryAffectingValueChanged(MediaValueChange change) {
   switch (change) {
     case MediaValueChange::kDynamicViewport:
     case MediaValueChange::kOther:
-      RecalcStyle(document);
-      ++media_query_recalc_count_for_test_;
+      if (Element* root = document.documentElement()) {
+        root->SetNeedsStyleRecalc(
+            kSubtreeStyleChange,
+            StyleChangeReasonForTracing::Create(style_change_reason::kStyleRuleChange));
+        document.SetNeedsStyleInvalidation();
+        RecalcStyle();
+        ++media_query_recalc_count_for_test_;
+      }
       break;
     case MediaValueChange::kSize:
       // Handled above.

@@ -98,8 +98,9 @@ NativeValue HTMLLinkElement::parseAuthorStyleSheet(AtomicString& cssString, Atom
   WEBF_LOG(VERBOSE) << "[HTMLLinkElement] Registering author stylesheet and marking active stylesheets dirty.";
   document.EnsureStyleEngine().RegisterAuthorSheet(new_sheet);
 
-  // Active stylesheets changed; schedule incremental style recomputation.
-  document.EnsureStyleEngine().UpdateActiveStyleSheets();
+  // Active stylesheets changed; mirror Blink by marking the document as
+  // needing an active style update instead of doing an immediate full recalc.
+  document.EnsureStyleEngine().SetNeedsActiveStyleUpdate();
 
   // Ensure UI commands (inline styles) are flushed to Dart before dispatching 'load'.
   // This guarantees that stylesheet-driven winners (e.g., BODY background)
@@ -148,7 +149,7 @@ void HTMLLinkElement::ParseAttribute(const webf::Element::AttributeModificationP
     WEBF_LOG(VERBOSE) << "[HTMLLinkElement] Attribute changed: " << params.name.ToUTF8String()
                       << ", old='" << params.old_value.ToUTF8String() << "' new='" << params.new_value.ToUTF8String()
                       << "'. Marking active stylesheets dirty.";
-    GetDocument().EnsureStyleEngine().UpdateActiveStyleSheets();
+    GetDocument().EnsureStyleEngine().SetNeedsActiveStyleUpdate();
   }
 }
 
@@ -156,7 +157,7 @@ Node::InsertionNotificationRequest HTMLLinkElement::InsertedInto(webf::Container
   HTMLElement::InsertedInto(insertion_point);
   if (isConnected() && GetExecutingContext()->isBlinkEnabled()) {
     WEBF_LOG(VERBOSE) << "[HTMLLinkElement] InsertedInto document; marking active stylesheets dirty.";
-    GetDocument().EnsureStyleEngine().UpdateActiveStyleSheets();
+    GetDocument().EnsureStyleEngine().SetNeedsActiveStyleUpdate();
   }
   return kInsertionDone;
 }
@@ -169,7 +170,7 @@ void HTMLLinkElement::RemovedFrom(webf::ContainerNode& insertion_point) {
       GetDocument().EnsureStyleEngine().UnregisterAuthorSheet(sheet_.Get());
       sheet_.Release()->ClearOwnerNode();
     }
-    GetDocument().EnsureStyleEngine().UpdateActiveStyleSheets();
+    GetDocument().EnsureStyleEngine().SetNeedsActiveStyleUpdate();
   }
 }
 

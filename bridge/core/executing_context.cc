@@ -542,7 +542,7 @@ void ExecutingContext::DrainMicrotasks() {
     Document* doc = document();
     if (doc) {
       MemberMutationScope mutation_scope{this};
-      doc->EnsureStyleEngine().RecalcInvalidatedStyles(*doc);
+      doc->UpdateStyleForThisDocument();
     }
   }
 

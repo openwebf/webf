@@ -790,25 +790,65 @@ bool Node::InActiveDocument() const {
 }
 
 void Node::SetNeedsStyleRecalc(StyleChangeType change_type, const StyleChangeReasonForTracing& reason) {
+  // Mirror Blink's preconditions as closely as possible so that style dirtiness
+  // and StyleRecalcRoot invariants match Blink's expectations.
   if (!GetExecutingContext()->isBlinkEnabled()) {
+    WEBF_LOG(VERBOSE) << "[StyleRecalcSkip] blink disabled for node_type=" << static_cast<int>(nodeType());
     return;
   }
 
-  // Minimal implementation to support Blink CSS recalc plumbing.
-  // Skip if not connected to a document.
-  if (!isConnected()) {
+  Document& document = GetDocument();
+  StyleEngine& engine = document.GetStyleEngine();
+
+  if (!engine.MarkStyleDirtyAllowed()) {
+    WEBF_LOG(VERBOSE) << "[StyleRecalcSkip] MarkStyleDirty disallowed for node_type="
+                      << static_cast<int>(nodeType());
     return;
   }
 
-  // Update this node's style change type if escalating.
+  if (change_type == kNoStyleChange) {
+    WEBF_LOG(VERBOSE) << "[StyleRecalcSkip] kNoStyleChange for node_type=" << static_cast<int>(nodeType());
+    return;
+  }
+
+  // Only elements and text nodes participate in style recalc.
+  if (!IsElementNode() && !IsTextNode()) {
+    WEBF_LOG(VERBOSE) << "[StyleRecalcSkip] non-element/text node_type=" << static_cast<int>(nodeType());
+    return;
+  }
+
+  if (!InActiveDocument()) {
+    WEBF_LOG(VERBOSE) << "[StyleRecalcSkip] not in active document, node_type=" << static_cast<int>(nodeType());
+    return;
+  }
+
+  if (ShouldSkipMarkingStyleDirty()) {
+    WEBF_LOG(VERBOSE) << "[StyleRecalcSkip] ShouldSkipMarkingStyleDirty() for node_type="
+                      << static_cast<int>(nodeType());
+    return;
+  }
+
   StyleChangeType existing_change_type = GetStyleChangeType();
+  if (change_type > existing_change_type) {
+    WEBF_LOG(VERBOSE) << "[StyleRecalc] Mark dirty node_type="
+                      << static_cast<int>(nodeType())
+                      << " is_element=" << IsElementNode()
+                      << " tag=" << (IsElementNode()
+                                         ? static_cast<Element*>(const_cast<Node*>(this))->tagName().ToUTF8String()
+                                         : std::string(""))
+                      << " old_change_type=" << static_cast<uint32_t>(existing_change_type)
+                      << " new_change_type=" << static_cast<uint32_t>(change_type);
+  }
   if (change_type > existing_change_type) {
     SetStyleChange(change_type);
   }
 
-  // If this is the first time marking dirty, propagate up to ancestors.
   if (existing_change_type == kNoStyleChange) {
     MarkAncestorsWithChildNeedsStyleRecalc();
+  }
+
+  if (auto* this_element = DynamicTo<Element>(this)) {
+    this_element->SetAnimationStyleChange(false);
   }
 }
 
@@ -824,20 +864,26 @@ void Node::ClearNeedsStyleRecalc() {
 }
 
 void Node::MarkAncestorsWithChildNeedsStyleRecalc() {
-  Element* ancestor = GetStyleRecalcParent();
-  bool parent_dirty = ancestor && ancestor->ChildNeedsStyleRecalc();
+  Element* style_parent = GetStyleRecalcParent();
+  bool parent_dirty = style_parent && style_parent->IsDirtyForStyleRecalc();
+  Element* ancestor = style_parent;
   for (; ancestor && !ancestor->ChildNeedsStyleRecalc(); ancestor = ancestor->GetStyleRecalcParent()) {
     if (!ancestor->isConnected())
       return;
     ancestor->SetChildNeedsStyleRecalc();
+    if (ancestor->IsDirtyForStyleRecalc()) {
+      break;
+    }
   }
   if (!isConnected())
     return;
+  // If the parent node is already dirty, we can keep the same recalc root. The
+  // early return here is a performance optimization matching Blink.
   if (parent_dirty)
     return;
 
   // Notify the StyleEngine about the new recalc root.
-  GetDocument().GetStyleEngine().UpdateStyleRecalcRoot(GetStyleRecalcParent(), this);
+  GetDocument().GetStyleEngine().UpdateStyleRecalcRoot(ancestor, this);
 }
 
 void Node::SetNeedsStyleInvalidation() {
@@ -885,6 +931,38 @@ Element* Node::FlatTreeParentForChildDirty() const {
   //     return nullptr;
   // }
   return parent;
+}
+
+bool Node::ShouldSkipMarkingStyleDirty() const {
+  // Blink's original Node::ShouldSkipMarkingStyleDirty relies on per-element
+  // ComputedStyle storage (GetComputedStyle()) to decide whether it is safe to
+  // mark a node dirty. WebF's Blink-style pipeline does not yet wire
+  // ComputedStyle into DOM nodes (Element::GetComputedStyle() currently
+  // returns nullptr), so a literal port of that logic would treat every
+  // non-root element as "unstyled" and skip all style dirtiness marks.
+  //
+  // That behaviour is exactly what causes logs like:
+  //   [StyleRecalcSkip] ShouldSkipMarkingStyleDirty() for node_type=1
+  // and results in styles never being recomputed for most of the tree (e.g.
+  // the React use_cases app rendering unstyled).
+  //
+  // Until full ComputedStyle wiring is implemented, we conservatively *never*
+  // skip marking style dirty for in-document element / text nodes. Other
+  // guards (IsElementNode/IsTextNode, InActiveDocument) in SetNeedsStyleRecalc
+  // already filter out nodes that do not participate in styling.
+  if (!isConnected()) {
+    // Nodes outside the active document don't need style recalc.
+    return true;
+  }
+
+  // For element and text nodes in an active document, always allow style
+  // dirtiness to be recorded.
+  if (IsElementNode() || IsTextNode()) {
+    return false;
+  }
+
+  // Non-element/text nodes do not participate in style recalc.
+  return true;
 }
 
 }  // namespace webf

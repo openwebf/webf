@@ -45,14 +45,19 @@
 //#include "core/css/layout_tree_rebuild_root.h"
 #include "core/css/media_value_change.h"
 #include "core/css/resolver/style_resolver.h"
-//#include "core/css/style_invalidation_root.h"
+#include "core/css/style_invalidation_root.h"
 #include "core/css/style_recalc_root.h"
+#include "core/css/style_recalc_change.h"
+#include "core/css/style_recalc_context.h"
 #include "core/dom/element.h"
 #include "core/platform/text/text_position.h"
 #include "pending_sheet_type.h"
 #include "style_sheet.h"
 
 namespace webf {
+
+class StyleRecalcChange;
+class StyleRecalcContext;
 
 class StyleSheetContents;
 class CSSStyleSheet;
@@ -110,24 +115,41 @@ class StyleEngine final {
 
   void UpdateStyleInvalidationRoot(ContainerNode* ancestor, Node* dirty_node);
   void UpdateStyleRecalcRoot(ContainerNode* ancestor, Node* dirty_node);
-  // Performs declared-value style recalculation for dirty subtrees.
-  // In Phase 1 this is a no-op placeholder.
-  void RecalcStyle(Document&);
+  // Performs declared-value style recalculation for dirty subtrees rooted at
+  // elements that have been marked dirty via NeedsStyleRecalc /
+  // ChildNeedsStyleRecalc. This aggregates selector-based invalidations
+  // (PendingInvalidations + StyleInvalidator) and then walks only the
+  // necessary subtrees, emitting winning declared values to the UI layer.
+  void RecalcStyle();
+  // Blink-style entry point that allows callers to pass an explicit
+  // StyleRecalcChange and StyleRecalcContext. Our parameterless RecalcStyle()
+  // forwards into this overload using a default-initialized change/context so
+  // that Blink-style call sites can be wired without changing behavior yet.
+  void RecalcStyle(StyleRecalcChange change, const StyleRecalcContext& style_recalc_context);
 
   // Recalculate styles for a specific subtree rooted at |root|, applying the
-  // same cascade/export/emission as RecalcStyle(Document&), but limiting the
-  // traversal to the given element and its descendants. This is useful for
-  // localized updates, such as when inline styles are removed and the element
-  // needs to fall back to stylesheet rules.
+  // same cascade/export/emission as RecalcStyle(), but limiting the traversal
+  // to the given element and its descendants. This is useful for localized
+  // updates, such as when inline styles are removed and the element needs to
+  // fall back to stylesheet rules.
   void RecalcStyleForSubtree(Element& root);
   // Recalculate styles for a single element only, without recursing into its
   // descendants. This is used for fine-grained style change types such as
   // kInlineIndependentStyleChange where descendants are not affected.
   void RecalcStyleForElementOnly(Element& element);
-  // Incremental style recomputation driven by PendingInvalidations +
-  // StyleInvalidator. This walks only subtrees that have been marked dirty via
-  // selector-based invalidation (e.g., ID/class changes).
-  void RecalcInvalidatedStyles(Document&);
+
+  // Returns true if there is a pending style invalidation root tracked by
+  // StyleInvalidationRoot. This loosely mirrors Blink's
+  // StyleEngine::NeedsStyleInvalidation and lets Document ask whether it
+  // should run selector-based invalidation before a style recalc.
+  bool NeedsStyleInvalidation() const { return style_invalidation_root_.GetRootNode(); }
+
+  // Push all pending selector-based invalidations through StyleInvalidator,
+  // starting from the current StyleInvalidationRoot. This is a thin wrapper
+  // around StyleInvalidator::Invalidate and is intentionally kept separate
+  // from RecalcStyle() so callers can preserve the Blink-style
+  // "invalidate-then-recalc" split when desired.
+  void InvalidateStyle();
 
   bool MarkReattachAllowed() const;
   bool MarkStyleDirtyAllowed() const;
@@ -159,11 +181,25 @@ class StyleEngine final {
   // Aggregate selector/invalidation features from all active author sheets.
   void CollectFeaturesTo(RuleFeatureSet& features);
 
-  // Mirror Blink's StyleEngine::UpdateActiveStyleSheets at a high level: mark
-  // that active stylesheets have changed, refresh global selector/invalidation
-  // metadata, and mark the document for incremental style recomputation. The
-  // actual work is performed later via RecalcInvalidatedStyles().
-  void UpdateActiveStyleSheets();
+  // Lightweight Blink-style hook that ensures any global selector /
+  // invalidation metadata derived from the current set of active author
+  // stylesheets is up to date. WebF tracks active sheets incrementally;
+  // UpdateActiveStyle simply refreshes the CSSGlobalRuleSet when needed.
+  void UpdateActiveStyle();
+
+  // Placeholders mirroring Blink's StyleEngine::InvalidateViewportUnitStylesIfNeeded
+  // and StyleEngine::InvalidateEnvDependentStylesIfNeeded. WebF currently
+  // relies on MediaQueryAffectingValueChanged to handle viewport / environment
+  // driven style recomputation, so these hooks are no-ops kept for API
+  // compatibility with Blink-style Document::UpdateStyleForThisDocument.
+  void InvalidateViewportUnitStylesIfNeeded();
+  void InvalidateEnvDependentStylesIfNeeded();
+
+  // Mirror Blink's StyleEngine::SetNeedsActiveStyleUpdate at a high level:
+  // mark that the active stylesheet set has changed and flag the document
+  // for an incremental style recomputation. This only marks the style tree
+  // dirty; the actual recomputation work happens later via RecalcStyle().
+  void SetNeedsActiveStyleUpdate();
 
   // Minimal wiring for Blink-style invalidation: schedule invalidation sets
   // for ID / class / attribute changes on an element. These currently
@@ -178,6 +214,11 @@ class StyleEngine final {
                                   Element&);
 
  private:
+  // Helper to decide whether selector-based invalidation work should be
+  // skipped for a given element (e.g., because it is not in the active
+  // document or we are already in the middle of a style recalc).
+  bool ShouldSkipInvalidationFor(const Element&) const;
+
   Document* document_;
   struct StringHash {
     size_t operator()(const String& s) const { 
@@ -216,6 +257,16 @@ class StyleEngine final {
   bool allow_skip_style_recalc_{false};
 
   PendingInvalidations pending_invalidations_;
+  // Root for selector-based style invalidation. Updated when nodes are marked
+  // with NeedsStyleInvalidation / ChildNeedsStyleInvalidation and consulted by
+  // InvalidateStyle() to avoid traversing the entire document when only a
+  // subtree is affected.
+  StyleInvalidationRoot style_invalidation_root_;
+  // Root for style-recalc traversal; updated via Node::SetNeedsStyleRecalc /
+  // Node::MarkAncestorsWithChildNeedsStyleRecalc and consulted by
+  // StyleEngine::RecalcStyle() to avoid traversing the entire document when
+  // only a subtree is dirty.
+  StyleRecalcRoot style_recalc_root_;
   std::shared_ptr<StyleResolver> resolver_;
   std::shared_ptr<CSSGlobalRuleSet> global_rule_set_;
   // Active author stylesheets registered by link/style processing. We track
