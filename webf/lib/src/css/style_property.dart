@@ -1253,7 +1253,10 @@ class CSSStyleProperty {
   /// CSS Grid Level 1 `grid` shorthand (partial support).
   ///
   /// Currently supported patterns:
+  ///   - `grid: none`
   ///   - `grid: <'grid-template-rows'> / <'grid-template-columns'>`
+  ///   - `grid: auto-flow <'grid-auto-rows'>? / <'grid-template-columns'>`
+  ///   - `grid: <'grid-template-rows'> / auto-flow <'grid-auto-columns'>?`
   ///
   /// Complex forms that include template area strings or auto-placement
   /// keywords (e.g. auto-flow branches) are intentionally ignored for now
@@ -1262,22 +1265,88 @@ class CSSStyleProperty {
     String value = shorthandValue.trim();
     if (value.isEmpty) return;
 
+    final String lower = value.toLowerCase();
+
+    // `grid: none` resets the template and auto tracks to their initial values.
+    if (lower == 'none') {
+      properties[GRID_TEMPLATE_ROWS] = 'none';
+      properties[GRID_TEMPLATE_COLUMNS] = 'none';
+      properties[GRID_TEMPLATE_AREAS] = 'none';
+      properties[GRID_AUTO_ROWS] = 'auto';
+      properties[GRID_AUTO_COLUMNS] = 'auto';
+      properties[GRID_AUTO_FLOW] = 'row';
+      return;
+    }
+
     // Ignore area-string based syntaxes (e.g. `"a a" "b c" / 1fr 1fr"`) for now.
     // These are covered by explicit longhands (`grid-template-areas`, etc.).
     if (value.contains('"') || value.contains('\'')) {
       return;
     }
 
-    // Basic template rows/columns form: grid: <rows> / <columns>
     final List<String> parts = value.split(_slashRegExp);
     if (parts.length == 2) {
-      final String rows = parts[0].trim();
-      final String cols = parts[1].trim();
-      if (rows.isNotEmpty) {
-        properties[GRID_TEMPLATE_ROWS] = rows;
+      final String before = parts[0].trim();
+      final String after = parts[1].trim();
+      if (before.isEmpty && after.isEmpty) return;
+
+      final List<String> beforeTokens = _splitBySpace(before);
+      final List<String> afterTokens = _splitBySpace(after);
+
+      final bool beforeStartsAutoFlow = beforeTokens.isNotEmpty && beforeTokens[0] == 'auto-flow';
+      final bool afterStartsAutoFlow = afterTokens.isNotEmpty && afterTokens[0] == 'auto-flow';
+
+      // Form 1: grid: auto-flow <rows>? / <template-columns>
+      if (beforeStartsAutoFlow && !afterStartsAutoFlow) {
+        final bool dense = beforeTokens.contains('dense');
+        String autoFlow = 'row';
+        if (dense) autoFlow = 'row dense';
+        properties[GRID_AUTO_FLOW] = autoFlow;
+
+        // First non-keyword token becomes grid-auto-rows, if present.
+        for (final String token in beforeTokens) {
+          if (token == 'auto-flow' || token == 'dense') continue;
+          properties[GRID_AUTO_ROWS] = token;
+          break;
+        }
+
+        if (after.isNotEmpty) {
+          properties[GRID_TEMPLATE_COLUMNS] = after;
+        }
+        properties[GRID_TEMPLATE_ROWS] = 'none';
+        properties[GRID_TEMPLATE_AREAS] = 'none';
+        return;
       }
-      if (cols.isNotEmpty) {
-        properties[GRID_TEMPLATE_COLUMNS] = cols;
+
+      // Form 2: grid: <template-rows> / auto-flow <columns>?
+      if (!beforeStartsAutoFlow && afterStartsAutoFlow) {
+        if (before.isNotEmpty) {
+          properties[GRID_TEMPLATE_ROWS] = before;
+        }
+
+        final bool dense = afterTokens.contains('dense');
+        String autoFlow = 'column';
+        if (dense) autoFlow = 'column dense';
+        properties[GRID_AUTO_FLOW] = autoFlow;
+
+        // First non-keyword token becomes grid-auto-columns, if present.
+        for (final String token in afterTokens) {
+          if (token == 'auto-flow' || token == 'dense') continue;
+          properties[GRID_AUTO_COLUMNS] = token;
+          break;
+        }
+
+        properties[GRID_TEMPLATE_COLUMNS] = 'none';
+        properties[GRID_TEMPLATE_AREAS] = 'none';
+        return;
+      }
+
+      // Basic template rows/columns form: grid: <rows> / <columns>
+      if (before.isNotEmpty) {
+        properties[GRID_TEMPLATE_ROWS] = before;
+      }
+      if (after.isNotEmpty) {
+        properties[GRID_TEMPLATE_COLUMNS] = after;
       }
     }
   }

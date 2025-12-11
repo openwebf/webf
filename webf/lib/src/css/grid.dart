@@ -475,7 +475,17 @@ class CSSGridParser {
     String propertyName,
     Axis axis,
   ) {
-    return _parseTrackListInternal(value, renderStyle, propertyName, axis);
+    final String trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      return const <GridTrackSize>[];
+    }
+    // For template track lists, `none` represents "no explicit tracks".
+    // Represent this as an empty list so that layout can fall back to
+    // auto tracks and computed-style serialization can emit `none`.
+    if (trimmed.toLowerCase() == 'none') {
+      return const <GridTrackSize>[];
+    }
+    return _parseTrackListInternal(trimmed, renderStyle, propertyName, axis);
   }
 
   static GridAutoFlow parseAutoFlow(String value) {
