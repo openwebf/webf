@@ -164,6 +164,9 @@ const String PLACE_CONTENT = 'placeContent';
 const String PLACE_ITEMS = 'placeItems';
 const String PLACE_SELF = 'placeSelf';
 
+// CSS Grid shorthands
+const String GRID_TEMPLATE = 'gridTemplate';
+
 const String GRID_AUTO_FLOW = 'gridAutoFlow';
 const String GRID_AUTO_ROWS = 'gridAutoRows';
 const String GRID_AUTO_COLUMNS = 'gridAutoColumns';

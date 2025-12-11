@@ -42,6 +42,7 @@ const Map<String, bool> _CSSShorthandProperty = {
   FLEX: true,
   FLEX_FLOW: true,
   GAP: true,
+  GRID_TEMPLATE: true,
   GRID: true,
   // WebF shorthand: maps to align-items + justify-content
   PLACE_CONTENT: true,
@@ -212,6 +213,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         return CSSStyleProperty.removeShorthandBackgroundPosition(this, isImportant);
       case BORDER_RADIUS:
         return CSSStyleProperty.removeShorthandBorderRadius(this, isImportant);
+      case GRID_TEMPLATE:
+        return CSSStyleProperty.removeShorthandGridTemplate(this, isImportant);
       case GRID:
         return CSSStyleProperty.removeShorthandGrid(this, isImportant);
       case PLACE_CONTENT:
@@ -322,6 +325,9 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
           break;
       case BORDER_RADIUS:
         CSSStyleProperty.setShorthandBorderRadius(longhandProperties, normalizedValue);
+        break;
+      case GRID_TEMPLATE:
+        CSSStyleProperty.setShorthandGridTemplate(longhandProperties, normalizedValue);
         break;
       case GRID:
         CSSStyleProperty.setShorthandGrid(longhandProperties, normalizedValue);

@@ -1250,6 +1250,72 @@ class CSSStyleProperty {
     }
   }
 
+  /// CSS Grid Level 1 `grid-template` shorthand (partial support).
+  ///
+  /// Currently supported patterns:
+  ///   - `grid-template: none`
+  ///   - `grid-template: <'grid-template-rows'> / <'grid-template-columns'>`
+  ///   - `grid-template: <template-areas> / <'grid-template-columns'>`
+  ///
+  /// More advanced track sizing forms (row track sizes following area strings,
+  /// subgrid keywords, etc.) are intentionally ignored for now.
+  static void setShorthandGridTemplate(Map<String, String?> properties, String shorthandValue) {
+    String value = shorthandValue.trim();
+    if (value.isEmpty) return;
+
+    final String lower = value.toLowerCase();
+    if (lower == 'none') {
+      properties[GRID_TEMPLATE_ROWS] = 'none';
+      properties[GRID_TEMPLATE_COLUMNS] = 'none';
+      properties[GRID_TEMPLATE_AREAS] = 'none';
+      return;
+    }
+
+    // Template-areas form: one or more quoted rows, optionally followed by
+    // `/ <track-list>` for columns. We:
+    //   - extract the contiguous quoted region to feed grid-template-areas
+    //   - treat the trailing `/ ...` as grid-template-columns when present.
+    if (value.contains('"') || value.contains('\'')) {
+      // Extract area strings between first and last quote to keep cssText compact.
+      final int firstQuote = value.indexOf('"') != -1 ? value.indexOf('"') : value.indexOf('\'');
+      final int lastQuote = value.lastIndexOf('"') != -1 ? value.lastIndexOf('"') : value.lastIndexOf('\'');
+      if (firstQuote != -1 && lastQuote > firstQuote) {
+        final String areasText = value.substring(firstQuote, lastQuote + 1).trim();
+        if (areasText.isNotEmpty) {
+          properties[GRID_TEMPLATE_AREAS] = areasText;
+        }
+      }
+
+      final int slashIndex = value.indexOf('/');
+      if (slashIndex != -1 && slashIndex + 1 < value.length) {
+        final String cols = value.substring(slashIndex + 1).trim();
+        if (cols.isNotEmpty) {
+          properties[GRID_TEMPLATE_COLUMNS] = cols;
+        }
+      }
+      return;
+    }
+
+    // Basic rows/columns form: grid-template: <rows> / <columns>
+    final List<String> parts = value.split(_slashRegExp);
+    if (parts.length == 2) {
+      final String rows = parts[0].trim();
+      final String cols = parts[1].trim();
+      if (rows.isNotEmpty) {
+        properties[GRID_TEMPLATE_ROWS] = rows;
+      }
+      if (cols.isNotEmpty) {
+        properties[GRID_TEMPLATE_COLUMNS] = cols;
+      }
+    }
+  }
+
+  static void removeShorthandGridTemplate(CSSStyleDeclaration style, [bool? isImportant]) {
+    if (style.contains(GRID_TEMPLATE_ROWS)) style.removeProperty(GRID_TEMPLATE_ROWS, isImportant);
+    if (style.contains(GRID_TEMPLATE_COLUMNS)) style.removeProperty(GRID_TEMPLATE_COLUMNS, isImportant);
+    if (style.contains(GRID_TEMPLATE_AREAS)) style.removeProperty(GRID_TEMPLATE_AREAS, isImportant);
+  }
+
   /// CSS Grid Level 1 `grid` shorthand (partial support).
   ///
   /// Currently supported patterns:
