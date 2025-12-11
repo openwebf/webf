@@ -42,6 +42,7 @@ const Map<String, bool> _CSSShorthandProperty = {
   FLEX: true,
   FLEX_FLOW: true,
   GAP: true,
+  GRID: true,
   // WebF shorthand: maps to align-items + justify-content
   PLACE_CONTENT: true,
   PLACE_ITEMS: true,
@@ -211,6 +212,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         return CSSStyleProperty.removeShorthandBackgroundPosition(this, isImportant);
       case BORDER_RADIUS:
         return CSSStyleProperty.removeShorthandBorderRadius(this, isImportant);
+      case GRID:
+        return CSSStyleProperty.removeShorthandGrid(this, isImportant);
       case PLACE_CONTENT:
         return CSSStyleProperty.removeShorthandPlaceContent(this, isImportant);
       case PLACE_ITEMS:
@@ -317,12 +320,15 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
           // Store directly to pending map during expansion to avoid recursive shorthand handling.
           _pendingProperties[BACKGROUND_POSITION] = CSSPropertyValue(normalizedValue, baseHref: baseHref);
           break;
-        case BORDER_RADIUS:
-          CSSStyleProperty.setShorthandBorderRadius(longhandProperties, normalizedValue);
-          break;
-        case PLACE_CONTENT:
-          CSSStyleProperty.setShorthandPlaceContent(longhandProperties, normalizedValue);
-          break;
+      case BORDER_RADIUS:
+        CSSStyleProperty.setShorthandBorderRadius(longhandProperties, normalizedValue);
+        break;
+      case GRID:
+        CSSStyleProperty.setShorthandGrid(longhandProperties, normalizedValue);
+        break;
+      case PLACE_CONTENT:
+        CSSStyleProperty.setShorthandPlaceContent(longhandProperties, normalizedValue);
+        break;
         case PLACE_ITEMS:
           CSSStyleProperty.setShorthandPlaceItems(longhandProperties, normalizedValue);
           break;

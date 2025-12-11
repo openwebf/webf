@@ -1250,6 +1250,47 @@ class CSSStyleProperty {
     }
   }
 
+  /// CSS Grid Level 1 `grid` shorthand (partial support).
+  ///
+  /// Currently supported patterns:
+  ///   - `grid: <'grid-template-rows'> / <'grid-template-columns'>`
+  ///
+  /// Complex forms that include template area strings or auto-placement
+  /// keywords (e.g. auto-flow branches) are intentionally ignored for now
+  /// so that invalid/unsupported shorthands do not corrupt longhands.
+  static void setShorthandGrid(Map<String, String?> properties, String shorthandValue) {
+    String value = shorthandValue.trim();
+    if (value.isEmpty) return;
+
+    // Ignore area-string based syntaxes (e.g. `"a a" "b c" / 1fr 1fr"`) for now.
+    // These are covered by explicit longhands (`grid-template-areas`, etc.).
+    if (value.contains('"') || value.contains('\'')) {
+      return;
+    }
+
+    // Basic template rows/columns form: grid: <rows> / <columns>
+    final List<String> parts = value.split(_slashRegExp);
+    if (parts.length == 2) {
+      final String rows = parts[0].trim();
+      final String cols = parts[1].trim();
+      if (rows.isNotEmpty) {
+        properties[GRID_TEMPLATE_ROWS] = rows;
+      }
+      if (cols.isNotEmpty) {
+        properties[GRID_TEMPLATE_COLUMNS] = cols;
+      }
+    }
+  }
+
+  static void removeShorthandGrid(CSSStyleDeclaration style, [bool? isImportant]) {
+    if (style.contains(GRID_TEMPLATE_ROWS)) style.removeProperty(GRID_TEMPLATE_ROWS, isImportant);
+    if (style.contains(GRID_TEMPLATE_COLUMNS)) style.removeProperty(GRID_TEMPLATE_COLUMNS, isImportant);
+    if (style.contains(GRID_TEMPLATE_AREAS)) style.removeProperty(GRID_TEMPLATE_AREAS, isImportant);
+    if (style.contains(GRID_AUTO_ROWS)) style.removeProperty(GRID_AUTO_ROWS, isImportant);
+    if (style.contains(GRID_AUTO_COLUMNS)) style.removeProperty(GRID_AUTO_COLUMNS, isImportant);
+    if (style.contains(GRID_AUTO_FLOW)) style.removeProperty(GRID_AUTO_FLOW, isImportant);
+  }
+
   static void setShorthandAnimation(Map<String, String?> properties, String shorthandValue) {
     List<String?>? values = _getAnimationValues(shorthandValue);
     if (values == null) return;

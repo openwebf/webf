@@ -71,10 +71,12 @@
 Track sizing/placement for MVP grids now ships with widget + integration coverage, and per-item alignment plumbing is partially in-tree. Upcoming focus areas:
 
 1. Begin Phase 5 hardening by profiling `RenderGridLayout` hot paths (auto-placement + track resolution), enumerating slow cases, and sketching caching/intrinsic sizing fixes.
-2. Document profiling insights and mitigation plans in `dev_css_grid_process.md` (alongside this plan) plus update example apps/docs once optimizations land.
-3. Stress-test grid layouts inside representative app flows (dashboard, list virtualization) to validate performance/behavioral stability before GA.
-4. Flip on `DebugFlags.enableCssGridProfiling` during perf sessions to capture per-grid timing for materialization, placement, and child layout.
-5. Continue filling integration matrix: template-area happy-path + auto-fit/place-content cases landed (unknown-area fallback temporarily skipped); next targets are overlapping area definitions and dense auto-fill dashboards with per-item overrides.
+2. Implement the `grid` shorthand property (per MDN / CSS Grid 1) as a thin layer over existing longhands (`grid-template-*`, `grid-auto-*`), covering the common `none`, template, and auto-flow forms and deferring subgrid/masonry keywords per non-goals.
+3. Add a basic `grid-template` shorthand (rows/columns/areas) parser to align with authors’ expectations for shorthand usage while still delegating storage to existing typed fields.
+4. Expand track-size parsing to gracefully ignore unsupported keywords like `min-content`/`max-content` in grid track lists (where they are not yet wired into layout), and document the current support level in `dev_css_grid_process.md`.
+5. Stress-test grid layouts inside representative app flows (dashboard, list virtualization) to validate performance/behavioral stability before GA.
+6. Flip on `DebugFlags.enableCssGridProfiling` during perf sessions to capture per-grid timing for materialization, placement, and child layout.
+7. Continue filling integration matrix: template-area happy-path + auto-fit/place-content + template-area overlap/unknown-area cases landed; next targets are shorthand-centric specs (e.g., `grid` / `grid-template`) and dense auto-fill dashboards with per-item overrides.
 
 **TODOs**
 - [x] Capture overview/goals/scope plus risks and rollout strategy.
@@ -85,3 +87,4 @@ Track sizing/placement for MVP grids now ships with widget + integration coverag
 - [x] Extend alignment/template features (Phase 4) with serialization and coverage (per-item alignment + computed styles partially landed).
 - [x] Complete computed-style serialization and integration specs for grid properties.
 - [ ] Profile and harden grid layout (Phase 5), updating docs/examples.
+- [ ] Add `grid` and `grid-template` shorthands on top of existing longhands, with focused integration specs under `integration_tests/specs/css/css-grid`.
