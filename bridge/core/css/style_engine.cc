@@ -36,6 +36,7 @@
 #include <cctype>
 #include <span>
 #include <unordered_map>
+#include "core/css/invalidation/invalidation_set.h"
 #include "core/css/css_property_name.h"
 #include "core/css/css_property_value_set.h"
 #include "core/css/css_style_sheet.h"
@@ -45,8 +46,10 @@
 #include "core/css/style_rule.h"
 #include "core/css/properties/css_property.h"
 #include "core/css/resolver/style_resolver.h"
+#include "core/dom/attribute.h"
 #include "core/dom/document.h"
 #include "core/dom/element.h"
+#include "core/dom/element_traversal.h"
 #include "core/css/element_rule_collector.h"
 #include "core/css/resolver/style_resolver_state.h"
 #include "core/css/resolver/style_cascade.h"
@@ -669,7 +672,155 @@ void StyleEngine::UpdateStyleRecalcRoot(ContainerNode* ancestor, Node* dirty_nod
   style_recalc_root_.Update(ancestor, dirty_node);
 }
 
-void StyleEngine::ScheduleNthPseudoInvalidations(ContainerNode& nth_parent) {}
+void StyleEngine::ScheduleNthPseudoInvalidations(ContainerNode& nth_parent) {
+  Document& document = GetDocument();
+  ExecutingContext* context = document.GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+  if (!global_rule_set_) {
+    return;
+  }
+  if (document.InStyleRecalc()) {
+    return;
+  }
+
+  global_rule_set_->Update(document);
+  InvalidationLists invalidation_lists;
+  global_rule_set_->GetRuleFeatureSet().CollectNthInvalidationSet(invalidation_lists);
+  pending_invalidations_.ScheduleInvalidationSetsForNode(invalidation_lists, nth_parent);
+}
+
+void StyleEngine::ScheduleSiblingInvalidationsForElement(Element& element,
+                                                         ContainerNode& scheduling_parent,
+                                                         unsigned min_direct_adjacent) {
+  assert(min_direct_adjacent);
+
+  Document& document = GetDocument();
+  ExecutingContext* context = document.GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+  if (!global_rule_set_) {
+    return;
+  }
+  if (&element.GetDocument() != &document) {
+    return;
+  }
+  if (document.InStyleRecalc()) {
+    return;
+  }
+
+  global_rule_set_->Update(document);
+  const RuleFeatureSet& features = global_rule_set_->GetRuleFeatureSet();
+
+  InvalidationLists invalidation_lists;
+
+  if (element.HasID()) {
+    features.CollectSiblingInvalidationSetForId(invalidation_lists, element, element.IdForStyleResolution(),
+                                                min_direct_adjacent);
+  }
+
+  if (element.HasClass()) {
+    const SpaceSplitString& class_names = element.ClassNames();
+    for (const AtomicString& class_name : class_names) {
+      features.CollectSiblingInvalidationSetForClass(invalidation_lists, element, class_name, min_direct_adjacent);
+    }
+  }
+
+  for (const Attribute& attribute : element.Attributes()) {
+    features.CollectSiblingInvalidationSetForAttribute(invalidation_lists, element, attribute.GetName(),
+                                                       min_direct_adjacent);
+  }
+
+  features.CollectUniversalSiblingInvalidationSet(invalidation_lists, min_direct_adjacent);
+
+  pending_invalidations_.ScheduleSiblingInvalidationsAsDescendants(invalidation_lists, scheduling_parent);
+}
+
+void StyleEngine::ScheduleInvalidationsForInsertedSibling(Element* before_element, Element& inserted_element) {
+  Document& document = GetDocument();
+  ExecutingContext* context = document.GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+  if (!global_rule_set_) {
+    return;
+  }
+  if (&inserted_element.GetDocument() != &document) {
+    return;
+  }
+  if (document.InStyleRecalc()) {
+    return;
+  }
+
+  ContainerNode* parent = inserted_element.parentNode();
+  if (!parent) {
+    return;
+  }
+
+  global_rule_set_->Update(document);
+  const RuleFeatureSet& features = global_rule_set_->GetRuleFeatureSet();
+
+  unsigned affected_siblings =
+      parent->ChildrenAffectedByIndirectAdjacentRules() ? SiblingInvalidationSet::kDirectAdjacentMax
+                                                        : features.MaxDirectAdjacentSelectors();
+
+  ContainerNode* scheduling_parent = inserted_element.ParentElementOrShadowRoot();
+  if (!scheduling_parent) {
+    return;
+  }
+
+  ScheduleSiblingInvalidationsForElement(inserted_element, *scheduling_parent, 1);
+
+  for (unsigned i = 1; before_element && i <= affected_siblings;
+       i++, before_element = ElementTraversal::PreviousSibling(*before_element)) {
+    ScheduleSiblingInvalidationsForElement(*before_element, *scheduling_parent, i);
+  }
+}
+
+void StyleEngine::ScheduleInvalidationsForRemovedSibling(Element* before_element,
+                                                         Element& removed_element,
+                                                         Element& after_element) {
+  Document& document = GetDocument();
+  ExecutingContext* context = document.GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+  if (!global_rule_set_) {
+    return;
+  }
+  if (&after_element.GetDocument() != &document || &removed_element.GetDocument() != &document) {
+    return;
+  }
+  if (document.InStyleRecalc()) {
+    return;
+  }
+
+  ContainerNode* parent = after_element.parentNode();
+  if (!parent) {
+    return;
+  }
+
+  global_rule_set_->Update(document);
+  const RuleFeatureSet& features = global_rule_set_->GetRuleFeatureSet();
+
+  unsigned affected_siblings =
+      parent->ChildrenAffectedByIndirectAdjacentRules() ? SiblingInvalidationSet::kDirectAdjacentMax
+                                                        : features.MaxDirectAdjacentSelectors();
+
+  ContainerNode* scheduling_parent = after_element.ParentElementOrShadowRoot();
+  if (!scheduling_parent) {
+    return;
+  }
+
+  ScheduleSiblingInvalidationsForElement(removed_element, *scheduling_parent, 1);
+
+  for (unsigned i = 1; before_element && i <= affected_siblings;
+       i++, before_element = ElementTraversal::PreviousSibling(*before_element)) {
+    ScheduleSiblingInvalidationsForElement(*before_element, *scheduling_parent, i);
+  }
+}
 
 bool StyleEngine::ShouldSkipInvalidationFor(const Element& element) const {
   // Only schedule invalidations using the StyleEngine of the Document that
@@ -969,7 +1120,7 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
 
         StyleResolver& resolver = EnsureStyleResolver();
         StyleResolverState state(document, *element);
-        ElementRuleCollector collector(state, SelectorChecker::kQueryingRules);
+        ElementRuleCollector collector(state, SelectorChecker::kResolvingStyle);
         resolver.CollectAllRules(state, collector, /*include_smil_properties*/ false);
         collector.SortAndTransferMatchedRules();
 
@@ -1276,7 +1427,7 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
 
         StyleResolver& resolver = EnsureStyleResolver();
         StyleResolverState state(document, *el);
-        ElementRuleCollector collector(state, SelectorChecker::kQueryingRules);
+        ElementRuleCollector collector(state, SelectorChecker::kResolvingStyle);
         resolver.CollectAllRules(state, collector, /*include_smil_properties*/ false);
         collector.SortAndTransferMatchedRules();
 

@@ -39,6 +39,7 @@
 #include "core/script_forbidden_scope.h"
 #include "document.h"
 #include "document_fragment.h"
+#include "element_traversal.h"
 #include "node_traversal.h"
 
 namespace webf {
@@ -739,6 +740,7 @@ void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange& c
   if (GetDocument().GetExecutingContext()->isBlinkEnabled() &&
       change.affects_elements == ChildrenChangeAffectsElements::kYes) {
     Document& document = GetDocument();
+    StyleEngine& style_engine = document.EnsureStyleEngine();
 
     // Mirror Blink behavior: when a node is inserted into the document, assume
     // its styles are potentially stale and force a subtree recalc starting
@@ -775,9 +777,48 @@ void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange& c
           StyleChangeReasonForTracing::Create(style_change_reason::kRelatedStyleRule));
     }
 
-    // Ensure StyleEngine::RecalcInvalidatedStyles() runs on the next flush by
-    // marking the document as having pending style invalidation work.
-    document.SetNeedsStyleInvalidation();
+    // For + and ~ combinators (as well as :nth-* positional selectors),
+    // succeeding siblings may need style invalidation after an element is
+    // inserted or removed.
+    if (!change.ByParser() && change.IsChildElementChange() && InActiveDocument() &&
+        GetStyleChangeType() != kSubtreeStyleChange &&
+        HasRestyleFlag(DynamicRestyleFlags::kChildrenAffectedByStructuralRules)) {
+      auto* changed_element = DynamicTo<Element>(change.sibling_changed);
+      if (changed_element) {
+        Node* node_after_change = change.sibling_after_change;
+        Node* node_before_change = change.sibling_before_change;
+
+        Element* element_after_change = DynamicTo<Element>(node_after_change);
+        if (node_after_change && !element_after_change) {
+          element_after_change = ElementTraversal::NextSibling(*node_after_change);
+        }
+
+        Element* element_before_change = DynamicTo<Element>(node_before_change);
+        if (node_before_change && !element_before_change) {
+          element_before_change = ElementTraversal::PreviousSibling(*node_before_change);
+        }
+
+        if ((ChildrenAffectedByForwardPositionalRules() && element_after_change) ||
+            (ChildrenAffectedByBackwardPositionalRules() && element_before_change)) {
+          style_engine.ScheduleNthPseudoInvalidations(*this);
+        }
+
+        if (!element_after_change) {
+          return;
+        }
+
+        if (!ChildrenAffectedByIndirectAdjacentRules() && !ChildrenAffectedByDirectAdjacentRules()) {
+          return;
+        }
+
+        if (change.type == ChildrenChangeType::kElementInserted) {
+          style_engine.ScheduleInvalidationsForInsertedSibling(element_before_change, *changed_element);
+        } else {
+          assert(change.type == ChildrenChangeType::kElementRemoved);
+          style_engine.ScheduleInvalidationsForRemovedSibling(element_before_change, *changed_element, *element_after_change);
+        }
+      }
+    }
   }
 }
 

@@ -245,6 +245,12 @@ void ElementRuleCollector::CollectMatchingRulesForList(
     context.pseudo_id = pseudo_element_id_;
     bool ua_matched = selector_checker_.Match(context, ua_match_result);
     if (ua_matched) {
+      // When collecting normal element rules, pseudo-element selectors (e.g.
+      // ::before/::after) may "match" only to mark pseudo presence. They must
+      // not contribute properties to the originating element's style.
+      if (pseudo_element_id_ == kPseudoIdNone && ua_match_result.dynamic_pseudo != kPseudoIdNone) {
+        continue;
+      }
       DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
     }
     continue;  // Handled UA case.
@@ -261,6 +267,12 @@ void ElementRuleCollector::CollectMatchingRulesForList(
     context.pseudo_id = pseudo_element_id_;
     bool matched = selector_checker_.Match(context, match_result);
     if (matched) {
+      // When collecting normal element rules, pseudo-element selectors (e.g.
+      // ::before/::after) may "match" only to mark pseudo presence. They must
+      // not contribute properties to the originating element's style.
+      if (pseudo_element_id_ == kPseudoIdNone && match_result.dynamic_pseudo != kPseudoIdNone) {
+        continue;
+      }
       WEBF_COND_LOG(COLLECTOR, VERBOSE) << "Author rule matched!";
       const std::shared_ptr<StyleRule>& rule = rule_data->Rule();
 

@@ -1821,7 +1821,7 @@ void RuleFeatureSet::CollectSiblingInvalidationSetForClass(InvalidationLists& in
 
   // TRACE_SCHEDULE_STYLE_INVALIDATION(element, *sibling_set, ClassChange,
   //                                  class_name);
-  invalidation_lists.siblings.push_back(std::shared_ptr<InvalidationSet>(sibling_set));
+  invalidation_lists.siblings.push_back(it->second);
 }
 
 void RuleFeatureSet::CollectInvalidationSetsForId(InvalidationLists& invalidation_lists,
@@ -1870,7 +1870,7 @@ void RuleFeatureSet::CollectSiblingInvalidationSetForId(InvalidationLists& inval
   }
 
   // TRACE_SCHEDULE_STYLE_INVALIDATION(element, *sibling_set, IdChange, id);
-  invalidation_lists.siblings.push_back(std::shared_ptr<InvalidationSet>(sibling_set));
+  invalidation_lists.siblings.push_back(it->second);
 }
 
 void RuleFeatureSet::CollectInvalidationSetsForAttribute(InvalidationLists& invalidation_lists,

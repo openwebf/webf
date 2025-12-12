@@ -155,6 +155,10 @@ class StyleEngine final {
   bool MarkStyleDirtyAllowed() const;
 
   void ScheduleNthPseudoInvalidations(ContainerNode&);
+  void ScheduleInvalidationsForInsertedSibling(Element* before_element, Element& inserted_element);
+  void ScheduleInvalidationsForRemovedSibling(Element* before_element,
+                                              Element& removed_element,
+                                              Element& after_element);
 
   const RuleFeatureSet& GetRuleFeatureSet() const {
     assert(global_rule_set_);
@@ -218,6 +222,10 @@ class StyleEngine final {
   // skipped for a given element (e.g., because it is not in the active
   // document or we are already in the middle of a style recalc).
   bool ShouldSkipInvalidationFor(const Element&) const;
+
+  void ScheduleSiblingInvalidationsForElement(Element& element,
+                                             ContainerNode& scheduling_parent,
+                                             unsigned min_direct_adjacent);
 
   Document* document_;
   struct StringHash {

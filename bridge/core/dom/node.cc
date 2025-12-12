@@ -613,9 +613,8 @@ ContainerNode* Node::NonShadowBoundaryParentNode() const {
 }
 
 ContainerNode* Node::ParentElementOrShadowRoot() const {
-  // TODO: Implement proper shadow tree traversal
-  // For now, just return the parent node as a simplified implementation
-  return parentNode();
+  ContainerNode* parent = parentNode();
+  return parent && (parent->IsElementNode() || parent->IsShadowRoot()) ? parent : nullptr;
 }
 
 unsigned int Node::NodeIndex() const {

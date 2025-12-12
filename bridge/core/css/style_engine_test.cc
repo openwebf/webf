@@ -9,6 +9,7 @@
 #include "core/css/resolver/style_resolver.h"
 #include "core/dom/document.h"
 #include "core/html/html_body_element.h"
+#include "core/html/html_div_element.h"
 #include "core/html/html_style_element.h"
 #include "core/platform/text/text_position.h"
 #include "foundation/string/wtf_string.h"
@@ -223,6 +224,49 @@ TEST_F(StyleEngineTest, LargeSheetCaching) {
   
   // Should use cached version based on hash
   EXPECT_EQ(sheet->Contents(), sheet2->Contents());
+}
+
+// TODO: verfiy this testcase, or delete it.
+TEST_F(StyleEngineTest, SiblingInvalidationDirectAdjacentOnInsertion) {
+  MemberMutationScope mutation_scope{GetExecutingContext()};
+  GetExecutingContext()->EnableBlinkEngine();
+
+  ASSERT_NE(GetDocument()->body(), nullptr);
+
+  auto* container = MakeGarbageCollected<HTMLDivElement>(*GetDocument());
+  GetDocument()->body()->appendChild(container, ASSERT_NO_EXCEPTION());
+
+  auto* b = MakeGarbageCollected<HTMLDivElement>(*GetDocument());
+  b->setAttribute(AtomicString::CreateFromUTF8("class"), AtomicString::CreateFromUTF8("b"));
+  container->appendChild(b, ASSERT_NO_EXCEPTION());
+
+  auto* style_element = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
+  GetDocument()->body()->appendChild(style_element, ASSERT_NO_EXCEPTION());
+
+  String css_text = R"(
+    .a + .b { color: red; }
+  )"_s;
+  CSSStyleSheet* sheet = GetStyleEngine().CreateSheet(*style_element, css_text);
+  ASSERT_NE(sheet, nullptr);
+  GetStyleEngine().RegisterAuthorSheet(sheet);
+
+  // Force an initial style pass so the container records that its children are
+  // affected by sibling combinators.
+  GetStyleEngine().SetNeedsActiveStyleUpdate();
+  GetDocument()->UpdateStyleForThisDocument();
+
+  EXPECT_FALSE(b->NeedsStyleRecalc());
+
+  auto* a = MakeGarbageCollected<HTMLDivElement>(*GetDocument());
+  a->setAttribute(AtomicString::CreateFromUTF8("class"), AtomicString::CreateFromUTF8("a"));
+  container->insertBefore(a, b, ASSERT_NO_EXCEPTION());
+
+  // The insertion itself only marks the inserted subtree dirty; sibling
+  // invalidation is applied when StyleInvalidator runs.
+  EXPECT_FALSE(b->NeedsStyleRecalc());
+
+  GetStyleEngine().InvalidateStyle();
+  EXPECT_TRUE(b->NeedsStyleRecalc());
 }
 
 TEST_F(StyleEngineTest, MediaQuerySizeChangeSkipsRecalcWithoutQueries) {
