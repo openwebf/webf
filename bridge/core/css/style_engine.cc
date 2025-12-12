@@ -1194,12 +1194,10 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
             if (value_string.IsNull()) value_string = String("");
             String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
             auto key_ns = prop_name.ToStylePropertyNameNativeString();
-            AtomicString value_atom(value_string);
-            auto val_ns = value_atom.ToNativeString();
             auto* payload =
                 reinterpret_cast<NativePseudoStyleWithHref*>(dart_malloc(sizeof(NativePseudoStyleWithHref)));
             payload->key = key_ns.release();
-            payload->value = val_ns.release();
+            payload->value = stringToNativeString(value_string).release();
             if (!base_href_string.IsEmpty()) {
               payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
             } else {
@@ -1302,9 +1300,8 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
 
           // Already cleared above.
           auto key_ns = prop_name.ToStylePropertyNameNativeString();
-          AtomicString value_atom(value_string);
           auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
-          payload->value = value_atom.ToNativeString().release();
+          payload->value = stringToNativeString(value_string).release();
           if (!base_href_string.IsEmpty()) {
             payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
           } else {
@@ -1318,9 +1315,8 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
           // Already cleared above.
           auto ws_prop = AtomicString::CreateFromUTF8("white-space");
           auto ws_key = ws_prop.ToStylePropertyNameNativeString();
-          AtomicString ws_value_atom(white_space_value_str);
           auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
-          payload->value = ws_value_atom.ToNativeString().release();
+          payload->value = stringToNativeString(white_space_value_str).release();
           payload->href = nullptr;
           ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(ws_key), element->bindingObject(),
                                              payload);
@@ -1360,12 +1356,10 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
             String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
 
             auto key_ns = prop_name.ToStylePropertyNameNativeString();
-            AtomicString value_atom(value_string);
-            auto val_ns = value_atom.ToNativeString();
             auto* payload =
                 reinterpret_cast<NativePseudoStyleWithHref*>(dart_malloc(sizeof(NativePseudoStyleWithHref)));
             payload->key = key_ns.release();
-            payload->value = val_ns.release();
+            payload->value = stringToNativeString(value_string).release();
             if (!base_href_string.IsEmpty()) {
               payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
             } else {
@@ -1499,12 +1493,10 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
               if (value_string.IsNull()) value_string = String("");
               String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
               auto key_ns = prop_name.ToStylePropertyNameNativeString();
-              AtomicString value_atom(value_string);
-              auto val_ns = value_atom.ToNativeString();
               auto* payload =
                   reinterpret_cast<NativePseudoStyleWithHref*>(dart_malloc(sizeof(NativePseudoStyleWithHref)));
               payload->key = key_ns.release();
-              payload->value = val_ns.release();
+              payload->value = stringToNativeString(value_string).release();
               if (!base_href_string.IsEmpty()) {
                 payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
               } else {
@@ -1594,9 +1586,8 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
           }
 
           auto key_ns = prop_name.ToStylePropertyNameNativeString();
-          AtomicString value_atom(value_string);
           auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
-          payload->value = value_atom.ToNativeString().release();
+          payload->value = stringToNativeString(value_string).release();
           if (!base_href_string.IsEmpty()) {
             payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
           } else {
@@ -1609,9 +1600,8 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
         if (emit_white_space_shorthand) {
           auto ws_prop = AtomicString::CreateFromUTF8("white-space");
           auto ws_key = ws_prop.ToStylePropertyNameNativeString();
-          AtomicString ws_value_atom(white_space_value_str);
           auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
-          payload->value = ws_value_atom.ToNativeString().release();
+          payload->value = stringToNativeString(white_space_value_str).release();
           payload->href = nullptr;
           ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(ws_key), el->bindingObject(),
                                              payload);
@@ -1647,12 +1637,10 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
             String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
 
             auto key_ns = prop_name.ToStylePropertyNameNativeString();
-            AtomicString value_atom(value_string);
-            auto val_ns = value_atom.ToNativeString();
             auto* payload =
                 reinterpret_cast<NativePseudoStyleWithHref*>(dart_malloc(sizeof(NativePseudoStyleWithHref)));
             payload->key = key_ns.release();
-            payload->value = val_ns.release();
+            payload->value = stringToNativeString(value_string).release();
             if (!base_href_string.IsEmpty()) {
               payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
             } else {

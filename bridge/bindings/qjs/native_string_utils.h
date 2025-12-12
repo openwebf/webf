@@ -19,11 +19,18 @@
 
 namespace webf {
 
+class String;
+
 // Convert to string and return a full copy of NativeString from JSValue.
 std::unique_ptr<SharedNativeString> jsValueToNativeString(JSContext* ctx, JSValue value);
 
 // Encode utf-8 to utf-16, and return a full copy of NativeString.
 std::unique_ptr<SharedNativeString> stringToNativeString(const std::string& string);
+
+// Copies a WebF String to a NativeString (UTF-16) without interning.
+// Prefer this over AtomicString(value).ToNativeString() for transient values
+// (e.g. style values) to avoid growing the AtomicString table.
+std::unique_ptr<SharedNativeString> stringToNativeString(const String& string);
 
 std::string nativeStringToStdString(const SharedNativeString* native_string);
 

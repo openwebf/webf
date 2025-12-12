@@ -37,6 +37,7 @@
 #include "foundation/logging.h"
 #include "foundation/native_value_converter.h"
 #include "foundation/utility/make_visitor.h"
+#include "bindings/qjs/native_string_utils.h"
 #include "html_element_type_helper.h"
 #include "mutation_observer_interest_group.h"
 #include "plugin_api/element.h"
@@ -1057,7 +1058,6 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
         auto property = inline_style->PropertyAt(i);
         AtomicString prop_name = property.Name().ToAtomicString();
         String value_string = inline_style->GetPropertyValueWithHint(prop_name, i);
-        AtomicString value_atom(value_string);
 
         // Normalize CSS property names (e.g. background-color, text-align) to the
         // camelCase form expected by the Dart style engine before sending them
@@ -1065,7 +1065,7 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
         // verbatim by ToStylePropertyNameNativeString().
         std::unique_ptr<SharedNativeString> args_01 = prop_name.ToStylePropertyNameNativeString();
         auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
-        payload->value = value_atom.ToNativeString().release();
+        payload->value = stringToNativeString(value_string).release();
         payload->href = nullptr;
         GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(),
                                                              payload);
