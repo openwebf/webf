@@ -301,7 +301,6 @@ class CSSFontFace {
     // Find matching font descriptor
     List<FontFaceDescriptor>? descriptors = _fontFaceRegistry[fontFamily];
     if (descriptors == null || descriptors.isEmpty) {
-      cssLogger.warning('[font-face][ensure] no descriptors for family="$fontFamily". Known families=${_fontFaceRegistry.keys.join('|')}');
       return;
     }
 
@@ -309,7 +308,6 @@ class CSSFontFace {
     FontFaceDescriptor? descriptor = _findBestMatchingDescriptor(descriptors, fontWeight);
 
     if (descriptor == null) {
-      cssLogger.warning('[font-face][ensure] no matching descriptor for weight=${fontWeight.index}. availableWeights=${descriptors.map((d)=>d.fontWeight.index).join(',')}');
       return;
     }
     if (descriptor.isLoaded) {
