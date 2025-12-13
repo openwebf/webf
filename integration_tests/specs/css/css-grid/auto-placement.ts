@@ -280,6 +280,99 @@ describe('CSS Grid auto placement', () => {
     grid.remove();
   });
 
+  it('honors justify-content space-between distributing columns', async () => {
+    const grid = document.createElement('div');
+    grid.setAttribute(
+      'style',
+      'display:grid;min-width:200px;max-width:200px;grid-template-columns:40px 40px;column-gap:0;row-gap:0;justify-content:space-between;',
+    );
+
+    const a = document.createElement('div');
+    a.style.height = '20px';
+    a.style.backgroundColor = 'rgba(59, 130, 246, 0.5)';
+    grid.appendChild(a);
+
+    const b = document.createElement('div');
+    b.style.height = '20px';
+    b.style.backgroundColor = 'rgba(16, 185, 129, 0.5)';
+    grid.appendChild(b);
+
+    document.body.appendChild(grid);
+
+    await waitForFrame();
+    await snapshot();
+
+    const gridRect = grid.getBoundingClientRect();
+    const rectA = a.getBoundingClientRect();
+    const rectB = b.getBoundingClientRect();
+
+    expect(Math.round(rectA.left - gridRect.left)).toBe(0);
+    expect(Math.round(rectB.left - gridRect.left)).toBe(160);
+    grid.remove();
+  });
+
+  it('honors justify-content space-around distributing columns', async () => {
+    const grid = document.createElement('div');
+    grid.setAttribute(
+      'style',
+      'display:grid;min-width:200px;max-width:200px;grid-template-columns:40px 40px;column-gap:0;row-gap:0;justify-content:space-around;',
+    );
+
+    const a = document.createElement('div');
+    a.style.height = '20px';
+    a.style.backgroundColor = 'rgba(244, 63, 94, 0.5)';
+    grid.appendChild(a);
+
+    const b = document.createElement('div');
+    b.style.height = '20px';
+    b.style.backgroundColor = 'rgba(234, 179, 8, 0.5)';
+    grid.appendChild(b);
+
+    document.body.appendChild(grid);
+
+    await waitForFrame();
+    await snapshot();
+
+    const gridRect = grid.getBoundingClientRect();
+    const rectA = a.getBoundingClientRect();
+    const rectB = b.getBoundingClientRect();
+
+    expect(Math.round(rectA.left - gridRect.left)).toBe(30);
+    expect(Math.round(rectB.left - gridRect.left)).toBe(130);
+    grid.remove();
+  });
+
+  it('honors justify-content space-evenly distributing columns', async () => {
+    const grid = document.createElement('div');
+    grid.setAttribute(
+      'style',
+      'display:grid;min-width:200px;max-width:200px;grid-template-columns:40px 40px;column-gap:0;row-gap:0;justify-content:space-evenly;',
+    );
+
+    const a = document.createElement('div');
+    a.style.height = '20px';
+    a.style.backgroundColor = 'rgba(129, 140, 248, 0.5)';
+    grid.appendChild(a);
+
+    const b = document.createElement('div');
+    b.style.height = '20px';
+    b.style.backgroundColor = 'rgba(147, 51, 234, 0.4)';
+    grid.appendChild(b);
+
+    document.body.appendChild(grid);
+
+    await waitForFrame();
+    await snapshot();
+
+    const gridRect = grid.getBoundingClientRect();
+    const rectA = a.getBoundingClientRect();
+    const rectB = b.getBoundingClientRect();
+
+    expect(Math.round(rectA.left - gridRect.left)).toBe(40);
+    expect(Math.round(rectB.left - gridRect.left)).toBe(120);
+    grid.remove();
+  });
+
   it('honors align-content flex-end', async () => {
     const grid = document.createElement('div');
     grid.setAttribute(

@@ -499,6 +499,84 @@ void main() {
       expect(offset.dx, closeTo(50, 1));
     });
 
+    testWidgets('justify-content space-between distributes columns', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-justify-space-between-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; width: 200px; justify-content: space-between; grid-template-columns: 40px 40px; column-gap: 0; row-gap: 0;">
+            <div id="a" style="height:20px;"></div>
+            <div id="b" style="height:20px;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final RenderGridLayout renderer = prepared.getElementById('grid').attachedRenderer as RenderGridLayout;
+      final RenderBox renderA = prepared.getElementById('a').attachedRenderer as RenderBox;
+      final RenderBox renderB = prepared.getElementById('b').attachedRenderer as RenderBox;
+
+      final Offset aOffset = getLayoutTransformTo(renderA, renderer, excludeScrollOffset: true);
+      final Offset bOffset = getLayoutTransformTo(renderB, renderer, excludeScrollOffset: true);
+
+      expect(aOffset.dx, closeTo(0, 1));
+      expect(bOffset.dx, closeTo(160, 1));
+      expect(bOffset.dy, closeTo(0, 1));
+    });
+
+    testWidgets('justify-content space-around distributes columns', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-justify-space-around-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; width: 200px; justify-content: space-around; grid-template-columns: 40px 40px; column-gap: 0; row-gap: 0;">
+            <div id="a" style="height:20px;"></div>
+            <div id="b" style="height:20px;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final RenderGridLayout renderer = prepared.getElementById('grid').attachedRenderer as RenderGridLayout;
+      final RenderBox renderA = prepared.getElementById('a').attachedRenderer as RenderBox;
+      final RenderBox renderB = prepared.getElementById('b').attachedRenderer as RenderBox;
+
+      final Offset aOffset = getLayoutTransformTo(renderA, renderer, excludeScrollOffset: true);
+      final Offset bOffset = getLayoutTransformTo(renderB, renderer, excludeScrollOffset: true);
+
+      expect(aOffset.dx, closeTo(30, 1));
+      expect(bOffset.dx, closeTo(130, 1));
+      expect(bOffset.dy, closeTo(0, 1));
+    });
+
+    testWidgets('justify-content space-evenly distributes columns', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-justify-space-evenly-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; width: 200px; justify-content: space-evenly; grid-template-columns: 40px 40px; column-gap: 0; row-gap: 0;">
+            <div id="a" style="height:20px;"></div>
+            <div id="b" style="height:20px;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final RenderGridLayout renderer = prepared.getElementById('grid').attachedRenderer as RenderGridLayout;
+      final RenderBox renderA = prepared.getElementById('a').attachedRenderer as RenderBox;
+      final RenderBox renderB = prepared.getElementById('b').attachedRenderer as RenderBox;
+
+      final Offset aOffset = getLayoutTransformTo(renderA, renderer, excludeScrollOffset: true);
+      final Offset bOffset = getLayoutTransformTo(renderB, renderer, excludeScrollOffset: true);
+
+      expect(aOffset.dx, closeTo(40, 1));
+      expect(bOffset.dx, closeTo(120, 1));
+      expect(bOffset.dy, closeTo(0, 1));
+    });
+
     testWidgets('align-content end pushes tracks to bottom', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,

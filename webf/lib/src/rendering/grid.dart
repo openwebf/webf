@@ -205,19 +205,28 @@ class RenderGridLayout extends RenderLayoutBox {
     return implicit;
   }
 
-  double _resolveJustifyContentShift(JustifyContent justifyContent, double freeSpace) {
+  double _resolveJustifyContentShift(
+    JustifyContent justifyContent,
+    double freeSpace, {
+    required int trackCount,
+  }) {
     if (freeSpace <= 0) return 0;
+    final int normalizedTracks = math.max(0, trackCount);
     switch (justifyContent) {
       case JustifyContent.center:
         return freeSpace / 2;
       case JustifyContent.flexEnd:
       case JustifyContent.end:
         return freeSpace;
+      case JustifyContent.spaceAround:
+        if (normalizedTracks <= 0) return 0;
+        return freeSpace / (normalizedTracks * 2);
+      case JustifyContent.spaceEvenly:
+        if (normalizedTracks <= 0) return 0;
+        return freeSpace / (normalizedTracks + 1);
       case JustifyContent.flexStart:
       case JustifyContent.start:
       case JustifyContent.spaceBetween:
-      case JustifyContent.spaceAround:
-      case JustifyContent.spaceEvenly:
       default:
         return 0;
     }
@@ -1207,23 +1216,27 @@ class RenderGridLayout extends RenderLayoutBox {
 
     // Compute used content size
     double usedContentWidth = 0;
+    int justificationColumnCount = colSizes.length;
     for (int c = 0; c < colSizes.length; c++) {
       usedContentWidth += colSizes[c];
       if (c < colSizes.length - 1) usedContentWidth += colGap;
     }
     if (explicitAutoFitColumns != null && explicitAutoFitColumnUsage != null) {
       double collapsedWidth = 0;
+      int collapsedCount = 0;
       for (int i = explicitColumnCount - 1; i >= 0; i--) {
         if (!explicitAutoFitColumns![i] || explicitAutoFitColumnUsage[i]) {
           break;
         }
         collapsedWidth += colSizes[i];
+        collapsedCount++;
         if (i > 0) {
           collapsedWidth += colGap;
         }
       }
       if (collapsedWidth > 0) {
         usedContentWidth = math.max(0.0, usedContentWidth - collapsedWidth);
+        justificationColumnCount = math.max(0, justificationColumnCount - collapsedCount);
       }
     }
     double usedContentHeight = 0;
@@ -1300,7 +1313,34 @@ class RenderGridLayout extends RenderLayoutBox {
     size = constraints.constrain(Size(desiredWidth, desiredHeight));
     final double horizontalFree = math.max(0.0, size.width - horizontalPaddingBorder - usedContentWidth);
     final double verticalFree = math.max(0.0, size.height - verticalPaddingBorder - usedContentHeight);
-    final double justifyShift = _resolveJustifyContentShift(renderStyle.justifyContent, horizontalFree);
+    final double justifyShift = _resolveJustifyContentShift(
+      renderStyle.justifyContent,
+      horizontalFree,
+      trackCount: justificationColumnCount,
+    );
+    double columnDistributionBetween = 0;
+    bool distributeColumns = false;
+    if (horizontalFree > 0 && justificationColumnCount > 0) {
+      final JustifyContent justifyContent = renderStyle.justifyContent;
+      switch (justifyContent) {
+        case JustifyContent.spaceBetween:
+          if (justificationColumnCount > 1) {
+            columnDistributionBetween = horizontalFree / (justificationColumnCount - 1);
+            distributeColumns = true;
+          }
+          break;
+        case JustifyContent.spaceAround:
+          columnDistributionBetween = horizontalFree / justificationColumnCount;
+          distributeColumns = true;
+          break;
+        case JustifyContent.spaceEvenly:
+          columnDistributionBetween = horizontalFree / (justificationColumnCount + 1);
+          distributeColumns = true;
+          break;
+        default:
+          break;
+      }
+    }
     double rowDistributionLeading = 0;
     double rowDistributionBetween = 0;
     bool distributeRows = false;
@@ -1337,7 +1377,11 @@ class RenderGridLayout extends RenderLayoutBox {
       if (distributeRows) {
         additionalY = rowDistributionLeading + pd.rowStart * rowDistributionBetween;
       }
-      pd.offset += Offset(justifyShift, additionalY);
+      double additionalX = justifyShift;
+      if (distributeColumns) {
+        additionalX += pd.columnStart * columnDistributionBetween;
+      }
+      pd.offset += Offset(additionalX, additionalY);
       childForAlignment = pd.nextSibling;
     }
 
