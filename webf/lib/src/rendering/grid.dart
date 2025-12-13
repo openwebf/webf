@@ -49,8 +49,8 @@ class GridLayoutParentData extends RenderLayoutParentData {
 class RenderGridLayout extends RenderLayoutBox {
   RenderGridLayout({
     List<RenderBox>? children,
-    required CSSRenderStyle renderStyle,
-  }) : super(renderStyle: renderStyle) {
+    required super.renderStyle,
+  }) {
     addAll(children);
   }
 
@@ -59,11 +59,6 @@ class RenderGridLayout extends RenderLayoutBox {
     if (child.parentData is! GridLayoutParentData) {
       child.parentData = GridLayoutParentData();
     }
-  }
-
-  void _gridLog(String Function() message) {
-    if (!DebugFlags.enableCssGridLayout) return;
-    renderingLogger.finer('[Grid] ${message()}');
   }
 
   bool get _gridProfilingEnabled => DebugFlags.enableCssGridProfiling;
@@ -792,7 +787,6 @@ class RenderGridLayout extends RenderLayoutBox {
   }
 
   void _performGridLayout(BoxConstraints contentConstraints) {
-    _gridLog(() => 'performLayout constraints=$constraints');
     final bool profileGrid = _gridProfilingEnabled;
     final Stopwatch? totalProfile = profileGrid ? (Stopwatch()..start()) : null;
     // Compute inner available sizes (content box constraints)
@@ -915,8 +909,6 @@ class RenderGridLayout extends RenderLayoutBox {
         explicitAutoFitRows = null;
       }
     }
-    _gridLog(() =>
-        'tracks resolved columns=${colSizes.map((e) => e.toStringAsFixed(2)).join(', ')} rows=${rowSizes.map((e) => e.toStringAsFixed(2)).join(', ')} autoRows=${renderStyle.gridAutoRows.length} autoFlow=${renderStyle.gridAutoFlow}');
 
     final Map<String, List<int>>? columnLineNameMap = _buildLineNameMap(resolvedColumnDefs);
     final Map<String, List<int>>? rowLineNameMap = _buildLineNameMap(resolvedRowDefs);
@@ -965,9 +957,6 @@ class RenderGridLayout extends RenderLayoutBox {
           columnEnd = GridPlacement.line(rect.columnEnd);
           rowStart = GridPlacement.line(rect.rowStart);
           rowEnd = GridPlacement.line(rect.rowEnd);
-          _gridLog(() => 'template-area match name=$areaName rect=$rect');
-        } else {
-          _gridLog(() => 'template-area fallback to auto placement name=$areaName');
         }
       }
 
@@ -1207,8 +1196,6 @@ class RenderGridLayout extends RenderLayoutBox {
         ..rowSpan = rowSpan
         ..columnSpan = colSpan;
       hasAnyChild = true;
-      _gridLog(() =>
-          'child#$childIndex row=$rowIndex col=$colIndex span=${rowSpan}x$colSpan offset=${pd.offset} childSize=${childSize} constraints=${childConstraints} explicitRow=$hasExplicitRowSize');
 
       child = pd.nextSibling;
       childIndex++;
@@ -1241,6 +1228,7 @@ class RenderGridLayout extends RenderLayoutBox {
     }
     double usedContentHeight = 0;
     final int totalRows = math.max(rowSizes.length, implicitRowHeights.length);
+    int alignmentRowCount = totalRows;
     for (int r = 0; r < totalRows; r++) {
       final double segment = _resolvedRowHeight(rowSizes, implicitRowHeights, r);
       usedContentHeight += segment;
@@ -1248,17 +1236,20 @@ class RenderGridLayout extends RenderLayoutBox {
     }
     if (explicitAutoFitRows != null && explicitAutoFitRowUsage != null) {
       double collapsedHeight = 0;
+      int collapsedCount = 0;
       for (int i = explicitRowCount - 1; i >= 0; i--) {
         if (!explicitAutoFitRows![i] || explicitAutoFitRowUsage[i]) {
           break;
         }
         collapsedHeight += rowSizes[i];
+        collapsedCount++;
         if (i > 0) {
           collapsedHeight += rowGap;
         }
       }
       if (collapsedHeight > 0) {
         usedContentHeight = math.max(0.0, usedContentHeight - collapsedHeight);
+        alignmentRowCount = math.max(0, alignmentRowCount - collapsedCount);
       }
     }
 
@@ -1344,22 +1335,22 @@ class RenderGridLayout extends RenderLayoutBox {
     double rowDistributionLeading = 0;
     double rowDistributionBetween = 0;
     bool distributeRows = false;
-    if (verticalFree > 0 && totalRows > 0) {
+    if (verticalFree > 0 && alignmentRowCount > 0) {
       final AlignContent alignContent = renderStyle.alignContent;
       switch (alignContent) {
         case AlignContent.spaceBetween:
-          if (totalRows > 1) {
-            rowDistributionBetween = verticalFree / (totalRows - 1);
+          if (alignmentRowCount > 1) {
+            rowDistributionBetween = verticalFree / (alignmentRowCount - 1);
             distributeRows = true;
           }
           break;
         case AlignContent.spaceAround:
-          rowDistributionBetween = verticalFree / totalRows;
+          rowDistributionBetween = verticalFree / alignmentRowCount;
           rowDistributionLeading = rowDistributionBetween / 2;
           distributeRows = true;
           break;
         case AlignContent.spaceEvenly:
-          rowDistributionBetween = verticalFree / (totalRows + 1);
+          rowDistributionBetween = verticalFree / (alignmentRowCount + 1);
           rowDistributionLeading = rowDistributionBetween;
           distributeRows = true;
           break;
@@ -1392,9 +1383,6 @@ class RenderGridLayout extends RenderLayoutBox {
     if (profileGrid && childLayoutDuration > Duration.zero) {
       _logGridProfile('grid.childLayout', childLayoutDuration);
     }
-
-    _gridLog(() =>
-        'final size=$size content=${usedContentWidth.toStringAsFixed(2)}x${usedContentHeight.toStringAsFixed(2)} rows=${rowSizes.length} implicitRows=${implicitRowHeights.length} free=${horizontalFree.toStringAsFixed(2)}x${verticalFree.toStringAsFixed(2)} alignShift=$alignShift justifyShift=$justifyShift');
 
     // Compute and cache CSS baselines for the grid container
     calculateBaseline();
@@ -1483,4 +1471,11 @@ class RenderGridLayout extends RenderLayoutBox {
     }
     return children;
   }
+}
+
+class RepaintBoundaryGridLayout extends RenderGridLayout {
+  RepaintBoundaryGridLayout({required super.renderStyle});
+
+  @override
+  bool get isRepaintBoundary => true;
 }

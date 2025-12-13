@@ -30,8 +30,12 @@ describe('CSS Grid auto-fit dashboards', () => {
     addTiles(grid as HTMLDivElement);
     document.body.appendChild(grid);
 
-    await waitForFrame();
-    await snapshot();
+    try {
+      await waitForFrame();
+      await snapshot();
+    } finally {
+      grid.remove();
+    }
   });
 
   it('space-evenly distributes tiles with auto-fill', async () => {
@@ -51,7 +55,11 @@ describe('CSS Grid auto-fit dashboards', () => {
     addTiles(grid as HTMLDivElement);
     document.body.appendChild(grid);
 
-    await waitForFrame();
-    await snapshot();
+    try {
+      await waitForFrame();
+      await snapshot();
+    } finally {
+      grid.remove();
+    }
   });
 });

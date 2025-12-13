@@ -39,7 +39,6 @@ void main() async {
   // FlexLog.enableAll();
   // FlowLog.enableAll();
   // PositionedLayoutLog.enableAll();
-  DebugFlags.enableCssGridLayout = true;
   // debugPaintBaselinesEnabled = true;
   // DebugFlags.enableDomLogs = true;
   // DebugFlags.enableCssLogs = true;

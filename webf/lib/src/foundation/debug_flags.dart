@@ -108,13 +108,6 @@ class DebugFlags {
   // Emit verbose semantics dumps per element to troubleshoot a11y tree wiring.
   static bool debugLogSemanticsEnabled = false;
 
-  // Feature flag to enable the CSS Grid layout engine.
-  //
-  // When true, display:grid/inline-grid containers create a RenderGridLayout and
-  // participate in grid placement/sizing. When false, grid containers fall back
-  // to flow layout for layout purposes while still exposing display:grid in style.
-  // Default is true so grid is enabled by default.
-  static bool enableCssGridLayout = true;
   // Emit lightweight profiling logs from RenderGridLayout for track sizing and
   // auto-placement hot paths. Intended for Phase 5 hardening work.
   static bool enableCssGridProfiling = false;
