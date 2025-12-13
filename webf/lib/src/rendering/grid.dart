@@ -179,7 +179,8 @@ class RenderGridLayout extends RenderLayoutBox {
       final int? endLine = _resolveGridLineNumber(end, normalizedTracks, namedLines: namedLines);
       if (startLine != null && endLine != null) {
         final int diff = endLine - startLine;
-        return diff > 0 ? diff : 1;
+        if (diff <= 0) return 0;
+        return math.max(1, diff);
       }
     }
     return 1;
@@ -963,21 +964,32 @@ class RenderGridLayout extends RenderLayoutBox {
 
       final int normalizedInitialCols = math.max(colSizes.length, 1);
       final int normalizedInitialRows = math.max(rowSizes.length, 1);
-      int colSpan = _resolveSpan(
+      final int resolvedColSpan = _resolveSpan(
         columnStart,
         columnEnd,
         normalizedInitialCols,
         namedLines: columnLineNameMap,
       );
-      int rowSpan = math.max(
-        1,
-        _resolveSpan(
-          rowStart,
-          rowEnd,
-          normalizedInitialRows,
-          namedLines: rowLineNameMap,
-        ),
+      final int resolvedRowSpan = _resolveSpan(
+        rowStart,
+        rowEnd,
+        normalizedInitialRows,
+        namedLines: rowLineNameMap,
       );
+
+      final bool invalidColumnRange = resolvedColSpan <= 0;
+      final bool invalidRowRange = resolvedRowSpan <= 0;
+      if (invalidColumnRange) {
+        columnStart = const GridPlacement.auto();
+        columnEnd = const GridPlacement.auto();
+      }
+      if (invalidRowRange) {
+        rowStart = const GridPlacement.auto();
+        rowEnd = const GridPlacement.auto();
+      }
+
+      int colSpan = invalidColumnRange ? 1 : resolvedColSpan;
+      int rowSpan = invalidRowRange ? 1 : resolvedRowSpan;
 
       int neededColumns = colSizes.length;
       final int? columnStartRequirement =

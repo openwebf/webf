@@ -425,6 +425,33 @@ void main() {
       expect(offset.dx, closeTo(0, 1));
     });
 
+    testWidgets('reverse column line range falls back to auto placement', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-invalid-column-range-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; width: 150px; grid-template-columns: 50px 50px 50px; grid-auto-columns: 50px; column-gap: 0; row-gap: 0;">
+            <div id="a" style="height:10px;"></div>
+            <div id="b" style="height:10px; grid-column: 5 / 2;"></div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox renderA = prepared.getElementById('a').attachedRenderer as RenderBox;
+      final RenderBox renderB = prepared.getElementById('b').attachedRenderer as RenderBox;
+
+      final Offset aOffset = getLayoutTransformTo(renderA, renderer, excludeScrollOffset: true);
+      final Offset bOffset = getLayoutTransformTo(renderB, renderer, excludeScrollOffset: true);
+
+      expect(aOffset.dx, closeTo(0, 1));
+      expect(bOffset.dx, closeTo(50, 1));
+      expect(bOffset.dy, closeTo(0, 1));
+    });
+
     testWidgets('grid-row with negative line targets last track', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
