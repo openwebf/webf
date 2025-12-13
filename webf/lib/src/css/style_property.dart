@@ -1219,6 +1219,213 @@ class CSSStyleProperty {
     if (style.contains(GRID_COLUMN_END)) style.removeProperty(GRID_COLUMN_END, isImportant);
   }
 
+  static void setShorthandGridArea(Map<String, String?> properties, String shorthandValue) {
+    List<String> parts = shorthandValue.split(_slashRegExp);
+
+    String rowStart = parts.isNotEmpty ? parts[0].trim() : '';
+    String columnStart = parts.length > 1 ? parts[1].trim() : '';
+    String rowEnd = parts.length > 2 ? parts[2].trim() : '';
+    String columnEnd = parts.length > 3 ? parts[3].trim() : '';
+
+    String normalize(String value) => value.isEmpty ? 'auto' : value;
+
+    properties[GRID_ROW_START] = normalize(rowStart);
+    properties[GRID_COLUMN_START] = normalize(columnStart);
+    properties[GRID_ROW_END] = normalize(rowEnd);
+    properties[GRID_COLUMN_END] = normalize(columnEnd);
+    final String trimmed = shorthandValue.trim();
+    final bool hasSingleToken = parts.length <= 1;
+    if (hasSingleToken && CSSGridParser.isCustomIdent(trimmed)) {
+      properties[GRID_AREA_INTERNAL] = trimmed;
+    } else {
+      properties[GRID_AREA_INTERNAL] = 'auto';
+    }
+  }
+
+  static void removeShorthandGridArea(CSSStyleDeclaration style, [bool? isImportant]) {
+    removeShorthandGridRow(style, isImportant);
+    removeShorthandGridColumn(style, isImportant);
+    if (style.contains(GRID_AREA_INTERNAL)) {
+      style.removeProperty(GRID_AREA_INTERNAL, isImportant);
+    }
+  }
+
+  /// CSS Grid Level 1 `grid-template` shorthand (partial support).
+  ///
+  /// Currently supported patterns:
+  ///   - `grid-template: none`
+  ///   - `grid-template: <'grid-template-rows'> / <'grid-template-columns'>`
+  ///   - `grid-template: <template-areas> / <'grid-template-columns'>`
+  ///
+  /// More advanced track sizing forms (row track sizes following area strings,
+  /// subgrid keywords, etc.) are intentionally ignored for now.
+  static void setShorthandGridTemplate(Map<String, String?> properties, String shorthandValue) {
+    String value = shorthandValue.trim();
+    if (value.isEmpty) return;
+
+    final String lower = value.toLowerCase();
+    if (lower == 'none') {
+      properties[GRID_TEMPLATE_ROWS] = 'none';
+      properties[GRID_TEMPLATE_COLUMNS] = 'none';
+      properties[GRID_TEMPLATE_AREAS] = 'none';
+      return;
+    }
+
+    // Template-areas form: one or more quoted rows, optionally followed by
+    // `/ <track-list>` for columns. We:
+    //   - extract the contiguous quoted region to feed grid-template-areas
+    //   - treat the trailing `/ ...` as grid-template-columns when present.
+    if (value.contains('"') || value.contains('\'')) {
+      // Extract area strings between first and last quote to keep cssText compact.
+      final int firstQuote = value.indexOf('"') != -1 ? value.indexOf('"') : value.indexOf('\'');
+      final int lastQuote = value.lastIndexOf('"') != -1 ? value.lastIndexOf('"') : value.lastIndexOf('\'');
+      if (firstQuote != -1 && lastQuote > firstQuote) {
+        final String areasText = value.substring(firstQuote, lastQuote + 1).trim();
+        if (areasText.isNotEmpty) {
+          properties[GRID_TEMPLATE_AREAS] = areasText;
+        }
+      }
+
+      final int slashIndex = value.indexOf('/');
+      if (slashIndex != -1 && slashIndex + 1 < value.length) {
+        final String cols = value.substring(slashIndex + 1).trim();
+        if (cols.isNotEmpty) {
+          properties[GRID_TEMPLATE_COLUMNS] = cols;
+        }
+      }
+      return;
+    }
+
+    // Basic rows/columns form: grid-template: <rows> / <columns>
+    final List<String> parts = value.split(_slashRegExp);
+    if (parts.length == 2) {
+      final String rows = parts[0].trim();
+      final String cols = parts[1].trim();
+      if (rows.isNotEmpty) {
+        properties[GRID_TEMPLATE_ROWS] = rows;
+      }
+      if (cols.isNotEmpty) {
+        properties[GRID_TEMPLATE_COLUMNS] = cols;
+      }
+    }
+  }
+
+  static void removeShorthandGridTemplate(CSSStyleDeclaration style, [bool? isImportant]) {
+    if (style.contains(GRID_TEMPLATE_ROWS)) style.removeProperty(GRID_TEMPLATE_ROWS, isImportant);
+    if (style.contains(GRID_TEMPLATE_COLUMNS)) style.removeProperty(GRID_TEMPLATE_COLUMNS, isImportant);
+    if (style.contains(GRID_TEMPLATE_AREAS)) style.removeProperty(GRID_TEMPLATE_AREAS, isImportant);
+  }
+
+  /// CSS Grid Level 1 `grid` shorthand (partial support).
+  ///
+  /// Currently supported patterns:
+  ///   - `grid: none`
+  ///   - `grid: <'grid-template-rows'> / <'grid-template-columns'>`
+  ///   - `grid: auto-flow <'grid-auto-rows'>? / <'grid-template-columns'>`
+  ///   - `grid: <'grid-template-rows'> / auto-flow <'grid-auto-columns'>?`
+  ///
+  /// Complex forms that include template area strings or auto-placement
+  /// keywords (e.g. auto-flow branches) are intentionally ignored for now
+  /// so that invalid/unsupported shorthands do not corrupt longhands.
+  static void setShorthandGrid(Map<String, String?> properties, String shorthandValue) {
+    String value = shorthandValue.trim();
+    if (value.isEmpty) return;
+
+    final String lower = value.toLowerCase();
+
+    // `grid: none` resets the template and auto tracks to their initial values.
+    if (lower == 'none') {
+      properties[GRID_TEMPLATE_ROWS] = 'none';
+      properties[GRID_TEMPLATE_COLUMNS] = 'none';
+      properties[GRID_TEMPLATE_AREAS] = 'none';
+      properties[GRID_AUTO_ROWS] = 'auto';
+      properties[GRID_AUTO_COLUMNS] = 'auto';
+      properties[GRID_AUTO_FLOW] = 'row';
+      return;
+    }
+
+    // Ignore area-string based syntaxes (e.g. `"a a" "b c" / 1fr 1fr"`) for now.
+    // These are covered by explicit longhands (`grid-template-areas`, etc.).
+    if (value.contains('"') || value.contains('\'')) {
+      return;
+    }
+
+    final List<String> parts = value.split(_slashRegExp);
+    if (parts.length == 2) {
+      final String before = parts[0].trim();
+      final String after = parts[1].trim();
+      if (before.isEmpty && after.isEmpty) return;
+
+      final List<String> beforeTokens = _splitBySpace(before);
+      final List<String> afterTokens = _splitBySpace(after);
+
+      final bool beforeStartsAutoFlow = beforeTokens.isNotEmpty && beforeTokens[0] == 'auto-flow';
+      final bool afterStartsAutoFlow = afterTokens.isNotEmpty && afterTokens[0] == 'auto-flow';
+
+      // Form 1: grid: auto-flow <rows>? / <template-columns>
+      if (beforeStartsAutoFlow && !afterStartsAutoFlow) {
+        final bool dense = beforeTokens.contains('dense');
+        String autoFlow = 'row';
+        if (dense) autoFlow = 'row dense';
+        properties[GRID_AUTO_FLOW] = autoFlow;
+
+        // First non-keyword token becomes grid-auto-rows, if present.
+        for (final String token in beforeTokens) {
+          if (token == 'auto-flow' || token == 'dense') continue;
+          properties[GRID_AUTO_ROWS] = token;
+          break;
+        }
+
+        if (after.isNotEmpty) {
+          properties[GRID_TEMPLATE_COLUMNS] = after;
+        }
+        properties[GRID_TEMPLATE_ROWS] = 'none';
+        properties[GRID_TEMPLATE_AREAS] = 'none';
+        return;
+      }
+
+      // Form 2: grid: <template-rows> / auto-flow <columns>?
+      if (!beforeStartsAutoFlow && afterStartsAutoFlow) {
+        if (before.isNotEmpty) {
+          properties[GRID_TEMPLATE_ROWS] = before;
+        }
+
+        final bool dense = afterTokens.contains('dense');
+        String autoFlow = 'column';
+        if (dense) autoFlow = 'column dense';
+        properties[GRID_AUTO_FLOW] = autoFlow;
+
+        // First non-keyword token becomes grid-auto-columns, if present.
+        for (final String token in afterTokens) {
+          if (token == 'auto-flow' || token == 'dense') continue;
+          properties[GRID_AUTO_COLUMNS] = token;
+          break;
+        }
+
+        properties[GRID_TEMPLATE_COLUMNS] = 'none';
+        properties[GRID_TEMPLATE_AREAS] = 'none';
+        return;
+      }
+
+      // Basic template rows/columns form: grid: <rows> / <columns>
+      if (before.isNotEmpty) {
+        properties[GRID_TEMPLATE_ROWS] = before;
+      }
+      if (after.isNotEmpty) {
+        properties[GRID_TEMPLATE_COLUMNS] = after;
+      }
+    }
+  }
+
+  static void removeShorthandGrid(CSSStyleDeclaration style, [bool? isImportant]) {
+    if (style.contains(GRID_TEMPLATE_ROWS)) style.removeProperty(GRID_TEMPLATE_ROWS, isImportant);
+    if (style.contains(GRID_TEMPLATE_COLUMNS)) style.removeProperty(GRID_TEMPLATE_COLUMNS, isImportant);
+    if (style.contains(GRID_TEMPLATE_AREAS)) style.removeProperty(GRID_TEMPLATE_AREAS, isImportant);
+    if (style.contains(GRID_AUTO_ROWS)) style.removeProperty(GRID_AUTO_ROWS, isImportant);
+    if (style.contains(GRID_AUTO_COLUMNS)) style.removeProperty(GRID_AUTO_COLUMNS, isImportant);
+    if (style.contains(GRID_AUTO_FLOW)) style.removeProperty(GRID_AUTO_FLOW, isImportant);
+  }
+
   static void setShorthandAnimation(Map<String, String?> properties, String shorthandValue) {
     List<String?>? values = _getAnimationValues(shorthandValue);
     if (values == null) return;
@@ -1233,10 +1440,25 @@ class CSSStyleProperty {
     properties[ANIMATION_NAME] = values[7];
   }
 
+  static void setShorthandPlaceContent(Map<String, String?> properties, String shorthandValue) {
+    shorthandValue = shorthandValue.replaceAll(_slashRegExp, ' ');
+    final List<String> values = _splitBySpace(shorthandValue);
+    if (values.isEmpty) return;
+
+    final String align = values[0];
+    final String justify = values.length > 1 ? values[1] : align;
+
+    properties[ALIGN_CONTENT] = align;
+    properties[JUSTIFY_CONTENT] = justify;
+  }
+
+  static void removeShorthandPlaceContent(CSSStyleDeclaration style, [bool? isImportant]) {
+    if (style.contains(ALIGN_CONTENT)) style.removeProperty(ALIGN_CONTENT, isImportant);
+    if (style.contains(JUSTIFY_CONTENT)) style.removeProperty(JUSTIFY_CONTENT, isImportant);
+  }
+
   // place-items shorthand
   // Spec: place-items: <'align-items'> [ / <'justify-items'> ]?
-  // In flexbox, 'justify-items' has no effect. For WebF (no Grid layout),
-  // we expand only to align-items and ignore the optional second value.
   static void setShorthandPlaceItems(Map<String, String?> properties, String shorthandValue) {
     // Normalize any slash separators and collapse whitespace
     shorthandValue = shorthandValue.replaceAll(_slashRegExp, ' ');
@@ -1245,12 +1467,31 @@ class CSSStyleProperty {
     if (values.isEmpty) return;
 
     String align = values[0];
+    String justify = values.length > 1 ? values[1] : align;
 
-    // Expand to longhand supported by WebF (align-items only).
     properties[ALIGN_ITEMS] = align;
+    properties[JUSTIFY_ITEMS] = justify;
   }
 
   static void removeShorthandPlaceItems(CSSStyleDeclaration style, [bool? isImportant]) {
     if (style.contains(ALIGN_ITEMS)) style.removeProperty(ALIGN_ITEMS, isImportant);
+    if (style.contains(JUSTIFY_ITEMS)) style.removeProperty(JUSTIFY_ITEMS, isImportant);
+  }
+
+  static void setShorthandPlaceSelf(Map<String, String?> properties, String shorthandValue) {
+    shorthandValue = shorthandValue.replaceAll(_slashRegExp, ' ');
+    final List<String> values = _splitBySpace(shorthandValue);
+    if (values.isEmpty) return;
+
+    final String align = values[0];
+    final String justify = values.length > 1 ? values[1] : align;
+
+    properties[ALIGN_SELF] = align;
+    properties[JUSTIFY_SELF] = justify;
+  }
+
+  static void removeShorthandPlaceSelf(CSSStyleDeclaration style, [bool? isImportant]) {
+    if (style.contains(ALIGN_SELF)) style.removeProperty(ALIGN_SELF, isImportant);
+    if (style.contains(JUSTIFY_SELF)) style.removeProperty(JUSTIFY_SELF, isImportant);
   }
 }

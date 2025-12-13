@@ -153,24 +153,34 @@ const String ROW_GAP = 'rowGap';
 const String COLUMN_GAP = 'columnGap';
 
 const String JUSTIFY_CONTENT = 'justifyContent';
+const String JUSTIFY_ITEMS = 'justifyItems';
+const String JUSTIFY_SELF = 'justifySelf';
 const String TEXT_ALIGN = 'textAlign';
 const String ALIGN_ITEMS = 'alignItems';
 const String ALIGN_SELF = 'alignSelf';
 const String ALIGN_CONTENT = 'alignContent';
-// Shorthand: place-items -> align-items + justify-content (WebF extension maps justify to justify-content)
+// Shorthands for CSS Box Alignment.
+const String PLACE_CONTENT = 'placeContent';
 const String PLACE_ITEMS = 'placeItems';
+const String PLACE_SELF = 'placeSelf';
+
+// CSS Grid shorthands
+const String GRID_TEMPLATE = 'gridTemplate';
 
 const String GRID_AUTO_FLOW = 'gridAutoFlow';
 const String GRID_AUTO_ROWS = 'gridAutoRows';
 const String GRID_AUTO_COLUMNS = 'gridAutoColumns';
 const String GRID_TEMPLATE_ROWS = 'gridTemplateRows';
 const String GRID_TEMPLATE_COLUMNS = 'gridTemplateColumns';
+const String GRID_TEMPLATE_AREAS = 'gridTemplateAreas';
 const String GRID_ROW_START = 'gridRowStart';
 const String GRID_ROW_END = 'gridRowEnd';
 const String GRID_COLUMN_START = 'gridColumnStart';
 const String GRID_COLUMN_END = 'gridColumnEnd';
 const String GRID_ROW = 'gridRow';
 const String GRID_COLUMN = 'gridColumn';
+const String GRID_AREA_INTERNAL = '__gridAreaName';
+const String GRID_AREA = 'gridArea';
 
 const String DIRECTION = 'direction';
 const String UNICODE_BIDI = 'unicodeBidi';

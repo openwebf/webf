@@ -42,10 +42,15 @@ const Map<String, bool> _CSSShorthandProperty = {
   FLEX: true,
   FLEX_FLOW: true,
   GAP: true,
+  GRID_TEMPLATE: true,
+  GRID: true,
   // WebF shorthand: maps to align-items + justify-content
+  PLACE_CONTENT: true,
   PLACE_ITEMS: true,
+  PLACE_SELF: true,
   GRID_ROW: true,
   GRID_COLUMN: true,
+  GRID_AREA: true,
   OVERFLOW: true,
   TRANSITION: true,
   TEXT_DECORATION: true,
@@ -208,8 +213,16 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         return CSSStyleProperty.removeShorthandBackgroundPosition(this, isImportant);
       case BORDER_RADIUS:
         return CSSStyleProperty.removeShorthandBorderRadius(this, isImportant);
+      case GRID_TEMPLATE:
+        return CSSStyleProperty.removeShorthandGridTemplate(this, isImportant);
+      case GRID:
+        return CSSStyleProperty.removeShorthandGrid(this, isImportant);
+      case PLACE_CONTENT:
+        return CSSStyleProperty.removeShorthandPlaceContent(this, isImportant);
       case PLACE_ITEMS:
         return CSSStyleProperty.removeShorthandPlaceItems(this, isImportant);
+      case PLACE_SELF:
+        return CSSStyleProperty.removeShorthandPlaceSelf(this, isImportant);
       case OVERFLOW:
         return CSSStyleProperty.removeShorthandOverflow(this, isImportant);
       case FONT:
@@ -224,6 +237,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         return CSSStyleProperty.removeShorthandGridRow(this, isImportant);
       case GRID_COLUMN:
         return CSSStyleProperty.removeShorthandGridColumn(this, isImportant);
+      case GRID_AREA:
+        return CSSStyleProperty.removeShorthandGridArea(this, isImportant);
       case BORDER:
       case BORDER_TOP:
       case BORDER_RIGHT:
@@ -308,11 +323,23 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
           // Store directly to pending map during expansion to avoid recursive shorthand handling.
           _pendingProperties[BACKGROUND_POSITION] = CSSPropertyValue(normalizedValue, baseHref: baseHref);
           break;
-        case BORDER_RADIUS:
-          CSSStyleProperty.setShorthandBorderRadius(longhandProperties, normalizedValue);
-          break;
+      case BORDER_RADIUS:
+        CSSStyleProperty.setShorthandBorderRadius(longhandProperties, normalizedValue);
+        break;
+      case GRID_TEMPLATE:
+        CSSStyleProperty.setShorthandGridTemplate(longhandProperties, normalizedValue);
+        break;
+      case GRID:
+        CSSStyleProperty.setShorthandGrid(longhandProperties, normalizedValue);
+        break;
+      case PLACE_CONTENT:
+        CSSStyleProperty.setShorthandPlaceContent(longhandProperties, normalizedValue);
+        break;
         case PLACE_ITEMS:
           CSSStyleProperty.setShorthandPlaceItems(longhandProperties, normalizedValue);
+          break;
+        case PLACE_SELF:
+          CSSStyleProperty.setShorthandPlaceSelf(longhandProperties, normalizedValue);
           break;
         case OVERFLOW:
           CSSStyleProperty.setShorthandOverflow(longhandProperties, normalizedValue);
@@ -334,6 +361,9 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
           break;
         case GRID_COLUMN:
           CSSStyleProperty.setShorthandGridColumn(longhandProperties, normalizedValue);
+          break;
+        case GRID_AREA:
+          CSSStyleProperty.setShorthandGridArea(longhandProperties, normalizedValue);
           break;
         case BORDER:
         case BORDER_TOP:

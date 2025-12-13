@@ -307,6 +307,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   FlexWrap get flexWrap;
 
   JustifyContent get justifyContent;
+  GridAxisAlignment get justifyItems;
+  GridAxisAlignment get justifySelf;
 
   AlignItems get alignItems;
 
@@ -340,6 +342,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   List<GridTrackSize> get gridTemplateColumns;
 
+  GridTemplateAreasDefinition? get gridTemplateAreasDefinition;
+
   GridPlacement get gridRowStart;
 
   GridPlacement get gridRowEnd;
@@ -347,6 +351,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   GridPlacement get gridColumnStart;
 
   GridPlacement get gridColumnEnd;
+
+  String? get gridAreaName;
 
   // Color
   CSSColor get color;
@@ -1399,6 +1405,8 @@ class CSSRenderStyle extends RenderStyle
         return gridTemplateColumns;
       case GRID_TEMPLATE_ROWS:
         return gridTemplateRows;
+      case GRID_TEMPLATE_AREAS:
+        return gridTemplateAreasDefinition;
       case GRID_AUTO_ROWS:
         return gridAutoRows;
       case GRID_AUTO_COLUMNS:
@@ -1413,10 +1421,16 @@ class CSSRenderStyle extends RenderStyle
         return gridColumnStart;
       case GRID_COLUMN_END:
         return gridColumnEnd;
+      case GRID_AREA_INTERNAL:
+        return gridAreaName;
       case ALIGN_ITEMS:
         return alignItems;
       case JUSTIFY_CONTENT:
         return justifyContent;
+      case JUSTIFY_ITEMS:
+        return justifyItems;
+      case JUSTIFY_SELF:
+        return justifySelf;
       case ALIGN_SELF:
         return alignSelf;
       case FLEX_GROW:
@@ -1738,6 +1752,9 @@ class CSSRenderStyle extends RenderStyle
       case GRID_TEMPLATE_ROWS:
         gridTemplateRows = value;
         break;
+      case GRID_TEMPLATE_AREAS:
+        gridTemplateAreasDefinition = value;
+        break;
       case GRID_AUTO_ROWS:
         gridAutoRows = value;
         break;
@@ -1749,21 +1766,34 @@ class CSSRenderStyle extends RenderStyle
         break;
       case GRID_ROW_START:
         gridRowStart = value;
+        gridAreaName = null;
         break;
       case GRID_ROW_END:
         gridRowEnd = value;
+        gridAreaName = null;
         break;
       case GRID_COLUMN_START:
         gridColumnStart = value;
+        gridAreaName = null;
         break;
       case GRID_COLUMN_END:
         gridColumnEnd = value;
+        gridAreaName = null;
+        break;
+      case GRID_AREA_INTERNAL:
+        gridAreaName = value as String?;
         break;
       case ALIGN_ITEMS:
         alignItems = value;
         break;
       case JUSTIFY_CONTENT:
         justifyContent = value;
+        break;
+      case JUSTIFY_ITEMS:
+        justifyItems = value;
+        break;
+      case JUSTIFY_SELF:
+        justifySelf = value;
         break;
       case ALIGN_SELF:
         alignSelf = value;
@@ -2258,6 +2288,12 @@ class CSSRenderStyle extends RenderStyle
       case JUSTIFY_CONTENT:
         value = CSSFlexboxMixin.resolveJustifyContent(propertyValue);
         break;
+      case JUSTIFY_ITEMS:
+        value = CSSGridParser.parseAxisAlignment(propertyValue, allowAuto: false);
+        break;
+      case JUSTIFY_SELF:
+        value = CSSGridParser.parseAxisAlignment(propertyValue, allowAuto: true);
+        break;
       case ALIGN_SELF:
         value = CSSFlexboxMixin.resolveAlignSelf(propertyValue);
         break;
@@ -2437,6 +2473,9 @@ class CSSRenderStyle extends RenderStyle
       case GRID_TEMPLATE_ROWS:
         value = CSSGridParser.parseTrackList(propertyValue, this, propertyName, Axis.vertical);
         break;
+      case GRID_TEMPLATE_AREAS:
+        value = CSSGridParser.parseTemplateAreas(propertyValue);
+        break;
       case GRID_AUTO_ROWS:
         value = CSSGridParser.parseTrackList(propertyValue, this, propertyName, Axis.vertical);
         break;
@@ -2451,6 +2490,9 @@ class CSSRenderStyle extends RenderStyle
       case GRID_COLUMN_START:
       case GRID_COLUMN_END:
         value = CSSGridParser.parsePlacement(propertyValue);
+        break;
+      case GRID_AREA_INTERNAL:
+        value = propertyValue == 'auto' ? null : propertyValue;
         break;
       case TEXT_TRANSFORM:
         value = CSSText.resolveTextTransform(propertyValue);
@@ -3063,22 +3105,14 @@ class CSSRenderStyle extends RenderStyle
     } else if (display == CSSDisplay.grid || display == CSSDisplay.inlineGrid) {
       // Grid containers: create the grid render layout. For MVP, RenderGridLayout
       // inherits flow behavior and will be extended in subsequent steps.
-      //
-      // Behind a feature flag so that grid layout can be disabled if needed.
-      if (DebugFlags.enableCssGridLayout) {
+      if (isRepaintBoundary) {
+        nextRenderLayoutBox = RepaintBoundaryGridLayout(
+          renderStyle: this
+        );
+      } else {
         nextRenderLayoutBox = RenderGridLayout(
           renderStyle: this,
         );
-      } else {
-        if (isRepaintBoundary) {
-          nextRenderLayoutBox = RenderRepaintBoundaryFlowLayoutNext(
-            renderStyle: this,
-          );
-        } else {
-          nextRenderLayoutBox = RenderFlowLayout(
-            renderStyle: this,
-          );
-        }
       }
     } else if (display == CSSDisplay.block ||
         display == CSSDisplay.none ||

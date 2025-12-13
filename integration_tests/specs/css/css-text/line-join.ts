@@ -159,7 +159,8 @@ describe('Text Line Join', () => {
     await snapshot();
   });
 
-  it('works with join two inline element and img', async () => {
+  it('works with join two inline element and img', async (done) => {
+    let img;
     let div = createElement(
       'div',
       {
@@ -177,7 +178,7 @@ describe('Text Line Join', () => {
           style: {
           },
         },[
-          createElement('img', {
+          img = createElement('img', {
             src: 'assets/blue15x15.png',
             width: '15',
             height: '15',
@@ -189,10 +190,14 @@ describe('Text Line Join', () => {
       ]
     );
     document.body.appendChild(div);
-    await snapshot();
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
-  it('works with join two inline element and img and more text', async () => {
+  it('works with join two inline element and img and more text', async (done) => {
+    let img;
     let div = createElement(
       'div',
       {
@@ -210,7 +215,7 @@ describe('Text Line Join', () => {
           style: {
           },
         },[
-          createElement('img', {
+          img = createElement('img', {
             src: 'assets/blue15x15.png',
             width: '15',
             height: '15',
@@ -222,10 +227,14 @@ describe('Text Line Join', () => {
       ]
     );
     document.body.appendChild(div);
-    await snapshot();
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
-  it('works with join two inline element pre text and img and more text', async () => {
+  it('works with join two inline element pre text and img and more text', async (done) => {
+    let img;
     let div = createElement(
       'div',
       {
@@ -244,7 +253,7 @@ describe('Text Line Join', () => {
           },
         },[
           createText(`pre text`),
-          createElement('img', {
+          img = createElement('img', {
             src: 'assets/blue15x15.png',
             width: '15',
             height: '15',
@@ -256,7 +265,10 @@ describe('Text Line Join', () => {
       ]
     );
     document.body.appendChild(div);
-    await snapshot();
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
   it('works with join two inline element and block', async () => {

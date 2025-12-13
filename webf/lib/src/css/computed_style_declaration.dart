@@ -896,29 +896,126 @@ String _gridAutoFlowToCss(GridAutoFlow flow) {
   }
 }
 
-String _gridTrackSizeToCss(GridTrackSize track) {
+String _gridTrackValueToCss(GridTrackSize track) {
   if (track is GridFixed) {
     return track.length.cssText();
   }
   if (track is GridFraction) {
     return '${track.fr.cssText()}fr';
   }
+  if (track is GridMinMax) {
+    final String minText = _gridTrackValueToCss(track.minTrack);
+    final String maxText = _gridTrackValueToCss(track.maxTrack);
+    return 'minmax($minText, $maxText)';
+  }
+  if (track is GridFitContent) {
+    return 'fit-content(${track.limit.cssText()})';
+  }
   return 'auto';
 }
 
-String _gridTrackListToCss(List<GridTrackSize> tracks, {required bool templateList}) {
+String _gridLineNamesToCss(List<String> names) {
+  if (names.isEmpty) return '';
+  return '[${names.join(' ')}]';
+}
+
+int _countLineNameOccurrences(List<GridTrackSize> tracks, String name) {
+  int count = 0;
+  void collect(List<GridTrackSize> list) {
+    for (final GridTrackSize track in list) {
+      if (track.leadingLineNames.contains(name)) count++;
+      if (track.trailingLineNames.contains(name)) count++;
+      if (track is GridRepeat) {
+        collect(track.tracks);
+      }
+    }
+  }
+
+  collect(tracks);
+  return count;
+}
+
+bool _shouldSerializeLineOccurrence(
+  GridPlacement placement,
+  CSSRenderStyle style, {
+  required bool isColumn,
+}) {
+  if (placement.lineName == null) return false;
+  if (placement.hasExplicitLineNameOccurrence) return true;
+  final List<GridTrackSize> tracks =
+      isColumn ? style.gridTemplateColumns : style.gridTemplateRows;
+  if (tracks.isEmpty) return false;
+  return _countLineNameOccurrences(tracks, placement.lineName!) > 1;
+}
+
+String _gridTrackListToCss(
+  List<GridTrackSize> tracks, {
+  required bool templateList,
+  bool includeTrailingEndNames = true,
+}) {
   if (tracks.isEmpty) {
     return templateList ? 'none' : 'auto';
   }
-  return tracks.map(_gridTrackSizeToCss).join(' ');
+  final StringBuffer buffer = StringBuffer();
+  for (int i = 0; i < tracks.length; i++) {
+    final GridTrackSize track = tracks[i];
+    if (track.leadingLineNames.isNotEmpty) {
+      buffer.write(_gridLineNamesToCss(track.leadingLineNames));
+      buffer.write(' ');
+    }
+    if (track is GridRepeat) {
+      buffer.write('repeat(');
+      switch (track.kind) {
+        case GridRepeatKind.count:
+          buffer.write(track.count?.toString() ?? '0');
+          break;
+        case GridRepeatKind.autoFill:
+          buffer.write('auto-fill');
+          break;
+        case GridRepeatKind.autoFit:
+          buffer.write('auto-fit');
+          break;
+      }
+      buffer.write(', ');
+      buffer.write(_gridTrackListToCss(
+        track.tracks,
+        templateList: false,
+        includeTrailingEndNames: false,
+      ));
+      buffer.write(')');
+    } else {
+      buffer.write(_gridTrackValueToCss(track));
+    }
+    if (i < tracks.length - 1) {
+      buffer.write(' ');
+    }
+  }
+  if (includeTrailingEndNames) {
+    final GridTrackSize last = tracks.last;
+    if (last.trailingLineNames.isNotEmpty) {
+      buffer.write(' ');
+      buffer.write(_gridLineNamesToCss(last.trailingLineNames));
+    }
+  }
+  return buffer.toString().trim();
 }
 
-String _gridPlacementToCss(GridPlacement placement) {
+String _gridPlacementToCss(
+  GridPlacement placement, {
+  bool forceIncludeOccurrence = false,
+}) {
   switch (placement.kind) {
     case GridPlacementKind.span:
       final int span = placement.span ?? 1;
       return 'span ${span > 0 ? span : 1}';
     case GridPlacementKind.line:
+      if (placement.lineName != null) {
+        final int occurrence = placement.lineNameOccurrence ?? 1;
+        if (placement.hasExplicitLineNameOccurrence || forceIncludeOccurrence || occurrence != 1) {
+          return '${placement.lineName} $occurrence';
+        }
+        return placement.lineName!;
+      }
       return (placement.line ?? 1).toString();
     case GridPlacementKind.auto:
     default:
@@ -926,10 +1023,126 @@ String _gridPlacementToCss(GridPlacement placement) {
   }
 }
 
-String _gridPlacementShorthand(GridPlacement start, GridPlacement end) {
-  final String startText = _gridPlacementToCss(start);
-  final String endText = _gridPlacementToCss(end);
+String _gridPlacementShorthand(
+  GridPlacement start,
+  GridPlacement end, {
+  bool forceStartOccurrence = false,
+  bool forceEndOccurrence = false,
+}) {
+  final String startText =
+      _gridPlacementToCss(start, forceIncludeOccurrence: forceStartOccurrence);
+  final String endText = _gridPlacementToCss(end, forceIncludeOccurrence: forceEndOccurrence);
   return '$startText / $endText';
+}
+
+String _gridAxisAlignmentToCss(GridAxisAlignment alignment) {
+  switch (alignment) {
+    case GridAxisAlignment.start:
+      return 'start';
+    case GridAxisAlignment.end:
+      return 'end';
+    case GridAxisAlignment.center:
+      return 'center';
+    case GridAxisAlignment.stretch:
+      return 'stretch';
+    case GridAxisAlignment.auto:
+    default:
+      return 'auto';
+  }
+}
+
+String _alignItemsToCss(AlignItems value) {
+  switch (value) {
+    case AlignItems.flexStart:
+      return 'flex-start';
+    case AlignItems.start:
+      return 'start';
+    case AlignItems.flexEnd:
+      return 'flex-end';
+    case AlignItems.end:
+      return 'end';
+    case AlignItems.center:
+      return 'center';
+    case AlignItems.baseline:
+      return 'baseline';
+    case AlignItems.stretch:
+    default:
+      return 'stretch';
+  }
+}
+
+String _alignSelfToCss(AlignSelf value) {
+  switch (value) {
+    case AlignSelf.auto:
+      return 'auto';
+    case AlignSelf.flexStart:
+      return 'flex-start';
+    case AlignSelf.start:
+      return 'start';
+    case AlignSelf.flexEnd:
+      return 'flex-end';
+    case AlignSelf.end:
+      return 'end';
+    case AlignSelf.center:
+      return 'center';
+    case AlignSelf.baseline:
+      return 'baseline';
+    case AlignSelf.stretch:
+    default:
+      return 'stretch';
+  }
+}
+
+String _alignContentToCss(AlignContent value) {
+  switch (value) {
+    case AlignContent.flexStart:
+      return 'flex-start';
+    case AlignContent.start:
+      return 'start';
+    case AlignContent.flexEnd:
+      return 'flex-end';
+    case AlignContent.end:
+      return 'end';
+    case AlignContent.center:
+      return 'center';
+    case AlignContent.spaceBetween:
+      return 'space-between';
+    case AlignContent.spaceAround:
+      return 'space-around';
+    case AlignContent.spaceEvenly:
+      return 'space-evenly';
+    case AlignContent.stretch:
+    default:
+      return 'stretch';
+  }
+}
+
+String _justifyContentToCss(JustifyContent value) {
+  switch (value) {
+    case JustifyContent.flexStart:
+      return 'flex-start';
+    case JustifyContent.start:
+      return 'start';
+    case JustifyContent.flexEnd:
+      return 'flex-end';
+    case JustifyContent.end:
+      return 'end';
+    case JustifyContent.center:
+      return 'center';
+    case JustifyContent.spaceBetween:
+      return 'space-between';
+    case JustifyContent.spaceAround:
+      return 'space-around';
+    case JustifyContent.spaceEvenly:
+      return 'space-evenly';
+    default:
+      return 'flex-start';
+  }
+}
+
+String _placeShorthandToCss(String primary, String secondary) {
+  if (primary == secondary) return primary;
+  return '$primary $secondary';
 }
 
 String? _valueForGridProperty(String propertyName, CSSRenderStyle style) {
@@ -944,22 +1157,132 @@ String? _valueForGridProperty(String propertyName, CSSRenderStyle style) {
       return _gridTrackListToCss(style.gridTemplateColumns, templateList: true);
     case 'grid-template-rows':
       return _gridTrackListToCss(style.gridTemplateRows, templateList: true);
+    case 'grid-template-areas':
+      return style.gridTemplateAreasDefinition?.cssText ?? 'none';
     case 'grid-auto-columns':
       return _gridTrackListToCss(style.gridAutoColumns, templateList: false);
     case 'grid-auto-rows':
       return _gridTrackListToCss(style.gridAutoRows, templateList: false);
     case 'grid-column-start':
-      return _gridPlacementToCss(style.gridColumnStart);
+      return _gridPlacementToCss(
+        style.gridColumnStart,
+        forceIncludeOccurrence: _shouldSerializeLineOccurrence(
+          style.gridColumnStart,
+          style,
+          isColumn: true,
+        ),
+      );
     case 'grid-column-end':
-      return _gridPlacementToCss(style.gridColumnEnd);
+      return _gridPlacementToCss(
+        style.gridColumnEnd,
+        forceIncludeOccurrence: _shouldSerializeLineOccurrence(
+          style.gridColumnEnd,
+          style,
+          isColumn: true,
+        ),
+      );
     case 'grid-row-start':
-      return _gridPlacementToCss(style.gridRowStart);
+      return _gridPlacementToCss(
+        style.gridRowStart,
+        forceIncludeOccurrence: _shouldSerializeLineOccurrence(
+          style.gridRowStart,
+          style,
+          isColumn: false,
+        ),
+      );
     case 'grid-row-end':
-      return _gridPlacementToCss(style.gridRowEnd);
+      return _gridPlacementToCss(
+        style.gridRowEnd,
+        forceIncludeOccurrence: _shouldSerializeLineOccurrence(
+          style.gridRowEnd,
+          style,
+          isColumn: false,
+        ),
+      );
     case 'grid-column':
-      return _gridPlacementShorthand(style.gridColumnStart, style.gridColumnEnd);
+      return _gridPlacementShorthand(
+        style.gridColumnStart,
+        style.gridColumnEnd,
+        forceStartOccurrence: _shouldSerializeLineOccurrence(
+          style.gridColumnStart,
+          style,
+          isColumn: true,
+        ),
+        forceEndOccurrence: _shouldSerializeLineOccurrence(
+          style.gridColumnEnd,
+          style,
+          isColumn: true,
+        ),
+      );
     case 'grid-row':
-      return _gridPlacementShorthand(style.gridRowStart, style.gridRowEnd);
+      return _gridPlacementShorthand(
+        style.gridRowStart,
+        style.gridRowEnd,
+        forceStartOccurrence: _shouldSerializeLineOccurrence(
+          style.gridRowStart,
+          style,
+          isColumn: false,
+        ),
+        forceEndOccurrence: _shouldSerializeLineOccurrence(
+          style.gridRowEnd,
+          style,
+          isColumn: false,
+        ),
+      );
+    case 'grid-area':
+      final String rowStartText = _gridPlacementToCss(
+        style.gridRowStart,
+        forceIncludeOccurrence: _shouldSerializeLineOccurrence(
+          style.gridRowStart,
+          style,
+          isColumn: false,
+        ),
+      );
+      final String columnStartText = _gridPlacementToCss(
+        style.gridColumnStart,
+        forceIncludeOccurrence: _shouldSerializeLineOccurrence(
+          style.gridColumnStart,
+          style,
+          isColumn: true,
+        ),
+      );
+      final String rowEndText = _gridPlacementToCss(
+        style.gridRowEnd,
+        forceIncludeOccurrence: _shouldSerializeLineOccurrence(
+          style.gridRowEnd,
+          style,
+          isColumn: false,
+        ),
+      );
+      final String columnEndText = _gridPlacementToCss(
+        style.gridColumnEnd,
+        forceIncludeOccurrence: _shouldSerializeLineOccurrence(
+          style.gridColumnEnd,
+          style,
+          isColumn: true,
+        ),
+      );
+      return '$rowStartText / $columnStartText / $rowEndText / $columnEndText';
+    case 'align-items':
+      return _alignItemsToCss(style.alignItems);
+    case 'align-self':
+      return _alignSelfToCss(style.alignSelf);
+    case 'justify-items':
+      return _gridAxisAlignmentToCss(style.justifyItems);
+    case 'justify-self':
+      return _gridAxisAlignmentToCss(style.justifySelf);
+    case 'place-items':
+      final alignItems = _alignItemsToCss(style.alignItems);
+      final justifyItems = _gridAxisAlignmentToCss(style.justifyItems);
+      return _placeShorthandToCss(alignItems, justifyItems);
+    case 'place-content':
+      final alignContent = _alignContentToCss(style.alignContent);
+      final justifyContent = _justifyContentToCss(style.justifyContent);
+      return _placeShorthandToCss(alignContent, justifyContent);
+    case 'place-self':
+      final alignSelf = _alignSelfToCss(style.alignSelf);
+      final justifySelf = _gridAxisAlignmentToCss(style.justifySelf);
+      return _placeShorthandToCss(alignSelf, justifySelf);
   }
   return null;
 }

@@ -204,7 +204,7 @@ mixin CSSFlexboxMixin on RenderStyle {
   set justifyContent(JustifyContent? value) {
     if (_justifyContent == value) return;
     _justifyContent = value;
-    if (isSelfRenderFlexLayout()) {
+    if (isSelfRenderFlexLayout() || isSelfRenderGridLayout()) {
       markNeedsLayout();
     }
   }
@@ -215,7 +215,7 @@ mixin CSSFlexboxMixin on RenderStyle {
   set alignItems(AlignItems? value) {
     if (_alignItems == value) return;
     _alignItems = value;
-    if (isSelfRenderFlexLayout()) {
+    if (isSelfRenderFlexLayout() || isSelfRenderGridLayout()) {
       markNeedsLayout();
     }
   }
@@ -226,7 +226,7 @@ mixin CSSFlexboxMixin on RenderStyle {
   set alignContent(AlignContent? value) {
     if (_alignContent == value) return;
     _alignContent = value;
-    if (isSelfRenderFlexLayout()) {
+    if (isSelfRenderFlexLayout() || isSelfRenderGridLayout()) {
       markNeedsLayout();
     }
   }
@@ -237,7 +237,7 @@ mixin CSSFlexboxMixin on RenderStyle {
   set alignSelf(AlignSelf? value) {
     if (_alignSelf == value) return;
     _alignSelf = value;
-    if (isParentRenderFlexLayout()) {
+    if (isParentRenderFlexLayout() || isParentRenderGridLayout()) {
       markNeedsLayout();
     }
   }
