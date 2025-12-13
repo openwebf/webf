@@ -58,7 +58,6 @@ List<List<int>> mems = [];
 
 // By CLI: `KRAKEN_ENABLE_TEST=true flutter run`
 void main() async {
-  DebugFlags.enableCssGridLayout = true;
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
       maxAliveInstances: 1,

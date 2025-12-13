@@ -67,7 +67,7 @@ void NativeBindingObject::HandleCallFromDartSide(const DartIsolateContext* dart_
     return;
 
   const AtomicString method =
-      AtomicString(std::unique_ptr<AutoFreeNativeString>(static_cast<AutoFreeNativeString*>(native_method->u.ptr)));
+    native_method != nullptr ? AtomicString(std::unique_ptr<AutoFreeNativeString>(static_cast<AutoFreeNativeString*>(native_method->u.ptr))) : AtomicString::Empty();
   const NativeValue result = binding_object->binding_target_->HandleCallFromDartSide(method, argc, argv, dart_object);
 
   auto* return_value = new NativeValue();

@@ -21,6 +21,7 @@ import 'package:webf/html.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/geometry/dom_point.dart';
 import 'package:webf/src/html/canvas/canvas_path_2d.dart';
+import 'package:webf/src/dom/intersection_observer.dart';
 
 // We have some integrated built-in behavior starting with string prefix reuse the callNativeMethod implements.
 enum BindingMethodCallOperations {
@@ -151,6 +152,7 @@ enum CreateBindingObjectType {
   createPath2D,
   createDOMPoint,
   createFormData,
+  createIntersectionObserver
 }
 
 abstract class BindingBridge {
@@ -185,8 +187,14 @@ abstract class BindingBridge {
         break;
       }
       case CreateBindingObjectType.createFormData:
-        FormDataBindings(BindingContext(controller.view, contextId, pointer));
+        {
+          FormDataBindings(BindingContext(controller.view, contextId, pointer));
         break;
+      }
+      case CreateBindingObjectType.createIntersectionObserver: {
+        IntersectionObserver intersectionObserver = IntersectionObserver(BindingContext(controller.view, contextId, pointer), arguments);
+        controller.view.setBindingObject(pointer, intersectionObserver);
+      }
     }
     if (enableWebFCommandLog) {
       bridgeLogger.fine('CreateBindingObject: $pointer $type arg: $arguments, time: ${stopwatch!.elapsedMicroseconds}us');

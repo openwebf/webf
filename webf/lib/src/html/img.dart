@@ -417,7 +417,7 @@ class ImageElement extends Element {
   int naturalHeight = 0;
 
   @override
-  void handleIntersectionChange(IntersectionObserverEntry entry) async {
+  bool handleIntersectionChange(IntersectionObserverEntry entry) {
     super.handleIntersectionChange(entry);
 
     // When appear
@@ -429,6 +429,7 @@ class ImageElement extends Element {
       _imgLog('[IMG] Intersection hidden -> pause stream elem=${hashCode}');
       _stopListeningStream(keepStreamAlive: true);
     }
+    return false;
   }
 
   // To prevent trigger load event more than once.

@@ -21,6 +21,7 @@
 #include "core/devtools/remote_object.h"
 #include "core/devtools/devtools_bridge.h"
 #include "core/dom/document.h"
+#include "core/dom/intersection_observer.h"
 #include "core/dom/mutation_observer.h"
 #include "core/events/error_event.h"
 #include "core/html/html_script_element.h"

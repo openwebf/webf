@@ -105,6 +105,8 @@
 #include "qjs_image.h"
 #include "qjs_input_event.h"
 #include "qjs_intersection_change_event.h"
+#include "qjs_intersection_observer.h"
+#include "qjs_intersection_observer_entry.h"
 #include "qjs_keyboard_event.h"
 #include "qjs_computed_css_style_declaration.h"
 #include "qjs_css_style_declaration.h"
@@ -314,6 +316,10 @@ void InstallBindings(ExecutingContext* context) {
   QJSSVGStyleElement::Install(context);
   QJSSVGLineElement::Install(context);
   QJSNativeLoader::Install(context);
+
+  // IntersectionObserver
+  QJSIntersectionObserver::Install(context);
+  QJSIntersectionObserverEntry::Install(context);
 
   // Legacy bindings, not standard.
   QJSElementAttributes::Install(context);

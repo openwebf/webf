@@ -26,8 +26,8 @@ Iterable<Layer> _getLayerChain(Layer start) {
   return layerChain.reversed;
 }
 
-typedef IntersectionChangeCallback = void Function(
-    IntersectionObserverEntry info);
+// Call the callback function and decide whether to deliver IntersectionObserver based on its return value
+typedef IntersectionChangeCallback = bool Function(IntersectionObserverEntry info);
 
 mixin RenderIntersectionObserverMixin on RenderBox {
   static copyTo(RenderIntersectionObserverMixin from,
@@ -51,6 +51,12 @@ mixin RenderIntersectionObserverMixin on RenderBox {
   /// A list of event handlers
   List<IntersectionChangeCallback>? _listeners;
 
+  List<double> _thresholds = [0.0];
+  int _lastThresholdsIndex = 0;
+  bool _lastIsIntersecting = false;
+
+  bool _clearIntersectionListeners = false;
+
   void disposeIntersectionObserverLayer() {
     _intersectionObserverLayer.layer = null;
   }
@@ -61,7 +67,7 @@ mixin RenderIntersectionObserverMixin on RenderBox {
     return _listeners?.isNotEmpty == true;
   }
 
-  void addIntersectionChangeListener(IntersectionChangeCallback callback) {
+  void addIntersectionChangeListener(IntersectionChangeCallback callback, [List<double> thresholds = const [0.0]]) {
     // Init things
     if (_listeners == null) {
       _listeners = List.empty(growable: true);
@@ -71,13 +77,21 @@ mixin RenderIntersectionObserverMixin on RenderBox {
     // Avoid same listener added twice.
     if (!_listeners!.contains(callback)) {
       _listeners!.add(callback);
+      _thresholds = thresholds;
     }
   }
 
   void clearIntersectionChangeListeners() {
+    _clearIntersectionListeners = true;
+  }
+
+  void _clearIntersectionChangeListeners() {
     _listeners?.clear();
     _listeners = null;
     _onIntersectionChange = null;
+    _clearIntersectionListeners = false;
+    _lastThresholdsIndex = 0;
+    _lastIsIntersecting = false;
   }
 
   void removeIntersectionChangeListener(IntersectionChangeCallback callback) {
@@ -94,13 +108,30 @@ mixin RenderIntersectionObserverMixin on RenderBox {
     markNeedsPaint();
   }
 
-  void _dispatchChange(IntersectionObserverEntry info) {
-    // Not use for-in, and not cache length, due to callback call stack may
-    // clear [_listeners], which case concurrent exception.
-    for (int i = 0; i < (_listeners == null ? 0 : _listeners!.length); i++) {
-      IntersectionChangeCallback callback = _listeners![i];
-      callback(info);
+  bool _dispatchChange(IntersectionObserverEntry info) {
+    bool deliverIntersectionObserver = false;
+    // Limit frequency
+    int index = firstThresholdGreaterThan(info.intersectionRatio, _thresholds!);
+    bool isIntersecting = info.isIntersecting;
+    if (index != _lastThresholdsIndex || isIntersecting != _lastIsIntersecting) {
+      _lastThresholdsIndex = index;
+      _lastIsIntersecting = isIntersecting;
+
+      // Not use for-in, and not cache length, due to callback call stack may
+      // clear [_listeners], which case concurrent exception.
+      for (int i = 0; i < (_listeners == null ? 0 : _listeners!.length); i++) {
+        IntersectionChangeCallback callback = _listeners![i];
+        if (callback(info)) {
+          deliverIntersectionObserver = true;
+        }
+      }
     }
+
+    if (_clearIntersectionListeners) {
+      _clearIntersectionChangeListeners();
+    }
+
+    return deliverIntersectionObserver;
   }
 
   void paintIntersectionObserver(PaintingContext context, Offset offset,
@@ -124,6 +155,14 @@ mixin RenderIntersectionObserverMixin on RenderBox {
     }
 
     context.pushLayer(_intersectionObserverLayer.layer!, callback, offset);
+  }
+
+  int firstThresholdGreaterThan(double ratio, List<double> thresholds) {
+    int result = 0;
+    while (result < thresholds.length && thresholds[result] <= ratio) {
+      result++;
+    }
+    return result;
   }
 }
 
@@ -157,6 +196,8 @@ class IntersectionObserverLayer extends ContainerLayer {
 
   /// 300ms delay compute layer offset
   static final Duration _updateInterval = Duration(milliseconds: 300);
+
+  static Timer? _timer;
 
   /// Offset to the start of the element, in local coordinates.
   final Offset _elementOffset;
@@ -259,10 +300,12 @@ class IntersectionObserverLayer extends ContainerLayer {
     final isUpdateScheduled = _updated.isNotEmpty;
     _updated[id] = this;
 
-    if (!isUpdateScheduled) {
+    if (!isUpdateScheduled && null == _timer) {
       // We use a normal [Timer] instead of a [RestartableTimer] so that changes
       // to the update duration will be picked up automatically.
-      Timer(_updateInterval, _handleUpdateTimer);
+      _timer = Timer.periodic(_updateInterval, (Timer timer) {
+        SchedulerBinding.instance.scheduleTask<void>(_processCallbacks, Priority.touch);
+      });
     }
   }
 
@@ -321,17 +364,17 @@ class IntersectionObserverLayer extends ContainerLayer {
 
   /// Invokes the visibility callback if [IntersectionObserverEntry] hasn't meaningfully
   /// changed since the last time we invoked it.
-  void _fireCallback(IntersectionObserverEntry info) {
+  bool _fireCallback(IntersectionObserverEntry info) {
     final oldInfo = _lastIntersectionInfo;
     // If isIntersecting is true maybe not visible when element size is 0
     final isIntersecting = info.isIntersecting;
 
     if (oldInfo == null) {
       if (!isIntersecting) {
-        return;
+        return false;
       }
     } else if (info.matchesIntersecting(oldInfo)) {
-      return;
+      return false;
     }
 
     if (isIntersecting) {
@@ -341,7 +384,7 @@ class IntersectionObserverLayer extends ContainerLayer {
       _lastIntersectionInfo = null;
     }
     // Notify visibility changed event
-    onIntersectionChange!(info);
+    return onIntersectionChange!(info);
   }
 
   Rect? _rootBounds;
@@ -350,10 +393,16 @@ class IntersectionObserverLayer extends ContainerLayer {
 
   /// Executes visibility callbacks for all updated.
   static void _processCallbacks() {
+    if (_updated.isEmpty) {
+      return;
+    }
+
+    bool deliverIntersectionObserver = false;
     for (final layer in _updated.values) {
-      if (layer.onIntersectionChange == null) return;
       if (!layer.attached) {
-        layer._fireCallback(IntersectionObserverEntry(size: Size.zero));
+        if (layer._fireCallback(IntersectionObserverEntry(size: Size.zero))) {
+          deliverIntersectionObserver = true;
+        }
         continue;
       }
 
@@ -367,9 +416,15 @@ class IntersectionObserverLayer extends ContainerLayer {
           elementBounds.bottom + layer._intersectPadding.bottom);
 
       final info = IntersectionObserverEntry.fromRects(
-          boundingClientRect: paddingAroundElementBounds,
-          rootBounds: rootBounds);
-      layer._fireCallback(info);
+          boundingClientRect: paddingAroundElementBounds, rootBounds: rootBounds);
+      if (layer._fireCallback(info)) {
+        deliverIntersectionObserver = true;
+      }
+    }
+
+    // for dom IntersectionObserver
+    if (deliverIntersectionObserver) {
+      SchedulerBinding.instance.scheduleFrame();
     }
     _updated.clear();
     _layerTransformCache.clear();
