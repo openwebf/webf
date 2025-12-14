@@ -8,6 +8,7 @@
  */
 
 import 'dart:math' as math;
+import 'package:flutter/animation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart';
@@ -349,12 +350,38 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       return bounds;
     }
 
-    return Rect.fromLTRB(
-      bounds.left - maxX,
-      bounds.top - maxY,
-      bounds.right + maxX,
-      bounds.bottom + maxY,
-    );
+    // Match Flutter's _RenderSingleChildViewport.describeSemanticsClip:
+    // expand the semantics clip by the already scrolled distance and the
+    // remaining scrollable distance, so offscreen descendants remain in the
+    // semantics tree (and become hidden via paint clip instead of dropped).
+    double left = bounds.left;
+    double right = bounds.right;
+    double top = bounds.top;
+    double bottom = bounds.bottom;
+
+    if (xScrollable) {
+      final double posX = scrollLeft.clamp(0.0, maxX).toDouble();
+      final double remainingX = maxX - posX;
+      if (renderStyle.direction == TextDirection.rtl) {
+        // Equivalent to AxisDirection.left.
+        left -= remainingX;
+        right += posX;
+      } else {
+        // AxisDirection.right.
+        left -= posX;
+        right += remainingX;
+      }
+    }
+
+    if (yScrollable) {
+      final double posY = scrollTop.clamp(0.0, maxY).toDouble();
+      final double remainingY = maxY - posY;
+      // AxisDirection.down.
+      top -= posY;
+      bottom += remainingY;
+    }
+
+    return Rect.fromLTRB(left, top, right, bottom);
   }
 
   void describeOverflowSemantics(SemanticsConfiguration config) {
@@ -444,6 +471,119 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
         scrollOffsetX!.jumpTo(next);
       };
     }
+  }
+
+  @override
+  void assembleSemanticsNode(SemanticsNode node, SemanticsConfiguration config, Iterable<SemanticsNode> children) {
+    final CSSOverflowType overflowX = renderStyle.effectiveOverflowX;
+    final CSSOverflowType overflowY = renderStyle.effectiveOverflowY;
+
+    final bool xScrollable =
+        (overflowX == CSSOverflowType.scroll || overflowX == CSSOverflowType.auto) && scrollOffsetX != null;
+    final bool yScrollable =
+        (overflowY == CSSOverflowType.scroll || overflowY == CSSOverflowType.auto) && scrollOffsetY != null;
+
+    if (!xScrollable && !yScrollable) {
+      super.assembleSemanticsNode(node, config, children);
+      return;
+    }
+
+    final List<SemanticsNode> childList = children is List<SemanticsNode> ? children : children.toList(growable: false);
+
+    int? firstVisibleIndex;
+    for (final SemanticsNode child in childList) {
+      if (!child.flagsCollection.isHidden) {
+        firstVisibleIndex ??= child.indexInParent;
+      }
+    }
+
+    config.scrollIndex = firstVisibleIndex;
+    config.scrollChildCount = childList.length;
+    node.updateWith(config: config, childrenInInversePaintOrder: childList);
+  }
+
+  @override
+  void showOnScreen({
+    RenderObject? descendant,
+    Rect? rect,
+    Duration duration = Duration.zero,
+    Curve curve = Curves.ease,
+  }) {
+    final CSSOverflowType overflowX = renderStyle.effectiveOverflowX;
+    final CSSOverflowType overflowY = renderStyle.effectiveOverflowY;
+
+    final bool xScrollable =
+        (overflowX == CSSOverflowType.scroll || overflowX == CSSOverflowType.auto) && scrollOffsetX != null;
+    final bool yScrollable =
+        (overflowY == CSSOverflowType.scroll || overflowY == CSSOverflowType.auto) && scrollOffsetY != null;
+
+    if ((!xScrollable && !yScrollable) || !hasSize || descendant == null || descendant is! RenderBox) {
+      return super.showOnScreen(descendant: descendant, rect: rect, duration: duration, curve: curve);
+    }
+
+    final Size? viewport = _viewportSize;
+    final Size? content = _scrollableSize;
+    if (viewport == null || content == null) {
+      return super.showOnScreen(descendant: descendant, rect: rect, duration: duration, curve: curve);
+    }
+
+    final Rect targetRect = rect ?? descendant.paintBounds;
+    final Matrix4 transform = descendant.getTransformTo(this as RenderObject);
+    final Rect bounds = MatrixUtils.transformRect(transform, targetRect);
+
+    if (yScrollable && scrollOffsetY != null) {
+      final double maxY = math.max(0.0, content.height - viewport.height);
+      double targetScrollTop = scrollTop;
+      if (bounds.top < 0.0) {
+        targetScrollTop += bounds.top;
+      } else if (bounds.bottom > size.height) {
+        targetScrollTop += (bounds.bottom - size.height);
+      }
+      targetScrollTop = targetScrollTop.clamp(0.0, maxY).toDouble();
+      if (duration == Duration.zero) {
+        scrollOffsetY!.jumpTo(targetScrollTop);
+      } else {
+        scrollOffsetY!.animateTo(targetScrollTop, duration: duration, curve: curve);
+      }
+    }
+
+    if (xScrollable && scrollOffsetX != null) {
+      final double maxX = math.max(0.0, content.width - viewport.width);
+      double targetScrollLeft = scrollLeft;
+
+      final AxisDirection axisDirectionX =
+          (renderStyle.direction == TextDirection.rtl) ? AxisDirection.left : AxisDirection.right;
+
+      switch (axisDirectionX) {
+        case AxisDirection.right:
+          if (bounds.left < 0.0) {
+            targetScrollLeft += bounds.left;
+          } else if (bounds.right > size.width) {
+            targetScrollLeft += (bounds.right - size.width);
+          }
+          break;
+        case AxisDirection.left:
+          if (bounds.right > size.width) {
+            targetScrollLeft -= (bounds.right - size.width);
+          } else if (bounds.left < 0.0) {
+            targetScrollLeft -= bounds.left;
+          }
+          break;
+        case AxisDirection.up:
+        case AxisDirection.down:
+          break;
+      }
+
+      targetScrollLeft = targetScrollLeft.clamp(0.0, maxX).toDouble();
+      if (duration == Duration.zero) {
+        scrollOffsetX!.jumpTo(targetScrollLeft);
+      } else {
+        scrollOffsetX!.animateTo(targetScrollLeft, duration: duration, curve: curve);
+      }
+    }
+
+    // Let ancestors handle any additional scrolling (e.g. nested scroll views).
+    super.showOnScreen(descendant: this as RenderObject, rect: null, duration: duration, curve: curve);
   }
 
   void debugOverflowProperties(DiagnosticPropertiesBuilder properties) {
