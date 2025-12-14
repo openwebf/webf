@@ -216,6 +216,16 @@ class WebFAccessibility {
     config.isSemanticBoundary = boundary;
     config.explicitChildNodes = explicitChildNodes;
     config.isSemanticBoundary = boundary;
+
+    // Provide a stable semantic index for scrollable containers and ordered traversal.
+    // This mirrors Flutter's RenderIndexedSemantics usage in scroll views.
+    final Object? parentData = renderObject.parentData;
+    if ((config.hasBeenAnnotated || config.isSemanticBoundary) &&
+        parentData is RenderLayoutParentData &&
+        parentData.semanticsIndex != null) {
+      config.indexInParent = parentData.semanticsIndex;
+    }
+
     if (kDebugMode && DebugFlags.debugLogSemanticsEnabled) {
       // Attach focus logs to every semantics node without overriding custom handlers.
       config.onDidGainAccessibilityFocus ??= () => _logSemanticsEvent(element, role, 'focus gained');
@@ -451,6 +461,10 @@ class WebFAccessibility {
     if (role != _Role.none) return false;
     final String tag = element.tagName.toUpperCase();
     if (!_layoutOnlyContainerTags.contains(tag)) return false;
+    // If the container has meaningful direct text, it must remain in the
+    // semantics tree (as static text) because WebF text nodes themselves do not
+    // currently contribute standalone semantics.
+    if (_hasNonWhitespaceDirectText(element)) return false;
     // Allow explicitly labeled/aria-described containers to remain in the tree.
     if (element.hasAttribute('aria-label') ||
         element.hasAttribute('aria-labelledby') ||
@@ -479,10 +493,23 @@ class WebFAccessibility {
       case html.ARTICLE:
       case html.ASIDE:
       case html.FOOTER:
-        return true;
+        // Only suppress auto-label when the container is a pure wrapper. If it
+        // has direct text, expose it as static text so VoiceOver can read it.
+        return !_hasNonWhitespaceDirectText(element);
       default:
         return false;
     }
+  }
+
+  static bool _hasNonWhitespaceDirectText(dom.Element element) {
+    dom.Node? child = element.firstChild;
+    while (child != null) {
+      if (child is dom.TextNode) {
+        if (child.data.trim().isNotEmpty) return true;
+      }
+      child = child.nextSibling;
+    }
+    return false;
   }
 
   static bool _hasFocusableDescendant(dom.Element element) {
