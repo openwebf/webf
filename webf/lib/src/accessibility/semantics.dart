@@ -453,21 +453,24 @@ class WebFAccessibility {
   static bool _isLayoutOnlyContainer(RenderBoxModel renderObject, dom.Element element, _Role role,
       {required bool focusable}) {
     if (renderObject is! RenderFlexLayout && renderObject is! RenderFlowLayout) return false;
-    if (focusable) return false;
     if (role != _Role.none) return false;
     final String tag = element.tagName.toUpperCase();
     if (!_layoutOnlyContainerTags.contains(tag)) return false;
+
+    // If the container is focusable (e.g. tabindex), keep it in the semantics
+    // tree unless it is acting as an overflow scroll container. This matches
+    // common browser behavior where focusable wrappers can be interacted with,
+    // while scroll containers are typically traversed via their contents.
+    final CSSOverflowType overflowX = renderObject.renderStyle.effectiveOverflowX;
+    final CSSOverflowType overflowY = renderObject.renderStyle.effectiveOverflowY;
+    final bool isScrollableOverflow = (overflowX == CSSOverflowType.scroll || overflowX == CSSOverflowType.auto) ||
+        (overflowY == CSSOverflowType.scroll || overflowY == CSSOverflowType.auto);
+    if (focusable && !isScrollableOverflow) return false;
+
     // If the container has meaningful direct text, it must remain in the
     // semantics tree (as static text) because WebF text nodes themselves do not
     // currently contribute standalone semantics.
     if (_hasNonWhitespaceDirectText(element)) return false;
-    // Allow explicitly labeled/aria-described containers to remain in the tree.
-    if (element.hasAttribute('aria-label') ||
-        element.hasAttribute('aria-labelledby') ||
-        element.hasAttribute('aria-describedby') ||
-        element.hasAttribute('title')) {
-      return false;
-    }
     return true;
   }
 
