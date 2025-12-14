@@ -17,6 +17,15 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
   }) : super(renderStyle: renderStyle);
 
   @override
+  void describeSemanticsConfiguration(SemanticsConfiguration config) {
+    // Intentionally do NOT call super (RenderBoxModel) here.
+    // This wrapper exists only to adapt layout constraints (e.g. for Scrollable
+    // and ListView contexts). Applying WebFAccessibility semantics here would
+    // duplicate the semantics produced by the real element render box inside.
+    config.isSemanticBoundary = false;
+  }
+
+  @override
   void setupParentData(covariant RenderObject child) {
     if (child.parentData is! RenderLayoutParentData) {
       child.parentData = RenderLayoutParentData();

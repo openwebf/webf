@@ -311,6 +311,11 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                 child: flutter.Scrollable(
                     controller: webFElement.scrollControllerX,
                     axisDirection: isRTL ? AxisDirection.left : AxisDirection.right,
+                    // WebF provides custom overflow scroll semantics from the
+                    // render tree (see RenderOverflowMixin.describeOverflowSemantics).
+                    // Disable Flutter's Scrollable semantics here to avoid
+                    // duplicate/competing scroll semantics nodes.
+                    excludeFromSemantics: true,
                     physics: xScrollable ? null : const flutter.NeverScrollableScrollPhysics(),
                     viewportBuilder: (flutter.BuildContext context, ViewportOffset position) {
                       flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
@@ -340,6 +345,8 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                     axisDirection: AxisDirection.down,
                     physics: yScrollable ? null : const flutter.NeverScrollableScrollPhysics(),
                     controller: webFElement.scrollControllerY,
+                    // See note above for overflow scroll semantics ownership.
+                    excludeFromSemantics: true,
                     viewportBuilder: (flutter.BuildContext context, ViewportOffset positionY) {
                       if (scrollableX != null) {
                         final bool isRTL = webFElement.renderStyle.direction == TextDirection.rtl;
@@ -351,6 +358,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                             child: flutter.Scrollable(
                                 controller: webFElement.scrollControllerX,
                                 axisDirection: isRTL ? AxisDirection.left : AxisDirection.right,
+                                excludeFromSemantics: true,
                                 viewportBuilder: (flutter.BuildContext context, ViewportOffset positionX) {
                                   flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
                                     webFElement: webFElement,

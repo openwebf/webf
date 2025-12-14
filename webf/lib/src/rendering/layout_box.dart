@@ -21,6 +21,21 @@ abstract class RenderLayoutBox extends RenderBoxModel
     _cachedPaintingOrder = null;
   }
 
+  @override
+  void visitChildrenForSemantics(RenderObjectVisitor visitor) {
+    // Assign stable child indices for scroll semantics (indexInParent / scrollIndex).
+    // This mirrors how Flutter's scroll views wrap children in RenderIndexedSemantics.
+    RenderBox? child = firstChild;
+    int index = 0;
+    while (child != null) {
+      final RenderLayoutParentData parentData = child.parentData as RenderLayoutParentData;
+      parentData.semanticsIndex = index;
+      visitor(child);
+      child = parentData.nextSibling;
+      index++;
+    }
+  }
+
   // Aggregate intrinsic sizing over non-positioned children.
   @override
   double computeMinIntrinsicWidth(double height) {

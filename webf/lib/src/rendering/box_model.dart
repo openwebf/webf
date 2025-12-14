@@ -25,6 +25,11 @@ class RenderLayoutParentData extends ContainerBoxParentData<RenderBox> {
   // Row index of child when wrapping
   int runIndex = 0;
 
+  // Semantic index of this child within its parent.
+  // Populated by RenderLayoutBox.visitChildrenForSemantics so nodes can set
+  // SemanticsConfiguration.indexInParent without expensive DOM sibling scans.
+  int? semanticsIndex;
+
   @override
   String toString() {
     return '${super.toString()}; runIndex: $runIndex;';
@@ -140,6 +145,9 @@ abstract class RenderBoxModel extends RenderBox
     super.describeSemanticsConfiguration(config);
     // Apply ARIA → Semantics mapping for generic WebF elements.
     WebFAccessibility.applyToRenderBoxModel(this, config);
+    // Apply overflow scrolling semantics (scrollPosition/extents/actions) so
+    // assistive technologies can track focus/geometry while scrolling.
+    describeOverflowSemantics(config);
   }
 
   RenderPositionPlaceholder? renderPositionPlaceholder;
