@@ -15,8 +15,10 @@
 #include "core/dom/document.h"
 #include "core/dom/element.h"
 #include "core/dom/intersection_observer_entry.h"
+#include "core/dom/legacy/bounding_client_rect.h"
 #include "core/dom/node.h"
 #include "core/executing_context.h"
+#include "foundation/dart_readable.h"
 #include "foundation/logging.h"
 #include "qjs_intersection_observer_init.h"
 
@@ -49,6 +51,9 @@ IntersectionObserver::IntersectionObserver(ExecutingContext* context,
   if (observer_init && observer_init->hasRoot()) {
     root_ = observer_init->root();
   }
+  if (observer_init && observer_init->hasRootMargin()) {
+    root_margin_ = observer_init->rootMargin();
+  }
   NativeValue arguments[1];
   int32_t argc = 0;
   if (observer_init && observer_init->hasThreshold()) {
@@ -56,7 +61,10 @@ IntersectionObserver::IntersectionObserver(ExecutingContext* context,
     WEBF_LOG(DEBUG) << "[IntersectionObserver]: Constructor threshold.size = " << observer_init->threshold().size()
                     << std::endl;
 #endif
-    thresholds_ = std::move(observer_init->threshold());
+    thresholds_ = observer_init->threshold();
+    if (thresholds_.empty()) {
+      thresholds_.push_back(0.0);
+    }
     std::sort(thresholds_.begin(), thresholds_.end());
     arguments[0] = NativeValueConverter<NativeTypeArray<NativeTypeDouble>>::ToNativeValue(thresholds_);
     argc = 1;
@@ -135,6 +143,62 @@ void IntersectionObserver::disconnect(ExceptionState& exception_state) {
                                                        bindingObject(), nullptr);
 }
 
+std::vector<IntersectionObserverEntry*> IntersectionObserver::takeRecords(ExceptionState& exception_state) {
+  static const AtomicString kTakeRecords = AtomicString::CreateFromUTF8("takeRecords");
+
+  NativeValue result = InvokeBindingMethod(kTakeRecords, 0, nullptr, FlushUICommandReason::kStandard, exception_state);
+  if (exception_state.HasException()) {
+    return {};
+  }
+
+  auto* entry_list =
+      NativeValueConverter<NativeTypePointer<NativeIntersectionObserverEntryList>>::FromNativeValue(result);
+  if (entry_list == nullptr) {
+    return {};
+  }
+
+  if (entry_list->entries == nullptr || entry_list->length <= 0) {
+    if (entry_list->entries != nullptr) {
+      dart_free(entry_list->entries);
+    }
+    dart_free(entry_list);
+    return {};
+  }
+
+  auto* native_entries = entry_list->entries;
+  const int32_t length = entry_list->length;
+  std::vector<IntersectionObserverEntry*> records;
+  records.reserve(length);
+
+  for (int32_t i = 0; i < length; i++) {
+    auto* target = DynamicTo<Element>(BindingObject::From(native_entries[i].target));
+    auto* bounding_client_rect = native_entries[i].boundingClientRect != nullptr
+                                     ? BoundingClientRect::Create(GetExecutingContext(),
+                                                                  native_entries[i].boundingClientRect)
+                                     : nullptr;
+    auto* root_bounds =
+        native_entries[i].rootBounds != nullptr
+            ? BoundingClientRect::Create(GetExecutingContext(), native_entries[i].rootBounds)
+            : nullptr;
+    auto* intersection_rect =
+        native_entries[i].intersectionRect != nullptr
+            ? BoundingClientRect::Create(GetExecutingContext(), native_entries[i].intersectionRect)
+            : nullptr;
+    auto* entry = MakeGarbageCollected<IntersectionObserverEntry>(GetExecutingContext(),
+                                                                  native_entries[i].is_intersecting == 1,
+                                                                  native_entries[i].intersectionRatio,
+                                                                  target,
+                                                                  bounding_client_rect,
+                                                                  root_bounds,
+                                                                  intersection_rect);
+    records.push_back(entry);
+  }
+
+  dart_free(native_entries);
+  dart_free(entry_list);
+  return records;
+}
+
 NativeValue IntersectionObserver::HandleCallFromDartSide(const AtomicString& method,
                                                          int32_t argc,
                                                          const NativeValue* argv,
@@ -154,9 +218,23 @@ NativeValue IntersectionObserver::HandleCallFromDartSide(const AtomicString& met
     assert(function_ != nullptr);
     JSValue js_array = JS_NewArray(ctx());
     for (int i = 0; i < length; i++) {
-      auto* entry = MakeGarbageCollected<IntersectionObserverEntry>(
-          GetExecutingContext(), native_entry[i].is_intersecting, native_entry[i].intersectionRatio,
-          DynamicTo<Element>(BindingObject::From(native_entry[i].target)));
+      auto* target = DynamicTo<Element>(BindingObject::From(native_entry[i].target));
+      auto* bounding_client_rect = native_entry[i].boundingClientRect != nullptr
+                                     ? BoundingClientRect::Create(GetExecutingContext(), native_entry[i].boundingClientRect)
+                                     : nullptr;
+      auto* root_bounds = native_entry[i].rootBounds != nullptr
+                            ? BoundingClientRect::Create(GetExecutingContext(), native_entry[i].rootBounds)
+                            : nullptr;
+      auto* intersection_rect = native_entry[i].intersectionRect != nullptr
+                                  ? BoundingClientRect::Create(GetExecutingContext(), native_entry[i].intersectionRect)
+                                  : nullptr;
+      auto* entry = MakeGarbageCollected<IntersectionObserverEntry>(GetExecutingContext(),
+                                                                    native_entry[i].is_intersecting == 1,
+                                                                    native_entry[i].intersectionRatio,
+                                                                    target,
+                                                                    bounding_client_rect,
+                                                                    root_bounds,
+                                                                    intersection_rect);
       JS_SetPropertyUint32(ctx(), js_array, i, entry->ToQuickJS());
     }
     ScriptValue arguments[] = {ScriptValue(ctx(), js_array), ToValue()};

@@ -5,20 +5,48 @@
 // Copyright (C) 2024-present The WebF authors. All rights reserved.
 
 #include "core/dom/intersection_observer_entry.h"
+
+#include <chrono>
+#include <cmath>
+
+#include "core/executing_context.h"
 #include "core/dom/element.h"
+#include "core/dom/legacy/bounding_client_rect.h"
 
 namespace webf {
+
+namespace {
+
+int64_t NowInMilliseconds(ExecutingContext* context) {
+  using namespace std::chrono;
+  auto now = system_clock::now();
+  auto duration = duration_cast<microseconds>(now - context->timeOrigin());
+  auto reduced_duration = std::floor(duration / 1000us) * 1000us;
+  return duration_cast<milliseconds>(reduced_duration).count();
+}
+
+}  // namespace
 
 IntersectionObserverEntry::IntersectionObserverEntry(ExecutingContext* context,
                                                      bool isIntersecting,
                                                      double intersectionRatio,
-                                                     Element* target)
+                                                     Element* target,
+                                                     BoundingClientRect* bounding_client_rect,
+                                                     BoundingClientRect* root_bounds,
+                                                     BoundingClientRect* intersection_rect)
     : ScriptWrappable(context->ctx()),
-      isIntersecting_(isIntersecting),
       intersectionRatio_(intersectionRatio),
+      isIntersecting_(isIntersecting),
+      time_(NowInMilliseconds(context)),
+      bounding_client_rect_(bounding_client_rect),
+      root_bounds_(root_bounds),
+      intersection_rect_(intersection_rect),
       target_(target) {}
 
 void IntersectionObserverEntry::Trace(GCVisitor* visitor) const {
+  visitor->TraceMember(bounding_client_rect_);
+  visitor->TraceMember(root_bounds_);
+  visitor->TraceMember(intersection_rect_);
   visitor->TraceMember(target_);
 }
 

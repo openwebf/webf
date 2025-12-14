@@ -14,15 +14,15 @@ import {Element} from "./element";
 interface IntersectionObserver {
   new(callback: Function, options?: IntersectionObserverInit): IntersectionObserver;
 
-  //readonly root: Node | null;
-  //readonly rootMargin: string;
+  readonly root: Node | null;
+  readonly rootMargin: string;
   //readonly scrollMargin: string;
-  //readonly thresholds: number[];
+  readonly thresholds: number[];
   //readonly delay: number;
   //readonly trackVisibility: boolean;
 
   observe(target: Element): void;
   unobserve(target: Element): void;
   disconnect(): void;
-  //takeRecords(): IntersectionObserverEntry[];
+  takeRecords(): IntersectionObserverEntry[];
 }

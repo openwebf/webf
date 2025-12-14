@@ -9,12 +9,10 @@
 import {Element} from "./element";
 
 export interface IntersectionObserverEntry {
-    // TODO(pengfei12.guo): not supported
-    // readonly time: DOMHighResTimeStamp;
-    // TODO(szager): |rootBounds| should not be nullable.
-    // readonly rootBounds: DOMRectReadOnly | null;
-    // readonly boundingClientRect: DOMRectReadOnly;
-    // readonly intersectionRect: DOMRectReadOnly;
+    readonly time: int64;
+    readonly rootBounds: BoundingClientRect | null;
+    readonly boundingClientRect: BoundingClientRect;
+    readonly intersectionRect: BoundingClientRect;
     // readonly isVisible: boolean;
 
     readonly isIntersecting: boolean;
@@ -25,5 +23,4 @@ export interface IntersectionObserverEntry {
 
     new(): void;
 }
-
 

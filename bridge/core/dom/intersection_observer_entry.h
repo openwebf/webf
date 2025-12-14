@@ -7,32 +7,50 @@
 #ifndef WEBF_CORE_INTERSECTION_OBSERVER_INTERSECTION_OBSERVER_ENTRY_H_
 #define WEBF_CORE_INTERSECTION_OBSERVER_INTERSECTION_OBSERVER_ENTRY_H_
 
+#include <cstdint>
+
 #include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/script_wrappable.h"
 
 namespace webf {
 
+class BoundingClientRect;
 class Element;
 
 struct NativeIntersectionObserverEntry : public DartReadable {
   int8_t is_intersecting;
   double intersectionRatio;
   NativeBindingObject* target;
+  NativeBindingObject* boundingClientRect;
+  NativeBindingObject* rootBounds;
+  NativeBindingObject* intersectionRect;
+};
+
+struct NativeIntersectionObserverEntryList : public DartReadable {
+  NativeIntersectionObserverEntry* entries;
+  int32_t length;
 };
 
 class IntersectionObserverEntry final : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
+  using ImplType = IntersectionObserverEntry*;
   IntersectionObserverEntry() = delete;
   explicit IntersectionObserverEntry(ExecutingContext* context,
                                      bool isIntersecting,
                                      double intersectionRatio,
-                                     Element* target);
+                                     Element* target,
+                                     BoundingClientRect* bounding_client_rect,
+                                     BoundingClientRect* root_bounds,
+                                     BoundingClientRect* intersection_rect);
 
   // TODO(pengfei12.guo): not supported
   // IDL interface
-  // double time() const { return time_; }
+  int64_t time() const { return time_; }
+  BoundingClientRect* rootBounds() const { return root_bounds_.Get(); }
+  BoundingClientRect* boundingClientRect() const { return bounding_client_rect_.Get(); }
+  BoundingClientRect* intersectionRect() const { return intersection_rect_.Get(); }
   double intersectionRatio() const { return intersectionRatio_; }
   // DOMRectReadOnly* boundingClientRect() const;
   // DOMRectReadOnly* rootBounds() const;
@@ -54,7 +72,10 @@ class IntersectionObserverEntry final : public ScriptWrappable {
   // IntersectionGeometry geometry_;
   double intersectionRatio_;
   bool isIntersecting_;
-  // DOMHighResTimeStamp time_;
+  int64_t time_;
+  Member<BoundingClientRect> bounding_client_rect_;
+  Member<BoundingClientRect> root_bounds_;
+  Member<BoundingClientRect> intersection_rect_;
   Member<Element> target_;
 };
 

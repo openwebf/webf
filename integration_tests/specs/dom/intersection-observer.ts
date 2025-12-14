@@ -28,6 +28,69 @@ describe('IntersectionObserver', () => {
     }
   }
 
+  it('exposes root/rootMargin/thresholds properties', () => {
+    const observer = new IntersectionObserver(
+      () => {},
+      {
+        root: null,
+        rootMargin: '10px',
+        threshold: [1, 0.5, 0],
+      }
+    )
+
+    expect(observer.root).toBe(null)
+    expect(typeof observer.rootMargin).toBe('string')
+    expect(observer.rootMargin).toBe('10px')
+    expect(observer.thresholds).toEqual([0, 0.5, 1])
+
+    observer.disconnect()
+  })
+
+  it('exposes entry rect and time fields', async () => {
+    const observed = createObserved('observed_entry_fields', {
+      width: '120px',
+      height: '90px',
+      backgroundColor: 'black',
+    })
+    document.body.appendChild(observed)
+
+    let lastEntry: IntersectionObserverEntry | null = null
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target !== observed) continue
+        lastEntry = entry
+      }
+    })
+
+    observer.observe(observed)
+
+    await waitForCondition(() => lastEntry != null)
+
+    expect(typeof lastEntry!.time).toBe('number')
+
+    expect(lastEntry!.boundingClientRect).not.toBeNull()
+    expect(typeof lastEntry!.boundingClientRect.width).toBe('number')
+    expect(typeof lastEntry!.boundingClientRect.height).toBe('number')
+
+    expect(lastEntry!.rootBounds).not.toBeNull()
+    expect(typeof lastEntry!.rootBounds!.width).toBe('number')
+    expect(typeof lastEntry!.rootBounds!.height).toBe('number')
+
+    expect(lastEntry!.intersectionRect).not.toBeNull()
+    expect(typeof lastEntry!.intersectionRect.width).toBe('number')
+    expect(typeof lastEntry!.intersectionRect.height).toBe('number')
+
+    observer.disconnect()
+  })
+
+  it('takeRecords returns empty array when no records', () => {
+    const observer = new IntersectionObserver(() => {})
+    const records = observer.takeRecords()
+    expect(Array.isArray(records)).toBe(true)
+    expect(records.length).toBe(0)
+    observer.disconnect()
+  })
+
   it('should trigger callback when element intersects', async () => {
     const observed = createObserved('observed', {
       width: '200px',

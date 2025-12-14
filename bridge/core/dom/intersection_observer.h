@@ -119,13 +119,11 @@ class IntersectionObserver final : public BindingObject {
   void observe(Element*, ExceptionState&);
   void unobserve(Element*, ExceptionState&);
   void disconnect(ExceptionState&);
-  // TODO(pengfei12.guo): not supported
-  // std::vector<Member<IntersectionObserverEntry>> takeRecords(ExceptionState&);
+  std::vector<IntersectionObserverEntry*> takeRecords(ExceptionState&);
 
   // API attributes.
   [[nodiscard]] Node* root() const { return root_; }
-  // TODO(pengfei12.guo): not supported
-  // AtomicString rootMargin() const;
+  [[nodiscard]] AtomicString rootMargin() const { return root_margin_; }
   // TODO(pengfei12.guo): not supported
   // AtomicString scrollMargin() const;
 
@@ -187,8 +185,9 @@ class IntersectionObserver final : public BindingObject {
 
  private:
   // We use UntracedMember<> here to do custom weak processing.
-  Node* root_;
-  std::vector<double> thresholds_;
+  Node* root_ = nullptr;
+  AtomicString root_margin_ = AtomicString::CreateFromUTF8("0px 0px 0px 0px");
+  std::vector<double> thresholds_ = {0.0};
   // Track active observation targets to keep this JS observer alive while it
   // has observations. Targets are stored by their NativeBindingObject pointer
   // address so we can avoid holding strong references to DOM Elements.

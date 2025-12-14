@@ -4,11 +4,13 @@
  */
 import 'dart:async';
 import 'dart:ffi';
+import 'dart:ui';
 
 import 'package:ffi/ffi.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/launcher.dart';
+import 'bounding_client_rect.dart';
 import 'element.dart';
 import 'intersection_observer_entry.dart';
 import 'package:flutter/foundation.dart';
@@ -56,7 +58,40 @@ class IntersectionObserver extends DynamicBindingObject {
   }
 
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {}
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+    methods['takeRecords'] = BindingObjectMethodSync(call: (_) {
+      if (_entries.isEmpty) return null;
+
+      final view = ownerView;
+      final entries = takeRecords();
+      if (entries.isEmpty) return null;
+
+      final Pointer<NativeIntersectionObserverEntryList> entryList =
+          malloc.allocate(sizeOf<NativeIntersectionObserverEntryList>());
+      final Pointer<NativeIntersectionObserverEntry> nativeEntries =
+          malloc.allocate(sizeOf<NativeIntersectionObserverEntry>() * entries.length);
+
+      entryList.ref.entries = nativeEntries;
+      entryList.ref.length = entries.length;
+
+      for (int i = 0; i < entries.length; i++) {
+        final entry = entries[i];
+
+        final boundingClientRect = _createBoundingClientRect(view, entry.boundingClientRect);
+        final rootBounds = _createBoundingClientRect(view, entry.rootBounds);
+        final intersectionRect = _createBoundingClientRect(view, entry.intersectionRect);
+
+        (nativeEntries + i).ref.isIntersecting = entry.isIntersecting ? 1 : 0;
+        (nativeEntries + i).ref.intersectionRatio = entry.intersectionRatio;
+        (nativeEntries + i).ref.element = entry.element.pointer!;
+        (nativeEntries + i).ref.boundingClientRect = boundingClientRect.pointer!;
+        (nativeEntries + i).ref.rootBounds = rootBounds.pointer!;
+        (nativeEntries + i).ref.intersectionRect = intersectionRect.pointer!;
+      }
+
+      return entryList;
+    });
+  }
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {}
@@ -151,6 +186,13 @@ class IntersectionObserver extends DynamicBindingObject {
       (nativeEntries + i).ref.isIntersecting = entries[i].isIntersecting ? 1 : 0;
       (nativeEntries + i).ref.intersectionRatio = entries[i].intersectionRatio;
       (nativeEntries + i).ref.element = entries[i].element.pointer!;
+
+      final boundingClientRect = _createBoundingClientRect(controller.view, entries[i].boundingClientRect);
+      final rootBounds = _createBoundingClientRect(controller.view, entries[i].rootBounds);
+      final intersectionRect = _createBoundingClientRect(controller.view, entries[i].intersectionRect);
+      (nativeEntries + i).ref.boundingClientRect = boundingClientRect.pointer!;
+      (nativeEntries + i).ref.rootBounds = rootBounds.pointer!;
+      (nativeEntries + i).ref.intersectionRect = intersectionRect.pointer!;
     }
 
     List<dynamic> dispatchEntryArguments = [nativeEntries, entries.length];
@@ -176,4 +218,17 @@ class IntersectionObserver extends DynamicBindingObject {
   final List<DartIntersectionObserverEntry> _entries = [];
   final List<Element> _elementList = [];
   List<double> _thresholds = [0.0];
+
+  BoundingClientRect _createBoundingClientRect(WebFViewController view, Rect rect) {
+    return BoundingClientRect(
+        context: BindingContext(view, view.contextId, allocateNewBindingObject()),
+        x: rect.left,
+        y: rect.top,
+        width: rect.width,
+        height: rect.height,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        left: rect.left);
+  }
 }

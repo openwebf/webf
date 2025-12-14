@@ -2489,8 +2489,18 @@ abstract class Element extends ContainerNode
           '[IntersectionObserver] notify target=$pointer tag=$tagName isIntersecting=${entry.isIntersecting} ratio=${entry.intersectionRatio} observers=${_intersectionObserverList.length}');
     }
     // If there are multiple IntersectionObservers, they cannot be distributed accurately
+    final Rect intersectionRect = entry.boundingClientRect.overlaps(entry.rootBounds)
+        ? entry.boundingClientRect.intersect(entry.rootBounds)
+        : Rect.zero;
     for (var observer in _intersectionObserverList) {
-      observer.addEntry(DartIntersectionObserverEntry(entry.isIntersecting, entry.intersectionRatio, this));
+      observer.addEntry(DartIntersectionObserverEntry(
+        entry.isIntersecting,
+        entry.intersectionRatio,
+        this,
+        entry.boundingClientRect,
+        entry.rootBounds,
+        intersectionRect,
+      ));
     }
 
     return _intersectionObserverList.isNotEmpty;
