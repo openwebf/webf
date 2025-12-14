@@ -128,5 +128,100 @@ describe('Accessibility: overflow scroll semantics interop', () => {
 
     await snapshot();
   });
-});
 
+  it('overflow region scrollTop updates and listview scroll updates', async () => {
+    document.body.innerHTML = '';
+
+    // Overflow
+    const region = document.createElement('div');
+    region.id = 'chat-region';
+    region.setAttribute('role', 'region');
+    region.setAttribute('aria-label', 'Chat Messages');
+    region.tabIndex = 0;
+    Object.assign(region.style, {
+      height: '120px',
+      width: '260px',
+      overflowY: 'auto',
+      border: '1px solid #ccc',
+      boxSizing: 'border-box',
+    } as Partial<CSSStyleDeclaration>);
+
+    // A series of fixed-height messages so that scrollHeight > clientHeight.
+    for (let i = 0; i < 20; i++) {
+      const message = document.createElement('div');
+      message.id = `msg-${i}`;
+      message.textContent = `Message ${i + 1}`;
+      Object.assign(message.style, {
+        height: '40px',
+        lineHeight: '40px',
+        borderBottom: '1px solid #eee',
+      } as Partial<CSSStyleDeclaration>);
+      region.appendChild(message);
+    }
+
+    document.body.appendChild(region);
+
+    const space = document.createElement('div');
+    space.id = 'space_id';
+    Object.assign(space.style, {
+      height: '10px',
+      backgroundColor: 'red',
+    } as Partial<CSSStyleDeclaration>);
+    document.body.appendChild(space);
+
+    // WebListView
+    const section = document.createElement('section');
+    section.className = 'componentItem';
+    section.setAttribute('aria-labelledby', 'landmark-demo-title');
+
+    const landmarksContainer = document.createElement('webf-listview');
+    landmarksContainer.style.height = '500px';
+    landmarksContainer.style.border = '1px solid #000';
+    landmarksContainer.className = 'landmarkExample';
+
+    // A series of fixed-height item so that scrollHeight > clientHeight.
+    for (let i = 0; i < 40; i++) {
+      const item = document.createElement('div');
+      item.id = `listview-item-${i}`;
+      item.textContent = `ListViewItem ${i + 1}`;
+      Object.assign(item.style, {
+        height: '40px',
+        lineHeight: '40px',
+        borderBottom: '1px solid #eee',
+      } as Partial<CSSStyleDeclaration>);
+      landmarksContainer.appendChild(item);
+    }
+
+    const listviewTarget = landmarksContainer.querySelector('#listview-item-5') as HTMLElement | null;
+    if (listviewTarget) {
+      listviewTarget.id = 'listview-target-item';
+      listviewTarget.style.backgroundColor = 'rgba(255, 230, 0, 0.5)';
+    }
+
+    section.appendChild(landmarksContainer);
+    document.body.appendChild(section);
+
+    await snapshot();
+
+    const maxRegionScroll = region.scrollHeight - region.clientHeight;
+    expect(maxRegionScroll).toBeGreaterThan(0);
+
+    region.scrollTop = Math.min(100, maxRegionScroll);
+    expect(region.scrollTop).toBeGreaterThan(0);
+
+    const targetItem = document.getElementById('listview-target-item') as HTMLElement | null;
+    expect(targetItem).toBeTruthy();
+
+    const rectBefore = targetItem!.getBoundingClientRect();
+
+    const listviewScrollTop = 100;
+    landmarksContainer.scrollTop = listviewScrollTop;
+    await snapshot();
+
+    expect(landmarksContainer.scrollTop).toBeGreaterThan(0);
+    expect(Math.abs(landmarksContainer.scrollTop - listviewScrollTop)).toBeLessThanOrEqual(1);
+
+    const rectAfter = targetItem!.getBoundingClientRect();
+    expect(Math.abs(rectAfter.top - (rectBefore.top - listviewScrollTop))).toBeLessThanOrEqual(1);
+  });
+});

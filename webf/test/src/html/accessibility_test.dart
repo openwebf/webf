@@ -25,6 +25,42 @@ SemanticsNode? _findSemanticsNodeWithLabel(SemanticsNode root, String label) {
   return found;
 }
 
+SemanticsNode? _findFirstScrollableNode(SemanticsNode root) {
+  SemanticsNode? found;
+  void visit(SemanticsNode node) {
+    if (found != null) return;
+    final SemanticsData data = node.getSemanticsData();
+    if (data.flagsCollection.hasImplicitScrolling && (data.scrollExtentMax ?? 0.0) > 0.0) {
+      found = node;
+      return;
+    }
+    node.visitChildren((SemanticsNode child) {
+      visit(child);
+      return found == null;
+    });
+  }
+
+  visit(root);
+  return found;
+}
+
+List<String> _collectTraversalLabels(SemanticsNode root) {
+  final List<String> labels = <String>[];
+  void visit(SemanticsNode node) {
+    final SemanticsData data = node.getSemanticsData();
+    final String label = data.label;
+    if (label.isNotEmpty && !data.flagsCollection.isHidden) {
+      labels.add(label);
+    }
+    for (final SemanticsNode child in node.debugListChildrenInOrder(DebugSemanticsDumpOrder.traversalOrder)) {
+      visit(child);
+    }
+  }
+
+  visit(root);
+  return labels;
+}
+
 void main() {
   setUp(() {
     setupTest();
@@ -146,31 +182,70 @@ void main() {
       try {
         await tester.pump();
 
+      final SemanticsOwner semanticsOwner = tester.binding.pipelineOwner.semanticsOwner!;
+      final SemanticsNode root = semanticsOwner.rootSemanticsNode!;
+
+      final SemanticsNode? scrollNodeBefore = _findFirstScrollableNode(root);
+      expect(scrollNodeBefore, isNotNull);
+
+      final SemanticsData before = scrollNodeBefore!.getSemanticsData();
+      expect(before.flagsCollection.hasImplicitScrolling, isTrue);
+      expect(before.scrollExtentMax, isNotNull);
+      expect(before.scrollExtentMax!, greaterThan(0.0));
+      expect(before.scrollPosition, isNotNull);
+      final double? posBefore = before.scrollPosition;
+
+        // Programmatic scroll should update semantics scrollPosition.
+      region.scrollTop = 200;
+      await tester.pump();
+
+      final SemanticsNode? scrollNodeAfter = _findFirstScrollableNode(root);
+      expect(scrollNodeAfter, isNotNull);
+      final SemanticsData after = scrollNodeAfter!.getSemanticsData();
+      expect(after.scrollPosition, isNotNull);
+      expect(after.scrollPosition!, greaterThan(0.0));
+      if (posBefore != null) {
+        expect(after.scrollPosition!, isNot(posBefore));
+      }
+      } finally {
+        handle.dispose();
+      }
+    });
+
+    testWidgets('overflow traversal moves through scroll contents before siblings', (WidgetTester tester) async {
+      final html = '''
+        <div id="region"
+             role="region"
+             aria-label="Chat Messages"
+             tabindex="0"
+             style="height: 100px; width: 200px; overflow-y: auto; border: 1px solid #000;">
+          <div style="height: 20px; line-height: 20px;">Message 1</div>
+          <div style="height: 20px; line-height: 20px;">Message 2</div>
+        </div>
+        <div id="after" style="height: 20px; line-height: 20px;">After</div>
+      ''';
+
+      await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        html: '<body>$html</body>',
+        controllerName: 'a11y-overflow-order-${DateTime.now().millisecondsSinceEpoch}',
+        wrap: (child) => MaterialApp(home: Scaffold(body: child)),
+      );
+
+      final SemanticsHandle handle = tester.ensureSemantics();
+      try {
+        await tester.pump();
+
         final SemanticsOwner semanticsOwner = tester.binding.pipelineOwner.semanticsOwner!;
         final SemanticsNode root = semanticsOwner.rootSemanticsNode!;
 
-        final SemanticsNode? regionNodeBefore = _findSemanticsNodeWithLabel(root, 'Chat Messages');
-        expect(regionNodeBefore, isNotNull);
+        final List<String> labels = _collectTraversalLabels(root);
+        final int idxMsg1 = labels.indexOf('Message 1');
+        final int idxAfter = labels.indexOf('After');
 
-        final SemanticsData before = regionNodeBefore!.getSemanticsData();
-        expect(before.flagsCollection.hasImplicitScrolling, isTrue);
-        expect(before.scrollExtentMax, isNotNull);
-        expect(before.scrollExtentMax!, greaterThan(0.0));
-        expect(before.scrollPosition, isNotNull);
-        final double? posBefore = before.scrollPosition;
-
-        // Programmatic scroll should update semantics scrollPosition.
-        region.scrollTop = 200;
-        await tester.pump();
-
-        final SemanticsNode? regionNodeAfter = _findSemanticsNodeWithLabel(root, 'Chat Messages');
-        expect(regionNodeAfter, isNotNull);
-        final SemanticsData after = regionNodeAfter!.getSemanticsData();
-        expect(after.scrollPosition, isNotNull);
-        expect(after.scrollPosition!, greaterThan(0.0));
-        if (posBefore != null) {
-          expect(after.scrollPosition!, isNot(posBefore));
-        }
+        expect(idxMsg1, greaterThanOrEqualTo(0));
+        expect(idxAfter, greaterThanOrEqualTo(0));
+        expect(idxAfter, greaterThan(idxMsg1));
       } finally {
         handle.dispose();
       }
