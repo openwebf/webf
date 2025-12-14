@@ -18,6 +18,8 @@ import 'package:webf/gesture.dart';
 typedef ScrollListener = void Function(double scrollOffset, AxisDirection axisDirection);
 
 mixin RenderOverflowMixin on RenderBoxModelBase {
+  static const double _kSemanticsScrollFactor = 0.8;
+
   ScrollListener? scrollListener;
   void Function(PointerEvent)? scrollablePointerListener;
 
@@ -307,6 +309,141 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     final Offset paintOffset = Offset(_paintOffsetX, _paintOffsetY);
     if (_shouldClipAtPaintOffset(paintOffset, size)) return Offset.zero & size;
     return null;
+  }
+
+  @override
+  Rect? describeSemanticsClip(RenderObject child) {
+    // By default, Flutter derives the semantics clip from the paint clip. For
+    // scrolling containers this causes offscreen descendants to get their
+    // semantics rect clipped to empty, making them "invisible" and dropped
+    // from the semantics tree. That breaks iOS VoiceOver focus geometry updates
+    // when the focused node scrolls off-screen.
+    //
+    // Mirror RenderViewport.describeSemanticsClip by expanding the semantics
+    // clip beyond the viewport so offscreen nodes remain in the tree and are
+    // instead marked hidden via the paint clip.
+    final CSSOverflowType overflowX = renderStyle.effectiveOverflowX;
+    final CSSOverflowType overflowY = renderStyle.effectiveOverflowY;
+
+    final Size? viewport = _viewportSize;
+    final Size? content = _scrollableSize;
+
+    final bool xScrollable = (overflowX == CSSOverflowType.scroll || overflowX == CSSOverflowType.auto) &&
+        scrollOffsetX != null &&
+        viewport != null &&
+        content != null;
+    final bool yScrollable = (overflowY == CSSOverflowType.scroll || overflowY == CSSOverflowType.auto) &&
+        scrollOffsetY != null &&
+        viewport != null &&
+        content != null;
+
+    if (!xScrollable && !yScrollable) {
+      return super.describeSemanticsClip(child);
+    }
+
+    final double maxX = xScrollable ? math.max(0.0, content!.width - viewport!.width) : 0.0;
+    final double maxY = yScrollable ? math.max(0.0, content!.height - viewport!.height) : 0.0;
+
+    final Rect bounds = semanticBounds;
+    if (maxX == 0.0 && maxY == 0.0) {
+      return bounds;
+    }
+
+    return Rect.fromLTRB(
+      bounds.left - maxX,
+      bounds.top - maxY,
+      bounds.right + maxX,
+      bounds.bottom + maxY,
+    );
+  }
+
+  void describeOverflowSemantics(SemanticsConfiguration config) {
+    final CSSOverflowType overflowX = renderStyle.effectiveOverflowX;
+    final CSSOverflowType overflowY = renderStyle.effectiveOverflowY;
+
+    final bool xScrollable =
+        (overflowX == CSSOverflowType.scroll || overflowX == CSSOverflowType.auto) && scrollOffsetX != null;
+    final bool yScrollable =
+        (overflowY == CSSOverflowType.scroll || overflowY == CSSOverflowType.auto) && scrollOffsetY != null;
+
+    if (!xScrollable && !yScrollable) {
+      return;
+    }
+
+    // Mirror Flutter's _RenderScrollSemantics: scrolling regions are semantic
+    // boundaries with explicit child nodes, and expose scroll metrics.
+    config.isSemanticBoundary = true;
+    config.explicitChildNodes = true;
+    config.hasImplicitScrolling = true;
+
+    final Size? viewport = _viewportSize;
+    final Size? content = _scrollableSize;
+    if (viewport == null || content == null) {
+      return;
+    }
+
+    final double maxX = math.max(0.0, content.width - viewport.width);
+    final double maxY = math.max(0.0, content.height - viewport.height);
+
+    // Expose primary-axis scroll metrics (prefer vertical when available).
+    if (yScrollable) {
+      config.scrollExtentMin = 0.0;
+      config.scrollExtentMax = maxY;
+      config.scrollPosition = scrollTop.clamp(0.0, maxY).toDouble();
+    } else if (xScrollable) {
+      config.scrollExtentMin = 0.0;
+      config.scrollExtentMax = maxX;
+      config.scrollPosition = scrollLeft.clamp(0.0, maxX).toDouble();
+    }
+
+    // Best-effort child count: used by some platforms to provide "x of y".
+    try {
+      config.scrollChildCount = renderStyle.target.childNodes.length;
+    } catch (_) {}
+
+    final bool canScroll = (yScrollable && maxY > 0.0) || (xScrollable && maxX > 0.0);
+    if (!canScroll) {
+      return;
+    }
+
+    // Semantic scroll-to-offset for implicit scrolling.
+    config.onScrollToOffset = (Offset targetOffset) {
+      if (yScrollable && scrollOffsetY != null) {
+        final double targetY = targetOffset.dy.clamp(0.0, maxY).toDouble();
+        scrollOffsetY!.jumpTo(targetY);
+      }
+      if (xScrollable && scrollOffsetX != null) {
+        final double targetX = targetOffset.dx.clamp(0.0, maxX).toDouble();
+        scrollOffsetX!.jumpTo(targetX);
+      }
+    };
+
+    // Semantic scroll actions (RenderSemanticsGestureHandler-like behavior).
+    if (yScrollable && scrollOffsetY != null && maxY > 0.0 && hasSize) {
+      config.onScrollUp = () {
+        final double delta = size.height * -_kSemanticsScrollFactor;
+        final double next = (scrollTop + delta).clamp(0.0, maxY).toDouble();
+        scrollOffsetY!.jumpTo(next);
+      };
+      config.onScrollDown = () {
+        final double delta = size.height * _kSemanticsScrollFactor;
+        final double next = (scrollTop + delta).clamp(0.0, maxY).toDouble();
+        scrollOffsetY!.jumpTo(next);
+      };
+    }
+
+    if (xScrollable && scrollOffsetX != null && maxX > 0.0 && hasSize) {
+      config.onScrollLeft = () {
+        final double delta = size.width * -_kSemanticsScrollFactor;
+        final double next = (scrollLeft + delta).clamp(0.0, maxX).toDouble();
+        scrollOffsetX!.jumpTo(next);
+      };
+      config.onScrollRight = () {
+        final double delta = size.width * _kSemanticsScrollFactor;
+        final double next = (scrollLeft + delta).clamp(0.0, maxX).toDouble();
+        scrollOffsetX!.jumpTo(next);
+      };
+    }
   }
 
   void debugOverflowProperties(DiagnosticPropertiesBuilder properties) {
