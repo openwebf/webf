@@ -47,9 +47,11 @@ void _handleDeliverResult(Object handle, Pointer<NativeValue> returnValue) {
 
 class IntersectionObserver extends DynamicBindingObject {
   IntersectionObserver(BindingContext? context, List<dynamic> thresholds_) : super(context) {
-    if (null != thresholds_) {
-      debugPrint('Dom.IntersectionObserver.Constructor thresholds_:$thresholds_');
-      _thresholds = thresholds_.map((e) => e as double).toList();
+    if (thresholds_.isNotEmpty) {
+      _thresholds = thresholds_.map((e) => (e as num).toDouble()).toList();
+    }
+    if (enableWebFCommandLog) {
+      domLogger.fine('[IntersectionObserver] ctor observer=$pointer thresholds=$_thresholds');
     }
   }
 
@@ -60,7 +62,9 @@ class IntersectionObserver extends DynamicBindingObject {
   void initializeProperties(Map<String, BindingObjectProperty> properties) {}
 
   void observe(Element element) {
-    // debugPrint('Dom.IntersectionObserver.observe element:$element');
+    if (enableWebFCommandLog) {
+      domLogger.fine('[IntersectionObserver] observe observer=$pointer target=${element.pointer} thresholds=$_thresholds');
+    }
     if (!element.addIntersectionObserver(this, _thresholds)) {
       return;
     }
@@ -68,12 +72,17 @@ class IntersectionObserver extends DynamicBindingObject {
   }
 
   void unobserve(Element element) {
-    // debugPrint('Dom.IntersectionObserver.unobserve');
+    if (enableWebFCommandLog) {
+      domLogger.fine('[IntersectionObserver] unobserve observer=$pointer target=${element.pointer}');
+    }
     _elementList.remove(element);
     element.removeIntersectionObserver(this);
   }
 
   void disconnect() {
+    if (enableWebFCommandLog) {
+      domLogger.fine('[IntersectionObserver] disconnect observer=$pointer targets=${_elementList.length}');
+    }
     if (_elementList.isEmpty) return;
     for (var element in _elementList) {
       element!.removeIntersectionObserver(this);
@@ -86,8 +95,14 @@ class IntersectionObserver extends DynamicBindingObject {
   }
 
   void addEntry(DartIntersectionObserverEntry entry) {
+    if (enableWebFCommandLog) {
+      domLogger.fine(
+          '[IntersectionObserver] addEntry observer=$pointer target=${entry.element.pointer} isIntersecting=${entry.isIntersecting} ratio=${entry.intersectionRatio}');
+    }
     _entries.add(entry);
   }
+
+  bool get hasPendingRecords => _entries.isNotEmpty;
 
   List<DartIntersectionObserverEntry> takeRecords() {
     List<DartIntersectionObserverEntry> entries = _entries.map((entry) => entry.copy()).toList();
@@ -96,16 +111,28 @@ class IntersectionObserver extends DynamicBindingObject {
   }
 
   Future<void> deliver(WebFController controller) async {
-    if (pointer == null) return;
+    if (pointer == null) {
+      if (enableWebFCommandLog) {
+        domLogger.fine('[IntersectionObserver] deliver skipped: observer has no native pointer');
+      }
+      return;
+    }
+
+    if (_entries.isEmpty) return;
+
+    final BindingObject? bindingObject = controller.view.getBindingObject<BindingObject>(pointer!);
+    if (bindingObject == null) {
+      if (enableWebFCommandLog) {
+        domLogger.warning('[IntersectionObserver] deliver skipped: missing binding object for observer=$pointer');
+      }
+      return;
+    }
 
     List<DartIntersectionObserverEntry> entries = takeRecords();
     if (entries.isEmpty) {
       return;
     }
-    // debugPrint('Dom.IntersectionObserver.deliver size:${entries.length}');
     Completer completer = Completer();
-
-    BindingObject bindingObject = controller.view.getBindingObject(pointer!);
     // Call methods implements at C++ side.
     DartInvokeBindingMethodsFromDart? invokeBindingMethodsFromDart =
         pointer!.ref.invokeBindingMethodFromDart.asFunction();
@@ -133,6 +160,10 @@ class IntersectionObserver extends DynamicBindingObject {
         completer, stopwatch, allocatedNativeArguments, nativeEntries, controller);
 
     Pointer<NativeFunction<NativeInvokeResultCallback>> resultCallback = Pointer.fromFunction(_handleDeliverResult);
+
+    if (enableWebFCommandLog) {
+      domLogger.fine('[IntersectionObserver] deliver observer=$pointer entries=${entries.length}');
+    }
 
     Future.microtask(() {
       invokeBindingMethodsFromDart(pointer!, contextId!, nullptr, dispatchEntryArguments.length,

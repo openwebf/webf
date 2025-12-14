@@ -754,11 +754,17 @@ class Document extends ContainerNode {
 
 
   void addIntersectionObserver(IntersectionObserver observer, Element element) {
+    if (enableWebFCommandLog) {
+      domLogger.fine('[IntersectionObserver] document add observer=${observer.pointer} target=${element.pointer}');
+    }
     observer.observe(element);
     _intersectionObserverList.add(observer);
   }
 
   void removeIntersectionObserver(IntersectionObserver observer, Element element) {
+    if (enableWebFCommandLog) {
+      domLogger.fine('[IntersectionObserver] document remove observer=${observer.pointer} target=${element.pointer}');
+    }
     observer.unobserve(element);
     if (!observer.HasObservations()) {
       _intersectionObserverList.remove(observer);
@@ -766,6 +772,9 @@ class Document extends ContainerNode {
   }
 
   void disconnectIntersectionObserver(IntersectionObserver observer) {
+    if (enableWebFCommandLog) {
+      domLogger.fine('[IntersectionObserver] document disconnect observer=${observer.pointer}');
+    }
     observer.disconnect();
     _intersectionObserverList.remove(observer);
   }
@@ -774,8 +783,16 @@ class Document extends ContainerNode {
     if (_intersectionObserverList.isEmpty) {
       return;
     }
-    for (var observer in _intersectionObserverList) {
+
+    int delivered = 0;
+    for (final IntersectionObserver observer in _intersectionObserverList) {
+      if (!observer.hasPendingRecords) continue;
+      delivered++;
       observer.deliver(controller);
+    }
+
+    if (enableWebFCommandLog && delivered > 0) {
+      domLogger.fine('[IntersectionObserver] deliver records observers=$delivered');
     }
   }
 }

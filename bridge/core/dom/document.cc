@@ -11,6 +11,7 @@
 #include "core/dom/comment.h"
 #include "core/dom/document_fragment.h"
 #include "core/dom/element.h"
+#include "core/dom/intersection_observer.h"
 #include "core/dom/events/event_target.h"
 #include "core/dom/text.h"
 #include "core/frame/window.h"
@@ -556,9 +557,29 @@ std::shared_ptr<EventListener> Document::GetWindowAttributeEventListener(const A
   return window->GetAttributeEventListener(event_type);
 }
 
+void Document::RegisterIntersectionObserver(IntersectionObserver* observer) {
+  if (observer == nullptr)
+    return;
+  intersection_observers_.insert(observer);
+}
+
+void Document::UnregisterIntersectionObserver(IntersectionObserver* observer) {
+  if (observer == nullptr)
+    return;
+  for (auto it = intersection_observers_.begin(); it != intersection_observers_.end(); ++it) {
+    if (it->Get() == observer) {
+      intersection_observers_.erase(it);
+      break;
+    }
+  }
+}
+
 void Document::Trace(GCVisitor* visitor) const {
   script_animation_controller_.Trace(visitor);
   visitor->TraceMember(current_script_);
+  for (auto& observer : intersection_observers_) {
+    visitor->TraceMember(observer);
+  }
   if (style_engine_ != nullptr) {
     style_engine_->Trace(visitor);
   }

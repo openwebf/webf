@@ -189,6 +189,11 @@ class IntersectionObserver final : public BindingObject {
   // We use UntracedMember<> here to do custom weak processing.
   Node* root_;
   std::vector<double> thresholds_;
+  // Track active observation targets to keep this JS observer alive while it
+  // has observations. Targets are stored by their NativeBindingObject pointer
+  // address so we can avoid holding strong references to DOM Elements.
+  std::unordered_set<const NativeBindingObject*> observed_targets_;
+  bool keep_alive_ = false;
 
   // TODO(pengfei12.guo): not support
   // const std::vector<Length> margin_;

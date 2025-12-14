@@ -5,6 +5,8 @@
 #ifndef BRIDGE_DOCUMENT_H
 #define BRIDGE_DOCUMENT_H
 
+#include <unordered_set>
+
 #include "bindings/qjs/cppgc/local_handle.h"
 #include "container_node.h"
 #include "core/platform/url/kurl.h"
@@ -30,6 +32,7 @@ class Text;
 class Comment;
 class HTMLElement;
 class LiveNodeListBase;
+class IntersectionObserver;
 
 enum NodeListInvalidationType : int {
   kDoNotInvalidateOnAttributeChanges = 0,
@@ -174,6 +177,10 @@ class Document : public ContainerNode, public TreeScope {
                                        ExceptionState& exception_state);
   std::shared_ptr<EventListener> GetWindowAttributeEventListener(const AtomicString& event_type);
 
+  // Keep JS IntersectionObserver instances alive while observing targets.
+  void RegisterIntersectionObserver(IntersectionObserver* observer);
+  void UnregisterIntersectionObserver(IntersectionObserver* observer);
+
   void Trace(GCVisitor* visitor) const override;
   const DocumentPublicMethods* documentPublicMethods();
   StyleEngine& EnsureStyleEngine();
@@ -236,6 +243,8 @@ class Document : public ContainerNode, public TreeScope {
   KURL base_element_url_;  // The URL set by the <base> element.
   KURL cookie_url_;        // The URL to use for cookie access.
   Member<HTMLScriptElement> current_script_{nullptr};
+
+  std::unordered_set<Member<IntersectionObserver>, Member<IntersectionObserver>::KeyHasher> intersection_observers_;
 };
 
 template <>

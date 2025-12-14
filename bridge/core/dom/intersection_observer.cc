@@ -10,7 +10,9 @@
 #include <limits>
 
 #include <native_value_converter.h>
+#include "bindings/qjs/cppgc/mutation_scope.h"
 #include "bindings/qjs/converter_impl.h"
+#include "core/dom/document.h"
 #include "core/dom/element.h"
 #include "core/dom/intersection_observer_entry.h"
 #include "core/dom/node.h"
@@ -48,6 +50,7 @@ IntersectionObserver::IntersectionObserver(ExecutingContext* context,
     root_ = observer_init->root();
   }
   NativeValue arguments[1];
+  int32_t argc = 0;
   if (observer_init && observer_init->hasThreshold()) {
 #if ENABLE_LOG
     WEBF_LOG(DEBUG) << "[IntersectionObserver]: Constructor threshold.size = " << observer_init->threshold().size()
@@ -56,10 +59,11 @@ IntersectionObserver::IntersectionObserver(ExecutingContext* context,
     thresholds_ = std::move(observer_init->threshold());
     std::sort(thresholds_.begin(), thresholds_.end());
     arguments[0] = NativeValueConverter<NativeTypeArray<NativeTypeDouble>>::ToNativeValue(thresholds_);
+    argc = 1;
   }
   GetExecutingContext()->dartMethodPtr()->createBindingObject(
       GetExecutingContext()->isDedicated(), GetExecutingContext()->contextId(), bindingObject(),
-      CreateBindingObjectType::kCreateIntersectionObserver, arguments, 1);
+      CreateBindingObjectType::kCreateIntersectionObserver, argc > 0 ? arguments : nullptr, argc);
 }
 
 bool IntersectionObserver::RootIsValid() const {
@@ -76,6 +80,20 @@ void IntersectionObserver::observe(Element* target, ExceptionState& exception_st
   WEBF_LOG(DEBUG) << "[IntersectionObserver]: observe target=" << target << "，tagName=" << target->nodeName()
                   << std::endl;
 #endif
+
+  // Keep this observer alive while it has active observation targets.
+  const bool was_empty = observed_targets_.empty();
+  const NativeBindingObject* target_binding_object = target->bindingObject();
+  const bool inserted = observed_targets_.insert(target_binding_object).second;
+  if (inserted && was_empty) {
+    keep_alive_ = true;
+    KeepAlive();
+    MemberMutationScope scope{GetExecutingContext()};
+    if (auto* document = GetExecutingContext()->document()) {
+      document->RegisterIntersectionObserver(this);
+    }
+  }
+
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kAddIntersectionObserver, nullptr, bindingObject(),
                                                        target->bindingObject());
 }
@@ -86,11 +104,33 @@ void IntersectionObserver::unobserve(Element* target, ExceptionState& exception_
     return;
   }
 
+  if (observed_targets_.erase(target->bindingObject()) > 0 && observed_targets_.empty()) {
+    MemberMutationScope scope{GetExecutingContext()};
+    if (auto* document = GetExecutingContext()->document()) {
+      document->UnregisterIntersectionObserver(this);
+    }
+    if (keep_alive_) {
+      keep_alive_ = false;
+      ReleaseAlive();
+    }
+  }
+
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kRemoveIntersectionObserver, nullptr, bindingObject(),
                                                        target->bindingObject());
 }
 
 void IntersectionObserver::disconnect(ExceptionState& exception_state) {
+  if (!observed_targets_.empty()) {
+    MemberMutationScope scope{GetExecutingContext()};
+    if (auto* document = GetExecutingContext()->document()) {
+      document->UnregisterIntersectionObserver(this);
+    }
+    observed_targets_.clear();
+    if (keep_alive_) {
+      keep_alive_ = false;
+      ReleaseAlive();
+    }
+  }
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kDisconnectIntersectionObserver, nullptr,
                                                        bindingObject(), nullptr);
 }

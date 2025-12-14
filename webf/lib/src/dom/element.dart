@@ -2484,6 +2484,10 @@ abstract class Element extends ContainerNode
 
 
   bool _handleIntersectionObserver(IntersectionObserverEntry entry) {
+    if (enableWebFCommandLog) {
+      domLogger.fine(
+          '[IntersectionObserver] notify target=$pointer tag=$tagName isIntersecting=${entry.isIntersecting} ratio=${entry.intersectionRatio} observers=${_intersectionObserverList.length}');
+    }
     // If there are multiple IntersectionObservers, they cannot be distributed accurately
     for (var observer in _intersectionObserverList) {
       observer.addEntry(DartIntersectionObserverEntry(entry.isIntersecting, entry.intersectionRatio, this));
@@ -2496,6 +2500,9 @@ abstract class Element extends ContainerNode
     if (_intersectionObserverList.contains(observer)) {
       return false;
     }
+    if (enableWebFCommandLog) {
+      domLogger.fine('[IntersectionObserver] attach target=$pointer observer=${observer.pointer} thresholds=$thresholds');
+    }
     renderStyle.addIntersectionChangeListener(_handleIntersectionObserver, thresholds);
     _intersectionObserverList.add(observer);
     _thresholds = thresholds;
@@ -2503,6 +2510,9 @@ abstract class Element extends ContainerNode
   }
 
   void removeIntersectionObserver(IntersectionObserver observer) {
+    if (enableWebFCommandLog) {
+      domLogger.fine('[IntersectionObserver] detach target=$pointer observer=${observer.pointer}');
+    }
     _intersectionObserverList.remove(observer);
 
     if (_intersectionObserverList.isEmpty) {
@@ -2513,6 +2523,9 @@ abstract class Element extends ContainerNode
   void ensureAddIntersectionObserver() {
     if (_intersectionObserverList.isEmpty) {
       return;
+    }
+    if (enableWebFCommandLog) {
+      domLogger.fine('[IntersectionObserver] ensureAttach target=$pointer observers=${_intersectionObserverList.length}');
     }
     renderStyle.addIntersectionChangeListener(_handleIntersectionObserver, _thresholds);
   }

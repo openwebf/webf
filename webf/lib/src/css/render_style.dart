@@ -992,16 +992,22 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   @pragma('vm:prefer-inline')
   void addIntersectionChangeListener(IntersectionChangeCallback entryCallback, List<double> thresholds) {
-    everyAttachedWidgetRenderBox((_, renderBoxModel) {
-      renderBoxModel.addIntersectionChangeListener(entryCallback);
-      renderBoxModel.markNeedsPaint();
+    everyWidgetRenderBox((_, renderBoxModel) {
+      renderBoxModel.addIntersectionChangeListener(entryCallback, thresholds);
+      if (renderBoxModel.attached) {
+        renderBoxModel.markNeedsCompositingBitsUpdate();
+        renderBoxModel.markNeedsPaint();
+      }
       return true;
     });
   }
 
   void removeIntersectionChangeListener(IntersectionChangeCallback entryCallback) {
-    everyAttachedWidgetRenderBox((_, renderBoxModel) {
+    everyWidgetRenderBox((_, renderBoxModel) {
       renderBoxModel.removeIntersectionChangeListener(entryCallback);
+      if (renderBoxModel.attached) {
+        renderBoxModel.markNeedsCompositingBitsUpdate();
+      }
       return true;
     });
   }

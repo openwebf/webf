@@ -105,7 +105,9 @@ mixin RenderIntersectionObserverMixin on RenderBox {
       _listeners = null;
       _onIntersectionChange = null;
     }
-    markNeedsPaint();
+    if (attached) {
+      markNeedsPaint();
+    }
   }
 
   bool _dispatchChange(IntersectionObserverEntry info) {
@@ -205,6 +207,7 @@ class IntersectionObserverLayer extends ContainerLayer {
   set elementSize(Size value) {
     if (value == _elementSize) return;
     _elementSize = value;
+    _scheduleIntersectionObservationUpdate();
   }
 
   Offset _paintOffset;
@@ -212,6 +215,7 @@ class IntersectionObserverLayer extends ContainerLayer {
   set paintOffset(Offset value) {
     if (value == _paintOffset) return;
     _paintOffset = value;
+    _scheduleIntersectionObservationUpdate();
   }
 
   IntersectionChangeCallback? onIntersectionChange;
@@ -365,26 +369,15 @@ class IntersectionObserverLayer extends ContainerLayer {
   /// Invokes the visibility callback if [IntersectionObserverEntry] hasn't meaningfully
   /// changed since the last time we invoked it.
   bool _fireCallback(IntersectionObserverEntry info) {
-    final oldInfo = _lastIntersectionInfo;
-    // If isIntersecting is true maybe not visible when element size is 0
-    final isIntersecting = info.isIntersecting;
-
-    if (oldInfo == null) {
-      if (!isIntersecting) {
-        return false;
-      }
-    } else if (info.matchesIntersecting(oldInfo)) {
+    final IntersectionObserverEntry? oldInfo = _lastIntersectionInfo;
+    if (oldInfo != null && info.matchesIntersecting(oldInfo)) {
       return false;
     }
 
-    if (isIntersecting) {
-      _lastIntersectionInfo = info;
-    } else {
-      // Track only visible items so that the maps don't grow unbounded.
-      _lastIntersectionInfo = null;
-    }
-    // Notify visibility changed event
-    return onIntersectionChange!(info);
+    _lastIntersectionInfo = info;
+    final callback = onIntersectionChange;
+    if (callback == null) return false;
+    return callback(info);
   }
 
   Rect? _rootBounds;

@@ -118,6 +118,9 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     if (disposed && _isFrameBindingAttached) return;
     _isFrameBindingAttached = true;
     flushUICommand(this, window.pointer!);
+    // Deliver pending IntersectionObserver entries to JS side.
+    // Safe to call every frame; it will no-op when there are no entries.
+    deliverIntersectionObserver();
     SchedulerBinding.instance.addPostFrameCallback((_) => flushPendingCommandsPerFrame());
   }
 
