@@ -1,3 +1,19 @@
+## 0.23.11
+
+- Features
+  - CSS Grid: enable grid layout by default and expand support for track sizing and placement, including
+    `repeat()`/`minmax()`/`fit-content()`, named lines, template areas, and `grid`/`grid-template`/`place-*`
+    shorthands.
+  - DOM/Bridge: complete the `IntersectionObserver` API (including `IntersectionObserverEntry`) and add v2
+    properties for richer visibility tracking.
+  - Accessibility: improve semantics for overflow scrolling containers, add ListView a11y coverage, and support
+    `menubar`/`menuitem` roles.
+- Fixed
+  - Grid: fix auto-placement and sizing edge cases (reverse line ranges, `justify-content: space-*`, auto-fit
+    track collapse, and placement alignment).
+  - Platform/CI: fix iOS source builds and stabilize integration tests/snapshots.
+  - Accessibility/DOM: improve focusability handling and skip non-semantic container tags during traversal.
+
 ## 0.23.10
 
 - Features
