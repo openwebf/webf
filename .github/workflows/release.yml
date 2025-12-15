@@ -828,7 +828,7 @@ jobs:
           fi
 
       - name: Publish webf to pub.dev
-        uses: k-paxian/dart-package-publisher@v1
+        uses: k-paxian/dart-package-publisher@master
         with:
           credentialJson: ${{ secrets.PUB_DEV_TOKEN }}
           flutter: true
@@ -837,7 +837,7 @@ jobs:
           relativePath: webf
 
       - name: Publish webf_cupertino_ui to pub.dev
-        uses: k-paxian/dart-package-publisher@v1
+        uses: k-paxian/dart-package-publisher@master
         with:
           credentialJson: ${{ secrets.PUB_DEV_TOKEN }}
           flutter: true
@@ -846,7 +846,7 @@ jobs:
           relativePath: webf_cupertino_ui
 
       - name: Publish webf_deeplink to pub.dev
-        uses: k-paxian/dart-package-publisher@v1
+        uses: k-paxian/dart-package-publisher@master
         with:
           credentialJson: ${{ secrets.PUB_DEV_TOKEN }}
           flutter: true
@@ -855,7 +855,7 @@ jobs:
           relativePath: webf_modules/deeplink
 
       - name: Publish webf_share to pub.dev
-        uses: k-paxian/dart-package-publisher@v1
+        uses: k-paxian/dart-package-publisher@master
         with:
           credentialJson: ${{ secrets.PUB_DEV_TOKEN }}
           flutter: true
