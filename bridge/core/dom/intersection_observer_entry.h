@@ -47,25 +47,17 @@ class IntersectionObserverEntry final : public ScriptWrappable {
                                      BoundingClientRect* root_bounds,
                                      BoundingClientRect* intersection_rect);
 
-  // TODO(pengfei12.guo): not supported
   // IDL interface
   int64_t time() const { return time_; }
   BoundingClientRect* rootBounds() const { return root_bounds_.Get(); }
   BoundingClientRect* boundingClientRect() const { return bounding_client_rect_.Get(); }
   BoundingClientRect* intersectionRect() const { return intersection_rect_.Get(); }
   double intersectionRatio() const { return intersectionRatio_; }
-  // DOMRectReadOnly* boundingClientRect() const;
-  // DOMRectReadOnly* rootBounds() const;
-  // DOMRectReadOnly* intersectionRect() const;
   bool isVisible() const { return is_visible_; }
 
   bool isIntersecting() const { return isIntersecting_; }
 
   Element* target() const { return target_.Get(); }
-
-  // TODO(pengfei12.guo): IntersectionGeometry not supported
-  // blink-internal interface
-  // const IntersectionGeometry& GetGeometry() const { return geometry_; }
   void Trace(GCVisitor*) const override;
 
  private:

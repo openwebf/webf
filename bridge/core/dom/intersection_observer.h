@@ -27,49 +27,6 @@ class IntersectionObserver final : public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
-  // The IntersectionObserver can be configured to notify based on changes to
-  // how much of the target element's area intersects with the root, or based on
-  // changes to how much of the root element's area intersects with the
-  // target. Examples illustrating the distinction:
-  //
-  //     1.0 of target,         0.5 of target,         1.0 of target,
-  //      0.25 of root           0.5 of root            1.0 of root
-  //  +------------------+   +------------------+   *~~~~~~~~~~~~~~~~~~*
-  //  |   //////////     |   |                  |   ;//////////////////;
-  //  |   //////////     |   |                  |   ;//////////////////;
-  //  |   //////////     |   ;//////////////////;   ;//////////////////;
-  //  |                  |   ;//////////////////;   ;//////////////////;
-  //  +------------------+   *~~~~~~~~~~~~~~~~~~*   *~~~~~~~~~~~~~~~~~~*
-  //                         ////////////////////
-  //                         ////////////////////
-  //                         ////////////////////
-  // enum ThresholdInterpretation { kFractionOfTarget, kFractionOfRoot };
-
-  //  This value can be used to detect transitions between non-intersecting or
-  //  edge-adjacent (i.e., zero area) state, and intersecting by any non-zero
-  //  number of pixels.
-  //  static constexpr float kMinimumThreshold =
-  //      IntersectionGeometry::kMinimumThreshold;
-
-  // Used to specify when callbacks should be invoked with new notifications.
-  // Blink-internal users of IntersectionObserver will have their callbacks
-  // invoked synchronously either at the end of a lifecycle update or in the
-  // middle of the lifecycle post layout. Javascript observers will PostTask to
-  // invoke their callbacks.
-  // enum DeliveryBehavior { kDeliverDuringPostLayoutSteps, kDeliverDuringPostLifecycleSteps, kPostTaskToDeliver };
-
-  // Used to specify whether the margins apply to the root element or the source
-  // element. The effect of the root element margins is that intermediate
-  // scrollers clip content by its bounding box without considering margins.
-  // That is, margins only apply to the last scroller (root). The effect of
-  // source element margins is that the margins apply to the first / deepest
-  // clipper, but do not apply to any other clippers. Note that in a case of a
-  // single clipper, the two approaches are equivalent.
-  //
-  // Note that the percentage margin is resolved against the root rect, even
-  // when the margin is applied to the target.
-  // enum MarginTarget { kApplyMarginToRoot, kApplyMarginToTarget };
-
   static IntersectionObserver* Create(ExecutingContext* context,
                                       const std::shared_ptr<QJSFunction>& function,
                                       ExceptionState& exception_state);
@@ -83,32 +40,6 @@ class IntersectionObserver final : public BindingObject {
   IntersectionObserver(ExecutingContext* context,
                        const std::shared_ptr<QJSFunction>& function,
                        const std::shared_ptr<IntersectionObserverInit>& observer_init);
-
-  // TODO(pengfei12.guo): Params not supported
-  // struct Params {
-  //   WEBF_STACK_ALLOCATED();
-  //
-  //  public:
-  //   Node* root;
-  //   Vector<Length> margin;
-  //   MarginTarget margin_target = kApplyMarginToRoot;
-  //   Vector<Length> scroll_margin;
-  //
-  //   // Elements should be in the range [0,1], and are interpreted according to
-  //   // the given `semantics`.
-  //   Vector<float> thresholds;
-  //   ThresholdInterpretation semantics = kFractionOfTarget;
-  //
-  //   DeliveryBehavior behavior = kDeliverDuringPostLifecycleSteps;
-  //   // Specifies the minimum period between change notifications.
-  //   base::TimeDelta delay;
-  //   bool track_visibility = false;
-  //   bool always_report_root_bounds = false;
-  //   // Indicates whether the overflow clip edge should be used instead of the
-  //   // bounding box if appropriate.
-  //   bool use_overflow_clip_edge = false;
-  //   bool needs_initial_observation_with_detached_target = true;
-  // };
 
   NativeValue HandleCallFromDartSide(const AtomicString& method,
                                      int32_t argc,
@@ -140,36 +71,6 @@ class IntersectionObserver final : public BindingObject {
     return root_ == nullptr;
   }
 
-  // TODO(pengfei12.guo): TimeDelta not support
-  // base::TimeDelta GetEffectiveDelay() const;
-
-  // TODO(pengfei12.guo): RootMargin not support
-  // std::vector<Length> RootMargin() const {
-  //  return margin_target_ == kApplyMarginToRoot ? margin_ : Vector<Length>();
-  //}
-
-  // TODO(pengfei12.guo): TargetMargin not support
-  // Vector<Length> TargetMargin() const {
-  //  return margin_target_ == kApplyMarginToTarget ? margin_ : Vector<Length>();
-  //}
-
-  // TODO(pengfei12.guo): ScrollMargin not support
-  // Vector<Length> ScrollMargin() const { return scroll_margin_; }
-
-  // TODO(pengfei12.guo): ComputeIntersections impl by dart
-  // Returns the number of IntersectionObservations that recomputed geometry.
-  // int64_t ComputeIntersections(unsigned flags, ComputeIntersectionsContext&);
-
-  // TODO(pengfei12.guo): GetUkmMetricId not support
-  // bool IsInternal() const;
-
-  // TODO(pengfei12.guo): GetUkmMetricId not support
-  // The metric id for tracking update time via UpdateTime metrics, or null for
-  // internal intersection observers without explicit metrics.
-  // std::optional<LocalFrameUkmAggregator::MetricId> GetUkmMetricId() const {
-  //  return ukm_metric_id_;
-  //}
-
   // Returns false if this observer has an explicit root node which has been
   // deleted; true otherwise.
   bool RootIsValid() const;
@@ -189,16 +90,6 @@ class IntersectionObserver final : public BindingObject {
   // address so we can avoid holding strong references to DOM Elements.
   std::unordered_set<const NativeBindingObject*> observed_targets_;
   bool keep_alive_ = false;
-
-  // TODO(pengfei12.guo): not support
-  // const std::vector<Length> margin_;
-  // const std::vector<Length> scroll_margin_;
-  // const MarginTarget margin_target_;
-  // const unsigned root_is_implicit_ : 1;
-  // const unsigned track_visibility_ : 1;
-  // const unsigned track_fraction_of_root_ : 1;
-  // const unsigned always_report_root_bounds_ : 1;
-  // const unsigned use_overflow_clip_edge_ : 1;
 
   std::shared_ptr<QJSFunction> function_;
 };
