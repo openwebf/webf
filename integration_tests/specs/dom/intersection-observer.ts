@@ -46,6 +46,26 @@ describe('IntersectionObserver', () => {
     observer.disconnect()
   })
 
+  it('supports IntersectionObserver v2 options/properties', () => {
+    const observer = new IntersectionObserver(
+      () => {},
+      {
+        threshold: 0.25,
+        scrollMargin: '5px',
+        delay: 10,
+        trackVisibility: true,
+      } as any
+    )
+
+    expect(observer.thresholds).toEqual([0.25])
+    expect((observer as any).scrollMargin).toBe('5px')
+    expect(typeof (observer as any).delay).toBe('number')
+    expect((observer as any).delay).toBeGreaterThanOrEqual(100)
+    expect((observer as any).trackVisibility).toBe(true)
+
+    observer.disconnect()
+  })
+
   it('exposes entry rect and time fields', async () => {
     const observed = createObserved('observed_entry_fields', {
       width: '120px',
@@ -79,6 +99,63 @@ describe('IntersectionObserver', () => {
     expect(lastEntry!.intersectionRect).not.toBeNull()
     expect(typeof lastEntry!.intersectionRect.width).toBe('number')
     expect(typeof lastEntry!.intersectionRect.height).toBe('number')
+
+    observer.disconnect()
+  })
+
+  it('sets entry.isVisible when trackVisibility is enabled', async () => {
+    const observed = createObserved('observed_visible', {
+      width: '120px',
+      height: '90px',
+      backgroundColor: 'black',
+    })
+    document.body.appendChild(observed)
+
+    let lastEntry: IntersectionObserverEntry | null = null
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.target !== observed) continue
+          lastEntry = entry
+        }
+      },
+      { threshold: 0, trackVisibility: true } as any
+    )
+
+    observer.observe(observed)
+
+    await waitForCondition(() => lastEntry != null)
+
+    expect(lastEntry!.isIntersecting).toBe(true)
+    expect(typeof (lastEntry as any).isVisible).toBe('boolean')
+    expect((lastEntry as any).isVisible).toBe(true)
+
+    observer.disconnect()
+  })
+
+  it('sets entry.isVisible to false when trackVisibility is disabled', async () => {
+    const observed = createObserved('observed_visible_default', {
+      width: '120px',
+      height: '90px',
+      backgroundColor: 'black',
+    })
+    document.body.appendChild(observed)
+
+    let lastEntry: IntersectionObserverEntry | null = null
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target !== observed) continue
+        lastEntry = entry
+      }
+    }, { threshold: 0 } as any)
+
+    observer.observe(observed)
+
+    await waitForCondition(() => lastEntry != null)
+
+    expect(lastEntry!.isIntersecting).toBe(true)
+    expect(typeof (lastEntry as any).isVisible).toBe('boolean')
+    expect((lastEntry as any).isVisible).toBe(false)
 
     observer.disconnect()
   })

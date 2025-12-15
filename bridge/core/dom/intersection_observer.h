@@ -124,17 +124,10 @@ class IntersectionObserver final : public BindingObject {
   // API attributes.
   [[nodiscard]] Node* root() const { return root_; }
   [[nodiscard]] AtomicString rootMargin() const { return root_margin_; }
-  // TODO(pengfei12.guo): not supported
-  // AtomicString scrollMargin() const;
-
+  [[nodiscard]] AtomicString scrollMargin() const { return scroll_margin_; }
   [[nodiscard]] const std::vector<double>& thresholds() const { return thresholds_; }
-  // TODO(pengfei12.guo): not supported
-  // DOMHighResTimeStamp delay() const {
-  //   if (delay_ != std::numeric_limits<int64_t>::min() && delay_ != std::numeric_limits<int64_t>::max()) {
-  //     return delay_ / 1000;
-  //   }
-  //   return (delay_ < 0) ? std::numeric_limits<int64_t>::min() : std::numeric_limits<int64_t>::max();
-  // }
+  [[nodiscard]] double delay() const { return delay_; }
+  [[nodiscard]] bool trackVisibility() const { return track_visibility_; }
 
   // An observer can either track intersections with an explicit root Node,
   // or with the the top-level frame's viewport (the "implicit root").  When
@@ -187,7 +180,10 @@ class IntersectionObserver final : public BindingObject {
   // We use UntracedMember<> here to do custom weak processing.
   Node* root_ = nullptr;
   AtomicString root_margin_ = AtomicString::CreateFromUTF8("0px 0px 0px 0px");
+  AtomicString scroll_margin_ = AtomicString::CreateFromUTF8("0px 0px 0px 0px");
   std::vector<double> thresholds_ = {0.0};
+  double delay_ = 0.0;
+  bool track_visibility_ = false;
   // Track active observation targets to keep this JS observer alive while it
   // has observations. Targets are stored by their NativeBindingObject pointer
   // address so we can avoid holding strong references to DOM Elements.

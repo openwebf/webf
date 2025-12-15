@@ -21,6 +21,7 @@
 #include "foundation/dart_readable.h"
 #include "foundation/logging.h"
 #include "qjs_intersection_observer_init.h"
+#include "qjs_union_double_sequencedouble.h"
 
 namespace webf {
 
@@ -54,18 +55,36 @@ IntersectionObserver::IntersectionObserver(ExecutingContext* context,
   if (observer_init && observer_init->hasRootMargin()) {
     root_margin_ = observer_init->rootMargin();
   }
+  if (observer_init && observer_init->hasScrollMargin()) {
+    scroll_margin_ = observer_init->scrollMargin();
+  }
+  if (observer_init && observer_init->hasDelay()) {
+    delay_ = std::max(0.0, observer_init->delay());
+  }
+  if (observer_init && observer_init->hasTrackVisibility()) {
+    track_visibility_ = observer_init->trackVisibility();
+  }
+  // https://wicg.github.io/IntersectionObserver/#dom-intersectionobserverinit-trackvisibility
+  // When tracking visibility, enforce the minimum delay to avoid high-frequency observation.
+  if (track_visibility_ && delay_ < 100.0) {
+    delay_ = 100.0;
+  }
   NativeValue arguments[1];
   int32_t argc = 0;
   if (observer_init && observer_init->hasThreshold()) {
-#if ENABLE_LOG
-    WEBF_LOG(DEBUG) << "[IntersectionObserver]: Constructor threshold.size = " << observer_init->threshold().size()
-                    << std::endl;
-#endif
-    thresholds_ = observer_init->threshold();
+    auto threshold = observer_init->threshold();
+    if (threshold != nullptr) {
+      if (threshold->IsDouble()) {
+        thresholds_ = {threshold->GetAsDouble()};
+      } else if (threshold->IsSequenceDouble()) {
+        thresholds_ = threshold->GetAsSequenceDouble();
+      }
+    }
     if (thresholds_.empty()) {
       thresholds_.push_back(0.0);
     }
     std::sort(thresholds_.begin(), thresholds_.end());
+    thresholds_.erase(std::unique(thresholds_.begin(), thresholds_.end()), thresholds_.end());
     arguments[0] = NativeValueConverter<NativeTypeArray<NativeTypeDouble>>::ToNativeValue(thresholds_);
     argc = 1;
   }
@@ -171,6 +190,8 @@ std::vector<IntersectionObserverEntry*> IntersectionObserver::takeRecords(Except
   records.reserve(length);
 
   for (int32_t i = 0; i < length; i++) {
+    const bool is_intersecting = native_entries[i].is_intersecting == 1;
+    const bool is_visible = track_visibility_ && is_intersecting;
     auto* target = DynamicTo<Element>(BindingObject::From(native_entries[i].target));
     auto* bounding_client_rect = native_entries[i].boundingClientRect != nullptr
                                      ? BoundingClientRect::Create(GetExecutingContext(),
@@ -185,7 +206,8 @@ std::vector<IntersectionObserverEntry*> IntersectionObserver::takeRecords(Except
             ? BoundingClientRect::Create(GetExecutingContext(), native_entries[i].intersectionRect)
             : nullptr;
     auto* entry = MakeGarbageCollected<IntersectionObserverEntry>(GetExecutingContext(),
-                                                                  native_entries[i].is_intersecting == 1,
+                                                                  is_intersecting,
+                                                                  is_visible,
                                                                   native_entries[i].intersectionRatio,
                                                                   target,
                                                                   bounding_client_rect,
@@ -218,6 +240,8 @@ NativeValue IntersectionObserver::HandleCallFromDartSide(const AtomicString& met
     assert(function_ != nullptr);
     JSValue js_array = JS_NewArray(ctx());
     for (int i = 0; i < length; i++) {
+      const bool is_intersecting = native_entry[i].is_intersecting == 1;
+      const bool is_visible = track_visibility_ && is_intersecting;
       auto* target = DynamicTo<Element>(BindingObject::From(native_entry[i].target));
       auto* bounding_client_rect = native_entry[i].boundingClientRect != nullptr
                                      ? BoundingClientRect::Create(GetExecutingContext(), native_entry[i].boundingClientRect)
@@ -229,7 +253,8 @@ NativeValue IntersectionObserver::HandleCallFromDartSide(const AtomicString& met
                                   ? BoundingClientRect::Create(GetExecutingContext(), native_entry[i].intersectionRect)
                                   : nullptr;
       auto* entry = MakeGarbageCollected<IntersectionObserverEntry>(GetExecutingContext(),
-                                                                    native_entry[i].is_intersecting == 1,
+                                                                    is_intersecting,
+                                                                    is_visible,
                                                                     native_entry[i].intersectionRatio,
                                                                     target,
                                                                     bounding_client_rect,

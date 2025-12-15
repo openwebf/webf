@@ -12,10 +12,9 @@ import {Node} from "./node";
 @Dictionary()
 export interface IntersectionObserverInit {
   root?: Node | null;
-  // TODO(pengfei12.guo): Just definition, no implementation.
   rootMargin?: string;
-  threshold?: number[];
-  // scrollMargin?: string;
-  // delay?: number;
-  // trackVisibility?: boolean;
+  threshold?: number | number[];
+  scrollMargin?: string;
+  delay?: number;
+  trackVisibility?: boolean;
 }

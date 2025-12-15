@@ -12,6 +12,7 @@
 #include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/script_wrappable.h"
 
+
 namespace webf {
 
 class BoundingClientRect;
@@ -39,6 +40,7 @@ class IntersectionObserverEntry final : public ScriptWrappable {
   IntersectionObserverEntry() = delete;
   explicit IntersectionObserverEntry(ExecutingContext* context,
                                      bool isIntersecting,
+                                     bool isVisible,
                                      double intersectionRatio,
                                      Element* target,
                                      BoundingClientRect* bounding_client_rect,
@@ -55,9 +57,7 @@ class IntersectionObserverEntry final : public ScriptWrappable {
   // DOMRectReadOnly* boundingClientRect() const;
   // DOMRectReadOnly* rootBounds() const;
   // DOMRectReadOnly* intersectionRect() const;
-  // bool isVisible() const {
-  // return geometry_.IsVisible();
-  //}
+  bool isVisible() const { return is_visible_; }
 
   bool isIntersecting() const { return isIntersecting_; }
 
@@ -72,6 +72,7 @@ class IntersectionObserverEntry final : public ScriptWrappable {
   // IntersectionGeometry geometry_;
   double intersectionRatio_;
   bool isIntersecting_;
+  bool is_visible_;
   int64_t time_;
   Member<BoundingClientRect> bounding_client_rect_;
   Member<BoundingClientRect> root_bounds_;

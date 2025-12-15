@@ -13,7 +13,7 @@ export interface IntersectionObserverEntry {
     readonly rootBounds: BoundingClientRect | null;
     readonly boundingClientRect: BoundingClientRect;
     readonly intersectionRect: BoundingClientRect;
-    // readonly isVisible: boolean;
+    readonly isVisible: boolean;
 
     readonly isIntersecting: boolean;
 
@@ -23,4 +23,3 @@ export interface IntersectionObserverEntry {
 
     new(): void;
 }
-

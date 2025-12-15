@@ -16,10 +16,10 @@ interface IntersectionObserver {
 
   readonly root: Node | null;
   readonly rootMargin: string;
-  //readonly scrollMargin: string;
+  readonly scrollMargin: string;
   readonly thresholds: number[];
-  //readonly delay: number;
-  //readonly trackVisibility: boolean;
+  readonly delay: number;
+  readonly trackVisibility: boolean;
 
   observe(target: Element): void;
   unobserve(target: Element): void;
