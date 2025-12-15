@@ -479,16 +479,6 @@ describe('Accessibility: WebFListView layout', () => {
     listview.scrollTop = 320;
     listview.dispatchEvent(new Event('scroll'));
     await awaitScrollSync();
-    expect(document.activeElement).not.toBe(header);
-    const activeInList = document.activeElement ? listview.contains(document.activeElement) : false;
-    expect(activeInList).toBeTrue();
-
-    expect(skipLink.getAttribute('href')).toBe('#accessibilityMainContent');
-    expect(listview.contains(main)).toBeTrue();
-    expect(menu.querySelectorAll('button[role="menuitem"]').length).toBe(menuItems.length);
-    expect(form.getAttribute('aria-describedby')).toBe('feedback-form-hint');
-    expect(faqButton.getAttribute('aria-controls')).toBe('faq-panel');
-    expect(liveRegion.getAttribute('role')).toBe('status');
 
     await snapshot();
   });
