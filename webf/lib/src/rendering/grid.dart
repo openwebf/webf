@@ -339,9 +339,43 @@ class RenderGridLayout extends RenderLayoutBox {
   ) {
     if (tracks.isEmpty) return const <GridTrackSize>[];
     final List<GridTrackSize> resolved = <GridTrackSize>[];
-    for (final GridTrackSize track in tracks) {
+    final int autoRepeatIndex = tracks.indexWhere((GridTrackSize track) {
+      if (track is! GridRepeat) return false;
+      return track.kind == GridRepeatKind.autoFill || track.kind == GridRepeatKind.autoFit;
+    });
+    int? autoRepeatCount;
+    if (autoRepeatIndex != -1) {
+      int otherTrackCount = 0;
+      double otherSizeSum = 0;
+      for (int i = 0; i < tracks.length; i++) {
+        if (i == autoRepeatIndex) continue;
+        final GridTrackSize track = tracks[i];
+        if (track is GridRepeat) {
+          final int repeatCount = track.kind == GridRepeatKind.count ? math.max(1, track.count ?? 1) : 1;
+          if (track.tracks.isNotEmpty && repeatCount > 0) {
+            otherTrackCount += track.tracks.length * repeatCount;
+            otherSizeSum += _measurePatternMinBreadth(track.tracks, innerAvailable, 0) * repeatCount;
+          }
+          continue;
+        }
+        otherTrackCount += 1;
+        otherSizeSum += _trackMinBreadth(track, innerAvailable);
+      }
+      autoRepeatCount = _repeatCountForAutoRepeatInTrackList(
+        tracks[autoRepeatIndex] as GridRepeat,
+        innerAvailable,
+        gap,
+        otherTrackCount: otherTrackCount,
+        otherSizeSum: otherSizeSum,
+      );
+    }
+
+    for (int i = 0; i < tracks.length; i++) {
+      final GridTrackSize track = tracks[i];
       if (track is GridRepeat) {
-        final int repeatCount = _repeatCountFor(track, innerAvailable, gap);
+        final int repeatCount = (autoRepeatIndex != -1 && i == autoRepeatIndex)
+            ? (autoRepeatCount ?? 1)
+            : _repeatCountFor(track, innerAvailable, gap);
         resolved.addAll(_expandRepeatTracks(track, repeatCount));
       } else {
         resolved.add(track);
@@ -424,6 +458,35 @@ class RenderGridLayout extends RenderLayoutBox {
     final double perPattern = patternBreadth + gap;
     final double available = innerAvailable + gap;
     final int repeatCount = math.max(1, (available / perPattern).floor());
+    return repeatCount.clamp(1, 100);
+  }
+
+  int _repeatCountForAutoRepeatInTrackList(
+    GridRepeat repeat,
+    double? innerAvailable,
+    double gap, {
+    required int otherTrackCount,
+    required double otherSizeSum,
+  }) {
+    if (repeat.kind == GridRepeatKind.count) {
+      return math.max(1, repeat.count ?? 1);
+    }
+    if (innerAvailable == null || !innerAvailable.isFinite) return 1;
+    if (repeat.tracks.isEmpty) return 1;
+
+    final bool hasFlexible = _patternHasFlexibleTracks(repeat.tracks);
+    final double patternSizeSum = hasFlexible
+        ? _measurePatternMinBreadth(repeat.tracks, innerAvailable, 0)
+        : _measurePatternBreadth(repeat.tracks, innerAvailable, 0);
+
+    if (patternSizeSum <= 0) return 1;
+    final int patternTrackCount = repeat.tracks.length;
+    final double perRepeat = patternSizeSum + gap * patternTrackCount;
+    if (perRepeat <= 0) return 1;
+
+    final double base = otherSizeSum + gap * (otherTrackCount - 1);
+    final double availableForRepeat = innerAvailable - base;
+    final int repeatCount = math.max(1, (availableForRepeat / perRepeat).floor());
     return repeatCount.clamp(1, 100);
   }
 
@@ -1296,7 +1359,125 @@ class RenderGridLayout extends RenderLayoutBox {
     final double desiredHeight = layoutContentHeight + verticalPaddingBorder;
     size = constraints.constrain(Size(desiredWidth, desiredHeight));
     final double horizontalFree = math.max(0.0, size.width - horizontalPaddingBorder - usedContentWidth);
-    final double verticalFree = math.max(0.0, size.height - verticalPaddingBorder - usedContentHeight);
+    double verticalFree = math.max(0.0, size.height - verticalPaddingBorder - usedContentHeight);
+    bool relayoutForStretchedRows = false;
+    if (verticalFree > 0 && renderStyle.alignContent == AlignContent.stretch && alignmentRowCount > 0) {
+      final List<int> stretchableRows = <int>[];
+      for (int r = 0; r < alignmentRowCount; r++) {
+        if (r < rowSizes.length && rowSizes[r] > 0) continue;
+        if (r >= implicitRowHeights.length) continue;
+        if (implicitRowHeights[r] <= 0) continue;
+        stretchableRows.add(r);
+      }
+      if (stretchableRows.isNotEmpty) {
+        final double perRow = verticalFree / stretchableRows.length;
+        for (final int r in stretchableRows) {
+          implicitRowHeights[r] += perRow;
+        }
+        usedContentHeight += verticalFree;
+        verticalFree = 0;
+        relayoutForStretchedRows = true;
+      }
+    }
+
+    if (relayoutForStretchedRows) {
+      RenderBox? childForRelayout = firstChild;
+      while (childForRelayout != null) {
+        RenderStyle? childGridStyle;
+        if (childForRelayout is RenderBoxModel) {
+          childGridStyle = childForRelayout.renderStyle;
+        } else if (childForRelayout is RenderEventListener) {
+          final RenderBox? wrapped = childForRelayout.child;
+          if (wrapped is RenderBoxModel) {
+            childGridStyle = wrapped.renderStyle;
+          }
+        }
+
+        final GridAxisAlignment justifySelfAlignment = _resolveJustifySelfAlignment(childGridStyle);
+        final GridAxisAlignment alignSelfAlignment = _resolveAlignSelfAlignment(childGridStyle);
+        final bool childWidthAuto = childGridStyle?.width.isAuto ?? true;
+        final bool childHeightAuto = childGridStyle?.height.isAuto ?? true;
+
+        final GridLayoutParentData pd = childForRelayout.parentData as GridLayoutParentData;
+        final int rowIndex = pd.rowStart;
+        final int colIndex = pd.columnStart;
+        final int rowSpan = math.max(1, pd.rowSpan);
+        final int colSpan = math.max(1, pd.columnSpan);
+
+        double xOffset = xStart;
+        for (int c = 0; c < colIndex; c++) {
+          xOffset += colSizes[c];
+          xOffset += colGap;
+        }
+
+        double cellWidth = 0;
+        for (int c = colIndex; c < math.min(colIndex + colSpan, colSizes.length); c++) {
+          cellWidth += colSizes[c];
+          if (c < colIndex + colSpan - 1) cellWidth += colGap;
+        }
+
+        double resolvedCellHeight = 0;
+        bool hasDefiniteCellHeight = true;
+        for (int r = rowIndex; r < rowIndex + rowSpan; r++) {
+          final double rh = _resolvedRowHeight(rowSizes, implicitRowHeights, r);
+          if (rh <= 0) {
+            hasDefiniteCellHeight = false;
+            break;
+          }
+          resolvedCellHeight += rh;
+        }
+        if (hasDefiniteCellHeight) {
+          resolvedCellHeight += rowGap * math.max(0, rowSpan - 1);
+        }
+        final double cellHeight = hasDefiniteCellHeight ? resolvedCellHeight : double.nan;
+
+        double? explicitItemHeight;
+        if (childGridStyle != null && childGridStyle.height.isNotAuto) {
+          explicitItemHeight = childGridStyle.height.computedValue;
+        }
+
+        final bool stretchWidth =
+            justifySelfAlignment == GridAxisAlignment.stretch && childWidthAuto && cellWidth.isFinite;
+        final bool stretchHeight = alignSelfAlignment == GridAxisAlignment.stretch &&
+            childHeightAuto &&
+            explicitItemHeight == null &&
+            cellHeight.isFinite;
+
+        final double minWidthConstraint = stretchWidth ? cellWidth : 0;
+        final double maxWidthConstraint = cellWidth.isFinite ? cellWidth : (innerMaxWidth ?? double.infinity);
+        final double minHeightConstraint = explicitItemHeight ?? (stretchHeight ? cellHeight : 0);
+        final double maxHeightConstraint =
+            explicitItemHeight ?? (cellHeight.isFinite ? cellHeight : (innerMaxHeight ?? double.infinity));
+
+        final BoxConstraints childConstraints = BoxConstraints(
+          minWidth: minWidthConstraint,
+          maxWidth: maxWidthConstraint,
+          minHeight: minHeightConstraint,
+          maxHeight: maxHeightConstraint,
+        );
+
+        childForRelayout.layout(childConstraints, parentUsesSize: true);
+        final Size childSize = childForRelayout.size;
+
+        double rowTop = paddingTop + borderTop;
+        for (int r = 0; r < rowIndex; r++) {
+          final double rh = _resolvedRowHeight(rowSizes, implicitRowHeights, r);
+          rowTop += rh;
+          rowTop += rowGap;
+        }
+
+        final double horizontalExtra = cellWidth.isFinite ? math.max(0, cellWidth - childSize.width) : 0;
+        final double verticalExtra =
+            cellHeight.isFinite ? math.max(0, cellHeight - childSize.height) : 0;
+        final double horizontalInset = _alignmentOffsetWithinCell(justifySelfAlignment, horizontalExtra);
+        final double verticalInset =
+            cellHeight.isFinite ? _alignmentOffsetWithinCell(alignSelfAlignment, verticalExtra) : 0;
+        pd.offset = Offset(xOffset + horizontalInset, rowTop + verticalInset);
+
+        childForRelayout = pd.nextSibling;
+      }
+    }
+
     final double justifyShift = _resolveJustifyContentShift(
       renderStyle.justifyContent,
       horizontalFree,
