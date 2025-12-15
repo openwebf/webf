@@ -248,6 +248,17 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
         case UICommandType.requestCanvasPaint:
           view.requestCanvasPaint(nativePtr.cast<NativeBindingObject>());
           break;
+        case UICommandType.addIntersectionObserver:
+          view.addIntersectionObserver(
+              nativePtr.cast<NativeBindingObject>(), command.nativePtr2.cast<NativeBindingObject>());
+          break;
+        case UICommandType.removeIntersectionObserver:
+          view.removeIntersectionObserver(
+              nativePtr.cast<NativeBindingObject>(), command.nativePtr2.cast<NativeBindingObject>());
+          break;
+        case UICommandType.disconnectIntersectionObserver:
+          view.disconnectIntersectionObserver(nativePtr.cast<NativeBindingObject>());
+          break;
         default:
           break;
       }

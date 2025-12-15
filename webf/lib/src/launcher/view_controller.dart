@@ -16,6 +16,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:path/path.dart';
+import 'package:webf/src/dom/intersection_observer.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/src/foundation/logger.dart';
 import 'package:flutter/scheduler.dart';
@@ -117,6 +118,9 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     if (disposed && _isFrameBindingAttached) return;
     _isFrameBindingAttached = true;
     flushUICommand(this, window.pointer!);
+    // Deliver pending IntersectionObserver entries to JS side.
+    // Safe to call every frame; it will no-op when there are no entries.
+    deliverIntersectionObserver();
     SchedulerBinding.instance.addPostFrameCallback((_) => flushPendingCommandsPerFrame());
   }
 
@@ -428,6 +432,49 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   void createDocumentFragment(Pointer<NativeBindingObject> nativePtr) {
     document.createDocumentFragment(BindingContext(document.controller.view, _contextId, nativePtr));
+  }
+
+  void addIntersectionObserver(
+      Pointer<NativeBindingObject> observerPointer, Pointer<NativeBindingObject> elementPointer) {
+    assert(hasBindingObject(observerPointer), 'observer: $observerPointer');
+    assert(hasBindingObject(elementPointer), 'element: $elementPointer');
+
+    IntersectionObserver? observer = getBindingObject<IntersectionObserver>(observerPointer);
+    Element? element = getBindingObject<Element>(elementPointer);
+    if (null == observer || null == element) {
+      return;
+    }
+
+    document.addIntersectionObserver(observer, element);
+  }
+
+  void removeIntersectionObserver(
+      Pointer<NativeBindingObject> observerPointer, Pointer<NativeBindingObject> elementPointer) {
+    assert(hasBindingObject(observerPointer), 'observer: $observerPointer');
+    assert(hasBindingObject(elementPointer), 'element: $elementPointer');
+
+    IntersectionObserver? observer = getBindingObject<IntersectionObserver>(observerPointer);
+    Element? element = getBindingObject<Element>(elementPointer);
+    if (null == observer || null == element) {
+      return;
+    }
+
+    document.removeIntersectionObserver(observer, element);
+  }
+
+  void disconnectIntersectionObserver(Pointer<NativeBindingObject> observerPointer) {
+    assert(hasBindingObject(observerPointer), 'observer: $observerPointer');
+
+    IntersectionObserver? observer = getBindingObject<IntersectionObserver>(observerPointer);
+    if (null == observer) {
+      return;
+    }
+
+    document.disconnectIntersectionObserver(observer);
+  }
+
+  void deliverIntersectionObserver() {
+    document.deliverIntersectionObserver();
   }
 
   void addEvent(Pointer<NativeBindingObject> nativePtr, String eventType,

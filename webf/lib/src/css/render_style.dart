@@ -990,6 +990,28 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     });
   }
 
+  @pragma('vm:prefer-inline')
+  void addIntersectionChangeListener(IntersectionChangeCallback entryCallback, List<double> thresholds) {
+    everyWidgetRenderBox((_, renderBoxModel) {
+      renderBoxModel.addIntersectionChangeListener(entryCallback, thresholds);
+      if (renderBoxModel.attached) {
+        renderBoxModel.markNeedsCompositingBitsUpdate();
+        renderBoxModel.markNeedsPaint();
+      }
+      return true;
+    });
+  }
+
+  void removeIntersectionChangeListener(IntersectionChangeCallback entryCallback) {
+    everyWidgetRenderBox((_, renderBoxModel) {
+      renderBoxModel.removeIntersectionChangeListener(entryCallback);
+      if (renderBoxModel.attached) {
+        renderBoxModel.markNeedsCompositingBitsUpdate();
+      }
+      return true;
+    });
+  }
+
   // Sizing may affect parent size, mark parent as needsLayout in case
   // renderBoxModel has tight constraints which will prevent parent from marking.
   @pragma('vm:prefer-inline')

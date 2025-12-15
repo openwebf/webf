@@ -46,6 +46,10 @@ UICommandKind GetKindFromUICommand(UICommand command) {
       return UICommandKind::kOperation;
     case UICommand::kRequestAnimationFrame:
       return UICommandKind::kOperation;
+    case UICommand::kAddIntersectionObserver:
+    case UICommand::kRemoveIntersectionObserver:
+    case UICommand::kDisconnectIntersectionObserver:
+      return UICommandKind::kIntersectionObserver;
     default:
       return UICommandKind::kUknownCommand;
   }

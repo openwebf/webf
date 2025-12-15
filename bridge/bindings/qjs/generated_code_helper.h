@@ -13,5 +13,6 @@
 #include "bindings/qjs/dictionary_base.h"
 #include "bindings/qjs/qjs_interface_bridge.h"
 #include "script_value.h"
+#include "qjs_union_double_sequencedouble.h"
 
 #endif

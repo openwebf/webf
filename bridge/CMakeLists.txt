@@ -45,14 +45,14 @@ if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
 #  set(CMAKE_LINKER lld)
 #  set(CMAKE_AR llvm-ar)
 #  set(CMAKE_RANLIB llvm-ranlib)
-  
+
   # Set C++20 standard for MSYS2 with libc++
   set(CMAKE_CXX_STANDARD 20)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
   set(CMAKE_CXX_EXTENSIONS OFF)
   add_compile_options(-stdlib=libc++)
   add_link_options(-stdlib=libc++)
-  
+
   # Define math constants that are not in standard C++
   add_compile_definitions(_USE_MATH_DEFINES)
 
@@ -108,14 +108,14 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -static-libgcc")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -stdlib=libc++ -static-libgcc")
-  
+
   # Ensure we're using clang/clang++ for libc++ support
   if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     message(WARNING "Using libc++ requires Clang compiler. Current compiler: ${CMAKE_CXX_COMPILER_ID}")
   endif()
-  
+
   message(STATUS "Using static libc++ for Linux build")
-  
+
   # STATIC_QUICKJS is set via build script (-DSTATIC_QUICKJS=true)
 endif ()
 

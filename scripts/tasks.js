@@ -168,7 +168,7 @@ task('build-darwin-webf-lib', done => {
     
     console.log(chalk.blue(`Building for architecture(s): ${architectures.join(', ')}`));
   }
-  const cpuCount = os.cpus().length;
+  const cpuCount = Math.max(1, (os.cpus() || []).length || 1);
   const webfTargets = ['webf', 'qjsc', 'webf_unit_test'];
   
   // Build for each architecture

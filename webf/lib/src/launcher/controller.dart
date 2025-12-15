@@ -46,6 +46,7 @@ import 'package:webf/src/launcher/network_options.dart';
 import 'loading_state.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/src/foundation/logger.dart';
+import 'package:webf/src/dom/intersection_observer.dart';
 
 // Error handler when load bundle failed.
 typedef LoadErrorHandler = void Function(FlutterError error, StackTrace stack);

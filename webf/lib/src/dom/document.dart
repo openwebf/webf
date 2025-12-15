@@ -25,6 +25,8 @@ import 'package:webf/launcher.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/css/query_selector.dart' as query_selector;
 import 'package:webf/src/dom/element_registry.dart' as element_registry;
+import 'package:webf/src/dom/intersection_observer.dart';
+
 
 // Removed _InactiveRenderObjects helper (unused).
 
@@ -47,6 +49,8 @@ class Document extends ContainerNode {
   final List<AsyncCallback> pendingPreloadingScriptCallbacks = [];
 
   final Set<int> _styleDirtyElements = {};
+
+  final Set<IntersectionObserver> _intersectionObserverList = {};
 
   void markElementStyleDirty(Element element, {String? reason}) {
     _styleDirtyElements.add(element.pointer!.address);
@@ -738,6 +742,7 @@ class Document extends ContainerNode {
     _documentElement = null;
     // Dispose animation timeline to stop ticker and prevent memory leaks
     animationTimeline.dispose();
+    _intersectionObserverList.clear();
     super.dispose();
   }
 
@@ -746,4 +751,48 @@ class Document extends ContainerNode {
 
   @override
   bool get isRendererAttachedToSegmentTree => viewport?.parent != null;
+
+
+  void addIntersectionObserver(IntersectionObserver observer, Element element) {
+    if (enableWebFCommandLog) {
+      domLogger.fine('[IntersectionObserver] document add observer=${observer.pointer} target=${element.pointer}');
+    }
+    observer.observe(element);
+    _intersectionObserverList.add(observer);
+  }
+
+  void removeIntersectionObserver(IntersectionObserver observer, Element element) {
+    if (enableWebFCommandLog) {
+      domLogger.fine('[IntersectionObserver] document remove observer=${observer.pointer} target=${element.pointer}');
+    }
+    observer.unobserve(element);
+    if (!observer.HasObservations()) {
+      _intersectionObserverList.remove(observer);
+    }
+  }
+
+  void disconnectIntersectionObserver(IntersectionObserver observer) {
+    if (enableWebFCommandLog) {
+      domLogger.fine('[IntersectionObserver] document disconnect observer=${observer.pointer}');
+    }
+    observer.disconnect();
+    _intersectionObserverList.remove(observer);
+  }
+
+  void deliverIntersectionObserver() {
+    if (_intersectionObserverList.isEmpty) {
+      return;
+    }
+
+    int delivered = 0;
+    for (final IntersectionObserver observer in _intersectionObserverList) {
+      if (!observer.hasPendingRecords) continue;
+      delivered++;
+      observer.deliver(controller);
+    }
+
+    if (enableWebFCommandLog && delivered > 0) {
+      domLogger.fine('[IntersectionObserver] deliver records observers=$delivered');
+    }
+  }
 }

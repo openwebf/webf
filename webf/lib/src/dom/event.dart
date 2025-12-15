@@ -117,13 +117,15 @@ mixin ElementEventMixin on ElementBase {
     dispatchEvent(DisappearEvent());
   }
 
-  void handleIntersectionChange(IntersectionObserverEntry entry) {
-    dispatchEvent(IntersectionChangeEvent(entry.intersectionRatio));
-    if (entry.intersectionRatio > 0) {
+  bool handleIntersectionChange(IntersectionObserverEntry entry) {
+    final double intersectionRatio = entry.intersectionRatio;
+    dispatchEvent(IntersectionChangeEvent(intersectionRatio));
+    if (intersectionRatio > 0) {
       handleAppear();
     } else {
       handleDisappear();
     }
+    return false;
   }
 
   void handleResizeChange(ResizeObserverEntry entry) {

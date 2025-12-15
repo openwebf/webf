@@ -25,6 +25,9 @@ import 'package:webf/widget.dart';
 import 'package:webf/src/css/query_selector.dart' as query_selector;
 import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/src/foundation/logger.dart';
+import 'intersection_observer.dart';
+import 'intersection_observer_entry.dart';
+
 
 final RegExp classNameSplitRegExp = RegExp(r'\s+');
 const String _oneSpace = ' ';
@@ -96,6 +99,9 @@ abstract class Element extends ContainerNode
         ElementAdapterMixin {
   // Default to unknown, assign by [createElement], used by inspector.
   String tagName = unknown;
+
+  final Set<IntersectionObserver> _intersectionObserverList = {};
+  List<double> _thresholds = [0.0];
 
   String? _id;
 
@@ -509,6 +515,9 @@ abstract class Element extends ContainerNode
 
     // Ensure that the event responder is bound.
     renderStyle.ensureEventResponderBound();
+
+    // Ensure IntersectionObserver when renderBoxModel change.
+    ensureAddIntersectionObserver();
 
     return nextRenderBoxModel;
   }
@@ -1145,6 +1154,7 @@ abstract class Element extends ContainerNode
     _beforeElement = null;
     _afterElement?.dispose();
     _afterElement = null;
+    renderStyle.removeIntersectionChangeListener(_handleIntersectionObserver);
     super.dispose();
   }
 
@@ -2470,6 +2480,64 @@ abstract class Element extends ContainerNode
     // Also, permit access even before a render box is attached so computed
     // properties like backgroundPosition can be observed during animation.
     return renderStyle as CSSRenderStyle;
+  }
+
+
+  bool _handleIntersectionObserver(IntersectionObserverEntry entry) {
+    if (enableWebFCommandLog) {
+      domLogger.fine(
+          '[IntersectionObserver] notify target=$pointer tag=$tagName isIntersecting=${entry.isIntersecting} ratio=${entry.intersectionRatio} observers=${_intersectionObserverList.length}');
+    }
+    // If there are multiple IntersectionObservers, they cannot be distributed accurately
+    final Rect intersectionRect = entry.boundingClientRect.overlaps(entry.rootBounds)
+        ? entry.boundingClientRect.intersect(entry.rootBounds)
+        : Rect.zero;
+    for (var observer in _intersectionObserverList) {
+      observer.addEntry(DartIntersectionObserverEntry(
+        entry.isIntersecting,
+        entry.intersectionRatio,
+        this,
+        entry.boundingClientRect,
+        entry.rootBounds,
+        intersectionRect,
+      ));
+    }
+
+    return _intersectionObserverList.isNotEmpty;
+  }
+
+  bool addIntersectionObserver(IntersectionObserver observer, List<double> thresholds) {
+    if (_intersectionObserverList.contains(observer)) {
+      return false;
+    }
+    if (enableWebFCommandLog) {
+      domLogger.fine('[IntersectionObserver] attach target=$pointer observer=${observer.pointer} thresholds=$thresholds');
+    }
+    renderStyle.addIntersectionChangeListener(_handleIntersectionObserver, thresholds);
+    _intersectionObserverList.add(observer);
+    _thresholds = thresholds;
+    return true;
+  }
+
+  void removeIntersectionObserver(IntersectionObserver observer) {
+    if (enableWebFCommandLog) {
+      domLogger.fine('[IntersectionObserver] detach target=$pointer observer=${observer.pointer}');
+    }
+    _intersectionObserverList.remove(observer);
+
+    if (_intersectionObserverList.isEmpty) {
+      renderStyle.removeIntersectionChangeListener(_handleIntersectionObserver);
+    }
+  }
+
+  void ensureAddIntersectionObserver() {
+    if (_intersectionObserverList.isEmpty) {
+      return;
+    }
+    if (enableWebFCommandLog) {
+      domLogger.fine('[IntersectionObserver] ensureAttach target=$pointer observers=${_intersectionObserverList.length}');
+    }
+    renderStyle.addIntersectionChangeListener(_handleIntersectionObserver, _thresholds);
   }
 }
 

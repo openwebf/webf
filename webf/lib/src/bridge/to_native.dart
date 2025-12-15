@@ -787,6 +787,10 @@ enum UICommandType {
   requestCanvasPaint,
   requestAnimationFrame,
   finishRecordingCommand,
+  // IntersectionObserver
+  addIntersectionObserver,
+  removeIntersectionObserver,
+  disconnectIntersectionObserver,
 }
 
 final class UICommandItem extends Struct {

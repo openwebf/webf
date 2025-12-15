@@ -33,6 +33,7 @@
 #include "core/html/canvas/canvas_rendering_context_2d.h"
 #include "core/dom/static_node_list.h"
 #include "core/html/html_all_collection.h"
+#include "core/dom/intersection_observer_entry.h"
 #include "defined_properties.h"
 
 namespace webf {
