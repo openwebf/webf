@@ -8,6 +8,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/semantics.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
@@ -31,9 +32,6 @@ class WebFAccessibility {
       return;
     }
 
-    // Set a text direction so labeled nodes satisfy Semantics assertions.
-    config.textDirection = renderObject.renderStyle.direction;
-
     // CSS-driven visibility → hide from a11y tree
     // - display:none
     // - visibility:hidden
@@ -55,6 +53,19 @@ class WebFAccessibility {
     // Determine explicit role and implicit role by tag/attributes.
     final String? explicitRole = element.getAttribute('role')?.toLowerCase();
     final _Role role = _inferRole(element, explicitRole);
+    final bool focusable = _isFocusable(element);
+
+    // Layout-only containers (e.g., vanilla div/section without labels or focus)
+    // should defer semantics to their children so VoiceOver/NVDA skip the node.
+    if (_isLayoutOnlyContainer(renderObject, element, role, focusable: focusable)) {
+      config.isSemanticBoundary = false;
+      config.explicitChildNodes = false;
+      return;
+    }
+
+    void ensureTextDirection() {
+      config.textDirection ??= renderObject.renderStyle.direction;
+    }
 
     final bool suppressSelfLabel = _shouldSuppressAutoLabel(element, role);
 
@@ -62,10 +73,12 @@ class WebFAccessibility {
     if (!suppressSelfLabel) {
       final String? name = computeAccessibleName(element)?.trim();
       if (name != null && name.isNotEmpty) {
+        ensureTextDirection();
         config.label = name;
       }
       final String? hint = computeAccessibleDescription(element)?.trim();
       if (hint != null && hint.isNotEmpty) {
+        ensureTextDirection();
         config.hint = hint;
       }
     }
@@ -83,6 +96,7 @@ class WebFAccessibility {
         if (!disabled) config.onTap = () => _dispatchClick(element);
         final String? ariaPressed = element.getAttribute('aria-pressed');
         if (ariaPressed != null) {
+          ensureTextDirection();
           final String v = ariaPressed.trim().toLowerCase();
           bool? toggled;
           switch (v) {
@@ -118,6 +132,7 @@ class WebFAccessibility {
         // aria-current indicates the current item within a set (e.g., nav)
         final String? ariaCurrent = element.getAttribute('aria-current');
         if (ariaCurrent != null && ariaCurrent.trim().toLowerCase() != 'false') {
+          ensureTextDirection();
           final String v = ariaCurrent.trim().toLowerCase();
           config.value = (v == 'page') ? 'Current page' : 'Current';
         }
@@ -128,10 +143,17 @@ class WebFAccessibility {
           final v = ariaSel.trim().toLowerCase();
           if (v == 'true' || v == 'false') {
             config.isSelected = (v == 'true');
+            ensureTextDirection();
             config.value = config.isSelected ? 'Selected' : 'Not selected';
           }
         }
         config.isButton = true;
+        break;
+      case _Role.menuitem:
+        config.isButton = true;
+        if (!disabled) config.onTap = () => _dispatchClick(element);
+        break;
+      case _Role.menubar:
         break;
       case _Role.image:
         config.isImage = true;
@@ -160,11 +182,18 @@ class WebFAccessibility {
       case _Role.header4:
       case _Role.header5:
       case _Role.header6:
+        config.isHeader = true;
+        final int level = _headingLevelForRole(role);
+        if (level > 0) {
+          // headingLevel is available on newer Flutter SDKs; guard with dynamic for compatibility.
+          try {
+            (config as dynamic).headingLevel = level;
+          } catch (_) {}
+        }
       case _Role.none:
         break;
     }
 
-    final bool focusable = _isFocusable(element);
     if (focusable) {
       config.isFocusable = true;
     }
@@ -180,10 +209,29 @@ class WebFAccessibility {
     } else if (!focusable && role == _Role.none && (config.label != null && config.label!.isNotEmpty)) {
       boundary = true;
       explicitChildNodes = true;
+    } else if (role == _Role.menubar) {
+      boundary = true;
+      explicitChildNodes = true;
     }
     config.isSemanticBoundary = boundary;
     config.explicitChildNodes = explicitChildNodes;
     config.isSemanticBoundary = boundary;
+
+    // Provide a stable semantic index for scrollable containers and ordered traversal.
+    // This mirrors Flutter's RenderIndexedSemantics usage in scroll views.
+    final Object? parentData = renderObject.parentData;
+    if ((config.hasBeenAnnotated || config.isSemanticBoundary) &&
+        parentData is RenderLayoutParentData &&
+        parentData.semanticsIndex != null) {
+      config.indexInParent = parentData.semanticsIndex;
+    }
+
+    if (kDebugMode && DebugFlags.debugLogSemanticsEnabled) {
+      // Attach focus logs to every semantics node without overriding custom handlers.
+      config.onDidGainAccessibilityFocus ??= () => _logSemanticsEvent(element, role, 'focus gained');
+      config.onDidLoseAccessibilityFocus ??= () => _logSemanticsEvent(element, role, 'focus lost');
+      config.addTagForChildren(_webfSemanticsLogTag);
+    }
     if (kDebugMode && DebugFlags.debugLogSemanticsEnabled) {
       _debugDumpSemantics(element, role, config, focusable: focusable);
     }
@@ -338,6 +386,10 @@ class WebFAccessibility {
         return _Role.textbox;
       case 'heading':
         return _Role.header1;
+      case 'menubar':
+        return _Role.menubar;
+      case 'menuitem':
+        return _Role.menuitem;
     }
 
     final String tag = element.tagName.toUpperCase();
@@ -389,6 +441,8 @@ class WebFAccessibility {
       case _Role.radio:
       case _Role.textbox:
       case _Role.tab:
+      case _Role.menuitem:
+      case _Role.menubar:
         return true;
       default:
         return false;
@@ -400,17 +454,65 @@ class WebFAccessibility {
     return v == 'true' || v == '1' || v == 'yes';
   }
 
+  static bool _isLayoutOnlyContainer(RenderBoxModel renderObject, dom.Element element, _Role role,
+      {required bool focusable}) {
+    if (renderObject is! RenderFlexLayout && renderObject is! RenderFlowLayout) return false;
+    if (role != _Role.none) return false;
+    final String tag = element.tagName.toUpperCase();
+    if (!_layoutOnlyContainerTags.contains(tag)) return false;
+
+    // If the container is focusable (e.g. tabindex), keep it in the semantics
+    // tree unless it is acting as an overflow scroll container. This matches
+    // common browser behavior where focusable wrappers can be interacted with,
+    // while scroll containers are typically traversed via their contents.
+    final CSSOverflowType overflowX = renderObject.renderStyle.effectiveOverflowX;
+    final CSSOverflowType overflowY = renderObject.renderStyle.effectiveOverflowY;
+    final bool isScrollableOverflow = (overflowX == CSSOverflowType.scroll || overflowX == CSSOverflowType.auto) ||
+        (overflowY == CSSOverflowType.scroll || overflowY == CSSOverflowType.auto);
+    if (focusable && !isScrollableOverflow) return false;
+
+    // If the container has meaningful direct text, it must remain in the
+    // semantics tree (as static text) because WebF text nodes themselves do not
+    // currently contribute standalone semantics.
+    if (_hasNonWhitespaceDirectText(element)) return false;
+    return true;
+  }
+
   static bool _shouldSuppressAutoLabel(dom.Element element, _Role role) {
     if (role != _Role.none) return false;
+    if (element.hasAttribute('aria-label') || element.hasAttribute('aria-labelledby')) return false;
     final String tag = element.tagName.toUpperCase();
     switch (tag) {
       case html.LI:
       case html.DT:
       case html.DD:
         return _hasFocusableDescendant(element);
+      // Structural containers should defer to their children unless explicitly labeled.
+      case html.DIV:
+      case html.HEADER:
+      case html.MAIN:
+      case html.NAV:
+      case html.SECTION:
+      case html.ARTICLE:
+      case html.ASIDE:
+      case html.FOOTER:
+        // Only suppress auto-label when the container is a pure wrapper. If it
+        // has direct text, expose it as static text so VoiceOver can read it.
+        return !_hasNonWhitespaceDirectText(element);
       default:
         return false;
     }
+  }
+
+  static bool _hasNonWhitespaceDirectText(dom.Element element) {
+    dom.Node? child = element.firstChild;
+    while (child != null) {
+      if (child is dom.TextNode) {
+        if (child.data.trim().isNotEmpty) return true;
+      }
+      child = child.nextSibling;
+    }
+    return false;
   }
 
   static bool _hasFocusableDescendant(dom.Element element) {
@@ -523,6 +625,19 @@ const Set<String> _nameFromContentRoles = <String>{
   'listitem',
   'term',
   'definition',
+  'menubar',
+  'menuitem',
+};
+
+const Set<String> _layoutOnlyContainerTags = <String>{
+  html.DIV,
+  html.SECTION,
+  html.ARTICLE,
+  html.ASIDE,
+  html.NAV,
+  html.MAIN,
+  html.HEADER,
+  html.FOOTER,
 };
 
 enum _Role {
@@ -534,6 +649,8 @@ enum _Role {
   radio,
   textbox,
   tab,
+  menuitem,
+  menubar,
   header1,
   header2,
   header3,
@@ -552,9 +669,25 @@ void _debugDumpSemantics(dom.Element element, _Role role, SemanticsConfiguration
     'enabled=${config.isEnabled}',
     'hidden=${config.isHidden}',
   ].join(', ');
-  debugPrint('[webf][a11y] semantics ${_formatElement(element)} => $description');
-  debugDumpSemanticsTree(DebugSemanticsDumpOrder.traversalOrder);
+  // debugPrint('[webf][a11y] semantics ${_formatElement(element)} => $description');
+  // debugDumpSemanticsTree(DebugSemanticsDumpOrder.traversalOrder);
 }
+
+void _logSemanticsEvent(dom.Element element, _Role role, String event) {
+  String geom = '';
+  try {
+    final RenderBoxModel? render = element.renderStyle.attachedRenderBoxModel;
+    if (render != null && render.hasSize) {
+      final Rect local = render.semanticBounds;
+      final Rect global = MatrixUtils.transformRect(render.getTransformTo(null), local);
+      geom =
+          ' local=${_fmtRect(local)} global=${_fmtRect(global)} scroll=(${render.scrollLeft.toStringAsFixed(1)},${render.scrollTop.toStringAsFixed(1)})';
+    }
+  } catch (_) {}
+  debugPrint('[webf][a11y] $event ${_formatElement(element)} role=$role$geom');
+}
+
+const SemanticsTag _webfSemanticsLogTag = SemanticsTag('webf-a11y-log-focus');
 
 String _formatElement(dom.Element element) {
   final buffer = StringBuffer('<${element.tagName.toLowerCase()}');
@@ -596,4 +729,9 @@ int _headingLevelForRole(_Role role) {
     default:
       return 0;
   }
+}
+
+String _fmtRect(Rect rect) {
+  return '(${rect.left.toStringAsFixed(1)},${rect.top.toStringAsFixed(1)})'
+      '→(${rect.right.toStringAsFixed(1)},${rect.bottom.toStringAsFixed(1)})';
 }

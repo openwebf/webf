@@ -8,6 +8,7 @@
  */
 
 import 'dart:math' as math;
+import 'package:flutter/animation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart';
@@ -18,6 +19,8 @@ import 'package:webf/gesture.dart';
 typedef ScrollListener = void Function(double scrollOffset, AxisDirection axisDirection);
 
 mixin RenderOverflowMixin on RenderBoxModelBase {
+  static const double _kSemanticsScrollFactor = 0.8;
+
   ScrollListener? scrollListener;
   void Function(PointerEvent)? scrollablePointerListener;
 
@@ -114,6 +117,16 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       }
       final AxisDirection dir = (renderStyle.direction == TextDirection.rtl) ? AxisDirection.left : AxisDirection.right;
       scrollListener!(scrollOffsetX!.pixels, dir);
+      if (DebugFlags.debugLogSemanticsEnabled || DebugFlags.debugLogScrollableEnabled) {
+        debugPrint('[webf][a11y][scroll] ${renderStyle.target} '
+            'scrollX=${scrollOffsetX!.pixels.toStringAsFixed(2)} '
+            'viewport=${_viewportSize?.width.toStringAsFixed(1) ?? '?'} '
+            'content=${_scrollableSize?.width.toStringAsFixed(1) ?? '?'} '
+            '→ markNeedsSemanticsUpdate');
+      }
+      // Keep semantics tree in sync with new scroll offset so accessibility
+      // focus/geometry follows the visible content after programmatic scrolls.
+      markNeedsSemanticsUpdate();
       markNeedsPaint();
     }
   }
@@ -127,6 +140,14 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
             '${scrollOffsetY!.pixels.toStringAsFixed(2)} max=${maxY.toStringAsFixed(2)}');
       }
       scrollListener!(scrollOffsetY!.pixels, AxisDirection.down);
+      if (DebugFlags.debugLogSemanticsEnabled || DebugFlags.debugLogScrollableEnabled) {
+        debugPrint('[webf][a11y][scroll] ${renderStyle.target} '
+            'scrollY=${scrollOffsetY!.pixels.toStringAsFixed(2)} '
+            'viewport=${_viewportSize?.height.toStringAsFixed(1) ?? '?'} '
+            'content=${_scrollableSize?.height.toStringAsFixed(1) ?? '?'} '
+            '→ markNeedsSemanticsUpdate');
+      }
+      markNeedsSemanticsUpdate();
       markNeedsPaint();
     }
   }
@@ -289,6 +310,280 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     final Offset paintOffset = Offset(_paintOffsetX, _paintOffsetY);
     if (_shouldClipAtPaintOffset(paintOffset, size)) return Offset.zero & size;
     return null;
+  }
+
+  @override
+  Rect? describeSemanticsClip(RenderObject child) {
+    // By default, Flutter derives the semantics clip from the paint clip. For
+    // scrolling containers this causes offscreen descendants to get their
+    // semantics rect clipped to empty, making them "invisible" and dropped
+    // from the semantics tree. That breaks iOS VoiceOver focus geometry updates
+    // when the focused node scrolls off-screen.
+    //
+    // Mirror RenderViewport.describeSemanticsClip by expanding the semantics
+    // clip beyond the viewport so offscreen nodes remain in the tree and are
+    // instead marked hidden via the paint clip.
+    final CSSOverflowType overflowX = renderStyle.effectiveOverflowX;
+    final CSSOverflowType overflowY = renderStyle.effectiveOverflowY;
+
+    final Size? viewport = _viewportSize;
+    final Size? content = _scrollableSize;
+
+    final bool xScrollable = (overflowX == CSSOverflowType.scroll || overflowX == CSSOverflowType.auto) &&
+        scrollOffsetX != null &&
+        viewport != null &&
+        content != null;
+    final bool yScrollable = (overflowY == CSSOverflowType.scroll || overflowY == CSSOverflowType.auto) &&
+        scrollOffsetY != null &&
+        viewport != null &&
+        content != null;
+
+    if (!xScrollable && !yScrollable) {
+      return super.describeSemanticsClip(child);
+    }
+
+    final double maxX = xScrollable ? math.max(0.0, content!.width - viewport!.width) : 0.0;
+    final double maxY = yScrollable ? math.max(0.0, content!.height - viewport!.height) : 0.0;
+
+    final Rect bounds = semanticBounds;
+    if (maxX == 0.0 && maxY == 0.0) {
+      return bounds;
+    }
+
+    // Match Flutter's _RenderSingleChildViewport.describeSemanticsClip:
+    // expand the semantics clip by the already scrolled distance and the
+    // remaining scrollable distance, so offscreen descendants remain in the
+    // semantics tree (and become hidden via paint clip instead of dropped).
+    double left = bounds.left;
+    double right = bounds.right;
+    double top = bounds.top;
+    double bottom = bounds.bottom;
+
+    if (xScrollable) {
+      final double posX = scrollLeft.clamp(0.0, maxX).toDouble();
+      final double remainingX = maxX - posX;
+      if (renderStyle.direction == TextDirection.rtl) {
+        // Equivalent to AxisDirection.left.
+        left -= remainingX;
+        right += posX;
+      } else {
+        // AxisDirection.right.
+        left -= posX;
+        right += remainingX;
+      }
+    }
+
+    if (yScrollable) {
+      final double posY = scrollTop.clamp(0.0, maxY).toDouble();
+      final double remainingY = maxY - posY;
+      // AxisDirection.down.
+      top -= posY;
+      bottom += remainingY;
+    }
+
+    return Rect.fromLTRB(left, top, right, bottom);
+  }
+
+  void describeOverflowSemantics(SemanticsConfiguration config) {
+    final CSSOverflowType overflowX = renderStyle.effectiveOverflowX;
+    final CSSOverflowType overflowY = renderStyle.effectiveOverflowY;
+
+    final bool xScrollable =
+        (overflowX == CSSOverflowType.scroll || overflowX == CSSOverflowType.auto) && scrollOffsetX != null;
+    final bool yScrollable =
+        (overflowY == CSSOverflowType.scroll || overflowY == CSSOverflowType.auto) && scrollOffsetY != null;
+
+    if (!xScrollable && !yScrollable) {
+      return;
+    }
+
+    // Mirror Flutter's _RenderScrollSemantics: scrolling regions are semantic
+    // boundaries with explicit child nodes, and expose scroll metrics.
+    config.isSemanticBoundary = true;
+    config.explicitChildNodes = true;
+    config.hasImplicitScrolling = true;
+
+    final Size? viewport = _viewportSize;
+    final Size? content = _scrollableSize;
+    if (viewport == null || content == null) {
+      return;
+    }
+
+    final double maxX = math.max(0.0, content.width - viewport.width);
+    final double maxY = math.max(0.0, content.height - viewport.height);
+
+    // Expose primary-axis scroll metrics (prefer vertical when available).
+    if (yScrollable) {
+      config.scrollExtentMin = 0.0;
+      config.scrollExtentMax = maxY;
+      config.scrollPosition = scrollTop.clamp(0.0, maxY).toDouble();
+    } else if (xScrollable) {
+      config.scrollExtentMin = 0.0;
+      config.scrollExtentMax = maxX;
+      config.scrollPosition = scrollLeft.clamp(0.0, maxX).toDouble();
+    }
+
+    // Best-effort child count: used by some platforms to provide "x of y".
+    try {
+      config.scrollChildCount = renderStyle.target.childNodes.length;
+    } catch (_) {}
+
+    final bool canScroll = (yScrollable && maxY > 0.0) || (xScrollable && maxX > 0.0);
+    if (!canScroll) {
+      return;
+    }
+
+    // Semantic scroll-to-offset for implicit scrolling.
+    config.onScrollToOffset = (Offset targetOffset) {
+      if (yScrollable && scrollOffsetY != null) {
+        final double targetY = targetOffset.dy.clamp(0.0, maxY).toDouble();
+        scrollOffsetY!.jumpTo(targetY);
+      }
+      if (xScrollable && scrollOffsetX != null) {
+        final double targetX = targetOffset.dx.clamp(0.0, maxX).toDouble();
+        scrollOffsetX!.jumpTo(targetX);
+      }
+    };
+
+    // Semantic scroll actions (RenderSemanticsGestureHandler-like behavior).
+    if (yScrollable && scrollOffsetY != null && maxY > 0.0 && hasSize) {
+      config.onScrollUp = () {
+        final double delta = size.height * -_kSemanticsScrollFactor;
+        final double next = (scrollTop + delta).clamp(0.0, maxY).toDouble();
+        scrollOffsetY!.jumpTo(next);
+      };
+      config.onScrollDown = () {
+        final double delta = size.height * _kSemanticsScrollFactor;
+        final double next = (scrollTop + delta).clamp(0.0, maxY).toDouble();
+        scrollOffsetY!.jumpTo(next);
+      };
+    }
+
+    if (xScrollable && scrollOffsetX != null && maxX > 0.0 && hasSize) {
+      config.onScrollLeft = () {
+        final double delta = size.width * -_kSemanticsScrollFactor;
+        final double next = (scrollLeft + delta).clamp(0.0, maxX).toDouble();
+        scrollOffsetX!.jumpTo(next);
+      };
+      config.onScrollRight = () {
+        final double delta = size.width * _kSemanticsScrollFactor;
+        final double next = (scrollLeft + delta).clamp(0.0, maxX).toDouble();
+        scrollOffsetX!.jumpTo(next);
+      };
+    }
+  }
+
+  @override
+  void assembleSemanticsNode(SemanticsNode node, SemanticsConfiguration config, Iterable<SemanticsNode> children) {
+    final CSSOverflowType overflowX = renderStyle.effectiveOverflowX;
+    final CSSOverflowType overflowY = renderStyle.effectiveOverflowY;
+
+    final bool xScrollable =
+        (overflowX == CSSOverflowType.scroll || overflowX == CSSOverflowType.auto) && scrollOffsetX != null;
+    final bool yScrollable =
+        (overflowY == CSSOverflowType.scroll || overflowY == CSSOverflowType.auto) && scrollOffsetY != null;
+
+    if (!xScrollable && !yScrollable) {
+      super.assembleSemanticsNode(node, config, children);
+      return;
+    }
+
+    final List<SemanticsNode> childList = children is List<SemanticsNode> ? children : children.toList(growable: false);
+
+    int? firstVisibleIndex;
+    for (final SemanticsNode child in childList) {
+      if (!child.flagsCollection.isHidden) {
+        firstVisibleIndex ??= child.indexInParent;
+      }
+    }
+
+    config.scrollIndex = firstVisibleIndex;
+    config.scrollChildCount = childList.length;
+    node.updateWith(config: config, childrenInInversePaintOrder: childList);
+  }
+
+  @override
+  void showOnScreen({
+    RenderObject? descendant,
+    Rect? rect,
+    Duration duration = Duration.zero,
+    Curve curve = Curves.ease,
+  }) {
+    final CSSOverflowType overflowX = renderStyle.effectiveOverflowX;
+    final CSSOverflowType overflowY = renderStyle.effectiveOverflowY;
+
+    final bool xScrollable =
+        (overflowX == CSSOverflowType.scroll || overflowX == CSSOverflowType.auto) && scrollOffsetX != null;
+    final bool yScrollable =
+        (overflowY == CSSOverflowType.scroll || overflowY == CSSOverflowType.auto) && scrollOffsetY != null;
+
+    if ((!xScrollable && !yScrollable) || !hasSize || descendant == null || descendant is! RenderBox) {
+      return super.showOnScreen(descendant: descendant, rect: rect, duration: duration, curve: curve);
+    }
+
+    final Size? viewport = _viewportSize;
+    final Size? content = _scrollableSize;
+    if (viewport == null || content == null) {
+      return super.showOnScreen(descendant: descendant, rect: rect, duration: duration, curve: curve);
+    }
+
+    final Rect targetRect = rect ?? descendant.paintBounds;
+    final Matrix4 transform = descendant.getTransformTo(this as RenderObject);
+    final Rect bounds = MatrixUtils.transformRect(transform, targetRect);
+
+    if (yScrollable && scrollOffsetY != null) {
+      final double maxY = math.max(0.0, content.height - viewport.height);
+      double targetScrollTop = scrollTop;
+      if (bounds.top < 0.0) {
+        targetScrollTop += bounds.top;
+      } else if (bounds.bottom > size.height) {
+        targetScrollTop += (bounds.bottom - size.height);
+      }
+      targetScrollTop = targetScrollTop.clamp(0.0, maxY).toDouble();
+      if (duration == Duration.zero) {
+        scrollOffsetY!.jumpTo(targetScrollTop);
+      } else {
+        scrollOffsetY!.animateTo(targetScrollTop, duration: duration, curve: curve);
+      }
+    }
+
+    if (xScrollable && scrollOffsetX != null) {
+      final double maxX = math.max(0.0, content.width - viewport.width);
+      double targetScrollLeft = scrollLeft;
+
+      final AxisDirection axisDirectionX =
+          (renderStyle.direction == TextDirection.rtl) ? AxisDirection.left : AxisDirection.right;
+
+      switch (axisDirectionX) {
+        case AxisDirection.right:
+          if (bounds.left < 0.0) {
+            targetScrollLeft += bounds.left;
+          } else if (bounds.right > size.width) {
+            targetScrollLeft += (bounds.right - size.width);
+          }
+          break;
+        case AxisDirection.left:
+          if (bounds.right > size.width) {
+            targetScrollLeft -= (bounds.right - size.width);
+          } else if (bounds.left < 0.0) {
+            targetScrollLeft -= bounds.left;
+          }
+          break;
+        case AxisDirection.up:
+        case AxisDirection.down:
+          break;
+      }
+
+      targetScrollLeft = targetScrollLeft.clamp(0.0, maxX).toDouble();
+      if (duration == Duration.zero) {
+        scrollOffsetX!.jumpTo(targetScrollLeft);
+      } else {
+        scrollOffsetX!.animateTo(targetScrollLeft, duration: duration, curve: curve);
+      }
+    }
+
+    // Let ancestors handle any additional scrolling (e.g. nested scroll views).
+    super.showOnScreen(descendant: this as RenderObject, rect: null, duration: duration, curve: curve);
   }
 
   void debugOverflowProperties(DiagnosticPropertiesBuilder properties) {
