@@ -831,24 +831,22 @@ jobs:
         run: |
           echo "🔐 Setting up pub.dev authentication..."
 
-          # Add the pub.dev token for publishing
-          echo '${{ secrets.PUB_DEV_TOKEN }}' | dart pub token add https://pub.dev
+          # Create pub-cache directory if it doesn't exist
+          mkdir -p ~/.pub-cache
+
+          # Write the credentials file directly
+          echo '${{ secrets.PUB_DEV_TOKEN }}' > ~/.pub-cache/pub-credentials.json
+
+          # Set proper permissions
+          chmod 600 ~/.pub-cache/pub-credentials.json
 
           echo "✅ pub.dev authentication configured"
 
-      - name: Publish to pub.dev
+      - name: Publish WebF packages to pub.dev
         run: |
-          echo "🚀 Publishing WebF to pub.dev..."
+          echo "🚀 Publishing WebF packages to pub.dev..."
 
-          cd webf
-
-          # Run Flutter pub get to ensure dependencies are resolved
-          flutter pub get
-
-          # Publish to pub.dev (--force to skip confirmation)
-          dart pub publish --force
-
-          # Get version for success message
+          # Get version for messages
           if [ -n "${{ inputs.version }}" ]; then
             VERSION="${{ inputs.version }}"
           elif [[ "${{ github.ref_name }}" == release/* ]]; then
@@ -858,7 +856,62 @@ jobs:
             VERSION="unknown"
           fi
 
-          echo "✅ Successfully published WebF version $VERSION to pub.dev"
+          # Track publishing status
+          PUBLISH_FAILED=false
+          PUBLISHED_COUNT=0
+          SKIPPED_COUNT=0
+
+          # Function to publish a package
+          publish_package() {
+            local package_name=$1
+            local package_dir=$2
+
+            echo "📦 Publishing $package_name..."
+            cd "$package_dir"
+            flutter pub get
+
+            # Capture output and exit code
+            output=$(dart pub publish --force 2>&1)
+            exit_code=$?
+
+            if [ $exit_code -eq 0 ]; then
+              echo "✅ Successfully published $package_name"
+              PUBLISHED_COUNT=$((PUBLISHED_COUNT + 1))
+            elif echo "$output" | grep -qi "version already exists\|already published\|package already has"; then
+              echo "ℹ️  Skipping $package_name - version already published"
+              SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+            else
+              echo "❌ Failed to publish $package_name"
+              echo "$output"
+              PUBLISH_FAILED=true
+            fi
+
+            cd - > /dev/null
+          }
+
+          # Publish all packages
+          publish_package "webf" "webf"
+          publish_package "webf_cupertino_ui" "webf_cupertino_ui"
+          publish_package "webf_deeplink" "webf_modules/deeplink"
+          publish_package "webf_share" "webf_modules/share"
+
+          # Summary
+          echo ""
+          echo "📊 Publishing Summary:"
+          echo "   - Published: $PUBLISHED_COUNT package(s)"
+          echo "   - Skipped: $SKIPPED_COUNT package(s) (already published)"
+
+          # Exit with error only if there were actual failures
+          if [ "$PUBLISH_FAILED" = true ]; then
+            echo "❌ Error: Some packages failed to publish. Please check the logs above."
+            exit 1
+          fi
+
+          if [ $PUBLISHED_COUNT -eq 0 ] && [ $SKIPPED_COUNT -gt 0 ]; then
+            echo "ℹ️  All packages were already published - no new versions released"
+          elif [ $PUBLISHED_COUNT -gt 0 ]; then
+            echo "✅ Successfully published $PUBLISHED_COUNT WebF package(s) version $VERSION to pub.dev"
+          fi
 
       - name: Summary
         run: |
@@ -871,13 +924,17 @@ jobs:
           else
             VERSION="unknown"
           fi
-          
-          echo "🎉 WebF package published successfully!"
+
+          echo "🎉 WebF packages published successfully!"
           echo "📋 Summary:"
           echo "   - Version: $VERSION"
           echo "   - Branch: ${{ github.ref_name }}"
           echo "   - Commit: ${{ github.sha }}"
-          echo "   - Published to: pub.dev (https://pub.dev/packages/webf)"
+          echo "   - Published packages:"
+          echo "     • webf (https://pub.dev/packages/webf)"
+          echo "     • webf_cupertino_ui (https://pub.dev/packages/webf_cupertino_ui)"
+          echo "     • webf_deeplink (https://pub.dev/packages/webf_deeplink)"
+          echo "     • webf_share (https://pub.dev/packages/webf_share)"
           echo "   - Debug symbols stored in Git LFS"
 
   create-pr-to-main:
