@@ -24,7 +24,7 @@ describe('CSS Grid repeat() notation', () => {
     await snapshot();
 
     const computed = getComputedStyle(grid);
-    expect(computed.gridTemplateColumns).toBe('100px 100px 100px');
+    expect(computed.gridTemplateColumns).toBe('repeat(3, 100px)');
 
     const items = Array.from(grid.children) as HTMLElement[];
     items.forEach(item => {
