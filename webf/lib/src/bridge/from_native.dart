@@ -14,7 +14,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
-import 'package:flutter/foundation.dart' as flutter_foundation;
 import 'package:flutter/scheduler.dart';
 import 'package:path/path.dart';
 import 'package:webf/bridge.dart';
@@ -22,7 +21,6 @@ import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/panel/console_store.dart';
 
-import '../../foundation.dart';
 
 String uint16ToString(Pointer<Uint16> pointer, int length) {
   return String.fromCharCodes(pointer.asTypedList(length));
@@ -348,37 +346,6 @@ void _clearTimeout(double contextId, int timerId) {
 }
 
 final Pointer<NativeFunction<NativeClearTimeout>> _nativeClearTimeout = Pointer.fromFunction(_clearTimeout);
-
-// Register requestAnimationFrame
-typedef NativeRequestAnimationFrame = Void Function(
-    Int32 newFrameId, Pointer<Void> callbackContext, Double contextId, Pointer<NativeFunction<NativeRAFAsyncCallback>>);
-
-void _requestAnimationFrame(int newFrameId, Pointer<Void> callbackContext, double contextId,
-    Pointer<NativeFunction<NativeRAFAsyncCallback>> callback) {
-  WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
-  WebFViewController currentView = controller.view;
-  controller.module.requestAnimationFrame(newFrameId, (double highResTimeStamp) {
-    void runCallback() {
-      if (controller.view != currentView || currentView.disposed) return;
-      DartRAFAsyncCallback func = callback.asFunction();
-      try {
-        func(callbackContext, contextId, highResTimeStamp, nullptr);
-      } catch (e, stack) {
-        Pointer<Utf8> nativeErrorMessage = ('Error: $e\n$stack').toNativeUtf8();
-        func(callbackContext, contextId, highResTimeStamp, nativeErrorMessage);
-      }
-    }
-
-    // Pause if webf page paused.
-    if (controller.paused) {
-      controller.pushPendingCallbacks(runCallback);
-    } else {
-      runCallback();
-    }
-  });
-}
-
-
 // Register cancelAnimationFrame
 typedef NativeCancelAnimationFrame = Void Function(Double contextId, Int32 id);
 

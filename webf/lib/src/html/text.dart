@@ -3,6 +3,8 @@
  * Licensed under GNU GPL with Enterprise exception.
  */
 
+// ignore_for_file: constant_identifier_names
+
 import 'package:flutter/widgets.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;

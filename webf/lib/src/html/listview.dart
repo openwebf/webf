@@ -26,7 +26,7 @@ const webfListView2 = 'WEBF-LIST-VIEW';
 /// A custom element that renders a Flutter ListView in WebF
 ///
 /// This element implements a scrollable list view that can be used in HTML with
-/// either the <LISTVIEW> or <WEBF-LISTVIEW> tag names. It supports common list
+/// either the `LISTVIEW` or `WEBF-LISTVIEW` tag names. It supports common list
 /// features like:
 /// - Vertical or horizontal scrolling
 /// - Pull-to-refresh functionality

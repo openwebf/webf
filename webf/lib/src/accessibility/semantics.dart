@@ -191,10 +191,6 @@ class WebFAccessibility {
         break;
     }
 
-    if (focusable) {
-      config.isFocusable = true;
-    }
-
     // Establish semantics boundaries so that standalone headings and static
     // text nodes remain discoverable even inside larger containers.
     bool boundary = false;
@@ -657,6 +653,7 @@ enum _Role {
 }
 
 void _debugDumpSemantics(dom.Element element, _Role role, SemanticsConfiguration config, {required bool focusable}) {
+  if (!DebugFlags.debugLogSemanticsEnabled) return;
   final description = <String>[
     'role=$role',
     'label="${config.label}"',
@@ -666,8 +663,7 @@ void _debugDumpSemantics(dom.Element element, _Role role, SemanticsConfiguration
     'enabled=${config.isEnabled}',
     'hidden=${config.isHidden}',
   ].join(', ');
-  // debugPrint('[webf][a11y] semantics ${_formatElement(element)} => $description');
-  // debugDumpSemanticsTree(DebugSemanticsDumpOrder.traversalOrder);
+  debugPrint('[webf][a11y] semantics ${_formatElement(element)} => $description');
 }
 
 void _logSemanticsEvent(dom.Element element, _Role role, String event) {

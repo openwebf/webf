@@ -901,8 +901,6 @@ class RenderFlowLayout extends RenderLayoutBox {
   void _doRegularFlowLayout(List<RenderBox> children) {
     _lineMetrics.clear();
     children.forEachIndexed((index, child) {
-      final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-
       BoxConstraints childConstraints;
       if (child is RenderBoxModel) {
         childConstraints = child.getConstraints();
@@ -980,15 +978,6 @@ class RenderFlowLayout extends RenderLayoutBox {
       return curr.mainAxisExtent > next.mainAxisExtent ? curr : next;
     });
     return maxMainSizeMetrics.mainAxisExtent;
-  }
-
-  // Find the size in the cross axis of lines.
-  double _getRunsCrossSize(List<RunMetrics> runMetrics,) {
-    double crossSize = 0;
-    for (RunMetrics run in runMetrics) {
-      crossSize += run.crossAxisExtent;
-    }
-    return crossSize;
   }
 
   // Compute the total cross-axis content size accounting for inter-run
@@ -1153,46 +1142,6 @@ class RenderFlowLayout extends RenderLayoutBox {
     return autoMinSize;
   }
 
-  // Record the cross size of all lines.
-  void _recordRunsCrossSize(RunMetrics runMetrics, List<double> runCrossSize) {
-    List<RenderBox> runChildren = runMetrics.runChildren;
-    double runCrossExtent = 0;
-    List<double> runChildrenCrossSize = [];
-    void iterateRunChildren(RenderBox runChild) {
-      double runChildCrossSize = 0.0;
-      if (runChild is RenderBoxModel) {
-        runChildCrossSize = runChild.boxSize?.height ?? 0.0;
-      }
-      runChildrenCrossSize.add(runChildCrossSize);
-    }
-
-    runChildren.forEach(iterateRunChildren);
-    runCrossExtent = runChildrenCrossSize.reduce((double curr, double next) {
-      return curr > next ? curr : next;
-    });
-
-    runCrossSize.add(runCrossExtent);
-  }
-
-  // Get auto min size in the cross axis which equals the cross axis size of its contents.
-  // https://www.w3.org/TR/css-sizing-3/#automatic-minimum-size
-  double _getCrossAxisAutoSize(List<RunMetrics> runMetrics,) {
-    double autoMinSize = 0;
-    // Cross size of each run.
-    List<double> runCrossSize = [];
-
-    // Calculate the max cross size of all runs.
-    for (RunMetrics runMetrics in runMetrics) {
-      _recordRunsCrossSize(runMetrics, runCrossSize);
-    }
-
-    // Get the sum of lines.
-    for (double crossSize in runCrossSize) {
-      autoMinSize += crossSize;
-    }
-
-    return autoMinSize;
-  }
 
   // Set flex container size according to children size.
   void _setContainerSize({double adjustHeight = 0, double adjustWidth = 0}) {
@@ -1281,11 +1230,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     // Set offset of children in each line.
     for (int i = 0; i < _lineMetrics.length; ++i) {
       final RunMetrics metrics = _lineMetrics[i];
-      final double runMainAxisExtent = metrics.mainAxisExtent;
       final double runCrossAxisExtent = metrics.crossAxisExtent;
-      final double mainAxisFreeSpace = math.max(0.0, mainAxisContentSize - runMainAxisExtent);
-      double crossAxisLineJoinOffset = 0;
-      double mainAxisLineJoinOffset = 0;
 
       double childLeadingSpace = 0.0;
       double childBetweenSpace = 0.0;
@@ -1363,9 +1308,6 @@ class RenderFlowLayout extends RenderLayoutBox {
         if (childRenderBoxModel is RenderBoxModel) {
           final rs = childRenderBoxModel.renderStyle;
           childMarginLeft = rs.marginLeft.computedValue;
-          double? dbgOwnTopInExtent;
-          double? dbgSelfTopIgnoringParent;
-          double? dbgTopContribution;
           if (!isPlaceholder || isStickyPlaceholder) {
             // The top margin as counted in the run's cross extent for this child.
             final double ownTopInExtent = getChildMarginTop(childRenderBoxModel);
@@ -1395,16 +1337,10 @@ class RenderFlowLayout extends RenderLayoutBox {
             childMarginTop = topContribution;
             childMarginBottom = getChildMarginBottom(childRenderBoxModel);
 
-            // Save for debug logging below
-            dbgOwnTopInExtent = ownTopInExtent;
-            dbgSelfTopIgnoringParent = selfTopIgnoringParent;
-            dbgTopContribution = topContribution;
           } else {
             // Absolute/fixed placeholders do not participate in vertical margin collapsing.
             childMarginTop = 0;
             childMarginBottom = 0;
-          }
-          if (!isPlaceholder || isStickyPlaceholder) {
           }
         }
 
@@ -1418,7 +1354,7 @@ class RenderFlowLayout extends RenderLayoutBox {
             childLineExtent +
             renderStyle.paddingTop.computedValue +
             renderStyle.effectiveBorderTopWidth.computedValue +
-                (childMarginTop ?? 0));
+                childMarginTop);
         // Apply position relative offset change.
         CSSPositionedLayout.applyRelativeOffset(relativeOffset, child);
 
@@ -1701,9 +1637,6 @@ class RenderFlowLayout extends RenderLayoutBox {
     // For the special case of a single RenderTextBox child inside a scroll container,
     // use the measured full text height to capture multi-line overflow.
     final double collapsedCrossStack = _getRunsCrossSizeWithCollapse(_lineMetrics);
-    bool singleRunTextOnly = _lineMetrics.length == 1 &&
-        _lineMetrics.first.runChildren.length == 1 &&
-        _lineMetrics.first.runChildren.first is RenderTextBox;
 
     final double linesCrossMax = scrollableCrossSizeOfLines.isEmpty
         ? 0.0
@@ -1923,54 +1856,6 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     visitChildren(dfs);
     return result;
-  }
-
-  double? _baselineFromInFlowChild(RenderBox child) {
-    RenderBox? current = child;
-    RenderBoxModel? resolved;
-    for (int depth = 0; depth < 4 && current != null; depth++) {
-      if (current is RenderBoxModel) {
-        resolved = current;
-        break;
-      }
-      if (current is RenderEventListener) {
-        current = current.child;
-        continue;
-      }
-      if (current is RenderPositionPlaceholder) {
-        current = current.positioned;
-        continue;
-      }
-      if (current is RenderObjectWithChildMixin<RenderBox>) {
-        final RenderBox? singleChild = (current as dynamic).child as RenderBox?;
-        if (singleChild == null) break;
-        current = singleChild;
-        continue;
-      }
-      break;
-    }
-
-    if (resolved == null || !resolved.hasSize) {
-      return null;
-    }
-
-    final CSSPositionType pos = resolved.renderStyle.position;
-    if (pos == CSSPositionType.absolute || pos == CSSPositionType.fixed) {
-      return null;
-    }
-
-    final double? childBaseline = resolved.computeCssLastBaselineOf(TextBaseline.alphabetic);
-    if (childBaseline == null) {
-      return null;
-    }
-
-    final Offset offset = getLayoutTransformTo(resolved, this, excludeScrollOffset: true);
-    final double collapsedWithParent = resolved.renderStyle.collapsedMarginTop;
-    final double ignoringParent = resolved.renderStyle.collapsedMarginTopIgnoringParent;
-    final double marginAdjustment = ignoringParent > collapsedWithParent
-        ? (ignoringParent - collapsedWithParent)
-        : 0.0;
-    return offset.dy + marginAdjustment + childBaseline;
   }
 
   @override

@@ -100,9 +100,9 @@ mixin TimeElementState on WebFWidgetElementState {
           });
         }
       },
-      child: AbsorbPointer(child: _createTimeInput(context)),
+      child: AbsorbPointer(child: createTimeInput(context)),
     );
   }
   
-  Widget _createTimeInput(BuildContext context);
+  Widget createTimeInput(BuildContext context);
 }

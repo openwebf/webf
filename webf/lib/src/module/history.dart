@@ -134,8 +134,8 @@ class HistoryModule extends BaseModule {
     uri = controller.uriParser!.resolve(Uri.parse(controller.url), uri);
 
     if (uri.host.isNotEmpty && uri.host != currentUri.host) {
-      print('Failed to execute \'pushState\' on \'History\': '
-          'A history state object with URL $url cannot be created in a document with origin ${uri.host} and URL ${currentUri.host}. "');
+      networkLogger.warning(
+          'Failed to execute \'pushState\' on \'History\': A history state object with URL $url cannot be created in a document with origin ${uri.host} and URL ${currentUri.host}.');
       return;
     }
 
@@ -154,8 +154,8 @@ class HistoryModule extends BaseModule {
     uri = controller.uriParser!.resolve(Uri.parse(controller.url), uri);
 
     if (uri.host.isNotEmpty && uri.host != currentUri.host) {
-      print('Failed to execute \'pushState\' on \'History\': '
-          'A history state object with URL $url cannot be created in a document with origin ${uri.host} and URL ${currentUri.host}. "');
+      networkLogger.warning(
+          'Failed to execute \'pushState\' on \'History\': A history state object with URL $url cannot be created in a document with origin ${uri.host} and URL ${currentUri.host}.');
       return;
     }
 

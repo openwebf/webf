@@ -563,9 +563,7 @@ abstract class RenderLayoutBox extends RenderBoxModel
 
       if (flexBasis != null && parentRenderStyle != null) {
         // Determine main-axis orientation with writing-mode awareness.
-        final CSSWritingMode wm = (parentRenderStyle is CSSRenderStyle)
-            ? parentRenderStyle.writingMode
-            : CSSWritingMode.horizontalTb;
+        final CSSWritingMode wm = parentRenderStyle.writingMode;
         final bool inlineIsHorizontal = (wm == CSSWritingMode.horizontalTb);
         final bool parentRow = parentRenderStyle.flexDirection == FlexDirection.row ||
             parentRenderStyle.flexDirection == FlexDirection.rowReverse;
@@ -573,15 +571,15 @@ abstract class RenderLayoutBox extends RenderBoxModel
         final bool isParentMainDefinite = isMainAxisHorizontal
             ? parentRenderStyle.contentBoxLogicalWidth != null
             : parentRenderStyle.contentBoxLogicalHeight != null;
-        final bool isPctBasis = flexBasisLV!.type == CSSLengthType.PERCENTAGE;
+      final bool isPctBasis = flexBasisLV!.type == CSSLengthType.PERCENTAGE;
 
-        // Follow CSS spec: percentage flex-basis resolves against the flex container's main size;
-        // if that size is indefinite, the used value is 'content'. In that case, do not override
-        // the specified content size here—let content determine sizing.
-        if (isPctBasis && !isParentMainDefinite) {
-          // Skip overriding specified content size.
-        } else if (flexBasis > 0) {
-          // Only apply positive, resolvable flex-basis to content sizing here.
+      // Follow CSS spec: percentage flex-basis resolves against the flex container's main size;
+      // if that size is indefinite, the used value is 'content'. In that case, do not override
+      // the specified content size here—let content determine sizing.
+      if (isPctBasis && !isParentMainDefinite) {
+        // Skip overriding specified content size.
+      } else if (flexBasis > 0) {
+        // Only apply positive, resolvable flex-basis to content sizing here.
           if (isMainAxisHorizontal) {
             if (!hasOverrideContentLogicalWidth) {
               specifiedContentWidth = _getContentWidth(flexBasis);

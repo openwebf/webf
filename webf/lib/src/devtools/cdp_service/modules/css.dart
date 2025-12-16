@@ -7,6 +7,8 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
+// ignore_for_file: constant_identifier_names
+
 import 'dart:ffi';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
@@ -297,8 +299,8 @@ class InspectCSSModule extends UIInspectorModule {
   }
 
   /// https://chromedevtools.github.io/devtools-protocol/tot/CSS/#method-createStyleSheet
-  /// Creates a new via-inspector stylesheet and attaches it to the document (preferably <head>).
-  /// Returns a StyleSheetId which we encode as "inline:<frontendNodeId>" for the created <style> element.
+  /// Creates a new via-inspector stylesheet and attaches it to the document (preferably `<head>`).
+  /// Returns a StyleSheetId which we encode as `inline:<frontendNodeId>` for the created `<style>` element.
   void handleCreateStyleSheet(int? id, Map<String, dynamic> params) {
     final ctx = dbgContext;
     if (ctx == null) {
@@ -342,7 +344,7 @@ class InspectCSSModule extends UIInspectorModule {
 
   /// https://chromedevtools.github.io/devtools-protocol/tot/CSS/#method-forcePseudoState
   /// Enables or disables forcing certain pseudo classes for the given node.
-  /// Params: { nodeId: <frontendNodeId>, forcedPseudoClasses: [ 'hover', 'active', ... ] }
+  /// Params: `{ nodeId: <frontendNodeId>, forcedPseudoClasses: [ 'hover', 'active', ... ] }`
   void handleForcePseudoState(int? id, Map<String, dynamic> params) {
     final ctx = dbgContext;
     if (ctx == null) {

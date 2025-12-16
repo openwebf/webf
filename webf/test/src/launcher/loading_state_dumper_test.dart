@@ -402,7 +402,7 @@ void main() {
 
     test('should track script element loading', () {
       // Queue a script
-      final script = dumper.recordScriptElementQueue(
+      dumper.recordScriptElementQueue(
         source: 'https://example.com/script.js',
         isInline: false,
         isModule: false,

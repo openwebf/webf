@@ -103,7 +103,7 @@ class ContentVerification {
       final decoration = renderObject.decoration;
       if (decoration is BoxDecoration) {
         // Has visible background color
-        if (decoration.color != null && decoration.color!.alpha > 0) {
+        if (decoration.color != null && decoration.color!.a > 0) {
           return true;
         }
         // Has gradient
@@ -130,7 +130,7 @@ class ContentVerification {
       final decoration = renderObject.renderStyle.decoration;
       if (decoration != null) {
         // Has background color
-        if (decoration.color != null && decoration.color!.alpha > 0) {
+        if (decoration.color != null && decoration.color!.a > 0) {
           return true;
         }
         // Has gradient
@@ -150,7 +150,7 @@ class ContentVerification {
 
     // Check viewport with background
     if (renderObject is RenderViewportBox) {
-      return renderObject.background != null && renderObject.background!.alpha > 0;
+      return renderObject.background != null && renderObject.background!.a > 0;
     }
 
     // For widget elements, use the ContentfulWidgetDetector

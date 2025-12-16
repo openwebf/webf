@@ -85,7 +85,7 @@ class WebFNavigationAction {
 
 Future<WebFNavigationActionPolicy> defaultDecisionHandler(WebFNavigationAction action) async {
   if (kDebugMode || kProfileMode) {
-    print('''
+    debugPrint('''
 Attempting to navigate WebF to an external WebF page: **`${action.target}`** from **`${action.source}`**. This behavior is disabled by default.
 
 To customize navigation behavior, override the `navigationDelegate` property on `WebFController`:

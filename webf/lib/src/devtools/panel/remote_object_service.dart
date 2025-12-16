@@ -49,10 +49,57 @@ class RemoteObjectService {
     String objectId,
     {bool includePrototype = false}
   ) async {
-    print('[RemoteObjectService] getObjectProperties called: contextId=$contextId, objectId=$objectId, includePrototype=$includePrototype');
+    devToolsLogger.fine(
+        '[RemoteObjectService] getObjectProperties called: contextId=$contextId, objectId=$objectId, includePrototype=$includePrototype');
     if (_getObjectPropertiesAsync == null) {
-      print('[RemoteObjectService] ERROR: _getObjectPropertiesAsync is null');
-      return [];
+      if (_getObjectProperties == null) {
+        devToolsLogger.warning('[RemoteObjectService] _getObjectPropertiesAsync/_getObjectProperties are null');
+        return [];
+      }
+
+      final objectIdPtr = objectId.toNativeUtf8();
+      try {
+        final resultPtr = _getObjectProperties!(
+          dartContext!.pointer,
+          contextId.toDouble(),
+          objectIdPtr,
+          includePrototype ? 1 : 0,
+        );
+
+        if (resultPtr == nullptr) return [];
+
+        final WebFController? controller = WebFController.getControllerOfJSContextId(contextId.toDouble());
+        if (controller == null) {
+          return [];
+        }
+        final result = fromNativeValue(controller.view, resultPtr);
+        if (result is! List) return [];
+
+        return result.map((item) {
+          if (item is Map<String, dynamic>) {
+            return RemoteObjectProperty(
+              name: item['name'] ?? '',
+              valueId: item['valueId'] ?? '',
+              enumerable: item['enumerable'] ?? true,
+              configurable: item['configurable'] ?? true,
+              writable: item['writable'] ?? true,
+              isOwn: item['isOwn'] ?? true,
+              value: RemoteObjectService.instance._parsePropertyValue(item['value']),
+            );
+          }
+          return RemoteObjectProperty(
+            name: 'unknown',
+            valueId: '',
+            enumerable: false,
+            configurable: false,
+            writable: false,
+            isOwn: false,
+            value: null,
+          );
+        }).toList();
+      } finally {
+        malloc.free(objectIdPtr);
+      }
     }
 
     final completer = Completer<List<RemoteObjectProperty>>();
@@ -240,7 +287,7 @@ void _handleGetObjectPropertiesCallback(Object handle, Pointer<NativeValue> resu
       context.completer.complete([]);
     }
   } catch (e) {
-    print('[RemoteObjectService] Error in callback: $e');
+    devToolsLogger.warning('[RemoteObjectService] Error in callback', e);
     context.completer.completeError(e);
   } finally {
     // Free the objectIdPtr

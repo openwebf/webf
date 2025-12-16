@@ -59,6 +59,7 @@ class IntersectionObserver extends DynamicBindingObject {
 
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeMethods(methods);
     methods['takeRecords'] = BindingObjectMethodSync(call: (_) {
       if (_entries.isEmpty) return null;
 
@@ -94,7 +95,9 @@ class IntersectionObserver extends DynamicBindingObject {
   }
 
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {}
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeProperties(properties);
+  }
 
   void observe(Element element) {
     if (enableWebFCommandLog) {

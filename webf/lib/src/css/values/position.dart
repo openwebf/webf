@@ -27,7 +27,6 @@ String _axisToValue(String? keyword, String? offset, {required bool horizontal})
   if (offset == null) return keyword ?? CENTER;
 
   // Have offset: convert logical keyword + offset into calc() where needed
-  final bool isPct = CSSPercentage.isPercentage(offset);
   if (keyword == null || keyword == (horizontal ? LEFT : TOP)) {
     // left/top with offset equals the offset itself
     return offset; // e.g. '20px' or '10%'
@@ -47,7 +46,7 @@ bool _isHorizKW(String t) => t == LEFT || t == RIGHT || t == CENTER;
 bool _isVertKW(String t) => t == TOP || t == BOTTOM || t == CENTER;
 
 /// CSS Values and Units: https://drafts.csswg.org/css-values-3/#position
-/// The <position> value specifies the position of a object area
+/// The `<position>` value specifies the position of a object area
 /// (e.g. background image) inside a positioning area (e.g. background
 /// positioning area). It is interpreted as specified for background-position.
 /// [CSS3-BACKGROUND]

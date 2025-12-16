@@ -18,6 +18,7 @@ import 'checked.dart';
 import 'radio.dart';
 import 'time.dart';
 
+// ignore: constant_identifier_names
 const INPUT = 'INPUT';
 
 enum InputSize {
@@ -217,7 +218,7 @@ class FlutterInputElementState extends WebFWidgetElementState
 
   // Implementation for TimeElementState
   @override
-  Widget _createTimeInput(BuildContext context) {
+  Widget createTimeInput(BuildContext context) {
     return createInput(context);
   }
 

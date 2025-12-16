@@ -3,6 +3,8 @@
  * Licensed under GNU GPL with Enterprise exception.
  */
 
+// ignore_for_file: deprecated_member_use
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -289,192 +291,6 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
               SizedBox(height: 16),
               _buildNetworkSummary(networkRequests),
             ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPhaseEntry(LoadingPhase phase, DateTime startTime, int maxDuration, List<LoadingError> errors) {
-    final offset = phase.timestamp.difference(startTime).inMilliseconds;
-    final position = (offset / maxDuration).clamp(0.0, 1.0);
-    final hasError = errors.any((e) => e.phase == phase.name);
-    final isSelected = _selectedPhase == phase;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedPhase = phase;
-          _selectedError = null;
-          _selectedNetworkRequest = null;
-        });
-      },
-      child: Container(
-        margin: EdgeInsets.only(bottom: 8),
-        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: isSelected ? Colors.blue.withOpacity(0.3) : Colors.transparent,
-          ),
-        ),
-        child: Row(
-          children: [
-            // Phase name
-            Expanded(
-              flex: 2,
-              child: Row(
-                children: [
-                  if (hasError)
-                    Icon(Icons.error, color: Colors.red, size: 16)
-                  else
-                    Icon(
-                      _getPhaseIcon(phase.name),
-                      color: _getPhaseColor(phase.name),
-                      size: 16,
-                    ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      phase.name,
-                      style: TextStyle(
-                        color: hasError ? Colors.red : Colors.white,
-                        fontSize: 12,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Time label
-            Container(
-              width: 60,
-              padding: EdgeInsets.only(left: 8),
-              child: Text(
-                '+${offset}ms',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 10,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNetworkEntry(LoadingNetworkRequest request, DateTime startTime, int maxDuration) {
-    final startOffset = request.startTime.difference(startTime).inMilliseconds;
-    final endOffset = request.endTime?.difference(startTime).inMilliseconds ?? startOffset;
-    final startPosition = (startOffset / maxDuration).clamp(0.0, 1.0);
-    final endPosition = (endOffset / maxDuration).clamp(0.0, 1.0);
-    final isSelected = _selectedNetworkRequest == request;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedNetworkRequest = request;
-          _selectedPhase = null;
-          _selectedError = null;
-        });
-      },
-      child: Container(
-        margin: EdgeInsets.only(bottom: 8),
-        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.orange.withOpacity(0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: isSelected ? Colors.orange.withOpacity(0.3) : Colors.transparent,
-          ),
-        ),
-        child: Row(
-          children: [
-            // Request info
-            Expanded(
-              flex: 2,
-              child: Row(
-                children: [
-                  Icon(
-                    request.error != null ? Icons.error :
-                    request.isSuccessful ? Icons.check_circle : Icons.pending,
-                    color: request.error != null ? Colors.red :
-                           request.isSuccessful ? Colors.green : Colors.orange,
-                    size: 16,
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          Uri.parse(request.url).path,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          '${request.method} - ${request.statusCode ?? "pending"}',
-                          style: TextStyle(
-                            color: Colors.white54,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Timeline bar
-            Expanded(
-              flex: 3,
-              child: Stack(
-                children: [
-                  // Background track
-                  Container(
-                    height: 20,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  // Duration bar
-                  Positioned(
-                    left: startPosition * 300,
-                    child: Container(
-                      width: (endPosition - startPosition) * 300,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        color: request.error != null ? Colors.red.withOpacity(0.5) :
-                               request.isSuccessful ? Colors.green.withOpacity(0.5) :
-                               Colors.orange.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  // Duration label
-                  if (request.duration != null)
-                    Positioned(
-                      left: startPosition * 300 + 4,
-                      top: 2,
-                      child: Text(
-                        '${request.duration!.inMilliseconds}ms',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
@@ -1026,267 +842,6 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
            '${timestamp.millisecond.toString().padLeft(3, '0')}';
   }
 
-  Widget _buildDetailRow(String label, String value, {bool isError = false}) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '$label: ',
-            style: TextStyle(
-              color: Colors.white54,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          Expanded(
-            child: SelectableText(
-              value,
-              style: TextStyle(
-                color: isError ? Colors.red : Colors.white,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCompactPhaseEntry(LoadingPhase phase, DateTime startTime, int maxDuration, List<LoadingError> errors) {
-    final offset = phase.timestamp.difference(startTime).inMilliseconds;
-    final hasError = errors.any((e) => e.phase == phase.name);
-    final isSelected = _selectedPhase == phase;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedPhase = phase;
-          _selectedError = null;
-          _selectedNetworkRequest = null;
-          _showDetails = true;
-        });
-      },
-      child: Container(
-        margin: EdgeInsets.only(bottom: 6),
-        padding: EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: isSelected ? Colors.blue.withOpacity(0.3) : Colors.white.withOpacity(0.1),
-          ),
-        ),
-        child: Row(
-          children: [
-            // Icon
-            if (hasError)
-              Icon(Icons.error, color: Colors.red, size: 14)
-            else
-              Icon(
-                _getPhaseIcon(phase.name),
-                color: _getPhaseColor(phase.name),
-                size: 14,
-              ),
-            SizedBox(width: 6),
-            // Phase name
-            Expanded(
-              child: Text(
-                phase.name,
-                style: TextStyle(
-                  color: hasError ? Colors.red : Colors.white,
-                  fontSize: 11,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            // Time
-            Text(
-              '+${offset}ms',
-              style: TextStyle(
-                color: Colors.white54,
-                fontSize: 10,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCompactNetworkEntry(LoadingNetworkRequest request, DateTime startTime, int maxDuration) {
-    final offset = request.startTime.difference(startTime).inMilliseconds;
-    final duration = request.duration?.inMilliseconds ?? 0;
-    final isSelected = _selectedNetworkRequest == request;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedNetworkRequest = request;
-          _selectedPhase = null;
-          _selectedError = null;
-          _showDetails = true;
-        });
-      },
-      child: Container(
-        margin: EdgeInsets.only(bottom: 6),
-        padding: EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.orange.withOpacity(0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: isSelected ? Colors.orange.withOpacity(0.3) : Colors.white.withOpacity(0.1),
-          ),
-        ),
-        child: Row(
-          children: [
-            // Status icon
-            Icon(
-              request.error != null ? Icons.error :
-              request.isSuccessful ? Icons.check_circle : Icons.pending,
-              color: request.error != null ? Colors.red :
-                     request.isSuccessful ? Colors.green : Colors.orange,
-              size: 14,
-            ),
-            SizedBox(width: 6),
-            // URL and method
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    Uri.parse(request.url).path,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                  Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                        child: Text(
-                          request.method,
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      if (request.statusCode != null) ...[
-                        SizedBox(width: 4),
-                        Text(
-                          '${request.statusCode}',
-                          style: TextStyle(
-                            color: request.statusCode! >= 400 ? Colors.red : Colors.white54,
-                            fontSize: 9,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            // Duration and size
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  duration > 0 ? '${duration}ms' : '-',
-                  style: TextStyle(
-                    color: Colors.white54,
-                    fontSize: 10,
-                  ),
-                ),
-                if (request.responseSize != null)
-                  Text(
-                    _formatBytes(request.responseSize!),
-                    style: TextStyle(
-                      color: Colors.white54,
-                      fontSize: 9,
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCompactErrorEntry(LoadingError error, DateTime startTime) {
-    final offset = error.timestamp.difference(startTime).inMilliseconds;
-    final isSelected = _selectedError == error;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedError = error;
-          _selectedPhase = null;
-          _selectedNetworkRequest = null;
-          _showDetails = true;
-        });
-      },
-      child: Container(
-        margin: EdgeInsets.only(bottom: 6),
-        padding: EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.red.withOpacity(0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: isSelected ? Colors.red.withOpacity(0.3) : Colors.red.withOpacity(0.2),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.error_outline, color: Colors.red, size: 14),
-            SizedBox(width: 6),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    error.phase,
-                    style: TextStyle(
-                      color: Colors.red,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    error.error.toString(),
-                    style: TextStyle(
-                      color: Colors.red.shade200,
-                      fontSize: 10,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              '+${offset}ms',
-              style: TextStyle(
-                color: Colors.red.shade300,
-                fontSize: 10,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildDetailsView() {
     return Container(
       padding: EdgeInsets.all(12),
@@ -1316,83 +871,6 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
           ),
         ),
       ],
-    );
-  }
-
-
-  Widget _buildStatisticsBar(LoadingState dumper) {
-    final successfulRequests = dumper.networkRequests.where((r) => r.isSuccessful).length;
-    final failedRequests = dumper.networkRequests.where((r) => r.error != null).length;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _buildStatCard(
-          icon: Icons.timer,
-          label: 'Total Duration',
-          value: dumper.totalDuration != null
-              ? '${dumper.totalDuration!.inMilliseconds}ms'
-              : 'N/A',
-          color: Colors.blue,
-        ),
-        _buildStatCard(
-          icon: Icons.layers,
-          label: 'Phases',
-          value: dumper.phases.length.toString(),
-          color: Colors.green,
-        ),
-        _buildStatCard(
-          icon: Icons.cloud_download,
-          label: 'Network',
-          value: '$successfulRequests/${dumper.networkRequests.length}',
-          color: Colors.orange,
-        ),
-        if (dumper.hasErrors)
-          _buildStatCard(
-            icon: Icons.error_outline,
-            label: 'Errors',
-            value: dumper.errors.length.toString(),
-            color: Colors.red,
-          ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 24),
-          SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 11,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -1455,48 +933,51 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
   }
 
   String _formatPhaseName(String phaseName) {
-    // Format known phase names
-    if (phaseName == LoadingState.phaseInit) {
-      return 'Initialize';
-    } else if (phaseName == LoadingState.phaseLoadStart) return 'Load Start';
-    else if (phaseName == LoadingState.phasePreload) return 'Preload';
-    else if (phaseName == LoadingState.phaseResolveEntrypoint) return 'Resolve Entrypoint';
-    else if (phaseName == LoadingState.phaseEvaluateStart) return 'Evaluate Start';
-    else if (phaseName == LoadingState.phaseParseHTML) return 'Parse HTML';
-    else if (phaseName == LoadingState.phaseEvaluateScripts) return 'Evaluate Scripts';
-    else if (phaseName == LoadingState.phaseEvaluateComplete) return 'Evaluate Complete';
-    else if (phaseName == LoadingState.phaseDOMContentLoaded) return 'DOM Content Loaded';
-    else if (phaseName == LoadingState.phaseWindowLoad) return 'Window Load';
-    else if (phaseName == LoadingState.phaseBuildRootView) return 'Build Root View';
-    else if (phaseName == LoadingState.phaseFirstPaint) return 'First Paint (FP)';
-    else if (phaseName == LoadingState.phaseFirstContentfulPaint) return 'First Contentful Paint (FCP)';
-    else if (phaseName == LoadingState.phaseLargestContentfulPaint) return 'Largest Contentful Paint (LCP)';
-    else if (phaseName == LoadingState.phaseAttachToFlutter) return 'Attach to Flutter';
-    else if (phaseName == LoadingState.phaseDetachFromFlutter) return 'Detach from Flutter';
-    else if (phaseName == LoadingState.phaseDispose) return 'Dispose';
-    else if (phaseName == LoadingState.phaseConstructor) return 'Constructor';
-
-    // Handle network phases
-    if (phaseName.startsWith('networkStart:')) {
-      return 'Network Request';
-    } else if (phaseName.startsWith('networkComplete:')) {
-      return 'Network Complete';
-    } else if (phaseName.startsWith('networkError:')) {
-      return 'Network Error';
+    final String? known = switch (phaseName) {
+      LoadingState.phaseInit => 'Initialize',
+      LoadingState.phaseLoadStart => 'Load Start',
+      LoadingState.phasePreload => 'Preload',
+      LoadingState.phaseResolveEntrypoint => 'Resolve Entrypoint',
+      LoadingState.phaseEvaluateStart => 'Evaluate Start',
+      LoadingState.phaseParseHTML => 'Parse HTML',
+      LoadingState.phaseEvaluateScripts => 'Evaluate Scripts',
+      LoadingState.phaseEvaluateComplete => 'Evaluate Complete',
+      LoadingState.phaseDOMContentLoaded => 'DOM Content Loaded',
+      LoadingState.phaseWindowLoad => 'Window Load',
+      LoadingState.phaseBuildRootView => 'Build Root View',
+      LoadingState.phaseFirstPaint => 'First Paint (FP)',
+      LoadingState.phaseFirstContentfulPaint => 'First Contentful Paint (FCP)',
+      LoadingState.phaseLargestContentfulPaint => 'Largest Contentful Paint (LCP)',
+      LoadingState.phaseAttachToFlutter => 'Attach to Flutter',
+      LoadingState.phaseDetachFromFlutter => 'Detach from Flutter',
+      LoadingState.phaseDispose => 'Dispose',
+      LoadingState.phaseConstructor => 'Constructor',
+      'resolveEntrypoint.start' => 'Resolve Entrypoint Start',
+      'resolveEntrypoint.end' => 'Resolve Entrypoint End',
+      'parseHTML.start' => 'Parse HTML Start',
+      'parseHTML.end' => 'Parse HTML End',
+      _ => null,
+    };
+    if (known != null) {
+      return known;
     }
 
-    // Handle specific .start and .end phases
-    if (phaseName == 'resolveEntrypoint.start') {
-      return 'Resolve Entrypoint Start';
-    } else if (phaseName == 'resolveEntrypoint.end') return 'Resolve Entrypoint End';
-    else if (phaseName == 'parseHTML.start') return 'Parse HTML Start';
-    else if (phaseName == 'parseHTML.end') return 'Parse HTML End';
+    if (phaseName.startsWith('networkStart:')) {
+      return 'Network Request';
+    }
+    if (phaseName.startsWith('networkComplete:')) {
+      return 'Network Complete';
+    }
+    if (phaseName.startsWith('networkError:')) {
+      return 'Network Error';
+    }
 
     // Handle other .start and .end phases
     if (phaseName.endsWith('.start')) {
       final baseName = phaseName.substring(0, phaseName.length - 6);
       return '${_formatPhaseName(baseName)} Start';
-    } else if (phaseName.endsWith('.end')) {
+    }
+    if (phaseName.endsWith('.end')) {
       final baseName = phaseName.substring(0, phaseName.length - 4);
       return '${_formatPhaseName(baseName)} End';
     }
@@ -1550,11 +1031,6 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
              p.timestamp.isBefore(windowLoadTimestamp) ||
              p.timestamp == windowLoadTimestamp;
     }).toList();
-  }
-
-  bool _isKeyPhase(String phaseName) {
-    // This method is no longer used but kept for backward compatibility
-    return true;
   }
 
   Widget _buildPhasesTable(String title, List<LoadingPhase> phases, Color color) {
@@ -2488,6 +1964,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                 color: Colors.white54,
                 onPressed: () async {
                   await Clipboard.setData(ClipboardData(text: devToolsUrl));
+                  if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('DevTools URL copied to clipboard'),
@@ -2595,6 +2072,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
 
                     if (confirm == true) {
                       await manager.disposeAll();
+                      if (!mounted) return;
                       // Close the bottom sheet
                       Navigator.of(context).pop();
                       // Show success message
@@ -2718,6 +2196,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
 
                     // Print render object tree
                     await controller.printRenderObjectTree(routePath);
+                    if (!context.mounted) return;
 
                     // Show feedback
                     final message = Platform.isMacOS
@@ -2788,6 +2267,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                     try {
                       // Reload the controller
                       await controller.reload();
+                      if (!context.mounted) return;
 
                       // Close loading dialog
                       Navigator.of(context).pop();
@@ -2801,6 +2281,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                         ),
                       );
                     } catch (e) {
+                      if (!context.mounted) return;
                       // Close loading dialog
                       Navigator.of(context).pop();
 
@@ -2902,7 +2383,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     );
   }
 
-  Widget _buildPerformanceMetricsList(WebFControllerManager manager, List<String> controllerNames) {
+  Widget buildPerformanceMetricsList(WebFControllerManager manager, List<String> controllerNames) {
     if (controllerNames.isEmpty) {
       return Center(
         child: Text(
@@ -3292,43 +2773,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     );
   }
 
-  Widget _buildQuickStat(String label, String value, Color color) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          SizedBox(height: 2),
-          Text(
-            value,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildRoutesTab() {
-    final manager = WebFControllerManager.instance;
-
     return Container(
       padding: EdgeInsets.all(16),
       child: Column(
@@ -4103,6 +3548,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                   color: Colors.white54,
                   onPressed: () async {
                     await Clipboard.setData(ClipboardData(text: content));
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('URL copied to clipboard'),
@@ -4126,6 +3572,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
               ? GestureDetector(
                   onTap: () async {
                     await Clipboard.setData(ClipboardData(text: content));
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('URL copied to clipboard'),
@@ -4199,6 +3646,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                 onPressed: () async {
                   final allHeaders = headers.entries.map((e) => '${e.key}: ${e.value.join(', ')}').join('\n');
                   await Clipboard.setData(ClipboardData(text: allHeaders));
+                  if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('All headers copied to clipboard'),
@@ -4249,6 +3697,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                   onTap: () async {
                     final headerText = '${entry.key}: ${entry.value.join(', ')}';
                     await Clipboard.setData(ClipboardData(text: headerText));
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Header copied to clipboard'),
@@ -4379,6 +3828,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                   color: Colors.white54,
                   onPressed: () async {
                     await Clipboard.setData(ClipboardData(text: responseString!));
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Response body copied to clipboard'),
@@ -4471,7 +3921,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     final isExpanded = _expandedRequestBodies.contains(request.requestId);
     bool isJson = false;
     bool isFormData = false;
-    String? requestString;
+    String requestString = '';
     dynamic jsonData;
     Map<String, String>? formDataFields;
 
@@ -4563,7 +4013,8 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                 icon: Icon(Icons.copy, size: 16),
                 color: Colors.white54,
                 onPressed: () async {
-                  await Clipboard.setData(ClipboardData(text: requestString ?? ''));
+                  await Clipboard.setData(ClipboardData(text: requestString));
+                  if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Request body copied to clipboard'),
@@ -4622,10 +4073,10 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
             ),
             child: isJson
                 ? _buildJsonViewer(jsonData, isExpanded)
-                : isFormData && formDataFields != null
-                    ? _buildFormDataViewer(formDataFields, isExpanded)
-                    : SelectableText(
-                        requestString ?? '',
+                    : isFormData && formDataFields != null
+                        ? _buildFormDataViewer(formDataFields, isExpanded)
+                        : SelectableText(
+                        requestString,
                         style: TextStyle(
                           color: Colors.white70,
                           fontSize: 11,
@@ -5666,7 +5117,8 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
         widget.remoteObject.objectId,
         includePrototype: true,
       );
-      print(properties);
+      devToolsLogger.fine(
+          'Loaded ${properties.length} properties for ${widget.remoteObject.objectId}');
 
       if (mounted) {
         setState(() {

@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
 
+// ignore: constant_identifier_names
 const SHIMMER = 'FLUTTER-SHIMMER';
 
 class FlutterShimmerElement extends WidgetElement {

@@ -49,7 +49,6 @@ Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool e
   }
   renderers.add(ancestor);
   List<Offset> stackOffsets = [];
-  final Matrix4 transform = Matrix4.identity();
 
   for (int index = renderers.length - 1; index > 0; index -= 1) {
     RenderObject parentRenderer = renderers[index];
@@ -902,7 +901,7 @@ abstract class RenderBoxModel extends RenderBox
     if (excludeScrollOffset) {
       offset -= Offset(scrollLeft, scrollTop);
     }
-    transform.translate(offset.dx, offset.dy);
+    transform.translateByDouble(offset.dx, offset.dy, 0.0, 1.0);
   }
 
   Offset obtainLayoutTransform(RenderObject child, bool excludeScrollOffset) {
@@ -1179,7 +1178,7 @@ abstract class RenderBoxModel extends RenderBox
     final double bgHeight = math.min(maxPaintHeight, textPainter.height + kPadding * 2);
 
     // Draw a red translucent background spanning the expanded area
-    final Paint errorPaint = Paint()..color = const Color(0xFFFF0000).withOpacity(0.7);
+    final Paint errorPaint = Paint()..color = const Color(0xFFFF0000).withAlpha((0.7 * 255).round());
     final Rect bgRect = Rect.fromLTWH(offset.dx, offset.dy, maxPaintWidth, bgHeight);
     canvas.drawRect(bgRect, errorPaint);
 
@@ -1300,10 +1299,10 @@ abstract class RenderBoxModel extends RenderBox
   }
 
   List<double> _createDropShadowColorMatrix(Color color) {
-    final double r = color.red / 255.0;
-    final double g = color.green / 255.0;
-    final double b = color.blue / 255.0;
-    final double a = color.alpha / 255.0;
+    final double r = color.r;
+    final double g = color.g;
+    final double b = color.b;
+    final double a = color.a;
     return <double>[
       0, 0, 0, r, 0,
       0, 0, 0, g, 0,

@@ -28,6 +28,8 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// ignore_for_file: constant_identifier_names
+
 part of 'parser.dart';
 
 // TODO(terry): Need to be consistent with tokens either they're ASCII tokens

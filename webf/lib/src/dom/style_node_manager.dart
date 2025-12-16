@@ -37,10 +37,6 @@ class StyleNodeManager {
 
   StyleNodeManager(this.document);
 
-  // Diagnostics: capture last invalidation fallback traversal counts
-  int _lastInvalidateFallbackVisited = 0;
-  int _lastInvalidateFallbackMatched = 0;
-
   void addStyleSheetCandidateNode(Node node) {
     if (!node.isConnected) {
       return;
@@ -105,8 +101,6 @@ class StyleNodeManager {
         return false;
       }
       invalidateElementStyle(changedRuleSet);
-      final int fbVisited = _lastInvalidateFallbackVisited;
-      final int fbMatched = _lastInvalidateFallbackMatched;
       if (shouldForceHtml) {
         final HTMLElement? root = document.documentElement;
         if (root != null) {
@@ -125,7 +119,6 @@ class StyleNodeManager {
         document.markElementStyleDirty(root);
       }
     }
-    int indexMs = 0;
     document.handleStyleSheets(newSheets);
     _pendingStyleSheets.clear();
     _isStyleSheetCandidateNodeChanged = false;
@@ -184,7 +177,6 @@ class StyleNodeManager {
     // 4) Fallback cases: tag/universal/pseudo changes.
     // Prefer a bounded scan using the collector rather than forcing a root recalc.
     int fallbackVisited = 0;
-    int fallbackMatched = 0;
     final bool hasTagRules = changedRuleSet.tagRules.isNotEmpty;
     if (hasTagRules ||
         changedRuleSet.universalRules.isNotEmpty ||
@@ -197,7 +189,6 @@ class StyleNodeManager {
           fallbackVisited++;
           final rules = collector.matchedRulesForInvalidate(changedRuleSet, node);
           if (rules.isNotEmpty) {
-            fallbackMatched++;
             addReason(node, 'fallback');
           }
         }
@@ -233,8 +224,6 @@ class StyleNodeManager {
       document.markElementStyleDirty(el, reason: reasons[el]?.join('|'));
     }
     marked = dirty.length;
-    _lastInvalidateFallbackVisited = fallbackVisited;
-    _lastInvalidateFallbackMatched = fallbackMatched;
     return marked;
   }
 

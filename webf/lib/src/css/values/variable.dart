@@ -9,7 +9,7 @@
 
 import 'package:webf/css.dart';
 
-const int _HYPHEN_CODE = 45; // -
+const int _hyphenCode = 45; // -
 
 // https://www.w3.org/TR/css-variables-1/#defining-variables
 class CSSVariable {
@@ -17,7 +17,7 @@ class CSSVariable {
     if (value == null) {
       return false;
     }
-    return value.length > 2 && value.codeUnitAt(0) == _HYPHEN_CODE && value.codeUnitAt(1) == _HYPHEN_CODE;
+    return value.length > 2 && value.codeUnitAt(0) == _hyphenCode && value.codeUnitAt(1) == _hyphenCode;
   }
 
   static bool isCSSVariableValue(String? value) {

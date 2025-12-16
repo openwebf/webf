@@ -65,7 +65,7 @@ class WebF extends StatefulWidget {
   static void setHttpCacheMode(HttpCacheMode mode) {
     HttpCacheController.mode = mode;
     if (kDebugMode) {
-      print('WebF http cache mode set to $mode.');
+      widgetLogger.fine('WebF http cache mode set to $mode.');
     }
   }
 
@@ -88,7 +88,7 @@ class WebF extends StatefulWidget {
                 if (e is FileSystemException && e.osError?.errorCode == 2) {
                   // ENOENT - already removed
                 } else {
-                  print('Warning: Failed to remove HTTP cache directory ${entity.path}: $e');
+                  widgetLogger.warning('Failed to remove HTTP cache directory ${entity.path}', e);
                 }
               }
             }
@@ -127,7 +127,7 @@ class WebF extends StatefulWidget {
               await bytecodeCacheDirectory.delete(recursive: true);
             } catch (retryError) {
               // If still failing, log and continue
-              print('Warning: Could not fully clear bytecode cache directory: $retryError');
+              widgetLogger.warning('Could not fully clear bytecode cache directory', retryError);
             }
           } else {
             rethrow;
@@ -139,8 +139,7 @@ class WebF extends StatefulWidget {
       HttpCacheController.clearAllMemoryCaches();
       QuickJSByteCodeCache.clearMemoryCache();
     } catch (e, stackTrace) {
-      print('Error clearing all caches: $e');
-      print('\n$stackTrace');
+      widgetLogger.severe('Error clearing all caches', e, stackTrace);
       rethrow;
     }
   }
@@ -265,7 +264,7 @@ class AutoManagedWebFState extends State<AutoManagedWebF> {
         initialState: widget.initialState,
         errorBuilder: widget.errorBuilder,
         onDispose: () {
-          print('webf $controller disposed');
+          widgetLogger.fine('webf $controller disposed');
           setState(() {});
         },
         onBuildSuccess: widget.onBuildSuccess,
@@ -790,6 +789,8 @@ class WebFStateElement extends StatefulElement {
       await _loadingInPreloadMode();
     } else if (controller.mode == WebFLoadingMode.preRendering) {
       await _loadingInPreRenderingMode();
+    } else {
+      await _loadingInNormalMode();
     }
 
     bool hasInitialRoute = widget.initialRoute != null || widget.controller.initialRoute != null;

@@ -13,6 +13,7 @@ import 'package:webf/webf.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
 
+// ignore: constant_identifier_names
 const String FLUTTER_GESTURE_DETECTOR = 'FLUTTER-GESTURE-DETECTOR';
 
 // Custom gesture detector element
@@ -46,7 +47,6 @@ class FlutterGestureDetectorState extends WebFWidgetElementState {
   }
 
   // Track last focal points to compute deltas for pan-style events.
-  Offset? _lastGlobalFocalPoint;
   Offset? _lastLocalFocalPoint;
   double _panTotalDeltaX = 0.0;
   double _panTotalDeltaY = 0.0;
@@ -107,7 +107,6 @@ class FlutterGestureDetectorState extends WebFWidgetElementState {
         });
 
         // Initialize tracking for pan deltas
-        _lastGlobalFocalPoint = details.focalPoint;
         _lastLocalFocalPoint = details.localFocalPoint;
         _panTotalDeltaX = 0;
         _panTotalDeltaY = 0;
@@ -154,7 +153,6 @@ class FlutterGestureDetectorState extends WebFWidgetElementState {
           'timestamp': _now(),
         });
 
-        _lastGlobalFocalPoint = details.focalPoint;
         _lastLocalFocalPoint = details.localFocalPoint;
       },
       onScaleEnd: (details) {

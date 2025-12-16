@@ -6,6 +6,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
+// ignore_for_file: constant_identifier_names
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -225,9 +227,9 @@ class UIInspector {
     String remoteAddress = await UIInspector.getConnectedLocalNetworkAddress();
     String inspectorURL = '$INSPECTOR_URL?ws=$remoteAddress:$port';
 
-    print('WebF DevTool listening at ws://$remoteAddress:$port');
-    print('Open Chrome/Edge and enter following url to your navigator:');
-    print('    $inspectorURL');
+    devToolsLogger.info('WebF DevTool listening at ws://$remoteAddress:$port');
+    devToolsLogger.info('Open Chrome/Edge and enter following url to your navigator:');
+    devToolsLogger.info('    $inspectorURL');
     if (DebugFlags.enableDevToolsLogs) {
       devToolsLogger.info('[DevTools] Server started ws=$remoteAddress:$port');
     }

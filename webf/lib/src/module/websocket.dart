@@ -6,6 +6,7 @@ import 'dart:io';
 
 import 'package:webf/dom.dart';
 import 'package:webf/module.dart';
+import 'package:webf/src/foundation/logger.dart';
 import 'package:web_socket_channel/io.dart';
 
 enum _ConnectionState { closed }
@@ -82,7 +83,7 @@ class WebSocketModule extends BaseModule {
       }
     }).catchError((e, stack) {
       // print connection error internally and trigger error event.
-      print(e);
+      networkLogger.warning('WebSocket connect error for $url', e, stack);
       Event event = Event(EVENT_ERROR);
       callback(id, event);
     });
@@ -133,7 +134,7 @@ class WebSocketModule extends BaseModule {
     }, onError: (error) {
       if (!_hasListener(id, EVENT_ERROR)) return;
       // print error internally and trigger error event;
-      print(error);
+      networkLogger.warning('WebSocket stream error for id=$id', error);
       Event event = Event(EVENT_ERROR);
       callback(id, event);
     }, onDone: () {

@@ -706,7 +706,6 @@ extension CSSDisplayText on CSSDisplay {
       case CSSDisplay.inlineGrid:
         return 'inline-grid';
       case CSSDisplay.inline:
-      default:
         return 'inline';
     }
   }
@@ -884,7 +883,6 @@ String _gridAutoFlowToCss(GridAutoFlow flow) {
     case GridAutoFlow.columnDense:
       return 'column dense';
     case GridAutoFlow.row:
-    default:
       return 'row';
   }
 }
@@ -1011,7 +1009,6 @@ String _gridPlacementToCss(
       }
       return (placement.line ?? 1).toString();
     case GridPlacementKind.auto:
-    default:
       return 'auto';
   }
 }
@@ -1039,7 +1036,6 @@ String _gridAxisAlignmentToCss(GridAxisAlignment alignment) {
     case GridAxisAlignment.stretch:
       return 'stretch';
     case GridAxisAlignment.auto:
-    default:
       return 'auto';
   }
 }
@@ -1059,7 +1055,6 @@ String _alignItemsToCss(AlignItems value) {
     case AlignItems.baseline:
       return 'baseline';
     case AlignItems.stretch:
-    default:
       return 'stretch';
   }
 }
@@ -1081,7 +1076,6 @@ String _alignSelfToCss(AlignSelf value) {
     case AlignSelf.baseline:
       return 'baseline';
     case AlignSelf.stretch:
-    default:
       return 'stretch';
   }
 }
@@ -1105,7 +1099,6 @@ String _alignContentToCss(AlignContent value) {
     case AlignContent.spaceEvenly:
       return 'space-evenly';
     case AlignContent.stretch:
-    default:
       return 'stretch';
   }
 }
@@ -1128,8 +1121,6 @@ String _justifyContentToCss(JustifyContent value) {
       return 'space-around';
     case JustifyContent.spaceEvenly:
       return 'space-evenly';
-    default:
-      return 'flex-start';
   }
 }
 

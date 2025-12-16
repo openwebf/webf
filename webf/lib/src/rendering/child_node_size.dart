@@ -216,11 +216,9 @@ class RenderChildSize extends RenderProxyBox {
       List<RenderBox> children,
       ) {
     List<RunMetrics> runMetrics = <RunMetrics>[];
-    double mainAxisLimit = ownerElement.renderStyle.contentMaxConstraintsWidth;
 
     double runMainAxisExtent = 0.0;
     double runCrossAxisExtent = 0.0;
-    RenderBox? preChild;
     double maxSizeAboveBaseline = 0;
     double maxSizeBelowBaseline = 0;
     List<RenderBox> runChildren = [];
@@ -290,7 +288,6 @@ class RenderChildSize extends RenderProxyBox {
         childParentData.runIndex = runMetrics.length;
       }
 
-      preChild = child;
     });
 
     if (runChildren.isNotEmpty) {

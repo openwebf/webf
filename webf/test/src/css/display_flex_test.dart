@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 /*
  * Copyright (C) 2025-present The WebF authors. All rights reserved.
  */
@@ -59,7 +61,6 @@ void main() {
         ''',
       );
 
-      var container = prepared.getElementById('container');
       var item1 = prepared.getElementById('item1');
       var item2 = prepared.getElementById('item2');
       var item3 = prepared.getElementById('item3');

@@ -5,6 +5,8 @@
 /*
  * Copyright (C) 2021-present The Kraken authors. All rights reserved.
  */
+// ignore_for_file: constant_identifier_names
+
 import 'package:webf/css.dart';
 
 abstract class CSSRule {

@@ -97,7 +97,6 @@ void main() {
       final controller = prepared.controller;
       await tester.pump();
 
-      final container = controller.view.document.querySelector(['div']) as dom.Element;
       final spans = controller.view.document.querySelectorAll(['span']);
 
       // Get render boxes
@@ -189,7 +188,6 @@ void main() {
       final controller = prepared.controller;
       await tester.pump();
 
-      final container = controller.view.document.querySelector(['div']) as dom.Element;
       final span = controller.view.document.querySelector(['span']) as dom.Element;
       final spanBox = span.attachedRenderer!;
 

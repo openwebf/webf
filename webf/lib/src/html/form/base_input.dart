@@ -469,8 +469,7 @@ mixin BaseInputState on WebFWidgetElementState {
     bool isAutoHeight = widgetElement.renderStyle.height.isAuto;
     bool isAutoWidth = widgetElement.renderStyle.width.isAuto;
 
-    // Compute accessible name (ARIA or native <label>) and feed into
-    // InputDecoration so EditableText provides correct semantics natively.
+    // Accessible name (ARIA or native <label>) for Semantics wrapper.
     final String? accessibleName = WebFAccessibility.computeAccessibleName(widgetElement);
 
     InputDecoration decoration = InputDecoration(
@@ -609,12 +608,11 @@ mixin BaseInputState on WebFWidgetElementState {
     }
 
     // ARIA semantics for accessible name/description on input controls.
-    final String? semanticsLabel = WebFAccessibility.computeAccessibleName(widgetElement);
     final String? semanticsHint = WebFAccessibility.computeAccessibleDescription(widgetElement);
-    if ((semanticsLabel != null && semanticsLabel.isNotEmpty) || (semanticsHint != null && semanticsHint.isNotEmpty)) {
+    if ((accessibleName != null && accessibleName.isNotEmpty) || (semanticsHint != null && semanticsHint.isNotEmpty)) {
       widget = Semantics(
         container: true,
-        label: (semanticsLabel != null && semanticsLabel.isNotEmpty) ? semanticsLabel : null,
+        label: (accessibleName != null && accessibleName.isNotEmpty) ? accessibleName : null,
         hint: (semanticsHint != null && semanticsHint.isNotEmpty) ? semanticsHint : null,
         textDirection: widgetElement.renderStyle.direction,
         child: widget,

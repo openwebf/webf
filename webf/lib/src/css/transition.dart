@@ -15,7 +15,7 @@ import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
 
 // CSS Transitions: https://drafts.csswg.org/css-transitions/
-const String _0s = '0s';
+const String _zeroSeconds = '0s';
 
 Color? _parseColor(String color, RenderStyle renderStyle, String propertyName) {
   return CSSColor
@@ -34,10 +34,10 @@ Color _updateColor(Color oldColor, Color newColor, double progress, String prope
   // only alpha (red → transparent red) instead of passing through black.
   Color effectiveOld = oldColor;
   Color effectiveNew = newColor;
-  if (oldColor.opacity == 0.0 && newColor.opacity > 0.0) {
-    effectiveOld = Color.fromRGBO(newColor.red, newColor.green, newColor.blue, 0.0);
-  } else if (newColor.opacity == 0.0 && oldColor.opacity > 0.0) {
-    effectiveNew = Color.fromRGBO(oldColor.red, oldColor.green, oldColor.blue, 0.0);
+  if (oldColor.a == 0.0 && newColor.a > 0.0) {
+    effectiveOld = newColor.withAlpha(0);
+  } else if (newColor.a == 0.0 && oldColor.a > 0.0) {
+    effectiveNew = oldColor.withAlpha(0);
   }
 
   Color? result = Color.lerp(effectiveOld, effectiveNew, progress);
@@ -279,7 +279,7 @@ List<CSSBoxShadow> _updateBoxShadowForTransition(
         if (!asTransparent) return s;
         final Color base = s.color ?? CSSColor.initial;
         return CSSBoxShadow(
-          color: base.withOpacity(0.0),
+          color: base.withAlpha(0),
           offsetX: s.offsetX ?? CSSLengthValue.zero,
           offsetY: s.offsetY ?? CSSLengthValue.zero,
           blurRadius: s.blurRadius ?? CSSLengthValue.zero,
@@ -291,7 +291,7 @@ List<CSSBoxShadow> _updateBoxShadowForTransition(
         final CSSBoxShadow t = template;
         final Color base = t.color ?? CSSColor.initial;
         return CSSBoxShadow(
-          color: asTransparent ? base.withOpacity(0.0) : base,
+          color: asTransparent ? base.withAlpha(0) : base,
           offsetX: t.offsetX ?? CSSLengthValue.zero,
           offsetY: t.offsetY ?? CSSLengthValue.zero,
           blurRadius: t.blurRadius ?? CSSLengthValue.zero,
@@ -650,7 +650,7 @@ mixin CSSTransitionMixin on RenderStyle {
   }
 
   @override
-  List<String> get transitionDuration => _transitionDuration ?? const [_0s];
+  List<String> get transitionDuration => _transitionDuration ?? const [_zeroSeconds];
 
   // https://drafts.csswg.org/css-transitions/#transition-timing-function-property
   // Name: transition-timing-function
@@ -690,7 +690,7 @@ mixin CSSTransitionMixin on RenderStyle {
   }
 
   @override
-  List<String> get transitionDelay => _transitionDelay ?? const [_0s];
+  List<String> get transitionDelay => _transitionDelay ?? const [_zeroSeconds];
 
   Map<String, List>? _effectiveTransitions;
 

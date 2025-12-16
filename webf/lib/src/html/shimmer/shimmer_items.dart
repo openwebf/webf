@@ -2,6 +2,8 @@
  * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
  * Licensed under GNU GPL with Enterprise exception.
  */
+// ignore_for_file: constant_identifier_names
+
 import 'package:webf/webf.dart';
 import 'package:flutter/material.dart';
 

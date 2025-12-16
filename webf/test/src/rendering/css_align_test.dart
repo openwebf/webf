@@ -45,7 +45,6 @@ void main() {
         ''',
       );
 
-      final container = prepared.getElementById('container');
       final text = prepared.getElementById('text');
       final rect = text.getBoundingClientRect();
 
@@ -220,7 +219,6 @@ void main() {
         ''',
       );
 
-      final container = prepared.getElementById('container');
       final block = prepared.getElementById('block');
       final inlineBlock = prepared.getElementById('inline-block');
 

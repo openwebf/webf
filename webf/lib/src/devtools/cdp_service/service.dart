@@ -21,6 +21,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
@@ -160,7 +161,6 @@ abstract class DevToolsService {
         if (didSeed) {
           // Still update child count since structure changed
           try {
-            final pId = context.forDevtoolsNodeId(parent);
             final count = parent.childNodes
                 .where((c) => c is Element || (c is TextNode && c.data.trim().isNotEmpty))
                 .length;
@@ -486,9 +486,9 @@ class ChromeDevToolsService extends DevToolsService {
     // Start the unified service if not already running
     if (!unifiedService.isRunning) {
       unifiedService.start().then((_) {
-        print('Chrome DevTools service started');
+        debugPrint('Chrome DevTools service started');
       }).catchError((error) {
-        print('Failed to start DevTools service: $error');
+        debugPrint('Failed to start DevTools service: $error');
       });
     }
   }
@@ -703,7 +703,7 @@ class UnifiedChromeDevToolsService {
               }
             }
           } catch (e) {
-            print('Error replaying queued message: $e');
+            debugPrint('Error replaying queued message: $e');
           }
         }
       });
@@ -838,40 +838,40 @@ class UnifiedChromeDevToolsService {
     _devToolsUrl =
         'devtools://devtools/bundled/inspector.html?ws=$connectAddress:${_httpServer!.port}';
 
-    print(
+    debugPrint(
         '╔════════════════════════════════════════════════════════════════════╗');
-    print(
+    debugPrint(
         '║                Chrome DevTools Server Started                       ║');
-    print(
+    debugPrint(
         '╚════════════════════════════════════════════════════════════════════╝');
-    print('');
-    print(
+    debugPrint('');
+    debugPrint(
         'DevTools is listening on port ${_httpServer!.port} on all network interfaces.');
-    print('');
-    print(
+    debugPrint('');
+    debugPrint(
         'To debug your WebF application, open Chrome or Edge and navigate to:');
-    print('');
-    print('  $_devToolsUrl');
-    print('');
+    debugPrint('');
+    debugPrint('  $_devToolsUrl');
+    debugPrint('');
 
     if (availableIPs.length > 1) {
-      print('Available on multiple network interfaces:');
+      debugPrint('Available on multiple network interfaces:');
       for (final ip in availableIPs) {
-        print(
+        debugPrint(
             '  • devtools://devtools/bundled/inspector.html?ws=$ip:${_httpServer!.port}');
       }
-      print('');
+      debugPrint('');
     }
 
-    print('You can also use localhost:');
-    print(
+    debugPrint('You can also use localhost:');
+    debugPrint(
         '  • devtools://devtools/bundled/inspector.html?ws=localhost:${_httpServer!.port}');
-    print('');
-    print('For debugging tools, visit:');
-    print('  • http://$connectAddress:${_httpServer!.port}/json/version');
-    print('  • http://$connectAddress:${_httpServer!.port}/json/list');
-    print('');
-    print('─' * 70);
+    debugPrint('');
+    debugPrint('For debugging tools, visit:');
+    debugPrint('  • http://$connectAddress:${_httpServer!.port}/json/version');
+    debugPrint('  • http://$connectAddress:${_httpServer!.port}/json/list');
+    debugPrint('');
+    debugPrint('─' * 70);
   }
 
   Future<shelf.Response> _handleRequest(shelf.Request request) async {
@@ -898,7 +898,7 @@ class UnifiedChromeDevToolsService {
     webSocket.stream.listen(
       (message) => _handleWebSocketMessage(connectionId, message),
       onError: (error) {
-        print('WebSocket error: $error');
+        debugPrint('WebSocket error: $error');
         _connections.remove(connectionId);
         if (DebugFlags.enableDevToolsLogs) {
           devToolsLogger.warning('[DevTools] WS error id=$connectionId err=$error');
@@ -966,7 +966,7 @@ class UnifiedChromeDevToolsService {
         }
       }
     } catch (e) {
-      print('Error handling WebSocket message: $e');
+      debugPrint('Error handling WebSocket message: $e');
     }
   }
 
@@ -1324,7 +1324,7 @@ class UnifiedChromeDevToolsService {
         try {
           connection.sink.add(message);
         } catch (e) {
-          print('Error sending event: $e');
+          debugPrint('Error sending event: $e');
         }
       }
     }
@@ -1344,7 +1344,7 @@ class UnifiedChromeDevToolsService {
       try {
         connection.sink.add(message);
       } catch (e) {
-        print('Error sending result: $e');
+        debugPrint('Error sending result: $e');
       }
     }
   }

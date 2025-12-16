@@ -7,6 +7,8 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
+// ignore_for_file: constant_identifier_names
+
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/src/css/css_animation.dart';

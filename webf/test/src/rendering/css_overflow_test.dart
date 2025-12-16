@@ -385,7 +385,6 @@ void main() {
       );
 
       final container = prepared.getElementById('container');
-      final content = prepared.getElementById('content');
       
       // Change to hidden
       await tester.runAsync(() async {

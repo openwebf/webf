@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 /*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
@@ -118,7 +120,6 @@ void main() {
 
       await tester.pump();
 
-      final container = prepared.getElementById('container');
       final item1 = prepared.getElementById('item1');
       final item2 = prepared.getElementById('item2');
       

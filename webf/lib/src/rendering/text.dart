@@ -389,9 +389,4 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     return tp.height;
   }
 
-  // Debug helpers
-  static String _fmtC(BoxConstraints c) =>
-      'C[minW=${c.minWidth.toStringAsFixed(1)}, maxW=${c.maxWidth.isFinite ? c.maxWidth.toStringAsFixed(1) : '∞'}, minH=${c.minHeight.toStringAsFixed(1)}, maxH=${c.maxHeight.isFinite ? c.maxHeight.toStringAsFixed(1) : '∞'}]';
-  static String _fmtS(Size s) => 'S(${s.width.toStringAsFixed(1)}×${s.height.toStringAsFixed(1)})';
-  static String _fmtO(Offset o) => 'O(${o.dx.toStringAsFixed(1)},${o.dy.toStringAsFixed(1)})';
 }

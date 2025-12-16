@@ -9,6 +9,7 @@
 import 'dart:collection';
 import 'dart:async';
 import 'package:flutter/widgets.dart';
+import 'package:webf/src/foundation/logger.dart';
 
 /// Represents a single phase in the WebFController loading lifecycle
 class LoadingPhase {
@@ -1353,34 +1354,35 @@ class LoadingStateDump {
   }
 
   String _getPhaseDisplayName(String phaseName) {
-    if (phaseName == LoadingState.phaseConstructor) {
-      return 'Constructor';
-    } else if (phaseName == LoadingState.phaseInit) return 'Initialize';
-    else if (phaseName == LoadingState.phaseLoadStart) return 'Load Start';
-    else if (phaseName == LoadingState.phasePreload) return 'Preload Start';
-    else if (phaseName == LoadingState.phasePreloadEnd) return 'Preload End';
-    else if (phaseName == LoadingState.phaseResolveEntrypoint) return 'Resolve Entrypoint';
-    else if (phaseName == 'resolveEntrypoint.start') return 'Resolve Entrypoint Start';
-    else if (phaseName == 'resolveEntrypoint.end') return 'Resolve Entrypoint End';
-    else if (phaseName == LoadingState.phaseEvaluateStart) return 'Evaluate Start';
-    else if (phaseName == LoadingState.phaseParseHTML) return 'Parse HTML';
-    else if (phaseName == 'parseHTML.start') return 'Parse HTML Start';
-    else if (phaseName == 'parseHTML.end') return 'Parse HTML End';
-    else if (phaseName == LoadingState.phaseEvaluateScripts) return 'Evaluate Scripts';
-    else if (phaseName == LoadingState.phaseEvaluateComplete) return 'Evaluate Complete';
-    else if (phaseName == LoadingState.phaseDOMContentLoaded) return 'DOM Content Loaded';
-    else if (phaseName == LoadingState.phaseWindowLoad) return 'Window Load';
-    else if (phaseName == LoadingState.phaseBuildRootView) return 'Build Root View';
-    else if (phaseName == LoadingState.phaseFirstPaint) return 'First Paint (FP)';
-    else if (phaseName == LoadingState.phaseFirstContentfulPaint) return 'First Contentful Paint (FCP)';
-    else if (phaseName == LoadingState.phaseLargestContentfulPaint) return 'Largest Contentful Paint (LCP)';
-    else if (phaseName == LoadingState.phaseAttachToFlutter) return 'Attach to Flutter';
-    else if (phaseName == LoadingState.phaseScriptQueue) return 'Script Queue';
-    else if (phaseName == LoadingState.phaseScriptLoadStart) return 'Script Load Start';
-    else if (phaseName == LoadingState.phaseScriptLoadComplete) return 'Script Load Complete';
-    else if (phaseName == LoadingState.phaseScriptExecuteStart) return 'Script Execute Start';
-    else if (phaseName == LoadingState.phaseScriptExecuteComplete) return 'Script Execute Complete';
-    else return phaseName;
+    return switch (phaseName) {
+      LoadingState.phaseConstructor => 'Constructor',
+      LoadingState.phaseInit => 'Initialize',
+      LoadingState.phaseLoadStart => 'Load Start',
+      LoadingState.phasePreload => 'Preload Start',
+      LoadingState.phasePreloadEnd => 'Preload End',
+      LoadingState.phaseResolveEntrypoint => 'Resolve Entrypoint',
+      'resolveEntrypoint.start' => 'Resolve Entrypoint Start',
+      'resolveEntrypoint.end' => 'Resolve Entrypoint End',
+      LoadingState.phaseEvaluateStart => 'Evaluate Start',
+      LoadingState.phaseParseHTML => 'Parse HTML',
+      'parseHTML.start' => 'Parse HTML Start',
+      'parseHTML.end' => 'Parse HTML End',
+      LoadingState.phaseEvaluateScripts => 'Evaluate Scripts',
+      LoadingState.phaseEvaluateComplete => 'Evaluate Complete',
+      LoadingState.phaseDOMContentLoaded => 'DOM Content Loaded',
+      LoadingState.phaseWindowLoad => 'Window Load',
+      LoadingState.phaseBuildRootView => 'Build Root View',
+      LoadingState.phaseFirstPaint => 'First Paint (FP)',
+      LoadingState.phaseFirstContentfulPaint => 'First Contentful Paint (FCP)',
+      LoadingState.phaseLargestContentfulPaint => 'Largest Contentful Paint (LCP)',
+      LoadingState.phaseAttachToFlutter => 'Attach to Flutter',
+      LoadingState.phaseScriptQueue => 'Script Queue',
+      LoadingState.phaseScriptLoadStart => 'Script Load Start',
+      LoadingState.phaseScriptLoadComplete => 'Script Load Complete',
+      LoadingState.phaseScriptExecuteStart => 'Script Execute Start',
+      LoadingState.phaseScriptExecuteComplete => 'Script Execute Complete',
+      _ => phaseName,
+    };
   }
 
   void _displayNetworkCategory(StringBuffer buffer, String categoryName, List<LoadingNetworkRequest> requests,
@@ -1759,7 +1761,7 @@ class LoadingState {
           listener(event);
         } catch (e) {
           // Prevent listener errors from affecting the loading process
-          print('Error in phase listener for ${phase.name}: $e');
+          widgetLogger.warning('Error in phase listener for ${phase.name}', e);
         }
       }
     }
@@ -1770,7 +1772,7 @@ class LoadingState {
         listener(event);
       } catch (e) {
         // Prevent listener errors from affecting the loading process
-        print('Error in generic phase listener: $e');
+        widgetLogger.warning('Error in generic phase listener', e);
       }
     }
   }
@@ -2339,31 +2341,6 @@ class LoadingState {
   /// Legacy method for backward compatibility - returns formatted string
   String dumpAsString({LoadingStateDumpOptions? options}) {
     return dump(options: options).toString();
-  }
-
-
-  /// Formats a duration into a human-readable string
-  String _formatDuration(Duration duration) {
-    if (duration.inMilliseconds < 1000) {
-      return '${duration.inMilliseconds}ms';
-    } else if (duration.inSeconds < 60) {
-      return '${(duration.inMilliseconds / 1000).toStringAsFixed(2)}s';
-    } else {
-      final minutes = duration.inMinutes;
-      final seconds = duration.inSeconds % 60;
-      return '${minutes}m ${seconds}s';
-    }
-  }
-
-  /// Formats bytes into human-readable string
-  String _formatBytes(int bytes) {
-    if (bytes < 1024) {
-      return '${bytes}B';
-    } else if (bytes < 1024 * 1024) {
-      return '${(bytes / 1024).toStringAsFixed(1)}KB';
-    } else {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
-    }
   }
 
   /// Dispatches a loading error event to registered listeners

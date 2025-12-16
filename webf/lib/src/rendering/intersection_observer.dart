@@ -307,9 +307,7 @@ class IntersectionObserverLayer extends ContainerLayer {
     if (!isUpdateScheduled && null == _timer) {
       // We use a normal [Timer] instead of a [RestartableTimer] so that changes
       // to the update duration will be picked up automatically.
-      _timer = Timer.periodic(_updateInterval, (Timer timer) {
-        SchedulerBinding.instance.scheduleTask<void>(_processCallbacks, Priority.touch);
-      });
+      _timer = Timer.periodic(_updateInterval, (Timer timer) => _handleUpdateTimer());
     }
   }
 

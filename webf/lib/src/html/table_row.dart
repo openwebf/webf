@@ -7,6 +7,7 @@ import 'package:webf/src/widget/widget_element.dart';
 import 'table_row_bindings_generated.dart';
 import 'table_cell.dart';
 
+// ignore: constant_identifier_names
 const String WEBF_TABLE_ROW = 'WEBF-TABLE-ROW';
 
 class WebFTableRow extends WebFTableRowBindings {

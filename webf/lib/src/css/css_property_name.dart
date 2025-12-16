@@ -6,6 +6,8 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
+// ignore_for_file: constant_identifier_names
+
 enum CSSPropertyID {
   Invalid,
   Variable,

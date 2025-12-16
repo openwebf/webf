@@ -6,6 +6,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
+// ignore_for_file: constant_identifier_names
+
 import 'dart:async';
 import 'dart:ui' as ui;
 import 'dart:ui';
@@ -618,8 +620,8 @@ class ImageElement extends Element {
     _imgLog('[IMG] _updateImageData elem=$hashCode taskId=$taskId lazy=$shouldLazyLoading mountedStates=${_imageState.length}');
     final future = _updateImageDataTask(taskId);
     _updateImageDataTaskFuture = future;
-    future.catchError((e) {
-      print(e);
+    future.catchError((e, stack) {
+      debugPrint('$e\n$stack');
     }).whenComplete(() {
       if (taskId == _updateImageDataTaskId) {
         _imgLog('[IMG] _updateImageData complete elem=$hashCode taskId=$taskId');
@@ -728,7 +730,7 @@ class ImageElement extends Element {
       _imgLog('[IMG] _loadSVGImage elem=$hashCode bytes=${response.bytes.length}');
       _applySVGResponse(response);
     } catch (e, stack) {
-      print('$e\n$stack');
+      debugPrint('$e\n$stack');
       _dispatchErrorEvent();
     } finally {
       // Decrement load event delay count after decode.

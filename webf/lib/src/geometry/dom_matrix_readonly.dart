@@ -392,9 +392,9 @@ class DOMMatrixReadOnly extends DynamicBindingObject with StaticDefinedBindingOb
 
   DOMMatrix scale(double sX, double sY, double sZ, double oriX, double oriY, double oriZ) {
     Matrix4 m = _matrix4.clone()
-      ..translate(oriX, oriY, oriZ)
-      ..scale(sX, sY, sZ)
-      ..translate(-oriX, -oriY, -oriZ);
+      ..translateByDouble(oriX, oriY, oriZ, 1.0)
+      ..scaleByDouble(sX, sY, sZ, 1.0)
+      ..translateByDouble(-oriX, -oriY, -oriZ, 1.0);
     bool flag2D = _is2D;
     if (sZ != 1 || oriZ != 0) {
       flag2D = false;
@@ -407,7 +407,7 @@ class DOMMatrixReadOnly extends DynamicBindingObject with StaticDefinedBindingOb
   }
 
   DOMMatrix scaleNonUniform(double sX, double sY) {
-    Matrix4 m = _matrix4.clone()..scale(sX, sY, 1);
+    Matrix4 m = _matrix4.clone()..scaleByDouble(sX, sY, 1.0, 1.0);
     return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, _is2D);
   }
 
@@ -454,7 +454,7 @@ class DOMMatrixReadOnly extends DynamicBindingObject with StaticDefinedBindingOb
   }
 
   DOMMatrix translate(double tx, double ty, double tz) {
-    Matrix4 m = _matrix4.clone()..translate(tx, ty, tz);
+    Matrix4 m = _matrix4.clone()..translateByDouble(tx, ty, tz, 1.0);
     bool flag2D = _is2D;
     if (tz != 0) {
       flag2D = false;

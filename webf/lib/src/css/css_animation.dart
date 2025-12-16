@@ -11,7 +11,7 @@ import 'package:webf/dom.dart';
 
 // CSS Animation: https://drafts.csswg.org/css-animations/
 
-const String _0s = '0s';
+const String _zeroSeconds = '0s';
 
 mixin CSSAnimationMixin on RenderStyle {
   List<String>? _animationName;
@@ -26,7 +26,7 @@ mixin CSSAnimationMixin on RenderStyle {
   List<String>? _animationDuration;
 
   @override
-  List<String> get animationDuration => _animationDuration ?? const [_0s];
+  List<String> get animationDuration => _animationDuration ?? const [_zeroSeconds];
 
   set animationDuration(List<String>? value) {
     _animationDuration = value;
@@ -44,7 +44,7 @@ mixin CSSAnimationMixin on RenderStyle {
   List<String>? _animationDelay;
 
   @override
-  List<String> get animationDelay => _animationDelay ?? const [_0s];
+  List<String> get animationDelay => _animationDelay ?? const [_zeroSeconds];
 
   set animationDelay(List<String>? value) {
     _animationDelay = value;

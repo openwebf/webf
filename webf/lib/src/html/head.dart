@@ -6,6 +6,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
+// ignore_for_file: constant_identifier_names
+
 import 'dart:async';
 import 'dart:io';
 
@@ -341,10 +343,8 @@ class LinkElement extends Element {
       return;
     }
 
+    ownerDocument.incrementRequestCount();
     try {
-      // Increment count when request
-      ownerDocument.incrementRequestCount();
-
       // Create a WebFBundle for the resource
       WebFBundle bundle = WebFBundle.fromUrl(url);
 
@@ -353,10 +353,11 @@ class LinkElement extends Element {
 
       // Add the preloaded bundle to the controller
       _addBundleToPreloadedBundles(bundle);
-
-      // Decrement count when response
+    } catch (e, st) {
+      domLogger.warning('[HeadElement] Failed to preload bundle url=$url', e, st);
+    } finally {
+      // Decrement count when response/error
       ownerDocument.decrementRequestCount();
-    } catch (e) {
     }
   }
 

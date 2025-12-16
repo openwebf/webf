@@ -46,6 +46,7 @@ class Path2D extends DynamicBindingObject{
 
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeMethods(methods);
      methods['moveTo'] = BindingObjectMethodSync(
         call: (args) => moveTo(
           castToType<num>(args[0]).toDouble(),
@@ -111,6 +112,7 @@ class Path2D extends DynamicBindingObject{
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeProperties(properties);
     // TODO: implement initializeProperties
   }
 

@@ -17,7 +17,11 @@ import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
-// logger import removed (no direct logging in this file)
+
+int _colorByte(double channel) => (channel * 255.0).round().clamp(0, 255).toInt();
+
+String _rgbaString(Color c) =>
+    'rgba(${_colorByte(c.r)},${_colorByte(c.g)},${_colorByte(c.b)},${c.a.toStringAsFixed(3)})';
 
 // A circular list implementation that allows access in a circular fashion.
 class CircularIntervalList<T> {
@@ -450,7 +454,6 @@ class BoxDecorationPainter extends BoxPainter {
 
         if (DebugFlags.enableBorderRadiusLogs) {
           try {
-            final el = renderStyle.target;
             renderingLogger.finer('[BorderRadius] dashed side(${direction.toString().split('.').last}) rrect '
                 'w=${rr.outerRect.width.toStringAsFixed(2)} leftRx=${leftRadiusX.toStringAsFixed(2)} '
                 'rightRx=${rightRadiusX.toStringAsFixed(2)} segLen=${segLen.toStringAsFixed(2)}');
@@ -556,7 +559,6 @@ class BoxDecorationPainter extends BoxPainter {
 
         if (DebugFlags.enableBorderRadiusLogs) {
           try {
-            final el = renderStyle.target;
             renderingLogger.finer('[BorderRadius] dashed side(${direction.toString().split('.').last}) rrect '
                 'h=${rr.outerRect.height.toStringAsFixed(2)} topRy=${topRadiusY.toStringAsFixed(2)} '
                 'bottomRy=${bottomRadiusY.toStringAsFixed(2)} segLen=${segLen.toStringAsFixed(2)}');
@@ -995,7 +997,7 @@ class BoxDecorationPainter extends BoxPainter {
 
       // Report FP when non-default background color is painted
       // Check if this is a non-default background (not transparent or white)
-      if (_decoration.color != null && _decoration.color!.alpha > 0) {
+      if (_decoration.color != null && _decoration.color!.a > 0) {
         renderStyle.target.ownerDocument.controller.reportFP();
       } else if (_decoration.gradient != null) {
         // Gradients always count as non-default backgrounds
@@ -1038,11 +1040,9 @@ class BoxDecorationPainter extends BoxPainter {
     // Prefer computed longhands when a transition is actively running for
     // background-position or its axes, so that animation-driven values take
     // effect even if the shorthand string was authored in stylesheet.
-    final bool animatingPos = (renderStyle is CSSRenderStyle)
-        ? (renderStyle).isTransitionRunning(BACKGROUND_POSITION) ||
-            (renderStyle).isTransitionRunning(BACKGROUND_POSITION_X) ||
-            (renderStyle).isTransitionRunning(BACKGROUND_POSITION_Y)
-        : false;
+    final bool animatingPos = renderStyle.isTransitionRunning(BACKGROUND_POSITION) ||
+        renderStyle.isTransitionRunning(BACKGROUND_POSITION_X) ||
+        renderStyle.isTransitionRunning(BACKGROUND_POSITION_Y);
 
     // Build full list first
     final List<(CSSBackgroundPosition, CSSBackgroundPosition)> full = [];
@@ -1072,9 +1072,7 @@ class BoxDecorationPainter extends BoxPainter {
     if (DebugFlags.enableBackgroundLogs) {
       renderingLogger.finer('[Background] parse sizes raw="$raw" tokens=${tokens.isNotEmpty ? tokens : <String>['<none>']} fullCount=$fullCount mapIdx=${gradientIndices.toString()}');
     }
-    final bool animatingSize = (renderStyle is CSSRenderStyle)
-        ? (renderStyle).isTransitionRunning(BACKGROUND_SIZE)
-        : false;
+    final bool animatingSize = renderStyle.isTransitionRunning(BACKGROUND_SIZE);
     final List<CSSBackgroundSize> full = [];
     for (int j = 0; j < fullCount; j++) {
       if (!animatingSize && tokens.isNotEmpty) {
@@ -1211,26 +1209,12 @@ class BoxDecorationPainter extends BoxPainter {
     }
     if (fns.isEmpty) return;
 
-    // Resolve per-layer lists separately for gradients and images.
-    // Build image layer indices in full list order.
-    final List<int> imgIndices = [];
-    for (int i = 0; i < fullFns.length; i++) {
-      if (fullFns[i].name == 'url') imgIndices.add(i);
-    }
-
     // Gradients mapping
     final positionsGrad = _parsePositionsMapped(gIndices, fullFns.length);
     final sizesGrad = _parseSizesMapped(gIndices, fullFns.length);
     final repeatsGrad = _parseRepeatsMapped(gIndices, fullFns.length);
     // Also map background-attachment per gradient layer for debugging (and future correctness).
     final attachmentsGrad = _parseAttachmentsMapped(gIndices, fullFns.length);
-
-    // Images mapping
-    final positionsImg = _parsePositionsMapped(imgIndices, fullFns.length);
-    final sizesImg = _parseSizesMapped(imgIndices, fullFns.length);
-    final repeatsImg = _parseRepeatsMapped(imgIndices, fullFns.length);
-
-
 
     // Paint from bottom-most (last) to top-most (first) per CSS layering rules.
     for (int i = fns.length - 1; i >= 0; i--) {
@@ -1272,17 +1256,17 @@ class BoxDecorationPainter extends BoxPainter {
         List<String>? st;
         if (gradient is LinearGradient) {
           cs = gradient.colors
-              .map((c) => 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})')
+              .map(_rgbaString)
               .toList();
           st = gradient.stops?.map((v) => v.toStringAsFixed(4)).toList();
         } else if (gradient is RadialGradient) {
           cs = gradient.colors
-              .map((c) => 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})')
+              .map(_rgbaString)
               .toList();
           st = gradient.stops?.map((v) => v.toStringAsFixed(4)).toList();
         } else if (gradient is SweepGradient) {
           cs = gradient.colors
-              .map((c) => 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})')
+              .map(_rgbaString)
               .toList();
           st = gradient.stops?.map((v) => v.toStringAsFixed(4)).toList();
         }
@@ -1484,7 +1468,7 @@ class BoxDecorationPainter extends BoxPainter {
 
     // Paint background-color under all layers if present.
     final Color? bgColor = renderStyle.backgroundColor?.value;
-    if (bgColor != null && bgColor.alpha > 0) {
+    if (bgColor != null && bgColor.a > 0) {
       final Paint p = Paint()..color = bgColor;
       switch (_decoration.shape) {
         case BoxShape.circle:
@@ -1619,22 +1603,22 @@ class BoxDecorationPainter extends BoxPainter {
         if (DebugFlags.enableBackgroundLogs) {
           List<String> cs = const [];
           List<String>? st;
-          if (gradient is LinearGradient) {
-            cs = gradient.colors
-                .map((c) => 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})')
+            if (gradient is LinearGradient) {
+              cs = gradient.colors
+                .map(_rgbaString)
                 .toList();
-            st = gradient.stops?.map((v) => v.toStringAsFixed(4)).toList();
-          } else if (gradient is RadialGradient) {
-            cs = gradient.colors
-                .map((c) => 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})')
+              st = gradient.stops?.map((v) => v.toStringAsFixed(4)).toList();
+            } else if (gradient is RadialGradient) {
+              cs = gradient.colors
+                .map(_rgbaString)
                 .toList();
-            st = gradient.stops?.map((v) => v.toStringAsFixed(4)).toList();
-          } else if (gradient is SweepGradient) {
-            cs = gradient.colors
-                .map((c) => 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})')
+              st = gradient.stops?.map((v) => v.toStringAsFixed(4)).toList();
+            } else if (gradient is SweepGradient) {
+              cs = gradient.colors
+                .map(_rgbaString)
                 .toList();
-            st = gradient.stops?.map((v) => v.toStringAsFixed(4)).toList();
-          }
+              st = gradient.stops?.map((v) => v.toStringAsFixed(4)).toList();
+            }
           renderingLogger.finer('[Background] layer(gradient) i=$i fn=${fullFns[i].name} rect=${positioningRect.size} '
               'destRect=${destRect.size} pos=(${px.cssText()}, ${py.cssText()}) size=${size.cssText()} repeat=$repeat '
               'colors=$cs stops=${st ?? const []}');

@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/services.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
@@ -283,7 +285,7 @@ class FlutterInteractionHandler {
       final vibrateData = arguments[0];
       final int duration = vibrateData['duration'] as int? ?? 500;
       
-      if (await Vibration.hasVibrator() ?? false) {
+      if (await Vibration.hasVibrator()) {
         await Vibration.vibrate(duration: duration);
         return {
           'success': true,

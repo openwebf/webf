@@ -34,9 +34,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   }
 
   bool get clipX {
-    RenderBoxModel renderBoxModel = this as RenderBoxModel;
-
-    List<Radius>? borderRadius = renderBoxModel.renderStyle.borderRadius;
+    final List<Radius>? borderRadius = renderStyle.borderRadius;
 
     // The content of replaced elements is always trimmed to the content edge curve.
     // https://www.w3.org/TR/css-backgrounds-3/#corner-clipping
@@ -58,9 +56,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   }
 
   bool get clipY {
-    RenderBoxModel renderBoxModel = this as RenderBoxModel;
-
-    List<Radius>? borderRadius = renderStyle.borderRadius;
+    final List<Radius>? borderRadius = renderStyle.borderRadius;
 
     // The content of replaced elements is always trimmed to the content edge curve.
     // https://www.w3.org/TR/css-backgrounds-3/#corner-clipping
@@ -168,7 +164,6 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     _viewportSize = viewportSize;
     if (_scrollOffsetX != null) {
       _setUpScrollX();
-      final double maxX = math.max(0.0, _scrollableSize!.width - _viewportSize!.width);
       // Do not auto-jump scroll position for RTL containers.
       // Per CSS/UA expectations, initial scroll position is the start edge
       // of the scroll range, and user agent should not forcibly move it to
@@ -178,7 +173,6 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
 
     if (_scrollOffsetY != null) {
       _setUpScrollY();
-      final double maxY = math.max(0.0, _scrollableSize!.height - _viewportSize!.height);
     }
 
     // After computing viewport/content dimensions, update sticky descendants so their
@@ -291,7 +285,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   // For position fixed render box, should reduce the outer scroll offsets.
   void applyPositionFixedPaintTransform(RenderBoxModel child, Matrix4 transform) {
     Offset totalScrollOffset = child.getTotalScrollOffset();
-    transform.translate(totalScrollOffset.dx, totalScrollOffset.dy);
+    transform.translateByDouble(totalScrollOffset.dx, totalScrollOffset.dy, 0.0, 1.0);
   }
 
   void applyOverflowPaintTransform(RenderBox child, Matrix4 transform) {
@@ -301,7 +295,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       applyPositionFixedPaintTransform(child, transform);
     }
 
-    transform.translate(paintOffset.dx, paintOffset.dy);
+    transform.translateByDouble(paintOffset.dx, paintOffset.dy, 0.0, 1.0);
   }
 
   @override

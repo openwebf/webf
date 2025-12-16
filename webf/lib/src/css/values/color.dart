@@ -7,6 +7,8 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
+// ignore_for_file: constant_identifier_names
+
 import 'dart:math';
 
 import 'package:flutter/src/foundation/diagnostics.dart';
@@ -208,10 +210,13 @@ class CSSColor with Diagnosticable {
   //     'rgba0' -> Color(0x19000000), 'rgba1' -> Color(0x26000000)
   // Cache will be terminated after used once.
 
+  static int _colorByte(double channel) =>
+      (channel * 255.0).round().clamp(0, 255).toInt();
+
   static String convertToHex(Color color) {
-    String red = color.red.toRadixString(16).padLeft(2);
-    String green = color.green.toRadixString(16).padLeft(2);
-    String blue = color.blue.toRadixString(16).padLeft(2);
+    final String red = _colorByte(color.r).toRadixString(16).padLeft(2, '0');
+    final String green = _colorByte(color.g).toRadixString(16).padLeft(2, '0');
+    final String blue = _colorByte(color.b).toRadixString(16).padLeft(2, '0');
     return '#$red$green$blue';
   }
 
@@ -220,19 +225,21 @@ class CSSColor with Diagnosticable {
   // Light (highlight): component + (255 - component) × 0.5 → floor = (component + 255) / 2
   static Color tranformToDarkColor(Color color) {
     // Round to nearest: floor(v/2 + 0.5) == (v + 1) >> 1
-    final int r = (color.red + 1) >> 1;
-    final int g = (color.green + 1) >> 1;
-    final int b = (color.blue + 1) >> 1;
-    return Color.fromARGB(color.alpha, r, g, b);
+    final int r = (_colorByte(color.r) + 1) >> 1;
+    final int g = (_colorByte(color.g) + 1) >> 1;
+    final int b = (_colorByte(color.b) + 1) >> 1;
+    final int a = _colorByte(color.a);
+    return Color.fromARGB(a, r, g, b);
   }
 
   static Color transformToLightColor(Color color) {
     // Round to nearest: round((v + 255) / 2) == (v + 256) >> 1
     int mixToWhite(int v) => ((v + 256) >> 1);
-    final int r = mixToWhite(color.red);
-    final int g = mixToWhite(color.green);
-    final int b = mixToWhite(color.blue);
-    return Color.fromARGB(color.alpha, r, g, b);
+    final int r = mixToWhite(_colorByte(color.r));
+    final int g = mixToWhite(_colorByte(color.g));
+    final int b = mixToWhite(_colorByte(color.b));
+    final int a = _colorByte(color.a);
+    return Color.fromARGB(a, r, g, b);
   }
 
   static bool isColor(String color) {
@@ -426,7 +433,7 @@ class CSSColor with Diagnosticable {
     if (parsed != null) {
       if (trace) {
         cssLogger.info(
-            '[color][parsed] property=$prop rgba=${parsed.red},${parsed.green},${parsed.blue},a=${parsed.a.cssText()}');
+            '[color][parsed] property=$prop rgba=${_colorByte(parsed.r)},${_colorByte(parsed.g)},${_colorByte(parsed.b)},a=${parsed.a.cssText()}');
       }
       _cachedParsedColor[color] = parsed;
     } else if (trace) {
@@ -438,9 +445,9 @@ class CSSColor with Diagnosticable {
 
   String cssText() {
     if (value.a < 1) {
-      return 'rgba(${value.red}, ${value.green}, ${value.blue}, ${value.a.cssText()})';
+      return 'rgba(${_colorByte(value.r)}, ${_colorByte(value.g)}, ${_colorByte(value.b)}, ${value.a.cssText()})';
     } else {
-      return 'rgb(${value.red}, ${value.green}, ${value.blue})';
+      return 'rgb(${_colorByte(value.r)}, ${_colorByte(value.g)}, ${_colorByte(value.b)})';
     }
   }
 

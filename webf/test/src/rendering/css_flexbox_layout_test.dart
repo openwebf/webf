@@ -184,7 +184,6 @@ void main() {
       final RenderBoxModel flexRenderBox = inlineFlex.renderStyle.attachedRenderBoxModel!;
 
       final double? containerBaseline = flexRenderBox.computeCssFirstBaseline();
-      final double borderBoxHeight = flexRenderBox.size.height;
 
       expect(containerBaseline, isNotNull);
       expect(

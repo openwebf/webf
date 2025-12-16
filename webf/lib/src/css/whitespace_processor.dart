@@ -6,6 +6,8 @@
  * Copyright (C) 2024-present The WebF authors. All rights reserved.
  */
 
+// ignore_for_file: constant_identifier_names
+
 import 'package:webf/css.dart';
 import 'package:webf/src/css/east_asian_width.dart';
 
@@ -183,7 +185,6 @@ class WhitespaceProcessor {
   static String _preserveWhitespace(String text, WhiteSpace whiteSpace) {
     final output = StringBuffer();
     final length = text.length;
-    int currentColumn = 0; // Track column position (kept for potential future use)
     
     for (int i = 0; i < length; i++) {
       final codeUnit = text.codeUnitAt(i);
@@ -191,20 +192,16 @@ class WhitespaceProcessor {
       if (isSegmentBreak(codeUnit)) {
         // Preserve segment breaks as line feeds
         output.writeCharCode(LINE_FEED);
-        currentColumn = 0; // Reset column at line break
       } else if (isTab(codeUnit)) {
         // Preserve tab characters in pre-like modes; visual expansion is handled by layout (tab-size)
         output.writeCharCode(TAB);
-        currentColumn++;
       } else if (isSpace(codeUnit) && whiteSpace == WhiteSpace.breakSpaces) {
         // For break-spaces, spaces remain as regular spaces (not non-breaking)
         // The breaking behavior is handled during line breaking
         output.writeCharCode(SPACE);
-        currentColumn++;
       } else {
         // Preserve character as-is
         output.writeCharCode(codeUnit);
-        currentColumn++;
       }
     }
     

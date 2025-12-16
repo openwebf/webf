@@ -9,6 +9,7 @@ import 'package:webf/widget.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/css.dart';
 
+// ignore: constant_identifier_names
 const String SVG = 'svg';
 
 class FlutterSvgElement extends WidgetElement {

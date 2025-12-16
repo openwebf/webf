@@ -220,7 +220,6 @@ class RenderGridLayout extends RenderLayoutBox {
       case JustifyContent.flexStart:
       case JustifyContent.start:
       case JustifyContent.spaceBetween:
-      default:
         return 0;
     }
   }
@@ -239,7 +238,6 @@ class RenderGridLayout extends RenderLayoutBox {
       case AlignContent.spaceAround:
       case AlignContent.spaceEvenly:
       case AlignContent.stretch:
-      default:
         return 0;
     }
   }
@@ -291,13 +289,14 @@ class RenderGridLayout extends RenderLayoutBox {
       case AlignItems.baseline:
         return GridAxisAlignment.center;
       case AlignItems.stretch:
-      default:
         return GridAxisAlignment.stretch;
     }
   }
 
   GridAxisAlignment _convertAlignSelfToAxis(AlignSelf value) {
     switch (value) {
+      case AlignSelf.auto:
+        return GridAxisAlignment.auto;
       case AlignSelf.flexStart:
       case AlignSelf.start:
         return GridAxisAlignment.start;
@@ -308,7 +307,6 @@ class RenderGridLayout extends RenderLayoutBox {
       case AlignSelf.baseline:
         return GridAxisAlignment.center;
       case AlignSelf.stretch:
-      default:
         return GridAxisAlignment.stretch;
     }
   }
@@ -323,7 +321,6 @@ class RenderGridLayout extends RenderLayoutBox {
       case GridAxisAlignment.auto:
       case GridAxisAlignment.start:
       case GridAxisAlignment.stretch:
-      default:
         return 0;
     }
   }
@@ -927,7 +924,6 @@ class RenderGridLayout extends RenderLayoutBox {
       explicitAutoFitRowUsage = List<bool>.filled(explicitRowCount, false);
     }
 
-    int childIndex = 0;
     final Stopwatch? placementStopwatch = profileGrid ? (Stopwatch()..start()) : null;
     Duration childLayoutDuration = Duration.zero;
     RenderBox? child = firstChild;
@@ -1196,7 +1192,6 @@ class RenderGridLayout extends RenderLayoutBox {
       hasAnyChild = true;
 
       child = pd.nextSibling;
-      childIndex++;
     }
 
     // Compute used content size

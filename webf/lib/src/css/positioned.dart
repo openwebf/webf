@@ -61,24 +61,6 @@ class CSSPositionedLayout {
     return null;
   }
 
-  // Compute viewport size of a scroll container's padding box.
-  static Size _scrollViewportSize(RenderBoxModel scrollContainer) {
-    final CSSRenderStyle rs = scrollContainer.renderStyle;
-    final double vw = math.max(
-      0.0,
-      scrollContainer.size.width -
-          rs.effectiveBorderLeftWidth.computedValue -
-          rs.effectiveBorderRightWidth.computedValue,
-    );
-    final double vh = math.max(
-      0.0,
-      scrollContainer.size.height -
-          rs.effectiveBorderTopWidth.computedValue -
-          rs.effectiveBorderBottomWidth.computedValue,
-    );
-    return Size(vw, vh);
-  }
-
   static Offset? getRelativeOffset(RenderStyle renderStyle) {
     CSSLengthValue left = renderStyle.left;
     CSSLengthValue right = renderStyle.right;
@@ -1171,32 +1153,6 @@ class CSSPositionedLayout {
     return false;
   }
 
-  // Compute inline horizontal advance (sum of visual widths) of siblings before the
-  // placeholder within an IFC container. Prefers text measurement for RenderTextBox,
-  // skips placeholders and out-of-flow boxes.
-  static double _computeInlineAdvanceBeforePlaceholder(RenderFlowLayout flowParent, RenderPositionPlaceholder ph) {
-    double sum = 0.0;
-    if (ph.parentData is! RenderLayoutParentData) return 0.0;
-    RenderBox? child = flowParent.firstChild;
-    while (child != null && child != ph) {
-      if (child is RenderTextBox) {
-        // Measure full text width with no wrap to approximate natural advance.
-        try {
-          final Size sz = child.computeFullTextSizeForWidth(double.infinity);
-          sum += sz.width;
-        } catch (_) {}
-      } else if (child is RenderBoxModel) {
-        // Inline-level boxes: if they have a size, add their border-box width.
-        // Positioned/placeholder are excluded by size==null or handled elsewhere.
-        final Size? sz = child.boxSize;
-        if (sz != null) sum += sz.width;
-      }
-      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
-      child = pd.nextSibling;
-    }
-    return sum;
-  }
-
   // Compute the offset of positioned element in one axis.
   static double _computePositionedOffset(
     Axis axis,
@@ -1496,31 +1452,6 @@ class CSSPositionedLayout {
     }
 
     return false;
-  }
-
-  /// Calculates the true vertical static position by considering the normal document flow.
-  ///
-  /// Unlike horizontal positioning which typically starts at the content area,
-  /// vertical positioning must account for where the element would actually appear
-  /// in the normal flow after previous siblings.
-  static double _calculateTrueVerticalStaticPosition(
-    RenderPositionPlaceholder placeholder,
-    RenderBoxModel parent,
-    Offset currentStaticPosition,
-  ) {
-    // Static position should reflect where the element would appear in normal
-    // flow without collapsing with the parent. Use the element's own top margin
-    // collapsed only with its first in-flow child (if any), i.e., ignoring
-    // parent collapse, so positioned elements' margins do not disappear.
-    final RenderBoxModel? positioned = placeholder.positioned;
-    if (positioned != null) {
-      // For absolutely positioned elements, the static position uses the box's
-      // own used margin values (no margin-collapsing with descendants).
-      // Use the specified margin-top to offset from the placeholder position.
-      final double ownTopMargin = positioned.renderStyle.marginTop.computedValue;
-      return currentStaticPosition.dy + ownTopMargin;
-    }
-    return currentStaticPosition.dy;
   }
 
   /// Checks if the static position has significant offset that may indicate

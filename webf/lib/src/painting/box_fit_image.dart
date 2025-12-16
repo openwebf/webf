@@ -217,7 +217,6 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
       // Respect aspect ratio roughly according to boxFit
       final double iw = intrinsic.width;
       final double ih = intrinsic.height;
-      final double ar = iw > 0 && ih > 0 ? iw / ih : 1.0;
       double tw = preferredWidth.toDouble();
       double th = preferredHeight.toDouble();
       if (boxFit == BoxFit.contain) {

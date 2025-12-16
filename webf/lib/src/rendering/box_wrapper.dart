@@ -43,7 +43,7 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
   @override
   void applyPaintTransform(RenderObject child, Matrix4 transform) {
     final BoxParentData childParentData = child.parentData as BoxParentData;
-    transform.translate(childParentData.offset.dx, childParentData.offset.dy);
+    transform.translateByDouble(childParentData.offset.dx, childParentData.offset.dy, 0.0, 1.0);
   }
 
   @override

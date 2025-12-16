@@ -9,6 +9,7 @@
 
 import 'package:quiver/core.dart';
 import 'package:webf/css.dart';
+import 'package:webf/src/foundation/logger.dart';
 
 /// https://drafts.csswg.org/cssom/#the-cssstylerule-interface
 class CSSStyleRule extends CSSRule {
@@ -240,7 +241,7 @@ class CSSMediaDirective extends CSSRule {
       }
       return double.parse(str);
     } catch (e) {
-      print('parseStringToDouble $e');
+      cssLogger.fine('parseStringToDouble error: $e');
     }
     return null;
   }

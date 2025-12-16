@@ -6,6 +6,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
+// ignore_for_file: constant_identifier_names
+
 import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
@@ -185,8 +187,7 @@ class HttpCacheController {
           }
         } catch (e, st) {
           // Be resilient to race conditions where files disappear between steps
-          print('Warning: Cache validation failed after write for ${request.uri}: $e');
-          print('\n$st');
+          httpCacheLogger.warning('Cache validation failed after write for ${request.uri}', e, st);
           removeObject(request.uri);
         }
       }, onError: (_) {
@@ -307,7 +308,7 @@ class HttpClientCachedResponse extends Stream<List<int>> implements HttpClientRe
       // Validate the cached content after writing
       bool isValid = await cacheObject.validateContent();
       if (!isValid) {
-        print('Cache validation failed, removing invalid cache for ${cacheObject.url}');
+        httpCacheLogger.warning('Cache validation failed, removing invalid cache for ${cacheObject.url}');
         await cacheObject.remove();
         // Remove from memory cache as well
         final String origin = cacheObject.origin ?? '';
@@ -329,10 +330,7 @@ class HttpClientCachedResponse extends Stream<List<int>> implements HttpClientRe
   }
 
   void _onError(Object error, [StackTrace? stackTrace]) {
-    print('Error while saving cache file, which has been removed.\n$error');
-    if (stackTrace != null) {
-      print('\n$stackTrace');
-    }
+    httpCacheLogger.severe('Error while saving cache file, which has been removed.', error, stackTrace);
     cacheObject.remove();
 
     // Complete the cache write future with error if not already completed

@@ -19,6 +19,11 @@ import 'package:webf/html.dart';
 import 'package:webf/css.dart';
 import 'package:webf/launcher.dart';
 
+int _colorByte(double channel) => (channel * 255.0).round().clamp(0, 255).toInt();
+
+String _rgbaString(Color c) =>
+    'rgba(${_colorByte(c.r)},${_colorByte(c.g)},${_colorByte(c.b)},${c.a.toStringAsFixed(3)})';
+
 // CSS Backgrounds: https://drafts.csswg.org/css-backgrounds/
 // CSS Images: https://drafts.csswg.org/css-images-3/
 
@@ -490,7 +495,7 @@ class CSSBackgroundImage {
               if (DebugFlags.enableBackgroundLogs) {
                 renderingLogger.finer('[Background] repeating-linear periodPx=${repeatPeriodPx.toStringAsFixed(2)}');
               }
-                          for (int i = 0; i < stops.length; i++) {
+              for (int i = 0; i < stops.length; i++) {
                 stops[i] = ((stops[i] - first) / range).clamp(0.0, 1.0);
               }
               if (DebugFlags.enableBackgroundLogs) {
@@ -500,13 +505,13 @@ class CSSBackgroundImage {
           }
           if (DebugFlags.enableBackgroundLogs) {
             final cs = colors
-                .map((c) => 'rgba(${c.red},${c.green},${c.blue},${c.a.toStringAsFixed(3)})')
+                .map(_rgbaString)
                 .toList();
             final st = stops.map((s) => s.toStringAsFixed(4)).toList();
             final dir = linearAngle != null
                 ? 'angle=${(linearAngle * 180 / math.pi).toStringAsFixed(1)}deg'
                 : 'begin=$begin end=$end';
-            final len = gradientLength.toStringAsFixed(2) ?? '<none>';
+            final len = gradientLength.toStringAsFixed(2);
             renderingLogger.finer('[Background] ${method.name} colors=$cs stops=$st $dir gradientLength=$len');
           }
           if (colors.length >= 2) {
@@ -639,7 +644,7 @@ class CSSBackgroundImage {
           }
           if (DebugFlags.enableBackgroundLogs) {
             final cs = colors
-                .map((c) => 'rgba(${c.red},${c.green},${c.blue},${c.a.toStringAsFixed(3)})')
+                .map(_rgbaString)
                 .toList();
             renderingLogger.finer('[Background] ${method.name} colors=$cs stops=${stops.map((s)=>s.toStringAsFixed(4)).toList()} '
                 'center=(${atX.toStringAsFixed(3)},${atY.toStringAsFixed(3)}) radius=$radius');
@@ -707,7 +712,7 @@ class CSSBackgroundImage {
           _applyColorAndStops(start, method.args, colors, stops, renderStyle, BACKGROUND_IMAGE);
           if (DebugFlags.enableBackgroundLogs) {
             final cs = colors
-                .map((c) => 'rgba(${c.red},${c.green},${c.blue},${c.a.toStringAsFixed(3)})')
+                .map(_rgbaString)
                 .toList();
             final fromDeg = ((from ?? 0) * 180 / math.pi).toStringAsFixed(1);
             renderingLogger.finer('[Background] ${method.name} from=${fromDeg}deg colors=$cs stops=${stops.map((s)=>s.toStringAsFixed(4)).toList()}');
@@ -1089,42 +1094,46 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
             if (stop! < 0) stop = 0;
             if (DebugFlags.enableBackgroundLogs) {
               final CSSColor? color = CSSColor.resolveColor(strings[0], renderStyle, propertyName);
-              final c = color?.value;
-              renderingLogger.finer('[Background]   stop token="${strings[i]}" unit=% -> ${stop.toStringAsFixed(4)} '
-                  'color=${c != null ? 'rgba(${c.red},${c.green},${c.blue},${c.a.toStringAsFixed(3)})' : '<invalid>'} src="$src"');
-            }
+                  final c = color?.value;
+                  renderingLogger.finer('[Background]   stop token="${strings[i]}" unit=% -> ${stop.toStringAsFixed(4)} '
+                      'color=${c != null ? _rgbaString(c) : '<invalid>'} src="$src"');
+                }
           } else if (CSSAngle.isAngle(strings[i])) {
             stop = CSSAngle.parseAngle(strings[i])! / (math.pi * 2);
             if (DebugFlags.enableBackgroundLogs) {
               final CSSColor? color = CSSColor.resolveColor(strings[0], renderStyle, propertyName);
-              final c = color?.value;
-              renderingLogger.finer('[Background]   stop token="${strings[i]}" unit=angle -> ${stop.toStringAsFixed(4)} '
-                  'color=${c != null ? 'rgba(${c.red},${c.green},${c.blue},${c.a.toStringAsFixed(3)})' : '<invalid>'} src="$src"');
-            }
+                  final c = color?.value;
+                  renderingLogger.finer('[Background]   stop token="${strings[i]}" unit=angle -> ${stop.toStringAsFixed(4)} '
+                      'color=${c != null ? _rgbaString(c) : '<invalid>'} src="$src"');
+                }
           } else if (CSSLength.isLength(strings[i])) {
             if (gradientLength != null) {
               stop = CSSLength.parseLength(strings[i], renderStyle, propertyName).computedValue / gradientLength;
               if (DebugFlags.enableBackgroundLogs) {
                 final CSSColor? color = CSSColor.resolveColor(strings[0], renderStyle, propertyName);
                 final c = color?.value;
-                renderingLogger.finer('[Background]   stop token="${strings[i]}" unit=length -> ${stop.toStringAsFixed(4)} '
-                    '(length=${CSSLength.parseLength(strings[i], renderStyle, propertyName).computedValue.toStringAsFixed(2)}, '
-                    'gradLen=${gradientLength.toStringAsFixed(2)}) '
-                    'color=${c != null ? 'rgba(${c.red},${c.green},${c.blue},${c.a.toStringAsFixed(3)})' : '<invalid>'} src="$src"');
-              }
-            }
+                    renderingLogger.finer('[Background]   stop token="${strings[i]}" unit=length -> ${stop.toStringAsFixed(4)} '
+                        '(length=${CSSLength.parseLength(strings[i], renderStyle, propertyName).computedValue.toStringAsFixed(2)}, '
+                        'gradLen=${gradientLength.toStringAsFixed(2)}) '
+                        'color=${c != null ? _rgbaString(c) : '<invalid>'} src="$src"');
+                  }
+                }
           }
           CSSColor? color = CSSColor.resolveColor(strings[0], renderStyle, propertyName);
           colorGradients.add(CSSColorStop(color?.value, stop));
         }
-      } catch (e) {}
+      } catch (e, st) {
+        if (DebugFlags.enableBackgroundLogs) {
+          renderingLogger.warning('[Background] Failed to parse color stop "$src"', e, st);
+        }
+      }
     } else {
       CSSColor? color = CSSColor.resolveColor(strings[0], renderStyle, propertyName);
       colorGradients.add(CSSColorStop(color?.value, stop));
       if (DebugFlags.enableBackgroundLogs) {
         final c = color?.value;
         renderingLogger.finer('[Background]   stop default -> ${stop?.toStringAsFixed(4) ?? '<none>'} '
-            'color=${c != null ? 'rgba(${c.red},${c.green},${c.blue},${c.a.toStringAsFixed(3)})' : '<invalid>'} src="$src"');
+            'color=${c != null ? _rgbaString(c) : '<invalid>'} src="$src"');
       }
     }
   }

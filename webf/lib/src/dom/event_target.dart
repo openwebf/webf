@@ -200,7 +200,7 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
           await handler(event);
         }
       } catch (e, stack) {
-        print('$e\n$stack');
+        domLogger.warning('Error while handling capture event "$eventType"', e, stack);
       }
       event.currentTarget = null;
     }
@@ -224,7 +224,7 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
           await handler(event);
         }
       } catch (e, stack) {
-        print('$e\n$stack');
+        domLogger.warning('Error while handling event "$eventType"', e, stack);
       }
       event.currentTarget = null;
     }

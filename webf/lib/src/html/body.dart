@@ -10,6 +10,7 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 
+// ignore: constant_identifier_names
 const String BODY = 'BODY';
 
 const Map<String, dynamic> _defaultStyle = {

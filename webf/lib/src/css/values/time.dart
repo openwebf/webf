@@ -7,6 +7,8 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
+// ignore_for_file: constant_identifier_names
+
 import 'package:quiver/collection.dart';
 
 final _timeRegExp = RegExp(r'^[+-]?(\d+)?(\.\d+)?(?:ms|s){1}$', caseSensitive: false);

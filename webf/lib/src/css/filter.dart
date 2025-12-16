@@ -7,12 +7,15 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
+// ignore_for_file: constant_identifier_names
+
 import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/src/foundation/logger.dart';
 
 const String GRAYSCALE = 'grayscale';
 const String SEPIA = 'sepia';
@@ -507,10 +510,10 @@ mixin CSSFilterEffectsMixin on RenderStyle {
       ImageFilter? imageFilter = _parseImageFilters(functions);
       final bool hasDropShadow = _filterDropShadows != null && _filterDropShadows!.isNotEmpty;
       if (imageFilter == null && colorFilter == null && !hasDropShadow) {
-        print('[WARNING] Parse CSS Filter failed or not supported: "$functions"');
+        cssLogger.warning('Parse CSS Filter failed or not supported: "$functions"');
         String supportedFilters =
             '$GRAYSCALE $SEPIA $BRIGHTNESS $CONTRAST $HUE_ROTATE $INVERT $SATURATE $DROP_SHADOW $BLUR';
-        print('WebF only support following filters: $supportedFilters');
+        cssLogger.warning('WebF only supports following filters: $supportedFilters');
       }
     }
   }
@@ -569,7 +572,7 @@ mixin CSSFilterEffectsMixin on RenderStyle {
 
     CSSLengthValue blurRadius = CSSLengthValue.zero;
     if (definition[3] != null) {
-      blurRadius = CSSLength.parseLength(definition[3]!, this, FILTER) ?? CSSLengthValue.zero;
+      blurRadius = CSSLength.parseLength(definition[3]!, this, FILTER);
     }
 
     // spread radius currently ignored

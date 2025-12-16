@@ -18,7 +18,7 @@ import 'package:quiver/collection.dart';
 typedef StyleChangeListener = void Function(String property, String? original, String present, {String? baseHref});
 typedef StyleFlushedListener = void Function(List<String> properties);
 
-const Map<String, bool> _CSSShorthandProperty = {
+const Map<String, bool> _cssShorthandProperty = {
   MARGIN: true,
   PADDING: true,
   BACKGROUND: true,
@@ -561,7 +561,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
     if (!_isValidValue(propertyName, normalizedValue)) return;
 
-    if (_CSSShorthandProperty[propertyName] != null) {
+    if (_cssShorthandProperty[propertyName] != null) {
       return _expandShorthand(propertyName, normalizedValue, isImportant, baseHref: baseHref);
     }
 

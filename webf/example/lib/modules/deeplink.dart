@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'dart:async';
 import 'dart:io';
 import 'package:url_launcher/url_launcher.dart';
@@ -89,7 +91,6 @@ class DeepLinkModule extends WebFBaseModule {
       } else if (path == '/app' || path == '/') {
         // General app deep link with query params
         final target = queryParams['target'] ?? 'home';
-        final page = queryParams['page'];
         
         if (target == 'react_use_cases' && _navigationCallback != null) {
           _navigationCallback!('react_use_cases', queryParams);

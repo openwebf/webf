@@ -9,6 +9,7 @@ import 'package:webf/src/html/table_header.dart';
 import 'package:webf/src/html/table_row.dart';
 import 'package:webf/src/widget/widget_element.dart';
 
+// ignore: constant_identifier_names
 const String WEBF_TABLE = 'WEBF-TABLE';
 
 class WebFTable extends WebFTableBindings {

@@ -16,7 +16,10 @@ enum CSSPositionType {
 }
 
 mixin CSSPositionMixin on RenderStyle {
-  static const CSSPositionType DEFAULT_POSITION_TYPE = CSSPositionType.static;
+  static const CSSPositionType defaultPositionType = CSSPositionType.static;
+  @Deprecated('Use defaultPositionType')
+  // ignore: constant_identifier_names
+  static const CSSPositionType DEFAULT_POSITION_TYPE = defaultPositionType;
 
   // https://drafts.csswg.org/css-position/#insets
   // Name: top, right, bottom, left
@@ -87,7 +90,7 @@ mixin CSSPositionMixin on RenderStyle {
   }
 
   @override
-  CSSPositionType get position => _position ?? DEFAULT_POSITION_TYPE;
+  CSSPositionType get position => _position ?? defaultPositionType;
   CSSPositionType? _position;
   set position(CSSPositionType? value) {
     if (_position == value) return;
@@ -126,7 +129,7 @@ mixin CSSPositionMixin on RenderStyle {
       RenderStyle renderStyle = this;
       RenderStyle? parentRenderStyle = renderStyle.getParentRenderStyle();
       // The z-index CSS property sets the z-order of a positioned element and its descendants or flex items.
-      if (renderStyle.position != DEFAULT_POSITION_TYPE ||
+      if (renderStyle.position != defaultPositionType ||
           parentRenderStyle?.effectiveDisplay == CSSDisplay.flex ||
           parentRenderStyle?.effectiveDisplay == CSSDisplay.inlineFlex) {
         markParentNeedsLayout();

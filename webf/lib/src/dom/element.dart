@@ -1917,9 +1917,7 @@ abstract class Element extends ContainerNode
     // the animation-driven value. The scheduled/active transition will drive
     // updates.
     final bool pending = _pendingTransitionProps.contains(propertyName);
-    final bool running = (renderStyle is CSSRenderStyle)
-        ? (renderStyle).isTransitionRunning(propertyName)
-        : false;
+    final bool running = renderStyle.isTransitionRunning(propertyName);
     if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
       cssLogger.info('[style][route] $tagName.$propertyName pending=$pending running=$running');
     }

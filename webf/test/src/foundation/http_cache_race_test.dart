@@ -2,27 +2,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/src/foundation/http_cache_object.dart';
-import 'package:webf/src/foundation/http_client.dart' show createHttpHeaders;
 
 import '../../setup.dart';
-
-class _Req implements HttpClientRequest {
-  _Req(this._uri, {Map<String, String>? headers})
-      : _headers = createHttpHeaders(
-            initialHeaders: headers?.map((k, v) => MapEntry(k, <String>[v])));
-
-  final Uri _uri;
-  final HttpHeaders _headers;
-
-  @override
-  Uri get uri => _uri;
-
-  @override
-  HttpHeaders get headers => _headers;
-
-  @override
-  noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
 
 void main() {
   late Directory tmp;

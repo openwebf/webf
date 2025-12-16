@@ -15,6 +15,7 @@ import 'package:webf/css.dart';
 
 import 'base_input.dart';
 
+// ignore: constant_identifier_names
 const TEXTAREA = 'TEXTAREA';
 
 const Map<String, dynamic> _textAreaDefaultStyle = {

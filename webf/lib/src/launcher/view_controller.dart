@@ -52,9 +52,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   // Idle cleanup state
   static final Map<double, List<Pointer>> _pendingPointers = {};
   static final Map<double, List<Pointer>> _pendingPointersWithEvents = {};
-  static final bool _cleanupScheduled = false;
   static const int _batchThreshold = 2000;
-  static const int _maxPointersPerIdle = 100;
 
   WebFViewController(
       {this.background,
@@ -752,7 +750,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       if (delegate.errorHandler != null) {
         delegate.errorHandler!(e, stack);
       } else {
-        print('WebF navigation failed: $e\n$stack');
+        widgetLogger.warning('WebF navigation failed', e, stack);
       }
     }
   }

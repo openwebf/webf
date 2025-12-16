@@ -6,6 +6,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
+// ignore_for_file: constant_identifier_names
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -57,7 +59,7 @@ abstract class WebFMethodChannel {
       try {
         return controller.module.moduleManager.emitModuleEvent(METHOD_CHANNEL_NAME, data: [method, arguments]);
       } catch (e, stack) {
-        print('Error invoke module event: $e, $stack');
+        domLogger.warning('Error invoke module event', e, stack);
       }
     };
   }

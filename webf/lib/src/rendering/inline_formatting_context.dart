@@ -11,7 +11,6 @@ import 'dart:ui' as ui
         ParagraphConstraints,
         PlaceholderAlignment,
         TextBox,
-        TextPosition,
         LineMetrics,
         TextStyle,
         FontFeature,
@@ -450,7 +449,7 @@ class InlineFormattingContext {
       }
       // Stop at widget boundary to avoid leaking outside this subtree.
       if (p is RenderWidget) break;
-      p = (p is RenderObject) ? (p).parent : null;
+      p = p.parent;
     }
     return false;
   }
@@ -1063,13 +1062,10 @@ class InlineFormattingContext {
         i++;
       }
       final int start = i;
-      bool tokenHasCjk = false;
       bool tokenHasNonCjk = false;
       while (i < s.length && !_isBreakChar(s.codeUnitAt(i))) {
         final int cu = s.codeUnitAt(i);
-        if (TextScriptDetector.isCJKCharacter(cu)) {
-          tokenHasCjk = true;
-        } else {
+        if (!TextScriptDetector.isCJKCharacter(cu)) {
           tokenHasNonCjk = true;
         }
         i++;
@@ -1990,7 +1986,7 @@ class InlineFormattingContext {
             final double h = para0.height;
             if (w > 0 && h > 0) {
               for (final Shadow s in shadows) {
-                if (s.color.alpha == 0) continue;
+                if (s.color.a == 0) continue;
                 final double blur = s.blurRadius;
                 // Approximate Flutter's radius→sigma conversion.
                 double radiusToSigma(double r) => r > 0 ? (r * 0.57735 + 0.5) : 0.0;
@@ -2090,7 +2086,7 @@ class InlineFormattingContext {
           final Gradient? grad0 = rs0.backgroundImage?.gradient;
           final Color? bgc0 = rs0.backgroundColor?.value;
 
-          if (grad0 != null || (bgc0 != null && bgc0.alpha != 0)) {
+          if (grad0 != null || (bgc0 != null && bgc0.a != 0)) {
             final double intrinsicLineWidth = para0.longestLine;
             final double layoutWidth = para0.width;
             final double w = math.max(layoutWidth, intrinsicLineWidth);
@@ -2125,7 +2121,7 @@ class InlineFormattingContext {
               // Overlay text fill color on top (browser paints text after background).
               // This allows CSS color alpha to tint/cover the gradient, matching browser behavior.
               final Color textFill = rs0.color.value;
-              if (textFill.alpha != 0) {
+              if (textFill.a != 0) {
                 context.canvas.saveLayer(layer, Paint());
                 // Paragraph as mask again
                 context.canvas.drawParagraph(para0, offset);
@@ -2146,14 +2142,13 @@ class InlineFormattingContext {
       // overlaying their background gradient within each text box rect.
       if (_elementRanges.isNotEmpty && _paragraph != null) {
         final para = _paragraph!;
-        int paintedCount = 0;
         _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
           final CSSRenderStyle s = box.renderStyle;
           if (s.backgroundClip != CSSBackgroundBoundary.text) return;
 
           final Gradient? grad = s.backgroundImage?.gradient;
           final Color? bgc = s.backgroundColor?.value;
-          if (grad == null && (bgc == null || bgc.alpha == 0)) return;
+          if (grad == null && (bgc == null || bgc.a == 0)) return;
           if (range.$2 <= range.$1) return;
 
           // Text boxes for this element's range
@@ -2284,7 +2279,7 @@ class InlineFormattingContext {
             if (segShadows != null && segShadows.isNotEmpty) {
               final ui.TextBox firstBox = boxes.first;
               for (final Shadow sh in segShadows) {
-                if (sh.color.alpha == 0) continue;
+                if (sh.color.a == 0) continue;
                 double radiusToSigma(double r) => r > 0 ? (r * 0.57735 + 0.5) : 0.0;
                 final double sigma = radiusToSigma(sh.blurRadius);
                 final double pad = sh.blurRadius * 2 + 2;
@@ -2328,7 +2323,6 @@ class InlineFormattingContext {
 
             segStart = segEnd;
           }
-          paintedCount++;
         });
       }
 
@@ -2848,10 +2842,6 @@ class InlineFormattingContext {
     // Whether ::first-letter styling should be applied once for this paragraph
     bool firstLetterDone = false;
 
-    // Record overflow flags for debugging
-    final CSSOverflowType containerOverflowX = style.effectiveOverflowX;
-    final CSSOverflowType containerOverflowY = style.effectiveOverflowY;
-
     // Apply text-indent on the first line by inserting a leading placeholder.
     // Reset cached first-line indent on each build; set when we insert a real indent.
     _leadingTextIndentPx = 0.0;
@@ -2904,7 +2894,6 @@ class InlineFormattingContext {
           _allPlaceholders.add(_InlinePlaceholder.leftExtra(frame.box));
           _textRunParas.add(null);
           frame.leftFlushed = true;
-          final effLH = _effectiveLineHeightPx(rs);
         }
       }
     }
@@ -2922,9 +2911,7 @@ class InlineFormattingContext {
     final bool localClipsOrScrollsX = container.renderStyle.effectiveOverflowX != CSSOverflowType.visible;
     _avoidWordBreakInScrollableX = localClipsOrScrollsX || _ancestorHasHorizontalScroll();
 
-    int itemIndex = -1;
     for (final item in _items) {
-      itemIndex += 1;
       if (item.isOpenTag && item.renderBox != null) {
         final rb = item.renderBox!;
         elementStack.add(rb);
@@ -2938,7 +2925,7 @@ class InlineFormattingContext {
               (st.effectiveBorderRightWidth.computedValue) +
               (st.marginRight.computedValue);
           openFrames.add(_OpenInlineFrame(rb, leftExtras: leftExtras, rightExtras: rightExtras));
-                  pb.pushStyle(_uiTextStyleFromCss(st));
+          pb.pushStyle(_uiTextStyleFromCss(st));
         }
         // Record content range start after left extras
         _elementRanges[rb] = (paraPos, paraPos);
@@ -3256,7 +3243,7 @@ class InlineFormattingContext {
           break;
         }
       }
-      p = (p is RenderObject) ? (p).parent : null;
+      p = p.parent;
     }
     // Prefer this container's own computed content max width
     final double cmw = style.contentMaxConstraintsWidth;
@@ -3279,7 +3266,7 @@ class InlineFormattingContext {
             break;
           }
         }
-        p = (p is RenderObject) ? p.parent : null;
+        p = p.parent;
       }
     }
 
@@ -3372,9 +3359,6 @@ class InlineFormattingContext {
     // break opportunities at all (no atomic inlines, no explicit breaks, and
     // no whitespace in text), i.e. a single unbreakable run, so that long
     // words/numbers can overflow horizontally for scrolling.
-    final bool ancestorScrollX = _ancestorHasHorizontalScroll();
-    final bool localIsScrollableX =
-        style.effectiveOverflowX == CSSOverflowType.scroll || style.effectiveOverflowX == CSSOverflowType.auto;
     // Consider only interior whitespace as natural break opportunities. Leading/trailing
     // whitespace does not create interior break points for a single long word.
     final bool contentHasNoBreaks = !hasAtomicInlines &&
@@ -3484,16 +3468,6 @@ class InlineFormattingContext {
     _placeholderBoxes = paragraph.getBoxesForPlaceholders();
     _paraCharCount = paraPos; // record final character count
 
-    // Debug: dump basic paragraph/line metrics to help diagnose alignment issues
-    try {
-      final int lineCount = _paraLines.length;
-      double minLeftDbg = double.infinity;
-      for (final lm in _paraLines) {
-        if (lm.left.isFinite) minLeftDbg = math.min(minLeftDbg, lm.left);
-      }
-      if (!minLeftDbg.isFinite) minLeftDbg = 0.0;
-    } catch (_) {}
-
     // Apply ::first-line by rebuilding the paragraph with per-range overrides
     // once we know the first line break position for the final layout width.
     final ownerEl0 = (container as RenderBoxModel).renderStyle.target;
@@ -3570,12 +3544,9 @@ class InlineFormattingContext {
           final (double height, double baselineOffset) = _measureParagraphTextMetricsFor(rbStyle);
           final double mL = rbStyle.marginLeft.computedValue;
           final double mR = rbStyle.marginRight.computedValue;
-          final double mT = rbStyle.marginTop.computedValue;
-          final double mB = rbStyle.marginBottom.computedValue;
           final double width = math.max(0.0, (rb.boxSize?.width ?? (rb.hasSize ? rb.boxSize!.width : 0.0)) + mL + mR);
           final ui.PlaceholderAlignment align = _placeholderAlignmentFromCss(rbStyle.verticalAlign);
-          double? baseline = baselineOffset;
-          baseline ??= height; // fallback
+          final double baseline = baselineOffset;
           pb2.addPlaceholder(width, height, align, baseline: TextBaseline.alphabetic, baselineOffset: baseline);
           placeholderOrder2.add(rb);
           _allPlaceholders.add(_InlinePlaceholder.atomic(rb));
@@ -3809,8 +3780,7 @@ class InlineFormattingContext {
             final double mR = rbStyle.marginRight.computedValue;
             final double width = math.max(0.0, (rb.boxSize?.width ?? (rb.hasSize ? rb.boxSize!.width : 0.0)) + mL + mR);
             final ui.PlaceholderAlignment align = _placeholderAlignmentFromCss(rbStyle.verticalAlign);
-            final double base = baselineOffset ?? height;
-            pb3.addPlaceholder(width, height, align, baseline: TextBaseline.alphabetic, baselineOffset: base);
+            pb3.addPlaceholder(width, height, align, baseline: TextBaseline.alphabetic, baselineOffset: baselineOffset);
             placeholderOrder2.add(rb);
             _allPlaceholders.add(_InlinePlaceholder.atomic(rb));
             _textRunParas.add(null);
@@ -4319,32 +4289,6 @@ class InlineFormattingContext {
 
         final rect = Rect.fromLTRB(left, top, right, bottom).shift(offset);
 
-        if (false) {
-          final bool drawTop = (bT > 0);
-          final bool drawBottom = (bB > 0);
-          final bool drawLeft = (logicalFirstFrag && bL > 0);
-          final bool drawRight = (logicalLastFrag && bR > 0);
-          final String lineInfo = (currentLineIndex >= 0) ? ' line=$currentLineIndex' : '';
-          // Diagnostics for tiny-edge suppression
-          final double dbgFs = s.fontSize.computedValue;
-          final double dbgThresh = math.max(1.0, dbgFs * 0.35);
-          final double dbgFragW = right - left;
-          bool dbgHasOtherWide = false;
-          for (int k = 0; k < e.rects.length; k++) {
-            if (k == i) continue;
-            final rk = e.rects[k];
-            if (lineTop != null && lineBottom != null) {
-              if (rk.bottom <= lineTop || rk.top >= lineBottom) continue;
-            }
-            if (lineOf(rk) != lineOf(tb)) continue;
-            if ((rk.right - rk.left) > dbgThresh) {
-              dbgHasOtherWide = true;
-              break;
-            }
-          }
-          final bool dbgTinyEdge = (dbgFragW <= dbgThresh) && dbgHasOtherWide && (physLeftEdge || physRightEdge);
-        }
-
         // Background: optionally suppress tiny edge whitespace fragment painting to avoid slivers
         bool suppressTinyEdgePaint() {
           final double fs = s.fontSize.computedValue;
@@ -4380,10 +4324,10 @@ class InlineFormattingContext {
         final bottomStyle = s.borderBottomStyle;
         final leftStyle = s.borderLeftStyle;
 
-        Color cTop = s.borderTopColor.value ?? const Color(0xFF000000);
-        Color cRight = s.borderRightColor.value ?? const Color(0xFF000000);
-        Color cBottom = s.borderBottomColor.value ?? const Color(0xFF000000);
-        Color cLeft = s.borderLeftColor.value ?? const Color(0xFF000000);
+        Color cTop = s.borderTopColor.value;
+        Color cRight = s.borderRightColor.value;
+        Color cBottom = s.borderBottomColor.value;
+        Color cLeft = s.borderLeftColor.value;
 
         bool is3DInsetOutset(CSSBorderStyleType t) => t == CSSBorderStyleType.outset || t == CSSBorderStyleType.inset;
         bool is3DGrooveRidge(CSSBorderStyleType t) => t == CSSBorderStyleType.groove || t == CSSBorderStyleType.ridge;
@@ -4414,7 +4358,6 @@ class InlineFormattingContext {
             final Paint dashPaint = Paint()
               ..style = PaintingStyle.fill
               ..color = color;
-            final double width = x1 - x0;
             final double unit = dotted ? h : math.max(h, h * 1.8);
             final double gap = unit; // simple equal dash-gap pattern
             double x = x0;
@@ -4431,7 +4374,6 @@ class InlineFormattingContext {
             final Paint dashPaint = Paint()
               ..style = PaintingStyle.fill
               ..color = color;
-            final double height = y1 - y0;
             final double unit = dotted ? w : math.max(w, w * 1.8);
             final double gap = unit;
             double y = y0;
@@ -4609,14 +4551,14 @@ class InlineFormattingContext {
         } else {
           // groove/ridge: two-band 3D shading per side.
           // Compute light/dark per side from the base color.
-          Color topLight = CSSColor.transformToLightColor(s.borderTopColor.value ?? const Color(0xFF000000));
-          Color topDark = CSSColor.tranformToDarkColor(s.borderTopColor.value ?? const Color(0xFF000000));
-          Color rightLight = CSSColor.transformToLightColor(s.borderRightColor.value ?? const Color(0xFF000000));
-          Color rightDark = CSSColor.tranformToDarkColor(s.borderRightColor.value ?? const Color(0xFF000000));
-          Color bottomLight = CSSColor.transformToLightColor(s.borderBottomColor.value ?? const Color(0xFF000000));
-          Color bottomDark = CSSColor.tranformToDarkColor(s.borderBottomColor.value ?? const Color(0xFF000000));
-          Color leftLight = CSSColor.transformToLightColor(s.borderLeftColor.value ?? const Color(0xFF000000));
-          Color leftDark = CSSColor.tranformToDarkColor(s.borderLeftColor.value ?? const Color(0xFF000000));
+          Color topLight = CSSColor.transformToLightColor(s.borderTopColor.value);
+          Color topDark = CSSColor.tranformToDarkColor(s.borderTopColor.value);
+          Color rightLight = CSSColor.transformToLightColor(s.borderRightColor.value);
+          Color rightDark = CSSColor.tranformToDarkColor(s.borderRightColor.value);
+          Color bottomLight = CSSColor.transformToLightColor(s.borderBottomColor.value);
+          Color bottomDark = CSSColor.tranformToDarkColor(s.borderBottomColor.value);
+          Color leftLight = CSSColor.transformToLightColor(s.borderLeftColor.value);
+          Color leftDark = CSSColor.tranformToDarkColor(s.borderLeftColor.value);
 
           bool isGrooveTop = topStyle == CSSBorderStyleType.groove;
           bool isGrooveRight = rightStyle == CSSBorderStyleType.groove;
@@ -4676,14 +4618,6 @@ class InlineFormattingContext {
               canvas.drawRect(Rect.fromLTWH(rect.right - w1 - w2, rect.top, w2, rect.height), p);
             }
           }
-        }
-      }
-    }
-
-    if (false) {
-      for (final e in entries) {
-        for (int i = 0; i < e.rects.length; i++) {
-          final tb = e.rects[i];
         }
       }
     }
@@ -4764,9 +4698,6 @@ class InlineFormattingContext {
         return ui.PlaceholderAlignment.bottom;
       case VerticalAlign.middle:
         return ui.PlaceholderAlignment.middle;
-      // For unsupported values (textTop/textBottom), fall back to baseline.
-      default:
-        return ui.PlaceholderAlignment.baseline;
     }
   }
 
@@ -4853,32 +4784,30 @@ class InlineFormattingContext {
 
   /// Get a description of the element from a RenderBoxModel.
   String _getElementDescription(RenderBoxModel? renderBox) {
-    if (renderBox == null) return 'unknown';
-
-    // Try to get element tag from the RenderBoxModel
-    final element = renderBox.renderStyle.target;
-    // For HTML elements, return the tag name
-    final tagName = element.tagName;
-    if (tagName.isNotEmpty && tagName != 'DIV') {
-      return tagName.toLowerCase();
+    if (renderBox == null) {
+      return 'unknown';
     }
 
-    // For elements with specific classes or IDs, include them
+    final element = renderBox.renderStyle.target;
+    final String tagName = element.tagName;
+    final String tagLower = tagName.toLowerCase();
+
     final id = element.id;
     final className = element.className;
-
     if (id != null && id.isNotEmpty) {
-      return '${tagName.toLowerCase()}#$id';
-    } else if (className.isNotEmpty) {
-      return '${tagName.toLowerCase()}.$className';
+      return '$tagLower#$id';
+    }
+    if (className.isNotEmpty) {
+      return '$tagLower.$className';
     }
 
-    return tagName.toLowerCase();
-  
-    // Fallback to a short description
+    if (tagName.isNotEmpty) {
+      return tagLower;
+    }
+
     final typeStr = renderBox.runtimeType.toString();
     if (typeStr.startsWith('Render')) {
-      return typeStr.substring(6); // Remove 'Render' prefix
+      return typeStr.substring(6);
     }
     return typeStr;
   }

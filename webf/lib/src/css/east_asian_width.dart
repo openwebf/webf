@@ -6,6 +6,8 @@
  * Copyright (C) 2024-present The WebF authors. All rights reserved.
  */
 
+// ignore_for_file: constant_identifier_names
+
 /// East Asian Width property classifier based on Unicode Standard Annex #11
 /// https://www.unicode.org/reports/tr11/
 class EastAsianWidth {

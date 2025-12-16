@@ -6,6 +6,8 @@
  * Copyright (C) 2024-present The OpenWebF(Cayman). All rights reserved.
  */
 
+// ignore_for_file: constant_identifier_names
+
 import 'dart:async';
 
 import 'package:flutter/rendering.dart';

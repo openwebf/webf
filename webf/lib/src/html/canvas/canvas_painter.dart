@@ -19,7 +19,6 @@ class CanvasPainter extends CustomPainter {
   CanvasRenderingContext2D? context;
 
   final Paint _saveLayerPaint = Paint();
-  bool _shouldRepaint = false;
 
   bool get _shouldPainting => context != null;
 
@@ -98,7 +97,6 @@ class CanvasPainter extends CustomPainter {
   }
 
   void _resetPaintingContext() {
-    _shouldRepaint = true;
   }
 
   void dispose() {

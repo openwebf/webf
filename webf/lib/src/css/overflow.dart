@@ -113,7 +113,10 @@ mixin CSSOverflowMixin on RenderStyle {
 
 mixin ElementOverflowMixin on ElementBase {
   // The duration time for element scrolling to a significant place.
-  static const SCROLL_DURATION = Duration(milliseconds: 250);
+  static const Duration scrollDuration = Duration(milliseconds: 250);
+  @Deprecated('Use scrollDuration')
+  // ignore: constant_identifier_names
+  static const Duration SCROLL_DURATION = scrollDuration;
 
   flutter.ScrollController? scrollControllerX;
   flutter.ScrollController? scrollControllerY;
@@ -276,7 +279,7 @@ mixin ElementOverflowMixin on ElementBase {
 
       position.moveTo(
         clampedDistance,
-        duration: withAnimation == true ? SCROLL_DURATION : null,
+        duration: withAnimation == true ? scrollDuration : null,
         curve: withAnimation == true ? Curves.easeOut : null,
       );
     }

@@ -9,6 +9,7 @@
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 
+// ignore: constant_identifier_names
 const String TEMPLATE = 'TEMPLATE';
 
 const Map<String, dynamic> _defaultStyle = {

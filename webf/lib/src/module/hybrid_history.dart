@@ -174,7 +174,7 @@ class HybridHistoryModule extends BaseModule {
       return _delegate!.path(_context, initialRoute);
     }
     String? currentPath = _context != null ? ModalRoute.of(_context!)?.settings.name : null;
-    return currentPath ?? initialRoute ?? '/';
+    return currentPath ?? initialRoute;
   }
 
   /// Whether the navigator can be popped.
@@ -253,7 +253,7 @@ class HybridHistoryModule extends BaseModule {
     } else if (route?.settings.name == null && initialState != null) {
       return jsonEncode(initialState);
     }
-    return jsonEncode(initialState) ?? '{}';
+    return initialState == null ? '{}' : jsonEncode(initialState);
   }
 
   @override

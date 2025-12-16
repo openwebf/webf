@@ -141,11 +141,6 @@ class InlineLayoutDebugger {
     return buffer.toString();
   }
 
-  /// Format an offset for display.
-  String _formatOffset(Offset offset) {
-    return '(${offset.dx.toStringAsFixed(1)}, ${offset.dy.toStringAsFixed(1)})';
-  }
-
   /// Format a size for display.
   String _formatSize(Size size) {
     return '${size.width.toStringAsFixed(1)}×${size.height.toStringAsFixed(1)}';

@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 /*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
@@ -392,26 +394,6 @@ void main() {
       print('$description - Element 2 top: ${rect2.top}, height: ${element2.offsetHeight}');
     }
 
-    // Helper function to verify top alignment
-    void verifyTopAlignment(dom.Element element1, dom.Element element2, {double tolerance = 2.0}) {
-      final rect1 = element1.getBoundingClientRect();
-      final rect2 = element2.getBoundingClientRect();
-
-      // For top alignment, both elements should start at the same vertical position
-      expect(rect1.top, closeTo(rect2.top, tolerance));
-    }
-
-    // Helper function to verify bottom alignment
-    void verifyBottomAlignment(dom.Element element1, dom.Element element2, {double tolerance = 2.0}) {
-      final rect1 = element1.getBoundingClientRect();
-      final rect2 = element2.getBoundingClientRect();
-
-      final bottom1 = rect1.top + element1.offsetHeight;
-      final bottom2 = rect2.top + element2.offsetHeight;
-
-      // For bottom alignment, both elements should end at the same vertical position
-      expect(bottom1, closeTo(bottom2, tolerance));
-    }
     testWidgets('with baseline', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,

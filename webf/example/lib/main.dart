@@ -3,6 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+// ignore_for_file: avoid_print
+
 import 'dart:async';
 
 import 'package:cronet_http/cronet_http.dart';

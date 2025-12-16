@@ -5,6 +5,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:webf/widget.dart';
 
+// ignore: constant_identifier_names
 const PORTAL = 'PORTAL';
 
 class PortalElement extends WidgetElement {

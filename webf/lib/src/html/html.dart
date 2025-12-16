@@ -11,6 +11,7 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/src/html/form/base_input.dart';
 
+// ignore: constant_identifier_names
 const String HTML = 'HTML';
 const Map<String, dynamic> _defaultStyle = {
   DISPLAY: BLOCK,

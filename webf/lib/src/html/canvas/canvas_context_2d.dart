@@ -6,6 +6,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
+// ignore_for_file: constant_identifier_names
+
 import 'dart:math' as math;
 import 'dart:core';
 import 'dart:typed_data';
@@ -22,24 +24,6 @@ import 'package:webf/src/html/canvas/canvas_text_metrics.dart';
 
 import 'canvas_context.dart';
 import 'canvas_path_2d.dart';
-
-// Simple circular list helper for dashing.
-class _CircularIntervalList<T> {
-  _CircularIntervalList(this._values);
-
-  final List<T> _values;
-  int _index = 0;
-
-  T get next {
-    if (_values.isEmpty) {
-      throw StateError('CircularIntervalList is empty');
-    }
-    if (_index >= _values.length) {
-      _index = 0;
-    }
-    return _values[_index++];
-  }
-}
 
 const String _DEFAULT_FONT = '10px sans-serif';
 const String START = 'start';
@@ -1435,7 +1419,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   }
 
   bool get _shouldPaintShadow =>
-      _shadowColor.alpha != 0 && (_shadowBlur > 0 || _shadowOffsetX != 0.0 || _shadowOffsetY != 0.0);
+      _shadowColor.a != 0 && (_shadowBlur > 0 || _shadowOffsetX != 0.0 || _shadowOffsetY != 0.0);
 
   double _shadowSigmaFromRadius(double radius) {
     if (radius <= 0) return 0.0;

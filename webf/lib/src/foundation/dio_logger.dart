@@ -44,9 +44,6 @@ class PrettyDioLogger extends Interceptor {
   /// Width size per logPrint
   final int maxWidth;
 
-  /// Size in which the Uint8List will be split
-  static const int chunkSize = 20;
-
   /// Max characters to log for response body; null means unlimited.
   final int? maxBodyLength;
 
@@ -412,19 +409,6 @@ class PrettyDioLogger extends Interceptor {
       } else {
         logPrint('║${_indent(tabs + 2)} $element${isLast ? '' : ','}');
       }
-    }
-  }
-
-  void _printUint8List(Uint8List list, {int tabs = kInitialTab}) {
-    var chunks = [];
-    for (var i = 0; i < list.length; i += chunkSize) {
-      chunks.add(
-        list.sublist(
-            i, i + chunkSize > list.length ? list.length : i + chunkSize),
-      );
-    }
-    for (var element in chunks) {
-      logPrint('║${_indent(tabs)} ${element.join(", ")}');
     }
   }
 

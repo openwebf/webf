@@ -8,6 +8,7 @@
  */
 // Original version: https://github.com/rknell/dart_queue
 import 'dart:async';
+import 'dart:io';
 
 class _QueuedFuture<T> {
   final Completer completer;
@@ -26,7 +27,7 @@ class _QueuedFuture<T> {
       }
       await Future.microtask(() {});
     } catch (e, stack) {
-      print('$e\n$stack');
+      stderr.writeln('$e\n$stack');
       completer.completeError(e);
     } finally {
       if (onComplete != null) onComplete!();

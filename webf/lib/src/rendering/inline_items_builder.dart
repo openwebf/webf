@@ -523,15 +523,6 @@ class InlineItemsBuilder {
     }
   }
 
-  /// Add line break opportunity.
-  void _addLineBreakOpportunity() {
-    items.add(InlineItem(
-      type: InlineItemType.lineBreakOpportunity,
-      startOffset: _currentOffset,
-      endOffset: _currentOffset,
-    ));
-  }
-
   /// Add control character (newline, tab, etc).
   void _addControl(String char) {
     final startOffset = _currentOffset;

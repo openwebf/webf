@@ -14,6 +14,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 
+// ignore: constant_identifier_names
 const ROUTER_LINK = 'WEBF-ROUTER-LINK';
 
 class RouterLinkElement extends WidgetElement {

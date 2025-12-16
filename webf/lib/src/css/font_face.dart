@@ -277,7 +277,7 @@ class CSSFontFace {
       // On error, mark as not loaded so it can be retried
       descriptor.isLoaded = false;
       _loadedFonts.remove(_getFontKey(descriptor.fontFamily, descriptor.fontWeight));
-      print('Failed to load font: $e\n$stack');
+      cssLogger.warning('Failed to load font', e, stack);
     }
   }
 

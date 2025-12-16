@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:webf_example/keyboard_case/popup_view.dart';
 import 'common_util.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
@@ -93,20 +92,29 @@ class FlutterPopupState extends WebFWidgetElementState {
   }
 
   void _showModal() {
-    final BuildContext context = this.context;
-    if (!context.mounted) {
+    if (!mounted) {
       return;
     }
 
+    bool parseBoolAttr(String name, {required bool defaultValue}) {
+      final String? raw = widgetElement.getAttribute(name);
+      if (raw == null) return defaultValue;
+      final String v = raw.trim().toLowerCase();
+      if (v.isEmpty) return true; // HTML boolean attribute
+      if (v == 'true' || v == '1') return true;
+      if (v == 'false' || v == '0') return false;
+      return defaultValue;
+    }
+
+    final BuildContext context = this.context;
     final title = widgetElement.getAttribute('title') ?? '';
-    final showClose = bool.parse(widgetElement.getAttribute('show-close') ?? '') ?? false;
-    final showBack = bool.parse(widgetElement.getAttribute('show-back') ?? '') ?? false;
+    final showClose = parseBoolAttr('show-close', defaultValue: false);
+    final showBack = parseBoolAttr('show-back', defaultValue: false);
     final leftButtonText = widgetElement.getAttribute('left-button-text') ?? '';
     final rightButtonText = widgetElement.getAttribute('right-button-text') ?? '';
-    final maskClosable = bool.parse(widgetElement.getAttribute('mask-closable') ?? '') ?? true;
-    final isCenterTitle = bool.parse(widgetElement.getAttribute('is-center-title') ?? '') ?? false;
-    final isVerticalButton =
-        bool.parse(widgetElement.getAttribute('is-vertical-button') ?? '') ?? false;
+    final maskClosable = parseBoolAttr('mask-closable', defaultValue: true);
+    final isCenterTitle = parseBoolAttr('is-center-title', defaultValue: false);
+    final isVerticalButton = parseBoolAttr('is-vertical-button', defaultValue: false);
 
     final contents = widgetElement.childNodes.whereType<FlutterPopupItem>();
     assert(contents.isNotEmpty && contents.length == 1, 'Popup content should be a single child.');
@@ -142,10 +150,6 @@ class FlutterPopupState extends WebFWidgetElementState {
       isCenterTitle: isCenterTitle,
       isVerticalButton: isVerticalButton,
     );
-  }
-
-  PopupDirection _getPopupDirection(String? direction) {
-    return PopupDirection.bottom;
   }
 }
 

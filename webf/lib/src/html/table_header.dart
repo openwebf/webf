@@ -7,6 +7,7 @@ import 'package:webf/src/html/table_header_bindings_generated.dart';
 import 'package:webf/src/widget/widget_element.dart';
 import 'table_cell.dart';
 
+// ignore: constant_identifier_names
 const String WEBF_TABLE_HEADER = 'WEBF-TABLE-HEADER';
 
 class WebFTableHeader extends WebFTableHeaderBindings {

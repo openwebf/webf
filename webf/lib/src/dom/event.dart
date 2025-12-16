@@ -873,7 +873,7 @@ class TouchList {
     Pointer<NativeTouchList> touchList = malloc.allocate(sizeOf<NativeTouchList>());
     Pointer<NativeTouch> touches = malloc.allocate<NativeTouch>(sizeOf<NativeTouch>() * _items.length);
     for (int i = 0; i < _items.length; i++) {
-      _items[i].toNative(touches.elementAt(i));
+      _items[i].toNative(touches + i);
     }
     touchList.ref.length = _items.length;
     touchList.ref.touches = touches;

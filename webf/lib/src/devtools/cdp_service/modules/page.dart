@@ -7,6 +7,8 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
+// ignore_for_file: constant_identifier_names
+
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -240,7 +242,7 @@ class InspectPageModule extends UIInspectorModule {
         await devtoolsService.controller!.reload();
       }
     } catch (e, stack) {
-      print('Dart Error: $e\n$stack');
+      devToolsLogger.warning('Dart Error', e, stack);
     }
   }
 
@@ -411,7 +413,9 @@ class InspectPageModule extends UIInspectorModule {
   }
 
   void handleGetFrameResourceTree(int? id, Map<String, dynamic> params) {
-    print('[DevTools] Page.getResourceTree called');
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] Page.getResourceTree called');
+    }
     final controller = (devtoolsService is ChromeDevToolsService)
         ? ChromeDevToolsService.unifiedService.currentController
         : devtoolsService.controller;
@@ -443,7 +447,10 @@ class InspectPageModule extends UIInspectorModule {
       const <String>[],
     );
     final frameResourceTree = FrameResourceTree(frame, []);
-    print('[DevTools] Page.getResourceTree -> url=$url origin=$origin ctx=${controller?.view.contextId.toString() ?? ''}');
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine(
+          '[DevTools] Page.getResourceTree -> url=$url origin=$origin ctx=${controller?.view.contextId.toString() ?? ''}');
+    }
     sendToFrontend(id, JSONEncodableMap({'frameTree': frameResourceTree}));
   }
 }

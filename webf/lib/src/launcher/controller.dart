@@ -25,12 +25,9 @@ import 'package:flutter/widgets.dart'
         AnimationController,
         BuildContext,
         ModalRoute,
-        RouteInformation,
         RouteObserver,
         StatefulElement,
-        View,
-        WidgetsBinding,
-        WidgetsBindingObserver;
+        View;
 import 'package:webf/css.dart';
 import 'package:dio/dio.dart' show Interceptor; // For custom Dio configuration
 import 'package:webf/dom.dart';
@@ -167,20 +164,7 @@ class WebFController with Diagnosticable {
   // Legacy single-route tracking for backward compatibility
   DateTime? get _navigationStartTime => _currentRouteMetrics?.navigationStartTime;
   bool get _lcpReported => _currentRouteMetrics?.lcpReported ?? false;
-  double get _largestContentfulPaintSize => _currentRouteMetrics?.largestContentfulPaintSize ?? 0;
   double get _lastReportedLCPTime => _currentRouteMetrics?.lastReportedLCPTime ?? 0;
-  Timer? get _lcpAutoFinalizeTimer => _currentRouteMetrics?.lcpAutoFinalizeTimer;
-  set _lcpAutoFinalizeTimer(Timer? timer) {
-    if (_currentRouteMetrics != null) {
-      _currentRouteMetrics!.lcpAutoFinalizeTimer = timer;
-    }
-  }
-  WeakReference<Element>? get _currentLCPElement => _currentRouteMetrics?.currentLCPElement;
-  set _currentLCPElement(WeakReference<Element>? ref) {
-    if (_currentRouteMetrics != null) {
-      _currentRouteMetrics!.currentLCPElement = ref;
-    }
-  }
 
   // FCP tracking
   bool get _fcpReported => _currentRouteMetrics?.fcpReported ?? false;
@@ -206,8 +190,9 @@ class WebFController with Diagnosticable {
 
   /// Gets the current LCP element if it's still connected to the DOM
   Element? get currentLCPElement {
-    if (_currentLCPElement != null) {
-      final element = _currentLCPElement!.target;
+    final WeakReference<Element>? lcpRef = _currentRouteMetrics?.currentLCPElement;
+    if (lcpRef != null) {
+      final element = lcpRef.target;
       if (element != null && element.isConnected) {
         return element;
       }
@@ -568,13 +553,7 @@ class WebFController with Diagnosticable {
     return _methodChannel as WebFJavaScriptChannel;
   }
 
-  JSLogHandler? _onJSLog;
-
-  JSLogHandler? get onJSLog => _onJSLog;
-
-  set onJSLog(JSLogHandler? jsLogHandler) {
-    _onJSLog = jsLogHandler;
-  }
+  JSLogHandler? onJSLog;
 
   ui.FlutterView? _ownerFlutterView;
 
@@ -904,11 +883,6 @@ class WebFController with Diagnosticable {
   /// Useful for accessing and manipulating individual components of the current URL.
   Uri? get uri => _uri;
 
-  _addHistory(WebFBundle bundle) {
-    HistoryModule historyModule = module.moduleManager.getModule<HistoryModule>('History')!;
-    historyModule.add(bundle);
-  }
-
   void _replaceCurrentHistory(WebFBundle bundle) {
     HistoryModule historyModule = module.moduleManager.getModule<HistoryModule>('History')!;
     previousHistoryStack.clear();
@@ -947,7 +921,7 @@ class WebFController with Diagnosticable {
 
     // Record load start phase
     _loadingState.recordPhase(LoadingState.phaseLoadStart, parameters: {
-      'bundle': bundle.url ?? 'null',
+      'bundle': bundle.url,
       'currentPageId': currentPageId,
     });
 
@@ -989,16 +963,7 @@ class WebFController with Diagnosticable {
         .addOrUpdateControllerWithLoading(name: currentPageId, bundle: bundle, forceReplace: true, mode: mode);
   }
 
-  PreloadingStatus _preloadStatus = PreloadingStatus.none;
-
-  PreloadingStatus get preloadStatus => _preloadStatus;
-
-  /// Sets the preloading status
-  ///
-  /// This is used internally and by WebFControllerManager to control the preloading state
-  set preloadStatus(PreloadingStatus status) {
-    _preloadStatus = status;
-  }
+  PreloadingStatus preloadStatus = PreloadingStatus.none;
 
   VoidCallback? _onPreloadingFinished;
   int unfinishedPreloadResources = 0;
@@ -1011,17 +976,17 @@ class WebFController with Diagnosticable {
   /// Using this mode can save up to 50% of loading time, while maintaining a high level of compatibility with the standard mode.
   /// It's safe and recommended to use this mode for all types of pages.
   Future<void> preload(WebFBundle bundle, {ui.Size? viewportSize, Duration? timeout}) async {
-    if (_preloadStatus == PreloadingStatus.done) return;
+    if (preloadStatus == PreloadingStatus.done) return;
     controllerPreloadingCompleter = Completer();
 
     await controlledInitCompleter.future;
 
-    if (_preloadStatus != PreloadingStatus.none) return;
-    if (_preRenderingStatus != PreRenderingStatus.none) return;
+    if (preloadStatus != PreloadingStatus.none) return;
+    if (preRenderingStatus != PreRenderingStatus.none) return;
 
     // Record preload phase
     _loadingState.recordPhase(LoadingState.phasePreload, parameters: {
-      'bundle': bundle.url ?? 'null',
+      'bundle': bundle.url,
       'viewportSize': viewportSize?.toString() ?? 'null',
       'timeout': timeout?.inMilliseconds ?? 'default',
     });
@@ -1038,7 +1003,7 @@ class WebFController with Diagnosticable {
     flushUICommand(view, nullptr);
 
     // Set the status value for preloading.
-    _preloadStatus = PreloadingStatus.preloading;
+    preloadStatus = PreloadingStatus.preloading;
 
     view.document.preloadViewportSize = _viewportSize;
     // Manually initialize the root element and create renderObjects for each elements.
@@ -1050,7 +1015,7 @@ class WebFController with Diagnosticable {
         Timer(timeout ?? Duration(seconds: 30), () {
           if (controllerPreloadingCompleter.isCompleted) return;
           isTimeout = true;
-          _preloadStatus = PreloadingStatus.fail;
+          preloadStatus = PreloadingStatus.fail;
           controllerPreloadingCompleter.completeError(FlutterError('Preloading failed with exceed timeout limits'));
         });
 
@@ -1066,7 +1031,7 @@ class WebFController with Diagnosticable {
 
           if (isTimeout) return;
 
-          _preloadStatus = PreloadingStatus.done;
+          preloadStatus = PreloadingStatus.done;
           _loadingState.recordPhase(LoadingState.phasePreloadEnd);
           controllerPreloadingCompleter.complete();
         } else if (_entrypoint!.isHTML) {
@@ -1092,12 +1057,12 @@ class WebFController with Diagnosticable {
             _onPreloadingFinished = () {
               if (isTimeout) return;
 
-              _preloadStatus = PreloadingStatus.done;
+              preloadStatus = PreloadingStatus.done;
               _loadingState.recordPhase(LoadingState.phasePreloadEnd);
               controllerPreloadingCompleter.complete();
             };
           } else {
-            _preloadStatus = PreloadingStatus.done;
+            preloadStatus = PreloadingStatus.done;
             _loadingState.recordPhase(LoadingState.phasePreloadEnd);
             controllerPreloadingCompleter.complete();
           }
@@ -1105,7 +1070,7 @@ class WebFController with Diagnosticable {
       } catch (e, stack) {
         if (isTimeout) return;
 
-        _preloadStatus = PreloadingStatus.fail;
+        preloadStatus = PreloadingStatus.fail;
         // Record the preloadError phase with error details
         _loadingState.recordPhase(LoadingState.phasePreloadError, parameters: {
           'error': e.toString(),
@@ -1137,16 +1102,7 @@ class WebFController with Diagnosticable {
     _loadingError = error;
   }
 
-  PreRenderingStatus _preRenderingStatus = PreRenderingStatus.none;
-
-  PreRenderingStatus get preRenderingStatus => _preRenderingStatus;
-
-  /// Sets the prerendering status
-  ///
-  /// This is used internally and by WebFControllerManager to control the prerendering state
-  set preRenderingStatus(PreRenderingStatus status) {
-    _preRenderingStatus = status;
-  }
+  PreRenderingStatus preRenderingStatus = PreRenderingStatus.none;
 
   /// The `aggressive` mode is a step further than `preloading`, cutting down up to 90% of loading time for optimal performance.
   /// This mode simulates the instantaneous response of native Flutter pages but may require modifications in the existing web codes for compatibility.
@@ -1161,18 +1117,18 @@ class WebFController with Diagnosticable {
   /// This mode loads, parses, and executes content in a simulated environment before mounting.
   /// Can improve loading performance by up to 90%, but requires special handling for dimension-dependent code.
   Future<void> preRendering(WebFBundle bundle, {Duration? timeout}) async {
-    if (_preRenderingStatus == PreRenderingStatus.done) return;
+    if (preRenderingStatus == PreRenderingStatus.done) return;
 
     controllerPreRenderingCompleter = Completer();
 
     await controlledInitCompleter.future;
 
-    if (_preRenderingStatus != PreRenderingStatus.none) return;
-    if (_preloadStatus != PreloadingStatus.none) return;
+    if (preRenderingStatus != PreRenderingStatus.none) return;
+    if (preloadStatus != PreloadingStatus.none) return;
 
     // Record prerendering phase
     _loadingState.recordPhase(LoadingState.phasePreRender, parameters: {
-      'bundle': bundle.url ?? 'null',
+      'bundle': bundle.url,
       'timeout': timeout?.inMilliseconds ?? 'default',
     });
 
@@ -1187,7 +1143,7 @@ class WebFController with Diagnosticable {
     flushUICommand(view, nullptr);
 
     // Set the status value for preloading.
-    _preRenderingStatus = PreRenderingStatus.preloading;
+    preRenderingStatus = PreRenderingStatus.preloading;
 
     // Manually initialize the root element and create renderObjects for each elements.
     view.document.documentElement!.applyStyle(view.document.documentElement!.style);
@@ -1199,7 +1155,7 @@ class WebFController with Diagnosticable {
         Timer(timeout ?? Duration(seconds: 20), () {
           if (controllerPreRenderingCompleter.isCompleted) return;
           isTimeout = true;
-          _preRenderingStatus = PreRenderingStatus.fail;
+          preRenderingStatus = PreRenderingStatus.fail;
           controllerPreRenderingCompleter.completeError(FlutterError('Prerendering failed with exceed timeout limits'));
         });
 
@@ -1213,7 +1169,7 @@ class WebFController with Diagnosticable {
         pause();
 
         view.window.addEventListener(EVENT_LOAD, (event) async {
-          _preRenderingStatus = PreRenderingStatus.done;
+          preRenderingStatus = PreRenderingStatus.done;
         });
 
         if (_entrypoint!.isJavascript || _entrypoint!.isBytecode) {
@@ -1225,7 +1181,7 @@ class WebFController with Diagnosticable {
 
         if (isTimeout) return;
 
-        _preRenderingStatus = PreRenderingStatus.evaluate;
+        preRenderingStatus = PreRenderingStatus.evaluate;
 
         // Evaluate the entry point, and loading the stylesheets and scripts.
         await evaluateEntrypoint();
@@ -1237,7 +1193,7 @@ class WebFController with Diagnosticable {
         view.flushPendingCommandsPerFrame();
       } catch (e, stack) {
         if (isTimeout) return;
-        _preRenderingStatus = PreRenderingStatus.fail;
+        preRenderingStatus = PreRenderingStatus.fail;
         _handlingLoadingError(e, stack);
         controllerPreRenderingCompleter.complete();
         return;
@@ -1392,7 +1348,7 @@ class WebFController with Diagnosticable {
 
     // Record resolve entrypoint phase
     final endResolve = _loadingState.recordPhaseStart(LoadingState.phaseResolveEntrypoint, parameters: {
-      'bundle': bundleToLoad.url ?? 'null',
+      'bundle': bundleToLoad.url,
       'baseUrl': url,
     });
 
@@ -1415,7 +1371,7 @@ class WebFController with Diagnosticable {
       _loadingState.recordError(LoadingState.phaseResolveEntrypoint, e,
         stackTrace: stack,
         context: {
-          'bundle': bundleToLoad.url ?? 'null',
+          'bundle': bundleToLoad.url,
           'baseUrl': url,
           'errorType': e.runtimeType.toString(),
         }
@@ -1454,7 +1410,7 @@ class WebFController with Diagnosticable {
     } catch (e) {
       // Ignore DevTools errors in production builds
       if (kDebugMode) {
-        print('DevTools notification failed: $e');
+        devToolsLogger.warning('DevTools notification failed', e);
       }
     }
   }
@@ -1476,7 +1432,7 @@ class WebFController with Diagnosticable {
     } catch (e) {
       // Ignore DevTools errors in production builds
       if (kDebugMode) {
-        print('DevTools DOM clear failed: $e');
+        devToolsLogger.warning('DevTools DOM clear failed', e);
       }
     }
 
@@ -1514,7 +1470,7 @@ class WebFController with Diagnosticable {
 
       // Record evaluate start phase
       final endEvaluate = _loadingState.recordPhaseStart(LoadingState.phaseEvaluateStart, parameters: {
-        'entrypoint': entrypoint.url ?? 'null',
+        'entrypoint': entrypoint.url,
         'contentType': entrypoint.contentType.toString(),
         'isJavascript': entrypoint.isJavascript,
         'isBytecode': entrypoint.isBytecode,
@@ -1577,7 +1533,7 @@ class WebFController with Diagnosticable {
               cacheKey: entrypoint.cacheKey,
               url: url);
         } catch (error) {
-          print('Fallback to execute JavaScript content of $url');
+          widgetLogger.warning('Fallback to execute JavaScript content of $url', error);
           rethrow;
         }
       } else {
@@ -1609,26 +1565,14 @@ class WebFController with Diagnosticable {
 
   bool get isComplete => _isComplete;
 
-  bool _isCanceled = false;
-
-  bool get isCanceled => _isCanceled;
-
-  set isCanceled(bool value) {
-    _isCanceled = value;
-  }
+  bool isCanceled = false;
 
   // window.onDOMContentLoaded
   bool _isDOMComplete = false;
 
   bool get isDOMComplete => _isDOMComplete;
 
-  bool _evaluated = false;
-
-  bool get evaluated => _evaluated;
-
-  set evaluated(value) {
-    _evaluated = value;
-  }
+  bool evaluated = false;
 
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/loader/FrameLoader.cpp#L840
   // Check whether the document has been loaded, such as html has parsed (main of JS has evaled) and images/scripts has loaded.
@@ -1784,7 +1728,7 @@ class WebFController with Diagnosticable {
 
   @override
   String toStringShort() {
-    String status = mode == WebFLoadingMode.preloading ? _preloadStatus.toString() : _preRenderingStatus.toString();
+    String status = mode == WebFLoadingMode.preloading ? preloadStatus.toString() : preRenderingStatus.toString();
     return '${describeIdentity(this)} (disposed: $disposed, evaluated: $evaluated, status: $status)';
   }
 
