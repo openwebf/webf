@@ -32,6 +32,13 @@ class _GridCellPlacement {
   _GridCellPlacement(this.row, this.column);
 }
 
+enum _GridPlacementPass {
+  bothAxes,
+  rowOnly,
+  columnOnly,
+  auto,
+}
+
 class GridLayoutParentData extends RenderLayoutParentData {
   int rowStart = 0;
   int columnStart = 0;
@@ -83,21 +90,31 @@ class RenderGridLayout extends RenderLayoutBox {
     Map<String, List<int>>? namedLines,
   }) {
     if (placement.kind != GridPlacementKind.line) return null;
-    if (placement.lineName != null && namedLines != null) {
-      final List<int>? indices = namedLines[placement.lineName!];
-      if (indices != null && indices.isNotEmpty) {
-        final int occurrence = placement.lineNameOccurrence ?? 1;
-        if (occurrence == 0) return null;
-        int selectedIndex;
-        if (occurrence > 0) {
-          if (occurrence > indices.length) return null;
-          selectedIndex = indices[occurrence - 1];
-        } else {
-          final int absOccurrence = -occurrence;
-          if (absOccurrence > indices.length) return null;
-          selectedIndex = indices[indices.length - absOccurrence];
+    if (placement.lineName != null) {
+      if (namedLines != null) {
+        final List<int>? indices = namedLines[placement.lineName!];
+        if (indices != null && indices.isNotEmpty) {
+          final int occurrence = placement.lineNameOccurrence ?? 1;
+          if (occurrence == 0) return null;
+          int selectedIndex;
+          if (occurrence > 0) {
+            if (occurrence > indices.length) return null;
+            selectedIndex = indices[occurrence - 1];
+          } else {
+            final int absOccurrence = -occurrence;
+            if (absOccurrence > indices.length) return null;
+            selectedIndex = indices[indices.length - absOccurrence];
+          }
+          return selectedIndex + 1;
         }
-        return selectedIndex + 1;
+      }
+      final int normalizedTracks = math.max(0, trackCount);
+      final String name = placement.lineName!;
+      if (name.endsWith('-start')) {
+        return normalizedTracks + 1;
+      }
+      if (name.endsWith('-end')) {
+        return normalizedTracks + 2;
       }
     }
     if (placement.line == null) return null;
@@ -126,21 +143,31 @@ class RenderGridLayout extends RenderLayoutBox {
     Map<String, List<int>>? namedLines,
   }) {
     if (placement.kind != GridPlacementKind.line) return null;
-    if (placement.lineName != null && namedLines != null) {
-      final List<int>? indices = namedLines[placement.lineName!];
-      if (indices != null && indices.isNotEmpty) {
-        final int occurrence = placement.lineNameOccurrence ?? 1;
-        if (occurrence == 0) return null;
-        int selectedIndex;
-        if (occurrence > 0) {
-          if (occurrence > indices.length) return null;
-          selectedIndex = indices[occurrence - 1];
-        } else {
-          final int absOccurrence = -occurrence;
-          if (absOccurrence > indices.length) return null;
-          selectedIndex = indices[indices.length - absOccurrence];
+    if (placement.lineName != null) {
+      if (namedLines != null) {
+        final List<int>? indices = namedLines[placement.lineName!];
+        if (indices != null && indices.isNotEmpty) {
+          final int occurrence = placement.lineNameOccurrence ?? 1;
+          if (occurrence == 0) return null;
+          int selectedIndex;
+          if (occurrence > 0) {
+            if (occurrence > indices.length) return null;
+            selectedIndex = indices[occurrence - 1];
+          } else {
+            final int absOccurrence = -occurrence;
+            if (absOccurrence > indices.length) return null;
+            selectedIndex = indices[indices.length - absOccurrence];
+          }
+          return selectedIndex;
         }
-        return selectedIndex;
+      }
+      final int normalizedTracks = math.max(0, trackCount);
+      final String name = placement.lineName!;
+      if (name.endsWith('-start')) {
+        return normalizedTracks;
+      }
+      if (name.endsWith('-end')) {
+        return normalizedTracks + 1;
       }
     }
     if (placement.line == null) return null;
@@ -1012,9 +1039,94 @@ class RenderGridLayout extends RenderLayoutBox {
 
     final Stopwatch? placementStopwatch = profileGrid ? (Stopwatch()..start()) : null;
     Duration childLayoutDuration = Duration.zero;
+
+    RenderBox? child;
+
     // Pass 1: resolve placements and grow implicit track lists.
-    RenderBox? child = firstChild;
-    while (child != null) {
+    final List<RenderBox> placementChildren = _collectChildren();
+    final int orderingColumnTrackCount = math.max(colSizes.length, 1);
+    final int orderingRowTrackCount = math.max(rowSizes.length, 1);
+    final List<RenderBox> definiteBothAxisItems = <RenderBox>[];
+    final List<RenderBox> definiteRowItems = <RenderBox>[];
+    final List<RenderBox> definiteColumnItems = <RenderBox>[];
+    final List<RenderBox> autoItems = <RenderBox>[];
+
+    for (final RenderBox placementChild in placementChildren) {
+      RenderStyle? childGridStyle;
+      if (placementChild is RenderBoxModel) {
+        childGridStyle = placementChild.renderStyle;
+      } else if (placementChild is RenderEventListener) {
+        final RenderBox? wrapped = placementChild.child;
+        if (wrapped is RenderBoxModel) {
+          childGridStyle = wrapped.renderStyle;
+        }
+      }
+
+      GridPlacement columnStart = childGridStyle?.gridColumnStart ?? const GridPlacement.auto();
+      GridPlacement columnEnd = childGridStyle?.gridColumnEnd ?? const GridPlacement.auto();
+      GridPlacement rowStart = childGridStyle?.gridRowStart ?? const GridPlacement.auto();
+      GridPlacement rowEnd = childGridStyle?.gridRowEnd ?? const GridPlacement.auto();
+      final String? areaName = childGridStyle?.gridAreaName;
+      if (areaName != null) {
+        final GridTemplateAreaRect? rect = templateAreaMap?[areaName];
+        if (rect != null) {
+          columnStart = GridPlacement.line(rect.columnStart);
+          columnEnd = GridPlacement.line(rect.columnEnd);
+          rowStart = GridPlacement.line(rect.rowStart);
+          rowEnd = GridPlacement.line(rect.rowEnd);
+        } else {
+          final String startName = '${areaName}-start';
+          final String endName = '${areaName}-end';
+          columnStart = GridPlacement.named(startName);
+          columnEnd = GridPlacement.named(endName);
+          rowStart = GridPlacement.named(startName);
+          rowEnd = GridPlacement.named(endName);
+        }
+      }
+
+      final int resolvedColSpan = _resolveSpan(
+        columnStart,
+        columnEnd,
+        orderingColumnTrackCount,
+        namedLines: columnLineNameMap,
+      );
+      final int resolvedRowSpan = _resolveSpan(
+        rowStart,
+        rowEnd,
+        orderingRowTrackCount,
+        namedLines: rowLineNameMap,
+      );
+      if (resolvedColSpan <= 0) {
+        columnStart = const GridPlacement.auto();
+        columnEnd = const GridPlacement.auto();
+      }
+      if (resolvedRowSpan <= 0) {
+        rowStart = const GridPlacement.auto();
+        rowEnd = const GridPlacement.auto();
+      }
+
+      final bool hasDefiniteColumn =
+          columnStart.kind == GridPlacementKind.line || columnEnd.kind == GridPlacementKind.line;
+      final bool hasDefiniteRow = rowStart.kind == GridPlacementKind.line || rowEnd.kind == GridPlacementKind.line;
+      if (hasDefiniteRow && hasDefiniteColumn) {
+        definiteBothAxisItems.add(placementChild);
+      } else if (hasDefiniteRow) {
+        definiteRowItems.add(placementChild);
+      } else if (hasDefiniteColumn) {
+        definiteColumnItems.add(placementChild);
+      } else {
+        autoItems.add(placementChild);
+      }
+    }
+
+    final List<RenderBox> orderedChildren = <RenderBox>[
+      ...definiteBothAxisItems,
+      ...definiteRowItems,
+      ...definiteColumnItems,
+      ...autoItems,
+    ];
+
+    for (final RenderBox child in orderedChildren) {
       RenderStyle? childGridStyle;
       if (child is RenderBoxModel) {
         childGridStyle = child.renderStyle;
@@ -1030,14 +1142,23 @@ class RenderGridLayout extends RenderLayoutBox {
       GridPlacement rowStart = childGridStyle?.gridRowStart ?? const GridPlacement.auto();
       GridPlacement rowEnd = childGridStyle?.gridRowEnd ?? const GridPlacement.auto();
       final String? areaName = childGridStyle?.gridAreaName;
-      // Honor grid-template-areas by mapping named areas to explicit line placements.
-      if (templateAreaMap != null && areaName != null) {
-        final GridTemplateAreaRect? rect = templateAreaMap[areaName];
+      if (areaName != null) {
+        // Honor grid-template-areas by mapping named areas to explicit line placements. When the
+        // name does not match any template area, treat it like an unresolved named area by
+        // falling back to the generated *-start/*-end line names (which may create implicit tracks).
+        final GridTemplateAreaRect? rect = templateAreaMap?[areaName];
         if (rect != null) {
           columnStart = GridPlacement.line(rect.columnStart);
           columnEnd = GridPlacement.line(rect.columnEnd);
           rowStart = GridPlacement.line(rect.rowStart);
           rowEnd = GridPlacement.line(rect.rowEnd);
+        } else {
+          final String startName = '${areaName}-start';
+          final String endName = '${areaName}-end';
+          columnStart = GridPlacement.named(startName);
+          columnEnd = GridPlacement.named(endName);
+          rowStart = GridPlacement.named(startName);
+          rowEnd = GridPlacement.named(endName);
         }
       }
 
@@ -1178,9 +1299,6 @@ class RenderGridLayout extends RenderLayoutBox {
         ..rowSpan = rowSpan
         ..columnSpan = colSpan;
       hasAnyChild = true;
-
-      child = pd.nextSibling;
-      childIndex++;
     }
 
     // Resolve intrinsic sizing for auto columns (grid-template-columns: auto) before laying out children.
