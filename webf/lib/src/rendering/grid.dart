@@ -617,6 +617,26 @@ class RenderGridLayout extends RenderLayoutBox {
     final int colSpan = columnSpan.clamp(1, math.max(1, columnCount));
     final int rowSpanClamped = math.max(1, rowSpan);
 
+    // Items with definite placement in both axes should be placed at their specified
+    // grid area/lines even if that overlaps previously placed items.
+    if (hasDefiniteRow && hasDefiniteColumn && explicitRow != null && explicitColumn != null) {
+      int row = math.max(0, explicitRow);
+      int column = math.max(0, explicitColumn);
+      if (column + colSpan > columnCount) {
+        _ensureImplicitColumns(
+          colSizes: columnSizes,
+          requiredCount: column + colSpan,
+          explicitCount: explicitColumnCount,
+          autoColumns: autoColumns,
+          innerAvailable: adjustedInnerWidth,
+        );
+        columnCount = columnSizes.length;
+      }
+      _ensureOccupancyRows(occupancy, row + rowSpanClamped, columnCount);
+      _markPlacement(occupancy, row, column, rowSpanClamped, colSpan);
+      return _GridCellPlacement(row, column);
+    }
+
     if (rowFlow) {
       int startRow;
       if (explicitRow != null) {
