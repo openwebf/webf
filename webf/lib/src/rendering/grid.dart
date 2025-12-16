@@ -992,6 +992,7 @@ class RenderGridLayout extends RenderLayoutBox {
 
     final Stopwatch? placementStopwatch = profileGrid ? (Stopwatch()..start()) : null;
     Duration childLayoutDuration = Duration.zero;
+    // Pass 1: resolve placements and grow implicit track lists.
     RenderBox? child = firstChild;
     while (child != null) {
       RenderStyle? childGridStyle;
@@ -1150,6 +1151,129 @@ class RenderGridLayout extends RenderLayoutBox {
           }
         }
       }
+      final GridLayoutParentData pd = child.parentData as GridLayoutParentData;
+      pd
+        ..rowStart = rowIndex
+        ..columnStart = colIndex
+        ..rowSpan = rowSpan
+        ..columnSpan = colSpan;
+      hasAnyChild = true;
+
+      child = pd.nextSibling;
+      childIndex++;
+    }
+
+    // Resolve intrinsic sizing for auto columns (grid-template-columns: auto) before laying out children.
+    if (colSizes.isNotEmpty) {
+      GridTrackSize columnTrackAt(int index) {
+        if (index >= 0 && index < resolvedColumnDefs.length) {
+          return resolvedColumnDefs[index];
+        }
+        final int implicitIndex = math.max(0, index - explicitColumnCount);
+        return autoColDefs.isNotEmpty ? autoColDefs[implicitIndex % autoColDefs.length] : const GridAuto();
+      }
+
+      final List<bool> autoColumnsMask = List<bool>.filled(colSizes.length, false);
+      bool hasAutoColumns = false;
+      for (int c = 0; c < colSizes.length; c++) {
+        final bool isAuto = columnTrackAt(c) is GridAuto;
+        autoColumnsMask[c] = isAuto;
+        if (isAuto) hasAutoColumns = true;
+      }
+
+      if (hasAutoColumns) {
+        RenderBox? childForIntrinsic = firstChild;
+        while (childForIntrinsic != null) {
+          final GridLayoutParentData pd = childForIntrinsic.parentData as GridLayoutParentData;
+          final int startCol = pd.columnStart;
+          final int span = math.max(1, pd.columnSpan);
+          if (startCol >= 0 && startCol < colSizes.length) {
+            final double intrinsicWidth = childForIntrinsic.getMaxIntrinsicWidth(double.infinity);
+            if (intrinsicWidth.isFinite && intrinsicWidth > 0) {
+              final int endCol = math.min(colSizes.length, startCol + span);
+              int autoCount = 0;
+              for (int c = startCol; c < endCol; c++) {
+                if (autoColumnsMask[c]) autoCount++;
+              }
+              if (autoCount > 0) {
+                final double availableIntrinsic =
+                    math.max(0.0, intrinsicWidth - colGap * math.max(0, span - 1));
+                final double perAutoTrack = availableIntrinsic / autoCount;
+                for (int c = startCol; c < endCol; c++) {
+                  if (!autoColumnsMask[c]) continue;
+                  if (perAutoTrack > colSizes[c]) {
+                    colSizes[c] = perAutoTrack;
+                  }
+                }
+              }
+            }
+          }
+          childForIntrinsic = pd.nextSibling;
+        }
+
+        // Recompute flexible (fr) tracks using the updated fixed/auto sizes.
+        if (adjustedInnerWidth != null && adjustedInnerWidth.isFinite && adjustedInnerWidth > 0) {
+          double fixedNonFlex = 0.0;
+          double frSum = 0.0;
+          final List<double> minFlexSizes = List<double>.filled(colSizes.length, 0.0);
+          final List<double> flexFactors = List<double>.filled(colSizes.length, 0.0);
+
+          for (int c = 0; c < colSizes.length; c++) {
+            final GridTrackSize track = columnTrackAt(c);
+            if (track is GridFraction) {
+              flexFactors[c] = track.fr;
+              frSum += track.fr;
+            } else if (track is GridMinMax && track.maxTrack is GridFraction) {
+              final double minSize = _resolveTrackSize(track.minTrack, adjustedInnerWidth);
+              minFlexSizes[c] = minSize;
+              final double fr = (track.maxTrack as GridFraction).fr;
+              flexFactors[c] = fr;
+              frSum += fr;
+            } else {
+              fixedNonFlex += colSizes[c];
+            }
+          }
+
+          if (frSum > 0) {
+            final double remaining = math.max(0.0, adjustedInnerWidth - fixedNonFlex);
+            for (int c = 0; c < colSizes.length; c++) {
+              final double fr = flexFactors[c];
+              if (fr <= 0) continue;
+              final double portion = remaining * (fr / frSum);
+              final GridTrackSize track = columnTrackAt(c);
+              if (track is GridFraction) {
+                colSizes[c] = portion;
+              } else if (track is GridMinMax && track.maxTrack is GridFraction) {
+                colSizes[c] = math.max(portion, minFlexSizes[c]);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Pass 2: layout children with resolved column widths.
+    if (implicitRowHeights.isNotEmpty) {
+      implicitRowHeights = List<double>.filled(implicitRowHeights.length, 0.0, growable: true);
+    }
+
+    child = firstChild;
+    while (child != null) {
+      RenderStyle? childGridStyle;
+      if (child is RenderBoxModel) {
+        childGridStyle = child.renderStyle;
+      } else if (child is RenderEventListener) {
+        final RenderBox? wrapped = child.child;
+        if (wrapped is RenderBoxModel) {
+          childGridStyle = wrapped.renderStyle;
+        }
+      }
+
+      final GridLayoutParentData pd = child.parentData as GridLayoutParentData;
+      final int rowIndex = pd.rowStart;
+      final int colIndex = pd.columnStart;
+      final int rowSpan = math.max(1, pd.rowSpan);
+      final int colSpan = math.max(1, pd.columnSpan).clamp(1, math.max(1, colSizes.length - colIndex));
 
       if (colSpan == 1 &&
           colIndex < resolvedColumnDefs.length &&
@@ -1202,13 +1326,12 @@ class RenderGridLayout extends RenderLayoutBox {
       final bool childHeightAuto = childGridStyle?.height.isAuto ?? true;
       final bool stretchWidth =
           justifySelfAlignment == GridAxisAlignment.stretch && childWidthAuto && cellWidth.isFinite;
-      final bool stretchHeight = alignSelfAlignment == GridAxisAlignment.stretch && childHeightAuto &&
-          hasExplicitRowSize && explicitItemHeight == null;
+      final bool stretchHeight =
+          alignSelfAlignment == GridAxisAlignment.stretch && childHeightAuto && hasExplicitRowSize && explicitItemHeight == null;
 
       final double minWidthConstraint = stretchWidth ? cellWidth : 0;
       final double maxWidthConstraint = cellWidth.isFinite ? cellWidth : (innerMaxWidth ?? double.infinity);
-      final double minHeightConstraint =
-          explicitItemHeight ?? (stretchHeight && cellHeight.isFinite ? cellHeight : 0);
+      final double minHeightConstraint = explicitItemHeight ?? (stretchHeight && cellHeight.isFinite ? cellHeight : 0);
       final double maxHeightConstraint =
           explicitItemHeight ?? (cellHeight.isFinite ? cellHeight : (innerMaxHeight ?? double.infinity));
 
@@ -1230,10 +1353,12 @@ class RenderGridLayout extends RenderLayoutBox {
       final Size childSize = child.size;
       final double perRow = childSize.height / rowSpan;
       for (int r = 0; r < rowSpan; r++) {
-        implicitRowHeights[rowIndex + r] = math.max(implicitRowHeights[rowIndex + r], perRow);
+        final int targetRow = rowIndex + r;
+        if (targetRow >= 0 && targetRow < implicitRowHeights.length) {
+          implicitRowHeights[targetRow] = math.max(implicitRowHeights[targetRow], perRow);
+        }
       }
 
-      final GridLayoutParentData pd = child.parentData as GridLayoutParentData;
       double rowTop = paddingTop + borderTop;
       for (int r = 0; r < rowIndex; r++) {
         final double rh = _resolvedRowHeight(rowSizes, implicitRowHeights, r);
@@ -1242,20 +1367,11 @@ class RenderGridLayout extends RenderLayoutBox {
       }
 
       final double horizontalExtra = cellWidth.isFinite ? math.max(0, cellWidth - childSize.width) : 0;
-      final double verticalExtra = hasExplicitRowSize && cellHeight.isFinite
-          ? math.max(0, cellHeight - childSize.height)
-          : 0;
+      final double verticalExtra = hasExplicitRowSize && cellHeight.isFinite ? math.max(0, cellHeight - childSize.height) : 0;
       final double horizontalInset = _alignmentOffsetWithinCell(justifySelfAlignment, horizontalExtra);
-      final double verticalInset = hasExplicitRowSize
-          ? _alignmentOffsetWithinCell(alignSelfAlignment, verticalExtra)
-          : 0;
+      final double verticalInset =
+          hasExplicitRowSize ? _alignmentOffsetWithinCell(alignSelfAlignment, verticalExtra) : 0;
       pd.offset = Offset(xOffset + horizontalInset, rowTop + verticalInset);
-      pd
-        ..rowStart = rowIndex
-        ..columnStart = colIndex
-        ..rowSpan = rowSpan
-        ..columnSpan = colSpan;
-      hasAnyChild = true;
 
       child = pd.nextSibling;
     }
