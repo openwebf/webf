@@ -8,7 +8,6 @@
  */
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/bridge.dart';
 
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Element#content_sectioning
 
@@ -28,56 +27,56 @@ const Map<String, dynamic> _defaultStyle = {
 const Map<String, dynamic> _addressDefaultStyle = {DISPLAY: BLOCK, FONT_STYLE: ITALIC};
 
 class AddressElement extends Element {
-  AddressElement([BindingContext? context]) : super(context);
+  AddressElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _addressDefaultStyle;
 }
 
 class ArticleElement extends Element {
-  ArticleElement([BindingContext? context]) : super(context);
+  ArticleElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 class AsideElement extends Element {
-  AsideElement([BindingContext? context]) : super(context);
+  AsideElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 class FooterElement extends Element {
-  FooterElement([BindingContext? context]) : super(context);
+  FooterElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 class HeaderElement extends Element {
-  HeaderElement([BindingContext? context]) : super(context);
+  HeaderElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 class MainElement extends Element {
-  MainElement([BindingContext? context]) : super(context);
+  MainElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 class NavElement extends Element {
-  NavElement([BindingContext? context]) : super(context);
+  NavElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 class SectionElement extends Element {
-  SectionElement([BindingContext? context]) : super(context);
+  SectionElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;

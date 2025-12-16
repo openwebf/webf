@@ -13,11 +13,8 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:path/path.dart';
-import 'package:vector_math/vector_math_64.dart' show Matrix4;
 import 'package:webf/css.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 import 'box_overflow.dart';
 import 'debug_overlay.dart';
@@ -588,13 +585,13 @@ abstract class RenderBoxModel extends RenderBox
     // Let the box measure to its intrinsic content width (subject to any
     // explicit min/max-width), which matches shrink-to-fit in the common
     // case where content width <= available width.
-    final bool _absOrFixedForWidth = renderStyle.position == CSSPositionType.absolute ||
+    final bool absOrFixedForWidth = renderStyle.position == CSSPositionType.absolute ||
         renderStyle.position == CSSPositionType.fixed;
-    final bool _widthAutoForAbs = renderStyle.width.isAuto;
-    final bool _bothLRNonAuto = renderStyle.left.isNotAuto && renderStyle.right.isNotAuto;
-    if (_absOrFixedForWidth &&
-        !_bothLRNonAuto &&
-        _widthAutoForAbs &&
+    final bool widthAutoForAbs = renderStyle.width.isAuto;
+    final bool bothLRNonAuto = renderStyle.left.isNotAuto && renderStyle.right.isNotAuto;
+    if (absOrFixedForWidth &&
+        !bothLRNonAuto &&
+        widthAutoForAbs &&
         !renderStyle.isSelfRenderReplaced() &&
         renderStyle.borderBoxLogicalWidth == null &&
         parentBoxContentConstraintsWidth != null) {
@@ -1027,9 +1024,9 @@ abstract class RenderBoxModel extends RenderBox
 
   // iterate add child to overflowLayout
   void addOverflowLayoutFromChildren(List<RenderBox> children) {
-    children.forEach((child) {
+    for (var child in children) {
       addOverflowLayoutFromChild(child);
-    });
+    }
   }
 
   void addOverflowLayoutFromChild(RenderBox child) {
@@ -1041,15 +1038,13 @@ abstract class RenderBoxModel extends RenderBox
     // scrollable overflow area of a scroll container per CSS overflow/positioning
     // expectations. They are clipped to the padding edge and scrolled as a part
     // of the content, but must not affect the scroll range calculation.
-    if (this is RenderBoxModel) {
-      final RenderBoxModel self = this as RenderBoxModel;
-      final bool isScrollContainer = self.renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
-          self.renderStyle.effectiveOverflowY != CSSOverflowType.visible;
-      if (isScrollContainer && child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
-        return;
-      }
+    final RenderBoxModel self = this;
+    final bool isScrollContainer = self.renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
+        self.renderStyle.effectiveOverflowY != CSSOverflowType.visible;
+    if (isScrollContainer && child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
+      return;
     }
-
+  
     CSSRenderStyle style = (child as RenderBoxModel).renderStyle;
     Rect overflowRect = Rect.fromLTWH(
         childParentData.offset.dx, childParentData.offset.dy, child.boxSize!.width, child.boxSize!.height);
@@ -1285,9 +1280,9 @@ abstract class RenderBoxModel extends RenderBox
 
     final Offset shadowOffset = offset + Offset(dx, dy);
 
-    final PaintingContextCallback drawContent = (innerContext, innerOffset) {
+    void drawContent(PaintingContext innerContext, Offset innerOffset) {
       _paintFilteredContent(innerContext, innerOffset, skipDropShadow: true);
-    };
+    }
 
     final ColorFilterLayer tintLayer = ColorFilterLayer(
       colorFilter: ColorFilter.matrix(_createDropShadowColorMatrix(color)),
@@ -1480,7 +1475,7 @@ abstract class RenderBoxModel extends RenderBox
       position: position,
       hitTest: (BoxHitTestResult result, Offset transformPosition) {
         // Apply the same paint scroll offset used during painting so hit testing aligns in RTL/LTR.
-        final Offset scrollPaintOffset = this.paintScrollOffset;
+        final Offset scrollPaintOffset = paintScrollOffset;
         return result.addWithPaintOffset(
             offset: (scrollPaintOffset.dx != 0.0 || scrollPaintOffset.dy != 0.0) ? scrollPaintOffset : null,
             position: transformPosition,

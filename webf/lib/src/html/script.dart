@@ -263,7 +263,7 @@ class ScriptRunner {
 
 // https://www.w3.org/TR/2011/WD-html5-author-20110809/the-link-element.html
 class ScriptElement extends Element {
-  ScriptElement([BindingContext? context]) : super(context);
+  ScriptElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;

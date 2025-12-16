@@ -68,13 +68,13 @@ class Token {
 /// A token containing a parsed literal value.
 class LiteralToken extends Token {
   dynamic value;
-  LiteralToken(int kind, FileSpan span, this.value) : super(kind, span);
+  LiteralToken(super.kind, super.span, this.value);
 }
 
 /// A token containing error information.
 class ErrorToken extends Token {
   String? message;
-  ErrorToken(int kind, FileSpan span, this.message) : super(kind, span);
+  ErrorToken(super.kind, super.span, this.message);
 }
 
 /// CSS ident-token.

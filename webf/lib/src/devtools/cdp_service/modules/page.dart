@@ -16,7 +16,6 @@ import 'package:meta/meta.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart' show RenderViewportBox;
-import 'package:webf/launcher.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/foundation.dart';
 
@@ -191,7 +190,7 @@ class InspectPageModule extends UIInspectorModule {
     return devtoolsService.controller?.view.document;
   }
 
-  InspectPageModule(DevToolsService devtoolsService) : super(devtoolsService);
+  InspectPageModule(super.devtoolsService);
 
   @override
   String get name => 'Page';
@@ -444,12 +443,7 @@ class InspectPageModule extends UIInspectorModule {
       const <String>[],
     );
     final frameResourceTree = FrameResourceTree(frame, []);
-    print('[DevTools] Page.getResourceTree -> url=' +
-        url +
-        ' origin=' +
-        origin +
-        ' ctx=' +
-        (controller?.view.contextId.toString() ?? ''));
+    print('[DevTools] Page.getResourceTree -> url=$url origin=$origin ctx=${controller?.view.contextId.toString() ?? ''}');
     sendToFrontend(id, JSONEncodableMap({'frameTree': frameResourceTree}));
   }
 }
@@ -460,7 +454,7 @@ class ScreenCastFrame implements JSONEncodable {
   final ScreencastFrameMetadata metadata;
   final int sessionId;
 
-  ScreenCastFrame(this.data, this.metadata, this.sessionId);
+  const ScreenCastFrame(this.data, this.metadata, this.sessionId);
 
   @override
   Map toJson() {
@@ -482,7 +476,7 @@ class ScreencastFrameMetadata implements JSONEncodable {
   final num scrollOffsetY;
   final num? timestamp;
 
-  ScreencastFrameMetadata(
+  const ScreencastFrameMetadata(
       this.offsetTop, this.pageScaleFactor, this.deviceWidth, this.deviceHeight, this.scrollOffsetX, this.scrollOffsetY,
       {this.timestamp});
 

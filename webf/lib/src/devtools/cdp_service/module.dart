@@ -8,7 +8,6 @@
  */
 
 import 'package:webf/devtools.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
 

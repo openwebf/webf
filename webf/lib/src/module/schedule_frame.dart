@@ -99,9 +99,9 @@ mixin ScheduleFrameMixin {
 
   void resumeAnimationFrame() {
     _paused = false;
-    _pendingFrameCallbacks.forEach((callback) {
+    for (var callback in _pendingFrameCallbacks) {
       callback();
-    });
+    }
     _pendingFrameCallbacks.clear();
   }
 

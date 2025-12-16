@@ -15,7 +15,6 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'dart:ui';
 
-import 'package:ffi/ffi.dart';
 import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
@@ -35,18 +34,10 @@ import 'package:flutter/widgets.dart'
 import 'package:webf/css.dart';
 import 'package:dio/dio.dart' show Interceptor; // For custom Dio configuration
 import 'package:webf/dom.dart';
-import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart'; // Import for ChromeDevToolsService
-import 'package:webf/src/foundation/loading_state_registry.dart';
-import 'package:webf/src/launcher/dio_logger_options.dart';
-import 'package:webf/src/launcher/network_options.dart';
 
-import 'loading_state.dart';
-import 'package:webf/src/foundation/debug_flags.dart';
-import 'package:webf/src/foundation/logger.dart';
-import 'package:webf/src/dom/intersection_observer.dart';
 
 // Error handler when load bundle failed.
 typedef LoadErrorHandler = void Function(FlutterError error, StackTrace stack);
@@ -702,9 +693,9 @@ class WebFController with Diagnosticable {
   void _initializePreloadBundle() {
     if (preloadedBundles == null) return;
     _preloadBundleIndex = {};
-    preloadedBundles!.forEach((bundle) {
+    for (var bundle in preloadedBundles!) {
       _preloadBundleIndex![bundle.url] = bundle;
-    });
+    }
   }
 
   /// Adds preloaded bundles to the controller.

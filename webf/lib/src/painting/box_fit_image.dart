@@ -9,8 +9,6 @@
 
 import 'dart:async';
 import 'dart:ffi' as ffi;
-import 'dart:typed_data';
-import 'dart:convert' as convert show utf8;
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -407,17 +405,12 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
 // The [MultiFrameImageStreamCompleter] that saved the natural dimention of image.
 class DimensionedMultiFrameImageStreamCompleter extends MultiFrameImageStreamCompleter {
   DimensionedMultiFrameImageStreamCompleter({
-    required Future<Codec> codec,
-    required double scale,
-    String? debugLabel,
-    Stream<ImageChunkEvent>? chunkEvents,
-    InformationCollector? informationCollector,
-  }) : super(
-            codec: codec,
-            scale: scale,
-            debugLabel: debugLabel,
-            chunkEvents: chunkEvents,
-            informationCollector: informationCollector);
+    required super.codec,
+    required super.scale,
+    super.debugLabel,
+    super.chunkEvents,
+    super.informationCollector,
+  });
 
   final List<Completer<Dimension>> _dimensionCompleter = [];
   Dimension? _dimension;
@@ -435,9 +428,9 @@ class DimensionedMultiFrameImageStreamCompleter extends MultiFrameImageStreamCom
   void setDimension(Dimension dimension) {
     _dimension = dimension;
     if (_dimensionCompleter.isNotEmpty) {
-      _dimensionCompleter.forEach((Completer<Dimension> completer) {
+      for (var completer in _dimensionCompleter) {
         completer.complete(dimension);
-      });
+      }
       _dimensionCompleter.clear();
     }
   }

@@ -8,7 +8,6 @@
  */
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 
 const String BODY = 'BODY';
@@ -18,7 +17,7 @@ const Map<String, dynamic> _defaultStyle = {
 };
 
 class BodyElement extends Element {
-  BodyElement([BindingContext? context]) : super(context);
+  BodyElement([super.context]);
 
   @override
   void addEventListener(String eventType, EventHandler eventHandler, {EventListenerOptions? addEventListenerOptions}) {

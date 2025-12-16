@@ -63,10 +63,6 @@ class RouterLinkElement extends WidgetElement {
   @override
   flutter.Key get key => flutter.ValueKey('WEBF_ROUTER_LINK_$_path');
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 
   @override
   void connectedCallback() {
@@ -115,19 +111,19 @@ class RouterLinkElementState extends WebFWidgetElementState {
     if (widgetElement.childNodes.isEmpty) {
       children = [];
     } else {
-      widgetElement.childNodes.forEach((node) {
+      for (var node in widgetElement.childNodes) {
         if (node is Element &&
             (node.renderStyle.position == CSSPositionType.sticky ||
                 node.renderStyle.position == CSSPositionType.absolute)) {
           children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
           children.add(node.toWidget());
-          return;
+          continue;
         } else if (node is Element && node.renderStyle.position == CSSPositionType.fixed) {
           children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
         } else {
           children.add(node.toWidget());
         }
-      });
+      }
     }
 
     return WebFWidgetElementChild(

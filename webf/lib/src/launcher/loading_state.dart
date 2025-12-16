@@ -8,7 +8,6 @@
 
 import 'dart:collection';
 import 'dart:async';
-import 'dart:math' as Math;
 import 'package:flutter/widgets.dart';
 
 /// Represents a single phase in the WebFController loading lifecycle
@@ -123,7 +122,7 @@ class LoadingNetworkRequest {
   });
 
   Duration? get duration =>
-      endTime != null ? endTime!.difference(startTime) : null;
+      endTime?.difference(startTime);
   bool get isComplete => endTime != null;
   bool get isSuccessful =>
       statusCode != null && statusCode! >= 200 && statusCode! < 300;
@@ -214,7 +213,7 @@ class LoadingScriptElement {
           : null;
 
   Duration? get totalDuration =>
-      executeEndTime != null ? executeEndTime!.difference(queueTime) : null;
+      executeEndTime?.difference(queueTime);
 
   bool get isComplete => executeEndTime != null || error != null;
   bool get isSuccessful => isComplete && error == null;
@@ -906,7 +905,7 @@ class LoadingStateDump {
           // Find network requests that occurred during resolveEntrypoint
           final resolveNetworkRequests = networkRequests.where((req) {
             return req.startTime.isAfter(resolveStartTime!.subtract(Duration(milliseconds: 10))) &&
-                   req.startTime.isBefore(resolveEndTime!.add(Duration(milliseconds: 10)));
+                   req.startTime.isBefore(resolveEndTime.add(Duration(milliseconds: 10)));
           }).toList();
 
           if (resolveNetworkRequests.isNotEmpty) {
@@ -1033,7 +1032,7 @@ class LoadingStateDump {
           // Find network requests that occurred during resolveEntrypoint
           final resolveNetworkRequests = networkRequests.where((req) {
             return req.startTime.isAfter(resolveStartTime!.subtract(Duration(milliseconds: 10))) &&
-                   req.startTime.isBefore(resolveEndTime!.add(Duration(milliseconds: 10)));
+                   req.startTime.isBefore(resolveEndTime.add(Duration(milliseconds: 10)));
           }).toList();
 
           if (resolveNetworkRequests.isNotEmpty) {
@@ -1354,8 +1353,9 @@ class LoadingStateDump {
   }
 
   String _getPhaseDisplayName(String phaseName) {
-    if (phaseName == LoadingState.phaseConstructor) return 'Constructor';
-    else if (phaseName == LoadingState.phaseInit) return 'Initialize';
+    if (phaseName == LoadingState.phaseConstructor) {
+      return 'Constructor';
+    } else if (phaseName == LoadingState.phaseInit) return 'Initialize';
     else if (phaseName == LoadingState.phaseLoadStart) return 'Load Start';
     else if (phaseName == LoadingState.phasePreload) return 'Preload Start';
     else if (phaseName == LoadingState.phasePreloadEnd) return 'Preload End';
@@ -1428,7 +1428,7 @@ class LoadingStateDump {
         // Show HTTP status code and protocol (e.g., 200 https)
         final proto = request.protocol ?? Uri.tryParse(request.url)?.scheme;
         statusStr = proto != null && proto.isNotEmpty
-            ? '${request.statusCode} ${proto}'
+            ? '${request.statusCode} $proto'
             : '${request.statusCode}';
       } else {
         statusStr = 'PENDING';

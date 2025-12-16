@@ -14,7 +14,6 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:webf/rendering.dart';
 import 'package:quiver/collection.dart';
 
@@ -385,7 +384,7 @@ class CSSLengthValue {
                 parentRenderStyle.width.isAuto) {
               // Treat as indefinite only if the parent has no definite logical content width yet.
               final double? cbLogicalW = (parentRenderStyle is CSSRenderStyle)
-                  ? (parentRenderStyle as CSSRenderStyle).contentBoxLogicalWidth
+                  ? (parentRenderStyle).contentBoxLogicalWidth
                   : parentRenderStyle.contentBoxLogicalWidth;
               if (cbLogicalW == null) {
                 _computedValue = double.infinity;
@@ -411,7 +410,7 @@ class CSSLengthValue {
               // Attempt to force parent width computation before giving up
               if (parentRenderStyle != null && parentRenderStyle is CSSRenderStyle) {
                 // Ensure parent's layout width is computed
-                (parentRenderStyle as CSSRenderStyle).computeContentBoxLogicalWidth();
+                (parentRenderStyle).computeContentBoxLogicalWidth();
                 // Try to get parent width again after computation
                 double? recomputedParentWidth =
                     isPositioned ? parentRenderStyle.paddingBoxLogicalWidth : parentRenderStyle.contentBoxLogicalWidth;
@@ -525,7 +524,7 @@ class CSSLengthValue {
               break;
             }
             double? mainContentSize =
-                parentRenderStyle!.flexDirection == FlexDirection.row ? parentContentBoxWidth : parentContentBoxHeight;
+                parentRenderStyle.flexDirection == FlexDirection.row ? parentContentBoxWidth : parentContentBoxHeight;
             if (mainContentSize != null) {
               _computedValue = mainContentSize * value!;
             } else {
@@ -597,8 +596,7 @@ class CSSLengthValue {
                   0;
               _computedValue = (borderBoxWidth - destinationWidth) * value!;
               if (DebugFlags.enableBackgroundLogs) {
-                renderingLogger.finer('[Background] resolve BACKGROUND_POSITION_X: containerW=' +
-                    '${borderBoxWidth.toStringAsFixed(2)} destW=${destinationWidth.toStringAsFixed(2)} pct=${(value! * 100).toStringAsFixed(1)}% -> ${_computedValue!.toStringAsFixed(2)}');
+                renderingLogger.finer('[Background] resolve BACKGROUND_POSITION_X: containerW=' '${borderBoxWidth.toStringAsFixed(2)} destW=${destinationWidth.toStringAsFixed(2)} pct=${(value! * 100).toStringAsFixed(1)}% -> ${_computedValue!.toStringAsFixed(2)}');
               }
             } else {
               _computedValue = value!;
@@ -612,8 +610,7 @@ class CSSLengthValue {
                   0;
               _computedValue = (borderBoxHeight - destinationHeight) * value!;
               if (DebugFlags.enableBackgroundLogs) {
-                renderingLogger.finer('[Background] resolve BACKGROUND_POSITION_Y: containerH=' +
-                    '${borderBoxHeight.toStringAsFixed(2)} destH=${destinationHeight.toStringAsFixed(2)} pct=${(value! * 100).toStringAsFixed(1)}% -> ${_computedValue!.toStringAsFixed(2)}');
+                renderingLogger.finer('[Background] resolve BACKGROUND_POSITION_Y: containerH=' '${borderBoxHeight.toStringAsFixed(2)} destH=${destinationHeight.toStringAsFixed(2)} pct=${(value! * 100).toStringAsFixed(1)}% -> ${_computedValue!.toStringAsFixed(2)}');
               }
             } else {
               _computedValue = value!;

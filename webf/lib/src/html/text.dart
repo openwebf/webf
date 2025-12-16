@@ -89,7 +89,7 @@ class WebFTextElement extends WebFTextBindings {
   TextSpan createTextSpan(dom.ChildNodeList childNodes) {
     List<InlineSpan> textSpanChildren = [];
 
-    childNodes.forEach((node) {
+    for (var node in childNodes) {
       if (node is dom.TextNode) {
         // Process whitespace according to the parent element's white-space property
         final processedText = WhitespaceProcessor.processPhaseOne(node.data, renderStyle.whiteSpace);
@@ -97,7 +97,7 @@ class WebFTextElement extends WebFTextBindings {
       } else if (node is dom.Element && node is WebFTextElement) {
         textSpanChildren.add(node.createTextSpan(node.childNodes));
       }
-    });
+    }
 
     TextSpan textSpan = TextSpan(style: createTextStyle(renderStyle), children: textSpanChildren);
 

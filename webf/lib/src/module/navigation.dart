@@ -40,7 +40,7 @@ class NavigationModule extends BaseModule {
   @override
   String get name => 'Navigation';
 
-  NavigationModule(ModuleManager? moduleManager) : super(moduleManager);
+  NavigationModule(super.moduleManager);
 
   @override
   void dispose() {}

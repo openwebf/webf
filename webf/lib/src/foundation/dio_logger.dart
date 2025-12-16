@@ -452,7 +452,7 @@ class PrettyDioLogger extends Interceptor {
     if (maxBodyLength == null) return input;
     if (input.length <= maxBodyLength!) return input;
     final omitted = input.length - maxBodyLength!;
-    return input.substring(0, maxBodyLength!) + '… [truncated $omitted chars]';
+    return '${input.substring(0, maxBodyLength!)}… [truncated $omitted chars]';
   }
 
   String _encodeJsonCompact(dynamic data) {
@@ -484,7 +484,7 @@ class PrettyDioLogger extends Interceptor {
   convert.Encoding _encodingForContentType(String? contentType) {
     if (contentType == null) return convert.utf8;
     final match = RegExp(r'charset=([^;]+)', caseSensitive: false).firstMatch(contentType);
-    final name = match != null ? match.group(1)?.trim() : null;
+    final name = match?.group(1)?.trim();
     return convert.Encoding.getByName(name?.toLowerCase() ?? '') ?? convert.utf8;
   }
 }

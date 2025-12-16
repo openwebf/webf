@@ -64,9 +64,9 @@ class FileStorage implements Storage {
   void _initCurDir(bool persistSession, bool ignoreExpires) {
     _curDir = dir ?? './.cookies/';
     if (!_curDir!.endsWith('/')) {
-      _curDir = _curDir! + '/';
+      _curDir = '${_curDir!}/';
     }
-    _curDir = _curDir! + 'ie${ignoreExpires ? 1 : 0}_ps${persistSession ? 1 : 0}/';
+    _curDir = '${_curDir!}ie${ignoreExpires ? 1 : 0}_ps${persistSession ? 1 : 0}/';
   }
 
   @override

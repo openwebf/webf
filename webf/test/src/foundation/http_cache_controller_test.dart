@@ -2,11 +2,6 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/foundation.dart';
-import 'package:webf/src/foundation/http_cache.dart';
-import 'package:webf/src/foundation/http_cache_object.dart';
-import 'package:webf/src/foundation/http_client.dart' show createHttpHeaders;
-import 'package:webf/src/foundation/http_client_response.dart';
-import 'package:webf/src/foundation/http_client_request.dart';
 
 import '../../setup.dart';
 

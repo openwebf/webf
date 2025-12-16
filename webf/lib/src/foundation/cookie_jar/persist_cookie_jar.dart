@@ -24,9 +24,8 @@ class PersistCookieJar extends DefaultCookieJar {
 
   PersistCookieJar(
       {this.persistSession = true,
-      bool ignoreExpires = false,
-      Storage? storage})
-      : super(ignoreExpires: ignoreExpires) {
+      super.ignoreExpires,
+      Storage? storage}) {
     this.storage = storage ?? FileStorage();
   }
 
@@ -54,9 +53,9 @@ class PersistCookieJar extends DefaultCookieJar {
         try {
           final Map<String, dynamic> jsonData = json.decode(str);
 
-          final cookies = jsonData.map((String domain, _cookies) {
+          final cookies = jsonData.map((String domain, cookie) {
             final Map<String, dynamic> cookies =
-                _cookies.cast<String, dynamic>();
+            cookie.cast<String, dynamic>();
             final domainCookies = cookies.map((String path, map) {
               final Map<String, String> cookieForPath =
                   map.cast<String, String>();
@@ -103,9 +102,9 @@ class PersistCookieJar extends DefaultCookieJar {
         try {
           final Map<String, dynamic> jsonData = json.decode(str);
 
-          final cookies = jsonData.map((String domain, _cookies) {
+          final cookies = jsonData.map((String domain, cookie) {
             final Map<String, dynamic> cookies =
-            _cookies.cast<String, dynamic>();
+            cookie.cast<String, dynamic>();
             final domainCookies = cookies.map((String path, map) {
               final Map<String, String> cookieForPath =
               map.cast<String, String>();
@@ -186,8 +185,8 @@ class PersistCookieJar extends DefaultCookieJar {
   ) {
     return domain
         .cast<String, Map<String, dynamic>>()
-        .map((String path, Map<String, dynamic> _cookies) {
-      final cookies = _cookies.map((String cookieName, cookie) {
+        .map((String path, Map<String, dynamic> cookie) {
+      final cookies = cookie.map((String cookieName, cookie) {
         if (((cookie.cookie.expires == null && cookie.cookie.maxAge == null) &&
                 persistSession) ||
             (persistSession && !cookie.isExpired())) {

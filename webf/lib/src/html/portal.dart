@@ -3,7 +3,6 @@
  * Licensed under GNU GPL with Enterprise exception.
  */
 import 'package:flutter/cupertino.dart';
-import 'package:webf/src/dom/child_node_list.dart';
 import 'package:webf/widget.dart';
 
 const PORTAL = 'PORTAL';
@@ -24,7 +23,7 @@ class PortalElementState extends WebFWidgetElementState {
   Widget build(BuildContext context) {
     return WebFEventListener(
         ownerElement: widgetElement,
-        child: widgetElement.childNodes.isNotEmpty ? widgetElement.childNodes.first.toWidget() : SizedBox.shrink(),
-        hasEvent: true);
+        hasEvent: true,
+        child: widgetElement.childNodes.isNotEmpty ? widgetElement.childNodes.first.toWidget() : SizedBox.shrink());
   }
 }

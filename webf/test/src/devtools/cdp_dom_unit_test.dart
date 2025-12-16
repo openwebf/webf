@@ -2,7 +2,6 @@
  * Unit-style tests calling CDP modules directly (no WebSocket server)
  */
 
-import 'dart:async';
 import 'dart:ffi';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -31,7 +30,7 @@ dynamic _deepToJson(dynamic v) {
 }
 
 class _DOMProbe extends InspectDOMModule {
-  _DOMProbe(DevToolsService s) : super(s);
+  _DOMProbe(super.s);
   Map<int?, Map<String, dynamic>?> lastResults = {};
   final List<InspectorEvent> events = [];
 
@@ -81,7 +80,7 @@ class _DOMProbe extends InspectDOMModule {
     }
     final raw = result.toJson();
     final ser = _deepToJson(raw);
-    lastResults[id] = ser is Map ? Map<String, dynamic>.from(ser as Map) : null;
+    lastResults[id] = ser is Map ? Map<String, dynamic>.from(ser) : null;
   }
 
   @override
@@ -91,7 +90,7 @@ class _DOMProbe extends InspectDOMModule {
 }
 
 class _CSSProbe extends InspectCSSModule {
-  _CSSProbe(DevToolsService s) : super(s);
+  _CSSProbe(super.s);
   Map<int?, Map<String, dynamic>?> lastResults = {};
 
   @override
@@ -102,7 +101,7 @@ class _CSSProbe extends InspectCSSModule {
     }
     final raw = result.toJson();
     final ser = _deepToJson(raw);
-    lastResults[id] = ser is Map ? Map<String, dynamic>.from(ser as Map) : null;
+    lastResults[id] = ser is Map ? Map<String, dynamic>.from(ser) : null;
   }
 }
 

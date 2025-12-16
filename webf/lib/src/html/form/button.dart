@@ -6,10 +6,8 @@
  * Copyright (C) 2022-present The WebF Company. All rights reserved.
  */
 
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/src/accessibility/semantics.dart';
 
@@ -57,7 +55,7 @@ mixin ButtonElementState on WebFWidgetElementState {
     Widget child = TextButton(
       style: ButtonStyle(
         backgroundColor:
-            MaterialStateProperty.resolveWith<Color?>((states) => _buttonElement.renderStyle.backgroundColor?.value),
+            WidgetStateProperty.resolveWith<Color?>((states) => _buttonElement.renderStyle.backgroundColor?.value),
       ),
       onPressed: () {
         var box = context.findRenderObject() as RenderBox;

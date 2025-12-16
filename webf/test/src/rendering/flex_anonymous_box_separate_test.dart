@@ -4,7 +4,6 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
@@ -59,14 +58,14 @@ void main() {
       print('DOM children count: ${childNodes.length}');
       
       int i = 0;
-      childNodes.forEach((node) {
+      for (var node in childNodes) {
         if (node is dom.TextNode) {
           print('Child $i: TextNode with data: "${node.data}"');
         } else if (node is dom.Element) {
           print('Child $i: Element <${node.tagName}>');
         }
         i++;
-      });
+      }
       
       // Get the render object to check flex items
       final renderer = container.attachedRenderer as RenderFlexLayout;

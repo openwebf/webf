@@ -12,7 +12,7 @@ class LocationModule extends BaseModule {
   @override
   String get name => 'Location';
 
-  LocationModule(ModuleManager? moduleManager) : super(moduleManager);
+  LocationModule(super.moduleManager);
 
   String get href => moduleManager!.controller.url;
 

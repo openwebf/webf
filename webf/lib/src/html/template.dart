@@ -8,7 +8,6 @@
  */
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/bridge.dart';
 
 const String TEMPLATE = 'TEMPLATE';
 
@@ -17,7 +16,7 @@ const Map<String, dynamic> _defaultStyle = {
 };
 
 class TemplateElement extends Element {
-  TemplateElement([BindingContext? context]) : super(context);
+  TemplateElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;

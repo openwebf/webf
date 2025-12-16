@@ -7,13 +7,11 @@
  */
 import 'dart:ffi' as ffi;
 import 'package:collection/collection.dart';
-import 'dart:ui';
 import 'package:flutter/rendering.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
-import 'package:webf/rendering.dart';
 
 class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
   final Element _element;
@@ -21,9 +19,8 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
 
   final ffi.Pointer<NativeBindingObject> _pointer;
 
-  ComputedCSSStyleDeclaration(BindingContext context, this._element, this._pseudoElementName)
-      : _pointer = context.pointer,
-        super(context);
+  ComputedCSSStyleDeclaration(BindingContext super.context, this._element, this._pseudoElementName)
+      : _pointer = context.pointer;
 
   @override
   get pointer => _pointer;
@@ -44,10 +41,6 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
   @override
   List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, _computedStyleSyncMethods];
 
-  @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    super.initializeMethods(methods);
-  }
 
   static final StaticDefinedBindingPropertyMap _computedStyleProperties = {
     'cssText': StaticDefinedBindingProperty(
@@ -65,7 +58,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
     final propertyMap = reverse(CSSPropertyNameMap);
 
     StringBuffer result = StringBuffer();
-    ComputedProperties.forEach((id) {
+    for (var id in ComputedProperties) {
       final name = propertyMap[id] ?? '';
       final value = getPropertyValue(name);
 
@@ -74,11 +67,11 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       result.write(': ');
       result.write(value);
       result.write(';');
-    });
+    }
     return result.toString();
   }
 
-  void set cssText(value) {}
+  set cssText(value) {}
 
   @override
   int get length => CSSPropertyID.values.length;
@@ -142,7 +135,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.BackgroundRepeat:
         return style.backgroundRepeat.cssText();
       case CSSPropertyID.BackgroundPosition:
-        return style.backgroundPositionX.cssText() + ' ' + style.backgroundPositionY.cssText();
+        return '${style.backgroundPositionX.cssText()} ${style.backgroundPositionY.cssText()}';
       case CSSPropertyID.BackgroundPositionX:
         return style.backgroundPositionX.cssText();
       case CSSPropertyID.BackgroundPositionY:
@@ -580,7 +573,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
     }
 
     if (!horizontalRadii.equals(verticalRadii)) {
-      return horizontalRadii.join(' ') + ' / ' + verticalRadii.join(' ');
+      return '${horizontalRadii.join(' ')} / ${verticalRadii.join(' ')}';
     }
     return horizontalRadii.join(' ');
   }
@@ -610,7 +603,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
     final backgroundColor = _valueForPropertyInStyle(CSSPropertyID.BackgroundColor);
     final beforeValue = beforeSlashSeparator.map((e) => _valueForPropertyInStyle(e)).join(' ');
     final afterValue = afterSlashSeparator.map((e) => _valueForPropertyInStyle(e)).join(' ');
-    return backgroundColor + ' ' + beforeValue + ' / ' + afterValue;
+    return '$backgroundColor $beforeValue / $afterValue';
   }
 
   @override

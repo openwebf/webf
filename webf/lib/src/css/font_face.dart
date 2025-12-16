@@ -93,13 +93,13 @@ class CSSFontFace {
       for(int i = 0; i < functions.length; i ++) {
         CSSFunctionalNotation notation = functions[i];
         if (notation.name == 'url') {
-          String tmp_src = notation.args[0];
-          tmp_src = removeQuotationMark(tmp_src);
+          String tmpSrc = notation.args[0];
+          tmpSrc = removeQuotationMark(tmpSrc);
 
-          if (tmp_src.startsWith('data')) {
-            String tmp_content = tmp_src.split(';').last;
-            if (tmp_content.startsWith('base64')) {
-              String base64 = tmp_src.split(',').last;
+          if (tmpSrc.startsWith('data')) {
+            String tmpContent = tmpSrc.split(';').last;
+            if (tmpContent.startsWith('base64')) {
+              String base64 = tmpSrc.split(',').last;
               try {
                 Uint8List decoded = base64Decode(base64);
                 if (decoded.isNotEmpty) {
@@ -108,8 +108,8 @@ class CSSFontFace {
               } catch(e) {}
             }
           } else {
-            String formatFromExt = tmp_src.split('.').last;
-            fonts.add(_Font(tmp_src, formatFromExt));
+            String formatFromExt = tmpSrc.split('.').last;
+            fonts.add(_Font(tmpSrc, formatFromExt));
           }
         }
       }

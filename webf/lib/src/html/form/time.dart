@@ -9,7 +9,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:webf/src/widget/widget_element.dart';
 
@@ -95,10 +94,11 @@ mixin TimeElementState on WebFWidgetElementState {
     return GestureDetector(
       onTap: () async {
         var time = await _showPicker(context);
-        if (time != null)
+        if (time != null) {
           setState(() {
             widgetElement.value = time;
           });
+        }
       },
       child: AbsorbPointer(child: _createTimeInput(context)),
     );

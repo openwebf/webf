@@ -23,7 +23,6 @@ import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/css/css_animation.dart';
 
-import 'package:logging/logging.dart' show Level;
 
 typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObject);
 
@@ -88,7 +87,7 @@ enum RenderObjectGetType { self, parent, firstChild, lastChild, previousSibling,
 abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   @override
   String toStringShort() {
-    return describeIdentity(this) + ' target: $target';
+    return '${describeIdentity(this)} target: $target';
   }
 
   // Common
@@ -463,7 +462,7 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
         break;
     }
 
-    _widgetRenderObjects.keys.forEach((element) {
+    for (var element in _widgetRenderObjects.keys) {
       if (element is WebRenderLayoutRenderObjectElement) {
         element.requestForBuild(reason);
       } else if (element is RenderWidgetElement) {
@@ -471,7 +470,7 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
       } else if (element is WebFRenderReplacedRenderObjectElement) {
         element.requestForBuild(reason);
       }
-    });
+    }
   }
 
   bool someRenderBoxSatisfy(SomeRenderBoxModelHandlerCallback callback) {
@@ -1263,9 +1262,9 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     // The renderObjects rendered by RouterLinkElement is not as an child in RenderWidget
     // We needs delegate to DOM elements to indicate the roots
     if (target is RouterLinkElement) {
-      target.children.forEach((element) {
+      for (var element in target.children) {
         element.renderStyle.visitChildren(visitor);
-      });
+      }
       return;
     }
 
@@ -1350,15 +1349,19 @@ class CSSRenderStyle extends RenderStyle
     properties.add(DiagnosticsProperty('borderEdge', border));
     if (backgroundClip != null) properties.add(DiagnosticsProperty('backgroundClip', backgroundClip));
     if (backgroundOrigin != null) properties.add(DiagnosticsProperty('backgroundOrigin', backgroundOrigin));
-    CSSBoxDecoration? _decoration = decoration;
-    if (_decoration != null && _decoration.hasBorderRadius)
-      properties.add(DiagnosticsProperty('borderRadius', _decoration.borderRadius));
-    if (_decoration != null && _decoration.image != null)
-      properties.add(DiagnosticsProperty('backgroundImage', _decoration.image));
-    if (_decoration != null && _decoration.boxShadow != null)
-      properties.add(DiagnosticsProperty('boxShadow', _decoration.boxShadow));
-    if (_decoration != null && _decoration.gradient != null)
-      properties.add(DiagnosticsProperty('gradient', _decoration.gradient));
+    CSSBoxDecoration? decoration = this.decoration;
+    if (decoration != null && decoration.hasBorderRadius) {
+      properties.add(DiagnosticsProperty('borderRadius', decoration.borderRadius));
+    }
+    if (decoration != null && decoration.image != null) {
+      properties.add(DiagnosticsProperty('backgroundImage', decoration.image));
+    }
+    if (decoration != null && decoration.boxShadow != null) {
+      properties.add(DiagnosticsProperty('boxShadow', decoration.boxShadow));
+    }
+    if (decoration != null && decoration.gradient != null) {
+      properties.add(DiagnosticsProperty('gradient', decoration.gradient));
+    }
   }
 
   void debugVisibilityProperties(DiagnosticPropertiesBuilder properties) {
@@ -2629,7 +2632,7 @@ class CSSRenderStyle extends RenderStyle
         // Whether THIS element is a flex item (its own parent is a flex container).
         // When true, width:auto must not be stretched to the parent’s width in the main axis;
         // the flex base size is content-based per CSS Flexbox §9.2.
-        final bool thisIsFlexItem = this.isParentRenderFlexLayout();
+        final bool thisIsFlexItem = isParentRenderFlexLayout();
 
         // Case A: inside a flex item — stretch block-level auto width to the flex item's measured width.
         // For WebF widget elements (custom elements backed by Flutter widgets), only use the
@@ -3156,7 +3159,7 @@ class CSSRenderStyle extends RenderStyle
     return nextRenderLayoutBox;
   }
 
-  RenderReplaced _createRenderReplaced({RenderReplaced? previousReplaced, bool isRepaintBoundary = false}) {
+  RenderReplaced _createRenderReplaced({bool isRepaintBoundary = false}) {
     RenderReplaced nextReplaced;
 
     if (isRepaintBoundary) {
@@ -3565,7 +3568,7 @@ mixin CSSWritingModeMixin on RenderStyle {
         final CSSVariable? variable = CSSVariable.tryParse(renderStyle, varString);
         if (variable == null) return varString; // keep as-is
 
-        final depKey = propertyName + '_' + input;
+        final depKey = '${propertyName}_$input';
         final dynamic raw = renderStyle.getCSSVariable(variable.identifier, depKey);
 
         if (raw == null || raw == INITIAL) {
@@ -3595,8 +3598,8 @@ mixin CSSWritingModeMixin on RenderStyle {
         final int? repLast = trimmed.isNotEmpty ? trimmed.codeUnitAt(trimmed.length - 1) : null;
         final bool addLeftSpace = leftChar != null && repFirst != null && isIdentCode(leftChar) && isIdentCode(repFirst);
         final bool addRightSpace = rightChar != null && repLast != null && isIdentCode(repLast) && isIdentCode(rightChar);
-        if (addLeftSpace) rep = ' ' + rep;
-        if (addRightSpace) rep = rep + ' ';
+        if (addLeftSpace) rep = ' $rep';
+        if (addRightSpace) rep = '$rep ';
         return rep;
       });
       if (result == before) break;

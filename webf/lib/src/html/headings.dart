@@ -8,7 +8,6 @@
  */
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/bridge.dart';
 
 const String H1 = 'H1';
 const String H2 = 'H2';
@@ -66,42 +65,42 @@ const Map<String, dynamic> _h6DefaultStyle = {
 };
 
 class H1Element extends Element {
-  H1Element([BindingContext? context]) : super(context);
+  H1Element([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _h1DefaultStyle;
 }
 
 class H2Element extends Element {
-  H2Element([BindingContext? context]) : super(context);
+  H2Element([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _h2DefaultStyle;
 }
 
 class H3Element extends Element {
-  H3Element([BindingContext? context]) : super(context);
+  H3Element([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _h3DefaultStyle;
 }
 
 class H4Element extends Element {
-  H4Element([BindingContext? context]) : super(context);
+  H4Element([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _h4DefaultStyle;
 }
 
 class H5Element extends Element {
-  H5Element([BindingContext? context]) : super(context);
+  H5Element([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _h5DefaultStyle;
 }
 
 class H6Element extends Element {
-  H6Element([BindingContext? context]) : super(context);
+  H6Element([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _h6DefaultStyle;

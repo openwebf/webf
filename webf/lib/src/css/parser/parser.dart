@@ -30,9 +30,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart';
 import 'package:webf/css.dart';
-import 'package:webf/foundation.dart';
 
 import 'package:source_span/source_span.dart';
 

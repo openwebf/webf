@@ -8,7 +8,6 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/foundation.dart';
 
 abstract class RenderLayoutBox extends RenderBoxModel
     with
@@ -44,8 +43,8 @@ abstract class RenderLayoutBox extends RenderBoxModel
     while (child != null) {
       final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
       final bool positioned = child is RenderBoxModel &&
-          ((child as RenderBoxModel).renderStyle.isSelfPositioned() ||
-              (child as RenderBoxModel).renderStyle.isSelfStickyPosition());
+          ((child).renderStyle.isSelfPositioned() ||
+              (child).renderStyle.isSelfStickyPosition());
       if (!positioned) {
         content = math.max(content, child.getMinIntrinsicWidth(height));
       }
@@ -67,8 +66,8 @@ abstract class RenderLayoutBox extends RenderBoxModel
     while (child != null) {
       final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
       final bool positioned = child is RenderBoxModel &&
-          ((child as RenderBoxModel).renderStyle.isSelfPositioned() ||
-              (child as RenderBoxModel).renderStyle.isSelfStickyPosition());
+          ((child).renderStyle.isSelfPositioned() ||
+              (child).renderStyle.isSelfStickyPosition());
       if (!positioned) {
         content += child.getMinIntrinsicHeight(width);
       }
@@ -88,8 +87,8 @@ abstract class RenderLayoutBox extends RenderBoxModel
     while (child != null) {
       final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
       final bool positioned = child is RenderBoxModel &&
-          ((child as RenderBoxModel).renderStyle.isSelfPositioned() ||
-              (child as RenderBoxModel).renderStyle.isSelfStickyPosition());
+          ((child).renderStyle.isSelfPositioned() ||
+              (child).renderStyle.isSelfStickyPosition());
       if (!positioned) {
         content = math.max(content, child.getMaxIntrinsicWidth(height));
       }
@@ -109,8 +108,8 @@ abstract class RenderLayoutBox extends RenderBoxModel
     while (child != null) {
       final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
       final bool positioned = child is RenderBoxModel &&
-          ((child as RenderBoxModel).renderStyle.isSelfPositioned() ||
-              (child as RenderBoxModel).renderStyle.isSelfStickyPosition());
+          ((child).renderStyle.isSelfPositioned() ||
+              (child).renderStyle.isSelfStickyPosition());
       if (!positioned) {
         content += child.getMaxIntrinsicHeight(width);
       }
@@ -136,7 +135,7 @@ abstract class RenderLayoutBox extends RenderBoxModel
     // If target is not our descendant, return current scroll position
     RenderObject? ancestor = target;
     while (ancestor != null && ancestor != this) {
-      ancestor = ancestor.parent as RenderObject?;
+      ancestor = ancestor.parent;
     }
     if (ancestor == null) {
       // Target is not our descendant, return current position
@@ -257,7 +256,7 @@ abstract class RenderLayoutBox extends RenderBoxModel
       List<RenderBoxModel> positionedAutoOrZero = [];
       List<RenderBoxModel> positives = [];
 
-      bool _subtreeHasAutoOrZeroParticipant(RenderBox node, [int depth = 0]) {
+      bool subtreeHasAutoOrZeroParticipant(RenderBox node, [int depth = 0]) {
         if (depth > 12) return false;
         // Check this node if it's a RenderBoxModel participant itself
         if (node is RenderBoxModel) {
@@ -270,13 +269,13 @@ abstract class RenderLayoutBox extends RenderBoxModel
         // Unwrap single-child wrappers
         if (node is RenderObjectWithChildMixin<RenderBox>) {
           final RenderBox? c = (node as dynamic).child as RenderBox?;
-          if (c != null && _subtreeHasAutoOrZeroParticipant(c, depth + 1)) return true;
+          if (c != null && subtreeHasAutoOrZeroParticipant(c, depth + 1)) return true;
         }
         // Iterate container children
         if (node is RenderLayoutBox) {
           RenderBox? c = node.firstChild;
           while (c != null) {
-            if (_subtreeHasAutoOrZeroParticipant(c, depth + 1)) return true;
+            if (subtreeHasAutoOrZeroParticipant(c, depth + 1)) return true;
             final RenderLayoutParentData pd = c.parentData as RenderLayoutParentData;
             c = pd.nextSibling;
           }
@@ -304,7 +303,7 @@ abstract class RenderLayoutBox extends RenderBoxModel
             // Non-positioned descendants: if subtree contains any z-index:0 or auto-positioned participants,
             // elevate this container to the auto/0 layer so those participants paint in the correct phase
             // relative to siblings (e.g., flex item with z-index:0 vs. abspos auto).
-            if (_subtreeHasAutoOrZeroParticipant(child)) {
+            if (subtreeHasAutoOrZeroParticipant(child)) {
               positionedAutoOrZero.add(child);
             } else {
               normalFlow.add(child);
@@ -318,7 +317,7 @@ abstract class RenderLayoutBox extends RenderBoxModel
       // Promote descendant stacking context roots with positive z-index into the
       // current container's positive bucket so that ordering can be resolved
       // across non-stacking ancestors — only for the document root stacking context.
-      void _collectPositiveStackingContexts(RenderBox node, List<RenderBoxModel> out, [int depth = 0]) {
+      void collectPositiveStackingContexts(RenderBox node, List<RenderBoxModel> out, [int depth = 0]) {
         // Avoid degenerate deep recursion.
         if (depth > 64) return;
         if (node is RenderBoxModel) {
@@ -334,12 +333,12 @@ abstract class RenderLayoutBox extends RenderBoxModel
         // Descend into containers/wrappers that don't establish a stacking context.
         if (node is RenderObjectWithChildMixin<RenderBox>) {
           final RenderBox? c = (node as dynamic).child as RenderBox?;
-          if (c != null) _collectPositiveStackingContexts(c, out, depth + 1);
+          if (c != null) collectPositiveStackingContexts(c, out, depth + 1);
         }
         if (node is RenderLayoutBox) {
           RenderBox? c = node.firstChild;
           while (c != null) {
-            _collectPositiveStackingContexts(c, out, depth + 1);
+            collectPositiveStackingContexts(c, out, depth + 1);
             final RenderLayoutParentData pd = c.parentData as RenderLayoutParentData;
             c = pd.nextSibling;
           }
@@ -348,15 +347,15 @@ abstract class RenderLayoutBox extends RenderBoxModel
 
       // Only promote at the document root (<html>), to avoid interfering with normal
       // stacking of nested flex/grid containers.
-      final bool promoteAtThisLevel = (renderStyle as CSSRenderStyle).isDocumentRootBox();
+      final bool promoteAtThisLevel = (renderStyle).isDocumentRootBox();
       if (promoteAtThisLevel) {
         for (final RenderBox nf in normalFlow) {
-          _collectPositiveStackingContexts(nf, positives);
+          collectPositiveStackingContexts(nf, positives);
         }
       }
 
       // Compare two render boxes by full document tree order using DOM compareDocumentPosition.
-      int _compareTreeOrder(RenderBoxModel a, RenderBoxModel b) {
+      int compareTreeOrder(RenderBoxModel a, RenderBoxModel b) {
         final Node aNode = a.renderStyle.target;
         final Node bNode = b.renderStyle.target;
         final DocumentPosition pos = aNode.compareDocumentPosition(bNode);
@@ -371,17 +370,17 @@ abstract class RenderLayoutBox extends RenderBoxModel
         final int az = a.renderStyle.zIndex ?? 0;
         final int bz = b.renderStyle.zIndex ?? 0;
         if (az != bz) return az.compareTo(bz);
-        return _compareTreeOrder(a, b);
+        return compareTreeOrder(a, b);
       });
 
       // For positioned with auto/0 z-index, order strictly by document tree order.
-      positionedAutoOrZero.sort(_compareTreeOrder);
+      positionedAutoOrZero.sort(compareTreeOrder);
 
       positives.sort((a, b) {
         final int az = a.renderStyle.zIndex ?? 0;
         final int bz = b.renderStyle.zIndex ?? 0;
         if (az != bz) return az.compareTo(bz);
-        return _compareTreeOrder(a, b);
+        return compareTreeOrder(a, b);
       });
 
       final List<RenderBox> ordered = [];
@@ -434,18 +433,18 @@ abstract class RenderLayoutBox extends RenderBoxModel
 
   @override
   void performPaint(PaintingContext context, Offset offset) {
-    Offset _accumulateOffsetFromDescendant(RenderObject descendant, RenderObject ancestor) {
+    Offset accumulateOffsetFromDescendant(RenderObject descendant, RenderObject ancestor) {
       Offset sum = Offset.zero;
       RenderObject? cur = descendant;
       while (cur != null && cur != ancestor) {
         final Object? pd = (cur is RenderBox) ? (cur.parentData) : null;
         if (pd is ContainerBoxParentData) {
-          final Offset o = (pd as ContainerBoxParentData).offset;
+          final Offset o = (pd).offset;
           sum += o;
         } else if (pd is RenderLayoutParentData) {
-          sum += (pd as RenderLayoutParentData).offset;
+          sum += (pd).offset;
         }
-        cur = cur.parent as RenderObject?;
+        cur = cur.parent;
       }
       return sum;
     }
@@ -459,7 +458,7 @@ abstract class RenderLayoutBox extends RenderBoxModel
 
       bool restoreFlag = false;
       bool previous = false;
-      final bool promoteHere = (renderStyle as CSSRenderStyle).isDocumentRootBox();
+      final bool promoteHere = (renderStyle).isDocumentRootBox();
       if (promoteHere && child is RenderBoxModel) {
         final CSSRenderStyle rs = child.renderStyle;
         final int? zi = rs.zIndex;
@@ -483,11 +482,11 @@ abstract class RenderLayoutBox extends RenderBoxModel
       // Compute correct paint offset even if the render box to paint is not a direct child
       // of this container (e.g., promoted positive stacking contexts).
       final bool direct = identical(child.parent, this);
-      final Offset localOffset = direct ? childParentData.offset : _accumulateOffsetFromDescendant(child, this);
+      final Offset localOffset = direct ? childParentData.offset : accumulateOffsetFromDescendant(child, this);
       context.paintChild(child, localOffset + offset);
 
       if (restoreFlag && child is RenderBoxModel) {
-        (child.renderStyle as CSSRenderStyle).suppressPositiveStackingFromDescendants = previous;
+        (child.renderStyle).suppressPositiveStackingFromDescendants = previous;
         if (child is RenderLayoutBox) {
           child.markChildrenNeedsSort();
         } else if (child is RenderWidget) {
@@ -684,10 +683,6 @@ abstract class RenderLayoutBox extends RenderBoxModel
     properties.add(DiagnosticsProperty('paintingOrder', paintingOrder));
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 }
 
 /// Modified from Flutter rendering/box.dart.
@@ -731,10 +726,11 @@ mixin RenderBoxContainerDefaultsMixin<ChildType extends RenderBox,
       double? candidate = child.getDistanceToActualBaseline(baseline);
       if (candidate != null) {
         candidate += childParentData.offset.dy;
-        if (result != null)
+        if (result != null) {
           result = math.min(result, candidate);
-        else
+        } else {
           result = candidate;
+        }
       }
       child = childParentData.nextSibling;
     }

@@ -12,16 +12,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:webf/bridge.dart';
 import 'package:dio/dio.dart' hide FormData;
 import 'package:webf/foundation.dart';
-import 'package:webf/src/foundation/dio_client.dart';
 import 'package:webf/html.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/module.dart';
-import 'package:webf/src/foundation/form_data/form_data.dart';
-import 'package:webf/src/foundation/loading_state_registry.dart';
 
 String EMPTY_STRING = '';
 
@@ -31,7 +27,7 @@ class FetchModule extends BaseModule {
 
   bool _disposed = false;
 
-  FetchModule(ModuleManager? moduleManager) : super(moduleManager);
+  FetchModule(super.moduleManager);
 
   @override
   void dispose() {

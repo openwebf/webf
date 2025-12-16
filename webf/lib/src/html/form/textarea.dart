@@ -33,7 +33,7 @@ class FlutterTextAreaElement extends WidgetElement with BaseInputElement {
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     super.initializeProperties(properties);
     // Ensure `textarea.value` property maps to element value storage.
-    properties['value'] = BindingObjectProperty(getter: () => value, setter: (v) => this.value = v);
+    properties['value'] = BindingObjectProperty(getter: () => value, setter: (v) => value = v);
     // Optionally expose defaultValue for symmetry; this mirrors BaseInputElement behavior.
     properties['defaultValue'] = BindingObjectProperty(getter: () => defaultValue, setter: (v) => defaultValue = v);
   }

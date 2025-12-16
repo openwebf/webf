@@ -8,8 +8,6 @@
  */
 
 import 'package:webf/css.dart';
-import 'package:webf/foundation.dart';
-import 'package:flutter/foundation.dart';
 
 const int _HYPHEN_CODE = 45; // -
 

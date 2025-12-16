@@ -28,7 +28,7 @@ enum InputSize {
 
 class FlutterInputElement extends WidgetElement
     with BaseInputElement, BaseCheckedElement, BaseRadioElement, BaseButtonElement {
-  FlutterInputElement(BindingContext? context) : super(context);
+  FlutterInputElement(super.context);
 
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
@@ -258,8 +258,8 @@ class FlutterInputElementState extends WebFWidgetElementState
   }
 
   Widget createInput(BuildContext context, {int minLines = 1, int maxLines = 1}) {
-    widgetElement..minLines = minLines;
-    widgetElement..maxLines = maxLines;
+    widgetElement.minLines = minLines;
+    widgetElement.maxLines = maxLines;
     switch (widgetElement.type) {
       case 'hidden':
         return SizedBox(width: 0, height: 0);

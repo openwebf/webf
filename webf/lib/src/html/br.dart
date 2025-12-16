@@ -8,13 +8,12 @@
 
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/bridge.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
 
 // https://html.spec.whatwg.org/multipage/text-level-semantics.html#htmlbrelement
 class BRElement extends Element {
-  BRElement([BindingContext? context]) : super(context);
+  BRElement([super.context]);
 
 
   @override

@@ -22,7 +22,7 @@ class HistoryModule extends BaseModule {
   @override
   String get name => 'History';
 
-  HistoryModule(ModuleManager? moduleManager) : super(moduleManager);
+  HistoryModule(super.moduleManager);
 
   Queue<HistoryItem> get _previousStack => moduleManager!.controller.previousHistoryStack;
   Queue<HistoryItem> get _nextStack => moduleManager!.controller.nextHistoryStack;

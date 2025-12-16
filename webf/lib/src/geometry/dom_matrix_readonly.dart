@@ -24,7 +24,7 @@ class DOMMatrixReadOnly extends DynamicBindingObject with StaticDefinedBindingOb
 
   bool get is2D => _is2D;
 
-  DOMMatrixReadOnly.fromMatrix4(BindingContext context, Matrix4? matrix4, bool flag2D) : super(context) {
+  DOMMatrixReadOnly.fromMatrix4(BindingContext super.context, Matrix4? matrix4, bool flag2D) {
     if (matrix4 != null) {
       _matrix4 = matrix4;
       _is2D = flag2D;
@@ -34,7 +34,7 @@ class DOMMatrixReadOnly extends DynamicBindingObject with StaticDefinedBindingOb
     }
   }
 
-  DOMMatrixReadOnly(BindingContext context, List<dynamic> domMatrixInit) : super(context) {
+  DOMMatrixReadOnly(BindingContext super.context, List<dynamic> domMatrixInit) {
     if (!domMatrixInit.isNotEmpty) {
       return;
     }
@@ -488,9 +488,9 @@ class DOMMatrixReadOnly extends DynamicBindingObject with StaticDefinedBindingOb
 
     // The 3D rotation matrix is described in CSS Transforms with alpha.
     // Please see: https://drafts.csswg.org/css-transforms-2/#Rotate3dDefined
-    double alpha_in_radians = degrees2Radians * (angle / 2);
-    double sc = sin(alpha_in_radians) * cos(alpha_in_radians);
-    double sq = sin(alpha_in_radians) * sin(alpha_in_radians);
+    double alphaInRadians = degrees2Radians * (angle / 2);
+    double sc = sin(alphaInRadians) * cos(alphaInRadians);
+    double sq = sin(alphaInRadians) * sin(alphaInRadians);
 
     double m11 = 1 - 2 * (ny * ny + nz * nz) * sq;
     double m12 = 2 * (nx * ny * sq + nz * sc);
@@ -509,6 +509,6 @@ class DOMMatrixReadOnly extends DynamicBindingObject with StaticDefinedBindingOb
     double m43 = 0;
     double m44 = 1;
 
-    return new Matrix4(m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44);
+    return Matrix4(m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44);
   }
 }

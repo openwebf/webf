@@ -68,7 +68,7 @@ class QuickJSByteCodeCacheObject {
       bool isCheckSumExist = await _checksum.exists();
 
       if (isCheckSumExist) {
-        int savedChecksum = int.parse(await _checksum.readAsStringSync());
+        int savedChecksum = int.parse(_checksum.readAsStringSync());
         if (fileCheckSum != savedChecksum) {
           throw FlutterError(
               'read bytecode cache failed, reason: checksum failed');

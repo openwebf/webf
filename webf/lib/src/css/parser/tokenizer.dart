@@ -41,7 +41,7 @@ class Tokenizer extends TokenizerBase {
   /// CDATA keyword.
   final List<int> CDATA_NAME = 'CDATA'.codeUnits;
 
-  Tokenizer(SourceFile file, String text, bool skipWhitespace, [int index = 0]) : super(file, text, skipWhitespace, index);
+  Tokenizer(super.file, super.text, super.skipWhitespace, [super.index]);
 
   @override
   Token next({bool unicodeRange = false}) {
@@ -285,7 +285,7 @@ class Tokenizer extends TokenizerBase {
         eatHexDigits(startHex + 6);
         if (_index != startHex) {
           // Parse the hex digits and add that character.
-          chars.add(int.parse('0x' + _text.substring(startHex, _index)));
+          chars.add(int.parse('0x${_text.substring(startHex, _index)}'));
 
           if (_index == _text.length) break;
 

@@ -21,7 +21,7 @@ const Map<String, dynamic> _linkStyle = {
 };
 
 class HTMLAnchorElement extends Element {
-  HTMLAnchorElement([BindingContext? context]) : super(context) {
+  HTMLAnchorElement([super.context]) {
     addEventListener(EVENT_CLICK, _handleClick);
   }
 
@@ -180,7 +180,7 @@ class HTMLAnchorElement extends Element {
     internalSetAttribute('type', value);
   }
 
-  String get protocol => _DOMString(_resolvedHyperlink?.scheme) + ':';
+  String get protocol => '${_DOMString(_resolvedHyperlink?.scheme)}:';
 
   set protocol(String value) {
     if (_resolvedHyperlink == null) return;
@@ -200,7 +200,7 @@ class HTMLAnchorElement extends Element {
     String? host;
     Uri? resolved = _resolvedHyperlink;
     if (resolved != null) {
-      host = resolved.host + ':' + (resolved.hasPort ? resolved.port.toString() : '');
+      host = '${resolved.host}:${resolved.hasPort ? resolved.port.toString() : ''}';
     }
     return _DOMString(host);
   }
@@ -252,7 +252,7 @@ class HTMLAnchorElement extends Element {
     String? search;
     String? query = _resolvedHyperlink?.query;
     if (query != null && query.isNotEmpty) {
-      search = '?' + query;
+      search = '?$query';
     }
     return _DOMString(search);
   }

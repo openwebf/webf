@@ -7,10 +7,8 @@
  */
 
 import 'package:flutter/rendering.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
-import 'package:webf/src/foundation/positioned_layout_logging.dart';
 
 /// A placeholder for positioned RenderBox
 class RenderPositionPlaceholder extends RenderPreferredSize {
@@ -54,7 +52,7 @@ class RenderPositionPlaceholder extends RenderPreferredSize {
       // known box size from a previous layout, but only when the positioned box
       // has a valid size. Avoid reading boxSize before the child has laid out to
       // prevent assertion failures.
-      final CSSRenderStyle rs = rbm!.renderStyle;
+      final CSSRenderStyle rs = rbm.renderStyle;
       if (rs.width.isNotAuto) {
         phWidth = rs.width.computedValue;
       } else if (rbm.hasSize && rbm.boxSize != null) {

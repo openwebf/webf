@@ -217,19 +217,19 @@ class FlutterShowCaseViewState extends WebFWidgetElementState {
             key: widgetElement._one,
             height: 0,
             width: screenWidth * 0.9, // Screen width minus some margin
-            container: descriptionWidget,
-            child: targetChildWidget, // Highlight target
+            container: descriptionWidget, // Highlight target
             disableDefaultTargetGestures: false,
             disposeOnTap: false,
-            tooltipPosition: tooltipPosition, // Set tooltip position
+            tooltipPosition: tooltipPosition,
+            child: targetChildWidget, // Set tooltip position
           );
         } else {
           return Showcase(
             key: widgetElement._one,
             disableBarrierInteraction: widgetElement._disableBarrierInteraction, // Use user-set value
             description: '',
-            child: targetChildWidget,
-            tooltipPosition: tooltipPosition, // Set tooltip position
+            tooltipPosition: tooltipPosition,
+            child: targetChildWidget, // Set tooltip position
           );
         }
       },

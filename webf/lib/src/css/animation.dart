@@ -12,7 +12,6 @@ import 'dart:math';
 
 import 'package:flutter/animation.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
@@ -101,7 +100,7 @@ class AnimationTimeline {
     // on width/height). Within the same target element, apply size-affecting
     // transitions before positional, and transforms last.
     if (_animations.isNotEmpty) {
-      int _priorityForProperty(String p) {
+      int priorityForProperty(String p) {
         const sizeProps = <String>{
           WIDTH,
           HEIGHT,
@@ -124,11 +123,11 @@ class AnimationTimeline {
         return 1;
       }
 
-      int _animationPriority(Animation a) {
+      int animationPriority(Animation a) {
         final effect = a.effect;
         if (effect is KeyframeEffect && effect.isTransition && effect.interpolations.isNotEmpty) {
           final prop = effect.interpolations.first.property;
-          return _priorityForProperty(prop);
+          return priorityForProperty(prop);
         }
         return 1;
       }
@@ -139,8 +138,8 @@ class AnimationTimeline {
         final eb = b.effect;
         if (ea is KeyframeEffect && eb is KeyframeEffect) {
           if (ea.renderStyle.target == eb.renderStyle.target) {
-            final pa = _animationPriority(a);
-            final pb = _animationPriority(b);
+            final pa = animationPriority(a);
+            final pb = animationPriority(b);
             if (pa != pb) return pa - pb;
           }
         }
@@ -349,15 +348,18 @@ class Animation {
   }
 
   AnimationPlayState get playState {
-    if (_isIdle)
+    if (_isIdle) {
       // The current time of the animation is unresolved and there are no pending tasks.
       return AnimationPlayState.idle;
-    if (_isPaused)
+    }
+    if (_isPaused) {
       // The animation was suspended and the Animation.currentTime property is not updating.
       return AnimationPlayState.paused;
-    if (_isFinished)
+    }
+    if (_isFinished) {
       // The animation has reached one of its boundaries and the Animation.currentTime property is not updating.
       return AnimationPlayState.finished;
+    }
     return AnimationPlayState.running;
   }
 
@@ -506,7 +508,7 @@ class Animation {
 }
 
 class AnimationPlaybackEvent extends Event {
-  AnimationPlaybackEvent(String type) : super(type);
+  AnimationPlaybackEvent(super.type);
 
   num? currentTime;
   num? timelineTime;
@@ -711,7 +713,7 @@ class KeyframeEffect extends AnimationEffect {
 
     // Sort by start offset, and for equal offsets, apply a stable dependency
     // order so transform values see width/height updates of the same tick.
-    int _priorityForProperty(String p) {
+    int priorityForProperty(String p) {
       // Lower number = applied earlier within the same offset bucket.
       // Ensure size-affecting properties run before transforms.
       const sizeProps = <String>{
@@ -740,8 +742,8 @@ class KeyframeEffect extends AnimationEffect {
       if (a.startOffset != b.startOffset) {
         return a.startOffset < b.startOffset ? -1 : 1;
       }
-      final pa = _priorityForProperty(a.property);
-      final pb = _priorityForProperty(b.property);
+      final pa = priorityForProperty(a.property);
+      final pb = priorityForProperty(b.property);
       if (pa != pb) return pa < pb ? -1 : 1;
       return 0;
     });
@@ -837,8 +839,7 @@ class KeyframeEffect extends AnimationEffect {
                 valueText = (maybe.isNotEmpty ? maybe : (current?.toString() ?? ''));
               } catch (_) {}
             }
-            cssLogger.info('[transition][tick] ${renderStyle.target.tagName}.$property t=' +
-                scaledLocalTime.toStringAsFixed(3) + ' value=' + (valueText.isEmpty ? '""' : valueText));
+            cssLogger.info('[transition][tick] ${renderStyle.target.tagName}.$property t=${scaledLocalTime.toStringAsFixed(3)} value=${valueText.isEmpty ? '""' : valueText}');
           }
         }
       }
@@ -918,8 +919,9 @@ class KeyframeEffect extends AnimationEffect {
       case AnimationEffectPhase.before:
         // If the fill mode is backwards or both, return the result of evaluating
         // max(local time - start delay, 0).
-        if (fillMode == FillMode.backwards || fillMode == FillMode.both)
+        if (fillMode == FillMode.backwards || fillMode == FillMode.both) {
           return max<double>(localTime! - timing!.delay!, 0.0);
+        }
         // Otherwise, return an unresolved time value.
         return null;
       case AnimationEffectPhase.active:
@@ -930,8 +932,9 @@ class KeyframeEffect extends AnimationEffect {
       case AnimationEffectPhase.after:
         // If the fill mode is forwards or both, return the result of evaluating
         // max(min(local time - start delay, active duration), 0).
-        if (fillMode == FillMode.forwards || fillMode == FillMode.both)
+        if (fillMode == FillMode.forwards || fillMode == FillMode.both) {
           return max<double>(min<double>(localTime! - timing!.delay!, activeDuration), 0.0);
+        }
         // Otherwise (the local time is unresolved), return an unresolved time value.
         return null;
       case AnimationEffectPhase.none:

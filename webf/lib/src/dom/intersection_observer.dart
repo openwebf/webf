@@ -48,7 +48,7 @@ void _handleDeliverResult(Object handle, Pointer<NativeValue> returnValue) {
 }
 
 class IntersectionObserver extends DynamicBindingObject {
-  IntersectionObserver(BindingContext? context, List<dynamic> thresholds_) : super(context) {
+  IntersectionObserver(super.context, List<dynamic> thresholds_) {
     if (thresholds_.isNotEmpty) {
       _thresholds = thresholds_.map((e) => (e as num).toDouble()).toList();
     }
@@ -120,7 +120,7 @@ class IntersectionObserver extends DynamicBindingObject {
     }
     if (_elementList.isEmpty) return;
     for (var element in _elementList) {
-      element!.removeIntersectionObserver(this);
+      element.removeIntersectionObserver(this);
     }
     _elementList.clear();
   }

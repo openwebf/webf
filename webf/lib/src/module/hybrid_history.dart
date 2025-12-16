@@ -82,7 +82,7 @@ class HybridHistoryModule extends BaseModule {
     _delegate = value;
   }
 
-  HybridHistoryModule(ModuleManager? moduleManager) : super(moduleManager);
+  HybridHistoryModule(super.moduleManager);
 
   BuildContext? get _context => moduleManager?.controller.currentBuildContext?.context;
 

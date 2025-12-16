@@ -672,7 +672,7 @@ class Document extends ContainerNode {
     _styleUpdateScheduled = true;
     final bool perFrame = DebugFlags.enableCssBatchStyleUpdatesPerFrame && DebugFlags.enableCssBatchStyleUpdates;
     if (DebugFlags.enableCssMultiStyleTrace) {
-      cssLogger.info('[trace][multi-style][schedule] style update scheduled via ' + (perFrame ? 'frame' : 'microtask'));
+      cssLogger.info('[trace][multi-style][schedule] style update scheduled via ${perFrame ? 'frame' : 'microtask'}');
     }
     if (perFrame) {
       SchedulerBinding.instance.addPostFrameCallback((_) {

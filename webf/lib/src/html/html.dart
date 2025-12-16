@@ -10,9 +10,6 @@ import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/src/html/form/base_input.dart';
-import 'package:webf/webf.dart';
-import 'package:webf/rendering.dart';
-import 'package:webf/bridge.dart';
 
 const String HTML = 'HTML';
 const Map<String, dynamic> _defaultStyle = {
@@ -21,7 +18,7 @@ const Map<String, dynamic> _defaultStyle = {
 };
 
 class HTMLElement extends Element {
-  HTMLElement([BindingContext? context]) : super(context) {
+  HTMLElement([super.context]) {
     // Add default behavior unfocus focused input or textarea elements.
     addEventListener('click', (event) async {
       if (event.target is! BaseInputElement) {
@@ -115,9 +112,9 @@ class HTMLElement extends Element {
   void flushPendingStylePropertiesForWholeTree() {
     runner(Element root) {
       root.style.flushPendingProperties();
-      root.children.forEach((element) {
+      for (var element in root.children) {
         runner(element);
-      });
+      }
     }
     runner(this);
   }

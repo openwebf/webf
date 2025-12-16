@@ -17,8 +17,6 @@ import 'package:webf/foundation.dart';
 import 'package:webf/module.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/launcher.dart';
-import 'loading_state_registry.dart';
-import 'dio_client.dart';
 import 'package:dio/dio.dart';
 
 const String DEFAULT_URL = 'about:blank';
@@ -37,10 +35,10 @@ const List<String> _supportedByteCodeVersions = ['1'];
 bool _isSupportedBytecode(String mimeType, Uri? uri) {
   if (uri != null) {
     for (int i = 0; i < _supportedByteCodeVersions.length; i++) {
-      if (mimeType.contains('application/vnd.webf.bc' + _supportedByteCodeVersions[i])) return true;
+      if (mimeType.contains('application/vnd.webf.bc${_supportedByteCodeVersions[i]}')) return true;
       // @NOTE: This is useful for most http server that did not recognize a .kbc1 file.
       // Simply treat some.kbc1 file as the bytecode.
-      if (uri.path.endsWith('.kbc' + _supportedByteCodeVersions[i])) return true;
+      if (uri.path.endsWith('.kbc${_supportedByteCodeVersions[i]}')) return true;
     }
   }
   return false;
@@ -259,7 +257,7 @@ class NetworkBundle extends WebFBundle {
     return client;
   })();
 
-  NetworkBundle(String url, {this.additionalHttpHeaders, ContentType? contentType}) : super(url, contentType: contentType);
+  NetworkBundle(super.url, {this.additionalHttpHeaders, super.contentType});
 
   Map<String, String>? additionalHttpHeaders = {};
 
@@ -514,15 +512,15 @@ class NetworkBundle extends WebFBundle {
 }
 
 class AssetsBundle extends WebFBundle {
-  AssetsBundle(String url, { ContentType? contentType }) : super(url, contentType: contentType);
+  AssetsBundle(super.url, { super.contentType });
 
   @override
   Future<void> obtainData([double contextId = 0]) async {
     if (data != null) return;
 
-    final Uri? _resolvedUri = resolvedUri;
-    if (_resolvedUri != null) {
-      final String assetName = getAssetName(_resolvedUri);
+    final Uri? resolvedUri = this.resolvedUri;
+    if (resolvedUri != null) {
+      final String assetName = getAssetName(resolvedUri);
       ByteData byteData = await rootBundle.load(assetName);
       data = byteData.buffer.asUint8List();
     } else {
@@ -546,7 +544,7 @@ class AssetsBundle extends WebFBundle {
 
 /// The bundle that source from local io.
 class FileBundle extends WebFBundle {
-  FileBundle(String url, { ContentType? contentType }) : super(url, contentType: contentType);
+  FileBundle(super.url, { super.contentType });
 
   @override
   Future<void> obtainData([double contextId = 0]) async {

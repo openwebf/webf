@@ -12,15 +12,12 @@ import 'dart:ffi';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/launcher.dart';
-import 'package:webf/foundation.dart';
 import 'package:path/path.dart' as path;
 
 typedef OnControllerCreated = void Function(WebFController controller);
@@ -58,7 +55,7 @@ class WebF extends StatefulWidget {
   final VoidCallback? onDispose;
 
   /// Callbacks when WebFController was created by this WebF widget.
-  final OnControllerCreated? onControllerCreated;
+  final OnControllerCreated? onControllerCreated = null;
 
   /// Callback that's called after the build success in webf.dart
   /// when widget.controller.view.document.documentElement!.toWidget() finishes executing.
@@ -175,16 +172,15 @@ class WebF extends StatefulWidget {
   /// The controller must be managed by WebFControllerManager with proper lifecycle management.
   @protected
   const WebF._({
-    Key? key,
+    super.key,
     this.loadingWidget,
     this.initialRoute,
     this.initialState,
     this.errorBuilder,
     this.onDispose,
-    this.onControllerCreated,
     this.onBuildSuccess,
-    required this.controller,
-  }) : super(key: key);
+    required this.controller
+  });
 
   /// Create a WebF widget using a controller name from WebFControllerManager.
   ///
@@ -382,7 +378,7 @@ class AutoManagedWebF extends StatefulWidget {
   final Map<String, SubViewBuilder>? routes;
   final ControllerSetup? setup;
 
-  AutoManagedWebF(
+  const AutoManagedWebF(
       {required this.controllerName,
       this.loadingWidget,
       this.errorBuilder,
@@ -418,7 +414,7 @@ class WebFState extends State<WebF> with RouteAware {
     if (viewportWidth == 0.0 && viewportHeight == 0.0) {
       // window.physicalSize are Size.zero when app first loaded. This only happened on Android and iOS physical devices with release build.
       // We should wait for onMetricsChanged when window.physicalSize get updated from Flutter Engine.
-      VoidCallback? _ordinaryOnMetricsChanged = PlatformDispatcher.instance.onMetricsChanged;
+      VoidCallback? ordinaryOnMetricsChanged = PlatformDispatcher.instance.onMetricsChanged;
       PlatformDispatcher.instance.onMetricsChanged = () async {
         if (view.physicalSize == ui.Size.zero) {
           return;
@@ -428,10 +424,10 @@ class WebFState extends State<WebF> with RouteAware {
         });
 
         // Should proxy to ordinary window.onMetricsChanged callbacks.
-        if (_ordinaryOnMetricsChanged != null) {
-          _ordinaryOnMetricsChanged();
+        if (ordinaryOnMetricsChanged != null) {
+          ordinaryOnMetricsChanged();
           // Recover ordinary callback to window.onMetricsChanged
-          PlatformDispatcher.instance.onMetricsChanged = _ordinaryOnMetricsChanged;
+          PlatformDispatcher.instance.onMetricsChanged = ordinaryOnMetricsChanged;
         }
       };
     } else {
@@ -561,7 +557,7 @@ class WebFState extends State<WebF> with RouteAware {
       if (widget.errorBuilder != null) {
         return widget.errorBuilder!(context, widget.controller.loadingError!);
       }
-      return Center(child: Text('Error loading: ' + widget.controller.loadingError!.toString()));
+      return Center(child: Text('Error loading: ${widget.controller.loadingError!}'));
     }
 
     bool hasInitialRoute = widget.initialRoute != null || widget.controller.initialRoute != null;
@@ -726,10 +722,6 @@ class WebFState extends State<WebF> with RouteAware {
 class WebFStateElement extends StatefulElement {
   WebFStateElement(super.widget);
 
-  @override
-  void markNeedsBuild() {
-    super.markNeedsBuild();
-  }
 
   @override
   void mount(Element? parent, Object? newSlot) {
@@ -866,7 +858,7 @@ class WebFStateElement extends StatefulElement {
 }
 
 class WebFContext extends InheritedWidget {
-  WebFContext({required super.child, this.controller});
+  const WebFContext({super.key, required super.child, this.controller});
 
   final WebFController? controller;
 
@@ -911,9 +903,9 @@ class WebFRootViewport extends MultiChildRenderObjectWidget {
     this.background,
     this.viewportWidth,
     this.viewportHeight,
-    required List<Widget> children,
+    required super.children,
     this.resizeToAvoidBottomInsets = true,
-  }) : super(children: children);
+  });
 
   @override
   RenderObject createRenderObject(BuildContext context) {

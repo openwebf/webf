@@ -28,7 +28,7 @@ class WebSocketModule extends BaseModule {
   final Map<String?, _WebSocketState> _stateMap = {};
   int _clientId = 0;
 
-  WebSocketModule(ModuleManager? moduleManager) : super(moduleManager);
+  WebSocketModule(super.moduleManager);
 
   @override
   String invoke(String method, List<dynamic> params) {

@@ -308,7 +308,7 @@ class CSSColor with Diagnosticable {
       var variable = renderStyle.resolveValue(propertyName, varString);
 
       if (variable is CSSVariable) {
-        String? resolved = renderStyle.getCSSVariable(variable.identifier, propertyName + '_' + fullColor)?.toString();
+        String? resolved = renderStyle.getCSSVariable(variable.identifier, '${propertyName}_$fullColor')?.toString();
 
         return resolved ?? '';
       }
@@ -369,7 +369,7 @@ class CSSColor with Diagnosticable {
       bool isRgba = color.startsWith(RGBA);
       String colorBody = originalColor.substring(isRgba ? 5 : 4, color.length - 1);
 
-      final rgbMatch;
+      final RegExpMatch? rgbMatch;
       if (renderStyle != null && colorBody.contains('var')) {
         final result = tryParserCSSColorWithVariable(originalColor, colorBody, renderStyle, propertyName ?? '');
         if (trace) {
@@ -396,7 +396,7 @@ class CSSColor with Diagnosticable {
       bool isHsla = color.startsWith(HSLA);
       String colorBody = originalColor.substring(isHsla ? 5 : 4, color.length - 1);
 
-      final hslMatch;
+      final RegExpMatch? hslMatch;
       if (renderStyle != null && colorBody.contains('var')) {
         final result = tryParserCSSColorWithVariable(originalColor, colorBody, renderStyle, propertyName ?? '');
         if (trace) {
@@ -426,7 +426,7 @@ class CSSColor with Diagnosticable {
     if (parsed != null) {
       if (trace) {
         cssLogger.info(
-            '[color][parsed] property=$prop rgba=${parsed.red},${parsed.green},${parsed.blue},a=${parsed.opacity.cssText()}');
+            '[color][parsed] property=$prop rgba=${parsed.red},${parsed.green},${parsed.blue},a=${parsed.a.cssText()}');
       }
       _cachedParsedColor[color] = parsed;
     } else if (trace) {
@@ -437,8 +437,8 @@ class CSSColor with Diagnosticable {
   }
 
   String cssText() {
-    if (value.opacity < 1) {
-      return 'rgba(${value.red}, ${value.green}, ${value.blue}, ${value.opacity.cssText()})';
+    if (value.a < 1) {
+      return 'rgba(${value.red}, ${value.green}, ${value.blue}, ${value.a.cssText()})';
     } else {
       return 'rgb(${value.red}, ${value.green}, ${value.blue})';
     }

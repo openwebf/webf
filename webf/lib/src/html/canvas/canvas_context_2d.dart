@@ -81,9 +81,8 @@ class CanvasAction {
 }
 
 class ImageBitmap extends DynamicBindingObject {
-  ImageBitmap(BindingContext context)
-      : _pointer = context.pointer,
-        super(context);
+  ImageBitmap(BindingContext super.context)
+      : _pointer = context.pointer;
 
   final ffi.Pointer<NativeBindingObject> _pointer;
 
@@ -98,9 +97,8 @@ class ImageBitmap extends DynamicBindingObject {
 }
 
 class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBindingObject {
-  CanvasRenderingContext2D(BindingContext context, this.canvas)
-      : _pointer = context.pointer,
-        super(context);
+  CanvasRenderingContext2D(BindingContext super.context, this.canvas)
+      : _pointer = context.pointer;
 
   final ffi.Pointer<NativeBindingObject> _pointer;
 
@@ -639,9 +637,9 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     path2d = Path2D();
     // ignore: avoid_print
     print('[Canvas2D] replayActions: canvasSize=$size, actionsCount=${_actions.length}');
-    _actions.forEach((action) {
+    for (var action in _actions) {
       action.fn.call(canvas, size);
-    });
+    }
     path2d = paintTemp;
   }
 
@@ -1090,18 +1088,18 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
         } else {
           Paint paint = Paint();
           if (strokeStyle is Color) {
-            paint..color = strokeStyle as Color;
+            paint.color = strokeStyle as Color;
           } else if (strokeStyle is CanvasRadialGradient) {
             final Rect bounds = effectivePath.getBounds();
             paint
-              ..shader =
+              .shader =
                   _drawRadialGradient(strokeStyle as CanvasRadialGradient, bounds.left, bounds.top, bounds.width,
                           bounds.height)
                       .createShader(bounds);
           } else if (strokeStyle is CanvasLinearGradient) {
             final Rect bounds = effectivePath.getBounds();
             paint
-              ..shader =
+              .shader =
                   _drawLinearGradient(strokeStyle as CanvasLinearGradient, bounds.left, bounds.top, bounds.width,
                           bounds.height)
                       .createShader(bounds);
@@ -1546,7 +1544,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     }
     final Paint layerPaint = Paint()
       ..blendMode = _globalBlendMode
-      ..color = const Color(0xFFFFFFFF).withOpacity(_globalAlpha);
+      ..color = const Color(0xFFFFFFFF).withValues(alpha: _globalAlpha);
     canvas.saveLayer(bounds, layerPaint);
     draw(canvas);
     canvas.restore();
@@ -1830,11 +1828,11 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
         _paintShadowForRect(drawCanvas, rect, style: PaintingStyle.fill);
         if (fillStyle is Color || fillStyle is CanvasRadialGradient || fillStyle is CanvasLinearGradient) {
           if (fillStyle is Color) {
-            paint..color = fillStyle as Color;
+            paint.color = fillStyle as Color;
           } else if (fillStyle is CanvasRadialGradient) {
-            paint..shader = _drawRadialGradient(fillStyle as CanvasRadialGradient, x, y, w, h).createShader(rect);
+            paint.shader = _drawRadialGradient(fillStyle as CanvasRadialGradient, x, y, w, h).createShader(rect);
           } else if (fillStyle is CanvasLinearGradient) {
-            paint..shader = _drawLinearGradient(fillStyle as CanvasLinearGradient, x, y, w, h).createShader(rect);
+            paint.shader = _drawLinearGradient(fillStyle as CanvasLinearGradient, x, y, w, h).createShader(rect);
           }
           drawCanvas.drawRect(rect, paint);
         } else if (fillStyle is CanvasPattern) {
@@ -1863,11 +1861,11 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
         final Path effectivePath = _applyLineDashIfNeeded(rectPath);
         _paintShadowForPath(drawCanvas, effectivePath, paintingStyle: PaintingStyle.stroke);
         if (strokeStyle is Color) {
-          paint..color = strokeStyle as Color;
+          paint.color = strokeStyle as Color;
         } else if (strokeStyle is CanvasRadialGradient) {
-          paint..shader = _drawRadialGradient(strokeStyle as CanvasRadialGradient, x, y, w, h).createShader(rect);
+          paint.shader = _drawRadialGradient(strokeStyle as CanvasRadialGradient, x, y, w, h).createShader(rect);
         } else if (strokeStyle is CanvasLinearGradient) {
-          paint..shader = _drawLinearGradient(strokeStyle as CanvasLinearGradient, x, y, w, h).createShader(rect);
+          paint.shader = _drawLinearGradient(strokeStyle as CanvasLinearGradient, x, y, w, h).createShader(rect);
         }
         paint
           ..strokeJoin = lineJoin

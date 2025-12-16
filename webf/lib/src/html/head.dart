@@ -10,8 +10,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/foundation.dart';
-import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/webf.dart';
@@ -30,7 +28,7 @@ const String NOSCRIPT = 'NOSCRIPT';
 const String SCRIPT = 'SCRIPT';
 
 class HeadElement extends Element {
-  HeadElement([BindingContext? context]) : super(context);
+  HeadElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
@@ -136,7 +134,7 @@ const String REL_PRELOAD = 'preload';
 
 // https://www.w3.org/TR/2011/WD-html5-author-20110809/the-link-element.html#the-link-element
 class LinkElement extends Element {
-  LinkElement([BindingContext? context]) : super(context);
+  LinkElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
@@ -187,10 +185,6 @@ class LinkElement extends Element {
   @override
   List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _linkElementProperties];
 
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    super.initializeProperties(properties);
-  }
 
   bool get disabled => getAttribute('disabled') != null;
 
@@ -260,13 +254,14 @@ class LinkElement extends Element {
       // Ensure the stylesheet carries an absolute href for correct URL resolution
       if (_resolvedHyperlink != null) {
         _styleSheet!.href = _resolvedHyperlink.toString();
-      } else if (href != null) {
+      } else {
         _styleSheet!.href = href;
       }
+    
       _styleSheet!.replaceSync(_cachedStyleSheetText!,
           windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
     } else {
-      final String? sheetHref = _resolvedHyperlink?.toString() ?? href;
+      final String sheetHref = _resolvedHyperlink?.toString() ?? href;
       _styleSheet = CSSParser(_cachedStyleSheetText!, href: sheetHref)
           .parse(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
       _styleSheet?.href = sheetHref;
@@ -401,7 +396,7 @@ class LinkElement extends Element {
 
 
 
-        final String? sheetHref = _resolvedHyperlink?.toString() ?? href;
+        final String sheetHref = _resolvedHyperlink?.toString() ?? href;
         _styleSheet = CSSParser(cssString, href: sheetHref).parse(
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
         _styleSheet?.href = sheetHref;
@@ -542,21 +537,21 @@ class LinkElement extends Element {
 }
 
 class MetaElement extends Element {
-  MetaElement([BindingContext? context]) : super(context);
+  MetaElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 class TitleElement extends Element {
-  TitleElement([BindingContext? context]) : super(context);
+  TitleElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 class NoScriptElement extends Element {
-  NoScriptElement([BindingContext? context]) : super(context);
+  NoScriptElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
@@ -732,5 +727,5 @@ mixin StyleElementMixin on Element {
 
 // https://www.w3.org/TR/2011/WD-html5-author-20110809/the-style-element.html
 class StyleElement extends Element with StyleElementMixin {
-  StyleElement([BindingContext? context]) : super(context);
+  StyleElement([super.context]);
 }

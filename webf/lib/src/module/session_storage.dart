@@ -17,7 +17,7 @@ class SessionStorageModule extends BaseModule {
   @override
   Future<void> initialize() async {}
 
-  SessionStorageModule(ModuleManager? moduleManager) : super(moduleManager);
+  SessionStorageModule(super.moduleManager);
 
   @override
   void dispose() {}
@@ -38,7 +38,7 @@ class SessionStorageModule extends BaseModule {
       case 'key':
         try {
           return controller.sessionStorage.keys.elementAt(params[0]);
-        } catch(e, stack) {
+        } catch(e) {
           return null;
         }
       case 'clear':

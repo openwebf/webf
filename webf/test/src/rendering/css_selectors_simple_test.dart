@@ -4,9 +4,6 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/foundation.dart';
-import 'package:webf/dom.dart' as dom;
-import 'package:webf/css.dart';
 import '../../setup.dart';
 import '../widget/test_utils.dart';
 
@@ -100,10 +97,10 @@ void main() {
 
       final div = prepared.getElementById('test');
       // Check that padding is applied
-      expect(div.renderStyle.paddingTop?.computedValue, equals(10.0));
-      expect(div.renderStyle.paddingRight?.computedValue, equals(10.0));
-      expect(div.renderStyle.paddingBottom?.computedValue, equals(10.0));
-      expect(div.renderStyle.paddingLeft?.computedValue, equals(10.0));
+      expect(div.renderStyle.paddingTop.computedValue, equals(10.0));
+      expect(div.renderStyle.paddingRight.computedValue, equals(10.0));
+      expect(div.renderStyle.paddingBottom.computedValue, equals(10.0));
+      expect(div.renderStyle.paddingLeft.computedValue, equals(10.0));
     });
 
     testWidgets('multiple class selector', (WidgetTester tester) async {
@@ -161,12 +158,12 @@ void main() {
       final outside = prepared.getElementById('outside');
 
       // Nested span should have padding
-      expect(nested.renderStyle.paddingTop?.computedValue, equals(5.0));
-      expect(nested.renderStyle.paddingLeft?.computedValue, equals(5.0));
+      expect(nested.renderStyle.paddingTop.computedValue, equals(5.0));
+      expect(nested.renderStyle.paddingLeft.computedValue, equals(5.0));
 
       // Outside span should not have padding
-      expect(outside.renderStyle.paddingTop?.computedValue ?? 0, equals(0.0));
-      expect(outside.renderStyle.paddingLeft?.computedValue ?? 0, equals(0.0));
+      expect(outside.renderStyle.paddingTop.computedValue ?? 0, equals(0.0));
+      expect(outside.renderStyle.paddingLeft.computedValue ?? 0, equals(0.0));
     });
 
     testWidgets('child selector', (WidgetTester tester) async {
@@ -196,10 +193,10 @@ void main() {
       final nested = prepared.getElementById('nested');
 
       // Direct child should have margin
-      expect(direct.renderStyle.marginTop?.computedValue, equals(10.0));
+      expect(direct.renderStyle.marginTop.computedValue, equals(10.0));
 
       // Nested span should not have margin from the selector
-      expect(nested.renderStyle.marginTop?.computedValue ?? 0, equals(0.0));
+      expect(nested.renderStyle.marginTop.computedValue ?? 0, equals(0.0));
     });
 
     testWidgets('attribute selector with exact value', (WidgetTester tester) async {
@@ -227,9 +224,9 @@ void main() {
       final panel = prepared.getElementById('panel');
       final plain = prepared.getElementById('plain');
 
-      expect(box.renderStyle.paddingTop?.computedValue, equals(15.0));
-      expect(panel.renderStyle.paddingTop?.computedValue, equals(20.0));
-      expect(plain.renderStyle.paddingTop?.computedValue ?? 0, equals(0.0));
+      expect(box.renderStyle.paddingTop.computedValue, equals(15.0));
+      expect(panel.renderStyle.paddingTop.computedValue, equals(20.0));
+      expect(plain.renderStyle.paddingTop.computedValue ?? 0, equals(0.0));
     });
 
     testWidgets('pseudo selector ::before and ::after', (WidgetTester tester) async {

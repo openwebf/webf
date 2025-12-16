@@ -4,8 +4,6 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/foundation.dart';
-import 'package:webf/dom.dart' as dom;
 import '../../setup.dart';
 import '../widget/test_utils.dart';
 

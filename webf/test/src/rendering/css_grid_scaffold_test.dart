@@ -6,7 +6,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/foundation.dart';
 import '../widget/test_utils.dart';
 import '../../setup.dart';
 
@@ -87,7 +86,7 @@ void main() {
         RenderObject? renderer = prepared.getElementById(id).attachedRenderer;
         expect(renderer, isNotNull);
         while (renderer != null && renderer.parent != grid.attachedRenderer) {
-          renderer = renderer.parent as RenderObject?;
+          renderer = renderer.parent;
         }
         expect(renderer, isA<RenderBox>());
         return (renderer as RenderBox).parentData as GridLayoutParentData;

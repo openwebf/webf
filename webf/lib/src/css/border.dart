@@ -476,7 +476,7 @@ class CSSBorderRadius {
         if (DebugFlags.enableBorderRadiusLogs) {
           try {
             final el = renderStyle.target;
-            cssLogger.finer('[BorderRadius] parse ${propertyName} for <${el.tagName.toLowerCase()}>: '
+            cssLogger.finer('[BorderRadius] parse $propertyName for <${el.tagName.toLowerCase()}>: '
                 'raw="$radius" -> (${x.cssText()}, ${y.cssText()})');
           } catch (_) {}
         }
@@ -500,12 +500,12 @@ class WebFBoxShadow extends BoxShadow {
   /// By default, the shadow is solid black with zero [offset], [blurRadius],
   /// and [spreadRadius].
   const WebFBoxShadow({
-    Color color = const Color(0xFF000000),
-    Offset offset = Offset.zero,
-    double blurRadius = 0.0,
-    double spreadRadius = 0.0,
+    super.color,
+    super.offset,
+    super.blurRadius,
+    super.spreadRadius,
     this.inset = false,
-  }) : super(color: color, offset: offset, blurRadius: blurRadius, spreadRadius: spreadRadius);
+  });
 
   final bool inset;
 }

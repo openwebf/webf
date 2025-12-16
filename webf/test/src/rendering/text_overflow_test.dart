@@ -5,10 +5,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/dom.dart' as dom;
-import 'package:webf/css.dart';
-import 'package:webf/rendering.dart';
 import '../../setup.dart';
 import '../widget/test_utils.dart';
 import 'style_test_utils.dart';

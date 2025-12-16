@@ -979,7 +979,7 @@ class BoxDecorationPainter extends BoxPainter {
         try {
           final el = renderStyle.target;
           final id = (el.id != null && el.id!.isNotEmpty) ? '#${el.id}' : '';
-          final cls = (el.className != null && el.className!.isNotEmpty) ? '.${el.className}' : '';
+          final cls = (el.className.isNotEmpty) ? '.${el.className}' : '';
           final rawAttach = el.style.getPropertyValue(BACKGROUND_ATTACHMENT);
           renderingLogger.finer('[Background] gradient-only path for <${el.tagName.toLowerCase()}$id$cls> rect=$rect raw-attachment="$rawAttach"');
         } catch (_) {}
@@ -1032,16 +1032,16 @@ class BoxDecorationPainter extends BoxPainter {
     final String raw = renderStyle.target.style.getPropertyValue(BACKGROUND_POSITION);
     final List<String> tokens = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
     if (DebugFlags.enableBackgroundLogs) {
-      renderingLogger.finer('[Background] parse positions raw="$raw" tokens=${tokens.length > 0 ? tokens : <String>['<none>']} fullCount=$fullCount mapIdx=${gradientIndices.toString()}');
+      renderingLogger.finer('[Background] parse positions raw="$raw" tokens=${tokens.isNotEmpty ? tokens : <String>['<none>']} fullCount=$fullCount mapIdx=${gradientIndices.toString()}');
     }
 
     // Prefer computed longhands when a transition is actively running for
     // background-position or its axes, so that animation-driven values take
     // effect even if the shorthand string was authored in stylesheet.
     final bool animatingPos = (renderStyle is CSSRenderStyle)
-        ? (renderStyle as CSSRenderStyle).isTransitionRunning(BACKGROUND_POSITION) ||
-            (renderStyle as CSSRenderStyle).isTransitionRunning(BACKGROUND_POSITION_X) ||
-            (renderStyle as CSSRenderStyle).isTransitionRunning(BACKGROUND_POSITION_Y)
+        ? (renderStyle).isTransitionRunning(BACKGROUND_POSITION) ||
+            (renderStyle).isTransitionRunning(BACKGROUND_POSITION_X) ||
+            (renderStyle).isTransitionRunning(BACKGROUND_POSITION_Y)
         : false;
 
     // Build full list first
@@ -1070,10 +1070,10 @@ class BoxDecorationPainter extends BoxPainter {
     final String raw = renderStyle.target.style.getPropertyValue(BACKGROUND_SIZE);
     final List<String> tokens = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
     if (DebugFlags.enableBackgroundLogs) {
-      renderingLogger.finer('[Background] parse sizes raw="$raw" tokens=${tokens.length > 0 ? tokens : <String>['<none>']} fullCount=$fullCount mapIdx=${gradientIndices.toString()}');
+      renderingLogger.finer('[Background] parse sizes raw="$raw" tokens=${tokens.isNotEmpty ? tokens : <String>['<none>']} fullCount=$fullCount mapIdx=${gradientIndices.toString()}');
     }
     final bool animatingSize = (renderStyle is CSSRenderStyle)
-        ? (renderStyle as CSSRenderStyle).isTransitionRunning(BACKGROUND_SIZE)
+        ? (renderStyle).isTransitionRunning(BACKGROUND_SIZE)
         : false;
     final List<CSSBackgroundSize> full = [];
     for (int j = 0; j < fullCount; j++) {
@@ -1095,7 +1095,7 @@ class BoxDecorationPainter extends BoxPainter {
     final String raw = renderStyle.target.style.getPropertyValue(BACKGROUND_REPEAT);
     final List<String> tokens = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
     if (DebugFlags.enableBackgroundLogs) {
-      renderingLogger.finer('[Background] parse repeats raw="$raw" tokens=${tokens.length > 0 ? tokens : <String>['<none>']} fullCount=$fullCount mapIdx=${gradientIndices.toString()}');
+      renderingLogger.finer('[Background] parse repeats raw="$raw" tokens=${tokens.isNotEmpty ? tokens : <String>['<none>']} fullCount=$fullCount mapIdx=${gradientIndices.toString()}');
     }
     final List<ImageRepeat> full = [];
     for (int j = 0; j < fullCount; j++) {
@@ -1117,7 +1117,7 @@ class BoxDecorationPainter extends BoxPainter {
     final String raw = renderStyle.target.style.getPropertyValue(BACKGROUND_ATTACHMENT);
     final List<String> tokens = raw.isNotEmpty ? _splitByTopLevelCommas(raw) : <String>[];
     if (DebugFlags.enableBackgroundLogs) {
-      renderingLogger.finer('[Background] parse attachments raw="$raw" tokens=${tokens.length > 0 ? tokens : <String>['<none>']} fullCount=$fullCount mapIdx=${mapIndices.toString()}');
+      renderingLogger.finer('[Background] parse attachments raw="$raw" tokens=${tokens.isNotEmpty ? tokens : <String>['<none>']} fullCount=$fullCount mapIdx=${mapIndices.toString()}');
     }
     final List<CSSBackgroundAttachmentType> full = [];
     for (int j = 0; j < fullCount; j++) {
@@ -1290,13 +1290,13 @@ class BoxDecorationPainter extends BoxPainter {
           try {
             final el = renderStyle.target;
             final id = (el.id != null && el.id!.isNotEmpty) ? '#${el.id}' : '';
-            final cls = (el.className != null && el.className!.isNotEmpty) ? '.${el.className}' : '';
+            final cls = (el.className.isNotEmpty) ? '.${el.className}' : '';
             return '<${el.tagName.toLowerCase()}$id$cls>';
           } catch (_) { return '<unknown>'; }
         }();
         renderingLogger.finer('[Background] layer(gradient) i=$i target=$tag fn=${fn.name} attach=${attach.cssText()} useViewport=$useViewport '
-            'clip=${layerClipRect} positionRect=${positioningRect} viewport=${viewportRect} pos=(${px.cssText()}, ${py.cssText()}) size=${size.cssText()} repeat=$repeat');
-        renderingLogger.finer('[Background]   dest=${destRect} colors=${cs} stops=${st ?? const []}');
+            'clip=$layerClipRect positionRect=$positioningRect viewport=$viewportRect pos=(${px.cssText()}, ${py.cssText()}) size=${size.cssText()} repeat=$repeat');
+        renderingLogger.finer('[Background]   dest=$destRect colors=$cs stops=${st ?? const []}');
       }
 
       // Clip to background painting area. Respect border-radius when present to
@@ -1335,7 +1335,7 @@ class BoxDecorationPainter extends BoxPainter {
           }
         }
         if (DebugFlags.enableBackgroundLogs) {
-          renderingLogger.finer('[Background]   tiled ${tCount} rects for gradient layer');
+          renderingLogger.finer('[Background]   tiled $tCount rects for gradient layer');
         }
       }
 
@@ -1469,7 +1469,7 @@ class BoxDecorationPainter extends BoxPainter {
           }
           canPaintUrl = _imagePainter!._image != null;
           if (DebugFlags.enableBackgroundLogs) {
-            renderingLogger.finer('[Background] layered pre-resolve: image ' + (canPaintUrl ? 'resolved synchronously' : 'unresolved; painting only non-url layers'));
+            renderingLogger.finer('[Background] layered pre-resolve: image ${canPaintUrl ? 'resolved synchronously' : 'unresolved; painting only non-url layers'}');
           }
         }
       }
@@ -1583,7 +1583,7 @@ class BoxDecorationPainter extends BoxPainter {
 
         if (DebugFlags.enableBackgroundLogs) {
           renderingLogger.finer('[Background] layer(url) i=$i pos=(${px.cssText()}, ${py.cssText()}) size=${size.cssText()} '
-              'repeat=$repeat originRect=$originRect clipRect=${layerClipRect} attachRect=${positioningRect} attach=${attach.cssText()}');
+              'repeat=$repeat originRect=$originRect clipRect=$layerClipRect attachRect=$positioningRect attach=${attach.cssText()}');
         }
         continue;
       }
@@ -1637,7 +1637,7 @@ class BoxDecorationPainter extends BoxPainter {
           }
           renderingLogger.finer('[Background] layer(gradient) i=$i fn=${fullFns[i].name} rect=${positioningRect.size} '
               'destRect=${destRect.size} pos=(${px.cssText()}, ${py.cssText()}) size=${size.cssText()} repeat=$repeat '
-              'colors=${cs} stops=${st ?? const []}');
+              'colors=$cs stops=${st ?? const []}');
         }
 
         canvas.save();
@@ -1670,13 +1670,13 @@ class BoxDecorationPainter extends BoxPainter {
             if (DebugFlags.enableBackgroundLogs) tCount++;
           }
           if (DebugFlags.enableBackgroundLogs) {
-            renderingLogger.finer('[Background]   tiled ${tCount} rects for gradient layer');
+            renderingLogger.finer('[Background]   tiled $tCount rects for gradient layer');
           }
         }
         canvas.restore();
 
         if (DebugFlags.enableBackgroundLogs) {
-          renderingLogger.finer('[Background] layer(gradient) i=$i pos=(${px.cssText()}, ${py.cssText()}) size=${size.cssText()} repeat=$repeat rect=$destRect attachRect=${positioningRect} attach=${attach.cssText()}');
+          renderingLogger.finer('[Background] layer(gradient) i=$i pos=(${px.cssText()}, ${py.cssText()}) size=${size.cssText()} repeat=$repeat rect=$destRect attachRect=$positioningRect attach=${attach.cssText()}');
         }
       }
     }
@@ -1893,7 +1893,7 @@ class BoxDecorationPainter extends BoxPainter {
     // When this element participates in an inline formatting context, backgrounds and borders
     // for inline-level boxes are painted by the paragraph path (InlineFormattingContext).
     // Skip BoxDecoration painting here to avoid double painting and mismatched joins.
-    bool _skipForInlineIFC() {
+    bool skipForInlineIFC() {
       // Only inline-level boxes are painted via paragraph IFC.
       if (renderStyle.effectiveDisplay != CSSDisplay.inline) return false;
       final RenderBoxModel? self = renderStyle.attachedRenderBoxModel;
@@ -1903,12 +1903,12 @@ class BoxDecorationPainter extends BoxPainter {
         if (p is RenderFlowLayout) {
           return p.establishIFC;
         }
-        p = (p as RenderObject).parent;
+        p = (p).parent;
       }
       return false;
     }
 
-    if (_skipForInlineIFC()) {
+    if (skipForInlineIFC()) {
       return;
     }
 
@@ -2006,7 +2006,7 @@ class BoxDecorationPainter extends BoxPainter {
         if (allSolid && uniformWidthCheck && b.top.width > 0.0) {
           // Treat as a circle when the box is square and all corner radii are
           // at least half of the side (handles "rounded-full" like 9999px).
-          bool _isCircleByBorderRadius(BorderRadius br, Rect r, {double tol = 0.5}) {
+          bool isCircleByBorderRadius(BorderRadius br, Rect r, {double tol = 0.5}) {
             final double w = r.width;
             final double h = r.height;
             if ((w - h).abs() > tol) return false;
@@ -2019,7 +2019,7 @@ class BoxDecorationPainter extends BoxPainter {
           }
 
           final BorderRadius br = _decoration.borderRadius!;
-          final bool isCircle = _isCircleByBorderRadius(br, rect);
+          final bool isCircle = isCircleByBorderRadius(br, rect);
 
           if (DebugFlags.enableBorderRadiusLogs) {
             try {
@@ -2175,7 +2175,7 @@ class BoxDecorationPainter extends BoxPainter {
     final RRect rr = _decoration.borderRadius!.toRRect(rect).deflate(inset);
     final Rect circleOval = rr.outerRect;
 
-    Paint _p(Color c) => Paint()
+    Paint p0(Color c) => Paint()
       ..color = c
       ..style = PaintingStyle.stroke
       ..strokeWidth = w
@@ -2184,7 +2184,7 @@ class BoxDecorationPainter extends BoxPainter {
 
     // Top: 225°..315°
     if ((border.top as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid && border.top.width > 0) {
-      final p = _p(border.top.color);
+      final p = p0(border.top.color);
       canvas.drawArc(circleOval, 5.0 * math.pi / 4.0, math.pi / 2.0, false, p);
       if (DebugFlags.enableBorderRadiusLogs) {
         try {
@@ -2196,7 +2196,7 @@ class BoxDecorationPainter extends BoxPainter {
 
     // Right: -45°..45°
     if ((border.right as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid && border.right.width > 0) {
-      final p = _p(border.right.color);
+      final p = p0(border.right.color);
       canvas.drawArc(circleOval, -math.pi / 4.0, math.pi / 2.0, false, p);
       if (DebugFlags.enableBorderRadiusLogs) {
         try {
@@ -2208,7 +2208,7 @@ class BoxDecorationPainter extends BoxPainter {
 
     // Bottom: 45°..135°
     if ((border.bottom as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid && border.bottom.width > 0) {
-      final p = _p(border.bottom.color);
+      final p = p0(border.bottom.color);
       canvas.drawArc(circleOval, math.pi / 4.0, math.pi / 2.0, false, p);
       if (DebugFlags.enableBorderRadiusLogs) {
         try {
@@ -2220,7 +2220,7 @@ class BoxDecorationPainter extends BoxPainter {
 
     // Left: 135°..225°
     if ((border.left as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.solid && border.left.width > 0) {
-      final p = _p(border.left.color);
+      final p = p0(border.left.color);
       canvas.drawArc(circleOval, 3.0 * math.pi / 4.0, math.pi / 2.0, false, p);
       if (DebugFlags.enableBorderRadiusLogs) {
         try {
@@ -2240,7 +2240,7 @@ class BoxDecorationPainter extends BoxPainter {
     final double inset = w / 2.0;
     final RRect rr = _decoration.borderRadius!.toRRect(rect).deflate(inset);
 
-    Paint _p(Color c) => Paint()
+    Paint p(Color c) => Paint()
       ..color = c
       ..style = PaintingStyle.stroke
       ..strokeWidth = w
@@ -2265,7 +2265,7 @@ class BoxDecorationPainter extends BoxPainter {
       if (rr.trRadiusX > 0 && rr.trRadiusY > 0) {
         topPath.addArc(trOval, 1.5 * math.pi, math.pi / 4.0); // 270 -> 315
       }
-      canvas.drawPath(topPath, _p(border.top.color));
+      canvas.drawPath(topPath, p(border.top.color));
     }
 
     // Right side: TR half-arc (315°->360°), straight right, BR half-arc (0°->45°)
@@ -2280,7 +2280,7 @@ class BoxDecorationPainter extends BoxPainter {
       if (rr.brRadiusX > 0 && rr.brRadiusY > 0) {
         rightPath.addArc(brOval, 0.0, math.pi / 4.0); // 0 -> 45
       }
-      canvas.drawPath(rightPath, _p(border.right.color));
+      canvas.drawPath(rightPath, p(border.right.color));
     }
 
     // Bottom side: BR half-arc (45°->90°), straight bottom, BL half-arc (90°->135°)
@@ -2295,7 +2295,7 @@ class BoxDecorationPainter extends BoxPainter {
       if (rr.blRadiusX > 0 && rr.blRadiusY > 0) {
         bottomPath.addArc(blOval, math.pi / 2.0, math.pi / 4.0); // 90 -> 135
       }
-      canvas.drawPath(bottomPath, _p(border.bottom.color));
+      canvas.drawPath(bottomPath, p(border.bottom.color));
     }
 
     // Left side: BL half-arc (135°->180°), straight left, TL half-arc (180°->225°)
@@ -2310,7 +2310,7 @@ class BoxDecorationPainter extends BoxPainter {
       if (rr.tlRadiusX > 0 && rr.tlRadiusY > 0) {
         leftPath.addArc(tlOval, math.pi, math.pi / 4.0); // 180 -> 225
       }
-      canvas.drawPath(leftPath, _p(border.left.color));
+      canvas.drawPath(leftPath, p(border.left.color));
     }
 
     if (DebugFlags.enableBorderRadiusLogs) {
@@ -2328,7 +2328,7 @@ class BoxDecorationPainter extends BoxPainter {
     final Border border = _decoration.border as Border;
 
     // Helper: draw horizontal double bands within [top, bottom] region of the rect.
-    void _drawHorizontalDoubleBands(double top, double bottom, Color color) {
+    void drawHorizontalDoubleBands(double top, double bottom, Color color) {
       final double w = (bottom - top).abs();
       if (w <= 0) return;
       final Paint p = Paint()..style = PaintingStyle.fill..color = color;
@@ -2346,7 +2346,7 @@ class BoxDecorationPainter extends BoxPainter {
     }
 
     // Helper: draw vertical double bands within [left, right] region of the rect.
-    void _drawVerticalDoubleBands(double left, double right, Color color) {
+    void drawVerticalDoubleBands(double left, double right, Color color) {
       final double w = (right - left).abs();
       if (w <= 0) return;
       final Paint p = Paint()..style = PaintingStyle.fill..color = color;
@@ -2363,7 +2363,7 @@ class BoxDecorationPainter extends BoxPainter {
     }
 
     // Detect uniform double border to support border-radius by stroking rrect twice.
-    bool _isUniformDouble(Border b) {
+    bool isUniformDouble(Border b) {
       if (b.top is! ExtendedBorderSide || b.right is! ExtendedBorderSide || b.bottom is! ExtendedBorderSide || b.left is! ExtendedBorderSide) {
         return false;
       }
@@ -2381,7 +2381,7 @@ class BoxDecorationPainter extends BoxPainter {
     }
 
     // Uniform double with border radius: draw two RRect strokes
-    if (_isUniformDouble(border) && _decoration.hasBorderRadius && _decoration.borderRadius != null) {
+    if (isUniformDouble(border) && _decoration.hasBorderRadius && _decoration.borderRadius != null) {
       final side = border.top as ExtendedBorderSide; // all equal
       final double w = side.width;
       final Color color = side.color;
@@ -2439,7 +2439,7 @@ class BoxDecorationPainter extends BoxPainter {
         border.top.width > 0) {
       final s = border.top as ExtendedBorderSide;
       final double w = s.width;
-      _drawHorizontalDoubleBands(rect.top, rect.top + w, s.color);
+      drawHorizontalDoubleBands(rect.top, rect.top + w, s.color);
     }
 
     if (border.right is ExtendedBorderSide &&
@@ -2447,7 +2447,7 @@ class BoxDecorationPainter extends BoxPainter {
         border.right.width > 0) {
       final s = border.right as ExtendedBorderSide;
       final double w = s.width;
-      _drawVerticalDoubleBands(rect.right - w, rect.right, s.color);
+      drawVerticalDoubleBands(rect.right - w, rect.right, s.color);
     }
 
     if (border.bottom is ExtendedBorderSide &&
@@ -2455,7 +2455,7 @@ class BoxDecorationPainter extends BoxPainter {
         border.bottom.width > 0) {
       final s = border.bottom as ExtendedBorderSide;
       final double w = s.width;
-      _drawHorizontalDoubleBands(rect.bottom - w, rect.bottom, s.color);
+      drawHorizontalDoubleBands(rect.bottom - w, rect.bottom, s.color);
     }
 
     if (border.left is ExtendedBorderSide &&
@@ -2463,7 +2463,7 @@ class BoxDecorationPainter extends BoxPainter {
         border.left.width > 0) {
       final s = border.left as ExtendedBorderSide;
       final double w = s.width;
-      _drawVerticalDoubleBands(rect.left, rect.left + w, s.color);
+      drawVerticalDoubleBands(rect.left, rect.left + w, s.color);
     }
   }
 
@@ -2552,18 +2552,18 @@ class BoxDecorationImagePainter {
     // as a defensive fallback to avoid stale/default axes.
     CSSBackgroundPosition px = _backgroundPositionX;
     CSSBackgroundPosition py = _backgroundPositionY;
-    bool _isDefault(CSSBackgroundPosition p) =>
+    bool isDefault(CSSBackgroundPosition p) =>
         p.length == null && p.calcValue == null && (p.percentage ?? -1) == -1;
     final String rawPos = _renderStyle.target.style.getPropertyValue(BACKGROUND_POSITION);
-    if (rawPos.isNotEmpty && (_isDefault(px) || _isDefault(py))) {
+    if (rawPos.isNotEmpty && (isDefault(px) || isDefault(py))) {
       try {
         final List<String> pair = CSSPosition.parsePositionShorthand(rawPos);
         final CSSBackgroundPosition ax = CSSPosition.resolveBackgroundPosition(
             pair[0], _renderStyle, BACKGROUND_POSITION_X, true);
         final CSSBackgroundPosition ay = CSSPosition.resolveBackgroundPosition(
             pair[1], _renderStyle, BACKGROUND_POSITION_Y, false);
-        if (_isDefault(px)) px = ax;
-        if (_isDefault(py)) py = ay;
+        if (isDefault(px)) px = ax;
+        if (isDefault(py)) py = ay;
         if (DebugFlags.enableBackgroundLogs) {
           renderingLogger.finer('[Background] fallback axes from shorthand: raw="$rawPos" -> '
               'x=${ax.cssText()} y=${ay.cssText()}');
@@ -2889,16 +2889,18 @@ void _paintImage({
     if (repeat == ImageRepeat.noRepeat) {
       canvas.drawImageRect(image, sourceRect, destinationRect, paint);
     } else {
-      for (final Rect tileRect in _generateImageTileRects(rect, destinationRect, repeat))
+      for (final Rect tileRect in _generateImageTileRects(rect, destinationRect, repeat)) {
         canvas.drawImageRect(image, sourceRect, tileRect, paint);
+      }
     }
   } else {
     canvas.scale(1 / scale);
     if (repeat == ImageRepeat.noRepeat) {
       canvas.drawImageNine(image, _scaleRect(centerSlice, scale), _scaleRect(destinationRect, scale), paint);
     } else {
-      for (final Rect tileRect in _generateImageTileRects(rect, destinationRect, repeat))
+      for (final Rect tileRect in _generateImageTileRects(rect, destinationRect, repeat)) {
         canvas.drawImageNine(image, _scaleRect(centerSlice, scale), _scaleRect(tileRect, scale), paint);
+      }
     }
   }
 
@@ -2930,7 +2932,9 @@ Iterable<Rect> _generateImageTileRects(Rect outputRect, Rect fundamentalRect, Im
   }
 
   for (int i = startX; i <= stopX; ++i) {
-    for (int j = startY; j <= stopY; ++j) yield fundamentalRect.shift(Offset(i * strideX, j * strideY));
+    for (int j = startY; j <= stopY; ++j) {
+      yield fundamentalRect.shift(Offset(i * strideX, j * strideY));
+    }
   }
 }
 

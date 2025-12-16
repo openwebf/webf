@@ -8,9 +8,6 @@
  */
 import 'dart:ui';
 
-import 'package:flutter/foundation.dart';
-import 'package:path/path.dart';
-import 'package:flutter/rendering.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
@@ -28,8 +25,7 @@ class Window extends EventTarget {
     return _screen!;
   }
 
-  Window(BindingContext? context, this.document)
-      : super(context) {
+  Window(super.context, this.document) {
     BindingBridge.listenEvent(this, 'load');
     BindingBridge.listenEvent(this, 'gcopen');
   }
@@ -130,9 +126,9 @@ class Window extends EventTarget {
   }
 
   void resizeViewportRelatedElements() {
-    _watchedViewportElements.forEach((element) {
+    for (var element in _watchedViewportElements) {
       element.renderStyle.markNeedsLayout();
-    });
+    }
   }
 
   String get colorScheme =>

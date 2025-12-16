@@ -566,7 +566,6 @@ mixin CSSFilterEffectsMixin on RenderStyle {
 
     CSSLengthValue? offsetX = CSSLength.parseLength(definition[1]!, this, FILTER);
     CSSLengthValue? offsetY = CSSLength.parseLength(definition[2]!, this, FILTER);
-    if (offsetX == null || offsetY == null) return null;
 
     CSSLengthValue blurRadius = CSSLengthValue.zero;
     if (definition[3] != null) {

@@ -581,17 +581,17 @@ void _fetchJavaScriptESMModule(Pointer<Void> callbackContext, double contextId, 
     } else if (moduleUrl.startsWith('/')) {
       // Absolute path - this is tricky when base is assets://
       // For HTTP imports from assets, we need to handle this specially
-      if (baseUrl != null && baseUrl.startsWith('assets:')) {
+      if (baseUrl.startsWith('assets:')) {
         // Can't resolve absolute paths against assets, treat as error
         callback(callbackContext, contextId, 'Cannot resolve absolute path "$moduleUrl" from assets URL'.toNativeUtf8(), nullptr, 0);
         return;
-      } else if (baseUrl != null) {
+      } else {
         Uri? baseUri = Uri.tryParse(baseUrl);
         if (baseUri != null) {
           resolvedUri = baseUri.resolve(moduleUrl);
         }
       }
-    } else if (baseUrl != null) {
+    } else {
       // Relative URL - resolve against base URL
       Uri? baseUri = Uri.tryParse(baseUrl);
       if (baseUri != null) {

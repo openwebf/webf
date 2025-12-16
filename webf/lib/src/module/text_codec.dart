@@ -8,14 +8,13 @@
  */
 
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:webf/src/module/module_manager.dart';
 
 class TextCodecModule extends BaseModule {
   @override
   String get name => 'TextCodec';
-  TextCodecModule(ModuleManager? moduleManager) : super(moduleManager);
+  TextCodecModule(super.moduleManager);
 
   static String textDecoder(List<int> bytes, String encoding, bool fatal, bool ignoreBOM) {
     String lower = encoding.toLowerCase();

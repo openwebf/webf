@@ -10,8 +10,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
-import 'package:webf/src/foundation/debug_flags.dart';
-import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/html.dart';
@@ -144,7 +142,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     target?.markFirstLinePseudoNeedsUpdate();
   }
 
-  CSSStyleDeclaration([BindingContext? context]): super(context);
+  CSSStyleDeclaration([super.context]);
 
   // ignore: prefer_initializing_formals
   CSSStyleDeclaration.computedStyle(this.target, this.defaultStyle, this.onStyleChanged, [this.onStyleFlushed]);
@@ -588,12 +586,12 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   }
 
   void flushDisplayProperties() {
-    Element? _target = target;
+    Element? target = this.target;
     // If style target element not exists, no need to do flush operation.
-    if (_target == null) return;
+    if (target == null) return;
 
     if (_pendingProperties.containsKey(DISPLAY) &&
-        _target.isConnected) {
+        target.isConnected) {
       CSSPropertyValue? prevValue = _properties[DISPLAY];
       CSSPropertyValue currentValue = _pendingProperties[DISPLAY]!;
       _properties[DISPLAY] = currentValue;
@@ -604,13 +602,13 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   }
 
   void flushPendingProperties() {
-    Element? _target = target;
+    Element? target = this.target;
     // If style target element not exists, no need to do flush operation.
-    if (_target == null) return;
+    if (target == null) return;
 
     // Display change from none to other value that the renderBoxModel is null.
     if (_pendingProperties.containsKey(DISPLAY) &&
-        _target.isConnected) {
+        target.isConnected) {
       CSSPropertyValue? prevValue = _properties[DISPLAY];
       CSSPropertyValue currentValue = _pendingProperties[DISPLAY]!;
       _properties[DISPLAY] = currentValue;

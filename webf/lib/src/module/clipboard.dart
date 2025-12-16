@@ -15,7 +15,7 @@ import 'package:webf/src/module/module_manager.dart';
 class ClipBoardModule extends BaseModule {
   @override
   String get name => 'Clipboard';
-  ClipBoardModule(ModuleManager? moduleManager) : super(moduleManager);
+  ClipBoardModule(super.moduleManager);
 
   static Future<String> readText() async {
     ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain);

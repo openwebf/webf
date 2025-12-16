@@ -13,14 +13,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:webf/foundation.dart';
 
-import 'cookie_jar.dart';
-import 'http_cache.dart';
-import 'http_cache_object.dart';
-import 'http_client.dart';
-import 'http_overrides.dart';
-import 'queue.dart';
 import '../launcher/controller.dart' show WebFController; // controller lookup for per-controller cache toggle
-import 'loading_state_registry.dart';
 
 // Global counter for unique request IDs
 int _requestIdCounter = 0;
@@ -103,8 +96,8 @@ class ProxyHttpClientRequest implements HttpClientRequest {
   Encoding get encoding => _backendRequest?.encoding ?? utf8;
 
   @override
-  set encoding(Encoding _encoding) {
-    _backendRequest?.encoding = _encoding;
+  set encoding(Encoding encoding) {
+    _backendRequest?.encoding = encoding;
   }
 
   @override
@@ -193,16 +186,12 @@ class ProxyHttpClientRequest implements HttpClientRequest {
       HttpCacheObject? cacheObject;
       // Per-controller cache toggle: allow a controller to override global cache mode.
       bool cacheEnabled = true;
-      if (contextId != null) {
-        final ctrl = WebFController.getControllerOfJSContextId(contextId);
-        final bool controllerWantsCache = ctrl?.networkOptions?.effectiveEnableHttpCache == true;
-        final bool controllerForbidsCache = ctrl?.networkOptions?.effectiveEnableHttpCache == false;
-        final bool globalCacheOn = HttpCacheController.mode != HttpCacheMode.NO_CACHE;
-        cacheEnabled = controllerForbidsCache ? false : (controllerWantsCache ? true : globalCacheOn);
-      } else {
-        cacheEnabled = HttpCacheController.mode != HttpCacheMode.NO_CACHE;
-      }
-
+      final ctrl = WebFController.getControllerOfJSContextId(contextId);
+      final bool controllerWantsCache = ctrl?.networkOptions?.effectiveEnableHttpCache == true;
+      final bool controllerForbidsCache = ctrl?.networkOptions?.effectiveEnableHttpCache == false;
+      final bool globalCacheOn = HttpCacheController.mode != HttpCacheMode.NO_CACHE;
+      cacheEnabled = controllerForbidsCache ? false : (controllerWantsCache ? true : globalCacheOn);
+    
       if (cacheEnabled) {
         HttpCacheController cacheController = HttpCacheController.instance(origin);
         cacheObject = await cacheController.getCacheObject(request.uri);

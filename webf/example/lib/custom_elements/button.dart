@@ -23,7 +23,7 @@ class FlutterButtonState extends WebFWidgetElementState {
       widgetElement.dispatchEvent(Event('press'));
     }, child: widgetElement.childNodes.isNotEmpty ? widgetElement.childNodes.first.toWidget() : Text(''));
 
-    return (widgetElement.renderStyle.width.isNotAuto || widgetElement.renderStyle.height.isNotAuto) ? Container(
+    return (widgetElement.renderStyle.width.isNotAuto || widgetElement.renderStyle.height.isNotAuto) ? SizedBox(
       width: widgetElement.renderStyle.width.isNotAuto ? widgetElement.renderStyle.width.computedValue : null,
       height: widgetElement.renderStyle.height.isNotAuto ? widgetElement.renderStyle.height.computedValue : null,
       child: button,

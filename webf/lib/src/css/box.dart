@@ -12,7 +12,6 @@ import 'dart:core';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
-import 'package:webf/src/foundation/debug_flags.dart';
 
 // CSS Box Model: https://drafts.csswg.org/css-box-4/
 mixin CSSBoxMixin on RenderStyle {
@@ -102,7 +101,7 @@ mixin CSSBoxMixin on RenderStyle {
 }
 
 class CSSBoxDecoration extends BoxDecoration {
-  CSSBoxDecoration({
+  const CSSBoxDecoration({
     this.color,
     this.image,
     this.border,

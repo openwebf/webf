@@ -4,7 +4,6 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/foundation.dart';
 import '../../setup.dart';
 import '../widget/test_utils.dart';
 
@@ -90,10 +89,10 @@ void main() {
       final text3Height = text3.offsetHeight;
 
       // Log the measurements
-      print('Container: ${containerWidth}x${containerHeight}');
-      print('Text1 (Short, 16px): ${text1Width}x${text1Height}');
-      print('Text2 (Medium, 20px): ${text2Width}x${text2Height}');
-      print('Text3 (Long, 14px): ${text3Width}x${text3Height}');
+      print('Container: ${containerWidth}x$containerHeight');
+      print('Text1 (Short, 16px): ${text1Width}x$text1Height');
+      print('Text2 (Medium, 20px): ${text2Width}x$text2Height');
+      print('Text3 (Long, 14px): ${text3Width}x$text3Height');
 
       // Verify container has proper layout
       expect(containerWidth, greaterThan(0), reason: 'Container width should not be zero');
@@ -511,10 +510,10 @@ void main() {
       expect(item3, isNotNull);
 
       print('=== Empty Flex Items Size Test ===');
-      print('Container: ${container!.offsetWidth}x${container.offsetHeight}');
-      print('Item1 (maxWidth: 30%, padding: 25px): ${item1!.offsetWidth}x${item1.offsetHeight}');
-      print('Item2 (maxWidth: 40%, padding: 25px): ${item2!.offsetWidth}x${item2.offsetHeight}');
-      print('Item3 (no maxWidth, padding: 25px): ${item3!.offsetWidth}x${item3.offsetHeight}');
+      print('Container: ${container.offsetWidth}x${container.offsetHeight}');
+      print('Item1 (maxWidth: 30%, padding: 25px): ${item1.offsetWidth}x${item1.offsetHeight}');
+      print('Item2 (maxWidth: 40%, padding: 25px): ${item2.offsetWidth}x${item2.offsetHeight}');
+      print('Item3 (no maxWidth, padding: 25px): ${item3.offsetWidth}x${item3.offsetHeight}');
 
       // Each empty item should be exactly 50px wide (25px padding on each side)
       // Since these items have no content, they should not expand beyond their padding box
@@ -583,10 +582,10 @@ void main() {
       expect(item3, isNotNull);
 
       print('=== Text Content Flex Items Size Test ===');
-      print('Container: ${container!.offsetWidth}x${container.offsetHeight}');
-      print('Item1 (maxWidth: 30%, with text): ${item1!.offsetWidth}x${item1.offsetHeight}');
-      print('Item2 (maxWidth: 40%, with text): ${item2!.offsetWidth}x${item2.offsetHeight}');
-      print('Item3 (no maxWidth, with text): ${item3!.offsetWidth}x${item3.offsetHeight}');
+      print('Container: ${container.offsetWidth}x${container.offsetHeight}');
+      print('Item1 (maxWidth: 30%, with text): ${item1.offsetWidth}x${item1.offsetHeight}');
+      print('Item2 (maxWidth: 40%, with text): ${item2.offsetWidth}x${item2.offsetHeight}');
+      print('Item3 (no maxWidth, with text): ${item3.offsetWidth}x${item3.offsetHeight}');
 
       // Container available width: 360px - 20px padding = 340px
       // Max widths: item1 = 30% of 340px = 102px, item2 = 40% of 340px = 136px

@@ -7,15 +7,11 @@
  */
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
-import 'package:meta/meta.dart';
-import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/launcher.dart';
-import 'package:webf/src/bridge/binding_object.dart';
 import 'package:webf/widget.dart';
 
 const Map<String, dynamic> _defaultStyle = {
@@ -47,7 +43,7 @@ abstract class WidgetElement extends dom.Element {
   dom.ChildNodeList get childNodes => super.childNodes as dom.ChildNodeList;
   bool isRouterLinkElement = false;
 
-  WidgetElement(BindingContext? context) : super(context) {
+  WidgetElement(super.context) {
     WidgetsFlutterBinding.ensureInitialized();
   }
 
@@ -204,7 +200,7 @@ abstract class WidgetElement extends dom.Element {
 class WidgetElementAdapter extends dom.WebFElementWidget {
   WidgetElement get widgetElement => super.webFElement as WidgetElement;
 
-  WidgetElementAdapter(WidgetElement widgetElement, {Key? key}) : super(widgetElement, key: key);
+  const WidgetElementAdapter(WidgetElement super.widgetElement, {super.key});
 
   @override
   StatefulElement createElement() {
@@ -221,10 +217,6 @@ class WidgetElementAdapter extends dom.WebFElementWidget {
     return 'WidgetElementAdapter(${widgetElement.tagName.toLowerCase()})';
   }
 
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-  }
 }
 
 class WebFWidgetElementAdapterElement extends StatefulElement {
@@ -240,7 +232,7 @@ class WebFWidgetElementAdapterElement extends StatefulElement {
 class WebFWidgetElement extends StatefulWidget {
   final WidgetElement widgetElement;
 
-  WebFWidgetElement(this.widgetElement);
+  const WebFWidgetElement(this.widgetElement, {super.key});
 
   @override
   State<StatefulWidget> createState() {
@@ -329,17 +321,16 @@ class WebFWidgetElementAdapterState extends dom.WebFElementWidgetState {
 
     List<Widget> children = [child];
 
-    widgetElement.outOfFlowPositionedElements.forEach((element) {
+    for (var element in widgetElement.outOfFlowPositionedElements) {
       children.add(element.toWidget());
-    });
+    }
 
     return WebFRenderWidgetAdaptor(widgetElement, key: widgetElement.key, children: children);
   }
 }
 
 class WebFRenderWidgetAdaptor extends MultiChildRenderObjectWidget {
-  WebFRenderWidgetAdaptor(this.widgetElement, {required List<Widget> children, Key? key})
-      : super(children: children, key: key);
+  const WebFRenderWidgetAdaptor(this.widgetElement, {required super.children, super.key});
 
   final WidgetElement widgetElement;
 

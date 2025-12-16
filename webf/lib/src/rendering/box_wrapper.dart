@@ -10,15 +10,14 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
-import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart' as dom;
 
 class RenderLayoutBoxWrapper extends RenderBoxModel
     with RenderObjectWithChildMixin<RenderBox>, RenderProxyBoxMixin<RenderBox> {
   RenderLayoutBoxWrapper({
-    required CSSRenderStyle renderStyle,
-  }) : super(renderStyle: renderStyle);
+    required super.renderStyle,
+  });
 
   @override
   void describeSemanticsConfiguration(SemanticsConfiguration config) {
@@ -88,7 +87,7 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
     // This allows outer layout (e.g., flex) to enforce a definite inline/cross size.
     // Without this, the wrapper would ignore tight sizes from its parent and the
     // inner WebF render boxes would keep unbounded widths.
-    BoxConstraints _intersect(BoxConstraints a, BoxConstraints b) {
+    BoxConstraints intersect(BoxConstraints a, BoxConstraints b) {
       double minW = math.max(a.minWidth, b.minWidth);
       double minH = math.max(a.minHeight, b.minHeight);
       double maxW = a.maxWidth;
@@ -104,7 +103,7 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
       return BoxConstraints(minWidth: minW, maxWidth: maxW, minHeight: minH, maxHeight: maxH);
     }
 
-    childConstraints = _intersect(childConstraints, constraints);
+    childConstraints = intersect(childConstraints, constraints);
 
     c.layout(childConstraints, parentUsesSize: true);
 
@@ -236,7 +235,7 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
 class LayoutBoxWrapper extends SingleChildRenderObjectWidget {
   final dom.Element ownerElement;
 
-  LayoutBoxWrapper({required Widget child, required this.ownerElement}) : super(child: child);
+  const LayoutBoxWrapper({super.key, required Widget child, required this.ownerElement}) : super(child: child);
 
   @override
   RenderObject createRenderObject(BuildContext context) {

@@ -37,7 +37,6 @@ import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/html.dart';
-import 'package:webf/src/foundation/debug_flags.dart';
 
 typedef IndexCounter = int Function(Element element);
 
@@ -507,12 +506,12 @@ class SelectorEvaluator extends SelectorVisitor {
       modulus = -1;
       list = list.sublist(1);
     }
-    list.forEach((String item) {
+    for (var item in list) {
       num? value = num.tryParse(item);
       if (value != null) {
         sum += value;
       }
-    });
+    }
     return sum * modulus;
   }
 

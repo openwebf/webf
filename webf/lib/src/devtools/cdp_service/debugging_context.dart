@@ -6,7 +6,6 @@ import 'dart:ffi';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 
 /// Abstract interface that provides debugging capabilities

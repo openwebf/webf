@@ -6,7 +6,6 @@ import 'dart:ui' as ui;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/dom.dart' as dom;
 
 /// A utility class to help set up WebF widget tests that need layout measurements.

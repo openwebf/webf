@@ -15,8 +15,6 @@ import 'package:webf/rendering.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
-import 'package:webf/src/devtools/cdp_service/modules/css.dart';
-import 'package:webf/src/devtools/cdp_service/modules/overlay.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/src/bridge/native_types.dart';
 
@@ -33,7 +31,7 @@ class InspectDOMModule extends UIInspectorModule {
 
   WebFViewController? get view => controller?.view; // legacy fallback
 
-  InspectDOMModule(DevToolsService devtoolsService) : super(devtoolsService);
+  InspectDOMModule(super.devtoolsService);
 
   @override
   void receiveFromFrontend(
@@ -169,14 +167,14 @@ class InspectDOMModule extends UIInspectorModule {
         'localName': n is Element ? n.tagName.toLowerCase() : null,
         'nodeName': n.nodeName,
         'nodeValue': n is TextNode
-            ? (n as TextNode).data
-            : (n is Comment ? (n as Comment).data : ''),
+            ? (n).data
+            : (n is Comment ? (n).data : ''),
         'parentId': n.parentNode != null ? n.ownerView.forDevtoolsNodeId(n.parentNode!) : 0,
         'childNodeCount': n.childNodes.length,
         'attributes': n is Element
             ? (() {
                 final attrs = <String>[];
-                (n as Element).attributes.forEach((k, v) {
+                (n).attributes.forEach((k, v) {
                   attrs.add(k);
                   attrs.add(v.toString());
                 });
@@ -388,7 +386,7 @@ class InspectDOMModule extends UIInspectorModule {
       node = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
     }
 
-    Element? element = null;
+    Element? element;
     if (node is Element) element = node;
 
     // BoxModel design to BorderBox in kraken.
@@ -511,7 +509,7 @@ class InspectDOMModule extends UIInspectorModule {
       node = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
     }
     if (node is Element && text != null) {
-      final el = node as Element;
+      final el = node;
       if (name != null && name.isNotEmpty) {
         // Update single attribute case
         if (text.isEmpty) {
@@ -1097,7 +1095,7 @@ class InspectDOMModule extends UIInspectorModule {
               'subtype': 'node',
               'className': node.nodeName,
               'description': node.nodeName,
-              'objectId': '${nodeId}',
+              'objectId': '$nodeId',
             }
           }));
     } else {

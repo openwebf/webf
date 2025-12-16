@@ -5,10 +5,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/foundation.dart';
-import 'package:webf/dom.dart' as dom;
-import 'package:webf/css.dart';
-import 'package:webf/rendering.dart';
 import '../../setup.dart';
 import '../widget/test_utils.dart';
 
@@ -80,14 +76,14 @@ void main() {
       await tester.pump();
 
       final textElement = prepared.getElementById('text');
-      expect(textElement.renderStyle.lineHeight!.computedValue, equals(16.0)); // 1 * 16px
+      expect(textElement.renderStyle.lineHeight.computedValue, equals(16.0)); // 1 * 16px
 
       // Change line height
       textElement.setInlineStyle('lineHeight', '2');
       textElement.style.flushPendingProperties();
       await tester.pump();
 
-      expect(textElement.renderStyle.lineHeight!.computedValue, equals(32.0)); // 2 * 16px
+      expect(textElement.renderStyle.lineHeight.computedValue, equals(32.0)); // 2 * 16px
     });
 
     testWidgets('should accept letter-spacing changes', (WidgetTester tester) async {
@@ -190,7 +186,7 @@ void main() {
 
       // Verify all changes
       expect(textElement.renderStyle.fontSize.computedValue, equals(20.0));
-      expect(textElement.renderStyle.lineHeight!.computedValue, equals(30.0)); // 1.5 * 20px
+      expect(textElement.renderStyle.lineHeight.computedValue, equals(30.0)); // 1.5 * 20px
       expect(textElement.renderStyle.letterSpacing?.value, equals(1.0));
       expect(textElement.renderStyle.fontWeight, equals(FontWeight.w700));
     });

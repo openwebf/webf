@@ -15,11 +15,12 @@
 /// - Supports multiple WebF controllers through a unified service
 /// - Integrates with WebFControllerManager for centralized management
 /// - Provides a single DevTools endpoint for all controllers
+library;
+
 
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:isolate';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
@@ -27,13 +28,8 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/devtools.dart';
-import 'package:webf/foundation.dart';
-import 'package:webf/dom.dart';
-import 'modules/page.dart';
-import 'modules/dom.dart';
 import 'debugging_context.dart';
-import 'inspector.dart'; // Import for DOMClearEvent and DOMEmptyDocumentEvent
-import 'modules/css.dart';
+// Import for DOMClearEvent and DOMEmptyDocumentEvent
 
 /// Abstract base class for implementing DevTools debugging services for WebF content.
 ///
@@ -391,7 +387,7 @@ abstract class DevToolsService {
           try {
             final id = context.forDevtoolsNodeId(textNode);
             final preview = textNode.data.length > 30
-                ? textNode.data.substring(0, 30) + '…'
+                ? '${textNode.data.substring(0, 30)}…'
                 : textNode.data;
             devToolsProtocolLogger
                 .finer('[DevTools] -> DOM.characterDataModified node=$id data="$preview"');
@@ -497,10 +493,6 @@ class ChromeDevToolsService extends DevToolsService {
     }
   }
 
-  @override
-  void init(WebFController controller) {
-    super.init(controller);
-  }
 
   @override
   void dispose() {
@@ -678,9 +670,9 @@ class UnifiedChromeDevToolsService {
 
     // Notify all UI modules about context change
     if (currentRegistrar != null) {
-      currentRegistrar.values.forEach((module) {
+      for (var module in currentRegistrar.values) {
         module.onContextChanged();
-      });
+      }
     }
 
     // Notify connected clients
@@ -1088,14 +1080,17 @@ class UnifiedChromeDevToolsService {
     // Queue only stateless enable/config commands to re-run once real context exists.
     if (command == 'enable') return true;
     if (module == 'Page' &&
-        (command == 'getResourceTree' || command == 'getNavigationHistory'))
+        (command == 'getResourceTree' || command == 'getNavigationHistory')) {
       return true;
+    }
     if (module == 'Page' &&
-        (command == 'startScreencast' || command == 'stopScreencast'))
+        (command == 'startScreencast' || command == 'stopScreencast')) {
       return true;
+    }
     if (module == 'DOM' && (command == 'getDocument')) return true;
-    if (module == 'CSS' && (command == 'enable' || command.startsWith('track')))
+    if (module == 'CSS' && (command == 'enable' || command.startsWith('track'))) {
       return true;
+    }
     if (module == 'Overlay' && command.startsWith('setShow')) return true;
     return false;
   }

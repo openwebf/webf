@@ -16,7 +16,6 @@ import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
-import 'package:webf/widget.dart';
 
 import 'canvas_context_2d.dart';
 import 'canvas_painter.dart';
@@ -325,7 +324,7 @@ class WebFCanvasState extends flutter.State<WebFCanvas> {
 class WebFCanvas extends flutter.StatefulWidget {
   final CanvasElement canvasElement;
 
-  WebFCanvas(this.canvasElement, {flutter.Key? key}) : super(key: key);
+  const WebFCanvas(this.canvasElement, {super.key});
 
   @override
   flutter.State<flutter.StatefulWidget> createState() {

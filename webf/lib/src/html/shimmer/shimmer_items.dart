@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 const String SHIMMER_AVATAR = 'FLUTTER-SHIMMER-AVATAR';
 
 class FlutterShimmerAvatarElement extends WidgetElement {
-  FlutterShimmerAvatarElement(BindingContext? context) : super(context);
+  FlutterShimmerAvatarElement(super.context);
 
   @override
   WebFWidgetElementState createState() {
@@ -38,7 +38,7 @@ class FlutterShimerAvatarElementState extends WebFWidgetElementState {
 const String SHIMMER_TEXT = 'FLUTTER-SHIMMER-TEXT';
 
 class FlutterShimmerTextElement extends WidgetElement {
-  FlutterShimmerTextElement(BindingContext? context) : super(context);
+  FlutterShimmerTextElement(super.context);
 
   @override
   WebFWidgetElementState createState() {
@@ -67,7 +67,7 @@ class FlutterShimmerTextElementState extends WebFWidgetElementState {
 const String SHIMMER_BUTTON = 'FLUTTER-SHIMMER-BUTTON';
 
 class FlutterShimmerButtonElement extends WidgetElement {
-  FlutterShimmerButtonElement(BindingContext? context) : super(context);
+  FlutterShimmerButtonElement(super.context);
 
   @override
   WebFWidgetElementState createState() {

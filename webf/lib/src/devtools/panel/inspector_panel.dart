@@ -17,11 +17,8 @@ import 'package:webf/widget.dart';
 import 'package:webf/src/devtools/panel/console_store.dart';
 import 'package:webf/src/devtools/panel/network_store.dart';
 import 'package:webf/src/devtools/panel/remote_object_service.dart';
-import 'package:webf/src/foundation/http_cache.dart';
 import 'package:webf/dom.dart' as dom;
-import 'package:webf/src/launcher/controller.dart' show RoutePerformanceMetrics;
 import 'package:webf/src/launcher/loading_state.dart';
-import 'package:webf/rendering.dart' show debugPaintInlineLayoutEnabled, debugLogFlexBaselineEnabled;
 
 /// A floating inspector panel for WebF that provides debugging tools and insights.
 ///
@@ -37,9 +34,9 @@ class WebFInspectorFloatingPanel extends StatefulWidget {
   final bool? visible;
 
   const WebFInspectorFloatingPanel({
-    Key? key,
+    super.key,
     this.visible,
-  }) : super(key: key);
+  });
 
   @override
   State<WebFInspectorFloatingPanel> createState() => _WebFInspectorFloatingPanelState();
@@ -50,10 +47,9 @@ class _LoadingStateTimelineDialog extends StatefulWidget {
   final String controllerName;
 
   const _LoadingStateTimelineDialog({
-    Key? key,
     required this.controller,
     required this.controllerName,
-  }) : super(key: key);
+  });
 
   @override
   State<_LoadingStateTimelineDialog> createState() => _LoadingStateTimelineDialogState();
@@ -876,7 +872,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
             ),
 
           // Show network stages if any
-          if (request.stages != null && request.stages!.isNotEmpty) ...[
+          if (request.stages.isNotEmpty) ...[
             SizedBox(height: 12),
             Container(
               padding: EdgeInsets.all(8),
@@ -896,7 +892,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                     ),
                   ),
                   SizedBox(height: 6),
-                  ...request.stages!.map((stage) => Padding(
+                  ...request.stages.map((stage) => Padding(
                     padding: EdgeInsets.only(left: 12, top: 4, bottom: 4),
                     child: Row(
                       children: [
@@ -1348,7 +1344,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
         _buildStatCard(
           icon: Icons.cloud_download,
           label: 'Network',
-          value: '${successfulRequests}/${dumper.networkRequests.length}',
+          value: '$successfulRequests/${dumper.networkRequests.length}',
           color: Colors.orange,
         ),
         if (dumper.hasErrors)
@@ -1460,8 +1456,9 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
 
   String _formatPhaseName(String phaseName) {
     // Format known phase names
-    if (phaseName == LoadingState.phaseInit) return 'Initialize';
-    else if (phaseName == LoadingState.phaseLoadStart) return 'Load Start';
+    if (phaseName == LoadingState.phaseInit) {
+      return 'Initialize';
+    } else if (phaseName == LoadingState.phaseLoadStart) return 'Load Start';
     else if (phaseName == LoadingState.phasePreload) return 'Preload';
     else if (phaseName == LoadingState.phaseResolveEntrypoint) return 'Resolve Entrypoint';
     else if (phaseName == LoadingState.phaseEvaluateStart) return 'Evaluate Start';
@@ -1489,18 +1486,19 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
     }
 
     // Handle specific .start and .end phases
-    if (phaseName == 'resolveEntrypoint.start') return 'Resolve Entrypoint Start';
-    else if (phaseName == 'resolveEntrypoint.end') return 'Resolve Entrypoint End';
+    if (phaseName == 'resolveEntrypoint.start') {
+      return 'Resolve Entrypoint Start';
+    } else if (phaseName == 'resolveEntrypoint.end') return 'Resolve Entrypoint End';
     else if (phaseName == 'parseHTML.start') return 'Parse HTML Start';
     else if (phaseName == 'parseHTML.end') return 'Parse HTML End';
 
     // Handle other .start and .end phases
     if (phaseName.endsWith('.start')) {
       final baseName = phaseName.substring(0, phaseName.length - 6);
-      return _formatPhaseName(baseName) + ' Start';
+      return '${_formatPhaseName(baseName)} Start';
     } else if (phaseName.endsWith('.end')) {
       final baseName = phaseName.substring(0, phaseName.length - 4);
-      return _formatPhaseName(baseName) + ' End';
+      return '${_formatPhaseName(baseName)} End';
     }
 
     // Default: capitalize words
@@ -2225,7 +2223,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: Colors.blueAccent,
+          activeThumbColor: Colors.blueAccent,
         ),
       ],
     );
@@ -3790,7 +3788,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                                 }
                               });
                             },
-                            activeColor: Colors.blue,
+                            activeThumbColor: Colors.blue,
                           ),
                         ),
                       ],
@@ -3799,7 +3797,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                 ),
                 SizedBox(height: 8),
                 // Filter chips
-                Container(
+                SizedBox(
                   height: 32,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
@@ -4509,7 +4507,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       requestString = 'Binary data (cannot display)';
     }
 
-    final isLongRequest = !isJson && !isFormData && requestString != null && requestString.length > 500;
+    final isLongRequest = !isJson && !isFormData && requestString.length > 500;
 
     return Container(
       padding: EdgeInsets.all(12),
@@ -5326,13 +5324,11 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
 // Interactive JSON Tree View Widget
 class _JsonTreeView extends StatefulWidget {
   final dynamic data;
-  final int depth;
+  final int depth = 0;
 
   const _JsonTreeView({
-    Key? key,
     required this.data,
-    this.depth = 0,
-  }) : super(key: key);
+  });
 
   @override
   _JsonTreeViewState createState() => _JsonTreeViewState();
@@ -5483,7 +5479,7 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
                 ],
               ],
             );
-          }).toList(),
+          }),
         ],
       );
     } else if (data is List) {
@@ -5585,7 +5581,7 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
                 ],
               ],
             );
-          }).toList(),
+          }),
         ],
       );
     } else {
@@ -5635,11 +5631,10 @@ class _RemoteObjectWidget extends StatefulWidget {
   final int contextId;
 
   const _RemoteObjectWidget({
-    Key? key,
     required this.remoteObject,
     required this.logLevel,
     required this.contextId,
-  }) : super(key: key);
+  });
 
   @override
   _RemoteObjectWidgetState createState() => _RemoteObjectWidgetState();

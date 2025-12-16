@@ -9,7 +9,6 @@
 
 import 'package:flutter/rendering.dart';
 import 'package:flutter/animation.dart' show Curve;
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/src/foundation/logger.dart';
@@ -184,12 +183,10 @@ Matrix4 _updateTransform(TransformAnimationValue begin, TransformAnimationValue 
       ? Matrix4.identity()
       : (CSSMatrix.computeTransformMatrix(end.value, renderStyle) ?? Matrix4.identity()));
 
-  if (beginMatrix != null && endMatrix != null) {
-    Matrix4 newMatrix4 = CSSMatrix.lerpMatrix(beginMatrix, endMatrix, t);
+  Matrix4 newMatrix4 = CSSMatrix.lerpMatrix(beginMatrix, endMatrix, t);
 
-    renderStyle.transformMatrix = newMatrix4;
-    return newMatrix4;
-  }
+  renderStyle.transformMatrix = newMatrix4;
+  return newMatrix4;
 
   return Matrix4.identity();
 }
@@ -267,7 +264,7 @@ List<CSSBoxShadow> _updateBoxShadowForTransition(
   // smoothly fade them in/out instead of stepping at 50%.
   final int maxLen = begin.length > end.length ? begin.length : end.length;
 
-  CSSLengthValue _lerpLen(CSSLengthValue? a, CSSLengthValue? b) {
+  CSSLengthValue lerpLen(CSSLengthValue? a, CSSLengthValue? b) {
     final double av = a?.computedValue ?? 0.0;
     final double bv = b?.computedValue ?? 0.0;
     final double v = av * (1 - progress) + bv * progress;
@@ -276,7 +273,7 @@ List<CSSBoxShadow> _updateBoxShadowForTransition(
 
   final List<CSSBoxShadow> result = <CSSBoxShadow>[];
   for (int i = 0; i < maxLen; i++) {
-    CSSBoxShadow _normalize(List<CSSBoxShadow> list, int index, {CSSBoxShadow? template, bool asTransparent = false}) {
+    CSSBoxShadow normalize(List<CSSBoxShadow> list, int index, {CSSBoxShadow? template, bool asTransparent = false}) {
       if (index < list.length) {
         final CSSBoxShadow s = list[index];
         if (!asTransparent) return s;
@@ -316,9 +313,9 @@ List<CSSBoxShadow> _updateBoxShadowForTransition(
     // transparent versions of the opposite side's geometry.
     final CSSBoxShadow? template = (i < begin.length ? begin[i] : (i < end.length ? end[i] : null));
     final CSSBoxShadow sb =
-        _normalize(begin, i, template: template, asTransparent: begin.isEmpty || i >= begin.length);
+        normalize(begin, i, template: template, asTransparent: begin.isEmpty || i >= begin.length);
     final CSSBoxShadow se =
-        _normalize(end, i, template: template, asTransparent: end.isEmpty || i >= end.length);
+        normalize(end, i, template: template, asTransparent: end.isEmpty || i >= end.length);
 
     final Color fromColor = sb.color ?? CSSColor.initial;
     final Color toColor = se.color ?? CSSColor.initial;
@@ -329,10 +326,10 @@ List<CSSBoxShadow> _updateBoxShadowForTransition(
 
     result.add(CSSBoxShadow(
       color: color,
-      offsetX: _lerpLen(sb.offsetX, se.offsetX),
-      offsetY: _lerpLen(sb.offsetY, se.offsetY),
-      blurRadius: _lerpLen(sb.blurRadius, se.blurRadius),
-      spreadRadius: _lerpLen(sb.spreadRadius, se.spreadRadius),
+      offsetX: lerpLen(sb.offsetX, se.offsetX),
+      offsetY: lerpLen(sb.offsetY, se.offsetY),
+      blurRadius: lerpLen(sb.blurRadius, se.blurRadius),
+      spreadRadius: lerpLen(sb.spreadRadius, se.spreadRadius),
       inset: inset,
     ));
   }
@@ -363,7 +360,7 @@ CSSBackgroundSize _updateBackgroundSize(CSSBackgroundSize begin, CSSBackgroundSi
     return chosen;
   }
 
-  CSSLengthValue? _lerpLen(CSSLengthValue? a, CSSLengthValue? b, bool isX) {
+  CSSLengthValue? lerpLen(CSSLengthValue? a, CSSLengthValue? b, bool isX) {
     if (a == null && b == null) return null;
     if (a == null || b == null) return progress < 0.5 ? a : b;
     // When both percentages, interpolate the percent.
@@ -384,8 +381,8 @@ CSSBackgroundSize _updateBackgroundSize(CSSBackgroundSize begin, CSSBackgroundSi
     return progress < 0.5 ? a : b;
   }
 
-  final CSSLengthValue? w = _lerpLen(begin.width, end.width, true);
-  final CSSLengthValue? h = _lerpLen(begin.height, end.height, false);
+  final CSSLengthValue? w = lerpLen(begin.width, end.width, true);
+  final CSSLengthValue? h = lerpLen(begin.height, end.height, false);
   final CSSBackgroundSize result = CSSBackgroundSize(fit: BoxFit.none, width: w, height: h);
 
   renderStyle.target.setRenderStyleProperty(BACKGROUND_SIZE, result);
@@ -413,7 +410,7 @@ List<CSSBackgroundPosition> _updateBackgroundPosition(List<CSSBackgroundPosition
     double progress,
     String property,
     CSSRenderStyle renderStyle) {
-  CSSBackgroundPosition _lerpOne(CSSBackgroundPosition a, CSSBackgroundPosition b, bool isX) {
+  CSSBackgroundPosition lerpOne(CSSBackgroundPosition a, CSSBackgroundPosition b, bool isX) {
     // Prefer numeric interpolation when both sides are numeric (length/calc).
     final String axisProperty = isX ? BACKGROUND_POSITION_X : BACKGROUND_POSITION_Y;
     final bool aNumeric = a.length != null || a.calcValue != null;
@@ -437,8 +434,8 @@ List<CSSBackgroundPosition> _updateBackgroundPosition(List<CSSBackgroundPosition
     return progress < 0.5 ? a : b;
   }
 
-  final CSSBackgroundPosition x = _lerpOne(begin[0], end[0], true);
-  final CSSBackgroundPosition y = _lerpOne(begin[1], end[1], false);
+  final CSSBackgroundPosition x = lerpOne(begin[0], end[0], true);
+  final CSSBackgroundPosition y = lerpOne(begin[1], end[1], false);
 
   // Update render style longhands to drive painting.
   renderStyle.target.setRenderStyleProperty(BACKGROUND_POSITION_X, x);
@@ -1030,7 +1027,7 @@ class CSSStepCurve extends Curve {
   final int? step;
   final bool isStart;
 
-  CSSStepCurve(this.step, this.isStart);
+  const CSSStepCurve(this.step, this.isStart);
 
   @override
   double transformInternal(double t) {

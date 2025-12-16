@@ -263,7 +263,7 @@ class ContentfulWidgetDetector {
       if (!widget.visible) {
         return false;
       }
-      return widget.child != null && hasContentfulChild(widget.child!);
+      return hasContentfulChild(widget.child);
     }
 
     if (widget is Offstage) {
@@ -285,7 +285,7 @@ class ContentfulWidgetDetector {
 
     // Default text style with content
     if (widget is DefaultTextStyle) {
-      return widget.child != null && hasContentfulChild(widget.child!);
+      return hasContentfulChild(widget.child);
     }
 
     // For other widgets, they are not inherently contentful
@@ -318,8 +318,9 @@ class ContentfulWidgetDetector {
     // Check single child widgets
     if (widget is SingleChildRenderObjectWidget || widget is ProxyWidget) {
       Widget? child;
-      if (widget is Container) child = widget.child;
-      else if (widget is Padding) child = widget.child;
+      if (widget is Container) {
+        child = widget.child;
+      } else if (widget is Padding) child = widget.child;
       else if (widget is Center) child = widget.child;
       else if (widget is Align) child = widget.child;
       else if (widget is SizedBox) child = widget.child;
@@ -377,8 +378,9 @@ class ContentfulWidgetDetector {
     if (widget is Row || widget is Column || widget is Stack || widget is IndexedStack ||
         widget is Flow || widget is Wrap || widget is ListBody || widget is CustomMultiChildLayout) {
       List<Widget>? children;
-      if (widget is Row) children = widget.children;
-      else if (widget is Column) children = widget.children;
+      if (widget is Row) {
+        children = widget.children;
+      } else if (widget is Column) children = widget.children;
       else if (widget is Stack) children = widget.children;
       else if (widget is IndexedStack) children = widget.children;
       else if (widget is Flow) children = widget.children;

@@ -6,11 +6,8 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/src/foundation/debug_flags.dart';
-import 'package:webf/src/foundation/logger.dart';
 
 // CSS Animation: https://drafts.csswg.org/css-animations/
 
@@ -157,11 +154,11 @@ mixin CSSAnimationMixin on RenderStyle {
   void runAnimation() {
     final removeKeys = _runningAnimation.keys.where((element) => !animationName.contains(element)).toList();
 
-    removeKeys.forEach((key) {
+    for (var key in removeKeys) {
       Animation animation = _runningAnimation[key]!;
       _runningAnimation.remove(key);
       animation.cancel();
-    });
+    }
 
     for (var i = 0; i < animationName.length; i++) {
       final name = animationName[i];
@@ -248,9 +245,9 @@ mixin CSSAnimationMixin on RenderStyle {
   void cancelRunningAnimation() {
     if (_runningAnimation.isNotEmpty) {
       List<Animation> animations = _runningAnimation.values.toList();
-      animations.forEach((animation) {
+      for (var animation in animations) {
         animation.cancel();
-      });
+      }
       _runningAnimation.clear();
     }
   }
@@ -267,12 +264,12 @@ mixin CSSAnimationMixin on RenderStyle {
   void _revertOriginProperty(Animation animation) {
     AnimationEffect? effect = animation.effect;
     if (effect != null && effect is KeyframeEffect) {
-      effect.properties.forEach((String property) {
+      for (var property in effect.properties) {
         if (_cacheOriginProperties.containsKey(property)) {
           target.setInlineStyle(property, _cacheOriginProperties[property]!);
         }
         _cacheOriginProperties.remove(property);
-      });
+      }
     }
   }
 

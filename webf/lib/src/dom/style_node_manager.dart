@@ -7,7 +7,6 @@
  */
 
 import 'dart:math' as math;
-import 'package:flutter/foundation.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/src/foundation/logger.dart';
 import 'package:collection/collection.dart';
@@ -80,8 +79,7 @@ class StyleNodeManager {
     }
     _pendingStyleSheets.add(styleSheet);
     if (DebugFlags.enableCssMultiStyleTrace) {
-      cssLogger.info('[trace][multi-style][add] pending=${_pendingStyleSheets.length} candidates=${_styleSheetCandidateNodes.length} ' +
-          'hash=${styleSheet.hashCode}');
+      cssLogger.info('[trace][multi-style][add] pending=${_pendingStyleSheets.length} candidates=${_styleSheetCandidateNodes.length} ' 'hash=${styleSheet.hashCode}');
     }
   }
 

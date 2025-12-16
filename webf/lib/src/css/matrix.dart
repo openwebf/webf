@@ -541,13 +541,14 @@ class CSSMatrix {
     scale[1] = sqrt(row1x * row1x + row1y * row1y);
 
     // If _determinant is negative, one axis was flipped.
-    double _determinant = row0x * row1y - row0y * row1x;
-    if (_determinant < 0) {
+    double determinant = row0x * row1y - row0y * row1x;
+    if (determinant < 0) {
       // Flip axis with minimum unit vector _dot product.
-      if (row0x < row1y)
+      if (row0x < row1y) {
         scale[0] = -scale[0];
-      else
+      } else {
         scale[1] = -scale[1];
+      }
     }
 
     // Renormalize matrix to remove scale.
@@ -794,21 +795,21 @@ class CSSMatrix {
       // Animation type: by computed value, but see below for none
       case SCALE:
         if (methodArgs.isNotEmpty && methodArgs.length <= 2) {
-          double _parseCssNumber(String s, double fallback) {
+          double parseCssNumber(String s, double fallback) {
             String t = s.trim();
             if (t.startsWith('-.')) {
-              t = '-0' + t.substring(1);
+              t = '-0${t.substring(1)}';
             } else if (t.startsWith('+.')) {
-              t = '+0' + t.substring(1);
+              t = '+0${t.substring(1)}';
             } else if (t.startsWith('.')) {
-              t = '0' + t;
+              t = '0$t';
             }
             return double.tryParse(t) ?? fallback;
           }
-          double x = _parseCssNumber(methodArgs[0], 1.0);
+          double x = parseCssNumber(methodArgs[0], 1.0);
           double y = x;
           if (methodArgs.length == 2) {
-            y = _parseCssNumber(methodArgs[1], x);
+            y = parseCssNumber(methodArgs[1], x);
           }
 
           return Matrix4.identity()..scale(x, y, 1);
@@ -820,20 +821,20 @@ class CSSMatrix {
         //   0, 0, scaleY, 0,
         //   0, 0, 0, 1]
         if (methodArgs.length == 3) {
-          double _parseCssNumber(String s, double fallback) {
+          double parseCssNumber(String s, double fallback) {
             String t = s.trim();
             if (t.startsWith('-.')) {
-              t = '-0' + t.substring(1);
+              t = '-0${t.substring(1)}';
             } else if (t.startsWith('+.')) {
-              t = '+0' + t.substring(1);
+              t = '+0${t.substring(1)}';
             } else if (t.startsWith('.')) {
-              t = '0' + t;
+              t = '0$t';
             }
             return double.tryParse(t) ?? fallback;
           }
-          double x = _parseCssNumber(methodArgs[0], 1.0);
-          double y = _parseCssNumber(methodArgs[1], 1.0);
-          double z = _parseCssNumber(methodArgs[2], 1.0);
+          double x = parseCssNumber(methodArgs[0], 1.0);
+          double y = parseCssNumber(methodArgs[1], 1.0);
+          double z = parseCssNumber(methodArgs[2], 1.0);
 
           return Matrix4.identity()..scale(x, y, z);
         }
@@ -844,11 +845,11 @@ class CSSMatrix {
         if (methodArgs.length == 1) {
           String t = methodArgs[0].trim();
           if (t.startsWith('-.')) {
-            t = '-0' + t.substring(1);
+            t = '-0${t.substring(1)}';
           } else if (t.startsWith('+.')) {
-            t = '+0' + t.substring(1);
+            t = '+0${t.substring(1)}';
           } else if (t.startsWith('.')) {
-            t = '0' + t;
+            t = '0$t';
           }
           double scale = double.tryParse(t) ?? 1.0;
           double x = 1.0, y = 1.0, z = 1.0;

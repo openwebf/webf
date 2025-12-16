@@ -22,7 +22,7 @@ const Duration DEFAULT_METHOD_CALL_TIMEOUT = Duration(seconds: 30);
 class MethodChannelModule extends WebFBaseModule {
   @override
   String get name => METHOD_CHANNEL_NAME;
-  MethodChannelModule(ModuleManager? moduleManager) : super(moduleManager);
+  MethodChannelModule(super.moduleManager);
 
   @override
   void dispose() {}

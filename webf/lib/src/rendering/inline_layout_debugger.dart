@@ -4,7 +4,6 @@
  */
 import 'package:flutter/rendering.dart';
 import 'package:webf/rendering.dart';
-import 'inline_formatting_context.dart';
 import 'inline_item.dart';
 
 /// A utility class to provide enhanced debugging information for inline layout.
@@ -158,26 +157,24 @@ class InlineLayoutDebugger {
     
     // Try to get element tag from the RenderBoxModel
     final element = renderBox.renderStyle.target;
-    if (element != null) {
-      // For HTML elements, return the tag name
-      final tagName = element.tagName;
-      if (tagName.isNotEmpty && tagName != 'DIV') {
-        return tagName.toLowerCase();
-      }
-      
-      // For elements with specific classes or IDs, include them
-      final id = element.id;
-      final className = element.className;
-      
-      if (id != null && id.isNotEmpty) {
-        return '${tagName.toLowerCase()}#$id';
-      } else if (className.isNotEmpty) {
-        return '${tagName.toLowerCase()}.$className';
-      }
-      
+    // For HTML elements, return the tag name
+    final tagName = element.tagName;
+    if (tagName.isNotEmpty && tagName != 'DIV') {
       return tagName.toLowerCase();
     }
     
+    // For elements with specific classes or IDs, include them
+    final id = element.id;
+    final className = element.className;
+    
+    if (id != null && id.isNotEmpty) {
+      return '${tagName.toLowerCase()}#$id';
+    } else if (className.isNotEmpty) {
+      return '${tagName.toLowerCase()}.$className';
+    }
+    
+    return tagName.toLowerCase();
+      
     // Fallback to a short description
     final typeStr = renderBox.runtimeType.toString();
     if (typeStr.startsWith('Render')) {

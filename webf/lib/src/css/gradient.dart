@@ -23,18 +23,17 @@ class CSSLinearGradient extends LinearGradient with BorderGradientMixin {
   /// The [colors] argument must not be null. If [stops] is non-null, it must
   /// have the same length as [colors].
   CSSLinearGradient({
-    Alignment begin = Alignment.centerLeft,
-    Alignment end = Alignment.centerRight,
+    Alignment super.begin,
+    Alignment super.end,
     double? angle,
     double? repeatPeriod,
-    required List<Color> colors,
+    required super.colors,
     // A list of values from 0.0 to 1.0 that denote fractions along the gradient.
-    List<double>? stops,
-    TileMode tileMode = TileMode.clamp,
-    GradientTransform? transform,
+    super.stops,
+    super.tileMode,
+    super.transform,
   })  : _angle = angle,
-        _repeatPeriod = repeatPeriod,
-        super(begin: begin, end: end, colors: colors, stops: stops, tileMode: tileMode, transform: transform);
+        _repeatPeriod = repeatPeriod;
 
   final double? _angle;
   final double? _repeatPeriod; // in device px along gradient line when repeated
@@ -95,10 +94,7 @@ class CSSLinearGradient extends LinearGradient with BorderGradientMixin {
       final rp = (tileMode == TileMode.repeated && _repeatPeriod != null && _repeatPeriod! > 0)
           ? ' period=${_repeatPeriod!.toStringAsFixed(2)}'
           : '';
-      renderingLogger.finer('[Background] shader(linear) rect=${rect.size} angle=${(angle * 180 / math.pi).toStringAsFixed(1)}deg'+rp+' '
-          'begin=${beginOffset.dx.toStringAsFixed(2)},${beginOffset.dy.toStringAsFixed(2)} '
-          'end=${endOffset.dx.toStringAsFixed(2)},${endOffset.dy.toStringAsFixed(2)} '
-          'stops=${sampleStops ?? const []}');
+      renderingLogger.finer('[Background] shader(linear) rect=${rect.size} angle=${(angle * 180 / math.pi).toStringAsFixed(1)}deg$rp begin=${beginOffset.dx.toStringAsFixed(2)},${beginOffset.dy.toStringAsFixed(2)} end=${endOffset.dx.toStringAsFixed(2)},${endOffset.dy.toStringAsFixed(2)} stops=${sampleStops ?? const []}');
     }
     return ui.Gradient.linear(
         beginOffset, endOffset, colors, _impliedStops(), tileMode, _resolveTransform(rect, textDirection));
@@ -144,15 +140,14 @@ class CSSRadialGradient extends RadialGradient with BorderGradientMixin {
   /// The [colors] argument must not be null. If [stops] is non-null, it must
   /// have the same length as [colors].
   CSSRadialGradient({
-    AlignmentGeometry center = Alignment.center,
-    double radius = 1.0,
-    required List<Color> colors,
-    List<double>? stops,
-    TileMode tileMode = TileMode.clamp,
-    GradientTransform? transform,
+    super.center,
+    super.radius = 1.0,
+    required super.colors,
+    super.stops,
+    super.tileMode,
+    super.transform,
     double? repeatPeriod,
-  })  : _repeatPeriod = repeatPeriod,
-        super(center: center, radius: radius, colors: colors, stops: stops, tileMode: tileMode, transform: transform);
+  })  : _repeatPeriod = repeatPeriod;
 
   final double? _repeatPeriod; // in device px; when repeated, sets the 0..1 span
 
@@ -192,8 +187,7 @@ class CSSRadialGradient extends RadialGradient with BorderGradientMixin {
       final rp = (tileMode == TileMode.repeated && _repeatPeriod != null && _repeatPeriod! > 0)
           ? ' period=${_repeatPeriod!.toStringAsFixed(2)}'
           : '';
-      renderingLogger.finer('[Background] shader(radial) rect=${rect.size} center=${centerOffset.dx.toStringAsFixed(2)},${centerOffset.dy.toStringAsFixed(2)} '
-          'radius=${radiusValue.toStringAsFixed(2)}'+rp+' stops=${sampleStops ?? const []}');
+      renderingLogger.finer('[Background] shader(radial) rect=${rect.size} center=${centerOffset.dx.toStringAsFixed(2)},${centerOffset.dy.toStringAsFixed(2)} radius=${radiusValue.toStringAsFixed(2)}$rp stops=${sampleStops ?? const []}');
     }
     return ui.Gradient.radial(
       centerOffset,
@@ -271,11 +265,10 @@ class CSSConicGradient extends SweepGradient with BorderGradientMixin {
   /// The [colors] argument must not be null. If [stops] is non-null, it must
   /// have the same length as [colors].
   CSSConicGradient(
-      {AlignmentGeometry center = Alignment.center,
-      required List<Color> colors,
-      List<double>? stops,
-      GradientTransform? transform})
-      : super(center: center, colors: colors, stops: stops, transform: transform);
+      {super.center,
+      required super.colors,
+      super.stops,
+      super.transform});
 
   @override
   Shader createShader(Rect rect, {TextDirection? textDirection}) {

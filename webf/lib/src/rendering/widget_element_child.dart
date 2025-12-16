@@ -37,7 +37,7 @@ class WebFWidgetElementChild extends SingleChildRenderObjectWidget {
   ///
   /// The [child] parameter is the WebF HTML element that will receive
   /// the constraints from the parent Flutter widget.
-  WebFWidgetElementChild({Widget? child, Key? key}): super(child: child, key: key);
+  const WebFWidgetElementChild({super.child, super.key});
 
   @override
   RenderObject createRenderObject(BuildContext context) {

@@ -1,11 +1,7 @@
-import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:webf/src/foundation/http_cache.dart';
 import 'package:webf/src/foundation/http_cache_object.dart';
-import 'package:webf/src/foundation/http_client_response.dart';
 import 'package:webf/src/foundation/http_client.dart' show createHttpHeaders;
 
 import '../../setup.dart';

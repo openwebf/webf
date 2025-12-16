@@ -149,7 +149,7 @@ class _ExtendedNestedScrollCoordinator extends _NestedScrollCoordinator {
     if (object == null) {
       return null;
     }
-    object = object.parent as RenderObject?;
+    object = object.parent;
     while (object != null) {
       // only find in body
       if (object is _ExtendedRenderSliverFillRemainingWithScrollable) {
@@ -158,7 +158,7 @@ class _ExtendedNestedScrollCoordinator extends _NestedScrollCoordinator {
       if (object is RenderViewport) {
         return object;
       }
-      object = object.parent as RenderObject?;
+      object = object.parent;
     }
     return null;
   }

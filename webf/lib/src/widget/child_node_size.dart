@@ -10,7 +10,7 @@ import 'package:webf/dom.dart' as dom;
 /// This is useful for building a WidgetElement whose height depends on the HTML/CSS layout height.
 /// Note: The margin space between the childNodes is ignored because the parentData does not belong to WebF's RenderObjectModel.
 class WebFChildNodeSize extends SingleChildRenderObjectWidget {
-  WebFChildNodeSize({
+  const WebFChildNodeSize({
     required this.ownerElement,
     super.child,
     super.key,

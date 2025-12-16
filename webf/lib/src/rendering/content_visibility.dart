@@ -16,13 +16,13 @@ import 'package:webf/rendering.dart';
 /// room in the parent.
 mixin RenderContentVisibilityMixin on RenderBoxModelBase {
   bool contentVisibilityHitTest(BoxHitTestResult result, {Offset? position}) {
-    ContentVisibility? _contentVisibility = renderStyle.contentVisibility;
-    return _contentVisibility != ContentVisibility.hidden;
+    ContentVisibility? contentVisibility = renderStyle.contentVisibility;
+    return contentVisibility != ContentVisibility.hidden;
   }
 
   void paintContentVisibility(PaintingContext context, Offset offset, PaintingContextCallback callback) {
-    ContentVisibility? _contentVisibility = renderStyle.contentVisibility;
-    if (_contentVisibility == ContentVisibility.hidden) {
+    ContentVisibility? contentVisibility = renderStyle.contentVisibility;
+    if (contentVisibility == ContentVisibility.hidden) {
       return;
     }
     callback(context, offset);

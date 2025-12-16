@@ -8,11 +8,8 @@
  */
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
-import 'package:webf/src/foundation/debug_flags.dart';
-import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/rendering.dart';
 
@@ -482,7 +479,7 @@ mixin CSSTextMixin on RenderStyle {
     if (_tabSize == null && getParentRenderStyle() != null) {
       final parent = getParentRenderStyle();
       if (parent is CSSTextMixin) {
-        return (parent as CSSTextMixin).tabSize;
+        return (parent).tabSize;
       }
     }
     // Default tab size is 8 space characters
@@ -1021,10 +1018,10 @@ class CSSText {
       return null;
     }
     String breakWord = '';
-    word.runes.forEach((element) {
+    for (var element in word.runes) {
       breakWord += String.fromCharCode(element);
       breakWord += '\u200B';
-    });
+    }
     return breakWord;
   }
 

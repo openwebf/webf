@@ -7,7 +7,6 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
-import 'dart:async';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';

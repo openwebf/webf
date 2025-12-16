@@ -11,8 +11,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
-import 'package:webf/src/css/grid.dart';
-import 'package:webf/dom.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/src/foundation/logger.dart';
 
@@ -819,7 +817,7 @@ class RenderGridLayout extends RenderLayoutBox {
     if (colsDef.isEmpty) {
       String raw = renderStyle.target.style.getPropertyValue(GRID_TEMPLATE_COLUMNS);
       if (raw.isEmpty) {
-        final String? styleAttr = (renderStyle.target as Element).getAttribute('style');
+        final String? styleAttr = (renderStyle.target).getAttribute('style');
         if (styleAttr != null) {
           final RegExp re = RegExp(r'grid-template-columns\s*:\s*([^;]+)', caseSensitive: false);
           final m = re.firstMatch(styleAttr);
@@ -833,7 +831,7 @@ class RenderGridLayout extends RenderLayoutBox {
     if (rowsDef.isEmpty) {
       String raw = renderStyle.target.style.getPropertyValue(GRID_TEMPLATE_ROWS);
       if (raw.isEmpty) {
-        final String? styleAttr = (renderStyle.target as Element).getAttribute('style');
+        final String? styleAttr = (renderStyle.target).getAttribute('style');
         if (styleAttr != null) {
           final RegExp re = RegExp(r'grid-template-rows\s*:\s*([^;]+)', caseSensitive: false);
           final m = re.firstMatch(styleAttr);
@@ -1212,7 +1210,7 @@ class RenderGridLayout extends RenderLayoutBox {
       double collapsedWidth = 0;
       int collapsedCount = 0;
       for (int i = explicitColumnCount - 1; i >= 0; i--) {
-        if (!explicitAutoFitColumns![i] || explicitAutoFitColumnUsage[i]) {
+        if (!explicitAutoFitColumns[i] || explicitAutoFitColumnUsage[i]) {
           break;
         }
         collapsedWidth += colSizes[i];
@@ -1238,7 +1236,7 @@ class RenderGridLayout extends RenderLayoutBox {
       double collapsedHeight = 0;
       int collapsedCount = 0;
       for (int i = explicitRowCount - 1; i >= 0; i--) {
-        if (!explicitAutoFitRows![i] || explicitAutoFitRowUsage[i]) {
+        if (!explicitAutoFitRows[i] || explicitAutoFitRowUsage[i]) {
           break;
         }
         collapsedHeight += rowSizes[i];

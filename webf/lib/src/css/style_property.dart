@@ -9,7 +9,6 @@
 
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
-import 'package:flutter/foundation.dart';
 import 'package:webf/src/css/css_animation.dart';
 
 // aB to a-b
@@ -324,7 +323,7 @@ class CSSStyleProperty {
     // longhands for the affected edges. Each longhand will later resolve the
     // var to a full shorthand string (e.g., "2px solid red") and extract its
     // own component.
-    bool _isEntireVarFunction(String s) {
+    bool isEntireVarFunction(String s) {
       final String trimmed = s.trimLeft();
       if (!trimmed.startsWith('var(')) return false;
       int start = trimmed.indexOf('(');
@@ -353,7 +352,7 @@ class CSSStyleProperty {
         property == BORDER_INLINE_END ||
         property == BORDER_BLOCK_START ||
         property == BORDER_BLOCK_END) {
-      if (_isEntireVarFunction(shorthandValue)) {
+      if (isEntireVarFunction(shorthandValue)) {
         // Apply the same var(...) to width/style/color for the specified edges.
         void applyEdge(String edge) {
           switch (edge) {
@@ -726,11 +725,11 @@ class CSSStyleProperty {
 
     bool isAfterSlash = false;
 
-    bool _isPositionToken(String t) {
+    bool isPositionToken(String t) {
       // Accept keywords, length/percentage, and var()/calc() functions.
       return CSSBackground.isValidBackgroundPositionValue(t) || CSSFunction.isFunction(t);
     }
-    bool _isSizeToken(String t) {
+    bool isSizeToken(String t) {
       return CSSBackground.isValidBackgroundSizeValue(t) || CSSFunction.isFunction(t);
     }
 
@@ -764,7 +763,7 @@ class CSSStyleProperty {
 
       if (!isAfterSlash) {
         // Position tokens only before slash
-        if (_isPositionToken(t)) {
+        if (isPositionToken(t)) {
           posTokens.add(t);
           continue;
         }
@@ -772,7 +771,7 @@ class CSSStyleProperty {
         continue;
       } else {
         // Size tokens only after slash
-        if (_isSizeToken(t)) {
+        if (isSizeToken(t)) {
           sizeTokens.add(t);
           continue;
         }
@@ -1277,7 +1276,7 @@ class CSSStyleProperty {
     //   - treat the trailing `/ ...` as grid-template-columns when present.
     if (value.contains('"') || value.contains('\'')) {
       // Extract area strings between first and last quote to keep cssText compact.
-      final int firstQuote = value.indexOf('"') != -1 ? value.indexOf('"') : value.indexOf('\'');
+      final int firstQuote = value.contains('"') ? value.indexOf('"') : value.indexOf('\'');
       final int lastQuote = value.lastIndexOf('"') != -1 ? value.lastIndexOf('"') : value.lastIndexOf('\'');
       if (firstQuote != -1 && lastQuote > firstQuote) {
         final String areasText = value.substring(firstQuote, lastQuote + 1).trim();

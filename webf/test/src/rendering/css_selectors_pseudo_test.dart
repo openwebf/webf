@@ -4,10 +4,8 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/css.dart';
-import 'package:webf/html.dart';
 import '../../setup.dart';
 import '../widget/test_utils.dart';
 
@@ -183,7 +181,7 @@ void main() {
       expect(beforeColor, isNotNull);
       expect(afterColor, isNotNull);
       // WebF may render colors differently, so we just check they're different
-      expect(beforeColor!.value, isNot(equals(afterColor!.value)));
+      expect(beforeColor.value, isNot(equals(afterColor.value)));
 
       // Check order in childNodes
       final children = div.childNodes.toList();

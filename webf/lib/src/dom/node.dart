@@ -13,7 +13,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
-import 'package:webf/rendering.dart';
 import 'node_data.dart';
 
 enum NodeType {

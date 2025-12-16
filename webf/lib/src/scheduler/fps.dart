@@ -95,12 +95,12 @@ class RenderFpsOverlay extends RenderBox {
       fontSize: 14.0,
     );
     TextSpan span = TextSpan(text: text, style: textStyle);
-    TextAlign _textAlign = TextAlign.start;
-    TextDirection _textDirection = TextDirection.ltr;
+    TextAlign textAlign = TextAlign.start;
+    TextDirection textDirection = TextDirection.ltr;
     TextPainter textPainter = TextPainter(
       text: span,
-      textAlign: _textAlign,
-      textDirection: _textDirection,
+      textAlign: textAlign,
+      textDirection: textDirection,
     );
 
     return textPainter;

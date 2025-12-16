@@ -8,7 +8,6 @@
  */
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/bridge.dart';
 
 const String LABEL = 'LABEL';
 const String BUTTON = 'BUTTON';
@@ -22,11 +21,11 @@ const Map<String, dynamic> _defaultStyle = {
 };
 
 class LabelElement extends Element {
-  LabelElement([BindingContext? context]) : super(context);
+  LabelElement([super.context]);
 }
 
 class ButtonElement extends Element {
-  ButtonElement([BindingContext? context]) : super(context);
+  ButtonElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;

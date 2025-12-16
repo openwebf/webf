@@ -244,26 +244,26 @@ class HttpClientCachedResponse extends Stream<List<int>> implements HttpClientRe
       {Function? onError, void Function()? onDone, bool? cancelOnError}) {
     _blobSink ??= cacheObject.openBlobWrite();
 
-    void _handleData(List<int> data) {
+    void handleData(List<int> data) {
       if (onData != null) onData(data);
       _onData(data);
     }
 
-    void _handleError(error, [stackTrace]) {
+    void handleError(error, [stackTrace]) {
       if (onError != null) onError(error, stackTrace);
       _onError(error, stackTrace);
     }
 
-    void _handleDone() {
+    void handleDone() {
       if (onDone != null) onDone();
       _onDone();
     }
 
     return _DelegatingStreamSubscription(
-      response.listen(_handleData, onError: _handleError, onDone: _handleDone, cancelOnError: cancelOnError),
-      handleData: _handleData,
-      handleDone: _handleDone,
-      handleError: _handleError,
+      response.listen(handleData, onError: handleError, onDone: handleDone, cancelOnError: cancelOnError),
+      handleData: handleData,
+      handleDone: handleDone,
+      handleError: handleError,
     );
   }
 
@@ -348,14 +348,13 @@ class _DelegatingStreamSubscription extends DelegatingStreamSubscription<List<in
   final void Function() _handleDone;
 
   _DelegatingStreamSubscription(
-    StreamSubscription<List<int>> source, {
+    super.source, {
     required void Function(List<int>) handleData,
     required Function handleError,
     required void Function() handleDone,
   })  : _handleData = handleData,
         _handleError = handleError,
-        _handleDone = handleDone,
-        super(source);
+        _handleDone = handleDone;
 
   @override
   void onData(void Function(List<int>)? handleData) {

@@ -8,7 +8,6 @@
 
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:flutter/foundation.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/src/css/query_selector.dart';

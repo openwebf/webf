@@ -3,8 +3,6 @@
  * Licensed under GNU GPL with Enterprise exception.
  */
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
-import 'package:flutter/widgets.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/html.dart';
 import 'package:webf/launcher.dart';
@@ -14,7 +12,7 @@ import 'package:webf/widget.dart';
 class WebFRouterViewport extends MultiChildRenderObjectWidget {
   final WebFController controller;
 
-  WebFRouterViewport({required this.controller, super.children, super.key});
+  const WebFRouterViewport({required this.controller, super.children, super.key});
 
   @override
   RenderObject createRenderObject(BuildContext context) {
@@ -200,7 +198,7 @@ class _AsyncWebFRouterView extends StatefulWidget {
   final WebFRouterViewBuilder? builder;
   final Widget Function(BuildContext context, Object error)? errorBuilder;
 
-  _AsyncWebFRouterView(
+  const _AsyncWebFRouterView(
       {required this.controllerName, required this.path, this.builder, this.loadingWidget, this.errorBuilder});
 
   @override

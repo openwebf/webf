@@ -140,7 +140,7 @@ class _FlutterSvgElementState extends WebFWidgetElementState {
     }
 
     final String rawSvg = _buildSvgString();
-    if (rawSvg == null || rawSvg.isEmpty) {
+    if (rawSvg.isEmpty) {
       // Nothing to render yet.
       return const SizedBox.shrink();
     }

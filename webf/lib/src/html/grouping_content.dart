@@ -8,8 +8,6 @@
  */
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/foundation.dart';
-import 'package:webf/bridge.dart';
 
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Element#text_content
 const String UL = 'UL';
@@ -63,28 +61,28 @@ const Map<String, dynamic> _lDefaultStyle = {
 };
 
 class DivElement extends Element {
-  DivElement([BindingContext? context]) : super(context);
+  DivElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 class FigureElement extends Element {
-  FigureElement([BindingContext? context]) : super(context);
+  FigureElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _bDefaultStyle;
 }
 
 class FigureCaptionElement extends Element {
-  FigureCaptionElement([BindingContext? context]) : super(context);
+  FigureCaptionElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 class BlockQuotationElement extends Element {
-  BlockQuotationElement([BindingContext? context]) : super(context);
+  BlockQuotationElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _bDefaultStyle;
@@ -92,7 +90,7 @@ class BlockQuotationElement extends Element {
 
 // https://html.spec.whatwg.org/multipage/grouping-content.html#htmlparagraphelement
 class ParagraphElement extends Element {
-  ParagraphElement([BindingContext? context]) : super(context);
+  ParagraphElement([super.context]);
   @override
   Map<String, dynamic> get defaultStyle => _pDefaultStyle;
 }
@@ -103,7 +101,7 @@ void debugOverridePDefaultStyle(Map<String, dynamic> newStyle) {
 
 // https://html.spec.whatwg.org/multipage/grouping-content.html#htmlulistelement
 class UListElement extends Element {
-  UListElement([BindingContext? context]) : super(context);
+  UListElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _lDefaultStyle;
@@ -111,14 +109,14 @@ class UListElement extends Element {
 
 // https://html.spec.whatwg.org/multipage/grouping-content.html#htmlolistelement
 class OListElement extends Element {
-  OListElement([BindingContext? context]) : super(context);
+  OListElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _lDefaultStyle;
 }
 
 class LIElement extends Element {
-  LIElement([BindingContext? context]) : super(context);
+  LIElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
@@ -160,19 +158,19 @@ class LIElement extends Element {
     style.handlePseudoRules(this, pseudoRules);
 
     // 8) List marker generation based on list-style-type
-    String _getProp(CSSStyleDeclaration s, String camel, String kebab) {
+    String getProp(CSSStyleDeclaration s, String camel, String kebab) {
       final v1 = s.getPropertyValue(camel);
       if (v1.isNotEmpty) return v1;
       return s.getPropertyValue(kebab);
     }
 
-    String? _effectiveListStyleType() {
+    String? effectiveListStyleType() {
       // Check self
-      String t = _getProp(style, 'listStyleType', 'list-style-type');
+      String t = getProp(style, 'listStyleType', 'list-style-type');
       if (t.isNotEmpty) return t;
       // Check parent
       if (parentElement != null) {
-        String pt = _getProp(parentElement!.style, 'listStyleType', 'list-style-type');
+        String pt = getProp(parentElement!.style, 'listStyleType', 'list-style-type');
         if (pt.isNotEmpty) return pt;
       }
       // Defaults by parent tag
@@ -181,7 +179,7 @@ class LIElement extends Element {
       return null;
     }
 
-    int _indexWithinList() {
+    int indexWithinList() {
       final p = parentElement;
       if (p == null) return 1;
       int idx = 0;
@@ -192,7 +190,7 @@ class LIElement extends Element {
       return idx == 0 ? 1 : idx;
     }
 
-    String _toAlpha(int n, {bool upper = false}) {
+    String toAlpha(int n, {bool upper = false}) {
       // 1->a, 26->z, 27->aa
       int num = n;
       StringBuffer sb = StringBuffer();
@@ -205,7 +203,7 @@ class LIElement extends Element {
       return sb.toString().split('').reversed.join();
     }
 
-    String _toRoman(int n, {bool upper = false}) {
+    String toRoman(int n, {bool upper = false}) {
       if (n <= 0) return upper ? 'N' : 'n';
       final List<List<dynamic>> map = [
         [1000, 'M'],
@@ -236,22 +234,22 @@ class LIElement extends Element {
       return upper ? s : s.toLowerCase();
     }
 
-    void _ensurePseudo() {
+    void ensurePseudo() {
       style.pseudoBeforeStyle ??= CSSStyleDeclaration();
     }
 
-    String _effectiveListStylePosition() {
-      String p = _getProp(style, 'listStylePosition', 'list-style-position');
+    String effectiveListStylePosition() {
+      String p = getProp(style, 'listStylePosition', 'list-style-position');
       if (p.isNotEmpty) return p;
       if (parentElement != null) {
-        String pp = _getProp(parentElement!.style, 'listStylePosition', 'list-style-position');
+        String pp = getProp(parentElement!.style, 'listStylePosition', 'list-style-position');
         if (pp.isNotEmpty) return pp;
       }
       return 'outside';
     }
 
-    final type = _effectiveListStyleType();
-    final pos = _effectiveListStylePosition();
+    final type = effectiveListStyleType();
+    final pos = effectiveListStylePosition();
     if (type != null) {
       if (pos == 'inside') {
         // Only set when author didn't explicitly set ::before content
@@ -264,34 +262,34 @@ class LIElement extends Element {
             }
           } else if (type == 'disc') {
             // bullet
-            _ensurePseudo();
+            ensurePseudo();
             style.pseudoBeforeStyle!.setProperty(CONTENT, '"• "');
           } else {
             // ordered styles
-            final idx = _indexWithinList();
+            final idx = indexWithinList();
             String marker;
             switch (type) {
               case 'decimal':
                 marker = idx.toString();
                 break;
               case 'lower-alpha':
-                marker = _toAlpha(idx, upper: false);
+                marker = toAlpha(idx, upper: false);
                 break;
               case 'upper-alpha':
-                marker = _toAlpha(idx, upper: true);
+                marker = toAlpha(idx, upper: true);
                 break;
               case 'lower-roman':
-                marker = _toRoman(idx, upper: false);
+                marker = toRoman(idx, upper: false);
                 break;
               case 'upper-roman':
-                marker = _toRoman(idx, upper: true);
+                marker = toRoman(idx, upper: true);
                 break;
               default:
                 marker = idx.toString();
                 break;
             }
-            _ensurePseudo();
-            style.pseudoBeforeStyle!.setProperty(CONTENT, '"' + marker + '. "');
+            ensurePseudo();
+            style.pseudoBeforeStyle!.setProperty(CONTENT, '"$marker. "');
           }
         }
       } else {
@@ -306,7 +304,7 @@ class LIElement extends Element {
 
 // https://html.spec.whatwg.org/multipage/grouping-content.html#htmlpreelement
 class PreElement extends Element {
-  PreElement([BindingContext? context]) : super(context);
+  PreElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _preDefaultStyle;
@@ -314,14 +312,14 @@ class PreElement extends Element {
 
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dd
 class DDElement extends Element {
-  DDElement([BindingContext? context]) : super(context);
+  DDElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _ddDefaultStyle;
 }
 
 class DTElement extends Element {
-  DTElement([BindingContext? context]) : super(context);
+  DTElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
@@ -329,7 +327,7 @@ class DTElement extends Element {
 
 // https://html.spec.whatwg.org/multipage/grouping-content.html#htmldlistelement
 class DListElement extends Element {
-  DListElement([BindingContext? context]) : super(context);
+  DListElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _pDefaultStyle;

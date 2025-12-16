@@ -105,9 +105,8 @@ abstract class CanvasImageData {
 
 // ignore: one_member_abstracts
 class CanvasGradient extends DynamicBindingObject {
-  CanvasGradient(BindingContext context, this.ownerCanvasElement)
-      : _pointer = context.pointer,
-        super(context);
+  CanvasGradient(BindingContext super.context, this.ownerCanvasElement)
+      : _pointer = context.pointer;
 
   final ffi.Pointer<NativeBindingObject> _pointer;
   final CanvasElement ownerCanvasElement;
@@ -134,11 +133,10 @@ class CanvasGradient extends DynamicBindingObject {
 
 // ignore: one_member_abstracts
 class CanvasPattern extends DynamicBindingObject {
-  CanvasPattern(BindingContext context, CanvasImageSource image, String repetition)
+  CanvasPattern(BindingContext super.context, CanvasImageSource image, String repetition)
       : _pointer = context.pointer,
         _image = image,
-        _repetition = repetition,
-        super(context);
+        _repetition = repetition;
 
   final ffi.Pointer<NativeBindingObject> _pointer;
 

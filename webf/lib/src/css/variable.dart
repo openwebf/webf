@@ -7,16 +7,10 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
-import 'dart:async';
 import 'dart:collection';
-import 'package:flutter/widgets.dart' hide Element;
-import 'package:flutter/foundation.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
-import 'package:webf/src/foundation/debug_flags.dart';
-import 'package:webf/src/foundation/logger.dart';
 
 // Local matcher for var(...) occurrences (supports simple nesting patterns).
 final RegExp _inlineVarFnRegExp = RegExp(r'var\(([^()]*\(.*?\)[^()]*)\)|var\(([^()]*)\)');
@@ -225,8 +219,8 @@ mixin CSSVariableMixin on RenderStyle {
       final int? repLast = trimmed.isNotEmpty ? trimmed.codeUnitAt(trimmed.length - 1) : null;
       final bool addLeftSpace = leftChar != null && repFirst != null && isIdentCode(leftChar) && isIdentCode(repFirst);
       final bool addRightSpace = rightChar != null && repLast != null && isIdentCode(repLast) && isIdentCode(rightChar);
-      if (addLeftSpace) rep = ' ' + rep;
-      if (addRightSpace) rep = rep + ' ';
+      if (addLeftSpace) rep = ' $rep';
+      if (addRightSpace) rep = '$rep ';
       return rep;
     });
     return result;
@@ -271,8 +265,8 @@ mixin CSSVariableMixin on RenderStyle {
         final int? repLast = trimmed.isNotEmpty ? trimmed.codeUnitAt(trimmed.length - 1) : null;
         final bool addLeftSpace = leftChar != null && repFirst != null && isIdentCode(leftChar) && isIdentCode(repFirst);
         final bool addRightSpace = rightChar != null && repLast != null && isIdentCode(repLast) && isIdentCode(rightChar);
-        if (addLeftSpace) rep = ' ' + rep;
-        if (addRightSpace) rep = rep + ' ';
+        if (addLeftSpace) rep = ' $rep';
+        if (addRightSpace) rep = '$rep ';
         return rep;
       });
       if (result == before) break;
@@ -363,11 +357,11 @@ mixin CSSVariableMixin on RenderStyle {
               // have stable matrices for forward and backward animations.
               final String prevText = _expandAllVars(
                   _expandVarWithOverride(cssText, identifier, prevVarValue),
-                  depContext: propertyName + '_' + cssText,
+                  depContext: '${propertyName}_$cssText',
               );
               final String endText = _expandAllVars(
                   cssText,
-                  depContext: propertyName + '_' + cssText,
+                  depContext: '${propertyName}_$cssText',
               );
               if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
                 cssLogger.info('[var][transition] property=$propertyName prevText="$prevText" endText="$endText"');
@@ -412,7 +406,7 @@ mixin CSSVariableMixin on RenderStyle {
         if (isColorProperty && cssTextToApply.contains('var(')) {
           cssTextToApply = _expandAllVars(
             cssTextToApply,
-            depContext: propertyName + '_' + cssText,
+            depContext: '${propertyName}_$cssText',
           );
         }
         final String? baseHref = target.style.getPropertyBaseHref(propertyName);

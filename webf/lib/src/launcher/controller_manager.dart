@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:collection';
-import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:webf/foundation.dart';
@@ -506,11 +505,11 @@ class WebFControllerManager {
     Stopwatch stopwatch = Stopwatch()..start();
 
     // Record an request for the concurrency checks
-    _ConcurrencyControllerInstance _concurrencyControllerInstance =
+    _ConcurrencyControllerInstance concurrencyControllerInstance =
         _ConcurrencyControllerInstance(newController, stopwatch, ControllerLoadState.idle);
 
     List<_ConcurrencyControllerInstance> concurrencyInstanceList = _concurrencyControllerByName[name]!;
-    concurrencyInstanceList.add(_concurrencyControllerInstance);
+    concurrencyInstanceList.add(concurrencyControllerInstance);
 
     // Wait for the new controller to initialize with fallback
     await newController.controlledInitCompleter.future;
@@ -528,7 +527,7 @@ class WebFControllerManager {
 
     Future<void> newControllerRequestFuture;
 
-    _concurrencyControllerInstance.state = ControllerLoadState.loading;
+    concurrencyControllerInstance.state = ControllerLoadState.loading;
 
     switch (mode) {
       case WebFLoadingMode.preloading:
@@ -543,7 +542,7 @@ class WebFControllerManager {
       // Race the concurrency request and find the target controller instance.
       // Success! Now we can safely replace the old controller
       WebFController winnerController = await _raceConcurrencyController(name, newController,
-          newControllerRequestFuture, _concurrencyControllerInstance, concurrencyInstanceList, raceCompleter);
+          newControllerRequestFuture, concurrencyControllerInstance, concurrencyInstanceList, raceCompleter);
 
       // The newController was failed to win the race.
       if (winnerController != newController) {
@@ -593,7 +592,7 @@ class WebFControllerManager {
       }
 
       return winnerController;
-    } catch (e, stack) {
+    } catch (e) {
       // Dispose the abandon controller instance
       Future.microtask(() async {
         debugPrint('WebFControllerManager: dispose loser controller: $newController');

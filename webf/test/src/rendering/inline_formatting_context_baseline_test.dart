@@ -5,7 +5,6 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
@@ -34,7 +33,7 @@ void main() {
         break;
       }
 
-      current = current.parent as RenderObject?;
+      current = current.parent;
     }
 
     return offset;

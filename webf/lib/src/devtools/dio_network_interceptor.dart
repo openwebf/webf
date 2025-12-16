@@ -14,7 +14,6 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webf/devtools.dart';
-import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/panel/network_store.dart';
 
 /// Dio interceptor for capturing network requests in DevTools

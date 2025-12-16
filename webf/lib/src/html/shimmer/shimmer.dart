@@ -4,13 +4,11 @@
  */
 import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
-import 'shimmer_widget.dart';
-import 'shimmer_loading.dart';
 
 const SHIMMER = 'FLUTTER-SHIMMER';
 
 class FlutterShimmerElement extends WidgetElement {
-  FlutterShimmerElement(BindingContext? context) : super(context);
+  FlutterShimmerElement(super.context);
 
   @override
   WebFWidgetElementState createState() {

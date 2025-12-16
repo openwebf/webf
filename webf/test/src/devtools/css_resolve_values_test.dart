@@ -16,7 +16,7 @@ import '../../setup.dart';
 
 class _TestCSSModule extends InspectCSSModule {
   Map<String, dynamic>? lastResult;
-  _TestCSSModule(DevToolsService s) : super(s);
+  _TestCSSModule(super.s);
 
   @override
   void sendToFrontend(int? id, JSONEncodable? result) {

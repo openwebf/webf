@@ -3,7 +3,6 @@
  * Licensed under GNU GPL with Enterprise exception.
  */
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +14,6 @@ import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:easy_refresh/easy_refresh.dart';
-import 'package:webf/src/widget/nested_scroll_forwarder.dart';
 import 'listview_bindings_generated.dart';
 
 /// Tag name for the ListView element in HTML

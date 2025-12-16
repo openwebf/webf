@@ -13,7 +13,7 @@ class WebFHTMLElement extends WebFRenderLayoutWidgetAdaptor {
   final dom.Element? parentElement;
   final Map<String, String>? inlineStyle;
 
-  WebFHTMLElement({
+  const WebFHTMLElement({
     required this.tagName,
     required this.controller,
     super.key,
