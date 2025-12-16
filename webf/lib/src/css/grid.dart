@@ -424,7 +424,10 @@ class CSSGridParser {
           final GridTrackSize last = sizes.removeLast();
           final List<String> updatedTrailing = <String>[...last.trailingLineNames, ...names];
           sizes.add(_cloneTrackWithLineNames(last, trailing: updatedTrailing));
-          pendingLeadingNames = <String>[...pendingLeadingNames, ...names];
+          // Line names between tracks apply to the shared grid line between them.
+          // Store them once as trailing names of the previous track (per grammar),
+          // instead of also propagating as leading names for the next track.
+          pendingLeadingNames = <String>[];
           pendingNamesAppliedAsTrailing = true;
         }
         continue;
