@@ -285,6 +285,12 @@ describe('CSS Grid template areas advanced', () => {
     await waitForFrame();
     await snapshot();
 
+    const invalidRect = invalidItem.getBoundingClientRect();
+    const validRect = validItem.getBoundingClientRect();
+    const leftRect = leftItem.getBoundingClientRect();
+    expect(invalidRect.left).toBeGreaterThan(validRect.right + 1);
+    expect(invalidRect.top).toBeGreaterThan(leftRect.bottom + 1);
+
     // All items should be visible
     expect(grid.children.length).toBe(3);
     Array.from(grid.children).forEach(child => {
