@@ -572,7 +572,10 @@ class RenderGridLayout extends RenderLayoutBox {
 
     void addNames(List<String> names, int index) {
       for (final name in names) {
-        map.putIfAbsent(name, () => <int>[]).add(index);
+        final List<int> indices = map.putIfAbsent(name, () => <int>[]);
+        if (indices.isEmpty || indices.last != index) {
+          indices.add(index);
+        }
       }
     }
 
