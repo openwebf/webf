@@ -14,6 +14,41 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
+function isMachOBinary(filePath) {
+  try {
+    const fd = fs.openSync(filePath, 'r');
+    const buffer = Buffer.alloc(4);
+    fs.readSync(fd, buffer, 0, 4, 0);
+    fs.closeSync(fd);
+
+    // Mach-O & FAT (universal) magic numbers.
+    const magics = new Set([
+      buffer.toString('hex'),
+    ]);
+
+    // Mach-O 32-bit / 64-bit (big-endian and little-endian)
+    if (magics.has('feedface') || magics.has('cefaedfe')) return true;
+    if (magics.has('feedfacf') || magics.has('cffaedfe')) return true;
+
+    // FAT/universal (32-bit and 64-bit, big-endian and little-endian)
+    if (magics.has('cafebabe') || magics.has('bebafeca')) return true;
+    if (magics.has('cafebabf') || magics.has('bfbafeca')) return true;
+
+    return false;
+  } catch (error) {
+    return false;
+  }
+}
+
+function isFileCommandAvailable() {
+  try {
+    execSync('file --version', { stdio: 'ignore' });
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
 /**
  * Get current system architecture
  * @returns {string} 'arm64' or 'x86_64'
@@ -23,8 +58,10 @@ function getSystemArchitecture() {
     const arch = execSync('uname -m', { encoding: 'utf8' }).trim();
     return arch;
   } catch (error) {
-    console.warn('⚠️  Could not determine system architecture, defaulting to arm64');
-    return 'arm64';
+    // Fallback for non-POSIX environments (or sandboxed shells).
+    const arch = process.arch === 'arm64' ? 'arm64' : 'x86_64';
+    console.warn(`⚠️  Could not determine system architecture via uname, defaulting to ${arch}`);
+    return arch;
   }
 }
 
@@ -34,6 +71,9 @@ function getSystemArchitecture() {
  * @returns {boolean} True if universal binary
  */
 function isUniversalBinary(filePath) {
+  if (!isFileCommandAvailable()) {
+    return false;
+  }
   try {
     const output = execSync(`file "${filePath}"`, { encoding: 'utf8' });
     return output.includes('universal binary') || 
@@ -92,6 +132,10 @@ function copyDylib(libName, bridgeBuildDir, targetDir) {
     if (isUniversalBinary(universalPath)) {
       console.log(`   ✅ Confirmed as universal binary (arm64 + x86_64)`);
     }
+    if (!isMachOBinary(universalPath)) {
+      console.error(`❌ ${libName} does not appear to be a Mach-O binary: ${universalPath}`);
+      return false;
+    }
     return copyFile(universalPath, targetPath);
   }
   
@@ -102,6 +146,10 @@ function copyDylib(libName, bridgeBuildDir, targetDir) {
   const archPath = systemArch === 'arm64' ? arm64Path : x86_64Path;
   if (fs.existsSync(archPath)) {
     console.log(`   ✅ Found ${systemArch} binary for ${libName}`);
+    if (!isMachOBinary(archPath)) {
+      console.error(`❌ ${libName} does not appear to be a Mach-O binary: ${archPath}`);
+      return false;
+    }
     return copyFile(archPath, targetPath);
   }
   
@@ -112,6 +160,10 @@ function copyDylib(libName, bridgeBuildDir, targetDir) {
   if (fs.existsSync(otherArchPath)) {
     console.warn(`⚠️  Only ${otherArch} binary found for ${libName} (current system: ${systemArch})`);
     console.warn(`   This may cause compatibility issues!`);
+    if (!isMachOBinary(otherArchPath)) {
+      console.error(`❌ ${libName} does not appear to be a Mach-O binary: ${otherArchPath}`);
+      return false;
+    }
     return copyFile(otherArchPath, targetPath);
   }
   
@@ -230,10 +282,11 @@ function copyMacOSDynamicLibraries(webfDir) {
 
 // Main execution
 function main() {
-  // Check if we're on macOS
+  // This script only copies Mach-O artifacts, so it can run in Linux containers/CI as long as the
+  // macOS build outputs are present (e.g., when the repo is mounted from a macOS host).
   if (process.platform !== 'darwin') {
-    console.error('❌ This script can only run on macOS');
-    process.exit(1);
+    console.warn(`⚠️  Not running on macOS (platform: ${process.platform}). Continuing with copy only.`);
+    console.warn(`   Note: CocoaPods steps (pod install) must be run on macOS.`);
   }
   
   // Parse command line arguments

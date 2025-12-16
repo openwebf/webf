@@ -21,9 +21,6 @@ dev_dependencies:
 
 flutter:
 
-# Information used by the publishing tool.
-publish_to: none
-
 topics:
   - webf
   - share

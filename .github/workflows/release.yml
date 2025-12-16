@@ -639,7 +639,7 @@ jobs:
 
   prepare-and-publish:
     name: Prepare and Publish WebF Package
-    runs-on: [self-hosted, macos]
+    runs-on: ubuntu-latest
     # Wait for all bridge builds and debug symbol collection
     needs: [build-windows, build-linux, build-macos, build-ios, build-android, collect-debug-symbols]
 
@@ -827,38 +827,41 @@ jobs:
             echo "⚠️ Android JNI libraries not found"
           fi
 
-      - name: Authenticate pub.dev for WebF
-        run: |
-          echo "🔐 Setting up pub.dev authentication..."
+      - name: Publish webf to pub.dev
+        uses: k-paxian/dart-package-publisher@master
+        with:
+          credentialJson: ${{ secrets.PUB_DEV_TOKEN }}
+          flutter: true
+          force: true
+          skipTests: true
+          relativePath: webf
 
-          # Add the pub.dev token for publishing
-          echo '${{ secrets.PUB_DEV_TOKEN }}' | dart pub token add https://pub.dev
+      - name: Publish webf_cupertino_ui to pub.dev
+        uses: k-paxian/dart-package-publisher@master
+        with:
+          credentialJson: ${{ secrets.PUB_DEV_TOKEN }}
+          flutter: true
+          force: true
+          skipTests: true
+          relativePath: webf_cupertino_ui
 
-          echo "✅ pub.dev authentication configured"
+      - name: Publish webf_deeplink to pub.dev
+        uses: k-paxian/dart-package-publisher@master
+        with:
+          credentialJson: ${{ secrets.PUB_DEV_TOKEN }}
+          flutter: true
+          force: true
+          skipTests: true
+          relativePath: webf_modules/deeplink
 
-      - name: Publish to pub.dev
-        run: |
-          echo "🚀 Publishing WebF to pub.dev..."
-
-          cd webf
-
-          # Run Flutter pub get to ensure dependencies are resolved
-          flutter pub get
-
-          # Publish to pub.dev (--force to skip confirmation)
-          dart pub publish --force
-
-          # Get version for success message
-          if [ -n "${{ inputs.version }}" ]; then
-            VERSION="${{ inputs.version }}"
-          elif [[ "${{ github.ref_name }}" == release/* ]]; then
-            VERSION="${{ github.ref_name }}"
-            VERSION="${VERSION#release/}"
-          else
-            VERSION="unknown"
-          fi
-
-          echo "✅ Successfully published WebF version $VERSION to pub.dev"
+      - name: Publish webf_share to pub.dev
+        uses: k-paxian/dart-package-publisher@master
+        with:
+          credentialJson: ${{ secrets.PUB_DEV_TOKEN }}
+          flutter: true
+          force: true
+          skipTests: true
+          relativePath: webf_modules/share
 
       - name: Summary
         run: |
@@ -871,13 +874,17 @@ jobs:
           else
             VERSION="unknown"
           fi
-          
-          echo "🎉 WebF package published successfully!"
+
+          echo "🎉 WebF packages published successfully!"
           echo "📋 Summary:"
           echo "   - Version: $VERSION"
           echo "   - Branch: ${{ github.ref_name }}"
           echo "   - Commit: ${{ github.sha }}"
-          echo "   - Published to: pub.dev (https://pub.dev/packages/webf)"
+          echo "   - Published packages:"
+          echo "     • webf (https://pub.dev/packages/webf)"
+          echo "     • webf_cupertino_ui (https://pub.dev/packages/webf_cupertino_ui)"
+          echo "     • webf_deeplink (https://pub.dev/packages/webf_deeplink)"
+          echo "     • webf_share (https://pub.dev/packages/webf_share)"
           echo "   - Debug symbols stored in Git LFS"
 
   create-pr-to-main:
