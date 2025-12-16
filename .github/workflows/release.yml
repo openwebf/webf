@@ -639,7 +639,7 @@ jobs:
 
   prepare-and-publish:
     name: Prepare and Publish WebF Package
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     # Wait for all bridge builds and debug symbol collection
     needs: [build-windows, build-linux, build-macos, build-ios, build-android, collect-debug-symbols]
 
