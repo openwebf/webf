@@ -952,8 +952,28 @@ class RenderGridLayout extends RenderLayoutBox {
         rowsDef = CSSGridParser.parseTrackList(raw, renderStyle, GRID_TEMPLATE_ROWS, Axis.vertical);
       }
     }
-    final double colGap = renderStyle.columnGap.computedValue;
-    final double rowGap = renderStyle.rowGap.computedValue;
+    double? gapBaseWidth = innerMaxWidth;
+    final double? gapLogicalBorderBoxWidth = renderStyle.borderBoxLogicalWidth;
+    if (renderStyle.width.isNotAuto &&
+        gapLogicalBorderBoxWidth != null &&
+        gapLogicalBorderBoxWidth.isFinite &&
+        gapLogicalBorderBoxWidth > 0) {
+      gapBaseWidth = math.max(0.0, gapLogicalBorderBoxWidth - horizontalPaddingBorder);
+    }
+
+    double? gapBaseHeight;
+    final double? gapLogicalBorderBoxHeight = renderStyle.borderBoxLogicalHeight;
+    if (renderStyle.height.isNotAuto &&
+        gapLogicalBorderBoxHeight != null &&
+        gapLogicalBorderBoxHeight.isFinite &&
+        gapLogicalBorderBoxHeight > 0) {
+      gapBaseHeight = math.max(0.0, gapLogicalBorderBoxHeight - verticalPaddingBorder);
+    } else if (hasBH && contentConstraints.minHeight == contentConstraints.maxHeight) {
+      gapBaseHeight = innerMaxHeight;
+    }
+
+    final double colGap = _resolveLengthValue(renderStyle.columnGap, gapBaseWidth);
+    final double rowGap = _resolveLengthValue(renderStyle.rowGap, gapBaseHeight);
 
     final double? contentAvailableWidth = innerMaxWidth;
     final List<GridTrackSize> autoColDefs = renderStyle.gridAutoColumns;
