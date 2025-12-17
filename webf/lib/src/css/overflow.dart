@@ -145,12 +145,6 @@ mixin ElementOverflowMixin on ElementBase {
     _scrollTo(x: x, y: y, withAnimation: withAnimation);
   }
 
-  void _ensureRenderObjectHasLayout() {
-    if (renderStyle.getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.needsLayout) == true) {
-      RendererBinding.instance.rootPipelineOwner.flushLayout();
-    }
-  }
-
   double get scrollLeft {
     if (scrollControllerX != null && scrollControllerX!.hasClients) {
       return scrollControllerX!.position.pixels;
@@ -166,7 +160,6 @@ mixin ElementOverflowMixin on ElementBase {
     if (!isRendererAttached) {
       return 0.0;
     }
-    _ensureRenderObjectHasLayout();
 
     flutter.ScrollController? scrollController = scrollControllerY;
 
@@ -183,7 +176,6 @@ mixin ElementOverflowMixin on ElementBase {
     if (!isRendererAttached) {
       return 0.0;
     }
-    _ensureRenderObjectHasLayout();
     flutter.ScrollController? scrollController = scrollControllerX;
 
     if (scrollController != null && scrollController.hasClients) {
@@ -198,28 +190,22 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get clientTop {
-    _ensureRenderObjectHasLayout();
     return renderStyle.effectiveBorderTopWidth.computedValue;
   }
 
   double get clientLeft {
-    _ensureRenderObjectHasLayout();
     return renderStyle.effectiveBorderLeftWidth.computedValue;
   }
 
   double get clientWidth {
-    _ensureRenderObjectHasLayout();
     return renderStyle.clientWidth() ?? 0.0;
   }
 
   double get clientHeight {
-    _ensureRenderObjectHasLayout();
     return renderStyle.clientHeight() ?? 0.0;
   }
 
   double get offsetWidth {
-    _ensureRenderObjectHasLayout();
-
     // For inline elements, calculate width from inline formatting context
     if (renderStyle.display == CSSDisplay.inline && isRendererAttached) {
       return _getInlineElementWidth();
@@ -230,8 +216,6 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get offsetHeight {
-    _ensureRenderObjectHasLayout();
-
     // For inline elements, calculate height from inline formatting context
     if (renderStyle.display == CSSDisplay.inline && isRendererAttached) {
       return _getInlineElementHeight();

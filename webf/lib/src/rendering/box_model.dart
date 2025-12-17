@@ -373,53 +373,14 @@ abstract class RenderBoxModel extends RenderBox
     needsRelayout = true;
   }
 
-  // Mirror debugDoingThisLayout flag in flutter.
-  // [debugDoingThisLayout] indicate whether [performLayout] for this render object is currently running.
-  bool doingThisLayout = false;
-
   // A flag to detect the size of this renderBox had changed during this layout.
   bool isSelfSizeChanged = false;
-
-  // Mirror debugNeedsLayout flag in Flutter to use in layout performance optimization
-  bool needsLayout = false;
-
-  @override
-  void markNeedsLayout() {
-    if (doingThisLayout) {
-      // Push delay the [markNeedsLayout] after owner [PipelineOwner] finishing current [flushLayout].
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        markNeedsLayout();
-      });
-      SchedulerBinding.instance.scheduleFrame();
-    } else {
-      needsLayout = true;
-      super.markNeedsLayout();
-      if ((!isSizeTight) && parent != null) {
-        markParentNeedsLayout();
-      }
-    }
-  }
 
   /// Mark children needs layout when drop child as Flutter did
   ///
   @override
   void dropChild(RenderObject child) {
     super.dropChild(child);
-    // Loop to mark all the children to needsLayout as flutter did
-    _syncChildNeedsLayoutFlag(child);
-  }
-
-  // @HACK: sync _needsLayout flag in Flutter to do performance opt.
-  void syncNeedsLayoutFlag() {
-    needsLayout = true;
-    visitChildren(_syncChildNeedsLayoutFlag);
-  }
-
-  /// Mark specified renderBoxModel needs layout
-  void _syncChildNeedsLayoutFlag(RenderObject child) {
-    if (child is RenderBoxModel) {
-      child.syncNeedsLayoutFlag();
-    }
   }
 
   void calculateBaseline();
@@ -427,14 +388,6 @@ abstract class RenderBoxModel extends RenderBox
   @override
   void layout(Constraints constraints, {bool parentUsesSize = false}) {
     renderBoxInLayoutHashCodes.add(hashCode);
-
-    if (hasSize) {
-      // Constraints changes between tight and no tight will cause reLayoutBoundary change
-      // which will then cause its children to be marked as needsLayout in Flutter
-      if ((constraints.isTight && !this.constraints.isTight) || (!constraints.isTight && this.constraints.isTight)) {
-        syncNeedsLayoutFlag();
-      }
-    }
     super.layout(constraints, parentUsesSize: parentUsesSize);
 
     renderBoxInLayoutHashCodes.remove(hashCode);
@@ -1043,7 +996,7 @@ abstract class RenderBoxModel extends RenderBox
     if (isScrollContainer && child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
       return;
     }
-  
+
     CSSRenderStyle style = (child as RenderBoxModel).renderStyle;
     Rect overflowRect = Rect.fromLTWH(
         childParentData.offset.dx, childParentData.offset.dy, child.boxSize!.width, child.boxSize!.height);
@@ -1086,7 +1039,6 @@ abstract class RenderBoxModel extends RenderBox
       positionedHolder!.preferredSize = Size.copy(size);
     }
 
-    needsLayout = false;
     dispatchResize(contentSize, boxSize ?? Size.zero);
 
     if (isSelfSizeChanged) {
@@ -1556,7 +1508,6 @@ abstract class RenderBoxModel extends RenderBox
     properties.add(DiagnosticsProperty('contentConstraints', contentConstraints, missingIfNull: true));
     properties.add(DiagnosticsProperty('maxScrollableSize', scrollableSize, missingIfNull: true));
     properties.add(DiagnosticsProperty('scrollableViewportSize', scrollableViewportSize, missingIfNull: true));
-    properties.add(DiagnosticsProperty('needsLayout', needsLayout, missingIfNull: true));
     properties.add(DiagnosticsProperty('isSizeTight', isSizeTight));
     properties.add(DiagnosticsProperty(
         'additionalPaintOffset', Offset(additionalPaintOffsetX ?? 0.0, additionalPaintOffsetY ?? 0.0)));

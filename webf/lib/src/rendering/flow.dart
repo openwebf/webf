@@ -530,22 +530,17 @@ class RenderFlowLayout extends RenderLayoutBox {
   @override
   void performLayout() {
     try {
-      doingThisLayout = true;
-
       _doPerformLayout();
 
       if (needsRelayout) {
         _doPerformLayout();
         needsRelayout = false;
       }
-
-      doingThisLayout = false;
     } catch (e, stack) {
       if (!kReleaseMode) {
         layoutExceptions = '$e\n$stack';
         reportException('performLayout', e, stack);
       }
-      doingThisLayout = false;
       rethrow;
     }
   }
@@ -934,20 +929,8 @@ class RenderFlowLayout extends RenderLayoutBox {
         childConstraints = constraints;
       }
 
-      // Whether child need to layout.
-      bool isChildNeedsLayout = true;
-
-      if (child.hasSize &&
-          !needsRelayout &&
-          (childConstraints == child.constraints) &&
-          ((child is RenderBoxModel && !child.needsLayout))) {
-        isChildNeedsLayout = false;
-      }
-
-      if (isChildNeedsLayout) {
-        bool parentUseSize = !(child is RenderBoxModel && child.isSizeTight || child is RenderPositionPlaceholder);
-        child.layout(childConstraints, parentUsesSize: parentUseSize);
-      }
+      bool parentUseSize = !(child is RenderBoxModel && child.isSizeTight || child is RenderPositionPlaceholder);
+      child.layout(childConstraints, parentUsesSize: parentUseSize);
 
       double childMainAxisExtent = RenderFlowLayout.getPureMainAxisExtent(child);
       double childCrossAxisExtent = _getCrossAxisExtent(child);

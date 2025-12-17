@@ -184,7 +184,7 @@ class CSSPositionedLayout {
 
     // Whether child need to layout
     bool isChildNeedsLayout = true;
-    if (child.hasSize && !needsRelayout && (childConstraints == child.constraints) && (!child.needsLayout)) {
+    if (child.hasSize && !needsRelayout && (childConstraints == child.constraints)) {
       isChildNeedsLayout = false;
     }
 
