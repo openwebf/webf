@@ -63,7 +63,7 @@ describe('CSS Grid template areas', () => {
     grid.remove();
   });
 
-  xit('auto places when grid-area references unknown name', async () => {
+  it('auto places when grid-area references unknown name', async () => {
     const { grid } = buildGrid();
     const orphan = document.createElement('div');
     orphan.textContent = 'orphan';
