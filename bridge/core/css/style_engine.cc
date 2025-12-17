@@ -36,12 +36,14 @@
 #include <cctype>
 #include <span>
 #include <unordered_map>
+#include <unordered_set>
 #include "core/css/invalidation/invalidation_set.h"
 #include "core/css/css_property_name.h"
 #include "core/css/css_property_value_set.h"
 #include "core/css/css_style_sheet.h"
 #include "core/css/css_value.h"
 #include "core/css/media_query_evaluator.h"
+#include "core/css/style_rule_import.h"
 #include "core/css/style_sheet_contents.h"
 #include "core/css/style_rule.h"
 #include "core/css/properties/css_property.h"
@@ -56,9 +58,6 @@
 // StyleRecalcChange / StyleRecalcContext API surface (Blink-style).
 #include "core/css/style_recalc_change.h"
 #include "core/css/style_recalc_context.h"
-#include "core/html/html_body_element.h"
-#include "core/html/html_style_element.h"
-#include "html_names.h"
 // Logging and pending substitution value support
 #include "foundation/logging.h"
 #include "bindings/qjs/native_string_utils.h"
@@ -74,7 +73,6 @@
 #include "core/css/invalidation/style_invalidator.h"
 #include "core/dom/container_node.h"
 #include "core/dom/node_traversal.h"
-#include "core/dom/element_traversal.h"
 #include "core/dom/qualified_name.h"
 
 namespace webf {
@@ -231,77 +229,111 @@ static String TrimAsciiWhitespace(const String& input) {
   return String::FromUTF8(s.c_str() + start, end - start);
 }
 
-// Collect viewport-dependent media query evaluation results from a single
+// Collect size-dependent media query evaluation results from a single
 // StyleSheetContents into |out_results| using the provided |evaluator|.
-// This walks @media rules (including nested group rules) and records only
-// those queries whose evaluation depends on viewport size. The order of
-// results is deterministic for a given stylesheet, which lets
-// MediaQueryAffectingValueChanged compare consecutive snapshots cheaply.
-static void CollectViewportDependentMediaQueryResults(
+// This walks @media rules (including nested group rules) as well as supported
+// @import rules (recursively) and records only queries whose evaluation depends
+// on viewport or device size. The order of results is deterministic for a given
+// stylesheet, which lets MediaQueryAffectingValueChanged compare consecutive
+// snapshots cheaply.
+static void CollectSizeDependentMediaQueryResults(
     StyleSheetContents& contents,
     const MediaQueryEvaluator& evaluator,
-    std::vector<MediaQuerySetResult>& out_results) {
-  if (!contents.HasMediaQueries()) {
+    std::vector<MediaQuerySetResult>& out_results,
+    std::unordered_set<const StyleSheetContents*>& visited) {
+  if (!visited.insert(&contents).second) {
     return;
   }
 
-  auto collect_from_child_vector =
-      [&](const StyleRuleBase::ChildRuleVector& child_rules,
-          const auto& self_ref) -> void {
-        uint32_t count = child_rules.size();
-        for (uint32_t i = 0; i < count; ++i) {
-          const std::shared_ptr<const StyleRuleBase>& base_rule_const = child_rules[i];
-          if (!base_rule_const) {
-            continue;
-          }
-          StyleRuleBase* base_rule = const_cast<StyleRuleBase*>(base_rule_const.get());
+  auto is_size_dependent = [](const MediaQueryResultFlags& flags) -> bool {
+    return flags.is_viewport_dependent || flags.is_device_dependent;
+  };
 
-          if (base_rule->IsMediaRule()) {
-            auto* media_rule = DynamicTo<StyleRuleMedia>(base_rule);
-            if (media_rule) {
-              const MediaQuerySet* queries = media_rule->MediaQueries();
-              if (queries) {
-                MediaQueryResultFlags flags;
-                bool match = evaluator.Eval(*queries, &flags);
-                if (flags.is_viewport_dependent) {
-                  out_results.emplace_back(*queries, match);
-                }
-              }
-              self_ref(media_rule->ChildRules(), self_ref);
-              continue;
+  auto collect_from_child_vector =
+      [&](const StyleRuleBase::ChildRuleVector& child_rules, const auto& self_ref) -> void {
+    uint32_t count = child_rules.size();
+    for (uint32_t i = 0; i < count; ++i) {
+      const std::shared_ptr<const StyleRuleBase>& base_rule_const = child_rules[i];
+      if (!base_rule_const) {
+        continue;
+      }
+      StyleRuleBase* base_rule = const_cast<StyleRuleBase*>(base_rule_const.get());
+
+      if (base_rule->IsMediaRule()) {
+        auto* media_rule = DynamicTo<StyleRuleMedia>(base_rule);
+        if (media_rule) {
+          std::shared_ptr<const MediaQuerySet> queries = media_rule->MediaQueriesShared();
+          if (queries) {
+            MediaQueryResultFlags flags;
+            bool match = evaluator.Eval(*queries, &flags);
+            if (is_size_dependent(flags)) {
+              out_results.emplace_back(std::move(queries), match);
             }
           }
-
-          if (auto* group_rule = DynamicTo<StyleRuleGroup>(base_rule)) {
-            self_ref(group_rule->ChildRules(), self_ref);
-          }
+          self_ref(media_rule->ChildRules(), self_ref);
+          continue;
         }
-      };
+      }
 
-  const auto& top_rules = contents.ChildRules();
-  for (const auto& base_rule : top_rules) {
-    if (!base_rule) {
+      if (auto* group_rule = DynamicTo<StyleRuleGroup>(base_rule)) {
+        self_ref(group_rule->ChildRules(), self_ref);
+      }
+    }
+  };
+
+  if (contents.HasMediaQueries()) {
+    const auto& top_rules = contents.ChildRules();
+    for (const auto& base_rule : top_rules) {
+      if (!base_rule) {
+        continue;
+      }
+      StyleRuleBase* rule = base_rule.get();
+      if (rule->IsMediaRule()) {
+        auto* media_rule = DynamicTo<StyleRuleMedia>(rule);
+        if (media_rule) {
+          std::shared_ptr<const MediaQuerySet> queries = media_rule->MediaQueriesShared();
+          if (queries) {
+            MediaQueryResultFlags flags;
+            bool match = evaluator.Eval(*queries, &flags);
+            if (is_size_dependent(flags)) {
+              out_results.emplace_back(std::move(queries), match);
+            }
+          }
+          collect_from_child_vector(media_rule->ChildRules(), collect_from_child_vector);
+          continue;
+        }
+      }
+
+      if (auto* group_rule = DynamicTo<StyleRuleGroup>(rule)) {
+        collect_from_child_vector(group_rule->ChildRules(), collect_from_child_vector);
+      }
+    }
+  }
+
+  // Include @import conditions and recurse into imported sheets when the
+  // import is currently active (i.e. supported + matching media).
+  for (const auto& import_rule : contents.ImportRules()) {
+    if (!import_rule || !import_rule->IsSupported()) {
       continue;
     }
-    StyleRuleBase* rule = base_rule.get();
-    if (rule->IsMediaRule()) {
-      auto* media_rule = DynamicTo<StyleRuleMedia>(rule);
-      if (media_rule) {
-        const MediaQuerySet* queries = media_rule->MediaQueries();
-        if (queries) {
-          MediaQueryResultFlags flags;
-          bool match = evaluator.Eval(*queries, &flags);
-          if (flags.is_viewport_dependent) {
-            out_results.emplace_back(*queries, match);
-          }
-        }
-        collect_from_child_vector(media_rule->ChildRules(), collect_from_child_vector);
-        continue;
+
+    std::shared_ptr<const MediaQuerySet> queries = import_rule->MediaQueries();
+    MediaQueryResultFlags flags;
+    bool match = true;
+    if (queries) {
+      match = evaluator.Eval(*queries, &flags);
+      if (is_size_dependent(flags)) {
+        out_results.emplace_back(std::move(queries), match);
       }
     }
 
-    if (auto* group_rule = DynamicTo<StyleRuleGroup>(rule)) {
-      collect_from_child_vector(group_rule->ChildRules(), collect_from_child_vector);
+    if (!match) {
+      continue;
+    }
+
+    std::shared_ptr<StyleSheetContents> child = import_rule->GetStyleSheet();
+    if (child) {
+      CollectSizeDependentMediaQueryResults(*child, evaluator, out_results, visited);
     }
   }
 }
@@ -931,7 +963,7 @@ void StyleEngine::SetNeedsActiveStyleUpdate() {
 
   // Any structural change to the active stylesheet set (insert/remove/modify
   // <style> / <link rel=stylesheet>) invalidates the cached media query
-  // evaluation snapshot used for viewport-size gating. The next
+  // evaluation snapshot used for size-change gating. The next
   // MediaQueryAffectingValueChanged(kSize) call will rebuild it.
   size_media_query_results_.clear();
 
@@ -1927,93 +1959,63 @@ void StyleEngine::MediaQueryAffectingValueChanged(MediaValueChange change) {
     return;
   }
 
-  // Clear cached RuleSets for any author stylesheets that contain media
-  // queries so they will be rebuilt with a fresh MediaValues snapshot
-  // (including the updated environment input) the next time styles are
-  // resolved.
+  // In Blink, media-value changes invalidate active stylesheet RuleSets and
+  // trigger an active-style update when needed. WebF uses a text cache for
+  // inline <style> sheets; cached StyleSheetContents may be reused later, so
+  // clear RuleSets for cached-but-inactive entries to avoid reusing a RuleSet
+  // built against stale MediaValues.
+  std::unordered_set<const StyleSheetContents*> active_contents;
+  active_contents.reserve(author_sheets_.size());
   for (const auto& contents : author_sheets_) {
+    if (contents) {
+      active_contents.insert(contents.get());
+    }
+  }
+
+  for (auto& entry : text_to_sheet_cache_) {
+    const auto& contents = entry.second;
     if (!contents) {
       continue;
     }
-    // For now we conservatively clear rule sets for all author
-    // stylesheets whenever an environment-dependent media value
-    // changes so that their media queries are re-evaluated using
-    // fresh MediaValues snapshots.
+    if (active_contents.find(contents.get()) != active_contents.end()) {
+      continue;
+    }
+    if (!contents->HasMediaQueries() && contents->ImportRules().empty()) {
+      continue;
+    }
     contents->ClearRuleSet();
   }
 
-  // Also clear cached RuleSets for any style sheets cached by text
-  // (typically inline <style> elements). These contents may be reused
-  // across multiple HTMLStyleElement instances, so we must ensure their
-  // media queries (including prefers-color-scheme) are re-evaluated
-  // against the updated MediaValues on the next style resolution.
-  for (auto& entry : text_to_sheet_cache_) {
-    const auto& contents = entry.second;
-    if (contents) {
-      contents->ClearRuleSet();
-    }
-  }
-
-  // Additionally, walk the DOM to clear RuleSets for any inline
-  // <style> elements whose contents are not in the shared text cache.
-  // This ensures dynamically created inline stylesheets also respond
-  // to environment-dependent media value changes such as
-  // prefers-color-scheme.
-  Element* root_element = document.documentElement();
-  if (root_element) {
-    std::function<void(Node*)> walk = [&](Node* node) {
-      if (!node) {
-        return;
-      }
-
-      if (node->IsElementNode()) {
-        Element* elem = static_cast<Element*>(node);
-        if (elem->HasTagName(html_names::kStyle)) {
-          auto* html_style = static_cast<HTMLStyleElement*>(elem);
-          CSSStyleSheet* sheet = html_style->sheet();
-          if (sheet) {
-            auto contents = sheet->Contents();
-            if (contents) {
-              contents->ClearRuleSet();
-            }
-          }
-        }
-      }
-
-      for (Node* child = node->firstChild(); child; child = child->nextSibling()) {
-        walk(child);
-      }
-    };
-    walk(root_element);
-  }
-
   // For viewport size changes, mirror Blink's behavior and gate full style
-  // recomputation on whether the set of viewport-dependent media queries
-  // actually changed. This lets pure resize within a breakpoint range skip
+  // recomputation on whether the set of size-dependent (viewport/device)
+  // media queries actually changed. This lets pure resize within a breakpoint
+  // range skip
   // style recalc and rely on layout-only updates instead.
   if (change == MediaValueChange::kSize) {
     MediaQueryEvaluator evaluator(context);
     std::vector<MediaQuerySetResult> new_results;
+    std::unordered_set<const StyleSheetContents*> visited;
+    visited.reserve(author_sheets_.size());
 
     for (const auto& contents : author_sheets_) {
       if (!contents) {
         continue;
       }
-      CollectViewportDependentMediaQueryResults(*contents, evaluator, new_results);
+      CollectSizeDependentMediaQueryResults(*contents, evaluator, new_results, visited);
     }
 
     if (new_results.empty()) {
-      // No viewport-dependent media queries at all: resizing cannot change
+      // No size-dependent media queries at all: resizing cannot change
       // which stylesheets or @media blocks are active, so skip style recalc.
       size_media_query_results_.clear();
       WEBF_LOG(VERBOSE) << "[StyleEngine] MediaQueryAffectingValueChanged(kSize): "
-                           "no viewport-dependent media queries; skipping style recalc.";
+                           "no size-dependent media queries; skipping style recalc.";
       return;
     }
 
     bool changed = false;
     if (size_media_query_results_.empty()) {
-      // First time we see viewport-dependent queries for this document; force
+      // First time we see size-dependent queries for this document; force
       // one style recomputation and establish a baseline for future resizes.
       changed = true;
     } else if (size_media_query_results_.size() != new_results.size()) {
@@ -2037,12 +2039,21 @@ void StyleEngine::MediaQueryAffectingValueChanged(MediaValueChange change) {
 
     if (!changed) {
       WEBF_LOG(VERBOSE) << "[StyleEngine] MediaQueryAffectingValueChanged(kSize): "
-                           "viewport-dependent media query set unchanged; skipping style recalc.";
+                           "size-dependent media query set unchanged; skipping style recalc.";
       return;
     }
 
     Element* root = document.documentElement();
     if (root) {
+      // Rebuild RuleSets for active author stylesheets against fresh MediaValues.
+      for (const auto& contents : author_sheets_) {
+        if (contents && (contents->HasMediaQueries() || !contents->ImportRules().empty())) {
+          contents->ClearRuleSet();
+        }
+      }
+      if (global_rule_set_) {
+        global_rule_set_->MarkDirty();
+      }
       root->SetNeedsStyleRecalc(
           kSubtreeStyleChange,
           StyleChangeReasonForTracing::Create(style_change_reason::kStyleRuleChange));
@@ -2060,6 +2071,14 @@ void StyleEngine::MediaQueryAffectingValueChanged(MediaValueChange change) {
     case MediaValueChange::kDynamicViewport:
     case MediaValueChange::kOther:
       if (Element* root = document.documentElement()) {
+        for (const auto& contents : author_sheets_) {
+          if (contents && (contents->HasMediaQueries() || !contents->ImportRules().empty())) {
+            contents->ClearRuleSet();
+          }
+        }
+        if (global_rule_set_) {
+          global_rule_set_->MarkDirty();
+        }
         root->SetNeedsStyleRecalc(
             kSubtreeStyleChange,
             StyleChangeReasonForTracing::Create(style_change_reason::kStyleRuleChange));

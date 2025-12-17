@@ -282,8 +282,9 @@ class StyleEngine final {
   // StyleSheetContents used for rule matching / invalidation.
   std::vector<CSSStyleSheet*> author_css_sheets_;
   std::vector<std::shared_ptr<StyleSheetContents>> author_sheets_;
-  // Cached evaluation results for viewport-dependent media queries across all
-  // active author stylesheets. This is used as a gate in
+  // Cached evaluation results for size-dependent (viewport/device) media query
+  // sets across all active author stylesheets (including @import conditions).
+  // This is used as a gate in
   // MediaQueryAffectingValueChanged(MediaValueChange::kSize) to skip full
   // style recomputation when the active set of media queries has not changed.
   std::vector<MediaQuerySetResult> size_media_query_results_;
