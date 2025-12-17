@@ -22,12 +22,12 @@ final List<String> supportedFonts = [
   'data'
 ];
 
-class _Font {
+class FontSource {
   String src = '';
   String format = '';
   Uint8List content = Uint8List(0);
-  _Font(this.src, this.format);
-  _Font.content(Uint8List value) {
+  FontSource(this.src, this.format);
+  FontSource.content(Uint8List value) {
     src = '';
     format = 'data';
     content = value;
@@ -38,7 +38,7 @@ class FontFaceDescriptor {
   final String fontFamily;
   final FontWeight fontWeight;
   final FontStyle fontStyle;
-  final _Font font;
+  final FontSource font;
   final double contextId;
   final String? baseHref;
   bool isLoaded = false;
@@ -88,7 +88,7 @@ class CSSFontFace {
       FontStyle fontStyle = fontStyleStr == 'italic' ? FontStyle.italic : FontStyle.normal;
 
       List<CSSFunctionalNotation> functions = CSSFunction.parseFunction(url);
-      List<_Font> fonts = [];
+      List<FontSource> fonts = [];
 
       for(int i = 0; i < functions.length; i ++) {
         CSSFunctionalNotation notation = functions[i];
@@ -103,18 +103,20 @@ class CSSFontFace {
               try {
                 Uint8List decoded = base64Decode(base64);
                 if (decoded.isNotEmpty) {
-                  fonts.add(_Font.content(decoded));
+                  fonts.add(FontSource.content(decoded));
                 }
-              } catch(e) {}
+              } catch (e) {
+                // Ignore invalid base64 font data.
+              }
             }
           } else {
             String formatFromExt = tmpSrc.split('.').last;
-            fonts.add(_Font(tmpSrc, formatFromExt));
+            fonts.add(FontSource(tmpSrc, formatFromExt));
           }
         }
       }
 
-      _Font? targetFont = fonts.firstWhereOrNull((f) {
+      FontSource? targetFont = fonts.firstWhereOrNull((f) {
         return supportedFonts.contains(f.format);
       });
 

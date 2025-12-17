@@ -33,19 +33,13 @@ class RouterLinkElement extends WidgetElement {
   @override
   bool get isRouterLinkElement => true;
 
-  String _path = '';
-
-  String get path => _path;
-
-  set path(String value) {
-    _path = value;
-  }
+  String path = '';
 
   @override
-  void setAttribute(String key, String value) {
-    super.setAttribute(key, value);
+  void setAttribute(String qualifiedName, String value) {
+    super.setAttribute(qualifiedName, value);
 
-    if (key == 'path') {
+    if (qualifiedName == 'path') {
       path = value;
     }
   }
@@ -62,14 +56,14 @@ class RouterLinkElement extends WidgetElement {
   List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _routeLinkProperties];
 
   @override
-  flutter.Key get key => flutter.ValueKey('WEBF_ROUTER_LINK_$_path');
+  flutter.Key get key => flutter.ValueKey('WEBF_ROUTER_LINK_$path');
 
 
   @override
   void connectedCallback() {
     super.connectedCallback();
-    if (_path.isNotEmpty) {
-      ownerView.setHybridRouterView(_path, this);
+    if (path.isNotEmpty) {
+      ownerView.setHybridRouterView(path, this);
     }
 
     if (path == ownerDocument.controller.initialRoute) {
@@ -84,14 +78,14 @@ class RouterLinkElement extends WidgetElement {
   @override
   void disconnectedCallback() {
     super.disconnectedCallback();
-    if (_path.isNotEmpty) {
-      ownerView.removeHybridRouterView(_path);
+    if (path.isNotEmpty) {
+      ownerView.removeHybridRouterView(path);
     }
   }
 
   @override
   String toString({flutter.DiagnosticLevel minLevel = flutter.DiagnosticLevel.info}) {
-    return 'RouterLinkElement [path=$_path]';
+    return 'RouterLinkElement [path=$path]';
   }
 
   @override

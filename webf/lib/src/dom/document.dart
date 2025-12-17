@@ -737,9 +737,7 @@ class Document extends ContainerNode {
   @override
   bool get isRendererAttached => viewport?.attached == true;
 
-  @override
   bool get isRendererAttachedToSegmentTree => viewport?.parent != null;
-
 
   void addIntersectionObserver(IntersectionObserver observer, Element element) {
     if (enableWebFCommandLog) {
@@ -754,7 +752,7 @@ class Document extends ContainerNode {
       domLogger.fine('[IntersectionObserver] document remove observer=${observer.pointer} target=${element.pointer}');
     }
     observer.unobserve(element);
-    if (!observer.HasObservations()) {
+    if (!observer.hasObservations()) {
       _intersectionObserverList.remove(observer);
     }
   }

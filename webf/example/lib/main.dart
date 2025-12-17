@@ -331,16 +331,16 @@ class MyAppState extends State<MyApp> {
           print('Set page to react_use_cases with route: $targetRoute');
 
           // Use a delayed navigation to ensure the Navigator is ready
-          Future.delayed(Duration(milliseconds: 100), () async {
-            final context = navigatorKey.currentContext;
-            if (context != null && mounted) {
-              Navigator.push(context, MaterialPageRoute(builder: (context) {
-                return WebFDemo(
-                  webfPageName: 'react_use_cases',
-                  initialRoute: targetRoute,
-                );
-              }));
-            }
+          Future.delayed(Duration(milliseconds: 100), () {
+            if (!mounted) return;
+            final navigator = navigatorKey.currentState;
+            if (navigator == null) return;
+            navigator.push(MaterialPageRoute(builder: (_) {
+              return WebFDemo(
+                webfPageName: 'react_use_cases',
+                initialRoute: targetRoute,
+              );
+            }));
           });
         }
       }
@@ -659,7 +659,7 @@ class WebFDemo extends StatefulWidget {
   const WebFDemo({super.key, required this.webfPageName, this.initialRoute = '/', this.initialState});
 
   @override
-  _WebFDemoState createState() => _WebFDemoState();
+  State<WebFDemo> createState() => _WebFDemoState();
 }
 
 class _WebFDemoState extends State<WebFDemo> {

@@ -14,7 +14,7 @@ import 'package:webf/src/module/module_manager.dart';
 
 String? _customUserAgent;
 
-class NavigatorModule extends BaseModule {
+class NavigatorModule extends WebFBaseModule {
   @override
   String get name => 'Navigator';
 

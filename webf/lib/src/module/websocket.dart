@@ -20,7 +20,7 @@ class _WebSocketState {
   _WebSocketState(this.status);
 }
 
-class WebSocketModule extends BaseModule {
+class WebSocketModule extends WebFBaseModule {
   @override
   String get name => 'WebSocket';
 

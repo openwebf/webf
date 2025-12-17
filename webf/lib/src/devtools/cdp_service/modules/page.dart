@@ -70,7 +70,7 @@ class Frame extends JSONEncodable {
   String? unreachableUrl;
 
   // Indicates whether this frame was tagged as an ad.
-  String? AdFrameType;
+  String? adFrameType;
 
   // Indicates whether the main document is a secure context and explains why that is the case.
   final String secureContextType;
@@ -83,7 +83,7 @@ class Frame extends JSONEncodable {
 
   Frame(this.id, this.loaderId, this.url, this.domainAndRegistry, this.securityOrigin, this.mimeType,
       this.secureContextType, this.crossOriginIsolatedContextType, this.gatedAPIFeatures,
-      {this.parentId, this.name, this.urlFragment, this.unreachableUrl, this.AdFrameType});
+      {this.parentId, this.name, this.urlFragment, this.unreachableUrl, this.adFrameType});
 
   @override
   Map toJson() {
@@ -103,7 +103,7 @@ class Frame extends JSONEncodable {
     if (name != null) map['name'] = name;
     if (urlFragment != null) map['urlFragment'] = urlFragment;
     if (unreachableUrl != null) map['unreachableUrl'] = unreachableUrl;
-    if (AdFrameType != null) map['AdFrameType'] = AdFrameType;
+    if (adFrameType != null) map['AdFrameType'] = adFrameType;
     return map;
   }
 }

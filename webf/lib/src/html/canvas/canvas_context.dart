@@ -58,15 +58,15 @@ class CanvasImageSource {
 
   void _fillCanvasImageSource(source) {
     if (source is ImageElement) {
-      image_element = source;
+      imageElement = source;
     } else if (source is CanvasElement) {
-      canvas_element = source;
+      canvasElement = source;
     }
   }
 
-  ImageElement? image_element;
+  ImageElement? imageElement;
 
-  CanvasElement? canvas_element;
+  CanvasElement? canvasElement;
 }
 
 abstract class CanvasFillStrokeStyles {
@@ -125,8 +125,8 @@ class CanvasGradient extends DynamicBindingObject {
   }
 
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    super.initializeMethods(methods);
+  void initializeDynamicMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeDynamicMethods(methods);
     methods['addColorStop'] =
         BindingObjectMethodSync(call: (args) => addColorStop(castToType<num>(args[0]), castToType<String>(args[1])));
   }
@@ -159,8 +159,8 @@ class CanvasPattern extends DynamicBindingObject {
   }
 
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    super.initializeMethods(methods);
+  void initializeDynamicMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeDynamicMethods(methods);
     methods['setTransform'] = BindingObjectMethodSync(call: (args) {
       BindingObject domMatrix = args[0];
       if (domMatrix is DOMMatrix) {
@@ -169,10 +169,6 @@ class CanvasPattern extends DynamicBindingObject {
     });
   }
 
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    super.initializeProperties(properties);
-  }
 }
 
 class CanvasLinearGradient extends CanvasGradient {

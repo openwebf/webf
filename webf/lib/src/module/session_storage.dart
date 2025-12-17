@@ -10,7 +10,7 @@ import 'dart:async';
 import 'package:webf/module.dart';
 import 'package:webf/launcher.dart';
 
-class SessionStorageModule extends BaseModule {
+class SessionStorageModule extends WebFBaseModule {
   @override
   String get name => 'SessionStorage';
 

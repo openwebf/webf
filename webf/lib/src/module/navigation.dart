@@ -36,7 +36,7 @@ enum WebFNavigationType {
   prerender
 }
 
-class NavigationModule extends BaseModule {
+class NavigationModule extends WebFBaseModule {
   @override
   String get name => 'Navigation';
 

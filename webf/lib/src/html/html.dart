@@ -28,7 +28,6 @@ class HTMLElement extends Element {
     });
   }
 
-  @override
   bool get managedByFlutterWidget => true;
 
   @override
@@ -72,7 +71,6 @@ class HTMLElement extends Element {
   }
 
   // Is child renderObject attached to the render object tree segment, and may be this segment are not attached to flutter.
-  @override
   bool get isRendererAttachedToSegmentTree => attachedRenderer != null;
 
   void _markEntireRenderObjectTreeNeedsLayout() {

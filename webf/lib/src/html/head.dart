@@ -582,8 +582,8 @@ mixin StyleElementMixin on Element {
   int? _lastStyleSheetSignature;
 
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    super.initializeProperties(properties);
+  void initializeDynamicProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeDynamicProperties(properties);
     properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = castToType<String>(value));
   }
 

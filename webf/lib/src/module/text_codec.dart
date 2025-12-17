@@ -11,7 +11,7 @@ import 'dart:convert';
 
 import 'package:webf/src/module/module_manager.dart';
 
-class TextCodecModule extends BaseModule {
+class TextCodecModule extends WebFBaseModule {
   @override
   String get name => 'TextCodec';
   TextCodecModule(super.moduleManager);

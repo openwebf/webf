@@ -182,7 +182,7 @@ void main() {
       try {
         await tester.pump();
 
-      final SemanticsOwner semanticsOwner = tester.binding.pipelineOwner.semanticsOwner!;
+      final SemanticsOwner semanticsOwner = tester.binding.rootPipelineOwner.semanticsOwner!;
       final SemanticsNode root = semanticsOwner.rootSemanticsNode!;
 
       final SemanticsNode? scrollNodeBefore = _findFirstScrollableNode(root);
@@ -236,7 +236,7 @@ void main() {
       try {
         await tester.pump();
 
-        final SemanticsOwner semanticsOwner = tester.binding.pipelineOwner.semanticsOwner!;
+        final SemanticsOwner semanticsOwner = tester.binding.rootPipelineOwner.semanticsOwner!;
         final SemanticsNode root = semanticsOwner.rootSemanticsNode!;
 
         final List<String> labels = _collectTraversalLabels(root);
@@ -283,7 +283,7 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 50));
 
-        final SemanticsOwner semanticsOwner = tester.binding.pipelineOwner.semanticsOwner!;
+        final SemanticsOwner semanticsOwner = tester.binding.rootPipelineOwner.semanticsOwner!;
         SemanticsNode root = semanticsOwner.rootSemanticsNode!;
 
         final SemanticsNode? msg1Before = _findSemanticsNodeWithLabel(root, 'Message 1');

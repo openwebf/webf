@@ -56,14 +56,14 @@ enum ImageType {
 }
 
 class WebFResizeImage extends ResizeImage {
-  WebFResizeImage(
+  const WebFResizeImage(
     super.imageProvider, {
     super.width,
     super.height,
     this.objectFit,
   });
 
-  BoxFit? objectFit;
+  final BoxFit? objectFit;
 
   static ImageProvider<Object> resizeIfNeeded(
       int? cacheWidth, int? cacheHeight, BoxFit? objectFit, ImageProvider provider) {

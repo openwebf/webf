@@ -273,11 +273,11 @@ class ScriptElement extends Element {
   final String _type = _MIME_TEXT_JAVASCRIPT;
 
   Uri? _resolvedSource;
-  ScriptReadyState _readyState = ScriptReadyState.loading;
+  ScriptReadyState readyState = ScriptReadyState.loading;
 
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    super.initializeProperties(properties);
+  void initializeDynamicProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeDynamicProperties(properties);
 
     properties['src'] = BindingObjectProperty(getter: () => src, setter: (value) => src = castToType<String>(value));
     properties['async'] =
@@ -350,12 +350,6 @@ class ScriptElement extends Element {
 
   set text(String value) {
     internalSetAttribute('text', value);
-  }
-
-  ScriptReadyState get readyState => _readyState;
-
-  set readyState(ScriptReadyState readyState) {
-    _readyState = readyState;
   }
 
   void _resolveSource(String source) {

@@ -31,8 +31,8 @@ class FlutterTextAreaElement extends WidgetElement with BaseInputElement {
 
 
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    super.initializeProperties(properties);
+  void initializeDynamicProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeDynamicProperties(properties);
     // Ensure `textarea.value` property maps to element value storage.
     properties['value'] = BindingObjectProperty(getter: () => value, setter: (v) => value = v);
     // Optionally expose defaultValue for symmetry; this mirrors BaseInputElement behavior.
@@ -40,8 +40,8 @@ class FlutterTextAreaElement extends WidgetElement with BaseInputElement {
   }
 
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    super.initializeMethods(methods);
+  void initializeDynamicMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeDynamicMethods(methods);
     methods['blur'] = BindingObjectMethodSync(call: (List args) {
       state?.blur();
     });

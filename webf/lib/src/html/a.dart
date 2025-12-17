@@ -164,25 +164,25 @@ class HTMLAnchorElement extends Element {
     // Set href will not reflect to attribute href.
   }
 
-  String get target => _DOMString(getAttribute('target'));
+  String get target => _domString(getAttribute('target'));
 
   set target(String value) {
     internalSetAttribute('target', value);
   }
 
-  String get rel => _DOMString(getAttribute('rel'));
+  String get rel => _domString(getAttribute('rel'));
 
   set rel(String value) {
     internalSetAttribute('rel', value);
   }
 
-  String get type => _DOMString(getAttribute('type'));
+  String get type => _domString(getAttribute('type'));
 
   set type(String value) {
     internalSetAttribute('type', value);
   }
 
-  String get protocol => '${_DOMString(_resolvedHyperlink?.scheme)}:';
+  String get protocol => '${_domString(_resolvedHyperlink?.scheme)}:';
 
   set protocol(String value) {
     if (_resolvedHyperlink == null) return;
@@ -204,7 +204,7 @@ class HTMLAnchorElement extends Element {
     if (resolved != null) {
       host = '${resolved.host}:${resolved.hasPort ? resolved.port.toString() : ''}';
     }
-    return _DOMString(host);
+    return _domString(host);
   }
 
   set host(String value) {
@@ -223,7 +223,7 @@ class HTMLAnchorElement extends Element {
     _reflectToAttributeHref();
   }
 
-  String get hostname => _DOMString(_resolvedHyperlink?.host);
+  String get hostname => _domString(_resolvedHyperlink?.host);
 
   set hostname(String value) {
     if (_resolvedHyperlink == null) return;
@@ -231,7 +231,7 @@ class HTMLAnchorElement extends Element {
     _reflectToAttributeHref();
   }
 
-  String get port => _DOMString(_resolvedHyperlink?.port.toString());
+  String get port => _domString(_resolvedHyperlink?.port.toString());
 
   set port(String value) {
     if (_resolvedHyperlink == null) return;
@@ -242,7 +242,7 @@ class HTMLAnchorElement extends Element {
     }
   }
 
-  String get pathname => _DOMString(_resolvedHyperlink?.path);
+  String get pathname => _domString(_resolvedHyperlink?.path);
 
   set pathname(String value) {
     if (_resolvedHyperlink == null) return;
@@ -256,7 +256,7 @@ class HTMLAnchorElement extends Element {
     if (query != null && query.isNotEmpty) {
       search = '?$query';
     }
-    return _DOMString(search);
+    return _domString(search);
   }
 
   set search(String value) {
@@ -270,7 +270,7 @@ class HTMLAnchorElement extends Element {
     _reflectToAttributeHref();
   }
 
-  String get hash => _DOMString(_resolvedHyperlink?.fragment);
+  String get hash => _domString(_resolvedHyperlink?.fragment);
 
   set hash(String value) {
     if (_resolvedHyperlink == null) return;
@@ -279,7 +279,7 @@ class HTMLAnchorElement extends Element {
   }
 
   // Web IDL attributes must return DOMString, it's a non-null value.
-  String _DOMString(String? input) {
+  String _domString(String? input) {
     return input ?? '';
   }
 

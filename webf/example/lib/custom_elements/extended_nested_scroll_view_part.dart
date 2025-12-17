@@ -137,6 +137,7 @@ class _ExtendedNestedScrollCoordinator extends _NestedScrollCoordinator {
     final RenderViewport? parent = findParentRenderViewport(renderObject);
     if (parent != null && parent.axis == axis) {
       for (final RenderSliver childrenInPaint
+      // ignore: invalid_use_of_protected_member
       in parent.childrenInHitTestOrder) {
         return childIsVisible(childrenInPaint, renderObject) &&
             renderObjectIsVisible(parent, axis);

@@ -42,7 +42,7 @@ class WebFDioCacheCookieInterceptor extends InterceptorsWrapper {
     
     // Remove internal WebF headers that shouldn't be sent to the server
     options.headers.remove('X-WebF-Request-Type');
-    options.headers.remove(HttpHeaderContext);  // Remove x-context header
+    options.headers.remove(httpHeaderContext); // Remove x-context header
 
     // Attach Referer/Origin based on entrypoint
     if (contextId != null) {

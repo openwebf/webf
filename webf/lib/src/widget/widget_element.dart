@@ -127,24 +127,24 @@ abstract class WidgetElement extends dom.Element {
 
   @mustCallSuper
   @override
-  void removeAttribute(String key) {
-    bool shouldRebuild = shouldElementRebuild(key, getAttribute(key), null);
-    super.removeAttribute(key);
+  void removeAttribute(String qualifiedName) {
+    bool shouldRebuild = shouldElementRebuild(qualifiedName, getAttribute(qualifiedName), null);
+    super.removeAttribute(qualifiedName);
     if (state != null && shouldRebuild) {
       state!.requestUpdateState();
     }
-    attributeDidUpdate(key, '');
+    attributeDidUpdate(qualifiedName, '');
   }
 
   @mustCallSuper
   @override
-  void setAttribute(String key, value) {
-    bool shouldRebuild = shouldElementRebuild(key, getAttribute(key), value);
-    super.setAttribute(key, value);
+  void setAttribute(String qualifiedName, value) {
+    bool shouldRebuild = shouldElementRebuild(qualifiedName, getAttribute(qualifiedName), value);
+    super.setAttribute(qualifiedName, value);
     if (state != null && shouldRebuild) {
       state!.requestUpdateState();
     }
-    attributeDidUpdate(key, value);
+    attributeDidUpdate(qualifiedName, value);
   }
 
   @nonVirtual
@@ -209,7 +209,7 @@ class WidgetElementAdapter extends dom.WebFElementWidget {
 
   @override
   State<StatefulWidget> createState() {
-    return WebFWidgetElementAdapterState(widgetElement);
+    return WebFWidgetElementAdapterState();
   }
 
   @override
@@ -235,6 +235,7 @@ class WebFWidgetElement extends StatefulWidget {
   const WebFWidgetElement(this.widgetElement, {super.key});
 
   @override
+  // ignore: no_logic_in_create_state
   State<StatefulWidget> createState() {
     WebFWidgetElementState state = widgetElement.createState();
     widgetElement._addWidgetElementState(state);
@@ -282,7 +283,7 @@ abstract class WebFWidgetElementState extends State<WebFWidgetElement> {
 }
 
 class WebFWidgetElementAdapterState extends dom.WebFElementWidgetState {
-  WebFWidgetElementAdapterState(WidgetElement widgetElement) : super();
+  WebFWidgetElementAdapterState() : super();
 
   WidgetElement get widgetElement => super.webFElement as WidgetElement;
 

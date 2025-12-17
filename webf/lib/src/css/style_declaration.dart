@@ -279,11 +279,11 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     // this property. To preserve inheritance semantics, we only do this for
     // non-inherited properties. For inherited ones we prefer leaving the
     // value empty so [RenderStyle] can pull from the parent instead.
-    if (isNullOrEmptyValue(present) && CSSInitialValues.containsKey(propertyName)) {
+    if (isNullOrEmptyValue(present) && cssInitialValues.containsKey(propertyName)) {
       final String kebabName = _kebabize(propertyName);
       final bool isInherited = isInheritedPropertyString(kebabName);
       if (!isInherited) {
-        present = CSSInitialValues[propertyName];
+        present = cssInitialValues[propertyName];
       }
     }
 

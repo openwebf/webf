@@ -39,6 +39,7 @@ dependencies:
   shared_preferences: ^2.5.3
   visibility_detector: ^0.4.0+2
   cronet_http: ^1.5.0
+  dio: ^5.4.0
 
 # When depending on this package from a real application,
 # you should remove the following overrides.

@@ -37,6 +37,5 @@ abstract class CharacterData extends Node {
   @override
   bool get isRendererAttached => false;
 
-  @override
   bool get isRendererAttachedToSegmentTree => false;
 }

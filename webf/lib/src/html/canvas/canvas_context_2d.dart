@@ -637,7 +637,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     int needsPaintIndex = _actions.length - 1;
     needsPaintIndexes.add(needsPaintIndex);
     // Must trigger repaint after add needsPaint
-    canvas.repaintNotifier.notifyListeners();
+    canvas.notifyRepaint();
   }
 
   // Perform canvas drawing.
@@ -1654,7 +1654,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   CanvasPattern createPattern(CanvasImageSource image, String repetition) {
     // ignore: avoid_print
     print(
-        "[Canvas2D] createPattern: imageType=${image.image_element != null ? 'HTMLImageElement' : (image.canvas_element != null ? 'HTMLCanvasElement' : 'Unknown')}, repetition=$repetition");
+        "[Canvas2D] createPattern: imageType=${image.imageElement != null ? 'HTMLImageElement' : (image.canvasElement != null ? 'HTMLCanvasElement' : 'Unknown')}, repetition=$repetition");
     return CanvasPattern(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), image, repetition);
   }
 
@@ -1698,17 +1698,17 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     // ignore: avoid_print
     print(
         '[Canvas2D] _drawPattern: repetition=${canvasPattern.repetition}, x=$x, y=$y, width=$width, height=$height');
-    if (canvasPattern.image.image_element == null && canvasPattern.image.canvas_element == null) {
+    if (canvasPattern.image.imageElement == null && canvasPattern.image.canvasElement == null) {
       throw AssertionError('CanvasPattern must be created from a canvas or image');
     }
 
     String repetition = canvasPattern.repetition;
-    int patternWidth = canvasPattern.image.image_element != null
-        ? canvasPattern.image.image_element!.width
-        : canvasPattern.image.canvas_element!.width;
-    int patternHeight = canvasPattern.image.image_element != null
-        ? canvasPattern.image.image_element!.height
-        : canvasPattern.image.canvas_element!.height;
+    int patternWidth = canvasPattern.image.imageElement != null
+        ? canvasPattern.image.imageElement!.width
+        : canvasPattern.image.canvasElement!.width;
+    int patternHeight = canvasPattern.image.imageElement != null
+        ? canvasPattern.image.imageElement!.height
+        : canvasPattern.image.canvasElement!.height;
     // Compute repeat counts based on the full canvas size so that the pattern
     // phase is always anchored at the canvas origin (0, 0), matching browser
     // behavior. The requested (x, y, width, height) region is then applied
@@ -1725,8 +1725,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     drawCanvas.clipRect(clipRegion);
 
     // CanvasPattern created from an image
-    if (canvasPattern.image.image_element != null) {
-      Image? repeatImg = canvasPattern.image.image_element?.image;
+    if (canvasPattern.image.imageElement != null) {
+      Image? repeatImg = canvasPattern.image.imageElement?.image;
 
       if (repetition == 'no-repeat') {
         xRepeatCount = 1;
@@ -1750,7 +1750,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
       }
     } else {
       // CanvasPattern created from a canvas
-      final CanvasElement? patternCanvasElement = canvasPattern.image.canvas_element;
+      final CanvasElement? patternCanvasElement = canvasPattern.image.canvasElement;
       if (patternCanvasElement == null) {
         throw AssertionError('CanvasPattern must be created from a canvas');
       }

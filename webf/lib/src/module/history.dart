@@ -18,7 +18,7 @@ class HistoryItem {
   final bool needJump;
 }
 
-class HistoryModule extends BaseModule {
+class HistoryModule extends WebFBaseModule {
   @override
   String get name => 'History';
 
@@ -193,7 +193,7 @@ class HistoryModule extends BaseModule {
         go(params[0]);
         break;
     }
-    return EMPTY_STRING;
+    return '';
   }
 
   @override

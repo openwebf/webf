@@ -8,7 +8,7 @@
  */
 import 'package:webf/module.dart';
 
-class LocationModule extends BaseModule {
+class LocationModule extends WebFBaseModule {
   @override
   String get name => 'Location';
 

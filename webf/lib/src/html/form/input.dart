@@ -32,8 +32,8 @@ class FlutterInputElement extends WidgetElement
   FlutterInputElement(super.context);
 
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    super.initializeMethods(methods);
+  void initializeDynamicMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeDynamicMethods(methods);
     methods['blur'] = BindingObjectMethodSync(call: (List args) {
       state?.blur();
     });
@@ -107,8 +107,8 @@ class FlutterInputElement extends WidgetElement
   }
 
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    super.initializeProperties(properties);
+  void initializeDynamicProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeDynamicProperties(properties);
 
     properties['value'] = BindingObjectProperty(getter: () => value, setter: (value) => this.value = value);
     properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = value);

@@ -182,8 +182,8 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     _parentOrShadowHostNode = value;
   }
 
-  Node? _previous;
-  Node? _next;
+  Node? previousSibling;
+  Node? nextSibling;
 
   Node? get firstChild;
 
@@ -193,13 +193,13 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   String get nodeName;
 
-  NodeData? _node_data;
+  NodeData? _nodeData;
 
-  NodeData? get nodeData => _node_data;
+  NodeData? get nodeData => _nodeData;
 
   NodeData ensureNodeData() {
-    _node_data ??= NodeData();
-    return _node_data!;
+    _nodeData ??= NodeData();
+    return _nodeData!;
   }
 
   Node treeRoot() {
@@ -274,8 +274,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     return isConnected;
   }
 
-  Node? get previousSibling => _previous;
-
   Node? get attachedRenderPreviousSibling {
     Node? previousSibling = this.previousSibling;
     do {
@@ -285,12 +283,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     return null;
   }
 
-  set previousSibling(Node? value) {
-    _previous = value;
-  }
-
-  Node? get nextSibling => _next;
-
   Node? get attachedRenderNextSibling {
     Node? nextSibling = this.nextSibling;
     do {
@@ -298,10 +290,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
       nextSibling = nextSibling?.nextSibling;
     } while (nextSibling != null);
     return null;
-  }
-
-  set nextSibling(Node? value) {
-    _next = value;
   }
 
   NodeList get childNodes {

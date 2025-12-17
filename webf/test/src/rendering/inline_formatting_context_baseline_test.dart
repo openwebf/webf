@@ -11,6 +11,11 @@ import 'package:webf/rendering.dart';
 import '../../setup.dart';
 import '../widget/test_utils.dart';
 
+double? _computeDistanceToActualBaseline(RenderBox box, TextBaseline baseline) {
+  final dynamic dynBox = box;
+  return dynBox.computeDistanceToActualBaseline(baseline) as double?;
+}
+
 void main() {
   setUpAll(() {
     setupTest();
@@ -73,10 +78,11 @@ void main() {
       final divRenderBox = divElement.attachedRenderer!;
 
       // Baseline should be computed based on the text content
-      final baseline = divRenderBox.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+      final baseline = _computeDistanceToActualBaseline(divRenderBox, TextBaseline.alphabetic);
 
       // With 24px font size, baseline should be roughly 18-20px from top
-      expect(baseline, greaterThan(0));
+      expect(baseline, isNotNull);
+      expect(baseline!, greaterThan(0));
       expect(baseline, lessThan(24));
     });
 
@@ -290,7 +296,7 @@ void main() {
       final spanBox = span.attachedRenderer!;
 
       // Empty inline-block should align its bottom with baseline
-      final baseline = spanBox.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+      final baseline = _computeDistanceToActualBaseline(spanBox, TextBaseline.alphabetic);
 
       // Baseline should be at the bottom of the box
       expect(baseline, equals(50));

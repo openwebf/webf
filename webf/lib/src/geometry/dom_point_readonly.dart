@@ -40,8 +40,8 @@ class DOMPointReadOnly extends DynamicBindingObject with StaticDefinedBindingObj
   double get w => _data[3];
 
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    super.initializeMethods(methods);
+  void initializeDynamicMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeDynamicMethods(methods);
     methods['matrixTransform'] = BindingObjectMethodSync(call: (args) {
       BindingObject domMatrix = args[0];
       if (domMatrix is DOMMatrix) {

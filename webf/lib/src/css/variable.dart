@@ -314,7 +314,7 @@ mixin CSSVariableMixin on RenderStyle {
             }
           }
         }
-        if (prevVarValue != null && this is CSSRenderStyle && CSSTransitionHandlers[propertyName] != null) {
+        if (prevVarValue != null && this is CSSRenderStyle && cssTransitionHandlers[propertyName] != null) {
           try {
             final CSSRenderStyle rs = this as CSSRenderStyle;
             // Raw configured check (current behavior)

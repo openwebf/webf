@@ -32,14 +32,14 @@ part of 'parser.dart';
 
 class Tokenizer extends TokenizerBase {
   /// U+ prefix for unicode characters.
-  final UNICODE_U = 'U'.codeUnitAt(0);
-  final UNICODE_LOWER_U = 'u'.codeUnitAt(0);
-  final UNICODE_PLUS = '+'.codeUnitAt(0);
+  final int unicodeU = 'U'.codeUnitAt(0);
+  final int unicodeLowerU = 'u'.codeUnitAt(0);
+  final int unicodePlus = '+'.codeUnitAt(0);
 
-  final QUESTION_MARK = '?'.codeUnitAt(0);
+  final int questionMark = '?'.codeUnitAt(0);
 
   /// CDATA keyword.
-  final List<int> CDATA_NAME = 'CDATA'.codeUnits;
+  final List<int> cdataName = 'CDATA'.codeUnits;
 
   Tokenizer(super.file, super.text, super.skipWhitespace, [super.index]);
 
@@ -166,11 +166,11 @@ class Tokenizer extends TokenizerBase {
           if (_maybeEatChar(TokenChar.MINUS) && _maybeEatChar(TokenChar.MINUS)) {
             return finishHtmlComment();
           } else if (_maybeEatChar(TokenChar.LBRACK) &&
-              _maybeEatChar(CDATA_NAME[0]) &&
-              _maybeEatChar(CDATA_NAME[1]) &&
-              _maybeEatChar(CDATA_NAME[2]) &&
-              _maybeEatChar(CDATA_NAME[3]) &&
-              _maybeEatChar(CDATA_NAME[4]) &&
+              _maybeEatChar(cdataName[0]) &&
+              _maybeEatChar(cdataName[1]) &&
+              _maybeEatChar(cdataName[2]) &&
+              _maybeEatChar(cdataName[3]) &&
+              _maybeEatChar(cdataName[4]) &&
               _maybeEatChar(TokenChar.LBRACK)) {
             // <![CDATA[
             return next();
@@ -216,7 +216,7 @@ class Tokenizer extends TokenizerBase {
           } else {
             return _errorToken();
           }
-        } else if (_inString && (ch == UNICODE_U || ch == UNICODE_LOWER_U) && (_peekChar() == UNICODE_PLUS)) {
+        } else if (_inString && (ch == unicodeU || ch == unicodeLowerU) && (_peekChar() == unicodePlus)) {
           // `_inString` is misleading. We actually DON'T want to enter this
           // block while tokenizing a string, but the parser sets this value to
           // false while it IS consuming tokens within a string.
@@ -365,7 +365,7 @@ class Tokenizer extends TokenizerBase {
   }
 
   bool maybeEatQuestionMark() {
-    if (_index < _text.length && _text.codeUnitAt(_index) == QUESTION_MARK) {
+    if (_index < _text.length && _text.codeUnitAt(_index) == questionMark) {
       _index += 1;
       return true;
     }
@@ -374,7 +374,7 @@ class Tokenizer extends TokenizerBase {
 
   void eatQuestionMarks() {
     while (_index < _text.length) {
-      if (_text.codeUnitAt(_index) == QUESTION_MARK) {
+      if (_text.codeUnitAt(_index) == questionMark) {
         _index += 1;
       } else {
         return;

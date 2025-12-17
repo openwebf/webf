@@ -7,6 +7,8 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
+// ignore_for_file: overridden_fields
+
 import 'dart:core';
 
 import 'package:flutter/rendering.dart';

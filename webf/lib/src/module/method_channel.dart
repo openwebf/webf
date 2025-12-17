@@ -66,20 +66,14 @@ abstract class WebFMethodChannel {
 }
 
 class WebFJavaScriptChannel extends WebFMethodChannel {
-  Duration _methodCallTimeout = DEFAULT_METHOD_CALL_TIMEOUT;
-
-  Duration get methodCallTimeout => _methodCallTimeout;
-
-  set methodCallTimeout(Duration duration) {
-    _methodCallTimeout = duration;
-  }
+  Duration methodCallTimeout = DEFAULT_METHOD_CALL_TIMEOUT;
 
   Future<dynamic> invokeMethod(String method, arguments) async {
     MethodCallCallback? jsMethodCallCallback = _onJSMethodCallCallback;
     if (jsMethodCallCallback != null) {
       return jsMethodCallCallback(method, arguments)
-          .timeout(_methodCallTimeout, onTimeout: () {
-        throw TimeoutException(METHOD_CALL_TIMEOUT, _methodCallTimeout);
+          .timeout(methodCallTimeout, onTimeout: () {
+        throw TimeoutException(METHOD_CALL_TIMEOUT, methodCallTimeout);
       });
     } else {
       return null;
@@ -100,8 +94,8 @@ class WebFJavaScriptChannel extends WebFMethodChannel {
     MethodCallCallback? methodCallCallback = _methodCallCallback;
     if (methodCallCallback != null) {
       return _methodCallCallback!(method, arguments)
-          .timeout(_methodCallTimeout, onTimeout: () {
-        throw TimeoutException(METHOD_CALL_TIMEOUT, _methodCallTimeout);
+          .timeout(methodCallTimeout, onTimeout: () {
+        throw TimeoutException(METHOD_CALL_TIMEOUT, methodCallTimeout);
       });
     } else {
       return Future.value(null);

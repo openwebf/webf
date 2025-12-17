@@ -902,7 +902,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   @override
   void didChangeLocales(List<Locale>? locales) {}
 
-  static double FOCUS_VIEWINSET_BOTTOM_OVERALL = 32;
+  static const double focusViewInsetBottomOverall = 32;
 
   @override
   void didChangeMetrics() {

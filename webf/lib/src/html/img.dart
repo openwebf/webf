@@ -92,7 +92,7 @@ class ImageElement extends Element {
     // @TODO: Implement the srcset.
     if (src.isEmpty) return true;
     if (_currentRequest != null && _currentRequest!.available) return true;
-    if (_currentRequest != null && _currentRequest!.state == _ImageRequestState.broken) return true;
+    if (_currentRequest != null && _currentRequest!.state == ImageRequestState.broken) return true;
     return true;
   }
 
@@ -136,8 +136,8 @@ class ImageElement extends Element {
   }
 
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    super.initializeProperties(properties);
+  void initializeDynamicProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeDynamicProperties(properties);
     properties['src'] = BindingObjectProperty(getter: () => src, setter: (value) => src = castToType<String>(value));
     properties['loading'] =
         BindingObjectProperty(getter: () => loading, setter: (value) => loading = castToType<String>(value));
@@ -501,9 +501,9 @@ class ImageElement extends Element {
   }
 
   @override
-  void removeAttribute(String key) {
-    super.removeAttribute(key);
-    if (key == 'loading') {
+  void removeAttribute(String qualifiedName) {
+    super.removeAttribute(qualifiedName);
+    if (qualifiedName == 'loading') {
       _updateImageDataLazyCompleter?.complete();
     }
   }
@@ -572,8 +572,8 @@ class ImageElement extends Element {
     _cachedImageInfo = imageInfo;
     _imgLog('[IMG] _handleImageFrame elem=$hashCode size=${imageInfo.image.width}x${imageInfo.image.height} sync=$synchronousCall');
 
-    if (_currentRequest?.state != _ImageRequestState.completelyAvailable) {
-      _currentRequest?.state = _ImageRequestState.completelyAvailable;
+    if (_currentRequest?.state != ImageRequestState.completelyAvailable) {
+      _currentRequest?.state = ImageRequestState.completelyAvailable;
     }
 
     // Option 1: Store pending update if no mounted state exists
@@ -1019,7 +1019,7 @@ class ImageState extends flutter.State<WebFImage> {
 }
 
 // https://html.spec.whatwg.org/multipage/images.html#images-processing-model
-enum _ImageRequestState {
+enum ImageRequestState {
   // The user agent hasn't obtained any image data, or has obtained some or
   // all of the image data but hasn't yet decoded enough of the image to get
   // the image dimensions.
@@ -1044,19 +1044,19 @@ enum _ImageRequestState {
 class ImageRequest {
   ImageRequest.fromUri(
     this.currentUri, {
-    this.state = _ImageRequestState.unavailable,
+    this.state = ImageRequestState.unavailable,
   });
 
   /// The request uri.
   Uri currentUri;
 
   /// Current state of image request.
-  _ImageRequestState state;
+  ImageRequestState state;
 
   /// When an image request's state is either partially available or completely available,
   /// the image request is said to be available.
   bool get available =>
-      state == _ImageRequestState.completelyAvailable || state == _ImageRequestState.partiallyAvailable;
+      state == ImageRequestState.completelyAvailable || state == ImageRequestState.partiallyAvailable;
 
   Future<ImageLoadResponse> obtainImage(WebFController controller) async {
     final WebFBundle? preloadedBundle = controller.getPreloadBundleFromUrl(currentUri.toString());

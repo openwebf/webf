@@ -105,17 +105,17 @@ double dot(v1, v2) {
   return result;
 }
 
-final double _1deg = 180 / pi;
-final double _1rad = pi / 180;
+final double _oneDeg = 180 / pi;
+final double _oneRad = pi / 180;
 
 double? rad2deg(rad) {
   // angleInDegree = angleInRadians * (180 / Math.PI)
-  return rad * _1deg;
+  return rad * _oneDeg;
 }
 
 double? _deg2rad(deg) {
   // angleInRadians = angleInDegrees * (Math.PI / 180)
-  return deg * _1rad;
+  return deg * _oneRad;
 }
 
 List<List<double>> _multiply(a, b) {

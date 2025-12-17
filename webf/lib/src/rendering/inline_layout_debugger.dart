@@ -149,27 +149,28 @@ class InlineLayoutDebugger {
   /// Get a short description of the RenderBoxModel.
   String _getElementDescription(RenderBoxModel? renderBox) {
     if (renderBox == null) return 'unknown';
-    
+
     // Try to get element tag from the RenderBoxModel
     final element = renderBox.renderStyle.target;
     // For HTML elements, return the tag name
     final tagName = element.tagName;
+    final lowerTagName = tagName.toLowerCase();
     if (tagName.isNotEmpty && tagName != 'DIV') {
-      return tagName.toLowerCase();
+      return lowerTagName;
     }
-    
+
     // For elements with specific classes or IDs, include them
     final id = element.id;
     final className = element.className;
-    
+
     if (id != null && id.isNotEmpty) {
-      return '${tagName.toLowerCase()}#$id';
+      return '$lowerTagName#$id';
     } else if (className.isNotEmpty) {
-      return '${tagName.toLowerCase()}.$className';
+      return '$lowerTagName.$className';
     }
-    
-    return tagName.toLowerCase();
-      
+
+    if (tagName.isNotEmpty) return lowerTagName;
+
     // Fallback to a short description
     final typeStr = renderBox.runtimeType.toString();
     if (typeStr.startsWith('Render')) {

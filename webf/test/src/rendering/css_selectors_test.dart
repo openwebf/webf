@@ -59,7 +59,7 @@ void main() {
       final div = prepared.getElementById('div1');
       // Check that a color is applied (not default black)
       expect(div.renderStyle.color, isNotNull);
-      expect(div.renderStyle.color.value.value, isNot(equals(0xFF000000))); // not black
+      expect(div.renderStyle.color.value.toARGB32(), isNot(equals(0xFF000000))); // not black
     });
 
     testWidgets('id selector with hyphen', (WidgetTester tester) async {
@@ -84,8 +84,8 @@ void main() {
       final div = prepared.getElementById('-div1');
       // Check that a color is applied (not default black or red)
       expect(div.renderStyle.color, isNotNull);
-      expect(div.renderStyle.color.value.value, isNot(equals(0xFF000000))); // not black
-      expect(div.renderStyle.color.value.value, isNot(equals(0xFFFF0000))); // not red
+      expect(div.renderStyle.color.value.toARGB32(), isNot(equals(0xFF000000))); // not black
+      expect(div.renderStyle.color.value.toARGB32(), isNot(equals(0xFFFF0000))); // not red
     });
 
     testWidgets('id selector specificity', (WidgetTester tester) async {
@@ -110,8 +110,8 @@ void main() {
       final div = prepared.getElementById('div1');
       // ID selector should win, applying green color
       expect(div.renderStyle.color, isNotNull);
-      expect(div.renderStyle.color.value.value, isNot(equals(0xFF000000))); // not black
-      expect(div.renderStyle.color.value.value, isNot(equals(0xFFFF0000))); // not red
+      expect(div.renderStyle.color.value.toARGB32(), isNot(equals(0xFF000000))); // not black
+      expect(div.renderStyle.color.value.toARGB32(), isNot(equals(0xFFFF0000))); // not red
     });
   });
 
@@ -164,7 +164,7 @@ void main() {
       expect(div.renderStyle.color, isNotNull); // div has color
       // Span should not have the color since selector is div.div1
       final spanColor = span.renderStyle.color;
-      expect(spanColor.value.value, equals(0xFF000000)); // default black
+      expect(spanColor.value.toARGB32(), equals(0xFF000000)); // default black
         });
 
     testWidgets('multiple class selector', (WidgetTester tester) async {
@@ -192,7 +192,7 @@ void main() {
       expect(divWithAll.renderStyle.color, isNotNull); // has color
       // Missing class should have default color
       final missingColor = divMissing.renderStyle.color;
-      expect(missingColor.value.value, equals(0xFF000000)); // default black
+      expect(missingColor.value.toARGB32(), equals(0xFF000000)); // default black
         });
 
     testWidgets('class selector specificity order', (WidgetTester tester) async {
@@ -244,22 +244,22 @@ void main() {
       final div = prepared.getElementById('test');
 
       // Initially default color (WebF sets black as default)
-      expect(div.renderStyle.color.value.value, equals(0xFF000000)); // black
+      expect(div.renderStyle.color.value.toARGB32(), equals(0xFF000000)); // black
 
       // Add red class
       div.className = 'red';
       await tester.pump();
       final redColor = div.renderStyle.color;
       expect(redColor, isNotNull);
-      expect(redColor.value.value, isNot(equals(0xFF000000))); // not black
+      expect(redColor.value.toARGB32(), isNot(equals(0xFF000000))); // not black
 
       // Change to blue class
       div.className = 'blue';
       await tester.pump();
       final blueColor = div.renderStyle.color;
       expect(blueColor, isNotNull);
-      expect(blueColor.value.value, isNot(equals(0xFF000000))); // not black
-      expect(blueColor.value.value, isNot(equals(redColor.value.value))); // different from red
+      expect(blueColor.value.toARGB32(), isNot(equals(0xFF000000))); // not black
+      expect(blueColor.value.toARGB32(), isNot(equals(redColor.value.toARGB32()))); // different from red
     });
   });
 
@@ -321,10 +321,10 @@ void main() {
 
       // Only div has red color
       expect(div.renderStyle.color, isNotNull);
-      expect(div.renderStyle.color.value.value, isNot(equals(0xFF000000))); // not default
+      expect(div.renderStyle.color.value.toARGB32(), isNot(equals(0xFF000000))); // not default
       // Span should have default color
       final spanColor = span.renderStyle.color;
-      expect(spanColor.value.value, equals(0xFF000000)); // default black
+      expect(spanColor.value.toARGB32(), equals(0xFF000000)); // default black
         });
   });
 
@@ -485,7 +485,7 @@ void main() {
       expect(nestedSpan.renderStyle.color, isNotNull); // color applied
       // Top span should have default color
       final topColor = topSpan.renderStyle.color;
-      expect(topColor.value.value, equals(0xFF000000)); // default black
+      expect(topColor.value.toARGB32(), equals(0xFF000000)); // default black
         });
 
     testWidgets('multiple level descendant', (WidgetTester tester) async {
@@ -517,7 +517,7 @@ void main() {
       expect(deepSpan.renderStyle.color, isNotNull); // color applied
       // Shallow span should have default color
       final shallowColor = shallowSpan.renderStyle.color;
-      expect(shallowColor.value.value, equals(0xFF000000)); // default black
+      expect(shallowColor.value.toARGB32(), equals(0xFF000000)); // default black
         });
 
 
@@ -581,7 +581,7 @@ void main() {
       expect(directChild.renderStyle.color, isNotNull); // color applied
       // Nested span should have default color
       final nestedColor = nestedSpan.renderStyle.color;
-      expect(nestedColor.value.value, equals(0xFF000000)); // default black
+      expect(nestedColor.value.toARGB32(), equals(0xFF000000)); // default black
         });
   });
 
@@ -612,7 +612,7 @@ void main() {
       expect(p1.renderStyle.color, isNotNull); // color applied
       // p2 should have default color
       final p2Color = p2.renderStyle.color;
-      expect(p2Color.value.value, equals(0xFF000000)); // default black
+      expect(p2Color.value.toARGB32(), equals(0xFF000000)); // default black
         });
 
     testWidgets('general sibling selector', skip: true, (WidgetTester tester) async {
@@ -640,8 +640,8 @@ void main() {
       final p1 = prepared.getElementById('p1');
       final p2 = prepared.getElementById('p2');
 
-      expect(p1.renderStyle.color.value.value, equals(0xFF0000FF)); // blue
-      expect(p2.renderStyle.color.value.value, equals(0xFF0000FF)); // blue
+      expect(p1.renderStyle.color.value.toARGB32(), equals(0xFF0000FF)); // blue
+      expect(p2.renderStyle.color.value.toARGB32(), equals(0xFF0000FF)); // blue
     });
   });
 
@@ -708,7 +708,7 @@ void main() {
       // Initially has color
       final initialColor = div.renderStyle.color;
       expect(initialColor, isNotNull);
-      expect(initialColor.value.value, isNot(equals(0xFF000000))); // not default
+      expect(initialColor.value.toARGB32(), isNot(equals(0xFF000000))); // not default
 
       // Remove style
       style.parentNode?.removeChild(style);
@@ -719,7 +719,7 @@ void main() {
       final afterColor = div.renderStyle.color;
       // If there's still a color, it should either be default black or different from initial
       expect(
-        afterColor.value == 0xFF000000 || afterColor.value != initialColor.value,
+        afterColor.value.toARGB32() == 0xFF000000 || afterColor.value != initialColor.value,
         isTrue,
         reason: 'Color should either be default black or different from initial color'
       );
@@ -752,7 +752,7 @@ void main() {
       // Check if color is applied
       final color = div.renderStyle.color;
       expect(color, isNotNull);
-      expect(color.value.value, isNot(equals(0xFF000000))); // not default
+      expect(color.value.toARGB32(), isNot(equals(0xFF000000))); // not default
       expect(div.renderStyle.fontSize.computedValue, equals(20.0));
     });
   });

@@ -66,7 +66,10 @@ class CanvasElement extends Element {
     return stateFinder.isEmpty ? null : stateFinder.last;
   }
 
-  final ChangeNotifier repaintNotifier = ChangeNotifier();
+  final _CanvasRepaintNotifier _repaintNotifier = _CanvasRepaintNotifier();
+  ChangeNotifier get repaintNotifier => _repaintNotifier;
+
+  void notifyRepaint() => _repaintNotifier.trigger();
 
   /// The painter that paints before the children.
   late CanvasPainter painter;
@@ -98,8 +101,8 @@ class CanvasElement extends Element {
   CanvasRenderingContext2D? context2d;
 
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    super.initializeMethods(methods);
+  void initializeDynamicMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeDynamicMethods(methods);
     methods['getContext'] = BindingObjectMethodSync(call: (args) => getContext(castToType<String>(args[0])));
   }
 
@@ -292,6 +295,10 @@ class CanvasElement extends Element {
   }
 }
 
+class _CanvasRepaintNotifier extends ChangeNotifier {
+  void trigger() => notifyListeners();
+}
+
 class WebFCanvasState extends flutter.State<WebFCanvas> {
   CanvasElement get canvasElement => widget.canvasElement;
 
@@ -356,11 +363,11 @@ class WebFCanvasPaint extends flutter.SingleChildRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(flutter.BuildContext context, RenderCanvasPaint renderCanvas) {
-    super.updateRenderObject(context, renderCanvas);
+  void updateRenderObject(flutter.BuildContext context, RenderCanvasPaint renderObject) {
+    super.updateRenderObject(context, renderObject);
 
-    renderCanvas.preferredSize = preferredSize;
-    updateCanvasPainterSize(preferredSize, renderCanvas);
+    renderObject.preferredSize = preferredSize;
+    updateCanvasPainterSize(preferredSize, renderObject);
   }
 
   void updateCanvasPainterSize(Size paintingBounding, RenderCanvasPaint renderCanvas) {

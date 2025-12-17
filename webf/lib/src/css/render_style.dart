@@ -440,23 +440,23 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   // For some style changes, we needs to upgrade
   void requestWidgetToRebuild(AdapterUpdateReason reason) {
-    switch (reason.runtimeType) {
-      case AddEventUpdateReason:
+    switch (reason) {
+      case AddEventUpdateReason _:
         target.hasEvent = true;
         break;
-      case AddScrollerUpdateReason:
+      case AddScrollerUpdateReason _:
         target.hasScroll = true;
         break;
-      case ToPositionPlaceHolderUpdateReason:
-        target.holderAttachedPositionedElement = (reason as ToPositionPlaceHolderUpdateReason).positionedElement;
-        target.holderAttachedContainingBlockElement = reason.containingBlockElement;
+      case ToPositionPlaceHolderUpdateReason r:
+        target.holderAttachedPositionedElement = r.positionedElement;
+        target.holderAttachedContainingBlockElement = r.containingBlockElement;
         break;
-      case ToStaticLayoutUpdateReason:
+      case ToStaticLayoutUpdateReason _:
         target.holderAttachedPositionedElement = null;
         target.holderAttachedContainingBlockElement = null;
         break;
-      case AttachPositionedChild:
-        target.addOutOfFlowPositionedElement((reason as AttachPositionedChild).positionedElement);
+      case AttachPositionedChild r:
+        target.addOutOfFlowPositionedElement(r.positionedElement);
         break;
       default:
         break;
@@ -749,7 +749,6 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     return matcher(selfRender.parent as RenderBoxModel, (selfRender.parent as RenderBoxModel).renderStyle);
   }
 
-  @override
   RenderViewportBox? getCurrentViewportBox() {
     flutter.RenderObject? current = attachedRenderBoxModel;
     while (current != null) {
@@ -2191,7 +2190,7 @@ class CSSRenderStyle extends RenderStyle
     propertyName = mappedPropertyName;
 
     if (propertyValue == INITIAL) {
-      propertyValue = CSSInitialValues[propertyName] ?? propertyValue;
+      propertyValue = cssInitialValues[propertyName] ?? propertyValue;
     }
 
     // Process CSSVariable only when the entire value is a single var(...)

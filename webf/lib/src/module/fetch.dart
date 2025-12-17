@@ -19,9 +19,9 @@ import 'package:webf/html.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/module.dart';
 
-String EMPTY_STRING = '';
+const String emptyString = '';
 
-class FetchModule extends BaseModule {
+class FetchModule extends WebFBaseModule {
   @override
   String get name => 'Fetch';
 
@@ -84,7 +84,7 @@ class FetchModule extends BaseModule {
 
       // Set ContextID Header
       if (moduleManager != null) {
-        request.headers.set(HttpHeaderContext, moduleManager!.contextId.toString());
+      request.headers.set(httpHeaderContext, moduleManager!.contextId.toString());
       }
 
       // Mark this as a Fetch/XHR request
@@ -172,7 +172,7 @@ class FetchModule extends BaseModule {
         }
       }).then((Uint8List? bytes) {
         if (bytes != null) {
-          completer.complete([EMPTY_STRING, response?.statusCode, bytes]);
+          completer.complete([emptyString, response?.statusCode, bytes]);
         } else {
           throw FlutterError('Failed to read response.');
         }
@@ -318,7 +318,7 @@ class FetchModule extends BaseModule {
         );
       } catch (_) {}
 
-      completer.complete([EMPTY_STRING, resp.statusCode ?? 0, bytes]);
+      completer.complete([emptyString, resp.statusCode ?? 0, bytes]);
     } catch (e, st) {
       // Record the fetch error in LoadingState
       if (moduleManager != null) {

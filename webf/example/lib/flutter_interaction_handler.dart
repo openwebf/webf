@@ -404,6 +404,12 @@ class FlutterInteractionHandler {
 
       // Get the WebF controller for react_use_cases
       WebFController? controller = await WebFControllerManager.instance.getController('react_use_cases');
+      if (!context.mounted) {
+        return {
+          'success': false,
+          'error': 'Context is no longer mounted for theme switching',
+        };
+      }
       
       // Toggle theme using AdaptiveTheme
       if (targetTheme == 'dark') {

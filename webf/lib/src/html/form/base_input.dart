@@ -310,7 +310,7 @@ mixin BaseInputElement on WidgetElement implements FormElementBase {
   TextStyle get _textStyle {
     double? height;
 
-    if (renderStyle.lineHeight != CSSText.DEFAULT_LINE_HEIGHT) {
+    if (renderStyle.lineHeight != CSSText.defaultLineHeight) {
       double lineHeight = renderStyle.lineHeight.computedValue / renderStyle.fontSize.computedValue;
 
       if (renderStyle.height.isNotAuto) {

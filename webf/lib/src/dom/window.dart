@@ -68,12 +68,6 @@ class Window extends EventTarget {
   @override
   List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _syncWindowProperties];
 
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    // https://www.w3.org/TR/cssom-view-1/#extensions-to-the-window-interface
-    super.initializeProperties(properties);
-  }
-
   void open(String url) {
     String? sourceUrl = document.controller.view.rootController.url;
     document.controller.view.handleNavigationAction(sourceUrl, url, WebFNavigationType.navigate);
@@ -167,13 +161,13 @@ class Window extends EventTarget {
   }
 
   @override
-  void addEventListener(String eventType, EventHandler handler, {EventListenerOptions? addEventListenerOptions, bool builtInCallback = false}) {
-    super.addEventListener(eventType, handler, addEventListenerOptions: addEventListenerOptions);
+  void addEventListener(String eventType, EventHandler eventHandler, {EventListenerOptions? addEventListenerOptions, bool builtInCallback = false}) {
+    super.addEventListener(eventType, eventHandler, addEventListenerOptions: addEventListenerOptions);
     switch (eventType) {
       case EVENT_SCROLL:
         // Fired at the Document or element when the viewport or element is scrolled, respectively.
         document.documentElement
-            ?.addEventListener(eventType, handler, addEventListenerOptions: addEventListenerOptions);
+            ?.addEventListener(eventType, eventHandler, addEventListenerOptions: addEventListenerOptions);
         break;
     }
   }
@@ -185,11 +179,11 @@ class Window extends EventTarget {
   }
 
   @override
-  void removeEventListener(String eventType, EventHandler handler, {bool isCapture = false, bool builtInCallback = false}) {
-    super.removeEventListener(eventType, handler, isCapture: isCapture);
+  void removeEventListener(String eventType, EventHandler eventHandler, {bool isCapture = false, bool builtInCallback = false}) {
+    super.removeEventListener(eventType, eventHandler, isCapture: isCapture);
     switch (eventType) {
       case EVENT_SCROLL:
-        document.documentElement?.removeEventListener(eventType, handler);
+        document.documentElement?.removeEventListener(eventType, eventHandler);
         break;
     }
   }

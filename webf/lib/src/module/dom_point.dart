@@ -6,7 +6,7 @@ import 'package:webf/bridge.dart';
 import 'package:webf/module.dart';
 import 'package:webf/src/geometry/dom_point.dart';
 
-class DOMPointModule extends BaseModule {
+class DOMPointModule extends WebFBaseModule {
   DOMPointModule(super.moduleManager);
 
   @override

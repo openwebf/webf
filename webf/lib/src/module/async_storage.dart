@@ -16,7 +16,7 @@ import 'package:webf/src/module/module_manager.dart';
 
 Map<String, LazyBox<String>> _sharedSyncBox = {};
 
-class AsyncStorageModule extends BaseModule {
+class AsyncStorageModule extends WebFBaseModule {
   @override
   String get name => 'AsyncStorage';
 

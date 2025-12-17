@@ -425,17 +425,17 @@ abstract class RenderBoxModel extends RenderBox
   void calculateBaseline();
 
   @override
-  void layout(Constraints newConstraints, {bool parentUsesSize = false}) {
+  void layout(Constraints constraints, {bool parentUsesSize = false}) {
     renderBoxInLayoutHashCodes.add(hashCode);
 
     if (hasSize) {
       // Constraints changes between tight and no tight will cause reLayoutBoundary change
       // which will then cause its children to be marked as needsLayout in Flutter
-      if ((newConstraints.isTight && !constraints.isTight) || (!newConstraints.isTight && constraints.isTight)) {
+      if ((constraints.isTight && !this.constraints.isTight) || (!constraints.isTight && this.constraints.isTight)) {
         syncNeedsLayoutFlag();
       }
     }
-    super.layout(newConstraints, parentUsesSize: parentUsesSize);
+    super.layout(constraints, parentUsesSize: parentUsesSize);
 
     renderBoxInLayoutHashCodes.remove(hashCode);
     // Clear length cache when no renderBox is in layout.

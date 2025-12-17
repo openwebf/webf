@@ -94,14 +94,14 @@ mixin ElementEventMixin on ElementBase {
   }
 
   @override
-  void addEventListener(String eventType, EventHandler handler, {EventListenerOptions? addEventListenerOptions}) {
-    super.addEventListener(eventType, handler, addEventListenerOptions: addEventListenerOptions);
+  void addEventListener(String eventType, EventHandler eventHandler, {EventListenerOptions? addEventListenerOptions}) {
+    super.addEventListener(eventType, eventHandler, addEventListenerOptions: addEventListenerOptions);
     renderStyle.ensureEventResponderBound();
   }
 
   @override
-  void removeEventListener(String eventType, EventHandler handler, {bool isCapture = false}) {
-    super.removeEventListener(eventType, handler, isCapture: isCapture);
+  void removeEventListener(String eventType, EventHandler eventHandler, {bool isCapture = false}) {
+    super.removeEventListener(eventType, eventHandler, isCapture: isCapture);
     renderStyle.ensureEventResponderBound();
   }
 

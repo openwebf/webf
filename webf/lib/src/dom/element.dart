@@ -150,7 +150,6 @@ abstract class Element extends ContainerNode
   @pragma('vm:prefer-inline')
   flutter.Key key = flutter.UniqueKey();
 
-  @protected
   void updateElementKey() {
     key = flutter.UniqueKey();
   }

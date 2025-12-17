@@ -60,7 +60,6 @@ mixin ElementAdapterMixin on ElementBase {
   final List<ScreenEvent> _screenEventQueue = [];
   bool _isProcessingQueue = false;
 
-  @flutter.immutable
   List<Element> get outOfFlowPositionedElements => _outOfFlowPositionedElements;
 
   void addOutOfFlowPositionedElement(Element newElement) {

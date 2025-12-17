@@ -137,8 +137,8 @@ enum CSSBackgroundImageType {
 /// The [CSSBackgroundMixin] mixin used to handle background shorthand and compute
 /// to single value of background.
 mixin CSSBackgroundMixin on RenderStyle {
-  static CSSBackgroundPosition DEFAULT_BACKGROUND_POSITION = CSSBackgroundPosition(percentage: -1);
-  static CSSBackgroundSize DEFAULT_BACKGROUND_SIZE = CSSBackgroundSize(fit: BoxFit.none);
+  static final CSSBackgroundPosition defaultBackgroundPosition = CSSBackgroundPosition(percentage: -1);
+  static final CSSBackgroundSize defaultBackgroundSize = CSSBackgroundSize(fit: BoxFit.none);
 
   /// Background-clip
   @override
@@ -193,7 +193,7 @@ mixin CSSBackgroundMixin on RenderStyle {
 
   /// Background-position-x
   @override
-  CSSBackgroundPosition get backgroundPositionX => _backgroundPositionX ?? DEFAULT_BACKGROUND_POSITION;
+  CSSBackgroundPosition get backgroundPositionX => _backgroundPositionX ?? defaultBackgroundPosition;
   CSSBackgroundPosition? _backgroundPositionX;
 
   set backgroundPositionX(CSSBackgroundPosition? value) {
@@ -205,7 +205,7 @@ mixin CSSBackgroundMixin on RenderStyle {
 
   /// Background-position-y
   @override
-  CSSBackgroundPosition get backgroundPositionY => _backgroundPositionY ?? DEFAULT_BACKGROUND_POSITION;
+  CSSBackgroundPosition get backgroundPositionY => _backgroundPositionY ?? defaultBackgroundPosition;
   CSSBackgroundPosition? _backgroundPositionY;
 
   set backgroundPositionY(CSSBackgroundPosition? value) {
@@ -217,7 +217,7 @@ mixin CSSBackgroundMixin on RenderStyle {
 
   /// Background-size
   @override
-  CSSBackgroundSize get backgroundSize => _backgroundSize ?? DEFAULT_BACKGROUND_SIZE;
+  CSSBackgroundSize get backgroundSize => _backgroundSize ?? defaultBackgroundSize;
   CSSBackgroundSize? _backgroundSize;
 
   set backgroundSize(CSSBackgroundSize? value) {

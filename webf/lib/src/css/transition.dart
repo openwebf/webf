@@ -187,8 +187,6 @@ Matrix4 _updateTransform(TransformAnimationValue begin, TransformAnimationValue 
 
   renderStyle.transformMatrix = newMatrix4;
   return newMatrix4;
-
-  return Matrix4.identity();
 }
 
 CSSOrigin? _parseTransformOrigin(String value, RenderStyle renderStyle, String property) {
@@ -489,7 +487,7 @@ CSSBackgroundPosition _updateBackgroundPositionY(CSSBackgroundPosition begin, CS
   return y;
 }
 
-Map<String, List<Function>> CSSTransitionHandlers = {
+Map<String, List<Function>> cssTransitionHandlers = {
   COLOR: _colorHandler,
   BACKGROUND_COLOR: _colorHandler,
   BACKGROUND_POSITION: [_parseBackgroundPosition, _updateBackgroundPosition, _stringifyBackgroundPosition],
@@ -721,7 +719,7 @@ mixin CSSTransitionMixin on RenderStyle {
       return false;
     }
     // When begin propertyValue is AUTO, skip animation and trigger style update directly.
-    prevValue = (prevValue == null || prevValue.isEmpty) ? CSSInitialValues[property] : prevValue;
+    prevValue = (prevValue == null || prevValue.isEmpty) ? cssInitialValues[property] : prevValue;
     // If the serialized values are identical, skip scheduling here. Var-driven
     // changes may be handled by the CSSVariableMixin path that schedules a
     // transition with an explicit prev substitution.
@@ -742,7 +740,7 @@ mixin CSSTransitionMixin on RenderStyle {
     // or when we don't have a transition handler for this property.
     final bool hasRenderBoxModel = hasRenderBox();
     final bool hasBoxSize = isBoxModelHaveSize();
-    final bool hasHandler = CSSTransitionHandlers[property] != null;
+    final bool hasHandler = cssTransitionHandlers[property] != null;
 
     if (!hasRenderBoxModel || !hasBoxSize || !hasHandler) {
       if (DebugFlags.shouldLogTransitionForProp(property)) {
@@ -823,10 +821,10 @@ mixin CSSTransitionMixin on RenderStyle {
     }
     if (_hasRunningTransition(propertyName)) {
       Animation animation = _propertyRunningTransition[propertyName]!;
-      if (CSSTransitionHandlers.containsKey(propertyName) && animation.effect is KeyframeEffect) {
+      if (cssTransitionHandlers.containsKey(propertyName) && animation.effect is KeyframeEffect) {
         KeyframeEffect effect = animation.effect as KeyframeEffect;
         var interpolation = effect.interpolations.firstWhere((interpolation) => interpolation.property == propertyName);
-        var stringifyFunc = CSSTransitionHandlers[propertyName]![2];
+        var stringifyFunc = cssTransitionHandlers[propertyName]![2];
         // Matrix4 begin, Matrix4 end, double t, String property, CSSRenderStyle renderStyle
         begin = stringifyFunc(
             interpolation.lerp(interpolation.begin, interpolation.end, animation.progress, propertyName, this));
@@ -841,14 +839,14 @@ mixin CSSTransitionMixin on RenderStyle {
     }
 
     if (begin == null || (begin is String && begin.isEmpty)) {
-      begin = CSSInitialValues[propertyName] ?? '';
+      begin = cssInitialValues[propertyName] ?? '';
       if (begin == CURRENT_COLOR) {
         begin = currentColor;
       }
     }
 
     if (end == null || (end is String && end.isEmpty)) {
-      end = CSSInitialValues[propertyName] ?? '';
+      end = cssInitialValues[propertyName] ?? '';
     }
 
     // Keyframe.value is typed as String; ensure our transition endpoints

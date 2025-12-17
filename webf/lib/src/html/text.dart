@@ -133,11 +133,11 @@ class WebFTextState extends WebFWidgetElementState {
     }
 
     // Load fonts for child elements
-    element.childNodes.forEach((node) async {
-      if (node is dom.Element && node is WebFTextElement) {
+    for (final node in element.childNodes) {
+      if (node is WebFTextElement) {
         await _loadFontsForElement(node);
       }
-    });
+    }
 
     // Trigger a rebuild if fonts were loaded
     if (mounted) {

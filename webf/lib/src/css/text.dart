@@ -41,7 +41,7 @@ mixin CSSTextMixin on RenderStyle {
   }
 
   set color(CSSColor? value) {
-    if (_color == value) return;
+    if (_color == value?.value) return;
     _color = value?.value;
 
     // Update all the children text with specified style property not set due to style inheritance.
@@ -156,7 +156,7 @@ mixin CSSTextMixin on RenderStyle {
     if (_fontFamily == null && getParentRenderStyle() != null) {
       return getParentRenderStyle()!.fontFamily;
     }
-    return _fontFamily ?? CSSText.DEFAULT_FONT_FAMILY_FALLBACK;
+    return _fontFamily ?? CSSText.defaultFontFamilyFallback;
   }
 
   set fontFamily(List<String>? value) {
@@ -177,7 +177,7 @@ mixin CSSTextMixin on RenderStyle {
     if (_fontSize == null && getParentRenderStyle() != null) {
       return getParentRenderStyle()!.fontSize;
     }
-    return _fontSize ?? CSSText.DEFAULT_FONT_SIZE;
+    return _fontSize ?? CSSText.defaultFontSize;
   }
 
   // Update font-size may affect following style:
@@ -241,7 +241,7 @@ mixin CSSTextMixin on RenderStyle {
           parentLengthValue.axisType);
     }
 
-    return _lineHeight ?? CSSText.DEFAULT_LINE_HEIGHT;
+    return _lineHeight ?? CSSText.defaultLineHeight;
   }
 
   set lineHeight(CSSLengthValue? value) {
@@ -708,7 +708,7 @@ class CSSText {
     return value == 'solid' || value == 'double' || value == 'dotted' || value == 'dashed' || value == 'wavy';
   }
 
-  static CSSLengthValue DEFAULT_LINE_HEIGHT = CSSLengthValue.normal;
+  static CSSLengthValue defaultLineHeight = CSSLengthValue.normal;
 
   static CSSLengthValue? resolveLineHeight(String value, RenderStyle renderStyle, String propertyName) {
     if (value.isNotEmpty) {
@@ -1029,13 +1029,13 @@ class CSSText {
     return TextBaseline.alphabetic; // @TODO: impl vertical-align
   }
 
-  static String? BUILTIN_FONT_PACKAGE;
+  static String? builtinFontPackage;
 
   static String? getFontPackage() {
-    return BUILTIN_FONT_PACKAGE;
+    return builtinFontPackage;
   }
 
-  static List<String>? DEFAULT_FONT_FAMILY_FALLBACK;
+  static List<String>? defaultFontFamilyFallback;
 
   static List<String> resolveFontFamilyFallback(String? fontFamily) {
     fontFamily = fontFamily ?? 'sans-serif';
@@ -1094,13 +1094,13 @@ class CSSText {
     }
 
     // Only for internal use.
-    if (resolvedFamily.isEmpty && CSSText.DEFAULT_FONT_FAMILY_FALLBACK != null) {
-      return CSSText.DEFAULT_FONT_FAMILY_FALLBACK!;
+    if (resolvedFamily.isEmpty && CSSText.defaultFontFamilyFallback != null) {
+      return CSSText.defaultFontFamilyFallback!;
     }
     return resolvedFamily;
   }
 
-  static CSSLengthValue DEFAULT_FONT_SIZE = CSSLengthValue(16.0, CSSLengthType.PX);
+  static CSSLengthValue defaultFontSize = CSSLengthValue(16.0, CSSLengthType.PX);
 
   static CSSLengthValue resolveSpacing(String spacing, RenderStyle renderStyle, String property) {
     if (spacing == NORMAL) return CSSLengthValue.zero;

@@ -11,7 +11,6 @@
 
 import 'dart:math';
 
-import 'package:flutter/src/foundation/diagnostics.dart';
 import 'package:quiver/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';

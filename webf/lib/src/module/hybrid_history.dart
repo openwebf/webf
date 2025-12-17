@@ -72,7 +72,7 @@ abstract class HybridHistoryDelegate {
   });
 }
 
-class HybridHistoryModule extends BaseModule {
+class HybridHistoryModule extends WebFBaseModule {
   @override
   String get name => 'HybridHistory';
 
@@ -353,7 +353,7 @@ class HybridHistoryModule extends BaseModule {
         }
         break;
     }
-    return EMPTY_STRING;
+    return '';
   }
 
   @override

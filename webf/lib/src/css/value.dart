@@ -9,7 +9,7 @@
 import 'package:webf/css.dart';
 
 // https://github.com/WebKit/webkit/blob/master/Source/WebCore/css/CSSProperties.json
-Map CSSInitialValues = {
+final Map cssInitialValues = {
   BACKGROUND_COLOR: TRANSPARENT,
   BACKGROUND_POSITION: '0% 0%',
   BOX_SHADOW: NONE,

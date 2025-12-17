@@ -32,8 +32,8 @@ class PersistCookieJar extends DefaultCookieJar {
   /// Whether persisting the cookies that without "expires" or "max-age" attribute;
   final bool persistSession;
 
-  final IndexKey = '.index';
-  final DomainsKey = '.domains';
+  static const String indexKey = '.index';
+  static const String domainsKey = '.domains';
 
   late Storage storage;
 
@@ -48,7 +48,7 @@ class PersistCookieJar extends DefaultCookieJar {
     if (force || !_initialized) {
       await storage.init(persistSession, ignoreExpires);
       // Load domain cookies
-      var str = await storage.read(DomainsKey);
+      var str = await storage.read(domainsKey);
       if (str != null && str.isNotEmpty) {
         try {
           final Map<String, dynamic> jsonData = json.decode(str);
@@ -74,17 +74,17 @@ class PersistCookieJar extends DefaultCookieJar {
             ..clear()
             ..addAll(cookies);
         } catch (e) {
-          await storage.delete(DomainsKey);
+          await storage.delete(domainsKey);
         }
       }
 
-      str = await storage.read(IndexKey);
+      str = await storage.read(indexKey);
       if ((str != null && str.isNotEmpty)) {
         try {
           final list = json.decode(str);
           _hostSet = Set<String>.from(list);
         } catch (e) {
-          await storage.delete(IndexKey);
+          await storage.delete(indexKey);
         }
       } else {
         _hostSet = <String>{};
@@ -97,7 +97,7 @@ class PersistCookieJar extends DefaultCookieJar {
     if (force || !_initialized) {
       storage.initSync(persistSession, ignoreExpires);
       // Load domain cookies
-      var str = storage.readSync(DomainsKey);
+      var str = storage.readSync(domainsKey);
       if (str != null && str.isNotEmpty) {
         try {
           final Map<String, dynamic> jsonData = json.decode(str);
@@ -123,17 +123,17 @@ class PersistCookieJar extends DefaultCookieJar {
             ..clear()
             ..addAll(cookies);
         } catch (e) {
-          storage.deleteSync(DomainsKey);
+          storage.deleteSync(domainsKey);
         }
       }
 
-      str = storage.readSync(IndexKey);
+      str = storage.readSync(indexKey);
       if ((str != null && str.isNotEmpty)) {
         try {
           final list = json.decode(str);
           _hostSet = Set<String>.from(list);
         } catch (e) {
-          storage.deleteSync(IndexKey);
+          storage.deleteSync(indexKey);
         }
       } else {
         _hostSet = <String>{};
@@ -215,13 +215,13 @@ class PersistCookieJar extends DefaultCookieJar {
     await super.delete(uri, withDomainSharedCookie);
     final host = uri.host;
     if (_hostSet.remove(host)) {
-      await storage.write(IndexKey, json.encode(_hostSet.toList()));
+      await storage.write(indexKey, json.encode(_hostSet.toList()));
     }
 
     await storage.delete(host);
 
     if (withDomainSharedCookie) {
-      await storage.write(DomainsKey, json.encode(domainCookies));
+      await storage.write(domainsKey, json.encode(domainCookies));
     }
   }
 
@@ -230,7 +230,7 @@ class PersistCookieJar extends DefaultCookieJar {
   Future<void> deleteAll() async {
     await _checkInitialized();
     await super.deleteAll();
-    var keys = _hostSet.toList(growable: true)..addAll([IndexKey, DomainsKey]);
+    var keys = _hostSet.toList(growable: true)..addAll([indexKey, domainsKey]);
     await storage.deleteAll(keys);
     _hostSet.clear();
   }
@@ -239,7 +239,7 @@ class PersistCookieJar extends DefaultCookieJar {
   void deleteAllSync() {
     _checkInitializedSync();
     super.deleteAllSync();
-    var keys = _hostSet.toList(growable: true)..addAll([IndexKey, DomainsKey]);
+    var keys = _hostSet.toList(growable: true)..addAll([indexKey, domainsKey]);
     storage.deleteAllSync(keys);
     _hostSet.clear();
   }
@@ -249,7 +249,7 @@ class PersistCookieJar extends DefaultCookieJar {
     final host = isLocalPath ? uri.scheme : uri.host;
     if (!_hostSet.contains(host)) {
       _hostSet.add(host);
-      await storage.write(IndexKey, json.encode(_hostSet.toList()));
+      await storage.write(indexKey, json.encode(_hostSet.toList()));
     }
     final cookies = hostCookies[host];
 
@@ -260,7 +260,7 @@ class PersistCookieJar extends DefaultCookieJar {
     if (withDomainSharedCookie) {
       var filterDomainCookies =
           domainCookies.map((key, value) => MapEntry(key, _filter(value)));
-      await storage.write(DomainsKey, json.encode(filterDomainCookies));
+      await storage.write(domainsKey, json.encode(filterDomainCookies));
     }
   }
 

@@ -236,8 +236,8 @@ class HttpCacheObject {
     return headers.expires ?? alwaysExpired;
   }
 
-  static int NetworkType = 0x01;
-  static int Reserved = 0x00;
+  static int networkType = 0x01;
+  static int reserved = 0x00;
 
   // This method write bytes in [Endian.little] order.
   // Reference: https://en.wikipedia.org/wiki/Endianness
@@ -306,7 +306,7 @@ class HttpCacheObject {
       if (index + 2 <= byteLength) {
         int type = byteData.getUint8(index);
         int version = byteData.getUint8(index + 1);
-        if (type != NetworkType || version != _indexFormatVersion) {
+        if (type != networkType || version != _indexFormatVersion) {
           // Unsupported format, invalidate cache
           _valid = false;
           return;
@@ -449,10 +449,10 @@ class HttpCacheObject {
       // Index bytes format:
       // | Type x 1B | Version x 1B | Reserved x 2B |
       bytesBuilder.add([
-        NetworkType,
+        networkType,
         _indexFormatVersion,
-        Reserved,
-        Reserved,
+        reserved,
+        reserved,
       ]);
 
       // | ExpiredTimeStamp x 8B |

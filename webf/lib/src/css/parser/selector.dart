@@ -90,17 +90,17 @@ class Selector extends TreeNode {
     int specificity = 0;
     for (final simpleSelectorSequence in simpleSelectorSequences) {
       final simpleSelector = simpleSelectorSequence.simpleSelector;
-      switch (simpleSelector.runtimeType) {
-        case IdSelector:
+      switch (simpleSelector) {
+        case IdSelector _:
           specificity += kIdSpecificity;
           break;
-        case ClassSelector:
-        case AttributeSelector:
-        case PseudoClassSelector:
+        case ClassSelector _:
+        case AttributeSelector _:
+        case PseudoClassSelector _:
           specificity += kClassLikeSpecificity;
           break;
-        case ElementSelector:
-        case PseudoElementSelector:
+        case ElementSelector _:
+        case PseudoElementSelector _:
           specificity += kTagSpecificity;
           break;
       }

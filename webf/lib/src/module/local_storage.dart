@@ -15,7 +15,7 @@ import 'package:webf/module.dart';
 
 Map<String, Box> _sharedSyncBox = {};
 
-class LocalStorageModule extends BaseModule {
+class LocalStorageModule extends WebFBaseModule {
   @override
   String get name => 'LocalStorage';
 
