@@ -32,6 +32,10 @@ Run from repo root (`../`) unless noted:
 ## Commit & Pull Request Guidelines
 - Use Conventional Commits: `type(scope): subject` (e.g., `fix(bridge): handle null QualifiedName`).
 - PRs should include rationale, linked issues, and exact verification steps; add screenshots for UI changes in `webf_apps/`.
+- Do not commit anything unless explicitly requested.
+
+## Agent-Specific Instructions
+- Always explain why changes are needed before making them.
 
 ## Security & Configuration Tips
 - Initialize submodules: `git submodule update --init --recursive`.
