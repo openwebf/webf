@@ -67,6 +67,14 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   bool get inited => _inited;
 
+  static const Duration _nativeMediaQueryAffectingValueDebounceDuration = Duration(milliseconds: 16);
+  Timer? _nativeMediaQueryAffectingValueDebounceTimer;
+  bool _nativeMediaQueryAffectingValuePostFrameCallbackScheduled = false;
+  double? _lastNotifiedViewportWidth;
+  double? _lastNotifiedViewportHeight;
+  double? _lastNotifiedDevicePixelRatio;
+  int? _lastNotifiedPageAddress;
+
   Future<void> initialize() async {
     if (enableDebug) {
       debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
@@ -249,7 +257,14 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   bool get disposed => _disposed;
 
+  // Root viewport for the full WebF widget.
   RootRenderViewportBox? viewport;
+
+  // Viewport used when rendering a hybrid router subview (WebFSubView/WebFRouterView).
+  RouterViewViewportBox? routerViewport;
+
+  // The effective viewport for DOM APIs like window.innerWidth/innerHeight.
+  RenderViewportBox? get currentViewport => routerViewport ?? viewport;
   late Document document;
   late Window window;
 
@@ -277,6 +292,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     // Pause animation timeline to prevent ticker from running when detached
     document.animationTimeline.pause();
     viewport = null;
+    routerViewport = null;
   }
 
   void initDocument(view, Pointer<NativeBindingObject> pointer) {
@@ -314,6 +330,10 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   // Dispose controller and recycle all resources.
   Future<void> dispose() async {
     if (!_inited) return;
+    _nativeMediaQueryAffectingValueDebounceTimer?.cancel();
+    _nativeMediaQueryAffectingValueDebounceTimer = null;
+    _nativeMediaQueryAffectingValuePostFrameCallbackScheduled = false;
+    routerViewport = null;
     await waitingSyncTaskComplete(contextId);
     _disposed = true;
     debugDOMTreeChanged = null;
@@ -344,6 +364,64 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
     // Dispose shared Dio client bound to this context
     disposeSharedDioForContext(_contextId);
+  }
+
+  void _scheduleNativeMediaQueryAffectingValueChanged() {
+    if (_nativeMediaQueryAffectingValueDebounceTimer != null) return;
+    _nativeMediaQueryAffectingValueDebounceTimer =
+        Timer(_nativeMediaQueryAffectingValueDebounceDuration, _scheduleNativeMediaQueryAffectingValueFlushAfterFrame);
+  }
+
+  void _scheduleNativeMediaQueryAffectingValueFlushAfterFrame() {
+    _nativeMediaQueryAffectingValueDebounceTimer = null;
+    if (_nativeMediaQueryAffectingValuePostFrameCallbackScheduled) return;
+    _nativeMediaQueryAffectingValuePostFrameCallbackScheduled = true;
+
+    // Ensure viewport RenderObject has the latest size before C++ side reads
+    // window.innerWidth/innerHeight (used for media query evaluation).
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _nativeMediaQueryAffectingValuePostFrameCallbackScheduled = false;
+      _flushNativeMediaQueryAffectingValueChanged();
+    });
+    SchedulerBinding.instance.scheduleFrame();
+  }
+
+  void _flushNativeMediaQueryAffectingValueChanged() {
+    if (!_inited || _disposed || WebFController.getControllerOfJSContextId(_contextId) == null) {
+      return;
+    }
+
+    final Pointer<Void>? page = getAllocatedPage(_contextId);
+    if (page == null) return;
+
+    if (_lastNotifiedPageAddress != page.address) {
+      _lastNotifiedPageAddress = page.address;
+      _lastNotifiedViewportWidth = null;
+      _lastNotifiedViewportHeight = null;
+      _lastNotifiedDevicePixelRatio = null;
+    }
+
+    final double width = window.innerWidth;
+    final double height = window.innerHeight;
+    bool shouldDispatchResizeEvent = false;
+    if (_lastNotifiedViewportWidth != width || _lastNotifiedViewportHeight != height) {
+      nativeOnViewportSizeChanged(page, width, height);
+      _lastNotifiedViewportWidth = width;
+      _lastNotifiedViewportHeight = height;
+      shouldDispatchResizeEvent = true;
+    }
+
+    final double dpr = window.devicePixelRatio;
+    if (_lastNotifiedDevicePixelRatio != dpr) {
+      nativeOnDevicePixelRatioChanged(page, dpr);
+      _lastNotifiedDevicePixelRatio = dpr;
+      shouldDispatchResizeEvent = true;
+    }
+
+    if (shouldDispatchResizeEvent) {
+      // Fire standard window resize event for JS frameworks and user code.
+      rootController.dispatchWindowResizeEvent();
+    }
   }
 
   VoidCallback? _originalOnPlatformBrightnessChanged;
@@ -974,14 +1052,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     // media queries depending on width/height/device-size and resolution can
     // be re-evaluated.
     if (_inited && !_disposed && WebFController.getControllerOfJSContextId(_contextId) != null) {
-      final double width = window.innerWidth;
-      final double height = window.innerHeight;
-      final Pointer<Void>? page = getAllocatedPage(_contextId);
-      if (page != null) {
-        nativeOnViewportSizeChanged(page, width, height);
-        final double dpr = window.devicePixelRatio;
-        nativeOnDevicePixelRatioChanged(page, dpr);
-      }
+      _scheduleNativeMediaQueryAffectingValueChanged();
     }
 
     window.resizeViewportRelatedElements();

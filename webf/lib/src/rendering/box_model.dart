@@ -1096,7 +1096,7 @@ abstract class RenderBoxModel extends RenderBox
 
     // Determine the maximum area we can use to display the error.
     // Prefer the viewport size; fall back to our current size.
-    final Size viewportSize = renderStyle.target.ownerView.viewport?.boxSize ?? size;
+    final Size viewportSize = renderStyle.target.ownerView.currentViewport?.boxSize ?? size;
 
     // Expand within the visible viewport starting from our own paint origin.
     final double maxPaintWidth = math.max(0, viewportSize.width - offset.dx);

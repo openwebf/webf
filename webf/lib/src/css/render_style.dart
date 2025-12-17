@@ -2628,7 +2628,7 @@ class CSSRenderStyle extends RenderStyle
         final bool parentInlineBlockAuto = p != null &&
             p.effectiveDisplay == CSSDisplay.inlineBlock && p.width.isAuto;
         if (!parentInlineBlockAuto) {
-          logicalWidth = target.ownerView.viewport!.boxSize!.width;
+          logicalWidth = target.ownerView.currentViewport!.boxSize!.width;
         }
       } else if (logicalWidth == null && (renderStyle.isSelfRouterLinkElement() && getCurrentViewportBox() is! RootRenderViewportBox)) {
         logicalWidth = getCurrentViewportBox()!.boxSize!.width;
@@ -2771,7 +2771,7 @@ class CSSRenderStyle extends RenderStyle
         final double contentH = contentW / aspectRatio!;
         logicalHeight = contentH + renderStyle.border.vertical + renderStyle.padding.vertical;
       } else if (renderStyle.isSelfHTMLElement()) {
-        logicalHeight = renderStyle.target.ownerView.viewport!.boxSize!.height;
+        logicalHeight = renderStyle.target.ownerView.currentViewport!.boxSize!.height;
       } else if ((renderStyle.position == CSSPositionType.absolute || renderStyle.position == CSSPositionType.fixed) &&
           !renderStyle.isSelfRenderReplaced() &&
           renderStyle.height.isAuto &&
@@ -2808,7 +2808,7 @@ class CSSRenderStyle extends RenderStyle
               childWrapper != null &&
               childWrapperConstraints != null &&
               (childWrapperConstraints.maxHeight.isFinite &&
-                  childWrapperConstraints.maxHeight != renderStyle.target.ownerView.viewport!.boxSize!.height)) {
+                  childWrapperConstraints.maxHeight != renderStyle.target.ownerView.currentViewport!.boxSize!.height)) {
             logicalHeight = childWrapperConstraints.maxHeight;
           } else if (renderStyle.isHeightStretch) {
             logicalHeight = parentRenderStyle.contentBoxLogicalHeight;

@@ -17,12 +17,16 @@ class WebFRouterViewport extends MultiChildRenderObjectWidget {
   @override
   RenderObject createRenderObject(BuildContext context) {
     RouterViewViewportBox root = RouterViewViewportBox(viewportSize: null, controller: controller);
+    controller.view.routerViewport = root;
     return root;
   }
 
   @override
   void didUnmountRenderObject(covariant RenderObject renderObject) {
     super.didUnmountRenderObject(renderObject);
+    if (controller.view.routerViewport == renderObject) {
+      controller.view.routerViewport = null;
+    }
   }
 }
 
