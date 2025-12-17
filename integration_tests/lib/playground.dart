@@ -64,7 +64,7 @@ void main() async {
   defineWebFCustomElements();
 
   // Set render font family AlibabaPuHuiTi to resolve rendering difference.
-  CSSText.DEFAULT_FONT_FAMILY_FALLBACK = ['AlibabaPuHuiTi'];
+  CSSText.defaultFontFamilyFallback = ['AlibabaPuHuiTi'];
 
   testTextInput = TestTextInput();
 
