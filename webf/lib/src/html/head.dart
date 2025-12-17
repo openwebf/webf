@@ -460,13 +460,6 @@ class LinkElement extends Element {
           ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
           ownerDocument.updateStyleIfNeeded();
         }
-
-        // Successful load: In Blink mode, C++ dispatches 'load'. Avoid double-dispatch here.
-        if (!ownerView.enableBlink) {
-          SchedulerBinding.instance.addPostFrameCallback((_) {
-            dispatchEvent(Event(EVENT_LOAD));
-          });
-        }
       } catch (e) {
         // Error: In Blink mode, dispatch on C++ side only.
         if (!ownerView.enableBlink) {
@@ -523,6 +516,7 @@ class LinkElement extends Element {
   }
 
   Future<void> _sendStyleSheetToNative(String cssText, {String? href}) async {
+    print(1);
     // Ensure we have a native binding object to call.
     final pointer = this.pointer;
     if (pointer == null || isBindingObjectDisposed(pointer) || pointer.ref.invokeBindingMethodFromDart == nullptr) {
