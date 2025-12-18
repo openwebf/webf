@@ -943,57 +943,68 @@ class InlineFormattingContext {
 
     double maxW = constraints.maxWidth;
 
-    // Helper to compute per-line trailing reserve based on current paragraph layout.
-    List<double> computePerLineReserve(ui.Paragraph p) {
-      final lines = p.computeLineMetrics();
-      if (lines.isEmpty) return const [];
-      final reserves = List<double>.filled(lines.length, 0.0, growable: false);
+    // Pre-filter candidates that can contribute trailing reserve.
+    final Set<RenderBoxModel> hasRightPH = <RenderBoxModel>{};
+    for (final ph in _allPlaceholders) {
+      if (ph.kind == _PHKind.rightExtra && ph.owner != null) {
+        hasRightPH.add(ph.owner!);
+      }
+    }
+    final List<(RenderBoxModel box, int start, int end, double extra)> candidates =
+        <(RenderBoxModel box, int start, int end, double extra)>[];
+    for (final entry in _elementRanges.entries) {
+      final RenderBoxModel box = entry.key;
+      final (int start, int end) = entry.value;
+      if (end <= start) continue;
+      if (hasRightPH.contains(box)) continue;
+      final CSSRenderStyle s = box.renderStyle;
+      final double extra =
+          s.paddingRight.computedValue + s.effectiveBorderRightWidth.computedValue + s.marginRight.computedValue;
+      if (extra <= 0) continue;
+      candidates.add((box, start, end, extra));
+    }
+    if (candidates.isEmpty) return;
 
-      // Build a quick lookup for which elements already emitted a right-extras placeholder
-      final Set<RenderBoxModel> hasRightPH = {};
-      for (int i = 0; i < _allPlaceholders.length && i < _placeholderBoxes.length; i++) {
-        final ph = _allPlaceholders[i];
-        if (ph.kind == _PHKind.rightExtra && ph.owner != null) {
-          hasRightPH.add(ph.owner!);
+    ui.TextBox? lastTextBoxForRange(ui.Paragraph p, int start, int end) {
+      if (end <= start) return null;
+      // Fast path: the last code unit usually maps to the final fragment.
+      int idx = end - 1;
+      // Trailing whitespace/markers can yield empty boxes; scan backwards a few code units.
+      for (int attempt = 0; attempt < 8 && idx >= start; attempt++, idx--) {
+        final boxes = p.getBoxesForRange(idx, idx + 1);
+        if (boxes.isNotEmpty) return boxes.last;
+      }
+      // Fallback: query the whole range.
+      final boxes = p.getBoxesForRange(start, end);
+      if (boxes.isEmpty) return null;
+      return boxes.last;
+    }
+
+    bool layoutPasses(ui.Paragraph p, List<ui.LineMetrics> lines) {
+      if (lines.isEmpty) return true;
+      final reserves = List<double>.filled(lines.length, 0.0, growable: false);
+      for (final (_, int start, int end, double extra) in candidates) {
+        final ui.TextBox? tb = lastTextBoxForRange(p, start, end);
+        if (tb == null) continue;
+        final int li = _bestOverlapLineIndexForBox(tb, lines);
+        if (li < 0 || li >= reserves.length) continue;
+        if (extra > reserves[li]) reserves[li] = extra;
+      }
+      for (int i = 0; i < lines.length; i++) {
+        if (lines[i].width + reserves[i] > maxW + 0.1) {
+          return false;
         }
       }
-
-      _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
-        final int sIdx = range.$1;
-        final int eIdx = range.$2;
-        if (eIdx <= sIdx) return;
-        final rects = p.getBoxesForRange(sIdx, eIdx);
-        if (rects.isEmpty) return;
-        final last = rects.last;
-        final linesLocal = p.computeLineMetrics();
-        final int li = _bestOverlapLineIndexForBox(last, linesLocal);
-        if (li < 0) return;
-        // Skip reserve if a right-extras placeholder already accounts for it.
-        if (hasRightPH.contains(box)) return;
-        final s = box.renderStyle;
-        final double extra =
-            s.paddingRight.computedValue + s.effectiveBorderRightWidth.computedValue + s.marginRight.computedValue;
-        if (extra > reserves[li]) reserves[li] = extra;
-      });
-      return reserves;
+      return true;
     }
 
     // Iteratively shrink width so each line satisfies width + reserve <= maxW.
     // Cap iterations to avoid long loops.
-    double chosen = maxW;
+    double chosen = paragraph.width.isFinite && paragraph.width > 0 ? math.min(paragraph.width, maxW) : maxW;
     for (int iter = 0; iter < 6; iter++) {
       final lines = paragraph.computeLineMetrics();
       if (lines.isEmpty) break;
-      final reserves = computePerLineReserve(paragraph);
-      if (reserves.isEmpty) break;
-      bool ok = true;
-      for (int i = 0; i < lines.length && i < reserves.length; i++) {
-        if (lines[i].width + reserves[i] > maxW + 0.1) {
-          ok = false;
-          break;
-        }
-      }
-      if (ok) break;
+      if (layoutPasses(paragraph, lines)) break;
 
       // Compute an estimate of how much we need to shrink, but broaden the
       // search space to allow crossing word-break thresholds. Limiting the
@@ -1007,14 +1018,7 @@ class InlineFormattingContext {
         final double mid = (hi + lo) / 2.0;
         paragraph.layout(ui.ParagraphConstraints(width: mid));
         final testLines = paragraph.computeLineMetrics();
-        final testRes = computePerLineReserve(paragraph);
-        bool pass = true;
-        for (int i = 0; i < testLines.length && i < testRes.length; i++) {
-          if (testLines[i].width + testRes[i] > maxW + 0.1) {
-            pass = false;
-            break;
-          }
-        }
+        final bool pass = layoutPasses(paragraph, testLines);
         if (pass) {
           midChosen = mid;
           lo = mid;
