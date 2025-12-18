@@ -36,6 +36,7 @@ Run from repo root (`../`) unless noted:
 
 ## Agent-Specific Instructions
 - Always explain why changes are needed before making them.
+- Do not build anything unless explicitly requested.
 
 ## Security & Configuration Tips
 - Initialize submodules: `git submodule update --init --recursive`.
