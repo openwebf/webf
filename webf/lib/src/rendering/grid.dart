@@ -1344,6 +1344,47 @@ class RenderGridLayout extends RenderLayoutBox {
         // clamp max-content sizing to the available inline size and allow
         // line wrapping (browser behavior).
         final List<double> autoMinColSizes = List<double>.filled(colSizes.length, 0.0);
+
+        void recomputeFlexibleTracks() {
+          if (adjustedInnerWidth == null || !adjustedInnerWidth!.isFinite || adjustedInnerWidth! <= 0) return;
+
+          double fixedNonFlex = 0.0;
+          double frSum = 0.0;
+          final List<double> minFlexSizes = List<double>.filled(colSizes.length, 0.0);
+          final List<double> flexFactors = List<double>.filled(colSizes.length, 0.0);
+
+          for (int c = 0; c < colSizes.length; c++) {
+            final GridTrackSize track = columnTrackAt(c);
+            if (track is GridFraction) {
+              flexFactors[c] = track.fr;
+              frSum += track.fr;
+            } else if (track is GridMinMax && track.maxTrack is GridFraction) {
+              final double minSize = _resolveTrackSize(track.minTrack, adjustedInnerWidth);
+              minFlexSizes[c] = minSize;
+              final double fr = (track.maxTrack as GridFraction).fr;
+              flexFactors[c] = fr;
+              frSum += fr;
+            } else {
+              fixedNonFlex += colSizes[c];
+            }
+          }
+
+          if (frSum > 0) {
+            final double remaining = math.max(0.0, adjustedInnerWidth! - fixedNonFlex);
+            for (int c = 0; c < colSizes.length; c++) {
+              final double fr = flexFactors[c];
+              if (fr <= 0) continue;
+              final double portion = remaining * (fr / frSum);
+              final GridTrackSize track = columnTrackAt(c);
+              if (track is GridFraction) {
+                colSizes[c] = portion;
+              } else if (track is GridMinMax && track.maxTrack is GridFraction) {
+                colSizes[c] = math.max(portion, minFlexSizes[c]);
+              }
+            }
+          }
+        }
+
         RenderBox? childForIntrinsic = firstChild;
         while (childForIntrinsic != null) {
           final GridLayoutParentData pd = childForIntrinsic.parentData as GridLayoutParentData;
@@ -1383,10 +1424,16 @@ class RenderGridLayout extends RenderLayoutBox {
           childForIntrinsic = pd.nextSibling;
         }
 
+        // Per CSS Grid track sizing, flexible (fr) tracks are resolved after fixed/auto
+        // tracks. Once auto tracks grow to fit content, re-resolve fr tracks so they
+        // take the remaining space instead of forcing auto tracks to shrink/wrap.
+        recomputeFlexibleTracks();
+
         // Clamp auto columns between their min-content and max-content contributions
         // when the grid container has a definite inline size. This prevents auto
         // columns from growing without bound and matches browser behavior where
         // long text wraps instead of forcing horizontal overflow.
+        bool didClampAutoColumns = false;
         if (adjustedInnerWidth != null && adjustedInnerWidth.isFinite && adjustedInnerWidth > 0) {
           double totalWidth = 0.0;
           for (final double size in colSizes) {
@@ -1414,47 +1461,15 @@ class RenderGridLayout extends RenderLayoutBox {
                 final double shrink = capacity * ratio;
                 colSizes[c] = math.max(autoMinColSizes[c], colSizes[c] - shrink);
               }
+              didClampAutoColumns = true;
             }
           }
         }
 
-        // Recompute flexible (fr) tracks using the updated fixed/auto sizes.
-        if (adjustedInnerWidth != null && adjustedInnerWidth.isFinite && adjustedInnerWidth > 0) {
-          double fixedNonFlex = 0.0;
-          double frSum = 0.0;
-          final List<double> minFlexSizes = List<double>.filled(colSizes.length, 0.0);
-          final List<double> flexFactors = List<double>.filled(colSizes.length, 0.0);
-
-          for (int c = 0; c < colSizes.length; c++) {
-            final GridTrackSize track = columnTrackAt(c);
-            if (track is GridFraction) {
-              flexFactors[c] = track.fr;
-              frSum += track.fr;
-            } else if (track is GridMinMax && track.maxTrack is GridFraction) {
-              final double minSize = _resolveTrackSize(track.minTrack, adjustedInnerWidth);
-              minFlexSizes[c] = minSize;
-              final double fr = (track.maxTrack as GridFraction).fr;
-              flexFactors[c] = fr;
-              frSum += fr;
-            } else {
-              fixedNonFlex += colSizes[c];
-            }
-          }
-
-          if (frSum > 0) {
-            final double remaining = math.max(0.0, adjustedInnerWidth - fixedNonFlex);
-            for (int c = 0; c < colSizes.length; c++) {
-              final double fr = flexFactors[c];
-              if (fr <= 0) continue;
-              final double portion = remaining * (fr / frSum);
-              final GridTrackSize track = columnTrackAt(c);
-              if (track is GridFraction) {
-                colSizes[c] = portion;
-              } else if (track is GridMinMax && track.maxTrack is GridFraction) {
-                colSizes[c] = math.max(portion, minFlexSizes[c]);
-              }
-            }
-          }
+        // If we clamped auto columns due to overflow (non-flex tracks exceed available space),
+        // re-resolve fr tracks to consume any newly freed space.
+        if (didClampAutoColumns) {
+          recomputeFlexibleTracks();
         }
       }
     }
