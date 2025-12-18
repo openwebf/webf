@@ -1952,8 +1952,14 @@ void StyleEngine::RecalcStyle() {
   RecalcStyle(change, context);
 }
 
-void StyleEngine::MediaQueryAffectingValueChanged(MediaValueChange change) {
-  Document& document = GetDocument();
+void StyleEngine::MarkUserStyleDirty() {}
+
+void StyleEngine::MediaQueryAffectingValueChanged(TreeScope& tree_scope, MediaValueChange change) {
+  Document& document = tree_scope.GetDocument();
+  if (&document != document_) {
+    return;
+  }
+
   ExecutingContext* context = document.GetExecutingContext();
   if (!context || !context->IsContextValid() || !context->isBlinkEnabled()) {
     return;
@@ -2093,6 +2099,38 @@ void StyleEngine::MediaQueryAffectingValueChanged(MediaValueChange change) {
   }
 }
 
-void StyleEngine::Trace(GCVisitor* visitor) {}
+void StyleEngine::MediaQueryAffectingValueChanged(UnorderedTreeScopeSet& tree_scopes,
+                                                  MediaValueChange change) {
+  for (TreeScope* tree_scope : tree_scopes) {
+    if (tree_scope) {
+      MediaQueryAffectingValueChanged(*tree_scope, change);
+    }
+  }
+}
+
+void StyleEngine::MediaQueryAffectingValueChanged(TextTrackSet& text_tracks, MediaValueChange change) {
+  (void)change;
+  if (text_tracks.empty()) {
+    return;
+  }
+}
+
+void StyleEngine::MediaQueryAffectingValueChanged(MediaValueChange change) {
+  if (AffectedByMediaValueChange(active_user_style_sheets_, change)) {
+    MarkUserStyleDirty();
+  }
+  MediaQueryAffectingValueChanged(GetDocument(), change);
+  MediaQueryAffectingValueChanged(active_tree_scopes_, change);
+  MediaQueryAffectingValueChanged(text_tracks_, change);
+  if (resolver_) {
+    resolver_->UpdateMediaType();
+  }
+}
+
+void StyleEngine::Trace(GCVisitor* visitor) {
+  for (const auto& active_sheet : active_user_style_sheets_) {
+    visitor->TraceMember(active_sheet.first);
+  }
+}
 
 }  // namespace webf

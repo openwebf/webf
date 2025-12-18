@@ -36,8 +36,10 @@
 
 #include <core/base/auto_reset.h>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <algorithm>
+#include "core/css/active_style_sheets.h"
 #include "core/css/css_global_rule_set.h"
 #include "core/css/css_style_sheet.h"
 #include "core/css/resolver/media_query_result.h"
@@ -64,6 +66,8 @@ class CSSStyleSheet;
 class Document;
 class StyleResolver;
 class LayoutTreeRebuildRoot;
+class TextTrack;
+class TreeScope;
 
 class StyleEngine final {
  public:
@@ -227,6 +231,14 @@ class StyleEngine final {
                                              ContainerNode& scheduling_parent,
                                              unsigned min_direct_adjacent);
 
+  using UnorderedTreeScopeSet = std::unordered_set<TreeScope*>;
+  using TextTrackSet = std::unordered_set<TextTrack*>;
+
+  void MarkUserStyleDirty();
+  void MediaQueryAffectingValueChanged(TreeScope& tree_scope, MediaValueChange change);
+  void MediaQueryAffectingValueChanged(UnorderedTreeScopeSet& tree_scopes, MediaValueChange change);
+  void MediaQueryAffectingValueChanged(TextTrackSet& text_tracks, MediaValueChange change);
+
   Document* document_;
   struct StringHash {
     size_t operator()(const String& s) const { 
@@ -277,6 +289,9 @@ class StyleEngine final {
   StyleRecalcRoot style_recalc_root_;
   std::shared_ptr<StyleResolver> resolver_;
   std::shared_ptr<CSSGlobalRuleSet> global_rule_set_;
+  ActiveStyleSheetVector active_user_style_sheets_;
+  UnorderedTreeScopeSet active_tree_scopes_;
+  TextTrackSet text_tracks_;
   // Active author stylesheets registered by link/style processing. We track
   // both the CSSStyleSheet wrapper (for top-level media lists) and the shared
   // StyleSheetContents used for rule matching / invalidation.

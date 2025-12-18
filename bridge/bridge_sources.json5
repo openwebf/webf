@@ -120,13 +120,14 @@
     "core/base/strings/utf_string_conversion_utils.cc",
     "core/core_initializer.cc",
 
-    // Style
-    "core/css/style_element.cc",
-    "core/css/style_color.cc",
-    "core/css/style_engine.cc",
-    "core/css/style_traversal_root.cc",
-    "core/css/style_invalidation_root.cc",
-    "core/css/style_recalc_root.cc",
+	    // Style
+	    "core/css/style_element.cc",
+	    "core/css/style_color.cc",
+	    "core/css/active_style_sheets.cc",
+	    "core/css/style_engine.cc",
+	    "core/css/style_traversal_root.cc",
+	    "core/css/style_invalidation_root.cc",
+	    "core/css/style_recalc_root.cc",
     "core/css/style_recalc_context.cc",
     "core/css/css_global_rule_set.cc",
     "core/css/rule_feature_set.cc",
