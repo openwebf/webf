@@ -554,7 +554,7 @@ abstract class RenderLayoutBox extends RenderBoxModel
     // Use the resolved flex-basis as the specified content size on the main axis
     // so the item measures to its base size during intrinsic layout.
     if (renderStyle.isParentRenderFlexLayout()) {
-      final CSSRenderStyle? parentRenderStyle = renderStyle.getParentRenderStyle();
+      final CSSRenderStyle? parentRenderStyle = renderStyle.getAttachedRenderParentRenderStyle();
       final CSSLengthValue? flexBasisLV = renderStyle.flexBasis;
       final bool isFlexBasisContent = flexBasisLV?.type == CSSLengthType.CONTENT;
       final double? flexBasis = (flexBasisLV == null || flexBasisLV == CSSLengthValue.auto || isFlexBasisContent)

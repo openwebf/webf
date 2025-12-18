@@ -362,7 +362,7 @@ abstract class RenderBoxModel extends RenderBox
   // child has percentage length and parent's size can not be calculated by style
   // thus parent needs relayout for its child calculate percentage length.
   void markParentNeedsRelayout() {
-    RenderObject? parent = renderStyle.getParentRenderStyle()?.attachedRenderBoxModel;
+    RenderObject? parent = renderStyle.getAttachedRenderParentRenderStyle()?.attachedRenderBoxModel;
     if (parent is RenderBoxModel) {
       parent.needsRelayout = true;
     }
@@ -421,7 +421,7 @@ abstract class RenderBoxModel extends RenderBox
     double? parentBoxContentConstraintsWidth;
     if (renderStyle.isParentRenderBoxModel() &&
         (renderStyle.isSelfRenderLayoutBox() || renderStyle.isSelfRenderWidget())) {
-      RenderBoxModel parentRenderBoxModel = (renderStyle.getParentRenderStyle()!.attachedRenderBoxModel!);
+      RenderBoxModel parentRenderBoxModel = (renderStyle.getAttachedRenderParentRenderStyle()!.attachedRenderBoxModel!);
 
       // Inline-block shrink-to-fit: when the parent is inline-block with auto width,
       // do not bound block children by the parent's finite content width. This allows
@@ -461,7 +461,7 @@ abstract class RenderBoxModel extends RenderBox
       // Flex context adjustments
       if (renderStyle.isParentRenderFlexLayout()) {
         final RenderFlexLayout flexParent =
-            renderStyle.getParentRenderStyle()!.attachedRenderBoxModel! as RenderFlexLayout;
+            renderStyle.getAttachedRenderParentRenderStyle()!.attachedRenderBoxModel! as RenderFlexLayout;
         // FlexItems with flex:none won't inherit parent box's constraints
         if (flexParent.isFlexNone(this)) {
           parentBoxContentConstraintsWidth = null;
@@ -507,7 +507,7 @@ abstract class RenderBoxModel extends RenderBox
       // Skip constraint inheritance if parent is a flex item with flex: none (flex-grow: 0, flex-shrink: 0)
       if (parentFlow.renderStyle.isParentRenderFlexLayout()) {
         RenderFlexLayout flexParent =
-            parentFlow.renderStyle.getParentRenderStyle()!.attachedRenderBoxModel as RenderFlexLayout;
+            parentFlow.renderStyle.getAttachedRenderParentRenderStyle()!.attachedRenderBoxModel as RenderFlexLayout;
         if (flexParent.isFlexNone(parentFlow)) {
           // Don't inherit constraints for flex: none items
           parentBoxContentConstraintsWidth = null;

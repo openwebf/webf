@@ -41,7 +41,7 @@ mixin CSSOpacityMixin on RenderStyle {
     }
 
     // Opacity effect the stacking context.
-    RenderStyle? parentRenderStyle = getParentRenderStyle();
+    RenderStyle? parentRenderStyle = getAttachedRenderParentRenderStyle();
     parentRenderStyle?.markChildrenNeedsSort();
 
     markNeedsPaint();

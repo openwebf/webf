@@ -59,7 +59,7 @@ mixin CSSVariableMixin on RenderStyle {
       return variable!.defaultValue;
     }
 
-    final parent = getParentRenderStyle();
+    final parent = getAttachedRenderParentRenderStyle();
     final dyn = parent?.getCSSVariable(identifier, propertyName);
 
     return dyn;

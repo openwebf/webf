@@ -575,7 +575,7 @@ class InlineFormattingContext {
         }
         nearestWithLine ??= cur;
       }
-      cur = cur.getParentRenderStyle() as CSSRenderStyle?;
+      cur = cur.getAttachedRenderParentRenderStyle() as CSSRenderStyle?;
     }
 
     if (nearestWithLine != null) {
@@ -3018,7 +3018,7 @@ class InlineFormattingContext {
         } else {
           styleBoxForBaseline = rb;
         }
-      
+
         final double? cssBaseline = styleBoxForBaseline.computeCssLastBaselineOf(TextBaseline.alphabetic);
         if (cssBaseline != null) {
           baselineOffset = mT + cssBaseline;

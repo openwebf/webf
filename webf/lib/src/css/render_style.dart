@@ -93,6 +93,9 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   // Common
   Element get target;
 
+  @pragma('vm:prefer-inline')
+  RenderStyle? get parent => target.parentElement?.renderStyle;
+
   dynamic getProperty(String key);
 
   /// Resolve the style value.
@@ -526,22 +529,22 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   @pragma('vm:prefer-inline')
   bool isParentRenderLayoutBox() {
-    return getParentRenderStyle()?.isSelfRenderLayoutBox() == true;
+    return getAttachedRenderParentRenderStyle()?.isSelfRenderLayoutBox() == true;
   }
 
   @pragma('vm:prefer-inline')
   bool isParentRenderFlexLayout() {
-    return getParentRenderStyle()?.isSelfRenderFlexLayout() == true;
+    return getAttachedRenderParentRenderStyle()?.isSelfRenderFlexLayout() == true;
   }
 
   @pragma('vm:prefer-inline')
   bool isParentRenderGridLayout() {
-    return getParentRenderStyle()?.isSelfRenderGridLayout() == true;
+    return getAttachedRenderParentRenderStyle()?.isSelfRenderGridLayout() == true;
   }
 
   @pragma('vm:prefer-inline')
   bool isParentRenderFlowLayout() {
-    return getParentRenderStyle()?.isSelfRenderFlowLayout() == true;
+    return getAttachedRenderParentRenderStyle()?.isSelfRenderFlowLayout() == true;
   }
 
   @pragma('vm:prefer-inline')
@@ -819,7 +822,7 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   @pragma('vm:prefer-inline')
-  T? getParentRenderStyle<T extends RenderStyle>() {
+  T? getAttachedRenderParentRenderStyle<T extends RenderStyle>() {
     return getRenderBoxValueByType(RenderObjectGetType.parent, (_, renderStyle) => renderStyle) as T? ??
         target.parentElement?.renderStyle as T?;
   }
@@ -1035,7 +1038,7 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   @pragma('vm:prefer-inline')
   void markParentNeedsSort() {
-    getParentRenderStyle()?.markChildrenNeedsSort();
+    getAttachedRenderParentRenderStyle()?.markChildrenNeedsSort();
   }
 
   // Whether this element itself establishes a stacking context.
@@ -1060,7 +1063,7 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     }
 
     // Flex or Grid items with non-auto z-index
-    final CSSRenderStyle? parent = getParentRenderStyle();
+    final CSSRenderStyle? parent = getAttachedRenderParentRenderStyle();
     if (parent != null &&
         ((parent.display == CSSDisplay.flex || parent.display == CSSDisplay.inlineFlex) ||
             (parent.display == CSSDisplay.grid || parent.display == CSSDisplay.inlineGrid)) &&
@@ -1127,44 +1130,51 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   dynamic _renderObjectMatchFn(
-      RenderBoxModel renderBoxModel, RenderObjectGetType getType, RenderObjectMatchers matcher) {
+      RenderBoxModel renderBoxModel,
+      RenderObjectGetType getType,
+      RenderObjectMatchers matcher,
+      ) {
     switch (getType) {
       case RenderObjectGetType.self:
         return matcher(renderBoxModel, renderBoxModel.renderStyle);
+
       case RenderObjectGetType.parent:
-        RenderObject? parent = renderBoxModel.parent;
+        final directParent = renderBoxModel.parent;
+        RenderObject? parent = directParent;
         while (parent is RenderEventListener ||
             parent is RenderLayoutBoxWrapper ||
             (parent is RenderFlowLayout && parent.renderStyle == this)) {
           parent = parent!.parent;
         }
+        return matcher(directParent, parent is RenderBoxModel ? parent.renderStyle : null);
 
-        return matcher(renderBoxModel.parent, parent is RenderBoxModel ? parent.renderStyle : null);
       case RenderObjectGetType.firstChild:
         if (renderBoxModel is RenderLayoutBox) {
-          RenderObject? firstChild = renderBoxModel.firstChild;
-
+          final firstChild = renderBoxModel.firstChild;
           return matcher(firstChild, firstChild is RenderBoxModel ? firstChild.renderStyle : null);
         }
         return false;
+
       case RenderObjectGetType.lastChild:
         if (renderBoxModel is RenderLayoutBox) {
-          RenderObject? lastChild = renderBoxModel.lastChild;
+          final lastChild = renderBoxModel.lastChild;
           return matcher(lastChild, lastChild is RenderBoxModel ? lastChild.renderStyle : null);
         }
         return false;
+
       case RenderObjectGetType.previousSibling:
-        var parentData = renderBoxModel.parentData;
-        if (parentData is RenderLayoutParentData) {
-          RenderObject? previousSibling = parentData.previousSibling;
-          return matcher(previousSibling, previousSibling is RenderBoxModel ? previousSibling.renderStyle : null);
+        final pd = renderBoxModel.parentData;
+        if (pd is RenderLayoutParentData) {
+          final prev = pd.previousSibling;
+          return matcher(prev, prev is RenderBoxModel ? prev.renderStyle : null);
         }
         return false;
+
       case RenderObjectGetType.nextSibling:
-        var parentData = renderBoxModel.parentData;
-        if (parentData is RenderLayoutParentData) {
-          RenderObject? nextSibling = parentData.nextSibling;
-          return matcher(nextSibling, nextSibling is RenderBoxModel ? nextSibling.renderStyle : null);
+        final pd = renderBoxModel.parentData;
+        if (pd is RenderLayoutParentData) {
+          final next = pd.nextSibling;
+          return matcher(next, next is RenderBoxModel ? next.renderStyle : null);
         }
         return false;
     }
@@ -1202,13 +1212,11 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   bool everyAttachedWidgetRenderBox(EveryRenderBoxModelHandlerCallback callback) {
-    for (var entry in _widgetRenderObjects.entries) {
-      RenderObject renderObject = entry.value;
-      if (!renderObject.attached) {
-        continue;
+    for (final entry in _widgetRenderObjects.entries) {
+      final ro = entry.value;
+      if (ro.attached && !callback(entry.key, ro)) {
+        return false;
       }
-      bool result = callback(entry.key, entry.value);
-      if (!result) return false;
     }
     return true;
   }
@@ -2576,7 +2584,7 @@ class CSSRenderStyle extends RenderStyle
       } else if (renderStyle.left.isNotAuto && renderStyle.right.isNotAuto) {
         // https://www.w3.org/TR/css-position-3/#abs-non-replaced-width
         if (renderStyle.isParentRenderBoxModel()) {
-          RenderStyle parentRenderStyle = renderStyle.getParentRenderStyle()!;
+          RenderStyle parentRenderStyle = renderStyle.getAttachedRenderParentRenderStyle()!;
           if (parentRenderStyle.paddingBoxLogicalWidth != null) {
             // Width of positioned element should subtract its horizontal margin.
             logicalWidth = (parentRenderStyle.paddingBoxLogicalWidth!) -
@@ -2599,7 +2607,7 @@ class CSSRenderStyle extends RenderStyle
     } else if (effectiveDisplay == CSSDisplay.block ||
         effectiveDisplay == CSSDisplay.flex ||
         effectiveDisplay == CSSDisplay.grid) {
-      CSSRenderStyle? parentStyle = renderStyle.getParentRenderStyle();
+      CSSRenderStyle? parentStyle = renderStyle.getAttachedRenderParentRenderStyle();
       if (logicalWidth == null && renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
       } else if (logicalWidth == null && aspectRatio != null && renderStyle.height.isNotAuto) {
@@ -2616,7 +2624,7 @@ class CSSRenderStyle extends RenderStyle
         // and force the inline-block to expand to the full line width. Instead, keep
         // width auto here so the child can measure intrinsically and the parent can
         // shrink-wrap to its contents.
-        final CSSRenderStyle? p = renderStyle.getParentRenderStyle();
+        final CSSRenderStyle? p = renderStyle.getAttachedRenderParentRenderStyle();
         final bool parentInlineBlockAuto = p != null &&
             p.effectiveDisplay == CSSDisplay.inlineBlock && p.width.isAuto;
         if (!parentInlineBlockAuto) {
@@ -2779,7 +2787,7 @@ class CSSRenderStyle extends RenderStyle
         // RenderBoxModel parent = current.parent as RenderBoxModel;
         // Get the renderStyle of outer scrolling box cause the renderStyle of scrolling
         // content box is only a fraction of the complete renderStyle.
-        RenderStyle parentRenderStyle = renderStyle.getParentRenderStyle()!;
+        RenderStyle parentRenderStyle = renderStyle.getAttachedRenderParentRenderStyle()!;
         // Height of positioned element should subtract its vertical margin.
         logicalHeight = (parentRenderStyle.paddingBoxLogicalHeight ?? 0) -
             renderStyle.top.computedValue -
@@ -2787,7 +2795,7 @@ class CSSRenderStyle extends RenderStyle
             renderStyle.marginTop.computedValue -
             renderStyle.marginBottom.computedValue;
       } else {
-        CSSRenderStyle? parentRenderStyle = renderStyle.getParentRenderStyle();
+        CSSRenderStyle? parentRenderStyle = renderStyle.getAttachedRenderParentRenderStyle();
 
         if (parentRenderStyle != null) {
           RenderWidgetElementChild? childWrapper = target.attachedRenderer?.findWidgetElementChild();
@@ -2857,7 +2865,7 @@ class CSSRenderStyle extends RenderStyle
   @override
   bool get isHeightStretch {
     RenderStyle renderStyle = this;
-    CSSRenderStyle? parentRenderStyle = renderStyle.getParentRenderStyle();
+    CSSRenderStyle? parentRenderStyle = renderStyle.getAttachedRenderParentRenderStyle();
     if (parentRenderStyle == null) {
       return false;
     }
@@ -2958,7 +2966,7 @@ class CSSRenderStyle extends RenderStyle
     // eg. compute percentage length before layout.
     if (_contentBoxLogicalWidth == double.infinity) {
       // Ensure parent layout is complete before resolving child percentages
-      CSSRenderStyle? parentStyle = getParentRenderStyle();
+      CSSRenderStyle? parentStyle = getAttachedRenderParentRenderStyle();
       if (parentStyle != null && parentStyle._contentBoxLogicalWidth == double.infinity) {
         parentStyle.computeContentBoxLogicalWidth();
       }
@@ -3440,14 +3448,14 @@ class CSSRenderStyle extends RenderStyle
   // Find ancestor render style with display of not inline.
   RenderStyle? _findAncestorWithNoDisplayInline() {
     RenderStyle renderStyle = this;
-    CSSRenderStyle? parentRenderStyle = renderStyle.getParentRenderStyle();
+    CSSRenderStyle? parentRenderStyle = renderStyle.getAttachedRenderParentRenderStyle();
     while (parentRenderStyle != null) {
       // If ancestor element is WidgetElement, should return it because should get maxWidth of constraints for logicalWidth.
       if (parentRenderStyle.effectiveDisplay != CSSDisplay.inline ||
           parentRenderStyle.target.renderObjectManagerType == RenderObjectManagerType.FLUTTER_ELEMENT) {
         break;
       }
-      parentRenderStyle = parentRenderStyle.getParentRenderStyle<CSSRenderStyle>();
+      parentRenderStyle = parentRenderStyle.getAttachedRenderParentRenderStyle<CSSRenderStyle>();
     }
     return parentRenderStyle;
   }
@@ -3455,10 +3463,10 @@ class CSSRenderStyle extends RenderStyle
   // Find ancestor render style with definite content box logical width.
   RenderStyle? _findAncestorWithContentBoxLogicalWidth() {
     RenderStyle renderStyle = this;
-    RenderStyle? parentRenderStyle = renderStyle.getParentRenderStyle();
+    RenderStyle? parentRenderStyle = renderStyle.getAttachedRenderParentRenderStyle();
 
     while (parentRenderStyle != null) {
-      RenderStyle? grandParentRenderStyle = parentRenderStyle.getParentRenderStyle();
+      RenderStyle? grandParentRenderStyle = parentRenderStyle.getAttachedRenderParentRenderStyle();
       // Flex item with flex-shrink 0 and no width/max-width will have infinity constraints
       // even if parents have width when flex direction is row.
       if (grandParentRenderStyle != null) {

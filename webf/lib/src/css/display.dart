@@ -103,7 +103,7 @@ mixin CSSDisplayMixin on RenderStyle {
     // 3. Flex items are blockified (children of flex containers)
     // https://www.w3.org/TR/css-display-3/#transformations
     if (hasRenderBox() && isParentRenderBoxModel()) {
-      RenderStyle? parentRenderStyle = getParentRenderStyle();
+      RenderStyle? parentRenderStyle = getAttachedRenderParentRenderStyle();
       if (parentRenderStyle != null) {
         // Check if parent is a flex container
         if (parentRenderStyle.display == CSSDisplay.flex ||

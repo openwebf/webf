@@ -1132,7 +1132,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     // the parent's inline formatting context, size it to the union of its visual
     // fragments as measured by the parent IFC rather than from its own flow runs.
     final bool isInlineSelf = renderStyle.effectiveDisplay == CSSDisplay.inline;
-    final RenderBoxModel? p = renderStyle.getParentRenderStyle()?.attachedRenderBoxModel;
+    final RenderBoxModel? p = renderStyle.getAttachedRenderParentRenderStyle()?.attachedRenderBoxModel;
     if (isInlineSelf && p is RenderFlowLayout && p.establishIFC && p.inlineFormattingContext != null) {
       final InlineFormattingContext ifc = p.inlineFormattingContext!;
         // Width: max per-line fragment width of this inline element.

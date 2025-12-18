@@ -224,6 +224,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   /// The Node.parentElement read-only property returns the DOM node's parent Element,
   /// or null if the node either has no parent, or its parent isn't a DOM Element.
+  @pragma('vm:prefer-inline')
   Element? get parentElement {
     if (parentNode != null && parentNode!.nodeType == NodeType.ELEMENT_NODE) {
       return parentNode as Element;
