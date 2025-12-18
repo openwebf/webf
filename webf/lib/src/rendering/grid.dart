@@ -1623,8 +1623,42 @@ class RenderGridLayout extends RenderLayoutBox {
           final int startCol = pd.columnStart;
           final int span = math.max(1, pd.columnSpan);
           if (startCol >= 0 && startCol < colSizes.length) {
-            final double intrinsicMaxWidth = childForIntrinsic.getMaxIntrinsicWidth(double.infinity);
-            final double intrinsicMinWidth = childForIntrinsic.getMinIntrinsicWidth(double.infinity);
+            RenderStyle? childGridStyle;
+            if (childForIntrinsic is RenderBoxModel) {
+              childGridStyle = childForIntrinsic.renderStyle;
+            } else if (childForIntrinsic is RenderEventListener) {
+              final RenderBox? wrapped = childForIntrinsic.child;
+              if (wrapped is RenderBoxModel) {
+                childGridStyle = wrapped.renderStyle;
+              }
+            }
+
+            double intrinsicMaxWidth = childForIntrinsic.getMaxIntrinsicWidth(double.infinity);
+            double intrinsicMinWidth = childForIntrinsic.getMinIntrinsicWidth(double.infinity);
+            if (childGridStyle != null) {
+              // Guard against circular dependencies where percentage widths contribute to intrinsic sizing
+              // of `auto` tracks; fall back to the definite min-width floor if available.
+              final CSSLengthValue minWidth = childGridStyle.minWidth;
+              if (minWidth.isNotAuto && minWidth.type != CSSLengthType.PERCENTAGE) {
+                final double minWidthValue = minWidth.computedValue;
+                if (minWidthValue.isFinite && minWidthValue > 0) {
+                  if (!intrinsicMinWidth.isFinite || intrinsicMinWidth < minWidthValue) {
+                    intrinsicMinWidth = minWidthValue;
+                  }
+                  if (!intrinsicMaxWidth.isFinite || intrinsicMaxWidth < minWidthValue) {
+                    intrinsicMaxWidth = minWidthValue;
+                  }
+                }
+              }
+
+              // Keep max-content contribution at least the min-content contribution to avoid
+              // shrinking auto tracks below their minimum contribution.
+              if (intrinsicMinWidth.isFinite &&
+                  intrinsicMinWidth > 0 &&
+                  (!intrinsicMaxWidth.isFinite || intrinsicMaxWidth < intrinsicMinWidth)) {
+                intrinsicMaxWidth = intrinsicMinWidth;
+              }
+            }
             final int endCol = math.min(colSizes.length, startCol + span);
 
             int autoCount = 0;
@@ -1697,6 +1731,17 @@ class RenderGridLayout extends RenderLayoutBox {
             }
           }
           childForIntrinsic = pd.nextSibling;
+        }
+
+        // Ensure auto tracks are at least their min-content contributions.
+        if (hasAutoColumns) {
+          for (int c = 0; c < colSizes.length; c++) {
+            if (!autoColumnsMask[c]) continue;
+            final double minSize = autoMinColSizes[c];
+            if (minSize.isFinite && minSize > colSizes[c]) {
+              colSizes[c] = minSize;
+            }
+          }
         }
 
         // Clamp range-limited tracks (minmax(<min>, <max>)) to their max limit after intrinsic sizing.
