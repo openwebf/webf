@@ -40,6 +40,7 @@
 #include "core/css/css_selector.h"
 #include "core/css/css_selector_list.h"
 #include "core/css/invalidation/invalidation_set.h"
+#include "core/css/media_query_exp.h"
 #include "core/css/style_scope.h"
 #include "core/dom/element.h"
 #include "core/dom/node.h"
@@ -1764,10 +1765,7 @@ bool RuleFeatureSet::HasViewportDependentMediaQueries() const {
 }
 
 bool RuleFeatureSet::HasDynamicViewportDependentMediaQueries() const {
-  // TODO(guopengfei)：
-  // return media_query_result_flags_.unit_flags &
-  //       MediaQueryExpValue::UnitFlags::kDynamicViewport;
-  return false;
+  return media_query_result_flags_.unit_flags & MediaQueryExpValue::UnitFlags::kDynamicViewport;
 }
 
 void RuleFeatureSet::CollectInvalidationSetsForClass(InvalidationLists& invalidation_lists,

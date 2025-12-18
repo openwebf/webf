@@ -80,7 +80,9 @@ void ProcessRule(RuleSet& rule_set,
     if (auto* media_rule = DynamicTo<StyleRuleMedia>(base_rule.get())) {
       const MediaQuerySet* queries = media_rule->MediaQueries();
       if (queries) {
-        bool match = medium.Eval(*queries);
+        MediaQueryResultFlags flags;
+        bool match = medium.Eval(*queries, &flags);
+        rule_set.AddMediaQueryResultFlags(flags);
         WEBF_LOG(INFO) << "[RuleSet] @media block '" << queries->MediaText().ToUTF8String()
                        << "' match=" << (match ? "true" : "false");
         if (!match) {
@@ -198,8 +200,13 @@ void RuleSet::AddRulesFromSheet(std::shared_ptr<StyleSheetContents> sheet,
     }
 
     auto mq = imp->MediaQueries();
-    if (mq && !medium.Eval(*mq)) {
-      continue;
+    if (mq) {
+      MediaQueryResultFlags flags;
+      bool match = medium.Eval(*mq, &flags);
+      AddMediaQueryResultFlags(flags);
+      if (!match) {
+        continue;
+      }
     }
     if (!imp->IsSupported()) {
       continue;
@@ -210,6 +217,10 @@ void RuleSet::AddRulesFromSheet(std::shared_ptr<StyleSheetContents> sheet,
       AddRulesFromSheet(child, medium, add_rule_flags);
     }
   }
+}
+
+void RuleSet::AddMediaQueryResultFlags(const MediaQueryResultFlags& flags) {
+  features_.MutableMediaQueryResultFlags().Add(flags);
 }
 
 void RuleSet::AddRule(std::shared_ptr<StyleRule> rule,

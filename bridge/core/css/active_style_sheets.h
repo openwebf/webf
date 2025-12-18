@@ -14,6 +14,7 @@
 #include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/heap_vector.h"
 #include "core/css/media_list.h"
+#include "core/css/media_value_change.h"
 
 namespace webf {
 
@@ -34,9 +35,8 @@ ActiveSheetsChange CompareActiveStyleSheets(const ActiveStyleSheetVector& old_st
                                             const ActiveStyleSheetVector& new_style_sheets,
                                             const HeapVector<Member<RuleSetDiff>>& diffs,
                                             std::unordered_set<Member<RuleSet>>& changed_rule_sets);
-// TODO(guopengfei)：先注释
-// bool AffectedByMediaValueChange(const ActiveStyleSheetVector& active_sheets,
-//                                MediaValueChange change);
+bool AffectedByMediaValueChange(const ActiveStyleSheetVector& active_sheets,
+                                MediaValueChange change);
 
 }  // namespace webf
 

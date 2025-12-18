@@ -94,6 +94,8 @@ class RuleSet {
                         const MediaQueryEvaluator&,
                         AddRuleFlags = kRuleHasNoSpecialState);
 
+  void AddMediaQueryResultFlags(const MediaQueryResultFlags& flags);
+
   // Add a single rule
   void AddRule(std::shared_ptr<StyleRule>, 
               unsigned selector_index,
