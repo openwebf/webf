@@ -7,6 +7,8 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
+// ignore_for_file: constant_identifier_names
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -263,7 +265,7 @@ class ScriptRunner {
 
 // https://www.w3.org/TR/2011/WD-html5-author-20110809/the-link-element.html
 class ScriptElement extends Element {
-  ScriptElement([BindingContext? context]) : super(context);
+  ScriptElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
@@ -271,11 +273,11 @@ class ScriptElement extends Element {
   final String _type = _MIME_TEXT_JAVASCRIPT;
 
   Uri? _resolvedSource;
-  ScriptReadyState _readyState = ScriptReadyState.loading;
+  ScriptReadyState readyState = ScriptReadyState.loading;
 
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    super.initializeProperties(properties);
+  void initializeDynamicProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeDynamicProperties(properties);
 
     properties['src'] = BindingObjectProperty(getter: () => src, setter: (value) => src = castToType<String>(value));
     properties['async'] =
@@ -348,12 +350,6 @@ class ScriptElement extends Element {
 
   set text(String value) {
     internalSetAttribute('text', value);
-  }
-
-  ScriptReadyState get readyState => _readyState;
-
-  set readyState(ScriptReadyState readyState) {
-    _readyState = readyState;
   }
 
   void _resolveSource(String source) {

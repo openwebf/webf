@@ -3,7 +3,6 @@
  * Licensed under GNU GPL with Enterprise exception.
  */
 
-import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 /// A widget that provides scroll controllers to descendant widgets to enable

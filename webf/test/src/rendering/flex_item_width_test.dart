@@ -1,12 +1,11 @@
+// ignore_for_file: avoid_print
+
 /*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/dom.dart' as dom;
-import 'package:webf/css.dart';
-import 'package:webf/rendering.dart';
 import '../../setup.dart';
 import '../widget/test_utils.dart';
 
@@ -121,7 +120,6 @@ void main() {
 
       await tester.pump();
 
-      final container = prepared.getElementById('container');
       final item1 = prepared.getElementById('item1');
       final item2 = prepared.getElementById('item2');
       

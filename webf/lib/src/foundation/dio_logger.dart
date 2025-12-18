@@ -44,9 +44,6 @@ class PrettyDioLogger extends Interceptor {
   /// Width size per logPrint
   final int maxWidth;
 
-  /// Size in which the Uint8List will be split
-  static const int chunkSize = 20;
-
   /// Max characters to log for response body; null means unlimited.
   final int? maxBodyLength;
 
@@ -415,19 +412,6 @@ class PrettyDioLogger extends Interceptor {
     }
   }
 
-  void _printUint8List(Uint8List list, {int tabs = kInitialTab}) {
-    var chunks = [];
-    for (var i = 0; i < list.length; i += chunkSize) {
-      chunks.add(
-        list.sublist(
-            i, i + chunkSize > list.length ? list.length : i + chunkSize),
-      );
-    }
-    for (var element in chunks) {
-      logPrint('║${_indent(tabs)} ${element.join(", ")}');
-    }
-  }
-
   bool _canFlattenMap(Map map) {
     return map.values
         .where((dynamic val) => val is Map || val is List)
@@ -452,7 +436,7 @@ class PrettyDioLogger extends Interceptor {
     if (maxBodyLength == null) return input;
     if (input.length <= maxBodyLength!) return input;
     final omitted = input.length - maxBodyLength!;
-    return input.substring(0, maxBodyLength!) + '… [truncated $omitted chars]';
+    return '${input.substring(0, maxBodyLength!)}… [truncated $omitted chars]';
   }
 
   String _encodeJsonCompact(dynamic data) {
@@ -484,7 +468,7 @@ class PrettyDioLogger extends Interceptor {
   convert.Encoding _encodingForContentType(String? contentType) {
     if (contentType == null) return convert.utf8;
     final match = RegExp(r'charset=([^;]+)', caseSensitive: false).firstMatch(contentType);
-    final name = match != null ? match.group(1)?.trim() : null;
+    final name = match?.group(1)?.trim();
     return convert.Encoding.getByName(name?.toLowerCase() ?? '') ?? convert.utf8;
   }
 }

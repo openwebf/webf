@@ -6,6 +6,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
+// ignore_for_file: constant_identifier_names
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -22,7 +24,7 @@ const Duration DEFAULT_METHOD_CALL_TIMEOUT = Duration(seconds: 30);
 class MethodChannelModule extends WebFBaseModule {
   @override
   String get name => METHOD_CHANNEL_NAME;
-  MethodChannelModule(ModuleManager? moduleManager) : super(moduleManager);
+  MethodChannelModule(super.moduleManager);
 
   @override
   void dispose() {}
@@ -57,27 +59,21 @@ abstract class WebFMethodChannel {
       try {
         return controller.module.moduleManager.emitModuleEvent(METHOD_CHANNEL_NAME, data: [method, arguments]);
       } catch (e, stack) {
-        print('Error invoke module event: $e, $stack');
+        domLogger.warning('Error invoke module event', e, stack);
       }
     };
   }
 }
 
 class WebFJavaScriptChannel extends WebFMethodChannel {
-  Duration _methodCallTimeout = DEFAULT_METHOD_CALL_TIMEOUT;
-
-  Duration get methodCallTimeout => _methodCallTimeout;
-
-  set methodCallTimeout(Duration duration) {
-    _methodCallTimeout = duration;
-  }
+  Duration methodCallTimeout = DEFAULT_METHOD_CALL_TIMEOUT;
 
   Future<dynamic> invokeMethod(String method, arguments) async {
     MethodCallCallback? jsMethodCallCallback = _onJSMethodCallCallback;
     if (jsMethodCallCallback != null) {
       return jsMethodCallCallback(method, arguments)
-          .timeout(_methodCallTimeout, onTimeout: () {
-        throw TimeoutException(METHOD_CALL_TIMEOUT, _methodCallTimeout);
+          .timeout(methodCallTimeout, onTimeout: () {
+        throw TimeoutException(METHOD_CALL_TIMEOUT, methodCallTimeout);
       });
     } else {
       return null;
@@ -98,8 +94,8 @@ class WebFJavaScriptChannel extends WebFMethodChannel {
     MethodCallCallback? methodCallCallback = _methodCallCallback;
     if (methodCallCallback != null) {
       return _methodCallCallback!(method, arguments)
-          .timeout(_methodCallTimeout, onTimeout: () {
-        throw TimeoutException(METHOD_CALL_TIMEOUT, _methodCallTimeout);
+          .timeout(methodCallTimeout, onTimeout: () {
+        throw TimeoutException(METHOD_CALL_TIMEOUT, methodCallTimeout);
       });
     } else {
       return Future.value(null);

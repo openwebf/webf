@@ -58,28 +58,6 @@ class PopupView extends StatefulWidget {
 }
 
 class PopupViewState extends State<PopupView> {
-  late bool _leftButtonEnable;
-  late bool _rightButtonEnable;
-
-  @override
-  void initState() {
-    super.initState();
-    _leftButtonEnable = widget.leftButtonEnable;
-    _rightButtonEnable = widget.rightButtonEnable;
-  }
-
-  void updateLeftButtonEnable(bool enable) {
-    setState(() {
-      _leftButtonEnable = enable;
-    });
-  }
-
-  void updateRightButtonEnable(bool enable) {
-    setState(() {
-      _rightButtonEnable = enable;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -181,12 +159,14 @@ class PopupViewState extends State<PopupView> {
     }
 
     return TextButton(
-        onPressed: () {
-          if (widget.buttonPressDismiss ?? false) {
-            Navigator.of(context).pop();
-          }
-          widget.onLeftButtonPressed?.call();
-        },
+        onPressed: widget.leftButtonEnable
+            ? () {
+                if (widget.buttonPressDismiss ?? false) {
+                  Navigator.of(context).pop();
+                }
+                widget.onLeftButtonPressed?.call();
+              }
+            : null,
         child: Text(widget.leftButtonText));
   }
 
@@ -196,26 +176,15 @@ class PopupViewState extends State<PopupView> {
     }
 
     return TextButton(
-        onPressed: () {
-          if (widget.buttonPressDismiss ?? false) {
-            Navigator.of(context).pop();
-          }
-          widget.onRightButtonPressed?.call();
-        },
+        onPressed: widget.rightButtonEnable
+            ? () {
+                if (widget.buttonPressDismiss ?? false) {
+                  Navigator.of(context).pop();
+                }
+                widget.onRightButtonPressed?.call();
+              }
+            : null,
         child: Text(widget.rightButtonText));
-
-    // return MGButton(
-    //   onPressed: () {
-    //     if (widget.buttonPressDismiss ?? false) {
-    //       Navigator.of(context).pop();
-    //     }
-    //     widget.onRightButtonPressed?.call();
-    //   },
-    //   enable: _rightButtonEnable,
-    //   text: widget.rightButtonText,
-    //   isExpand: true,
-    //   presetFontSizes: widget.presetFontSizes,
-    // );
   }
 
   Widget _buildButtonLeft(BuildContext context) {
@@ -224,12 +193,14 @@ class PopupViewState extends State<PopupView> {
     }
     return Expanded(
         child: TextButton(
-            onPressed: () {
-              if (widget.buttonPressDismiss ?? false) {
-                Navigator.of(context).pop();
-              }
-              widget.onLeftButtonPressed?.call();
-            },
+            onPressed: widget.leftButtonEnable
+                ? () {
+                    if (widget.buttonPressDismiss ?? false) {
+                      Navigator.of(context).pop();
+                    }
+                    widget.onLeftButtonPressed?.call();
+                  }
+                : null,
             child: Text(
               widget.leftButtonText,
             )));
@@ -242,12 +213,14 @@ class PopupViewState extends State<PopupView> {
 
     return Expanded(
         child: TextButton(
-            onPressed: () {
-              if (widget.buttonPressDismiss ?? false) {
-                Navigator.of(context).pop();
-              }
-              widget.onRightButtonPressed?.call();
-            },
+            onPressed: widget.rightButtonEnable
+                ? () {
+                    if (widget.buttonPressDismiss ?? false) {
+                      Navigator.of(context).pop();
+                    }
+                    widget.onRightButtonPressed?.call();
+                  }
+                : null,
             child: Text(widget.rightButtonText)));
   }
 

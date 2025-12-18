@@ -31,7 +31,6 @@ void main() {
       await tester.pump();
 
       final grid = prepared.getElementById('grid');
-      final a = prepared.getElementById('a');
       final b = prepared.getElementById('b');
       final c = prepared.getElementById('c');
 
@@ -40,13 +39,11 @@ void main() {
       expect(rg.hasSize, isTrue);
       expect(rg.size.width, equals(250));
 
-      final ra = a.attachedRenderer as RenderBox;
       final rb = b.attachedRenderer as RenderBox;
       final rc = c.attachedRenderer as RenderBox;
 
       // Compute offsets relative to the grid container using layout transforms.
       final RenderGridLayout gridRenderer = grid.attachedRenderer as RenderGridLayout;
-      final Offset aOffset = getLayoutTransformTo(ra, gridRenderer, excludeScrollOffset: true);
       final Offset bOffset = getLayoutTransformTo(rb, gridRenderer, excludeScrollOffset: true);
       final Offset cOffset = getLayoutTransformTo(rc, gridRenderer, excludeScrollOffset: true);
 

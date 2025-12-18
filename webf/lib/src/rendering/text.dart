@@ -6,14 +6,10 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
-import 'dart:ui';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
-import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/src/rendering/box_model.dart';
 import 'package:webf/src/css/whitespace_processor.dart';
 
 class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox> {
@@ -80,13 +76,13 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     // Reuse span building to keep style consistent with actual painting.
     final span = _buildTextSpan();
     // Configure strut and text height behavior to honor CSS line-height.
-    StrutStyle? _strut;
+    StrutStyle? strut;
     final lh = renderStyle.lineHeight;
     if (lh.type != CSSLengthType.NORMAL) {
       final double fs = renderStyle.fontSize.computedValue;
       final double multiple = lh.computedValue / fs;
       if (multiple.isFinite && multiple > 0) {
-        _strut = StrutStyle(
+        strut = StrutStyle(
           fontSize: fs,
           height: multiple,
           fontFamilyFallback: renderStyle.fontFamily,
@@ -97,25 +93,25 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
         );
       }
     }
-    const TextHeightBehavior _thb = TextHeightBehavior(
+    const TextHeightBehavior thb = TextHeightBehavior(
       applyHeightToFirstAscent: true,
       applyHeightToLastDescent: true,
       leadingDistribution: TextLeadingDistribution.even,
     );
 
     // Compute effective maxLines consistent with layout.
-    final bool _nowrap = renderStyle.whiteSpace == WhiteSpace.nowrap;
-    final bool _ellipsis = renderStyle.effectiveTextOverflow == TextOverflow.ellipsis;
-    final int? _effectiveMaxLines = renderStyle.lineClamp ?? (_nowrap && _ellipsis ? 1 : null);
+    final bool nowrap = renderStyle.whiteSpace == WhiteSpace.nowrap;
+    final bool ellipsis = renderStyle.effectiveTextOverflow == TextOverflow.ellipsis;
+    final int? effectiveMaxLines = renderStyle.lineClamp ?? (nowrap && ellipsis ? 1 : null);
 
     final tp = TextPainter(
       text: span,
       textAlign: renderStyle.textAlign,
       textDirection: renderStyle.direction,
-      ellipsis: _ellipsis ? '…' : null,
-      maxLines: _effectiveMaxLines, // honor line-clamp or nowrap+ellipsis
-      strutStyle: _strut,
-      textHeightBehavior: _thb,
+      ellipsis: ellipsis ? '…' : null,
+      maxLines: effectiveMaxLines, // honor line-clamp or nowrap+ellipsis
+      strutStyle: strut,
+      textHeightBehavior: thb,
     );
     tp.layout(minWidth: 0, maxWidth: maxWidth.isFinite ? maxWidth : double.infinity);
     return Size(tp.width, tp.height);
@@ -156,12 +152,12 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
     // Configure strut and text height behavior to honor CSS line-height.
     final lh = renderStyle.lineHeight;
-    StrutStyle? _strut;
+    StrutStyle? strut;
     if (lh.type != CSSLengthType.NORMAL) {
       final double fs = renderStyle.fontSize.computedValue;
       final double multiple = lh.computedValue / fs;
       if (multiple.isFinite && multiple > 0) {
-        _strut = StrutStyle(
+        strut = StrutStyle(
           fontSize: fs,
           height: multiple,
           fontFamilyFallback: renderStyle.fontFamily,
@@ -172,7 +168,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
         );
       }
     }
-    const TextHeightBehavior _thb = TextHeightBehavior(
+    const TextHeightBehavior thb = TextHeightBehavior(
       applyHeightToFirstAscent: true,
       applyHeightToLastDescent: true,
       leadingDistribution: TextLeadingDistribution.even,
@@ -184,8 +180,8 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       ..textDirection = renderStyle.direction
       ..ellipsis = (renderStyle.effectiveTextOverflow == TextOverflow.ellipsis) ? '…' : null
       ..maxLines = effectiveMaxLines
-      ..strutStyle = _strut
-      ..textHeightBehavior = _thb
+      ..strutStyle = strut
+      ..textHeightBehavior = thb
       ..layout(
         // Use loose width to keep intrinsic sizing (shrink-to-fit) for
         // absolutely/fixed positioned auto-width content. Horizontal centering
@@ -334,12 +330,12 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
     // Map CSS line-height to StrutStyle when explicit.
     final lh = renderStyle.lineHeight;
-    StrutStyle? _strut;
+    StrutStyle? strut;
     if (lh.type != CSSLengthType.NORMAL) {
       final double fs = renderStyle.fontSize.computedValue;
       final double multiple = lh.computedValue / fs;
       if (multiple.isFinite && multiple > 0) {
-        _strut = StrutStyle(
+        strut = StrutStyle(
           fontSize: fs,
           height: multiple,
           fontFamilyFallback: renderStyle.fontFamily,
@@ -356,7 +352,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       textDirection: renderStyle.direction,
       ellipsis: ellipsis ? '…' : null,
       maxLines: effectiveMaxLines,
-      strutStyle: _strut,
+      strutStyle: strut,
       textHeightBehavior: const TextHeightBehavior(
         applyHeightToFirstAscent: true,
         applyHeightToLastDescent: true,
@@ -393,10 +389,4 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     return tp.height;
   }
 
-  // Debug helpers
-  static String _fmtC(BoxConstraints c) =>
-      'C[minW=' + c.minWidth.toStringAsFixed(1) + ', maxW=' + (c.maxWidth.isFinite ? c.maxWidth.toStringAsFixed(1) : '∞') +
-      ', minH=' + c.minHeight.toStringAsFixed(1) + ', maxH=' + (c.maxHeight.isFinite ? c.maxHeight.toStringAsFixed(1) : '∞') + ']';
-  static String _fmtS(Size s) => 'S(' + s.width.toStringAsFixed(1) + '×' + s.height.toStringAsFixed(1) + ')';
-  static String _fmtO(Offset o) => 'O(' + o.dx.toStringAsFixed(1) + ',' + o.dy.toStringAsFixed(1) + ')';
 }

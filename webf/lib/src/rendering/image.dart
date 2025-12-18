@@ -6,25 +6,16 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
-import 'dart:ui' as ui show Image;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 class WebFRenderImage extends RenderImage {
   WebFRenderImage({
-    ui.Image? image,
-    BoxFit? fit,
-    AlignmentGeometry alignment = Alignment.center,
-  }) : super(
-          image: image,
-          fit: fit,
-          alignment: alignment,
-        );
+    super.image,
+    super.fit,
+    super.alignment,
+  });
 
-  @override
-  void performLayout() {
-    super.performLayout();
-  }
 }
 
 class WebFRawImage extends RawImage {

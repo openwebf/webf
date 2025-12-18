@@ -27,40 +27,40 @@ class ProxyHttpClient implements HttpClient {
   bool get autoUncompress => _nativeHttpClient.autoUncompress;
 
   @override
-  set autoUncompress(bool _autoUncompress) {
-    _nativeHttpClient.autoUncompress = _autoUncompress;
+  set autoUncompress(bool autoUncompress) {
+    _nativeHttpClient.autoUncompress = autoUncompress;
   }
 
   @override
   Duration get connectionTimeout => _nativeHttpClient.connectionTimeout!;
 
   @override
-  set connectionTimeout(Duration? _connectionTimeout) {
-    _nativeHttpClient.connectionTimeout = _connectionTimeout;
+  set connectionTimeout(Duration? connectionTimeout) {
+    _nativeHttpClient.connectionTimeout = connectionTimeout;
   }
 
   @override
   Duration get idleTimeout => _nativeHttpClient.idleTimeout;
 
   @override
-  set idleTimeout(Duration _idleTimeout) {
-    _nativeHttpClient.idleTimeout = _idleTimeout;
+  set idleTimeout(Duration idleTimeout) {
+    _nativeHttpClient.idleTimeout = idleTimeout;
   }
 
   @override
   int get maxConnectionsPerHost => _nativeHttpClient.maxConnectionsPerHost!;
 
   @override
-  set maxConnectionsPerHost(int? _maxConnectionsPerHost) {
-    _nativeHttpClient.maxConnectionsPerHost = _maxConnectionsPerHost;
+  set maxConnectionsPerHost(int? maxConnectionsPerHost) {
+    _nativeHttpClient.maxConnectionsPerHost = maxConnectionsPerHost;
   }
 
   @override
   String get userAgent => _nativeHttpClient.userAgent!;
 
   @override
-  set userAgent(String? _userAgent) {
-    _nativeHttpClient.userAgent = _userAgent;
+  set userAgent(String? userAgent) {
+    _nativeHttpClient.userAgent = userAgent;
   }
 
   @override
@@ -266,9 +266,9 @@ class _HttpHeaders implements HttpHeaders {
   DateTime? get expires => tryParseHttpDate(value(HttpHeaders.expiresHeader) ?? '');
 
   @override
-  set expires(DateTime? _expires) {
-    if (_expires == null) return;
-    String formatted = HttpDate.format(_expires.toUtc());
+  set expires(DateTime? expires) {
+    if (expires == null) return;
+    String formatted = HttpDate.format(expires.toUtc());
     set(HttpHeaders.expiresHeader, formatted);
   }
 
@@ -276,9 +276,9 @@ class _HttpHeaders implements HttpHeaders {
   String? get host => value(HttpHeaders.hostHeader);
 
   @override
-  set host(String? _host) {
-    if (_host == null) return;
-    set(HttpHeaders.hostHeader, _host);
+  set host(String? host) {
+    if (host == null) return;
+    set(HttpHeaders.hostHeader, host);
   }
 
   @override
@@ -295,12 +295,12 @@ class _HttpHeaders implements HttpHeaders {
   }
 
   @override
-  set ifModifiedSince(DateTime? _ifModifiedSince) {
-    if (_ifModifiedSince == null) {
+  set ifModifiedSince(DateTime? ifModifiedSince) {
+    if (ifModifiedSince == null) {
       _headers.remove(HttpHeaders.ifModifiedSinceHeader);
     } else {
       // Format "ifModifiedSince" header with date in Greenwich Mean Time (GMT).
-      String formatted = HttpDate.format(_ifModifiedSince.toUtc());
+      String formatted = HttpDate.format(ifModifiedSince.toUtc());
       set(HttpHeaders.ifModifiedSinceHeader, formatted);
     }
   }
@@ -401,7 +401,7 @@ class _HttpHeaders implements HttpHeaders {
     StringBuffer sb = StringBuffer();
     bool hasValue = false;
     _headers.forEach((String name, List<String> values) {
-      values.forEach((String value) {
+      for (var value in values) {
         if (hasValue) {
           sb.write('\n');
         }
@@ -410,7 +410,7 @@ class _HttpHeaders implements HttpHeaders {
           ..write(': ')
           ..write(value);
         hasValue = true;
-      });
+      }
     });
     return sb.toString();
   }

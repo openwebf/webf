@@ -18,11 +18,11 @@ class HistoryItem {
   final bool needJump;
 }
 
-class HistoryModule extends BaseModule {
+class HistoryModule extends WebFBaseModule {
   @override
   String get name => 'History';
 
-  HistoryModule(ModuleManager? moduleManager) : super(moduleManager);
+  HistoryModule(super.moduleManager);
 
   Queue<HistoryItem> get _previousStack => moduleManager!.controller.previousHistoryStack;
   Queue<HistoryItem> get _nextStack => moduleManager!.controller.nextHistoryStack;
@@ -134,8 +134,8 @@ class HistoryModule extends BaseModule {
     uri = controller.uriParser!.resolve(Uri.parse(controller.url), uri);
 
     if (uri.host.isNotEmpty && uri.host != currentUri.host) {
-      print('Failed to execute \'pushState\' on \'History\': '
-          'A history state object with URL $url cannot be created in a document with origin ${uri.host} and URL ${currentUri.host}. "');
+      networkLogger.warning(
+          'Failed to execute \'pushState\' on \'History\': A history state object with URL $url cannot be created in a document with origin ${uri.host} and URL ${currentUri.host}.');
       return;
     }
 
@@ -154,8 +154,8 @@ class HistoryModule extends BaseModule {
     uri = controller.uriParser!.resolve(Uri.parse(controller.url), uri);
 
     if (uri.host.isNotEmpty && uri.host != currentUri.host) {
-      print('Failed to execute \'pushState\' on \'History\': '
-          'A history state object with URL $url cannot be created in a document with origin ${uri.host} and URL ${currentUri.host}. "');
+      networkLogger.warning(
+          'Failed to execute \'pushState\' on \'History\': A history state object with URL $url cannot be created in a document with origin ${uri.host} and URL ${currentUri.host}.');
       return;
     }
 
@@ -193,7 +193,7 @@ class HistoryModule extends BaseModule {
         go(params[0]);
         break;
     }
-    return EMPTY_STRING;
+    return '';
   }
 
   @override

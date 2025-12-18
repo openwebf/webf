@@ -7,6 +7,8 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
+// ignore_for_file: constant_identifier_names
+
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -16,7 +18,6 @@ import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
-import 'package:webf/widget.dart';
 
 import 'canvas_context_2d.dart';
 import 'canvas_painter.dart';
@@ -65,7 +66,10 @@ class CanvasElement extends Element {
     return stateFinder.isEmpty ? null : stateFinder.last;
   }
 
-  final ChangeNotifier repaintNotifier = ChangeNotifier();
+  final _CanvasRepaintNotifier _repaintNotifier = _CanvasRepaintNotifier();
+  ChangeNotifier get repaintNotifier => _repaintNotifier;
+
+  void notifyRepaint() => _repaintNotifier.trigger();
 
   /// The painter that paints before the children.
   late CanvasPainter painter;
@@ -97,8 +101,8 @@ class CanvasElement extends Element {
   CanvasRenderingContext2D? context2d;
 
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    super.initializeMethods(methods);
+  void initializeDynamicMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeDynamicMethods(methods);
     methods['getContext'] = BindingObjectMethodSync(call: (args) => getContext(castToType<String>(args[0])));
   }
 
@@ -291,6 +295,10 @@ class CanvasElement extends Element {
   }
 }
 
+class _CanvasRepaintNotifier extends ChangeNotifier {
+  void trigger() => notifyListeners();
+}
+
 class WebFCanvasState extends flutter.State<WebFCanvas> {
   CanvasElement get canvasElement => widget.canvasElement;
 
@@ -325,7 +333,7 @@ class WebFCanvasState extends flutter.State<WebFCanvas> {
 class WebFCanvas extends flutter.StatefulWidget {
   final CanvasElement canvasElement;
 
-  WebFCanvas(this.canvasElement, {flutter.Key? key}) : super(key: key);
+  const WebFCanvas(this.canvasElement, {super.key});
 
   @override
   flutter.State<flutter.StatefulWidget> createState() {
@@ -355,11 +363,11 @@ class WebFCanvasPaint extends flutter.SingleChildRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(flutter.BuildContext context, RenderCanvasPaint renderCanvas) {
-    super.updateRenderObject(context, renderCanvas);
+  void updateRenderObject(flutter.BuildContext context, RenderCanvasPaint renderObject) {
+    super.updateRenderObject(context, renderObject);
 
-    renderCanvas.preferredSize = preferredSize;
-    updateCanvasPainterSize(preferredSize, renderCanvas);
+    renderObject.preferredSize = preferredSize;
+    updateCanvasPainterSize(preferredSize, renderObject);
   }
 
   void updateCanvasPainterSize(Size paintingBounding, RenderCanvasPaint renderCanvas) {

@@ -24,7 +24,6 @@ class DocumentFragment extends ContainerNode {
   @override
   bool get isRendererAttached => false;
 
-  @override
   bool get isRendererAttachedToSegmentTree => false;
 
   // DocumentFragment has no hash key representation.

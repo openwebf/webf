@@ -9,8 +9,6 @@
 import 'dart:ui';
 import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
-import 'package:webf/foundation.dart';
-import 'package:webf/gesture.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/rendering.dart' hide RenderBoxContainerDefaultsMixin;
 

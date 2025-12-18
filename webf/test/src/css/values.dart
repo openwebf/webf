@@ -28,11 +28,11 @@ void main() {
             hsl(0, 100%, 50%)
           )''',
       ];
-      cases.forEach((String input) {
+      for (var input in cases) {
         test('simple case #${cases.indexOf(input)}', () {
           expect(CSSFunction.isFunction(input), true);
         });
-      });
+      }
 
       test('specified function name #0', () {
         var input = 'var(--x)';

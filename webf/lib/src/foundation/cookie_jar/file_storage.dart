@@ -26,7 +26,8 @@ class FileStorage implements Storage {
     if (file.existsSync()) {
       try {
         await file.delete(recursive: true);
-      } catch(e) {
+      } catch (_) {
+        return;
       }
     }
   }
@@ -37,7 +38,8 @@ class FileStorage implements Storage {
     if (file.existsSync()) {
       try {
         file.deleteSync(recursive: true);
-      } catch(e) {
+      } catch (_) {
+        return;
       }
     }
   }
@@ -46,7 +48,8 @@ class FileStorage implements Storage {
   Future<void> deleteAll(List<String> keys) async {
     try {
       await Directory(_curDir!).delete(recursive: true);
-    } catch(e) {
+    } catch (_) {
+      return;
     }
   }
 
@@ -56,7 +59,8 @@ class FileStorage implements Storage {
     if (dir.existsSync()) {
       try {
         dir.deleteSync(recursive: true);
-      } catch(e) {
+      } catch (_) {
+        return;
       }
     }
   }
@@ -64,9 +68,9 @@ class FileStorage implements Storage {
   void _initCurDir(bool persistSession, bool ignoreExpires) {
     _curDir = dir ?? './.cookies/';
     if (!_curDir!.endsWith('/')) {
-      _curDir = _curDir! + '/';
+      _curDir = '${_curDir!}/';
     }
-    _curDir = _curDir! + 'ie${ignoreExpires ? 1 : 0}_ps${persistSession ? 1 : 0}/';
+    _curDir = '${_curDir!}ie${ignoreExpires ? 1 : 0}_ps${persistSession ? 1 : 0}/';
   }
 
   @override

@@ -6,6 +6,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
+// ignore_for_file: constant_identifier_names
+
 import 'dart:core';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
@@ -135,16 +137,16 @@ mixin CSSBorderMixin on RenderStyle {
         : null;
   }
 
-  /// Shorted border property:
-  ///   border：<line-width> || <line-style> || <color>
-  ///   (<line-width> = <length> | thin | medium | thick), support length now.
-  /// Seperated properties:
-  ///   borderWidth: <line-width>{1,4}
-  ///   borderStyle: none | hidden | dotted | dashed | solid | double | groove | ridge | inset | outset
+  /// Shorthand border property:
+  ///   `border: <line-width> || <line-style> || <color>`
+  ///   (`<line-width>` = `<length>` | thin | medium | thick), support length now.
+  /// Separated properties:
+  ///   `borderWidth: <line-width>{1,4}`
+  ///   `borderStyle: none | hidden | dotted | dashed | solid | double | groove | ridge | inset | outset`
   ///     (PS. Only support solid now.)
-  ///   borderColor: <color>
+  ///   `borderColor: <color>`
 
-  /// Border-width = <length> | thin | medium | thick
+  /// `border-width` = `<length>` | thin | medium | thick
 
   CSSLengthValue? _borderTopWidth;
 
@@ -476,7 +478,7 @@ class CSSBorderRadius {
         if (DebugFlags.enableBorderRadiusLogs) {
           try {
             final el = renderStyle.target;
-            cssLogger.finer('[BorderRadius] parse ${propertyName} for <${el.tagName.toLowerCase()}>: '
+            cssLogger.finer('[BorderRadius] parse $propertyName for <${el.tagName.toLowerCase()}>: '
                 'raw="$radius" -> (${x.cssText()}, ${y.cssText()})');
           } catch (_) {}
         }
@@ -500,12 +502,12 @@ class WebFBoxShadow extends BoxShadow {
   /// By default, the shadow is solid black with zero [offset], [blurRadius],
   /// and [spreadRadius].
   const WebFBoxShadow({
-    Color color = const Color(0xFF000000),
-    Offset offset = Offset.zero,
-    double blurRadius = 0.0,
-    double spreadRadius = 0.0,
+    super.color,
+    super.offset,
+    super.blurRadius,
+    super.spreadRadius,
     this.inset = false,
-  }) : super(color: color, offset: offset, blurRadius: blurRadius, spreadRadius: spreadRadius);
+  });
 
   final bool inset;
 }

@@ -7,11 +7,10 @@
  */
 
 
-import 'package:webf/bridge.dart';
 import 'dom_point_readonly.dart';
 
 class DOMPoint extends DOMPointReadOnly {
-  DOMPoint(BindingContext context, List<dynamic> domPointInit) : super(context, domPointInit) {}
+  DOMPoint(super.context, super.domPointInit);
 
-  DOMPoint.fromPoint(BindingContext context, DOMPoint? point) : super.fromPoint(context, point) {}
+  DOMPoint.fromPoint(super.context, super.point) : super.fromPoint();
 }

@@ -11,10 +11,8 @@ import 'dart:ffi';
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/devtools.dart';
-import 'package:webf/launcher.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
-import 'package:webf/foundation.dart';
 
 class InspectOverlayModule extends UIInspectorModule {
   @override
@@ -25,7 +23,7 @@ class InspectOverlayModule extends UIInspectorModule {
 
   Document? get document => dbgContext?.document ?? devtoolsService.controller?.view.document;
 
-  InspectOverlayModule(DevToolsService devtoolsService) : super(devtoolsService);
+  InspectOverlayModule(super.devtoolsService);
 
   @override
   void receiveFromFrontend(int? id, String method, Map<String, dynamic>? params) {
@@ -86,16 +84,16 @@ class InspectOverlayModule extends UIInspectorModule {
     }
 
     // Accept either int or double values
-    double _toDouble(dynamic v) {
+    double toDouble(dynamic v) {
       if (v is int) return v.toDouble();
       if (v is double) return v;
       return 0.0;
     }
 
-    final double x = _toDouble(params['x'] ?? params['left']);
-    final double y = _toDouble(params['y'] ?? params['top']);
-    final double w = _toDouble(params['width']);
-    final double h = _toDouble(params['height']);
+    final double x = toDouble(params['x'] ?? params['left']);
+    final double y = toDouble(params['y'] ?? params['top']);
+    final double w = toDouble(params['width']);
+    final double h = toDouble(params['height']);
 
     final double cx = x + (w > 0 ? w / 2 : 0);
     final double cy = y + (h > 0 ? h / 2 : 0);

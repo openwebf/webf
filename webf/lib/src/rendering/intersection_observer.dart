@@ -113,7 +113,7 @@ mixin RenderIntersectionObserverMixin on RenderBox {
   bool _dispatchChange(IntersectionObserverEntry info) {
     bool deliverIntersectionObserver = false;
     // Limit frequency
-    int index = firstThresholdGreaterThan(info.intersectionRatio, _thresholds!);
+    int index = firstThresholdGreaterThan(info.intersectionRatio, _thresholds);
     bool isIntersecting = info.isIntersecting;
     if (index != _lastThresholdsIndex || isIntersecting != _lastIsIntersecting) {
       _lastThresholdsIndex = index;
@@ -307,9 +307,7 @@ class IntersectionObserverLayer extends ContainerLayer {
     if (!isUpdateScheduled && null == _timer) {
       // We use a normal [Timer] instead of a [RestartableTimer] so that changes
       // to the update duration will be picked up automatically.
-      _timer = Timer.periodic(_updateInterval, (Timer timer) {
-        SchedulerBinding.instance.scheduleTask<void>(_processCallbacks, Priority.touch);
-      });
+      _timer = Timer.periodic(_updateInterval, (Timer timer) => _handleUpdateTimer());
     }
   }
 
@@ -466,9 +464,13 @@ class IntersectionObserverEntry {
     if (size == Size.zero) return false;
 
     if (boundingClientRect.right < rootBounds.left ||
-        rootBounds.right < boundingClientRect.left) return false;
+        rootBounds.right < boundingClientRect.left) {
+      return false;
+    }
     if (boundingClientRect.bottom < rootBounds.top ||
-        rootBounds.bottom < boundingClientRect.top) return false;
+        rootBounds.bottom < boundingClientRect.top) {
+      return false;
+    }
     return true;
   }
 

@@ -17,6 +17,7 @@ import 'package:path/path.dart' as path;
 
 import 'http_client.dart';
 import 'http_client_response.dart';
+import 'logger.dart';
 
 class HttpCacheObject {
   static const _httpHeaderCacheHits = 'cache-hits';
@@ -235,8 +236,8 @@ class HttpCacheObject {
     return headers.expires ?? alwaysExpired;
   }
 
-  static int NetworkType = 0x01;
-  static int Reserved = 0x00;
+  static int networkType = 0x01;
+  static int reserved = 0x00;
 
   // This method write bytes in [Endian.little] order.
   // Reference: https://en.wikipedia.org/wiki/Endianness
@@ -305,7 +306,7 @@ class HttpCacheObject {
       if (index + 2 <= byteLength) {
         int type = byteData.getUint8(index);
         int version = byteData.getUint8(index + 1);
-        if (type != NetworkType || version != _indexFormatVersion) {
+        if (type != networkType || version != _indexFormatVersion) {
           // Unsupported format, invalidate cache
           _valid = false;
           return;
@@ -411,14 +412,12 @@ class HttpCacheObject {
       _lastUsedPersistedAt = lastUsed;
     } on FormatException catch (e, stackTrace) {
       // Format errors indicate corrupted cache data
-      print('Cache format error for $url: $e');
-      print('\n$stackTrace');
+      httpCacheLogger.warning('Cache format error for $url', e, stackTrace);
       _valid = false;
       await remove();
     } on FileSystemException catch (e, stackTrace) {
       // File system errors might be temporary (disk full, permissions, etc.)
-      print('File system error while reading cache for $url: $e');
-      print('\n$stackTrace');
+      httpCacheLogger.warning('File system error while reading cache for $url', e, stackTrace);
       _valid = false;
       // Only remove if file is corrupted, not for temporary I/O issues
       if (e.message.contains('corrupted') || e.message.contains('invalid')) {
@@ -426,8 +425,7 @@ class HttpCacheObject {
       }
     } catch (e, stackTrace) {
       // Other unexpected errors
-      print('Unexpected error while reading cache object for $url: $e');
-      print('\n$stackTrace');
+      httpCacheLogger.severe('Unexpected error while reading cache object for $url', e, stackTrace);
       _valid = false;
       // Don't remove cache for unknown errors to avoid data loss
     } finally {
@@ -440,7 +438,8 @@ class HttpCacheObject {
     // Try to acquire lock with longer timeout for write operations
     if (!await _acquireLock(timeout: const Duration(seconds: 10))) {
       // Log warning and return gracefully instead of throwing error
-      print('Warning: Failed to acquire lock for writing cache index for $url - skipping cache update');
+      httpCacheLogger.warning(
+          'Failed to acquire lock for writing cache index for $url - skipping cache update');
       return;
     }
 
@@ -450,10 +449,10 @@ class HttpCacheObject {
       // Index bytes format:
       // | Type x 1B | Version x 1B | Reserved x 2B |
       bytesBuilder.add([
-        NetworkType,
+        networkType,
         _indexFormatVersion,
-        Reserved,
-        Reserved,
+        reserved,
+        reserved,
       ]);
 
       // | ExpiredTimeStamp x 8B |
@@ -507,7 +506,7 @@ class HttpCacheObject {
     try {
       contentChecksum = await _calculateBlobChecksum();
     } catch (e) {
-      print('Error calculating content checksum for $url: $e');
+      httpCacheLogger.warning('Error calculating content checksum for $url', e);
     }
   }
 
@@ -515,7 +514,7 @@ class HttpCacheObject {
   Future<bool> validateContent() async {
     // Check if both files exist
     if (!await _file.exists() || !await _blob.exists()) {
-      print('Cache validation failed: Missing cache files for $url');
+      httpCacheLogger.warning('Cache validation failed: Missing cache files for $url');
       return false;
     }
 
@@ -538,7 +537,7 @@ class HttpCacheObject {
 
       // Only validate length for non-encoded content
       if (!hasContentEncoding && actualLength != contentLength) {
-        print(
+        httpCacheLogger.warning(
             'Cache validation failed: Content length mismatch for $url. Expected: $contentLength, Actual: $actualLength');
         return false;
       }
@@ -550,12 +549,12 @@ class HttpCacheObject {
         // Calculate actual checksum
         final actualChecksum = await _calculateBlobChecksum();
         if (actualChecksum != contentChecksum) {
-          print(
+          httpCacheLogger.warning(
               'Cache validation failed: Checksum mismatch for $url. Expected: $contentChecksum, Actual: $actualChecksum');
           return false;
         }
       } catch (e) {
-        print('Cache validation failed: Error calculating checksum for $url: $e');
+        httpCacheLogger.warning('Cache validation failed: Error calculating checksum for $url', e);
         return false;
       }
     }
@@ -611,7 +610,7 @@ class HttpCacheObject {
     // Try to acquire lock with longer timeout for remove operations
     if (!await _acquireLock(timeout: Duration(seconds: 5))) {
       // Log warning but still attempt to remove files
-      print('Warning: Failed to acquire lock for removing cache for $url - attempting removal anyway');
+      httpCacheLogger.warning('Failed to acquire lock for removing cache for $url - attempting removal anyway');
     }
 
     try {
@@ -823,7 +822,7 @@ class HttpCacheObject {
             continue;
           }
           // After max retries, log and continue without throwing
-          print('Warning: Failed to update cache index after $maxRetries retries for $url: $e');
+          httpCacheLogger.warning('Failed to update cache index after $maxRetries retries for $url', e);
           return;
         }
       }
@@ -872,10 +871,7 @@ class HttpCacheObjectBlob implements EventSink<List<int>> {
 
   @override
   void addError(Object error, [StackTrace? stackTrace]) {
-    print('Error while writing to cache blob, $error');
-    if (stackTrace != null) {
-      print('\n$stackTrace');
-    }
+    httpCacheLogger.severe('Error while writing to cache blob', error, stackTrace);
 
     // Cleanup resources on error to prevent memory leak
     if (_writer != null) {
@@ -924,7 +920,7 @@ class HttpCacheObjectBlob implements EventSink<List<int>> {
             // Rename is atomic on POSIX systems
             await _tempFile.rename(_file.path);
           } catch (e) {
-            print('Error renaming temp blob file: $e');
+            httpCacheLogger.warning('Error renaming temp blob file', e);
             // Clean up temp file on error
             if (await _tempFile.exists()) {
               try {
@@ -935,7 +931,7 @@ class HttpCacheObjectBlob implements EventSink<List<int>> {
           }
         }
       } catch (e) {
-        print('Error closing cache blob writer: $e');
+        httpCacheLogger.warning('Error closing cache blob writer', e);
         // Clean up temp file on error
         if (await _tempFile.exists()) {
           try {
@@ -972,7 +968,7 @@ class HttpCacheObjectBlob implements EventSink<List<int>> {
       try {
         await _file.delete();
       } catch (e) {
-        print('Error deleting cache blob file: $e');
+        httpCacheLogger.warning('Error deleting cache blob file', e);
       }
     }
   }

@@ -1,15 +1,15 @@
+// ignore_for_file: avoid_print
+
 /*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/foundation.dart';
 import '../../setup.dart';
 import '../widget/test_utils.dart';
 
@@ -243,7 +243,7 @@ void main() {
       // Get the nested inline-block div - it's the first div child
       dom.Element? nestedInlineBlock;
       for (var child in root.children) {
-        if (child is dom.Element && child.tagName == 'DIV') {
+        if (child.tagName == 'DIV') {
           nestedInlineBlock = child;
           break;
         }

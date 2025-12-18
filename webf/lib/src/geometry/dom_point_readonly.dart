@@ -17,7 +17,7 @@ import 'package:webf/src/geometry/dom_point.dart';
 class DOMPointReadOnly extends DynamicBindingObject with StaticDefinedBindingObject {
   final List<double> _data = [0, 0, 0, 1];
 
-  DOMPointReadOnly(BindingContext context, List<dynamic> domPointInit) : super(context) {
+  DOMPointReadOnly(BindingContext super.context, List<dynamic> domPointInit) {
     for (int i = 0; i < domPointInit.length; i++) {
       if (domPointInit[i].runtimeType == double) {
         _data[i] = domPointInit[i];
@@ -25,7 +25,7 @@ class DOMPointReadOnly extends DynamicBindingObject with StaticDefinedBindingObj
     }
   }
 
-  DOMPointReadOnly.fromPoint(BindingContext context, DOMPoint? point) : super(context) {
+  DOMPointReadOnly.fromPoint(BindingContext super.context, DOMPoint? point) {
     if (point != null) {
       _data[0] = point.x;
       _data[1] = point.y;
@@ -40,7 +40,8 @@ class DOMPointReadOnly extends DynamicBindingObject with StaticDefinedBindingObj
   double get w => _data[3];
 
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+  void initializeDynamicMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeDynamicMethods(methods);
     methods['matrixTransform'] = BindingObjectMethodSync(call: (args) {
       BindingObject domMatrix = args[0];
       if (domMatrix is DOMMatrix) {

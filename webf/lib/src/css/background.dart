@@ -7,11 +7,9 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
-import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
@@ -20,7 +18,11 @@ import 'package:webf/painting.dart';
 import 'package:webf/html.dart';
 import 'package:webf/css.dart';
 import 'package:webf/launcher.dart';
-import 'package:webf/rendering.dart';
+
+int _colorByte(double channel) => (channel * 255.0).round().clamp(0, 255).toInt();
+
+String _rgbaString(Color c) =>
+    'rgba(${_colorByte(c.r)},${_colorByte(c.g)},${_colorByte(c.b)},${c.a.toStringAsFixed(3)})';
 
 // CSS Backgrounds: https://drafts.csswg.org/css-backgrounds/
 // CSS Images: https://drafts.csswg.org/css-images-3/
@@ -135,8 +137,8 @@ enum CSSBackgroundImageType {
 /// The [CSSBackgroundMixin] mixin used to handle background shorthand and compute
 /// to single value of background.
 mixin CSSBackgroundMixin on RenderStyle {
-  static CSSBackgroundPosition DEFAULT_BACKGROUND_POSITION = CSSBackgroundPosition(percentage: -1);
-  static CSSBackgroundSize DEFAULT_BACKGROUND_SIZE = CSSBackgroundSize(fit: BoxFit.none);
+  static final CSSBackgroundPosition defaultBackgroundPosition = CSSBackgroundPosition(percentage: -1);
+  static final CSSBackgroundSize defaultBackgroundSize = CSSBackgroundSize(fit: BoxFit.none);
 
   /// Background-clip
   @override
@@ -191,7 +193,7 @@ mixin CSSBackgroundMixin on RenderStyle {
 
   /// Background-position-x
   @override
-  CSSBackgroundPosition get backgroundPositionX => _backgroundPositionX ?? DEFAULT_BACKGROUND_POSITION;
+  CSSBackgroundPosition get backgroundPositionX => _backgroundPositionX ?? defaultBackgroundPosition;
   CSSBackgroundPosition? _backgroundPositionX;
 
   set backgroundPositionX(CSSBackgroundPosition? value) {
@@ -203,7 +205,7 @@ mixin CSSBackgroundMixin on RenderStyle {
 
   /// Background-position-y
   @override
-  CSSBackgroundPosition get backgroundPositionY => _backgroundPositionY ?? DEFAULT_BACKGROUND_POSITION;
+  CSSBackgroundPosition get backgroundPositionY => _backgroundPositionY ?? defaultBackgroundPosition;
   CSSBackgroundPosition? _backgroundPositionY;
 
   set backgroundPositionY(CSSBackgroundPosition? value) {
@@ -215,7 +217,7 @@ mixin CSSBackgroundMixin on RenderStyle {
 
   /// Background-size
   @override
-  CSSBackgroundSize get backgroundSize => _backgroundSize ?? DEFAULT_BACKGROUND_SIZE;
+  CSSBackgroundSize get backgroundSize => _backgroundSize ?? defaultBackgroundSize;
   CSSBackgroundSize? _backgroundSize;
 
   set backgroundSize(CSSBackgroundSize? value) {
@@ -237,7 +239,7 @@ mixin CSSBackgroundMixin on RenderStyle {
       try {
         final el = target;
         final id = (el.id != null && el.id!.isNotEmpty) ? '#${el.id}' : '';
-        final cls = (el.className != null && el.className!.isNotEmpty) ? '.${el.className}' : '';
+        final cls = (el.className.isNotEmpty) ? '.${el.className}' : '';
         renderingLogger.finer('[Background] set BACKGROUND_ATTACHMENT on <${el.tagName.toLowerCase()}$id$cls> -> '
             '${_backgroundAttachment?.cssText() ?? 'null'}');
       } catch (_) {}
@@ -463,7 +465,7 @@ class CSSBackgroundImage {
             }
             if (DebugFlags.enableBackgroundLogs) {
               renderingLogger.finer('[Background] linear-gradient choose gradientLength = '
-                  '${gradientLength?.toStringAsFixed(2)} (bg-size: w=${bs.width?.computedValue.toStringAsFixed(2) ?? 'auto'}, '
+                  '${gradientLength.toStringAsFixed(2)} (bg-size: w=${bs.width?.computedValue.toStringAsFixed(2) ?? 'auto'}, '
                   'h=${bs.height?.computedValue.toStringAsFixed(2) ?? 'auto'}; fb: w=${fbW.toStringAsFixed(2)}, h=${fbH.toStringAsFixed(2)})');
             }
           }
@@ -479,8 +481,8 @@ class CSSBackgroundImage {
             final double last = stops.last;
             double range = last - first;
             if (DebugFlags.enableBackgroundLogs) {
-              final double? gl = gradientLength;
-              final double periodPx = (gl != null && range > 0) ? (range * gl) : -1;
+              final double gl = gradientLength;
+              final double periodPx = (range > 0) ? (range * gl) : -1;
               renderingLogger.finer('[Background] repeating-linear normalize: first=${first.toStringAsFixed(4)} last=${last.toStringAsFixed(4)} '
                   'range=${range.toStringAsFixed(4)} periodPx=${periodPx >= 0 ? periodPx.toStringAsFixed(2) : '<unknown>'}');
             }
@@ -489,11 +491,9 @@ class CSSBackgroundImage {
               // Keep stops as-is to avoid division by zero.
             } else {
               // Capture period in device pixels for shader scaling.
-              if (gradientLength != null) {
-                repeatPeriodPx = range * gradientLength!;
-                if (DebugFlags.enableBackgroundLogs) {
-                  renderingLogger.finer('[Background] repeating-linear periodPx=${repeatPeriodPx!.toStringAsFixed(2)}');
-                }
+              repeatPeriodPx = range * gradientLength;
+              if (DebugFlags.enableBackgroundLogs) {
+                renderingLogger.finer('[Background] repeating-linear periodPx=${repeatPeriodPx.toStringAsFixed(2)}');
               }
               for (int i = 0; i < stops.length; i++) {
                 stops[i] = ((stops[i] - first) / range).clamp(0.0, 1.0);
@@ -505,13 +505,13 @@ class CSSBackgroundImage {
           }
           if (DebugFlags.enableBackgroundLogs) {
             final cs = colors
-                .map((c) => 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})')
+                .map(_rgbaString)
                 .toList();
             final st = stops.map((s) => s.toStringAsFixed(4)).toList();
             final dir = linearAngle != null
-                ? 'angle=' + (linearAngle * 180 / math.pi).toStringAsFixed(1) + 'deg'
+                ? 'angle=${(linearAngle * 180 / math.pi).toStringAsFixed(1)}deg'
                 : 'begin=$begin end=$end';
-            final len = gradientLength?.toStringAsFixed(2) ?? '<none>';
+            final len = gradientLength.toStringAsFixed(2);
             renderingLogger.finer('[Background] ${method.name} colors=$cs stops=$st $dir gradientLength=$len');
           }
           if (colors.length >= 2) {
@@ -644,16 +644,16 @@ class CSSBackgroundImage {
           }
           if (DebugFlags.enableBackgroundLogs) {
             final cs = colors
-                .map((c) => 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})')
+                .map(_rgbaString)
                 .toList();
             renderingLogger.finer('[Background] ${method.name} colors=$cs stops=${stops.map((s)=>s.toStringAsFixed(4)).toList()} '
-                'center=(${atX!.toStringAsFixed(3)},${atY!.toStringAsFixed(3)}) radius=$radius');
+                'center=(${atX.toStringAsFixed(3)},${atY.toStringAsFixed(3)}) radius=$radius');
           }
           if (colors.length >= 2) {
             // Apply an ellipse transform when requested.
-            final GradientTransform? xf = isEllipse ? CSSGradientEllipseTransform(atX!, atY!) : null;
+            final GradientTransform? xf = isEllipse ? CSSGradientEllipseTransform(atX, atY) : null;
             _gradient = CSSRadialGradient(
-              center: FractionalOffset(atX!, atY!),
+              center: FractionalOffset(atX, atY),
               radius: radius,
               colors: colors,
               stops: stops,
@@ -712,14 +712,14 @@ class CSSBackgroundImage {
           _applyColorAndStops(start, method.args, colors, stops, renderStyle, BACKGROUND_IMAGE);
           if (DebugFlags.enableBackgroundLogs) {
             final cs = colors
-                .map((c) => 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})')
+                .map(_rgbaString)
                 .toList();
             final fromDeg = ((from ?? 0) * 180 / math.pi).toStringAsFixed(1);
             renderingLogger.finer('[Background] ${method.name} from=${fromDeg}deg colors=$cs stops=${stops.map((s)=>s.toStringAsFixed(4)).toList()}');
           }
           if (colors.length >= 2) {
             _gradient = CSSConicGradient(
-                center: FractionalOffset(atX!, atY!),
+                center: FractionalOffset(atX, atY),
                 colors: colors,
                 stops: stops,
                 transform: GradientRotation(-math.pi / 2 + from!));
@@ -798,6 +798,7 @@ class CSSBackgroundPosition {
     return '';
   }
 
+  @override
   String toString() {
     return cssText();
   }
@@ -1038,7 +1039,7 @@ void _applyColorAndStops(
     double grow = 1.0 / (args.length - start - 1);
     if (DebugFlags.enableBackgroundLogs) {
       final subset = args.sublist(start);
-      renderingLogger.finer('[Background] applyColorStops start=$start args=${subset} gradientLength=${gradientLength?.toStringAsFixed(2) ?? '<none>'}');
+      renderingLogger.finer('[Background] applyColorStops start=$start args=$subset gradientLength=${gradientLength?.toStringAsFixed(2) ?? '<none>'}');
     }
     for (int i = start; i < args.length; i++) {
       List<CSSColorStop> colorGradients =
@@ -1093,42 +1094,46 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
             if (stop! < 0) stop = 0;
             if (DebugFlags.enableBackgroundLogs) {
               final CSSColor? color = CSSColor.resolveColor(strings[0], renderStyle, propertyName);
-              final c = color?.value;
-              renderingLogger.finer('[Background]   stop token="${strings[i]}" unit=% -> ${stop!.toStringAsFixed(4)} '
-                  'color=${c != null ? 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})' : '<invalid>'} src="$src"');
-            }
+                  final c = color?.value;
+                  renderingLogger.finer('[Background]   stop token="${strings[i]}" unit=% -> ${stop.toStringAsFixed(4)} '
+                      'color=${c != null ? _rgbaString(c) : '<invalid>'} src="$src"');
+                }
           } else if (CSSAngle.isAngle(strings[i])) {
             stop = CSSAngle.parseAngle(strings[i])! / (math.pi * 2);
             if (DebugFlags.enableBackgroundLogs) {
               final CSSColor? color = CSSColor.resolveColor(strings[0], renderStyle, propertyName);
-              final c = color?.value;
-              renderingLogger.finer('[Background]   stop token="${strings[i]}" unit=angle -> ${stop!.toStringAsFixed(4)} '
-                  'color=${c != null ? 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})' : '<invalid>'} src="$src"');
-            }
+                  final c = color?.value;
+                  renderingLogger.finer('[Background]   stop token="${strings[i]}" unit=angle -> ${stop.toStringAsFixed(4)} '
+                      'color=${c != null ? _rgbaString(c) : '<invalid>'} src="$src"');
+                }
           } else if (CSSLength.isLength(strings[i])) {
             if (gradientLength != null) {
               stop = CSSLength.parseLength(strings[i], renderStyle, propertyName).computedValue / gradientLength;
               if (DebugFlags.enableBackgroundLogs) {
                 final CSSColor? color = CSSColor.resolveColor(strings[0], renderStyle, propertyName);
                 final c = color?.value;
-                renderingLogger.finer('[Background]   stop token="${strings[i]}" unit=length -> ${stop!.toStringAsFixed(4)} '
-                    '(length=${CSSLength.parseLength(strings[i], renderStyle, propertyName).computedValue.toStringAsFixed(2)}, '
-                    'gradLen=${gradientLength.toStringAsFixed(2)}) '
-                    'color=${c != null ? 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})' : '<invalid>'} src="$src"');
-              }
-            }
+                    renderingLogger.finer('[Background]   stop token="${strings[i]}" unit=length -> ${stop.toStringAsFixed(4)} '
+                        '(length=${CSSLength.parseLength(strings[i], renderStyle, propertyName).computedValue.toStringAsFixed(2)}, '
+                        'gradLen=${gradientLength.toStringAsFixed(2)}) '
+                        'color=${c != null ? _rgbaString(c) : '<invalid>'} src="$src"');
+                  }
+                }
           }
           CSSColor? color = CSSColor.resolveColor(strings[0], renderStyle, propertyName);
           colorGradients.add(CSSColorStop(color?.value, stop));
         }
-      } catch (e) {}
+      } catch (e, st) {
+        if (DebugFlags.enableBackgroundLogs) {
+          renderingLogger.warning('[Background] Failed to parse color stop "$src"', e, st);
+        }
+      }
     } else {
       CSSColor? color = CSSColor.resolveColor(strings[0], renderStyle, propertyName);
       colorGradients.add(CSSColorStop(color?.value, stop));
       if (DebugFlags.enableBackgroundLogs) {
         final c = color?.value;
         renderingLogger.finer('[Background]   stop default -> ${stop?.toStringAsFixed(4) ?? '<none>'} '
-            'color=${c != null ? 'rgba(${c.red},${c.green},${c.blue},${c.opacity.toStringAsFixed(3)})' : '<invalid>'} src="$src"');
+            'color=${c != null ? _rgbaString(c) : '<invalid>'} src="$src"');
       }
     }
   }

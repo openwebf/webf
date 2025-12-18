@@ -5,7 +5,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:webf/foundation.dart';
@@ -14,14 +13,14 @@ import 'package:webf/foundation.dart';
 /// network delays and other timing-related behaviors
 class MockTimedBundle extends WebFBundle {
   MockTimedBundle(
-    String url, {
+    super.url, {
     this.delayInMilliseconds = 0,
     this.content,
     this.bytecode,
     this.completer,
     this.autoResolve = true,
-    ContentType? contentType,
-  }) : super(url, contentType: contentType) {
+    super.contentType,
+  }) {
     // If automatic resolution is enabled, prepare the data
     if (autoResolve && content != null) {
       data = Uint8List.fromList(utf8.encode(content!));
@@ -174,8 +173,8 @@ class MockTimedBundle extends WebFBundle {
 
 /// A simple mock WebFBundle for testing preload functionality
 class MockWebFBundle extends WebFBundle {
-  MockWebFBundle.fromUrl(String url, {ContentType? contentType}) 
-      : super(url, contentType: contentType ?? ContentType('image', 'svg+xml'));
+  MockWebFBundle.fromUrl(super.url, {ContentType? contentType}) 
+      : super(contentType: contentType ?? ContentType('image', 'svg+xml'));
 
   bool _isDisposed = false;
   int _obtainDataCallCount = 0;

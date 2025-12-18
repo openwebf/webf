@@ -6,11 +6,11 @@
  * Copyright (C) 2022-present The WebF Company. All rights reserved.
  */
 
+// ignore_for_file: deprecated_member_use
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:webf/html.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/dom.dart' as dom;
 

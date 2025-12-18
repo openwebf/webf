@@ -4,8 +4,6 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/foundation.dart';
-import 'package:webf/dom.dart' as dom;
 import '../../setup.dart';
 import '../widget/test_utils.dart';
 import '../css/flex_direction_test.dart' as flex_direction_test;
@@ -222,7 +220,6 @@ void main() {
         ''',
       );
 
-      final container = prepared.getElementById('container');
       final child1 = prepared.getElementById('child1');
       final child2 = prepared.getElementById('child2');
       
@@ -266,7 +263,6 @@ void main() {
         ''',
       );
 
-      final container = prepared.getElementById('container');
       final child1 = prepared.getElementById('child1');
       final child2 = prepared.getElementById('child2');
       
@@ -484,7 +480,6 @@ void main() {
       
       // Children should be centered
       final child1Rect = child1.getBoundingClientRect();
-      final child2Rect = child2.getBoundingClientRect();
       
       final totalChildrenWidth = child1.offsetWidth + child2.offsetWidth;
       final freeSpace = container.offsetWidth - totalChildrenWidth;
@@ -828,6 +823,7 @@ void main() {
       final child2 = prepared.getElementById('child2');
       
       // Child1 should maintain its width
+      expect(container.offsetWidth, equals(300.0));
       expect(child1.offsetWidth, equals(50.0));
       
       // Child2 should grow to fill remaining space
@@ -1182,7 +1178,6 @@ void main() {
       );
 
       final container = prepared.getElementById('container');
-      final child1 = prepared.getElementById('child1');
       final child2 = prepared.getElementById('child2');
       
       // Lines should be at the bottom of container
@@ -1222,7 +1217,6 @@ void main() {
         ''',
       );
 
-      final container = prepared.getElementById('container');
       final child1 = prepared.getElementById('child1');
       final child2 = prepared.getElementById('child2');
       
@@ -1468,6 +1462,7 @@ void main() {
       final child2 = prepared.getElementById('child2');
       
       // Child1 should maintain its width (flex: none)
+      expect(container.offsetWidth, equals(300.0));
       expect(child1.offsetWidth, equals(100.0));
       
       // Child2 should take remaining space

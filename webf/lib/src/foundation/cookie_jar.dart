@@ -41,7 +41,7 @@ class CookieManager {
     List<String> pathSegments = uri.pathSegments;
 
     if (pathSegments.isNotEmpty) {
-      cookie.path ??= '/' + pathSegments.sublist(0, pathSegments.length - 1).join('/');
+      cookie.path ??= '/${pathSegments.sublist(0, pathSegments.length - 1).join('/')}';
     }
 
     cookie.domain ??= uri.host;
@@ -74,7 +74,7 @@ class CookieManager {
     Uri uri = Uri.parse(url);
     String scheme = uri.scheme;
     List<Cookie> cookies = _cookieJar!.loadForCurrentURISync(uri);
-    cookies.forEach((value) {
+    for (var value in cookies) {
       SerializableCookie seCookie = SerializableCookie(value);
       bool isHttpOnly = seCookie.cookie.httpOnly;
       bool isInvalid = seCookie.isExpired();
@@ -88,7 +88,7 @@ class CookieManager {
           cookiePairs.add('${value.name}=${value.value}');
         }
       }
-    });
+    }
     return cookiePairs.join('; ');
   }
 

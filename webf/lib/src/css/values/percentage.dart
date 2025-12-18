@@ -16,15 +16,15 @@ final _nonNegativePercentageRegExp = RegExp(r'^[+]?\d+[\.]?\d*\%$', caseSensitiv
 final LinkedLruHashMap<String, double?> _cachedParsedPercentage = LinkedLruHashMap(maximumSize: 100);
 
 class CSSPercentage {
-  static String PERCENTAGE = '%';
+  static const String percentageSymbol = '%';
 
   static double? parsePercentage(String value) {
     if (_cachedParsedPercentage.containsKey(value)) {
       return _cachedParsedPercentage[value];
     }
     double? parsed;
-    if (value.endsWith(PERCENTAGE)) {
-      parsed = double.tryParse(value.split(PERCENTAGE)[0])! / 100;
+    if (value.endsWith(percentageSymbol)) {
+      parsed = double.tryParse(value.split(percentageSymbol)[0])! / 100;
     }
     return _cachedParsedPercentage[value] = parsed;
   }

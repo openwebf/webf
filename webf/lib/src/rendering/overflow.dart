@@ -14,7 +14,6 @@ import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/css.dart';
-import 'package:webf/gesture.dart';
 
 typedef ScrollListener = void Function(double scrollOffset, AxisDirection axisDirection);
 
@@ -35,9 +34,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   }
 
   bool get clipX {
-    RenderBoxModel renderBoxModel = this as RenderBoxModel;
-
-    List<Radius>? borderRadius = renderBoxModel.renderStyle.borderRadius;
+    final List<Radius>? borderRadius = renderStyle.borderRadius;
 
     // The content of replaced elements is always trimmed to the content edge curve.
     // https://www.w3.org/TR/css-backgrounds-3/#corner-clipping
@@ -59,9 +56,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   }
 
   bool get clipY {
-    RenderBoxModel renderBoxModel = this as RenderBoxModel;
-
-    List<Radius>? borderRadius = renderStyle.borderRadius;
+    final List<Radius>? borderRadius = renderStyle.borderRadius;
 
     // The content of replaced elements is always trimmed to the content edge curve.
     // https://www.w3.org/TR/css-backgrounds-3/#corner-clipping
@@ -169,7 +164,6 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     _viewportSize = viewportSize;
     if (_scrollOffsetX != null) {
       _setUpScrollX();
-      final double maxX = math.max(0.0, _scrollableSize!.width - _viewportSize!.width);
       // Do not auto-jump scroll position for RTL containers.
       // Per CSS/UA expectations, initial scroll position is the start edge
       // of the scroll range, and user agent should not forcibly move it to
@@ -179,7 +173,6 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
 
     if (_scrollOffsetY != null) {
       _setUpScrollY();
-      final double maxY = math.max(0.0, _scrollableSize!.height - _viewportSize!.height);
     }
 
     // After computing viewport/content dimensions, update sticky descendants so their
@@ -250,7 +243,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       // If current or its descendants has a compositing layer caused by styles
       // (eg. transform, opacity, overflow...), then it needs to create a new layer
       // or else the clip in the older layer will not work.
-      bool _needsCompositing = needsCompositing;
+      bool needsCompositing = this.needsCompositing;
 
       if (decoration != null && decoration.hasBorderRadius) {
         BorderRadius radius = decoration.borderRadius!;
@@ -276,11 +269,11 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
                 'tl=(${clipRRect.tlRadiusX.toStringAsFixed(2)},${clipRRect.tlRadiusY.toStringAsFixed(2)})');
           } catch (_) {}
         }
-        _clipRRectLayer.layer = context.pushClipRRect(_needsCompositing, offset, clipRect, clipRRect, painter,
+        _clipRRectLayer.layer = context.pushClipRRect(needsCompositing, offset, clipRect, clipRRect, painter,
             oldLayer: _clipRRectLayer.layer);
       } else {
         _clipRectLayer.layer =
-            context.pushClipRect(_needsCompositing, offset, clipRect, painter, oldLayer: _clipRectLayer.layer);
+            context.pushClipRect(needsCompositing, offset, clipRect, painter, oldLayer: _clipRectLayer.layer);
       }
     } else {
       _clipRectLayer.layer = null;
@@ -292,7 +285,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   // For position fixed render box, should reduce the outer scroll offsets.
   void applyPositionFixedPaintTransform(RenderBoxModel child, Matrix4 transform) {
     Offset totalScrollOffset = child.getTotalScrollOffset();
-    transform.translate(totalScrollOffset.dx, totalScrollOffset.dy);
+    transform.translateByDouble(totalScrollOffset.dx, totalScrollOffset.dy, 0.0, 1.0);
   }
 
   void applyOverflowPaintTransform(RenderBox child, Matrix4 transform) {
@@ -302,7 +295,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       applyPositionFixedPaintTransform(child, transform);
     }
 
-    transform.translate(paintOffset.dx, paintOffset.dy);
+    transform.translateByDouble(paintOffset.dx, paintOffset.dy, 0.0, 1.0);
   }
 
   @override
@@ -342,8 +335,8 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       return super.describeSemanticsClip(child);
     }
 
-    final double maxX = xScrollable ? math.max(0.0, content!.width - viewport!.width) : 0.0;
-    final double maxY = yScrollable ? math.max(0.0, content!.height - viewport!.height) : 0.0;
+    final double maxX = xScrollable ? math.max(0.0, content.width - viewport.width) : 0.0;
+    final double maxY = yScrollable ? math.max(0.0, content.height - viewport.height) : 0.0;
 
     final Rect bounds = semanticBounds;
     if (maxX == 0.0 && maxY == 0.0) {

@@ -14,13 +14,12 @@ import 'session_storage.dart';
 import 'websocket.dart';
 import 'text_codec.dart';
 
-@Deprecated('Use WebFBaseModule instead')
-abstract class BaseModule {
+abstract class WebFBaseModule {
   String get name;
 
   final ModuleManager? moduleManager;
 
-  BaseModule(this.moduleManager);
+  WebFBaseModule(this.moduleManager);
 
   dynamic invoke(String method, List<dynamic> params);
 
@@ -33,15 +32,14 @@ abstract class BaseModule {
   void dispose();
 }
 
-abstract class WebFBaseModule extends BaseModule {
-  WebFBaseModule(super.moduleManager);
-}
+@Deprecated('Use WebFBaseModule instead')
+typedef BaseModule = WebFBaseModule;
 
 typedef InvokeModuleCallback = Future<dynamic> Function({String? error, Object? data});
-typedef NewModuleCreator = BaseModule Function(ModuleManager);
-typedef ModuleCreator = BaseModule Function(ModuleManager? moduleManager);
+typedef NewModuleCreator = WebFBaseModule Function(ModuleManager);
+typedef ModuleCreator = WebFBaseModule Function(ModuleManager? moduleManager);
 
-final MAGIC_RESULT_FOR_ASYNC = 0x01fa2f << 4;
+final magicResultForAsync = 0x01fa2f << 4;
 
 bool _isDefined = false;
 
@@ -69,19 +67,19 @@ final Map<String, ModuleCreator> _creatorMap = {};
 final Map<String, ModuleCreator> _customizedCreatorMap = {};
 
 void _defineModule(ModuleCreator moduleCreator) {
-  BaseModule fakeModule = moduleCreator(null);
+  WebFBaseModule fakeModule = moduleCreator(null);
   _creatorMap[fakeModule.name] = moduleCreator;
 }
 
 void _defineCustomModule(ModuleCreator moduleCreator) {
-  BaseModule customModule = moduleCreator(null);
+  WebFBaseModule customModule = moduleCreator(null);
   _customizedCreatorMap[customModule.name] = moduleCreator;
 }
 
 class ModuleManager {
   final double contextId;
   final WebFController controller;
-  final Map<String, BaseModule> _moduleMap = {};
+  final Map<String, WebFBaseModule> _moduleMap = {};
   bool disposed = false;
 
   ModuleManager(this.controller, this.contextId) {
@@ -99,7 +97,7 @@ class ModuleManager {
     await Future.wait(_moduleMap.values.map((module) { return module.initialize(); }));
   }
 
-  T? getModule<T extends BaseModule>(String moduleName) {
+  T? getModule<T extends WebFBaseModule>(String moduleName) {
     return _moduleMap[moduleName] as T?;
   }
 
@@ -121,7 +119,7 @@ class ModuleManager {
       _moduleMap[moduleName] = creator(this);
     }
 
-    BaseModule module = _moduleMap[moduleName]!;
+    WebFBaseModule module = _moduleMap[moduleName]!;
 
     handleInvokeModuleWithFuture({String? error, Object? data}) async {
       if (disposed) {
@@ -139,7 +137,7 @@ class ModuleManager {
         String errmsg = '$e\n$stack';
         handleInvokeModuleWithFuture(error: errmsg);
       });
-      return MAGIC_RESULT_FOR_ASYNC;
+      return magicResultForAsync;
     }
 
     return result;

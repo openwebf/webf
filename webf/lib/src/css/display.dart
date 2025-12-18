@@ -59,10 +59,6 @@ mixin CSSDisplayMixin on RenderStyle {
         return CSSDisplay.grid;
       case 'inline-grid':
         return CSSDisplay.inlineGrid;
-      case 'grid':
-        return CSSDisplay.grid;
-      case 'inline-grid':
-        return CSSDisplay.inlineGrid;
       case 'inline':
       default:
         return CSSDisplay.inline;

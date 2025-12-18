@@ -36,11 +36,11 @@ enum WebFNavigationType {
   prerender
 }
 
-class NavigationModule extends BaseModule {
+class NavigationModule extends WebFBaseModule {
   @override
   String get name => 'Navigation';
 
-  NavigationModule(ModuleManager? moduleManager) : super(moduleManager);
+  NavigationModule(super.moduleManager);
 
   @override
   void dispose() {}
@@ -85,7 +85,7 @@ class WebFNavigationAction {
 
 Future<WebFNavigationActionPolicy> defaultDecisionHandler(WebFNavigationAction action) async {
   if (kDebugMode || kProfileMode) {
-    print('''
+    debugPrint('''
 Attempting to navigate WebF to an external WebF page: **`${action.target}`** from **`${action.source}`**. This behavior is disabled by default.
 
 To customize navigation behavior, override the `navigationDelegate` property on `WebFController`:

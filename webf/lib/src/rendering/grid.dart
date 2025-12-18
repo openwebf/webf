@@ -11,8 +11,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
-import 'package:webf/src/css/grid.dart';
-import 'package:webf/dom.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/src/foundation/logger.dart';
 
@@ -222,7 +220,6 @@ class RenderGridLayout extends RenderLayoutBox {
       case JustifyContent.flexStart:
       case JustifyContent.start:
       case JustifyContent.spaceBetween:
-      default:
         return 0;
     }
   }
@@ -241,7 +238,6 @@ class RenderGridLayout extends RenderLayoutBox {
       case AlignContent.spaceAround:
       case AlignContent.spaceEvenly:
       case AlignContent.stretch:
-      default:
         return 0;
     }
   }
@@ -293,13 +289,14 @@ class RenderGridLayout extends RenderLayoutBox {
       case AlignItems.baseline:
         return GridAxisAlignment.center;
       case AlignItems.stretch:
-      default:
         return GridAxisAlignment.stretch;
     }
   }
 
   GridAxisAlignment _convertAlignSelfToAxis(AlignSelf value) {
     switch (value) {
+      case AlignSelf.auto:
+        return GridAxisAlignment.auto;
       case AlignSelf.flexStart:
       case AlignSelf.start:
         return GridAxisAlignment.start;
@@ -310,7 +307,6 @@ class RenderGridLayout extends RenderLayoutBox {
       case AlignSelf.baseline:
         return GridAxisAlignment.center;
       case AlignSelf.stretch:
-      default:
         return GridAxisAlignment.stretch;
     }
   }
@@ -325,7 +321,6 @@ class RenderGridLayout extends RenderLayoutBox {
       case GridAxisAlignment.auto:
       case GridAxisAlignment.start:
       case GridAxisAlignment.stretch:
-      default:
         return 0;
     }
   }
@@ -819,7 +814,7 @@ class RenderGridLayout extends RenderLayoutBox {
     if (colsDef.isEmpty) {
       String raw = renderStyle.target.style.getPropertyValue(GRID_TEMPLATE_COLUMNS);
       if (raw.isEmpty) {
-        final String? styleAttr = (renderStyle.target as Element).getAttribute('style');
+        final String? styleAttr = (renderStyle.target).getAttribute('style');
         if (styleAttr != null) {
           final RegExp re = RegExp(r'grid-template-columns\s*:\s*([^;]+)', caseSensitive: false);
           final m = re.firstMatch(styleAttr);
@@ -833,7 +828,7 @@ class RenderGridLayout extends RenderLayoutBox {
     if (rowsDef.isEmpty) {
       String raw = renderStyle.target.style.getPropertyValue(GRID_TEMPLATE_ROWS);
       if (raw.isEmpty) {
-        final String? styleAttr = (renderStyle.target as Element).getAttribute('style');
+        final String? styleAttr = (renderStyle.target).getAttribute('style');
         if (styleAttr != null) {
           final RegExp re = RegExp(r'grid-template-rows\s*:\s*([^;]+)', caseSensitive: false);
           final m = re.firstMatch(styleAttr);
@@ -929,7 +924,6 @@ class RenderGridLayout extends RenderLayoutBox {
       explicitAutoFitRowUsage = List<bool>.filled(explicitRowCount, false);
     }
 
-    int childIndex = 0;
     final Stopwatch? placementStopwatch = profileGrid ? (Stopwatch()..start()) : null;
     Duration childLayoutDuration = Duration.zero;
     RenderBox? child = firstChild;
@@ -1198,7 +1192,6 @@ class RenderGridLayout extends RenderLayoutBox {
       hasAnyChild = true;
 
       child = pd.nextSibling;
-      childIndex++;
     }
 
     // Compute used content size
@@ -1212,7 +1205,7 @@ class RenderGridLayout extends RenderLayoutBox {
       double collapsedWidth = 0;
       int collapsedCount = 0;
       for (int i = explicitColumnCount - 1; i >= 0; i--) {
-        if (!explicitAutoFitColumns![i] || explicitAutoFitColumnUsage[i]) {
+        if (!explicitAutoFitColumns[i] || explicitAutoFitColumnUsage[i]) {
           break;
         }
         collapsedWidth += colSizes[i];
@@ -1238,7 +1231,7 @@ class RenderGridLayout extends RenderLayoutBox {
       double collapsedHeight = 0;
       int collapsedCount = 0;
       for (int i = explicitRowCount - 1; i >= 0; i--) {
-        if (!explicitAutoFitRows![i] || explicitAutoFitRowUsage[i]) {
+        if (!explicitAutoFitRows[i] || explicitAutoFitRowUsage[i]) {
           break;
         }
         collapsedHeight += rowSizes[i];

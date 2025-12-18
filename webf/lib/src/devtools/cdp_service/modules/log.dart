@@ -8,12 +8,10 @@
  */
 
 import 'package:webf/devtools.dart';
-import 'package:webf/launcher.dart';
-import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
 import 'package:webf/foundation.dart';
 
 class InspectLogModule extends UIInspectorModule {
-  InspectLogModule(DevToolsService server) : super(server) {
+  InspectLogModule(super.server) {
     _setupLogHandler();
   }
 

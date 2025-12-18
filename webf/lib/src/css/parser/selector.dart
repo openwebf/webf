@@ -90,17 +90,17 @@ class Selector extends TreeNode {
     int specificity = 0;
     for (final simpleSelectorSequence in simpleSelectorSequences) {
       final simpleSelector = simpleSelectorSequence.simpleSelector;
-      switch (simpleSelector.runtimeType) {
-        case IdSelector:
+      switch (simpleSelector) {
+        case IdSelector _:
           specificity += kIdSpecificity;
           break;
-        case ClassSelector:
-        case AttributeSelector:
-        case PseudoClassSelector:
+        case ClassSelector _:
+        case AttributeSelector _:
+        case PseudoClassSelector _:
           specificity += kClassLikeSpecificity;
           break;
-        case ElementSelector:
-        case PseudoElementSelector:
+        case ElementSelector _:
+        case PseudoElementSelector _:
           specificity += kTagSpecificity;
           break;
       }
@@ -170,7 +170,7 @@ abstract class SimpleSelector extends TreeNode {
 
 // Marker for an invalid simple selector so selector lists can be discarded.
 class InvalidSelector extends SimpleSelector {
-  InvalidSelector(Identifier name) : super(name);
+  InvalidSelector(Identifier super.name);
 
   @override
   String toString() => '';
@@ -181,7 +181,7 @@ class InvalidSelector extends SimpleSelector {
 
 // element name
 class ElementSelector extends SimpleSelector {
-  ElementSelector(name) : super(name);
+  ElementSelector(super.name);
 
   @override
   String toString() => name;
@@ -195,7 +195,7 @@ class AttributeSelector extends SimpleSelector {
   final int _op;
   final dynamic value;
 
-  AttributeSelector(Identifier name, this._op, this.value) : super(name);
+  AttributeSelector(Identifier super.name, this._op, this.value);
 
   int get operatorKind => _op;
 
@@ -259,7 +259,7 @@ class AttributeSelector extends SimpleSelector {
 
 // #id
 class IdSelector extends SimpleSelector {
-  IdSelector(Identifier name) : super(name);
+  IdSelector(Identifier super.name);
 
   @override
   String toString() => '#$_name';
@@ -270,7 +270,7 @@ class IdSelector extends SimpleSelector {
 
 // .class
 class ClassSelector extends SimpleSelector {
-  ClassSelector(Identifier name) : super(name);
+  ClassSelector(Identifier super.name);
 
   @override
   String toString() => '.$_name';
@@ -281,7 +281,7 @@ class ClassSelector extends SimpleSelector {
 
 // :pseudoClass
 class PseudoClassSelector extends SimpleSelector {
-  PseudoClassSelector(Identifier name) : super(name);
+  PseudoClassSelector(Identifier super.name);
 
   @override
   String toString() => ':$name';
@@ -295,7 +295,7 @@ class PseudoElementSelector extends SimpleSelector {
   // If true, this is a CSS2.1 pseudo-element with only a single ':'.
   final bool isLegacy;
 
-  PseudoElementSelector(Identifier name, {this.isLegacy = false}) : super(name);
+  PseudoElementSelector(Identifier super.name, {this.isLegacy = false});
 
   @override
   String toString() => "${isLegacy ? ':' : '::'}$name";
@@ -308,7 +308,7 @@ class PseudoElementSelector extends SimpleSelector {
 class PseudoClassFunctionSelector extends PseudoClassSelector {
   final dynamic argument; // Selector, List<String>
 
-  PseudoClassFunctionSelector(Identifier name, this.argument) : super(name);
+  PseudoClassFunctionSelector(super.name, this.argument);
 
   Selector get selector => argument as Selector;
 
@@ -322,7 +322,7 @@ class PseudoClassFunctionSelector extends PseudoClassSelector {
 class PseudoElementFunctionSelector extends PseudoElementSelector {
   final List<String> expression;
 
-  PseudoElementFunctionSelector(Identifier name, this.expression) : super(name);
+  PseudoElementFunctionSelector(super.name, this.expression);
 
   @override
   dynamic visit(Visitor visitor) => visitor.visitPseudoElementFunctionSelector(this);

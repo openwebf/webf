@@ -6,7 +6,7 @@ import 'package:webf/bridge.dart';
 import 'package:webf/geometry.dart';
 import 'package:webf/module.dart';
 
-class DOMMatrixModule extends BaseModule {
+class DOMMatrixModule extends WebFBaseModule {
   DOMMatrixModule(super.moduleManager);
 
   @override

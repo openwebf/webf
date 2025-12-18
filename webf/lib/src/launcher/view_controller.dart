@@ -15,10 +15,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:path/path.dart';
 import 'package:webf/src/dom/intersection_observer.dart';
-import 'package:webf/src/foundation/debug_flags.dart';
-import 'package:webf/src/foundation/logger.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart' hide Element;
 import 'package:ffi/ffi.dart';
@@ -28,13 +25,12 @@ import 'package:webf/rendering.dart';
 import 'package:webf/src/html/canvas/canvas_context_2d.dart';
 import 'package:webf/src/html/text.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/src/foundation/dio_client.dart' show disposeSharedDioForContext;
 
 // FFI binding for the C++ batch free function
 typedef NativeBatchFreeFunction = Void Function(Pointer<Void> pointers, Int32 count);
 typedef DartBatchFreeFunction = void Function(Pointer<Void> pointers, int count);
 
-late final DartBatchFreeFunction _batchFreeNativeBindingObjects = WebFDynamicLibrary.ref
+final DartBatchFreeFunction _batchFreeNativeBindingObjects = WebFDynamicLibrary.ref
     .lookupFunction<NativeBatchFreeFunction, DartBatchFreeFunction>('batchFreeNativeBindingObjects');
 
 class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
@@ -56,9 +52,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   // Idle cleanup state
   static final Map<double, List<Pointer>> _pendingPointers = {};
   static final Map<double, List<Pointer>> _pendingPointersWithEvents = {};
-  static bool _cleanupScheduled = false;
   static const int _batchThreshold = 2000;
-  static const int _maxPointersPerIdle = 100;
 
   WebFViewController(
       {this.background,
@@ -67,7 +61,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       required this.rootController,
       required this.runningThread,
       this.navigationDelegate,
-      this.initialCookies}) {}
+      this.initialCookies});
 
   bool _inited = false;
 
@@ -103,11 +97,11 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   void resumeAnimationTimeline() {
 
-    _pendingAnimationTimesLines.forEach((callback) {
+    for (var callback in _pendingAnimationTimesLines) {
       try {
         callback();
       } catch (_) {}
-    });
+    }
     _pendingAnimationTimesLines.clear();
     _isAnimationTimelineStopped = false;
   }
@@ -720,10 +714,10 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   Future<void> handleNavigationAction(String? sourceUrl, String targetUrl, WebFNavigationType navigationType) async {
     WebFNavigationAction action = WebFNavigationAction(sourceUrl, targetUrl, navigationType);
 
-    WebFNavigationDelegate _delegate = navigationDelegate!;
+    WebFNavigationDelegate delegate = navigationDelegate!;
 
     try {
-      WebFNavigationActionPolicy policy = await _delegate.dispatchDecisionHandler(action);
+      WebFNavigationActionPolicy policy = await delegate.dispatchDecisionHandler(action);
       if (policy == WebFNavigationActionPolicy.cancel) return;
 
       String targetPath = action.target;
@@ -753,10 +747,10 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
         // Navigate and other type, do nothing.
       }
     } catch (e, stack) {
-      if (_delegate.errorHandler != null) {
-        _delegate.errorHandler!(e, stack);
+      if (delegate.errorHandler != null) {
+        delegate.errorHandler!(e, stack);
       } else {
-        print('WebF navigation failed: $e\n$stack');
+        widgetLogger.warning('WebF navigation failed', e, stack);
       }
     }
   }
@@ -908,7 +902,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   @override
   void didChangeLocales(List<Locale>? locales) {}
 
-  static double FOCUS_VIEWINSET_BOTTOM_OVERALL = 32;
+  static const double focusViewInsetBottomOverall = 32;
 
   @override
   void didChangeMetrics() {

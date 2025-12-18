@@ -83,7 +83,7 @@ class RenderChildSize extends RenderProxyBox {
   double getChildAscent(RenderBox child) {
     // Distance from top to baseline of child.
     // double? childAscent = child.getDistanceToBaseline(TextBaseline.alphabetic, onlyReal: true);
-    double? childAscent = null;
+    double? childAscent;
     Size? childSize = getChildSize(child);
 
     double baseline = childSize!.height;
@@ -215,12 +215,10 @@ class RenderChildSize extends RenderProxyBox {
   List<RunMetrics> _computeRunMetrics(
       List<RenderBox> children,
       ) {
-    List<RunMetrics> _runMetrics = <RunMetrics>[];
-    double mainAxisLimit = ownerElement.renderStyle.contentMaxConstraintsWidth;
+    List<RunMetrics> runMetrics = <RunMetrics>[];
 
     double runMainAxisExtent = 0.0;
     double runCrossAxisExtent = 0.0;
-    RenderBox? preChild;
     double maxSizeAboveBaseline = 0;
     double maxSizeBelowBaseline = 0;
     List<RenderBox> runChildren = [];
@@ -235,7 +233,7 @@ class RenderChildSize extends RenderProxyBox {
       double childCrossAxisExtent = _getCrossAxisExtent(child);
 
       if (runChildren.isNotEmpty) {
-        _runMetrics.add(RunMetrics(
+        runMetrics.add(RunMetrics(
           runMainAxisExtent,
           runCrossAxisExtent,
           runChildren,
@@ -255,10 +253,10 @@ class RenderChildSize extends RenderProxyBox {
         verticalAlign = childRenderStyle.verticalAlign;
       }
 
-      bool _isLineHeightValid = isLineHeightValid(child);
+      bool isLineHeightValid = this.isLineHeightValid(child);
 
       // Vertical align is only valid for inline box.
-      if (verticalAlign == VerticalAlign.baseline && _isLineHeightValid) {
+      if (verticalAlign == VerticalAlign.baseline && isLineHeightValid) {
         Size childSize = _getChildSize(child)!;
         // When baseline of children not found, use boundary of margin bottom as baseline.
         double childAscent = getChildAscent(child);
@@ -287,32 +285,31 @@ class RenderChildSize extends RenderProxyBox {
       runChildren[childNodeId] = child;
 
       if (childParentData is RenderLayoutParentData) {
-        childParentData.runIndex = _runMetrics.length;
+        childParentData.runIndex = runMetrics.length;
       }
 
-      preChild = child;
     });
 
     if (runChildren.isNotEmpty) {
-      _runMetrics.add(RunMetrics(
+      runMetrics.add(RunMetrics(
         runMainAxisExtent,
         runCrossAxisExtent,
         runChildren,
       ));
     }
 
-    _lineBoxMetrics = _runMetrics;
+    _lineBoxMetrics = runMetrics;
 
-    return _runMetrics;
+    return runMetrics;
   }
 
   // Find the size in the cross axis of lines.
   // @TODO: add cache to avoid recalculate in one layout stage.
   double _getRunsCrossSize(
-      List<RunMetrics> _runMetrics,
+      List<RunMetrics> runMetrics,
       ) {
     double crossSize = 0;
-    for (RunMetrics run in _runMetrics) {
+    for (RunMetrics run in runMetrics) {
       crossSize += run.crossAxisExtent;
     }
     return crossSize;
@@ -321,12 +318,12 @@ class RenderChildSize extends RenderProxyBox {
   // Find the max size in the main axis of lines.
   // @TODO: add cache to avoid recalculate in one layout stage.
   double _getRunsMaxMainSize(
-      List<RunMetrics> _runMetrics,
+      List<RunMetrics> runMetrics,
       ) {
-    if (_runMetrics.isEmpty) return 0.0;
+    if (runMetrics.isEmpty) return 0.0;
 
     // Find the max size of lines.
-    RunMetrics maxMainSizeMetrics = _runMetrics.reduce((RunMetrics curr, RunMetrics next) {
+    RunMetrics maxMainSizeMetrics = runMetrics.reduce((RunMetrics curr, RunMetrics next) {
       return curr.mainAxisExtent > next.mainAxisExtent ? curr : next;
     });
     return maxMainSizeMetrics.mainAxisExtent;

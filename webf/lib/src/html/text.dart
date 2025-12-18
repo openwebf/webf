@@ -3,6 +3,8 @@
  * Licensed under GNU GPL with Enterprise exception.
  */
 
+// ignore_for_file: constant_identifier_names
+
 import 'package:flutter/widgets.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
@@ -89,7 +91,7 @@ class WebFTextElement extends WebFTextBindings {
   TextSpan createTextSpan(dom.ChildNodeList childNodes) {
     List<InlineSpan> textSpanChildren = [];
 
-    childNodes.forEach((node) {
+    for (var node in childNodes) {
       if (node is dom.TextNode) {
         // Process whitespace according to the parent element's white-space property
         final processedText = WhitespaceProcessor.processPhaseOne(node.data, renderStyle.whiteSpace);
@@ -97,7 +99,7 @@ class WebFTextElement extends WebFTextBindings {
       } else if (node is dom.Element && node is WebFTextElement) {
         textSpanChildren.add(node.createTextSpan(node.childNodes));
       }
-    });
+    }
 
     TextSpan textSpan = TextSpan(style: createTextStyle(renderStyle), children: textSpanChildren);
 
@@ -131,11 +133,11 @@ class WebFTextState extends WebFWidgetElementState {
     }
 
     // Load fonts for child elements
-    element.childNodes.forEach((node) async {
-      if (node is dom.Element && node is WebFTextElement) {
+    for (final node in element.childNodes) {
+      if (node is WebFTextElement) {
         await _loadFontsForElement(node);
       }
-    });
+    }
 
     // Trigger a rebuild if fonts were loaded
     if (mounted) {

@@ -1,12 +1,11 @@
+// ignore_for_file: avoid_print
+
 /*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/foundation.dart';
-import 'package:webf/css.dart';
-import 'package:webf/dom.dart' as dom;
 import '../../setup.dart';
 import '../widget/test_utils.dart';
 
@@ -123,6 +122,7 @@ void main() {
       final item3 = prepared.getElementById('item3');
       
       // Items should have percentage of container width
+      expect(container.offsetWidth, equals(300.0));
       expect(item1.offsetWidth, equals(90.0)); // 30% of 300px
       expect(item2.offsetWidth, equals(120.0)); // 40% of 300px
       expect(item3.offsetWidth, equals(90.0)); // 30% of 300px
@@ -331,8 +331,6 @@ void main() {
       print('Test: should handle dynamic changes (initial)');
       print('Item1 initial width: ${item1.offsetWidth}');
       print('Item2 initial width: ${item2.offsetWidth}');
-      
-      final initialWidth1 = item1.offsetWidth;
       
       // Change flex-basis
       item1.style.setProperty('flex-basis', '150px');

@@ -75,7 +75,6 @@ class Document extends ContainerNode {
   int ruleSetVersion = 0;
 
   bool _styleUpdateScheduled = false;
-  bool _styleUpdateTriggeredByScheduler = false;
   Timer? _styleUpdateDebounceTimer;
 
   String? _domain;
@@ -431,13 +430,13 @@ class Document extends ContainerNode {
 
     final BodyElement? body = bodyElement;
     final ui.Color? bodyColor = body?.renderStyle.backgroundColor?.value;
-    final bool bodyHasColor = bodyColor != null && bodyColor.alpha != 0;
+    final bool bodyHasColor = bodyColor != null && bodyColor.a != 0;
 
     if (bodyHasColor) {
       resolved = bodyColor;
     } else {
       final ui.Color? htmlColor = documentElement?.renderStyle.backgroundColor?.value;
-      final bool htmlHasColor = htmlColor != null && htmlColor.alpha != 0;
+      final bool htmlHasColor = htmlColor != null && htmlColor.a != 0;
       if (htmlHasColor) {
         resolved = htmlColor;
       }
@@ -540,9 +539,7 @@ class Document extends ContainerNode {
     styleSheets.addAll(sheets.map((e) => e.clone()));
 
     ruleSet.reset();
-    int ruleCount = 0;
     for (var sheet in sheets) {
-      ruleCount += sheet.cssRules.length;
       ruleSet.addRules(sheet.cssRules, baseHref: sheet.href);
     }
     // Increment the ruleset version to bust element-level caches.
@@ -584,12 +581,9 @@ class Document extends ContainerNode {
 
   void flushStyle({bool rebuild = false}) {
 
-    // Capture whether this flush was triggered by a scheduled batch.
-    final bool scheduled = _styleUpdateScheduled;
     final int dirtyAtStart = _styleDirtyElements.length;
     // Always attempt to update active stylesheets first so changedRuleSet can
     // mark targeted elements dirty (even if we had no prior dirty set).
-    int sheetsMs = 0;
     final bool sheetsUpdated = styleNodeManager.updateActiveStyleSheets(rebuild: rebuild);
 
     if (DebugFlags.enableCssMultiStyleTrace) {
@@ -660,9 +654,7 @@ class Document extends ContainerNode {
         if (DebugFlags.enableCssMultiStyleTrace) {
           cssLogger.info('[trace][multi-style][schedule] style update running (debounce)');
         }
-        _styleUpdateTriggeredByScheduler = true;
         updateStyleIfNeeded();
-        _styleUpdateTriggeredByScheduler = false;
         _styleUpdateScheduled = false;
       });
       return;
@@ -672,7 +664,7 @@ class Document extends ContainerNode {
     _styleUpdateScheduled = true;
     final bool perFrame = DebugFlags.enableCssBatchStyleUpdatesPerFrame && DebugFlags.enableCssBatchStyleUpdates;
     if (DebugFlags.enableCssMultiStyleTrace) {
-      cssLogger.info('[trace][multi-style][schedule] style update scheduled via ' + (perFrame ? 'frame' : 'microtask'));
+      cssLogger.info('[trace][multi-style][schedule] style update scheduled via ${perFrame ? 'frame' : 'microtask'}');
     }
     if (perFrame) {
       SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -685,9 +677,7 @@ class Document extends ContainerNode {
         if (DebugFlags.enableCssMultiStyleTrace) {
           cssLogger.info('[trace][multi-style][schedule] style update running (frame)');
         }
-        _styleUpdateTriggeredByScheduler = true;
         updateStyleIfNeeded();
-        _styleUpdateTriggeredByScheduler = false;
         _styleUpdateScheduled = false;
       });
       SchedulerBinding.instance.scheduleFrame();
@@ -702,9 +692,7 @@ class Document extends ContainerNode {
         if (DebugFlags.enableCssMultiStyleTrace) {
           cssLogger.info('[trace][multi-style][schedule] style update running (microtask)');
         }
-        _styleUpdateTriggeredByScheduler = true;
         updateStyleIfNeeded();
-        _styleUpdateTriggeredByScheduler = false;
         _styleUpdateScheduled = false;
       });
     }
@@ -749,9 +737,7 @@ class Document extends ContainerNode {
   @override
   bool get isRendererAttached => viewport?.attached == true;
 
-  @override
   bool get isRendererAttachedToSegmentTree => viewport?.parent != null;
-
 
   void addIntersectionObserver(IntersectionObserver observer, Element element) {
     if (enableWebFCommandLog) {
@@ -766,7 +752,7 @@ class Document extends ContainerNode {
       domLogger.fine('[IntersectionObserver] document remove observer=${observer.pointer} target=${element.pointer}');
     }
     observer.unobserve(element);
-    if (!observer.HasObservations()) {
+    if (!observer.hasObservations()) {
       _intersectionObserverList.remove(observer);
     }
   }

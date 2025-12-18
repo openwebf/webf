@@ -4,14 +4,11 @@
  * whitespace-only text becomes visible once populated.
  */
 
-import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/devtools.dart';
-import 'package:webf/dom.dart' as dom;
 import 'package:webf/launcher.dart';
-import 'package:webf/src/bridge/native_types.dart';
 import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
 
 import '../../setup.dart';
@@ -59,7 +56,7 @@ void main() {
 
     // Create <p id=p></p> and append via view to trigger devtools callbacks
     final p = doc.createElement('p', BindingContext(view, view.contextId, allocateNewBindingObject()));
-    (p as dom.Element).setAttribute('id', 'p');
+    (p).setAttribute('id', 'p');
     view.insertAdjacentNode(root.pointer!, 'beforeend', p.pointer!);
 
     // Append a non-empty text node via view to trigger devtools callbacks
@@ -116,7 +113,7 @@ void main() {
 
     // Create <span id=s></span> and append via view to trigger devtools callbacks
     final span = doc.createElement('span', BindingContext(view, view.contextId, allocateNewBindingObject()));
-    (span as dom.Element).setAttribute('id', 's');
+    (span).setAttribute('id', 's');
     view.insertAdjacentNode(root.pointer!, 'beforeend', span.pointer!);
 
     // Append a whitespace-only text node via view

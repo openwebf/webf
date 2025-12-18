@@ -1,10 +1,11 @@
+// ignore_for_file: avoid_print
+
 /*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
-import 'dart:ui' as ui;
 
 import '../../setup.dart';
 import '../widget/test_utils.dart';

@@ -94,14 +94,14 @@ mixin ElementEventMixin on ElementBase {
   }
 
   @override
-  void addEventListener(String eventType, EventHandler handler, {EventListenerOptions? addEventListenerOptions}) {
-    super.addEventListener(eventType, handler, addEventListenerOptions: addEventListenerOptions);
+  void addEventListener(String eventType, EventHandler eventHandler, {EventListenerOptions? addEventListenerOptions}) {
+    super.addEventListener(eventType, eventHandler, addEventListenerOptions: addEventListenerOptions);
     renderStyle.ensureEventResponderBound();
   }
 
   @override
-  void removeEventListener(String eventType, EventHandler handler, {bool isCapture = false}) {
-    super.removeEventListener(eventType, handler, isCapture: isCapture);
+  void removeEventListener(String eventType, EventHandler eventHandler, {bool isCapture = false}) {
+    super.removeEventListener(eventType, eventHandler, isCapture: isCapture);
     renderStyle.ensureEventResponderBound();
   }
 
@@ -183,8 +183,8 @@ class Event {
   Pointer toRaw([int extraLength = 0, bool isCustomEvent = false]) {
     Pointer<RawEvent> event = malloc.allocate<RawEvent>(sizeOf<RawEvent>());
 
-    EventTarget? _target = target;
-    EventTarget? _currentTarget = currentTarget;
+    EventTarget? target = this.target;
+    EventTarget? currentTarget = this.currentTarget;
 
     List<int> methods = [
       stringToNativeString(type).address,
@@ -193,8 +193,8 @@ class Event {
       composed ? 1 : 0,
       timeStamp,
       defaultPrevented ? 1 : 0,
-      (_target != null && _target.pointer != null) ? _target.pointer!.address : nullptr.address,
-      (_currentTarget != null && _currentTarget.pointer != null) ? _currentTarget.pointer!.address : nullptr.address,
+      (target != null && target.pointer != null) ? target.pointer!.address : nullptr.address,
+      (currentTarget != null && currentTarget.pointer != null) ? currentTarget.pointer!.address : nullptr.address,
       sharedJSProps.address, // EventProps* props
       propLen, // int64_t props_len
       allocateLen // int64_t alloc_size;
@@ -330,12 +330,12 @@ class UIEvent extends Event {
   double which;
 
   UIEvent(
-    String type, {
+    super.type, {
     this.detail = 0.0,
     this.view,
     this.which = 0.0,
     super.composed,
-  }) : super(type, bubbles: true, cancelable: true);
+  }) : super(bubbles: true, cancelable: true);
 
   @override
   Pointer toRaw([int extraLength = 0, bool isCustomEvent = false]) {
@@ -355,13 +355,13 @@ class FocusEvent extends UIEvent {
   EventTarget? relatedTarget;
 
   FocusEvent(
-    String type, {
+    super.type, {
     this.relatedTarget,
     super.detail,
     super.view,
     super.which,
     super.composed,
-  }) : super(type);
+  });
 
   @override
   Pointer toRaw([int extraLength = 0, bool isCustomEvent = false]) {
@@ -383,11 +383,11 @@ class KeyboardEvent extends UIEvent {
   final String code;
 
   KeyboardEvent(
-    String type, {
+    super.type, {
     this.key = '',
     this.code = '',
     super.composed = true,
-  }) : super(type);
+  });
 
   @override
   Pointer toRaw([int extraLength = 0, bool isCustomEvent = false]) {
@@ -414,15 +414,15 @@ class MouseEvent extends UIEvent {
   double offsetY;
 
   MouseEvent(
-    String type, {
+    super.type, {
     this.clientX = 0.0,
     this.clientY = 0.0,
     this.offsetX = 0.0,
     this.offsetY = 0.0,
-    double detail = 0.0,
-    EventTarget? view,
-    double which = 0.0,
-  }) : super(type, detail: detail, view: view, which: which, composed: false);
+    super.detail,
+    super.view,
+    super.which,
+  }) : super(composed: false);
 
   static MouseEvent fromTapUp(Element ownerElement, TapUpDetails tapDetails) {
     Offset globalPosition = tapDetails.globalPosition;
@@ -472,7 +472,7 @@ class GestureEvent extends Event {
   final double scale;
 
   GestureEvent(
-    String type, {
+    super.type, {
     this.state = '',
     this.direction = '',
     this.rotation = 0.0,
@@ -484,7 +484,7 @@ class GestureEvent extends Event {
     super.bubbles,
     super.cancelable,
     super.composed,
-  }) : super(type);
+  });
 
   @override
   Pointer toRaw([int extraLength = 0, bool isCustomEvent = false]) {
@@ -516,14 +516,14 @@ class TransitionEvent extends Event {
   final String pseudoElement;
 
   TransitionEvent(
-    String type, {
+    super.type, {
     this.elapsedTime = 0.0,
     this.propertyName = '',
     this.pseudoElement = '',
-    bool bubbles = true,
-    bool cancelable = true,
-    bool composed = false,
-  }) : super(type, bubbles: bubbles, cancelable: cancelable, composed: composed);
+    super.bubbles = true,
+    super.cancelable = true,
+    super.composed,
+  });
 
   @override
   Pointer<NativeType> toRaw([int extraLength = 0, bool isCustomEvent = false]) {
@@ -554,12 +554,12 @@ class CustomEvent extends Event {
   dynamic detail;
 
   CustomEvent(
-    String type, {
-    this.detail = null,
+    super.type, {
+    this.detail,
     super.bubbles,
     super.cancelable,
     super.composed,
-  }) : super(type);
+  });
 
   @override
   Pointer toRaw([int extraLength = 0, bool isCustomEvent = false]) {
@@ -749,7 +749,7 @@ class IntersectionChangeEvent extends Event {
 /// reference: https://w3c.github.io/touch-events/#touchevent-interface
 class TouchEvent extends UIEvent {
   TouchEvent(
-    String type, {
+    super.type, {
     TouchList? touches,
     TouchList? targetTouches,
     TouchList? changedTouches,
@@ -760,7 +760,7 @@ class TouchEvent extends UIEvent {
   })  : touches = touches ?? TouchList(),
         targetTouches = targetTouches ?? TouchList(),
         changedTouches = changedTouches ?? TouchList(),
-        super(type, composed: true);
+        super(composed: true);
 
   TouchList touches;
   TouchList targetTouches;
@@ -873,7 +873,7 @@ class TouchList {
     Pointer<NativeTouchList> touchList = malloc.allocate(sizeOf<NativeTouchList>());
     Pointer<NativeTouch> touches = malloc.allocate<NativeTouch>(sizeOf<NativeTouch>() * _items.length);
     for (int i = 0; i < _items.length; i++) {
-      _items[i].toNative(touches.elementAt(i));
+      _items[i].toNative(touches + i);
     }
     touchList.ref.length = _items.length;
     touchList.ref.touches = touches;
@@ -882,11 +882,10 @@ class TouchList {
 }
 
 class AnimationEvent extends Event {
-  AnimationEvent(String type, {String? animationName, double? elapsedTime, String? pseudoElement})
+  AnimationEvent(super.type, {String? animationName, double? elapsedTime, String? pseudoElement})
       : animationName = animationName ?? '',
         elapsedTime = elapsedTime ?? 0.0,
-        pseudoElement = pseudoElement ?? '',
-        super(type) {}
+        pseudoElement = pseudoElement ?? '';
 
   String animationName;
   double elapsedTime;

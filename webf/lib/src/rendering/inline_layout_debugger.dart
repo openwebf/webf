@@ -4,7 +4,6 @@
  */
 import 'package:flutter/rendering.dart';
 import 'package:webf/rendering.dart';
-import 'inline_formatting_context.dart';
 import 'inline_item.dart';
 
 /// A utility class to provide enhanced debugging information for inline layout.
@@ -142,11 +141,6 @@ class InlineLayoutDebugger {
     return buffer.toString();
   }
 
-  /// Format an offset for display.
-  String _formatOffset(Offset offset) {
-    return '(${offset.dx.toStringAsFixed(1)}, ${offset.dy.toStringAsFixed(1)})';
-  }
-
   /// Format a size for display.
   String _formatSize(Size size) {
     return '${size.width.toStringAsFixed(1)}×${size.height.toStringAsFixed(1)}';
@@ -155,29 +149,28 @@ class InlineLayoutDebugger {
   /// Get a short description of the RenderBoxModel.
   String _getElementDescription(RenderBoxModel? renderBox) {
     if (renderBox == null) return 'unknown';
-    
+
     // Try to get element tag from the RenderBoxModel
     final element = renderBox.renderStyle.target;
-    if (element != null) {
-      // For HTML elements, return the tag name
-      final tagName = element.tagName;
-      if (tagName.isNotEmpty && tagName != 'DIV') {
-        return tagName.toLowerCase();
-      }
-      
-      // For elements with specific classes or IDs, include them
-      final id = element.id;
-      final className = element.className;
-      
-      if (id != null && id.isNotEmpty) {
-        return '${tagName.toLowerCase()}#$id';
-      } else if (className.isNotEmpty) {
-        return '${tagName.toLowerCase()}.$className';
-      }
-      
-      return tagName.toLowerCase();
+    // For HTML elements, return the tag name
+    final tagName = element.tagName;
+    final lowerTagName = tagName.toLowerCase();
+    if (tagName.isNotEmpty && tagName != 'DIV') {
+      return lowerTagName;
     }
-    
+
+    // For elements with specific classes or IDs, include them
+    final id = element.id;
+    final className = element.className;
+
+    if (id != null && id.isNotEmpty) {
+      return '$lowerTagName#$id';
+    } else if (className.isNotEmpty) {
+      return '$lowerTagName.$className';
+    }
+
+    if (tagName.isNotEmpty) return lowerTagName;
+
     // Fallback to a short description
     final typeStr = renderBox.runtimeType.toString();
     if (typeStr.startsWith('Render')) {

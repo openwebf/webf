@@ -5,12 +5,16 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
 import '../../setup.dart';
 import '../widget/test_utils.dart';
+
+double? _computeDistanceToActualBaseline(RenderBox box, TextBaseline baseline) {
+  final dynamic dynBox = box;
+  return dynBox.computeDistanceToActualBaseline(baseline) as double?;
+}
 
 void main() {
   setUpAll(() {
@@ -34,7 +38,7 @@ void main() {
         break;
       }
 
-      current = current.parent as RenderObject?;
+      current = current.parent;
     }
 
     return offset;
@@ -74,10 +78,11 @@ void main() {
       final divRenderBox = divElement.attachedRenderer!;
 
       // Baseline should be computed based on the text content
-      final baseline = divRenderBox.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+      final baseline = _computeDistanceToActualBaseline(divRenderBox, TextBaseline.alphabetic);
 
       // With 24px font size, baseline should be roughly 18-20px from top
-      expect(baseline, greaterThan(0));
+      expect(baseline, isNotNull);
+      expect(baseline!, greaterThan(0));
       expect(baseline, lessThan(24));
     });
 
@@ -98,7 +103,6 @@ void main() {
       final controller = prepared.controller;
       await tester.pump();
 
-      final container = controller.view.document.querySelector(['div']) as dom.Element;
       final spans = controller.view.document.querySelectorAll(['span']);
 
       // Get render boxes
@@ -190,7 +194,6 @@ void main() {
       final controller = prepared.controller;
       await tester.pump();
 
-      final container = controller.view.document.querySelector(['div']) as dom.Element;
       final span = controller.view.document.querySelector(['span']) as dom.Element;
       final spanBox = span.attachedRenderer!;
 
@@ -293,7 +296,7 @@ void main() {
       final spanBox = span.attachedRenderer!;
 
       // Empty inline-block should align its bottom with baseline
-      final baseline = spanBox.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+      final baseline = _computeDistanceToActualBaseline(spanBox, TextBaseline.alphabetic);
 
       // Baseline should be at the bottom of the box
       expect(baseline, equals(50));

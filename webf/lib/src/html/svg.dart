@@ -9,6 +9,7 @@ import 'package:webf/widget.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/css.dart';
 
+// ignore: constant_identifier_names
 const String SVG = 'svg';
 
 class FlutterSvgElement extends WidgetElement {
@@ -61,14 +62,14 @@ class FlutterSvgElement extends WidgetElement {
   }
 
   @override
-  void setAttribute(String key, value) {
-    super.setAttribute(key, value);
+  void setAttribute(String qualifiedName, value) {
+    super.setAttribute(qualifiedName, value);
     _notifyAncestorSvgToRebuild();
   }
 
   @override
-  void removeAttribute(String key) {
-    super.removeAttribute(key);
+  void removeAttribute(String qualifiedName) {
+    super.removeAttribute(qualifiedName);
     _notifyAncestorSvgToRebuild();
   }
 }
@@ -117,14 +118,14 @@ class FlutterSVGChildElement extends dom.Element {
   }
 
   @override
-  void setAttribute(String key, value) {
-    super.setAttribute(key, value);
+  void setAttribute(String qualifiedName, value) {
+    super.setAttribute(qualifiedName, value);
     _notifyRootSvgToRebuild();
   }
 
   @override
-  void removeAttribute(String key) {
-    super.removeAttribute(key);
+  void removeAttribute(String qualifiedName) {
+    super.removeAttribute(qualifiedName);
     _notifyRootSvgToRebuild();
   }
 }
@@ -140,7 +141,7 @@ class _FlutterSvgElementState extends WebFWidgetElementState {
     }
 
     final String rawSvg = _buildSvgString();
-    if (rawSvg == null || rawSvg.isEmpty) {
+    if (rawSvg.isEmpty) {
       // Nothing to render yet.
       return const SizedBox.shrink();
     }

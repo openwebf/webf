@@ -12,7 +12,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 
 import 'canvas_context_2d.dart';
-import 'canvas.dart';
 
 class CanvasPainter extends CustomPainter {
   CanvasPainter({required Listenable repaint}) : super(repaint: repaint);
@@ -20,7 +19,6 @@ class CanvasPainter extends CustomPainter {
   CanvasRenderingContext2D? context;
 
   final Paint _saveLayerPaint = Paint();
-  bool _shouldRepaint = false;
 
   bool get _shouldPainting => context != null;
 
@@ -49,9 +47,9 @@ class CanvasPainter extends CustomPainter {
   @override
   void paint(Canvas rootCanvas, Size size) async {
     if (paintedPictures.isNotEmpty) {
-      paintedPictures.forEach((picture) {
+      for (var picture in paintedPictures) {
         rootCanvas.drawPicture(picture);
-      });
+      }
     }
 
     final PictureRecorder pictureRecorder = PictureRecorder();
@@ -88,7 +86,7 @@ class CanvasPainter extends CustomPainter {
       paintedPictures.add(picture);
 
       // Report FCP when canvas has content painted for the first time
-      if (context != null && context!.canvas != null) {
+      if (context != null) {
         // Report FP first (if not already reported)
         context!.canvas.ownerDocument.controller.reportFP();
         context!.canvas.ownerDocument.controller.reportFCP();
@@ -99,7 +97,6 @@ class CanvasPainter extends CustomPainter {
   }
 
   void _resetPaintingContext() {
-    _shouldRepaint = true;
   }
 
   void dispose() {

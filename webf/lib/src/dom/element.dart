@@ -23,8 +23,6 @@ import 'package:webf/bridge.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/css/query_selector.dart' as query_selector;
-import 'package:webf/src/foundation/debug_flags.dart';
-import 'package:webf/src/foundation/logger.dart';
 import 'intersection_observer.dart';
 import 'intersection_observer_entry.dart';
 
@@ -152,7 +150,6 @@ abstract class Element extends ContainerNode
   @pragma('vm:prefer-inline')
   flutter.Key key = flutter.UniqueKey();
 
-  @protected
   void updateElementKey() {
     key = flutter.UniqueKey();
   }
@@ -483,8 +480,9 @@ abstract class Element extends ContainerNode
   }
 
   dynamic querySelector(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty)
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) {
       return null;
+    }
     return query_selector.querySelector(this, args.first);
   }
 
@@ -494,14 +492,16 @@ abstract class Element extends ContainerNode
   }
 
   bool matches(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty)
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) {
       return false;
+    }
     return query_selector.matches(this, args.first);
   }
 
   dynamic closest(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty)
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) {
       return null;
+    }
     return query_selector.closest(this, args.first);
   }
 
@@ -607,13 +607,13 @@ abstract class Element extends ContainerNode
     final RenderBoxModel? defaultScroller = attachedRenderer;
     if (defaultScroller == null) return;
 
-    RenderBoxModel? _nearestScrollContainer(RenderObject start) {
+    RenderBoxModel? nearestScrollContainer(RenderObject start) {
       RenderObject? current = start;
       while (current != null) {
         if (current is RenderBoxModel) {
           if (current.clipX || current.clipY) return current;
         }
-        current = current.parent as RenderObject?;
+        current = current.parent;
       }
       return null;
     }
@@ -621,7 +621,7 @@ abstract class Element extends ContainerNode
     void visit(Element el) {
       for (final Node node in el.childNodes) {
         if (node is! Element) continue;
-        final Element childEl = node as Element;
+        final Element childEl = node;
         if (childEl.renderStyle.position == CSSPositionType.sticky) {
           final RenderBoxModel? rbm = childEl.attachedRenderer;
           final RenderBoxModel? cb =
@@ -629,9 +629,9 @@ abstract class Element extends ContainerNode
           if (rbm != null) {
             // Use the child's own nearest scroll container so nested scrollers don't get
             // overridden by outer viewport updates (e.g., <html> / <body> setups).
-            final RenderBoxModel? scForChild =
-                _nearestScrollContainer(rbm) ?? defaultScroller;
-            CSSPositionedLayout.applyStickyChildOffset(cb ?? scForChild!, rbm,
+            final RenderBoxModel scForChild =
+                nearestScrollContainer(rbm) ?? defaultScroller;
+            CSSPositionedLayout.applyStickyChildOffset(cb ?? scForChild, rbm,
                 scrollContainer: scForChild);
           }
         }
@@ -761,7 +761,7 @@ abstract class Element extends ContainerNode
     void visit(Element el) {
       for (final Node node in el.childNodes) {
         if (node is! Element) continue;
-        final Element child = node as Element;
+        final Element child = node;
         final CSSPositionType pos = child.renderStyle.position;
         // Only consider out-of-flow positioned descendants.
         if (pos == CSSPositionType.absolute ||
@@ -872,7 +872,7 @@ abstract class Element extends ContainerNode
 
   // Compute the current counter value for a given name at this element's point
   int _computeCounterValue(String name) {
-    String _getProp(CSSStyleDeclaration style, String camel, String kebab) {
+    String getProp(CSSStyleDeclaration style, String camel, String kebab) {
       final v1 = style.getPropertyValue(camel);
       if (v1.isNotEmpty) return v1;
       return style.getPropertyValue(kebab);
@@ -882,7 +882,7 @@ abstract class Element extends ContainerNode
     Element? scope = this;
     int initial = 0;
     while (scope != null) {
-      final reset = _getProp(scope.style, 'counterReset', 'counter-reset');
+      final reset = getProp(scope.style, 'counterReset', 'counter-reset');
       if (reset.isNotEmpty && reset != 'none') {
         final map = _parseCounterList(reset);
         if (map.containsKey(name)) {
@@ -899,7 +899,7 @@ abstract class Element extends ContainerNode
 
     // 2) Walk document order from scope to this, summing increments
     int value = initial;
-    if (scope == null) scope = ownerDocument.documentElement;
+    scope ??= ownerDocument.documentElement;
     bool reached = false;
 
     void walk(Node node) {
@@ -907,7 +907,7 @@ abstract class Element extends ContainerNode
       if (node is Element) {
         // increments on element itself
         final incEl =
-            _getProp(node.style, 'counterIncrement', 'counter-increment');
+            getProp(node.style, 'counterIncrement', 'counter-increment');
         if (incEl.isNotEmpty && incEl != 'none') {
           final map = _parseCounterIncrementList(incEl);
           final add = (map[name] ?? 0);
@@ -921,7 +921,7 @@ abstract class Element extends ContainerNode
         if (identical(node, this)) {
           final incBefore = node.style.pseudoBeforeStyle == null
               ? ''
-              : _getProp(node.style.pseudoBeforeStyle!, 'counterIncrement',
+              : getProp(node.style.pseudoBeforeStyle!, 'counterIncrement',
                   'counter-increment');
           if (incBefore.isNotEmpty && incBefore != 'none') {
             final map = _parseCounterIncrementList(incBefore);
@@ -965,7 +965,9 @@ abstract class Element extends ContainerNode
         final quote = ch;
         i++;
         int start = i;
-        while (i < content.length && content[i] != quote) i++;
+        while (i < content.length && content[i] != quote) {
+          i++;
+        }
         out.write(content.substring(start, i));
         if (i < content.length && content[i] == quote) i++;
         if (i < content.length && content[i] == ' ') i++;
@@ -974,14 +976,17 @@ abstract class Element extends ContainerNode
       // try function: counter(name)
       // read identifier
       int startIdent = i;
-      while (i < content.length && RegExp(r'[a-zA-Z_-]').hasMatch(content[i]))
+      while (i < content.length && RegExp(r'[a-zA-Z_-]').hasMatch(content[i])) {
         i++;
+      }
       final ident = content.substring(startIdent, i);
       if (ident.isNotEmpty && i < content.length && content[i] == '(') {
         // parse args until ')'
         i++; // skip '('
         int argStart = i;
-        while (i < content.length && content[i] != ')') i++;
+        while (i < content.length && content[i] != ')') {
+          i++;
+        }
         String args = content.substring(argStart, i).trim();
         if (i < content.length && content[i] == ')') i++;
         if (ident == 'counter') {
@@ -997,7 +1002,9 @@ abstract class Element extends ContainerNode
           out.write(v.toString());
         }
         // skip optional spaces
-        while (i < content.length && content[i] == ' ') i++;
+        while (i < content.length && content[i] == ' ') {
+          i++;
+        }
         continue;
       }
       // otherwise skip or write char
@@ -1398,7 +1405,7 @@ abstract class Element extends ContainerNode
         propertyHandler != null && propertyHandler.setter != null;
     if (invokedByPropertyHandler) {
       // Let the property handler perform the actual mutation (e.g., className setter)
-      propertyHandler!.setter!(value);
+      propertyHandler.setter!(value);
     }
     // Persist attribute map + emit DevTools events exactly once and avoid
     // redundant style work when the property handler already did it.
@@ -1578,7 +1585,7 @@ abstract class Element extends ContainerNode
     }
 
     if (DebugFlags.shouldLogTransitionForProp(name)) {
-      cssLogger.info('[style][apply-prop] ${tagName}.$name value=${value is CSSColor ? (value as CSSColor).cssText() : value}');
+      cssLogger.info('[style][apply-prop] $tagName.$name value=${value is CSSColor ? (value).cssText() : value}');
     }
     if (DebugFlags.enableBackgroundLogs && (name == BACKGROUND_POSITION_X || name == BACKGROUND_POSITION_Y)) {
       try {
@@ -1624,7 +1631,7 @@ abstract class Element extends ContainerNode
 
   void setRenderStyle(String property, String present, {String? baseHref}) {
     if (DebugFlags.shouldLogTransitionForProp(property)) {
-      cssLogger.info('[style][apply] ${tagName}.$property present="$present" baseHref=${baseHref ?? 'null'}');
+      cssLogger.info('[style][apply] $tagName.$property present="$present" baseHref=${baseHref ?? 'null'}');
     }
     dynamic value = present.isEmpty
         ? null
@@ -1739,9 +1746,9 @@ abstract class Element extends ContainerNode
     // Cache miss: compute and insert, enforce capacity with LRU eviction.
     final CSSStyleDeclaration computed =
         _elementRuleCollector.collectionFromRuleSet(ruleSet, this);
-    final int _capRaw = DebugFlags.cssMatchedRulesCacheCapacity;
-    final int _capacity = _capRaw <= 0 ? 1 : _capRaw;
-    if (cache.length >= _capacity) {
+    final int capRaw = DebugFlags.cssMatchedRulesCacheCapacity;
+    final int capacity = capRaw <= 0 ? 1 : capRaw;
+    if (cache.length >= capacity) {
       final _MatchFingerprint oldest = cache.keys.first;
       cache.remove(oldest);
 
@@ -1796,7 +1803,7 @@ abstract class Element extends ContainerNode
 
   void scheduleRunTransitionAnimations(String propertyName, String? prevValue, String currentValue) {
     if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
-      cssLogger.info('[transition][queue] ${tagName}.$propertyName prev=${prevValue ?? 'null'} -> curr=$currentValue');
+      cssLogger.info('[transition][queue] $tagName.$propertyName prev=${prevValue ?? 'null'} -> curr=$currentValue');
     }
     if (_pendingTransitionProps.contains(propertyName)) {
       // Already scheduled this property in current frame; coalesce by updating
@@ -1868,7 +1875,7 @@ abstract class Element extends ContainerNode
         propertyName == BORDER_BOTTOM_COLOR;
 
     if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
-      cssLogger.info('[style][change] ${tagName}.$propertyName prev=${prevValue ?? 'null'} curr=$currentValue');
+      cssLogger.info('[style][change] $tagName.$propertyName prev=${prevValue ?? 'null'} curr=$currentValue');
     }
 
     // For color properties, prefer the previous *computed* color from
@@ -1880,7 +1887,7 @@ abstract class Element extends ContainerNode
       if (prevComputed is CSSColor) {
         prevForTransition = prevComputed.cssText();
         if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
-          cssLogger.info('[style][prev-computed] ${tagName}.$propertyName prevSerialized=${prevValue ?? 'null'} prevComputed=$prevForTransition');
+          cssLogger.info('[style][prev-computed] $tagName.$propertyName prevSerialized=${prevValue ?? 'null'} prevComputed=$prevForTransition');
         }
       }
     }
@@ -1898,7 +1905,7 @@ abstract class Element extends ContainerNode
 
     final bool shouldTrans = renderStyle.shouldTransition(propertyName, prevForTransition, currentValue);
     if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
-      cssLogger.info('[style][route] ${tagName}.$propertyName shouldTransition=$shouldTrans');
+      cssLogger.info('[style][route] $tagName.$propertyName shouldTransition=$shouldTrans');
     }
     if (shouldTrans) {
       scheduleRunTransitionAnimations(propertyName, prevForTransition, currentValue);
@@ -1909,17 +1916,15 @@ abstract class Element extends ContainerNode
     // the animation-driven value. The scheduled/active transition will drive
     // updates.
     final bool pending = _pendingTransitionProps.contains(propertyName);
-    final bool running = (renderStyle is CSSRenderStyle)
-        ? (renderStyle as CSSRenderStyle).isTransitionRunning(propertyName)
-        : false;
+    final bool running = renderStyle.isTransitionRunning(propertyName);
     if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
-      cssLogger.info('[style][route] ${tagName}.$propertyName pending=$pending running=$running');
+      cssLogger.info('[style][route] $tagName.$propertyName pending=$pending running=$running');
     }
     if (pending || running) {
       return;
     }
     if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
-      cssLogger.info('[style][apply] ${tagName}.$propertyName direct-set value=$currentValue');
+      cssLogger.info('[style][apply] $tagName.$propertyName direct-set value=$currentValue');
     }
     setRenderStyle(propertyName, currentValue, baseHref: baseHref);
   }
@@ -2110,7 +2115,7 @@ abstract class Element extends ContainerNode
             }
             break;
           }
-          parent = (parent as RenderObject).parent;
+          parent = (parent).parent;
         }
       }
 
@@ -2479,7 +2484,7 @@ abstract class Element extends ContainerNode
     // shorthands and resetting longhands to initial values.
     // Also, permit access even before a render box is attached so computed
     // properties like backgroundPosition can be observed during animation.
-    return renderStyle as CSSRenderStyle;
+    return renderStyle;
   }
 
 

@@ -119,6 +119,8 @@ void main() async {
 }
 
 class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
   @override
   State<StatefulWidget> createState() {
     return MyAppState();
@@ -164,7 +166,7 @@ class MyAppState extends State<MyApp> {
 }
 
 class TestHomePage extends StatefulWidget {
-  const TestHomePage({Key? key, required this.webfPageName}) : super(key: key);
+  const TestHomePage({super.key, required this.webfPageName});
   final ValueNotifier<String> webfPageName;
 
   @override
@@ -213,7 +215,7 @@ class WebFTestPage extends StatefulWidget {
   final String initialRoute;
   final Map<String, dynamic>? initialState;
 
-  WebFTestPage({
+  const WebFTestPage({super.key, 
     required this.webfPageName,
     this.initialRoute = '/',
     this.initialState,

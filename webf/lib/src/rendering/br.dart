@@ -13,7 +13,7 @@ import 'package:webf/rendering.dart';
 // Render object for <br>. When not inside an IFC (e.g., as a flex item),
 // it contributes one line of vertical space equal to the computed line height.
 class RenderBr extends RenderLayoutBox {
-  RenderBr({required CSSRenderStyle renderStyle}) : super(renderStyle: renderStyle);
+  RenderBr({required super.renderStyle});
 
   double _computeLineHeightPx() {
     // If an explicit line-height is provided and resolves to a pixel value, use it.

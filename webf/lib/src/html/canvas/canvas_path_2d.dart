@@ -22,7 +22,7 @@ final double _2pi = 2 * math.pi;
 final double _pi = math.pi;
 final double _piOver2 = math.pi / 2;
 
-class Path2D extends DynamicBindingObject{
+class Path2D extends DynamicBindingObject {
   Path _path = Path();
 
   get path {
@@ -33,20 +33,21 @@ class Path2D extends DynamicBindingObject{
 
   Path2D({BindingContext? context, List<dynamic>? path2DInit}) : super(context) {
     if (path2DInit != null && path2DInit.isNotEmpty) {
-      switch (path2DInit[0].runtimeType) {
-        case Path2D:
-          addPath(path2DInit[0] as Path2D);
+      switch (path2DInit[0]) {
+        case Path2D path:
+          addPath(path);
           break;
-        case String:
-          addSVGPath(path2DInit[0] as String);
+        case String svgPath:
+          addSVGPath(svgPath);
           break;
       }
     }
   }
 
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-     methods['moveTo'] = BindingObjectMethodSync(
+  void initializeDynamicMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeDynamicMethods(methods);
+    methods['moveTo'] = BindingObjectMethodSync(
         call: (args) => moveTo(
           castToType<num>(args[0]).toDouble(),
           castToType<num>(args[1]).toDouble()));
@@ -109,10 +110,6 @@ class Path2D extends DynamicBindingObject{
     });
   }
 
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    // TODO: implement initializeProperties
-  }
 
   void _setPoint(x, y) {
     _points.add(x);

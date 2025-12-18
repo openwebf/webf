@@ -35,7 +35,7 @@ class FlutterSelectState extends WebFWidgetElementState {
   @override
   Widget build(BuildContext context) {
     final renderStyle = widgetElement.renderStyle;
-    return Container(
+    return SizedBox(
       width: renderStyle.width.computedValue,
       child: DropdownButton2<String>(
         isExpanded: true,

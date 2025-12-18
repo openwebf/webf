@@ -57,7 +57,7 @@ mixin CSSGapMixin on RenderStyle {
     if (gap == 'normal') {
       return CSSLengthValue.normal;
     }
-    return CSSLength.parseLength(gap, renderStyle) ?? CSSLengthValue.normal;
+    return CSSLength.parseLength(gap, renderStyle);
   }
 }
 

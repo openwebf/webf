@@ -98,7 +98,7 @@ class InlineItem {
       return false;
     }
 
-    final renderStyle = (renderBox as RenderBoxModel?)?.renderStyle;
+    final renderStyle = (renderBox)?.renderStyle;
     if (renderStyle == null) return false;
 
     // Create box fragment if has borders, padding, or background
@@ -106,10 +106,10 @@ class InlineItem {
            (renderStyle.borderTopWidth?.value != null && renderStyle.borderTopWidth!.value! > 0) ||
            (renderStyle.borderRightWidth?.value != null && renderStyle.borderRightWidth!.value! > 0) ||
            (renderStyle.borderBottomWidth?.value != null && renderStyle.borderBottomWidth!.value! > 0) ||
-           (renderStyle.paddingLeft?.value != null && renderStyle.paddingLeft!.value! > 0) ||
-           (renderStyle.paddingTop?.value != null && renderStyle.paddingTop!.value! > 0) ||
-           (renderStyle.paddingRight?.value != null && renderStyle.paddingRight!.value! > 0) ||
-           (renderStyle.paddingBottom?.value != null && renderStyle.paddingBottom!.value! > 0) ||
+           (renderStyle.paddingLeft.value != null && renderStyle.paddingLeft.value! > 0) ||
+           (renderStyle.paddingTop.value != null && renderStyle.paddingTop.value! > 0) ||
+           (renderStyle.paddingRight.value != null && renderStyle.paddingRight.value! > 0) ||
+           (renderStyle.paddingBottom.value != null && renderStyle.paddingBottom.value! > 0) ||
            (renderStyle.backgroundColor?.value != null);
   }
 

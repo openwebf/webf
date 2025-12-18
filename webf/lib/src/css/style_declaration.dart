@@ -10,8 +10,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
-import 'package:webf/src/foundation/debug_flags.dart';
-import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/html.dart';
@@ -20,7 +18,7 @@ import 'package:quiver/collection.dart';
 typedef StyleChangeListener = void Function(String property, String? original, String present, {String? baseHref});
 typedef StyleFlushedListener = void Function(List<String> properties);
 
-const Map<String, bool> _CSSShorthandProperty = {
+const Map<String, bool> _cssShorthandProperty = {
   MARGIN: true,
   PADDING: true,
   BACKGROUND: true,
@@ -144,7 +142,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     target?.markFirstLinePseudoNeedsUpdate();
   }
 
-  CSSStyleDeclaration([BindingContext? context]): super(context);
+  CSSStyleDeclaration([super.context]);
 
   // ignore: prefer_initializing_formals
   CSSStyleDeclaration.computedStyle(this.target, this.defaultStyle, this.onStyleChanged, [this.onStyleFlushed]);
@@ -281,11 +279,11 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     // this property. To preserve inheritance semantics, we only do this for
     // non-inherited properties. For inherited ones we prefer leaving the
     // value empty so [RenderStyle] can pull from the parent instead.
-    if (isNullOrEmptyValue(present) && CSSInitialValues.containsKey(propertyName)) {
+    if (isNullOrEmptyValue(present) && cssInitialValues.containsKey(propertyName)) {
       final String kebabName = _kebabize(propertyName);
       final bool isInherited = isInheritedPropertyString(kebabName);
       if (!isInherited) {
-        present = CSSInitialValues[propertyName];
+        present = cssInitialValues[propertyName];
       }
     }
 
@@ -563,7 +561,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
     if (!_isValidValue(propertyName, normalizedValue)) return;
 
-    if (_CSSShorthandProperty[propertyName] != null) {
+    if (_cssShorthandProperty[propertyName] != null) {
       return _expandShorthand(propertyName, normalizedValue, isImportant, baseHref: baseHref);
     }
 
@@ -588,12 +586,12 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   }
 
   void flushDisplayProperties() {
-    Element? _target = target;
+    Element? target = this.target;
     // If style target element not exists, no need to do flush operation.
-    if (_target == null) return;
+    if (target == null) return;
 
     if (_pendingProperties.containsKey(DISPLAY) &&
-        _target.isConnected) {
+        target.isConnected) {
       CSSPropertyValue? prevValue = _properties[DISPLAY];
       CSSPropertyValue currentValue = _pendingProperties[DISPLAY]!;
       _properties[DISPLAY] = currentValue;
@@ -604,13 +602,13 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   }
 
   void flushPendingProperties() {
-    Element? _target = target;
+    Element? target = this.target;
     // If style target element not exists, no need to do flush operation.
-    if (_target == null) return;
+    if (target == null) return;
 
     // Display change from none to other value that the renderBoxModel is null.
     if (_pendingProperties.containsKey(DISPLAY) &&
-        _target.isConnected) {
+        target.isConnected) {
       CSSPropertyValue? prevValue = _properties[DISPLAY];
       CSSPropertyValue currentValue = _pendingProperties[DISPLAY]!;
       _properties[DISPLAY] = currentValue;

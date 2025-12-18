@@ -3,14 +3,13 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+// ignore_for_file: avoid_print
+
 import 'dart:async';
-import 'dart:io';
 
 import 'package:cronet_http/cronet_http.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
@@ -42,7 +41,6 @@ import 'modules/test_array_buffer.dart';
 import 'modules/share.dart';
 import 'modules/deeplink.dart';
 import 'flutter_ui_handler.dart';
-import 'flutter_interaction_handler.dart';
 import 'custom_elements/nested_scrollable.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
@@ -273,7 +271,7 @@ class SecondScreen extends StatelessWidget {
 class MyApp extends StatefulWidget {
   final AdaptiveThemeMode? savedThemeMode;
 
-  MyApp({required this.savedThemeMode});
+  const MyApp({super.key, required this.savedThemeMode});
 
   @override
   State<StatefulWidget> createState() {
@@ -333,16 +331,16 @@ class MyAppState extends State<MyApp> {
           print('Set page to react_use_cases with route: $targetRoute');
 
           // Use a delayed navigation to ensure the Navigator is ready
-          Future.delayed(Duration(milliseconds: 100), () async {
-            final context = navigatorKey.currentContext;
-            if (context != null && mounted) {
-              Navigator.push(context, MaterialPageRoute(builder: (context) {
-                return WebFDemo(
-                  webfPageName: 'react_use_cases',
-                  initialRoute: targetRoute,
-                );
-              }));
-            }
+          Future.delayed(Duration(milliseconds: 100), () {
+            if (!mounted) return;
+            final navigator = navigatorKey.currentState;
+            if (navigator == null) return;
+            navigator.push(MaterialPageRoute(builder: (_) {
+              return WebFDemo(
+                webfPageName: 'react_use_cases',
+                initialRoute: targetRoute,
+              );
+            }));
           });
         }
       }
@@ -433,7 +431,7 @@ class MyAppState extends State<MyApp> {
 }
 
 class FirstPage extends StatefulWidget {
-  const FirstPage({Key? key, required this.title, required this.webfPageName}) : super(key: key);
+  const FirstPage({super.key, required this.title, required this.webfPageName});
   final String title;
   final ValueNotifier<String> webfPageName;
 
@@ -658,10 +656,10 @@ class WebFDemo extends StatefulWidget {
   final String initialRoute;
   final Map<String, dynamic>? initialState;
 
-  WebFDemo({required this.webfPageName, this.initialRoute = '/', this.initialState});
+  const WebFDemo({super.key, required this.webfPageName, this.initialRoute = '/', this.initialState});
 
   @override
-  _WebFDemoState createState() => _WebFDemoState();
+  State<WebFDemo> createState() => _WebFDemoState();
 }
 
 class _WebFDemoState extends State<WebFDemo> {

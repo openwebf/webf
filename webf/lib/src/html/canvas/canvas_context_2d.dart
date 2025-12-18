@@ -6,6 +6,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
+// ignore_for_file: constant_identifier_names
+
 import 'dart:math' as math;
 import 'dart:core';
 import 'dart:typed_data';
@@ -22,24 +24,6 @@ import 'package:webf/src/html/canvas/canvas_text_metrics.dart';
 
 import 'canvas_context.dart';
 import 'canvas_path_2d.dart';
-
-// Simple circular list helper for dashing.
-class _CircularIntervalList<T> {
-  _CircularIntervalList(this._values);
-
-  final List<T> _values;
-  int _index = 0;
-
-  T get next {
-    if (_values.isEmpty) {
-      throw StateError('CircularIntervalList is empty');
-    }
-    if (_index >= _values.length) {
-      _index = 0;
-    }
-    return _values[_index++];
-  }
-}
 
 const String _DEFAULT_FONT = '10px sans-serif';
 const String START = 'start';
@@ -81,9 +65,8 @@ class CanvasAction {
 }
 
 class ImageBitmap extends DynamicBindingObject {
-  ImageBitmap(BindingContext context)
-      : _pointer = context.pointer,
-        super(context);
+  ImageBitmap(BindingContext super.context)
+      : _pointer = context.pointer;
 
   final ffi.Pointer<NativeBindingObject> _pointer;
 
@@ -98,9 +81,8 @@ class ImageBitmap extends DynamicBindingObject {
 }
 
 class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBindingObject {
-  CanvasRenderingContext2D(BindingContext context, this.canvas)
-      : _pointer = context.pointer,
-        super(context);
+  CanvasRenderingContext2D(BindingContext super.context, this.canvas)
+      : _pointer = context.pointer;
 
   final ffi.Pointer<NativeBindingObject> _pointer;
 
@@ -639,9 +621,9 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     path2d = Path2D();
     // ignore: avoid_print
     print('[Canvas2D] replayActions: canvasSize=$size, actionsCount=${_actions.length}');
-    _actions.forEach((action) {
+    for (var action in _actions) {
       action.fn.call(canvas, size);
-    });
+    }
     path2d = paintTemp;
   }
 
@@ -655,7 +637,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     int needsPaintIndex = _actions.length - 1;
     needsPaintIndexes.add(needsPaintIndex);
     // Must trigger repaint after add needsPaint
-    canvas.repaintNotifier.notifyListeners();
+    canvas.notifyRepaint();
   }
 
   // Perform canvas drawing.
@@ -1090,18 +1072,18 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
         } else {
           Paint paint = Paint();
           if (strokeStyle is Color) {
-            paint..color = strokeStyle as Color;
+            paint.color = strokeStyle as Color;
           } else if (strokeStyle is CanvasRadialGradient) {
             final Rect bounds = effectivePath.getBounds();
             paint
-              ..shader =
+              .shader =
                   _drawRadialGradient(strokeStyle as CanvasRadialGradient, bounds.left, bounds.top, bounds.width,
                           bounds.height)
                       .createShader(bounds);
           } else if (strokeStyle is CanvasLinearGradient) {
             final Rect bounds = effectivePath.getBounds();
             paint
-              ..shader =
+              .shader =
                   _drawLinearGradient(strokeStyle as CanvasLinearGradient, bounds.left, bounds.top, bounds.width,
                           bounds.height)
                       .createShader(bounds);
@@ -1437,7 +1419,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   }
 
   bool get _shouldPaintShadow =>
-      _shadowColor.alpha != 0 && (_shadowBlur > 0 || _shadowOffsetX != 0.0 || _shadowOffsetY != 0.0);
+      _shadowColor.a != 0 && (_shadowBlur > 0 || _shadowOffsetX != 0.0 || _shadowOffsetY != 0.0);
 
   double _shadowSigmaFromRadius(double radius) {
     if (radius <= 0) return 0.0;
@@ -1546,7 +1528,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     }
     final Paint layerPaint = Paint()
       ..blendMode = _globalBlendMode
-      ..color = const Color(0xFFFFFFFF).withOpacity(_globalAlpha);
+      ..color = const Color(0xFFFFFFFF).withValues(alpha: _globalAlpha);
     canvas.saveLayer(bounds, layerPaint);
     draw(canvas);
     canvas.restore();
@@ -1672,7 +1654,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   CanvasPattern createPattern(CanvasImageSource image, String repetition) {
     // ignore: avoid_print
     print(
-        "[Canvas2D] createPattern: imageType=${image.image_element != null ? 'HTMLImageElement' : (image.canvas_element != null ? 'HTMLCanvasElement' : 'Unknown')}, repetition=$repetition");
+        "[Canvas2D] createPattern: imageType=${image.imageElement != null ? 'HTMLImageElement' : (image.canvasElement != null ? 'HTMLCanvasElement' : 'Unknown')}, repetition=$repetition");
     return CanvasPattern(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), image, repetition);
   }
 
@@ -1716,17 +1698,17 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     // ignore: avoid_print
     print(
         '[Canvas2D] _drawPattern: repetition=${canvasPattern.repetition}, x=$x, y=$y, width=$width, height=$height');
-    if (canvasPattern.image.image_element == null && canvasPattern.image.canvas_element == null) {
+    if (canvasPattern.image.imageElement == null && canvasPattern.image.canvasElement == null) {
       throw AssertionError('CanvasPattern must be created from a canvas or image');
     }
 
     String repetition = canvasPattern.repetition;
-    int patternWidth = canvasPattern.image.image_element != null
-        ? canvasPattern.image.image_element!.width
-        : canvasPattern.image.canvas_element!.width;
-    int patternHeight = canvasPattern.image.image_element != null
-        ? canvasPattern.image.image_element!.height
-        : canvasPattern.image.canvas_element!.height;
+    int patternWidth = canvasPattern.image.imageElement != null
+        ? canvasPattern.image.imageElement!.width
+        : canvasPattern.image.canvasElement!.width;
+    int patternHeight = canvasPattern.image.imageElement != null
+        ? canvasPattern.image.imageElement!.height
+        : canvasPattern.image.canvasElement!.height;
     // Compute repeat counts based on the full canvas size so that the pattern
     // phase is always anchored at the canvas origin (0, 0), matching browser
     // behavior. The requested (x, y, width, height) region is then applied
@@ -1743,8 +1725,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     drawCanvas.clipRect(clipRegion);
 
     // CanvasPattern created from an image
-    if (canvasPattern.image.image_element != null) {
-      Image? repeatImg = canvasPattern.image.image_element?.image;
+    if (canvasPattern.image.imageElement != null) {
+      Image? repeatImg = canvasPattern.image.imageElement?.image;
 
       if (repetition == 'no-repeat') {
         xRepeatCount = 1;
@@ -1768,7 +1750,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
       }
     } else {
       // CanvasPattern created from a canvas
-      final CanvasElement? patternCanvasElement = canvasPattern.image.canvas_element;
+      final CanvasElement? patternCanvasElement = canvasPattern.image.canvasElement;
       if (patternCanvasElement == null) {
         throw AssertionError('CanvasPattern must be created from a canvas');
       }
@@ -1830,11 +1812,11 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
         _paintShadowForRect(drawCanvas, rect, style: PaintingStyle.fill);
         if (fillStyle is Color || fillStyle is CanvasRadialGradient || fillStyle is CanvasLinearGradient) {
           if (fillStyle is Color) {
-            paint..color = fillStyle as Color;
+            paint.color = fillStyle as Color;
           } else if (fillStyle is CanvasRadialGradient) {
-            paint..shader = _drawRadialGradient(fillStyle as CanvasRadialGradient, x, y, w, h).createShader(rect);
+            paint.shader = _drawRadialGradient(fillStyle as CanvasRadialGradient, x, y, w, h).createShader(rect);
           } else if (fillStyle is CanvasLinearGradient) {
-            paint..shader = _drawLinearGradient(fillStyle as CanvasLinearGradient, x, y, w, h).createShader(rect);
+            paint.shader = _drawLinearGradient(fillStyle as CanvasLinearGradient, x, y, w, h).createShader(rect);
           }
           drawCanvas.drawRect(rect, paint);
         } else if (fillStyle is CanvasPattern) {
@@ -1863,11 +1845,11 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
         final Path effectivePath = _applyLineDashIfNeeded(rectPath);
         _paintShadowForPath(drawCanvas, effectivePath, paintingStyle: PaintingStyle.stroke);
         if (strokeStyle is Color) {
-          paint..color = strokeStyle as Color;
+          paint.color = strokeStyle as Color;
         } else if (strokeStyle is CanvasRadialGradient) {
-          paint..shader = _drawRadialGradient(strokeStyle as CanvasRadialGradient, x, y, w, h).createShader(rect);
+          paint.shader = _drawRadialGradient(strokeStyle as CanvasRadialGradient, x, y, w, h).createShader(rect);
         } else if (strokeStyle is CanvasLinearGradient) {
-          paint..shader = _drawLinearGradient(strokeStyle as CanvasLinearGradient, x, y, w, h).createShader(rect);
+          paint.shader = _drawLinearGradient(strokeStyle as CanvasLinearGradient, x, y, w, h).createShader(rect);
         }
         paint
           ..strokeJoin = lineJoin

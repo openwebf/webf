@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:collection';
-import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:webf/foundation.dart';
@@ -283,7 +282,7 @@ class WebFControllerManager {
         port: config.devToolsPort,
         address: config.devToolsAddress,
       ).catchError((error) {
-        print('Failed to start DevTools: $error');
+        devToolsLogger.warning('Failed to start DevTools', error);
       });
     }
   }
@@ -470,7 +469,9 @@ class WebFControllerManager {
     } catch (e) {
       // If creating a new controller fails and we have an old one, log and return old controller
       if (oldController != null && currentState != ControllerState.disposed) {
-        print('WebFControllerManager: Failed to create new controller, $e. Falling back to existing controller.');
+        widgetLogger.warning(
+            'WebFControllerManager: Failed to create new controller. Falling back to existing controller.',
+            e);
         return oldController;
       }
       // If no fallback is available, rethrow the error
@@ -506,11 +507,11 @@ class WebFControllerManager {
     Stopwatch stopwatch = Stopwatch()..start();
 
     // Record an request for the concurrency checks
-    _ConcurrencyControllerInstance _concurrencyControllerInstance =
+    _ConcurrencyControllerInstance concurrencyControllerInstance =
         _ConcurrencyControllerInstance(newController, stopwatch, ControllerLoadState.idle);
 
     List<_ConcurrencyControllerInstance> concurrencyInstanceList = _concurrencyControllerByName[name]!;
-    concurrencyInstanceList.add(_concurrencyControllerInstance);
+    concurrencyInstanceList.add(concurrencyControllerInstance);
 
     // Wait for the new controller to initialize with fallback
     await newController.controlledInitCompleter.future;
@@ -528,7 +529,7 @@ class WebFControllerManager {
 
     Future<void> newControllerRequestFuture;
 
-    _concurrencyControllerInstance.state = ControllerLoadState.loading;
+    concurrencyControllerInstance.state = ControllerLoadState.loading;
 
     switch (mode) {
       case WebFLoadingMode.preloading:
@@ -543,7 +544,7 @@ class WebFControllerManager {
       // Race the concurrency request and find the target controller instance.
       // Success! Now we can safely replace the old controller
       WebFController winnerController = await _raceConcurrencyController(name, newController,
-          newControllerRequestFuture, _concurrencyControllerInstance, concurrencyInstanceList, raceCompleter);
+          newControllerRequestFuture, concurrencyControllerInstance, concurrencyInstanceList, raceCompleter);
 
       // The newController was failed to win the race.
       if (winnerController != newController) {
@@ -577,8 +578,8 @@ class WebFControllerManager {
         _enableDevToolsForController(winnerController);
       }
 
-      print('WebFControllerManager: $newController load complete with '
-          'bundle: $bundle, time: ${stopwatch.elapsedMilliseconds}ms');
+      widgetLogger.info(
+          'WebFControllerManager: $newController load complete with bundle: $bundle, time: ${stopwatch.elapsedMilliseconds}ms');
 
       // Schedule disposal of the old controller after returning the new one, if it exists
       if (instance != null && !instance.controller.disposed) {
@@ -587,13 +588,13 @@ class WebFControllerManager {
           if (_config.onControllerDisposed != null) {
             _config.onControllerDisposed!(name, instance.controller);
           }
-          print('WebFControllerManager: dispose the replaced controller ${instance.controller}');
+          widgetLogger.fine('WebFControllerManager: dispose the replaced controller ${instance.controller}');
           await instance.controller.dispose();
         });
       }
 
       return winnerController;
-    } catch (e, stack) {
+    } catch (e) {
       // Dispose the abandon controller instance
       Future.microtask(() async {
         debugPrint('WebFControllerManager: dispose loser controller: $newController');
@@ -679,18 +680,6 @@ class WebFControllerManager {
       setup: setup,
       forceReplace: false,
     );
-  }
-
-  /// Cancels a controller's loading or preloading process.
-  ///
-  /// This internal method is used to mark a controller as canceled when a newer
-  /// controller is being loaded with the same name. This prevents resource conflicts
-  /// and ensures that only the most recently requested controller continues loading.
-  ///
-  /// [controller] The controller to cancel.
-  void _cancelUpdateOrLoadingIfNecessary(WebFController controller) {
-    debugPrint('WebFControllerManager: cancel $controller');
-    controller.isCanceled = true;
   }
 
   /// Recreates a controller using previously stored initialization parameters.
@@ -1335,7 +1324,7 @@ class WebFControllerManager {
   /// @return A Future that completes when the DevTools server is started
   Future<void> startDevTools({int port = 9222, String address = '0.0.0.0'}) async {
     if (_devToolsEnabled) {
-      print('DevTools is already running');
+      devToolsLogger.info('DevTools is already running');
       return;
     }
 

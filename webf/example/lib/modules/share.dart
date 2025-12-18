@@ -1,7 +1,8 @@
 
+// ignore_for_file: avoid_print
+
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -40,8 +41,6 @@ class ShareModule extends WebFBaseModule {
       final downloadDir = await getTemporaryDirectory();
       final now = DateTime.now().millisecondsSinceEpoch;
       final filePath = '${downloadDir.path}/screenshot_$now.png';
-
-      Uint8List bytes = snapshot.bytes;
 
       final file = File(filePath);
       await file.writeAsBytes(snapshot.bytes);

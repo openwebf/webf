@@ -5,8 +5,6 @@
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/src/rendering/text.dart';
-import 'package:webf/src/rendering/event_listener.dart';
 import 'package:webf/src/css/whitespace_processor.dart';
 import 'inline_item.dart';
 
@@ -81,7 +79,7 @@ class InlineItemsBuilder {
       _directionStack.add(container.renderStyle.direction);
       _levelStack.add(container.renderStyle.direction == TextDirection.rtl ? 1 : 0);
       // Enable PRE leading newline trimming only for PRE tag
-      final String? tag = container.renderStyle.target.tagName;
+      final String tag = container.renderStyle.target.tagName;
       _shouldTrimLeadingNewlineForPre = (tag == 'PRE');
     }
 
@@ -92,8 +90,8 @@ class InlineItemsBuilder {
     // final line feed, if present. This matches browser behavior where authors
     // often indent the closing </pre> and don't expect an extra blank line.
     if (container is RenderBoxModel) {
-      final String? _tag = container.renderStyle.target.tagName;
-      if (_tag == 'PRE') {
+      final String tag0 = container.renderStyle.target.tagName;
+      if (tag0 == 'PRE') {
         _trimTrailingIndentAndNewlineForPre();
       }
     }
@@ -149,7 +147,7 @@ class InlineItemsBuilder {
 
         // Handle <br/>: always force a line break in inline formatting context.
         final target = child.renderStyle.target;
-        final String? tagName = target?.tagName;
+        final String tagName = target.tagName;
         if (tagName == 'BR') {
           // Reset collapsible space tracking and insert a newline control
           _endsWithCollapsibleSpace = false;
@@ -523,15 +521,6 @@ class InlineItemsBuilder {
         ..clear()
         ..addAll(adjusted);
     }
-  }
-
-  /// Add line break opportunity.
-  void _addLineBreakOpportunity() {
-    items.add(InlineItem(
-      type: InlineItemType.lineBreakOpportunity,
-      startOffset: _currentOffset,
-      endOffset: _currentOffset,
-    ));
   }
 
   /// Add control character (newline, tab, etc).

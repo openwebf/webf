@@ -6,6 +6,8 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
+// ignore_for_file: constant_identifier_names
+
 import 'dart:ui';
 
 enum _CSSPathCommandCategory {
@@ -42,7 +44,7 @@ enum _CSSPathCommandType {
   const _CSSPathCommandType(this._category);
 }
 
-var _CSSPathCommandTypeMap = _CSSPathCommandType.values.asNameMap();
+var _cssPathCommandTypeMap = _CSSPathCommandType.values.asNameMap();
 
 class _CSSPathCommand {
   final _CSSPathCommandType type;
@@ -288,7 +290,7 @@ class _CSSPathParser {
     _readWhitespace();
     if (index >= input.length) return null;
     final char = input[index];
-    final type = _CSSPathCommandTypeMap[char];
+    final type = _cssPathCommandTypeMap[char];
     if (type == null) {
       // restore index
       preIndex = index = cacheIndex;

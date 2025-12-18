@@ -8,10 +8,8 @@
  */
 
 import 'package:quiver/core.dart';
-import 'package:flutter/foundation.dart';
-import 'package:webf/src/foundation/debug_flags.dart';
-import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/css.dart';
+import 'package:webf/src/foundation/logger.dart';
 
 /// https://drafts.csswg.org/cssom/#the-cssstylerule-interface
 class CSSStyleRule extends CSSRule {
@@ -148,9 +146,9 @@ class CSSMediaDirective extends CSSRule {
   int get type => CSSRule.MEDIA_RULE;
 
   List<CSSRule>? getValidMediaRules(double? windowWidth, double? windowHeight, bool isDarkMode) {
-    List<CSSRule>? _mediaRules = [];
+    List<CSSRule>? mediaRules = [];
     if (rules == null) {
-      return _mediaRules;
+      return mediaRules;
     }
     if (cssMediaQuery == null) {
       return rules;
@@ -159,7 +157,7 @@ class CSSMediaDirective extends CSSRule {
     //w3c has media type screen/print/speech/all, but webf only work on screen and all
     String? mediaType = cssMediaQuery!._mediaType?.name;
     if (mediaType != null && mediaType != MediaType.SCREEN && mediaType != MediaType.ALL) {
-      return _mediaRules;
+      return mediaRules;
     }
     List<bool> conditions = [];
     List<bool> ops = [];
@@ -228,9 +226,9 @@ class CSSMediaDirective extends CSSRule {
       }
     }
     if (isValid) {
-      _mediaRules = rules;
+      mediaRules = rules;
     }
-    return _mediaRules;
+    return mediaRules;
   }
 
   double? parseStringToDouble(String str) {
@@ -243,7 +241,7 @@ class CSSMediaDirective extends CSSRule {
       }
       return double.parse(str);
     } catch (e) {
-      print('parseStringToDouble $e');
+      cssLogger.fine('parseStringToDouble error: $e');
     }
     return null;
   }

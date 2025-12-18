@@ -654,6 +654,7 @@ class _GridAreaBuilder {
 
 mixin CSSGridMixin on RenderStyle {
   List<GridTrackSize>? _gridTemplateColumns;
+  @override
   List<GridTrackSize> get gridTemplateColumns => _gridTemplateColumns ?? const <GridTrackSize>[];
   set gridTemplateColumns(List<GridTrackSize>? value) {
     if (_gridTemplateColumns == value) return;
@@ -662,6 +663,7 @@ mixin CSSGridMixin on RenderStyle {
   }
 
   List<GridTrackSize>? _gridTemplateRows;
+  @override
   List<GridTrackSize> get gridTemplateRows => _gridTemplateRows ?? const <GridTrackSize>[];
   set gridTemplateRows(List<GridTrackSize>? value) {
     if (_gridTemplateRows == value) return;
@@ -670,6 +672,7 @@ mixin CSSGridMixin on RenderStyle {
   }
 
   List<GridTrackSize>? _gridAutoRows;
+  @override
   List<GridTrackSize> get gridAutoRows => _gridAutoRows ?? const <GridTrackSize>[];
   set gridAutoRows(List<GridTrackSize>? value) {
     if (_gridAutoRows == value) return;
@@ -678,6 +681,7 @@ mixin CSSGridMixin on RenderStyle {
   }
 
   List<GridTrackSize>? _gridAutoColumns;
+  @override
   List<GridTrackSize> get gridAutoColumns => _gridAutoColumns ?? const <GridTrackSize>[];
   set gridAutoColumns(List<GridTrackSize>? value) {
     if (_gridAutoColumns == value) return;
@@ -686,6 +690,7 @@ mixin CSSGridMixin on RenderStyle {
   }
 
   GridAutoFlow? _gridAutoFlow;
+  @override
   GridAutoFlow get gridAutoFlow => _gridAutoFlow ?? GridAutoFlow.row;
   set gridAutoFlow(GridAutoFlow? value) {
     if (_gridAutoFlow == value) return;
@@ -694,6 +699,7 @@ mixin CSSGridMixin on RenderStyle {
   }
 
   GridAxisAlignment? _justifyItems;
+  @override
   GridAxisAlignment get justifyItems => _normalizeAxisAlignmentValue(_justifyItems);
   set justifyItems(GridAxisAlignment? value) {
     if (_justifyItems == value) return;
@@ -702,6 +708,7 @@ mixin CSSGridMixin on RenderStyle {
   }
 
   GridAxisAlignment? _justifySelf;
+  @override
   GridAxisAlignment get justifySelf => _justifySelf ?? GridAxisAlignment.auto;
   set justifySelf(GridAxisAlignment? value) {
     if (_justifySelf == value) return;
@@ -710,6 +717,7 @@ mixin CSSGridMixin on RenderStyle {
   }
 
   GridPlacement? _gridColumnStart;
+  @override
   GridPlacement get gridColumnStart => _gridColumnStart ?? const GridPlacement.auto();
   set gridColumnStart(GridPlacement? value) {
     if (_gridColumnStart == value) return;
@@ -718,6 +726,7 @@ mixin CSSGridMixin on RenderStyle {
   }
 
   GridPlacement? _gridColumnEnd;
+  @override
   GridPlacement get gridColumnEnd => _gridColumnEnd ?? const GridPlacement.auto();
   set gridColumnEnd(GridPlacement? value) {
     if (_gridColumnEnd == value) return;
@@ -726,6 +735,7 @@ mixin CSSGridMixin on RenderStyle {
   }
 
   GridPlacement? _gridRowStart;
+  @override
   GridPlacement get gridRowStart => _gridRowStart ?? const GridPlacement.auto();
   set gridRowStart(GridPlacement? value) {
     if (_gridRowStart == value) return;
@@ -734,6 +744,7 @@ mixin CSSGridMixin on RenderStyle {
   }
 
   GridPlacement? _gridRowEnd;
+  @override
   GridPlacement get gridRowEnd => _gridRowEnd ?? const GridPlacement.auto();
   set gridRowEnd(GridPlacement? value) {
     if (_gridRowEnd == value) return;
@@ -742,6 +753,7 @@ mixin CSSGridMixin on RenderStyle {
   }
 
   GridTemplateAreasDefinition? _gridTemplateAreasDefinition;
+  @override
   GridTemplateAreasDefinition? get gridTemplateAreasDefinition => _gridTemplateAreasDefinition;
   set gridTemplateAreasDefinition(GridTemplateAreasDefinition? value) {
     if (_gridTemplateAreasDefinition == value) return;
@@ -750,6 +762,7 @@ mixin CSSGridMixin on RenderStyle {
   }
 
   String? _gridAreaName;
+  @override
   String? get gridAreaName => _gridAreaName;
   set gridAreaName(String? value) {
     final String? normalized = value == null || value.isEmpty || value.toLowerCase() == 'auto' ? null : value;

@@ -7,6 +7,8 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
+// ignore_for_file: constant_identifier_names
+
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -16,7 +18,6 @@ import 'package:meta/meta.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart' show RenderViewportBox;
-import 'package:webf/launcher.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/foundation.dart';
 
@@ -69,7 +70,7 @@ class Frame extends JSONEncodable {
   String? unreachableUrl;
 
   // Indicates whether this frame was tagged as an ad.
-  String? AdFrameType;
+  String? adFrameType;
 
   // Indicates whether the main document is a secure context and explains why that is the case.
   final String secureContextType;
@@ -82,7 +83,7 @@ class Frame extends JSONEncodable {
 
   Frame(this.id, this.loaderId, this.url, this.domainAndRegistry, this.securityOrigin, this.mimeType,
       this.secureContextType, this.crossOriginIsolatedContextType, this.gatedAPIFeatures,
-      {this.parentId, this.name, this.urlFragment, this.unreachableUrl, this.AdFrameType});
+      {this.parentId, this.name, this.urlFragment, this.unreachableUrl, this.adFrameType});
 
   @override
   Map toJson() {
@@ -102,7 +103,7 @@ class Frame extends JSONEncodable {
     if (name != null) map['name'] = name;
     if (urlFragment != null) map['urlFragment'] = urlFragment;
     if (unreachableUrl != null) map['unreachableUrl'] = unreachableUrl;
-    if (AdFrameType != null) map['AdFrameType'] = AdFrameType;
+    if (adFrameType != null) map['AdFrameType'] = adFrameType;
     return map;
   }
 }
@@ -191,7 +192,7 @@ class InspectPageModule extends UIInspectorModule {
     return devtoolsService.controller?.view.document;
   }
 
-  InspectPageModule(DevToolsService devtoolsService) : super(devtoolsService);
+  InspectPageModule(super.devtoolsService);
 
   @override
   String get name => 'Page';
@@ -241,7 +242,7 @@ class InspectPageModule extends UIInspectorModule {
         await devtoolsService.controller!.reload();
       }
     } catch (e, stack) {
-      print('Dart Error: $e\n$stack');
+      devToolsLogger.warning('Dart Error', e, stack);
     }
   }
 
@@ -412,7 +413,9 @@ class InspectPageModule extends UIInspectorModule {
   }
 
   void handleGetFrameResourceTree(int? id, Map<String, dynamic> params) {
-    print('[DevTools] Page.getResourceTree called');
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine('[DevTools] Page.getResourceTree called');
+    }
     final controller = (devtoolsService is ChromeDevToolsService)
         ? ChromeDevToolsService.unifiedService.currentController
         : devtoolsService.controller;
@@ -444,12 +447,10 @@ class InspectPageModule extends UIInspectorModule {
       const <String>[],
     );
     final frameResourceTree = FrameResourceTree(frame, []);
-    print('[DevTools] Page.getResourceTree -> url=' +
-        url +
-        ' origin=' +
-        origin +
-        ' ctx=' +
-        (controller?.view.contextId.toString() ?? ''));
+    if (DebugFlags.enableDevToolsLogs) {
+      devToolsLogger.fine(
+          '[DevTools] Page.getResourceTree -> url=$url origin=$origin ctx=${controller?.view.contextId.toString() ?? ''}');
+    }
     sendToFrontend(id, JSONEncodableMap({'frameTree': frameResourceTree}));
   }
 }
@@ -460,7 +461,7 @@ class ScreenCastFrame implements JSONEncodable {
   final ScreencastFrameMetadata metadata;
   final int sessionId;
 
-  ScreenCastFrame(this.data, this.metadata, this.sessionId);
+  const ScreenCastFrame(this.data, this.metadata, this.sessionId);
 
   @override
   Map toJson() {
@@ -482,7 +483,7 @@ class ScreencastFrameMetadata implements JSONEncodable {
   final num scrollOffsetY;
   final num? timestamp;
 
-  ScreencastFrameMetadata(
+  const ScreencastFrameMetadata(
       this.offsetTop, this.pageScaleFactor, this.deviceWidth, this.deviceHeight, this.scrollOffsetX, this.scrollOffsetY,
       {this.timestamp});
 

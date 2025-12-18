@@ -9,6 +9,8 @@
 
 // CSS Values and Units: https://drafts.csswg.org/css-values-3/#functional-notations
 
+// ignore_for_file: constant_identifier_names
+
 import 'package:quiver/collection.dart';
 
 // DotAll means accept line terminators like `\n`.

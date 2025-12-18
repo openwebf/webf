@@ -8,7 +8,6 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/semantics.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
@@ -24,7 +23,7 @@ class WebFAccessibility {
   /// Apply semantics for a generic WebF render object based on its DOM element.
   static void applyToRenderBoxModel(RenderBoxModel renderObject, SemanticsConfiguration config) {
     final dom.Element element = renderObject.renderStyle.target;
-    final CSSRenderStyle rs = renderObject.renderStyle as CSSRenderStyle;
+    final CSSRenderStyle rs = renderObject.renderStyle;
 
     // Skip if this element hosts a Flutter widget subtree; let child semantics speak.
     if (element.isWidgetElement) {
@@ -121,10 +120,8 @@ class WebFAccessibility {
               toggled = _isTruthy(ariaPressed);
               config.value = toggled ? 'Pressed' : 'Not pressed';
           }
-          if (toggled != null) {
-            config.isToggled = toggled;
-          }
-        }
+          config.isToggled = toggled;
+                }
         break;
       case _Role.link:
         config.isLink = true;
@@ -194,10 +191,6 @@ class WebFAccessibility {
         break;
     }
 
-    if (focusable) {
-      config.isFocusable = true;
-    }
-
     // Establish semantics boundaries so that standalone headings and static
     // text nodes remain discoverable even inside larger containers.
     bool boundary = false;
@@ -206,7 +199,7 @@ class WebFAccessibility {
       boundary = true;
       // Keep heading text nodes explicit so screen readers treat them as standalone entries.
       explicitChildNodes = true;
-    } else if (!focusable && role == _Role.none && (config.label != null && config.label!.isNotEmpty)) {
+    } else if (!focusable && role == _Role.none && (config.label.isNotEmpty)) {
       boundary = true;
       explicitChildNodes = true;
     } else if (role == _Role.menubar) {
@@ -267,8 +260,8 @@ class WebFAccessibility {
         final list = element.ownerDocument.elementsByID[id];
         if (list != null && list.isNotEmpty) {
           final dom.Element ref = list.first;
-          final String? refName = _computeAccessibleNameInternal(ref, visited) ?? _collectText(ref);
-          if (refName != null && refName.isNotEmpty) {
+          final String refName = _computeAccessibleNameInternal(ref, visited) ?? _collectText(ref);
+          if (refName.isNotEmpty) {
             if (buffer.isNotEmpty) buffer.write(' ');
             buffer.write(refName);
           }
@@ -305,7 +298,7 @@ class WebFAccessibility {
       try {
         final String? id = element.id;
         if (id != null && id.isNotEmpty) {
-          final labels = element.ownerDocument.querySelectorAll(['label[for="' + id + '"]']);
+          final labels = element.ownerDocument.querySelectorAll(['label[for="$id"]']);
           if (labels is List && labels.isNotEmpty) {
             final dom.Element labelEl = labels.first as dom.Element;
             final String text = _collectText(labelEl);
@@ -660,17 +653,17 @@ enum _Role {
 }
 
 void _debugDumpSemantics(dom.Element element, _Role role, SemanticsConfiguration config, {required bool focusable}) {
+  if (!DebugFlags.debugLogSemanticsEnabled) return;
   final description = <String>[
     'role=$role',
-    if (config.label != null) 'label="${config.label}"',
+    'label="${config.label}"',
     'focusable=$focusable',
     'boundary=${config.isSemanticBoundary}',
     'explicitChildNodes=${config.explicitChildNodes}',
     'enabled=${config.isEnabled}',
     'hidden=${config.isHidden}',
   ].join(', ');
-  // debugPrint('[webf][a11y] semantics ${_formatElement(element)} => $description');
-  // debugDumpSemanticsTree(DebugSemanticsDumpOrder.traversalOrder);
+  debugPrint('[webf][a11y] semantics ${_formatElement(element)} => $description');
 }
 
 void _logSemanticsEvent(dom.Element element, _Role role, String event) {

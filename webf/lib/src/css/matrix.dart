@@ -105,17 +105,17 @@ double dot(v1, v2) {
   return result;
 }
 
-final double _1deg = 180 / pi;
-final double _1rad = pi / 180;
+final double _oneDeg = 180 / pi;
+final double _oneRad = pi / 180;
 
 double? rad2deg(rad) {
   // angleInDegree = angleInRadians * (180 / Math.PI)
-  return rad * _1deg;
+  return rad * _oneDeg;
 }
 
 double? _deg2rad(deg) {
   // angleInRadians = angleInDegrees * (Math.PI / 180)
-  return deg * _1rad;
+  return deg * _oneRad;
 }
 
 List<List<double>> _multiply(a, b) {
@@ -541,13 +541,14 @@ class CSSMatrix {
     scale[1] = sqrt(row1x * row1x + row1y * row1y);
 
     // If _determinant is negative, one axis was flipped.
-    double _determinant = row0x * row1y - row0y * row1x;
-    if (_determinant < 0) {
+    double determinant = row0x * row1y - row0y * row1x;
+    if (determinant < 0) {
       // Flip axis with minimum unit vector _dot product.
-      if (row0x < row1y)
+      if (row0x < row1y) {
         scale[0] = -scale[0];
-      else
+      } else {
         scale[1] = -scale[1];
+      }
     }
 
     // Renormalize matrix to remove scale.
@@ -685,7 +686,7 @@ class CSSMatrix {
               cssLogger.info('[transform][resolve] translate x=${x.computedValue} y=${y.computedValue} args=${methodArgs.join(', ')}');
             } catch (_) {}
           }
-          return Matrix4.identity()..translate(x.computedValue, y.computedValue);
+          return Matrix4.identity()..translateByDouble(x.computedValue, y.computedValue, 0.0, 1.0);
         }
         break;
       case TRANSLATE_3D:
@@ -705,7 +706,7 @@ class CSSMatrix {
           CSSLengthValue x = CSSLength.parseLength(methodArgs[0].trim(), renderStyle, TRANSLATE, Axis.horizontal);
           if (x.computedValue == double.infinity || y.computedValue == double.infinity || z.computedValue == double.infinity) return null;
           x.renderStyle = y.renderStyle = z.renderStyle = renderStyle;
-          return Matrix4.identity()..translate(x.computedValue, y.computedValue, z.computedValue);
+          return Matrix4.identity()..translateByDouble(x.computedValue, y.computedValue, z.computedValue, 1.0);
         }
         break;
       case TRANSLATE_X:
@@ -716,7 +717,7 @@ class CSSMatrix {
           // Double.infinity indicates translate not resolved due to renderBox not layout yet
           // in percentage case.
           if (computedValue == double.infinity) return null;
-          return Matrix4.identity()..translate(computedValue);
+          return Matrix4.identity()..translateByDouble(computedValue, 0.0, 0.0, 1.0);
         }
         break;
       case TRANSLATE_Y:
@@ -730,7 +731,7 @@ class CSSMatrix {
           if (DebugFlags.shouldLogTransitionForProp(TRANSFORM)) {
             try { cssLogger.info('[transform][resolve] translateY y=$computedValue arg=${methodArgs[0]}'); } catch (_) {}
           }
-          return Matrix4.identity()..translate(0.0, computedValue);
+          return Matrix4.identity()..translateByDouble(0.0, computedValue, 0.0, 1.0);
         }
         break;
       case TRANSLATE_Z:
@@ -740,7 +741,7 @@ class CSSMatrix {
           // Double.infinity indicates translate not resolved due to renderBox not layout yet
           // in percentage case.
           if (computedValue == double.infinity) return null;
-          return Matrix4.identity()..translate(0.0, 0.0, computedValue);
+          return Matrix4.identity()..translateByDouble(0.0, 0.0, computedValue, 1.0);
         }
         break;
       // https://drafts.csswg.org/css-transforms-2/#individual-transforms
@@ -794,24 +795,24 @@ class CSSMatrix {
       // Animation type: by computed value, but see below for none
       case SCALE:
         if (methodArgs.isNotEmpty && methodArgs.length <= 2) {
-          double _parseCssNumber(String s, double fallback) {
+          double parseCssNumber(String s, double fallback) {
             String t = s.trim();
             if (t.startsWith('-.')) {
-              t = '-0' + t.substring(1);
+              t = '-0${t.substring(1)}';
             } else if (t.startsWith('+.')) {
-              t = '+0' + t.substring(1);
+              t = '+0${t.substring(1)}';
             } else if (t.startsWith('.')) {
-              t = '0' + t;
+              t = '0$t';
             }
             return double.tryParse(t) ?? fallback;
           }
-          double x = _parseCssNumber(methodArgs[0], 1.0);
+          double x = parseCssNumber(methodArgs[0], 1.0);
           double y = x;
           if (methodArgs.length == 2) {
-            y = _parseCssNumber(methodArgs[1], x);
+            y = parseCssNumber(methodArgs[1], x);
           }
 
-          return Matrix4.identity()..scale(x, y, 1);
+          return Matrix4.identity()..scaleByDouble(x, y, 1.0, 1.0);
         }
         break;
       case SCALE_3D:
@@ -820,22 +821,22 @@ class CSSMatrix {
         //   0, 0, scaleY, 0,
         //   0, 0, 0, 1]
         if (methodArgs.length == 3) {
-          double _parseCssNumber(String s, double fallback) {
+          double parseCssNumber(String s, double fallback) {
             String t = s.trim();
             if (t.startsWith('-.')) {
-              t = '-0' + t.substring(1);
+              t = '-0${t.substring(1)}';
             } else if (t.startsWith('+.')) {
-              t = '+0' + t.substring(1);
+              t = '+0${t.substring(1)}';
             } else if (t.startsWith('.')) {
-              t = '0' + t;
+              t = '0$t';
             }
             return double.tryParse(t) ?? fallback;
           }
-          double x = _parseCssNumber(methodArgs[0], 1.0);
-          double y = _parseCssNumber(methodArgs[1], 1.0);
-          double z = _parseCssNumber(methodArgs[2], 1.0);
+          double x = parseCssNumber(methodArgs[0], 1.0);
+          double y = parseCssNumber(methodArgs[1], 1.0);
+          double z = parseCssNumber(methodArgs[2], 1.0);
 
-          return Matrix4.identity()..scale(x, y, z);
+          return Matrix4.identity()..scaleByDouble(x, y, z, 1.0);
         }
         break;
       case SCALE_X:
@@ -844,11 +845,11 @@ class CSSMatrix {
         if (methodArgs.length == 1) {
           String t = methodArgs[0].trim();
           if (t.startsWith('-.')) {
-            t = '-0' + t.substring(1);
+            t = '-0${t.substring(1)}';
           } else if (t.startsWith('+.')) {
-            t = '+0' + t.substring(1);
+            t = '+0${t.substring(1)}';
           } else if (t.startsWith('.')) {
-            t = '0' + t;
+            t = '0$t';
           }
           double scale = double.tryParse(t) ?? 1.0;
           double x = 1.0, y = 1.0, z = 1.0;
@@ -861,7 +862,7 @@ class CSSMatrix {
             z = scale;
           }
 
-          return Matrix4.identity()..scale(x, y, z);
+          return Matrix4.identity()..scaleByDouble(x, y, z, 1.0);
         }
         break;
       case SKEW:

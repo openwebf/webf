@@ -11,7 +11,6 @@ import 'dart:ui' as ui
         ParagraphConstraints,
         PlaceholderAlignment,
         TextBox,
-        TextPosition,
         LineMetrics,
         TextStyle,
         FontFeature,
@@ -26,10 +25,8 @@ import 'dart:developer' as developer;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webf/css.dart';
-import 'package:webf/dom.dart' as dom;
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/src/css/text_script_detector.dart';
 
 import 'inline_item.dart';
 
@@ -452,7 +449,7 @@ class InlineFormattingContext {
       }
       // Stop at widget boundary to avoid leaking outside this subtree.
       if (p is RenderWidget) break;
-      p = (p is RenderObject) ? (p as RenderObject).parent : null;
+      p = p.parent;
     }
     return false;
   }
@@ -582,9 +579,9 @@ class InlineFormattingContext {
     }
 
     if (nearestWithLine != null) {
-      chosenStyle = nearestWithLine!.textDecorationStyle;
+      chosenStyle = nearestWithLine.textDecorationStyle;
       // textDecorationColor getter defaults to currentColor when unset.
-      chosenColor = nearestWithLine!.textDecorationColor?.value;
+      chosenColor = nearestWithLine.textDecorationColor?.value;
     }
 
     return (combined, chosenStyle, chosenColor);
@@ -849,10 +846,10 @@ class InlineFormattingContext {
           (style.effectiveBorderTopWidth.computedValue > 0) ||
           (style.effectiveBorderRightWidth.computedValue > 0) ||
           (style.effectiveBorderBottomWidth.computedValue > 0);
-      final hasPadding = ((style.paddingLeft?.value ?? 0) > 0) ||
-          ((style.paddingTop?.value ?? 0) > 0) ||
-          ((style.paddingRight?.value ?? 0) > 0) ||
-          ((style.paddingBottom?.value ?? 0) > 0);
+      final hasPadding = ((style.paddingLeft.value ?? 0) > 0) ||
+          ((style.paddingTop.value ?? 0) > 0) ||
+          ((style.paddingRight.value ?? 0) > 0) ||
+          ((style.paddingBottom.value ?? 0) > 0);
       if (!hasBg && !hasBorder && !hasPadding) return;
 
       List<ui.TextBox> rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
@@ -894,7 +891,7 @@ class InlineFormattingContext {
     double maxW = constraints.maxWidth;
 
     // Helper to compute per-line trailing reserve based on current paragraph layout.
-    List<double> _computePerLineReserve(ui.Paragraph p) {
+    List<double> computePerLineReserve(ui.Paragraph p) {
       final lines = p.computeLineMetrics();
       if (lines.isEmpty) return const [];
       final reserves = List<double>.filled(lines.length, 0.0, growable: false);
@@ -934,7 +931,7 @@ class InlineFormattingContext {
     for (int iter = 0; iter < 6; iter++) {
       final lines = paragraph.computeLineMetrics();
       if (lines.isEmpty) break;
-      final reserves = _computePerLineReserve(paragraph);
+      final reserves = computePerLineReserve(paragraph);
       if (reserves.isEmpty) break;
       bool ok = true;
       for (int i = 0; i < lines.length && i < reserves.length; i++) {
@@ -957,7 +954,7 @@ class InlineFormattingContext {
         final double mid = (hi + lo) / 2.0;
         paragraph.layout(ui.ParagraphConstraints(width: mid));
         final testLines = paragraph.computeLineMetrics();
-        final testRes = _computePerLineReserve(paragraph);
+        final testRes = computePerLineReserve(paragraph);
         bool pass = true;
         for (int i = 0; i < testLines.length && i < testRes.length; i++) {
           if (testLines[i].width + testRes[i] > maxW + 0.1) {
@@ -1033,8 +1030,8 @@ class InlineFormattingContext {
   // U+00AD, zero-width space U+200B, and '/'. This reduces the auto min-size
   // of flex items to a content-based minimum closer to browsers.
   double _approxParagraphMinIntrinsicWidth() {
-    if (_paragraph == null || _textContent == null || _textContent!.isEmpty) return 0;
-    final String s = _textContent!;
+    if (_paragraph == null || _textContent.isEmpty) return 0;
+    final String s = _textContent;
     int i = 0;
     double maxToken = 0;
     double maxNonCjkToken = 0;
@@ -1061,15 +1058,14 @@ class InlineFormattingContext {
     }
     while (i < s.length) {
       // Skip break chars
-      while (i < s.length && _isBreakChar(s.codeUnitAt(i))) i++;
+      while (i < s.length && _isBreakChar(s.codeUnitAt(i))) {
+        i++;
+      }
       final int start = i;
-      bool tokenHasCjk = false;
       bool tokenHasNonCjk = false;
       while (i < s.length && !_isBreakChar(s.codeUnitAt(i))) {
         final int cu = s.codeUnitAt(i);
-        if (TextScriptDetector.isCJKCharacter(cu)) {
-          tokenHasCjk = true;
-        } else {
+        if (!TextScriptDetector.isCJKCharacter(cu)) {
           tokenHasNonCjk = true;
         }
         i++;
@@ -1199,7 +1195,7 @@ class InlineFormattingContext {
         final hasRange = _elementRanges.containsKey(owner);
         if (hasRange) break;
       }
-      cur = cur.parent as RenderObject?;
+      cur = cur.parent;
     }
     if (owner == null) return 0.0;
     final range = _elementRanges[owner];
@@ -1436,14 +1432,14 @@ class InlineFormattingContext {
       // summing per-line max placeholder heights.
       if (_placeholderBoxes.isNotEmpty) {
         // Determine if the paragraph has any real text glyphs (exclude placeholders).
-        final int _placeholderCount = math.min(_placeholderBoxes.length, _allPlaceholders.length);
-        final bool _hasTextGlyphs = (_paraCharCount - _placeholderCount) > 0;
+        final int placeholderCount = math.min(_placeholderBoxes.length, _allPlaceholders.length);
+        final bool hasTextGlyphs = (_paraCharCount - placeholderCount) > 0;
         // When there is no in-flow text (only atomic inline boxes like inline-block/replaced),
         // browsers size each line to the tallest atomic inline on that line. Vertical margins
         // do not contribute to the line box height. Flutter's paragraph may include margins or
         // extra leading in placeholder rectangles; normalize by summing the per-line maximum
         // owner border-box heights and using that as the paragraph height.
-        if (!_hasTextGlyphs) {
+        if (!hasTextGlyphs) {
           // Build per-line maxes for two measures:
           // - owner border-box height (ignores vertical margins)
           // - placeholder (paragraph) height (includes vertical margins if any)
@@ -1666,7 +1662,7 @@ class InlineFormattingContext {
 
     try {
       final CSSRenderStyle containerStyle = (container as RenderBoxModel).renderStyle;
-      final bool _clipText = containerStyle.backgroundClip == CSSBackgroundBoundary.text;
+      final bool clipText = containerStyle.backgroundClip == CSSBackgroundBoundary.text;
 
       // Interleave line background and text painting so that later lines can
       // visually overlay earlier lines when they cross vertically.
@@ -1675,7 +1671,7 @@ class InlineFormattingContext {
       if (_paraLines.isEmpty) {
         // Fallback: paint decorations then text if no line metrics
         _paintInlineSpanDecorations(context, offset);
-        if (!_clipText) {
+        if (!clipText) {
           context.canvas.drawParagraph(para, offset);
         }
       } else {
@@ -1778,7 +1774,7 @@ class InlineFormattingContext {
         // just paint decorations once and draw paragraph once.
         if (!anyShift && !anyVAAdjust && !anyRelAdjust) {
           _paintInlineSpanDecorations(context, offset);
-          if (!_clipText) {
+          if (!clipText) {
             context.canvas.drawParagraph(para, offset);
           }
         } else {
@@ -1839,7 +1835,7 @@ class InlineFormattingContext {
               lineClipBottom,
             );
 
-            ui.Path _clipMinusVA(Rect base, bool isRightSlice) {
+            ui.Path clipMinusVA(Rect base, bool isRightSlice) {
               ui.Path p = ui.Path()..addRect(base);
               final adj = vaAdjust[i] ?? const <(ui.TextBox, double)>[];
               final rel = relAdjust[i] ?? const <(ui.TextBox, double, double)>[];
@@ -1876,17 +1872,17 @@ class InlineFormattingContext {
             }
 
             // Left slice (no horizontal shift)
-            if (!_clipText) {
+            if (!clipText) {
               context.canvas.save();
-              context.canvas.clipPath(_clipMinusVA(leftBase, false));
+              context.canvas.clipPath(clipMinusVA(leftBase, false));
               context.canvas.drawParagraph(para, offset);
               context.canvas.restore();
             }
 
             // Right slice (apply shift if needed)
-            if (!_clipText) {
+            if (!clipText) {
               context.canvas.save();
-              context.canvas.clipPath(_clipMinusVA(rightBase, true));
+              context.canvas.clipPath(clipMinusVA(rightBase, true));
               if (shiftSum != 0.0) {
                 context.canvas.translate(shiftSum, 0.0);
               }
@@ -1908,7 +1904,7 @@ class InlineFormattingContext {
                   offset.dx + leftPartRight,
                   offset.dy + tb.bottom + dy,
                 );
-                if (!_clipText) {
+                if (!clipText) {
                   context.canvas.save();
                   context.canvas.clipRect(target);
                   context.canvas.translate(0.0, dy);
@@ -1924,7 +1920,7 @@ class InlineFormattingContext {
                   offset.dx + tb.right + shiftSum,
                   offset.dy + tb.bottom + dy,
                 );
-                if (!_clipText) {
+                if (!clipText) {
                   context.canvas.save();
                   context.canvas.clipRect(target);
                   context.canvas.translate(shiftSum, dy);
@@ -1948,7 +1944,7 @@ class InlineFormattingContext {
                   offset.dx + leftPartRight + dx,
                   offset.dy + tb.bottom + dy,
                 );
-                if (!_clipText) {
+                if (!clipText) {
                   context.canvas.save();
                   context.canvas.clipRect(target);
                   context.canvas.translate(dx, dy);
@@ -1964,7 +1960,7 @@ class InlineFormattingContext {
                   offset.dx + tb.right + shiftSum + dx,
                   offset.dy + tb.bottom + dy,
                 );
-                if (!_clipText) {
+                if (!clipText) {
                   context.canvas.save();
                   context.canvas.clipRect(target);
                   context.canvas.translate(shiftSum + dx, dy);
@@ -1979,22 +1975,22 @@ class InlineFormattingContext {
         // When using background-clip:text, paint text-shadow separately before the
         // gradient mask so that shadows retain their own color instead of being
         // tinted by the background.
-        if (_clipText && _paragraph != null) {
-          final CSSRenderStyle _rs = (container as RenderBoxModel).renderStyle;
-          final List<Shadow>? shadows = _rs.textShadow;
+        if (clipText && _paragraph != null) {
+          final CSSRenderStyle rs0 = (container as RenderBoxModel).renderStyle;
+          final List<Shadow>? shadows = rs0.textShadow;
           if (shadows != null && shadows.isNotEmpty) {
-            final ui.Paragraph _para = _paragraph!;
-            final double intrinsicLineWidth = _para.longestLine;
-            final double layoutWidth = _para.width;
+            final ui.Paragraph para0 = _paragraph!;
+            final double intrinsicLineWidth = para0.longestLine;
+            final double layoutWidth = para0.width;
             final double w = math.max(layoutWidth, intrinsicLineWidth);
-            final double h = _para.height;
+            final double h = para0.height;
             if (w > 0 && h > 0) {
               for (final Shadow s in shadows) {
-                if (s.color.alpha == 0) continue;
+                if (s.color.a == 0) continue;
                 final double blur = s.blurRadius;
                 // Approximate Flutter's radius→sigma conversion.
-                double _radiusToSigma(double r) => r > 0 ? (r * 0.57735 + 0.5) : 0.0;
-                final double sigma = _radiusToSigma(blur);
+                double radiusToSigma(double r) => r > 0 ? (r * 0.57735 + 0.5) : 0.0;
+                final double sigma = radiusToSigma(blur);
                 // Expand layer to accommodate blur spread and offset.
                 final double pad = blur * 2 + 2;
                 final Rect layer = Rect.fromLTWH(
@@ -2009,7 +2005,7 @@ class InlineFormattingContext {
                 }
                 context.canvas.saveLayer(layer, layerPaint);
                 // Draw glyph mask shifted by the shadow offset.
-                context.canvas.drawParagraph(_para, offset.translate(s.offset.dx, s.offset.dy));
+                context.canvas.drawParagraph(para0, offset.translate(s.offset.dx, s.offset.dy));
                 // Tint the mask with the shadow color.
                 final Paint tint = Paint()
                   ..blendMode = BlendMode.srcIn
@@ -2083,26 +2079,26 @@ class InlineFormattingContext {
 
       // Gradient text via background-clip: text
       // Draw a gradient (or background color) clipped to glyphs when requested on the container.
-      final CSSRenderStyle _rs = (container as RenderBoxModel).renderStyle;
-      if (_rs.backgroundClip == CSSBackgroundBoundary.text) {
-        final ui.Paragraph? _para = _paragraph;
-        if (_para != null) {
-          final Gradient? _grad = _rs.backgroundImage?.gradient;
-          final Color? _bgc = _rs.backgroundColor?.value;
+      final CSSRenderStyle rs0 = (container as RenderBoxModel).renderStyle;
+      if (rs0.backgroundClip == CSSBackgroundBoundary.text) {
+        final ui.Paragraph? para0 = _paragraph;
+        if (para0 != null) {
+          final Gradient? grad0 = rs0.backgroundImage?.gradient;
+          final Color? bgc0 = rs0.backgroundColor?.value;
 
-          if (_grad != null || (_bgc != null && _bgc.alpha != 0)) {
-            final double intrinsicLineWidth = _para.longestLine;
-            final double layoutWidth = _para.width;
+          if (grad0 != null || (bgc0 != null && bgc0.a != 0)) {
+            final double intrinsicLineWidth = para0.longestLine;
+            final double layoutWidth = para0.width;
             final double w = math.max(layoutWidth, intrinsicLineWidth);
-            final double h = _para.height;
+            final double h = para0.height;
             if (w > 0 && h > 0) {
               final Rect layer = Rect.fromLTWH(offset.dx, offset.dy, w, h);
 
               // Compute container border-box rect in current canvas coordinates.
-              final double padL = _rs.paddingLeft.computedValue;
-              final double padT = _rs.paddingTop.computedValue;
-              final double borL = _rs.effectiveBorderLeftWidth.computedValue;
-              final double borT = _rs.effectiveBorderTopWidth.computedValue;
+              final double padL = rs0.paddingLeft.computedValue;
+              final double padT = rs0.paddingTop.computedValue;
+              final double borL = rs0.effectiveBorderLeftWidth.computedValue;
+              final double borT = rs0.effectiveBorderTopWidth.computedValue;
               final double contLeft = offset.dx - padL - borL;
               final double contTop = offset.dy - padT - borT;
               final Rect contRect = Rect.fromLTWH(contLeft, contTop, container.size.width, container.size.height);
@@ -2110,25 +2106,25 @@ class InlineFormattingContext {
               // Use a layer so we can mask the background with glyph alpha using srcIn.
               context.canvas.saveLayer(layer, Paint());
               // Draw the paragraph shape into the layer (mask only; no shadows/decoration in clip-text).
-              context.canvas.drawParagraph(_para, offset);
+              context.canvas.drawParagraph(para0, offset);
               // Now overlay the background with srcIn so it is clipped to the glyphs we just drew.
               final Paint p = Paint()..blendMode = BlendMode.srcIn;
-              if (_grad != null) {
-                p.shader = _grad.createShader(contRect);
+              if (grad0 != null) {
+                p.shader = grad0.createShader(contRect);
                 context.canvas.drawRect(layer, p);
               } else {
-                p.color = _bgc!;
+                p.color = bgc0!;
                 context.canvas.drawRect(layer, p);
               }
               context.canvas.restore();
 
               // Overlay text fill color on top (browser paints text after background).
               // This allows CSS color alpha to tint/cover the gradient, matching browser behavior.
-              final Color textFill = _rs.color.value;
-              if (textFill.alpha != 0) {
+              final Color textFill = rs0.color.value;
+              if (textFill.a != 0) {
                 context.canvas.saveLayer(layer, Paint());
                 // Paragraph as mask again
-                context.canvas.drawParagraph(_para, offset);
+                context.canvas.drawParagraph(para0, offset);
                 final Paint fill = Paint()
                   ..blendMode = BlendMode.srcIn
                   ..color = textFill;
@@ -2146,14 +2142,13 @@ class InlineFormattingContext {
       // overlaying their background gradient within each text box rect.
       if (_elementRanges.isNotEmpty && _paragraph != null) {
         final para = _paragraph!;
-        int paintedCount = 0;
         _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
           final CSSRenderStyle s = box.renderStyle;
           if (s.backgroundClip != CSSBackgroundBoundary.text) return;
 
           final Gradient? grad = s.backgroundImage?.gradient;
           final Color? bgc = s.backgroundColor?.value;
-          if (grad == null && (bgc == null || bgc.alpha == 0)) return;
+          if (grad == null && (bgc == null || bgc.a == 0)) return;
           if (range.$2 <= range.$1) return;
 
           // Text boxes for this element's range
@@ -2171,7 +2166,7 @@ class InlineFormattingContext {
           final Rect union = Rect.fromLTRB(minL, minT, maxR, maxB);
 
           // Helper to build a mask paragraph for a given text (forced opaque glyph color).
-          ui.Paragraph _buildMaskPara(String text) {
+          ui.Paragraph buildMaskPara(String text) {
             final ui.ParagraphBuilder pb = ui.ParagraphBuilder(ui.ParagraphStyle(
               textDirection: (container as RenderBoxModel).renderStyle.direction,
               textHeightBehavior: const ui.TextHeightBehavior(
@@ -2226,7 +2221,7 @@ class InlineFormattingContext {
           final List<int> lines = lineRects.keys.toList()..sort();
 
           // Binary search to find the maximal end index on a paragraph line.
-          int _findLineEnd(int startIndex, int targetLine) {
+          int findLineEnd(int startIndex, int targetLine) {
             int lo = startIndex + 1;
             int hi = range.$2;
             int best = startIndex + 1;
@@ -2259,12 +2254,12 @@ class InlineFormattingContext {
             final boxes = lineRects[li]!;
             boxes.sort((a, b) => a.left.compareTo(b.left));
             // Compute substring end for this line using binary search.
-            final int segEnd = _findLineEnd(segStart, li);
+            final int segEnd = findLineEnd(segStart, li);
             if (segEnd <= segStart) {
               continue;
             }
             final String segText = _textContent.substring(segStart, segEnd);
-            final ui.Paragraph segPara = _buildMaskPara(segText);
+            final ui.Paragraph segPara = buildMaskPara(segText);
 
             // Build union clip for the line's boxes.
             double l = boxes.first.left, t = boxes.first.top, r = boxes.first.right, b = boxes.first.bottom;
@@ -2280,13 +2275,13 @@ class InlineFormattingContext {
             final Rect layer = Rect.fromLTRB(offset.dx + l, offset.dy + t, offset.dx + r, offset.dy + b);
 
             // Paint text shadows for this inline segment before gradient to keep shadow color.
-            final List<Shadow>? _segShadows = s.textShadow;
-            if (_segShadows != null && _segShadows.isNotEmpty) {
+            final List<Shadow>? segShadows = s.textShadow;
+            if (segShadows != null && segShadows.isNotEmpty) {
               final ui.TextBox firstBox = boxes.first;
-              for (final Shadow sh in _segShadows) {
-                if (sh.color.alpha == 0) continue;
-                double _radiusToSigma(double r) => r > 0 ? (r * 0.57735 + 0.5) : 0.0;
-                final double sigma = _radiusToSigma(sh.blurRadius);
+              for (final Shadow sh in segShadows) {
+                if (sh.color.a == 0) continue;
+                double radiusToSigma(double r) => r > 0 ? (r * 0.57735 + 0.5) : 0.0;
+                final double sigma = radiusToSigma(sh.blurRadius);
                 final double pad = sh.blurRadius * 2 + 2;
                 final Rect shadowLayer = Rect.fromLTRB(
                   layer.left + sh.offset.dx - pad,
@@ -2328,7 +2323,6 @@ class InlineFormattingContext {
 
             segStart = segEnd;
           }
-          paintedCount++;
         });
       }
 
@@ -2786,20 +2780,20 @@ class InlineFormattingContext {
     // establishes the minimum line box height for each line, per CSS. This centers
     // smaller runs (e.g., inline elements with smaller line-height) inside a taller
     // block line-height without requiring per-line paint shifts.
-    ui.StrutStyle? _paragraphStrut;
-    final CSSRenderStyle _containerStyle = (container as RenderBoxModel).renderStyle;
-    final CSSLengthValue _containerLH = _containerStyle.lineHeight;
-    if (_containerLH.type != CSSLengthType.NORMAL) {
-      final double fontSize = _containerStyle.fontSize.computedValue;
-      final double multiple = _containerLH.computedValue / fontSize;
+    ui.StrutStyle? paragraphStrut;
+    final CSSRenderStyle containerStyle = (container as RenderBoxModel).renderStyle;
+    final CSSLengthValue containerLH = containerStyle.lineHeight;
+    if (containerLH.type != CSSLengthType.NORMAL) {
+      final double fontSize = containerStyle.fontSize.computedValue;
+      final double multiple = containerLH.computedValue / fontSize;
       // Guard against non-finite or non-positive multiples
       if (multiple.isFinite && multiple > 0) {
-        _paragraphStrut = ui.StrutStyle(
+        paragraphStrut = ui.StrutStyle(
           fontSize: fontSize,
           height: multiple,
-          fontFamilyFallback: _containerStyle.fontFamily,
-          fontStyle: _containerStyle.fontStyle,
-          fontWeight: _containerStyle.fontWeight,
+          fontFamilyFallback: containerStyle.fontFamily,
+          fontStyle: containerStyle.fontStyle,
+          fontWeight: containerStyle.fontWeight,
           // Use as minimum line height; let larger content expand the line.
           forceStrutHeight: false,
         );
@@ -2810,13 +2804,13 @@ class InlineFormattingContext {
     // works with white-space: nowrap and overflow not visible. For Flutter's paragraph
     // engine to emit ellipsis glyphs, a maxLines must be provided. When nowrap+ellipsis
     // are active and no explicit line-clamp is set, constrain to a single line.
-    final int? _effectiveMaxLines = style.lineClamp ??
+    final int? effectiveMaxLines = style.lineClamp ??
         ((style.whiteSpace == WhiteSpace.nowrap && style.effectiveTextOverflow == TextOverflow.ellipsis) ? 1 : null);
 
     final pb = ui.ParagraphBuilder(ui.ParagraphStyle(
       textAlign: style.textAlign,
       textDirection: style.direction,
-      maxLines: _effectiveMaxLines,
+      maxLines: effectiveMaxLines,
       ellipsis: style.effectiveTextOverflow == TextOverflow.ellipsis ? '\u2026' : null,
       // Distribute extra line-height evenly above/below the glyphs so a single
       // line with large line-height (e.g., equal to box height) is vertically
@@ -2828,7 +2822,7 @@ class InlineFormattingContext {
       ),
       // Apply strut when the container specifies a concrete line-height; this makes the
       // paragraph respect the block container’s min line box height across all lines.
-      strutStyle: _paragraphStrut,
+      strutStyle: paragraphStrut,
     ));
 
     _placeholderOrder.clear();
@@ -2846,11 +2840,7 @@ class InlineFormattingContext {
     final List<RenderBoxModel> elementStack = [];
 
     // Whether ::first-letter styling should be applied once for this paragraph
-    bool _firstLetterDone = false;
-
-    // Record overflow flags for debugging
-    final CSSOverflowType containerOverflowX = style.effectiveOverflowX;
-    final CSSOverflowType containerOverflowY = style.effectiveOverflowY;
+    bool firstLetterDone = false;
 
     // Apply text-indent on the first line by inserting a leading placeholder.
     // Reset cached first-line indent on each build; set when we insert a real indent.
@@ -2891,7 +2881,7 @@ class InlineFormattingContext {
     }
 
     // Helper to flush pending left extras for all open frames (from outermost to innermost)
-    void _flushPendingLeftExtras() {
+    void flushPendingLeftExtras() {
       for (final frame in openFrames) {
         if (!frame.leftFlushed && frame.leftExtras > 0) {
           final rs = frame.box.renderStyle;
@@ -2904,7 +2894,6 @@ class InlineFormattingContext {
           _allPlaceholders.add(_InlinePlaceholder.leftExtra(frame.box));
           _textRunParas.add(null);
           frame.leftFlushed = true;
-          final effLH = _effectiveLineHeightPx(rs);
         }
       }
     }
@@ -2922,9 +2911,7 @@ class InlineFormattingContext {
     final bool localClipsOrScrollsX = container.renderStyle.effectiveOverflowX != CSSOverflowType.visible;
     _avoidWordBreakInScrollableX = localClipsOrScrollsX || _ancestorHasHorizontalScroll();
 
-    int _itemIndex = -1;
     for (final item in _items) {
-      _itemIndex += 1;
       if (item.isOpenTag && item.renderBox != null) {
         final rb = item.renderBox!;
         elementStack.add(rb);
@@ -2937,9 +2924,7 @@ class InlineFormattingContext {
           final rightExtras = (st.paddingRight.computedValue) +
               (st.effectiveBorderRightWidth.computedValue) +
               (st.marginRight.computedValue);
-          if (rb is RenderBoxModel) {
-            openFrames.add(_OpenInlineFrame(rb, leftExtras: leftExtras, rightExtras: rightExtras));
-          }
+          openFrames.add(_OpenInlineFrame(rb, leftExtras: leftExtras, rightExtras: rightExtras));
           pb.pushStyle(_uiTextStyleFromCss(st));
         }
         // Record content range start after left extras
@@ -2962,7 +2947,7 @@ class InlineFormattingContext {
               if (frame.hadContent) {
                 // Non-empty inline span: ensure left extras flushed, then add a trailing
                 // right-extras placeholder only if allowed in this pass.
-                _flushPendingLeftExtras();
+                flushPendingLeftExtras();
                 if (frame.rightExtras > 0) {
                   // Only add a right-extras placeholder in PASS 2 for inline elements
                   // that did not fragment across lines in PASS 1. For fragmented spans,
@@ -3004,7 +2989,7 @@ class InlineFormattingContext {
           for (final f in openFrames) {
             f.hadContent = true;
           }
-          _flushPendingLeftExtras();
+          flushPendingLeftExtras();
         }
         // Add placeholder for atomic inline
         final rb = item.renderBox!;
@@ -3030,16 +3015,15 @@ class InlineFormattingContext {
         RenderBoxModel? styleBoxForBaseline;
         if (resolvedForBaseline is RenderBoxModel) {
           styleBoxForBaseline = resolvedForBaseline;
-        } else if (rb is RenderBoxModel) {
+        } else {
           styleBoxForBaseline = rb;
         }
-        if (styleBoxForBaseline != null) {
-          final double? cssBaseline = styleBoxForBaseline.computeCssLastBaselineOf(TextBaseline.alphabetic);
-          if (cssBaseline != null) {
-            baselineOffset = mT + cssBaseline;
-          }
+      
+        final double? cssBaseline = styleBoxForBaseline.computeCssLastBaselineOf(TextBaseline.alphabetic);
+        if (cssBaseline != null) {
+          baselineOffset = mT + cssBaseline;
         }
-        // Fallback to bottom margin edge if no baseline is available yet.
+              // Fallback to bottom margin edge if no baseline is available yet.
         baselineOffset ??= height;
 
         // Map CSS vertical-align to dart:ui PlaceholderAlignment for atomic inline items.
@@ -3089,7 +3073,7 @@ class InlineFormattingContext {
           for (final f in openFrames) {
             f.hadContent = true;
           }
-          _flushPendingLeftExtras();
+          flushPendingLeftExtras();
         }
         // If any ancestor establishes horizontal scroll/auto overflow,
         // prevent breaking within ASCII words so long sequences (e.g., digits)
@@ -3138,7 +3122,7 @@ class InlineFormattingContext {
             pb.addPlaceholder(phWidth, phHeight, _placeholderAlignmentFromCss(ownerVA));
           }
           paraPos += 1;
-          _allPlaceholders.add(_InlinePlaceholder.textRun(ownerBox!));
+          _allPlaceholders.add(_InlinePlaceholder.textRun(ownerBox));
           _textRunParas.add(subPara);
           _textRunBuildIndex += 1;
         } else {
@@ -3147,21 +3131,21 @@ class InlineFormattingContext {
           // Apply ::first-letter if present and not yet applied.
           final ownerEl = (container as RenderBoxModel).renderStyle.target;
           final CSSStyleDeclaration? fl = ownerEl.style.pseudoFirstLetterStyle;
-          if (!_firstLetterDone && fl != null) {
+          if (!firstLetterDone && fl != null) {
             // Determine prefix length to style: include leading quote if followed by ASCII letter.
-            int _prefixLen = 0;
+            int prefixLen = 0;
             if (text.isNotEmpty) {
               int c0 = text.codeUnitAt(0);
               bool isAsciiLetter(int c) => (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
               bool isQuote(int c) => c == 0x22 || c == 0x27 || c == 0x201C || c == 0x201D || c == 0x2018 || c == 0x2019;
               if (isQuote(c0) && text.length >= 2 && isAsciiLetter(text.codeUnitAt(1))) {
-                _prefixLen = 2;
+                prefixLen = 2;
               } else if (isAsciiLetter(c0)) {
-                _prefixLen = 1;
+                prefixLen = 1;
               }
             }
 
-            if (_prefixLen > 0) {
+            if (prefixLen > 0) {
               // Build override style for color/font-size if provided.
               Color? ovColor;
               double? ovFontSize;
@@ -3181,16 +3165,16 @@ class InlineFormattingContext {
                   color: ovColor,
                   fontSize: ovFontSize,
                 ));
-                pb.addText(text.substring(0, _prefixLen));
+                pb.addText(text.substring(0, prefixLen));
                 pb.pop();
-                if (_prefixLen < text.length) {
-                  pb.addText(text.substring(_prefixLen));
+                if (prefixLen < text.length) {
+                  pb.addText(text.substring(prefixLen));
                 }
-                _firstLetterDone = true;
+                firstLetterDone = true;
               } else {
                 // No supported overrides; fall back to emitting the whole text.
                 pb.addText(text);
-                _firstLetterDone = true; // consider applied so we don't try again
+                firstLetterDone = true; // consider applied so we don't try again
               }
             } else {
               // No eligible prefix in this run; emit as-is and wait for next.
@@ -3212,7 +3196,7 @@ class InlineFormattingContext {
           for (final f in openFrames) {
             f.hadContent = true;
           }
-          _flushPendingLeftExtras();
+          flushPendingLeftExtras();
         }
         // Use container style to ensure a style is on the stack for ParagraphBuilder
         pb.pushStyle(_uiTextStyleFromCss(style));
@@ -3259,7 +3243,7 @@ class InlineFormattingContext {
           break;
         }
       }
-      p = (p is RenderObject) ? (p as RenderObject).parent : null;
+      p = p.parent;
     }
     // Prefer this container's own computed content max width
     final double cmw = style.contentMaxConstraintsWidth;
@@ -3282,55 +3266,56 @@ class InlineFormattingContext {
             break;
           }
         }
-        p = (p is RenderObject) ? p.parent : null;
+        p = p.parent;
       }
     }
 
     double initialWidth;
     bool shapedWithHugeWidth = false;
-    bool _shapedWithZeroWidth = false; // Track when we intentionally shape with 0 width
+    bool shapedWithZeroWidth = false; // Track when we intentionally shape with 0 width
 
     // Decide whether shaping with zero width is appropriate. We only do this
     // when there are natural break opportunities between items (e.g., between
     // atomic inline boxes, explicit breaks) or whitespace within text. For a
     // single unbreakable text run (e.g., "11111"), we avoid zero-width shaping
     // to prevent per-character wrapping and instead let it overflow.
-    bool _containsSoftWrapWhitespace(String s) {
+    bool containsSoftWrapWhitespace(String s) {
       // Matches common whitespace that creates soft wrap opportunities
       return s.contains(RegExp(r"[\s\u200B\u2060]")); // include ZWSP/WORD JOINER
     }
 
-    bool _hasAtomicInlines = _items.any((it) => it.isAtomicInline);
-    bool _hasExplicitBreaks =
+    bool hasAtomicInlines = _items.any((it) => it.isAtomicInline);
+    bool hasExplicitBreaks =
         _items.any((it) => it.type == InlineItemType.control || it.type == InlineItemType.lineBreakOpportunity);
-    bool _hasWhitespaceInText = false;
-    bool _hasInteriorWhitespaceInText = false;
-    bool _hasBreakablePunctuationInText = false; // e.g., hyphen '-' or soft hyphen
-    bool _hasCJKBreaks = false; // CJK characters introduce break opportunities under normal line-breaking
+    bool hasWhitespaceInText = false;
+    bool hasInteriorWhitespaceInText = false;
+    bool hasBreakablePunctuationInText = false; // e.g., hyphen '-' or soft hyphen
+    bool hasCJKBreaks = false; // CJK characters introduce break opportunities under normal line-breaking
     for (final it in _items) {
       if (it.isText) {
         final t = it.getText(_textContent);
-        if (_containsSoftWrapWhitespace(t)) {
-          _hasWhitespaceInText = true;
+        if (containsSoftWrapWhitespace(t)) {
+          hasWhitespaceInText = true;
         }
         // Detect interior (between non-space) soft wrap whitespace, not just leading/trailing
-        if (!_hasInteriorWhitespaceInText) {
+        if (!hasInteriorWhitespaceInText) {
           if (RegExp(r"\S\s+\S").hasMatch(t)) {
-            _hasInteriorWhitespaceInText = true;
+            hasInteriorWhitespaceInText = true;
           }
         }
         // Detect common breakable punctuation within the run (hyphen-minus, soft hyphen, slash)
-        if (!_hasBreakablePunctuationInText) {
+        if (!hasBreakablePunctuationInText) {
           if (t.contains('-') || t.contains('\u00AD') || t.contains('/')) {
-            _hasBreakablePunctuationInText = true;
+            hasBreakablePunctuationInText = true;
           }
         }
         // Detect presence of CJK characters which allow soft wrapping between characters
-        if (!_hasCJKBreaks && TextScriptDetector.containsCJK(t)) {
-          _hasCJKBreaks = true;
+        if (!hasCJKBreaks && TextScriptDetector.containsCJK(t)) {
+          hasCJKBreaks = true;
         }
-        if (_hasWhitespaceInText && _hasInteriorWhitespaceInText && _hasBreakablePunctuationInText && _hasCJKBreaks)
+        if (hasWhitespaceInText && hasInteriorWhitespaceInText && hasBreakablePunctuationInText && hasCJKBreaks) {
           break;
+        }
       }
     }
     // Respect CSS white-space: nowrap/pre (handled later), but for other modes treat CJK as breakable.
@@ -3338,7 +3323,7 @@ class InlineFormattingContext {
     // grapheme clusters; treat content as breakable.
     final bool breakAll = style.wordBreak == WordBreak.breakAll;
     final bool preferZeroWidthShaping =
-        _hasAtomicInlines || _hasExplicitBreaks || _hasWhitespaceInText || _hasCJKBreaks || breakAll;
+        hasAtomicInlines || hasExplicitBreaks || hasWhitespaceInText || hasCJKBreaks || breakAll;
     if (!constraints.hasBoundedWidth) {
       // Unbounded: prefer a reasonable fallback if available, otherwise use a very large width
       initialWidth =
@@ -3356,7 +3341,7 @@ class InlineFormattingContext {
         // and shape with a reasonable fallback width so content overflows instead.
         if (preferZeroWidthShaping) {
           initialWidth = 0.0;
-          _shapedWithZeroWidth = true;
+          shapedWithZeroWidth = true;
         } else {
           initialWidth =
               (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0) ? fallbackContentMaxWidth : 1000000.0;
@@ -3374,21 +3359,18 @@ class InlineFormattingContext {
     // break opportunities at all (no atomic inlines, no explicit breaks, and
     // no whitespace in text), i.e. a single unbreakable run, so that long
     // words/numbers can overflow horizontally for scrolling.
-    final bool _ancestorScrollX = _ancestorHasHorizontalScroll();
-    final bool _localIsScrollableX =
-        style.effectiveOverflowX == CSSOverflowType.scroll || style.effectiveOverflowX == CSSOverflowType.auto;
     // Consider only interior whitespace as natural break opportunities. Leading/trailing
     // whitespace does not create interior break points for a single long word.
-    final bool _contentHasNoBreaks = !_hasAtomicInlines &&
-        !_hasExplicitBreaks &&
-        !_hasInteriorWhitespaceInText &&
-        !_hasBreakablePunctuationInText &&
-        !_hasCJKBreaks &&
+    final bool contentHasNoBreaks = !hasAtomicInlines &&
+        !hasExplicitBreaks &&
+        !hasInteriorWhitespaceInText &&
+        !hasBreakablePunctuationInText &&
+        !hasCJKBreaks &&
         !breakAll;
     // Always avoid per-character wrapping for truly unbreakable content by shaping wide.
     // This matches browser behavior where a single long word overflows horizontally
     // instead of wrapping at arbitrary character boundaries.
-    if (_contentHasNoBreaks) {
+    if (contentHasNoBreaks) {
       initialWidth = 1000000.0;
       shapedWithHugeWidth = true;
     }
@@ -3399,8 +3381,8 @@ class InlineFormattingContext {
     // that soft wrapping never occurs; the final content width is taken from
     // the paragraph's longestLine, and painting/clipping is handled by the
     // container.
-    final bool _noSoftWrap = style.whiteSpace == WhiteSpace.nowrap || style.whiteSpace == WhiteSpace.pre;
-    if (_noSoftWrap) {
+    final bool noSoftWrap = style.whiteSpace == WhiteSpace.nowrap || style.whiteSpace == WhiteSpace.pre;
+    if (noSoftWrap) {
       // Preserve bounded shaping when we intend to show ellipsis; otherwise disable soft wraps
       // by shaping with a very wide width.
       final bool wantsEllipsis = style.effectiveTextOverflow == TextOverflow.ellipsis &&
@@ -3458,7 +3440,7 @@ class InlineFormattingContext {
         // When we intentionally shaped with zero width to enforce line breaks (due to zero
         // available content width), do not reflow with a fallback width. Keep the 0-width
         // shaping so each atomic/text fragment occupies its own line as expected.
-        if (!_shapedWithZeroWidth) {
+        if (!shapedWithZeroWidth) {
           final double targetWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
               ? fallbackContentMaxWidth
               : paragraph.longestLine;
@@ -3485,16 +3467,6 @@ class InlineFormattingContext {
     _paraLines = paragraph.computeLineMetrics();
     _placeholderBoxes = paragraph.getBoxesForPlaceholders();
     _paraCharCount = paraPos; // record final character count
-
-    // Debug: dump basic paragraph/line metrics to help diagnose alignment issues
-    try {
-      final int lineCount = _paraLines.length;
-      double minLeftDbg = double.infinity;
-      for (final lm in _paraLines) {
-        if (lm.left.isFinite) minLeftDbg = math.min(minLeftDbg, lm.left);
-      }
-      if (!minLeftDbg.isFinite) minLeftDbg = 0.0;
-    } catch (_) {}
 
     // Apply ::first-line by rebuilding the paragraph with per-range overrides
     // once we know the first line break position for the final layout width.
@@ -3538,14 +3510,14 @@ class InlineFormattingContext {
       final pb2 = ui.ParagraphBuilder(ui.ParagraphStyle(
         textAlign: style.textAlign,
         textDirection: style.direction,
-        maxLines: _effectiveMaxLines,
+        maxLines: effectiveMaxLines,
         ellipsis: style.effectiveTextOverflow == TextOverflow.ellipsis ? '\u2026' : null,
         textHeightBehavior: const ui.TextHeightBehavior(
           applyHeightToFirstAscent: true,
           applyHeightToLastDescent: true,
           leadingDistribution: ui.TextLeadingDistribution.even,
         ),
-        strutStyle: _paragraphStrut,
+        strutStyle: paragraphStrut,
       ));
 
       // Re-run inline items building with overrides applied to text in the first line range.
@@ -3554,7 +3526,7 @@ class InlineFormattingContext {
 
       for (final item in _items) {
         if (item.isOpenTag) {
-          final box = item.renderBox as RenderBoxModel?;
+          final box = item.renderBox;
           if (box != null) {
             openFrames2.add(_OpenInlineFrame(box, leftExtras: 0.0, rightExtras: 0.0));
           }
@@ -3569,15 +3541,12 @@ class InlineFormattingContext {
           // Mirror the atomic placeholder logic
           final RenderBoxModel rb = item.renderBox as RenderBoxModel;
           final CSSRenderStyle rbStyle = rb.renderStyle;
-          final (double height, double? baselineOffset) = _measureParagraphTextMetricsFor(rbStyle);
+          final (double height, double baselineOffset) = _measureParagraphTextMetricsFor(rbStyle);
           final double mL = rbStyle.marginLeft.computedValue;
           final double mR = rbStyle.marginRight.computedValue;
-          final double mT = rbStyle.marginTop.computedValue;
-          final double mB = rbStyle.marginBottom.computedValue;
           final double width = math.max(0.0, (rb.boxSize?.width ?? (rb.hasSize ? rb.boxSize!.width : 0.0)) + mL + mR);
           final ui.PlaceholderAlignment align = _placeholderAlignmentFromCss(rbStyle.verticalAlign);
-          double? baseline = baselineOffset;
-          if (baseline == null) baseline = height; // fallback
+          final double baseline = baselineOffset;
           pb2.addPlaceholder(width, height, align, baseline: TextBaseline.alphabetic, baselineOffset: baseline);
           placeholderOrder2.add(rb);
           _allPlaceholders.add(_InlinePlaceholder.atomic(rb));
@@ -3591,15 +3560,17 @@ class InlineFormattingContext {
           String text = item.getText(_textContent);
           if (text.isEmpty || item.style == null) continue;
           if (openFrames2.isNotEmpty) {
-            for (final f in openFrames2) f.hadContent = true;
-            _flushPendingLeftExtras();
+            for (final f in openFrames2) {
+              f.hadContent = true;
+            }
+            flushPendingLeftExtras();
           }
           pb2.pushStyle(_uiTextStyleFromCss(item.style!));
           if (firstLineRemaining > 0) {
             final int segLen = math.min(firstLineRemaining, text.length);
-            final ui.TextStyle? flOv = _firstLineOverrideFor(firstLineDecl!, item.style!);
+            final ui.TextStyle? flOv = _firstLineOverrideFor(firstLineDecl, item.style!);
 
-            int _prefixLenFor(String s) {
+            int prefixLenFor(String s) {
               if (s.isEmpty) return 0;
               int c0 = s.codeUnitAt(0);
               bool isAsciiLetter(int c) => (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
@@ -3612,13 +3583,14 @@ class InlineFormattingContext {
             ui.TextStyle? flLetterOv;
             int letterPrefix = 0;
             if (!firstLetterApplied2 && firstLetterDecl != null) {
-              letterPrefix = _prefixLenFor(text);
+              letterPrefix = prefixLenFor(text);
               if (letterPrefix > 0) {
                 Color? ovColor;
                 double? ovFontSize;
                 final String colorVal = firstLetterDecl.getPropertyValue(COLOR);
-                if (colorVal.isNotEmpty)
+                if (colorVal.isNotEmpty) {
                   ovColor = CSSColor.parseColor(colorVal, renderStyle: item.style!, propertyName: COLOR);
+                }
                 final String fsVal = firstLetterDecl.getPropertyValue(FONT_SIZE);
                 if (fsVal.isNotEmpty) {
                   final CSSLengthValue parsed = CSSLength.parseLength(fsVal, item.style!, FONT_SIZE);
@@ -3654,7 +3626,7 @@ class InlineFormattingContext {
               int letterPrefix = 0;
               Color? ovColor;
               double? ovFontSize;
-              int _prefix() {
+              int prefix() {
                 if (text.isEmpty) return 0;
                 int c0 = text.codeUnitAt(0);
                 bool isAsciiLetter(int c) => (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
@@ -3665,11 +3637,12 @@ class InlineFormattingContext {
                 return 0;
               }
 
-              letterPrefix = _prefix();
+              letterPrefix = prefix();
               if (letterPrefix > 0) {
                 final String colorVal = firstLetterDecl.getPropertyValue(COLOR);
-                if (colorVal.isNotEmpty)
+                if (colorVal.isNotEmpty) {
                   ovColor = CSSColor.parseColor(colorVal, renderStyle: item.style!, propertyName: COLOR);
+                }
                 final String fsVal = firstLetterDecl.getPropertyValue(FONT_SIZE);
                 if (fsVal.isNotEmpty) {
                   final CSSLengthValue parsed = CSSLength.parseLength(fsVal, item.style!, FONT_SIZE);
@@ -3697,8 +3670,10 @@ class InlineFormattingContext {
           final text = item.getText(_textContent);
           if (text.isEmpty) continue;
           if (openFrames2.isNotEmpty) {
-            for (final f in openFrames2) f.hadContent = true;
-            _flushPendingLeftExtras();
+            for (final f in openFrames2) {
+              f.hadContent = true;
+            }
+            flushPendingLeftExtras();
           }
           pb2.pushStyle(_uiTextStyleFromCss(style));
           pb2.addText(text);
@@ -3717,12 +3692,12 @@ class InlineFormattingContext {
       if (isBlockLike) {
         if (!constraints.hasBoundedWidth) {
           final double targetWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
-              ? fallbackContentMaxWidth!
+              ? fallbackContentMaxWidth
               : paragraph.longestLine;
           paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
         } else if (constraints.maxWidth <= 0) {
           final double targetWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
-              ? fallbackContentMaxWidth!
+              ? fallbackContentMaxWidth
               : paragraph.longestLine;
           paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
         }
@@ -3766,14 +3741,14 @@ class InlineFormattingContext {
         final pb3 = ui.ParagraphBuilder(ui.ParagraphStyle(
           textAlign: style.textAlign,
           textDirection: style.direction,
-          maxLines: _effectiveMaxLines,
+          maxLines: effectiveMaxLines,
           ellipsis: style.effectiveTextOverflow == TextOverflow.ellipsis ? '\u2026' : null,
           textHeightBehavior: const ui.TextHeightBehavior(
             applyHeightToFirstAscent: true,
             applyHeightToLastDescent: true,
             leadingDistribution: ui.TextLeadingDistribution.even,
           ),
-          strutStyle: _paragraphStrut,
+          strutStyle: paragraphStrut,
         ));
 
         openFrames2.clear();
@@ -3790,7 +3765,7 @@ class InlineFormattingContext {
         final CSSStyleDeclaration? firstLetterDecl3 = ownerEl0.style.pseudoFirstLetterStyle;
         for (final item in _items) {
           if (item.isOpenTag) {
-            final box = item.renderBox as RenderBoxModel?;
+            final box = item.renderBox;
             if (box != null) openFrames2.add(_OpenInlineFrame(box, leftExtras: 0.0, rightExtras: 0.0));
           } else if (item.isCloseTag) {
             if (openFrames2.isNotEmpty) {
@@ -3800,13 +3775,12 @@ class InlineFormattingContext {
           } else if (item.isAtomicInline) {
             final RenderBoxModel rb = item.renderBox as RenderBoxModel;
             final CSSRenderStyle rbStyle = rb.renderStyle;
-            final (double height, double? baselineOffset) = _measureParagraphTextMetricsFor(rbStyle);
+            final (double height, double baselineOffset) = _measureParagraphTextMetricsFor(rbStyle);
             final double mL = rbStyle.marginLeft.computedValue;
             final double mR = rbStyle.marginRight.computedValue;
             final double width = math.max(0.0, (rb.boxSize?.width ?? (rb.hasSize ? rb.boxSize!.width : 0.0)) + mL + mR);
             final ui.PlaceholderAlignment align = _placeholderAlignmentFromCss(rbStyle.verticalAlign);
-            final double base = baselineOffset ?? height;
-            pb3.addPlaceholder(width, height, align, baseline: TextBaseline.alphabetic, baselineOffset: base);
+            pb3.addPlaceholder(width, height, align, baseline: TextBaseline.alphabetic, baselineOffset: baselineOffset);
             placeholderOrder2.add(rb);
             _allPlaceholders.add(_InlinePlaceholder.atomic(rb));
             _textRunParas.add(null);
@@ -3817,15 +3791,17 @@ class InlineFormattingContext {
             String text = item.getText(_textContent);
             if (text.isEmpty || item.style == null) continue;
             if (openFrames2.isNotEmpty) {
-              for (final f in openFrames2) f.hadContent = true;
-              _flushPendingLeftExtras();
+              for (final f in openFrames2) {
+                f.hadContent = true;
+              }
+              flushPendingLeftExtras();
             }
             pb3.pushStyle(_uiTextStyleFromCss(item.style!));
             if (firstRemain3 > 0) {
               final int segLen = math.min(firstRemain3, text.length);
-              final ui.TextStyle? flOv = _firstLineOverrideFor(firstLineDecl!, item.style!);
+              final ui.TextStyle? flOv = _firstLineOverrideFor(firstLineDecl, item.style!);
 
-              int _prefixLenFor(String s) {
+              int prefixLenFor(String s) {
                 if (s.isEmpty) return 0;
                 int c0 = s.codeUnitAt(0);
                 bool isAsciiLetter(int c) => (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
@@ -3839,13 +3815,14 @@ class InlineFormattingContext {
               ui.TextStyle? flLetterOv;
               int letterPrefix = 0;
               if (!firstLetterApplied3 && firstLetterDecl3 != null) {
-                letterPrefix = _prefixLenFor(text);
+                letterPrefix = prefixLenFor(text);
                 if (letterPrefix > 0) {
                   Color? ovColor;
                   double? ovFontSize;
                   final String colorVal = firstLetterDecl3.getPropertyValue(COLOR);
-                  if (colorVal.isNotEmpty)
+                  if (colorVal.isNotEmpty) {
                     ovColor = CSSColor.parseColor(colorVal, renderStyle: item.style!, propertyName: COLOR);
+                  }
                   final String fsVal = firstLetterDecl3.getPropertyValue(FONT_SIZE);
                   if (fsVal.isNotEmpty) {
                     final CSSLengthValue parsed = CSSLength.parseLength(fsVal, item.style!, FONT_SIZE);
@@ -3880,7 +3857,7 @@ class InlineFormattingContext {
                 int letterPrefix = 0;
                 Color? ovColor;
                 double? ovFontSize;
-                int _prefix() {
+                int prefix() {
                   if (text.isEmpty) return 0;
                   int c0 = text.codeUnitAt(0);
                   bool isAsciiLetter(int c) => (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
@@ -3891,11 +3868,12 @@ class InlineFormattingContext {
                   return 0;
                 }
 
-                letterPrefix = _prefix();
+                letterPrefix = prefix();
                 if (letterPrefix > 0) {
                   final String colorVal = firstLetterDecl3.getPropertyValue(COLOR);
-                  if (colorVal.isNotEmpty)
+                  if (colorVal.isNotEmpty) {
                     ovColor = CSSColor.parseColor(colorVal, renderStyle: item.style!, propertyName: COLOR);
+                  }
                   final String fsVal = firstLetterDecl3.getPropertyValue(FONT_SIZE);
                   if (fsVal.isNotEmpty) {
                     final CSSLengthValue parsed = CSSLength.parseLength(fsVal, item.style!, FONT_SIZE);
@@ -3923,8 +3901,10 @@ class InlineFormattingContext {
             final text = item.getText(_textContent);
             if (text.isEmpty) continue;
             if (openFrames2.isNotEmpty) {
-              for (final f in openFrames2) f.hadContent = true;
-              _flushPendingLeftExtras();
+              for (final f in openFrames2) {
+                f.hadContent = true;
+              }
+              flushPendingLeftExtras();
             }
             pb3.pushStyle(_uiTextStyleFromCss(style));
             pb3.addText(text);
@@ -3941,7 +3921,7 @@ class InlineFormattingContext {
         if (isBlockLike) {
           if (!constraints.hasBoundedWidth || constraints.maxWidth <= 0) {
             final double targetWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
-                ? fallbackContentMaxWidth!
+                ? fallbackContentMaxWidth
                 : paragraph.longestLine;
             paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
           }
@@ -4114,12 +4094,12 @@ class InlineFormattingContext {
         // Determine visual-first/last fragments on this line (physical left/right),
         // instead of relying on logical order (i==0/last). This is important in RTL,
         // where the first logical fragment can be at the visual right.
-        bool _overlapsLine(ui.TextBox r) {
+        bool overlapsLine(ui.TextBox r) {
           if (lineTop == null || lineBottom == null) return true;
           return !(r.bottom <= lineTop || r.top >= lineBottom);
         }
 
-        int _lineOf(ui.TextBox r) =>
+        int lineOf(ui.TextBox r) =>
             (lineTop != null && lineBottom != null && currentLineIndex >= 0) ? currentLineIndex : _lineIndexForRect(r);
         // Visual edge within the current line band
         bool isFirst = true;
@@ -4127,9 +4107,9 @@ class InlineFormattingContext {
         for (int k = 0; k < e.rects.length; k++) {
           if (k == i) continue;
           final rk = e.rects[k];
-          if (!_overlapsLine(rk)) continue;
+          if (!overlapsLine(rk)) continue;
           // Only compare fragments that belong to the same line band
-          if (_lineOf(rk) != _lineOf(tb)) continue;
+          if (lineOf(rk) != lineOf(tb)) continue;
           if (rk.left < left - 0.01) isFirst = false; // there's something more to the left
           if (rk.right > right + 0.01) isLast = false; // there's something more to the right
           if (!isFirst && !isLast) break;
@@ -4309,34 +4289,8 @@ class InlineFormattingContext {
 
         final rect = Rect.fromLTRB(left, top, right, bottom).shift(offset);
 
-        if (false) {
-          final bool drawTop = (bT > 0);
-          final bool drawBottom = (bB > 0);
-          final bool drawLeft = (logicalFirstFrag && bL > 0);
-          final bool drawRight = (logicalLastFrag && bR > 0);
-          final String lineInfo = (currentLineIndex >= 0) ? ' line=$currentLineIndex' : '';
-          // Diagnostics for tiny-edge suppression
-          final double _dbgFs = s.fontSize.computedValue;
-          final double _dbgThresh = math.max(1.0, _dbgFs * 0.35);
-          final double _dbgFragW = right - left;
-          bool _dbgHasOtherWide = false;
-          for (int k = 0; k < e.rects.length; k++) {
-            if (k == i) continue;
-            final rk = e.rects[k];
-            if (lineTop != null && lineBottom != null) {
-              if (rk.bottom <= lineTop || rk.top >= lineBottom) continue;
-            }
-            if (_lineOf(rk) != _lineOf(tb)) continue;
-            if ((rk.right - rk.left) > _dbgThresh) {
-              _dbgHasOtherWide = true;
-              break;
-            }
-          }
-          final bool _dbgTinyEdge = (_dbgFragW <= _dbgThresh) && _dbgHasOtherWide && (physLeftEdge || physRightEdge);
-        }
-
         // Background: optionally suppress tiny edge whitespace fragment painting to avoid slivers
-        bool _suppressTinyEdgePaint() {
+        bool suppressTinyEdgePaint() {
           final double fs = s.fontSize.computedValue;
           final double smallThresh = math.max(1.0, fs * 0.35);
           final double fragW = right - left;
@@ -4348,13 +4302,13 @@ class InlineFormattingContext {
             if (lineTop != null && lineBottom != null) {
               if (rk.bottom <= lineTop || rk.top >= lineBottom) continue;
             }
-            if (_lineOf(rk) != _lineOf(tb)) continue;
+            if (lineOf(rk) != lineOf(tb)) continue;
             if ((rk.right - rk.left) > smallThresh) return true;
           }
           return false;
         }
 
-        final bool suppressEdge = _suppressTinyEdgePaint();
+        final bool suppressEdge = suppressTinyEdgePaint();
         // Skip painting inline background rectangles when background-clip:text is set
         if (!suppressEdge && s.backgroundColor?.value != null && s.backgroundClip != CSSBackgroundBoundary.text) {
           final bg = Paint()..color = s.backgroundColor!.value;
@@ -4370,13 +4324,13 @@ class InlineFormattingContext {
         final bottomStyle = s.borderBottomStyle;
         final leftStyle = s.borderLeftStyle;
 
-        Color cTop = s.borderTopColor?.value ?? const Color(0xFF000000);
-        Color cRight = s.borderRightColor?.value ?? const Color(0xFF000000);
-        Color cBottom = s.borderBottomColor?.value ?? const Color(0xFF000000);
-        Color cLeft = s.borderLeftColor?.value ?? const Color(0xFF000000);
+        Color cTop = s.borderTopColor.value;
+        Color cRight = s.borderRightColor.value;
+        Color cBottom = s.borderBottomColor.value;
+        Color cLeft = s.borderLeftColor.value;
 
-        bool _is3DInsetOutset(CSSBorderStyleType t) => t == CSSBorderStyleType.outset || t == CSSBorderStyleType.inset;
-        bool _is3DGrooveRidge(CSSBorderStyleType t) => t == CSSBorderStyleType.groove || t == CSSBorderStyleType.ridge;
+        bool is3DInsetOutset(CSSBorderStyleType t) => t == CSSBorderStyleType.outset || t == CSSBorderStyleType.inset;
+        bool is3DGrooveRidge(CSSBorderStyleType t) => t == CSSBorderStyleType.groove || t == CSSBorderStyleType.ridge;
 
         // Apply 3D shading per side
         if (topStyle == CSSBorderStyleType.outset) cTop = CSSColor.transformToLightColor(cTop);
@@ -4388,23 +4342,22 @@ class InlineFormattingContext {
         if (rightStyle == CSSBorderStyleType.outset) cRight = CSSColor.tranformToDarkColor(cRight);
         if (rightStyle == CSSBorderStyleType.inset) cRight = CSSColor.transformToLightColor(cRight);
 
-        final bool anyInsetOutset = _is3DInsetOutset(topStyle) ||
-            _is3DInsetOutset(rightStyle) ||
-            _is3DInsetOutset(bottomStyle) ||
-            _is3DInsetOutset(leftStyle);
-        final bool anyGrooveRidge = _is3DGrooveRidge(topStyle) ||
-            _is3DGrooveRidge(rightStyle) ||
-            _is3DGrooveRidge(bottomStyle) ||
-            _is3DGrooveRidge(leftStyle);
+        final bool anyInsetOutset = is3DInsetOutset(topStyle) ||
+            is3DInsetOutset(rightStyle) ||
+            is3DInsetOutset(bottomStyle) ||
+            is3DInsetOutset(leftStyle);
+        final bool anyGrooveRidge = is3DGrooveRidge(topStyle) ||
+            is3DGrooveRidge(rightStyle) ||
+            is3DGrooveRidge(bottomStyle) ||
+            is3DGrooveRidge(leftStyle);
 
         if (!anyInsetOutset && !anyGrooveRidge) {
           // Helper painters for dashed/dotted sides (rectangular segments)
-          void _paintDashedHorizontal(double x0, double x1, double y, double h, Color color, bool dotted) {
+          void paintDashedHorizontal(double x0, double x1, double y, double h, Color color, bool dotted) {
             if (x1 <= x0 || h <= 0) return;
             final Paint dashPaint = Paint()
               ..style = PaintingStyle.fill
               ..color = color;
-            final double width = x1 - x0;
             final double unit = dotted ? h : math.max(h, h * 1.8);
             final double gap = unit; // simple equal dash-gap pattern
             double x = x0;
@@ -4416,12 +4369,11 @@ class InlineFormattingContext {
             }
           }
 
-          void _paintDashedVertical(double y0, double y1, double x, double w, Color color, bool dotted) {
+          void paintDashedVertical(double y0, double y1, double x, double w, Color color, bool dotted) {
             if (y1 <= y0 || w <= 0) return;
             final Paint dashPaint = Paint()
               ..style = PaintingStyle.fill
               ..color = color;
-            final double height = y1 - y0;
             final double unit = dotted ? w : math.max(w, w * 1.8);
             final double gap = unit;
             double y = y0;
@@ -4437,7 +4389,7 @@ class InlineFormattingContext {
           if (bT > 0) {
             p.color = cTop;
             if (topStyle == CSSBorderStyleType.dashed || topStyle == CSSBorderStyleType.dotted) {
-              _paintDashedHorizontal(rect.left, rect.right, rect.top, bT, cTop, topStyle == CSSBorderStyleType.dotted);
+              paintDashedHorizontal(rect.left, rect.right, rect.top, bT, cTop, topStyle == CSSBorderStyleType.dotted);
             } else if (topStyle == CSSBorderStyleType.double && bT >= 3.0) {
               final double band = (bT / 3.0).floorToDouble().clamp(1.0, bT);
               final double gap = (bT - 2 * band).clamp(0.0, bT);
@@ -4450,7 +4402,7 @@ class InlineFormattingContext {
           if (bB > 0) {
             p.color = cBottom;
             if (bottomStyle == CSSBorderStyleType.dashed || bottomStyle == CSSBorderStyleType.dotted) {
-              _paintDashedHorizontal(
+              paintDashedHorizontal(
                   rect.left, rect.right, rect.bottom - bB, bB, cBottom, bottomStyle == CSSBorderStyleType.dotted);
             } else if (bottomStyle == CSSBorderStyleType.double && bB >= 3.0) {
               final double band = (bB / 3.0).floorToDouble().clamp(1.0, bB);
@@ -4465,7 +4417,7 @@ class InlineFormattingContext {
           if (logicalFirstFrag && bL > 0) {
             p.color = cLeft;
             if (leftStyle == CSSBorderStyleType.dashed || leftStyle == CSSBorderStyleType.dotted) {
-              _paintDashedVertical(rect.top, rect.bottom, rect.left, bL, cLeft, leftStyle == CSSBorderStyleType.dotted);
+              paintDashedVertical(rect.top, rect.bottom, rect.left, bL, cLeft, leftStyle == CSSBorderStyleType.dotted);
             } else if (leftStyle == CSSBorderStyleType.double && bL >= 3.0) {
               final double band = (bL / 3.0).floorToDouble().clamp(1.0, bL);
               final double gap = (bL - 2 * band).clamp(0.0, bL);
@@ -4480,7 +4432,7 @@ class InlineFormattingContext {
           if (logicalLastFrag && bR > 0) {
             p.color = cRight;
             if (rightStyle == CSSBorderStyleType.dashed || rightStyle == CSSBorderStyleType.dotted) {
-              _paintDashedVertical(
+              paintDashedVertical(
                   rect.top, rect.bottom, rect.right - bR, bR, cRight, rightStyle == CSSBorderStyleType.dotted);
             } else if (rightStyle == CSSBorderStyleType.double && bR >= 3.0) {
               final double band = (bR / 3.0).floorToDouble().clamp(1.0, bR);
@@ -4599,14 +4551,14 @@ class InlineFormattingContext {
         } else {
           // groove/ridge: two-band 3D shading per side.
           // Compute light/dark per side from the base color.
-          Color topLight = CSSColor.transformToLightColor(s.borderTopColor?.value ?? const Color(0xFF000000));
-          Color topDark = CSSColor.tranformToDarkColor(s.borderTopColor?.value ?? const Color(0xFF000000));
-          Color rightLight = CSSColor.transformToLightColor(s.borderRightColor?.value ?? const Color(0xFF000000));
-          Color rightDark = CSSColor.tranformToDarkColor(s.borderRightColor?.value ?? const Color(0xFF000000));
-          Color bottomLight = CSSColor.transformToLightColor(s.borderBottomColor?.value ?? const Color(0xFF000000));
-          Color bottomDark = CSSColor.tranformToDarkColor(s.borderBottomColor?.value ?? const Color(0xFF000000));
-          Color leftLight = CSSColor.transformToLightColor(s.borderLeftColor?.value ?? const Color(0xFF000000));
-          Color leftDark = CSSColor.tranformToDarkColor(s.borderLeftColor?.value ?? const Color(0xFF000000));
+          Color topLight = CSSColor.transformToLightColor(s.borderTopColor.value);
+          Color topDark = CSSColor.tranformToDarkColor(s.borderTopColor.value);
+          Color rightLight = CSSColor.transformToLightColor(s.borderRightColor.value);
+          Color rightDark = CSSColor.tranformToDarkColor(s.borderRightColor.value);
+          Color bottomLight = CSSColor.transformToLightColor(s.borderBottomColor.value);
+          Color bottomDark = CSSColor.tranformToDarkColor(s.borderBottomColor.value);
+          Color leftLight = CSSColor.transformToLightColor(s.borderLeftColor.value);
+          Color leftDark = CSSColor.tranformToDarkColor(s.borderLeftColor.value);
 
           bool isGrooveTop = topStyle == CSSBorderStyleType.groove;
           bool isGrooveRight = rightStyle == CSSBorderStyleType.groove;
@@ -4669,14 +4621,6 @@ class InlineFormattingContext {
         }
       }
     }
-
-    if (false) {
-      for (final e in entries) {
-        for (int i = 0; i < e.rects.length; i++) {
-          final tb = e.rects[i];
-        }
-      }
-    }
   }
 
   // Create a synthetic TextBox from left/right extras placeholders for empty inline spans
@@ -4697,8 +4641,8 @@ class InlineFormattingContext {
       }
     }
     // Prefer merged placeholder when available to avoid line-break artifacts
-    if (mergedIndex != null && mergedIndex! < _placeholderBoxes.length) {
-      final anchor = _placeholderBoxes[mergedIndex!];
+    if (mergedIndex != null && mergedIndex < _placeholderBoxes.length) {
+      final anchor = _placeholderBoxes[mergedIndex];
       final double leftEdge = anchor.left;
       final double rightEdge = anchor.left + (mergedWidth ?? (anchor.right - anchor.left));
       final double top = anchor.top;
@@ -4707,9 +4651,9 @@ class InlineFormattingContext {
     }
     // Fallback to separate left/right extras if present
     if (leftIndex == null || rightIndex == null) return const [];
-    if (leftIndex! >= _placeholderBoxes.length || rightIndex! >= _placeholderBoxes.length) return const [];
-    final left = _placeholderBoxes[leftIndex!];
-    final right = _placeholderBoxes[rightIndex!];
+    if (leftIndex >= _placeholderBoxes.length || rightIndex >= _placeholderBoxes.length) return const [];
+    final left = _placeholderBoxes[leftIndex];
+    final right = _placeholderBoxes[rightIndex];
     final l = left.left;
     final r = right.right;
     final t = math.min(left.top, right.top);
@@ -4754,9 +4698,6 @@ class InlineFormattingContext {
         return ui.PlaceholderAlignment.bottom;
       case VerticalAlign.middle:
         return ui.PlaceholderAlignment.middle;
-      // For unsupported values (textTop/textBottom), fall back to baseline.
-      default:
-        return ui.PlaceholderAlignment.baseline;
     }
   }
 
@@ -4843,34 +4784,30 @@ class InlineFormattingContext {
 
   /// Get a description of the element from a RenderBoxModel.
   String _getElementDescription(RenderBoxModel? renderBox) {
-    if (renderBox == null) return 'unknown';
-
-    // Try to get element tag from the RenderBoxModel
-    final element = renderBox.renderStyle.target;
-    if (element != null) {
-      // For HTML elements, return the tag name
-      final tagName = element.tagName;
-      if (tagName.isNotEmpty && tagName != 'DIV') {
-        return tagName.toLowerCase();
-      }
-
-      // For elements with specific classes or IDs, include them
-      final id = element.id;
-      final className = element.className;
-
-      if (id != null && id.isNotEmpty) {
-        return '${tagName.toLowerCase()}#$id';
-      } else if (className.isNotEmpty) {
-        return '${tagName.toLowerCase()}.$className';
-      }
-
-      return tagName.toLowerCase();
+    if (renderBox == null) {
+      return 'unknown';
     }
 
-    // Fallback to a short description
+    final element = renderBox.renderStyle.target;
+    final String tagName = element.tagName;
+    final String tagLower = tagName.toLowerCase();
+
+    final id = element.id;
+    final className = element.className;
+    if (id != null && id.isNotEmpty) {
+      return '$tagLower#$id';
+    }
+    if (className.isNotEmpty) {
+      return '$tagLower.$className';
+    }
+
+    if (tagName.isNotEmpty) {
+      return tagLower;
+    }
+
     final typeStr = renderBox.runtimeType.toString();
     if (typeStr.startsWith('Render')) {
-      return typeStr.substring(6); // Remove 'Render' prefix
+      return typeStr.substring(6);
     }
     return typeStr;
   }

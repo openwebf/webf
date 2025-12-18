@@ -14,11 +14,11 @@ import 'package:webf/src/module/module_manager.dart';
 
 String? _customUserAgent;
 
-class NavigatorModule extends BaseModule {
+class NavigatorModule extends WebFBaseModule {
   @override
   String get name => 'Navigator';
 
-  NavigatorModule(ModuleManager? moduleManager) : super(moduleManager);
+  NavigatorModule(super.moduleManager);
 
   @override
   void dispose() {}
@@ -55,7 +55,7 @@ class NavigatorModule extends BaseModule {
 
   static String getLanguages() {
     // Stringify the list of languages to JSON format.
-    return '[' + PlatformDispatcher.instance.locales.map(((locale) => '"${locale.toLanguageTag()}"')).join(',') + ']';
+    return '[${PlatformDispatcher.instance.locales.map(((locale) => '"${locale.toLanguageTag()}"')).join(',')}]';
   }
 
   static String getHardwareConcurrency() {

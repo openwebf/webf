@@ -114,9 +114,9 @@ mixin TimerMixin {
       }
     });
 
-    _pendingUnFinishedCallbacks.forEach((callback) {
+    for (var callback in _pendingUnFinishedCallbacks) {
       callback();
-    });
+    }
     _pendingUnFinishedCallbacks.clear();
     _isPaused = false;
 

@@ -10,11 +10,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:webf/rendering.dart';
-import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/html.dart';
@@ -74,8 +70,10 @@ mixin BaseInputElement on WidgetElement implements FormElementBase {
   // Expose element value for resolving mixin conflicts from the concrete class.
   String get elementValue => _value;
 
+  @override
   String get value => _value;
 
+  @override
   set value(value) {
     setElementValue(value != null ? value.toString() : '');
   }
@@ -180,13 +178,14 @@ mixin BaseInputElement on WidgetElement implements FormElementBase {
     }
   }
 
+  @override
   String get type => getAttribute('type') ?? 'text';
 
   String? get inputMode => getAttribute('inputmode');
 
   String? get enterKeyHint => getAttribute('enterkeyhint');
 
-  void set type(value) {
+  set type(value) {
     String newType = value.toString();
     String currentType = getAttribute('type') ?? 'text';
 
@@ -238,6 +237,7 @@ mixin BaseInputElement on WidgetElement implements FormElementBase {
 
   bool _disabled = false;
 
+  @override
   bool get disabled => _disabled;
 
   set disabled(value) {
@@ -308,9 +308,9 @@ mixin BaseInputElement on WidgetElement implements FormElementBase {
           : 0;
 
   TextStyle get _textStyle {
-    double? height = null;
+    double? height;
 
-    if (renderStyle.lineHeight != CSSText.DEFAULT_LINE_HEIGHT) {
+    if (renderStyle.lineHeight != CSSText.defaultLineHeight) {
       double lineHeight = renderStyle.lineHeight.computedValue / renderStyle.fontSize.computedValue;
 
       if (renderStyle.height.isNotAuto) {
@@ -469,8 +469,7 @@ mixin BaseInputState on WebFWidgetElementState {
     bool isAutoHeight = widgetElement.renderStyle.height.isAuto;
     bool isAutoWidth = widgetElement.renderStyle.width.isAuto;
 
-    // Compute accessible name (ARIA or native <label>) and feed into
-    // InputDecoration so EditableText provides correct semantics natively.
+    // Accessible name (ARIA or native <label>) for Semantics wrapper.
     final String? accessibleName = WebFAccessibility.computeAccessibleName(widgetElement);
 
     InputDecoration decoration = InputDecoration(
@@ -609,12 +608,11 @@ mixin BaseInputState on WebFWidgetElementState {
     }
 
     // ARIA semantics for accessible name/description on input controls.
-    final String? semanticsLabel = WebFAccessibility.computeAccessibleName(widgetElement);
     final String? semanticsHint = WebFAccessibility.computeAccessibleDescription(widgetElement);
-    if ((semanticsLabel != null && semanticsLabel.isNotEmpty) || (semanticsHint != null && semanticsHint.isNotEmpty)) {
+    if ((accessibleName != null && accessibleName.isNotEmpty) || (semanticsHint != null && semanticsHint.isNotEmpty)) {
       widget = Semantics(
         container: true,
-        label: (semanticsLabel != null && semanticsLabel.isNotEmpty) ? semanticsLabel : null,
+        label: (accessibleName != null && accessibleName.isNotEmpty) ? accessibleName : null,
         hint: (semanticsHint != null && semanticsHint.isNotEmpty) ? semanticsHint : null,
         textDirection: widgetElement.renderStyle.direction,
         child: widget,

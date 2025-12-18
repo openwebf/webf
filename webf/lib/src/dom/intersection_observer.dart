@@ -48,7 +48,7 @@ void _handleDeliverResult(Object handle, Pointer<NativeValue> returnValue) {
 }
 
 class IntersectionObserver extends DynamicBindingObject {
-  IntersectionObserver(BindingContext? context, List<dynamic> thresholds_) : super(context) {
+  IntersectionObserver(super.context, List<dynamic> thresholds_) {
     if (thresholds_.isNotEmpty) {
       _thresholds = thresholds_.map((e) => (e as num).toDouble()).toList();
     }
@@ -58,7 +58,8 @@ class IntersectionObserver extends DynamicBindingObject {
   }
 
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+  void initializeDynamicMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeDynamicMethods(methods);
     methods['takeRecords'] = BindingObjectMethodSync(call: (_) {
       if (_entries.isEmpty) return null;
 
@@ -93,8 +94,6 @@ class IntersectionObserver extends DynamicBindingObject {
     });
   }
 
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {}
 
   void observe(Element element) {
     if (enableWebFCommandLog) {
@@ -120,12 +119,12 @@ class IntersectionObserver extends DynamicBindingObject {
     }
     if (_elementList.isEmpty) return;
     for (var element in _elementList) {
-      element!.removeIntersectionObserver(this);
+      element.removeIntersectionObserver(this);
     }
     _elementList.clear();
   }
 
-  bool HasObservations() {
+  bool hasObservations() {
     return _elementList.isNotEmpty;
   }
 

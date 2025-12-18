@@ -137,6 +137,7 @@ class _ExtendedNestedScrollCoordinator extends _NestedScrollCoordinator {
     final RenderViewport? parent = findParentRenderViewport(renderObject);
     if (parent != null && parent.axis == axis) {
       for (final RenderSliver childrenInPaint
+      // ignore: invalid_use_of_protected_member
       in parent.childrenInHitTestOrder) {
         return childIsVisible(childrenInPaint, renderObject) &&
             renderObjectIsVisible(parent, axis);
@@ -149,7 +150,7 @@ class _ExtendedNestedScrollCoordinator extends _NestedScrollCoordinator {
     if (object == null) {
       return null;
     }
-    object = object.parent as RenderObject?;
+    object = object.parent;
     while (object != null) {
       // only find in body
       if (object is _ExtendedRenderSliverFillRemainingWithScrollable) {
@@ -158,7 +159,7 @@ class _ExtendedNestedScrollCoordinator extends _NestedScrollCoordinator {
       if (object is RenderViewport) {
         return object;
       }
-      object = object.parent as RenderObject?;
+      object = object.parent;
     }
     return null;
   }

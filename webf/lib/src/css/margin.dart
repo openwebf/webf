@@ -75,11 +75,11 @@ mixin CSSMarginMixin on RenderStyle {
   // Margin top of in-flow block-level box which has collapsed margin.
   // https://www.w3.org/TR/CSS2/box.html#collapsing-margins
   double get collapsedMarginTop {
-    double _marginTop;
+    double marginTop;
 
     if (effectiveDisplay == CSSDisplay.inline) {
-      _marginTop = 0;
-      return _marginTop;
+      marginTop = 0;
+      return marginTop;
     }
 
     // Margin collapse does not work on following case:
@@ -87,8 +87,8 @@ mixin CSSMarginMixin on RenderStyle {
     // 2. Inline level elements
     // 3. Inner renderBox of element with overflow auto/scroll
     if (isDocumentRootBox() || (effectiveDisplay != CSSDisplay.block && effectiveDisplay != CSSDisplay.flex)) {
-      _marginTop = marginTop.computedValue;
-      return _marginTop;
+      marginTop = this.marginTop.computedValue;
+      return marginTop;
     }
 
     // If there is any previous attached render sibling (including placeholders
@@ -99,14 +99,14 @@ mixin CSSMarginMixin on RenderStyle {
     final bool hasPrevInFlow = isPreviousSiblingAreRenderObject();
     if (!hasPrevInFlow) {
       // First in-flow child: may collapse with parent top
-      _marginTop = _collapsedMarginTopWithParent;
+      marginTop = _collapsedMarginTopWithParent;
     } else {
       // Subsequent in-flow child: do not collapse with previous sibling here.
       // Parent layout combines prev bottom and this top per spec.
-      _marginTop = _collapsedMarginTopWithFirstChild;
+      marginTop = _collapsedMarginTopWithFirstChild;
     }
 
-    return _marginTop;
+    return marginTop;
   }
 
   // The top margin of an in-flow block element collapses with its first in-flow block-level child's
@@ -166,8 +166,8 @@ mixin CSSMarginMixin on RenderStyle {
     bool isOverflowVisible =
         effectiveOverflowX == CSSOverflowType.visible && effectiveOverflowY == CSSOverflowType.visible;
     bool isOverflowClip = effectiveOverflowX == CSSOverflowType.clip && effectiveOverflowY == CSSOverflowType.clip;
-    double _marginTop = marginTop.computedValue;
-    double _marginBottom = marginBottom.computedValue;
+    double marginTop = this.marginTop.computedValue;
+    double marginBottom = this.marginBottom.computedValue;
 
     // Margin top and bottom of empty block collapse.
     // Make collapsed margin-top to the max of its top and bottom and margin-bottom as 0.
@@ -175,10 +175,10 @@ mixin CSSMarginMixin on RenderStyle {
         isSelfBoxModelMatch((renderBoxModel, _) => renderBoxModel.boxSize!.height == 0) &&
         effectiveDisplay != CSSDisplay.flex &&
         (isOverflowVisible || isOverflowClip)) {
-      return math.max(_marginTop, _marginBottom);
+      return math.max(marginTop, marginBottom);
     }
 
-    return _marginTop;
+    return marginTop;
   }
 
   // The top margin of an in-flow block element collapses with its first in-flow block-level child's
@@ -264,12 +264,12 @@ mixin CSSMarginMixin on RenderStyle {
   // Margin bottom of in-flow block-level box which has collapsed margin.
   // https://www.w3.org/TR/CSS2/box.html#collapsing-margins
   double get collapsedMarginBottom {
-    double _marginBottom;
+    double marginBottom;
 
     // Margin is invalid for inline element.
     if (effectiveDisplay == CSSDisplay.inline) {
-      _marginBottom = 0;
-      return _marginBottom;
+      marginBottom = 0;
+      return marginBottom;
     }
 
     // Margin collapse does not work on following case:
@@ -277,22 +277,22 @@ mixin CSSMarginMixin on RenderStyle {
     // 2. Inline level elements
     // 3. Inner renderBox of element with overflow auto/scroll
     if (isDocumentRootBox() || (effectiveDisplay != CSSDisplay.block && effectiveDisplay != CSSDisplay.flex)) {
-      _marginBottom = marginBottom.computedValue;
-      return _marginBottom;
+      marginBottom = this.marginBottom.computedValue;
+      return marginBottom;
     }
 
     if (!isNextSiblingAreRenderObject()) {
       // Margin bottom collapse with its parent if it is the last child of its parent and its value is 0.
-      _marginBottom = _collapsedMarginBottomWithParent;
+      marginBottom = _collapsedMarginBottomWithParent;
     } else {
       // Margin bottom collapse with its nested last child when meeting following cases at the same time:
       // 1. No padding, border is set.
       // 2. No height, min-height, max-height is set.
       // 3. No block formatting context of itself (eg. overflow scroll and position absolute) is created.
-      _marginBottom = _collapsedMarginBottomWithLastChild;
+      marginBottom = _collapsedMarginBottomWithLastChild;
     }
 
-    return _marginBottom;
+    return marginBottom;
   }
 
   // Collapsed bottom margin to be used when resolving adjacency with the next

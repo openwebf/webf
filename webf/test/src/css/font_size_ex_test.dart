@@ -1,6 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:webf/dom.dart' as dom;
-import 'package:webf/rendering.dart';
 import '../../setup.dart';
 import '../widget/test_utils.dart';
 
@@ -20,7 +18,7 @@ void main() {
         ''',
       );
 
-      final p = prepared.getElementById('p') as dom.Element;
+      final p = prepared.getElementById('p');
       // With fallback 1ex=0.5em, 3ex = 1.5em; parent font-size=16px => 24px
       expect(p.attachedRenderer!.renderStyle.fontSize.computedValue, closeTo(24.0, 0.1));
     });

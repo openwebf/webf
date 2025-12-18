@@ -4,8 +4,6 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/foundation.dart';
-import 'package:webf/dom.dart' as dom;
 import '../../setup.dart';
 import '../widget/test_utils.dart';
 
@@ -334,7 +332,6 @@ void main() {
         ''',
       );
 
-      final container = prepared.getElementById('container');
       final relative = prepared.getElementById('relative');
       final rect = relative.getBoundingClientRect();
 
@@ -935,7 +932,6 @@ void main() {
         ''',
       );
 
-      final container = prepared.getElementById('container');
       final percentPos = prepared.getElementById('percent-pos');
 
       final rect = percentPos.getBoundingClientRect();
@@ -1290,7 +1286,6 @@ void main() {
       final calcPos = prepared.getElementById('calc-pos');
 
       // Element should be centered (150 - 50 = 100)
-      final rect = calcPos.getBoundingClientRect();
       // TODO: WebF may not fully support calc() in positioning
       expect(calcPos.offsetWidth, equals(100.0));
       expect(calcPos.offsetHeight, equals(100.0));
@@ -1532,7 +1527,6 @@ void main() {
 
       // Fixed element should be positioned relative to viewport
       final fixed = prepared.getElementById('level5');
-      final rect = fixed.getBoundingClientRect();
       // TODO: WebF may have issues with fixed positioning in deeply nested contexts
       // For now, just verify element exists
       expect(fixed.offsetWidth, equals(50.0));

@@ -8,6 +8,7 @@ import 'package:webf/src/html/table_cell_bindings_generated.dart';
 import 'package:webf/src/widget/webf_element.dart';
 import 'package:webf/src/widget/widget_element.dart';
 
+// ignore: constant_identifier_names
 const String WEBF_TABLE_CELL = 'WEBF-TABLE-CELL';
 
 class WebFTableCell extends WebFTableCellBindings {

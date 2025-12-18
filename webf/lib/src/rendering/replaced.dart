@@ -7,11 +7,9 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
-import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 
 /// RenderBox of a replaced element whose content is outside the scope of the CSS formatting model,
@@ -142,10 +140,10 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
 
       // Clamp specified sizes to the available constraints first (includes max-width/min-width from style).
       if (width != null) {
-        width = width!.clamp(childConstraints.minWidth, childConstraints.maxWidth);
+        width = width.clamp(childConstraints.minWidth, childConstraints.maxWidth);
       }
       if (height != null) {
-        height = height!.clamp(childConstraints.minHeight, childConstraints.maxHeight);
+        height = height.clamp(childConstraints.minHeight, childConstraints.maxHeight);
       }
 
       // Apply aspect-ratio and constraint-driven sizing when only one or neither dimension is specified.
@@ -153,12 +151,12 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
       if (width != null && height != null) {
         childConstraints = childConstraints.tighten(width: width, height: height);
       } else if (width != null) {
-        final double? h = ratio != null ? (width! / ratio) : null;
-        final double? clampedH = h != null ? h.clamp(childConstraints.minHeight, childConstraints.maxHeight) : null;
+        final double? h = ratio != null ? (width / ratio) : null;
+        final double? clampedH = h?.clamp(childConstraints.minHeight, childConstraints.maxHeight);
         childConstraints = childConstraints.tighten(width: width, height: clampedH);
       } else if (height != null) {
-        final double? w = ratio != null ? (height! * ratio) : null;
-        final double? clampedW = w != null ? w.clamp(childConstraints.minWidth, childConstraints.maxWidth) : null;
+        final double? w = ratio != null ? (height * ratio) : null;
+        final double? clampedW = w?.clamp(childConstraints.minWidth, childConstraints.maxWidth);
         childConstraints = childConstraints.tighten(width: clampedW, height: height);
       } else if (ratio != null) {
         // Both width and height are auto; resolve via aspect-ratio and constraints.
@@ -202,7 +200,7 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
           usedH = h1;
         }
 
-        if (usedW != null && usedH != null && usedW > 0 && usedH > 0) {
+        if (usedW > 0 && usedH > 0) {
           childConstraints = childConstraints.tighten(width: usedW, height: usedH);
         }
       }
@@ -279,7 +277,7 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
       height = attempingSize.height;
     }
 
-    size = constraints!.constrain(Size(width, height));
+    size = constraints.constrain(Size(width, height));
     assert(size.isFinite);
   }
 

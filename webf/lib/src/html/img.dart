@@ -6,6 +6,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
+// ignore_for_file: constant_identifier_names
+
 import 'dart:async';
 import 'dart:ui' as ui;
 import 'dart:ui';
@@ -22,7 +24,6 @@ import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/widget.dart';
 import 'package:webf/src/scheduler/debounce.dart';
 
 void _imgLog(String message) {
@@ -91,7 +92,7 @@ class ImageElement extends Element {
     // @TODO: Implement the srcset.
     if (src.isEmpty) return true;
     if (_currentRequest != null && _currentRequest!.available) return true;
-    if (_currentRequest != null && _currentRequest!.state == _ImageRequestState.broken) return true;
+    if (_currentRequest != null && _currentRequest!.state == ImageRequestState.broken) return true;
     return true;
   }
 
@@ -116,7 +117,7 @@ class ImageElement extends Element {
   // When there has a delay task, should complete it to continue.
   Completer<bool?>? _updateImageDataLazyCompleter;
 
-  ImageElement([BindingContext? context]) : super(context) {
+  ImageElement([super.context]) {
     // Add default event listener to make sure load or error event can be fired to the native side to release the keepAlive
     // handler of HTMLImageElement.
     BindingBridge.listenEvent(this, 'load');
@@ -135,8 +136,8 @@ class ImageElement extends Element {
   }
 
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    super.initializeProperties(properties);
+  void initializeDynamicProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeDynamicProperties(properties);
     properties['src'] = BindingObjectProperty(getter: () => src, setter: (value) => src = castToType<String>(value));
     properties['loading'] =
         BindingObjectProperty(getter: () => loading, setter: (value) => loading = castToType<String>(value));
@@ -176,7 +177,7 @@ class ImageElement extends Element {
   @override
   RenderObject willAttachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
     RenderObject renderObject = super.willAttachRenderer(flutterWidgetElement);
-    _imgLog('[IMG] willAttachRenderer elem=${hashCode}');
+    _imgLog('[IMG] willAttachRenderer elem=$hashCode');
     style.addStyleChangeListener(_stylePropertyChanged);
     RenderReplaced? renderReplaced = renderObject as RenderReplaced;
     if ((!_didWatchAnimationImage) && (shouldLazyLoading) && renderReplaced.hasIntersectionObserver() == false) {
@@ -194,7 +195,7 @@ class ImageElement extends Element {
   @override
   void didDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) async {
     super.didDetachRenderer(flutterWidgetElement);
-    _imgLog('[IMG] didDetachRenderer elem=${hashCode}');
+    _imgLog('[IMG] didDetachRenderer elem=$hashCode');
     style.removeStyleChangeListener(_stylePropertyChanged);
   }
 
@@ -215,13 +216,13 @@ class ImageElement extends Element {
   set src(String value) {
     internalSetAttribute('src', value);
     final resolvedUri = _resolveResourceUri(value);
-    _imgLog('[IMG] set src value=$value resolved=$resolvedUri prev=$_resolvedUri elem=${hashCode} hasRenderer=${renderStyle.attachedRenderBoxModel != null}');
+    _imgLog('[IMG] set src value=$value resolved=$resolvedUri prev=$_resolvedUri elem=$hashCode hasRenderer=${renderStyle.attachedRenderBoxModel != null}');
     if (_resolvedUri != resolvedUri) {
       _loaded = false;
       _resolvedUri = resolvedUri;
       // Clear any stale prefetched response from prior URL to avoid cross-URL leakage
       if (_prefetchedImageResponse != null) {
-        _imgLog('[IMG] clear stale prefetched response on src change elem=${hashCode}');
+        _imgLog('[IMG] clear stale prefetched response on src change elem=$hashCode');
       }
       _prefetchedImageResponse = null;
       _prefetchedImageUri = null;
@@ -230,7 +231,7 @@ class ImageElement extends Element {
       _isSVGImage = false;
       // Stop listening to the old stream immediately since URL changed
       _stopListeningStream(keepStreamAlive: false);
-      _imgLog('[IMG] _startLoadNewImage due to src change elem=${hashCode}');
+      _imgLog('[IMG] _startLoadNewImage due to src change elem=$hashCode');
       _startLoadNewImage();
     }
   }
@@ -271,7 +272,7 @@ class ImageElement extends Element {
 
   void _listenToStream() {
     if (_isListeningStream) return;
-    _imgLog('[IMG] _listenToStream elem=${hashCode}');
+    _imgLog('[IMG] _listenToStream elem=$hashCode');
     _cachedImageStream?.addListener(_listener);
     _isListeningStream = true;
   }
@@ -290,7 +291,7 @@ class ImageElement extends Element {
   @override
   void dispose() async {
     super.dispose();
-    _imgLog('[IMG] dispose elem=${hashCode} states=${_imageState.length} hasStream=$_isListeningStream');
+    _imgLog('[IMG] dispose elem=$hashCode states=${_imageState.length} hasStream=$_isListeningStream');
 
     RenderReplaced? renderReplaced = renderStyle.attachedRenderBoxModel as RenderReplaced?;
     renderReplaced?.removeIntersectionChangeListener(handleIntersectionChange);
@@ -422,11 +423,11 @@ class ImageElement extends Element {
 
     // When appear
     if (entry.isIntersecting) {
-      _imgLog('[IMG] Intersection visible -> resume stream elem=${hashCode}');
+      _imgLog('[IMG] Intersection visible -> resume stream elem=$hashCode');
       _updateImageDataLazyCompleter?.complete();
       _listenToStream();
     } else {
-      _imgLog('[IMG] Intersection hidden -> pause stream elem=${hashCode}');
+      _imgLog('[IMG] Intersection hidden -> pause stream elem=$hashCode');
       _stopListeningStream(keepStreamAlive: true);
     }
     return false;
@@ -446,12 +447,12 @@ class ImageElement extends Element {
   bool hadTryReload = false;
 
   void _onImageError(Object exception, StackTrace? stackTrace) async {
-    _imgLog('[IMG] _onImageError elem=${hashCode} url=$_resolvedUri exception=$exception');
+    _imgLog('[IMG] _onImageError elem=$hashCode url=$_resolvedUri exception=$exception');
     if (_resolvedUri != null) {
       // Invalidate http cache for this failed image loads.
       await WebFBundle.invalidateCache(_resolvedUri!.toString());
       if (!hadTryReload) {
-        _imgLog('[IMG] try force reload after error elem=${hashCode}');
+        _imgLog('[IMG] try force reload after error elem=$hashCode');
         _reloadImage(forceUpdate: true);
         hadTryReload = true;
       }
@@ -500,16 +501,16 @@ class ImageElement extends Element {
   }
 
   @override
-  void removeAttribute(String key) {
-    super.removeAttribute(key);
-    if (key == 'loading') {
+  void removeAttribute(String qualifiedName) {
+    super.removeAttribute(qualifiedName);
+    if (qualifiedName == 'loading') {
       _updateImageDataLazyCompleter?.complete();
     }
   }
 
   void _stopListeningStream({bool keepStreamAlive = false}) {
     if (!_isListeningStream) return;
-    _imgLog('[IMG] _stopListeningStream elem=${hashCode} keepAlive=$keepStreamAlive');
+    _imgLog('[IMG] _stopListeningStream elem=$hashCode keepAlive=$keepStreamAlive');
     if (keepStreamAlive && _completerHandle == null && _cachedImageStream?.completer != null) {
       _completerHandle = _cachedImageStream!.completer!.keepAlive();
     }
@@ -535,7 +536,7 @@ class ImageElement extends Element {
 
   void _updateSourceStream(ImageStream newStream) {
     if (_cachedImageStream?.key == newStream.key) return;
-    _imgLog('[IMG] _updateSourceStream elem=${hashCode} oldKey=${_cachedImageStream?.key} newKey=${newStream.key}');
+    _imgLog('[IMG] _updateSourceStream elem=$hashCode oldKey=${_cachedImageStream?.key} newKey=${newStream.key}');
     if (_isListeningStream) {
       _cachedImageStream?.removeListener(_listener);
     }
@@ -569,10 +570,10 @@ class ImageElement extends Element {
   // This callback may fire multiple times when image have multiple frames (such as an animated GIF).
   void _handleImageFrame(ImageInfo imageInfo, bool synchronousCall) {
     _cachedImageInfo = imageInfo;
-    _imgLog('[IMG] _handleImageFrame elem=${hashCode} size=${imageInfo.image.width}x${imageInfo.image.height} sync=$synchronousCall');
+    _imgLog('[IMG] _handleImageFrame elem=$hashCode size=${imageInfo.image.width}x${imageInfo.image.height} sync=$synchronousCall');
 
-    if (_currentRequest?.state != _ImageRequestState.completelyAvailable) {
-      _currentRequest?.state = _ImageRequestState.completelyAvailable;
+    if (_currentRequest?.state != ImageRequestState.completelyAvailable) {
+      _currentRequest?.state = ImageRequestState.completelyAvailable;
     }
 
     // Option 1: Store pending update if no mounted state exists
@@ -616,14 +617,14 @@ class ImageElement extends Element {
       _updateImageDataLazyCompleter?.complete(true); // cancel lazy task
     }
     final taskId = ++_updateImageDataTaskId;
-    _imgLog('[IMG] _updateImageData elem=${hashCode} taskId=$taskId lazy=$shouldLazyLoading mountedStates=${_imageState.length}');
+    _imgLog('[IMG] _updateImageData elem=$hashCode taskId=$taskId lazy=$shouldLazyLoading mountedStates=${_imageState.length}');
     final future = _updateImageDataTask(taskId);
     _updateImageDataTaskFuture = future;
-    future.catchError((e) {
-      print(e);
+    future.catchError((e, stack) {
+      debugPrint('$e\n$stack');
     }).whenComplete(() {
       if (taskId == _updateImageDataTaskId) {
-        _imgLog('[IMG] _updateImageData complete elem=${hashCode} taskId=$taskId');
+        _imgLog('[IMG] _updateImageData complete elem=$hashCode taskId=$taskId');
         _updateImageDataTaskFuture = null;
       }
     });
@@ -642,7 +643,7 @@ class ImageElement extends Element {
       final abort = await completer.future;
 
       if (abort == true || taskId != _updateImageDataTaskId) {
-        _imgLog('[IMG] _updateImageDataTask aborted elem=${hashCode} taskId=$taskId');
+        _imgLog('[IMG] _updateImageDataTask aborted elem=$hashCode taskId=$taskId');
         return;
       }
       // Because the renderObject can changed between rendering, So we need to reassign the value;
@@ -654,14 +655,14 @@ class ImageElement extends Element {
         return;
       }
 
-      _loadImg() async {
+      loadImg() async {
         // Increment load event delay count before decode.
         ownerDocument.incrementLoadEventDelayCount();
-        _imgLog('[IMG] begin load elem=${hashCode} url=$_resolvedUri');
+        _imgLog('[IMG] begin load elem=$hashCode url=$_resolvedUri');
 
         // Fast path if URL/data scheme indicates SVG
         if (_isSVGMode) {
-          _imgLog('[IMG] detected SVG mode by URL elem=${hashCode}');
+          _imgLog('[IMG] detected SVG mode by URL elem=$hashCode');
           _loadSVGImage();
           return;
         }
@@ -690,13 +691,13 @@ class ImageElement extends Element {
           }
 
           if (isSvg) {
-            _imgLog('[IMG] prefetch decided SVG elem=${hashCode}');
+            _imgLog('[IMG] prefetch decided SVG elem=$hashCode');
             _applySVGResponse(response);
             // Decrement load event delay here for prefetch SVG path
             ownerDocument.decrementLoadEventDelayCount();
           } else {
             // Hand off to raster pipeline and avoid double-fetch
-            _imgLog('[IMG] prefetch decided raster elem=${hashCode}');
+            _imgLog('[IMG] prefetch decided raster elem=$hashCode');
             _prefetchedImageResponse = response;
             _prefetchedImageUri = _resolvedUri;
             _isSVGImage = false;
@@ -712,12 +713,12 @@ class ImageElement extends Element {
 
       if (!ownerDocument.controller.isFlutterAttached) {
         ownerView.registerCallbackOnceForFlutterAttached(() {
-          _imgLog('[IMG] Flutter not attached; defer load elem=${hashCode}');
-          _loadImg();
+          _imgLog('[IMG] Flutter not attached; defer load elem=$hashCode');
+          loadImg();
         });
       } else {
-        _imgLog('[IMG] Flutter attached; load now elem=${hashCode}');
-        _loadImg();
+        _imgLog('[IMG] Flutter attached; load now elem=$hashCode');
+        loadImg();
       }
     });
     SchedulerBinding.instance.scheduleFrame();
@@ -726,10 +727,10 @@ class ImageElement extends Element {
   void _loadSVGImage() async {
     try {
       ImageLoadResponse response = await obtainImage(this, _resolvedUri!);
-      _imgLog('[IMG] _loadSVGImage elem=${hashCode} bytes=${response.bytes.length}');
+      _imgLog('[IMG] _loadSVGImage elem=$hashCode bytes=${response.bytes.length}');
       _applySVGResponse(response);
     } catch (e, stack) {
-      print('$e\n$stack');
+      debugPrint('$e\n$stack');
       _dispatchErrorEvent();
     } finally {
       // Decrement load event delay count after decode.
@@ -742,7 +743,7 @@ class ImageElement extends Element {
     _svgBytes = response.bytes;
     _resizeImage();
     _isSVGImage = true;
-    _imgLog('[IMG] _applySVGResponse elem=${hashCode}');
+    _imgLog('[IMG] _applySVGResponse elem=$hashCode');
     SchedulerBinding.instance.addPostFrameCallback((_) {
       // Apply the same fix for SVG images
       final currentState = state;
@@ -792,7 +793,7 @@ class ImageElement extends Element {
         contextId: contextId!,
         devicePixelRatio: ownerFlutterView?.devicePixelRatio ?? 2.0,
       );
-      _imgLog('[IMG] created provider elem=${hashCode} url=$_resolvedUri fit=$objectFit dpr=${ownerFlutterView?.devicePixelRatio}');
+      _imgLog('[IMG] created provider elem=$hashCode url=$_resolvedUri fit=$objectFit dpr=${ownerFlutterView?.devicePixelRatio}');
     }
 
     // Try to make sure that this image can be encoded into a smaller size.
@@ -802,7 +803,7 @@ class ImageElement extends Element {
     int? cachedHeight = renderStyle.height.value != null && height > 0 && height.isFinite
         ? (height * (ownerFlutterView?.devicePixelRatio ?? 2.0)).toInt()
         : null;
-    _imgLog('[IMG] resolve stream elem=${hashCode} cached=${cachedWidth}x${cachedHeight} css=${renderStyle.width.value}x${renderStyle.height.value}');
+    _imgLog('[IMG] resolve stream elem=$hashCode cached=${cachedWidth}x$cachedHeight css=${renderStyle.width.value}x${renderStyle.height.value}');
 
     if (cachedWidth != null && cachedHeight != null) {
       // If a image with the same URL has a fixed size, attempt to remove the previous unsized imageProvider from imageCache.
@@ -811,14 +812,14 @@ class ImageElement extends Element {
         configuration: ImageConfiguration.empty,
       );
       PaintingBinding.instance.imageCache.evict(previousUnSizedKey, includeLive: true);
-      _imgLog('[IMG] evict previous unsized cache elem=${hashCode}');
+      _imgLog('[IMG] evict previous unsized cache elem=$hashCode');
     }
 
     ImageConfiguration imageConfiguration = _currentImageConfig =
         _shouldScaling && cachedWidth != null && cachedHeight != null
             ? ImageConfiguration(size: Size(cachedWidth.toDouble(), cachedHeight.toDouble()))
             : ImageConfiguration.empty;
-    _imgLog('[IMG] imageConfiguration elem=${hashCode} config=$imageConfiguration');
+    _imgLog('[IMG] imageConfiguration elem=$hashCode config=$imageConfiguration');
     final stream = provider.resolve(imageConfiguration);
     _updateSourceStream(stream);
     _listenToStream();
@@ -860,12 +861,12 @@ class ImageElement extends Element {
 
   void _startLoadNewImage() {
     if (_resolvedUri == null) {
-      _imgLog('[IMG] _startLoadNewImage ignored null url elem=${hashCode}');
+      _imgLog('[IMG] _startLoadNewImage ignored null url elem=$hashCode');
       return;
     }
 
     _debounce.run(() {
-      _imgLog('[IMG] _startLoadNewImage -> _updateImageData elem=${hashCode} url=$_resolvedUri');
+      _imgLog('[IMG] _startLoadNewImage -> _updateImageData elem=$hashCode url=$_resolvedUri');
       _updateImageData();
     });
   }
@@ -881,14 +882,14 @@ class ImageElement extends Element {
         configuration: ImageConfiguration.empty,
       );
       PaintingBinding.instance.imageCache.evict(previousUnSizedKey, includeLive: true);
-      _imgLog('[IMG] _reloadImage forceUpdate elem=${hashCode}');
+      _imgLog('[IMG] _reloadImage forceUpdate elem=$hashCode');
     }
 
     if (_isSVGImage) {
       // In svg mode, we don't need to reload
     } else {
       _debounce.run(() {
-        _imgLog('[IMG] _reloadImage -> _updateImageData elem=${hashCode}');
+        _imgLog('[IMG] _reloadImage -> _updateImageData elem=$hashCode');
         _updateImageData();
       });
     }
@@ -935,7 +936,7 @@ class ImageElement extends Element {
 class WebFImage extends flutter.StatefulWidget {
   final ImageElement imageElement;
 
-  WebFImage(this.imageElement, {flutter.Key? key}) : super(key: key);
+  const WebFImage(this.imageElement, {super.key});
 
   @override
   flutter.State<flutter.StatefulWidget> createState() {
@@ -961,7 +962,7 @@ class ImageState extends flutter.State<WebFImage> {
   void initState() {
     super.initState();
     imageElement._imageState.add(this);
-    _imgLog('[IMG] ImageState.initState elem=${imageElement.hashCode} state=${hashCode} mounted=${mounted}');
+    _imgLog('[IMG] ImageState.initState elem=${imageElement.hashCode} state=$hashCode mounted=$mounted');
 
     // Option 1: Check if there's a pending update that couldn't be delivered
     if (imageElement._hasPendingImageUpdate && imageElement._cachedImageInfo != null) {
@@ -988,7 +989,7 @@ class ImageState extends flutter.State<WebFImage> {
   void dispose() {
     super.dispose();
     imageElement._imageState.remove(this);
-    _imgLog('[IMG] ImageState.dispose elem=${imageElement.hashCode} state=${hashCode}');
+    _imgLog('[IMG] ImageState.dispose elem=${imageElement.hashCode} state=$hashCode');
   }
 
   @override
@@ -1018,7 +1019,7 @@ class ImageState extends flutter.State<WebFImage> {
 }
 
 // https://html.spec.whatwg.org/multipage/images.html#images-processing-model
-enum _ImageRequestState {
+enum ImageRequestState {
   // The user agent hasn't obtained any image data, or has obtained some or
   // all of the image data but hasn't yet decoded enough of the image to get
   // the image dimensions.
@@ -1043,19 +1044,19 @@ enum _ImageRequestState {
 class ImageRequest {
   ImageRequest.fromUri(
     this.currentUri, {
-    this.state = _ImageRequestState.unavailable,
+    this.state = ImageRequestState.unavailable,
   });
 
   /// The request uri.
   Uri currentUri;
 
   /// Current state of image request.
-  _ImageRequestState state;
+  ImageRequestState state;
 
   /// When an image request's state is either partially available or completely available,
   /// the image request is said to be available.
   bool get available =>
-      state == _ImageRequestState.completelyAvailable || state == _ImageRequestState.partiallyAvailable;
+      state == ImageRequestState.completelyAvailable || state == ImageRequestState.partiallyAvailable;
 
   Future<ImageLoadResponse> obtainImage(WebFController controller) async {
     final WebFBundle? preloadedBundle = controller.getPreloadBundleFromUrl(currentUri.toString());

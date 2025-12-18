@@ -28,6 +28,8 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// ignore_for_file: constant_identifier_names
+
 part of 'parser.dart';
 
 // TODO(terry): Need to be consistent with tokens either they're ASCII tokens
@@ -375,17 +377,17 @@ class TokenKind {
   }
 
   static String decimalToHex(int number, [int minDigits = 1]) {
-    final _HEX_DIGITS = '0123456789abcdef';
+    final hexDigits = '0123456789abcdef';
 
     var result = <String>[];
 
     var dividend = number >> 4;
     var remain = number % 16;
-    result.add(_HEX_DIGITS[remain]);
+    result.add(hexDigits[remain]);
     while (dividend != 0) {
       remain = dividend % 16;
       dividend >>= 4;
-      result.add(_HEX_DIGITS[remain]);
+      result.add(hexDigits[remain]);
     }
 
     var invertResult = StringBuffer();

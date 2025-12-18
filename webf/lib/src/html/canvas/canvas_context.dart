@@ -58,15 +58,15 @@ class CanvasImageSource {
 
   void _fillCanvasImageSource(source) {
     if (source is ImageElement) {
-      image_element = source;
+      imageElement = source;
     } else if (source is CanvasElement) {
-      canvas_element = source;
+      canvasElement = source;
     }
   }
 
-  ImageElement? image_element;
+  ImageElement? imageElement;
 
-  CanvasElement? canvas_element;
+  CanvasElement? canvasElement;
 }
 
 abstract class CanvasFillStrokeStyles {
@@ -105,9 +105,8 @@ abstract class CanvasImageData {
 
 // ignore: one_member_abstracts
 class CanvasGradient extends DynamicBindingObject {
-  CanvasGradient(BindingContext context, this.ownerCanvasElement)
-      : _pointer = context.pointer,
-        super(context);
+  CanvasGradient(BindingContext super.context, this.ownerCanvasElement)
+      : _pointer = context.pointer;
 
   final ffi.Pointer<NativeBindingObject> _pointer;
   final CanvasElement ownerCanvasElement;
@@ -126,7 +125,8 @@ class CanvasGradient extends DynamicBindingObject {
   }
 
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+  void initializeDynamicMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeDynamicMethods(methods);
     methods['addColorStop'] =
         BindingObjectMethodSync(call: (args) => addColorStop(castToType<num>(args[0]), castToType<String>(args[1])));
   }
@@ -134,11 +134,10 @@ class CanvasGradient extends DynamicBindingObject {
 
 // ignore: one_member_abstracts
 class CanvasPattern extends DynamicBindingObject {
-  CanvasPattern(BindingContext context, CanvasImageSource image, String repetition)
+  CanvasPattern(BindingContext super.context, CanvasImageSource image, String repetition)
       : _pointer = context.pointer,
         _image = image,
-        _repetition = repetition,
-        super(context);
+        _repetition = repetition;
 
   final ffi.Pointer<NativeBindingObject> _pointer;
 
@@ -160,7 +159,8 @@ class CanvasPattern extends DynamicBindingObject {
   }
 
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+  void initializeDynamicMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeDynamicMethods(methods);
     methods['setTransform'] = BindingObjectMethodSync(call: (args) {
       BindingObject domMatrix = args[0];
       if (domMatrix is DOMMatrix) {
@@ -169,8 +169,6 @@ class CanvasPattern extends DynamicBindingObject {
     });
   }
 
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {}
 }
 
 class CanvasLinearGradient extends CanvasGradient {

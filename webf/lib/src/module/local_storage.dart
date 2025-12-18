@@ -15,7 +15,7 @@ import 'package:webf/module.dart';
 
 Map<String, Box> _sharedSyncBox = {};
 
-class LocalStorageModule extends BaseModule {
+class LocalStorageModule extends WebFBaseModule {
   @override
   String get name => 'LocalStorage';
 
@@ -43,7 +43,7 @@ class LocalStorageModule extends BaseModule {
     }
   }
 
-  LocalStorageModule(ModuleManager? moduleManager) : super(moduleManager);
+  LocalStorageModule(super.moduleManager);
 
   @override
   void dispose() {
@@ -74,9 +74,9 @@ class LocalStorageModule extends BaseModule {
           return null;
         }
       case 'clear':
-        box.keys.forEach((key) {
+        for (var key in box.keys) {
           box.delete(key);
-        });
+        }
         break;
       case 'length':
         return box.length;

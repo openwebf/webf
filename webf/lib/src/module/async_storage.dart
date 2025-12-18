@@ -16,17 +16,17 @@ import 'package:webf/src/module/module_manager.dart';
 
 Map<String, LazyBox<String>> _sharedSyncBox = {};
 
-class AsyncStorageModule extends BaseModule {
+class AsyncStorageModule extends WebFBaseModule {
   @override
   String get name => 'AsyncStorage';
 
   static String getBoxKey(ModuleManager moduleManager) {
-    String origin = moduleManager.controller.origin + '_async';
+    String origin = '${moduleManager.controller.origin}_async';
     int fileCheckSum = getCrc32(origin.codeUnits);
     return '_webf_$fileCheckSum';
   }
 
-  AsyncStorageModule(ModuleManager? moduleManager) : super(moduleManager);
+  AsyncStorageModule(super.moduleManager);
 
   late LazyBox<String> _lazyBox;
 
@@ -53,7 +53,7 @@ class AsyncStorageModule extends BaseModule {
     try {
       await _lazyBox.put(key, value);
       return true;
-    } catch (e, stack) {
+    } catch (e) {
       return false;
     }
   }
@@ -66,7 +66,7 @@ class AsyncStorageModule extends BaseModule {
     try {
       await _lazyBox.delete(key);
       return true;
-    } catch (e, stack) {
+    } catch (e) {
       return false;
     }
   }

@@ -36,7 +36,7 @@ class Throttling {
     _stateSC.sink.add(false);
     _isReady = false;
     _waiter
-      ..then((_) {
+      .then((_) {
         _isReady = true;
         _stateSC.sink.add(true);
       });

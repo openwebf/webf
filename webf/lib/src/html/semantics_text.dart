@@ -6,12 +6,10 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
-import 'package:flutter/widgets.dart' as flutter;
-import 'package:flutter/rendering.dart';
+// ignore_for_file: constant_identifier_names
+
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/rendering.dart';
-import 'package:webf/bridge.dart';
 
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Element#inline_text_semantics
 const String SPAN = 'SPAN';
@@ -89,35 +87,35 @@ const Map<String, dynamic> _hrDefaultStyle = {
 const Map<String, dynamic> _defaultStyle = {FONT_STYLE: ITALIC};
 
 class BringElement extends Element {
-  BringElement([BindingContext? context]) : super(context);
+  BringElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _boldDefaultStyle;
 }
 
 class AbbreviationElement extends Element {
-  AbbreviationElement([BindingContext? context]) : super(context);
+  AbbreviationElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _abbrDefaultStyle;
 }
 
 class EmphasisElement extends Element {
-  EmphasisElement([BindingContext? context]) : super(context);
+  EmphasisElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _emDefaultStyle;
 }
 
 class CitationElement extends Element {
-  CitationElement([BindingContext? context]) : super(context);
+  CitationElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 class DefinitionElement extends Element {
-  DefinitionElement([BindingContext? context]) : super(context);
+  DefinitionElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
@@ -125,28 +123,28 @@ class DefinitionElement extends Element {
 
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/i
 class IdiomaticElement extends Element {
-  IdiomaticElement([BindingContext? context]) : super(context);
+  IdiomaticElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 class CodeElement extends Element {
-  CodeElement([BindingContext? context]) : super(context);
+  CodeElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _codeDefaultStyle;
 }
 
 class SampleElement extends Element {
-  SampleElement([BindingContext? context]) : super(context);
+  SampleElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _codeDefaultStyle;
 }
 
 class KeyboardElement extends Element {
-  KeyboardElement([BindingContext? context]) : super(context);
+  KeyboardElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _codeDefaultStyle;
@@ -155,48 +153,48 @@ class KeyboardElement extends Element {
 // https://html.spec.whatwg.org/multipage/obsolete.html#the-tt-element
 // The <tt> element is obsolete; for compatibility it maps to monospace font.
 class TeletypeElement extends Element {
-  TeletypeElement([BindingContext? context]) : super(context);
+  TeletypeElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _codeDefaultStyle;
 }
 
 class SpanElement extends Element {
-  SpanElement([BindingContext? context]) : super(context);
+  SpanElement([super.context]);
 }
 
 class DataElement extends Element {
-  DataElement([BindingContext? context]) : super(context);
+  DataElement([super.context]);
 }
 
 // TODO: enclosed text is a short inline quotation
 class QuoteElement extends Element {
-  QuoteElement([BindingContext? context]) : super(context);
+  QuoteElement([super.context]);
 }
 
 class StrongElement extends Element {
-  StrongElement([BindingContext? context]) : super(context);
+  StrongElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _boldDefaultStyle;
 }
 
 class TimeElement extends Element {
-  TimeElement([BindingContext? context]) : super(context);
+  TimeElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _boldDefaultStyle;
 }
 
 class SmallElement extends Element {
-  SmallElement([BindingContext? context]) : super(context);
+  SmallElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _smallDefaultStyle;
 }
 
 class StrikethroughElement extends Element {
-  StrikethroughElement([BindingContext? context]) : super(context);
+  StrikethroughElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _sDefaultStyle;
@@ -204,28 +202,28 @@ class StrikethroughElement extends Element {
 
 // https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-u-element
 class UnarticulatedElement extends Element {
-  UnarticulatedElement([BindingContext? context]) : super(context);
+  UnarticulatedElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _uDefaultStyle;
 }
 
 class VariableElement extends Element {
-  VariableElement([BindingContext? context]) : super(context);
+  VariableElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
 class MarkElement extends Element {
-  MarkElement([BindingContext? context]) : super(context);
+  MarkElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _markDefaultStyle;
 }
 
 class HRElement extends Element {
-  HRElement([BindingContext? context]) : super(context);
+  HRElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _hrDefaultStyle;
@@ -234,7 +232,7 @@ class HRElement extends Element {
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/sub
 // Render subscripts with smaller font size and lowered baseline.
 class SubscriptElement extends Element {
-  SubscriptElement([BindingContext? context]) : super(context);
+  SubscriptElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _subDefaultStyle;
@@ -243,7 +241,7 @@ class SubscriptElement extends Element {
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/sup
 // Render superscripts with smaller font size and raised baseline.
 class SuperscriptElement extends Element {
-  SuperscriptElement([BindingContext? context]) : super(context);
+  SuperscriptElement([super.context]);
 
   @override
   Map<String, dynamic> get defaultStyle => _supDefaultStyle;

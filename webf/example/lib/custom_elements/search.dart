@@ -40,8 +40,7 @@ class FlutterSearchState extends WebFWidgetElementState {
   @override
   Widget build(BuildContext context) {
     final renderStyle = widgetElement.renderStyle;
-    return Container(
-      child: TextField(
+    return TextField(
         maxLines: 1,
         controller: _controller,
         decoration: InputDecoration(
@@ -85,7 +84,6 @@ class FlutterSearchState extends WebFWidgetElementState {
         style: TextStyle(
             overflow: TextOverflow.visible,
             fontSize: renderStyle.fontSize.computedValue), // Handles text overflow gracefully
-      ),
-    );
+      );
   }
 }

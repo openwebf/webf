@@ -72,7 +72,7 @@ abstract class HybridHistoryDelegate {
   });
 }
 
-class HybridHistoryModule extends BaseModule {
+class HybridHistoryModule extends WebFBaseModule {
   @override
   String get name => 'HybridHistory';
 
@@ -82,7 +82,7 @@ class HybridHistoryModule extends BaseModule {
     _delegate = value;
   }
 
-  HybridHistoryModule(ModuleManager? moduleManager) : super(moduleManager);
+  HybridHistoryModule(super.moduleManager);
 
   BuildContext? get _context => moduleManager?.controller.currentBuildContext?.context;
 
@@ -174,7 +174,7 @@ class HybridHistoryModule extends BaseModule {
       return _delegate!.path(_context, initialRoute);
     }
     String? currentPath = _context != null ? ModalRoute.of(_context!)?.settings.name : null;
-    return currentPath ?? initialRoute ?? '/';
+    return currentPath ?? initialRoute;
   }
 
   /// Whether the navigator can be popped.
@@ -253,7 +253,7 @@ class HybridHistoryModule extends BaseModule {
     } else if (route?.settings.name == null && initialState != null) {
       return jsonEncode(initialState);
     }
-    return jsonEncode(initialState) ?? '{}';
+    return initialState == null ? '{}' : jsonEncode(initialState);
   }
 
   @override
@@ -353,7 +353,7 @@ class HybridHistoryModule extends BaseModule {
         }
         break;
     }
-    return EMPTY_STRING;
+    return '';
   }
 
   @override

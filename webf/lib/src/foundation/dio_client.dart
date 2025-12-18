@@ -3,7 +3,6 @@
  * Licensed under GNU GPL with Enterprise exception.
  */
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:cupertino_http/cupertino_http.dart';
 import 'package:dio/dio.dart';

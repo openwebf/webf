@@ -7,6 +7,8 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
+// ignore_for_file: constant_identifier_names
+
 import 'dart:ffi';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
@@ -14,7 +16,6 @@ import 'package:webf/devtools.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
-import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
 
 const int INLINED_STYLESHEET_ID = 1;
@@ -25,7 +26,7 @@ class InspectCSSModule extends UIInspectorModule {
 
   Document? get document => dbgContext?.document ?? devtoolsService.controller?.view.document;
 
-  InspectCSSModule(DevToolsService devtoolsService) : super(devtoolsService);
+  InspectCSSModule(super.devtoolsService);
 
   // Tracking support for CSS.computedStyleUpdates
   bool _trackComputedUpdates = false;
@@ -298,8 +299,8 @@ class InspectCSSModule extends UIInspectorModule {
   }
 
   /// https://chromedevtools.github.io/devtools-protocol/tot/CSS/#method-createStyleSheet
-  /// Creates a new via-inspector stylesheet and attaches it to the document (preferably <head>).
-  /// Returns a StyleSheetId which we encode as "inline:<frontendNodeId>" for the created <style> element.
+  /// Creates a new via-inspector stylesheet and attaches it to the document (preferably `<head>`).
+  /// Returns a StyleSheetId which we encode as `inline:<frontendNodeId>` for the created `<style>` element.
   void handleCreateStyleSheet(int? id, Map<String, dynamic> params) {
     final ctx = dbgContext;
     if (ctx == null) {
@@ -343,7 +344,7 @@ class InspectCSSModule extends UIInspectorModule {
 
   /// https://chromedevtools.github.io/devtools-protocol/tot/CSS/#method-forcePseudoState
   /// Enables or disables forcing certain pseudo classes for the given node.
-  /// Params: { nodeId: <frontendNodeId>, forcedPseudoClasses: [ 'hover', 'active', ... ] }
+  /// Params: `{ nodeId: <frontendNodeId>, forcedPseudoClasses: [ 'hover', 'active', ... ] }`
   void handleForcePseudoState(int? id, Map<String, dynamic> params) {
     final ctx = dbgContext;
     if (ctx == null) {
@@ -624,7 +625,7 @@ class InspectCSSModule extends UIInspectorModule {
     for (MapEntry<String, CSSPropertyValue> entry in element.style) {
       String kebabName = kebabize(entry.key);
       String propertyValue = entry.value.toString();
-      String _cssText = '$kebabName: $propertyValue';
+      String cssText0 = '$kebabName: $propertyValue';
       CSSProperty cssProperty = CSSProperty(
         name: kebabName,
         value: entry.value.value,
@@ -632,10 +633,10 @@ class InspectCSSModule extends UIInspectorModule {
           startLine: 0,
           startColumn: cssText.length,
           endLine: 0,
-          endColumn: cssText.length + _cssText.length + 1,
+          endColumn: cssText.length + cssText0.length + 1,
         ),
       );
-      cssText += '$_cssText; ';
+      cssText += '$cssText0; ';
       cssProperties.add(cssProperty);
     }
 
@@ -654,7 +655,7 @@ class InspectCSSModule extends UIInspectorModule {
     element.inlineStyle.forEach((key, value) {
       String kebabName = kebabize(key);
       String propertyValue = value.toString();
-      String _cssText = '$kebabName: $propertyValue';
+      String cssText0 = '$kebabName: $propertyValue';
       CSSProperty cssProperty = CSSProperty(
         name: kebabName,
         value: value,
@@ -662,10 +663,10 @@ class InspectCSSModule extends UIInspectorModule {
           startLine: 0,
           startColumn: cssText.length,
           endLine: 0,
-          endColumn: cssText.length + _cssText.length + 1,
+          endColumn: cssText.length + cssText0.length + 1,
         ),
       );
-      cssText += '$_cssText; ';
+      cssText += '$cssText0; ';
       cssProperties.add(cssProperty);
     });
 
@@ -770,7 +771,7 @@ class InspectCSSModule extends UIInspectorModule {
     if (nodeId != null) {
       final BindingObject? obj = ctx.getBindingObject(Pointer.fromAddress(nodeId));
       if (obj is Element && obj is StyleElementMixin) {
-        CSSStyleSheet? sheet = (obj as StyleElementMixin).styleSheet;
+        CSSStyleSheet? sheet = (obj).styleSheet;
         // If sheet not parsed yet, parse from text content
         if (sheet == null) {
           final String? text = obj.collectElementChildText();

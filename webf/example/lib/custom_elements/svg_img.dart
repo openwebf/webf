@@ -2,6 +2,8 @@
  * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
  * Licensed under GNU GPL with Enterprise exception.
  */
+// ignore_for_file: avoid_print
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:webf/webf.dart';
@@ -29,29 +31,32 @@ class FlutterSVGImg extends WidgetElement {
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 
+  static final StaticDefinedBindingPropertyMap _svgImgProperties = {
+    'src': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterSVGImg>(element).src,
+      setter: (element, value) => castToType<FlutterSVGImg>(element).src = castToType<String>(value),
+    ),
+    'width': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterSVGImg>(element).width,
+      setter: (element, value) => castToType<FlutterSVGImg>(element).width = value,
+    ),
+    'height': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterSVGImg>(element).height,
+      setter: (element, value) => castToType<FlutterSVGImg>(element).height = value,
+    ),
+    'naturalWidth': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterSVGImg>(element).naturalWidth,
+    ),
+    'naturalHeight': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterSVGImg>(element).naturalHeight,
+    ),
+    'complete': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterSVGImg>(element)._loaded,
+    ),
+  };
+
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    super.initializeProperties(properties);
-
-    properties['src'] = BindingObjectProperty(
-      getter: () => src,
-      setter: (value) => src = castToType<String>(value)
-    );
-
-    properties['width'] = BindingObjectProperty(
-      getter: () => width,
-      setter: (value) => width = value
-    );
-
-    properties['height'] = BindingObjectProperty(
-      getter: () => height,
-      setter: (value) => height = value
-    );
-
-    properties['naturalWidth'] = BindingObjectProperty(getter: () => naturalWidth);
-    properties['naturalHeight'] = BindingObjectProperty(getter: () => naturalHeight);
-    properties['complete'] = BindingObjectProperty(getter: () => _loaded);
-  }
+  List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _svgImgProperties];
 
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {

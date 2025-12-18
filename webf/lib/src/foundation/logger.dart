@@ -41,17 +41,15 @@ class WebFLogger {
 
       // In debug mode, use debugPrint for better Flutter integration
       if (kDebugMode) {
-        Platform.isMacOS ? print(logMessage) : debugPrint(logMessage);
-        if (record.error != null) {
-          debugPrint('Error: ${record.error}');
-        }
-        if (record.stackTrace != null) {
-          debugPrint('Stack trace:\n${record.stackTrace}');
-        }
+        debugPrint(logMessage);
+        if (record.error != null) debugPrint('Error: ${record.error}');
+        if (record.stackTrace != null) debugPrint('Stack trace:\n${record.stackTrace}');
       } else {
         // In release/profile mode, you might want to send logs to a service
-        // For now, we'll just use print
-        print(logMessage);
+        // For now, write to stdout/stderr.
+        stdout.writeln(logMessage);
+        if (record.error != null) stderr.writeln('Error: ${record.error}');
+        if (record.stackTrace != null) stderr.writeln('Stack trace:\n${record.stackTrace}');
       }
     });
 
@@ -73,5 +71,8 @@ final Logger domLogger = WebFLogger.getLogger('WebF.DOM');
 final Logger cssLogger = WebFLogger.getLogger('WebF.CSS');
 final Logger renderingLogger = WebFLogger.getLogger('WebF.Rendering');
 final Logger canvasLogger = WebFLogger.getLogger('WebF.Canvas');
+final Logger httpCacheLogger = WebFLogger.getLogger('WebF.HttpCache');
+final Logger networkLogger = WebFLogger.getLogger('WebF.Network');
+final Logger widgetLogger = WebFLogger.getLogger('WebF.Widget');
 final Logger devToolsLogger = WebFLogger.getLogger('WebF.DevTools');
 final Logger devToolsProtocolLogger = WebFLogger.getLogger('WebF.DevTools.CDP');

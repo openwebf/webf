@@ -148,13 +148,7 @@ void main() {
       var request = await httpClient.openUrl('GET', server.getUri('network'));
       WebFHttpOverrides.setContextHeader(request.headers, contextId);
 
-      var error;
-      try {
-        await request.close();
-      } catch (_error) {
-        error = _error;
-      }
-      assert(error is FlutterError);
+      await expectLater(() => request.close(), throwsA(isA<FlutterError>()));
 
       HttpCacheController.mode = HttpCacheMode.DEFAULT;
     });

@@ -6,6 +6,7 @@
 import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 
+// ignore: constant_identifier_names
 const String TOUCH_AREA = 'WEBF-TOUCHAREA';
 
 const Map<String, dynamic> _defaultStyle = {

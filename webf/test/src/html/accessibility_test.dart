@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter/semantics.dart';
+import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/src/accessibility/semantics.dart';
 import 'package:flutter/material.dart';
@@ -42,6 +42,29 @@ SemanticsNode? _findFirstScrollableNode(SemanticsNode root) {
 
   visit(root);
   return found;
+}
+
+SemanticsOwner _findSemanticsOwner(PipelineOwner rootPipelineOwner) {
+  SemanticsOwner? found;
+
+  void visit(PipelineOwner owner) {
+    final SemanticsOwner? semanticsOwner = owner.semanticsOwner;
+    if (semanticsOwner != null && semanticsOwner.rootSemanticsNode != null) {
+      found ??= semanticsOwner;
+      return;
+    }
+    owner.visitChildren(visit);
+  }
+
+  visit(rootPipelineOwner);
+
+  if (found == null) {
+    throw StateError(
+      'No SemanticsOwner with a rootSemanticsNode found in PipelineOwner tree. '
+      'Did you call tester.ensureSemantics() and pump a frame?',
+    );
+  }
+  return found!;
 }
 
 List<String> _collectTraversalLabels(SemanticsNode root) {
@@ -182,31 +205,31 @@ void main() {
       try {
         await tester.pump();
 
-      final SemanticsOwner semanticsOwner = tester.binding.pipelineOwner.semanticsOwner!;
-      final SemanticsNode root = semanticsOwner.rootSemanticsNode!;
+        final SemanticsOwner semanticsOwner = _findSemanticsOwner(tester.binding.rootPipelineOwner);
+        final SemanticsNode root = semanticsOwner.rootSemanticsNode!;
 
-      final SemanticsNode? scrollNodeBefore = _findFirstScrollableNode(root);
-      expect(scrollNodeBefore, isNotNull);
+        final SemanticsNode? scrollNodeBefore = _findFirstScrollableNode(root);
+        expect(scrollNodeBefore, isNotNull);
 
-      final SemanticsData before = scrollNodeBefore!.getSemanticsData();
-      expect(before.flagsCollection.hasImplicitScrolling, isTrue);
-      expect(before.scrollExtentMax, isNotNull);
-      expect(before.scrollExtentMax!, greaterThan(0.0));
-      expect(before.scrollPosition, isNotNull);
-      final double? posBefore = before.scrollPosition;
+        final SemanticsData before = scrollNodeBefore!.getSemanticsData();
+        expect(before.flagsCollection.hasImplicitScrolling, isTrue);
+        expect(before.scrollExtentMax, isNotNull);
+        expect(before.scrollExtentMax!, greaterThan(0.0));
+        expect(before.scrollPosition, isNotNull);
+        final double? posBefore = before.scrollPosition;
 
         // Programmatic scroll should update semantics scrollPosition.
-      region.scrollTop = 200;
-      await tester.pump();
+        region.scrollTop = 200;
+        await tester.pump();
 
-      final SemanticsNode? scrollNodeAfter = _findFirstScrollableNode(root);
-      expect(scrollNodeAfter, isNotNull);
-      final SemanticsData after = scrollNodeAfter!.getSemanticsData();
-      expect(after.scrollPosition, isNotNull);
-      expect(after.scrollPosition!, greaterThan(0.0));
-      if (posBefore != null) {
-        expect(after.scrollPosition!, isNot(posBefore));
-      }
+        final SemanticsNode? scrollNodeAfter = _findFirstScrollableNode(root);
+        expect(scrollNodeAfter, isNotNull);
+        final SemanticsData after = scrollNodeAfter!.getSemanticsData();
+        expect(after.scrollPosition, isNotNull);
+        expect(after.scrollPosition!, greaterThan(0.0));
+        if (posBefore != null) {
+          expect(after.scrollPosition!, isNot(posBefore));
+        }
       } finally {
         handle.dispose();
       }
@@ -236,7 +259,7 @@ void main() {
       try {
         await tester.pump();
 
-        final SemanticsOwner semanticsOwner = tester.binding.pipelineOwner.semanticsOwner!;
+        final SemanticsOwner semanticsOwner = _findSemanticsOwner(tester.binding.rootPipelineOwner);
         final SemanticsNode root = semanticsOwner.rootSemanticsNode!;
 
         final List<String> labels = _collectTraversalLabels(root);
@@ -283,7 +306,7 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 50));
 
-        final SemanticsOwner semanticsOwner = tester.binding.pipelineOwner.semanticsOwner!;
+        final SemanticsOwner semanticsOwner = _findSemanticsOwner(tester.binding.rootPipelineOwner);
         SemanticsNode root = semanticsOwner.rootSemanticsNode!;
 
         final SemanticsNode? msg1Before = _findSemanticsNodeWithLabel(root, 'Message 1');

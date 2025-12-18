@@ -184,8 +184,8 @@ mixin StaticDefinedBindingObject<T> on BindingObject<T> {
 
 abstract class DynamicBindingObject<T> extends BindingObject<T> {
   DynamicBindingObject([super.context]) {
-    initializeProperties(_dynamicProperties);
-    initializeMethods(_dynamicMethods);
+    initializeDynamicProperties(_dynamicProperties);
+    initializeDynamicMethods(_dynamicMethods);
   }
 
   final Map<String, BindingObjectProperty> _dynamicProperties = {};
@@ -195,6 +195,18 @@ abstract class DynamicBindingObject<T> extends BindingObject<T> {
   final Map<String, BindingObjectMethod> _dynamicMethods = {};
 
   Map<String, BindingObjectMethod> get dynamicMethods => _dynamicMethods;
+
+  @mustCallSuper
+  void initializeDynamicProperties(Map<String, BindingObjectProperty> properties) {
+    // ignore: deprecated_member_use_from_same_package
+    initializeProperties(properties);
+  }
+
+  @mustCallSuper
+  void initializeDynamicMethods(Map<String, BindingObjectMethod> methods) {
+    // ignore: deprecated_member_use_from_same_package
+    initializeMethods(methods);
+  }
 
   @Deprecated(
       '''

@@ -18,9 +18,6 @@ import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
-import 'inline_formatting_context.dart';
-import 'text.dart';
-import 'event_listener.dart';
 
 // Position and size of each run (line box) in flow layout.
 // https://www.w3.org/TR/css-inline-3/#line-boxes
@@ -58,8 +55,8 @@ class RunMetrics {
 class RenderFlowLayout extends RenderLayoutBox {
   RenderFlowLayout({
     List<RenderBox>? children,
-    required CSSRenderStyle renderStyle,
-  }) : super(renderStyle: renderStyle) {
+    required super.renderStyle,
+  }) {
     addAll(children);
   }
 
@@ -230,17 +227,17 @@ class RenderFlowLayout extends RenderLayoutBox {
     }
 
     // Regular flow layout painting: skip RenderTextBox unless it paints itself (non-IFC)
-    Offset _accumulateOffsetFromDescendant(RenderObject descendant, RenderObject ancestor) {
+    Offset accumulateOffsetFromDescendant(RenderObject descendant, RenderObject ancestor) {
       Offset sum = Offset.zero;
       RenderObject? cur = descendant;
       while (cur != null && cur != ancestor) {
         final Object? pd = (cur is RenderBox) ? (cur.parentData) : null;
         if (pd is ContainerBoxParentData) {
-          sum += (pd as ContainerBoxParentData).offset;
+          sum += (pd).offset;
         } else if (pd is RenderLayoutParentData) {
-          sum += (pd as RenderLayoutParentData).offset;
+          sum += (pd).offset;
         }
-        cur = cur.parent as RenderObject?;
+        cur = cur.parent;
       }
       return sum;
     }
@@ -251,7 +248,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       // Skip text boxes that are handled by IFC, but paint text boxes that paint themselves
       if (child is RenderTextBox) {
-        shouldPaint = shouldPaint && (child as RenderTextBox).paintsSelf;
+        shouldPaint = shouldPaint && (child).paintsSelf;
       }
 
       if (!shouldPaint) continue;
@@ -263,7 +260,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       bool previous = false;
       // Only suppress descendants' positive stacking when painting the document root
       // (where we promote descendant positives to this level).
-      final bool promoteHere = (renderStyle as CSSRenderStyle).isDocumentRootBox();
+      final bool promoteHere = (renderStyle).isDocumentRootBox();
       if (promoteHere && child is RenderBoxModel) {
         final CSSRenderStyle rs = child.renderStyle;
         final int? zi = rs.zIndex;
@@ -281,11 +278,11 @@ class RenderFlowLayout extends RenderLayoutBox {
       }
 
       final bool direct = identical(child.parent, this);
-      final Offset localOffset = direct ? childParentData.offset : _accumulateOffsetFromDescendant(child, this);
+      final Offset localOffset = direct ? childParentData.offset : accumulateOffsetFromDescendant(child, this);
       context.paintChild(child, localOffset + offset);
 
       if (restoreFlag && child is RenderBoxModel) {
-        (child.renderStyle as CSSRenderStyle).suppressPositiveStackingFromDescendants = previous;
+        (child.renderStyle).suppressPositiveStackingFromDescendants = previous;
         if (child is RenderLayoutBox) {
           child.markChildrenNeedsSort();
         } else if (child is RenderWidget) {
@@ -303,16 +300,16 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   // Determine effective list-style-type for an LI element
   String? _effectiveListStyleTypeFor(Element el) {
-    String _getProp(CSSStyleDeclaration s, String camel, String kebab) {
+    String getProp(CSSStyleDeclaration s, String camel, String kebab) {
       final v1 = s.getPropertyValue(camel);
       if (v1.isNotEmpty) return v1;
       return s.getPropertyValue(kebab);
     }
-    final t = _getProp(el.style, 'listStyleType', 'list-style-type');
+    final t = getProp(el.style, 'listStyleType', 'list-style-type');
     if (t.isNotEmpty) return t;
     final p = el.parentElement;
     if (p != null) {
-      final pt = _getProp(p.style, 'listStyleType', 'list-style-type');
+      final pt = getProp(p.style, 'listStyleType', 'list-style-type');
       if (pt.isNotEmpty) return pt;
       if (p is OListElement) return 'decimal';
       if (p is UListElement) return 'disc';
@@ -321,16 +318,16 @@ class RenderFlowLayout extends RenderLayoutBox {
   }
 
   String _effectiveListStylePositionFor(Element el) {
-    String _getProp(CSSStyleDeclaration s, String camel, String kebab) {
+    String getProp(CSSStyleDeclaration s, String camel, String kebab) {
       final v1 = s.getPropertyValue(camel);
       if (v1.isNotEmpty) return v1;
       return s.getPropertyValue(kebab);
     }
-    final t = _getProp(el.style, 'listStylePosition', 'list-style-position');
+    final t = getProp(el.style, 'listStylePosition', 'list-style-position');
     if (t.isNotEmpty) return t;
     final p = el.parentElement;
     if (p != null) {
-      final pt = _getProp(p.style, 'listStylePosition', 'list-style-position');
+      final pt = getProp(p.style, 'listStylePosition', 'list-style-position');
       if (pt.isNotEmpty) return pt;
     }
     return 'outside';
@@ -435,7 +432,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     // Build paragraphs for marker components with stable spacing (no kerning between '.' and digits)
     final ts = _uiTextStyleFromCss(renderStyle);
-    ui.Paragraph _buildPara(String text) {
+    ui.Paragraph buildPara(String text) {
       final pb = ui.ParagraphBuilder(ui.ParagraphStyle(
         textDirection: TextDirection.ltr,
         textHeightBehavior: const ui.TextHeightBehavior(
@@ -453,14 +450,14 @@ class RenderFlowLayout extends RenderLayoutBox {
     }
 
     // Fixed outside gap between marker and border box
-    final double spaceW = _buildPara(' ').maxIntrinsicWidth;
+    final double spaceW = buildPara(' ').maxIntrinsicWidth;
 
     // Components
     ui.Paragraph? dotPara;
     ui.Paragraph? numPara;
     double markerBaseline;
     if (type == 'disc') {
-      dotPara = _buildPara('•');
+      dotPara = buildPara('•');
       markerBaseline = dotPara.alphabeticBaseline;
     } else {
       final idx = _listIndexFor(el);
@@ -485,8 +482,8 @@ class RenderFlowLayout extends RenderLayoutBox {
           numText = idx.toString();
           break;
       }
-      dotPara = _buildPara('.');
-      numPara = _buildPara(numText);
+      dotPara = buildPara('.');
+      numPara = buildPara(numText);
       markerBaseline = math.max(dotPara.alphabeticBaseline, numPara.alphabeticBaseline);
     }
 
@@ -506,11 +503,11 @@ class RenderFlowLayout extends RenderLayoutBox {
     final double drawY = baselineY - markerBaseline;
 
     if (type == 'disc') {
-      final double dotW = dotPara!.maxIntrinsicWidth;
+      final double dotW = dotPara.maxIntrinsicWidth;
       final double x = isRTL ? baseX : baseX - dotW;
       context.canvas.drawParagraph(dotPara, Offset(x, drawY));
     } else {
-      final double dotW = dotPara!.maxIntrinsicWidth;
+      final double dotW = dotPara.maxIntrinsicWidth;
       final double numW = numPara!.maxIntrinsicWidth;
       if (isRTL) {
         final double xDot = baseX;
@@ -648,10 +645,10 @@ class RenderFlowLayout extends RenderLayoutBox {
     // CSS shrink-to-fit width for inline-block with auto width:
     // used = min( max(min-content, available), max-content )
     if (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock && renderStyle.width.isAuto) {
-      final double? avail = (contentConstraints != null && contentConstraints!.hasBoundedWidth)
+      final double avail = (contentConstraints != null && contentConstraints!.hasBoundedWidth)
           ? contentConstraints!.maxWidth
           : (constraints.hasBoundedWidth ? constraints.maxWidth : double.nan);
-      if (avail != null && avail.isFinite) {
+      if (avail.isFinite) {
         final double minContent = inlineFormattingContext.paragraphMinIntrinsicWidth;
         final double maxContent = inlineFormattingContext.paragraphMaxIntrinsicWidth;
         // Guard against degenerate values
@@ -875,11 +872,9 @@ class RenderFlowLayout extends RenderLayoutBox {
       // previously measured height so that vertical alignment inside flex/grid
       // (e.g., align-items:center) continues to take effect after this pass.
       double preservedMinH = 0.0;
-      if (childBoxModel != null) {
-        final CSSRenderStyle crs2 = childBoxModel.renderStyle;
-        if (crs2.minHeight.isNotAuto) preservedMinH = crs2.minHeight.computedValue;
-      }
-      final BoxConstraints stretch = BoxConstraints(
+      final CSSRenderStyle crs2 = childBoxModel.renderStyle;
+      if (crs2.minHeight.isNotAuto) preservedMinH = crs2.minHeight.computedValue;
+          final BoxConstraints stretch = BoxConstraints(
         minWidth: targetWidth,
         maxWidth: targetWidth,
         minHeight: preservedMinH,
@@ -906,8 +901,6 @@ class RenderFlowLayout extends RenderLayoutBox {
   void _doRegularFlowLayout(List<RenderBox> children) {
     _lineMetrics.clear();
     children.forEachIndexed((index, child) {
-      final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-
       BoxConstraints childConstraints;
       if (child is RenderBoxModel) {
         childConstraints = child.getConstraints();
@@ -985,15 +978,6 @@ class RenderFlowLayout extends RenderLayoutBox {
       return curr.mainAxisExtent > next.mainAxisExtent ? curr : next;
     });
     return maxMainSizeMetrics.mainAxisExtent;
-  }
-
-  // Find the size in the cross axis of lines.
-  double _getRunsCrossSize(List<RunMetrics> runMetrics,) {
-    double crossSize = 0;
-    for (RunMetrics run in runMetrics) {
-      crossSize += run.crossAxisExtent;
-    }
-    return crossSize;
   }
 
   // Compute the total cross-axis content size accounting for inter-run
@@ -1158,46 +1142,6 @@ class RenderFlowLayout extends RenderLayoutBox {
     return autoMinSize;
   }
 
-  // Record the cross size of all lines.
-  void _recordRunsCrossSize(RunMetrics runMetrics, List<double> runCrossSize) {
-    List<RenderBox> runChildren = runMetrics.runChildren;
-    double runCrossExtent = 0;
-    List<double> runChildrenCrossSize = [];
-    void iterateRunChildren(RenderBox runChild) {
-      double runChildCrossSize = 0.0;
-      if (runChild is RenderBoxModel) {
-        runChildCrossSize = runChild.boxSize?.height ?? 0.0;
-      }
-      runChildrenCrossSize.add(runChildCrossSize);
-    }
-
-    runChildren.forEach(iterateRunChildren);
-    runCrossExtent = runChildrenCrossSize.reduce((double curr, double next) {
-      return curr > next ? curr : next;
-    });
-
-    runCrossSize.add(runCrossExtent);
-  }
-
-  // Get auto min size in the cross axis which equals the cross axis size of its contents.
-  // https://www.w3.org/TR/css-sizing-3/#automatic-minimum-size
-  double _getCrossAxisAutoSize(List<RunMetrics> runMetrics,) {
-    double autoMinSize = 0;
-    // Cross size of each run.
-    List<double> runCrossSize = [];
-
-    // Calculate the max cross size of all runs.
-    for (RunMetrics runMetrics in runMetrics) {
-      _recordRunsCrossSize(runMetrics, runCrossSize);
-    }
-
-    // Get the sum of lines.
-    for (double crossSize in runCrossSize) {
-      autoMinSize += crossSize;
-    }
-
-    return autoMinSize;
-  }
 
   // Set flex container size according to children size.
   void _setContainerSize({double adjustHeight = 0, double adjustWidth = 0}) {
@@ -1286,11 +1230,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     // Set offset of children in each line.
     for (int i = 0; i < _lineMetrics.length; ++i) {
       final RunMetrics metrics = _lineMetrics[i];
-      final double runMainAxisExtent = metrics.mainAxisExtent;
       final double runCrossAxisExtent = metrics.crossAxisExtent;
-      final double mainAxisFreeSpace = math.max(0.0, mainAxisContentSize - runMainAxisExtent);
-      double crossAxisLineJoinOffset = 0;
-      double mainAxisLineJoinOffset = 0;
 
       double childLeadingSpace = 0.0;
       double childBetweenSpace = 0.0;
@@ -1356,21 +1296,18 @@ class RenderFlowLayout extends RenderLayoutBox {
         RenderBoxModel? childRenderBoxModel;
         final bool isPlaceholder = child is RenderPositionPlaceholder;
         final bool isStickyPlaceholder = isPlaceholder &&
-            ((child as RenderPositionPlaceholder).positioned?.renderStyle.position == CSSPositionType.sticky);
+            ((child).positioned?.renderStyle.position == CSSPositionType.sticky);
         if (child is RenderBoxModel) {
           childRenderBoxModel = child;
         } else if (isPlaceholder) {
           // Use the positioned element's render style for horizontal margin and width calculations
           // so the placeholder's X offset reflects margin-left/right. We'll skip vertical collapsing below.
-          childRenderBoxModel = (child as RenderPositionPlaceholder).positioned;
+          childRenderBoxModel = (child).positioned;
         }
 
         if (childRenderBoxModel is RenderBoxModel) {
           final rs = childRenderBoxModel.renderStyle;
           childMarginLeft = rs.marginLeft.computedValue;
-          double? dbgOwnTopInExtent;
-          double? dbgSelfTopIgnoringParent;
-          double? dbgTopContribution;
           if (!isPlaceholder || isStickyPlaceholder) {
             // The top margin as counted in the run's cross extent for this child.
             final double ownTopInExtent = getChildMarginTop(childRenderBoxModel);
@@ -1400,16 +1337,10 @@ class RenderFlowLayout extends RenderLayoutBox {
             childMarginTop = topContribution;
             childMarginBottom = getChildMarginBottom(childRenderBoxModel);
 
-            // Save for debug logging below
-            dbgOwnTopInExtent = ownTopInExtent;
-            dbgSelfTopIgnoringParent = selfTopIgnoringParent;
-            dbgTopContribution = topContribution;
           } else {
             // Absolute/fixed placeholders do not participate in vertical margin collapsing.
             childMarginTop = 0;
             childMarginBottom = 0;
-          }
-          if (!isPlaceholder || isStickyPlaceholder) {
           }
         }
 
@@ -1423,14 +1354,14 @@ class RenderFlowLayout extends RenderLayoutBox {
             childLineExtent +
             renderStyle.paddingTop.computedValue +
             renderStyle.effectiveBorderTopWidth.computedValue +
-                (childMarginTop ?? 0));
+                childMarginTop);
         // Apply position relative offset change.
         CSSPositionedLayout.applyRelativeOffset(relativeOffset, child);
 
         childMainPosition += childMainAxisExtent + childBetweenSpace;
 
         // Update previous collapsed bottom margin for next in-flow sibling in the run
-        if (childMarginBottom != null && childRenderBoxModel != null && (!isPlaceholder || isStickyPlaceholder)) {
+        if (childRenderBoxModel != null && (!isPlaceholder || isStickyPlaceholder)) {
           prevCollapsedBottom = childMarginBottom;
         }
       }
@@ -1684,10 +1615,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       preLinesCrossSize += runMetric.crossAxisExtent;
 
       if (DebugFlags.debugLogScrollableEnabled) {
-        renderingLogger.finer('[Flow-Scroll] line childCrossMax=' +
-            (scrollableCrossSizeOfChildren.reduce((a, b) => a > b ? a : b)).toStringAsFixed(2) +
-            ' lineBottom=' + maxScrollableCrossSizeOfLine.toStringAsFixed(2) +
-            ' preLinesCrossSize→' + preLinesCrossSize.toStringAsFixed(2));
+        renderingLogger.finer('[Flow-Scroll] line childCrossMax=${(scrollableCrossSizeOfChildren.reduce((a, b) => a > b ? a : b)).toStringAsFixed(2)} lineBottom=${maxScrollableCrossSizeOfLine.toStringAsFixed(2)} preLinesCrossSize→${preLinesCrossSize.toStringAsFixed(2)}');
       }
     }
 
@@ -1709,9 +1637,6 @@ class RenderFlowLayout extends RenderLayoutBox {
     // For the special case of a single RenderTextBox child inside a scroll container,
     // use the measured full text height to capture multi-line overflow.
     final double collapsedCrossStack = _getRunsCrossSizeWithCollapse(_lineMetrics);
-    bool singleRunTextOnly = _lineMetrics.length == 1 &&
-        _lineMetrics.first.runChildren.length == 1 &&
-        _lineMetrics.first.runChildren.first is RenderTextBox;
 
     final double linesCrossMax = scrollableCrossSizeOfLines.isEmpty
         ? 0.0
@@ -1750,10 +1675,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     scrollableSize = Size(maxScrollableMainSize, maxScrollableCrossSize);
 
     if (DebugFlags.debugLogScrollableEnabled) {
-      renderingLogger.finer('[Flow-Scroll] result main=' + maxScrollableMainSize.toStringAsFixed(2) +
-          ' cross=' + maxScrollableCrossSize.toStringAsFixed(2) +
-          ' padding(top=' + renderStyle.paddingTop.computedValue.toStringAsFixed(2) + ', bottom=' +
-          (isScrollContainer ? renderStyle.paddingBottom.computedValue.toStringAsFixed(2) : '0') + ')');
+      renderingLogger.finer('[Flow-Scroll] result main=${maxScrollableMainSize.toStringAsFixed(2)} cross=${maxScrollableCrossSize.toStringAsFixed(2)} padding(top=${renderStyle.paddingTop.computedValue.toStringAsFixed(2)}, bottom=${isScrollContainer ? renderStyle.paddingBottom.computedValue.toStringAsFixed(2) : '0'})');
     }
   }
 
@@ -1934,54 +1856,6 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     visitChildren(dfs);
     return result;
-  }
-
-  double? _baselineFromInFlowChild(RenderBox child) {
-    RenderBox? current = child;
-    RenderBoxModel? resolved;
-    for (int depth = 0; depth < 4 && current != null; depth++) {
-      if (current is RenderBoxModel) {
-        resolved = current;
-        break;
-      }
-      if (current is RenderEventListener) {
-        current = current.child as RenderBox?;
-        continue;
-      }
-      if (current is RenderPositionPlaceholder) {
-        current = current.positioned;
-        continue;
-      }
-      if (current is RenderObjectWithChildMixin<RenderBox>) {
-        final RenderBox? singleChild = (current as dynamic).child as RenderBox?;
-        if (singleChild == null) break;
-        current = singleChild;
-        continue;
-      }
-      break;
-    }
-
-    if (resolved == null || !resolved.hasSize) {
-      return null;
-    }
-
-    final CSSPositionType pos = resolved.renderStyle.position;
-    if (pos == CSSPositionType.absolute || pos == CSSPositionType.fixed) {
-      return null;
-    }
-
-    final double? childBaseline = resolved.computeCssLastBaselineOf(TextBaseline.alphabetic);
-    if (childBaseline == null) {
-      return null;
-    }
-
-    final Offset offset = getLayoutTransformTo(resolved, this, excludeScrollOffset: true);
-    final double collapsedWithParent = resolved.renderStyle.collapsedMarginTop;
-    final double ignoringParent = resolved.renderStyle.collapsedMarginTopIgnoringParent;
-    final double marginAdjustment = ignoringParent > collapsedWithParent
-        ? (ignoringParent - collapsedWithParent)
-        : 0.0;
-    return offset.dy + marginAdjustment + childBaseline;
   }
 
   @override

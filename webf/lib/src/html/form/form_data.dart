@@ -13,7 +13,7 @@ class FormDataBindings extends DynamicBindingObject with StaticDefinedBindingObj
   Map<String, dynamic> get storage => _formStorages;
 
   // This is called when a new FormData object is created from the JS side
-  FormDataBindings(BindingContext context): super(context);
+  FormDataBindings(BindingContext super.context);
 
   void setString(String key, String value) {
     _formStorages[key] = value;

@@ -4,8 +4,6 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/foundation.dart';
-import 'package:webf/dom.dart' as dom;
 import '../../setup.dart';
 import '../widget/test_utils.dart';
 
@@ -47,7 +45,6 @@ void main() {
         ''',
       );
 
-      final container = prepared.getElementById('container');
       final text = prepared.getElementById('text');
       final rect = text.getBoundingClientRect();
 
@@ -222,7 +219,6 @@ void main() {
         ''',
       );
 
-      final container = prepared.getElementById('container');
       final block = prepared.getElementById('block');
       final inlineBlock = prepared.getElementById('inline-block');
 

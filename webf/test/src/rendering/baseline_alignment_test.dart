@@ -3,12 +3,9 @@
  */
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter/rendering.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/css.dart';
-import 'package:webf/rendering.dart';
 import '../../setup.dart';
 import '../widget/test_utils.dart';
 
@@ -54,7 +51,6 @@ void main() {
       // Wait for image to load
       await tester.pump(Duration(seconds: 1));
 
-      final div = controller.view.document.querySelector(['div']) as dom.Element;
       final img = controller.view.document.querySelector(['img']) as dom.Element;
       
       expect(img.renderStyle.verticalAlign, equals(VerticalAlign.baseline));

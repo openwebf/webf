@@ -13,20 +13,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:webf/foundation.dart';
 
-import 'cookie_jar.dart';
-import 'http_cache.dart';
-import 'http_cache_object.dart';
-import 'http_client.dart';
-import 'http_overrides.dart';
-import 'queue.dart';
 import '../launcher/controller.dart' show WebFController; // controller lookup for per-controller cache toggle
-import 'loading_state_registry.dart';
-
-// Global counter for unique request IDs
-int _requestIdCounter = 0;
 
 class ProxyHttpClientRequest implements HttpClientRequest {
-  final WebFHttpOverrides _httpOverrides;
   final HttpClient _nativeHttpClient;
   final String _method;
   final Uri _uri;
@@ -43,10 +32,9 @@ class ProxyHttpClientRequest implements HttpClientRequest {
   // Saving request headers.
   final HttpHeaders _httpHeaders = createHttpHeaders();
 
-  ProxyHttpClientRequest(String method, Uri uri, WebFHttpOverrides httpOverrides, HttpClient nativeHttpClient)
+  ProxyHttpClientRequest(String method, Uri uri, WebFHttpOverrides _, HttpClient nativeHttpClient)
       : _method = method.toUpperCase(),
         _uri = uri,
-        _httpOverrides = httpOverrides,
         _nativeHttpClient = nativeHttpClient;
 
   @override
@@ -103,8 +91,8 @@ class ProxyHttpClientRequest implements HttpClientRequest {
   Encoding get encoding => _backendRequest?.encoding ?? utf8;
 
   @override
-  set encoding(Encoding _encoding) {
-    _backendRequest?.encoding = _encoding;
+  set encoding(Encoding encoding) {
+    _backendRequest?.encoding = encoding;
   }
 
   @override
@@ -132,15 +120,12 @@ class ProxyHttpClientRequest implements HttpClientRequest {
 
   // Legacy HttpClientInterceptor hooks removed.
 
-  static const String _HttpHeadersOrigin = 'origin';
+  static const String _httpHeadersOrigin = 'origin';
 
   @override
   Future<HttpClientResponse> close() async {
     double? contextId = WebFHttpOverrides.getContextHeader(headers);
     HttpClientRequest request = this;
-    // Use a more unique request ID with counter and microseconds
-    _requestIdCounter++;
-    String requestId = '${_requestIdCounter}_${DateTime.now().microsecondsSinceEpoch}';
 
     // Get the loading state dumper for tracking
     final dumper = contextId != null ? LoadingStateRegistry.instance.getDumper(contextId) : null;
@@ -182,7 +167,7 @@ class ProxyHttpClientRequest implements HttpClientRequest {
       // @TODO: Apply referrer policy.
       String origin = getOrigin(referrer);
       if (method != 'GET' && method != 'HEAD') {
-        headers.set(_HttpHeadersOrigin, origin);
+        headers.set(_httpHeadersOrigin, origin);
       }
 
       // Step 1: Prepare request (no custom interceptor).
@@ -193,16 +178,12 @@ class ProxyHttpClientRequest implements HttpClientRequest {
       HttpCacheObject? cacheObject;
       // Per-controller cache toggle: allow a controller to override global cache mode.
       bool cacheEnabled = true;
-      if (contextId != null) {
-        final ctrl = WebFController.getControllerOfJSContextId(contextId);
-        final bool controllerWantsCache = ctrl?.networkOptions?.effectiveEnableHttpCache == true;
-        final bool controllerForbidsCache = ctrl?.networkOptions?.effectiveEnableHttpCache == false;
-        final bool globalCacheOn = HttpCacheController.mode != HttpCacheMode.NO_CACHE;
-        cacheEnabled = controllerForbidsCache ? false : (controllerWantsCache ? true : globalCacheOn);
-      } else {
-        cacheEnabled = HttpCacheController.mode != HttpCacheMode.NO_CACHE;
-      }
-
+      final ctrl = WebFController.getControllerOfJSContextId(contextId);
+      final bool controllerWantsCache = ctrl?.networkOptions?.effectiveEnableHttpCache == true;
+      final bool controllerForbidsCache = ctrl?.networkOptions?.effectiveEnableHttpCache == false;
+      final bool globalCacheOn = HttpCacheController.mode != HttpCacheMode.NO_CACHE;
+      cacheEnabled = controllerForbidsCache ? false : (controllerWantsCache ? true : globalCacheOn);
+    
       if (cacheEnabled) {
         HttpCacheController cacheController = HttpCacheController.instance(origin);
         cacheObject = await cacheController.getCacheObject(request.uri);
@@ -287,7 +268,7 @@ class ProxyHttpClientRequest implements HttpClientRequest {
         }
       } catch (e) {
         // If still failing, log and rethrow
-        print('Error closing HTTP request for $uri: $e');
+        networkLogger.warning('Error closing HTTP request for $uri', e);
         // Check if this is a Fetch/XHR request by looking for the marker header
         final isFetchRequest = headers.value('X-WebF-Request-Type') == 'fetch';
         dumper?.recordNetworkRequestError(_uri.toString(), e.toString(), isXHR: isFetchRequest);
@@ -399,12 +380,12 @@ class ProxyHttpClientRequest implements HttpClientRequest {
     } catch (e) {
       // Handle "Bad file descriptor" and other socket errors
       if (e is SocketException || e.toString().contains('Bad file descriptor')) {
-        print('Warning: Socket error when opening URL $_uri: $e');
+        networkLogger.warning('Socket error when opening URL $_uri', e);
         try {
           backendRequest = await _nativeHttpClient.openUrl(_method, _uri);
-          print('Successfully recovered with new HTTP client for $_uri');
+          networkLogger.info('Successfully recovered with new HTTP client for $_uri');
         } catch (retryError) {
-          print('Failed to recover with new HTTP client: $retryError');
+          networkLogger.warning('Failed to recover with new HTTP client for $_uri', retryError);
           rethrow;
         }
       } else {

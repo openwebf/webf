@@ -11,7 +11,10 @@ import 'dart:io';
 import 'package:webf/webf.dart';
 
 // TODO: Don't use header to mark context.
-const String HttpHeaderContext = 'x-context';
+const String httpHeaderContext = 'x-context';
+@Deprecated('Use httpHeaderContext')
+// ignore: constant_identifier_names
+const String HttpHeaderContext = httpHeaderContext;
 
 class WebFHttpOverrides {
   static WebFHttpOverrides? _instance;
@@ -24,7 +27,7 @@ class WebFHttpOverrides {
   }
 
   static double? getContextHeader(HttpHeaders headers) {
-    String? intVal = headers.value(HttpHeaderContext);
+    String? intVal = headers.value(httpHeaderContext);
     if (intVal == null) {
       return null;
     }
@@ -32,7 +35,7 @@ class WebFHttpOverrides {
   }
 
   static void setContextHeader(HttpHeaders headers, double contextId) {
-    headers.set(HttpHeaderContext, contextId.toString());
+    headers.set(httpHeaderContext, contextId.toString());
   }
 }
 

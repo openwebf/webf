@@ -89,7 +89,7 @@ void main() {
         color: Colors.transparent,
       )), isFalse);
       expect(ContentfulWidgetDetector.isContentfulWidget(ColoredBox(
-        color: Colors.black.withOpacity(0),
+        color: Colors.black.withAlpha(0),
       )), isFalse);
     });
 

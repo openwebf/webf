@@ -18,6 +18,7 @@ import 'checked.dart';
 import 'radio.dart';
 import 'time.dart';
 
+// ignore: constant_identifier_names
 const INPUT = 'INPUT';
 
 enum InputSize {
@@ -28,11 +29,11 @@ enum InputSize {
 
 class FlutterInputElement extends WidgetElement
     with BaseInputElement, BaseCheckedElement, BaseRadioElement, BaseButtonElement {
-  FlutterInputElement(BindingContext? context) : super(context);
+  FlutterInputElement(super.context);
 
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    super.initializeMethods(methods);
+  void initializeDynamicMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeDynamicMethods(methods);
     methods['blur'] = BindingObjectMethodSync(call: (List args) {
       state?.blur();
     });
@@ -106,8 +107,8 @@ class FlutterInputElement extends WidgetElement
   }
 
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    super.initializeProperties(properties);
+  void initializeDynamicProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeDynamicProperties(properties);
 
     properties['value'] = BindingObjectProperty(getter: () => value, setter: (value) => this.value = value);
     properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = value);
@@ -217,7 +218,7 @@ class FlutterInputElementState extends WebFWidgetElementState
 
   // Implementation for TimeElementState
   @override
-  Widget _createTimeInput(BuildContext context) {
+  Widget createTimeInput(BuildContext context) {
     return createInput(context);
   }
 
@@ -258,8 +259,8 @@ class FlutterInputElementState extends WebFWidgetElementState
   }
 
   Widget createInput(BuildContext context, {int minLines = 1, int maxLines = 1}) {
-    widgetElement..minLines = minLines;
-    widgetElement..maxLines = maxLines;
+    widgetElement.minLines = minLines;
+    widgetElement.maxLines = maxLines;
     switch (widgetElement.type) {
       case 'hidden':
         return SizedBox(width: 0, height: 0);

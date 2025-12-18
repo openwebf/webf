@@ -37,7 +37,6 @@ import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/html.dart';
-import 'package:webf/src/foundation/debug_flags.dart';
 
 typedef IndexCounter = int Function(Element element);
 
@@ -394,25 +393,25 @@ class SelectorEvaluator extends SelectorVisitor {
   }
 
   @override
-  bool visitPseudoClassFunctionSelector(PseudoClassFunctionSelector selector) {
-    List<num?>? data = _parseNthExpressions(selector.expression);
+  bool visitPseudoClassFunctionSelector(PseudoClassFunctionSelector node) {
+    List<num?>? data = _parseNthExpressions(node.expression);
     //  i = An + B
     if (data == null) {
       return false;
     }
 
-    switch (selector.name) {
+    switch (node.name) {
       // http://dev.w3.org/csswg/selectors-4/#the-nth-child-pseudo
       case 'nth-child':
-        return _elementSatisfiesNthChildren(_element!, selector, data[0], data[1]!);
+        return _elementSatisfiesNthChildren(_element!, node, data[0], data[1]!);
       case 'nth-of-type':
-        return _elementSatisfiesNthChildrenOfType(_element!, _element!.tagName, selector, data[0], data[1]!);
+        return _elementSatisfiesNthChildrenOfType(_element!, _element!.tagName, node, data[0], data[1]!);
       case 'nth-last-child':
-        return _elementSatisfiesNthLastChildren(_element!, selector, data[0], data[1]!);
+        return _elementSatisfiesNthLastChildren(_element!, node, data[0], data[1]!);
       case 'nth-last-of-type':
-        return _elementSatisfiesNthLastChildrenOfType(_element!, _element!.tagName, selector, data[0], data[1]!);
+        return _elementSatisfiesNthLastChildrenOfType(_element!, _element!.tagName, node, data[0], data[1]!);
     }
-    if (kDebugMode) throw _unimplemented(selector);
+    if (kDebugMode) throw _unimplemented(node);
     return false;
   }
 
@@ -507,12 +506,12 @@ class SelectorEvaluator extends SelectorVisitor {
       modulus = -1;
       list = list.sublist(1);
     }
-    list.forEach((String item) {
+    for (var item in list) {
       num? value = num.tryParse(item);
       if (value != null) {
         sum += value;
       }
-    });
+    }
     return sum * modulus;
   }
 

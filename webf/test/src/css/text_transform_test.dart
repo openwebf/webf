@@ -1,8 +1,5 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/css.dart';
-import 'package:webf/dom.dart' as dom;
-import 'package:webf/rendering.dart';
 import '../../setup.dart';
 import '../widget/test_utils.dart';
 
@@ -21,8 +18,8 @@ void main() {
           </div>
         ''',
       );
-      final u = prepared.getElementById('u') as dom.Element;
-      final l = prepared.getElementById('l') as dom.Element;
+      final u = prepared.getElementById('u');
+      final l = prepared.getElementById('l');
       // Verify the property is parsed and present
       expect(u.attachedRenderer!.renderStyle.textTransform, equals(TextTransform.uppercase));
       expect(l.attachedRenderer!.renderStyle.textTransform, equals(TextTransform.lowercase));
@@ -37,7 +34,7 @@ void main() {
           </div>
         ''',
       );
-      final c = prepared.getElementById('c') as dom.Element;
+      final c = prepared.getElementById('c');
       expect(c.attachedRenderer!.renderStyle.textTransform, equals(TextTransform.capitalize));
     });
   });

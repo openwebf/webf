@@ -28,11 +28,10 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart';
 import 'package:webf/css.dart';
-import 'package:webf/foundation.dart';
 
 import 'package:source_span/source_span.dart';
 
@@ -258,13 +257,13 @@ class CSSParser {
   void _error(String message, {SourceSpan? location}) {
     if (!kShowCSSParseError) return;
     location ??= _peekToken.span;
-    print(location.message(message, color: '\u001b[31m'));
+    stderr.writeln(location.message(message, color: '\u001b[31m'));
   }
 
   void _warning(String message, {SourceSpan? location}) {
     if (!kShowCSSParseError) return;
     location ??= _makeSpan(_peekToken.span);
-    print(location.message(message, color: '\u001b[35m'));
+    stderr.writeln(location.message(message, color: '\u001b[35m'));
   }
 
   SourceSpan _makeSpan(FileSpan start) {
@@ -728,7 +727,7 @@ class CSSParser {
 
   /// Same as [processSelector] but reports an error for each combinator.
   ///
-  /// This is a quick fix for parsing <compound-selectors> until the parser
+  /// This is a quick fix for parsing `<compound-selectors>` until the parser
   /// supports Selector Level 4 grammar:
   /// https://drafts.csswg.org/selectors-4/#typedef-compound-selector
   Selector? processCompoundSelector() {
@@ -1171,6 +1170,7 @@ class CSSParser {
     return _peekToken.text;
   }
 
+  // ignore: constant_identifier_names
   static const int MAX_UNICODE = 0x10FFFF;
 
   String processQuotedString([bool urlString = false]) {

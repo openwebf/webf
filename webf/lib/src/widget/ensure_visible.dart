@@ -6,7 +6,6 @@ import 'dart:async';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:webf/rendering.dart';
-import 'nested_scroll_forwarder.dart';
 
 class WebFEnsureVisible {
   static bool _isOnScreen(RenderObject target, RenderViewportBox root) {
@@ -34,10 +33,10 @@ class WebFEnsureVisible {
 
     // Find root WebF viewport.
     RenderViewportBox? root;
-    RenderObject? r = target.parent as RenderObject?;
+    RenderObject? r = target.parent;
     while (r != null) {
       if (r is RenderViewportBox) { root = r; break; }
-      r = (r.parent as RenderObject?);
+      r = r.parent;
     }
     if (root == null) {
       return;

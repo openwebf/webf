@@ -4,9 +4,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/css.dart';
-import 'package:webf/dom.dart' as dom;
 import '../../setup.dart';
 import '../widget/test_utils.dart';
 
@@ -93,7 +91,6 @@ void main() {
         ''',
       );
 
-      final container = prepared.getElementById('container');
       final item1 = prepared.getElementById('item1');
       final item2 = prepared.getElementById('item2');
       final item3 = prepared.getElementById('item3');
@@ -157,7 +154,6 @@ void main() {
 
       final item1 = prepared.getElementById('item1');
       final item2 = prepared.getElementById('item2');
-      final container = prepared.getElementById('container');
       
       // WebF seems to have issues with flex-shrink and flex-basis combination
       // Both items appear to get equal width regardless of flex-basis

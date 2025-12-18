@@ -8,7 +8,6 @@
 
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:flutter/foundation.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/src/css/query_selector.dart';
@@ -108,7 +107,6 @@ class ElementRuleCollector {
   List<CSSRule> matchedRules(RuleSet ruleSet, Element element) {
     List<CSSRule> matchedRules = [];
 
-    int candidateCount = 0;
     // Reuse a single evaluator per matchedRules() to avoid repeated allocations.
     final SelectorEvaluator evaluator = SelectorEvaluator();
     // Build ancestor token sets once per call if fast-path is enabled, to avoid
@@ -125,7 +123,6 @@ class ElementRuleCollector {
     String? id = element.id;
     if (id != null) {
       final list = ruleSet.idRules[id];
-      candidateCount += (list?.length ?? 0);
       matchedRules.addAll(_collectMatchingRulesForList(
         list,
         element,
@@ -138,7 +135,6 @@ class ElementRuleCollector {
     // .class
     for (String className in element.classList) {
       final list = ruleSet.classRules[className];
-      candidateCount += (list?.length ?? 0);
       matchedRules.addAll(_collectMatchingRulesForList(
         list,
         element,
@@ -151,7 +147,6 @@ class ElementRuleCollector {
     // attribute selector
     for (String attribute in element.attributes.keys) {
       final list = ruleSet.attributeRules[attribute.toUpperCase()];
-      candidateCount += (list?.length ?? 0);
       matchedRules.addAll(_collectMatchingRulesForList(
         list,
         element,
@@ -164,7 +159,6 @@ class ElementRuleCollector {
     // tag selectors are stored uppercase; normalize element tag for lookup.
     final String tagLookup = element.tagName.toUpperCase();
     final listTag = ruleSet.tagRules[tagLookup];
-    candidateCount += (listTag?.length ?? 0);
     matchedRules.addAll(_collectMatchingRulesForList(
       listTag,
       element,
@@ -174,7 +168,6 @@ class ElementRuleCollector {
     ));
 
     // universal
-    candidateCount += ruleSet.universalRules.length;
     matchedRules.addAll(_collectMatchingRulesForList(
       ruleSet.universalRules,
       element,
@@ -359,7 +352,7 @@ class ElementRuleCollector {
         }
       } catch (error) {
         if (kShowUnavailableCSSProperties) {
-          print('selector evaluator error: $error');
+          cssLogger.warning('selector evaluator error: $error');
         }
       }
     }

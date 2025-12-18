@@ -1,9 +1,10 @@
+// ignore_for_file: avoid_print
+
 /*
  * Copyright (C) 2025-present The WebF authors. All rights reserved.
  */
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
-import 'dart:ui' as ui;
 
 import '../../setup.dart';
 import '../widget/test_utils.dart';
@@ -60,7 +61,6 @@ void main() {
         ''',
       );
 
-      var container = prepared.getElementById('container');
       var item1 = prepared.getElementById('item1');
       var item2 = prepared.getElementById('item2');
       var item3 = prepared.getElementById('item3');

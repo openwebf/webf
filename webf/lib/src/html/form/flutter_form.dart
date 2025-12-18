@@ -2,6 +2,8 @@
  * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
  * Licensed under GNU GPL with Enterprise exception.
  */
+// ignore_for_file: constant_identifier_names
+
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
@@ -237,7 +239,6 @@ class FlutterFormState extends WebFWidgetElementState {
           children: _buildChildren(),
         );
       case FormLayout.vertical:
-      default:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -314,7 +315,7 @@ class FlutterFormField extends WidgetElement {
           
       state?.requestUpdateState();
     } catch (e) {
-      print('Failed to set rules: $e');
+      widgetLogger.warning('Failed to set rules', e);
     }
   }
 
@@ -409,7 +410,6 @@ class FlutterFormFieldState extends WebFWidgetElementState {
         );
         
       case FormLayout.vertical:
-      default:
         return Padding(
           padding: const EdgeInsets.only(bottom: 16.0),
           child: Column(

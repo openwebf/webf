@@ -10,10 +10,8 @@ import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/src/html/form/base_input.dart';
-import 'package:webf/webf.dart';
-import 'package:webf/rendering.dart';
-import 'package:webf/bridge.dart';
 
+// ignore: constant_identifier_names
 const String HTML = 'HTML';
 const Map<String, dynamic> _defaultStyle = {
   DISPLAY: BLOCK,
@@ -21,7 +19,7 @@ const Map<String, dynamic> _defaultStyle = {
 };
 
 class HTMLElement extends Element {
-  HTMLElement([BindingContext? context]) : super(context) {
+  HTMLElement([super.context]) {
     // Add default behavior unfocus focused input or textarea elements.
     addEventListener('click', (event) async {
       if (event.target is! BaseInputElement) {
@@ -30,7 +28,6 @@ class HTMLElement extends Element {
     });
   }
 
-  @override
   bool get managedByFlutterWidget => true;
 
   @override
@@ -74,7 +71,6 @@ class HTMLElement extends Element {
   }
 
   // Is child renderObject attached to the render object tree segment, and may be this segment are not attached to flutter.
-  @override
   bool get isRendererAttachedToSegmentTree => attachedRenderer != null;
 
   void _markEntireRenderObjectTreeNeedsLayout() {
@@ -115,9 +111,9 @@ class HTMLElement extends Element {
   void flushPendingStylePropertiesForWholeTree() {
     runner(Element root) {
       root.style.flushPendingProperties();
-      root.children.forEach((element) {
+      for (var element in root.children) {
         runner(element);
-      });
+      }
     }
     runner(this);
   }

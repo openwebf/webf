@@ -4,7 +4,6 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/css.dart';
 import '../../setup.dart';
 import '../widget/test_utils.dart';
@@ -82,7 +81,6 @@ void main() {
       );
 
       final inline1 = prepared.getElementById('inline1');
-      final inline2 = prepared.getElementById('inline2');
 
       // Inline elements should ignore explicit width/height
       expect(inline1.offsetWidth, greaterThan(0), reason: 'Inline element should have width from content');
@@ -432,7 +430,6 @@ void main() {
         ''',
       );
 
-      final flex = prepared.getElementById('flex');
       final inline = prepared.getElementById('inline');
       final inlineBlock = prepared.getElementById('inline-block');
       final inlineFlex = prepared.getElementById('inline-flex');

@@ -1,11 +1,11 @@
+// ignore_for_file: avoid_print
+
 /*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/launcher.dart';
 import '../../setup.dart';
 
 void main() {

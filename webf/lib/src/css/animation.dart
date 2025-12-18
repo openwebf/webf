@@ -12,7 +12,6 @@ import 'dart:math';
 
 import 'package:flutter/animation.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
@@ -101,7 +100,7 @@ class AnimationTimeline {
     // on width/height). Within the same target element, apply size-affecting
     // transitions before positional, and transforms last.
     if (_animations.isNotEmpty) {
-      int _priorityForProperty(String p) {
+      int priorityForProperty(String p) {
         const sizeProps = <String>{
           WIDTH,
           HEIGHT,
@@ -124,11 +123,11 @@ class AnimationTimeline {
         return 1;
       }
 
-      int _animationPriority(Animation a) {
+      int animationPriority(Animation a) {
         final effect = a.effect;
         if (effect is KeyframeEffect && effect.isTransition && effect.interpolations.isNotEmpty) {
           final prop = effect.interpolations.first.property;
-          return _priorityForProperty(prop);
+          return priorityForProperty(prop);
         }
         return 1;
       }
@@ -139,8 +138,8 @@ class AnimationTimeline {
         final eb = b.effect;
         if (ea is KeyframeEffect && eb is KeyframeEffect) {
           if (ea.renderStyle.target == eb.renderStyle.target) {
-            final pa = _animationPriority(a);
-            final pb = _animationPriority(b);
+            final pa = animationPriority(a);
+            final pb = animationPriority(b);
             if (pa != pb) return pa - pb;
           }
         }
@@ -239,7 +238,7 @@ class Animation {
   // the only kind of effect currently available is KeyframeEffect.
   // This can be null (which is the default) to indicate that there should be no effect applied.
   KeyframeEffect? _effect;
-  AnimationTimeline? _timeline;
+  AnimationTimeline? timeline;
   AnimationReplaceState? _replaceState;
 
   Function? onfinish;
@@ -249,9 +248,7 @@ class Animation {
   // For transitionstart event
   Function? onstart;
 
-  Animation(KeyframeEffect effect, AnimationTimeline timeline)
-      : _effect = effect,
-        _timeline = timeline;
+  Animation(KeyframeEffect effect, this.timeline) : _effect = effect;
 
   void _setInEffect(bool flag) {
     if (_inEffect == false && flag == true && onstart != null) {
@@ -273,7 +270,7 @@ class Animation {
     if (newTime == null) return;
 
     if (!_isPaused && _startTime != null) {
-      _startTime = _timeline!.currentTime! - newTime / _playbackRate;
+      _startTime = timeline!.currentTime! - newTime / _playbackRate;
     }
 
     _isCurrentTimePending = false;
@@ -303,14 +300,6 @@ class Animation {
 
   set effect(AnimationEffect? effect) {
     _effect = effect as KeyframeEffect?;
-  }
-
-  AnimationTimeline? get timeline {
-    return _timeline;
-  }
-
-  set timeline(AnimationTimeline? timeline) {
-    _timeline = timeline;
   }
 
   double get playbackRate {
@@ -345,19 +334,22 @@ class Animation {
 
     if (_isPaused || _isIdle) return;
     _startTime = value;
-    _tickCurrentTime((_timeline!.currentTime! - _startTime!) * playbackRate);
+    _tickCurrentTime((timeline!.currentTime! - _startTime!) * playbackRate);
   }
 
   AnimationPlayState get playState {
-    if (_isIdle)
+    if (_isIdle) {
       // The current time of the animation is unresolved and there are no pending tasks.
       return AnimationPlayState.idle;
-    if (_isPaused)
+    }
+    if (_isPaused) {
       // The animation was suspended and the Animation.currentTime property is not updating.
       return AnimationPlayState.paused;
-    if (_isFinished)
+    }
+    if (_isFinished) {
       // The animation has reached one of its boundaries and the Animation.currentTime property is not updating.
       return AnimationPlayState.finished;
+    }
     return AnimationPlayState.running;
   }
 
@@ -397,7 +389,7 @@ class Animation {
 
     if (oncancel != null) {
       var event = AnimationPlaybackEvent(EVENT_CANCEL);
-      event.timelineTime = _timeline!.currentTime;
+      event.timelineTime = timeline!.currentTime;
       oncancel!(event);
     }
   }
@@ -506,7 +498,7 @@ class Animation {
 }
 
 class AnimationPlaybackEvent extends Event {
-  AnimationPlaybackEvent(String type) : super(type);
+  AnimationPlaybackEvent(super.type);
 
   num? currentTime;
   num? timelineTime;
@@ -520,16 +512,16 @@ class Keyframe {
   Keyframe(this.property, this.value, this.offset, [this.easing]);
 }
 
-class _Interpolation {
+class KeyframeInterpolation {
   double startOffset;
   double endOffset;
   Curve? easing;
   String property;
-  var begin;
-  var end;
+  dynamic begin;
+  dynamic end;
   Function lerp;
 
-  _Interpolation(
+  KeyframeInterpolation(
       {required this.property,
       required this.startOffset,
       required this.endOffset,
@@ -541,7 +533,7 @@ class _Interpolation {
   }
 
   @override
-  String toString() => '_Interpolation('
+  String toString() => 'KeyframeInterpolation('
       'startOffset: $startOffset, '
       'endOffset: $endOffset, '
       'easing: $easing, '
@@ -553,8 +545,8 @@ class _Interpolation {
 
 class KeyframeEffect extends AnimationEffect {
   RenderStyle renderStyle;
-  late List<_Interpolation> _interpolations;
-  List<_Interpolation> get interpolations => _interpolations;
+  late List<KeyframeInterpolation> _interpolations;
+  List<KeyframeInterpolation> get interpolations => _interpolations;
   double? _progress;
   double? _activeTime;
   late Map<String, List<Keyframe>> _propertySpecificKeyframeGroups;
@@ -595,9 +587,9 @@ class KeyframeEffect extends AnimationEffect {
     return selected;
   }
 
-  static List<_Interpolation> _makeInterpolations(
+  static List<KeyframeInterpolation> _makeInterpolations(
       Map<String, List<Keyframe>> propertySpecificKeyframeGroups, RenderStyle? renderStyle) {
-    List<_Interpolation> interpolations = [];
+    List<KeyframeInterpolation> interpolations = [];
 
     propertySpecificKeyframeGroups.forEach((String property, List<Keyframe> keyframes) {
       // Handle single-end keyframe (e.g., only `to { ... }`) by synthesizing a
@@ -613,13 +605,13 @@ class KeyframeEffect extends AnimationEffect {
         // string as a real value.
         String left = renderStyle?.target.style.getPropertyValue(property) ?? '';
         if (left.isEmpty) {
-          left = CSSInitialValues[property] ?? '';
+          left = cssInitialValues[property] ?? '';
         }
         String? right = keyframes[0].value;
-        if (left == INITIAL) left = CSSInitialValues[property] ?? left;
-        if (right == INITIAL) right = CSSInitialValues[property];
+        if (left == INITIAL) left = cssInitialValues[property] ?? left;
+        if (right == INITIAL) right = cssInitialValues[property];
 
-        List? handlers = CSSTransitionHandlers[property];
+        List? handlers = cssTransitionHandlers[property];
         handlers ??= [_defaultParse, _defaultLerp];
         Function parseProperty = handlers[0];
 
@@ -635,7 +627,7 @@ class KeyframeEffect extends AnimationEffect {
         // segments: underlying -> keyframe, then keyframe -> underlying.
         if (offset > 0.0 && offset < 1.0) {
           // 0 -> offset: left -> right
-          interpolations.add(_Interpolation(
+          interpolations.add(KeyframeInterpolation(
               property: property,
               startOffset: 0.0,
               endOffset: offset,
@@ -645,7 +637,7 @@ class KeyframeEffect extends AnimationEffect {
               lerp: handlers[1]));
 
           // offset -> 1: right -> left
-          interpolations.add(_Interpolation(
+          interpolations.add(KeyframeInterpolation(
               property: property,
               startOffset: offset,
               endOffset: 1.0,
@@ -659,7 +651,7 @@ class KeyframeEffect extends AnimationEffect {
           double startOffset = 0.0;
           double endOffset = 1.0;
 
-          interpolations.add(_Interpolation(
+          interpolations.add(KeyframeInterpolation(
               property: property,
               startOffset: startOffset,
               endOffset: endOffset,
@@ -687,16 +679,16 @@ class KeyframeEffect extends AnimationEffect {
 
         String? left = keyframes[startIndex].value;
         String? right = keyframes[endIndex].value;
-        if (left == INITIAL) left = CSSInitialValues[property];
-        if (right == INITIAL) right = CSSInitialValues[property];
+        if (left == INITIAL) left = cssInitialValues[property];
+        if (right == INITIAL) right = cssInitialValues[property];
 
         if (left == right) continue;
 
-        List? handlers = CSSTransitionHandlers[property];
+        List? handlers = cssTransitionHandlers[property];
         handlers ??= [_defaultParse, _defaultLerp];
         Function parseProperty = handlers[0];
 
-        _Interpolation interpolation = _Interpolation(
+        KeyframeInterpolation interpolation = KeyframeInterpolation(
             property: property,
             startOffset: startOffset,
             endOffset: endOffset,
@@ -711,7 +703,7 @@ class KeyframeEffect extends AnimationEffect {
 
     // Sort by start offset, and for equal offsets, apply a stable dependency
     // order so transform values see width/height updates of the same tick.
-    int _priorityForProperty(String p) {
+    int priorityForProperty(String p) {
       // Lower number = applied earlier within the same offset bucket.
       // Ensure size-affecting properties run before transforms.
       const sizeProps = <String>{
@@ -736,12 +728,12 @@ class KeyframeEffect extends AnimationEffect {
       return 1;
     }
 
-    interpolations.sort((_Interpolation a, _Interpolation b) {
+    interpolations.sort((KeyframeInterpolation a, KeyframeInterpolation b) {
       if (a.startOffset != b.startOffset) {
         return a.startOffset < b.startOffset ? -1 : 1;
       }
-      final pa = _priorityForProperty(a.property);
-      final pb = _priorityForProperty(b.property);
+      final pa = priorityForProperty(a.property);
+      final pb = priorityForProperty(b.property);
       if (pa != pb) return pa < pb ? -1 : 1;
       return 0;
     });
@@ -794,7 +786,7 @@ class KeyframeEffect extends AnimationEffect {
       SchedulerBinding.instance.scheduleFrame();
     } else {
       for (int i = 0; i < _interpolations.length; i++) {
-        _Interpolation interpolation = _interpolations[i];
+        KeyframeInterpolation interpolation = _interpolations[i];
         double startOffset = interpolation.startOffset;
         double endOffset = interpolation.endOffset;
         //fix filter invalid interval
@@ -822,7 +814,7 @@ class KeyframeEffect extends AnimationEffect {
           if (DebugFlags.shouldLogTransitionForProp(property)) {
             String valueText = '';
             try {
-              final handlers = CSSTransitionHandlers[property];
+              final handlers = cssTransitionHandlers[property];
               if (handlers != null && handlers.length >= 3) {
                 final stringify = handlers[2];
                 valueText = stringify(current).toString();
@@ -837,8 +829,7 @@ class KeyframeEffect extends AnimationEffect {
                 valueText = (maybe.isNotEmpty ? maybe : (current?.toString() ?? ''));
               } catch (_) {}
             }
-            cssLogger.info('[transition][tick] ${renderStyle.target.tagName}.$property t=' +
-                scaledLocalTime.toStringAsFixed(3) + ' value=' + (valueText.isEmpty ? '""' : valueText));
+            cssLogger.info('[transition][tick] ${renderStyle.target.tagName}.$property t=${scaledLocalTime.toStringAsFixed(3)} value=${valueText.isEmpty ? '""' : valueText}');
           }
         }
       }
@@ -918,8 +909,9 @@ class KeyframeEffect extends AnimationEffect {
       case AnimationEffectPhase.before:
         // If the fill mode is backwards or both, return the result of evaluating
         // max(local time - start delay, 0).
-        if (fillMode == FillMode.backwards || fillMode == FillMode.both)
+        if (fillMode == FillMode.backwards || fillMode == FillMode.both) {
           return max<double>(localTime! - timing!.delay!, 0.0);
+        }
         // Otherwise, return an unresolved time value.
         return null;
       case AnimationEffectPhase.active:
@@ -930,8 +922,9 @@ class KeyframeEffect extends AnimationEffect {
       case AnimationEffectPhase.after:
         // If the fill mode is forwards or both, return the result of evaluating
         // max(min(local time - start delay, active duration), 0).
-        if (fillMode == FillMode.forwards || fillMode == FillMode.both)
+        if (fillMode == FillMode.forwards || fillMode == FillMode.both) {
           return max<double>(min<double>(localTime! - timing!.delay!, activeDuration), 0.0);
+        }
         // Otherwise (the local time is unresolved), return an unresolved time value.
         return null;
       case AnimationEffectPhase.none:
@@ -1155,11 +1148,11 @@ class EffectTiming {
   // The number of milliseconds each iteration of the animation takes to complete.
   // Defaults to 0. Although this is technically optional,
   // keep in mind that your animation will not run if this value is 0.
-  double? _duration;
+  double? duration;
 
   // The number of milliseconds to delay the start of the animation.
   // Defaults to 0.
-  double? _delay;
+  double? delay;
 
   // The rate of the animation's change over time.
   // Accepts the pre-defined values "linear", "ease", "ease-in", "ease-out", and "ease-in-out",
@@ -1172,72 +1165,42 @@ class EffectTiming {
   // switches direction after each iteration (alternate),
   // or runs backwards and switches direction after each iteration (alternate-reverse).
   // Defaults to "normal".
-  PlaybackDirection? _direction;
+  PlaybackDirection? direction;
 
   // The number of milliseconds to delay after the end of an animation.
   // This is primarily of use when sequencing animations based on the end time of another animation.
   // Defaults to 0.
-  double? _endDelay;
+  double? endDelay;
 
   // Dictates whether the animation's effects should be reflected by the element(s) prior to playing ("backwards"),
   // retained after the animation has completed playing ("forwards"), or both. Defaults to "none".
-  FillMode? _fill;
+  FillMode? fill;
 
   // Describes at what point in the iteration the animation should start.
   // 0.5 would indicate starting halfway through the first iteration for example,
   // and with this value set, an animation with 2 iterations would end halfway through a third iteration.
   // Defaults to 0.0.
-  double? _iterationStart;
+  double? iterationStart;
 
   // The number of times the animation should repeat.
   // Defaults to 1, and can also take a value of Infinity to make it repeat for as long as the element exists.
-  double? _iterations;
+  double? iterations;
 
-  EffectTiming(
-      {double duration = 0,
-      double delay = 0,
-      double endDelay = 0,
-      double iterationStart = 0,
-      double iterations = 1,
-      String easing = 'linear',
-      PlaybackDirection direction = PlaybackDirection.normal,
-      FillMode fill = FillMode.auto}) {
-    _duration = duration;
-    _delay = delay;
-    _endDelay = endDelay;
-    _iterationStart = iterationStart;
-    _iterations = iterations;
+  EffectTiming({
+    this.duration = 0,
+    this.delay = 0,
+    this.endDelay = 0,
+    this.iterationStart = 0,
+    this.iterations = 1,
+    String easing = 'linear',
+    this.direction = PlaybackDirection.normal,
+    this.fill = FillMode.auto,
+  }) {
     _easing = easing;
-    _direction = direction;
-    _fill = fill;
 
     if (_easing != null) {
       _easingCurve = _parseEasing(_easing);
     }
-  }
-
-  double? get delay {
-    return _delay;
-  }
-
-  set delay(double? value) {
-    _delay = value;
-  }
-
-  PlaybackDirection? get direction {
-    return _direction;
-  }
-
-  set direction(PlaybackDirection? value) {
-    _direction = value;
-  }
-
-  double? get duration {
-    return _duration;
-  }
-
-  set duration(double? value) {
-    _duration = value;
   }
 
   String? get easing {
@@ -1253,35 +1216,4 @@ class EffectTiming {
     return _easingCurve;
   }
 
-  double? get endDelay {
-    return _endDelay;
-  }
-
-  set endDelay(double? value) {
-    _endDelay = value;
-  }
-
-  FillMode? get fill {
-    return _fill;
-  }
-
-  set fill(FillMode? value) {
-    _fill = value;
-  }
-
-  double? get iterationStart {
-    return _iterationStart;
-  }
-
-  set iterationStart(double? value) {
-    _iterationStart = value;
-  }
-
-  double? get iterations {
-    return _iterations;
-  }
-
-  set iterations(double? value) {
-    _iterations = value;
-  }
 }

@@ -3,7 +3,6 @@
  * Licensed under GNU GPL with Enterprise exception.
  */
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +14,6 @@ import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:easy_refresh/easy_refresh.dart';
-import 'package:webf/src/widget/nested_scroll_forwarder.dart';
 import 'listview_bindings_generated.dart';
 
 /// Tag name for the ListView element in HTML
@@ -28,7 +26,7 @@ const webfListView2 = 'WEBF-LIST-VIEW';
 /// A custom element that renders a Flutter ListView in WebF
 ///
 /// This element implements a scrollable list view that can be used in HTML with
-/// either the <LISTVIEW> or <WEBF-LISTVIEW> tag names. It supports common list
+/// either the `LISTVIEW` or `WEBF-LISTVIEW` tag names. It supports common list
 /// features like:
 /// - Vertical or horizontal scrolling
 /// - Pull-to-refresh functionality

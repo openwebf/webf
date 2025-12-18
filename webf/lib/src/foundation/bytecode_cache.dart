@@ -6,6 +6,8 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
+// ignore_for_file: constant_identifier_names
+
 import 'dart:io';
 import 'package:archive/archive.dart';
 import 'package:path/path.dart' as path;
@@ -68,7 +70,7 @@ class QuickJSByteCodeCacheObject {
       bool isCheckSumExist = await _checksum.exists();
 
       if (isCheckSumExist) {
-        int savedChecksum = int.parse(await _checksum.readAsStringSync());
+        int savedChecksum = int.parse(_checksum.readAsStringSync());
         if (fileCheckSum != savedChecksum) {
           throw FlutterError(
               'read bytecode cache failed, reason: checksum failed');
@@ -79,9 +81,7 @@ class QuickJSByteCodeCacheObject {
         await cacheFile.delete();
       }
     } catch (message, stackTrace) {
-      print('Error while reading cache object for $hash');
-      print('\n$message');
-      print('\n$stackTrace');
+      bridgeLogger.warning('Error while reading cache object for $hash', message, stackTrace);
 
       bytes = null;
       // Remove index file while invalid.

@@ -20,7 +20,7 @@ import 'package:webf/bridge.dart';
 typedef EventHandler = Future<void> Function(Event event);
 
 abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindingObject {
-  EventTarget(BindingContext? context) : super(context);
+  EventTarget(super.context);
 
   bool _disposed = false;
   bool get disposed => _disposed;
@@ -75,14 +75,16 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
   void addEventListener(String eventType, EventHandler eventHandler, {EventListenerOptions? addEventListenerOptions}) {
     if (_disposed) return;
     bool capture = false;
-    if (addEventListenerOptions != null)
+    if (addEventListenerOptions != null) {
       capture = addEventListenerOptions.capture;
+    }
     List<EventHandler>? existHandler = capture ? _eventCaptureHandlers[eventType] : _eventHandlers[eventType];
     if (existHandler == null) {
-      if (capture)
+      if (capture) {
         _eventCaptureHandlers[eventType] = existHandler = [];
-      else
+      } else {
         _eventHandlers[eventType] = existHandler = [];
+      }
     }
     existHandler.add(eventHandler);
     if (this is Element) {
@@ -198,7 +200,7 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
           await handler(event);
         }
       } catch (e, stack) {
-        print('$e\n$stack');
+        domLogger.warning('Error while handling capture event "$eventType"', e, stack);
       }
       event.currentTarget = null;
     }
@@ -222,7 +224,7 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
           await handler(event);
         }
       } catch (e, stack) {
-        print('$e\n$stack');
+        domLogger.warning('Error while handling event "$eventType"', e, stack);
       }
       event.currentTarget = null;
     }

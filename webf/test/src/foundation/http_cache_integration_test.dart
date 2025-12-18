@@ -2,7 +2,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/src/foundation/http_cache.dart';
@@ -11,9 +10,8 @@ import 'package:webf/src/foundation/http_cache_object.dart';
 import '../../setup.dart';
 
 void main() {
-  Directory? tempDirectory;
   setUp(() {
-    tempDirectory = setupTest();
+    setupTest();
   });
 
   TestWidgetsFlutterBinding.ensureInitialized();

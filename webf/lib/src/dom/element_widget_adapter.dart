@@ -6,11 +6,7 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
-import 'dart:async';
-import 'dart:ffi' as ffi;
-import 'dart:ui';
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart' as flutter;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -20,8 +16,6 @@ import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
-import 'package:webf/src/foundation/logger.dart';
-import 'package:webf/src/foundation/positioned_layout_logging.dart';
 
 // Enable verbose logging for DOM → widget building and anonymous block wrapping.
 bool debugLogDomAdapterEnabled = false;
@@ -66,7 +60,6 @@ mixin ElementAdapterMixin on ElementBase {
   final List<ScreenEvent> _screenEventQueue = [];
   bool _isProcessingQueue = false;
 
-  @flutter.immutable
   List<Element> get outOfFlowPositionedElements => _outOfFlowPositionedElements;
 
   void addOutOfFlowPositionedElement(Element newElement) {
@@ -213,7 +206,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       // Case 2: Inline content needs to be wrapped to maintain proper formatting context
       final shouldWrap = _shouldWrapInlineContentInAnonymousBlocks();
       if (debugLogDomAdapterEnabled) {
-        domLogger.fine('[DOMAdapter] build <${webFElement.tagName}> wrapInline=${shouldWrap} '
+        domLogger.fine('[DOMAdapter] build <${webFElement.tagName}> wrapInline=$shouldWrap '
             'display=${webFElement.renderStyle.display} childCount=${webFElement.childNodes.length}');
       }
       if (shouldWrap) {
@@ -255,7 +248,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
             if (node.data.trim().isNotEmpty) {
               if (debugLogDomAdapterEnabled) {
                 final t = node.data;
-                domLogger.fine('[DOMAdapter] add TextNode "${t.length > 24 ? t.substring(0,24) + '…' : t}"');
+                domLogger.fine('[DOMAdapter] add TextNode "${t.length > 24 ? '${t.substring(0,24)}…' : t}"');
               }
               children.add(node.toWidget());
             } else {
@@ -644,7 +637,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
         if (node is TextNode && node.data.trim().isNotEmpty) {
           if (debugLogDomAdapterEnabled) {
             final t = node.data;
-            domLogger.fine('[DOMAdapter] add TextNode to inlineGroup "${t.length > 24 ? t.substring(0,24) + '…' : t}"');
+            domLogger.fine('[DOMAdapter] add TextNode to inlineGroup "${t.length > 24 ? '${t.substring(0,24)}…' : t}"');
           }
           currentInlineGroup.add(node.toWidget());
         } else if (node is Comment) {
@@ -831,10 +824,10 @@ class WebFRenderReplacedRenderObjectWidget extends flutter.SingleChildRenderObje
   RenderObject createRenderObject(flutter.BuildContext context) {
     // Prefer an existing paired render object; fall back to creating one if missing.
     RenderBoxModel renderBoxModel =  webFElement.renderStyle.getWidgetPairedRenderBoxModel(context as flutter.RenderObjectElement) ??
-        (webFElement.createRenderer(context as flutter.RenderObjectElement) as RenderBoxModel);
+        (webFElement.createRenderer(context) as RenderBoxModel);
 
     // Attach position holder to apply offsets based on original layout.
-    for (final positionHolder in webFElement!.positionHolderElements) {
+    for (final positionHolder in webFElement.positionHolderElements) {
       if (positionHolder.mounted) {
         renderBoxModel.renderPositionPlaceholder = positionHolder.renderObject as RenderPositionPlaceholder;
         (positionHolder.renderObject as RenderPositionPlaceholder).positioned = renderBoxModel;
@@ -843,7 +836,7 @@ class WebFRenderReplacedRenderObjectWidget extends flutter.SingleChildRenderObje
             impl: PositionedImpl.build,
             feature: PositionedFeature.wiring,
             message: () => 'attach placeholder -> <${renderBoxModel.renderStyle.target.tagName.toLowerCase()}>'
-                ' under <${webFElement!.tagName.toLowerCase()}>',
+                ' under <${webFElement.tagName.toLowerCase()}>',
           );
         } catch (_) {}
       }
@@ -950,7 +943,7 @@ class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget
     // Prefer an existing paired render object; fall back to creating one if missing.
     RenderBoxModel? renderBoxModel =
         webFElement!.renderStyle.getWidgetPairedRenderBoxModel(context as flutter.RenderObjectElement);
-    renderBoxModel ??= webFElement!.createRenderer(context as flutter.RenderObjectElement) as RenderBoxModel;
+    renderBoxModel ??= webFElement!.createRenderer(context) as RenderBoxModel;
 
     try {
       final phCount = webFElement!.positionHolderElements.length;

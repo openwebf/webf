@@ -11,11 +11,11 @@ import 'package:quiver/core.dart';
 
 abstract class StyleSheet {}
 
-const String _CSSStyleSheetType = 'text/css';
+const String _cssStyleSheetType = 'text/css';
 
 // https://drafts.csswg.org/cssom-1/#cssstylesheet
 class CSSStyleSheet implements StyleSheet, Comparable {
-  String type = _CSSStyleSheetType;
+  String type = _cssStyleSheetType;
 
   /// A Boolean indicating whether the stylesheet is disabled. False by default.
   bool disabled = false;
