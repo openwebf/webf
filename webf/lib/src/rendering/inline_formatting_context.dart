@@ -34,6 +34,9 @@ import 'inline_item.dart';
 import 'inline_items_builder.dart';
 import 'inline_layout_debugger.dart';
 
+final RegExp _softWrapWhitespaceRegExp = RegExp(r'[\s\u200B\u2060]'); // include ZWSP/WORD JOINER
+final RegExp _interiorWhitespaceRegExp = RegExp(r'\S\s+\S');
+
 /// Manages the inline formatting context for a block container.
 /// Based on Blink's InlineNode.
 class InlineFormattingContext {
@@ -124,6 +127,12 @@ class InlineFormattingContext {
 
   // For mapping inline element RenderBox -> range in paragraph text
   final Map<RenderBoxModel, (int start, int end)> _elementRanges = {};
+
+  // Caches used during the (often two-pass) paragraph build to avoid recomputing
+  // expensive text styles/metrics across `_buildAndLayoutParagraph` invocations.
+  final Map<CSSRenderStyle, ui.TextStyle> _cachedUiTextStyles = Map.identity();
+  final Map<CSSRenderStyle, (double height, double baselineOffset)> _cachedParagraphTextMetrics = Map.identity();
+  List<ui.Paragraph>? _cachedTextRunParagraphsForReuse;
 
   // Public helpers for consumers outside IFC to query inline element metrics
   // without relying on legacy line boxes.
@@ -364,6 +373,12 @@ class InlineFormattingContext {
         (a.bottom - b.bottom).abs() < eps;
   }
 
+  void _resetBuildAndLayoutParagraphCaches() {
+    _cachedUiTextStyles.clear();
+    _cachedParagraphTextMetrics.clear();
+    _cachedTextRunParagraphsForReuse = null;
+  }
+
   // Measure text metrics (height and baseline offset) for a given CSS text style
   // using the same text height behavior as the paragraph path.
   (double height, double baselineOffset) _measureTextMetricsForStyle(CSSRenderStyle rs) {
@@ -401,6 +416,8 @@ class InlineFormattingContext {
   // tasks such as placeholders and text-indent, using the full text style
   // (including line-height) so metrics match the main paragraph runs.
   (double height, double baselineOffset) _measureParagraphTextMetricsFor(CSSRenderStyle rs) {
+    final cached = _cachedParagraphTextMetrics[rs];
+    if (cached != null) return cached;
     final dir = (container as RenderBoxModel).renderStyle.direction;
     final mpb = ui.ParagraphBuilder(ui.ParagraphStyle(
       textDirection: dir,
@@ -420,15 +437,21 @@ class InlineFormattingContext {
       final lm = lines.first;
       final double ascent = lm.ascent;
       final double descent = lm.descent;
-      return (ascent + descent, ascent);
+      final result = (ascent + descent, ascent);
+      _cachedParagraphTextMetrics[rs] = result;
+      return result;
     }
     final double baseline = mp.alphabeticBaseline;
     final double ph = mp.height;
     if (ph.isFinite && ph > 0 && baseline.isFinite && baseline > 0) {
-      return (ph, baseline);
+      final result = (ph, baseline);
+      _cachedParagraphTextMetrics[rs] = result;
+      return result;
     }
     final fs = rs.fontSize.computedValue;
-    return (fs, fs * 0.8);
+    final result = (fs, fs * 0.8);
+    _cachedParagraphTextMetrics[rs] = result;
+    return result;
   }
 
   bool _ancestorHasHorizontalScroll() {
@@ -1256,6 +1279,7 @@ class InlineFormattingContext {
   // text inside the element is positioned relative to the final used width.
   void relayoutParagraphToWidth(double width) {
     if (!width.isFinite || width <= 0) return;
+    _resetBuildAndLayoutParagraphCaches();
     // Make the container's content logical width definite so descendants with
     // percentage widths (e.g., <img width:50%>) can resolve against it.
     final RenderBoxModel container = this.container as RenderBoxModel;
@@ -1327,6 +1351,7 @@ class InlineFormattingContext {
     try {
       // Prepare items if needed
       prepareLayout();
+      _resetBuildAndLayoutParagraphCaches();
       // Two-pass build: first lay out without right-extras placeholders to
       // observe natural breaks, then re-layout with right-extras only for
       // inline elements that do not fragment across lines.
@@ -2869,6 +2894,11 @@ class InlineFormattingContext {
     // Track an inline element stack to record ranges
     final List<RenderBoxModel> elementStack = [];
 
+    // Reuse sub-paragraphs for text-run placeholders between pass 1 and pass 2.
+    final List<ui.Paragraph>? reuseTextRunParas = _cachedTextRunParagraphsForReuse;
+    int reuseTextRunIndex = 0;
+    final List<ui.Paragraph> builtTextRunParas = <ui.Paragraph>[];
+
     // Whether ::first-letter styling should be applied once for this paragraph
     bool firstLetterDone = false;
 
@@ -2925,6 +2955,21 @@ class InlineFormattingContext {
           _textRunParas.add(null);
           frame.leftFlushed = true;
         }
+      }
+    }
+
+    // Mark first content within any open frames and flush left extras once.
+    void markContentInOpenFrames() {
+      if (openFrames.isEmpty) return;
+      bool anyNew = false;
+      for (final f in openFrames) {
+        if (!f.hadContent) {
+          f.hadContent = true;
+          anyNew = true;
+        }
+      }
+      if (anyNew) {
+        flushPendingLeftExtras();
       }
     }
 
@@ -3015,12 +3060,7 @@ class InlineFormattingContext {
         }
       } else if (item.isAtomicInline && item.renderBox != null) {
         // First content inside any open frames
-        if (openFrames.isNotEmpty) {
-          for (final f in openFrames) {
-            f.hadContent = true;
-          }
-          flushPendingLeftExtras();
-        }
+        markContentInOpenFrames();
         // Add placeholder for atomic inline
         final rb = item.renderBox!;
         final rbStyle = rb.renderStyle;
@@ -3099,12 +3139,7 @@ class InlineFormattingContext {
         String text = item.getText(_textContent);
         if (text.isEmpty || item.style == null) continue;
         // First content inside any open frames
-        if (openFrames.isNotEmpty) {
-          for (final f in openFrames) {
-            f.hadContent = true;
-          }
-          flushPendingLeftExtras();
-        }
+        markContentInOpenFrames();
         // If any ancestor establishes horizontal scroll/auto overflow,
         // prevent breaking within ASCII words so long sequences (e.g., digits)
         // overflow horizontally and can be scrolled instead of wrapping.
@@ -3123,20 +3158,26 @@ class InlineFormattingContext {
         final VerticalAlign ownerVA = ownerBox?.renderStyle.verticalAlign ?? VerticalAlign.baseline;
         final bool usePlaceholderForText = ownerBox != null && ownerVA != VerticalAlign.baseline;
         if (usePlaceholderForText) {
-          // Shape the text in its own paragraph to measure width/height.
-          final subPB = ui.ParagraphBuilder(ui.ParagraphStyle(
-            textDirection: style.direction,
-            textHeightBehavior: const ui.TextHeightBehavior(
-              applyHeightToFirstAscent: true,
-              applyHeightToLastDescent: true,
-              leadingDistribution: ui.TextLeadingDistribution.even,
-            ),
-          ));
-          subPB.pushStyle(_uiTextStyleFromCss(item.style!));
-          subPB.addText(text);
-          subPB.pop();
-          final subPara = subPB.build();
-          subPara.layout(const ui.ParagraphConstraints(width: 1000000.0));
+          ui.Paragraph subPara;
+          if (reuseTextRunParas != null && reuseTextRunIndex < reuseTextRunParas.length) {
+            subPara = reuseTextRunParas[reuseTextRunIndex++];
+          } else {
+            // Shape the text in its own paragraph to measure width/height.
+            final subPB = ui.ParagraphBuilder(ui.ParagraphStyle(
+              textDirection: style.direction,
+              textHeightBehavior: const ui.TextHeightBehavior(
+                applyHeightToFirstAscent: true,
+                applyHeightToLastDescent: true,
+                leadingDistribution: ui.TextLeadingDistribution.even,
+              ),
+            ));
+            subPB.pushStyle(_uiTextStyleFromCss(item.style!));
+            subPB.addText(text);
+            subPB.pop();
+            subPara = subPB.build();
+            subPara.layout(const ui.ParagraphConstraints(width: 1000000.0));
+          }
+          builtTextRunParas.add(subPara);
           final double phWidth = subPara.longestLine;
           final double phHeight = subPara.height;
           // Prefer baseline alignment with a precomputed baselineOffset when available from a prior pass,
@@ -3222,12 +3263,7 @@ class InlineFormattingContext {
         // Control characters (e.g., from <br>) act as hard line breaks.
         final text = item.getText(_textContent);
         if (text.isEmpty) continue;
-        if (openFrames.isNotEmpty) {
-          for (final f in openFrames) {
-            f.hadContent = true;
-          }
-          flushPendingLeftExtras();
-        }
+        markContentInOpenFrames();
         // Use container style to ensure a style is on the stack for ParagraphBuilder
         pb.pushStyle(_uiTextStyleFromCss(style));
         pb.addText(text);
@@ -3263,6 +3299,10 @@ class InlineFormattingContext {
     );
 
     _paragraphShapedWithHugeWidth = shapedWithHugeWidth;
+
+    // Make text-run sub-paragraphs available for reuse in a subsequent build
+    // (pass 2) during the same layout cycle.
+    _cachedTextRunParagraphsForReuse = builtTextRunParas;
   }
 
   double? _computeFallbackContentMaxWidth(CSSRenderStyle style) {
@@ -3328,10 +3368,6 @@ class InlineFormattingContext {
     bool shapedWithHugeWidth = false;
     bool shapedWithZeroWidth = false; // Track when we intentionally shape with 0 width
 
-    bool containsSoftWrapWhitespace(String s) {
-      return s.contains(RegExp(r"[\s\u200B\u2060]")); // include ZWSP/WORD JOINER
-    }
-
     final bool hasAtomicInlines = _items.any((it) => it.isAtomicInline);
     final bool hasExplicitBreaks =
         _items.any((it) => it.type == InlineItemType.control || it.type == InlineItemType.lineBreakOpportunity);
@@ -3342,13 +3378,11 @@ class InlineFormattingContext {
     for (final it in _items) {
       if (it.isText) {
         final t = it.getText(_textContent);
-        if (containsSoftWrapWhitespace(t)) {
+        if (!hasWhitespaceInText && _softWrapWhitespaceRegExp.hasMatch(t)) {
           hasWhitespaceInText = true;
         }
-        if (!hasInteriorWhitespaceInText) {
-          if (RegExp(r"\S\s+\S").hasMatch(t)) {
-            hasInteriorWhitespaceInText = true;
-          }
+        if (!hasInteriorWhitespaceInText && _interiorWhitespaceRegExp.hasMatch(t)) {
+          hasInteriorWhitespaceInText = true;
         }
         if (!hasBreakablePunctuationInText) {
           if (t.contains('-') || t.contains('\u00AD') || t.contains('/')) {
@@ -4437,6 +4471,8 @@ class InlineFormattingContext {
 
   // Convert CSSRenderStyle to dart:ui TextStyle for ParagraphBuilder
   ui.TextStyle _uiTextStyleFromCss(CSSRenderStyle rs) {
+    final cached = _cachedUiTextStyles[rs];
+    if (cached != null) return cached;
     final families = rs.fontFamily;
     if (families != null && families.isNotEmpty) {
       CSSFontFace.ensureFontLoaded(families[0], rs.fontWeight, rs);
@@ -4463,7 +4499,7 @@ class InlineFormattingContext {
     final Color effectiveColor = clipText ? baseColor.withAlpha(hidden ? 0x00 : 0xFF) : baseColor;
     final (TextDecoration effLine, TextDecorationStyle? effStyle, Color? effColor) =
         _computeEffectiveTextDecoration(rs);
-    return ui.TextStyle(
+    final result = ui.TextStyle(
       // For clip-text, force fully-opaque glyphs for the mask (ignore alpha).
       color: effectiveColor,
       // Suppress decorations in clip-text mask paragraph; they are painted separately.
@@ -4486,9 +4522,12 @@ class InlineFormattingContext {
       shadows: clipText ? null : rs.textShadow,
       // fontFeatures/fontVariations could be mapped from CSS if available
     );
+    _cachedUiTextStyles[rs] = result;
+    return result;
   }
 
   void dispose() {
+    _resetBuildAndLayoutParagraphCaches();
     _items.clear();
     _placeholderBoxes = const [];
     _placeholderOrder.clear();
