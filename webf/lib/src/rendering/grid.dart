@@ -39,6 +39,13 @@ enum _GridPlacementPass {
   auto,
 }
 
+enum _IntrinsicTrackKind {
+  none,
+  auto,
+  minContent,
+  maxContent,
+}
+
 class GridLayoutParentData extends RenderLayoutParentData {
   int rowStart = 0;
   int columnStart = 0;
@@ -244,6 +251,7 @@ class RenderGridLayout extends RenderLayoutBox {
       case JustifyContent.spaceEvenly:
         if (normalizedTracks <= 0) return 0;
         return freeSpace / (normalizedTracks + 1);
+      case JustifyContent.stretch:
       case JustifyContent.flexStart:
       case JustifyContent.start:
       case JustifyContent.spaceBetween:
@@ -573,6 +581,18 @@ class RenderGridLayout extends RenderLayoutBox {
         trailingLineNames: resolvedTrailing,
         isAutoFit: autoFit,
       );
+    } else if (source is GridMinContent) {
+      return GridMinContent(
+        leadingLineNames: resolvedLeading,
+        trailingLineNames: resolvedTrailing,
+        isAutoFit: autoFit,
+      );
+    } else if (source is GridMaxContent) {
+      return GridMaxContent(
+        leadingLineNames: resolvedLeading,
+        trailingLineNames: resolvedTrailing,
+        isAutoFit: autoFit,
+      );
     } else if (source is GridMinMax) {
       return GridMinMax(
         source.minTrack,
@@ -776,15 +796,17 @@ class RenderGridLayout extends RenderLayoutBox {
     return length.computedValue;
   }
 
-  double _resolveTrackSize(GridTrackSize track, double? innerAvailable) {
+  double _resolveTrackSize(GridTrackSize track, double? innerAvailable, {double? percentageBasis}) {
     if (track is GridFixed) {
       final CSSLengthValue lv = track.length;
       if (lv.type == CSSLengthType.PX) {
         return lv.computedValue;
       }
       if (lv.type == CSSLengthType.PERCENTAGE) {
-        if (innerAvailable != null && innerAvailable.isFinite) {
-          return (lv.value ?? 0) * innerAvailable;
+        final double? basis =
+            (percentageBasis != null && percentageBasis.isFinite) ? percentageBasis : innerAvailable;
+        if (basis != null && basis.isFinite) {
+          return (lv.value ?? 0) * basis;
         }
         return 0;
       }
@@ -797,13 +819,13 @@ class RenderGridLayout extends RenderLayoutBox {
     } else if (track is GridMinMax) {
       final GridTrackSize maxTrack = track.maxTrack;
       if (maxTrack is GridFraction) {
-        return _resolveTrackSize(track.minTrack, innerAvailable);
+        return _resolveTrackSize(track.minTrack, innerAvailable, percentageBasis: percentageBasis);
       }
-      final double minValue = _resolveTrackSize(track.minTrack, innerAvailable);
-      final double maxValue = _resolveTrackSize(maxTrack, innerAvailable);
+      final double minValue = _resolveTrackSize(track.minTrack, innerAvailable, percentageBasis: percentageBasis);
+      final double maxValue = _resolveTrackSize(maxTrack, innerAvailable, percentageBasis: percentageBasis);
       return math.max(minValue, maxValue);
     } else if (track is GridFitContent) {
-      final double limit = _resolveLengthValue(track.limit, innerAvailable);
+      final double limit = _resolveLengthValue(track.limit, percentageBasis ?? innerAvailable);
       if (innerAvailable != null && innerAvailable.isFinite) {
         return math.min(limit, innerAvailable);
       }
@@ -812,7 +834,12 @@ class RenderGridLayout extends RenderLayoutBox {
     return 0;
   }
 
-  List<double> _resolveTracks(List<GridTrackSize> tracks, double? innerAvailable, Axis axis) {
+  List<double> _resolveTracks(
+    List<GridTrackSize> tracks,
+    double? innerAvailable,
+    Axis axis, {
+    double? percentageBasis,
+  }) {
     if (tracks.isEmpty) {
       return <double>[];
     }
@@ -830,16 +857,16 @@ class RenderGridLayout extends RenderLayoutBox {
         flexFactors[i] = fr;
         frSum += fr;
       } else if (t is GridMinMax && t.maxTrack is GridFraction) {
-        final double minSize = _resolveTrackSize(t.minTrack, innerAvailable);
+        final double minSize = _resolveTrackSize(t.minTrack, innerAvailable, percentageBasis: percentageBasis);
         minFlexSizes[i] = minSize;
         final double fr = (t.maxTrack as GridFraction).fr;
         flexFactors[i] = fr;
         frSum += fr;
       } else if (t is GridFixed) {
-        sizes[i] = _resolveTrackSize(t, innerAvailable);
+        sizes[i] = _resolveTrackSize(t, innerAvailable, percentageBasis: percentageBasis);
         fixed += sizes[i];
       } else {
-        sizes[i] = _resolveTrackSize(t, innerAvailable);
+        sizes[i] = _resolveTrackSize(t, innerAvailable, percentageBasis: percentageBasis);
         fixed += sizes[i];
       }
     }
@@ -975,7 +1002,14 @@ class RenderGridLayout extends RenderLayoutBox {
     final double colGap = _resolveLengthValue(renderStyle.columnGap, gapBaseWidth);
     final double rowGap = _resolveLengthValue(renderStyle.rowGap, gapBaseHeight);
 
-    final double? contentAvailableWidth = innerMaxWidth;
+    double? contentAvailableWidth = innerMaxWidth;
+    if ((contentAvailableWidth == null || !contentAvailableWidth.isFinite) &&
+        renderStyle.width.isNotAuto &&
+        gapLogicalBorderBoxWidth != null &&
+        gapLogicalBorderBoxWidth.isFinite &&
+        gapLogicalBorderBoxWidth > 0) {
+      contentAvailableWidth = math.max(0.0, gapLogicalBorderBoxWidth - horizontalPaddingBorder);
+    }
     final List<GridTrackSize> autoColDefs = renderStyle.gridAutoColumns;
     final List<GridTrackSize> resolvedColumnDefs = _profileGridSection(
       'grid.materializeColumns',
@@ -990,7 +1024,12 @@ class RenderGridLayout extends RenderLayoutBox {
     final List<double> colSizes = hasExplicitCols
         ? _profileGridSection(
             'grid.resolveColumns',
-            () => _resolveTracks(resolvedColumnDefs, adjustedInnerWidth, Axis.horizontal),
+            () => _resolveTracks(
+              resolvedColumnDefs,
+              adjustedInnerWidth,
+              Axis.horizontal,
+              percentageBasis: contentAvailableWidth,
+            ),
           )
         : <double>[];
     final int explicitColumnCount = hasExplicitCols ? colSizes.length : 0;
@@ -1011,7 +1050,14 @@ class RenderGridLayout extends RenderLayoutBox {
         innerAvailable: adjustedInnerWidth,
       );
     }
-    final double? contentAvailableHeight = innerMaxHeight;
+    double? contentAvailableHeight = innerMaxHeight;
+    if ((contentAvailableHeight == null || !contentAvailableHeight.isFinite) &&
+        renderStyle.height.isNotAuto &&
+        gapLogicalBorderBoxHeight != null &&
+        gapLogicalBorderBoxHeight.isFinite &&
+        gapLogicalBorderBoxHeight > 0) {
+      contentAvailableHeight = math.max(0.0, gapLogicalBorderBoxHeight - verticalPaddingBorder);
+    }
     final List<GridTrackSize> resolvedRowDefs = _profileGridSection(
       'grid.materializeRows',
       () => _materializeTrackList(rowsDef, contentAvailableHeight, rowGap, Axis.vertical),
@@ -1025,7 +1071,12 @@ class RenderGridLayout extends RenderLayoutBox {
         ? <double>[]
         : _profileGridSection(
             'grid.resolveRows',
-            () => _resolveTracks(resolvedRowDefs, adjustedInnerHeight, Axis.vertical),
+            () => _resolveTracks(
+              resolvedRowDefs,
+              adjustedInnerHeight,
+              Axis.vertical,
+              percentageBasis: contentAvailableHeight,
+            ),
           );
     final int definedRowCount = resolvedRowDefs.length;
     final int explicitRowCount = definedRowCount > 0 ? definedRowCount : 1;
@@ -1321,7 +1372,7 @@ class RenderGridLayout extends RenderLayoutBox {
       hasAnyChild = true;
     }
 
-    // Resolve intrinsic sizing for auto columns (grid-template-columns: auto) before laying out children.
+    // Resolve intrinsic sizing for content-based columns (auto/min-content/max-content) before laying out children.
     if (colSizes.isNotEmpty) {
       GridTrackSize columnTrackAt(int index) {
         if (index >= 0 && index < resolvedColumnDefs.length) {
@@ -1331,55 +1382,236 @@ class RenderGridLayout extends RenderLayoutBox {
         return autoColDefs.isNotEmpty ? autoColDefs[implicitIndex % autoColDefs.length] : const GridAuto();
       }
 
-      final List<bool> autoColumnsMask = List<bool>.filled(colSizes.length, false);
-      bool hasAutoColumns = false;
-      for (int c = 0; c < colSizes.length; c++) {
-        final bool isAuto = columnTrackAt(c) is GridAuto;
-        autoColumnsMask[c] = isAuto;
-        if (isAuto) hasAutoColumns = true;
+      _IntrinsicTrackKind intrinsicKindForBaseTrack(GridTrackSize track) {
+        if (track is GridAuto) return _IntrinsicTrackKind.auto;
+        if (track is GridMinContent) return _IntrinsicTrackKind.minContent;
+        if (track is GridMaxContent) return _IntrinsicTrackKind.maxContent;
+        return _IntrinsicTrackKind.none;
       }
 
-      if (hasAutoColumns) {
+      _IntrinsicTrackKind intrinsicKindForTrack(GridTrackSize track) {
+        if (track is GridMinMax) {
+          final _IntrinsicTrackKind maxKind = intrinsicKindForBaseTrack(track.maxTrack);
+          if (maxKind != _IntrinsicTrackKind.none) return maxKind;
+          return intrinsicKindForBaseTrack(track.minTrack);
+        }
+        return intrinsicKindForBaseTrack(track);
+      }
+
+      final List<bool> autoColumnsMask = List<bool>.filled(colSizes.length, false);
+      final List<bool> minContentColumnsMask = List<bool>.filled(colSizes.length, false);
+      final List<bool> maxContentColumnsMask = List<bool>.filled(colSizes.length, false);
+      final List<double> rangeMinColSizes = List<double>.filled(colSizes.length, 0.0);
+      final List<double> rangeMaxColSizes = List<double>.filled(colSizes.length, 0.0);
+      final List<double> flexFactors = List<double>.filled(colSizes.length, 0.0);
+      final List<double> flexMinColSizes = List<double>.filled(colSizes.length, 0.0);
+      bool hasIntrinsicColumns = false;
+      bool hasAutoColumns = false;
+      bool hasRangeColumns = false;
+      bool hasFlexColumns = false;
+      for (int c = 0; c < colSizes.length; c++) {
+        final GridTrackSize track = columnTrackAt(c);
+        final _IntrinsicTrackKind kind = intrinsicKindForTrack(track);
+        switch (kind) {
+          case _IntrinsicTrackKind.auto:
+            autoColumnsMask[c] = true;
+            hasAutoColumns = true;
+            hasIntrinsicColumns = true;
+            break;
+          case _IntrinsicTrackKind.minContent:
+            minContentColumnsMask[c] = true;
+            hasIntrinsicColumns = true;
+            break;
+          case _IntrinsicTrackKind.maxContent:
+            maxContentColumnsMask[c] = true;
+            hasIntrinsicColumns = true;
+            break;
+          case _IntrinsicTrackKind.none:
+            break;
+        }
+
+        // For `minmax(<intrinsic>, <fixed>)`, allow the intrinsic contribution to determine
+        // the track size (up to the fixed max) instead of eagerly sizing to the max.
+        if (track is GridMinMax &&
+            intrinsicKindForBaseTrack(track.minTrack) != _IntrinsicTrackKind.none &&
+            track.maxTrack is! GridFraction) {
+          final double maxLimit =
+              _resolveTrackSize(track.maxTrack, adjustedInnerWidth, percentageBasis: contentAvailableWidth);
+          if (maxLimit > 0) {
+            colSizes[c] = 0.0;
+          }
+        }
+
+        // Track sizing for minmax(<fixed>, <fixed>) tracks (range tracks) and flex tracks.
+        if (track is GridFraction) {
+          flexFactors[c] = track.fr;
+          hasFlexColumns = true;
+        } else if (track is GridMinMax) {
+          if (track.maxTrack is GridFraction) {
+            final double fr = (track.maxTrack as GridFraction).fr;
+            flexFactors[c] = fr;
+            hasFlexColumns = true;
+            final double minSize =
+                _resolveTrackSize(track.minTrack, adjustedInnerWidth, percentageBasis: contentAvailableWidth);
+            if (minSize.isFinite && minSize > flexMinColSizes[c]) {
+              flexMinColSizes[c] = minSize;
+            }
+          } else {
+            final double minSize =
+                _resolveTrackSize(track.minTrack, adjustedInnerWidth, percentageBasis: contentAvailableWidth);
+            final double rawMaxSize =
+                _resolveTrackSize(track.maxTrack, adjustedInnerWidth, percentageBasis: contentAvailableWidth);
+            double normalizedMinSize = minSize.isFinite && minSize > 0 ? minSize : 0.0;
+            double normalizedMaxSize = rawMaxSize.isFinite && rawMaxSize > 0 ? rawMaxSize : 0.0;
+            // Spec: If the resolved max is less than the resolved min, the max is floored to the min.
+            if (normalizedMaxSize > 0 && normalizedMinSize > normalizedMaxSize) {
+              normalizedMaxSize = normalizedMinSize;
+            }
+            if (normalizedMaxSize.isFinite && normalizedMaxSize > 0) {
+              rangeMinColSizes[c] = normalizedMinSize;
+              rangeMaxColSizes[c] = normalizedMaxSize;
+              hasRangeColumns = true;
+              // Start at min instead of max; grow toward max after flex minimums are satisfied.
+              colSizes[c] = rangeMinColSizes[c];
+            }
+          }
+        }
+      }
+
+      final bool needsColumnSizingResolution = hasIntrinsicColumns || hasRangeColumns || hasFlexColumns;
+      if (needsColumnSizingResolution) {
         // Track each auto column's min-content contribution so that we can
         // clamp max-content sizing to the available inline size and allow
         // line wrapping (browser behavior).
         final List<double> autoMinColSizes = List<double>.filled(colSizes.length, 0.0);
 
-        void recomputeFlexibleTracks() {
+        void resolveFlexibleAndRangeTracks() {
           if (adjustedInnerWidth == null || !adjustedInnerWidth!.isFinite || adjustedInnerWidth! <= 0) return;
+          final double available = adjustedInnerWidth!;
 
-          double fixedNonFlex = 0.0;
+          double fixedNonFlexNonRange = 0.0;
+          double rangeBaseSum = 0.0;
+          double flexMinSum = 0.0;
           double frSum = 0.0;
-          final List<double> minFlexSizes = List<double>.filled(colSizes.length, 0.0);
-          final List<double> flexFactors = List<double>.filled(colSizes.length, 0.0);
+          final List<int> growableRanges = <int>[];
 
           for (int c = 0; c < colSizes.length; c++) {
-            final GridTrackSize track = columnTrackAt(c);
-            if (track is GridFraction) {
-              flexFactors[c] = track.fr;
-              frSum += track.fr;
-            } else if (track is GridMinMax && track.maxTrack is GridFraction) {
-              final double minSize = _resolveTrackSize(track.minTrack, adjustedInnerWidth);
-              minFlexSizes[c] = minSize;
-              final double fr = (track.maxTrack as GridFraction).fr;
-              flexFactors[c] = fr;
+            final double fr = flexFactors[c];
+            if (fr > 0) {
+              double minSize = flexMinColSizes[c];
+              if (!minSize.isFinite || minSize < 0) minSize = 0.0;
+              flexMinColSizes[c] = minSize;
+              flexMinSum += minSize;
               frSum += fr;
-            } else {
-              fixedNonFlex += colSizes[c];
+              continue;
+            }
+
+            final double maxRange = rangeMaxColSizes[c];
+            if (maxRange > 0 && maxRange.isFinite) {
+              double base = colSizes[c];
+              if (!base.isFinite || base < 0) base = 0.0;
+              final double minRange = rangeMinColSizes[c];
+              if (base < minRange) base = minRange;
+              if (base > maxRange) base = maxRange;
+              colSizes[c] = base;
+              rangeBaseSum += base;
+              if (maxRange > base + 0.01) {
+                growableRanges.add(c);
+              }
+              continue;
+            }
+
+            fixedNonFlexNonRange += colSizes[c];
+          }
+
+          final double minUsed = fixedNonFlexNonRange + rangeBaseSum + flexMinSum;
+          if (minUsed >= available) {
+            for (int c = 0; c < colSizes.length; c++) {
+              final double fr = flexFactors[c];
+              if (fr <= 0) continue;
+              colSizes[c] = flexMinColSizes[c];
+            }
+            return;
+          }
+
+          double free = available - minUsed;
+
+          if (growableRanges.isNotEmpty && free > 0) {
+            final List<int> active = List<int>.from(growableRanges);
+            while (active.isNotEmpty && free > 0) {
+              final double share = free / active.length;
+              bool anyFrozen = false;
+              for (int i = active.length - 1; i >= 0; i--) {
+                final int idx = active[i];
+                final double maxSize = rangeMaxColSizes[idx];
+                final double current = colSizes[idx];
+                final double capacity = maxSize - current;
+                if (capacity <= 0) {
+                  active.removeAt(i);
+                  continue;
+                }
+                if (capacity <= share + 1e-6) {
+                  colSizes[idx] = maxSize;
+                  free -= capacity;
+                  active.removeAt(i);
+                  anyFrozen = true;
+                } else {
+                  colSizes[idx] = current + share;
+                  free -= share;
+                }
+              }
+              if (!anyFrozen) break;
             }
           }
 
           if (frSum > 0) {
-            final double remaining = math.max(0.0, adjustedInnerWidth! - fixedNonFlex);
+            double occupiedNonFlex = fixedNonFlexNonRange;
             for (int c = 0; c < colSizes.length; c++) {
-              final double fr = flexFactors[c];
-              if (fr <= 0) continue;
-              final double portion = remaining * (fr / frSum);
-              final GridTrackSize track = columnTrackAt(c);
-              if (track is GridFraction) {
-                colSizes[c] = portion;
-              } else if (track is GridMinMax && track.maxTrack is GridFraction) {
-                colSizes[c] = math.max(portion, minFlexSizes[c]);
+              final double maxRange = rangeMaxColSizes[c];
+              if (maxRange > 0 && maxRange.isFinite) {
+                occupiedNonFlex += colSizes[c];
+              }
+            }
+
+            final double flexSpace = math.max(0.0, available - occupiedNonFlex);
+            double remainingSpace = flexSpace;
+            double remainingFrSum = frSum;
+            final List<int> activeFlex = <int>[
+              for (int c = 0; c < colSizes.length; c++)
+                if (flexFactors[c] > 0) c
+            ];
+
+            while (activeFlex.isNotEmpty && remainingFrSum > 0) {
+              bool frozeAny = false;
+              for (int i = activeFlex.length - 1; i >= 0; i--) {
+                final int idx = activeFlex[i];
+                final double fr = flexFactors[idx];
+                if (fr <= 0) {
+                  activeFlex.removeAt(i);
+                  continue;
+                }
+                final double portion = remainingSpace * (fr / remainingFrSum);
+                double minSize = flexMinColSizes[idx];
+                if (!minSize.isFinite || minSize < 0) minSize = 0.0;
+                if (portion + 1e-6 < minSize) {
+                  colSizes[idx] = minSize;
+                  remainingSpace -= minSize;
+                  remainingFrSum -= fr;
+                  activeFlex.removeAt(i);
+                  frozeAny = true;
+                }
+              }
+              if (remainingSpace < 0) remainingSpace = 0.0;
+              if (!frozeAny) {
+                for (final int idx in activeFlex) {
+                  final double fr = flexFactors[idx];
+                  if (fr <= 0 || remainingFrSum <= 0) {
+                    colSizes[idx] = flexMinColSizes[idx];
+                    continue;
+                  }
+                  colSizes[idx] = remainingSpace * (fr / remainingFrSum);
+                }
+                break;
               }
             }
           }
@@ -1391,32 +1623,75 @@ class RenderGridLayout extends RenderLayoutBox {
           final int startCol = pd.columnStart;
           final int span = math.max(1, pd.columnSpan);
           if (startCol >= 0 && startCol < colSizes.length) {
-            final double intrinsicWidth = childForIntrinsic.getMaxIntrinsicWidth(double.infinity);
+            final double intrinsicMaxWidth = childForIntrinsic.getMaxIntrinsicWidth(double.infinity);
             final double intrinsicMinWidth = childForIntrinsic.getMinIntrinsicWidth(double.infinity);
-            if (intrinsicWidth.isFinite && intrinsicWidth > 0) {
-              final int endCol = math.min(colSizes.length, startCol + span);
-              int autoCount = 0;
-              for (int c = startCol; c < endCol; c++) {
-                if (autoColumnsMask[c]) autoCount++;
-              }
+            final int endCol = math.min(colSizes.length, startCol + span);
+
+            int autoCount = 0;
+            int minContentCount = 0;
+            int maxContentCount = 0;
+            int flexCount = 0;
+            for (int c = startCol; c < endCol; c++) {
+              if (autoColumnsMask[c]) autoCount++;
+              if (minContentColumnsMask[c]) minContentCount++;
+              if (maxContentColumnsMask[c]) maxContentCount++;
+              if (flexFactors[c] > 0) flexCount++;
+            }
+
+            if ((autoCount > 0 || maxContentCount > 0) && intrinsicMaxWidth.isFinite && intrinsicMaxWidth > 0) {
+              final double availableMax =
+                  math.max(0.0, intrinsicMaxWidth - colGap * math.max(0, span - 1));
               if (autoCount > 0) {
-                final double availableIntrinsic =
-                    math.max(0.0, intrinsicWidth - colGap * math.max(0, span - 1));
-                final double perAutoTrack = availableIntrinsic / autoCount;
-                double perAutoMinTrack = 0.0;
-                if (intrinsicMinWidth.isFinite && intrinsicMinWidth > 0) {
-                  final double availableMin =
-                      math.max(0.0, intrinsicMinWidth - colGap * math.max(0, span - 1));
-                  perAutoMinTrack = availableMin / autoCount;
-                }
+                final double perAutoTrack = availableMax / autoCount;
                 for (int c = startCol; c < endCol; c++) {
                   if (!autoColumnsMask[c]) continue;
                   if (perAutoTrack > colSizes[c]) {
                     colSizes[c] = perAutoTrack;
                   }
+                }
+              }
+              if (maxContentCount > 0) {
+                final double perMaxContentTrack = availableMax / maxContentCount;
+                for (int c = startCol; c < endCol; c++) {
+                  if (!maxContentColumnsMask[c]) continue;
+                  if (perMaxContentTrack > colSizes[c]) {
+                    colSizes[c] = perMaxContentTrack;
+                  }
+                }
+              }
+            }
+
+            if ((autoCount > 0 || minContentCount > 0) && intrinsicMinWidth.isFinite && intrinsicMinWidth > 0) {
+              final double availableMin =
+                  math.max(0.0, intrinsicMinWidth - colGap * math.max(0, span - 1));
+              if (autoCount > 0) {
+                final double perAutoMinTrack = availableMin / autoCount;
+                for (int c = startCol; c < endCol; c++) {
+                  if (!autoColumnsMask[c]) continue;
                   if (perAutoMinTrack > autoMinColSizes[c]) {
                     autoMinColSizes[c] = perAutoMinTrack;
                   }
+                }
+              }
+              if (minContentCount > 0) {
+                final double perMinContentTrack = availableMin / minContentCount;
+                for (int c = startCol; c < endCol; c++) {
+                  if (!minContentColumnsMask[c]) continue;
+                  if (perMinContentTrack > colSizes[c]) {
+                    colSizes[c] = perMinContentTrack;
+                  }
+                }
+              }
+            }
+
+            if (flexCount > 0 && intrinsicMinWidth.isFinite && intrinsicMinWidth > 0) {
+              final double availableMin =
+                  math.max(0.0, intrinsicMinWidth - colGap * math.max(0, span - 1));
+              final double perFlexMinTrack = availableMin / flexCount;
+              for (int c = startCol; c < endCol; c++) {
+                if (flexFactors[c] <= 0) continue;
+                if (perFlexMinTrack > flexMinColSizes[c]) {
+                  flexMinColSizes[c] = perFlexMinTrack;
                 }
               }
             }
@@ -1424,17 +1699,28 @@ class RenderGridLayout extends RenderLayoutBox {
           childForIntrinsic = pd.nextSibling;
         }
 
-        // Per CSS Grid track sizing, flexible (fr) tracks are resolved after fixed/auto
-        // tracks. Once auto tracks grow to fit content, re-resolve fr tracks so they
-        // take the remaining space instead of forcing auto tracks to shrink/wrap.
-        recomputeFlexibleTracks();
+        // Clamp range-limited tracks (minmax(<min>, <max>)) to their max limit after intrinsic sizing.
+        for (int c = 0; c < colSizes.length; c++) {
+          final double maxRange = rangeMaxColSizes[c];
+          if (maxRange <= 0 || !maxRange.isFinite) continue;
+          final double minRange = rangeMinColSizes[c];
+          double value = colSizes[c];
+          if (!value.isFinite || value < 0) value = 0.0;
+          if (value < minRange) value = minRange;
+          if (value > maxRange) value = maxRange;
+          colSizes[c] = value;
+        }
+
+        // Resolve range tracks first (up to their max) and then distribute remaining space to flex tracks,
+        // while respecting flex tracks' automatic minimum sizes (min-content contributions).
+        resolveFlexibleAndRangeTracks();
 
         // Clamp auto columns between their min-content and max-content contributions
         // when the grid container has a definite inline size. This prevents auto
         // columns from growing without bound and matches browser behavior where
         // long text wraps instead of forcing horizontal overflow.
         bool didClampAutoColumns = false;
-        if (adjustedInnerWidth != null && adjustedInnerWidth.isFinite && adjustedInnerWidth > 0) {
+        if (hasAutoColumns && adjustedInnerWidth != null && adjustedInnerWidth.isFinite && adjustedInnerWidth > 0) {
           double totalWidth = 0.0;
           for (final double size in colSizes) {
             totalWidth += size;
@@ -1467,9 +1753,9 @@ class RenderGridLayout extends RenderLayoutBox {
         }
 
         // If we clamped auto columns due to overflow (non-flex tracks exceed available space),
-        // re-resolve fr tracks to consume any newly freed space.
+        // re-resolve range/flex tracks to consume any newly freed space.
         if (didClampAutoColumns) {
-          recomputeFlexibleTracks();
+          resolveFlexibleAndRangeTracks();
         }
       }
     }
@@ -1747,9 +2033,43 @@ class RenderGridLayout extends RenderLayoutBox {
     final double desiredWidth = layoutContentWidth + horizontalPaddingBorder;
     final double desiredHeight = layoutContentHeight + verticalPaddingBorder;
     size = constraints.constrain(Size(desiredWidth, desiredHeight));
-    final double horizontalFree = math.max(0.0, size.width - horizontalPaddingBorder - usedContentWidth);
+    double horizontalFree = math.max(0.0, size.width - horizontalPaddingBorder - usedContentWidth);
     double verticalFree = math.max(0.0, size.height - verticalPaddingBorder - usedContentHeight);
-    bool relayoutForStretchedRows = false;
+    bool relayoutForStretchedTracks = false;
+
+    if (horizontalFree > 0 &&
+        renderStyle.justifyContent == JustifyContent.stretch &&
+        justificationColumnCount > 0) {
+      GridTrackSize columnTrackAt(int index) {
+        if (index >= 0 && index < resolvedColumnDefs.length) {
+          return resolvedColumnDefs[index];
+        }
+        final int implicitIndex = math.max(0, index - explicitColumnCount);
+        return autoColDefs.isNotEmpty ? autoColDefs[implicitIndex % autoColDefs.length] : const GridAuto();
+      }
+
+      bool isStretchableColumn(GridTrackSize track) {
+        if (track is GridAuto) return true;
+        if (track is GridMinMax) return track.maxTrack is GridAuto;
+        return false;
+      }
+
+      final List<int> stretchableColumns = <int>[];
+      for (int c = 0; c < justificationColumnCount; c++) {
+        if (isStretchableColumn(columnTrackAt(c))) {
+          stretchableColumns.add(c);
+        }
+      }
+      if (stretchableColumns.isNotEmpty) {
+        final double perColumn = horizontalFree / stretchableColumns.length;
+        for (final int c in stretchableColumns) {
+          colSizes[c] += perColumn;
+        }
+        usedContentWidth += horizontalFree;
+        horizontalFree = 0;
+        relayoutForStretchedTracks = true;
+      }
+    }
     if (verticalFree > 0 && renderStyle.alignContent == AlignContent.stretch && alignmentRowCount > 0) {
       final List<int> stretchableRows = <int>[];
       for (int r = 0; r < alignmentRowCount; r++) {
@@ -1765,15 +2085,15 @@ class RenderGridLayout extends RenderLayoutBox {
         }
         usedContentHeight += verticalFree;
         verticalFree = 0;
-        relayoutForStretchedRows = true;
+        relayoutForStretchedTracks = true;
       }
     }
 
-    if (!relayoutForStretchedRows && relayoutForImplicitRowStretch) {
-      relayoutForStretchedRows = true;
+    if (!relayoutForStretchedTracks && relayoutForImplicitRowStretch) {
+      relayoutForStretchedTracks = true;
     }
 
-    if (relayoutForStretchedRows) {
+    if (relayoutForStretchedTracks) {
       RenderBox? childForRelayout = firstChild;
       while (childForRelayout != null) {
         RenderStyle? childGridStyle;

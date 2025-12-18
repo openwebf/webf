@@ -4113,6 +4113,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       switch (renderStyle.justifyContent) {
         case JustifyContent.flexStart:
         case JustifyContent.start:
+        case JustifyContent.stretch:
           leadingSpace = 0.0;
           betweenSpace = 0.0;
           break;

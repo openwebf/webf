@@ -894,6 +894,12 @@ String _gridTrackValueToCss(GridTrackSize track) {
   if (track is GridFraction) {
     return '${track.fr.cssText()}fr';
   }
+  if (track is GridMinContent) {
+    return 'min-content';
+  }
+  if (track is GridMaxContent) {
+    return 'max-content';
+  }
   if (track is GridMinMax) {
     final String minText = _gridTrackValueToCss(track.minTrack);
     final String maxText = _gridTrackValueToCss(track.maxTrack);
@@ -1121,6 +1127,10 @@ String _justifyContentToCss(JustifyContent value) {
       return 'space-around';
     case JustifyContent.spaceEvenly:
       return 'space-evenly';
+    case JustifyContent.stretch:
+      return 'stretch';
+    default:
+      return 'flex-start';
   }
 }
 
