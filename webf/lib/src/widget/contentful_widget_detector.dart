@@ -45,9 +45,7 @@ class ContentfulWidgetDetector {
     // Images
     if (renderObject is RenderImage) {
       // Check if image has been loaded and has size
-      return renderObject.image != null &&
-             renderObject.size.width > 0 &&
-             renderObject.size.height > 0;
+      return renderObject.image != null && renderObject.size.width > 0 && renderObject.size.height > 0;
     }
 
     // Custom painting
@@ -82,9 +80,7 @@ class ContentfulWidgetDetector {
     }
 
     // ClipPath with visible content
-    if (renderObject is RenderClipPath ||
-        renderObject is RenderClipRRect ||
-        renderObject is RenderClipOval) {
+    if (renderObject is RenderClipPath || renderObject is RenderClipRRect || renderObject is RenderClipOval) {
       // Clips are only contentful if they have contentful children
       return false; // Let recursion handle children
     }
@@ -300,8 +296,10 @@ class ContentfulWidgetDetector {
     }
 
     // For layout widgets, check if they have contentful children
-    if (widget is SingleChildRenderObjectWidget || widget is ProxyWidget ||
-        widget is MultiChildRenderObjectWidget || widget is Flex) {
+    if (widget is SingleChildRenderObjectWidget ||
+        widget is ProxyWidget ||
+        widget is MultiChildRenderObjectWidget ||
+        widget is Flex) {
       return hasContentfulChild(widget);
     }
 
@@ -310,58 +308,157 @@ class ContentfulWidgetDetector {
 
   /// Recursively checks if a widget or its descendants contain contentful painting
   static bool hasContentfulChild(Widget widget) {
+    // Check if the widget is inherently contentful (not layout widgets)
     if (_isInherentlyContentful(widget)) {
       return true;
     }
 
-    final Widget? singleChild = switch (widget) {
-      Opacity(:final opacity, :final child) when opacity > 0 => child,
-      Visibility(:final visible, :final child) when visible => child,
-      Offstage(:final offstage, :final child) when !offstage => child,
-      SingleChildRenderObjectWidget(child: final child) => child,
-      ProxyWidget(child: final child) => child,
-      Container(:final child) => child,
-      GestureDetector(:final child) => child,
-      Dismissible(:final child) => child,
-      Draggable(:final child) => child,
-      Hero(:final child) => child,
-      AnimatedContainer(:final child) => child,
-      AnimatedPadding(:final child) => child,
-      AnimatedPositioned(:final child) => child,
-      AnimatedOpacity(:final child) => child,
-      AnimatedDefaultTextStyle(:final child) => child,
-      AnimatedPhysicalModel(:final child) => child,
-      AnimatedSize(:final child) => child,
-      AnimatedAlign(:final child) => child,
-      DecoratedBoxTransition(:final child) => child,
-      SlideTransition(:final child) => child,
-      ScaleTransition(:final child) => child,
-      RotationTransition(:final child) => child,
-      SizeTransition(:final child) => child,
-      PositionedTransition(:final child) => child,
-      RelativePositionedTransition(:final child) => child,
-      Card(:final child) => child,
-      _ => null,
-    };
-
-    if (singleChild != null) {
-      return hasContentfulChild(singleChild);
+    // Check single child widgets
+    if (widget is SingleChildRenderObjectWidget || widget is ProxyWidget) {
+      Widget? child;
+      if (widget is Container) {
+        child = widget.child;
+      } else if (widget is Padding) {
+        child = widget.child;
+      } else if (widget is Center) {
+        child = widget.child;
+      } else if (widget is Align) {
+        child = widget.child;
+      } else if (widget is SizedBox) {
+        child = widget.child;
+      } else if (widget is ConstrainedBox) {
+        child = widget.child;
+      } else if (widget is AspectRatio) {
+        child = widget.child;
+      } else if (widget is FittedBox) {
+        child = widget.child;
+      } else if (widget is Transform) {
+        child = widget.child;
+      } else if (widget is ClipRect) {
+        child = widget.child;
+      } else if (widget is ClipRRect) {
+        child = widget.child;
+      } else if (widget is ClipOval) {
+        child = widget.child;
+      } else if (widget is ClipPath) {
+        child = widget.child;
+      } else if (widget is ColorFiltered) {
+        child = widget.child;
+      } else if (widget is FractionalTranslation) {
+        child = widget.child;
+      } else if (widget is RotatedBox) {
+        child = widget.child;
+      } else if (widget is LimitedBox) {
+        child = widget.child;
+      } else if (widget is OverflowBox) {
+        child = widget.child;
+      } else if (widget is IntrinsicHeight) {
+        child = widget.child;
+      } else if (widget is IntrinsicWidth) {
+        child = widget.child;
+      } else if (widget is Baseline) {
+        child = widget.child;
+      } else if (widget is AbsorbPointer) {
+        child = widget.child;
+      } else if (widget is IgnorePointer) {
+        child = widget.child;
+      } else if (widget is MouseRegion) {
+        child = widget.child;
+      } else if (widget is Semantics) {
+        child = widget.child;
+      } else if (widget is ExcludeSemantics) {
+        child = widget.child;
+      } else if (widget is MergeSemantics) {
+        child = widget.child;
+      } else if (widget is BlockSemantics) {
+        child = widget.child;
+      } else if (widget is GestureDetector) {
+        child = widget.child;
+      } else if (widget is Dismissible) {
+        child = widget.child;
+      } else if (widget is Draggable) {
+        child = widget.child;
+      }
+      // DragTarget requires a builder function, skip direct child check
+      else if (widget is Hero) {
+        child = widget.child;
+      } else if (widget is AnimatedContainer) {
+        child = widget.child;
+      } else if (widget is AnimatedPadding) {
+        child = widget.child;
+      } else if (widget is AnimatedPositioned) {
+        child = widget.child;
+      } else if (widget is AnimatedOpacity) {
+        child = widget.child;
+      } else if (widget is AnimatedDefaultTextStyle) {
+        child = widget.child;
+      } else if (widget is AnimatedPhysicalModel) {
+        child = widget.child;
+      } else if (widget is AnimatedSize) {
+        child = widget.child;
+      } else if (widget is AnimatedAlign) {
+        child = widget.child;
+      } else if (widget is DecoratedBoxTransition) {
+        child = widget.child;
+      } else if (widget is SlideTransition) {
+        child = widget.child;
+      } else if (widget is ScaleTransition) {
+        child = widget.child;
+      } else if (widget is RotationTransition) {
+        child = widget.child;
+      } else if (widget is SizeTransition) {
+        child = widget.child;
+      } else if (widget is FadeTransition) {
+        child = widget.child;
+      } else if (widget is PositionedTransition) {
+        child = widget.child;
+      } else if (widget is RelativePositionedTransition) {
+        child = widget.child;
+      }
+      if (child != null) {
+        return hasContentfulChild(child);
+      }
     }
 
-    final List<Widget>? children = switch (widget) {
-      MultiChildRenderObjectWidget(children: final children) => children,
-      _ => null,
-    };
-
-    if (children != null) {
-      for (final child in children) {
-        if (hasContentfulChild(child)) {
-          return true;
+    // Check multi-child widgets
+    if (widget is Row ||
+        widget is Column ||
+        widget is Stack ||
+        widget is IndexedStack ||
+        widget is Flow ||
+        widget is Wrap ||
+        widget is ListBody ||
+        widget is CustomMultiChildLayout) {
+      List<Widget>? children;
+      if (widget is Row) {
+        children = widget.children;
+      } else if (widget is Column) {
+        children = widget.children;
+      } else if (widget is Stack) {
+        children = widget.children;
+      } else if (widget is IndexedStack) {
+        children = widget.children;
+      } else if (widget is Flow) {
+        children = widget.children;
+      } else if (widget is Wrap) {
+        children = widget.children;
+      } else if (widget is ListBody) {
+        children = widget.children;
+      } else if (widget is CustomMultiChildLayout) {
+        children = widget.children;
+      }
+      if (children != null) {
+        for (final child in children) {
+          if (hasContentfulChild(child)) {
+            return true;
+          }
         }
       }
     }
 
+    // Check Table separately
     if (widget is Table) {
+      // Check table rows
       for (final row in widget.children) {
         for (final cell in row.children) {
           if (hasContentfulChild(cell)) {
@@ -371,6 +468,16 @@ class ContentfulWidgetDetector {
       }
     }
 
+    // Check Flex widgets
+    if (widget is Flex) {
+      for (final child in widget.children) {
+        if (hasContentfulChild(child)) {
+          return true;
+        }
+      }
+    }
+
+    // Default: not contentful
     return false;
   }
 }
