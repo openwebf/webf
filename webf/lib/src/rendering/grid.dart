@@ -1340,6 +1340,10 @@ class RenderGridLayout extends RenderLayoutBox {
       }
 
       if (hasAutoColumns) {
+        // Track each auto column's min-content contribution so that we can
+        // clamp max-content sizing to the available inline size and allow
+        // line wrapping (browser behavior).
+        final List<double> autoMinColSizes = List<double>.filled(colSizes.length, 0.0);
         RenderBox? childForIntrinsic = firstChild;
         while (childForIntrinsic != null) {
           final GridLayoutParentData pd = childForIntrinsic.parentData as GridLayoutParentData;
@@ -1347,6 +1351,7 @@ class RenderGridLayout extends RenderLayoutBox {
           final int span = math.max(1, pd.columnSpan);
           if (startCol >= 0 && startCol < colSizes.length) {
             final double intrinsicWidth = childForIntrinsic.getMaxIntrinsicWidth(double.infinity);
+            final double intrinsicMinWidth = childForIntrinsic.getMinIntrinsicWidth(double.infinity);
             if (intrinsicWidth.isFinite && intrinsicWidth > 0) {
               final int endCol = math.min(colSizes.length, startCol + span);
               int autoCount = 0;
@@ -1357,16 +1362,60 @@ class RenderGridLayout extends RenderLayoutBox {
                 final double availableIntrinsic =
                     math.max(0.0, intrinsicWidth - colGap * math.max(0, span - 1));
                 final double perAutoTrack = availableIntrinsic / autoCount;
+                double perAutoMinTrack = 0.0;
+                if (intrinsicMinWidth.isFinite && intrinsicMinWidth > 0) {
+                  final double availableMin =
+                      math.max(0.0, intrinsicMinWidth - colGap * math.max(0, span - 1));
+                  perAutoMinTrack = availableMin / autoCount;
+                }
                 for (int c = startCol; c < endCol; c++) {
                   if (!autoColumnsMask[c]) continue;
                   if (perAutoTrack > colSizes[c]) {
                     colSizes[c] = perAutoTrack;
+                  }
+                  if (perAutoMinTrack > autoMinColSizes[c]) {
+                    autoMinColSizes[c] = perAutoMinTrack;
                   }
                 }
               }
             }
           }
           childForIntrinsic = pd.nextSibling;
+        }
+
+        // Clamp auto columns between their min-content and max-content contributions
+        // when the grid container has a definite inline size. This prevents auto
+        // columns from growing without bound and matches browser behavior where
+        // long text wraps instead of forcing horizontal overflow.
+        if (adjustedInnerWidth != null && adjustedInnerWidth.isFinite && adjustedInnerWidth > 0) {
+          double totalWidth = 0.0;
+          for (final double size in colSizes) {
+            totalWidth += size;
+          }
+          if (totalWidth > adjustedInnerWidth + 0.5) {
+            final double overflow = totalWidth - adjustedInnerWidth;
+            final List<double> shrinkCapacities = List<double>.filled(colSizes.length, 0.0);
+            double totalCapacity = 0.0;
+            for (int c = 0; c < colSizes.length; c++) {
+              if (!autoColumnsMask[c]) continue;
+              double minSize = autoMinColSizes[c];
+              if (!minSize.isFinite || minSize < 0) minSize = 0.0;
+              if (minSize > colSizes[c]) minSize = colSizes[c];
+              autoMinColSizes[c] = minSize;
+              final double capacity = math.max(0.0, colSizes[c] - minSize);
+              shrinkCapacities[c] = capacity;
+              totalCapacity += capacity;
+            }
+            if (totalCapacity > 0) {
+              final double ratio = math.min(1.0, overflow / totalCapacity);
+              for (int c = 0; c < colSizes.length; c++) {
+                final double capacity = shrinkCapacities[c];
+                if (capacity <= 0) continue;
+                final double shrink = capacity * ratio;
+                colSizes[c] = math.max(autoMinColSizes[c], colSizes[c] - shrink);
+              }
+            }
+          }
         }
 
         // Recompute flexible (fr) tracks using the updated fixed/auto sizes.
@@ -1534,6 +1583,54 @@ class RenderGridLayout extends RenderLayoutBox {
       child = pd.nextSibling;
     }
 
+    // If auto-sized rows resolve to a definite height (from intrinsic measurement),
+    // apply align-self: stretch so items fill the resolved row size, matching CSS Grid.
+    bool relayoutForImplicitRowStretch = false;
+    RenderBox? stretchCheckChild = firstChild;
+    while (stretchCheckChild != null) {
+      RenderStyle? childGridStyle;
+      if (stretchCheckChild is RenderBoxModel) {
+        childGridStyle = stretchCheckChild.renderStyle;
+      } else if (stretchCheckChild is RenderEventListener) {
+        final RenderBox? wrapped = stretchCheckChild.child;
+        if (wrapped is RenderBoxModel) {
+          childGridStyle = wrapped.renderStyle;
+        }
+      }
+      final GridAxisAlignment alignSelfAlignment = _resolveAlignSelfAlignment(childGridStyle);
+      final bool childHeightAuto = childGridStyle?.height.isAuto ?? true;
+      double? explicitItemHeight;
+      if (childGridStyle != null && childGridStyle.height.isNotAuto) {
+        explicitItemHeight = childGridStyle.height.computedValue;
+      }
+      if (alignSelfAlignment == GridAxisAlignment.stretch && childHeightAuto && explicitItemHeight == null) {
+        final GridLayoutParentData pd = stretchCheckChild.parentData as GridLayoutParentData;
+        final int rowIndex = pd.rowStart;
+        final int rowSpan = math.max(1, pd.rowSpan);
+        double resolvedCellHeight = 0;
+        bool hasDefiniteCellHeight = true;
+        for (int r = rowIndex; r < rowIndex + rowSpan; r++) {
+          final double rh = _resolvedRowHeight(rowSizes, implicitRowHeights, r);
+          if (rh <= 0) {
+            hasDefiniteCellHeight = false;
+            break;
+          }
+          resolvedCellHeight += rh;
+        }
+        if (hasDefiniteCellHeight) {
+          resolvedCellHeight += rowGap * math.max(0, rowSpan - 1);
+        }
+        if (hasDefiniteCellHeight && resolvedCellHeight.isFinite) {
+          final double currentHeight = stretchCheckChild.size.height;
+          if (resolvedCellHeight > currentHeight + 0.5) {
+            relayoutForImplicitRowStretch = true;
+            break;
+          }
+        }
+      }
+      stretchCheckChild = (stretchCheckChild.parentData as GridLayoutParentData).nextSibling;
+    }
+
     // Compute used content size
     double usedContentWidth = 0;
     int justificationColumnCount = colSizes.length;
@@ -1655,6 +1752,10 @@ class RenderGridLayout extends RenderLayoutBox {
         verticalFree = 0;
         relayoutForStretchedRows = true;
       }
+    }
+
+    if (!relayoutForStretchedRows && relayoutForImplicitRowStretch) {
+      relayoutForStretchedRows = true;
     }
 
     if (relayoutForStretchedRows) {
