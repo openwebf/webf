@@ -182,33 +182,8 @@ class CSSPositionedLayout {
       }
     }
 
-    // Whether child need to layout
-    bool isChildNeedsLayout = true;
-    if (child.hasSize && !needsRelayout && (childConstraints == child.constraints)) {
-      isChildNeedsLayout = false;
-    }
-
-    if (isChildNeedsLayout) {
-      try {
-        PositionedLayoutLog.log(
-          impl: PositionedImpl.layout,
-          feature: PositionedFeature.layout,
-          message: () => '<${child.renderStyle.target.tagName.toLowerCase()}> layout start '
-              'constraints=(${childConstraints.minWidth.toStringAsFixed(1)}..${childConstraints.maxWidth.isFinite ? childConstraints.maxWidth.toStringAsFixed(1) : '∞'}, '
-              '${childConstraints.minHeight.toStringAsFixed(1)}..${childConstraints.maxHeight.isFinite ? childConstraints.maxHeight.toStringAsFixed(1) : '∞'})',
-        );
-      } catch (_) {}
-      // Should create relayoutBoundary for positioned child.
-      child.layout(childConstraints, parentUsesSize: false);
-      try {
-        final Size s = child.size;
-        PositionedLayoutLog.log(
-          impl: PositionedImpl.layout,
-          feature: PositionedFeature.layout,
-          message: () => '<${child.renderStyle.target.tagName.toLowerCase()}> layout done size=${s.width.toStringAsFixed(2)}×${s.height.toStringAsFixed(2)}',
-        );
-      } catch (_) {}
-    }
+    // Keep positioned child as a relayout boundary.
+    child.layout(childConstraints, parentUsesSize: false);
   }
 
   // Position of positioned element involves inset, size , margin and its containing block size.

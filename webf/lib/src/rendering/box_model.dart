@@ -12,7 +12,6 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
@@ -879,11 +878,7 @@ abstract class RenderBoxModel extends RenderBox
 
   set scrollableSize(Size value) {
     assert(value.isFinite);
-    if (_maxScrollableSize != value) {
-      _maxScrollableSize = value;
-    } else {
-      _maxScrollableSize = value;
-    }
+    _maxScrollableSize = value;
   }
 
   Size scrollableViewportSize = Size.zero;
