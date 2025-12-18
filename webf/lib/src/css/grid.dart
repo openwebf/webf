@@ -49,6 +49,22 @@ class GridAuto extends GridTrackSize {
   }) : super();
 }
 
+class GridMinContent extends GridTrackSize {
+  const GridMinContent({
+    super.leadingLineNames,
+    super.trailingLineNames,
+    super.isAutoFit,
+  }) : super();
+}
+
+class GridMaxContent extends GridTrackSize {
+  const GridMaxContent({
+    super.leadingLineNames,
+    super.trailingLineNames,
+    super.isAutoFit,
+  }) : super();
+}
+
 class GridMinMax extends GridTrackSize {
   final GridTrackSize minTrack;
   final GridTrackSize maxTrack;
@@ -270,6 +286,16 @@ class CSSGridParser {
         leadingLineNames: resolvedLeading,
         trailingLineNames: resolvedTrailing,
       );
+    } else if (source is GridMinContent) {
+      return GridMinContent(
+        leadingLineNames: resolvedLeading,
+        trailingLineNames: resolvedTrailing,
+      );
+    } else if (source is GridMaxContent) {
+      return GridMaxContent(
+        leadingLineNames: resolvedLeading,
+        trailingLineNames: resolvedTrailing,
+      );
     } else if (source is GridMinMax) {
       return GridMinMax(
         source.minTrack,
@@ -307,8 +333,15 @@ class CSSGridParser {
     final List<String> resolvedTrailing = trailingNames ?? const <String>[];
     final String t = token.trim();
     if (t.isEmpty) return null;
-    if (t == 'auto') {
+    final String lower = t.toLowerCase();
+    if (lower == 'auto') {
       return GridAuto(leadingLineNames: resolvedLeading, trailingLineNames: resolvedTrailing);
+    }
+    if (lower == 'min-content') {
+      return GridMinContent(leadingLineNames: resolvedLeading, trailingLineNames: resolvedTrailing);
+    }
+    if (lower == 'max-content') {
+      return GridMaxContent(leadingLineNames: resolvedLeading, trailingLineNames: resolvedTrailing);
     }
     if (t.endsWith('fr')) {
       final numStr = t.substring(0, t.length - 2).trim();
