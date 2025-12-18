@@ -6,11 +6,6 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-
-
-#include "core/css/media_query_evaluator.h"
-#include "core/css/style_sheet_contents.h"
-
 #include "html_link_element.h"
 #include "binding_call_methods.h"
 #include "html_names.h"
@@ -90,10 +85,6 @@ NativeValue HTMLLinkElement::parseAuthorStyleSheet(AtomicString& cssString, Atom
     new_sheet = document.EnsureStyleEngine().CreateSheet(*this, cssString.GetString());
   }
   sheet_ = new_sheet;
-
-  MediaQueryEvaluator evaluator("screen");
-  auto contents = sheet_->Contents();
-  auto ruleset = contents->EnsureRuleSet(evaluator);
 
   WEBF_LOG(VERBOSE) << "[HTMLLinkElement] Registering author stylesheet and marking active stylesheets dirty.";
   document.EnsureStyleEngine().RegisterAuthorSheet(new_sheet);
