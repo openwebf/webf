@@ -66,6 +66,182 @@ class RenderGridLayout extends RenderLayoutBox {
     addAll(children);
   }
 
+  RenderStyle? _unwrapGridChildStyle(RenderBox child) {
+    if (child is RenderEventListener) {
+      final RenderBox? wrapped = child.child;
+      if (wrapped is RenderBoxModel) {
+        return wrapped.renderStyle;
+      }
+    }
+    if (child is RenderBoxModel) {
+      return child.renderStyle;
+    }
+    return null;
+  }
+
+  bool _isPositionedGridChild(RenderBox child) {
+    final RenderStyle? style = _unwrapGridChildStyle(child);
+    if (style == null) return false;
+    return style.isSelfPositioned() || style.isSelfStickyPosition();
+  }
+
+  @override
+  double computeMaxIntrinsicWidth(double height) {
+    final List<GridTrackSize> colsDef = renderStyle.gridTemplateColumns;
+    if (colsDef.isEmpty) {
+      return super.computeMaxIntrinsicWidth(height);
+    }
+
+    final double paddingBorderH = renderStyle.paddingLeft.computedValue +
+        renderStyle.paddingRight.computedValue +
+        renderStyle.effectiveBorderLeftWidth.computedValue +
+        renderStyle.effectiveBorderRightWidth.computedValue;
+    final double colGap = _resolveLengthValue(renderStyle.columnGap, null);
+    final List<GridTrackSize> resolvedCols =
+        _materializeTrackList(colsDef, null, colGap, Axis.horizontal);
+    final int colCount = math.max(1, resolvedCols.length);
+    final List<double> colWidths = List<double>.filled(colCount, 0.0);
+
+    // Seed fixed tracks.
+    for (int c = 0; c < resolvedCols.length; c++) {
+      final GridTrackSize track = resolvedCols[c];
+      if (track is GridFixed) {
+        final double value = _resolveTrackSize(track, null);
+        if (value.isFinite && value > colWidths[c]) {
+          colWidths[c] = value;
+        }
+      }
+    }
+
+    RenderBox? child = firstChild;
+    int autoIndex = 0;
+    while (child != null) {
+      final GridLayoutParentData pd = child.parentData as GridLayoutParentData;
+      if (!_isPositionedGridChild(child)) {
+        final int colIndex = colCount > 0 ? (autoIndex % colCount) : 0;
+        autoIndex++;
+
+        final RenderStyle? childStyle = _unwrapGridChildStyle(child);
+        final double childMax = child.getMaxIntrinsicWidth(height);
+        double childMin = child.getMinIntrinsicWidth(height);
+        if (childStyle != null &&
+            (childStyle.whiteSpace == WhiteSpace.nowrap || childStyle.whiteSpace == WhiteSpace.pre)) {
+          childMin = childMax;
+        }
+
+        final GridTrackSize track = colIndex < resolvedCols.length ? resolvedCols[colIndex] : const GridAuto();
+        double contribution = childMax;
+        if (track is GridMinContent) {
+          contribution = childMin;
+        } else if (track is GridMaxContent) {
+          contribution = childMax;
+        } else if (track is GridAuto) {
+          contribution = childMax;
+        } else if (track is GridMinMax) {
+          final GridTrackSize maxTrack = track.maxTrack;
+          if (maxTrack is GridMinContent) {
+            contribution = childMin;
+          } else if (maxTrack is GridFixed) {
+            final double maxSize = _resolveTrackSize(maxTrack, null);
+            contribution = childMax;
+            if (maxSize.isFinite && maxSize > 0) {
+              contribution = math.min(contribution, maxSize);
+            }
+          } else {
+            contribution = childMax;
+          }
+          final double minSize = _resolveTrackSize(track.minTrack, null);
+          if (minSize.isFinite && minSize > contribution) {
+            contribution = minSize;
+          }
+        }
+
+        if (contribution.isFinite && contribution > colWidths[colIndex]) {
+          colWidths[colIndex] = contribution;
+        }
+      }
+      child = pd.nextSibling;
+    }
+
+    double contentWidth = 0.0;
+    for (int c = 0; c < colCount; c++) {
+      contentWidth += colWidths[c];
+      if (c < colCount - 1) contentWidth += colGap;
+    }
+    return contentWidth + paddingBorderH;
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) {
+    final List<GridTrackSize> colsDef = renderStyle.gridTemplateColumns;
+    if (colsDef.isEmpty) {
+      return super.computeMinIntrinsicWidth(height);
+    }
+
+    final double paddingBorderH = renderStyle.paddingLeft.computedValue +
+        renderStyle.paddingRight.computedValue +
+        renderStyle.effectiveBorderLeftWidth.computedValue +
+        renderStyle.effectiveBorderRightWidth.computedValue;
+    final double colGap = _resolveLengthValue(renderStyle.columnGap, null);
+    final List<GridTrackSize> resolvedCols =
+        _materializeTrackList(colsDef, null, colGap, Axis.horizontal);
+    final int colCount = math.max(1, resolvedCols.length);
+    final List<double> colWidths = List<double>.filled(colCount, 0.0);
+
+    // Seed fixed tracks.
+    for (int c = 0; c < resolvedCols.length; c++) {
+      final GridTrackSize track = resolvedCols[c];
+      if (track is GridFixed) {
+        final double value = _resolveTrackSize(track, null);
+        if (value.isFinite && value > colWidths[c]) {
+          colWidths[c] = value;
+        }
+      }
+    }
+
+    RenderBox? child = firstChild;
+    int autoIndex = 0;
+    while (child != null) {
+      final GridLayoutParentData pd = child.parentData as GridLayoutParentData;
+      if (!_isPositionedGridChild(child)) {
+        final int colIndex = colCount > 0 ? (autoIndex % colCount) : 0;
+        autoIndex++;
+
+        final RenderStyle? childStyle = _unwrapGridChildStyle(child);
+        final double childMax = child.getMaxIntrinsicWidth(height);
+        double childMin = child.getMinIntrinsicWidth(height);
+        if (childStyle != null &&
+            (childStyle.whiteSpace == WhiteSpace.nowrap || childStyle.whiteSpace == WhiteSpace.pre)) {
+          childMin = childMax;
+        }
+
+        final GridTrackSize track = colIndex < resolvedCols.length ? resolvedCols[colIndex] : const GridAuto();
+        double contribution = childMin;
+        if (track is GridMaxContent) {
+          contribution = childMax;
+        } else if (track is GridMinMax) {
+          final double minSize = _resolveTrackSize(track.minTrack, null);
+          contribution = childMin;
+          if (minSize.isFinite && minSize > contribution) {
+            contribution = minSize;
+          }
+        }
+
+        if (contribution.isFinite && contribution > colWidths[colIndex]) {
+          colWidths[colIndex] = contribution;
+        }
+      }
+      child = pd.nextSibling;
+    }
+
+    double contentWidth = 0.0;
+    for (int c = 0; c < colCount; c++) {
+      contentWidth += colWidths[c];
+      if (c < colCount - 1) contentWidth += colGap;
+    }
+    return contentWidth + paddingBorderH;
+  }
+
   @override
   void setupParentData(RenderBox child) {
     if (child.parentData is! GridLayoutParentData) {
@@ -1648,6 +1824,16 @@ class RenderGridLayout extends RenderLayoutBox {
                   if (!intrinsicMaxWidth.isFinite || intrinsicMaxWidth < minWidthValue) {
                     intrinsicMaxWidth = minWidthValue;
                   }
+                }
+              }
+
+              // For nowrap/pre text, the min-content contribution is the max-content contribution.
+              // Flutter's min intrinsic width defaults to the longest breakable word, so correct it
+              // here for grid track sizing.
+              if (childGridStyle.whiteSpace == WhiteSpace.nowrap ||
+                  childGridStyle.whiteSpace == WhiteSpace.pre) {
+                if (intrinsicMaxWidth.isFinite && intrinsicMaxWidth > 0) {
+                  intrinsicMinWidth = intrinsicMaxWidth;
                 }
               }
 
