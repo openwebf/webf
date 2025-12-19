@@ -15,6 +15,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'dart:ui';
 
+import 'package:ffi/ffi.dart';
 import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';

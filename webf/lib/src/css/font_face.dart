@@ -172,7 +172,7 @@ class CSSFontFace {
     final FontStyle style = (fontStyle == 'italic') ? FontStyle.italic : FontStyle.normal;
 
     List<CSSFunctionalNotation> functions = CSSFunction.parseFunction(src);
-    List<_Font> fonts = [];
+    List<FontSource> fonts = [];
     for (final CSSFunctionalNotation notation in functions) {
       if (notation.name == 'url' && notation.args.isNotEmpty) {
         String tmpSrc = removeQuotationMark(notation.args[0]);
@@ -185,18 +185,18 @@ class CSSFontFace {
             try {
               Uint8List decoded = base64Decode(base64);
               if (decoded.isNotEmpty) {
-                fonts.add(_Font.content(decoded));
+                fonts.add(FontSource.content(decoded));
               }
             } catch (_) {}
           }
         } else {
           String formatFromExt = tmpSrc.split('.').last;
-          fonts.add(_Font(tmpSrc, formatFromExt));
+          fonts.add(FontSource(tmpSrc, formatFromExt));
         }
       }
     }
 
-    _Font? targetFont = fonts.firstWhereOrNull((f) => supportedFonts.contains(f.format));
+    FontSource? targetFont = fonts.firstWhereOrNull((f) => supportedFonts.contains(f.format));
     if (targetFont == null) {
       cssLogger.warning('[font-face][register] no supported font format in src (sheet=$sheetId family=$cleanFamily)');
       return;

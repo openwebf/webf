@@ -1113,11 +1113,25 @@ class CSSParser {
       var expr = processExpr();
       if (expr != null) {
         // Handle !important (prio)
-        var importantPriority = false;
-        // handle multi-important
-        while (_maybeEat(TokenKind.IMPORTANT)) {
-          importantPriority = true;
+        var importantPriority = _maybeEat(TokenKind.IMPORTANT);
+
+        // CSS only allows a single `!important` marker. If we see another
+        // `!important` (or any other trailing token) before `;`/`}` then the
+        // whole declaration is invalid and must be ignored, but we should
+        // recover to continue parsing subsequent declarations.
+        //
+        // This matters for custom properties, e.g.:
+        //   --a: var(--b) !important !important;
+        // which must be dropped per spec.
+        final trailingToken = _peek();
+        final hasUnexpectedTrailingToken = trailingToken != TokenKind.SEMICOLON &&
+            trailingToken != TokenKind.RBRACE &&
+            trailingToken != TokenKind.END_OF_FILE;
+        if ((importantPriority && trailingToken == TokenKind.IMPORTANT) || hasUnexpectedTrailingToken) {
+          _skipToDeclarationEnd();
+          return;
         }
+
         style.setProperty(propertyIdent, expr, isImportant: importantPriority, baseHref: href);
       }
     } else if (_peekToken.kind == TokenKind.VAR_DEFINITION) {
@@ -1125,6 +1139,22 @@ class CSSParser {
     } else if (_peekToken.kind == TokenKind.DIRECTIVE_INCLUDE) {
       // TODO @include mixinName in the declaration area.
     } else if (_peekToken.kind == TokenKind.DIRECTIVE_EXTEND) {
+      _next();
+    }
+  }
+
+  void _skipToDeclarationEnd() {
+    var parenCount = 0;
+    while (!_maybeEat(TokenKind.END_OF_FILE)) {
+      if (_peek() == TokenKind.LPAREN) {
+        parenCount++;
+      }
+      if (_peek() == TokenKind.RPAREN) {
+        parenCount--;
+      }
+      if (parenCount <= 0 && (_peek() == TokenKind.SEMICOLON || _peek() == TokenKind.RBRACE)) {
+        break;
+      }
       _next();
     }
   }
