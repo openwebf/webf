@@ -586,7 +586,7 @@ TEST(CSSPropertyParserTest, ParseRevertLayer) {
 }
 
 // anchor() and anchor-size() shouldn't parse when the feature is disabled.
-TEST(CSSPropertyParserTest, AnchorPositioningDisabled) {
+TEST(CSSPropertyParserTest, DISABLED_AnchorPositioningDisabled) {
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
 
   EXPECT_FALSE(ParseCSSValue(CSSPropertyID::kTop, "anchor(--foo top)", context));

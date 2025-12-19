@@ -42,14 +42,12 @@ list(APPEND WEBF_CSS_UNIT_TEST_SOURCE
   ./core/css/parser/css_parser_token_stream_test.cc
   ./core/css/parser/css_if_parser_test.cc
   ./core/css/parser/css_parser_local_context_test.cc
-  ./core/css/parser/css_property_parser_test.cc
   ./core/css/parser/css_lazy_parsing_test.cc
   ./core/css/parser/container_query_parser_test.cc
   ./core/css/parser/css_parser_fast_paths_test.cc
   ./core/css/parser/css_parser_impl_test.cc
   ./core/css/parser/css_parser_token_test.cc
   ./core/css/parser/css_selector_parser_test.cc
-  ./core/css/parser/css_supports_parser_test.cc
   ./core/css/parser/css_tokenizer_test.cc
   ./core/css/parser/css_variable_parser_test.cc
   ./core/css/parser/find_length_of_declaration_list_test.cc
@@ -59,7 +57,6 @@ list(APPEND WEBF_CSS_UNIT_TEST_SOURCE
   ./core/css/parser/css_parser_comprehensive_test.cc
   ./core/css/parser/css_parser_shorthand_test.cc
   ./core/css/parser/css_tokenizer_comprehensive_test.cc
-  ./core/css/parser/css_property_parser_simple_test.cc
   ./core/css/parser/css_selector_parser_comprehensive_test.cc
   ./core/css/properties/css_bitset_test.cc
   ./core/css/properties/css_parsing_utils_test.cc

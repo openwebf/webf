@@ -1635,10 +1635,11 @@ std::shared_ptr<StyleRule> CSSParserImpl::ConsumeStyleRule(CSSParserTokenStream&
     if (!observer_ && lazy_state_) {
       assert(style_sheet_);
 
-      uint32_t len =
-          static_cast<uint32_t>(FindLengthOfDeclarationList(StringView(stream.RemainingText().data() + 1, stream.RemainingText().length() - 1)));
+      const StringView remaining_text = stream.RemainingText();
+      const StringView declaration_list(remaining_text, 1);
+      uint32_t len = static_cast<uint32_t>(FindLengthOfDeclarationList(declaration_list));
       if (len != 0) {
-        uint32_t block_start_offset = stream.Offset();
+        uint32_t block_start_offset = stream.LookAheadOffset();
         stream.SkipToEndOfBlock(len + 2);  // +2 for { and }.
         return StyleRule::Create(selector_vector,
                                  std::make_shared<CSSLazyPropertyParserImpl>(block_start_offset, lazy_state_));

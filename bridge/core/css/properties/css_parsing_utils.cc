@@ -165,23 +165,20 @@ bool ConsumeAnyValue(CSSParserTokenRange& range) {
 
 
 bool ConsumeAnyValue(CSSParserTokenStream& stream) {
-  bool result = IsTokenAllowedForAnyValue(stream.Peek());
-  unsigned nesting_level = 0;
-
-  while (nesting_level || result) {
-    const CSSParserToken& token = stream.Consume();
-    if (token.GetBlockType() == CSSParserToken::kBlockStart) {
-      nesting_level++;
-    } else if (token.GetBlockType() == CSSParserToken::kBlockEnd) {
-      nesting_level--;
+  while (!stream.AtEnd()) {
+    if (stream.Peek().GetBlockType() == CSSParserToken::kBlockStart) {
+      CSSParserTokenStream::RestoringBlockGuard guard(stream);
+      if (!ConsumeAnyValue(stream) || !guard.Release()) {
+        return false;
+      }
+    } else if (IsTokenAllowedForAnyValue(stream.Peek())) {
+      stream.Consume();
+    } else {
+      return false;
     }
-    if (stream.AtEnd()) {
-      return result;
-    }
-    result = result && IsTokenAllowedForAnyValue(stream.Peek());
   }
 
-  return result;
+  return true;
 }
 
 // MathFunctionParser is a helper for parsing something that _might_ be a
