@@ -143,6 +143,12 @@ class CSSStyleProperty {
     final String? positionShorthand = values[4];
     final String size = values[5] ?? 'auto';
 
+    if (DebugFlags.enableBackgroundLogs && shorthandValue.contains('gradient')) {
+      cssLogger.finer('[Background] expand shorthand "$shorthandValue" -> '
+          'color="${values[0] ?? 'transparent'}" image="${values[1] ?? 'none'}" repeat="${values[2] ?? 'repeat'}" '
+          'attachment="${values[3] ?? 'scroll'}" position="${values[4] ?? '<none>'}" size="$size"');
+    }
+
     properties[BACKGROUND_COLOR] = color;
     properties[BACKGROUND_IMAGE] = image;
     properties[BACKGROUND_REPEAT] = repeat;
