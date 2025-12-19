@@ -230,6 +230,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   FontStyle get fontStyle;
 
+  String get fontVariant;
+
   List<String>? get fontFamily;
 
   List<Shadow>? get textShadow;
@@ -1565,6 +1567,8 @@ class CSSRenderStyle extends RenderStyle
         return fontWeight;
       case FONT_STYLE:
         return fontStyle;
+      case FONT_VARIANT:
+        return fontVariant;
       case FONT_FAMILY:
         return fontFamily;
       case FONT_SIZE:
@@ -1990,6 +1994,9 @@ class CSSRenderStyle extends RenderStyle
         break;
       case FONT_STYLE:
         fontStyle = value;
+        break;
+      case FONT_VARIANT:
+        fontVariant = value;
         break;
       case FONT_FAMILY:
         fontFamily = value;
@@ -2473,6 +2480,9 @@ class CSSRenderStyle extends RenderStyle
         break;
       case FONT_STYLE:
         value = CSSText.resolveFontStyle(propertyValue);
+        break;
+      case FONT_VARIANT:
+        value = CSSText.resolveFontVariant(propertyValue);
         break;
       case FONT_FAMILY:
         value = CSSText.resolveFontFamilyFallback(propertyValue);

@@ -17,6 +17,29 @@ final RegExp _commaRegExp = RegExp(r'\s*,\s*');
 
 typedef TextPainterCallback = Paint? Function(Rect bounds);
 
+class _FontFeatureSupportKey {
+  final String primaryFamily;
+  final int weightIndex;
+  final FontStyle fontStyle;
+
+  const _FontFeatureSupportKey({
+    required this.primaryFamily,
+    required this.weightIndex,
+    required this.fontStyle,
+  });
+
+  @override
+  bool operator ==(Object other) {
+    return other is _FontFeatureSupportKey &&
+        other.primaryFamily == primaryFamily &&
+        other.weightIndex == weightIndex &&
+        other.fontStyle == fontStyle;
+  }
+
+  @override
+  int get hashCode => Object.hash(primaryFamily, weightIndex, fontStyle);
+}
+
 // CSS Text: https://drafts.csswg.org/css-text-3/
 // CSS Text Decoration: https://drafts.csswg.org/css-text-decor-3/
 // CSS Box Alignment: https://drafts.csswg.org/css-align/
@@ -145,6 +168,26 @@ mixin CSSTextMixin on RenderStyle {
     _fontStyle = value;
     // Update all the children text with specified style property not set due to style inheritance.
     _markChildrenTextNeedsLayout(this, FONT_STYLE);
+  }
+
+  String? _fontVariant;
+
+  @override
+  String get fontVariant {
+    // Get style from self or closest parent if specified style property is not set
+    // due to style inheritance.
+    if (_fontVariant == null && parent != null) {
+      return parent!.fontVariant;
+    }
+
+    return _fontVariant ?? NORMAL;
+  }
+
+  set fontVariant(String? value) {
+    if (_fontVariant == value) return;
+    _fontVariant = value;
+    // Update all the children text with specified style property not set due to style inheritance.
+    _markChildrenTextNeedsLayout(this, FONT_VARIANT);
   }
 
   List<String>? _fontFamily;
@@ -621,6 +664,9 @@ mixin CSSTextMixin on RenderStyle {
         decorationStyle: renderStyle.textDecorationStyle,
         fontWeight: renderStyle.fontWeight,
         fontStyle: renderStyle.fontStyle,
+        fontFeatures: renderStyle.fontVariant == 'small-caps' && CSSText.supportsSmallCapsFontFeature(renderStyle)
+            ? const [FontFeature.enable('smcp')]
+            : null,
         fontFamily: (renderStyle.fontFamily != null && renderStyle.fontFamily!.isNotEmpty)
             ? renderStyle.fontFamily!.first
             : null,
@@ -662,8 +708,69 @@ mixin CSSTextMixin on RenderStyle {
 }
 
 class CSSText {
+  static final Map<_FontFeatureSupportKey, bool> _smcpSupportCache = {};
+
   static bool isValidFontStyleValue(String value) {
     return value == 'normal' || value == 'italic' || value == 'oblique';
+  }
+
+  static bool isValidFontVariantValue(String value) {
+    // The CSS2.1 font-variant property only accepts 'normal' or 'small-caps'.
+    return value == 'normal' || value == 'small-caps';
+  }
+
+  static bool supportsSmallCapsFontFeature(CSSRenderStyle renderStyle) {
+    final List<String>? families = renderStyle.fontFamily;
+    final String primary = (families != null && families.isNotEmpty) ? families.first : '';
+    final _FontFeatureSupportKey key = _FontFeatureSupportKey(
+      primaryFamily: primary,
+      weightIndex: renderStyle.fontWeight.index,
+      fontStyle: renderStyle.fontStyle,
+    );
+
+    final bool? cached = _smcpSupportCache[key];
+    if (cached != null) return cached;
+
+    // Ensure primary font is requested before probing.
+    if (primary.isNotEmpty) {
+      CSSFontFace.ensureFontLoaded(primary, renderStyle.fontWeight, renderStyle);
+    }
+
+    // Probe by measuring if enabling 'smcp' changes layout metrics; when the font
+    // doesn't support it, metrics should remain identical (heuristic).
+    Size measure(String text, {List<FontFeature>? features}) {
+      final TextPainter tp = TextPainter(
+        text: TextSpan(
+          text: text,
+          style: TextStyle(
+            fontFamily: primary.isNotEmpty ? primary : null,
+            fontFamilyFallback: families,
+            fontWeight: renderStyle.fontWeight,
+            fontStyle: renderStyle.fontStyle,
+            fontSize: renderStyle.fontSize.computedValue,
+            fontFeatures: features,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      return tp.size;
+    }
+
+    const samples = ['a', 'abcxyz', 'mixedCapsAa'];
+    bool supported = false;
+    for (final s in samples) {
+      final Size base = measure(s);
+      final Size feat = measure(s, features: const [FontFeature.enable('smcp')]);
+      final double dw = (feat.width - base.width).abs();
+      final double dh = (feat.height - base.height).abs();
+      if (dw > 0.1 || dh > 0.1) {
+        supported = true;
+        break;
+      }
+    }
+
+    _smcpSupportCache[key] = supported;
+    return supported;
   }
 
   static bool isValidFontWeightValue(String value) {
@@ -1009,6 +1116,13 @@ class CSSText {
     }
   }
 
+  static String? resolveFontVariant(String? fontVariant) {
+    if (fontVariant == null) return null;
+    final String lower = fontVariant.toLowerCase();
+    if (!isValidFontVariantValue(lower)) return null;
+    return lower;
+  }
+
   static String? toCharacterBreakStr(String? word) {
     if (word == null || word.isEmpty) {
       return null;
@@ -1045,7 +1159,8 @@ class CSSText {
         familyName = familyName.substring(1, familyName.length - 1);
       }
 
-      switch (familyName) {
+      final String familyKey = familyName.toLowerCase();
+      switch (familyKey) {
         case 'sans-serif':
           // Default sans-serif font in iOS (9 and newer)and iPadOS: Helvetica
           // Default sans-serif font in Android (4.0+): Roboto

@@ -2244,7 +2244,7 @@ class InlineFormattingContext {
               return s.lineHeight.computedValue / s.fontSize.computedValue;
             })();
             final Color maskColor = s.isVisibilityHidden ? const Color(0x00000000) : s.color.value.withAlpha(0xFF);
-            pb.pushStyle(ui.TextStyle(
+            final ui.TextStyle maskStyle = ui.TextStyle(
               color: maskColor,
               // Suppress decoration/shadow in the mask paragraph for clip-text; they
               // are painted via dedicated passes to preserve color/ordering.
@@ -2264,8 +2264,12 @@ class InlineFormattingContext {
               background: CSSText.getBackground(),
               foreground: CSSText.getForeground(),
               shadows: null,
-            ));
-            pb.addText(text);
+              fontFeatures: s.fontVariant == 'small-caps' && CSSText.supportsSmallCapsFontFeature(s)
+                  ? const [ui.FontFeature.enable('smcp')]
+                  : null,
+            );
+            pb.pushStyle(maskStyle);
+            _addTextWithFontVariant(pb, text, s, s.fontSize.computedValue);
             final ui.Paragraph p = pb.build();
             p.layout(const ui.ParagraphConstraints(width: 1000000.0));
             return p;
@@ -3175,8 +3179,9 @@ class InlineFormattingContext {
                 leadingDistribution: ui.TextLeadingDistribution.even,
               ),
             ));
-            subPB.pushStyle(_uiTextStyleFromCss(item.style!));
-            subPB.addText(text);
+            final ui.TextStyle subStyle = _uiTextStyleFromCss(item.style!);
+            subPB.pushStyle(subStyle);
+            _addTextWithFontVariant(subPB, text, item.style!, item.style!.fontSize.computedValue);
             subPB.pop();
             subPara = subPB.build();
             subPara.layout(const ui.ParagraphConstraints(width: 1000000.0));
@@ -3201,7 +3206,9 @@ class InlineFormattingContext {
           _textRunParas.add(subPara);
           _textRunBuildIndex += 1;
         } else {
-          pb.pushStyle(_uiTextStyleFromCss(item.style!));
+          final ui.TextStyle baseRunStyle = _uiTextStyleFromCss(item.style!);
+          final double baseFontSize = item.style!.fontSize.computedValue;
+          pb.pushStyle(baseRunStyle);
 
           // Apply ::first-letter if present and not yet applied.
           final ownerEl = (container as RenderBoxModel).renderStyle.target;
@@ -3236,28 +3243,29 @@ class InlineFormattingContext {
               }
 
               if (ovColor != null || (ovFontSize != null && ovFontSize.isFinite)) {
-                pb.pushStyle(ui.TextStyle(
+                final ui.TextStyle ovStyle = ui.TextStyle(
                   color: ovColor,
                   fontSize: ovFontSize,
-                ));
-                pb.addText(text.substring(0, prefixLen));
+                );
+                pb.pushStyle(ovStyle);
+                _addTextWithFontVariant(pb, text.substring(0, prefixLen), item.style!, ovFontSize ?? baseFontSize);
                 pb.pop();
                 if (prefixLen < text.length) {
-                  pb.addText(text.substring(prefixLen));
+                  _addTextWithFontVariant(pb, text.substring(prefixLen), item.style!, baseFontSize);
                 }
                 firstLetterDone = true;
               } else {
                 // No supported overrides; fall back to emitting the whole text.
-                pb.addText(text);
+                _addTextWithFontVariant(pb, text, item.style!, baseFontSize);
                 firstLetterDone = true; // consider applied so we don't try again
               }
             } else {
               // No eligible prefix in this run; emit as-is and wait for next.
-              pb.addText(text);
+              _addTextWithFontVariant(pb, text, item.style!, baseFontSize);
             }
           } else {
             // No ::first-letter or already applied
-            pb.addText(text);
+            _addTextWithFontVariant(pb, text, item.style!, baseFontSize);
           }
 
           pb.pop();
@@ -3620,7 +3628,9 @@ class InlineFormattingContext {
       } else if (item.isText) {
         final String text = item.getText(_textContent);
         if (text.isEmpty || item.style == null) continue;
-        pb.pushStyle(_uiTextStyleFromCss(item.style!));
+        final ui.TextStyle baseRunStyle = _uiTextStyleFromCss(item.style!);
+        final double baseFontSize = item.style!.fontSize.computedValue;
+        pb.pushStyle(baseRunStyle);
         if (firstLineRemaining > 0) {
           final int segLen = math.min(firstLineRemaining, text.length);
           final ui.TextStyle? flOv = _firstLineOverrideFor(firstLineDecl, item.style!);
@@ -3635,20 +3645,28 @@ class InlineFormattingContext {
           }
 
           if (segLen > 0) {
+            // dart:ui.TextStyle does not expose fontSize; keep synthesis relative
+            // to the element's computed font-size for now.
+            final double effectiveFirstLineFontSize = baseFontSize;
             if (flOv != null) pb.pushStyle(flOv);
             if (letterPrefix > 0) {
               final int used = math.min(letterPrefix, segLen);
+              final double effectiveLetterFontSize = effectiveFirstLineFontSize;
               if (flLetterOv != null) pb.pushStyle(flLetterOv);
-              pb.addText(text.substring(0, used));
+              _addTextWithFontVariant(pb, text.substring(0, used), item.style!, effectiveLetterFontSize);
               if (flLetterOv != null) pb.pop();
-              if (segLen > used) pb.addText(text.substring(used, segLen));
+              if (segLen > used) {
+                _addTextWithFontVariant(pb, text.substring(used, segLen), item.style!, effectiveFirstLineFontSize);
+              }
               firstLetterApplied = true;
             } else {
-              pb.addText(text.substring(0, segLen));
+              _addTextWithFontVariant(pb, text.substring(0, segLen), item.style!, effectiveFirstLineFontSize);
             }
             if (flOv != null) pb.pop();
           }
-          if (text.length > segLen) pb.addText(text.substring(segLen));
+          if (text.length > segLen) {
+            _addTextWithFontVariant(pb, text.substring(segLen), item.style!, baseFontSize);
+          }
           firstLineRemaining -= segLen;
         } else {
           if (!firstLetterApplied && firstLetterDecl != null) {
@@ -3657,18 +3675,20 @@ class InlineFormattingContext {
               final ui.TextStyle? ov = _firstLetterOverrideFor(firstLetterDecl, item.style!);
               if (ov != null) {
                 pb.pushStyle(ov);
-                pb.addText(text.substring(0, letterPrefix));
+                _addTextWithFontVariant(pb, text.substring(0, letterPrefix), item.style!, baseFontSize);
                 pb.pop();
-                if (letterPrefix < text.length) pb.addText(text.substring(letterPrefix));
+                if (letterPrefix < text.length) {
+                  _addTextWithFontVariant(pb, text.substring(letterPrefix), item.style!, baseFontSize);
+                }
               } else {
-                pb.addText(text);
+                _addTextWithFontVariant(pb, text, item.style!, baseFontSize);
               }
               firstLetterApplied = true;
             } else {
-              pb.addText(text);
+              _addTextWithFontVariant(pb, text, item.style!, baseFontSize);
             }
           } else {
-            pb.addText(text);
+            _addTextWithFontVariant(pb, text, item.style!, baseFontSize);
           }
         }
         pb.pop();
@@ -4503,6 +4523,10 @@ class InlineFormattingContext {
     final Color effectiveColor = clipText ? baseColor.withAlpha(hidden ? 0x00 : 0xFF) : baseColor;
     final (TextDecoration effLine, TextDecorationStyle? effStyle, Color? effColor) =
         _computeEffectiveTextDecoration(rs);
+    final List<ui.FontFeature>? fontFeatures =
+        rs.fontVariant == 'small-caps' && CSSText.supportsSmallCapsFontFeature(rs)
+            ? const [ui.FontFeature.enable('smcp')]
+            : null;
     final result = ui.TextStyle(
       // For clip-text, force fully-opaque glyphs for the mask (ignore alpha).
       color: effectiveColor,
@@ -4516,6 +4540,7 @@ class InlineFormattingContext {
       fontFamily: (families != null && families.isNotEmpty) ? families.first : null,
       fontFamilyFallback: families,
       fontSize: rs.fontSize.computedValue,
+      fontFeatures: fontFeatures,
       letterSpacing: rs.letterSpacing?.computedValue,
       wordSpacing: rs.wordSpacing?.computedValue,
       height: heightMultiple,
@@ -4528,6 +4553,57 @@ class InlineFormattingContext {
     );
     _cachedUiTextStyles[rs] = result;
     return result;
+  }
+
+  static const double _syntheticSmallCapsScale = 0.8;
+
+  bool _shouldSynthesizeSmallCaps(CSSRenderStyle rs) {
+    return rs.fontVariant == 'small-caps' && !CSSText.supportsSmallCapsFontFeature(rs);
+  }
+
+  bool _isLowerAsciiLetter(int cu) => cu >= 0x61 && cu <= 0x7A;
+
+  void _addTextWithFontVariant(ui.ParagraphBuilder pb, String text, CSSRenderStyle rs, double baseFontSize) {
+    if (!_shouldSynthesizeSmallCaps(rs)) {
+      pb.addText(text);
+      return;
+    }
+
+    if (!baseFontSize.isFinite || baseFontSize <= 0) {
+      pb.addText(text);
+      return;
+    }
+
+    final double smallCapsSize = baseFontSize * _syntheticSmallCapsScale;
+    int runStart = 0;
+    bool inLower = false;
+    for (int i = 0; i < text.length; i++) {
+      final bool isLower = _isLowerAsciiLetter(text.codeUnitAt(i));
+      if (i == 0) {
+        inLower = isLower;
+        continue;
+      }
+      if (isLower != inLower) {
+        final String seg = text.substring(runStart, i);
+        if (inLower) {
+          pb.pushStyle(ui.TextStyle(fontSize: smallCapsSize));
+          pb.addText(seg.toUpperCase());
+          pb.pop();
+        } else {
+          pb.addText(seg);
+        }
+        runStart = i;
+        inLower = isLower;
+      }
+    }
+    final String tail = text.substring(runStart);
+    if (inLower) {
+      pb.pushStyle(ui.TextStyle(fontSize: smallCapsSize));
+      pb.addText(tail.toUpperCase());
+      pb.pop();
+    } else {
+      pb.addText(tail);
+    }
   }
 
   void dispose() {

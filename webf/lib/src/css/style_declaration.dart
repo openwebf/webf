@@ -435,6 +435,12 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       return string;
     }
 
+    // Preserve font family names and font shorthand values to avoid breaking
+    // platform font resolution (Flutter font families can be case-sensitive).
+    if (propertyName == FONT_FAMILY || propertyName == FONT) {
+      return string;
+    }
+
     if (propertyName == CONTENT) {
       return string;
     }
@@ -550,6 +556,13 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         final bool isNonNegPct = CSSPercentage.isNonNegativePercentage(normalizedValue);
         final bool isKeyword = CSSText.isValidFontSizeValue(normalizedValue);
         if (!(isVar || isFunc || isNonNegLen || isNonNegPct || isKeyword)) return false;
+        break;
+      case FONT_VARIANT:
+        // CSS2.1 font-variant accepts 'normal' or 'small-caps'.
+        final bool isVarFontVariant = CSSVariable.isCSSVariableValue(normalizedValue);
+        final bool isFuncFontVariant = CSSFunction.isFunction(normalizedValue);
+        final bool isKeywordFontVariant = CSSText.isValidFontVariantValue(normalizedValue);
+        if (!(isVarFontVariant || isFuncFontVariant || isKeywordFontVariant)) return false;
         break;
     }
     return true;

@@ -242,14 +242,16 @@ class CSSStyleProperty {
     List<String?>? values = _getFontValues(shorthandValue);
     if (values == null) return;
     properties[FONT_STYLE] = values[0];
-    properties[FONT_WEIGHT] = values[1];
-    properties[FONT_SIZE] = values[2];
-    properties[LINE_HEIGHT] = values[3];
-    properties[FONT_FAMILY] = values[4];
+    properties[FONT_VARIANT] = values[1];
+    properties[FONT_WEIGHT] = values[2];
+    properties[FONT_SIZE] = values[3];
+    properties[LINE_HEIGHT] = values[4];
+    properties[FONT_FAMILY] = values[5];
   }
 
   static void removeShorthandFont(CSSStyleDeclaration style, [bool? isImportant]) {
     if (style.contains(FONT_STYLE)) style.removeProperty(FONT_STYLE, isImportant);
+    if (style.contains(FONT_VARIANT)) style.removeProperty(FONT_VARIANT, isImportant);
     if (style.contains(FONT_WEIGHT)) style.removeProperty(FONT_WEIGHT, isImportant);
     if (style.contains(FONT_SIZE)) style.removeProperty(FONT_SIZE, isImportant);
     if (style.contains(LINE_HEIGHT)) style.removeProperty(LINE_HEIGHT, isImportant);
@@ -811,12 +813,11 @@ class CSSStyleProperty {
     List<String> values = _splitBySpace(shorthandProperty);
 
     String? style;
+    String? variant;
     String? weight;
     String? size;
     String? lineHeight;
     String? family;
-
-    bool isSizeEndAndLineHeightStart = false;
 
     // Font shorthand has following rules:
     // * it must include values for:
@@ -834,41 +835,62 @@ class CSSStyleProperty {
     //
     // [ [ <'font-style'> || <font-variant-css2> || <'font-weight'> || <font-stretch-css3> ]? <'font-size'> [ / <'line-height'> ]? <'font-family'> ]
     // https://drafts.csswg.org/css-fonts/#font-prop
-    for (String value in values) {
+    for (int i = 0; i < values.length; i++) {
+      final String value = values[i];
       final bool isValueVariableFunction = CSSFunction.isFunction(value, functionName: VAR);
-      if (style == null &&
-          size == null &&
-          family == null &&
-          !isSizeEndAndLineHeightStart &&
-          (isValueVariableFunction || CSSText.isValidFontStyleValue(value))) {
-        style = value;
-      } else if (weight == null &&
-          size == null &&
-          family == null &&
-          !isSizeEndAndLineHeightStart &&
-          (isValueVariableFunction || CSSText.isValidFontWeightValue(value))) {
-        weight = value;
-      } else if (size == null && (isValueVariableFunction || CSSText.isValidFontSizeValue(value))) {
-        size = value;
-      } else if (value == '/') {
-        isSizeEndAndLineHeightStart = true;
+
+      // Per spec, 'normal' may appear in the optional pre-size section to
+      // represent the initial value of any of the optional properties; it is
+      // effectively ignorable for shorthand parsing.
+      final String normalized = isValueVariableFunction ? value : value.toLowerCase();
+      if (size == null && normalized == NORMAL) {
         continue;
-      } else if (lineHeight == null && (isValueVariableFunction || CSSText.isValidLineHeightValue(value))) {
-        lineHeight = value;
-      } else if (size != null && family == null) {
-        // The font-family must be the last value specified.
-        // Like `font: 12px` is invalid property value.
-        family = value;
-      } else {
+      }
+
+      if (size == null) {
+        if (style == null && (isValueVariableFunction || CSSText.isValidFontStyleValue(normalized))) {
+          style = normalized;
+          continue;
+        }
+        if (variant == null && (isValueVariableFunction || CSSText.isValidFontVariantValue(normalized))) {
+          variant = normalized;
+          continue;
+        }
+        if (weight == null && (isValueVariableFunction || CSSText.isValidFontWeightValue(normalized))) {
+          weight = normalized;
+          continue;
+        }
+        if (isValueVariableFunction || CSSText.isValidFontSizeValue(normalized)) {
+          size = normalized;
+          continue;
+        }
         return null;
       }
+
+      // After <font-size> comes optional /<line-height>, then <font-family>.
+      if (value == '/') {
+        if (lineHeight != null || i + 1 >= values.length) return null;
+        final String lh = values[++i];
+        final bool isLhVar = CSSFunction.isFunction(lh, functionName: VAR);
+        final String lhNormalized = isLhVar ? lh : lh.toLowerCase();
+        if (!(isLhVar || CSSText.isValidLineHeightValue(lhNormalized))) {
+          return null;
+        }
+        lineHeight = lhNormalized;
+        continue;
+      }
+
+      // The font-family must be the last value specified; preserve original
+      // token case so platform font resolution can match system fonts.
+      family = values.sublist(i).join(' ');
+      break;
     }
 
-    if ((isSizeEndAndLineHeightStart && (size == null || lineHeight == null)) || family == null) {
+    if (size == null || family == null) {
       return null;
     }
 
-    return [style, weight, size, lineHeight, family];
+    return [style, variant, weight, size, lineHeight, family];
   }
 
   static List<String?>? _getTextDecorationValues(String shorthandProperty) {
