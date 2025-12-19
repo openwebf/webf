@@ -1777,17 +1777,6 @@ class RenderFlexLayout extends RenderLayoutBox {
     final bool isWrap = renderStyle.flexWrap == FlexWrap.wrap || renderStyle.flexWrap == FlexWrap.wrapReverse;
     final double mainAxisGap = _getMainAxisGap();
 
-    // PASS 1: Layout children with intrinsic constraints (no percentage limits)
-    // This establishes the parent's natural size
-    for (RenderBox child in children) {
-      final BoxConstraints childConstraints = _getIntrinsicConstraints(child);
-      child.layout(childConstraints, parentUsesSize: true);
-
-      if (child is RenderBoxModel) {
-        child.clearOverrideContentSize();
-      }
-    }
-
     double runMainAxisExtent = 0.0;
     double runCrossAxisExtent = 0.0;
 
@@ -1812,8 +1801,15 @@ class RenderFlexLayout extends RenderLayoutBox {
     // Info about each flex item in each flex line
     List<_RunChild> runChildren = <_RunChild>[];
 
-    // PASS 2: Calculate run metrics using intrinsic sizes
+    // PASS 1+2: Intrinsic layout + compute run metrics in one pass.
     for (RenderBox child in children) {
+      final BoxConstraints childConstraints = _getIntrinsicConstraints(child);
+      child.layout(childConstraints, parentUsesSize: true);
+
+      if (child is RenderBoxModel) {
+        child.clearOverrideContentSize();
+      }
+
       final RenderLayoutParentData? childParentData = child.parentData as RenderLayoutParentData?;
 
       // Use intrinsic size for run calculations
