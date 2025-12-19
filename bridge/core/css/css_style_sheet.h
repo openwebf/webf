@@ -228,7 +228,7 @@ class CSSStyleSheet final : public StyleSheet, public MediaQuerySetOwner {
   AtomicString title_;
 
   Member<Node> owner_node_;
-  Element* owner_parent_or_shadow_host_element_;
+  Element* owner_parent_or_shadow_host_element_{nullptr};
   Member<CSSRule> owner_rule_;
   // Used for knowing which TreeScopes to invalidate when an adopted stylesheet
   // is modified. The value is a count to keep track of the number of references
@@ -236,7 +236,7 @@ class CSSStyleSheet final : public StyleSheet, public MediaQuerySetOwner {
   std::unordered_map<TreeScope*, size_t> adopted_tree_scopes_;
   // The Document this stylesheet was constructed for. Always non-null for
   // constructed stylesheets. Always null for other sheets.
-  Document* constructor_document_;
+  Document* constructor_document_{nullptr};
   std::unordered_set<AtomicString, AtomicString::KeyHasher> custom_element_tag_names_;
 
   TextPosition start_position_;

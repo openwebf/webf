@@ -23,7 +23,8 @@ namespace webf {
 // To minimize performance impact, we wrap trace events with a lookup of
 // cached flag. The cached flag is made "static const" and is not shared
 // with InvalidationSet to avoid additional GOT lookup cost.
-static const unsigned char* g_style_invalidator_tracing_enabled = nullptr;
+static const unsigned char kStyleInvalidatorTracingDisabled = 0;
+static const unsigned char* g_style_invalidator_tracing_enabled = &kStyleInvalidatorTracingDisabled;
 
 //#define TRACE_STYLE_INVALIDATOR_INVALIDATION_IF_ENABLED(element, reason) \
 //  if (UNLIKELY(*g_style_invalidator_tracing_enabled))                    \

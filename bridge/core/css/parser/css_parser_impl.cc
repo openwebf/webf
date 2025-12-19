@@ -189,29 +189,8 @@ static inline void FilterProperties(std::vector<CSSPropertyValue>& values,
                                     size_t& unused_entries,
                                     std::bitset<kNumCSSProperties>& seen_properties,
                                     std::unordered_set<std::string>& seen_custom_properties) {
-  // Move !important declarations last, using a simple insertion sort.
-  // This is O(n²), but n is typically small, and std::stable_partition
-  // wants to allocate memory to get to O(n), which is overkill here.
-  // Moreover, this is O(n) if there are no !important properties
-  // (the common case) or only !important properties.
-  size_t last_nonimportant_idx = values.size() - 1;
-  for (size_t i = values.size(); i--;) {
-    if (values[i].IsImportant()) {
-      if (i != last_nonimportant_idx) {
-        // Move this element to the end, preserving the order
-        // of the other elements.
-        CSSPropertyValue tmp = std::move(values[i]);
-        for (size_t j = i; j < last_nonimportant_idx; ++j) {
-          values[j] = std::move(values[j + 1]);
-        }
-        values[last_nonimportant_idx] = std::move(tmp);
-      }
-      --last_nonimportant_idx;
-    }
-  }
-
-  // Add properties in reverse order so that highest priority definitions are
-  // reached first. Duplicate definitions can then be ignored when found.
+  // Add properties in reverse order so that later definitions are reached
+  // first. Duplicate definitions can then be ignored when found.
   for (size_t i = values.size(); i--;) {
     const CSSPropertyValue& property = values[i];
     if (property.Id() == CSSPropertyID::kVariable) {

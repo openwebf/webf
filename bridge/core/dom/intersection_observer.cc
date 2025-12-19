@@ -104,7 +104,7 @@ void IntersectionObserver::observe(Element* target, ExceptionState& exception_st
   }
 
 #if ENABLE_LOG
-  WEBF_LOG(DEBUG) << "[IntersectionObserver]: observe target=" << target << "，tagName=" << target->nodeName()
+  WEBF_LOG(VERBOSE) << "[IntersectionObserver]: observe target=" << target << "，tagName=" << target->nodeName()
                   << std::endl;
 #endif
 
@@ -265,7 +265,7 @@ NativeValue IntersectionObserver::HandleCallFromDartSide(const AtomicString& met
     ScriptValue arguments[] = {ScriptValue(ctx(), js_array), ToValue()};
 
 #if ENABLE_LOG
-    WEBF_LOG(DEBUG) << "[IntersectionObserver]: HandleCallFromDartSide length=" << length << "，JS function_ Invoke"
+    WEBF_LOG(VERBOSE) << "[IntersectionObserver]: HandleCallFromDartSide length=" << length << "，JS function_ Invoke"
                     << std::endl;
 #endif
 

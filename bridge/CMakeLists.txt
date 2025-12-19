@@ -206,6 +206,10 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/code_gen)
 set(BRIDGE_SOURCE_LOADED FALSE)
 set(_BRIDGE_SOURCES_JSON5 "${CMAKE_CURRENT_SOURCE_DIR}/bridge_sources.json5")
 if(EXISTS "${_BRIDGE_SOURCES_JSON5}")
+  # Ensure changes to bridge_sources.json5 trigger a CMake reconfigure so newly
+  # added source files are picked up (otherwise builds can fail at link time
+  # with unresolved symbols).
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_BRIDGE_SOURCES_JSON5}")
   execute_process(
     COMMAND node ${CMAKE_CURRENT_SOURCE_DIR}/scripts/read_bridge_sources.js ${_BRIDGE_SOURCES_JSON5}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}

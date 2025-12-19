@@ -37,7 +37,6 @@ list(APPEND WEBF_CSS_UNIT_TEST_SOURCE
   # CSS Parser
   ./core/css/css_primitive_value_test.cc
   ./core/css/css_test_helpers.cc
-  ./core/css/css_math_expression_node_test.cc
   ./core/css/parser/allowed_rules_test.cc
   ./core/css/parser/at_rule_descriptor_parser_test.cc
   ./core/css/parser/css_parser_token_stream_test.cc

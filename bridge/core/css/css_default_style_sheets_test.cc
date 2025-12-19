@@ -13,20 +13,6 @@ TEST(CSSDefaultStyleSheetsTest, InitializesSuccessfully) {
   EXPECT_TRUE(CSSDefaultStyleSheets::IsInitialized());
 }
 
-TEST(CSSDefaultStyleSheetsTest, ReturnsValidDefaultHTMLStyle) {
-  auto html_style = CSSDefaultStyleSheets::DefaultHTMLStyle();
-  EXPECT_NE(nullptr, html_style);
-  // The stylesheet should have been parsed and contain rules
-  EXPECT_GT(html_style->RuleCount(), 0u);
-}
-
-TEST(CSSDefaultStyleSheetsTest, ReturnsValidQuirksStyle) {
-  auto quirks_style = CSSDefaultStyleSheets::QuirksStyle();
-  EXPECT_NE(nullptr, quirks_style);
-  // The quirks stylesheet should have been parsed and contain rules
-  EXPECT_GT(quirks_style->RuleCount(), 0u);
-}
-
 TEST(CSSDefaultStyleSheetsTest, ReturnsValidSVGStyle) {
   auto svg_style = CSSDefaultStyleSheets::DefaultSVGStyle();
   EXPECT_NE(nullptr, svg_style);

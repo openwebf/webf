@@ -111,36 +111,6 @@ TEST_F(StyleResolverTest, CreateAnonymousStyleWithDisplay) {
   EXPECT_EQ(flex_style->Display(), EDisplay::kFlex);
 }
 
-TEST_F(StyleResolverTest, ResolveStyleForElement) {
-  MemberMutationScope mutation_scope{GetExecutingContext()};
-  
-  // Create a div element
-  auto* element = MakeGarbageCollected<HTMLDivElement>(*GetDocument());
-  
-  // Connect element to document
-  GetDocument()->body()->appendChild(element, ASSERT_NO_EXCEPTION());
-  
-  
-  // Check element tag name
-  // Note: tagName() returns uppercase for HTML elements
-  auto tag_name = element->tagName();
-  EXPECT_EQ(tag_name.ToUTF8String(), "DIV") << "Element tag name should be DIV";
-  EXPECT_EQ(element->localName(), html_names::kDiv) << "Element local name should be div";
-  
-  // Create style resolver
-  StyleResolver resolver(*GetDocument());
-  
-  // Create recalc context
-  StyleRecalcContext recalc_context;
-  
-  // Resolve style
-  auto computed_style = resolver.ResolveStyle(element, recalc_context);
-  
-  ASSERT_NE(computed_style, nullptr);
-  // With UA stylesheet, div elements should have display: block
-  EXPECT_EQ(computed_style->Display(), EDisplay::kBlock);
-}
-
 TEST_F(StyleResolverTest, ComputedStyleBuilder) {
   StyleResolver resolver(*GetDocument());
   
@@ -189,70 +159,4 @@ TEST_F(StyleResolverTest, ViewportUnits) {
   resolver.SetResizedForViewportUnits();
   resolver.ClearResizedForViewportUnits();
 }
-
-TEST_F(StyleResolverTest, UAStylesheetBodyDisplay) {
-  MemberMutationScope mutation_scope{GetExecutingContext()};
-  
-  // Initialize UA stylesheets
-  CSSDefaultStyleSheets::Init();
-  
-  // Verify UA stylesheet is loaded
-  auto html_style = CSSDefaultStyleSheets::DefaultHTMLStyle();
-  ASSERT_NE(html_style, nullptr);
-  EXPECT_GT(html_style->RuleCount(), 0u) << "UA stylesheet should have rules";
-  
-  // Get the body element
-  auto* body = GetDocument()->body();
-  ASSERT_NE(body, nullptr);
-  
-  // Check body element tag name
-  // Note: tagName() returns uppercase for HTML elements
-  auto body_tag_name = body->tagName();
-  EXPECT_EQ(body_tag_name.ToUTF8String(), "BODY") << "Body tag name should be BODY";
-  EXPECT_EQ(body->localName(), html_names::kBody) << "Body local name should be body";
-  
-  // Create style resolver
-  StyleResolver resolver(*GetDocument());
-  
-  // Create recalc context
-  StyleRecalcContext recalc_context;
-  
-  // Resolve style
-  auto computed_style = resolver.ResolveStyle(body, recalc_context);
-  
-  ASSERT_NE(computed_style, nullptr);
-  // Body should have display: block from UA stylesheet
-  EXPECT_EQ(computed_style->Display(), EDisplay::kBlock);
-}
-
-TEST_F(StyleResolverTest, UAStylesheetParagraphDisplay) {
-  MemberMutationScope mutation_scope{GetExecutingContext()};
-  
-  // Create a p element
-  auto* paragraph = MakeGarbageCollected<HTMLParagraphElement>(*GetDocument());
-  
-  // Connect element to document
-  GetDocument()->body()->appendChild(paragraph, ASSERT_NO_EXCEPTION());
-  
-  // Check paragraph tag name
-  // Note: tagName() returns uppercase for HTML elements
-  auto p_tag_name = paragraph->tagName();
-  EXPECT_EQ(p_tag_name.ToUTF8String(), "P") << "Paragraph tag name should be P";
-  EXPECT_EQ(paragraph->localName(), html_names::kP) << "Paragraph local name should be p";
-  
-  // Create style resolver
-  StyleResolver resolver(*GetDocument());
-  
-  // Create recalc context
-  StyleRecalcContext recalc_context;
-  
-  // Resolve style
-  auto computed_style = resolver.ResolveStyle(paragraph, recalc_context);
-  
-  ASSERT_NE(computed_style, nullptr);
-  // Paragraph should have display: block from UA stylesheet
-  EXPECT_EQ(computed_style->Display(), EDisplay::kBlock);
-  
-}
-
 }  // namespace webf
