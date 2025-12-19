@@ -1,3 +1,15 @@
+## 0.23.12
+
+- Performance
+  - Rendering: comprehensive flex layout optimizations (caching invariants and per-item flex data, reduced allocations, and new fast paths).
+  - Inline formatting: speed up paragraph layout and trailing extras shrink passes; refactor paragraph building for less work.
+  - Style/layout: optimize parent render-style reads and avoid unnecessary element key updates.
+- Fixed
+  - Android: fix build configuration issues.
+  - Tooling/tests: resolve lint issues and update integration/unit tests.
+- Chore
+  - Dependencies: bump `vector_math` to `^2.2.0`.
+
 ## 0.23.11
 
 - Features
