@@ -315,8 +315,12 @@ void StyleInvalidator::Invalidate(Element& element, SiblingData& sibling_data) {
   //   could apply to the descendants.
   // * there are invalidation sets attached to descendants then we need to
   //   clear the flags on the nodes, whether we use the sets or not.
-  if ((!WholeSubtreeInvalid() && HasInvalidationSets() && element.GetComputedStyle()) ||
-      element.ChildNeedsStyleInvalidation()) {
+  // Blink gates invalidation recursion on GetComputedStyle() to avoid walking
+  // subtrees that cannot be affected (e.g. display:none). WebF does not yet
+  // store ComputedStyle on DOM nodes, so GetComputedStyle() always returns
+  // nullptr; keep invalidation functional by recursing whenever there are
+  // pending invalidation sets.
+  if ((!WholeSubtreeInvalid() && HasInvalidationSets()) || element.ChildNeedsStyleInvalidation()) {
     InvalidateChildren(element);
   } else {
     ClearPendingNthSiblingInvalidationSets();

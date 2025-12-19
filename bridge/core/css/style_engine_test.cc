@@ -226,7 +226,6 @@ TEST_F(StyleEngineTest, LargeSheetCaching) {
   EXPECT_EQ(sheet->Contents(), sheet2->Contents());
 }
 
-// TODO: verfiy this testcase, or delete it.
 TEST_F(StyleEngineTest, SiblingInvalidationDirectAdjacentOnInsertion) {
   MemberMutationScope mutation_scope{GetExecutingContext()};
   GetExecutingContext()->EnableBlinkEngine();
