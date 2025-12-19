@@ -2174,17 +2174,178 @@ class RenderFlexLayout extends RenderLayoutBox {
     return totalViolation != 0;
   }
 
+  bool _hasBaselineAlignedChildren(List<_RunMetrics> runMetrics) {
+    if (!_isHorizontalFlexDirection) return false;
+    if (renderStyle.alignItems == AlignItems.baseline) return true;
+    for (final _RunMetrics metrics in runMetrics) {
+      for (final _RunChild runChild in metrics.runChildren) {
+        if (_getAlignSelf(runChild.child) == AlignSelf.baseline) return true;
+      }
+    }
+    return false;
+  }
+
+  bool _hasStretchedChildrenInCrossAxis(List<_RunMetrics> runMetrics) {
+    for (final _RunMetrics metrics in runMetrics) {
+      for (final _RunChild runChild in metrics.runChildren) {
+        if (_needToStretchChildCrossSize(runChild.child)) return true;
+      }
+    }
+    return false;
+  }
+
+  bool _tryNoFlexNoStretchNoBaselineFastPath(
+    List<_RunMetrics> runMetrics, {
+    required double? maxMainSize,
+    required bool isMainSizeDefinite,
+    required double? contentBoxLogicalWidth,
+    required double? contentBoxLogicalHeight,
+  }) {
+    final double containerStyleMin = _isHorizontalFlexDirection
+        ? (renderStyle.minWidth.isNotAuto ? renderStyle.minWidth.computedValue : 0.0)
+        : (renderStyle.minHeight.isNotAuto ? renderStyle.minHeight.computedValue : 0.0);
+
+    // First, verify no run will actually enter flexible length resolution.
+    for (final _RunMetrics metrics in runMetrics) {
+      final List<_RunChild> runChildrenList = metrics.runChildren;
+
+      double totalSpace = 0;
+      for (final _RunChild runChild in runChildrenList) {
+        double childSpace = runChild.originalMainSize;
+        final RenderBox child = runChild.child;
+        double marginHorizontal = 0;
+        double marginVertical = 0;
+        if (child is RenderBoxModel) {
+          final double? usedBasis = _getUsedFlexBasis(child);
+          marginHorizontal = child.renderStyle.marginLeft.computedValue + child.renderStyle.marginRight.computedValue;
+          marginVertical = child.renderStyle.marginTop.computedValue + child.renderStyle.marginBottom.computedValue;
+          if (usedBasis != null) {
+            childSpace = usedBasis; // already border-box
+          }
+        }
+        final double mainAxisMargin = _isHorizontalFlexDirection ? marginHorizontal : marginVertical;
+        totalSpace += childSpace + mainAxisMargin;
+      }
+
+      final int itemCount = runChildrenList.length;
+      if (itemCount > 1) {
+        totalSpace += (itemCount - 1) * _getMainAxisGap();
+      }
+
+      final double freeSpace = maxMainSize != null ? (maxMainSize - totalSpace) : 0.0;
+
+      final bool boundedOnly = maxMainSize != null &&
+          !(_isHorizontalFlexDirection
+              ? (contentBoxLogicalWidth != null ||
+                  (contentConstraints?.hasTightWidth ?? false) ||
+                  constraints.hasTightWidth)
+              : (contentBoxLogicalHeight != null ||
+                  (contentConstraints?.hasTightHeight ?? false) ||
+                  constraints.hasTightHeight));
+
+      final bool willShrink = maxMainSize != null && freeSpace < 0 && metrics.totalFlexShrink > 0;
+
+      bool willGrow = false;
+      if (metrics.totalFlexGrow > 0 && !boundedOnly) {
+        if (isMainSizeDefinite) {
+          willGrow = maxMainSize != null && freeSpace > 0;
+        } else {
+          // Auto main size: positive free space is only distributable to satisfy an
+          // author-specified min-main-size.
+          willGrow = containerStyleMin > totalSpace;
+        }
+      }
+
+      if (willGrow || willShrink) return false;
+    }
+
+    // No flexing/no stretching/no baseline alignment: relayout only items that actually need it.
+    final double mainAxisGap = _getMainAxisGap();
+    final double availCross = contentConstraints?.maxWidth ?? double.infinity;
+    for (final _RunMetrics metrics in runMetrics) {
+      final List<_RunChild> runChildrenList = metrics.runChildren;
+      final int runChildrenCount = runChildrenList.length;
+
+      bool didRelayout = false;
+      for (final _RunChild runChild in runChildrenList) {
+        final RenderBox child = runChild.child;
+        final RenderBoxModel? effectiveChild =
+            child is RenderBoxModel ? child : (child is RenderEventListener ? child.child as RenderBoxModel? : null);
+        if (effectiveChild == null) continue;
+
+        final double childOldMainSize = _isHorizontalFlexDirection ? child.size.width : child.size.height;
+        final double? desiredPreservedMain = _childrenIntrinsicMainSizes[child];
+
+        bool needsLayout = effectiveChild.needsRelayout;
+        if (!needsLayout && desiredPreservedMain != null && desiredPreservedMain != childOldMainSize) {
+          needsLayout = true;
+        }
+        if (!needsLayout && desiredPreservedMain != null) {
+          final BoxConstraints applied = child.constraints;
+          final bool autoMain = _isHorizontalFlexDirection
+              ? effectiveChild.renderStyle.width.isAuto
+              : effectiveChild.renderStyle.height.isAuto;
+          final bool wasNonTightMain = _isHorizontalFlexDirection ? !applied.hasTightWidth : !applied.hasTightHeight;
+          if (autoMain && wasNonTightMain) {
+            needsLayout = true;
+          }
+        }
+
+        // Column-direction: apply shrink-to-fit cross sizing only when a definite available width exists.
+        if (!needsLayout && !_isHorizontalFlexDirection) {
+          final bool childCrossAuto = effectiveChild.renderStyle.width.isAuto;
+          if (childCrossAuto && availCross.isFinite) {
+            final double measuredBorderW = effectiveChild.size.width;
+            if (measuredBorderW > availCross + 0.5) {
+              needsLayout = true;
+            }
+          }
+        }
+
+        if (!needsLayout) continue;
+
+        _markFlexRelayoutForTextOnly(effectiveChild);
+
+        final BoxConstraints childConstraints = _getChildAdjustedConstraints(
+          effectiveChild,
+          null, // no main-axis flexing
+          null, // no cross-axis stretching
+          runChildrenCount,
+          preserveMainAxisSize: desiredPreservedMain,
+        );
+        child.layout(childConstraints, parentUsesSize: true);
+        didRelayout = true;
+      }
+
+      if (!didRelayout) continue;
+
+      // Recompute run extents from the final child sizes.
+      double mainAxisExtent = 0;
+      double crossAxisExtent = 0;
+      for (int i = 0; i < runChildrenList.length; i++) {
+        if (i > 0) mainAxisExtent += mainAxisGap;
+        final RenderBox child = runChildrenList[i].child;
+        mainAxisExtent += _getMainAxisExtent(child);
+        crossAxisExtent = math.max(crossAxisExtent, _getCrossAxisExtent(child));
+      }
+      metrics.mainAxisExtent = mainAxisExtent;
+      metrics.crossAxisExtent = crossAxisExtent;
+    }
+
+    return true;
+  }
+
   // Adjust children size (not include position placeholder) based on
   // flex factors (flex-grow/flex-shrink) and alignment in cross axis (align-items).
   //  https://www.w3.org/TR/css-flexbox-1/#resolve-flexible-lengths
   void _adjustChildrenSize(List<_RunMetrics> runMetrics,) {
     if (runMetrics.isEmpty) return;
-    // Compute spacing before and between each flex line.
-    final _RunSpacing runSpacing = _computeRunSpacing(runMetrics);
-    final double runBetweenSpace = runSpacing.between;
+    final bool hasBaselineAlignment = _hasBaselineAlignedChildren(runMetrics);
+    final bool canAttemptFastPath = _isHorizontalFlexDirection && !hasBaselineAlignment;
+    final bool hasStretchedChildren =
+        canAttemptFastPath ? _hasStretchedChildrenInCrossAxis(runMetrics) : true;
     double? contentBoxLogicalWidth = renderStyle.contentBoxLogicalWidth;
     double? contentBoxLogicalHeight = renderStyle.contentBoxLogicalHeight;
-
 
     // Container's width specified by style or inherited from parent.
     // Use null to indicate an indefinite size; do not default to 0,
@@ -2225,7 +2386,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     } else if (constraints.hasBoundedHeight && constraints.maxHeight.isFinite) {
       containerHeight = constraints.maxHeight;
     }
-      if (constraints.hasBoundedHeight && constraints.maxHeight.isFinite) {
+    if (constraints.hasBoundedHeight && constraints.maxHeight.isFinite) {
       containerHeight =
           (containerHeight == null) ? constraints.maxHeight : math.min(containerHeight, constraints.maxHeight);
     }
@@ -2251,6 +2412,22 @@ class RenderFlexLayout extends RenderLayoutBox {
         constraints.hasTightHeight ||
         ((contentConstraints?.hasBoundedHeight ?? false) && (contentConstraints?.maxHeight.isFinite ?? false)) ||
         (constraints.hasBoundedHeight && constraints.maxHeight.isFinite));
+
+    if (canAttemptFastPath && !hasStretchedChildren) {
+      if (_tryNoFlexNoStretchNoBaselineFastPath(
+        runMetrics,
+        maxMainSize: maxMainSize,
+        isMainSizeDefinite: isMainSizeDefinite,
+        contentBoxLogicalWidth: contentBoxLogicalWidth,
+        contentBoxLogicalHeight: contentBoxLogicalHeight,
+      )) {
+        return;
+      }
+    }
+
+    // Compute spacing before and between each flex line.
+    final _RunSpacing runSpacing = _computeRunSpacing(runMetrics);
+    final double runBetweenSpace = runSpacing.between;
 
     for (int i = 0; i < runMetrics.length; ++i) {
       final _RunMetrics metrics = runMetrics[i];
