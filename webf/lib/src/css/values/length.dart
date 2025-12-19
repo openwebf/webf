@@ -210,10 +210,10 @@ class CSSLengthValue {
         // and font size of the element itself, in the case of other properties like width.
         if (realPropertyName == FONT_SIZE) {
           // If root element set fontSize as em unit.
-          if (renderStyle!.getParentRenderStyle() == null) {
+          if (renderStyle!.getAttachedRenderParentRenderStyle() == null) {
             _computedValue = value! * 16;
           } else {
-            _computedValue = value! * renderStyle!.getParentRenderStyle()!.fontSize.computedValue;
+            _computedValue = value! * renderStyle!.getAttachedRenderParentRenderStyle()!.fontSize.computedValue;
           }
         } else {
           _computedValue = value! * renderStyle!.fontSize.computedValue;
@@ -225,10 +225,10 @@ class CSSLengthValue {
         // font-size are relative to the inherited font-size).
         double baseEmPx;
         if (realPropertyName == FONT_SIZE) {
-          if (renderStyle!.getParentRenderStyle() == null) {
+          if (renderStyle!.getAttachedRenderParentRenderStyle() == null) {
             baseEmPx = 16; // default root font size baseline
           } else {
-            baseEmPx = renderStyle!.getParentRenderStyle()!.fontSize.computedValue;
+            baseEmPx = renderStyle!.getAttachedRenderParentRenderStyle()!.fontSize.computedValue;
           }
         } else {
           baseEmPx = renderStyle!.fontSize.computedValue;
@@ -237,7 +237,7 @@ class CSSLengthValue {
         break;
       case CSSLengthType.REM:
         // If root element set fontSize as rem unit.
-        if (renderStyle!.getParentRenderStyle() == null) {
+        if (renderStyle!.getAttachedRenderParentRenderStyle() == null) {
           _computedValue = value! * 16;
         } else {
           // Font rem is calculated against the root element's font size.
@@ -266,7 +266,7 @@ class CSSLengthValue {
 
         RenderStyle? parentRenderStyle = isPositioned
             ? currentRenderStyle?.target.getContainingBlockElement()?.renderStyle
-            : currentRenderStyle?.getParentRenderStyle();
+            : currentRenderStyle?.getAttachedRenderParentRenderStyle();
 
         // Should access the renderStyle of renderBoxModel parent but not renderStyle parent
         // cause the element of renderStyle parent may not equal to containing block.
@@ -276,7 +276,7 @@ class CSSLengthValue {
           if (parentRenderStyle.isBoxModel() && (_isPercentageRelativeContainerRenderStyle(parentRenderStyle))) {
             break;
           }
-          parentRenderStyle = parentRenderStyle.getParentRenderStyle();
+          parentRenderStyle = parentRenderStyle.getAttachedRenderParentRenderStyle();
         }
 
         RenderWidgetElementChild? renderWidgetElementChild =
@@ -334,10 +334,10 @@ class CSSLengthValue {
         switch (realPropertyName) {
           case FONT_SIZE:
             // Relative to the parent font size.
-            if (renderStyle!.getParentRenderStyle() == null) {
+            if (renderStyle!.getAttachedRenderParentRenderStyle() == null) {
               _computedValue = value! * 16;
             } else {
-              _computedValue = value! * renderStyle!.getParentRenderStyle()!.fontSize.computedValue;
+              _computedValue = value! * renderStyle!.getAttachedRenderParentRenderStyle()!.fontSize.computedValue;
             }
             break;
           case TEXT_INDENT:
@@ -474,7 +474,7 @@ class CSSLengthValue {
             // There are two exceptions when percentage height is resolved against actual render height of parent:
             // 1. positioned element
             // 2. parent is flex item
-            RenderStyle? grandParentRenderStyle = parentRenderStyle?.getParentRenderStyle();
+            RenderStyle? grandParentRenderStyle = parentRenderStyle?.getAttachedRenderParentRenderStyle();
             bool isGrandParentFlexLayout = grandParentRenderStyle?.display == CSSDisplay.flex ||
                 grandParentRenderStyle?.display == CSSDisplay.inlineFlex;
 
@@ -520,7 +520,7 @@ class CSSLengthValue {
           case FLEX_BASIS:
             // Flex-basis computation is called in RenderFlexLayout which
             // will ensure parent exists.
-            RenderStyle? parentRenderStyle = renderStyle!.getParentRenderStyle();
+            RenderStyle? parentRenderStyle = renderStyle!.getAttachedRenderParentRenderStyle();
             if (parentRenderStyle == null) {
               _computedValue = 0;
               break;

@@ -37,7 +37,7 @@ class RenderBr extends RenderLayoutBox {
 
     // In a row-direction flex container, <br> should not add horizontal space
     // nor increase cross size. Keep it zero-height in that scenario.
-    final parentStyle = renderStyle.getParentRenderStyle();
+    final parentStyle = renderStyle.getAttachedRenderParentRenderStyle();
     if (parentStyle != null && parentStyle.isSelfRenderFlexLayout()) {
       if (CSSFlex.isHorizontalFlexDirection(parentStyle.flexDirection)) {
         lineHeight = 0;

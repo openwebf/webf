@@ -100,7 +100,7 @@ class DebugFlags {
   // Removed: Use FlowLog filters to enable flow logs.
 
   // Verbose logging for scrollable sizing; toggle at runtime.
-  static bool debugLogScrollableEnabled = false;
+  static bool debugLogScrollableEnabled = const bool.fromEnvironment('WEBF_DEBUG_SCROLL', defaultValue: false);
 
   // Enable verbose baseline logging for flex baseline alignment.
   static bool debugLogFlexBaselineEnabled = false;

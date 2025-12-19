@@ -530,22 +530,17 @@ class RenderFlowLayout extends RenderLayoutBox {
   @override
   void performLayout() {
     try {
-      doingThisLayout = true;
-
       _doPerformLayout();
 
       if (needsRelayout) {
         _doPerformLayout();
         needsRelayout = false;
       }
-
-      doingThisLayout = false;
     } catch (e, stack) {
       if (!kReleaseMode) {
         layoutExceptions = '$e\n$stack';
         reportException('performLayout', e, stack);
       }
-      doingThisLayout = false;
       rethrow;
     }
   }
@@ -934,20 +929,8 @@ class RenderFlowLayout extends RenderLayoutBox {
         childConstraints = constraints;
       }
 
-      // Whether child need to layout.
-      bool isChildNeedsLayout = true;
-
-      if (child.hasSize &&
-          !needsRelayout &&
-          (childConstraints == child.constraints) &&
-          ((child is RenderBoxModel && !child.needsLayout))) {
-        isChildNeedsLayout = false;
-      }
-
-      if (isChildNeedsLayout) {
-        bool parentUseSize = !(child is RenderBoxModel && child.isSizeTight || child is RenderPositionPlaceholder);
-        child.layout(childConstraints, parentUsesSize: parentUseSize);
-      }
+      bool parentUseSize = !(child is RenderBoxModel && child.isSizeTight || child is RenderPositionPlaceholder);
+      child.layout(childConstraints, parentUsesSize: parentUseSize);
 
       double childMainAxisExtent = RenderFlowLayout.getPureMainAxisExtent(child);
       double childCrossAxisExtent = _getCrossAxisExtent(child);
@@ -1149,7 +1132,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     // the parent's inline formatting context, size it to the union of its visual
     // fragments as measured by the parent IFC rather than from its own flow runs.
     final bool isInlineSelf = renderStyle.effectiveDisplay == CSSDisplay.inline;
-    final RenderBoxModel? p = renderStyle.getParentRenderStyle()?.attachedRenderBoxModel;
+    final RenderBoxModel? p = renderStyle.getAttachedRenderParentRenderStyle()?.attachedRenderBoxModel;
     if (isInlineSelf && p is RenderFlowLayout && p.establishIFC && p.inlineFormattingContext != null) {
       final InlineFormattingContext ifc = p.inlineFormattingContext!;
         // Width: max per-line fragment width of this inline element.

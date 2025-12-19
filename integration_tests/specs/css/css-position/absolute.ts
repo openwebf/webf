@@ -1168,6 +1168,7 @@ describe('Position absolute', () => {
       overlay.style.backgroundColor = 'red';
 
       await waitForFrame();
+      await sleep(1);
 
       window.scroll(0, 10000);
       await snapshot(1);

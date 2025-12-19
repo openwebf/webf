@@ -188,7 +188,7 @@ mixin CSSMarginMixin on RenderStyle {
     double marginTop = _collapsedMarginTopWithFirstChild;
     // Use parent renderStyle if renderBoxModel is scrollingContentBox cause its style is not
     // the same with its parent.
-    RenderStyle? parentRenderStyle = getParentRenderStyle();
+    RenderStyle? parentRenderStyle = getAttachedRenderParentRenderStyle();
 
     if (parentRenderStyle == null) return 0.0;
 
@@ -418,7 +418,7 @@ mixin CSSMarginMixin on RenderStyle {
     double marginBottom = _collapsedMarginBottomWithLastChild;
     // Use parent renderStyle if renderBoxModel is scrollingContentBox cause its style is not
     // the same with its parent.
-    RenderStyle? parentRenderStyle = getParentRenderStyle<CSSMarginMixin>();
+    RenderStyle? parentRenderStyle = getAttachedRenderParentRenderStyle<CSSMarginMixin>();
 
     if (parentRenderStyle == null) return 0.0;
 

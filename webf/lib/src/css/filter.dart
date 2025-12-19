@@ -499,7 +499,7 @@ mixin CSSFilterEffectsMixin on RenderStyle {
     resetBoxDecoration();
 
     // Filter effect the stacking context.
-    RenderStyle? parentRenderStyle = getParentRenderStyle();
+    RenderStyle? parentRenderStyle = getAttachedRenderParentRenderStyle();
     parentRenderStyle?.markChildrenNeedsSort();
 
     markNeedsPaint();

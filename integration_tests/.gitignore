@@ -40,3 +40,4 @@ macos/DerivedData/
 .specs
 pubspec.lock
 GeneratedPluginRegistrant.swift
+.preview-bundles

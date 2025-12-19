@@ -12,7 +12,6 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
@@ -363,7 +362,7 @@ abstract class RenderBoxModel extends RenderBox
   // child has percentage length and parent's size can not be calculated by style
   // thus parent needs relayout for its child calculate percentage length.
   void markParentNeedsRelayout() {
-    RenderObject? parent = renderStyle.getParentRenderStyle()?.attachedRenderBoxModel;
+    RenderObject? parent = renderStyle.getAttachedRenderParentRenderStyle()?.attachedRenderBoxModel;
     if (parent is RenderBoxModel) {
       parent.needsRelayout = true;
     }
@@ -373,53 +372,14 @@ abstract class RenderBoxModel extends RenderBox
     needsRelayout = true;
   }
 
-  // Mirror debugDoingThisLayout flag in flutter.
-  // [debugDoingThisLayout] indicate whether [performLayout] for this render object is currently running.
-  bool doingThisLayout = false;
-
   // A flag to detect the size of this renderBox had changed during this layout.
   bool isSelfSizeChanged = false;
-
-  // Mirror debugNeedsLayout flag in Flutter to use in layout performance optimization
-  bool needsLayout = false;
-
-  @override
-  void markNeedsLayout() {
-    if (doingThisLayout) {
-      // Push delay the [markNeedsLayout] after owner [PipelineOwner] finishing current [flushLayout].
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        markNeedsLayout();
-      });
-      SchedulerBinding.instance.scheduleFrame();
-    } else {
-      needsLayout = true;
-      super.markNeedsLayout();
-      if ((!isSizeTight) && parent != null) {
-        markParentNeedsLayout();
-      }
-    }
-  }
 
   /// Mark children needs layout when drop child as Flutter did
   ///
   @override
   void dropChild(RenderObject child) {
     super.dropChild(child);
-    // Loop to mark all the children to needsLayout as flutter did
-    _syncChildNeedsLayoutFlag(child);
-  }
-
-  // @HACK: sync _needsLayout flag in Flutter to do performance opt.
-  void syncNeedsLayoutFlag() {
-    needsLayout = true;
-    visitChildren(_syncChildNeedsLayoutFlag);
-  }
-
-  /// Mark specified renderBoxModel needs layout
-  void _syncChildNeedsLayoutFlag(RenderObject child) {
-    if (child is RenderBoxModel) {
-      child.syncNeedsLayoutFlag();
-    }
   }
 
   void calculateBaseline();
@@ -427,14 +387,6 @@ abstract class RenderBoxModel extends RenderBox
   @override
   void layout(Constraints constraints, {bool parentUsesSize = false}) {
     renderBoxInLayoutHashCodes.add(hashCode);
-
-    if (hasSize) {
-      // Constraints changes between tight and no tight will cause reLayoutBoundary change
-      // which will then cause its children to be marked as needsLayout in Flutter
-      if ((constraints.isTight && !this.constraints.isTight) || (!constraints.isTight && this.constraints.isTight)) {
-        syncNeedsLayoutFlag();
-      }
-    }
     super.layout(constraints, parentUsesSize: parentUsesSize);
 
     renderBoxInLayoutHashCodes.remove(hashCode);
@@ -469,7 +421,7 @@ abstract class RenderBoxModel extends RenderBox
     double? parentBoxContentConstraintsWidth;
     if (renderStyle.isParentRenderBoxModel() &&
         (renderStyle.isSelfRenderLayoutBox() || renderStyle.isSelfRenderWidget())) {
-      RenderBoxModel parentRenderBoxModel = (renderStyle.getParentRenderStyle()!.attachedRenderBoxModel!);
+      RenderBoxModel parentRenderBoxModel = (renderStyle.getAttachedRenderParentRenderStyle()!.attachedRenderBoxModel!);
 
       // Inline-block shrink-to-fit: when the parent is inline-block with auto width,
       // do not bound block children by the parent's finite content width. This allows
@@ -509,7 +461,7 @@ abstract class RenderBoxModel extends RenderBox
       // Flex context adjustments
       if (renderStyle.isParentRenderFlexLayout()) {
         final RenderFlexLayout flexParent =
-            renderStyle.getParentRenderStyle()!.attachedRenderBoxModel! as RenderFlexLayout;
+            renderStyle.getAttachedRenderParentRenderStyle()!.attachedRenderBoxModel! as RenderFlexLayout;
         // FlexItems with flex:none won't inherit parent box's constraints
         if (flexParent.isFlexNone(this)) {
           parentBoxContentConstraintsWidth = null;
@@ -555,7 +507,7 @@ abstract class RenderBoxModel extends RenderBox
       // Skip constraint inheritance if parent is a flex item with flex: none (flex-grow: 0, flex-shrink: 0)
       if (parentFlow.renderStyle.isParentRenderFlexLayout()) {
         RenderFlexLayout flexParent =
-            parentFlow.renderStyle.getParentRenderStyle()!.attachedRenderBoxModel as RenderFlexLayout;
+            parentFlow.renderStyle.getAttachedRenderParentRenderStyle()!.attachedRenderBoxModel as RenderFlexLayout;
         if (flexParent.isFlexNone(parentFlow)) {
           // Don't inherit constraints for flex: none items
           parentBoxContentConstraintsWidth = null;
@@ -926,11 +878,7 @@ abstract class RenderBoxModel extends RenderBox
 
   set scrollableSize(Size value) {
     assert(value.isFinite);
-    if (_maxScrollableSize != value) {
-      _maxScrollableSize = value;
-    } else {
-      _maxScrollableSize = value;
-    }
+    _maxScrollableSize = value;
   }
 
   Size scrollableViewportSize = Size.zero;
@@ -1043,7 +991,7 @@ abstract class RenderBoxModel extends RenderBox
     if (isScrollContainer && child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
       return;
     }
-  
+
     CSSRenderStyle style = (child as RenderBoxModel).renderStyle;
     Rect overflowRect = Rect.fromLTWH(
         childParentData.offset.dx, childParentData.offset.dy, child.boxSize!.width, child.boxSize!.height);
@@ -1086,7 +1034,6 @@ abstract class RenderBoxModel extends RenderBox
       positionedHolder!.preferredSize = Size.copy(size);
     }
 
-    needsLayout = false;
     dispatchResize(contentSize, boxSize ?? Size.zero);
 
     if (isSelfSizeChanged) {
@@ -1556,7 +1503,6 @@ abstract class RenderBoxModel extends RenderBox
     properties.add(DiagnosticsProperty('contentConstraints', contentConstraints, missingIfNull: true));
     properties.add(DiagnosticsProperty('maxScrollableSize', scrollableSize, missingIfNull: true));
     properties.add(DiagnosticsProperty('scrollableViewportSize', scrollableViewportSize, missingIfNull: true));
-    properties.add(DiagnosticsProperty('needsLayout', needsLayout, missingIfNull: true));
     properties.add(DiagnosticsProperty('isSizeTight', isSizeTight));
     properties.add(DiagnosticsProperty(
         'additionalPaintOffset', Offset(additionalPaintOffsetX ?? 0.0, additionalPaintOffsetY ?? 0.0)));

@@ -1553,7 +1553,13 @@ abstract class Element extends ContainerNode
     }
 
     renderStyle.requestWidgetToRebuild(UpdateDisplayReason());
-    updateElementKey();
+    // Changing display may require swapping the underlying RenderBoxModel type.
+    // Only force a Flutter element remount when this element already has a
+    // mounted render object; otherwise, the upcoming first build will create
+    // the correct renderer without extra key churn.
+    if (renderStyle.hasRenderBox()) {
+      updateElementKey();
+    }
 
     // When display changes (e.g., block <-> inline), ancestor containers may need
     // to rebuild to re-evaluate anonymous block wrapping and inline formatting.
@@ -2477,13 +2483,6 @@ abstract class Element extends ContainerNode
   }
 
   CSSRenderStyle? computedStyle(String? pseudoElementSpecifier) {
-    // Do not trigger recalculateStyle() here. Callers (e.g., getComputedStyle)
-    // should first invoke Document.updateStyleIfNeeded(), which flushes pending
-    // stylesheet or inline changes. Re-entering recalc from here can clobber
-    // in-flight animation values (e.g., background-position) by re-expanding
-    // shorthands and resetting longhands to initial values.
-    // Also, permit access even before a render box is attached so computed
-    // properties like backgroundPosition can be observed during animation.
     return renderStyle;
   }
 
