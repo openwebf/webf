@@ -140,6 +140,14 @@ class _RunChild {
   }
 }
 
+class _OrderedFlexItem {
+  const _OrderedFlexItem(this.child, this.order, this.originalIndex);
+
+  final RenderBox child;
+  final int order;
+  final int originalIndex;
+}
+
 /// ## Layout algorithm
 ///
 /// _This section describes how the framework causes [RenderFlowLayout] to position
@@ -836,42 +844,6 @@ class RenderFlexLayout extends RenderLayoutBox {
     return autoMinBorderBox;
   }
 
-  double _getShrinkConstraints(RenderBox child, Map<int?, _RunChild> runChildren, double remainingFreeSpace) {
-    double totalWeightedFlexShrink = 0;
-    runChildren.forEach((int? hashCode, _RunChild runChild) {
-      RenderBox child = runChild.child;
-      if (!runChild.frozen) {
-        double childFlexShrink = _getFlexShrink(child);
-        // Weight by used flex-basis (border-box) when definite, else originalMainSize
-        double? flexBasis = _getUsedFlexBasis(child);
-        double baseSize = flexBasis ?? runChild.originalMainSize;
-        totalWeightedFlexShrink += baseSize * childFlexShrink;
-      }
-    });
-    if (totalWeightedFlexShrink == 0) {
-      return 0;
-    }
-
-    int? childNodeId;
-    if (child is RenderTextBox) {
-      childNodeId = child.hashCode;
-    } else if (child is RenderBoxModel) {
-      childNodeId = child.hashCode;
-    }
-
-    _RunChild current = runChildren[childNodeId]!;
-    double currentFlexShrink = _getFlexShrink(current.child);
-
-    // Use used flex-basis (border-box) if available, otherwise use originalMainSize
-    double? flexBasis = _getUsedFlexBasis(current.child);
-    double baseSize = flexBasis ?? current.originalMainSize;
-
-    double currentExtent = currentFlexShrink * baseSize;
-    double minusConstraints = (currentExtent / totalWeightedFlexShrink) * remainingFreeSpace;
-
-    return minusConstraints;
-  }
-
   // Get constraints suited for intrinsic sizing of flex items.
   //
   // Goals:
@@ -1194,37 +1166,41 @@ class RenderFlexLayout extends RenderLayoutBox {
   // Sort flex items by their order property (default order is 0), stably.
   // When multiple items have the same order, preserve their original DOM order.
   List<RenderBox> _getSortedFlexItems(List<RenderBox> children) {
-    List<RenderBox> sortedChildren = List.from(children);
-
-    // Map each child to its original index to ensure stability.
-    final Map<RenderBox, int> originalIndex = {
-      for (int i = 0; i < children.length; i++) children[i]: i
-    };
+    if (children.length < 2) return children;
 
     int getOrder(RenderBox box) {
-      if (box is RenderBoxModel) {
-        return box.renderStyle.order;
-      }
+      if (box is RenderBoxModel) return box.renderStyle.order;
       if (box is RenderEventListener) {
         final RenderBox? inner = box.child;
-        if (inner is RenderBoxModel) {
-          return inner.renderStyle.order;
-        }
+        if (inner is RenderBoxModel) return inner.renderStyle.order;
       }
       return 0;
     }
 
-    sortedChildren.sort((a, b) {
-      final int orderA = getOrder(a);
-      final int orderB = getOrder(b);
-      if (orderA != orderB) {
-        return orderA.compareTo(orderB);
-      }
-      // Tie-breaker: original DOM order to make sort stable
-      return originalIndex[a]!.compareTo(originalIndex[b]!);
-    });
+    // Fast path: avoid sorting/allocation when all orders are 0, or already sorted.
+    bool anyNonZero = false;
+    bool alreadySorted = true;
+    int prevOrder = getOrder(children[0]);
+    anyNonZero = prevOrder != 0;
+    for (int i = 1; i < children.length; i++) {
+      final int order = getOrder(children[i]);
+      anyNonZero = anyNonZero || order != 0;
+      if (order < prevOrder) alreadySorted = false;
+      prevOrder = order;
+    }
+    if (!anyNonZero || alreadySorted) return children;
 
-    return sortedChildren;
+    // Stable sort by (order, originalIndex).
+    final List<_OrderedFlexItem> items = List<_OrderedFlexItem>.generate(
+      children.length,
+      (int i) => _OrderedFlexItem(children[i], getOrder(children[i]), i),
+      growable: false,
+    );
+    items.sort((_OrderedFlexItem a, _OrderedFlexItem b) {
+      final int byOrder = a.order.compareTo(b.order);
+      return byOrder != 0 ? byOrder : a.originalIndex.compareTo(b.originalIndex);
+    });
+    return List<RenderBox>.generate(items.length, (int i) => items[i].child, growable: false);
   }
 
   @override
@@ -1404,10 +1380,10 @@ class RenderFlexLayout extends RenderLayoutBox {
     for (_RunMetrics metrics in runMetrics) {
       double maxCrossAxisExtent = 0;
       double newMainAxisExtent = 0;
+      final double mainAxisGap = _getMainAxisGap();
 
-      final List<_RunChild> runChildrenList = metrics.runChildren.values.toList();
-      for (int i = 0; i < runChildrenList.length; i++) {
-        final _RunChild runChild = runChildrenList[i];
+      int childIndex = 0;
+      for (final _RunChild runChild in metrics.runChildren.values) {
         final RenderBox child = runChild.child;
 
         // Recompute cross-axis extent from final sizes
@@ -1415,10 +1391,11 @@ class RenderFlexLayout extends RenderLayoutBox {
         maxCrossAxisExtent = math.max(maxCrossAxisExtent, childCrossAxisExtent);
 
         // Recompute main-axis extent from final sizes (includes margins)
-        if (i > 0) {
-          newMainAxisExtent += _getMainAxisGap();
+        if (childIndex > 0) {
+          newMainAxisExtent += mainAxisGap;
         }
         newMainAxisExtent += _getMainAxisExtent(child);
+        childIndex++;
       }
 
       metrics.crossAxisExtent = maxCrossAxisExtent;
@@ -1481,7 +1458,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         // Establish baseline from the first flex item on the first line that
         // participates in baseline alignment (align-self/align-items: baseline).
         final _RunMetrics firstLineMetrics = _flexLineBoxMetrics[0];
-        final List<_RunChild> firstRunChildren = firstLineMetrics.runChildren.values.toList();
+        final Iterable<_RunChild> firstRunChildren = firstLineMetrics.runChildren.values;
         RenderBox? baselineChild;
         double? baselineDistance;
         RenderBox? fallbackChild;
@@ -1554,7 +1531,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       // participate, fall back to the first item with a baseline; if no item
       // exposes a baseline, synthesize from the bottom border edge.
       final _RunMetrics firstLineMetrics = _flexLineBoxMetrics[0];
-      final List<_RunChild> firstRunChildren = firstLineMetrics.runChildren.values.toList();
+      final Iterable<_RunChild> firstRunChildren = firstLineMetrics.runChildren.values;
       if (firstRunChildren.isNotEmpty) {
         RenderBox? baselineChild;
         double? baselineDistance; // distance from child's border-top to its baseline
@@ -1653,15 +1630,9 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     // PASS 1: Layout children with intrinsic constraints (no percentage limits)
     // This establishes the parent's natural size
-    Map<int, BoxConstraints> intrinsicConstraints = {};
-    Map<int, Size> intrinsicSizes = {};
-
     for (RenderBox child in children) {
-      BoxConstraints childConstraints = _getIntrinsicConstraints(child);
-      intrinsicConstraints[child.hashCode] = childConstraints;
-
+      final BoxConstraints childConstraints = _getIntrinsicConstraints(child);
       child.layout(childConstraints, parentUsesSize: true);
-      intrinsicSizes[child.hashCode] = child.size;
 
       if (child is RenderBoxModel) {
         child.clearOverrideContentSize();
@@ -1698,7 +1669,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       int childNodeId = child.hashCode;
 
       // Use intrinsic size for run calculations
-      Size childSize = intrinsicSizes[childNodeId]!;
+      final Size childSize = child.size;
       double intrinsicMain = _isHorizontalFlexDirection ? childSize.width : childSize.height;
 
       // CSS Flexbox §9.2: For flex-basis:auto with an auto main-size, the flex base size
@@ -2094,44 +2065,58 @@ class RenderFlexLayout extends RenderLayoutBox {
     List<_RunChild> maxViolations = [];
     double totalViolation = 0;
 
-    // Loop flex item to find min/max violations.
-    runChildren.forEach((int? index, _RunChild runChild) {
-      if (runChild.frozen) {
-        return;
+    final double remainingFreeSpace = runMetric.remainingFreeSpace;
+    final double? spacePerFlex = (remainingFreeSpace > 0 && totalFlexGrow > 0)
+        ? (remainingFreeSpace / totalFlexGrow)
+        : null;
+
+    // For flex-shrink, compute the total weighted flex-shrink factor once per
+    // iteration: sum(baseSize * flexShrink) for all unfrozen items.
+    double totalWeightedFlexShrink = 0.0;
+    if (remainingFreeSpace < 0 && totalFlexShrink > 0) {
+      for (final _RunChild runChild in runChildren.values) {
+        if (runChild.frozen) continue;
+        final RenderBox child = runChild.child;
+        final double childFlexShrink = _getFlexShrink(child);
+        if (childFlexShrink == 0) continue;
+
+        final double? flexBasis = _getUsedFlexBasis(child);
+        final double baseSize = flexBasis ?? runChild.originalMainSize;
+        totalWeightedFlexShrink += baseSize * childFlexShrink;
       }
-      RenderBox child = runChild.child;
-      int childNodeId = child.hashCode;
+    }
 
-      _RunChild? current = runChildren[childNodeId];
+    // Loop flex item to find min/max violations.
+    for (final _RunChild runChild in runChildren.values) {
+      if (runChild.frozen) continue;
 
-      // Use used flex-basis (border-box) for originalMainSize when definite
-      double? flexBasis = _getUsedFlexBasis(child);
-      double originalMainSize = flexBasis ?? current!.originalMainSize;
+      final RenderBox child = runChild.child;
+
+      // Use used flex-basis (border-box) for originalMainSize when definite.
+      final double? flexBasis = _getUsedFlexBasis(child);
+      final double originalMainSize = flexBasis ?? runChild.originalMainSize;
 
       double computedSize = originalMainSize;
-
-      // Computed size by flex factor.
       double flexedMainSize = originalMainSize;
 
-      // Adjusted size after min and max size clamp.
-      double flexGrow = _getFlexGrow(child);
-      double flexShrink = _getFlexShrink(child);
+      final double flexGrow = _getFlexGrow(child);
+      final double flexShrink = _getFlexShrink(child);
 
-      double remainingFreeSpace = runMetric.remainingFreeSpace;
       // Re-evaluate grow/shrink based on current remaining free space sign.
-      final bool doGrow = remainingFreeSpace > 0 && totalFlexGrow > 0 && flexGrow > 0;
+      final bool doGrow = spacePerFlex != null && flexGrow > 0;
       final bool doShrink = remainingFreeSpace < 0 && totalFlexShrink > 0 && flexShrink > 0;
 
       if (doGrow) {
-        final double spacePerFlex = totalFlexGrow > 0 ? (remainingFreeSpace / totalFlexGrow) : double.nan;
         computedSize = originalMainSize + spacePerFlex * flexGrow;
       } else if (doShrink) {
         // Distribute negative free space proportionally per §9.7. Items with
         // overflow clipping still participate normally; their automatic
         // minimum size may be zero, but that affects clamping, not the
         // distribution itself.
-        double shrinkValue = _getShrinkConstraints(child, runChildren, remainingFreeSpace);
-        computedSize = originalMainSize + shrinkValue;
+        if (totalWeightedFlexShrink != 0) {
+          final double scaledShrink = originalMainSize * flexShrink;
+          computedSize = originalMainSize + (scaledShrink / totalWeightedFlexShrink) * remainingFreeSpace;
+        }
       }
 
       // Save the pre-clamp size to adjust remaining free space correctly
@@ -2168,14 +2153,14 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
       runChild.flexedMainSize = flexedMainSize;
       totalViolation += violation;
-    });
+    }
 
     // Freeze over-flexed items.
     if (totalViolation == 0) {
       // If total violation is zero, freeze all the flex items and exit loop.
-      runChildren.forEach((int? index, _RunChild runChild) {
+      for (final _RunChild runChild in runChildren.values) {
         runChild.frozen = true;
-      });
+      }
     } else {
       List<_RunChild> violations = totalViolation < 0 ? maxViolations : minViolations;
 
@@ -2295,9 +2280,9 @@ class RenderFlexLayout extends RenderLayoutBox {
 
       double totalSpace = 0;
       // Flex factor calculation depends on flex-basis if exists.
-      void calTotalSpace(int? hashCode, _RunChild runChild) {
+      for (final _RunChild runChild in runChildrenList) {
         double childSpace = runChild.originalMainSize;
-        RenderBox child = runChild.child;
+        final RenderBox child = runChild.child;
         double marginHorizontal = 0;
         double marginVertical = 0;
         if (child is RenderBoxModel) {
@@ -2311,8 +2296,6 @@ class RenderFlexLayout extends RenderLayoutBox {
         double mainAxisMargin = _isHorizontalFlexDirection ? marginHorizontal : marginVertical;
         totalSpace += childSpace + mainAxisMargin;
       }
-
-      runChildren.forEach(calTotalSpace);
 
       // Add gap spacing to total space calculation for flex-grow available space
       int itemCount = runChildren.length;
@@ -2583,14 +2566,13 @@ class RenderFlexLayout extends RenderLayoutBox {
   // in the cross axis (align-items/align-self).
   double _recomputeRunCrossExtent(_RunMetrics metrics) {
     final Map<int?, _RunChild> runChildren = metrics.runChildren;
-    final List<_RunChild> runChildrenList = runChildren.values.toList();
 
     double runCrossAxisExtent = 0;
 
     double maxSizeAboveBaseline = 0;
     double maxSizeBelowBaseline = 0;
 
-    for (_RunChild runChild in runChildrenList) {
+    for (final _RunChild runChild in runChildren.values) {
       RenderBox child = runChild.child;
       double childMainSize = _isHorizontalFlexDirection ? child.size.width : child.size.height;
       double childCrossSize = _isHorizontalFlexDirection ? child.size.height : child.size.width;
@@ -3328,8 +3310,8 @@ class RenderFlexLayout extends RenderLayoutBox {
   void _recordRunsMainSize(_RunMetrics runMetrics, List<double> runMainSize) {
     Map<int?, _RunChild> runChildren = runMetrics.runChildren;
     double runMainExtent = 0;
-    void iterateRunChildren(int? hashCode, _RunChild runChild) {
-      RenderBox child = runChild.child;
+    for (final _RunChild runChild in runChildren.values) {
+      final RenderBox child = runChild.child;
       double runChildMainSize = _isHorizontalFlexDirection ? child.size.width : child.size.height;
       // Should add main axis margin of child to the main axis auto size of parent.
       if (child is RenderBoxModel) {
@@ -3342,8 +3324,6 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
       runMainExtent += runChildMainSize;
     }
-
-    runChildren.forEach(iterateRunChildren);
     runMainSize.add(runMainExtent);
   }
 
@@ -3370,18 +3350,11 @@ class RenderFlexLayout extends RenderLayoutBox {
   void _recordRunsCrossSize(_RunMetrics runMetrics, List<double> runCrossSize) {
     Map<int?, _RunChild> runChildren = runMetrics.runChildren;
     double runCrossExtent = 0;
-    List<double> runChildrenCrossSize = [];
-    void iterateRunChildren(int? hashCode, _RunChild runChild) {
-      RenderBox child = runChild.child;
-      double runChildCrossSize = _isHorizontalFlexDirection ? child.size.height : child.size.width;
-      runChildrenCrossSize.add(runChildCrossSize);
+    for (final _RunChild runChild in runChildren.values) {
+      final RenderBox child = runChild.child;
+      final double runChildCrossSize = _isHorizontalFlexDirection ? child.size.height : child.size.width;
+      runCrossExtent = math.max(runCrossExtent, runChildCrossSize);
     }
-
-    runChildren.forEach(iterateRunChildren);
-    runCrossExtent = runChildrenCrossSize.reduce((double curr, double next) {
-      return curr > next ? curr : next;
-    });
-
     runCrossSize.add(runCrossExtent);
   }
 
@@ -3418,42 +3391,22 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     for (_RunMetrics runMetric in runMetrics) {
       Map<int?, _RunChild> runChildren = runMetric.runChildren;
+      // Avoid O(n^2) summation of previous siblings by keeping a running total.
+      double preSiblingsMainSize = 0;
+      double maxScrollableMainSizeOfLine = 0;
+      double maxScrollableCrossSizeInLine = 0;
 
-      List<RenderBox> runChildrenList = [];
-      // Scrollable main size collection of each child in the line.
-      List<double> scrollableMainSizeOfChildren = [];
-      // Scrollable cross size collection of each child in the line.
-      List<double> scrollableCrossSizeOfChildren = [];
-
-      void iterateRunChildren(int? hashCode, _RunChild runChild) {
-        RenderBox child = runChild.child;
-        // Total main size of previous siblings.
-        double preSiblingsMainSize = 0;
-        for (RenderBox sibling in runChildrenList) {
-          // Include prior siblings' border-box size in the main axis.
-          preSiblingsMainSize += _isHorizontalFlexDirection ? sibling.size.width : sibling.size.height;
-          // Also include the siblings' margins in the main axis; flex items' margins do not collapse
-          // and must contribute to the scrollable overflow region.
-          if (sibling is RenderBoxModel) {
-            if (_isHorizontalFlexDirection) {
-              preSiblingsMainSize += sibling.renderStyle.marginLeft.computedValue +
-                  sibling.renderStyle.marginRight.computedValue;
-            } else {
-              preSiblingsMainSize += sibling.renderStyle.marginTop.computedValue +
-                  sibling.renderStyle.marginBottom.computedValue;
-            }
-          }
-        }
+      for (final _RunChild runChild in runChildren.values) {
+        final RenderBox child = runChild.child;
 
         Size childScrollableSize = child.size;
-
         double childOffsetX = 0;
         double childOffsetY = 0;
 
         if (child is RenderBoxModel) {
-          RenderStyle childRenderStyle = child.renderStyle;
-          CSSOverflowType overflowX = childRenderStyle.effectiveOverflowX;
-          CSSOverflowType overflowY = childRenderStyle.effectiveOverflowY;
+          final RenderStyle childRenderStyle = child.renderStyle;
+          final CSSOverflowType overflowX = childRenderStyle.effectiveOverflowX;
+          final CSSOverflowType overflowY = childRenderStyle.effectiveOverflowY;
           // Only non scroll container need to use scrollable size, otherwise use its own size.
           if (overflowX == CSSOverflowType.visible && overflowY == CSSOverflowType.visible) {
             childScrollableSize = child.scrollableSize;
@@ -3469,7 +3422,7 @@ class RenderFlexLayout extends RenderLayoutBox {
 
           // Add offset of position relative.
           // Offset of position absolute and fixed is added in layout stage of positioned renderBox.
-          Offset? relativeOffset = CSSPositionedLayout.getRelativeOffset(childRenderStyle);
+          final Offset? relativeOffset = CSSPositionedLayout.getRelativeOffset(childRenderStyle);
           if (relativeOffset != null) {
             childOffsetX += relativeOffset.dx;
             childOffsetY += relativeOffset.dy;
@@ -3483,28 +3436,31 @@ class RenderFlexLayout extends RenderLayoutBox {
           }
         }
 
-        scrollableMainSizeOfChildren.add(preSiblingsMainSize +
+        final double childScrollableMain = preSiblingsMainSize +
             (_isHorizontalFlexDirection
                 ? childScrollableSize.width + childOffsetX
-                : childScrollableSize.height + childOffsetY));
-        scrollableCrossSizeOfChildren.add(_isHorizontalFlexDirection
+                : childScrollableSize.height + childOffsetY);
+        final double childScrollableCross = _isHorizontalFlexDirection
             ? childScrollableSize.height + childOffsetY
-            : childScrollableSize.width + childOffsetX);
-        runChildrenList.add(child);
+            : childScrollableSize.width + childOffsetX;
+
+        maxScrollableMainSizeOfLine = math.max(maxScrollableMainSizeOfLine, childScrollableMain);
+        maxScrollableCrossSizeInLine = math.max(maxScrollableCrossSizeInLine, childScrollableCross);
+
+        // Update running main size for subsequent siblings (border-box size + main-axis margins).
+        double childMainSize = _isHorizontalFlexDirection ? child.size.width : child.size.height;
+        if (child is RenderBoxModel) {
+          if (_isHorizontalFlexDirection) {
+            childMainSize += child.renderStyle.marginLeft.computedValue + child.renderStyle.marginRight.computedValue;
+          } else {
+            childMainSize += child.renderStyle.marginTop.computedValue + child.renderStyle.marginBottom.computedValue;
+          }
+        }
+        preSiblingsMainSize += childMainSize;
       }
 
-      runChildren.forEach(iterateRunChildren);
-
-      // Max scrollable main size of all the children in the line.
-      double maxScrollableMainSizeOfLine = scrollableMainSizeOfChildren.reduce((double curr, double next) {
-        return curr > next ? curr : next;
-      });
-
       // Max scrollable cross size of all the children in the line.
-      double maxScrollableCrossSizeOfLine = preLinesCrossSize +
-          scrollableCrossSizeOfChildren.reduce((double curr, double next) {
-            return curr > next ? curr : next;
-          });
+      final double maxScrollableCrossSizeOfLine = preLinesCrossSize + maxScrollableCrossSizeInLine;
 
       scrollableMainSizeOfLines.add(maxScrollableMainSizeOfLine);
       scrollableCrossSizeOfLines.add(maxScrollableCrossSizeOfLine);
