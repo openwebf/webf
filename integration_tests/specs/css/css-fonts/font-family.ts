@@ -108,7 +108,7 @@ describe('FontFamily', () => {
 
       test_computed_value('font-family', 'serif', 'Times, Times New Roman, Noto Serif, Songti SC, Songti TC, Hiragino Mincho ProN, AppleMyungjo, Apple SD Gothic Neo');
       test_computed_value('font-family', 'sans-serif', 'Helvetica, Roboto, PingFang SC, PingFang TC');
-      test_computed_value('font-family', 'cursive', 'Snell Roundhand, Apple Chancery, DancingScript, Comic Sans MS');
+      test_computed_value('font-family', 'cursive', 'Apple Chancery, Snell Roundhand, DancingScript, Comic Sans MS');
       test_computed_value('font-family', 'fantasy', 'Papyrus, Impact');
       test_computed_value('font-family', 'monospace', 'Courier, Courier New, DroidSansMono, Monaco, Heiti SC, Heiti TC');
       test_computed_value(

@@ -1423,7 +1423,7 @@ class CSSText {
           break;
         case 'monospace':
           // Default monospace font in iOS and iPadOS: Courier
-          resolvedFamily.addAll(['Courier', 'Courier New', 'DroidSansMono', 'Monaco', 'Heiti SC', 'Heiti TC']);
+          resolvedFamily.addAll(['Menlo', 'Courier', 'Courier New', 'DroidSansMono', 'Monaco', 'Heiti SC', 'Heiti TC']);
           break;
         case 'cursive':
           // Default cursive font in iOS and iPadOS: Apple Chancery
