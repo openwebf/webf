@@ -2400,9 +2400,12 @@ class RenderGridLayout extends RenderLayoutBox {
 
       final GridAxisAlignment justifySelfAlignment = _resolveJustifySelfAlignment(childGridStyle);
       final GridAxisAlignment alignSelfAlignment = _resolveAlignSelfAlignment(childGridStyle);
-      final EdgeInsets childMargin = _gridChildMargin(childGridStyle);
-      final double marginHorizontal = childMargin.left + childMargin.right;
-      final double marginVertical = childMargin.top + childMargin.bottom;
+      final _GridResolvedMargins childMargins = _resolveGridChildMargins(
+        childGridStyle,
+        cellWidth.isFinite ? cellWidth : null,
+      );
+      final double marginHorizontal = childMargins.horizontal;
+      final double marginVertical = childMargins.vertical;
       final BoxConstraints childConstraints = _gridItemConstraints(
         childGridStyle: childGridStyle,
         justifySelfAlignment: justifySelfAlignment,
@@ -2442,14 +2445,45 @@ class RenderGridLayout extends RenderLayoutBox {
         rowTop += rowGap;
       }
 
-      final double marginBoxWidth = childSize.width + marginHorizontal;
-      final double horizontalExtra = cellWidth.isFinite ? math.max(0, cellWidth - marginBoxWidth) : 0;
+      double usedMarginLeft = childMargins.left;
+      double usedMarginRight = childMargins.right;
+      if (childMargins.autoLeft || childMargins.autoRight) {
+        final double free = cellWidth.isFinite ? cellWidth - (childSize.width + marginHorizontal) : 0;
+        final double freeSpace = math.max(0, free);
+        if (childMargins.autoLeft && childMargins.autoRight) {
+          usedMarginLeft = freeSpace / 2;
+          usedMarginRight = freeSpace / 2;
+        } else if (childMargins.autoLeft) {
+          usedMarginLeft = freeSpace;
+        } else if (childMargins.autoRight) {
+          usedMarginRight = freeSpace;
+        }
+      }
+
+      double usedMarginTop = childMargins.top;
+      double usedMarginBottom = childMargins.bottom;
+      if ((childMargins.autoTop || childMargins.autoBottom) && hasExplicitRowSize && cellHeight.isFinite) {
+        final double free = cellHeight - (childSize.height + marginVertical);
+        final double freeSpace = math.max(0, free);
+        if (childMargins.autoTop && childMargins.autoBottom) {
+          usedMarginTop = freeSpace / 2;
+          usedMarginBottom = freeSpace / 2;
+        } else if (childMargins.autoTop) {
+          usedMarginTop = freeSpace;
+        } else if (childMargins.autoBottom) {
+          usedMarginBottom = freeSpace;
+        }
+      }
+
+      final double usedMarginBoxWidth = childSize.width + usedMarginLeft + usedMarginRight;
+      final double usedMarginBoxHeight = childSize.height + usedMarginTop + usedMarginBottom;
+      final double horizontalExtra = cellWidth.isFinite ? math.max(0, cellWidth - usedMarginBoxWidth) : 0;
       final double verticalExtra = hasExplicitRowSize && cellHeight.isFinite
-          ? math.max(0, cellHeight - (childSize.height + marginVertical))
+          ? math.max(0, cellHeight - usedMarginBoxHeight)
           : 0;
       final double horizontalInset = _alignmentOffsetWithinCell(justifySelfAlignment, horizontalExtra);
       final double verticalInset = hasExplicitRowSize ? _alignmentOffsetWithinCell(alignSelfAlignment, verticalExtra) : 0;
-      pd.offset = Offset(xOffset + horizontalInset + childMargin.left, rowTop + verticalInset + childMargin.top);
+      pd.offset = Offset(xOffset + horizontalInset + usedMarginLeft, rowTop + verticalInset + usedMarginTop);
 
       child = pd.nextSibling;
     }
@@ -2475,9 +2509,19 @@ class RenderGridLayout extends RenderLayoutBox {
         explicitItemHeight = childGridStyle.height.computedValue;
       }
       if (alignSelfAlignment == GridAxisAlignment.stretch && childHeightAuto && explicitItemHeight == null) {
-        final EdgeInsets childMargin = _gridChildMargin(childGridStyle);
-        final double marginVertical = childMargin.top + childMargin.bottom;
         final GridLayoutParentData pd = stretchCheckChild.parentData as GridLayoutParentData;
+        double cellWidth = 0;
+        final int colIndex = pd.columnStart;
+        final int colSpan = math.max(1, pd.columnSpan).clamp(1, math.max(1, colSizes.length - colIndex));
+        for (int c = colIndex; c < math.min(colIndex + colSpan, colSizes.length); c++) {
+          cellWidth += colSizes[c];
+          if (c < colIndex + colSpan - 1) cellWidth += colGap;
+        }
+        final _GridResolvedMargins childMargins = _resolveGridChildMargins(
+          childGridStyle,
+          cellWidth.isFinite ? cellWidth : null,
+        );
+        final double marginVertical = childMargins.vertical;
         final int rowIndex = pd.rowStart;
         final int rowSpan = math.max(1, pd.rowSpan);
         double resolvedCellHeight = 0;
@@ -2681,9 +2725,6 @@ class RenderGridLayout extends RenderLayoutBox {
 
         final GridAxisAlignment justifySelfAlignment = _resolveJustifySelfAlignment(childGridStyle);
         final GridAxisAlignment alignSelfAlignment = _resolveAlignSelfAlignment(childGridStyle);
-        final EdgeInsets childMargin = _gridChildMargin(childGridStyle);
-        final double marginHorizontal = childMargin.left + childMargin.right;
-        final double marginVertical = childMargin.top + childMargin.bottom;
 
         final GridLayoutParentData pd = childForRelayout.parentData as GridLayoutParentData;
         final int rowIndex = pd.rowStart;
@@ -2702,6 +2743,13 @@ class RenderGridLayout extends RenderLayoutBox {
           cellWidth += colSizes[c];
           if (c < colIndex + colSpan - 1) cellWidth += colGap;
         }
+
+        final _GridResolvedMargins childMargins = _resolveGridChildMargins(
+          childGridStyle,
+          cellWidth.isFinite ? cellWidth : null,
+        );
+        final double marginHorizontal = childMargins.horizontal;
+        final double marginVertical = childMargins.vertical;
 
         double resolvedCellHeight = 0;
         bool hasDefiniteCellHeight = true;
@@ -2741,14 +2789,44 @@ class RenderGridLayout extends RenderLayoutBox {
           rowTop += rowGap;
         }
 
-        final double marginBoxWidth = childSize.width + marginHorizontal;
-        final double horizontalExtra = cellWidth.isFinite ? math.max(0, cellWidth - marginBoxWidth) : 0;
-        final double verticalExtra =
-            cellHeight.isFinite ? math.max(0, cellHeight - (childSize.height + marginVertical)) : 0;
+        double usedMarginLeft = childMargins.left;
+        double usedMarginRight = childMargins.right;
+        if (childMargins.autoLeft || childMargins.autoRight) {
+          final double free = cellWidth.isFinite ? cellWidth - (childSize.width + marginHorizontal) : 0;
+          final double freeSpace = math.max(0, free);
+          if (childMargins.autoLeft && childMargins.autoRight) {
+            usedMarginLeft = freeSpace / 2;
+            usedMarginRight = freeSpace / 2;
+          } else if (childMargins.autoLeft) {
+            usedMarginLeft = freeSpace;
+          } else if (childMargins.autoRight) {
+            usedMarginRight = freeSpace;
+          }
+        }
+
+        double usedMarginTop = childMargins.top;
+        double usedMarginBottom = childMargins.bottom;
+        if ((childMargins.autoTop || childMargins.autoBottom) && hasDefiniteCellHeight && cellHeight.isFinite) {
+          final double free = cellHeight - (childSize.height + marginVertical);
+          final double freeSpace = math.max(0, free);
+          if (childMargins.autoTop && childMargins.autoBottom) {
+            usedMarginTop = freeSpace / 2;
+            usedMarginBottom = freeSpace / 2;
+          } else if (childMargins.autoTop) {
+            usedMarginTop = freeSpace;
+          } else if (childMargins.autoBottom) {
+            usedMarginBottom = freeSpace;
+          }
+        }
+
+        final double usedMarginBoxWidth = childSize.width + usedMarginLeft + usedMarginRight;
+        final double usedMarginBoxHeight = childSize.height + usedMarginTop + usedMarginBottom;
+        final double horizontalExtra = cellWidth.isFinite ? math.max(0, cellWidth - usedMarginBoxWidth) : 0;
+        final double verticalExtra = cellHeight.isFinite ? math.max(0, cellHeight - usedMarginBoxHeight) : 0;
         final double horizontalInset = _alignmentOffsetWithinCell(justifySelfAlignment, horizontalExtra);
         final double verticalInset =
             cellHeight.isFinite ? _alignmentOffsetWithinCell(alignSelfAlignment, verticalExtra) : 0;
-        pd.offset = Offset(xOffset + horizontalInset + childMargin.left, rowTop + verticalInset + childMargin.top);
+        pd.offset = Offset(xOffset + horizontalInset + usedMarginLeft, rowTop + verticalInset + usedMarginTop);
 
         childForRelayout = pd.nextSibling;
       }
