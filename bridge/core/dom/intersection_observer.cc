@@ -99,14 +99,8 @@ bool IntersectionObserver::RootIsValid() const {
 
 void IntersectionObserver::observe(Element* target, ExceptionState& exception_state) {
   if (!RootIsValid() || !target) {
-    WEBF_LOG(ERROR) << "[IntersectionObserver]: observe valid:" << std::endl;
     return;
   }
-
-#if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[IntersectionObserver]: observe target=" << target << "，tagName=" << target->nodeName()
-                  << std::endl;
-#endif
 
   // Keep this observer alive while it has active observation targets.
   const bool was_empty = observed_targets_.empty();
@@ -127,7 +121,6 @@ void IntersectionObserver::observe(Element* target, ExceptionState& exception_st
 
 void IntersectionObserver::unobserve(Element* target, ExceptionState& exception_state) {
   if (!target) {
-    WEBF_LOG(ERROR) << "[IntersectionObserver]: unobserve valid:" << std::endl;
     return;
   }
 
@@ -226,7 +219,6 @@ NativeValue IntersectionObserver::HandleCallFromDartSide(const AtomicString& met
                                                          const NativeValue* argv,
                                                          Dart_Handle dart_object) {
   if (!GetExecutingContext() || !GetExecutingContext()->IsContextValid()) {
-    WEBF_LOG(ERROR) << "[IntersectionObserver]: HandleCallFromDartSide Context Valid" << std::endl;
     return Native_NewNull();
   }
 
@@ -264,16 +256,9 @@ NativeValue IntersectionObserver::HandleCallFromDartSide(const AtomicString& met
     }
     ScriptValue arguments[] = {ScriptValue(ctx(), js_array), ToValue()};
 
-#if ENABLE_LOG
-    WEBF_LOG(VERBOSE) << "[IntersectionObserver]: HandleCallFromDartSide length=" << length << "，JS function_ Invoke"
-                    << std::endl;
-#endif
-
     function_->Invoke(ctx(), ToValue(), 2, arguments);
 
     JS_FreeValue(ctx(), js_array);
-  } else {
-    WEBF_LOG(ERROR) << "[IntersectionObserver]: HandleCallFromDartSide entries is empty";
   }
 
   return Native_NewNull();

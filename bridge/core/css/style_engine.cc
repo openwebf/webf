@@ -1797,9 +1797,6 @@ void StyleEngine::RecalcStyle(StyleRecalcChange change, const StyleRecalcContext
       Element* element = static_cast<Element*>(node);
       if (element->NeedsStyleRecalc()) {
         StyleChangeType change_type = element->GetStyleChangeType();
-          WEBF_LOG(VERBOSE) << "[StyleEngine] Recalc element="
-                          << element->tagName().ToUTF8String()
-                          << " change_type=" << static_cast<uint32_t>(change_type);
         if (change_type == kInlineIndependentStyleChange) {
           // Inline-only independent style changes affect this element but not
           // its descendants. Recompute style just for this element to keep
@@ -1845,13 +1842,6 @@ void StyleEngine::RecalcStyle(StyleRecalcChange change, const StyleRecalcContext
 
   if (doc_root && root != doc_root) {
     if (Node* remaining = find_remaining_dirty_node()) {
-      WEBF_LOG(WARN) << "[StyleEngine] Remaining dirty nodes after style walk; running full-document pass."
-                        << " walk_root=" << root->tagName().ToUTF8String()
-                        << " remaining_type=" << static_cast<int>(remaining->nodeType())
-                        << " remaining_change_type=" << static_cast<uint32_t>(remaining->GetStyleChangeType())
-                        << " remaining_tag=" << (remaining->IsElementNode()
-                                                    ? To<Element>(*remaining).tagName().ToUTF8String()
-                                                    : std::string(""));
       walk(doc_root);
       doc_root->ClearChildNeedsStyleRecalc();
     }
@@ -1958,8 +1948,6 @@ void StyleEngine::MediaQueryAffectingValueChanged(TreeScope& tree_scope, MediaVa
       // No size-dependent media queries at all: resizing cannot change
       // which stylesheets or @media blocks are active, so skip style recalc.
       size_media_query_results_.clear();
-      WEBF_LOG(VERBOSE) << "[StyleEngine] MediaQueryAffectingValueChanged(kSize): "
-                           "no size-dependent media queries; skipping style recalc.";
       return;
     }
 
@@ -1988,8 +1976,6 @@ void StyleEngine::MediaQueryAffectingValueChanged(TreeScope& tree_scope, MediaVa
     size_media_query_results_ = std::move(new_results);
 
     if (!changed) {
-      WEBF_LOG(VERBOSE) << "[StyleEngine] MediaQueryAffectingValueChanged(kSize): "
-                           "size-dependent media query set unchanged; skipping style recalc.";
       return;
     }
 

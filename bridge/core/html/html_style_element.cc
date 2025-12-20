@@ -35,8 +35,6 @@ void HTMLStyleElement::ParseAttribute(const webf::Element::AttributeModification
   if (GetExecutingContext()->isBlinkEnabled()) {
     // Changes like media/type/disabled can affect matching; mark active
     // stylesheets dirty and schedule incremental style recomputation.
-    WEBF_LOG(VERBOSE) << "[StyleEngine] SetNeedsActiveStyleUpdate from HTMLStyleElement::ParseAttribute name="
-                      << params.name.ToUTF8String();
     GetDocument().EnsureStyleEngine().SetNeedsActiveStyleUpdate();
   }
 }
@@ -55,7 +53,6 @@ void HTMLStyleElement::RemovedFrom(webf::ContainerNode& insertion_point) {
     StyleElement::RemovedFrom(*this, insertion_point);
     // Stylesheet removed; mark active stylesheets dirty and schedule
     // incremental recomputation rather than an immediate full recalc.
-    WEBF_LOG(VERBOSE) << "[StyleEngine] SetNeedsActiveStyleUpdate from HTMLStyleElement::RemovedFrom";
     GetDocument().EnsureStyleEngine().SetNeedsActiveStyleUpdate();
   }
 }
@@ -66,7 +63,6 @@ void HTMLStyleElement::ChildrenChanged(const webf::ContainerNode::ChildrenChange
     StyleElement::ChildrenChanged(*this);
     // Style text changed; mark active stylesheets dirty and schedule
     // incremental recomputation.
-    WEBF_LOG(VERBOSE) << "[StyleEngine] SetNeedsActiveStyleUpdate from HTMLStyleElement::ChildrenChanged";
     GetDocument().EnsureStyleEngine().SetNeedsActiveStyleUpdate();
   }
 }
@@ -77,7 +73,6 @@ void HTMLStyleElement::FinishParsingChildren() {
     HTMLElement::FinishParsingChildren();
     // After finishing parsing, mark active stylesheets dirty and schedule
     // incremental recomputation.
-    WEBF_LOG(VERBOSE) << "[StyleEngine] SetNeedsActiveStyleUpdate from HTMLStyleElement::FinishParsingChildren";
     GetDocument().EnsureStyleEngine().SetNeedsActiveStyleUpdate();
   }
 }

@@ -535,9 +535,6 @@ void CSSStyleSheet::SetText(const AtomicString& text, CSSImportRules import_rule
   bool allow_imports = import_rules == CSSImportRules::kAllow;
   if (contents_->ParseString(text.ToUTF8String(), allow_imports) == ParseSheetResult::kHasUnallowedImportRule &&
       import_rules == CSSImportRules::kIgnoreWithWarning) {
-    WEBF_LOG(VERBOSE) << "@import rules are not allowed here. See "
-                         "https://github.com/WICG/construct-stylesheets/issues/"
-                         "119#issuecomment-588352418.";
   }
 
   // Font-face registration for inline stylesheets is handled in StyleEngine::CreateSheet.

@@ -141,7 +141,6 @@ void StyleRuleImport::RequestStyleSheet() {
   const std::shared_ptr<const CSSParserContext>& parser_ctx = parent_sheet->ParserContext();
   ExecutingContext* exe_ctx = parser_ctx->GetExecutingContext();
   if (exe_ctx == nullptr || exe_ctx->dartIsolateContext() == nullptr) {
-    WEBF_LOG(WARN) << "[StyleRuleImport] Missing executing context; skip @import href='" << Href().ToUTF8String() << "'";
     return;
   }
 

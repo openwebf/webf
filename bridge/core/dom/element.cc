@@ -999,9 +999,6 @@ void Element::StyleAttributeChanged(const AtomicString& new_style_string,
     if (HasElementData()) {
       GetElementData()->SetStyleAttributeIsDirty(false);
     }
-    WEBF_LOG(VERBOSE) << "[StyleInvalidation] Style attribute changed on <"
-                      << tagName().ToUTF8String()
-                      << "> in_active_document=" << InActiveDocument();
     SetNeedsStyleRecalc(
         kLocalStyleChange,
         StyleChangeReasonForTracing::Create(style_change_reason::kStyleAttributeChange));
@@ -1219,14 +1216,6 @@ void Element::RecalcStyle(const StyleRecalcChange change, const StyleRecalcConte
   StyleScopeFrame style_scope_frame(*this, style_recalc_context.style_scope_frame);
   StyleRecalcContext local_context = style_recalc_context;
   local_context.style_scope_frame = &style_scope_frame;
-
-  bool self_dirty = NeedsStyleRecalc();
-  bool child_dirty = ChildNeedsStyleRecalc();
-
-  WEBF_LOG(VERBOSE) << "[Element::RecalcStyle] tag=" << tagName().ToNativeString()
-                    << " self_dirty=" << self_dirty << " child_dirty=" << child_dirty
-                    << " recalc_descendants=" << change.RecalcDescendants()
-                    << " suppressed=" << change.IsSuppressed();
 }
 
 // inline ElementRareDataVector* Element::GetElementRareData() const {

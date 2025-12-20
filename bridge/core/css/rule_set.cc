@@ -83,8 +83,6 @@ void ProcessRule(RuleSet& rule_set,
         MediaQueryResultFlags flags;
         bool match = medium.Eval(*queries, &flags);
         rule_set.AddMediaQueryResultFlags(flags);
-        WEBF_LOG(INFO) << "[RuleSet] @media block '" << queries->MediaText().ToUTF8String()
-                       << "' match=" << (match ? "true" : "false");
         if (!match) {
           return;
         }

@@ -139,8 +139,6 @@ String ElementAttributes::ToString() {
                      }
                    }), element_->style());
         builder.Append("\""_s);
-      } else {
-        WEBF_LOG(WARN) << "Style not available inside ElementAttributes::ToString()";
       }
     }
     first = false;

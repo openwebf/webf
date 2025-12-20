@@ -25,13 +25,6 @@ void PendingInvalidations::ScheduleInvalidationSetsForNode(const InvalidationLis
   assert(!node.GetDocument().InStyleRecalc());
   bool requires_descendant_invalidation = false;
 
-  WEBF_LOG(VERBOSE) << "[StyleInvalidation] ScheduleInvalidationSetsForNode on "
-                    << (node.IsElementNode() ? "element" : "non-element")
-                    << " tag="
-                    << (node.IsElementNode() ? To<Element>(node).tagName().ToNativeString() : nullptr)
-                    << " sibling_sets=" << invalidation_lists.siblings.size()
-                    << " descendant_sets=" << invalidation_lists.descendants.size();
-
   if (node.GetStyleChangeType() < kSubtreeStyleChange) {
     for (auto& invalidation_set : invalidation_lists.descendants) {
       if (invalidation_set->InvalidatesNth()) {
