@@ -66,6 +66,17 @@ class RenderGridLayout extends RenderLayoutBox {
     addAll(children);
   }
 
+  RenderBoxModel? _unwrapGridChildBoxModel(RenderBox child) {
+    if (child is RenderEventListener) {
+      final RenderBox? wrapped = child.child;
+      if (wrapped is RenderBoxModel) return wrapped;
+    }
+    if (child is RenderBoxModel) {
+      return child;
+    }
+    return null;
+  }
+
   RenderStyle? _unwrapGridChildStyle(RenderBox child) {
     if (child is RenderEventListener) {
       final RenderBox? wrapped = child.child;
@@ -77,6 +88,26 @@ class RenderGridLayout extends RenderLayoutBox {
       return child.renderStyle;
     }
     return null;
+  }
+
+  void _overrideGridChildContentBoxLogicalSizes(RenderBox child, BoxConstraints borderBoxConstraints) {
+    final RenderBoxModel? box = _unwrapGridChildBoxModel(child);
+    if (box == null) return;
+
+    final CSSRenderStyle style = box.renderStyle;
+
+    if (borderBoxConstraints.hasTightWidth && borderBoxConstraints.maxWidth.isFinite) {
+      double contentW = style.deflatePaddingBorderWidth(borderBoxConstraints.maxWidth);
+      if (contentW.isFinite && contentW < 0) contentW = 0;
+      style.contentBoxLogicalWidth = contentW;
+      box.hasOverrideContentLogicalWidth = true;
+    }
+    if (borderBoxConstraints.hasTightHeight && borderBoxConstraints.maxHeight.isFinite) {
+      double contentH = style.deflatePaddingBorderHeight(borderBoxConstraints.maxHeight);
+      if (contentH.isFinite && contentH < 0) contentH = 0;
+      style.contentBoxLogicalHeight = contentH;
+      box.hasOverrideContentLogicalHeight = true;
+    }
   }
 
   bool _isPositionedGridChild(RenderBox child) {
@@ -972,6 +1003,220 @@ class RenderGridLayout extends RenderLayoutBox {
     return length.computedValue;
   }
 
+  double? _resolveGridItemSize(
+    CSSLengthValue value,
+    double? percentageBasis, {
+    required bool treatIndefinitePercentageAsAuto,
+  }) {
+    // Do not use `value.isAuto` here: in WebF it treats percentage widths/heights
+    // that can't resolve against the containing block as `auto` (computedValue=∞),
+    // but in CSS Grid, percentages on items resolve against the grid area size.
+    if (value.type == CSSLengthType.AUTO) return null;
+    if (value.calcValue != null && value.calcValue!.expression == null) return null;
+    if (value.type == CSSLengthType.PERCENTAGE) {
+      if (percentageBasis != null && percentageBasis.isFinite) {
+        return (value.value ?? 0) * percentageBasis;
+      }
+      return treatIndefinitePercentageAsAuto ? null : 0;
+    }
+    final double resolved = value.computedValue;
+    if (!resolved.isFinite) return null;
+    return resolved;
+  }
+
+  double? _resolveGridItemMaxSize(CSSLengthValue value, double? percentageBasis) {
+    if (value.isNone) return null;
+    return _resolveGridItemSize(
+      value,
+      percentageBasis,
+      treatIndefinitePercentageAsAuto: true,
+    );
+  }
+
+  // WebF currently only supports `box-sizing: border-box`, so the preferred
+  // aspect ratio applies to the border-box dimensions (matching browser behavior
+  // under `border-box` sizing).
+  double _gridItemBorderBoxWidthFromHeight(double borderBoxHeight, double ratio) {
+    final double w = borderBoxHeight * ratio;
+    return w.isFinite ? math.max(0, w) : 0;
+  }
+
+  double _gridItemBorderBoxHeightFromWidth(double borderBoxWidth, double ratio) {
+    final double h = borderBoxWidth / ratio;
+    return h.isFinite ? math.max(0, h) : 0;
+  }
+
+  Size _containBorderBoxSizeWithAspectRatio(CSSRenderStyle style, double cellWidth, double cellHeight, double ratio) {
+    double availableContentW = style.deflatePaddingBorderWidth(cellWidth);
+    double availableContentH = style.deflatePaddingBorderHeight(cellHeight);
+    if (availableContentW.isFinite && availableContentW < 0) availableContentW = 0;
+    if (availableContentH.isFinite && availableContentH < 0) availableContentH = 0;
+    double contentW;
+    double contentH;
+    if (availableContentW / ratio <= availableContentH) {
+      contentW = availableContentW;
+      contentH = availableContentW / ratio;
+    } else {
+      contentH = availableContentH;
+      contentW = availableContentH * ratio;
+    }
+    return Size(style.wrapPaddingBorderWidth(contentW), style.wrapPaddingBorderHeight(contentH));
+  }
+
+  double? _clampOptional(double? value, double? minValue, double? maxValue) {
+    double? current = value;
+    if (current == null) return null;
+    if (minValue != null && minValue.isFinite) {
+      current = math.max(minValue, current);
+    }
+    if (maxValue != null && maxValue.isFinite) {
+      current = math.min(maxValue, current);
+    }
+    return current;
+  }
+
+  BoxConstraints _gridItemConstraints({
+    required CSSRenderStyle? childGridStyle,
+    required GridAxisAlignment justifySelfAlignment,
+    required GridAxisAlignment alignSelfAlignment,
+    required double cellWidth,
+    required bool hasDefiniteCellHeight,
+    required double cellHeight,
+    required double? innerMaxWidth,
+    required double? innerMaxHeight,
+  }) {
+    final double? percentageBasisW = cellWidth.isFinite ? cellWidth : null;
+    final double? percentageBasisH = cellHeight.isFinite ? cellHeight : null;
+
+    double? usedW;
+    double? usedH;
+    double? minW;
+    double? maxW;
+    double? minH;
+    double? maxH;
+
+    if (childGridStyle != null) {
+      usedW = _resolveGridItemSize(
+        childGridStyle.width,
+        percentageBasisW,
+        treatIndefinitePercentageAsAuto: true,
+      );
+      usedH = _resolveGridItemSize(
+        childGridStyle.height,
+        percentageBasisH,
+        treatIndefinitePercentageAsAuto: true,
+      );
+
+      minW = _resolveGridItemSize(
+        childGridStyle.minWidth,
+        percentageBasisW,
+        treatIndefinitePercentageAsAuto: true,
+      );
+      maxW = _resolveGridItemMaxSize(childGridStyle.maxWidth, percentageBasisW);
+
+      minH = _resolveGridItemSize(
+        childGridStyle.minHeight,
+        percentageBasisH,
+        treatIndefinitePercentageAsAuto: true,
+      );
+      maxH = _resolveGridItemMaxSize(childGridStyle.maxHeight, percentageBasisH);
+    }
+
+    final double? ratio = childGridStyle?.aspectRatio;
+    final bool hasRatio = ratio != null && ratio > 0;
+
+    if (hasRatio && usedW == null && usedH == null && childGridStyle != null) {
+      // With a preferred aspect ratio and no definite sizes, grid items size in the
+      // inline axis from the grid area (like a block with width:auto), and resolve
+      // the block axis from the aspect ratio. This may overflow the grid area's
+      // block size (per spec and browser behavior).
+      final bool hasDefiniteWidth = cellWidth.isFinite && cellWidth > 0;
+      final bool hasDefiniteHeight = hasDefiniteCellHeight && cellHeight.isFinite && cellHeight > 0;
+      if (hasDefiniteWidth) {
+        usedW = cellWidth;
+        usedH = _gridItemBorderBoxHeightFromWidth(usedW, ratio!);
+      } else if (hasDefiniteHeight) {
+        usedH = cellHeight;
+        usedW = _gridItemBorderBoxWidthFromHeight(usedH, ratio!);
+      }
+    }
+
+    if (hasRatio && childGridStyle != null) {
+      if (usedW == null && usedH != null) {
+        usedW = _gridItemBorderBoxWidthFromHeight(usedH, ratio!);
+      } else if (usedH == null && usedW != null) {
+        usedH = _gridItemBorderBoxHeightFromWidth(usedW, ratio!);
+      }
+    }
+
+    if (usedW == null && justifySelfAlignment == GridAxisAlignment.stretch && cellWidth.isFinite) {
+      usedW = cellWidth;
+    }
+    if (usedH == null &&
+        alignSelfAlignment == GridAxisAlignment.stretch &&
+        hasDefiniteCellHeight &&
+        cellHeight.isFinite) {
+      usedH = cellHeight;
+    }
+
+    if (hasRatio && childGridStyle != null) {
+      if (usedW == null && usedH != null) {
+        usedW = _gridItemBorderBoxWidthFromHeight(usedH, ratio!);
+      } else if (usedH == null && usedW != null) {
+        usedH = _gridItemBorderBoxHeightFromWidth(usedW, ratio!);
+      }
+    }
+
+    usedW = _clampOptional(usedW, minW, maxW);
+    usedH = _clampOptional(usedH, minH, maxH);
+
+    // Border-box sizes must not be smaller than padding+border (WebF supports
+    // border-box only). Clamp the resolved sizes so deflating to the content box
+    // remains non-negative.
+    if (childGridStyle != null) {
+      final double minBorderBoxW = childGridStyle.paddingLeft.computedValue +
+          childGridStyle.paddingRight.computedValue +
+          childGridStyle.effectiveBorderLeftWidth.computedValue +
+          childGridStyle.effectiveBorderRightWidth.computedValue;
+      final double minBorderBoxH = childGridStyle.paddingTop.computedValue +
+          childGridStyle.paddingBottom.computedValue +
+          childGridStyle.effectiveBorderTopWidth.computedValue +
+          childGridStyle.effectiveBorderBottomWidth.computedValue;
+      if (usedW != null && usedW.isFinite) {
+        usedW = math.max(usedW, minBorderBoxW);
+      }
+      if (usedH != null && usedH.isFinite) {
+        usedH = math.max(usedH, minBorderBoxH);
+      }
+    }
+
+    final double minWidthConstraint = math.max(0, usedW ?? (minW ?? 0));
+    double maxWidthConstraint = usedW ??
+        (cellWidth.isFinite ? cellWidth : (innerMaxWidth ?? double.infinity));
+    if (maxW != null && maxW.isFinite) {
+      maxWidthConstraint = math.min(maxWidthConstraint, maxW);
+    }
+    if (maxWidthConstraint < minWidthConstraint) {
+      maxWidthConstraint = minWidthConstraint;
+    }
+
+    final double minHeightConstraint = math.max(0, usedH ?? (minH ?? 0));
+    double maxHeightConstraint = usedH ?? (innerMaxHeight ?? double.infinity);
+    if (maxH != null && maxH.isFinite) {
+      maxHeightConstraint = math.min(maxHeightConstraint, maxH);
+    }
+    if (maxHeightConstraint < minHeightConstraint) {
+      maxHeightConstraint = minHeightConstraint;
+    }
+
+    return BoxConstraints(
+      minWidth: minWidthConstraint,
+      maxWidth: maxWidthConstraint,
+      minHeight: minHeightConstraint,
+      maxHeight: maxHeightConstraint,
+    );
+  }
+
   double _resolveTrackSize(GridTrackSize track, double? innerAvailable, {double? percentageBasis}) {
     if (track is GridFixed) {
       final CSSLengthValue lv = track.length;
@@ -1299,7 +1544,7 @@ class RenderGridLayout extends RenderLayoutBox {
     final List<RenderBox> autoItems = <RenderBox>[];
 
     for (final RenderBox placementChild in placementChildren) {
-      RenderStyle? childGridStyle;
+      CSSRenderStyle? childGridStyle;
       if (placementChild is RenderBoxModel) {
         childGridStyle = placementChild.renderStyle;
       } else if (placementChild is RenderEventListener) {
@@ -1374,7 +1619,7 @@ class RenderGridLayout extends RenderLayoutBox {
     ];
 
     for (final RenderBox child in orderedChildren) {
-      RenderStyle? childGridStyle;
+      CSSRenderStyle? childGridStyle;
       if (child is RenderBoxModel) {
         childGridStyle = child.renderStyle;
       } else if (child is RenderEventListener) {
@@ -1799,7 +2044,7 @@ class RenderGridLayout extends RenderLayoutBox {
           final int startCol = pd.columnStart;
           final int span = math.max(1, pd.columnSpan);
           if (startCol >= 0 && startCol < colSizes.length) {
-            RenderStyle? childGridStyle;
+            CSSRenderStyle? childGridStyle;
             if (childForIntrinsic is RenderBoxModel) {
               childGridStyle = childForIntrinsic.renderStyle;
             } else if (childForIntrinsic is RenderEventListener) {
@@ -1834,6 +2079,34 @@ class RenderGridLayout extends RenderLayoutBox {
                   childGridStyle.whiteSpace == WhiteSpace.pre) {
                 if (intrinsicMaxWidth.isFinite && intrinsicMaxWidth > 0) {
                   intrinsicMinWidth = intrinsicMaxWidth;
+                }
+              }
+
+              // Aspect-ratio affects the box's intrinsic size contributions when one axis is
+              // definite and the other is auto. In particular, a definite block-size with an
+              // auto inline-size yields an intrinsic inline-size derived from the preferred
+              // aspect ratio. This is important for flex (fr) tracks: their automatic minimum
+              // size is based on the min-content contribution, and browsers will overflow the
+              // grid container rather than overlap items when these minimums exceed the
+              // available size.
+              final double? ratio = childGridStyle.aspectRatio;
+              if (ratio != null && ratio > 0) {
+                final bool widthAuto = childGridStyle.width.isAuto ||
+                    (childGridStyle.width.type == CSSLengthType.PERCENTAGE &&
+                        !childGridStyle.width.computedValue.isFinite);
+                if (widthAuto && childGridStyle.height.isNotAuto) {
+                  final double h = childGridStyle.height.computedValue;
+                  if (h.isFinite && h > 0) {
+                    final double derivedW = _gridItemBorderBoxWidthFromHeight(h, ratio);
+                    if (derivedW.isFinite && derivedW > 0) {
+                      if (!intrinsicMinWidth.isFinite || derivedW > intrinsicMinWidth) {
+                        intrinsicMinWidth = derivedW;
+                      }
+                      if (!intrinsicMaxWidth.isFinite || derivedW > intrinsicMaxWidth) {
+                        intrinsicMaxWidth = derivedW;
+                      }
+                    }
+                  }
                 }
               }
 
@@ -1998,7 +2271,7 @@ class RenderGridLayout extends RenderLayoutBox {
 
     child = firstChild;
     while (child != null) {
-      RenderStyle? childGridStyle;
+      CSSRenderStyle? childGridStyle;
       if (child is RenderBoxModel) {
         childGridStyle = child.renderStyle;
       } else if (child is RenderEventListener) {
@@ -2054,35 +2327,22 @@ class RenderGridLayout extends RenderLayoutBox {
       }
       final double cellHeight = hasExplicitRowSize ? explicitHeight : double.nan;
 
-      double? explicitItemHeight;
-      if (childGridStyle != null && childGridStyle.height.isNotAuto) {
-        explicitItemHeight = childGridStyle.height.computedValue;
-      }
-
       final GridAxisAlignment justifySelfAlignment = _resolveJustifySelfAlignment(childGridStyle);
       final GridAxisAlignment alignSelfAlignment = _resolveAlignSelfAlignment(childGridStyle);
-      final bool childWidthAuto = childGridStyle?.width.isAuto ?? true;
-      final bool childHeightAuto = childGridStyle?.height.isAuto ?? true;
-      final bool stretchWidth =
-          justifySelfAlignment == GridAxisAlignment.stretch && childWidthAuto && cellWidth.isFinite;
-      final bool stretchHeight =
-          alignSelfAlignment == GridAxisAlignment.stretch && childHeightAuto && hasExplicitRowSize && explicitItemHeight == null;
-
-      final double minWidthConstraint = stretchWidth ? cellWidth : 0;
-      final double maxWidthConstraint = cellWidth.isFinite ? cellWidth : (innerMaxWidth ?? double.infinity);
-      final double minHeightConstraint = explicitItemHeight ?? (stretchHeight && cellHeight.isFinite ? cellHeight : 0);
-      final double maxHeightConstraint =
-          explicitItemHeight ?? (cellHeight.isFinite ? cellHeight : (innerMaxHeight ?? double.infinity));
-
-      final BoxConstraints childConstraints = BoxConstraints(
-        minWidth: minWidthConstraint,
-        maxWidth: maxWidthConstraint,
-        minHeight: minHeightConstraint,
-        maxHeight: maxHeightConstraint,
+      final BoxConstraints childConstraints = _gridItemConstraints(
+        childGridStyle: childGridStyle,
+        justifySelfAlignment: justifySelfAlignment,
+        alignSelfAlignment: alignSelfAlignment,
+        cellWidth: cellWidth,
+        hasDefiniteCellHeight: hasExplicitRowSize,
+        cellHeight: cellHeight,
+        innerMaxWidth: innerMaxWidth,
+        innerMaxHeight: innerMaxHeight,
       );
 
       Stopwatch? childLayoutSw;
       if (profileGrid) childLayoutSw = Stopwatch()..start();
+      _overrideGridChildContentBoxLogicalSizes(child, childConstraints);
       child.layout(childConstraints, parentUsesSize: true);
       if (childLayoutSw != null) {
         childLayoutSw.stop();
@@ -2106,7 +2366,9 @@ class RenderGridLayout extends RenderLayoutBox {
       }
 
       final double horizontalExtra = cellWidth.isFinite ? math.max(0, cellWidth - childSize.width) : 0;
-      final double verticalExtra = hasExplicitRowSize && cellHeight.isFinite ? math.max(0, cellHeight - childSize.height) : 0;
+      final double verticalExtra = hasExplicitRowSize && cellHeight.isFinite
+          ? math.max(0, cellHeight - childSize.height)
+          : 0;
       final double horizontalInset = _alignmentOffsetWithinCell(justifySelfAlignment, horizontalExtra);
       final double verticalInset =
           hasExplicitRowSize ? _alignmentOffsetWithinCell(alignSelfAlignment, verticalExtra) : 0;
@@ -2120,7 +2382,7 @@ class RenderGridLayout extends RenderLayoutBox {
     bool relayoutForImplicitRowStretch = false;
     RenderBox? stretchCheckChild = firstChild;
     while (stretchCheckChild != null) {
-      RenderStyle? childGridStyle;
+      CSSRenderStyle? childGridStyle;
       if (stretchCheckChild is RenderBoxModel) {
         childGridStyle = stretchCheckChild.renderStyle;
       } else if (stretchCheckChild is RenderEventListener) {
@@ -2327,7 +2589,7 @@ class RenderGridLayout extends RenderLayoutBox {
     if (relayoutForStretchedTracks) {
       RenderBox? childForRelayout = firstChild;
       while (childForRelayout != null) {
-        RenderStyle? childGridStyle;
+        CSSRenderStyle? childGridStyle;
         if (childForRelayout is RenderBoxModel) {
           childGridStyle = childForRelayout.renderStyle;
         } else if (childForRelayout is RenderEventListener) {
@@ -2339,8 +2601,6 @@ class RenderGridLayout extends RenderLayoutBox {
 
         final GridAxisAlignment justifySelfAlignment = _resolveJustifySelfAlignment(childGridStyle);
         final GridAxisAlignment alignSelfAlignment = _resolveAlignSelfAlignment(childGridStyle);
-        final bool childWidthAuto = childGridStyle?.width.isAuto ?? true;
-        final bool childHeightAuto = childGridStyle?.height.isAuto ?? true;
 
         final GridLayoutParentData pd = childForRelayout.parentData as GridLayoutParentData;
         final int rowIndex = pd.rowStart;
@@ -2374,32 +2634,18 @@ class RenderGridLayout extends RenderLayoutBox {
           resolvedCellHeight += rowGap * math.max(0, rowSpan - 1);
         }
         final double cellHeight = hasDefiniteCellHeight ? resolvedCellHeight : double.nan;
-
-        double? explicitItemHeight;
-        if (childGridStyle != null && childGridStyle.height.isNotAuto) {
-          explicitItemHeight = childGridStyle.height.computedValue;
-        }
-
-        final bool stretchWidth =
-            justifySelfAlignment == GridAxisAlignment.stretch && childWidthAuto && cellWidth.isFinite;
-        final bool stretchHeight = alignSelfAlignment == GridAxisAlignment.stretch &&
-            childHeightAuto &&
-            explicitItemHeight == null &&
-            cellHeight.isFinite;
-
-        final double minWidthConstraint = stretchWidth ? cellWidth : 0;
-        final double maxWidthConstraint = cellWidth.isFinite ? cellWidth : (innerMaxWidth ?? double.infinity);
-        final double minHeightConstraint = explicitItemHeight ?? (stretchHeight ? cellHeight : 0);
-        final double maxHeightConstraint =
-            explicitItemHeight ?? (cellHeight.isFinite ? cellHeight : (innerMaxHeight ?? double.infinity));
-
-        final BoxConstraints childConstraints = BoxConstraints(
-          minWidth: minWidthConstraint,
-          maxWidth: maxWidthConstraint,
-          minHeight: minHeightConstraint,
-          maxHeight: maxHeightConstraint,
+        final BoxConstraints childConstraints = _gridItemConstraints(
+          childGridStyle: childGridStyle,
+          justifySelfAlignment: justifySelfAlignment,
+          alignSelfAlignment: alignSelfAlignment,
+          cellWidth: cellWidth,
+          hasDefiniteCellHeight: hasDefiniteCellHeight,
+          cellHeight: cellHeight,
+          innerMaxWidth: innerMaxWidth,
+          innerMaxHeight: innerMaxHeight,
         );
 
+        _overrideGridChildContentBoxLogicalSizes(childForRelayout, childConstraints);
         childForRelayout.layout(childConstraints, parentUsesSize: true);
         final Size childSize = childForRelayout.size;
 
@@ -2567,7 +2813,11 @@ class RenderGridLayout extends RenderLayoutBox {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(EnumProperty<GridAutoFlow>('gridAutoFlow', renderStyle.gridAutoFlow, defaultValue: GridAutoFlow.row));
+    properties.add(EnumProperty<GridAutoFlow>(
+      'gridAutoFlow',
+      renderStyle.gridAutoFlow,
+      defaultValue: GridAutoFlow.row,
+    ));
     properties.add(IntProperty('explicitColumns', renderStyle.gridTemplateColumns.length, defaultValue: 0));
     properties.add(IntProperty('explicitRows', renderStyle.gridTemplateRows.length, defaultValue: 0));
     properties.add(IntProperty('autoColumnPatterns', renderStyle.gridAutoColumns.length, defaultValue: 0));
