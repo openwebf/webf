@@ -852,7 +852,7 @@ class CSSStyleProperty {
           style = normalized;
           continue;
         }
-        if (variant == null && (isValueVariableFunction || CSSText.isValidFontVariantValue(normalized))) {
+        if (variant == null && (isValueVariableFunction || CSSText.isValidFontVariantCss21Value(normalized))) {
           variant = normalized;
           continue;
         }

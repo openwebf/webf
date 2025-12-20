@@ -2244,6 +2244,7 @@ class InlineFormattingContext {
               return s.lineHeight.computedValue / s.fontSize.computedValue;
             })();
             final Color maskColor = s.isVisibilityHidden ? const Color(0x00000000) : s.color.value.withAlpha(0xFF);
+            final variant = CSSText.resolveFontFeaturesForVariant(s);
             final ui.TextStyle maskStyle = ui.TextStyle(
               color: maskColor,
               // Suppress decoration/shadow in the mask paragraph for clip-text; they
@@ -2264,9 +2265,7 @@ class InlineFormattingContext {
               background: CSSText.getBackground(),
               foreground: CSSText.getForeground(),
               shadows: null,
-              fontFeatures: s.fontVariant == 'small-caps' && CSSText.supportsSmallCapsFontFeature(s)
-                  ? const [ui.FontFeature.enable('smcp')]
-                  : null,
+              fontFeatures: variant.features.isNotEmpty ? variant.features : null,
             );
             pb.pushStyle(maskStyle);
             _addTextWithFontVariant(pb, text, s, s.fontSize.computedValue);
@@ -4523,10 +4522,8 @@ class InlineFormattingContext {
     final Color effectiveColor = clipText ? baseColor.withAlpha(hidden ? 0x00 : 0xFF) : baseColor;
     final (TextDecoration effLine, TextDecorationStyle? effStyle, Color? effColor) =
         _computeEffectiveTextDecoration(rs);
-    final List<ui.FontFeature>? fontFeatures =
-        rs.fontVariant == 'small-caps' && CSSText.supportsSmallCapsFontFeature(rs)
-            ? const [ui.FontFeature.enable('smcp')]
-            : null;
+    final variant = CSSText.resolveFontFeaturesForVariant(rs);
+    final List<ui.FontFeature>? fontFeatures = variant.features.isNotEmpty ? variant.features : null;
     final result = ui.TextStyle(
       // For clip-text, force fully-opaque glyphs for the mask (ignore alpha).
       color: effectiveColor,
@@ -4557,14 +4554,11 @@ class InlineFormattingContext {
 
   static const double _syntheticSmallCapsScale = 0.8;
 
-  bool _shouldSynthesizeSmallCaps(CSSRenderStyle rs) {
-    return rs.fontVariant == 'small-caps' && !CSSText.supportsSmallCapsFontFeature(rs);
-  }
-
   bool _isLowerAsciiLetter(int cu) => cu >= 0x61 && cu <= 0x7A;
 
   void _addTextWithFontVariant(ui.ParagraphBuilder pb, String text, CSSRenderStyle rs, double baseFontSize) {
-    if (!_shouldSynthesizeSmallCaps(rs)) {
+    final FontVariantCapsSynthesis synth = CSSText.resolveFontFeaturesForVariant(rs).synth;
+    if (synth == FontVariantCapsSynthesis.none) {
       pb.addText(text);
       return;
     }
@@ -4575,6 +4569,13 @@ class InlineFormattingContext {
     }
 
     final double smallCapsSize = baseFontSize * _syntheticSmallCapsScale;
+    if (synth == FontVariantCapsSynthesis.allLetters) {
+      pb.pushStyle(ui.TextStyle(fontSize: smallCapsSize));
+      pb.addText(text.toUpperCase());
+      pb.pop();
+      return;
+    }
+
     int runStart = 0;
     bool inLower = false;
     for (int i = 0; i < text.length; i++) {

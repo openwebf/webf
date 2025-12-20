@@ -31,5 +31,17 @@ void main() {
       style.setProperty('fontVariant', 'small-caps');
       expect(style.getPropertyValue('fontVariant'), 'small-caps');
     });
+
+    test('font-variant longhand parses multiple keywords', () {
+      final CSSStyleDeclaration style = CSSStyleDeclaration();
+      style.setProperty('fontVariant', 'oldstyle-nums tabular-nums slashed-zero');
+      expect(style.getPropertyValue('fontVariant'), 'oldstyle-nums tabular-nums slashed-zero');
+    });
+
+    test('font-variant longhand rejects unknown keyword', () {
+      final CSSStyleDeclaration style = CSSStyleDeclaration();
+      style.setProperty('fontVariant', 'small-caps definitely-not-a-keyword');
+      expect(style.getPropertyValue('fontVariant'), '');
+    });
   });
 }
