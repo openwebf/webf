@@ -55,6 +55,8 @@ if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
 
   # Define math constants that are not in standard C++
   add_compile_definitions(_USE_MATH_DEFINES)
+  # Exclude GDI from Windows.h
+  add_compile_definitions(NOGDI)
 
   if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
     set(CMAKE_INSTALL_PREFIX $ENV{LIBRARY_OUTPUT_DIR})
