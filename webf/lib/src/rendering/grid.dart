@@ -58,12 +58,81 @@ class GridLayoutParentData extends RenderLayoutParentData {
   }
 }
 
+class _GridResolvedMargins {
+  final double left;
+  final double top;
+  final double right;
+  final double bottom;
+  final bool autoLeft;
+  final bool autoTop;
+  final bool autoRight;
+  final bool autoBottom;
+
+  const _GridResolvedMargins({
+    required this.left,
+    required this.top,
+    required this.right,
+    required this.bottom,
+    required this.autoLeft,
+    required this.autoTop,
+    required this.autoRight,
+    required this.autoBottom,
+  });
+
+  static const _GridResolvedMargins zero = _GridResolvedMargins(
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    autoLeft: false,
+    autoTop: false,
+    autoRight: false,
+    autoBottom: false,
+  );
+
+  double get horizontal => left + right;
+  double get vertical => top + bottom;
+}
+
 class RenderGridLayout extends RenderLayoutBox {
   RenderGridLayout({
     List<RenderBox>? children,
     required super.renderStyle,
   }) {
     addAll(children);
+  }
+
+  double _resolveGridItemMargin(CSSLengthValue value, double? percentageBasisWidth) {
+    if (value.type == CSSLengthType.AUTO) return 0;
+    if (value.type == CSSLengthType.PERCENTAGE) {
+      if (percentageBasisWidth != null && percentageBasisWidth.isFinite) {
+        return (value.value ?? 0) * percentageBasisWidth;
+      }
+      return 0;
+    }
+    final double resolved = value.computedValue;
+    if (!resolved.isFinite) return 0;
+    return resolved;
+  }
+
+  _GridResolvedMargins _resolveGridChildMargins(CSSRenderStyle? style, double? percentageBasisWidth) {
+    if (style == null) return _GridResolvedMargins.zero;
+
+    final bool autoLeft = style.marginLeft.type == CSSLengthType.AUTO;
+    final bool autoRight = style.marginRight.type == CSSLengthType.AUTO;
+    final bool autoTop = style.marginTop.type == CSSLengthType.AUTO;
+    final bool autoBottom = style.marginBottom.type == CSSLengthType.AUTO;
+
+    return _GridResolvedMargins(
+      left: autoLeft ? 0 : _resolveGridItemMargin(style.marginLeft, percentageBasisWidth),
+      top: autoTop ? 0 : _resolveGridItemMargin(style.marginTop, percentageBasisWidth),
+      right: autoRight ? 0 : _resolveGridItemMargin(style.marginRight, percentageBasisWidth),
+      bottom: autoBottom ? 0 : _resolveGridItemMargin(style.marginBottom, percentageBasisWidth),
+      autoLeft: autoLeft,
+      autoTop: autoTop,
+      autoRight: autoRight,
+      autoBottom: autoBottom,
+    );
   }
 
   RenderBoxModel? _unwrapGridChildBoxModel(RenderBox child) {
@@ -1082,6 +1151,8 @@ class RenderGridLayout extends RenderLayoutBox {
     required double cellWidth,
     required bool hasDefiniteCellHeight,
     required double cellHeight,
+    required double marginHorizontal,
+    required double marginVertical,
     required double? innerMaxWidth,
     required double? innerMaxHeight,
   }) {
@@ -1133,10 +1204,10 @@ class RenderGridLayout extends RenderLayoutBox {
       final bool hasDefiniteWidth = cellWidth.isFinite && cellWidth > 0;
       final bool hasDefiniteHeight = hasDefiniteCellHeight && cellHeight.isFinite && cellHeight > 0;
       if (hasDefiniteWidth) {
-        usedW = cellWidth;
+        usedW = math.max(0, cellWidth - marginHorizontal);
         usedH = _gridItemBorderBoxHeightFromWidth(usedW, ratio!);
       } else if (hasDefiniteHeight) {
-        usedH = cellHeight;
+        usedH = math.max(0, cellHeight - marginVertical);
         usedW = _gridItemBorderBoxWidthFromHeight(usedH, ratio!);
       }
     }
@@ -1150,13 +1221,13 @@ class RenderGridLayout extends RenderLayoutBox {
     }
 
     if (usedW == null && justifySelfAlignment == GridAxisAlignment.stretch && cellWidth.isFinite) {
-      usedW = cellWidth;
+      usedW = math.max(0, cellWidth - marginHorizontal);
     }
     if (usedH == null &&
         alignSelfAlignment == GridAxisAlignment.stretch &&
         hasDefiniteCellHeight &&
         cellHeight.isFinite) {
-      usedH = cellHeight;
+      usedH = math.max(0, cellHeight - marginVertical);
     }
 
     if (hasRatio && childGridStyle != null) {
@@ -2329,6 +2400,9 @@ class RenderGridLayout extends RenderLayoutBox {
 
       final GridAxisAlignment justifySelfAlignment = _resolveJustifySelfAlignment(childGridStyle);
       final GridAxisAlignment alignSelfAlignment = _resolveAlignSelfAlignment(childGridStyle);
+      final EdgeInsets childMargin = _gridChildMargin(childGridStyle);
+      final double marginHorizontal = childMargin.left + childMargin.right;
+      final double marginVertical = childMargin.top + childMargin.bottom;
       final BoxConstraints childConstraints = _gridItemConstraints(
         childGridStyle: childGridStyle,
         justifySelfAlignment: justifySelfAlignment,
@@ -2336,6 +2410,8 @@ class RenderGridLayout extends RenderLayoutBox {
         cellWidth: cellWidth,
         hasDefiniteCellHeight: hasExplicitRowSize,
         cellHeight: cellHeight,
+        marginHorizontal: marginHorizontal,
+        marginVertical: marginVertical,
         innerMaxWidth: innerMaxWidth,
         innerMaxHeight: innerMaxHeight,
       );
@@ -2350,7 +2426,8 @@ class RenderGridLayout extends RenderLayoutBox {
       }
 
       final Size childSize = child.size;
-      final double perRow = childSize.height / rowSpan;
+      final double marginBoxHeight = childSize.height + marginVertical;
+      final double perRow = math.max(0, marginBoxHeight) / rowSpan;
       for (int r = 0; r < rowSpan; r++) {
         final int targetRow = rowIndex + r;
         if (targetRow >= 0 && targetRow < implicitRowHeights.length) {
@@ -2365,14 +2442,14 @@ class RenderGridLayout extends RenderLayoutBox {
         rowTop += rowGap;
       }
 
-      final double horizontalExtra = cellWidth.isFinite ? math.max(0, cellWidth - childSize.width) : 0;
+      final double marginBoxWidth = childSize.width + marginHorizontal;
+      final double horizontalExtra = cellWidth.isFinite ? math.max(0, cellWidth - marginBoxWidth) : 0;
       final double verticalExtra = hasExplicitRowSize && cellHeight.isFinite
-          ? math.max(0, cellHeight - childSize.height)
+          ? math.max(0, cellHeight - (childSize.height + marginVertical))
           : 0;
       final double horizontalInset = _alignmentOffsetWithinCell(justifySelfAlignment, horizontalExtra);
-      final double verticalInset =
-          hasExplicitRowSize ? _alignmentOffsetWithinCell(alignSelfAlignment, verticalExtra) : 0;
-      pd.offset = Offset(xOffset + horizontalInset, rowTop + verticalInset);
+      final double verticalInset = hasExplicitRowSize ? _alignmentOffsetWithinCell(alignSelfAlignment, verticalExtra) : 0;
+      pd.offset = Offset(xOffset + horizontalInset + childMargin.left, rowTop + verticalInset + childMargin.top);
 
       child = pd.nextSibling;
     }
@@ -2398,6 +2475,8 @@ class RenderGridLayout extends RenderLayoutBox {
         explicitItemHeight = childGridStyle.height.computedValue;
       }
       if (alignSelfAlignment == GridAxisAlignment.stretch && childHeightAuto && explicitItemHeight == null) {
+        final EdgeInsets childMargin = _gridChildMargin(childGridStyle);
+        final double marginVertical = childMargin.top + childMargin.bottom;
         final GridLayoutParentData pd = stretchCheckChild.parentData as GridLayoutParentData;
         final int rowIndex = pd.rowStart;
         final int rowSpan = math.max(1, pd.rowSpan);
@@ -2416,7 +2495,8 @@ class RenderGridLayout extends RenderLayoutBox {
         }
         if (hasDefiniteCellHeight && resolvedCellHeight.isFinite) {
           final double currentHeight = stretchCheckChild.size.height;
-          if (resolvedCellHeight > currentHeight + 0.5) {
+          final double availableHeight = math.max(0, resolvedCellHeight - marginVertical);
+          if (availableHeight > currentHeight + 0.5) {
             relayoutForImplicitRowStretch = true;
             break;
           }
@@ -2601,6 +2681,9 @@ class RenderGridLayout extends RenderLayoutBox {
 
         final GridAxisAlignment justifySelfAlignment = _resolveJustifySelfAlignment(childGridStyle);
         final GridAxisAlignment alignSelfAlignment = _resolveAlignSelfAlignment(childGridStyle);
+        final EdgeInsets childMargin = _gridChildMargin(childGridStyle);
+        final double marginHorizontal = childMargin.left + childMargin.right;
+        final double marginVertical = childMargin.top + childMargin.bottom;
 
         final GridLayoutParentData pd = childForRelayout.parentData as GridLayoutParentData;
         final int rowIndex = pd.rowStart;
@@ -2641,6 +2724,8 @@ class RenderGridLayout extends RenderLayoutBox {
           cellWidth: cellWidth,
           hasDefiniteCellHeight: hasDefiniteCellHeight,
           cellHeight: cellHeight,
+          marginHorizontal: marginHorizontal,
+          marginVertical: marginVertical,
           innerMaxWidth: innerMaxWidth,
           innerMaxHeight: innerMaxHeight,
         );
@@ -2656,13 +2741,14 @@ class RenderGridLayout extends RenderLayoutBox {
           rowTop += rowGap;
         }
 
-        final double horizontalExtra = cellWidth.isFinite ? math.max(0, cellWidth - childSize.width) : 0;
+        final double marginBoxWidth = childSize.width + marginHorizontal;
+        final double horizontalExtra = cellWidth.isFinite ? math.max(0, cellWidth - marginBoxWidth) : 0;
         final double verticalExtra =
-            cellHeight.isFinite ? math.max(0, cellHeight - childSize.height) : 0;
+            cellHeight.isFinite ? math.max(0, cellHeight - (childSize.height + marginVertical)) : 0;
         final double horizontalInset = _alignmentOffsetWithinCell(justifySelfAlignment, horizontalExtra);
         final double verticalInset =
             cellHeight.isFinite ? _alignmentOffsetWithinCell(alignSelfAlignment, verticalExtra) : 0;
-        pd.offset = Offset(xOffset + horizontalInset, rowTop + verticalInset);
+        pd.offset = Offset(xOffset + horizontalInset + childMargin.left, rowTop + verticalInset + childMargin.top);
 
         childForRelayout = pd.nextSibling;
       }
