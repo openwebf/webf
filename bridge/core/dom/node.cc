@@ -792,7 +792,6 @@ void Node::SetNeedsStyleRecalc(StyleChangeType change_type, const StyleChangeRea
   // Mirror Blink's preconditions as closely as possible so that style dirtiness
   // and StyleRecalcRoot invariants match Blink's expectations.
   if (!GetExecutingContext()->isBlinkEnabled()) {
-    WEBF_LOG(VERBOSE) << "[StyleRecalcSkip] blink disabled for node_type=" << static_cast<int>(nodeType());
     return;
   }
 
@@ -800,44 +799,27 @@ void Node::SetNeedsStyleRecalc(StyleChangeType change_type, const StyleChangeRea
   StyleEngine& engine = document.GetStyleEngine();
 
   if (!engine.MarkStyleDirtyAllowed()) {
-    WEBF_LOG(VERBOSE) << "[StyleRecalcSkip] MarkStyleDirty disallowed for node_type="
-                      << static_cast<int>(nodeType());
     return;
   }
 
   if (change_type == kNoStyleChange) {
-    WEBF_LOG(VERBOSE) << "[StyleRecalcSkip] kNoStyleChange for node_type=" << static_cast<int>(nodeType());
     return;
   }
 
   // Only elements and text nodes participate in style recalc.
   if (!IsElementNode() && !IsTextNode()) {
-    WEBF_LOG(VERBOSE) << "[StyleRecalcSkip] non-element/text node_type=" << static_cast<int>(nodeType());
     return;
   }
 
   if (!InActiveDocument()) {
-    WEBF_LOG(VERBOSE) << "[StyleRecalcSkip] not in active document, node_type=" << static_cast<int>(nodeType());
     return;
   }
 
   if (ShouldSkipMarkingStyleDirty()) {
-    WEBF_LOG(VERBOSE) << "[StyleRecalcSkip] ShouldSkipMarkingStyleDirty() for node_type="
-                      << static_cast<int>(nodeType());
     return;
   }
 
   StyleChangeType existing_change_type = GetStyleChangeType();
-  if (change_type > existing_change_type) {
-    WEBF_LOG(VERBOSE) << "[StyleRecalc] Mark dirty node_type="
-                      << static_cast<int>(nodeType())
-                      << " is_element=" << IsElementNode()
-                      << " tag=" << (IsElementNode()
-                                         ? static_cast<Element*>(const_cast<Node*>(this))->tagName().ToUTF8String()
-                                         : std::string(""))
-                      << " old_change_type=" << static_cast<uint32_t>(existing_change_type)
-                      << " new_change_type=" << static_cast<uint32_t>(change_type);
-  }
   if (change_type > existing_change_type) {
     SetStyleChange(change_type);
   }

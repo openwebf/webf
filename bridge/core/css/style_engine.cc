@@ -412,7 +412,6 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text) {
     int64_t sheet_id_val = std::bit_cast<int64_t>(style_sheet);
     auto contents = style_sheet->Contents();
     std::string base_href = contents->BaseURL().GetString();
-    WEBF_LOG(INFO) << "[font-face][CreateSheet] begin sheetId=" << sheet_id_val << " baseHref=" << base_href;
 
     const auto& top = contents->ChildRules();
     std::vector<std::shared_ptr<const StyleRuleBase>> childVec;
@@ -435,7 +434,6 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text) {
             std::string familyUtf8 = familyLower.ToUTF8String();
             std::string srcUtf8 = src.ToUTF8String();
             if (srcUtf8.size() > 160) srcUtf8 = srcUtf8.substr(0, 160) + "…";
-            WEBF_LOG(INFO) << "[font-face][found] family='" << familyUtf8 << "' src='" << srcUtf8 << "'";
             auto baseHrefNative = stringToNativeString(base_href).release();
             auto familyNative = stringToNativeString(familyUtf8).release();
             auto srcNative = stringToNativeString(src.ToUTF8String()).release();
@@ -443,8 +441,6 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text) {
             auto styleNative = stringToNativeString(style.ToUTF8String()).release();
             exe_ctx->dartMethodPtr()->registerFontFace(exe_ctx->isDedicated(), exe_ctx->contextId(), sheet_id_val,
                                                        familyNative, srcNative, weightNative, styleNative, baseHrefNative);
-            WEBF_LOG(INFO) << "[font-face][register] dispatched to Dart (ctx=" << exe_ctx->contextId() << ")"
-                           << " family='" << familyUtf8 << "'";
           }
         } else if (r->IsKeyframesRule()) {
           auto kf = std::static_pointer_cast<const StyleRuleKeyframes>(r);
@@ -471,7 +467,6 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text) {
           auto cssNative = stringToNativeString(cssText).release();
           exe_ctx->dartMethodPtr()->registerKeyframes(exe_ctx->isDedicated(), exe_ctx->contextId(), sheet_id_val,
                                                       nameNative, cssNative, is_prefixed ? 1 : 0);
-          WEBF_LOG(INFO) << "[keyframes][register] name='" << String(name).ToUTF8String() << "'";
         } else if (r->IsMediaRule() || r->IsSupportsRule() || r->IsLayerBlockRule() || r->IsContainerRule() ||
                    r->IsScopeRule() || r->IsStartingStyleRule()) {
           auto group = std::static_pointer_cast<const StyleRuleGroup>(r);
@@ -483,9 +478,7 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text) {
         }
       }
     };
-    WEBF_LOG(INFO) << "[font-face][CreateSheet] walking top-level rules count=" << childVec.size();
     walk(childVec);
-    WEBF_LOG(INFO) << "[font-face][CreateSheet] end sheetId=" << sheet_id_val;
   }
 
   return style_sheet;
@@ -952,7 +945,6 @@ void StyleEngine::SetNeedsActiveStyleUpdate() {
   // (ids, classes, attributes, nth, etc.) will be rebuilt from the current
   // author sheets before the next invalidation-driven style recomputation.
   if (global_rule_set_) {
-    WEBF_LOG(VERBOSE) << "[StyleInvalidation] GlobalRuleSet: active stylesheet set changed; marking features dirty.";
     global_rule_set_->MarkDirty();
   }
 
@@ -1028,11 +1020,6 @@ void StyleEngine::IdChangedForElement(const AtomicString& old_id,
     return;
   }
 
-  WEBF_LOG(VERBOSE) << "[StyleInvalidation] IdChanged old="
-                    << old_id.ToNativeString()
-                    << " new=" << new_id.ToNativeString()
-                    << " on <" << element.tagName().ToNativeString() << ">";
-
   global_rule_set_->Update(document);
   const RuleFeatureSet& features = global_rule_set_->GetRuleFeatureSet();
 
@@ -1066,11 +1053,6 @@ void StyleEngine::ClassAttributeChangedForElement(const AtomicString& old_class_
   if (ShouldSkipInvalidationFor(element)) {
     return;
   }
-
-  WEBF_LOG(VERBOSE) << "[StyleInvalidation] ClassChanged old=\""
-                    << old_class_value.ToNativeString()
-                    << "\" new=\"" << new_class_value.ToNativeString()
-                    << "\" on <" << element.tagName().ToNativeString() << ">";
 
   global_rule_set_->Update(document);
   const RuleFeatureSet& features = global_rule_set_->GetRuleFeatureSet();
@@ -1120,10 +1102,6 @@ void StyleEngine::AttributeChangedForElement(const AtomicString& attribute_local
     return;
   }
 
-  WEBF_LOG(VERBOSE) << "[StyleInvalidation] AttributeChanged name="
-                    << attribute_local_name.ToUTF8String()
-                    << " on <" << element.tagName().ToUTF8String() << ">";
-
   global_rule_set_->Update(document);
   const RuleFeatureSet& features = global_rule_set_->GetRuleFeatureSet();
 
@@ -1141,8 +1119,6 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
   if (!document.GetExecutingContext()->isBlinkEnabled()) {
     return;
   }
-
-  auto begin_calc = std::chrono::steady_clock::now();
 
   std::function<InheritedState(Element*, const InheritedState&)> apply_for_element =
       [&](Element* element, const InheritedState& parent_state) -> InheritedState {
@@ -1430,9 +1406,6 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
 
   InheritedState root_state;
   walk(&root_element, root_state);
-
-  auto end_calc = std::chrono::steady_clock::now();
-  WEBF_LOG(INFO) << "[StyleEngine] Finished Recalc subtree styles(took " << std::chrono::duration_cast<std::chrono::milliseconds>(end_calc - begin_calc).count() << "ms)";
 }
 
 void StyleEngine::RecalcStyleForElementOnly(Element& element) {
@@ -1440,8 +1413,6 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
   if (!document.GetExecutingContext()->isBlinkEnabled()) {
     return;
   }
-
-  auto begin_calc = std::chrono::steady_clock::now();
 
   // Reuse the same per-element styling logic as RecalcStyleForSubtree, but do
   // not recurse into children and ignore inherited/custom-var accumulation.
@@ -1699,10 +1670,6 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
 
   InheritedState empty_state;
   apply_for_element(&element, empty_state);
-
-  auto end_calc = std::chrono::steady_clock::now();
-  WEBF_LOG(INFO) << "[StyleEngine] Finished Recalc element-only styles(took "
-                 << std::chrono::duration_cast<std::chrono::milliseconds>(end_calc - begin_calc).count() << "ms)";
 }
 
 void StyleEngine::RecalcStyle(StyleRecalcChange change, const StyleRecalcContext& style_recalc_context) {
@@ -1723,9 +1690,6 @@ void StyleEngine::RecalcStyle(StyleRecalcChange change, const StyleRecalcContext
   } in_style_recalc_scope(document);
 
   MemberMutationScope scope{context};
-
-  WEBF_LOG(INFO) << "[StyleEngine] RecalcStyle starts...";
-  auto begin_calc = std::chrono::steady_clock::now();
 
   Element* root = nullptr;
   if (style_recalc_root_.GetRootNode()) {
@@ -1761,11 +1725,8 @@ void StyleEngine::RecalcStyle(StyleRecalcChange change, const StyleRecalcContext
   // when both the document/subtree are clean *and* the change is empty.
   if (map.empty() && !document.NeedsStyleInvalidation() && !document.ChildNeedsStyleInvalidation() &&
       !subtree_needs_style_recalc && change.IsEmpty()) {
-    WEBF_LOG(INFO) << "[StyleEngine] Nothing scheduled via selector-based invalidation; nothing to do.";
     return;
   }
-
-  WEBF_LOG(INFO) << "[StyleEngine] Recalc PendingInvalidationMap size: " << map.size();
 
   // First, run the StyleInvalidator to translate InvalidationSets into
   // StyleChangeType flags on individual elements.
@@ -1785,12 +1746,6 @@ void StyleEngine::RecalcStyle(StyleRecalcChange change, const StyleRecalcContext
     }
     invalidator.Invalidate(document, invalidation_root);
   }
-
-  WEBF_LOG(VERBOSE) << "[StyleEngine] Recalc root="
-                    << root->tagName().ToUTF8String()
-                    << " needs_style=" << root->NeedsStyleRecalc()
-                    << " child_needs_style=" << root->ChildNeedsStyleRecalc()
-                    << " forced_descendants=" << change.RecalcDescendants();
 
   // If the caller explicitly requested a full subtree recalc (e.g. via
   // ForceRecalcDescendants in a Blink-style code path), honour that by
@@ -1819,11 +1774,6 @@ void StyleEngine::RecalcStyle(StyleRecalcChange change, const StyleRecalcContext
     }
 
     style_recalc_root_.Clear();
-
-    auto end_calc_force = std::chrono::steady_clock::now();
-    WEBF_LOG(INFO) << "[StyleEngine] Finished RecalcStyle(took "
-                   << std::chrono::duration_cast<std::chrono::milliseconds>(end_calc_force - begin_calc).count()
-                   << "ms) [forced descendants]";
     return;
   }
 
@@ -1921,10 +1871,6 @@ void StyleEngine::RecalcStyle(StyleRecalcChange change, const StyleRecalcContext
   // After a full style walk and ancestor cleanup, reset the recalc root to
   // allow a fresh root to be established on the next dirty mark.
   style_recalc_root_.Clear();
-
-  auto end_calc = std::chrono::steady_clock::now();
-  WEBF_LOG(INFO) << "[StyleEngine] Finished RecalcStyle(took "
-                 << std::chrono::duration_cast<std::chrono::milliseconds>(end_calc - begin_calc).count() << "ms)";
 }
 
 void StyleEngine::RecalcStyle() {

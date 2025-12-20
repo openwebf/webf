@@ -127,8 +127,6 @@ StyleElement::ProcessingResult StyleElement::CreateSheet(Element& element, const
   // Active author stylesheets changed; mirror Blink by marking the document as
   // needing an active style update instead of doing a synchronous full recalc
   // here. The actual recomputation happens later via StyleEngine::RecalcStyle().
-  WEBF_LOG(VERBOSE) << "[StyleEngine] SetNeedsActiveStyleUpdate from StyleElement::CreateSheet tag="
-                    << element.localName().ToUTF8String();
   document.EnsureStyleEngine().SetNeedsActiveStyleUpdate();
 
   return kProcessingSuccessful;

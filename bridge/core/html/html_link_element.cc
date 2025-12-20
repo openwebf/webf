@@ -86,7 +86,6 @@ NativeValue HTMLLinkElement::parseAuthorStyleSheet(AtomicString& cssString, Atom
   }
   sheet_ = new_sheet;
 
-  WEBF_LOG(VERBOSE) << "[HTMLLinkElement] Registering author stylesheet and marking active stylesheets dirty.";
   document.EnsureStyleEngine().RegisterAuthorSheet(new_sheet);
 
   // Active stylesheets changed; mirror Blink by marking the document as
@@ -106,7 +105,6 @@ NativeValue HTMLLinkElement::parseAuthorStyleSheet(AtomicString& cssString, Atom
     MemberMutationScope scope(GetExecutingContext());
     ExceptionState exception_state;
     Event* load_event = Event::Create(GetExecutingContext(), event_type_names::kload, exception_state);
-    WEBF_LOG(VERBOSE) << "[HTMLLinkElement] Dispatching 'load' event after applying stylesheet.";
     dispatchEvent(load_event, exception_state);
   }
 
@@ -137,9 +135,6 @@ void HTMLLinkElement::ParseAttribute(const webf::Element::AttributeModificationP
   // If rel/href/type/disabled attributes change, trigger style recalc.
   if (params.name == html_names::kRelAttr || params.name == html_names::kHrefAttr || params.name == html_names::kTypeAttr ||
       params.name == html_names::kDisabledAttr) {
-    WEBF_LOG(VERBOSE) << "[HTMLLinkElement] Attribute changed: " << params.name.ToUTF8String()
-                      << ", old='" << params.old_value.ToUTF8String() << "' new='" << params.new_value.ToUTF8String()
-                      << "'. Marking active stylesheets dirty.";
     GetDocument().EnsureStyleEngine().SetNeedsActiveStyleUpdate();
   }
 }
@@ -147,7 +142,6 @@ void HTMLLinkElement::ParseAttribute(const webf::Element::AttributeModificationP
 Node::InsertionNotificationRequest HTMLLinkElement::InsertedInto(webf::ContainerNode& insertion_point) {
   HTMLElement::InsertedInto(insertion_point);
   if (isConnected() && GetExecutingContext()->isBlinkEnabled()) {
-    WEBF_LOG(VERBOSE) << "[HTMLLinkElement] InsertedInto document; marking active stylesheets dirty.";
     GetDocument().EnsureStyleEngine().SetNeedsActiveStyleUpdate();
   }
   return kInsertionDone;
@@ -157,7 +151,6 @@ void HTMLLinkElement::RemovedFrom(webf::ContainerNode& insertion_point) {
   HTMLElement::RemovedFrom(insertion_point);
   if (GetExecutingContext()->isBlinkEnabled()) {
     if (sheet_) {
-      WEBF_LOG(VERBOSE) << "[HTMLLinkElement] RemovedFrom document; unregistering author stylesheet.";
       GetDocument().EnsureStyleEngine().UnregisterAuthorSheet(sheet_.Get());
       sheet_.Release()->ClearOwnerNode();
     }

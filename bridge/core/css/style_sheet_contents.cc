@@ -236,50 +236,6 @@ void StyleSheetContents::ParserAppendRule(std::shared_ptr<StyleRuleBase> rule) {
   //    namespace_rules_.push_back(namespace_rule);
   //    return;
   //  }
-
-  // Debug: log appended style rules and @font-face rules.
-  if (rule && rule->IsStyleRule()) {
-    auto style_rule = std::static_pointer_cast<StyleRule>(rule);
-    String selectors_text = style_rule->SelectorsText();
-    WEBF_COND_LOG(STYLESHEET, VERBOSE) << "[StyleSheet] Append style rule: " << selectors_text.ToUTF8String();
-  } else if (rule && rule->IsFontFaceRule()) {
-    auto ff = std::static_pointer_cast<StyleRuleFontFace>(rule);
-    const CSSPropertyValueSet& props = ff->Properties();
-    WEBF_LOG(INFO) << "[font-face][parse] appended @font-face (base=" << parser_context_->BaseURL().GetString() << ")"
-                   << " props=" << props.PropertyCount();
-    for (unsigned i = 0; i < props.PropertyCount(); ++i) {
-      auto prop = props.PropertyAt(i);
-      const auto vptr = prop.Value();
-      std::string name = prop.Name().IsCustomProperty()
-                             ? prop.Name().ToAtomicString().ToUTF8String()
-                             : CSSProperty::Get(prop.Id()).GetPropertyNameString().ToUTF8String();
-      std::string value = (vptr && *vptr) ? (*vptr)->CssText().ToUTF8String() : std::string("<null>");
-      if (value.size() > 200) value = value.substr(0, 200) + "…";
-      WEBF_LOG(INFO) << "  - " << name << ": '" << value << "'";
-    }
-  } else if (rule && rule->IsKeyframesRule()) {
-    auto kf = std::static_pointer_cast<StyleRuleKeyframes>(rule);
-    WEBF_COND_LOG(STYLESHEET, VERBOSE) << "[keyframes][parse] appended @keyframes name='" << String(kf->GetName()).ToUTF8String()
-                                       << "' prefixed=" << (kf->IsVendorPrefixed() ? "true" : "false");
-  } else if (rule && rule->IsMediaRule()) {
-    // TODO: REMOVE THIS AFTER media query IS READY
-    // Debug logging for @media rules, including prefers-color-scheme.
-    auto media_rule = std::static_pointer_cast<StyleRuleMedia>(rule);
-    const MediaQuerySet* queries = media_rule->MediaQueries();
-    String mq_text = queries ? queries->MediaText() : String("[null]");
-    WEBF_LOG(INFO) << "[StyleSheet] Append @media rule: " << mq_text.ToUTF8String();
-    const auto& raw_children = media_rule->ChildRules().RawChildRules();
-    WEBF_LOG(INFO) << "[StyleSheet] @media child count: " << raw_children.size();
-    for (const auto& child : raw_children) {
-      if (!child || !child->IsStyleRule()) {
-        continue;
-      }
-      auto nested_style = std::static_pointer_cast<const StyleRule>(child);
-      WEBF_LOG(INFO) << "  - nested rule selectors: "
-                     << nested_style->SelectorsText().ToUTF8String();
-    }
-  }
-
   child_rules_.push_back(rule);
 }
 

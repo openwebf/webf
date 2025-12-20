@@ -907,11 +907,6 @@ void Element::InvalidateStyleAttribute(bool only_changed_independent_properties)
     GetElementData()->SetStyleAttributeIsDirty(true);
     SetNeedsStyleRecalc(only_changed_independent_properties ? kInlineIndependentStyleChange : kLocalStyleChange,
                         StyleChangeReasonForTracing::Create(style_change_reason::kInlineCSSStyleMutated));
-    WEBF_LOG(VERBOSE) << "[StyleInvalidation] Inline style change on <"
-                      << tagName().ToUTF8String()
-                      << "> only_independent=" << only_changed_independent_properties
-                      << " in_active_document=" << InActiveDocument()
-                      << " style_change_type=" << static_cast<uint32_t>(GetStyleChangeType());
     // Mirror Blink: treat inline style mutation as a style-attribute change
     // for invalidation purposes so that selector-based features that look at
     // style="" (e.g., :has() or attribute-dependent rules) see a consistent
@@ -943,11 +938,6 @@ void Element::AttributeChanged(const AttributeModificationParams& params) {
   // element should be skipped (e.g., disconnected, inactive document) rather
   // than gating on isConnected() here.
   if (GetExecutingContext()->isBlinkEnabled()) {
-    WEBF_LOG(VERBOSE) << "[StyleInvalidation] Attribute change name="
-                      << params.name.ToNativeString()
-                      << " old=" << params.old_value.ToNativeString()
-                      << " new=" << params.new_value.ToNativeString()
-                      << " on <" << tagName().ToNativeString() << ">";
     StyleEngine& engine = GetDocument().EnsureStyleEngine();
     if (name == html_names::kIdAttr) {
       engine.IdChangedForElement(params.old_value, params.new_value, *this);

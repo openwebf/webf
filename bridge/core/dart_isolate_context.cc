@@ -131,9 +131,7 @@ JSRuntime* DartIsolateContext::runtime() {
   return runtime_;
 }
 
-DartIsolateContext::~DartIsolateContext() {
-  WEBF_LOG(INFO) << "### DartIsolateContext is destroyed";
-}
+DartIsolateContext::~DartIsolateContext() {}
 
 void DartIsolateContext::InitializeGlobalsPerThread() {
   DCHECK(runtime_ != nullptr);

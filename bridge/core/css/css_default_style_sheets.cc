@@ -39,13 +39,13 @@ void CSSDefaultStyleSheets::Init() {
   }
   
   // Parse default HTML stylesheet
-  default_html_style_ = ParseUASheet(kHTMLDefaultStyle);
-  
-  if (default_html_style_) {
-    WEBF_LOG(VERBOSE) << "UA stylesheet parsed, rule count: " << default_html_style_->RuleCount();
-  } else {
-    WEBF_LOG(ERROR) << "Failed to parse UA stylesheet";
-  }
+  // default_html_style_ = ParseUASheet(kHTMLDefaultStyle);
+  //
+  // if (default_html_style_) {
+  //   WEBF_LOG(VERBOSE) << "UA stylesheet parsed, rule count: " << default_html_style_->RuleCount();
+  // } else {
+  //   WEBF_LOG(ERROR) << "Failed to parse UA stylesheet";
+  // }
   
   // Parse quirks mode stylesheet
   quirks_style_ = ParseUASheet(kQuirksDefaultStyle);

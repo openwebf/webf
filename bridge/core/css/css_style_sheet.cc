@@ -322,10 +322,8 @@ void CSSStyleSheet::ClearOwnerNode() {
     ExecutingContext* exe_ctx = doc->GetExecutingContext();
     if (exe_ctx && exe_ctx->dartMethodPtr()) {
       auto sheet_id_val = std::bit_cast<int64_t>(this);
-      WEBF_LOG(INFO) << "[font-face][unregister] sheetId=" << sheet_id_val << " ctx=" << exe_ctx->contextId();
       exe_ctx->dartMethodPtr()->unregisterFontFace(exe_ctx->isDedicated(), exe_ctx->contextId(), sheet_id_val);
       // Also unregister any @keyframes registered for this sheet.
-      WEBF_LOG(INFO) << "[keyframes][unregister] sheetId=" << sheet_id_val << " ctx=" << exe_ctx->contextId();
       exe_ctx->dartMethodPtr()->unregisterKeyframes(exe_ctx->isDedicated(), exe_ctx->contextId(), sheet_id_val);
     }
   }
