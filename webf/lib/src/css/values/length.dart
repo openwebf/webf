@@ -59,6 +59,10 @@ enum CSSLengthType {
   INITIAL,
   // flex-basis: content keyword (CSS Sizing-3)
   CONTENT,
+  // intrinsic sizing keywords (CSS Sizing-3)
+  MIN_CONTENT,
+  MAX_CONTENT,
+  FIT_CONTENT,
 }
 
 class CSSLengthValue {
@@ -119,6 +123,12 @@ class CSSLengthValue {
         break;
       case CSSLengthType.CONTENT:
         return 'content';
+      case CSSLengthType.MIN_CONTENT:
+        return 'min-content';
+      case CSSLengthType.MAX_CONTENT:
+        return 'max-content';
+      case CSSLengthType.FIT_CONTENT:
+        return 'fit-content';
     }
     return '';
   }
@@ -660,6 +670,13 @@ class CSSLengthValue {
         // that incorrectly query computedValue don't crash. Layout code must special-case.
         _computedValue = 0;
         break;
+      case CSSLengthType.MIN_CONTENT:
+      case CSSLengthType.MAX_CONTENT:
+      case CSSLengthType.FIT_CONTENT:
+        // Intrinsic sizing keywords can't be resolved to a fixed length without
+        // layout context; treat as 0 here and let layout algorithms special-case.
+        _computedValue = 0;
+        break;
       default:
         // @FIXME: Type AUTO not always resolves to 0, in cases such as `margin: auto`, `width: auto`.
         _computedValue = 0;
@@ -736,6 +753,11 @@ class CSSLengthValue {
   bool get isZero {
     return value == 0;
   }
+
+  bool get isMinContent => type == CSSLengthType.MIN_CONTENT;
+  bool get isMaxContent => type == CSSLengthType.MAX_CONTENT;
+  bool get isFitContent => type == CSSLengthType.FIT_CONTENT;
+  bool get isIntrinsic => isMinContent || isMaxContent || isFitContent;
 
   /// Compares two length for equality.
   @override
@@ -866,6 +888,12 @@ class CSSLength {
     } else if (text.toLowerCase() == 'content') {
       // flex-basis: content
       return CSSLengthValue(null, CSSLengthType.CONTENT, renderStyle, propertyName, axisType);
+    } else if (text.toLowerCase() == 'min-content') {
+      return CSSLengthValue(null, CSSLengthType.MIN_CONTENT, renderStyle, propertyName, axisType);
+    } else if (text.toLowerCase() == 'max-content') {
+      return CSSLengthValue(null, CSSLengthType.MAX_CONTENT, renderStyle, propertyName, axisType);
+    } else if (text.toLowerCase() == 'fit-content') {
+      return CSSLengthValue(null, CSSLengthType.FIT_CONTENT, renderStyle, propertyName, axisType);
     } else if (text.endsWith(REM)) {
       value = double.tryParse(text.split(REM)[0]);
       unit = CSSLengthType.REM;

@@ -1145,6 +1145,7 @@ class RenderGridLayout extends RenderLayoutBox {
   }
 
   BoxConstraints _gridItemConstraints({
+    required RenderBox child,
     required CSSRenderStyle? childGridStyle,
     required GridAxisAlignment justifySelfAlignment,
     required GridAxisAlignment alignSelfAlignment,
@@ -1191,6 +1192,85 @@ class RenderGridLayout extends RenderLayoutBox {
         treatIndefinitePercentageAsAuto: true,
       );
       maxH = _resolveGridItemMaxSize(childGridStyle.maxHeight, percentageBasisH);
+
+      final bool needsIntrinsicWidth = childGridStyle.width.isIntrinsic ||
+          childGridStyle.minWidth.isIntrinsic ||
+          childGridStyle.maxWidth.isIntrinsic;
+      final bool needsIntrinsicHeight = childGridStyle.height.isIntrinsic ||
+          childGridStyle.minHeight.isIntrinsic ||
+          childGridStyle.maxHeight.isIntrinsic;
+
+      double? intrinsicMinW;
+      double? intrinsicMaxW;
+      double? intrinsicMinH;
+      double? intrinsicMaxH;
+
+      if (needsIntrinsicWidth) {
+        final double availableH = (hasDefiniteCellHeight && cellHeight.isFinite)
+            ? math.max(0, cellHeight - marginVertical)
+            : double.infinity;
+        double minW = child.getMinIntrinsicWidth(availableH);
+        double maxW = child.getMaxIntrinsicWidth(availableH);
+        if (childGridStyle.whiteSpace == WhiteSpace.nowrap || childGridStyle.whiteSpace == WhiteSpace.pre) {
+          minW = maxW;
+        }
+        if (!minW.isFinite || minW < 0) minW = 0;
+        if (!maxW.isFinite || maxW < 0) maxW = minW;
+        intrinsicMinW = minW;
+        intrinsicMaxW = maxW;
+      }
+
+      if (needsIntrinsicHeight) {
+        final double availableW = cellWidth.isFinite ? math.max(0, cellWidth - marginHorizontal) : double.infinity;
+        double minH = child.getMinIntrinsicHeight(availableW);
+        double maxH = child.getMaxIntrinsicHeight(availableW);
+        if (!minH.isFinite || minH < 0) minH = 0;
+        if (!maxH.isFinite || maxH < 0) maxH = minH;
+        intrinsicMinH = minH;
+        intrinsicMaxH = maxH;
+      }
+
+      double? resolveIntrinsic(CSSLengthValue value, double minIntrinsic, double maxIntrinsic, double available) {
+        switch (value.type) {
+          case CSSLengthType.MIN_CONTENT:
+            return minIntrinsic;
+          case CSSLengthType.MAX_CONTENT:
+            return maxIntrinsic;
+          case CSSLengthType.FIT_CONTENT:
+            final double avail = available.isFinite ? available : maxIntrinsic;
+            return math.min(maxIntrinsic, math.max(minIntrinsic, avail));
+          default:
+            return null;
+        }
+      }
+
+      if (needsIntrinsicWidth && intrinsicMinW != null && intrinsicMaxW != null) {
+        final double availableW = cellWidth.isFinite ? math.max(0, cellWidth - marginHorizontal) : double.infinity;
+        if (childGridStyle.width.isIntrinsic) {
+          usedW = resolveIntrinsic(childGridStyle.width, intrinsicMinW, intrinsicMaxW, availableW);
+        }
+        if (childGridStyle.minWidth.isIntrinsic) {
+          minW = resolveIntrinsic(childGridStyle.minWidth, intrinsicMinW, intrinsicMaxW, availableW);
+        }
+        if (childGridStyle.maxWidth.isIntrinsic) {
+          maxW = resolveIntrinsic(childGridStyle.maxWidth, intrinsicMinW, intrinsicMaxW, availableW);
+        }
+      }
+
+      if (needsIntrinsicHeight && intrinsicMinH != null && intrinsicMaxH != null) {
+        final double availableH = (hasDefiniteCellHeight && cellHeight.isFinite)
+            ? math.max(0, cellHeight - marginVertical)
+            : double.infinity;
+        if (childGridStyle.height.isIntrinsic) {
+          usedH = resolveIntrinsic(childGridStyle.height, intrinsicMinH, intrinsicMaxH, availableH);
+        }
+        if (childGridStyle.minHeight.isIntrinsic) {
+          minH = resolveIntrinsic(childGridStyle.minHeight, intrinsicMinH, intrinsicMaxH, availableH);
+        }
+        if (childGridStyle.maxHeight.isIntrinsic) {
+          maxH = resolveIntrinsic(childGridStyle.maxHeight, intrinsicMinH, intrinsicMaxH, availableH);
+        }
+      }
     }
 
     final double? ratio = childGridStyle?.aspectRatio;
@@ -2192,6 +2272,23 @@ class RenderGridLayout extends RenderLayoutBox {
                   (!intrinsicMaxWidth.isFinite || intrinsicMaxWidth < intrinsicMinWidth)) {
                 intrinsicMaxWidth = intrinsicMinWidth;
               }
+
+              // Intrinsic sizing keywords on the grid item affect its intrinsic
+              // contributions: a specified `width: max-content` forces the item's
+              // minimum contribution up to its max-content size, and `width:
+              // min-content` forces the max contribution down to its min-content
+              // size. This is important for flex (fr) tracks to avoid adjacent
+              // item overlap when the item's used size is intrinsic.
+              final CSSLengthValue preferredWidth = childGridStyle.width;
+              if (preferredWidth.type == CSSLengthType.MAX_CONTENT) {
+                if (intrinsicMaxWidth.isFinite && intrinsicMaxWidth > 0) {
+                  intrinsicMinWidth = intrinsicMaxWidth;
+                }
+              } else if (preferredWidth.type == CSSLengthType.MIN_CONTENT) {
+                if (intrinsicMinWidth.isFinite && intrinsicMinWidth > 0) {
+                  intrinsicMaxWidth = intrinsicMinWidth;
+                }
+              }
             }
             final int endCol = math.min(colSizes.length, startCol + span);
 
@@ -2411,6 +2508,7 @@ class RenderGridLayout extends RenderLayoutBox {
       final double marginHorizontal = childMargins.horizontal;
       final double marginVertical = childMargins.vertical;
       final BoxConstraints childConstraints = _gridItemConstraints(
+        child: child,
         childGridStyle: childGridStyle,
         justifySelfAlignment: justifySelfAlignment,
         alignSelfAlignment: alignSelfAlignment,
@@ -2796,6 +2894,7 @@ class RenderGridLayout extends RenderLayoutBox {
         }
         final double cellHeight = hasDefiniteCellHeight ? resolvedCellHeight : double.nan;
         final BoxConstraints childConstraints = _gridItemConstraints(
+          child: childForRelayout,
           childGridStyle: childGridStyle,
           justifySelfAlignment: justifySelfAlignment,
           alignSelfAlignment: alignSelfAlignment,

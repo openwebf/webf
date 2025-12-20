@@ -466,6 +466,10 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
     if (CSSLength.isInitial(normalizedValue)) return true;
 
+    final String lowerValue = normalizedValue.toLowerCase();
+    final bool isIntrinsicSizeKeyword =
+        lowerValue == 'min-content' || lowerValue == 'max-content' || lowerValue == 'fit-content';
+
     // Validate value.
     switch (propertyName) {
       case WIDTH:
@@ -475,7 +479,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
             !CSSLength.isAuto(normalizedValue) &&
             !CSSPercentage.isNonNegativePercentage(normalizedValue) &&
             // SVG width need to support number type
-            !CSSNumber.isNumber(normalizedValue)) {
+            !CSSNumber.isNumber(normalizedValue) &&
+            !isIntrinsicSizeKeyword) {
           return false;
         }
         break;
@@ -498,12 +503,20 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       case MAX_HEIGHT:
         if (normalizedValue != NONE &&
             !CSSLength.isNonNegativeLength(normalizedValue) &&
-            !CSSPercentage.isNonNegativePercentage(normalizedValue)) {
+            !CSSPercentage.isNonNegativePercentage(normalizedValue) &&
+            !isIntrinsicSizeKeyword) {
           return false;
         }
         break;
       case MIN_WIDTH:
       case MIN_HEIGHT:
+        if (!CSSLength.isNonNegativeLength(normalizedValue) &&
+            !CSSLength.isAuto(normalizedValue) &&
+            !CSSPercentage.isNonNegativePercentage(normalizedValue) &&
+            !isIntrinsicSizeKeyword) {
+          return false;
+        }
+        break;
       case PADDING_TOP:
       case PADDING_LEFT:
       case PADDING_BOTTOM:
