@@ -862,6 +862,7 @@ class CSSText {
 
   static bool isValidFontSizeValue(String value) {
     return CSSLength.isNonNegativeLength(value) ||
+        CSSPercentage.isNonNegativePercentage(value) ||
         value == 'xx-small' ||
         value == 'x-small' ||
         value == 'small' ||
