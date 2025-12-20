@@ -1426,8 +1426,8 @@ class CSSText {
           resolvedFamily.addAll(['Courier', 'Courier New', 'DroidSansMono', 'Monaco', 'Heiti SC', 'Heiti TC']);
           break;
         case 'cursive':
-          // Default cursive font in iOS and iPadOS: Snell Roundhand
-          resolvedFamily.addAll(['Snell Roundhand', 'Apple Chancery', 'DancingScript', 'Comic Sans MS']);
+          // Default cursive font in iOS and iPadOS: Apple Chancery
+          resolvedFamily.addAll(['Apple Chancery', 'Snell Roundhand', 'DancingScript', 'Comic Sans MS']);
           break;
         case 'fantasy':
           // Default fantasy font in iOS and iPadOS:
