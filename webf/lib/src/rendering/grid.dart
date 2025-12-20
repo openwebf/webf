@@ -1766,7 +1766,11 @@ class RenderGridLayout extends RenderLayoutBox {
         neededColumns = math.max(neededColumns, columnEndRequirement);
       }
       final bool rowFlow = autoFlow == GridAutoFlow.row || autoFlow == GridAutoFlow.rowDense;
-      if (!rowFlow) {
+      if (rowFlow) {
+        // Auto-placement (row-flow) still needs enough columns to satisfy a large span-only item
+        // (e.g. `grid-column: span 5`) which can extend the implicit grid beyond the explicit tracks.
+        neededColumns = math.max(neededColumns, colSpan);
+      } else {
         neededColumns = math.max(neededColumns, autoCursor.column + colSpan);
       }
       _ensureImplicitColumns(
@@ -2430,10 +2434,36 @@ class RenderGridLayout extends RenderLayoutBox {
 
       final Size childSize = child.size;
       final double marginBoxHeight = childSize.height + marginVertical;
-      final double perRow = math.max(0, marginBoxHeight) / rowSpan;
+      // Resolve implicit/auto row heights from item contributions.
+      //
+      // When an item spans fixed-size tracks plus implicit/auto tracks, only the
+      // remaining height beyond the fixed tracks (and gutters) should be used
+      // to grow the implicit/auto tracks. This matches the grid track sizing
+      // algorithm where spanning items only increase tracks when necessary.
+      double fixedRowHeight = 0;
+      int flexibleRowCount = 0;
       for (int r = 0; r < rowSpan; r++) {
         final int targetRow = rowIndex + r;
-        if (targetRow >= 0 && targetRow < implicitRowHeights.length) {
+        if (targetRow < 0 || targetRow >= rowSizes.length) {
+          flexibleRowCount++;
+          continue;
+        }
+        final double resolved = rowSizes[targetRow];
+        if (resolved > 0) {
+          fixedRowHeight += resolved;
+        } else {
+          flexibleRowCount++;
+        }
+      }
+      final double gutters = rowGap * math.max(0, rowSpan - 1);
+      final double remaining = math.max(0, marginBoxHeight - fixedRowHeight - gutters);
+      if (flexibleRowCount > 0 && remaining > 0) {
+        final double perRow = remaining / flexibleRowCount;
+        for (int r = 0; r < rowSpan; r++) {
+          final int targetRow = rowIndex + r;
+          if (targetRow < 0 || targetRow >= rowSizes.length) continue;
+          if (rowSizes[targetRow] > 0) continue;
+          if (targetRow >= implicitRowHeights.length) continue;
           implicitRowHeights[targetRow] = math.max(implicitRowHeights[targetRow], perRow);
         }
       }
@@ -2528,7 +2558,7 @@ class RenderGridLayout extends RenderLayoutBox {
         bool hasDefiniteCellHeight = true;
         for (int r = rowIndex; r < rowIndex + rowSpan; r++) {
           final double rh = _resolvedRowHeight(rowSizes, implicitRowHeights, r);
-          if (rh <= 0) {
+          if (!rh.isFinite || rh < 0) {
             hasDefiniteCellHeight = false;
             break;
           }
@@ -2755,7 +2785,7 @@ class RenderGridLayout extends RenderLayoutBox {
         bool hasDefiniteCellHeight = true;
         for (int r = rowIndex; r < rowIndex + rowSpan; r++) {
           final double rh = _resolvedRowHeight(rowSizes, implicitRowHeights, r);
-          if (rh <= 0) {
+          if (!rh.isFinite || rh < 0) {
             hasDefiniteCellHeight = false;
             break;
           }
