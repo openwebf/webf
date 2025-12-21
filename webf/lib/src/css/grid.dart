@@ -596,6 +596,10 @@ class CSSGridParser {
 
     final int? lineValue = int.tryParse(trimmed);
     if (lineValue != null) {
+      // Grid line number 0 is invalid per CSS Grid and should be treated as 'auto'.
+      if (lineValue == 0) {
+        return const GridPlacement.auto();
+      }
       return GridPlacement.line(lineValue);
     }
 
