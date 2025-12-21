@@ -1,3 +1,10 @@
+## 0.23.13
+
+- Compatibility
+  - Set the minimal Flutter version requirement to 3.29.x.
+- Breaking
+  - Remove the built-in `FlutterForm`/`FlutterFormField` elements (and their generated bindings) and stop exporting `flutter_form.dart`.
+
 ## 0.23.12
 
 - Performance
