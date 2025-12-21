@@ -70,3 +70,6 @@ pubspec.lock
 
 **/.claude/settings.local.json
 **/.preview-bundles
+
+**/.dartServer/
+**/.dart-tool/
