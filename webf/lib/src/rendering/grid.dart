@@ -1078,6 +1078,39 @@ class RenderGridLayout extends RenderLayoutBox {
     return map.isEmpty ? null : map;
   }
 
+  Map<String, List<int>>? _mergeLineNameMapWithTemplateAreas(
+    Map<String, List<int>>? base,
+    Map<String, GridTemplateAreaRect>? templateAreas, {
+    required Axis axis,
+  }) {
+    if (templateAreas == null || templateAreas.isEmpty) return base;
+    final Map<String, List<int>> merged =
+        base == null ? <String, List<int>>{} : base.map((key, value) => MapEntry(key, List<int>.from(value)));
+
+    void addIndex(String name, int index) {
+      if (index < 0) return;
+      final List<int> indices = merged.putIfAbsent(name, () => <int>[]);
+      if (indices.contains(index)) return;
+      final int insertAt = indices.indexWhere((existing) => existing > index);
+      if (insertAt == -1) {
+        indices.add(index);
+      } else {
+        indices.insert(insertAt, index);
+      }
+    }
+
+    for (final MapEntry<String, GridTemplateAreaRect> entry in templateAreas.entries) {
+      final String areaName = entry.key;
+      final GridTemplateAreaRect rect = entry.value;
+      final int startLine = (axis == Axis.horizontal ? rect.columnStart : rect.rowStart) - 1;
+      final int endLine = (axis == Axis.horizontal ? rect.columnEnd : rect.rowEnd) - 1;
+      addIndex('${areaName}-start', startLine);
+      addIndex('${areaName}-end', endLine);
+    }
+
+    return merged.isEmpty ? null : merged;
+  }
+
   _GridCellPlacement _placeAutoItem({
     required List<List<bool>> occupancy,
     required List<double> columnSizes,
@@ -1831,8 +1864,16 @@ class RenderGridLayout extends RenderLayoutBox {
       }
     }
 
-    final Map<String, List<int>>? columnLineNameMap = _buildLineNameMap(resolvedColumnDefs);
-    final Map<String, List<int>>? rowLineNameMap = _buildLineNameMap(resolvedRowDefs);
+    final Map<String, List<int>>? columnLineNameMap = _mergeLineNameMapWithTemplateAreas(
+      _buildLineNameMap(resolvedColumnDefs),
+      templateAreaMap,
+      axis: Axis.horizontal,
+    );
+    final Map<String, List<int>>? rowLineNameMap = _mergeLineNameMapWithTemplateAreas(
+      _buildLineNameMap(resolvedRowDefs),
+      templateAreaMap,
+      axis: Axis.vertical,
+    );
     final GridAutoFlow autoFlow = renderStyle.gridAutoFlow;
 
     // Layout children using auto placement matrix.
