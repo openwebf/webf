@@ -251,9 +251,9 @@ class CSSGradientEllipseTransform extends GradientTransform {
     final double sx = 1.0;
     final double sy = (rx == 0) ? 1.0 : (ry / rx);
     final vm.Matrix4 m = vm.Matrix4.identity();
-    m.translateByDouble(cx, cy, 0.0, 1.0);
-    m.scaleByDouble(sx, sy, 1.0, 1.0);
-    m.translateByDouble(-cx, -cy, 0.0, 1.0);
+    m.translate(cx, cy);
+    m.scale(sx, sy, 1.0);
+    m.translate(-cx, -cy);
     return m;
   }
 }

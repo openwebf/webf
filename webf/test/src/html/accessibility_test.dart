@@ -30,7 +30,7 @@ SemanticsNode? _findFirstScrollableNode(SemanticsNode root) {
   void visit(SemanticsNode node) {
     if (found != null) return;
     final SemanticsData data = node.getSemanticsData();
-    if (data.flagsCollection.hasImplicitScrolling && (data.scrollExtentMax ?? 0.0) > 0.0) {
+    if (data.hasFlag(SemanticsFlag.hasImplicitScrolling) && (data.scrollExtentMax ?? 0.0) > 0.0) {
       found = node;
       return;
     }
@@ -72,7 +72,7 @@ List<String> _collectTraversalLabels(SemanticsNode root) {
   void visit(SemanticsNode node) {
     final SemanticsData data = node.getSemanticsData();
     final String label = data.label;
-    if (label.isNotEmpty && !data.flagsCollection.isHidden) {
+    if (label.isNotEmpty && !data.hasFlag(SemanticsFlag.isHidden)) {
       labels.add(label);
     }
     for (final SemanticsNode child in node.debugListChildrenInOrder(DebugSemanticsDumpOrder.traversalOrder)) {
@@ -212,7 +212,7 @@ void main() {
         expect(scrollNodeBefore, isNotNull);
 
         final SemanticsData before = scrollNodeBefore!.getSemanticsData();
-        expect(before.flagsCollection.hasImplicitScrolling, isTrue);
+        expect(before.hasFlag(SemanticsFlag.hasImplicitScrolling), isTrue);
         expect(before.scrollExtentMax, isNotNull);
         expect(before.scrollExtentMax!, greaterThan(0.0));
         expect(before.scrollPosition, isNotNull);
@@ -311,7 +311,7 @@ void main() {
 
         final SemanticsNode? msg1Before = _findSemanticsNodeWithLabel(root, 'Message 1');
         expect(msg1Before, isNotNull);
-        expect(msg1Before!.getSemanticsData().flagsCollection.isHidden, isFalse);
+        expect(msg1Before!.getSemanticsData().hasFlag(SemanticsFlag.isHidden), isFalse);
 
         // Scroll to the bottom, pushing "Message 1" out of the viewport.
         region.scrollTop = region.scrollHeight;
@@ -321,7 +321,7 @@ void main() {
         root = semanticsOwner.rootSemanticsNode!;
         final SemanticsNode? msg1After = _findSemanticsNodeWithLabel(root, 'Message 1');
         expect(msg1After, isNotNull);
-        expect(msg1After!.getSemanticsData().flagsCollection.isHidden, isTrue);
+        expect(msg1After!.getSemanticsData().hasFlag(SemanticsFlag.isHidden), isTrue);
       } finally {
         handle.dispose();
       }

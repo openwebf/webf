@@ -1699,7 +1699,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         Switch(
           value: value,
           onChanged: onChanged,
-          activeThumbColor: Colors.blueAccent,
+          activeColor: Colors.blueAccent,
         ),
       ],
     );
@@ -3233,7 +3233,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                                 }
                               });
                             },
-                            activeThumbColor: Colors.blue,
+                            activeColor: Colors.blue,
                           ),
                         ),
                       ],
