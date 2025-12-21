@@ -969,9 +969,6 @@ void Element::ParseAttribute(const webf::Element::AttributeModificationParams& p
       // use the exact author-specified case.
       EnsureUniqueElementData().SetClass(v);
     }
-  } else if (params.name == html_names::kStyleAttr) {
-    // Update inline style from style attribute
-    StyleAttributeChanged(params.new_value, params.reason);
   }
 
   // TODO(CGQAQ): other attrs should be set so that attr-seelctor could work as expected.
@@ -985,7 +982,9 @@ void Element::StyleAttributeChanged(const AtomicString& new_style_string,
     EnsureUniqueElementData().inline_style_ = nullptr;
     if (GetExecutingContext()->isBlinkEnabled()) {
       // Clear all inline styles on Dart side when style attribute is removed.
-      GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, bindingObject(), nullptr);
+      if (InActiveDocument()) {
+        GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, bindingObject(), nullptr);
+      }
     }
   } else {
     SetInlineStyleFromString(new_style_string);
@@ -1040,7 +1039,7 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
 
     // Emit declared style updates to Dart as raw CSS strings (no C++ evaluation).
     // This keeps values like calc(), var(), and viewport units intact for Dart-side evaluation.
-    if (inline_style) {
+    if (inline_style && InActiveDocument()) {
       unsigned count = inline_style->PropertyCount();
       // Always clear existing inline styles before applying new set to avoid stale properties.
       GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, bindingObject(), nullptr);
