@@ -155,7 +155,11 @@ CSSStyleSheet::CSSStyleSheet(ExecutingContext* context,
   contents_->RegisterClient(this);
 }
 
-CSSStyleSheet::~CSSStyleSheet() = default;
+CSSStyleSheet::~CSSStyleSheet() {
+  if (contents_) {
+    contents_->UnregisterClient(this);
+  }
+}
 
 void CSSStyleSheet::WillMutateRules() {
   // If we are the only client it is safe to mutate.
