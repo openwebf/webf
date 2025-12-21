@@ -24,6 +24,17 @@ int _colorByte(double channel) => (channel * 255.0).round().clamp(0, 255).toInt(
 String _rgbaString(Color c) =>
     'rgba(${_colorByte(c.r)},${_colorByte(c.g)},${_colorByte(c.b)},${c.a.toStringAsFixed(3)})';
 
+String _stripTrailingSemicolons(String s) {
+  String out = s;
+  int guard = 0;
+  while (guard++ < 8) {
+    final String trimmed = out.trimRight();
+    if (!trimmed.endsWith(';')) break;
+    out = trimmed.substring(0, trimmed.length - 1);
+  }
+  return out;
+}
+
 // CSS Backgrounds: https://drafts.csswg.org/css-backgrounds/
 // CSS Images: https://drafts.csswg.org/css-images-3/
 
@@ -187,6 +198,15 @@ mixin CSSBackgroundMixin on RenderStyle {
     }
 
     _backgroundImage = value;
+    if (DebugFlags.enableBackgroundLogs) {
+      try {
+        final el = target;
+        final id = (el.id != null && el.id!.isNotEmpty) ? '#${el.id}' : '';
+        final cls = (el.className.isNotEmpty) ? '.${el.className}' : '';
+        final names = value?.functions.map((f) => f.name).toList() ?? const <String>[];
+        renderingLogger.finer('[Background] set BACKGROUND_IMAGE on <${el.tagName.toLowerCase()}$id$cls> -> $names');
+      } catch (_) {}
+    }
     markNeedsPaint();
     resetBoxDecoration();
   }
@@ -524,6 +544,10 @@ class CSSBackgroundImage {
                 stops: stops,
                 tileMode: method.name == 'linear-gradient' ? TileMode.clamp : TileMode.repeated);
             return _gradient;
+          }
+          if (DebugFlags.enableBackgroundLogs) {
+            renderingLogger.warning('[Background] ${method.name} dropped: need >=2 colors, got ${colors.length}. '
+                'args=${method.args}');
           }
           break;
         // Radial gradients: support "[<shape> || <size>] [at <position>]" prelude.
@@ -988,11 +1012,13 @@ class CSSBackground {
         return out;
       }
     }
-    return src.split(splitRegExp).where((s) => s.isNotEmpty).toList();
+    return src
+        .split(splitRegExp)
+        .where((s) => s.isNotEmpty && s != ';')
+        .toList();
   }
 
   static bool _looksLikeColorToken(String token) {
-    if (token.startsWith('var(')) return true;
     return CSSColor.isColor(token);
   }
 
@@ -1008,11 +1034,16 @@ class CSSBackground {
     for (int i = start; i < args.length; i++) {
       final String raw = args[i].trim();
       if (raw.isEmpty) return false;
-      final List<String> tokens = _tokenizeGradientStop(raw);
+      // A stop token may itself be a var() that expands to multiple tokens
+      // (e.g., Tailwind: var(--tw-gradient-from) -> "rgb(...) var(--pos)").
+      final String expandedStop = raw.contains('var(') ? _expandBackgroundVars(raw, renderStyle).trim() : raw;
+      if (expandedStop.isEmpty) return false;
+      final List<String> tokens = _tokenizeGradientStop(expandedStop);
       if (tokens.isEmpty) return false;
 
       // First token must resolve to a color.
-      final String colorToken = tokens.first;
+      final String colorToken = _stripTrailingSemicolons(tokens.first.trim());
+      if (colorToken.isEmpty) return false;
       final CSSColor? resolved = CSSColor.resolveColor(colorToken, renderStyle, propertyName);
       if (resolved == null) return false;
 
@@ -1020,7 +1051,16 @@ class CSSBackground {
       // color token implies missing commas and makes the whole gradient invalid.
       int positionCount = 0;
       for (int j = 1; j < tokens.length; j++) {
-        final String t = tokens[j];
+        final String t0 = tokens[j];
+        if (t0 == ';') continue;
+        // var() may represent a position token (Tailwind uses var(--tw-gradient-*-position)).
+        // Resolve var() here; if it resolves to a color, treat as missing-comma (invalid).
+        final String t = _stripTrailingSemicolons(
+            t0.contains('var(') ? _expandBackgroundVars(t0, renderStyle).trim() : t0.trim());
+        if (t.isEmpty) {
+          // An empty var() is equivalent to no token; ignore.
+          continue;
+        }
         if (_looksLikeColorToken(t)) return false;
         if (CSSPercentage.isPercentage(t) || CSSLength.isLength(t) || CSSAngle.isAngle(t)) {
           positionCount++;
@@ -1044,6 +1084,7 @@ class CSSBackground {
   static String _expandBackgroundVars(String input, RenderStyle renderStyle) {
     if (!input.contains('var(')) return input;
     String result = input;
+    final bool trace = DebugFlags.enableBackgroundLogs && input.contains('gradient');
     // Limit to avoid infinite loops on pathological input.
     int guard = 0;
     while (result.contains('var(') && guard++ < 8) {
@@ -1054,6 +1095,9 @@ class CSSBackground {
         // Parse the var() expression to get identifier and (optional) fallback.
         final CSSVariable? variable = CSSVariable.tryParse(renderStyle, varString);
         if (variable == null) {
+          if (trace) {
+            renderingLogger.finer('[Background] var expand parse-failed var="$varString" input="$input"');
+          }
           return '';
         }
         // Track dependency on this variable for backgroundImage recomputation.
@@ -1063,9 +1107,18 @@ class CSSBackground {
         if (raw == null || raw == INITIAL) {
           // Use fallback defined in var(--x, <fallback>) if provided.
           final fallback = variable.defaultValue;
+          if (trace) {
+            renderingLogger.finer('[Background] var expand id=${variable.identifier} -> <null> fallback="${fallback?.toString() ?? ''}"');
+          }
           return fallback?.toString() ?? '';
         }
-        return raw.toString();
+        final String rawText = raw.toString();
+        final String stripped = _stripTrailingSemicolons(rawText);
+        if (trace) {
+          final suffix = (rawText != stripped) ? ' (stripped trailing ;)': '';
+          renderingLogger.finer('[Background] var expand id=${variable.identifier} -> "$rawText"$suffix');
+        }
+        return stripped;
       });
       if (result == original) break;
     }
@@ -1140,90 +1193,101 @@ void _applyColorAndStops(
 
 List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, String propertyName,
     [double? defaultStop, double? gradientLength]) {
-  List<String> strings = [];
-  List<CSSColorStop> colorGradients = [];
+  final List<CSSColorStop> colorGradients = <CSSColorStop>[];
+  final String original = src.trim();
+  String expanded = original;
+  // A stop token may be a var() that expands to "color <position>" (Tailwind),
+  // so expand the whole stop string before tokenizing.
+  if (expanded.contains('var(')) {
+    expanded = CSSBackground._expandBackgroundVars(expanded, renderStyle).trim();
+  }
+  if (DebugFlags.enableBackgroundLogs && expanded != original) {
+    renderingLogger.finer('[Background] stop expand src="$original" -> "$expanded"');
+  }
+  final List<String> tokens = CSSBackground._tokenizeGradientStop(expanded);
+  if (tokens.isEmpty) return colorGradients;
 
-  // rgba may contain space, color should handle special
-  if (src.startsWith('rgba(') || src.startsWith('rgb(') || src.startsWith('hsl(') || src.startsWith('hsla(')) {
-    // Treat functional color notations as a single token, since their arguments may include spaces.
-    // This mirrors the special handling already in place for rgb/rgba and fixes gradients using hsl()/hsla().
-    int indexOfEnd = src.lastIndexOf(')');
-    if (indexOfEnd != -1) {
-      strings.add(src.substring(0, indexOfEnd + 1));
-      // If there are trailing tokens after the color function (e.g., "hsl(...) 30%"),
-      // keep them by splitting the remainder by spaces and appending.
-      if (indexOfEnd + 1 < src.length) {
-        final String remainder = src.substring(indexOfEnd + 1).trim();
-        if (remainder.isNotEmpty) {
-          strings.addAll(remainder.split(' '));
-        }
-      }
-    } else {
-      // Fallback: unable to find a closing ')', split by spaces.
-      strings = src.split(' ');
+  final String colorToken = _stripTrailingSemicolons(tokens.first.trim());
+  if (colorToken.isEmpty) return colorGradients;
+
+  final CSSColor? color = CSSColor.resolveColor(colorToken, renderStyle, propertyName);
+  if (color == null) {
+    if (DebugFlags.enableBackgroundLogs) {
+      renderingLogger.warning('[Background] stop color parse failed: token="$colorToken" src="$expanded"');
     }
-  } else {
-    strings = src.split(splitRegExp).where((s) => s.isNotEmpty).toList();
+    return colorGradients;
   }
 
-  if (strings.isNotEmpty) {
-    double? stop = defaultStop;
-    if (strings.length >= 2) {
-      try {
-        for (int i = 1; i < strings.length; i++) {
-          final String token = strings[i];
-          bool parsed = false;
-          if (CSSPercentage.isPercentage(strings[i])) {
-            stop = CSSPercentage.parsePercentage(strings[i]);
-            // Negative percentage is invalid in gradients which will defaults to 0.
-            if (stop! < 0) stop = 0;
-            parsed = true;
-            if (DebugFlags.enableBackgroundLogs) {
-              final CSSColor? color = CSSColor.resolveColor(strings[0], renderStyle, propertyName);
-                  final c = color?.value;
-                  renderingLogger.finer('[Background]   stop token="${strings[i]}" unit=% -> ${stop.toStringAsFixed(4)} '
-                      'color=${c != null ? _rgbaString(c) : '<invalid>'} src="$src"');
-                }
-          } else if (CSSAngle.isAngle(strings[i])) {
-            stop = CSSAngle.parseAngle(strings[i])! / (math.pi * 2);
-            parsed = true;
-            if (DebugFlags.enableBackgroundLogs) {
-              final CSSColor? color = CSSColor.resolveColor(strings[0], renderStyle, propertyName);
-                  final c = color?.value;
-                  renderingLogger.finer('[Background]   stop token="${strings[i]}" unit=angle -> ${stop.toStringAsFixed(4)} '
-                      'color=${c != null ? _rgbaString(c) : '<invalid>'} src="$src"');
-                }
-          } else if (CSSLength.isLength(strings[i])) {
-            if (gradientLength != null) {
-              stop = CSSLength.parseLength(strings[i], renderStyle, propertyName).computedValue / gradientLength;
-              parsed = true;
-              if (DebugFlags.enableBackgroundLogs) {
-                final CSSColor? color = CSSColor.resolveColor(strings[0], renderStyle, propertyName);
-                final c = color?.value;
-                    renderingLogger.finer('[Background]   stop token="${strings[i]}" unit=length -> ${stop.toStringAsFixed(4)} '
-                        '(length=${CSSLength.parseLength(strings[i], renderStyle, propertyName).computedValue.toStringAsFixed(2)}, '
-                        'gradLen=${gradientLength.toStringAsFixed(2)}) '
-                        'color=${c != null ? _rgbaString(c) : '<invalid>'} src="$src"');
-                  }
-                }
-          }
-          CSSColor? color = CSSColor.resolveColor(strings[0], renderStyle, propertyName);
-          colorGradients.add(CSSColorStop(color?.value, stop));
-        }
-      } catch (e, st) {
-        if (DebugFlags.enableBackgroundLogs) {
-          renderingLogger.warning('[Background] Failed to parse color stop "$src"', e, st);
-        }
+  // Parse up to 2 optional stop positions.
+  final List<double> parsedStops = <double>[];
+  try {
+    for (int i = 1; i < tokens.length && parsedStops.length < 2; i++) {
+      String t = tokens[i].trim();
+      if (t == ';') continue;
+      if (t.isEmpty) continue;
+      if (t.contains('var(')) {
+        t = CSSBackground._expandBackgroundVars(t, renderStyle).trim();
+        t = _stripTrailingSemicolons(t);
+        if (t.isEmpty) continue;
       }
-    } else {
-      CSSColor? color = CSSColor.resolveColor(strings[0], renderStyle, propertyName);
-      colorGradients.add(CSSColorStop(color?.value, stop));
-      if (DebugFlags.enableBackgroundLogs) {
-        final c = color?.value;
-        renderingLogger.finer('[Background]   stop default -> ${stop?.toStringAsFixed(4) ?? '<none>'} '
-            'color=${c != null ? _rgbaString(c) : '<invalid>'} src="$src"');
+      t = _stripTrailingSemicolons(t);
+      if (CSSPercentage.isPercentage(t)) {
+        double? stop = CSSPercentage.parsePercentage(t);
+        if (stop != null) {
+          // Negative percentage is invalid in gradients; clamp to 0.
+          if (stop < 0) stop = 0;
+          parsedStops.add(stop);
+          if (DebugFlags.enableBackgroundLogs) {
+            renderingLogger.finer('[Background]   stop token="$t" unit=% -> ${stop.toStringAsFixed(4)} '
+                'color=${_rgbaString(color.value)} src="$src"');
+          }
+        }
+      } else if (CSSAngle.isAngle(t)) {
+        final double? radians = CSSAngle.parseAngle(t);
+        if (radians != null) {
+          final double stop = radians / (math.pi * 2);
+          parsedStops.add(stop);
+          if (DebugFlags.enableBackgroundLogs) {
+            renderingLogger.finer('[Background]   stop token="$t" unit=angle -> ${stop.toStringAsFixed(4)} '
+                'color=${_rgbaString(color.value)} src="$src"');
+          }
+        }
+      } else if (CSSLength.isLength(t)) {
+        if (gradientLength != null && gradientLength > 0) {
+          final double stop = CSSLength.parseLength(t, renderStyle, propertyName).computedValue / gradientLength;
+          parsedStops.add(stop);
+          if (DebugFlags.enableBackgroundLogs) {
+            renderingLogger.finer('[Background]   stop token="$t" unit=length -> ${stop.toStringAsFixed(4)} '
+                '(gradLen=${gradientLength.toStringAsFixed(2)}) '
+                'color=${_rgbaString(color.value)} src="$src"');
+          }
+        }
+      } else if (CSSColor.isColor(t)) {
+        // If a trailing token resolves to a color, this likely indicates a missing comma
+        // ("green 75% green 100%"). Treat the stop as invalid; caller may drop the gradient.
+        return const <CSSColorStop>[];
+      } else {
+        // Unknown token: ignore.
       }
     }
+  } catch (e, st) {
+    if (DebugFlags.enableBackgroundLogs) {
+      renderingLogger.warning('[Background] Failed to parse color stop "$src"', e, st);
+    }
+    return const <CSSColorStop>[];
+  }
+
+  if (parsedStops.isEmpty) {
+    colorGradients.add(CSSColorStop(color.value, defaultStop));
+    if (DebugFlags.enableBackgroundLogs) {
+      renderingLogger.finer('[Background]   stop default -> ${defaultStop?.toStringAsFixed(4) ?? '<none>'} '
+          'color=${_rgbaString(color.value)} src="$src"');
+    }
+    return colorGradients;
+  }
+
+  for (final stop in parsedStops) {
+    colorGradients.add(CSSColorStop(color.value, stop));
   }
 
   return colorGradients;

@@ -123,6 +123,11 @@ mixin CSSVariableMixin on RenderStyle {
     if (DebugFlags.shouldLogCssVar(identifier, deps)) {
       cssLogger.info('[var][set] id=$identifier new="$value" target=${target.tagName}');
     }
+    if (DebugFlags.enableBackgroundLogs && identifier.startsWith('--tw-gradient-')) {
+      // Tailwind gradients rely heavily on custom properties. Log these at a low
+      // verbosity gate so we can diagnose bad tokenization (e.g., stray ';').
+      cssLogger.finer('[Background][var][set] id=$identifier value="$value"');
+    }
     // Snapshot old value before mutation for transition heuristics.
     // Prefer the exact prior token text, including alias var(...) if present.
     String? prevRaw = _identifierStorage != null ? _identifierStorage![identifier] : null;
