@@ -34,5 +34,4 @@ export 'src/html/shimmer/shimmer.dart';
 export 'src/html/shimmer/shimmer_items.dart';
 export 'src/html/shimmer/shimmer_loading.dart';
 export 'src/html/shimmer/shimmer_widget.dart';
-export 'src/html/form/flutter_form.dart';
 export 'src/html/table.dart';

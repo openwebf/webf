@@ -285,7 +285,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   // For position fixed render box, should reduce the outer scroll offsets.
   void applyPositionFixedPaintTransform(RenderBoxModel child, Matrix4 transform) {
     Offset totalScrollOffset = child.getTotalScrollOffset();
-    transform.translateByDouble(totalScrollOffset.dx, totalScrollOffset.dy, 0.0, 1.0);
+    transform.translate(totalScrollOffset.dx, totalScrollOffset.dy);
   }
 
   void applyOverflowPaintTransform(RenderBox child, Matrix4 transform) {
@@ -295,7 +295,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       applyPositionFixedPaintTransform(child, transform);
     }
 
-    transform.translateByDouble(paintOffset.dx, paintOffset.dy, 0.0, 1.0);
+    transform.translate(paintOffset.dx, paintOffset.dy);
   }
 
   @override
@@ -485,7 +485,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
 
     int? firstVisibleIndex;
     for (final SemanticsNode child in childList) {
-      if (!child.flagsCollection.isHidden) {
+      if (!child.hasFlag(SemanticsFlag.isHidden)) {
         firstVisibleIndex ??= child.indexInParent;
       }
     }

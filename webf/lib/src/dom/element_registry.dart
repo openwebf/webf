@@ -200,8 +200,6 @@ void defineBuiltInElements() {
   defineElement(BUTTON, (context) => ButtonElement(context));
   defineElement(INPUT, (context) => FlutterInputElement(context));
   defineElement(TEXTAREA, (context) => FlutterTextAreaElement(context));
-  defineWidgetElement(FLUTTER_FORM, (context) => FlutterForm(context));
-  defineWidgetElement(FLUTTER_FORM_FIELD, (context) => FlutterFormField(context));
   // Edits
   defineElement(DEL, (context) => DelElement(context));
   defineElement(INS, (context) => InsElement(context));

@@ -7,8 +7,6 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
-// ignore_for_file: constant_identifier_names
-
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:vector_math/vector_math_64.dart';
@@ -172,24 +170,22 @@ mixin CSSTransformMixin on RenderStyle {
     assert(hasRenderBox());
     // Make sure it is used after renderBoxModel been created.
     final Matrix4 result = Matrix4.identity();
-    result.translateByDouble(transformOffset.dx, transformOffset.dy, 0.0, 1.0);
+    result.translate(transformOffset.dx, transformOffset.dy);
     late Offset translation;
     if (transformAlignment != Alignment.topLeft) {
       // Use boxSize instead of size to avoid Flutter cannot access size beyond parent access warning
       translation = transformAlignment.alongSize(boxSize()!);
       // translation =
-      result.translateByDouble(translation.dx, translation.dy, 0.0, 1.0);
+      result.translate(translation.dx, translation.dy);
     }
 
     if (transformMatrix != null) {
       result.multiply(transformMatrix!);
     }
 
-    if (transformAlignment != Alignment.topLeft) {
-      result.translateByDouble(-translation.dx, -translation.dy, 0.0, 1.0);
-    }
+    if (transformAlignment != Alignment.topLeft) result.translate(-translation.dx, -translation.dy);
 
-    result.translateByDouble(-transformOffset.dx, -transformOffset.dy, 0.0, 1.0);
+    result.translate(-transformOffset.dx, -transformOffset.dy);
 
     assert(result.storage.every((double component) => component.isFinite));
     return result;

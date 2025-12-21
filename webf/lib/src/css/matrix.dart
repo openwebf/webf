@@ -686,7 +686,7 @@ class CSSMatrix {
               cssLogger.info('[transform][resolve] translate x=${x.computedValue} y=${y.computedValue} args=${methodArgs.join(', ')}');
             } catch (_) {}
           }
-          return Matrix4.identity()..translateByDouble(x.computedValue, y.computedValue, 0.0, 1.0);
+          return Matrix4.identity()..translate(x.computedValue, y.computedValue);
         }
         break;
       case TRANSLATE_3D:
@@ -706,7 +706,7 @@ class CSSMatrix {
           CSSLengthValue x = CSSLength.parseLength(methodArgs[0].trim(), renderStyle, TRANSLATE, Axis.horizontal);
           if (x.computedValue == double.infinity || y.computedValue == double.infinity || z.computedValue == double.infinity) return null;
           x.renderStyle = y.renderStyle = z.renderStyle = renderStyle;
-          return Matrix4.identity()..translateByDouble(x.computedValue, y.computedValue, z.computedValue, 1.0);
+          return Matrix4.identity()..translate(x.computedValue, y.computedValue, z.computedValue);
         }
         break;
       case TRANSLATE_X:
@@ -717,7 +717,7 @@ class CSSMatrix {
           // Double.infinity indicates translate not resolved due to renderBox not layout yet
           // in percentage case.
           if (computedValue == double.infinity) return null;
-          return Matrix4.identity()..translateByDouble(computedValue, 0.0, 0.0, 1.0);
+          return Matrix4.identity()..translate(computedValue);
         }
         break;
       case TRANSLATE_Y:
@@ -731,7 +731,7 @@ class CSSMatrix {
           if (DebugFlags.shouldLogTransitionForProp(TRANSFORM)) {
             try { cssLogger.info('[transform][resolve] translateY y=$computedValue arg=${methodArgs[0]}'); } catch (_) {}
           }
-          return Matrix4.identity()..translateByDouble(0.0, computedValue, 0.0, 1.0);
+          return Matrix4.identity()..translate(0.0, computedValue);
         }
         break;
       case TRANSLATE_Z:
@@ -741,7 +741,7 @@ class CSSMatrix {
           // Double.infinity indicates translate not resolved due to renderBox not layout yet
           // in percentage case.
           if (computedValue == double.infinity) return null;
-          return Matrix4.identity()..translateByDouble(0.0, 0.0, computedValue, 1.0);
+          return Matrix4.identity()..translate(0.0, 0.0, computedValue);
         }
         break;
       // https://drafts.csswg.org/css-transforms-2/#individual-transforms
@@ -812,7 +812,7 @@ class CSSMatrix {
             y = parseCssNumber(methodArgs[1], x);
           }
 
-          return Matrix4.identity()..scaleByDouble(x, y, 1.0, 1.0);
+          return Matrix4.identity()..scale(x, y, 1);
         }
         break;
       case SCALE_3D:
@@ -836,7 +836,7 @@ class CSSMatrix {
           double y = parseCssNumber(methodArgs[1], 1.0);
           double z = parseCssNumber(methodArgs[2], 1.0);
 
-          return Matrix4.identity()..scaleByDouble(x, y, z, 1.0);
+          return Matrix4.identity()..scale(x, y, z);
         }
         break;
       case SCALE_X:
@@ -862,7 +862,7 @@ class CSSMatrix {
             z = scale;
           }
 
-          return Matrix4.identity()..scaleByDouble(x, y, z, 1.0);
+          return Matrix4.identity()..scale(x, y, z);
         }
         break;
       case SKEW:
