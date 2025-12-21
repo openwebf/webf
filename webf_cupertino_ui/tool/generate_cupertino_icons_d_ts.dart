@@ -14,7 +14,7 @@ import 'dart:io';
 ///       packages/flutter/lib/src/cupertino/icons.dart
 ///     - Writes lib/src/cupertino_icons.d.ts
 ///
-///   dart run tool/generate_cupertino_icons_d_ts.dart <path/to/icons.dart> [output.d.ts]
+///   dart run tool/generate_cupertino_icons_d_ts.dart `<path/to/icons.dart>` [output.d.ts]
 Future<void> main(List<String> args) async {
   // Resolve input path: prefer CLI arg; otherwise discover via flutter in PATH.
   String inputPath;
@@ -38,7 +38,7 @@ Future<void> main(List<String> args) async {
 
   final file = File(inputPath);
   if (!await file.exists()) {
-    stderr.writeln('Input file not found: ' + inputPath);
+    stderr.writeln('Input file not found: $inputPath');
     exitCode = 2;
     return;
   }
@@ -62,7 +62,7 @@ Future<void> main(List<String> args) async {
   }
 
   if (names.isEmpty) {
-    stderr.writeln('No IconData names found in: ' + inputPath);
+    stderr.writeln('No IconData names found in: $inputPath');
     exitCode = 3;
     return;
   }
@@ -78,7 +78,7 @@ Future<void> main(List<String> args) async {
   // Follow colors generator style: string-valued enum entries
   outDts.writeln('declare enum CupertinoIcons {');
   for (final name in sorted) {
-    outDts.writeln('  ' + name + ' = ' + jsonEncode(name) + ',');
+    outDts.writeln('  $name = ${jsonEncode(name)},');
   }
   outDts.writeln('}');
   outDts.writeln();
@@ -93,13 +93,13 @@ Future<void> main(List<String> args) async {
   outDart.writeln();
   outDart.writeln('const Map<String, IconData> kCupertinoIconMap = {');
   for (final name in sorted) {
-    outDart.writeln("  '" + name + "': CupertinoIcons." + name + ',');
+    outDart.writeln("  '$name': CupertinoIcons.$name,");
   }
   outDart.writeln('};');
   outDart.writeln();
   await File(outputDartMapPath).writeAsString(outDart.toString());
 
-  stdout.writeln('Wrote ' + outputDtsPath + ' and ' + outputDartMapPath + ' with ' + sorted.length.toString() + ' icons.');
+  stdout.writeln('Wrote $outputDtsPath and $outputDartMapPath with ${sorted.length} icons.');
 }
 
 Future<String?> _findFlutterSdkRoot() async {
@@ -154,7 +154,7 @@ Future<String?> _findFlutterSdkRoot() async {
 Future<bool> _looksLikeFlutterRoot(Directory dir) async {
   try {
     final file = File(
-      dir.path + '/packages/flutter/lib/src/cupertino/icons.dart',
+      '${dir.path}/packages/flutter/lib/src/cupertino/icons.dart',
     );
     return await file.exists();
   } catch (_) {

@@ -4,7 +4,6 @@
  */
 import 'package:flutter/cupertino.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/rendering.dart';
 
 /// WebF wrapper for Flutter's CupertinoTabView.
 ///

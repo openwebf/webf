@@ -3,7 +3,6 @@
  * Licensed under the Apache License, Version 2.0.
  */
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Color;
 import 'package:webf/css.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';

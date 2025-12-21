@@ -3,7 +3,6 @@
  * Licensed under the Apache License, Version 2.0.
  */
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show BottomNavigationBarItem; // For CupertinoTabBar items
 import 'package:collection/collection.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/rendering.dart';
@@ -16,6 +15,7 @@ import 'logger.dart';
 /// A WebF custom element that mimics Flutter's CupertinoTabScaffold.
 ///
 /// Usage (DOM):
+/// ```html
 /// <flutter-cupertino-tab-scaffold current-index="0">
 ///   <flutter-cupertino-tab-scaffold-tab title="Home">
 ///     ...content of tab 0...
@@ -24,8 +24,9 @@ import 'logger.dart';
 ///     ...content of tab 1...
 ///   </flutter-cupertino-tab-scaffold-tab>
 /// </flutter-cupertino-tab-scaffold>
+/// ```
 ///
-/// Icon support: place a <flutter-cupertino-icon> as a child of the tab to be used
+/// Icon support: place a `<flutter-cupertino-icon>` as a child of the tab to be used
 /// as the tab's icon. If none is found, an empty box is used.
 class FlutterCupertinoTabScaffold extends WidgetElement {
   FlutterCupertinoTabScaffold(super.context);
@@ -42,7 +43,7 @@ class FlutterCupertinoTabScaffold extends WidgetElement {
         final int? parsed = int.tryParse(value);
         if (parsed != null && parsed != _currentIndex) {
           _currentIndex = parsed;
-          final s = state as FlutterCupertinoTabScaffoldState?;
+          final s = state;
           if (s != null) {
             // Update controller; listener will sync state and dispatch events.
             s.setIndexFromAttribute(_currentIndex);
@@ -140,15 +141,6 @@ class FlutterCupertinoTabScaffoldState extends WebFWidgetElementState {
     final List<FlutterCupertinoTabScaffoldTab> tabs = widgetElement.childNodes
         .whereType<FlutterCupertinoTabScaffoldTab>()
         .toList(growable: false);
-
-    // Gather tabs only; each tab builds its own content in its State
-    for (int i = 0; i < tabs.length; i++) {
-      final tab = tabs[i];
-      final hasTabView = tab.childNodes
-          .whereType<dom.Element>()
-          .any((e) => e is FlutterCupertinoTabView);
-      // Intentionally minimal diagnostics; no verbose details
-    }
 
     // Build items for the bottom bar
     final List<BottomNavigationBarItem> items = <BottomNavigationBarItem>[];

@@ -109,12 +109,14 @@ class FlutterCupertinoButtonState extends WebFWidgetElementState {
     // Get renderStyle
     final renderStyle = widgetElement.renderStyle;
     final hasWidth = renderStyle.width.computedValue != 0.0;
-    final hasHeight = renderStyle.height.computedValue != 0.0;
     final hasPadding = renderStyle.padding != EdgeInsets.zero;
     final hasBorderRadius = renderStyle.borderRadius != null;
     final hasMinHeight = renderStyle.minHeight.computedValue != 0.0;
     final textAlign = renderStyle.textAlign;
     final backgroundColor = _parseCSSColor(renderStyle.backgroundColor);
+    final double minSize = hasMinHeight
+        ? (renderStyle.minHeight.value ?? widgetElement.getDefaultMinSize())
+        : widgetElement.getDefaultMinSize();
 
     // Determine the alignment based on textAlign
     AlignmentGeometry alignment;
@@ -162,22 +164,22 @@ class FlutterCupertinoButtonState extends WebFWidgetElementState {
           },
           // Unify padding behavior: when width is fixed, remove internal padding
           padding: hasWidth ? EdgeInsets.zero : (hasPadding ? renderStyle.padding : getDefaultPadding()),
-          disabledColor: getDisabledColor(),
-          pressedOpacity: widgetElement._pressedOpacity,
-          borderRadius: renderStyle.borderRadius != null
-              ? BorderRadius.only(
-                  topLeft: renderStyle.borderRadius![0],
-                  topRight: renderStyle.borderRadius![1],
-                  bottomRight: renderStyle.borderRadius![2],
-                  bottomLeft: renderStyle.borderRadius![3],
-                )
-              : BorderRadius.zero,
-          minSize: hasMinHeight ? renderStyle.minHeight.value : widgetElement.getDefaultMinSize(),
-          alignment: alignment,
-          child: buttonChild,
-        );
-        break;
-      case 'tinted':
+	          disabledColor: getDisabledColor(),
+	          pressedOpacity: widgetElement._pressedOpacity,
+	          borderRadius: renderStyle.borderRadius != null
+	              ? BorderRadius.only(
+	                  topLeft: renderStyle.borderRadius![0],
+	                  topRight: renderStyle.borderRadius![1],
+	                  bottomRight: renderStyle.borderRadius![2],
+	                  bottomLeft: renderStyle.borderRadius![3],
+	                )
+	              : BorderRadius.zero,
+	          minimumSize: Size.square(minSize),
+	          alignment: alignment,
+	          child: buttonChild,
+	        );
+	        break;
+	      case 'tinted':
         button = CupertinoButton.tinted(
           onPressed: widgetElement._disabled ? null : () {
             widgetElement.dispatchEvent(Event('click'));
@@ -186,21 +188,21 @@ class FlutterCupertinoButtonState extends WebFWidgetElementState {
           color: backgroundColor,
           disabledColor: getDisabledColor(),
           // Support asymmetric border radii
-          borderRadius: hasBorderRadius
-              ? BorderRadius.only(
-                  topLeft: renderStyle.borderRadius![0],
-                  topRight: renderStyle.borderRadius![1],
-                  bottomRight: renderStyle.borderRadius![2],
-                  bottomLeft: renderStyle.borderRadius![3],
-                )
-              : BorderRadius.circular(8),
-          pressedOpacity: widgetElement._pressedOpacity,
-          minSize: hasMinHeight ? renderStyle.minHeight.value : widgetElement.getDefaultMinSize(),
-          alignment: alignment,
-          child: buttonChild,
-        );
-        break;
-      default:
+	          borderRadius: hasBorderRadius
+	              ? BorderRadius.only(
+	                  topLeft: renderStyle.borderRadius![0],
+	                  topRight: renderStyle.borderRadius![1],
+	                  bottomRight: renderStyle.borderRadius![2],
+	                  bottomLeft: renderStyle.borderRadius![3],
+	                )
+	              : BorderRadius.circular(8),
+	          pressedOpacity: widgetElement._pressedOpacity,
+	          minimumSize: Size.square(minSize),
+	          alignment: alignment,
+	          child: buttonChild,
+	        );
+	        break;
+	      default:
         button = CupertinoButton(
           onPressed: widgetElement._disabled ? null : () {
             widgetElement.dispatchEvent(Event('click'));
@@ -209,20 +211,20 @@ class FlutterCupertinoButtonState extends WebFWidgetElementState {
           color: backgroundColor,
           disabledColor: getDisabledColor(),
           // Support asymmetric border radii
-          borderRadius: hasBorderRadius
-              ? BorderRadius.only(
-                  topLeft: renderStyle.borderRadius![0],
-                  topRight: renderStyle.borderRadius![1],
-                  bottomRight: renderStyle.borderRadius![2],
-                  bottomLeft: renderStyle.borderRadius![3],
-                )
-              : BorderRadius.circular(8),
-          pressedOpacity: widgetElement._pressedOpacity,
-          minSize: hasMinHeight ? renderStyle.minHeight.value : widgetElement.getDefaultMinSize(),
-          alignment: alignment,
-          child: buttonChild,
-        );
-    }
+	          borderRadius: hasBorderRadius
+	              ? BorderRadius.only(
+	                  topLeft: renderStyle.borderRadius![0],
+	                  topRight: renderStyle.borderRadius![1],
+	                  bottomRight: renderStyle.borderRadius![2],
+	                  bottomLeft: renderStyle.borderRadius![3],
+	                )
+	              : BorderRadius.circular(8),
+	          pressedOpacity: widgetElement._pressedOpacity,
+	          minimumSize: Size.square(minSize),
+	          alignment: alignment,
+	          child: buttonChild,
+	        );
+	    }
 
     return button;
   }

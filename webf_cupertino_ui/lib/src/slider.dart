@@ -102,21 +102,6 @@ class FlutterCupertinoSlider extends FlutterCupertinoSliderBindings {
   }
 
   @override
-  double getValue(List<dynamic> args) {
-    return _value;
-  }
-
-  @override
-  void setValue(List<dynamic> args) {
-    if (args.isEmpty) return;
-    final next = _parseDouble(args[0], _value).clamp(_min, _max);
-    if (next != _value) {
-      _value = next;
-      state?.requestUpdateState(() {});
-    }
-  }
-
-  @override
   WebFWidgetElementState createState() {
     return FlutterCupertinoSliderState(this);
   }

@@ -155,11 +155,11 @@ class FlutterCupertinoModalPopupState extends WebFWidgetElementState {
       return;
     }
 
-    final BuildContext? buildContext = context;
-    if (buildContext == null || !buildContext.mounted) {
-      logger.e('Element BuildContext is null or unmounted. Cannot show modal popup');
+    if (!mounted) {
+      logger.e('Element BuildContext is unmounted. Cannot show modal popup');
       return;
     }
+    final BuildContext buildContext = context;
 
     _isShowing = true;
 
@@ -171,8 +171,8 @@ class FlutterCupertinoModalPopupState extends WebFWidgetElementState {
         context: buildContext,
         useRootNavigator: true,
         barrierDismissible: maskClosable,
-        barrierColor: CupertinoColors.black.withOpacity(
-          backgroundOpacity.clamp(0.0, 1.0),
+        barrierColor: CupertinoColors.black.withValues(
+          alpha: backgroundOpacity.clamp(0.0, 1.0),
         ),
         builder: (BuildContext dialogContext) {
           return _buildPopupContent(dialogContext);
@@ -194,16 +194,14 @@ class FlutterCupertinoModalPopupState extends WebFWidgetElementState {
     if (!_isShowing) {
       return;
     }
-    final BuildContext? buildContext = context;
-    if (buildContext == null) {
+    if (!mounted) {
       return;
     }
-    Navigator.of(buildContext, rootNavigator: true).pop();
+    Navigator.of(context, rootNavigator: true).pop();
   }
 
   Widget _buildPopupContent(BuildContext dialogContext) {
     Widget child;
-    var node = widgetElement.childNodes.first;
     if (widgetElement.childNodes.isEmpty) {
       child = const SizedBox.shrink();
     } else {

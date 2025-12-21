@@ -83,15 +83,11 @@ class FlutterCupertinoActionSheetState extends WebFWidgetElementState {
       return;
     }
 
-    final BuildContext? buildContext = context;
-    if (buildContext == null) {
-      logger.e('Element BuildContext is null. Cannot show ActionSheet');
-      return;
-    }
-    if (!buildContext.mounted) {
+    if (!mounted) {
       logger.e('BuildContext is not mounted. Cannot show ActionSheet');
       return;
     }
+    final BuildContext buildContext = context;
 
     final String? title = config['title'] as String?;
     final String? message = config['message'] as String?;
