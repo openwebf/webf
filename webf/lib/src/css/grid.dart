@@ -578,9 +578,17 @@ class CSSGridParser {
 
     final String lower = trimmed.toLowerCase();
     if (lower.startsWith('span')) {
-      final String number = lower.substring(4).trim();
-      final int? spanValue = int.tryParse(number);
-      if (spanValue != null && spanValue > 0) {
+      final String rest = trimmed.substring(4).trim();
+      if (rest.isEmpty) return const GridPlacement.span(1);
+      int? spanValue;
+      for (final String token in rest.split(RegExp(r'\s+'))) {
+        final int? parsed = int.tryParse(token);
+        if (parsed != null && parsed > 0) {
+          spanValue = parsed;
+          break;
+        }
+      }
+      if (spanValue != null) {
         return GridPlacement.span(spanValue);
       }
       return const GridPlacement.span(1);
