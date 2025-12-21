@@ -313,7 +313,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                     // Disable Flutter's Scrollable semantics here to avoid
                     // duplicate/competing scroll semantics nodes.
                     excludeFromSemantics: true,
-                    physics: xScrollable ? null : const flutter.NeverScrollableScrollPhysics(),
+                    physics: xScrollable ? flutter.ClampingScrollPhysics() : const flutter.NeverScrollableScrollPhysics(),
                     viewportBuilder: (flutter.BuildContext context, ViewportOffset position) {
                       flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
                         webFElement: webFElement,
@@ -340,7 +340,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                 enabled: yScrollable,
                 child: flutter.Scrollable(
                     axisDirection: AxisDirection.down,
-                    physics: yScrollable ? null : const flutter.NeverScrollableScrollPhysics(),
+                    physics: yScrollable ? flutter.ClampingScrollPhysics() : const flutter.NeverScrollableScrollPhysics(),
                     controller: webFElement.scrollControllerY,
                     // See note above for overflow scroll semantics ownership.
                     excludeFromSemantics: true,
@@ -356,6 +356,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                                 controller: webFElement.scrollControllerX,
                                 axisDirection: isRTL ? AxisDirection.left : AxisDirection.right,
                                 excludeFromSemantics: true,
+                                physics: flutter.ClampingScrollPhysics(),
                                 viewportBuilder: (flutter.BuildContext context, ViewportOffset positionX) {
                                   flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
                                     webFElement: webFElement,
