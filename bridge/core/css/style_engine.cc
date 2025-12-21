@@ -430,8 +430,8 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text) {
           String weight = props.GetPropertyValue(CSSPropertyID::kFontWeight);
           String style = props.GetPropertyValue(CSSPropertyID::kFontStyle);
           if (!family.IsEmpty() && !src.IsEmpty()) {
-            String familyLower = family.LowerASCII();
-            std::string familyUtf8 = familyLower.ToUTF8String();
+            // Preserve original family name casing to match the value used by style resolution on Dart side.
+            std::string familyUtf8 = family.ToUTF8String();
             std::string srcUtf8 = src.ToUTF8String();
             if (srcUtf8.size() > 160) srcUtf8 = srcUtf8.substr(0, 160) + "…";
             auto baseHrefNative = stringToNativeString(base_href).release();
@@ -546,9 +546,8 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text, co
           String weight = props.GetPropertyValue(CSSPropertyID::kFontWeight);
           String style = props.GetPropertyValue(CSSPropertyID::kFontStyle);
           if (!family.IsEmpty() && !src.IsEmpty()) {
-            String familyLower = family.LowerASCII();
             auto baseHrefNative = stringToNativeString(baseHrefStr).release();
-            auto familyNative = stringToNativeString(familyLower.ToUTF8String()).release();
+            auto familyNative = stringToNativeString(family.ToUTF8String()).release();
             auto srcNative = stringToNativeString(src.ToUTF8String()).release();
             auto weightNative = stringToNativeString(weight.ToUTF8String()).release();
             auto styleNative = stringToNativeString(style.ToUTF8String()).release();
@@ -573,9 +572,8 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text, co
         String weight = props.GetPropertyValue(CSSPropertyID::kFontWeight);
         String style = props.GetPropertyValue(CSSPropertyID::kFontStyle);
         if (!family.IsEmpty() && !src.IsEmpty()) {
-          String familyLower = family.LowerASCII();
           auto baseHrefNative = stringToNativeString(baseHrefStr).release();
-          auto familyNative = stringToNativeString(familyLower.ToUTF8String()).release();
+          auto familyNative = stringToNativeString(family.ToUTF8String()).release();
           auto srcNative = stringToNativeString(src.ToUTF8String()).release();
           auto weightNative = stringToNativeString(weight.ToUTF8String()).release();
           auto styleNative = stringToNativeString(style.ToUTF8String()).release();
