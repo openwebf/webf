@@ -1535,8 +1535,9 @@ class RenderFlexLayout extends RenderLayoutBox {
           // baseline-aligned item no longer anchors the container baseline in IFC.
           if (_isChildCrossAxisMarginAutoExist(candidate)) return false;
           final AlignSelf self = _getAlignSelf(candidate);
-          if (self == AlignSelf.baseline) return true;
-          if (self == AlignSelf.auto && renderStyle.alignItems == AlignItems.baseline) {
+          if (self == AlignSelf.baseline || self == AlignSelf.lastBaseline) return true;
+          if (self == AlignSelf.auto &&
+              (renderStyle.alignItems == AlignItems.baseline || renderStyle.alignItems == AlignItems.lastBaseline)) {
             return true;
           }
           return false;
@@ -1604,8 +1605,9 @@ class RenderFlexLayout extends RenderLayoutBox {
 
         bool participatesInBaseline(RenderBox candidate) {
           final AlignSelf self = _getAlignSelf(candidate);
-          if (self == AlignSelf.baseline) return true;
-          if (self == AlignSelf.auto && renderStyle.alignItems == AlignItems.baseline) {
+          if (self == AlignSelf.baseline || self == AlignSelf.lastBaseline) return true;
+          if (self == AlignSelf.auto &&
+              (renderStyle.alignItems == AlignItems.baseline || renderStyle.alignItems == AlignItems.lastBaseline)) {
             return true;
           }
           return false;
@@ -1638,7 +1640,10 @@ class RenderFlexLayout extends RenderLayoutBox {
           }
           AlignSelf self = _getAlignSelf(child);
           final bool participates = (!hasCrossAuto) &&
-              (self == AlignSelf.baseline || (self == AlignSelf.auto && renderStyle.alignItems == AlignItems.baseline));
+              (self == AlignSelf.baseline ||
+                  self == AlignSelf.lastBaseline ||
+                  (self == AlignSelf.auto &&
+                      (renderStyle.alignItems == AlignItems.baseline || renderStyle.alignItems == AlignItems.lastBaseline)));
           double dy = 0;
           if (child.parentData is RenderLayoutParentData) {
             dy = (child.parentData as RenderLayoutParentData).offset.dy;
@@ -1900,7 +1905,11 @@ class RenderFlexLayout extends RenderLayoutBox {
       // Vertical align is only valid for inline box.
       // Baseline alignment in column direction behave the same as flex-start.
       AlignSelf alignSelf = _getAlignSelf(child);
-      bool isBaselineAlign = alignSelf == AlignSelf.baseline || renderStyle.alignItems == AlignItems.baseline;
+      bool isBaselineAlign =
+          alignSelf == AlignSelf.baseline ||
+          alignSelf == AlignSelf.lastBaseline ||
+          renderStyle.alignItems == AlignItems.baseline ||
+          renderStyle.alignItems == AlignItems.lastBaseline;
       bool isHorizontal = _isHorizontalFlexDirection;
       if (isHorizontal && isBaselineAlign) {
         // Distance from top to baseline of child
@@ -2704,7 +2713,11 @@ class RenderFlexLayout extends RenderLayoutBox {
       // Vertical align is only valid for inline box.
       // Baseline alignment in column direction behave the same as flex-start.
       AlignSelf alignSelf = _getAlignSelf(child);
-      bool isBaselineAlign = alignSelf == AlignSelf.baseline || renderStyle.alignItems == AlignItems.baseline;
+      bool isBaselineAlign =
+          alignSelf == AlignSelf.baseline ||
+          alignSelf == AlignSelf.lastBaseline ||
+          renderStyle.alignItems == AlignItems.baseline ||
+          renderStyle.alignItems == AlignItems.lastBaseline;
 
       if (_isHorizontalFlexDirection && isBaselineAlign) {
         // Distance from top to baseline of child
@@ -4018,6 +4031,7 @@ class RenderFlexLayout extends RenderLayoutBox {
             alignment = 'center';
             break;
           case AlignSelf.baseline:
+          case AlignSelf.lastBaseline:
             alignment = 'baseline';
             break;
           case AlignSelf.auto:
@@ -4035,6 +4049,7 @@ class RenderFlexLayout extends RenderLayoutBox {
                 alignment = 'center';
                 break;
               case AlignItems.baseline:
+              case AlignItems.lastBaseline:
               // FIXME: baseline alignment in wrap-reverse flexWrap may display different from browser in some case
                 if (_isHorizontalFlexDirection) {
                   alignment = 'baseline';

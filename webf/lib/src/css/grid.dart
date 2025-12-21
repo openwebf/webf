@@ -200,6 +200,8 @@ enum GridAxisAlignment {
   end,
   center,
   stretch,
+  baseline,
+  lastBaseline,
 }
 
 class CSSGridParser {
@@ -547,6 +549,11 @@ class CSSGridParser {
     switch (normalized) {
       case 'auto':
         return allowAuto ? GridAxisAlignment.auto : GridAxisAlignment.stretch;
+      case 'baseline':
+      case 'first baseline':
+        return GridAxisAlignment.baseline;
+      case 'last baseline':
+        return GridAxisAlignment.lastBaseline;
       case 'flex-start':
       case 'self-start':
       case 'start':

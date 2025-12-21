@@ -1051,6 +1051,10 @@ String _gridAxisAlignmentToCss(GridAxisAlignment alignment) {
       return 'center';
     case GridAxisAlignment.stretch:
       return 'stretch';
+    case GridAxisAlignment.baseline:
+      return 'baseline';
+    case GridAxisAlignment.lastBaseline:
+      return 'last baseline';
     case GridAxisAlignment.auto:
     default:
       return 'auto';
@@ -1071,6 +1075,8 @@ String _alignItemsToCss(AlignItems value) {
       return 'center';
     case AlignItems.baseline:
       return 'baseline';
+    case AlignItems.lastBaseline:
+      return 'last baseline';
     case AlignItems.stretch:
     default:
       return 'stretch';
@@ -1093,6 +1099,8 @@ String _alignSelfToCss(AlignSelf value) {
       return 'center';
     case AlignSelf.baseline:
       return 'baseline';
+    case AlignSelf.lastBaseline:
+      return 'last baseline';
     case AlignSelf.stretch:
     default:
       return 'stretch';
