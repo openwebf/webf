@@ -597,8 +597,11 @@ class RenderGridLayout extends RenderLayoutBox {
       case AlignItems.end:
         return GridAxisAlignment.end;
       case AlignItems.center:
-      case AlignItems.baseline:
         return GridAxisAlignment.center;
+      case AlignItems.baseline:
+        return GridAxisAlignment.baseline;
+      case AlignItems.lastBaseline:
+        return GridAxisAlignment.lastBaseline;
       case AlignItems.stretch:
         return GridAxisAlignment.stretch;
     }
@@ -615,8 +618,11 @@ class RenderGridLayout extends RenderLayoutBox {
       case AlignSelf.end:
         return GridAxisAlignment.end;
       case AlignSelf.center:
-      case AlignSelf.baseline:
         return GridAxisAlignment.center;
+      case AlignSelf.baseline:
+        return GridAxisAlignment.baseline;
+      case AlignSelf.lastBaseline:
+        return GridAxisAlignment.lastBaseline;
       case AlignSelf.stretch:
         return GridAxisAlignment.stretch;
     }
@@ -632,7 +638,163 @@ class RenderGridLayout extends RenderLayoutBox {
       case GridAxisAlignment.auto:
       case GridAxisAlignment.start:
       case GridAxisAlignment.stretch:
+      case GridAxisAlignment.baseline:
+      case GridAxisAlignment.lastBaseline:
         return 0;
+    }
+  }
+
+  double _gridChildBaselineFromBorderTop(RenderBox child, {required bool lastBaseline}) {
+    RenderBox baselineBox = child;
+    double offsetY = 0;
+
+    if (child is RenderEventListener) {
+      final RenderBox? wrapped = child.child;
+      if (wrapped != null) {
+        baselineBox = wrapped;
+        final Object? pd = wrapped.parentData;
+        if (pd is BoxParentData) {
+          offsetY = pd.offset.dy;
+        }
+      }
+    }
+
+    double? baseline;
+    if (baselineBox is RenderBoxModel) {
+      baseline = lastBaseline ? baselineBox.computeCssLastBaseline() : baselineBox.computeCssFirstBaseline();
+    }
+    baseline ??= baselineBox.getDistanceToBaseline(TextBaseline.alphabetic);
+
+    if (baseline == null || !baseline.isFinite) {
+      baseline = child.size.height;
+      offsetY = 0;
+    }
+
+    final double resolved = baseline + offsetY;
+    return resolved.isFinite ? math.max(0, resolved) : 0;
+  }
+
+  void _applyRowBaselineAlignment({
+    required List<double> rowSizes,
+    required List<double> implicitRowHeights,
+    required double rowGap,
+    required double paddingTop,
+    required double borderTop,
+    required double alignShift,
+    required bool distributeRows,
+    required double rowDistributionLeading,
+    required double rowDistributionBetween,
+  }) {
+    final Map<int, double> firstBaselineYByRow = <int, double>{};
+    final Map<int, double> lastBaselineToBottomByRow = <int, double>{};
+
+    final int rowCount = math.max(rowSizes.length, implicitRowHeights.length);
+    final List<double> rowTopByRow = List<double>.filled(rowCount, 0);
+    final List<double> rowBottomByRow = List<double>.filled(rowCount, 0);
+    double baseY = paddingTop + borderTop;
+    for (int r = 0; r < rowCount; r++) {
+      final double shift = distributeRows ? (rowDistributionLeading + r * rowDistributionBetween) : alignShift;
+      final double resolvedHeight = _resolvedRowHeight(rowSizes, implicitRowHeights, r);
+      rowTopByRow[r] = baseY + shift;
+      rowBottomByRow[r] = rowTopByRow[r] + resolvedHeight;
+      baseY += resolvedHeight;
+      baseY += rowGap;
+    }
+
+    RenderBox? child = firstChild;
+    while (child != null) {
+      final GridLayoutParentData pd = child.parentData as GridLayoutParentData;
+      if (_isPositionedGridChild(child)) {
+        child = pd.nextSibling;
+        continue;
+      }
+
+      final RenderStyle? childStyle = _unwrapGridChildStyle(child);
+      final GridAxisAlignment alignSelfAlignment = _resolveAlignSelfAlignment(childStyle);
+      final bool useFirstBaseline = alignSelfAlignment == GridAxisAlignment.baseline;
+      final bool useLastBaseline = alignSelfAlignment == GridAxisAlignment.lastBaseline;
+      if (!useFirstBaseline && !useLastBaseline) {
+        child = pd.nextSibling;
+        continue;
+      }
+
+      final double baselineFromTop = _gridChildBaselineFromBorderTop(
+        child,
+        lastBaseline: useLastBaseline,
+      );
+      final int row = pd.rowStart;
+      if (useLastBaseline) {
+        final double baselineToBottom = math.max(0, child.size.height - baselineFromTop);
+        final double? current = lastBaselineToBottomByRow[row];
+        if (current == null || baselineToBottom > current) {
+          lastBaselineToBottomByRow[row] = baselineToBottom;
+        }
+      } else {
+        final double baselineY = pd.offset.dy + baselineFromTop;
+        final double? current = firstBaselineYByRow[row];
+        if (current == null || baselineY > current) {
+          firstBaselineYByRow[row] = baselineY;
+        }
+      }
+
+      child = pd.nextSibling;
+    }
+
+    if (firstBaselineYByRow.isEmpty && lastBaselineToBottomByRow.isEmpty) return;
+
+    child = firstChild;
+    while (child != null) {
+      final GridLayoutParentData pd = child.parentData as GridLayoutParentData;
+      if (_isPositionedGridChild(child)) {
+        child = pd.nextSibling;
+        continue;
+      }
+
+      final RenderStyle? childStyle = _unwrapGridChildStyle(child);
+      final GridAxisAlignment alignSelfAlignment = _resolveAlignSelfAlignment(childStyle);
+      final bool useFirstBaseline = alignSelfAlignment == GridAxisAlignment.baseline;
+      final bool useLastBaseline = alignSelfAlignment == GridAxisAlignment.lastBaseline;
+      if (!useFirstBaseline && !useLastBaseline) {
+        child = pd.nextSibling;
+        continue;
+      }
+
+      final int row = pd.rowStart;
+      double? targetBaselineY;
+      if (useLastBaseline) {
+        if (row < 0 || row >= rowCount) {
+          child = pd.nextSibling;
+          continue;
+        }
+        final double? baselineToBottom = lastBaselineToBottomByRow[row];
+        if (baselineToBottom == null) {
+          child = pd.nextSibling;
+          continue;
+        }
+        final double rowBottom = rowBottomByRow[row];
+        if (!rowBottom.isFinite || rowBottom <= 0) {
+          child = pd.nextSibling;
+          continue;
+        }
+        targetBaselineY = rowBottom - baselineToBottom;
+      } else {
+        targetBaselineY = firstBaselineYByRow[row];
+      }
+      if (targetBaselineY == null) {
+        child = pd.nextSibling;
+        continue;
+      }
+
+      final double baselineFromTop = _gridChildBaselineFromBorderTop(
+        child,
+        lastBaseline: useLastBaseline,
+      );
+      final double baselineY = pd.offset.dy + baselineFromTop;
+      final double delta = targetBaselineY - baselineY;
+      if (delta.abs() > 0.01) {
+        pd.offset += Offset(0, delta);
+      }
+      child = pd.nextSibling;
     }
   }
 
@@ -1199,13 +1361,16 @@ class RenderGridLayout extends RenderLayoutBox {
       final bool needsIntrinsicHeight = childGridStyle.height.isIntrinsic ||
           childGridStyle.minHeight.isIntrinsic ||
           childGridStyle.maxHeight.isIntrinsic;
+      final bool needsAutoFitWidth = usedW == null &&
+          childGridStyle.width.isAuto &&
+          justifySelfAlignment != GridAxisAlignment.stretch;
 
       double? intrinsicMinW;
       double? intrinsicMaxW;
       double? intrinsicMinH;
       double? intrinsicMaxH;
 
-      if (needsIntrinsicWidth) {
+      if (needsIntrinsicWidth || needsAutoFitWidth) {
         final double availableH = (hasDefiniteCellHeight && cellHeight.isFinite)
             ? math.max(0, cellHeight - marginVertical)
             : double.infinity;
@@ -1255,6 +1420,11 @@ class RenderGridLayout extends RenderLayoutBox {
         if (childGridStyle.maxWidth.isIntrinsic) {
           maxW = resolveIntrinsic(childGridStyle.maxWidth, intrinsicMinW, intrinsicMaxW, availableW);
         }
+      }
+
+      if (needsAutoFitWidth && intrinsicMinW != null && intrinsicMaxW != null) {
+        final double availableW = cellWidth.isFinite ? math.max(0, cellWidth - marginHorizontal) : double.infinity;
+        usedW = math.min(intrinsicMaxW, math.max(intrinsicMinW, availableW));
       }
 
       if (needsIntrinsicHeight && intrinsicMinH != null && intrinsicMaxH != null) {
@@ -3032,6 +3202,19 @@ class RenderGridLayout extends RenderLayoutBox {
       pd.offset += Offset(additionalX, additionalY);
       childForAlignment = pd.nextSibling;
     }
+
+    // Apply baseline/last-baseline alignment for items within each row.
+    _applyRowBaselineAlignment(
+      rowSizes: rowSizes,
+      implicitRowHeights: implicitRowHeights,
+      rowGap: rowGap,
+      paddingTop: paddingTop,
+      borderTop: borderTop,
+      alignShift: alignShift,
+      distributeRows: distributeRows,
+      rowDistributionLeading: rowDistributionLeading,
+      rowDistributionBetween: rowDistributionBetween,
+    );
 
     placementStopwatch?.stop();
     if (placementStopwatch != null) {

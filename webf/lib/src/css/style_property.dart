@@ -1489,14 +1489,15 @@ class CSSStyleProperty {
   // place-items shorthand
   // Spec: place-items: <'align-items'> [ / <'justify-items'> ]?
   static void setShorthandPlaceItems(Map<String, String?> properties, String shorthandValue) {
-    // Normalize any slash separators and collapse whitespace
-    shorthandValue = shorthandValue.replaceAll(_slashRegExp, ' ');
-    List<String> values = _splitBySpace(shorthandValue);
+    final List<String> parts = shorthandValue
+        .split(_slashRegExp)
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return;
 
-    if (values.isEmpty) return;
-
-    String align = values[0];
-    String justify = values.length > 1 ? values[1] : align;
+    final String align = parts[0];
+    final String justify = parts.length > 1 ? parts[1] : align;
 
     properties[ALIGN_ITEMS] = align;
     properties[JUSTIFY_ITEMS] = justify;
@@ -1508,12 +1509,15 @@ class CSSStyleProperty {
   }
 
   static void setShorthandPlaceSelf(Map<String, String?> properties, String shorthandValue) {
-    shorthandValue = shorthandValue.replaceAll(_slashRegExp, ' ');
-    final List<String> values = _splitBySpace(shorthandValue);
-    if (values.isEmpty) return;
+    final List<String> parts = shorthandValue
+        .split(_slashRegExp)
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return;
 
-    final String align = values[0];
-    final String justify = values.length > 1 ? values[1] : align;
+    final String align = parts[0];
+    final String justify = parts.length > 1 ? parts[1] : align;
 
     properties[ALIGN_SELF] = align;
     properties[JUSTIFY_SELF] = justify;
