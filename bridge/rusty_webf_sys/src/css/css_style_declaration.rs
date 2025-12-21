@@ -18,6 +18,7 @@ pub struct CSSStyleDeclarationRustMethods {
   pub set_css_text: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
   pub length: extern "C" fn(ptr: *const OpaquePtr) -> i64,
   pub get_property_value: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> AtomicStringRef,
+  pub set_property: extern "C" fn(ptr: *const OpaquePtr, *const c_char, NativeValue, *const c_char, exception_state: *const OpaquePtr) -> c_void,
   pub remove_property: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> AtomicStringRef,
   pub release: extern "C" fn(ptr: *const OpaquePtr) -> c_void,
   pub dynamic_to: extern "C" fn(ptr: *const OpaquePtr, type_: CSSStyleDeclarationType) -> RustValue<c_void>,
@@ -74,6 +75,24 @@ impl CSSStyleDeclaration {
     }
     Ok(value.to_string())
   }
+  pub fn set_property(&self, property: &str, value: NativeValue, exception_state: &ExceptionState) -> Result<(), String> {
+    unsafe {
+      ((*self.method_pointer).set_property)(self.ptr(), CString::new(property).unwrap().as_ptr(), value, CString::new("").unwrap().as_ptr(), exception_state.ptr);
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self.context()));
+    }
+    Ok(())
+  }
+  pub fn set_property_with_priority(&self, property: &str, value: NativeValue, priority: &str, exception_state: &ExceptionState) -> Result<(), String> {
+    unsafe {
+      ((*self.method_pointer).set_property)(self.ptr(), CString::new(property).unwrap().as_ptr(), value, CString::new(priority).unwrap().as_ptr(), exception_state.ptr);
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self.context()));
+    }
+    Ok(())
+  }
   pub fn remove_property(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String> {
     let value = unsafe {
       ((*self.method_pointer).remove_property)(self.ptr(), CString::new(property).unwrap().as_ptr(), exception_state.ptr)
@@ -116,6 +135,7 @@ pub trait CSSStyleDeclarationMethods {
   fn set_css_text(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
   fn length(&self) -> i64;
   fn get_property_value(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String>;
+  fn set_property(&self, property: &str, value: NativeValue, priority: &str, exception_state: &ExceptionState) -> Result<(), String>;
   fn remove_property(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String>;
   fn as_css_style_declaration(&self) -> &CSSStyleDeclaration;
 }
@@ -131,6 +151,9 @@ impl CSSStyleDeclarationMethods for CSSStyleDeclaration {
   }
   fn get_property_value(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String> {
     self.get_property_value(property, exception_state)
+  }
+  fn set_property(&self, property: &str, value: NativeValue, priority: &str, exception_state: &ExceptionState) -> Result<(), String> {
+    self.set_property_with_priority(property, value, priority, exception_state)
   }
   fn remove_property(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String> {
     self.remove_property(property, exception_state)

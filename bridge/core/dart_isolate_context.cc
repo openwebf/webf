@@ -8,7 +8,9 @@
 
 #include "dart_isolate_context.h"
 #include <algorithm>
+#include <iomanip>
 #include <unordered_set>
+#include <vector>
 #include "../foundation/string/atomic_string_table.h"
 #include "core/core_initializer.h"
 #include "core/html/custom/widget_element_shape.h"
@@ -62,6 +64,7 @@ static void ClearUpWires(JSRuntime* runtime) {
 }
 
 thread_local JSRuntime* runtime_{nullptr};
+thread_local DartIsolateContext* g_current_isolate_context = nullptr;
 thread_local uint32_t running_dart_isolates = 0;
 thread_local bool is_core_global_initialized = false;
 thread_local std::unique_ptr<StringCache> DartIsolateContext::string_cache_{nullptr};
@@ -113,6 +116,8 @@ void DartIsolateContext::FinalizeJSRuntime() {
   is_core_global_initialized = false;
 }
 
+DartIsolateContext* GetCurrentDartIsolateContext() { return g_current_isolate_context; }
+
 DartIsolateContext::DartIsolateContext(const uint64_t* dart_methods, int32_t dart_methods_length)
     : is_valid_(true),
       running_thread_(std::this_thread::get_id()),
@@ -134,12 +139,44 @@ void DartIsolateContext::InitializeGlobalsPerThread() {
     string_cache_ = std::make_unique<StringCache>(runtime_);
   }
   InitializeCoreGlobals();
+  // Bind current isolate to this JS thread for helper access.
+  g_current_isolate_context = this;
 }
 
 void DartIsolateContext::Dispose(multi_threading::Callback callback) {
   dispatcher_->Dispose([this, &callback]() {
     is_valid_ = false;
     pages_in_ui_thread_.clear();
+
+    // Pretty-print metrics snapshot at teardown.
+    auto snapshot = metrics_.SnapshotAllNamed();
+    if (!snapshot.empty()) {
+      // Collect items and sort by value desc, then key asc for readability.
+      std::vector<std::pair<std::string, uint64_t>> items;
+      items.reserve(snapshot.size());
+      size_t max_key_len = 0;
+      uint64_t total = 0;
+      for (const auto& kv : snapshot) {
+        items.emplace_back(kv.first, kv.second);
+        max_key_len = std::max(max_key_len, kv.first.size());
+        total += kv.second;
+      }
+      std::sort(items.begin(), items.end(), [](const auto& a, const auto& b) {
+        if (a.second != b.second)
+          return a.second > b.second;
+        return a.first < b.first;
+      });
+
+      WEBF_LOG(INFO) << "===== WebF Metrics (DartIsolateContext) =====";
+      WEBF_LOG(INFO) << "Entries: " << items.size() << ", Total: " << total;
+      for (const auto& [key, value] : items) {
+        std::ostringstream line;
+        line << "  " << std::left << std::setw(static_cast<int>(max_key_len)) << key << " : " << value;
+        WEBF_LOG(INFO) << line.str();
+      }
+      WEBF_LOG(INFO) << "============================================";
+    }
+
     running_dart_isolates--;
     FinalizeJSRuntime();
     callback();

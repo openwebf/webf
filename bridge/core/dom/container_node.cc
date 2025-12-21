@@ -27,6 +27,8 @@
  */
 
 #include "container_node.h"
+#include "core/css/style_engine.h"
+#include "foundation/logging.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "foundation/string/string_builder.h"
 #include "core/dom/child_list_mutation_scope.h"
@@ -37,6 +39,7 @@
 #include "core/script_forbidden_scope.h"
 #include "document.h"
 #include "document_fragment.h"
+#include "element_traversal.h"
 #include "node_traversal.h"
 
 namespace webf {
@@ -729,6 +732,94 @@ void ContainerNode::NotifyNodeRemoved(Node& root) {
 
 void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange& change) {
   InvalidateNodeListCachesInAncestors(nullptr, nullptr, &change);
+
+  // When Blink CSS is enabled, structural changes that affect elements should
+  // mark the affected subtree as needing style recomputation. The actual style
+  // update is performed later via StyleEngine::RecalcStyle() on the next
+  // frame / FlushUICommand, rather than doing a full synchronous recalc here.
+  if (GetDocument().GetExecutingContext()->isBlinkEnabled() &&
+      change.affects_elements == ChildrenChangeAffectsElements::kYes) {
+    Document& document = GetDocument();
+    StyleEngine& style_engine = document.EnsureStyleEngine();
+
+    // Mirror Blink behavior: when a node is inserted into the document, assume
+    // its styles are potentially stale and force a subtree recalc starting
+    // from the root of the inserted subtree. For removals or non-element
+    // containers, fall back to marking the container (or document root).
+    Element* subtree_root = nullptr;
+
+    // For direct child insertions, prefer the inserted element itself as the
+    // subtree root. This matches Blink's kSubtreeStyleChange-on-host behavior
+    // for newly attached subtrees.
+    if (change.IsChildInsertion() && change.sibling_changed && change.sibling_changed->IsElementNode()) {
+      subtree_root = To<Element>(change.sibling_changed);
+      // Only treat as a style recalc root once the element is actually
+      // connected to the document tree.
+      if (!subtree_root->isConnected()) {
+        subtree_root = nullptr;
+      }
+    }
+
+    // If we did not identify a specific inserted host (e.g. removals, parser
+    // finish events, or non-element inserts), fall back to the container
+    // element, or ultimately the document element.
+    if (!subtree_root) {
+      if (IsElementNode()) {
+        subtree_root = To<Element>(this);
+      } else {
+        subtree_root = document.documentElement();
+      }
+    }
+
+    if (subtree_root && subtree_root->isConnected()) {
+      subtree_root->SetNeedsStyleRecalc(
+          kSubtreeStyleChange,
+          StyleChangeReasonForTracing::Create(style_change_reason::kRelatedStyleRule));
+    }
+
+    // For + and ~ combinators (as well as :nth-* positional selectors),
+    // succeeding siblings may need style invalidation after an element is
+    // inserted or removed.
+    if (!change.ByParser() && change.IsChildElementChange() && InActiveDocument() &&
+        GetStyleChangeType() != kSubtreeStyleChange &&
+        HasRestyleFlag(DynamicRestyleFlags::kChildrenAffectedByStructuralRules)) {
+      auto* changed_element = DynamicTo<Element>(change.sibling_changed);
+      if (changed_element) {
+        Node* node_after_change = change.sibling_after_change;
+        Node* node_before_change = change.sibling_before_change;
+
+        Element* element_after_change = DynamicTo<Element>(node_after_change);
+        if (node_after_change && !element_after_change) {
+          element_after_change = ElementTraversal::NextSibling(*node_after_change);
+        }
+
+        Element* element_before_change = DynamicTo<Element>(node_before_change);
+        if (node_before_change && !element_before_change) {
+          element_before_change = ElementTraversal::PreviousSibling(*node_before_change);
+        }
+
+        if ((ChildrenAffectedByForwardPositionalRules() && element_after_change) ||
+            (ChildrenAffectedByBackwardPositionalRules() && element_before_change)) {
+          style_engine.ScheduleNthPseudoInvalidations(*this);
+        }
+
+        if (!element_after_change) {
+          return;
+        }
+
+        if (!ChildrenAffectedByIndirectAdjacentRules() && !ChildrenAffectedByDirectAdjacentRules()) {
+          return;
+        }
+
+        if (change.type == ChildrenChangeType::kElementInserted) {
+          style_engine.ScheduleInvalidationsForInsertedSibling(element_before_change, *changed_element);
+        } else {
+          assert(change.type == ChildrenChangeType::kElementRemoved);
+          style_engine.ScheduleInvalidationsForRemovedSibling(element_before_change, *changed_element, *element_after_change);
+        }
+      }
+    }
+  }
 }
 
 void ContainerNode::InvalidateNodeListCachesInAncestors(const QualifiedName* attr_name,

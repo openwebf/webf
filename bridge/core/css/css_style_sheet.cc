@@ -13,11 +13,15 @@
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_parser_impl.h"
 #include "core/css/style_sheet_contents.h"
+#include "core/css/style_rule.h"
+#include "core/css/css_property_value_set.h"
+#include "bindings/qjs/native_string_utils.h"
 #include "core/dom/document.h"
 #include "core/html/html_link_element.h"
 #include "core/html/html_style_element.h"
 #include "core/svg/svg_style_element.h"
 #include "html_element_type_helper.h"
+#include <functional>
 
 #include <utility>
 #include "css_rule.h"
@@ -151,7 +155,11 @@ CSSStyleSheet::CSSStyleSheet(ExecutingContext* context,
   contents_->RegisterClient(this);
 }
 
-CSSStyleSheet::~CSSStyleSheet() = default;
+CSSStyleSheet::~CSSStyleSheet() {
+  if (contents_) {
+    contents_->UnregisterClient(this);
+  }
+}
 
 void CSSStyleSheet::WillMutateRules() {
   // If we are the only client it is safe to mutate.
@@ -311,6 +319,17 @@ void CSSStyleSheet::ClearOwnerNode() {
   DidMutate(Mutation::kSheet);
   if (owner_node_) {
     contents_->UnregisterClient(this);
+  }
+  // Unregister font-faces for this sheet on DOM removal.
+  Document* doc = OwnerDocument();
+  if (doc) {
+    ExecutingContext* exe_ctx = doc->GetExecutingContext();
+    if (exe_ctx && exe_ctx->dartMethodPtr()) {
+      auto sheet_id_val = std::bit_cast<int64_t>(this);
+      exe_ctx->dartMethodPtr()->unregisterFontFace(exe_ctx->isDedicated(), exe_ctx->contextId(), sheet_id_val);
+      // Also unregister any @keyframes registered for this sheet.
+      exe_ctx->dartMethodPtr()->unregisterKeyframes(exe_ctx->isDedicated(), exe_ctx->contextId(), sheet_id_val);
+    }
   }
   owner_node_ = nullptr;
 }
@@ -520,10 +539,9 @@ void CSSStyleSheet::SetText(const AtomicString& text, CSSImportRules import_rule
   bool allow_imports = import_rules == CSSImportRules::kAllow;
   if (contents_->ParseString(text.ToUTF8String(), allow_imports) == ParseSheetResult::kHasUnallowedImportRule &&
       import_rules == CSSImportRules::kIgnoreWithWarning) {
-    WEBF_LOG(VERBOSE) << "@import rules are not allowed here. See "
-                         "https://github.com/WICG/construct-stylesheets/issues/"
-                         "119#issuecomment-588352418.";
   }
+
+  // Font-face registration for inline stylesheets is handled in StyleEngine::CreateSheet.
 }
 
 void CSSStyleSheet::SetAlternateFromConstructor(bool alternate_from_constructor) {
@@ -575,7 +593,7 @@ void CSSStyleSheet::Trace(GCVisitor* visitor) const {
     visitor->TraceMember(wrapper);
   }
   visitor->TraceMember(rule_list_cssom_wrapper_);
-  visitor->TraceMember(constructor_document_);
+//  visitor->TraceMember(constructor_document_);
   contents_->Trace(visitor);
   StyleSheet::Trace(visitor);
 }

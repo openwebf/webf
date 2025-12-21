@@ -150,25 +150,39 @@ int StyleBuilderConverter::ConvertInteger(const StyleResolverState& state,
 
 StyleColor StyleBuilderConverter::ConvertStyleColor(const StyleResolverState& state,
                                                    const CSSValue& value,
-                                                   bool for_visited_link) {
+                                                   bool /*for_visited_link*/) {
+  // currentColor special-cases to StyleColor::CurrentColor
   if (auto* identifier_value = DynamicTo<CSSIdentifierValue>(&value)) {
     if (identifier_value->GetValueID() == CSSValueID::kCurrentcolor) {
       return StyleColor::CurrentColor();
     }
   }
-  
+  // Fallback to a numeric StyleColor from ConvertColor.
   return StyleColor(ConvertColor(state, value));
 }
 
-Color StyleBuilderConverter::ConvertColor(const StyleResolverState& state,
+Color StyleBuilderConverter::ConvertColor(const StyleResolverState& /*state*/,
                                          const CSSValue& value) {
-  if (auto* color_value = DynamicTo<CSSInitialColorValue>(&value)) {
-    // CSSInitialColorValue doesn't have a Value() method in WebF
-    // Return a default color for initial color value
+  // Numeric color (e.g., from named colors mapped by the parser or rgba())
+  if (auto* color_value = DynamicTo<cssvalue::CSSColor>(&value)) {
+    return color_value->Value();
+  }
+
+  // Keyword colors (e.g., white, yellow, transparent, etc.)
+  if (auto* ident = DynamicTo<CSSIdentifierValue>(&value)) {
+    CSSValueID id = ident->GetValueID();
+    if (StyleColor::IsColorKeyword(id)) {
+      // Resolve via named color table using default color scheme.
+      return StyleColor::ColorFromKeyword(id, ColorScheme::kDefault);
+    }
+  }
+
+  // Initial color
+  if (DynamicTo<CSSInitialColorValue>(&value)) {
     return Color::kBlack;
   }
-  
-  // TODO: Handle more color types when available (rgb(), rgba(), hsl(), etc.)
+
+  // Fallback: transparent
   return Color::kTransparent;
 }
 

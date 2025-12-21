@@ -1,5 +1,6 @@
 {
   BRIDGE_SOURCE: [
+    "foundation/metrics_registry.cc",
     "foundation/logging.cc",
     "foundation/ios_logger.mm",
     "foundation/native_string.cc",
@@ -119,10 +120,23 @@
     "core/base/strings/utf_string_conversion_utils.cc",
     "core/core_initializer.cc",
 
-    // Style
-    "core/css/style_element.cc",
-    "core/css/style_color.cc",
-    "core/css/style_engine.cc",
+	    // Style
+	    "core/css/style_element.cc",
+	    "core/css/style_color.cc",
+	    "core/css/active_style_sheets.cc",
+	    "core/css/style_engine.cc",
+	    "core/css/style_traversal_root.cc",
+	    "core/css/style_invalidation_root.cc",
+	    "core/css/style_recalc_root.cc",
+    "core/css/style_recalc_context.cc",
+    "core/css/css_global_rule_set.cc",
+    "core/css/rule_feature_set.cc",
+    "core/css/invalidation/invalidation_flags.cc",
+    "core/css/invalidation/invalidation_set.cc",
+    "core/css/invalidation/pending_invalidations.cc",
+    "core/css/invalidation/rule_invalidation_data.cc",
+    "core/css/invalidation/style_invalidator.cc",
+    "core/inspector/invalidation_set_to_selector_map.cc",
 
     // Animation
     "core/animation/animation_time_delta.cc",
@@ -188,6 +202,7 @@
     "core/css/css_selector_list.cc",
     "core/css/css_value.cc",
     "core/css/media_list.cc",
+    "core/css/media_values_dynamic.cc",
     "core/css/media_values.cc",
     "core/css/style_scope.cc",
     "core/css/cascade_layer.cc",
@@ -294,6 +309,7 @@
     "core/css/css_value_pool.cc",
     "core/css/cssom_utils.cc",
     "core/css/css_string_value.cc",
+    "core/css/css_raw_value.cc",
     "core/css/css_initial_value.cc",
     "core/css/css_numeric_literal_value",
     "core/css/css_color.cc",

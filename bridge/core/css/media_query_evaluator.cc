@@ -141,7 +141,9 @@ bool MediaQueryEvaluator::Eval(const MediaQuerySet& query_set, MediaQueryResultF
   // Iterate over queries, stop if any of them eval to true (OR semantics).
   bool result = false;
   for (size_t i = 0; i < queries.size() && !result; ++i) {
-    result = Eval(*queries[i], result_flags);
+    const MediaQuery& q = *queries[i];
+    bool q_result = Eval(q, result_flags);
+    result = q_result;
   }
 
   return result;
@@ -744,6 +746,32 @@ static bool MaxResolutionMediaFeatureEval(const MediaQueryExpValue& value,
   return ResolutionMediaFeatureEval(value, MediaQueryOperator::kLe, media_values);
 }
 
+static bool PrefersColorSchemeMediaFeatureEval(const MediaQueryExpValue& value,
+                                               MediaQueryOperator,
+                                               const MediaValues& media_values) {
+  // Boolean context: any supported value yields true.
+  if (!value.IsValid()) {
+    return true;
+  }
+
+  if (!value.IsId()) {
+    return false;
+  }
+
+  CSSValueID preferred = media_values.PreferredColorScheme();
+
+  switch (value.Id()) {
+    case CSSValueID::kDark:
+      return preferred == CSSValueID::kDark;
+    case CSSValueID::kLight:
+      return preferred == CSSValueID::kLight;
+    case CSSValueID::kNoPreference:
+      return preferred == CSSValueID::kNoPreference;
+    default:
+      return false;
+  }
+}
+
 static bool Transform3dMediaFeatureEval(const MediaQueryExpValue& value,
                                         MediaQueryOperator op,
                                         const MediaValues& media_values) {
@@ -843,7 +871,8 @@ KleeneValue MediaQueryEvaluator::EvalFeature(const MediaQueryFeatureExpNode& fea
 
   // Call the media feature evaluation function. Assume no prefix and let
   // trampoline functions override the prefix if prefix is used.
-  auto it = g_function_map->find(feature.Name().Impl().get());
+  AtomicString name = feature.Name();
+  auto it = g_function_map->find(name.Impl().get());
   if (it == g_function_map->end()) {
     return KleeneValue::kFalse;
   }

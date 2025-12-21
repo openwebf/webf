@@ -62,8 +62,10 @@ class MediaQueryExpValue {
 
   explicit MediaQueryExpValue(CSSValueID id) : type_(Type::kId), id_(id) {}
   explicit MediaQueryExpValue(std::shared_ptr<const CSSValue> value) : type_(Type::kValue), value_(std::move(value)) {}
-  MediaQueryExpValue(const CSSPrimitiveValue& numerator, const CSSPrimitiveValue& denominator)
-      : type_(Type::kRatio), ratio_(std::make_shared<cssvalue::CSSRatioValue>(numerator, denominator)) {}
+  MediaQueryExpValue(std::shared_ptr<const CSSPrimitiveValue> numerator,
+                     std::shared_ptr<const CSSPrimitiveValue> denominator)
+      : type_(Type::kRatio),
+        ratio_(std::make_shared<cssvalue::CSSRatioValue>(std::move(numerator), std::move(denominator))) {}
   void Trace(GCVisitor* visitor) const {}
 
   bool IsValid() const { return type_ != Type::kInvalid; }

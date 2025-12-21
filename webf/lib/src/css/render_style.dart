@@ -230,6 +230,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   FontStyle get fontStyle;
 
+  String get fontVariant;
+
   List<String>? get fontFamily;
 
   List<Shadow>? get textShadow;
@@ -1565,6 +1567,8 @@ class CSSRenderStyle extends RenderStyle
         return fontWeight;
       case FONT_STYLE:
         return fontStyle;
+      case FONT_VARIANT:
+        return fontVariant;
       case FONT_FAMILY:
         return fontFamily;
       case FONT_SIZE:
@@ -1990,6 +1994,9 @@ class CSSRenderStyle extends RenderStyle
         break;
       case FONT_STYLE:
         fontStyle = value;
+        break;
+      case FONT_VARIANT:
+        fontVariant = value;
         break;
       case FONT_FAMILY:
         fontFamily = value;
@@ -2474,6 +2481,9 @@ class CSSRenderStyle extends RenderStyle
       case FONT_STYLE:
         value = CSSText.resolveFontStyle(propertyValue);
         break;
+      case FONT_VARIANT:
+        value = CSSText.resolveFontVariant(propertyValue);
+        break;
       case FONT_FAMILY:
         value = CSSText.resolveFontFamilyFallback(propertyValue);
         break;
@@ -2628,7 +2638,7 @@ class CSSRenderStyle extends RenderStyle
         final bool parentInlineBlockAuto = p != null &&
             p.effectiveDisplay == CSSDisplay.inlineBlock && p.width.isAuto;
         if (!parentInlineBlockAuto) {
-          logicalWidth = target.ownerView.viewport!.boxSize!.width;
+          logicalWidth = target.ownerView.currentViewport!.boxSize!.width;
         }
       } else if (logicalWidth == null && (renderStyle.isSelfRouterLinkElement() && getCurrentViewportBox() is! RootRenderViewportBox)) {
         logicalWidth = getCurrentViewportBox()!.boxSize!.width;
@@ -2771,7 +2781,7 @@ class CSSRenderStyle extends RenderStyle
         final double contentH = contentW / aspectRatio!;
         logicalHeight = contentH + renderStyle.border.vertical + renderStyle.padding.vertical;
       } else if (renderStyle.isSelfHTMLElement()) {
-        logicalHeight = renderStyle.target.ownerView.viewport!.boxSize!.height;
+        logicalHeight = renderStyle.target.ownerView.currentViewport!.boxSize!.height;
       } else if ((renderStyle.position == CSSPositionType.absolute || renderStyle.position == CSSPositionType.fixed) &&
           !renderStyle.isSelfRenderReplaced() &&
           renderStyle.height.isAuto &&
@@ -2808,7 +2818,7 @@ class CSSRenderStyle extends RenderStyle
               childWrapper != null &&
               childWrapperConstraints != null &&
               (childWrapperConstraints.maxHeight.isFinite &&
-                  childWrapperConstraints.maxHeight != renderStyle.target.ownerView.viewport!.boxSize!.height)) {
+                  childWrapperConstraints.maxHeight != renderStyle.target.ownerView.currentViewport!.boxSize!.height)) {
             logicalHeight = childWrapperConstraints.maxHeight;
           } else if (renderStyle.isHeightStretch) {
             logicalHeight = parentRenderStyle.contentBoxLogicalHeight;

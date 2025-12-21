@@ -49,7 +49,7 @@ class CSSMediaRule : public CSSConditionRule {
 
   void Reattach(std::shared_ptr<StyleRuleBase>) override;
 
-  void TraceAfterDispatch(GCVisitor* visitor) const;
+  void Trace(GCVisitor* visitor) const override;
 
  private:
   String conditionText() const override;

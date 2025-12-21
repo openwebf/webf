@@ -12,6 +12,7 @@
 #include "core/executing_context.h"
 #include "foundation/logging.h"
 #include "include/webf_bridge.h"
+#include "string/utf8_codecs.h"
 
 namespace webf {
 
@@ -34,6 +35,9 @@ UICommandKind GetKindFromUICommand(UICommand command) {
     case UICommand::kRemoveEvent:
       return UICommandKind::kEvent;
     case UICommand::kSetStyle:
+    case UICommand::kSetPseudoStyle:
+    case UICommand::kRemovePseudoStyle:
+    case UICommand::kClearPseudoStyle:
     case UICommand::kClearStyle:
       return UICommandKind::kStyleUpdate;
     case UICommand::kSetAttribute:

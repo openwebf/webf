@@ -101,6 +101,13 @@ class WebFPage final {
                                           bool is_module,
                                           Dart_PersistentHandle persistent_handle,
                                           DumpQuickjsByteCodeCallback result_callback);
+  // Entry points used by the Dart side to notify C++ that specific
+  // environment-dependent media values have changed. Each callback targets
+  // a single value and is free to ignore the value for now and query the
+  // latest environment from Dart via MediaValues when evaluating.
+  static void OnViewportSizeChangedInternal(void* page_, double inner_width, double inner_height);
+  static void OnDevicePixelRatioChangedInternal(void* page_, double device_pixel_ratio);
+  static void OnColorSchemeChangedInternal(void* page_, const std::string& scheme);
 
   // evaluate JavaScript source codes in standard mode.
   bool evaluateScript(const char* script,

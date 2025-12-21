@@ -30,6 +30,7 @@
 #include "selector_checker.h"
 #include <algorithm>
 #include <set>
+#include <string>
 #include "../../foundation/string/ascii_types.h"
 #include "../../foundation/string/string_view.h"
 #include "bindings/qjs/heap_vector.h"
@@ -56,6 +57,8 @@
 #include "core/svg/svg_element.h"
 #include "foundation/string/atomic_string.h"
 #include "foundation/casting.h"
+#include "foundation/logging.h"
+#include "bindings/qjs/exception_state.h"
 
 namespace webf {
 
@@ -95,19 +98,38 @@ static bool MatchesTagName(const Element& element, const QualifiedName& tag_q_na
  // }
  const AtomicString& local_name = tag_q_name.LocalName();
  if (local_name != CSSSelector::UniversalSelectorAtom() && local_name != element.localName()) {
-   if (element.IsHTMLElement()) {
-     return false;
-   }
-   // Non-html elements in html documents are normalized to their camel-cased
-   // version during parsing if applicable. Yet, type selectors are lower-cased
-   // for selectors in html documents. Compare the upper case converted names
-   // instead to allow matching SVG elements like foreignObject.
-   if (element.TagQName().LocalNameUpper() != tag_q_name.LocalNameUpper()) {
-     return false;
-   }
- }
+  if (element.IsHTMLElement()) {
+    if (!EqualIgnoringASCIICase(StringView(local_name), StringView(element.localName()))) {
+      return false;
+    }
+  } else {
+  // Non-html elements in html documents are normalized to their camel-cased
+  // version during parsing if applicable. Yet, type selectors are lower-cased
+  // for selectors in html documents. Compare the upper case converted names
+  // instead to allow matching SVG elements like foreignObject.
+  if (element.TagQName().LocalNameUpper() != tag_q_name.LocalNameUpper()) {
+    return false;
+  }
+  }
+}
  const AtomicString& namespace_uri = tag_q_name.NamespaceURI();
  return namespace_uri == g_star_atom || namespace_uri == element.namespaceURI();
+}
+// Helper for debug logging of elements: tag#id.class
+static inline std::string DescribeElementForLog(const Element* e) {
+  if (!e) return std::string("<null>");
+  std::string s = e->localName().ToUTF8String();
+  AtomicString eid = e->id();
+  if (!eid.IsNull() && !eid.empty()) {
+    s += "#";
+    s += eid.ToUTF8String();
+  }
+  AtomicString cls = e->className();
+  if (!cls.IsNull() && !cls.empty()) {
+    s += ".";
+    s += cls.ToUTF8String();
+  }
+  return s;
 }
 static Element* ParentElement(const SelectorChecker::SelectorCheckingContext& context) {
  // - If context.scope is a shadow root, we should walk up to its shadow host.
@@ -220,31 +242,39 @@ SelectorChecker::MatchStatus SelectorChecker::MatchSelector(const SelectorChecki
  }
 #endif
  if (!is_covered_by_bucketing && !CheckOne(context, sub_result)) {
+   WEBF_COND_LOG(SELECTOR, VERBOSE) << "[Selector] CheckOne FAIL for selector '"
+                     << context.selector->SimpleSelectorTextForDebug().ToUTF8String()
+                     << "' on element " << DescribeElementForLog(context.element);
    return kSelectorFailsLocally;
  }
+ WEBF_COND_LOG(SELECTOR, VERBOSE) << "[Selector] CheckOne OK for selector '"
+                   << context.selector->SimpleSelectorTextForDebug().ToUTF8String()
+                   << "' on element " << DescribeElementForLog(context.element);
  if (sub_result.dynamic_pseudo != kPseudoIdNone) {
    result.dynamic_pseudo = sub_result.dynamic_pseudo;
    result.custom_highlight_name = sub_result.custom_highlight_name;
  }
- // Early return for simple selectors to prevent infinite recursion
- // This is the key fix: for simple selectors without combinators, we don't need recursion
- if (context.selector->IsLastInComplexSelector()) {
-   return kSelectorMatches;
- }
- 
- // Additional safety check: if NextSimpleSelector is null, this is definitely the last selector
- if (!context.selector->NextSimpleSelector()) {
-   return kSelectorMatches;
- }
- 
- // For very simple selectors like "div" with kSubSelector relation but no actual next selector,
- // treat them as matching to avoid infinite recursion
- if (context.selector->Relation() == CSSSelector::kSubSelector) {
-   const CSSSelector* next = context.selector->NextSimpleSelector();
-   if (!next) {
-     return kSelectorMatches;
-   }
- }
+  // Only stop once we've consumed the entire complex selector chain.
+  // The correct base case is when there is no NextSimpleSelector().
+  // Do not early‑return based on IsLastInComplexSelector(), since combinators
+  // to the left still need to be matched (e.g., ".foo + div").
+  if (!context.selector->NextSimpleSelector()) {
+    // If a specific pseudo-element is being requested (e.g., ::before or ::after),
+    // ensure the dynamically matched pseudo (set by CheckOne/CheckPseudoElement)
+    // matches the requested one. Without this guard, a collector requesting
+    // ::before could also match ::after rules when the pseudo selector is the
+    // terminal simple selector, leading to mixed pseudo styles.
+    if (context.pseudo_id != kPseudoIdNone && result.dynamic_pseudo != context.pseudo_id) {
+      WEBF_COND_LOG(SELECTOR, VERBOSE)
+          << "[Selector] Terminal simple selector rejected due to pseudo mismatch. requested="
+          << static_cast<int>(context.pseudo_id) << ", matched=" << static_cast<int>(result.dynamic_pseudo)
+          << " for element " << DescribeElementForLog(context.element);
+      return kSelectorFailsCompletely;
+    }
+    WEBF_COND_LOG(SELECTOR, VERBOSE) << "[Selector] Terminal simple selector matched for element "
+                      << DescribeElementForLog(context.element);
+    return kSelectorMatches;
+  }
  
  switch (context.selector->Relation()) {
    case CSSSelector::kSubSelector:
@@ -253,17 +283,24 @@ SelectorChecker::MatchStatus SelectorChecker::MatchSelector(const SelectorChecki
      // The kScopeActivation relation type does not change the current element
      // being matched: it behaves like a special kSubSelector in this context.
      return MatchForScopeActivation(context, result);
-   default: {
-     if (NextSelectorExceedsScope(context)) {
-       return kSelectorFailsCompletely;
-     }
-     if (context.pseudo_id != kPseudoIdNone && context.pseudo_id != result.dynamic_pseudo) {
-       return kSelectorFailsCompletely;
-     }
-     webf::AutoReset<PseudoId> dynamic_pseudo_scope(&result.dynamic_pseudo, kPseudoIdNone);
-     return MatchForRelation(context, result);
-   }
- }
+  default: {
+    if (NextSelectorExceedsScope(context)) {
+      return kSelectorFailsCompletely;
+    }
+    if (context.pseudo_id != kPseudoIdNone && context.pseudo_id != result.dynamic_pseudo) {
+      return kSelectorFailsCompletely;
+    }
+    webf::AutoReset<PseudoId> dynamic_pseudo_scope(&result.dynamic_pseudo, kPseudoIdNone);
+    WEBF_COND_LOG(SELECTOR, VERBOSE) << "[Selector] Proceeding to relation '" << static_cast<int>(context.selector->Relation())
+                      << "' for element " << DescribeElementForLog(context.element)
+                      << ", next selector: '"
+                      << (context.selector->NextSimpleSelector()
+                              ? context.selector->NextSimpleSelector()->SimpleSelectorTextForDebug().ToUTF8String()
+                              : std::string("<null>"))
+                      << "'";
+    return MatchForRelation(context, result);
+  }
+}
 }
 static inline SelectorChecker::SelectorCheckingContext PrepareNextContextForRelation(
    const SelectorChecker::SelectorCheckingContext& context) {
@@ -371,7 +408,7 @@ SelectorChecker::MatchStatus SelectorChecker::MatchForRelation(const SelectorChe
      DCHECK(result.has_argument_leftmost_compound_matches);
      result.has_argument_leftmost_compound_matches->push_back(context.element);
      [[fallthrough]];
-   case CSSSelector::kDescendant:
+  case CSSSelector::kDescendant:
      if (next_context.selector->GetPseudoType() == CSSSelector::kPseudoScope) {
        if (next_context.selector->IsLastInComplexSelector()) {
          if (context.scope && context.scope->IsDocumentFragment()) {
@@ -379,12 +416,14 @@ SelectorChecker::MatchStatus SelectorChecker::MatchForRelation(const SelectorChe
          }
        }
      }
-     for (next_context.element = ParentElement(next_context); next_context.element;
-          next_context.element = ParentElement(next_context)) {
-       MatchStatus match = MatchSelector(next_context, result);
-       if (match == kSelectorMatches || match == kSelectorFailsCompletely) {
-         return match;
-       }
+    for (next_context.element = ParentElement(next_context); next_context.element;
+         next_context.element = ParentElement(next_context)) {
+      WEBF_COND_LOG(SELECTOR, VERBOSE) << "[Selector] Descendant: try parent "
+                        << DescribeElementForLog(next_context.element);
+      MatchStatus match = MatchSelector(next_context, result);
+      if (match == kSelectorMatches || match == kSelectorFailsCompletely) {
+        return match;
+      }
        if (NextSelectorExceedsScope(next_context)) {
          return kSelectorFailsCompletely;
        }
@@ -393,50 +432,85 @@ SelectorChecker::MatchStatus SelectorChecker::MatchForRelation(const SelectorChe
        }
      }
      return kSelectorFailsCompletely;
-   case CSSSelector::kRelativeChild:
-     DCHECK(result.has_argument_leftmost_compound_matches);
-     result.has_argument_leftmost_compound_matches->push_back(context.element);
-     [[fallthrough]];
-   case CSSSelector::kChild: {
-     next_context.element = ParentElement(next_context);
-     if (!next_context.element) {
-       return kSelectorFailsCompletely;
-     }
-     return MatchSelector(next_context, result);
-   }
+  case CSSSelector::kRelativeChild:
+    DCHECK(result.has_argument_leftmost_compound_matches);
+    result.has_argument_leftmost_compound_matches->push_back(context.element);
+    [[fallthrough]];
+ case CSSSelector::kChild: {
+    next_context.element = ParentElement(next_context);
+    if (!next_context.element) {
+      return kSelectorFailsCompletely;
+    }
+    return MatchSelector(next_context, result);
+  }
    case CSSSelector::kRelativeDirectAdjacent:
      DCHECK(result.has_argument_leftmost_compound_matches);
      result.has_argument_leftmost_compound_matches->push_back(context.element);
      [[fallthrough]];
-   case CSSSelector::kDirectAdjacent:
-     if (mode_ == kResolvingStyle) {
-       if (ContainerNode* parent = context.element->ParentElementOrShadowRoot()) {
-         parent->SetChildrenAffectedByDirectAdjacentRules();
-       }
-     }
-     next_context.element = ElementTraversal::PreviousSibling(*context.element);
-     if (!next_context.element) {
-       return kSelectorFailsAllSiblings;
-     }
-     return MatchSelector(next_context, result);
+  case CSSSelector::kDirectAdjacent:
+    if (mode_ == kResolvingStyle) {
+      if (ContainerNode* parent = context.element->ParentElementOrShadowRoot()) {
+        parent->SetChildrenAffectedByDirectAdjacentRules();
+      }
+    }
+    next_context.element = ElementTraversal::PreviousSibling(*context.element);
+    WEBF_COND_LOG(SELECTOR, VERBOSE) << "[Selector] DirectAdjacent: previous sibling of "
+                      << DescribeElementForLog(context.element) << " is "
+                      << DescribeElementForLog(next_context.element)
+                      << "; left compound: '"
+                      << (next_context.selector
+                              ? next_context.selector->SimpleSelectorTextForDebug().ToUTF8String()
+                              : std::string("<null>"))
+                      << "'";
+    if (!next_context.element) {
+      return kSelectorFailsAllSiblings;
+    }
+    // Fast-path common case: left compound is a single [class="..."] or [id="..."]
+    // attribute selector. This avoids corner cases in attribute storage when
+    // ElementData doesn't mirror legacy attributes.
+    if (const CSSSelector* left = next_context.selector) {
+      if (!left->NextSimpleSelector() && left->Match() == CSSSelector::kAttributeExact) {
+        const AtomicString& lname = left->Attribute().LocalName();
+        const AtomicString& expect = left->Value();
+        if (lname == "class"_as) {
+          AtomicString cls = next_context.element->className();
+          WEBF_COND_LOG(SELECTOR, VERBOSE) << "[Selector] DirectAdjacent fast-path: compare class '" << cls.ToUTF8String()
+                            << "' vs expected '" << expect.ToUTF8String() << "'";
+          if (!cls.IsNull() && cls == expect) {
+            return kSelectorMatches;
+          }
+        } else if (lname == "id"_as) {
+          WEBF_COND_LOG(SELECTOR, VERBOSE) << "[Selector] DirectAdjacent fast-path: compare id '"
+                            << (next_context.element->HasID() ? next_context.element->IdForStyleResolution().ToUTF8String()
+                                                             : std::string("<none>"))
+                            << "' vs expected '" << expect.ToUTF8String() << "'";
+          if (next_context.element->HasID() && next_context.element->IdForStyleResolution() == expect) {
+            return kSelectorMatches;
+          }
+        }
+      }
+    }
+    return MatchSelector(next_context, result);
    case CSSSelector::kRelativeIndirectAdjacent:
      DCHECK(result.has_argument_leftmost_compound_matches);
      result.has_argument_leftmost_compound_matches->push_back(context.element);
      [[fallthrough]];
-   case CSSSelector::kIndirectAdjacent:
-     if (mode_ == kResolvingStyle) {
-       if (ContainerNode* parent = context.element->ParentElementOrShadowRoot()) {
-         parent->SetChildrenAffectedByIndirectAdjacentRules();
-       }
-     }
-     next_context.element = ElementTraversal::PreviousSibling(*context.element);
-     for (; next_context.element; next_context.element = ElementTraversal::PreviousSibling(*next_context.element)) {
-       MatchStatus match = MatchSelector(next_context, result);
-       if (match == kSelectorMatches || match == kSelectorFailsAllSiblings || match == kSelectorFailsCompletely) {
-         return match;
-       }
-     }
-     return kSelectorFailsAllSiblings;
+  case CSSSelector::kIndirectAdjacent:
+    if (mode_ == kResolvingStyle) {
+      if (ContainerNode* parent = context.element->ParentElementOrShadowRoot()) {
+        parent->SetChildrenAffectedByIndirectAdjacentRules();
+      }
+    }
+    next_context.element = ElementTraversal::PreviousSibling(*context.element);
+    for (; next_context.element; next_context.element = ElementTraversal::PreviousSibling(*next_context.element)) {
+      WEBF_COND_LOG(SELECTOR, VERBOSE) << "[Selector] IndirectAdjacent: try previous sibling "
+                        << DescribeElementForLog(next_context.element);
+      MatchStatus match = MatchSelector(next_context, result);
+      if (match == kSelectorMatches || match == kSelectorFailsAllSiblings || match == kSelectorFailsCompletely) {
+        return match;
+      }
+    }
+    return kSelectorFailsAllSiblings;
    case CSSSelector::kUAShadow: {
      // If we're in the same tree-scope as the scoping element, then following
      // a kUAShadow combinator would escape that and thus the scope.
@@ -682,70 +756,160 @@ static bool AttributeValueMatches(const Attribute& attribute_item,
  }
 }
 static bool AnyAttributeMatches(Element& element, CSSSelector::MatchType match, const CSSSelector& selector) {
- const QualifiedName& selector_attr = selector.Attribute();
- // Should not be possible from the CSS grammar.
- DCHECK_NE(selector_attr.LocalName(), CSSSelector::UniversalSelectorAtom());
- // Synchronize the attribute in case it is lazy-computed.
- // Currently all lazy properties have a null namespace, so only pass
- // localName().
- element.SynchronizeAttribute(selector_attr.LocalName());
- // NOTE: For kAttributeSet, this is a bogus pointer but never used.
- const AtomicString& selector_value = selector.Value();
- TextCaseSensitivity case_sensitivity =
-     (selector.AttributeMatch() == CSSSelector::AttributeMatchType::kCaseInsensitive) ? kTextCaseASCIIInsensitive
-                                                                                      : kTextCaseSensitive;
- // Get attributes from element
- if (!element.hasAttributes()) {
-   return false;
- }
- AttributeCollection attributes = element.Attributes();
- for (const auto& attribute_item : attributes) {
-   if (!attribute_item.Matches(selector_attr)) {
-     if (element.IsHTMLElement()) {
-       continue;
-     }
-     // Non-html attributes in html documents are normalized to their camel-
-     // cased version during parsing if applicable. Yet, attribute selectors
-     // are lower-cased for selectors in html documents. Compare the selector
-     // and the attribute local name insensitively to e.g. allow matching SVG
-     // attributes like viewBox.
-     //
-     // NOTE: If changing this behavior, be sure to also update the bucketing
-     // in ElementRuleCollector::CollectMatchingRules() accordingly.
-     if (!attribute_item.MatchesCaseInsensitive(selector_attr)) {
-       continue;
-     }
-   }
-   if (AttributeValueMatches(attribute_item, match, selector_value, case_sensitivity)) {
-     return true;
-   }
-   if (case_sensitivity == kTextCaseASCIIInsensitive) {
-     if (selector_attr.NamespaceURI() != g_star_atom) {
-       return false;
-     }
-     continue;
-   }
-   // Legacy dictates that values of some attributes should be compared in
-   // a case-insensitive manner regardless of whether the case insensitive
-   // flag is set or not.
-   bool legacy_case_insensitive = element.IsHTMLElement() && !selector.IsCaseSensitiveAttribute();
-   // If case-insensitive, re-check, and count if result differs.
-//    // See http://code.google.com/p/chromium/issues/detail?id=327060
-   if (legacy_case_insensitive &&
-       AttributeValueMatches(attribute_item, match, selector_value, kTextCaseASCIIInsensitive)) {
-     // If the `s` modifier is in the attribute selector, return false
-     // despite of legacy_case_insensitive.
-     if (selector.AttributeMatch() == CSSSelector::AttributeMatchType::kCaseSensitiveAlways) {
-       // Case sensitive modifier takes precedence
-       return false;
-     }
-     // Legacy case insensitive match succeeded
-     return true;
-   }
-   if (selector_attr.NamespaceURI() != g_star_atom) {
-     return false;
-   }
- }
+  const QualifiedName& selector_attr = selector.Attribute();
+  // Should not be possible from the CSS grammar.
+  DCHECK_NE(selector_attr.LocalName(), CSSSelector::UniversalSelectorAtom());
+  WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Try '[" << selector_attr.LocalName().ToUTF8String()
+                   << "]' match type " << static_cast<int>(match)
+                   << " ns='" << selector_attr.NamespaceURI().ToUTF8String() << "'"
+                   << " value='" << selector.Value().ToUTF8String() << "' on "
+                   << DescribeElementForLog(&element);
+  // Synchronize the attribute in case it is lazy-computed.
+  // Currently all lazy properties have a null namespace, so only pass
+  // localName().
+  element.SynchronizeAttribute(selector_attr.LocalName());
+  // NOTE: For kAttributeSet, this is a bogus pointer but never used.
+  const AtomicString& selector_value = selector.Value();
+  TextCaseSensitivity case_sensitivity =
+      (selector.AttributeMatch() == CSSSelector::AttributeMatchType::kCaseInsensitive) ? kTextCaseASCIIInsensitive
+                                                                                       : kTextCaseSensitive;
+  // Get attributes from element
+  AttributeCollection attributes = element.Attributes();
+  if (!attributes.IsEmpty()) {
+    WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Scanning " << attributes.size() << " attribute(s)";
+    for (const auto& attribute_item : attributes) {
+      WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Candidate '"
+                        << attribute_item.GetName().LocalName().ToUTF8String() << "'='"
+                        << attribute_item.Value().ToUTF8String() << "'";
+      if (!attribute_item.Matches(selector_attr)) {
+        if (element.IsHTMLElement()) {
+          continue;
+        }
+        // Non-html attributes in html documents are normalized to their camel-
+        // cased version during parsing if applicable. Yet, attribute selectors
+        // are lower-cased for selectors in html documents. Compare the selector
+        // and the attribute local name insensitively to e.g. allow matching SVG
+        // attributes like viewBox.
+        //
+        // NOTE: If changing this behavior, be sure to also update the bucketing
+        // in ElementRuleCollector::CollectMatchingRules() accordingly.
+        if (!attribute_item.MatchesCaseInsensitive(selector_attr)) {
+          continue;
+        }
+      }
+      if (AttributeValueMatches(attribute_item, match, selector_value, case_sensitivity)) {
+        WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Matched by AttributeCollection";
+        return true;
+      }
+      if (case_sensitivity == kTextCaseASCIIInsensitive) {
+        if (selector_attr.NamespaceURI() != g_star_atom) {
+          return false;
+        }
+        continue;
+      }
+      // Legacy dictates that values of some attributes should be compared in
+      // a case-insensitive manner regardless of whether the case insensitive
+      // flag is set or not.
+      bool legacy_case_insensitive = element.IsHTMLElement() && !selector.IsCaseSensitiveAttribute();
+      // If case-insensitive, re-check, and count if result differs.
+      if (legacy_case_insensitive &&
+          AttributeValueMatches(attribute_item, match, selector_value, kTextCaseASCIIInsensitive)) {
+        // If the `s` modifier is in the attribute selector, return false
+        // despite of legacy_case_insensitive.
+        if (selector.AttributeMatch() == CSSSelector::AttributeMatchType::kCaseSensitiveAlways) {
+          // Case sensitive modifier takes precedence
+          return false;
+        }
+        // Legacy case insensitive match succeeded
+        WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Matched by legacy ASCII-insensitive";
+        return true;
+      }
+      if (selector_attr.NamespaceURI() != g_star_atom) {
+        return false;
+      }
+    }
+  }
+  // Fallback: ElementData may not store all attributes (runtime mutations
+  // and non-style-affecting attributes may live only in ElementAttributes).
+  // To make attribute selectors like [data-x] or [role="button"] work,
+  // consult ElementAttributes when namespace constraints allow.
+  {
+    const bool any_ns = selector_attr.NamespaceURI() == g_star_atom || selector_attr.NamespaceURI().IsNull();
+    if (any_ns) {
+      const AtomicString& local = selector_attr.LocalName();
+      ExceptionState exception_state;  // No exception expected for attribute access.
+      if (match == CSSSelector::kAttributeSet) {
+        if (element.hasAttribute(local, exception_state)) {
+          WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Matched by ElementAttributes presence";
+          return true;
+        }
+      } else {
+        AtomicString attr_value = element.getAttribute(local, exception_state);
+        if (!attr_value.IsNull()) {
+          Attribute fake(QualifiedName(g_null_atom, local, g_star_atom), attr_value);
+          if (AttributeValueMatches(fake, match, selector_value, case_sensitivity)) {
+            WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Matched by ElementAttributes value";
+            return true;
+          }
+          // Legacy ASCII-insensitive fallback for HTML when needed.
+          if (element.IsHTMLElement() && !selector.IsCaseSensitiveAttribute() &&
+              AttributeValueMatches(fake, match, selector_value, kTextCaseASCIIInsensitive)) {
+            if (selector.AttributeMatch() != CSSSelector::AttributeMatchType::kCaseSensitiveAlways) {
+              WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Matched by ElementAttributes legacy ASCII-insensitive";
+              return true;
+            }
+          }
+        }
+      }
+    }
+  }
+  // Fallback for core attributes that are tracked outside AttributeCollection.
+  // This allows selectors like [id="..."] and [class="..."] to work even if
+  // ElementData isn't storing raw attributes.
+  const bool any_ns = selector_attr.NamespaceURI() == g_star_atom || selector_attr.NamespaceURI().IsNull();
+  if (any_ns) {
+    const AtomicString& local = selector_attr.LocalName();
+    // id attribute
+    if (local == "id"_as) {
+      if (!element.HasID()) {
+        WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Fallback id: element has no id";
+        return false;
+      }
+      WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Fallback id compare '" << element.id().ToUTF8String()
+                        << "' vs '" << selector_value.ToUTF8String() << "'";
+      if (match == CSSSelector::kAttributeExact) {
+        if (case_sensitivity == kTextCaseSensitive) {
+          return StringView(element.id()) == StringView(selector_value);
+        } else {
+          return EqualIgnoringASCIICase(StringView(element.id()), StringView(selector_value));
+        }
+      } else {
+        Attribute fake(QualifiedName(g_null_atom, local, g_star_atom), element.id());
+        return AttributeValueMatches(fake, match, selector_value, case_sensitivity);
+      }
+    }
+    // class attribute
+    if (local == "class"_as) {
+      // className() reflects the current attribute text.
+      AtomicString class_text = element.className();
+      if (class_text.IsNull()) {
+        WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Fallback class: className is null";
+        return false;
+      }
+      WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Fallback class compare '" << class_text.ToUTF8String()
+                        << "' vs '" << selector_value.ToUTF8String() << "'";
+      if (match == CSSSelector::kAttributeExact) {
+        if (case_sensitivity == kTextCaseSensitive) {
+          return StringView(class_text) == StringView(selector_value);
+        } else {
+          return EqualIgnoringASCIICase(StringView(class_text), StringView(selector_value));
+        }
+      } else {
+        Attribute fake(QualifiedName(g_null_atom, local, g_star_atom), class_text);
+        return AttributeValueMatches(fake, match, selector_value, case_sensitivity);
+      }
+    }
+  }
  return false;
 }
 ALWAYS_INLINE bool SelectorChecker::CheckOne(const SelectorCheckingContext& context, MatchResult& result) const {
@@ -795,7 +959,12 @@ ALWAYS_INLINE bool SelectorChecker::CheckOne(const SelectorCheckingContext& cont
    case CSSSelector::kPseudoClass:
      return CheckPseudoClass(context, result);
    case CSSSelector::kPseudoElement:
-     return CheckPseudoElement(context, result);
+    // In Blink, pseudo-element matching is not performed in kQueryingRules mode.
+    // Avoid entering pseudo-element logic when only querying/collecting rules.
+    if (mode_ == kQueryingRules) {
+      return false;
+    }
+    return CheckPseudoElement(context, result);
    default:
      NOTREACHED_IN_MIGRATION();
      return false;
@@ -1388,54 +1557,54 @@ bool SelectorChecker::CheckPseudoClass(const SelectorCheckingContext& context, M
      //   return text_control->IsPlaceholderVisible();
      // }
      break;
-   case CSSSelector::kPseudoNthChild:
-     if (mode_ == kResolvingStyle) {
-       if (ContainerNode* parent = element.ParentElementOrDocumentFragment()) {
-         parent->SetChildrenAffectedByForwardPositionalRules();
-       }
-     }
-     if (selector.SelectorList()) {
-       // Check if the element itself matches the “of” selector.
-       // Note that this will also propagate the correct MatchResult flags,
-       // so NthIndexCache does not have to do that.
-       if (!MatchesAnyInList(context, selector.SelectorList()->First(), result)) {
-         return false;
-       }
-     }
-     return selector.MatchNth(NthIndexCache::NthChildIndex(element, selector.SelectorList(), this, &context));
-   case CSSSelector::kPseudoNthOfType:
-     if (mode_ == kResolvingStyle) {
-       if (ContainerNode* parent = element.ParentElementOrDocumentFragment()) {
-         parent->SetChildrenAffectedByForwardPositionalRules();
-       }
-     }
-     return selector.MatchNth(NthIndexCache::NthOfTypeIndex(element));
-   case CSSSelector::kPseudoNthLastChild: {
-     ContainerNode* parent = element.ParentElementOrDocumentFragment();
-     if (mode_ == kResolvingStyle && parent) {
-       parent->SetChildrenAffectedByBackwardPositionalRules();
-     }
-     if (mode_ != kQueryingRules && parent && !parent->IsFinishedParsingChildren()) {
-       return false;
-     }
-     if (selector.SelectorList()) {
-       // Check if the element itself matches the “of” selector.
-       if (!MatchesAnyInList(context, selector.SelectorList()->First(), result)) {
-         return false;
-       }
-     }
-     return selector.MatchNth(NthIndexCache::NthLastChildIndex(element, selector.SelectorList(), this, &context));
-   }
-   case CSSSelector::kPseudoNthLastOfType: {
-     ContainerNode* parent = element.ParentElementOrDocumentFragment();
-     if (mode_ == kResolvingStyle && parent) {
-       parent->SetChildrenAffectedByBackwardPositionalRules();
-     }
-     if (mode_ != kQueryingRules && parent && !parent->IsFinishedParsingChildren()) {
-       return false;
-     }
-     return selector.MatchNth(NthIndexCache::NthLastOfTypeIndex(element));
-   }
+  case CSSSelector::kPseudoNthChild:
+    if (mode_ == kResolvingStyle) {
+      if (ContainerNode* parent = element.ParentElementOrDocumentFragment()) {
+        parent->SetChildrenAffectedByForwardPositionalRules();
+      }
+    }
+    if (selector.SelectorList()) {
+      // Check if the element itself matches the “of” selector.
+      // Note that this will also propagate the correct MatchResult flags,
+      // so NthIndexCache does not have to do that.
+      if (!MatchesAnyInList(context, selector.SelectorList()->First(), result)) {
+        return false;
+      }
+    }
+    return selector.MatchNth(NthIndexCache::NthChildIndex(element, selector.SelectorList(), this, &context));
+  case CSSSelector::kPseudoNthOfType:
+    if (mode_ == kResolvingStyle) {
+      if (ContainerNode* parent = element.ParentElementOrDocumentFragment()) {
+        parent->SetChildrenAffectedByForwardPositionalRules();
+      }
+    }
+    return selector.MatchNth(NthIndexCache::NthOfTypeIndex(element));
+  case CSSSelector::kPseudoNthLastChild: {
+    ContainerNode* parent = element.ParentElementOrDocumentFragment();
+    if (mode_ == kResolvingStyle && parent) {
+      parent->SetChildrenAffectedByBackwardPositionalRules();
+    }
+    if (mode_ != kQueryingRules && parent && !parent->IsFinishedParsingChildren()) {
+      return false;
+    }
+    if (selector.SelectorList()) {
+      // Check if the element itself matches the “of” selector.
+      if (!MatchesAnyInList(context, selector.SelectorList()->First(), result)) {
+        return false;
+      }
+    }
+    return selector.MatchNth(NthIndexCache::NthLastChildIndex(element, selector.SelectorList(), this, &context));
+  }
+  case CSSSelector::kPseudoNthLastOfType: {
+    ContainerNode* parent = element.ParentElementOrDocumentFragment();
+    if (mode_ == kResolvingStyle && parent) {
+      parent->SetChildrenAffectedByBackwardPositionalRules();
+    }
+    if (mode_ != kQueryingRules && parent && !parent->IsFinishedParsingChildren()) {
+      return false;
+    }
+    return selector.MatchNth(NthIndexCache::NthLastOfTypeIndex(element));
+  }
    case CSSSelector::kPseudoSelectorFragmentAnchor:
      return MatchesSelectorFragmentAnchorPseudoClass(element);
    case CSSSelector::kPseudoTarget:
@@ -1927,8 +2096,21 @@ bool SelectorChecker::CheckPseudoAutofill(CSSSelector::PseudoType pseudo_type, E
  return false;
 }
 bool SelectorChecker::CheckPseudoElement(const SelectorCheckingContext& context, MatchResult& result) const {
+ if (mode_ == kQueryingRules) {
+   // Align with Blink: don't match pseudo-elements when only querying rules.
+   return false;
+ }
  const CSSSelector& selector = *context.selector;
  Element& element = *context.element;
+ // If a specific pseudo element was requested (e.g. ::before), ensure
+ // we don't match a different pseudo (e.g. ::after). This prevents
+ // cross-contamination when collecting rules for a concrete pseudo.
+ if (context.pseudo_id != kPseudoIdNone) {
+   PseudoId selector_pseudo = CSSSelector::GetPseudoId(selector.GetPseudoType());
+   if (selector_pseudo == kPseudoIdNone || selector_pseudo != context.pseudo_id) {
+     return false;
+   }
+ }
  if (context.in_nested_complex_selector) {
    // This would normally be rejected parse-time, but can happen
    // with the & selector, so reject it match-time.

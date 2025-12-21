@@ -229,6 +229,81 @@ void parseHTML(void* page_,
       length, persistent_handle, result_callback);
 }
 
+void onViewportSizeChanged(void* page_, double inner_width, double inner_height) {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dart] onViewportSizeChanged call width=" << inner_width << " height=" << inner_height
+                    << std::endl;
+#endif
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  if (!page) {
+    return;
+  }
+
+  auto* dart_isolate_context = page->dartIsolateContext();
+  if (!dart_isolate_context || !dart_isolate_context->dispatcher()) {
+    return;
+  }
+
+  // Run the callback on the JS thread (or current thread for non-dedicated
+  // mode) so we can safely touch the DOM / style engine.
+  dart_isolate_context->dispatcher()->PostToJs(page->isDedicated(),
+                                               static_cast<int32_t>(page->contextId()),
+                                               webf::WebFPage::OnViewportSizeChangedInternal,
+                                               page_,
+                                               inner_width,
+                                               inner_height);
+}
+
+void onDevicePixelRatioChanged(void* page_, double device_pixel_ratio) {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dart] onDevicePixelRatioChanged call dpr=" << device_pixel_ratio << std::endl;
+#endif
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  if (!page) {
+    return;
+  }
+
+  auto* dart_isolate_context = page->dartIsolateContext();
+  if (!dart_isolate_context || !dart_isolate_context->dispatcher()) {
+    return;
+  }
+
+  dart_isolate_context->dispatcher()->PostToJs(page->isDedicated(),
+                                               static_cast<int32_t>(page->contextId()),
+                                               webf::WebFPage::OnDevicePixelRatioChangedInternal,
+                                               page_,
+                                               device_pixel_ratio);
+}
+
+void onColorSchemeChanged(void* page_, const char* scheme, int32_t length) {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dart] onColorSchemeChanged call" << std::endl;
+#endif
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  if (!page) {
+    return;
+  }
+
+  auto* dart_isolate_context = page->dartIsolateContext();
+  if (!dart_isolate_context || !dart_isolate_context->dispatcher()) {
+    return;
+  }
+
+  // Copy the scheme string into a temporary std::string so it stays valid
+  // until the JS-thread callback consumes it.
+  std::string scheme_copy;
+  if (scheme && length > 0) {
+    scheme_copy.assign(scheme, static_cast<size_t>(length));
+  }
+
+  dart_isolate_context->dispatcher()->PostToJs(
+      page->isDedicated(),
+      static_cast<int32_t>(page->contextId()),
+      webf::WebFPage::OnColorSchemeChangedInternal,
+      page_,
+      scheme_copy);
+}
+
 void registerPluginByteCode(uint8_t* bytes, int32_t length, const char* pluginName) {
   webf::ExecutingContext::plugin_byte_code[pluginName] = webf::NativeByteCode{bytes, length};
 }

@@ -12,6 +12,8 @@
 #include <cassert>
 #include <string>
 #include "ascii_fast_path.h"
+#include "bindings/qjs/native_string_utils.h"
+#include "core/base/strings/string_number_conversions.h"
 #include "string_buffer.h"
 #include "string_view.h"
 #include "utf8_codecs.h"
@@ -96,6 +98,27 @@ StringImpl* StringImpl::empty16_bit_ = const_cast<StringImpl*>(&g_global_empty16
 void StringImpl::InitStatics() {
   new ((void*)empty_) StringImpl(kConstructEmptyString);
   new ((void*)empty16_bit_) StringImpl(kConstructEmptyString16Bit);
+}
+
+bool StringImpl::ToDouble(double* p) const {
+  if (Is8Bit()) {
+    auto sv = Latin1StringView(Characters8(), length_);
+    auto str = UTF8Codecs::EncodeLatin1(sv);
+    return base::StringToDouble(str, p);
+  }
+  auto sv = UTF16StringView(Characters16(), length_);
+  // Avoid relying on the UTF16 overload to prevent link-time undefined symbol.
+  // Convert to UTF-8 and use the std::string_view overload instead.
+  auto str = UTF8Codecs::EncodeUTF16(sv);
+  return base::StringToDouble(str, p);
+}
+
+std::string StringImpl::ToUTF8String() {
+  if (Is8Bit()) {
+    return UTF8Codecs::EncodeLatin1({Characters8(), length()});
+  }
+
+  return UTF8Codecs::EncodeUTF16({Characters16(), length()});
 }
 
 std::shared_ptr<StringImpl> StringImpl::Create(const LChar* characters, size_t length) {
@@ -338,6 +361,54 @@ size_t StringImpl::HashSlowCase() const {
   else
     SetHash(StringHasher::ComputeHashForWideString(Characters16(), length_));
   return ExistingHash();
+}
+
+static inline bool IsCSSSpaceChar(char16_t c) {
+  switch (c) {
+    case ' ':
+    case '\t':
+    case '\n':
+    case '\r':
+    case '\f':
+      return true;
+    default:
+      return false;
+  }
+}
+
+std::shared_ptr<StringImpl> StringImpl::StripWhiteSpace(const std::shared_ptr<StringImpl>& str) {
+  if (!str || !str->length_) {
+    return str;
+  }
+
+  size_t start = 0;
+  size_t end = str->length_;
+
+  if (str->Is8Bit()) {
+    const LChar* chars = str->Characters8();
+    while (start < end && IsCSSSpaceChar(chars[start])) {
+      ++start;
+    }
+    while (end > start && IsCSSSpaceChar(chars[end - 1])) {
+      --end;
+    }
+    if (start == 0 && end == str->length_) {
+      return str;
+    }
+    return Create(chars + start, end - start);
+  }
+
+  const UChar* chars16 = str->Characters16();
+  while (start < end && IsCSSSpaceChar(chars16[start])) {
+    ++start;
+  }
+  while (end > start && IsCSSSpaceChar(chars16[end - 1])) {
+    --end;
+  }
+  if (start == 0 && end == str->length_) {
+    return str;
+  }
+  return Create(chars16 + start, end - start);
 }
 
 // Helper function to decode UTF-8 character

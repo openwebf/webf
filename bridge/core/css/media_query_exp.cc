@@ -42,7 +42,29 @@
 namespace webf {
 
 static inline bool FeatureWithValidIdent(const String& media_feature, CSSValueID ident) {
-  if (media_feature == media_feature_names_atomicstring::kVideoDynamicRange) {
+  // orientation: portrait | landscape
+  if (media_feature == media_feature_names_atomicstring::kOrientation) {
+    return ident == CSSValueID::kPortrait || ident == CSSValueID::kLandscape;
+  }
+
+  // resizable: true | false
+  if (media_feature == media_feature_names_atomicstring::kResizable) {
+    return ident == CSSValueID::kTrue || ident == CSSValueID::kFalse;
+  }
+
+  // inverted-colors: inverted | none
+  if (media_feature == media_feature_names_atomicstring::kInvertedColors) {
+    return ident == CSSValueID::kInverted || ident == CSSValueID::kNone;
+  }
+
+  // prefers-color-scheme: dark | light | no-preference
+  if (media_feature == media_feature_names_atomicstring::kPrefersColorScheme) {
+    return ident == CSSValueID::kDark || ident == CSSValueID::kLight || ident == CSSValueID::kNoPreference;
+  }
+
+  // dynamic-range / video-dynamic-range: standard | high
+  if (media_feature == media_feature_names_atomicstring::kDynamicRange ||
+      media_feature == media_feature_names_atomicstring::kVideoDynamicRange) {
     return ident == CSSValueID::kStandard || ident == CSSValueID::kHigh;
   }
 
@@ -252,7 +274,7 @@ std::optional<MediaQueryExpValue> MediaQueryExpValue::Consume(const String& medi
       return std::nullopt;
     }
     if (!css_parsing_utils::ConsumeSlashIncludingWhitespace(range)) {
-      return MediaQueryExpValue(*value, *CSSNumericLiteralValue::Create(1, CSSPrimitiveValue::UnitType::kNumber));
+      return MediaQueryExpValue(value, CSSNumericLiteralValue::Create(1, CSSPrimitiveValue::UnitType::kNumber));
     }
     std::shared_ptr<const CSSPrimitiveValue> denominator =
         css_parsing_utils::ConsumeNumber(range, context, CSSPrimitiveValue::ValueRange::kNonNegative);
@@ -260,10 +282,10 @@ std::optional<MediaQueryExpValue> MediaQueryExpValue::Consume(const String& medi
       return std::nullopt;
     }
     if (value->GetDoubleValue() == 0 && denominator->GetDoubleValue() == 0) {
-      return MediaQueryExpValue(*CSSNumericLiteralValue::Create(1, CSSPrimitiveValue::UnitType::kNumber),
-                                *CSSNumericLiteralValue::Create(0, CSSPrimitiveValue::UnitType::kNumber));
+      return MediaQueryExpValue(CSSNumericLiteralValue::Create(1, CSSPrimitiveValue::UnitType::kNumber),
+                                CSSNumericLiteralValue::Create(0, CSSPrimitiveValue::UnitType::kNumber));
     }
-    return MediaQueryExpValue(*value, *denominator);
+    return MediaQueryExpValue(value, denominator);
   }
 
   if (FeatureWithInteger(media_feature, value.get()) || FeatureWithNumber(media_feature, value.get()) ||

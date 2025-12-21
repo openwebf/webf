@@ -8,7 +8,7 @@ interface LegacyComputedCssStyleDeclaration extends LegacyCssStyleDeclaration {
   // @ts-ignore
   getPropertyValue(property: string): SupportAsync<string>;
   // @ts-ignore
-  setProperty(property: string, value: any): SupportAsyncManual<void>;
+  setProperty(property: string, value: any, priority?: string): SupportAsyncManual<void>;
   // @ts-ignore
   removeProperty(property: string): SupportAsync<string>;
 

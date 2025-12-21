@@ -25,6 +25,7 @@ using PublicCSSStyleDeclarationGetCssText = AtomicStringRef (*)(CSSStyleDeclarat
 using PublicCSSStyleDeclarationSetCssText = void (*)(CSSStyleDeclaration*, const char*, SharedExceptionState*);
 using PublicCSSStyleDeclarationGetLength = int64_t (*)(CSSStyleDeclaration*);
 using PublicCSSStyleDeclarationGetPropertyValue = AtomicStringRef (*)(CSSStyleDeclaration*, const char*, SharedExceptionState*);
+using PublicCSSStyleDeclarationSetProperty = void (*)(CSSStyleDeclaration*, const char*, NativeValue, const char*, SharedExceptionState*);
 using PublicCSSStyleDeclarationRemoveProperty = AtomicStringRef (*)(CSSStyleDeclaration*, const char*, SharedExceptionState*);
 using PublicCSSStyleDeclarationRelease = void (*)(CSSStyleDeclaration*);
 using PublicCSSStyleDeclarationDynamicTo = WebFValue<CSSStyleDeclaration, WebFPublicMethods> (*)(CSSStyleDeclaration*, CSSStyleDeclarationType);
@@ -33,6 +34,7 @@ struct CSSStyleDeclarationPublicMethods : public WebFPublicMethods {
   static void SetCssText(CSSStyleDeclaration* css_style_declaration, const char* cssText, SharedExceptionState* shared_exception_state);
   static int64_t Length(CSSStyleDeclaration* css_style_declaration);
   static AtomicStringRef GetPropertyValue(CSSStyleDeclaration* css_style_declaration, const char* property, SharedExceptionState* shared_exception_state);
+  static void SetProperty(CSSStyleDeclaration* css_style_declaration, const char* property, NativeValue value, const char* priority, SharedExceptionState* shared_exception_state);
   static AtomicStringRef RemoveProperty(CSSStyleDeclaration* css_style_declaration, const char* property, SharedExceptionState* shared_exception_state);
   static void Release(CSSStyleDeclaration* css_style_declaration);
   static WebFValue<CSSStyleDeclaration, WebFPublicMethods> DynamicTo(CSSStyleDeclaration* css_style_declaration, CSSStyleDeclarationType css_style_declaration_type);
@@ -41,6 +43,7 @@ struct CSSStyleDeclarationPublicMethods : public WebFPublicMethods {
   PublicCSSStyleDeclarationSetCssText css_style_declaration_set_css_text{SetCssText};
   PublicCSSStyleDeclarationGetLength css_style_declaration_get_length{Length};
   PublicCSSStyleDeclarationGetPropertyValue css_style_declaration_get_property_value{GetPropertyValue};
+  PublicCSSStyleDeclarationSetProperty css_style_declaration_set_property{SetProperty};
   PublicCSSStyleDeclarationRemoveProperty css_style_declaration_remove_property{RemoveProperty};
   PublicCSSStyleDeclarationRelease css_style_declaration_release{Release};
   PublicCSSStyleDeclarationDynamicTo css_style_declaration_dynamic_to{DynamicTo};

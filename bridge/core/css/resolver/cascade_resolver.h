@@ -35,6 +35,10 @@
 #include "core/css/resolver/cascade_filter.h"
 #include "core/css/resolver/cascade_origin.h"
 #include "foundation/macros.h"
+// For caching parsed longhands from pending substitutions
+#include "core/css/css_property_value.h"
+
+namespace webf { namespace cssvalue { class CSSPendingSubstitutionValue; } }
 
 namespace webf {
 
@@ -44,7 +48,7 @@ class CSSVariableData;
 // CascadeResolver is an object passed on the stack during Apply. Its most
 // important job is to detect cycles during Apply (in general, keep track of
 // which properties we're currently applying).
-class CascadeResolver {
+ class CascadeResolver {
   WEBF_STACK_ALLOCATED();
 
  public:
@@ -123,6 +127,12 @@ class CascadeResolver {
   CSSProperty::Flags author_flags_ = 0;
   CSSProperty::Flags flags_ = 0;
   CSSProperty::Flags rejected_flags_ = 0;
+
+  // Cache for resolving CSSPendingSubstitutionValue like Blink
+  struct PendingSubstitutionCache {
+    const cssvalue::CSSPendingSubstitutionValue* value = nullptr;
+    std::vector<CSSPropertyValue> parsed_properties;
+  } shorthand_cache_;
 };
 
 }  // namespace webf

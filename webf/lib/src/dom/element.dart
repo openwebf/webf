@@ -1958,7 +1958,7 @@ abstract class Element extends ContainerNode
   }
 
   // Set inline style property.
-  void setInlineStyle(String property, String value) {
+  void setInlineStyle(String property, String value, {String? baseHref}) {
     // Current only for mark property is setting by inline style.
     inlineStyle[property] = value;
 
@@ -1967,7 +1967,7 @@ abstract class Element extends ContainerNode
       style.removeProperty(property, true);
       recalculateStyle();
     } else {
-      style.setProperty(property, value, isImportant: true);
+      style.setProperty(property, value, isImportant: true, baseHref: baseHref);
     }
   }
 
@@ -1977,6 +1977,21 @@ abstract class Element extends ContainerNode
       style.removeProperty(key, true);
     }
     inlineStyle.clear();
+  }
+
+  // Set pseudo element (::before, ::after, ::first-letter, ::first-line) style.
+  void setPseudoStyle(String type, String property, String value, {String? baseHref}) {
+    style.setPseudoProperty(type, property, value, baseHref: baseHref);
+  }
+
+  // Remove pseudo element (::before, ::after, ::first-letter, ::first-line) style.
+  void removePseudoStyle(String type, String property) {
+    style.removePseudoProperty(type, property);
+  }
+
+  // Clear all inline pseudo styles for a specific pseudo element.
+  void clearPseudoStyle(String type) {
+    style.clearPseudoStyle(type);
   }
 
   void _applyPseudoStyle(CSSStyleDeclaration style) {

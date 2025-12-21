@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
 import styles from './ResponsivePage.module.css';
 
@@ -22,13 +22,34 @@ export const ResponsivePage: React.FC = () => {
     return 'xs';
   };
 
-  const viewportInfo: ViewportInfo = {
-    width: window.innerWidth,
-    height: window.innerHeight,
-    devicePixelRatio: window.devicePixelRatio,
-    breakpoint: getBreakpoint(window.innerWidth),
-    orientation: window.innerWidth > window.innerHeight ? 'landscape' : 'portrait'
-  }
+  const [viewportInfo, setViewportInfo] = useState<ViewportInfo>(() => {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    return {
+      width,
+      height,
+      devicePixelRatio: window.devicePixelRatio,
+      breakpoint: getBreakpoint(width),
+      orientation: width > height ? 'landscape' : 'portrait'
+    };
+  });
+
+  useEffect(() => {
+    const updateViewportInfo = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      setViewportInfo({
+        width,
+        height,
+        devicePixelRatio: window.devicePixelRatio,
+        breakpoint: getBreakpoint(width),
+        orientation: width > height ? 'landscape' : 'portrait'
+      });
+    };
+
+    window.addEventListener('resize', updateViewportInfo);
+    return () => window.removeEventListener('resize', updateViewportInfo);
+  }, []);
 
 
   const toggleLayout = () => {

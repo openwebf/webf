@@ -18,7 +18,7 @@ pub struct LegacyCssStyleDeclarationRustMethods {
   pub set_css_text: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
   pub length: extern "C" fn(ptr: *const OpaquePtr) -> i64,
   pub get_property_value: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> AtomicStringRef,
-  pub set_property: extern "C" fn(ptr: *const OpaquePtr, *const c_char, NativeValue, exception_state: *const OpaquePtr) -> c_void,
+  pub set_property: extern "C" fn(ptr: *const OpaquePtr, *const c_char, NativeValue, *const c_char, exception_state: *const OpaquePtr) -> c_void,
   pub remove_property: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> AtomicStringRef,
   pub release: extern "C" fn(ptr: *const OpaquePtr) -> c_void,
   pub dynamic_to: extern "C" fn(ptr: *const OpaquePtr, type_: LegacyCssStyleDeclarationType) -> RustValue<c_void>,
@@ -77,7 +77,16 @@ impl LegacyCssStyleDeclaration {
   }
   pub fn set_property(&self, property: &str, value: NativeValue, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
-      ((*self.method_pointer).set_property)(self.ptr(), CString::new(property).unwrap().as_ptr(), value, exception_state.ptr);
+      ((*self.method_pointer).set_property)(self.ptr(), CString::new(property).unwrap().as_ptr(), value, CString::new("").unwrap().as_ptr(), exception_state.ptr);
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self.context()));
+    }
+    Ok(())
+  }
+  pub fn set_property_with_priority(&self, property: &str, value: NativeValue, priority: &str, exception_state: &ExceptionState) -> Result<(), String> {
+    unsafe {
+      ((*self.method_pointer).set_property)(self.ptr(), CString::new(property).unwrap().as_ptr(), value, CString::new(priority).unwrap().as_ptr(), exception_state.ptr);
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
@@ -126,7 +135,7 @@ pub trait LegacyCssStyleDeclarationMethods {
   fn set_css_text(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
   fn length(&self) -> i64;
   fn get_property_value(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String>;
-  fn set_property(&self, property: &str, value: NativeValue, exception_state: &ExceptionState) -> Result<(), String>;
+  fn set_property(&self, property: &str, value: NativeValue, priority: &str, exception_state: &ExceptionState) -> Result<(), String>;
   fn remove_property(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String>;
   fn as_legacy_css_style_declaration(&self) -> &LegacyCssStyleDeclaration;
 }
@@ -143,8 +152,8 @@ impl LegacyCssStyleDeclarationMethods for LegacyCssStyleDeclaration {
   fn get_property_value(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String> {
     self.get_property_value(property, exception_state)
   }
-  fn set_property(&self, property: &str, value: NativeValue, exception_state: &ExceptionState) -> Result<(), String> {
-    self.set_property(property, value, exception_state)
+  fn set_property(&self, property: &str, value: NativeValue, priority: &str, exception_state: &ExceptionState) -> Result<(), String> {
+    self.set_property_with_priority(property, value, priority, exception_state)
   }
   fn remove_property(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String> {
     self.remove_property(property, exception_state)

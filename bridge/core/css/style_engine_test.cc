@@ -9,6 +9,7 @@
 #include "core/css/resolver/style_resolver.h"
 #include "core/dom/document.h"
 #include "core/html/html_body_element.h"
+#include "core/html/html_div_element.h"
 #include "core/html/html_style_element.h"
 #include "core/platform/text/text_position.h"
 #include "foundation/string/wtf_string.h"
@@ -223,6 +224,95 @@ TEST_F(StyleEngineTest, LargeSheetCaching) {
   
   // Should use cached version based on hash
   EXPECT_EQ(sheet->Contents(), sheet2->Contents());
+}
+
+TEST_F(StyleEngineTest, SiblingInvalidationDirectAdjacentOnInsertion) {
+  MemberMutationScope mutation_scope{GetExecutingContext()};
+  GetExecutingContext()->EnableBlinkEngine();
+
+  ASSERT_NE(GetDocument()->body(), nullptr);
+
+  auto* container = MakeGarbageCollected<HTMLDivElement>(*GetDocument());
+  GetDocument()->body()->appendChild(container, ASSERT_NO_EXCEPTION());
+
+  auto* b = MakeGarbageCollected<HTMLDivElement>(*GetDocument());
+  b->setAttribute(AtomicString::CreateFromUTF8("class"), AtomicString::CreateFromUTF8("b"));
+  container->appendChild(b, ASSERT_NO_EXCEPTION());
+
+  auto* style_element = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
+  GetDocument()->body()->appendChild(style_element, ASSERT_NO_EXCEPTION());
+
+  String css_text = R"(
+    .a + .b { color: red; }
+  )"_s;
+  CSSStyleSheet* sheet = GetStyleEngine().CreateSheet(*style_element, css_text);
+  ASSERT_NE(sheet, nullptr);
+  GetStyleEngine().RegisterAuthorSheet(sheet);
+
+  // Force an initial style pass so the container records that its children are
+  // affected by sibling combinators.
+  GetStyleEngine().SetNeedsActiveStyleUpdate();
+  GetDocument()->UpdateStyleForThisDocument();
+
+  EXPECT_FALSE(b->NeedsStyleRecalc());
+
+  auto* a = MakeGarbageCollected<HTMLDivElement>(*GetDocument());
+  a->setAttribute(AtomicString::CreateFromUTF8("class"), AtomicString::CreateFromUTF8("a"));
+  container->insertBefore(a, b, ASSERT_NO_EXCEPTION());
+
+  // The insertion itself only marks the inserted subtree dirty; sibling
+  // invalidation is applied when StyleInvalidator runs.
+  EXPECT_FALSE(b->NeedsStyleRecalc());
+
+  GetStyleEngine().InvalidateStyle();
+  EXPECT_TRUE(b->NeedsStyleRecalc());
+}
+
+TEST_F(StyleEngineTest, MediaQuerySizeChangeSkipsRecalcWithoutQueries) {
+  MemberMutationScope mutation_scope{GetExecutingContext()};
+  GetExecutingContext()->EnableBlinkEngine();
+
+  StyleEngine& engine = GetStyleEngine();
+  EXPECT_EQ(engine.media_query_recalc_count_for_test(), 0);
+
+  // With no viewport-dependent media queries present, a size change should
+  // not trigger a style recomputation.
+  engine.MediaQueryAffectingValueChanged(MediaValueChange::kSize);
+  EXPECT_EQ(engine.media_query_recalc_count_for_test(), 0);
+}
+
+TEST_F(StyleEngineTest, MediaQuerySizeChangeGatedByViewportDependentQueries) {
+  MemberMutationScope mutation_scope{GetExecutingContext()};
+  GetExecutingContext()->EnableBlinkEngine();
+
+  auto* element = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
+  GetDocument()->body()->appendChild(element, ASSERT_NO_EXCEPTION());
+
+  // A simple viewport-dependent media query that always matches for typical
+  // test viewports; used to verify that repeated size notifications only
+  // trigger a single recomputation.
+  String css_text = R"(
+    @media (min-width: 1px) {
+      body { color: red; }
+    }
+  )"_s;
+
+  StyleEngine& engine = GetStyleEngine();
+  CSSStyleSheet* sheet = engine.CreateSheet(*element, css_text);
+  ASSERT_NE(sheet, nullptr);
+  engine.RegisterAuthorSheet(sheet);
+
+  EXPECT_EQ(engine.media_query_recalc_count_for_test(), 0);
+
+  // First size change with viewport-dependent media queries present should
+  // trigger a style recomputation and establish the baseline.
+  engine.MediaQueryAffectingValueChanged(MediaValueChange::kSize);
+  EXPECT_EQ(engine.media_query_recalc_count_for_test(), 1);
+
+  // Subsequent size changes without crossing any breakpoint should not
+  // trigger additional recomputations.
+  engine.MediaQueryAffectingValueChanged(MediaValueChange::kSize);
+  EXPECT_EQ(engine.media_query_recalc_count_for_test(), 1);
 }
 
 }  // namespace webf

@@ -109,7 +109,65 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
       String printMsg;
       switch(command.type) {
         case UICommandType.setStyle:
-          printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} key: ${command.args} value: ${command.nativePtr2 != nullptr ? nativeStringToString(command.nativePtr2.cast<NativeString>()) : null}';
+          String? valueLog;
+          String? baseHrefLog;
+          if (command.nativePtr2 != nullptr) {
+            try {
+              final Pointer<NativeStyleValueWithHref> payload =
+                  command.nativePtr2.cast<NativeStyleValueWithHref>();
+              final Pointer<NativeString> valuePtr = payload.ref.value;
+              final Pointer<NativeString> hrefPtr = payload.ref.href;
+              if (valuePtr != nullptr) {
+                valueLog = nativeStringToString(valuePtr);
+              }
+              if (hrefPtr != nullptr) {
+                baseHrefLog = nativeStringToString(hrefPtr);
+              }
+            } catch (_) {
+              valueLog = '<error>';
+              baseHrefLog = '<error>';
+            }
+          }
+          printMsg =
+              'nativePtr: ${command.nativePtr} type: ${command.type} key: ${command.args} value: $valueLog baseHref: ${baseHrefLog ?? 'null'}';
+          break;
+        case UICommandType.setPseudoStyle:
+          if (command.nativePtr2 != nullptr) {
+            try {
+              final Pointer<NativePseudoStyleWithHref> payload =
+                  command.nativePtr2.cast<NativePseudoStyleWithHref>();
+              final Pointer<NativeString> keyPtr = payload.ref.key;
+              final Pointer<NativeString> valuePtr = payload.ref.value;
+              final Pointer<NativeString> hrefPtr = payload.ref.href;
+              final String key = keyPtr != nullptr ? nativeStringToString(keyPtr) : '';
+              final String value = valuePtr != nullptr ? nativeStringToString(valuePtr) : '';
+              final String? href = hrefPtr != nullptr ? nativeStringToString(hrefPtr) : null;
+              printMsg =
+                  'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} property: $key=$value baseHref: ${href ?? 'null'}';
+            } catch (_) {
+              printMsg =
+                  'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} property: <error>';
+            }
+          } else {
+            printMsg =
+                'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} property: <null>';
+          }
+          break;
+        case UICommandType.removePseudoStyle:
+          printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} remove: ${command.nativePtr2 != nullptr ? nativeStringToString(command.nativePtr2.cast<NativeString>()) : null}';
+          break;
+        case UICommandType.clearPseudoStyle:
+          printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args}';
+          break;
+        case UICommandType.setPseudoStyle:
+          printMsg =
+              'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} cssText: ${command.nativePtr2 != nullptr ? nativeStringToString(command.nativePtr2.cast<NativeString>()) : null}';
+          break;
+        case UICommandType.removePseudoStyle:
+          printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} remove: ${command.nativePtr2 != nullptr ? nativeStringToString(command.nativePtr2.cast<NativeString>()) : null}';
+          break;
+        case UICommandType.clearPseudoStyle:
+          printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args}';
           break;
         case UICommandType.setAttribute:
           printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} key: ${nativeStringToString(command.nativePtr2.cast<NativeString>())} value: ${command.args}';
@@ -189,20 +247,98 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           view.cloneNode(nativePtr.cast<NativeBindingObject>(), command.nativePtr2.cast<NativeBindingObject>());
           break;
         case UICommandType.setStyle:
-          String value;
+          String value = '';
+          String? baseHref;
           if (command.nativePtr2 != nullptr) {
-            Pointer<NativeString> nativeValue = command.nativePtr2.cast<NativeString>();
-            value = nativeStringToString(nativeValue);
-            freeNativeString(nativeValue);
-          } else {
-            value = '';
+            final Pointer<NativeStyleValueWithHref> payload =
+                command.nativePtr2.cast<NativeStyleValueWithHref>();
+            final Pointer<NativeString> valuePtr = payload.ref.value;
+            final Pointer<NativeString> hrefPtr = payload.ref.href;
+            if (valuePtr != nullptr) {
+              final Pointer<NativeString> nativeValue = valuePtr.cast<NativeString>();
+              value = nativeStringToString(nativeValue);
+              freeNativeString(nativeValue);
+            }
+            if (hrefPtr != nullptr) {
+              final Pointer<NativeString> nativeHref = hrefPtr.cast<NativeString>();
+              final String raw = nativeStringToString(nativeHref);
+              freeNativeString(nativeHref);
+              baseHref = raw.isEmpty ? null : raw;
+            }
+            malloc.free(payload);
           }
-          view.setInlineStyle(nativePtr, command.args, value);
+
+          view.setInlineStyle(nativePtr, command.args, value, baseHref: baseHref);
           pendingStylePropertiesTargets[nativePtr.address] = true;
+          break;
+        case UICommandType.setPseudoStyle:
+          if (command.nativePtr2 != nullptr) {
+            final keyValue = nativePairToPairRecord(command.nativePtr2.cast());
+            if (keyValue.key.isNotEmpty) {
+              view.setPseudoStyle(nativePtr, command.args, keyValue.key, keyValue.value);
+            }
+          }
+          break;
+        case UICommandType.removePseudoStyle:
+          if (command.nativePtr2 != nullptr) {
+            Pointer<NativeString> nativeKey = command.nativePtr2.cast<NativeString>();
+            String key = nativeStringToString(nativeKey);
+            freeNativeString(nativeKey);
+            view.removePseudoStyle(nativePtr, command.args, key);
+          }
+          break;
+        case UICommandType.clearPseudoStyle:
+          view.clearPseudoStyle(nativePtr, command.args);
           break;
         case UICommandType.clearStyle:
           view.clearInlineStyle(nativePtr);
           pendingStylePropertiesTargets[nativePtr.address] = true;
+          break;
+        case UICommandType.setPseudoStyle:
+          if (command.nativePtr2 != nullptr) {
+            final Pointer<NativePseudoStyleWithHref> payload =
+                command.nativePtr2.cast<NativePseudoStyleWithHref>();
+            final Pointer<NativeString> keyPtr = payload.ref.key;
+            final Pointer<NativeString> valuePtr = payload.ref.value;
+            final Pointer<NativeString> hrefPtr = payload.ref.href;
+
+            String key = '';
+            String value = '';
+            String? baseHref;
+
+            if (keyPtr != nullptr) {
+              final Pointer<NativeString> nativeKey = keyPtr.cast<NativeString>();
+              key = nativeStringToString(nativeKey);
+              freeNativeString(nativeKey);
+            }
+            if (valuePtr != nullptr) {
+              final Pointer<NativeString> nativeValue = valuePtr.cast<NativeString>();
+              value = nativeStringToString(nativeValue);
+              freeNativeString(nativeValue);
+            }
+            if (hrefPtr != nullptr) {
+              final Pointer<NativeString> nativeHref = hrefPtr.cast<NativeString>();
+              final String raw = nativeStringToString(nativeHref);
+              freeNativeString(nativeHref);
+              baseHref = raw.isEmpty ? null : raw;
+            }
+            malloc.free(payload);
+
+            if (key.isNotEmpty) {
+              view.setPseudoStyle(nativePtr, command.args, key, value, baseHref: baseHref);
+            }
+          }
+          break;
+        case UICommandType.removePseudoStyle:
+          if (command.nativePtr2 != nullptr) {
+            Pointer<NativeString> nativeKey = command.nativePtr2.cast<NativeString>();
+            String key = nativeStringToString(nativeKey);
+            freeNativeString(nativeKey);
+            view.removePseudoStyle(nativePtr, command.args, key);
+          }
+          break;
+        case UICommandType.clearPseudoStyle:
+          view.clearPseudoStyle(nativePtr, command.args);
           break;
         case UICommandType.setAttribute:
           Pointer<NativeString> nativeKey = command.nativePtr2.cast<NativeString>();

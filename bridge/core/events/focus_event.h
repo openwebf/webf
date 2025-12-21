@@ -58,6 +58,8 @@ class FocusEvent : public UIEvent {
 
   bool IsFocusEvent() const override;
 
+  void Trace(GCVisitor* visitor) const override;
+
   const FocusEventPublicMethods* focusEventPublicMethods();
 
  private:

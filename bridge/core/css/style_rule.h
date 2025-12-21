@@ -554,6 +554,7 @@ class StyleRuleMedia : public StyleRuleCondition {
   StyleRuleMedia(const StyleRuleMedia&) = default;
 
   const MediaQuerySet* MediaQueries() const { return media_queries_.get(); }
+  std::shared_ptr<const MediaQuerySet> MediaQueriesShared() const { return media_queries_; }
 
   void SetMediaQueries(std::shared_ptr<const MediaQuerySet> media_queries) { media_queries_ = media_queries; }
 

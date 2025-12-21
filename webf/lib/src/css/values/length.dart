@@ -292,7 +292,7 @@ class CSSLengthValue {
               renderWidgetElementChild != null &&
               renderWidgetElementChild.constraints.maxHeight.isFinite &&
               renderWidgetElementChild.constraints.maxHeight !=
-                  currentRenderStyle!.target.ownerView.viewport!.boxSize!.height;
+                  currentRenderStyle!.target.ownerView.currentViewport!.boxSize!.height;
           parentWidgetConstraintHeight = renderWidgetElementChild?.constraints.maxHeight;
         } catch (_) {}
 

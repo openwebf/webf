@@ -30,6 +30,7 @@
 #include <tuple>
 #include <utility>
 
+#include "core/css/css_color.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_math_function_value.h"
 #include "core/css/css_numeric_literal_value.h"
@@ -600,7 +601,17 @@ void CSSGradientValue::AppendCSSTextForColorStops(StringBuilder& result, bool re
     }
 
     if (stop.color_) {
-      result.Append(stop.color_->CssText());
+      // Preserve author-specified color text when safe. When a stop offset
+      // follows, prefer hex/rgb canonicalization to avoid downstream
+      // tokenization issues with "rgb(...) 50%" in some parsers.
+      if (!stop.offset_ && stop.color_->HasRawText()) {
+        result.Append(stop.color_->CssTextForSerialization());
+      } else if (auto* css_color = DynamicTo<cssvalue::CSSColor>(stop.color_.get())) {
+        Color color = css_color->Value();
+        result.Append(color.SerializeAsCanvasColor());
+      } else {
+        result.Append(stop.color_->CssText());
+      }
     }
     if (stop.color_ && stop.offset_) {
       result.Append(' ');
@@ -617,17 +628,17 @@ void CSSGradientValue::AppendCSSTextForDeprecatedColorStops(StringBuilder& resul
     result.Append(", "_s);
     if (stop.offset_->IsZero() == CSSPrimitiveValue::BoolStatus::kTrue) {
       result.Append("from("_s);
-      result.Append(stop.color_->CssText());
+      result.Append(stop.color_->CssTextForSerialization());
       result.Append(')');
     } else if (stop.offset_->IsOne() == CSSPrimitiveValue::BoolStatus::kTrue) {
       result.Append("to("_s);
-      result.Append(stop.color_->CssText());
+      result.Append(stop.color_->CssTextForSerialization());
       result.Append(')');
     } else {
       result.Append("color-stop("_s);
       result.Append(stop.offset_->CssText());
       result.Append(", "_s);
-      result.Append(stop.color_->CssText());
+      result.Append(stop.color_->CssTextForSerialization());
       result.Append(')');
     }
   }

@@ -366,10 +366,17 @@ class Node : public EventTarget {
 
   //  bool NeedsLayoutSubtreeUpdate() const;
   //  bool NeedsWhitespaceChildrenUpdate() const;
-  //  bool IsDirtyForStyleRecalc() const {
-  //    return NeedsStyleRecalc() || GetForceReattachLayoutTree() ||
-  //           NeedsLayoutSubtreeUpdate();
-  //  }
+  // Minimal Blink-aligned helpers for style recalc dirtiness. WebF does not
+  // yet implement layout-subtree tracking, so NeedsLayoutSubtreeUpdate()
+  // currently always returns false.
+  bool GetForceReattachLayoutTree() const {
+    return GetFlag(kForceReattachLayoutTree);
+  }
+  bool NeedsLayoutSubtreeUpdate() const { return false; }
+  bool IsDirtyForStyleRecalc() const {
+    return NeedsStyleRecalc() || GetForceReattachLayoutTree() ||
+           NeedsLayoutSubtreeUpdate();
+  }
   //  bool IsDirtyForRebuildLayoutTree() const {
   //    return NeedsReattachLayoutTree() || NeedsLayoutSubtreeUpdate();
   //  }
@@ -402,7 +409,7 @@ class Node : public EventTarget {
   // but in node_computed_style.h. Please include that file if you want to use
   // this function.
   inline const ComputedStyle* GetComputedStyle() const;
-  //  bool ShouldSkipMarkingStyleDirty() const;
+  bool ShouldSkipMarkingStyleDirty() const;
 
   // True if the style invalidation process should traverse this node's children
   // when looking for pending invalidations.

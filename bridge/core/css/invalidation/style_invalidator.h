@@ -119,14 +119,14 @@ class StyleInvalidator {
           prev_invalidation_flags_(invalidator->invalidation_flags_),
           invalidator_(invalidator) {}
     ~RecursionCheckpoint() {
-      // TODO(guopengfei)：
-      // invalidator_->invalidation_sets_.Shrink(prev_invalidation_sets_size_);
-      invalidator_->invalidation_sets_.clear();
+      // Restore invalidation sets pushed during this recursion frame without
+      // discarding sets inherited from ancestor frames.
+      invalidator_->invalidation_sets_.resize(prev_invalidation_sets_size_);
       invalidator_->invalidation_flags_ = prev_invalidation_flags_;
     }
 
    private:
-    int prev_invalidation_sets_size_;
+    size_t prev_invalidation_sets_size_;
     InvalidationFlags prev_invalidation_flags_;
     StyleInvalidator* invalidator_;
   };

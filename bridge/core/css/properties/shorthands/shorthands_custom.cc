@@ -32,11 +32,9 @@ namespace {
 // New animation-* properties are  "reset only":
 // https://github.com/w3c/csswg-drafts/issues/6946#issuecomment-1233190360
 bool IsResetOnlyAnimationProperty(CSSPropertyID property) {
+  // Only timeline and range-* are reset-only. Those properties may not be
+  // enabled in this build; safely return false for all others.
   switch (property) {
-      //    case CSSPropertyID::kAnimationTimeline:
-      //    case CSSPropertyID::kAnimationRangeStart:
-      //    case CSSPropertyID::kAnimationRangeEnd:
-      //      return true;
     default:
       return false;
   }
@@ -47,36 +45,28 @@ std::shared_ptr<const CSSValue> ConsumeAnimationValue(CSSPropertyID property,
                                                       CSSParserTokenStream& stream,
                                                       std::shared_ptr<const CSSParserContext> context,
                                                       bool use_legacy_parsing) {
-  //  switch (property) {
-  //    case CSSPropertyID::kAnimationDelay:
-  //      return css_parsing_utils::ConsumeTime(stream, context, CSSPrimitiveValue::ValueRange::kAll);
-  //    case CSSPropertyID::kAnimationDirection:
-  //      return css_parsing_utils::ConsumeIdent<CSSValueID::kNormal, CSSValueID::kAlternate, CSSValueID::kReverse,
-  //                                             CSSValueID::kAlternateReverse>(stream);
-  //    case CSSPropertyID::kAnimationDuration:
-  //      return css_parsing_utils::ConsumeAnimationDuration(stream, context);
-  //    case CSSPropertyID::kAnimationFillMode:
-  //      return css_parsing_utils::ConsumeIdent<CSSValueID::kNone, CSSValueID::kForwards, CSSValueID::kBackwards,
-  //                                             CSSValueID::kBoth>(stream);
-  //    case CSSPropertyID::kAnimationIterationCount:
-  //      return css_parsing_utils::ConsumeAnimationIterationCount(stream, context);
-  //    case CSSPropertyID::kAnimationName:
-  //      return css_parsing_utils::ConsumeAnimationName(stream, context, use_legacy_parsing);
-  //    case CSSPropertyID::kAnimationPlayState:
-  //      return css_parsing_utils::ConsumeIdent<CSSValueID::kRunning, CSSValueID::kPaused>(stream);
-  //    case CSSPropertyID::kAnimationTimingFunction:
-  //      return css_parsing_utils::ConsumeAnimationTimingFunction(stream, context);
-  //    case CSSPropertyID::kAnimationTimeline:
-  //    case CSSPropertyID::kAnimationRangeStart:
-  //    case CSSPropertyID::kAnimationRangeEnd:
-  //      // New animation-* properties are  "reset only", see
-  //      // IsResetOnlyAnimationProperty.
-  //      return nullptr;
-  //    default:
-  //      NOTREACHED_IN_MIGRATION();
-  //      return nullptr;
-  //  }
-  return nullptr;
+  switch (property) {
+    case CSSPropertyID::kAnimationDelay:
+      return css_parsing_utils::ConsumeTime(stream, context, CSSPrimitiveValue::ValueRange::kAll);
+    case CSSPropertyID::kAnimationDirection:
+      return css_parsing_utils::ConsumeIdent<CSSValueID::kNormal, CSSValueID::kAlternate, CSSValueID::kReverse,
+                                             CSSValueID::kAlternateReverse>(stream);
+    case CSSPropertyID::kAnimationDuration:
+      return css_parsing_utils::ConsumeAnimationDuration(stream, context);
+    case CSSPropertyID::kAnimationFillMode:
+      return css_parsing_utils::ConsumeIdent<CSSValueID::kNone, CSSValueID::kForwards, CSSValueID::kBackwards,
+                                             CSSValueID::kBoth>(stream);
+    case CSSPropertyID::kAnimationIterationCount:
+      return css_parsing_utils::ConsumeAnimationIterationCount(stream, context);
+    case CSSPropertyID::kAnimationName:
+      return css_parsing_utils::ConsumeAnimationName(stream, context, use_legacy_parsing);
+    case CSSPropertyID::kAnimationPlayState:
+      return css_parsing_utils::ConsumeIdent<CSSValueID::kRunning, CSSValueID::kPaused>(stream);
+    case CSSPropertyID::kAnimationTimingFunction:
+      return css_parsing_utils::ConsumeAnimationTimingFunction(stream, context);
+    default:
+      return nullptr;
+  }
 }
 
 bool ParseAnimationShorthand(const StylePropertyShorthand& shorthand,
@@ -184,15 +174,13 @@ bool ParseBackgroundOrMaskPosition(const StylePropertyShorthand& shorthand,
 
 }  // namespace
 //
-// bool Animation::ParseShorthand(
-//    bool important,
-//    CSSParserTokenStream& stream,
-//    std::shared_ptr<const CSSParserContext> context,
-//    const CSSParserLocalContext& local_context,
-//    std::vector<CSSPropertyValue>& properties) const {
-//  return ParseAnimationShorthand(animationShorthand(), important, stream,
-//                                 context, local_context, properties);
-//}
+bool Animation::ParseShorthand(bool important,
+                               CSSParserTokenStream& stream,
+                               std::shared_ptr<const CSSParserContext> context,
+                               const CSSParserLocalContext& local_context,
+                               std::vector<CSSPropertyValue>& properties) const {
+  return ParseAnimationShorthand(animationShorthand(), important, stream, context, local_context, properties);
+}
 //
 // std::shared_ptr<const CSSValue> Animation::CSSValueFromComputedStyleInternal(
 //    const ComputedStyle& style,
@@ -1016,31 +1004,28 @@ bool Flex::ParseShorthand(bool important,
                           std::shared_ptr<const CSSParserContext> context,
                           const CSSParserLocalContext&,
                           std::vector<CSSPropertyValue>& properties) const {
-  static const double kUnsetValue = -1;
-  double flex_grow = kUnsetValue;
-  double flex_shrink = kUnsetValue;
-  std::shared_ptr<const CSSValue> flex_basis = nullptr;
+  std::shared_ptr<const CSSValue> flex_grow;
+  std::shared_ptr<const CSSValue> flex_shrink;
+  std::shared_ptr<const CSSValue> flex_basis;
 
   if (stream.Peek().Id() == CSSValueID::kNone) {
-    flex_grow = 0;
-    flex_shrink = 0;
+    auto zero = CSSNumericLiteralValue::Create(0, CSSPrimitiveValue::UnitType::kNumber);
+    flex_grow = zero;
+    flex_shrink = zero;
     flex_basis = CSSIdentifierValue::Create(CSSValueID::kAuto);
     stream.ConsumeIncludingWhitespace();
   } else {
     for (;;) {
       CSSParserSavePoint savepoint(stream);
-      double num;
-      if (css_parsing_utils::ConsumeNumberRaw(stream, context, num)) {
-        if (num < 0) {
-          break;
-        }
-        if (flex_grow == kUnsetValue) {
+      if (auto num = css_parsing_utils::ConsumeNumber(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative)) {
+        if (!flex_grow) {
           flex_grow = num;
           savepoint.Release();
-        } else if (flex_shrink == kUnsetValue) {
+        } else if (!flex_shrink) {
           flex_shrink = num;
           savepoint.Release();
-        } else if (!num && !flex_basis) {
+        } else if (!flex_basis && num->IsNumericLiteralValue() &&
+                   To<CSSNumericLiteralValue>(num.get())->DoubleValue() == 0) {
           // Unitless zero is a valid <'flex-basis'>. All other <length>s
           // must have some unit, and are handled by the other branch.
           flex_basis = CSSNumericLiteralValue::Create(0, CSSPrimitiveValue::UnitType::kPixels);
@@ -1054,17 +1039,17 @@ bool Flex::ParseShorthand(bool important,
           flex_basis = css_parsing_utils::ConsumeIdent(stream);
         }
         if (!flex_basis) {
-          flex_basis =
-              css_parsing_utils::ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
+          flex_basis = css_parsing_utils::ConsumeLengthOrPercent(stream, context,
+                                                                 CSSPrimitiveValue::ValueRange::kNonNegative);
         }
         if (flex_basis) {
           // <'flex-basis'> may not appear between <'flex-grow'> and
           // <'flex-shrink'>. We therefore ensure that grow and shrink are
           // either both set, or both unset, once <'flex-basis'> is seen.
-          if (flex_grow != kUnsetValue && flex_shrink == kUnsetValue) {
-            flex_shrink = 1;
+          if (flex_grow && !flex_shrink) {
+            flex_shrink = CSSNumericLiteralValue::Create(1, CSSPrimitiveValue::UnitType::kNumber);
           }
-          DCHECK_EQ(flex_grow == kUnsetValue, flex_shrink == kUnsetValue);
+          DCHECK_EQ(!flex_grow, !flex_shrink);
           savepoint.Release();
         } else {
           break;
@@ -1073,28 +1058,24 @@ bool Flex::ParseShorthand(bool important,
         break;
       }
     }
-    if (flex_grow == kUnsetValue && flex_shrink == kUnsetValue && !flex_basis) {
+    if (!flex_grow && !flex_shrink && !flex_basis) {
       return false;
     }
-    if (flex_grow == kUnsetValue) {
-      flex_grow = 1;
+    if (!flex_grow) {
+      flex_grow = CSSNumericLiteralValue::Create(1, CSSPrimitiveValue::UnitType::kNumber);
     }
-    if (flex_shrink == kUnsetValue) {
-      flex_shrink = 1;
+    if (!flex_shrink) {
+      flex_shrink = CSSNumericLiteralValue::Create(1, CSSPrimitiveValue::UnitType::kNumber);
     }
     if (!flex_basis) {
       flex_basis = CSSNumericLiteralValue::Create(0, CSSPrimitiveValue::UnitType::kPercentage);
     }
   }
 
-  css_parsing_utils::AddProperty(
-      CSSPropertyID::kFlexGrow, CSSPropertyID::kFlex,
-      CSSNumericLiteralValue::Create(ClampTo<float>(flex_grow), CSSPrimitiveValue::UnitType::kNumber), important,
-      css_parsing_utils::IsImplicitProperty::kNotImplicit, properties);
-  css_parsing_utils::AddProperty(
-      CSSPropertyID::kFlexShrink, CSSPropertyID::kFlex,
-      CSSNumericLiteralValue::Create(ClampTo<float>(flex_shrink), CSSPrimitiveValue::UnitType::kNumber), important,
-      css_parsing_utils::IsImplicitProperty::kNotImplicit, properties);
+  css_parsing_utils::AddProperty(CSSPropertyID::kFlexGrow, CSSPropertyID::kFlex, flex_grow, important,
+                                 css_parsing_utils::IsImplicitProperty::kNotImplicit, properties);
+  css_parsing_utils::AddProperty(CSSPropertyID::kFlexShrink, CSSPropertyID::kFlex, flex_shrink, important,
+                                 css_parsing_utils::IsImplicitProperty::kNotImplicit, properties);
 
   css_parsing_utils::AddProperty(CSSPropertyID::kFlexBasis, CSSPropertyID::kFlex, flex_basis, important,
                                  css_parsing_utils::IsImplicitProperty::kNotImplicit, properties);

@@ -4,8 +4,6 @@
 
 #include "css_variable_data.h"
 
-#include <cstring>
-#include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_parser_token_stream.h"
 #include "core/css/parser/css_tokenizer.h"
 #include "foundation/string/string_types.h"
@@ -67,7 +65,7 @@ std::shared_ptr<CSSVariableData> CSSVariableData::Create(CSSTokenizedValue value
   while (!value.range.AtEnd()) {
     ExtractFeatures(value.range.Consume(), has_font_units, has_root_font_units, has_line_height_units);
   }
-  return Create(StringView(value.text.data()), is_animation_tainted, needs_variable_resolution, has_font_units, has_root_font_units,
+  return Create(value.text, is_animation_tainted, needs_variable_resolution, has_font_units, has_root_font_units,
                 has_line_height_units);
 }
 

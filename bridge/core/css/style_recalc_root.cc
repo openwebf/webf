@@ -1,146 +1,65 @@
 // Copyright 2018 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
+//
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
 #include "core/css/style_recalc_root.h"
+
 #include "core/dom/document.h"
 #include "core/dom/element.h"
-//#include "third_party/blink/renderer/core/dom/shadow_root.h"
-//#include "third_party/blink/renderer/core/dom/slot_assignment.h"
-//#include "third_party/blink/renderer/core/html/html_slot_element.h"
-//#include "third_party/blink/renderer/core/layout/layout_object.h"
 
 namespace webf {
-//
-// Element& StyleRecalcRoot::RootElement() const {
-//  Node* root_node = GetRootNode();
-//  assert(root_node);
-//  if (root_node->IsDocumentNode()) {
-//    return *root_node->GetDocument().documentElement();
-//  }
-//  if (root_node->IsPseudoElement()) {
-//    // We could possibly have called UpdatePseudoElement, but start at the
-//    // originating element for simplicity.
-//    return *root_node->parentElement();
-//  }
-//  if (root_node->IsTextNode()) {
-//    root_node = root_node->GetStyleRecalcParent();
-//  }
-//  return To<Element>(*root_node);
-//}
-///*
-//#if DCHECK_IS_ON()
-// ContainerNode* StyleRecalcRoot::Parent(const Node& node) const {
-//  return node.GetStyleRecalcParent();
-//}
-//
-// bool StyleRecalcRoot::IsChildDirty(const Node& node) const {
-//  return node.ChildNeedsStyleRecalc();
-//}
-//#endif  // DCHECK_IS_ON()
-// */
-//
-// bool StyleRecalcRoot::IsDirty(const Node& node) const {
-//  return node.IsDirtyForStyleRecalc();
-//}
-//
-// namespace {
-//
-// std::optional<Member<Element>> FirstFlatTreeAncestorForChildDirty(
-//    ContainerNode& parent) {
-//  if (!parent.IsElementNode()) {
-//    // The flat tree does not contain shadow roots or the document node. The
-//    // closest ancestor for dirty bits is the shadow host or nullptr.
-//    return parent.ParentOrShadowHostElement();
-//  }
-//  /*  // TODO(guopengfei)：
-//  ShadowRoot* root = parent.GetShadowRoot();
-//  if (!root) {
-//    return To<Element>(&parent);
-//  }
-//  if (!root->HasSlotAssignment()) {
-//    return std::nullopt;
-//  }
-//  // The child has already been removed, so we cannot look up its slot
-//  // assignment directly. Find the slot which was part of the ancestor chain
-//  // before the removal by checking the child-dirty bits. Since the recalc root
-//  // was removed, there is at most one such child-dirty slot.
-//  for (const auto& slot : root->GetSlotAssignment().Slots()) {
-//    if (slot->ChildNeedsStyleRecalc()) {
-//      return slot;
-//    }
-//  }
-//  */
-//  // The slot has also been removed. Fall back to using the light tree parent as
-//  // the new recalc root.
-//  return std::nullopt;
-//}
-//
-// bool IsFlatTreeConnected(const Node& root) {
-//  if (!root.isConnected()) {
-//    return false;
-//  }
-//  // If the recalc root is removed from the flat tree because its assigned slot
-//  // is removed from the flat tree, the recalc flags will be cleared in
-//  // DetachLayoutTree() with performing_reattach=false. We use that to decide if
-//  // the root node is no longer part of the flat tree.
-//  return root.IsDirtyForStyleRecalc() || root.ChildNeedsStyleRecalc();
-//}
-//
-//}  // namespace
-//
-// void StyleRecalcRoot::SubtreeModified(ContainerNode& parent) {
-//  if (!GetRootNode()) {
-//    return;
-//  }
-//  if (GetRootNode()->IsDocumentNode()) {
-//    return;
-//  }
-//  if (IsFlatTreeConnected(*GetRootNode())) {
-//    return;
-//  }
-//  // We are notified with the light tree parent of the node(s) which were
-//  // removed from the DOM. If 'parent' is a shadow host, there are elements in
-//  // its shadow tree which are marked child-dirty which needs to be cleared in
-//  // order to clear the recalc root below. If we are not able to find the
-//  // closest flat tree ancestor for traversal, fall back to using the 'parent'
-//  // as the new recalc root to allow the child-dirty bits to be cleared on the
-//  // next style recalc.
-//  auto opt_ancestor = FirstFlatTreeAncestorForChildDirty(parent);
-//  if (!opt_ancestor) {
-//    ContainerNode* common_ancestor = &parent;
-//    ContainerNode* new_root = &parent;
-//    if (!IsFlatTreeConnected(parent)) {
-//      // Fall back to the document root element since the flat tree is in a
-//      // state where we do not know what a suitable common ancestor would be.
-//      common_ancestor = nullptr;
-//      new_root = parent.GetDocument().documentElement();
-//    }
-//    Update(common_ancestor, new_root);
-//    assert(!IsSingleRoot());
-//    assert(GetRootNode() == new_root);
-//    return;
-//  }
-//  for (Element* ancestor = opt_ancestor.value(); ancestor;
-//       ancestor = ancestor->GetStyleRecalcParent()) {
-//    assert(ancestor->ChildNeedsStyleRecalc());
-//    assert(!ancestor->NeedsStyleRecalc());
-//    ancestor->ClearChildNeedsStyleRecalc();
-//  }
-//  Clear();
-//}
-//
-// void StyleRecalcRoot::FlatTreePositionChanged(const Node& node) {
-//  if (!GetRootNode()) {
-//    return;
-//  }
-//  if (GetRootNode()->IsDocumentNode()) {
-//    return;
-//  }
-//  assert(node.parentElement());
-//  SubtreeModified(*node.parentElement());
-//}
+
+Element& StyleRecalcRoot::RootElement() const {
+  Node* root_node = GetRootNode();
+  assert(root_node);
+
+  if (root_node->IsDocumentNode()) {
+    Element* doc_element = root_node->GetDocument().documentElement();
+    assert(doc_element);
+    return *doc_element;
+  }
+
+  if (root_node->IsTextNode()) {
+    // For text nodes, start recalc at the style-recalc parent element.
+    root_node = root_node->GetStyleRecalcParent();
+  }
+
+  // For now we ignore pseudo-elements / shadow DOM and assume the root is an
+  // Element in the light DOM.
+  return To<Element>(*root_node);
+}
+
+bool StyleRecalcRoot::IsDirty(const Node& node) const {
+  // Mirror Blink's StyleRecalcRoot::IsDirty by consulting the node's
+  // IsDirtyForStyleRecalc() helper (self-dirty / layout-dirty), rather than
+  // treating child-dirty breadcrumbs as sufficient.
+  return node.IsDirtyForStyleRecalc();
+}
+
+void StyleRecalcRoot::SubtreeModified(ContainerNode& parent) {
+  Node* root_node = GetRootNode();
+  if (!root_node) {
+    return;
+  }
+
+  // If the current root is still connected, keep it; style recalc will clear
+  // dirty bits as usual.
+  if (root_node->isConnected()) {
+    return;
+  }
+
+  // The root was detached. Clear child-dirty breadcrumbs on ancestors up to
+  // the first non-dirty ancestor, then reset the recalc root. This keeps the
+  // tree consistent for future dirty marks.
+  for (Node* ancestor = &parent; ancestor; ancestor = ancestor->ParentOrShadowHostNode()) {
+    if (!ancestor->ChildNeedsStyleRecalc()) {
+      break;
+    }
+    ancestor->ClearChildNeedsStyleRecalc();
+  }
+  Clear();
+}
 
 }  // namespace webf

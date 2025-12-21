@@ -9,6 +9,7 @@
 
 #include <quickjs/quickjs.h>
 #include <codecvt>
+#include <iterator>
 #include "event_type_names.h"
 #include "gtest/gtest.h"
 #include "native_string_utils.h"
@@ -197,6 +198,27 @@ TEST(AtomicString, MixedUTF8AndUTF16) {
   EXPECT_EQ(str2, "Hello 世界");
 }
 
+TEST(AtomicString, ConstructFromStringView) {
+  TEST_init();
+
+  String ascii = String::FromUTF8("string-view");
+  StringView ascii_view(ascii);
+  AtomicString from_ascii(ascii_view);
+  EXPECT_TRUE(from_ascii.Is8Bit());
+  EXPECT_EQ(from_ascii.ToUTF8String(), "string-view");
+
+  const char16_t wide_chars[] = u"Bảo hiểm";
+  String wide(wide_chars, std::size(wide_chars) - 1);
+  StringView wide_view(wide);
+  AtomicString from_wide(wide_view);
+  EXPECT_FALSE(from_wide.Is8Bit());
+  EXPECT_EQ(from_wide.ToUTF8String(), "Bảo hiểm");
+
+  StringView null_view;
+  AtomicString from_null(null_view);
+  EXPECT_TRUE(from_null.IsNull());
+}
+
 TEST(AtomicString, UTF16WithSurrogatePairs) {
   TEST_init();
   
@@ -328,3 +350,25 @@ TEST(StringImpl, CreateFromUTF8Empty) {
   EXPECT_TRUE(str2->length() == 0);
   EXPECT_EQ(str1, str2); // Should return the same empty string singleton
 }
+
+// Adding for hash collision reference
+// TEST(StringImpl, HashCollision1) {
+//   TEST_init();
+//
+//   // Test hash collision
+//   auto str1 = StringImpl::CreateFromUTF8(R"#(
+//       * {
+//         padding: 0;
+//         margin: 0;
+//       }
+//       .q {
+//         margin: 10px;
+//         padding: 10px;
+//         flex: 1 1 auto;
+//         background: gold;
+//       }
+//     )#");
+//   auto str2 = StringImpl::CreateFromUTF8("screen_async");
+//
+//   EXPECT_EQ(str1->GetHash(), str2->GetHash());
+// }

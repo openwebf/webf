@@ -26,6 +26,8 @@
 #ifndef WEBF_CORE_CSS_RESOLVER_MEDIA_QUERY_RESULT_H_
 #define WEBF_CORE_CSS_RESOLVER_MEDIA_QUERY_RESULT_H_
 
+#include <memory>
+
 #include "core/css/media_list.h"
 #include "foundation/macros.h"
 
@@ -35,8 +37,8 @@ class MediaQuerySetResult {
   WEBF_DISALLOW_NEW();
 
  public:
-  MediaQuerySetResult(const MediaQuerySet& media_queries, bool result)
-      : media_queries_(&media_queries), result_(result) {}
+  MediaQuerySetResult(std::shared_ptr<const MediaQuerySet> media_queries, bool result)
+      : media_queries_(std::move(media_queries)), result_(result) {}
   void Trace(GCVisitor* visitor) const {}
 
   const MediaQuerySet& MediaQueries() const { return *media_queries_; }

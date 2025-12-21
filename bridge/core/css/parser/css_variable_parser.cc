@@ -8,6 +8,7 @@
 
 #include "css_variable_parser.h"
 #include "core/base/containers/contains.h"
+#include "foundation/string/character_visitor.h"
 #include "core/css/css_unparsed_declaration_value.h"
 #include "core/css/css_variable_data.h"
 #include "core/css/parser/css_parser_idioms.h"
@@ -263,63 +264,62 @@ std::shared_ptr<const CSSUnparsedDeclarationValue> CSSVariableParser::ParseUnive
   return std::make_shared<CSSUnparsedDeclarationValue>(variable_data, context);
 }
 
+// Handle both 8-bit and 16-bit by visiting characters generically.
 StringView CSSVariableParser::StripTrailingWhitespaceAndComments(StringView text) {
-  // Comments may (unfortunately!) be unfinished, so we can't rely on
-  // looking for */; if there's /* anywhere, we'll need to scan through
-  // the string from the start. We do a very quick heuristic first
-  // to get rid of the most common cases.
-  //
-  // TODO(sesse): In the cases where we've tokenized the string before
-  // (i.e. not CSSOM, where we just get a string), we know we can't
-  // have unfinished comments, so consider piping that knowledge all
-  // the way through here.
-  bool has_slash = false;
-  if (text.Is8Bit()) {
-    const LChar* chars = text.Characters8();
-    for (unsigned i = 0; i < text.length(); ++i) {
-      if (chars[i] == '/') {
-        has_slash = true;
-        break;
+  // Comments may (unfortunately!) be unfinished, so we can't rely on "*/";
+  // if there's "/*" anywhere, we scan from the start. First, a quick
+  // heuristic: if there is no '/' at all, we can strip trailing whitespace
+  // without a full scan.
+  bool has_slash = webf::VisitCharacters(text, [&](auto chars) {
+    for (auto ch : chars) {
+      if (ch == '/') {
+        return true;
       }
     }
-  }
-  if (text.Is8Bit() && !has_slash) {
-    // No comments, so we can strip whitespace only.
-    while (!text.Empty() && IsHTMLSpace(text[text.length() - 1])) {
-      text = StringView(text, 0, text.length() - 1);
-    }
-    return text;
+    return false;
+  });
+
+  if (!has_slash) {
+    // No comments possible, strip trailing HTML whitespace only.
+    size_t new_len = webf::VisitCharacters(text, [&](auto chars) {
+      size_t len = chars.size();
+      while (len > 0 && IsHTMLSpace(chars[len - 1])) {
+        --len;
+      }
+      return len;
+    });
+    return StringView(text, 0, new_len);
   }
 
-  size_t string_len = 0;
-  bool in_comment = false;
-  for (size_t i = 0; i < text.length(); ++i) {
-    if (in_comment) {
-      // See if we can end this comment.
-      if (text[i] == '*' && i + 1 < text.length() && text[i + 1] == '/') {
-        ++i;
-        in_comment = false;
-      }
-    } else {
-      // See if we must start a comment.
-      if (text[i] == '/' && i + 1 < text.length() && text[i + 1] == '*') {
-        ++i;
-        in_comment = true;
-      } else if (!IsHTMLSpace(text[i])) {
-        // A non-space outside a comment, so the string
-        // must go at least to here.
-        string_len = i + 1;
+  // Full scan that accounts for comments and whitespace in both encodings.
+  size_t string_len = webf::VisitCharacters(text, [&](auto chars) {
+    size_t last_non_space = 0;
+    bool in_comment = false;
+    for (size_t i = 0; i < chars.size(); ++i) {
+      if (in_comment) {
+        // Look for comment terminator.
+        if (chars[i] == '*' && i + 1 < chars.size() && chars[i + 1] == '/') {
+          ++i;
+          in_comment = false;
+        }
+      } else {
+        // Start of comment?
+        if (chars[i] == '/' && i + 1 < chars.size() && chars[i + 1] == '*') {
+          ++i;
+          in_comment = true;
+        } else if (!IsHTMLSpace(chars[i])) {
+          // A non-space outside comments marks content end.
+          last_non_space = i + 1;
+        }
       }
     }
-  }
+    return last_non_space;
+  });
 
-  StringView ret = StringView(text, 0, string_len);
+  StringView ret(text, 0, string_len);
 
   // Leading whitespace should already have been stripped.
-  // (This test needs to be after we stripped trailing spaces,
-  // or we could look at trailing space believing it was leading.)
   DCHECK(ret.IsEmpty() || !IsHTMLSpace(ret[0]));
-
   return ret;
 }
 

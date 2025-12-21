@@ -1,11 +1,14 @@
 /*
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU GPL with Enterprise exception.
  */
 #include "element.h"
 
 #include <core/css/parser/css_selector_parser.h>
 
+#include <functional>
 #include <utility>
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_state.h"
@@ -18,8 +21,12 @@
 #include "core/css/inline_css_style_declaration.h"
 #include "core/css/legacy/legacy_inline_css_style_declaration.h"
 #include "core/css/parser/css_parser.h"
-#include "core/css/style_engine.h"
+#include "core/css/style_recalc_change.h"
+#include "core/css/style_recalc_context.h"
+#include "core/css/style_scope_frame.h"
 #include "core/css/style_scope_data.h"
+#include "core/css/style_engine.h"
+#include "core/css/white_space.h"
 #include "core/dom/document_fragment.h"
 #include "core/dom/element_rare_data_vector.h"
 #include "core/fileapi/blob.h"
@@ -27,8 +34,10 @@
 #include "core/html/parser/html_parser.h"
 #include "element_attribute_names.h"
 #include "element_namespace_uris.h"
+#include "foundation/logging.h"
 #include "foundation/native_value_converter.h"
 #include "foundation/utility/make_visitor.h"
+#include "bindings/qjs/native_string_utils.h"
 #include "html_element_type_helper.h"
 #include "mutation_observer_interest_group.h"
 #include "plugin_api/element.h"
@@ -85,6 +94,8 @@ bool Element::hasAttribute(const AtomicString& name, ExceptionState& exception_s
 }
 
 AtomicString Element::getAttribute(const AtomicString& name, ExceptionState& exception_state) const {
+  // Keep lazily-synchronized attributes (notably "style") up to date before reading them.
+  const_cast<Element*>(this)->SynchronizeAttribute(name);
   return EnsureElementAttributes().getAttribute(name, exception_state);
 }
 
@@ -461,7 +472,11 @@ Element& Element::CloneWithoutChildren(Document* document) const {
   return clone;
 }
 
-void Element::NotifyInlineStyleMutation() {}
+void Element::NotifyInlineStyleMutation() {
+  if (!GetExecutingContext()->isBlinkEnabled()) {
+    return;
+  }
+}
 
 void Element::CloneNonAttributePropertiesFrom(const Element& other, CloneChildrenFlag) {
   // Clone the inline style from the legacy style declaration
@@ -892,8 +907,12 @@ void Element::InvalidateStyleAttribute(bool only_changed_independent_properties)
     GetElementData()->SetStyleAttributeIsDirty(true);
     SetNeedsStyleRecalc(only_changed_independent_properties ? kInlineIndependentStyleChange : kLocalStyleChange,
                         StyleChangeReasonForTracing::Create(style_change_reason::kInlineCSSStyleMutated));
-    //  GetDocument().GetStyleEngine().AttributeChangedForElement(
-    //      html_names::kStyleAttr, *this);
+    // Mirror Blink: treat inline style mutation as a style-attribute change
+    // for invalidation purposes so that selector-based features that look at
+    // style="" (e.g., :has() or attribute-dependent rules) see a consistent
+    // dirty root while still marking only this element as needing recalc.
+    StyleEngine& engine = GetDocument().EnsureStyleEngine();
+    engine.AttributeChangedForElement(html_names::kStyleAttr, *this);
   } else {
     EnsureUniqueElementData().SetStyleAttributeIsDirty(true);
   }
@@ -911,16 +930,48 @@ void Element::AttributeChanged(const AttributeModificationParams& params) {
       StyleAttributeChanged(params.new_value, params.reason);
     }
   }
+
+  // Trigger selector-based invalidation for attribute changes when Blink CSS
+  // is enabled. We only mark the DOM as needing style updates here; the actual
+  // incremental style recomputation is performed later (e.g., before flushing
+  // UI commands for the next frame). Let the style engine decide whether the
+  // element should be skipped (e.g., disconnected, inactive document) rather
+  // than gating on isConnected() here.
+  if (GetExecutingContext()->isBlinkEnabled()) {
+    StyleEngine& engine = GetDocument().EnsureStyleEngine();
+    if (name == html_names::kIdAttr) {
+      engine.IdChangedForElement(params.old_value, params.new_value, *this);
+    } else if (name == html_names::kClassAttr) {
+      engine.ClassAttributeChangedForElement(params.old_value, params.new_value, *this);
+      // FIXME: find out correct way to trigger recalc on next frame
+      // engine.RecalcStyleForSubtree(*this);
+    } else if (name != html_names::kStyleAttr) {
+      engine.AttributeChangedForElement(name, *this);
+    }
+  }
 }
 
 void Element::ParseAttribute(const webf::Element::AttributeModificationParams& params) {
   if (params.name == html_names::kIdAttr) {
     // Update the ID for style resolution
     EnsureUniqueElementData().SetIdForStyleResolution(params.new_value);
-  } else if (params.name == html_names::kStyleAttr) {
-    // Update inline style from style attribute
-    StyleAttributeChanged(params.new_value, params.reason);
+  } else if (params.name == html_names::kClassAttr) {
+    // Update parsed class tokens for selector matching
+    // Match Blink: only call SetClass when non-empty; clear otherwise.
+    const AtomicString& v = params.new_value;
+    if (v.IsNull() || v.empty()) {
+      EnsureUniqueElementData().ClearClass();
+    } else {
+      // Class selectors in HTML are case-sensitive per the CSS Selectors spec
+      // (unless modified by document compat/quirks handling). Lowercasing here
+      // prevents matching author rules like `.j4Cp { ... }` against an element
+      // with class="j4Cp". Store class tokens verbatim so selector matching can
+      // use the exact author-specified case.
+      EnsureUniqueElementData().SetClass(v);
+    }
   }
+
+  // TODO(CGQAQ): other attrs should be set so that attr-seelctor could work as expected.
 }
 
 void Element::StyleAttributeChanged(const AtomicString& new_style_string,
@@ -929,8 +980,28 @@ void Element::StyleAttributeChanged(const AtomicString& new_style_string,
 
   if (new_style_string.IsNull()) {
     EnsureUniqueElementData().inline_style_ = nullptr;
+    if (GetExecutingContext()->isBlinkEnabled()) {
+      // Clear all inline styles on Dart side when style attribute is removed.
+      if (InActiveDocument()) {
+        GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, bindingObject(), nullptr);
+      }
+    }
   } else {
     SetInlineStyleFromString(new_style_string);
+  }
+
+  // When Blink CSS is enabled, a change to the `style` attribute must also
+  // participate in Blink-style style recalc and invalidation, not just update
+  // the Dart-side inline style snapshot. Mirror Blink's behavior by clearing
+  // the lazy style-attribute dirty bit (if any) and marking this element as
+  // needing a local style recalc with the appropriate tracing reason.
+  if (GetExecutingContext()->isBlinkEnabled()) {
+    if (HasElementData()) {
+      GetElementData()->SetStyleAttributeIsDirty(false);
+    }
+    SetNeedsStyleRecalc(
+        kLocalStyleChange,
+        StyleChangeReasonForTracing::Create(style_change_reason::kStyleAttributeChange));
   }
 }
 
@@ -959,25 +1030,31 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
           ->ParseDeclarationList(new_style_string, GetDocument().ElementSheet().Contents());
     }
 
+    // Persist the parsed inline style back to the element so CSSOM accessors
+    // (style(), cssText(), getPropertyValue(), serialization) reflect updates.
+    EnsureUniqueElementData().inline_style_ = inline_style;
+
     // Emit declared style updates to Dart as raw CSS strings (no C++ evaluation).
     // This keeps values like calc(), var(), and viewport units intact for Dart-side evaluation.
-    if (inline_style) {
+    if (inline_style && InActiveDocument()) {
       unsigned count = inline_style->PropertyCount();
-      if (count == 0) {
-        GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, bindingObject(), nullptr);
-      } else {
-        for (unsigned i = 0; i < count; ++i) {
-          auto property = inline_style->PropertyAt(i);
-          // Property name as AtomicString
-          AtomicString prop_name = property.Name().ToAtomicString();
-          // Get the serialized value without evaluation; use name+hint to preserve custom properties
-          String value_string = inline_style->GetPropertyValueWithHint(prop_name, i);
-          AtomicString value_atom(value_string);
+      // Always clear existing inline styles before applying new set to avoid stale properties.
+      GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, bindingObject(), nullptr);
+      for (unsigned i = 0; i < count; ++i) {
+        auto property = inline_style->PropertyAt(i);
+        AtomicString prop_name = property.Name().ToAtomicString();
+        String value_string = inline_style->GetPropertyValueWithHint(prop_name, i);
 
-          std::unique_ptr<SharedNativeString> args_01 = prop_name.ToNativeString();
-          GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01),
-                                                               bindingObject(), value_atom.ToNativeString().release());
-        }
+        // Normalize CSS property names (e.g. background-color, text-align) to the
+        // camelCase form expected by the Dart style engine before sending them
+        // across the bridge. Custom properties starting with '--' are preserved
+        // verbatim by ToStylePropertyNameNativeString().
+        std::unique_ptr<SharedNativeString> args_01 = prop_name.ToStylePropertyNameNativeString();
+        auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
+        payload->value = stringToNativeString(value_string).release();
+        payload->href = nullptr;
+        GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(),
+                                                             payload);
       }
     }
   } else {
@@ -1120,6 +1197,25 @@ StyleScopeData* Element::GetStyleScopeData() const {
     return data->GetStyleScopeData();
   }
   return nullptr;
+}
+
+void Element::RecalcStyle(const StyleRecalcChange change, const StyleRecalcContext& style_recalc_context) {
+  ExecutingContext* exec_ctx = GetExecutingContext();
+  if (!exec_ctx || !exec_ctx->isBlinkEnabled()) {
+    return;
+  }
+  if (!InActiveDocument()) {
+    return;
+  }
+
+  // Establish the @scope activation frame for this element, mirroring Blink's
+  // pattern of threading StyleScopeFrame through Element::RecalcStyle. WebF's
+  // current style pipeline still routes actual cascade / UI emission through
+  // StyleEngine::RecalcStyleFor(Subtree|ElementOnly); this hook is used for
+  // diagnostics and future Blink-alignment work.
+  StyleScopeFrame style_scope_frame(*this, style_recalc_context.style_scope_frame);
+  StyleRecalcContext local_context = style_recalc_context;
+  local_context.style_scope_frame = &style_scope_frame;
 }
 
 // inline ElementRareDataVector* Element::GetElementRareData() const {

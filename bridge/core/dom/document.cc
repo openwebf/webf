@@ -29,6 +29,7 @@
 #include "element_traversal.h"
 #include "event_factory.h"
 #include "foundation/native_value_converter.h"
+#include "core/script_forbidden_scope.h"
 #include "html_element_factory.h"
 #include "svg_element_factory.h"
 #include "webf_element_names.h"
@@ -577,6 +578,7 @@ void Document::UnregisterIntersectionObserver(IntersectionObserver* observer) {
 void Document::Trace(GCVisitor* visitor) const {
   script_animation_controller_.Trace(visitor);
   visitor->TraceMember(current_script_);
+  visitor->TraceMember(elem_sheet_);
   for (auto& observer : intersection_observers_) {
     visitor->TraceMember(observer);
   }
@@ -595,7 +597,73 @@ StyleEngine& Document::EnsureStyleEngine() {
 }
 
 bool Document::InStyleRecalc() const {
-  return false;
+  // Until the full DocumentLifecycle plumbing is wired, use a local flag
+  // toggled by StyleEngine to indicate when we are in the middle of a style
+  // recalc traversal. This is sufficient for guarding
+  // StyleEngine::UpdateStyleRecalcRoot so that it matches Blink's behavior of
+  // skipping root updates when marks occur from inside RecalcStyle().
+  return in_style_recalc_;
+}
+
+void Document::UpdateStyleForThisDocument() {
+  ExecutingContext* context = GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  // Ensure we have a StyleEngine instance before driving the Blink-style
+  // style update sequence.
+  StyleEngine& style_engine = EnsureStyleEngine();
+
+  EvaluateMediaQueryListIfNeeded();
+  style_engine.UpdateActiveStyle();
+  style_engine.InvalidateViewportUnitStylesIfNeeded();
+  style_engine.InvalidateEnvDependentStylesIfNeeded();
+  UpdateStyleInvalidationIfNeeded();
+  UpdateStyle();
+}
+
+void Document::EvaluateMediaQueryListIfNeeded() {
+  // Blink notifies CSSOM MediaQueryList listeners here when media features
+  // change during style recalc. WebF currently exposes matchMedia via a JS
+  // polyfill, so there is no C++ MediaQueryMatcher yet. Keep this hook as a
+  // no-op so that Blink-style call chains remain intact and can be filled in
+  // with a native matcher in the future.
+}
+
+void Document::UpdateStyleInvalidationIfNeeded() {
+  // If there is no StyleEngine yet, there cannot be any Blink-style selector
+  // invalidations to process.
+  if (!style_engine_) {
+    return;
+  }
+
+  ExecutingContext* context = GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  StyleEngine& style_engine = *style_engine_;
+  if (!style_engine.NeedsStyleInvalidation()) {
+    return;
+  }
+
+  // Prevent script execution during invalidation; Blink uses a similar
+  // ScriptForbiddenScope in Document::UpdateStyleInvalidationIfNeeded.
+  ScriptForbiddenScope forbid_script;
+  style_engine.InvalidateStyle();
+}
+
+void Document::UpdateStyle() {
+  ExecutingContext* context = GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  // Delegate to StyleEngine's incremental style recomputation. Layout-tree
+  // updates are handled on the Flutter side, so we only emit updated
+  // declared-value styles via RecalcStyle().
+  EnsureStyleEngine().RecalcStyle();
 }
 
 void Document::RegisterNodeList(const LiveNodeListBase* list) {}

@@ -9,6 +9,14 @@
 #ifndef BRIDGE_BINDINGS_QJS_HEAP_VECTOR_H_
 #define BRIDGE_BINDINGS_QJS_HEAP_VECTOR_H_
 
+#include <algorithm>
+#include <cassert>
+#include <cstddef>
+#include <iostream>
+#include <vector>
+
+#include "bindings/qjs/cppgc/gc_visitor.h"
+
 namespace webf {
 
 template <typename V>

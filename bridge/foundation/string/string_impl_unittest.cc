@@ -8,6 +8,7 @@
 
 #include "string_impl.h"
 #include <cstring>
+#include <iterator>
 #include "atomic_string.h"
 #include "gtest/gtest.h"
 
@@ -151,6 +152,17 @@ TEST(StringImplTest, NullTerminationWithDataPrefix) {
   // Verify length and content
   EXPECT_EQ(name.length(), 19u);
   EXPECT_EQ(name, "data-test-attribute");
+}
+
+TEST(StringImplTest, ToUTF8StringFromUTF16) {
+  // Vietnamese text with tone marks exercises BMP non-Latin characters.
+  const char16_t text[] = u"Bảo hiểm";
+  constexpr size_t len = std::size(text) - 1;  // exclude null terminator
+
+  String str(text, len);
+  auto utf8 = str.ToUTF8String();
+
+  EXPECT_EQ(utf8, "Bảo hiểm");
 }
 
 }  // namespace

@@ -9,9 +9,10 @@
 #include "ui_command_ring_buffer.h"
 #include <algorithm>
 #include <cstring>
+#include "bindings/qjs/native_string_utils.h"
 #include "core/executing_context.h"
 #include "foundation/logging.h"
-#include "bindings/qjs/native_string_utils.h"
+#include "string/utf8_codecs.h"
 
 namespace webf {
 
@@ -246,10 +247,10 @@ UICommandPackageRingBuffer::UICommandPackageRingBuffer(ExecutingContext* context
 UICommandPackageRingBuffer::~UICommandPackageRingBuffer() = default;
 
 void UICommandPackageRingBuffer::AddCommand(UICommand type,
-                                           SharedNativeString* args_01,
-                                           void* native_binding_object,
-                                           void* nativePtr2,
-                                           bool request_ui_update) {
+                                            SharedNativeString* args_01,
+                                            void* native_binding_object,
+                                            void* nativePtr2,
+                                            bool request_ui_update) {
   UICommandItem item(static_cast<int32_t>(type), args_01, native_binding_object, nativePtr2);
 
   std::lock_guard<std::mutex> lock(current_package_mutex_);
@@ -289,7 +290,7 @@ void UICommandPackageRingBuffer::PushPackage(std::unique_ptr<UICommandPackage> p
   if (next_write_idx == read_index_.load(std::memory_order_acquire)) {
     // Buffer full, use overflow
     std::lock_guard<std::mutex> lock(overflow_mutex_);
-    WEBF_LOG(VERBOSE) << " PUSH PACKAGE TO OVERFLOW " << package.get();
+    WEBF_COND_LOG(COMMAND, VERBOSE) << "[UICommandPackageRingBuffer] PUSH PACKAGE TO OVERFLOW " << package.get();
     overflow_packages_.push_back(std::move(package));
     return;
   }

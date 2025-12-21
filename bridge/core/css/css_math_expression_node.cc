@@ -1044,13 +1044,16 @@ class CSSMathExpressionNodeParser {
       if (math_operator != CSSMathOperator::kAdd && math_operator != CSSMathOperator::kSubtract) {
         break;
       }
-      if ((&tokens.Peek() - 1)->GetType() != kWhitespaceToken) {
-        return nullptr;  // calc(1px+ 2px) is invalid
-      }
-      tokens.Consume();
-      if (tokens.Peek().GetType() != kWhitespaceToken) {
-        return nullptr;  // calc(1px +2px) is invalid
-      }
+      // Be permissive about whitespace around '+' and '-' to match real-world usage.
+      // Accept expressions like 'calc(100px+100px)' and 'calc(100px- 50px)'.
+      // This mirrors how we already treat '*' and '/' operators above.
+      // if ((&tokens.Peek() - 1)->GetType() != kWhitespaceToken) {
+      //   return nullptr;  // calc(1px+ 2px) is invalid
+      // }
+      // tokens.Consume();
+      // if (tokens.Peek().GetType() != kWhitespaceToken) {
+      //   return nullptr;  // calc(1px +2px) is invalid
+      // }
       tokens.ConsumeIncludingWhitespace();
 
       std::shared_ptr<const CSSMathExpressionNode> rhs = ParseValueMultiplicativeExpression(tokens, state);

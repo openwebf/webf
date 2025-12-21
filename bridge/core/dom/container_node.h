@@ -215,10 +215,16 @@ class ContainerNode : public Node {
   void SetChildrenAffectedByForwardPositionalRules() {
     SetRestyleFlag(DynamicRestyleFlags::kChildrenAffectedByForwardPositionalRules);
   }
+  bool ChildrenAffectedByDirectAdjacentRules() const {
+    return HasRestyleFlag(DynamicRestyleFlags::kChildrenAffectedByDirectAdjacentRules);
+  }
   void SetChildrenAffectedByDirectAdjacentRules() {
     SetRestyleFlag(DynamicRestyleFlags::kChildrenAffectedByDirectAdjacentRules);
   }
 
+  bool ChildrenAffectedByIndirectAdjacentRules() const {
+    return HasRestyleFlag(DynamicRestyleFlags::kChildrenAffectedByIndirectAdjacentRules);
+  }
   void SetChildrenAffectedByIndirectAdjacentRules() {
     SetRestyleFlag(DynamicRestyleFlags::kChildrenAffectedByIndirectAdjacentRules);
   }

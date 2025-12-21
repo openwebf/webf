@@ -131,11 +131,17 @@ CSSStyleDeclaration::CSSStyleDeclaration(ExecutingContext* context) : BindingObj
 
 ScriptValue CSSStyleDeclaration::item(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
   AtomicString result = AnonymousNamedGetter(key);
+  if (result.IsNull()) {
+    return ScriptValue::Undefined(ctx());
+  }
   return ScriptValue(ctx(), result);
 }
 
 ScriptValue CSSStyleDeclaration::item(webf::AtomicString&& key, webf::ExceptionState& exception_state) {
   AtomicString result = AnonymousNamedGetter(key);
+  if (result.IsNull()) {
+    return ScriptValue::Undefined(ctx());
+  }
   return ScriptValue(ctx(), result);
 }
 
@@ -145,7 +151,7 @@ AtomicString CSSStyleDeclaration::AnonymousNamedGetter(const webf::AtomicString&
 
   // Do not handle non-property names.
   if (!IsValidCSSPropertyID(unresolved_property)) {
-    return AtomicString::Empty();
+    return AtomicString::Null();
   }
 
   return GetPropertyValueInternal(ResolveCSSPropertyID(unresolved_property));
@@ -160,34 +166,29 @@ bool CSSStyleDeclaration::AnonymousNamedSetter(const webf::AtomicString& name, c
   if (!IsValidCSSPropertyID(unresolved_property)) {
     return false;
   }
+  // We don't need this as we are not going to parse value at all.
   ExceptionState exception_state;
-  if (value.IsNumber()) {
-    double double_value = value.ToDouble(ctx());
-    if (FastPathSetProperty(unresolved_property, double_value)) {
-      return true;
-    }
-    // The fast path failed, e.g. because the property was a longhand,
-    // so let the normal string handling deal with it.
-  }
+  // if (value.IsNumber()) {
+  //   double double_value = value.ToDouble(ctx());
+  //   if (FastPathSetProperty(unresolved_property, double_value)) {
+  //     return true;
+  //   }
+  //   // The fast path failed, e.g. because the property was a longhand,
+  //   // so let the normal string handling deal with it.
+  // }
 
   if (value.IsString()) {
     auto string = value.ToString(ctx());
-    if (string.length() <= 128) {
-      uint8_t buffer[128];
-      int len = string.length();
-      SetPropertyInternal(unresolved_property, AtomicString::Empty(), StringView(buffer, len), false, exception_state);
-      if (exception_state.HasException()) {
-        return true;
-      }
-      return true;
-    }
+    // Fast path: pass the actual string data through; avoid temporary buffers.
+    SetPropertyInternal(unresolved_property, AtomicString::Empty(), StringView(string), false, exception_state);
+    return true;
   }
 
   // Perform a type conversion from ES value to
   // IDL [LegacyNullToEmptyString] DOMString only after we've confirmed that
   // the property name is a valid CSS attribute name (see bug 1310062).
   auto&& string_value = value.ToLegacyDOMString(ctx());
-  SetPropertyInternal(unresolved_property, AtomicString::Empty(), string_value, false, exception_state);
+  SetPropertyInternal(unresolved_property, AtomicString::Empty(), StringView(string_value), false, exception_state);
   if (exception_state.HasException()) {
     return true;
   }

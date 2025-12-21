@@ -36,12 +36,21 @@
 
 #include <core/base/auto_reset.h>
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
+#include <algorithm>
+#include "core/css/active_style_sheets.h"
 #include "core/css/css_global_rule_set.h"
+#include "core/css/css_style_sheet.h"
+#include "core/css/resolver/media_query_result.h"
 #include "core/css/invalidation/pending_invalidations.h"
 //#include "core/css/layout_tree_rebuild_root.h"
+#include "core/css/media_value_change.h"
 #include "core/css/resolver/style_resolver.h"
-//#include "core/css/style_invalidation_root.h"
+#include "core/css/style_invalidation_root.h"
 #include "core/css/style_recalc_root.h"
+#include "core/css/style_recalc_change.h"
+#include "core/css/style_recalc_context.h"
 #include "core/dom/element.h"
 #include "core/platform/text/text_position.h"
 #include "pending_sheet_type.h"
@@ -49,24 +58,33 @@
 
 namespace webf {
 
+class StyleRecalcChange;
+class StyleRecalcContext;
+
 class StyleSheetContents;
 class CSSStyleSheet;
 class Document;
 class StyleResolver;
 class LayoutTreeRebuildRoot;
+class TextTrack;
+class TreeScope;
 
 class StyleEngine final {
  public:
   explicit StyleEngine(Document& document);
   ~StyleEngine() { 
-    WEBF_LOG(VERBOSE) << "Destroying StyleEngine, clearing cache of size: " << text_to_sheet_cache_.size(); 
     // Clear the cache to break circular references
     text_to_sheet_cache_.clear();
   }
   CSSStyleSheet* CreateSheet(Element&, const String& text);
+  // Create a stylesheet with an explicit base URL for resolving relative URLs
+  // inside the sheet (e.g., url(...) in external CSS). When provided, caching
+  // will be keyed by both text and base_href to avoid cross-base reuse.
+  CSSStyleSheet* CreateSheet(Element&, const String& text, const AtomicString& base_href);
   Document& GetDocument() const;
   void Trace(GCVisitor* visitor);
   CSSStyleSheet* ParseSheet(Element&, const String& text);
+  CSSStyleSheet* ParseSheet(Element&, const String& text, const AtomicString& base_href);
 
   bool InRebuildLayoutTree() const { return in_layout_tree_rebuild_; }
   bool InDOMRemoval() const { return in_dom_removal_; }
@@ -100,14 +118,50 @@ class StyleEngine final {
 
   void UpdateStyleInvalidationRoot(ContainerNode* ancestor, Node* dirty_node);
   void UpdateStyleRecalcRoot(ContainerNode* ancestor, Node* dirty_node);
-  // Performs declared-value style recalculation for dirty subtrees.
-  // In Phase 1 this is a no-op placeholder.
-  void RecalcStyle(Document&);
+  // Performs declared-value style recalculation for dirty subtrees rooted at
+  // elements that have been marked dirty via NeedsStyleRecalc /
+  // ChildNeedsStyleRecalc. This aggregates selector-based invalidations
+  // (PendingInvalidations + StyleInvalidator) and then walks only the
+  // necessary subtrees, emitting winning declared values to the UI layer.
+  void RecalcStyle();
+  // Blink-style entry point that allows callers to pass an explicit
+  // StyleRecalcChange and StyleRecalcContext. Our parameterless RecalcStyle()
+  // forwards into this overload using a default-initialized change/context so
+  // that Blink-style call sites can be wired without changing behavior yet.
+  void RecalcStyle(StyleRecalcChange change, const StyleRecalcContext& style_recalc_context);
+
+  // Recalculate styles for a specific subtree rooted at |root|, applying the
+  // same cascade/export/emission as RecalcStyle(), but limiting the traversal
+  // to the given element and its descendants. This is useful for localized
+  // updates, such as when inline styles are removed and the element needs to
+  // fall back to stylesheet rules.
+  void RecalcStyleForSubtree(Element& root);
+  // Recalculate styles for a single element only, without recursing into its
+  // descendants. This is used for fine-grained style change types such as
+  // kInlineIndependentStyleChange where descendants are not affected.
+  void RecalcStyleForElementOnly(Element& element);
+
+  // Returns true if there is a pending style invalidation root tracked by
+  // StyleInvalidationRoot. This loosely mirrors Blink's
+  // StyleEngine::NeedsStyleInvalidation and lets Document ask whether it
+  // should run selector-based invalidation before a style recalc.
+  bool NeedsStyleInvalidation() const { return style_invalidation_root_.GetRootNode(); }
+
+  // Push all pending selector-based invalidations through StyleInvalidator,
+  // starting from the current StyleInvalidationRoot. This is a thin wrapper
+  // around StyleInvalidator::Invalidate and is intentionally kept separate
+  // from RecalcStyle() so callers can preserve the Blink-style
+  // "invalidate-then-recalc" split when desired.
+  void InvalidateStyle();
 
   bool MarkReattachAllowed() const;
   bool MarkStyleDirtyAllowed() const;
 
   void ScheduleNthPseudoInvalidations(ContainerNode&);
+  void ScheduleInvalidationsForInsertedSibling(Element* before_element, Element& inserted_element);
+  void ScheduleInvalidationsForRemovedSibling(Element* before_element,
+                                              Element& removed_element,
+                                              Element& after_element);
 
   const RuleFeatureSet& GetRuleFeatureSet() const {
     assert(global_rule_set_);
@@ -124,7 +178,66 @@ class StyleEngine final {
   
   void CreateResolver();
 
+  // Notify the style engine that some environment-dependent media value
+  // (viewport size, dynamic viewport units, or other device state) has
+  // changed. For now this conservatively triggers a full style recalc
+  // when Blink CSS is enabled, but the hook allows more targeted
+  // invalidation later.
+  void MediaQueryAffectingValueChanged(MediaValueChange change);
+
+  // Aggregate selector/invalidation features from all active author sheets.
+  void CollectFeaturesTo(RuleFeatureSet& features);
+
+  // Lightweight Blink-style hook that ensures any global selector /
+  // invalidation metadata derived from the current set of active author
+  // stylesheets is up to date. WebF tracks active sheets incrementally;
+  // UpdateActiveStyle simply refreshes the CSSGlobalRuleSet when needed.
+  void UpdateActiveStyle();
+
+  // Placeholders mirroring Blink's StyleEngine::InvalidateViewportUnitStylesIfNeeded
+  // and StyleEngine::InvalidateEnvDependentStylesIfNeeded. WebF currently
+  // relies on MediaQueryAffectingValueChanged to handle viewport / environment
+  // driven style recomputation, so these hooks are no-ops kept for API
+  // compatibility with Blink-style Document::UpdateStyleForThisDocument.
+  void InvalidateViewportUnitStylesIfNeeded();
+  void InvalidateEnvDependentStylesIfNeeded();
+
+  // Mirror Blink's StyleEngine::SetNeedsActiveStyleUpdate at a high level:
+  // mark that the active stylesheet set has changed and flag the document
+  // for an incremental style recomputation. This only marks the style tree
+  // dirty; the actual recomputation work happens later via RecalcStyle().
+  void SetNeedsActiveStyleUpdate();
+
+  // Minimal wiring for Blink-style invalidation: schedule invalidation sets
+  // for ID / class / attribute changes on an element. These currently
+  // complement, but do not replace, the full RecalcStyle() path.
+  void IdChangedForElement(const AtomicString& old_id,
+                           const AtomicString& new_id,
+                           Element&);
+  void ClassAttributeChangedForElement(const AtomicString& old_class_value,
+                                       const AtomicString& new_class_value,
+                                       Element&);
+  void AttributeChangedForElement(const AtomicString& attribute_local_name,
+                                  Element&);
+
  private:
+  // Helper to decide whether selector-based invalidation work should be
+  // skipped for a given element (e.g., because it is not in the active
+  // document or we are already in the middle of a style recalc).
+  bool ShouldSkipInvalidationFor(const Element&) const;
+
+  void ScheduleSiblingInvalidationsForElement(Element& element,
+                                             ContainerNode& scheduling_parent,
+                                             unsigned min_direct_adjacent);
+
+  using UnorderedTreeScopeSet = std::unordered_set<TreeScope*>;
+  using TextTrackSet = std::unordered_set<TextTrack*>;
+
+  void MarkUserStyleDirty();
+  void MediaQueryAffectingValueChanged(TreeScope& tree_scope, MediaValueChange change);
+  void MediaQueryAffectingValueChanged(UnorderedTreeScopeSet& tree_scopes, MediaValueChange change);
+  void MediaQueryAffectingValueChanged(TextTrackSet& text_tracks, MediaValueChange change);
+
   Document* document_;
   struct StringHash {
     size_t operator()(const String& s) const { 
@@ -163,9 +276,88 @@ class StyleEngine final {
   bool allow_skip_style_recalc_{false};
 
   PendingInvalidations pending_invalidations_;
+  // Root for selector-based style invalidation. Updated when nodes are marked
+  // with NeedsStyleInvalidation / ChildNeedsStyleInvalidation and consulted by
+  // InvalidateStyle() to avoid traversing the entire document when only a
+  // subtree is affected.
+  StyleInvalidationRoot style_invalidation_root_;
+  // Root for style-recalc traversal; updated via Node::SetNeedsStyleRecalc /
+  // Node::MarkAncestorsWithChildNeedsStyleRecalc and consulted by
+  // StyleEngine::RecalcStyle() to avoid traversing the entire document when
+  // only a subtree is dirty.
+  StyleRecalcRoot style_recalc_root_;
   std::shared_ptr<StyleResolver> resolver_;
   std::shared_ptr<CSSGlobalRuleSet> global_rule_set_;
+  ActiveStyleSheetVector active_user_style_sheets_;
+  UnorderedTreeScopeSet active_tree_scopes_;
+  TextTrackSet text_tracks_;
+  // Active author stylesheets registered by link/style processing. We track
+  // both the CSSStyleSheet wrapper (for top-level media lists) and the shared
+  // StyleSheetContents used for rule matching / invalidation.
+  std::vector<CSSStyleSheet*> author_css_sheets_;
+  std::vector<std::shared_ptr<StyleSheetContents>> author_sheets_;
+  // Cached evaluation results for size-dependent (viewport/device) media query
+  // sets across all active author stylesheets (including @import conditions).
+  // This is used as a gate in
+  // MediaQueryAffectingValueChanged(MediaValueChange::kSize) to skip full
+  // style recomputation when the active set of media queries has not changed.
+  std::vector<MediaQuerySetResult> size_media_query_results_;
+  // Test-only counter incremented when MediaQueryAffectingValueChanged ends up
+  // calling RecalcStyle(). This lets unit tests observe the optimization
+  // without wiring into logging or UI commands.
+  int media_query_recalc_count_for_test_{0};
+
+ public:
+  int media_query_recalc_count_for_test() const { return media_query_recalc_count_for_test_; }
+
+  void RegisterAuthorSheet(CSSStyleSheet* sheet) {
+    if (!sheet) return;
+    auto contents = sheet->Contents();
+    if (!contents) return;
+    // Track the CSSStyleSheet wrapper so we can later inspect top-level media
+    // lists if needed.
+    bool have_sheet = false;
+    for (auto* s : author_css_sheets_) {
+      if (s == sheet) {
+        have_sheet = true;
+        break;
+      }
+    }
+    if (!have_sheet) {
+      author_css_sheets_.push_back(sheet);
+    }
+    // Avoid duplicates
+    for (auto& s : author_sheets_) {
+      if (s.get() == contents.get()) return;
+    }
+    author_sheets_.push_back(contents);
+    if (global_rule_set_) {
+      global_rule_set_->MarkDirty();
+    }
+  }
+
+  void UnregisterAuthorSheet(CSSStyleSheet* sheet) {
+    if (!sheet) return;
+    auto contents = sheet->Contents();
+    if (!contents) return;
+    author_css_sheets_.erase(
+        std::remove(author_css_sheets_.begin(), author_css_sheets_.end(), sheet),
+        author_css_sheets_.end());
+    author_sheets_.erase(
+        std::remove_if(author_sheets_.begin(), author_sheets_.end(),
+                        [&](const std::shared_ptr<StyleSheetContents>& s) { return s.get() == contents.get(); }),
+        author_sheets_.end());
+    if (global_rule_set_) {
+      global_rule_set_->MarkDirty();
+    }
+  }
+
+  const std::vector<std::shared_ptr<StyleSheetContents>>& AuthorSheets() const { return author_sheets_; }
 };
+
+// Helper used by PendingInvalidations to schedule nth-child style invalidation
+// on parents that are affected by positional pseudo-classes.
+void PossiblyScheduleNthPseudoInvalidations(Node& node);
 
 }  // namespace webf
 

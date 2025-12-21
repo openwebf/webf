@@ -19,6 +19,7 @@
 #include "core/css/css_selector.h"
 #include "core/css/css_style_sheet.h"
 #include "core/css/css_unparsed_declaration_value.h"
+#include "core/css/css_raw_value.h"
 #include "core/css/css_value_list.h"
 #include "core/css/parser/at_rule_descriptor_parser.h"
 #include "core/css/parser/css_at_rule_id.h"
@@ -188,29 +189,8 @@ static inline void FilterProperties(std::vector<CSSPropertyValue>& values,
                                     size_t& unused_entries,
                                     std::bitset<kNumCSSProperties>& seen_properties,
                                     std::unordered_set<std::string>& seen_custom_properties) {
-  // Move !important declarations last, using a simple insertion sort.
-  // This is O(n²), but n is typically small, and std::stable_partition
-  // wants to allocate memory to get to O(n), which is overkill here.
-  // Moreover, this is O(n) if there are no !important properties
-  // (the common case) or only !important properties.
-  size_t last_nonimportant_idx = values.size() - 1;
-  for (size_t i = values.size(); i--;) {
-    if (values[i].IsImportant()) {
-      if (i != last_nonimportant_idx) {
-        // Move this element to the end, preserving the order
-        // of the other elements.
-        CSSPropertyValue tmp = std::move(values[i]);
-        for (size_t j = i; j < last_nonimportant_idx; ++j) {
-          values[j] = std::move(values[j + 1]);
-        }
-        values[last_nonimportant_idx] = std::move(tmp);
-      }
-      --last_nonimportant_idx;
-    }
-  }
-
-  // Add properties in reverse order so that highest priority definitions are
-  // reached first. Duplicate definitions can then be ignored when found.
+  // Add properties in reverse order so that later definitions are reached
+  // first. Duplicate definitions can then be ignored when found.
   for (size_t i = values.size(); i--;) {
     const CSSPropertyValue& property = values[i];
     if (property.Id() == CSSPropertyID::kVariable) {
@@ -987,8 +967,9 @@ bool CSSParserImpl::ConsumeVariableValue(CSSParserTokenStream& stream,
     if (!variable_data) {
       return false;
     }
-
-    value = std::make_shared<CSSUnparsedDeclarationValue>(variable_data, context_);
+    // Preserve the raw user text of the custom property value so downstream
+    // sees exactly what was authored (e.g., "100px"), without further resolution.
+    value = std::make_shared<CSSRawValue>(variable_data->Serialize());
   }
   parsed_properties_.emplace_back(CSSPropertyName(variable_name), value, important);
   return true;
@@ -1095,11 +1076,17 @@ bool CSSParserImpl::ConsumeDeclaration(CSSParserTokenStream& stream, StyleRule::
         if (rule_type != StyleRule::kStyle && rule_type != StyleRule::kKeyframe) {
           return false;
         }
+        // Peek value once to detect/strip !important without advancing the
+        // stream for the real consumption below.
+        CSSParserTokenStream::State savepoint = stream.Save();
         CSSTokenizedValue tokenized_value = ConsumeUnrestrictedPropertyValue(stream);
         important = RemoveImportantAnnotationIfPresent(tokenized_value);
         if (important && (rule_type == StyleRule::kKeyframe)) {
           return false;
         }
+        // Restore so ConsumeVariableValue can read the actual value.
+        stream.Restore(savepoint);
+
         AtomicString variable_name = lhs.Value().ToAtomicString();
         bool allow_important_annotation = (rule_type != StyleRule::kKeyframe);
         bool is_animation_tainted = rule_type == StyleRule::kKeyframe;
@@ -1648,10 +1635,11 @@ std::shared_ptr<StyleRule> CSSParserImpl::ConsumeStyleRule(CSSParserTokenStream&
     if (!observer_ && lazy_state_) {
       assert(style_sheet_);
 
-      uint32_t len =
-          static_cast<uint32_t>(FindLengthOfDeclarationList(StringView(stream.RemainingText().data() + 1, stream.RemainingText().length() - 1)));
+      const StringView remaining_text = stream.RemainingText();
+      const StringView declaration_list(remaining_text, 1);
+      uint32_t len = static_cast<uint32_t>(FindLengthOfDeclarationList(declaration_list));
       if (len != 0) {
-        uint32_t block_start_offset = stream.Offset();
+        uint32_t block_start_offset = stream.LookAheadOffset();
         stream.SkipToEndOfBlock(len + 2);  // +2 for { and }.
         return StyleRule::Create(selector_vector,
                                  std::make_shared<CSSLazyPropertyParserImpl>(block_start_offset, lazy_state_));

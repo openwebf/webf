@@ -195,6 +195,28 @@ TEST_F(CSSPropertyParserSimpleTest, ParseBackgroundProperties) {
   EXPECT_TRUE(CanParseValue(CSSPropertyID::kBackgroundRepeat, "no-repeat"));
 }
 
+// Regression coverage for parsing length second component in background-position.
+TEST_F(CSSPropertyParserSimpleTest, BackgroundPositionWithLength) {
+  auto props = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+  ExecutingContext* exec_context = env_->page()->executingContext();
+
+  auto result = CSSParser::ParseValue(props.get(), CSSPropertyID::kBackgroundPosition, "50% 6px"_s, false,
+                                      exec_context);
+  ASSERT_NE(result, MutableCSSPropertyValueSet::kParseError);
+
+  const auto* value_x = props->GetPropertyCSSValue(CSSPropertyID::kBackgroundPositionX);
+  ASSERT_TRUE(value_x && *value_x);
+  ASSERT_TRUE((*value_x)->IsNumericLiteralValue());
+  EXPECT_TRUE(To<CSSNumericLiteralValue>(value_x->get())->IsPercentage());
+  EXPECT_EQ("50%", To<CSSNumericLiteralValue>(value_x->get())->CustomCSSText());
+
+  const auto* value_y = props->GetPropertyCSSValue(CSSPropertyID::kBackgroundPositionY);
+  ASSERT_TRUE(value_y && *value_y);
+  ASSERT_TRUE((*value_y)->IsNumericLiteralValue());
+  EXPECT_TRUE(To<CSSNumericLiteralValue>(value_y->get())->IsPx());
+  EXPECT_EQ("6px", To<CSSNumericLiteralValue>(value_y->get())->CustomCSSText());
+}
+
 // Test border properties
 TEST_F(CSSPropertyParserSimpleTest, ParseBorderProperties) {
   // Border width

@@ -9,6 +9,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
@@ -168,6 +169,14 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       css += '${_kebabize(property)}: $value ${_importants.containsKey(property) ? '!important' : ''};';
     });
     return css;
+  }
+
+  /// Whether the given property is marked as `!important` on this declaration.
+  ///
+  /// Exposed for components (e.g., CSS variable resolver) that need to
+  /// preserve importance when updating dependent properties.
+  bool isImportant(String propertyName) {
+    return _importants[propertyName] == true;
   }
 
   bool get hasInheritedPendingProperty {
@@ -426,6 +435,12 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       return string;
     }
 
+    // Preserve font family names and font shorthand values to avoid breaking
+    // platform font resolution (Flutter font families can be case-sensitive).
+    if (propertyName == FONT_FAMILY || propertyName == FONT) {
+      return string;
+    }
+
     if (propertyName == CONTENT) {
       return string;
     }
@@ -541,6 +556,13 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         final bool isNonNegPct = CSSPercentage.isNonNegativePercentage(normalizedValue);
         final bool isKeyword = CSSText.isValidFontSizeValue(normalizedValue);
         if (!(isVar || isFunc || isNonNegLen || isNonNegPct || isKeyword)) return false;
+        break;
+      case FONT_VARIANT:
+        // CSS2.1 font-variant accepts 'normal' or 'small-caps'.
+        final bool isVarFontVariant = CSSVariable.isCSSVariableValue(normalizedValue);
+        final bool isFuncFontVariant = CSSFunction.isFunction(normalizedValue);
+        final bool isKeywordFontVariant = CSSText.isValidFontVariantValue(normalizedValue);
+        if (!(isVarFontVariant || isFuncFontVariant || isKeywordFontVariant)) return false;
         break;
     }
     return true;
@@ -659,6 +681,86 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
     onStyleFlushed?.call(propertyNames);
 
+  }
+
+  // Set a style property on a pseudo element (before/after/first-letter/first-line) for this element.
+  // Values set here are treated as inline on the pseudo element and marked important
+  // to override stylesheet rules when applicable.
+  void setPseudoProperty(String type, String propertyName, String value, {String? baseHref}) {
+    switch (type) {
+      case 'before':
+        pseudoBeforeStyle ??= CSSStyleDeclaration();
+        pseudoBeforeStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref);
+        target?.markBeforePseudoElementNeedsUpdate();
+        break;
+      case 'after':
+        pseudoAfterStyle ??= CSSStyleDeclaration();
+        pseudoAfterStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref);
+        target?.markAfterPseudoElementNeedsUpdate();
+        break;
+      case 'first-letter':
+        pseudoFirstLetterStyle ??= CSSStyleDeclaration();
+        pseudoFirstLetterStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref);
+        target?.markFirstLetterPseudoNeedsUpdate();
+        break;
+      case 'first-line':
+        pseudoFirstLineStyle ??= CSSStyleDeclaration();
+        pseudoFirstLineStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref);
+        target?.markFirstLinePseudoNeedsUpdate();
+        break;
+    }
+  }
+
+  // Remove a style property from a pseudo element (before/after/first-letter/first-line) for this element.
+  void removePseudoProperty(String type, String propertyName) {
+    switch (type) {
+      case 'before':
+        if (pseudoBeforeStyle != null) {
+          // Remove the inline override; fall back to stylesheet value if present.
+          pseudoBeforeStyle!.removeProperty(propertyName, true);
+        }
+        target?.markBeforePseudoElementNeedsUpdate();
+        break;
+      case 'after':
+        if (pseudoAfterStyle != null) {
+          pseudoAfterStyle!.removeProperty(propertyName, true);
+        }
+        target?.markAfterPseudoElementNeedsUpdate();
+        break;
+      case 'first-letter':
+        if (pseudoFirstLetterStyle != null) {
+          pseudoFirstLetterStyle!.removeProperty(propertyName, true);
+        }
+        target?.markFirstLetterPseudoNeedsUpdate();
+        break;
+      case 'first-line':
+        if (pseudoFirstLineStyle != null) {
+          pseudoFirstLineStyle!.removeProperty(propertyName, true);
+        }
+        target?.markFirstLinePseudoNeedsUpdate();
+        break;
+    }
+  }
+
+  void clearPseudoStyle(String type) {
+    switch(type) {
+      case 'before':
+        pseudoBeforeStyle = null;
+        target?.markBeforePseudoElementNeedsUpdate();
+        break;
+      case 'after':
+        pseudoAfterStyle = null;
+        target?.markAfterPseudoElementNeedsUpdate();
+        break;
+      case 'first-letter':
+        pseudoFirstLetterStyle = null;
+        target?.markFirstLetterPseudoNeedsUpdate();
+        break;
+      case 'first-line':
+        pseudoFirstLineStyle = null;
+        target?.markFirstLinePseudoNeedsUpdate();
+        break;
+    }
   }
 
   // Inserts the style of the given Declaration into the current Declaration.

@@ -187,12 +187,40 @@ void TEST_LoadNativeLibrary(double context_id,
                             void* import_data,
                             LoadNativeLibraryCallback callback) {}
 void TEST_fetchJavaScriptESMModule(void* callback_context,
-                                   double context_id,
-                                   SharedNativeString* module_url,
-                                   FetchJavaScriptESMModuleCallback callback) {}
+                                  double context_id,
+                                  SharedNativeString* module_url,
+                                  FetchJavaScriptESMModuleCallback callback) {}
 void TEST_GetWidgetElementShape() {}
 
 void TEST_onJsLog(double contextId, int32_t level, const char*) {}
+
+void TEST_fetchImportCSSContent(void* callback_context,
+                                double context_id,
+                                SharedNativeString* /*base_href*/,
+                                SharedNativeString* /*import_href*/,
+                                FetchImportCSSContentCallback callback) {
+  if (callback) {
+    callback(callback_context, context_id, nullptr, nullptr, 0);
+  }
+}
+
+void TEST_registerFontFace(double /*context_id*/,
+                           int64_t /*sheet_id*/,
+                           SharedNativeString* /*font_family*/,
+                           SharedNativeString* /*src*/,
+                           SharedNativeString* /*font_weight*/,
+                           SharedNativeString* /*font_style*/,
+                           SharedNativeString* /*base_href*/) {}
+
+void TEST_unregisterFontFace(double /*context_id*/, int64_t /*sheet_id*/) {}
+
+void TEST_registerKeyframes(double /*context_id*/,
+                            int64_t /*sheet_id*/,
+                            SharedNativeString* /*name*/,
+                            SharedNativeString* /*css_text*/,
+                            int32_t /*is_prefixed*/) {}
+
+void TEST_unregisterKeyframes(double /*context_id*/, int64_t /*sheet_id*/) {}
 
 #if ENABLE_PROFILE
 NativePerformanceEntryList* TEST_getPerformanceEntries(int32_t) {
@@ -358,6 +386,11 @@ std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(onJSError));
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(TEST_onJsLog));
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(TEST_onJSLogStructured));
+  mockMethods.emplace_back(reinterpret_cast<uint64_t>(TEST_fetchImportCSSContent));
+  mockMethods.emplace_back(reinterpret_cast<uint64_t>(TEST_registerFontFace));
+  mockMethods.emplace_back(reinterpret_cast<uint64_t>(TEST_unregisterFontFace));
+  mockMethods.emplace_back(reinterpret_cast<uint64_t>(TEST_registerKeyframes));
+  mockMethods.emplace_back(reinterpret_cast<uint64_t>(TEST_unregisterKeyframes));
   return mockMethods;
 }
 

@@ -13,7 +13,8 @@
 
 #include "core/css/css_style_sheet.h"
 //#include "core/css/resolver/scoped_style_resolver.h"
-//#include "core/css/rule_set.h"
+#include "core/css/rule_set.h"
+#include "core/css/style_rule_import.h"
 #include "core/css/style_change_reason.h"
 #include "core/css/style_engine.h"
 #include "core/css/style_sheet_contents.h"
@@ -24,7 +25,7 @@ namespace webf {
 ActiveSheetsChange CompareActiveStyleSheets(const ActiveStyleSheetVector& old_style_sheets,
                                             const ActiveStyleSheetVector& new_style_sheets,
                                             const HeapVector<Member<RuleSetDiff>>& diffs,
-                                            std::unordered_set<Member<RuleSet>>& changed_rule_sets) {
+                                            std::unordered_set<std::shared_ptr<RuleSet>>& changed_rule_sets) {
   unsigned new_style_sheet_count = new_style_sheets.size();
   unsigned old_style_sheet_count = old_style_sheets.size();
   bool adds_non_matching_mq = false;
@@ -156,71 +157,92 @@ ActiveSheetsChange CompareActiveStyleSheets(const ActiveStyleSheetVector& old_st
       }
       if (sheet2.second) {
         changed_rule_sets.insert(sheet2.second);
-      }
+    }
     }*/
-  return changed_rule_sets.IsEmpty() && !adds_non_matching_mq ? kNoActiveSheetsChanged : kActiveSheetsChanged;
+  return changed_rule_sets.empty() && !adds_non_matching_mq ? kNoActiveSheetsChanged : kActiveSheetsChanged;
 }
 
 namespace {
 
 bool HasMediaQueries(const ActiveStyleSheetVector& active_style_sheets) {
-  /* TODO(guopengfei)：先注释
-    for (const auto& active_sheet : active_style_sheets) {
-      if (const MediaQuerySet* media_queries =
-              active_sheet.first->MediaQueries()) {
-        if (!media_queries->QueryVector().IsEmpty()) {
-          return true;
-        }
-      }
-      StyleSheetContents* contents = active_sheet.first->Contents();
-      if (contents->HasMediaQueries()) {
+  for (const auto& active_sheet : active_style_sheets) {
+    if (!active_sheet.first) {
+      continue;
+    }
+
+    if (std::shared_ptr<const MediaQuerySet> media_queries = active_sheet.first->MediaQueries()) {
+      if (!media_queries->QueryVector().empty()) {
         return true;
       }
     }
-   */
+
+    std::shared_ptr<StyleSheetContents> contents = active_sheet.first->Contents();
+    if (!contents) {
+      continue;
+    }
+    if (contents->HasMediaQueries()) {
+      return true;
+    }
+    for (const auto& import_rule : contents->ImportRules()) {
+      if (!import_rule) {
+        continue;
+      }
+      if (std::shared_ptr<const MediaQuerySet> import_queries = import_rule->MediaQueries()) {
+        if (!import_queries->QueryVector().empty()) {
+          return true;
+        }
+      }
+    }
+  }
   return false;
 }
 
 bool HasSizeDependentMediaQueries(const ActiveStyleSheetVector& active_style_sheets) {
-  /* TODO(guopengfei)：先注释
-for (const auto& active_sheet : active_style_sheets) {
-  if (active_sheet.first->HasMediaQueryResults()) {
-    return true;
+  for (const auto& active_sheet : active_style_sheets) {
+    if (!active_sheet.first) {
+      continue;
+    }
+
+    if (active_sheet.first->HasMediaQueryResults()) {
+      return true;
+    }
+
+    std::shared_ptr<StyleSheetContents> contents = active_sheet.first->Contents();
+    if (!contents || !contents->HasRuleSet()) {
+      continue;
+    }
+    RuleSet* rule_set = contents->GetRuleSet();
+    if (rule_set && rule_set->Features().HasMediaQueryResults()) {
+      return true;
+    }
   }
-  StyleSheetContents* contents = active_sheet.first->Contents();
-  if (!contents->HasRuleSet()) {
-    continue;
-  }
-  if (contents->GetRuleSet().Features().HasMediaQueryResults()) {
-    return true;
-  }
-}
-   */
   return false;
 }
 
 bool HasDynamicViewportDependentMediaQueries(const ActiveStyleSheetVector& active_style_sheets) {
-  /* TODO(guopengfei)：先注释
-for (const auto& active_sheet : active_style_sheets) {
-  if (active_sheet.first->HasDynamicViewportDependentMediaQueries()) {
-    return true;
+  for (const auto& active_sheet : active_style_sheets) {
+    if (!active_sheet.first) {
+      continue;
+    }
+
+    if (active_sheet.first->HasDynamicViewportDependentMediaQueries()) {
+      return true;
+    }
+
+    std::shared_ptr<StyleSheetContents> contents = active_sheet.first->Contents();
+    if (!contents || !contents->HasRuleSet()) {
+      continue;
+    }
+    RuleSet* rule_set = contents->GetRuleSet();
+    if (rule_set && rule_set->Features().HasDynamicViewportDependentMediaQueries()) {
+      return true;
+    }
   }
-  StyleSheetContents* contents = active_sheet.first->Contents();
-  if (!contents->HasRuleSet()) {
-    continue;
-  }
-  if (contents->GetRuleSet()
-          .Features()
-          .HasDynamicViewportDependentMediaQueries()) {
-    return true;
-  }
-}
-   */
   return false;
 }
 
 }  // namespace
-/*
+
 bool AffectedByMediaValueChange(const ActiveStyleSheetVector& active_sheets,
                                 MediaValueChange change) {
   if (change == MediaValueChange::kSize) {
@@ -233,6 +255,5 @@ bool AffectedByMediaValueChange(const ActiveStyleSheetVector& active_sheets,
   assert(change == MediaValueChange::kOther);
   return HasMediaQueries(active_sheets);
 }
- */
 
 }  // namespace webf

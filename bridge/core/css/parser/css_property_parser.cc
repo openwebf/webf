@@ -10,6 +10,7 @@
 #include "foundation/string/character_visitor.h"
 #include "core/css/css_pending_substitution_value.h"
 #include "core/css/css_unparsed_declaration_value.h"
+#include "core/css/css_raw_value.h"
 #include "core/css/hash_tools.h"
 #include "core/css/parser/at_rule_descriptor_parser.h"
 #include "core/css/parser/css_parser_impl.h"
@@ -18,6 +19,7 @@
 #include "core/css/properties/css_bitset.h"
 #include "core/css/properties/css_parsing_utils.h"
 #include "core/css/property_bitsets.h"
+#include "core/platform/url/kurl.h"
 #include "longhands.h"
 #include "shorthands.h"
 
@@ -103,11 +105,10 @@ bool CSSPropertyParser::ParseCSSWideKeyword(CSSPropertyID unresolved_property, b
 bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
                                         bool allow_important_annotation,
                                         StyleRule::RuleType rule_type) {
-  if (ParseCSSWideKeyword(unresolved_property, rule_type)) {
+  // Match Blink: pass allow_important_annotation when checking CSS-wide keywords.
+  if (ParseCSSWideKeyword(unresolved_property, allow_important_annotation)) {
     return true;
   }
-
-  CSSParserTokenStream::State savepoint = stream_.Save();
 
   CSSPropertyID property_id = ResolveCSSPropertyID(unresolved_property);
   const CSSProperty& property = CSSProperty::Get(property_id);
@@ -119,64 +120,7 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
   if (!IsPropertyAllowedInRule(property, rule_type)) {
     return false;
   }
-  int parsed_properties_size = parsed_properties_->size();
-
-  bool is_shorthand = property.IsShorthand();
   DCHECK(context_);
-
-  // NOTE: The first branch of the if here uses the tokenized form,
-  // and the second uses the streaming parser. This is only allowed
-  // since they start from the same place and we reset both below,
-  // so they cannot go out of sync.
-  if (is_shorthand) {
-    const auto local_context = CSSParserLocalContext()
-                                   .WithAliasParsing(IsPropertyAlias(unresolved_property))
-                                   .WithCurrentShorthand(property_id);
-    // Variable references will fail to parse here and will fall out to the
-    // variable ref parser below.
-    //
-    // NOTE: We call ParseShorthand() with important=false, since we don't know
-    // yet whether we have !important or not. We'll change the flag for all
-    // added properties below (ParseShorthand() makes its own calls to
-    // AddProperty(), since there may be more than one of them).
-    if (To<Shorthand>(property).ParseShorthand(
-            /*important=*/false, stream_, context_, local_context, *parsed_properties_)) {
-      bool important = css_parsing_utils::MaybeConsumeImportant(stream_, allow_important_annotation);
-      if (stream_.AtEnd()) {
-        if (important) {
-          for (size_t property_idx = parsed_properties_size; property_idx < parsed_properties_->size();
-               ++property_idx) {
-            (*parsed_properties_)[property_idx].SetImportant();
-          }
-        }
-        return true;
-      }
-    }
-
-    // Remove any properties that may have been added by ParseShorthand()
-    // during a failing parse earlier.
-    parsed_properties_->erase(parsed_properties_->begin(), parsed_properties_->begin() + parsed_properties_size);
-    parsed_properties_->shrink_to_fit();
-  } else {
-    if (std::shared_ptr<const CSSValue> parsed_value =
-            css_parsing_utils::ParseLonghand(unresolved_property, CSSPropertyID::kInvalid, context_, stream_)) {
-      bool important = css_parsing_utils::MaybeConsumeImportant(stream_, allow_important_annotation);
-      if (stream_.AtEnd()) {
-        AddProperty(property_id, CSSPropertyID::kInvalid, std::move(parsed_value), important,
-                    css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
-        return true;
-      }
-    }
-  }
-
-  // We did not parse properly without variable substitution,
-  // so rewind the stream, and see if parsing it as something
-  // containing variables will help.
-  //
-  // Note that if so, this needs the original text, so we need to take
-  // note of the original offsets so that we can see what we tokenized.
-  stream_.EnsureLookAhead();
-  stream_.Restore(savepoint);
 
   CSSTokenizedValue value = CSSParserImpl::ConsumeRestrictedPropertyValue(stream_);
   if (!stream_.AtEnd()) {
@@ -186,27 +130,22 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
   const bool important = CSSParserImpl::RemoveImportantAnnotationIfPresent(value);
   value.text = CSSVariableParser::StripTrailingWhitespaceAndComments(value.text);
 
-  if (CSSVariableParser::ContainsValidVariableReferences(value.range, context_->GetExecutingContext())) {
-    if (value.text.length() > CSSVariableData::kMaxVariableBytes) {
-      return false;
+  auto raw = std::make_shared<CSSRawValue>(String(value.text));
+  // Record the parser context base URL as a base href on this raw value so
+  // that later pipeline stages (e.g. StyleEngine -> UICommand bridge) can
+  // resolve relative url() tokens consistently with the stylesheet URL.
+  // Treat about:blank as "no href" so consumers fall back to the document or
+  // controller URL rather than using a synthetic base.
+  if (context_) {
+    const KURL& base_url = context_->BaseURL();
+    std::string base = base_url.GetString();
+    if (!base_url.IsEmpty() && base_url.IsValid() && base != "about:blank") {
+      raw->SetBaseHref(String::FromUTF8(base));
     }
-
-    bool is_animation_tainted = false;
-    auto variable = std::make_shared<CSSUnparsedDeclarationValue>(
-        CSSVariableData::Create(value, is_animation_tainted, true), context_);
-
-    if (is_shorthand) {
-      std::shared_ptr<cssvalue::CSSPendingSubstitutionValue> pending_value =
-          std::make_shared<cssvalue::CSSPendingSubstitutionValue>(property_id, variable);
-      css_parsing_utils::AddExpandedPropertyForValue(property_id, pending_value, important, *parsed_properties_);
-    } else {
-      AddProperty(property_id, CSSPropertyID::kInvalid, variable, important,
-                  css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
-    }
-    return true;
   }
-
-  return false;
+  AddProperty(property_id, CSSPropertyID::kInvalid, raw, important,
+              css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
+  return true;
 }
 
 bool CSSPropertyParser::ParseValue(CSSPropertyID unresolved_property,
@@ -338,6 +277,25 @@ CSSPropertyID UnresolvedCSSPropertyID(const ExecutingContext* context,
   });
 }
 
+template <typename CharacterType>
+static CSSValueID CssValueKeywordID(tcb::span<const CharacterType> value_keyword) {
+  char buffer[maxCSSValueKeywordLength + 1];
+  if (!QuasiLowercaseIntoBuffer(value_keyword.data(), static_cast<unsigned>(value_keyword.size()), buffer)) {
+    return CSSValueID::kInvalid;
+  }
+
+  unsigned length = static_cast<unsigned>(value_keyword.size());
+  const Value* hash_table_entry = FindValue(buffer, length);
+#if DDEBUG
+  // Verify that we get the same answer with standard lowercasing.
+  for (unsigned i = 0; i < length; ++i) {
+    buffer[i] = ToASCIILower(value_keyword[i]);
+  }
+  assert(hash_table_entry == FindValue(buffer, length));
+#endif
+  return hash_table_entry ? static_cast<CSSValueID>(hash_table_entry->id) : CSSValueID::kInvalid;
+}
+
 CSSValueID CssValueKeywordID(const StringView& string) {
   unsigned length = string.length();
   if (!length) {
@@ -347,20 +305,7 @@ CSSValueID CssValueKeywordID(const StringView& string) {
     return CSSValueID::kInvalid;
   }
 
-  char buffer[maxCSSValueKeywordLength + 1];  // 1 for null character
-  if (!QuasiLowercaseIntoBuffer(string.data() , length, buffer)) {
-    return CSSValueID::kInvalid;
-  }
-
-  const Value* hash_table_entry = FindValue(buffer, length);
-#if DDEBUG
-  // Verify that we get the same answer with standard lowercasing.
-  for (unsigned i = 0; i < length; ++i) {
-    buffer[i] = ToASCIILower(string.data()[i]);
-  }
-  assert(hash_table_entry == FindValue(buffer, length));
-#endif
-  return hash_table_entry ? static_cast<CSSValueID>(hash_table_entry->id) : CSSValueID::kInvalid;
+  return string.Is8Bit() ? CssValueKeywordID(string.Span8()) : CssValueKeywordID(string.Span16());
 }
 
 bool CSSPropertyParser::ParseFontFaceDescriptor(CSSPropertyID resolved_property) {

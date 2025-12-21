@@ -64,7 +64,6 @@ class AbstractPropertySetCSSStyleDeclaration : public CSSStyleDeclaration {
 
   AtomicString cssText() const final;
 
- private:
   bool IsAbstractPropertySet() const final { return true; }
   CSSRule* parentRule() const override { return nullptr; }
   unsigned length() const final;
@@ -73,8 +72,7 @@ class AbstractPropertySetCSSStyleDeclaration : public CSSStyleDeclaration {
   AtomicString getPropertyPriority(const AtomicString& property_name) final;
   AtomicString GetPropertyShorthand(const AtomicString& property_name) final;
   bool IsPropertyImplicit(const AtomicString& property_name) final;
-  void setProperty(const ExecutingContext*,
-                   const AtomicString& property_name,
+  void setProperty(const AtomicString& property_name,
                    const AtomicString& value,
                    const AtomicString& priority,
                    ExceptionState&) final;

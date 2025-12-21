@@ -39,13 +39,13 @@ void CSSDefaultStyleSheets::Init() {
   }
   
   // Parse default HTML stylesheet
-  default_html_style_ = ParseUASheet(kHTMLDefaultStyle);
-  
-  if (default_html_style_) {
-    WEBF_LOG(VERBOSE) << "UA stylesheet parsed, rule count: " << default_html_style_->RuleCount();
-  } else {
-    WEBF_LOG(ERROR) << "Failed to parse UA stylesheet";
-  }
+  // default_html_style_ = ParseUASheet(kHTMLDefaultStyle);
+  //
+  // if (default_html_style_) {
+  //   WEBF_LOG(VERBOSE) << "UA stylesheet parsed, rule count: " << default_html_style_->RuleCount();
+  // } else {
+  //   WEBF_LOG(ERROR) << "Failed to parse UA stylesheet";
+  // }
   
   // Parse quirks mode stylesheet
   quirks_style_ = ParseUASheet(kQuirksDefaultStyle);
@@ -110,10 +110,12 @@ std::shared_ptr<StyleSheetContents> CSSDefaultStyleSheets::ParseUASheet(const ch
   // UA stylesheets always parse in the UA sheet mode
   auto parser_context = std::make_shared<CSSParserContext>(kUASheetMode);
   auto sheet = std::make_shared<StyleSheetContents>(parser_context);
-  
+
+
+  // TODO: remove UA Style all togather.
   // Parse the CSS string - we need to use ParseSheet directly with the UA context
   // instead of ParseString which creates its own context
-  CSSParser::ParseSheet(parser_context, sheet, String::FromUTF8(css));
+  // CSSParser::ParseSheet(parser_context, sheet, String::FromUTF8(css));
   
   // WEBF_LOG(VERBOSE) << "Parsed UA stylesheet, rule count: " << sheet->RuleCount();
   

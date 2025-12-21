@@ -34,8 +34,10 @@
 #include "core/css/style_rule_import.h"
 #include "core/css/rule_set.h"
 #include "core/css/media_query_evaluator.h"
+#include "core/css/css_keyframes_rule.h"
 #include "element_namespace_uris.h"
 #include "foundation/logging.h"
+#include <functional>
 // #include "core/css/parser/css_"
 
 namespace webf {
@@ -89,7 +91,14 @@ StyleSheetContents::~StyleSheetContents() = default;
 ParseSheetResult StyleSheetContents::ParseString(const String& sheet_text,
                                                  bool allow_import_rules,
                                                  CSSDeferPropertyParsing defer_property_parsing) {
-  std::shared_ptr<CSSParserContext> context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
+  // Use the parser context associated with this StyleSheetContents so relative
+  // URLs resolve against the correct base (e.g., the stylesheet href).
+  std::shared_ptr<CSSParserContext> context;
+  if (parser_context_) {
+    context = std::make_shared<CSSParserContext>(parser_context_.get(), this);
+  } else {
+    context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
+  }
   return CSSParser::ParseSheet(context, shared_from_this(), sheet_text, defer_property_parsing, allow_import_rules);
 }
 
@@ -227,7 +236,6 @@ void StyleSheetContents::ParserAppendRule(std::shared_ptr<StyleRuleBase> rule) {
   //    namespace_rules_.push_back(namespace_rule);
   //    return;
   //  }
-
   child_rules_.push_back(rule);
 }
 
@@ -359,26 +367,9 @@ void StyleSheetContents::ParserAddNamespace(const std::optional<String>& prefix,
 void StyleSheetContents::NotifyRemoveFontFaceRule(const webf::StyleRuleFontFace*) {}
 
 std::shared_ptr<RuleSet> StyleSheetContents::EnsureRuleSet(const MediaQueryEvaluator& medium) {
-  
   if (!rule_set_) {
     rule_set_ = std::make_shared<RuleSet>();
-    
-    
-    // Add all style rules from child_rules_ to the rule set
-    for (const auto& rule : child_rules_) {
-      if (rule->IsStyleRule()) {
-        // Since we can't use dynamic_pointer_cast without RTTI, use static_pointer_cast
-        // after we've already checked the type with IsStyleRule()
-        auto style_rule_ptr = std::static_pointer_cast<StyleRule>(rule);
-        rule_set_->AddStyleRule(style_rule_ptr, kRuleHasNoSpecialState);
-      }
-      // TODO: Handle other rule types like @media, @supports, etc.
-    }
-    
-    // Also process imported stylesheets
-    for (const auto& import_rule : import_rules_) {
-      // TODO: Handle @import rules
-    }
+    rule_set_->AddRulesFromSheet(shared_from_this(), medium, kRuleHasNoSpecialState);
   }
   return rule_set_;
 }

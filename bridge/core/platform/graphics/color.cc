@@ -68,9 +68,8 @@ int BlendComponent(int c, int a) {
 // originally moved here from the CSS parser
 template <typename CharacterType>
 inline bool ParseHexColorInternal(const CharacterType* name, unsigned length, Color& color) {
+  // Support 3/6-digit legacy hex and 4/8-digit CSS Color 4 hex (#RGBA/#RRGGBBAA)
   if (length != 3 && length != 4 && length != 6 && length != 8)
-    return false;
-  if ((length == 8 || length == 4))
     return false;
   unsigned value = 0;
   for (unsigned i = 0; i < length; ++i) {
@@ -442,6 +441,17 @@ String Color::SerializeLegacyColorAsCSSColor() const {
   } else if (color_space_ == Color::ColorSpace::kSRGBLegacy) {
     // For kSRGBLegacy colors, the values are already in 0-1 range and need to be converted to 0-255
     std::tie(r, g, b) = SRGBToSRGBLegacy(r + kEpsilon, g + kEpsilon, b + kEpsilon);
+  }
+
+  // TODO: we may not need this after we don't parse CSSPropertyValue
+  // Defensive fix: some code paths may incorrectly carry sRGB legacy channel
+  // values in the [0,1] range into serialization without going through the
+  // conversion above. If channels look like normalized values, scale them to
+  // the 0..255 range to match CSSOM rgb() serialization.
+  if (r <= 1.0f && g <= 1.0f && b <= 1.0f && (r > 0.0f || g > 0.0f || b > 0.0f)) {
+    r *= 255.0f;
+    g *= 255.0f;
+    b *= 255.0f;
   }
 
   result.AppendNumber(round(ClampTo(r, 0.0, 255.0)), 6);

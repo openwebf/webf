@@ -40,6 +40,12 @@ class CSSValue : public std::enable_shared_from_this<CSSValue> {
   static std::shared_ptr<const CSSValue> Create(const Length& value, float zoom);
 
   String CssText() const;
+  String CssTextForSerialization() const;
+
+  const String& RawText() const { return raw_text_; }
+  bool HasRawText() const { return !raw_text_.IsNull() && raw_text_.length(); }
+  void SetRawText(const String& raw_text) const { raw_text_ = raw_text; }
+  void ClearRawText() const { raw_text_ = String(); }
 
   [[nodiscard]] bool IsNumericLiteralValue() const { return class_type_ == kNumericLiteralClass; }
   bool IsMathFunctionValue() const { return class_type_ == kMathFunctionClass; }
@@ -99,6 +105,7 @@ class CSSValue : public std::enable_shared_from_this<CSSValue> {
   bool IsReflectValue() const { return class_type_ == kReflectClass; }
   bool IsShadowValue() const { return class_type_ == kShadowClass; }
   bool IsStringValue() const { return class_type_ == kStringClass; }
+  bool IsRawValue() const { return class_type_ == kRawClass; }
   bool IsURIValue() const { return class_type_ == kURIClass; }
   bool IsLinearTimingFunctionValue() const { return class_type_ == kLinearTimingFunctionClass; }
   bool IsCubicBezierTimingFunctionValue() const { return class_type_ == kCubicBezierTimingFunctionClass; }
@@ -164,6 +171,7 @@ class CSSValue : public std::enable_shared_from_this<CSSValue> {
     kQuadClass,                               // future
     kCustomIdentClass,                        // done
     kStringClass,                             // done
+    kRawClass,                                // new: raw, unquoted CSS text
     kURIClass,                                // future
     kValuePairClass,                          // done
     kLightDarkValuePairClass,                 // done
@@ -251,6 +259,8 @@ class CSSValue : public std::enable_shared_from_this<CSSValue> {
   };
 
   ClassType GetClassType() const { return static_cast<ClassType>(class_type_); }
+  // for debug
+  const char* GetClassTypeName() const;
 
   std::shared_ptr<const CSSValue> PopulateWithTreeScope(const TreeScope*) const;
 
@@ -286,6 +296,7 @@ class CSSValue : public std::enable_shared_from_this<CSSValue> {
   uint8_t needs_tree_scope_population_ : 1;  // NOLINT
 
  private:
+  mutable String raw_text_;
   const uint8_t class_type_;  // ClassType
 };
 

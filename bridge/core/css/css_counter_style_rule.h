@@ -57,8 +57,6 @@ class CSSCounterStyleRule : public CSSRule {
 
   void Reattach(std::shared_ptr<StyleRuleBase>) override;
 
-  void TraceAfterDispatch(GCVisitor* visitor) const;
-
  private:
   std::shared_ptr<StyleRuleCounterStyle> counter_style_rule_;
 };

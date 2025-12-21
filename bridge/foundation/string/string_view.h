@@ -48,8 +48,6 @@ class StringView final {
   explicit StringView(const UTF8Char*);
   explicit StringView(const LChar*);
   explicit StringView(const UChar*);
-  explicit StringView(const std::string_view&);
-  explicit StringView(const std::string& string);
   explicit StringView(const SharedNativeString* string);
   explicit StringView(void* bytes, unsigned length, bool is_wide_char);
   explicit StringView(const char* view, unsigned length);
@@ -135,7 +133,7 @@ class StringView final {
   bool operator==(const StringView& other) const;
   bool operator!=(const StringView& other) const { return !(*this == other); }
   bool operator==(const char* str) const;
-  bool operator!=(const char* str) const { return !(*this == str); }
+  bool operator!=(const char* str) const { return !(*this == str); } std::string ToUTF8String();
 
  private:
   // We use the StringImpl to mark for 8bit or 16bit, even for strings where

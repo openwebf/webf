@@ -471,6 +471,50 @@ function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaratio
   isConstructor: false,
   isInstanceMethod: false
 }) {
+  // Unified handling: setProperty(property, value, priority?) for all style declarations
+  if (declaration.name === 'setProperty') {
+    const isLegacy = getClassName(blob).startsWith('Legacy');
+    const valueIDL = isLegacy ? 'IDLAny' : 'IDLDOMString';
+    return `auto&& args_property = Converter<IDLDOMString>::FromValue(ctx, argv[0], exception_state);
+if (UNLIKELY(exception_state.HasException())) {
+  return exception_state.ToQuickJS();
+}
+auto&& args_value = Converter<${valueIDL}>::FromValue(ctx, argv[1], exception_state);
+if (UNLIKELY(exception_state.HasException())) {
+  return exception_state.ToQuickJS();
+}
+AtomicString args_priority = AtomicString::Empty();
+if (argc > 2) {
+  args_priority = Converter<IDLDOMString>::FromValue(ctx, argv[2], exception_state);
+  if (UNLIKELY(exception_state.HasException())) {
+    return exception_state.ToQuickJS();
+  }
+}
+auto* self = toScriptWrappable<${getClassNameWithNamespace(getClassName(blob))}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
+self->setProperty(args_property, args_value, args_priority, exception_state);`;
+  }
+  // Unified handling: setProperty_async(property, value, priority?) for all style declarations
+  if (declaration.name === 'setProperty_async') {
+    const isLegacy = getClassName(blob).startsWith('Legacy');
+    const valueIDL = isLegacy ? 'IDLAny' : 'IDLDOMString';
+    return `auto&& args_property = Converter<IDLDOMString>::FromValue(ctx, argv[0], exception_state);
+if (UNLIKELY(exception_state.HasException())) {
+  return exception_state.ToQuickJS();
+}
+auto&& args_value = Converter<${valueIDL}>::FromValue(ctx, argv[1], exception_state);
+if (UNLIKELY(exception_state.HasException())) {
+  return exception_state.ToQuickJS();
+}
+AtomicString args_priority = AtomicString::Empty();
+if (argc > 2) {
+  args_priority = Converter<IDLDOMString>::FromValue(ctx, argv[2], exception_state);
+  if (UNLIKELY(exception_state.HasException())) {
+    return exception_state.ToQuickJS();
+  }
+}
+auto* self = toScriptWrappable<${getClassNameWithNamespace(getClassName(blob))}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
+self->setProperty_async(args_property, args_value, args_priority, exception_state);`;
+  }
   if (options.isConstructor && declaration.returnType.value == FunctionArgumentType.void) {
     return 'return JS_ThrowTypeError(ctx, "Illegal constructor");';
   }

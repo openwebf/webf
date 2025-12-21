@@ -120,6 +120,7 @@ const String BORDER_BOTTOM_LEFT_RADIUS = 'borderBottomLeftRadius';
 
 const String FONT = 'font';
 const String FONT_STYLE = 'fontStyle';
+const String FONT_VARIANT = 'fontVariant';
 const String FONT_WEIGHT = 'fontWeight';
 const String FONT_SIZE = 'fontSize';
 const String LINE_HEIGHT = 'lineHeight';

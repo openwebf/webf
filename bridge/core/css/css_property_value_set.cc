@@ -32,6 +32,8 @@
 #include "foundation/string/wtf_string.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_markup.h"
+#include "core/css/css_raw_value.h"
+#include "core/css/css_value.h"
 #include "core/css/parser/css_parser.h"
 #include "core/css/properties/css_property.h"
 #include "core/css/property_set_css_style_declaration.h"
@@ -39,6 +41,8 @@
 #include "core/css/style_sheet_contents.h"
 #include "css_style_declaration.h"
 #include "foundation/macros.h"
+#include "core/dart_isolate_context.h"
+#include "foundation/metrics_registry.h"
 #include "property_bitsets.h"
 #include "style_property_shorthand.h"
 
@@ -77,7 +81,7 @@ String CSSPropertyValueSet::GetPropertyValue(const T& property) const {
   }
   const std::shared_ptr<const CSSValue>* value = GetPropertyCSSValue(property);
   if (value) {
-    return value->get()->CssText();
+    return value->get()->CssTextForSerialization();
   }
   return String::EmptyString();
 }
@@ -104,14 +108,61 @@ const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::GetPropertyCSSValueW
     const AtomicString& property_name,
     unsigned index) const {
   assert(property_name == PropertyAt(index).Name().ToAtomicString());
-  return PropertyAt(index).Value();
+  auto value = PropertyAt(index).Value();
+  // CSSRawValue was abandoned.
+  // DCHECK(value->get()->IsRawValue());
+  return value;
 }
 
 String CSSPropertyValueSet::GetPropertyValueWithHint(const AtomicString& property_name, unsigned int index) const {
-  auto value = GetPropertyCSSValueWithHint(property_name, index);
-  if (value) {
-    return value->get()->CssText();
+  if (auto* isolate = GetCurrentDartIsolateContext()) {
+    isolate->metrics()->Increment(MetricsEnum::kTotalGetPropertyValueWithHint);
   }
+  const std::shared_ptr<const CSSValue>* value = GetPropertyCSSValueWithHint(property_name, index);
+  if (value) {
+    const CSSValue& css_value = *(*value);
+    // Normalize CSS-wide 'initial' for select properties to concrete specified values.
+    // This is important for properties where the UI side expects resolved values
+    // instead of the CSS-wide keyword 'initial'.
+    if (css_value.IsInitialValue()) {
+      // Property names here are canonical CSS names (kebab-case).
+      if (property_name == AtomicString::CreateFromUTF8("flex-grow")) {
+        return String("0");
+      }
+      if (property_name == AtomicString::CreateFromUTF8("flex-shrink")) {
+        return String("1");
+      }
+      if (property_name == AtomicString::CreateFromUTF8("flex-basis")) {
+        return String("auto");
+      }
+    }
+    if (css_value.HasRawText()) {
+      if (auto* isolate = GetCurrentDartIsolateContext()) {
+        isolate->metrics()->Increment(MetricsEnum::kGetPropertyValueWithHintWithRawText);
+      }
+      return css_value.RawText();
+    }
+    return css_value.CssTextForSerialization();
+  }
+  return String::EmptyString();
+}
+
+String CSSPropertyValueSet::GetPropertyBaseHrefWithHint(const AtomicString& property_name,
+                                                        unsigned int index) const {
+  const std::shared_ptr<const CSSValue>* value = GetPropertyCSSValueWithHint(property_name, index);
+  if (!value || !(*value)) {
+    return String::EmptyString();
+  }
+
+  const CSSValue& css_value = *(*value);
+  if (css_value.IsRawValue()) {
+    if (const auto* raw = DynamicTo<CSSRawValue>(&css_value)) {
+      if (raw->HasBaseHref()) {
+        return raw->BaseHref();
+      }
+    }
+  }
+
   return String::EmptyString();
 }
 
@@ -347,22 +398,20 @@ void MutableCSSPropertyValueSet::SetProperty(CSSPropertyID property_id,
                                              std::shared_ptr<const CSSValue> value,
                                              bool important) {
   DCHECK_NE(property_id, CSSPropertyID::kVariable);
-  DCHECK_NE(property_id, CSSPropertyID::kWhiteSpace);
+  // DCHECK_NE(property_id, CSSPropertyID::kWhiteSpace);
   StylePropertyShorthand shorthand = shorthandForProperty(property_id);
   if (shorthand.length() == 0) {
     SetLonghandProperty(CSSPropertyValue(CSSPropertyName(property_id), std::move(value), important));
     return;
   }
 
-  RemovePropertiesInSet(shorthand.properties(), shorthand.length());
+  // RemovePropertiesInSet(shorthand.properties(), shorthand.length());
 
   // The simple shorthand expansion below doesn't work for `white-space`.
-  DCHECK_NE(property_id, CSSPropertyID::kWhiteSpace);
-  for (int i = 0; i < shorthand.length(); i++) {
-    CSSPropertyName longhand_name(shorthand.properties()[i]->PropertyID());
-    property_vector_.emplace_back(CSSPropertyValue(longhand_name, value, important));
-  }
+  // DCHECK_NE(property_id, CSSPropertyID::kWhiteSpace);
+  property_vector_.emplace_back(CSSPropertyName(property_id), value, important);
 }
+
 void MutableCSSPropertyValueSet::SetProperty(const CSSPropertyName& name,
                                              std::shared_ptr<const CSSValue> value,
                                              bool important) {
@@ -390,7 +439,11 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetPro
   // When replacing an existing property value, this moves the property to the
   // end of the list. Firefox preserves the position, and MSIE moves the
   // property to the beginning.
-  return CSSParser::ParseValue(this, unresolved_property, value, important, context_style_sheet);
+
+  // Uncomment this if you want to debug property set
+  // auto name = CSSPropertyName(ResolveCSSPropertyID(unresolved_property));
+  // WEBF_LOG(INFO) << "The property: " << name.ToAtomicString().ToUTF8String() << "=" << value.ToUTF8String();
+  return CSSParser::ParseValue(this, unresolved_property, value, important, std::move(context_style_sheet));
 }
 
 MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetCustomProperty(
@@ -408,7 +461,8 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetCus
 
 MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::SetLonghandProperty(CSSPropertyValue property) {
   const CSSPropertyID id = property.Id();
-  DCHECK_EQ(shorthandForProperty(id).length(), 0u);
+  // Allow shorthand in CSSPropertyValueSet
+  // DCHECK_EQ(shorthandForProperty(id).length(), 0u);
   CSSPropertyValue* to_replace;
   if (id == CSSPropertyID::kVariable) {
     to_replace = const_cast<CSSPropertyValue*>(FindPropertyPointer(property.Name().ToAtomicString()));
@@ -450,7 +504,7 @@ template <typename T>
 bool MutableCSSPropertyValueSet::RemoveProperty(const T& property, String* return_text) {
   if (RemoveShorthandProperty(property)) {
     if (return_text) {
-      *return_text = String();
+      *return_text = ""_s;
     }
     return true;
   }
@@ -485,7 +539,7 @@ bool MutableCSSPropertyValueSet::RemovePropertiesInSet(const CSSProperty* const 
     properties[new_index++] = properties[old_index];
   }
   if (new_index != old_size) {
-    property_vector_.reserve(new_index);
+    property_vector_.erase(property_vector_.begin() + new_index, property_vector_.end());
     return true;
   }
   return false;
@@ -614,13 +668,13 @@ ALWAYS_INLINE CSSPropertyValue* MutableCSSPropertyValueSet::FindInsertionPointFo
 bool MutableCSSPropertyValueSet::RemovePropertyAtIndex(int property_index, String* return_text) {
   if (property_index == -1) {
     if (return_text) {
-      *return_text = String();
+      *return_text = ""_s;
     }
     return false;
   }
 
   if (return_text) {
-    *return_text = PropertyAt(property_index).Value()->get()->CssText();
+    *return_text = PropertyAt(property_index).Value()->get()->CssTextForSerialization();
   }
 
   // A more efficient removal strategy would involve marking entries as empty

@@ -264,7 +264,7 @@ describe('Font', () => {
     );
     BODY.appendChild(container);
     container.addEventListener('onscreen', () => {
-      test_computed_value('font', 'italic 800 12px 14px helvetica');
+      test_computed_value('font', 'italic 800 12px  14px helvetica');
       done();
     })
     

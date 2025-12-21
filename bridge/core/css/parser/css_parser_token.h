@@ -51,6 +51,7 @@ enum CSSParserTokenType {
   kRightBraceToken,
   kStringToken,
   kBadStringToken,
+  kRawToken,
   kEOFToken,
   kCommentToken,
 };
@@ -131,6 +132,7 @@ class CSSParserToken {
   }
 
   bool IsEOF() const { return type_ == static_cast<unsigned>(kEOFToken); }
+  bool IsRaw() const { return type_ == static_cast<unsigned>(kRawToken); }
   char Delimiter() const;
 
   NumericSign GetNumericSign() const;

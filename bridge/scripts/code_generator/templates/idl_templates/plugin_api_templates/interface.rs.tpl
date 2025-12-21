@@ -137,6 +137,27 @@ impl <%= className %> {
     <% if (method.async_returnType) { return; } %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
     <% if (isVoidType(method.returnType)) { %>
+      <% if ((['CSSStyleDeclaration','InlineCssStyleDeclaration','LegacyCssStyleDeclaration','LegacyComputedCssStyleDeclaration'].includes(className)) && method.name === 'setProperty') { %>
+  pub fn set_property(&self, property: &str, value: NativeValue, exception_state: &ExceptionState) -> Result<(), String> {
+    unsafe {
+      ((*self.method_pointer).set_property)(self.ptr(), CString::new(property).unwrap().as_ptr(), value, CString::new("").unwrap().as_ptr(), exception_state.ptr);
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self.context()));
+    }
+    Ok(())
+  }
+
+  pub fn set_property_with_priority(&self, property: &str, value: NativeValue, priority: &str, exception_state: &ExceptionState) -> Result<(), String> {
+    unsafe {
+      ((*self.method_pointer).set_property)(self.ptr(), CString::new(property).unwrap().as_ptr(), value, CString::new(priority).unwrap().as_ptr(), exception_state.ptr);
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self.context()));
+    }
+    Ok(())
+  }
+      <% } else { %>
   pub fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).<%= methodName %>)(self.ptr(), <%= generateMethodParametersName(method.args) %>exception_state.ptr);
@@ -146,6 +167,7 @@ impl <%= className %> {
     }
     Ok(())
   }
+      <% } %>
     <% } else { %>
   pub fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<<%= generateMethodReturnType(method.returnType) %>, String> {
     let value = unsafe {
@@ -255,9 +277,15 @@ impl <%= className %>Methods for <%= className %> {
     <% if (method.async_returnType) { return; } %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
     <% if (isVoidType(method.returnType)) { %>
+      <% if ((['CSSStyleDeclaration','InlineCssStyleDeclaration','LegacyCssStyleDeclaration','LegacyComputedCssStyleDeclaration'].includes(className)) && method.name === 'setProperty') { %>
+  fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String> {
+    self.set_property_with_priority(<%= generateParentMethodParametersName(method.args) %>exception_state)
+  }
+      <% } else { %>
   fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String> {
     self.<%= methodName %>(<%= generateParentMethodParametersName(method.args) %>exception_state)
   }
+      <% } %>
     <% } else { %>
   fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<<%= generateMethodReturnType(method.returnType) %>, String> {
     self.<%= methodName %>(<%= generateParentMethodParametersName(method.args) %>exception_state)
@@ -297,9 +325,15 @@ impl <%= parentObject.name %>Methods for <%= className %> {
     <% if (method.async_returnType) { return; } %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
     <% if (isVoidType(method.returnType)) { %>
+      <% if ((['CSSStyleDeclaration','InlineCssStyleDeclaration','LegacyCssStyleDeclaration','LegacyComputedCssStyleDeclaration'].includes(parentObject.name)) && method.name === 'setProperty') { %>
+  fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String> {
+    self.<%= parentKey %>.set_property_with_priority(<%= generateParentMethodParametersName(method.args) %>exception_state)
+  }
+      <% } else { %>
   fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String> {
     self.<%= parentKey %>.<%= methodName %>(<%= generateParentMethodParametersName(method.args) %>exception_state)
   }
+      <% } %>
     <% } else { %>
   fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<<%= generateMethodReturnType(method.returnType) %>, String> {
     self.<%= parentKey %>.<%= methodName %>(<%= generateParentMethodParametersName(method.args) %>exception_state)

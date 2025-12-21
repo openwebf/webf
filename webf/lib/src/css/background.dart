@@ -865,13 +865,14 @@ class CSSBackground {
   static bool isValidBackgroundImageValue(String value) {
     // According to CSS Backgrounds spec, 'none' is a valid <bg-image> keyword.
     if (value == 'none') return true;
-    return (value.lastIndexOf(')') == value.length - 1) &&
+    final bool isValid = (value.lastIndexOf(')') == value.length - 1) &&
         (value.startsWith('url(') ||
             value.startsWith('linear-gradient(') ||
             value.startsWith('repeating-linear-gradient(') ||
             value.startsWith('radial-gradient(') ||
             value.startsWith('repeating-radial-gradient(') ||
             value.startsWith('conic-gradient('));
+    return isValid;
   }
 
   static bool isValidBackgroundPositionValue(String value) {
@@ -937,17 +938,99 @@ class CSSBackground {
     // first token would be seen and gradients would be dropped.
     String expanded = _expandBackgroundVars(present, renderStyle);
     List<CSSFunctionalNotation> functions = CSSFunction.parseFunction(expanded);
+    // Validate gradient syntaxes early. In particular, we must reject invalid
+    // color-stop tokens like "green 75% green 100%" (missing comma) which
+    // browsers treat as an invalid gradient and thus ignore.
+    if (functions.isNotEmpty) {
+      final List<CSSFunctionalNotation> filtered = <CSSFunctionalNotation>[];
+      for (final f in functions) {
+        if (f.name == 'linear-gradient' || f.name == 'repeating-linear-gradient') {
+          final bool ok = _isValidLinearGradientArgs(f.args, renderStyle, property);
+          if (!ok) {
+            if (DebugFlags.enableBackgroundLogs) {
+              renderingLogger.warning('[Background] drop invalid ${f.name} args=${f.args} present="$present"');
+            }
+            continue;
+          }
+        }
+        filtered.add(f);
+      }
+      functions = filtered;
+    }
     if (DebugFlags.enableBackgroundLogs) {
+      renderingLogger.finer('[Background] resolveBackgroundImage present="$present" expanded="$expanded" '
+          'fnCount=${functions.length}');
       for (final f in functions) {
         if (f.name == 'url') {
           final raw = f.args.isNotEmpty ? f.args[0] : '';
           renderingLogger.finer('[Background] resolve image url raw=$raw baseHref=${baseHref ?? controller.url}');
         } else if (f.name.contains('gradient')) {
-          renderingLogger.finer('[Background] resolve gradient ${f.name} args=${f.args.length}');
+          renderingLogger.finer('[Background] resolve gradient ${f.name} args=${f.args.length} rawArgs=${f.args}');
         }
       }
     }
     return CSSBackgroundImage(functions, renderStyle, controller, baseHref: baseHref);
+  }
+
+  static List<String> _tokenizeGradientStop(String src) {
+    if (src.isEmpty) return const <String>[];
+    // rgb[a]()/hsl[a]() may contain spaces; treat the whole function as one token.
+    if (src.startsWith('rgba(') || src.startsWith('rgb(') || src.startsWith('hsl(') || src.startsWith('hsla(')) {
+      final int indexOfEnd = src.lastIndexOf(')');
+      if (indexOfEnd != -1) {
+        final List<String> out = <String>[src.substring(0, indexOfEnd + 1)];
+        if (indexOfEnd + 1 < src.length) {
+          final String remainder = src.substring(indexOfEnd + 1).trim();
+          if (remainder.isNotEmpty) {
+            out.addAll(remainder.split(splitRegExp).where((s) => s.isNotEmpty));
+          }
+        }
+        return out;
+      }
+    }
+    return src.split(splitRegExp).where((s) => s.isNotEmpty).toList();
+  }
+
+  static bool _looksLikeColorToken(String token) {
+    if (token.startsWith('var(')) return true;
+    return CSSColor.isColor(token);
+  }
+
+  static bool _isValidLinearGradientArgs(List<String> args, RenderStyle renderStyle, String propertyName) {
+    if (args.isEmpty) return false;
+    int start = 0;
+    final String arg0 = args[0].trim();
+    if (arg0.startsWith('to ') || CSSAngle.isAngle(arg0)) {
+      start = 1;
+    }
+    // A <linear-gradient()> must have at least 2 color stops.
+    if (args.length - start < 2) return false;
+    for (int i = start; i < args.length; i++) {
+      final String raw = args[i].trim();
+      if (raw.isEmpty) return false;
+      final List<String> tokens = _tokenizeGradientStop(raw);
+      if (tokens.isEmpty) return false;
+
+      // First token must resolve to a color.
+      final String colorToken = tokens.first;
+      final CSSColor? resolved = CSSColor.resolveColor(colorToken, renderStyle, propertyName);
+      if (resolved == null) return false;
+
+      // Remaining tokens are optional stop positions (0-2). Any additional
+      // color token implies missing commas and makes the whole gradient invalid.
+      int positionCount = 0;
+      for (int j = 1; j < tokens.length; j++) {
+        final String t = tokens[j];
+        if (_looksLikeColorToken(t)) return false;
+        if (CSSPercentage.isPercentage(t) || CSSLength.isLength(t) || CSSAngle.isAngle(t)) {
+          positionCount++;
+          continue;
+        }
+        return false;
+      }
+      if (positionCount > 2) return false;
+    }
+    return true;
   }
 
   // Regex adapted from color var handling to match var(...) including
@@ -1080,7 +1163,7 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
       strings = src.split(' ');
     }
   } else {
-    strings = src.split(' ');
+    strings = src.split(splitRegExp).where((s) => s.isNotEmpty).toList();
   }
 
   if (strings.isNotEmpty) {
@@ -1088,10 +1171,13 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
     if (strings.length >= 2) {
       try {
         for (int i = 1; i < strings.length; i++) {
+          final String token = strings[i];
+          bool parsed = false;
           if (CSSPercentage.isPercentage(strings[i])) {
             stop = CSSPercentage.parsePercentage(strings[i]);
             // Negative percentage is invalid in gradients which will defaults to 0.
             if (stop! < 0) stop = 0;
+            parsed = true;
             if (DebugFlags.enableBackgroundLogs) {
               final CSSColor? color = CSSColor.resolveColor(strings[0], renderStyle, propertyName);
                   final c = color?.value;
@@ -1100,6 +1186,7 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
                 }
           } else if (CSSAngle.isAngle(strings[i])) {
             stop = CSSAngle.parseAngle(strings[i])! / (math.pi * 2);
+            parsed = true;
             if (DebugFlags.enableBackgroundLogs) {
               final CSSColor? color = CSSColor.resolveColor(strings[0], renderStyle, propertyName);
                   final c = color?.value;
@@ -1109,6 +1196,7 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
           } else if (CSSLength.isLength(strings[i])) {
             if (gradientLength != null) {
               stop = CSSLength.parseLength(strings[i], renderStyle, propertyName).computedValue / gradientLength;
+              parsed = true;
               if (DebugFlags.enableBackgroundLogs) {
                 final CSSColor? color = CSSColor.resolveColor(strings[0], renderStyle, propertyName);
                 final c = color?.value;

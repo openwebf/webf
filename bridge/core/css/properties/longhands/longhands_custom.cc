@@ -108,6 +108,99 @@ std::shared_ptr<const CSSValue> AlignSelf::ParseSingleValue(CSSParserTokenStream
   return css_parsing_utils::ConsumeSelfPositionOverflowPosition(stream, css_parsing_utils::IsSelfPositionKeyword);
 }
 
+// Animation longhands parsing and no-op application.
+
+std::shared_ptr<const CSSValue> AnimationDelay::ParseSingleValue(CSSParserTokenStream& stream,
+                                                                 std::shared_ptr<const CSSParserContext> context,
+                                                                 const CSSParserLocalContext&) const {
+  return css_parsing_utils::ConsumeTime(stream, context, CSSPrimitiveValue::ValueRange::kAll);
+}
+
+std::shared_ptr<const CSSValue> AnimationDelay::InitialValue() const { return CSSInitialValue::Create(); }
+void AnimationDelay::ApplyInitial(StyleResolverState&) const {}
+void AnimationDelay::ApplyInherit(StyleResolverState&) const {}
+void AnimationDelay::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
+
+std::shared_ptr<const CSSValue> AnimationDirection::ParseSingleValue(CSSParserTokenStream& stream,
+                                                                     std::shared_ptr<const CSSParserContext>,
+                                                                     const CSSParserLocalContext&) const {
+  return css_parsing_utils::ConsumeIdent<CSSValueID::kNormal, CSSValueID::kAlternate, CSSValueID::kReverse,
+                                         CSSValueID::kAlternateReverse>(stream);
+}
+
+std::shared_ptr<const CSSValue> AnimationDirection::InitialValue() const { return CSSInitialValue::Create(); }
+void AnimationDirection::ApplyInitial(StyleResolverState&) const {}
+void AnimationDirection::ApplyInherit(StyleResolverState&) const {}
+void AnimationDirection::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
+
+std::shared_ptr<const CSSValue> AnimationDuration::ParseSingleValue(CSSParserTokenStream& stream,
+                                                                    std::shared_ptr<const CSSParserContext> context,
+                                                                    const CSSParserLocalContext&) const {
+  return css_parsing_utils::ConsumeAnimationDuration(stream, context);
+}
+
+std::shared_ptr<const CSSValue> AnimationDuration::InitialValue() const { return CSSInitialValue::Create(); }
+void AnimationDuration::ApplyInitial(StyleResolverState&) const {}
+void AnimationDuration::ApplyInherit(StyleResolverState&) const {}
+void AnimationDuration::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
+
+std::shared_ptr<const CSSValue> AnimationFillMode::ParseSingleValue(CSSParserTokenStream& stream,
+                                                                    std::shared_ptr<const CSSParserContext>,
+                                                                    const CSSParserLocalContext&) const {
+  return css_parsing_utils::ConsumeIdent<CSSValueID::kNone, CSSValueID::kForwards, CSSValueID::kBackwards,
+                                         CSSValueID::kBoth>(stream);
+}
+
+std::shared_ptr<const CSSValue> AnimationFillMode::InitialValue() const { return CSSInitialValue::Create(); }
+void AnimationFillMode::ApplyInitial(StyleResolverState&) const {}
+void AnimationFillMode::ApplyInherit(StyleResolverState&) const {}
+void AnimationFillMode::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
+
+std::shared_ptr<const CSSValue> AnimationIterationCount::ParseSingleValue(CSSParserTokenStream& stream,
+                                                                          std::shared_ptr<const CSSParserContext> context,
+                                                                          const CSSParserLocalContext&) const {
+  return css_parsing_utils::ConsumeAnimationIterationCount(stream, context);
+}
+
+std::shared_ptr<const CSSValue> AnimationIterationCount::InitialValue() const { return CSSInitialValue::Create(); }
+void AnimationIterationCount::ApplyInitial(StyleResolverState&) const {}
+void AnimationIterationCount::ApplyInherit(StyleResolverState&) const {}
+void AnimationIterationCount::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
+
+std::shared_ptr<const CSSValue> AnimationName::ParseSingleValue(CSSParserTokenStream& stream,
+                                                                std::shared_ptr<const CSSParserContext> context,
+                                                                const CSSParserLocalContext&) const {
+  // Allow quoted names for legacy compatibility.
+  return css_parsing_utils::ConsumeAnimationName(stream, context, /*allow_quoted_name=*/true);
+}
+
+std::shared_ptr<const CSSValue> AnimationName::InitialValue() const { return CSSInitialValue::Create(); }
+void AnimationName::ApplyInitial(StyleResolverState&) const {}
+void AnimationName::ApplyInherit(StyleResolverState&) const {}
+void AnimationName::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
+
+std::shared_ptr<const CSSValue> AnimationPlayState::ParseSingleValue(CSSParserTokenStream& stream,
+                                                                     std::shared_ptr<const CSSParserContext>,
+                                                                     const CSSParserLocalContext&) const {
+  return css_parsing_utils::ConsumeIdent<CSSValueID::kRunning, CSSValueID::kPaused>(stream);
+}
+
+std::shared_ptr<const CSSValue> AnimationPlayState::InitialValue() const { return CSSInitialValue::Create(); }
+void AnimationPlayState::ApplyInitial(StyleResolverState&) const {}
+void AnimationPlayState::ApplyInherit(StyleResolverState&) const {}
+void AnimationPlayState::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
+
+std::shared_ptr<const CSSValue> AnimationTimingFunction::ParseSingleValue(CSSParserTokenStream& stream,
+                                                                          std::shared_ptr<const CSSParserContext> context,
+                                                                          const CSSParserLocalContext&) const {
+  return css_parsing_utils::ConsumeAnimationTimingFunction(stream, context);
+}
+
+std::shared_ptr<const CSSValue> AnimationTimingFunction::InitialValue() const { return CSSInitialValue::Create(); }
+void AnimationTimingFunction::ApplyInitial(StyleResolverState&) const {}
+void AnimationTimingFunction::ApplyInherit(StyleResolverState&) const {}
+void AnimationTimingFunction::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
+
 // anchor-name: none | <dashed-ident>#
 std::shared_ptr<const CSSValue> AnchorName::ParseSingleValue(CSSParserTokenStream& stream,
                                                              std::shared_ptr<const CSSParserContext> context,
@@ -910,6 +1003,36 @@ std::shared_ptr<const CSSValue> Content::ParseSingleValue(CSSParserTokenStream& 
     CSSParserSavePoint savepoint(stream);
     std::shared_ptr<const CSSValue> parsed_value = css_parsing_utils::ConsumeImage(stream, context);
     if (!parsed_value) {
+      // Support counter() / counters() in content.
+      if (stream.Peek().GetType() == kFunctionToken &&
+          (stream.Peek().FunctionId() == CSSValueID::kCounter || stream.Peek().FunctionId() == CSSValueID::kCounters)) {
+        CSSValueID fid = stream.Peek().FunctionId();
+        CSSParserTokenRange args = css_parsing_utils::ConsumeFunction(stream);
+        auto func = std::make_shared<CSSFunctionValue>(fid);
+        // Parse first <custom-ident>
+        if (auto name = css_parsing_utils::ConsumeCustomIdent(args, context)) {
+          func->Append(name);
+          // Optionally parse remaining simple arguments: <string> or <ident>
+          // This is a minimal implementation sufficient for counter(name).
+          if (!args.AtEnd()) {
+            if (auto sep = css_parsing_utils::ConsumeString(args)) {
+              func->Append(sep);
+            }
+          }
+          if (!args.AtEnd()) {
+            if (auto style_ident = css_parsing_utils::ConsumeIdent(args)) {
+              func->Append(style_ident);
+            }
+          }
+          args.ConsumeWhitespace();
+          parsed_value = func;
+        } else {
+          // Failed to parse a valid name; treat as invalid for this item.
+          parsed_value = nullptr;
+        }
+      }
+    }
+    if (!parsed_value) {
       parsed_value = css_parsing_utils::ConsumeIdent<CSSValueID::kOpenQuote, CSSValueID::kCloseQuote,
                                                      CSSValueID::kNoOpenQuote, CSSValueID::kNoCloseQuote>(stream);
     }
@@ -956,6 +1079,47 @@ std::shared_ptr<const CSSValue> Content::ParseSingleValue(CSSParserTokenStream& 
 }
 
 const int kCounterIncrementDefaultValue = 1;
+
+// CSS Counter properties
+std::shared_ptr<const CSSValue> CounterReset::ParseSingleValue(CSSParserTokenStream& stream,
+                                                              std::shared_ptr<const CSSParserContext> context,
+                                                              const CSSParserLocalContext&) const {
+  // Syntax: none | [ <custom-ident> <integer>? ]+ (space-separated pairs)
+  // Default value for <integer> part is 0 for counter-reset.
+  return css_parsing_utils::ConsumeCounter(stream, context, /*default_value=*/0);
+}
+
+std::shared_ptr<const CSSValue> CounterReset::InitialValue() const {
+  return CSSIdentifierValue::Create(CSSValueID::kNone);
+}
+
+std::shared_ptr<const CSSValue> CounterIncrement::ParseSingleValue(CSSParserTokenStream& stream,
+                                                                  std::shared_ptr<const CSSParserContext> context,
+                                                                  const CSSParserLocalContext&) const {
+  // Syntax: none | [ <custom-ident> <integer>? ]+ (space-separated pairs)
+  // Default value for <integer> part is 1 for counter-increment.
+  return css_parsing_utils::ConsumeCounter(stream, context, kCounterIncrementDefaultValue);
+}
+
+std::shared_ptr<const CSSValue> CounterIncrement::InitialValue() const {
+  return CSSIdentifierValue::Create(CSSValueID::kNone);
+}
+
+// Style builder stubs for counter properties: WebF forwards these as textual
+// inline styles to the UI side, so applying them to ComputedStyle is a no-op.
+void CounterReset::ApplyInitial(StyleResolverState&) const {}
+void CounterReset::ApplyInherit(StyleResolverState&) const {}
+void CounterReset::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
+
+void CounterIncrement::ApplyInitial(StyleResolverState&) const {}
+void CounterIncrement::ApplyInherit(StyleResolverState&) const {}
+void CounterIncrement::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
+
+// list-style-type is forwarded as a textual inline style to the UI side.
+// It is not stored on ComputedStyle in WebF; applying it here is a no-op.
+void ListStyleType::ApplyInitial(StyleResolverState&) const {}
+void ListStyleType::ApplyInherit(StyleResolverState&) const {}
+void ListStyleType::ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {}
 
 // std::shared_ptr<const CSSValue> Cursor::ParseSingleValue(CSSParserTokenStream& stream,
 //                                                          std::shared_ptr<const CSSParserContext> context,
@@ -3089,45 +3253,8 @@ void Color::ApplyInitial(webf::StyleResolverState& state) const {
 }
 
 void Color::ApplyValue(webf::StyleResolverState& state, const webf::CSSValue& value, webf::CSSProperty::ValueMode) const {
-  if (value.IsColorValue()) {
-    const auto& color_value = static_cast<const cssvalue::CSSColor&>(value);
-    state.StyleBuilder().SetColor(color_value.Value());
-  } else if (value.IsIdentifierValue()) {
-    const auto& ident_value = static_cast<const CSSIdentifierValue&>(value);
-    if (ident_value.GetValueID() == CSSValueID::kCurrentcolor) {
-      // For currentColor, we should use the inherited color
-      state.StyleBuilder().SetColor(state.ParentStyle()->Color());
-    } else {
-      // Handle common color keywords
-      webf::Color color;
-      bool converted = false;
-      
-      switch (ident_value.GetValueID()) {
-        case CSSValueID::kBlue:
-          color = webf::Color(0, 0, 255);
-          converted = true;
-          break;
-        case CSSValueID::kPurple:
-          color = webf::Color(128, 0, 128);
-          converted = true;
-          break;
-        case CSSValueID::kRed:
-          color = webf::Color(255, 0, 0);
-          converted = true;
-          break;
-        case CSSValueID::kGreen:
-          color = webf::Color(0, 128, 0);
-          converted = true;
-          break;
-        default:
-          break;
-      }
-      
-      if (converted) {
-        state.StyleBuilder().SetColor(color);
-      }
-    }
-  }
+  // Use the shared color converter to support CSSColor and all named keywords.
+  state.StyleBuilder().SetColor(StyleBuilderConverter::ConvertColor(state, value));
 }
 
 void LineClamp::ApplyInitial(webf::StyleResolverState&) const {}
@@ -3217,7 +3344,10 @@ void BackgroundOrigin::ApplyValue(webf::StyleResolverState&,
                                   webf::CSSProperty::ValueMode) const {}
 
 std::shared_ptr<const CSSValue> TransitionDelay::InitialValue() const {
-  return nullptr;
+  // Initial value for transition-delay is 0s
+  thread_local static std::shared_ptr<const CSSValue> value =
+      CSSNumericLiteralValue::Create(0, CSSPrimitiveValue::UnitType::kSeconds);
+  return value;
 }
 
 void TextOrientation::ApplyInherit(webf::StyleResolverState&) const {}

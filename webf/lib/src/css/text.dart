@@ -7,6 +7,8 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
+import 'dart:ui' as ui;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
@@ -16,6 +18,38 @@ import 'package:webf/rendering.dart';
 final RegExp _commaRegExp = RegExp(r'\s*,\s*');
 
 typedef TextPainterCallback = Paint? Function(Rect bounds);
+
+class _FontFeatureSupportKey {
+  final String primaryFamily;
+  final int weightIndex;
+  final FontStyle fontStyle;
+  final String tag;
+
+  const _FontFeatureSupportKey({
+    required this.primaryFamily,
+    required this.weightIndex,
+    required this.fontStyle,
+    required this.tag,
+  });
+
+  @override
+  bool operator ==(Object other) {
+    return other is _FontFeatureSupportKey &&
+        other.primaryFamily == primaryFamily &&
+        other.weightIndex == weightIndex &&
+        other.fontStyle == fontStyle &&
+        other.tag == tag;
+  }
+
+  @override
+  int get hashCode => Object.hash(primaryFamily, weightIndex, fontStyle, tag);
+}
+
+enum FontVariantCapsSynthesis {
+  none,
+  lowercaseOnly,
+  allLetters,
+}
 
 // CSS Text: https://drafts.csswg.org/css-text-3/
 // CSS Text Decoration: https://drafts.csswg.org/css-text-decor-3/
@@ -145,6 +179,26 @@ mixin CSSTextMixin on RenderStyle {
     _fontStyle = value;
     // Update all the children text with specified style property not set due to style inheritance.
     _markChildrenTextNeedsLayout(this, FONT_STYLE);
+  }
+
+  String? _fontVariant;
+
+  @override
+  String get fontVariant {
+    // Get style from self or closest parent if specified style property is not set
+    // due to style inheritance.
+    if (_fontVariant == null && parent != null) {
+      return parent!.fontVariant;
+    }
+
+    return _fontVariant ?? NORMAL;
+  }
+
+  set fontVariant(String? value) {
+    if (_fontVariant == value) return;
+    _fontVariant = value;
+    // Update all the children text with specified style property not set due to style inheritance.
+    _markChildrenTextNeedsLayout(this, FONT_VARIANT);
   }
 
   List<String>? _fontFamily;
@@ -614,6 +668,7 @@ mixin CSSTextMixin on RenderStyle {
         ? const Color(0x00000000)
         : (renderStyle.backgroundClip != CSSBackgroundBoundary.text ? color ?? renderStyle.color.value : null);
 
+    final variant = CSSText.resolveFontFeaturesForVariant(renderStyle);
     TextStyle textStyle = TextStyle(
         color: effectiveColor,
         decoration: hidden ? TextDecoration.none : renderStyle.textDecorationLine,
@@ -621,6 +676,7 @@ mixin CSSTextMixin on RenderStyle {
         decorationStyle: renderStyle.textDecorationStyle,
         fontWeight: renderStyle.fontWeight,
         fontStyle: renderStyle.fontStyle,
+        fontFeatures: variant.features.isNotEmpty ? variant.features : null,
         fontFamily: (renderStyle.fontFamily != null && renderStyle.fontFamily!.isNotEmpty)
             ? renderStyle.fontFamily!.first
             : null,
@@ -662,8 +718,137 @@ mixin CSSTextMixin on RenderStyle {
 }
 
 class CSSText {
+  static final Map<_FontFeatureSupportKey, bool> _featureSupportCache = {};
+
   static bool isValidFontStyleValue(String value) {
     return value == 'normal' || value == 'italic' || value == 'oblique';
+  }
+
+  static bool isValidFontVariantValue(String value) {
+    if (value.isEmpty) return false;
+    final String normalized = value.trim().toLowerCase();
+    if (normalized == 'normal' || normalized == 'none') return true;
+
+    final List<String> tokens = normalized.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+    if (tokens.isEmpty) return false;
+    if (tokens.contains('normal') || tokens.contains('none')) return false;
+
+    for (final t in tokens) {
+      if (!_isValidFontVariantKeyword(t)) return false;
+    }
+    return true;
+  }
+
+  static bool isValidFontVariantCss21Value(String value) {
+    // The CSS2.1 font-variant property used in the `font` shorthand only accepts
+    // 'normal' or 'small-caps'.
+    return value == 'normal' || value == 'small-caps';
+  }
+
+  static bool _isValidFontVariantKeyword(String t) {
+    switch (t) {
+      // Caps
+      case 'small-caps':
+      case 'all-small-caps':
+      case 'petite-caps':
+      case 'all-petite-caps':
+      case 'unicase':
+      case 'titling-caps':
+      // Ligatures
+      case 'common-ligatures':
+      case 'no-common-ligatures':
+      case 'discretionary-ligatures':
+      case 'no-discretionary-ligatures':
+      case 'historical-ligatures':
+      case 'no-historical-ligatures':
+      case 'contextual':
+      case 'no-contextual':
+      case 'historical-forms':
+      // Numeric
+      case 'lining-nums':
+      case 'oldstyle-nums':
+      case 'proportional-nums':
+      case 'tabular-nums':
+      case 'diagonal-fractions':
+      case 'stacked-fractions':
+      case 'slashed-zero':
+      case 'ordinal':
+      // East Asian
+      case 'jis78':
+      case 'jis83':
+      case 'jis90':
+      case 'jis04':
+      case 'simplified':
+      case 'traditional':
+      case 'full-width':
+      case 'proportional-width':
+      case 'ruby':
+      // Position
+      case 'sub':
+      case 'super':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  static bool supportsSmallCapsFontFeature(CSSRenderStyle renderStyle) {
+    return supportsFontFeature(renderStyle, 'smcp');
+  }
+
+  static bool supportsFontFeature(CSSRenderStyle renderStyle, String tag) {
+    final List<String>? families = renderStyle.fontFamily;
+    final String primary = (families != null && families.isNotEmpty) ? families.first : '';
+    final _FontFeatureSupportKey key = _FontFeatureSupportKey(
+      primaryFamily: primary,
+      weightIndex: renderStyle.fontWeight.index,
+      fontStyle: renderStyle.fontStyle,
+      tag: tag,
+    );
+
+    final bool? cached = _featureSupportCache[key];
+    if (cached != null) return cached;
+
+    // Ensure primary font is requested before probing.
+    if (primary.isNotEmpty) {
+      CSSFontFace.ensureFontLoaded(primary, renderStyle.fontWeight, renderStyle);
+    }
+
+    // Probe by measuring if enabling a feature changes layout metrics; when the
+    // font doesn't support it, metrics should remain identical (heuristic).
+    Size measure(String text, {List<FontFeature>? features}) {
+      final TextPainter tp = TextPainter(
+        text: TextSpan(
+          text: text,
+          style: TextStyle(
+            fontFamily: primary.isNotEmpty ? primary : null,
+            fontFamilyFallback: families,
+            fontWeight: renderStyle.fontWeight,
+            fontStyle: renderStyle.fontStyle,
+            fontSize: renderStyle.fontSize.computedValue,
+            fontFeatures: features,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      return tp.size;
+    }
+
+    const samples = ['a', 'abcxyz', 'mixedCapsAa'];
+    bool supported = false;
+    for (final s in samples) {
+      final Size base = measure(s);
+      final Size feat = measure(s, features: [FontFeature.enable(tag)]);
+      final double dw = (feat.width - base.width).abs();
+      final double dh = (feat.height - base.height).abs();
+      if (dw > 0.1 || dh > 0.1) {
+        supported = true;
+        break;
+      }
+    }
+
+    _featureSupportCache[key] = supported;
+    return supported;
   }
 
   static bool isValidFontWeightValue(String value) {
@@ -677,6 +862,7 @@ class CSSText {
 
   static bool isValidFontSizeValue(String value) {
     return CSSLength.isNonNegativeLength(value) ||
+        CSSPercentage.isNonNegativePercentage(value) ||
         value == 'xx-small' ||
         value == 'x-small' ||
         value == 'small' ||
@@ -1009,6 +1195,175 @@ class CSSText {
     }
   }
 
+  static String? resolveFontVariant(String? fontVariant) {
+    if (fontVariant == null) return null;
+    final String normalized = fontVariant.trim().toLowerCase();
+    if (!isValidFontVariantValue(normalized)) return null;
+    // Normalize whitespace.
+    return normalized.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).join(' ');
+  }
+
+  static ({List<ui.FontFeature> features, FontVariantCapsSynthesis synth}) resolveFontFeaturesForVariant(
+      CSSRenderStyle renderStyle) {
+    final String v = renderStyle.fontVariant;
+    if (v.isEmpty || v == 'normal') {
+      return (features: const <ui.FontFeature>[], synth: FontVariantCapsSynthesis.none);
+    }
+
+    if (v == 'none') {
+      // Treat as disabling common/contextual/discretionary/historical ligatures.
+      return (
+        features: const <ui.FontFeature>[
+          ui.FontFeature('liga', 0),
+          ui.FontFeature('clig', 0),
+          ui.FontFeature('calt', 0),
+          ui.FontFeature('dlig', 0),
+          ui.FontFeature('hlig', 0),
+        ],
+        synth: FontVariantCapsSynthesis.none
+      );
+    }
+
+    final tokens = v.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+    final List<ui.FontFeature> features = <ui.FontFeature>[];
+    FontVariantCapsSynthesis synth = FontVariantCapsSynthesis.none;
+
+    final bool hasAllSmallCaps = tokens.contains('all-small-caps');
+    final bool hasSmallCaps = tokens.contains('small-caps');
+    final bool hasAllPetiteCaps = tokens.contains('all-petite-caps');
+    final bool hasPetiteCaps = tokens.contains('petite-caps');
+
+    if (hasAllSmallCaps || hasSmallCaps) {
+      final bool hasSmcp = supportsFontFeature(renderStyle, 'smcp');
+      final bool hasC2sc = hasAllSmallCaps ? supportsFontFeature(renderStyle, 'c2sc') : true;
+      if (hasAllSmallCaps && hasSmcp && hasC2sc) {
+        features.add(const ui.FontFeature.enable('smcp'));
+        features.add(const ui.FontFeature.enable('c2sc'));
+      } else if (!hasAllSmallCaps && hasSmcp) {
+        features.add(const ui.FontFeature.enable('smcp'));
+      } else {
+        synth = hasAllSmallCaps ? FontVariantCapsSynthesis.allLetters : FontVariantCapsSynthesis.lowercaseOnly;
+      }
+    } else if (hasAllPetiteCaps || hasPetiteCaps) {
+      final bool hasPcap = supportsFontFeature(renderStyle, 'pcap');
+      final bool hasC2pc = hasAllPetiteCaps ? supportsFontFeature(renderStyle, 'c2pc') : true;
+      if (hasAllPetiteCaps && hasPcap && hasC2pc) {
+        features.add(const ui.FontFeature.enable('pcap'));
+        features.add(const ui.FontFeature.enable('c2pc'));
+      } else if (!hasAllPetiteCaps && hasPcap) {
+        features.add(const ui.FontFeature.enable('pcap'));
+      } else {
+        synth = hasAllPetiteCaps ? FontVariantCapsSynthesis.allLetters : FontVariantCapsSynthesis.lowercaseOnly;
+      }
+    } else if (tokens.contains('unicase')) {
+      features.add(const ui.FontFeature.enable('unic'));
+    } else if (tokens.contains('titling-caps')) {
+      features.add(const ui.FontFeature.enable('titl'));
+    }
+
+    for (final t in tokens) {
+      switch (t) {
+        // Ligatures
+        case 'common-ligatures':
+          features.add(const ui.FontFeature.enable('liga'));
+          features.add(const ui.FontFeature.enable('clig'));
+          break;
+        case 'no-common-ligatures':
+          features.add(const ui.FontFeature('liga', 0));
+          features.add(const ui.FontFeature('clig', 0));
+          break;
+        case 'discretionary-ligatures':
+          features.add(const ui.FontFeature.enable('dlig'));
+          break;
+        case 'no-discretionary-ligatures':
+          features.add(const ui.FontFeature('dlig', 0));
+          break;
+        case 'historical-ligatures':
+          features.add(const ui.FontFeature.enable('hlig'));
+          break;
+        case 'no-historical-ligatures':
+          features.add(const ui.FontFeature('hlig', 0));
+          break;
+        case 'contextual':
+          features.add(const ui.FontFeature.enable('calt'));
+          break;
+        case 'no-contextual':
+          features.add(const ui.FontFeature('calt', 0));
+          break;
+        case 'historical-forms':
+          features.add(const ui.FontFeature.enable('hist'));
+          break;
+
+        // Numeric
+        case 'lining-nums':
+          features.add(const ui.FontFeature.enable('lnum'));
+          break;
+        case 'oldstyle-nums':
+          features.add(const ui.FontFeature.enable('onum'));
+          break;
+        case 'proportional-nums':
+          features.add(const ui.FontFeature.enable('pnum'));
+          break;
+        case 'tabular-nums':
+          features.add(const ui.FontFeature.enable('tnum'));
+          break;
+        case 'diagonal-fractions':
+          features.add(const ui.FontFeature.enable('frac'));
+          break;
+        case 'stacked-fractions':
+          features.add(const ui.FontFeature.enable('afrc'));
+          break;
+        case 'slashed-zero':
+          features.add(const ui.FontFeature.enable('zero'));
+          break;
+        case 'ordinal':
+          features.add(const ui.FontFeature.enable('ordn'));
+          break;
+
+        // East Asian
+        case 'jis78':
+          features.add(const ui.FontFeature.enable('jp78'));
+          break;
+        case 'jis83':
+          features.add(const ui.FontFeature.enable('jp83'));
+          break;
+        case 'jis90':
+          features.add(const ui.FontFeature.enable('jp90'));
+          break;
+        case 'jis04':
+          features.add(const ui.FontFeature.enable('jp04'));
+          break;
+        case 'simplified':
+          features.add(const ui.FontFeature.enable('smpl'));
+          break;
+        case 'traditional':
+          features.add(const ui.FontFeature.enable('trad'));
+          break;
+        case 'full-width':
+          features.add(const ui.FontFeature.enable('fwid'));
+          break;
+        case 'proportional-width':
+          features.add(const ui.FontFeature.enable('pwid'));
+          break;
+        case 'ruby':
+          features.add(const ui.FontFeature.enable('ruby'));
+          break;
+
+        // Position
+        case 'sub':
+          features.add(const ui.FontFeature.enable('subs'));
+          break;
+        case 'super':
+          features.add(const ui.FontFeature.enable('sups'));
+          break;
+        default:
+          break;
+      }
+    }
+
+    return (features: features, synth: synth);
+  }
+
   static String? toCharacterBreakStr(String? word) {
     if (word == null || word.isEmpty) {
       return null;
@@ -1045,7 +1400,8 @@ class CSSText {
         familyName = familyName.substring(1, familyName.length - 1);
       }
 
-      switch (familyName) {
+      final String familyKey = familyName.toLowerCase();
+      switch (familyKey) {
         case 'sans-serif':
           // Default sans-serif font in iOS (9 and newer)and iPadOS: Helvetica
           // Default sans-serif font in Android (4.0+): Roboto
@@ -1067,11 +1423,11 @@ class CSSText {
           break;
         case 'monospace':
           // Default monospace font in iOS and iPadOS: Courier
-          resolvedFamily.addAll(['Courier', 'Courier New', 'DroidSansMono', 'Monaco', 'Heiti SC', 'Heiti TC']);
+          resolvedFamily.addAll(['Menlo', 'Courier', 'Courier New', 'DroidSansMono', 'Monaco', 'Heiti SC', 'Heiti TC']);
           break;
         case 'cursive':
-          // Default cursive font in iOS and iPadOS: Snell Roundhand
-          resolvedFamily.addAll(['Snell Roundhand', 'Apple Chancery', 'DancingScript', 'Comic Sans MS']);
+          // Default cursive font in iOS and iPadOS: Apple Chancery
+          resolvedFamily.addAll(['Apple Chancery', 'Snell Roundhand', 'DancingScript', 'Comic Sans MS']);
           break;
         case 'fantasy':
           // Default fantasy font in iOS and iPadOS:

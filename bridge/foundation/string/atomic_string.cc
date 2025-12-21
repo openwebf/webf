@@ -77,6 +77,18 @@ AtomicString::AtomicString(const String& s) : AtomicString(String(s)) {}
 
 AtomicString::AtomicString(String&& s) : string_(AtomicStringTable::Instance().Add(s.ReleaseImpl())) {}
 
+AtomicString::AtomicString(const StringView& view) {
+  if (view.IsNull()) {
+    return;
+  }
+
+  if (view.Is8Bit()) {
+    string_ = AtomicStringTable::Instance().AddLatin1(view.Characters8(), view.length());
+  } else {
+    string_ = AtomicStringTable::Instance().Add(view.Characters16(), view.length());
+  }
+}
+
 AtomicString::AtomicString(UTF16StringView string_view)
     : string_(AtomicStringTable::Instance().Add(string_view.data(), string_view.length())) {}
 
@@ -182,6 +194,63 @@ std::unique_ptr<SharedNativeString> AtomicString::ToNativeString() const {
   }
 }
 
+std::unique_ptr<SharedNativeString> AtomicString::ToStylePropertyNameNativeString() const {
+  if (string_ == nullptr) {
+    return AtomicString::Empty().ToNativeString();
+  }
+
+  size_t len = string_->length();
+  uint16_t* uint16_buffer = (uint16_t*)dart_malloc(sizeof(uint16_buffer[0]) * (len + 1));
+  memset(uint16_buffer, 0, sizeof(uint16_buffer[0]) * (len + 1));
+  size_t index = 0;
+
+  if (string_->Is8Bit()) {
+    // Preserve custom property names (starting with "--") exactly as-is.
+    if (string_->length() >= 2 && (*string_)[0] == '-' && (*string_)[1] == '-') {
+      return ToNativeString();
+    }
+    if (this->Contains('-')) {
+      bool isDash = false;
+      for (auto ch : *string_) {
+        if (ch == '-') {
+          isDash = true;
+          continue;
+        }
+        if (isDash) {
+          isDash = false;
+          ch = std::toupper(ch);
+        }
+        uint16_buffer[index++] = static_cast<uint16_t>(ch);
+      }
+      uint16_buffer[index] = 0;  // Null terminate
+      return std::make_unique<SharedNativeString>(uint16_buffer, index);
+    }
+    return ToNativeString();
+  } else {
+    // Preserve custom property names (starting with "--") exactly as-is.
+    if (string_->length() >= 2 && (*string_)[0] == u'-' && (*string_)[1] == u'-') {
+      return ToNativeString();
+    }
+    if (this->Contains(u'-')) {
+      bool isDash = false;
+      for (auto ch : *string_) {
+        if (ch == u'-') {
+          isDash = true;
+          continue;
+        }
+        if (isDash) {
+          isDash = false;
+          ch = std::toupper(ch);
+        }
+        uint16_buffer[index++] = static_cast<uint16_t>(ch);
+      }
+      uint16_buffer[index] = 0;  // Null terminate
+      return std::make_unique<SharedNativeString>(uint16_buffer, index);
+    }
+    return ToNativeString();
+  }
+}
+
 JSValue AtomicString::ToQuickJS(JSContext* ctx) const {
   if (string_ == nullptr) {
     return JS_NewString(ctx, "");
@@ -200,11 +269,7 @@ UTF8String AtomicString::ToUTF8String() const {
     return std::string{};
   }
 
-  if (string_->Is8Bit()) {
-    return UTF8Codecs::EncodeLatin1({string_->Characters8(), string_->length()});
-  }
-
-  return UTF8Codecs::EncodeUTF16({string_->Characters16(), string_->length()});
+  return string_->ToUTF8String();
 }
 
 const LChar* AtomicString::Characters8() const {

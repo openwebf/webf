@@ -14,6 +14,7 @@
 #include "bindings/qjs/qjs_function.h"
 #include "bindings/qjs/script_value.h"
 #include "foundation/native_string.h"
+#include "foundation/dart_readable.h"
 
 namespace webf {
 
@@ -59,6 +60,41 @@ struct NativeTypeFunction final : public NativeTypeBaseHelper<std::shared_ptr<QJ
 
 // Async function
 struct NativeTypeAsyncFunction final : public NativeTypeBaseHelper<std::shared_ptr<QJSFunction>> {};
+
+// ----------------------------------------------------------------------------
+// FFI structs for Dart bridge interop
+// Keep layout in sync with ../webf/lib/src/bridge/native_types.dart
+// ----------------------------------------------------------------------------
+
+// Key-Value pair where both key and value are SharedNativeString*.
+// Memory for the pointers (key/value) is owned externally and freed via
+// freeNativeString on the Dart side after conversion.
+struct NativePair : public DartReadable {
+  SharedNativeString* key{nullptr};
+  SharedNativeString* value{nullptr};
+};
+
+// Array of NativePair items with a 32-bit length.
+struct NativeMap : public DartReadable {
+  NativePair* items{nullptr};
+  uint32_t length{0};
+};
+
+// Combined style value + base href payload for UICommand::kSetStyle.
+// - |value| holds the serialized CSS value (NativeString*).
+// - |href| holds an optional base href (NativeString*), or nullptr if absent.
+struct NativeStyleValueWithHref : public DartReadable {
+  SharedNativeString* value{nullptr};
+  SharedNativeString* href{nullptr};
+};
+
+// Combined pseudo style property (key/value) + base href payload for
+// UICommand::kSetPseudoStyle.
+struct NativePseudoStyleWithHref : public DartReadable {
+  SharedNativeString* key{nullptr};
+  SharedNativeString* value{nullptr};
+  SharedNativeString* href{nullptr};
+};
 
 }  // namespace webf
 

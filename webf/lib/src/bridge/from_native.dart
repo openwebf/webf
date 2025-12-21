@@ -18,8 +18,10 @@ import 'package:flutter/scheduler.dart';
 import 'package:path/path.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/css.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/panel/console_store.dart';
+import 'package:webf/src/css/keyframes_bridge.dart';
 
 
 String uint16ToString(Pointer<Uint16> pointer, int length) {
@@ -68,7 +70,63 @@ double uInt64ToDouble(int value) {
 }
 
 String nativeStringToString(Pointer<NativeString> pointer) {
-  return uint16ToString(pointer.ref.string, pointer.ref.length);
+  final int len = pointer.ref.length;
+  if (len == 0) {
+    return '';
+  }
+  final ptr = pointer.ref.string;
+  if (ptr == nullptr) {
+    return '';
+  }
+  return uint16ToString(ptr, len);
+}
+
+({String key, String value}) nativePairToPairRecord(Pointer<NativePair> pointer, {bool free = false}) {
+  if (pointer != nullptr) {
+    final keyPtr = pointer.ref.key;
+    final valuePtr = pointer.ref.value;
+
+    String key = "";
+    String value = "";
+
+    if (keyPtr != nullptr) {
+      final nativeKey = keyPtr.cast<NativeString>();
+      key = nativeStringToString(nativeKey);
+      if (free)
+        freeNativeString(nativeKey);
+    }
+
+    if (valuePtr != nullptr) {
+      final nativeValue = valuePtr.cast<NativeString>();
+      value = nativeStringToString(nativeValue);
+      if (free)
+        freeNativeString(nativeValue);
+    }
+
+    if (free)
+      malloc.free(pointer);
+
+    return (key: key, value: value);
+  }
+
+  return (key: "", value: "");
+}
+
+Map<String, String> nativeMapToMap(Pointer<NativeMap> pointer) {
+  final map = <String, String>{};
+
+  if (pointer != nullptr) {
+    final nativeMap = pointer.ref;
+    if (nativeMap.items != nullptr) {
+      for (int i = 0; i < nativeMap.length; ++i) {
+        final pair = nativeMap.items + i;
+        final pairDecoded = nativePairToPairRecord(pair);
+        map[pairDecoded.key] = pairDecoded.value;
+      }
+    }
+  }
+
+  return map;
 }
 
 void freeNativeString(Pointer<NativeString> pointer) {
@@ -718,28 +776,235 @@ void _onJSLogStructured(double contextId, int level, int argc, Pointer<NativeVal
   malloc.free(argv);
 }
 
-final Pointer<NativeFunction<NativeOnJSLogStructured>> _nativeOnJSLogStructured = Pointer.fromFunction(_onJSLogStructured);
+  final Pointer<NativeFunction<NativeOnJSLogStructured>> _nativeOnJSLogStructured = Pointer.fromFunction(_onJSLogStructured);
 
-final List<int> _dartNativeMethods = [
-  _nativeInvokeModule.address,
-  _nativeRequestBatchUpdate.address,
-  _nativeReloadApp.address,
-  _nativeSetTimeout.address,
-  _nativeSetInterval.address,
-  _nativeClearTimeout.address,
-  _nativeRequestIdleCallback.address,
-  _nativeCancelAnimationFrame.address,
-  _nativeCancelIdleCallback.address,
-  _nativeToBlob.address,
-  _nativeFlushUICommand.address,
-  _nativeCreateBindingObject.address,
-  _nativeLoadLibrary.address,
-  _nativeFetchJavaScriptESMModule.address,
-  _nativeOnJsError.address,
-  _nativeOnJsLog.address,
-  _nativeOnJSLogStructured.address
-];
+// ===== CSS @import fetch (Bridge -> Dart) =====
+// C++ requests CSS content for @import; Dart resolves URL and fetches, then
+// calls back with bytes or error.
+typedef NativeFetchImportCSSContentCallback = Void Function(
+    Pointer<Void> callbackContext,
+    Double contextId,
+    Pointer<Utf8> error,
+    Pointer<Uint8> bytes,
+    Int32 length);
+typedef DartFetchImportCSSContentCallback = void Function(
+    Pointer<Void> callbackContext,
+    double contextId,
+    Pointer<Utf8> error,
+    Pointer<Uint8> bytes,
+    int length);
+
+typedef NativeFetchImportCSSContent = Void Function(
+    Pointer<Void> callbackContext,
+    Double contextId,
+    Pointer<NativeString> baseHref,
+    Pointer<NativeString> importHref,
+    Pointer<NativeFunction<NativeFetchImportCSSContentCallback>> callback);
+
+void _fetchImportCSSContent(
+    Pointer<Void> callbackContext,
+    double contextId,
+    Pointer<NativeString> nativeBaseHref,
+    Pointer<NativeString> nativeImportHref,
+    Pointer<NativeFunction<NativeFetchImportCSSContentCallback>> nativeCallback) async {
+  DartFetchImportCSSContentCallback callback = nativeCallback.asFunction(isLeaf: true);
+
+  try {
+    WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
+    if (controller == null) {
+      bridgeLogger.severe('[@import] no controller for context $contextId');
+      callback(callbackContext, contextId, 'No controller for context'.toNativeUtf8(), nullptr, 0);
+      return;
+    }
+
+    final String baseHrefRaw = nativeStringToString(nativeBaseHref);
+    final String importHref = nativeStringToString(nativeImportHref);
+    // Resolve relative import URL against the stylesheet base href
+    // Fallback: if base is empty or 'about:*', use the document URL as base.
+    String effectiveBase = baseHrefRaw;
+    if (effectiveBase.isEmpty || effectiveBase.startsWith('about:')) {
+      effectiveBase = controller.url ?? '';
+    }
+    Uri resolved = controller.uriParser!.resolve(Uri.parse(effectiveBase), Uri.parse(importHref));
+    bridgeLogger.fine('[@import] fetchImportCSSContent base=$baseHrefRaw (effective=$effectiveBase) import=$importHref -> $resolved');
+
+    final String url = resolved.toString();
+    WebFBundle bundle = controller.getPreloadBundleFromUrl(url) ?? WebFBundle.fromUrl(url);
+    try {
+      await bundle.resolve(baseUrl: controller.url, uriParser: controller.uriParser);
+      await bundle.obtainData(controller.view.contextId);
+
+      final String cssText = await resolveStringFromData(bundle.data!);
+      bridgeLogger.fine('[@import] fetched ${cssText.length} bytes from $resolved');
+      final bytes = utf8.encode(cssText);
+      Pointer<Uint8> ptr = malloc.allocate(sizeOf<Uint8>() * bytes.length);
+      ptr.asTypedList(bytes.length).setAll(0, bytes);
+      callback(callbackContext, contextId, nullptr, ptr, bytes.length);
+    } catch (e, stack) {
+      final msg = '[@import] fetch error for $resolved: $e\n$stack';
+      bridgeLogger.severe(msg);
+      final err = (msg).toNativeUtf8();
+      callback(callbackContext, contextId, err, nullptr, 0);
+    } finally {
+      bundle.dispose();
+    }
+  } catch (e, stack) {
+    final msg = '[@import] unexpected error: $e\n$stack';
+    bridgeLogger.severe(msg);
+    final err = (msg).toNativeUtf8();
+    callback(callbackContext, contextId, err, nullptr, 0);
+  }
+}
+
+final Pointer<NativeFunction<NativeFetchImportCSSContent>> _nativeFetchImportCSSContent =
+    Pointer.fromFunction(_fetchImportCSSContent);
+
+  final List<int> _dartNativeMethods = [
+    _nativeInvokeModule.address,
+    _nativeRequestBatchUpdate.address,
+    _nativeReloadApp.address,
+    _nativeSetTimeout.address,
+    _nativeSetInterval.address,
+    _nativeClearTimeout.address,
+    _nativeRequestIdleCallback.address,
+    _nativeCancelAnimationFrame.address,
+    _nativeCancelIdleCallback.address,
+    _nativeToBlob.address,
+    _nativeFlushUICommand.address,
+    _nativeCreateBindingObject.address,
+    _nativeLoadLibrary.address,
+    _nativeFetchJavaScriptESMModule.address,
+    _nativeOnJsError.address,
+    _nativeOnJsLog.address,
+    _nativeOnJSLogStructured.address,
+    _nativeFetchImportCSSContent.address,
+    _nativeRegisterFontFace.address,
+    _nativeUnregisterFontFace.address,
+    _nativeRegisterKeyframes.address,
+    _nativeUnregisterKeyframes.address,
+  ];
+
+// ===== FontFace registration (Bridge -> Dart) =====
+typedef NativeRegisterFontFace = Void Function(
+    Double contextId,
+    Int64 sheetId,
+    Pointer<NativeString> fontFamily,
+    Pointer<NativeString> src,
+    Pointer<NativeString> fontWeight,
+    Pointer<NativeString> fontStyle,
+    Pointer<NativeString> baseHref);
+
+void _registerFontFace(
+  double contextId,
+  int sheetId,
+  Pointer<NativeString> nativeFontFamily,
+  Pointer<NativeString> nativeSrc,
+  Pointer<NativeString> nativeFontWeight,
+  Pointer<NativeString> nativeFontStyle,
+  Pointer<NativeString> nativeBaseHref,
+) {
+  try {
+    final String fontFamily = nativeStringToString(nativeFontFamily);
+    final String src = nativeStringToString(nativeSrc);
+    final String fontWeight = nativeStringToString(nativeFontWeight);
+    final String fontStyle = nativeStringToString(nativeFontStyle);
+    final String baseHref = nativeStringToString(nativeBaseHref);
+
+    // Debug
+    try {
+      final String srcPreview = src.length > 120 ? src.substring(0, 120) + '…' : src;
+      bridgeLogger.info('[font-face][dart] register sheet=$sheetId family=$fontFamily weight=$fontWeight style=$fontStyle base=${baseHref.isEmpty ? 'null' : baseHref} src="$srcPreview"');
+    } catch (_) {}
+
+    CSSFontFace.registerFromBridge(
+      sheetId: sheetId,
+      fontFamily: fontFamily,
+      src: src,
+      fontWeight: fontWeight.isEmpty ? null : fontWeight,
+      fontStyle: fontStyle.isEmpty ? null : fontStyle,
+      contextId: contextId,
+      baseHref: baseHref.isEmpty ? null : baseHref,
+    );
+  } catch (e, stack) {
+    bridgeLogger.severe('[font-face] register error: $e\n$stack');
+  } finally {
+    // Free native strings allocated on C++ side.
+    if (nativeFontFamily != nullptr) freeNativeString(nativeFontFamily);
+    if (nativeSrc != nullptr) freeNativeString(nativeSrc);
+    if (nativeFontWeight != nullptr) freeNativeString(nativeFontWeight);
+    if (nativeFontStyle != nullptr) freeNativeString(nativeFontStyle);
+    if (nativeBaseHref != nullptr) freeNativeString(nativeBaseHref);
+  }
+}
+
+final Pointer<NativeFunction<NativeRegisterFontFace>> _nativeRegisterFontFace = Pointer.fromFunction(_registerFontFace);
+
+typedef NativeUnregisterFontFace = Void Function(Double contextId, Int64 sheetId);
+
+void _unregisterFontFace(double contextId, int sheetId) {
+  try {
+    CSSFontFace.unregisterFromSheet(sheetId);
+  } catch (e, stack) {
+    bridgeLogger.severe('[font-face] unregister error: $e\n$stack');
+  }
+}
+
+final Pointer<NativeFunction<NativeUnregisterFontFace>> _nativeUnregisterFontFace =
+    Pointer.fromFunction(_unregisterFontFace);
 
 List<int> makeDartMethodsData() {
   return _dartNativeMethods;
 }
+
+// ===== Keyframes registration (Bridge -> Dart) =====
+typedef NativeRegisterKeyframes = Void Function(
+  Double contextId,
+  Int64 sheetId,
+  Pointer<NativeString> name,
+  Pointer<NativeString> cssText,
+  Int32 isPrefixed,
+);
+
+void _registerKeyframes(
+  double contextId,
+  int sheetId,
+  Pointer<NativeString> nativeName,
+  Pointer<NativeString> nativeCssText,
+  int isPrefixed,
+) {
+  try {
+    final String name = nativeStringToString(nativeName);
+    final String cssText = nativeStringToString(nativeCssText);
+
+    bridgeLogger.info('[keyframes][dart] register sheet=$sheetId name=$name prefixed=${isPrefixed == 1}');
+
+    CSSKeyframesBridge.registerFromBridge(
+      contextId: contextId,
+      sheetId: sheetId,
+      name: name,
+      cssText: cssText,
+      isPrefixed: isPrefixed == 1,
+    );
+  } catch (e, stack) {
+    bridgeLogger.severe('[keyframes] register error: $e\n$stack');
+  } finally {
+    if (nativeName != nullptr) freeNativeString(nativeName);
+    if (nativeCssText != nullptr) freeNativeString(nativeCssText);
+  }
+}
+
+final Pointer<NativeFunction<NativeRegisterKeyframes>> _nativeRegisterKeyframes =
+    Pointer.fromFunction(_registerKeyframes);
+
+typedef NativeUnregisterKeyframes = Void Function(Double contextId, Int64 sheetId);
+
+void _unregisterKeyframes(double contextId, int sheetId) {
+  try {
+    CSSKeyframesBridge.unregisterFromSheet(contextId: contextId, sheetId: sheetId);
+  } catch (e, stack) {
+    bridgeLogger.severe('[keyframes] unregister error: $e\n$stack');
+  } finally {}
+}
+
+final Pointer<NativeFunction<NativeUnregisterKeyframes>> _nativeUnregisterKeyframes =
+    Pointer.fromFunction(_unregisterKeyframes);

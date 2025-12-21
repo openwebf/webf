@@ -67,13 +67,21 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   bool get inited => _inited;
 
+  static const Duration _nativeMediaQueryAffectingValueDebounceDuration = Duration(milliseconds: 16);
+  Timer? _nativeMediaQueryAffectingValueDebounceTimer;
+  bool _nativeMediaQueryAffectingValuePostFrameCallbackScheduled = false;
+  double? _lastNotifiedViewportWidth;
+  double? _lastNotifiedViewportHeight;
+  double? _lastNotifiedDevicePixelRatio;
+  int? _lastNotifiedPageAddress;
+
   Future<void> initialize() async {
     if (enableDebug) {
       debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
       debugPaintSizeEnabled = true;
     }
 
-    _contextId = await initBridge(this, runningThread, enableBlink || bool.fromEnvironment("WEBF_ENABLE_BLINK"));
+    _contextId = await initBridge(this, runningThread, enableBlink);
 
     _inited = true;
 
@@ -249,7 +257,14 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   bool get disposed => _disposed;
 
+  // Root viewport for the full WebF widget.
   RootRenderViewportBox? viewport;
+
+  // Viewport used when rendering a hybrid router subview (WebFSubView/WebFRouterView).
+  RouterViewViewportBox? routerViewport;
+
+  // The effective viewport for DOM APIs like window.innerWidth/innerHeight.
+  RenderViewportBox? get currentViewport => routerViewport ?? viewport;
   late Document document;
   late Window window;
 
@@ -277,6 +292,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     // Pause animation timeline to prevent ticker from running when detached
     document.animationTimeline.pause();
     viewport = null;
+    routerViewport = null;
   }
 
   void initDocument(view, Pointer<NativeBindingObject> pointer) {
@@ -314,6 +330,10 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   // Dispose controller and recycle all resources.
   Future<void> dispose() async {
     if (!_inited) return;
+    _nativeMediaQueryAffectingValueDebounceTimer?.cancel();
+    _nativeMediaQueryAffectingValueDebounceTimer = null;
+    _nativeMediaQueryAffectingValuePostFrameCallbackScheduled = false;
+    routerViewport = null;
     await waitingSyncTaskComplete(contextId);
     _disposed = true;
     debugDOMTreeChanged = null;
@@ -344,6 +364,64 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
     // Dispose shared Dio client bound to this context
     disposeSharedDioForContext(_contextId);
+  }
+
+  void _scheduleNativeMediaQueryAffectingValueChanged() {
+    if (_nativeMediaQueryAffectingValueDebounceTimer != null) return;
+    _nativeMediaQueryAffectingValueDebounceTimer =
+        Timer(_nativeMediaQueryAffectingValueDebounceDuration, _scheduleNativeMediaQueryAffectingValueFlushAfterFrame);
+  }
+
+  void _scheduleNativeMediaQueryAffectingValueFlushAfterFrame() {
+    _nativeMediaQueryAffectingValueDebounceTimer = null;
+    if (_nativeMediaQueryAffectingValuePostFrameCallbackScheduled) return;
+    _nativeMediaQueryAffectingValuePostFrameCallbackScheduled = true;
+
+    // Ensure viewport RenderObject has the latest size before C++ side reads
+    // window.innerWidth/innerHeight (used for media query evaluation).
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _nativeMediaQueryAffectingValuePostFrameCallbackScheduled = false;
+      _flushNativeMediaQueryAffectingValueChanged();
+    });
+    SchedulerBinding.instance.scheduleFrame();
+  }
+
+  void _flushNativeMediaQueryAffectingValueChanged() {
+    if (!_inited || _disposed || WebFController.getControllerOfJSContextId(_contextId) == null) {
+      return;
+    }
+
+    final Pointer<Void>? page = getAllocatedPage(_contextId);
+    if (page == null) return;
+
+    if (_lastNotifiedPageAddress != page.address) {
+      _lastNotifiedPageAddress = page.address;
+      _lastNotifiedViewportWidth = null;
+      _lastNotifiedViewportHeight = null;
+      _lastNotifiedDevicePixelRatio = null;
+    }
+
+    final double width = window.innerWidth;
+    final double height = window.innerHeight;
+    bool shouldDispatchResizeEvent = false;
+    if (_lastNotifiedViewportWidth != width || _lastNotifiedViewportHeight != height) {
+      nativeOnViewportSizeChanged(page, width, height);
+      _lastNotifiedViewportWidth = width;
+      _lastNotifiedViewportHeight = height;
+      shouldDispatchResizeEvent = true;
+    }
+
+    final double dpr = window.devicePixelRatio;
+    if (_lastNotifiedDevicePixelRatio != dpr) {
+      nativeOnDevicePixelRatioChanged(page, dpr);
+      _lastNotifiedDevicePixelRatio = dpr;
+      shouldDispatchResizeEvent = true;
+    }
+
+    if (shouldDispatchResizeEvent) {
+      // Fire standard window resize event for JS frameworks and user code.
+      rootController.dispatchWindowResizeEvent();
+    }
   }
 
   VoidCallback? _originalOnPlatformBrightnessChanged;
@@ -664,13 +742,13 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     context2d?.requestPaint();
   }
 
-  void setInlineStyle(Pointer selfPtr, String key, String value) {
+  void setInlineStyle(Pointer selfPtr, String key, String value, {String? baseHref}) {
     assert(hasBindingObject(selfPtr), 'id: $selfPtr key: $key value: $value');
     Node? target = getBindingObject<Node>(selfPtr);
     if (target == null) return;
 
     if (target is Element) {
-      target.setInlineStyle(key, value);
+      target.setInlineStyle(key, value, baseHref: baseHref);
     }
   }
 
@@ -681,6 +759,70 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
     if (target is Element) {
       target.clearInlineStyle();
+    }
+  }
+
+  void setPseudoStyle(Pointer selfPtr, String args, String key, String value, {String? baseHref}) {
+    assert(hasBindingObject(selfPtr), 'id: $selfPtr');
+    Node? target = getBindingObject<Node>(selfPtr);
+    if (target == null) return;
+    if (target is! Element) {
+      debugPrint("[setPseudoStyle] target is not an element");
+      return;
+    }
+
+    switch(args) {
+      case 'before':
+      case 'after':
+      case 'first-letter':
+      case 'first-line':
+        target.setPseudoStyle(args, key, value, baseHref: baseHref);
+        break;
+
+      default:
+        debugPrint("[setPseudoStyle] Not supported pseudo element: $args");
+    }
+  }
+
+  void removePseudoStyle(Pointer selfPtr, String args, String key) {
+    assert(hasBindingObject(selfPtr), 'id: $selfPtr');
+    Node? target = getBindingObject<Node>(selfPtr);
+    if (target == null) return;
+    if (target is! Element) {
+      debugPrint("[removePseudoStyle] target is not an element");
+      return;
+    }
+
+    switch(args) {
+      case 'before':
+      case 'after':
+      case 'first-letter':
+      case 'first-line':
+        target.removePseudoStyle(args, key);
+        break;
+      default:
+        debugPrint("[removePseudoStyle] Not supported pseudo element: $args");
+    }
+  }
+
+  void clearPseudoStyle(Pointer selfPtr, String args) {
+    assert(hasBindingObject(selfPtr), 'id: $selfPtr');
+    Node? target = getBindingObject<Node>(selfPtr);
+    if (target == null) return;
+    if (target is! Element) {
+      debugPrint("[clearPseudoStyle] target is not an element");
+      return;
+    }
+
+    switch (args) {
+      case 'before':
+      case 'after':
+      case 'first-letter':
+      case 'first-line':
+        target.clearPseudoStyle(args);
+        break;
+      default:
+        debugPrint("[clearPseudoStyle] Not supported pseudo element: $args");
     }
   }
 
@@ -906,6 +1048,13 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   @override
   void didChangeMetrics() {
+    // Notify C++ Blink style engine about viewport and DPR changes so that
+    // media queries depending on width/height/device-size and resolution can
+    // be re-evaluated.
+    if (_inited && !_disposed && WebFController.getControllerOfJSContextId(_contextId) != null) {
+      _scheduleNativeMediaQueryAffectingValueChanged();
+    }
+
     window.resizeViewportRelatedElements();
   }
 
@@ -913,6 +1062,18 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   void didChangePlatformBrightness() {
     // If dark mode was override by the caller, watch the system platform changes to update platform brightness
     if (rootController.darkModeOverride == null) {
+      // Notify C++ Blink style engine that color-scheme changed, so
+      // prefers-color-scheme media queries can react to the new value.
+      if (_inited && !_disposed && WebFController.getControllerOfJSContextId(_contextId) != null) {
+        final Pointer<Void>? page = getAllocatedPage(_contextId);
+        if (page != null) {
+          final String scheme = window.colorScheme;
+          final Pointer<Utf8> schemePtr = scheme.toNativeUtf8();
+          nativeOnColorSchemeChanged(page, schemePtr, scheme.length);
+          malloc.free(schemePtr);
+        }
+      }
+
       document.recalculateStyleImmediately();
     }
   }

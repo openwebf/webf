@@ -212,8 +212,4 @@ void CSSCounterStyleRule::Reattach(std::shared_ptr<StyleRuleBase> rule) {
   counter_style_rule_ = std::static_pointer_cast<StyleRuleCounterStyle>(rule);
 }
 
-void CSSCounterStyleRule::TraceAfterDispatch(GCVisitor* visitor) const {
-  // In WebF, we use shared_ptr, so no tracing needed
-}
-
 }  // namespace webf

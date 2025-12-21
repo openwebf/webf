@@ -364,6 +364,23 @@ enum class EListStylePosition : uint8_t {
   kMaxEnumValue = kInside,
 };
 
+// List style types supported by list-style-type.
+// Keep in sync with css_properties.json5 and css_value_keywords.json5.
+enum class EListStyleType : uint8_t {
+  kDisc,
+  kCircle,
+  kSquare,
+  kDisclosureOpen,
+  kDisclosureClosed,
+  kDecimal,
+  kLowerAlpha,
+  kUpperAlpha,
+  kLowerRoman,
+  kUpperRoman,
+  kNone,
+  kMaxEnumValue = kNone,
+};
+
 enum class EMaskType : uint8_t {
   kAlpha,
   kLuminance,

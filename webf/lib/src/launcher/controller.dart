@@ -15,6 +15,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'dart:ui';
 
+import 'package:ffi/ffi.dart';
 import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
@@ -637,7 +638,17 @@ class WebFController with Diagnosticable {
     bool? after = isDarkMode;
 
     if (before != after) {
-      view.window.dispatchEvent(ColorSchemeChangeEvent(after == true ? 'dark' : 'light'));
+      final String scheme = after == true ? 'dark' : 'light';
+      view.window.dispatchEvent(ColorSchemeChangeEvent(scheme));
+      // Notify native Blink CSS about the new color-scheme value so that
+      // prefers-color-scheme media queries re-evaluate against the updated
+      // environment, in addition to Dart-side style updates.
+      final Pointer<Void>? page = getAllocatedPage(view.contextId);
+      if (page != null) {
+        final Pointer<Utf8> schemePtr = scheme.toNativeUtf8();
+        nativeOnColorSchemeChanged(page, schemePtr, scheme.length);
+        malloc.free(schemePtr);
+      }
       view.document.recalculateStyleImmediately();
     } else {
 
@@ -705,6 +716,7 @@ class WebFController with Diagnosticable {
 
   WebFController({
     bool enableDebug = false,
+    bool enableBlink = false,
     WebFBundle? bundle,
     WebFThread? runningThread,
     this.background,
@@ -748,6 +760,7 @@ class WebFController with Diagnosticable {
     _view = WebFViewController(
         background: background,
         enableDebug: enableDebug,
+        enableBlink: enableBlink,
         rootController: this,
         runningThread: this.runningThread!,
         navigationDelegate: navigationDelegate,

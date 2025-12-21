@@ -859,176 +859,155 @@
 //      type_name: "EffectModel::CompositeOperation",
 //      valid_for_marker: true,
 //    },
-//    {
-//      name: "animation-delay",
-//      property_methods: [
-//        "ParseSingleValue",
-//        /* "CSSValueFromComputedStyleInternal", */
-//        "InitialValue"
-//      ],
-//      style_builder_template: "animation",
-//      style_builder_template_args: {
-//        attribute: "DelayStart",
-//      },
-//      typedom_types: [
-//        "Time"
-//      ],
-//      separator: ",",
-//      valid_for_marker: true,
-//      is_animation_property: true,
-//      // Animation properites are never incremental.
-//      supports_incremental_style: false,
-//      valid_for_keyframe: false,
-//    },
-//    {
-//      name: "animation-direction",
-//      property_methods: [
-//        "ParseSingleValue",
-//        /* "CSSValueFromComputedStyleInternal", */
-//        "InitialValue"
-//      ],
-//      keywords: [
-//        "normal",
-//        "reverse",
-//        "alternate",
-//        "alternate-reverse"
-//      ],
-//      typedom_types: [
-//        "Keyword"
-//      ],
-//      style_builder_template: "animation",
-//      style_builder_template_args: {
-//        attribute: "Direction",
-//      },
-//      separator: ",",
-//      valid_for_marker: true,
-//      is_animation_property: true,
-//      // Animation properites are never incremental.
-//      supports_incremental_style: false,
-//      valid_for_keyframe: false,
-//    },
-//    {
-//      name: "animation-duration",
-//      property_methods: [
-//        "ParseSingleValue",
-//        /* "CSSValueFromComputedStyleInternal", */
-//        "InitialValue"
-//      ],
-//      style_builder_template: "animation",
-//      style_builder_template_args: {
-//        attribute: "Duration",
-//      },
-//      typedom_types: [
-//        "Time"
-//      ],
-//      separator: ",",
-//      valid_for_marker: true,
-//      is_animation_property: true,
-//      // Animation properites are never incremental.
-//      supports_incremental_style: false,
-//      valid_for_keyframe: false,
-//    },
-//    {
-//      name: "animation-fill-mode",
-//      property_methods: [
-//        "ParseSingleValue",
-//        /* "CSSValueFromComputedStyleInternal", */
-//        "InitialValue"
-//      ],
-//      style_builder_template: "animation",
-//      style_builder_template_args: {
-//        attribute: "FillMode",
-//      },
-//      keywords: [
-//        "none",
-//        "forwards",
-//        "backwards",
-//        "both"
-//      ],
-//      typedom_types: [
-//        "Keyword"
-//      ],
-//      separator: ",",
-//      valid_for_marker: true,
-//      is_animation_property: true,
-//      // Animation properites are never incremental.
-//      supports_incremental_style: false,
-//      valid_for_keyframe: false,
-//    },
-//    {
-//      name: "animation-iteration-count",
-//      property_methods: [
-//        "ParseSingleValue",
-//        /* "CSSValueFromComputedStyleInternal", */
-//        "InitialValue"
-//      ],
-//      keywords: [
-//        "infinite"
-//      ],
-//      style_builder_template: "animation",
-//      style_builder_template_args: {
-//        attribute: "IterationCount",
-//      },
-//      typedom_types: [
-//        "Keyword",
-//        "Number"
-//      ],
-//      separator: ",",
-//      valid_for_marker: true,
-//      is_animation_property: true,
-//      // Animation properites are never incremental.
-//      supports_incremental_style: false,
-//      valid_for_keyframe: false,
-//    },
-//    {
-//      name: "animation-name",
-//      property_methods: [
-//        "ParseSingleValue",
-//        /* "CSSValueFromComputedStyleInternal", */
-//        "InitialValue"
-//      ],
-//      style_builder_template: "animation",
-//      style_builder_template_args: {
-//        attribute: "Name",
-//      },
-//      keywords: [
-//        "none"
-//      ],
-//      typedom_types: [
-//        "Keyword"
-//      ],
-//      separator: ",",
-//      valid_for_marker: true,
-//      is_animation_property: true,
-//      // Animation properites are never incremental.
-//      supports_incremental_style: false,
-//      valid_for_keyframe: false,
-//    },
-//    {
-//      name: "animation-play-state",
-//      property_methods: [
-//        "ParseSingleValue",
-//        /* "CSSValueFromComputedStyleInternal", */
-//        "InitialValue"
-//      ],
-//      style_builder_template: "animation",
-//      style_builder_template_args: {
-//        attribute: "PlayState",
-//      },
-//      keywords: [
-//        "running",
-//        "paused"
-//      ],
-//      typedom_types: [
-//        "Keyword"
-//      ],
-//      separator: ",",
-//      valid_for_marker: true,
-//      is_animation_property: true,
-//      // Animation properites are never incremental.
-//      supports_incremental_style: false,
-//      valid_for_keyframe: false,
-//    },
+    {
+      name: "animation-delay",
+      property_methods: [
+        "ParseSingleValue",
+        /* "CSSValueFromComputedStyleInternal", */
+        "InitialValue"
+      ],
+      style_builder_template: "empty",
+      typedom_types: [
+        "Time"
+      ],
+      separator: ",",
+      valid_for_marker: true,
+      is_animation_property: true,
+      // Animation properites are never incremental.
+      supports_incremental_style: false,
+      valid_for_keyframe: false,
+    },
+    {
+      name: "animation-direction",
+      property_methods: [
+        "ParseSingleValue",
+        /* "CSSValueFromComputedStyleInternal", */
+        "InitialValue"
+      ],
+      keywords: [
+        "normal",
+        "reverse",
+        "alternate",
+        "alternate-reverse"
+      ],
+      typedom_types: [
+        "Keyword"
+      ],
+      style_builder_template: "empty",
+      separator: ",",
+      valid_for_marker: true,
+      is_animation_property: true,
+      // Animation properites are never incremental.
+      supports_incremental_style: false,
+      valid_for_keyframe: false,
+    },
+    {
+      name: "animation-duration",
+      property_methods: [
+        "ParseSingleValue",
+        /* "CSSValueFromComputedStyleInternal", */
+        "InitialValue"
+      ],
+      style_builder_template: "empty",
+      typedom_types: [
+        "Time"
+      ],
+      separator: ",",
+      valid_for_marker: true,
+      is_animation_property: true,
+      // Animation properites are never incremental.
+      supports_incremental_style: false,
+      valid_for_keyframe: false,
+    },
+    {
+      name: "animation-fill-mode",
+      property_methods: [
+        "ParseSingleValue",
+        /* "CSSValueFromComputedStyleInternal", */
+        "InitialValue"
+      ],
+      style_builder_template: "empty",
+      keywords: [
+        "none",
+        "forwards",
+        "backwards",
+        "both"
+      ],
+      typedom_types: [
+        "Keyword"
+      ],
+      separator: ",",
+      valid_for_marker: true,
+      is_animation_property: true,
+      // Animation properites are never incremental.
+      supports_incremental_style: false,
+      valid_for_keyframe: false,
+    },
+    {
+      name: "animation-iteration-count",
+      property_methods: [
+        "ParseSingleValue",
+        /* "CSSValueFromComputedStyleInternal", */
+        "InitialValue"
+      ],
+      keywords: [
+        "infinite"
+      ],
+      style_builder_template: "empty",
+      typedom_types: [
+        "Keyword",
+        "Number"
+      ],
+      separator: ",",
+      valid_for_marker: true,
+      is_animation_property: true,
+      // Animation properites are never incremental.
+      supports_incremental_style: false,
+      valid_for_keyframe: false,
+    },
+    {
+      name: "animation-name",
+      property_methods: [
+        "ParseSingleValue",
+        /* "CSSValueFromComputedStyleInternal", */
+        "InitialValue"
+      ],
+      style_builder_template: "empty",
+      keywords: [
+        "none"
+      ],
+      typedom_types: [
+        "Keyword"
+      ],
+      separator: ",",
+      valid_for_marker: true,
+      is_animation_property: true,
+      // Animation properites are never incremental.
+      supports_incremental_style: false,
+      valid_for_keyframe: false,
+    },
+    {
+      name: "animation-play-state",
+      property_methods: [
+        "ParseSingleValue",
+        /* "CSSValueFromComputedStyleInternal", */
+        "InitialValue"
+      ],
+      style_builder_template: "empty",
+      keywords: [
+        "running",
+        "paused"
+      ],
+      typedom_types: [
+        "Keyword"
+      ],
+      separator: ",",
+      valid_for_marker: true,
+      is_animation_property: true,
+      // Animation properites are never incremental.
+      supports_incremental_style: false,
+      valid_for_keyframe: false,
+    },
 //    {
 //      name: "animation-range-start",
 //      property_methods: [
@@ -1092,39 +1071,63 @@
 //      // Animation properites are never incremental.
 //      supports_incremental_style: false,
 //    },
-//    {
-//      name: "animation-timing-function",
-//      property_methods: [
-//        "ParseSingleValue",
-//        /* "CSSValueFromComputedStyleInternal", */
-//        "InitialValue"
-//      ],
-//      style_builder_template: "animation",
-//      style_builder_template_args: {
-//        attribute: "TimingFunction",
-//      },
-//      keywords: [
-//        "linear",
-//        "ease",
-//        "ease-in",
-//        "ease-out",
-//        "ease-in-out",
-//        "jump-both",
-//        "jump-end",
-//        "jump-none",
-//        "jump-start",
-//        "step-start",
-//        "step-end"
-//      ],
-//      typedom_types: [
-//        "Keyword"
-//      ],
-//      separator: ",",
-//      valid_for_marker: true,
-//      is_animation_property: true,
-//      // Animation properites are never incremental.
-//      supports_incremental_style: false,
-//    },
+    {
+      name: "animation-timing-function",
+      property_methods: [
+        "ParseSingleValue",
+        /* "CSSValueFromComputedStyleInternal", */
+        "InitialValue"
+      ],
+      style_builder_template: "empty",
+      keywords: [
+        "linear",
+        "ease",
+        "ease-in",
+        "ease-out",
+        "ease-in-out",
+        "jump-both",
+        "jump-end",
+        "jump-none",
+        "jump-start",
+        "step-start",
+        "step-end"
+      ],
+      typedom_types: [
+        "Keyword"
+      ],
+      separator: ",",
+      valid_for_marker: true,
+      is_animation_property: true,
+      // Animation properites are never incremental.
+      supports_incremental_style: false,
+    },
+    {
+      name: "list-style-type",
+      // Parsing and initial value only – forwarded to Dart via UICommand kSetStyle
+      // We don't currently store this on ComputedStyle; values are emitted from the inline
+      // property set during style resolution.
+      field_template: "keyword",
+      type_name: "EListStyleType",
+      // The initial value per CSS is 'disc'. UA rules override this for <ol> to 'decimal'.
+      default_value: "disc",
+      inherited: true,
+      // Valid value keywords. Keep in sync with css_value_keywords.json5 list-style-type entries.
+      keywords: [
+        "disc",
+        "circle",
+        "square",
+        "disclosure-open",
+        "disclosure-closed",
+        "decimal",
+        "lower-alpha",
+        "upper-alpha",
+        "lower-roman",
+        "upper-roman",
+        "none",
+      ],
+      // Avoid generating style builder application; values are forwarded as strings to UI.
+      style_builder_template: "empty",
+    },
     {
       name: "transition-delay",
       property_methods: [
@@ -1144,6 +1147,28 @@
       is_animation_property: true,
       // Animation properites are never incremental.
       supports_incremental_style: false,
+    },
+    // CSS Counters
+    {
+      name: "counter-reset",
+      // Parsing and initial value only – forwarded to Dart via UICommand kSetStyle
+      property_methods: [
+        "ParseSingleValue",
+        "InitialValue"
+      ],
+      // No style builder; render side consumes the textual value
+      style_builder_template: "empty",
+      // kNone is the initial value per spec
+      keywords: ["none"],
+    },
+    {
+      name: "counter-increment",
+      property_methods: [
+        "ParseSingleValue",
+        "InitialValue"
+      ],
+      style_builder_template: "empty",
+      keywords: ["none"],
     },
     {
       name: "transition-duration",
@@ -8073,6 +8098,34 @@
       affected_by_zoom: true,
     },
     {
+      name: "word-break",
+      property_methods: [
+        /* "CSSValueFromComputedStyleInternal" */
+      ],
+      inherited: true,
+      field_group: "*",
+      field_template: "keyword",
+      // The order of keywords must align with EWordBreak in
+      // core/style/computed_style_base_constants.h
+      keywords: [
+        "normal",
+        "break-all",
+        "keep-all",
+        "auto-phrase",
+        "break-word"
+      ],
+      default_value: "normal",
+      type_name: "EWordBreak",
+      typedom_types: [
+        "Keyword"
+      ],
+      valid_for_marker: true,
+      invalidate: [
+        "layout",
+        "paint"
+      ],
+    },
+    {
       name: "z-index",
       property_methods: [
         "ParseSingleValue",
@@ -8793,25 +8846,25 @@
       is_property: false,
     },
     // Shorthands
-//    {
-//      name: "animation",
-//      longhands: [
-////        "animation-duration",
-////        "animation-timing-function",
-////        "animation-delay",
-////        "animation-iteration-count",
-////        "animation-direction",
-////        "animation-fill-mode",
-////        "animation-play-state",
-////        "animation-name"
-//      ],
-//      property_methods: [
-//        "ParseShorthand",
-//        /* "CSSValueFromComputedStyleInternal" */
-//      ],
-//      supports_incremental_style: false,
-//      valid_for_keyframe: false,
-//    },
+    {
+      name: "animation",
+      longhands: [
+        "animation-duration",
+        "animation-timing-function",
+        "animation-delay",
+        "animation-iteration-count",
+        "animation-direction",
+        "animation-fill-mode",
+        "animation-play-state",
+        "animation-name"
+      ],
+      property_methods: [
+        "ParseShorthand",
+        /* "CSSValueFromComputedStyleInternal" */
+      ],
+      supports_incremental_style: false,
+      valid_for_keyframe: false,
+    },
 //    {
 //      // Variant of the "animation" shorthand which includes the
 //      // animation-timeline and animation-range-* longhands.
@@ -9987,10 +10040,15 @@
       name: "-webkit-text-size-adjust",
       alias_for: "text-size-adjust",
     },
-    {
-      name: "-webkit-transform",
-      alias_for: "transform",
-    },
+    // NOTE: Disabled alias for compatibility hardening.
+    // -webkit-transform used to alias to unprefixed 'transform'.
+    // Leaving commented so it's easy to restore if needed.
+    // To re-enable, uncomment the block and run codegen:
+    //   node scripts/generate_binding_code.js (from repo root)
+    // {
+    //   name: "-webkit-transform",
+    //   alias_for: "transform",
+    // },
     {
       name: "-webkit-transform-origin",
       alias_for: "transform-origin",

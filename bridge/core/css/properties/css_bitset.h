@@ -143,6 +143,8 @@ class CSSBitsetBase {
   Iterator begin() const { return Iterator(chunks_.data(), 0, 0); }
   Iterator end() const { return Iterator(chunks_.data(), kChunks, kBits); }
 
+  [[nodiscard]] constexpr size_t Size() const { return chunks_.size(); }
+
   // Like begin(), except that it skips all high-priority properties
   // (so starts at the first set bit after kLastHighPriorityCSSProperty).
   Iterator BeginAfterHighPriority() const {

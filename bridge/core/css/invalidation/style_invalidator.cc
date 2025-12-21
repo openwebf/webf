@@ -23,7 +23,8 @@ namespace webf {
 // To minimize performance impact, we wrap trace events with a lookup of
 // cached flag. The cached flag is made "static const" and is not shared
 // with InvalidationSet to avoid additional GOT lookup cost.
-static const unsigned char* g_style_invalidator_tracing_enabled = nullptr;
+static const unsigned char kStyleInvalidatorTracingDisabled = 0;
+static const unsigned char* g_style_invalidator_tracing_enabled = &kStyleInvalidatorTracingDisabled;
 
 //#define TRACE_STYLE_INVALIDATOR_INVALIDATION_IF_ENABLED(element, reason) \
 //  if (UNLIKELY(*g_style_invalidator_tracing_enabled))                    \
@@ -195,7 +196,7 @@ void StyleInvalidator::PushInvalidationSetsForContainerNode(ContainerNode& node,
   }
   NodeInvalidationSets& pending_invalidations = pending_invalidations_iterator->second;
 
-  assert(pending_nth_sets_.IsEmpty());
+  assert(pending_nth_sets_.empty());
 
   for (const auto& invalidation_set : pending_invalidations.Siblings()) {
     assert(invalidation_set->IsAlive());
@@ -210,7 +211,7 @@ void StyleInvalidator::PushInvalidationSetsForContainerNode(ContainerNode& node,
     return;
   }
 
-  if (!pending_invalidations.Descendants().IsEmpty()) {
+  if (!pending_invalidations.Descendants().empty()) {
     for (const auto& invalidation_set : pending_invalidations.Descendants()) {
       assert(invalidation_set->IsAlive());
       PushInvalidationSet(*invalidation_set);
@@ -314,8 +315,12 @@ void StyleInvalidator::Invalidate(Element& element, SiblingData& sibling_data) {
   //   could apply to the descendants.
   // * there are invalidation sets attached to descendants then we need to
   //   clear the flags on the nodes, whether we use the sets or not.
-  if ((!WholeSubtreeInvalid() && HasInvalidationSets() && element.GetComputedStyle()) ||
-      element.ChildNeedsStyleInvalidation()) {
+  // Blink gates invalidation recursion on GetComputedStyle() to avoid walking
+  // subtrees that cannot be affected (e.g. display:none). WebF does not yet
+  // store ComputedStyle on DOM nodes, so GetComputedStyle() always returns
+  // nullptr; keep invalidation functional by recursing whenever there are
+  // pending invalidation sets.
+  if ((!WholeSubtreeInvalid() && HasInvalidationSets()) || element.ChildNeedsStyleInvalidation()) {
     InvalidateChildren(element);
   } else {
     ClearPendingNthSiblingInvalidationSets();

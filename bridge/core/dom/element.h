@@ -28,6 +28,8 @@ namespace webf {
 
 class ShadowRoot;
 class StyleScopeData;
+class StyleRecalcChange;
+class StyleRecalcContext;
 
 enum class ElementFlags {
   kTabIndexWasSetExplicitly = 1 << 0,
@@ -241,6 +243,12 @@ class Element : public ContainerNode {
   StyleScopeData& EnsureStyleScopeData();
   StyleScopeData* GetStyleScopeData() const;
 
+  // Blink-style per-element style recalc entry point. WebF currently performs
+  // its actual cascade and UI emission work in StyleEngine; this method
+  // mirrors Blink's traversal contract (including @scope bookkeeping via
+  // StyleScopeFrame) so that callers can be ported with minimal changes.
+  void RecalcStyle(const StyleRecalcChange, const StyleRecalcContext&);
+
   void SetComputedStyle(const ComputedStyle* computed_style) {
     // computed_style_ = computed_style;
   }
@@ -405,9 +413,9 @@ inline Element* Node::parentElement() const {
 }
 
 inline bool Element::hasAttributes() const {
-  // return !Attributes().IsEmpty();
-
-  return !EnsureElementAttributes().hasAttributes();
+  // Correct semantics: true if this element has any attributes.
+  // Prefer the lightweight collection check.
+  return !Attributes().IsEmpty();
 }
 
 inline const AtomicString& Element::IdForStyleResolution() const {

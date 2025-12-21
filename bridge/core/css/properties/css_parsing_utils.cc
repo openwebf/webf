@@ -5,6 +5,8 @@
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
 #include "core/css/properties/css_parsing_utils.h"
+#include "core/css/parser/css_parser_save_point.h"
+#include "core/css/css_raw_value.h"
 #include "core/base/containers/span.h"
 #include "core/css/css_appearance_auto_base_select_value_pair.h"
 #include "core/css/css_axis_value.h"
@@ -59,6 +61,9 @@
 
 namespace webf {
 namespace css_parsing_utils {
+
+// Forward declaration used by certain component consumers to preserve var() as raw text.
+static std::shared_ptr<const CSSValue> ConsumeVarFunctionAsRaw(CSSParserTokenStream&);
 
 // https://drafts.csswg.org/css-syntax/#typedef-any-value
 bool IsTokenAllowedForAnyValue(const CSSParserToken& token) {
@@ -160,23 +165,20 @@ bool ConsumeAnyValue(CSSParserTokenRange& range) {
 
 
 bool ConsumeAnyValue(CSSParserTokenStream& stream) {
-  bool result = IsTokenAllowedForAnyValue(stream.Peek());
-  unsigned nesting_level = 0;
-
-  while (nesting_level || result) {
-    const CSSParserToken& token = stream.Consume();
-    if (token.GetBlockType() == CSSParserToken::kBlockStart) {
-      nesting_level++;
-    } else if (token.GetBlockType() == CSSParserToken::kBlockEnd) {
-      nesting_level--;
+  while (!stream.AtEnd()) {
+    if (stream.Peek().GetBlockType() == CSSParserToken::kBlockStart) {
+      CSSParserTokenStream::RestoringBlockGuard guard(stream);
+      if (!ConsumeAnyValue(stream) || !guard.Release()) {
+        return false;
+      }
+    } else if (IsTokenAllowedForAnyValue(stream.Peek())) {
+      stream.Consume();
+    } else {
+      return false;
     }
-    if (stream.AtEnd()) {
-      return result;
-    }
-    result = result && IsTokenAllowedForAnyValue(stream.Peek());
   }
 
-  return result;
+  return true;
 }
 
 // MathFunctionParser is a helper for parsing something that _might_ be a
@@ -801,7 +803,7 @@ std::shared_ptr<const CSSValue> ConsumeRatio(CSSParserTokenStream& stream,
   }
 
   savepoint.Release();
-  return std::make_shared<cssvalue::CSSRatioValue>(*first, *second);
+  return std::make_shared<cssvalue::CSSRatioValue>(first, second);
 }
 
 
@@ -958,6 +960,12 @@ ConsumeColorInternal(T& range,
                      std::shared_ptr<const CSSParserContext> context,
                      bool accept_quirky_colors,
                      AllowedColors allowed_colors) {
+  // Capture raw source slice for CSSParserTokenStream to preserve author input.
+  size_t raw_start = 0;
+  if constexpr (std::is_same_v<T, CSSParserTokenStream>) {
+    range.EnsureLookAhead();
+    raw_start = range.LookAheadOffset();
+  }
   CSSValueID id = range.Peek().Id();
   if ((id == CSSValueID::kAccentcolor || id == CSSValueID::kAccentcolortext)) {
     return nullptr;
@@ -972,23 +980,57 @@ ConsumeColorInternal(T& range,
       return nullptr;
     }
     auto color = ConsumeIdent(range);
+    if (color) {
+      if constexpr (std::is_same_v<T, CSSParserTokenStream>) {
+        size_t raw_end = range.Offset();
+        if (raw_end > raw_start) {
+          String raw = String(range.StringRangeAt(raw_start, raw_end - raw_start));
+          color->SetRawText(raw);
+        }
+      }
+    }
     return color;
   }
 
   Color color = Color::kTransparent;
   if (ParseHexColor(range, color, accept_quirky_colors)) {
-    return cssvalue::CSSColor::Create(color);
+    auto v = cssvalue::CSSColor::Create(color);
+    if constexpr (std::is_same_v<T, CSSParserTokenStream>) {
+      size_t raw_end = range.Offset();
+      if (raw_end > raw_start) {
+        String raw = String(range.StringRangeAt(raw_start, raw_end - raw_start));
+        v->SetRawText(raw);
+      }
+    }
+    return v;
   }
 
   // Parses the color inputs rgb(), rgba(), hsl(), hsla(), hwb(), lab(),
   // oklab(), lch(), oklch() and color(). https://www.w3.org/TR/css-color-4/
   ColorFunctionParser parser;
   if (auto functional_syntax_color = parser.ConsumeFunctionalSyntaxColor(range, context)) {
+    if constexpr (std::is_same_v<T, CSSParserTokenStream>) {
+      size_t raw_end = range.Offset();
+      if (raw_end > raw_start) {
+        String raw = String(range.StringRangeAt(raw_start, raw_end - raw_start));
+        functional_syntax_color->SetRawText(raw);
+      }
+    }
     return functional_syntax_color;
   }
 
   if (allowed_colors == AllowedColors::kAll) {
-    return ConsumeLightDark(ConsumeColor<CSSParserTokenRange>, range, context);
+    auto v = ConsumeLightDark(ConsumeColor<CSSParserTokenRange>, range, context);
+    if (v) {
+      if constexpr (std::is_same_v<T, CSSParserTokenStream>) {
+        size_t raw_end = range.Offset();
+        if (raw_end > raw_start) {
+          String raw = String(range.StringRangeAt(raw_start, raw_end - raw_start));
+          v->SetRawText(raw);
+        }
+      }
+    }
+    return v;
   }
   return nullptr;
 }
@@ -1387,6 +1429,9 @@ bool ConsumeBorderShorthand(CSSParserTokenStream& stream,
 std::shared_ptr<const CSSValue> ConsumeBorderWidth(CSSParserTokenStream& stream,
                                                    std::shared_ptr<const CSSParserContext> context,
                                                    UnitlessQuirk unitless) {
+  if (auto raw = ConsumeVarFunctionAsRaw(stream)) {
+    return raw;
+  }
   if (stream.Peek().FunctionId() == CSSValueID::kInternalAppearanceAutoBaseSelect) {
     CSSParserSavePoint savepoint(stream);
     CSSParserTokenRange arg_range = ConsumeFunction(stream);
@@ -1416,6 +1461,9 @@ std::shared_ptr<const CSSValue> ParseBorderWidthSide(CSSParserTokenStream& strea
 
 std::shared_ptr<const CSSValue> ParseBorderStyleSide(CSSParserTokenStream& stream,
                                                      std::shared_ptr<const CSSParserContext> context) {
+  if (auto raw = ConsumeVarFunctionAsRaw(stream)) {
+    return raw;
+  }
   if (stream.Peek().FunctionId() == CSSValueID::kInternalAppearanceAutoBaseSelect) {
     CSSParserSavePoint savepoint(stream);
     CSSParserTokenRange arg_range = ConsumeFunction(stream);
@@ -1457,6 +1505,9 @@ ConsumeAppearanceAutoBaseSelectColor(T& range, std::shared_ptr<const CSSParserCo
 std::shared_ptr<const CSSValue> ConsumeBorderColorSide(CSSParserTokenStream& stream,
                                                        std::shared_ptr<const CSSParserContext> context,
                                                        const CSSParserLocalContext& local_context) {
+  if (auto raw = ConsumeVarFunctionAsRaw(stream)) {
+    return raw;
+  }
   CSSPropertyID shorthand = local_context.CurrentShorthand();
   bool allow_quirky_colors = IsQuirksModeBehavior(context->Mode()) &&
                              (shorthand == CSSPropertyID::kInvalid || shorthand == CSSPropertyID::kBorderColor);
@@ -1474,6 +1525,10 @@ std::shared_ptr<const CSSValue> ParseLonghand(CSSPropertyID unresolved_property,
   CSSPropertyID property_id = ResolveCSSPropertyID(unresolved_property);
   CSSValueID value_id = stream.Peek().Id();
   assert(!CSSProperty::Get(property_id).IsShorthand());
+  // Preserve var() as raw text for later serialization if present as the value.
+  if (auto raw = ConsumeVarFunctionAsRaw(stream)) {
+    return raw;
+  }
   if (CSSParserFastPaths::IsHandledByKeywordFastPath(property_id)) {
     if (CSSParserFastPaths::IsValidKeywordPropertyAndValue(property_id, stream.Peek().Id(), context->Mode())) {
       return ConsumeIdent(stream);
@@ -2529,7 +2584,8 @@ CSSParserToken ConsumeUrlAsToken(CSSParserTokenStream& stream, std::shared_ptr<c
 
 CSSUrlData CollectUrlData(const String& url, std::shared_ptr<const CSSParserContext> context) {
   AtomicString atomic_url(url);
-  return CSSUrlData(atomic_url, context->CompleteNonEmptyURL(url));
+  KURL resolved = context->CompleteNonEmptyURL(url);
+  return CSSUrlData(atomic_url, resolved);
 }
 
 static std::shared_ptr<const CSSImageValue> CreateCSSImageValueWithReferrer(
@@ -5533,15 +5589,51 @@ std::shared_ptr<const CSSValue> ConsumeTransformValue(CSSParserTokenStream& stre
           return nullptr;
         }
         break;
-      case CSSValueID::kRotate3D:
-        if (!ConsumeNumbers(stream, context, transform_value, 3) || !ConsumeCommaIncludingWhitespace(stream)) {
-          return nullptr;
-        }
-        parsed_value = ConsumeAngle(stream, context);
-        if (!parsed_value) {
-          return nullptr;
+      case CSSValueID::kRotate3D: {
+        // Support both:
+        //   - Spec form: rotate3d(<number>, <number>, <number>, <angle>)
+        //   - Legacy form used in WebF tests: rotate3d(<angle>, <angle>, <angle>)
+        const CSSParserToken& first = stream.Peek();
+        if (first.GetType() == kNumberToken || first.GetType() == kFunctionToken) {
+          // Axis + angle syntax: <number>{3}, <angle>
+          if (!ConsumeNumbers(stream, context, transform_value, 3) || !ConsumeCommaIncludingWhitespace(stream)) {
+            return nullptr;
+          }
+          parsed_value = ConsumeAngle(stream, context);
+          if (!parsed_value) {
+            return nullptr;
+          }
+        } else {
+          // Triple-angle syntax: rotate3d(ax, ay, az)
+          // Parse three <angle> values separated by commas. These are
+          // forwarded as-is and interpreted on the Dart side.
+          std::shared_ptr<const CSSPrimitiveValue> angle_x = ConsumeAngle(stream, context);
+          if (!angle_x) {
+            return nullptr;
+          }
+          transform_value->Append(angle_x);
+
+          if (!ConsumeCommaIncludingWhitespace(stream)) {
+            return nullptr;
+          }
+
+          std::shared_ptr<const CSSPrimitiveValue> angle_y = ConsumeAngle(stream, context);
+          if (!angle_y) {
+            return nullptr;
+          }
+          transform_value->Append(angle_y);
+
+          if (!ConsumeCommaIncludingWhitespace(stream)) {
+            return nullptr;
+          }
+
+          parsed_value = ConsumeAngle(stream, context);
+          if (!parsed_value) {
+            return nullptr;
+          }
         }
         break;
+      }
       case CSSValueID::kTranslate3D:
         if (!ConsumeTranslate3d(stream, context, transform_value)) {
           return nullptr;
@@ -6145,6 +6237,23 @@ bool MaybeConsumeImportant(CSSParserTokenStream& stream, bool allow_important_an
 
   savepoint.Release();
   return true;
+}
+
+// When encountering a var() function while parsing a component of a shorthand,
+// return it as a CSSRawValue preserving the original text so we can serialize
+// the raw var(...) later. This is used to keep var() for longhand expansion
+// when the variable cannot be resolved at parse-time.
+static std::shared_ptr<const CSSValue> ConsumeVarFunctionAsRaw(CSSParserTokenStream& stream) {
+  if (stream.Peek().GetType() != kFunctionToken || stream.Peek().FunctionId() != CSSValueID::kVar) {
+    return nullptr;
+  }
+  CSSParserSavePoint savepoint(stream);
+  CSSParserTokenRange arg_range = ConsumeFunction(stream);
+  // Serialize the exact inner tokens as CSS text.
+  String inner = arg_range.Serialize();
+  String full = String::FromUTF8("var(") + inner + String::FromUTF8(")");
+  savepoint.Release();
+  return std::make_shared<CSSRawValue>(full);
 }
 
 }  // namespace css_parsing_utils

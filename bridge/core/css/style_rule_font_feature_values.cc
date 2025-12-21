@@ -11,7 +11,7 @@
 #include "core/css/cascade_layer.h"
 #include "core/css/style_rule_font_feature_values.h"
 //#include "platform/wtf/assertions.h"
-#include "foundation/string_builder.h"
+#include "foundation/string/string_builder.h"
 
 #include <limits>
 
@@ -22,10 +22,6 @@ StyleRuleFontFeature::StyleRuleFontFeature(StyleRuleFontFeature::FeatureType typ
 
 StyleRuleFontFeature::StyleRuleFontFeature(const StyleRuleFontFeature&) = default;
 StyleRuleFontFeature::~StyleRuleFontFeature() = default;
-
-void StyleRuleFontFeature::TraceAfterDispatch(GCVisitor* visitor) const {
-  StyleRuleBase::TraceAfterDispatch(visitor);
-}
 
 void StyleRuleFontFeature::UpdateAlias(AtomicString alias, const std::vector<uint32_t>& features) {
   feature_aliases_[alias] = FeatureIndicesWithPriority{features, std::numeric_limits<unsigned>::max()};
@@ -149,11 +145,6 @@ AtomicString StyleRuleFontFeatureValues::FamilyAsString() const {
     }
   }
   return families.ReleaseString();
-}
-
-void StyleRuleFontFeatureValues::TraceAfterDispatch(GCVisitor* visitor) const {
-  StyleRuleBase::TraceAfterDispatch(visitor);
-  //  visitor->Trace(layer_);
 }
 
 }  // namespace webf

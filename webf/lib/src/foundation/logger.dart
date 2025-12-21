@@ -13,6 +13,21 @@ import 'package:flutter/foundation.dart';
 /// Global logger configuration for WebF
 class WebFLogger {
   static bool _initialized = false;
+  // Monotonic stopwatch starting at application load to compute ms since start.
+  static final Stopwatch _appStopwatch = Stopwatch()..start();
+  static String _formatElapsed(Duration d) {
+    final totalMs = d.inMilliseconds;
+    if (totalMs < 1000) {
+      return '${totalMs}ms';
+    }
+    final minutes = totalMs ~/ 60000;
+    final seconds = (totalMs % 60000) ~/ 1000;
+    final millis = totalMs % 1000;
+    if (minutes > 0) {
+      return '${minutes}M${seconds}s${millis}ms';
+    }
+    return '${seconds}s${millis}ms';
+  }
 
   /// Initialize the logger with default configuration
   static void initialize() {
@@ -33,17 +48,22 @@ class WebFLogger {
 
     // Configure the root logger to print messages
     Logger.root.onRecord.listen((LogRecord record) {
+      // Time since application start in ms/s/M format
+      final time = _formatElapsed(_appStopwatch.elapsed);
+      final levelName = record.level.name;
       final logger = record.loggerName.padRight(5);
       final message = record.message;
 
-      // Format: [TIME] LEVEL   LOGGER               MESSAGE
-      final logMessage = '$logger $message';
+      // Format: [TIME] LEVEL LOGGER MESSAGE (omit LEVEL when FINE)
+      final logMessage = record.level == Level.FINE
+          ? '$time $logger $message'
+          : '$time $levelName $logger $message';
 
       // In debug mode, use debugPrint for better Flutter integration
       if (kDebugMode) {
-        debugPrint(logMessage);
-        if (record.error != null) debugPrint('Error: ${record.error}');
-        if (record.stackTrace != null) debugPrint('Stack trace:\n${record.stackTrace}');
+        print(logMessage);
+        if (record.error != null) print('Error: ${record.error}');
+        if (record.stackTrace != null) print('Stack trace:\n${record.stackTrace}');
       } else {
         // In release/profile mode, you might want to send logs to a service
         // For now, write to stdout/stderr.

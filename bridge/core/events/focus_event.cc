@@ -69,6 +69,11 @@ bool FocusEvent::IsFocusEvent() const {
   return true;
 }
 
+void FocusEvent::Trace(GCVisitor* visitor) const {
+  visitor->TraceMember(related_target_);
+  UIEvent::Trace(visitor);
+}
+
 const FocusEventPublicMethods* FocusEvent::focusEventPublicMethods() {
   static FocusEventPublicMethods focus_event_public_methods;
   return &focus_event_public_methods;

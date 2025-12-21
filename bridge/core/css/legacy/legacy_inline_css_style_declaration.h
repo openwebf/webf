@@ -34,12 +34,12 @@ class LegacyInlineCssStyleDeclaration : public LegacyCssStyleDeclaration {
   [[nodiscard]] unsigned length() const override;
 
   AtomicString getPropertyValue(const AtomicString& key, ExceptionState& exception_state) override;
-  void setProperty(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) override;
+  void setProperty(const AtomicString& key, const ScriptValue& value, const AtomicString& priority, ExceptionState& exception_state) override;
   AtomicString removeProperty(const AtomicString& key, ExceptionState& exception_state) override;
 
   [[nodiscard]] String ToString() const;
 
-  void InlineStyleChanged();
+  void InlineStyleChanged(const AtomicString& old_style_text);
 
   bool NamedPropertyQuery(const AtomicString&, ExceptionState&) override;
   void NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&) override;

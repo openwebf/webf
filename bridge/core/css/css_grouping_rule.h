@@ -61,7 +61,7 @@ class CSSGroupingRule : public CSSRule {
     return Item(index, /*trigger_use_counters=*/false);
   }
 
-  void TraceAfterDispatch(GCVisitor*) const;
+  void Trace(GCVisitor* visitor) const override;
 
  protected:
   CSSGroupingRule(std::shared_ptr<StyleRuleGroup> group_rule, CSSStyleSheet* parent);

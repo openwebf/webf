@@ -214,6 +214,7 @@ describe('Bidirectional Text (Phase 1)', () => {
     const container = document.createElement('div');
     container.style.direction = 'rtl';
     container.style.width = '350px';
+    container.style.fontFamily = 'Times'
     container.style.fontSize = '16px';
 
     const p = document.createElement('p');

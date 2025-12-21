@@ -42,8 +42,20 @@ DartMethodPointer::DartMethodPointer(DartIsolateContext* dart_isolate_context,
   on_js_error_ = reinterpret_cast<OnJSError>(dart_methods[i++]);
   on_js_log_ = reinterpret_cast<OnJSLog>(dart_methods[i++]);
   on_js_log_structured_ = reinterpret_cast<OnJSLogStructured>(dart_methods[i++]);
+  // New: fetch CSS @import content
+  fetch_import_css_content_ = reinterpret_cast<FetchImportCSSContent>(dart_methods[i++]);
+  // FontFace registration
+  register_font_face_ = reinterpret_cast<RegisterFontFace>(dart_methods[i++]);
+  unregister_font_face_ = reinterpret_cast<UnregisterFontFace>(dart_methods[i++]);
 
-  assert_m(i == dart_methods_length, "Dart native methods count is not equal with C++ side method registrations.");
+  // Optional extension: @keyframes registration. Only read if provided by Dart.
+  if (static_cast<int32_t>(i + 2) <= dart_methods_length) {
+    register_keyframes_ = reinterpret_cast<RegisterKeyframes>(dart_methods[i++]);
+    unregister_keyframes_ = reinterpret_cast<UnregisterKeyframes>(dart_methods[i++]);
+  }
+
+  assert_m(i == static_cast<size_t>(dart_methods_length),
+           "Dart native methods count is not equal with C++ side method registrations.");
 }
 
 NativeValue* DartMethodPointer::invokeModule(bool is_dedicated,
@@ -81,6 +93,54 @@ void DartMethodPointer::requestBatchUpdate(bool is_dedicated, double context_id)
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, request_batch_update_, context_id);
+}
+
+void DartMethodPointer::registerFontFace(bool is_dedicated,
+                                         double context_id,
+                                         int64_t sheet_id,
+                                         SharedNativeString* font_family,
+                                         SharedNativeString* src,
+                                         SharedNativeString* font_weight,
+                                         SharedNativeString* font_style,
+                                         SharedNativeString* base_href) {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::registerFontFace Call";
+#endif
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, register_font_face_, context_id, sheet_id, font_family,
+                                                  src, font_weight, font_style, base_href);
+}
+
+void DartMethodPointer::unregisterFontFace(bool is_dedicated, double context_id, int64_t sheet_id) {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::unregisterFontFace Call";
+#endif
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, unregister_font_face_, context_id, sheet_id);
+}
+
+void DartMethodPointer::registerKeyframes(bool is_dedicated,
+                                          double context_id,
+                                          int64_t sheet_id,
+                                          SharedNativeString* name,
+                                          SharedNativeString* css_text,
+                                          int32_t is_prefixed) {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::registerKeyframes Call";
+#endif
+  if (!register_keyframes_) {
+    return;  // Dart side not supporting this yet; fail silently
+  }
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, register_keyframes_, context_id, sheet_id, name,
+                                                  css_text, is_prefixed);
+}
+
+void DartMethodPointer::unregisterKeyframes(bool is_dedicated, double context_id, int64_t sheet_id) {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::unregisterKeyframes Call";
+#endif
+  if (!unregister_keyframes_) {
+    return;  // Dart side not supporting this yet; fail silently
+  }
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, unregister_keyframes_, context_id, sheet_id);
 }
 
 void DartMethodPointer::reloadApp(bool is_dedicated, double context_id) {
@@ -267,6 +327,24 @@ void DartMethodPointer::fetchJavaScriptESMModule(bool is_dedicated,
 
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::fetchJavaScriptESMModule ASYNC call END";
+#endif
+}
+
+void DartMethodPointer::fetchImportCSSContent(bool is_dedicated,
+                                              void* callback_context,
+                                              double context_id,
+                                              webf::SharedNativeString* base_href,
+                                              webf::SharedNativeString* import_href,
+                                              FetchImportCSSContentCallback callback) {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::fetchImportCSSContent ASYNC call START";
+#endif
+
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, fetch_import_css_content_, callback_context,
+                                                  context_id, base_href, import_href, callback);
+
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::fetchImportCSSContent ASYNC call END";
 #endif
 }
 

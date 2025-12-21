@@ -139,8 +139,6 @@ String ElementAttributes::ToString() {
                      }
                    }), element_->style());
         builder.Append("\""_s);
-      } else {
-        WEBF_LOG(WARN) << "Style not available inside ElementAttributes::ToString()";
       }
     }
     first = false;
@@ -179,7 +177,8 @@ const ElementAttributesPublicMethods* ElementAttributes::elementAttributesPublic
 }
 
 bool ElementAttributes::hasAttributes() const {
-  return attributes_.empty();
+  // True when at least one attribute exists.
+  return !attributes_.empty();
 }
 
 }  // namespace webf

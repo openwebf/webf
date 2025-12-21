@@ -276,6 +276,16 @@ static JSValue parseHTML(JSContext* ctx, JSValueConst this_val, int argc, JSValu
 
 static JSValue syncThreadBuffer(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   auto* context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
+  // NOTE: if we snapshot after document.body.appendChild, we may not get all styles as
+  // the style recalc cannot catch up the UICommand flush. This is a work-ground of the issue.
+  // `__webf_sync_buffer__` is used by the snapshot test harness to flush pending UI commands.
+  // Ensure declared-value styles are recalculated and emitted as `kSetStyle` commands before syncing.
+  if (context != nullptr && context->isBlinkEnabled()) {
+    if (auto* document = context->document()) {
+      MemberMutationScope scope{context};
+      document->UpdateStyleForThisDocument();
+    }
+  }
   context->uiCommandBuffer()->SyncAllPackages();
   context->dartMethodPtr()->requestBatchUpdate(context->isDedicated(), context->contextId());
   return JS_NULL;

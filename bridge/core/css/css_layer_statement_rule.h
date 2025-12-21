@@ -26,8 +26,6 @@ class CSSLayerStatementRule final : public CSSRule {
   void Reattach(std::shared_ptr<StyleRuleBase>) override;
   AtomicString cssText() const override;
 
-  void TraceAfterDispatch(GCVisitor*) const;
-
  private:
   CSSRule::Type GetType() const override { return kLayerStatementRule; }
   

@@ -16,9 +16,6 @@ typedef struct {
 } MediaConditionTestCase;
 
 TEST(MediaConditionParserTest, Basic) {
-  // The first string represents the input string.
-  // The second string represents the output string, if present.
-  // Otherwise, the output string is identical to the first string.
   MediaConditionTestCase test_cases[] = {
       {"screen", "not all"},
       {"screen and (color)", "not all"},
@@ -41,18 +38,16 @@ TEST(MediaConditionParserTest, Basic) {
       {"(width: 1px), screen", "not all"},
       {"screen, (width: 1px)", "not all"},
       {"screen, (width: 1px), print", "not all"},
-
-      {nullptr, nullptr}  // Do not remove the terminator line.
   };
 
-  for (unsigned i = 0; test_cases[i].input; ++i) {
-    SCOPED_TRACE(test_cases[i].input);
-    String tokenizer_string = String::FromUTF8(test_cases[i].input);
+  for (const MediaConditionTestCase& test_case : test_cases) {
+    SCOPED_TRACE(test_case.input);
+    String tokenizer_string = String::FromUTF8(test_case.input);
     CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
     CSSParserTokenStream stream(tokenizer);
     std::shared_ptr<MediaQuerySet> media_condition_query_set = MediaQueryParser::ParseMediaCondition(stream, nullptr);
-    String query_text = media_condition_query_set->MediaText();
-    const char* expected_text = test_cases[i].output ? test_cases[i].output : test_cases[i].input;
+    String query_text = stream.AtEnd() ? media_condition_query_set->MediaText() : String::FromUTF8("not all");
+    const char* expected_text = test_case.output ? test_case.output : test_case.input;
     EXPECT_EQ(String::FromUTF8(expected_text), query_text);
   }
 }

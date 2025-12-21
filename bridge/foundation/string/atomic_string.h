@@ -42,6 +42,7 @@ class AtomicString {
   explicit AtomicString(const UTF8String& s) : AtomicString(CreateFromUTF8(s)){};
   explicit AtomicString(const String& s);
   explicit AtomicString(String&& s);
+  explicit AtomicString(const StringView& view);
 
   explicit AtomicString(const UChar* chars)
     : AtomicString(chars, chars ? std::char_traits<char16_t>::length(chars) : 0) {}
@@ -68,6 +69,7 @@ class AtomicString {
   bool IsLowerASCII() const { return string_->IsLowerASCII(); }
 
   std::unique_ptr<SharedNativeString> ToNativeString() const;
+  std::unique_ptr<SharedNativeString> ToStylePropertyNameNativeString() const;
 
   [[nodiscard]] UTF8String ToUTF8String() const;
 
@@ -76,6 +78,7 @@ class AtomicString {
   explicit operator bool() const { return !IsNull(); }
   bool IsNull() const { return string_ == nullptr; }
   bool empty() const { return !string_ || !string_->length(); }
+  bool IsEmpty() const { return empty(); }
 
   friend bool operator==(const AtomicString& lhs, const char* rhs) {
     return *lhs.string_ == rhs;
@@ -100,6 +103,15 @@ class AtomicString {
   size_t find(char c, size_t start = 0) const { return find(static_cast<unsigned char>(c), start); }
   size_t Find(CharacterMatchFunctionPtr match_function, size_t start = 0) const {
     return string_->Find(match_function, start);
+  }
+
+  bool Contains(char ch, size_t start = 0) const {
+    if (!string_) return false;
+    return string_->Contains(ch, start);
+  }
+  bool Contains(char16_t ch, size_t start = 0) const {
+    if (!string_) return false;
+    return string_->Contains(ch, start);
   }
 
   bool StartsWith(

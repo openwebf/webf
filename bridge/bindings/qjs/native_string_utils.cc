@@ -9,6 +9,11 @@
 
 #include "native_string_utils.h"
 
+#include <cstring>
+
+#include "foundation/dart_readable.h"
+#include "foundation/string/wtf_string.h"
+
 namespace webf {
 
 std::unique_ptr<SharedNativeString> jsValueToNativeString(JSContext* ctx, JSValue value) {
@@ -42,6 +47,26 @@ std::unique_ptr<SharedNativeString> stringToNativeString(const std::string& stri
   fromUTF8(string, utf16);
   SharedNativeString tmp{reinterpret_cast<const uint16_t*>(utf16.c_str()), static_cast<uint32_t>(utf16.size())};
   return SharedNativeString::FromTemporaryString(tmp.string(), tmp.length());
+}
+
+std::unique_ptr<SharedNativeString> stringToNativeString(const String& string) {
+  uint32_t length = string.length();
+  if (length == 0) {
+    return std::make_unique<SharedNativeString>(nullptr, 0);
+  }
+
+  auto* buffer = static_cast<uint16_t*>(dart_malloc(sizeof(uint16_t) * length));
+  if (string.Is8Bit()) {
+    const LChar* p = string.Characters8();
+    for (uint32_t i = 0; i < length; ++i) {
+      buffer[i] = static_cast<uint16_t>(p[i]);
+    }
+  } else {
+    const UChar* p = string.Characters16();
+    std::memcpy(buffer, p, sizeof(uint16_t) * length);
+  }
+
+  return std::make_unique<SharedNativeString>(buffer, length);
 }
 
 std::string nativeStringToStdString(const SharedNativeString* native_string) {

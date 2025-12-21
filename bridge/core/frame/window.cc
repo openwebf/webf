@@ -11,6 +11,7 @@
 #include <modp_b64/modp_b64.h>
 #include "binding_call_methods.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
+#include "bindings/qjs/cppgc/mutation_scope.h"
 #include "core/dom/document.h"
 #include "core/dom/element.h"
 #include "core/events/message_event.h"
@@ -22,6 +23,7 @@
 
 #include "core/css/computed_css_style_declaration.h"
 #include "core/css/legacy/legacy_computed_css_style_declaration.h"
+#include "core/css/style_engine.h"
 
 namespace webf {
 
@@ -310,9 +312,19 @@ void Window::postMessage(const ScriptValue& message,
   dispatchEvent(message_event, exception_state);
 }
 
-WindowComputedStyle Window::getComputedStyle(Element* element, ExceptionState& exception_state) {
-  if (GetExecutingContext()->isBlinkEnabled()) {
-    return MakeGarbageCollected<ComputedCssStyleDeclaration>(GetExecutingContext());
+legacy::LegacyComputedCssStyleDeclaration* Window::getComputedStyle(Element* element, ExceptionState& exception_state) {
+  // When Blink CSS engine is enabled, ensure any pending selector-based
+  // invalidations are applied before querying the Dart-side computed style.
+  // This keeps window.getComputedStyle() in sync with the latest styles
+  // produced by the native StyleEngine, including background-clip:text
+  // gradients that are resolved via Blink and forwarded as inline styles.
+  ExecutingContext* context = GetExecutingContext();
+  if (context && context->isBlinkEnabled()) {
+    Document* doc = context->document();
+    if (doc) {
+      MemberMutationScope mutation_scope{context};
+      doc->UpdateStyleForThisDocument();
+    }
   }
 
   // Legacy ComputedStyle is from dart side.
@@ -330,12 +342,11 @@ WindowComputedStyle Window::getComputedStyle(Element* element, ExceptionState& e
   return MakeGarbageCollected<legacy::LegacyComputedCssStyleDeclaration>(GetExecutingContext(), native_binding_object);
 }
 
-WindowComputedStyle Window::getComputedStyle(Element* element,
+legacy::LegacyComputedCssStyleDeclaration* Window::getComputedStyle(Element* element,
                                                       const AtomicString& pseudo_elt,
                                                       ExceptionState& exception_state) {
   return getComputedStyle(element, exception_state);
 }
-
 
 double Window::___requestIdleCallback__(const std::shared_ptr<QJSFunction>& callback,
                                         webf::ExceptionState& exception_state) {

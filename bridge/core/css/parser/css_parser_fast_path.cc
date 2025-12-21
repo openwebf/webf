@@ -9,6 +9,7 @@
 #endif
 
 #include "../../../foundation/string/ascii_types.h"
+#include "foundation/string/utf8_codecs.h"
 #include "core/css/css_function_value.h"
 #include "core/css/css_inherit_value.h"
 #include "core/css/css_initial_value.h"
@@ -1003,8 +1004,18 @@ static ParseColorResult ParseColor(CSSPropertyID property_id,
   // Fast path for hex colors and rgb()/rgba()/hsl()/hsla() colors.
   // Note that ParseColor may be called from external contexts,
   // i.e., when parsing style sheets, so we need the Unicode path here.
-  const bool parsed =
-      FastParseColorInternal(out_color, string.Is8Bit() ? string.Characters8() : reinterpret_cast<const uint8_t*>(string.Characters16()), string.length(), quirks_mode);
+  const uint8_t* color_chars = nullptr;
+  unsigned color_length = string.length();
+  UTF8String utf8_buffer;
+  if (string.Is8Bit()) {
+    color_chars = reinterpret_cast<const uint8_t*>(string.Characters8());
+  } else {
+    utf8_buffer = UTF8Codecs::Encode(string);
+    color_chars = reinterpret_cast<const uint8_t*>(utf8_buffer.data());
+    color_length = static_cast<unsigned>(utf8_buffer.size());
+  }
+
+  const bool parsed = FastParseColorInternal(out_color, color_chars, color_length, quirks_mode);
   return parsed ? ParseColorResult::kColor : ParseColorResult::kFailure;
 }
 
@@ -1057,6 +1068,13 @@ bool CSSParserFastPaths::IsValidKeywordPropertyAndValue(CSSPropertyID property_i
     case CSSPropertyID::kColorRendering:
       return value_id == CSSValueID::kAuto || value_id == CSSValueID::kOptimizespeed ||
              value_id == CSSValueID::kOptimizequality;
+    case CSSPropertyID::kListStyleType:
+      // Accept common list markers including alpha/roman variants and none.
+      return value_id == CSSValueID::kNone || value_id == CSSValueID::kDisc || value_id == CSSValueID::kCircle ||
+             value_id == CSSValueID::kSquare || value_id == CSSValueID::kDisclosureOpen ||
+             value_id == CSSValueID::kDisclosureClosed || value_id == CSSValueID::kDecimal ||
+             value_id == CSSValueID::kLowerAlpha || value_id == CSSValueID::kUpperAlpha ||
+             value_id == CSSValueID::kLowerRoman || value_id == CSSValueID::kUpperRoman;
     case CSSPropertyID::kDirection:
       return value_id == CSSValueID::kLtr || value_id == CSSValueID::kRtl;
     case CSSPropertyID::kDominantBaseline:
@@ -1249,10 +1267,9 @@ bool CSSParserFastPaths::IsValidKeywordPropertyAndValue(CSSPropertyID property_i
     case CSSPropertyID::kWhiteSpaceCollapse:
       return value_id == CSSValueID::kCollapse || value_id == CSSValueID::kPreserve ||
              value_id == CSSValueID::kPreserveBreaks || value_id == CSSValueID::kBreakSpaces;
-      //    case CSSPropertyID::kWordBreak:
-      //      return value_id == CSSValueID::kNormal || value_id == CSSValueID::kBreakAll || value_id ==
-      //      CSSValueID::kKeepAll ||
-      //             value_id == CSSValueID::kBreakWord || value_id == CSSValueID::kAutoPhrase;
+    case CSSPropertyID::kWordBreak:
+      return value_id == CSSValueID::kNormal || value_id == CSSValueID::kBreakAll || value_id == CSSValueID::kKeepAll ||
+             value_id == CSSValueID::kBreakWord || value_id == CSSValueID::kAutoPhrase;
     case CSSPropertyID::kOriginTrialTestProperty:
       return value_id == CSSValueID::kNormal || value_id == CSSValueID::kNone;
     case CSSPropertyID::kTextBoxTrim:
@@ -1318,6 +1335,8 @@ CSSBitset CSSParserFastPaths::handled_by_keyword_fast_paths_properties_{{
     CSSPropertyID::kTextDecorationStyle,
     CSSPropertyID::kTextDecorationSkipInk,
     CSSPropertyID::kTextOrientation,
+    // Support keyword-only parsing for list-style-type.
+    CSSPropertyID::kListStyleType,
     CSSPropertyID::kWebkitTextOrientation,
     CSSPropertyID::kTextOverflow,
     CSSPropertyID::kTextRendering,
@@ -1348,7 +1367,7 @@ CSSBitset CSSParserFastPaths::handled_by_keyword_fast_paths_properties_{{
     CSSPropertyID::kUserSelect,
     CSSPropertyID::kWebkitWritingMode,
     CSSPropertyID::kWhiteSpaceCollapse,
-    //    CSSPropertyID::kWordBreak,
+    CSSPropertyID::kWordBreak,
     CSSPropertyID::kWritingMode,
     CSSPropertyID::kOriginTrialTestProperty,
     CSSPropertyID::kOverlay,
@@ -1384,8 +1403,18 @@ static std::shared_ptr<const CSSValue> ParseKeywordValue(CSSPropertyID property_
                                                          std::shared_ptr<const CSSParserContext> context) {
   DCHECK(!string.IsEmpty());
 
-  std::shared_ptr<const CSSValue> css_wide_keyword =
-      ParseCSSWideKeywordValue(string.Is8Bit() ? string.Characters8() : reinterpret_cast<const uint8_t*>(string.Characters16()), string.length());
+  const uint8_t* keyword_chars = nullptr;
+  unsigned keyword_length = string.length();
+  UTF8String keyword_utf8;
+  if (string.Is8Bit()) {
+    keyword_chars = reinterpret_cast<const uint8_t*>(string.Characters8());
+  } else {
+    keyword_utf8 = UTF8Codecs::Encode(string);
+    keyword_chars = reinterpret_cast<const uint8_t*>(keyword_utf8.data());
+    keyword_length = static_cast<unsigned>(keyword_utf8.size());
+  }
+
+  std::shared_ptr<const CSSValue> css_wide_keyword = ParseCSSWideKeywordValue(keyword_chars, keyword_length);
 
   if (!CSSParserFastPaths::IsHandledByKeywordFastPath(property_id)) {
     // This isn't a property we have a fast path for, but even
@@ -1657,8 +1686,17 @@ static std::shared_ptr<const CSSValue> ParseSimpleTransform(CSSPropertyID proper
     return nullptr;
   }
 
-  const uint8_t* pos = reinterpret_cast<const uint8_t*>(string.data());
+  const uint8_t* pos = nullptr;
   unsigned length = string.length();
+  UTF8String transform_utf8;
+  if (string.Is8Bit()) {
+    pos = reinterpret_cast<const uint8_t*>(string.Characters8());
+  } else {
+    transform_utf8 = UTF8Codecs::Encode(string);
+    pos = reinterpret_cast<const uint8_t*>(transform_utf8.data());
+    length = static_cast<unsigned>(transform_utf8.size());
+  }
+
   if (!TransformCanLikelyUseFastPath(pos, length)) {
     return nullptr;
   }

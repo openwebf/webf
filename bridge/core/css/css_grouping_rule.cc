@@ -112,9 +112,12 @@ void CSSGroupingRule::AppendCSSTextForItems(StringBuilder& result) const {
   result.Append("}"_s);
 }
 
-void CSSGroupingRule::TraceAfterDispatch(GCVisitor* visitor) const {
-  // Note: In Blink this would trace garbage collected objects
-  // In WebF we use shared_ptr, so no tracing needed
+void CSSGroupingRule::Trace(GCVisitor* visitor) const {
+  for (auto& child_rule : child_rule_cssom_wrappers_) {
+    visitor->TraceMember(child_rule);
+  }
+  visitor->TraceMember(rule_list_cssom_wrapper_);
+  CSSRule::Trace(visitor);
 }
 
 }  // namespace webf

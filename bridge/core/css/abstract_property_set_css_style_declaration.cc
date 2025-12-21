@@ -29,6 +29,7 @@
 #include "core/css/css_style_sheet.h"
 #include "core/css/parser/css_property_parser.h"
 #include "core/css/style_attribute_mutation_scope.h"
+#include "code_gen/shorthands.h"
 
 namespace webf {
 
@@ -101,12 +102,11 @@ bool AbstractPropertySetCSSStyleDeclaration::IsPropertyImplicit(const AtomicStri
   return PropertySet().IsPropertyImplicit(property_id);
 }
 
-void AbstractPropertySetCSSStyleDeclaration::setProperty(const ExecutingContext* execution_context,
-                                                         const AtomicString& property_name,
+void AbstractPropertySetCSSStyleDeclaration::setProperty(const AtomicString& property_name,
                                                          const AtomicString& value,
                                                          const AtomicString& priority,
                                                          ExceptionState& exception_state) {
-  CSSPropertyID property_id = UnresolvedCSSPropertyID(execution_context, String(property_name.Impl()).ToStringView());
+  CSSPropertyID property_id = UnresolvedCSSPropertyID(GetExecutingContext(), String(property_name.Impl()).ToStringView());
   if (!IsValidCSSPropertyID(property_id) || !IsPropertyValid(property_id)) {
     return;
   }
@@ -195,19 +195,48 @@ void AbstractPropertySetCSSStyleDeclaration::SetPropertyInternal(CSSPropertyID u
   StyleAttributeMutationScope mutation_scope(this);
   WillMutate();
 
+  // Capture the pre-mutation serialized inline style so we can detect
+  // no-op updates (e.g. setting a property to its current value) and
+  // avoid spurious MutationObserver callbacks.
+  AtomicString old_css_text = cssText();
+
+  // When setting a shorthand (e.g. background, margin) via CSSOM inline
+  // style, clear any existing longhand declarations for that shorthand
+  // from the property set first. This prevents stale longhand values from
+  // continuing to win after a shorthand write.
+  if (unresolved_property != CSSPropertyID::kVariable) {
+    CSSPropertyID resolved = ResolveCSSPropertyID(unresolved_property);
+    StylePropertyShorthand shorthand = shorthandForProperty(resolved);
+    if (shorthand.length() > 0) {
+      PropertySet().RemoveShorthandProperty(resolved);
+    }
+  }
+
   MutableCSSPropertyValueSet::SetResult result;
   if (unresolved_property == CSSPropertyID::kVariable) {
-    AtomicString atomic_name(custom_property_name);
-
     bool is_animation_tainted = IsKeyframeStyle();
-    result = PropertySet().ParseAndSetCustomProperty(atomic_name, String(value), important, ContextStyleSheet(),
+    result = PropertySet().ParseAndSetCustomProperty(custom_property_name, String(value), important, ContextStyleSheet(),
                                                      is_animation_tainted);
   } else {
     result =
         PropertySet().ParseAndSetProperty(unresolved_property, String(value), important, ContextStyleSheet());
   }
 
-  if (result == MutableCSSPropertyValueSet::kParseError || result == MutableCSSPropertyValueSet::kUnchanged) {
+  if (result == MutableCSSPropertyValueSet::kParseError) {
+    DidMutate(kNoChanges);
+    return;
+  }
+
+  // Even if the underlying property set reports a change, if the
+  // serialized style attribute is identical before and after the
+  // operation, treat this as a no-op for the purposes of style
+  // invalidation and MutationObserver attribute records. This ensures
+  // that:
+  //   el.style.height = "100px";
+  //   el.style.height = "100px";
+  // only produces a single attributes mutation, while direct
+  // cssText assignments remain always observable.
+  if (cssText() == old_css_text || result == MutableCSSPropertyValueSet::kUnchanged) {
     DidMutate(kNoChanges);
     return;
   }

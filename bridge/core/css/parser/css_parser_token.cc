@@ -294,6 +294,9 @@ void CSSParserToken::Serialize(StringBuilder& builder) const {
       return builder.Append('{');
     case kRightBraceToken:
       return builder.Append('}');
+    case kRawToken:
+      SerializeRaw(String(Value()), builder);
+      return;
 
     case kEOFToken:
     case kCommentToken:

@@ -181,7 +181,7 @@ class StyleResolver final {
       uint32_t page_index,
       const ComputedStyle& page_style);
 
-  Document& GetDocument() const;
+ Document& GetDocument() const;
 
   void SetRuleUsageTracker(StyleRuleUsageTracker*);
 
@@ -201,6 +201,14 @@ class StyleResolver final {
 
   bool IsSkippingStyleRecalcForContainer() const {
     return skipping_style_recalc_for_container_;
+  }
+
+  // Expose rule matching for external callers who need the matched declarations
+  // without computing computed style.
+  void CollectAllRules(StyleResolverState& state,
+                       ElementRuleCollector& collector,
+                       bool include_smil_properties = false) {
+    MatchAllRules(state, collector, include_smil_properties);
   }
 
  private:

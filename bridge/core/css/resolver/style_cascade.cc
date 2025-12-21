@@ -39,11 +39,18 @@
 #include "core/css/resolver/cascade_resolver.h"
 #include "core/css/resolver/style_builder.h"
 #include "core/css/resolver/style_resolver_state.h"
+#include "core/css/parser/css_property_parser.h"
+#include "core/css/parser/css_parser_token_stream.h"
+#include "core/css/parser/css_tokenizer.h"
+#include "core/css/style_rule.h"
 #include "core/style/computed_style.h"
 #include "core/css/css_unset_value.h"
 #include "core/css/css_invalid_variable_value.h"
 #include "core/css/css_pending_substitution_value.h"
 #include "core/platform/text/writing_direction_mode.h"
+#include <unordered_map>
+#include <cctype>
+#include <functional>
 #include "foundation/logging.h"
 
 namespace webf {
@@ -151,6 +158,11 @@ void StyleCascade::AnalyzeMatchResult() {
   
   // WEBF_LOG(VERBOSE) << "AnalyzeMatchResult: " << matched_properties.size() << " matched property sets";
   
+  uint16_t block_index = 0;
+  // Collect priorities per-property, then flush to CascadeMap sorted by
+  // ForLayerComparison to satisfy CascadeMap's insertion invariant.
+  std::vector<std::vector<CascadePriority>> native_priorities(static_cast<size_t>(kNumCSSProperties));
+  std::unordered_map<AtomicString, std::vector<CascadePriority>, AtomicString::KeyHasher> custom_priorities;
   for (const auto& entry : matched_properties) {
     if (!entry.properties) {
       continue;
@@ -169,7 +181,8 @@ void StyleCascade::AnalyzeMatchResult() {
     // Process each property in the set
     // WEBF_LOG(VERBOSE) << "Property set has " << properties.PropertyCount() << " properties, origin: " << static_cast<int>(entry.origin);
     
-    for (unsigned i = 0; i < properties.PropertyCount(); ++i) {
+    uint16_t declaration_index = 0;
+    for (unsigned i = 0; i < properties.PropertyCount(); ++i, ++declaration_index) {
       const StylePropertySet::PropertyReference property = properties.PropertyAt(i);
       
       if (!property.Value() || !*property.Value()) {
@@ -191,31 +204,69 @@ void StyleCascade::AnalyzeMatchResult() {
             StyleCascadeOrigin::kImportantAuthor : StyleCascadeOrigin::kAuthor;
       }
       
-      // Build cascade priority
-      // CascadePriority(origin, is_inline_style, layer_order, position, tree_order)
-      CascadePriority priority(style_origin, 
-                               entry.is_inline_style,  // is_inline_style
-                               CascadeLayerMap::kImplicitOuterLayerOrder,      // layer_order
-                               position++);  // position
+      // Build cascade priority using layer order and a stable position
+      // Encode position as (block_index << 16) | declaration_index like Blink
+      uint32_t encoded_position = (static_cast<uint32_t>(block_index) << 16) |
+                                  static_cast<uint32_t>(declaration_index);
+      CascadePriority priority(
+          style_origin,
+          entry.is_inline_style,                          // is_inline_style
+          static_cast<uint16_t>(entry.layer_level),       // layer_order
+          encoded_position);                              // position
       
-      // Add to cascade map
+      // Collect per property; we will sort by ForLayerComparison before adding
+      // to CascadeMap to guarantee non-decreasing order.
       if (property.Id() == CSSPropertyID::kVariable) {
         // Custom property
         const auto& metadata = property.PropertyMetadata();
         if (!metadata.custom_name_.IsNull()) {
-          map_.Add(metadata.custom_name_, priority);
+          custom_priorities[metadata.custom_name_].emplace_back(priority);
         }
       } else {
         // Regular property - resolve surrogates first
         const CSSProperty& css_property = CSSProperty::Get(property.Id());
         const CSSProperty& resolved_property = ResolveSurrogate(css_property);
-        // WEBF_LOG(VERBOSE) << "Adding property " << static_cast<int>(resolved_property.PropertyID()) << " to cascade map at position " << (position - 1);
-        map_.Add(resolved_property.PropertyID(), priority);
+        native_priorities[static_cast<size_t>(resolved_property.PropertyID())].emplace_back(priority);
       }
     }
+    ++block_index;
   }
   
   needs_match_result_analyze_ = false;
+
+  // Flush native properties in non-decreasing ForLayerComparison order.
+  for (size_t pid = 0; pid < native_priorities.size(); ++pid) {
+    auto& vec = native_priorities[pid];
+    if (vec.empty()) continue;
+    std::stable_sort(vec.begin(), vec.end(), [](const CascadePriority& a, const CascadePriority& b) {
+      uint64_t fa = a.ForLayerComparison();
+      uint64_t fb = b.ForLayerComparison();
+      if (fa != fb) return fa < fb;
+      // Tie-break: prefer non-inline before inline to keep consistency
+      if (a.IsInlineStyle() != b.IsInlineStyle()) return !a.IsInlineStyle();
+      // Final tie-breaker: position
+      return a.GetPosition() < b.GetPosition();
+    });
+    CSSPropertyID id = static_cast<CSSPropertyID>(pid);
+    for (const auto& pr : vec) {
+      map_.Add(id, pr);
+    }
+  }
+
+  // Flush custom properties in non-decreasing ForLayerComparison order.
+  for (auto& entry : custom_priorities) {
+    auto& vec = entry.second;
+    std::stable_sort(vec.begin(), vec.end(), [](const CascadePriority& a, const CascadePriority& b) {
+      uint64_t fa = a.ForLayerComparison();
+      uint64_t fb = b.ForLayerComparison();
+      if (fa != fb) return fa < fb;
+      if (a.IsInlineStyle() != b.IsInlineStyle()) return !a.IsInlineStyle();
+      return a.GetPosition() < b.GetPosition();
+    });
+    for (const auto& pr : vec) {
+      map_.Add(entry.first, pr);
+    }
+  }
 }
 
 void StyleCascade::ApplyCascadeAffecting(CascadeResolver& resolver) {
@@ -299,39 +350,33 @@ void StyleCascade::LookupAndApplyDeclaration(const CSSProperty& property,
   const CSSValue* value = ValueAt(match_result_, priority->GetPosition());
   if (value) {
     resolver.CollectFlags(property, priority->GetOrigin());
-    
+    // Resolve substitutions (var(), pending substitution) before applying.
+    const CSSValue* resolved = ResolveSubstitutions(property, *value, resolver);
     // Apply the value
-    StyleBuilder::ApplyProperty(property.PropertyID(), state_, *value);
+    StyleBuilder::ApplyProperty(property.PropertyID(), state_, *resolved);
   }
 }
 
-const CSSValue* StyleCascade::ValueAt(const MatchResult& result, 
+const CSSValue* StyleCascade::ValueAt(const MatchResult& result,
                                       uint32_t position) const {
-  // This is a simplified version - we need to map position to actual value
-  // In a real implementation, this would look up the value from the
-  // MatchedProperties based on the position
-  uint32_t current_pos = 0;
-  
-  // WEBF_LOG(VERBOSE) << "ValueAt looking for position " << position;
-  
-  for (const auto& entry : result.GetMatchedProperties()) {
-    if (!entry.properties) {
-      continue;
-    }
-    
-    const StylePropertySet& properties = *entry.properties;
-    for (unsigned i = 0; i < properties.PropertyCount(); ++i) {
-      if (current_pos == position) {
-        const auto& prop = properties.PropertyAt(i);
-        // WEBF_LOG(VERBOSE) << "Found property at position " << position << ": ID=" << static_cast<int>(prop.Id());
-        return prop.Value() ? prop.Value()->get() : nullptr;
-      }
-      current_pos++;
-    }
+  // Decode position as (block_index << 16) | declaration_index
+  uint16_t block_index = static_cast<uint16_t>(position >> 16);
+  uint16_t decl_index = static_cast<uint16_t>(position & 0xFFFF);
+
+  const auto& list = result.GetMatchedProperties();
+  if (block_index >= list.size()) {
+    return nullptr;
   }
-  
-  // WEBF_LOG(VERBOSE) << "No property found at position " << position;
-  return nullptr;
+  const auto& entry = list[block_index];
+  if (!entry.properties) {
+    return nullptr;
+  }
+  const StylePropertySet& properties = *entry.properties;
+  if (decl_index >= properties.PropertyCount()) {
+    return nullptr;
+  }
+  const auto& prop = properties.PropertyAt(decl_index);
+  return prop.Value() ? prop.Value()->get() : nullptr;
 }
 
 const CSSValue* StyleCascade::Resolve(const CSSProperty& property,
@@ -354,6 +399,148 @@ const CSSValue* StyleCascade::Resolve(const CSSProperty& property,
   resolver.CollectFlags(property, priority.GetOrigin());
   
   return result;
+}
+
+std::shared_ptr<MutableCSSPropertyValueSet> StyleCascade::BuildWinningPropertySet() {
+  AnalyzeIfNeeded();
+  // Create a property set in standard HTML mode.
+  auto result = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+
+  // Helper to locate the property reference for an encoded position
+  // (block_index << 16) | declaration_index. Returns true if found and fills out the reference.
+  auto find_ref_at = [&](uint32_t encoded_position,
+                         const StylePropertySet** out_set,
+                         unsigned* out_index,
+                         CSSPropertyValueSet::PropertyReference* out_prop) -> bool {
+    uint16_t block_index = static_cast<uint16_t>(encoded_position >> 16);
+    uint16_t decl_index = static_cast<uint16_t>(encoded_position & 0xFFFF);
+    const auto& list = match_result_.GetMatchedProperties();
+    if (block_index >= list.size()) return false;
+    const auto& entry = list[block_index];
+    if (!entry.properties) return false;
+    const StylePropertySet& properties = *entry.properties;
+    if (decl_index >= properties.PropertyCount()) return false;
+    if (out_set) *out_set = &properties;
+    if (out_index) *out_index = decl_index;
+    if (out_prop) *out_prop = properties.PropertyAt(decl_index);
+    return true;
+  };
+
+  // Export native properties (non-custom)
+  // Resolve CSSPendingSubstitutionValue like Blink by re-parsing the shorthand
+  // with variables substituted to produce concrete longhand values.
+  //
+  // To preserve declaration/cascade order when emitting to the UI layer,
+  // we first collect the winning properties with their encoded position
+  // and then sort by that position before inserting into the result set.
+  struct ExportedProperty {
+    CSSPropertyID id;
+    CSSPropertyName name;
+    std::shared_ptr<const CSSValue> value;
+    bool important;
+    uint32_t position;
+  };
+
+  std::vector<ExportedProperty> exported_properties;
+  exported_properties.reserve(map_.NativeBitset().Size());
+
+  CascadeResolver resolver(CascadeFilter(), /*generation*/ 0);
+  for (CSSPropertyID id : map_.NativeBitset()) {
+    const CascadePriority* prio = map_.FindKnownToExist(id);
+    if (!prio) {
+      continue;
+    }
+    uint32_t pos = prio->GetPosition();
+    const StylePropertySet* set = nullptr;
+    unsigned idx = 0;
+    CSSPropertyValueSet::PropertyReference prop_ref =
+        CSSPropertyValueSet::PropertyReference(*result, 0);
+    if (!find_ref_at(pos, &set, &idx, &prop_ref)) {
+      continue;
+    }
+
+    // Get shared CSSValue and importance.
+    const std::shared_ptr<const CSSValue>* value_ptr = prop_ref.Value();
+    if (!value_ptr || !(*value_ptr)) {
+      continue;
+    }
+    bool important = prop_ref.PropertyMetadata().important_ || prio->IsImportant();
+
+    // const CSSProperty& property = CSSProperty::Get(id);
+    std::shared_ptr<const CSSValue> to_set = *value_ptr;  // default to original shared value
+    // if (to_set && to_set->IsPendingSubstitutionValue()) {
+    //   if (const auto* pending = DynamicTo<cssvalue::CSSPendingSubstitutionValue>(to_set.get())) {
+    //     // Populate resolver cache by resolving once.
+    //     (void)ResolvePendingSubstitution(property, *pending, resolver);
+    //     // Find the parsed longhand value matching this property and grab its shared_ptr.
+    //     const CSSProperty* unvisited_property =
+    //         property.IsVisited() ? property.GetUnvisitedProperty() : &property;
+    //     bool matched = false;
+    //     for (const auto& prop_val : resolver.shorthand_cache_.parsed_properties) {
+    //       const CSSProperty& longhand = CSSProperty::Get(prop_val.Id());
+    //       if (&ResolveSurrogate(longhand) == unvisited_property) {
+    //         const std::shared_ptr<const CSSValue>* stored = prop_val.Value();
+    //         if (stored && *stored) {
+    //           to_set = *stored;
+    //         }
+    //         matched = true;
+    //         break;
+    //       }
+    //     }
+    //     if (!matched) {
+    //       // Longhand not present in parsed result; treat as unset for export.
+    //       to_set = cssvalue::CSSUnsetValue::Create();
+    //     }
+    //   }
+    // }
+
+    // Preserve the declared property name (logical/physical) when exporting
+    // so the UICommand receives the original logical names unchanged.
+    CSSPropertyName declared_name = prop_ref.Name();
+    exported_properties.push_back(
+        ExportedProperty{id, declared_name, to_set, important, pos});
+  }
+
+  // Sort by encoded position so that later declarations (including shorthands)
+  // are emitted after earlier ones, matching cascade/source order. This is
+  // important for consumers like the Dart style engine that replay SetStyle
+  // commands sequentially.
+  std::sort(exported_properties.begin(), exported_properties.end(),
+            [](const ExportedProperty& a, const ExportedProperty& b) {
+              if (a.position != b.position) {
+                return a.position < b.position;
+              }
+              // Tie-breaker: keep deterministic order by property id.
+              return static_cast<unsigned>(a.id) < static_cast<unsigned>(b.id);
+            });
+
+  for (const auto& prop : exported_properties) {
+    result->SetProperty(prop.name, prop.value, prop.important);
+  }
+
+  // Export custom properties
+  for (const auto& entry : map_.GetCustomMap()) {
+    const AtomicString& custom_name = entry.first;
+    const CascadePriority* prio = map_.Find(CSSPropertyName(custom_name));
+    if (!prio) continue;
+    uint32_t pos = prio->GetPosition();
+    const StylePropertySet* set = nullptr;
+    unsigned idx = 0;
+    CSSPropertyValueSet::PropertyReference prop_ref = CSSPropertyValueSet::PropertyReference(*result, 0);
+    if (!find_ref_at(pos, &set, &idx, &prop_ref)) {
+      continue;
+    }
+    const std::shared_ptr<const CSSValue>* value_ptr = prop_ref.Value();
+    if (!value_ptr || !(*value_ptr)) continue;
+    bool important = prop_ref.PropertyMetadata().important_ || prio->IsImportant();
+    result->SetProperty(CSSPropertyName(custom_name), *value_ptr, important);
+  }
+
+  return result;
+}
+
+std::shared_ptr<MutableCSSPropertyValueSet> StyleCascade::ExportWinningPropertySet() {
+  return BuildWinningPropertySet();
 }
 
 const CSSValue* StyleCascade::ResolveSubstitutions(const CSSProperty& property,
@@ -447,12 +634,107 @@ const CSSValue* StyleCascade::ResolvePendingSubstitution(
 
   DCHECK_NE(property.PropertyID(), CSSPropertyID::kVariable);
 
-  // Pending substitution values represent shorthand properties that contain
-  // var() references. In WebF's current implementation, we'll return unset
-  // to use the initial value, as we don't have full variable substitution yet.
-  //
-  // In Blink, this would parse the shorthand value, resolve variables,
-  // and return the appropriate longhand values.
+  // Mirror Blink: resolve variables in the shorthand text to concrete tokens
+  // and then re-parse the shorthand into longhands.
+
+  CSSUnparsedDeclarationValue* shorthand_value = value.ShorthandValue();
+  if (!shorthand_value) {
+    return cssvalue::CSSUnsetValue::Create().get();
+  }
+  auto data = shorthand_value->VariableDataValue();
+  if (!data) {
+    return cssvalue::CSSUnsetValue::Create().get();
+  }
+
+  String shorthand_text = String(data->OriginalText());
+
+  // Otherwise, resolve variables to text and re-parse like Blink.
+  using CustomVarMap = std::unordered_map<AtomicString, String, AtomicString::KeyHasher>;
+  CustomVarMap custom_vars;
+  const auto& custom_map = map_.GetCustomMap();
+  for (const auto& entry : custom_map) {
+    const AtomicString& custom_name = entry.first;
+    const CascadePriority& prio = map_.Top(const_cast<CascadeMap::CascadePriorityList&>(entry.second));
+    const CSSValue* cv = ValueAt(match_result_, prio.GetPosition());
+    if (!cv) continue;
+    if (const auto* unparsed = DynamicTo<CSSUnparsedDeclarationValue>(cv)) {
+      auto d = unparsed->VariableDataValue();
+      if (d) custom_vars.emplace(custom_name, String(d->OriginalText()));
+    }
+  }
+
+  std::function<String(const String&)> resolve_vars_in_text;
+  resolve_vars_in_text = [&](const String& input) -> String {
+    std::string s = input.ToUTF8String();
+    auto ltrim = [](const std::string& str) -> std::string {
+      size_t i = 0; while (i < str.size() && std::isspace(static_cast<unsigned char>(str[i]))) i++; return str.substr(i);
+    };
+    auto rtrim = [](const std::string& str) -> std::string {
+      if (str.empty()) return str; size_t i = str.size();
+      while (i > 0 && std::isspace(static_cast<unsigned char>(str[i-1]))) i--; return str.substr(0, i);
+    };
+    auto trim = [&](const std::string& str) -> std::string { return rtrim(ltrim(str)); };
+    size_t pos = 0;
+    while (true) {
+      size_t start = s.find("var(", pos);
+      if (start == std::string::npos) break;
+      size_t i = start + 4; int depth = 1;
+      while (i < s.size() && depth > 0) { if (s[i] == '(') depth++; else if (s[i] == ')') depth--; i++; }
+      if (depth != 0) break;
+      size_t end = i - 1; std::string inside = s.substr(start + 4, end - (start + 4));
+      int inner_depth = 0; size_t comma_pos = std::string::npos;
+      for (size_t k = 0; k < inside.size(); ++k) { char c = inside[k];
+        if (c == '(') inner_depth++; else if (c == ')') inner_depth--; else if (c == ',' && inner_depth == 0) { comma_pos = k; break; } }
+      std::string name_part = comma_pos == std::string::npos ? inside : inside.substr(0, comma_pos);
+      std::string fb_part = comma_pos == std::string::npos ? std::string() : inside.substr(comma_pos + 1);
+      name_part = trim(name_part); fb_part = trim(fb_part);
+      std::string replacement_utf8;
+      if (name_part.rfind("--", 0) == 0) {
+        AtomicString key = AtomicString::CreateFromUTF8(name_part.c_str(), name_part.length());
+        auto it = custom_vars.find(key);
+        if (it != custom_vars.end()) {
+          replacement_utf8 = it->second.ToUTF8String();
+        } else {
+          if (!fb_part.empty()) {
+            replacement_utf8 = resolve_vars_in_text(String::FromUTF8(fb_part.c_str(), fb_part.length())).ToUTF8String();
+          } else {
+            replacement_utf8 = s.substr(start, end - start + 1);
+          }
+        }
+      } else {
+        replacement_utf8 = s.substr(start, end - start + 1);
+      }
+      s.replace(start, end - start + 1, replacement_utf8);
+      pos = start + replacement_utf8.size();
+    }
+    return String::FromUTF8(s.c_str(), s.size());
+  };
+
+  String resolved_text = resolve_vars_in_text(shorthand_text);
+  bool is_cached = resolver.shorthand_cache_.value == &value;
+  if (!is_cached) {
+    CSSTokenizer tokenizer(resolved_text);
+    CSSParserTokenStream stream(tokenizer);
+    std::vector<CSSPropertyValue> parsed_properties;
+    if (!CSSPropertyParser::ParseValue(value.ShorthandPropertyId(), /*allow_important_annotation=*/false,
+                                       stream, shorthand_value->ParserContext(), parsed_properties,
+                                       StyleRule::RuleType::kStyle)) {
+      return cssvalue::CSSUnsetValue::Create().get();
+    }
+    resolver.shorthand_cache_.value = &value;
+    resolver.shorthand_cache_.parsed_properties = std::move(parsed_properties);
+  }
+
+  const auto& parsed_properties = resolver.shorthand_cache_.parsed_properties;
+  const CSSProperty* unvisited_property = property.IsVisited() ? property.GetUnvisitedProperty() : &property;
+  for (const auto& prop_val : parsed_properties) {
+    const CSSProperty& longhand = CSSProperty::Get(prop_val.Id());
+    if (&ResolveSurrogate(longhand) == unvisited_property) {
+      const std::shared_ptr<const CSSValue>* stored = prop_val.Value();
+      return stored ? stored->get() : cssvalue::CSSUnsetValue::Create().get();
+    }
+  }
+
   return cssvalue::CSSUnsetValue::Create().get();
 }
 

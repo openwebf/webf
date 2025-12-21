@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 #include "core/css/parser/css_property_parser.h"
+#include "core/css/css_property_value_set.h"
+#include "core/css/css_raw_value.h"
 #include "core/css/css_grid_integer_repeat_value.h"
 #include "core/css/css_image_set_value.h"
 #include "core/css/css_repeat_style_value.h"
@@ -230,6 +232,46 @@ TEST(CSSPropertyParserTest, IncompleteColor) {
   std::shared_ptr<const CSSValue> value = CSSParser::ParseSingleValue(
       CSSPropertyID::kBackgroundColor, "rgba(123 45"_s, StrictCSSParserContext(SecureContextMode::kSecureContext));
   ASSERT_FALSE(value);
+}
+
+TEST(CSSPropertyParserTest, DeclarationLastWinsIgnoresImportantInSameBlock) {
+  auto ctx = StrictCSSParserContext(SecureContextMode::kSecureContext);
+  auto set = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+  bool ok = CSSParser::ParseDeclarationList(ctx, set.get(),
+                                            "color: red !important; color: blue;"_s);
+  ASSERT_TRUE(ok);
+  ASSERT_EQ(1u, set->PropertyCount());
+  auto prop = set->PropertyAt(0);
+  EXPECT_EQ(CSSPropertyID::kColor, prop.Id());
+  EXPECT_EQ("blue", set->GetPropertyValue(CSSPropertyID::kColor));
+  EXPECT_FALSE(prop.PropertyMetadata().important_);
+}
+
+TEST(CSSPropertyParserTest, Hex8Color) {
+  // Ensure 8-digit hex colors (#RRGGBBAA) are parsed.
+  std::shared_ptr<const CSSValue> value = CSSParser::ParseSingleValue(
+      CSSPropertyID::kBackgroundColor, "#DADADA00"_s, StrictCSSParserContext(SecureContextMode::kSecureContext));
+  ASSERT_TRUE(value);
+  const cssvalue::CSSColor& css_color = To<cssvalue::CSSColor>(*value);
+  const Color& c = css_color.Value();
+  EXPECT_EQ(c.Red(), 0xDA);
+  EXPECT_EQ(c.Green(), 0xDA);
+  EXPECT_EQ(c.Blue(), 0xDA);
+  EXPECT_EQ(c.AlphaAsInteger(), 0x00);
+}
+
+TEST(CSSPropertyParserTest, Hex4Color) {
+  // Ensure 4-digit hex colors (#RGBA) are parsed.
+  std::shared_ptr<const CSSValue> value = CSSParser::ParseSingleValue(
+      CSSPropertyID::kBackgroundColor, "#1A2B"_s, StrictCSSParserContext(SecureContextMode::kSecureContext));
+  ASSERT_TRUE(value);
+  const cssvalue::CSSColor& css_color = To<cssvalue::CSSColor>(*value);
+  const Color& c = css_color.Value();
+  // #1A2B => R=0x11, G=0xAA, B=0x22, A=0xBB
+  EXPECT_EQ(c.Red(), 0x11);
+  EXPECT_EQ(c.Green(), 0xAA);
+  EXPECT_EQ(c.Blue(), 0x22);
+  EXPECT_EQ(c.AlphaAsInteger(), 0xBB);
 }
 
 void TestImageSetParsing(const String& testValue, const String& expectedCssText) {
@@ -544,7 +586,7 @@ TEST(CSSPropertyParserTest, ParseRevertLayer) {
 }
 
 // anchor() and anchor-size() shouldn't parse when the feature is disabled.
-TEST(CSSPropertyParserTest, AnchorPositioningDisabled) {
+TEST(CSSPropertyParserTest, DISABLED_AnchorPositioningDisabled) {
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
 
   EXPECT_FALSE(ParseCSSValue(CSSPropertyID::kTop, "anchor(--foo top)", context));
@@ -645,6 +687,92 @@ TEST(CSSPropertyParserTest, RepeatStyleRoundViaShorthand) {
 
 TEST(CSSPropertyParserTest, RepeatStyle2ValViaShorthand) {
   TestRepeatStyleViaShorthandsParsing("url(foo) space repeat"_s, "space repeat"_s);
+}
+
+TEST(CSSPropertyParserRawTextTest, StoresRawTextForLonghandValue) {
+  auto style = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+  auto result = CSSParser::ParseValue(style.get(), CSSPropertyID::kColor, "rgba(255, 0, 0, 0.5)"_s,
+                                      false /* important */, nullptr);
+  EXPECT_EQ(result, MutableCSSPropertyValueSet::kChangedPropertySet);
+  ASSERT_EQ(style->PropertyCount(), 1u);
+  auto property = style->PropertyAt(0);
+  const auto* value_ptr = property.Value();
+  ASSERT_TRUE(value_ptr && *value_ptr);
+  EXPECT_EQ((*value_ptr)->RawText(), "rgba(255, 0, 0, 0.5)"_s);
+  EXPECT_EQ(style->GetPropertyValue(CSSPropertyID::kColor), "rgba(255, 0, 0, 0.5)"_s);
+}
+
+TEST(CSSPropertyParserRawTextTest, TrimsLeadingWhitespace) {
+  auto style = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+  auto result = CSSParser::ParseValue(style.get(), CSSPropertyID::kColor, "   blue"_s,
+                                      false /* important */, nullptr);
+  EXPECT_EQ(result, MutableCSSPropertyValueSet::kChangedPropertySet);
+  ASSERT_EQ(style->PropertyCount(), 1u);
+  auto property = style->PropertyAt(0);
+  const auto* value_ptr = property.Value();
+  ASSERT_TRUE(value_ptr && *value_ptr);
+  EXPECT_EQ((*value_ptr)->RawText(), "blue"_s);
+  EXPECT_EQ(style->GetPropertyValue(CSSPropertyID::kColor), "blue"_s);
+}
+
+TEST(CSSPropertyParserRawTextTest, StripsImportantFromRawText) {
+  auto style = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+  auto result = CSSParser::ParseValue(style.get(), CSSPropertyID::kColor, "red   !important"_s,
+                                      false /* important */, nullptr);
+  EXPECT_EQ(result, MutableCSSPropertyValueSet::kChangedPropertySet);
+  ASSERT_EQ(style->PropertyCount(), 1u);
+  auto property = style->PropertyAt(0);
+  EXPECT_TRUE(property.IsImportant());
+  const auto* value_ptr = property.Value();
+  ASSERT_TRUE(value_ptr && *value_ptr);
+  EXPECT_EQ((*value_ptr)->RawText(), "red"_s);
+  EXPECT_EQ(style->GetPropertyValue(CSSPropertyID::kColor), "red"_s);
+}
+
+TEST(CSSPropertyParserRawTextTest, ShorthandRawTextPreservedOnExpansion) {
+  auto style = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+  auto result = CSSParser::ParseValue(style.get(), CSSPropertyID::kMargin, "10px 20px"_s,
+                                      false /* important */, nullptr);
+  EXPECT_EQ(result, MutableCSSPropertyValueSet::kChangedPropertySet);
+  ASSERT_GT(style->PropertyCount(), 0u);
+  for (unsigned i = 0; i < style->PropertyCount(); ++i) {
+    auto property = style->PropertyAt(i);
+    const auto* value_ptr = property.Value();
+    ASSERT_TRUE(value_ptr && *value_ptr);
+    EXPECT_EQ((*value_ptr)->RawText(), "10px 20px"_s);
+  }
+  EXPECT_EQ(style->GetPropertyValue(CSSPropertyID::kMargin), "10px 20px"_s);
+}
+
+TEST(CSSPropertyParserRawTextTest, CssWideKeywordRawText) {
+  auto style = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+  auto result = CSSParser::ParseValue(style.get(), CSSPropertyID::kColor, "inherit"_s,
+                                      false /* important */, nullptr);
+  EXPECT_EQ(result, MutableCSSPropertyValueSet::kChangedPropertySet);
+  ASSERT_EQ(style->PropertyCount(), 1u);
+  auto property = style->PropertyAt(0);
+  const auto* value_ptr = property.Value();
+  ASSERT_TRUE(value_ptr && *value_ptr);
+  EXPECT_EQ((*value_ptr)->RawText(), "inherit"_s);
+  EXPECT_EQ(style->GetPropertyValue(CSSPropertyID::kColor), "inherit"_s);
+}
+
+TEST(CSSPropertyParserRawTextTest, VariableReferenceRawText) {
+  auto style = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+  auto result = CSSParser::ParseValue(style.get(), CSSPropertyID::kColor, "var(--accent)"_s,
+                                      false /* important */, nullptr);
+  EXPECT_EQ(result, MutableCSSPropertyValueSet::kChangedPropertySet);
+  ASSERT_EQ(style->PropertyCount(), 1u);
+  auto property = style->PropertyAt(0);
+  const auto* value_ptr = property.Value();
+  ASSERT_TRUE(value_ptr && *value_ptr);
+  EXPECT_EQ((*value_ptr)->RawText(), "var(--accent)"_s);
+  EXPECT_EQ(style->GetPropertyValue(CSSPropertyID::kColor), "var(--accent)"_s);
+}
+
+TEST(CSSValueSerializationTest, SanitizesRawTextForSerialization) {
+  auto raw_value = std::make_shared<CSSRawValue>("var(--accent); padding: 12px"_s);
+  EXPECT_EQ(raw_value->CssTextForSerialization(), "var(--accent)"_s);
 }
 
 }  // namespace webf

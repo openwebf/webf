@@ -407,10 +407,6 @@ CanvasPattern* CanvasRenderingContext2D::createPattern(
     ExceptionState& exception_state) {
   NativeValue arguments[2];
 
-  WEBF_LOG(INFO) << "[CanvasRenderingContext2D::createPattern] init type = "
-                 << (init->IsHTMLImageElement() ? "HTMLImageElement" : (init->IsHTMLCanvasElement() ? "HTMLCanvasElement" : "Unknown"))
-                 << ", repetition = " << repetition.ToUTF8String();
-
   if (init->IsHTMLImageElement()) {
     arguments[0] =
         NativeValueConverter<NativeTypePointer<HTMLImageElement>>::ToNativeValue(init->GetAsHTMLImageElement());
@@ -672,9 +668,6 @@ void CanvasRenderingContext2D::setStrokeStyle(
     const std::shared_ptr<QJSUnionDomStringCanvasGradientCanvasPattern>& style,
     ExceptionState& exception_state) {
   NativeValue value = Native_NewNull();
-
-  WEBF_LOG(INFO) << "[CanvasRenderingContext2D::setStrokeStyle] content type = "
-                 << static_cast<int>(style->GetContentType());
 
   if (style->IsDomString()) {
     value = NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), style->GetAsDomString());

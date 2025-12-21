@@ -30,8 +30,11 @@
 
 #include "core/css/css_selector.h"
 #include <algorithm>
+#include <cstring>
 #include <memory>
-#include "../../foundation/string/string_builder.h"
+#include <string_view>
+#include "foundation/string/string_builder.h"
+#include "foundation/string/character_visitor.h"
 #include "core/base/strings/string_util.h"
 #include "core/css/css_markup.h"
 #include "core/css/css_selector_list.h"
@@ -650,10 +653,63 @@ constexpr static NameToPseudoStruct kPseudoTypeWithArgumentsMap[] = {
     {"where", CSSSelector::kPseudoWhere},
 };
 
+namespace {
+
+bool PseudoLiteralLess(const char* literal, const AtomicString& name) {
+  const size_t literal_length = std::strlen(literal);
+  return webf::VisitCharacters(name, [&](auto chars) -> bool {
+    using CharT = typename std::decay_t<decltype(chars)>::value_type;
+    const size_t name_length = chars.size();
+
+    const char* lit_it = literal;
+    const char* lit_end = literal + literal_length;
+    auto name_it = chars.begin();
+    auto name_end = chars.end();
+
+    for (; lit_it != lit_end && name_it != name_end; ++lit_it, ++name_it) {
+      char16_t lit_ch = static_cast<unsigned char>(*lit_it);
+      char16_t name_ch = static_cast<char16_t>(*name_it);
+      if (lit_ch < name_ch) {
+        return true;
+      }
+      if (lit_ch > name_ch) {
+        return false;
+      }
+    }
+
+    // All shared prefix characters are equal; the shorter string is "less".
+    if (lit_it == lit_end && name_it != name_end) {
+      return true;
+    }
+    return false;
+  });
+}
+
+bool PseudoLiteralEquals(const char* literal, const AtomicString& name) {
+  if (name.IsNull()) {
+    return false;
+  }
+  const size_t literal_length = std::strlen(literal);
+  if (literal_length != name.length()) {
+    return false;
+  }
+  return webf::VisitCharacters(name, [&](auto chars) -> bool {
+    using CharT = typename std::decay_t<decltype(chars)>::value_type;
+    return std::equal(
+        chars.begin(), chars.end(), literal, literal + literal_length,
+        [](CharT name_ch, char lit_ch) {
+          return static_cast<char16_t>(name_ch) ==
+                 static_cast<char16_t>(static_cast<unsigned char>(lit_ch));
+        });
+  });
+}
+
+}  // namespace
+
 CSSSelector::PseudoType CSSSelector::NameToPseudoType(const AtomicString& name,
                                                       bool has_arguments,
                                                       const Document* document) {
-  if (name.IsNull() || !name.Is8Bit()) {
+  if (name.IsNull()) {
     return CSSSelector::kPseudoUnknown;
   }
 
@@ -666,18 +722,18 @@ CSSSelector::PseudoType CSSSelector::NameToPseudoType(const AtomicString& name,
     pseudo_type_map = kPseudoTypeWithoutArgumentsMap;
     pseudo_type_map_end = kPseudoTypeWithoutArgumentsMap + std::size(kPseudoTypeWithoutArgumentsMap);
   }
+
   const NameToPseudoStruct* match = std::lower_bound(
       pseudo_type_map, pseudo_type_map_end, name,
-      [](const NameToPseudoStruct& entry, const AtomicString& name) -> bool {
-        DCHECK(name.Is8Bit());
-        DCHECK(entry.string);
-        // If strncmp returns 0, then either the keys are equal, or |name| sorts
-        // before |entry|.
-        return strncmp(entry.string, reinterpret_cast<const char*>(name.Characters8()), name.length()) < 0;
+      [](const NameToPseudoStruct& entry, const AtomicString& key) {
+        return PseudoLiteralLess(entry.string, key);
       });
-  if (match == pseudo_type_map_end || match->string != name.GetString()) {
+
+  if (match == pseudo_type_map_end ||
+      !PseudoLiteralEquals(match->string, name)) {
     return CSSSelector::kPseudoUnknown;
   }
+
   return static_cast<CSSSelector::PseudoType>(match->type);
 }
 

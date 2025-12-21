@@ -105,7 +105,7 @@ std::shared_ptr<const CSSValueList> CSSValueList::Copy() const {
       new_list = std::const_pointer_cast<CSSValueList>(CreateSlashSeparated());
       break;
     default:
-      WEBF_LOG(VERBOSE) << "[CSSValueList]: NotReached Copy():" << value_list_separator_ << std::endl;
+      break;
   }
   new_list->values_ = values_;
   new_list->needs_tree_scope_population_ = needs_tree_scope_population_;
@@ -130,7 +130,7 @@ std::shared_ptr<const CSSValueList> CSSValueList::PopulateWithTreeScope(const Tr
       new_list = std::const_pointer_cast<CSSValueList>(CreateSlashSeparated());
       break;
     default:
-      WEBF_LOG(VERBOSE) << "[CSSValueList]: NotReached PopulateWithTreeScope():" << value_list_separator_ << std::endl;
+      break;
   }
   new_list->values_.reserve(values_.size());
   for (const std::shared_ptr<const CSSValue>& value : values_) {
@@ -152,7 +152,7 @@ String CSSValueList::CustomCSSText() const {
       separator = " / "_sv;
       break;
     default:
-      WEBF_LOG(VERBOSE) << "[CSSValueList]: NotReached CustomCSSText():" << value_list_separator_ << std::endl;
+      break;
   }
 
   StringBuilder result;

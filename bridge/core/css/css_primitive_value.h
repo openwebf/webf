@@ -35,6 +35,7 @@
 #include "core/platform/geometry/length.h"
 #include "core/platform/math_extras.h"
 #include "foundation/casting.h"
+#include "string/character_visitor.h"
 
 namespace webf {
 
@@ -415,7 +416,13 @@ class CSSPrimitiveValue : public CSSValue {
 
   static String UnitTypeToString(UnitType);
   static UnitType StringToUnitType(StringView string) {
-    return StringToUnitType(reinterpret_cast<const unsigned char*>(string.data()), string.length());
+    return webf::VisitCharacters(string, [](const auto& c) {
+      std::vector<uint8_t> buffer(c.size());
+      for (size_t i = 0; i < c.size(); ++i) {
+        buffer[i] = c[i] & 0xff;
+      }
+      return StringToUnitType(buffer.data(), c.size());
+    });
   }
 
   String CustomCSSText() const;

@@ -116,8 +116,9 @@ void CSSStyleRule::Reattach(std::shared_ptr<StyleRuleBase> rule) {
   }
 }
 
-void CSSStyleRule::TraceAfterDispatch(GCVisitor* visitor) const {
-  // In WebF, we use shared_ptr, so no tracing needed
+void CSSStyleRule::Trace(GCVisitor* visitor) const {
+  visitor->TraceMember(properties_cssom_wrapper_);
+  CSSRule::Trace(visitor);
 }
 
 }  // namespace webf

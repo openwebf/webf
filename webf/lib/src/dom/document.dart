@@ -107,7 +107,7 @@ class Document extends ContainerNode {
   @override
   EventTarget? get parentEventTarget => defaultView;
 
-  RootRenderViewportBox? get viewport => controller.view.viewport;
+  RenderViewportBox? get viewport => controller.view.currentViewport;
 
   ui.Size? _preloadViewportSize;
 
@@ -421,7 +421,7 @@ class Document extends ContainerNode {
   }
 
   void syncViewportBackground() {
-    final RootRenderViewportBox? vp = viewport;
+    final RenderViewportBox? vp = viewport;
     if (vp == null) {
       return;
     }

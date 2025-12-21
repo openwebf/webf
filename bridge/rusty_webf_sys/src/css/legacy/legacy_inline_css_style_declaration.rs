@@ -56,8 +56,8 @@ impl LegacyCssStyleDeclarationMethods for LegacyInlineCssStyleDeclaration {
   fn get_property_value(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String> {
     self.legacy_css_style_declaration.get_property_value(property, exception_state)
   }
-  fn set_property(&self, property: &str, value: NativeValue, exception_state: &ExceptionState) -> Result<(), String> {
-    self.legacy_css_style_declaration.set_property(property, value, exception_state)
+  fn set_property(&self, property: &str, value: NativeValue, priority: &str, exception_state: &ExceptionState) -> Result<(), String> {
+    self.legacy_css_style_declaration.set_property_with_priority(property, value, priority, exception_state)
   }
   fn remove_property(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String> {
     self.legacy_css_style_declaration.remove_property(property, exception_state)

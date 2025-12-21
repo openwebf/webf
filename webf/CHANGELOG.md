@@ -2236,7 +2236,7 @@ return true;
 1. **Fix Draggable Effect Demo Built with React.js Based on `ontouchstart` and `ontouchmove`
    Gestures**
    Demo
-   URL: [http://andycall.oss-cn-beijing.aliyuncs.com/demo/dragable-list.js](http://andycall.oss-cn-beijing.aliyuncs.com/demo/dragable-list.js)
+   URL: [https://andycall.oss-cn-beijing.aliyuncs.com/demo/dragable-list.js](http://andycall.oss-cn-beijing.aliyuncs.com/demo/dragable-list.js)
 
 ---
 

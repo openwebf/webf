@@ -182,9 +182,9 @@ ScriptValue::ScriptValue(const ScriptValue& value) {
 ScriptValue& ScriptValue::operator=(const ScriptValue& value) {
   if (&value != this) {
     JS_FreeValueRT(runtime_, value_);
+    runtime_ = value.runtime_;
     value_ = JS_DupValueRT(runtime_, value.value_);
   }
-  runtime_ = value.runtime_;
   return *this;
 }
 

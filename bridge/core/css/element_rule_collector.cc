@@ -35,6 +35,7 @@
 #include "element_rule_collector.h"
 
 #include <algorithm>
+#include <limits>
 #include "core/css/css_property_value_set.h"
 #include "core/css/css_rule_list.h"
 #include "core/css/css_selector.h"
@@ -44,14 +45,35 @@
 #include "core/css/selector_filter.h"
 #include "core/css/style_rule.h"
 #include "core/dom/element.h"
+#include "foundation/string/ascii_types.h"
+#include "foundation/string/string_view.h"
 
 namespace webf {
 
-ElementRuleCollector::ElementRuleCollector(StyleResolverState& state)
+// Fast prefilter: if the rightmost compound contains a type selector,
+// ensure the candidate element’s tag matches it. This avoids falsely
+// matching ID- or class-bucketed rules like "P#three" against PRE#three.
+static bool RightmostCompoundTagMatchesElement(const RuleData& rule_data,
+                                               const Element& element) {
+  if (!rule_data.HasRightmostType()) {
+    return true;
+  }
+  const AtomicString& expected = rule_data.RightmostTag();
+  const AtomicString& actual = element.localName();
+  if (expected == CSSSelector::UniversalSelectorAtom()) {
+    return true;
+  }
+  if (element.IsHTMLElement()) {
+    return EqualIgnoringASCIICase(StringView(expected), StringView(actual));
+  }
+  return element.TagQName().LocalNameUpper() == actual.UpperASCII();
+}
+
+ElementRuleCollector::ElementRuleCollector(StyleResolverState& state, SelectorChecker::Mode mode)
     : state_(state),
       element_(&state.GetElement()),
       pseudo_element_id_(state.GetPseudoElementId()),
-      selector_checker_(SelectorChecker::kResolvingStyle),
+      selector_checker_(mode),
       selector_filter_(nullptr) {
 }
 
@@ -59,9 +81,6 @@ ElementRuleCollector::~ElementRuleCollector() = default;
 
 void ElementRuleCollector::CollectMatchingRules(const MatchRequest& match_request) {
   assert(element_);
-  
-  WEBF_LOG(VERBOSE) << "CollectMatchingRules for element: " << element_->localName().GetString() 
-                    << " origin: " << static_cast<int>(match_request.GetOrigin());
   
   // Collect rules from the match request
   for (const auto& rule_set : match_request.GetRuleSets()) {
@@ -108,10 +127,29 @@ void ElementRuleCollector::CollectRuleSetMatchingRules(
   if (element_->HasID()) {
     const auto& id_rules = rule_set->IdRules(element_->id());
     if (!id_rules.empty()) {
-      CollectMatchingRulesForList(id_rules,
-                                 cascade_origin,
-                                 cascade_layer,
-                                 match_request);
+      // Blink does not materialize a bare #id from a typed compound (e.g., P#id).
+      // If any typed compounds exist for this id, only match those and ignore
+      // any pure #id variants that may have been created elsewhere.
+      bool typed_exists = false;
+      for (const auto& rd : id_rules) {
+        if (rd && rd->HasRightmostType()) { typed_exists = true; break; }
+      }
+      if (typed_exists) {
+        std::vector<std::shared_ptr<RuleData>> typed_only;
+        typed_only.reserve(id_rules.size());
+        for (const auto& rd : id_rules) {
+          if (rd && rd->HasRightmostType()) typed_only.push_back(rd);
+        }
+        CollectMatchingRulesForList(typed_only,
+                                   cascade_origin,
+                                   cascade_layer,
+                                   match_request);
+      } else {
+        CollectMatchingRulesForList(id_rules,
+                                   cascade_origin,
+                                   cascade_layer,
+                                   match_request);
+      }
     }
   }
   
@@ -139,6 +177,33 @@ void ElementRuleCollector::CollectMatchingRulesForList(
   // Safety check - don't process too many rules to prevent hangs
   size_t processed_count = 0;
   const size_t MAX_RULES_TO_PROCESS = 1000;
+
+  // If this is an ID bucket (rules all target the element's id), and there are
+  // typed compounds (e.g. P#id), prefer those and ignore pure-id variants. This
+  // guards against accidental id-only entries created upstream and aligns with
+  // Blink behavior for compound matching specificity.
+  auto extract_rightmost_id = [](const CSSSelector& sel) -> AtomicString {
+    const CSSSelector* s = &sel;
+    while (s) {
+      if (s->Match() == CSSSelector::kId) {
+        return s->Value();
+      }
+      s = s->NextSimpleSelector();
+    }
+    return g_null_atom;
+  };
+
+  bool maybe_id_bucket = false;
+  if (!rules.empty() && rules.front()) {
+    AtomicString idv = extract_rightmost_id(rules.front()->Selector());
+    maybe_id_bucket = !idv.IsNull() && element_->HasID() && idv == element_->id();
+  }
+  bool typed_exists_in_bucket = false;
+  if (maybe_id_bucket) {
+    for (const auto& rd : rules) {
+      if (rd && rd->HasRightmostType()) { typed_exists_in_bucket = true; break; }
+    }
+  }
   
   for (const auto& rule_data : rules) {
     if (!rule_data) {
@@ -150,33 +215,72 @@ void ElementRuleCollector::CollectMatchingRulesForList(
       break;
     }
     
+    // Skip pure-id variants if we have typed compounds in the same ID bucket.
+    if (maybe_id_bucket && typed_exists_in_bucket && !rule_data->HasRightmostType()) {
+      continue;
+    }
+
     // Check if selector matches element
     SelectorChecker::SelectorCheckingContext context(element_);
     context.selector = &rule_data->Selector();
+
+    // Blink-style prefilter: if the rightmost compound has a type selector,
+    // ensure the element's tag matches before invoking the full matcher.
+    bool type_ok = RightmostCompoundTagMatchesElement(*rule_data, *element_);
+    if (!type_ok) {
+      continue;
+    }
     
     // Safety check: skip malformed selectors
     if (!context.selector) {
       continue;
     }
     
-    // For UA stylesheets, do a simple tag name check to avoid complex selector matching
-    if (cascade_origin == CascadeOrigin::kUserAgent) {
-      // Simple tag matching for UA stylesheet - bypass complex selector matching
-      if (context.selector->Match() == CSSSelector::kTag) {
-        const AtomicString& selector_tag = context.selector->TagQName().LocalName();
-        WEBF_LOG(VERBOSE) << "UA rule tag: " << selector_tag.GetString() 
-                          << " element: " << element_->localName().GetString();
-        if (selector_tag == element_->localName() || selector_tag == CSSSelector::UniversalSelectorAtom()) {
-          WEBF_LOG(VERBOSE) << "UA rule matched!";
-          DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
-        }
+  // UA stylesheet matching must respect full selectors (combinators, pseudos).
+  // Previously we short-circuited on tag-only which caused rules like
+  // "td > p:first-child" to (incorrectly) match all <p>, zeroing margins.
+  if (cascade_origin == CascadeOrigin::kUserAgent) {
+    SelectorChecker::MatchResult ua_match_result;
+    // Ensure UA rule matching respects requested pseudo-element (e.g., ::before/::after)
+    context.pseudo_id = pseudo_element_id_;
+    bool ua_matched = selector_checker_.Match(context, ua_match_result);
+    if (ua_matched) {
+      // When collecting normal element rules, pseudo-element selectors (e.g.
+      // ::before/::after) may "match" only to mark pseudo presence. They must
+      // not contribute properties to the originating element's style.
+      if (pseudo_element_id_ == kPseudoIdNone && ua_match_result.dynamic_pseudo != kPseudoIdNone) {
+        continue;
       }
-      continue;  // Skip complex matching for UA rules
+      DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
     }
+    continue;  // Handled UA case.
+  }
     
     SelectorChecker::MatchResult match_result;
+    // Avoid calling TagQName() unless the selector is a tag selector.
+    // Non-tag selectors (class, id, attribute, pseudo, etc.) would hit
+    // a DCHECK in CSSSelector::TagQName(). Logging is omitted here to
+    // keep this path safe across all selector types.
+    // Propagate pseudo-element matching request (if any) into the context
+    // so pseudo-element selectors like ::before / ::after can be evaluated
+    // when the checker runs in non-querying modes.
+    context.pseudo_id = pseudo_element_id_;
     bool matched = selector_checker_.Match(context, match_result);
     if (matched) {
+      // When collecting normal element rules, pseudo-element selectors (e.g.
+      // ::before/::after) may "match" only to mark pseudo presence. They must
+      // not contribute properties to the originating element's style.
+      if (pseudo_element_id_ == kPseudoIdNone && match_result.dynamic_pseudo != kPseudoIdNone) {
+        continue;
+      }
+      WEBF_COND_LOG(COLLECTOR, VERBOSE) << "Author rule matched!";
+      const std::shared_ptr<StyleRule>& rule = rule_data->Rule();
+
+      String selector = rule->SelectorsText();
+      WEBF_COND_LOG(COLLECTOR, VERBOSE) << "SELECTOR: " << selector.Characters8();
+
+      String s = rule->Properties().AsText();
+      WEBF_COND_LOG(COLLECTOR, VERBOSE) << "RULE: " << s.Characters8();
       DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
     }
   }
@@ -251,28 +355,50 @@ void ElementRuleCollector::SortMatchedRules() {
   // Sort by cascade order
   std::stable_sort(matched_rules_.begin(), matched_rules_.end(),
       [](const MatchedRule& a, const MatchedRule& b) {
-        // First by origin
+        // CSS Cascade order (aligned with CascadePriority::ForLayerComparison):
+        // 1) Origin (UA < User < Author < Animation < Transition)
         if (a.cascade_origin != b.cascade_origin) {
           return static_cast<int>(a.cascade_origin) < static_cast<int>(b.cascade_origin);
         }
-        
-        // Then by cascade layer
+
+        // 2) Inline style vs. stylesheet rules: non-inline first, inline last.
+        //    This ensures ForLayerComparison is non-decreasing when adding
+        //    to CascadeMap, preventing assertion failures.
+        if (a.is_inline_style != b.is_inline_style) {
+          return b.is_inline_style; // false < true
+        }
+
+        // 3) Cascade layer (lower layer order first)
         if (a.cascade_layer != b.cascade_layer) {
           return a.cascade_layer < b.cascade_layer;
         }
-        
-        // Then by specificity
+
+        // 4) Specificity (sort ascending so higher specificity appears later and wins)
         if (a.specificity != b.specificity) {
           return a.specificity < b.specificity;
         }
-        
-        // Finally by order of appearance
+
+        // 5) Source order tie-breaker: stylesheet index, then rule position
+        if (a.style_sheet_index != b.style_sheet_index) {
+          return a.style_sheet_index < b.style_sheet_index;
+        }
+        if (a.rule_data && b.rule_data && a.rule_data->Position() != b.rule_data->Position()) {
+          return a.rule_data->Position() < b.rule_data->Position();
+        }
+
+        // 6) Fallback to collection order (stable)
         return a.cascade_order < b.cascade_order;
       });
 }
 
 void ElementRuleCollector::TransferMatchedRules() {
   for (const auto& matched_rule : matched_rules_) {
+    if (matched_rule.is_inline_style) {
+      if (matched_rule.inline_properties) {
+        result_.AddInlineStyleProperties(matched_rule.inline_properties);
+      }
+      continue;
+    }
     if (matched_rule.rule_data && matched_rule.rule_data->Rule()) {
       result_.AddMatchedProperties(
           &matched_rule.rule_data->Rule()->Properties(),
@@ -293,13 +419,33 @@ void ElementRuleCollector::ClearMatchedRules() {
 void ElementRuleCollector::AddElementStyleProperties(
     std::shared_ptr<const StylePropertySet> property_set,
     PropertyAllowedInMode property_mode) {
-  
+  // Align with Blink: Do not add the originating element's inline style when
+  // collecting rules for a pseudo-element. Pseudo elements cannot have inline
+  // styles; they inherit inheritable properties via the computed style
+  // pipeline instead. Including inline here would incorrectly elevate
+  // non-inherited properties (e.g., border) into the pseudo cascade.
+  if (is_collecting_for_pseudo_element_) {
+    return;
+  }
+
   if (!property_set || property_set->PropertyCount() == 0) {
     return;
   }
   
-  // Use the new method for inline styles
-  result_.AddInlineStyleProperties(property_set.get());
+  // Queue inline style into matched list so it participates in sorting.
+  MatchedRule matched_rule;
+  matched_rule.rule_data = nullptr;
+  matched_rule.specificity = 0;
+  matched_rule.cascade_origin = CascadeOrigin::kAuthor;
+  matched_rule.cascade_layer = 0;
+  matched_rule.style_sheet_index = std::numeric_limits<unsigned>::max();
+  matched_rule.cascade_order = current_cascade_order_++;
+  matched_rule.is_inline_style = true;
+  matched_rule.inline_properties = property_set.get();
+  // Keep a strong reference to ensure lifetime if needed in later phases
+  // (TransferMatchedRules reads from inline_properties pointer).
+  // Note: We avoid changing interfaces; this ownership is implicit.
+  matched_rules_.push_back(matched_rule);
 }
 
 void ElementRuleCollector::SetPseudoElementStyleRequest(

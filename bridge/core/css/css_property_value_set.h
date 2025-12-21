@@ -105,6 +105,9 @@ class CSSPropertyValueSet : public std::enable_shared_from_this<CSSPropertyValue
   const std::shared_ptr<const CSSValue>* GetPropertyCSSValueWithHint(const AtomicString& property_name,
                                                                      unsigned index) const;
   String GetPropertyValueWithHint(const AtomicString& property_name, unsigned index) const;
+  // Returns the base href associated with a property value (if any),
+  // derived from the underlying CSSValue (e.g. CSSRawValue).
+  String GetPropertyBaseHrefWithHint(const AtomicString& property_name, unsigned index) const;
   bool PropertyIsImportantWithHint(const AtomicString& property_name, unsigned index) const;
 
   bool ShorthandIsImportant(CSSPropertyID) const;
@@ -258,6 +261,7 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   // Convenience wrapper around the above that also supports custom properties.
   void SetProperty(const CSSPropertyName&, std::shared_ptr<const CSSValue>, bool important = false);
 
+
   // Also a convenience wrapper around SetProperty(), parsing the value from a
   // string before setting it. If the value is empty, the property is removed.
   // Only for non-custom properties.
@@ -291,7 +295,7 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
 
   template <typename T>
   bool RemoveProperty(const T& property, String* return_text = nullptr);
-
+  bool RemoveShorthandProperty(CSSPropertyID);
   bool RemovePropertiesInSet(const CSSProperty* const set[], unsigned length);
   void RemoveEquivalentProperties(const CSSPropertyValueSet*);
   void RemoveEquivalentProperties(const legacy::LegacyCssStyleDeclaration*);
@@ -322,7 +326,6 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
 
   bool RemovePropertyAtIndex(int, String* return_text);
 
-  bool RemoveShorthandProperty(CSSPropertyID);
   bool RemoveShorthandProperty(const AtomicString& custom_property_name) { return false; }
   CSSPropertyValue* FindCSSPropertyWithName(const CSSPropertyName&);
   std::shared_ptr<PropertySetCSSStyleDeclaration> cssom_wrapper_;

@@ -39,6 +39,7 @@
 #include <memory>
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "bindings/qjs/cppgc/member.h"
+#include "core/css/css_raw_value.h"
 #include "foundation/string/wtf_string.h"
 
 namespace webf {
@@ -61,6 +62,8 @@ class MediaQuery {
   void Trace(GCVisitor*) const;
 
   bool HasUnknown() const { return has_unknown_; }
+  const CSSRawValue* RawCondition() const { return raw_condition_.get(); }
+  void SetRawCondition(std::shared_ptr<const CSSRawValue> raw_condition) { raw_condition_ = std::move(raw_condition); }
   RestrictorType Restrictor() const;
   const MediaQueryExpNode* ExpNode() const;
   const String& MediaType() const;
@@ -71,6 +74,7 @@ class MediaQuery {
   String media_type_;
   mutable String serialization_cache_;
   std::shared_ptr<const MediaQueryExpNode> exp_node_;
+  std::shared_ptr<const CSSRawValue> raw_condition_;
 
   RestrictorType restrictor_;
   // Set if |exp_node_| contains any MediaQueryUnknownExpNode instances.
