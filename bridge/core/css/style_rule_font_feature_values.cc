@@ -23,10 +23,6 @@ StyleRuleFontFeature::StyleRuleFontFeature(StyleRuleFontFeature::FeatureType typ
 StyleRuleFontFeature::StyleRuleFontFeature(const StyleRuleFontFeature&) = default;
 StyleRuleFontFeature::~StyleRuleFontFeature() = default;
 
-void StyleRuleFontFeature::TraceAfterDispatch(GCVisitor* visitor) const {
-  StyleRuleBase::TraceAfterDispatch(visitor);
-}
-
 void StyleRuleFontFeature::UpdateAlias(AtomicString alias, const std::vector<uint32_t>& features) {
   feature_aliases_[alias] = FeatureIndicesWithPriority{features, std::numeric_limits<unsigned>::max()};
 }
@@ -149,11 +145,6 @@ AtomicString StyleRuleFontFeatureValues::FamilyAsString() const {
     }
   }
   return families.ReleaseString();
-}
-
-void StyleRuleFontFeatureValues::TraceAfterDispatch(GCVisitor* visitor) const {
-  StyleRuleBase::TraceAfterDispatch(visitor);
-  //  visitor->Trace(layer_);
 }
 
 }  // namespace webf

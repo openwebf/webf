@@ -302,7 +302,14 @@ struct Converter<IDLSequence<T>> : public ConverterBase<IDLSequence<T>> {
     }
 
     ImplType v;
-    uint32_t length = Converter<IDLUint32>::FromValue(ctx, JS_GetPropertyStr(ctx, value, "length"), exception_state);
+    JSValue length_value = JS_GetPropertyStr(ctx, value, "length");
+    if (JS_IsException(length_value)) {
+      exception_state.ThrowException(ctx, length_value);
+      JS_FreeValue(ctx, length_value);
+      return {};
+    }
+    uint32_t length = Converter<IDLUint32>::FromValue(ctx, length_value, exception_state);
+    JS_FreeValue(ctx, length_value);
 
     v.reserve(length);
 
@@ -430,12 +437,19 @@ struct Converter<JSEventListener> : public ConverterBase<JSEventListener> {
     if (JS_IsObject(value) && !JS_IsFunction(ctx, value)) {
       JSValue handleEventMethod = JS_GetPropertyStr(ctx, value, "handleEvent");
 
+      if (JS_IsException(handleEventMethod)) {
+        exception_state.ThrowException(ctx, handleEventMethod);
+        JS_FreeValue(ctx, handleEventMethod);
+        return JSEventListener::CreateOrNull(nullptr);
+      }
+
       if (JS_IsFunction(ctx, handleEventMethod)) {
         auto result = JSEventListener::CreateOrNull(QJSFunction::Create(ctx, handleEventMethod, value));
         JS_FreeValue(ctx, handleEventMethod);
         return result;
       }
 
+      JS_FreeValue(ctx, handleEventMethod);
       return JSEventListener::CreateOrNull(nullptr);
     }
     return JSEventListener::CreateOrNull(QJSFunction::Create(ctx, value));

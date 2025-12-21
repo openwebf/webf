@@ -43,7 +43,10 @@
 namespace webf {
 
 void NodeMutationObserverData::Trace(GCVisitor* visitor) const {
-  for(auto&& item : registry_) {
+  for (auto&& item : registry_) {
+    visitor->TraceMember(item);
+  }
+  for (auto&& item : transient_registry_) {
     visitor->TraceMember(item);
   }
 }

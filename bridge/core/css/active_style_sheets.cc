@@ -25,7 +25,7 @@ namespace webf {
 ActiveSheetsChange CompareActiveStyleSheets(const ActiveStyleSheetVector& old_style_sheets,
                                             const ActiveStyleSheetVector& new_style_sheets,
                                             const HeapVector<Member<RuleSetDiff>>& diffs,
-                                            std::unordered_set<Member<RuleSet>>& changed_rule_sets) {
+                                            std::unordered_set<std::shared_ptr<RuleSet>>& changed_rule_sets) {
   unsigned new_style_sheet_count = new_style_sheets.size();
   unsigned old_style_sheet_count = old_style_sheets.size();
   bool adds_non_matching_mq = false;

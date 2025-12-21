@@ -26,8 +26,6 @@ class CSSLayerBlockRule final : public CSSGroupingRule {
   void Reattach(std::shared_ptr<StyleRuleBase>) override;
   AtomicString cssText() const override;
 
-  void TraceAfterDispatch(GCVisitor*) const;
-
  private:
   // TODO: Add DevTools support.
 

@@ -61,8 +61,4 @@ void CSSSupportsRule::Reattach(std::shared_ptr<StyleRuleBase> rule) {
   CSSConditionRule::Reattach(rule);
 }
 
-void CSSSupportsRule::TraceAfterDispatch(GCVisitor* visitor) const {
-  CSSConditionRule::TraceAfterDispatch(visitor);
-}
-
 }  // namespace webf

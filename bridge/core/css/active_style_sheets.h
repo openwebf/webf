@@ -7,6 +7,8 @@
 #ifndef WEBF_CORE_CSS_ACTIVE_STYLE_SHEETS_H_
 #define WEBF_CORE_CSS_ACTIVE_STYLE_SHEETS_H_
 
+#include <memory>
+#include <unordered_set>
 //#include "third_party/blink/renderer/core/core_export.h"
 //#include "third_party/blink/renderer/core/css/media_value_change.h"
 //#include "third_party/blink/renderer/platform/heap/collection_support/heap_hash_set.h"
@@ -22,7 +24,7 @@ class CSSStyleSheet;
 class RuleSet;
 class RuleSetDiff;
 
-using ActiveStyleSheet = std::pair<Member<CSSStyleSheet>, Member<RuleSet>>;
+using ActiveStyleSheet = std::pair<Member<CSSStyleSheet>, std::shared_ptr<RuleSet>>;
 using ActiveStyleSheetVector = std::vector<ActiveStyleSheet>;
 
 enum ActiveSheetsChange {
@@ -34,7 +36,7 @@ enum ActiveSheetsChange {
 ActiveSheetsChange CompareActiveStyleSheets(const ActiveStyleSheetVector& old_style_sheets,
                                             const ActiveStyleSheetVector& new_style_sheets,
                                             const HeapVector<Member<RuleSetDiff>>& diffs,
-                                            std::unordered_set<Member<RuleSet>>& changed_rule_sets);
+                                            std::unordered_set<std::shared_ptr<RuleSet>>& changed_rule_sets);
 bool AffectedByMediaValueChange(const ActiveStyleSheetVector& active_sheets,
                                 MediaValueChange change);
 

@@ -42,8 +42,4 @@ void CSSLayerStatementRule::Reattach(std::shared_ptr<StyleRuleBase> rule) {
   rule_ = std::static_pointer_cast<StyleRuleLayerStatement>(rule);
 }
 
-void CSSLayerStatementRule::TraceAfterDispatch(GCVisitor* visitor) const {
-  // In WebF, we use shared_ptr, so no tracing needed
-}
-
 }  // namespace webf

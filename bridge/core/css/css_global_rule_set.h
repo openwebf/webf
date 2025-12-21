@@ -5,6 +5,7 @@
 #ifndef WEBF_CORE_CSS_CSS_GLOBAL_RULE_SET_H_
 #define WEBF_CORE_CSS_CSS_GLOBAL_RULE_SET_H_
 
+#include <memory>
 #include "core/css/rule_feature_set.h"
 
 namespace webf {
@@ -35,11 +36,9 @@ class CSSGlobalRuleSet final {
   void Update(Document&);
 
   const RuleFeatureSet& GetRuleFeatureSet() const { return features_; }
-  RuleSet* WatchedSelectorsRuleSet() const { return watched_selectors_rule_set_.Get(); }
-  RuleSet* DocumentRulesSelectorsRuleSet() const { return document_rules_selectors_rule_set_.Get(); }
+  RuleSet* WatchedSelectorsRuleSet() const { return watched_selectors_rule_set_.get(); }
+  RuleSet* DocumentRulesSelectorsRuleSet() const { return document_rules_selectors_rule_set_.get(); }
   bool HasFullscreenUAStyle() const { return has_fullscreen_ua_style_; }
-
-  void Trace(GCVisitor*) const;
 
  private:
   // Constructed from rules in all TreeScopes including UA style and style
@@ -47,11 +46,11 @@ class CSSGlobalRuleSet final {
   RuleFeatureSet features_;
 
   // Rules injected from extensions.
-  Member<RuleSet> watched_selectors_rule_set_;
+  std::shared_ptr<RuleSet> watched_selectors_rule_set_;
 
   // Rules extracted from CSS selector document rule predicates in speculation
   // rules.
-  Member<RuleSet> document_rules_selectors_rule_set_;
+  std::shared_ptr<RuleSet> document_rules_selectors_rule_set_;
 
   bool has_fullscreen_ua_style_ = false;
   bool is_dirty_ = true;

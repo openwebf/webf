@@ -74,8 +74,9 @@ void CSSMediaRule::Reattach(std::shared_ptr<StyleRuleBase> rule) {
   }
 }
 
-void CSSMediaRule::TraceAfterDispatch(GCVisitor* visitor) const {
-  CSSConditionRule::TraceAfterDispatch(visitor);
+void CSSMediaRule::Trace(GCVisitor* visitor) const {
+  visitor->TraceMember(media_cssom_wrapper_);
+  CSSConditionRule::Trace(visitor);
 }
 
 }  // namespace webf

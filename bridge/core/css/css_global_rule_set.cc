@@ -81,9 +81,4 @@ void CSSGlobalRuleSet::Dispose() {
    */
 }
 
-void CSSGlobalRuleSet::Trace(GCVisitor* visitor) const {
-  // visitor->TraceMember(watched_selectors_rule_set_);
-  // visitor->TraceMember(document_rules_selectors_rule_set_);
-}
-
 }  // namespace webf

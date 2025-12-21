@@ -40,8 +40,4 @@ void CSSLayerBlockRule::Reattach(std::shared_ptr<StyleRuleBase> rule) {
   CSSGroupingRule::Reattach(rule);
 }
 
-void CSSLayerBlockRule::TraceAfterDispatch(GCVisitor* visitor) const {
-  CSSGroupingRule::TraceAfterDispatch(visitor);
-}
-
 }  // namespace webf

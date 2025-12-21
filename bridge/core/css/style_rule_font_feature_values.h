@@ -34,8 +34,6 @@ class StyleRuleFontFeature : public StyleRuleBase {
 
   FeatureType GetFeatureType() { return type_; }
 
-  void TraceAfterDispatch(GCVisitor*) const;
-
  private:
   FeatureType type_;
   FontFeatureAliases feature_aliases_;
@@ -125,15 +123,13 @@ class StyleRuleFontFeatureValues : public StyleRuleBase {
   FontFeatureAliases* GetOrnaments() { return &feature_values_storage_.ornaments_; }
   FontFeatureAliases* GetAnnotation() { return &feature_values_storage_.annotation_; }
 
-  void SetCascadeLayer(const CascadeLayer* layer) { layer_ = layer; }
-  const CascadeLayer* GetCascadeLayer() const { return layer_.Get(); }
-
-  void TraceAfterDispatch(GCVisitor*) const;
+  void SetCascadeLayer(std::shared_ptr<const CascadeLayer> layer) { layer_ = std::move(layer); }
+  const CascadeLayer* GetCascadeLayer() const { return layer_.get(); }
 
  private:
   std::vector<AtomicString> families_;
   FontFeatureValuesStorage feature_values_storage_;
-  Member<const CascadeLayer> layer_;
+  std::shared_ptr<const CascadeLayer> layer_;
 };
 
 template <>

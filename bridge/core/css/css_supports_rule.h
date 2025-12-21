@@ -49,8 +49,6 @@ class CSSSupportsRule : public CSSConditionRule {
 
   void Reattach(std::shared_ptr<StyleRuleBase>) override;
 
-  void TraceAfterDispatch(GCVisitor* visitor) const;
-
  private:
   String conditionText() const override;
 };

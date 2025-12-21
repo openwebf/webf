@@ -2077,6 +2077,9 @@ void StyleEngine::Trace(GCVisitor* visitor) {
   for (const auto& active_sheet : active_user_style_sheets_) {
     visitor->TraceMember(active_sheet.first);
   }
+
+  style_invalidation_root_.Trace(visitor);
+  style_recalc_root_.Trace(visitor);
 }
 
 }  // namespace webf
