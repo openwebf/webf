@@ -439,9 +439,11 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetPro
   // When replacing an existing property value, this moves the property to the
   // end of the list. Firefox preserves the position, and MSIE moves the
   // property to the beginning.
-  auto name = CSSPropertyName(ResolveCSSPropertyID(unresolved_property));
-  WEBF_LOG(INFO) << "The property: " << name.ToAtomicString().ToUTF8String() << "=" << value.ToUTF8String();
-  return CSSParser::ParseValue(this, unresolved_property, value, important, context_style_sheet);
+
+  // Uncomment this if you want to debug property set
+  // auto name = CSSPropertyName(ResolveCSSPropertyID(unresolved_property));
+  // WEBF_LOG(INFO) << "The property: " << name.ToAtomicString().ToUTF8String() << "=" << value.ToUTF8String();
+  return CSSParser::ParseValue(this, unresolved_property, value, important, std::move(context_style_sheet));
 }
 
 MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetCustomProperty(
