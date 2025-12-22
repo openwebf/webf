@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:meta/meta.dart';
@@ -15,6 +16,32 @@ import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:easy_refresh/easy_refresh.dart';
 import 'listview_bindings_generated.dart';
+
+class _WebFListViewNoScrollbarScrollBehavior extends ScrollBehavior {
+  static final Set<PointerDeviceKind> _kDragDevices = PointerDeviceKind.values.toSet();
+
+  final ScrollPhysics? _physics;
+
+  const _WebFListViewNoScrollbarScrollBehavior([this._physics]);
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    return _physics ?? super.getScrollPhysics(context);
+  }
+
+  @override
+  Widget buildOverscrollIndicator(BuildContext context, Widget child, ScrollableDetails details) {
+    return child;
+  }
+
+  @override
+  Widget buildScrollbar(BuildContext context, Widget child, ScrollableDetails details) {
+    return child;
+  }
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => _kDragDevices;
+}
 
 /// Tag name for the ListView element in HTML
 const listView = 'LISTVIEW';
@@ -470,6 +497,7 @@ class WebFListViewState extends WebFWidgetElementState {
         onLoad: widgetElement.hasEventListener('loadmore') ? onLoad : null,
         onRefresh: widgetElement.hasEventListener('refresh') ? onRefresh : null,
         controller: refreshController,
+        scrollBehaviorBuilder: (physics) => _WebFListViewNoScrollbarScrollBehavior(physics),
         child: result);
 
     // Finally, wrap with NestedScrollForwarder to provide scroll controller to nested elements
