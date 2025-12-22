@@ -3354,6 +3354,11 @@ class RenderGridLayout extends RenderLayoutBox {
   }
 
   @override
+  bool hitTestChildren(BoxHitTestResult result, {Offset? position}) {
+    return defaultHitTestChildren(result, position: position);
+  }
+
+  @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(EnumProperty<GridAutoFlow>(
