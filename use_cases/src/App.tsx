@@ -40,7 +40,6 @@ import {FormPage} from './pages/FormPage';
 import {MutationObserverPage} from './pages/MutationObserverPage';
 import {WebStoragePage} from './pages/WebStoragePage';
 import {DOMBoundingRectPage} from './pages/DOMBoundingRectPage';
-import {CSSShowcasePage} from './pages/CSSShowcasePage';
 import {BGPage} from './pages/css/BGPage';
 import {BGGradientPage} from './pages/css/BGGradientPage';
 import {BGImagePage} from './pages/css/BGImagePage';
@@ -106,9 +105,9 @@ import { CupertinoSliderPage } from './pages/cupertino/CupertinoSliderPage';
 import { CupertinoSlidingSegmentedControlPage } from './pages/cupertino/CupertinoSlidingSegmentedControlPage';
 import { CupertinoCheckBoxPage } from './pages/cupertino/CupertinoCheckBoxPage';
 import { CupertinoRadioPage } from './pages/cupertino/CupertinoRadioPage';
-// import {UserDetailsPage} from './pages/routeDemo/UserDetailsPage';
-// import {ReportDetailsPage} from './pages/routeDemo/ReportDetailsPage';
-// import {ProfileEditPage} from './pages/routeDemo/ProfileEditPage';
+import {UserDetailsPage} from './pages/routeDemo/UserDetailsPage';
+import {ReportDetailsPage} from './pages/routeDemo/ReportDetailsPage';
+import {ProfileEditPage} from './pages/routeDemo/ProfileEditPage';
 
 function App() {
 
@@ -136,7 +135,6 @@ function App() {
 
         <Route path="/canvas-2d" title="Canvas 2D" element={<Canvas2dPage />} />
 
-        <Route path="/css-showcase" title="CSS Showcase" element={<CSSShowcasePage />} />
         <Route path="/css/bg" title="Background" element={<BGPage />} />
         <Route path="/css/bg-gradient" title="Background Gradient" element={<BGGradientPage />} />
         <Route path="/css/bg-image" title="Background Image" element={<BGImagePage />} />
@@ -200,6 +198,12 @@ function App() {
 
         <Route path="/image-preload" title="Image Preload" element={<ImagePreloadPage />} />
         <Route path="/routing" title="Routing & Navigation" element={<RoutingPage />} />
+
+        {/* Dynamic Route Examples */}
+        <Route path="/user/:id" title="User Details" element={<UserDetailsPage />} />
+        <Route path="/dashboard/:year/:month/reports/:id" title="Report Details" element={<ReportDetailsPage />} />
+        <Route path="/profile/edit" title="Profile Edit" element={<ProfileEditPage />} />
+
         <Route path="/deep-link" title="Deep Links" element={<DeepLinkPage />} />
         <Route path="/flutter-interaction" title="Flutter Interaction" element={<FlutterInteractionPage />} />
         <Route path="/native-interaction" title="Native Interaction" element={<NativeInteractionPage />} />

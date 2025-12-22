@@ -83,8 +83,8 @@ export const ImagePage: React.FC = () => {
                   {data.samples.map((sample, index) => (
                     <div key={index} className={styles.imageCard}>
                       <div className={styles.imageContainer}>
-                        <img 
-                          src={sample.url} 
+                        <img
+                          src={sample.url}
                           alt={sample.name}
                           className={styles.image}
                           loading="lazy"
