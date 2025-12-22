@@ -2772,7 +2772,12 @@ class CSSRenderStyle extends RenderStyle
       _contentBoxLogicalHeight = null;
       return;
     } else {
-      if (renderStyle.height.isNotAuto) {
+      // Intrinsic sizing keywords (min-content/max-content/fit-content) depend on layout and
+      // do not establish a definite containing block height for percentage resolution.
+      // Treat them like auto here and let the layout algorithm determine the used height.
+      if (renderStyle.height.isIntrinsic) {
+        logicalHeight = null;
+      } else if (renderStyle.height.isNotAuto) {
         logicalHeight = renderStyle.height.computedValue;
       } else if (aspectRatio != null && renderStyle.width.isNotAuto) {
         // Prefer aspect-ratio when width is definite and height is auto.
