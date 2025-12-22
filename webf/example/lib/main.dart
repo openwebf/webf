@@ -5,11 +5,10 @@
 
 // ignore_for_file: avoid_print
 
-import 'dart:async';
-
 import 'package:cronet_http/cronet_http.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
@@ -31,7 +30,6 @@ const String demoInitialRoute = '/';
 const Map<String, dynamic>? demoInitialState = null;
 
 void main() async {
-  DebugFlags.enableImageLogs = true;
   WidgetsFlutterBinding.ensureInitialized();
   final savedThemeMode = await AdaptiveTheme.getThemeMode();
 
@@ -51,8 +49,9 @@ void main() async {
   // Add react use cases controller with preloading for image preload test
   WebFControllerManager.instance.addWithPrerendering(
       name: demoControllerName,
-      createController: () => WebFController(
-        enableBlink: false,
+      createController: () =>
+          WebFController(
+            enableBlink: false,
             routeObserver: routeObserver,
           ),
       bundle: WebFBundle.fromUrl(demoEntryUrl),
@@ -65,10 +64,18 @@ void main() async {
 }
 
 class WebFSubView extends StatefulWidget {
-  const WebFSubView({super.key, required this.path, required this.controller});
+  const WebFSubView({
+    super.key,
+    required this.path,
+    required this.controller,
+    this.pathParameters = const {},
+    this.queryParameters = const {},
+  });
 
   final WebFController controller;
   final String path;
+  final Map<String, String> pathParameters;
+  final Map<String, String> queryParameters;
 
   @override
   State<StatefulWidget> createState() {
@@ -81,14 +88,27 @@ class WebFSubViewState extends State<WebFSubView> {
   Widget build(BuildContext context) {
     WebFController controller = widget.controller;
     RouterLinkElement? routerLinkElement = controller.view.getHybridRouterView(widget.path);
+    final String baseTitle = routerLinkElement?.getAttribute('title') ?? '';
+    final String paramsSummary = [
+      ...widget.pathParameters.entries.map((e) => '${e.key}=${e.value}'),
+      ...widget.queryParameters.entries.map((e) => '${e.key}=${e.value}'),
+    ].join(', ');
+    final String title = paramsSummary.isEmpty
+        ? baseTitle
+        : baseTitle.isEmpty
+        ? paramsSummary
+        : '$baseTitle ($paramsSummary)';
     return Scaffold(
       appBar: AppBar(
-        title: Text(routerLinkElement?.getAttribute('title') ?? ''),
+        title: Text(title),
         actions: [
           Padding(
               padding: EdgeInsets.fromLTRB(0, 0, 20, 0),
               child: DayNightSwitcherIcon(
-                isDarkModeEnabled: AdaptiveTheme.of(context).theme.brightness == Brightness.dark,
+                isDarkModeEnabled: AdaptiveTheme
+                    .of(context)
+                    .theme
+                    .brightness == Brightness.dark,
                 onStateChanged: (isDarkModeEnabled) async {
                   // sets theme mode to dark
                   !isDarkModeEnabled ? AdaptiveTheme.of(context).setLight() : AdaptiveTheme.of(context).setDark();
@@ -142,24 +162,108 @@ class MyApp extends StatefulWidget {
 }
 
 class MyAppState extends State<MyApp> {
-  final ValueNotifier<String> webfPageName = ValueNotifier('');
   @override
   void initState() {
     super.initState();
   }
 
-  Route<dynamic>? handleOnGenerateRoute(RouteSettings settings) {
-    return CupertinoPageRoute(
-      settings: settings,
-      builder: (context) {
-        return WebFRouterView.fromControllerName(
-            controllerName: webfPageName.value,
-            path: settings.name!,
-            builder: (context, controller) {
-              return WebFSubView(controller: controller, path: settings.name!);
-            },
-            loadingWidget: _WebFDemoState.buildSplashScreen());
-      },
+  Object? _buildHybridRouteArguments(GoRouterState state, {
+    required Map<String, String> pathParameters,
+    required Map<String, String> queryParameters,
+  }) {
+    if (state.extra is Map) {
+      final merged = <String, dynamic>{};
+      for (final entry in (state.extra as Map).entries) {
+        merged[entry.key.toString()] = entry.value;
+      }
+      return <String, dynamic>{
+        ...merged,
+        if (pathParameters.isNotEmpty) 'pathParameters': pathParameters,
+        if (queryParameters.isNotEmpty) 'queryParameters': queryParameters,
+      };
+    }
+    if (state.extra != null) return state.extra;
+    if (pathParameters.isEmpty && queryParameters.isEmpty) return null;
+    return <String, dynamic>{
+      'pathParameters': pathParameters,
+      'queryParameters': queryParameters,
+    };
+  }
+
+  late final GoRouter _router = GoRouter(
+    navigatorKey: navigatorKey,
+    initialLocation: '/',
+    observers: [routeObserver],
+    routes: <RouteBase>[
+      GoRoute(
+        path: '/',
+        builder: (context, state) => const FirstPage(title: 'Landing Bay'),
+      ),
+      GoRoute(
+        path: '/demo',
+        pageBuilder: (context, state) =>
+            MaterialPage<void>(
+              key: state.pageKey,
+              name: state.uri.toString(),
+              child: const WebFDemo(
+                webfPageName: demoControllerName,
+                initialRoute: demoInitialRoute,
+                initialState: demoInitialState,
+              ),
+            ),
+      ),
+      // Example of explicit dynamic routing with parameters.
+      GoRoute(
+        path: '/profile/:userId',
+        name: 'webf-profile',
+        pageBuilder: (context, state) => _buildWebFHybridRoutePage(state),
+      ),
+      // Universal catch-all for WebF hybrid router routes.
+      GoRoute(
+        path: '/:webfPath(.*)',
+        name: 'universal-webf-route',
+        pageBuilder: (context, state) => _buildWebFHybridRoutePage(state),
+      ),
+    ],
+    errorBuilder: (context, state) =>
+        Scaffold(
+          appBar: AppBar(title: const Text('Route not found')),
+          body: Center(child: Text(state.error?.toString() ?? 'Unknown routing error')),
+        ),
+  );
+
+  Page<void> _buildWebFHybridRoutePage(GoRouterState state) {
+    // Use the actual location path (not the matched pattern) so WebF can resolve dynamic hybrid routes.
+    final String path = state.uri.path;
+
+    // Avoid passing the universal catch-all param into the demo UI.
+    final pathParameters = Map<String, String>.from(state.pathParameters)
+      ..remove('webfPath');
+    final queryParameters = state.uri.queryParameters;
+
+    WebFController controller = WebFControllerManager.instance.getControllerSync(demoControllerName)!;
+
+    return MaterialPage<void>(
+        key: state.pageKey,
+        name: state.uri.toString(),
+        arguments: _buildHybridRouteArguments(
+          state,
+          pathParameters: pathParameters,
+          queryParameters: queryParameters,
+        ),
+        child: WebFRouterView.fromControllerName(
+          controllerName: demoControllerName,
+          path: path,
+          builder: (context, controller) => WebFSubView(
+            controller: controller,
+            path: path,
+            pathParameters: pathParameters,
+            queryParameters: queryParameters,
+          ),
+          loadingWidget: _WebFDemoState.buildSplashScreen(),
+        ),
+        // child: WebFSubView(path: path, controller: controller, queryParameters: queryParameters,
+        //     pathParameters: pathParameters)
     );
   }
 
@@ -169,30 +273,14 @@ class MyAppState extends State<MyApp> {
       light: ThemeData.light(useMaterial3: true),
       dark: ThemeData.dark(useMaterial3: true),
       initial: widget.savedThemeMode ?? AdaptiveThemeMode.light,
-      builder: (theme, darkTheme) => MaterialApp(
-        title: 'WebF Example App',
-        initialRoute: '/',
-        theme: theme,
-        darkTheme: darkTheme,
-        navigatorKey: navigatorKey,
-        navigatorObservers: [routeObserver],
-        themeMode: ThemeMode.system,
-        onGenerateInitialRoutes: (initialRoute) {
-          return [
-            CupertinoPageRoute(
-              builder: (context) {
-                return ValueListenableBuilder(
-                    valueListenable: webfPageName,
-                    builder: (context, value, child) {
-                      return FirstPage(title: 'Landing Bay', webfPageName: webfPageName);
-                    });
-              },
-            )
-          ];
-        },
-        onGenerateRoute: handleOnGenerateRoute,
-        debugShowCheckedModeBanner: false,
-      ),
+      builder: (theme, darkTheme) =>
+          MaterialApp.router(
+              title: 'WebF Example App',
+              theme: theme,
+              darkTheme: darkTheme,
+              themeMode: ThemeMode.system,
+              routerConfig: _router,
+              debugShowCheckedModeBanner: false),
     );
   }
 
@@ -203,10 +291,9 @@ class MyAppState extends State<MyApp> {
 }
 
 class FirstPage extends StatefulWidget {
-  const FirstPage({super.key, required this.title, required this.webfPageName});
+  const FirstPage({super.key, required this.title});
 
   final String title;
-  final ValueNotifier<String> webfPageName;
 
   @override
   State<StatefulWidget> createState() {
@@ -226,14 +313,7 @@ class FirstPageState extends State<FirstPage> {
           Center(
             child: ElevatedButton(
                 onPressed: () {
-                  widget.webfPageName.value = demoControllerName;
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return WebFDemo(
-                      webfPageName: demoControllerName,
-                      initialRoute: demoInitialRoute,
-                      initialState: demoInitialState,
-                    );
-                  }));
+                  context.push('/demo');
                 },
                 child: Text('Open demo')),
           ),
@@ -258,7 +338,10 @@ class WebFDemo extends StatefulWidget {
 class _WebFDemoState extends State<WebFDemo> {
   @override
   Widget build(BuildContext context) {
-    bool darkModeOverride = AdaptiveTheme.of(context).theme.brightness == Brightness.dark;
+    bool darkModeOverride = AdaptiveTheme
+        .of(context)
+        .theme
+        .brightness == Brightness.dark;
     // bool isDarkModeEnabled = AdaptiveTheme.of(context).
     return Scaffold(
         appBar: AppBar(
@@ -267,12 +350,15 @@ class _WebFDemoState extends State<WebFDemo> {
             Padding(
                 padding: EdgeInsets.fromLTRB(0, 0, 20, 0),
                 child: DayNightSwitcherIcon(
-                  isDarkModeEnabled: AdaptiveTheme.of(context).theme.brightness == Brightness.dark,
+                  isDarkModeEnabled: AdaptiveTheme
+                      .of(context)
+                      .theme
+                      .brightness == Brightness.dark,
                   onStateChanged: (isDarkModeEnabled) async {
                     // sets theme mode to dark
                     !isDarkModeEnabled ? AdaptiveTheme.of(context).setLight() : AdaptiveTheme.of(context).setDark();
                     WebFController? controller =
-                        await WebFControllerManager.instance.getController(widget.webfPageName);
+                    await WebFControllerManager.instance.getController(widget.webfPageName);
                     controller?.darkModeOverride = isDarkModeEnabled;
                     // Removed call to view.didChangePlatformBrightness as it's no longer needed
                     // The darkModeOverride setter now handles updating styles and dispatching events
@@ -288,7 +374,8 @@ class _WebFDemoState extends State<WebFDemo> {
                 initialRoute: widget.initialRoute,
                 initialState: widget.initialState,
                 bundle: WebFBundle.fromUrl(demoEntryUrl),
-                createController: () => WebFController(
+                createController: () =>
+                    WebFController(
                       routeObserver: routeObserver,
                       initialRoute: widget.initialRoute,
                       onControllerInit: (controller) async {},
@@ -300,7 +387,9 @@ class _WebFDemoState extends State<WebFDemo> {
                         android: WebFNetworkOptions(
                             httpClientAdapter: () async {
                               String cacheDirectory = await HttpCacheController.getCacheDirectory(
-                                  WebFBundle.fromUrl(demoEntryUrl).resolvedUri!);
+                                  WebFBundle
+                                      .fromUrl(demoEntryUrl)
+                                      .resolvedUri!);
                               CronetEngine cronetEngine = CronetEngine.build(
                                   cacheMode: (kReleaseMode || kProfileMode) ? CacheMode.disk : CacheMode.memory,
                                   cacheMaxSize: 24 * 1024 * 1024,
@@ -311,7 +400,7 @@ class _WebFDemoState extends State<WebFDemo> {
                               return CronetAdapter(cronetEngine);
                             },
                             enableHttpCache: false // Cronet have it's own http cache impls
-                            ),
+                        ),
                       ),
                       onLCPContentVerification: (ContentInfo contentInfo, String routePath) {
                         print('contentInfo: $contentInfo $routePath');
@@ -402,7 +491,8 @@ class _WebFDemoState extends State<WebFDemo> {
                     final isFinal = event.parameters['isFinal'] ?? false;
                     final status = isFinal ? 'FINAL' : (isCandidate ? 'CANDIDATE' : 'UNKNOWN');
                     print(
-                        '📊 Largest Contentful Paint (LCP) ($status) at ${event.parameters['timeSinceNavigationStart']}ms');
+                        '📊 Largest Contentful Paint (LCP) ($status) at ${event
+                            .parameters['timeSinceNavigationStart']}ms');
                   });
                 }),
             WebFInspectorFloatingPanel(),
@@ -417,7 +507,7 @@ class _WebFDemoState extends State<WebFDemo> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Image.asset(
-            'assets/logo.png',
+            'assets/webf.png',
             width: 150,
             height: 150,
           ),

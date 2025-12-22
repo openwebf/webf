@@ -4,29 +4,38 @@
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:webf/webf.dart';
 
 class CustomHybridHistoryDelegate extends HybridHistoryDelegate {
   @override
   void pop(BuildContext context) {
+    if (GoRouter.of(context).canPop()) {
+      GoRouter.of(context).pop();
+      return;
+    }
     Navigator.pop(context);
   }
 
   @override
   String path(BuildContext? context, String? initialRoute) {
     if (context == null) return initialRoute ?? '/';
-    String? currentPath = ModalRoute.of(context)?.settings.name;
-    return currentPath ?? initialRoute ?? '/';
+    try {
+      return GoRouterState.of(context).uri.toString();
+    } catch (_) {
+      String? currentPath = ModalRoute.of(context)?.settings.name;
+      return currentPath ?? initialRoute ?? '/';
+    }
   }
 
   @override
   void pushNamed(BuildContext context, String routeName, {Object? arguments}) {
-    Navigator.pushNamed(context, routeName, arguments: arguments);
+    GoRouter.of(context).push(routeName, extra: arguments);
   }
 
   @override
   void replaceState(BuildContext context, Object? state, String name) {
-    Navigator.pushReplacementNamed(context, name, arguments: state);
+    GoRouter.of(context).pushReplacement(name, extra: state);
   }
 
   @override
@@ -46,17 +55,28 @@ class CustomHybridHistoryDelegate extends HybridHistoryDelegate {
     TO? result,
     Object? arguments,
   }) {
-    return Navigator.restorablePopAndPushNamed(context, routeName, arguments: arguments);
+    // go_router doesn't support restorable navigation APIs; fall back to a non-restorable equivalent.
+    if (GoRouter.of(context).canPop()) {
+      GoRouter.of(context).pop();
+    }
+    GoRouter.of(context).push(routeName, extra: arguments);
+    return routeName;
   }
 
   @override
   void popUntil(BuildContext context, RoutePredicate predicate) {
+    final router = GoRouter.of(context);
+    final navigator = router.routerDelegate.navigatorKey.currentState;
+    if (navigator != null) {
+      navigator.popUntil(predicate);
+      return;
+    }
     Navigator.popUntil(context, predicate);
   }
 
   @override
   bool canPop(BuildContext context) {
-    return Navigator.canPop(context);
+    return GoRouter.of(context).canPop() || Navigator.canPop(context);
   }
 
   @override
@@ -70,7 +90,11 @@ class CustomHybridHistoryDelegate extends HybridHistoryDelegate {
     String routeName, {
     Object? arguments,
   }) {
-    Navigator.popAndPushNamed(context, routeName, arguments: arguments);
+    final router = GoRouter.of(context);
+    if (router.canPop()) {
+      router.pop();
+    }
+    router.push(routeName, extra: arguments);
   }
 
   @override
@@ -80,6 +104,13 @@ class CustomHybridHistoryDelegate extends HybridHistoryDelegate {
     RoutePredicate predicate, {
     Object? arguments,
   }) {
-    Navigator.pushNamedAndRemoveUntil(context, newRouteName, predicate, arguments: arguments);
+    final router = GoRouter.of(context);
+    final navigator = router.routerDelegate.navigatorKey.currentState;
+    if (navigator != null) {
+      navigator.popUntil(predicate);
+      router.push(newRouteName, extra: arguments);
+      return;
+    }
+    router.go(newRouteName, extra: arguments);
   }
 }
