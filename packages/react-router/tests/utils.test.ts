@@ -1,5 +1,4 @@
-import { pathToRegex, matchPath, matchRoutes, generateKey } from '../src/utils';
-import { RouteConfig } from '../src/types';
+import { matchPath, matchRoutes, pathToRegex } from '../src/routes/utils';
 
 describe('Router Utils', () => {
   describe('pathToRegex', () => {
@@ -28,12 +27,19 @@ describe('Router Utils', () => {
       expect(regex.test('/files/path/to/file.txt')).toBe(true);
       expect(paramNames).toEqual(['*']);
     });
+
+    it('should handle catch-all "*" pattern', () => {
+      const { regex, paramNames } = pathToRegex('*');
+      expect(regex.test('/anything/here')).toBe(true);
+      expect(paramNames).toEqual(['*']);
+    });
   });
 
   describe('matchPath', () => {
     it('should match simple paths', () => {
       const match = matchPath('/about', '/about');
-      expect(match).toEqual({ params: {} });
+      expect(match).not.toBeNull();
+      expect(match?.params).toEqual({});
     });
 
     it('should return null for non-matching paths', () => {
@@ -42,74 +48,40 @@ describe('Router Utils', () => {
     });
 
     it('should extract parameters', () => {
-      const match = matchPath('/user/123', '/user/:id');
-      expect(match).toEqual({ params: { id: '123' } });
+      const match = matchPath('/user/:id', '/user/123');
+      expect(match).not.toBeNull();
+      expect(match?.params).toEqual({ id: '123' });
     });
 
     it('should extract multiple parameters', () => {
-      const match = matchPath('/user/123/post/456', '/user/:id/post/:postId');
-      expect(match).toEqual({ params: { id: '123', postId: '456' } });
+      const match = matchPath('/user/:id/post/:postId', '/user/123/post/456');
+      expect(match).not.toBeNull();
+      expect(match?.params).toEqual({ id: '123', postId: '456' });
+    });
+
+    it('should extract splat from wildcard paths', () => {
+      const match = matchPath('/files/*', '/files/path/to/file.txt');
+      expect(match).not.toBeNull();
+      expect(match?.params).toEqual({ '*': 'path/to/file.txt' });
+    });
+
+    it('should match catch-all "*" pattern', () => {
+      const match = matchPath('*', '/any/path');
+      expect(match).not.toBeNull();
+      expect(match?.params).toEqual({ '*': '/any/path' });
     });
   });
 
   describe('matchRoutes', () => {
-    const routes: RouteConfig[] = [
-      {
-        path: '/',
-        element: {} as any,
-        children: [
-          {
-            path: '/about',
-            element: {} as any
-          },
-          {
-            path: '/users',
-            element: {} as any,
-            children: [
-              {
-                path: '/users/:id',
-                element: {} as any
-              }
-            ]
-          }
-        ]
-      }
-    ];
-
     it('should match root route', () => {
-      const matches = matchRoutes(routes, '/');
-      expect(matches).toHaveLength(1);
-      expect(matches[0].pathname).toBe('/');
+      const match = matchRoutes(['/', '*'], '/');
+      expect(match?.path).toBe('/');
     });
 
-    it('should match nested routes', () => {
-      const matches = matchRoutes(routes, '/about');
-      expect(matches).toHaveLength(2);
-      expect(matches[0].pathname).toBe('/');
-      expect(matches[1].pathname).toBe('/about');
-    });
-
-    it('should match deeply nested routes with params', () => {
-      const matches = matchRoutes(routes, '/users/123');
-      expect(matches).toHaveLength(3);
-      expect(matches[0].pathname).toBe('/');
-      expect(matches[1].pathname).toBe('/users');
-      expect(matches[2].pathname).toBe('/users/:id');
-      expect(matches[2].params).toEqual({ id: '123' });
-    });
-  });
-
-  describe('generateKey', () => {
-    it('should generate unique keys', () => {
-      const key1 = generateKey();
-      const key2 = generateKey();
-      expect(key1).not.toBe(key2);
-    });
-
-    it('should generate string keys', () => {
-      const key = generateKey();
-      expect(typeof key).toBe('string');
-      expect(key.length).toBeGreaterThan(0);
+    it('should match dynamic routes in order', () => {
+      const match = matchRoutes(['/', '/users/:id', '*'], '/users/123');
+      expect(match?.path).toBe('/users/:id');
+      expect(match?.params).toEqual({ id: '123' });
     });
   });
 });

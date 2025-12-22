@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useMemo, Children, isValidElement, useState, useEffect } from 'react';
+import React, { createContext, useContext, useMemo, Children, isValidElement, useState, useEffect, useRef } from 'react';
 import { Route } from './Route';
-import { WebFRouter, RouteParams, matchPath } from './utils';
-import { HybridRouterChangeEvent } from '../utils/RouterLink';
+import { __unstable_setEnsureRouteMountedCallback, WebFRouter, matchPath } from './utils';
+import type { HybridRouteStackEntry, RouteMatch, RouteParams } from './utils';
+import type { HybridRouterChangeEvent } from '../utils/RouterLink';
 
 /**
  * Route context interface
@@ -16,6 +17,10 @@ interface RouteContext<S = any> {
    * Current route path, corresponds to RoutePath enum
    */
   path: string | undefined
+  /**
+   * The concrete mounted path for this route instance (e.g. `/users/123`).
+   */
+  mountedPath: string | undefined
   /**
    * Page state
    * State data passed during route navigation
@@ -40,6 +45,7 @@ interface RouteContext<S = any> {
  */
 const RouteContext = createContext<RouteContext>({
   path: undefined,
+  mountedPath: undefined,
   params: undefined,
   routeParams: undefined,
   activePath: undefined,
@@ -62,9 +68,9 @@ const RouteContext = createContext<RouteContext>({
 export function useRouteContext() {
   const context = useContext<RouteContext>(RouteContext);
 
-  // isActive is true only for push events with matching path
-  const isActive = (context.routeEventKind === 'didPush' || context.routeEventKind === 'didPushNext')
-    && context.path === context.activePath;
+  const isActive = context.activePath !== undefined
+    && context.mountedPath !== undefined
+    && context.activePath === context.mountedPath;
 
   return {
     ...context,
@@ -114,15 +120,10 @@ export function useLocation(): Location & { isActive: boolean } {
 
   // Create location object from context
   const location = useMemo(() => {
-    const currentPath = context.path || context.activePath || WebFRouter.path;
-    let pathname = currentPath;
-
-    
-    // Check if the current component's route matches the active path
-    const isCurrentRoute = context.path === context.activePath;
+    const pathname = context.activePath || WebFRouter.path;
     
     // Get state - prioritize context params, fallback to WebFRouter.state
-    const state = (context.isActive || isCurrentRoute) 
+    const state = context.isActive
       ? (context.params || WebFRouter.state)
       : WebFRouter.state;
     
@@ -132,7 +133,7 @@ export function useLocation(): Location & { isActive: boolean } {
       isActive: context.isActive,
       key: `${pathname}-${Date.now()}`
     };
-  }, [context.isActive, context.path, context.activePath, context.params]);
+  }, [context.isActive, context.activePath, context.params]);
 
   return location;
 }
@@ -215,38 +216,44 @@ export interface RoutesProps {
 /**
  * Route-specific context provider that only updates when the route is active
  */
-function RouteContextProvider({ path, children }: { path: string, children: React.ReactNode }) {
+function RouteContextProvider({
+  patternPath,
+  mountedPath,
+  children,
+}: {
+  patternPath: string;
+  mountedPath: string;
+  children: React.ReactNode;
+}) {
   const globalContext = useContext(RouteContext);
 
   // Create a route-specific context that only updates when this route is active
   const routeSpecificContext = useMemo(() => {
-    // Check if this route pattern matches the active path
-    const match = globalContext.activePath ? matchPath(path, globalContext.activePath) : null;
-    
-    if (match) {
-      // Use route params from Flutter event if available, otherwise from local matching
-      const effectiveRouteParams = globalContext.routeParams || match.params;
-      
-      // For matching routes, always try to get state from WebFRouter if params is undefined
+    const isActive = globalContext.activePath !== undefined && globalContext.activePath === mountedPath;
+    const match = isActive ? matchPath(patternPath, mountedPath) : null;
+
+    if (isActive && match) {
       const effectiveParams = globalContext.params !== undefined ? globalContext.params : WebFRouter.state;
-      
+
       return {
-        path,
+        path: patternPath,
+        mountedPath,
         params: effectiveParams,
-        routeParams: effectiveRouteParams,
+        routeParams: match.params,
         activePath: globalContext.activePath,
         routeEventKind: globalContext.routeEventKind
       };
     }
-    // Return previous values if not active
+
     return {
-      path,
+      path: patternPath,
+      mountedPath,
       params: undefined,
       routeParams: undefined,
       activePath: globalContext.activePath,
       routeEventKind: undefined
     };
-  }, [path, globalContext.activePath, globalContext.params, globalContext.routeParams, globalContext.routeEventKind]);
+  }, [patternPath, mountedPath, globalContext.activePath, globalContext.params, globalContext.routeEventKind]);
 
   return (
     <RouteContext.Provider value={routeSpecificContext}>
@@ -255,15 +262,60 @@ function RouteContextProvider({ path, children }: { path: string, children: Reac
   );
 }
 
+function patternScore(pattern: string): number {
+  if (pattern === '*') return 0;
+  const segments = pattern.split('/').filter(Boolean);
+  let score = 0;
+  for (const segment of segments) {
+    if (segment === '*') score += 1;
+    else if (segment.startsWith(':')) score += 2;
+    else score += 3;
+  }
+  return score * 100 + segments.length;
+}
+
+function findBestMatch(patterns: string[], pathname: string): RouteMatch | null {
+  let best: { match: RouteMatch; score: number } | null = null;
+  for (const pattern of patterns) {
+    const match = matchPath(pattern, pathname);
+    if (!match) continue;
+    const score = patternScore(pattern);
+    if (!best || score > best.score) best = { match, score };
+  }
+  return best?.match ?? null;
+}
+
+function escapeAttributeValue(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
 export function Routes({ children }: RoutesProps) {
   // State to track current route information
   const [routeState, setRouteState] = useState<RouteContext>({
     path: undefined,
+    mountedPath: undefined,
     activePath: WebFRouter.path, // Initialize with current path
     params: undefined,
     routeParams: undefined,
     routeEventKind: undefined
   });
+
+  const [stack, setStack] = useState<HybridRouteStackEntry[]>(() => WebFRouter.stack);
+  const [preMountedPaths, setPreMountedPaths] = useState<string[]>([]);
+
+  const routePatternsRef = useRef<string[]>([]);
+  const pendingEnsureResolversRef = useRef<Map<string, Array<() => void>>>(new Map());
+
+  // Keep a stable view of declared route patterns for event handlers.
+  useEffect(() => {
+    const patterns: string[] = [];
+    Children.forEach(children, (child: React.ReactNode) => {
+      if (!isValidElement(child)) return;
+      if (child.type !== Route) return;
+      patterns.push(child.props.path);
+    });
+    routePatternsRef.current = patterns;
+  }, [children]);
   
   // Listen to hybridrouterchange event
   useEffect(() => {
@@ -272,34 +324,22 @@ export function Routes({ children }: RoutesProps) {
       
       // Check for new event detail structure with params
       const eventDetail = (event as any).detail;
-      
-      // Only update activePath for push events
-      const newActivePath = (routeEvent.kind === 'didPushNext' || routeEvent.kind === 'didPush')
-        ? routeEvent.path
-        : routeState.activePath;
 
-      // For dynamic routes, extract parameters from the path using registered route patterns
-      let routeParams = eventDetail?.params || undefined;
-      if (!routeParams && newActivePath) {
-        // Try to extract parameters from registered route patterns
-        const registeredRoutes = Array.from(document.querySelectorAll('webf-router-link'));
-        for (const routeElement of registeredRoutes) {
-          const routePath = routeElement.getAttribute('path');
-          if (routePath && routePath.includes(':')) {
-            const match = matchPath(routePath, newActivePath);
-            if (match) {
-              routeParams = match.params;
-              break;
-            }
-          }
-        }
-      }
-      
-      const eventState = eventDetail?.state || routeEvent.state;
+      const newActivePath = WebFRouter.path;
+      const newStack = WebFRouter.stack;
+      setStack(newStack);
+      setPreMountedPaths((prev) => prev.filter((p) => newStack.some((entry) => entry.path === p)));
+
+      const bestMatch = newActivePath ? findBestMatch(routePatternsRef.current, newActivePath) : null;
+      const routeParams = eventDetail?.params || bestMatch?.params || undefined;
+
+      const activeEntry = [...newStack].reverse().find((entry) => entry.path === newActivePath);
+      const eventState = activeEntry?.state ?? eventDetail?.state ?? routeEvent.state ?? WebFRouter.state;
 
       // Update state based on event kind
       setRouteState({
         path: routeEvent.path,
+        mountedPath: routeEvent.path,
         activePath: newActivePath,
         params: eventState,
         routeParams: routeParams, // Use params from Flutter if available
@@ -314,39 +354,123 @@ export function Routes({ children }: RoutesProps) {
     return () => {
       document.removeEventListener('hybridrouterchange', handleRouteChange);
     };
-  }, [routeState.activePath]);
+  }, []);
+
+  useEffect(() => {
+    __unstable_setEnsureRouteMountedCallback((pathname: string) => {
+      if (!pathname) return;
+
+      const bestMatch = findBestMatch(routePatternsRef.current, pathname);
+      if (!bestMatch) return;
+
+      const selector = `webf-router-link[path="${escapeAttributeValue(pathname)}"]`;
+      if (document.querySelector(selector)) return;
+
+      let resolveFn: (() => void) | undefined;
+      const promise = new Promise<void>((resolve) => {
+        resolveFn = resolve;
+      });
+
+      pendingEnsureResolversRef.current.set(pathname, [
+        ...(pendingEnsureResolversRef.current.get(pathname) ?? []),
+        resolveFn!,
+      ]);
+
+      setPreMountedPaths((prev) => (prev.includes(pathname) ? prev : [...prev, pathname]));
+
+      return promise;
+    });
+
+    return () => {
+      __unstable_setEnsureRouteMountedCallback(null);
+    };
+  }, []);
+
+  useEffect(() => {
+    const pending = pendingEnsureResolversRef.current;
+    for (const [pathname, resolvers] of pending.entries()) {
+      const selector = `webf-router-link[path="${escapeAttributeValue(pathname)}"]`;
+      if (!document.querySelector(selector)) continue;
+      for (const resolve of resolvers) resolve();
+      pending.delete(pathname);
+    }
+  }, [children, stack, preMountedPaths, routeState.activePath]);
 
   // Global context value
   const globalContextValue = useMemo(() => ({
     path: undefined,
+    mountedPath: undefined,
     params: routeState.params,
     routeParams: routeState.routeParams, // Pass through route params from Flutter
     activePath: routeState.activePath,
     routeEventKind: routeState.routeEventKind
   }), [routeState.activePath, routeState.params, routeState.routeParams, routeState.routeEventKind]);
 
-  // Wrap each Route component with its own context provider
   const wrappedChildren = useMemo(() => {
-    return Children.map(children, (child: React.ReactNode) => {
+    const declaredRoutes: React.ReactElement[] = [];
+    const patterns: string[] = [];
+    const declaredPaths = new Set<string>();
+
+    Children.forEach(children, (child: React.ReactNode) => {
       if (!isValidElement(child)) {
-        return child;
+        declaredRoutes.push(child as any);
+        return;
       }
 
-      // Ensure only Route components are direct children
       if (child.type !== Route) {
         console.warn('Routes component should only contain Route components as direct children');
-        return child;
+        declaredRoutes.push(child);
+        return;
       }
 
-      // Wrap each Route with its own context provider
-      const routePath = child.props.path;
-      return (
-        <RouteContextProvider key={routePath} path={routePath}>
+      const patternPath: string = child.props.path;
+      patterns.push(patternPath);
+      declaredPaths.add(patternPath);
+      const mountedPath: string = child.props.mountedPath ?? patternPath;
+
+      declaredRoutes.push(
+        <RouteContextProvider key={`declared:${patternPath}`} patternPath={patternPath} mountedPath={mountedPath}>
           {child}
         </RouteContextProvider>
       );
     });
-  }, [children]);
+
+    const mountedPaths: string[] = [];
+    for (const entry of stack) mountedPaths.push(entry.path);
+    for (const path of preMountedPaths) mountedPaths.push(path);
+    if (routeState.activePath && !mountedPaths.includes(routeState.activePath)) mountedPaths.push(routeState.activePath);
+
+    const dynamicRoutes: React.ReactElement[] = [];
+    const seenMountedPaths = new Set<string>();
+    for (const mountedPath of mountedPaths) {
+      if (seenMountedPaths.has(mountedPath)) continue;
+      seenMountedPaths.add(mountedPath);
+      if (declaredPaths.has(mountedPath)) continue;
+
+      const bestMatch = findBestMatch(patterns, mountedPath);
+      if (!bestMatch) continue;
+
+      const matchingRouteElement = Children.toArray(children).find((node) => {
+        if (!isValidElement(node)) return false;
+        if (node.type !== Route) return false;
+        return node.props.path === bestMatch.path;
+      }) as React.ReactElement | undefined;
+
+      if (!matchingRouteElement) continue;
+
+      const routeInstance = React.cloneElement(matchingRouteElement, {
+        mountedPath,
+      });
+
+      dynamicRoutes.push(
+        <RouteContextProvider key={`dynamic:${mountedPath}`} patternPath={bestMatch.path} mountedPath={mountedPath}>
+          {routeInstance}
+        </RouteContextProvider>
+      );
+    }
+
+    return [...declaredRoutes, ...dynamicRoutes];
+  }, [children, stack, preMountedPaths, routeState.activePath]);
 
   return (
     <RouteContext.Provider value={globalContextValue}>

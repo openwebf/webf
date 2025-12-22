@@ -28,6 +28,11 @@ export interface RouteProps {
    */
   path: string
   /**
+   * The concrete path to mount for this route instance.
+   * Used internally to support dynamic routes like `/users/:id` mounting at `/users/123`.
+   */
+  mountedPath?: string
+  /**
    * Whether to pre-render
    * If true, the page will be rendered when the app starts, rather than waiting for route navigation
    * Can be used to improve page switching performance or preload data
@@ -54,7 +59,7 @@ export interface RouteProps {
  *
  * Responsible for managing page rendering, lifecycle and navigation bar
  */
-export function Route({path, prerender = false, element, title, theme}: RouteProps) {
+export function Route({ path, mountedPath, prerender = false, element, title, theme }: RouteProps) {
   // Mark whether the page has been rendered
   const [hasRendered, updateRender] = useState(false)
 
@@ -78,7 +83,7 @@ export function Route({path, prerender = false, element, title, theme}: RoutePro
   })
 
   return (
-    <WebFRouterLink path={path} title={title} theme={theme} onScreen={handleOnScreen} offScreen={handleOffScreen}>
+    <WebFRouterLink path={mountedPath ?? path} title={title} theme={theme} onScreen={handleOnScreen} offScreen={handleOffScreen}>
       {shouldRenderChildren ? element : null}
     </WebFRouterLink>
   )
