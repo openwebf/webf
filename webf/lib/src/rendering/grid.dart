@@ -3269,6 +3269,20 @@ class RenderGridLayout extends RenderLayoutBox {
       rowDistributionBetween: rowDistributionBetween,
     );
 
+    // Apply position: relative offsets after grid item placement and alignment.
+    RenderBox? childForRelativePosition = firstChild;
+    while (childForRelativePosition != null) {
+      final GridLayoutParentData pd = childForRelativePosition.parentData as GridLayoutParentData;
+      final RenderStyle? childStyle = _unwrapGridChildStyle(childForRelativePosition);
+      if (childStyle != null && childStyle.position == CSSPositionType.relative) {
+        final Offset? relativeOffset = CSSPositionedLayout.getRelativeOffset(childStyle);
+        if (relativeOffset != null) {
+          pd.offset = pd.offset.translate(relativeOffset.dx, relativeOffset.dy);
+        }
+      }
+      childForRelativePosition = pd.nextSibling;
+    }
+
     placementStopwatch?.stop();
     if (placementStopwatch != null) {
       _logGridProfile('grid.autoPlacement', placementStopwatch.elapsed);
