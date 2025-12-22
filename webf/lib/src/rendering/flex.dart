@@ -1974,7 +1974,6 @@ class RenderFlexLayout extends RenderLayoutBox {
           alignSelf == AlignSelf.lastBaseline ||
           renderStyle.alignItems == AlignItems.baseline ||
           renderStyle.alignItems == AlignItems.lastBaseline;
-      bool isHorizontal = _isHorizontalFlexDirection;
       if (isHorizontal && isBaselineAlign) {
         // Distance from top to baseline of child
         double childAscent = _getChildAscent(child);
