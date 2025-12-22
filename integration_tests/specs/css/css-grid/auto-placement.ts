@@ -51,6 +51,11 @@ describe('CSS Grid auto placement', () => {
     expect(computed.gridAutoFlow).toEqual('row dense');
     await waitForFrame();
     await snapshot();
+
+    const gridRect = grid.getBoundingClientRect();
+    const item2Rect = (grid.children[1] as HTMLElement).getBoundingClientRect();
+    const item3Rect = (grid.children[2] as HTMLElement).getBoundingClientRect();
+    expect(Math.round(item3Rect.top - gridRect.top)).toBeGreaterThan(Math.round(item2Rect.top - gridRect.top));
     grid.remove();
   });
 
