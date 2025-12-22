@@ -1489,18 +1489,10 @@ class CSSStyleProperty {
   // place-items shorthand
   // Spec: place-items: <'align-items'> [ / <'justify-items'> ]?
   static void setShorthandPlaceItems(Map<String, String?> properties, String shorthandValue) {
-    final List<String> parts = shorthandValue
-        .split(_slashRegExp)
-        .map((part) => part.trim())
-        .where((part) => part.isNotEmpty)
-        .toList();
-    if (parts.isEmpty) return;
-
-    final String align = parts[0];
-    final String justify = parts.length > 1 ? parts[1] : align;
-
-    properties[ALIGN_ITEMS] = align;
-    properties[JUSTIFY_ITEMS] = justify;
+    final ({String align, String justify})? axes = _parsePlaceShorthandAxes(shorthandValue);
+    if (axes == null) return;
+    properties[ALIGN_ITEMS] = axes.align;
+    properties[JUSTIFY_ITEMS] = axes.justify;
   }
 
   static void removeShorthandPlaceItems(CSSStyleDeclaration style, [bool? isImportant]) {
@@ -1509,22 +1501,70 @@ class CSSStyleProperty {
   }
 
   static void setShorthandPlaceSelf(Map<String, String?> properties, String shorthandValue) {
-    final List<String> parts = shorthandValue
-        .split(_slashRegExp)
-        .map((part) => part.trim())
-        .where((part) => part.isNotEmpty)
-        .toList();
-    if (parts.isEmpty) return;
-
-    final String align = parts[0];
-    final String justify = parts.length > 1 ? parts[1] : align;
-
-    properties[ALIGN_SELF] = align;
-    properties[JUSTIFY_SELF] = justify;
+    final ({String align, String justify})? axes = _parsePlaceShorthandAxes(shorthandValue);
+    if (axes == null) return;
+    properties[ALIGN_SELF] = axes.align;
+    properties[JUSTIFY_SELF] = axes.justify;
   }
 
   static void removeShorthandPlaceSelf(CSSStyleDeclaration style, [bool? isImportant]) {
     if (style.contains(ALIGN_SELF)) style.removeProperty(ALIGN_SELF, isImportant);
     if (style.contains(JUSTIFY_SELF)) style.removeProperty(JUSTIFY_SELF, isImportant);
   }
+}
+
+({String align, String justify})? _parsePlaceShorthandAxes(String shorthandValue) {
+  final String trimmed = shorthandValue.trim();
+  if (trimmed.isEmpty) return null;
+
+  final List<String> slashParts = trimmed
+      .split(_slashRegExp)
+      .map((part) => part.trim())
+      .where((part) => part.isNotEmpty)
+      .toList();
+  if (slashParts.length >= 2) {
+    return (align: slashParts[0], justify: slashParts[1]);
+  }
+
+  final List<String> tokens = _splitBySpace(trimmed)
+      .map((token) => token.trim())
+      .where((token) => token.isNotEmpty)
+      .toList();
+  if (tokens.isEmpty) return null;
+
+  ({String value, int next}) parseAxisValue(int start) {
+    if (start >= tokens.length) return (value: '', next: start);
+    final String first = tokens[start];
+    final String lower = first.toLowerCase();
+
+    if (start + 1 < tokens.length) {
+      final String second = tokens[start + 1];
+      final String lowerSecond = second.toLowerCase();
+
+      if ((lower == 'first' || lower == 'last') && lowerSecond == 'baseline') {
+        return (value: '$first $second', next: start + 2);
+      }
+      if ((lower == 'safe' || lower == 'unsafe')) {
+        return (value: '$first $second', next: start + 2);
+      }
+    }
+
+    return (value: first, next: start + 1);
+  }
+
+  final ({String value, int next}) first = parseAxisValue(0);
+  String align = first.value;
+  int index = first.next;
+
+  String justify = align;
+  if (index < tokens.length) {
+    final ({String value, int next}) second = parseAxisValue(index);
+    justify = second.value;
+    index = second.next;
+    if (index < tokens.length) {
+      justify = (<String>[justify, ...tokens.sublist(index)]).join(' ');
+    }
+  }
+
+  return (align: align, justify: justify);
 }

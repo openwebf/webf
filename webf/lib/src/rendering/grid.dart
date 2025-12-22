@@ -1903,7 +1903,6 @@ class RenderGridLayout extends RenderLayoutBox {
     final List<RenderBox> definiteBothAxisItems = <RenderBox>[];
     final List<RenderBox> definiteRowItems = <RenderBox>[];
     final List<RenderBox> definiteColumnItems = <RenderBox>[];
-    final List<RenderBox> autoItems = <RenderBox>[];
 
     for (final RenderBox placementChild in placementChildren) {
       CSSRenderStyle? childGridStyle;
@@ -1968,17 +1967,30 @@ class RenderGridLayout extends RenderLayoutBox {
         definiteRowItems.add(placementChild);
       } else if (hasDefiniteColumn) {
         definiteColumnItems.add(placementChild);
-      } else {
-        autoItems.add(placementChild);
       }
     }
 
-    final List<RenderBox> orderedChildren = <RenderBox>[
-      ...definiteBothAxisItems,
-      ...definiteRowItems,
-      ...definiteColumnItems,
-      ...autoItems,
-    ];
+    // CSS Grid item placement algorithm runs distinct passes depending on the auto-flow axis.
+    //
+    // For row-flow: place definite row items next, then place the remaining items in
+    // order-modified document order (including definite-column items).
+    // For column-flow: place definite column items next, then place the remaining items in
+    // order-modified document order (including definite-row items).
+    final bool rowFlowForOrdering = autoFlow == GridAutoFlow.row || autoFlow == GridAutoFlow.rowDense;
+    final Set<RenderBox> placedInEarlyPasses = <RenderBox>{...definiteBothAxisItems};
+    final List<RenderBox> orderedChildren = <RenderBox>[...definiteBothAxisItems];
+    if (rowFlowForOrdering) {
+      orderedChildren.addAll(definiteRowItems);
+      placedInEarlyPasses.addAll(definiteRowItems);
+    } else {
+      orderedChildren.addAll(definiteColumnItems);
+      placedInEarlyPasses.addAll(definiteColumnItems);
+    }
+    // Remaining items keep original order.
+    for (final RenderBox placementChild in placementChildren) {
+      if (placedInEarlyPasses.contains(placementChild)) continue;
+      orderedChildren.add(placementChild);
+    }
 
     for (final RenderBox child in orderedChildren) {
       CSSRenderStyle? childGridStyle;
