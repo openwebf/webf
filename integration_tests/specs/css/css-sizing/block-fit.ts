@@ -29,7 +29,7 @@ describe('block-fit', () => {
       done();
     }
   });
-  it('content-as-initial', async () => {
+  it('content-as-initial', async (done) => {
     let child;
     let parent;
     parent = createElement(
@@ -55,6 +55,12 @@ describe('block-fit', () => {
     );
     BODY.appendChild(parent);
 
-    await snapshot(0.2);
+    onImageLoad(child, async () => {
+      await snapshot(0.1);
+      const rect = child.getBoundingClientRect();
+      expect(rect.width).toBeGreaterThan(0);
+      expect(rect.height).toBeGreaterThan(0);
+      done();
+    });
   });
 });
