@@ -25,12 +25,13 @@ import 'custom_hybrid_history_delegate.dart';
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-const String demoEntryUrl = 'https://usecase.openwebf.com';
+const String demoEntryUrl = 'http://localhost:5173';
 const String demoControllerName = 'demo';
 const String demoInitialRoute = '/';
 const Map<String, dynamic>? demoInitialState = null;
 
 void main() async {
+  DebugFlags.enableImageLogs = true;
   WidgetsFlutterBinding.ensureInitialized();
   final savedThemeMode = await AdaptiveTheme.getThemeMode();
 
@@ -405,6 +406,7 @@ class _WebFDemoState extends State<WebFDemo> {
                   });
                 }),
             WebFInspectorFloatingPanel(),
+
           ],
         ));
   }

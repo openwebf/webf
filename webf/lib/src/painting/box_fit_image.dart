@@ -11,6 +11,7 @@ import 'dart:async';
 import 'dart:ffi' as ffi;
 import 'dart:ui';
 
+import 'package:archive/archive.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
@@ -113,37 +114,34 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
       }
       response = await _loadImage(controller.view.getBindingObject<Element>(targetElementPtr)!, url);
 
-      final bytes = response.bytes;
+      Uint8List bytes = response.bytes;
       if (bytes.isEmpty) {
         PaintingBinding.instance.imageCache.evict(key);
         throw StateError('Unable to read data');
       }
 
+      // Some servers incorrectly apply compression to already-compressed image
+      // payloads (e.g. GIF) or return gzipped bodies without the client layer
+      // transparently inflating them. Try a cheap gunzip pass when the magic
+      // header is present.
+      final Uint8List? gunzipped = _tryGunzip(bytes);
+      if (gunzipped != null && gunzipped.isNotEmpty) {
+        bytes = gunzipped;
+      }
+
       // Detect SVG via mime or sniff
       final bool isSvg = _isSvgMime(response.mime) || _sniffSvg(bytes);
+      final bool isGif = !isSvg && (_isGifMime(response.mime) || _sniffGif(bytes));
 
-      ImageDescriptor descriptor;
       int? preferredWidth;
       int? preferredHeight;
-      if (isSvg) {
-        // Rasterize SVG into a bitmap at a reasonable target size
-        // Prefer configuration size in physical pixels when available
-        if (key.configuration?.size != null) {
-          preferredWidth = (key.configuration!.size!.width * devicePixelRatio).round();
-          preferredHeight = (key.configuration!.size!.height * devicePixelRatio).round();
-        }
+      int? svgPreferredWidth;
+      int? svgPreferredHeight;
 
-        final Uint8List rasterPng = await _rasterizeSvgToPng(
-          bytes,
-          preferredWidth: preferredWidth,
-          preferredHeight: preferredHeight,
-          boxFit: boxFit,
-        );
-        final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(rasterPng);
-        descriptor = await ImageDescriptor.encoded(buffer);
-      } else {
-        final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(bytes);
-        descriptor = await ImageDescriptor.encoded(buffer);
+      // For SVG rasterization, prefer configuration size in physical pixels when available.
+      if (isSvg && key.configuration?.size != null) {
+        svgPreferredWidth = (key.configuration!.size!.width * devicePixelRatio).round();
+        svgPreferredHeight = (key.configuration!.size!.height * devicePixelRatio).round();
       }
 
       // For raster images, compute preferred size for codec scaling
@@ -152,23 +150,36 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
         preferredHeight = (key.configuration!.size!.height * devicePixelRatio).toInt();
       }
 
-      final Codec codec = await _instantiateImageCodec(
-        descriptor,
-        boxFit: boxFit,
-        // For SVG, we already rasterized to a target size; avoid scaling again
-        preferredWidth: isSvg ? null : preferredWidth,
-        preferredHeight: isSvg ? null : preferredHeight,
-      );
+      late final _DecodedImage decoded;
+      try {
+        decoded = await _decodeImageBytes(
+          bytes,
+          isSvg: isSvg,
+          isGif: isGif,
+          boxFit: boxFit,
+          // For SVG, we rasterize to a target size; avoid scaling again.
+          preferredWidth: isSvg ? null : preferredWidth,
+          preferredHeight: isSvg ? null : preferredHeight,
+          svgPreferredWidth: svgPreferredWidth,
+          svgPreferredHeight: svgPreferredHeight,
+        );
+      } catch (e) {
+        throw FlutterError('Failed to decode image $url (mime=${response.mime}, bytes=${bytes.length}): $e');
+      }
 
       // Fire image on load after codec created.
       scheduleMicrotask(() {
         if (!controller.disposed && onImageLoad != null && controller.view.getBindingObject(targetElementPtr) != null) {
-          onImageLoad!(controller.view.getBindingObject<Element>(targetElementPtr)!, descriptor.width, descriptor.height,
-              codec.frameCount);
+          onImageLoad!(
+            controller.view.getBindingObject<Element>(targetElementPtr)!,
+            decoded.naturalWidth,
+            decoded.naturalHeight,
+            decoded.codec.frameCount,
+          );
         }
-        _imageStreamCompleter!.setDimension(Dimension(descriptor.width, descriptor.height, codec.frameCount));
+        _imageStreamCompleter!.setDimension(Dimension(decoded.naturalWidth, decoded.naturalHeight, decoded.codec.frameCount));
       });
-      return codec;
+      return decoded.codec;
     } on FlutterError {
       // Depending on where the exception was thrown, the image cache may not
       // have had a chance to track the key in the cache at all.
@@ -177,13 +188,25 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
         PaintingBinding.instance.imageCache.evict(key);
       });
       rethrow;
+    } catch (_) {
+      scheduleMicrotask(() {
+        PaintingBinding.instance.imageCache.evict(key);
+      });
+      rethrow;
     }
   }
+
 
   bool _isSvgMime(String? mime) {
     final m = mime?.toLowerCase();
     if (m == null) return false;
     return m.contains('image/svg');
+  }
+
+  bool _isGifMime(String? mime) {
+    final m = mime?.toLowerCase();
+    if (m == null) return false;
+    return m.contains('image/gif');
   }
 
   bool _sniffSvg(Uint8List bytes) {
@@ -195,6 +218,38 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
           head.contains('xmlns="http://www.w3.org/2000/svg"');
     } catch (_) {
       return false;
+    }
+  }
+
+  static bool _sniffGif(Uint8List bytes) {
+    if (bytes.length < 10) return false;
+    // GIF header: "GIF87a" or "GIF89a"
+    return bytes[0] == 0x47 && // G
+        bytes[1] == 0x49 && // I
+        bytes[2] == 0x46 && // F
+        bytes[3] == 0x38 && // 8
+        (bytes[4] == 0x37 || bytes[4] == 0x39) && // 7 or 9
+        bytes[5] == 0x61; // a
+  }
+
+  static ({int width, int height})? _tryParseGifDimensions(Uint8List bytes) {
+    if (!_sniffGif(bytes)) return null;
+    if (bytes.length < 10) return null;
+    final int width = bytes[6] | (bytes[7] << 8);
+    final int height = bytes[8] | (bytes[9] << 8);
+    if (width <= 0 || height <= 0) return null;
+    return (width: width, height: height);
+  }
+
+  static Uint8List? _tryGunzip(Uint8List bytes) {
+    if (bytes.length < 2) return null;
+    // gzip magic header: 1F 8B
+    if (bytes[0] != 0x1f || bytes[1] != 0x8b) return null;
+    try {
+      final List<int> decoded = GZipDecoder().decodeBytes(bytes, verify: true);
+      return Uint8List.fromList(decoded);
+    } catch (_) {
+      return null;
     }
   }
 
@@ -322,15 +377,39 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
 
   static Future<Codec> _instantiateImageCodec(
     ImageDescriptor descriptor, {
-    BoxFit? boxFit = BoxFit.none,
+    BoxFit boxFit = BoxFit.none,
     int? preferredWidth,
     int? preferredHeight,
   }) async {
-    assert(boxFit != null);
-
     final int naturalWidth = descriptor.width;
     final int naturalHeight = descriptor.height;
 
+    final ({int? width, int? height}) targetSize = _calculateTargetSize(
+      naturalWidth: naturalWidth,
+      naturalHeight: naturalHeight,
+      boxFit: boxFit,
+      preferredWidth: preferredWidth,
+      preferredHeight: preferredHeight,
+    );
+
+    final Codec rawCodec = await descriptor.instantiateCodec(
+      targetWidth: targetSize.width,
+      targetHeight: targetSize.height,
+    );
+
+    // Wrap the underlying codec so that dispose() is resilient to races where
+    // the native image peer has already been collected (e.g. during aggressive
+    // teardown of WebF controllers while animated images are still decoding).
+    return _SafeImageCodec(rawCodec);
+  }
+
+  static ({int? width, int? height}) _calculateTargetSize({
+    required int naturalWidth,
+    required int naturalHeight,
+    required BoxFit boxFit,
+    required int? preferredWidth,
+    required int? preferredHeight,
+  }) {
     int? targetWidth;
     int? targetHeight;
 
@@ -394,16 +473,292 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
       targetHeight = naturalHeight;
     }
 
-    final Codec rawCodec = await descriptor.instantiateCodec(
-      targetWidth: targetWidth,
-      targetHeight: targetHeight,
+    return (width: targetWidth, height: targetHeight);
+  }
+
+  Future<_DecodedImage> _decodeImageBytes(
+    Uint8List bytes, {
+    required bool isSvg,
+    required bool isGif,
+    required BoxFit boxFit,
+    required int? preferredWidth,
+    required int? preferredHeight,
+    required int? svgPreferredWidth,
+    required int? svgPreferredHeight,
+  }) async {
+    if (isSvg) {
+      final Uint8List rasterPng = await _rasterizeSvgToPng(
+        bytes,
+        preferredWidth: svgPreferredWidth,
+        preferredHeight: svgPreferredHeight,
+        boxFit: boxFit,
+      );
+      final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(rasterPng);
+      try {
+        final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
+        try {
+          final Codec codec = await _instantiateImageCodec(descriptor, boxFit: boxFit);
+          final Codec managed = _ResourceDisposingCodec(
+            codec,
+            onDispose: () {
+              descriptor.dispose();
+              buffer.dispose();
+            },
+          );
+          return _DecodedImage(codec: managed, naturalWidth: descriptor.width, naturalHeight: descriptor.height);
+        } catch (_) {
+          descriptor.dispose();
+          rethrow;
+        }
+      } catch (_) {
+        // Fallback to engine decode if ImageDescriptor is unavailable in this runtime.
+        buffer.dispose();
+        return _decodeViaInstantiateCodec(
+          rasterPng,
+          boxFit: boxFit,
+          preferredWidth: null,
+          preferredHeight: null,
+        );
+      }
+    }
+
+    // GIF decoding: Some engine builds don't support GIF via ImageDescriptor.encoded,
+    // but do support it via instantiateImageCodec().
+    if (isGif) {
+      final ({int width, int height})? dims = _tryParseGifDimensions(bytes);
+      final int? naturalWidth = dims?.width;
+      final int? naturalHeight = dims?.height;
+      if (naturalWidth != null && naturalHeight != null) {
+        final ({int? width, int? height}) targetSize = _calculateTargetSize(
+          naturalWidth: naturalWidth,
+          naturalHeight: naturalHeight,
+          boxFit: boxFit,
+          preferredWidth: preferredWidth,
+          preferredHeight: preferredHeight,
+        );
+        final Codec rawCodec = await instantiateImageCodec(
+          bytes,
+          targetWidth: targetSize.width,
+          targetHeight: targetSize.height,
+        );
+        return _DecodedImage(codec: _SafeImageCodec(rawCodec), naturalWidth: naturalWidth, naturalHeight: naturalHeight);
+      }
+      // If header parse fails, fall back to codec priming.
+      final Codec rawCodec = await instantiateImageCodec(bytes);
+      final _PrimedCodec primed = await _PrimedCodec.prime(_SafeImageCodec(rawCodec));
+      return _DecodedImage(
+        codec: primed.codec,
+        naturalWidth: primed.naturalWidth,
+        naturalHeight: primed.naturalHeight,
+      );
+    }
+
+    // Default path: prefer ImageDescriptor for fast header decode and scaling.
+    final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(bytes);
+    try {
+      final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
+      try {
+        final Codec codec = await _instantiateImageCodec(
+          descriptor,
+          boxFit: boxFit,
+          preferredWidth: preferredWidth,
+          preferredHeight: preferredHeight,
+        );
+        final Codec managed = _ResourceDisposingCodec(
+          codec,
+          onDispose: () {
+            descriptor.dispose();
+            buffer.dispose();
+          },
+        );
+        return _DecodedImage(codec: managed, naturalWidth: descriptor.width, naturalHeight: descriptor.height);
+      } catch (_) {
+        descriptor.dispose();
+        rethrow;
+      }
+    } catch (_) {
+      // Fallback: decode via engine and infer dimensions from the first frame.
+      // This also covers runtimes where ImageDescriptor.encoded doesn't support
+      // certain formats (notably GIF on some platforms).
+      buffer.dispose();
+      return _decodeViaInstantiateCodec(
+        bytes,
+        boxFit: boxFit,
+        preferredWidth: preferredWidth,
+        preferredHeight: preferredHeight,
+      );
+    }
+  }
+
+  Future<_DecodedImage> _decodeViaInstantiateCodec(
+    Uint8List bytes, {
+    required BoxFit boxFit,
+    required int? preferredWidth,
+    required int? preferredHeight,
+  }) async {
+    final Codec rawCodec = await instantiateImageCodec(bytes);
+    final _PrimedCodec primed = await _PrimedCodec.prime(_SafeImageCodec(rawCodec));
+
+    final int naturalWidth = primed.naturalWidth;
+    final int naturalHeight = primed.naturalHeight;
+
+    if (preferredWidth == null && preferredHeight == null) {
+      return _DecodedImage(codec: primed.codec, naturalWidth: naturalWidth, naturalHeight: naturalHeight);
+    }
+
+    final ({int? width, int? height}) targetSize = _calculateTargetSize(
+      naturalWidth: naturalWidth,
+      naturalHeight: naturalHeight,
+      boxFit: boxFit,
+      preferredWidth: preferredWidth,
+      preferredHeight: preferredHeight,
     );
 
-    // Wrap the underlying codec so that dispose() is resilient to races where
-    // the native image peer has already been collected (e.g. during aggressive
-    // teardown of WebF controllers while animated images are still decoding).
-    return _SafeImageCodec(rawCodec);
+    final int resolvedTargetWidth = targetSize.width ?? naturalWidth;
+    final int resolvedTargetHeight = targetSize.height ?? naturalHeight;
+    final bool needsResize = resolvedTargetWidth != naturalWidth || resolvedTargetHeight != naturalHeight;
+    if (!needsResize) {
+      return _DecodedImage(codec: primed.codec, naturalWidth: naturalWidth, naturalHeight: naturalHeight);
+    }
+
+    // Avoid keeping two codecs alive at the same time.
+    primed.codec.dispose();
+
+    final Codec resizedCodec = await instantiateImageCodec(
+      bytes,
+      targetWidth: targetSize.width,
+      targetHeight: targetSize.height,
+    );
+    final _PrimedCodec primedResized = await _PrimedCodec.prime(_SafeImageCodec(resizedCodec));
+    // Keep natural size as the original dimensions.
+    return _DecodedImage(codec: primedResized.codec, naturalWidth: naturalWidth, naturalHeight: naturalHeight);
   }
+}
+
+class _DecodedImage {
+  const _DecodedImage({
+    required this.codec,
+    required this.naturalWidth,
+    required this.naturalHeight,
+  });
+
+  final Codec codec;
+  final int naturalWidth;
+  final int naturalHeight;
+}
+
+class _ResourceDisposingCodec implements Codec {
+  _ResourceDisposingCodec(this._inner, {required this.onDispose});
+
+  final Codec _inner;
+  final VoidCallback onDispose;
+  bool _resourcesDisposed = false;
+
+  @override
+  int get frameCount => _inner.frameCount;
+
+  @override
+  int get repetitionCount => _inner.repetitionCount;
+
+  @override
+  Future<FrameInfo> getNextFrame() => _inner.getNextFrame();
+
+  @override
+  void dispose() {
+    try {
+      _inner.dispose();
+    } finally {
+      if (!_resourcesDisposed) {
+        _resourcesDisposed = true;
+        try {
+          onDispose();
+        } catch (_) {
+          // Best-effort cleanup.
+        }
+      }
+    }
+  }
+
+  @override
+  String toString() => _inner.toString();
+}
+
+class _PrimedCodec {
+  const _PrimedCodec({
+    required this.codec,
+    required this.naturalWidth,
+    required this.naturalHeight,
+  });
+
+  final Codec codec;
+  final int naturalWidth;
+  final int naturalHeight;
+
+  static Future<_PrimedCodec> prime(Codec codec) async {
+    final FrameInfo firstFrame = await codec.getNextFrame();
+    final int width = firstFrame.image.width;
+    final int height = firstFrame.image.height;
+    return _PrimedCodec(
+      codec: _FirstFrameCachingCodec(codec, firstFrame),
+      naturalWidth: width,
+      naturalHeight: height,
+    );
+  }
+}
+
+class _FirstFrameCachingCodec implements Codec {
+  _FirstFrameCachingCodec(this._inner, this._firstFrame);
+
+  final Codec _inner;
+  final FrameInfo _firstFrame;
+  bool _returnedFirst = false;
+
+  @override
+  int get frameCount => _inner.frameCount;
+
+  @override
+  int get repetitionCount => _inner.repetitionCount;
+
+  @override
+  Future<FrameInfo> getNextFrame() {
+    if (!_returnedFirst) {
+      _returnedFirst = true;
+      return SynchronousFuture<FrameInfo>(_firstFrame);
+    }
+    return _inner.getNextFrame();
+  }
+
+  @override
+  void dispose() => _inner.dispose();
+
+  @override
+  String toString() => _inner.toString();
+}
+
+@visibleForTesting
+Future<({Codec codec, int naturalWidth, int naturalHeight})> debugDecodeGifForTest(
+  Uint8List bytes, {
+  BoxFit boxFit = BoxFit.none,
+  int? preferredWidth,
+  int? preferredHeight,
+}) async {
+  final ({int width, int height})? dims = BoxFitImage._tryParseGifDimensions(bytes);
+  if (dims == null) {
+    throw ArgumentError('Bytes are not a valid GIF (or missing header dimensions).');
+  }
+  final ({int? width, int? height}) targetSize = BoxFitImage._calculateTargetSize(
+    naturalWidth: dims.width,
+    naturalHeight: dims.height,
+    boxFit: boxFit,
+    preferredWidth: preferredWidth,
+    preferredHeight: preferredHeight,
+  );
+  final Codec rawCodec = await instantiateImageCodec(
+    bytes,
+    targetWidth: targetSize.width,
+    targetHeight: targetSize.height,
+  );
+  return (codec: _SafeImageCodec(rawCodec), naturalWidth: dims.width, naturalHeight: dims.height);
 }
 
 // The [MultiFrameImageStreamCompleter] that saved the natural dimention of image.

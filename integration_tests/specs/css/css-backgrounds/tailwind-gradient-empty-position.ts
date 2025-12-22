@@ -47,4 +47,3 @@ describe('Background Tailwind gradient with empty position vars', () => {
     await snapshot(div);
   });
 });
-
