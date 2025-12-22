@@ -6,138 +6,82 @@ export const ProfileEditPage: React.FC = () => {
   const location = useLocation();
 
   return (
-    <WebFListView style={{
-      padding: '20px',
-      backgroundColor: 'var(--background-secondary)',
-      borderRadius: '12px',
-      marginBottom: '20px',
-      border: '1px solid var(--border-color)'
-    }}>
-      <h1 style={{
-        fontSize: '24px',
-        marginBottom: '16px',
-        color: 'var(--font-color-primary)'
-      }}>
-        Edit Profile
-      </h1>
+    <WebFListView className="p-5 bg-surface-secondary rounded-xl mb-5 border border-line">
+      <h1 className="text-2xl font-semibold mb-4 text-fg-primary">Edit Profile</h1>
 
-        <div style={{ marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '18px', marginBottom: '12px', color: 'var(--font-color-primary)' }}>
-            Deep Link Navigation Demo
-          </h2>
-          <div style={{
-            backgroundColor: 'var(--background-tertiary)',
-            padding: '16px',
-            borderRadius: '8px',
-            border: '1px solid var(--border-color)'
-          }}>
-            <p style={{ margin: '0 0 8px 0', color: 'var(--secondary-font-color)' }}>
-              This page demonstrates direct deep-link navigation.
-            </p>
-            <p style={{ margin: '0', color: 'var(--secondary-font-color)' }}>
-              When you click "Back", it will return to the home page instead of the previous route.
-            </p>
-          </div>
+      <div className="mb-5">
+        <h2 className="text-lg font-semibold mb-3 text-fg-primary">Deep Link Navigation Demo</h2>
+        <div className="bg-surface-tertiary p-4 rounded-lg border border-line">
+          <p className="mb-2 text-fg-secondary">This page demonstrates direct deep-link navigation.</p>
+          <p className="mb-0 text-fg-secondary">
+            When you click "Back", it will pop back to the previous route (if any).
+          </p>
         </div>
+      </div>
         
-        {location.state?.formData && (
-          <div style={{ marginBottom: '20px' }}>
-            <h2 style={{ fontSize: '18px', marginBottom: '12px', color: 'var(--font-color-primary)' }}>
-              Form Data:
-            </h2>
-            <div style={{
-              backgroundColor: 'var(--background-tertiary)',
-              padding: '16px',
-              borderRadius: '8px',
-              border: '1px solid var(--border-color)'
-            }}>
-              <p style={{ margin: '0 0 8px 0', fontFamily: 'monospace', color: 'var(--font-color)' }}>
-                <strong>Name:</strong> {location.state.formData.name || 'Not provided'}
-              </p>
-              <p style={{ margin: '0 0 8px 0', fontFamily: 'monospace', color: 'var(--font-color)' }}>
-                <strong>Email:</strong> {location.state.formData.email || 'Not provided'}
-              </p>
-              {location.state.formData.preferences && (
-                <div style={{ marginTop: '12px' }}>
-                  <p style={{ margin: '0 0 8px 0', fontWeight: 'bold', color: 'var(--font-color)' }}>Preferences:</p>
-                  <div style={{ paddingLeft: '16px' }}>
-                    <p style={{ margin: '0 0 4px 0', fontFamily: 'monospace', color: 'var(--font-color)' }}>
-                      <strong>Theme:</strong> {location.state.formData.preferences.theme}
-                    </p>
-                    <p style={{ margin: '0', fontFamily: 'monospace', color: 'var(--font-color)' }}>
-                      <strong>Language:</strong> {location.state.formData.preferences.language}
-                    </p>
-                  </div>
+      {location.state?.formData && (
+        <div className="mb-5">
+          <h2 className="text-lg font-semibold mb-3 text-fg-primary">Form Data:</h2>
+          <div className="bg-surface-tertiary p-4 rounded-lg border border-line">
+            <p className="mb-2 font-mono text-fg">
+              <strong>Name:</strong> {location.state.formData.name || 'Not provided'}
+            </p>
+            <p className="mb-2 font-mono text-fg">
+              <strong>Email:</strong> {location.state.formData.email || 'Not provided'}
+            </p>
+            {location.state.formData.preferences && (
+              <div className="mt-3">
+                <p className="mb-2 font-semibold text-fg">Preferences:</p>
+                <div className="pl-4">
+                  <p className="mb-1 font-mono text-fg">
+                    <strong>Theme:</strong> {location.state.formData.preferences.theme}
+                  </p>
+                  <p className="mb-0 font-mono text-fg">
+                    <strong>Language:</strong> {location.state.formData.preferences.language}
+                  </p>
                 </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        <div style={{ marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '18px', marginBottom: '12px', color: 'var(--font-color-primary)' }}>
-            Session Information:
-          </h2>
-          <div style={{
-            backgroundColor: 'var(--background-tertiary)',
-            padding: '16px',
-            borderRadius: '8px',
-            border: '1px solid var(--border-color)'
-          }}>
-            {location.state?.editMode && (
-              <p style={{ margin: '0 0 8px 0', fontFamily: 'monospace', color: 'var(--font-color)' }}>
-                <strong>Edit Mode:</strong> {location.state.editMode ? 'Enabled' : 'Disabled'}
-              </p>
-            )}
-            {location.state?.scrollPosition && (
-              <p style={{ margin: '0 0 8px 0', fontFamily: 'monospace', color: 'var(--font-color)' }}>
-                <strong>Scroll Position:</strong> {location.state.scrollPosition}px
-              </p>
-            )}
-            {location.state?.lastModified && (
-              <p style={{ margin: '0', fontFamily: 'monospace' }}>
-                <strong>Last Modified:</strong> {new Date(location.state.lastModified).toLocaleString()}
-              </p>
+              </div>
             )}
           </div>
         </div>
+      )}
 
-        <div style={{ marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '18px', marginBottom: '12px', color: 'var(--font-color-primary)' }}>
-            Complete State:
-          </h2>
-          <div style={{
-            backgroundColor: 'var(--background-tertiary)',
-            padding: '16px',
-            borderRadius: '8px',
-            border: '1px solid var(--border-color)'
-          }}>
-            <pre style={{ 
-              margin: 0, 
-              fontSize: '12px',
-              fontFamily: 'monospace',
-              whiteSpace: 'pre-wrap',
-              color: 'var(--font-color)'
-            }}>
-              {JSON.stringify(location.state, null, 2)}
-            </pre>
-          </div>
+      <div className="mb-5">
+        <h2 className="text-lg font-semibold mb-3 text-fg-primary">Session Information:</h2>
+        <div className="bg-surface-tertiary p-4 rounded-lg border border-line">
+          {location.state?.editMode !== undefined && (
+            <p className="mb-2 font-mono text-fg">
+              <strong>Edit Mode:</strong> {location.state.editMode ? 'Enabled' : 'Disabled'}
+            </p>
+          )}
+          {location.state?.scrollPosition !== undefined && (
+            <p className="mb-2 font-mono text-fg">
+              <strong>Scroll Position:</strong> {location.state.scrollPosition}px
+            </p>
+          )}
+          {location.state?.lastModified && (
+            <p className="mb-0 font-mono text-fg">
+              <strong>Last Modified:</strong> {new Date(location.state.lastModified).toLocaleString()}
+            </p>
+          )}
         </div>
+      </div>
 
-        <button
-          onClick={() => WebFRouter.pushState({}, '/')}
-          style={{
-            background: '#007aff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '12px 24px',
-            fontSize: '16px',
-            cursor: 'pointer'
-          }}
-        >
-          Back to Home (Deep Link Navigation)
-        </button>
+      <div className="mb-5">
+        <h2 className="text-lg font-semibold mb-3 text-fg-primary">Complete State:</h2>
+        <div className="bg-surface-tertiary p-4 rounded-lg border border-line">
+          <pre className="m-0 text-xs font-mono whitespace-pre-wrap text-fg">
+            {JSON.stringify(location.state, null, 2)}
+          </pre>
+        </div>
+      </div>
+
+      <button
+        onClick={() => WebFRouter.pop()}
+        className="bg-[#007aff] hover:bg-[#006fe6] text-white border-0 rounded-lg py-3 px-6 text-base cursor-pointer transition-colors active:scale-[.98]"
+      >
+        Back
+      </button>
     </WebFListView>
   );
 };
