@@ -1,4 +1,4 @@
-fdescribe('CSS Grid hit testing', () => {
+describe('CSS Grid hit testing', () => {
   it('returns the expected grid item from document.elementFromPoint', async () => {
     const grid = document.createElement('div');
     grid.style.display = 'grid';
