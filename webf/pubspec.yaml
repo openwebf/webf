@@ -19,7 +19,6 @@ dependencies:
   quiver: ^3.2.1 # Pure dart module.
   source_span: ^1.9.0 # Pure dart module.
   archive: ^3.3.7 # Pure dart module.
-  flutter_localization: ^0.3.3
   web_socket_channel: ^3.0.1
   flutter_svg: ^2.0.17
   easy_refresh: ^3.4.0
