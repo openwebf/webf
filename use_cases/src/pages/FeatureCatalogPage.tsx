@@ -7,86 +7,102 @@ type Section = { title: string; items: Item[] };
 
 const sections: Section[] = [
   {
-    title: 'DOM Core',
+    title: 'CSS - Layout & Box Model',
     items: [
-      { label: 'DOM Measurements (getBoundingClientRect)', path: '/dom-bounding-rect' },
-      { label: 'MutationObserver', path: '/mutation-observer' },
-      { label: 'Events (mouse/touch/scroll/CustomEvent)', path: '/dom/events' },
-      { label: 'Geometry (DOMMatrix/DOMPoint)', path: '/dom/geometry' },
-      { label: 'Offsets (offsetWidth/Height/Top/Left)', path: '/dom/offsets' },
-      { label: 'DOMTokenList (classList)', path: '/dom/classlist' },
-      { label: 'HTML API (innerHTML vs textContent)', path: '/dom/innerhtml' },
-      { label: 'Style API (element.style)', path: '/dom/style' },
+      { label: 'Flexbox', path: '/css/flex-layout', desc: 'One-dimensional layout with alignment controls' },
+      { label: 'Display / Flow / Box', path: '/css/display-flow', desc: 'Block/inline, formatting context, flow' },
+      { label: 'Sizing', path: '/css/sizing', desc: 'Width/height/min/max, box-sizing' },
+      { label: 'Inline & Inline Formatting', path: '/css/inline-formatting', desc: 'Baselines, line boxes, alignment' },
     ],
   },
   {
-    title: 'CSS',
+    title: 'CSS - Backgrounds, Borders & Overflow',
     items: [
-      { label: 'CSS Showcase', path: '/css-showcase' },
-      { label: 'Flexbox', path: '/css/flex-layout' },
-      { label: 'Positioned Layout', path: '/css/position' },
-      { label: 'Display / Flow / Box', path: '/css/display-flow' },
-      { label: 'Sizing', path: '/css/sizing' },
-      { label: 'Inline & Inline Formatting', path: '/css/inline-formatting' },
-      { label: 'Background', path: '/css/bg' },
-      { label: 'Background Gradient', path: '/css/bg-gradient' },
-      { label: 'Background Radial', path: '/css/bg-radial' },
-      { label: 'Background Image', path: '/css/bg-image' },
-      { label: 'Border', path: '/css/border' },
-      { label: 'Border Radius', path: '/css/border-radius' },
-      { label: 'Box Shadow', path: '/css/box-shadow' },
-      { label: 'Overflow', path: '/css/overflow' },
-      { label: 'Transforms', path: '/css/transforms' },
-      { label: 'Transitions', path: '/css/transitions' },
-      { label: 'Animations (Keyframes)', path: '/css/keyframes' },
-      // { label: 'Clip Path', path: '/css/clip-path' },
-      { label: 'Filter Effects', path: '/css/filter' },
-      { label: 'Selectors', path: '/css/selectors' },
-      { label: 'Values & Units', path: '/css/values-units' },
-      { label: 'Animations', path: '/css/animation' },
+      { label: 'Background', path: '/css/bg', desc: 'Color, repeat, position and size' },
+      { label: 'Background Gradient', path: '/css/bg-gradient', desc: 'Linear gradients' },
+      { label: 'Background Radial', path: '/css/bg-radial', desc: 'Radial gradients' },
+      { label: 'Background Image', path: '/css/bg-image', desc: 'Images as backgrounds' },
+      { label: 'Border', path: '/css/border', desc: 'Styles, widths and colors' },
+      { label: 'Border Radius', path: '/css/border-radius', desc: 'Rounded corners' },
+      { label: 'Box Shadow', path: '/css/box-shadow', desc: 'Shadow and depth effects' },
+      { label: 'Overflow', path: '/css/overflow', desc: 'Hidden, scroll and auto handling' },
+    ],
+  },
+  {
+    title: 'CSS - Transforms & Transitions',
+    items: [
+      { label: 'Transforms', path: '/css/transforms', desc: 'Translate, scale, rotate, skew' },
+      { label: 'Transitions', path: '/css/transitions', desc: 'Smooth property changes' },
+      { label: 'Animations (Keyframes)', path: '/css/keyframes', desc: 'Timeline-based animations' },
+      { label: 'CSS Animations', path: '/css/animation', desc: 'Fade, slide, scale, rotate, bounce, pulse' },
+      { label: 'Filter Effects', path: '/css/filter', desc: 'Blur, brightness, contrast and more' },
+    ],
+  },
+  {
+    title: 'CSS - Positioning, Typography & Media',
+    items: [
+      { label: 'Positioned Layout', path: '/css/position', desc: 'Relative, absolute, sticky, fixed' },
+      { label: 'Typography', path: '/typography', desc: 'Text layout, overflow and decoration' },
+      { label: 'Custom Fonts (@font-face)', path: '/fontface', desc: 'Custom web fonts' },
+      { label: 'Selectors', path: '/css/selectors', desc: 'Attribute, pseudo, combinators' },
+      { label: 'Values & Units', path: '/css/values-units', desc: 'px, em, rem, vw, vh, calc()' },
+    ],
+  },
+  {
+    title: 'DOM Core',
+    items: [
+      { label: 'DOM Measurements (getBoundingClientRect)', path: '/dom-bounding-rect', desc: 'Get element size and position relative to viewport' },
+      { label: 'MutationObserver', path: '/mutation-observer', desc: 'Observe and react to DOM changes' },
+      { label: 'Events (mouse/touch/scroll/CustomEvent)', path: '/dom/events', desc: 'Event handling and custom events' },
+      { label: 'Geometry (DOMMatrix/DOMPoint)', path: '/dom/geometry', desc: 'Geometric transformations and calculations' },
+      { label: 'Offsets (offsetWidth/Height/Top/Left)', path: '/dom/offsets', desc: 'Element offset dimensions and positions' },
+      { label: 'DOMTokenList (classList)', path: '/dom/classlist', desc: 'Add, remove, toggle CSS classes' },
+      { label: 'HTML API (innerHTML vs textContent)', path: '/dom/innerhtml', desc: 'HTML and text content manipulation' },
+      { label: 'Style API (element.style)', path: '/dom/style', desc: 'Inline style manipulation' },
     ],
   },
   {
     title: 'Tailwind CSS',
     items: [
-      { label: 'Tailwind Showcase', path: '/tailwind' },
+      { label: 'Tailwind Showcase', path: '/tailwind', desc: 'Utility-first CSS framework demonstrations' },
     ],
   },
   {
     title: 'Networking',
     items: [
-      { label: 'Fetch / XHR / FormData', path: '/network' },
-      { label: 'WebSocket (echo)', path: '/websocket' },
+      { label: 'Fetch / XHR / FormData', path: '/network', desc: 'HTTP requests and form data handling' },
+      { label: 'WebSocket (echo)', path: '/websocket', desc: 'Real-time bidirectional communication' },
     ],
   },
   {
     title: 'Storage',
     items: [
-      { label: 'Web Storage (localStorage / sessionStorage)', path: '/web-storage' },
-      { label: 'Cookies', path: '/cookies' },
+      { label: 'Web Storage (localStorage / sessionStorage)', path: '/web-storage', desc: 'Client-side key-value storage' },
+      { label: 'Cookies', path: '/cookies', desc: 'HTTP cookies management' },
     ],
   },
   {
     title: 'URL & Encoding',
     items: [
-      { label: 'URL / Base64 / TextEncoder', path: '/url-encoding' },
+      { label: 'URL / Base64 / TextEncoder', path: '/url-encoding', desc: 'URL parsing and text encoding utilities' },
     ],
   },
   {
     title: 'Graphics',
     items: [
-      { label: 'Canvas 2D', path: '/canvas-2d' },
-      { label: 'SVG via <img>', path: '/svg-image' },
-      { label: 'Image Preload', path: '/image-preload' },
+      { label: 'Image Gallery', path: '/image', desc: 'Display various image formats: PNG, JPEG, GIF, WebP, and SVG' },
+      { label: 'Canvas 2D', path: '/canvas-2d', desc: 'Draw shapes, text, and images with Canvas 2D API' },
+      { label: 'SVG via <img>', path: '/svg-image', desc: 'Inline SVG data URLs with gradients, patterns, paths, and icons' },
+      { label: 'Image Preload', path: '/image-preload', desc: 'Preload images for better performance' },
     ],
   },
   {
     title: 'Modules & Ecosystem',
     items: [
-      { label: 'Routing & Navigation', path: '/routing' },
-      { label: 'Deep Links', path: '/deep-link' },
-      { label: 'Flutter Interaction', path: '/flutter-interaction' },
-      { label: 'Native Interaction', path: '/native-interaction' },
+      { label: 'Routing & Navigation', path: '/routing', desc: 'Client-side routing and navigation' },
+      { label: 'Deep Links', path: '/deep-link', desc: 'Deep linking and app integration' },
+      { label: 'Flutter Interaction', path: '/flutter-interaction', desc: 'JavaScript and Flutter communication' },
+      { label: 'Native Interaction', path: '/native-interaction', desc: 'Native platform integration' },
     ],
   },
   {
@@ -101,32 +117,22 @@ const sections: Section[] = [
       { label: 'FlutterGestureDetector', path: '/gesture', desc: 'Native gesture detection with tap, pan, pinch, and rotate' },
     ],
   },
-  // {
-  //   title: 'Accessibility',
-  //   items: [
-  //     {
-  //       label: 'Accessibility Use Cases',
-  //       path: '/accessibility',
-  //       desc: 'Landmarks, keyboard navigation, and accessible forms',
-  //     },
-  //   ],
-  // },
   {
     title: 'Forms & Input',
     items: [
-      { label: 'Form (Basic)', path: '/form' },
-      { label: 'Basic Form Elements', path: '/basic-form-elements' },
-      { label: 'Input Sizing', path: '/input-sizing' },
-      { label: 'Form (Advanced)', path: '/advanced-form' },
+      { label: 'Form (Basic)', path: '/form', desc: 'Basic form elements and validation' },
+      { label: 'Basic Form Elements', path: '/basic-form-elements', desc: 'Input, textarea, select, and button elements' },
+      { label: 'Input Sizing', path: '/input-sizing', desc: 'Dynamic input field sizing' },
+      { label: 'Form (Advanced)', path: '/advanced-form', desc: 'Advanced form patterns and validation' },
     ],
   },
   {
     title: 'Others',
     items: [
-      { label: 'Listview', path: '/listview' },
-      { label: 'Tables', path: '/table' },
-      { label: 'QR Code Generator', path: '/qrcode' },
-      { label: 'Video Player', path: '/video' },
+      { label: 'Listview', path: '/listview', desc: 'Scrollable list implementation' },
+      { label: 'Tables', path: '/table', desc: 'HTML table layouts and styling' },
+      { label: 'QR Code Generator', path: '/qrcode', desc: 'Generate QR codes dynamically' },
+      { label: 'Video Player', path: '/video', desc: 'HTML5 video playback' },
     ],
   },
 ];
@@ -134,38 +140,50 @@ const sections: Section[] = [
 export const FeatureCatalogPage: React.FC = () => {
   const navigate = (path: string) => WebFRouter.pushState({}, path);
 
+  const Item = (props: { label: string; desc?: string; path: string }) => (
+    <div
+      className="flex items-center p-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0 cursor-pointer transition-colors hover:bg-surface-hover"
+      onClick={() => navigate(props.path)}
+    >
+      <div className="flex-1">
+        <div className="text-base font-semibold text-gray-800 dark:text-white mb-1">{props.label}</div>
+        {props.desc && (
+          <div className="text-sm text-gray-600 dark:text-gray-400 leading-snug">{props.desc}</div>
+        )}
+      </div>
+      <div className="text-base text-gray-400 dark:text-gray-500 font-bold ml-3">&gt;</div>
+    </div>
+  );
+
   return (
     <div id="main" className="min-h-screen w-full bg-surface">
       <WebFListView className="w-full px-3 md:px-6 max-w-4xl mx-auto py-6">
-          <h1 className="text-2xl md:text-3xl font-semibold text-fg-primary mb-4">WebF Feature Catalog</h1>
-          <p className="text-fg-secondary mb-6">Browse showcases grouped by supported feature areas.</p>
-
-          <div className="flex flex-wrap -mx-2">
-            {sections.map((section) => (
-              <div key={section.title} className="w-full md:w-1/2 px-2 mb-4">
-                <div className="bg-surface-secondary rounded-xl border border-line p-4 h-full">
-                  <h2 className="text-lg font-medium text-fg-primary mb-2">{section.title}</h2>
-                  <div className="divide-y divide-line">
-                    {section.items.map((item) => (
-                      <div
-                        key={item.path}
-                        className="-mx-2 px-2 py-2 cursor-pointer hover:bg-surface-hover rounded-md transition "
-                        onClick={() => navigate(item.path)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-fg-primary">{item.label}</span>
-                          <span className="text-fg-secondary">&gt;</span>
-                        </div>
-                        {item.desc && (
-                          <p className="text-sm text-fg-secondary mt-1">{item.desc}</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
+        {/* Header */}
+        <div className="w-full flex justify-center items-center mb-8">
+          <div className="bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 p-6 rounded-2xl text-white shadow-lg w-full">
+            <h1 className="text-3xl font-bold mb-2 drop-shadow">WebF Feature Catalog</h1>
+            <p className="text-base leading-relaxed opacity-90">
+              Explore WebF capabilities organized by feature areas - CSS, DOM, Graphics, Forms, and more
+            </p>
           </div>
+        </div>
+
+        {/* Sections - flattened for WebFListView optimization */}
+        {sections.map((section, sectionIndex) => (
+          <div key={section.title} className="">
+            {/* Section Header */}
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white mt-6 mb-3 pl-3 border-l-4 border-blue-500">
+              {section.title}
+            </h2>
+
+            {/* Section Container */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden border border-gray-200 dark:border-gray-700 mb-4">
+              {section.items.map((item) => (
+                <Item key={item.path} label={item.label} desc={item.desc} path={item.path} />
+              ))}
+            </div>
+          </div>
+        ))}
       </WebFListView>
     </div>
   );
