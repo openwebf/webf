@@ -119,7 +119,14 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
   TextSpan _buildTextSpan() {
     // Phase I whitespace processing to approximate CSS behavior outside IFC
-    final processed = WhitespaceProcessor.processPhaseOne(_data, renderStyle.whiteSpace);
+    String processed = WhitespaceProcessor.processPhaseOne(_data, renderStyle.whiteSpace);
+    // CSS `white-space: nowrap` (and `pre`) forbid soft wrapping opportunities at
+    // regular spaces. Flutter's line breaking treats U+0020 as a break opportunity,
+    // so replace it with U+00A0 to match CSS behavior (while still allowing
+    // explicit breaks such as <br> / newlines in `pre`).
+    if (renderStyle.whiteSpace == WhiteSpace.nowrap || renderStyle.whiteSpace == WhiteSpace.pre) {
+      processed = processed.replaceAll(' ', '\u00A0');
+    }
 
     // Map CSS line-height to TextStyle.height multiplier
     final lh = renderStyle.lineHeight;

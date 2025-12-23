@@ -32,6 +32,20 @@ class _GridCellPlacement {
   _GridCellPlacement(this.row, this.column);
 }
 
+enum _GridPlacementPass {
+  bothAxes,
+  rowOnly,
+  columnOnly,
+  auto,
+}
+
+enum _IntrinsicTrackKind {
+  none,
+  auto,
+  minContent,
+  maxContent,
+}
+
 class GridLayoutParentData extends RenderLayoutParentData {
   int rowStart = 0;
   int columnStart = 0;
@@ -44,12 +58,288 @@ class GridLayoutParentData extends RenderLayoutParentData {
   }
 }
 
+class _GridResolvedMargins {
+  final double left;
+  final double top;
+  final double right;
+  final double bottom;
+  final bool autoLeft;
+  final bool autoTop;
+  final bool autoRight;
+  final bool autoBottom;
+
+  const _GridResolvedMargins({
+    required this.left,
+    required this.top,
+    required this.right,
+    required this.bottom,
+    required this.autoLeft,
+    required this.autoTop,
+    required this.autoRight,
+    required this.autoBottom,
+  });
+
+  static const _GridResolvedMargins zero = _GridResolvedMargins(
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    autoLeft: false,
+    autoTop: false,
+    autoRight: false,
+    autoBottom: false,
+  );
+
+  double get horizontal => left + right;
+  double get vertical => top + bottom;
+}
+
 class RenderGridLayout extends RenderLayoutBox {
   RenderGridLayout({
     List<RenderBox>? children,
     required super.renderStyle,
   }) {
     addAll(children);
+  }
+
+  double _resolveGridItemMargin(CSSLengthValue value, double? percentageBasisWidth) {
+    if (value.type == CSSLengthType.AUTO) return 0;
+    if (value.type == CSSLengthType.PERCENTAGE) {
+      if (percentageBasisWidth != null && percentageBasisWidth.isFinite) {
+        return (value.value ?? 0) * percentageBasisWidth;
+      }
+      return 0;
+    }
+    final double resolved = value.computedValue;
+    if (!resolved.isFinite) return 0;
+    return resolved;
+  }
+
+  _GridResolvedMargins _resolveGridChildMargins(CSSRenderStyle? style, double? percentageBasisWidth) {
+    if (style == null) return _GridResolvedMargins.zero;
+
+    final bool autoLeft = style.marginLeft.type == CSSLengthType.AUTO;
+    final bool autoRight = style.marginRight.type == CSSLengthType.AUTO;
+    final bool autoTop = style.marginTop.type == CSSLengthType.AUTO;
+    final bool autoBottom = style.marginBottom.type == CSSLengthType.AUTO;
+
+    return _GridResolvedMargins(
+      left: autoLeft ? 0 : _resolveGridItemMargin(style.marginLeft, percentageBasisWidth),
+      top: autoTop ? 0 : _resolveGridItemMargin(style.marginTop, percentageBasisWidth),
+      right: autoRight ? 0 : _resolveGridItemMargin(style.marginRight, percentageBasisWidth),
+      bottom: autoBottom ? 0 : _resolveGridItemMargin(style.marginBottom, percentageBasisWidth),
+      autoLeft: autoLeft,
+      autoTop: autoTop,
+      autoRight: autoRight,
+      autoBottom: autoBottom,
+    );
+  }
+
+  RenderBoxModel? _unwrapGridChildBoxModel(RenderBox child) {
+    if (child is RenderEventListener) {
+      final RenderBox? wrapped = child.child;
+      if (wrapped is RenderBoxModel) return wrapped;
+    }
+    if (child is RenderBoxModel) {
+      return child;
+    }
+    return null;
+  }
+
+  RenderStyle? _unwrapGridChildStyle(RenderBox child) {
+    if (child is RenderEventListener) {
+      final RenderBox? wrapped = child.child;
+      if (wrapped is RenderBoxModel) {
+        return wrapped.renderStyle;
+      }
+    }
+    if (child is RenderBoxModel) {
+      return child.renderStyle;
+    }
+    return null;
+  }
+
+  void _overrideGridChildContentBoxLogicalSizes(RenderBox child, BoxConstraints borderBoxConstraints) {
+    final RenderBoxModel? box = _unwrapGridChildBoxModel(child);
+    if (box == null) return;
+
+    final CSSRenderStyle style = box.renderStyle;
+
+    if (borderBoxConstraints.hasTightWidth && borderBoxConstraints.maxWidth.isFinite) {
+      double contentW = style.deflatePaddingBorderWidth(borderBoxConstraints.maxWidth);
+      if (contentW.isFinite && contentW < 0) contentW = 0;
+      style.contentBoxLogicalWidth = contentW;
+      box.hasOverrideContentLogicalWidth = true;
+    }
+    if (borderBoxConstraints.hasTightHeight && borderBoxConstraints.maxHeight.isFinite) {
+      double contentH = style.deflatePaddingBorderHeight(borderBoxConstraints.maxHeight);
+      if (contentH.isFinite && contentH < 0) contentH = 0;
+      style.contentBoxLogicalHeight = contentH;
+      box.hasOverrideContentLogicalHeight = true;
+    }
+  }
+
+  bool _isPositionedGridChild(RenderBox child) {
+    final RenderStyle? style = _unwrapGridChildStyle(child);
+    if (style == null) return false;
+    return style.isSelfPositioned() || style.isSelfStickyPosition();
+  }
+
+  @override
+  double computeMaxIntrinsicWidth(double height) {
+    final List<GridTrackSize> colsDef = renderStyle.gridTemplateColumns;
+    if (colsDef.isEmpty) {
+      return super.computeMaxIntrinsicWidth(height);
+    }
+
+    final double paddingBorderH = renderStyle.paddingLeft.computedValue +
+        renderStyle.paddingRight.computedValue +
+        renderStyle.effectiveBorderLeftWidth.computedValue +
+        renderStyle.effectiveBorderRightWidth.computedValue;
+    final double colGap = _resolveLengthValue(renderStyle.columnGap, null);
+    final List<GridTrackSize> resolvedCols =
+        _materializeTrackList(colsDef, null, colGap, Axis.horizontal);
+    final int colCount = math.max(1, resolvedCols.length);
+    final List<double> colWidths = List<double>.filled(colCount, 0.0);
+
+    // Seed fixed tracks.
+    for (int c = 0; c < resolvedCols.length; c++) {
+      final GridTrackSize track = resolvedCols[c];
+      if (track is GridFixed) {
+        final double value = _resolveTrackSize(track, null);
+        if (value.isFinite && value > colWidths[c]) {
+          colWidths[c] = value;
+        }
+      }
+    }
+
+    RenderBox? child = firstChild;
+    int autoIndex = 0;
+    while (child != null) {
+      final GridLayoutParentData pd = child.parentData as GridLayoutParentData;
+      if (!_isPositionedGridChild(child)) {
+        final int colIndex = colCount > 0 ? (autoIndex % colCount) : 0;
+        autoIndex++;
+
+        final RenderStyle? childStyle = _unwrapGridChildStyle(child);
+        final double childMax = child.getMaxIntrinsicWidth(height);
+        double childMin = child.getMinIntrinsicWidth(height);
+        if (childStyle != null &&
+            (childStyle.whiteSpace == WhiteSpace.nowrap || childStyle.whiteSpace == WhiteSpace.pre)) {
+          childMin = childMax;
+        }
+
+        final GridTrackSize track = colIndex < resolvedCols.length ? resolvedCols[colIndex] : const GridAuto();
+        double contribution = childMax;
+        if (track is GridMinContent) {
+          contribution = childMin;
+        } else if (track is GridMaxContent) {
+          contribution = childMax;
+        } else if (track is GridAuto) {
+          contribution = childMax;
+        } else if (track is GridMinMax) {
+          final GridTrackSize maxTrack = track.maxTrack;
+          if (maxTrack is GridMinContent) {
+            contribution = childMin;
+          } else if (maxTrack is GridFixed) {
+            final double maxSize = _resolveTrackSize(maxTrack, null);
+            contribution = childMax;
+            if (maxSize.isFinite && maxSize > 0) {
+              contribution = math.min(contribution, maxSize);
+            }
+          } else {
+            contribution = childMax;
+          }
+          final double minSize = _resolveTrackSize(track.minTrack, null);
+          if (minSize.isFinite && minSize > contribution) {
+            contribution = minSize;
+          }
+        }
+
+        if (contribution.isFinite && contribution > colWidths[colIndex]) {
+          colWidths[colIndex] = contribution;
+        }
+      }
+      child = pd.nextSibling;
+    }
+
+    double contentWidth = 0.0;
+    for (int c = 0; c < colCount; c++) {
+      contentWidth += colWidths[c];
+      if (c < colCount - 1) contentWidth += colGap;
+    }
+    return contentWidth + paddingBorderH;
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) {
+    final List<GridTrackSize> colsDef = renderStyle.gridTemplateColumns;
+    if (colsDef.isEmpty) {
+      return super.computeMinIntrinsicWidth(height);
+    }
+
+    final double paddingBorderH = renderStyle.paddingLeft.computedValue +
+        renderStyle.paddingRight.computedValue +
+        renderStyle.effectiveBorderLeftWidth.computedValue +
+        renderStyle.effectiveBorderRightWidth.computedValue;
+    final double colGap = _resolveLengthValue(renderStyle.columnGap, null);
+    final List<GridTrackSize> resolvedCols =
+        _materializeTrackList(colsDef, null, colGap, Axis.horizontal);
+    final int colCount = math.max(1, resolvedCols.length);
+    final List<double> colWidths = List<double>.filled(colCount, 0.0);
+
+    // Seed fixed tracks.
+    for (int c = 0; c < resolvedCols.length; c++) {
+      final GridTrackSize track = resolvedCols[c];
+      if (track is GridFixed) {
+        final double value = _resolveTrackSize(track, null);
+        if (value.isFinite && value > colWidths[c]) {
+          colWidths[c] = value;
+        }
+      }
+    }
+
+    RenderBox? child = firstChild;
+    int autoIndex = 0;
+    while (child != null) {
+      final GridLayoutParentData pd = child.parentData as GridLayoutParentData;
+      if (!_isPositionedGridChild(child)) {
+        final int colIndex = colCount > 0 ? (autoIndex % colCount) : 0;
+        autoIndex++;
+
+        final RenderStyle? childStyle = _unwrapGridChildStyle(child);
+        final double childMax = child.getMaxIntrinsicWidth(height);
+        double childMin = child.getMinIntrinsicWidth(height);
+        if (childStyle != null &&
+            (childStyle.whiteSpace == WhiteSpace.nowrap || childStyle.whiteSpace == WhiteSpace.pre)) {
+          childMin = childMax;
+        }
+
+        final GridTrackSize track = colIndex < resolvedCols.length ? resolvedCols[colIndex] : const GridAuto();
+        double contribution = childMin;
+        if (track is GridMaxContent) {
+          contribution = childMax;
+        } else if (track is GridMinMax) {
+          final double minSize = _resolveTrackSize(track.minTrack, null);
+          contribution = childMin;
+          if (minSize.isFinite && minSize > contribution) {
+            contribution = minSize;
+          }
+        }
+
+        if (contribution.isFinite && contribution > colWidths[colIndex]) {
+          colWidths[colIndex] = contribution;
+        }
+      }
+      child = pd.nextSibling;
+    }
+
+    double contentWidth = 0.0;
+    for (int c = 0; c < colCount; c++) {
+      contentWidth += colWidths[c];
+      if (c < colCount - 1) contentWidth += colGap;
+    }
+    return contentWidth + paddingBorderH;
   }
 
   @override
@@ -83,21 +373,31 @@ class RenderGridLayout extends RenderLayoutBox {
     Map<String, List<int>>? namedLines,
   }) {
     if (placement.kind != GridPlacementKind.line) return null;
-    if (placement.lineName != null && namedLines != null) {
-      final List<int>? indices = namedLines[placement.lineName!];
-      if (indices != null && indices.isNotEmpty) {
-        final int occurrence = placement.lineNameOccurrence ?? 1;
-        if (occurrence == 0) return null;
-        int selectedIndex;
-        if (occurrence > 0) {
-          if (occurrence > indices.length) return null;
-          selectedIndex = indices[occurrence - 1];
-        } else {
-          final int absOccurrence = -occurrence;
-          if (absOccurrence > indices.length) return null;
-          selectedIndex = indices[indices.length - absOccurrence];
+    if (placement.lineName != null) {
+      if (namedLines != null) {
+        final List<int>? indices = namedLines[placement.lineName!];
+        if (indices != null && indices.isNotEmpty) {
+          final int occurrence = placement.lineNameOccurrence ?? 1;
+          if (occurrence == 0) return null;
+          int selectedIndex;
+          if (occurrence > 0) {
+            if (occurrence > indices.length) return null;
+            selectedIndex = indices[occurrence - 1];
+          } else {
+            final int absOccurrence = -occurrence;
+            if (absOccurrence > indices.length) return null;
+            selectedIndex = indices[indices.length - absOccurrence];
+          }
+          return selectedIndex + 1;
         }
-        return selectedIndex + 1;
+      }
+      final int normalizedTracks = math.max(0, trackCount);
+      final String name = placement.lineName!;
+      if (name.endsWith('-start')) {
+        return normalizedTracks + 1;
+      }
+      if (name.endsWith('-end')) {
+        return normalizedTracks + 2;
       }
     }
     if (placement.line == null) return null;
@@ -126,21 +426,31 @@ class RenderGridLayout extends RenderLayoutBox {
     Map<String, List<int>>? namedLines,
   }) {
     if (placement.kind != GridPlacementKind.line) return null;
-    if (placement.lineName != null && namedLines != null) {
-      final List<int>? indices = namedLines[placement.lineName!];
-      if (indices != null && indices.isNotEmpty) {
-        final int occurrence = placement.lineNameOccurrence ?? 1;
-        if (occurrence == 0) return null;
-        int selectedIndex;
-        if (occurrence > 0) {
-          if (occurrence > indices.length) return null;
-          selectedIndex = indices[occurrence - 1];
-        } else {
-          final int absOccurrence = -occurrence;
-          if (absOccurrence > indices.length) return null;
-          selectedIndex = indices[indices.length - absOccurrence];
+    if (placement.lineName != null) {
+      if (namedLines != null) {
+        final List<int>? indices = namedLines[placement.lineName!];
+        if (indices != null && indices.isNotEmpty) {
+          final int occurrence = placement.lineNameOccurrence ?? 1;
+          if (occurrence == 0) return null;
+          int selectedIndex;
+          if (occurrence > 0) {
+            if (occurrence > indices.length) return null;
+            selectedIndex = indices[occurrence - 1];
+          } else {
+            final int absOccurrence = -occurrence;
+            if (absOccurrence > indices.length) return null;
+            selectedIndex = indices[indices.length - absOccurrence];
+          }
+          return selectedIndex;
         }
-        return selectedIndex;
+      }
+      final int normalizedTracks = math.max(0, trackCount);
+      final String name = placement.lineName!;
+      if (name.endsWith('-start')) {
+        return normalizedTracks;
+      }
+      if (name.endsWith('-end')) {
+        return normalizedTracks + 1;
       }
     }
     if (placement.line == null) return null;
@@ -217,6 +527,7 @@ class RenderGridLayout extends RenderLayoutBox {
       case JustifyContent.spaceEvenly:
         if (normalizedTracks <= 0) return 0;
         return freeSpace / (normalizedTracks + 1);
+      case JustifyContent.stretch:
       case JustifyContent.flexStart:
       case JustifyContent.start:
       case JustifyContent.spaceBetween:
@@ -286,8 +597,11 @@ class RenderGridLayout extends RenderLayoutBox {
       case AlignItems.end:
         return GridAxisAlignment.end;
       case AlignItems.center:
-      case AlignItems.baseline:
         return GridAxisAlignment.center;
+      case AlignItems.baseline:
+        return GridAxisAlignment.baseline;
+      case AlignItems.lastBaseline:
+        return GridAxisAlignment.lastBaseline;
       case AlignItems.stretch:
         return GridAxisAlignment.stretch;
     }
@@ -304,8 +618,11 @@ class RenderGridLayout extends RenderLayoutBox {
       case AlignSelf.end:
         return GridAxisAlignment.end;
       case AlignSelf.center:
-      case AlignSelf.baseline:
         return GridAxisAlignment.center;
+      case AlignSelf.baseline:
+        return GridAxisAlignment.baseline;
+      case AlignSelf.lastBaseline:
+        return GridAxisAlignment.lastBaseline;
       case AlignSelf.stretch:
         return GridAxisAlignment.stretch;
     }
@@ -321,7 +638,163 @@ class RenderGridLayout extends RenderLayoutBox {
       case GridAxisAlignment.auto:
       case GridAxisAlignment.start:
       case GridAxisAlignment.stretch:
+      case GridAxisAlignment.baseline:
+      case GridAxisAlignment.lastBaseline:
         return 0;
+    }
+  }
+
+  double _gridChildBaselineFromBorderTop(RenderBox child, {required bool lastBaseline}) {
+    RenderBox baselineBox = child;
+    double offsetY = 0;
+
+    if (child is RenderEventListener) {
+      final RenderBox? wrapped = child.child;
+      if (wrapped != null) {
+        baselineBox = wrapped;
+        final Object? pd = wrapped.parentData;
+        if (pd is BoxParentData) {
+          offsetY = pd.offset.dy;
+        }
+      }
+    }
+
+    double? baseline;
+    if (baselineBox is RenderBoxModel) {
+      baseline = lastBaseline ? baselineBox.computeCssLastBaseline() : baselineBox.computeCssFirstBaseline();
+    }
+    baseline ??= baselineBox.getDistanceToBaseline(TextBaseline.alphabetic);
+
+    if (baseline == null || !baseline.isFinite) {
+      baseline = child.size.height;
+      offsetY = 0;
+    }
+
+    final double resolved = baseline + offsetY;
+    return resolved.isFinite ? math.max(0, resolved) : 0;
+  }
+
+  void _applyRowBaselineAlignment({
+    required List<double> rowSizes,
+    required List<double> implicitRowHeights,
+    required double rowGap,
+    required double paddingTop,
+    required double borderTop,
+    required double alignShift,
+    required bool distributeRows,
+    required double rowDistributionLeading,
+    required double rowDistributionBetween,
+  }) {
+    final Map<int, double> firstBaselineYByRow = <int, double>{};
+    final Map<int, double> lastBaselineToBottomByRow = <int, double>{};
+
+    final int rowCount = math.max(rowSizes.length, implicitRowHeights.length);
+    final List<double> rowTopByRow = List<double>.filled(rowCount, 0);
+    final List<double> rowBottomByRow = List<double>.filled(rowCount, 0);
+    double baseY = paddingTop + borderTop;
+    for (int r = 0; r < rowCount; r++) {
+      final double shift = distributeRows ? (rowDistributionLeading + r * rowDistributionBetween) : alignShift;
+      final double resolvedHeight = _resolvedRowHeight(rowSizes, implicitRowHeights, r);
+      rowTopByRow[r] = baseY + shift;
+      rowBottomByRow[r] = rowTopByRow[r] + resolvedHeight;
+      baseY += resolvedHeight;
+      baseY += rowGap;
+    }
+
+    RenderBox? child = firstChild;
+    while (child != null) {
+      final GridLayoutParentData pd = child.parentData as GridLayoutParentData;
+      if (_isPositionedGridChild(child)) {
+        child = pd.nextSibling;
+        continue;
+      }
+
+      final RenderStyle? childStyle = _unwrapGridChildStyle(child);
+      final GridAxisAlignment alignSelfAlignment = _resolveAlignSelfAlignment(childStyle);
+      final bool useFirstBaseline = alignSelfAlignment == GridAxisAlignment.baseline;
+      final bool useLastBaseline = alignSelfAlignment == GridAxisAlignment.lastBaseline;
+      if (!useFirstBaseline && !useLastBaseline) {
+        child = pd.nextSibling;
+        continue;
+      }
+
+      final double baselineFromTop = _gridChildBaselineFromBorderTop(
+        child,
+        lastBaseline: useLastBaseline,
+      );
+      final int row = pd.rowStart;
+      if (useLastBaseline) {
+        final double baselineToBottom = math.max(0, child.size.height - baselineFromTop);
+        final double? current = lastBaselineToBottomByRow[row];
+        if (current == null || baselineToBottom > current) {
+          lastBaselineToBottomByRow[row] = baselineToBottom;
+        }
+      } else {
+        final double baselineY = pd.offset.dy + baselineFromTop;
+        final double? current = firstBaselineYByRow[row];
+        if (current == null || baselineY > current) {
+          firstBaselineYByRow[row] = baselineY;
+        }
+      }
+
+      child = pd.nextSibling;
+    }
+
+    if (firstBaselineYByRow.isEmpty && lastBaselineToBottomByRow.isEmpty) return;
+
+    child = firstChild;
+    while (child != null) {
+      final GridLayoutParentData pd = child.parentData as GridLayoutParentData;
+      if (_isPositionedGridChild(child)) {
+        child = pd.nextSibling;
+        continue;
+      }
+
+      final RenderStyle? childStyle = _unwrapGridChildStyle(child);
+      final GridAxisAlignment alignSelfAlignment = _resolveAlignSelfAlignment(childStyle);
+      final bool useFirstBaseline = alignSelfAlignment == GridAxisAlignment.baseline;
+      final bool useLastBaseline = alignSelfAlignment == GridAxisAlignment.lastBaseline;
+      if (!useFirstBaseline && !useLastBaseline) {
+        child = pd.nextSibling;
+        continue;
+      }
+
+      final int row = pd.rowStart;
+      double? targetBaselineY;
+      if (useLastBaseline) {
+        if (row < 0 || row >= rowCount) {
+          child = pd.nextSibling;
+          continue;
+        }
+        final double? baselineToBottom = lastBaselineToBottomByRow[row];
+        if (baselineToBottom == null) {
+          child = pd.nextSibling;
+          continue;
+        }
+        final double rowBottom = rowBottomByRow[row];
+        if (!rowBottom.isFinite || rowBottom <= 0) {
+          child = pd.nextSibling;
+          continue;
+        }
+        targetBaselineY = rowBottom - baselineToBottom;
+      } else {
+        targetBaselineY = firstBaselineYByRow[row];
+      }
+      if (targetBaselineY == null) {
+        child = pd.nextSibling;
+        continue;
+      }
+
+      final double baselineFromTop = _gridChildBaselineFromBorderTop(
+        child,
+        lastBaseline: useLastBaseline,
+      );
+      final double baselineY = pd.offset.dy + baselineFromTop;
+      final double delta = targetBaselineY - baselineY;
+      if (delta.abs() > 0.01) {
+        pd.offset += Offset(0, delta);
+      }
+      child = pd.nextSibling;
     }
   }
 
@@ -339,9 +812,43 @@ class RenderGridLayout extends RenderLayoutBox {
   ) {
     if (tracks.isEmpty) return const <GridTrackSize>[];
     final List<GridTrackSize> resolved = <GridTrackSize>[];
-    for (final GridTrackSize track in tracks) {
+    final int autoRepeatIndex = tracks.indexWhere((GridTrackSize track) {
+      if (track is! GridRepeat) return false;
+      return track.kind == GridRepeatKind.autoFill || track.kind == GridRepeatKind.autoFit;
+    });
+    int? autoRepeatCount;
+    if (autoRepeatIndex != -1) {
+      int otherTrackCount = 0;
+      double otherSizeSum = 0;
+      for (int i = 0; i < tracks.length; i++) {
+        if (i == autoRepeatIndex) continue;
+        final GridTrackSize track = tracks[i];
+        if (track is GridRepeat) {
+          final int repeatCount = track.kind == GridRepeatKind.count ? math.max(1, track.count ?? 1) : 1;
+          if (track.tracks.isNotEmpty && repeatCount > 0) {
+            otherTrackCount += track.tracks.length * repeatCount;
+            otherSizeSum += _measurePatternMinBreadth(track.tracks, innerAvailable, 0) * repeatCount;
+          }
+          continue;
+        }
+        otherTrackCount += 1;
+        otherSizeSum += _trackMinBreadth(track, innerAvailable);
+      }
+      autoRepeatCount = _repeatCountForAutoRepeatInTrackList(
+        tracks[autoRepeatIndex] as GridRepeat,
+        innerAvailable,
+        gap,
+        otherTrackCount: otherTrackCount,
+        otherSizeSum: otherSizeSum,
+      );
+    }
+
+    for (int i = 0; i < tracks.length; i++) {
+      final GridTrackSize track = tracks[i];
       if (track is GridRepeat) {
-        final int repeatCount = _repeatCountFor(track, innerAvailable, gap);
+        final int repeatCount = (autoRepeatIndex != -1 && i == autoRepeatIndex)
+            ? (autoRepeatCount ?? 1)
+            : _repeatCountFor(track, innerAvailable, gap);
         resolved.addAll(_expandRepeatTracks(track, repeatCount));
       } else {
         resolved.add(track);
@@ -427,6 +934,35 @@ class RenderGridLayout extends RenderLayoutBox {
     return repeatCount.clamp(1, 100);
   }
 
+  int _repeatCountForAutoRepeatInTrackList(
+    GridRepeat repeat,
+    double? innerAvailable,
+    double gap, {
+    required int otherTrackCount,
+    required double otherSizeSum,
+  }) {
+    if (repeat.kind == GridRepeatKind.count) {
+      return math.max(1, repeat.count ?? 1);
+    }
+    if (innerAvailable == null || !innerAvailable.isFinite) return 1;
+    if (repeat.tracks.isEmpty) return 1;
+
+    final bool hasFlexible = _patternHasFlexibleTracks(repeat.tracks);
+    final double patternSizeSum = hasFlexible
+        ? _measurePatternMinBreadth(repeat.tracks, innerAvailable, 0)
+        : _measurePatternBreadth(repeat.tracks, innerAvailable, 0);
+
+    if (patternSizeSum <= 0) return 1;
+    final int patternTrackCount = repeat.tracks.length;
+    final double perRepeat = patternSizeSum + gap * patternTrackCount;
+    if (perRepeat <= 0) return 1;
+
+    final double base = otherSizeSum + gap * (otherTrackCount - 1);
+    final double availableForRepeat = innerAvailable - base;
+    final int repeatCount = math.max(1, (availableForRepeat / perRepeat).floor());
+    return repeatCount.clamp(1, 100);
+  }
+
   List<GridTrackSize> _expandRepeatTracks(GridRepeat repeat, int repeatCount) {
     if (repeat.tracks.isEmpty || repeatCount <= 0) return const <GridTrackSize>[];
     final List<GridTrackSize> expanded = <GridTrackSize>[];
@@ -483,6 +1019,18 @@ class RenderGridLayout extends RenderLayoutBox {
         trailingLineNames: resolvedTrailing,
         isAutoFit: autoFit,
       );
+    } else if (source is GridMinContent) {
+      return GridMinContent(
+        leadingLineNames: resolvedLeading,
+        trailingLineNames: resolvedTrailing,
+        isAutoFit: autoFit,
+      );
+    } else if (source is GridMaxContent) {
+      return GridMaxContent(
+        leadingLineNames: resolvedLeading,
+        trailingLineNames: resolvedTrailing,
+        isAutoFit: autoFit,
+      );
     } else if (source is GridMinMax) {
       return GridMinMax(
         source.minTrack,
@@ -509,7 +1057,10 @@ class RenderGridLayout extends RenderLayoutBox {
 
     void addNames(List<String> names, int index) {
       for (final name in names) {
-        map.putIfAbsent(name, () => <int>[]).add(index);
+        final List<int> indices = map.putIfAbsent(name, () => <int>[]);
+        if (indices.isEmpty || indices.last != index) {
+          indices.add(index);
+        }
       }
     }
 
@@ -525,6 +1076,39 @@ class RenderGridLayout extends RenderLayoutBox {
     }
 
     return map.isEmpty ? null : map;
+  }
+
+  Map<String, List<int>>? _mergeLineNameMapWithTemplateAreas(
+    Map<String, List<int>>? base,
+    Map<String, GridTemplateAreaRect>? templateAreas, {
+    required Axis axis,
+  }) {
+    if (templateAreas == null || templateAreas.isEmpty) return base;
+    final Map<String, List<int>> merged =
+        base == null ? <String, List<int>>{} : base.map((key, value) => MapEntry(key, List<int>.from(value)));
+
+    void addIndex(String name, int index) {
+      if (index < 0) return;
+      final List<int> indices = merged.putIfAbsent(name, () => <int>[]);
+      if (indices.contains(index)) return;
+      final int insertAt = indices.indexWhere((existing) => existing > index);
+      if (insertAt == -1) {
+        indices.add(index);
+      } else {
+        indices.insert(insertAt, index);
+      }
+    }
+
+    for (final MapEntry<String, GridTemplateAreaRect> entry in templateAreas.entries) {
+      final String areaName = entry.key;
+      final GridTemplateAreaRect rect = entry.value;
+      final int startLine = (axis == Axis.horizontal ? rect.columnStart : rect.rowStart) - 1;
+      final int endLine = (axis == Axis.horizontal ? rect.columnEnd : rect.rowEnd) - 1;
+      addIndex('${areaName}-start', startLine);
+      addIndex('${areaName}-end', endLine);
+    }
+
+    return merged.isEmpty ? null : merged;
   }
 
   _GridCellPlacement _placeAutoItem({
@@ -550,6 +1134,26 @@ class RenderGridLayout extends RenderLayoutBox {
     int columnCount = columnSizes.length;
     final int colSpan = columnSpan.clamp(1, math.max(1, columnCount));
     final int rowSpanClamped = math.max(1, rowSpan);
+
+    // Items with definite placement in both axes should be placed at their specified
+    // grid area/lines even if that overlaps previously placed items.
+    if (hasDefiniteRow && hasDefiniteColumn && explicitRow != null && explicitColumn != null) {
+      int row = math.max(0, explicitRow);
+      int column = math.max(0, explicitColumn);
+      if (column + colSpan > columnCount) {
+        _ensureImplicitColumns(
+          colSizes: columnSizes,
+          requiredCount: column + colSpan,
+          explicitCount: explicitColumnCount,
+          autoColumns: autoColumns,
+          innerAvailable: adjustedInnerWidth,
+        );
+        columnCount = columnSizes.length;
+      }
+      _ensureOccupancyRows(occupancy, row + rowSpanClamped, columnCount);
+      _markPlacement(occupancy, row, column, rowSpanClamped, colSpan);
+      return _GridCellPlacement(row, column);
+    }
 
     if (rowFlow) {
       int startRow;
@@ -663,15 +1267,321 @@ class RenderGridLayout extends RenderLayoutBox {
     return length.computedValue;
   }
 
-  double _resolveTrackSize(GridTrackSize track, double? innerAvailable) {
+  double? _resolveGridItemSize(
+    CSSLengthValue value,
+    double? percentageBasis, {
+    required bool treatIndefinitePercentageAsAuto,
+  }) {
+    // Do not use `value.isAuto` here: in WebF it treats percentage widths/heights
+    // that can't resolve against the containing block as `auto` (computedValue=∞),
+    // but in CSS Grid, percentages on items resolve against the grid area size.
+    if (value.type == CSSLengthType.AUTO) return null;
+    if (value.calcValue != null && value.calcValue!.expression == null) return null;
+    if (value.type == CSSLengthType.PERCENTAGE) {
+      if (percentageBasis != null && percentageBasis.isFinite) {
+        return (value.value ?? 0) * percentageBasis;
+      }
+      return treatIndefinitePercentageAsAuto ? null : 0;
+    }
+    final double resolved = value.computedValue;
+    if (!resolved.isFinite) return null;
+    return resolved;
+  }
+
+  double? _resolveGridItemMaxSize(CSSLengthValue value, double? percentageBasis) {
+    if (value.isNone) return null;
+    return _resolveGridItemSize(
+      value,
+      percentageBasis,
+      treatIndefinitePercentageAsAuto: true,
+    );
+  }
+
+  // WebF currently only supports `box-sizing: border-box`, so the preferred
+  // aspect ratio applies to the border-box dimensions (matching browser behavior
+  // under `border-box` sizing).
+  double _gridItemBorderBoxWidthFromHeight(double borderBoxHeight, double ratio) {
+    final double w = borderBoxHeight * ratio;
+    return w.isFinite ? math.max(0, w) : 0;
+  }
+
+  double _gridItemBorderBoxHeightFromWidth(double borderBoxWidth, double ratio) {
+    final double h = borderBoxWidth / ratio;
+    return h.isFinite ? math.max(0, h) : 0;
+  }
+
+  Size _containBorderBoxSizeWithAspectRatio(CSSRenderStyle style, double cellWidth, double cellHeight, double ratio) {
+    double availableContentW = style.deflatePaddingBorderWidth(cellWidth);
+    double availableContentH = style.deflatePaddingBorderHeight(cellHeight);
+    if (availableContentW.isFinite && availableContentW < 0) availableContentW = 0;
+    if (availableContentH.isFinite && availableContentH < 0) availableContentH = 0;
+    double contentW;
+    double contentH;
+    if (availableContentW / ratio <= availableContentH) {
+      contentW = availableContentW;
+      contentH = availableContentW / ratio;
+    } else {
+      contentH = availableContentH;
+      contentW = availableContentH * ratio;
+    }
+    return Size(style.wrapPaddingBorderWidth(contentW), style.wrapPaddingBorderHeight(contentH));
+  }
+
+  double? _clampOptional(double? value, double? minValue, double? maxValue) {
+    double? current = value;
+    if (current == null) return null;
+    if (minValue != null && minValue.isFinite) {
+      current = math.max(minValue, current);
+    }
+    if (maxValue != null && maxValue.isFinite) {
+      current = math.min(maxValue, current);
+    }
+    return current;
+  }
+
+  BoxConstraints _gridItemConstraints({
+    required RenderBox child,
+    required CSSRenderStyle? childGridStyle,
+    required GridAxisAlignment justifySelfAlignment,
+    required GridAxisAlignment alignSelfAlignment,
+    required double cellWidth,
+    required bool hasDefiniteCellHeight,
+    required double cellHeight,
+    required double marginHorizontal,
+    required double marginVertical,
+    required double? innerMaxWidth,
+    required double? innerMaxHeight,
+  }) {
+    final double? percentageBasisW = cellWidth.isFinite ? cellWidth : null;
+    final double? percentageBasisH = cellHeight.isFinite ? cellHeight : null;
+
+    double? usedW;
+    double? usedH;
+    double? minW;
+    double? maxW;
+    double? minH;
+    double? maxH;
+
+    if (childGridStyle != null) {
+      usedW = _resolveGridItemSize(
+        childGridStyle.width,
+        percentageBasisW,
+        treatIndefinitePercentageAsAuto: true,
+      );
+      usedH = _resolveGridItemSize(
+        childGridStyle.height,
+        percentageBasisH,
+        treatIndefinitePercentageAsAuto: true,
+      );
+
+      minW = _resolveGridItemSize(
+        childGridStyle.minWidth,
+        percentageBasisW,
+        treatIndefinitePercentageAsAuto: true,
+      );
+      maxW = _resolveGridItemMaxSize(childGridStyle.maxWidth, percentageBasisW);
+
+      minH = _resolveGridItemSize(
+        childGridStyle.minHeight,
+        percentageBasisH,
+        treatIndefinitePercentageAsAuto: true,
+      );
+      maxH = _resolveGridItemMaxSize(childGridStyle.maxHeight, percentageBasisH);
+
+      final bool needsIntrinsicWidth = childGridStyle.width.isIntrinsic ||
+          childGridStyle.minWidth.isIntrinsic ||
+          childGridStyle.maxWidth.isIntrinsic;
+      final bool needsIntrinsicHeight = childGridStyle.height.isIntrinsic ||
+          childGridStyle.minHeight.isIntrinsic ||
+          childGridStyle.maxHeight.isIntrinsic;
+      final bool needsAutoFitWidth = usedW == null &&
+          childGridStyle.width.isAuto &&
+          justifySelfAlignment != GridAxisAlignment.stretch;
+
+      double? intrinsicMinW;
+      double? intrinsicMaxW;
+      double? intrinsicMinH;
+      double? intrinsicMaxH;
+
+      if (needsIntrinsicWidth || needsAutoFitWidth) {
+        final double availableH = (hasDefiniteCellHeight && cellHeight.isFinite)
+            ? math.max(0, cellHeight - marginVertical)
+            : double.infinity;
+        double minW = child.getMinIntrinsicWidth(availableH);
+        double maxW = child.getMaxIntrinsicWidth(availableH);
+        if (childGridStyle.whiteSpace == WhiteSpace.nowrap || childGridStyle.whiteSpace == WhiteSpace.pre) {
+          minW = maxW;
+        }
+        if (!minW.isFinite || minW < 0) minW = 0;
+        if (!maxW.isFinite || maxW < 0) maxW = minW;
+        intrinsicMinW = minW;
+        intrinsicMaxW = maxW;
+      }
+
+      if (needsIntrinsicHeight) {
+        final double availableW = cellWidth.isFinite ? math.max(0, cellWidth - marginHorizontal) : double.infinity;
+        double minH = child.getMinIntrinsicHeight(availableW);
+        double maxH = child.getMaxIntrinsicHeight(availableW);
+        if (!minH.isFinite || minH < 0) minH = 0;
+        if (!maxH.isFinite || maxH < 0) maxH = minH;
+        intrinsicMinH = minH;
+        intrinsicMaxH = maxH;
+      }
+
+      double? resolveIntrinsic(CSSLengthValue value, double minIntrinsic, double maxIntrinsic, double available) {
+        switch (value.type) {
+          case CSSLengthType.MIN_CONTENT:
+            return minIntrinsic;
+          case CSSLengthType.MAX_CONTENT:
+            return maxIntrinsic;
+          case CSSLengthType.FIT_CONTENT:
+            final double avail = available.isFinite ? available : maxIntrinsic;
+            return math.min(maxIntrinsic, math.max(minIntrinsic, avail));
+          default:
+            return null;
+        }
+      }
+
+      if (needsIntrinsicWidth && intrinsicMinW != null && intrinsicMaxW != null) {
+        final double availableW = cellWidth.isFinite ? math.max(0, cellWidth - marginHorizontal) : double.infinity;
+        if (childGridStyle.width.isIntrinsic) {
+          usedW = resolveIntrinsic(childGridStyle.width, intrinsicMinW, intrinsicMaxW, availableW);
+        }
+        if (childGridStyle.minWidth.isIntrinsic) {
+          minW = resolveIntrinsic(childGridStyle.minWidth, intrinsicMinW, intrinsicMaxW, availableW);
+        }
+        if (childGridStyle.maxWidth.isIntrinsic) {
+          maxW = resolveIntrinsic(childGridStyle.maxWidth, intrinsicMinW, intrinsicMaxW, availableW);
+        }
+      }
+
+      if (needsAutoFitWidth && intrinsicMinW != null && intrinsicMaxW != null) {
+        final double availableW = cellWidth.isFinite ? math.max(0, cellWidth - marginHorizontal) : double.infinity;
+        usedW = math.min(intrinsicMaxW, math.max(intrinsicMinW, availableW));
+      }
+
+      if (needsIntrinsicHeight && intrinsicMinH != null && intrinsicMaxH != null) {
+        final double availableH = (hasDefiniteCellHeight && cellHeight.isFinite)
+            ? math.max(0, cellHeight - marginVertical)
+            : double.infinity;
+        if (childGridStyle.height.isIntrinsic) {
+          usedH = resolveIntrinsic(childGridStyle.height, intrinsicMinH, intrinsicMaxH, availableH);
+        }
+        if (childGridStyle.minHeight.isIntrinsic) {
+          minH = resolveIntrinsic(childGridStyle.minHeight, intrinsicMinH, intrinsicMaxH, availableH);
+        }
+        if (childGridStyle.maxHeight.isIntrinsic) {
+          maxH = resolveIntrinsic(childGridStyle.maxHeight, intrinsicMinH, intrinsicMaxH, availableH);
+        }
+      }
+    }
+
+    final double? ratio = childGridStyle?.aspectRatio;
+    final bool hasRatio = ratio != null && ratio > 0;
+
+    if (hasRatio && usedW == null && usedH == null && childGridStyle != null) {
+      // With a preferred aspect ratio and no definite sizes, grid items size in the
+      // inline axis from the grid area (like a block with width:auto), and resolve
+      // the block axis from the aspect ratio. This may overflow the grid area's
+      // block size (per spec and browser behavior).
+      final bool hasDefiniteWidth = cellWidth.isFinite && cellWidth > 0;
+      final bool hasDefiniteHeight = hasDefiniteCellHeight && cellHeight.isFinite && cellHeight > 0;
+      if (hasDefiniteWidth) {
+        usedW = math.max(0, cellWidth - marginHorizontal);
+        usedH = _gridItemBorderBoxHeightFromWidth(usedW, ratio!);
+      } else if (hasDefiniteHeight) {
+        usedH = math.max(0, cellHeight - marginVertical);
+        usedW = _gridItemBorderBoxWidthFromHeight(usedH, ratio!);
+      }
+    }
+
+    if (hasRatio && childGridStyle != null) {
+      if (usedW == null && usedH != null) {
+        usedW = _gridItemBorderBoxWidthFromHeight(usedH, ratio!);
+      } else if (usedH == null && usedW != null) {
+        usedH = _gridItemBorderBoxHeightFromWidth(usedW, ratio!);
+      }
+    }
+
+    if (usedW == null && justifySelfAlignment == GridAxisAlignment.stretch && cellWidth.isFinite) {
+      usedW = math.max(0, cellWidth - marginHorizontal);
+    }
+    if (usedH == null &&
+        alignSelfAlignment == GridAxisAlignment.stretch &&
+        hasDefiniteCellHeight &&
+        cellHeight.isFinite) {
+      usedH = math.max(0, cellHeight - marginVertical);
+    }
+
+    if (hasRatio && childGridStyle != null) {
+      if (usedW == null && usedH != null) {
+        usedW = _gridItemBorderBoxWidthFromHeight(usedH, ratio!);
+      } else if (usedH == null && usedW != null) {
+        usedH = _gridItemBorderBoxHeightFromWidth(usedW, ratio!);
+      }
+    }
+
+    usedW = _clampOptional(usedW, minW, maxW);
+    usedH = _clampOptional(usedH, minH, maxH);
+
+    // Border-box sizes must not be smaller than padding+border (WebF supports
+    // border-box only). Clamp the resolved sizes so deflating to the content box
+    // remains non-negative.
+    if (childGridStyle != null) {
+      final double minBorderBoxW = childGridStyle.paddingLeft.computedValue +
+          childGridStyle.paddingRight.computedValue +
+          childGridStyle.effectiveBorderLeftWidth.computedValue +
+          childGridStyle.effectiveBorderRightWidth.computedValue;
+      final double minBorderBoxH = childGridStyle.paddingTop.computedValue +
+          childGridStyle.paddingBottom.computedValue +
+          childGridStyle.effectiveBorderTopWidth.computedValue +
+          childGridStyle.effectiveBorderBottomWidth.computedValue;
+      if (usedW != null && usedW.isFinite) {
+        usedW = math.max(usedW, minBorderBoxW);
+      }
+      if (usedH != null && usedH.isFinite) {
+        usedH = math.max(usedH, minBorderBoxH);
+      }
+    }
+
+    final double minWidthConstraint = math.max(0, usedW ?? (minW ?? 0));
+    double maxWidthConstraint = usedW ??
+        (cellWidth.isFinite ? cellWidth : (innerMaxWidth ?? double.infinity));
+    if (maxW != null && maxW.isFinite) {
+      maxWidthConstraint = math.min(maxWidthConstraint, maxW);
+    }
+    if (maxWidthConstraint < minWidthConstraint) {
+      maxWidthConstraint = minWidthConstraint;
+    }
+
+    final double minHeightConstraint = math.max(0, usedH ?? (minH ?? 0));
+    double maxHeightConstraint = usedH ?? (innerMaxHeight ?? double.infinity);
+    if (maxH != null && maxH.isFinite) {
+      maxHeightConstraint = math.min(maxHeightConstraint, maxH);
+    }
+    if (maxHeightConstraint < minHeightConstraint) {
+      maxHeightConstraint = minHeightConstraint;
+    }
+
+    return BoxConstraints(
+      minWidth: minWidthConstraint,
+      maxWidth: maxWidthConstraint,
+      minHeight: minHeightConstraint,
+      maxHeight: maxHeightConstraint,
+    );
+  }
+
+  double _resolveTrackSize(GridTrackSize track, double? innerAvailable, {double? percentageBasis}) {
     if (track is GridFixed) {
       final CSSLengthValue lv = track.length;
       if (lv.type == CSSLengthType.PX) {
         return lv.computedValue;
       }
       if (lv.type == CSSLengthType.PERCENTAGE) {
-        if (innerAvailable != null && innerAvailable.isFinite) {
-          return (lv.value ?? 0) * innerAvailable;
+        final double? basis =
+            (percentageBasis != null && percentageBasis.isFinite) ? percentageBasis : innerAvailable;
+        if (basis != null && basis.isFinite) {
+          return (lv.value ?? 0) * basis;
         }
         return 0;
       }
@@ -684,13 +1594,13 @@ class RenderGridLayout extends RenderLayoutBox {
     } else if (track is GridMinMax) {
       final GridTrackSize maxTrack = track.maxTrack;
       if (maxTrack is GridFraction) {
-        return _resolveTrackSize(track.minTrack, innerAvailable);
+        return _resolveTrackSize(track.minTrack, innerAvailable, percentageBasis: percentageBasis);
       }
-      final double minValue = _resolveTrackSize(track.minTrack, innerAvailable);
-      final double maxValue = _resolveTrackSize(maxTrack, innerAvailable);
+      final double minValue = _resolveTrackSize(track.minTrack, innerAvailable, percentageBasis: percentageBasis);
+      final double maxValue = _resolveTrackSize(maxTrack, innerAvailable, percentageBasis: percentageBasis);
       return math.max(minValue, maxValue);
     } else if (track is GridFitContent) {
-      final double limit = _resolveLengthValue(track.limit, innerAvailable);
+      final double limit = _resolveLengthValue(track.limit, percentageBasis ?? innerAvailable);
       if (innerAvailable != null && innerAvailable.isFinite) {
         return math.min(limit, innerAvailable);
       }
@@ -699,7 +1609,12 @@ class RenderGridLayout extends RenderLayoutBox {
     return 0;
   }
 
-  List<double> _resolveTracks(List<GridTrackSize> tracks, double? innerAvailable, Axis axis) {
+  List<double> _resolveTracks(
+    List<GridTrackSize> tracks,
+    double? innerAvailable,
+    Axis axis, {
+    double? percentageBasis,
+  }) {
     if (tracks.isEmpty) {
       return <double>[];
     }
@@ -717,16 +1632,16 @@ class RenderGridLayout extends RenderLayoutBox {
         flexFactors[i] = fr;
         frSum += fr;
       } else if (t is GridMinMax && t.maxTrack is GridFraction) {
-        final double minSize = _resolveTrackSize(t.minTrack, innerAvailable);
+        final double minSize = _resolveTrackSize(t.minTrack, innerAvailable, percentageBasis: percentageBasis);
         minFlexSizes[i] = minSize;
         final double fr = (t.maxTrack as GridFraction).fr;
         flexFactors[i] = fr;
         frSum += fr;
       } else if (t is GridFixed) {
-        sizes[i] = _resolveTrackSize(t, innerAvailable);
+        sizes[i] = _resolveTrackSize(t, innerAvailable, percentageBasis: percentageBasis);
         fixed += sizes[i];
       } else {
-        sizes[i] = _resolveTrackSize(t, innerAvailable);
+        sizes[i] = _resolveTrackSize(t, innerAvailable, percentageBasis: percentageBasis);
         fixed += sizes[i];
       }
     }
@@ -839,10 +1754,37 @@ class RenderGridLayout extends RenderLayoutBox {
         rowsDef = CSSGridParser.parseTrackList(raw, renderStyle, GRID_TEMPLATE_ROWS, Axis.vertical);
       }
     }
-    final double colGap = renderStyle.columnGap.computedValue;
-    final double rowGap = renderStyle.rowGap.computedValue;
+    double? gapBaseWidth = innerMaxWidth;
+    final double? gapLogicalBorderBoxWidth = renderStyle.borderBoxLogicalWidth;
+    if (renderStyle.width.isNotAuto &&
+        gapLogicalBorderBoxWidth != null &&
+        gapLogicalBorderBoxWidth.isFinite &&
+        gapLogicalBorderBoxWidth > 0) {
+      gapBaseWidth = math.max(0.0, gapLogicalBorderBoxWidth - horizontalPaddingBorder);
+    }
 
-    final double? contentAvailableWidth = innerMaxWidth;
+    double? gapBaseHeight;
+    final double? gapLogicalBorderBoxHeight = renderStyle.borderBoxLogicalHeight;
+    if (renderStyle.height.isNotAuto &&
+        gapLogicalBorderBoxHeight != null &&
+        gapLogicalBorderBoxHeight.isFinite &&
+        gapLogicalBorderBoxHeight > 0) {
+      gapBaseHeight = math.max(0.0, gapLogicalBorderBoxHeight - verticalPaddingBorder);
+    } else if (hasBH && contentConstraints.minHeight == contentConstraints.maxHeight) {
+      gapBaseHeight = innerMaxHeight;
+    }
+
+    final double colGap = _resolveLengthValue(renderStyle.columnGap, gapBaseWidth);
+    final double rowGap = _resolveLengthValue(renderStyle.rowGap, gapBaseHeight);
+
+    double? contentAvailableWidth = innerMaxWidth;
+    if ((contentAvailableWidth == null || !contentAvailableWidth.isFinite) &&
+        renderStyle.width.isNotAuto &&
+        gapLogicalBorderBoxWidth != null &&
+        gapLogicalBorderBoxWidth.isFinite &&
+        gapLogicalBorderBoxWidth > 0) {
+      contentAvailableWidth = math.max(0.0, gapLogicalBorderBoxWidth - horizontalPaddingBorder);
+    }
     final List<GridTrackSize> autoColDefs = renderStyle.gridAutoColumns;
     final List<GridTrackSize> resolvedColumnDefs = _profileGridSection(
       'grid.materializeColumns',
@@ -857,7 +1799,12 @@ class RenderGridLayout extends RenderLayoutBox {
     final List<double> colSizes = hasExplicitCols
         ? _profileGridSection(
             'grid.resolveColumns',
-            () => _resolveTracks(resolvedColumnDefs, adjustedInnerWidth, Axis.horizontal),
+            () => _resolveTracks(
+              resolvedColumnDefs,
+              adjustedInnerWidth,
+              Axis.horizontal,
+              percentageBasis: contentAvailableWidth,
+            ),
           )
         : <double>[];
     final int explicitColumnCount = hasExplicitCols ? colSizes.length : 0;
@@ -878,7 +1825,14 @@ class RenderGridLayout extends RenderLayoutBox {
         innerAvailable: adjustedInnerWidth,
       );
     }
-    final double? contentAvailableHeight = innerMaxHeight;
+    double? contentAvailableHeight = innerMaxHeight;
+    if ((contentAvailableHeight == null || !contentAvailableHeight.isFinite) &&
+        renderStyle.height.isNotAuto &&
+        gapLogicalBorderBoxHeight != null &&
+        gapLogicalBorderBoxHeight.isFinite &&
+        gapLogicalBorderBoxHeight > 0) {
+      contentAvailableHeight = math.max(0.0, gapLogicalBorderBoxHeight - verticalPaddingBorder);
+    }
     final List<GridTrackSize> resolvedRowDefs = _profileGridSection(
       'grid.materializeRows',
       () => _materializeTrackList(rowsDef, contentAvailableHeight, rowGap, Axis.vertical),
@@ -892,7 +1846,12 @@ class RenderGridLayout extends RenderLayoutBox {
         ? <double>[]
         : _profileGridSection(
             'grid.resolveRows',
-            () => _resolveTracks(resolvedRowDefs, adjustedInnerHeight, Axis.vertical),
+            () => _resolveTracks(
+              resolvedRowDefs,
+              adjustedInnerHeight,
+              Axis.vertical,
+              percentageBasis: contentAvailableHeight,
+            ),
           );
     final int definedRowCount = resolvedRowDefs.length;
     final int explicitRowCount = definedRowCount > 0 ? definedRowCount : 1;
@@ -905,8 +1864,16 @@ class RenderGridLayout extends RenderLayoutBox {
       }
     }
 
-    final Map<String, List<int>>? columnLineNameMap = _buildLineNameMap(resolvedColumnDefs);
-    final Map<String, List<int>>? rowLineNameMap = _buildLineNameMap(resolvedRowDefs);
+    final Map<String, List<int>>? columnLineNameMap = _mergeLineNameMapWithTemplateAreas(
+      _buildLineNameMap(resolvedColumnDefs),
+      templateAreaMap,
+      axis: Axis.horizontal,
+    );
+    final Map<String, List<int>>? rowLineNameMap = _mergeLineNameMapWithTemplateAreas(
+      _buildLineNameMap(resolvedRowDefs),
+      templateAreaMap,
+      axis: Axis.vertical,
+    );
     final GridAutoFlow autoFlow = renderStyle.gridAutoFlow;
 
     // Layout children using auto placement matrix.
@@ -926,9 +1893,107 @@ class RenderGridLayout extends RenderLayoutBox {
 
     final Stopwatch? placementStopwatch = profileGrid ? (Stopwatch()..start()) : null;
     Duration childLayoutDuration = Duration.zero;
-    RenderBox? child = firstChild;
-    while (child != null) {
-      RenderStyle? childGridStyle;
+
+    RenderBox? child;
+
+    // Pass 1: resolve placements and grow implicit track lists.
+    final List<RenderBox> placementChildren = _collectChildren();
+    final int orderingColumnTrackCount = math.max(colSizes.length, 1);
+    final int orderingRowTrackCount = math.max(rowSizes.length, 1);
+    final List<RenderBox> definiteBothAxisItems = <RenderBox>[];
+    final List<RenderBox> definiteRowItems = <RenderBox>[];
+    final List<RenderBox> definiteColumnItems = <RenderBox>[];
+
+    for (final RenderBox placementChild in placementChildren) {
+      CSSRenderStyle? childGridStyle;
+      if (placementChild is RenderBoxModel) {
+        childGridStyle = placementChild.renderStyle;
+      } else if (placementChild is RenderEventListener) {
+        final RenderBox? wrapped = placementChild.child;
+        if (wrapped is RenderBoxModel) {
+          childGridStyle = wrapped.renderStyle;
+        }
+      }
+
+      GridPlacement columnStart = childGridStyle?.gridColumnStart ?? const GridPlacement.auto();
+      GridPlacement columnEnd = childGridStyle?.gridColumnEnd ?? const GridPlacement.auto();
+      GridPlacement rowStart = childGridStyle?.gridRowStart ?? const GridPlacement.auto();
+      GridPlacement rowEnd = childGridStyle?.gridRowEnd ?? const GridPlacement.auto();
+      final String? areaName = childGridStyle?.gridAreaName;
+      if (areaName != null) {
+        final GridTemplateAreaRect? rect = templateAreaMap?[areaName];
+        if (rect != null) {
+          columnStart = GridPlacement.line(rect.columnStart);
+          columnEnd = GridPlacement.line(rect.columnEnd);
+          rowStart = GridPlacement.line(rect.rowStart);
+          rowEnd = GridPlacement.line(rect.rowEnd);
+        } else {
+          final String startName = '${areaName}-start';
+          final String endName = '${areaName}-end';
+          columnStart = GridPlacement.named(startName);
+          columnEnd = GridPlacement.named(endName);
+          rowStart = GridPlacement.named(startName);
+          rowEnd = GridPlacement.named(endName);
+        }
+      }
+
+      final int resolvedColSpan = _resolveSpan(
+        columnStart,
+        columnEnd,
+        orderingColumnTrackCount,
+        namedLines: columnLineNameMap,
+      );
+      final int resolvedRowSpan = _resolveSpan(
+        rowStart,
+        rowEnd,
+        orderingRowTrackCount,
+        namedLines: rowLineNameMap,
+      );
+      if (resolvedColSpan <= 0) {
+        columnStart = const GridPlacement.auto();
+        columnEnd = const GridPlacement.auto();
+      }
+      if (resolvedRowSpan <= 0) {
+        rowStart = const GridPlacement.auto();
+        rowEnd = const GridPlacement.auto();
+      }
+
+      final bool hasDefiniteColumn =
+          columnStart.kind == GridPlacementKind.line || columnEnd.kind == GridPlacementKind.line;
+      final bool hasDefiniteRow = rowStart.kind == GridPlacementKind.line || rowEnd.kind == GridPlacementKind.line;
+      if (hasDefiniteRow && hasDefiniteColumn) {
+        definiteBothAxisItems.add(placementChild);
+      } else if (hasDefiniteRow) {
+        definiteRowItems.add(placementChild);
+      } else if (hasDefiniteColumn) {
+        definiteColumnItems.add(placementChild);
+      }
+    }
+
+    // CSS Grid item placement algorithm runs distinct passes depending on the auto-flow axis.
+    //
+    // For row-flow: place definite row items next, then place the remaining items in
+    // order-modified document order (including definite-column items).
+    // For column-flow: place definite column items next, then place the remaining items in
+    // order-modified document order (including definite-row items).
+    final bool rowFlowForOrdering = autoFlow == GridAutoFlow.row || autoFlow == GridAutoFlow.rowDense;
+    final Set<RenderBox> placedInEarlyPasses = <RenderBox>{...definiteBothAxisItems};
+    final List<RenderBox> orderedChildren = <RenderBox>[...definiteBothAxisItems];
+    if (rowFlowForOrdering) {
+      orderedChildren.addAll(definiteRowItems);
+      placedInEarlyPasses.addAll(definiteRowItems);
+    } else {
+      orderedChildren.addAll(definiteColumnItems);
+      placedInEarlyPasses.addAll(definiteColumnItems);
+    }
+    // Remaining items keep original order.
+    for (final RenderBox placementChild in placementChildren) {
+      if (placedInEarlyPasses.contains(placementChild)) continue;
+      orderedChildren.add(placementChild);
+    }
+
+    for (final RenderBox child in orderedChildren) {
+      CSSRenderStyle? childGridStyle;
       if (child is RenderBoxModel) {
         childGridStyle = child.renderStyle;
       } else if (child is RenderEventListener) {
@@ -943,14 +2008,23 @@ class RenderGridLayout extends RenderLayoutBox {
       GridPlacement rowStart = childGridStyle?.gridRowStart ?? const GridPlacement.auto();
       GridPlacement rowEnd = childGridStyle?.gridRowEnd ?? const GridPlacement.auto();
       final String? areaName = childGridStyle?.gridAreaName;
-      // Honor grid-template-areas by mapping named areas to explicit line placements.
-      if (templateAreaMap != null && areaName != null) {
-        final GridTemplateAreaRect? rect = templateAreaMap[areaName];
+      if (areaName != null) {
+        // Honor grid-template-areas by mapping named areas to explicit line placements. When the
+        // name does not match any template area, treat it like an unresolved named area by
+        // falling back to the generated *-start/*-end line names (which may create implicit tracks).
+        final GridTemplateAreaRect? rect = templateAreaMap?[areaName];
         if (rect != null) {
           columnStart = GridPlacement.line(rect.columnStart);
           columnEnd = GridPlacement.line(rect.columnEnd);
           rowStart = GridPlacement.line(rect.rowStart);
           rowEnd = GridPlacement.line(rect.rowEnd);
+        } else {
+          final String startName = '${areaName}-start';
+          final String endName = '${areaName}-end';
+          columnStart = GridPlacement.named(startName);
+          columnEnd = GridPlacement.named(endName);
+          rowStart = GridPlacement.named(startName);
+          rowEnd = GridPlacement.named(endName);
         }
       }
 
@@ -995,7 +2069,11 @@ class RenderGridLayout extends RenderLayoutBox {
         neededColumns = math.max(neededColumns, columnEndRequirement);
       }
       final bool rowFlow = autoFlow == GridAutoFlow.row || autoFlow == GridAutoFlow.rowDense;
-      if (!rowFlow) {
+      if (rowFlow) {
+        // Auto-placement (row-flow) still needs enough columns to satisfy a large span-only item
+        // (e.g. `grid-column: span 5`) which can extend the implicit grid beyond the explicit tracks.
+        neededColumns = math.max(neededColumns, colSpan);
+      } else {
         neededColumns = math.max(neededColumns, autoCursor.column + colSpan);
       }
       _ensureImplicitColumns(
@@ -1084,6 +2162,525 @@ class RenderGridLayout extends RenderLayoutBox {
           }
         }
       }
+      final GridLayoutParentData pd = child.parentData as GridLayoutParentData;
+      pd
+        ..rowStart = rowIndex
+        ..columnStart = colIndex
+        ..rowSpan = rowSpan
+        ..columnSpan = colSpan;
+      hasAnyChild = true;
+    }
+
+    // Resolve intrinsic sizing for content-based columns (auto/min-content/max-content) before laying out children.
+    if (colSizes.isNotEmpty) {
+      GridTrackSize columnTrackAt(int index) {
+        if (index >= 0 && index < resolvedColumnDefs.length) {
+          return resolvedColumnDefs[index];
+        }
+        final int implicitIndex = math.max(0, index - explicitColumnCount);
+        return autoColDefs.isNotEmpty ? autoColDefs[implicitIndex % autoColDefs.length] : const GridAuto();
+      }
+
+      _IntrinsicTrackKind intrinsicKindForBaseTrack(GridTrackSize track) {
+        if (track is GridAuto) return _IntrinsicTrackKind.auto;
+        if (track is GridMinContent) return _IntrinsicTrackKind.minContent;
+        if (track is GridMaxContent) return _IntrinsicTrackKind.maxContent;
+        return _IntrinsicTrackKind.none;
+      }
+
+      _IntrinsicTrackKind intrinsicKindForTrack(GridTrackSize track) {
+        if (track is GridMinMax) {
+          final _IntrinsicTrackKind maxKind = intrinsicKindForBaseTrack(track.maxTrack);
+          if (maxKind != _IntrinsicTrackKind.none) return maxKind;
+          return intrinsicKindForBaseTrack(track.minTrack);
+        }
+        return intrinsicKindForBaseTrack(track);
+      }
+
+      final List<bool> autoColumnsMask = List<bool>.filled(colSizes.length, false);
+      final List<bool> minContentColumnsMask = List<bool>.filled(colSizes.length, false);
+      final List<bool> maxContentColumnsMask = List<bool>.filled(colSizes.length, false);
+      final List<double> rangeMinColSizes = List<double>.filled(colSizes.length, 0.0);
+      final List<double> rangeMaxColSizes = List<double>.filled(colSizes.length, 0.0);
+      final List<double> flexFactors = List<double>.filled(colSizes.length, 0.0);
+      final List<double> flexMinColSizes = List<double>.filled(colSizes.length, 0.0);
+      bool hasIntrinsicColumns = false;
+      bool hasAutoColumns = false;
+      bool hasRangeColumns = false;
+      bool hasFlexColumns = false;
+      for (int c = 0; c < colSizes.length; c++) {
+        final GridTrackSize track = columnTrackAt(c);
+        final _IntrinsicTrackKind kind = intrinsicKindForTrack(track);
+        switch (kind) {
+          case _IntrinsicTrackKind.auto:
+            autoColumnsMask[c] = true;
+            hasAutoColumns = true;
+            hasIntrinsicColumns = true;
+            break;
+          case _IntrinsicTrackKind.minContent:
+            minContentColumnsMask[c] = true;
+            hasIntrinsicColumns = true;
+            break;
+          case _IntrinsicTrackKind.maxContent:
+            maxContentColumnsMask[c] = true;
+            hasIntrinsicColumns = true;
+            break;
+          case _IntrinsicTrackKind.none:
+            break;
+        }
+
+        // For `minmax(<intrinsic>, <fixed>)`, allow the intrinsic contribution to determine
+        // the track size (up to the fixed max) instead of eagerly sizing to the max.
+        if (track is GridMinMax &&
+            intrinsicKindForBaseTrack(track.minTrack) != _IntrinsicTrackKind.none &&
+            track.maxTrack is! GridFraction) {
+          final double maxLimit =
+              _resolveTrackSize(track.maxTrack, adjustedInnerWidth, percentageBasis: contentAvailableWidth);
+          if (maxLimit > 0) {
+            colSizes[c] = 0.0;
+          }
+        }
+
+        // Track sizing for minmax(<fixed>, <fixed>) tracks (range tracks) and flex tracks.
+        if (track is GridFraction) {
+          flexFactors[c] = track.fr;
+          hasFlexColumns = true;
+        } else if (track is GridMinMax) {
+          if (track.maxTrack is GridFraction) {
+            final double fr = (track.maxTrack as GridFraction).fr;
+            flexFactors[c] = fr;
+            hasFlexColumns = true;
+            final double minSize =
+                _resolveTrackSize(track.minTrack, adjustedInnerWidth, percentageBasis: contentAvailableWidth);
+            if (minSize.isFinite && minSize > flexMinColSizes[c]) {
+              flexMinColSizes[c] = minSize;
+            }
+          } else {
+            final double minSize =
+                _resolveTrackSize(track.minTrack, adjustedInnerWidth, percentageBasis: contentAvailableWidth);
+            final double rawMaxSize =
+                _resolveTrackSize(track.maxTrack, adjustedInnerWidth, percentageBasis: contentAvailableWidth);
+            double normalizedMinSize = minSize.isFinite && minSize > 0 ? minSize : 0.0;
+            double normalizedMaxSize = rawMaxSize.isFinite && rawMaxSize > 0 ? rawMaxSize : 0.0;
+            // Spec: If the resolved max is less than the resolved min, the max is floored to the min.
+            if (normalizedMaxSize > 0 && normalizedMinSize > normalizedMaxSize) {
+              normalizedMaxSize = normalizedMinSize;
+            }
+            if (normalizedMaxSize.isFinite && normalizedMaxSize > 0) {
+              rangeMinColSizes[c] = normalizedMinSize;
+              rangeMaxColSizes[c] = normalizedMaxSize;
+              hasRangeColumns = true;
+              // Start at min instead of max; grow toward max after flex minimums are satisfied.
+              colSizes[c] = rangeMinColSizes[c];
+            }
+          }
+        }
+      }
+
+      final bool needsColumnSizingResolution = hasIntrinsicColumns || hasRangeColumns || hasFlexColumns;
+      if (needsColumnSizingResolution) {
+        // Track each auto column's min-content contribution so that we can
+        // clamp max-content sizing to the available inline size and allow
+        // line wrapping (browser behavior).
+        final List<double> autoMinColSizes = List<double>.filled(colSizes.length, 0.0);
+
+        void resolveFlexibleAndRangeTracks() {
+          if (adjustedInnerWidth == null || !adjustedInnerWidth!.isFinite || adjustedInnerWidth! <= 0) return;
+          final double available = adjustedInnerWidth!;
+
+          double fixedNonFlexNonRange = 0.0;
+          double rangeBaseSum = 0.0;
+          double flexMinSum = 0.0;
+          double frSum = 0.0;
+          final List<int> growableRanges = <int>[];
+
+          for (int c = 0; c < colSizes.length; c++) {
+            final double fr = flexFactors[c];
+            if (fr > 0) {
+              double minSize = flexMinColSizes[c];
+              if (!minSize.isFinite || minSize < 0) minSize = 0.0;
+              flexMinColSizes[c] = minSize;
+              flexMinSum += minSize;
+              frSum += fr;
+              continue;
+            }
+
+            final double maxRange = rangeMaxColSizes[c];
+            if (maxRange > 0 && maxRange.isFinite) {
+              double base = colSizes[c];
+              if (!base.isFinite || base < 0) base = 0.0;
+              final double minRange = rangeMinColSizes[c];
+              if (base < minRange) base = minRange;
+              if (base > maxRange) base = maxRange;
+              colSizes[c] = base;
+              rangeBaseSum += base;
+              if (maxRange > base + 0.01) {
+                growableRanges.add(c);
+              }
+              continue;
+            }
+
+            fixedNonFlexNonRange += colSizes[c];
+          }
+
+          final double minUsed = fixedNonFlexNonRange + rangeBaseSum + flexMinSum;
+          if (minUsed >= available) {
+            for (int c = 0; c < colSizes.length; c++) {
+              final double fr = flexFactors[c];
+              if (fr <= 0) continue;
+              colSizes[c] = flexMinColSizes[c];
+            }
+            return;
+          }
+
+          double free = available - minUsed;
+
+          if (growableRanges.isNotEmpty && free > 0) {
+            final List<int> active = List<int>.from(growableRanges);
+            while (active.isNotEmpty && free > 0) {
+              final double share = free / active.length;
+              bool anyFrozen = false;
+              for (int i = active.length - 1; i >= 0; i--) {
+                final int idx = active[i];
+                final double maxSize = rangeMaxColSizes[idx];
+                final double current = colSizes[idx];
+                final double capacity = maxSize - current;
+                if (capacity <= 0) {
+                  active.removeAt(i);
+                  continue;
+                }
+                if (capacity <= share + 1e-6) {
+                  colSizes[idx] = maxSize;
+                  free -= capacity;
+                  active.removeAt(i);
+                  anyFrozen = true;
+                } else {
+                  colSizes[idx] = current + share;
+                  free -= share;
+                }
+              }
+              if (!anyFrozen) break;
+            }
+          }
+
+          if (frSum > 0) {
+            double occupiedNonFlex = fixedNonFlexNonRange;
+            for (int c = 0; c < colSizes.length; c++) {
+              final double maxRange = rangeMaxColSizes[c];
+              if (maxRange > 0 && maxRange.isFinite) {
+                occupiedNonFlex += colSizes[c];
+              }
+            }
+
+            final double flexSpace = math.max(0.0, available - occupiedNonFlex);
+            double remainingSpace = flexSpace;
+            double remainingFrSum = frSum;
+            final List<int> activeFlex = <int>[
+              for (int c = 0; c < colSizes.length; c++)
+                if (flexFactors[c] > 0) c
+            ];
+
+            while (activeFlex.isNotEmpty && remainingFrSum > 0) {
+              bool frozeAny = false;
+              for (int i = activeFlex.length - 1; i >= 0; i--) {
+                final int idx = activeFlex[i];
+                final double fr = flexFactors[idx];
+                if (fr <= 0) {
+                  activeFlex.removeAt(i);
+                  continue;
+                }
+                final double portion = remainingSpace * (fr / remainingFrSum);
+                double minSize = flexMinColSizes[idx];
+                if (!minSize.isFinite || minSize < 0) minSize = 0.0;
+                if (portion + 1e-6 < minSize) {
+                  colSizes[idx] = minSize;
+                  remainingSpace -= minSize;
+                  remainingFrSum -= fr;
+                  activeFlex.removeAt(i);
+                  frozeAny = true;
+                }
+              }
+              if (remainingSpace < 0) remainingSpace = 0.0;
+              if (!frozeAny) {
+                for (final int idx in activeFlex) {
+                  final double fr = flexFactors[idx];
+                  if (fr <= 0 || remainingFrSum <= 0) {
+                    colSizes[idx] = flexMinColSizes[idx];
+                    continue;
+                  }
+                  colSizes[idx] = remainingSpace * (fr / remainingFrSum);
+                }
+                break;
+              }
+            }
+          }
+        }
+
+        RenderBox? childForIntrinsic = firstChild;
+        while (childForIntrinsic != null) {
+          final GridLayoutParentData pd = childForIntrinsic.parentData as GridLayoutParentData;
+          final int startCol = pd.columnStart;
+          final int span = math.max(1, pd.columnSpan);
+          if (startCol >= 0 && startCol < colSizes.length) {
+            CSSRenderStyle? childGridStyle;
+            if (childForIntrinsic is RenderBoxModel) {
+              childGridStyle = childForIntrinsic.renderStyle;
+            } else if (childForIntrinsic is RenderEventListener) {
+              final RenderBox? wrapped = childForIntrinsic.child;
+              if (wrapped is RenderBoxModel) {
+                childGridStyle = wrapped.renderStyle;
+              }
+            }
+
+            double intrinsicMaxWidth = childForIntrinsic.getMaxIntrinsicWidth(double.infinity);
+            double intrinsicMinWidth = childForIntrinsic.getMinIntrinsicWidth(double.infinity);
+            if (childGridStyle != null) {
+              // Guard against circular dependencies where percentage widths contribute to intrinsic sizing
+              // of `auto` tracks; fall back to the definite min-width floor if available.
+              final CSSLengthValue minWidth = childGridStyle.minWidth;
+              if (minWidth.isNotAuto && minWidth.type != CSSLengthType.PERCENTAGE) {
+                final double minWidthValue = minWidth.computedValue;
+                if (minWidthValue.isFinite && minWidthValue > 0) {
+                  if (!intrinsicMinWidth.isFinite || intrinsicMinWidth < minWidthValue) {
+                    intrinsicMinWidth = minWidthValue;
+                  }
+                  if (!intrinsicMaxWidth.isFinite || intrinsicMaxWidth < minWidthValue) {
+                    intrinsicMaxWidth = minWidthValue;
+                  }
+                }
+              }
+
+              // For nowrap/pre text, the min-content contribution is the max-content contribution.
+              // Flutter's min intrinsic width defaults to the longest breakable word, so correct it
+              // here for grid track sizing.
+              if (childGridStyle.whiteSpace == WhiteSpace.nowrap ||
+                  childGridStyle.whiteSpace == WhiteSpace.pre) {
+                if (intrinsicMaxWidth.isFinite && intrinsicMaxWidth > 0) {
+                  intrinsicMinWidth = intrinsicMaxWidth;
+                }
+              }
+
+              // Aspect-ratio affects the box's intrinsic size contributions when one axis is
+              // definite and the other is auto. In particular, a definite block-size with an
+              // auto inline-size yields an intrinsic inline-size derived from the preferred
+              // aspect ratio. This is important for flex (fr) tracks: their automatic minimum
+              // size is based on the min-content contribution, and browsers will overflow the
+              // grid container rather than overlap items when these minimums exceed the
+              // available size.
+              final double? ratio = childGridStyle.aspectRatio;
+              if (ratio != null && ratio > 0) {
+                final bool widthAuto = childGridStyle.width.isAuto ||
+                    (childGridStyle.width.type == CSSLengthType.PERCENTAGE &&
+                        !childGridStyle.width.computedValue.isFinite);
+                if (widthAuto && childGridStyle.height.isNotAuto) {
+                  final double h = childGridStyle.height.computedValue;
+                  if (h.isFinite && h > 0) {
+                    final double derivedW = _gridItemBorderBoxWidthFromHeight(h, ratio);
+                    if (derivedW.isFinite && derivedW > 0) {
+                      if (!intrinsicMinWidth.isFinite || derivedW > intrinsicMinWidth) {
+                        intrinsicMinWidth = derivedW;
+                      }
+                      if (!intrinsicMaxWidth.isFinite || derivedW > intrinsicMaxWidth) {
+                        intrinsicMaxWidth = derivedW;
+                      }
+                    }
+                  }
+                }
+              }
+
+              // Keep max-content contribution at least the min-content contribution to avoid
+              // shrinking auto tracks below their minimum contribution.
+              if (intrinsicMinWidth.isFinite &&
+                  intrinsicMinWidth > 0 &&
+                  (!intrinsicMaxWidth.isFinite || intrinsicMaxWidth < intrinsicMinWidth)) {
+                intrinsicMaxWidth = intrinsicMinWidth;
+              }
+
+              // Intrinsic sizing keywords on the grid item affect its intrinsic
+              // contributions: a specified `width: max-content` forces the item's
+              // minimum contribution up to its max-content size, and `width:
+              // min-content` forces the max contribution down to its min-content
+              // size. This is important for flex (fr) tracks to avoid adjacent
+              // item overlap when the item's used size is intrinsic.
+              final CSSLengthValue preferredWidth = childGridStyle.width;
+              if (preferredWidth.type == CSSLengthType.MAX_CONTENT) {
+                if (intrinsicMaxWidth.isFinite && intrinsicMaxWidth > 0) {
+                  intrinsicMinWidth = intrinsicMaxWidth;
+                }
+              } else if (preferredWidth.type == CSSLengthType.MIN_CONTENT) {
+                if (intrinsicMinWidth.isFinite && intrinsicMinWidth > 0) {
+                  intrinsicMaxWidth = intrinsicMinWidth;
+                }
+              }
+            }
+            final int endCol = math.min(colSizes.length, startCol + span);
+
+            int autoCount = 0;
+            int minContentCount = 0;
+            int maxContentCount = 0;
+            int flexCount = 0;
+            for (int c = startCol; c < endCol; c++) {
+              if (autoColumnsMask[c]) autoCount++;
+              if (minContentColumnsMask[c]) minContentCount++;
+              if (maxContentColumnsMask[c]) maxContentCount++;
+              if (flexFactors[c] > 0) flexCount++;
+            }
+
+            if ((autoCount > 0 || maxContentCount > 0) && intrinsicMaxWidth.isFinite && intrinsicMaxWidth > 0) {
+              final double availableMax =
+                  math.max(0.0, intrinsicMaxWidth - colGap * math.max(0, span - 1));
+              if (autoCount > 0) {
+                final double perAutoTrack = availableMax / autoCount;
+                for (int c = startCol; c < endCol; c++) {
+                  if (!autoColumnsMask[c]) continue;
+                  if (perAutoTrack > colSizes[c]) {
+                    colSizes[c] = perAutoTrack;
+                  }
+                }
+              }
+              if (maxContentCount > 0) {
+                final double perMaxContentTrack = availableMax / maxContentCount;
+                for (int c = startCol; c < endCol; c++) {
+                  if (!maxContentColumnsMask[c]) continue;
+                  if (perMaxContentTrack > colSizes[c]) {
+                    colSizes[c] = perMaxContentTrack;
+                  }
+                }
+              }
+            }
+
+            if ((autoCount > 0 || minContentCount > 0) && intrinsicMinWidth.isFinite && intrinsicMinWidth > 0) {
+              final double availableMin =
+                  math.max(0.0, intrinsicMinWidth - colGap * math.max(0, span - 1));
+              if (autoCount > 0) {
+                final double perAutoMinTrack = availableMin / autoCount;
+                for (int c = startCol; c < endCol; c++) {
+                  if (!autoColumnsMask[c]) continue;
+                  if (perAutoMinTrack > autoMinColSizes[c]) {
+                    autoMinColSizes[c] = perAutoMinTrack;
+                  }
+                }
+              }
+              if (minContentCount > 0) {
+                final double perMinContentTrack = availableMin / minContentCount;
+                for (int c = startCol; c < endCol; c++) {
+                  if (!minContentColumnsMask[c]) continue;
+                  if (perMinContentTrack > colSizes[c]) {
+                    colSizes[c] = perMinContentTrack;
+                  }
+                }
+              }
+            }
+
+            if (flexCount > 0 && intrinsicMinWidth.isFinite && intrinsicMinWidth > 0) {
+              final double availableMin =
+                  math.max(0.0, intrinsicMinWidth - colGap * math.max(0, span - 1));
+              final double perFlexMinTrack = availableMin / flexCount;
+              for (int c = startCol; c < endCol; c++) {
+                if (flexFactors[c] <= 0) continue;
+                if (perFlexMinTrack > flexMinColSizes[c]) {
+                  flexMinColSizes[c] = perFlexMinTrack;
+                }
+              }
+            }
+          }
+          childForIntrinsic = pd.nextSibling;
+        }
+
+        // Ensure auto tracks are at least their min-content contributions.
+        if (hasAutoColumns) {
+          for (int c = 0; c < colSizes.length; c++) {
+            if (!autoColumnsMask[c]) continue;
+            final double minSize = autoMinColSizes[c];
+            if (minSize.isFinite && minSize > colSizes[c]) {
+              colSizes[c] = minSize;
+            }
+          }
+        }
+
+        // Clamp range-limited tracks (minmax(<min>, <max>)) to their max limit after intrinsic sizing.
+        for (int c = 0; c < colSizes.length; c++) {
+          final double maxRange = rangeMaxColSizes[c];
+          if (maxRange <= 0 || !maxRange.isFinite) continue;
+          final double minRange = rangeMinColSizes[c];
+          double value = colSizes[c];
+          if (!value.isFinite || value < 0) value = 0.0;
+          if (value < minRange) value = minRange;
+          if (value > maxRange) value = maxRange;
+          colSizes[c] = value;
+        }
+
+        // Resolve range tracks first (up to their max) and then distribute remaining space to flex tracks,
+        // while respecting flex tracks' automatic minimum sizes (min-content contributions).
+        resolveFlexibleAndRangeTracks();
+
+        // Clamp auto columns between their min-content and max-content contributions
+        // when the grid container has a definite inline size. This prevents auto
+        // columns from growing without bound and matches browser behavior where
+        // long text wraps instead of forcing horizontal overflow.
+        bool didClampAutoColumns = false;
+        if (hasAutoColumns && adjustedInnerWidth != null && adjustedInnerWidth.isFinite && adjustedInnerWidth > 0) {
+          double totalWidth = 0.0;
+          for (final double size in colSizes) {
+            totalWidth += size;
+          }
+          if (totalWidth > adjustedInnerWidth + 0.5) {
+            final double overflow = totalWidth - adjustedInnerWidth;
+            final List<double> shrinkCapacities = List<double>.filled(colSizes.length, 0.0);
+            double totalCapacity = 0.0;
+            for (int c = 0; c < colSizes.length; c++) {
+              if (!autoColumnsMask[c]) continue;
+              double minSize = autoMinColSizes[c];
+              if (!minSize.isFinite || minSize < 0) minSize = 0.0;
+              if (minSize > colSizes[c]) minSize = colSizes[c];
+              autoMinColSizes[c] = minSize;
+              final double capacity = math.max(0.0, colSizes[c] - minSize);
+              shrinkCapacities[c] = capacity;
+              totalCapacity += capacity;
+            }
+            if (totalCapacity > 0) {
+              final double ratio = math.min(1.0, overflow / totalCapacity);
+              for (int c = 0; c < colSizes.length; c++) {
+                final double capacity = shrinkCapacities[c];
+                if (capacity <= 0) continue;
+                final double shrink = capacity * ratio;
+                colSizes[c] = math.max(autoMinColSizes[c], colSizes[c] - shrink);
+              }
+              didClampAutoColumns = true;
+            }
+          }
+        }
+
+        // If we clamped auto columns due to overflow (non-flex tracks exceed available space),
+        // re-resolve range/flex tracks to consume any newly freed space.
+        if (didClampAutoColumns) {
+          resolveFlexibleAndRangeTracks();
+        }
+      }
+    }
+
+    // Pass 2: layout children with resolved column widths.
+    if (implicitRowHeights.isNotEmpty) {
+      implicitRowHeights = List<double>.filled(implicitRowHeights.length, 0.0, growable: true);
+    }
+
+    child = firstChild;
+    while (child != null) {
+      CSSRenderStyle? childGridStyle;
+      if (child is RenderBoxModel) {
+        childGridStyle = child.renderStyle;
+      } else if (child is RenderEventListener) {
+        final RenderBox? wrapped = child.child;
+        if (wrapped is RenderBoxModel) {
+          childGridStyle = wrapped.renderStyle;
+        }
+      }
+
+      final GridLayoutParentData pd = child.parentData as GridLayoutParentData;
+      final int rowIndex = pd.rowStart;
+      final int colIndex = pd.columnStart;
+      final int rowSpan = math.max(1, pd.rowSpan);
+      final int colSpan = math.max(1, pd.columnSpan).clamp(1, math.max(1, colSizes.length - colIndex));
 
       if (colSpan == 1 &&
           colIndex < resolvedColumnDefs.length &&
@@ -1125,36 +2722,31 @@ class RenderGridLayout extends RenderLayoutBox {
       }
       final double cellHeight = hasExplicitRowSize ? explicitHeight : double.nan;
 
-      double? explicitItemHeight;
-      if (childGridStyle != null && childGridStyle.height.isNotAuto) {
-        explicitItemHeight = childGridStyle.height.computedValue;
-      }
-
       final GridAxisAlignment justifySelfAlignment = _resolveJustifySelfAlignment(childGridStyle);
       final GridAxisAlignment alignSelfAlignment = _resolveAlignSelfAlignment(childGridStyle);
-      final bool childWidthAuto = childGridStyle?.width.isAuto ?? true;
-      final bool childHeightAuto = childGridStyle?.height.isAuto ?? true;
-      final bool stretchWidth =
-          justifySelfAlignment == GridAxisAlignment.stretch && childWidthAuto && cellWidth.isFinite;
-      final bool stretchHeight = alignSelfAlignment == GridAxisAlignment.stretch && childHeightAuto &&
-          hasExplicitRowSize && explicitItemHeight == null;
-
-      final double minWidthConstraint = stretchWidth ? cellWidth : 0;
-      final double maxWidthConstraint = cellWidth.isFinite ? cellWidth : (innerMaxWidth ?? double.infinity);
-      final double minHeightConstraint =
-          explicitItemHeight ?? (stretchHeight && cellHeight.isFinite ? cellHeight : 0);
-      final double maxHeightConstraint =
-          explicitItemHeight ?? (cellHeight.isFinite ? cellHeight : (innerMaxHeight ?? double.infinity));
-
-      final BoxConstraints childConstraints = BoxConstraints(
-        minWidth: minWidthConstraint,
-        maxWidth: maxWidthConstraint,
-        minHeight: minHeightConstraint,
-        maxHeight: maxHeightConstraint,
+      final _GridResolvedMargins childMargins = _resolveGridChildMargins(
+        childGridStyle,
+        cellWidth.isFinite ? cellWidth : null,
+      );
+      final double marginHorizontal = childMargins.horizontal;
+      final double marginVertical = childMargins.vertical;
+      final BoxConstraints childConstraints = _gridItemConstraints(
+        child: child,
+        childGridStyle: childGridStyle,
+        justifySelfAlignment: justifySelfAlignment,
+        alignSelfAlignment: alignSelfAlignment,
+        cellWidth: cellWidth,
+        hasDefiniteCellHeight: hasExplicitRowSize,
+        cellHeight: cellHeight,
+        marginHorizontal: marginHorizontal,
+        marginVertical: marginVertical,
+        innerMaxWidth: innerMaxWidth,
+        innerMaxHeight: innerMaxHeight,
       );
 
       Stopwatch? childLayoutSw;
       if (profileGrid) childLayoutSw = Stopwatch()..start();
+      _overrideGridChildContentBoxLogicalSizes(child, childConstraints);
       child.layout(childConstraints, parentUsesSize: true);
       if (childLayoutSw != null) {
         childLayoutSw.stop();
@@ -1162,12 +2754,41 @@ class RenderGridLayout extends RenderLayoutBox {
       }
 
       final Size childSize = child.size;
-      final double perRow = childSize.height / rowSpan;
+      final double marginBoxHeight = childSize.height + marginVertical;
+      // Resolve implicit/auto row heights from item contributions.
+      //
+      // When an item spans fixed-size tracks plus implicit/auto tracks, only the
+      // remaining height beyond the fixed tracks (and gutters) should be used
+      // to grow the implicit/auto tracks. This matches the grid track sizing
+      // algorithm where spanning items only increase tracks when necessary.
+      double fixedRowHeight = 0;
+      int flexibleRowCount = 0;
       for (int r = 0; r < rowSpan; r++) {
-        implicitRowHeights[rowIndex + r] = math.max(implicitRowHeights[rowIndex + r], perRow);
+        final int targetRow = rowIndex + r;
+        if (targetRow < 0 || targetRow >= rowSizes.length) {
+          flexibleRowCount++;
+          continue;
+        }
+        final double resolved = rowSizes[targetRow];
+        if (resolved > 0) {
+          fixedRowHeight += resolved;
+        } else {
+          flexibleRowCount++;
+        }
+      }
+      final double gutters = rowGap * math.max(0, rowSpan - 1);
+      final double remaining = math.max(0, marginBoxHeight - fixedRowHeight - gutters);
+      if (flexibleRowCount > 0 && remaining > 0) {
+        final double perRow = remaining / flexibleRowCount;
+        for (int r = 0; r < rowSpan; r++) {
+          final int targetRow = rowIndex + r;
+          if (targetRow < 0 || targetRow >= rowSizes.length) continue;
+          if (rowSizes[targetRow] > 0) continue;
+          if (targetRow >= implicitRowHeights.length) continue;
+          implicitRowHeights[targetRow] = math.max(implicitRowHeights[targetRow], perRow);
+        }
       }
 
-      final GridLayoutParentData pd = child.parentData as GridLayoutParentData;
       double rowTop = paddingTop + borderTop;
       for (int r = 0; r < rowIndex; r++) {
         final double rh = _resolvedRowHeight(rowSizes, implicitRowHeights, r);
@@ -1175,23 +2796,108 @@ class RenderGridLayout extends RenderLayoutBox {
         rowTop += rowGap;
       }
 
-      final double horizontalExtra = cellWidth.isFinite ? math.max(0, cellWidth - childSize.width) : 0;
+      double usedMarginLeft = childMargins.left;
+      double usedMarginRight = childMargins.right;
+      if (childMargins.autoLeft || childMargins.autoRight) {
+        final double free = cellWidth.isFinite ? cellWidth - (childSize.width + marginHorizontal) : 0;
+        final double freeSpace = math.max(0, free);
+        if (childMargins.autoLeft && childMargins.autoRight) {
+          usedMarginLeft = freeSpace / 2;
+          usedMarginRight = freeSpace / 2;
+        } else if (childMargins.autoLeft) {
+          usedMarginLeft = freeSpace;
+        } else if (childMargins.autoRight) {
+          usedMarginRight = freeSpace;
+        }
+      }
+
+      double usedMarginTop = childMargins.top;
+      double usedMarginBottom = childMargins.bottom;
+      if ((childMargins.autoTop || childMargins.autoBottom) && hasExplicitRowSize && cellHeight.isFinite) {
+        final double free = cellHeight - (childSize.height + marginVertical);
+        final double freeSpace = math.max(0, free);
+        if (childMargins.autoTop && childMargins.autoBottom) {
+          usedMarginTop = freeSpace / 2;
+          usedMarginBottom = freeSpace / 2;
+        } else if (childMargins.autoTop) {
+          usedMarginTop = freeSpace;
+        } else if (childMargins.autoBottom) {
+          usedMarginBottom = freeSpace;
+        }
+      }
+
+      final double usedMarginBoxWidth = childSize.width + usedMarginLeft + usedMarginRight;
+      final double usedMarginBoxHeight = childSize.height + usedMarginTop + usedMarginBottom;
+      final double horizontalExtra = cellWidth.isFinite ? math.max(0, cellWidth - usedMarginBoxWidth) : 0;
       final double verticalExtra = hasExplicitRowSize && cellHeight.isFinite
-          ? math.max(0, cellHeight - childSize.height)
+          ? math.max(0, cellHeight - usedMarginBoxHeight)
           : 0;
       final double horizontalInset = _alignmentOffsetWithinCell(justifySelfAlignment, horizontalExtra);
-      final double verticalInset = hasExplicitRowSize
-          ? _alignmentOffsetWithinCell(alignSelfAlignment, verticalExtra)
-          : 0;
-      pd.offset = Offset(xOffset + horizontalInset, rowTop + verticalInset);
-      pd
-        ..rowStart = rowIndex
-        ..columnStart = colIndex
-        ..rowSpan = rowSpan
-        ..columnSpan = colSpan;
-      hasAnyChild = true;
+      final double verticalInset = hasExplicitRowSize ? _alignmentOffsetWithinCell(alignSelfAlignment, verticalExtra) : 0;
+      pd.offset = Offset(xOffset + horizontalInset + usedMarginLeft, rowTop + verticalInset + usedMarginTop);
 
       child = pd.nextSibling;
+    }
+
+    // If auto-sized rows resolve to a definite height (from intrinsic measurement),
+    // apply align-self: stretch so items fill the resolved row size, matching CSS Grid.
+    bool relayoutForImplicitRowStretch = false;
+    RenderBox? stretchCheckChild = firstChild;
+    while (stretchCheckChild != null) {
+      CSSRenderStyle? childGridStyle;
+      if (stretchCheckChild is RenderBoxModel) {
+        childGridStyle = stretchCheckChild.renderStyle;
+      } else if (stretchCheckChild is RenderEventListener) {
+        final RenderBox? wrapped = stretchCheckChild.child;
+        if (wrapped is RenderBoxModel) {
+          childGridStyle = wrapped.renderStyle;
+        }
+      }
+      final GridAxisAlignment alignSelfAlignment = _resolveAlignSelfAlignment(childGridStyle);
+      final bool childHeightAuto = childGridStyle?.height.isAuto ?? true;
+      double? explicitItemHeight;
+      if (childGridStyle != null && childGridStyle.height.isNotAuto) {
+        explicitItemHeight = childGridStyle.height.computedValue;
+      }
+      if (alignSelfAlignment == GridAxisAlignment.stretch && childHeightAuto && explicitItemHeight == null) {
+        final GridLayoutParentData pd = stretchCheckChild.parentData as GridLayoutParentData;
+        double cellWidth = 0;
+        final int colIndex = pd.columnStart;
+        final int colSpan = math.max(1, pd.columnSpan).clamp(1, math.max(1, colSizes.length - colIndex));
+        for (int c = colIndex; c < math.min(colIndex + colSpan, colSizes.length); c++) {
+          cellWidth += colSizes[c];
+          if (c < colIndex + colSpan - 1) cellWidth += colGap;
+        }
+        final _GridResolvedMargins childMargins = _resolveGridChildMargins(
+          childGridStyle,
+          cellWidth.isFinite ? cellWidth : null,
+        );
+        final double marginVertical = childMargins.vertical;
+        final int rowIndex = pd.rowStart;
+        final int rowSpan = math.max(1, pd.rowSpan);
+        double resolvedCellHeight = 0;
+        bool hasDefiniteCellHeight = true;
+        for (int r = rowIndex; r < rowIndex + rowSpan; r++) {
+          final double rh = _resolvedRowHeight(rowSizes, implicitRowHeights, r);
+          if (!rh.isFinite || rh < 0) {
+            hasDefiniteCellHeight = false;
+            break;
+          }
+          resolvedCellHeight += rh;
+        }
+        if (hasDefiniteCellHeight) {
+          resolvedCellHeight += rowGap * math.max(0, rowSpan - 1);
+        }
+        if (hasDefiniteCellHeight && resolvedCellHeight.isFinite) {
+          final double currentHeight = stretchCheckChild.size.height;
+          final double availableHeight = math.max(0, resolvedCellHeight - marginVertical);
+          if (availableHeight > currentHeight + 0.5) {
+            relayoutForImplicitRowStretch = true;
+            break;
+          }
+        }
+      }
+      stretchCheckChild = (stretchCheckChild.parentData as GridLayoutParentData).nextSibling;
     }
 
     // Compute used content size
@@ -1295,8 +3001,189 @@ class RenderGridLayout extends RenderLayoutBox {
     final double desiredWidth = layoutContentWidth + horizontalPaddingBorder;
     final double desiredHeight = layoutContentHeight + verticalPaddingBorder;
     size = constraints.constrain(Size(desiredWidth, desiredHeight));
-    final double horizontalFree = math.max(0.0, size.width - horizontalPaddingBorder - usedContentWidth);
-    final double verticalFree = math.max(0.0, size.height - verticalPaddingBorder - usedContentHeight);
+    double horizontalFree = math.max(0.0, size.width - horizontalPaddingBorder - usedContentWidth);
+    double verticalFree = math.max(0.0, size.height - verticalPaddingBorder - usedContentHeight);
+    bool relayoutForStretchedTracks = false;
+
+    if (horizontalFree > 0 &&
+        renderStyle.justifyContent == JustifyContent.stretch &&
+        justificationColumnCount > 0) {
+      GridTrackSize columnTrackAt(int index) {
+        if (index >= 0 && index < resolvedColumnDefs.length) {
+          return resolvedColumnDefs[index];
+        }
+        final int implicitIndex = math.max(0, index - explicitColumnCount);
+        return autoColDefs.isNotEmpty ? autoColDefs[implicitIndex % autoColDefs.length] : const GridAuto();
+      }
+
+      bool isStretchableColumn(GridTrackSize track) {
+        if (track is GridAuto) return true;
+        if (track is GridMinMax) return track.maxTrack is GridAuto;
+        return false;
+      }
+
+      final List<int> stretchableColumns = <int>[];
+      for (int c = 0; c < justificationColumnCount; c++) {
+        if (isStretchableColumn(columnTrackAt(c))) {
+          stretchableColumns.add(c);
+        }
+      }
+      if (stretchableColumns.isNotEmpty) {
+        final double perColumn = horizontalFree / stretchableColumns.length;
+        for (final int c in stretchableColumns) {
+          colSizes[c] += perColumn;
+        }
+        usedContentWidth += horizontalFree;
+        horizontalFree = 0;
+        relayoutForStretchedTracks = true;
+      }
+    }
+    if (verticalFree > 0 && renderStyle.alignContent == AlignContent.stretch && alignmentRowCount > 0) {
+      final List<int> stretchableRows = <int>[];
+      for (int r = 0; r < alignmentRowCount; r++) {
+        if (r < rowSizes.length && rowSizes[r] > 0) continue;
+        if (r >= implicitRowHeights.length) continue;
+        if (implicitRowHeights[r] <= 0) continue;
+        stretchableRows.add(r);
+      }
+      if (stretchableRows.isNotEmpty) {
+        final double perRow = verticalFree / stretchableRows.length;
+        for (final int r in stretchableRows) {
+          implicitRowHeights[r] += perRow;
+        }
+        usedContentHeight += verticalFree;
+        verticalFree = 0;
+        relayoutForStretchedTracks = true;
+      }
+    }
+
+    if (!relayoutForStretchedTracks && relayoutForImplicitRowStretch) {
+      relayoutForStretchedTracks = true;
+    }
+
+    if (relayoutForStretchedTracks) {
+      RenderBox? childForRelayout = firstChild;
+      while (childForRelayout != null) {
+        CSSRenderStyle? childGridStyle;
+        if (childForRelayout is RenderBoxModel) {
+          childGridStyle = childForRelayout.renderStyle;
+        } else if (childForRelayout is RenderEventListener) {
+          final RenderBox? wrapped = childForRelayout.child;
+          if (wrapped is RenderBoxModel) {
+            childGridStyle = wrapped.renderStyle;
+          }
+        }
+
+        final GridAxisAlignment justifySelfAlignment = _resolveJustifySelfAlignment(childGridStyle);
+        final GridAxisAlignment alignSelfAlignment = _resolveAlignSelfAlignment(childGridStyle);
+
+        final GridLayoutParentData pd = childForRelayout.parentData as GridLayoutParentData;
+        final int rowIndex = pd.rowStart;
+        final int colIndex = pd.columnStart;
+        final int rowSpan = math.max(1, pd.rowSpan);
+        final int colSpan = math.max(1, pd.columnSpan);
+
+        double xOffset = xStart;
+        for (int c = 0; c < colIndex; c++) {
+          xOffset += colSizes[c];
+          xOffset += colGap;
+        }
+
+        double cellWidth = 0;
+        for (int c = colIndex; c < math.min(colIndex + colSpan, colSizes.length); c++) {
+          cellWidth += colSizes[c];
+          if (c < colIndex + colSpan - 1) cellWidth += colGap;
+        }
+
+        final _GridResolvedMargins childMargins = _resolveGridChildMargins(
+          childGridStyle,
+          cellWidth.isFinite ? cellWidth : null,
+        );
+        final double marginHorizontal = childMargins.horizontal;
+        final double marginVertical = childMargins.vertical;
+
+        double resolvedCellHeight = 0;
+        bool hasDefiniteCellHeight = true;
+        for (int r = rowIndex; r < rowIndex + rowSpan; r++) {
+          final double rh = _resolvedRowHeight(rowSizes, implicitRowHeights, r);
+          if (!rh.isFinite || rh < 0) {
+            hasDefiniteCellHeight = false;
+            break;
+          }
+          resolvedCellHeight += rh;
+        }
+        if (hasDefiniteCellHeight) {
+          resolvedCellHeight += rowGap * math.max(0, rowSpan - 1);
+        }
+        final double cellHeight = hasDefiniteCellHeight ? resolvedCellHeight : double.nan;
+        final BoxConstraints childConstraints = _gridItemConstraints(
+          child: childForRelayout,
+          childGridStyle: childGridStyle,
+          justifySelfAlignment: justifySelfAlignment,
+          alignSelfAlignment: alignSelfAlignment,
+          cellWidth: cellWidth,
+          hasDefiniteCellHeight: hasDefiniteCellHeight,
+          cellHeight: cellHeight,
+          marginHorizontal: marginHorizontal,
+          marginVertical: marginVertical,
+          innerMaxWidth: innerMaxWidth,
+          innerMaxHeight: innerMaxHeight,
+        );
+
+        _overrideGridChildContentBoxLogicalSizes(childForRelayout, childConstraints);
+        childForRelayout.layout(childConstraints, parentUsesSize: true);
+        final Size childSize = childForRelayout.size;
+
+        double rowTop = paddingTop + borderTop;
+        for (int r = 0; r < rowIndex; r++) {
+          final double rh = _resolvedRowHeight(rowSizes, implicitRowHeights, r);
+          rowTop += rh;
+          rowTop += rowGap;
+        }
+
+        double usedMarginLeft = childMargins.left;
+        double usedMarginRight = childMargins.right;
+        if (childMargins.autoLeft || childMargins.autoRight) {
+          final double free = cellWidth.isFinite ? cellWidth - (childSize.width + marginHorizontal) : 0;
+          final double freeSpace = math.max(0, free);
+          if (childMargins.autoLeft && childMargins.autoRight) {
+            usedMarginLeft = freeSpace / 2;
+            usedMarginRight = freeSpace / 2;
+          } else if (childMargins.autoLeft) {
+            usedMarginLeft = freeSpace;
+          } else if (childMargins.autoRight) {
+            usedMarginRight = freeSpace;
+          }
+        }
+
+        double usedMarginTop = childMargins.top;
+        double usedMarginBottom = childMargins.bottom;
+        if ((childMargins.autoTop || childMargins.autoBottom) && hasDefiniteCellHeight && cellHeight.isFinite) {
+          final double free = cellHeight - (childSize.height + marginVertical);
+          final double freeSpace = math.max(0, free);
+          if (childMargins.autoTop && childMargins.autoBottom) {
+            usedMarginTop = freeSpace / 2;
+            usedMarginBottom = freeSpace / 2;
+          } else if (childMargins.autoTop) {
+            usedMarginTop = freeSpace;
+          } else if (childMargins.autoBottom) {
+            usedMarginBottom = freeSpace;
+          }
+        }
+
+        final double usedMarginBoxWidth = childSize.width + usedMarginLeft + usedMarginRight;
+        final double usedMarginBoxHeight = childSize.height + usedMarginTop + usedMarginBottom;
+        final double horizontalExtra = cellWidth.isFinite ? math.max(0, cellWidth - usedMarginBoxWidth) : 0;
+        final double verticalExtra = cellHeight.isFinite ? math.max(0, cellHeight - usedMarginBoxHeight) : 0;
+        final double horizontalInset = _alignmentOffsetWithinCell(justifySelfAlignment, horizontalExtra);
+        final double verticalInset =
+            cellHeight.isFinite ? _alignmentOffsetWithinCell(alignSelfAlignment, verticalExtra) : 0;
+        pd.offset = Offset(xOffset + horizontalInset + usedMarginLeft, rowTop + verticalInset + usedMarginTop);
+
+        childForRelayout = pd.nextSibling;
+      }
+    }
+
     final double justifyShift = _resolveJustifyContentShift(
       renderStyle.justifyContent,
       horizontalFree,
@@ -1367,6 +3254,33 @@ class RenderGridLayout extends RenderLayoutBox {
       }
       pd.offset += Offset(additionalX, additionalY);
       childForAlignment = pd.nextSibling;
+    }
+
+    // Apply baseline/last-baseline alignment for items within each row.
+    _applyRowBaselineAlignment(
+      rowSizes: rowSizes,
+      implicitRowHeights: implicitRowHeights,
+      rowGap: rowGap,
+      paddingTop: paddingTop,
+      borderTop: borderTop,
+      alignShift: alignShift,
+      distributeRows: distributeRows,
+      rowDistributionLeading: rowDistributionLeading,
+      rowDistributionBetween: rowDistributionBetween,
+    );
+
+    // Apply position: relative offsets after grid item placement and alignment.
+    RenderBox? childForRelativePosition = firstChild;
+    while (childForRelativePosition != null) {
+      final GridLayoutParentData pd = childForRelativePosition.parentData as GridLayoutParentData;
+      final RenderStyle? childStyle = _unwrapGridChildStyle(childForRelativePosition);
+      if (childStyle != null && childStyle.position == CSSPositionType.relative) {
+        final Offset? relativeOffset = CSSPositionedLayout.getRelativeOffset(childStyle);
+        if (relativeOffset != null) {
+          pd.offset = pd.offset.translate(relativeOffset.dx, relativeOffset.dy);
+        }
+      }
+      childForRelativePosition = pd.nextSibling;
     }
 
     placementStopwatch?.stop();
@@ -1440,9 +3354,18 @@ class RenderGridLayout extends RenderLayoutBox {
   }
 
   @override
+  bool hitTestChildren(BoxHitTestResult result, {Offset? position}) {
+    return defaultHitTestChildren(result, position: position);
+  }
+
+  @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(EnumProperty<GridAutoFlow>('gridAutoFlow', renderStyle.gridAutoFlow, defaultValue: GridAutoFlow.row));
+    properties.add(EnumProperty<GridAutoFlow>(
+      'gridAutoFlow',
+      renderStyle.gridAutoFlow,
+      defaultValue: GridAutoFlow.row,
+    ));
     properties.add(IntProperty('explicitColumns', renderStyle.gridTemplateColumns.length, defaultValue: 0));
     properties.add(IntProperty('explicitRows', renderStyle.gridTemplateRows.length, defaultValue: 0));
     properties.add(IntProperty('autoColumnPatterns', renderStyle.gridAutoColumns.length, defaultValue: 0));

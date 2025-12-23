@@ -69,4 +69,7 @@ pubspec.lock
 .fvm
 
 **/.claude/settings.local.json
-.preview-bundles/*
+**/.preview-bundles
+
+**/.dartServer/
+**/.dart-tool/

@@ -77,6 +77,12 @@ enum JustifyContent {
   /// The spacing between each pair of adjacent items, the start edge and the first item,
   /// and the end edge and the last item, are all exactly the same.
   spaceEvenly,
+
+  /// If the combined size of the items along the main axis is less than the size of the alignment container,
+  /// any auto-sized items have their size increased equally (not proportionally),
+  /// while still respecting the constraints imposed by max-height/max-width (or equivalent functionality),
+  /// so that the combined size exactly fills the alignment container along the main axis.
+  stretch,
 }
 
 /// Sets the distribution of space between and around content items along a flexbox's cross-axis.
@@ -143,7 +149,10 @@ enum AlignItems {
 
   /// All flex items are aligned such that their flex container baselines align.
   /// The item with the largest distance between its cross-start margin edge and its baseline is flushed with the cross-start edge of the line.
-  baseline
+  baseline,
+
+  /// Like `baseline`, but aligns items to their last baseline instead of the first baseline.
+  lastBaseline
 }
 
 /// Overrides a flex item's align-items value
@@ -172,7 +181,10 @@ enum AlignSelf {
 
   /// All flex items are aligned such that their flex container baselines align.
   /// The item with the largest distance between its cross-start margin edge and its baseline is flushed with the cross-start edge of the line.
-  baseline
+  baseline,
+
+  /// Like `baseline`, but aligns the item to its last baseline instead of the first baseline.
+  lastBaseline
 }
 
 mixin CSSFlexboxMixin on RenderStyle {
@@ -199,7 +211,12 @@ mixin CSSFlexboxMixin on RenderStyle {
   }
 
   @override
-  JustifyContent get justifyContent => _justifyContent ?? JustifyContent.flexStart;
+  JustifyContent get justifyContent {
+    final JustifyContent? value = _justifyContent;
+    if (value != null) return value;
+    if (isSelfRenderGridLayout()) return JustifyContent.stretch;
+    return JustifyContent.flexStart;
+  }
   JustifyContent? _justifyContent;
   set justifyContent(JustifyContent? value) {
     if (_justifyContent == value) return;
@@ -306,6 +323,9 @@ mixin CSSFlexboxMixin on RenderStyle {
 
   static JustifyContent resolveJustifyContent(String justifyContent) {
     switch (justifyContent) {
+      case 'stretch':
+      case 'normal':
+        return JustifyContent.stretch;
       case 'flex-end':
       case 'end':
         return JustifyContent.flexEnd;
@@ -335,7 +355,10 @@ mixin CSSFlexboxMixin on RenderStyle {
       case 'center':
         return AlignItems.center;
       case 'baseline':
+      case 'first baseline':
         return AlignItems.baseline;
+      case 'last baseline':
+        return AlignItems.lastBaseline;
       case 'stretch':
       default:
         return AlignItems.stretch;
@@ -377,7 +400,10 @@ mixin CSSFlexboxMixin on RenderStyle {
       case 'stretch':
         return AlignSelf.stretch;
       case 'baseline':
+      case 'first baseline':
         return AlignSelf.baseline;
+      case 'last baseline':
+        return AlignSelf.lastBaseline;
       default:
         return AlignSelf.auto;
     }

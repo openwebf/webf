@@ -49,6 +49,22 @@ class GridAuto extends GridTrackSize {
   }) : super();
 }
 
+class GridMinContent extends GridTrackSize {
+  const GridMinContent({
+    super.leadingLineNames,
+    super.trailingLineNames,
+    super.isAutoFit,
+  }) : super();
+}
+
+class GridMaxContent extends GridTrackSize {
+  const GridMaxContent({
+    super.leadingLineNames,
+    super.trailingLineNames,
+    super.isAutoFit,
+  }) : super();
+}
+
 class GridMinMax extends GridTrackSize {
   final GridTrackSize minTrack;
   final GridTrackSize maxTrack;
@@ -184,6 +200,8 @@ enum GridAxisAlignment {
   end,
   center,
   stretch,
+  baseline,
+  lastBaseline,
 }
 
 class CSSGridParser {
@@ -270,6 +288,16 @@ class CSSGridParser {
         leadingLineNames: resolvedLeading,
         trailingLineNames: resolvedTrailing,
       );
+    } else if (source is GridMinContent) {
+      return GridMinContent(
+        leadingLineNames: resolvedLeading,
+        trailingLineNames: resolvedTrailing,
+      );
+    } else if (source is GridMaxContent) {
+      return GridMaxContent(
+        leadingLineNames: resolvedLeading,
+        trailingLineNames: resolvedTrailing,
+      );
     } else if (source is GridMinMax) {
       return GridMinMax(
         source.minTrack,
@@ -307,8 +335,15 @@ class CSSGridParser {
     final List<String> resolvedTrailing = trailingNames ?? const <String>[];
     final String t = token.trim();
     if (t.isEmpty) return null;
-    if (t == 'auto') {
+    final String lower = t.toLowerCase();
+    if (lower == 'auto') {
       return GridAuto(leadingLineNames: resolvedLeading, trailingLineNames: resolvedTrailing);
+    }
+    if (lower == 'min-content') {
+      return GridMinContent(leadingLineNames: resolvedLeading, trailingLineNames: resolvedTrailing);
+    }
+    if (lower == 'max-content') {
+      return GridMaxContent(leadingLineNames: resolvedLeading, trailingLineNames: resolvedTrailing);
     }
     if (t.endsWith('fr')) {
       final numStr = t.substring(0, t.length - 2).trim();
@@ -424,7 +459,10 @@ class CSSGridParser {
           final GridTrackSize last = sizes.removeLast();
           final List<String> updatedTrailing = <String>[...last.trailingLineNames, ...names];
           sizes.add(_cloneTrackWithLineNames(last, trailing: updatedTrailing));
-          pendingLeadingNames = <String>[...pendingLeadingNames, ...names];
+          // Line names between tracks apply to the shared grid line between them.
+          // Store them once as trailing names of the previous track (per grammar),
+          // instead of also propagating as leading names for the next track.
+          pendingLeadingNames = <String>[];
           pendingNamesAppliedAsTrailing = true;
         }
         continue;
@@ -511,6 +549,11 @@ class CSSGridParser {
     switch (normalized) {
       case 'auto':
         return allowAuto ? GridAxisAlignment.auto : GridAxisAlignment.stretch;
+      case 'baseline':
+      case 'first baseline':
+        return GridAxisAlignment.baseline;
+      case 'last baseline':
+        return GridAxisAlignment.lastBaseline;
       case 'flex-start':
       case 'self-start':
       case 'start':
@@ -535,9 +578,17 @@ class CSSGridParser {
 
     final String lower = trimmed.toLowerCase();
     if (lower.startsWith('span')) {
-      final String number = lower.substring(4).trim();
-      final int? spanValue = int.tryParse(number);
-      if (spanValue != null && spanValue > 0) {
+      final String rest = trimmed.substring(4).trim();
+      if (rest.isEmpty) return const GridPlacement.span(1);
+      int? spanValue;
+      for (final String token in rest.split(RegExp(r'\s+'))) {
+        final int? parsed = int.tryParse(token);
+        if (parsed != null && parsed > 0) {
+          spanValue = parsed;
+          break;
+        }
+      }
+      if (spanValue != null) {
         return GridPlacement.span(spanValue);
       }
       return const GridPlacement.span(1);
@@ -545,6 +596,10 @@ class CSSGridParser {
 
     final int? lineValue = int.tryParse(trimmed);
     if (lineValue != null) {
+      // Grid line number 0 is invalid per CSS Grid and should be treated as 'auto'.
+      if (lineValue == 0) {
+        return const GridPlacement.auto();
+      }
       return GridPlacement.line(lineValue);
     }
 

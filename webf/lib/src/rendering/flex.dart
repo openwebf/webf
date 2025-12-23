@@ -1616,8 +1616,9 @@ class RenderFlexLayout extends RenderLayoutBox {
           // baseline-aligned item no longer anchors the container baseline in IFC.
           if (_isChildCrossAxisMarginAutoExist(candidate)) return false;
           final AlignSelf self = _getAlignSelf(candidate);
-          if (self == AlignSelf.baseline) return true;
-          if (self == AlignSelf.auto && renderStyle.alignItems == AlignItems.baseline) {
+          if (self == AlignSelf.baseline || self == AlignSelf.lastBaseline) return true;
+          if (self == AlignSelf.auto &&
+              (renderStyle.alignItems == AlignItems.baseline || renderStyle.alignItems == AlignItems.lastBaseline)) {
             return true;
           }
           return false;
@@ -1683,6 +1684,16 @@ class RenderFlexLayout extends RenderLayoutBox {
         RenderBox? fallbackChild;
         double? fallbackBaseline;
 
+        bool participatesInBaseline(RenderBox candidate) {
+          final AlignSelf self = _getAlignSelf(candidate);
+          if (self == AlignSelf.baseline || self == AlignSelf.lastBaseline) return true;
+          if (self == AlignSelf.auto &&
+              (renderStyle.alignItems == AlignItems.baseline || renderStyle.alignItems == AlignItems.lastBaseline)) {
+            return true;
+          }
+          return false;
+        }
+
         for (final _RunChild runChild in firstRunChildren) {
           final RenderBox child = runChild.child;
           final double? childBaseline = child.getDistanceToBaseline(TextBaseline.alphabetic);
@@ -1708,7 +1719,14 @@ class RenderFlexLayout extends RenderLayoutBox {
           }
           AlignSelf self = _getAlignSelf(child);
           final bool participates = (!hasCrossAuto) &&
-              (self == AlignSelf.baseline || (self == AlignSelf.auto && renderStyle.alignItems == AlignItems.baseline));
+              (self == AlignSelf.baseline ||
+                  self == AlignSelf.lastBaseline ||
+                  (self == AlignSelf.auto &&
+                      (renderStyle.alignItems == AlignItems.baseline || renderStyle.alignItems == AlignItems.lastBaseline)));
+          double dy = 0;
+          if (child.parentData is RenderLayoutParentData) {
+            dy = (child.parentData as RenderLayoutParentData).offset.dy;
+          }
 
           if (participates && baselineChild == null) {
             baselineChild = child;
@@ -1951,7 +1969,11 @@ class RenderFlexLayout extends RenderLayoutBox {
       // Vertical align is only valid for inline box.
       // Baseline alignment in column direction behave the same as flex-start.
       AlignSelf alignSelf = _getAlignSelf(child);
-      bool isBaselineAlign = alignSelf == AlignSelf.baseline || renderStyle.alignItems == AlignItems.baseline;
+      bool isBaselineAlign =
+          alignSelf == AlignSelf.baseline ||
+          alignSelf == AlignSelf.lastBaseline ||
+          renderStyle.alignItems == AlignItems.baseline ||
+          renderStyle.alignItems == AlignItems.lastBaseline;
       if (isHorizontal && isBaselineAlign) {
         // Distance from top to baseline of child
         double childAscent = _getChildAscent(child);
@@ -2927,8 +2949,12 @@ class RenderFlexLayout extends RenderLayoutBox {
 
       // Vertical align is only valid for inline box.
       // Baseline alignment in column direction behave the same as flex-start.
-      AlignSelf alignSelf = runChild.alignSelf;
-      bool isBaselineAlign = alignSelf == AlignSelf.baseline || renderStyle.alignItems == AlignItems.baseline;
+      AlignSelf alignSelf = _getAlignSelf(child);
+      bool isBaselineAlign =
+          alignSelf == AlignSelf.baseline ||
+          alignSelf == AlignSelf.lastBaseline ||
+          renderStyle.alignItems == AlignItems.baseline ||
+          renderStyle.alignItems == AlignItems.lastBaseline;
 
       if (isHorizontal && isBaselineAlign) {
         // Distance from top to baseline of child
@@ -3857,6 +3883,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       double? explicitContainerCross;   // from explicit non-auto width/height
       double? resolvedContainerCross;   // resolved cross size for block-level flex when auto
       double? minCrossFromConstraints;  // content-box min cross size
+      double? minCrossFromStyle;        // content-box min cross size derived from min-width/min-height
       double? containerInnerCross;      // measured inner cross size from this layout pass
       final CSSDisplay effectiveDisplay = renderStyle.effectiveDisplay;
       final bool isInlineFlex = effectiveDisplay == CSSDisplay.inlineFlex;
@@ -3904,6 +3931,17 @@ class RenderFlexLayout extends RenderLayoutBox {
         if (hasDefiniteContainerCross && contentSize.height.isFinite && contentSize.height > 0) {
           containerInnerCross = contentSize.height;
         }
+        // min-height should also participate in establishing the line cross size
+        // for single-line flex containers, even when the container's cross size
+        // is otherwise indefinite (e.g. height:auto under grid layout constraints).
+        if (renderStyle.minHeight.isNotAuto) {
+          final double minBorderBox = renderStyle.minHeight.computedValue;
+          double minContentBox = renderStyle.deflatePaddingBorderHeight(minBorderBox);
+          if (minContentBox.isFinite && minContentBox < 0) minContentBox = 0;
+          if (minContentBox.isFinite && minContentBox > 0) {
+            minCrossFromStyle = minContentBox;
+          }
+        }
         // Height:auto is generally not definite prior to layout; still capture a min-cross constraint if present.
         if (contentConstraints != null && contentConstraints!.minHeight.isFinite && contentConstraints!.minHeight > 0) {
           minCrossFromConstraints = contentConstraints!.minHeight;
@@ -3930,8 +3968,25 @@ class RenderFlexLayout extends RenderLayoutBox {
         if (hasDefiniteContainerCross && renderStyle.width.isNotAuto && contentSize.width.isFinite && contentSize.width > 0) {
           containerInnerCross = contentSize.width;
         }
+        if (renderStyle.minWidth.isNotAuto) {
+          final double minBorderBox = renderStyle.minWidth.computedValue;
+          double minContentBox = renderStyle.deflatePaddingBorderWidth(minBorderBox);
+          if (minContentBox.isFinite && minContentBox < 0) minContentBox = 0;
+          if (minContentBox.isFinite && minContentBox > 0) {
+            minCrossFromStyle = minContentBox;
+          }
+        }
         if (contentConstraints != null && contentConstraints!.minWidth.isFinite && contentConstraints!.minWidth > 0) {
           minCrossFromConstraints = contentConstraints!.minWidth;
+        }
+      }
+
+      // Prefer the larger of the style-derived and constraints-derived minimum cross sizes.
+      if (minCrossFromStyle != null && minCrossFromStyle!.isFinite) {
+        if (minCrossFromConstraints != null && minCrossFromConstraints!.isFinite) {
+          minCrossFromConstraints = math.max(minCrossFromConstraints!, minCrossFromStyle!);
+        } else {
+          minCrossFromConstraints = minCrossFromStyle;
         }
       }
 
@@ -4084,6 +4139,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       switch (renderStyle.justifyContent) {
         case JustifyContent.flexStart:
         case JustifyContent.start:
+        case JustifyContent.stretch:
           leadingSpace = 0.0;
           betweenSpace = 0.0;
           break;
@@ -4182,6 +4238,7 @@ class RenderFlexLayout extends RenderLayoutBox {
             alignment = 'center';
             break;
           case AlignSelf.baseline:
+          case AlignSelf.lastBaseline:
             alignment = 'baseline';
             break;
           case AlignSelf.auto:
@@ -4199,6 +4256,7 @@ class RenderFlexLayout extends RenderLayoutBox {
                 alignment = 'center';
                 break;
               case AlignItems.baseline:
+              case AlignItems.lastBaseline:
               // FIXME: baseline alignment in wrap-reverse flexWrap may display different from browser in some case
                 if (isHorizontal) {
                   alignment = 'baseline';

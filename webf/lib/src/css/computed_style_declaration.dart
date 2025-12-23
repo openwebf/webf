@@ -894,6 +894,12 @@ String _gridTrackValueToCss(GridTrackSize track) {
   if (track is GridFraction) {
     return '${track.fr.cssText()}fr';
   }
+  if (track is GridMinContent) {
+    return 'min-content';
+  }
+  if (track is GridMaxContent) {
+    return 'max-content';
+  }
   if (track is GridMinMax) {
     final String minText = _gridTrackValueToCss(track.minTrack);
     final String maxText = _gridTrackValueToCss(track.maxTrack);
@@ -971,21 +977,17 @@ String _gridTrackListToCss(
       buffer.write(_gridTrackListToCss(
         track.tracks,
         templateList: false,
-        includeTrailingEndNames: false,
       ));
       buffer.write(')');
     } else {
       buffer.write(_gridTrackValueToCss(track));
     }
+    if (track.trailingLineNames.isNotEmpty && (i < tracks.length - 1 || includeTrailingEndNames)) {
+      buffer.write(' ');
+      buffer.write(_gridLineNamesToCss(track.trailingLineNames));
+    }
     if (i < tracks.length - 1) {
       buffer.write(' ');
-    }
-  }
-  if (includeTrailingEndNames) {
-    final GridTrackSize last = tracks.last;
-    if (last.trailingLineNames.isNotEmpty) {
-      buffer.write(' ');
-      buffer.write(_gridLineNamesToCss(last.trailingLineNames));
     }
   }
   return buffer.toString().trim();
@@ -1035,6 +1037,10 @@ String _gridAxisAlignmentToCss(GridAxisAlignment alignment) {
       return 'center';
     case GridAxisAlignment.stretch:
       return 'stretch';
+    case GridAxisAlignment.baseline:
+      return 'baseline';
+    case GridAxisAlignment.lastBaseline:
+      return 'last baseline';
     case GridAxisAlignment.auto:
       return 'auto';
   }
@@ -1054,6 +1060,8 @@ String _alignItemsToCss(AlignItems value) {
       return 'center';
     case AlignItems.baseline:
       return 'baseline';
+    case AlignItems.lastBaseline:
+      return 'last baseline';
     case AlignItems.stretch:
       return 'stretch';
   }
@@ -1075,6 +1083,8 @@ String _alignSelfToCss(AlignSelf value) {
       return 'center';
     case AlignSelf.baseline:
       return 'baseline';
+    case AlignSelf.lastBaseline:
+      return 'last baseline';
     case AlignSelf.stretch:
       return 'stretch';
   }
@@ -1121,6 +1131,10 @@ String _justifyContentToCss(JustifyContent value) {
       return 'space-around';
     case JustifyContent.spaceEvenly:
       return 'space-evenly';
+    case JustifyContent.stretch:
+      return 'stretch';
+    default:
+      return 'flex-start';
   }
 }
 
