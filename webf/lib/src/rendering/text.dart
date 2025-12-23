@@ -26,6 +26,7 @@ final RegExp _trimLeftWhitespaceReg = RegExp(r'^[' + _documentWhiteSpace + r']([
 final RegExp _trimRightWhitespaceReg = RegExp(r'([^' + _documentWhiteSpace + r']+)[' + _documentWhiteSpace + r']$');
 final webfTextMaxLines = double.maxFinite.toInt();
 Size _miniCharSize = Size.zero;
+double _miniCharTextScaleFactor = 1.0;
 
 class TextParentData extends ContainerBoxParentData<RenderBox> {}
 
@@ -368,7 +369,8 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   // Empty string is the minimum size character, use it as the base size
   // for calculating the maximum characters to display in its container.
   Size get minCharSize {
-    if (_miniCharSize == Size.zero) {
+    final double textScaleFactor = renderStyle.target.ownerDocument.controller.textScaleFactor;
+    if (_miniCharSize == Size.zero || _miniCharTextScaleFactor != textScaleFactor) {
       TextStyle textStyle = TextStyle(
         fontFamilyFallback: renderStyle.fontFamily,
         fontSize: renderStyle.fontSize.computedValue,
@@ -381,9 +383,11 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
             text: ' ',
             style: textStyle,
           ),
-          textDirection: TextDirection.ltr);
+          textDirection: TextDirection.ltr,
+          textScaler: TextScaler.linear(textScaleFactor));
       painter.layout();
       _miniCharSize = painter.size;
+      _miniCharTextScaleFactor = textScaleFactor;
     }
     return _miniCharSize;
   }
@@ -474,6 +478,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     WebFRenderParagraph? paragraph = child as WebFRenderParagraph?;
     lineBoxes.clear();
     if (paragraph != null) {
+      paragraph.textScaleFactor = renderStyle.target.ownerDocument.controller.textScaleFactor;
       
       paragraph.overflow = renderStyle.effectiveTextOverflow;
       paragraph.textAlign = renderStyle.textAlign;

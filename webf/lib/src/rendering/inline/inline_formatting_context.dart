@@ -74,6 +74,7 @@ class InlineFormattingContext {
     final style = item.style;
 
     if (style == null || text.isEmpty) return;
+    final textScaler = style.target.ownerDocument.controller.textScaler;
 
     // Create text painter for measurement
     final textPainter = TextPainter(
@@ -82,6 +83,7 @@ class InlineFormattingContext {
         style: _createTextStyle(style),
       ),
       textDirection: _getTextDirection(),
+      textScaler: textScaler,
     );
 
     // Layout to get metrics

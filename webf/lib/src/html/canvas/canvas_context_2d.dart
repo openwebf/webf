@@ -1135,6 +1135,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
       // FIXME: Current must passed but not work in canvas text painter
       textDirection: direction,
       textAlign: textAlign,
+      textScaler: ownerView.rootController.textScaler,
     );
 
     return textPainter;

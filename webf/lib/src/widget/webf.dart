@@ -553,6 +553,12 @@ class WebFState extends State<WebF> with RouteAware {
       return const SizedBox(width: 0, height: 0);
     }
 
+    // Sync global text scaling from Flutter's MediaQuery so WebF text layout/painting follows it.
+    final MediaQueryData? mediaQuery = MediaQuery.maybeOf(context);
+    if (mediaQuery != null) {
+      widget.controller.textScaleFactor = mediaQuery.textScaler.scale(1.0);
+    }
+
     if (widget.controller.hasLoadingError) {
       if (widget.errorBuilder != null) {
         return widget.errorBuilder!(context, widget.controller.loadingError!);
@@ -919,6 +925,7 @@ class WebFRootViewport extends MultiChildRenderObjectWidget {
             (viewportWidth != null && viewportHeight != null) ? ui.Size(viewportWidth!, viewportHeight!) : null,
         controller: controller);
     controller.view.viewport = root;
+    controller.registerViewport(root);
 
     if (!controller.viewportLayoutCompleter.isCompleted) {
       SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -933,6 +940,9 @@ class WebFRootViewport extends MultiChildRenderObjectWidget {
   void didUnmountRenderObject(covariant RenderObject renderObject) {
     super.didUnmountRenderObject(renderObject);
 
+    if (renderObject is RenderViewportBox) {
+      controller.unregisterViewport(renderObject);
+    }
     controller.view.viewport = null;
     controller.viewportLayoutCompleter = Completer();
   }

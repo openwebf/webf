@@ -19,18 +19,28 @@ class WebFRouterViewport extends MultiChildRenderObjectWidget {
   @override
   RenderObject createRenderObject(BuildContext context) {
     RouterViewViewportBox root = RouterViewViewportBox(viewportSize: null, controller: controller);
+    controller.registerViewport(root);
     return root;
   }
 
   @override
   void didUnmountRenderObject(covariant RenderObject renderObject) {
     super.didUnmountRenderObject(renderObject);
+    if (renderObject is RenderViewportBox) {
+      controller.unregisterViewport(renderObject);
+    }
   }
 }
 
 class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   @override
   Widget build(BuildContext context) {
+    // Sync global text scaling from Flutter's MediaQuery so WebF text layout/painting follows it.
+    final MediaQueryData? mediaQuery = MediaQuery.maybeOf(context);
+    if (mediaQuery != null) {
+      widget.controller.textScaleFactor = mediaQuery.textScaler.scale(1.0);
+    }
+
     WidgetElement? child = widget.controller.view.getHybridRouterView(widget.path);
     if (child == null) {
       if (widget.defaultViewBuilder == null) {

@@ -87,6 +87,7 @@ class LineBreaker {
       _itemIndex++;
       return;
     }
+    final textScaler = style.target.ownerDocument.controller.textScaler;
 
     // Start offset within the item
     int startOffset = _textOffset > 0 ? _textOffset : 0;
@@ -98,6 +99,7 @@ class LineBreaker {
         style: _createTextStyle(style),
       ),
       textDirection: TextDirection.ltr,
+      textScaler: textScaler,
     );
 
     while (startOffset < text.length) {
@@ -107,6 +109,7 @@ class LineBreaker {
         startOffset, 
         style, 
         textPainter,
+        textScaler,
       );
 
       if (breakPoint <= startOffset) {
@@ -128,6 +131,7 @@ class LineBreaker {
           style: _createTextStyle(style),
         ),
         textDirection: TextDirection.ltr,
+        textScaler: textScaler,
       );
       segmentPainter.layout();
 
@@ -194,6 +198,7 @@ class LineBreaker {
     int startOffset, 
     CSSRenderStyle style,
     TextPainter painter,
+    TextScaler textScaler,
   ) {
     // Handle white-space property
     if (style.whiteSpace == WhiteSpace.nowrap) {
@@ -217,6 +222,7 @@ class LineBreaker {
           style: painter.text?.style,
         ),
         textDirection: TextDirection.ltr,
+        textScaler: textScaler,
       );
       segmentPainter.layout();
 

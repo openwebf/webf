@@ -17,6 +17,7 @@ class RenderLineBreak extends RenderReplaced {
 
   TextPainter get textPainter {
     double fontSize = renderStyle.fontSize.computedValue;
+    final textScaler = renderStyle.target.ownerDocument.controller.textScaler;
 
     TextStyle textStyle = TextStyle(
       fontFamilyFallback: renderStyle.fontFamily,
@@ -30,7 +31,8 @@ class RenderLineBreak extends RenderReplaced {
           text: ' ',
           style: textStyle,
         ),
-        textDirection: TextDirection.ltr);
+        textDirection: TextDirection.ltr,
+        textScaler: textScaler);
     painter.layout();
     return painter;
   }

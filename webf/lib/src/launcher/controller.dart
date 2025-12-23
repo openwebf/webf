@@ -228,6 +228,47 @@ class WebFController with Diagnosticable {
   /// This determines the background color of the WebF widget content area.
   final Color? background;
 
+  // Text scaling (from Flutter's MediaQuery).
+  double _textScaleFactor = 1.0;
+
+  /// The global text scale factor applied to all WebF text layout/painting.
+  ///
+  /// This is synced from Flutter's `MediaQueryData.textScaler` by the `WebF` widget.
+  double get textScaleFactor => _textScaleFactor;
+
+  set textScaleFactor(double value) {
+    if (value.isNaN || !value.isFinite) return;
+    // Allow 0.0 (text hidden) to match `TextScaler.linear(0.0)` behavior.
+    if (_textScaleFactor == value) return;
+    _textScaleFactor = value;
+
+    // Trigger relayout for any attached viewports (root and router viewports).
+    for (final viewport in _attachedViewports.toList(growable: false)) {
+      if (viewport.attached) {
+        viewport.markNeedsLayout();
+      }
+    }
+
+    // If the bridge is initialized and the DOM exists, request a relayout to reflect the new text scale.
+    if (_view?.inited == true) {
+      final docElement = _view!.document.documentElement;
+      docElement?.renderStyle.markNeedsLayout();
+    }
+  }
+
+  /// A convenience `TextScaler` for Flutter `TextPainter` APIs.
+  TextScaler get textScaler => TextScaler.linear(_textScaleFactor);
+
+  final Set<RenderViewportBox> _attachedViewports = <RenderViewportBox>{};
+
+  void registerViewport(RenderViewportBox viewport) {
+    _attachedViewports.add(viewport);
+  }
+
+  void unregisterViewport(RenderViewportBox viewport) {
+    _attachedViewports.remove(viewport);
+  }
+
   /// The width of WebF Widget.
   /// Default: the value of max-width in constraints.
   /// This allows you to explicitly set the width of the WebF rendering area regardless of parent constraints.

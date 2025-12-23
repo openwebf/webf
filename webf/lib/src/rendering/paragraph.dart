@@ -751,7 +751,7 @@ class WebFRenderParagraph extends RenderBox
           final TextPainter fadeSizePainter = TextPainter(
             text: WebFTextSpan(style: _textPainter.text!.style, text: '\u2026'),
             textDirection: textDirection,
-            textScaleFactor: textScaleFactor,
+            textScaler: TextScaler.linear(textScaleFactor),
             locale: locale,
           )..layout();
           if (didOverflowWidth) {
