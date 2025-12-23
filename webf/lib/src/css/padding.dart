@@ -33,7 +33,12 @@ mixin CSSPaddingMixin on RenderStyle {
   }
 
   @override
-  CSSLengthValue get paddingLeft => _paddingLeft ?? CSSLengthValue.zero;
+  CSSLengthValue get paddingLeft {
+    final CSSLengthValue physical = _paddingLeft ?? CSSLengthValue.zero;
+    // Logical properties override the corresponding physical side.
+    final CSSLengthValue? logical = (direction == TextDirection.rtl) ? _paddingInlineEnd : _paddingInlineStart;
+    return logical ?? physical;
+  }
 
   CSSLengthValue? _paddingRight;
   set paddingRight(CSSLengthValue? value) {
@@ -43,7 +48,26 @@ mixin CSSPaddingMixin on RenderStyle {
   }
 
   @override
-  CSSLengthValue get paddingRight => _paddingRight ?? CSSLengthValue.zero;
+  CSSLengthValue get paddingRight {
+    final CSSLengthValue physical = _paddingRight ?? CSSLengthValue.zero;
+    // Logical properties override the corresponding physical side.
+    final CSSLengthValue? logical = (direction == TextDirection.rtl) ? _paddingInlineStart : _paddingInlineEnd;
+    return logical ?? physical;
+  }
+
+  CSSLengthValue? _paddingInlineStart;
+  set paddingInlineStart(CSSLengthValue? value) {
+    if (_paddingInlineStart == value) return;
+    _paddingInlineStart = value;
+    _markSelfAndParentNeedsLayout();
+  }
+
+  CSSLengthValue? _paddingInlineEnd;
+  set paddingInlineEnd(CSSLengthValue? value) {
+    if (_paddingInlineEnd == value) return;
+    _paddingInlineEnd = value;
+    _markSelfAndParentNeedsLayout();
+  }
 
   CSSLengthValue? _paddingBottom;
   set paddingBottom(CSSLengthValue? value) {

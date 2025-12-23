@@ -1640,15 +1640,18 @@ class CSSRenderStyle extends RenderStyle
       }
     }
 
-    // Map logical properties to physical properties based on current direction
+    // Map logical properties to physical properties based on current direction.
+    //
+    // Note: Do NOT eagerly map padding-inline-start/end to physical paddings here.
+    // `direction` is inherited and may change after the property is applied (e.g., when
+    // an ancestor sets `direction` later in the same style flush). Eager mapping can
+    // leave stale padding on the wrong side (LTR->RTL), shrinking the content box.
     String propertyName = name;
     final bool isRTL = direction == TextDirection.rtl;
 
     // Handle inline-start properties (maps to left in LTR, right in RTL)
     if (name == MARGIN_INLINE_START) {
       propertyName = isRTL ? MARGIN_RIGHT : MARGIN_LEFT;
-    } else if (name == PADDING_INLINE_START) {
-      propertyName = isRTL ? PADDING_RIGHT : PADDING_LEFT;
     } else if (name == BORDER_INLINE_START) {
       propertyName = isRTL ? BORDER_RIGHT : BORDER_LEFT;
     } else if (name == BORDER_INLINE_START_WIDTH) {
@@ -1663,8 +1666,6 @@ class CSSRenderStyle extends RenderStyle
     // Handle inline-end properties (maps to right in LTR, left in RTL)
     else if (name == MARGIN_INLINE_END) {
       propertyName = isRTL ? MARGIN_LEFT : MARGIN_RIGHT;
-    } else if (name == PADDING_INLINE_END) {
-      propertyName = isRTL ? PADDING_LEFT : PADDING_RIGHT;
     } else if (name == BORDER_INLINE_END) {
       propertyName = isRTL ? BORDER_LEFT : BORDER_RIGHT;
     } else if (name == BORDER_INLINE_END_WIDTH) {
@@ -1911,6 +1912,12 @@ class CSSRenderStyle extends RenderStyle
       case PADDING_LEFT:
         paddingLeft = value;
         break;
+      case PADDING_INLINE_START:
+        paddingInlineStart = value;
+        break;
+      case PADDING_INLINE_END:
+        paddingInlineEnd = value;
+        break;
       // Border
       case BORDER_LEFT_WIDTH:
         borderLeftWidth = value;
@@ -2132,15 +2139,16 @@ class CSSRenderStyle extends RenderStyle
       return propertyValue;
     }
 
-    // Map logical properties to physical properties based on current direction
+    // Map logical properties to physical properties based on current direction.
+    //
+    // Note: Do NOT eagerly map padding-inline-start/end to physical paddings here.
+    // See [setProperty] above for rationale.
     String mappedPropertyName = propertyName;
     final bool isRTL = direction == TextDirection.rtl;
 
     // Handle inline-start properties (maps to left in LTR, right in RTL)
     if (propertyName == MARGIN_INLINE_START) {
       mappedPropertyName = isRTL ? MARGIN_RIGHT : MARGIN_LEFT;
-    } else if (propertyName == PADDING_INLINE_START) {
-      mappedPropertyName = isRTL ? PADDING_RIGHT : PADDING_LEFT;
     } else if (propertyName == BORDER_INLINE_START) {
       mappedPropertyName = isRTL ? BORDER_RIGHT : BORDER_LEFT;
     } else if (propertyName == BORDER_INLINE_START_WIDTH) {
@@ -2155,8 +2163,6 @@ class CSSRenderStyle extends RenderStyle
     // Handle inline-end properties (maps to right in LTR, left in RTL)
     else if (propertyName == MARGIN_INLINE_END) {
       mappedPropertyName = isRTL ? MARGIN_LEFT : MARGIN_RIGHT;
-    } else if (propertyName == PADDING_INLINE_END) {
-      mappedPropertyName = isRTL ? PADDING_LEFT : PADDING_RIGHT;
     } else if (propertyName == BORDER_INLINE_END) {
       mappedPropertyName = isRTL ? BORDER_LEFT : BORDER_RIGHT;
     } else if (propertyName == BORDER_INLINE_END_WIDTH) {
@@ -2311,6 +2317,10 @@ class CSSRenderStyle extends RenderStyle
         } else {
           value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
         }
+        break;
+      case PADDING_INLINE_START:
+      case PADDING_INLINE_END:
+        value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
         break;
       case FLEX_DIRECTION:
         value = CSSFlexboxMixin.resolveFlexDirection(propertyValue);

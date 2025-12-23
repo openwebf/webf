@@ -2928,6 +2928,17 @@ class InlineFormattingContext {
       final double reserved = indentPx > 0 ? indentPx : 0.0;
       if (reserved > 0) {
         _leadingTextIndentPx = reserved;
+        // Ensure the indent placeholder is resolved on the inline-start in RTL.
+        // Flutter treats placeholders as neutral for bidi reordering; when the
+        // paragraph begins with a placeholder, it can be resolved to the wrong
+        // direction. Prepending an RTL mark makes the placeholder strongly RTL
+        // without affecting layout width.
+        if (style.direction == TextDirection.rtl) {
+          pb.pushStyle(_uiTextStyleFromCss(style));
+          pb.addText('\u200F'); // RLM
+          pb.pop();
+          paraPos += 1;
+        }
         pb.addPlaceholder(reserved, ph, ui.PlaceholderAlignment.baseline,
             baseline: TextBaseline.alphabetic, baselineOffset: bo);
         // Keep placeholder indices aligned: record a neutral placeholder so that
@@ -2935,15 +2946,6 @@ class InlineFormattingContext {
         _allPlaceholders.add(_InlinePlaceholder.emptySpan(container as RenderBoxModel, reserved));
         paraPos += 1;
         _textRunParas.add(null);
-        // In RTL, reserve space on the inline-start (right) by forcing the
-        // indent placeholder to precede content visually: insert a zero-width
-        // no-break space with strong RTL property.
-        if (style.direction == TextDirection.rtl) {
-          pb.pushStyle(_uiTextStyleFromCss(style));
-          pb.addText('\uFEFF'); // ZWNBSP to ensure grapheme advance at start
-          pb.pop();
-          paraPos += 1;
-        }
       }
     }
 
