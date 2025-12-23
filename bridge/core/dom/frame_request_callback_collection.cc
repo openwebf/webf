@@ -21,6 +21,8 @@ void FrameCallback::Fire(double highResTimeStamp) {
   if (callback_ == nullptr)
     return;
 
+  context_->SetIsIdle(false);
+
   if (auto* callback = DynamicTo<QJSFunction>(callback_.get())) {
     JSContext* ctx = context_->ctx();
 

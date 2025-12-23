@@ -32,6 +32,7 @@
 #include "event_factory.h"
 #include "foundation/native_value_converter.h"
 #include "foundation/logging.h"
+#include "core/base/auto_reset.h"
 #include "core/script_forbidden_scope.h"
 #include "html_element_factory.h"
 #include "svg_element_factory.h"
@@ -613,6 +614,11 @@ void Document::UpdateStyleForThisDocument() {
   if (!context || !context->isBlinkEnabled()) {
     return;
   }
+
+  if (update_style_for_this_document_in_progress_) {
+    return;
+  }
+  AutoReset<bool> auto_reset(&update_style_for_this_document_in_progress_, true);
 
   auto start_time = std::chrono::steady_clock::now();
 

@@ -2024,7 +2024,6 @@ void StyleEngine::MediaQueryAffectingValueChanged(TreeScope& tree_scope, MediaVa
           kSubtreeStyleChange,
           StyleChangeReasonForTracing::Create(style_change_reason::kStyleRuleChange));
       document.SetNeedsStyleInvalidation();
-      RecalcStyle();
       ++media_query_recalc_count_for_test_;
     }
     return;
@@ -2049,7 +2048,6 @@ void StyleEngine::MediaQueryAffectingValueChanged(TreeScope& tree_scope, MediaVa
             kSubtreeStyleChange,
             StyleChangeReasonForTracing::Create(style_change_reason::kStyleRuleChange));
         document.SetNeedsStyleInvalidation();
-        RecalcStyle();
         ++media_query_recalc_count_for_test_;
       }
       break;
