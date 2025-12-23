@@ -977,21 +977,17 @@ String _gridTrackListToCss(
       buffer.write(_gridTrackListToCss(
         track.tracks,
         templateList: false,
-        includeTrailingEndNames: false,
       ));
       buffer.write(')');
     } else {
       buffer.write(_gridTrackValueToCss(track));
     }
+    if (track.trailingLineNames.isNotEmpty && (i < tracks.length - 1 || includeTrailingEndNames)) {
+      buffer.write(' ');
+      buffer.write(_gridLineNamesToCss(track.trailingLineNames));
+    }
     if (i < tracks.length - 1) {
       buffer.write(' ');
-    }
-  }
-  if (includeTrailingEndNames) {
-    final GridTrackSize last = tracks.last;
-    if (last.trailingLineNames.isNotEmpty) {
-      buffer.write(' ');
-      buffer.write(_gridLineNamesToCss(last.trailingLineNames));
     }
   }
   return buffer.toString().trim();
