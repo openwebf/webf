@@ -50,8 +50,8 @@ class FlutterSvgElement extends WidgetElement {
   }
 
   @override
-  void setInlineStyle(String property, String value, {String? baseHref}) {
-    super.setInlineStyle(property, value, baseHref: baseHref);
+  void setInlineStyle(String property, String value, {String? baseHref, bool fromNative = false}) {
+    super.setInlineStyle(property, value, baseHref: baseHref, fromNative: fromNative);
     _notifyAncestorSvgToRebuild();
   }
 
@@ -106,8 +106,8 @@ class FlutterSVGChildElement extends dom.Element {
   }
 
   @override
-  void setInlineStyle(String property, String value, {String? baseHref}) {
-    super.setInlineStyle(property, value, baseHref: baseHref);
+  void setInlineStyle(String property, String value, {String? baseHref, bool fromNative = false}) {
+    super.setInlineStyle(property, value, baseHref: baseHref, fromNative: fromNative);
     _notifyRootSvgToRebuild();
   }
 

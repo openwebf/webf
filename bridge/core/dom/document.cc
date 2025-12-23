@@ -3,6 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "document.h"
+#include <chrono>
+
 #include "../../foundation/string/ascii_types.h"
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_message.h"
@@ -29,6 +31,7 @@
 #include "element_traversal.h"
 #include "event_factory.h"
 #include "foundation/native_value_converter.h"
+#include "foundation/logging.h"
 #include "core/script_forbidden_scope.h"
 #include "html_element_factory.h"
 #include "svg_element_factory.h"
@@ -611,6 +614,8 @@ void Document::UpdateStyleForThisDocument() {
     return;
   }
 
+  auto start_time = std::chrono::steady_clock::now();
+
   // Ensure we have a StyleEngine instance before driving the Blink-style
   // style update sequence.
   StyleEngine& style_engine = EnsureStyleEngine();
@@ -621,6 +626,12 @@ void Document::UpdateStyleForThisDocument() {
   style_engine.InvalidateEnvDependentStylesIfNeeded();
   UpdateStyleInvalidationIfNeeded();
   UpdateStyle();
+
+  auto duration_ms =
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count();
+  if (duration_ms != 0) {
+    WEBF_LOG(VERBOSE) << "[Style] Document::UpdateStyleForThisDocument elapsed: " << duration_ms << "ms" << std::endl;
+  }
 }
 
 void Document::EvaluateMediaQueryListIfNeeded() {

@@ -910,12 +910,6 @@ void _registerFontFace(
     final String fontStyle = nativeStringToString(nativeFontStyle);
     final String baseHref = nativeStringToString(nativeBaseHref);
 
-    // Debug
-    try {
-      final String srcPreview = src.length > 120 ? src.substring(0, 120) + '…' : src;
-      bridgeLogger.info('[font-face][dart] register sheet=$sheetId family=$fontFamily weight=$fontWeight style=$fontStyle base=${baseHref.isEmpty ? 'null' : baseHref} src="$srcPreview"');
-    } catch (_) {}
-
     CSSFontFace.registerFromBridge(
       sheetId: sheetId,
       fontFamily: fontFamily,
@@ -975,8 +969,6 @@ void _registerKeyframes(
   try {
     final String name = nativeStringToString(nativeName);
     final String cssText = nativeStringToString(nativeCssText);
-
-    bridgeLogger.info('[keyframes][dart] register sheet=$sheetId name=$name prefixed=${isPrefixed == 1}');
 
     CSSKeyframesBridge.registerFromBridge(
       contextId: contextId,

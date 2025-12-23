@@ -1958,16 +1958,22 @@ abstract class Element extends ContainerNode
   }
 
   // Set inline style property.
-  void setInlineStyle(String property, String value, {String? baseHref}) {
+  void setInlineStyle(String property, String value, {String? baseHref, bool fromNative = false}) {
+    final bool enableBlink = ownerDocument.ownerView.enableBlink;
+    final bool validate = !(fromNative && enableBlink);
     // Current only for mark property is setting by inline style.
     inlineStyle[property] = value;
 
     // recalculate matching styles for element when inline styles are removed.
     if (value.isEmpty) {
       style.removeProperty(property, true);
-      recalculateStyle();
+      // When Blink CSS is enabled, style cascading and validation happen on
+      // the native side. Avoid expensive Dart-side recalculation here.
+      if (!(fromNative && enableBlink)) {
+        recalculateStyle();
+      }
     } else {
-      style.setProperty(property, value, isImportant: true, baseHref: baseHref);
+      style.setProperty(property, value, isImportant: true, baseHref: baseHref, validate: validate);
     }
   }
 
@@ -1980,8 +1986,10 @@ abstract class Element extends ContainerNode
   }
 
   // Set pseudo element (::before, ::after, ::first-letter, ::first-line) style.
-  void setPseudoStyle(String type, String property, String value, {String? baseHref}) {
-    style.setPseudoProperty(type, property, value, baseHref: baseHref);
+  void setPseudoStyle(String type, String property, String value, {String? baseHref, bool fromNative = false}) {
+    final bool enableBlink = ownerDocument.ownerView.enableBlink;
+    final bool validate = !(fromNative && enableBlink);
+    style.setPseudoProperty(type, property, value, baseHref: baseHref, validate: validate);
   }
 
   // Remove pseudo element (::before, ::after, ::first-letter, ::first-line) style.

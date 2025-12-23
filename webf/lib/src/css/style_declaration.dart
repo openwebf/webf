@@ -300,7 +300,13 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     _pendingProperties[propertyName] = CSSPropertyValue(present);
   }
 
-  void _expandShorthand(String propertyName, String normalizedValue, bool? isImportant, {String? baseHref}) {
+  void _expandShorthand(
+    String propertyName,
+    String normalizedValue,
+    bool? isImportant, {
+    String? baseHref,
+    bool validate = true,
+  }) {
     Map<String, String?> longhandProperties;
     String cacheKey = '$propertyName:$normalizedValue';
     if (_cachedExpandedShorthand.containsKey(cacheKey)) {
@@ -404,7 +410,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         // Preserve the baseHref from the originating declaration so any
         // url(...) in expanded longhands (e.g., background-image) resolve
         // relative to the stylesheet that contained the shorthand.
-        setProperty(propertyName, value, isImportant: isImportant, baseHref: baseHref);
+        setProperty(propertyName, value, isImportant: isImportant, baseHref: baseHref, validate: validate);
       });
     }
   }
@@ -444,6 +450,18 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     if (propertyName == CONTENT) {
       return string;
     }
+
+    // Fast path: most CSS values are already lowercase. Avoid allocating
+    // a new string via `toLowerCase()` when not needed.
+    bool hasUppercase = false;
+    for (int i = 0; i < string.length; i++) {
+      final int codeUnit = string.codeUnitAt(i);
+      if (codeUnit >= 65 && codeUnit <= 90) {
+        hasUppercase = true;
+        break;
+      }
+    }
+    if (!hasUppercase) return string;
 
     // Like url("http://path") declared with quotation marks and
     // custom property names are case sensitive.
@@ -583,7 +601,13 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
   /// Modifies an existing CSS property or creates a new CSS property in
   /// the declaration block.
-  void setProperty(String propertyName, String? value, {bool? isImportant, String? baseHref}) {
+  void setProperty(
+    String propertyName,
+    String? value, {
+    bool? isImportant,
+    String? baseHref,
+    bool validate = true,
+  }) {
     propertyName = propertyName.trim();
 
     // Null or empty value means should be removed.
@@ -594,10 +618,10 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
     String normalizedValue = _toLowerCase(propertyName, value.toString().trim());
 
-    if (!_isValidValue(propertyName, normalizedValue)) return;
+    if (validate && !_isValidValue(propertyName, normalizedValue)) return;
 
     if (_cssShorthandProperty[propertyName] != null) {
-      return _expandShorthand(propertyName, normalizedValue, isImportant, baseHref: baseHref);
+      return _expandShorthand(propertyName, normalizedValue, isImportant, baseHref: baseHref, validate: validate);
     }
 
     // From style sheet mark the property important as false.
@@ -699,26 +723,26 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   // Set a style property on a pseudo element (before/after/first-letter/first-line) for this element.
   // Values set here are treated as inline on the pseudo element and marked important
   // to override stylesheet rules when applicable.
-  void setPseudoProperty(String type, String propertyName, String value, {String? baseHref}) {
+  void setPseudoProperty(String type, String propertyName, String value, {String? baseHref, bool validate = true}) {
     switch (type) {
       case 'before':
         pseudoBeforeStyle ??= CSSStyleDeclaration();
-        pseudoBeforeStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref);
+        pseudoBeforeStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref, validate: validate);
         target?.markBeforePseudoElementNeedsUpdate();
         break;
       case 'after':
         pseudoAfterStyle ??= CSSStyleDeclaration();
-        pseudoAfterStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref);
+        pseudoAfterStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref, validate: validate);
         target?.markAfterPseudoElementNeedsUpdate();
         break;
       case 'first-letter':
         pseudoFirstLetterStyle ??= CSSStyleDeclaration();
-        pseudoFirstLetterStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref);
+        pseudoFirstLetterStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref, validate: validate);
         target?.markFirstLetterPseudoNeedsUpdate();
         break;
       case 'first-line':
         pseudoFirstLineStyle ??= CSSStyleDeclaration();
-        pseudoFirstLineStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref);
+        pseudoFirstLineStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref, validate: validate);
         target?.markFirstLinePseudoNeedsUpdate();
         break;
     }

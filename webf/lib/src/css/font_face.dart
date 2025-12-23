@@ -162,8 +162,6 @@ class CSSFontFace {
     required double contextId,
     String? baseHref,
   }) {
-    cssLogger.info('[font-face][register] incoming sheet=$sheetId family=$fontFamily weight=${fontWeight ?? 'null'} style=${fontStyle ?? 'null'} base=${baseHref ?? 'null'}');
-
     if (fontFamily.isEmpty || src.isEmpty) return;
 
     final String cleanFamily = removeQuotationMark(fontFamily);
@@ -176,7 +174,6 @@ class CSSFontFace {
     for (final CSSFunctionalNotation notation in functions) {
       if (notation.name == 'url' && notation.args.isNotEmpty) {
         String tmpSrc = removeQuotationMark(notation.args[0]);
-        cssLogger.fine('[font-face][register] candidate src=$tmpSrc');
         if (tmpSrc.startsWith('data')) {
           // data:...;base64,<...>
           String tmpContent = tmpSrc.split(';').last;
@@ -198,7 +195,6 @@ class CSSFontFace {
 
     FontSource? targetFont = fonts.firstWhereOrNull((f) => supportedFonts.contains(f.format));
     if (targetFont == null) {
-      cssLogger.warning('[font-face][register] no supported font format in src (sheet=$sheetId family=$cleanFamily)');
       return;
     }
 
@@ -214,7 +210,6 @@ class CSSFontFace {
 
     _fontFaceRegistry.putIfAbsent(cleanFamily, () => []).add(descriptor);
     _sheetRegistry.putIfAbsent(sheetId, () => []).add(descriptor);
-    cssLogger.info('[font-face][register] stored family=$cleanFamily formats=${fonts.map((f)=>f.format).join(',')} chosen=${targetFont.format} registryFamilies=${_fontFaceRegistry.keys.join('|')}');
   }
 
   // Bridge API: unregister all font-faces associated with a stylesheet id.
