@@ -2617,6 +2617,7 @@ class CSSRenderStyle extends RenderStyle
     } else if (effectiveDisplay == CSSDisplay.block ||
         effectiveDisplay == CSSDisplay.flex ||
         effectiveDisplay == CSSDisplay.grid) {
+      RenderViewportBox? root = getCurrentViewportBox();
       CSSRenderStyle? parentStyle = renderStyle.getAttachedRenderParentRenderStyle();
       if (logicalWidth == null && renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
@@ -2640,8 +2641,8 @@ class CSSRenderStyle extends RenderStyle
         if (!parentInlineBlockAuto) {
           logicalWidth = target.ownerView.currentViewport!.boxSize!.width;
         }
-      } else if (logicalWidth == null && (renderStyle.isSelfRouterLinkElement() && getCurrentViewportBox() is! RootRenderViewportBox)) {
-        logicalWidth = getCurrentViewportBox()!.boxSize!.width;
+      } else if (logicalWidth == null && (renderStyle.isSelfRouterLinkElement() && root != null && root is! RootRenderViewportBox)) {
+        logicalWidth = root!.boxSize!.width;
       } else if (logicalWidth == null && parentStyle != null) {
         // Resolve whether the direct parent is a flex item (its render box's parent is a flex container).
         // Determine if our direct parent is a flex item: i.e., the parent's parent is a flex container.
