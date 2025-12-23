@@ -1620,7 +1620,12 @@ class CSSRenderStyle extends RenderStyle
 
     // Memorize the variable value to renderStyle object.
     if (CSSVariable.isCSSSVariableProperty(name)) {
-      setCSSVariable(name, value.toString());
+      // Custom properties can legally be set to an empty token stream:
+      //   --x: ;
+      // Some parsing paths represent that as `null`; do NOT stringify it to
+      // "null", since it will leak into var() expansion and break consumers
+      // like Tailwind gradients (e.g. "#3b82f6 null").
+      setCSSVariable(name, value == null ? '' : value.toString());
       return;
     }
 
