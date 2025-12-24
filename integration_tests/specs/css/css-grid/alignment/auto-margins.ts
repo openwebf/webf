@@ -165,10 +165,14 @@ describe('CSS Grid auto margins and alignment interaction', () => {
     const gridRect = grid.getBoundingClientRect();
 
     // Item should be centered both ways
+    // Auto margins center within the grid area (the item’s containing block),
+    // not the full border-box width of a block-level grid container.
+    const cellRight = gridRect.left + 200;
+    const cellBottom = gridRect.top + 180;
     const leftMargin = itemRect.left - gridRect.left;
-    const rightMargin = gridRect.right - itemRect.right;
+    const rightMargin = cellRight - itemRect.right;
     const topMargin = itemRect.top - gridRect.top;
-    const bottomMargin = gridRect.bottom - itemRect.bottom;
+    const bottomMargin = cellBottom - itemRect.bottom;
 
     expect(Math.abs(leftMargin - rightMargin)).toBeLessThan(1);
     expect(Math.abs(topMargin - bottomMargin)).toBeLessThan(1);
