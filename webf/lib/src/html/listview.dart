@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:meta/meta.dart';
 import 'package:webf/css.dart';
@@ -53,7 +54,7 @@ const webfListView2 = 'WEBF-LIST-VIEW';
 /// A custom element that renders a Flutter ListView in WebF
 ///
 /// This element implements a scrollable list view that can be used in HTML with
-/// either the `LISTVIEW` or `WEBF-LISTVIEW` tag names. It supports common list
+/// either the `<LISTVIEW>` or `<WEBF-LISTVIEW>` tag names. It supports common list
 /// features like:
 /// - Vertical or horizontal scrolling
 /// - Pull-to-refresh functionality
@@ -269,8 +270,68 @@ class WebFListViewElement extends WebFListViewBindings {
         call: (bindingObject, args) => castToType<WebFListViewElement>(bindingObject).resetFooter())
   };
 
+  static final StaticDefinedAsyncBindingObjectMethodMap listViewAsyncMethods = {
+    'scrollByIndex': StaticDefinedAsyncBindingObjectMethod(call: (bindingObject, args) async {
+      final element = castToType<WebFListViewElement>(bindingObject);
+      if (args.isEmpty) return false;
+      final int? index = _coerceInt(args[0]);
+      if (index == null) return false;
+
+      final dynamic options = args.length > 1 ? args[1] : null;
+      bool animated = true;
+      int durationMs = 250;
+      double? alignment;
+
+      if (options is bool) {
+        animated = options;
+      } else if (options is num) {
+        durationMs = options.toInt();
+      } else if (options is Map) {
+        final dynamic animatedOption = options['animated'];
+        if (animatedOption is bool) animated = animatedOption;
+
+        final dynamic durationOption = options['duration'];
+        if (durationOption is num) durationMs = durationOption.toInt();
+
+        final dynamic alignmentOption = options['alignment'];
+        if (alignmentOption is num) alignment = alignmentOption.toDouble();
+      }
+
+      return element.scrollByIndex(
+        index,
+        animated: animated,
+        duration: Duration(milliseconds: durationMs),
+        alignment: alignment,
+      );
+    }),
+  };
+
+  /// Scrolls this ListView until the item at [index] is visible.
+  ///
+  /// This is designed for lazily-built lists where the total scroll extent can't be
+  /// known up front. For the last item (`index == childNodes.length - 1`), this will
+  /// repeatedly scroll to the current `maxScrollExtent` until the end stabilizes.
+  Future<bool> scrollByIndex(
+    int index, {
+    bool animated = true,
+    Duration duration = const Duration(milliseconds: 250),
+    double? alignment,
+  }) async {
+    final WebFListViewState? currentState = state;
+    if (currentState == null) return false;
+    return await currentState.scrollByIndex(
+      index,
+      animated: animated,
+      duration: duration,
+      alignment: alignment,
+    );
+  }
+
   @override
   List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, listViewMethods];
+
+  @override
+  List<StaticDefinedAsyncBindingObjectMethodMap> get asyncMethods => [...super.asyncMethods, listViewAsyncMethods];
 }
 
 /// State class for the FlutterListViewElement
@@ -378,6 +439,235 @@ class WebFListViewState extends WebFWidgetElementState {
   /// that aren't explicitly completed by calling finishLoad()
   bool _isLoading = false;
 
+  final Map<int, BuildContext> _mountedItemContexts = {};
+
+  void _registerItemContext(int index, BuildContext context) {
+    _mountedItemContexts[index] = context;
+  }
+
+  void _unregisterItemContext(int index) {
+    _mountedItemContexts.remove(index);
+  }
+
+  static bool _isUsableContext(BuildContext context) {
+    final RenderObject? ro = context.findRenderObject();
+    return ro != null && ro.attached;
+  }
+
+  ({int min, int max})? _mountedIndexRange() {
+    if (_mountedItemContexts.isEmpty) return null;
+    int minIndex = _mountedItemContexts.keys.first;
+    int maxIndex = minIndex;
+    for (final i in _mountedItemContexts.keys) {
+      if (i < minIndex) minIndex = i;
+      if (i > maxIndex) maxIndex = i;
+    }
+    return (min: minIndex, max: maxIndex);
+  }
+
+  Future<void> _scrollTo(
+    double offset, {
+    required bool animated,
+    required Duration duration,
+    Curve curve = Curves.ease,
+  }) async {
+    final ScrollController? controller = scrollController;
+    if (!mounted || controller == null || !controller.hasClients) return;
+
+    final position = controller.position;
+    final double target = offset.clamp(position.minScrollExtent, position.maxScrollExtent);
+    if (!animated || duration == Duration.zero) {
+      controller.jumpTo(target);
+      return;
+    }
+    await controller.animateTo(target, duration: duration, curve: curve);
+  }
+
+  Future<void> _scrollToStableExtent({
+    required bool toMax,
+    required bool animated,
+    required Duration duration,
+    Curve curve = Curves.ease,
+    int maxAttempts = 24,
+  }) async {
+    final ScrollController? controller = scrollController;
+    if (!mounted || controller == null || !controller.hasClients) return;
+
+    double lastPixels = controller.position.pixels;
+    double lastExtent = toMax ? controller.position.maxScrollExtent : controller.position.minScrollExtent;
+    int stableCount = 0;
+
+    for (int i = 0; i < maxAttempts; i++) {
+      final position = controller.position;
+      final double target = toMax ? position.maxScrollExtent : position.minScrollExtent;
+      await _scrollTo(target, animated: animated, duration: duration, curve: curve);
+      await SchedulerBinding.instance.endOfFrame;
+
+      final double pixels = controller.position.pixels;
+      final double extent = toMax ? controller.position.maxScrollExtent : controller.position.minScrollExtent;
+      final bool moved = (pixels - lastPixels).abs() > 0.5;
+      final bool extentChanged = (extent - lastExtent).abs() > 0.5;
+
+      if (!moved && !extentChanged) {
+        stableCount++;
+      } else {
+        stableCount = 0;
+      }
+      if (stableCount >= 2) {
+        return;
+      }
+      lastPixels = pixels;
+      lastExtent = extent;
+    }
+  }
+
+  /// Scrolls the ListView until the item at [index] is mounted, then ensures it's visible.
+  ///
+  /// Returns `true` if the item was found and scrolled into view.
+  Future<bool> scrollByIndex(
+    int index, {
+    bool animated = true,
+    Duration duration = const Duration(milliseconds: 250),
+    Curve curve = Curves.ease,
+    double? alignment,
+    int maxAttempts = 80,
+  }) async {
+    final ScrollController? controller = scrollController;
+    if (!mounted || controller == null || !controller.hasClients) return false;
+
+    final int itemCount = widgetElement.childNodes.length;
+    if (itemCount == 0) return false;
+
+    final int targetIndex = index.clamp(0, itemCount - 1);
+    final bool isLast = targetIndex == itemCount - 1;
+    final bool isFirst = targetIndex == 0;
+    final double effectiveAlignment = alignment ?? (isLast ? 1.0 : 0.0);
+
+    await SchedulerBinding.instance.endOfFrame;
+    if (!mounted) return false;
+
+    BuildContext? targetContext = _mountedItemContexts[targetIndex];
+    if (targetContext != null && targetContext.mounted && _isUsableContext(targetContext)) {
+      await WebFEnsureVisible.acrossScrollables(
+        targetContext,
+        duration: duration,
+        curve: curve,
+        alignment: effectiveAlignment,
+        axis: widgetElement.scrollDirection,
+      );
+      return true;
+    }
+
+    // Fast path for the edges: keep scrolling to the extent until it stabilizes,
+    // then try to reveal the target item.
+    if (isLast) {
+      await _scrollToStableExtent(toMax: true, animated: animated, duration: duration, curve: curve);
+    } else if (isFirst) {
+      await _scrollToStableExtent(toMax: false, animated: animated, duration: duration, curve: curve);
+    } else {
+      // Jump close to the estimated offset to reduce the number of viewport steps.
+      try {
+        final position = controller.position;
+        final double ratio = itemCount <= 1 ? 0.0 : targetIndex / (itemCount - 1);
+        final double estimate = position.minScrollExtent + (position.maxScrollExtent - position.minScrollExtent) * ratio;
+        await _scrollTo(estimate, animated: false, duration: Duration.zero);
+      } catch (_) {
+        // Ignore transient errors while layout is changing.
+      }
+    }
+
+    await SchedulerBinding.instance.endOfFrame;
+    if (!mounted) return false;
+    targetContext = _mountedItemContexts[targetIndex];
+    if (targetContext != null && targetContext.mounted && _isUsableContext(targetContext)) {
+      await WebFEnsureVisible.acrossScrollables(
+        targetContext,
+        duration: duration,
+        curve: curve,
+        alignment: effectiveAlignment,
+        axis: widgetElement.scrollDirection,
+      );
+      return true;
+    }
+
+    // Progressive scrolling: step by viewport size until the target index is mounted.
+    double lastPixels = controller.position.pixels;
+    for (int attempt = 0; attempt < maxAttempts; attempt++) {
+      final range = _mountedIndexRange();
+      final int direction;
+      if (range == null) {
+        direction = isLast ? 1 : -1;
+      } else if (targetIndex > range.max) {
+        direction = 1;
+      } else if (targetIndex < range.min) {
+        direction = -1;
+      } else {
+        // Target is within mounted range but we don't have a usable context yet.
+        requestUpdateState();
+        await SchedulerBinding.instance.endOfFrame;
+        if (!mounted) return false;
+        targetContext = _mountedItemContexts[targetIndex];
+        if (targetContext != null && targetContext.mounted && _isUsableContext(targetContext)) {
+          await WebFEnsureVisible.acrossScrollables(
+            targetContext,
+            duration: duration,
+            curve: curve,
+            alignment: effectiveAlignment,
+            axis: widgetElement.scrollDirection,
+          );
+          return true;
+        }
+        break;
+      }
+
+      final position = controller.position;
+      final double viewport = position.viewportDimension > 0 ? position.viewportDimension : 200;
+      final double next = position.pixels + direction * viewport * 0.85;
+
+      try {
+        await _scrollTo(
+          next,
+          animated: animated,
+          duration: Duration(milliseconds: math.min(250, duration.inMilliseconds)),
+          curve: curve,
+        );
+      } catch (_) {
+        // Ignore transient errors while layout is changing.
+      }
+
+      await SchedulerBinding.instance.endOfFrame;
+      if (!mounted) return false;
+
+      targetContext = _mountedItemContexts[targetIndex];
+      if (targetContext != null && targetContext.mounted && _isUsableContext(targetContext)) {
+        await WebFEnsureVisible.acrossScrollables(
+          targetContext,
+          duration: duration,
+          curve: curve,
+          alignment: effectiveAlignment,
+          axis: widgetElement.scrollDirection,
+        );
+        return true;
+      }
+
+      final double pixels = controller.position.pixels;
+      final bool moved = (pixels - lastPixels).abs() > 0.5;
+      if (!moved && controller.position.atEdge) {
+        // We can't make progress anymore.
+        break;
+      }
+      lastPixels = pixels;
+    }
+
+    // If we were asked to scroll to the last index, consider reaching the end sufficient,
+    // even if the target widget isn't mounted (e.g. removed mid-scroll).
+    if (isLast) {
+      return controller.hasClients && controller.position.pixels >= controller.position.maxScrollExtent - 0.5;
+    }
+
+    return false;
+  }
+
   /// Builds a widget for a specific index in the list view
   ///
   /// This method handles the creation of list item widgets based on their index:
@@ -391,15 +681,28 @@ class WebFListViewState extends WebFWidgetElementState {
   @protected
   Widget buildListViewItemByIndex(int index) {
     Node? node = widgetElement.childNodes.elementAt(index);
+    Widget child;
     if (node is dom.Element) {
       CSSPositionType positionType = node.renderStyle.position;
       if (positionType == CSSPositionType.absolute || positionType == CSSPositionType.fixed) {
-        return PositionPlaceHolder(node.holderAttachedPositionedElement!, node);
+        child = PositionPlaceHolder(node.holderAttachedPositionedElement!, node);
+      } else {
+        child = LayoutBoxWrapper(ownerElement: node, child: widgetElement.childNodes.elementAt(index).toWidget());
       }
-
-      return LayoutBoxWrapper(ownerElement: node, child: widgetElement.childNodes.elementAt(index).toWidget());
+    } else {
+      child = node.toWidget();
     }
-    return node.toWidget();
+
+    // Track mounted item contexts so we can scroll to an index in a lazily-built list.
+    return KeyedSubtree(
+      key: ValueKey<int>(index),
+      child: _WebFListViewIndexMarker(
+        index: index,
+        onMountOrUpdate: _registerItemContext,
+        onUnmount: _unregisterItemContext,
+        child: child,
+      ),
+    );
   }
 
   /// Builds the header widget for pull-to-refresh functionality
@@ -511,5 +814,50 @@ class WebFListViewState extends WebFWidgetElementState {
     }
 
     return result;
+  }
+}
+
+int? _coerceInt(dynamic value) {
+  if (value is int) return value;
+  if (value is double) return value.toInt();
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value);
+  return null;
+}
+
+class _WebFListViewIndexMarker extends StatefulWidget {
+  const _WebFListViewIndexMarker({
+    required this.index,
+    required this.onMountOrUpdate,
+    required this.onUnmount,
+    required this.child,
+  });
+
+  final int index;
+  final void Function(int index, BuildContext context) onMountOrUpdate;
+  final void Function(int index) onUnmount;
+  final Widget child;
+
+  @override
+  State<_WebFListViewIndexMarker> createState() => _WebFListViewIndexMarkerState();
+}
+
+class _WebFListViewIndexMarkerState extends State<_WebFListViewIndexMarker> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    widget.onMountOrUpdate(widget.index, context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    widget.onMountOrUpdate(widget.index, context);
+    return widget.child;
+  }
+
+  @override
+  void dispose() {
+    widget.onUnmount(widget.index);
+    super.dispose();
   }
 }

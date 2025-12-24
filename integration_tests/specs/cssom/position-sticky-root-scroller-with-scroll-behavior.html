@@ -23,6 +23,7 @@
 <div id="sticky">This is a sticky element!</div>
 
 <script>
+    await sleep(1);
     let sticky = document.getElementById('sticky');
     window.scrollTo(0, 700);
     assert_equals(sticky.offsetTop, 700 + 50);

@@ -79,6 +79,36 @@ interface WebFListViewMethods {
    * operation without completing it.
    */
   resetFooter(): void;
+
+  /**
+   * Scrolls the ListView until the child at `index` is visible.
+   *
+   * This method is intended for lazily-built lists where the total scroll extent
+   * can't be known up front. To scroll to the bottom, call with the last index:
+   * `await el.scrollByIndex(el.children.length - 1)`.
+   *
+   * @returns `true` if the target item was found and scrolled into view.
+   */
+  scrollByIndex(
+    index: number,
+    options?: {
+      /**
+       * Whether to animate the scroll.
+       * @default true
+       */
+      animated?: boolean;
+      /**
+       * Animation duration in milliseconds.
+       * @default 250
+       */
+      duration?: number;
+      /**
+       * Alignment within viewport, from 0.0 (start) to 1.0 (end).
+       * If omitted, defaults to 1.0 for the last index, otherwise 0.0.
+       */
+      alignment?: number;
+    }
+  ): Promise<boolean>;
 }
 
 interface WebFListViewEvents {
