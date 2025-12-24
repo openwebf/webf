@@ -1,5 +1,5 @@
 describe('WebFListView.scrollByIndex', () => {
-  fit('should scroll to the last item by index', async (done) => {
+  it('should scroll to the last item by index', async (done) => {
     const listview = document.createElement('webf-listview') as any;
     listview.style.width = '300px';
     listview.style.height = '200px';

@@ -31,13 +31,11 @@ describe('background image', function () {
     link.setAttribute('href', `${location.protocol}//${location.hostname}:${parseInt(location.port) + 1}/public/assets/remote.css`);
     document.head.appendChild(link);
 
-    console.log(`${location.protocol}//${location.hostname}:${parseInt(location.port) + 1}/public/assets/remote.css`);
-
     let div = document.createElement('div');
     div.className = 'container';
     div.textContent = 'helloworld';
     document.body.appendChild(div);
-    await snapshot(1);
+    await snapshot(4);
   });
 
   it('should work with image of base64', async () => {
@@ -72,7 +70,7 @@ describe('background image', function () {
        --background-end-rgb: 255, 255, 255;
        --background-end-rgb-2: 0,0,0;
       }
-      
+
       .box {
         width: 100px;
         height: 100px;
