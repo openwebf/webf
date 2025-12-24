@@ -1,5 +1,5 @@
 describe('CSS Grid minmax() advanced', () => {
-  xit('handles minmax with fit-content max', async () => {
+  it('handles minmax with fit-content max', async () => {
     const grid = document.createElement('div');
     grid.style.display = 'grid';
     grid.style.gridTemplateColumns = 'minmax(100px, fit-content(200px))';
@@ -20,6 +20,10 @@ describe('CSS Grid minmax() advanced', () => {
     await waitForFrame();
     await snapshot();
 
+    // The column should fill the grid container (300px)
+    expect(item.getBoundingClientRect().width).toBeCloseTo(300, 0);
+
+    // Or at minimum, verify it respects the 100px floor
     expect(item.getBoundingClientRect().width).toBeGreaterThanOrEqual(100);
 
     grid.remove();
