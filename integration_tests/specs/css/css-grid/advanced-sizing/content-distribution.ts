@@ -33,7 +33,7 @@ describe('CSS Grid content distribution', () => {
     grid.remove();
   });
 
-  xit('handles space distribution with minmax', async () => {
+  it('handles space distribution with minmax', async () => {
     const grid = document.createElement('div');
     grid.style.display = 'grid';
     grid.style.gridTemplateColumns = 'minmax(100px, 1fr) minmax(150px, 2fr)';
@@ -58,10 +58,10 @@ describe('CSS Grid content distribution', () => {
     await snapshot();
 
     const items = Array.from(grid.children) as HTMLElement[];
-    // After minimums (100 + 150 = 250), 200px remains
-    // Distributed as 1fr:2fr (1/3 vs 2/3)
-    expect(items[0].getBoundingClientRect().width).toBeCloseTo(167, 0); // 100 + 67
-    expect(items[1].getBoundingClientRect().width).toBeCloseTo(283, 0); // 150 + 133
+    // grid-template-columns: minmax(100px, 1fr) minmax(150px, 2fr)
+    // Total Width: 450px
+    expect(items[0].getBoundingClientRect().width).toBeCloseTo(150, 0); // 450 × 1/3
+    expect(items[1].getBoundingClientRect().width).toBeCloseTo(300, 0); // 450 × 2/3
 
     grid.remove();
   });
