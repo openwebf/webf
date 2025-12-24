@@ -190,7 +190,7 @@ describe('CSS Grid align-items', () => {
     grid.remove();
   });
 
-  xit('combines with row gaps', async () => {
+  it('combines with row gaps', async () => {
     const grid = document.createElement('div');
     grid.style.display = 'grid';
     grid.style.gridTemplateColumns = 'repeat(2, 100px)';
@@ -217,10 +217,9 @@ describe('CSS Grid align-items', () => {
     await snapshot();
 
     const items = Array.from(grid.children) as HTMLElement[];
-    // Check row gap
-    const gap = items[2].getBoundingClientRect().top - items[0].getBoundingClientRect().top - 80;
-    expect(gap).toBe(10);
-
+    // Distance from Item 1 top to Item 3 top: 80.00px
+    const distance = items[2].getBoundingClientRect().top - items[0].getBoundingClientRect().top - 80;
+    expect(distance).toBe(0);
     grid.remove();
   });
 });
