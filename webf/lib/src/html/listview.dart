@@ -3,6 +3,7 @@
  * Licensed under GNU GPL with Enterprise exception.
  */
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
@@ -553,7 +554,7 @@ class WebFListViewState extends WebFWidgetElementState {
         duration: duration,
         curve: curve,
         alignment: effectiveAlignment,
-        axis: widgetElement.scrollDirection,
+        axis: widgetElement.axis,
       );
       return true;
     }
@@ -585,7 +586,7 @@ class WebFListViewState extends WebFWidgetElementState {
         duration: duration,
         curve: curve,
         alignment: effectiveAlignment,
-        axis: widgetElement.scrollDirection,
+        axis: widgetElement.axis,
       );
       return true;
     }
@@ -613,7 +614,7 @@ class WebFListViewState extends WebFWidgetElementState {
             duration: duration,
             curve: curve,
             alignment: effectiveAlignment,
-            axis: widgetElement.scrollDirection,
+            axis: widgetElement.axis,
           );
           return true;
         }
@@ -645,7 +646,7 @@ class WebFListViewState extends WebFWidgetElementState {
           duration: duration,
           curve: curve,
           alignment: effectiveAlignment,
-          axis: widgetElement.scrollDirection,
+          axis: widgetElement.axis,
         );
         return true;
       }
