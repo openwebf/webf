@@ -925,11 +925,37 @@ class CSSLength {
     } else if (text == INITIAL) {
       return CSSLengthValue.initial;
     } else if (text == INHERIT) {
-      if (renderStyle != null && propertyName != null && renderStyle.target.parentElement != null) {
-        var element = renderStyle.target.parentElement!;
-        return parseLength(element.style.getPropertyValue(propertyName), element.renderStyle, propertyName, axisType);
+      // Per CSS Cascade, `inherit` sets the computed value on the element to
+      // the computed value of its parent. For <length-percentage> properties,
+      // this means percentage should remain a percentage (e.g. `100%`) and then
+      // be resolved against the *child's* containing block during layout.
+      //
+      // Avoid resolving percentages using the parent's containing block (which
+      // would incorrectly turn `100%` into an absolute px length here).
+      if (renderStyle != null && propertyName != null) {
+        final parent = renderStyle.target.parentElement;
+        if (parent != null) {
+          final dynamic parentComputed = parent.renderStyle.getProperty(propertyName);
+          if (parentComputed is CSSLengthValue) {
+            final String computedText = parentComputed.cssText();
+            if (computedText.isNotEmpty) {
+              return parseLength(computedText, renderStyle, propertyName, axisType);
+            }
+          }
+
+          // Fallback to parent's serialized specified value when computed is unavailable.
+          final String specified = parent.style.getPropertyValue(propertyName);
+          if (specified.isNotEmpty) {
+            return parseLength(specified, renderStyle, propertyName, axisType);
+          }
+        }
+
+        // Root element (or missing parent): fall back to initial value.
+        final String initialValue = (cssInitialValues[propertyName] as String?) ?? AUTO;
+        return parseLength(initialValue, renderStyle, propertyName, axisType);
       }
-      return CSSLengthValue.zero;
+
+      return CSSLengthValue.unknown;
     } else if (text == AUTO) {
       return CSSLengthValue.auto;
     } else if (text == NONE) {

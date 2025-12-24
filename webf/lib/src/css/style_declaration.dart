@@ -483,6 +483,9 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     if (CSSFunction.isFunction(normalizedValue)) return true;
 
     if (CSSLength.isInitial(normalizedValue)) return true;
+    // CSS-wide keyword: allow `inherit` for all properties so per-property
+    // parsers (e.g. CSSLength.parseLength) can resolve it correctly.
+    if (normalizedValue == INHERIT) return true;
 
     final String lowerValue = normalizedValue.toLowerCase();
     final bool isIntrinsicSizeKeyword =
