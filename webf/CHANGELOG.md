@@ -1,3 +1,10 @@
+## 0.22.20
+
+### Features
+
+- Support global font size adjustment using MediaQuery.textScaler at the root.
+- Add scrollByIndex to WebFListView to enable scrolling to a position by item index.
+
 ## 0.22.19
 
 ### Features
