@@ -157,7 +157,7 @@ describe('CSS Grid auto-fit', () => {
     grid2.remove();
   });
 
-  xit('handles auto-fit with single item', async () => {
+  it('handles auto-fit with single item', async () => {
     const grid = document.createElement('div');
     grid.style.display = 'grid';
     grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(100px, 1fr))';

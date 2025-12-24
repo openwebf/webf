@@ -2907,6 +2907,7 @@ class RenderGridLayout extends RenderLayoutBox {
       usedContentWidth += colSizes[c];
       if (c < colSizes.length - 1) usedContentWidth += colGap;
     }
+    int collapsedAutoFitColumnCount = 0;
     if (explicitAutoFitColumns != null && explicitAutoFitColumnUsage != null) {
       double collapsedWidth = 0;
       int collapsedCount = 0;
@@ -2923,6 +2924,7 @@ class RenderGridLayout extends RenderLayoutBox {
       if (collapsedWidth > 0) {
         usedContentWidth = math.max(0.0, usedContentWidth - collapsedWidth);
         justificationColumnCount = math.max(0, justificationColumnCount - collapsedCount);
+        collapsedAutoFitColumnCount = collapsedCount;
       }
     }
     double usedContentHeight = 0;
@@ -3005,17 +3007,51 @@ class RenderGridLayout extends RenderLayoutBox {
     double verticalFree = math.max(0.0, size.height - verticalPaddingBorder - usedContentHeight);
     bool relayoutForStretchedTracks = false;
 
+    GridTrackSize columnTrackAt(int index) {
+      if (index >= 0 && index < resolvedColumnDefs.length) {
+        return resolvedColumnDefs[index];
+      }
+      final int implicitIndex = math.max(0, index - explicitColumnCount);
+      return autoColDefs.isNotEmpty ? autoColDefs[implicitIndex % autoColDefs.length] : const GridAuto();
+    }
+
+    double flexFactorForColumnTrack(GridTrackSize track) {
+      if (track is GridFraction) return track.fr;
+      if (track is GridMinMax && track.maxTrack is GridFraction) {
+        return (track.maxTrack as GridFraction).fr;
+      }
+      return 0.0;
+    }
+
+    // When `auto-fit` collapses empty tracks, the resolved track sizing can gain
+    // new free space after placement. Per CSS Grid, flexible (fr) tracks should
+    // absorb this space as part of track sizing (not via justify-content).
+    if (horizontalFree > 0 && collapsedAutoFitColumnCount > 0 && justificationColumnCount > 0) {
+      double frSum = 0.0;
+      final List<double> frFactors =
+          List<double>.filled(justificationColumnCount, 0.0, growable: false);
+      for (int c = 0; c < justificationColumnCount; c++) {
+        final double fr = flexFactorForColumnTrack(columnTrackAt(c));
+        if (fr > 0) {
+          frFactors[c] = fr;
+          frSum += fr;
+        }
+      }
+      if (frSum > 0) {
+        for (int c = 0; c < justificationColumnCount; c++) {
+          final double fr = frFactors[c];
+          if (fr <= 0) continue;
+          colSizes[c] += horizontalFree * (fr / frSum);
+        }
+        usedContentWidth += horizontalFree;
+        horizontalFree = 0;
+        relayoutForStretchedTracks = true;
+      }
+    }
+
     if (horizontalFree > 0 &&
         renderStyle.justifyContent == JustifyContent.stretch &&
         justificationColumnCount > 0) {
-      GridTrackSize columnTrackAt(int index) {
-        if (index >= 0 && index < resolvedColumnDefs.length) {
-          return resolvedColumnDefs[index];
-        }
-        final int implicitIndex = math.max(0, index - explicitColumnCount);
-        return autoColDefs.isNotEmpty ? autoColDefs[implicitIndex % autoColDefs.length] : const GridAuto();
-      }
-
       bool isStretchableColumn(GridTrackSize track) {
         if (track is GridAuto) return true;
         if (track is GridMinMax) return track.maxTrack is GridAuto;
