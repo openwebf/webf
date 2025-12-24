@@ -13,10 +13,11 @@ import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 
-
 /// RenderBox of a widget element whose content is rendering by Flutter Widgets.
 class RenderWidget extends RenderBoxModel
-    with ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>> {
+    with
+        ContainerRenderObjectMixin<RenderBox,
+            ContainerBoxParentData<RenderBox>> {
   RenderWidget({required super.renderStyle});
 
   // Cache sticky children to calculate the base offset of sticky children
@@ -24,13 +25,15 @@ class RenderWidget extends RenderBoxModel
 
   @override
   BoxSizeType get widthSizeType {
-    bool widthDefined = renderStyle.width.isNotAuto || renderStyle.minWidth.isNotAuto;
+    bool widthDefined =
+        renderStyle.width.isNotAuto || renderStyle.minWidth.isNotAuto;
     return widthDefined ? BoxSizeType.specified : BoxSizeType.intrinsic;
   }
 
   @override
   BoxSizeType get heightSizeType {
-    bool heightDefined = renderStyle.height.isNotAuto || renderStyle.minHeight.isNotAuto;
+    bool heightDefined =
+        renderStyle.height.isNotAuto || renderStyle.minHeight.isNotAuto;
     return heightDefined ? BoxSizeType.specified : BoxSizeType.intrinsic;
   }
 
@@ -60,16 +63,19 @@ class RenderWidget extends RenderBoxModel
     // For inline-block with auto width, avoid clamping to the viewport so
     // children can determine natural width and we shrink-wrap accordingly.
     final bool isInlineBlockAutoWidth =
-        renderStyle.effectiveDisplay == CSSDisplay.inlineBlock && renderStyle.width.isAuto;
+        renderStyle.effectiveDisplay == CSSDisplay.inlineBlock &&
+            renderStyle.width.isAuto;
 
     // When the widget element has an explicit inline-size (width/min-width/max-width),
     // we should not additionally clamp the child to the viewport. Let it size up to
     // the content constraints so that explicit widths (e.g., 500px) can overflow and
     // participate in scrollable sizing, matching regular RenderBoxModel behavior.
-    final bool hasExplicitInlineWidth =
-        renderStyle.width.isNotAuto || renderStyle.minWidth.isNotAuto || renderStyle.maxWidth.isNotNone;
+    final bool hasExplicitInlineWidth = renderStyle.width.isNotAuto ||
+        renderStyle.minWidth.isNotAuto ||
+        renderStyle.maxWidth.isNotNone;
 
-    RenderViewportBox viewportBox = getViewportBox() ?? renderStyle.target.getRootViewport()!;
+    RenderViewportBox viewportBox =
+        getViewportBox() ?? renderStyle.target.getRootViewport()!;
     Size viewportSize = viewportBox.viewportSize;
     // The content box of this RenderWidget is the area available to the hosted
     // Flutter widget after accounting for CSS padding and borders. When we clamp
@@ -78,31 +84,34 @@ class RenderWidget extends RenderBoxModel
     // padding + border) never exceeds the viewport height. Otherwise, elements
     // like WebFListView would grow taller than the root viewport by exactly the
     // amount of their vertical padding.
-    final double verticalPadding =
-        renderStyle.paddingTop.computedValue + renderStyle.paddingBottom.computedValue;
-    final double verticalBorder = renderStyle.effectiveBorderTopWidth.computedValue +
-        renderStyle.effectiveBorderBottomWidth.computedValue;
+    final double verticalPadding = renderStyle.paddingTop.computedValue +
+        renderStyle.paddingBottom.computedValue;
+    final double verticalBorder =
+        renderStyle.effectiveBorderTopWidth.computedValue +
+            renderStyle.effectiveBorderBottomWidth.computedValue;
     final double contentViewportHeight =
         math.max(0.0, viewportSize.height - verticalPadding - verticalBorder);
 
     BoxConstraints childConstraints;
     if (isInlineBlockAutoWidth || hasExplicitInlineWidth) {
       childConstraints = BoxConstraints(
-        minWidth: contentConstraints!.minWidth,
-        maxWidth: contentConstraints!.maxWidth,
-        minHeight: contentConstraints!.minHeight,
-        maxHeight: (contentConstraints!.hasTightHeight || (renderStyle.target as WidgetElement).allowsInfiniteHeight)
-            ? contentConstraints!.maxHeight
-            : math.min(contentViewportHeight, contentConstraints!.maxHeight)
-      );
+          minWidth: contentConstraints!.minWidth,
+          maxWidth: contentConstraints!.maxWidth,
+          minHeight: contentConstraints!.minHeight,
+          maxHeight: (contentConstraints!.hasTightHeight ||
+                  (renderStyle.target as WidgetElement).allowsInfiniteHeight)
+              ? contentConstraints!.maxHeight
+              : math.min(contentViewportHeight, contentConstraints!.maxHeight));
     } else {
       childConstraints = BoxConstraints(
           minWidth: contentConstraints!.minWidth,
-          maxWidth: (contentConstraints!.hasTightWidth || (renderStyle.target as WidgetElement).allowsInfiniteWidth)
+          maxWidth: (contentConstraints!.hasTightWidth ||
+                  (renderStyle.target as WidgetElement).allowsInfiniteWidth)
               ? contentConstraints!.maxWidth
               : math.min(viewportSize.width, contentConstraints!.maxWidth),
           minHeight: contentConstraints!.minHeight,
-          maxHeight: (contentConstraints!.hasTightHeight || (renderStyle.target as WidgetElement).allowsInfiniteHeight)
+          maxHeight: (contentConstraints!.hasTightHeight ||
+                  (renderStyle.target as WidgetElement).allowsInfiniteHeight)
               ? contentConstraints!.maxHeight
               : math.min(contentViewportHeight, contentConstraints!.maxHeight));
     }
@@ -115,8 +124,8 @@ class RenderWidget extends RenderBoxModel
     if (renderStyle.width.isNotAuto) {
       final double? logicalContentWidth = renderStyle.contentBoxLogicalWidth;
       if (logicalContentWidth != null && logicalContentWidth.isFinite) {
-        final double clampedWidth =
-            logicalContentWidth.clamp(contentConstraints!.minWidth, contentConstraints!.maxWidth);
+        final double clampedWidth = logicalContentWidth.clamp(
+            contentConstraints!.minWidth, contentConstraints!.maxWidth);
         childConstraints = childConstraints.tighten(width: clampedWidth);
       }
     }
@@ -130,8 +139,8 @@ class RenderWidget extends RenderBoxModel
       final double? logicalContentHeight = renderStyle.contentBoxLogicalHeight;
       if (logicalContentHeight != null && logicalContentHeight.isFinite) {
         // Clamp to the available content constraints to avoid exceeding parent limits.
-        final double clampedHeight = logicalContentHeight
-            .clamp(contentConstraints!.minHeight, contentConstraints!.maxHeight);
+        final double clampedHeight = logicalContentHeight.clamp(
+            contentConstraints!.minHeight, contentConstraints!.maxHeight);
         childConstraints = childConstraints.tighten(height: clampedHeight);
       }
     }
@@ -161,7 +170,8 @@ class RenderWidget extends RenderBoxModel
     double paddingLeftWidth = renderStyle.paddingLeft.computedValue;
     double paddingTopWidth = renderStyle.paddingTop.computedValue;
 
-    Offset offset = Offset(borderLeftWidth + paddingLeftWidth, borderTopWidth + paddingTopWidth);
+    Offset offset = Offset(
+        borderLeftWidth + paddingLeftWidth, borderTopWidth + paddingTopWidth);
     // Apply position relative offset change.
     CSSPositionedLayout.applyRelativeOffset(offset, child);
   }
@@ -187,13 +197,15 @@ class RenderWidget extends RenderBoxModel
       }
       if (node is RenderObjectWithChildMixin<RenderBox>) {
         final RenderBox? c = (node as dynamic).child as RenderBox?;
-        if (c != null && subtreeHasAutoOrZeroParticipant(c, depth + 1)) return true;
+        if (c != null && subtreeHasAutoOrZeroParticipant(c, depth + 1))
+          return true;
       }
       if (node is RenderLayoutBox) {
         RenderBox? c = node.firstChild;
         while (c != null) {
           if (subtreeHasAutoOrZeroParticipant(c, depth + 1)) return true;
-          final RenderLayoutParentData pd = c.parentData as RenderLayoutParentData;
+          final RenderLayoutParentData pd =
+              c.parentData as RenderLayoutParentData;
           c = pd.nextSibling;
         }
       }
@@ -232,7 +244,9 @@ class RenderWidget extends RenderBoxModel
     // Promote descendant stacking context roots with positive z-index so they can
     // participate in ordering at this level (e.g., widget container hosting <body>
     // vs absolutely-positioned under <html>).
-    void collectPositiveStackingContexts(RenderBox node, List<RenderBoxModel> out, [int depth = 0]) {
+    void collectPositiveStackingContexts(
+        RenderBox node, List<RenderBoxModel> out,
+        [int depth = 0]) {
       if (depth > 64) return;
       if (node is RenderBoxModel) {
         final CSSRenderStyle rs = node.renderStyle;
@@ -250,7 +264,8 @@ class RenderWidget extends RenderBoxModel
         RenderBox? c = node.firstChild;
         while (c != null) {
           collectPositiveStackingContexts(c, out, depth + 1);
-          final RenderLayoutParentData pd = c.parentData as RenderLayoutParentData;
+          final RenderLayoutParentData pd =
+              c.parentData as RenderLayoutParentData;
           c = pd.nextSibling;
         }
       }
@@ -266,7 +281,7 @@ class RenderWidget extends RenderBoxModel
       final Node bNode = b.renderStyle.target;
       final DocumentPosition pos = aNode.compareDocumentPosition(bNode);
       if (pos == DocumentPosition.FOLLOWING) return -1; // a before b
-      if (pos == DocumentPosition.PRECEDING) return 1;  // a after b
+      if (pos == DocumentPosition.PRECEDING) return 1; // a after b
       return 0;
     }
 
@@ -315,7 +330,8 @@ class RenderWidget extends RenderBoxModel
     double content = 0.0;
     RenderBox? child = firstChild;
     while (child != null) {
-      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+      final RenderLayoutParentData pd =
+          child.parentData as RenderLayoutParentData;
       final bool positioned = child is RenderBoxModel &&
           ((child).renderStyle.isSelfPositioned() ||
               (child).renderStyle.isSelfStickyPosition());
@@ -325,10 +341,12 @@ class RenderWidget extends RenderBoxModel
       }
       child = pd.nextSibling;
     }
-    final double padding = (renderStyle.paddingLeft.computedValue + renderStyle.paddingRight.computedValue);
+    final double padding = (renderStyle.paddingLeft.computedValue +
+        renderStyle.paddingRight.computedValue);
     final double border = (renderStyle.effectiveBorderLeftWidth.computedValue +
         renderStyle.effectiveBorderRightWidth.computedValue);
-    if (content == 0.0) content = super.computeMinIntrinsicWidth(height) - padding - border;
+    if (content == 0.0)
+      content = super.computeMinIntrinsicWidth(height) - padding - border;
     return content + padding + border;
   }
 
@@ -337,7 +355,8 @@ class RenderWidget extends RenderBoxModel
     double content = 0.0;
     RenderBox? child = firstChild;
     while (child != null) {
-      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+      final RenderLayoutParentData pd =
+          child.parentData as RenderLayoutParentData;
       final bool positioned = child is RenderBoxModel &&
           ((child).renderStyle.isSelfPositioned() ||
               (child).renderStyle.isSelfStickyPosition());
@@ -347,10 +366,12 @@ class RenderWidget extends RenderBoxModel
       }
       child = pd.nextSibling;
     }
-    final double padding = (renderStyle.paddingTop.computedValue + renderStyle.paddingBottom.computedValue);
+    final double padding = (renderStyle.paddingTop.computedValue +
+        renderStyle.paddingBottom.computedValue);
     final double border = (renderStyle.effectiveBorderTopWidth.computedValue +
         renderStyle.effectiveBorderBottomWidth.computedValue);
-    if (content == 0.0) content = super.computeMinIntrinsicHeight(width) - padding - border;
+    if (content == 0.0)
+      content = super.computeMinIntrinsicHeight(width) - padding - border;
     return content + padding + border;
   }
 
@@ -359,7 +380,8 @@ class RenderWidget extends RenderBoxModel
     double content = 0.0;
     RenderBox? child = firstChild;
     while (child != null) {
-      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+      final RenderLayoutParentData pd =
+          child.parentData as RenderLayoutParentData;
       final bool positioned = child is RenderBoxModel &&
           ((child).renderStyle.isSelfPositioned() ||
               (child).renderStyle.isSelfStickyPosition());
@@ -369,10 +391,12 @@ class RenderWidget extends RenderBoxModel
       }
       child = pd.nextSibling;
     }
-    final double padding = (renderStyle.paddingLeft.computedValue + renderStyle.paddingRight.computedValue);
+    final double padding = (renderStyle.paddingLeft.computedValue +
+        renderStyle.paddingRight.computedValue);
     final double border = (renderStyle.effectiveBorderLeftWidth.computedValue +
         renderStyle.effectiveBorderRightWidth.computedValue);
-    if (content == 0.0) content = super.computeMaxIntrinsicWidth(height) - padding - border;
+    if (content == 0.0)
+      content = super.computeMaxIntrinsicWidth(height) - padding - border;
     return content + padding + border;
   }
 
@@ -381,7 +405,8 @@ class RenderWidget extends RenderBoxModel
     double content = 0.0;
     RenderBox? child = firstChild;
     while (child != null) {
-      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+      final RenderLayoutParentData pd =
+          child.parentData as RenderLayoutParentData;
       final bool positioned = child is RenderBoxModel &&
           ((child).renderStyle.isSelfPositioned() ||
               (child).renderStyle.isSelfStickyPosition());
@@ -391,10 +416,12 @@ class RenderWidget extends RenderBoxModel
       }
       child = pd.nextSibling;
     }
-    final double padding = (renderStyle.paddingTop.computedValue + renderStyle.paddingBottom.computedValue);
+    final double padding = (renderStyle.paddingTop.computedValue +
+        renderStyle.paddingBottom.computedValue);
     final double border = (renderStyle.effectiveBorderTopWidth.computedValue +
         renderStyle.effectiveBorderBottomWidth.computedValue);
-    if (content == 0.0) content = super.computeMaxIntrinsicHeight(width) - padding - border;
+    if (content == 0.0)
+      content = super.computeMaxIntrinsicHeight(width) - padding - border;
     return content + padding + border;
   }
 
@@ -426,8 +453,11 @@ class RenderWidget extends RenderBoxModel
 
     RenderBox? child = firstChild;
     while (child != null) {
-      final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-      if (child is RenderBoxModel && (child.renderStyle.isSelfPositioned() || child.renderStyle.isSelfStickyPosition())) {
+      final RenderLayoutParentData childParentData =
+          child.parentData as RenderLayoutParentData;
+      if (child is RenderBoxModel &&
+          (child.renderStyle.isSelfPositioned() ||
+              child.renderStyle.isSelfStickyPosition())) {
         positionedChildren.add(child);
       } else {
         nonPositionedChildren.add(child);
@@ -464,7 +494,8 @@ class RenderWidget extends RenderBoxModel
     }
 
     calculateBaseline();
-    initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
+    initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height),
+        Rect.fromLTRB(0, 0, size.width, size.height));
     didLayout();
   }
 
@@ -491,7 +522,8 @@ class RenderWidget extends RenderBoxModel
     double marginTop = renderStyle.marginTop.computedValue;
     double marginBottom = renderStyle.marginBottom.computedValue;
     // Use margin-bottom as baseline if layout has no children
-    return computeCssFirstBaseline() ?? marginTop + boxSize!.height + marginBottom;
+    return computeCssFirstBaseline() ??
+        marginTop + boxSize!.height + marginBottom;
   }
 
   @override
@@ -521,7 +553,10 @@ class RenderWidget extends RenderBoxModel
   @override
   void performPaint(PaintingContext context, Offset offset) {
     // Report FCP/LCP when RenderWidget with contentful Flutter widget is first painted
-    if (renderStyle.target is WidgetElement && firstChild != null && hasSize && !size.isEmpty) {
+    if (renderStyle.target is WidgetElement &&
+        firstChild != null &&
+        hasSize &&
+        !size.isEmpty) {
       final widgetElement = renderStyle.target as WidgetElement;
 
       // Check if the widget contains contentful content and get the actual visible area
@@ -532,11 +567,13 @@ class RenderWidget extends RenderBoxModel
         widgetElement.ownerDocument.controller.reportFCP();
 
         // Report LCP candidate with the actual contentful area
-        widgetElement.ownerDocument.controller.reportLCPCandidate(widgetElement, contentfulArea);
+        widgetElement.ownerDocument.controller
+            .reportLCPCandidate(widgetElement, contentfulArea);
       }
     }
 
-    Offset accumulateOffsetFromDescendant(RenderObject descendant, RenderObject ancestor) {
+    Offset accumulateOffsetFromDescendant(
+        RenderObject descendant, RenderObject ancestor) {
       Offset sum = Offset.zero;
       RenderObject? cur = descendant;
       while (cur != null && cur != ancestor) {
@@ -553,7 +590,8 @@ class RenderWidget extends RenderBoxModel
 
     for (final RenderBox child in paintingOrder) {
       if (isPositionPlaceholder(child)) continue;
-      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+      final RenderLayoutParentData pd =
+          child.parentData as RenderLayoutParentData;
       if (!child.hasSize) continue;
 
       bool restoreFlag = false;
@@ -576,7 +614,8 @@ class RenderWidget extends RenderBoxModel
       }
 
       final bool direct = identical(child.parent, this);
-      final Offset localOffset = direct ? pd.offset : accumulateOffsetFromDescendant(child, this);
+      final Offset localOffset =
+          direct ? pd.offset : accumulateOffsetFromDescendant(child, this);
       context.paintChild(child, offset + localOffset);
 
       if (restoreFlag && child is RenderBoxModel) {
@@ -595,7 +634,8 @@ class RenderWidget extends RenderBoxModel
   double _getContentfulPaintArea(WidgetElement widgetElement) {
     // Only check render objects created directly by the WidgetElement's state build() method
     // This uses a special method that skips any RenderBoxModel or RenderWidget children
-    return ContentfulWidgetDetector.getContentfulPaintAreaFromFlutterWidget(firstChild);
+    return ContentfulWidgetDetector.getContentfulPaintAreaFromFlutterWidget(
+        firstChild);
   }
 
   @override
@@ -606,7 +646,8 @@ class RenderWidget extends RenderBoxModel
 
     RenderBox? child = lastChild;
     while (child != null) {
-      final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+      final RenderLayoutParentData childParentData =
+          child.parentData as RenderLayoutParentData;
 
       final bool isHit = result.addWithPaintOffset(
         offset: childParentData.offset,
@@ -617,8 +658,9 @@ class RenderWidget extends RenderBoxModel
           if (child is RenderBoxModel) {
             CSSPositionType positionType = child.renderStyle.position;
             if (positionType == CSSPositionType.fixed) {
-              Offset totalScrollOffset = (this as RenderBoxModel).getTotalScrollOffset();
-              transformed -= totalScrollOffset;
+              // Keep hit testing in sync with RenderBoxModel.paintBoxModel.
+              final Offset o = child.getFixedScrollCompensation();
+              if (o.dx != 0.0 || o.dy != 0.0) transformed -= o;
             }
           }
 
@@ -645,8 +687,10 @@ class RenderWidget extends RenderBoxModel
     double paddingTop = renderStyle.paddingTop.computedValue;
     double topInset = borderTop + paddingTop;
 
-    double? firstBaseline = firstChild?.getDistanceToBaseline(TextBaseline.alphabetic);
-    double? lastBaseline = lastChild?.getDistanceToBaseline(TextBaseline.alphabetic);
+    double? firstBaseline =
+        firstChild?.getDistanceToBaseline(TextBaseline.alphabetic);
+    double? lastBaseline =
+        lastChild?.getDistanceToBaseline(TextBaseline.alphabetic);
 
     if (firstBaseline != null) firstBaseline += topInset;
     if (lastBaseline != null) lastBaseline += topInset;

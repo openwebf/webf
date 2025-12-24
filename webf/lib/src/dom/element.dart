@@ -26,7 +26,6 @@ import 'package:webf/src/css/query_selector.dart' as query_selector;
 import 'intersection_observer.dart';
 import 'intersection_observer_entry.dart';
 
-
 final RegExp classNameSplitRegExp = RegExp(r'\s+');
 const String _oneSpace = ' ';
 const String _styleProperty = 'style';
@@ -672,6 +671,11 @@ abstract class Element extends ContainerNode
       updateElementKey();
       renderStyle.requestWidgetToRebuild(UpdateTransformReason());
     }
+    // A transformed element establishes a fixed-position containing block per spec.
+    // When transform toggles, out-of-flow positioned descendants may need to be
+    // rehomed to a different containing block (e.g., fixed elements moving
+    // between viewport and this element).
+    _reattachOutOfFlowDescendantsToCorrectContainingBlocks();
   }
 
   void _updateHostingWidgetWithPosition(CSSPositionType oldPosition) {
@@ -1376,9 +1380,11 @@ abstract class Element extends ContainerNode
       case CSSPositionType.fixed:
         Element viewportElement = ownerDocument.documentElement!;
 
-        // If the element has 'position: fixed', the router link element was behavior as the HTMLElement in DOM mode.
+        // For fixed positioning, the containing block is the viewport unless an
+        // ancestor establishes a fixed-position containing block (e.g. transform).
+        // https://drafts.csswg.org/css-position/#fixedpos-containing-block
         containingBlockElement =
-            _findRouterLinkElement(this) ?? viewportElement;
+            _findFixedContainingBlock(this, viewportElement) ?? viewportElement;
 
         break;
     }
@@ -1431,8 +1437,8 @@ abstract class Element extends ContainerNode
     } else {
       final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
       if (DebugFlags.enableCssBatchRecalc) {
-        ownerDocument.markElementStyleDirty(this, reason: 'batch:attr:$qualifiedName');
-
+        ownerDocument.markElementStyleDirty(this,
+            reason: 'batch:attr:$qualifiedName');
       } else {
         recalculateStyle(rebuildNested: isNeedRecalculate);
       }
@@ -1472,8 +1478,8 @@ abstract class Element extends ContainerNode
       attributes.remove(qualifiedName);
       final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
       if (DebugFlags.enableCssBatchRecalc) {
-        ownerDocument.markElementStyleDirty(this, reason: 'batch:remove:$qualifiedName');
-
+        ownerDocument.markElementStyleDirty(this,
+            reason: 'batch:remove:$qualifiedName');
       } else {
         recalculateStyle(rebuildNested: isNeedRecalculate);
       }
@@ -1591,9 +1597,11 @@ abstract class Element extends ContainerNode
     }
 
     if (DebugFlags.shouldLogTransitionForProp(name)) {
-      cssLogger.info('[style][apply-prop] $tagName.$name value=${value is CSSColor ? (value).cssText() : value}');
+      cssLogger.info(
+          '[style][apply-prop] $tagName.$name value=${value is CSSColor ? (value).cssText() : value}');
     }
-    if (DebugFlags.enableBackgroundLogs && (name == BACKGROUND_POSITION_X || name == BACKGROUND_POSITION_Y)) {
+    if (DebugFlags.enableBackgroundLogs &&
+        (name == BACKGROUND_POSITION_X || name == BACKGROUND_POSITION_Y)) {
       try {
         final CSSBackgroundPosition p = value as CSSBackgroundPosition;
         renderingLogger.finer('[Background] apply $name cssText=${p.cssText()} '
@@ -1637,13 +1645,12 @@ abstract class Element extends ContainerNode
 
   void setRenderStyle(String property, String present, {String? baseHref}) {
     if (DebugFlags.shouldLogTransitionForProp(property)) {
-      cssLogger.info('[style][apply] $tagName.$property present="$present" baseHref=${baseHref ?? 'null'}');
+      cssLogger.info(
+          '[style][apply] $tagName.$property present="$present" baseHref=${baseHref ?? 'null'}');
     }
     dynamic value = present.isEmpty
         ? null
         : renderStyle.resolveValue(property, present, baseHref: baseHref);
-
-
 
     setRenderStyleProperty(property, value);
   }
@@ -1728,7 +1735,8 @@ abstract class Element extends ContainerNode
     final int version = ownerDocument.ruleSetVersion;
     final _MatchFingerprint fingerprint = _computeMatchFingerprint(ruleSet);
     final LinkedHashMap<_MatchFingerprint, _MatchedRulesCacheEntry> cache =
-        _matchedRulesLRU ??= LinkedHashMap<_MatchFingerprint, _MatchedRulesCacheEntry>();
+        _matchedRulesLRU ??=
+            LinkedHashMap<_MatchFingerprint, _MatchedRulesCacheEntry>();
 
     // Prune stale entries from previous RuleSet versions (capacity is tiny).
     if (cache.isNotEmpty) {
@@ -1757,7 +1765,6 @@ abstract class Element extends ContainerNode
     if (cache.length >= capacity) {
       final _MatchFingerprint oldest = cache.keys.first;
       cache.remove(oldest);
-
     }
     cache[fingerprint] = _MatchedRulesCacheEntry(
       version: version,
@@ -1805,11 +1812,15 @@ abstract class Element extends ContainerNode
   final Set<String> _pendingTransitionProps = <String>{};
   // Collect transition requests arriving in the same frame so we can start
   // all of them together on the next frame.
-  final List<({String property, String? prev, String curr})> _pendingTransitionQueue = <({String property, String? prev, String curr})>[];
+  final List<({String property, String? prev, String curr})>
+      _pendingTransitionQueue =
+      <({String property, String? prev, String curr})>[];
 
-  void scheduleRunTransitionAnimations(String propertyName, String? prevValue, String currentValue) {
+  void scheduleRunTransitionAnimations(
+      String propertyName, String? prevValue, String currentValue) {
     if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
-      cssLogger.info('[transition][queue] $tagName.$propertyName prev=${prevValue ?? 'null'} -> curr=$currentValue');
+      cssLogger.info(
+          '[transition][queue] $tagName.$propertyName prev=${prevValue ?? 'null'} -> curr=$currentValue');
     }
     if (_pendingTransitionProps.contains(propertyName)) {
       // Already scheduled this property in current frame; coalesce by updating
@@ -1834,9 +1845,11 @@ abstract class Element extends ContainerNode
           if (isColorProp && prevValue != null && prevValue.isNotEmpty) {
             mergedPrev = prevValue;
           }
-          _pendingTransitionQueue[i] = (property: propertyName, prev: mergedPrev, curr: currentValue);
+          _pendingTransitionQueue[i] =
+              (property: propertyName, prev: mergedPrev, curr: currentValue);
           if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
-            cssLogger.info('[transition][queue] coalesce property=$propertyName prevOld=${item.prev ?? 'null'} prevNew=${prevValue ?? 'null'} mergedPrev=${mergedPrev ?? 'null'} new-curr=$currentValue');
+            cssLogger.info(
+                '[transition][queue] coalesce property=$propertyName prevOld=${item.prev ?? 'null'} prevNew=${prevValue ?? 'null'} mergedPrev=${mergedPrev ?? 'null'} new-curr=$currentValue');
           }
 
           break;
@@ -1845,22 +1858,25 @@ abstract class Element extends ContainerNode
       return;
     }
     _pendingTransitionProps.add(propertyName);
-    _pendingTransitionQueue.add((property: propertyName, prev: prevValue, curr: currentValue));
+    _pendingTransitionQueue
+        .add((property: propertyName, prev: prevValue, curr: currentValue));
 
     if (_queuedTransitionBatch) return;
     _queuedTransitionBatch = true;
     SchedulerBinding.instance.addPostFrameCallback((_) {
       // Drain queue in insertion order so related properties (e.g., width, left, transform)
       // start in the same frame, improving sync.
-      final items = List<({String property, String? prev, String curr})>.from(_pendingTransitionQueue);
+      final items = List<({String property, String? prev, String curr})>.from(
+          _pendingTransitionQueue);
       _pendingTransitionQueue.clear();
       _queuedTransitionBatch = false;
       for (final item in items) {
-      if (DebugFlags.shouldLogTransitionForProp(item.property)) {
-        cssLogger.info('[transition][drain] run property=${item.property} prev=${item.prev ?? 'null'} curr=${item.curr}');
-      }
-      renderStyle.runTransition(item.property, item.prev, item.curr);
-      _pendingTransitionProps.remove(item.property);
+        if (DebugFlags.shouldLogTransitionForProp(item.property)) {
+          cssLogger.info(
+              '[transition][drain] run property=${item.property} prev=${item.prev ?? 'null'} curr=${item.curr}');
+        }
+        renderStyle.runTransition(item.property, item.prev, item.curr);
+        _pendingTransitionProps.remove(item.property);
       }
     });
     SchedulerBinding.instance.scheduleFrame();
@@ -1881,7 +1897,8 @@ abstract class Element extends ContainerNode
         propertyName == BORDER_BOTTOM_COLOR;
 
     if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
-      cssLogger.info('[style][change] $tagName.$propertyName prev=${prevValue ?? 'null'} curr=$currentValue');
+      cssLogger.info(
+          '[style][change] $tagName.$propertyName prev=${prevValue ?? 'null'} curr=$currentValue');
     }
 
     // For color properties, prefer the previous *computed* color from
@@ -1893,7 +1910,8 @@ abstract class Element extends ContainerNode
       if (prevComputed is CSSColor) {
         prevForTransition = prevComputed.cssText();
         if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
-          cssLogger.info('[style][prev-computed] $tagName.$propertyName prevSerialized=${prevValue ?? 'null'} prevComputed=$prevForTransition');
+          cssLogger.info(
+              '[style][prev-computed] $tagName.$propertyName prevSerialized=${prevValue ?? 'null'} prevComputed=$prevForTransition');
         }
       }
     }
@@ -1909,12 +1927,15 @@ abstract class Element extends ContainerNode
       } catch (_) {}
     }
 
-    final bool shouldTrans = renderStyle.shouldTransition(propertyName, prevForTransition, currentValue);
+    final bool shouldTrans = renderStyle.shouldTransition(
+        propertyName, prevForTransition, currentValue);
     if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
-      cssLogger.info('[style][route] $tagName.$propertyName shouldTransition=$shouldTrans');
+      cssLogger.info(
+          '[style][route] $tagName.$propertyName shouldTransition=$shouldTrans');
     }
     if (shouldTrans) {
-      scheduleRunTransitionAnimations(propertyName, prevForTransition, currentValue);
+      scheduleRunTransitionAnimations(
+          propertyName, prevForTransition, currentValue);
       return;
     }
     // If a transition for this property is pending in this frame or currently
@@ -1924,13 +1945,15 @@ abstract class Element extends ContainerNode
     final bool pending = _pendingTransitionProps.contains(propertyName);
     final bool running = renderStyle.isTransitionRunning(propertyName);
     if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
-      cssLogger.info('[style][route] $tagName.$propertyName pending=$pending running=$running');
+      cssLogger.info(
+          '[style][route] $tagName.$propertyName pending=$pending running=$running');
     }
     if (pending || running) {
       return;
     }
     if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
-      cssLogger.info('[style][apply] $tagName.$propertyName direct-set value=$currentValue');
+      cssLogger.info(
+          '[style][apply] $tagName.$propertyName direct-set value=$currentValue');
     }
     setRenderStyle(propertyName, currentValue, baseHref: baseHref);
   }
@@ -1958,7 +1981,8 @@ abstract class Element extends ContainerNode
   }
 
   // Set inline style property.
-  void setInlineStyle(String property, String value, {String? baseHref, bool fromNative = false}) {
+  void setInlineStyle(String property, String value,
+      {String? baseHref, bool fromNative = false}) {
     final bool enableBlink = ownerDocument.ownerView.enableBlink;
     final bool validate = !(fromNative && enableBlink);
     // Current only for mark property is setting by inline style.
@@ -1973,12 +1997,12 @@ abstract class Element extends ContainerNode
         recalculateStyle();
       }
     } else {
-      style.setProperty(property, value, isImportant: true, baseHref: baseHref, validate: validate);
+      style.setProperty(property, value,
+          isImportant: true, baseHref: baseHref, validate: validate);
     }
   }
 
   void clearInlineStyle() {
-
     for (var key in inlineStyle.keys) {
       style.removeProperty(key, true);
     }
@@ -1986,10 +2010,12 @@ abstract class Element extends ContainerNode
   }
 
   // Set pseudo element (::before, ::after, ::first-letter, ::first-line) style.
-  void setPseudoStyle(String type, String property, String value, {String? baseHref, bool fromNative = false}) {
+  void setPseudoStyle(String type, String property, String value,
+      {String? baseHref, bool fromNative = false}) {
     final bool enableBlink = ownerDocument.ownerView.enableBlink;
     final bool validate = !(fromNative && enableBlink);
-    style.setPseudoProperty(type, property, value, baseHref: baseHref, validate: validate);
+    style.setPseudoProperty(type, property, value,
+        baseHref: baseHref, validate: validate);
   }
 
   // Remove pseudo element (::before, ::after, ::first-letter, ::first-line) style.
@@ -2051,7 +2077,6 @@ abstract class Element extends ContainerNode
     if (forceRecalculate ||
         renderStyle.display != CSSDisplay.none ||
         shouldUpdateCSSVariables) {
-
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
@@ -2068,7 +2093,6 @@ abstract class Element extends ContainerNode
               rebuildNested: rebuildNested, forceRecalculate: forceRecalculate);
         }
       }
-
     }
   }
 
@@ -2509,16 +2533,16 @@ abstract class Element extends ContainerNode
     return renderStyle;
   }
 
-
   bool _handleIntersectionObserver(IntersectionObserverEntry entry) {
     if (enableWebFCommandLog) {
       domLogger.fine(
           '[IntersectionObserver] notify target=$pointer tag=$tagName isIntersecting=${entry.isIntersecting} ratio=${entry.intersectionRatio} observers=${_intersectionObserverList.length}');
     }
     // If there are multiple IntersectionObservers, they cannot be distributed accurately
-    final Rect intersectionRect = entry.boundingClientRect.overlaps(entry.rootBounds)
-        ? entry.boundingClientRect.intersect(entry.rootBounds)
-        : Rect.zero;
+    final Rect intersectionRect =
+        entry.boundingClientRect.overlaps(entry.rootBounds)
+            ? entry.boundingClientRect.intersect(entry.rootBounds)
+            : Rect.zero;
     for (var observer in _intersectionObserverList) {
       observer.addEntry(DartIntersectionObserverEntry(
         entry.isIntersecting,
@@ -2533,14 +2557,17 @@ abstract class Element extends ContainerNode
     return _intersectionObserverList.isNotEmpty;
   }
 
-  bool addIntersectionObserver(IntersectionObserver observer, List<double> thresholds) {
+  bool addIntersectionObserver(
+      IntersectionObserver observer, List<double> thresholds) {
     if (_intersectionObserverList.contains(observer)) {
       return false;
     }
     if (enableWebFCommandLog) {
-      domLogger.fine('[IntersectionObserver] attach target=$pointer observer=${observer.pointer} thresholds=$thresholds');
+      domLogger.fine(
+          '[IntersectionObserver] attach target=$pointer observer=${observer.pointer} thresholds=$thresholds');
     }
-    renderStyle.addIntersectionChangeListener(_handleIntersectionObserver, thresholds);
+    renderStyle.addIntersectionChangeListener(
+        _handleIntersectionObserver, thresholds);
     _intersectionObserverList.add(observer);
     _thresholds = thresholds;
     return true;
@@ -2548,7 +2575,8 @@ abstract class Element extends ContainerNode
 
   void removeIntersectionObserver(IntersectionObserver observer) {
     if (enableWebFCommandLog) {
-      domLogger.fine('[IntersectionObserver] detach target=$pointer observer=${observer.pointer}');
+      domLogger.fine(
+          '[IntersectionObserver] detach target=$pointer observer=${observer.pointer}');
     }
     _intersectionObserverList.remove(observer);
 
@@ -2562,9 +2590,11 @@ abstract class Element extends ContainerNode
       return;
     }
     if (enableWebFCommandLog) {
-      domLogger.fine('[IntersectionObserver] ensureAttach target=$pointer observers=${_intersectionObserverList.length}');
+      domLogger.fine(
+          '[IntersectionObserver] ensureAttach target=$pointer observers=${_intersectionObserverList.length}');
     }
-    renderStyle.addIntersectionChangeListener(_handleIntersectionObserver, _thresholds);
+    renderStyle.addIntersectionChangeListener(
+        _handleIntersectionObserver, _thresholds);
   }
 }
 
@@ -2665,6 +2695,28 @@ Element? _findContainingBlock(Element child, Element viewportElement) {
     }
     parent = parent.parentElement;
   }
+  return parent;
+}
+
+// https://drafts.csswg.org/css-position/#fixedpos-containing-block
+Element? _findFixedContainingBlock(Element child, Element viewportElement) {
+  Element? parent = child.parentElement;
+
+  while (parent != null) {
+    final bool hasTransform = parent.renderStyle.transform != null;
+    // Filter also creates a containing block for fixed-position descendants per spec.
+    final bool hasFilter = parent.renderStyle.filter != null;
+    final bool isRouterLinkElement = parent is RouterLinkElement;
+
+    if (parent == viewportElement ||
+        hasTransform ||
+        hasFilter ||
+        isRouterLinkElement) {
+      break;
+    }
+    parent = parent.parentElement;
+  }
+
   return parent;
 }
 
