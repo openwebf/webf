@@ -80,14 +80,17 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     final lh = renderStyle.lineHeight;
     if (lh.type != CSSLengthType.NORMAL) {
       final double fs = renderStyle.fontSize.computedValue;
+      final double scaledFs = renderStyle.textScaler.scale(fs);
       final double multiple = lh.computedValue / fs;
       if (multiple.isFinite && multiple > 0) {
+        final FontWeight weight =
+            (renderStyle.boldText && renderStyle.fontWeight.index < FontWeight.w700.index) ? FontWeight.w700 : renderStyle.fontWeight;
         strut = StrutStyle(
-          fontSize: fs,
+          fontSize: scaledFs,
           height: multiple,
           fontFamilyFallback: renderStyle.fontFamily,
           fontStyle: renderStyle.fontStyle,
-          fontWeight: renderStyle.fontWeight,
+          fontWeight: weight,
           // Minimum line-box height like CSS; allow expansion if content larger.
           forceStrutHeight: false,
         );
@@ -108,6 +111,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       text: span,
       textAlign: renderStyle.textAlign,
       textDirection: renderStyle.direction,
+      textScaler: renderStyle.textScaler,
       ellipsis: ellipsis ? '…' : null,
       maxLines: effectiveMaxLines, // honor line-clamp or nowrap+ellipsis
       strutStyle: strut,
@@ -148,7 +152,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
   void _layoutText(BoxConstraints constraints) {
     final span = _buildTextSpan();
-    _textPainter ??= TextPainter(text: span, textDirection: renderStyle.direction);
+    _textPainter ??= TextPainter(text: span, textDirection: renderStyle.direction, textScaler: renderStyle.textScaler);
     // Determine effective maxLines based on CSS semantics:
     // - If line-clamp is set, use it directly.
     // - If white-space is nowrap and text-overflow resolves to ellipsis,
@@ -162,14 +166,17 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     StrutStyle? strut;
     if (lh.type != CSSLengthType.NORMAL) {
       final double fs = renderStyle.fontSize.computedValue;
+      final double scaledFs = renderStyle.textScaler.scale(fs);
       final double multiple = lh.computedValue / fs;
       if (multiple.isFinite && multiple > 0) {
+        final FontWeight weight =
+            (renderStyle.boldText && renderStyle.fontWeight.index < FontWeight.w700.index) ? FontWeight.w700 : renderStyle.fontWeight;
         strut = StrutStyle(
-          fontSize: fs,
+          fontSize: scaledFs,
           height: multiple,
           fontFamilyFallback: renderStyle.fontFamily,
           fontStyle: renderStyle.fontStyle,
-          fontWeight: renderStyle.fontWeight,
+          fontWeight: weight,
           // Minimum line-box height like CSS; allow expansion if content larger.
           forceStrutHeight: false,
         );
@@ -185,6 +192,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       ..text = span
       ..textAlign = renderStyle.textAlign
       ..textDirection = renderStyle.direction
+      ..textScaler = renderStyle.textScaler
       ..ellipsis = (renderStyle.effectiveTextOverflow == TextOverflow.ellipsis) ? '…' : null
       ..maxLines = effectiveMaxLines
       ..strutStyle = strut
@@ -340,14 +348,17 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     StrutStyle? strut;
     if (lh.type != CSSLengthType.NORMAL) {
       final double fs = renderStyle.fontSize.computedValue;
+      final double scaledFs = renderStyle.textScaler.scale(fs);
       final double multiple = lh.computedValue / fs;
       if (multiple.isFinite && multiple > 0) {
+        final FontWeight weight =
+            (renderStyle.boldText && renderStyle.fontWeight.index < FontWeight.w700.index) ? FontWeight.w700 : renderStyle.fontWeight;
         strut = StrutStyle(
-          fontSize: fs,
+          fontSize: scaledFs,
           height: multiple,
           fontFamilyFallback: renderStyle.fontFamily,
           fontStyle: renderStyle.fontStyle,
-          fontWeight: renderStyle.fontWeight,
+          fontWeight: weight,
           forceStrutHeight: false,
         );
       }
@@ -357,6 +368,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       text: span,
       textAlign: renderStyle.textAlign,
       textDirection: renderStyle.direction,
+      textScaler: renderStyle.textScaler,
       ellipsis: ellipsis ? '…' : null,
       maxLines: effectiveMaxLines,
       strutStyle: strut,

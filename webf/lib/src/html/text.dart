@@ -150,6 +150,7 @@ class WebFTextState extends WebFWidgetElementState {
     double lineHeight =
         widgetElement.renderStyle.lineHeight.computedValue / widgetElement.renderStyle.fontSize.computedValue;
     return RichText(
+        textScaler: widgetElement.renderStyle.textScaler,
         text: widgetElement.createTextSpan(widgetElement.childNodes),
         textAlign: widgetElement.renderStyle.textAlign,
         overflow: widgetElement.renderStyle.textOverflow,

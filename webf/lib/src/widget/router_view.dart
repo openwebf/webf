@@ -50,6 +50,7 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    widget.controller.updateTextSettingsFromContext(context);
     widget.controller.routeObserver?.subscribe(this, ModalRoute.of(context)!);
   }
 
@@ -236,6 +237,7 @@ class _AsyncWebFRouterViewState extends State<_AsyncWebFRouterView> {
     // can briefly put FutureBuilder back into `waiting`, which would otherwise replace the
     // subtree (disposing WebFRouterView) even though the controller is already ready.
     if (existController != null && existController.evaluated && !existController.disposed) {
+      existController.updateTextSettingsFromContext(context);
       return widget.builder != null
           ? widget.builder!(context, existController)
           : _WebFRouterViewWithStartTime(controller: existController, path: widget.path, startTime: _pfStartTime);
@@ -267,6 +269,7 @@ class _AsyncWebFRouterViewState extends State<_AsyncWebFRouterView> {
           }
 
           WebFController controller = snapshot.data!;
+          controller.updateTextSettingsFromContext(context);
 
           return widget.builder != null
               ? widget.builder!(context, controller)

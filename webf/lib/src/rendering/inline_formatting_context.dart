@@ -644,14 +644,18 @@ class InlineFormattingContext {
   // so we can measure pure font metrics (ascent+descent) for decoration bands.
   ui.TextStyle _uiTextStyleFromCssNoLineHeight(CSSRenderStyle rs) {
     final families = rs.fontFamily;
+    final FontWeight weight = (rs.boldText && rs.fontWeight.index < FontWeight.w700.index) ? FontWeight.w700 : rs.fontWeight;
     if (families != null && families.isNotEmpty) {
-      CSSFontFace.ensureFontLoaded(families[0], rs.fontWeight, rs);
+      CSSFontFace.ensureFontLoaded(families[0], weight, rs);
     }
     final bool clipText = (container as RenderBoxModel).renderStyle.backgroundClip == CSSBackgroundBoundary.text;
     final Color baseColor = rs.color.value;
     final Color effectiveColor = clipText ? baseColor.withAlpha(0xFF) : baseColor;
     final (TextDecoration effLine, TextDecorationStyle? effStyle, Color? effColor) =
         _computeEffectiveTextDecoration(rs);
+    final double baseFontSize = rs.fontSize.computedValue;
+    final double scaledFontSize = rs.textScaler.scale(baseFontSize);
+    final double scaleFactor = baseFontSize > 0 ? (scaledFontSize / baseFontSize) : 1.0;
     return ui.TextStyle(
       // For clip-text, force fully-opaque glyphs for the mask (ignore alpha).
       color: effectiveColor,
@@ -660,14 +664,14 @@ class InlineFormattingContext {
       decoration: clipText ? TextDecoration.none : effLine,
       decorationColor: clipText ? null : effColor,
       decorationStyle: clipText ? null : effStyle,
-      fontWeight: rs.fontWeight,
+      fontWeight: weight,
       fontStyle: rs.fontStyle,
       textBaseline: CSSText.getTextBaseLine(),
       fontFamily: (families != null && families.isNotEmpty) ? families.first : null,
       fontFamilyFallback: families,
-      fontSize: rs.fontSize.computedValue,
-      letterSpacing: rs.letterSpacing?.computedValue,
-      wordSpacing: rs.wordSpacing?.computedValue,
+      fontSize: scaledFontSize,
+      letterSpacing: rs.letterSpacing?.computedValue != null ? rs.letterSpacing!.computedValue * scaleFactor : null,
+      wordSpacing: rs.wordSpacing?.computedValue != null ? rs.wordSpacing!.computedValue * scaleFactor : null,
       // height intentionally null to ignore CSS line-height
       locale: CSSText.getLocale(),
       background: CSSText.getBackground(),
@@ -2850,12 +2854,16 @@ class InlineFormattingContext {
       final double multiple = containerLH.computedValue / fontSize;
       // Guard against non-finite or non-positive multiples
       if (multiple.isFinite && multiple > 0) {
+        final double scaledFontSize = containerStyle.textScaler.scale(fontSize);
+        final FontWeight weight = (containerStyle.boldText && containerStyle.fontWeight.index < FontWeight.w700.index)
+            ? FontWeight.w700
+            : containerStyle.fontWeight;
         paragraphStrut = ui.StrutStyle(
-          fontSize: fontSize,
+          fontSize: scaledFontSize,
           height: multiple,
           fontFamilyFallback: containerStyle.fontFamily,
           fontStyle: containerStyle.fontStyle,
-          fontWeight: containerStyle.fontWeight,
+          fontWeight: weight,
           // Use as minimum line height; let larger content expand the line.
           forceStrutHeight: false,
         );
@@ -4499,8 +4507,9 @@ class InlineFormattingContext {
     final cached = _cachedUiTextStyles[rs];
     if (cached != null) return cached;
     final families = rs.fontFamily;
+    final FontWeight weight = (rs.boldText && rs.fontWeight.index < FontWeight.w700.index) ? FontWeight.w700 : rs.fontWeight;
     if (families != null && families.isNotEmpty) {
-      CSSFontFace.ensureFontLoaded(families[0], rs.fontWeight, rs);
+      CSSFontFace.ensureFontLoaded(families[0], weight, rs);
     }
     // Map CSS line-height to a multiplier for dart:ui. For 'normal', align with CSS by
     // using 1.2× font-size instead of letting Flutter pick a font-driven band.
@@ -4513,6 +4522,10 @@ class InlineFormattingContext {
       }
       return rs.lineHeight.computedValue / rs.fontSize.computedValue;
     })();
+
+    final double baseFontSize = rs.fontSize.computedValue;
+    final double scaledFontSize = rs.textScaler.scale(baseFontSize);
+    final double scaleFactor = baseFontSize > 0 ? (scaledFontSize / baseFontSize) : 1.0;
 
     final bool clipText = (container as RenderBoxModel).renderStyle.backgroundClip == CSSBackgroundBoundary.text;
     // visibility:hidden should not paint text or its text decorations, but must still
@@ -4533,15 +4546,15 @@ class InlineFormattingContext {
       decoration: (hidden || clipText) ? TextDecoration.none : effLine,
       decorationColor: (hidden || clipText) ? const Color(0x00000000) : effColor,
       decorationStyle: clipText ? null : effStyle,
-      fontWeight: rs.fontWeight,
+      fontWeight: weight,
       fontStyle: rs.fontStyle,
       textBaseline: CSSText.getTextBaseLine(),
       fontFamily: (families != null && families.isNotEmpty) ? families.first : null,
       fontFamilyFallback: families,
-      fontSize: rs.fontSize.computedValue,
+      fontSize: scaledFontSize,
       fontFeatures: fontFeatures,
-      letterSpacing: rs.letterSpacing?.computedValue,
-      wordSpacing: rs.wordSpacing?.computedValue,
+      letterSpacing: rs.letterSpacing?.computedValue != null ? rs.letterSpacing!.computedValue * scaleFactor : null,
+      wordSpacing: rs.wordSpacing?.computedValue != null ? rs.wordSpacing!.computedValue * scaleFactor : null,
       height: heightMultiple,
       locale: CSSText.getLocale(),
       background: CSSText.getBackground(),
@@ -4565,12 +4578,13 @@ class InlineFormattingContext {
       return;
     }
 
-    if (!baseFontSize.isFinite || baseFontSize <= 0) {
+    final double scaledBaseFontSize = rs.textScaler.scale(baseFontSize);
+    if (!scaledBaseFontSize.isFinite || scaledBaseFontSize <= 0) {
       pb.addText(text);
       return;
     }
 
-    final double smallCapsSize = baseFontSize * _syntheticSmallCapsScale;
+    final double smallCapsSize = scaledBaseFontSize * _syntheticSmallCapsScale;
     if (synth == FontVariantCapsSynthesis.allLetters) {
       pb.pushStyle(ui.TextStyle(fontSize: smallCapsSize));
       pb.addText(text.toUpperCase());

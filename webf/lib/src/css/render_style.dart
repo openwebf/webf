@@ -93,6 +93,10 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   // Common
   Element get target;
 
+  TextScaler get textScaler => target.ownerDocument.controller.textScaler;
+
+  bool get boldText => target.ownerDocument.controller.boldText;
+
   @pragma('vm:prefer-inline')
   RenderStyle? get parent => target.parentElement?.renderStyle;
 

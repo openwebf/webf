@@ -25,7 +25,7 @@ class RenderBr extends RenderLayoutBox {
     // Fallback: use font metrics via TextPainter for a realistic single line height.
     // Construct a TextSpan using CSS text mapping.
     final span = CSSTextMixin.createTextSpan(' ', renderStyle);
-    final tp = TextPainter(text: span, textDirection: renderStyle.direction);
+    final tp = TextPainter(text: span, textDirection: renderStyle.direction, textScaler: renderStyle.textScaler);
     tp.layout();
     return tp.height;
   }

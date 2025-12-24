@@ -1875,10 +1875,14 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     }
     var fontFamilyFallback = CSSText.resolveFontFamilyFallback(_fontProperties[FONT_FAMILY]);
     FontWeight fontWeight = CSSText.resolveFontWeight(_fontProperties[FONT_WEIGHT]);
+    if (canvas.ownerDocument.controller.boldText && fontWeight.index < FontWeight.w700.index) {
+      fontWeight = FontWeight.w700;
+    }
     if (shouldStrokeText) {
       return TextStyle(
           fontSize: _fontSize ?? 10,
           fontFamilyFallback: fontFamilyFallback,
+          fontWeight: fontWeight,
           foreground: Paint()
             ..strokeJoin = lineJoin
             ..strokeCap = lineCap
@@ -1899,9 +1903,11 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   TextPainter _getTextPainter(String text, Color color, {bool shouldStrokeText = false}) {
     TextStyle textStyle = _getTextStyle(color, shouldStrokeText);
     TextSpan span = TextSpan(text: text, style: textStyle);
+    final TextScaler textScaler = canvas.ownerDocument.controller.textScaler;
     TextPainter textPainter = TextPainter(
       text: span,
       // FIXME: Current must passed but not work in canvas text painter
+      textScaler: textScaler,
       textDirection: direction,
       textAlign: textAlign,
     );

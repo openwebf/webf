@@ -568,6 +568,7 @@ mixin BaseInputState on WebFWidgetElementState {
       final TextStyle style = widgetElement._textStyle;
       final TextPainter tp = TextPainter(
         text: TextSpan(text: '000000000000000000', style: style), // 18 zeros
+        textScaler: widgetElement.renderStyle.textScaler,
         textDirection: TextDirection.ltr,
         maxLines: 1,
       )
@@ -595,6 +596,7 @@ mixin BaseInputState on WebFWidgetElementState {
       final String zeros = List.filled(columns, '0').join();
       final TextPainter tp = TextPainter(
         text: TextSpan(text: zeros, style: style),
+        textScaler: widgetElement.renderStyle.textScaler,
         textDirection: TextDirection.ltr,
         maxLines: 1,
       )..layout(minWidth: 0, maxWidth: double.infinity);
