@@ -182,7 +182,9 @@ describe('CSS Text Effects with Paint Support', () => {
       expect(rect1.width).toBeGreaterThan(0);
 
       // Change background gradient
-      dynamicText.style.background = 'linear-gradient(90deg, #a8edea 0%, #fed6e3 100%)';
+      dynamicText.style.background = 'linear-gradient(90deg, #a8edea 0%, #fed6e3 100%) text';
+      // FIXME: remove this line after supporting background-clip as longhand of background property
+      dynamicText.style.backgroundClip = 'text';
 
       requestAnimationFrame(async () => {
         // Verify text still renders with new background
