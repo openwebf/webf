@@ -153,7 +153,7 @@ describe('CSS Grid overlapping items', () => {
     grid.remove();
   });
 
-  xit('handles negative z-index', async () => {
+  it('handles negative z-index', async () => {
     const grid = document.createElement('div');
     grid.style.display = 'grid';
     grid.style.gridTemplateColumns = 'repeat(3, 90px)';
@@ -206,6 +206,12 @@ describe('CSS Grid overlapping items', () => {
     expect(getComputedStyle(items[0]).zIndex).toBe('-1');
     expect(getComputedStyle(items[1]).zIndex).toBe('0');
     expect(getComputedStyle(items[2]).zIndex).toBe('auto');
+
+    // Negative z-index grid items are painted behind the grid container's background
+    // when the container doesn't establish a stacking context (z-index: auto).
+    const item1Rect = items[0].getBoundingClientRect();
+    const hit = document.elementFromPoint(item1Rect.left + 5, item1Rect.top + 5);
+    expect(hit).toBe(grid);
 
     grid.remove();
   });

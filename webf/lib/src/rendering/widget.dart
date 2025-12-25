@@ -327,6 +327,96 @@ class RenderWidget extends RenderBoxModel
     _cachedPaintingOrder = null;
   }
 
+  bool _isNegativeZIndexStackingChild(RenderBox child) {
+    if (child is! RenderBoxModel) return false;
+    final int? zi = child.renderStyle.zIndex;
+    if (zi == null || zi >= 0) return false;
+    return child.renderStyle.establishesStackingContext;
+  }
+
+  bool _shouldPaintNegativeZIndexChildrenUnderBackground() {
+    if (renderStyle.establishesStackingContext) return false;
+    for (final RenderBox child in paintingOrder) {
+      if (!identical(child.parent, this)) continue;
+      if (_isNegativeZIndexStackingChild(child)) return true;
+      break;
+    }
+    return false;
+  }
+
+  void _paintNegativeZIndexChildrenUnderBackground(PaintingContext context, Offset offset) {
+    final Offset scrollPaintOffset = paintScrollOffset;
+
+    Offset accumulateOffsetFromDescendant(RenderObject descendant, RenderObject ancestor) {
+      Offset sum = Offset.zero;
+      RenderObject? cur = descendant;
+      while (cur != null && cur != ancestor) {
+        final Object? pd = (cur is RenderBox) ? (cur.parentData) : null;
+        if (pd is ContainerBoxParentData) {
+          sum += pd.offset;
+        } else if (pd is RenderLayoutParentData) {
+          sum += pd.offset;
+        }
+        cur = cur.parent;
+      }
+      return sum;
+    }
+
+    void paintNegatives(PaintingContext context, Offset offset) {
+      final Offset contentOffset = offset + scrollPaintOffset;
+      for (final RenderBox child in paintingOrder) {
+        if (isPositionPlaceholder(child)) continue;
+        if (!_isNegativeZIndexStackingChild(child)) break;
+        if (!child.hasSize) continue;
+
+        final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+        final bool direct = identical(child.parent, this);
+        final Offset localOffset = direct ? pd.offset : accumulateOffsetFromDescendant(child, this);
+        context.paintChild(child, contentOffset + localOffset);
+      }
+    }
+
+    if (clipX || clipY) {
+      final EdgeInsets borderEdge = EdgeInsets.fromLTRB(
+        renderStyle.effectiveBorderLeftWidth.computedValue,
+        renderStyle.effectiveBorderTopWidth.computedValue,
+        renderStyle.effectiveBorderRightWidth.computedValue,
+        renderStyle.effectiveBorderBottomWidth.computedValue,
+      );
+      final double cw = math.max(0.0, size.width - borderEdge.left - borderEdge.right);
+      final double ch = math.max(0.0, size.height - borderEdge.top - borderEdge.bottom);
+      final Rect clipRect = Offset(borderEdge.left, borderEdge.top) & Size(cw, ch);
+      if (cw <= 0.0 || ch <= 0.0) return;
+
+      final bool needsCompositing = this.needsCompositing;
+      final decoration = renderStyle.decoration;
+      if (decoration != null && decoration.hasBorderRadius) {
+        final BorderRadius radius = decoration.borderRadius!;
+        final Rect rect = Offset.zero & size;
+        final RRect borderRRect = radius.toRRect(rect);
+        final double? borderTop = renderStyle.borderTopWidth?.computedValue;
+        RRect clipRRect = borderTop != null ? borderRRect.deflate(borderTop) : borderRRect;
+        if (renderStyle.isSelfRenderReplaced()) {
+          clipRRect = clipRRect.deflate(renderStyle.paddingTop.computedValue);
+        }
+        context.pushClipRRect(needsCompositing, offset, clipRect, clipRRect, paintNegatives);
+      } else {
+        context.pushClipRect(needsCompositing, offset, clipRect, paintNegatives);
+      }
+      return;
+    }
+
+    paintNegatives(context, offset);
+  }
+
+  @override
+  void paintDecoration(PaintingContext context, Offset offset, PaintingContextCallback callback) {
+    if (_shouldPaintNegativeZIndexChildrenUnderBackground()) {
+      _paintNegativeZIndexChildrenUnderBackground(context, offset);
+    }
+    super.paintDecoration(context, offset, callback);
+  }
+
   // Intrinsic sizing for WidgetElement containers: forward to the primary
   // non-positioned child, including paddings and borders.
   @override
@@ -576,8 +666,8 @@ class RenderWidget extends RenderBoxModel
       }
     }
 
-    Offset accumulateOffsetFromDescendant(
-        RenderObject descendant, RenderObject ancestor) {
+    final bool skipNegatives = _shouldPaintNegativeZIndexChildrenUnderBackground();
+    Offset accumulateOffsetFromDescendant(RenderObject descendant, RenderObject ancestor) {
       Offset sum = Offset.zero;
       RenderObject? cur = descendant;
       while (cur != null && cur != ancestor) {
@@ -594,8 +684,8 @@ class RenderWidget extends RenderBoxModel
 
     for (final RenderBox child in paintingOrder) {
       if (isPositionPlaceholder(child)) continue;
-      final RenderLayoutParentData pd =
-          child.parentData as RenderLayoutParentData;
+      if (skipNegatives && _isNegativeZIndexStackingChild(child)) continue;
+      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
       if (!child.hasSize) continue;
 
       bool restoreFlag = false;
@@ -650,6 +740,8 @@ class RenderWidget extends RenderBoxModel
 
     if (position == null) return false;
 
+    final bool skipNegatives = _shouldPaintNegativeZIndexChildrenUnderBackground();
+
     Offset accumulateOffsetFromDescendant(RenderObject descendant, RenderObject ancestor) {
       Offset sum = Offset.zero;
       RenderObject? cur = descendant;
@@ -668,6 +760,7 @@ class RenderWidget extends RenderBoxModel
     for (int i = paintingOrder.length - 1; i >= 0; i--) {
       final RenderBox child = paintingOrder[i];
       if (isPositionPlaceholder(child)) continue;
+      if (skipNegatives && _isNegativeZIndexStackingChild(child)) continue;
       if (!child.hasSize) continue;
 
       final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;

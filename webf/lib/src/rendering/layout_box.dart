@@ -20,6 +20,100 @@ abstract class RenderLayoutBox extends RenderBoxModel
     _cachedPaintingOrder = null;
   }
 
+  bool _isNegativeZIndexStackingChild(RenderBox child) {
+    if (child is! RenderBoxModel) return false;
+    final int? zi = child.renderStyle.zIndex;
+    if (zi == null || zi >= 0) return false;
+    // Only treat elements that establish a stacking context as z-index participants.
+    return child.renderStyle.establishesStackingContext;
+  }
+
+  bool _shouldPaintNegativeZIndexChildrenUnderBackground() {
+    if (renderStyle.establishesStackingContext) return false;
+    for (final RenderBox child in paintingOrder) {
+      if (!identical(child.parent, this)) continue;
+      if (_isNegativeZIndexStackingChild(child)) return true;
+      // Negative z-index children are sorted first in paintingOrder; once we hit a non-negative
+      // direct child, we can stop scanning.
+      break;
+    }
+    return false;
+  }
+
+  void _paintNegativeZIndexChildrenUnderBackground(PaintingContext context, Offset offset) {
+    final Offset scrollPaintOffset = paintScrollOffset;
+
+    Offset accumulateOffsetFromDescendant(RenderObject descendant, RenderObject ancestor) {
+      Offset sum = Offset.zero;
+      RenderObject? cur = descendant;
+      while (cur != null && cur != ancestor) {
+        final Object? pd = (cur is RenderBox) ? (cur.parentData) : null;
+        if (pd is ContainerBoxParentData) {
+          sum += pd.offset;
+        } else if (pd is RenderLayoutParentData) {
+          sum += pd.offset;
+        }
+        cur = cur.parent;
+      }
+      return sum;
+    }
+
+    void paintNegatives(PaintingContext context, Offset offset) {
+      final Offset contentOffset = offset + scrollPaintOffset;
+      for (final RenderBox child in paintingOrder) {
+        if (isPositionPlaceholder(child)) continue;
+        if (!_isNegativeZIndexStackingChild(child)) break;
+        if (!child.hasSize) continue;
+
+        final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+        final bool direct = identical(child.parent, this);
+        final Offset localOffset = direct ? childParentData.offset : accumulateOffsetFromDescendant(child, this);
+        context.paintChild(child, localOffset + contentOffset);
+      }
+    }
+
+    // Ensure negative children painted under background still honor overflow clipping.
+    if (clipX || clipY) {
+      final EdgeInsets borderEdge = EdgeInsets.fromLTRB(
+        renderStyle.effectiveBorderLeftWidth.computedValue,
+        renderStyle.effectiveBorderTopWidth.computedValue,
+        renderStyle.effectiveBorderRightWidth.computedValue,
+        renderStyle.effectiveBorderBottomWidth.computedValue,
+      );
+      final double cw = math.max(0.0, size.width - borderEdge.left - borderEdge.right);
+      final double ch = math.max(0.0, size.height - borderEdge.top - borderEdge.bottom);
+      final Rect clipRect = Offset(borderEdge.left, borderEdge.top) & Size(cw, ch);
+      if (cw <= 0.0 || ch <= 0.0) return;
+
+      final bool needsCompositing = this.needsCompositing;
+      final decoration = renderStyle.decoration;
+      if (decoration != null && decoration.hasBorderRadius) {
+        final BorderRadius radius = decoration.borderRadius!;
+        final Rect rect = Offset.zero & size;
+        final RRect borderRRect = radius.toRRect(rect);
+        final double? borderTop = renderStyle.borderTopWidth?.computedValue;
+        RRect clipRRect = borderTop != null ? borderRRect.deflate(borderTop) : borderRRect;
+        if (renderStyle.isSelfRenderReplaced()) {
+          clipRRect = clipRRect.deflate(renderStyle.paddingTop.computedValue);
+        }
+        context.pushClipRRect(needsCompositing, offset, clipRect, clipRRect, paintNegatives);
+      } else {
+        context.pushClipRect(needsCompositing, offset, clipRect, paintNegatives);
+      }
+      return;
+    }
+
+    paintNegatives(context, offset);
+  }
+
+  @override
+  void paintDecoration(PaintingContext context, Offset offset, PaintingContextCallback callback) {
+    if (_shouldPaintNegativeZIndexChildrenUnderBackground()) {
+      _paintNegativeZIndexChildrenUnderBackground(context, offset);
+    }
+    super.paintDecoration(context, offset, callback);
+  }
+
   @override
   void visitChildrenForSemantics(RenderObjectVisitor visitor) {
     // Assign stable child indices for scroll semantics (indexInParent / scrollIndex).
@@ -452,9 +546,11 @@ abstract class RenderLayoutBox extends RenderBoxModel
       return sum;
     }
 
+    final bool skipNegatives = _shouldPaintNegativeZIndexChildrenUnderBackground();
     for (int i = paintingOrder.length - 1; i >= 0; i--) {
       final RenderBox child = paintingOrder[i];
       if (isPositionPlaceholder(child)) continue;
+      if (skipNegatives && _isNegativeZIndexStackingChild(child)) continue;
       if (!child.hasSize) continue;
 
       final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
@@ -495,9 +591,11 @@ abstract class RenderLayoutBox extends RenderBoxModel
       return sum;
     }
 
+    final bool skipNegatives = _shouldPaintNegativeZIndexChildrenUnderBackground();
     for (int i = 0; i < paintingOrder.length; i++) {
       RenderBox child = paintingOrder[i];
       if (isPositionPlaceholder(child)) continue;
+      if (skipNegatives && _isNegativeZIndexStackingChild(child)) continue;
 
       final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
       if (!child.hasSize) continue;
