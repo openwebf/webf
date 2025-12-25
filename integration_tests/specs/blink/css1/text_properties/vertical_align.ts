@@ -115,7 +115,7 @@ SMALL {font-size: 12pt;}
       </p>
     `;
 
-      await snapshot(2);
+      await snapshot(4);
 
 
 

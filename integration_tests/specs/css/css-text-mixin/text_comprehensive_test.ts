@@ -394,7 +394,7 @@ describe('CSS Text Comprehensive Integration', () => {
         expect(colorBtnRect.height).toBeGreaterThan(0);
         expect(colorBtnRect.width).toBeGreaterThan(0);
 
-        await snapshot();
+        await snapshot(1);
         document.body.removeChild(container);
         done();
       });
