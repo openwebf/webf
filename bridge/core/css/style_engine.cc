@@ -1162,6 +1162,13 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
           }
         }
 
+        bool display_none_for_invalidation = false;
+        if (property_set && !property_set->IsEmpty()) {
+          String display_value = property_set->GetPropertyValue(CSSPropertyID::kDisplay);
+          display_none_for_invalidation = display_value.StripWhiteSpace().LowerASCII() == "none";
+        }
+        element->SetDisplayNoneForStyleInvalidation(display_none_for_invalidation);
+
         if (!property_set || property_set->IsEmpty()) {
           // Even if there are no element-level winners, clear any previously-sent
           // overrides (to avoid stale styles) and emit pseudo styles if any exist.
@@ -1477,6 +1484,13 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
             }
           }
         }
+
+        bool display_none_for_invalidation = false;
+        if (property_set && !property_set->IsEmpty()) {
+          String display_value = property_set->GetPropertyValue(CSSPropertyID::kDisplay);
+          display_none_for_invalidation = display_value.StripWhiteSpace().LowerASCII() == "none";
+        }
+        el->SetDisplayNoneForStyleInvalidation(display_none_for_invalidation);
 
         auto* ctx = document.GetExecutingContext();
 

@@ -603,32 +603,27 @@ const ElementPublicMethods* Element::elementPublicMethods() {
 }
 
 AtomicString Element::LocalNameForSelectorMatching() const {
-  /* // TODO(guopengfei)：
-  if (IsHTMLElement() || !IsA<HTMLDocument>(GetDocument())) {
-    return localName();
-  }
-  return localName().LowerASCII();
-  */
-  return AtomicString::Empty();
+  return local_name_;
 }
 
 bool Element::HasAttributeIgnoringNamespace(const AtomicString& local_name) const {
-  if (!HasElementData()) {
+  if (local_name.IsNull() || local_name.empty()) {
     return false;
   }
-  /* // TODO(guopengfei)：
-  WTF::AtomicStringTable::WeakResult hint =
-      WeakLowercaseIfNecessary(local_name);
-  SynchronizeAttributeHinted(local_name, hint);
-  if (hint.IsNull()) {
-    return false;
-  }
-  for (const Attribute& attribute : GetElementData()->Attributes()) {
-    if (hint == attribute.LocalName()) {
-      return true;
+
+  if (HasElementData()) {
+    for (const Attribute& attribute : GetElementData()->Attributes()) {
+      if (attribute.LocalName() == local_name) {
+        return true;
+      }
     }
   }
-  */
+
+  if (attributes_ != nullptr) {
+    ExceptionState exception_state;
+    return attributes_->hasAttribute(local_name, exception_state);
+  }
+
   return false;
 }
 

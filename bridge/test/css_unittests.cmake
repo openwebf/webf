@@ -32,6 +32,8 @@ list(APPEND WEBF_CSS_UNIT_TEST_SOURCE
   ./core/css/css_nested_declarations_rule_test.cc
   ./core/css/css_nesting_test.cc
   ./core/css/container_query_test.cc
+  ./core/css/invalidation/invalidation_set_test.cc
+  ./core/css/invalidation/pending_invalidations_test.cc
 
   # CSS Parser
   ./core/css/css_primitive_value_test.cc
