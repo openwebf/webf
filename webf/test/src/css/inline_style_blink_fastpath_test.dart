@@ -56,5 +56,31 @@ void main() {
     box.setInlineStyle('fontSize', '-2px', fromNative: true);
     expect(box.style.getPropertyValue('fontSize'), equals('-2px'));
   });
-}
 
+  testWidgets('Negative padding from native does not crash layout', (WidgetTester tester) async {
+    final prepared = await WebFWidgetTestUtils.prepareCustomWidgetTest(
+      tester: tester,
+      controllerName: 'blink-inline-style-negative-padding-test-${DateTime.now().millisecondsSinceEpoch}',
+      createController: () => WebFController(
+        enableBlink: true,
+        viewportWidth: 360,
+        viewportHeight: 640,
+      ),
+      bundle: WebFBundle.fromContent(
+        '<html><body><p>This is <span id="box">inline</span> content.</p></body></html>',
+        url: 'test://blink-inline-style-negative-padding/',
+        contentType: htmlContentType,
+      ),
+    );
+
+    final box = prepared.getElementById('box');
+    box.setInlineStyle('paddingBottom', '-10px', fromNative: true);
+    expect(box.style.getPropertyValue('paddingBottom'), equals('-10px'));
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(tester.takeException(), isNull);
+    expect(box.renderStyle.paddingBottom.computedValue, equals(0));
+  });
+}

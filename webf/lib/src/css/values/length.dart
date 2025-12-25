@@ -733,6 +733,20 @@ class CSSLengthValue {
     // Ensure _computedValue is never null
     _computedValue ??= 0;
 
+    // CSS padding values are non-negative; clamp invalid negative values to 0
+    // to match spec behavior and avoid negative EdgeInsets during layout.
+    if (realPropertyName == PADDING_TOP ||
+        realPropertyName == PADDING_RIGHT ||
+        realPropertyName == PADDING_BOTTOM ||
+        realPropertyName == PADDING_LEFT ||
+        realPropertyName == PADDING_INLINE_START ||
+        realPropertyName == PADDING_INLINE_END ||
+        realPropertyName == PADDING_BLOCK_START ||
+        realPropertyName == PADDING_BLOCK_END) {
+      final double v = _computedValue!;
+      _computedValue = (!v.isFinite || v < 0) ? 0 : v;
+    }
+
     // Cache computed value.
     if (renderStyle?.hasRenderBox() == true && propertyName != null && type != CSSLengthType.PERCENTAGE) {
       cacheComputedValue(renderStyle!, propertyName!, _computedValue!);

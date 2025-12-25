@@ -10,6 +10,19 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 
 mixin CSSPaddingMixin on RenderStyle {
+  CSSLengthValue? _normalizePaddingLength(CSSLengthValue? value) {
+    if (value == null) return null;
+    final double? raw = value.value;
+    if (raw != null && raw < 0) return CSSLengthValue.zero;
+    return value;
+  }
+
+  double _nonNegativePaddingComputedValue(CSSLengthValue value) {
+    final double computed = value.computedValue;
+    if (!computed.isFinite || computed < 0) return 0;
+    return computed;
+  }
+
   /// The amount to pad the child in each dimension.
   ///
   /// If this is set to an [EdgeInsetsDirectional] object, then [textDirection]
@@ -17,16 +30,18 @@ mixin CSSPaddingMixin on RenderStyle {
   @override
   EdgeInsets get padding {
     EdgeInsets insets = EdgeInsets.only(
-        left: paddingLeft.computedValue,
-        right: paddingRight.computedValue,
-        bottom: paddingBottom.computedValue,
-        top: paddingTop.computedValue);
+      left: _nonNegativePaddingComputedValue(paddingLeft),
+      right: _nonNegativePaddingComputedValue(paddingRight),
+      bottom: _nonNegativePaddingComputedValue(paddingBottom),
+      top: _nonNegativePaddingComputedValue(paddingTop),
+    );
     assert(insets.isNonNegative);
     return insets;
   }
 
   CSSLengthValue? _paddingLeft;
   set paddingLeft(CSSLengthValue? value) {
+    value = _normalizePaddingLength(value);
     if (_paddingLeft == value) return;
     _paddingLeft = value;
     _markSelfAndParentNeedsLayout();
@@ -42,6 +57,7 @@ mixin CSSPaddingMixin on RenderStyle {
 
   CSSLengthValue? _paddingRight;
   set paddingRight(CSSLengthValue? value) {
+    value = _normalizePaddingLength(value);
     if (_paddingRight == value) return;
     _paddingRight = value;
     _markSelfAndParentNeedsLayout();
@@ -57,6 +73,7 @@ mixin CSSPaddingMixin on RenderStyle {
 
   CSSLengthValue? _paddingInlineStart;
   set paddingInlineStart(CSSLengthValue? value) {
+    value = _normalizePaddingLength(value);
     if (_paddingInlineStart == value) return;
     _paddingInlineStart = value;
     _markSelfAndParentNeedsLayout();
@@ -64,6 +81,7 @@ mixin CSSPaddingMixin on RenderStyle {
 
   CSSLengthValue? _paddingInlineEnd;
   set paddingInlineEnd(CSSLengthValue? value) {
+    value = _normalizePaddingLength(value);
     if (_paddingInlineEnd == value) return;
     _paddingInlineEnd = value;
     _markSelfAndParentNeedsLayout();
@@ -71,23 +89,25 @@ mixin CSSPaddingMixin on RenderStyle {
 
   CSSLengthValue? _paddingBottom;
   set paddingBottom(CSSLengthValue? value) {
+    value = _normalizePaddingLength(value);
     if (_paddingBottom == value) return;
     _paddingBottom = value;
     _markSelfAndParentNeedsLayout();
   }
 
   @override
-  CSSLengthValue get paddingBottom => _paddingBottom ?? CSSLengthValue.zero;
+  CSSLengthValue get paddingBottom => _normalizePaddingLength(_paddingBottom) ?? CSSLengthValue.zero;
 
   CSSLengthValue? _paddingTop;
   set paddingTop(CSSLengthValue? value) {
+    value = _normalizePaddingLength(value);
     if (_paddingTop == value) return;
     _paddingTop = value;
     _markSelfAndParentNeedsLayout();
   }
 
   @override
-  CSSLengthValue get paddingTop => _paddingTop ?? CSSLengthValue.zero;
+  CSSLengthValue get paddingTop => _normalizePaddingLength(_paddingTop) ?? CSSLengthValue.zero;
 
   void _markSelfAndParentNeedsLayout() {
     markNeedsLayout();
@@ -107,14 +127,16 @@ mixin CSSPaddingMixin on RenderStyle {
   }
 
   Size wrapPaddingSize(Size innerSize) {
-    return Size(paddingLeft.computedValue + innerSize.width + paddingRight.computedValue,
-        paddingTop.computedValue + innerSize.height + paddingBottom.computedValue);
+    return Size(
+      _nonNegativePaddingComputedValue(paddingLeft) + innerSize.width + _nonNegativePaddingComputedValue(paddingRight),
+      _nonNegativePaddingComputedValue(paddingTop) + innerSize.height + _nonNegativePaddingComputedValue(paddingBottom),
+    );
   }
 
   Size wrapPaddingSizeRight(Size innerSize) {
     return Size(
-        innerSize.width + paddingRight.computedValue,
-        paddingTop.computedValue + innerSize.height + paddingBottom.computedValue
+      innerSize.width + _nonNegativePaddingComputedValue(paddingRight),
+      _nonNegativePaddingComputedValue(paddingTop) + innerSize.height + _nonNegativePaddingComputedValue(paddingBottom),
     );
   }
   void debugPaddingProperties(DiagnosticPropertiesBuilder properties) {
