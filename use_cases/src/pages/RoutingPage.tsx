@@ -58,7 +58,7 @@ export const RoutingPage: React.FC = () => {
   const testPush = async () => {
     setIsNavigating(prev => ({...prev, advPush: true}));
     try {
-      await WebFRouter.push('/flutter-interaction', { source: 'routing_demo' });
+      await WebFRouter.push('/native-interaction', { source: 'routing_demo' });
       setTimeout(updateRoutingState, 100);
     } finally {
       setIsNavigating(prev => ({...prev, advPush: false}));

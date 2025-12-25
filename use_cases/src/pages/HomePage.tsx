@@ -40,7 +40,7 @@ export const HomePage: React.FC = () => {
           <Row title="Cupertino UI" desc="iOS-style components and interactions." to="/cupertino-showcase"/>
           <Row title="Tailwind CSS" desc="Utility-first UI with WebF tokens." to="/tailwind"/>
           <Row title="CSS Showcase" desc="Layouts, effects and advanced styling." to="/css-showcase"/>
-          <Row title="Native Interaction" desc="Screenshot, share and platform features." to="/native-interaction"/>
+          <Row title="WebF Share Module" desc="Save screenshots and share content." to="/native-interaction"/>
         </div>
       </WebFListView>
     </div>

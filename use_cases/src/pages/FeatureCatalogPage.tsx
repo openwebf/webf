@@ -97,24 +97,48 @@ const sections: Section[] = [
     ],
   },
   {
-    title: 'Modules & Ecosystem',
+    title: 'Hybrid Router',
     items: [
       { label: 'Routing & Navigation', path: '/routing', desc: 'Client-side routing and navigation' },
-      { label: 'Deep Links', path: '/deep-link', desc: 'Deep linking and app integration' },
-      { label: 'Flutter Interaction', path: '/flutter-interaction', desc: 'JavaScript and Flutter communication' },
-      { label: 'Native Interaction', path: '/native-interaction', desc: 'Native platform integration' },
+    ],
+  },
+  {
+    title: 'Native Plugins',
+    items: [
+      { label: 'WebF Share Module', path: '/native-interaction', desc: 'Share and save content via native APIs' },
     ],
   },
   {
     title: 'Cupertino UI',
     items: [
       { label: 'Cupertino Showcase', path: '/cupertino-showcase', desc: 'iOS-style components and interactions' },
+      { label: 'Cupertino Colors', path: '/cupertino/colors', desc: 'Static and dynamic Cupertino colors' },
+      { label: 'Cupertino Icons', path: '/cupertino/icons', desc: 'iOS SF Symbols icon set' },
+      { label: 'Tabs', path: '/cupertino/tabs', desc: 'TabScaffold · TabBar · TabView · Controller' },
+      { label: 'Cupertino Alert Dialog', path: '/cupertino/alert', desc: 'Alerts & dialog actions' },
+      { label: 'Cupertino Action Sheet', path: '/cupertino/actionsheet', desc: 'Action sheet and sheet actions' },
+      { label: 'Cupertino Modal Popup', path: '/cupertino/modal-popup', desc: 'Bottom sheet style modal popup' },
+      { label: 'Cupertino Context Menu', path: '/cupertino/context-menu', desc: 'Peek and pop context actions' },
+      { label: 'CupertinoListSection', path: '/cupertino/list-section', desc: 'Grouped list sections' },
+      { label: 'CupertinoListTile', path: '/cupertino/list-tile', desc: 'iOS-style list tiles' },
+      { label: 'CupertinoFormSection', path: '/cupertino/form-section', desc: 'Form rows and grouped settings' },
+      { label: 'CupertinoTextField', path: '/cupertino/text-field', desc: 'Single-line iOS-style text input' },
+      { label: 'CupertinoTextFormFieldRow', path: '/cupertino/text-form-field-row', desc: 'Inline text field row for forms' },
+      { label: 'CupertinoSearchTextField', path: '/cupertino/search-text-field', desc: 'iOS-style search bar' },
+      { label: 'CupertinoDatePicker', path: '/cupertino/date-picker', desc: 'iOS date & time picker' },
+      { label: 'Cupertino Buttons', path: '/cupertino/buttons', desc: 'Buttons with iOS styling' },
+      { label: 'CupertinoSwitch', path: '/cupertino/switch', desc: 'iOS-style toggle' },
+      { label: 'CupertinoSlider', path: '/cupertino/slider', desc: 'Value selection slider' },
+      { label: 'Sliding Segmented Control', path: '/cupertino/sliding-segmented-control', desc: 'Segmented control with sliding thumb' },
+      { label: 'CupertinoCheckBox', path: '/cupertino/checkbox', desc: 'iOS checkbox' },
+      { label: 'CupertinoRadio', path: '/cupertino/radio', desc: 'iOS radio button' },
     ],
   },
   {
-    title: 'Gestures',
+    title: 'Core UI',
     items: [
       { label: 'FlutterGestureDetector', path: '/gesture', desc: 'Native gesture detection with tap, pan, pinch, and rotate' },
+      { label: 'WebFListView', path: '/listview', desc: 'Infinite scrolling list optimized for long lists' },
     ],
   },
   {
@@ -129,7 +153,6 @@ const sections: Section[] = [
   {
     title: 'Others',
     items: [
-      { label: 'Listview', path: '/listview', desc: 'Scrollable list implementation' },
       { label: 'Tables', path: '/table', desc: 'HTML table layouts and styling' },
       { label: 'QR Code Generator', path: '/qrcode', desc: 'Generate QR codes dynamically' },
       { label: 'Video Player', path: '/video', desc: 'HTML5 video playback' },
