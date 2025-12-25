@@ -158,8 +158,17 @@ mixin CSSBackgroundMixin on RenderStyle {
 
   set backgroundClip(CSSBackgroundBoundary? value) {
     if (value == _backgroundClip) return;
+    final CSSBackgroundBoundary? oldValue = _backgroundClip;
     _backgroundClip = value;
-    markNeedsPaint();
+    // `background-clip:text` affects how glyphs are built/painted (paragraph cache),
+    // so toggling to/from it must rebuild text layout instead of paint-only.
+    final bool togglesClipText =
+        oldValue == CSSBackgroundBoundary.text || value == CSSBackgroundBoundary.text;
+    if (togglesClipText) {
+      markNeedsLayout();
+    } else {
+      markNeedsPaint();
+    }
     resetBoxDecoration();
   }
 
