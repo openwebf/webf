@@ -114,6 +114,15 @@ void Element::removeAttribute(const AtomicString& name, ExceptionState& exceptio
 }
 
 BoundingClientRect* Element::getBoundingClientRect(ExceptionState& exception_state) {
+  ExecutingContext* context = GetExecutingContext();
+  if (context && context->isBlinkEnabled()) {
+    Document* doc = context->document();
+    if (doc) {
+      MemberMutationScope mutation_scope{context};
+      doc->UpdateStyleForThisDocument();
+    }
+  }
+
   NativeValue result = InvokeBindingMethod(
       binding_call_methods::kgetBoundingClientRect, 0, nullptr,
       FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
@@ -128,6 +137,15 @@ BoundingClientRect* Element::getBoundingClientRect(ExceptionState& exception_sta
 }
 
 std::vector<BoundingClientRect*> Element::getClientRects(ExceptionState& exception_state) {
+  ExecutingContext* context = GetExecutingContext();
+  if (context && context->isBlinkEnabled()) {
+    Document* doc = context->document();
+    if (doc) {
+      MemberMutationScope mutation_scope{context};
+      doc->UpdateStyleForThisDocument();
+    }
+  }
+
   NativeValue result = InvokeBindingMethod(
       binding_call_methods::kgetClientRects, 0, nullptr,
       FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);

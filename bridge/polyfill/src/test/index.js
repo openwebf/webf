@@ -6,9 +6,11 @@ const jasmineInterface = jasmineCore.interface(jasmine, env);
 const global = globalThis;
 
 let timers = [];
+let rafGeneration = 0;
 
 const oldSetTimeout = setTimeout;
 const oldSetInterval = setInterval;
+const oldRequestAnimationFrame = global.requestAnimationFrame?.bind(global);
 
 // when spec is done, all pending timer should force to stop and never invoke.
 function clearAllTimer() {
@@ -18,6 +20,12 @@ function clearAllTimer() {
       timers[index] = null;
     }
   });
+}
+
+// When a spec is done, any pending requestAnimationFrame callbacks from that spec
+// must not run in the next spec (documentElement will be replaced in specDone).
+function clearAllAnimationFrames() {
+  rafGeneration++;
 }
 
 global.setTimeout = function (fn, timeout) {
@@ -47,6 +55,22 @@ global.setInterval = function (fn, timeout) {
   return timer;
 };
 
+if (typeof oldRequestAnimationFrame === 'function') {
+  global.requestAnimationFrame = function (callback) {
+    const currentGen = rafGeneration;
+    // In WebF tests, layout/style updates are bridged via a buffered UI command
+    // pipeline. Flushing here makes `requestAnimationFrame` a reliable boundary
+    // for "style applied + layout ready" assertions.
+    if (typeof __webf_sync_buffer__ === 'function') {
+      __webf_sync_buffer__();
+    }
+    return oldRequestAnimationFrame(function (time) {
+      if (currentGen !== rafGeneration) return;
+      callback(time);
+    });
+  };
+}
+
 // https://jasmine.github.io/api/edge/Reporter.html
 class JasmineTracker {
   onJasmineDone() { }
@@ -57,6 +81,7 @@ class JasmineTracker {
 
   specDone(result) {
     clearAllTimer();
+    clearAllAnimationFrames();
     resetDocumentElement();
     webf.methodChannel.clearMethodCallHandler();
     document.___clear_cookies__();

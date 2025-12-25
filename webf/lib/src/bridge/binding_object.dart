@@ -11,6 +11,8 @@ import 'dart:ffi';
 import 'package:collection/collection.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
@@ -381,6 +383,48 @@ dynamic _callBindingObjectMethods(BindingObject bindingObject, String method, Li
   return (bindingObject as DynamicBindingObject)._invokeBindingMethod(method, args);
 }
 
+const Set<String> _layoutDependentBindingProperties = <String>{
+  'offsetLeft',
+  'offsetTop',
+  'offsetWidth',
+  'offsetHeight',
+  'clientLeft',
+  'clientTop',
+  'clientWidth',
+  'clientHeight',
+};
+
+const Set<String> _layoutDependentBindingMethods = <String>{
+  'getBoundingClientRect',
+  'getClientRects',
+};
+
+bool _shouldFlushLayoutForBindingCall(dynamic method, List<dynamic> args) {
+  // BindingMethodCallOperations.getProperty => args: [key]
+  if (method is int &&
+      method == BindingMethodCallOperations.getProperty.index &&
+      args.isNotEmpty) {
+    final dynamic key = args[0];
+    return key is String && _layoutDependentBindingProperties.contains(key);
+  }
+
+  // Direct method invoke => method is a string name.
+  if (method is String) {
+    return _layoutDependentBindingMethods.contains(method);
+  }
+
+  return false;
+}
+
+void _flushFlutterLayoutIfSafe() {
+  final SchedulerPhase phase = SchedulerBinding.instance.schedulerPhase;
+  if (phase != SchedulerPhase.idle && phase != SchedulerPhase.postFrameCallbacks) {
+    return;
+  }
+
+  RendererBinding.instance.pipelineOwner.flushLayout();
+}
+
 Future<void> _invokeBindingMethodFromNativeImpl(double contextId, Pointer<NativeBindingObject> nativeBindingObject,
     Pointer<NativeValue> returnValue, Pointer<NativeValue> nativeMethod, int argc, Pointer<NativeValue> argv) async {
 
@@ -395,6 +439,9 @@ Future<void> _invokeBindingMethodFromNativeImpl(double contextId, Pointer<Native
     return fromNativeValue(controller.view, nativeValue);
   });
 
+  if (controller.view.enableBlink && _shouldFlushLayoutForBindingCall(method, values)) {
+    _flushFlutterLayoutIfSafe();
+  }
 
   BindingObject bindingObject = controller.view.getBindingObject(nativeBindingObject);
 
