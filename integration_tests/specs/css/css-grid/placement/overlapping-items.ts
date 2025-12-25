@@ -319,7 +319,7 @@ describe('CSS Grid overlapping items', () => {
     grid.remove();
   });
 
-  xit('overlaps with partial grid areas', async () => {
+  it('overlaps with partial grid areas', async () => {
     const grid = document.createElement('div');
     grid.style.display = 'grid';
     grid.style.gridTemplateColumns = 'repeat(4, 70px)';

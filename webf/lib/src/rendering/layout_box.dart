@@ -264,7 +264,11 @@ abstract class RenderLayoutBox extends RenderBoxModel
           final int? zi = rs.zIndex;
           final bool positioned = rs.position != CSSPositionType.static;
           // z-index: 0 (including flex/grid items) or positioned with z-index:auto
-          if (zi == 0 || (positioned && zi == null)) return true;
+          // Also include non-positioned stacking-context roots (e.g. opacity < 1, transform, filter),
+          // which participate in the auto/0 stacking layer per CSS stacking rules.
+          if (zi == 0 || (positioned && zi == null) || (!positioned && zi == null && rs.establishesStackingContext)) {
+            return true;
+          }
         }
         // Unwrap single-child wrappers
         if (node is RenderObjectWithChildMixin<RenderBox>) {
@@ -298,6 +302,10 @@ abstract class RenderLayoutBox extends RenderBoxModel
             positionedAutoOrZero.add(child);
           } else if (positioned && zi == null) {
             // Positioned with z-index: auto
+            positionedAutoOrZero.add(child);
+          } else if (!positioned && zi == null && rs.establishesStackingContext) {
+            // Non-positioned stacking context roots (e.g. opacity < 1) paint above normal flow
+            // in the auto/0 stacking layer.
             positionedAutoOrZero.add(child);
           } else {
             // Non-positioned descendants: if subtree contains any z-index:0 or auto-positioned participants,
@@ -429,6 +437,44 @@ abstract class RenderLayoutBox extends RenderBoxModel
   BoxConstraints getConstraints() {
     BoxConstraints boxConstraints = super.getConstraints();
     return boxConstraints;
+  }
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
+    Offset accumulateOffsetFromDescendant(RenderObject descendant, RenderObject ancestor) {
+      Offset sum = Offset.zero;
+      RenderObject? cur = descendant;
+      while (cur != null && cur != ancestor) {
+        final Object? pd = (cur is RenderBox) ? (cur.parentData) : null;
+        if (pd is ContainerBoxParentData) sum += pd.offset;
+        cur = cur.parent;
+      }
+      return sum;
+    }
+
+    for (int i = paintingOrder.length - 1; i >= 0; i--) {
+      final RenderBox child = paintingOrder[i];
+      if (isPositionPlaceholder(child)) continue;
+      if (!child.hasSize) continue;
+
+      final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+      final bool direct = identical(child.parent, this);
+      final Offset localOffset = direct ? childParentData.offset : accumulateOffsetFromDescendant(child, this);
+
+      final bool isHit = result.addWithPaintOffset(
+        offset: localOffset,
+        position: position,
+        hitTest: (BoxHitTestResult result, Offset transformed) {
+          if (child is RenderBoxModel && child.renderStyle.position == CSSPositionType.fixed) {
+            transformed -= getTotalScrollOffset();
+          }
+          return child.hitTest(result, position: transformed);
+        },
+      );
+      if (isHit) return true;
+    }
+
+    return false;
   }
 
   @override

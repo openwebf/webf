@@ -3391,7 +3391,8 @@ class RenderGridLayout extends RenderLayoutBox {
 
   @override
   bool hitTestChildren(BoxHitTestResult result, {Offset? position}) {
-    return defaultHitTestChildren(result, position: position);
+    if (position == null) return false;
+    return super.hitTestChildren(result, position: position);
   }
 
   @override

@@ -1884,7 +1884,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     }
 
     // Fallback to default behavior for regular flow layout
-    return defaultHitTestChildren(result, position: position);
+    return super.hitTestChildren(result, position: position);
   }
 
 
