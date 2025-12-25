@@ -68,6 +68,8 @@ class WebFTextElement extends WebFTextBindings {
     //   locale: The locale used to select region-specific glyphs.
     //   background: The paint drawn as a background for the text.
     //   foreground: The paint used to draw the text. If this is specified, color must be null.
+    final double fs = renderStyle.fontSize.computedValue;
+    final double nonNegativeFontSize = fs.isFinite && fs >= 0 ? fs : 0.0;
     TextStyle textStyle = TextStyle(
         color: renderStyle.backgroundClip != CSSBackgroundBoundary.text ? renderStyle.color.value : null,
         decoration: renderStyle.textDecorationLine,
@@ -76,7 +78,7 @@ class WebFTextElement extends WebFTextBindings {
         fontWeight: renderStyle.fontWeight,
         fontStyle: renderStyle.fontStyle,
         fontFamilyFallback: renderStyle.fontFamily,
-        fontSize: renderStyle.fontSize.computedValue,
+        fontSize: nonNegativeFontSize,
         letterSpacing: renderStyle.letterSpacing?.computedValue,
         wordSpacing: renderStyle.wordSpacing?.computedValue,
         shadows: renderStyle.textShadow,

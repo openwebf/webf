@@ -80,20 +80,23 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     final lh = renderStyle.lineHeight;
     if (lh.type != CSSLengthType.NORMAL) {
       final double fs = renderStyle.fontSize.computedValue;
-      final double scaledFs = renderStyle.textScaler.scale(fs);
-      final double multiple = lh.computedValue / fs;
-      if (multiple.isFinite && multiple > 0) {
-        final FontWeight weight =
-            (renderStyle.boldText && renderStyle.fontWeight.index < FontWeight.w700.index) ? FontWeight.w700 : renderStyle.fontWeight;
-        strut = StrutStyle(
-          fontSize: scaledFs,
-          height: multiple,
-          fontFamilyFallback: renderStyle.fontFamily,
-          fontStyle: renderStyle.fontStyle,
-          fontWeight: weight,
-          // Minimum line-box height like CSS; allow expansion if content larger.
-          forceStrutHeight: false,
-        );
+      if (fs.isFinite && fs > 0) {
+        final double scaledFs = renderStyle.textScaler.scale(fs);
+        final double multiple = lh.computedValue / fs;
+        if (multiple.isFinite && multiple > 0) {
+          final FontWeight weight = (renderStyle.boldText && renderStyle.fontWeight.index < FontWeight.w700.index)
+              ? FontWeight.w700
+              : renderStyle.fontWeight;
+          strut = StrutStyle(
+            fontSize: scaledFs,
+            height: multiple,
+            fontFamilyFallback: renderStyle.fontFamily,
+            fontStyle: renderStyle.fontStyle,
+            fontWeight: weight,
+            // Minimum line-box height like CSS; allow expansion if content larger.
+            forceStrutHeight: false,
+          );
+        }
       }
     }
     const TextHeightBehavior thb = TextHeightBehavior(
@@ -138,7 +141,11 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
         ? null
         : (lh.type == CSSLengthType.EM
             ? lh.value
-            : lh.computedValue / renderStyle.fontSize.computedValue);
+            : (() {
+                final double fs = renderStyle.fontSize.computedValue;
+                if (!fs.isFinite || fs <= 0) return null;
+                return lh.computedValue / fs;
+              })());
 
     // Delegate span building to CSSTextMixin to keep styling consistent.
     _cachedSpan = CSSTextMixin.createTextSpan(
@@ -166,20 +173,23 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     StrutStyle? strut;
     if (lh.type != CSSLengthType.NORMAL) {
       final double fs = renderStyle.fontSize.computedValue;
-      final double scaledFs = renderStyle.textScaler.scale(fs);
-      final double multiple = lh.computedValue / fs;
-      if (multiple.isFinite && multiple > 0) {
-        final FontWeight weight =
-            (renderStyle.boldText && renderStyle.fontWeight.index < FontWeight.w700.index) ? FontWeight.w700 : renderStyle.fontWeight;
-        strut = StrutStyle(
-          fontSize: scaledFs,
-          height: multiple,
-          fontFamilyFallback: renderStyle.fontFamily,
-          fontStyle: renderStyle.fontStyle,
-          fontWeight: weight,
-          // Minimum line-box height like CSS; allow expansion if content larger.
-          forceStrutHeight: false,
-        );
+      if (fs.isFinite && fs > 0) {
+        final double scaledFs = renderStyle.textScaler.scale(fs);
+        final double multiple = lh.computedValue / fs;
+        if (multiple.isFinite && multiple > 0) {
+          final FontWeight weight = (renderStyle.boldText && renderStyle.fontWeight.index < FontWeight.w700.index)
+              ? FontWeight.w700
+              : renderStyle.fontWeight;
+          strut = StrutStyle(
+            fontSize: scaledFs,
+            height: multiple,
+            fontFamilyFallback: renderStyle.fontFamily,
+            fontStyle: renderStyle.fontStyle,
+            fontWeight: weight,
+            // Minimum line-box height like CSS; allow expansion if content larger.
+            forceStrutHeight: false,
+          );
+        }
       }
     }
     const TextHeightBehavior thb = TextHeightBehavior(
@@ -348,19 +358,22 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     StrutStyle? strut;
     if (lh.type != CSSLengthType.NORMAL) {
       final double fs = renderStyle.fontSize.computedValue;
-      final double scaledFs = renderStyle.textScaler.scale(fs);
-      final double multiple = lh.computedValue / fs;
-      if (multiple.isFinite && multiple > 0) {
-        final FontWeight weight =
-            (renderStyle.boldText && renderStyle.fontWeight.index < FontWeight.w700.index) ? FontWeight.w700 : renderStyle.fontWeight;
-        strut = StrutStyle(
-          fontSize: scaledFs,
-          height: multiple,
-          fontFamilyFallback: renderStyle.fontFamily,
-          fontStyle: renderStyle.fontStyle,
-          fontWeight: weight,
-          forceStrutHeight: false,
-        );
+      if (fs.isFinite && fs > 0) {
+        final double scaledFs = renderStyle.textScaler.scale(fs);
+        final double multiple = lh.computedValue / fs;
+        if (multiple.isFinite && multiple > 0) {
+          final FontWeight weight = (renderStyle.boldText && renderStyle.fontWeight.index < FontWeight.w700.index)
+              ? FontWeight.w700
+              : renderStyle.fontWeight;
+          strut = StrutStyle(
+            fontSize: scaledFs,
+            height: multiple,
+            fontFamilyFallback: renderStyle.fontFamily,
+            fontStyle: renderStyle.fontStyle,
+            fontWeight: weight,
+            forceStrutHeight: false,
+          );
+        }
       }
     }
 

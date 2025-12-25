@@ -472,6 +472,9 @@ mixin BaseInputState on WebFWidgetElementState {
     // Accessible name (ARIA or native <label>) for Semantics wrapper.
     final String? accessibleName = WebFAccessibility.computeAccessibleName(widgetElement);
 
+    final double fs = widgetElement.renderStyle.fontSize.computedValue;
+    final double nonNegativeFontSize = fs.isFinite && fs >= 0 ? fs : 0.0;
+
     InputDecoration decoration = InputDecoration(
         label: widgetElement.label != null ? Text(widgetElement.label!) : null,
         border: InputBorder.none,
@@ -480,7 +483,7 @@ mixin BaseInputState on WebFWidgetElementState {
         isCollapsed: false,
         hintText: widgetElement.placeholder,
         hintStyle: TextStyle(
-          fontSize: widgetElement.renderStyle.fontSize.computedValue,
+          fontSize: nonNegativeFontSize,
           height: 1.0, // Ensure hint text has consistent line height
           // Match the main text style for consistent baseline
           fontWeight: widgetElement.renderStyle.fontWeight,
@@ -508,7 +511,7 @@ mixin BaseInputState on WebFWidgetElementState {
             : null);
     Widget widget = TextField(
       controller: controller,
-      cursorHeight: widgetElement.renderStyle.fontSize.computedValue,
+      cursorHeight: nonNegativeFontSize,
       enabled: !widgetElement.disabled && !widgetElement.readonly,
       style: widgetElement._textStyle,
       strutStyle: null,

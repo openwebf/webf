@@ -8,6 +8,7 @@
  */
 
 import 'dart:ui' as ui;
+import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
@@ -677,6 +678,7 @@ mixin CSSTextMixin on RenderStyle {
 
     final variant = CSSText.resolveFontFeaturesForVariant(renderStyle);
     final FontWeight effectiveFontWeight = _effectiveFontWeight(renderStyle);
+    final double nonNegativeFontSize = math.max(0.0, renderStyle.fontSize.computedValue);
     TextStyle textStyle = TextStyle(
         color: effectiveColor,
         decoration: hidden ? TextDecoration.none : renderStyle.textDecorationLine,
@@ -689,7 +691,7 @@ mixin CSSTextMixin on RenderStyle {
             ? renderStyle.fontFamily!.first
             : null,
         fontFamilyFallback: renderStyle.fontFamily,
-        fontSize: renderStyle.fontSize.computedValue,
+        fontSize: nonNegativeFontSize,
         letterSpacing: renderStyle.letterSpacing?.computedValue,
         wordSpacing: renderStyle.wordSpacing?.computedValue,
         shadows: renderStyle.textShadow,
@@ -834,7 +836,7 @@ class CSSText {
             fontFamilyFallback: families,
             fontWeight: effectiveWeight,
             fontStyle: renderStyle.fontStyle,
-            fontSize: renderStyle.fontSize.computedValue,
+            fontSize: math.max(0.0, renderStyle.fontSize.computedValue),
             fontFeatures: features,
           ),
         ),
@@ -1184,6 +1186,11 @@ class CSSText {
         // If parsing failed, treat as invalid (ignore declaration).
         if (identical(parsed, CSSLengthValue.unknown)) {
           // Keep previous value unchanged (ignore invalid declaration).
+          return renderStyle.fontSize;
+        }
+        // Per CSS, font-size must be non-negative; negative <length>/<percentage> declarations are invalid and ignored.
+        // Keep calc() results as-is (including negative) for computed style queries; layout code must clamp.
+        if (parsed.calcValue == null && parsed.computedValue < 0) {
           return renderStyle.fontSize;
         }
         // Preserve calc() results (including negative) for computed style queries.
