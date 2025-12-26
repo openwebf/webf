@@ -230,6 +230,13 @@ class Element : public ContainerNode {
   // add for invalidation begin
   bool IsDocumentElement() const;
 
+  // Tracks whether the most recently computed style for this element results
+  // in `display: none`. This is used by the Blink-style selector invalidation
+  // pipeline to skip scheduling descendant invalidations for display:none
+  // subtrees (Blink uses the absence of a layout object as a proxy).
+  bool IsDisplayNoneForStyleInvalidation() const { return is_display_none_for_style_invalidation_; }
+  void SetDisplayNoneForStyleInvalidation(bool value) { is_display_none_for_style_invalidation_ = value; }
+
   // NOTE: This shadows Node::GetComputedStyle().
   const ComputedStyle* GetComputedStyle() const {
     // return computed_style_.Get();
@@ -380,6 +387,7 @@ class Element : public ContainerNode {
 
   mutable std::shared_ptr<ElementData> element_data_;
   mutable Member<ElementAttributes> attributes_;
+  bool is_display_none_for_style_invalidation_ = false;
 
   QualifiedName tag_name_;
 };
@@ -413,9 +421,10 @@ inline Element* Node::parentElement() const {
 }
 
 inline bool Element::hasAttributes() const {
-  // Correct semantics: true if this element has any attributes.
-  // Prefer the lightweight collection check.
-  return !Attributes().IsEmpty();
+  if (!Attributes().IsEmpty()) {
+    return true;
+  }
+  return attributes_ != nullptr && attributes_->hasAttributes();
 }
 
 inline const AtomicString& Element::IdForStyleResolution() const {

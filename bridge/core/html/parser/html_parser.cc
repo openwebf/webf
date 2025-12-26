@@ -32,34 +32,31 @@ std::string trim(const std::string& str) {
 
 // Parse html,isHTMLFragment should be false if you need to automatically complete html, head, and body when they are
 // missing.
-GumboOutput* parse(const std::string& html, bool isHTMLFragment = false) {
-  // Gumbo-parser parse HTML.
-  GumboOutput* htmlTree = gumbo_parse_with_options(&kGumboDefaultOptions, html.c_str(), html.length());
+static GumboOutput* parseDocument(const std::string& html) {
+  return gumbo_parse_with_options(&kGumboDefaultOptions, html.c_str(), html.length());
+}
 
-  if (isHTMLFragment) {
-    // Find body.
-    const GumboVector* children = &htmlTree->root->v.element.children;
-    for (int i = 0; i < children->length; ++i) {
-      auto* child = (GumboNode*)children->data[i];
-      if (child->type == GUMBO_NODE_ELEMENT) {
-        std::string tagName;
-        if (child->v.element.tag != GUMBO_TAG_UNKNOWN) {
-          tagName = gumbo_normalized_tagname(child->v.element.tag);
-        } else {
-          GumboStringPiece piece = child->v.element.original_tag;
-          gumbo_tag_from_original_text(&piece);
-          tagName = std::string(piece.data, piece.length);
-        }
+static GumboOutput* parseFragment(const std::string& html, GumboTag fragment_context) {
+  GumboOptions options = kGumboDefaultOptions;
+  options.fragment_context = fragment_context;
+  options.fragment_namespace = GumboNamespaceEnum::GUMBO_NAMESPACE_HTML;
+  return gumbo_parse_with_options(&options, html.c_str(), html.length());
+}
 
-        if (tagName.compare("body") == 0) {
-          htmlTree->root = child;
-          break;
-        }
-      }
-    }
+static GumboTag fragmentContextFor(Node* root_node) {
+  auto* element = DynamicTo<Element>(root_node);
+  if (element == nullptr) {
+    return GUMBO_TAG_BODY;
   }
-
-  return htmlTree;
+  std::string local_name = element->localName().ToUTF8String();
+  if (local_name.empty()) {
+    return GUMBO_TAG_BODY;
+  }
+  GumboTag tag = gumbo_tag_enum(local_name.c_str());
+  if (tag == GUMBO_TAG_LAST) {
+    return GUMBO_TAG_BODY;
+  }
+  return tag;
 }
 
 void transToSVG(GumboNode* node) {
@@ -274,8 +271,13 @@ bool HTMLParser::parseHTML(const std::string& html, Node* root_node, bool isHTML
     return true;
   }
 
-  // Parse HTML with Gumbo - it has built-in error recovery
-  GumboOutput* htmlTree = parse(html, isHTMLFragment);
+  // Parse HTML with Gumbo - it has built-in error recovery.
+  GumboOutput* htmlTree = nullptr;
+  if (isHTMLFragment) {
+    htmlTree = parseFragment(html, fragmentContextFor(root_node));
+  } else {
+    htmlTree = parseDocument(html);
+  }
   if (htmlTree == nullptr) {
     ExceptionState exception_state;
     exception_state.ThrowException(context->ctx(), ErrorType::TypeError, "Failed to parse HTML: Invalid HTML content");
@@ -297,7 +299,149 @@ bool HTMLParser::parseHTML(const std::string& html, Node* root_node, bool isHTML
   root_container_node->ParserFinishedBuildingDocumentFragment();
 
   // Traverse and build DOM tree
-  bool traverse_result = traverseHTML(root_container_node, htmlTree->root);
+  auto append_gumbo_child = [&](ContainerNode* parent, GumboNode* child) -> bool {
+    if (parent == nullptr || child == nullptr) {
+      return false;
+    }
+
+    if (child->type == GUMBO_NODE_ELEMENT) {
+      std::string tagName;
+      if (child->v.element.tag != GUMBO_TAG_UNKNOWN) {
+        tagName = gumbo_normalized_tagname(child->v.element.tag);
+      } else {
+        GumboStringPiece piece = child->v.element.original_tag;
+        gumbo_tag_from_original_text(&piece);
+        tagName = std::string(piece.data, piece.length);
+      }
+
+      if (tagName.empty()) {
+        WEBF_LOG(WARN) << "Skipping element with empty tag name";
+        return false;
+      }
+
+      Element* element = nullptr;
+      ExceptionState exception_state;
+
+      switch (child->v.element.tag_namespace) {
+        case ::GUMBO_NAMESPACE_SVG: {
+          element = context->document()->createElementNS(element_namespace_uris::ksvg, AtomicString(tagName),
+                                                         exception_state);
+          break;
+        }
+        default: {
+          element = context->document()->createElement(AtomicString(tagName), exception_state);
+        }
+      }
+
+      if (exception_state.HasException()) {
+        context->HandleException(exception_state);
+        WEBF_LOG(ERROR) << "Failed to create element: " << tagName;
+        return false;
+      }
+
+      if (element == nullptr) {
+        WEBF_LOG(ERROR) << "Failed to create element (null): " << tagName;
+        return false;
+      }
+
+      // Apply attributes before attaching children so that inline styles are
+      // ready during subtree build.
+      parseProperty(element, &child->v.element);
+
+      element->BeginParsingChildren();
+      if (!traverseHTML(element, child)) {
+        WEBF_LOG(WARN) << "Failed to traverse child element: " << tagName;
+      }
+      parent->AppendChild(element);
+      element->FinishParsingChildren();
+      return true;
+    }
+
+    if (child->type == GUMBO_NODE_TEXT || child->type == GUMBO_NODE_WHITESPACE) {
+      const char* text_content = child->v.text.text;
+      if (text_content == nullptr) {
+        return true;
+      }
+      ExceptionState exception_state;
+      auto* text = context->document()->createTextNode(AtomicString::CreateFromUTF8(text_content), exception_state);
+      if (!exception_state.HasException() && text != nullptr) {
+        parent->AppendChild(text);
+        return true;
+      }
+      if (exception_state.HasException()) {
+        context->HandleException(exception_state);
+      }
+      return false;
+    }
+
+    if (child->type == GUMBO_NODE_COMMENT) {
+      const char* comment_content = child->v.text.text;
+      ExceptionState exception_state;
+      auto* comment = context->document()->createComment(
+          AtomicString::CreateFromUTF8(comment_content ? comment_content : ""), exception_state);
+      if (!exception_state.HasException() && comment != nullptr) {
+        parent->AppendChild(comment);
+        return true;
+      }
+      if (exception_state.HasException()) {
+        context->HandleException(exception_state);
+      }
+      return false;
+    }
+
+    if (child->type == GUMBO_NODE_CDATA) {
+      const char* cdata_content = child->v.text.text;
+      if (cdata_content == nullptr) {
+        return true;
+      }
+      ExceptionState exception_state;
+      auto* text = context->document()->createTextNode(AtomicString::CreateFromUTF8(cdata_content), exception_state);
+      if (!exception_state.HasException() && text != nullptr) {
+        parent->AppendChild(text);
+        return true;
+      }
+      if (exception_state.HasException()) {
+        context->HandleException(exception_state);
+      }
+      return false;
+    }
+
+    return true;
+  };
+
+  auto traverse_fragment_root = [&](GumboNode* root) -> bool {
+    if (root == nullptr) {
+      return false;
+    }
+    if (root->type != GUMBO_NODE_ELEMENT) {
+      return traverseHTML(root_container_node, root);
+    }
+
+    // When parsing an HTML fragment Gumbo still produces an <html> root and may
+    // synthesize <head>/<body>. For innerHTML we want the fragment nodes, not
+    // the wrapper elements; flatten <head>/<body> by appending their children.
+    if (root->v.element.tag == GUMBO_TAG_HTML) {
+      bool ok = true;
+      const GumboVector* children = &root->v.element.children;
+      for (int i = 0; i < children->length; ++i) {
+        auto* child = static_cast<GumboNode*>(children->data[i]);
+        if (!child) {
+          continue;
+        }
+        if (child->type == GUMBO_NODE_ELEMENT &&
+            (child->v.element.tag == GUMBO_TAG_HEAD || child->v.element.tag == GUMBO_TAG_BODY)) {
+          ok = traverseHTML(root_container_node, child) && ok;
+          continue;
+        }
+        ok = append_gumbo_child(root_container_node, child) && ok;
+      }
+      return ok;
+    }
+
+    return traverseHTML(root_container_node, root);
+  };
+
+  bool traverse_result = isHTMLFragment ? traverse_fragment_root(htmlTree->root) : traverseHTML(root_container_node, htmlTree->root);
 
   // Free gumbo parse nodes
   gumbo_destroy_output(&kGumboDefaultOptions, htmlTree);

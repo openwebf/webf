@@ -113,7 +113,7 @@ class WebFPage extends StatelessWidget {
                     onControllerInit: (controller) async {
                       double contextId = controller.view.contextId;
                       Pointer<Void> testContext = initTestFramework(contextId);
-                      registerDartTestMethodsToCpp(contextId);
+                      registerDartTestMethodsToCpp(testContext);
                       // Timer(Duration(seconds: 1), () {
                       //   executeTest(testContext, contextId);
                       // });

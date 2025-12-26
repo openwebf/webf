@@ -17,7 +17,7 @@ describe('CSS Text Comprehensive Integration', () => {
         ">
           English Gradient Text
         </div>
-        
+
         <div lang="zh-CN" style="
           background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
           background-clip: text;
@@ -27,7 +27,7 @@ describe('CSS Text Comprehensive Integration', () => {
         ">
           中文渐变文字
         </div>
-        
+
         <div lang="ja" style="
           background: linear-gradient(45deg, #a8edea, #fed6e3);
           background-clip: text;
@@ -37,7 +37,7 @@ describe('CSS Text Comprehensive Integration', () => {
         ">
           日本語グラデーション
         </div>
-        
+
         <div lang="ar" dir="rtl" style="
           background: linear-gradient(45deg, #ffecd2, #fcb69f);
           background-clip: text;
@@ -64,7 +64,7 @@ describe('CSS Text Comprehensive Integration', () => {
         expect(rect.height).toBeGreaterThan(0);
         expect(rect.width).toBeGreaterThan(0);
       });
-      
+
       await snapshot();
       document.body.removeChild(container);
       done();
@@ -90,7 +90,7 @@ describe('CSS Text Comprehensive Integration', () => {
           ">
             한국어 텍스트 효과
           </span>
-          
+
           <p style="
             color: currentColor;
             font-size: 16px;
@@ -111,7 +111,7 @@ describe('CSS Text Comprehensive Integration', () => {
       // Initial verification
       let spanRect = span.getBoundingClientRect();
       let pRect = p.getBoundingClientRect();
-      
+
       expect(spanRect.height).toBeGreaterThan(0);
       expect(spanRect.width).toBeGreaterThan(0);
       expect(pRect.height).toBeGreaterThan(0);
@@ -119,17 +119,17 @@ describe('CSS Text Comprehensive Integration', () => {
 
       // Change color to test currentColor optimization
       outerDiv.style.color = '#3742fa';
-      
+
       requestAnimationFrame(async () => {
         // Verify elements still render after color change
         spanRect = span.getBoundingClientRect();
         pRect = p.getBoundingClientRect();
-        
+
         expect(spanRect.height).toBeGreaterThan(0);
         expect(spanRect.width).toBeGreaterThan(0);
         expect(pRect.height).toBeGreaterThan(0);
         expect(pRect.width).toBeGreaterThan(0);
-        
+
         await snapshot();
         document.body.removeChild(container);
         done();
@@ -150,8 +150,8 @@ describe('CSS Text Comprehensive Integration', () => {
             padding: 10px;
           ">
             <div style="
-              background: linear-gradient(${45 * i}deg, 
-                hsl(${i * 45}, 60%, 50%), 
+              background: linear-gradient(${45 * i}deg,
+                hsl(${i * 45}, 60%, 50%),
                 hsl(${(i * 45 + 90) % 360}, 60%, 70%)
               );
               background-clip: text;
@@ -190,10 +190,10 @@ describe('CSS Text Comprehensive Integration', () => {
       sections.forEach(section => {
         const gradientDiv = section.querySelector('div') as HTMLElement;
         const p = section.querySelector('p') as HTMLElement;
-        
+
         const divRect = gradientDiv.getBoundingClientRect();
         const pRect = p.getBoundingClientRect();
-        
+
         expect(divRect.height).toBeGreaterThan(0);
         expect(divRect.width).toBeGreaterThan(0);
         expect(pRect.height).toBeGreaterThan(0);
@@ -203,28 +203,28 @@ describe('CSS Text Comprehensive Integration', () => {
       // Test performance of color updates
       const startTime = performance.now();
       performanceTest.style.color = '#ff3838';
-      
+
       requestAnimationFrame(async () => {
         const endTime = performance.now();
         const updateTime = endTime - startTime;
-        
+
         // Should update efficiently (under 100ms for this complex test)
         expect(updateTime).toBeLessThan(100);
-        
+
         // Verify all elements still render after update
         sections.forEach(section => {
           const gradientDiv = section.querySelector('div') as HTMLElement;
           const p = section.querySelector('p') as HTMLElement;
-          
+
           const divRect = gradientDiv.getBoundingClientRect();
           const pRect = p.getBoundingClientRect();
-          
+
           expect(divRect.height).toBeGreaterThan(0);
           expect(divRect.width).toBeGreaterThan(0);
           expect(pRect.height).toBeGreaterThan(0);
           expect(pRect.width).toBeGreaterThan(0);
         });
-        
+
         await snapshot();
         document.body.removeChild(container);
         done();
@@ -246,7 +246,7 @@ describe('CSS Text Comprehensive Integration', () => {
         ">
           Article Header
         </header>
-        
+
         <section lang="zh-CN" style="border-color: currentColor; border: 2px solid; padding: 15px;">
           <h2 style="
             background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
@@ -257,7 +257,7 @@ describe('CSS Text Comprehensive Integration', () => {
           ">
             中文标题
           </h2>
-          
+
           <div lang="ja" style="
             text-decoration-color: currentColor;
             text-decoration: underline;
@@ -272,13 +272,13 @@ describe('CSS Text Comprehensive Integration', () => {
             ">
               日本語の内容
             </span>
-            
+
             <p style="color: currentColor; font-size: 14px;">
               Japanese supporting text
             </p>
           </div>
         </section>
-        
+
         <footer style="
           background-color: currentColor;
           color: white;
@@ -308,7 +308,7 @@ describe('CSS Text Comprehensive Integration', () => {
 
       // Test inheritance updates
       article.style.color = '#ff4757';
-      
+
       requestAnimationFrame(async () => {
         // Verify elements still render after inheritance change
         [header, h2, span, p, footer].forEach(el => {
@@ -316,7 +316,7 @@ describe('CSS Text Comprehensive Integration', () => {
           expect(rect.height).toBeGreaterThan(0);
           expect(rect.width).toBeGreaterThan(0);
         });
-        
+
         await snapshot();
         document.body.removeChild(container);
         done();

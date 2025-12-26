@@ -151,7 +151,9 @@ describe('CSS1 padding-left', () => {
       li1,
       li2
     ]);
-    
+
+    BODY.style.fontFamily = 'Times';
+
     append(BODY, style);
     append(BODY, p);
     append(BODY, pre);

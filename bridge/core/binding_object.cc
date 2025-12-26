@@ -12,6 +12,7 @@
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise_resolver.h"
 #include "core/dom/container_node.h"
+#include "core/dom/document.h"
 #include "core/dom/events/event_target.h"
 #include "core/dom/mutation_observer_interest_group.h"
 #include "core/executing_context.h"
@@ -21,6 +22,29 @@
 #include "logging.h"
 
 namespace webf {
+
+static bool ShouldUpdateStyleForThisDocumentForDOMGeometry(const AtomicString& prop) {
+  return prop == binding_call_methods::koffsetLeft || prop == binding_call_methods::koffsetTop ||
+         prop == binding_call_methods::koffsetWidth || prop == binding_call_methods::koffsetHeight ||
+         prop == binding_call_methods::kclientLeft || prop == binding_call_methods::kclientTop ||
+         prop == binding_call_methods::kclientWidth || prop == binding_call_methods::kclientHeight;
+}
+
+static bool ShouldUpdateStyleForThisDocumentForDOMGeometryMethod(const AtomicString& method) {
+  return method == binding_call_methods::kgetBoundingClientRect || method == binding_call_methods::kgetClientRects;
+}
+
+static void UpdateStyleForThisDocumentIfBlinkEnabled(ExecutingContext* context) {
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+  Document* doc = context->document();
+  if (!doc) {
+    return;
+  }
+  MemberMutationScope mutation_scope{context};
+  doc->UpdateStyleForThisDocument();
+}
 
 static void ReturnEventResultToDart(Dart_Handle persistent_handle,
                                     NativeValue* result,
@@ -179,6 +203,9 @@ ScriptPromise BindingObject::InvokeBindingMethodAsync(const webf::AtomicString& 
                                                       int32_t argc,
                                                       const webf::NativeValue* args,
                                                       webf::ExceptionState& exception_state) const {
+  if (ShouldUpdateStyleForThisDocumentForDOMGeometryMethod(method)) {
+    UpdateStyleForThisDocumentIfBlinkEnabled(GetExecutingContext());
+  }
   NativeValue method_on_stack = NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), method);
   return InvokeBindingMethodAsyncInternal(method_on_stack, argc, args, exception_state);
 }
@@ -258,6 +285,10 @@ ScriptPromise BindingObject::GetBindingPropertyAsync(const webf::AtomicString& p
         ctx(), ErrorType::InternalError,
         "Can not get binding property on BindingObject, dart binding object had been disposed");
     return ScriptPromise(ctx(), JS_NULL);
+  }
+
+  if (ShouldUpdateStyleForThisDocumentForDOMGeometry(prop)) {
+    UpdateStyleForThisDocumentIfBlinkEnabled(GetExecutingContext());
   }
 
   const NativeValue argv[] = {Native_NewString(prop.ToNativeString().release())};
@@ -341,6 +372,10 @@ NativeValue BindingObject::GetBindingProperty(const AtomicString& prop,
         ctx(), ErrorType::InternalError,
         "Can not get binding property on BindingObject, dart binding object had been disposed");
     return Native_NewNull();
+  }
+
+  if (ShouldUpdateStyleForThisDocumentForDOMGeometry(prop)) {
+    UpdateStyleForThisDocumentIfBlinkEnabled(GetExecutingContext());
   }
 
   const NativeValue argv[] = {Native_NewString(prop.ToNativeString().release())};
