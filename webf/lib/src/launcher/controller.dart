@@ -25,6 +25,8 @@ import 'package:flutter/widgets.dart'
     show
         AnimationController,
         BuildContext,
+        MediaQuery,
+        MediaQueryData,
         ModalRoute,
         RouteObserver,
         StatefulElement,
@@ -142,6 +144,37 @@ enum PreloadingStatus {
 enum PreRenderingStatus { none, preloading, evaluate, rendering, done, fail }
 
 class WebFController with Diagnosticable {
+  TextScaler _textScaler = TextScaler.noScaling;
+  bool _boldText = false;
+
+  TextScaler get textScaler => _textScaler;
+  bool get boldText => _boldText;
+
+  void _markRenderSubtreeNeedsLayout(RenderObject root) {
+    root.visitChildren(_markRenderSubtreeNeedsLayout);
+    root.markNeedsLayout();
+    root.markNeedsPaint();
+  }
+
+  void updateTextSettingsFromContext(BuildContext context) {
+    final MediaQueryData data = MediaQuery.maybeOf(context) ?? MediaQueryData.fromView(View.of(context));
+    updateTextSettings(textScaler: data.textScaler, boldText: data.boldText);
+  }
+
+  void updateTextSettings({required TextScaler textScaler, required bool boldText}) {
+    final bool changed = _textScaler != textScaler || _boldText != boldText;
+    if (!changed) return;
+
+    _textScaler = textScaler;
+    _boldText = boldText;
+
+    // Force relayout so inline paragraph shaping / text measurements reflect the new scaling/weight.
+    final RenderViewportBox? viewport = _view?.currentViewport;
+    if (viewport != null) {
+      _markRenderSubtreeNeedsLayout(viewport);
+    }
+  }
+
   // Route-specific performance metrics tracking
   final Map<String, RoutePerformanceMetrics> _routeMetrics = {};
 
@@ -1412,6 +1445,7 @@ class WebFController with Diagnosticable {
     });
 
     _ownerFlutterView = View.of(context);
+    updateTextSettingsFromContext(context);
     view.attachToFlutter(context);
     PaintingBinding.instance.systemFonts.addListener(_watchFontLoading);
     _isFlutterAttached = true;

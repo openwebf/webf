@@ -92,7 +92,7 @@ export interface HybridHistoryInterface {
    * @param result Optional result to pass back to the previous screen
    * @returns True if the route was popped, false otherwise
    */
-  maybePop(result?: any): boolean;
+  maybePop(result?: any): Promise<boolean>;
 
   /**
    * Pop the current route and push a new named route
@@ -269,8 +269,8 @@ class HybridHistory implements HybridHistoryInterface {
    * @param result Optional result to pass back to the previous screen
    * @returns True if the route was popped, false otherwise
    */
-  maybePop(result?: any): boolean {
-    return webf.invokeModule('HybridHistory', 'maybePop', result !== undefined ? result : null) === 'true';
+  async maybePop(result?: any): Promise<boolean> {
+    return (await webf.invokeModuleAsync('HybridHistory', 'maybePop', result !== undefined ? result : null)) === 'true';
   }
 
   /**

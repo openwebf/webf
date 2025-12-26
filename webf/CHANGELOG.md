@@ -1,3 +1,9 @@
+## 0.24.0
+
+- Introduce the new experimental css engine built based on Blink's CSS impls.
+- Enable it: opt-in via `WebFController(enableBlink: true)`
+
+
 ## 0.23.13
 
 - Compatibility

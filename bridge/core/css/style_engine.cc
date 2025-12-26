@@ -1195,20 +1195,30 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
             }
             for (unsigned i = 0; i < pseudo_set->PropertyCount(); ++i) {
               auto prop = pseudo_set->PropertyAt(i);
+              CSSPropertyID id = prop.Id();
+              if (id == CSSPropertyID::kInvalid) {
+                continue;
+              }
+              const auto* value_ptr = prop.Value();
+              if (!value_ptr || !(*value_ptr)) {
+                continue;
+              }
               AtomicString prop_name = prop.Name().ToAtomicString();
-            String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
-            if (value_string.IsNull()) value_string = String("");
-            String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
-            auto key_ns = prop_name.ToStylePropertyNameNativeString();
-            auto* payload =
-                reinterpret_cast<NativePseudoStyleWithHref*>(dart_malloc(sizeof(NativePseudoStyleWithHref)));
-            payload->key = key_ns.release();
-            payload->value = stringToNativeString(value_string).release();
-            if (!base_href_string.IsEmpty()) {
-              payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
-            } else {
-              payload->href = nullptr;
-            }
+              String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
+              if (value_string.IsNull()) {
+                value_string = (*value_ptr)->CssTextForSerialization();
+              }
+              String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
+              auto key_ns = prop_name.ToStylePropertyNameNativeString();
+              auto* payload =
+                  reinterpret_cast<NativePseudoStyleWithHref*>(dart_malloc(sizeof(NativePseudoStyleWithHref)));
+              payload->key = key_ns.release();
+              payload->value = stringToNativeString(value_string).release();
+              if (!base_href_string.IsEmpty()) {
+                payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
+              } else {
+                payload->href = nullptr;
+              }
               auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
               auto pseudo_ns = pseudo_atom.ToNativeString();
               ctx->uiCommandBuffer()->AddCommand(UICommand::kSetPseudoStyle, std::move(pseudo_ns),
@@ -1356,9 +1366,19 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
           }
           for (unsigned i = 0; i < pseudo_set->PropertyCount(); ++i) {
             auto prop = pseudo_set->PropertyAt(i);
+            CSSPropertyID id = prop.Id();
+            if (id == CSSPropertyID::kInvalid) {
+              continue;
+            }
+            const auto* value_ptr = prop.Value();
+            if (!value_ptr || !(*value_ptr)) {
+              continue;
+            }
             AtomicString prop_name = prop.Name().ToAtomicString();
             String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
-            if (value_string.IsNull()) value_string = String("");
+            if (value_string.IsNull()) {
+              value_string = (*value_ptr)->CssTextForSerialization();
+            }
             String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
 
             auto key_ns = prop_name.ToStylePropertyNameNativeString();
@@ -1632,9 +1652,19 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
                                              el->bindingObject(), nullptr);
           for (unsigned i = 0; i < pseudo_set->PropertyCount(); ++i) {
             auto prop = pseudo_set->PropertyAt(i);
+            CSSPropertyID id = prop.Id();
+            if (id == CSSPropertyID::kInvalid) {
+              continue;
+            }
+            const auto* value_ptr = prop.Value();
+            if (!value_ptr || !(*value_ptr)) {
+              continue;
+            }
             AtomicString prop_name = prop.Name().ToAtomicString();
             String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
-            if (value_string.IsNull()) value_string = String("");
+            if (value_string.IsNull()) {
+              value_string = (*value_ptr)->CssTextForSerialization();
+            }
             String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
 
             auto key_ns = prop_name.ToStylePropertyNameNativeString();

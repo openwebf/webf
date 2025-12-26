@@ -707,6 +707,7 @@ class WebFState extends State<WebF> with RouteAware {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    widget.controller.updateTextSettingsFromContext(context);
     widget.controller.routeObserver?.subscribe(this, ModalRoute.of(context)!);
   }
 

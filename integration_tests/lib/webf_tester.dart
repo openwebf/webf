@@ -39,7 +39,7 @@ class _WebFTesterState extends State<WebFTester> {
         controllerName: 'tester',
         initialRoute: '/',
         createController: () => WebFController(
-            enableBlink: false || bool.fromEnvironment("WEBF_ENABLE_BLINK"),
+            enableBlink: true,
             viewportWidth: width,
             viewportHeight: height,
             onLoad: onLoad,

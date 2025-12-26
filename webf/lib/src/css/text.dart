@@ -8,6 +8,7 @@
  */
 
 import 'dart:ui' as ui;
+import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
@@ -55,6 +56,13 @@ enum FontVariantCapsSynthesis {
 // CSS Text Decoration: https://drafts.csswg.org/css-text-decor-3/
 // CSS Box Alignment: https://drafts.csswg.org/css-align/
 mixin CSSTextMixin on RenderStyle {
+  static FontWeight _effectiveFontWeight(CSSRenderStyle renderStyle) {
+    final FontWeight base = renderStyle.fontWeight;
+    if (!renderStyle.boldText) return base;
+    // Match Flutter's "boldText" accessibility behavior by forcing at least bold.
+    return base.index < FontWeight.w700.index ? FontWeight.w700 : base;
+  }
+
   bool get hasColor => _color != null;
 
   @override
@@ -669,19 +677,21 @@ mixin CSSTextMixin on RenderStyle {
         : (renderStyle.backgroundClip != CSSBackgroundBoundary.text ? color ?? renderStyle.color.value : null);
 
     final variant = CSSText.resolveFontFeaturesForVariant(renderStyle);
+    final FontWeight effectiveFontWeight = _effectiveFontWeight(renderStyle);
+    final double nonNegativeFontSize = math.max(0.0, renderStyle.fontSize.computedValue);
     TextStyle textStyle = TextStyle(
         color: effectiveColor,
         decoration: hidden ? TextDecoration.none : renderStyle.textDecorationLine,
         decorationColor: hidden ? const Color(0x00000000) : renderStyle.textDecorationColor?.value,
         decorationStyle: renderStyle.textDecorationStyle,
-        fontWeight: renderStyle.fontWeight,
+        fontWeight: effectiveFontWeight,
         fontStyle: renderStyle.fontStyle,
         fontFeatures: variant.features.isNotEmpty ? variant.features : null,
         fontFamily: (renderStyle.fontFamily != null && renderStyle.fontFamily!.isNotEmpty)
             ? renderStyle.fontFamily!.first
             : null,
         fontFamilyFallback: renderStyle.fontFamily,
-        fontSize: renderStyle.fontSize.computedValue,
+        fontSize: nonNegativeFontSize,
         letterSpacing: renderStyle.letterSpacing?.computedValue,
         wordSpacing: renderStyle.wordSpacing?.computedValue,
         shadows: renderStyle.textShadow,
@@ -706,7 +716,7 @@ mixin CSSTextMixin on RenderStyle {
     if (fontFamilies != null && fontFamilies.isNotEmpty) {
       String primaryFontFamily = fontFamilies[0];
       // Fire and forget - the font will be available for the next frame
-      CSSFontFace.ensureFontLoaded(primaryFontFamily, renderStyle.fontWeight, renderStyle);
+      CSSFontFace.ensureFontLoaded(primaryFontFamily, _effectiveFontWeight(renderStyle), renderStyle);
     }
 
     TextStyle textStyle = createTextStyle(renderStyle, height: height, color: color);
@@ -799,9 +809,10 @@ class CSSText {
   static bool supportsFontFeature(CSSRenderStyle renderStyle, String tag) {
     final List<String>? families = renderStyle.fontFamily;
     final String primary = (families != null && families.isNotEmpty) ? families.first : '';
+    final FontWeight effectiveWeight = CSSTextMixin._effectiveFontWeight(renderStyle);
     final _FontFeatureSupportKey key = _FontFeatureSupportKey(
       primaryFamily: primary,
-      weightIndex: renderStyle.fontWeight.index,
+      weightIndex: effectiveWeight.index,
       fontStyle: renderStyle.fontStyle,
       tag: tag,
     );
@@ -811,7 +822,7 @@ class CSSText {
 
     // Ensure primary font is requested before probing.
     if (primary.isNotEmpty) {
-      CSSFontFace.ensureFontLoaded(primary, renderStyle.fontWeight, renderStyle);
+      CSSFontFace.ensureFontLoaded(primary, effectiveWeight, renderStyle);
     }
 
     // Probe by measuring if enabling a feature changes layout metrics; when the
@@ -823,12 +834,13 @@ class CSSText {
           style: TextStyle(
             fontFamily: primary.isNotEmpty ? primary : null,
             fontFamilyFallback: families,
-            fontWeight: renderStyle.fontWeight,
+            fontWeight: effectiveWeight,
             fontStyle: renderStyle.fontStyle,
-            fontSize: renderStyle.fontSize.computedValue,
+            fontSize: math.max(0.0, renderStyle.fontSize.computedValue),
             fontFeatures: features,
           ),
         ),
+        textScaler: renderStyle.textScaler,
         textDirection: TextDirection.ltr,
       )..layout();
       return tp.size;
@@ -1174,6 +1186,11 @@ class CSSText {
         // If parsing failed, treat as invalid (ignore declaration).
         if (identical(parsed, CSSLengthValue.unknown)) {
           // Keep previous value unchanged (ignore invalid declaration).
+          return renderStyle.fontSize;
+        }
+        // Per CSS, font-size must be non-negative; negative <length>/<percentage> declarations are invalid and ignored.
+        // Keep calc() results as-is (including negative) for computed style queries; layout code must clamp.
+        if (parsed.calcValue == null && parsed.computedValue < 0) {
           return renderStyle.fontSize;
         }
         // Preserve calc() results (including negative) for computed style queries.

@@ -46,7 +46,10 @@ mixin ButtonElementState on WebFWidgetElementState {
 
   TextStyle get _buttonStyle => TextStyle(
         color: _buttonElement.renderStyle.color.value,
-        fontSize: _buttonElement.renderStyle.fontSize.computedValue,
+        fontSize: (() {
+          final double fs = _buttonElement.renderStyle.fontSize.computedValue;
+          return fs.isFinite && fs >= 0 ? fs : 0.0;
+        })(),
         fontWeight: _buttonElement.renderStyle.fontWeight,
         fontFamily: _buttonElement.renderStyle.fontFamily?.join(' '),
       );

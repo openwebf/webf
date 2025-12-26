@@ -15,7 +15,8 @@ import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/css.dart';
 
-typedef ScrollListener = void Function(double scrollOffset, AxisDirection axisDirection);
+typedef ScrollListener = void Function(
+    double scrollOffset, AxisDirection axisDirection);
 
 mixin RenderOverflowMixin on RenderBoxModelBase {
   static const double _kSemanticsScrollFactor = 0.8;
@@ -38,7 +39,9 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
 
     // The content of replaced elements is always trimmed to the content edge curve.
     // https://www.w3.org/TR/css-backgrounds-3/#corner-clipping
-    if (borderRadius != null && renderStyle.isSelfRenderReplaced() && renderStyle.aspectRatio != null) {
+    if (borderRadius != null &&
+        renderStyle.isSelfRenderReplaced() &&
+        renderStyle.aspectRatio != null) {
       return true;
     }
 
@@ -60,7 +63,9 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
 
     // The content of replaced elements is always trimmed to the content edge curve.
     // https://www.w3.org/TR/css-backgrounds-3/#corner-clipping
-    if (borderRadius != null && renderStyle.isSelfRenderReplaced() && renderStyle.aspectRatio != null) {
+    if (borderRadius != null &&
+        renderStyle.isSelfRenderReplaced() &&
+        renderStyle.aspectRatio != null) {
       return true;
     }
 
@@ -106,13 +111,18 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     // If scroll is happening, that element has been unmounted, prevent null usage.
     if (scrollOffsetX != null) {
       if (DebugFlags.debugLogScrollableEnabled) {
-        final double maxX = math.max(0.0, (_scrollableSize?.width ?? 0) - (_viewportSize?.width ?? 0));
-        renderingLogger.finer('[Overflow-Scroll] <${renderStyle.target.tagName.toLowerCase()}> X pixels='
+        final double maxX = math.max(
+            0.0, (_scrollableSize?.width ?? 0) - (_viewportSize?.width ?? 0));
+        renderingLogger.finer(
+            '[Overflow-Scroll] <${renderStyle.target.tagName.toLowerCase()}> X pixels='
             '${scrollOffsetX!.pixels.toStringAsFixed(2)} max=${maxX.toStringAsFixed(2)}');
       }
-      final AxisDirection dir = (renderStyle.direction == TextDirection.rtl) ? AxisDirection.left : AxisDirection.right;
+      final AxisDirection dir = (renderStyle.direction == TextDirection.rtl)
+          ? AxisDirection.left
+          : AxisDirection.right;
       scrollListener!(scrollOffsetX!.pixels, dir);
-      if (DebugFlags.debugLogSemanticsEnabled || DebugFlags.debugLogScrollableEnabled) {
+      if (DebugFlags.debugLogSemanticsEnabled ||
+          DebugFlags.debugLogScrollableEnabled) {
         debugPrint('[webf][a11y][scroll] ${renderStyle.target} '
             'scrollX=${scrollOffsetX!.pixels.toStringAsFixed(2)} '
             'viewport=${_viewportSize?.width.toStringAsFixed(1) ?? '?'} '
@@ -130,12 +140,15 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     assert(scrollListener != null);
     if (scrollOffsetY != null) {
       if (DebugFlags.debugLogScrollableEnabled) {
-        final double maxY = math.max(0.0, (_scrollableSize?.height ?? 0) - (_viewportSize?.height ?? 0));
-        renderingLogger.finer('[Overflow-Scroll] <${renderStyle.target.tagName.toLowerCase()}> Y pixels='
+        final double maxY = math.max(
+            0.0, (_scrollableSize?.height ?? 0) - (_viewportSize?.height ?? 0));
+        renderingLogger.finer(
+            '[Overflow-Scroll] <${renderStyle.target.tagName.toLowerCase()}> Y pixels='
             '${scrollOffsetY!.pixels.toStringAsFixed(2)} max=${maxY.toStringAsFixed(2)}');
       }
       scrollListener!(scrollOffsetY!.pixels, AxisDirection.down);
-      if (DebugFlags.debugLogSemanticsEnabled || DebugFlags.debugLogScrollableEnabled) {
+      if (DebugFlags.debugLogSemanticsEnabled ||
+          DebugFlags.debugLogScrollableEnabled) {
         debugPrint('[webf][a11y][scroll] ${renderStyle.target} '
             'scrollY=${scrollOffsetY!.pixels.toStringAsFixed(2)} '
             'viewport=${_viewportSize?.height.toStringAsFixed(1) ?? '?'} '
@@ -149,12 +162,14 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
 
   void _setUpScrollX() {
     _scrollOffsetX!.applyViewportDimension(_viewportSize!.width);
-    _scrollOffsetX!.applyContentDimensions(0.0, math.max(0.0, _scrollableSize!.width - _viewportSize!.width));
+    _scrollOffsetX!.applyContentDimensions(
+        0.0, math.max(0.0, _scrollableSize!.width - _viewportSize!.width));
   }
 
   void _setUpScrollY() {
     _scrollOffsetY!.applyViewportDimension(_viewportSize!.height);
-    _scrollOffsetY!.applyContentDimensions(0.0, math.max(0.0, _scrollableSize!.height - _viewportSize!.height));
+    _scrollOffsetY!.applyContentDimensions(
+        0.0, math.max(0.0, _scrollableSize!.height - _viewportSize!.height));
   }
 
   void setUpOverflowScroller(Size scrollableSize, Size viewportSize) {
@@ -182,13 +197,15 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       el.updateStickyOffsets();
     } catch (_) {}
   }
+
   double get _paintOffsetX {
     if (_scrollOffsetX == null) return 0.0;
     // Compute logical left-edge position within the scrollable content.
     // LTR: logical distance from left is the raw pixels.
     // RTL: logical distance from left is (maxScroll - pixels) so that
     // an initial pixels=0 aligns the visual viewport to the right edge.
-    final double maxScroll = math.max(0.0, (_scrollableSize?.width ?? 0) - (_viewportSize?.width ?? 0));
+    final double maxScroll = math.max(
+        0.0, (_scrollableSize?.width ?? 0) - (_viewportSize?.width ?? 0));
     final double logicalLeft = (renderStyle.direction == TextDirection.rtl)
         ? (maxScroll - _scrollOffsetX!.pixels)
         : _scrollOffsetX!.pixels;
@@ -215,13 +232,20 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   }
 
   bool _shouldClipAtPaintOffset(Offset paintOffset, Size childSize) {
-    return paintOffset < Offset.zero || !(Offset.zero & size).contains((paintOffset & childSize).bottomRight);
+    return paintOffset < Offset.zero ||
+        !(Offset.zero & size).contains((paintOffset & childSize).bottomRight);
   }
 
-  final LayerHandle<ClipRRectLayer> _clipRRectLayer = LayerHandle<ClipRRectLayer>();
-  final LayerHandle<ClipRectLayer> _clipRectLayer = LayerHandle<ClipRectLayer>();
+  final LayerHandle<ClipRRectLayer> _clipRRectLayer =
+      LayerHandle<ClipRRectLayer>();
+  final LayerHandle<ClipRectLayer> _clipRectLayer =
+      LayerHandle<ClipRectLayer>();
 
-  void paintOverflow(PaintingContext context, Offset offset, EdgeInsets borderEdge, CSSBoxDecoration? decoration,
+  void paintOverflow(
+      PaintingContext context,
+      Offset offset,
+      EdgeInsets borderEdge,
+      CSSBoxDecoration? decoration,
       PaintingContextCallback callback) {
     if (clipX == false && clipY == false) return callback(context, offset);
 
@@ -236,7 +260,8 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
         );
     if (_shouldClipAtPaintOffset(paintOffset, size)) {
       // ignore: prefer_function_declarations_over_variables
-      PaintingContextCallback painter = (PaintingContext context, Offset offset) {
+      PaintingContextCallback painter =
+          (PaintingContext context, Offset offset) {
         callback(context, offset + paintOffset);
       };
 
@@ -254,7 +279,8 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
         double? borderTop = renderStyle.borderTopWidth?.computedValue;
         // The content of overflow is trimmed to the padding edge curve.
         // https://www.w3.org/TR/css-backgrounds-3/#corner-clipping
-        RRect clipRRect = borderTop != null ? borderRRect.deflate(borderTop) : borderRRect;
+        RRect clipRRect =
+            borderTop != null ? borderRRect.deflate(borderTop) : borderRRect;
 
         // The content of replaced elements is trimmed to the content edge curve.
         if (renderStyle.isSelfRenderReplaced()) {
@@ -265,15 +291,18 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
         if (DebugFlags.enableBorderRadiusLogs) {
           try {
             final el = renderStyle.target;
-            renderingLogger.finer('[BorderRadius] overflow clip <${el.tagName.toLowerCase()}> clipRect=${clipRect.size} '
+            renderingLogger.finer(
+                '[BorderRadius] overflow clip <${el.tagName.toLowerCase()}> clipRect=${clipRect.size} '
                 'tl=(${clipRRect.tlRadiusX.toStringAsFixed(2)},${clipRRect.tlRadiusY.toStringAsFixed(2)})');
           } catch (_) {}
         }
-        _clipRRectLayer.layer = context.pushClipRRect(needsCompositing, offset, clipRect, clipRRect, painter,
+        _clipRRectLayer.layer = context.pushClipRRect(
+            needsCompositing, offset, clipRect, clipRRect, painter,
             oldLayer: _clipRRectLayer.layer);
       } else {
-        _clipRectLayer.layer =
-            context.pushClipRect(needsCompositing, offset, clipRect, painter, oldLayer: _clipRectLayer.layer);
+        _clipRectLayer.layer = context.pushClipRect(
+            needsCompositing, offset, clipRect, painter,
+            oldLayer: _clipRectLayer.layer);
       }
     } else {
       _clipRectLayer.layer = null;
@@ -283,15 +312,19 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   }
 
   // For position fixed render box, should reduce the outer scroll offsets.
-  void applyPositionFixedPaintTransform(RenderBoxModel child, Matrix4 transform) {
-    Offset totalScrollOffset = child.getTotalScrollOffset();
-    transform.translate(totalScrollOffset.dx, totalScrollOffset.dy);
+  void applyPositionFixedPaintTransform(
+      RenderBoxModel child, Matrix4 transform) {
+    // Keep `applyPaintTransform` in sync with the scroll-compensation applied in
+    // RenderBoxModel.paintBoxModel.
+    final Offset o = child.getFixedScrollCompensation();
+    if (o.dx != 0.0 || o.dy != 0.0) transform.translate(o.dx, o.dy);
   }
 
   void applyOverflowPaintTransform(RenderBox child, Matrix4 transform) {
     final Offset paintOffset = Offset(_paintOffsetX, _paintOffsetY);
 
-    if (child is RenderBoxModel && child.renderStyle.position == CSSPositionType.fixed) {
+    if (child is RenderBoxModel &&
+        child.renderStyle.position == CSSPositionType.fixed) {
       applyPositionFixedPaintTransform(child, transform);
     }
 
@@ -322,11 +355,13 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     final Size? viewport = _viewportSize;
     final Size? content = _scrollableSize;
 
-    final bool xScrollable = (overflowX == CSSOverflowType.scroll || overflowX == CSSOverflowType.auto) &&
+    final bool xScrollable = (overflowX == CSSOverflowType.scroll ||
+            overflowX == CSSOverflowType.auto) &&
         scrollOffsetX != null &&
         viewport != null &&
         content != null;
-    final bool yScrollable = (overflowY == CSSOverflowType.scroll || overflowY == CSSOverflowType.auto) &&
+    final bool yScrollable = (overflowY == CSSOverflowType.scroll ||
+            overflowY == CSSOverflowType.auto) &&
         scrollOffsetY != null &&
         viewport != null &&
         content != null;
@@ -335,8 +370,10 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       return super.describeSemanticsClip(child);
     }
 
-    final double maxX = xScrollable ? math.max(0.0, content.width - viewport.width) : 0.0;
-    final double maxY = yScrollable ? math.max(0.0, content.height - viewport.height) : 0.0;
+    final double maxX =
+        xScrollable ? math.max(0.0, content.width - viewport.width) : 0.0;
+    final double maxY =
+        yScrollable ? math.max(0.0, content.height - viewport.height) : 0.0;
 
     final Rect bounds = semanticBounds;
     if (maxX == 0.0 && maxY == 0.0) {
@@ -381,10 +418,12 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     final CSSOverflowType overflowX = renderStyle.effectiveOverflowX;
     final CSSOverflowType overflowY = renderStyle.effectiveOverflowY;
 
-    final bool xScrollable =
-        (overflowX == CSSOverflowType.scroll || overflowX == CSSOverflowType.auto) && scrollOffsetX != null;
-    final bool yScrollable =
-        (overflowY == CSSOverflowType.scroll || overflowY == CSSOverflowType.auto) && scrollOffsetY != null;
+    final bool xScrollable = (overflowX == CSSOverflowType.scroll ||
+            overflowX == CSSOverflowType.auto) &&
+        scrollOffsetX != null;
+    final bool yScrollable = (overflowY == CSSOverflowType.scroll ||
+            overflowY == CSSOverflowType.auto) &&
+        scrollOffsetY != null;
 
     if (!xScrollable && !yScrollable) {
       return;
@@ -421,7 +460,8 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       config.scrollChildCount = renderStyle.target.childNodes.length;
     } catch (_) {}
 
-    final bool canScroll = (yScrollable && maxY > 0.0) || (xScrollable && maxX > 0.0);
+    final bool canScroll =
+        (yScrollable && maxY > 0.0) || (xScrollable && maxX > 0.0);
     if (!canScroll) {
       return;
     }
@@ -467,21 +507,26 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   }
 
   @override
-  void assembleSemanticsNode(SemanticsNode node, SemanticsConfiguration config, Iterable<SemanticsNode> children) {
+  void assembleSemanticsNode(SemanticsNode node, SemanticsConfiguration config,
+      Iterable<SemanticsNode> children) {
     final CSSOverflowType overflowX = renderStyle.effectiveOverflowX;
     final CSSOverflowType overflowY = renderStyle.effectiveOverflowY;
 
-    final bool xScrollable =
-        (overflowX == CSSOverflowType.scroll || overflowX == CSSOverflowType.auto) && scrollOffsetX != null;
-    final bool yScrollable =
-        (overflowY == CSSOverflowType.scroll || overflowY == CSSOverflowType.auto) && scrollOffsetY != null;
+    final bool xScrollable = (overflowX == CSSOverflowType.scroll ||
+            overflowX == CSSOverflowType.auto) &&
+        scrollOffsetX != null;
+    final bool yScrollable = (overflowY == CSSOverflowType.scroll ||
+            overflowY == CSSOverflowType.auto) &&
+        scrollOffsetY != null;
 
     if (!xScrollable && !yScrollable) {
       super.assembleSemanticsNode(node, config, children);
       return;
     }
 
-    final List<SemanticsNode> childList = children is List<SemanticsNode> ? children : children.toList(growable: false);
+    final List<SemanticsNode> childList = children is List<SemanticsNode>
+        ? children
+        : children.toList(growable: false);
 
     int? firstVisibleIndex;
     for (final SemanticsNode child in childList) {
@@ -505,19 +550,26 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     final CSSOverflowType overflowX = renderStyle.effectiveOverflowX;
     final CSSOverflowType overflowY = renderStyle.effectiveOverflowY;
 
-    final bool xScrollable =
-        (overflowX == CSSOverflowType.scroll || overflowX == CSSOverflowType.auto) && scrollOffsetX != null;
-    final bool yScrollable =
-        (overflowY == CSSOverflowType.scroll || overflowY == CSSOverflowType.auto) && scrollOffsetY != null;
+    final bool xScrollable = (overflowX == CSSOverflowType.scroll ||
+            overflowX == CSSOverflowType.auto) &&
+        scrollOffsetX != null;
+    final bool yScrollable = (overflowY == CSSOverflowType.scroll ||
+            overflowY == CSSOverflowType.auto) &&
+        scrollOffsetY != null;
 
-    if ((!xScrollable && !yScrollable) || !hasSize || descendant == null || descendant is! RenderBox) {
-      return super.showOnScreen(descendant: descendant, rect: rect, duration: duration, curve: curve);
+    if ((!xScrollable && !yScrollable) ||
+        !hasSize ||
+        descendant == null ||
+        descendant is! RenderBox) {
+      return super.showOnScreen(
+          descendant: descendant, rect: rect, duration: duration, curve: curve);
     }
 
     final Size? viewport = _viewportSize;
     final Size? content = _scrollableSize;
     if (viewport == null || content == null) {
-      return super.showOnScreen(descendant: descendant, rect: rect, duration: duration, curve: curve);
+      return super.showOnScreen(
+          descendant: descendant, rect: rect, duration: duration, curve: curve);
     }
 
     final Rect targetRect = rect ?? descendant.paintBounds;
@@ -536,7 +588,8 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       if (duration == Duration.zero) {
         scrollOffsetY!.jumpTo(targetScrollTop);
       } else {
-        scrollOffsetY!.animateTo(targetScrollTop, duration: duration, curve: curve);
+        scrollOffsetY!
+            .animateTo(targetScrollTop, duration: duration, curve: curve);
       }
     }
 
@@ -545,7 +598,9 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       double targetScrollLeft = scrollLeft;
 
       final AxisDirection axisDirectionX =
-          (renderStyle.direction == TextDirection.rtl) ? AxisDirection.left : AxisDirection.right;
+          (renderStyle.direction == TextDirection.rtl)
+              ? AxisDirection.left
+              : AxisDirection.right;
 
       switch (axisDirectionX) {
         case AxisDirection.right:
@@ -571,17 +626,24 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       if (duration == Duration.zero) {
         scrollOffsetX!.jumpTo(targetScrollLeft);
       } else {
-        scrollOffsetX!.animateTo(targetScrollLeft, duration: duration, curve: curve);
+        scrollOffsetX!
+            .animateTo(targetScrollLeft, duration: duration, curve: curve);
       }
     }
 
     // Let ancestors handle any additional scrolling (e.g. nested scroll views).
-    super.showOnScreen(descendant: this as RenderObject, rect: null, duration: duration, curve: curve);
+    super.showOnScreen(
+        descendant: this as RenderObject,
+        rect: null,
+        duration: duration,
+        curve: curve);
   }
 
   void debugOverflowProperties(DiagnosticPropertiesBuilder properties) {
-    if (_scrollableSize != null) properties.add(DiagnosticsProperty('scrollableSize', _scrollableSize));
-    if (_viewportSize != null) properties.add(DiagnosticsProperty('viewportSize', _viewportSize));
+    if (_scrollableSize != null)
+      properties.add(DiagnosticsProperty('scrollableSize', _scrollableSize));
+    if (_viewportSize != null)
+      properties.add(DiagnosticsProperty('viewportSize', _viewportSize));
     properties.add(DiagnosticsProperty('clipX', clipX));
     properties.add(DiagnosticsProperty('clipY', clipY));
   }

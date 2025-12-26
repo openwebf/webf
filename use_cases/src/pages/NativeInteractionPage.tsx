@@ -180,7 +180,7 @@ export const NativeInteractionPage: React.FC = () => {
     <div id="main">
       <WebFListView className={styles.list}>
         <div className={styles.componentSection}>
-          <div className={styles.sectionTitle}>Native Interaction Showcase</div>
+          <div className={styles.sectionTitle}>WebF Share Module</div>
           <div className={styles.componentBlock}>
 
 

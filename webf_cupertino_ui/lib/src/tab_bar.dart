@@ -3,7 +3,6 @@
  * Licensed under the Apache License, Version 2.0.
  */
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show BottomNavigationBarItem;
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/dom.dart' as dom;
@@ -29,10 +28,14 @@ class FlutterCupertinoTabBar extends WidgetElement {
         final parsed = int.tryParse(value);
         if (parsed != null && parsed != _currentIndex) {
           _currentIndex = parsed;
-          state?.setState(() {
-            final s = state as FlutterCupertinoTabBarState?;
-            if (s != null) s.currentIndex = _currentIndex;
-          });
+          final s = state;
+          if (s != null) {
+            s.requestUpdateState(() {
+              s.currentIndex = _currentIndex;
+            });
+          } else {
+            state?.requestUpdateState(() {});
+          }
         }
       },
     );

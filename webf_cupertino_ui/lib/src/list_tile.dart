@@ -66,16 +66,9 @@ class FlutterCupertinoListTileState extends WebFWidgetElementState {
   FlutterCupertinoListTile get widgetElement =>
       super.widgetElement as FlutterCupertinoListTile;
 
-  Widget? _buildSlotChild<T>() {
-    for (final node in widgetElement.childNodes) {
-      if (node is T) {
-        if (node is dom.Node) {
-          final widget = node.toWidget();
-          if (widget != null) {
-            return WebFWidgetElementChild(child: widget);
-          }
-        }
-      }
+  Widget? _buildSlotChild<T extends dom.Node>() {
+    for (final node in widgetElement.childNodes.whereType<T>()) {
+      return WebFWidgetElementChild(child: node.toWidget());
     }
     return null;
   }
@@ -90,10 +83,7 @@ class FlutterCupertinoListTileState extends WebFWidgetElementState {
           node is FlutterCupertinoListTileTrailing) {
         continue;
       }
-      final widget = node.toWidget();
-      if (widget != null) {
-        children.add(WebFWidgetElementChild(child: widget));
-      }
+      children.add(WebFWidgetElementChild(child: node.toWidget()));
     }
 
     if (children.isEmpty) {

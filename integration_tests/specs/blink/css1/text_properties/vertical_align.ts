@@ -115,9 +115,8 @@ SMALL {font-size: 12pt;}
       </p>
     `;
 
-      await snapshot(2);
-
-
+      await waitForFrame();
+      await snapshot(1);
 
       window.scroll(0, 500);
 

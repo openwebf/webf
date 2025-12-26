@@ -19,7 +19,8 @@ import 'package:webf/src/foundation/positioned_layout_logging.dart';
 // RenderPositionHolder may be affected by overflow: scroller offset.
 // We need to reset these offset to keep positioned elements render at their original position.
 // @NOTE: Attention that renderObjects in tree may not all subtype of RenderBoxModel, use `is` to identify.
-Offset? _getRenderPositionHolderScrollOffset(RenderPositionPlaceholder holder, RenderObject root) {
+Offset? _getRenderPositionHolderScrollOffset(
+    RenderPositionPlaceholder holder, RenderObject root) {
   RenderObject? current = holder.parent;
   while (current != null && current != root) {
     if (current is RenderBoxModel) {
@@ -33,15 +34,17 @@ Offset? _getRenderPositionHolderScrollOffset(RenderPositionPlaceholder holder, R
 }
 
 // Get the offset of the RenderPlaceholder of positioned element to its parent RenderBoxModel.
-Offset _getPlaceholderToParentOffset(RenderPositionPlaceholder? placeholder, RenderBoxModel parent,
+Offset _getPlaceholderToParentOffset(
+    RenderPositionPlaceholder? placeholder, RenderBoxModel parent,
     {bool excludeScrollOffset = false}) {
   if (placeholder == null || !placeholder.attached) {
     return Offset.zero;
   }
-  Offset positionHolderScrollOffset = _getRenderPositionHolderScrollOffset(placeholder, parent) ?? Offset.zero;
+  Offset positionHolderScrollOffset =
+      _getRenderPositionHolderScrollOffset(placeholder, parent) ?? Offset.zero;
   // Offset of positioned element should exclude scroll offset to its containing block.
-  Offset toParentOffset =
-      placeholder.getOffsetToAncestor(Offset.zero, parent, excludeScrollOffset: excludeScrollOffset);
+  Offset toParentOffset = placeholder.getOffsetToAncestor(Offset.zero, parent,
+      excludeScrollOffset: excludeScrollOffset);
   Offset placeholderOffset = positionHolderScrollOffset + toParentOffset;
 
   return placeholderOffset;
@@ -106,7 +109,8 @@ class CSSPositionedLayout {
   }
 
   static void applyRelativeOffset(Offset? relativeOffset, RenderBox renderBox) {
-    RenderLayoutParentData? boxParentData = renderBox.parentData as RenderLayoutParentData?;
+    RenderLayoutParentData? boxParentData =
+        renderBox.parentData as RenderLayoutParentData?;
 
     if (boxParentData != null) {
       Offset? styleOffset;
@@ -117,7 +121,8 @@ class CSSPositionedLayout {
 
       if (relativeOffset != null) {
         if (styleOffset != null) {
-          boxParentData.offset = relativeOffset.translate(styleOffset.dx, styleOffset.dy);
+          boxParentData.offset =
+              relativeOffset.translate(styleOffset.dx, styleOffset.dy);
         } else {
           boxParentData.offset = relativeOffset;
         }
@@ -136,7 +141,8 @@ class CSSPositionedLayout {
             renderStyle.right.isNotAuto);
   }
 
-  static void layoutPositionedChild(RenderBoxModel parent, RenderBoxModel child, {bool needsRelayout = false}) {
+  static void layoutPositionedChild(RenderBoxModel parent, RenderBoxModel child,
+      {bool needsRelayout = false}) {
     BoxConstraints childConstraints = child.getConstraints();
 
     // For absolutely/fixed positioned non-replaced elements with both top and bottom specified
@@ -146,7 +152,8 @@ class CSSPositionedLayout {
     // overlays to stretch with the container height. Do this only when there are no explicit
     // min/max height constraints so we don't override author-specified clamping (e.g., max-height).
     final CSSRenderStyle rs = child.renderStyle;
-    final bool isAbsOrFixed = rs.position == CSSPositionType.absolute || rs.position == CSSPositionType.fixed;
+    final bool isAbsOrFixed = rs.position == CSSPositionType.absolute ||
+        rs.position == CSSPositionType.fixed;
     final bool hasExplicitMaxHeight = !rs.maxHeight.isNone;
     final bool hasExplicitMinHeight = !rs.minHeight.isAuto;
     if (isAbsOrFixed &&
@@ -192,16 +199,21 @@ class CSSPositionedLayout {
     RenderBoxModel parent,
     RenderBoxModel child,
   ) {
-    RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+    RenderLayoutParentData childParentData =
+        child.parentData as RenderLayoutParentData;
     Size size = child.boxSize!;
     Size parentSize = parent.boxSize!;
 
     RenderStyle parentRenderStyle = parent.renderStyle;
 
-    CSSLengthValue parentBorderLeftWidth = parentRenderStyle.effectiveBorderLeftWidth;
-    CSSLengthValue parentBorderRightWidth = parentRenderStyle.effectiveBorderRightWidth;
-    CSSLengthValue parentBorderTopWidth = parentRenderStyle.effectiveBorderTopWidth;
-    CSSLengthValue parentBorderBottomWidth = parentRenderStyle.effectiveBorderBottomWidth;
+    CSSLengthValue parentBorderLeftWidth =
+        parentRenderStyle.effectiveBorderLeftWidth;
+    CSSLengthValue parentBorderRightWidth =
+        parentRenderStyle.effectiveBorderRightWidth;
+    CSSLengthValue parentBorderTopWidth =
+        parentRenderStyle.effectiveBorderTopWidth;
+    CSSLengthValue parentBorderBottomWidth =
+        parentRenderStyle.effectiveBorderBottomWidth;
     CSSLengthValue parentPaddingLeft = parentRenderStyle.paddingLeft;
     CSSLengthValue parentPaddingTop = parentRenderStyle.paddingTop;
 
@@ -209,8 +221,12 @@ class CSSPositionedLayout {
     // Thus the final offset of child need to add the border of parent.
     // https://www.w3.org/TR/css-position-3/#def-cb
     Size containingBlockSize = Size(
-        parentSize.width - parentBorderLeftWidth.computedValue - parentBorderRightWidth.computedValue,
-        parentSize.height - parentBorderTopWidth.computedValue - parentBorderBottomWidth.computedValue);
+        parentSize.width -
+            parentBorderLeftWidth.computedValue -
+            parentBorderRightWidth.computedValue,
+        parentSize.height -
+            parentBorderTopWidth.computedValue -
+            parentBorderBottomWidth.computedValue);
 
     CSSRenderStyle childRenderStyle = child.renderStyle;
     CSSLengthValue left = childRenderStyle.left;
@@ -231,9 +247,13 @@ class CSSPositionedLayout {
     // The static position of positioned element is its offset when its position property had been static
     // which equals to the position of its placeholder renderBox.
     // https://www.w3.org/TR/CSS2/visudet.html#static-position
-    RenderPositionPlaceholder? ph = child.renderStyle.getSelfPositionPlaceHolder();
+    RenderPositionPlaceholder? ph =
+        child.renderStyle.getSelfPositionPlaceHolder();
+    final bool excludeScrollOffset =
+        child.renderStyle.position != CSSPositionType.fixed ||
+            !child.isFixedToViewport;
     Offset staticPositionOffset = _getPlaceholderToParentOffset(ph, parent,
-        excludeScrollOffset: child.renderStyle.position != CSSPositionType.fixed);
+        excludeScrollOffset: excludeScrollOffset);
 
     try {
       final pTag = parent.renderStyle.target.tagName.toLowerCase();
@@ -244,7 +264,8 @@ class CSSPositionedLayout {
       PositionedLayoutLog.log(
         impl: PositionedImpl.layout,
         feature: PositionedFeature.staticPosition,
-        message: () => '<$cTag> static from placeholder: raw=${phOff == null ? 'null' : '${phOff.dx.toStringAsFixed(2)},${phOff.dy.toStringAsFixed(2)}'} '
+        message: () =>
+            '<$cTag> static from placeholder: raw=${phOff == null ? 'null' : '${phOff.dx.toStringAsFixed(2)},${phOff.dy.toStringAsFixed(2)}'} '
             'toParent=${staticPositionOffset.dx.toStringAsFixed(2)},${staticPositionOffset.dy.toStringAsFixed(2)} parent=<$pTag>',
       );
     } catch (_) {}
@@ -253,14 +274,18 @@ class CSSPositionedLayout {
     try {
       final cTag = child.renderStyle.target.tagName.toLowerCase();
       final dispSpec = child.renderStyle.display.toString().split('.').last;
-      final dispEff = child.renderStyle.effectiveDisplay.toString().split('.').last;
+      final dispEff =
+          child.renderStyle.effectiveDisplay.toString().split('.').last;
       final posType = child.renderStyle.position.toString().split('.').last;
       final phParent = ph == null ? 'null' : ph.parent.runtimeType.toString();
-      final bool phInIFC = ph != null && ph.parent is RenderFlowLayout && (ph.parent as RenderFlowLayout).establishIFC;
+      final bool phInIFC = ph != null &&
+          ph.parent is RenderFlowLayout &&
+          (ph.parent as RenderFlowLayout).establishIFC;
       PositionedLayoutLog.log(
         impl: PositionedImpl.layout,
         feature: PositionedFeature.staticPosition,
-        message: () => 'context <$cTag> pos=$posType disp(spec=$dispSpec, eff=$dispEff) '
+        message: () =>
+            'context <$cTag> pos=$posType disp(spec=$dispSpec, eff=$dispEff) '
             'parentIsDocRoot=${parent.isDocumentRootBox} phParent=$phParent phInIFC=$phInIFC',
       );
     } catch (_) {}
@@ -268,20 +293,19 @@ class CSSPositionedLayout {
     // Ensure static position accuracy for W3C compliance
     // W3C requires static position to represent where element would be in normal flow
     Offset adjustedStaticPosition = _ensureAccurateStaticPosition(
-      staticPositionOffset,
-      child,
-      parent,
-      left,
-      right,
-      top,
-      bottom,
-      parentBorderLeftWidth,
-      parentBorderRightWidth,
-      parentBorderTopWidth,
-      parentBorderBottomWidth,
-      parentPaddingLeft,
-      parentPaddingTop
-    );
+        staticPositionOffset,
+        child,
+        parent,
+        left,
+        right,
+        top,
+        bottom,
+        parentBorderLeftWidth,
+        parentBorderRightWidth,
+        parentBorderTopWidth,
+        parentBorderBottomWidth,
+        parentPaddingLeft,
+        parentPaddingTop);
 
     // Inline static-position correction (horizontal): when the placeholder sits inside
     // an IFC container (e.g., text followed by abspos inline), align the static X to the
@@ -305,11 +329,12 @@ class CSSPositionedLayout {
         // Use specified display (not effective) to avoid misclassifying inline elements
         // that are out-of-flow as block.
         final CSSDisplay childDisp = child.renderStyle.display;
-        final bool childIsBlockLike = (childDisp == CSSDisplay.block || childDisp == CSSDisplay.flex);
+        final bool childIsBlockLike =
+            (childDisp == CSSDisplay.block || childDisp == CSSDisplay.flex);
         // Base content-left inset inside the IFC container
         final double contentLeftInset =
             flowParent.renderStyle.effectiveBorderLeftWidth.computedValue +
-            flowParent.renderStyle.paddingLeft.computedValue;
+                flowParent.renderStyle.paddingLeft.computedValue;
         if (!childIsBlockLike) {
           // Use IFC-provided inline advance; when unavailable (e.g., empty inline), keep 0.
           double inlineAdvance = flowParent.inlineAdvanceBefore(ph);
@@ -317,20 +342,25 @@ class CSSPositionedLayout {
             PositionedLayoutLog.log(
               impl: PositionedImpl.layout,
               feature: PositionedFeature.staticPosition,
-              message: () => 'IFC inline advance (non-root inline)=${inlineAdvance.toStringAsFixed(2)}',
+              message: () =>
+                  'IFC inline advance (non-root inline)=${inlineAdvance.toStringAsFixed(2)}',
             );
           } catch (_) {}
           if (inlineAdvance == 0.0) {
             // Fallback: if placeholder is appended after inline content within this IFC container,
             // use the paragraph visual max line width as the preceding inline advance.
-            final bool hasPrecedingInline = _hasInlineContentBeforePlaceholder(flowParent, ph);
-            if (hasPrecedingInline && flowParent.inlineFormattingContext != null) {
-              inlineAdvance = flowParent.inlineFormattingContext!.paragraphVisualMaxLineWidth;
+            final bool hasPrecedingInline =
+                _hasInlineContentBeforePlaceholder(flowParent, ph);
+            if (hasPrecedingInline &&
+                flowParent.inlineFormattingContext != null) {
+              inlineAdvance = flowParent
+                  .inlineFormattingContext!.paragraphVisualMaxLineWidth;
               try {
                 PositionedLayoutLog.log(
                   impl: PositionedImpl.layout,
                   feature: PositionedFeature.staticPosition,
-                  message: () => 'fallback inline advance by paragraph width =${inlineAdvance.toStringAsFixed(2)}',
+                  message: () =>
+                      'fallback inline advance by paragraph width =${inlineAdvance.toStringAsFixed(2)}',
                 );
               } catch (_) {}
             }
@@ -339,11 +369,16 @@ class CSSPositionedLayout {
           // since the horizontal insets equation will use the static position as 'left' and a
           // percentage width that fills the containing block; browsers effectively align such
           // overlays at the content-left (no inline advance).
-          final bool widthIsPercentage = child.renderStyle.width.type == CSSLengthType.PERCENTAGE;
+          final bool widthIsPercentage =
+              child.renderStyle.width.type == CSSLengthType.PERCENTAGE;
           final double effAdvance = widthIsPercentage ? 0.0 : inlineAdvance;
           // Compute flow content-left in CB space and add inline advance.
-          final Offset phToFlow = _getPlaceholderToParentOffset(ph, flowParent, excludeScrollOffset: true);
-          final double targetX = staticPositionOffset.dx - phToFlow.dx + contentLeftInset + effAdvance;
+          final Offset phToFlow = _getPlaceholderToParentOffset(ph, flowParent,
+              excludeScrollOffset: true);
+          final double targetX = staticPositionOffset.dx -
+              phToFlow.dx +
+              contentLeftInset +
+              effAdvance;
           adjustedStaticPosition = Offset(targetX, adjustedStaticPosition.dy);
           try {
             PositionedLayoutLog.log(
@@ -358,9 +393,11 @@ class CSSPositionedLayout {
           // Vertical: when both top and bottom are auto, align to the IFC container's
           // content-top in CB coordinates so the abspos sits at the top of the line box.
           if (top.isAuto && bottom.isAuto) {
-            final double contentTopInset = flowParent.renderStyle.paddingTop.computedValue +
+            final double contentTopInset = flowParent
+                    .renderStyle.paddingTop.computedValue +
                 flowParent.renderStyle.effectiveBorderTopWidth.computedValue;
-            final double targetY = staticPositionOffset.dy - phToFlow.dy + contentTopInset;
+            final double targetY =
+                staticPositionOffset.dy - phToFlow.dy + contentTopInset;
             adjustedStaticPosition = Offset(adjustedStaticPosition.dx, targetY);
             try {
               PositionedLayoutLog.log(
@@ -374,14 +411,18 @@ class CSSPositionedLayout {
         } else {
           // Block-level hypothetical box: anchor to flow content-left in CB space.
           if (contentLeftInset != 0.0) {
-            final Offset phToFlow = _getPlaceholderToParentOffset(ph, flowParent, excludeScrollOffset: true);
-            final double targetX = staticPositionOffset.dx - phToFlow.dx + contentLeftInset;
+            final Offset phToFlow = _getPlaceholderToParentOffset(
+                ph, flowParent,
+                excludeScrollOffset: true);
+            final double targetX =
+                staticPositionOffset.dx - phToFlow.dx + contentLeftInset;
             adjustedStaticPosition = Offset(targetX, adjustedStaticPosition.dy);
             try {
               PositionedLayoutLog.log(
                 impl: PositionedImpl.layout,
                 feature: PositionedFeature.staticPosition,
-                message: () => 'adjust static pos by IFC content-left for block '
+                message: () =>
+                    'adjust static pos by IFC content-left for block '
                     'contentLeft=${contentLeftInset.toStringAsFixed(2)} '
                     '→ (${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})',
               );
@@ -391,16 +432,19 @@ class CSSPositionedLayout {
           // AND there is preceding inline content before the placeholder.
           if (top.isAuto && bottom.isAuto) {
             // Determine preceding inline by structural scan when width sums are unavailable.
-            final bool hasPrecedingInline = _hasInlineContentBeforePlaceholder(flowParent, ph);
+            final bool hasPrecedingInline =
+                _hasInlineContentBeforePlaceholder(flowParent, ph);
             try {
               PositionedLayoutLog.log(
                 impl: PositionedImpl.layout,
                 feature: PositionedFeature.staticPosition,
-                message: () => 'non-root IFC block: hasPrecedingInline=$hasPrecedingInline',
+                message: () =>
+                    'non-root IFC block: hasPrecedingInline=$hasPrecedingInline',
               );
             } catch (_) {}
             if (hasPrecedingInline) {
-              final InlineFormattingContext? ifc = flowParent.inlineFormattingContext;
+              final InlineFormattingContext? ifc =
+                  flowParent.inlineFormattingContext;
               if (ifc != null) {
                 double paraH;
                 final lines = ifc.paragraphLineMetrics;
@@ -410,15 +454,17 @@ class CSSPositionedLayout {
                   paraH = ifc.paragraph?.height ?? 0.0;
                 }
                 if (paraH != 0.0 && adjustedStaticPosition.dy.abs() < 0.5) {
-                  adjustedStaticPosition = adjustedStaticPosition.translate(0, paraH);
+                  adjustedStaticPosition =
+                      adjustedStaticPosition.translate(0, paraH);
                   try {
-                  PositionedLayoutLog.log(
-                    impl: PositionedImpl.layout,
-                    feature: PositionedFeature.staticPosition,
-                    message: () => 'adjust static pos by IFC paragraph height for block '
-                        'lines=${lines.length} h=${paraH.toStringAsFixed(2)} '
-                        '→ (${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})',
-                  );
+                    PositionedLayoutLog.log(
+                      impl: PositionedImpl.layout,
+                      feature: PositionedFeature.staticPosition,
+                      message: () =>
+                          'adjust static pos by IFC paragraph height for block '
+                          'lines=${lines.length} h=${paraH.toStringAsFixed(2)} '
+                          '→ (${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})',
+                    );
                   } catch (_) {}
                 }
               }
@@ -431,10 +477,12 @@ class CSSPositionedLayout {
         // the line box where the placeholder sits (top of the first line).
         if (top.isAuto && bottom.isAuto) {
           final double padTop = flowParent.renderStyle.paddingTop.computedValue;
-          final double borderTop = flowParent.renderStyle.effectiveBorderTopWidth.computedValue;
+          final double borderTop =
+              flowParent.renderStyle.effectiveBorderTopWidth.computedValue;
           final double contentTopInset = padTop + borderTop;
           if (contentTopInset != 0.0 && adjustedStaticPosition.dy.abs() < 0.5) {
-            adjustedStaticPosition = adjustedStaticPosition.translate(0, contentTopInset);
+            adjustedStaticPosition =
+                adjustedStaticPosition.translate(0, contentTopInset);
             try {
               PositionedLayoutLog.log(
                 impl: PositionedImpl.layout,
@@ -461,10 +509,10 @@ class CSSPositionedLayout {
       if (phParent is RenderBoxModel) {
         final RenderBoxModel phContainer = phParent;
         final RenderStyle cStyle = phContainer.renderStyle;
-        final bool qualifiesBFC =
-            cStyle.isLayoutBox() &&
+        final bool qualifiesBFC = cStyle.isLayoutBox() &&
             cStyle.effectiveDisplay == CSSDisplay.block &&
-            (cStyle.effectiveOverflowY == CSSOverflowType.visible || cStyle.effectiveOverflowY == CSSOverflowType.clip) &&
+            (cStyle.effectiveOverflowY == CSSOverflowType.visible ||
+                cStyle.effectiveOverflowY == CSSOverflowType.clip) &&
             cStyle.paddingTop.computedValue == 0 &&
             cStyle.effectiveBorderTopWidth.computedValue == 0;
 
@@ -475,14 +523,17 @@ class CSSPositionedLayout {
         if (qualifiesBFC && isFirstChild) {
           final RenderBoxModel? firstFlow = _resolveNextInFlowSiblingModel(ph);
           if (firstFlow != null) {
-            final double childTopIgnoringParent = firstFlow.renderStyle.collapsedMarginTopIgnoringParent;
+            final double childTopIgnoringParent =
+                firstFlow.renderStyle.collapsedMarginTopIgnoringParent;
             if (childTopIgnoringParent != 0) {
-              adjustedStaticPosition = adjustedStaticPosition.translate(0, childTopIgnoringParent);
+              adjustedStaticPosition =
+                  adjustedStaticPosition.translate(0, childTopIgnoringParent);
               try {
                 PositionedLayoutLog.log(
                   impl: PositionedImpl.layout,
                   feature: PositionedFeature.staticPosition,
-                  message: () => 'adjust static pos by first in-flow child top(${childTopIgnoringParent.toStringAsFixed(2)}) '
+                  message: () =>
+                      'adjust static pos by first in-flow child top(${childTopIgnoringParent.toStringAsFixed(2)}) '
                       '→ (${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})',
                 );
               } catch (_) {}
@@ -513,32 +564,40 @@ class CSSPositionedLayout {
           // Base inset: content-left inside the IFC container
           final double contentLeftInset =
               flowParent.renderStyle.effectiveBorderLeftWidth.computedValue +
-              flowParent.renderStyle.paddingLeft.computedValue;
+                  flowParent.renderStyle.paddingLeft.computedValue;
           // Under document root, honor block-level vs inline-level behavior:
           // - Block/flex: anchor to content-left only (x = content-left), no vertical shift.
           // - Inline-level: add horizontal inline advance before placeholder.
           // Use the specified display for block-vs-inline determination; effectiveDisplay
           // is normalized for out-of-flow and may not reflect original block-vs-inline.
           final CSSDisplay childDispSpecified = child.renderStyle.display;
-          final bool childIsBlockLike = (childDispSpecified == CSSDisplay.block || childDispSpecified == CSSDisplay.flex);
+          final bool childIsBlockLike =
+              (childDispSpecified == CSSDisplay.block ||
+                  childDispSpecified == CSSDisplay.flex);
           try {
             PositionedLayoutLog.log(
               impl: PositionedImpl.layout,
               feature: PositionedFeature.staticPosition,
-              message: () => 'doc-root IFC path: dispSpecified=${childDispSpecified.toString().split('.').last} '
+              message: () =>
+                  'doc-root IFC path: dispSpecified=${childDispSpecified.toString().split('.').last} '
                   'blockLike=$childIsBlockLike contentLeft=${contentLeftInset.toStringAsFixed(2)}',
             );
           } catch (_) {}
           if (childIsBlockLike) {
             if (contentLeftInset != 0.0) {
-              final Offset phToFlow = _getPlaceholderToParentOffset(ph, flowParent, excludeScrollOffset: true);
-              final double targetX = staticPositionOffset.dx - phToFlow.dx + contentLeftInset;
-              adjustedStaticPosition = Offset(targetX, adjustedStaticPosition.dy);
+              final Offset phToFlow = _getPlaceholderToParentOffset(
+                  ph, flowParent,
+                  excludeScrollOffset: true);
+              final double targetX =
+                  staticPositionOffset.dx - phToFlow.dx + contentLeftInset;
+              adjustedStaticPosition =
+                  Offset(targetX, adjustedStaticPosition.dy);
               try {
                 PositionedLayoutLog.log(
                   impl: PositionedImpl.layout,
                   feature: PositionedFeature.staticPosition,
-                  message: () => 'adjust static pos under root by IFC content-left for block '
+                  message: () =>
+                      'adjust static pos under root by IFC content-left for block '
                       'contentLeft=${contentLeftInset.toStringAsFixed(2)} '
                       '→ (${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})',
                 );
@@ -546,31 +605,37 @@ class CSSPositionedLayout {
             }
             // Vertical: if preceded by inline, move to the next line (add paragraph height).
             if (top.isAuto && bottom.isAuto) {
-              final bool hasPrecedingInline = _hasInlineContentBeforePlaceholder(flowParent, ph);
+              final bool hasPrecedingInline =
+                  _hasInlineContentBeforePlaceholder(flowParent, ph);
               try {
                 PositionedLayoutLog.log(
                   impl: PositionedImpl.layout,
                   feature: PositionedFeature.staticPosition,
-                  message: () => 'doc-root IFC block: hasPrecedingInline=$hasPrecedingInline',
+                  message: () =>
+                      'doc-root IFC block: hasPrecedingInline=$hasPrecedingInline',
                 );
               } catch (_) {}
               if (hasPrecedingInline) {
-                final InlineFormattingContext? ifc = flowParent.inlineFormattingContext;
+                final InlineFormattingContext? ifc =
+                    flowParent.inlineFormattingContext;
                 if (ifc != null) {
                   double paraH;
                   final lines = ifc.paragraphLineMetrics;
                   if (lines.isNotEmpty) {
-                    paraH = lines.fold<double>(0.0, (sum, lm) => sum + lm.height);
+                    paraH =
+                        lines.fold<double>(0.0, (sum, lm) => sum + lm.height);
                   } else {
                     paraH = ifc.paragraph?.height ?? 0.0;
                   }
                   if (paraH != 0.0) {
-                    adjustedStaticPosition = adjustedStaticPosition.translate(0, paraH);
+                    adjustedStaticPosition =
+                        adjustedStaticPosition.translate(0, paraH);
                     try {
                       PositionedLayoutLog.log(
                         impl: PositionedImpl.layout,
                         feature: PositionedFeature.staticPosition,
-                        message: () => 'adjust static pos under root by IFC paragraph height for block '
+                        message: () =>
+                            'adjust static pos under root by IFC paragraph height for block '
                             'lines=${lines.length} '
                             'h=${paraH.toStringAsFixed(2)} '
                             '→ (${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})',
@@ -586,32 +651,44 @@ class CSSPositionedLayout {
               PositionedLayoutLog.log(
                 impl: PositionedImpl.layout,
                 feature: PositionedFeature.staticPosition,
-                message: () => 'inline-level under root: inlineAdvance=${inlineAdvance.toStringAsFixed(2)}',
+                message: () =>
+                    'inline-level under root: inlineAdvance=${inlineAdvance.toStringAsFixed(2)}',
               );
             } catch (_) {}
             if (inlineAdvance == 0.0) {
-              final bool hasPrecedingInline = _hasInlineContentBeforePlaceholder(flowParent, ph);
-              if (hasPrecedingInline && flowParent.inlineFormattingContext != null) {
-                inlineAdvance = flowParent.inlineFormattingContext!.paragraphVisualMaxLineWidth;
+              final bool hasPrecedingInline =
+                  _hasInlineContentBeforePlaceholder(flowParent, ph);
+              if (hasPrecedingInline &&
+                  flowParent.inlineFormattingContext != null) {
+                inlineAdvance = flowParent
+                    .inlineFormattingContext!.paragraphVisualMaxLineWidth;
                 try {
                   PositionedLayoutLog.log(
                     impl: PositionedImpl.layout,
                     feature: PositionedFeature.staticPosition,
-                    message: () => 'fallback inline advance under root by paragraph width =${inlineAdvance.toStringAsFixed(2)}',
+                    message: () =>
+                        'fallback inline advance under root by paragraph width =${inlineAdvance.toStringAsFixed(2)}',
                   );
                 } catch (_) {}
               }
             }
-            final bool widthIsPercentage = child.renderStyle.width.type == CSSLengthType.PERCENTAGE;
+            final bool widthIsPercentage =
+                child.renderStyle.width.type == CSSLengthType.PERCENTAGE;
             final double effAdvance = widthIsPercentage ? 0.0 : inlineAdvance;
-            final Offset phToFlow = _getPlaceholderToParentOffset(ph, flowParent, excludeScrollOffset: true);
-            final double targetX = staticPositionOffset.dx - phToFlow.dx + contentLeftInset + effAdvance;
+            final Offset phToFlow = _getPlaceholderToParentOffset(
+                ph, flowParent,
+                excludeScrollOffset: true);
+            final double targetX = staticPositionOffset.dx -
+                phToFlow.dx +
+                contentLeftInset +
+                effAdvance;
             adjustedStaticPosition = Offset(targetX, adjustedStaticPosition.dy);
             try {
               PositionedLayoutLog.log(
                 impl: PositionedImpl.layout,
                 feature: PositionedFeature.staticPosition,
-                message: () => 'adjust static pos under root by IFC inline advance '
+                message: () =>
+                    'adjust static pos under root by IFC inline advance '
                     'contentLeft=${contentLeftInset.toStringAsFixed(2)} '
                     'advance=${effAdvance.toStringAsFixed(2)} '
                     '→ (${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})',
@@ -626,7 +703,8 @@ class CSSPositionedLayout {
       PositionedLayoutLog.log(
         impl: PositionedImpl.layout,
         feature: PositionedFeature.staticPosition,
-        message: () => 'adjusted static pos = (${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})',
+        message: () =>
+            'adjusted static pos = (${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})',
       );
     } catch (_) {}
 
@@ -638,7 +716,23 @@ class CSSPositionedLayout {
     // ScrollTop and scrollLeft will be added to offset of renderBox in the paint stage
     // for positioned fixed element.
     if (childRenderStyle.position == CSSPositionType.fixed) {
-      Offset scrollOffset = child.getTotalScrollOffset();
+      Offset scrollOffset = Offset.zero;
+      if (child.isFixedToViewport) {
+        // Viewport-fixed: compensate all ancestor scroll offsets so the element
+        // stays anchored to the viewport.
+        scrollOffset = child.getTotalScrollOffset();
+      } else {
+        // Non-viewport fixed (e.g. fixed-position containing block via `transform`):
+        // compensate only the containing block's own scrolling so the element
+        // stays anchored within that containing block.
+        final cbElement =
+            child.renderStyle.target.holderAttachedContainingBlockElement;
+        final cbRenderer = cbElement?.attachedRenderer;
+        if (cbRenderer is RenderBoxModel) {
+          scrollOffset = Offset(cbRenderer.scrollLeft, cbRenderer.scrollTop);
+        }
+      }
+
       child.additionalPaintOffsetX = scrollOffset.dx;
       child.additionalPaintOffsetY = scrollOffset.dy;
       try {
@@ -657,7 +751,7 @@ class CSSPositionedLayout {
     // computed from the padding edge must exclude border and padding for alignment.
     final bool parentIsScrollContainer =
         parent.renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
-        parent.renderStyle.effectiveOverflowY != CSSOverflowType.visible;
+            parent.renderStyle.effectiveOverflowY != CSSOverflowType.visible;
 
     // Determine direction for resolving 'auto' horizontal insets: use the
     // direction of the element establishing the static-position containing block
@@ -708,7 +802,8 @@ class CSSPositionedLayout {
       PositionedLayoutLog.log(
         impl: PositionedImpl.layout,
         feature: PositionedFeature.offsets,
-        message: () => 'compute offset for <${child.renderStyle.target.tagName.toLowerCase()}>'
+        message: () =>
+            'compute offset for <${child.renderStyle.target.tagName.toLowerCase()}>'
             ' dir=$dir parentScroll=$parentIsScrollContainer left=${left.cssText()} right=${right.cssText()} '
             'top=${top.cssText()} bottom=${bottom.cssText()} → (${x.toStringAsFixed(2)},${y.toStringAsFixed(2)})',
       );
@@ -721,7 +816,8 @@ class CSSPositionedLayout {
     bool placedWrapper = false;
     final RenderObject? directParent = child.parent;
     if (directParent is RenderEventListener) {
-      final RenderLayoutParentData pd = directParent.parentData as RenderLayoutParentData;
+      final RenderLayoutParentData pd =
+          directParent.parentData as RenderLayoutParentData;
       pd.offset = finalOffset;
       placedWrapper = true;
     }
@@ -732,7 +828,8 @@ class CSSPositionedLayout {
     // Diagnostics: compute instantaneous on-screen right edge and parent bounds to detect overflow.
     try {
       // Parent padding-right edge in parent's border-box coordinate space.
-      final double parentPadRightX = parent.boxSize!.width - parentBorderRightWidth.computedValue;
+      final double parentPadRightX =
+          parent.boxSize!.width - parentBorderRightWidth.computedValue;
       // Child transform translation applied at paint time.
       final Matrix4 eff = child.renderStyle.effectiveTransformMatrix;
       final Vector3 tr = eff.getTranslation();
@@ -741,7 +838,8 @@ class CSSPositionedLayout {
       PositionedLayoutLog.log(
         impl: PositionedImpl.layout,
         feature: PositionedFeature.offsets,
-        message: () => 'bounds check: childRight=${rightEdgeX.toStringAsFixed(2)} '
+        message: () =>
+            'bounds check: childRight=${rightEdgeX.toStringAsFixed(2)} '
             'parentPadRight=${parentPadRightX.toStringAsFixed(2)} '
             'overflowX=${(rightEdgeX - parentPadRightX).toStringAsFixed(2)}',
       );
@@ -751,7 +849,8 @@ class CSSPositionedLayout {
       PositionedLayoutLog.log(
         impl: PositionedImpl.layout,
         feature: PositionedFeature.offsets,
-        message: () => 'apply offset final=(${finalOffset.dx.toStringAsFixed(2)},${finalOffset.dy.toStringAsFixed(2)}) '
+        message: () =>
+            'apply offset final=(${finalOffset.dx.toStringAsFixed(2)},${finalOffset.dy.toStringAsFixed(2)}) '
             'from x=${x.toStringAsFixed(2)} y=${y.toStringAsFixed(2)} ancestor=(${ancestorOffset.dx.toStringAsFixed(2)},${ancestorOffset.dy.toStringAsFixed(2)})',
       );
     } catch (_) {}
@@ -760,11 +859,15 @@ class CSSPositionedLayout {
   // Apply sticky paint-time offset based on scroll position of nearest scroll container.
   // The child must already be laid out and have its base (un-stuck) layout offset set
   // to its static position within the containing block (done in applyPositionedChildOffset for sticky).
-  static void applyStickyChildOffset(RenderBoxModel parent, RenderBoxModel child, {RenderBoxModel? scrollContainer}) {
+  static void applyStickyChildOffset(
+      RenderBoxModel parent, RenderBoxModel child,
+      {RenderBoxModel? scrollContainer}) {
     if (child.renderStyle.position != CSSPositionType.sticky) return;
 
     // Identify the scroll container that constrains stickiness.
-    RenderBoxModel? scroller = scrollContainer ?? _nearestScrollContainer(parent) ?? _nearestScrollContainer(child);
+    RenderBoxModel? scroller = scrollContainer ??
+        _nearestScrollContainer(parent) ??
+        _nearestScrollContainer(child);
 
     // Use zero scroll if no container; sticky behaves like relative.
     final double scrollTop = scroller?.scrollTop ?? 0.0;
@@ -780,10 +883,12 @@ class CSSPositionedLayout {
     Offset baseInScroller = Offset.zero;
     if (scroller != null) {
       try {
-        baseInScroller = child.getOffsetToAncestor(Offset.zero, scroller, excludeScrollOffset: true);
+        baseInScroller = child.getOffsetToAncestor(Offset.zero, scroller,
+            excludeScrollOffset: true);
       } catch (_) {
         // Fallback to local parent offset if transform fails; better than nothing.
-        final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+        final RenderLayoutParentData pd =
+            child.parentData as RenderLayoutParentData;
         baseInScroller = pd.offset;
       }
     }
@@ -792,16 +897,22 @@ class CSSPositionedLayout {
     final double childW = child.boxSize?.width ?? child.size.width;
     final double childH = child.boxSize?.height ?? child.size.height;
     final CSSRenderStyle? scrollerStyle = scroller?.renderStyle;
-    final double scrollerPaddingLeft = scrollerStyle?.paddingLeft.computedValue ?? 0.0;
-    final double scrollerPaddingRight = scrollerStyle?.paddingRight.computedValue ?? 0.0;
-    final double scrollerPaddingTop = scrollerStyle?.paddingTop.computedValue ?? 0.0;
-    final double scrollerPaddingBottom = scrollerStyle?.paddingBottom.computedValue ?? 0.0;
+    final double scrollerPaddingLeft =
+        scrollerStyle?.paddingLeft.computedValue ?? 0.0;
+    final double scrollerPaddingRight =
+        scrollerStyle?.paddingRight.computedValue ?? 0.0;
+    final double scrollerPaddingTop =
+        scrollerStyle?.paddingTop.computedValue ?? 0.0;
+    final double scrollerPaddingBottom =
+        scrollerStyle?.paddingBottom.computedValue ?? 0.0;
 
     // Debug: entering sticky computation summary
     try {
       final String cTag = rs.target.tagName.toLowerCase();
       final String pTag = parent.renderStyle.target.tagName.toLowerCase();
-      final String sTag = scroller != null ? scroller.renderStyle.target.tagName.toLowerCase() : 'none';
+      final String sTag = scroller != null
+          ? scroller.renderStyle.target.tagName.toLowerCase()
+          : 'none';
       PositionedLayoutLog.log(
         impl: PositionedImpl.layout,
         feature: PositionedFeature.sticky,
@@ -825,7 +936,8 @@ class CSSPositionedLayout {
       PositionedLayoutLog.log(
         impl: PositionedImpl.layout,
         feature: PositionedFeature.sticky,
-        message: () => 'nat=(${natX.toStringAsFixed(2)},${natY.toStringAsFixed(2)}) desired(init)='
+        message: () =>
+            'nat=(${natX.toStringAsFixed(2)},${natY.toStringAsFixed(2)}) desired(init)='
             '(${desiredX.toStringAsFixed(2)},${desiredY.toStringAsFixed(2)})',
       );
     } catch (_) {}
@@ -834,7 +946,6 @@ class CSSPositionedLayout {
     // unchanged until it crosses the specified threshold relative to the
     // viewport (or the containing block bounds). Insets participate only as
     // constraints below via clamping, which matches browser behavior.
-
 
     // Apply vertical stickiness constraints relative to the viewport.
     if (rs.top.isNotAuto || rs.bottom.isNotAuto) {
@@ -848,7 +959,8 @@ class CSSPositionedLayout {
             PositionedLayoutLog.log(
               impl: PositionedImpl.layout,
               feature: PositionedFeature.sticky,
-              message: () => 'viewportY top inset=${topLimit.toStringAsFixed(2)} natY=${natY.toStringAsFixed(2)} '
+              message: () =>
+                  'viewportY top inset=${topLimit.toStringAsFixed(2)} natY=${natY.toStringAsFixed(2)} '
                   'desired: ${before.toStringAsFixed(2)} → ${desiredY.toStringAsFixed(2)}',
             );
           } catch (_) {}
@@ -858,9 +970,11 @@ class CSSPositionedLayout {
         // bottom-sticky appears at the viewport bottom at rest. For scroller parents, only clamp
         // when at least partially visible to avoid premature snapping.
         if (rs.bottom.isNotAuto) {
-          final double bottomInset = rs.bottom.computedValue + scrollerPaddingBottom;
+          final double bottomInset =
+              rs.bottom.computedValue + scrollerPaddingBottom;
           final double maxY = viewport.height - bottomInset - childH;
-          final bool parentIsScrollerForViewport = (scroller != null) && identical(parent, scroller);
+          final bool parentIsScrollerForViewport =
+              (scroller != null) && identical(parent, scroller);
           final bool isPartiallyVisible = natY < viewport.height;
           final double before = desiredY;
           if (natY > maxY) {
@@ -872,7 +986,8 @@ class CSSPositionedLayout {
             PositionedLayoutLog.log(
               impl: PositionedImpl.layout,
               feature: PositionedFeature.sticky,
-              message: () => 'viewportY bottom inset=${bottomInset.toStringAsFixed(2)} '
+              message: () =>
+                  'viewportY bottom inset=${bottomInset.toStringAsFixed(2)} '
                   'maxY=${maxY.toStringAsFixed(2)} natY=${natY.toStringAsFixed(2)} '
                   'parentIsScroller=$parentIsScrollerForViewport partiallyVisible=$isPartiallyVisible '
                   'desired: ${before.toStringAsFixed(2)} → ${desiredY.toStringAsFixed(2)}',
@@ -893,22 +1008,26 @@ class CSSPositionedLayout {
             PositionedLayoutLog.log(
               impl: PositionedImpl.layout,
               feature: PositionedFeature.sticky,
-              message: () => 'viewportX left inset=${leftLimit.toStringAsFixed(2)} natX=${natX.toStringAsFixed(2)} '
+              message: () =>
+                  'viewportX left inset=${leftLimit.toStringAsFixed(2)} natX=${natX.toStringAsFixed(2)} '
                   'desired: ${before.toStringAsFixed(2)} → ${desiredX.toStringAsFixed(2)}',
             );
           } catch (_) {}
         }
         if (rs.right.isNotAuto) {
-          final double rightInset = rs.right.computedValue + scrollerPaddingRight;
+          final double rightInset =
+              rs.right.computedValue + scrollerPaddingRight;
           final double maxX = viewport.width - rightInset - childW;
           final bool isPartiallyVisibleX = natX < viewport.width;
           final double before = desiredX;
-          if (isPartiallyVisibleX && natX > maxX) desiredX = math.min(desiredX, maxX);
+          if (isPartiallyVisibleX && natX > maxX)
+            desiredX = math.min(desiredX, maxX);
           try {
             PositionedLayoutLog.log(
               impl: PositionedImpl.layout,
               feature: PositionedFeature.sticky,
-              message: () => 'viewportX right inset=${rightInset.toStringAsFixed(2)} maxX=${maxX.toStringAsFixed(2)} '
+              message: () =>
+                  'viewportX right inset=${rightInset.toStringAsFixed(2)} maxX=${maxX.toStringAsFixed(2)} '
                   'natX=${natX.toStringAsFixed(2)} partiallyVisible=$isPartiallyVisibleX '
                   'desired: ${before.toStringAsFixed(2)} → ${desiredX.toStringAsFixed(2)}',
             );
@@ -922,12 +1041,20 @@ class CSSPositionedLayout {
     // the scroller's coordinate space.
     if (parent.attached && scroller != null && parent.boxSize != null) {
       try {
-        final Offset parentToScroller = parent.getOffsetToAncestor(Offset.zero, scroller, excludeScrollOffset: true);
+        final Offset parentToScroller = parent.getOffsetToAncestor(
+            Offset.zero, scroller,
+            excludeScrollOffset: true);
         final CSSRenderStyle p = parent.renderStyle;
-        final double padLeftEdgeS = parentToScroller.dx + p.effectiveBorderLeftWidth.computedValue;
-        final double padTopEdgeS = parentToScroller.dy + p.effectiveBorderTopWidth.computedValue;
-        final double padRightEdgeS = parentToScroller.dx + parent.boxSize!.width - p.effectiveBorderRightWidth.computedValue;
-        final double padBottomEdgeS = parentToScroller.dy + parent.boxSize!.height - p.effectiveBorderBottomWidth.computedValue;
+        final double padLeftEdgeS =
+            parentToScroller.dx + p.effectiveBorderLeftWidth.computedValue;
+        final double padTopEdgeS =
+            parentToScroller.dy + p.effectiveBorderTopWidth.computedValue;
+        final double padRightEdgeS = parentToScroller.dx +
+            parent.boxSize!.width -
+            p.effectiveBorderRightWidth.computedValue;
+        final double padBottomEdgeS = parentToScroller.dy +
+            parent.boxSize!.height -
+            p.effectiveBorderBottomWidth.computedValue;
 
         // Convert parent padding edges to viewport coordinates.
         // When the parent IS the scroller, its padding box does not move relative to its
@@ -945,8 +1072,16 @@ class CSSPositionedLayout {
           // in the same coordinate space as natX/natY (which already excludes the scroller's borders).
           padLeftEdgeV = 0.0;
           padTopEdgeV = 0.0;
-          padRightEdgeV = viewport.width.isFinite ? viewport.width : (parent.boxSize!.width - p.effectiveBorderLeftWidth.computedValue - p.effectiveBorderRightWidth.computedValue);
-          padBottomEdgeV = viewport.height.isFinite ? viewport.height : (parent.boxSize!.height - p.effectiveBorderTopWidth.computedValue - p.effectiveBorderBottomWidth.computedValue);
+          padRightEdgeV = viewport.width.isFinite
+              ? viewport.width
+              : (parent.boxSize!.width -
+                  p.effectiveBorderLeftWidth.computedValue -
+                  p.effectiveBorderRightWidth.computedValue);
+          padBottomEdgeV = viewport.height.isFinite
+              ? viewport.height
+              : (parent.boxSize!.height -
+                  p.effectiveBorderTopWidth.computedValue -
+                  p.effectiveBorderBottomWidth.computedValue);
         } else {
           // For non-scroller parents, transform the parent's padding edges into the scroller's viewport space.
           padLeftEdgeV = padLeftEdgeS - scrollLeft;
@@ -962,21 +1097,35 @@ class CSSPositionedLayout {
         // scrollable overflow, clamp to the container bounds so the sticky remains visible.
         final bool topOnly = rs.top.isNotAuto && !rs.bottom.isNotAuto;
         final bool leftOnly = rs.left.isNotAuto && !rs.right.isNotAuto;
-        final bool canScrollY = parent.scrollableSize.height - parent.scrollableViewportSize.height > 0.5;
-        final bool canScrollX = parent.scrollableSize.width - parent.scrollableViewportSize.width > 0.5;
+        final bool canScrollY = parent.scrollableSize.height -
+                parent.scrollableViewportSize.height >
+            0.5;
+        final bool canScrollX =
+            parent.scrollableSize.width - parent.scrollableViewportSize.width >
+                0.5;
         final double clampTopInset = rs.top.computedValue + scrollerPaddingTop;
-        final double clampLeftInset = rs.left.computedValue + scrollerPaddingLeft;
-        final bool suppressYClampInitially = parentIsScroller && topOnly && viewport.height.isFinite &&
-            (clampTopInset > (padBottomEdgeV - padTopEdgeV - childH)) && scrollTop == 0.0 && canScrollY;
-        final bool suppressXClampInitially = parentIsScroller && leftOnly && viewport.width.isFinite &&
-            (clampLeftInset > (padRightEdgeV - padLeftEdgeV - childW)) && scrollLeft == 0.0 && canScrollX;
+        final double clampLeftInset =
+            rs.left.computedValue + scrollerPaddingLeft;
+        final bool suppressYClampInitially = parentIsScroller &&
+            topOnly &&
+            viewport.height.isFinite &&
+            (clampTopInset > (padBottomEdgeV - padTopEdgeV - childH)) &&
+            scrollTop == 0.0 &&
+            canScrollY;
+        final bool suppressXClampInitially = parentIsScroller &&
+            leftOnly &&
+            viewport.width.isFinite &&
+            (clampLeftInset > (padRightEdgeV - padLeftEdgeV - childW)) &&
+            scrollLeft == 0.0 &&
+            canScrollX;
 
         // Debug: suppression flags for initial clamp when parent is the scroller
         try {
           PositionedLayoutLog.log(
             impl: PositionedImpl.layout,
             feature: PositionedFeature.sticky,
-            message: () => 'parentIsScroller=$parentIsScroller canScrollY=$canScrollY canScrollX=$canScrollX '
+            message: () =>
+                'parentIsScroller=$parentIsScroller canScrollY=$canScrollY canScrollX=$canScrollX '
                 'suppressYClampInitially=$suppressYClampInitially suppressXClampInitially=$suppressXClampInitially',
           );
         } catch (_) {}
@@ -994,7 +1143,8 @@ class CSSPositionedLayout {
           PositionedLayoutLog.log(
             impl: PositionedImpl.layout,
             feature: PositionedFeature.sticky,
-            message: () => 'parentBoundsV left=${padLeftEdgeV.toStringAsFixed(2)} top=${padTopEdgeV.toStringAsFixed(2)} '
+            message: () =>
+                'parentBoundsV left=${padLeftEdgeV.toStringAsFixed(2)} top=${padTopEdgeV.toStringAsFixed(2)} '
                 'right=${padRightEdgeV.toStringAsFixed(2)} bottom=${padBottomEdgeV.toStringAsFixed(2)} '
                 'Xbounds=[${minXBound.toStringAsFixed(2)},${maxXBound.toStringAsFixed(2)}] '
                 'Ybounds=[${minYBound.toStringAsFixed(2)},${maxYBound.toStringAsFixed(2)}]',
@@ -1011,7 +1161,8 @@ class CSSPositionedLayout {
             PositionedLayoutLog.log(
               impl: PositionedImpl.layout,
               feature: PositionedFeature.sticky,
-              message: () => 'parentClampX desired: ${before.toStringAsFixed(2)} → ${desiredX.toStringAsFixed(2)}',
+              message: () =>
+                  'parentClampX desired: ${before.toStringAsFixed(2)} → ${desiredX.toStringAsFixed(2)}',
             );
           } catch (_) {}
         }
@@ -1022,7 +1173,8 @@ class CSSPositionedLayout {
             PositionedLayoutLog.log(
               impl: PositionedImpl.layout,
               feature: PositionedFeature.sticky,
-              message: () => 'parentClampY desired: ${before.toStringAsFixed(2)} → ${desiredY.toStringAsFixed(2)}',
+              message: () =>
+                  'parentClampY desired: ${before.toStringAsFixed(2)} → ${desiredY.toStringAsFixed(2)}',
             );
           } catch (_) {}
         }
@@ -1057,21 +1209,26 @@ class CSSPositionedLayout {
 
   // Resolve the next in-flow block-level RenderBoxModel sibling after a placeholder.
   // Skips wrappers (RenderEventListener) and ignores other placeholders.
-  static RenderBoxModel? _resolveNextInFlowSiblingModel(RenderPositionPlaceholder ph) {
+  static RenderBoxModel? _resolveNextInFlowSiblingModel(
+      RenderPositionPlaceholder ph) {
     RenderObject? current = ph;
     // Move to next sibling in the parent's child list
     if (ph.parentData is! RenderLayoutParentData) return null;
-    RenderObject? next = (ph.parentData as RenderLayoutParentData).nextSibling as RenderObject?;
+    RenderObject? next =
+        (ph.parentData as RenderLayoutParentData).nextSibling as RenderObject?;
     while (next != null) {
       if (next is RenderPositionPlaceholder) {
         // Skip other placeholders
         current = next;
-        next = (next.parentData as RenderLayoutParentData?)?.nextSibling as RenderObject?;
+        next = (next.parentData as RenderLayoutParentData?)?.nextSibling
+            as RenderObject?;
         continue;
       }
       if (next is RenderBoxModel) {
         final rs = next.renderStyle;
-        if ((rs.effectiveDisplay == CSSDisplay.block || rs.effectiveDisplay == CSSDisplay.flex) && !rs.isSelfPositioned()) {
+        if ((rs.effectiveDisplay == CSSDisplay.block ||
+                rs.effectiveDisplay == CSSDisplay.flex) &&
+            !rs.isSelfPositioned()) {
           return next;
         }
       }
@@ -1079,24 +1236,29 @@ class CSSPositionedLayout {
         final RenderBox? inner = next.child;
         if (inner is RenderBoxModel) {
           final rs = inner.renderStyle;
-          if ((rs.effectiveDisplay == CSSDisplay.block || rs.effectiveDisplay == CSSDisplay.flex) && !rs.isSelfPositioned()) {
+          if ((rs.effectiveDisplay == CSSDisplay.block ||
+                  rs.effectiveDisplay == CSSDisplay.flex) &&
+              !rs.isSelfPositioned()) {
             return inner;
           }
         }
       }
       // Fallback: advance to subsequent sibling
       current = next;
-      next = (current.parentData as RenderLayoutParentData?)?.nextSibling as RenderObject?;
+      next = (current.parentData as RenderLayoutParentData?)?.nextSibling
+          as RenderObject?;
     }
     return null;
   }
 
   // Heuristic: detect if there is any inline text content before the placeholder within an IFC container.
-  static bool _hasInlineContentBeforePlaceholder(RenderFlowLayout flowParent, RenderPositionPlaceholder ph) {
+  static bool _hasInlineContentBeforePlaceholder(
+      RenderFlowLayout flowParent, RenderPositionPlaceholder ph) {
     RenderBox? child = flowParent.firstChild;
     while (child != null && child != ph) {
       if (_containsInlineText(child)) return true;
-      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+      final RenderLayoutParentData pd =
+          child.parentData as RenderLayoutParentData;
       child = pd.nextSibling;
     }
     return false;
@@ -1116,7 +1278,8 @@ class CSSPositionedLayout {
       RenderBox? c = node.firstChild;
       while (c != null) {
         if (_containsInlineText(c, depth + 1)) return true;
-        final RenderLayoutParentData pd = c.parentData as RenderLayoutParentData;
+        final RenderLayoutParentData pd =
+            c.parentData as RenderLayoutParentData;
         c = pd.nextSibling;
       }
       return false;
@@ -1159,14 +1322,20 @@ class CSSPositionedLayout {
       if (axis == Axis.horizontal && containerDirection == TextDirection.rtl) {
         // Resolve right = staticPosition → compute left offset accordingly.
         // left = contentLeft + (CB width - width - staticPosition)
-        final double leftFromContent = containingBlockLength - length - staticPosition;
-        offset = parentBorderBeforeWidth.computedValue + leftFromContent + marginBefore.computedValue;
+        final double leftFromContent =
+            containingBlockLength - length - staticPosition;
+        offset = parentBorderBeforeWidth.computedValue +
+            leftFromContent +
+            marginBefore.computedValue;
       } else {
         offset = staticPosition;
       }
     } else {
       if (insetBefore.isNotAuto && insetAfter.isNotAuto) {
-        double freeSpace = containingBlockLength - length - insetBefore.computedValue - insetAfter.computedValue;
+        double freeSpace = containingBlockLength -
+            length -
+            insetBefore.computedValue -
+            insetAfter.computedValue;
         double marginBeforeValue;
 
         if (marginBefore.isAuto && marginAfter.isAuto) {
@@ -1199,7 +1368,9 @@ class CSSPositionedLayout {
           // Use specified margin-left in this case.
           marginBeforeValue = marginBefore.computedValue;
         }
-        offset = parentBorderBeforeWidth.computedValue + insetBefore.computedValue + marginBeforeValue;
+        offset = parentBorderBeforeWidth.computedValue +
+            insetBefore.computedValue +
+            marginBeforeValue;
       } else if (insetBefore.isAuto && insetAfter.isNotAuto) {
         // If left/top is auto, width/height and right/bottom are not auto, then solve for left/top.
         // For vertical axis with bottom specified, we need to calculate position from the bottom edge
@@ -1208,18 +1379,24 @@ class CSSPositionedLayout {
             insetAfter.computedValue -
             marginBefore.computedValue -
             marginAfter.computedValue;
-        offset = parentBorderBeforeWidth.computedValue + insetBeforeValue + marginBefore.computedValue;
+        offset = parentBorderBeforeWidth.computedValue +
+            insetBeforeValue +
+            marginBefore.computedValue;
       } else {
         // If right/bottom is auto, left/top and width/height are not auto, then solve for right/bottom.
         // Offsets are measured from the padding edge; relative to the parent's border edge, add border + inset.
         // Do NOT add parentPaddingBefore here; 'left/top' is already relative to the padding edge.
-        offset = parentBorderBeforeWidth.computedValue + insetBefore.computedValue + marginBefore.computedValue;
+        offset = parentBorderBeforeWidth.computedValue +
+            insetBefore.computedValue +
+            marginBefore.computedValue;
       }
 
       // Convert position relative to scrolling content box.
       // Scrolling content box positions relative to the content edge of its parent.
       if (isParentScrollingContentBox) {
-        offset = offset - parentBorderBeforeWidth.computedValue - parentPaddingBefore.computedValue;
+        offset = offset -
+            parentBorderBeforeWidth.computedValue -
+            parentPaddingBefore.computedValue;
       }
     }
 
@@ -1253,7 +1430,8 @@ class CSSPositionedLayout {
       return staticPositionOffset;
     }
 
-    RenderPositionPlaceholder? placeholder = child.renderStyle.getSelfPositionPlaceHolder();
+    RenderPositionPlaceholder? placeholder =
+        child.renderStyle.getSelfPositionPlaceHolder();
     // Placeholder may live under a different parent than the containing block (e.g., under inline ancestor);
     // still valid: we can compute its offset to the containing block.
     if (placeholder == null) {
@@ -1269,29 +1447,42 @@ class CSSPositionedLayout {
     bool shouldUseAccurateHorizontalPosition = left.isAuto && right.isAuto;
     bool shouldUseAccurateVerticalPosition = top.isAuto && bottom.isAuto;
 
-    if (!shouldUseAccurateHorizontalPosition && !shouldUseAccurateVerticalPosition) {
+    if (!shouldUseAccurateHorizontalPosition &&
+        !shouldUseAccurateVerticalPosition) {
       return staticPositionOffset;
     }
 
     // Check if current static position may be inaccurate due to flow layout artifacts
-    bool needsCorrection = _staticPositionNeedsCorrection(placeholder, staticPositionOffset, parent);
+    bool needsCorrection = _staticPositionNeedsCorrection(
+        placeholder, staticPositionOffset, parent);
 
     // Special-case: Inline Formatting Context containing block with no in-flow anchor
     // For absolutely positioned non-replaced elements with all insets auto, when the
     // containing block establishes an IFC and there is no in-flow sibling before the
     // placeholder (i.e., nothing to anchor in normal flow), browsers place the box at
     // the bottom-right corner of the padding box. Constrain within padding edges.
-    final bool isIFCContainingBlock = parent is RenderFlowLayout && (parent).establishIFC;
-    if (!placeholderInFlex && isIFCContainingBlock && left.isAuto && right.isAuto && top.isAuto && bottom.isAuto) {
+    final bool isIFCContainingBlock =
+        parent is RenderFlowLayout && (parent).establishIFC;
+    if (!placeholderInFlex &&
+        isIFCContainingBlock &&
+        left.isAuto &&
+        right.isAuto &&
+        top.isAuto &&
+        bottom.isAuto) {
       if (placeholder.parentData is RenderLayoutParentData) {
-        final RenderLayoutParentData pd = placeholder.parentData as RenderLayoutParentData;
+        final RenderLayoutParentData pd =
+            placeholder.parentData as RenderLayoutParentData;
         if (pd.previousSibling == null) {
-          final double padLeft = parentBorderLeftWidth.computedValue + parentPaddingLeft.computedValue;
-          final double padTop = parentBorderTopWidth.computedValue + parentPaddingTop.computedValue;
+          final double padLeft = parentBorderLeftWidth.computedValue +
+              parentPaddingLeft.computedValue;
+          final double padTop = parentBorderTopWidth.computedValue +
+              parentPaddingTop.computedValue;
           final Size parentSize = parent.boxSize ?? Size.zero;
           final Size childSize = child.boxSize ?? Size.zero;
-          final double rightEdge = parentSize.width - parentBorderRightWidth.computedValue;
-          final double bottomEdge = parentSize.height - parentBorderBottomWidth.computedValue;
+          final double rightEdge =
+              parentSize.width - parentBorderRightWidth.computedValue;
+          final double bottomEdge =
+              parentSize.height - parentBorderBottomWidth.computedValue;
           final double bx = math.max(padLeft, rightEdge - childSize.width);
           final double by = math.max(padTop, bottomEdge - childSize.height);
           return Offset(bx, by);
@@ -1300,7 +1491,8 @@ class CSSPositionedLayout {
     }
 
     // Calculate the true normal flow position following W3C static position rules
-    double contentAreaX = parentBorderLeftWidth.computedValue + parentPaddingLeft.computedValue;
+    double contentAreaX =
+        parentBorderLeftWidth.computedValue + parentPaddingLeft.computedValue;
 
     // For horizontal axis: use content area start only when a correction is necessary.
     double correctedX = (shouldUseAccurateHorizontalPosition && needsCorrection)
@@ -1325,36 +1517,51 @@ class CSSPositionedLayout {
     // and cross-axis centering applies (align-self/align-items center). The placeholder
     // is 0-height and is placed at the cross-axis center; we need to subtract half of the
     // child's box height so the top edge is positioned correctly.
-    if (placeholderInFlex && (shouldUseAccurateVerticalPosition || shouldUseAccurateHorizontalPosition)) {
+    if (placeholderInFlex &&
+        (shouldUseAccurateVerticalPosition ||
+            shouldUseAccurateHorizontalPosition)) {
       // Use the flex container (placeholder's parent) to determine direction and alignment.
-      final RenderFlexLayout flexContainer = placeholder.parent as RenderFlexLayout;
+      final RenderFlexLayout flexContainer =
+          placeholder.parent as RenderFlexLayout;
       final CSSRenderStyle pStyle = flexContainer.renderStyle;
       final FlexDirection dir = pStyle.flexDirection;
-      final bool isRowDirection = (dir == FlexDirection.row || dir == FlexDirection.rowReverse);
+      final bool isRowDirection =
+          (dir == FlexDirection.row || dir == FlexDirection.rowReverse);
       // Effective cross-axis alignment respects child's align-self when specified,
       // otherwise falls back to container's align-items.
       final AlignSelf self = child.renderStyle.alignSelf;
       final AlignItems parentAlignItems = pStyle.alignItems;
-      final bool isCenter = self == AlignSelf.center || (self == AlignSelf.auto && parentAlignItems == AlignItems.center);
-      final bool isEnd = self == AlignSelf.flexEnd || (self == AlignSelf.auto && parentAlignItems == AlignItems.flexEnd);
-      final bool isStart = self == AlignSelf.flexStart || (self == AlignSelf.auto && parentAlignItems == AlignItems.flexStart);
+      final bool isCenter = self == AlignSelf.center ||
+          (self == AlignSelf.auto && parentAlignItems == AlignItems.center);
+      final bool isEnd = self == AlignSelf.flexEnd ||
+          (self == AlignSelf.auto && parentAlignItems == AlignItems.flexEnd);
+      final bool isStart = self == AlignSelf.flexStart ||
+          (self == AlignSelf.auto && parentAlignItems == AlignItems.flexStart);
 
       if (isRowDirection && shouldUseAccurateVerticalPosition) {
         // Compute from the flex container’s content box in the containing block’s
         // coordinate space: containerOffset + padding/border + alignment.
-        final RenderLayoutParentData? phPD = placeholder.parentData as RenderLayoutParentData?;
+        final RenderLayoutParentData? phPD =
+            placeholder.parentData as RenderLayoutParentData?;
         final Offset phOffsetInFlex = phPD?.offset ?? Offset.zero;
         // staticPositionOffset = flexOffsetToCB + placeholderOffsetInFlex
         final Offset flexOffsetToCB = staticPositionOffset - phOffsetInFlex;
 
         final double fcBorderTop = pStyle.effectiveBorderTopWidth.computedValue;
-        final double fcBorderBottom = pStyle.effectiveBorderBottomWidth.computedValue;
+        final double fcBorderBottom =
+            pStyle.effectiveBorderBottomWidth.computedValue;
         final double fcPadTop = pStyle.paddingTop.computedValue;
         final double fcPadBottom = pStyle.paddingBottom.computedValue;
         final Size fcSize = flexContainer.boxSize ?? Size.zero;
-        final double fcContentH = (fcSize.height - fcBorderTop - fcBorderBottom - fcPadTop - fcPadBottom).clamp(0.0, double.infinity);
+        final double fcContentH = (fcSize.height -
+                fcBorderTop -
+                fcBorderBottom -
+                fcPadTop -
+                fcPadBottom)
+            .clamp(0.0, double.infinity);
         final double childH = child.boxSize?.height ?? 0;
-        final double contentTopInCB = flexOffsetToCB.dy + fcBorderTop + fcPadTop;
+        final double contentTopInCB =
+            flexOffsetToCB.dy + fcBorderTop + fcPadTop;
         if (isCenter) {
           correctedY = contentTopInCB + (fcContentH - childH) / 2.0;
         } else if (isEnd) {
@@ -1365,18 +1572,27 @@ class CSSPositionedLayout {
       } else if (!isRowDirection && shouldUseAccurateHorizontalPosition) {
         // Column direction: cross-axis is horizontal. Compute left from the flex
         // container content box so the abspos element centers and updates when width changes.
-        final RenderLayoutParentData? phPD = placeholder.parentData as RenderLayoutParentData?;
+        final RenderLayoutParentData? phPD =
+            placeholder.parentData as RenderLayoutParentData?;
         final Offset phOffsetInFlex = phPD?.offset ?? Offset.zero;
         final Offset flexOffsetToCB = staticPositionOffset - phOffsetInFlex;
 
-        final double fcBorderLeft = pStyle.effectiveBorderLeftWidth.computedValue;
-        final double fcBorderRight = pStyle.effectiveBorderRightWidth.computedValue;
+        final double fcBorderLeft =
+            pStyle.effectiveBorderLeftWidth.computedValue;
+        final double fcBorderRight =
+            pStyle.effectiveBorderRightWidth.computedValue;
         final double fcPadLeft = pStyle.paddingLeft.computedValue;
         final double fcPadRight = pStyle.paddingRight.computedValue;
         final Size fcSize = flexContainer.boxSize ?? Size.zero;
-        final double fcContentW = (fcSize.width - fcBorderLeft - fcBorderRight - fcPadLeft - fcPadRight).clamp(0.0, double.infinity);
+        final double fcContentW = (fcSize.width -
+                fcBorderLeft -
+                fcBorderRight -
+                fcPadLeft -
+                fcPadRight)
+            .clamp(0.0, double.infinity);
         final double childW = child.boxSize?.width ?? 0;
-        final double contentLeftInCB = flexOffsetToCB.dx + fcBorderLeft + fcPadLeft;
+        final double contentLeftInCB =
+            flexOffsetToCB.dx + fcBorderLeft + fcPadLeft;
         if (isCenter) {
           correctedX = contentLeftInCB + (fcContentW - childW) / 2.0;
         } else if (isEnd) {
@@ -1405,7 +1621,8 @@ class CSSPositionedLayout {
       return false;
     }
 
-    RenderLayoutParentData placeholderData = placeholder.parentData as RenderLayoutParentData;
+    RenderLayoutParentData placeholderData =
+        placeholder.parentData as RenderLayoutParentData;
     RenderBox? previousSibling = placeholderData.previousSibling;
 
     if (previousSibling == null) {
@@ -1431,20 +1648,23 @@ class CSSPositionedLayout {
 
   /// Checks if the static position has significant offset that may indicate
   /// flow layout artifacts rather than true normal flow position.
-  static bool _hasSignificantOffset(Offset staticPosition, RenderBoxModel parent) {
+  static bool _hasSignificantOffset(
+      Offset staticPosition, RenderBoxModel parent) {
     RenderStyle parentStyle = parent.renderStyle;
     double expectedX = parentStyle.effectiveBorderLeftWidth.computedValue +
-                      parentStyle.paddingLeft.computedValue;
+        parentStyle.paddingLeft.computedValue;
     double expectedY = parentStyle.effectiveBorderTopWidth.computedValue +
-                      parentStyle.paddingTop.computedValue;
+        parentStyle.paddingTop.computedValue;
 
     // Allow small tolerance for rounding differences
     const double tolerance = 1.0;
 
     // If static position is significantly different from content area start,
     // it may need correction
-    bool hasUnexpectedHorizontalOffset = (staticPosition.dx - expectedX).abs() > tolerance;
-    bool hasUnexpectedVerticalOffset = (staticPosition.dy - expectedY).abs() > tolerance;
+    bool hasUnexpectedHorizontalOffset =
+        (staticPosition.dx - expectedX).abs() > tolerance;
+    bool hasUnexpectedVerticalOffset =
+        (staticPosition.dy - expectedY).abs() > tolerance;
 
     return hasUnexpectedHorizontalOffset || hasUnexpectedVerticalOffset;
   }

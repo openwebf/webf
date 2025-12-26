@@ -178,23 +178,25 @@ class FlutterCupertinoRadioState extends WebFWidgetElementState {
       ignoring: widgetElement.disabled,
       child: Opacity(
         opacity: widgetElement.disabled ? 0.5 : 1.0,
-        child: CupertinoRadio<String>(
-          value: widgetElement.val ?? '',
+        child: RadioGroup<String>(
           groupValue: widgetElement.groupValue,
-          toggleable: widgetElement.toggleable,
-          useCheckmarkStyle: widgetElement.useCheckmarkStyle,
-          activeColor: active,
-          inactiveColor: inactive,
-          fillColor: fill,
-          focusColor: focus,
-          autofocus: widgetElement.autofocus,
           onChanged: (String? newValue) {
             if (widgetElement.disabled) return;
-            final String next = newValue ?? '';
             widgetElement.dispatchEvent(
-              CustomEvent('change', detail: next),
+              CustomEvent('change', detail: newValue ?? ''),
             );
           },
+          child: CupertinoRadio<String>(
+            value: widgetElement.val ?? '',
+            enabled: !widgetElement.disabled,
+            toggleable: widgetElement.toggleable,
+            useCheckmarkStyle: widgetElement.useCheckmarkStyle,
+            activeColor: active,
+            inactiveColor: inactive,
+            fillColor: fill,
+            focusColor: focus,
+            autofocus: widgetElement.autofocus,
+          ),
         ),
       ),
     );

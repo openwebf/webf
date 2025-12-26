@@ -62,7 +62,10 @@ bool isGzip(List<int> data) {
 // The order is HTML -> KBC -> JavaScript.
 String _acceptHeader() {
   String bc = _supportedByteCodeVersions.map((String v) => 'application/vnd.webf.bc$v').join(',');
-  return 'text/html,$bc,application/javascript';
+  // Be permissive: this is used for all resource types (HTML/CSS/JS/images/fonts).
+  // Some servers/CDNs negotiate responses based on Accept; lacking image types can
+  // cause image URLs to return HTML and break decoding ("Invalid image data").
+  return 'text/html,$bc,application/javascript,image/gif,image/png,image/jpeg,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8';
 }
 
 bool _isAssetsScheme(String path) {
@@ -241,9 +244,89 @@ class DataBundle extends WebFBundle {
   }
 
   DataBundle.fromDataUrl(String dataUrl, {ContentType? contentType}) : super(dataUrl) {
-    UriData uriData = UriData.parse(dataUrl);
-    data = uriData.contentAsBytes();
-    _contentType = contentType ?? ContentType.parse('${uriData.mimeType}; charset=${uriData.charset}');
+    try {
+      final UriData uriData = UriData.parse(dataUrl);
+      data = uriData.contentAsBytes();
+      _contentType = contentType ?? _contentTypeFromUriData(uriData);
+    } on FormatException {
+      // Some producers use non-standard `;utf8,` or include parameters that
+      // `UriData.parse`/`ContentType.parse` reject. Fall back to a tolerant parser.
+      final ({Uint8List bytes, ContentType type}) parsed = _parseDataUrlFallback(dataUrl);
+      data = parsed.bytes;
+      _contentType = contentType ?? parsed.type;
+    }
+  }
+
+  static ContentType _contentTypeFromUriData(UriData uriData) {
+    final String mimeType = uriData.mimeType.isNotEmpty ? uriData.mimeType : ContentType.text.mimeType;
+    String? charset = uriData.charset;
+    // Treat non-standard `;utf8` parameter as utf-8.
+    if (charset == null && uriData.parameters.containsKey('utf8')) {
+      charset = 'utf-8';
+    }
+    final String ct = charset != null ? '$mimeType; charset=$charset' : mimeType;
+    try {
+      return ContentType.parse(ct);
+    } catch (_) {
+      // Be permissive; callers can still sniff by bytes/mime.
+      return ContentType.binary;
+    }
+  }
+
+  static ({Uint8List bytes, ContentType type}) _parseDataUrlFallback(String dataUrl) {
+    // Format: data:[<mediatype>][;base64],<data>
+    final String s = dataUrl.trim();
+    final int comma = s.indexOf(',');
+    if (!s.startsWith('data:') || comma == -1) {
+      return (bytes: Uint8List(0), type: ContentType.binary);
+    }
+
+    String header = s.substring('data:'.length, comma);
+    String payload = s.substring(comma + 1);
+
+    final String lowerHeader = header.toLowerCase();
+    final bool isBase64 = lowerHeader.contains(';base64');
+
+    // Extract mime type (before the first ';'), default per spec.
+    String mimeType = header;
+    final int semi = header.indexOf(';');
+    if (semi != -1) {
+      mimeType = header.substring(0, semi);
+    }
+    mimeType = mimeType.isNotEmpty ? mimeType : 'text/plain';
+
+    // Charset handling.
+    String? charset;
+    final RegExp charsetRe = RegExp(r'charset=([^;]+)', caseSensitive: false);
+    final Match? m = charsetRe.firstMatch(header);
+    if (m != null) charset = m.group(1);
+    if (charset == null && lowerHeader.contains(';utf8')) charset = 'utf-8';
+
+    ContentType type;
+    try {
+      type = ContentType.parse(charset != null ? '$mimeType; charset=$charset' : mimeType);
+    } catch (_) {
+      type = ContentType.binary;
+    }
+
+    Uint8List bytes;
+    try {
+      if (isBase64) {
+        // Some encoders percent-escape base64; decode if needed.
+        if (payload.contains('%')) {
+          payload = Uri.decodeFull(payload);
+        }
+        bytes = Uint8List.fromList(base64.decode(payload));
+      } else {
+        // Percent-decoded text; encode as UTF-8 bytes.
+        final String decoded = payload.contains('%') ? Uri.decodeComponent(payload) : payload;
+        bytes = Uint8List.fromList(utf8.encode(decoded));
+      }
+    } catch (_) {
+      bytes = Uint8List(0);
+    }
+
+    return (bytes: bytes, type: type);
   }
 
   @override
@@ -346,7 +429,7 @@ class NetworkBundle extends WebFBundle {
           );
         }
 
-        final bytes = resp.data ?? Uint8List(0);
+        Uint8List bytes = resp.data ?? Uint8List(0);
         // Response fully received
         dumper?.recordNetworkRequestStage(url, LoadingState.stageResponseReceived, metadata: {
           'responseSize': bytes.length,
@@ -355,6 +438,13 @@ class NetworkBundle extends WebFBundle {
         if (bytes.isEmpty) {
           await WebFBundle.invalidateCache(url);
           return;
+        }
+
+        // To maintain compatibility with older versions of WebF, which save Gzip
+        // content in caches, decode it here as well (Dio path).
+        final bool wasGzipped = isGzip(bytes);
+        if (wasGzipped) {
+          bytes = Uint8List.fromList(gzip.decoder.convert(bytes));
         }
 
         data = bytes;
@@ -455,7 +545,8 @@ class NetworkBundle extends WebFBundle {
 
       // To maintain compatibility with older versions of WebF, which save Gzip content in caches, we should check the bytes
       // and decode them if they are in gzip format.
-      if (isGzip(bytes)) {
+      final bool wasGzipped = isGzip(bytes);
+      if (wasGzipped) {
         bytes = Uint8List.fromList(gzip.decoder.convert(bytes));
       }
 

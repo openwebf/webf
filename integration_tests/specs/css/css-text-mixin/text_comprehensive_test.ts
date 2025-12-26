@@ -324,7 +324,7 @@ describe('CSS Text Comprehensive Integration', () => {
     });
   });
 
-  it('should maintain text quality across dynamic layout changes', async (done) => {
+  it('should maintain text quality when changing text size', async (done) => {
     const container = document.createElement('div');
     container.innerHTML = `
       <div class="dynamic-layout" lang="zh-CN" style="color: #2f3640;">
@@ -338,7 +338,7 @@ describe('CSS Text Comprehensive Integration', () => {
         ">
           动态布局中文文本
         </div>
-        
+
         <div class="controls">
           <button class="size-btn" style="
             background-color: currentColor;
@@ -350,7 +350,7 @@ describe('CSS Text Comprehensive Integration', () => {
           ">
             Change Size
           </button>
-          
+
           <button class="color-btn" style="
             border: 2px solid currentColor;
             background: transparent;
@@ -373,65 +373,260 @@ describe('CSS Text Comprehensive Integration', () => {
 
     dynamicLayout.style.padding = '20px';
 
-    let testStep = 0;
-    const tests = [
-      () => {
-        // Test 1: Change text size
-        textContent.style.fontSize = '24px';
-        textContent.style.fontWeight = 'bold';
-      },
-      () => {
-        // Test 2: Change layout color
-        dynamicLayout.style.color = '#3c6382';
-      },
-      () => {
-        // Test 3: Change text gradient
-        textContent.style.background = 'linear-gradient(90deg, #70a1ff, #5352ed)';
-      },
-      () => {
-        // Test 4: Change layout properties
-        textContent.style.letterSpacing = '1px';
-        textContent.style.lineHeight = '1.6';
-      }
-    ];
+    requestAnimationFrame(async () => {
+      // Initial snapshot
+      await snapshot();
 
-    const runTest = () => {
-      if (testStep < tests.length) {
-        tests[testStep]();
-        testStep++;
-        
-        requestAnimationFrame(async () => {
-          // Verify all elements still render correctly
-          const textRect = textContent.getBoundingClientRect();
-          const sizeBtnRect = sizeBtn.getBoundingClientRect();
-          const colorBtnRect = colorBtn.getBoundingClientRect();
-          
-          expect(textRect.height).toBeGreaterThan(0);
-          expect(textRect.width).toBeGreaterThan(0);
-          expect(sizeBtnRect.height).toBeGreaterThan(0);
-          expect(sizeBtnRect.width).toBeGreaterThan(0);
-          expect(colorBtnRect.height).toBeGreaterThan(0);
-          expect(colorBtnRect.width).toBeGreaterThan(0);
-          
-          setTimeout(runTest, 50); // Small delay between tests
-        });
-      } else {
-        // Final verification
-        requestAnimationFrame(async () => {
-          await snapshot(1);
-          document.body.removeChild(container);
-          done();
-        });
-      }
-    };
+      // Change text size
+      textContent.style.fontSize = '24px';
+      textContent.style.fontWeight = 'bold';
+
+      requestAnimationFrame(async () => {
+        // Verify all elements still render correctly
+        const textRect = textContent.getBoundingClientRect();
+        const sizeBtnRect = sizeBtn.getBoundingClientRect();
+        const colorBtnRect = colorBtn.getBoundingClientRect();
+
+        expect(textRect.height).toBeGreaterThan(0);
+        expect(textRect.width).toBeGreaterThan(0);
+        expect(sizeBtnRect.height).toBeGreaterThan(0);
+        expect(sizeBtnRect.width).toBeGreaterThan(0);
+        expect(colorBtnRect.height).toBeGreaterThan(0);
+        expect(colorBtnRect.width).toBeGreaterThan(0);
+
+        await snapshot(1);
+        document.body.removeChild(container);
+        done();
+      });
+    });
+  });
+
+  it('should maintain text quality when changing layout color', async (done) => {
+    const container = document.createElement('div');
+    container.innerHTML = `
+      <div class="dynamic-layout" lang="zh-CN" style="color: #2f3640;">
+        <div class="text-content" style="
+          background: linear-gradient(45deg, #ff9ff3, #f368e0);
+          background-clip: text;
+          -webkit-background-clip: text;
+          color: transparent;
+          font-size: 18px;
+          transition: all 0.3s ease;
+        ">
+          动态布局中文文本
+        </div>
+
+        <div class="controls">
+          <button class="size-btn" style="
+            background-color: currentColor;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin: 5px;
+            cursor: pointer;
+          ">
+            Change Size
+          </button>
+
+          <button class="color-btn" style="
+            border: 2px solid currentColor;
+            background: transparent;
+            color: currentColor;
+            padding: 8px 16px;
+            margin: 5px;
+            cursor: pointer;
+          ">
+            Change Color
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(container);
+
+    const dynamicLayout = container.querySelector('.dynamic-layout') as HTMLElement;
+    const textContent = container.querySelector('.text-content') as HTMLElement;
+    const sizeBtn = container.querySelector('.size-btn') as HTMLElement;
+    const colorBtn = container.querySelector('.color-btn') as HTMLElement;
+
+    dynamicLayout.style.padding = '20px';
 
     requestAnimationFrame(async () => {
-      // Initial verification
-      const textRect = textContent.getBoundingClientRect();
-      expect(textRect.height).toBeGreaterThan(0);
-      expect(textRect.width).toBeGreaterThan(0);
-      
-      runTest();
+      // Initial snapshot
+      await snapshot();
+
+      // Change layout color
+      dynamicLayout.style.color = '#3c6382';
+
+      requestAnimationFrame(async () => {
+        // Verify all elements still render correctly
+        const textRect = textContent.getBoundingClientRect();
+        const sizeBtnRect = sizeBtn.getBoundingClientRect();
+        const colorBtnRect = colorBtn.getBoundingClientRect();
+
+        expect(textRect.height).toBeGreaterThan(0);
+        expect(textRect.width).toBeGreaterThan(0);
+        expect(sizeBtnRect.height).toBeGreaterThan(0);
+        expect(sizeBtnRect.width).toBeGreaterThan(0);
+        expect(colorBtnRect.height).toBeGreaterThan(0);
+        expect(colorBtnRect.width).toBeGreaterThan(0);
+
+        await snapshot(2);
+        document.body.removeChild(container);
+        done();
+      });
+    });
+  });
+
+  it('should maintain text quality when changing text gradient', async (done) => {
+    const container = document.createElement('div');
+    container.innerHTML = `
+      <div class="dynamic-layout" lang="zh-CN" style="color: #2f3640;">
+        <div class="text-content" style="
+          background: linear-gradient(45deg, #ff9ff3, #f368e0);
+          background-clip: text;
+          -webkit-background-clip: text;
+          color: transparent;
+          font-size: 18px;
+          transition: all 0.3s ease;
+        ">
+          动态布局中文文本
+        </div>
+
+        <div class="controls">
+          <button class="size-btn" style="
+            background-color: currentColor;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin: 5px;
+            cursor: pointer;
+          ">
+            Change Size
+          </button>
+
+          <button class="color-btn" style="
+            border: 2px solid currentColor;
+            background: transparent;
+            color: currentColor;
+            padding: 8px 16px;
+            margin: 5px;
+            cursor: pointer;
+          ">
+            Change Color
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(container);
+
+    const dynamicLayout = container.querySelector('.dynamic-layout') as HTMLElement;
+    const textContent = container.querySelector('.text-content') as HTMLElement;
+    const sizeBtn = container.querySelector('.size-btn') as HTMLElement;
+    const colorBtn = container.querySelector('.color-btn') as HTMLElement;
+
+    dynamicLayout.style.padding = '20px';
+
+    requestAnimationFrame(async () => {
+      // Initial snapshot
+      await snapshot();
+
+      // Change text gradient
+      textContent.style.background = 'linear-gradient(90deg, #70a1ff, #5352ed)';
+
+      requestAnimationFrame(async () => {
+        // Verify all elements still render correctly
+        const textRect = textContent.getBoundingClientRect();
+        const sizeBtnRect = sizeBtn.getBoundingClientRect();
+        const colorBtnRect = colorBtn.getBoundingClientRect();
+
+        expect(textRect.height).toBeGreaterThan(0);
+        expect(textRect.width).toBeGreaterThan(0);
+        expect(sizeBtnRect.height).toBeGreaterThan(0);
+        expect(sizeBtnRect.width).toBeGreaterThan(0);
+        expect(colorBtnRect.height).toBeGreaterThan(0);
+        expect(colorBtnRect.width).toBeGreaterThan(0);
+
+        await snapshot(1);
+        document.body.removeChild(container);
+        done();
+      });
+    });
+  });
+
+  it('should maintain text quality when changing layout properties', async (done) => {
+    const container = document.createElement('div');
+    container.innerHTML = `
+      <div class="dynamic-layout" lang="zh-CN" style="color: #2f3640;">
+        <div class="text-content" style="
+          background: linear-gradient(45deg, #ff9ff3, #f368e0);
+          background-clip: text;
+          -webkit-background-clip: text;
+          color: transparent;
+          font-size: 18px;
+          transition: all 0.3s ease;
+        ">
+          动态布局中文文本
+        </div>
+
+        <div class="controls">
+          <button class="size-btn" style="
+            background-color: currentColor;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin: 5px;
+            cursor: pointer;
+          ">
+            Change Size
+          </button>
+
+          <button class="color-btn" style="
+            border: 2px solid currentColor;
+            background: transparent;
+            color: currentColor;
+            padding: 8px 16px;
+            margin: 5px;
+            cursor: pointer;
+          ">
+            Change Color
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(container);
+
+    const dynamicLayout = container.querySelector('.dynamic-layout') as HTMLElement;
+    const textContent = container.querySelector('.text-content') as HTMLElement;
+    const sizeBtn = container.querySelector('.size-btn') as HTMLElement;
+    const colorBtn = container.querySelector('.color-btn') as HTMLElement;
+
+    dynamicLayout.style.padding = '20px';
+
+    requestAnimationFrame(async () => {
+      // Initial snapshot
+      await snapshot();
+
+      // Change layout properties
+      textContent.style.letterSpacing = '1px';
+      textContent.style.lineHeight = '1.6';
+
+      requestAnimationFrame(async () => {
+        // Verify all elements still render correctly
+        const textRect = textContent.getBoundingClientRect();
+        const sizeBtnRect = sizeBtn.getBoundingClientRect();
+        const colorBtnRect = colorBtn.getBoundingClientRect();
+
+        expect(textRect.height).toBeGreaterThan(0);
+        expect(textRect.width).toBeGreaterThan(0);
+        expect(sizeBtnRect.height).toBeGreaterThan(0);
+        expect(sizeBtnRect.width).toBeGreaterThan(0);
+        expect(colorBtnRect.height).toBeGreaterThan(0);
+        expect(colorBtnRect.width).toBeGreaterThan(0);
+
+        await snapshot(1);
+        document.body.removeChild(container);
+        done();
+      });
     });
   });
 });

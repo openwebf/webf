@@ -1,6 +1,6 @@
 {
   "name": "@openwebf/react-core-ui",
-  "version": "0.2.13",
+  "version": "0.22.20",
   "description": "Core UI components for WebF React applications",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -9,21 +9,20 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup"
+    "build": "tsdown"
   },
   "keywords": [],
   "author": "",
-  "license": "Apache-2.0",
+  "license": "ISC",
   "type": "commonjs",
   "peerDependencies": {
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
   },
-  "dependencies": {},
   "devDependencies": {
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.2",
-    "tsup": "^8.5.0",
+    "tsdown": "^0.18.2",
     "typescript": "^5.8.3"
   }
 }

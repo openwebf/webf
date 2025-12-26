@@ -52,8 +52,6 @@ class CSSKeyframesBridge {
 
           // Update document ruleset for lookup by animation-name
           document.ruleSet.keyframesRules[name] = rule;
-
-          cssLogger.info('[keyframes][register] ctx=$contextId sheet=$sheetId name=$name frames=${rule.keyframes.length}');
         }
       }
     } catch (e, s) {

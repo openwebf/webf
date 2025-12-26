@@ -55,7 +55,8 @@ class WebFWidgetTestUtils {
     });
 
     final webf = WebF.fromControllerName(controllerName: name);
-    await tester.pumpWidget(wrap != null ? wrap(webf) : webf);
+    final Widget rootWidget = wrap != null ? wrap(webf) : webf;
+    await tester.pumpWidget(rootWidget);
 
     // Wait for initial rendering
     await tester.pump();
@@ -68,7 +69,7 @@ class WebFWidgetTestUtils {
     // Additional frames to ensure layout
     await tester.pump();
     await tester.pump(Duration(milliseconds: 100));
-    await tester.pumpFrames(webf, Duration(milliseconds: 100));
+    await tester.pumpFrames(rootWidget, Duration(milliseconds: 100));
 
     await tester.runAsync(() async {
       return Future.wait([
@@ -109,7 +110,8 @@ class WebFWidgetTestUtils {
     });
 
     final webf = WebF.fromControllerName(controllerName: name);
-    await tester.pumpWidget(wrap != null ? wrap(webf) : webf);
+    final Widget rootWidget = wrap != null ? wrap(webf) : webf;
+    await tester.pumpWidget(rootWidget);
 
     // Wait for initial rendering
     await tester.pump();
@@ -122,7 +124,7 @@ class WebFWidgetTestUtils {
     // Additional frames to ensure layout
     await tester.pump();
     await tester.pump(Duration(milliseconds: 100));
-    await tester.pumpFrames(webf, Duration(milliseconds: 100));
+    await tester.pumpFrames(rootWidget, Duration(milliseconds: 100));
 
     await tester.runAsync(() async {
       return Future.wait([

@@ -94,7 +94,7 @@ class DebugFlags {
   // no further updates arrive within the interval.
   static int cssBatchStyleUpdatesDebounceMs = 32;
 
-  // Controls verbose IMG element logs added for diagnostics.
+  // Controls verbose IMG/network/decode logs for diagnostics.
   static bool enableImageLogs = false;
 
   // Removed: Use FlowLog filters to enable flow logs.

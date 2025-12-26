@@ -644,14 +644,19 @@ class InlineFormattingContext {
   // so we can measure pure font metrics (ascent+descent) for decoration bands.
   ui.TextStyle _uiTextStyleFromCssNoLineHeight(CSSRenderStyle rs) {
     final families = rs.fontFamily;
+    final FontWeight weight = (rs.boldText && rs.fontWeight.index < FontWeight.w700.index) ? FontWeight.w700 : rs.fontWeight;
     if (families != null && families.isNotEmpty) {
-      CSSFontFace.ensureFontLoaded(families[0], rs.fontWeight, rs);
+      CSSFontFace.ensureFontLoaded(families[0], weight, rs);
     }
     final bool clipText = (container as RenderBoxModel).renderStyle.backgroundClip == CSSBackgroundBoundary.text;
     final Color baseColor = rs.color.value;
     final Color effectiveColor = clipText ? baseColor.withAlpha(0xFF) : baseColor;
     final (TextDecoration effLine, TextDecorationStyle? effStyle, Color? effColor) =
         _computeEffectiveTextDecoration(rs);
+    final double baseFontSize = rs.fontSize.computedValue;
+    final double safeBaseFontSize = baseFontSize.isFinite && baseFontSize >= 0 ? baseFontSize : 0.0;
+    final double scaledFontSize = rs.textScaler.scale(safeBaseFontSize);
+    final double scaleFactor = safeBaseFontSize > 0 ? (scaledFontSize / safeBaseFontSize) : 1.0;
     return ui.TextStyle(
       // For clip-text, force fully-opaque glyphs for the mask (ignore alpha).
       color: effectiveColor,
@@ -660,14 +665,14 @@ class InlineFormattingContext {
       decoration: clipText ? TextDecoration.none : effLine,
       decorationColor: clipText ? null : effColor,
       decorationStyle: clipText ? null : effStyle,
-      fontWeight: rs.fontWeight,
+      fontWeight: weight,
       fontStyle: rs.fontStyle,
       textBaseline: CSSText.getTextBaseLine(),
       fontFamily: (families != null && families.isNotEmpty) ? families.first : null,
       fontFamilyFallback: families,
-      fontSize: rs.fontSize.computedValue,
-      letterSpacing: rs.letterSpacing?.computedValue,
-      wordSpacing: rs.wordSpacing?.computedValue,
+      fontSize: scaledFontSize,
+      letterSpacing: rs.letterSpacing?.computedValue != null ? rs.letterSpacing!.computedValue * scaleFactor : null,
+      wordSpacing: rs.wordSpacing?.computedValue != null ? rs.wordSpacing!.computedValue * scaleFactor : null,
       // height intentionally null to ignore CSS line-height
       locale: CSSText.getLocale(),
       background: CSSText.getBackground(),
@@ -2238,10 +2243,13 @@ class InlineFormattingContext {
             if (families != null && families.isNotEmpty) {
               CSSFontFace.ensureFontLoaded(families[0], s.fontWeight, s);
             }
+            final double baseFontSize = s.fontSize.computedValue;
+            final double safeBaseFontSize = baseFontSize.isFinite && baseFontSize >= 0 ? baseFontSize : 0.0;
             final double? heightMultiple = (() {
               if (s.lineHeight.type == CSSLengthType.NORMAL) return kTextHeightNone;
               if (s.lineHeight.type == CSSLengthType.EM) return s.lineHeight.value;
-              return s.lineHeight.computedValue / s.fontSize.computedValue;
+              if (safeBaseFontSize <= 0) return null;
+              return s.lineHeight.computedValue / baseFontSize;
             })();
             final Color maskColor = s.isVisibilityHidden ? const Color(0x00000000) : s.color.value.withAlpha(0xFF);
             final variant = CSSText.resolveFontFeaturesForVariant(s);
@@ -2257,7 +2265,7 @@ class InlineFormattingContext {
               textBaseline: CSSText.getTextBaseLine(),
               fontFamily: (families != null && families.isNotEmpty) ? families.first : null,
               fontFamilyFallback: families,
-              fontSize: s.fontSize.computedValue,
+              fontSize: safeBaseFontSize,
               letterSpacing: s.letterSpacing?.computedValue,
               wordSpacing: s.wordSpacing?.computedValue,
               height: heightMultiple,
@@ -2268,7 +2276,7 @@ class InlineFormattingContext {
               fontFeatures: variant.features.isNotEmpty ? variant.features : null,
             );
             pb.pushStyle(maskStyle);
-            _addTextWithFontVariant(pb, text, s, s.fontSize.computedValue);
+            _addTextWithFontVariant(pb, text, s, safeBaseFontSize);
             final ui.Paragraph p = pb.build();
             p.layout(const ui.ParagraphConstraints(width: 1000000.0));
             return p;
@@ -2847,18 +2855,24 @@ class InlineFormattingContext {
     final CSSLengthValue containerLH = containerStyle.lineHeight;
     if (containerLH.type != CSSLengthType.NORMAL) {
       final double fontSize = containerStyle.fontSize.computedValue;
-      final double multiple = containerLH.computedValue / fontSize;
-      // Guard against non-finite or non-positive multiples
-      if (multiple.isFinite && multiple > 0) {
-        paragraphStrut = ui.StrutStyle(
-          fontSize: fontSize,
-          height: multiple,
-          fontFamilyFallback: containerStyle.fontFamily,
-          fontStyle: containerStyle.fontStyle,
-          fontWeight: containerStyle.fontWeight,
-          // Use as minimum line height; let larger content expand the line.
-          forceStrutHeight: false,
-        );
+      if (fontSize.isFinite && fontSize > 0) {
+        final double multiple = containerLH.computedValue / fontSize;
+        // Guard against non-finite or non-positive multiples
+        if (multiple.isFinite && multiple > 0) {
+          final double scaledFontSize = containerStyle.textScaler.scale(fontSize);
+          final FontWeight weight = (containerStyle.boldText && containerStyle.fontWeight.index < FontWeight.w700.index)
+              ? FontWeight.w700
+              : containerStyle.fontWeight;
+          paragraphStrut = ui.StrutStyle(
+            fontSize: scaledFontSize,
+            height: multiple,
+            fontFamilyFallback: containerStyle.fontFamily,
+            fontStyle: containerStyle.fontStyle,
+            fontWeight: weight,
+            // Use as minimum line height; let larger content expand the line.
+            forceStrutHeight: false,
+          );
+        }
       }
     }
 
@@ -2928,6 +2942,17 @@ class InlineFormattingContext {
       final double reserved = indentPx > 0 ? indentPx : 0.0;
       if (reserved > 0) {
         _leadingTextIndentPx = reserved;
+        // Ensure the indent placeholder is resolved on the inline-start in RTL.
+        // Flutter treats placeholders as neutral for bidi reordering; when the
+        // paragraph begins with a placeholder, it can be resolved to the wrong
+        // direction. Prepending an RTL mark makes the placeholder strongly RTL
+        // without affecting layout width.
+        if (style.direction == TextDirection.rtl) {
+          pb.pushStyle(_uiTextStyleFromCss(style));
+          pb.addText('\u200F'); // RLM
+          pb.pop();
+          paraPos += 1;
+        }
         pb.addPlaceholder(reserved, ph, ui.PlaceholderAlignment.baseline,
             baseline: TextBaseline.alphabetic, baselineOffset: bo);
         // Keep placeholder indices aligned: record a neutral placeholder so that
@@ -2935,15 +2960,6 @@ class InlineFormattingContext {
         _allPlaceholders.add(_InlinePlaceholder.emptySpan(container as RenderBoxModel, reserved));
         paraPos += 1;
         _textRunParas.add(null);
-        // In RTL, reserve space on the inline-start (right) by forcing the
-        // indent placeholder to precede content visually: insert a zero-width
-        // no-break space with strong RTL property.
-        if (style.direction == TextDirection.rtl) {
-          pb.pushStyle(_uiTextStyleFromCss(style));
-          pb.addText('\uFEFF'); // ZWNBSP to ensure grapheme advance at start
-          pb.pop();
-          paraPos += 1;
-        }
       }
     }
 
@@ -4497,11 +4513,15 @@ class InlineFormattingContext {
     final cached = _cachedUiTextStyles[rs];
     if (cached != null) return cached;
     final families = rs.fontFamily;
+    final FontWeight weight = (rs.boldText && rs.fontWeight.index < FontWeight.w700.index) ? FontWeight.w700 : rs.fontWeight;
     if (families != null && families.isNotEmpty) {
-      CSSFontFace.ensureFontLoaded(families[0], rs.fontWeight, rs);
+      CSSFontFace.ensureFontLoaded(families[0], weight, rs);
     }
     // Map CSS line-height to a multiplier for dart:ui. For 'normal', align with CSS by
     // using 1.2× font-size instead of letting Flutter pick a font-driven band.
+    final double baseFontSize = rs.fontSize.computedValue;
+    final double safeBaseFontSize = baseFontSize.isFinite && baseFontSize >= 0 ? baseFontSize : 0.0;
+
     final double? heightMultiple = (() {
       if (rs.lineHeight.type == CSSLengthType.NORMAL) {
         return kTextHeightNone; // CSS 'normal' approximation
@@ -4509,8 +4529,11 @@ class InlineFormattingContext {
       if (rs.lineHeight.type == CSSLengthType.EM) {
         return rs.lineHeight.value;
       }
-      return rs.lineHeight.computedValue / rs.fontSize.computedValue;
+      if (safeBaseFontSize <= 0) return null;
+      return rs.lineHeight.computedValue / baseFontSize;
     })();
+    final double scaledFontSize = rs.textScaler.scale(safeBaseFontSize);
+    final double scaleFactor = safeBaseFontSize > 0 ? (scaledFontSize / safeBaseFontSize) : 1.0;
 
     final bool clipText = (container as RenderBoxModel).renderStyle.backgroundClip == CSSBackgroundBoundary.text;
     // visibility:hidden should not paint text or its text decorations, but must still
@@ -4531,15 +4554,15 @@ class InlineFormattingContext {
       decoration: (hidden || clipText) ? TextDecoration.none : effLine,
       decorationColor: (hidden || clipText) ? const Color(0x00000000) : effColor,
       decorationStyle: clipText ? null : effStyle,
-      fontWeight: rs.fontWeight,
+      fontWeight: weight,
       fontStyle: rs.fontStyle,
       textBaseline: CSSText.getTextBaseLine(),
       fontFamily: (families != null && families.isNotEmpty) ? families.first : null,
       fontFamilyFallback: families,
-      fontSize: rs.fontSize.computedValue,
+      fontSize: scaledFontSize,
       fontFeatures: fontFeatures,
-      letterSpacing: rs.letterSpacing?.computedValue,
-      wordSpacing: rs.wordSpacing?.computedValue,
+      letterSpacing: rs.letterSpacing?.computedValue != null ? rs.letterSpacing!.computedValue * scaleFactor : null,
+      wordSpacing: rs.wordSpacing?.computedValue != null ? rs.wordSpacing!.computedValue * scaleFactor : null,
       height: heightMultiple,
       locale: CSSText.getLocale(),
       background: CSSText.getBackground(),
@@ -4563,12 +4586,14 @@ class InlineFormattingContext {
       return;
     }
 
-    if (!baseFontSize.isFinite || baseFontSize <= 0) {
+    final double safeBaseFontSize = baseFontSize.isFinite && baseFontSize >= 0 ? baseFontSize : 0.0;
+    final double scaledBaseFontSize = rs.textScaler.scale(safeBaseFontSize);
+    if (!scaledBaseFontSize.isFinite || scaledBaseFontSize <= 0) {
       pb.addText(text);
       return;
     }
 
-    final double smallCapsSize = baseFontSize * _syntheticSmallCapsScale;
+    final double smallCapsSize = scaledBaseFontSize * _syntheticSmallCapsScale;
     if (synth == FontVariantCapsSynthesis.allLetters) {
       pb.pushStyle(ui.TextStyle(fontSize: smallCapsSize));
       pb.addText(text.toUpperCase());

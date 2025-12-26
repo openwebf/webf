@@ -29,8 +29,11 @@ const _1pt = _1in / 72; // 1pt = 1/72th of 1in
 // Approximate x-height ratio to em when font metrics are not available.
 // Many UAs approximate 1ex ≈ 0.5em for generic fonts.
 const double _exToEmFallbackRatio = 0.5;
+// Approximate 1ch when glyph metrics are not available.
+// Many UAs approximate 1ch ≈ 0.5em for common fonts.
+const double _chToEmFallbackRatio = 0.5;
 
-final String _unitRegStr = '(px|rpx|vw|vh|vmin|vmax|rem|em|ex|in|cm|mm|pc|pt|q)';
+final String _unitRegStr = '(px|rpx|vw|vh|vmin|vmax|rem|em|ex|ch|in|cm|mm|pc|pt|q)';
 final _lengthRegExp = RegExp(r'^[+-]?(\d+)?(\.\d+)?' + _unitRegStr + r'$', caseSensitive: false);
 final _negativeZeroRegExp = RegExp(r'^-(0+)?(\.0+)?' + _unitRegStr + r'$', caseSensitive: false);
 final _nonNegativeLengthRegExp = RegExp(r'^[+]?(\d+)?(\.\d+)?' + _unitRegStr + r'$', caseSensitive: false);
@@ -42,6 +45,7 @@ enum CSSLengthType {
   // relative units
   EM, // em,
   EX, // ex (x-height of the element's font)
+  CH, // ch (advance measure of '0' glyph)
   REM, // rem
   VH, // vh
   VW, // vw
@@ -80,6 +84,8 @@ class CSSLengthValue {
         renderStyle!.addFontRelativeProperty(propertyName!);
       } else if (type == CSSLengthType.EX) {
         renderStyle!.addFontRelativeProperty(propertyName!);
+      } else if (type == CSSLengthType.CH) {
+        renderStyle!.addFontRelativeProperty(propertyName!);
       } else if (type == CSSLengthType.REM) {
         renderStyle!.addRootFontRelativeProperty(propertyName!);
       }
@@ -99,6 +105,7 @@ class CSSLengthValue {
       case CSSLengthType.PX:
       case CSSLengthType.EM:
       case CSSLengthType.EX:
+      case CSSLengthType.CH:
         return '${computedValue.cssText()}px';
       case CSSLengthType.REM:
         return '${value?.cssText()}rem';
@@ -244,6 +251,47 @@ class CSSLengthValue {
           baseEmPx = renderStyle!.fontSize.computedValue;
         }
         _computedValue = value! * (baseEmPx * _exToEmFallbackRatio);
+        break;
+      case CSSLengthType.CH:
+        // The `ch` unit is defined as the advance measure of the "0" glyph in the element's font.
+        // When font metrics are not available, approximate via 0.5em.
+        double oneChPx;
+
+        // Avoid recursion when resolving `font-size` in terms of `ch` by measuring against the
+        // inherited font style instead of the element's own (yet-to-be-computed) font size.
+        RenderStyle? metricBaseStyle = renderStyle;
+        if (realPropertyName == FONT_SIZE) {
+          metricBaseStyle = renderStyle!.getAttachedRenderParentRenderStyle();
+        }
+
+        double baseEmPx;
+        if (realPropertyName == FONT_SIZE) {
+          if (metricBaseStyle == null) {
+            baseEmPx = 16;
+          } else {
+            baseEmPx = metricBaseStyle.fontSize.computedValue;
+          }
+        } else {
+          baseEmPx = renderStyle!.fontSize.computedValue;
+        }
+        oneChPx = baseEmPx * _chToEmFallbackRatio;
+
+        if (metricBaseStyle is CSSRenderStyle) {
+          try {
+            final TextStyle style = CSSTextMixin.createTextStyle(metricBaseStyle);
+            final TextPainter tp = TextPainter(
+              text: TextSpan(text: '0', style: style),
+              textScaler: metricBaseStyle.textScaler,
+              textDirection: metricBaseStyle.direction,
+              maxLines: 1,
+            )..layout(minWidth: 0, maxWidth: double.infinity);
+            if (tp.width > 0) {
+              oneChPx = tp.width;
+            }
+          } catch (_) {}
+        }
+
+        _computedValue = value! * oneChPx;
         break;
       case CSSLengthType.REM:
         // If root element set fontSize as rem unit.
@@ -685,6 +733,20 @@ class CSSLengthValue {
     // Ensure _computedValue is never null
     _computedValue ??= 0;
 
+    // CSS padding values are non-negative; clamp invalid negative values to 0
+    // to match spec behavior and avoid negative EdgeInsets during layout.
+    if (realPropertyName == PADDING_TOP ||
+        realPropertyName == PADDING_RIGHT ||
+        realPropertyName == PADDING_BOTTOM ||
+        realPropertyName == PADDING_LEFT ||
+        realPropertyName == PADDING_INLINE_START ||
+        realPropertyName == PADDING_INLINE_END ||
+        realPropertyName == PADDING_BLOCK_START ||
+        realPropertyName == PADDING_BLOCK_END) {
+      final double v = _computedValue!;
+      _computedValue = (!v.isFinite || v < 0) ? 0 : v;
+    }
+
     // Cache computed value.
     if (renderStyle?.hasRenderBox() == true && propertyName != null && type != CSSLengthType.PERCENTAGE) {
       cacheComputedValue(renderStyle!, propertyName!, _computedValue!);
@@ -734,6 +796,7 @@ class CSSLengthValue {
         type == CSSLengthType.VMIN ||
         type == CSSLengthType.VMAX ||
         type == CSSLengthType.EM ||
+        type == CSSLengthType.CH ||
         type == CSSLengthType.REM ||
         type == CSSLengthType.PERCENTAGE;
   }
@@ -876,11 +939,37 @@ class CSSLength {
     } else if (text == INITIAL) {
       return CSSLengthValue.initial;
     } else if (text == INHERIT) {
-      if (renderStyle != null && propertyName != null && renderStyle.target.parentElement != null) {
-        var element = renderStyle.target.parentElement!;
-        return parseLength(element.style.getPropertyValue(propertyName), element.renderStyle, propertyName, axisType);
+      // Per CSS Cascade, `inherit` sets the computed value on the element to
+      // the computed value of its parent. For <length-percentage> properties,
+      // this means percentage should remain a percentage (e.g. `100%`) and then
+      // be resolved against the *child's* containing block during layout.
+      //
+      // Avoid resolving percentages using the parent's containing block (which
+      // would incorrectly turn `100%` into an absolute px length here).
+      if (renderStyle != null && propertyName != null) {
+        final parent = renderStyle.target.parentElement;
+        if (parent != null) {
+          final dynamic parentComputed = parent.renderStyle.getProperty(propertyName);
+          if (parentComputed is CSSLengthValue) {
+            final String computedText = parentComputed.cssText();
+            if (computedText.isNotEmpty) {
+              return parseLength(computedText, renderStyle, propertyName, axisType);
+            }
+          }
+
+          // Fallback to parent's serialized specified value when computed is unavailable.
+          final String specified = parent.style.getPropertyValue(propertyName);
+          if (specified.isNotEmpty) {
+            return parseLength(specified, renderStyle, propertyName, axisType);
+          }
+        }
+
+        // Root element (or missing parent): fall back to initial value.
+        final String initialValue = (cssInitialValues[propertyName] as String?) ?? AUTO;
+        return parseLength(initialValue, renderStyle, propertyName, axisType);
       }
-      return CSSLengthValue.zero;
+
+      return CSSLengthValue.unknown;
     } else if (text == AUTO) {
       return CSSLengthValue.auto;
     } else if (text == NONE) {
@@ -903,6 +992,9 @@ class CSSLength {
     } else if (text.endsWith(EX)) {
       value = double.tryParse(text.split(EX)[0]);
       unit = CSSLengthType.EX;
+    } else if (text.endsWith(CH)) {
+      value = double.tryParse(text.split(CH)[0]);
+      unit = CSSLengthType.CH;
     } else if (text.endsWith(RPX)) {
       value = double.tryParse(text.split(RPX)[0]);
       unit = CSSLengthType.RPX;

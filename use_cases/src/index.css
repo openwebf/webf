@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* WebFListView: show custom refresh indicator only when enabled */
+webf-listview[refresh-style="customCupertino"] > [slotName="refresh-indicator"] {
+  display: flex;
+}
+
+@keyframes webf-float-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',

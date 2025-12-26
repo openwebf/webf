@@ -6,11 +6,12 @@ description: Demonstrates how to use the webf plugin.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 environment:
-  sdk: ">=2.17.0 <3.0.0"
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
+  go_router: ^16.1.0
   example_app:
     path: rust_builder
   webf: ^0.10.0

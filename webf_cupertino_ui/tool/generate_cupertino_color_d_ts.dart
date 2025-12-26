@@ -11,7 +11,7 @@ import 'dart:io';
 ///       packages/flutter/lib/src/cupertino/colors.dart
 ///     - Writes lib/src/cupertino_colors.d.ts
 ///
-///   dart run tool/generate_cupertino_color_d_ts.dart <path/to/colors.dart> [output.d.ts]
+///   dart run tool/generate_cupertino_color_d_ts.dart `<path/to/colors.dart>` [output.d.ts]
 Future<void> main(List<String> args) async {
   // Resolve input path: prefer CLI arg; otherwise discover via flutter in PATH.
   String inputPath;
@@ -34,7 +34,7 @@ Future<void> main(List<String> args) async {
 
   final file = File(inputPath);
   if (!await file.exists()) {
-    stderr.writeln('Input file not found: ' + inputPath);
+    stderr.writeln('Input file not found: $inputPath');
     exitCode = 2;
     return;
   }
@@ -61,7 +61,7 @@ Future<void> main(List<String> args) async {
   // 2) Parse static Color.fromARGB like:
   //    static const Color name = Color.fromARGB(255, r, g, b);
   final staticFromARGB = RegExp(
-    'static\\s+const\\s+Color\\s+(\\\w+)\\s*=\\s*Color\\.fromARGB\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)\\s*;',
+    r'static\s+const\s+Color\s+(\w+)\s*=\s*Color\.fromARGB\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)\s*;',
     multiLine: true,
   );
   for (final m in staticFromARGB.allMatches(content)) {
@@ -76,7 +76,7 @@ Future<void> main(List<String> args) async {
   // 3) Parse static Color.fromRGBO like:
   //    static const Color name = Color.fromRGBO(255, 255, 255, 1.0);
   final staticFromRGBO = RegExp(
-    'static\\s+const\\s+Color\\s+(\\\w+)\\s*=\\s*Color\\.fromRGBO\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*([0-9]+(?:\\.[0-9]+)?)\\s*\\)\\s*;',
+    r'static\s+const\s+Color\s+(\w+)\s*=\s*Color\.fromRGBO\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([0-9]+(?:\.[0-9]+)?)\s*\)\s*;',
     multiLine: true,
   );
   for (final m in staticFromRGBO.allMatches(content)) {
@@ -85,7 +85,7 @@ Future<void> main(List<String> args) async {
     final g = int.parse(m.group(3)!);
     final b = int.parse(m.group(4)!);
     final opacity = _formatAlphaFraction(m.group(5)!);
-    colorCss[name] = 'rgba(' + r.toString() + ', ' + g.toString() + ', ' + b.toString() + ', ' + opacity + ')';
+    colorCss[name] = 'rgba($r, $g, $b, $opacity)';
   }
 
   // 4) Parse dynamic colors defined via CupertinoDynamicColor.with... with a `color:` property.
@@ -159,13 +159,13 @@ Future<void> main(List<String> args) async {
   out.writeln('declare enum CupertinoColors {');
   for (final name in sortedNames) {
     final css = colorCss[name]!;
-    out.writeln('  ' + name + ' = ' + jsonEncode(css) + ',');
+    out.writeln('  $name = ${jsonEncode(css)},');
   }
   out.writeln('}');
   out.writeln();
 
   await File(outputPath).writeAsString(out.toString());
-  stdout.writeln('Wrote ' + outputPath + ' with ' + sortedNames.length.toString() + ' colors.');
+  stdout.writeln('Wrote $outputPath with ${sortedNames.length} colors.');
 }
 
 String? _parseColorArg(String block) {
@@ -195,7 +195,7 @@ String? _parseColorArg(String block) {
     final g = int.parse(mRgbo.group(2)!);
     final b = int.parse(mRgbo.group(3)!);
     final opacity = _formatAlphaFraction(mRgbo.group(4)!);
-    return 'rgba(' + r.toString() + ', ' + g.toString() + ', ' + b.toString() + ', ' + opacity + ')';
+    return 'rgba($r, $g, $b, $opacity)';
   }
 
   return null;
@@ -217,7 +217,7 @@ String _rgbaFromARGB(int a, int r, int g, int b) {
   g = g.clamp(0, 255);
   b = b.clamp(0, 255);
   final alpha = _formatAlphaFromInt(a);
-  return 'rgba(' + r.toString() + ', ' + g.toString() + ', ' + b.toString() + ', ' + alpha + ')';
+  return 'rgba($r, $g, $b, $alpha)';
 }
 
 String _formatAlphaFraction(String raw) {
@@ -297,11 +297,10 @@ Future<String?> _findFlutterSdkRoot() async {
 Future<bool> _looksLikeFlutterRoot(Directory dir) async {
   try {
     final colors = File(
-      dir.path + '/packages/flutter/lib/src/cupertino/colors.dart',
+      '${dir.path}/packages/flutter/lib/src/cupertino/colors.dart',
     );
     return await colors.exists();
   } catch (_) {
     return false;
   }
 }
-

@@ -135,7 +135,7 @@ class CSSStyleProperty {
 
     // Per CSS Backgrounds spec, unspecified subproperties reset to their initial values.
     // Initials: color=transparent, image=none, repeat=repeat, attachment=scroll,
-    // position=0% 0%, size=auto. Origin/clip not parsed here.
+    // position=0% 0%, size=auto, origin=padding-box, clip=border-box.
     final String color = values[0] ?? 'transparent';
     final String image = values[1] ?? 'none';
     final String repeat = values[2] ?? 'repeat';
@@ -171,6 +171,11 @@ class CSSStyleProperty {
     }
     properties[BACKGROUND_SIZE] = size;
 
+    // Reset origin/clip to their initial values when using `background` shorthand.
+    // Note: We currently don't parse origin/clip tokens from the shorthand itself,
+    // but per spec they must be reset when omitted.
+    properties[BACKGROUND_ORIGIN] = 'padding-box';
+    properties[BACKGROUND_CLIP] = 'border-box';
 
   }
 
@@ -181,6 +186,8 @@ class CSSStyleProperty {
     if (style.contains(BACKGROUND_POSITION)) style.removeProperty(BACKGROUND_POSITION, isImportant);
     if (style.contains(BACKGROUND_SIZE)) style.removeProperty(BACKGROUND_SIZE, isImportant);
     if (style.contains(BACKGROUND_REPEAT)) style.removeProperty(BACKGROUND_REPEAT, isImportant);
+    if (style.contains(BACKGROUND_ORIGIN)) style.removeProperty(BACKGROUND_ORIGIN, isImportant);
+    if (style.contains(BACKGROUND_CLIP)) style.removeProperty(BACKGROUND_CLIP, isImportant);
   }
 
   static void setShorthandBackgroundPosition(Map<String, String?> properties, String shorthandValue) {

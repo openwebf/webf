@@ -3,10 +3,23 @@
  *
  * Encapsulates routing navigation functionality with route guard mechanism for permission checks
  */
-// eslint-disable-next-line no-restricted-imports
-import { webf } from '@openwebf/webf-enterprise-typings';
+function getHybridHistory(): any {
+  return (globalThis as any)?.webf?.hybridHistory;
+}
 
 type RoutePath = string;
+
+type EnsureRouteMountedCallback = (pathname: string) => Promise<void> | void;
+let ensureRouteMountedCallback: EnsureRouteMountedCallback | null = null;
+
+export function __unstable_setEnsureRouteMountedCallback(callback: EnsureRouteMountedCallback | null) {
+  ensureRouteMountedCallback = callback;
+}
+
+async function ensureRouteMounted(pathname: string) {
+  if (!ensureRouteMountedCallback) return;
+  await ensureRouteMountedCallback(pathname);
+}
 
 /**
  * Single entry in the hybrid router stack.
@@ -26,7 +39,7 @@ export const WebFRouter = {
    * Get the current state object associated with the history entry
    */
   get state() {
-    return webf.hybridHistory.state;
+    return getHybridHistory()?.state;
   },
 
   /**
@@ -34,14 +47,14 @@ export const WebFRouter = {
    * The stack is ordered from root route (index 0) to the current top route (last element).
    */
   get stack(): HybridRouteStackEntry[] {
-    return webf.hybridHistory.buildContextStack as HybridRouteStackEntry[];
+    return (getHybridHistory()?.buildContextStack as HybridRouteStackEntry[]) ?? [];
   },
   
   /**
    * Get the current route path
    */
   get path() {
-    return webf.hybridHistory.path as RoutePath
+    return (getHybridHistory()?.path as RoutePath) ?? '/'
   },
   
   /**
@@ -49,8 +62,10 @@ export const WebFRouter = {
    * Applies route guards for permission checks before navigation
    */
   push: async <P extends RoutePath>(path: P, state?: any) => {
-
-    webf.hybridHistory.pushNamed(path, { arguments: state })
+    const hybridHistory = getHybridHistory();
+    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
+    await ensureRouteMounted(path);
+    hybridHistory.pushNamed(path, { arguments: state })
   },
   
   /**
@@ -58,14 +73,19 @@ export const WebFRouter = {
    * Applies route guards for permission checks before navigation
    */
   replace: async <P extends RoutePath>(path: P, state?: any) => {
-    webf.hybridHistory.pushReplacementNamed(path, { arguments: state});
+    const hybridHistory = getHybridHistory();
+    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
+    await ensureRouteMounted(path);
+    hybridHistory.pushReplacementNamed(path, { arguments: state});
   },
   
   /**
    * Navigate back to the previous route
    */
   back: () => {
-    webf.hybridHistory.back();
+    const hybridHistory = getHybridHistory();
+    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
+    hybridHistory.back();
   },
   
   /**
@@ -73,42 +93,57 @@ export const WebFRouter = {
    * Flutter-style navigation method
    */
   pop: (result?: any) => {
-    webf.hybridHistory.pop(result);
+    const hybridHistory = getHybridHistory();
+    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
+    hybridHistory.pop(result);
   },
   
   /**
    * Pop routes until reaching a specific route
    */
   popUntil: (path: RoutePath) => {
-    webf.hybridHistory.popUntil(path)
+    const hybridHistory = getHybridHistory();
+    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
+    hybridHistory.popUntil(path)
   },
   
   /**
    * Pop the current route and push a new named route
    */
   popAndPushNamed: async <T extends RoutePath>(path: T, state?: any) => {
-    webf.hybridHistory.popAndPushNamed(path, {arguments: state})
+    const hybridHistory = getHybridHistory();
+    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
+    await ensureRouteMounted(path);
+    hybridHistory.popAndPushNamed(path, {arguments: state})
   },
   
   /**
    * Push a new route and remove routes until reaching a specific route
    */
   pushNamedAndRemoveUntil: async <T extends RoutePath>(path: T, state: any, untilPath: RoutePath) => {
-    webf.hybridHistory.pushNamedAndRemoveUntil(state, path, untilPath)
+    const hybridHistory = getHybridHistory();
+    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
+    await ensureRouteMounted(path);
+    hybridHistory.pushNamedAndRemoveUntil(state, path, untilPath)
   },
   
   /**
    * Push a new route and remove all routes until a specific route (Flutter-style)
    */
   pushNamedAndRemoveUntilRoute: async <T extends RoutePath>(newPath: T, untilPath: RoutePath, state?: any) => {
-    webf.hybridHistory.pushNamedAndRemoveUntilRoute(newPath, untilPath, { arguments: state })
+    const hybridHistory = getHybridHistory();
+    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
+    await ensureRouteMounted(newPath);
+    hybridHistory.pushNamedAndRemoveUntilRoute(newPath, untilPath, { arguments: state })
   },
   
   /**
    * Check if the navigator can go back
    */
   canPop: (): boolean => {
-    return webf.hybridHistory.canPop();
+    const hybridHistory = getHybridHistory();
+    if (!hybridHistory) return false;
+    return hybridHistory.canPop();
   },
   
   /**
@@ -116,21 +151,27 @@ export const WebFRouter = {
    * Returns true if the pop was successful, false otherwise
    */
   maybePop: (result?: any): boolean => {
-    return webf.hybridHistory.maybePop(result);
+    const hybridHistory = getHybridHistory();
+    if (!hybridHistory) return false;
+    return hybridHistory.maybePop(result);
   },
   
   /**
    * Push a new state to the history stack (web-style navigation)
    */
   pushState: (state: any, name: string) => {
-    webf.hybridHistory.pushState(state, name);
+    const hybridHistory = getHybridHistory();
+    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
+    hybridHistory.pushState(state, name);
   },
   
   /**
    * Replace the current history entry with a new one (web-style navigation)
    */
   replaceState: (state: any, name: string) => {
-    webf.hybridHistory.replaceState(state, name);
+    const hybridHistory = getHybridHistory();
+    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
+    hybridHistory.replaceState(state, name);
   },
   
   /**
@@ -138,7 +179,9 @@ export const WebFRouter = {
    * Returns a restoration ID string
    */
   restorablePopAndPushState: (state: any, name: string): string => {
-    return webf.hybridHistory.restorablePopAndPushState(state, name);
+    const hybridHistory = getHybridHistory();
+    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
+    return hybridHistory.restorablePopAndPushState(state, name);
   },
   
   /**
@@ -146,7 +189,10 @@ export const WebFRouter = {
    * Returns a restoration ID string
    */
   restorablePopAndPushNamed: async <T extends RoutePath>(path: T, state?: any): Promise<string> => {
-    return webf.hybridHistory.restorablePopAndPushNamed(path, { arguments: state });
+    const hybridHistory = getHybridHistory();
+    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
+    await ensureRouteMounted(path);
+    return hybridHistory.restorablePopAndPushNamed(path, { arguments: state });
   }
 }
 
@@ -174,6 +220,11 @@ export interface RouteMatch {
 export function pathToRegex(pattern: string): { regex: RegExp; paramNames: string[] } {
   const paramNames: string[] = [];
   
+  if (pattern === '*') {
+    paramNames.push('*');
+    return { regex: /^(.*)$/, paramNames };
+  }
+
   // Escape special regex characters except : and *
   let regexPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
   
@@ -181,6 +232,12 @@ export function pathToRegex(pattern: string): { regex: RegExp; paramNames: strin
   regexPattern = regexPattern.replace(/:([^\/]+)/g, (_, paramName) => {
     paramNames.push(paramName);
     return '([^/]+)';
+  });
+
+  // Replace * with a splat capture group (matches across segments)
+  regexPattern = regexPattern.replace(/\*/g, () => {
+    paramNames.push('*');
+    return '(.*)';
   });
   
   // Add anchors for exact matching

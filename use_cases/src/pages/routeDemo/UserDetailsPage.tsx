@@ -3,138 +3,57 @@ import { useParams, useLocation, WebFRouter } from '../../router';
 import { WebFListView } from '@openwebf/react-core-ui';
 
 export const UserDetailsPage: React.FC = () => {
-  
   const params = useParams();
   const location = useLocation();
 
   return (
-    <WebFListView style={{
-      padding: '20px',
-      backgroundColor: 'var(--background-secondary)',
-      borderRadius: '12px',
-      marginBottom: '20px',
-      border: '1px solid var(--border-color)'
-    }}>
-      <h1 style={{
-        fontSize: '24px',
-        marginBottom: '16px',
-        color: 'var(--font-color-primary)'
-      }}>
-        User Details
-      </h1>
-        
-        <div style={{ marginBottom: '20px' }}>
-          <h2 style={{ 
-            fontSize: '18px', 
-            marginBottom: '12px', 
-            color: 'var(--font-color-primary)' 
-          }}>
-            Route Parameters:
-          </h2>
-          <div style={{
-            backgroundColor: 'var(--background-tertiary)',
-            padding: '16px',
-            borderRadius: '8px',
-            border: '1px solid var(--border-color)'
-          }}>
-            <p style={{ 
-              margin: '0 0 8px 0', 
-              fontFamily: 'monospace',
-              color: 'var(--font-color)'
-            }}>
-              <strong>userId:</strong> {params.userId || 'Not provided'}
+    <WebFListView className="p-5 bg-surface-secondary rounded-xl mb-5 border border-line">
+      <h1 className="text-2xl font-semibold mb-4 text-fg-primary">User Details</h1>
+
+      <div className="mb-5">
+        <h2 className="text-lg font-semibold mb-3 text-fg-primary">Route Parameters:</h2>
+        <div className="bg-surface-tertiary p-4 rounded-lg border border-line">
+          <p className="mb-2 font-mono text-fg">
+            <strong>userId:</strong> {params.id || 'Not provided'}
+          </p>
+          {params.userType && (
+            <p className="font-mono text-fg">
+              <strong>userType:</strong> {params.userType}
             </p>
-            {params.userType && (
-              <p style={{ 
-                margin: '0', 
-                fontFamily: 'monospace',
-                color: 'var(--font-color)'
-              }}>
-                <strong>userType:</strong> {params.userType}
-              </p>
-            )}
-          </div>
+          )}
         </div>
+      </div>
 
-        <div style={{ marginBottom: '20px' }}>
-          <h2 style={{ 
-            fontSize: '18px', 
-            marginBottom: '12px', 
-            color: 'var(--font-color-primary)' 
-          }}>
-            Location State:
-          </h2>
-          <div style={{
-            backgroundColor: 'var(--background-tertiary)',
-            padding: '16px',
-            borderRadius: '8px',
-            border: '1px solid var(--border-color)'
-          }}>
-            <pre style={{ 
-              margin: 0, 
-              fontSize: '12px',
-              fontFamily: 'monospace',
-              whiteSpace: 'pre-wrap',
-              color: 'var(--font-color)'
-            }}>
-              {JSON.stringify(location.state, null, 2)}
-            </pre>
-          </div>
+      <div className="mb-5">
+        <h2 className="text-lg font-semibold mb-3 text-fg-primary">Location State:</h2>
+        <div className="bg-surface-tertiary p-4 rounded-lg border border-line">
+          <pre className="m-0 text-xs font-mono whitespace-pre-wrap text-fg">
+            {JSON.stringify(location.state, null, 2)}
+          </pre>
         </div>
+      </div>
 
-        <div style={{ marginBottom: '20px' }}>
-          <h2 style={{ 
-            fontSize: '18px', 
-            marginBottom: '12px', 
-            color: 'var(--font-color-primary)' 
-          }}>
-            Current Path:
-          </h2>
-          <div style={{
-            backgroundColor: 'var(--background-tertiary)',
-            padding: '16px',
-            borderRadius: '8px',
-            border: '1px solid var(--border-color)'
-          }}>
-            <p style={{ 
-              margin: 0, 
-              fontFamily: 'monospace',
-              color: 'var(--font-color)'
-            }}>
-              {location.pathname}
-            </p>
-          </div>
+      <div className="mb-5">
+        <h2 className="text-lg font-semibold mb-3 text-fg-primary">Current Path:</h2>
+        <div className="bg-surface-tertiary p-4 rounded-lg border border-line">
+          <p className="m-0 font-mono text-fg">{location.pathname}</p>
         </div>
+      </div>
 
+      <div className="flex flex-wrap gap-3">
         <button
-          onClick={() => WebFRouter.pushState({}, '/')}
-          style={{
-            background: '#007aff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '12px 24px',
-            fontSize: '16px',
-            cursor: 'pointer'
-          }}
+          onClick={() => WebFRouter.pop()}
+          className="bg-[#007aff] hover:bg-[#006fe6] text-white border-0 rounded-lg py-3 px-6 text-base cursor-pointer transition-colors active:scale-[.98]"
         >
-          Back to Home
+          Back
         </button>
         <button
           onClick={() => WebFRouter.pushState({}, '/user/888')}
-          style={{
-            background: '#007aff',
-            color: 'white',
-            border: 'none',
-            marginLeft: '10px',
-            borderRadius: '8px',
-            padding: '12px 24px',
-            fontSize: '16px',
-            cursor: 'pointer'
-          }}
+          className="bg-[#007aff] hover:bg-[#006fe6] text-white border-0 rounded-lg py-3 px-6 text-base cursor-pointer transition-colors active:scale-[.98]"
         >
           Go User Details 888
         </button>
+      </div>
     </WebFListView>
   );
 };

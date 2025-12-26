@@ -397,6 +397,8 @@ class RenderFlowLayout extends RenderLayoutBox {
       CSSFontFace.ensureFontLoaded(families[0], rs.fontWeight, rs);
     }
     final bool clipText = rs.backgroundClip == CSSBackgroundBoundary.text;
+    final double fs = rs.fontSize.computedValue;
+    final double nonNegativeFontSize = fs.isFinite && fs >= 0 ? fs : 0.0;
     return ui.TextStyle(
       color: clipText ? null : rs.color.value,
       decoration: rs.textDecorationLine,
@@ -407,7 +409,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       textBaseline: CSSText.getTextBaseLine(),
       fontFamily: (families != null && families.isNotEmpty) ? families.first : null,
       fontFamilyFallback: families,
-      fontSize: rs.fontSize.computedValue,
+      fontSize: nonNegativeFontSize,
       letterSpacing: rs.letterSpacing?.computedValue,
       wordSpacing: rs.wordSpacing?.computedValue,
       // Do not apply CSS line-height here; markers align via baseline offsets.

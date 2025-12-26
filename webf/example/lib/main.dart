@@ -5,46 +5,29 @@
 
 // ignore_for_file: avoid_print
 
-import 'dart:async';
-
 import 'package:cronet_http/cronet_http.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:webf_example/cronet_adapter.dart';
-import 'custom_elements/icon.dart';
-import 'custom_elements/search.dart';
-import 'custom_elements/select.dart';
-import 'custom_elements/button.dart';
-import 'custom_elements/bottom_sheet.dart';
-import 'custom_elements/tab.dart';
-import 'custom_elements/switch.dart';
-import 'custom_elements/slider.dart';
-import 'custom_elements/svg_img.dart';
-import 'custom_elements/show_case_view.dart';
-import 'custom_elements/custom_listview_cupertino.dart';
-import 'custom_elements/custom_listview_material.dart';
-import 'custom_elements/flutter_sliver_listview.dart';
-import 'keyboard_case/popup.dart';
 import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
 
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
-import 'package:app_links/app_links.dart';
 
 import 'custom_hybrid_history_delegate.dart';
-import 'custom_listview.dart';
-import 'modules/test_array_buffer.dart';
-import 'modules/share.dart';
-import 'modules/deeplink.dart';
-import 'flutter_ui_handler.dart';
-import 'custom_elements/nested_scrollable.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+const String demoEntryUrl = 'http://localhost:5173';
+const String demoControllerName = 'demo';
+const String demoInitialRoute = '/';
+const Map<String, dynamic>? demoInitialState = null;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -62,151 +45,37 @@ void main() async {
       onControllerDetached: (String name, WebFController controller) {
         print('controller detached: $name $controller');
       }));
-  WebF.defineCustomElement('test-flutter-popup', (context) => FlutterPopup(context));
-  WebF.defineCustomElement('test-flutter-popup-item', (context) => FlutterPopupItem(context));
-  WebF.defineCustomElement('flutter-tab', (context) => FlutterTab(context));
-  WebF.defineCustomElement('flutter-tab-item', (context) => FlutterTabItem(context));
-  WebF.defineCustomElement('flutter-icon', (context) => FlutterIcon(context));
-  WebF.defineCustomElement('flutter-search', (context) => FlutterSearch(context));
-  WebF.defineCustomElement('flutter-select', (context) => FlutterSelect(context));
-  WebF.defineCustomElement('flutter-button', (context) => FlutterButton(context));
-  WebF.defineCustomElement('flutter-bottom-sheet', (context) => FlutterBottomSheet(context));
-  WebF.defineCustomElement('flutter-slider', (context) => SliderElement(context));
-  WebF.defineCustomElement('flutter-switch', (context) => FlutterSwitch(context));
-  WebF.defineCustomElement('flutter-svg-img', (context) => FlutterSVGImg(context));
-  WebF.defineCustomElement('flutter-showcase-view', (context) => FlutterShowCaseView(context));
-  WebF.defineCustomElement('flutter-showcase-item', (context) => FlutterShowCaseItem(context));
-  WebF.defineCustomElement('flutter-showcase-description', (context) => FlutterShowCaseDescription(context));
-  WebF.defineCustomElement('webf-listview-cupertino', (context) => CustomWebFListViewWithCupertinoRefreshIndicator(context));
-  WebF.defineCustomElement('webf-listview-material', (context) => CustomWebFListViewWithMeterialRefreshIndicator(context));
 
-  WebF.defineCustomElement('flutter-nest-scroller-skeleton', (context) => FlutterNestScrollerSkeleton(context));
-  WebF.defineCustomElement(
-      'flutter-nest-scroller-item-top-area', (context) => FlutterNestScrollerSkeletonItemTopArea(context));
-  WebF.defineCustomElement('flutter-nest-scroller-item-persistent-header',
-      (context) => FlutterNestScrollerSkeletonItemPersistentHeader(context));
-  WebF.defineCustomElement('flutter-sliver-listview', (context) => FlutterSliverListview(context));
-  WebF.defineModule((context) => TestModule(context));
-  WebF.defineModule((context) => ShareModule(context));
-  WebF.defineModule((context) => DeepLinkModule(context));
-
-  // Add home controller with preloading
-  WebFControllerManager.instance.addWithPreload(
-      name: 'miracle_plus',
-      createController: () => WebFController(
-          routeObserver: routeObserver,
-          initialRoute: '/',
-          networkOptions: WebFNetworkOptions(
-            android: WebFNetworkOptions(
-                httpClientAdapter: () async {
-                  String cacheDirectory =
-                      await HttpCacheController.getCacheDirectory(Uri.parse('https://miracleplus.openwebf.com/'));
-                  CronetEngine cronetEngine = CronetEngine.build(
-                      cacheMode: (kReleaseMode || kProfileMode) ? CacheMode.disk : CacheMode.memory,
-                      cacheMaxSize: 24 * 1024 * 1024,
-                      enableBrotli: true,
-                      enableHttp2: true,
-                      enableQuic: true,
-                      storagePath: (kReleaseMode || kProfileMode) ? cacheDirectory : null);
-                  return CronetAdapter(cronetEngine);
-                },
-                enableHttpCache: false // Cronet have it's own http cache impls
-                ),
+  // Add react use cases controller with preloading for image preload test
+  WebFControllerManager.instance.addWithPrerendering(
+      name: demoControllerName,
+      createController: () =>
+          WebFController(
+            enableBlink: false,
+            routeObserver: routeObserver,
           ),
-          // dioHttpClientAdapterAndroid: CronetAdapter(cronetEngine),
-          // dioHttpClientAdapter: NativeAdapter(),
-          onLCP: (time, isEvaluated) {
-            print('LCP time: $time, evaluated: $isEvaluated');
-          },
-          onLCPContentVerification: (contentInfo, routePath) {
-            print('contentInfo: $contentInfo');
-          },
-          httpLoggerOptions: HttpLoggerOptions(
-            requestHeader: true,
-            requestBody: true,
-          ),
-          onControllerInit: (controller) async {
-            // Built-in once-only error dump with debounce and per-load reset
-            controller.loadingState.onFinalLargestContentfulPaint((event) {
-              final dump = controller.dumpLoadingState(
-                options: LoadingStateDumpOptions.html |
-                    LoadingStateDumpOptions.api |
-                    LoadingStateDumpOptions.scripts |
-                    LoadingStateDumpOptions.networkDetailed,
-              );
-              debugPrint(dump.toStringFiltered());
-            });
-
-            // controller.loadingState.onFinalLargestContentfulPaint((_) {
-            //   if (!hasReported) {
-            //     LoadingStateDump dump = controller.dumpLoadingState(
-            //         options: LoadingStateDumpOptions.html |
-            //             LoadingStateDumpOptions.api |
-            //             LoadingStateDumpOptions.scripts |
-            //             LoadingStateDumpOptions.networkDetailed);
-            //     print(dump.toString());
-            //   }
-            //   hasReported = true;
-            // });
-          }),
-      bundle: WebFBundle.fromUrl('https://miracleplus.openwebf.com/'),
+      bundle: WebFBundle.fromUrl(demoEntryUrl),
       setup: (controller) {
         controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
         controller.darkModeOverride = savedThemeMode?.isDark;
       });
 
-  // // Add vue controller with preloading
-  // WebFControllerManager.instance.addWithPrerendering(
-  //     name: 'miracle_plus',
-  //     createController: () => WebFController(
-  //           initialRoute: '/home',
-  //           routeObserver: routeObserver,
-  //         ),
-  //     bundle: WebFBundle.fromUrl('https://miracleplus.openwebf.com/'),
-  //     setup: (controller) {
-  //       controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-  //       controller.darkModeOverride = savedThemeMode?.isDark;
-  //     });
-  //
-  // // Add vue controller with preloading
-  // WebFControllerManager.instance.addWithPrerendering(
-  //     name: 'cupertino_gallery',
-  //     createController: () => WebFController(
-  //       initialRoute: '/',
-  //       routeObserver: routeObserver,
-  //     ),
-  //     bundle: WebFBundle.fromUrl('https://vue-cupertino-gallery.openwebf.com/'),
-  //     setup: (controller) {
-  //       controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-  //       controller.darkModeOverride = savedThemeMode?.isDark;
-  //     });
-  //
-  // // Add react use cases controller with preloading for image preload test
-  // WebFControllerManager.instance.addWithPreload(
-  //     name: 'react_use_cases',
-  //     createController: () => WebFController(
-  //           routeObserver: routeObserver,
-  //           // devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-  //         ),
-  //     bundle: WebFBundle.fromUrl('http://localhost:3000/'),
-  //     setup: (controller) {
-  //       controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-  //       controller.darkModeOverride = savedThemeMode?.isDark;
-  //
-  //       // Set up method call handler for FlutterInteractionPage using dedicated handler
-  //       controller.javascriptChannel.onMethodCall = FlutterInteractionHandler().handleMethodCall;
-  //     });
-
-  WebF.overrideCustomElement('webf-listview', (context) => CustomWebFListView(context));
-
   runApp(MyApp(savedThemeMode: savedThemeMode));
 }
 
 class WebFSubView extends StatefulWidget {
-  const WebFSubView({super.key, required this.path, required this.controller});
+  const WebFSubView({
+    super.key,
+    required this.path,
+    required this.controller,
+    this.pathParameters = const {},
+    this.queryParameters = const {},
+  });
 
   final WebFController controller;
   final String path;
+  final Map<String, String> pathParameters;
+  final Map<String, String> queryParameters;
 
   @override
   State<StatefulWidget> createState() {
@@ -219,14 +88,27 @@ class WebFSubViewState extends State<WebFSubView> {
   Widget build(BuildContext context) {
     WebFController controller = widget.controller;
     RouterLinkElement? routerLinkElement = controller.view.getHybridRouterView(widget.path);
+    final String baseTitle = routerLinkElement?.getAttribute('title') ?? '';
+    final String paramsSummary = [
+      ...widget.pathParameters.entries.map((e) => '${e.key}=${e.value}'),
+      ...widget.queryParameters.entries.map((e) => '${e.key}=${e.value}'),
+    ].join(', ');
+    final String title = paramsSummary.isEmpty
+        ? baseTitle
+        : baseTitle.isEmpty
+        ? paramsSummary
+        : '$baseTitle ($paramsSummary)';
     return Scaffold(
       appBar: AppBar(
-        title: Text(routerLinkElement?.getAttribute('title') ?? ''),
+        title: Text(title),
         actions: [
           Padding(
               padding: EdgeInsets.fromLTRB(0, 0, 20, 0),
               child: DayNightSwitcherIcon(
-                isDarkModeEnabled: AdaptiveTheme.of(context).theme.brightness == Brightness.dark,
+                isDarkModeEnabled: AdaptiveTheme
+                    .of(context)
+                    .theme
+                    .brightness == Brightness.dark,
                 onStateChanged: (isDarkModeEnabled) async {
                   // sets theme mode to dark
                   !isDarkModeEnabled ? AdaptiveTheme.of(context).setLight() : AdaptiveTheme.of(context).setDark();
@@ -280,114 +162,108 @@ class MyApp extends StatefulWidget {
 }
 
 class MyAppState extends State<MyApp> {
-  final ValueNotifier<String> webfPageName = ValueNotifier('');
-  late AppLinks _appLinks;
-
   @override
   void initState() {
     super.initState();
-
-    // Initialize app links
-    _appLinks = AppLinks();
-
-    // Set up deep link navigation callback - but don't use Navigator in initState
-    DeepLinkModule.setNavigationCallback((String target, Map<String, String> params) async {
-      if (target == 'react_use_cases') {
-        // Get the page parameter to determine route
-        final page = params['page'];
-        String targetRoute = '/';
-
-        // Map page parameter to specific routes
-        if (page != null) {
-          switch (page) {
-            case 'deeplink':
-              targetRoute = '/deeplink';
-              break;
-            case 'animation':
-              targetRoute = '/animation';
-              break;
-            case 'video':
-              targetRoute = '/video';
-              break;
-            case 'network':
-              targetRoute = '/network';
-              break;
-            default:
-              targetRoute = '/';
-          }
-        }
-
-        // Check if react_use_cases controller already exists
-        WebFController? existingController = await WebFControllerManager.instance.getController('react_use_cases');
-
-        if (existingController != null && webfPageName.value == 'react_use_cases') {
-          // If controller exists and we're already on the react_use_cases page,
-          // use hybridHistory to navigate within the existing page
-          print('Using existing controller, navigating to: $targetRoute');
-          existingController.hybridHistory.pushState(params, targetRoute);
-        } else {
-          // Set page name and navigate after a short delay to ensure UI is ready
-          webfPageName.value = 'react_use_cases';
-          print('Set page to react_use_cases with route: $targetRoute');
-
-          // Use a delayed navigation to ensure the Navigator is ready
-          Future.delayed(Duration(milliseconds: 100), () {
-            if (!mounted) return;
-            final navigator = navigatorKey.currentState;
-            if (navigator == null) return;
-            navigator.push(MaterialPageRoute(builder: (_) {
-              return WebFDemo(
-                webfPageName: 'react_use_cases',
-                initialRoute: targetRoute,
-              );
-            }));
-          });
-        }
-      }
-    });
-
-    // Listen for incoming app links when app is already running
-    _appLinks.uriLinkStream.listen((Uri uri) {
-      print('Received app link: $uri');
-      _handleIncomingLink(uri.toString());
-    });
-
-    // Handle initial deep link when app is launched from closed state
-    _handleInitialLink();
   }
 
-  void _handleInitialLink() async {
-    // Add a small delay to ensure the app is fully initialized
-    await Future.delayed(Duration(milliseconds: 500));
-
-    try {
-      final Uri? initialLink = await _appLinks.getInitialLink();
-      if (initialLink != null) {
-        print('App launched with link: $initialLink');
-        _handleIncomingLink(initialLink.toString());
+  Object? _buildHybridRouteArguments(GoRouterState state, {
+    required Map<String, String> pathParameters,
+    required Map<String, String> queryParameters,
+  }) {
+    if (state.extra is Map) {
+      final merged = <String, dynamic>{};
+      for (final entry in (state.extra as Map).entries) {
+        merged[entry.key.toString()] = entry.value;
       }
-    } catch (e) {
-      print('Failed to get initial app link: $e');
+      return <String, dynamic>{
+        ...merged,
+        if (pathParameters.isNotEmpty) 'pathParameters': pathParameters,
+        if (queryParameters.isNotEmpty) 'queryParameters': queryParameters,
+      };
     }
+    if (state.extra != null) return state.extra;
+    if (pathParameters.isEmpty && queryParameters.isEmpty) return null;
+    return <String, dynamic>{
+      'pathParameters': pathParameters,
+      'queryParameters': queryParameters,
+    };
   }
 
-  void _handleIncomingLink(String url) async {
-    final result = await DeepLinkModule.processDeepLink(url);
-    print('Deep link processing result: $result');
-  }
+  late final GoRouter _router = GoRouter(
+    navigatorKey: navigatorKey,
+    initialLocation: '/',
+    observers: [routeObserver],
+    routes: <RouteBase>[
+      GoRoute(
+        path: '/',
+        builder: (context, state) => const FirstPage(title: 'Landing Bay'),
+      ),
+      GoRoute(
+        path: '/demo',
+        pageBuilder: (context, state) =>
+            MaterialPage<void>(
+              key: state.pageKey,
+              name: state.uri.toString(),
+              child: const WebFDemo(
+                webfPageName: demoControllerName,
+                initialRoute: demoInitialRoute,
+                initialState: demoInitialState,
+              ),
+            ),
+      ),
+      // Example of explicit dynamic routing with parameters.
+      GoRoute(
+        path: '/profile/:userId',
+        name: 'webf-profile',
+        pageBuilder: (context, state) => _buildWebFHybridRoutePage(state),
+      ),
+      // Universal catch-all for WebF hybrid router routes.
+      GoRoute(
+        path: '/:webfPath(.*)',
+        name: 'universal-webf-route',
+        pageBuilder: (context, state) => _buildWebFHybridRoutePage(state),
+      ),
+    ],
+    errorBuilder: (context, state) =>
+        Scaffold(
+          appBar: AppBar(title: const Text('Route not found')),
+          body: Center(child: Text(state.error?.toString() ?? 'Unknown routing error')),
+        ),
+  );
 
-  Route<dynamic>? handleOnGenerateRoute(RouteSettings settings) {
-    return CupertinoPageRoute(
-      settings: settings,
-      builder: (context) {
-        return WebFRouterView.fromControllerName(
-            controllerName: webfPageName.value,
-            path: settings.name!,
-            builder: (context, controller) {
-              return WebFSubView(controller: controller, path: settings.name!);
-            },
-            loadingWidget: _WebFDemoState.buildSplashScreen());
-      },
+  Page<void> _buildWebFHybridRoutePage(GoRouterState state) {
+    // Use the actual location path (not the matched pattern) so WebF can resolve dynamic hybrid routes.
+    final String path = state.uri.path;
+
+    // Avoid passing the universal catch-all param into the demo UI.
+    final pathParameters = Map<String, String>.from(state.pathParameters)
+      ..remove('webfPath');
+    final queryParameters = state.uri.queryParameters;
+
+    WebFController controller = WebFControllerManager.instance.getControllerSync(demoControllerName)!;
+
+    return MaterialPage<void>(
+        key: state.pageKey,
+        name: state.uri.toString(),
+        arguments: _buildHybridRouteArguments(
+          state,
+          pathParameters: pathParameters,
+          queryParameters: queryParameters,
+        ),
+        child: WebFRouterView.fromControllerName(
+          controllerName: demoControllerName,
+          path: path,
+          builder: (context, controller) => WebFSubView(
+            controller: controller,
+            path: path,
+            pathParameters: pathParameters,
+            queryParameters: queryParameters,
+          ),
+          loadingWidget: _WebFDemoState.buildSplashScreen(),
+        ),
+        // child: WebFSubView(path: path, controller: controller, queryParameters: queryParameters,
+        //     pathParameters: pathParameters)
     );
   }
 
@@ -397,30 +273,14 @@ class MyAppState extends State<MyApp> {
       light: ThemeData.light(useMaterial3: true),
       dark: ThemeData.dark(useMaterial3: true),
       initial: widget.savedThemeMode ?? AdaptiveThemeMode.light,
-      builder: (theme, darkTheme) => MaterialApp(
-        title: 'WebF Example App',
-        initialRoute: '/',
-        theme: theme,
-        darkTheme: darkTheme,
-        navigatorKey: navigatorKey,
-        navigatorObservers: [routeObserver],
-        themeMode: ThemeMode.system,
-        onGenerateInitialRoutes: (initialRoute) {
-          return [
-            CupertinoPageRoute(
-              builder: (context) {
-                return ValueListenableBuilder(
-                    valueListenable: webfPageName,
-                    builder: (context, value, child) {
-                      return FirstPage(title: 'Landing Bay', webfPageName: webfPageName);
-                    });
-              },
-            )
-          ];
-        },
-        onGenerateRoute: handleOnGenerateRoute,
-        debugShowCheckedModeBanner: false,
-      ),
+      builder: (theme, darkTheme) =>
+          MaterialApp.router(
+              title: 'WebF Example App',
+              theme: theme,
+              darkTheme: darkTheme,
+              themeMode: ThemeMode.system,
+              routerConfig: _router,
+              debugShowCheckedModeBanner: false),
     );
   }
 
@@ -431,9 +291,9 @@ class MyAppState extends State<MyApp> {
 }
 
 class FirstPage extends StatefulWidget {
-  const FirstPage({super.key, required this.title, required this.webfPageName});
+  const FirstPage({super.key, required this.title});
+
   final String title;
-  final ValueNotifier<String> webfPageName;
 
   @override
   State<StatefulWidget> createState() {
@@ -450,204 +310,17 @@ class FirstPageState extends State<FirstPage> {
       ),
       body: Stack(
         children: [
-          ListView(children: [
-            ElevatedButton(
+          Center(
+            child: ElevatedButton(
                 onPressed: () {
-                  widget.webfPageName.value = 'html/css';
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return WebFDemo(
-                      webfPageName: 'html/css',
-                      initialRoute: '/',
-                    );
-                  }));
+                  context.push('/demo');
                 },
-                child: Text('Open HTML/CSS/JavaScript demo')),
-            SizedBox(height: 18),
-            ElevatedButton(
-                onPressed: () {
-                  widget.webfPageName.value = 'esm_demo';
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return WebFDemo(
-                      webfPageName: 'esm_demo',
-                      initialRoute: '/',
-                    );
-                  }));
-                },
-                child: Text('Open ES Module Demo')),
-            SizedBox(height: 18),
-            ElevatedButton(
-                onPressed: () {
-                  widget.webfPageName.value = 'import_meta_demo';
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return WebFDemo(
-                      webfPageName: 'import_meta_demo',
-                      initialRoute: '/',
-                    );
-                  }));
-                },
-                child: Text('Open ES Module Import Meta Demo')),
-            SizedBox(height: 18),
-            ElevatedButton(
-                onPressed: () {
-                  widget.webfPageName.value = 'vuejs';
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return WebFDemo(webfPageName: 'vuejs');
-                  }));
-                },
-                child: Text('Open Vue.js demo')),
-            ElevatedButton(
-                onPressed: () {
-                  widget.webfPageName.value = 'vuejs';
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return WebFDemo(
-                      webfPageName: 'vuejs',
-                      initialRoute: '/positioned_layout',
-                    );
-                  }));
-                },
-                child: Text('Open Vue.js demo Positioned Layout')),
-            SizedBox(height: 18),
-            ElevatedButton(
-                onPressed: () {
-                  widget.webfPageName.value = 'reactjs';
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return WebFDemo(
-                      webfPageName: 'reactjs',
-                    );
-                  }));
-                },
-                child: Text('Open React.js demo')),
-            ElevatedButton(
-                onPressed: () {
-                  widget.webfPageName.value = 'reactjs';
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return WebFDemo(
-                      webfPageName: 'reactjs',
-                      initialRoute: '/array-buffer-demo',
-                    );
-                  }));
-                },
-                child: Text('Open ArrayBuffer Demo')),
-            SizedBox(height: 10),
-            ElevatedButton(
-                onPressed: () {
-                  widget.webfPageName.value = 'tailwind_react';
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return WebFDemo(
-                      webfPageName: 'tailwind_react',
-                      initialRoute: '/',
-                    );
-                  }));
-                },
-                child: Text('Open React.js with TailwindCSS 3')),
-            SizedBox(height: 10),
-            ElevatedButton(
-                onPressed: () {
-                  widget.webfPageName.value = 'miracle_plus';
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return WebFDemo(
-                      webfPageName: 'miracle_plus',
-                      initialRoute: '/',
-                      initialState: {'name': 1},
-                    );
-                  }));
-                },
-                child: Text('Open MiraclePlus App')),
-            ElevatedButton(
-                onPressed: () {
-                  widget.webfPageName.value = 'miracle_plus';
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return WebFDemo(
-                      webfPageName: 'miracle_plus',
-                      initialRoute: '/login',
-                    );
-                  }));
-                },
-                child: Text('Open MiraclePlus App Login')),
-            SizedBox(height: 18),
-            ElevatedButton(
-                onPressed: () {
-                  widget.webfPageName.value = 'hybrid_router';
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return WebFDemo(webfPageName: 'hybrid_router');
-                  }));
-                },
-                child: Text('Open Hybrid Router Example')),
-            SizedBox(height: 18),
-            ElevatedButton(
-                onPressed: () {
-                  widget.webfPageName.value = 'cupertino_gallery';
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return WebFDemo(webfPageName: 'cupertino_gallery');
-                  }));
-                },
-                child: Text('Open Cupertino Gallery')),
-            ElevatedButton(
-                onPressed: () {
-                  widget.webfPageName.value = 'cupertino_gallery';
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return WebFDemo(
-                      webfPageName: 'cupertino_gallery',
-                      initialRoute: '/button',
-                    );
-                  }));
-                },
-                child: Text('Open Cupertino Gallery / Button')),
-            SizedBox(height: 18),
-            ElevatedButton(
-                onPressed: () {
-                  widget.webfPageName.value = 'use_cases';
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return WebFDemo(webfPageName: 'use_cases');
-                  }));
-                },
-                child: Text('Open Use Cases (Vue.js)')),
-            SizedBox(height: 18),
-            ElevatedButton(
-                onPressed: () {
-                  widget.webfPageName.value = 'react_use_cases';
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return WebFDemo(webfPageName: 'react_use_cases');
-                  }));
-                },
-                child: Text('Open Use Cases (React.js)')),
-          ]),
+                child: Text('Open demo')),
+          ),
           WebFInspectorFloatingPanel(),
         ],
       ),
     );
-  }
-}
-
-// Helper method to determine the appropriate bundle based on controller name
-WebFBundle? _getBundleForControllerName(String controllerName) {
-  switch (controllerName) {
-    case 'html/css':
-      return WebFBundle.fromUrl('assets:///assets/bundle.html');
-    // return WebFBundle.fromUrl('http://127.0.0.1:3300/kraken_debug_server.js');
-    case 'esm_demo':
-      return WebFBundle.fromUrl('assets:///assets/esm_demo.html');
-    case 'import_meta_demo':
-      return WebFBundle.fromUrl('assets:///assets/import_meta_demo.html');
-    case 'vuejs':
-      return WebFBundle.fromUrl('assets:///vue_project/dist/index.html');
-    case 'reactjs':
-      return WebFBundle.fromUrl('http://localhost:3000/react_project/build');
-    case 'miracle_plus':
-      return WebFBundle.fromUrl('https://miracleplus.openwebf.com/');
-    case 'hybrid_router':
-      return WebFBundle.fromUrl('assets:///hybrid_router/build/index.html');
-    case 'tailwind_react':
-      return WebFBundle.fromUrl('assets:///tailwind_react/build/index.html');
-    case 'cupertino_gallery':
-      return WebFBundle.fromUrl('https://vue-cupertino-gallery.openwebf.com/');
-    case 'use_cases':
-      return WebFBundle.fromUrl('assets:///use_cases/dist/index.html');
-    case 'react_use_cases':
-      return WebFBundle.fromUrl('https://usecase.openwebf.com/');
-    default:
-      // Return null if the controller name is not recognized
-      return null;
   }
 }
 
@@ -665,10 +338,10 @@ class WebFDemo extends StatefulWidget {
 class _WebFDemoState extends State<WebFDemo> {
   @override
   Widget build(BuildContext context) {
-    // Set context for FlutterUIHandler
-    FlutterUIHandler().setContext(context);
-
-    bool darkModeOverride = AdaptiveTheme.of(context).theme.brightness == Brightness.dark;
+    bool darkModeOverride = AdaptiveTheme
+        .of(context)
+        .theme
+        .brightness == Brightness.dark;
     // bool isDarkModeEnabled = AdaptiveTheme.of(context).
     return Scaffold(
         appBar: AppBar(
@@ -677,12 +350,15 @@ class _WebFDemoState extends State<WebFDemo> {
             Padding(
                 padding: EdgeInsets.fromLTRB(0, 0, 20, 0),
                 child: DayNightSwitcherIcon(
-                  isDarkModeEnabled: AdaptiveTheme.of(context).theme.brightness == Brightness.dark,
+                  isDarkModeEnabled: AdaptiveTheme
+                      .of(context)
+                      .theme
+                      .brightness == Brightness.dark,
                   onStateChanged: (isDarkModeEnabled) async {
                     // sets theme mode to dark
                     !isDarkModeEnabled ? AdaptiveTheme.of(context).setLight() : AdaptiveTheme.of(context).setDark();
                     WebFController? controller =
-                        await WebFControllerManager.instance.getController(widget.webfPageName);
+                    await WebFControllerManager.instance.getController(widget.webfPageName);
                     controller?.darkModeOverride = isDarkModeEnabled;
                     // Removed call to view.didChangePlatformBrightness as it's no longer needed
                     // The darkModeOverride setter now handles updating styles and dispatching events
@@ -697,8 +373,9 @@ class _WebFDemoState extends State<WebFDemo> {
                 loadingWidget: buildSplashScreen(),
                 initialRoute: widget.initialRoute,
                 initialState: widget.initialState,
-                bundle: _getBundleForControllerName(widget.webfPageName),
-                createController: () => WebFController(
+                bundle: WebFBundle.fromUrl(demoEntryUrl),
+                createController: () =>
+                    WebFController(
                       routeObserver: routeObserver,
                       initialRoute: widget.initialRoute,
                       onControllerInit: (controller) async {},
@@ -706,23 +383,25 @@ class _WebFDemoState extends State<WebFDemo> {
                         requestHeader: true,
                         requestBody: true,
                       ),
-                    networkOptions: WebFNetworkOptions(
-                      android: WebFNetworkOptions(
-                          httpClientAdapter: () async {
-                            String cacheDirectory =
-                            await HttpCacheController.getCacheDirectory(_getBundleForControllerName(widget.webfPageName)!.resolvedUri!);
-                            CronetEngine cronetEngine = CronetEngine.build(
-                                cacheMode: (kReleaseMode || kProfileMode) ? CacheMode.disk : CacheMode.memory,
-                                cacheMaxSize: 24 * 1024 * 1024,
-                                enableBrotli: true,
-                                enableHttp2: true,
-                                enableQuic: true,
-                                storagePath: (kReleaseMode || kProfileMode) ? cacheDirectory : null);
-                            return CronetAdapter(cronetEngine);
-                          },
-                          enableHttpCache: false // Cronet have it's own http cache impls
+                      networkOptions: WebFNetworkOptions(
+                        android: WebFNetworkOptions(
+                            httpClientAdapter: () async {
+                              String cacheDirectory = await HttpCacheController.getCacheDirectory(
+                                  WebFBundle
+                                      .fromUrl(demoEntryUrl)
+                                      .resolvedUri!);
+                              CronetEngine cronetEngine = CronetEngine.build(
+                                  cacheMode: (kReleaseMode || kProfileMode) ? CacheMode.disk : CacheMode.memory,
+                                  cacheMaxSize: 24 * 1024 * 1024,
+                                  enableBrotli: true,
+                                  enableHttp2: true,
+                                  enableQuic: true,
+                                  storagePath: (kReleaseMode || kProfileMode) ? cacheDirectory : null);
+                              return CronetAdapter(cronetEngine);
+                            },
+                            enableHttpCache: false // Cronet have it's own http cache impls
+                        ),
                       ),
-                    ),
                       onLCPContentVerification: (ContentInfo contentInfo, String routePath) {
                         print('contentInfo: $contentInfo $routePath');
                       },
@@ -812,10 +491,12 @@ class _WebFDemoState extends State<WebFDemo> {
                     final isFinal = event.parameters['isFinal'] ?? false;
                     final status = isFinal ? 'FINAL' : (isCandidate ? 'CANDIDATE' : 'UNKNOWN');
                     print(
-                        '📊 Largest Contentful Paint (LCP) ($status) at ${event.parameters['timeSinceNavigationStart']}ms');
+                        '📊 Largest Contentful Paint (LCP) ($status) at ${event
+                            .parameters['timeSinceNavigationStart']}ms');
                   });
                 }),
             WebFInspectorFloatingPanel(),
+
           ],
         ));
   }
@@ -826,7 +507,7 @@ class _WebFDemoState extends State<WebFDemo> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Image.asset(
-            'assets/logo.png',
+            'assets/webf.png',
             width: 150,
             height: 150,
           ),
@@ -836,7 +517,7 @@ class _WebFDemoState extends State<WebFDemo> {
           ),
           SizedBox(height: 16),
           Text(
-            '正在加载...',
+            'Loading...',
             style: TextStyle(
               fontSize: 16,
               color: CupertinoColors.systemGrey,

@@ -50,7 +50,7 @@ class FlutterCupertinoIconState extends WebFWidgetElementState {
 
   @override
   Widget build(BuildContext context) {
-    IconData? iconType = FlutterCupertinoIcon.getIconType(widgetElement.type ?? '');
+    final IconData? iconType = FlutterCupertinoIcon.getIconType(widgetElement.type);
     if (iconType == null) return SizedBox.shrink();
 
     return Icon(

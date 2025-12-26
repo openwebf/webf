@@ -9,6 +9,8 @@
 // ignore_for_file: constant_identifier_names
 
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:ui';
 
@@ -30,6 +32,45 @@ void _imgLog(String message) {
   if (kDebugMode && DebugFlags.enableImageLogs) {
     debugPrint(message);
   }
+}
+
+({int width, int height})? _tryParseSvgIntrinsicSize(Uint8List bytes) {
+  try {
+    // Only probe the head; SVG root attributes are near the start.
+    final int probeLen = bytes.length < 4096 ? bytes.length : 4096;
+    final String head = utf8.decode(bytes.sublist(0, probeLen), allowMalformed: true);
+    final Match? svgTagMatch = RegExp(r'<svg\b[^>]*>', caseSensitive: false).firstMatch(head);
+    if (svgTagMatch == null) return null;
+    final String tag = svgTagMatch.group(0)!;
+
+    int? parseLengthAttr(String name) {
+      final Match? m = RegExp('$name\\s*=\\s*([\"\\\']?)([^\"\\\'>\\s]+)\\1', caseSensitive: false).firstMatch(tag);
+      if (m == null) return null;
+      String v = m.group(2)!.trim();
+      if (v.endsWith('%')) return null;
+      if (v.endsWith('px')) v = v.substring(0, v.length - 2);
+      final double? d = double.tryParse(v);
+      if (d == null || d <= 0) return null;
+      return d.round();
+    }
+
+    final int? w = parseLengthAttr('width');
+    final int? h = parseLengthAttr('height');
+    if (w != null && h != null) return (width: w, height: h);
+
+    final Match? vb = RegExp('viewBox\\s*=\\s*([\"\\\'])([^\"\\\']+)\\1', caseSensitive: false).firstMatch(tag);
+    if (vb != null) {
+      final parts = vb.group(2)!.trim().split(RegExp(r'[ ,]+'));
+      if (parts.length == 4) {
+        final double? vbw = double.tryParse(parts[2]);
+        final double? vbh = double.tryParse(parts[3]);
+        if (vbw != null && vbh != null && vbw > 0 && vbh > 0) {
+          return (width: vbw.round(), height: vbh.round());
+        }
+      }
+    }
+  } catch (_) {}
+  return null;
 }
 
 const String IMAGE = 'IMG';
@@ -273,8 +314,33 @@ class ImageElement extends Element {
   void _listenToStream() {
     if (_isListeningStream) return;
     _imgLog('[IMG] _listenToStream elem=$hashCode');
-    _cachedImageStream?.addListener(_listener);
-    _isListeningStream = true;
+    final ImageStream? stream = _cachedImageStream;
+    if (stream == null) return;
+
+    try {
+      stream.addListener(_listener);
+      _isListeningStream = true;
+    } on StateError catch (e) {
+      // Recover from "Stream has been disposed" by creating a new stream from the provider.
+      if (e.message.contains('Stream has been disposed') && _currentImageProvider != null) {
+        _imgLog('[IMG] stream disposed; recreate stream elem=$hashCode url=$_resolvedUri');
+        // Evict first to avoid ImageCache returning the disposed completer again.
+        try {
+          _currentImageProvider!.evict(configuration: _currentImageConfig ?? ImageConfiguration.empty);
+        } catch (_) {}
+
+        final ImageStream newStream = _currentImageProvider!.resolve(_currentImageConfig ?? ImageConfiguration.empty);
+        _updateSourceStream(newStream);
+        try {
+          _cachedImageStream?.addListener(_listener);
+          _isListeningStream = true;
+        } on StateError {
+          _isListeningStream = false;
+        }
+      } else {
+        rethrow;
+      }
+    }
   }
 
   bool _didWatchAnimationImage = false;
@@ -419,6 +485,7 @@ class ImageElement extends Element {
 
   @override
   bool handleIntersectionChange(IntersectionObserverEntry entry) {
+    if (disposed) return false;
     super.handleIntersectionChange(entry);
 
     // When appear
@@ -509,11 +576,26 @@ class ImageElement extends Element {
   }
 
   void _stopListeningStream({bool keepStreamAlive = false}) {
-    if (!_isListeningStream) return;
-    _imgLog('[IMG] _stopListeningStream elem=$hashCode keepAlive=$keepStreamAlive');
-    if (keepStreamAlive && _completerHandle == null && _cachedImageStream?.completer != null) {
+    final ImageStream? stream = _cachedImageStream;
+    // KeepAlive handle is useful even if we're not currently listening, because
+    // the stream may become disposed between pause/resume if no handles exist.
+    if (!keepStreamAlive && _completerHandle != null) {
+      _completerHandle?.dispose();
+      _completerHandle = null;
+    } else if (keepStreamAlive && _completerHandle == null && _cachedImageStream?.completer != null) {
       _completerHandle = _cachedImageStream!.completer!.keepAlive();
     }
+
+    // If we want to pause while the stream is still unresolved (no completer yet),
+    // removing the listener can cause the completer to be disposed as soon as it
+    // arrives. Keep the listener attached in this edge case.
+    if (keepStreamAlive && _isListeningStream && stream?.completer == null) {
+      _imgLog('[IMG] pause requested but stream unresolved; keep listening elem=$hashCode');
+      return;
+    }
+
+    if (!_isListeningStream) return;
+    _imgLog('[IMG] _stopListeningStream elem=$hashCode keepAlive=$keepStreamAlive');
 
     // Safely remove listener to prevent accessing disposed native peers
     try {
@@ -538,8 +620,16 @@ class ImageElement extends Element {
     if (_cachedImageStream?.key == newStream.key) return;
     _imgLog('[IMG] _updateSourceStream elem=$hashCode oldKey=${_cachedImageStream?.key} newKey=${newStream.key}');
     if (_isListeningStream) {
-      _cachedImageStream?.removeListener(_listener);
+      try {
+        _cachedImageStream?.removeListener(_listener);
+      } catch (_) {
+        // Best-effort: stream may already be disposed.
+      }
     }
+
+    // Stream changed; any keepAlive handle is no longer valid for the new stream.
+    _completerHandle?.dispose();
+    _completerHandle = null;
 
     _cachedImageStream = newStream;
 
@@ -741,6 +831,11 @@ class ImageElement extends Element {
 
   void _applySVGResponse(ImageLoadResponse response) {
     _svgBytes = response.bytes;
+    final dims = _tryParseSvgIntrinsicSize(response.bytes);
+    if (dims != null) {
+      naturalWidth = dims.width;
+      naturalHeight = dims.height;
+    }
     _resizeImage();
     _isSVGImage = true;
     _imgLog('[IMG] _applySVGResponse elem=$hashCode');
@@ -897,10 +992,71 @@ class ImageElement extends Element {
 
   Uri? _resolveResourceUri(String src) {
     String base = ownerDocument.controller.url;
+    // Data URLs don't need resolving and `Uri.parse` is stricter than browsers
+    // for some characters (notably unescaped quotes) that frequently appear in
+    // inline SVG payloads.
+    if (src.startsWith('data:')) {
+      Uri? normalized = _normalizeDataUri(src);
+      if (normalized != null) return normalized;
+
+      final Uri? uri = Uri.tryParse(src);
+      if (uri != null) return uri;
+
+      // Try a data-uri aware parser and re-serialize to a normalized form that
+      // Dart's Uri parser accepts.
+      try {
+        final UriData uriData = UriData.parse(src);
+        final String normalized = uriData.toString();
+        final Uri? normalizedUri = Uri.tryParse(normalized);
+        if (normalizedUri != null) return normalizedUri;
+      } catch (_) {
+      }
+
+      // Try common sanitizations used by inline SVG encoders.
+      final String sanitized = src.replaceAll("'", "%27").replaceAll('"', '%22');
+      return Uri.tryParse(sanitized);
+    }
+
     try {
-      return ownerDocument.controller.uriParser!.resolve(Uri.parse(base), Uri.parse(src));
+      final Uri? srcUri = Uri.tryParse(src);
+      if (srcUri == null) return null;
+      return ownerDocument.controller.uriParser!.resolve(Uri.parse(base), srcUri);
     } catch (_) {
       // Ignoring the failure of resolving, but to remove the resolved hyperlink.
+      return null;
+    }
+  }
+
+  Uri? _normalizeDataUri(String src) {
+    // Handles non-standard forms like `data:image/svg+xml;utf8,%3Csvg...`
+    // by decoding the payload first and rebuilding a standards-compliant URI.
+    try {
+      final int comma = src.indexOf(',');
+      if (!src.startsWith('data:') || comma == -1) return null;
+      final String header = src.substring('data:'.length, comma);
+      String payload = src.substring(comma + 1);
+      final String lowerHeader = header.toLowerCase();
+
+      // Only normalize non-base64 inline SVG payloads; other types fall back.
+      final bool isBase64 = lowerHeader.contains(';base64');
+      final bool isSvg = lowerHeader.startsWith('image/svg+xml');
+      if (!isSvg || isBase64) return null;
+
+      // `;utf8` is commonly used to indicate percent-encoded UTF-8 text.
+      // Decode the percent-encoded payload to an SVG string, then rebuild.
+      if (payload.contains('%')) {
+        payload = Uri.decodeComponent(payload);
+      }
+
+      final UriData rebuilt = UriData.fromString(
+        payload,
+        mimeType: 'image/svg+xml',
+        encoding: utf8,
+      );
+      final Uri uri = Uri.parse(rebuilt.toString());
+
+      return uri;
+    } catch (e) {
       return null;
     }
   }
@@ -1007,8 +1163,13 @@ class ImageState extends flutter.State<WebFImage> {
         alignment: imageElement.renderStyle.objectPosition,
       );
     } else {
-      child = SvgPicture.memory(
-        imageElement._svgBytes!,
+      final bytes = imageElement._svgBytes!;
+      final String svgString = utf8.decode(bytes, allowMalformed: true);
+      child = SvgPicture.string(
+        svgString,
+        fit: imageElement.renderStyle.objectFit,
+        alignment: imageElement.renderStyle.objectPosition,
+        placeholderBuilder: (_) => const flutter.SizedBox.shrink(),
       );
     }
     if (isRepaintBoundary) {
@@ -1060,7 +1221,20 @@ class ImageRequest {
 
   Future<ImageLoadResponse> obtainImage(WebFController controller) async {
     final WebFBundle? preloadedBundle = controller.getPreloadBundleFromUrl(currentUri.toString());
-    final WebFBundle bundle = preloadedBundle ?? WebFBundle.fromUrl(currentUri.toString());
+    const Map<String, String> imageHeaders = <String, String>{
+      // Avoid advertising AVIF here: some CDNs will content-negotiate to AVIF
+      // even for .gif URLs, but AVIF decode support varies by platform/runtime.
+      'Accept': 'image/gif,image/png,image/jpeg,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+      // Avoid unsupported encodings (e.g. brotli) for binary image payloads.
+      'Accept-Encoding': 'identity',
+    };
+    // Images should negotiate with an image-centric Accept header; some CDNs will
+    // otherwise return HTML or other non-image payloads (leading to "Invalid image data").
+    final WebFBundle bundle = preloadedBundle ??
+        WebFBundle.fromUrl(
+          currentUri.toString(),
+          additionalHttpHeaders: imageHeaders,
+        );
     await bundle.resolve(baseUrl: controller.url, uriParser: controller.uriParser);
     await bundle.obtainData(controller.view.contextId);
 

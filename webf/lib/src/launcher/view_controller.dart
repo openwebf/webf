@@ -748,7 +748,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     if (target == null) return;
 
     if (target is Element) {
-      target.setInlineStyle(key, value, baseHref: baseHref);
+      target.setInlineStyle(key, value, baseHref: baseHref, fromNative: true);
     }
   }
 
@@ -776,7 +776,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       case 'after':
       case 'first-letter':
       case 'first-line':
-        target.setPseudoStyle(args, key, value, baseHref: baseHref);
+        target.setPseudoStyle(args, key, value, baseHref: baseHref, fromNative: true);
         break;
 
       default:

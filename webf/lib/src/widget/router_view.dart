@@ -50,6 +50,7 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    widget.controller.updateTextSettingsFromContext(context);
     widget.controller.routeObserver?.subscribe(this, ModalRoute.of(context)!);
   }
 
@@ -212,16 +213,40 @@ class _AsyncWebFRouterView extends StatefulWidget {
 class _AsyncWebFRouterViewState extends State<_AsyncWebFRouterView> {
   // Capture start time when state is created for performance tracking
   final DateTime _pfStartTime = DateTime.now();
+  late Future<WebFController?> _controllerFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _controllerFuture = WebFControllerManager.instance.getController(widget.controllerName);
+  }
+
+  @override
+  void didUpdateWidget(covariant _AsyncWebFRouterView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controllerName != widget.controllerName) {
+      _controllerFuture = WebFControllerManager.instance.getController(widget.controllerName);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-        future: WebFControllerManager.instance.getController(widget.controllerName),
+    final existController = WebFControllerManager.instance.getControllerSync(widget.controllerName);
+    // Keep the existing (evaluated) controller view alive across router rebuilds.
+    // go_router rebuilds the page stack when navigating, and creating a new Future in build
+    // can briefly put FutureBuilder back into `waiting`, which would otherwise replace the
+    // subtree (disposing WebFRouterView) even though the controller is already ready.
+    if (existController != null && existController.evaluated && !existController.disposed) {
+      existController.updateTextSettingsFromContext(context);
+      return widget.builder != null
+          ? widget.builder!(context, existController)
+          : _WebFRouterViewWithStartTime(controller: existController, path: widget.path, startTime: _pfStartTime);
+    }
+
+    return FutureBuilder<WebFController?>(
+        future: _controllerFuture,
         builder: (context, snapshot) {
-          WebFController? existController = WebFControllerManager.instance.getControllerSync(widget.controllerName);
-          if (existController == null ||
-              !existController.evaluated ||
-              snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting && snapshot.data == null) {
             return widget.loadingWidget ??
                 const SizedBox(
                   width: 50,
@@ -244,6 +269,7 @@ class _AsyncWebFRouterViewState extends State<_AsyncWebFRouterView> {
           }
 
           WebFController controller = snapshot.data!;
+          controller.updateTextSettingsFromContext(context);
 
           return widget.builder != null
               ? widget.builder!(context, controller)

@@ -9,8 +9,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show FlutterError;
 import 'package:webf/foundation.dart';
 
 import '../launcher/controller.dart' show WebFController; // controller lookup for per-controller cache toggle
@@ -183,7 +184,7 @@ class ProxyHttpClientRequest implements HttpClientRequest {
       final bool controllerForbidsCache = ctrl?.networkOptions?.effectiveEnableHttpCache == false;
       final bool globalCacheOn = HttpCacheController.mode != HttpCacheMode.NO_CACHE;
       cacheEnabled = controllerForbidsCache ? false : (controllerWantsCache ? true : globalCacheOn);
-    
+
       if (cacheEnabled) {
         HttpCacheController cacheController = HttpCacheController.instance(origin);
         cacheObject = await cacheController.getCacheObject(request.uri);
