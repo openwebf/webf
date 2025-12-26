@@ -1210,6 +1210,9 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
               if (!value_ptr || !(*value_ptr)) {
                 continue;
               }
+              if (id == CSSPropertyID::kVariable && value_string.IsEmpty()) {
+                value_string = String(" ");
+              }
               AtomicString prop_name = prop.Name().ToAtomicString();
               String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
               if (value_string.IsNull()) {
@@ -1315,6 +1318,9 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
           String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
           String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
           if (value_string.IsNull()) value_string = String("");
+          if (id == CSSPropertyID::kVariable && value_string.IsEmpty()) {
+            value_string = String(" ");
+          }
 
           // Skip white-space longhands; will emit shorthand later
           if (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap) {
@@ -1385,6 +1391,9 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
             String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
             if (value_string.IsNull()) {
               value_string = (*value_ptr)->CssTextForSerialization();
+            }
+            if (id == CSSPropertyID::kVariable && value_string.IsEmpty()) {
+              value_string = String(" ");
             }
             String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
 
@@ -1523,9 +1532,13 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
                                                el->bindingObject(), nullptr);
             for (unsigned i = 0; i < pseudo_set->PropertyCount(); ++i) {
               auto prop = pseudo_set->PropertyAt(i);
+              CSSPropertyID id = prop.Id();
               AtomicString prop_name = prop.Name().ToAtomicString();
               String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
               if (value_string.IsNull()) value_string = String("");
+              if (id == CSSPropertyID::kVariable && value_string.IsEmpty()) {
+                value_string = String(" ");
+              }
               String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
               auto key_ns = prop_name.ToStylePropertyNameNativeString();
               auto* payload =
@@ -1615,6 +1628,9 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
           String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
           String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
           if (value_string.IsNull()) value_string = String("");
+          if (id == CSSPropertyID::kVariable && value_string.IsEmpty()) {
+            value_string = String(" ");
+          }
 
           if (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap) {
             continue;
@@ -1673,6 +1689,9 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
             const auto* value_ptr = prop.Value();
             if (!value_ptr || !(*value_ptr)) {
               continue;
+            }
+            if (id == CSSPropertyID::kVariable && value_string.IsEmpty()) {
+              value_string = String(" ");
             }
             AtomicString prop_name = prop.Name().ToAtomicString();
             String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);

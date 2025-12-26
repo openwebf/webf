@@ -1064,13 +1064,14 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
           // Skip parse-error or missing values; they should not be forwarded to Dart.
           continue;
         }
+        if (id == CSSPropertyID::kVariable && value_string.IsEmpty()) {
+          value_string = String(" ");
+        }
         AtomicString prop_name = property.Name().ToAtomicString();
         String value_string = inline_style->GetPropertyValueWithHint(prop_name, i);
         if (value_string.IsNull()) {
           value_string = (*value_ptr)->CssTextForSerialization();
         }
-        String base_href_string = inline_style->GetPropertyBaseHrefWithHint(prop_name, i);
-
         // Normalize CSS property names (e.g. background-color, text-align) to the
         // camelCase form expected by the Dart style engine before sending them
         // across the bridge. Custom properties starting with '--' are preserved
@@ -1078,11 +1079,7 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
         std::unique_ptr<SharedNativeString> args_01 = prop_name.ToStylePropertyNameNativeString();
         auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
         payload->value = stringToNativeString(value_string).release();
-        if (!base_href_string.IsEmpty()) {
-          payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
-        } else {
-          payload->href = nullptr;
-        }
+        payload->href = nullptr;
         GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(),
                                                              payload);
       }
