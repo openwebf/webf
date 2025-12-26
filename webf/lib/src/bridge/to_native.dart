@@ -820,6 +820,11 @@ enum UICommandType {
   addIntersectionObserver,
   removeIntersectionObserver,
   disconnectIntersectionObserver,
+  // Append-only: stylesheet-only style updates (Blink CSS pipeline).
+  setSheetStyle,
+  clearSheetStyle,
+  // Append-only: set full inline style text (Blink CSS pipeline).
+  setInlineStyleText,
 }
 
 final class UICommandItem extends Struct {

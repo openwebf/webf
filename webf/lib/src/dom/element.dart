@@ -142,6 +142,12 @@ abstract class Element extends ContainerNode
   /// The inline style is a map of style property name to style property value.
   final Map<String, dynamic> inlineStyle = {};
 
+  /// Styles from style sheets when Blink CSS stack is enabled.
+  ///
+  /// This is kept separate from [inlineStyle] so Blink-provided stylesheet
+  /// results don't get mixed into author inline styles.
+  final Map<String, CSSPropertyValue> _sheetStyle = <String, CSSPropertyValue>{};
+
   /// The StatefulElements that holding the reference of this elements
   @flutter.protected
   final Set<flutter.State> _states = {};
@@ -1715,8 +1721,49 @@ abstract class Element extends ContainerNode
     }
   }
 
+  void setSheetStyle(String property, String value, {String? baseHref}) {
+    if (value.isEmpty) {
+      _sheetStyle.remove(property);
+      // Avoid clobbering author inline styles (treated as important).
+      if (!style.isImportant(property)) {
+        style.removeProperty(property, false);
+      }
+      return;
+    }
+
+    _sheetStyle[property] = CSSPropertyValue(value, baseHref: baseHref);
+    style.setProperty(property, value, isImportant: false, baseHref: baseHref);
+  }
+
+  void clearSheetStyle() {
+    if (_sheetStyle.isEmpty) return;
+
+    final List<String> keys = _sheetStyle.keys.toList(growable: false);
+    for (final String property in keys) {
+      // Avoid clobbering author inline styles (treated as important).
+      if (!style.isImportant(property)) {
+        style.removeProperty(property, false);
+      }
+    }
+    _sheetStyle.clear();
+  }
+
   void _applySheetStyle(CSSStyleDeclaration style) {
-    CSSStyleDeclaration matchRule = _collectMatchedRulesWithCache();
+    if (ownerDocument.ownerView.enableBlink) {
+      if (_sheetStyle.isNotEmpty) {
+        _sheetStyle.forEach((propertyName, propertyValue) {
+          style.setProperty(
+            propertyName,
+            propertyValue.value,
+            isImportant: false,
+            baseHref: propertyValue.baseHref,
+          );
+        });
+      }
+      return;
+    }
+
+    final CSSStyleDeclaration matchRule = _collectMatchedRulesWithCache();
     style.union(matchRule);
   }
 
@@ -2000,6 +2047,11 @@ abstract class Element extends ContainerNode
       style.setProperty(property, value,
           isImportant: true, baseHref: baseHref, validate: validate);
     }
+
+    inline style  importent true
+    sheet style importent true
+    inline style importent false
+    sheet style importent false
   }
 
   void clearInlineStyle() {

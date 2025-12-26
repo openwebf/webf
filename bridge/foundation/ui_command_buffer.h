@@ -63,7 +63,12 @@ enum class UICommand {
   kClearPseudoStyle,
   kAddIntersectionObserver,
   kRemoveIntersectionObserver,
-  kDisconnectIntersectionObserver
+  kDisconnectIntersectionObserver,
+  // Append-only: stylesheet-only style updates (Blink CSS pipeline).
+  kSetSheetStyle,
+  kClearSheetStyle,
+  // Append-only: set full inline style text (Blink CSS pipeline).
+  kSetInlineStyleText
 };
 
 #define MAXIMUM_UI_COMMAND_SIZE 2048

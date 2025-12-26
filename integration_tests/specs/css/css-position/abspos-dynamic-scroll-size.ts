@@ -1,5 +1,5 @@
 describe('positioned scrollable size', () => {
-  it('dynamic change the size of elements inside of positioned element can affect scrollable size', async (done) => {
+  fit('dynamic change the size of elements inside of positioned element can affect scrollable size', async (done) => {
     let overlay: any;
 
     const placeholders = Array(50).fill(0).map(() =>

@@ -56,7 +56,7 @@ final class UICommandItemFFI extends Struct {
   external int nativePtr2;
 }
 
-bool enableWebFCommandLog = !kReleaseMode && Platform.environment['ENABLE_WEBF_JS_LOG'] == 'true';
+bool enableWebFCommandLog = true ||  !kReleaseMode && Platform.environment['ENABLE_WEBF_JS_LOG'] == 'true';
 
 typedef NativeFreeActiveCommandBuffer = Void Function(Pointer<Void>);
 typedef DartFreeActiveCommandBuffer = void Function(Pointer<Void>);
@@ -131,6 +131,32 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           printMsg =
               'nativePtr: ${command.nativePtr} type: ${command.type} key: ${command.args} value: $valueLog baseHref: ${baseHrefLog ?? 'null'}';
           break;
+        case UICommandType.setInlineStyleText:
+          printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} cssText: ${command.args}';
+          break;
+        case UICommandType.setSheetStyle:
+          String? valueLog;
+          String? baseHrefLog;
+          if (command.nativePtr2 != nullptr) {
+            try {
+              final Pointer<NativeStyleValueWithHref> payload =
+                  command.nativePtr2.cast<NativeStyleValueWithHref>();
+              final Pointer<NativeString> valuePtr = payload.ref.value;
+              final Pointer<NativeString> hrefPtr = payload.ref.href;
+              if (valuePtr != nullptr) {
+                valueLog = nativeStringToString(valuePtr);
+              }
+              if (hrefPtr != nullptr) {
+                baseHrefLog = nativeStringToString(hrefPtr);
+              }
+            } catch (_) {
+              valueLog = '<error>';
+              baseHrefLog = '<error>';
+            }
+          }
+          printMsg =
+              'nativePtr: ${command.nativePtr} type: ${command.type} key: ${command.args} value: $valueLog baseHref: ${baseHrefLog ?? 'null'}';
+          break;
         case UICommandType.setPseudoStyle:
           if (command.nativePtr2 != nullptr) {
             try {
@@ -152,16 +178,6 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
             printMsg =
                 'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} property: <null>';
           }
-          break;
-        case UICommandType.removePseudoStyle:
-          printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} remove: ${command.nativePtr2 != nullptr ? nativeStringToString(command.nativePtr2.cast<NativeString>()) : null}';
-          break;
-        case UICommandType.clearPseudoStyle:
-          printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args}';
-          break;
-        case UICommandType.setPseudoStyle:
-          printMsg =
-              'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} cssText: ${command.nativePtr2 != nullptr ? nativeStringToString(command.nativePtr2.cast<NativeString>()) : null}';
           break;
         case UICommandType.removePseudoStyle:
           printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} pseudo: ${command.args} remove: ${command.nativePtr2 != nullptr ? nativeStringToString(command.nativePtr2.cast<NativeString>()) : null}';
@@ -271,27 +287,41 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           view.setInlineStyle(nativePtr, command.args, value, baseHref: baseHref);
           pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
-        case UICommandType.setPseudoStyle:
+        case UICommandType.setInlineStyleText:
+          view.setInlineStyleText(nativePtr, command.args);
+          pendingStylePropertiesTargets[nativePtr.address] = true;
+          break;
+        case UICommandType.setSheetStyle:
+          String value = '';
+          String? baseHref;
           if (command.nativePtr2 != nullptr) {
-            final keyValue = nativePairToPairRecord(command.nativePtr2.cast());
-            if (keyValue.key.isNotEmpty) {
-              view.setPseudoStyle(nativePtr, command.args, keyValue.key, keyValue.value);
+            final Pointer<NativeStyleValueWithHref> payload =
+                command.nativePtr2.cast<NativeStyleValueWithHref>();
+            final Pointer<NativeString> valuePtr = payload.ref.value;
+            final Pointer<NativeString> hrefPtr = payload.ref.href;
+            if (valuePtr != nullptr) {
+              final Pointer<NativeString> nativeValue = valuePtr.cast<NativeString>();
+              value = nativeStringToString(nativeValue);
+              freeNativeString(nativeValue);
             }
+            if (hrefPtr != nullptr) {
+              final Pointer<NativeString> nativeHref = hrefPtr.cast<NativeString>();
+              final String raw = nativeStringToString(nativeHref);
+              freeNativeString(nativeHref);
+              baseHref = raw.isEmpty ? null : raw;
+            }
+            malloc.free(payload);
           }
-          break;
-        case UICommandType.removePseudoStyle:
-          if (command.nativePtr2 != nullptr) {
-            Pointer<NativeString> nativeKey = command.nativePtr2.cast<NativeString>();
-            String key = nativeStringToString(nativeKey);
-            freeNativeString(nativeKey);
-            view.removePseudoStyle(nativePtr, command.args, key);
-          }
-          break;
-        case UICommandType.clearPseudoStyle:
-          view.clearPseudoStyle(nativePtr, command.args);
+
+          view.setSheetStyle(nativePtr, command.args, value, baseHref: baseHref);
+          pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
         case UICommandType.clearStyle:
           view.clearInlineStyle(nativePtr);
+          pendingStylePropertiesTargets[nativePtr.address] = true;
+          break;
+        case UICommandType.clearSheetStyle:
+          view.clearSheetStyle(nativePtr);
           pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
         case UICommandType.setPseudoStyle:

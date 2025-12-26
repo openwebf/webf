@@ -35,10 +35,13 @@ UICommandKind GetKindFromUICommand(UICommand command) {
     case UICommand::kRemoveEvent:
       return UICommandKind::kEvent;
     case UICommand::kSetStyle:
+    case UICommand::kSetSheetStyle:
+    case UICommand::kSetInlineStyleText:
     case UICommand::kSetPseudoStyle:
     case UICommand::kRemovePseudoStyle:
     case UICommand::kClearPseudoStyle:
     case UICommand::kClearStyle:
+    case UICommand::kClearSheetStyle:
       return UICommandKind::kStyleUpdate;
     case UICommand::kSetAttribute:
     case UICommand::kRemoveAttribute:

@@ -752,6 +752,35 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     }
   }
 
+  void setInlineStyleText(Pointer selfPtr, String cssText) {
+    assert(hasBindingObject(selfPtr), 'id: $selfPtr cssText: $cssText');
+    Node? target = getBindingObject<Node>(selfPtr);
+    if (target == null) return;
+    if (target is! Element) return;
+
+    // Replace the full inline style declaration in one shot.
+    target.clearInlineStyle();
+    if (cssText.trim().isEmpty) return;
+
+    final Map<String, dynamic> map = CSSParser(cssText).parseInlineStyle();
+    if (map.isEmpty) return;
+
+    map.forEach((String propertyName, dynamic value) {
+      target.inlineStyle[propertyName] = value;
+      target.style.setProperty(propertyName, value.toString(), isImportant: true);
+    });
+  }
+
+  void setSheetStyle(Pointer selfPtr, String key, String value, {String? baseHref}) {
+    assert(hasBindingObject(selfPtr), 'id: $selfPtr key: $key value: $value');
+    Node? target = getBindingObject<Node>(selfPtr);
+    if (target == null) return;
+
+    if (target is Element) {
+      target.setSheetStyle(key, value, baseHref: baseHref);
+    }
+  }
+
   void clearInlineStyle(Pointer selfPtr) {
     assert(hasBindingObject(selfPtr), 'id: $selfPtr');
     Node? target = getBindingObject<Node>(selfPtr);
@@ -759,6 +788,16 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
     if (target is Element) {
       target.clearInlineStyle();
+    }
+  }
+
+  void clearSheetStyle(Pointer selfPtr) {
+    assert(hasBindingObject(selfPtr), 'id: $selfPtr');
+    Node? target = getBindingObject<Node>(selfPtr);
+    if (target == null) return;
+
+    if (target is Element) {
+      target.clearSheetStyle();
     }
   }
 

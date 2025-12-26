@@ -1131,15 +1131,18 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
         collector.SortAndTransferMatchedRules();
 
         StyleCascade cascade(state);
+        StyleCascade sheet_cascade(state);
         for (const auto& entry : collector.GetMatchResult().GetMatchedProperties()) {
           if (entry.is_inline_style) {
             cascade.MutableMatchResult().AddInlineStyleProperties(entry.properties);
           } else {
             cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
+            sheet_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
           }
         }
 
         std::shared_ptr<MutableCSSPropertyValueSet> property_set = cascade.ExportWinningPropertySet();
+        std::shared_ptr<MutableCSSPropertyValueSet> sheet_property_set = sheet_cascade.ExportWinningPropertySet();
 
         auto inline_style = const_cast<Element&>(*element).EnsureMutableInlineStyle();
         if (inline_style && inline_style->PropertyCount() > 0) {
@@ -1162,13 +1165,11 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
           }
         }
 
-        if (!property_set || property_set->IsEmpty()) {
-          // Even if there are no element-level winners, clear any previously-sent
-          // overrides (to avoid stale styles) and emit pseudo styles if any exist.
+        if (!sheet_property_set || sheet_property_set->IsEmpty()) {
+          // Even if there are no stylesheet winners, clear any previously-sent
+          // sheet snapshot (to avoid stale styles) and emit pseudo styles if any exist.
           auto* ctx = document.GetExecutingContext();
-          if (!(inline_style && inline_style->PropertyCount() > 0)) {
-            ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
-          }
+          ctx->uiCommandBuffer()->AddCommand(UICommand::kClearSheetStyle, nullptr, element->bindingObject(), nullptr);
           auto emit_pseudo_if_any = [&](PseudoId pseudo_id, const char* pseudo_name) {
             ElementRuleCollector pseudo_collector(state, SelectorChecker::kResolvingStyle);
             pseudo_collector.SetPseudoElementStyleRequest(PseudoElementStyleRequest(pseudo_id));
@@ -1239,20 +1240,18 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
         }
 
         auto* ctx = document.GetExecutingContext();
-        // Only clear when we actually have properties to apply; otherwise we
-        // might clear a previously-sent snapshot and leave the element with no
-        // inline overrides (e.g., BODY background), causing incorrect paint.
-        ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
+        // Clear previously-sent stylesheet snapshot before emitting the new winners.
+        ctx->uiCommandBuffer()->AddCommand(UICommand::kClearSheetStyle, nullptr, element->bindingObject(), nullptr);
         bool cleared = true;
 
-        if (!property_set || property_set->IsEmpty()) {
+        if (!sheet_property_set || sheet_property_set->IsEmpty()) {
           InheritedState next_state;
           next_state.inherited_values = parent_state.inherited_values;
           next_state.custom_vars = parent_state.custom_vars;
           return next_state;
         }
 
-        unsigned count = property_set->PropertyCount();
+        unsigned count = sheet_property_set->PropertyCount();
         InheritedValueMap inherited_values(parent_state.inherited_values);
         CustomVarMap custom_vars(parent_state.custom_vars);
 
@@ -1262,7 +1261,7 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
         WhiteSpaceCollapse ws_collapse_enum = WhiteSpaceCollapse::kCollapse;
         TextWrap text_wrap_enum = TextWrap::kWrap;
         for (unsigned i = 0; i < count; ++i) {
-          auto prop = property_set->PropertyAt(i);
+          auto prop = sheet_property_set->PropertyAt(i);
           CSSPropertyID id = prop.Id();
           if (id == CSSPropertyID::kInvalid) continue;
           const auto* value_ptr = prop.Value();
@@ -1298,15 +1297,15 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
         }
 
         for (unsigned i = 0; i < count; ++i) {
-          auto prop = property_set->PropertyAt(i);
+          auto prop = sheet_property_set->PropertyAt(i);
           CSSPropertyID id = prop.Id();
           if (id == CSSPropertyID::kInvalid) continue;
           const auto* value_ptr = prop.Value();
           if (!value_ptr || !(*value_ptr)) continue;
 
           AtomicString prop_name = prop.Name().ToAtomicString();
-          String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
-          String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
+          String value_string = sheet_property_set->GetPropertyValueWithHint(prop_name, i);
+          String base_href_string = sheet_property_set->GetPropertyBaseHrefWithHint(prop_name, i);
           if (value_string.IsNull()) value_string = String("");
 
           // Skip white-space longhands; will emit shorthand later
@@ -1323,7 +1322,7 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
           } else {
             payload->href = nullptr;
           }
-          ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(key_ns), element->bindingObject(),
+          ctx->uiCommandBuffer()->AddCommand(UICommand::kSetSheetStyle, std::move(key_ns), element->bindingObject(),
                                              payload);
         }
 
@@ -1334,7 +1333,7 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
           auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
           payload->value = stringToNativeString(white_space_value_str).release();
           payload->href = nullptr;
-          ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(ws_key), element->bindingObject(),
+          ctx->uiCommandBuffer()->AddCommand(UICommand::kSetSheetStyle, std::move(ws_key), element->bindingObject(),
                                              payload);
         }
 
@@ -1447,15 +1446,18 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
         collector.SortAndTransferMatchedRules();
 
         StyleCascade cascade(state);
+        StyleCascade sheet_cascade(state);
         for (const auto& entry : collector.GetMatchResult().GetMatchedProperties()) {
           if (entry.is_inline_style) {
             cascade.MutableMatchResult().AddInlineStyleProperties(entry.properties);
           } else {
             cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
+            sheet_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
           }
         }
 
         std::shared_ptr<MutableCSSPropertyValueSet> property_set = cascade.ExportWinningPropertySet();
+        std::shared_ptr<MutableCSSPropertyValueSet> sheet_property_set = sheet_cascade.ExportWinningPropertySet();
 
         auto inline_style = const_cast<Element&>(*el).EnsureMutableInlineStyle();
         if (inline_style && inline_style->PropertyCount() > 0) {
@@ -1480,10 +1482,8 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
 
         auto* ctx = document.GetExecutingContext();
 
-        if (!property_set || property_set->IsEmpty()) {
-          if (!(inline_style && inline_style->PropertyCount() > 0)) {
-            ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, el->bindingObject(), nullptr);
-          }
+        if (!sheet_property_set || sheet_property_set->IsEmpty()) {
+          ctx->uiCommandBuffer()->AddCommand(UICommand::kClearSheetStyle, nullptr, el->bindingObject(), nullptr);
 
           auto emit_pseudo_if_any = [&](PseudoId pseudo_id, const char* pseudo_name) {
             ElementRuleCollector pseudo_collector(state, SelectorChecker::kResolvingStyle);
@@ -1543,10 +1543,10 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
           return next_state;
         }
 
-        // We have properties to apply. Clear existing overrides and emit winners.
-        ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, el->bindingObject(), nullptr);
+        // We have stylesheet winners to apply. Clear existing snapshot and emit winners.
+        ctx->uiCommandBuffer()->AddCommand(UICommand::kClearSheetStyle, nullptr, el->bindingObject(), nullptr);
 
-        unsigned count = property_set->PropertyCount();
+        unsigned count = sheet_property_set->PropertyCount();
         InheritedValueMap inherited_values(parent_state.inherited_values);
         CustomVarMap custom_vars(parent_state.custom_vars);
 
@@ -1555,7 +1555,7 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
         WhiteSpaceCollapse ws_collapse_enum = WhiteSpaceCollapse::kCollapse;
         TextWrap text_wrap_enum = TextWrap::kWrap;
         for (unsigned i = 0; i < count; ++i) {
-          auto prop = property_set->PropertyAt(i);
+          auto prop = sheet_property_set->PropertyAt(i);
           CSSPropertyID id = prop.Id();
           if (id == CSSPropertyID::kInvalid) continue;
           const auto* value_ptr = prop.Value();
@@ -1591,15 +1591,15 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
         }
 
         for (unsigned i = 0; i < count; ++i) {
-          auto prop = property_set->PropertyAt(i);
+          auto prop = sheet_property_set->PropertyAt(i);
           CSSPropertyID id = prop.Id();
           if (id == CSSPropertyID::kInvalid) continue;
           const auto* value_ptr = prop.Value();
           if (!value_ptr || !(*value_ptr)) continue;
 
           AtomicString prop_name = prop.Name().ToAtomicString();
-          String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
-          String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
+          String value_string = sheet_property_set->GetPropertyValueWithHint(prop_name, i);
+          String base_href_string = sheet_property_set->GetPropertyBaseHrefWithHint(prop_name, i);
           if (value_string.IsNull()) value_string = String("");
 
           if (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap) {
@@ -1614,7 +1614,7 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
           } else {
             payload->href = nullptr;
           }
-          ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(key_ns), el->bindingObject(),
+          ctx->uiCommandBuffer()->AddCommand(UICommand::kSetSheetStyle, std::move(key_ns), el->bindingObject(),
                                              payload);
         }
 
@@ -1624,7 +1624,7 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
           auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
           payload->value = stringToNativeString(white_space_value_str).release();
           payload->href = nullptr;
-          ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(ws_key), el->bindingObject(),
+          ctx->uiCommandBuffer()->AddCommand(UICommand::kSetSheetStyle, std::move(ws_key), el->bindingObject(),
                                              payload);
         }
 

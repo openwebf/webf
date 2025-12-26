@@ -476,6 +476,18 @@ void Element::NotifyInlineStyleMutation() {
   if (!GetExecutingContext()->isBlinkEnabled()) {
     return;
   }
+
+  // Keep Dart-side inline style snapshot in sync for rendering.
+  // Use a single kSetStyle command carrying full cssText to avoid per-property parsing/serialization.
+  if (!InActiveDocument()) {
+    return;
+  }
+  InlineCssStyleDeclaration* decl = inlineStyleForBlink();
+  if (decl == nullptr) {
+    return;
+  }
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, decl->cssText().ToNativeString(),
+                                                       bindingObject(), reinterpret_cast<void*>(1));
 }
 
 void Element::CloneNonAttributePropertiesFrom(const Element& other, CloneChildrenFlag) {
@@ -981,9 +993,12 @@ void Element::StyleAttributeChanged(const AtomicString& new_style_string,
   if (new_style_string.IsNull()) {
     EnsureUniqueElementData().inline_style_ = nullptr;
     if (GetExecutingContext()->isBlinkEnabled()) {
-      // Clear all inline styles on Dart side when style attribute is removed.
+      // When Blink CSS is enabled, keep Dart-side inline styles in sync too.
+      // Use a single kSetStyle command carrying the full cssText (empty = clear)
+      // to avoid per-property UI command emission/parsing.
       if (InActiveDocument()) {
-        GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, bindingObject(), nullptr);
+        GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, AtomicString::Empty().ToNativeString(),
+                                                             bindingObject(), reinterpret_cast<void*>(1));
       }
     }
   } else {
@@ -1034,45 +1049,11 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
     // (style(), cssText(), getPropertyValue(), serialization) reflect updates.
     EnsureUniqueElementData().inline_style_ = inline_style;
 
-    // Emit declared style updates to Dart as raw CSS strings (no C++ evaluation).
-    // This keeps values like calc(), var(), and viewport units intact for Dart-side evaluation.
-    if (inline_style && InActiveDocument()) {
-      unsigned count = inline_style->PropertyCount();
-      // Always clear existing inline styles before applying new set to avoid stale properties.
-      GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, bindingObject(), nullptr);
-      for (unsigned i = 0; i < count; ++i) {
-        auto property = inline_style->PropertyAt(i);
-        CSSPropertyID id = property.Id();
-        if (id == CSSPropertyID::kInvalid) {
-          continue;
-        }
-        const auto* value_ptr = property.Value();
-        if (!value_ptr || !(*value_ptr)) {
-          // Skip parse-error or missing values; they should not be forwarded to Dart.
-          continue;
-        }
-        AtomicString prop_name = property.Name().ToAtomicString();
-        String value_string = inline_style->GetPropertyValueWithHint(prop_name, i);
-        if (value_string.IsNull()) {
-          value_string = (*value_ptr)->CssTextForSerialization();
-        }
-        String base_href_string = inline_style->GetPropertyBaseHrefWithHint(prop_name, i);
-
-        // Normalize CSS property names (e.g. background-color, text-align) to the
-        // camelCase form expected by the Dart style engine before sending them
-        // across the bridge. Custom properties starting with '--' are preserved
-        // verbatim by ToStylePropertyNameNativeString().
-        std::unique_ptr<SharedNativeString> args_01 = prop_name.ToStylePropertyNameNativeString();
-        auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
-        payload->value = stringToNativeString(value_string).release();
-        if (!base_href_string.IsEmpty()) {
-          payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
-        } else {
-          payload->href = nullptr;
-        }
-        GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(),
-                                                             payload);
-      }
+    // Emit the raw cssText to Dart (no per-property parsing/serialization) so
+    // Dart can update its inline style snapshot directly.
+    if (InActiveDocument()) {
+      GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, new_style_string.ToNativeString(),
+                                                           bindingObject(), reinterpret_cast<void*>(1));
     }
   } else {
     auto&& legacy_inline_style = EnsureElementRareData().EnsureLegacyInlineCSSStyleDeclaration(this);

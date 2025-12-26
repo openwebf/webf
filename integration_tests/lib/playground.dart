@@ -107,6 +107,7 @@ class WebFPage extends StatelessWidget {
                 controllerName: 'test',
                 bundle: WebFBundle.fromUrl('http://127.0.0.1:3300/webf_debug_server.js'),
                 createController: () => WebFController(
+                  enableBlink: true,
                     viewportWidth: 360,
                     viewportHeight: 640,
                     background: Colors.black12,
