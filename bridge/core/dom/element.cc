@@ -1064,13 +1064,13 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
           // Skip parse-error or missing values; they should not be forwarded to Dart.
           continue;
         }
-        if (id == CSSPropertyID::kVariable && value_string.IsEmpty()) {
-          value_string = String(" ");
-        }
         AtomicString prop_name = property.Name().ToAtomicString();
         String value_string = inline_style->GetPropertyValueWithHint(prop_name, i);
         if (value_string.IsNull()) {
           value_string = (*value_ptr)->CssTextForSerialization();
+        }
+        if (id == CSSPropertyID::kVariable && value_string.IsEmpty()) {
+          value_string = String(" ");
         }
         // Normalize CSS property names (e.g. background-color, text-align) to the
         // camelCase form expected by the Dart style engine before sending them
