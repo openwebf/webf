@@ -205,4 +205,70 @@ describe('CSS Grid align-self', () => {
 
     grid.remove();
   });
+
+  it('aligns with first baseline', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(3, 100px)';
+    grid.style.gridTemplateRows = '100px';
+    grid.style.alignItems = 'center';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#e0f2f1';
+
+    for (let i = 0; i < 3; i++) {
+      const item = document.createElement('div');
+      item.textContent = 'Text';
+      if (i === 1) {
+        item.style.alignSelf = 'first baseline';
+      }
+      item.style.fontSize = ['14px', '18px', '22px'][i];
+      item.style.backgroundColor = ['#4DB6AC', '#26A69A', '#009688'][i];
+      item.style.padding = '5px';
+      item.style.color = 'white';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    const items = Array.from(grid.children) as HTMLElement[];
+    expect(items.length).toBe(3);
+
+    grid.remove();
+  });
+
+  it('handles auto alignment', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(3, 100px)';
+    grid.style.gridTemplateRows = '100px';
+    grid.style.alignItems = 'center';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#fce4ec';
+
+    for (let i = 0; i < 3; i++) {
+      const item = document.createElement('div');
+      item.textContent = `${i + 1}`;
+      if (i === 1) {
+        item.textContent += ' (auto)';
+        item.style.alignSelf = 'auto';
+        item.style.fontSize = '10px';
+      }
+      item.style.backgroundColor = ['#F06292', '#EC407A', '#E91E63'][i];
+      item.style.padding = '10px';
+      item.style.color = 'white';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    const items = Array.from(grid.children) as HTMLElement[];
+    // Auto should inherit from align-items (center)
+    expect(items.length).toBe(3);
+
+    grid.remove();
+  });
 });

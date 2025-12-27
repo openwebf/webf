@@ -225,4 +225,61 @@ describe('CSS Grid justify-items', () => {
 
     grid.remove();
   });
+
+  it('aligns items with baseline', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(3, 100px)';
+    grid.style.gridTemplateRows = '80px';
+    grid.style.justifyItems = 'baseline';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#ffccbc';
+
+    for (let i = 0; i < 3; i++) {
+      const item = document.createElement('div');
+      item.textContent = 'Text';
+      item.style.fontSize = ['14px', '18px', '22px'][i];
+      item.style.backgroundColor = ['#FF8A65', '#FF7043', '#FF5722'][i];
+      item.style.padding = '5px';
+      item.style.color = 'white';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    const items = Array.from(grid.children) as HTMLElement[];
+    expect(items.length).toBe(3);
+
+    grid.remove();
+  });
+
+  it('handles legacy alignment values', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(3, 100px)';
+    grid.style.gridTemplateRows = '80px';
+    grid.style.justifyItems = 'legacy';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#c8e6c9';
+
+    for (let i = 0; i < 3; i++) {
+      const item = document.createElement('div');
+      item.textContent = `${i + 1}`;
+      item.style.backgroundColor = ['#81C784', '#66BB6A', '#4CAF50'][i];
+      item.style.padding = '10px';
+      item.style.color = 'white';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    const items = Array.from(grid.children) as HTMLElement[];
+    expect(items.length).toBe(3);
+
+    grid.remove();
+  });
 });

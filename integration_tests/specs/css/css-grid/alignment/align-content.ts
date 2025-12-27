@@ -317,4 +317,109 @@ describe('CSS Grid align-content', () => {
 
     grid.remove();
   });
+
+  it('handles align-content with single row', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(2, 100px)';
+    grid.style.gridTemplateRows = '60px';
+    grid.style.height = '180px';
+    grid.style.alignContent = 'center';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#b2dfdb';
+
+    for (let i = 0; i < 2; i++) {
+      const item = document.createElement('div');
+      item.textContent = `${i + 1}`;
+      item.style.backgroundColor = ['#26A69A', '#009688'][i];
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.justifyContent = 'center';
+      item.style.color = 'white';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    const items = Array.from(grid.children) as HTMLElement[];
+    const gridRect = grid.getBoundingClientRect();
+    const gridCenter = (gridRect.top + gridRect.bottom) / 2;
+    const rowCenter = (items[0].getBoundingClientRect().top + items[0].getBoundingClientRect().bottom) / 2;
+
+    // Single row should be centered
+    expect(Math.abs(gridCenter - rowCenter)).toBeLessThan(1);
+
+    grid.remove();
+  });
+
+  it('handles space-between with two rows', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(2, 100px)';
+    grid.style.gridTemplateRows = 'repeat(2, 50px)';
+    grid.style.height = '200px';
+    grid.style.alignContent = 'space-between';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#c5cae9';
+
+    for (let i = 0; i < 4; i++) {
+      const item = document.createElement('div');
+      item.textContent = `${i + 1}`;
+      item.style.backgroundColor = ['#7986CB', '#5C6BC0', '#3F51B5', '#3949AB'][i];
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.justifyContent = 'center';
+      item.style.color = 'white';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    const items = Array.from(grid.children) as HTMLElement[];
+    const gridRect = grid.getBoundingClientRect();
+
+    // With two rows, first at top, last at bottom
+    expect(items[0].getBoundingClientRect().top).toBe(gridRect.top);
+    expect(items[2].getBoundingClientRect().bottom).toBe(gridRect.bottom);
+
+    grid.remove();
+  });
+
+  it('handles align-content with mixed row sizes', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(2, 100px)';
+    grid.style.gridTemplateRows = '40px 60px 50px';
+    grid.style.height = '250px';
+    grid.style.alignContent = 'space-evenly';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#d1c4e9';
+
+    for (let i = 0; i < 6; i++) {
+      const item = document.createElement('div');
+      item.textContent = `${i + 1}`;
+      item.style.backgroundColor = ['#9575CD', '#7E57C2', '#673AB7', '#5E35B1', '#512DA8', '#4527A0'][i];
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.justifyContent = 'center';
+      item.style.color = 'white';
+      item.style.fontSize = '11px';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    const items = Array.from(grid.children) as HTMLElement[];
+    expect(items[0].getBoundingClientRect().height).toBe(40);
+    expect(items[2].getBoundingClientRect().height).toBe(60);
+    expect(items[4].getBoundingClientRect().height).toBe(50);
+
+    grid.remove();
+  });
 });

@@ -222,4 +222,62 @@ describe('CSS Grid align-items', () => {
     expect(distance).toBe(0);
     grid.remove();
   });
+
+  it('aligns items with first baseline', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(3, 100px)';
+    grid.style.gridTemplateRows = '100px';
+    grid.style.alignItems = 'first baseline';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#fff3e0';
+
+    for (let i = 0; i < 3; i++) {
+      const item = document.createElement('div');
+      item.textContent = 'Text';
+      item.style.fontSize = ['12px', '16px', '20px'][i];
+      item.style.backgroundColor = ['#FFB74D', '#FFA726', '#FF9800'][i];
+      item.style.padding = '5px';
+      item.style.color = 'white';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    const items = Array.from(grid.children) as HTMLElement[];
+    expect(items.length).toBe(3);
+
+    grid.remove();
+  });
+
+  it('aligns items with last baseline', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(3, 100px)';
+    grid.style.gridTemplateRows = '100px';
+    grid.style.alignItems = 'last baseline';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#b2ebf2';
+
+    for (let i = 0; i < 3; i++) {
+      const item = document.createElement('div');
+      item.textContent = 'Text';
+      item.style.fontSize = ['12px', '16px', '20px'][i];
+      item.style.backgroundColor = ['#4DD0E1', '#26C6DA', '#00BCD4'][i];
+      item.style.padding = '5px';
+      item.style.color = 'white';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    const items = Array.from(grid.children) as HTMLElement[];
+    expect(items.length).toBe(3);
+
+    grid.remove();
+  });
 });

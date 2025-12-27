@@ -89,4 +89,60 @@ describe('CSS Grid place-items shorthand', () => {
 
     grid.remove();
   });
+
+  it('uses end for both axes', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(3, 100px)';
+    grid.style.gridTemplateRows = '100px';
+    grid.style.placeItems = 'end';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#fff3e0';
+
+    for (let i = 0; i < 3; i++) {
+      const item = document.createElement('div');
+      item.textContent = `${i + 1}`;
+      item.style.backgroundColor = ['#FFB74D', '#FFA726', '#FF9800'][i];
+      item.style.padding = '10px';
+      item.style.color = 'white';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    expect(getComputedStyle(grid).alignItems).toBe('end');
+    expect(getComputedStyle(grid).justifyItems).toBe('end');
+
+    grid.remove();
+  });
+
+  it('combines with grid gaps', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(3, 90px)';
+    grid.style.gridTemplateRows = '90px';
+    grid.style.placeItems = 'center';
+    grid.style.gap = '10px';
+    grid.style.backgroundColor = '#e8f5e9';
+
+    for (let i = 0; i < 3; i++) {
+      const item = document.createElement('div');
+      item.textContent = `${i + 1}`;
+      item.style.backgroundColor = ['#66BB6A', '#4CAF50', '#43A047'][i];
+      item.style.padding = '8px';
+      item.style.color = 'white';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    expect(getComputedStyle(grid).alignItems).toBe('center');
+    expect(getComputedStyle(grid).justifyItems).toBe('center');
+
+    grid.remove();
+  });
 });

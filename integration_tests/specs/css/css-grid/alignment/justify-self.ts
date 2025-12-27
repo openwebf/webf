@@ -183,4 +183,70 @@ describe('CSS Grid justify-self', () => {
 
     grid.remove();
   });
+
+  it('aligns with baseline', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(3, 100px)';
+    grid.style.gridTemplateRows = '80px';
+    grid.style.justifyItems = 'center';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#ede7f6';
+
+    for (let i = 0; i < 3; i++) {
+      const item = document.createElement('div');
+      item.textContent = 'Text';
+      if (i === 1) {
+        item.style.justifySelf = 'baseline';
+      }
+      item.style.fontSize = ['14px', '18px', '22px'][i];
+      item.style.backgroundColor = ['#9575CD', '#7E57C2', '#673AB7'][i];
+      item.style.padding = '5px';
+      item.style.color = 'white';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    const items = Array.from(grid.children) as HTMLElement[];
+    expect(items.length).toBe(3);
+
+    grid.remove();
+  });
+
+  it('handles auto alignment', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(3, 100px)';
+    grid.style.gridTemplateRows = '80px';
+    grid.style.justifyItems = 'center';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#e1bee7';
+
+    for (let i = 0; i < 3; i++) {
+      const item = document.createElement('div');
+      item.textContent = `${i + 1}`;
+      if (i === 1) {
+        item.textContent += ' (auto)';
+        item.style.justifySelf = 'auto';
+        item.style.fontSize = '10px';
+      }
+      item.style.backgroundColor = ['#CE93D8', '#BA68C8', '#AB47BC'][i];
+      item.style.padding = '10px';
+      item.style.color = 'white';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    const items = Array.from(grid.children) as HTMLElement[];
+    // Auto should inherit from justify-items (center)
+    expect(items.length).toBe(3);
+
+    grid.remove();
+  });
 });

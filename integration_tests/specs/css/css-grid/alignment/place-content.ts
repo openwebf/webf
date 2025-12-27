@@ -95,4 +95,68 @@ describe('CSS Grid place-content shorthand', () => {
 
     grid.remove();
   });
+
+  it('uses space-around for both axes', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(2, 70px)';
+    grid.style.gridTemplateRows = 'repeat(2, 50px)';
+    grid.style.width = '210px';
+    grid.style.height = '160px';
+    grid.style.placeContent = 'space-around';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#fff3e0';
+
+    for (let i = 0; i < 4; i++) {
+      const item = document.createElement('div');
+      item.textContent = `${i + 1}`;
+      item.style.backgroundColor = ['#FFB74D', '#FFA726', '#FF9800', '#FB8C00'][i];
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.justifyContent = 'center';
+      item.style.color = 'white';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    expect(getComputedStyle(grid).alignContent).toBe('space-around');
+    expect(getComputedStyle(grid).justifyContent).toBe('space-around');
+
+    grid.remove();
+  });
+
+  it('uses space-evenly with gaps', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(2, 60px)';
+    grid.style.gridTemplateRows = 'repeat(2, 50px)';
+    grid.style.width = '200px';
+    grid.style.height = '170px';
+    grid.style.placeContent = 'space-evenly';
+    grid.style.gap = '10px';
+    grid.style.backgroundColor = '#e8f5e9';
+
+    for (let i = 0; i < 4; i++) {
+      const item = document.createElement('div');
+      item.textContent = `${i + 1}`;
+      item.style.backgroundColor = ['#66BB6A', '#4CAF50', '#43A047', '#388E3C'][i];
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.justifyContent = 'center';
+      item.style.color = 'white';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    expect(getComputedStyle(grid).alignContent).toBe('space-evenly');
+    expect(getComputedStyle(grid).justifyContent).toBe('space-evenly');
+
+    grid.remove();
+  });
 });

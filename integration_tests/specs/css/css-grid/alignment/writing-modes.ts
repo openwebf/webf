@@ -1,5 +1,5 @@
-xdescribe('CSS Grid alignment with writing modes', () => {
-  it('handles vertical-rl writing mode', async () => {
+describe('CSS Grid alignment with writing modes', () => {
+  xit('handles vertical-rl writing mode', async () => {
     const grid = document.createElement('div');
     grid.style.display = 'grid';
     grid.style.gridTemplateColumns = 'repeat(2, 100px)';
@@ -29,7 +29,7 @@ xdescribe('CSS Grid alignment with writing modes', () => {
     grid.remove();
   });
 
-  it('aligns content in vertical-lr writing mode', async () => {
+  xit('aligns content in vertical-lr writing mode', async () => {
     const grid = document.createElement('div');
     grid.style.display = 'grid';
     grid.style.gridTemplateColumns = 'repeat(2, 90px)';
@@ -63,7 +63,7 @@ xdescribe('CSS Grid alignment with writing modes', () => {
     grid.remove();
   });
 
-  it('handles rtl direction with justify-content', async () => {
+  xit('handles rtl direction with justify-content', async () => {
     const grid = document.createElement('div');
     grid.style.display = 'grid';
     grid.style.gridTemplateColumns = 'repeat(3, 80px)';
@@ -95,7 +95,7 @@ xdescribe('CSS Grid alignment with writing modes', () => {
     grid.remove();
   });
 
-  it('aligns items in vertical writing mode', async () => {
+  xit('aligns items in vertical writing mode', async () => {
     const grid = document.createElement('div');
     grid.style.display = 'grid';
     grid.style.gridTemplateColumns = 'repeat(2, 100px)';
@@ -112,6 +112,71 @@ xdescribe('CSS Grid alignment with writing modes', () => {
       item.style.width = '50px';
       item.style.height = '40px';
       item.style.backgroundColor = ['#FFB74D', '#FFA726', '#FF9800', '#FB8C00'][i];
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.justifyContent = 'center';
+      item.style.color = 'white';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    const items = Array.from(grid.children) as HTMLElement[];
+    expect(items.length).toBe(4);
+
+    grid.remove();
+  });
+
+  it('handles horizontal-tb (default) writing mode explicitly', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(3, 90px)';
+    grid.style.gridTemplateRows = 'repeat(2, 70px)';
+    grid.style.writingMode = 'horizontal-tb';
+    grid.style.justifyContent = 'center';
+    grid.style.alignContent = 'center';
+    grid.style.width = '320px';
+    grid.style.height = '200px';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#e8eaf6';
+
+    for (let i = 0; i < 6; i++) {
+      const item = document.createElement('div');
+      item.textContent = `${i + 1}`;
+      item.style.backgroundColor = ['#7986CB', '#5C6BC0', '#3F51B5', '#3949AB', '#303F9F', '#283593'][i];
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.justifyContent = 'center';
+      item.style.color = 'white';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    const items = Array.from(grid.children) as HTMLElement[];
+    expect(items.length).toBe(6);
+
+    grid.remove();
+  });
+
+  xit('combines rtl direction with vertical writing mode', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(2, 90px)';
+    grid.style.gridTemplateRows = 'repeat(2, 70px)';
+    grid.style.writingMode = 'vertical-rl';
+    grid.style.direction = 'rtl';
+    grid.style.gap = '5px';
+    grid.style.backgroundColor = '#c5e1a5';
+
+    for (let i = 0; i < 4; i++) {
+      const item = document.createElement('div');
+      item.textContent = `${i + 1}`;
+      item.style.backgroundColor = ['#9CCC65', '#8BC34A', '#7CB342', '#689F38'][i];
       item.style.display = 'flex';
       item.style.alignItems = 'center';
       item.style.justifyContent = 'center';

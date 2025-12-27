@@ -213,4 +213,112 @@ describe('CSS Grid auto margins and alignment interaction', () => {
 
     grid.remove();
   });
+
+  it('auto margins with mixed alignment values', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(3, 110px)';
+    grid.style.gridTemplateRows = '100px';
+    grid.style.placeItems = 'end start';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#ede7f6';
+
+    for (let i = 0; i < 3; i++) {
+      const item = document.createElement('div');
+      item.textContent = ['Normal', 'Auto H', 'Auto V'][i];
+      item.style.width = '80px';
+      item.style.height = '70px';
+      if (i === 1) {
+        item.style.marginLeft = 'auto';
+        item.style.marginRight = 'auto';
+      } else if (i === 2) {
+        item.style.marginTop = 'auto';
+        item.style.marginBottom = 'auto';
+      }
+      item.style.backgroundColor = ['#9575CD', '#7E57C2', '#673AB7'][i];
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.justifyContent = 'center';
+      item.style.color = 'white';
+      item.style.fontSize = '10px';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    const items = Array.from(grid.children) as HTMLElement[];
+    expect(items.length).toBe(3);
+
+    grid.remove();
+  });
+
+  it('handles asymmetric auto margins', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = '180px';
+    grid.style.gridTemplateRows = '150px';
+    grid.style.justifyItems = 'start';
+    grid.style.alignItems = 'start';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#e0f2f1';
+
+    const item = document.createElement('div');
+    item.textContent = 'Left auto only';
+    item.style.width = '120px';
+    item.style.height = '90px';
+    item.style.marginLeft = 'auto';
+    item.style.marginRight = '0';
+    item.style.backgroundColor = '#4DB6AC';
+    item.style.display = 'flex';
+    item.style.alignItems = 'center';
+    item.style.justifyContent = 'center';
+    item.style.color = 'white';
+    item.style.fontSize = '10px';
+    grid.appendChild(item);
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    // Item should be pushed to the right edge
+    const itemRight = item.getBoundingClientRect().right;
+    const gridRight = grid.getBoundingClientRect().right;
+    expect(Math.abs(itemRight - gridRight)).toBe(180);
+
+    grid.remove();
+  });
+
+  it('auto margins with percentage-based item sizes', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = '240px';
+    grid.style.gridTemplateRows = '180px';
+    grid.style.placeItems = 'start';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#fce4ec';
+
+    const item = document.createElement('div');
+    item.textContent = '50% size';
+    item.style.width = '50%';
+    item.style.height = '50%';
+    item.style.margin = 'auto';
+    item.style.backgroundColor = '#F06292';
+    item.style.display = 'flex';
+    item.style.alignItems = 'center';
+    item.style.justifyContent = 'center';
+    item.style.color = 'white';
+    grid.appendChild(item);
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    // Item should be centered with 50% size
+    expect(item.getBoundingClientRect().width).toBe(120);
+    expect(item.getBoundingClientRect().height).toBe(90);
+
+    grid.remove();
+  });
 });

@@ -322,4 +322,103 @@ describe('CSS Grid justify-content', () => {
 
     grid.remove();
   });
+
+  it('handles justify-content with single item', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = '100px';
+    grid.style.gridTemplateRows = '60px';
+    grid.style.width = '300px';
+    grid.style.justifyContent = 'center';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#f0f4c3';
+
+    const item = document.createElement('div');
+    item.textContent = 'Solo';
+    item.style.backgroundColor = '#9CCC65';
+    item.style.display = 'flex';
+    item.style.alignItems = 'center';
+    item.style.justifyContent = 'center';
+    item.style.color = 'white';
+    grid.appendChild(item);
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    // Single item should be centered
+    const gridCenter = (grid.getBoundingClientRect().left + grid.getBoundingClientRect().right) / 2;
+    const itemCenter = (item.getBoundingClientRect().left + item.getBoundingClientRect().right) / 2;
+    expect(Math.abs(gridCenter - itemCenter)).toBeLessThan(1);
+
+    grid.remove();
+  });
+
+  it('handles justify-content with mixed track sizes', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = '60px 100px 80px';
+    grid.style.gridTemplateRows = '60px';
+    grid.style.width = '340px';
+    grid.style.justifyContent = 'space-evenly';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#f8bbd0';
+
+    for (let i = 0; i < 3; i++) {
+      const item = document.createElement('div');
+      item.textContent = `${i + 1}`;
+      item.style.backgroundColor = ['#F06292', '#EC407A', '#E91E63'][i];
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.justifyContent = 'center';
+      item.style.color = 'white';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    const items = Array.from(grid.children) as HTMLElement[];
+    expect(items[0].getBoundingClientRect().width).toBe(60);
+    expect(items[1].getBoundingClientRect().width).toBe(100);
+    expect(items[2].getBoundingClientRect().width).toBe(80);
+
+    grid.remove();
+  });
+
+  it('handles space-between with two items', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(2, 80px)';
+    grid.style.gridTemplateRows = '60px';
+    grid.style.width = '300px';
+    grid.style.justifyContent = 'space-between';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#dce775';
+
+    for (let i = 0; i < 2; i++) {
+      const item = document.createElement('div');
+      item.textContent = `${i + 1}`;
+      item.style.backgroundColor = ['#AFB42B', '#9E9D24'][i];
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.justifyContent = 'center';
+      item.style.color = 'white';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    const items = Array.from(grid.children) as HTMLElement[];
+    const gridRect = grid.getBoundingClientRect();
+
+    // With two items, first at start, last at end
+    expect(items[0].getBoundingClientRect().left).toBe(gridRect.left);
+    expect(items[1].getBoundingClientRect().right).toBe(gridRect.right);
+
+    grid.remove();
+  });
 });
