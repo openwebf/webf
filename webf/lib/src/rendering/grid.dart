@@ -2301,8 +2301,13 @@ class RenderGridLayout extends RenderLayoutBox {
         final List<double> autoMinColSizes = List<double>.filled(colSizes.length, 0.0);
 
         void resolveFlexibleAndRangeTracks() {
-          if (adjustedInnerWidth == null || !adjustedInnerWidth!.isFinite || adjustedInnerWidth! <= 0) return;
-          final double available = adjustedInnerWidth!;
+          double? availableTrackSpace = adjustedInnerWidth;
+          if (contentAvailableWidth != null && contentAvailableWidth.isFinite) {
+            availableTrackSpace =
+                math.max(0.0, contentAvailableWidth - colGap * math.max(0, colSizes.length - 1));
+          }
+          if (availableTrackSpace == null || !availableTrackSpace.isFinite || availableTrackSpace <= 0) return;
+          final double available = availableTrackSpace;
 
           double fixedNonFlexNonRange = 0.0;
           double rangeBaseSum = 0.0;
