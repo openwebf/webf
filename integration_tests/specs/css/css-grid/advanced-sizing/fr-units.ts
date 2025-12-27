@@ -225,6 +225,41 @@ describe('CSS Grid fractional (fr) units', () => {
     grid.remove();
   });
 
+  it('uses fr units in grid-auto-rows', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(2, 100px)';
+    grid.style.gridTemplateRows = '50px';
+    grid.style.gridAutoRows = '1fr';
+    grid.style.height = '250px';
+    grid.style.gap = '0';
+    grid.style.backgroundColor = '#e8f5e9';
+
+    for (let i = 0; i < 6; i++) {
+      const item = document.createElement('div');
+      item.textContent = `${i + 1}`;
+      item.style.backgroundColor = ['#66BB6A', '#4CAF50', '#43A047', '#388E3C', '#2E7D32', '#1B5E20'][i];
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.justifyContent = 'center';
+      item.style.color = 'white';
+      grid.appendChild(item);
+    }
+
+    document.body.appendChild(grid);
+    await waitForFrame();
+    await snapshot();
+
+    const items = Array.from(grid.children) as HTMLElement[];
+    // First row: 50px explicit
+    expect(items[0].getBoundingClientRect().height).toBe(50);
+    // Remaining space (200px) divided by 2 implicit rows = 100px each
+    expect(items[2].getBoundingClientRect().height).toBe(100);
+    expect(items[4].getBoundingClientRect().height).toBe(100);
+
+    grid.remove();
+  });
+
   it('handles fractional fr values', async () => {
     const grid = document.createElement('div');
     grid.style.display = 'grid';

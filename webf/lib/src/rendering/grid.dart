@@ -2765,6 +2765,77 @@ class RenderGridLayout extends RenderLayoutBox {
       }
     }
 
+    // Resolve flexible (fr) row tracks, including implicit grid-auto-rows tracks.
+    if (rowSizes.isNotEmpty && contentAvailableHeight != null && contentAvailableHeight.isFinite) {
+      GridTrackSize rowTrackAt(int index) {
+        if (index >= 0 && index < resolvedRowDefs.length) {
+          return resolvedRowDefs[index];
+        }
+        final int implicitIndex = math.max(0, index - resolvedRowDefs.length);
+        return autoRowDefs.isNotEmpty ? autoRowDefs[implicitIndex % autoRowDefs.length] : const GridAuto();
+      }
+
+      double flexFactorForRowTrack(GridTrackSize track) {
+        if (track is GridFraction) return track.fr;
+        if (track is GridMinMax && track.maxTrack is GridFraction) {
+          return (track.maxTrack as GridFraction).fr;
+        }
+        return 0.0;
+      }
+
+      final int rowCount = rowSizes.length;
+      final double availableTrackSpace =
+          math.max(0.0, contentAvailableHeight - rowGap * math.max(0, rowCount - 1));
+
+      double fixed = 0.0;
+      double frSum = 0.0;
+      final List<double> frFactors = List<double>.filled(rowCount, 0.0);
+      final List<double> minFlexSizes = List<double>.filled(rowCount, 0.0);
+
+      for (int r = 0; r < rowCount; r++) {
+        final GridTrackSize track = rowTrackAt(r);
+        final double fr = flexFactorForRowTrack(track);
+        if (fr > 0) {
+          frFactors[r] = fr;
+          frSum += fr;
+          // Reset any eagerly-resolved value so distribution considers all flex tracks.
+          rowSizes[r] = 0.0;
+
+          if (track is GridMinMax && track.maxTrack is GridFraction) {
+            final double minSize =
+                _resolveTrackSize(track.minTrack, availableTrackSpace, percentageBasis: contentAvailableHeight);
+            if (minSize.isFinite && minSize > 0) {
+              minFlexSizes[r] = minSize;
+            }
+          }
+          continue;
+        }
+
+        final double size = rowSizes[r];
+        if (size.isFinite && size > 0) {
+          fixed += size;
+        }
+      }
+
+      if (frSum > 0) {
+        final double remaining = math.max(0.0, availableTrackSpace - fixed);
+        if (remaining > 0) {
+          for (int r = 0; r < rowCount; r++) {
+            final double fr = frFactors[r];
+            if (fr <= 0) continue;
+            final double portion = remaining * (fr / frSum);
+            rowSizes[r] = math.max(portion, minFlexSizes[r]);
+          }
+        } else {
+          for (int r = 0; r < rowCount; r++) {
+            final double fr = frFactors[r];
+            if (fr <= 0) continue;
+            rowSizes[r] = minFlexSizes[r];
+          }
+        }
+      }
+    }
+
     // Pass 2: layout children with resolved column widths.
     if (implicitRowHeights.isNotEmpty) {
       implicitRowHeights = List<double>.filled(implicitRowHeights.length, 0.0, growable: true);
