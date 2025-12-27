@@ -2138,7 +2138,13 @@ class RenderGridLayout extends RenderLayoutBox {
       }
 
       while (rowSizes.length < rowIndex + rowSpan) {
-        rowSizes.add(0);
+        final int targetRow = rowSizes.length;
+        double rowSize = 0.0;
+        if ((rowsDef.isEmpty || targetRow >= definedRowCount) && autoRowDefs.isNotEmpty) {
+          final int implicitOrdinal = rowsDef.isEmpty ? targetRow : math.max(0, targetRow - definedRowCount);
+          rowSize = _resolveAutoTrackAt(autoRowDefs, implicitOrdinal, innerMaxHeight) ?? 0.0;
+        }
+        rowSizes.add(rowSize);
       }
       while (implicitRowHeights.length < rowIndex + rowSpan) {
         implicitRowHeights.add(0);
