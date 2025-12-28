@@ -273,14 +273,6 @@ void ElementRuleCollector::CollectMatchingRulesForList(
       if (pseudo_element_id_ == kPseudoIdNone && match_result.dynamic_pseudo != kPseudoIdNone) {
         continue;
       }
-      WEBF_COND_LOG(COLLECTOR, VERBOSE) << "Author rule matched!";
-      const std::shared_ptr<StyleRule>& rule = rule_data->Rule();
-
-      String selector = rule->SelectorsText();
-      WEBF_COND_LOG(COLLECTOR, VERBOSE) << "SELECTOR: " << selector.Characters8();
-
-      String s = rule->Properties().AsText();
-      WEBF_COND_LOG(COLLECTOR, VERBOSE) << "RULE: " << s.Characters8();
       DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
     }
   }
