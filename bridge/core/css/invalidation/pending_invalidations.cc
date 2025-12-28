@@ -12,7 +12,6 @@
 #include "core/dom/document.h"
 #include "core/dom/element.h"
 #include "core/dom/element_traversal.h"
-#include "core/dom/node_computed_style.h"
 //#include "core/dom/shadow_root.h"
 //#include "core/html/html_slot_element.h"
 //#include "core/inspector/inspector_trace_events.h"
@@ -59,13 +58,11 @@ void PendingInvalidations::ScheduleInvalidationSetsForNode(const InvalidationLis
         requires_descendant_invalidation = true;
       }
     }
-    /* // TODO(guopengfei)：暂不支持ComputedStyle
     // No need to schedule descendant invalidations on display:none elements.
     if (requires_descendant_invalidation && node.IsElementNode() &&
-        !To<Element>(node).GetComputedStyle()) {
+        To<Element>(node).IsDisplayNoneForStyleInvalidation()) {
       requires_descendant_invalidation = false;
     }
-     */
   }
 
   if (!requires_descendant_invalidation && invalidation_lists.siblings.empty()) {

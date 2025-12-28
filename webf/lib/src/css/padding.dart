@@ -50,8 +50,13 @@ mixin CSSPaddingMixin on RenderStyle {
   @override
   CSSLengthValue get paddingLeft {
     final CSSLengthValue physical = _paddingLeft ?? CSSLengthValue.zero;
-    // Logical properties override the corresponding physical side.
+    // When both logical and physical properties target the same side (e.g.
+    // padding-inline-start + padding-left in LTR), browsers allow the physical
+    // side to override the logical one. We keep the logical value around so it
+    // can remap when `direction` changes, but only use it as a fallback when
+    // the physical side is not explicitly specified.
     final CSSLengthValue? logical = (direction == TextDirection.rtl) ? _paddingInlineEnd : _paddingInlineStart;
+    if (_paddingLeft != null) return physical;
     return logical ?? physical;
   }
 
@@ -66,8 +71,9 @@ mixin CSSPaddingMixin on RenderStyle {
   @override
   CSSLengthValue get paddingRight {
     final CSSLengthValue physical = _paddingRight ?? CSSLengthValue.zero;
-    // Logical properties override the corresponding physical side.
+    // See paddingLeft: physical side should win when explicitly specified.
     final CSSLengthValue? logical = (direction == TextDirection.rtl) ? _paddingInlineStart : _paddingInlineEnd;
+    if (_paddingRight != null) return physical;
     return logical ?? physical;
   }
 

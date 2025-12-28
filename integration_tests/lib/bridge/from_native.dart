@@ -214,9 +214,13 @@ final Dart_RegisterTestEnvDartMethods _registerTestEnvDartMethods = WebFDynamicL
     .lookup<NativeFunction<Native_RegisterTestEnvDartMethods>>('registerTestEnvDartMethods')
     .asFunction();
 
-void registerDartTestMethodsToCpp(double contextId) {
-  Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * _dartNativeMethods.length);
-  Uint64List nativeMethodList = bytes.asTypedList(_dartNativeMethods.length);
-  nativeMethodList.setAll(0, _dartNativeMethods);
-  _registerTestEnvDartMethods(getAllocatedPage(contextId)!, bytes, _dartNativeMethods.length);
+void registerDartTestMethodsToCpp(Pointer<Void> testContext) {
+  final Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * _dartNativeMethods.length);
+  try {
+    final Uint64List nativeMethodList = bytes.asTypedList(_dartNativeMethods.length);
+    nativeMethodList.setAll(0, _dartNativeMethods);
+    _registerTestEnvDartMethods(testContext, bytes, _dartNativeMethods.length);
+  } finally {
+    malloc.free(bytes);
+  }
 }

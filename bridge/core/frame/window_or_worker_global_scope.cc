@@ -278,6 +278,7 @@ void WindowOrWorkerGlobalScope::clearInterval(ExecutingContext* context, int32_t
 double WindowOrWorkerGlobalScope::requestAnimationFrame(ExecutingContext* context, const std::shared_ptr<Function>& callback, ExceptionState& exception_state) {
   auto frame_callback = FrameCallback::Create(context, callback);
   uint32_t request_id = context->document()->RequestAnimationFrame(frame_callback, exception_state);
+  context->MarkNeedsStyleUpdateInMicrotask();
   // Add finish recording to force trigger a frame update.
   context->uiCommandBuffer()->AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
   // `-1` represents some error occurred.

@@ -21,6 +21,8 @@ void IdleCallback::Fire(double remaining_time) {
   if (callback_ == nullptr)
     return;
 
+  context_->SetIsIdle(false);
+
   JSContext* ctx = context_->ctx();
   MemberMutationScope member_mutation_scope{context_};
 

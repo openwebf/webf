@@ -59,6 +59,7 @@ mixin ElementAdapterMixin on ElementBase {
   // Track the screen state and event queue
   final List<ScreenEvent> _screenEventQueue = [];
   bool _isProcessingQueue = false;
+  bool _isOnScreen = false;
 
   List<Element> get outOfFlowPositionedElements => _outOfFlowPositionedElements;
 
@@ -90,10 +91,15 @@ mixin ElementAdapterMixin on ElementBase {
   Element? holderAttachedContainingBlockElement;
 
   flutter.ScrollController? _scrollControllerX;
-
+  set scrollControllerX(value) {
+    _scrollControllerX = value;
+  }
   flutter.ScrollController? get scrollControllerX => _scrollControllerX;
 
   flutter.ScrollController? _scrollControllerY;
+  set scrollControllerY(value) {
+    _scrollControllerY = value;
+  }
 
   flutter.ScrollController? get scrollControllerY => _scrollControllerY;
 
@@ -103,8 +109,19 @@ mixin ElementAdapterMixin on ElementBase {
   bool hasScroll = false;
 
   void enqueueScreenEvent(ScreenEvent event) {
-    // If we're enqueuing an onScreen event, remove any pending offScreen events
     if (event.type == ScreenEventType.onScreen) {
+      // If we're enqueuing an onScreen event, remove any pending offScreen events.
+      _screenEventQueue.removeWhere((e) => e.type == ScreenEventType.offScreen);
+
+      // De-dupe onscreen: an element may be mounted/rebuilt multiple times while
+      // remaining visible (e.g. style-driven rebuilds). Tests and framework code
+      // expect `onscreen` to be a one-shot notification per visible lifecycle.
+      if (_isOnScreen) return;
+      _screenEventQueue.removeWhere((e) => e.type == ScreenEventType.onScreen);
+    } else if (event.type == ScreenEventType.offScreen) {
+      // If we're enqueuing an offScreen event, remove any pending onScreen events.
+      _screenEventQueue.removeWhere((e) => e.type == ScreenEventType.onScreen);
+      if (!_isOnScreen) return;
       _screenEventQueue.removeWhere((e) => e.type == ScreenEventType.offScreen);
     }
 
@@ -122,9 +139,10 @@ mixin ElementAdapterMixin on ElementBase {
 
         // Process events based on current state and event type
         if (event.type == ScreenEventType.offScreen) {
+          _isOnScreen = false;
           await (this as Element).dispatchEvent(event.offScreenEvent!);
         } else if (event.type == ScreenEventType.onScreen) {
-          // Only dispatch onScreen if we're not already on screen
+          _isOnScreen = true;
           await (this as Element).dispatchEventUtilAdded(event.onScreenEvent!);
         }
       }
@@ -330,7 +348,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       if (overflowY == CSSOverflowType.scroll ||
           overflowY == CSSOverflowType.auto ||
           overflowY == CSSOverflowType.hidden) {
-        webFElement._scrollControllerY ??= flutter.ScrollController();
+        webFElement.scrollControllerY ??= flutter.ScrollController();
         final bool yScrollable = overflowY != CSSOverflowType.hidden;
         final bool xScrollable = overflowX != CSSOverflowType.hidden;
         widget = LayoutBoxWrapper(
@@ -404,10 +422,10 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
   @override
   void deactivate() {
     super.deactivate();
-    webFElement._scrollControllerY?.dispose();
-    webFElement._scrollControllerY = null;
-    webFElement._scrollControllerX?.dispose();
-    webFElement._scrollControllerX = null;
+    webFElement.scrollControllerY?.dispose();
+    webFElement.scrollControllerY = null;
+    webFElement.scrollControllerX?.dispose();
+    webFElement.scrollControllerX = null;
     webFElement.removeState(this);
   }
 
@@ -420,10 +438,10 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
   @override
   void dispose() {
     webFElement.removeState(this);
-    webFElement._scrollControllerY?.dispose();
-    webFElement._scrollControllerY = null;
-    webFElement._scrollControllerX?.dispose();
-    webFElement._scrollControllerX = null;
+    webFElement.scrollControllerY?.dispose();
+    webFElement.scrollControllerY = null;
+    webFElement.scrollControllerX?.dispose();
+    webFElement.scrollControllerX = null;
     super.dispose();
   }
 

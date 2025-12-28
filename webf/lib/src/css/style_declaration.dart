@@ -619,7 +619,9 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       return;
     }
 
-    String normalizedValue = _toLowerCase(propertyName, value.toString().trim());
+    final String rawValue = value.toString();
+    final bool isCustomProperty = CSSVariable.isCSSSVariableProperty(propertyName);
+    String normalizedValue = isCustomProperty ? rawValue : _toLowerCase(propertyName, rawValue.trim());
 
     if (validate && !_isValidValue(propertyName, normalizedValue)) return;
 

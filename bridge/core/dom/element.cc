@@ -114,6 +114,15 @@ void Element::removeAttribute(const AtomicString& name, ExceptionState& exceptio
 }
 
 BoundingClientRect* Element::getBoundingClientRect(ExceptionState& exception_state) {
+  ExecutingContext* context = GetExecutingContext();
+  if (context && context->isBlinkEnabled()) {
+    Document* doc = context->document();
+    if (doc) {
+      MemberMutationScope mutation_scope{context};
+      doc->UpdateStyleForThisDocument();
+    }
+  }
+
   NativeValue result = InvokeBindingMethod(
       binding_call_methods::kgetBoundingClientRect, 0, nullptr,
       FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
@@ -128,6 +137,15 @@ BoundingClientRect* Element::getBoundingClientRect(ExceptionState& exception_sta
 }
 
 std::vector<BoundingClientRect*> Element::getClientRects(ExceptionState& exception_state) {
+  ExecutingContext* context = GetExecutingContext();
+  if (context && context->isBlinkEnabled()) {
+    Document* doc = context->document();
+    if (doc) {
+      MemberMutationScope mutation_scope{context};
+      doc->UpdateStyleForThisDocument();
+    }
+  }
+
   NativeValue result = InvokeBindingMethod(
       binding_call_methods::kgetClientRects, 0, nullptr,
       FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
@@ -603,32 +621,27 @@ const ElementPublicMethods* Element::elementPublicMethods() {
 }
 
 AtomicString Element::LocalNameForSelectorMatching() const {
-  /* // TODO(guopengfei)：
-  if (IsHTMLElement() || !IsA<HTMLDocument>(GetDocument())) {
-    return localName();
-  }
-  return localName().LowerASCII();
-  */
-  return AtomicString::Empty();
+  return local_name_;
 }
 
 bool Element::HasAttributeIgnoringNamespace(const AtomicString& local_name) const {
-  if (!HasElementData()) {
+  if (local_name.IsNull() || local_name.empty()) {
     return false;
   }
-  /* // TODO(guopengfei)：
-  WTF::AtomicStringTable::WeakResult hint =
-      WeakLowercaseIfNecessary(local_name);
-  SynchronizeAttributeHinted(local_name, hint);
-  if (hint.IsNull()) {
-    return false;
-  }
-  for (const Attribute& attribute : GetElementData()->Attributes()) {
-    if (hint == attribute.LocalName()) {
-      return true;
+
+  if (HasElementData()) {
+    for (const Attribute& attribute : GetElementData()->Attributes()) {
+      if (attribute.LocalName() == local_name) {
+        return true;
+      }
     }
   }
-  */
+
+  if (attributes_ != nullptr) {
+    ExceptionState exception_state;
+    return attributes_->hasAttribute(local_name, exception_state);
+  }
+
   return false;
 }
 
@@ -792,6 +805,15 @@ ScriptPromise Element::toBlob(double device_pixel_ratio, ExceptionState& excepti
   auto* context = GetExecutingContext();
   context->RegisterActiveScriptPromise(resolver);
   context->DrawCanvasElementIfNeeded();
+
+  if (context && context->isBlinkEnabled()) {
+    Document* doc = context->document();
+    if (doc) {
+      MemberMutationScope mutation_scope{context};
+      doc->UpdateStyleForThisDocument();
+    }
+  }
+
   new ElementSnapshotPromiseReader(GetExecutingContext(), this, resolver, device_pixel_ratio);
   return resolver->Promise();
 }
@@ -1056,8 +1078,9 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
         if (value_string.IsNull()) {
           value_string = (*value_ptr)->CssTextForSerialization();
         }
-        String base_href_string = inline_style->GetPropertyBaseHrefWithHint(prop_name, i);
-
+        if (id == CSSPropertyID::kVariable && value_string.IsEmpty()) {
+          value_string = String(" ");
+        }
         // Normalize CSS property names (e.g. background-color, text-align) to the
         // camelCase form expected by the Dart style engine before sending them
         // across the bridge. Custom properties starting with '--' are preserved
@@ -1065,11 +1088,7 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
         std::unique_ptr<SharedNativeString> args_01 = prop_name.ToStylePropertyNameNativeString();
         auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
         payload->value = stringToNativeString(value_string).release();
-        if (!base_href_string.IsEmpty()) {
-          payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
-        } else {
-          payload->href = nullptr;
-        }
+        payload->href = nullptr;
         GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(),
                                                              payload);
       }

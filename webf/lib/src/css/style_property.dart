@@ -142,11 +142,14 @@ class CSSStyleProperty {
     final String attachment = values[3] ?? 'scroll';
     final String? positionShorthand = values[4];
     final String size = values[5] ?? 'auto';
+    final String origin = values[6] ?? 'padding-box';
+    final String clip = values[7] ?? 'border-box';
 
     if (DebugFlags.enableBackgroundLogs && shorthandValue.contains('gradient')) {
       cssLogger.finer('[Background] expand shorthand "$shorthandValue" -> '
           'color="${values[0] ?? 'transparent'}" image="${values[1] ?? 'none'}" repeat="${values[2] ?? 'repeat'}" '
-          'attachment="${values[3] ?? 'scroll'}" position="${values[4] ?? '<none>'}" size="$size"');
+          'attachment="${values[3] ?? 'scroll'}" position="${values[4] ?? '<none>'}" size="$size" '
+          'origin="$origin" clip="$clip"');
     }
 
     properties[BACKGROUND_COLOR] = color;
@@ -171,12 +174,10 @@ class CSSStyleProperty {
     }
     properties[BACKGROUND_SIZE] = size;
 
-    // Reset origin/clip to their initial values when using `background` shorthand.
-    // Note: We currently don't parse origin/clip tokens from the shorthand itself,
-    // but per spec they must be reset when omitted.
-    properties[BACKGROUND_ORIGIN] = 'padding-box';
-    properties[BACKGROUND_CLIP] = 'border-box';
-
+    // Per spec, shorthand resets origin/clip to their initial values when omitted,
+    // and applies parsed values when present (including `text` for clip).
+    properties[BACKGROUND_ORIGIN] = origin;
+    properties[BACKGROUND_CLIP] = clip;
   }
 
   static void removeShorthandBackground(CSSStyleDeclaration style, [bool? isImportant]) {
@@ -734,6 +735,9 @@ class CSSStyleProperty {
     String? image;
     String? repeat;
     String? attachment;
+    String? origin;
+    String? clip;
+    final List<String> boxTokens = <String>[];
 
     // Accumulate position tokens before '/'
     final List<String> posTokens = <String>[];
@@ -754,6 +758,11 @@ class CSSStyleProperty {
       final bool isVarFn = CSSFunction.isFunction(t, functionName: VAR);
       if (t == '/') {
         isAfterSlash = true;
+        continue;
+      }
+
+      if (t == 'border-box' || t == 'padding-box' || t == 'content-box' || t == 'text') {
+        boxTokens.add(t);
         continue;
       }
 
@@ -809,7 +818,34 @@ class CSSStyleProperty {
       size = sizeTokens.take(2).join(' ');
     }
 
-    return [color, image, repeat, attachment, position, size];
+    if (boxTokens.isNotEmpty) {
+      if (boxTokens.length == 1) {
+        final String single = boxTokens[0];
+        if (single == 'text') {
+          clip = 'text';
+        } else {
+          origin = single;
+          clip = single;
+        }
+      } else {
+        final String first = boxTokens[0];
+        final String second = boxTokens[1];
+        if (first == 'text' && second != 'text') {
+          clip = 'text';
+          origin = second;
+        } else if (first != 'text' && second == 'text') {
+          origin = first;
+          clip = 'text';
+        } else if (first != 'text' && second != 'text') {
+          origin = first;
+          clip = second;
+        } else {
+          clip = 'text';
+        }
+      }
+    }
+
+    return [color, image, repeat, attachment, position, size, origin, clip];
   }
 
   static List<String?>? _getFontValues(String shorthandProperty) {
