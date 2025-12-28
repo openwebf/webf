@@ -1149,12 +1149,27 @@ String _placeShorthandToCss(String primary, String secondary) {
   return '$primary $secondary';
 }
 
+String _gapToCss(CSSLengthValue value) {
+  if (value.type == CSSLengthType.NORMAL) return '0px';
+  final String text = value.cssText();
+  if (text.isNotEmpty) return text;
+  final double computed = value.computedValue;
+  if (!computed.isFinite || computed <= 0) return '0px';
+  return '${computed.cssText()}px';
+}
+
 String? _valueForGridProperty(String propertyName, CSSRenderStyle style) {
   String normalized = propertyName.contains('-') ? propertyName : kebabize(propertyName);
   if (normalized.startsWith('-')) {
     normalized = normalized.substring(1);
   }
   switch (normalized) {
+    case 'row-gap':
+      return _gapToCss(style.rowGap);
+    case 'column-gap':
+      return _gapToCss(style.columnGap);
+    case 'gap':
+      return _placeShorthandToCss(_gapToCss(style.rowGap), _gapToCss(style.columnGap));
     case 'grid-auto-flow':
       return _gridAutoFlowToCss(style.gridAutoFlow);
     case 'grid-template-columns':
