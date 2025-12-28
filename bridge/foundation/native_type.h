@@ -88,6 +88,18 @@ struct NativeStyleValueWithHref : public DartReadable {
   SharedNativeString* href{nullptr};
 };
 
+// Combined style property/value id + base href payload for UICommand::kSetStyleById.
+// - |property_id| is the native (Blink) CSSPropertyID integer value.
+// - |value_id| is the native (Blink) CSSValueID integer value when >= 0, otherwise the value is provided via |value|.
+// - |value| holds the serialized CSS value (NativeString*), only used when |value_id| < 0.
+// - |href| holds an optional base href (NativeString*), or nullptr if absent.
+struct NativeStyleValueIdWithHref : public DartReadable {
+  int32_t property_id{0};
+  int32_t value_id{-1};
+  SharedNativeString* value{nullptr};
+  SharedNativeString* href{nullptr};
+};
+
 // Combined pseudo style property (key/value) + base href payload for
 // UICommand::kSetPseudoStyle.
 struct NativePseudoStyleWithHref : public DartReadable {

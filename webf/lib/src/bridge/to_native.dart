@@ -833,6 +833,8 @@ enum UICommandType {
   addIntersectionObserver,
   removeIntersectionObserver,
   disconnectIntersectionObserver,
+  // Append-only: set inline style using Blink CSSPropertyID/CSSValueID ints.
+  setStyleById,
 }
 
 final class UICommandItem extends Struct {

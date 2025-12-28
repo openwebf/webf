@@ -63,7 +63,9 @@ enum class UICommand {
   kClearPseudoStyle,
   kAddIntersectionObserver,
   kRemoveIntersectionObserver,
-  kDisconnectIntersectionObserver
+  kDisconnectIntersectionObserver,
+  // Append-only: set inline style using CSSPropertyID/CSSValueID integers (Blink mode fast-path).
+  kSetStyleById
 };
 
 #define MAXIMUM_UI_COMMAND_SIZE 2048
@@ -95,6 +97,17 @@ class UICommandBuffer {
                           void* nativePtr,
                           void* nativePtr2,
                           bool request_ui_update = true);
+  // Fast-path for UICommand::kSetStyleById without allocating a payload struct.
+  // Encoding:
+  // - args_01_length: property id (CSSPropertyID integer value)
+  // - string_01: either a pointer to a NativeString (SharedNativeString*) holding the value (>= 0),
+  //              or a negative immediate CSSValueID: -(value_id + 1).
+  // - nativePtr2: optional base href NativeString (SharedNativeString*) pointer (may be nullptr).
+  virtual void AddStyleByIdCommand(void* nativePtr,
+                                  int32_t property_id,
+                                  int64_t value_slot,
+                                  SharedNativeString* base_href,
+                                  bool request_ui_update = true);
   UICommandItem* data();
   uint32_t kindFlag();
   int64_t size();

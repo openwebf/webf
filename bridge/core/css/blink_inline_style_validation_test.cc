@@ -10,6 +10,8 @@
 #include "foundation/native_type.h"
 #include "foundation/string/wtf_string.h"
 #include "foundation/ui_command_buffer.h"
+#include "code_gen/css_property_names.h"
+#include "code_gen/css_value_keywords.h"
 #include "webf_test_env.h"
 
 using namespace webf;
@@ -31,23 +33,83 @@ std::string SharedNativeStringToUTF8(const SharedNativeString* s) {
   return String(reinterpret_cast<const UChar*>(s->string()), static_cast<size_t>(s->length())).ToUTF8String();
 }
 
+std::string ConvertCamelCaseToKebabCase(const std::string& property_name) {
+  std::string result;
+  result.reserve(property_name.size() + 8);
+  for (unsigned char c : property_name) {
+    if (std::isupper(c)) {
+      result.push_back('-');
+      result.push_back(static_cast<char>(std::tolower(c)));
+    } else {
+      result.push_back(static_cast<char>(c));
+    }
+  }
+  return result;
+}
+
 bool HasSetStyleWithKeyValue(ExecutingContext* context, const std::string& key, const std::string& value) {
+  const CSSPropertyID expected_property_id = CssPropertyID(context, ConvertCamelCaseToKebabCase(key));
   auto* pack = static_cast<UICommandBufferPack*>(context->uiCommandBuffer()->data());
   auto* items = static_cast<UICommandItem*>(pack->data);
   for (int64_t i = 0; i < pack->length; ++i) {
     const UICommandItem& item = items[i];
-    if (item.type != static_cast<int32_t>(UICommand::kSetStyle)) {
+    if (item.type == static_cast<int32_t>(UICommand::kSetStyle)) {
+      if (CommandArg01ToUTF8(item) != key) {
+        continue;
+      }
+      auto* payload =
+          reinterpret_cast<NativeStyleValueWithHref*>(static_cast<uintptr_t>(item.nativePtr2));
+      if (!payload) {
+        continue;
+      }
+      if (SharedNativeStringToUTF8(payload->value) == value) {
+        return true;
+      }
       continue;
     }
-    if (CommandArg01ToUTF8(item) != key) {
+
+    if (item.type != static_cast<int32_t>(UICommand::kSetStyleById)) {
       continue;
     }
-    auto* payload =
-        reinterpret_cast<NativeStyleValueWithHref*>(static_cast<uintptr_t>(item.nativePtr2));
-    if (!payload) {
+    if (item.args_01_length != static_cast<int32_t>(expected_property_id)) {
       continue;
     }
-    if (SharedNativeStringToUTF8(payload->value) == value) {
+
+    std::string value_text;
+    if (item.string_01 < 0) {
+      value_text = getValueName(static_cast<CSSValueID>(-item.string_01 - 1));
+    } else {
+      auto* value_ptr = reinterpret_cast<SharedNativeString*>(static_cast<uintptr_t>(item.string_01));
+      value_text = SharedNativeStringToUTF8(value_ptr);
+    }
+    if (value_text == value) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool HasSetStyleByIdWithKeyValue(ExecutingContext* context, const std::string& key, const std::string& value) {
+  const CSSPropertyID expected_property_id = CssPropertyID(context, ConvertCamelCaseToKebabCase(key));
+  auto* pack = static_cast<UICommandBufferPack*>(context->uiCommandBuffer()->data());
+  auto* items = static_cast<UICommandItem*>(pack->data);
+  for (int64_t i = 0; i < pack->length; ++i) {
+    const UICommandItem& item = items[i];
+    if (item.type != static_cast<int32_t>(UICommand::kSetStyleById)) {
+      continue;
+    }
+    if (item.args_01_length != static_cast<int32_t>(expected_property_id)) {
+      continue;
+    }
+
+    std::string value_text;
+    if (item.string_01 < 0) {
+      value_text = getValueName(static_cast<CSSValueID>(-item.string_01 - 1));
+    } else {
+      auto* value_ptr = reinterpret_cast<SharedNativeString*>(static_cast<uintptr_t>(item.string_01));
+      value_text = SharedNativeStringToUTF8(value_ptr);
+    }
+    if (value_text == value) {
       return true;
     }
   }
@@ -75,7 +137,7 @@ TEST(BlinkCSSStyleDeclarationValidation, RejectsInvalidFontSize) {
   const char* set_valid = "document.body.style.fontSize = '18px';";
   env->page()->evaluateScript(set_valid, strlen(set_valid), "vm://", 0);
   TEST_runLoop(context);
-  EXPECT_TRUE(HasSetStyleWithKeyValue(context, "fontSize", "18px"));
+  EXPECT_TRUE(HasSetStyleByIdWithKeyValue(context, "fontSize", "18px"));
 
   context->uiCommandBuffer()->clear();
 
@@ -84,6 +146,6 @@ TEST(BlinkCSSStyleDeclarationValidation, RejectsInvalidFontSize) {
   const char* set_invalid = "document.body.style.fontSize = '-1px';";
   env->page()->evaluateScript(set_invalid, strlen(set_invalid), "vm://", 0);
   TEST_runLoop(context);
-  EXPECT_FALSE(HasSetStyleWithKeyValue(context, "fontSize", "-1px"));
+  EXPECT_FALSE(HasSetStyleByIdWithKeyValue(context, "fontSize", "-1px"));
   EXPECT_EQ(errorCalled, false);
 }

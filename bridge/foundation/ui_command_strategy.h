@@ -37,6 +37,7 @@ public:
                       void* native_ptr,
                       void* native_ptr2,
                       bool request_ui_update);
+ void RecordStyleByIdCommand(const UICommandItem& item, bool request_ui_update);
  void ConfigWaitingBufferSize(size_t size);
  size_t GetWaitingCommandsCount() const { return waiting_commands_.size(); }
  void FlushWaitingCommands();
@@ -63,6 +64,8 @@ private:
    void* native_binding_object;
    void* native_ptr2;
    bool request_ui_update;
+   bool use_item{false};
+   UICommandItem item{};
  };
  std::vector<WaitingCommand> waiting_commands_;
  

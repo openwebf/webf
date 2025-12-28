@@ -71,6 +71,26 @@ void SharedUICommand::AddCommand(UICommand type,
                                              request_ui_update);
 }
 
+void SharedUICommand::AddStyleByIdCommand(void* native_binding_object,
+                                         int32_t property_id,
+                                         int64_t value_slot,
+                                         SharedNativeString* base_href,
+                                         bool request_ui_update) {
+  if (!context_->isDedicated()) {
+    std::lock_guard<std::mutex> lock(read_buffer_mutex_);
+    read_buffer_->AddStyleByIdCommand(native_binding_object, property_id, value_slot, base_href, request_ui_update);
+    return;
+  }
+
+  UICommandItem item{};
+  item.type = static_cast<int32_t>(UICommand::kSetStyleById);
+  item.args_01_length = property_id;
+  item.string_01 = value_slot;
+  item.nativePtr = static_cast<int64_t>(reinterpret_cast<intptr_t>(native_binding_object));
+  item.nativePtr2 = static_cast<int64_t>(reinterpret_cast<intptr_t>(base_href));
+  ui_command_sync_strategy_->RecordStyleByIdCommand(item, request_ui_update);
+}
+
 void* SharedUICommand::data() {
   std::lock_guard<std::mutex> lock(read_buffer_mutex_);
 
