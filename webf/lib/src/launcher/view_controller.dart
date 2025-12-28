@@ -116,15 +116,30 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   bool _isFrameBindingAttached = false;
   bool _beginFrameStyleUpdateScheduled = false;
+  int? _beginFrameStyleUpdateCallbackId;
+  bool _disposing = false;
+  bool _frameFlushLoopEnabled = false;
+
+  bool get _canScheduleFrames => !_disposing && !_disposed && _frameFlushLoopEnabled;
+
+  void _cancelBlinkStyleUpdateForNextFrame() {
+    final int? callbackId = _beginFrameStyleUpdateCallbackId;
+    if (callbackId != null) {
+      SchedulerBinding.instance.cancelFrameCallbackWithId(callbackId);
+      _beginFrameStyleUpdateCallbackId = null;
+    }
+    _beginFrameStyleUpdateScheduled = false;
+  }
 
   void _scheduleBlinkStyleUpdateForNextFrame() {
-    if (!enableBlink || disposed) return;
+    if (!enableBlink || !_canScheduleFrames) return;
     if (_beginFrameStyleUpdateScheduled) return;
     _beginFrameStyleUpdateScheduled = true;
 
-    SchedulerBinding.instance.scheduleFrameCallback((Duration _) {
+    _beginFrameStyleUpdateCallbackId = SchedulerBinding.instance.scheduleFrameCallback((Duration _) {
       _beginFrameStyleUpdateScheduled = false;
-      if (disposed) return;
+      _beginFrameStyleUpdateCallbackId = null;
+      if (!_canScheduleFrames) return;
 
       final page = getAllocatedPage(contextId);
       if (page == null) return;
@@ -140,14 +155,25 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   void flushPendingCommandsPerFrame() {
-    if (disposed && _isFrameBindingAttached) return;
+    if (_disposing || _disposed) return;
+    if (_frameFlushLoopEnabled) return;
+    _frameFlushLoopEnabled = true;
     _isFrameBindingAttached = true;
+    _flushPendingCommandsPerFrameLoop();
+  }
+
+  void _flushPendingCommandsPerFrameLoop() {
+    if (!_canScheduleFrames) {
+      _isFrameBindingAttached = false;
+      return;
+    }
+
     flushUICommand(this, window.pointer!);
     _scheduleBlinkStyleUpdateForNextFrame();
     // Deliver pending IntersectionObserver entries to JS side.
     // Safe to call every frame; it will no-op when there are no entries.
     deliverIntersectionObserver();
-    SchedulerBinding.instance.addPostFrameCallback((_) => flushPendingCommandsPerFrame());
+    SchedulerBinding.instance.addPostFrameCallback((_) => _flushPendingCommandsPerFrameLoop());
     SchedulerBinding.instance.scheduleFrame();
   }
 
@@ -310,9 +336,15 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       _onFlutterAttached[i]();
     }
     _onFlutterAttached.clear();
+    if (_inited && rootController.evaluated) {
+      flushPendingCommandsPerFrame();
+    }
   }
 
   void detachFromFlutter() {
+    _frameFlushLoopEnabled = false;
+    _cancelBlinkStyleUpdateForNextFrame();
+    _isFrameBindingAttached = false;
     _unregisterPlatformBrightnessChange();
     // Pause animation timeline to prevent ticker from running when detached
     document.animationTimeline.pause();
@@ -355,6 +387,10 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   // Dispose controller and recycle all resources.
   Future<void> dispose() async {
     if (!_inited) return;
+    _disposing = true;
+    _frameFlushLoopEnabled = false;
+    _cancelBlinkStyleUpdateForNextFrame();
+    _isFrameBindingAttached = false;
     _nativeMediaQueryAffectingValueDebounceTimer?.cancel();
     _nativeMediaQueryAffectingValueDebounceTimer = null;
     _nativeMediaQueryAffectingValuePostFrameCallbackScheduled = false;
