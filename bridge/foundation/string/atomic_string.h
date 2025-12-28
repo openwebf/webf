@@ -156,14 +156,6 @@ class AtomicString {
   std::shared_ptr<StringImpl> string_ = nullptr;
 };
 
-inline AtomicString operator""_as(const char* str, size_t len) {
-  return AtomicString::CreateFromUTF8(str, len);
-}
-
-inline AtomicString operator""_as(const char16_t* str, size_t len) {
-  return {str, len};
-}
-
 // AtomicStringRef is a reference to an AtomicString's string data.
 // It is used to pass an AtomicString's string data without copying the string data.
 struct AtomicStringRef {

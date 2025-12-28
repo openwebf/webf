@@ -128,7 +128,8 @@ TEST(StringImplTest, NullTerminationEmptyString) {
 
 TEST(StringImplTest, NullTerminationAtomicString) {
   // Test that AtomicString also benefits from null termination
-  AtomicString atomic_str = "test-string"_as;
+  static const AtomicString kTestString = AtomicString::CreateFromUTF8("test-string", sizeof("test-string") - 1);
+  AtomicString atomic_str = kTestString;
   
   ASSERT_TRUE(atomic_str.Is8Bit());
   const LChar* chars = atomic_str.Characters8();
@@ -140,7 +141,9 @@ TEST(StringImplTest, NullTerminationAtomicString) {
 
 TEST(StringImplTest, NullTerminationWithDataPrefix) {
   // Test the specific case that was failing in dom_string_map.cc
-  AtomicString name = "data-test-attribute"_as;
+  static const AtomicString kDataTestAttribute =
+      AtomicString::CreateFromUTF8("data-test-attribute", sizeof("data-test-attribute") - 1);
+  AtomicString name = kDataTestAttribute;
   
   ASSERT_TRUE(name.Is8Bit());
   const LChar* chars = name.Characters8();

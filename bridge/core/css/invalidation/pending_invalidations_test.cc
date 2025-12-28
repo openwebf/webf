@@ -98,7 +98,7 @@ TEST_F(PendingInvalidationsTest, DescendantInvalidationOnDisplayNone) {
   MemberMutationScope mutation_scope{GetDocument().GetExecutingContext()};
 
   ExceptionState exception_state;
-  GetDocument().body()->setInnerHTML(R"HTML(
+  constexpr const char kInnerHTML[] = R"HTML(
     <style>
       #a { display: none }
       .a .b { color: green }
@@ -107,8 +107,10 @@ TEST_F(PendingInvalidationsTest, DescendantInvalidationOnDisplayNone) {
       <div class="b"></div>
       <div class="b"></div>
     </div>
-  )HTML"_as,
-                                     exception_state);
+  )HTML";
+  static const AtomicString kInnerHTMLAtom =
+      AtomicString::CreateFromUTF8(kInnerHTML, sizeof(kInnerHTML) - 1);
+  GetDocument().body()->setInnerHTML(kInnerHTMLAtom, exception_state);
   ASSERT_FALSE(exception_state.HasException());
 
   GetDocument().UpdateStyleForThisDocument();

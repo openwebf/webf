@@ -29,7 +29,7 @@ class Variable : public Longhand {
   const AtomicString& GetPropertyNameAtomicString() const override {
     // TODO(xiezuobing):
     ExecutingContext* context;
-    static const AtomicString name = "variable"_as;
+    static const AtomicString name = AtomicString::CreateFromUTF8("variable", sizeof("variable") - 1);
     return name;
   }
 
