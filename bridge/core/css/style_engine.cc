@@ -1428,8 +1428,6 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
           }
 
           std::shared_ptr<MutableCSSPropertyValueSet> pseudo_set = pseudo_cascade.ExportWinningPropertySet();
-          WEBF_COND_LOG(STYLEENGINE, VERBOSE) << "[StyleEngine] Pseudo '" << pseudo_name << "' count="
-                            << (pseudo_set ? static_cast<int>(pseudo_set->PropertyCount()) : -1);
           if (!pseudo_set || pseudo_set->PropertyCount() == 0) return;
           {
             auto pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
