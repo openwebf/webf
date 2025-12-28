@@ -144,6 +144,20 @@ class WebFPage final {
   FORCE_INLINE bool isDedicated() { return context_->isDedicated(); };
   FORCE_INLINE double contextId() { return context_->contextId(); }
 
+  // Returns false when a previous UpdateStyleForThisDocument task is still
+  // running (or pending) for this page.
+  bool TryBeginUpdateStyleForThisDocument() {
+    return !update_style_for_this_document_in_progress_.exchange(true, std::memory_order_acq_rel);
+  }
+
+  void EndUpdateStyleForThisDocument() {
+    update_style_for_this_document_in_progress_.store(false, std::memory_order_release);
+  }
+
+  bool IsUpdateStyleForThisDocumentInProgress() const {
+    return update_style_for_this_document_in_progress_.load(std::memory_order_acquire);
+  }
+
   // Don't allow more than a certain number of frames in a page.
   static int MaxNumberOfFrames();
 
@@ -154,6 +168,7 @@ class WebFPage final {
 #endif
  private:
   const std::thread::id ownerThreadId;
+  std::atomic<bool> update_style_for_this_document_in_progress_{false};
   // FIXME: we must to use raw pointer instead of unique_ptr because we needs to access context_ when dispose page.
   // TODO: Raw pointer is dangerous and just works but it's fragile. We needs refactor this for more stable and
   // maintainable.

@@ -292,6 +292,19 @@ final DartOnColorSchemeChanged nativeOnColorSchemeChanged = WebFDynamicLibrary.r
     .lookup<NativeFunction<NativeOnColorSchemeChanged>>('onColorSchemeChanged')
     .asFunction();
 
+// Per-frame hook into the native (Blink CSS) side. Returns 1 if a style update
+// was scheduled/executed, or 0 if skipped because an update is already running.
+typedef NativeUpdateStyleForThisDocument = Int8 Function(Pointer<Void> page);
+typedef DartUpdateStyleForThisDocument = int Function(Pointer<Void> page);
+
+final DartUpdateStyleForThisDocument _updateStyleForThisDocument = WebFDynamicLibrary.ref
+    .lookup<NativeFunction<NativeUpdateStyleForThisDocument>>('updateStyleForThisDocument')
+    .asFunction();
+
+bool updateStyleForThisDocument(Pointer<Void> page) {
+  return _updateStyleForThisDocument(page) == 1;
+}
+
 typedef NativeParseSVGResult = Pointer<NativeGumboOutput> Function(Pointer<Utf8> code, Int32 length);
 typedef DartParseSVGResult = Pointer<NativeGumboOutput> Function(Pointer<Utf8> code, int length);
 

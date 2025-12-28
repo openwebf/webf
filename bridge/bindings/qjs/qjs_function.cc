@@ -11,6 +11,7 @@
 #include <vector>
 #include "core/binding_object.h"
 #include "core/dom/events/event_target.h"
+#include "core/executing_context.h"
 #include "cppgc/gc_visitor.h"
 
 namespace webf {
@@ -82,6 +83,7 @@ ScriptValue QJSFunction::Invoke(JSContext* ctx, const ScriptValue& this_val, int
   }
 
   ExecutingContext* context = ExecutingContext::From(ctx);
+  context->SetIsIdle(false);
 
   JSValue returnValue = JS_Call(ctx, function_, JS_IsNull(this_val_) ? this_val.QJSValue() : this_val_, argc, argv);
 

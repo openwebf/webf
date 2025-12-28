@@ -274,6 +274,7 @@ class Document : public ContainerNode, public TreeScope {
   // semantics for StyleEngine integration. We do not yet expose the full
   // DocumentLifecycle state machine, but this boolean allows StyleEngine to
   // guard UpdateStyleRecalcRoot against marks coming from inside RecalcStyle.
+  bool update_style_for_this_document_in_progress_{false};
   mutable bool in_style_recalc_{false};
 };
 

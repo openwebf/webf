@@ -198,6 +198,9 @@ class ExecutingContext {
   FORCE_INLINE bool isDedicated() { return is_dedicated_; }
   FORCE_INLINE std::chrono::time_point<std::chrono::system_clock> timeOrigin() const { return time_origin_; }
   FORCE_INLINE bool isBlinkEnabled() { return enable_blink_engine_; }
+  FORCE_INLINE bool isIdle() const { return is_idle_; }
+  FORCE_INLINE void SetIsIdle(bool is_idle) { is_idle_ = is_idle; }
+  FORCE_INLINE void MarkNeedsStyleUpdateInMicrotask() { is_needs_update_styles_in_microtask_ = true; }
 
   // Get RemoteObjectRegistry for this context
   RemoteObjectRegistry* GetRemoteObjectRegistry();
@@ -294,6 +297,8 @@ class ExecutingContext {
   bool is_dedicated_;
   std::unique_ptr<RemoteObjectRegistry> remote_object_registry_;
   bool enable_blink_engine_ = false;
+  bool is_idle_{true};
+  bool is_needs_update_styles_in_microtask_ {false};
 
   // Rust methods ptr should keep alive when ExecutingContext is disposing.
   const std::unique_ptr<ExecutingContextWebFMethods> public_method_ptr_ = nullptr;

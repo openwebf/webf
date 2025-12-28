@@ -1162,6 +1162,13 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
           }
         }
 
+        bool display_none_for_invalidation = false;
+        if (property_set && !property_set->IsEmpty()) {
+          String display_value = property_set->GetPropertyValue(CSSPropertyID::kDisplay);
+          display_none_for_invalidation = display_value.StripWhiteSpace().LowerASCII() == "none";
+        }
+        element->SetDisplayNoneForStyleInvalidation(display_none_for_invalidation);
+
         if (!property_set || property_set->IsEmpty()) {
           // Even if there are no element-level winners, clear any previously-sent
           // overrides (to avoid stale styles) and emit pseudo styles if any exist.
@@ -1207,6 +1214,9 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
               String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
               if (value_string.IsNull()) {
                 value_string = (*value_ptr)->CssTextForSerialization();
+              }
+              if (id == CSSPropertyID::kVariable && value_string.IsEmpty()) {
+                value_string = String(" ");
               }
               String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
               auto key_ns = prop_name.ToStylePropertyNameNativeString();
@@ -1308,6 +1318,9 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
           String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
           String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
           if (value_string.IsNull()) value_string = String("");
+          if (id == CSSPropertyID::kVariable && value_string.IsEmpty()) {
+            value_string = String(" ");
+          }
 
           // Skip white-space longhands; will emit shorthand later
           if (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap) {
@@ -1378,6 +1391,9 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
             String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
             if (value_string.IsNull()) {
               value_string = (*value_ptr)->CssTextForSerialization();
+            }
+            if (id == CSSPropertyID::kVariable && value_string.IsEmpty()) {
+              value_string = String(" ");
             }
             String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
 
@@ -1478,6 +1494,13 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
           }
         }
 
+        bool display_none_for_invalidation = false;
+        if (property_set && !property_set->IsEmpty()) {
+          String display_value = property_set->GetPropertyValue(CSSPropertyID::kDisplay);
+          display_none_for_invalidation = display_value.StripWhiteSpace().LowerASCII() == "none";
+        }
+        el->SetDisplayNoneForStyleInvalidation(display_none_for_invalidation);
+
         auto* ctx = document.GetExecutingContext();
 
         if (!property_set || property_set->IsEmpty()) {
@@ -1509,9 +1532,13 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
                                                el->bindingObject(), nullptr);
             for (unsigned i = 0; i < pseudo_set->PropertyCount(); ++i) {
               auto prop = pseudo_set->PropertyAt(i);
+              CSSPropertyID id = prop.Id();
               AtomicString prop_name = prop.Name().ToAtomicString();
               String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
               if (value_string.IsNull()) value_string = String("");
+              if (id == CSSPropertyID::kVariable && value_string.IsEmpty()) {
+                value_string = String(" ");
+              }
               String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
               auto key_ns = prop_name.ToStylePropertyNameNativeString();
               auto* payload =
@@ -1601,6 +1628,9 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
           String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
           String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
           if (value_string.IsNull()) value_string = String("");
+          if (id == CSSPropertyID::kVariable && value_string.IsEmpty()) {
+            value_string = String(" ");
+          }
 
           if (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap) {
             continue;
@@ -1664,6 +1694,9 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
             String value_string = pseudo_set->GetPropertyValueWithHint(prop_name, i);
             if (value_string.IsNull()) {
               value_string = (*value_ptr)->CssTextForSerialization();
+            }
+            if (id == CSSPropertyID::kVariable && value_string.IsEmpty()) {
+              value_string = String(" ");
             }
             String base_href_string = pseudo_set->GetPropertyBaseHrefWithHint(prop_name, i);
 
@@ -2024,7 +2057,6 @@ void StyleEngine::MediaQueryAffectingValueChanged(TreeScope& tree_scope, MediaVa
           kSubtreeStyleChange,
           StyleChangeReasonForTracing::Create(style_change_reason::kStyleRuleChange));
       document.SetNeedsStyleInvalidation();
-      RecalcStyle();
       ++media_query_recalc_count_for_test_;
     }
     return;
@@ -2049,7 +2081,6 @@ void StyleEngine::MediaQueryAffectingValueChanged(TreeScope& tree_scope, MediaVa
             kSubtreeStyleChange,
             StyleChangeReasonForTracing::Create(style_change_reason::kStyleRuleChange));
         document.SetNeedsStyleInvalidation();
-        RecalcStyle();
         ++media_query_recalc_count_for_test_;
       }
       break;

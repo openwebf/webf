@@ -136,6 +136,13 @@ void onDevicePixelRatioChanged(void* page, double device_pixel_ratio);
 WEBF_EXPORT_C
 void onColorSchemeChanged(void* page, const char* scheme, int32_t length);
 
+// Called by the Dart side at the beginning of a Flutter frame to allow the
+// native Blink CSS engine to update declared-value styles for this document.
+// Returns 1 if a style update was scheduled/executed, or 0 if skipped (e.g.
+// because a previous update is still in progress).
+WEBF_EXPORT_C
+int8_t updateStyleForThisDocument(void* page);
+
 WEBF_EXPORT_C
 void* parseSVGResult(const char* code, int32_t length);
 WEBF_EXPORT_C

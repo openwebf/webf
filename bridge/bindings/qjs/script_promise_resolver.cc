@@ -51,6 +51,7 @@ ScriptPromise ScriptPromiseResolver::Promise() {
 void ScriptPromiseResolver::ResolveOrRejectImmediately(JSValue value) {
   if (context_ == nullptr)
     return;
+  context_->SetIsIdle(true);
   {
     if (state_ == kResolving) {
       JSValue arguments[] = {value};

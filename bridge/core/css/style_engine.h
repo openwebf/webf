@@ -154,6 +154,9 @@ class StyleEngine final {
   // "invalidate-then-recalc" split when desired.
   void InvalidateStyle();
 
+  PendingInvalidations& GetPendingNodeInvalidations() { return pending_invalidations_; }
+  const PendingInvalidations& GetPendingNodeInvalidations() const { return pending_invalidations_; }
+
   bool MarkReattachAllowed() const;
   bool MarkStyleDirtyAllowed() const;
 

@@ -46,7 +46,7 @@ class _WebFTesterState extends State<WebFTester> {
             onControllerInit: (controller) async {
               double contextId = controller.view.contextId;
               testContext = initTestFramework(contextId);
-              registerDartTestMethodsToCpp(contextId);
+              registerDartTestMethodsToCpp(testContext!);
 
               // Pass test filter from environment if available
               final testFilter = Platform.environment['WEBF_TEST_NAME_FILTER'];
