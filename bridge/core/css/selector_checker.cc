@@ -443,12 +443,12 @@ SelectorChecker::MatchStatus SelectorChecker::MatchForRelation(const SelectorChe
       if (!left->NextSimpleSelector() && left->Match() == CSSSelector::kAttributeExact) {
         const AtomicString& lname = left->Attribute().LocalName();
         const AtomicString& expect = left->Value();
-        if (lname == "class"_as) {
+        if (lname == g_class_atom) {
           AtomicString cls = next_context.element->className();
           if (!cls.IsNull() && cls == expect) {
             return kSelectorMatches;
           }
-        } else if (lname == "id"_as) {
+        } else if (lname == g_id_atom) {
           if (next_context.element->HasID() && next_context.element->IdForStyleResolution() == expect) {
             return kSelectorMatches;
           }
@@ -819,7 +819,7 @@ static bool AnyAttributeMatches(Element& element, CSSSelector::MatchType match, 
   if (any_ns) {
     const AtomicString& local = selector_attr.LocalName();
     // id attribute
-    if (local == "id"_as) {
+    if (local == g_id_atom) {
       if (!element.HasID()) {
         return false;
       }
@@ -835,7 +835,7 @@ static bool AnyAttributeMatches(Element& element, CSSSelector::MatchType match, 
       }
     }
     // class attribute
-    if (local == "class"_as) {
+    if (local == g_class_atom) {
       // className() reflects the current attribute text.
       AtomicString class_text = element.className();
       if (class_text.IsNull()) {
