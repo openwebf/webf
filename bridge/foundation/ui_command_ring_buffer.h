@@ -106,6 +106,7 @@ class UICommandPackageRingBuffer {
                   void* native_binding_object,
                   void* nativePtr2,
                   bool request_ui_update = true);
+  void AddCommandItem(const UICommandItem& item, UICommand type, bool request_ui_update = true);
   void FlushCurrentPackage();
   
   // Consumer operations

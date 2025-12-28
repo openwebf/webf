@@ -968,7 +968,7 @@ task('generate-bindings-code', (done) => {
     return done(new Error(`Code generator build failed with status ${buildResult.status}`));
   }
 
-  let compileResult = spawnSync('node', ['bin/code_generator', '-s', '../../core', '-d', '../../code_gen'], {
+  let compileResult = spawnSync('node', ['bin/code_generator', '-s', '../../core', '-d', '../../code_gen', '--dart-dist', '../../../webf/lib/src/bridge/code_gen'], {
     cwd: paths.codeGen,
     env: {
       ...process.env,

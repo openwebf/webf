@@ -41,6 +41,7 @@
 #include "core/css/css_property_name.h"
 #include "core/css/css_property_value_set.h"
 #include "core/css/css_style_sheet.h"
+#include "core/css/css_identifier_value.h"
 #include "core/css/css_value.h"
 #include "core/css/media_query_evaluator.h"
 #include "core/css/style_rule_import.h"
@@ -1315,11 +1316,32 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
           if (!value_ptr || !(*value_ptr)) continue;
 
           AtomicString prop_name = prop.Name().ToAtomicString();
-          String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
-          String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
-          if (value_string.IsNull()) value_string = String("");
-          if (id == CSSPropertyID::kVariable && value_string.IsEmpty()) {
-            value_string = String(" ");
+          // Custom properties require sending the property name across the bridge.
+          if (id == CSSPropertyID::kVariable) {
+            String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
+            String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
+            if (value_string.IsNull()) value_string = String("");
+            if (value_string.IsEmpty()) {
+              value_string = String(" ");
+            }
+
+            // Skip white-space longhands; will emit shorthand later
+            if (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap) {
+              continue;
+            }
+
+            // Already cleared above.
+            auto key_ns = prop_name.ToStylePropertyNameNativeString();
+            auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
+            payload->value = stringToNativeString(value_string).release();
+            if (!base_href_string.IsEmpty()) {
+              payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
+            } else {
+              payload->href = nullptr;
+            }
+            ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(key_ns), element->bindingObject(),
+                                               payload);
+            continue;
           }
 
           // Skip white-space longhands; will emit shorthand later
@@ -1327,28 +1349,66 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
             continue;
           }
 
-          // Already cleared above.
-          auto key_ns = prop_name.ToStylePropertyNameNativeString();
-          auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
-          payload->value = stringToNativeString(value_string).release();
-          if (!base_href_string.IsEmpty()) {
-            payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
+          int64_t value_slot = 0;
+          SharedNativeString* base_href = nullptr;
+          if ((*value_ptr)->IsIdentifierValue()) {
+            const auto& ident = To<CSSIdentifierValue>(*(*value_ptr));
+            value_slot = -static_cast<int64_t>(ident.GetValueID()) - 1;
           } else {
-            payload->href = nullptr;
+            String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
+            String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
+            if (value_string.IsNull()) {
+              value_string = String("");
+            }
+            if (!value_string.IsEmpty()) {
+              auto* value_ns = stringToNativeString(value_string).release();
+              value_slot = static_cast<int64_t>(reinterpret_cast<intptr_t>(value_ns));
+            }
+            if (!base_href_string.IsEmpty()) {
+              base_href = stringToNativeString(base_href_string.ToUTF8String()).release();
+            }
           }
-          ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(key_ns), element->bindingObject(),
-                                             payload);
+
+          ctx->uiCommandBuffer()->AddStyleByIdCommand(element->bindingObject(), static_cast<int32_t>(id), value_slot,
+                                                      base_href);
         }
 
         if (emit_white_space_shorthand) {
           // Already cleared above.
-          auto ws_prop = AtomicString::CreateFromUTF8("white-space");
-          auto ws_key = ws_prop.ToStylePropertyNameNativeString();
-          auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
-          payload->value = stringToNativeString(white_space_value_str).release();
-          payload->href = nullptr;
-          ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(ws_key), element->bindingObject(),
-                                             payload);
+          CSSValueID ws_value_id = CSSValueID::kInvalid;
+          EWhiteSpace ws = ToWhiteSpace(ws_collapse_enum, text_wrap_enum);
+          switch (ws) {
+            case EWhiteSpace::kNormal:
+              ws_value_id = CSSValueID::kNormal;
+              break;
+            case EWhiteSpace::kNowrap:
+              ws_value_id = CSSValueID::kNowrap;
+              break;
+            case EWhiteSpace::kPre:
+              ws_value_id = CSSValueID::kPre;
+              break;
+            case EWhiteSpace::kPreLine:
+              ws_value_id = CSSValueID::kPreLine;
+              break;
+            case EWhiteSpace::kPreWrap:
+              ws_value_id = CSSValueID::kPreWrap;
+              break;
+            case EWhiteSpace::kBreakSpaces:
+              ws_value_id = CSSValueID::kBreakSpaces;
+              break;
+          }
+
+          int64_t value_slot = 0;
+          if (ws_value_id != CSSValueID::kInvalid) {
+            value_slot = -static_cast<int64_t>(ws_value_id) - 1;
+          } else if (!white_space_value_str.IsEmpty()) {
+            auto* value_ns = stringToNativeString(white_space_value_str).release();
+            value_slot = static_cast<int64_t>(reinterpret_cast<intptr_t>(value_ns));
+          }
+
+          ctx->uiCommandBuffer()->AddStyleByIdCommand(element->bindingObject(),
+                                                      static_cast<int32_t>(CSSPropertyID::kWhiteSpace), value_slot,
+                                                      nullptr);
         }
 
         // Pseudo emission (only minimal content properties as in RecalcStyle)
@@ -1625,37 +1685,94 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
           if (!value_ptr || !(*value_ptr)) continue;
 
           AtomicString prop_name = prop.Name().ToAtomicString();
-          String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
-          String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
-          if (value_string.IsNull()) value_string = String("");
-          if (id == CSSPropertyID::kVariable && value_string.IsEmpty()) {
-            value_string = String(" ");
+          // Custom properties require sending the property name across the bridge.
+          if (id == CSSPropertyID::kVariable) {
+            String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
+            String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
+            if (value_string.IsNull()) value_string = String("");
+            if (value_string.IsEmpty()) {
+              value_string = String(" ");
+            }
+
+            if (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap) {
+              continue;
+            }
+
+            auto key_ns = prop_name.ToStylePropertyNameNativeString();
+            auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
+            payload->value = stringToNativeString(value_string).release();
+            if (!base_href_string.IsEmpty()) {
+              payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
+            } else {
+              payload->href = nullptr;
+            }
+            ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(key_ns), el->bindingObject(), payload);
+            continue;
           }
 
           if (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap) {
             continue;
           }
 
-          auto key_ns = prop_name.ToStylePropertyNameNativeString();
-          auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
-          payload->value = stringToNativeString(value_string).release();
-          if (!base_href_string.IsEmpty()) {
-            payload->href = stringToNativeString(base_href_string.ToUTF8String()).release();
+          int64_t value_slot = 0;
+          SharedNativeString* base_href = nullptr;
+
+          if ((*value_ptr)->IsIdentifierValue()) {
+            const auto& ident = To<CSSIdentifierValue>(*(*value_ptr));
+            value_slot = -static_cast<int64_t>(ident.GetValueID()) - 1;
           } else {
-            payload->href = nullptr;
+            String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
+            String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
+            if (value_string.IsNull()) value_string = String("");
+
+            if (!value_string.IsEmpty()) {
+              auto* value_ns = stringToNativeString(value_string).release();
+              value_slot = static_cast<int64_t>(reinterpret_cast<intptr_t>(value_ns));
+            }
+            if (!base_href_string.IsEmpty()) {
+              base_href = stringToNativeString(base_href_string.ToUTF8String()).release();
+            }
           }
-          ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(key_ns), el->bindingObject(),
-                                             payload);
+
+          ctx->uiCommandBuffer()->AddStyleByIdCommand(el->bindingObject(), static_cast<int32_t>(id), value_slot,
+                                                      base_href);
         }
 
         if (emit_white_space_shorthand) {
-          auto ws_prop = AtomicString::CreateFromUTF8("white-space");
-          auto ws_key = ws_prop.ToStylePropertyNameNativeString();
-          auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
-          payload->value = stringToNativeString(white_space_value_str).release();
-          payload->href = nullptr;
-          ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(ws_key), el->bindingObject(),
-                                             payload);
+          CSSValueID ws_value_id = CSSValueID::kInvalid;
+          EWhiteSpace ws = ToWhiteSpace(ws_collapse_enum, text_wrap_enum);
+          switch (ws) {
+            case EWhiteSpace::kNormal:
+              ws_value_id = CSSValueID::kNormal;
+              break;
+            case EWhiteSpace::kNowrap:
+              ws_value_id = CSSValueID::kNowrap;
+              break;
+            case EWhiteSpace::kPre:
+              ws_value_id = CSSValueID::kPre;
+              break;
+            case EWhiteSpace::kPreLine:
+              ws_value_id = CSSValueID::kPreLine;
+              break;
+            case EWhiteSpace::kPreWrap:
+              ws_value_id = CSSValueID::kPreWrap;
+              break;
+            case EWhiteSpace::kBreakSpaces:
+              ws_value_id = CSSValueID::kBreakSpaces;
+              break;
+          }
+
+          int64_t value_slot = 0;
+          if (ws_value_id != CSSValueID::kInvalid) {
+            value_slot = -static_cast<int64_t>(ws_value_id) - 1;
+          } else if (!white_space_value_str.IsEmpty()) {
+            auto* value_ns = stringToNativeString(white_space_value_str).release();
+            value_slot = static_cast<int64_t>(reinterpret_cast<intptr_t>(value_ns));
+          }
+
+          ctx->uiCommandBuffer()->AddStyleByIdCommand(el->bindingObject(),
+                                                      static_cast<int32_t>(CSSPropertyID::kWhiteSpace), value_slot,
+                                                      nullptr);
         }
 
         auto send_pseudo_for = [&](PseudoId pseudo_id, const char* pseudo_name) {

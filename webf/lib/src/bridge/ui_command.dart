@@ -15,11 +15,20 @@ import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/dom.dart';
 
+import 'code_gen/blink_css_ids.dart';
+
 class UICommand {
   late final UICommandType type;
   late final String args;
   late final Pointer nativePtr;
   late final Pointer nativePtr2;
+
+  // Inline payload for UICommandType.setStyleById.
+  // - stylePropertyId: native (Blink) CSSPropertyID integer value.
+  // - styleValueSlot: either a pointer to NativeString (>= 0) holding the value,
+  //   or a negative immediate CSSValueID: -(valueId + 1).
+  int stylePropertyId = 0;
+  int styleValueSlot = 0;
 
   UICommand();
   UICommand.from(this.type, this.args, this.nativePtr, this.nativePtr2);
@@ -78,6 +87,15 @@ List<UICommand> nativeUICommandToDartFFI(double contextId) {
     // Extract type
     command.type = UICommandType.values[commandItem.type];
 
+    if (command.type == UICommandType.setStyleById) {
+      command.args = '';
+      command.nativePtr = commandItem.nativePtr != 0 ? Pointer.fromAddress(commandItem.nativePtr) : nullptr;
+      command.nativePtr2 = commandItem.nativePtr2 != 0 ? Pointer.fromAddress(commandItem.nativePtr2) : nullptr;
+      command.stylePropertyId = commandItem.args01Length;
+      command.styleValueSlot = commandItem.string_01;
+      return command;
+    }
+
     // Extract args string
     if (commandItem.string_01 != 0) {
       Pointer<Uint16> args_01 = Pointer.fromAddress(commandItem.string_01);
@@ -101,6 +119,16 @@ List<UICommand> nativeUICommandToDartFFI(double contextId) {
 
 void execUICommands(WebFViewController view, List<UICommand> commands) {
   Map<int, bool> pendingStylePropertiesTargets = {};
+
+  String blinkStylePropertyNameFromId(int propertyId) {
+    if (propertyId <= 0 || propertyId >= blinkCSSPropertyIdToStyleName.length) return '';
+    return blinkCSSPropertyIdToStyleName[propertyId];
+  }
+
+  String blinkKeywordFromValueId(int valueId) {
+    if (valueId <= 0 || valueId >= blinkCSSValueIdToKeyword.length) return '';
+    return blinkCSSValueIdToKeyword[valueId];
+  }
 
   for(UICommand command in commands) {
     UICommandType commandType = command.type;
@@ -130,6 +158,30 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           }
           printMsg =
               'nativePtr: ${command.nativePtr} type: ${command.type} key: ${command.args} value: $valueLog baseHref: ${baseHrefLog ?? 'null'}';
+          break;
+        case UICommandType.setStyleById:
+          final String keyLog = blinkStylePropertyNameFromId(command.stylePropertyId);
+          String? valueLog;
+          String? baseHrefLog;
+          final int slot = command.styleValueSlot;
+          if (slot < 0) {
+            valueLog = blinkKeywordFromValueId(-slot - 1);
+          } else if (slot > 0) {
+            try {
+              valueLog = nativeStringToString(Pointer<NativeString>.fromAddress(slot));
+            } catch (_) {
+              valueLog = '<error>';
+            }
+          }
+          if (command.nativePtr2 != nullptr) {
+            try {
+              baseHrefLog = nativeStringToString(command.nativePtr2.cast<NativeString>());
+            } catch (_) {
+              baseHrefLog = '<error>';
+            }
+          }
+          printMsg =
+              'nativePtr: ${command.nativePtr} type: ${command.type} propertyId: ${command.stylePropertyId} key: $keyLog value: ${valueLog ?? '<null>'} baseHref: ${baseHrefLog ?? 'null'}';
           break;
         case UICommandType.setPseudoStyle:
           if (command.nativePtr2 != nullptr) {
@@ -269,6 +321,32 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           }
 
           view.setInlineStyle(nativePtr, command.args, value, baseHref: baseHref);
+          pendingStylePropertiesTargets[nativePtr.address] = true;
+          break;
+        case UICommandType.setStyleById:
+          final String key = blinkStylePropertyNameFromId(command.stylePropertyId);
+          if (key.isEmpty) break;
+
+          String value = '';
+          String? baseHref;
+
+          final int slot = command.styleValueSlot;
+          if (slot < 0) {
+            value = blinkKeywordFromValueId(-slot - 1);
+          } else if (slot > 0) {
+            final Pointer<NativeString> nativeValue = Pointer<NativeString>.fromAddress(slot);
+            value = nativeStringToString(nativeValue);
+            freeNativeString(nativeValue);
+          }
+
+          if (command.nativePtr2 != nullptr) {
+            final Pointer<NativeString> nativeHref = command.nativePtr2.cast<NativeString>();
+            final String raw = nativeStringToString(nativeHref);
+            freeNativeString(nativeHref);
+            baseHref = raw.isEmpty ? null : raw;
+          }
+
+          view.setInlineStyle(nativePtr, key, value, baseHref: baseHref);
           pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
         case UICommandType.setPseudoStyle:

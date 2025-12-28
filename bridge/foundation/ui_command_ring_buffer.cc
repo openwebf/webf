@@ -269,6 +269,21 @@ void UICommandPackageRingBuffer::AddCommand(UICommand type,
   }
 }
 
+void UICommandPackageRingBuffer::AddCommandItem(const UICommandItem& item, UICommand type, bool request_ui_update) {
+  std::lock_guard<std::mutex> lock(current_package_mutex_);
+
+  if (!current_package_->commands.empty() && current_package_->ShouldSplit(type)) {
+    FlushCurrentPackage();
+  }
+
+  current_package_->AddCommand(item);
+
+  if (type == UICommand::kFinishRecordingCommand || type == UICommand::kAsyncCaller
+      || type == UICommand::kRequestAnimationFrame || type == UICommand::kRequestCanvasPaint) {
+    FlushCurrentPackage();
+  }
+}
+
 void UICommandPackageRingBuffer::FlushCurrentPackage() {
   if (current_package_->commands.empty()) {
     return;
