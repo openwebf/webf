@@ -5,7 +5,9 @@
 #include "include/webf_bridge.h"
 #include <core/binding_object.h>
 
+#include "bindings/qjs/cppgc/mutation_scope.h"
 #include "core/dart_isolate_context.h"
+#include "core/dom/document.h"
 #include "core/html/html_script_element.h"
 #include "core/html/parser/html_parser.h"
 #include "core/page.h"
@@ -302,6 +304,62 @@ void onColorSchemeChanged(void* page_, const char* scheme, int32_t length) {
       webf::WebFPage::OnColorSchemeChangedInternal,
       page_,
       scheme_copy);
+}
+
+int8_t updateStyleForThisDocument(void* page_) {
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  if (!page) {
+    return 0;
+  }
+
+  if (!page->TryBeginUpdateStyleForThisDocument()) {
+    return 0;
+  }
+
+  webf::ExecutingContext* context = page->executingContext();
+  if (!context || !context->IsContextValid()) {
+    page->EndUpdateStyleForThisDocument();
+    return 0;
+  }
+
+  auto* dart_isolate_context = page->dartIsolateContext();
+  if (!dart_isolate_context || !dart_isolate_context->dispatcher()) {
+    page->EndUpdateStyleForThisDocument();
+    return 0;
+  }
+
+  dart_isolate_context->dispatcher()->PostToJsAndCallback(
+      page->isDedicated(), static_cast<int32_t>(page->contextId()),
+      [](void* page_ptr) {
+        auto* page = reinterpret_cast<webf::WebFPage*>(page_ptr);
+        if (!page) {
+          return;
+        }
+
+        webf::ExecutingContext* context = page->executingContext();
+        if (!context || !context->IsContextValid() || !context->isBlinkEnabled()) {
+          return;
+        }
+
+        if (!context->isIdle()) {
+          return;
+        }
+
+        webf::Document* document = context->document();
+        if (!document) {
+          return;
+        }
+
+        webf::MemberMutationScope mutation_scope{context};
+        document->UpdateStyleForThisDocument();
+        // Ensure any style-generated UI commands are flushed and visible to the
+        // Dart/UI thread in dedicated-thread mode.
+        context->uiCommandBuffer()->AddCommand(webf::UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
+      },
+      [page]() { page->EndUpdateStyleForThisDocument(); },
+      page_);
+
+  return 1;
 }
 
 void registerPluginByteCode(uint8_t* bytes, int32_t length, const char* pluginName) {

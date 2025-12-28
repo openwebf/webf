@@ -185,6 +185,8 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
     return false;
   }
 
+  SetIsIdle(false);
+
   // Validate input parameters
   if (code == nullptr || code_len == 0) {
     return true; // Empty script is not an error
@@ -247,6 +249,8 @@ bool ExecutingContext::EvaluateJavaScript(const char16_t* code, size_t length, c
 
 bool ExecutingContext::EvaluateJavaScript(const char16_t* code, size_t length, const char* sourceURL, int startLine,
                                           HTMLScriptElement* script_element) {
+  SetIsIdle(false);
+
   std::string utf8Code = toUTF8(std::u16string(reinterpret_cast<const char16_t*>(code), length));
 
   // Set document.currentScript if script element is provided
@@ -291,6 +295,8 @@ bool ExecutingContext::EvaluateModule(const char* code,
   if (ScriptForbiddenScope::IsScriptForbidden()) {
     return false;
   }
+
+  SetIsIdle(false);
 
   // Per HTML spec, document.currentScript is always null in module scripts.
   // Do not set currentScript for module evaluation.
@@ -346,6 +352,8 @@ bool ExecutingContext::EvaluateJavaScript(const char* code, size_t codeLength, c
 
 bool ExecutingContext::EvaluateJavaScript(const char* code, size_t codeLength, const char* sourceURL, int startLine,
                                           HTMLScriptElement* script_element) {
+  SetIsIdle(false);
+
   // Set document.currentScript if script element is provided
   HTMLScriptElement* previous_current_script = nullptr;
   if (script_element && document()) {
@@ -386,6 +394,8 @@ bool ExecutingContext::EvaluateByteCode(const uint8_t* bytes, size_t byteLength,
     HandleException(exception_state);
     return false;
   }
+
+  SetIsIdle(false);
 
   // Set document.currentScript if script element is provided
   HTMLScriptElement* previous_current_script = nullptr;
@@ -535,17 +545,11 @@ void ExecutingContext::ReportError(JSValueConst error, char** rust_errmsg, uint3
 
 void ExecutingContext::DrainMicrotasks() {
   DrainPendingPromiseJobs();
-  // Right after all microtasks done, apply any pending incremental style
-  // invalidations so that DOM mutations affecting selector matching are
-  // reflected in the styles emitted for this frame.
-  if (isBlinkEnabled()) {
-    Document* doc = document();
-    if (doc) {
-      MemberMutationScope mutation_scope{this};
-      doc->UpdateStyleForThisDocument();
-    }
+  SetIsIdle(true);
+  if (is_needs_update_styles_in_microtask_) {
+    MemberMutationScope mutation_scope{this};
+    document()->UpdateStyleForThisDocument();
   }
-
   DrawCanvasElementIfNeeded();
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 }

@@ -118,8 +118,8 @@ mixin ElementOverflowMixin on ElementBase {
   // ignore: constant_identifier_names
   static const Duration SCROLL_DURATION = scrollDuration;
 
-  flutter.ScrollController? scrollControllerX;
-  flutter.ScrollController? scrollControllerY;
+  flutter.ScrollController? get scrollControllerX;
+  flutter.ScrollController? get scrollControllerY;
 
   double get scrollTop {
     if (scrollControllerY != null && scrollControllerY!.hasClients) {

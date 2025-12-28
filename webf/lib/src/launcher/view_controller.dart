@@ -115,15 +115,40 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   bool _isFrameBindingAttached = false;
+  bool _beginFrameStyleUpdateScheduled = false;
+
+  void _scheduleBlinkStyleUpdateForNextFrame() {
+    if (!enableBlink || disposed) return;
+    if (_beginFrameStyleUpdateScheduled) return;
+    _beginFrameStyleUpdateScheduled = true;
+
+    SchedulerBinding.instance.scheduleFrameCallback((Duration _) {
+      _beginFrameStyleUpdateScheduled = false;
+      if (disposed) return;
+
+      final page = getAllocatedPage(contextId);
+      if (page == null) return;
+      updateStyleForThisDocument(page);
+    });
+  }
+
+  void deliverStyleRequestForDocument() {
+    if (!enableBlink) return;
+    final page = getAllocatedPage(contextId);
+    if (page == null) return;
+    updateStyleForThisDocument(page);
+  }
 
   void flushPendingCommandsPerFrame() {
     if (disposed && _isFrameBindingAttached) return;
     _isFrameBindingAttached = true;
     flushUICommand(this, window.pointer!);
+    _scheduleBlinkStyleUpdateForNextFrame();
     // Deliver pending IntersectionObserver entries to JS side.
     // Safe to call every frame; it will no-op when there are no entries.
     deliverIntersectionObserver();
     SchedulerBinding.instance.addPostFrameCallback((_) => flushPendingCommandsPerFrame());
+    SchedulerBinding.instance.scheduleFrame();
   }
 
   final Map<String, Completer<void>> _hybridRouteLoadCompleter = {};

@@ -136,6 +136,38 @@ mixin CSSVariableMixin on RenderStyle {
       prevRaw = _variableStorage![identifier]!.toString();
     }
 
+    // CSS-wide keywords have special meaning for custom properties too.
+    // Custom properties are inherited, so:
+    //   --x: inherit; / --x: unset;
+    // behaves like removing the local override and inheriting from the parent.
+    final String trimmed = value.trim();
+    final String lower = trimmed.toLowerCase();
+    if (lower == INHERIT || lower == 'unset') {
+      _identifierStorage?.remove(identifier);
+      _variableStorage?.remove(identifier);
+      if (_identifierStorage != null && _identifierStorage!.isEmpty) _identifierStorage = null;
+      if (_variableStorage != null && _variableStorage!.isEmpty) _variableStorage = null;
+
+      if (DebugFlags.shouldLogCssVar(identifier, deps)) {
+        cssLogger.info('[var][set] id=$identifier stored-as=inherit prev=${prevRaw ?? 'null'}');
+      }
+
+      if (_propertyDependencies.containsKey(identifier)) {
+        _notifyCSSVariableChanged(identifier, trimmed, prevRaw);
+      } else {
+        _clearColorCacheForVariable(identifier);
+        if (DebugFlags.shouldLogCssVar(identifier)) {
+          cssLogger.info('[var][notify] id=$identifier no-deps; cleared-color-cache-only');
+        }
+      }
+      return;
+    }
+
+    // Canonicalize CSS-wide keyword case for custom properties.
+    if (lower == INITIAL) {
+      value = INITIAL;
+    }
+
     if (isSingleVarFunction(value)) {
       CSSVariable? variable = CSSVariable.tryParse(this, value);
       if (variable != null) {
