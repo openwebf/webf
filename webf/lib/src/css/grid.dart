@@ -374,6 +374,9 @@ class CSSGridParser {
         final GridTrackSize? maxTrack =
             _parseSingleTrack(maxToken, renderStyle, propertyName, axis, leadingNames: const [], trailingNames: const []);
         if (minTrack != null && maxTrack != null) {
+          if (minTrack is GridFitContent || maxTrack is GridFitContent) {
+            return null;
+          }
           return GridMinMax(
             minTrack,
             maxTrack,

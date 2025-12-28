@@ -202,6 +202,25 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   @override
   void performPaint(PaintingContext context, Offset offset) {
+    bool isNegativeZIndexStackingChild(RenderBox child) {
+      if (child is! RenderBoxModel) return false;
+      final int? zi = child.renderStyle.zIndex;
+      if (zi == null || zi >= 0) return false;
+      return child.renderStyle.establishesStackingContext;
+    }
+
+    bool shouldSkipNegativeZIndexChildren() {
+      if (renderStyle.establishesStackingContext) return false;
+      for (final RenderBox child in paintingOrder) {
+        if (!identical(child.parent, this)) continue;
+        if (isNegativeZIndexStackingChild(child)) return true;
+        break;
+      }
+      return false;
+    }
+
+    final bool skipNegatives = shouldSkipNegativeZIndexChildren();
+
     // If using inline formatting context, delegate painting to it first.
     if (establishIFC && _inlineFormattingContext != null) {
       // Calculate content offset (adjust for padding and border)
@@ -219,6 +238,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       // Paint positioned direct children in proper stacking order.
       for (final RenderBox child in paintingOrder) {
         if (child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
+          if (skipNegatives && isNegativeZIndexStackingChild(child)) continue;
           final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
           if (child.hasSize) context.paintChild(child, pd.offset + offset);
         }
@@ -252,6 +272,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       }
 
       if (!shouldPaint) continue;
+      if (skipNegatives && isNegativeZIndexStackingChild(child)) continue;
 
       final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
       if (!child.hasSize) continue;
@@ -1884,7 +1905,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     }
 
     // Fallback to default behavior for regular flow layout
-    return defaultHitTestChildren(result, position: position);
+    return super.hitTestChildren(result, position: position);
   }
 
 

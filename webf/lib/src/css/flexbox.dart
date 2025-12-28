@@ -327,8 +327,9 @@ mixin CSSFlexboxMixin on RenderStyle {
       case 'normal':
         return JustifyContent.stretch;
       case 'flex-end':
-      case 'end':
         return JustifyContent.flexEnd;
+      case 'end':
+        return JustifyContent.end;
       case 'center':
         return JustifyContent.center;
       case 'space-between':
@@ -338,7 +339,9 @@ mixin CSSFlexboxMixin on RenderStyle {
       case 'space-evenly':
         return JustifyContent.spaceEvenly;
       case 'flex-start':
+        return JustifyContent.flexStart;
       case 'start':
+        return JustifyContent.start;
       default:
         return JustifyContent.flexStart;
     }
@@ -347,11 +350,13 @@ mixin CSSFlexboxMixin on RenderStyle {
   static AlignItems resolveAlignItems(String alignItems) {
     switch (alignItems) {
       case 'flex-start':
-      case 'start':
         return AlignItems.flexStart;
+      case 'start':
+        return AlignItems.start;
       case 'flex-end':
-      case 'end':
         return AlignItems.flexEnd;
+      case 'end':
+        return AlignItems.end;
       case 'center':
         return AlignItems.center;
       case 'baseline':
@@ -368,11 +373,13 @@ mixin CSSFlexboxMixin on RenderStyle {
   static AlignContent resolveAlignContent(String alignContent) {
     switch (alignContent) {
       case 'flex-start':
-      case 'start':
         return AlignContent.flexStart;
+      case 'start':
+        return AlignContent.start;
       case 'flex-end':
-      case 'end':
         return AlignContent.flexEnd;
+      case 'end':
+        return AlignContent.end;
       case 'center':
         return AlignContent.center;
       case 'space-around':
@@ -390,11 +397,13 @@ mixin CSSFlexboxMixin on RenderStyle {
   static AlignSelf resolveAlignSelf(String alignSelf) {
     switch (alignSelf) {
       case 'flex-start':
-      case 'start':
         return AlignSelf.flexStart;
+      case 'start':
+        return AlignSelf.start;
       case 'flex-end':
-      case 'end':
         return AlignSelf.flexEnd;
+      case 'end':
+        return AlignSelf.end;
       case 'center':
         return AlignSelf.center;
       case 'stretch':

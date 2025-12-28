@@ -193,7 +193,9 @@ class RenderWidget extends RenderBoxModel
         final rs = node.renderStyle;
         final int? zi = rs.zIndex;
         final bool positioned = rs.position != CSSPositionType.static;
-        if (zi == 0 || (positioned && zi == null)) return true;
+        if (zi == 0 || (positioned && zi == null) || (!positioned && zi == null && rs.establishesStackingContext)) {
+          return true;
+        }
       }
       if (node is RenderObjectWithChildMixin<RenderBox>) {
         final RenderBox? c = (node as dynamic).child as RenderBox?;
@@ -226,6 +228,8 @@ class RenderWidget extends RenderBoxModel
         } else if (zi == 0) {
           positionedAutoOrZero.add(c);
         } else if (positioned && zi == null) {
+          positionedAutoOrZero.add(c);
+        } else if (!positioned && zi == null && rs.establishesStackingContext) {
           positionedAutoOrZero.add(c);
         } else {
           // If subtree contains any z-index:0 or auto-positioned participants,
@@ -321,6 +325,96 @@ class RenderWidget extends RenderBoxModel
 
   void markChildrenNeedsSort() {
     _cachedPaintingOrder = null;
+  }
+
+  bool _isNegativeZIndexStackingChild(RenderBox child) {
+    if (child is! RenderBoxModel) return false;
+    final int? zi = child.renderStyle.zIndex;
+    if (zi == null || zi >= 0) return false;
+    return child.renderStyle.establishesStackingContext;
+  }
+
+  bool _shouldPaintNegativeZIndexChildrenUnderBackground() {
+    if (renderStyle.establishesStackingContext) return false;
+    for (final RenderBox child in paintingOrder) {
+      if (!identical(child.parent, this)) continue;
+      if (_isNegativeZIndexStackingChild(child)) return true;
+      break;
+    }
+    return false;
+  }
+
+  void _paintNegativeZIndexChildrenUnderBackground(PaintingContext context, Offset offset) {
+    final Offset scrollPaintOffset = paintScrollOffset;
+
+    Offset accumulateOffsetFromDescendant(RenderObject descendant, RenderObject ancestor) {
+      Offset sum = Offset.zero;
+      RenderObject? cur = descendant;
+      while (cur != null && cur != ancestor) {
+        final Object? pd = (cur is RenderBox) ? (cur.parentData) : null;
+        if (pd is ContainerBoxParentData) {
+          sum += pd.offset;
+        } else if (pd is RenderLayoutParentData) {
+          sum += pd.offset;
+        }
+        cur = cur.parent;
+      }
+      return sum;
+    }
+
+    void paintNegatives(PaintingContext context, Offset offset) {
+      final Offset contentOffset = offset + scrollPaintOffset;
+      for (final RenderBox child in paintingOrder) {
+        if (isPositionPlaceholder(child)) continue;
+        if (!_isNegativeZIndexStackingChild(child)) break;
+        if (!child.hasSize) continue;
+
+        final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+        final bool direct = identical(child.parent, this);
+        final Offset localOffset = direct ? pd.offset : accumulateOffsetFromDescendant(child, this);
+        context.paintChild(child, contentOffset + localOffset);
+      }
+    }
+
+    if (clipX || clipY) {
+      final EdgeInsets borderEdge = EdgeInsets.fromLTRB(
+        renderStyle.effectiveBorderLeftWidth.computedValue,
+        renderStyle.effectiveBorderTopWidth.computedValue,
+        renderStyle.effectiveBorderRightWidth.computedValue,
+        renderStyle.effectiveBorderBottomWidth.computedValue,
+      );
+      final double cw = math.max(0.0, size.width - borderEdge.left - borderEdge.right);
+      final double ch = math.max(0.0, size.height - borderEdge.top - borderEdge.bottom);
+      final Rect clipRect = Offset(borderEdge.left, borderEdge.top) & Size(cw, ch);
+      if (cw <= 0.0 || ch <= 0.0) return;
+
+      final bool needsCompositing = this.needsCompositing;
+      final decoration = renderStyle.decoration;
+      if (decoration != null && decoration.hasBorderRadius) {
+        final BorderRadius radius = decoration.borderRadius!;
+        final Rect rect = Offset.zero & size;
+        final RRect borderRRect = radius.toRRect(rect);
+        final double? borderTop = renderStyle.borderTopWidth?.computedValue;
+        RRect clipRRect = borderTop != null ? borderRRect.deflate(borderTop) : borderRRect;
+        if (renderStyle.isSelfRenderReplaced()) {
+          clipRRect = clipRRect.deflate(renderStyle.paddingTop.computedValue);
+        }
+        context.pushClipRRect(needsCompositing, offset, clipRect, clipRRect, paintNegatives);
+      } else {
+        context.pushClipRect(needsCompositing, offset, clipRect, paintNegatives);
+      }
+      return;
+    }
+
+    paintNegatives(context, offset);
+  }
+
+  @override
+  void paintDecoration(PaintingContext context, Offset offset, PaintingContextCallback callback) {
+    if (_shouldPaintNegativeZIndexChildrenUnderBackground()) {
+      _paintNegativeZIndexChildrenUnderBackground(context, offset);
+    }
+    super.paintDecoration(context, offset, callback);
   }
 
   // Intrinsic sizing for WidgetElement containers: forward to the primary
@@ -572,8 +666,8 @@ class RenderWidget extends RenderBoxModel
       }
     }
 
-    Offset accumulateOffsetFromDescendant(
-        RenderObject descendant, RenderObject ancestor) {
+    final bool skipNegatives = _shouldPaintNegativeZIndexChildrenUnderBackground();
+    Offset accumulateOffsetFromDescendant(RenderObject descendant, RenderObject ancestor) {
       Offset sum = Offset.zero;
       RenderObject? cur = descendant;
       while (cur != null && cur != ancestor) {
@@ -590,8 +684,8 @@ class RenderWidget extends RenderBoxModel
 
     for (final RenderBox child in paintingOrder) {
       if (isPositionPlaceholder(child)) continue;
-      final RenderLayoutParentData pd =
-          child.parentData as RenderLayoutParentData;
+      if (skipNegatives && _isNegativeZIndexStackingChild(child)) continue;
+      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
       if (!child.hasSize) continue;
 
       bool restoreFlag = false;
@@ -644,34 +738,51 @@ class RenderWidget extends RenderBoxModel
       return hitTestIntrinsicChild(result, firstChild, position!);
     }
 
-    RenderBox? child = lastChild;
-    while (child != null) {
-      final RenderLayoutParentData childParentData =
-          child.parentData as RenderLayoutParentData;
+    if (position == null) return false;
+
+    final bool skipNegatives = _shouldPaintNegativeZIndexChildrenUnderBackground();
+
+    Offset accumulateOffsetFromDescendant(RenderObject descendant, RenderObject ancestor) {
+      Offset sum = Offset.zero;
+      RenderObject? cur = descendant;
+      while (cur != null && cur != ancestor) {
+        final Object? pd = (cur is RenderBox) ? (cur.parentData) : null;
+        if (pd is ContainerBoxParentData) {
+          sum += pd.offset;
+        } else if (pd is RenderLayoutParentData) {
+          sum += pd.offset;
+        }
+        cur = cur.parent;
+      }
+      return sum;
+    }
+
+    for (int i = paintingOrder.length - 1; i >= 0; i--) {
+      final RenderBox child = paintingOrder[i];
+      if (isPositionPlaceholder(child)) continue;
+      if (skipNegatives && _isNegativeZIndexStackingChild(child)) continue;
+      if (!child.hasSize) continue;
+
+      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+      final bool direct = identical(child.parent, this);
+      final Offset localOffset = direct ? pd.offset : accumulateOffsetFromDescendant(child, this);
 
       final bool isHit = result.addWithPaintOffset(
-        offset: childParentData.offset,
-        position: position!,
+        offset: localOffset,
+        position: position,
         hitTest: (BoxHitTestResult result, Offset transformed) {
-          assert(transformed == position - childParentData.offset);
-
           if (child is RenderBoxModel) {
-            CSSPositionType positionType = child.renderStyle.position;
+            final CSSPositionType positionType = child.renderStyle.position;
             if (positionType == CSSPositionType.fixed) {
               // Keep hit testing in sync with RenderBoxModel.paintBoxModel.
               final Offset o = child.getFixedScrollCompensation();
               if (o.dx != 0.0 || o.dy != 0.0) transformed -= o;
             }
           }
-
-          return child!.hitTest(result, position: transformed);
+          return child.hitTest(result, position: transformed);
         },
       );
-      if (isHit) {
-        return true;
-      }
-
-      child = childParentData.previousSibling;
+      if (isHit) return true;
     }
 
     return false;

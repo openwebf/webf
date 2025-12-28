@@ -68,5 +68,65 @@ describe('CSS Grid hit testing', () => {
 
     grid.remove();
   });
-});
 
+  it('treats opacity stacking contexts as higher stacking layer', async () => {
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(4, 70px)';
+    grid.style.gridTemplateRows = 'repeat(3, 60px)';
+    grid.style.gap = '0';
+
+    const item1 = document.createElement('div');
+    item1.id = 'grid-opacity-A';
+    item1.textContent = 'A';
+    item1.style.gridArea = '1 / 1 / 2 / 3';
+    grid.appendChild(item1);
+
+    const item2 = document.createElement('div');
+    item2.id = 'grid-opacity-B';
+    item2.textContent = 'B';
+    item2.style.gridArea = '1 / 2 / 3 / 4';
+    item2.style.opacity = '0.8';
+    grid.appendChild(item2);
+
+    const item3 = document.createElement('div');
+    item3.id = 'grid-opacity-C';
+    item3.textContent = 'C';
+    item3.style.gridArea = '2 / 1 / 4 / 3';
+    grid.appendChild(item3);
+
+    const item4 = document.createElement('div');
+    item4.id = 'grid-opacity-D';
+    item4.textContent = 'D';
+    item4.style.gridArea = '2 / 3 / 4 / 5';
+    grid.appendChild(item4);
+
+    document.body.appendChild(grid);
+    await waitForOnScreen(grid);
+
+    function midpointOfOverlap(r1: DOMRect, r2: DOMRect) {
+      const left = Math.max(r1.left, r2.left);
+      const right = Math.min(r1.right, r2.right);
+      const top = Math.max(r1.top, r2.top);
+      const bottom = Math.min(r1.bottom, r2.bottom);
+      expect(right).toBeGreaterThan(left);
+      expect(bottom).toBeGreaterThan(top);
+      return {x: left + (right - left) / 2, y: top + (bottom - top) / 2};
+    }
+
+    // B overlaps both C and D. Because opacity < 1 creates a stacking context,
+    // it participates in the auto/0 stacking layer and should paint above
+    // non-stacking, non-positioned grid items.
+    const bRect = item2.getBoundingClientRect();
+    const cRect = item3.getBoundingClientRect();
+    const dRect = item4.getBoundingClientRect();
+
+    const bc = midpointOfOverlap(bRect, cRect);
+    expect(document.elementFromPoint(bc.x, bc.y)).toBe(item2);
+
+    const bd = midpointOfOverlap(bRect, dRect);
+    expect(document.elementFromPoint(bd.x, bd.y)).toBe(item2);
+
+    grid.remove();
+  });
+});

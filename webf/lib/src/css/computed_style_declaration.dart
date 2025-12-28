@@ -1271,10 +1271,14 @@ String? _valueForGridProperty(String propertyName, CSSRenderStyle style) {
       return _alignItemsToCss(style.alignItems);
     case 'align-self':
       return _alignSelfToCss(style.alignSelf);
+    case 'align-content':
+      return _alignContentToCss(style.alignContent);
     case 'justify-items':
       return _gridAxisAlignmentToCss(style.justifyItems);
     case 'justify-self':
       return _gridAxisAlignmentToCss(style.justifySelf);
+    case 'justify-content':
+      return _justifyContentToCss(style.justifyContent);
     case 'place-items':
       final alignItems = _alignItemsToCss(style.alignItems);
       final justifyItems = _gridAxisAlignmentToCss(style.justifyItems);
