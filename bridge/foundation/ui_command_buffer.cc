@@ -35,6 +35,7 @@ UICommandKind GetKindFromUICommand(UICommand command) {
     case UICommand::kRemoveEvent:
       return UICommandKind::kEvent;
     case UICommand::kSetStyle:
+    case UICommand::kSetStyleById:
     case UICommand::kSetPseudoStyle:
     case UICommand::kRemovePseudoStyle:
     case UICommand::kClearPseudoStyle:
@@ -77,6 +78,21 @@ void UICommandBuffer::AddCommand(UICommand type,
 
   UICommandItem item{static_cast<int32_t>(type), args_01, nativePtr, nativePtr2};
   updateFlags(type);
+  addCommand(item, request_ui_update);
+}
+
+void UICommandBuffer::AddStyleByIdCommand(void* nativePtr,
+                                         int32_t property_id,
+                                         int64_t value_slot,
+                                         SharedNativeString* base_href,
+                                         bool request_ui_update) {
+  UICommandItem item{};
+  item.type = static_cast<int32_t>(UICommand::kSetStyleById);
+  item.args_01_length = property_id;
+  item.string_01 = value_slot;
+  item.nativePtr = static_cast<int64_t>(reinterpret_cast<intptr_t>(nativePtr));
+  item.nativePtr2 = static_cast<int64_t>(reinterpret_cast<intptr_t>(base_href));
+  updateFlags(UICommand::kSetStyleById);
   addCommand(item, request_ui_update);
 }
 

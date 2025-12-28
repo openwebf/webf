@@ -242,14 +242,8 @@ SelectorChecker::MatchStatus SelectorChecker::MatchSelector(const SelectorChecki
  }
 #endif
  if (!is_covered_by_bucketing && !CheckOne(context, sub_result)) {
-   WEBF_COND_LOG(SELECTOR, VERBOSE) << "[Selector] CheckOne FAIL for selector '"
-                     << context.selector->SimpleSelectorTextForDebug().ToUTF8String()
-                     << "' on element " << DescribeElementForLog(context.element);
    return kSelectorFailsLocally;
  }
- WEBF_COND_LOG(SELECTOR, VERBOSE) << "[Selector] CheckOne OK for selector '"
-                   << context.selector->SimpleSelectorTextForDebug().ToUTF8String()
-                   << "' on element " << DescribeElementForLog(context.element);
  if (sub_result.dynamic_pseudo != kPseudoIdNone) {
    result.dynamic_pseudo = sub_result.dynamic_pseudo;
    result.custom_highlight_name = sub_result.custom_highlight_name;
@@ -265,14 +259,8 @@ SelectorChecker::MatchStatus SelectorChecker::MatchSelector(const SelectorChecki
     // ::before could also match ::after rules when the pseudo selector is the
     // terminal simple selector, leading to mixed pseudo styles.
     if (context.pseudo_id != kPseudoIdNone && result.dynamic_pseudo != context.pseudo_id) {
-      WEBF_COND_LOG(SELECTOR, VERBOSE)
-          << "[Selector] Terminal simple selector rejected due to pseudo mismatch. requested="
-          << static_cast<int>(context.pseudo_id) << ", matched=" << static_cast<int>(result.dynamic_pseudo)
-          << " for element " << DescribeElementForLog(context.element);
       return kSelectorFailsCompletely;
     }
-    WEBF_COND_LOG(SELECTOR, VERBOSE) << "[Selector] Terminal simple selector matched for element "
-                      << DescribeElementForLog(context.element);
     return kSelectorMatches;
   }
  
@@ -291,13 +279,6 @@ SelectorChecker::MatchStatus SelectorChecker::MatchSelector(const SelectorChecki
       return kSelectorFailsCompletely;
     }
     webf::AutoReset<PseudoId> dynamic_pseudo_scope(&result.dynamic_pseudo, kPseudoIdNone);
-    WEBF_COND_LOG(SELECTOR, VERBOSE) << "[Selector] Proceeding to relation '" << static_cast<int>(context.selector->Relation())
-                      << "' for element " << DescribeElementForLog(context.element)
-                      << ", next selector: '"
-                      << (context.selector->NextSimpleSelector()
-                              ? context.selector->NextSimpleSelector()->SimpleSelectorTextForDebug().ToUTF8String()
-                              : std::string("<null>"))
-                      << "'";
     return MatchForRelation(context, result);
   }
 }
@@ -418,8 +399,6 @@ SelectorChecker::MatchStatus SelectorChecker::MatchForRelation(const SelectorChe
      }
     for (next_context.element = ParentElement(next_context); next_context.element;
          next_context.element = ParentElement(next_context)) {
-      WEBF_COND_LOG(SELECTOR, VERBOSE) << "[Selector] Descendant: try parent "
-                        << DescribeElementForLog(next_context.element);
       MatchStatus match = MatchSelector(next_context, result);
       if (match == kSelectorMatches || match == kSelectorFailsCompletely) {
         return match;
@@ -454,14 +433,6 @@ SelectorChecker::MatchStatus SelectorChecker::MatchForRelation(const SelectorChe
       }
     }
     next_context.element = ElementTraversal::PreviousSibling(*context.element);
-    WEBF_COND_LOG(SELECTOR, VERBOSE) << "[Selector] DirectAdjacent: previous sibling of "
-                      << DescribeElementForLog(context.element) << " is "
-                      << DescribeElementForLog(next_context.element)
-                      << "; left compound: '"
-                      << (next_context.selector
-                              ? next_context.selector->SimpleSelectorTextForDebug().ToUTF8String()
-                              : std::string("<null>"))
-                      << "'";
     if (!next_context.element) {
       return kSelectorFailsAllSiblings;
     }
@@ -472,18 +443,12 @@ SelectorChecker::MatchStatus SelectorChecker::MatchForRelation(const SelectorChe
       if (!left->NextSimpleSelector() && left->Match() == CSSSelector::kAttributeExact) {
         const AtomicString& lname = left->Attribute().LocalName();
         const AtomicString& expect = left->Value();
-        if (lname == "class"_as) {
+        if (lname == g_class_atom) {
           AtomicString cls = next_context.element->className();
-          WEBF_COND_LOG(SELECTOR, VERBOSE) << "[Selector] DirectAdjacent fast-path: compare class '" << cls.ToUTF8String()
-                            << "' vs expected '" << expect.ToUTF8String() << "'";
           if (!cls.IsNull() && cls == expect) {
             return kSelectorMatches;
           }
-        } else if (lname == "id"_as) {
-          WEBF_COND_LOG(SELECTOR, VERBOSE) << "[Selector] DirectAdjacent fast-path: compare id '"
-                            << (next_context.element->HasID() ? next_context.element->IdForStyleResolution().ToUTF8String()
-                                                             : std::string("<none>"))
-                            << "' vs expected '" << expect.ToUTF8String() << "'";
+        } else if (lname == g_id_atom) {
           if (next_context.element->HasID() && next_context.element->IdForStyleResolution() == expect) {
             return kSelectorMatches;
           }
@@ -503,8 +468,6 @@ SelectorChecker::MatchStatus SelectorChecker::MatchForRelation(const SelectorChe
     }
     next_context.element = ElementTraversal::PreviousSibling(*context.element);
     for (; next_context.element; next_context.element = ElementTraversal::PreviousSibling(*next_context.element)) {
-      WEBF_COND_LOG(SELECTOR, VERBOSE) << "[Selector] IndirectAdjacent: try previous sibling "
-                        << DescribeElementForLog(next_context.element);
       MatchStatus match = MatchSelector(next_context, result);
       if (match == kSelectorMatches || match == kSelectorFailsAllSiblings || match == kSelectorFailsCompletely) {
         return match;
@@ -759,11 +722,6 @@ static bool AnyAttributeMatches(Element& element, CSSSelector::MatchType match, 
   const QualifiedName& selector_attr = selector.Attribute();
   // Should not be possible from the CSS grammar.
   DCHECK_NE(selector_attr.LocalName(), CSSSelector::UniversalSelectorAtom());
-  WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Try '[" << selector_attr.LocalName().ToUTF8String()
-                   << "]' match type " << static_cast<int>(match)
-                   << " ns='" << selector_attr.NamespaceURI().ToUTF8String() << "'"
-                   << " value='" << selector.Value().ToUTF8String() << "' on "
-                   << DescribeElementForLog(&element);
   // Synchronize the attribute in case it is lazy-computed.
   // Currently all lazy properties have a null namespace, so only pass
   // localName().
@@ -776,11 +734,7 @@ static bool AnyAttributeMatches(Element& element, CSSSelector::MatchType match, 
   // Get attributes from element
   AttributeCollection attributes = element.Attributes();
   if (!attributes.IsEmpty()) {
-    WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Scanning " << attributes.size() << " attribute(s)";
     for (const auto& attribute_item : attributes) {
-      WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Candidate '"
-                        << attribute_item.GetName().LocalName().ToUTF8String() << "'='"
-                        << attribute_item.Value().ToUTF8String() << "'";
       if (!attribute_item.Matches(selector_attr)) {
         if (element.IsHTMLElement()) {
           continue;
@@ -798,7 +752,6 @@ static bool AnyAttributeMatches(Element& element, CSSSelector::MatchType match, 
         }
       }
       if (AttributeValueMatches(attribute_item, match, selector_value, case_sensitivity)) {
-        WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Matched by AttributeCollection";
         return true;
       }
       if (case_sensitivity == kTextCaseASCIIInsensitive) {
@@ -821,7 +774,6 @@ static bool AnyAttributeMatches(Element& element, CSSSelector::MatchType match, 
           return false;
         }
         // Legacy case insensitive match succeeded
-        WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Matched by legacy ASCII-insensitive";
         return true;
       }
       if (selector_attr.NamespaceURI() != g_star_atom) {
@@ -840,7 +792,6 @@ static bool AnyAttributeMatches(Element& element, CSSSelector::MatchType match, 
       ExceptionState exception_state;  // No exception expected for attribute access.
       if (match == CSSSelector::kAttributeSet) {
         if (element.hasAttribute(local, exception_state)) {
-          WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Matched by ElementAttributes presence";
           return true;
         }
       } else {
@@ -848,14 +799,12 @@ static bool AnyAttributeMatches(Element& element, CSSSelector::MatchType match, 
         if (!attr_value.IsNull()) {
           Attribute fake(QualifiedName(g_null_atom, local, g_star_atom), attr_value);
           if (AttributeValueMatches(fake, match, selector_value, case_sensitivity)) {
-            WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Matched by ElementAttributes value";
             return true;
           }
           // Legacy ASCII-insensitive fallback for HTML when needed.
           if (element.IsHTMLElement() && !selector.IsCaseSensitiveAttribute() &&
               AttributeValueMatches(fake, match, selector_value, kTextCaseASCIIInsensitive)) {
             if (selector.AttributeMatch() != CSSSelector::AttributeMatchType::kCaseSensitiveAlways) {
-              WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Matched by ElementAttributes legacy ASCII-insensitive";
               return true;
             }
           }
@@ -870,13 +819,10 @@ static bool AnyAttributeMatches(Element& element, CSSSelector::MatchType match, 
   if (any_ns) {
     const AtomicString& local = selector_attr.LocalName();
     // id attribute
-    if (local == "id"_as) {
+    if (local == g_id_atom) {
       if (!element.HasID()) {
-        WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Fallback id: element has no id";
         return false;
       }
-      WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Fallback id compare '" << element.id().ToUTF8String()
-                        << "' vs '" << selector_value.ToUTF8String() << "'";
       if (match == CSSSelector::kAttributeExact) {
         if (case_sensitivity == kTextCaseSensitive) {
           return StringView(element.id()) == StringView(selector_value);
@@ -889,15 +835,12 @@ static bool AnyAttributeMatches(Element& element, CSSSelector::MatchType match, 
       }
     }
     // class attribute
-    if (local == "class"_as) {
+    if (local == g_class_atom) {
       // className() reflects the current attribute text.
       AtomicString class_text = element.className();
       if (class_text.IsNull()) {
-        WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Fallback class: className is null";
         return false;
       }
-      WEBF_COND_LOG(ATTR, VERBOSE) << "[Selector][Attr] Fallback class compare '" << class_text.ToUTF8String()
-                        << "' vs '" << selector_value.ToUTF8String() << "'";
       if (match == CSSSelector::kAttributeExact) {
         if (case_sensitivity == kTextCaseSensitive) {
           return StringView(class_text) == StringView(selector_value);

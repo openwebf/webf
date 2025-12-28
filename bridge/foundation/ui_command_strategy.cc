@@ -49,6 +49,19 @@ void UICommandSyncStrategy::Reset() {
   frequency_map_.clear();
   waiting_commands_.clear();
 }
+
+void UICommandSyncStrategy::RecordStyleByIdCommand(const UICommandItem& item, bool request_ui_update) {
+  waiting_commands_.push_back({
+    static_cast<UICommand>(item.type),
+    nullptr,
+    nullptr,
+    nullptr,
+    request_ui_update,
+    true,
+    item
+  });
+}
+
 void UICommandSyncStrategy::RecordUICommand(UICommand type,
                                             std::unique_ptr<SharedNativeString>&& args_01,
                                             void* native_binding_object,
@@ -86,6 +99,7 @@ void UICommandSyncStrategy::RecordUICommand(UICommand type,
       break;
     }
     case UICommand::kSetStyle:
+    case UICommand::kSetStyleById:
     case UICommand::kSetPseudoStyle:
     case UICommand::kRemovePseudoStyle:
     case UICommand::kClearPseudoStyle:
@@ -169,13 +183,17 @@ void UICommandSyncStrategy::AddToWaitingQueue(UICommand type,
 void UICommandSyncStrategy::FlushWaitingCommands() {
   // Flush all waiting commands to the ring buffer
   for (auto& cmd : waiting_commands_) {
-    host_->package_buffer_->AddCommand(
-      cmd.type,
-      cmd.args_01.get(),
-      cmd.native_binding_object,
-      cmd.native_ptr2,
-      cmd.request_ui_update
-    );
+    if (cmd.use_item) {
+      host_->package_buffer_->AddCommandItem(cmd.item, cmd.type, cmd.request_ui_update);
+    } else {
+      host_->package_buffer_->AddCommand(
+        cmd.type,
+        cmd.args_01.get(),
+        cmd.native_binding_object,
+        cmd.native_ptr2,
+        cmd.request_ui_update
+      );
+    }
   }
   waiting_commands_.clear();
 }

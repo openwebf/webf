@@ -55,6 +55,22 @@ final class NativeStyleValueWithHref extends Struct {
   external Pointer<NativeString> href;
 }
 
+// Combined style property/value id + base href payload for UICommandType.setStyleById.
+// - |propertyId| is the native (Blink) CSSPropertyID integer value.
+// - |valueId| is the native (Blink) CSSValueID integer value when >= 0, otherwise the value is provided via |value|.
+// - |value| is the CSS value as NativeString, only used when |valueId| < 0.
+// - |href| is an optional base href as NativeString (may be nullptr).
+final class NativeStyleValueIdWithHref extends Struct {
+  @Int32()
+  external int propertyId;
+
+  @Int32()
+  external int valueId;
+
+  external Pointer<NativeString> value;
+  external Pointer<NativeString> href;
+}
+
 // Combined pseudo style property (key/value) + base href payload for
 // UICommandType.setPseudoStyle.
 final class NativePseudoStyleWithHref extends Struct {

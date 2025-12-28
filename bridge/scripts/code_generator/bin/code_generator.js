@@ -33,6 +33,7 @@ const { makeCSSPrimitiveValueUnitTrie } = require('../dist/json/make_css_primiti
 const { makeAtRuleNames } = require('../dist/json/make_atrule_names');
 const { makeColorData } = require('../dist/json/make_color_data');
 const { makeComputedStyleInitialValues } = require('../dist/json/make_computed_style_initial_values');
+const { makeDartBlinkCssIds } = require('../dist/json/make_dart_blink_css_ids');
 
 
 program
@@ -40,16 +41,20 @@ program
   .description('WebF code generator.')
   .requiredOption('-s, --source <path>', 'source directory.')
   .requiredOption('-d, --dist <path>', 'destionation directory.')
+  .option('--dart-dist <path>', 'destination directory for generated Dart sources.')
 
 program.parse(process.argv);
 
-let {source, dist} = program.opts();
+let {source, dist, dartDist} = program.opts();
 
 if (!path.isAbsolute(source)) {
   source = path.join(process.cwd(), source);
 }
 if (!path.isAbsolute(dist)) {
   dist = path.join(process.cwd(), dist);
+}
+if (dartDist && !path.isAbsolute(dartDist)) {
+  dartDist = path.join(process.cwd(), dartDist);
 }
 
 function writeFileIfChanged(filePath, content) {
@@ -276,6 +281,14 @@ function genCodeFromJSONData() {
   let computedStyleInitialValues = makeComputedStyleInitialValues();
   let computedStyleInitialValuesFilePath = path.join(dist, 'computed_style_initial_values');
   writeFileIfChanged(computedStyleInitialValuesFilePath + '.h', computedStyleInitialValues.header);
+
+  if (dartDist) {
+    if (!fs.existsSync(dartDist)) {
+      fs.mkdirSync(dartDist, { recursive: true });
+    }
+    let blinkCssIds = makeDartBlinkCssIds();
+    writeFileIfChanged(path.join(dartDist, 'blink_css_ids.dart'), blinkCssIds.source);
+  }
 }
 
 class DefinedPropertyCollector {

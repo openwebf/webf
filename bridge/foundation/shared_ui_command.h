@@ -38,6 +38,14 @@ class SharedUICommand : public DartReadable {
                   void* nativePtr2,
                   bool request_ui_update = true);
 
+  // Fast-path for UICommand::kSetStyleById without allocating a payload struct.
+  // See UICommandBuffer::AddStyleByIdCommand for the data encoding.
+  void AddStyleByIdCommand(void* native_binding_object,
+                           int32_t property_id,
+                           int64_t value_slot,
+                           SharedNativeString* base_href,
+                           bool request_ui_update = true);
+
   void ConfigureSyncCommandBufferSize(size_t size);
 
   void* data();

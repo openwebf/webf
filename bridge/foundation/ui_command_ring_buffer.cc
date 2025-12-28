@@ -269,6 +269,21 @@ void UICommandPackageRingBuffer::AddCommand(UICommand type,
   }
 }
 
+void UICommandPackageRingBuffer::AddCommandItem(const UICommandItem& item, UICommand type, bool request_ui_update) {
+  std::lock_guard<std::mutex> lock(current_package_mutex_);
+
+  if (!current_package_->commands.empty() && current_package_->ShouldSplit(type)) {
+    FlushCurrentPackage();
+  }
+
+  current_package_->AddCommand(item);
+
+  if (type == UICommand::kFinishRecordingCommand || type == UICommand::kAsyncCaller
+      || type == UICommand::kRequestAnimationFrame || type == UICommand::kRequestCanvasPaint) {
+    FlushCurrentPackage();
+  }
+}
+
 void UICommandPackageRingBuffer::FlushCurrentPackage() {
   if (current_package_->commands.empty()) {
     return;
@@ -290,7 +305,7 @@ void UICommandPackageRingBuffer::PushPackage(std::unique_ptr<UICommandPackage> p
   if (next_write_idx == read_index_.load(std::memory_order_acquire)) {
     // Buffer full, use overflow
     std::lock_guard<std::mutex> lock(overflow_mutex_);
-    WEBF_COND_LOG(COMMAND, VERBOSE) << "[UICommandPackageRingBuffer] PUSH PACKAGE TO OVERFLOW " << package.get();
+    WEBF_LOG(WARN) << "[UICommandPackageRingBuffer] PUSH PACKAGE TO OVERFLOW " << package.get();
     overflow_packages_.push_back(std::move(package));
     return;
   }

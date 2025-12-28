@@ -112,9 +112,6 @@
 #define WEBF_PP_XCAT(a, b) WEBF_PP_CAT(a, b)
 #define WEBF_LOG_TAG_IF(TAG) WEBF_PP_XCAT(WEBF_LOG_, WEBF_PP_XCAT(TAG, _IF))
 
-#define WEBF_COND_LOG(TAG, severity) \
-  WEBF_LAZY_STREAM(WEBF_LOG_STREAM(severity), (WEBF_LOG_TAG_IF(TAG)) && (::webf::severity >= WEBF_MIN_LOG_LEVEL))
-
 #define WEBF_CHECK(condition) \
   WEBF_LAZY_STREAM(::webf::LogMessage(::webf::FATAL, __FILE__, __LINE__, #condition).stream(), !(condition))
 

@@ -422,10 +422,6 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
   @override
   void deactivate() {
     super.deactivate();
-    webFElement.scrollControllerY?.dispose();
-    webFElement.scrollControllerY = null;
-    webFElement.scrollControllerX?.dispose();
-    webFElement.scrollControllerX = null;
     webFElement.removeState(this);
   }
 
@@ -438,10 +434,10 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
   @override
   void dispose() {
     webFElement.removeState(this);
-    webFElement.scrollControllerY?.dispose();
-    webFElement.scrollControllerY = null;
-    webFElement.scrollControllerX?.dispose();
-    webFElement.scrollControllerX = null;
+    webFElement._scrollControllerY?.dispose();
+    webFElement._scrollControllerY = null;
+    webFElement._scrollControllerX?.dispose();
+    webFElement._scrollControllerX = null;
     super.dispose();
   }
 
