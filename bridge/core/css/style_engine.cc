@@ -410,7 +410,7 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text) {
   if (style_sheet && element.GetDocument().GetExecutingContext() &&
       element.GetDocument().GetExecutingContext()->dartMethodPtr()) {
     ExecutingContext* exe_ctx = element.GetDocument().GetExecutingContext();
-    int64_t sheet_id_val = std::bit_cast<int64_t>(style_sheet);
+    int64_t sheet_id_val = static_cast<int64_t>(reinterpret_cast<intptr_t>(style_sheet));
     auto contents = style_sheet->Contents();
     std::string base_href = contents->BaseURL().GetString();
 
@@ -529,7 +529,7 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text, co
   if (style_sheet && element.GetDocument().GetExecutingContext() &&
       element.GetDocument().GetExecutingContext()->dartMethodPtr()) {
     ExecutingContext* exe_ctx = element.GetDocument().GetExecutingContext();
-    int64_t sheet_id_val = std::bit_cast<int64_t>(style_sheet);
+    int64_t sheet_id_val = static_cast<int64_t>(reinterpret_cast<intptr_t>(style_sheet));
     auto contents = style_sheet->Contents();
     std::string baseHrefStr = base_href.ToUTF8String();
     const auto& top = contents->ChildRules();
