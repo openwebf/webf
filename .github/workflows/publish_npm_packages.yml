@@ -144,6 +144,4 @@ jobs:
       - name: Publish to npm
         if: ${{ steps.meta.outputs.private != 'true' && steps.exists.outputs.exists != 'true' }}
         working-directory: ${{ matrix.relativePath }}
-        env:
-          NODE_AUTH_TOKEN: ""
         run: npm publish
