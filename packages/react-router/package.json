@@ -24,7 +24,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/openwebf/webf.git",
+    "url": "https://github.com/openwebf/webf",
     "directory": "packages/react-router"
   },
   "keywords": [
