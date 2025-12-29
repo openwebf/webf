@@ -8,24 +8,6 @@ on:
         required: false
         default: ""
         type: string
-      dry_run:
-        description: "Run `npm publish --dry-run` only"
-        required: true
-        default: true
-        type: boolean
-      tag:
-        description: "npm dist-tag (e.g. latest, next, beta)"
-        required: true
-        default: "latest"
-        type: string
-      access:
-        description: "npm access for scoped packages"
-        required: true
-        default: "public"
-        type: choice
-        options:
-          - public
-          - restricted
 
 concurrency:
   group: publish-npm-packages
@@ -159,14 +141,9 @@ jobs:
         working-directory: ${{ matrix.relativePath }}
         run: npm run build --if-present
 
-      - name: NPM publish (dry run)
-        if: ${{ inputs.dry_run && steps.meta.outputs.private != 'true' && steps.exists.outputs.exists != 'true' }}
-        working-directory: ${{ matrix.relativePath }}
-        run: npm publish --dry-run --access "${{ inputs.access }}" --tag "${{ inputs.tag }}"
-
       - name: Publish to npm
-        if: ${{ !inputs.dry_run && steps.meta.outputs.private != 'true' && steps.exists.outputs.exists != 'true' }}
+        if: ${{ steps.meta.outputs.private != 'true' && steps.exists.outputs.exists != 'true' }}
         working-directory: ${{ matrix.relativePath }}
         env:
           NODE_AUTH_TOKEN: ""
-        run: npm publish --provenance --access "${{ inputs.access }}" --tag "${{ inputs.tag }}"
+        run: npm publish
