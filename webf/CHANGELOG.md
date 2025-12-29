@@ -1,8 +1,95 @@
 ## 0.24.0
 
-- Introduce the new experimental css engine built based on Blink's CSS impls.
-- Enable it: opt-in via `WebFController(enableBlink: true)`
+Set the minimal flutter version requirement to 3.29.x
 
+### Major Features
+
+- **Blink CSS Engine Integration** (#773, #779)
+  - **New experimental C++-based CSS engine** as the future replacement for the Dart-based CSS engine
+  - **Architecture Benefits**:
+    - CSS processing moved to JS thread (C++) instead of UI thread (Dart)
+    - Better thread separation: style computation doesn't block UI rendering
+    - Sends computed styles to Dart as inline styles for final rendering
+  - **Lower Maintenance for Future CSS Support**:
+    - Leverages Chromium's Blink CSS implementation directly
+    - New CSS features can be added by following Blink's proven approach
+    - Reduced effort to maintain standards compliance
+  - **Performance Improvements** (ongoing optimization):
+    - Faster invalidation system: conservative yet efficient style recalculation
+    - Property/value IDs and static strings reduce allocations
+    - Optimized rule matching and diff-based style updates
+  - Currently opt-in for testing: `WebFController(enableBlink: true)`
+  - Feature parity with Dart engine maintained
+
+- **CSS Grid Layout - Complete Implementation** (#775, #778)
+
+  **Grid Container Properties**
+  - `display: grid` and `display: inline-grid`
+  - `grid-template-columns`, `grid-template-rows` with `fr`, `minmax()`, `fit-content()`, `repeat()`, `auto-fill`, `auto-fit`
+  - `grid-template-areas` for named grid regions
+  - `grid-auto-rows`, `grid-auto-columns` for implicit track sizing
+  - `grid-auto-flow` with `row`, `column`, `dense` values
+  - `row-gap`, `column-gap`, `gap` (with percentage support)
+  - `align-content`, `justify-content`, `place-content`
+  - `align-items`, `justify-items`, `place-items`
+
+  **Grid Item Properties**
+  - `grid-column-start`, `grid-column-end`, `grid-column`
+  - `grid-row-start`, `grid-row-end`, `grid-row`
+  - `grid-area` for named area placement
+  - `align-self`, `justify-self`, `place-self`
+  - Support for line numbers (positive/negative), named lines, and `span` keyword
+
+  **Track Sizing Functions & Keywords**
+  - Intrinsic sizing: `min-content`, `max-content`, `fit-content()`
+  - Fractional units: `fr` with proper space distribution
+  - `minmax(min, max)` for flexible track sizing
+  - `repeat(count, tracks)` and `repeat(auto-fill/auto-fit, tracks)`
+  - Percentage, fixed lengths, and `auto` sizing
+
+  **Features**
+  - Named grid lines and implicit area line names (`<area>-start`, `<area>-end`)
+  - Auto-placement algorithm with sparse and dense packing
+  - Multi-track spanning
+  - Baseline and last-baseline alignment
+  - Safe and unsafe alignment keywords
+  - Auto-margins for grid items
+  - Writing-mode support
+  - Aspect-ratio preservation
+  - Nested grids
+  - Hit testing with `elementFromPoint()`
+  - Full `getComputedStyle()` support
+
+  **100+ integration tests based on Web Platform Tests**
+
+### Performance Improvements
+
+- **Style Calculation Optimization** (#777, #779)
+  - VSync-driven style recalculation: synchronized with display refresh rate
+
+### Bug Fixes
+
+- **Layout & Rendering**
+  - Flexbox: Fixed relayout behavior when changing alignment properties
+  - z-index: Paint negative z-index elements under background correctly
+
+- **Router & Navigation**
+  - Fixed Hybrid Router `maybePop` API behavior
+  - Prevent unexpected disposal of RouterView when mounting
+  - Use `go_router` for more robust routing in the examples
+  - Added dynamic router support in `@openwebf/react-router`
+  - Fixed viewport resizing
+
+- **Images & Assets**
+  - Fixed GIF and data URI SVG image loading
+  - Fixed Tailwind CSS gradient with empty position values
+  - Improved image codec disposal resilience
+
+### API Changes
+
+- **New APIs**
+  - `Element.scrollByIndex()`: Scroll ListView to specific index
+  - `WebFController.enableBlink`: Flag to enable Blink CSS engine (opt-in)
 
 ## 0.23.13
 
