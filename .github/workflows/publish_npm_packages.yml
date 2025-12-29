@@ -97,7 +97,6 @@ jobs:
         with:
           node-version: "lts/*"
           check-latest: true
-          registry-url: "https://registry.npmjs.org"
 
       - name: Upgrade npm (for OIDC Trusted Publishing)
         run: npm i -g npm@latest
