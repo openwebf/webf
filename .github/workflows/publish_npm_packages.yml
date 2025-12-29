@@ -134,7 +134,7 @@ jobs:
 
       - name: Skip private package
         if: ${{ steps.meta.outputs.private == 'true' }}
-        run: echo "Skipping private package: ${{ steps.meta.outputs.name }}"
+        run: 'echo "Skipping private package: ${{ steps.meta.outputs.name }}"'
 
       - name: Check if version already published
         if: ${{ steps.meta.outputs.private != 'true' }}

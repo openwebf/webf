@@ -1,6 +1,6 @@
 {
   "name": "@openwebf/vue-router",
-  "version": "0.1.0-beta.1",
+  "version": "0.24.0",
   "description": "Vue Router implementation for WebF applications using hybrid history API",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
