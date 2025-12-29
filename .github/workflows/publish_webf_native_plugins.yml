@@ -1,10 +1,10 @@
-name: Publish WebF Modules
+name: Publish WebF Native Plugins
 
 on:
   workflow_dispatch:
     inputs:
       packages:
-        description: "Comma-separated package paths (default: auto-discover webf_cupertino_ui + webf_modules/*)"
+        description: "Comma-separated package paths (default: auto-discover webf_cupertino_ui + native_plugins/*)"
         required: false
         default: ""
         type: string
@@ -25,7 +25,7 @@ on:
         type: boolean
 
 concurrency:
-  group: publish-webf-modules
+  group: publish-webf-native-plugins
   cancel-in-progress: false
 
 permissions:
@@ -62,7 +62,7 @@ jobs:
             if os.path.isfile("webf_cupertino_ui/pubspec.yaml"):
               packages.append("webf_cupertino_ui")
 
-            for pubspec in sorted(glob.glob("webf_modules/*/pubspec.yaml")):
+            for pubspec in sorted(glob.glob("native_plugins/*/pubspec.yaml")):
               directory = os.path.dirname(pubspec)
               if "/.dart_tool/" in directory:
                 continue
