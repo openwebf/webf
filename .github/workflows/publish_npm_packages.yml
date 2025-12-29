@@ -103,7 +103,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          registry-url: https://registry.npmjs.org
 
       - name: Validate package path
         shell: bash
@@ -168,4 +167,6 @@ jobs:
       - name: Publish to npm
         if: ${{ !inputs.dry_run && steps.meta.outputs.private != 'true' && steps.exists.outputs.exists != 'true' }}
         working-directory: ${{ matrix.relativePath }}
+        env:
+          NODE_AUTH_TOKEN: ""
         run: npm publish --provenance --access "${{ inputs.access }}" --tag "${{ inputs.tag }}"
