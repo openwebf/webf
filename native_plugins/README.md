@@ -1,19 +1,8 @@
-# WebF Modules
+# WebF Native Plugins
 
 This directory contains WebF-specific Flutter packages that extend WebF functionality with additional modules.
 
 ## Available Modules
-
-### 🔗 [webf_deeplink](./deeplink/)
-**Deep link and URL scheme handling**
-- Open deep links in external applications
-- Handle fallback URLs when primary links fail
-- Register deep link handlers for custom URL schemes
-- Cross-platform support (iOS, Android, macOS)
-
-```dart
-WebF.defineModule((context) => DeepLinkModule(context));
-```
 
 ### 📤 [webf_share](./share/)
 **Content and image sharing functionality**
@@ -32,7 +21,6 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  webf_deeplink: ^1.0.0  # Available on pub.dev
   webf_share: ^1.0.0  # Available on pub.dev
 ```
 
@@ -40,11 +28,9 @@ dependencies:
 
 ```dart
 import 'package:webf/webf.dart';
-import 'package:webf_deeplink/webf_deeplink.dart';
 import 'package:webf_share/webf_share.dart';
 
 // Register modules globally (in main function)
-WebF.defineModule((context) => DeepLinkModule(context));
 WebF.defineModule((context) => ShareModule(context));
 ```
 
@@ -53,26 +39,10 @@ WebF.defineModule((context) => ShareModule(context));
 Install the npm packages for better TypeScript support:
 
 ```bash
-npm install @openwebf/webf-deeplink @openwebf/webf-share
+npm install @openwebf/webf-share
 ```
 
 ```javascript
-// Deep link example
-import { WebFDeepLink, DeepLinkHelpers } from '@openwebf/webf-deeplink';
-
-// Simple deep link
-const result = await WebFDeepLink.openDeepLink({
-  url: 'whatsapp://send?text=Hello',
-  fallbackUrl: 'https://wa.me/?text=Hello'
-});
-
-// Helper methods
-await DeepLinkHelpers.openEmail({
-  to: 'demo@example.com',
-  subject: 'Hello from WebF',
-  body: 'This is a test email'
-});
-
 // Share example
 import { WebFShare, ShareHelpers } from '@openwebf/webf-share';
 
