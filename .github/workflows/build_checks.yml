@@ -1,0 +1,127 @@
+name: Build Checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'release/**'
+
+env:
+  nodeVersion: "22"
+  cmakeVersion: "4.0.3"
+  flutter: "3.29.0"
+
+jobs:
+  build-android-bridge:
+    name: Build Android Bridge
+    runs-on: [self-hosted, macos]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Setup CMake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: ${{ env.cmakeVersion }}
+
+      - name: Setup Android SDK and NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r27d
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+
+      - name: Setup build dependencies
+        run: |
+          # Check if build tools are already installed on self-hosted macOS runner
+          which ninja || brew install ninja
+          which pkg-config || brew install pkg-config
+
+      - name: Verify toolchain
+        run: |
+          which clang
+          clang --version
+          cmake --version
+          ninja --version
+          echo "Android SDK: $ANDROID_HOME"
+          echo "Android NDK: ${{ steps.setup-ndk.outputs.ndk-path }}"
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Generate binding code
+        run: npm run bindgen
+
+      - name: Build Android bridge
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+          ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
+          WEBF_JS_ENGINE: quickjs
+        run: |
+          echo "🔨 Building Android bridge..."
+          echo "Using NDK: $ANDROID_NDK_HOME"
+          npm run build:bridge:android
+
+      - name: Verify build outputs
+        run: |
+          echo "📋 Checking Android build outputs..."
+          if [ -d "bridge/build/android" ]; then
+            echo "✅ Android build directory exists"
+            find bridge/build/android -name "*.so" -o -name "*.a" | head -20
+          else
+            echo "❌ Android build directory not found"
+            exit 1
+          fi
+
+  build-ios-example:
+    name: Build iOS Example
+    runs-on: [self-hosted, macos]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.flutter }}
+          channel: 'stable'
+
+      - name: Verify toolchain
+        run: |
+          xcodebuild -version
+          flutter --version
+          pod --version
+
+      - name: Get Flutter dependencies
+        run: |
+          cd webf/example
+          flutter pub get
+
+      - name: Build iOS example (no codesign)
+        run: |
+          cd webf/example
+          echo "🔨 Building iOS example..."
+          flutter build ios --no-codesign --debug
+        env:
+          FLUTTER_BUILD_MODE: debug
+
+      - name: Verify build outputs
+        run: |
+          echo "📋 Checking iOS example build outputs..."
+          if [ -d "webf/example/build/ios" ]; then
+            echo "✅ iOS build directory exists"
+            ls -la webf/example/build/ios/
+          else
+            echo "❌ iOS build directory not found"
+            exit 1
+          fi
