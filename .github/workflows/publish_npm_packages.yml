@@ -95,7 +95,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: "lts/*"
+          check-latest: true
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Upgrade npm (for OIDC Trusted Publishing)
+        run: npm i -g npm@latest
 
       - name: Validate package path
         shell: bash
@@ -152,7 +157,7 @@ jobs:
         working-directory: ${{ matrix.relativePath }}
         run: npm run build --if-present
 
-      - name: Publish to npm
+      - name: Publish to npm (Trusted Publishing / OIDC)
         if: ${{ steps.meta.outputs.private != 'true' && steps.exists.outputs.exists != 'true' }}
         working-directory: ${{ matrix.relativePath }}
         run: npm publish --provenance --access "${{ inputs.access }}"
