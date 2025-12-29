@@ -14,12 +14,6 @@ import 'package:webf/css.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/src/foundation/logger.dart';
 
-/// Temporary Grid render object scaffold.
-///
-/// For the initial step, RenderGridLayout subclasses RenderFlowLayout so that
-/// display:grid containers behave like block/flow containers while we land the
-/// full CSS Grid algorithm incrementally. This ensures display:grid does not
-/// throw and can participate in layout/painting with predictable behavior.
 class _GridAutoCursor {
   int row;
   int column;
