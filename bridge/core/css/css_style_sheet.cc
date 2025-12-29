@@ -325,7 +325,7 @@ void CSSStyleSheet::ClearOwnerNode() {
   if (doc) {
     ExecutingContext* exe_ctx = doc->GetExecutingContext();
     if (exe_ctx && exe_ctx->dartMethodPtr()) {
-      auto sheet_id_val = std::bit_cast<int64_t>(this);
+      auto sheet_id_val = static_cast<int64_t>(reinterpret_cast<intptr_t>(this));
       exe_ctx->dartMethodPtr()->unregisterFontFace(exe_ctx->isDedicated(), exe_ctx->contextId(), sheet_id_val);
       // Also unregister any @keyframes registered for this sheet.
       exe_ctx->dartMethodPtr()->unregisterKeyframes(exe_ctx->isDedicated(), exe_ctx->contextId(), sheet_id_val);
