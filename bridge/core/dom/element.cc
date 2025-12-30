@@ -331,6 +331,10 @@ std::vector<Element*> Element::getElementsByTagName(const AtomicString& tag_name
 }
 
 Element* Element::querySelector(const AtomicString& selectors, ExceptionState& exception_state) {
+  if (GetExecutingContext() && GetExecutingContext()->isBlinkEnabled()) {
+    return ContainerNode::QuerySelector(selectors, exception_state);
+  }
+
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelector, 1, arguments,
                                            FlushUICommandReason::kDependentsAll, exception_state);
@@ -341,6 +345,10 @@ Element* Element::querySelector(const AtomicString& selectors, ExceptionState& e
 }
 
 std::vector<Element*> Element::querySelectorAll(const AtomicString& selectors, ExceptionState& exception_state) {
+  if (GetExecutingContext() && GetExecutingContext()->isBlinkEnabled()) {
+    return ContainerNode::QuerySelectorAll(selectors, exception_state);
+  }
+
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelectorAll, 1, arguments,
                                            FlushUICommandReason::kDependentsAll, exception_state);
