@@ -17,6 +17,12 @@ This app also includes route demos using `@openwebf/vue-router`.
 These demos are intended to run inside the WebF environment where `webf.hybridHistory` and
 `<webf-router-link>` are available.
 
+## Use cases pages
+
+This repo mirrors the page/folder structure (and route paths) from `../use_cases`:
+- Routes: `src/routes.ts`
+- Pages: `src/pages/` (placeholders to be ported from the React implementation)
+
 ### Debugging
 
 This project enables vue-router debug logs by default in `src/main.ts`.
@@ -29,9 +35,10 @@ globalThis.__WEBF_VUE_ROUTER_DEBUG__ = true;
 
 ### What to look at
 
-- Route configuration: `src/App.vue`
-- Demo pages:
+- Route configuration: `src/routes.ts`
+- Pages: `src/pages/`
+- Legacy router demo components (not wired by default):
   - `src/components/RouterDemoHome.vue`
-  - `src/components/RouterDemoUser.vue` (dynamic params)
-  - `src/components/RouterDemoFiles.vue` (wildcard splat)
-  - `src/components/RouterDemoNotFound.vue` (catch-all)
+  - `src/components/RouterDemoUser.vue`
+  - `src/components/RouterDemoFiles.vue`
+  - `src/components/RouterDemoNotFound.vue`

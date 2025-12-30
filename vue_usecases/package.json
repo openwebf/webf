@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@openwebf/vue-core-ui": "file:../packages/vue-core-ui",
     "@openwebf/vue-cupertino-ui": "file:../../../../../private/var/folders/68/lyfvmcts4_l_r051bppwpkm40000gn/T/webf-typings-rT0J2w",
     "@openwebf/vue-router": "file:../packages/vue-router",
     "vue": "^3.5.24"
