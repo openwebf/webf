@@ -26,11 +26,14 @@
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/script_wrappable.h"
+#include "core/css/css_rule.h"
 
 namespace webf {
 
 class CSSRule;
 class CSSStyleSheet;
+class ExceptionState;
+class AtomicString;
 
 using RuleIndexList = std::vector<std::pair<Member<CSSRule>, int>>;
 
@@ -38,6 +41,8 @@ class CSSRuleList : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
+  using ImplType = CSSRuleList*;
+
   CSSRuleList(JSContext* ctx) : ScriptWrappable(ctx){};
 
   CSSRuleList(const CSSRuleList&) = delete;
@@ -45,6 +50,10 @@ class CSSRuleList : public ScriptWrappable {
 
   virtual unsigned length() const = 0;
   CSSRule* item(unsigned index) const { return Item(index); }
+  CSSRule* item(unsigned index, ExceptionState& exception_state) const { return Item(index); }
+
+  virtual bool NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state);
+  virtual void NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState& exception_state);
 
   virtual CSSStyleSheet* GetStyleSheet() const = 0;
   virtual CSSRule* Item(unsigned index, bool trigger_use_counters) const = 0;

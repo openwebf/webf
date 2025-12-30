@@ -21,4 +21,40 @@
 
 #include "css_rule_list.h"
 
-namespace webf {}
+#include <charconv>
+
+#include "bindings/qjs/exception_state.h"
+#include "foundation/string/atomic_string.h"
+
+namespace webf {
+
+bool CSSRuleList::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
+  if (key.IsNull()) {
+    return false;
+  }
+
+  std::string str = key.ToUTF8String();
+  if (str.empty()) {
+    return false;
+  }
+
+  uint32_t index = 0;
+  const char* begin = str.data();
+  const char* end = begin + str.size();
+  auto [ptr, ec] = std::from_chars(begin, end, index);
+  if (ec != std::errc() || ptr != end) {
+    return false;
+  }
+
+  return index < length();
+}
+
+void CSSRuleList::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState& exception_state) {
+  unsigned len = length();
+  names.reserve(len);
+  for (unsigned i = 0; i < len; i++) {
+    names.emplace_back(AtomicString(std::to_string(i)));
+  }
+}
+
+}  // namespace webf
