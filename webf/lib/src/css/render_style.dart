@@ -2658,7 +2658,7 @@ class CSSRenderStyle extends RenderStyle
         final bool parentInlineBlockAuto = p != null &&
             p.effectiveDisplay == CSSDisplay.inlineBlock && p.width.isAuto;
         if (!parentInlineBlockAuto) {
-          logicalWidth = target.ownerView.currentViewport!.boxSize!.width;
+          logicalWidth = getCurrentViewportBox()!.boxSize!.width;
         }
       } else if (logicalWidth == null && (renderStyle.isSelfRouterLinkElement() && root != null && root is! RootRenderViewportBox)) {
         logicalWidth = root!.boxSize!.width;
