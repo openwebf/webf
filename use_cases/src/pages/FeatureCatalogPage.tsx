@@ -140,6 +140,7 @@ const sections: Section[] = [
     items: [
       { label: 'FlutterGestureDetector', path: '/gesture', desc: 'Native gesture detection with tap, pan, pinch, and rotate' },
       { label: 'WebFListView', path: '/listview', desc: 'Infinite scrolling list optimized for long lists' },
+      { label: 'Dragable List', path: '/dragable-list', desc: 'Touch-based draggable list with smooth reordering' },
     ],
   },
   {
