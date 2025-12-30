@@ -688,15 +688,23 @@ class ImageElement extends Element {
     // Fire the load event at first frame come.
     if (!_loaded) {
       _loaded = true;
-      SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+      void fireLoadEvent() {
         _dispatchLoadEvent();
         _reportLCPCandidate();
         // Report FP first (if not already reported)
         ownerDocument.controller.reportFP();
         // Report FCP when image is first painted
         ownerDocument.controller.reportFCP();
-      });
-      SchedulerBinding.instance.scheduleFrame();
+      }
+
+      if (ownerDocument.controller.isFlutterAttached) {
+        SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+          fireLoadEvent();
+        });
+        SchedulerBinding.instance.scheduleFrame();
+      } else {
+        scheduleMicrotask(fireLoadEvent);
+      }
     }
   }
 
@@ -740,75 +748,85 @@ class ImageElement extends Element {
       _updateImageDataLazyCompleter = null;
     }
 
+    final WebFController controller = ownerDocument.controller;
+
+    Future<void> loadImg() async {
+      // Increment load event delay count before decode.
+      ownerDocument.incrementLoadEventDelayCount();
+      _imgLog('[IMG] begin load elem=$hashCode url=$_resolvedUri');
+
+      // Fast path if URL/data scheme indicates SVG
+      if (_isSVGMode) {
+        _imgLog('[IMG] detected SVG mode by URL elem=$hashCode');
+        _loadSVGImage();
+        return;
+      }
+
+      // Otherwise prefetch to inspect content-type and sniff as needed
+      try {
+        final ImageLoadResponse response = await obtainImage(this, _resolvedUri!);
+        final String? mime = response.mime?.toLowerCase();
+
+        bool isSvg = false;
+        if (mime != null) {
+          isSvg = mime.contains('image/svg');
+        }
+        if (!isSvg) {
+          // Sniff bytes for SVG signatures when header is absent/misleading
+          final int probeLen = response.bytes.length < 256 ? response.bytes.length : 256;
+          try {
+            final String head = String.fromCharCodes(response.bytes.sublist(0, probeLen));
+            final String headLower = head.toLowerCase();
+            if (headLower.contains('<svg') ||
+                (headLower.contains('<?xml') && headLower.contains('svg')) ||
+                headLower.contains('xmlns="http://www.w3.org/2000/svg"')) {
+              isSvg = true;
+            }
+          } catch (_) {}
+        }
+
+        if (isSvg) {
+          _imgLog('[IMG] prefetch decided SVG elem=$hashCode');
+          _applySVGResponse(response);
+          // Decrement load event delay here for prefetch SVG path
+          ownerDocument.decrementLoadEventDelayCount();
+        } else {
+          // Hand off to raster pipeline and avoid double-fetch
+          _imgLog('[IMG] prefetch decided raster elem=$hashCode');
+          _prefetchedImageResponse = response;
+          _prefetchedImageUri = _resolvedUri;
+          _isSVGImage = false;
+          _loadNormalImage();
+        }
+      } catch (e, stack) {
+        debugPrint('$e\n$stack');
+        _dispatchErrorEvent();
+        // Decrement on failure
+        ownerDocument.decrementLoadEventDelayCount();
+      }
+    }
+
+    if (controller.mode == WebFLoadingMode.preRendering) {
+      if (taskId != _updateImageDataTaskId) return;
+      _imgLog('[IMG] prerendering; load without Flutter attachment elem=$hashCode');
+      await loadImg();
+      SchedulerBinding.instance.scheduleFrame();
+      return;
+    }
+
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
       if (taskId != _updateImageDataTaskId) {
         return;
       }
 
-      loadImg() async {
-        // Increment load event delay count before decode.
-        ownerDocument.incrementLoadEventDelayCount();
-        _imgLog('[IMG] begin load elem=$hashCode url=$_resolvedUri');
-
-        // Fast path if URL/data scheme indicates SVG
-        if (_isSVGMode) {
-          _imgLog('[IMG] detected SVG mode by URL elem=$hashCode');
-          _loadSVGImage();
-          return;
-        }
-
-        // Otherwise prefetch to inspect content-type and sniff as needed
-        try {
-          final ImageLoadResponse response = await obtainImage(this, _resolvedUri!);
-          final String? mime = response.mime?.toLowerCase();
-
-          bool isSvg = false;
-          if (mime != null) {
-            isSvg = mime.contains('image/svg');
-          }
-          if (!isSvg) {
-            // Sniff bytes for SVG signatures when header is absent/misleading
-            final int probeLen = response.bytes.length < 256 ? response.bytes.length : 256;
-            try {
-              final String head = String.fromCharCodes(response.bytes.sublist(0, probeLen));
-              final String headLower = head.toLowerCase();
-              if (headLower.contains('<svg') ||
-                  (headLower.contains('<?xml') && headLower.contains('svg')) ||
-                  headLower.contains('xmlns="http://www.w3.org/2000/svg"')) {
-                isSvg = true;
-              }
-            } catch (_) {}
-          }
-
-          if (isSvg) {
-            _imgLog('[IMG] prefetch decided SVG elem=$hashCode');
-            _applySVGResponse(response);
-            // Decrement load event delay here for prefetch SVG path
-            ownerDocument.decrementLoadEventDelayCount();
-          } else {
-            // Hand off to raster pipeline and avoid double-fetch
-            _imgLog('[IMG] prefetch decided raster elem=$hashCode');
-            _prefetchedImageResponse = response;
-            _prefetchedImageUri = _resolvedUri;
-            _isSVGImage = false;
-            _loadNormalImage();
-          }
-        } catch (e, stack) {
-          debugPrint('$e\n$stack');
-          _dispatchErrorEvent();
-          // Decrement on failure
-          ownerDocument.decrementLoadEventDelayCount();
-        }
-      }
-
-      if (!ownerDocument.controller.isFlutterAttached) {
+      if (!controller.isFlutterAttached) {
         ownerView.registerCallbackOnceForFlutterAttached(() {
           _imgLog('[IMG] Flutter not attached; defer load elem=$hashCode');
-          loadImg();
+          unawaited(loadImg());
         });
       } else {
         _imgLog('[IMG] Flutter attached; load now elem=$hashCode');
-        loadImg();
+        unawaited(loadImg());
       }
     });
     SchedulerBinding.instance.scheduleFrame();
