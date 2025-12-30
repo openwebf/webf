@@ -1,6 +1,7 @@
-import { computed, inject, ComputedRef } from 'vue';
+import { computed, ComputedRef } from 'vue';
 import { WebFRouter } from '../router/WebFRouter';
-import type { Location, RouteContext } from '../types';
+import type { Location } from '../types';
+import { useRouteContext } from './useRouteContext';
 
 /**
  * Hook to get the current location
@@ -17,39 +18,18 @@ import type { Location, RouteContext } from '../types';
  * ```
  */
 export function useLocation(): ComputedRef<Location> {
-  const routeContext = inject<RouteContext>('route-context');
-  const routeSpecificContext = inject<ComputedRef<RouteContext>>('route-specific-context');
-  
+  const context = useRouteContext();
+
   return computed(() => {
-    const context = routeSpecificContext?.value || routeContext;
-    
-    if (!context) {
-      // Fallback to WebFRouter if no context is provided
-      return {
-        pathname: WebFRouter.path,
-        state: WebFRouter.state,
-        isActive: true,
-        key: `${WebFRouter.path}-${Date.now()}`
-      };
-    }
-    
-    const currentPath = context.path || context.activePath || WebFRouter.path;
-    const pathname = currentPath;
-    
-    // Check if the current component's route matches the active path
-    const isCurrentRoute = context.path === context.activePath;
-    const isActive = (context.routeEventKind === 'didPush' || context.routeEventKind === 'didPushNext')
-      && context.path === context.activePath;
-    
-    // Get state - prioritize context params, fallback to WebFRouter.state
-    const state = (isActive || isCurrentRoute) 
-      ? (context.params || WebFRouter.state)
+    const pathname = context.value.activePath || WebFRouter.path;
+    const state = context.value.isActive
+      ? (context.value.params || WebFRouter.state)
       : WebFRouter.state;
-    
+
     return {
       pathname,
       state,
-      isActive,
+      isActive: context.value.isActive,
       key: `${pathname}-${Date.now()}`
     };
   });

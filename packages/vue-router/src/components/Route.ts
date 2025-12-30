@@ -1,144 +1,65 @@
-import { defineComponent, computed, ref, inject, provide, h, PropType, Component } from 'vue';
-import { matchPath } from '../utils/pathMatcher';
-import type { RouteContext } from '../types';
+import { defineComponent, computed, ref, h, PropType } from 'vue';
+import { WebFRouterLink } from '../utils/RouterLink';
 
 /**
- * Route component - represents a single route that conditionally renders its element
- * 
- * Props:
- * - path: Route pattern (e.g., "/user/:id")
- * - element: Component to render when route is active
- * - title: Optional title for the route
- * - prerender: Whether to mount the component immediately
+ * Route Component
+ *
+ * Responsible for managing page rendering and delegating mount/lifecycle to `webf-router-link`.
  */
 export const Route = defineComponent({
   name: 'Route',
   props: {
+    title: {
+      type: String,
+      required: false,
+    },
     path: {
       type: String,
       required: true
     },
-    element: {
-      type: [Object, String] as PropType<Component | string>,
-      required: true
-    },
-    title: {
+    mountedPath: {
       type: String,
-      required: false
+      required: false,
     },
     prerender: {
       type: Boolean,
       default: false
-    }
+    },
+    element: {
+      type: [Object, String, Function] as PropType<any>,
+      required: true
+    },
+    theme: {
+      type: String as PropType<'material' | 'cupertino'>,
+      required: false,
+    },
   },
   setup(props) {
-    
-    // Inject route context from parent Routes component
-    const routeContext = inject<RouteContext>('route-context');
+    const hasRendered = ref(false);
+    const shouldRenderChildren = computed(() => props.prerender || hasRendered.value);
 
-    // Local state
-    const isMounted = ref(props.prerender || false);
-
-    // Check if this route is active
-    const isActive = computed(() => {
-      if (!routeContext) {
-        return false;
-      }
-      
-      const currentPath = routeContext.activePath;
-      if (!currentPath) {
-        return false;
-      }
-      
-      // Check if the route pattern matches
-      const match = matchPath(props.path, currentPath);
-      const isActive = match !== null;
-      return isActive;
-    });
-
-    // Handle dynamic component loading
-    const computedElement = computed(() => {
-      if (typeof props.element === 'string') {
-        // If element is a string, return the string for dynamic component resolution
-        return props.element;
-      }
-      return props.element;
-    });
-
-    // Handle onscreen event for lazy loading and route activation
-    const onScreen = (event: Event) => {
-      if (!isMounted.value) {
-        isMounted.value = true;
-      }
-      
-      // Trigger hybridrouterchange event to notify Routes component
-      // Similar to React's WebFRouterLink behavior
-      const hybridRouterEvent = new CustomEvent('hybridrouterchange', {
-        detail: {
-          kind: 'didPush',
-          path: props.path,
-          state: (event as any).detail?.state || null,
-          params: (event as any).detail?.params || null
-        }
-      });
-      
-      document.dispatchEvent(hybridRouterEvent);
+    const handleOnScreen = () => {
+      hasRendered.value = true;
     };
 
-    // Provide route-specific context
-    if (routeContext) {
-      const routeSpecificContext = computed(() => {
-        const match = routeContext.activePath ? matchPath(props.path, routeContext.activePath) : null;
-        
-        if (match) {
-          return {
-            path: props.path,
-            params: routeContext.params,
-            routeParams: match.params,
-            activePath: routeContext.activePath,
-            routeEventKind: routeContext.routeEventKind
-          };
-        }
-        
-        return {
-          path: props.path,
-          params: undefined,
-          routeParams: undefined,
-          activePath: routeContext.activePath,
-          routeEventKind: undefined
-        };
-      });
-      
-      provide('route-specific-context', routeSpecificContext);
-    }
+    const handleOffScreen = () => {};
 
     return () => {
-      
-      // Match React behavior: render if mounted (received onscreen event), regardless of route matching
-      const shouldRender = isMounted.value;
-      
-      if (shouldRender) {
-        try {
-          const component = h(computedElement.value as Component);
-          return h('webf-router-link', {
-            path: props.path,
-            title: props.title,
-            onOnscreen: onScreen
-          }, [component]);
-        } catch (error) {
-          return h('webf-router-link', {
-            path: props.path,
-            title: props.title,
-            onOnscreen: onScreen
-          }, ['Error loading component']);
-        }
-      } else {
-        return h('webf-router-link', {
-          path: props.path,
+      const pathToMount = props.mountedPath ?? props.path;
+
+      return h(
+        WebFRouterLink,
+        {
+          path: pathToMount,
           title: props.title,
-          onOnscreen: onScreen
-        }, []);
-      }
+          theme: props.theme,
+          onScreen: handleOnScreen,
+          offScreen: handleOffScreen,
+        },
+        {
+          default: () => (shouldRenderChildren.value ? h(props.element as any) : null),
+        }
+      );
     };
   }
 });
