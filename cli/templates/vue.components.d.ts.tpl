@@ -3,9 +3,10 @@
  */
 // Based on the Vue 3 documentation for defining custom elements:
 // https://vuejs.org/guide/extras/web-components
-import { EmitFn, PublicProps, HTMLAttributes } from 'vue';
+import type { EmitFn, PublicProps, StyleValue, ClassValue } from 'vue';
+import '@openwebf/webf-enterprise-typings';
 
-<%= typesImport %>
+<%= typeAliases %>
 
 type EventMap = {
   [event: string]: Event
@@ -13,29 +14,29 @@ type EventMap = {
 
 // This maps an EventMap to the format that Vue's $emit type expects.
 type VueEmit<T extends EventMap> = EmitFn<{
-  [K in keyof T]: (event: T[K]) => void
+  [K in keyof T]: (event: NonNullable<T[K]>) => void
 }>
 
 // Vue 3 event listener properties for template usage
 type VueEventListeners<T extends EventMap> = {
-  [K in keyof T as `on${Capitalize<string & K>}`]?: (event: T[K]) => any
+  [K in keyof T as `on${Capitalize<string & K>}`]?: (event: NonNullable<T[K]>) => any
 }
 
 <%= consts %>
 <%= enums %>
+<%= dependencies %>
 
 type DefineCustomElement<
   ElementType,
+  Props,
   Events extends EventMap = {},
-  SelectedAttributes extends keyof ElementType = keyof ElementType
 > = new () => ElementType & VueEventListeners<Events> & {
   // Use $props to define the properties exposed to template type checking. Vue
   // specifically reads prop definitions from the `$props` type. Note that we
-  // combine the element's props with the global HTML props and Vue's special
-  // props.
+  // combine the element's props with Vue's special props.
   /** @deprecated Do not use the $props property on a Custom Element ref,
     this is for template prop types only. */
-  $props: Partial<Pick<ElementType, SelectedAttributes>> & PublicProps & VueEventListeners<Events>
+  $props: Props & PublicProps & VueEventListeners<Events>
 
   // Use $emit to specifically define event types. Vue specifically reads event
   // types from the `$emit` type. Note that `$emit` expects a particular format
@@ -47,10 +48,11 @@ type DefineCustomElement<
 
 <%= components %>
 
-declare module 'vue' {
+declare module '@vue/runtime-core' {
   interface GlobalComponents {
     <% componentMetas.forEach(comp => { %>
     '<%= comp.tagName %>': DefineCustomElement<
+      <%= comp.className %>Element,
       <%= comp.className %>Props,
       <%= comp.className %>Events
     >
