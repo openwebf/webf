@@ -3122,6 +3122,74 @@ class RenderGridLayout extends RenderLayoutBox {
       }
     }
 
+    // Cache min-content contributions (content-box) for flexbox automatic
+    // minimum size (min-size:auto). Flex layout consults `minContentWidth`/
+    // `minContentHeight` to clamp flex items to their content-based minimum.
+    double minContentW = 0.0;
+    for (int c = 0; c < colSizes.length; c++) {
+      final GridTrackSize track;
+      if (c >= 0 && c < resolvedColumnDefs.length) {
+        track = resolvedColumnDefs[c];
+      } else {
+        final int implicitIndex = math.max(0, c - resolvedColumnDefs.length);
+        track = autoColDefs.isNotEmpty ? autoColDefs[implicitIndex % autoColDefs.length] : const GridAuto();
+      }
+      minContentW += _trackMinBreadth(track, null);
+      if (c < colSizes.length - 1) {
+        minContentW += colGap;
+      }
+    }
+
+    double minContentH = 0.0;
+    for (int r = 0; r < totalRows; r++) {
+      final GridTrackSize track;
+      if (r >= 0 && r < resolvedRowDefs.length) {
+        track = resolvedRowDefs[r];
+      } else {
+        final int implicitIndex = math.max(0, r - resolvedRowDefs.length);
+        track = autoRowDefs.isNotEmpty ? autoRowDefs[implicitIndex % autoRowDefs.length] : const GridAuto();
+      }
+      minContentH += _trackMinBreadth(track, null);
+      if (r < totalRows - 1) {
+        minContentH += rowGap;
+      }
+    }
+
+    if (explicitAutoFitColumns != null && explicitAutoFitColumnUsage != null && resolvedColumnDefs.isNotEmpty) {
+      double collapsedMinWidth = 0.0;
+      for (int i = explicitColumnCount - 1; i >= 0; i--) {
+        if (!explicitAutoFitColumns[i] || explicitAutoFitColumnUsage[i]) {
+          break;
+        }
+        collapsedMinWidth += _trackMinBreadth(resolvedColumnDefs[i], null);
+        if (i > 0) {
+          collapsedMinWidth += colGap;
+        }
+      }
+      if (collapsedMinWidth > 0) {
+        minContentW = math.max(0.0, minContentW - collapsedMinWidth);
+      }
+    }
+
+    if (explicitAutoFitRows != null && explicitAutoFitRowUsage != null && resolvedRowDefs.isNotEmpty) {
+      double collapsedMinHeight = 0.0;
+      for (int i = explicitRowCount - 1; i >= 0; i--) {
+        if (!explicitAutoFitRows[i] || explicitAutoFitRowUsage[i]) {
+          break;
+        }
+        collapsedMinHeight += _trackMinBreadth(resolvedRowDefs[i], null);
+        if (i > 0) {
+          collapsedMinHeight += rowGap;
+        }
+      }
+      if (collapsedMinHeight > 0) {
+        minContentH = math.max(0.0, minContentH - collapsedMinHeight);
+      }
+    }
+
+    minContentWidth = minContentW;
+    minContentHeight = minContentH;
+
     // Final size constrained by constraints.
     // For grid containers, the used border-box width/height come from:
     //   - definite width/height if specified;
