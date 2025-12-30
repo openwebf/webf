@@ -6,6 +6,7 @@
 #define WEBF_CSS_STYLE_SHEET_H
 
 #include "core/css/css_rule.h"
+#include "core/css/css_rule_list.h"
 #include "core/css/media_query_set_owner.h"
 #include "core/css/resolver/media_query_result.h"
 #include "core/dom/document.h"
@@ -45,6 +46,8 @@ class CSSStyleSheet final : public StyleSheet, public MediaQuerySetOwner {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
+  using ImplType = CSSStyleSheet*;
+
   static const Document* SingleOwnerDocument(const CSSStyleSheet*);
 
   static CSSStyleSheet* Create(Document&, const CSSStyleSheetInit*, ExceptionState&);
@@ -81,7 +84,7 @@ class CSSStyleSheet final : public StyleSheet, public MediaQuerySetOwner {
   bool disabled() const override { return is_disabled_; }
   void setDisabled(bool) override;
 
-  CSSRuleList* cssRules(ExceptionState&);
+  CSSRuleList* cssRules();
   unsigned insertRule(const AtomicString& rule, unsigned index, ExceptionState&);
   void deleteRule(unsigned index, ExceptionState&);
 

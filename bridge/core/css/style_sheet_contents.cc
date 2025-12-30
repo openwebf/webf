@@ -264,12 +264,64 @@ StyleRuleBase* StyleSheetContents::RuleAt(unsigned int index) const {
   return child_rules_[index].get();
 }
 
-bool StyleSheetContents::WrapperInsertRule(webf::StyleRuleBase*, unsigned int index) {
-  return false;
+bool StyleSheetContents::WrapperInsertRule(webf::StyleRuleBase* rule, unsigned int index) {
+  if (index > RuleCount()) {
+    return false;
+  }
+
+  if (!rule) {
+    return false;
+  }
+
+  std::shared_ptr<const StyleRuleBase> copied_rule_const = rule->Copy();
+  if (!copied_rule_const) {
+    return false;
+  }
+
+  std::shared_ptr<StyleRuleBase> copied_rule = std::const_pointer_cast<StyleRuleBase>(copied_rule_const);
+
+  if (auto* import_rule = DynamicTo<StyleRuleImport>(copied_rule.get())) {
+    // Per CSSOM rules, @import must come before any other rules. Since we
+    // split import rules and child rules into different vectors, only allow
+    // inserting @import within the import section.
+    if (index > import_rules_.size()) {
+      return false;
+    }
+
+    auto import_shared = std::static_pointer_cast<StyleRuleImport>(copied_rule);
+    import_rules_.insert(import_rules_.begin() + index, import_shared);
+    import_shared->SetParentStyleSheet(shared_from_this());
+    import_shared->RequestStyleSheet();
+  } else {
+    // Do not allow inserting non-import rules before existing @import rules.
+    if (index < import_rules_.size()) {
+      return false;
+    }
+
+    unsigned child_index = index - import_rules_.size();
+    child_rules_.insert(child_rules_.begin() + child_index, copied_rule);
+  }
+
+  ClearRuleSet();
+  return true;
 }
 
 bool StyleSheetContents::WrapperDeleteRule(unsigned int index) {
-  return false;
+  if (index >= RuleCount()) {
+    return false;
+  }
+
+  if (index < import_rules_.size()) {
+    // Detach the import rule from this sheet.
+    import_rules_[index]->ClearParentStyleSheet();
+    import_rules_.erase(import_rules_.begin() + index);
+  } else {
+    unsigned child_index = index - import_rules_.size();
+    child_rules_.erase(child_rules_.begin() + child_index);
+  }
+
+  ClearRuleSet();
+  return true;
 }
 
 void StyleSheetContents::ClearRules() {

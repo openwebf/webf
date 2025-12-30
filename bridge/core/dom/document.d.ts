@@ -12,12 +12,14 @@ import {Event} from "./events/event";
 import {HTMLAllCollection} from "../html/html_all_collection";
 import {IDLEventHandler} from "../frame/window_event_handlers";
 import {Window} from "../frame/window";
+import {CSSStyleSheet} from "../css/css_style_sheet";
 import {ParentNode} from "./parent_node";
 import {GlobalEventHandlers} from "./global_event_handlers";
 import {ElementCreationOptions} from './element_creation_options';
 
 interface Document extends Node, ParentNode, GlobalEventHandlers {
   readonly all: HTMLAllCollection;
+  readonly styleSheets: CSSStyleSheet[];
   title: SupportAsync<DartImpl<string>>;
   body: HTMLBodyElement | null;
   cookie: SupportAsync<DartImpl<string>>;

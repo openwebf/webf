@@ -14,6 +14,7 @@
 #include "core/dom/document_fragment.h"
 #include "core/dom/element.h"
 #include "core/dom/intersection_observer.h"
+#include "core/dom/node_traversal.h"
 #include "core/dom/events/event_target.h"
 #include "core/dom/text.h"
 #include "core/frame/window.h"
@@ -24,6 +25,8 @@
 #include "core/html/html_element.h"
 #include "core/html/html_head_element.h"
 #include "core/html/html_html_element.h"
+#include "core/html/html_link_element.h"
+#include "core/html/html_style_element.h"
 #include "core/html/html_unknown_element.h"
 #include "core/html/touches/webf_touch_area_element.h"
 #include "core/svg/svg_element.h"
@@ -297,6 +300,31 @@ CSSStyleSheet& Document::ElementSheet() {
   if (!elem_sheet_)
     elem_sheet_ = CSSStyleSheet::CreateInline(*this, base_url_);
   return *elem_sheet_;
+}
+
+std::vector<CSSStyleSheet*> Document::styleSheets() const {
+  std::vector<CSSStyleSheet*> sheets;
+  Element* root = documentElement();
+  if (!root) {
+    return sheets;
+  }
+
+  for (Node& node : NodeTraversal::InclusiveDescendantsOf(*root)) {
+    if (auto* style_element = DynamicTo<HTMLStyleElement>(&node)) {
+      if (CSSStyleSheet* sheet = style_element->sheet()) {
+        sheets.push_back(sheet);
+      }
+      continue;
+    }
+    if (auto* link_element = DynamicTo<HTMLLinkElement>(&node)) {
+      if (CSSStyleSheet* sheet = link_element->sheet()) {
+        sheets.push_back(sheet);
+      }
+      continue;
+    }
+  }
+
+  return sheets;
 }
 
 AtomicString Document::readyState() {

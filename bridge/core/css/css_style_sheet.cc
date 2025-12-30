@@ -15,6 +15,7 @@
 #include "core/css/style_sheet_contents.h"
 #include "core/css/style_rule.h"
 #include "core/css/css_property_value_set.h"
+#include "core/css/style_engine.h"
 #include "bindings/qjs/native_string_utils.h"
 #include "core/dom/document.h"
 #include "core/html/html_link_element.h"
@@ -162,15 +163,35 @@ CSSStyleSheet::~CSSStyleSheet() {
 }
 
 void CSSStyleSheet::WillMutateRules() {
+  // Cached CSSOM rule wrappers are index-based and can contain gaps (lazy
+  // creation). Any rule mutation (insert/delete) would otherwise require
+  // shifting these wrappers, which is unsafe with the current Member
+  // implementation. Treat them as a cache and invalidate on mutation.
+  child_rule_cssom_wrappers_.clear();
+
   // If we are the only client it is safe to mutate.
   if (!contents_->IsUsedFromTextCache()) {
     contents_->StartMutation();
-    assert(false);
-    //    contents_->ClearRuleSet();
+    contents_->ClearRuleSet();
     return;
   }
   // Only cacheable stylesheets should have multiple clients.
   DCHECK(contents_->IsCacheableForStyleElement() || contents_->IsCacheableForResource());
+
+  // If this stylesheet participates in the author sheet registry, its
+  // StyleSheetContents pointer is used for rule matching. When we perform
+  // copy-on-write below, the contents pointer changes, so keep StyleEngine's
+  // registry in sync by temporarily unregistering and re-registering.
+  Document* document = OwnerDocument();
+  StyleEngine* style_engine = nullptr;
+  ExecutingContext* context = nullptr;
+  if (document) {
+    context = document->GetExecutingContext();
+    if (context && context->isBlinkEnabled()) {
+      style_engine = &document->EnsureStyleEngine();
+      style_engine->UnregisterAuthorSheet(this);
+    }
+  }
 
   // Copy-on-write. Note that this eagerly parses any rules that were
   // lazily parsed.
@@ -179,46 +200,47 @@ void CSSStyleSheet::WillMutateRules() {
   contents_->RegisterClient(this);
 
   contents_->StartMutation();
+  contents_->ClearRuleSet();
 
-  assert(false);
-  // Any existing CSSOM wrappers need to be connected to the copied child rules.
-  //  ReattachChildRuleCSSOMWrappers();
+  // Cached CSSOM rule wrappers reference StyleRule objects from the old
+  // StyleSheetContents. Clear them so they are recreated lazily against the
+  // new contents.
+  child_rule_cssom_wrappers_.clear();
+
+  if (style_engine) {
+    style_engine->RegisterAuthorSheet(this);
+  }
 }
 
 void CSSStyleSheet::DidMutate(Mutation mutation) {
-  //  if (mutation == Mutation::kRules) {
-  //    DCHECK(contents_->IsMutable());
-  //    DCHECK_LE(contents_->ClientSize(), 1u);
-  //  }
-  //  Document* document = OwnerDocument();
-  //  if (!document || !document->IsActive()) {
-  //    return;
-  //  }
-  //  if (!custom_element_tag_names_.IsEmpty()) {
-  //    document->GetStyleEngine().ScheduleCustomElementInvalidations(custom_element_tag_names_);
-  //  }
-  //  bool invalidate_matched_properties_cache = false;
-  //  if (ownerNode() && ownerNode()->isConnected()) {
-  //    document->GetStyleEngine().SetNeedsActiveStyleUpdate(ownerNode()->GetTreeScope());
-  //    invalidate_matched_properties_cache = true;
-  //  } else if (!adopted_tree_scopes_.IsEmpty()) {
-  //    for (auto tree_scope : adopted_tree_scopes_.Keys()) {
-  //      // It is currently required that adopted sheets can not be moved between
-  //      // documents.
-  //      DCHECK(tree_scope->GetDocument() == document);
-  //      if (!tree_scope->RootNode().isConnected()) {
-  //        continue;
-  //      }
-  //      document->GetStyleEngine().SetNeedsActiveStyleUpdate(*tree_scope);
-  //      invalidate_matched_properties_cache = true;
-  //    }
-  //  }
-  //  if (mutation == Mutation::kRules) {
-  //    if (invalidate_matched_properties_cache) {
-  //      document->GetStyleResolver().InvalidateMatchedPropertiesCache();
-  //    }
-  //    probe::DidMutateStyleSheet(document, this);
-  //  }
+  Document* document = OwnerDocument();
+  if (!document) {
+    return;
+  }
+
+  ExecutingContext* context = document->GetExecutingContext();
+  if (!context || !context->IsContextValid() || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  // Ensure any cached RuleSet is rebuilt on the next access.
+  if (contents_) {
+    contents_->ClearRuleSet();
+  }
+
+  // For document-linked stylesheets, schedule a full declared-value style
+  // recomputation. This mirrors Blink's "active stylesheets update" path and
+  // lets the style engine export updated declared values to Dart.
+  if (ownerNode() && ownerNode()->isConnected()) {
+    document->EnsureStyleEngine().SetNeedsActiveStyleUpdate();
+    return;
+  }
+
+  // Adopted stylesheets are not fully wired yet in WebF. Conservatively mark
+  // the owning document dirty if this sheet is adopted anywhere.
+  if (!adopted_tree_scopes_.empty()) {
+    document->EnsureStyleEngine().SetNeedsActiveStyleUpdate();
+  }
 }
 
 void CSSStyleSheet::EnableRuleAccessForInspector() {
@@ -335,7 +357,7 @@ void CSSStyleSheet::ClearOwnerNode() {
 }
 
 CSSRuleList* CSSStyleSheet::rules(ExceptionState& exception_state) {
-  return cssRules(exception_state);
+  return cssRules();
 }
 
 unsigned CSSStyleSheet::insertRule(const AtomicString& rule_string, unsigned index, ExceptionState& exception_state) {
@@ -374,9 +396,6 @@ unsigned CSSStyleSheet::insertRule(const AtomicString& rule_string, unsigned ind
     }
     return 0;
   }
-  if (!child_rule_cssom_wrappers_.empty()) {
-    child_rule_cssom_wrappers_.insert(child_rule_cssom_wrappers_.begin() + index, Member<CSSRule>(nullptr));
-  }
 
   return index;
 }
@@ -401,13 +420,6 @@ void CSSStyleSheet::deleteRule(unsigned index, ExceptionState& exception_state) 
   if (!success) {
     exception_state.ThrowException(ctx(), ErrorType::TypeError, "Failed to delete rule");
     return;
-  }
-
-  if (!child_rule_cssom_wrappers_.empty()) {
-    if (child_rule_cssom_wrappers_[index]) {
-      child_rule_cssom_wrappers_[index]->SetParentStyleSheet(nullptr);
-    }
-    child_rule_cssom_wrappers_.erase(child_rule_cssom_wrappers_.begin() + index);
   }
 }
 
@@ -460,7 +472,7 @@ void CSSStyleSheet::replaceSync(const AtomicString& text, ExceptionState& except
   //  probe::DidReplaceStyleSheetText(OwnerDocument(), this, text);
 }
 
-CSSRuleList* CSSStyleSheet::cssRules(ExceptionState& exception_state) {
+CSSRuleList* CSSStyleSheet::cssRules() {
   if (!rule_list_cssom_wrapper_) {
     rule_list_cssom_wrapper_ = MakeGarbageCollected<StyleSheetCSSRuleList>(this);
   }

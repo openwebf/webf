@@ -346,10 +346,23 @@ class StyleEngine final {
     author_css_sheets_.erase(
         std::remove(author_css_sheets_.begin(), author_css_sheets_.end(), sheet),
         author_css_sheets_.end());
-    author_sheets_.erase(
-        std::remove_if(author_sheets_.begin(), author_sheets_.end(),
-                        [&](const std::shared_ptr<StyleSheetContents>& s) { return s.get() == contents.get(); }),
-        author_sheets_.end());
+    bool still_used = false;
+    for (auto* s : author_css_sheets_) {
+      if (!s) {
+        continue;
+      }
+      auto c = s->Contents();
+      if (c && c.get() == contents.get()) {
+        still_used = true;
+        break;
+      }
+    }
+    if (!still_used) {
+      author_sheets_.erase(
+          std::remove_if(author_sheets_.begin(), author_sheets_.end(),
+                          [&](const std::shared_ptr<StyleSheetContents>& s) { return s.get() == contents.get(); }),
+          author_sheets_.end());
+    }
     if (global_rule_set_) {
       global_rule_set_->MarkDirty();
     }

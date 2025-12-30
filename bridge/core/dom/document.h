@@ -96,6 +96,7 @@ class Document : public ContainerNode, public TreeScope {
   AtomicString compatMode();
 
   CSSStyleSheet& ElementSheet();
+  std::vector<CSSStyleSheet*> styleSheets() const;
 
   AtomicString readyState();
   DEFINE_DOCUMENT_ATTRIBUTE_EVENT_LISTENER(readystatechange, kreadystatechange);

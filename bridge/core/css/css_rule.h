@@ -45,6 +45,8 @@ class CSSRule : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
+  using ImplType = CSSRule*;
+
   ~CSSRule() override = default;
 
   enum Type {
