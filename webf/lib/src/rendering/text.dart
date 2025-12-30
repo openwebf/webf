@@ -226,7 +226,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   @override
   void performLayout() {
     if (_data.isEmpty) {
-      size = Size.zero;
+      size = constraints.constrain(Size.zero);
       return;
     }
 
