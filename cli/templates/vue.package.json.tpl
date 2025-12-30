@@ -8,6 +8,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "dependencies": {
+    "@openwebf/webf-enterprise-typings": "^0.23.7"
+  },
   "peerDependencies": {
     "vue": "^3.0.0"
   },

@@ -233,19 +233,13 @@ describe('Generator', () => {
         command: 'test command'
       });
       
-      // Check that index.d.ts was written
+      // Dart codegen does not write a root index.d.ts; it copies .d.ts files alongside generated Dart bindings.
       const writeFileCalls = mockFs.writeFileSync.mock.calls;
       const indexDtsCall = writeFileCalls.find(call => 
         call[0].toString().endsWith('index.d.ts')
       );
       
-      expect(indexDtsCall).toBeDefined();
-      expect(indexDtsCall![1]).toContain('/// <reference path="./global.d.ts" />');
-      expect(indexDtsCall![1]).toContain('/// <reference path="./components/button.d.ts" />');
-      expect(indexDtsCall![1]).toContain('/// <reference path="./widgets/card.d.ts" />');
-      expect(indexDtsCall![1]).toContain("export * from './components/button';");
-      expect(indexDtsCall![1]).toContain("export * from './widgets/card';");
-      expect(indexDtsCall![1]).toContain('TypeScript Definitions');
+      expect(indexDtsCall).toBeUndefined();
     });
     
     it('should copy original .d.ts files to output directory', async () => {
@@ -478,8 +472,8 @@ describe('Generator', () => {
       // First file fails (no writes), second file succeeds (1 dart + 1 .d.ts), plus index.d.ts = 3 total
       // But since the error happens in dartGen, the .d.ts copy might not happen
       const writeCalls = mockFs.writeFileSync.mock.calls;
-      // Should have at least written the successful dart file and index.d.ts
-      expect(writeCalls.length).toBeGreaterThanOrEqual(2);
+      // Should have at least written the successful Dart bindings file
+      expect(writeCalls.length).toBeGreaterThanOrEqual(1);
     });
   });
 

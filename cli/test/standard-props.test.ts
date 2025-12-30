@@ -49,13 +49,13 @@ describe('Standard HTML Props Generation', () => {
       const propsContent = result.substring(propsStart, propsEnd);
       
       // Verify order: custom props, event handlers, then standard HTML props
-      const labelIndex = propsContent.indexOf('label: dom_string;');
-      const variantIndex = propsContent.indexOf('variant?: dom_string;');
-      const onClickIndex = propsContent.indexOf('onClick?: (event: Event) => void;');
-      const idIndex = propsContent.indexOf('id?: string;');
-      const styleIndex = propsContent.indexOf('style?: React.CSSProperties;');
-      const childrenIndex = propsContent.indexOf('children?: React.ReactNode;');
-      const classNameIndex = propsContent.indexOf('className?: string;');
+      const labelIndex = propsContent.search(/\n\s*label\??:\s*/);
+      const variantIndex = propsContent.search(/\n\s*variant\??:\s*/);
+      const onClickIndex = propsContent.search(/\n\s*onClick\??:\s*/);
+      const idIndex = propsContent.search(/\n\s*id\??:\s*/);
+      const styleIndex = propsContent.search(/\n\s*style\??:\s*/);
+      const childrenIndex = propsContent.search(/\n\s*children\??:\s*/);
+      const classNameIndex = propsContent.search(/\n\s*className\??:\s*/);
       
       // All props should exist
       expect(labelIndex).toBeGreaterThan(-1);
@@ -131,8 +131,8 @@ describe('Standard HTML Props Generation', () => {
       
       // Standard HTML props
       expect(propsContent).toContain("'id'?: string;");
-      expect(propsContent).toContain("'class'?: string;");
-      expect(propsContent).toContain("'style'?: string | Record<string, any>;");
+      expect(propsContent).toContain("'class'?: ClassValue;");
+      expect(propsContent).toContain("'style'?: StyleValue;");
     });
 
     it('should handle Vue style prop with both string and object types', () => {
@@ -145,8 +145,8 @@ describe('Standard HTML Props Generation', () => {
       
       const result = generateVueTypings([blob]);
       
-      // Vue style prop should accept both string and object
-      expect(result).toMatch(/'style'\?: string \| Record<string, any>;/);
+      // Vue style prop should accept Vue's supported style value forms
+      expect(result).toMatch(/'style'\?: StyleValue;/);
     });
   });
 
@@ -176,11 +176,11 @@ describe('Standard HTML Props Generation', () => {
       
       // Both should have style prop (with appropriate types)
       expect(reactResult).toContain('style?: React.CSSProperties;');
-      expect(vueResult).toContain("'style'?: string | Record<string, any>;");
+      expect(vueResult).toContain("'style'?: StyleValue;");
       
       // React has className, Vue has class
       expect(reactResult).toContain('className?: string;');
-      expect(vueResult).toContain("'class'?: string;");
+      expect(vueResult).toContain("'class'?: ClassValue;");
       
       // React has children, Vue uses slots (not in props)
       expect(reactResult).toContain('children?: React.ReactNode;');

@@ -2,10 +2,9 @@ import _ from "lodash";
 import fs from 'fs';
 import path from 'path';
 import {ParameterType} from "./analyzer";
-import {ClassObject, FunctionArgumentType, FunctionDeclaration, ConstObject, EnumObject} from "./declaration";
+import {ClassObject, FunctionArgumentType, FunctionDeclaration, ConstObject, EnumObject, TypeAliasObject} from "./declaration";
 import {IDLBlob} from "./IDLBlob";
-import { debug } from './logger';
-import {getPointerType, isPointerType, isUnionType, trimNullTypeFromType} from "./utils";
+import {getPointerType, isPointerType, isUnionType} from "./utils";
 
 function readTemplate(name: string) {
   return fs.readFileSync(path.join(__dirname, '../templates/' + name + '.tpl'), {encoding: 'utf-8'});
@@ -49,7 +48,7 @@ function generateReturnType(type: ParameterType): string {
     if (pointerType === 'Type') return 'any';
     if (typeof pointerType === 'string' && pointerType.startsWith('typeof ')) {
       const ident = pointerType.substring('typeof '.length).trim();
-      return `typeof __webfTypes.${ident}`;
+      return `typeof ${ident}`;
     }
     return pointerType;
   }
@@ -58,7 +57,7 @@ function generateReturnType(type: ParameterType): string {
     if (elemType === 'Type') return 'any[]';
     if (typeof elemType === 'string' && elemType.startsWith('typeof ')) {
       const ident = elemType.substring('typeof '.length).trim();
-      return `(typeof __webfTypes.${ident})[]`;
+      return `(typeof ${ident})[]`;
     }
     return `${elemType}[]`;
   }
@@ -112,110 +111,100 @@ function generateMethodDeclaration(method: FunctionDeclaration) {
   return `${methodName}(${args}): ${returnType};`;
 }
 
-function generateVueComponent(blob: IDLBlob) {
-  const classObjects = blob.objects as ClassObject[];
-  
-  // Skip if no class objects
-  if (!classObjects || classObjects.length === 0) {
+type VueComponentSpec = {
+  className: string;
+  properties?: ClassObject;
+  events?: ClassObject;
+  methods?: ClassObject;
+};
+
+function getVueComponentSpecs(blob: IDLBlob): VueComponentSpec[] {
+  const classObjects = blob.objects.filter(obj => obj instanceof ClassObject) as ClassObject[];
+  if (classObjects.length === 0) return [];
+
+  const properties = classObjects.filter(object => object.name.endsWith('Properties'));
+  const events = classObjects.filter(object => object.name.endsWith('Events'));
+  const methods = classObjects.filter(object => object.name.endsWith('Methods'));
+
+  const componentMap = new Map<string, VueComponentSpec>();
+
+  properties.forEach(prop => {
+    const className = prop.name.replace(/Properties$/, '');
+    if (!componentMap.has(className)) componentMap.set(className, { className });
+    componentMap.get(className)!.properties = prop;
+  });
+
+  events.forEach(ev => {
+    const className = ev.name.replace(/Events$/, '');
+    if (!componentMap.has(className)) componentMap.set(className, { className });
+    componentMap.get(className)!.events = ev;
+  });
+
+  methods.forEach(m => {
+    const className = m.name.replace(/Methods$/, '');
+    if (!componentMap.has(className)) componentMap.set(className, { className });
+    componentMap.get(className)!.methods = m;
+  });
+
+  return Array.from(componentMap.values())
+    .filter(spec => spec.className.trim().length > 0)
+    .sort((a, b) => a.className.localeCompare(b.className));
+}
+
+function renderSupportingInterface(object: ClassObject): string {
+  const hasProps = !!object.props && object.props.length > 0;
+  const hasMethods = !!object.methods && object.methods.length > 0;
+  if (!hasProps && !hasMethods) {
     return '';
   }
-  const classObjectDictionary = Object.fromEntries(
-    classObjects.map(object => {
-      return [object.name, object];
-    })
-  );
 
-  const properties = classObjects.filter(object => {
-    return object.name.endsWith('Properties');
-  });
-  const events = classObjects.filter(object => {
-    return object.name.endsWith('Events');
-  });
+  const interfaceLines: string[] = [];
 
-  const others = classObjects.filter(object => {
-    return !object.name.endsWith('Properties')
-      && !object.name.endsWith('Events');
-  });
-
-  const dependencies = others.map(object => {
-    if (!object || !object.props || object.props.length === 0) {
-      return '';
-    }
-
-    const interfaceLines: string[] = [];
-
-    if (object.documentation && object.documentation.trim().length > 0) {
-      interfaceLines.push('/**');
-      object.documentation.split('\n').forEach(line => {
-        interfaceLines.push(` * ${line}`);
-      });
-      interfaceLines.push(' */');
-    }
-
-    interfaceLines.push(`interface ${object.name} {`);
-
-    const propLines = object.props.map(prop => {
-      const lines: string[] = [];
-
-      if (prop.documentation && prop.documentation.trim().length > 0) {
-        lines.push('  /**');
-        prop.documentation.split('\n').forEach(line => {
-          lines.push(`   * ${line}`);
-        });
-        lines.push('   */');
-      }
-
-      const optionalToken = prop.optional ? '?' : '';
-      lines.push(`  ${prop.name}${optionalToken}: ${generateReturnType(prop.type)};`);
-
-      return lines.join('\n');
+  if (object.documentation && object.documentation.trim().length > 0) {
+    interfaceLines.push('/**');
+    object.documentation.split('\n').forEach(line => {
+      interfaceLines.push(` * ${line}`);
     });
-
-    interfaceLines.push(propLines.join('\n'));
-    interfaceLines.push('}');
-
-    return interfaceLines.join('\n');
-  }).filter(dep => dep.trim() !== '').join('\n\n');
-
-  const componentProperties = properties.length > 0 ? properties[0] : undefined;
-  const componentEvents = events.length > 0 ? events[0] : undefined;
-  const className = (() => {
-    if (componentProperties) {
-      return componentProperties.name.replace(/Properties$/, '');
-    }
-    if (componentEvents) {
-      return componentEvents.name.replace(/Events$/, '');
-    }
-    return '';
-  })();
-
-  if (!className) {
-    return '';
+    interfaceLines.push(' */');
   }
 
-  const content = _.template(readTemplate('vue.component.partial'))({
-    className: className,
-    properties: componentProperties,
-    events: componentEvents,
-    classObjectDictionary,
-    dependencies,
-    blob,
-    generateReturnType,
-    generateMethodDeclaration,
-    generateEventHandlerType,
+  interfaceLines.push(`export interface ${object.name} {`);
+
+  const propLines = (object.props || []).map(prop => {
+    const lines: string[] = [];
+
+    if (prop.documentation && prop.documentation.trim().length > 0) {
+      lines.push('  /**');
+      prop.documentation.split('\n').forEach(line => {
+        lines.push(`   * ${line}`);
+      });
+      lines.push('   */');
+    }
+
+    const optionalToken = prop.optional ? '?' : '';
+    lines.push(`  ${prop.name}${optionalToken}: ${generateReturnType(prop.type)};`);
+
+    return lines.join('\n');
   });
 
-  const result = content.split('\n').filter(str => {
-    return str.trim().length > 0;
-  }).join('\n');
+  interfaceLines.push(propLines.join('\n'));
 
-  return result;
+  if (object.methods && object.methods.length > 0) {
+    const methodLines = object.methods.map(method => {
+      return `  ${generateMethodDeclaration(method)}`;
+    });
+    interfaceLines.push(methodLines.join('\n'));
+  }
+
+  interfaceLines.push('}');
+
+  return interfaceLines.join('\n');
 }
 
 function toVueTagName(className: string): string {
   if (className.startsWith('WebF')) {
     const withoutPrefix = className.substring(4);
-    return 'web-f-' + _.kebabCase(withoutPrefix);
+    return 'webf-' + _.kebabCase(withoutPrefix);
   } else if (className.startsWith('Flutter')) {
     const withoutPrefix = className.substring(7);
     return 'flutter-' + _.kebabCase(withoutPrefix);
@@ -224,36 +213,29 @@ function toVueTagName(className: string): string {
 }
 
 export function generateVueTypings(blobs: IDLBlob[]) {
-  const componentNames = blobs.map(blob => {
-    const classObjects = blob.objects as ClassObject[];
-
-    const properties = classObjects.filter(object => {
-      return object.name.endsWith('Properties');
-    });
-    const events = classObjects.filter(object => {
-      return object.name.endsWith('Events');
+  const componentSpecMap = new Map<string, VueComponentSpec>();
+  blobs
+    .flatMap(blob => getVueComponentSpecs(blob))
+    .forEach(spec => {
+      if (!componentSpecMap.has(spec.className)) componentSpecMap.set(spec.className, spec);
     });
 
-    const componentProperties = properties.length > 0 ? properties[0] : undefined;
-    const componentEvents = events.length > 0 ? events[0] : undefined;
-    const className = (() => {
-      if (componentProperties) {
-        return componentProperties.name.replace(/Properties$/, '');
-      }
-      if (componentEvents) {
-        return componentEvents.name.replace(/Events$/, '');
-      }
-      return '';
-    })();
-    return className;
-  }).filter(name => {
-    return name.length > 0;
-  });
-  const components = blobs.map(blob => {
-    return generateVueComponent(blob);
-  }).filter(component => {
-    return component.length > 0;
-  }).join('\n\n');
+  const componentSpecs = Array.from(componentSpecMap.values()).sort((a, b) => a.className.localeCompare(b.className));
+  const componentNames = componentSpecs.map(spec => spec.className);
+
+  const components = componentSpecs.map(spec => {
+    const content = _.template(readTemplate('vue.component.partial'))({
+      className: spec.className,
+      properties: spec.properties,
+      events: spec.events,
+      methods: spec.methods,
+      generateReturnType,
+      generateMethodDeclaration,
+      generateEventHandlerType,
+    });
+
+    return content.split('\n').filter(str => str.trim().length > 0).join('\n');
+  }).filter(Boolean).join('\n\n');
 
   // Collect declare consts across blobs and render as exported ambient declarations
   const consts = blobs
@@ -267,6 +249,7 @@ export function generateVueTypings(blobs: IDLBlob[]) {
   });
 
   const constDeclarations = Array.from(uniqueConsts.values())
+    .sort((a, b) => a.name.localeCompare(b.name))
     .map(c => `export declare const ${c.name}: ${c.type};`)
     .join('\n');
 
@@ -275,29 +258,53 @@ export function generateVueTypings(blobs: IDLBlob[]) {
     .flatMap(blob => blob.objects)
     .filter(obj => obj instanceof EnumObject) as EnumObject[];
 
-  const enumDeclarations = enums.map(e => {
-    const members = e.members.map(m => m.initializer ? `${m.name} = ${m.initializer}` : `${m.name}`).join(', ');
-    return `export declare enum ${e.name} { ${members} }`;
-  }).join('\n');
+  const uniqueEnums = new Map<string, EnumObject>();
+  enums.forEach(e => {
+    if (!uniqueEnums.has(e.name)) uniqueEnums.set(e.name, e);
+  });
 
-  // Compute relative import path from the generated typings file (index.d.ts at dist root)
-  // to the aggregated React types module (src/types.ts) when present.
-  let typesImportPath = './src/types';
-  try {
-    if (blobs.length > 0) {
-      const distRoot = blobs[0].dist;
-      const typingsDir = distRoot; // index.d.ts is written directly under distRoot
-      const typesFilePath = path.join(distRoot, 'src', 'types');
-      const rel = path.relative(typingsDir, typesFilePath).replace(/\\/g, '/');
-      typesImportPath = rel.startsWith('.') ? rel : `./${rel}`;
-    }
-  } catch {
-    typesImportPath = './src/types';
-  }
+  const enumDeclarations = Array.from(uniqueEnums.values())
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(e => {
+      const members = e.members.map(m => m.initializer ? `${m.name} = ${m.initializer}` : `${m.name}`).join(', ');
+      return `export declare enum ${e.name} { ${members} }`;
+    })
+    .join('\n');
 
-  // Always import the types namespace to support typeof references
-  const typesImport = `import * as __webfTypes from '${typesImportPath}';`;
-  debug(`[vue] Generating typings; importing types from ${typesImportPath}`);
+  // Collect type aliases across blobs and render as exported declarations.
+  const typeAliases = blobs
+    .flatMap(blob => blob.objects)
+    .filter(obj => obj instanceof TypeAliasObject) as TypeAliasObject[];
+
+  const uniqueTypeAliases = new Map<string, TypeAliasObject>();
+  typeAliases.forEach(t => {
+    if (!uniqueTypeAliases.has(t.name)) uniqueTypeAliases.set(t.name, t);
+  });
+
+  const typeAliasDeclarations = Array.from(uniqueTypeAliases.values())
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(t => `export type ${t.name} = ${t.type};`)
+    .join('\n');
+
+  // Collect supporting interfaces (non-component interfaces) so referenced types exist.
+  const supportingInterfaces = blobs
+    .flatMap(blob => blob.objects)
+    .filter(obj => obj instanceof ClassObject) as ClassObject[];
+
+  const supporting = supportingInterfaces.filter(obj => {
+    return !obj.name.endsWith('Properties') && !obj.name.endsWith('Events') && !obj.name.endsWith('Methods');
+  });
+
+  const uniqueSupporting = new Map<string, ClassObject>();
+  supporting.forEach(obj => {
+    if (!uniqueSupporting.has(obj.name)) uniqueSupporting.set(obj.name, obj);
+  });
+
+  const supportingDeclarations = Array.from(uniqueSupporting.values())
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(obj => renderSupportingInterface(obj))
+    .filter(Boolean)
+    .join('\n\n');
 
   // Build mapping of template tag names to class names for GlobalComponents
   const componentMetas = componentNames.map(className => ({
@@ -315,7 +322,8 @@ export function generateVueTypings(blobs: IDLBlob[]) {
     components,
     consts: constDeclarations,
     enums: enumDeclarations,
-    typesImport,
+    typeAliases: typeAliasDeclarations,
+    dependencies: supportingDeclarations,
   });
 
   return content.split('\n').filter(str => {
