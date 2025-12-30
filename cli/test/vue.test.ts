@@ -79,6 +79,7 @@ describe('Vue Generator', () => {
       expect(result).toContain("declare module '@vue/runtime-core' {");
       expect(result).toContain("interface GlobalComponents {");
       expect(result).toContain("'webf-list-view': DefineCustomElement<");
+      expect(result).not.toContain("'web-f-list-view': DefineCustomElement<");
       expect(result).toContain("WebFListViewElement,");
       expect(result).toContain("WebFListViewProps,");
       expect(result).toContain("WebFListViewEvents");

@@ -201,15 +201,23 @@ function renderSupportingInterface(object: ClassObject): string {
   return interfaceLines.join('\n');
 }
 
-function toVueTagName(className: string): string {
+function toVueTagName(rawClassName: string): string {
+  const className = rawClassName.trim();
+
   if (className.startsWith('WebF')) {
     const withoutPrefix = className.substring(4);
-    return 'webf-' + _.kebabCase(withoutPrefix);
-  } else if (className.startsWith('Flutter')) {
-    const withoutPrefix = className.substring(7);
-    return 'flutter-' + _.kebabCase(withoutPrefix);
+    const suffix = _.kebabCase(withoutPrefix);
+    return suffix.length > 0 ? 'webf-' + suffix : 'webf';
   }
-  return _.kebabCase(className);
+
+  if (className.startsWith('Flutter')) {
+    const withoutPrefix = className.substring(7);
+    const suffix = _.kebabCase(withoutPrefix);
+    return suffix.length > 0 ? 'flutter-' + suffix : 'flutter';
+  }
+
+  const kebab = _.kebabCase(className);
+  return kebab.replace(/^web-f-/, 'webf-');
 }
 
 export function generateVueTypings(blobs: IDLBlob[]) {

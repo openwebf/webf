@@ -48,7 +48,7 @@ type DefineCustomElement<
 
 <%= components %>
 
-declare module '@vue/runtime-core' {
+declare module 'vue' {
   interface GlobalComponents {
     <% componentMetas.forEach(comp => { %>
     '<%= comp.tagName %>': DefineCustomElement<
