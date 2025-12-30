@@ -3,30 +3,268 @@
  */
 // Based on the Vue 3 documentation for defining custom elements:
 // https://vuejs.org/guide/extras/web-components
-import { EmitFn, PublicProps, HTMLAttributes } from 'vue';
+import type { EmitFn, PublicProps, StyleValue, ClassValue } from 'vue';
+import '@openwebf/webf-enterprise-typings';
 type EventMap = {
   [event: string]: Event
 }
 // This maps an EventMap to the format that Vue's $emit type expects.
 type VueEmit<T extends EventMap> = EmitFn<{
-  [K in keyof T]: (event: T[K]) => void
+  [K in keyof T]: (event: NonNullable<T[K]>) => void
 }>
 // Vue 3 event listener properties for template usage
 type VueEventListeners<T extends EventMap> = {
-  [K in keyof T as `on${Capitalize<string & K>}`]?: (event: T[K]) => any
+  [K in keyof T as `on${Capitalize<string & K>}`]?: (event: NonNullable<T[K]>) => any
+}
+export interface FlutterGestureDetectorEventDetail {
+  /**
+   * Milliseconds since epoch when the event dispatches
+   */
+  timestamp: number;
+}
+export interface FlutterGestureDetectorLongPressDetail {
+  /**
+   * Global X coordinate where long press starts
+   */
+  globalX: number;
+  /**
+   * Global Y coordinate where long press starts
+   */
+  globalY: number;
+  /**
+   * Local X coordinate relative to element
+   */
+  localX: number;
+  /**
+   * Local Y coordinate relative to element
+   */
+  localY: number;
+  /**
+   * Milliseconds since epoch when the event dispatches
+   */
+  timestamp: number;
+}
+export interface FlutterGestureDetectorLongPressEndDetail {
+  /**
+   * X velocity (px/s) at release
+   */
+  velocityX: number;
+  /**
+   * Y velocity (px/s) at release
+   */
+  velocityY: number;
+}
+export interface FlutterGestureDetectorPanEndDetail {
+  /**
+   * X velocity (px/s) at release
+   */
+  velocityX: number;
+  /**
+   * Y velocity (px/s) at release
+   */
+  velocityY: number;
+  /**
+   * Accumulated X delta over the gesture (global)
+   */
+  totalDeltaX: number;
+  /**
+   * Accumulated Y delta over the gesture (global)
+   */
+  totalDeltaY: number;
+  /**
+   * Number of active pointers when gesture ended
+   */
+  pointerCount: number;
+  /**
+   * Milliseconds since epoch when the event dispatches
+   */
+  timestamp: number;
+}
+export interface FlutterGestureDetectorPanStartDetail {
+  /**
+   * Global X of gesture focal point
+   */
+  x: number;
+  /**
+   * Global Y of gesture focal point
+   */
+  y: number;
+  /**
+   * Local X of gesture focal point
+   */
+  localX: number;
+  /**
+   * Local Y of gesture focal point
+   */
+  localY: number;
+  /**
+   * Number of active pointers contributing to the gesture
+   */
+  pointerCount: number;
+  /**
+   * Milliseconds since epoch when the event dispatches
+   */
+  timestamp: number;
+}
+export interface FlutterGestureDetectorPanUpdateDetail {
+  /**
+   * Global X of gesture focal point
+   */
+  x: number;
+  /**
+   * Global Y of gesture focal point
+   */
+  y: number;
+  /**
+   * Local X of gesture focal point
+   */
+  localX: number;
+  /**
+   * Local Y of gesture focal point
+   */
+  localY: number;
+  /**
+   * Delta X since last update (global)
+   */
+  deltaX: number;
+  /**
+   * Delta Y since last update (global)
+   */
+  deltaY: number;
+  /**
+   * Delta X since last update (local)
+   */
+  localDeltaX: number;
+  /**
+   * Delta Y since last update (local)
+   */
+  localDeltaY: number;
+  /**
+   * Number of active pointers contributing to the gesture
+   */
+  pointerCount: number;
+  /**
+   * Milliseconds since epoch when the event dispatches
+   */
+  timestamp: number;
+}
+export interface FlutterGestureDetectorScaleEndDetail {
+  /**
+   * X velocity (px/s) of last pointer
+   */
+  velocityX: number;
+  /**
+   * Y velocity (px/s) of last pointer
+   */
+  velocityY: number;
+  /**
+   * Final scale velocity (factor per second)
+   */
+  scaleVelocity: number;
+  /**
+   * Number of active pointers when gesture ended
+   */
+  pointerCount: number;
+  /**
+   * Milliseconds since epoch when the event dispatches
+   */
+  timestamp: number;
+}
+export interface FlutterGestureDetectorScaleStartDetail {
+  /**
+   * Global X of scale focal point
+   */
+  focalPointX: number;
+  /**
+   * Global Y of scale focal point
+   */
+  focalPointY: number;
+  /**
+   * Local X of scale focal point
+   */
+  localFocalPointX: number;
+  /**
+   * Local Y of scale focal point
+   */
+  localFocalPointY: number;
+  /**
+   * Number of active pointers contributing to the scale
+   */
+  pointerCount: number;
+  /**
+   * Source pointer event timestamp in microseconds (if available)
+   */
+  sourceTimeStampMicros?: number;
+  /**
+   * Milliseconds since epoch when the event dispatches
+   */
+  timestamp: number;
+}
+export interface FlutterGestureDetectorScaleUpdateDetail {
+  /**
+   * Scale factor since start (>= 0)
+   */
+  scale: number;
+  /**
+   * Horizontal axis scale factor (>= 0)
+   */
+  horizontalScale: number;
+  /**
+   * Vertical axis scale factor (>= 0)
+   */
+  verticalScale: number;
+  /**
+   * Rotation in radians since start
+   */
+  rotation: number;
+  /**
+   * Global X of scale focal point
+   */
+  focalPointX: number;
+  /**
+   * Global Y of scale focal point
+   */
+  focalPointY: number;
+  /**
+   * Local X of scale focal point
+   */
+  localFocalPointX: number;
+  /**
+   * Local Y of scale focal point
+   */
+  localFocalPointY: number;
+  /**
+   * Global X delta of focal point since last update
+   */
+  focalPointDeltaX: number;
+  /**
+   * Global Y delta of focal point since last update
+   */
+  focalPointDeltaY: number;
+  /**
+   * Current number of active pointers
+   */
+  pointerCount: number;
+  /**
+   * Source pointer event timestamp in microseconds (if available)
+   */
+  sourceTimeStampMicros?: number;
+  /**
+   * Milliseconds since epoch when the event dispatches
+   */
+  timestamp: number;
 }
 type DefineCustomElement<
   ElementType,
+  Props,
   Events extends EventMap = {},
-  SelectedAttributes extends keyof ElementType = keyof ElementType
 > = new () => ElementType & VueEventListeners<Events> & {
   // Use $props to define the properties exposed to template type checking. Vue
   // specifically reads prop definitions from the `$props` type. Note that we
-  // combine the element's props with the global HTML props and Vue's special
-  // props.
+  // combine the element's props with Vue's special props.
   /** @deprecated Do not use the $props property on a Custom Element ref,
     this is for template prop types only. */
-  $props: Partial<Pick<ElementType, SelectedAttributes>> & PublicProps & VueEventListeners<Events>
+  $props: Props & PublicProps & VueEventListeners<Events>
   // Use $emit to specifically define event types. Vue specifically reads event
   // types from the `$emit` type. Note that `$emit` expects a particular format
   // that we map `Events` to.
@@ -34,98 +272,50 @@ type DefineCustomElement<
     this is for template prop types only. */
   $emit: VueEmit<Events>
 }
-export type WebFTextProps = {
+export type FlutterGestureDetectorProps = {
   'id'?: string;
-  'class'?: string;
-  'style'?: string | Record<string, any>;
+  'class'?: ClassValue;
+  'style'?: StyleValue;
 }
-export interface WebFTextElement {
+export interface FlutterGestureDetectorElement {
 }
-export type WebFTextEvents = {
+export type FlutterGestureDetectorEvents = {
+  tap: CustomEvent<FlutterGestureDetectorEventDetail>;
+  doubletap: CustomEvent<FlutterGestureDetectorEventDetail>;
+  longpress: CustomEvent<FlutterGestureDetectorLongPressDetail>;
+  longpressend: CustomEvent<FlutterGestureDetectorLongPressEndDetail>;
+  panstart: CustomEvent<FlutterGestureDetectorPanStartDetail>;
+  panupdate: CustomEvent<FlutterGestureDetectorPanUpdateDetail>;
+  panend: CustomEvent<FlutterGestureDetectorPanEndDetail>;
+  scalestart: CustomEvent<FlutterGestureDetectorScaleStartDetail>;
+  scaleupdate: CustomEvent<FlutterGestureDetectorScaleUpdateDetail>;
+  scaleend: CustomEvent<FlutterGestureDetectorScaleEndDetail>;
 }
-export type WebFTableRowProps = {
+export type FlutterShimmerProps = {
   'id'?: string;
-  'class'?: string;
-  'style'?: string | Record<string, any>;
+  'class'?: ClassValue;
+  'style'?: StyleValue;
 }
-export interface WebFTableRowElement {
+export interface FlutterShimmerElement {
 }
-export type WebFTableRowEvents = {
+export type FlutterShimmerEvents = {
 }
-export type WebFTableHeaderProps = {
-  'sticky'?: boolean;
+export type FlutterShimmerAvatarProps = {
   'id'?: string;
-  'class'?: string;
-  'style'?: string | Record<string, any>;
+  'class'?: ClassValue;
+  'style'?: StyleValue;
 }
-export interface WebFTableHeaderElement {
-  sticky?: boolean;
+export interface FlutterShimmerAvatarElement {
 }
-export type WebFTableHeaderEvents = {
-}
-export type WebFTableCellProps = {
-  'vertical-alignment'?: top;
-  'column-width'?: number;
-  'id'?: string;
-  'class'?: string;
-  'style'?: string | Record<string, any>;
-}
-export interface WebFTableCellElement {
-  verticalAlignment?: top;
-  columnWidth?: number;
-}
-export type WebFTableCellEvents = {
-}
-export type WebFTableProps = {
-  'text-direction'?: ltr;
-  'default-vertical-alignment'?: top;
-  'default-column-width'?: number;
-  'column-widths'?: string;
-  'border'?: string;
-  'text-baseline'?: alphabetic;
-  'id'?: string;
-  'class'?: string;
-  'style'?: string | Record<string, any>;
-}
-export interface WebFTableElement {
-  textDirection?: ltr;
-  defaultVerticalAlignment?: top;
-  defaultColumnWidth?: number;
-  columnWidths?: string;
-  border?: string;
-  textBaseline?: alphabetic;
-}
-export type WebFTableEvents = {
-}
-export type WebFListViewProps = {
-  'shrink-wrap'?: boolean;
-  'id'?: string;
-  'class'?: string;
-  'style'?: string | Record<string, any>;
-}
-export interface WebFListViewElement {
-  shrinkWrap?: boolean;
-}
-export type WebFListViewEvents = {
-  refresh?: Event;
-  loadmore?: Event;
-}
-export type FlutterShimmerTextProps = {
-  'id'?: string;
-  'class'?: string;
-  'style'?: string | Record<string, any>;
-}
-export interface FlutterShimmerTextElement {
-}
-export type FlutterShimmerTextEvents = {
+export type FlutterShimmerAvatarEvents = {
 }
 export type FlutterShimmerButtonProps = {
   'width'?: string;
   'height'?: string;
   'radius'?: string;
   'id'?: string;
-  'class'?: string;
-  'style'?: string | Record<string, any>;
+  'class'?: ClassValue;
+  'style'?: StyleValue;
 }
 export interface FlutterShimmerButtonElement {
   width?: string;
@@ -134,65 +324,154 @@ export interface FlutterShimmerButtonElement {
 }
 export type FlutterShimmerButtonEvents = {
 }
-export type FlutterShimmerAvatarProps = {
+export type FlutterShimmerTextProps = {
   'id'?: string;
-  'class'?: string;
-  'style'?: string | Record<string, any>;
+  'class'?: ClassValue;
+  'style'?: StyleValue;
 }
-export interface FlutterShimmerAvatarElement {
+export interface FlutterShimmerTextElement {
 }
-export type FlutterShimmerAvatarEvents = {
+export type FlutterShimmerTextEvents = {
 }
-export type FlutterShimmerProps = {
+export type WebFListViewProps = {
+  'shrink-wrap'?: boolean;
+  'scroll-direction'?: 'horizontal' | 'vertical';
   'id'?: string;
-  'class'?: string;
-  'style'?: string | Record<string, any>;
+  'class'?: ClassValue;
+  'style'?: StyleValue;
 }
-export interface FlutterShimmerElement {
+export interface WebFListViewElement {
+  shrinkWrap?: boolean;
+  scrollDirection?: 'horizontal' | 'vertical';
+  finishRefresh(result: string): void;
+  finishLoad(result: string): void;
+  resetHeader(): void;
+  resetFooter(): void;
+  scrollByIndex(index: number, options: any): void;
 }
-export type FlutterShimmerEvents = {
+export type WebFListViewEvents = {
+  refresh: Event;
+  loadmore: Event;
+}
+export type WebFTableProps = {
+  'text-direction'?: 'ltr' | 'rtl';
+  'default-vertical-alignment'?: 'top' | 'middle' | 'bottom' | 'baseline' | 'fill';
+  'default-column-width'?: number;
+  'column-widths'?: string;
+  'border'?: string;
+  'text-baseline'?: 'alphabetic' | 'ideographic';
+  'id'?: string;
+  'class'?: ClassValue;
+  'style'?: StyleValue;
+}
+export interface WebFTableElement {
+  textDirection?: 'ltr' | 'rtl';
+  defaultVerticalAlignment?: 'top' | 'middle' | 'bottom' | 'baseline' | 'fill';
+  defaultColumnWidth?: number;
+  columnWidths?: string;
+  border?: string;
+  textBaseline?: 'alphabetic' | 'ideographic';
+}
+export type WebFTableEvents = {
+}
+export type WebFTableCellProps = {
+  'vertical-alignment'?: 'top' | 'middle' | 'bottom' | 'baseline' | 'fill';
+  'column-width'?: number;
+  'id'?: string;
+  'class'?: ClassValue;
+  'style'?: StyleValue;
+}
+export interface WebFTableCellElement {
+  verticalAlignment?: 'top' | 'middle' | 'bottom' | 'baseline' | 'fill';
+  columnWidth?: number;
+}
+export type WebFTableCellEvents = {
+}
+export type WebFTableHeaderProps = {
+  'sticky'?: boolean;
+  'id'?: string;
+  'class'?: ClassValue;
+  'style'?: StyleValue;
+}
+export interface WebFTableHeaderElement {
+  sticky?: boolean;
+}
+export type WebFTableHeaderEvents = {
+}
+export type WebFTableRowProps = {
+  'id'?: string;
+  'class'?: ClassValue;
+  'style'?: StyleValue;
+}
+export interface WebFTableRowElement {
+}
+export type WebFTableRowEvents = {
+}
+export type WebFTextProps = {
+  'id'?: string;
+  'class'?: ClassValue;
+  'style'?: StyleValue;
+}
+export interface WebFTextElement {
+}
+export type WebFTextEvents = {
 }
 declare module 'vue' {
   interface GlobalComponents {
-    'WebFText': DefineCustomElement<
-      WebFTextProps,
-      WebFTextEvents
+    'flutter-gesture-detector': DefineCustomElement<
+      FlutterGestureDetectorElement,
+      FlutterGestureDetectorProps,
+      FlutterGestureDetectorEvents
     >
-    'WebFTableRow': DefineCustomElement<
-      WebFTableRowProps,
-      WebFTableRowEvents
+    'flutter-shimmer': DefineCustomElement<
+      FlutterShimmerElement,
+      FlutterShimmerProps,
+      FlutterShimmerEvents
     >
-    'WebFTableHeader': DefineCustomElement<
-      WebFTableHeaderProps,
-      WebFTableHeaderEvents
-    >
-    'WebFTableCell': DefineCustomElement<
-      WebFTableCellProps,
-      WebFTableCellEvents
-    >
-    'WebFTable': DefineCustomElement<
-      WebFTableProps,
-      WebFTableEvents
-    >
-    'WebFListView': DefineCustomElement<
-      WebFListViewProps,
-      WebFListViewEvents
-    >
-    'FlutterShimmerText': DefineCustomElement<
-      FlutterShimmerTextProps,
-      FlutterShimmerTextEvents
-    >
-    'FlutterShimmerButton': DefineCustomElement<
-      FlutterShimmerButtonProps,
-      FlutterShimmerButtonEvents
-    >
-    'FlutterShimmerAvatar': DefineCustomElement<
+    'flutter-shimmer-avatar': DefineCustomElement<
+      FlutterShimmerAvatarElement,
       FlutterShimmerAvatarProps,
       FlutterShimmerAvatarEvents
     >
-    'FlutterShimmer': DefineCustomElement<
-      FlutterShimmerProps,
-      FlutterShimmerEvents
+    'flutter-shimmer-button': DefineCustomElement<
+      FlutterShimmerButtonElement,
+      FlutterShimmerButtonProps,
+      FlutterShimmerButtonEvents
+    >
+    'flutter-shimmer-text': DefineCustomElement<
+      FlutterShimmerTextElement,
+      FlutterShimmerTextProps,
+      FlutterShimmerTextEvents
+    >
+    'webf-list-view': DefineCustomElement<
+      WebFListViewElement,
+      WebFListViewProps,
+      WebFListViewEvents
+    >
+    'webf-table': DefineCustomElement<
+      WebFTableElement,
+      WebFTableProps,
+      WebFTableEvents
+    >
+    'webf-table-cell': DefineCustomElement<
+      WebFTableCellElement,
+      WebFTableCellProps,
+      WebFTableCellEvents
+    >
+    'webf-table-header': DefineCustomElement<
+      WebFTableHeaderElement,
+      WebFTableHeaderProps,
+      WebFTableHeaderEvents
+    >
+    'webf-table-row': DefineCustomElement<
+      WebFTableRowElement,
+      WebFTableRowProps,
+      WebFTableRowEvents
+    >
+    'webf-text': DefineCustomElement<
+      WebFTextElement,
+      WebFTextProps,
+      WebFTextEvents
     >
   }
 }
