@@ -1,0 +1,11 @@
+<script setup lang="ts">
+import PlaceholderPage from '../_shared/PlaceholderPage.vue';
+</script>
+
+<template>
+  <PlaceholderPage
+    title="Sliding Segmented Control"
+    source="../use_cases/src/pages/cupertino/CupertinoSlidingSegmentedControlPage.tsx"
+  />
+</template>
+
