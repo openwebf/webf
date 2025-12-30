@@ -21,6 +21,11 @@ export interface RouteMatch {
  */
 export function pathToRegex(pattern: string): { regex: RegExp; paramNames: string[] } {
   const paramNames: string[] = [];
+
+  if (pattern === '*') {
+    paramNames.push('*');
+    return { regex: /^(.*)$/, paramNames };
+  }
   
   // Escape special regex characters except : and *
   let regexPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
@@ -29,6 +34,12 @@ export function pathToRegex(pattern: string): { regex: RegExp; paramNames: strin
   regexPattern = regexPattern.replace(/:([^\/]+)/g, (_, paramName) => {
     paramNames.push(paramName);
     return '([^/]+)';
+  });
+
+  // Replace * with a splat capture group (matches across segments)
+  regexPattern = regexPattern.replace(/\*/g, () => {
+    paramNames.push('*');
+    return '(.*)';
   });
   
   // Add anchors for exact matching

@@ -6,7 +6,8 @@ export { useRouteContext } from './composables/useRouteContext';
 export { useRoutes } from './composables/useRoutes';
 
 // Router
-export { WebFRouter } from './router/WebFRouter';
+export { WebFRouter, __unstable_setEnsureRouteMountedCallback } from './router/WebFRouter';
+export type { HybridRouteStackEntry } from './router/WebFRouter';
 
 // Components
 export { Routes } from './components/Routes';
@@ -14,11 +15,14 @@ export { Route } from './components/Route';
 
 // Utils
 export { matchPath, pathToRegex, matchRoutes } from './utils/pathMatcher';
+export { WebFRouterLink } from './utils/RouterLink';
+export type { HybridRouterChangeEvent } from './utils/RouterLink';
+export { __unstable_deriveActivePathFromHybridRouterChange } from './utils/hybridRouterChange';
+export type { HybridRouterChangeKind, DerivedActivePathResult } from './utils/hybridRouterChange';
 
 // Types
 export type {
   RouteContext,
-  HybridRouterChangeEvent,
   Location,
   NavigateOptions,
   NavigateFunction,

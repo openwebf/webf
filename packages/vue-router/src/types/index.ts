@@ -12,6 +12,10 @@ export interface RouteContext {
    */
   path: string | undefined;
   /**
+   * The concrete mounted path for this route instance (e.g. `/users/123`).
+   */
+  mountedPath: string | undefined;
+  /**
    * Page state
    */
   params: any | undefined;
@@ -27,15 +31,6 @@ export interface RouteContext {
    * Route event kind
    */
   routeEventKind?: 'didPushNext' | 'didPush' | 'didPop' | 'didPopNext';
-}
-
-/**
- * Hybrid router change event
- */
-export interface HybridRouterChangeEvent {
-  kind: 'didPushNext' | 'didPush' | 'didPop' | 'didPopNext';
-  path: string;
-  state?: any;
 }
 
 /**
@@ -130,4 +125,14 @@ export interface RouteObject {
    * Whether to pre-render this route
    */
   prerender?: boolean;
+  /**
+   * Theme for this route
+   *
+   * @default "material"
+   */
+  theme?: 'material' | 'cupertino';
+  /**
+   * Child routes (not supported yet)
+   */
+  children?: RouteObject[];
 }

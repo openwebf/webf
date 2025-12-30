@@ -1,4 +1,6 @@
-import { h, VNode, defineAsyncComponent } from 'vue';
+import { h, VNode } from 'vue';
+import { Route } from '../components/Route';
+import { Routes } from '../components/Routes';
 import type { RouteObject } from '../types';
 
 /**
@@ -25,9 +27,20 @@ export function useRoutes(routes: RouteObject[]): VNode | null {
     return null;
   }
   
-  // For now, return a placeholder
-  // This function should be used with the compiled components
-  console.warn('useRoutes function requires compiled components. Use template-based routing instead.');
-  
-  return null;
+  const routeElements = routes.map((route) => {
+    if (route.children && route.children.length > 0) {
+      console.warn('Nested routes are not supported yet');
+    }
+
+    return h(Route, {
+      key: route.path,
+      path: route.path,
+      title: route.title,
+      element: route.element,
+      prerender: route.prerender,
+      theme: route.theme,
+    });
+  });
+
+  return h(Routes, null, { default: () => routeElements });
 }
