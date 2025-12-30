@@ -106,6 +106,7 @@ import { CupertinoRadioPage } from './pages/cupertino/CupertinoRadioPage';
 import {UserDetailsPage} from './pages/routeDemo/UserDetailsPage';
 import {ReportDetailsPage} from './pages/routeDemo/ReportDetailsPage';
 import {ProfileEditPage} from './pages/routeDemo/ProfileEditPage';
+import {DragableListPage} from './pages/DragableListPage';
 
 function App() {
 
@@ -210,6 +211,7 @@ function App() {
         <Route path="/alert" title="Alert" element={<AlertPage />} />
         <Route path="/theme-toggle" title="Theme Toggle" element={<ThemeTogglePage />} />
         <Route path="/gesture" title="Gesture Detection" element={<GesturePage />} />
+        <Route path="/dragable-list" title="Dragable List" element={<DragableListPage />} />
 
         {/*<Route path="/show_case" title="Show Case" element={<ShowCasePage />} />*/}
         <Route path="/listview" title="WebFListView" element={<ListviewPage />} />
