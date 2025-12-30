@@ -8,6 +8,7 @@
  */
 
 import 'package:webf/css.dart';
+import 'package:webf/dom.dart';
 
 enum CSSDisplay {
   inline,
@@ -40,10 +41,22 @@ mixin CSSDisplayMixin on RenderStyle {
 
   void initDisplay(CSSStyleDeclaration style) {
     // Must take from style because it inited before flush pending properties.
-    _display ??= resolveDisplay(style[DISPLAY]);
+    _display ??= resolveDisplay(style[DISPLAY], renderStyle: this);
   }
 
-  static CSSDisplay resolveDisplay(String? displayString) {
+  static CSSDisplay resolveDisplay(String? displayString, {RenderStyle? renderStyle}) {
+    if (displayString == INHERIT) {
+      final Element? parent = renderStyle?.target.parentElement;
+      if (parent != null) {
+        return parent.renderStyle.display;
+      }
+      // Root element: `inherit` behaves like `initial`.
+      return resolveDisplay(cssInitialValues[DISPLAY] as String? ?? INLINE, renderStyle: renderStyle);
+    }
+    if (displayString == INITIAL) {
+      return resolveDisplay(cssInitialValues[DISPLAY] as String? ?? INLINE, renderStyle: renderStyle);
+    }
+
     switch (displayString) {
       case 'none':
         return CSSDisplay.none;

@@ -2246,7 +2246,7 @@ class CSSRenderStyle extends RenderStyle
     dynamic value;
     switch (propertyName) {
       case DISPLAY:
-        value = CSSDisplayMixin.resolveDisplay(propertyValue);
+        value = CSSDisplayMixin.resolveDisplay(propertyValue, renderStyle: renderStyle);
         break;
       case OVERFLOW_X:
       case OVERFLOW_Y:
