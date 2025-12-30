@@ -27,7 +27,13 @@
  */
 
 #include "container_node.h"
+#include "core/css/css_selector_list.h"
+#include "core/css/parser/css_nesting_type.h"
+#include "core/css/parser/css_parser.h"
+#include "core/css/parser/css_parser_context.h"
+#include "core/css/selector_checker.h"
 #include "core/css/style_engine.h"
+#include "core/css/style_sheet_contents.h"
 #include "foundation/logging.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "foundation/string/string_builder.h"
@@ -44,6 +50,45 @@
 
 namespace webf {
 
+namespace {
+
+std::shared_ptr<CSSSelectorList> ParseSelectorListOrThrow(const AtomicString& selectors,
+                                                          ExceptionState& exception_state,
+                                                          JSContext* ctx) {
+  auto parser_context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
+  auto sheet = std::make_shared<StyleSheetContents>(parser_context);
+
+  std::vector<CSSSelector> arena;
+  tcb::span<CSSSelector> vector =
+      CSSParser::ParseSelector(parser_context, CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr, sheet,
+                               selectors.GetString(), arena);
+
+  auto selector_list = CSSSelectorList::AdoptSelectorVector(vector);
+  if (!selector_list->IsValid()) {
+    exception_state.ThrowException(ctx, ErrorType::SyntaxError,
+                                   "'" + selectors.ToUTF8String() + "' is not a valid selector.");
+    return nullptr;
+  }
+  return selector_list;
+}
+
+bool MatchesAnySelectorInList(Element& element, const CSSSelectorList& selector_list, const ContainerNode& scope) {
+  SelectorChecker checker(SelectorChecker::kQueryingRules);
+  SelectorChecker::SelectorCheckingContext context(&element);
+  context.scope = &scope;
+
+  for (const CSSSelector* selector = selector_list.First(); selector; selector = CSSSelectorList::Next(*selector)) {
+    context.selector = selector;
+    SelectorChecker::MatchResult result;
+    if (checker.Match(context, result)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+}  // namespace
+
 // Legacy impls due to limited time, should remove this func in the future.
 HTMLCollection* ContainerNode::Children() {
   return EnsureCachedCollection<HTMLCollection>(CollectionType::kNodeChildren);
@@ -57,16 +102,40 @@ unsigned ContainerNode::CountChildren() const {
 }
 
 Element* ContainerNode::QuerySelector(const AtomicString& selectors, ExceptionState& exception_state) {
-  //  SelectorQuery* selector_query = GetDocument().GetSelectorQueryCache().Add(
-  //      selectors, GetDocument(), exception_state);
-  //  if (!selector_query)
-  //    return nullptr;
-  //  return selector_query->QueryFirst(*this);
+  auto selector_list = ParseSelectorListOrThrow(selectors, exception_state, ctx());
+  if (!selector_list) {
+    return nullptr;
+  }
+
+  for (Element& element : ElementTraversal::DescendantsOf(*this)) {
+    if (MatchesAnySelectorInList(element, *selector_list, *this)) {
+      return &element;
+    }
+  }
   return nullptr;
 }
 
 Element* ContainerNode::QuerySelector(const AtomicString& selectors) {
   return QuerySelector(selectors, ASSERT_NO_EXCEPTION());
+}
+
+std::vector<Element*> ContainerNode::QuerySelectorAll(const AtomicString& selectors, ExceptionState& exception_state) {
+  auto selector_list = ParseSelectorListOrThrow(selectors, exception_state, ctx());
+  if (!selector_list) {
+    return {};
+  }
+
+  std::vector<Element*> result;
+  for (Element& element : ElementTraversal::DescendantsOf(*this)) {
+    if (MatchesAnySelectorInList(element, *selector_list, *this)) {
+      result.emplace_back(&element);
+    }
+  }
+  return result;
+}
+
+std::vector<Element*> ContainerNode::QuerySelectorAll(const AtomicString& selectors) {
+  return QuerySelectorAll(selectors, ASSERT_NO_EXCEPTION());
 }
 
 inline void GetChildNodes(ContainerNode& node, NodeVector& nodes) {
@@ -557,7 +626,7 @@ AtomicString ContainerNode::nodeValue() const {
 }
 
 Element* ContainerNode::querySelector(const webf::AtomicString& selectors, webf::ExceptionState& exception_state) {
-  return nullptr;
+  return QuerySelector(selectors, exception_state);
 }
 
 Element* ContainerNode::OwnerShadowHost() const {
