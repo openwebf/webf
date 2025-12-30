@@ -63,6 +63,8 @@ class ContainerNode : public Node {
 
   Element* QuerySelector(const AtomicString& selectors, ExceptionState&);
   Element* QuerySelector(const AtomicString& selectors);
+  std::vector<Element*> QuerySelectorAll(const AtomicString& selectors, ExceptionState&);
+  std::vector<Element*> QuerySelectorAll(const AtomicString& selectors);
 
   Node* InsertBefore(Node* new_child, Node* ref_child, ExceptionState&);
   Node* ReplaceChild(Node* new_child, Node* old_child, ExceptionState&);

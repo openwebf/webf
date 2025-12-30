@@ -201,6 +201,10 @@ bool Document::ChildTypeAllowed(NodeType type) const {
 }
 
 Element* Document::querySelector(const AtomicString& selectors, ExceptionState& exception_state) {
+  if (GetExecutingContext() && GetExecutingContext()->isBlinkEnabled()) {
+    return ContainerNode::QuerySelector(selectors, exception_state);
+  }
+
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelector, 1, arguments,
                                            FlushUICommandReason::kDependentsAll, exception_state);
@@ -211,6 +215,10 @@ Element* Document::querySelector(const AtomicString& selectors, ExceptionState& 
 }
 
 std::vector<Element*> Document::querySelectorAll(const AtomicString& selectors, ExceptionState& exception_state) {
+  if (GetExecutingContext() && GetExecutingContext()->isBlinkEnabled()) {
+    return ContainerNode::QuerySelectorAll(selectors, exception_state);
+  }
+
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelectorAll, 1, arguments,
                                            FlushUICommandReason::kDependentsAll, exception_state);
