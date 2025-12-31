@@ -2,12 +2,28 @@
 import { computed, ref } from 'vue';
 import { WebFRouter, useLocation, useNavigate } from '@openwebf/vue-router';
 
+const props = withDefaults(
+  defineProps<{
+    basePath?: string;
+  }>(),
+  {
+    basePath: '',
+  },
+);
+
 const location = useLocation();
 const nav = useNavigate();
 
 const userId = ref('123');
 const filePath = ref('docs/getting-started');
 const unknownPath = ref('somewhere/else');
+
+function joinBase(path: string) {
+  if (!props.basePath) return path;
+  const base = props.basePath.endsWith('/') ? props.basePath.slice(0, -1) : props.basePath;
+  const suffix = path.startsWith('/') ? path : `/${path}`;
+  return `${base}${suffix}`.replace(/\/{2,}/g, '/');
+}
 
 const currentStateJson = computed(() => {
   const state = location.value.state;
@@ -20,25 +36,28 @@ const currentStateJson = computed(() => {
 });
 
 async function goUser() {
-  const to = `/users/${userId.value}`;
+  const to = joinBase(`/users/${userId.value}`);
   await WebFRouter.push(to, { from: location.value.pathname, at: Date.now() });
 }
 
 async function goFiles() {
-  const to = `/files/${filePath.value}`;
+  const to = joinBase(`/files/${filePath.value}`);
   await WebFRouter.push(to, { from: 'home', at: Date.now() });
 }
 
 async function goUnknown() {
-  const to = `/${unknownPath.value}`.replace(/\/{2,}/g, '/');
+  const to = joinBase(`/${unknownPath.value}`);
   await WebFRouter.push(to, { from: 'home', at: Date.now() });
 }
+
+const routePatternUser = computed(() => joinBase('/users/:id'));
+const routePatternFiles = computed(() => joinBase('/files/*'));
+const routePatternCatchAll = computed(() => joinBase('/*'));
 </script>
 
 <template>
   <div class="mx-auto max-w-3xl space-y-6 text-left">
     <div class="space-y-2">
-      <h1 class="text-2xl font-semibold">Vue Router Demo (WebF)</h1>
       <p class="text-sm opacity-80">
         This demo runs inside the WebF environment and uses the native <code>webf.hybridHistory</code> +
         <code>&lt;webf-router-link&gt;</code>.
@@ -56,16 +75,28 @@ async function goUnknown() {
     </div>
 
     <div class="grid gap-3 sm:grid-cols-2">
-      <button class="rounded-lg bg-white/10 px-4 py-2 text-sm hover:bg-white/15" @click="nav.navigate('/about')">
-        Go to /about
+      <button class="rounded-lg bg-white/10 px-4 py-2 text-sm hover:bg-white/15" @click="nav.navigate(joinBase('/about'))">
+        Go to {{ joinBase('/about') }}
+      </button>
+      <button
+        class="rounded-lg bg-white/10 px-4 py-2 text-sm hover:bg-white/15"
+        @click="nav.navigate(joinBase('/users/1'))"
+      >
+        Go to {{ joinBase('/users/1') }}
       </button>
       <button class="rounded-lg bg-white/10 px-4 py-2 text-sm hover:bg-white/15" @click="nav.navigate(-1)">
         Back (-1)
       </button>
+      <button
+        class="rounded-lg bg-white/10 px-4 py-2 text-sm hover:bg-white/15"
+        @click="nav.navigate(joinBase('/files/docs/getting-started'))"
+      >
+        Go to {{ joinBase('/files/docs/getting-started') }}
+      </button>
     </div>
 
     <div class="rounded-lg border border-white/10 p-4 space-y-3">
-      <div class="font-medium">Dynamic route: <code>/users/:id</code></div>
+      <div class="font-medium">Dynamic route: <code>{{ routePatternUser }}</code></div>
       <div class="flex gap-2">
         <input
           v-model="userId"
@@ -80,7 +111,7 @@ async function goUnknown() {
     </div>
 
     <div class="rounded-lg border border-white/10 p-4 space-y-3">
-      <div class="font-medium">Wildcard route: <code>/files/*</code></div>
+      <div class="font-medium">Wildcard route: <code>{{ routePatternFiles }}</code></div>
       <div class="flex gap-2">
         <input
           v-model="filePath"
@@ -94,7 +125,7 @@ async function goUnknown() {
     </div>
 
     <div class="rounded-lg border border-white/10 p-4 space-y-3">
-      <div class="font-medium">Catch-all route: <code>*</code></div>
+      <div class="font-medium">Catch-all route: <code>{{ routePatternCatchAll }}</code></div>
       <div class="flex gap-2">
         <input
           v-model="unknownPath"

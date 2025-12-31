@@ -1,0 +1,293 @@
+/* Image page styles */
+.list {
+  flex: 1;
+  padding: 0;
+  margin: 0;
+}
+
+.componentSection {
+  padding: 20px;
+  background-color: var(--background-color, #f5f5f5);
+  min-height: 100vh;
+}
+
+.sectionTitle {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.componentBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.componentItem {
+  background: var(--card-background, #ffffff);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-color, #e5e5e5);
+}
+
+.itemLabel {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 8px;
+}
+
+.itemDesc {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* Image grid layout */
+.imageGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 16px;
+}
+
+.imageCard {
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.imageCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.imageContainer {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  background: #f8f9fa;
+  overflow: hidden;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.3s ease;
+}
+
+.errorImage {
+  object-fit: contain;
+  background: #f5f5f5;
+}
+
+.imageOverlay {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.imageFormat {
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.imageInfo {
+  padding: 16px;
+}
+
+.imageName {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 4px;
+}
+
+.imageDesc {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  line-height: 1.4;
+}
+
+/* Comparison table styles */
+.comparisonTable {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 16px;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 1fr 2fr 2fr 1fr;
+  gap: 1px;
+  background: var(--border-color, #e5e5e5);
+}
+
+.tableHeader {
+  background: var(--accent-color, #007aff);
+  color: white;
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  text-align: center;
+}
+
+.tableCell {
+  background: var(--card-background, #ffffff);
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--primary-text-color, #333);
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Feature list styles */
+.featureList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--feature-background, #f8f9fa);
+  border-radius: 8px;
+  border-left: 4px solid var(--accent-color, #007aff);
+}
+
+.featureIcon {
+  font-size: 20px;
+  width: 24px;
+  text-align: center;
+}
+
+.featureText {
+  font-size: 14px;
+  color: var(--primary-text-color, #333);
+  font-weight: 500;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .componentSection {
+    padding: 16px;
+  }
+
+  .imageGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .tableRow {
+    grid-template-columns: 1fr;
+    gap: 1px;
+  }
+
+  .tableHeader,
+  .tableCell {
+    text-align: left;
+    padding: 8px 12px;
+  }
+
+  .featureList {
+    grid-template-columns: 1fr;
+  }
+
+  .imageContainer {
+    height: 180px;
+  }
+}
+
+@media (min-width: 768px) {
+  .componentSection {
+    padding: 32px;
+  }
+
+  .imageGrid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .imageGrid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+
+  .imageContainer {
+    height: 220px;
+  }
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .componentSection {
+    background-color: var(--dark-background-color, #1a1a1a);
+  }
+
+  .componentItem {
+    background: var(--dark-card-background, #2d2d2d);
+    border-color: var(--dark-border-color, #404040);
+  }
+
+  .imageCard {
+    background: var(--dark-card-background, #2d2d2d);
+  }
+
+  .sectionTitle {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .itemLabel {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .itemDesc {
+    color: var(--dark-secondary-text-color, #cccccc);
+  }
+
+  .imageName {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .imageDesc {
+    color: var(--dark-secondary-text-color, #cccccc);
+  }
+
+  .tableCell {
+    background: var(--dark-card-background, #2d2d2d);
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .feature {
+    background: var(--dark-feature-background, #383838);
+  }
+
+  .featureText {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .imageContainer {
+    background: #383838;
+  }
+}

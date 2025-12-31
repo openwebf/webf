@@ -18,6 +18,15 @@ export const appRoutes: AppRoute[] = [
   { path: '/websocket', title: 'WebSocket', element: defineAsyncComponent(() => import('./pages/WebSocketPage.vue')) },
   { path: '/svg-image', title: 'SVG via Img', element: defineAsyncComponent(() => import('./pages/SvgImagePage.vue')) },
   { path: '/accessibility', title: 'Accessibility Use Cases', element: defineAsyncComponent(() => import('./pages/AccessibilityPage.vue')) },
+  { path: '/webf-share', title: 'WebF Share', element: defineAsyncComponent(() => import('./pages/WebFSharePage.vue')) },
+  { path: '/form', title: 'Form (Basic)', element: defineAsyncComponent(() => import('./pages/FormPage.vue')) },
+  {
+    path: '/basic-form-elements',
+    title: 'Basic Form Elements',
+    element: defineAsyncComponent(() => import('./pages/BasicFormElementsPage.vue')),
+  },
+  { path: '/input-sizing', title: 'Input Sizing', element: defineAsyncComponent(() => import('./pages/InputSizingPage.vue')) },
+  { path: '/advanced-form', title: 'Form (Advanced)', element: defineAsyncComponent(() => import('./pages/FormAdvancedPage.vue')) },
 
   // DOM
   { path: '/dom/events', title: 'DOM Events', element: defineAsyncComponent(() => import('./pages/dom/DOMEventsPage.vue')) },
@@ -270,7 +279,11 @@ export const appRoutes: AppRoute[] = [
 
   // Routing / Navigation
   { path: '/image-preload', title: 'Image Preload', element: defineAsyncComponent(() => import('./pages/ImagePreloadPage.vue')) },
+  { path: '/routing/about', title: 'Routing Demo: About', element: defineAsyncComponent(() => import('./pages/routing/RoutingAboutPage.vue')) },
+  { path: '/routing/users/:id', title: 'Routing Demo: User', element: defineAsyncComponent(() => import('./pages/routing/RoutingUserPage.vue')) },
+  { path: '/routing/files/*', title: 'Routing Demo: Files', element: defineAsyncComponent(() => import('./pages/routing/RoutingFilesPage.vue')) },
   { path: '/routing', title: 'Routing & Navigation', element: defineAsyncComponent(() => import('./pages/RoutingPage.vue')) },
+  { path: '/routing/*', title: 'Routing Demo: Not Found', element: defineAsyncComponent(() => import('./pages/routing/RoutingNotFoundPage.vue')) },
 
   // Dynamic Route Examples
   { path: '/user/:id', title: 'User Details', element: defineAsyncComponent(() => import('./pages/routeDemo/UserDetailsPage.vue')) },
@@ -294,4 +307,3 @@ export const appRoutes: AppRoute[] = [
   { path: '/dragable-list', title: 'Dragable List', element: defineAsyncComponent(() => import('./pages/DragableListPage.vue')) },
   { path: '/listview', title: 'WebFListView', element: defineAsyncComponent(() => import('./pages/ListviewPage.vue')) },
 ];
-

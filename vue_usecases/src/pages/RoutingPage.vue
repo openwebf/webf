@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import PlaceholderPage from './_shared/PlaceholderPage.vue';
+import RouterDemoHome from '../components/RouterDemoHome.vue';
+import RoutingDemoShell from './routing/_shared/RoutingDemoShell.vue';
 </script>
 
 <template>
-  <PlaceholderPage title="Routing & Navigation" source="../use_cases/src/pages/RoutingPage.tsx" />
+  <RoutingDemoShell
+    title="Routing & Navigation"
+    description="Router demos rendered inside a scrollable webf-list-view. Navigate within /routing/*."
+    :demo="RouterDemoHome"
+  />
 </template>
-

@@ -25,8 +25,8 @@ export interface RouteContextWithActive extends RouteContext {
  * ```
  */
 export function useRouteContext(): ComputedRef<RouteContextWithActive> {
-  const routeContext = inject<RouteContext>('route-context');
-  const routeSpecificContext = inject<ComputedRef<RouteContext>>('route-specific-context');
+  const routeContext = inject<RouteContext | undefined>('route-context', undefined);
+  const routeSpecificContext = inject<ComputedRef<RouteContext> | undefined>('route-specific-context', undefined);
   
   return computed(() => {
     const context = routeSpecificContext?.value || routeContext;
