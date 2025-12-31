@@ -3,7 +3,7 @@
  */
 // Based on the Vue 3 documentation for defining custom elements:
 // https://vuejs.org/guide/extras/web-components
-import type { EmitFn, PublicProps, StyleValue, ClassValue, Directive } from 'vue';
+import type { EmitFn, PublicProps, StyleValue, ClassValue, Directive, ShallowRef } from 'vue';
 import '@openwebf/webf-enterprise-typings';
 type EventMap = {
   [event: string]: Event
@@ -449,11 +449,18 @@ export type FlutterAttachedDirectiveValue =
 export const flutterAttached: Directive<HTMLElement, FlutterAttachedDirectiveValue>;
 export const vFlutterAttached: Directive<HTMLElement, FlutterAttachedDirectiveValue>;
 
-declare module 'vue' {
-  interface GlobalDirectives {
-    'flutter-attached': typeof flutterAttached;
-  }
+export function useFlutterAttached(
+  onAttached: FlutterAttachedCallback,
+  onDetached?: FlutterDetachedCallback
+): ShallowRef<HTMLElement | null>;
 
+export function useFlutterAttachedEffect(callback: FlutterAttachedCallback): ShallowRef<HTMLElement | null>;
+
+declare module '@vue/runtime-core' {
+  interface GlobalDirectives {
+    vFlutterAttached: typeof flutterAttached;
+  }
+  
   interface GlobalComponents {
     'flutter-gesture-detector': DefineCustomElement<
       FlutterGestureDetectorElement,
@@ -516,4 +523,11 @@ declare module 'vue' {
       WebFTextEvents
     >
   }
+}
+
+// Some tooling (older IDE integrations) look for global directive/component typing
+// augmentations on the `vue` module name instead of `@vue/runtime-core`.
+declare module 'vue' {
+  interface GlobalDirectives extends import('@vue/runtime-core').GlobalDirectives {}
+  interface GlobalComponents extends import('@vue/runtime-core').GlobalComponents {}
 }

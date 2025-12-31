@@ -58,3 +58,29 @@ function onDetached(e: Event) {
 }
 </script>
 ```
+
+## `useFlutterAttached()` composable (alternative)
+
+If you prefer composables (Composition API) over directives:
+
+```vue
+<template>
+  <webf-list-view :ref="el" style="height: 300px" />
+  <div :ref="otherEl" />
+</template>
+
+<script setup lang="ts">
+import { useFlutterAttached } from '@openwebf/vue-core-ui';
+
+const el = useFlutterAttached(
+  () => {
+    // onscreen
+  },
+  () => {
+    // offscreen
+  },
+);
+
+const otherEl = useFlutterAttached(() => {});
+</script>
+```
