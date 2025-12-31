@@ -77,12 +77,19 @@ describe('Vue Generator', () => {
       
       // Should generate proper component declarations
       expect(result).toContain("declare module '@vue/runtime-core' {");
+      expect(result).toContain("interface GlobalDirectives {");
+      expect(result).toContain('vFlutterAttached: typeof flutterAttached;');
       expect(result).toContain("interface GlobalComponents {");
       expect(result).toContain("'webf-list-view': DefineCustomElement<");
       expect(result).not.toContain("'web-f-list-view': DefineCustomElement<");
       expect(result).toContain("WebFListViewElement,");
       expect(result).toContain("WebFListViewProps,");
       expect(result).toContain("WebFListViewEvents");
+
+      // Compatibility module for older tooling
+      expect(result).toContain("declare module 'vue' {");
+      expect(result).toContain("interface GlobalDirectives extends import('@vue/runtime-core').GlobalDirectives {}");
+      expect(result).toContain("interface GlobalComponents extends import('@vue/runtime-core').GlobalComponents {}");
     });
 
     it('should handle multiple components', () => {
