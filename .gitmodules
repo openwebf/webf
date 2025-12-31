@@ -2,3 +2,6 @@
 	path = bridge/third_party/quickjs
 	url = git@github.com:openwebf/quickjs.git
     branch = feat/official_version
+[submodule "webf/flutter_easy_refresh"]
+	path = webf/flutter_easy_refresh
+	url = git@github.com:openwebf/flutter_easy_refresh.git
