@@ -57,17 +57,36 @@ function escapeAttributeValue(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
-function flattenVNodes(nodes: unknown[]): VNode[] {
+function flattenRouteSlotVNodes(nodes: unknown): VNode[] {
   const flat: VNode[] = [];
-  for (const node of nodes) {
+  const visit = (node: unknown) => {
     if (Array.isArray(node)) {
-      flat.push(...flattenVNodes(node));
-      continue;
+      for (const child of node) visit(child);
+      return;
     }
-    if (node == null) continue;
-    if (isVNode(node)) flat.push(node);
-  }
+    if (node == null) return;
+    if (!isVNode(node)) return;
+
+    if (node.type === Fragment) {
+      const children = (node as any).children;
+      if (Array.isArray(children)) {
+        for (const child of children) visit(child);
+      }
+      return;
+    }
+
+    flat.push(node);
+  };
+
+  visit(nodes);
   return flat;
+}
+
+function isRouteVNode(node: VNode): boolean {
+  if (node.type === Route) return true;
+
+  const props = node.props as any;
+  return typeof props?.path === 'string' && props.path.startsWith('/') && 'element' in props;
 }
 
 const RouteContextProvider = defineComponent({
@@ -236,10 +255,10 @@ export const Routes = defineComponent({
     }
 
     function updateRoutePatternsFromSlots() {
-      const nodes = flattenVNodes(slots.default?.() ?? []);
+      const nodes = flattenRouteSlotVNodes(slots.default?.() ?? []);
       const patterns: string[] = [];
       for (const node of nodes) {
-        if (node.type !== Route) continue;
+        if (!isRouteVNode(node)) continue;
         const path = (node.props as any)?.path;
         if (typeof path === 'string') patterns.push(path);
       }
@@ -425,7 +444,7 @@ export const Routes = defineComponent({
     });
 
     return () => {
-      const slotNodes = flattenVNodes(slots.default?.() ?? []);
+      const slotNodes = flattenRouteSlotVNodes(slots.default?.() ?? []);
 
       const declaredRoutes: VNode[] = [];
       const patterns: string[] = [];
@@ -433,7 +452,7 @@ export const Routes = defineComponent({
       const declaredRouteByPattern = new Map<string, VNode>();
 
       for (const node of slotNodes) {
-        if (node.type !== Route) {
+        if (!isRouteVNode(node)) {
           declaredRoutes.push(node);
           continue;
         }
@@ -487,7 +506,8 @@ export const Routes = defineComponent({
         const matchingRouteNode = declaredRouteByPattern.get(bestMatch.path);
         if (!matchingRouteNode) continue;
 
-        const routeInstance = h(Route, {
+        const routeComponent = matchingRouteNode.type as any;
+        const routeInstance = h(routeComponent, {
           ...(matchingRouteNode.props as any),
           mountedPath,
           key: `route:${mountedPath}`,
