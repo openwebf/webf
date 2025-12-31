@@ -668,15 +668,6 @@ abstract class RenderLayoutBox extends RenderBoxModel
     required double contentWidth,
     required double contentHeight,
   }) {
-    try {
-      // Keep for future diagnostic hooks (no-op by default).
-      final tag = renderStyle.target.tagName.toLowerCase();
-      final disp = renderStyle.effectiveDisplay;
-      final pType = parent?.runtimeType.toString() ?? 'null';
-      final _ = '[BoxSize] <$tag> getContentSize in='
-          '${contentWidth.toStringAsFixed(2)}×${contentHeight.toStringAsFixed(2)} '
-          'display=$disp parent=$pType';
-    } catch (_) {}
     double finalContentWidth = contentWidth;
     double finalContentHeight = contentHeight;
 
