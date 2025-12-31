@@ -150,6 +150,91 @@ void main() {
       expect(absolute.offsetHeight, equals(280.0)); // 300 - 10 - 10
     });
 
+    testWidgets('absolute with inset shorthand', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName:
+            'position-absolute-inset-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                position: relative;
+                width: 200px;
+                height: 200px;
+                background-color: #eee;
+              ">
+                <div id="absolute" style="
+                  position: absolute;
+                  inset: 20px;
+                  background-color: green;
+                ">Inset</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      final absolute = prepared.getElementById('absolute');
+
+      expect(container.offsetWidth, equals(200.0));
+      expect(container.offsetHeight, equals(200.0));
+
+      expect(absolute.offsetWidth, equals(160.0)); // 200 - 20 - 20
+      expect(absolute.offsetHeight, equals(160.0)); // 200 - 20 - 20
+
+      final rect = absolute.getBoundingClientRect();
+      final containerRect = container.getBoundingClientRect();
+      expect(rect.left, equals(containerRect.left + 20.0));
+      expect(rect.top, equals(containerRect.top + 20.0));
+    });
+
+    testWidgets('absolute in grid container with inset shorthand',
+        (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName:
+            'position-absolute-grid-inset-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="grid" style="
+                display: grid;
+                position: relative;
+                grid-template-columns: repeat(2, 150px);
+                grid-template-rows: repeat(2, 100px);
+                gap: 10px;
+                width: 310px;
+                height: 210px;
+                background-color: #f3e5f5;
+              ">
+                <div id="absolute" style="
+                  position: absolute;
+                  inset: 20px;
+                  background-color: #BA68C8;
+                ">Inset</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final grid = prepared.getElementById('grid');
+      final absolute = prepared.getElementById('absolute');
+
+      expect(grid.offsetWidth, equals(310.0));
+      expect(grid.offsetHeight, equals(210.0));
+
+      expect(absolute.offsetWidth, equals(270.0)); // 310 - 20 - 20
+      expect(absolute.offsetHeight, equals(170.0)); // 210 - 20 - 20
+
+      final rect = absolute.getBoundingClientRect();
+      final gridRect = grid.getBoundingClientRect();
+      expect(rect.left, equals(gridRect.left + 20.0));
+      expect(rect.top, equals(gridRect.top + 20.0));
+    });
+
     testWidgets('absolute with margin', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
