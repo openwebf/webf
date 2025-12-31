@@ -48,7 +48,13 @@ type DefineCustomElement<
 
 <%= components %>
 
-declare module 'vue' {
+declare const flutterAttached: (typeof import('@openwebf/webf-enterprise-typings')) extends { flutterAttached: infer T } ? T : any;
+
+declare module '@vue/runtime-core' {
+  interface GlobalDirectives {
+    vFlutterAttached: typeof flutterAttached;
+  }
+
   interface GlobalComponents {
     <% componentMetas.forEach(comp => { %>
     '<%= comp.tagName %>': DefineCustomElement<
@@ -58,4 +64,11 @@ declare module 'vue' {
     >
     <% }) %>
   }
+}
+
+// Some tooling (older IDE integrations) look for global directive/component typing
+// augmentations on the `vue` module name instead of `@vue/runtime-core`.
+declare module 'vue' {
+  interface GlobalDirectives extends import('@vue/runtime-core').GlobalDirectives {}
+  interface GlobalComponents extends import('@vue/runtime-core').GlobalComponents {}
 }
