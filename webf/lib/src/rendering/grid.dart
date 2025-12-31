@@ -1705,6 +1705,35 @@ class RenderGridLayout extends RenderLayoutBox {
     final double? innerMaxWidth = hasBW ? math.max(0.0, contentConstraints.maxWidth) : null;
     final double? innerMaxHeight = hasBH ? math.max(0.0, contentConstraints.maxHeight) : null;
 
+    // Out-of-flow positioned children (absolute/fixed/sticky) do not participate in
+    // grid item placement or track sizing. They are laid out and positioned after
+    // the grid container size and placeholder static positions are known.
+    final List<RenderBoxModel> positionedChildren = <RenderBoxModel>[];
+    final List<RenderBoxModel> stickyChildren = <RenderBoxModel>[];
+    final List<RenderBoxModel> absFixedChildren = <RenderBoxModel>[];
+    RenderBox? positionedScan = firstChild;
+    while (positionedScan != null) {
+      final GridLayoutParentData pd = positionedScan.parentData as GridLayoutParentData;
+      if (positionedScan is RenderBoxModel) {
+        final RenderStyle? style = _unwrapGridChildStyle(positionedScan);
+        if (style != null && (style.isSelfPositioned() || style.isSelfStickyPosition())) {
+          positionedChildren.add(positionedScan);
+          if (style.isSelfStickyPosition()) {
+            stickyChildren.add(positionedScan);
+          } else {
+            absFixedChildren.add(positionedScan);
+          }
+        }
+      }
+      positionedScan = pd.nextSibling;
+    }
+
+    // Pre-layout sticky positioned children so their placeholders can reserve
+    // correct space during the subsequent grid layout pass.
+    for (final RenderBoxModel sticky in stickyChildren) {
+      CSSPositionedLayout.layoutPositionedChild(this, sticky);
+    }
+
     // Resolve tracks
     // Resolve explicit track definitions from render style; if not yet materialized
     // (e.g., very early layout), fall back to parsing inline style string once.
@@ -1885,7 +1914,9 @@ class RenderGridLayout extends RenderLayoutBox {
     RenderBox? child;
 
     // Pass 1: resolve placements and grow implicit track lists.
-    final List<RenderBox> placementChildren = _collectChildren();
+    final List<RenderBox> placementChildren = _collectChildren()
+        .where((RenderBox child) => !_isPositionedGridChild(child))
+        .toList(growable: false);
     final int orderingColumnTrackCount = math.max(colSizes.length, 1);
     final int orderingRowTrackCount = math.max(rowSizes.length, 1);
     final List<RenderBox> definiteBothAxisItems = <RenderBox>[];
@@ -2859,6 +2890,10 @@ class RenderGridLayout extends RenderLayoutBox {
       }
 
       final GridLayoutParentData pd = child.parentData as GridLayoutParentData;
+      if (_isPositionedGridChild(child)) {
+        child = pd.nextSibling;
+        continue;
+      }
       final int rowIndex = pd.rowStart;
       final int colIndex = pd.columnStart;
       final int rowSpan = math.max(1, pd.rowSpan);
@@ -3012,6 +3047,11 @@ class RenderGridLayout extends RenderLayoutBox {
     bool relayoutForImplicitRowStretch = false;
     RenderBox? stretchCheckChild = firstChild;
     while (stretchCheckChild != null) {
+      final GridLayoutParentData pd = stretchCheckChild.parentData as GridLayoutParentData;
+      if (_isPositionedGridChild(stretchCheckChild)) {
+        stretchCheckChild = pd.nextSibling;
+        continue;
+      }
       CSSRenderStyle? childGridStyle;
       if (stretchCheckChild is RenderBoxModel) {
         childGridStyle = stretchCheckChild.renderStyle;
@@ -3028,7 +3068,6 @@ class RenderGridLayout extends RenderLayoutBox {
         explicitItemHeight = childGridStyle.height.computedValue;
       }
       if (alignSelfAlignment == GridAxisAlignment.stretch && childHeightAuto && explicitItemHeight == null) {
-        final GridLayoutParentData pd = stretchCheckChild.parentData as GridLayoutParentData;
         double cellWidth = 0;
         final int colIndex = pd.columnStart;
         final int colSpan = math.max(1, pd.columnSpan).clamp(1, math.max(1, colSizes.length - colIndex));
@@ -3065,7 +3104,7 @@ class RenderGridLayout extends RenderLayoutBox {
           }
         }
       }
-      stretchCheckChild = (stretchCheckChild.parentData as GridLayoutParentData).nextSibling;
+      stretchCheckChild = pd.nextSibling;
     }
 
     // Compute used content size
@@ -3516,6 +3555,10 @@ class RenderGridLayout extends RenderLayoutBox {
     RenderBox? childForAlignment = firstChild;
     while (childForAlignment != null) {
       final GridLayoutParentData pd = childForAlignment.parentData as GridLayoutParentData;
+      if (_isPositionedGridChild(childForAlignment)) {
+        childForAlignment = pd.nextSibling;
+        continue;
+      }
       double additionalY = alignShift;
       if (distributeRows) {
         additionalY = rowDistributionLeading + pd.rowStart * rowDistributionBetween;
@@ -3553,6 +3596,18 @@ class RenderGridLayout extends RenderLayoutBox {
         }
       }
       childForRelativePosition = pd.nextSibling;
+    }
+
+    // Now that the grid container size and placeholder static positions are known,
+    // lay out and position out-of-flow children (absolute/fixed/sticky) relative to
+    // this grid container as their containing block.
+    for (final RenderBoxModel child in absFixedChildren) {
+      CSSPositionedLayout.layoutPositionedChild(this, child);
+    }
+
+    for (final RenderBoxModel child in positionedChildren) {
+      CSSPositionedLayout.applyPositionedChildOffset(this, child);
+      CSSPositionedLayout.applyStickyChildOffset(this, child);
     }
 
     placementStopwatch?.stop();
