@@ -127,11 +127,15 @@ const sections: Section[] = [
 function navigate(path: string) {
   WebFRouter.pushState({}, path);
 }
+
+function onListViewAttached() {
+  console.log('list view attached');
+}
 </script>
 
 <template>
   <div id="main" class="min-h-screen w-full">
-    <webf-list-view class="w-full px-3 py-6 md:px-6 max-w-4xl mx-auto">
+    <webf-list-view class="w-full px-3 py-6 md:px-6 max-w-4xl mx-auto" v-flutter-attached="onListViewAttached">
       <div class="w-full flex justify-center items-center mb-8">
         <div class="bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 p-6 rounded-2xl text-white shadow-lg w-full">
           <h1 class="text-3xl font-bold mb-2 drop-shadow">WebF Feature Catalog</h1>
