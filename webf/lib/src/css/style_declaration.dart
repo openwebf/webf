@@ -22,6 +22,7 @@ typedef StyleFlushedListener = void Function(List<String> properties);
 const Map<String, bool> _cssShorthandProperty = {
   MARGIN: true,
   PADDING: true,
+  INSET: true,
   BACKGROUND: true,
   BACKGROUND_POSITION: true,
   BORDER_RADIUS: true,
@@ -214,6 +215,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         return CSSStyleProperty.removeShorthandPadding(this, isImportant);
       case MARGIN:
         return CSSStyleProperty.removeShorthandMargin(this, isImportant);
+      case INSET:
+        return CSSStyleProperty.removeShorthandInset(this, isImportant);
       case BACKGROUND:
         return CSSStyleProperty.removeShorthandBackground(this, isImportant);
       case BACKGROUND_POSITION:
@@ -320,6 +323,9 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
           break;
         case MARGIN:
           CSSStyleProperty.setShorthandMargin(longhandProperties, normalizedValue);
+          break;
+        case INSET:
+          CSSStyleProperty.setShorthandInset(longhandProperties, normalizedValue);
           break;
         case BACKGROUND:
           // Expand shorthand into longhands for this declaration block only.
