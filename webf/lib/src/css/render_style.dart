@@ -2657,11 +2657,12 @@ class CSSRenderStyle extends RenderStyle
         final CSSRenderStyle? p = renderStyle.getAttachedRenderParentRenderStyle();
         final bool parentInlineBlockAuto = p != null &&
             p.effectiveDisplay == CSSDisplay.inlineBlock && p.width.isAuto;
-        if (!parentInlineBlockAuto) {
-          logicalWidth = getCurrentViewportBox()!.boxSize!.width;
+        RenderViewportBox? viewport = getCurrentViewportBox() ?? renderStyle.target.getRootViewport();
+        if (!parentInlineBlockAuto && viewport != null) {
+          logicalWidth = viewport.boxSize!.width;
         }
-      } else if (logicalWidth == null && (renderStyle.isSelfRouterLinkElement() && root != null && root is! RootRenderViewportBox)) {
-        logicalWidth = root!.boxSize!.width;
+      } else if (logicalWidth == null && (renderStyle.isSelfRouterLinkElement() && root != null)) {
+        logicalWidth = root.boxSize!.width;
       } else if (logicalWidth == null && parentStyle != null) {
         // Resolve whether the direct parent is a flex item (its render box's parent is a flex container).
         // Determine if our direct parent is a flex item: i.e., the parent's parent is a flex container.
@@ -2686,7 +2687,7 @@ class CSSRenderStyle extends RenderStyle
               maxConstraintWidth = childWrapper?.constraints.maxWidth;
             } catch (_) {}
 
-            if (childWrapper != null && maxConstraintWidth != null) {
+            if (childWrapper != null && maxConstraintWidth != null && maxConstraintWidth.isFinite) {
               logicalWidth = maxConstraintWidth;
             }
             // If there is no WebFWidgetElementChild (or no constraints yet),
@@ -2838,12 +2839,14 @@ class CSSRenderStyle extends RenderStyle
           try {
             childWrapperConstraints = childWrapper?.constraints;
           } catch (_) {}
+          RenderViewportBox? viewportBox = getCurrentViewportBox() ?? renderStyle.target.getRootViewport();
           // Override the default logicalHeight value is the parent is RenderWidget
           if (parentRenderStyle.isSelfRenderWidget() &&
               childWrapper != null &&
               childWrapperConstraints != null &&
               (childWrapperConstraints.maxHeight.isFinite &&
-                  childWrapperConstraints.maxHeight != renderStyle.target.ownerView.currentViewport!.boxSize!.height)) {
+                  viewportBox != null &&
+                  childWrapperConstraints.maxHeight != viewportBox.boxSize!.height)) {
             logicalHeight = childWrapperConstraints.maxHeight;
           } else if (renderStyle.isHeightStretch) {
             logicalHeight = parentRenderStyle.contentBoxLogicalHeight;
