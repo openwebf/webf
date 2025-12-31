@@ -38,9 +38,6 @@ export const HomePage: React.FC = () => {
         <div className="text-lg sm:text-xl md:text-2xl font-semibold text-fg-primary mb-2">Quick Demos</div>
         <div className="bg-surface-secondary rounded-xl px-3 sm:px-4 md:px-5 mb-8 divide-y divide-line">
           <Row title="Cupertino UI" desc="iOS-style components and interactions." to="/cupertino-showcase"/>
-          <Row title="Tailwind CSS" desc="Utility-first UI with WebF tokens." to="/tailwind"/>
-          <Row title="CSS Showcase" desc="Layouts, effects and advanced styling." to="/css-showcase"/>
-          <Row title="WebF Share Module" desc="Save screenshots and share content." to="/native-interaction"/>
         </div>
       </WebFListView>
     </div>

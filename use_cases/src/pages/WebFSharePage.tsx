@@ -3,7 +3,7 @@ import { WebFListView } from '@openwebf/react-core-ui';
 import { WebFShare } from '@openwebf/webf-share';
 import styles from './NativeInteractionPage.module.css';
 
-export const NativeInteractionPage: React.FC = () => {
+export const WebFSharePage: React.FC = () => {
   const [screenshotResult, setScreenshotResult] = useState<string>('');
   const [screenshotImage, setScreenshotImage] = useState<string>('');
   const [shareResult, setShareResult] = useState<string>('');

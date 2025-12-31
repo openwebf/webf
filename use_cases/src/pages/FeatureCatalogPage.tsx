@@ -7,6 +7,20 @@ type Section = { title: string; items: Item[] };
 
 const sections: Section[] = [
   {
+    title: 'Core UI',
+    items: [
+      { label: 'FlutterGestureDetector', path: '/gesture', desc: 'Native gesture detection with tap, pan, pinch, and rotate' },
+      { label: 'WebFListView', path: '/listview', desc: 'Infinite scrolling list optimized for long lists' },
+      { label: 'Dragable List', path: '/dragable-list', desc: 'Touch-based draggable list with smooth reordering' },
+    ],
+  },
+  {
+    title: 'Hybrid Router',
+    items: [
+      { label: 'Routing & Navigation', path: '/routing', desc: 'Client-side routing and navigation' },
+    ],
+  },
+  {
     title: 'CSS - Layout & Box Model',
     items: [
       { label: 'Flexbox', path: '/css/flex-layout', desc: 'One-dimensional layout with alignment controls' },
@@ -94,19 +108,13 @@ const sections: Section[] = [
       { label: 'Image Gallery', path: '/image', desc: 'Display various image formats: PNG, JPEG, GIF, WebP, and SVG' },
       { label: 'Canvas 2D', path: '/canvas-2d', desc: 'Draw shapes, text, and images with Canvas 2D API' },
       { label: 'SVG via <img>', path: '/svg-image', desc: 'Inline SVG data URLs with gradients, patterns, paths, and icons' },
-      { label: 'Image Preload', path: '/image-preload', desc: 'Preload images for better performance' },
-    ],
-  },
-  {
-    title: 'Hybrid Router',
-    items: [
-      { label: 'Routing & Navigation', path: '/routing', desc: 'Client-side routing and navigation' },
+      // { label: 'Image Preload', path: '/image-preload', desc: 'Preload images for better performance' },
     ],
   },
   {
     title: 'Native Plugins',
     items: [
-      { label: 'WebF Share Module', path: '/native-interaction', desc: 'Share and save content via native APIs' },
+      { label: 'WebF Share', path: '/webf-share', desc: 'Share and save content via native APIs' },
     ],
   },
   {
@@ -136,14 +144,6 @@ const sections: Section[] = [
     ],
   },
   {
-    title: 'Core UI',
-    items: [
-      { label: 'FlutterGestureDetector', path: '/gesture', desc: 'Native gesture detection with tap, pan, pinch, and rotate' },
-      { label: 'WebFListView', path: '/listview', desc: 'Infinite scrolling list optimized for long lists' },
-      { label: 'Dragable List', path: '/dragable-list', desc: 'Touch-based draggable list with smooth reordering' },
-    ],
-  },
-  {
     title: 'Forms & Input',
     items: [
       { label: 'Form (Basic)', path: '/form', desc: 'Basic form elements and validation' },
@@ -152,14 +152,14 @@ const sections: Section[] = [
       { label: 'Form (Advanced)', path: '/advanced-form', desc: 'Advanced form patterns and validation' },
     ],
   },
-  {
-    title: 'Others',
-    items: [
-      { label: 'Tables', path: '/table', desc: 'HTML table layouts and styling' },
-      { label: 'QR Code Generator', path: '/qrcode', desc: 'Generate QR codes dynamically' },
-      { label: 'Video Player', path: '/video', desc: 'HTML5 video playback' },
-    ],
-  },
+  // {
+  //   title: 'Others',
+  //   items: [
+  //     { label: 'Tables', path: '/table', desc: 'HTML table layouts and styling' },
+  //     { label: 'QR Code Generator', path: '/qrcode', desc: 'Generate QR codes dynamically' },
+  //     { label: 'Video Player', path: '/video', desc: 'HTML5 video playback' },
+  //   ],
+  // },
 ];
 
 export const FeatureCatalogPage: React.FC = () => {
