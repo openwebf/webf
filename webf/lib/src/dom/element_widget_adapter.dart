@@ -289,14 +289,6 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
         }
       }
       for (final positionedElement in webFElement.outOfFlowPositionedElements) {
-        try {
-          PositionedLayoutLog.log(
-            impl: PositionedImpl.build,
-            feature: PositionedFeature.wiring,
-            message: () => 'build positioned <${positionedElement.tagName.toLowerCase()}>'
-                ' under containing block <${webFElement.tagName.toLowerCase()}>',
-          );
-        } catch (_) {}
         children.add(positionedElement.toWidget());
       }
     }
@@ -847,14 +839,6 @@ class WebFRenderReplacedRenderObjectWidget extends flutter.SingleChildRenderObje
       if (positionHolder.mounted) {
         renderBoxModel.renderPositionPlaceholder = positionHolder.renderObject as RenderPositionPlaceholder;
         (positionHolder.renderObject as RenderPositionPlaceholder).positioned = renderBoxModel;
-        try {
-          PositionedLayoutLog.log(
-            impl: PositionedImpl.build,
-            feature: PositionedFeature.wiring,
-            message: () => 'attach placeholder -> <${renderBoxModel.renderStyle.target.tagName.toLowerCase()}>'
-                ' under <${webFElement.tagName.toLowerCase()}>',
-          );
-        } catch (_) {}
       }
     }
 
@@ -960,17 +944,6 @@ class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget
     RenderBoxModel? renderBoxModel =
         webFElement!.renderStyle.getWidgetPairedRenderBoxModel(context as flutter.RenderObjectElement);
     renderBoxModel ??= webFElement!.createRenderer(context) as RenderBoxModel;
-
-    try {
-      final phCount = webFElement!.positionHolderElements.length;
-      final posCount = webFElement!.outOfFlowPositionedElements.length;
-      PositionedLayoutLog.log(
-        impl: PositionedImpl.build,
-        feature: PositionedFeature.wiring,
-        message: () => 'createRenderObject for <${webFElement!.tagName.toLowerCase()}>'
-            ' placeholders=$phCount positionedChildren=$posCount',
-      );
-    } catch (_) {}
 
     // Attach position holder to apply offsets based on original layout.
     for (final positionHolder in webFElement!.positionHolderElements) {
@@ -1111,14 +1084,6 @@ class _PositionedPlaceHolderElement extends flutter.SingleChildRenderObjectEleme
     if (rbm != null) {
       rbm.renderPositionPlaceholder = renderObject as RenderPositionPlaceholder;
       (renderObject as RenderPositionPlaceholder).positioned = rbm;
-      try {
-        PositionedLayoutLog.log(
-          impl: PositionedImpl.build,
-          feature: PositionedFeature.wiring,
-          message: () => 'mount placeholder for <${widget.positionedElement.tagName.toLowerCase()}>'
-              ' in <${widget.selfElement.tagName.toLowerCase()}>',
-        );
-      } catch (_) {}
     }
   }
 
@@ -1131,15 +1096,6 @@ class _PositionedPlaceHolderElement extends flutter.SingleChildRenderObjectEleme
     if (pairedRenderBoxModel?.renderPositionPlaceholder == renderObject) {
       pairedRenderBoxModel?.renderPositionPlaceholder = null;
     }
-    try {
-      PositionedLayoutLog.log(
-        impl: PositionedImpl.build,
-        feature: PositionedFeature.wiring,
-        message: () => 'unmount placeholder for <${widget.positionedElement.tagName.toLowerCase()}>'
-            ' from <${widget.selfElement.tagName.toLowerCase()}>',
-      );
-    } catch (_) {}
-
     super.unmount();
   }
 }
