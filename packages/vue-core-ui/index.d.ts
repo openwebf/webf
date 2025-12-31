@@ -3,7 +3,7 @@
  */
 // Based on the Vue 3 documentation for defining custom elements:
 // https://vuejs.org/guide/extras/web-components
-import type { EmitFn, PublicProps, StyleValue, ClassValue } from 'vue';
+import type { EmitFn, PublicProps, StyleValue, ClassValue, Directive } from 'vue';
 import '@openwebf/webf-enterprise-typings';
 type EventMap = {
   [event: string]: Event
@@ -13,8 +13,9 @@ type VueEmit<T extends EventMap> = EmitFn<{
   [K in keyof T]: (event: NonNullable<T[K]>) => void
 }>
 // Vue 3 event listener properties for template usage
+type Camelize<S extends string> = S extends `${infer Head}-${infer Tail}` ? `${Head}${Capitalize<Camelize<Tail>>}` : S
 type VueEventListeners<T extends EventMap> = {
-  [K in keyof T as `on${Capitalize<string & K>}`]?: (event: NonNullable<T[K]>) => any
+  [K in keyof T as `on${Capitalize<Camelize<string & K>>}`]?: (event: NonNullable<T[K]>) => any
 }
 export interface FlutterGestureDetectorEventDetail {
   /**
@@ -347,7 +348,7 @@ export interface WebFListViewElement {
   finishLoad(result: string): void;
   resetHeader(): void;
   resetFooter(): void;
-  scrollByIndex(index: number, options: any): void;
+  scrollByIndex(index: number, options: any): Promise<boolean>;
 }
 export type WebFListViewEvents = {
   refresh: Event;
@@ -416,7 +417,43 @@ export interface WebFTextElement {
 }
 export type WebFTextEvents = {
 }
+
+export type WebFTouchAreaProps = {
+  'id'?: string;
+  'class'?: ClassValue;
+  'style'?: StyleValue;
+}
+export interface WebFTouchAreaElement {
+}
+export type WebFTouchAreaEvents = {
+  touchstart: TouchEvent;
+  touchend: TouchEvent;
+  touchcancel: TouchEvent;
+  touchmove: TouchEvent;
+}
+
+export type FlutterAttachedCallback = (event: Event) => void;
+export type FlutterDetachedCallback = (event: Event) => void;
+
+export type FlutterAttachedDirectiveValue =
+  | FlutterAttachedCallback
+  | {
+      onAttached?: FlutterAttachedCallback;
+      onDetached?: FlutterDetachedCallback;
+      attached?: FlutterAttachedCallback;
+      detached?: FlutterDetachedCallback;
+    }
+  | null
+  | undefined;
+
+export const flutterAttached: Directive<HTMLElement, FlutterAttachedDirectiveValue>;
+export const vFlutterAttached: Directive<HTMLElement, FlutterAttachedDirectiveValue>;
+
 declare module 'vue' {
+  interface GlobalDirectives {
+    'flutter-attached': typeof flutterAttached;
+  }
+
   interface GlobalComponents {
     'flutter-gesture-detector': DefineCustomElement<
       FlutterGestureDetectorElement,
@@ -442,6 +479,11 @@ declare module 'vue' {
       FlutterShimmerTextElement,
       FlutterShimmerTextProps,
       FlutterShimmerTextEvents
+    >
+    'webf-toucharea': DefineCustomElement<
+      WebFTouchAreaElement,
+      WebFTouchAreaProps,
+      WebFTouchAreaEvents
     >
     'webf-list-view': DefineCustomElement<
       WebFListViewElement,

@@ -2,11 +2,13 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
+    "moduleResolution": "Bundler",
     "declaration": true,
     "declarationDir": "dist",
     "outDir": "dist",
     "strict": true,
     "esModuleInterop": true,
+    "types": [],
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": true
