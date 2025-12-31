@@ -19,7 +19,12 @@ import {FontFacePage} from './pages/FontFacePage';
 import {WebFSharePage} from './pages/WebFSharePage';
 import {NetworkPage} from './pages/NetworkPage';
 import {ResponsivePage} from './pages/ResponsivePage';
-import {RoutingPage} from './pages/RoutingPage';
+import { RoutingPage } from './pages/RoutingPage';
+import { RoutingAboutPage } from './pages/RoutingAboutPage';
+import { RoutingUserPage } from './pages/RoutingUserPage';
+import { RoutingFilesPage } from './pages/RoutingFilesPage';
+import { RoutingNotFoundPage } from './pages/RoutingNotFoundPage';
+import { WebFRouterAPIDemoPage } from './pages/WebFRouterAPIDemoPage';
 import {ContextMenuPage} from './pages/ContextMenuPage';
 import {ModalPopupPage} from './pages/ModalPopupPage';
 import {LoadingPage} from './pages/LoadingPage';
@@ -196,7 +201,14 @@ function App() {
 
 
         <Route path="/image-preload" title="Image Preload" element={<ImagePreloadPage />} />
+
+        {/* Routing / Navigation */}
+        <Route path="/routing/about" title="Routing Demo: About" element={<RoutingAboutPage />} />
+        <Route path="/routing/users/:id" title="Routing Demo: User" element={<RoutingUserPage />} />
+        <Route path="/routing/files/*" title="Routing Demo: Files" element={<RoutingFilesPage />} />
         <Route path="/routing" title="Routing & Navigation" element={<RoutingPage />} />
+        <Route path="/routing/*" title="Routing Demo: Not Found" element={<RoutingNotFoundPage />} />
+        <Route path="/routing-api" title="WebFRouter API Showcase" element={<WebFRouterAPIDemoPage />} />
 
         {/* Dynamic Route Examples */}
         <Route path="/user/:id" title="User Details" element={<UserDetailsPage />} />
