@@ -164,16 +164,18 @@ class CSSLengthValue {
     final CSSDisplay eff = renderStyle.effectiveDisplay;
 
     // Block-level containers establish percentage reference sizes.
-    final bool isBlockLevelBox = eff == CSSDisplay.block || eff == CSSDisplay.flex;
+    final bool isBlockLevelBox = eff == CSSDisplay.block || eff == CSSDisplay.flex || eff == CSSDisplay.grid;
 
     // Inline-block/inline-flex with explicit width also establish a percentage container.
     final bool isInlineWithExplicitSize =
-        (eff == CSSDisplay.inlineBlock || eff == CSSDisplay.inlineFlex) && renderStyle.width.value != null;
+        (eff == CSSDisplay.inlineBlock || eff == CSSDisplay.inlineFlex || eff == CSSDisplay.inlineGrid) &&
+            renderStyle.width.value != null;
 
     // Inline-block/inline-flex with auto width still establish a containing block;
     // percentages resolve against the available inline size determined by ancestors.
     final bool isInlineBlockAutoWidth =
-        (eff == CSSDisplay.inlineBlock || eff == CSSDisplay.inlineFlex) && renderStyle.width.isAuto;
+        (eff == CSSDisplay.inlineBlock || eff == CSSDisplay.inlineFlex || eff == CSSDisplay.inlineGrid) &&
+            renderStyle.width.isAuto;
 
     return isBlockLevelBox || isInlineWithExplicitSize || isInlineBlockAutoWidth;
   }
