@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
 
 export const WebSocketPage: React.FC = () => {
-  const [endpoint, setEndpoint] = useState('wss://echo.websocket.events');
+  const [endpoint, setEndpoint] = useState('wss://echo.websocket.org');
   const [status, setStatus] = useState<'disconnected'|'connecting'|'connected'>('disconnected');
   const [message, setMessage] = useState('Hello, WebF!');
   const [log, setLog] = useState<string[]>([]);

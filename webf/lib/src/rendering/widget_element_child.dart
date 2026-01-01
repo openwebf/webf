@@ -4,6 +4,7 @@
  */
 
 import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart';
 import 'package:webf/rendering.dart';
 
 /// A widget that passes outer constraints to inner WebF HTMLElement children.
