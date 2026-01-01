@@ -3,7 +3,7 @@ import { onUnmounted, ref } from 'vue';
 
 type Status = 'disconnected' | 'connecting' | 'connected';
 
-const endpoint = ref('wss://echo.websocket.events');
+const endpoint = ref('wss://echo.websocket.org');
 const status = ref<Status>('disconnected');
 const message = ref('Hello, WebF!');
 const log = ref<string[]>([]);
