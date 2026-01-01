@@ -7,7 +7,6 @@
     "@openwebf/react-cupertino-ui": "^0.3.35",
     "@openwebf/react-router": "^0.24.0",
     "@openwebf/react-ui-kit": "^0.1.0-beta.1",
-    "@openwebf/webf-deeplink": "^1.0.0",
     "@openwebf/webf-share": "^1.0.0",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
