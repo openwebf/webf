@@ -1,16 +1,16 @@
-name: form
-description: "A new Flutter package project."
-version: 0.0.1
-homepage:
+name: webf_form
+description: WebF custom elements for building validated forms with native Flutter widgets.
+version: 1.0.0
+homepage: https://openwebf.com
 
 environment:
-  sdk: ">=3.8.0 <4.0.0"
-  flutter: ">=3.32.0"
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.29.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  webf: 0.24.0
+  webf: ^0.24.0
   flutter_form_builder: ^10.2.0
   form_builder_validators: ^11.2.0
 
@@ -20,7 +20,7 @@ dependency_overrides:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
+  flutter_lints: ^5.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -58,3 +58,9 @@ flutter:
   #
   # For details regarding fonts in packages, see
   # https://flutter.dev/to/font-from-package
+
+topics:
+  - webf
+  - form
+  - validation
+  - flutter
