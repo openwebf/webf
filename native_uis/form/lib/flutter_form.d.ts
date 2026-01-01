@@ -21,10 +21,12 @@ interface FlutterFormProperties {
   autovalidate?: boolean;
 
   /**
-   * Whether to validate form on submit
+   * Whether to validate form on submit.
+   *
+   * HTML attribute: `validate-on-submit`
    * @default false
    */
-  'validate-on-submit'?: boolean;
+  validateOnSubmit?: boolean;
 
   /**
    * Form layout type
@@ -81,7 +83,7 @@ interface FlutterFormEvents {
 /**
  * A form field element that provides validation and different input types
  * 
- * This element works as a child of flutter-webf-form and provides individual
+ * This element works as a child of <flutter-form> and provides individual
  * form field functionality with validation rules and various input types.
  */
 interface FlutterFormFieldProperties {
@@ -102,19 +104,47 @@ interface FlutterFormFieldProperties {
   label?: string;
 
   /**
+   * Placeholder text for the form field.
+   *
+   * HTML attribute: `placeholder`
+   */
+  placeholder?: string;
+
+  /**
    * Input type for the form field
    * @default 'text'
    */
   type?: 'text' | 'email' | 'password' | 'number' | 'url';
 }
 
+interface FlutterFormValidationRule {
+  /** Custom error message for this rule. */
+  message?: string;
+  /** Exact allowed values (maps to `enum` in Dart). */
+  enum?: string[];
+  /** Exact length requirement. */
+  len?: number;
+  /** Minimum length requirement. */
+  minLength?: number;
+  /** Maximum length requirement. */
+  maxLength?: number;
+  /** Minimum numeric value requirement. */
+  min?: number;
+  /** Maximum numeric value requirement. */
+  max?: number;
+  /** Whether this field is required. */
+  required?: boolean;
+  /** Value type for built-in validators. */
+  type?: 'string' | 'number' | 'boolean' | 'url' | 'email';
+}
+
 interface FlutterFormFieldMethods {
   /**
    * Sets validation rules for this form field
    * 
-   * @param rules JSON string containing validation rules to apply to this field
+   * @param rules Validation rules as a JS array or a JSON string (legacy).
    */
-  setRules(rules: string): void;
+  setRules(rules: FlutterFormValidationRule[] | string): void;
 }
 
 interface FlutterFormFieldEvents {

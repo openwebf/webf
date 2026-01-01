@@ -2,17 +2,15 @@
  * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
  * Licensed under GNU GPL with Enterprise exception.
  */
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/webf.dart';
 
-// Define form layout enum
-enum FormLayout {
-  vertical,    // Vertical layout, label on top, input below
-  horizontal,  // Horizontal layout, label on left, input on right
-}
+import 'flutter_form_bindings_generated.dart';
 
 // Define validation rule types
 enum ValidatorType {
@@ -25,15 +23,15 @@ enum ValidatorType {
 
 // Validation rule structure
 class ValidationRule {
-  final String? message;       // Error message
+  final String? message; // Error message
   final List<String>? enumValues; // Enum values
-  final int? len;              // Fixed length
-  final int? minLength;        // Minimum length
-  final int? maxLength;        // Maximum length
-  final num? min;              // Minimum value
-  final num? max;              // Maximum value
-  final bool? required;        // Whether required
-  final ValidatorType? type;   // Data type
+  final int? len; // Fixed length
+  final int? minLength; // Minimum length
+  final int? maxLength; // Maximum length
+  final num? min; // Minimum value
+  final num? max; // Maximum value
+  final bool? required; // Whether required
+  final ValidatorType? type; // Data type
 
   ValidationRule({
     this.message,
@@ -51,12 +49,18 @@ class ValidationRule {
     ValidatorType? parseType(String? typeStr) {
       if (typeStr == null) return null;
       switch (typeStr.toLowerCase()) {
-        case 'string': return ValidatorType.string;
-        case 'number': return ValidatorType.number;
-        case 'boolean': return ValidatorType.boolean;
-        case 'url': return ValidatorType.url;
-        case 'email': return ValidatorType.email;
-        default: return null;
+        case 'string':
+          return ValidatorType.string;
+        case 'number':
+          return ValidatorType.number;
+        case 'boolean':
+          return ValidatorType.boolean;
+        case 'url':
+          return ValidatorType.url;
+        case 'email':
+          return ValidatorType.email;
+        default:
+          return null;
       }
     }
 
@@ -77,59 +81,85 @@ class ValidationRule {
 const FLUTTER_FORM = 'FLUTTER-FORM';
 
 // Define form element class
-class FlutterForm extends WidgetElement {
+class FlutterForm extends FlutterFormBindings {
   FlutterForm(super.context);
 
   // Form key
   final _formKey = GlobalKey<FormBuilderState>();
 
-  // Whether to show validation errors
-  // bool _showValidationErrors = false;
-  
   // Form layout type
-  FormLayout _layout = FormLayout.vertical;
+  FlutterFormLayout _layout = FlutterFormLayout.vertical;
+
+  bool _autovalidate = false;
+  bool _validateOnSubmit = false;
+  bool _submittedOnce = false;
 
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
-    
-    attributes['autovalidate'] = ElementAttributeProperty(
-      getter: () => _autovalidate.toString(),
-      setter: (value) {
-        _autovalidate = value != 'false';
-      }
-    );
-    
+
+    // Backward-compatible alias.
     attributes['validateOnSubmit'] = ElementAttributeProperty(
-      getter: () => _validateOnSubmit.toString(),
-      setter: (value) {
-        _validateOnSubmit = value != 'false';
-      }
-    );
-    
+        getter: () => validateOnSubmit.toString(),
+        setter: (value) => validateOnSubmit = value == 'true' || value == '',
+        deleter: () => validateOnSubmit = false);
+
+    // Override to avoid throwing on invalid values and to keep a stable default.
     attributes['layout'] = ElementAttributeProperty(
-      getter: () => _layout.toString().split('.').last,
-      setter: (value) {
-        switch (value.toLowerCase()) {
-          case 'horizontal':
-            _layout = FormLayout.horizontal;
-            break;
-          default:
-            _layout = FormLayout.vertical;
-            break;
-        }
-        
-        state?.requestUpdateState();
-      }
-    );
+        getter: () => layout?.value,
+        setter: (value) {
+          FlutterFormLayout? parsed;
+          try {
+            parsed = FlutterFormLayout.parse(value);
+          } catch (_) {
+            parsed = null;
+          }
+          layout = parsed ?? FlutterFormLayout.vertical;
+        },
+        deleter: () => layout = FlutterFormLayout.vertical);
   }
 
-  bool _autovalidate = false;
-  bool _validateOnSubmit = false;
+  bool _coerceBool(dynamic value) {
+    if (value is bool) return value;
+    if (value == null) return false;
+    final str = value.toString();
+    return str == 'true' || str.isEmpty;
+  }
 
+  @override
   bool get autovalidate => _autovalidate;
+
+  @override
+  set autovalidate(value) {
+    final next = _coerceBool(value);
+    if (_autovalidate == next) return;
+    _autovalidate = next;
+    state?.requestUpdateState();
+  }
+
+  @override
   bool get validateOnSubmit => _validateOnSubmit;
-  FormLayout get layout => _layout;
+
+  @override
+  set validateOnSubmit(value) {
+    final next = _coerceBool(value);
+    if (_validateOnSubmit == next) return;
+    _validateOnSubmit = next;
+    state?.requestUpdateState();
+  }
+
+  @override
+  FlutterFormLayout? get layout => _layout;
+
+  @override
+  set layout(value) {
+    final next = value ?? FlutterFormLayout.vertical;
+    if (_layout == next) return;
+    _layout = next;
+    state?.requestUpdateState();
+  }
+
+  bool get submittedOnce => _submittedOnce;
 
   // Define static method mapping for frontend calls
   static StaticDefinedSyncBindingObjectMethodMap formSyncMethods = {
@@ -157,9 +187,9 @@ class FlutterForm extends WidgetElement {
 
   @override
   List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
-    ...super.methods,
-    formSyncMethods,
-  ];
+        ...super.methods,
+        formSyncMethods,
+      ];
 
   // Get the current state of the form
   FormBuilderState? get formState => _formKey.currentState;
@@ -167,27 +197,30 @@ class FlutterForm extends WidgetElement {
   // Validate and submit the form
   void validateAndSubmit() {
     if (state == null) return;
-    
-    state?.requestUpdateState(() {
-      // _showValidationErrors = true;
-    });
-    
-    if (_formKey.currentState?.saveAndValidate() ?? false) {
-      // Map<String, dynamic> formValues = getFormValues();
-      // Record form values, then retrieve in frontend JS code
-      dispatchEvent(dom.Event('submit'));
-    } else {
-      dispatchEvent(dom.Event('validation-error'));
+
+    if (_validateOnSubmit) {
+      _submittedOnce = true;
+      state?.requestUpdateState();
+
+      if (_formKey.currentState?.saveAndValidate() ?? false) {
+        dispatchEvent(dom.Event('submit'));
+      } else {
+        dispatchEvent(dom.Event('validation-error'));
+      }
+      return;
     }
+
+    _formKey.currentState?.save();
+    dispatchEvent(dom.Event('submit'));
   }
 
   // Reset the form
   void resetForm() {
     if (state == null) return;
-    
+
     _formKey.currentState?.reset();
     state?.requestUpdateState(() {
-      // _showValidationErrors = false;
+      _submittedOnce = false;
     });
     dispatchEvent(dom.Event('reset'));
   }
@@ -214,8 +247,9 @@ class FlutterFormState extends WebFWidgetElementState {
   Widget build(BuildContext context) {
     return FormBuilder(
       key: widgetElement._formKey,
-      autovalidateMode: widgetElement.autovalidate 
-          ? AutovalidateMode.onUserInteraction 
+      autovalidateMode: (widgetElement.autovalidate ||
+              (widgetElement.validateOnSubmit && widgetElement.submittedOnce))
+          ? AutovalidateMode.onUserInteraction
           : AutovalidateMode.disabled,
       child: SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
@@ -227,16 +261,16 @@ class FlutterFormState extends WebFWidgetElementState {
       ),
     );
   }
-  
+
   Widget _buildFormContent() {
     switch (widgetElement.layout) {
-      case FormLayout.horizontal:
+      case FlutterFormLayout.horizontal:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: _buildChildren(),
         );
-      case FormLayout.vertical:
+      case FlutterFormLayout.vertical:
       default:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,12 +279,12 @@ class FlutterFormState extends WebFWidgetElementState {
         );
     }
   }
-  
+
   List<Widget> _buildChildren() {
     return widgetElement.childNodes.map<Widget>((node) {
       // Pass the current form layout type to child elements
       if (node is FlutterFormField) {
-        node.formLayout = widgetElement.layout;
+        node.formLayout = widgetElement.layout ?? FlutterFormLayout.vertical;
       }
       return node.toWidget();
     }).toList();
@@ -266,55 +300,68 @@ class FlutterFormField extends WidgetElement {
   String _name = '';
   bool _isRequired = false;
   String _label = '';
-  FormLayout _formLayout = FormLayout.vertical; // Default to vertical layout
+  FlutterFormLayout _formLayout =
+      FlutterFormLayout.vertical; // Default to vertical layout
   String _type = 'text'; // Input type
-  
+  String _placeholder = '';
+
   // Validation rules list
   List<ValidationRule> _rules = [];
 
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
-    
+
     attributes['name'] = ElementAttributeProperty(
-      getter: () => _name,
-      setter: (value) {
-        _name = value;
-      }
-    );
-    
+        getter: () => _name,
+        setter: (value) {
+          _name = value;
+          state?.requestUpdateState();
+        });
+
     attributes['required'] = ElementAttributeProperty(
       getter: () => _isRequired.toString(),
       setter: (value) {
-        _isRequired = value == 'true';
-      }
+        _isRequired = value == 'true' || value.isEmpty;
+        state?.requestUpdateState();
+      },
+      deleter: () {
+        _isRequired = false;
+        state?.requestUpdateState();
+      },
     );
-    
+
     attributes['label'] = ElementAttributeProperty(
-      getter: () => _label,
-      setter: (value) {
-        _label = value;
-      }
-    );
-    
+        getter: () => _label,
+        setter: (value) {
+          _label = value;
+          state?.requestUpdateState();
+        });
+
     attributes['type'] = ElementAttributeProperty(
-      getter: () => _type,
+        getter: () => _type,
+        setter: (value) {
+          _type = value;
+          state?.requestUpdateState();
+        });
+
+    attributes['placeholder'] = ElementAttributeProperty(
+      getter: () => _placeholder,
       setter: (value) {
-        _type = value;
-      }
+        _placeholder = value;
+        state?.requestUpdateState();
+      },
     );
   }
 
   // Set rules method
   void setRules(List<Map<String, dynamic>> rulesData) {
     try {
-      _rules = rulesData
-          .map((rule) => ValidationRule.fromJson(rule))
-          .toList();
-          
+      _rules = rulesData.map((rule) => ValidationRule.fromJson(rule)).toList();
+
       state?.requestUpdateState();
     } catch (e) {
-      print('Failed to set rules: $e');
+      debugPrint('Failed to set rules: $e');
     }
   }
 
@@ -323,11 +370,28 @@ class FlutterFormField extends WidgetElement {
     'setRules': StaticDefinedSyncBindingObjectMethod(
       call: (element, args) {
         final formField = castToType<FlutterFormField>(element);
-        if (args.isNotEmpty && args[0] is List) {
-          final List<dynamic> rulesData = args[0] as List<dynamic>;
-          final List<Map<String, dynamic>> rules = rulesData
-              .whereType<Map<String, dynamic>>()
-              .toList();
+        if (args.isEmpty) return null;
+        final input = args[0];
+
+        List<dynamic>? list;
+        if (input is List) {
+          list = input;
+        } else if (input is String) {
+          try {
+            final decoded = jsonDecode(input);
+            if (decoded is List) list = decoded;
+          } catch (_) {
+            list = null;
+          }
+        }
+
+        if (list != null) {
+          final rules = <Map<String, dynamic>>[];
+          for (final item in list) {
+            if (item is Map) {
+              rules.add(Map<String, dynamic>.from(item));
+            }
+          }
           formField.setRules(rules);
         }
         return null;
@@ -337,25 +401,26 @@ class FlutterFormField extends WidgetElement {
 
   @override
   List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
-    ...super.methods,
-    formFieldSyncMethods,
-  ];
+        ...super.methods,
+        formFieldSyncMethods,
+      ];
 
   String get name => _name;
   bool get isRequired => _isRequired;
   String get label => _label;
   String get type => _type;
+  String get placeholder => _placeholder;
   List<ValidationRule> get rules => _rules;
-  
+
   // Set form layout
-  set formLayout(FormLayout layout) {
+  set formLayout(FlutterFormLayout layout) {
     if (_formLayout != layout) {
       _formLayout = layout;
       state?.requestUpdateState();
     }
   }
-  
-  FormLayout get formLayout => _formLayout;
+
+  FlutterFormLayout get formLayout => _formLayout;
 
   @override
   FlutterFormFieldState? get state => super.state as FlutterFormFieldState?;
@@ -370,24 +435,15 @@ class FlutterFormFieldState extends WebFWidgetElementState {
   @override
   FlutterFormField get widgetElement => super.widgetElement as FlutterFormField;
 
-  dom.Node? _getFirstChildNode() {
-    return widgetElement.childNodes.isNotEmpty ? widgetElement.childNodes.first : null;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final childNode = _getFirstChildNode();
-    final childWidget = childNode?.toWidget();
-    
-    if (childWidget == null) return const SizedBox();
-    
     // Handle input type
     final inputType = widgetElement.type;
-    final placeholder = _getPlaceholder(childNode);
-    
+    final placeholder = _getPlaceholderFromChild() ?? widgetElement.placeholder;
+
     // Build different field layouts based on form layout type
     switch (widgetElement.formLayout) {
-      case FormLayout.horizontal:
+      case FlutterFormLayout.horizontal:
         return Padding(
           padding: const EdgeInsets.only(bottom: 16.0),
           child: Row(
@@ -407,9 +463,8 @@ class FlutterFormFieldState extends WebFWidgetElementState {
             ],
           ),
         );
-        
-      case FormLayout.vertical:
-      default:
+
+      case FlutterFormLayout.vertical:
         return Padding(
           padding: const EdgeInsets.only(bottom: 16.0),
           child: Column(
@@ -430,55 +485,61 @@ class FlutterFormFieldState extends WebFWidgetElementState {
         );
     }
   }
-  
-  String _getPlaceholder(dom.Node? node) {
+
+  String? _getPlaceholderFromChild() {
+    if (widgetElement.childNodes.isEmpty) return null;
+    final node = widgetElement.childNodes.first;
     if (node is dom.Element) {
-      return node.getAttribute('placeholder') ?? '';
+      return node.getAttribute('placeholder');
     }
-    return '';
+    return null;
   }
-  
-  Widget _buildFormField(BuildContext context, String type, String placeholder) {
+
+  Widget _buildFormField(
+      BuildContext context, String type, String placeholder) {
     // Build validator list based on rules
     List<FormFieldValidator<String>> validators = [];
-    
+
     // First handle required, highest priority
     bool isRequired = widgetElement.isRequired;
-    String defaultRequiredMessage = '${widgetElement.label} cannot be empty';
-    
+    final labelOrName = widgetElement.label.isNotEmpty
+        ? widgetElement.label
+        : widgetElement.name;
+    final defaultRequiredMessage = '$labelOrName cannot be empty';
+
     // Check if there's a required rule from rules
     final requiredRule = widgetElement.rules.firstWhere(
       (rule) => rule.required == true,
       orElse: () => ValidationRule(),
     );
-    
+
     if (requiredRule.required == true || isRequired) {
       validators.add(FormBuilderValidators.required(
         errorText: requiredRule.message ?? defaultRequiredMessage,
       ));
       isRequired = true;
     }
-    
+
     // Handle different types of validation rules
     for (final rule in widgetElement.rules) {
       // Skip if already handled required
       if (rule.required == true) continue;
-      
+
       // Handle enum validation
       if (rule.enumValues != null && rule.enumValues!.isNotEmpty) {
         validators.add((value) {
           if (value == null || value.isEmpty) {
             return isRequired ? (rule.message ?? defaultRequiredMessage) : null;
           }
-          
+
           if (!rule.enumValues!.contains(value)) {
             return rule.message ?? 'Please select a valid option';
           }
-          
+
           return null;
         });
       }
-      
+
       // Handle length validation
       if (rule.len != null) {
         validators.add(FormBuilderValidators.equalLength(
@@ -486,23 +547,25 @@ class FlutterFormFieldState extends WebFWidgetElementState {
           errorText: rule.message ?? 'Length must be ${rule.len} characters',
         ));
       }
-      
+
       // Handle minimum length validation
       if (rule.minLength != null) {
         validators.add(FormBuilderValidators.minLength(
           rule.minLength!,
-          errorText: rule.message ?? 'Length cannot be less than ${rule.minLength} characters',
+          errorText: rule.message ??
+              'Length cannot be less than ${rule.minLength} characters',
         ));
       }
-      
+
       // Handle maximum length validation
       if (rule.maxLength != null) {
         validators.add(FormBuilderValidators.maxLength(
           rule.maxLength!,
-          errorText: rule.message ?? 'Length cannot exceed ${rule.maxLength} characters',
+          errorText: rule.message ??
+              'Length cannot exceed ${rule.maxLength} characters',
         ));
       }
-      
+
       // Handle type validation
       if (rule.type != null) {
         switch (rule.type) {
@@ -511,35 +574,37 @@ class FlutterFormFieldState extends WebFWidgetElementState {
               errorText: rule.message ?? 'Please enter a valid email address',
             ));
             break;
-            
+
           case ValidatorType.url:
             validators.add(FormBuilderValidators.url(
               errorText: rule.message ?? 'Please enter a valid URL',
             ));
             break;
-            
+
           case ValidatorType.number:
             validators.add(FormBuilderValidators.numeric(
               errorText: rule.message ?? 'Please enter a valid number',
             ));
-            
+
             // Handle minimum value validation
             if (rule.min != null) {
               validators.add(FormBuilderValidators.min(
                 rule.min!.toDouble(),
-                errorText: rule.message ?? 'Value cannot be less than ${rule.min}',
+                errorText:
+                    rule.message ?? 'Value cannot be less than ${rule.min}',
               ));
             }
-            
+
             // Handle maximum value validation
             if (rule.max != null) {
               validators.add(FormBuilderValidators.max(
                 rule.max!.toDouble(),
-                errorText: rule.message ?? 'Value cannot be greater than ${rule.max}',
+                errorText:
+                    rule.message ?? 'Value cannot be greater than ${rule.max}',
               ));
             }
             break;
-            
+
           default:
             break;
         }
@@ -550,26 +615,29 @@ class FlutterFormFieldState extends WebFWidgetElementState {
           validators.add(FormBuilderValidators.numeric(
             errorText: rule.message ?? 'Please enter a valid number',
           ));
-          
+
           if (rule.min != null) {
             validators.add(FormBuilderValidators.min(
               rule.min!.toDouble(),
-              errorText: rule.message ?? 'Value cannot be less than ${rule.min}',
+              errorText:
+                  rule.message ?? 'Value cannot be less than ${rule.min}',
             ));
           }
-          
+
           if (rule.max != null) {
             validators.add(FormBuilderValidators.max(
               rule.max!.toDouble(),
-              errorText: rule.message ?? 'Value cannot be greater than ${rule.max}',
+              errorText:
+                  rule.message ?? 'Value cannot be greater than ${rule.max}',
             ));
           }
         }
       }
     }
-    
-    final validator = validators.isEmpty ? null : FormBuilderValidators.compose(validators);
-    
+
+    final validator =
+        validators.isEmpty ? null : FormBuilderValidators.compose(validators);
+
     // Build different form controls based on field type
     switch (type) {
       case 'email':
@@ -585,7 +653,7 @@ class FlutterFormFieldState extends WebFWidgetElementState {
           keyboardType: TextInputType.emailAddress,
           validator: validator,
         );
-        
+
       case 'password':
         return FormBuilderTextField(
           name: widgetElement.name,
@@ -599,7 +667,7 @@ class FlutterFormFieldState extends WebFWidgetElementState {
           ),
           validator: validator,
         );
-        
+
       case 'number':
         return FormBuilderTextField(
           name: widgetElement.name,
@@ -613,7 +681,7 @@ class FlutterFormFieldState extends WebFWidgetElementState {
           keyboardType: TextInputType.number,
           validator: validator,
         );
-        
+
       case 'url':
         return FormBuilderTextField(
           name: widgetElement.name,
@@ -627,7 +695,7 @@ class FlutterFormFieldState extends WebFWidgetElementState {
           keyboardType: TextInputType.url,
           validator: validator,
         );
-        
+
       default: // text
         return FormBuilderTextField(
           name: widgetElement.name,
