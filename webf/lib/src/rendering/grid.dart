@@ -1792,7 +1792,17 @@ class RenderGridLayout extends RenderLayoutBox {
     }
 
     final double colGap = _resolveLengthValue(renderStyle.columnGap, gapBaseWidth);
-    final double rowGap = _resolveLengthValue(renderStyle.rowGap, gapBaseHeight);
+    final CSSLengthValue rowGapLength = renderStyle.rowGap;
+    final bool rowGapIsPercentage = rowGapLength.type == CSSLengthType.PERCENTAGE;
+    final double rowGapPercentage = rowGapIsPercentage ? (rowGapLength.value ?? 0.0) : 0.0;
+    // Per CSS Box Alignment, gap percentages resolve against the corresponding
+    // size of the content box. For Grid Layout, cyclic percentages (e.g. % row-gap
+    // when the grid height is auto) resolve against the content box size during
+    // layout (not as zero), so defer resolution until the grid's content height
+    // is known. See: https://www.w3.org/TR/css-align-3/#gap-percent
+    final bool shouldResolveRowGapAgainstContentBoxLater =
+        rowGapIsPercentage && (gapBaseHeight == null || !gapBaseHeight.isFinite) && rowGapPercentage > 0;
+    double rowGap = shouldResolveRowGapAgainstContentBoxLater ? 0.0 : _resolveLengthValue(rowGapLength, gapBaseHeight);
 
     double? contentAvailableWidth = innerMaxWidth;
     if ((contentAvailableWidth == null || !contentAvailableWidth.isFinite) &&
@@ -3134,14 +3144,43 @@ class RenderGridLayout extends RenderLayoutBox {
         collapsedAutoFitColumnCount = collapsedCount;
       }
     }
-    double usedContentHeight = 0;
     final int totalRows = math.max(rowSizes.length, implicitRowHeights.length);
     int alignmentRowCount = totalRows;
+    double usedContentHeightWithoutGaps = 0;
     for (int r = 0; r < totalRows; r++) {
       final double segment = _resolvedRowHeight(rowSizes, implicitRowHeights, r);
-      usedContentHeight += segment;
-      if (r < totalRows - 1) usedContentHeight += rowGap;
+      if (segment.isFinite && segment > 0) {
+        usedContentHeightWithoutGaps += segment;
+      }
     }
+    if (shouldResolveRowGapAgainstContentBoxLater && totalRows > 1 && usedContentHeightWithoutGaps > 0) {
+      final int gapCount = totalRows - 1;
+      final double denominator = 1.0 - rowGapPercentage * gapCount;
+      if (denominator > 0) {
+        rowGap = (rowGapPercentage * usedContentHeightWithoutGaps) / denominator;
+      } else {
+        rowGap = 0.0;
+      }
+
+      // Child offsets were computed assuming rowGap=0; translate them to include
+      // the resolved row gaps without forcing a full relayout pass.
+      RenderBox? childForGapAdjust = firstChild;
+      while (childForGapAdjust != null) {
+        final GridLayoutParentData pd = childForGapAdjust.parentData as GridLayoutParentData;
+        if (_isPositionedGridChild(childForGapAdjust)) {
+          childForGapAdjust = pd.nextSibling;
+          continue;
+        }
+        final int rowStart = pd.rowStart;
+        if (rowStart > 0 && rowGap > 0) {
+          pd.offset = pd.offset.translate(0.0, rowGap * rowStart);
+        }
+        childForGapAdjust = pd.nextSibling;
+      }
+    }
+
+    double usedContentHeight =
+        usedContentHeightWithoutGaps + rowGap * math.max(0, totalRows - 1);
     if (explicitAutoFitRows != null && explicitAutoFitRowUsage != null) {
       double collapsedHeight = 0;
       int collapsedCount = 0;
