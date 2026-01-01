@@ -60,7 +60,7 @@ const sections: Section[] = [
       { label: 'Typography', path: '/typography', desc: 'Text layout, overflow and decoration' },
       { label: 'Custom Fonts (@font-face)', path: '/fontface', desc: 'Custom web fonts' },
       { label: 'Responsive Design', path: '/responsive', desc: 'Media queries and adaptive layouts' },
-      { label: 'Selectors', path: '/css/selectors', desc: 'Attribute, pseudo, combinators' },
+      // { label: 'Selectors', path: '/css/selectors', desc: 'Attribute, pseudo, combinators' },
       { label: 'Values & Units', path: '/css/values-units', desc: 'px, em, rem, vw, vh, calc()' },
     ],
   },

@@ -1,0 +1,427 @@
+/* Custom font declarations */
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 100;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/roboto/v30/KFOkCnqEu92Fr1MmgVxIIzIXKMny.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmSU5fBBc4AMP6lQ.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxKKTU1Kg.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmEU9fBBc4AMP6lQ.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmWUlfBBc4AMP6lQ.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmYUtfBBc4AMP6lQ.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/opensans/v34/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0B4taVQUwaEQbjB_mQ.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/lato/v23/S6uyw4BMUTPHjx4wXiWtFCc.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/montserrat/v25/JTUSjIg1_i6t8kCHKm459WlhyyTh89Y.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/playfairdisplay/v30/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvXDXbtXK-F2qO03q.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Merriweather';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/merriweather/v30/u-440qyriQwlOrhSvowK_l5-fCZMdeX3rsHo.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Crimson Text';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/crimsontext/v19/wlp2gwHKFkZgtmSR3NB0oRJX-g1-VK2V5w.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Fira Code';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/firacode/v21/uU9eCBsR6Z2vfE9aq3bL0fxyUs4tcw4W_D1sFUOOK0eKLzHALtf5S6V_5TrKvlXFBw.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Source Code Pro';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/sourcecodepro/v22/HI_SiYsKILxRpg3hIP6sJ7fM7PqlPevWnsUnxg.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/jetbrainsmono/v13/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKxjPVmUsaaDhw.woff2') format('woff2');
+}
+
+/* Font Face page styles */
+.list {
+  flex: 1;
+  padding: 0;
+  margin: 0;
+}
+
+.componentSection {
+  padding: 20px;
+  background-color: var(--background-color, #f5f5f5);
+  min-height: 100vh;
+}
+
+.sectionTitle {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.componentBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.componentItem {
+  background: var(--card-background, #ffffff);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-color, #e5e5e5);
+}
+
+.itemLabel {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 8px;
+}
+
+.itemDesc {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* Font container styles */
+.fontContainer {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.fontExample {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.fontExample:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.fontName {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-color, #007aff);
+  margin-bottom: 12px;
+}
+
+.fontSample {
+  font-size: 24px;
+  line-height: 1.4;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 8px;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+}
+
+.fontDetails {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  font-style: italic;
+}
+
+/* Font family applications */
+.roboto {
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.openSans {
+  font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.lato {
+  font-family: 'Lato', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.montserrat {
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.playfairDisplay {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.merriweather {
+  font-family: 'Merriweather', Georgia, serif;
+}
+
+.crimsonText {
+  font-family: 'Crimson Text', Georgia, serif;
+}
+
+.firaCode {
+  font-family: 'Fira Code', 'Monaco', 'Menlo', monospace;
+}
+
+.sourceCodePro {
+  font-family: 'Source Code Pro', 'Monaco', 'Menlo', monospace;
+}
+
+.jetbrainsMono {
+  font-family: 'JetBrains Mono', 'Monaco', 'Menlo', monospace;
+}
+
+/* Font weight examples */
+.weightExample {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.weightSample {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 12px;
+  padding: 8px 0;
+}
+
+.weight100 { font-weight: 100; }
+.weight300 { font-weight: 300; }
+.weight400 { font-weight: 400; }
+.weight500 { font-weight: 500; }
+.weight700 { font-weight: 700; }
+.weight900 { font-weight: 900; }
+
+/* Code block styles */
+.codeContainer {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+  overflow-x: auto;
+}
+
+.codeBlock {
+  font-family: 'Fira Code', 'Monaco', 'Menlo', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--primary-text-color, #333);
+  margin: 0;
+  white-space: pre;
+  overflow-x: auto;
+  background: #ffffff;
+  padding: 16px;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+/* Tips container */
+.tipsContainer {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.tip {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  align-items: flex-start;
+}
+
+.tip:last-child {
+  margin-bottom: 0;
+}
+
+.tipIcon {
+  font-size: 20px;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.tipContent {
+  flex: 1;
+}
+
+.tipTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 4px;
+}
+
+.tipText {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  line-height: 1.5;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .componentSection {
+    padding: 16px;
+  }
+
+  .fontSample {
+    font-size: 20px;
+  }
+
+  .weightSample {
+    font-size: 16px;
+  }
+
+  .codeBlock {
+    font-size: 12px;
+  }
+
+  .tip {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .fontSample {
+    font-size: 18px;
+  }
+
+  .weightSample {
+    font-size: 14px;
+  }
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .componentSection {
+    background-color: var(--dark-background-color, #1a1a1a);
+  }
+
+  .componentItem {
+    background: var(--dark-card-background, #2d2d2d);
+    border-color: var(--dark-border-color, #404040);
+  }
+
+  .sectionTitle {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .itemLabel {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .itemDesc {
+    color: var(--dark-secondary-text-color, #cccccc);
+  }
+
+  .fontContainer,
+  .weightExample,
+  .codeContainer,
+  .tipsContainer {
+    background: #383838;
+    border-color: #555;
+  }
+
+  .fontSample,
+  .weightSample,
+  .codeBlock {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .fontDetails,
+  .tipText {
+    color: var(--dark-secondary-text-color, #cccccc);
+  }
+
+  .tipTitle {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .codeBlock {
+    background: #2d2d2d;
+    border-color: #555;
+  }
+}

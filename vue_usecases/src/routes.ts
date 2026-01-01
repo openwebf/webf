@@ -8,8 +8,9 @@ export type AppRoute = {
 };
 
 export const appRoutes: AppRoute[] = [
-  { path: '/', title: 'Home', element: defineAsyncComponent(() => import('./pages/HomePage.vue')) },
-  { path: '/features', title: 'Features', element: defineAsyncComponent(() => import('./pages/FeatureCatalogPage.vue')) },
+  { path: '/', title: 'Feature Catalog', element: defineAsyncComponent(() => import('./pages/FeatureCatalogPage.vue')) },
+  { path: '/features', title: 'Feature Catalog', element: defineAsyncComponent(() => import('./pages/FeatureCatalogPage.vue')) },
+  { path: '/home', title: 'Home', element: defineAsyncComponent(() => import('./pages/HomePage.vue')) },
   { path: '/tailwind', title: 'Tailwind CSS Showcase', element: defineAsyncComponent(() => import('./pages/TailwindShowcasePage.vue')) },
 
   // Feature catalog routes

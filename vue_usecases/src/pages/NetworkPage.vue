@@ -20,6 +20,21 @@ function setLoading(key: string, loading: boolean) {
   isLoading[key] = loading;
 }
 
+function parseXHRHeaders(headerString: string): Record<string, string> {
+  const headers: Record<string, string> = {};
+  for (const line of headerString.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const colonIndex = trimmed.indexOf(':');
+    if (colonIndex < 0) continue;
+    const key = trimmed.slice(0, colonIndex).trim();
+    const value = trimmed.slice(colonIndex + 1).trim();
+    if (!key) continue;
+    headers[key] = value;
+  }
+  return headers;
+}
+
 async function testGetRequest() {
   setLoading('get', true);
   const startTime = Date.now();
@@ -135,6 +150,51 @@ async function testDeleteRequest() {
   }
 }
 
+async function testXHRRequest() {
+  setLoading('xhr', true);
+  const startTime = Date.now();
+  try {
+    const result = await new Promise<RequestResult>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', 'https://dummyjson.com/products/1');
+      xhr.setRequestHeader('Accept', 'application/json');
+
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState !== XMLHttpRequest.DONE) return;
+        const duration = Date.now() - startTime;
+        const status = xhr.status;
+        const statusText = xhr.statusText || (status >= 200 && status < 300 ? 'OK' : 'Error');
+        const headers = parseXHRHeaders(xhr.getAllResponseHeaders() || '');
+
+        let data: unknown = xhr.responseText;
+        try {
+          data = JSON.parse(xhr.responseText);
+        } catch {
+          // keep raw responseText
+        }
+
+        resolve({
+          status,
+          statusText,
+          data,
+          headers,
+          duration,
+        });
+      };
+
+      xhr.onerror = () => reject(new Error('Network error'));
+      xhr.onabort = () => reject(new Error('Request aborted'));
+      xhr.send();
+    });
+
+    updateResult('xhr', result);
+  } catch (error) {
+    updateResult('xhr', `Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  } finally {
+    setLoading('xhr', false);
+  }
+}
+
 async function testFormDataRequest() {
   setLoading('formdata', true);
   const startTime = Date.now();
@@ -233,6 +293,7 @@ const tests: Array<{ key: string; title: string; desc: string; run: () => void |
   { key: 'post', title: 'POST JSON', desc: 'Create a resource via POST', run: testPostRequest },
   { key: 'put', title: 'PUT JSON', desc: 'Update a resource via PUT', run: testPutRequest },
   { key: 'delete', title: 'DELETE', desc: 'Delete a resource via DELETE', run: testDeleteRequest },
+  { key: 'xhr', title: 'XHR (GET)', desc: 'GET the same JSON via XMLHttpRequest', run: testXHRRequest },
   { key: 'formdata', title: 'FormData', desc: 'Upload a form with a file blob', run: testFormDataRequest },
   { key: 'headers', title: 'Custom Headers', desc: 'Send custom headers and inspect echo', run: testCustomHeaders },
   { key: 'concurrent', title: 'Concurrent', desc: 'Run multiple fetches in parallel', run: testConcurrentRequests },
@@ -260,7 +321,7 @@ function formatResult(result: RequestResult | string | undefined) {
     <webf-list-view class="w-full px-3 md:px-6 max-w-4xl mx-auto py-6">
       <h1 class="text-2xl font-semibold text-fg-primary mb-4">Network</h1>
       <p class="text-fg-secondary mb-6">
-        Fetch demos for JSON, FormData, headers, and concurrent requests. These require network access at runtime.
+        Demos for Fetch, XHR, FormData, headers, and concurrent requests. These require network access at runtime.
       </p>
 
       <div class="flex flex-col gap-4">

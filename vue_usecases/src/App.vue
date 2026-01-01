@@ -5,6 +5,11 @@ import { appRoutes } from './routes';
 
 <template>
   <div class="min-h-screen w-full text-left">
+    <div class="fixed top-3 right-3 z-50 pointer-events-none">
+      <div class="rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white shadow">
+        Vue
+      </div>
+    </div>
     <Routes>
       <Route
         v-for="r in appRoutes"
