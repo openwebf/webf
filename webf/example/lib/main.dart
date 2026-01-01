@@ -24,7 +24,7 @@ import 'custom_hybrid_history_delegate.dart';
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-const String demoEntryUrl = 'http://localhost:5173';
+const String demoEntryUrl = 'http://localhost:5174';
 const String demoControllerName = 'demo';
 const String demoInitialRoute = '/';
 const Map<String, dynamic>? demoInitialState = null;
@@ -496,7 +496,6 @@ class _WebFDemoState extends State<WebFDemo> {
                   });
                 }),
             WebFInspectorFloatingPanel(),
-
           ],
         ));
   }

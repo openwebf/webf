@@ -159,7 +159,7 @@ function App() {
         <Route path="/css/sizing" title="Sizing" element={<SizingPage />} />
         <Route path="/css/inline-formatting" title="Inline Formatting" element={<InlineFormattingPage />} />
         <Route path="/css/position" title="Positioned Layout" element={<PositionPage />} />
-        <Route path="/css/selectors" title="Selectors" element={<SelectorsPage />} />
+        {/*<Route path="/css/selectors" title="Selectors" element={<SelectorsPage />} />*/}
         <Route path="/css/values-units" title="Values & Units" element={<ValuesUnitsPage />} />
 
 

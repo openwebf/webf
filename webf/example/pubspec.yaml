@@ -27,7 +27,6 @@ dependencies:
   share_plus: ^10.0.0
   showcaseview: ^4.0.1
   path_provider: ^2.1.5
-  easy_refresh: ^3.4.0
   collection: ^1.18.0
   auto_size_text: ^3.0.0
   webf_cupertino_ui:
