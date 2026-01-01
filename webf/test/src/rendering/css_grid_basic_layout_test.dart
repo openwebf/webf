@@ -123,6 +123,36 @@ void main() {
       expect(rowGap, closeTo(gridRenderer.size.height * 0.05, 1.0));
     });
 
+    testWidgets('nested percentage widths do not inflate auto row height', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-nested-percent-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; grid-template-columns: auto; grid-template-rows: auto;">
+            <div id="item" style="padding: 10px; background: #FFB74D;">
+              <div style="width: 80%; padding: 10px; background: #FF9800;">
+                <div style="width: 90%; padding: 10px; background: #F57C00; color: white;">Nested content</div>
+              </div>
+            </div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final item = prepared.getElementById('item');
+
+      final RenderGridLayout gridRenderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox itemRenderer = item.attachedRenderer as RenderBox;
+
+      expect(gridRenderer.size.height, greaterThan(80));
+      expect(gridRenderer.size.height, lessThanOrEqualTo(100)); // Give more headroom
+      expect(itemRenderer.size.height, greaterThan(80));
+      expect(itemRenderer.size.height, lessThanOrEqualTo(100)); // Give more headroom
+      expect(itemRenderer.size.height, gridRenderer.size.height);
+    });
+
     testWidgets('grid-auto-columns create implicit tracks', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,

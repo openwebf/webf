@@ -2882,6 +2882,138 @@ class RenderGridLayout extends RenderLayoutBox {
       }
     }
 
+    // Before laying out children to resolve auto row sizes, apply any horizontal
+    // track stretching that depends on the grid container's used width.
+    //
+    // Column track sizes affect item inline sizes, which in turn can affect
+    // item block sizes (e.g. via text wrapping). If we defer stretching until
+    // after measuring item heights, auto row sizing can become stale and leave
+    // the grid too tall.
+    if (colSizes.isNotEmpty) {
+      double usedContentWidth = 0;
+      int justificationColumnCount = colSizes.length;
+      for (int c = 0; c < colSizes.length; c++) {
+        usedContentWidth += colSizes[c];
+        if (c < colSizes.length - 1) usedContentWidth += colGap;
+      }
+
+      int collapsedAutoFitColumnCount = 0;
+      if (explicitAutoFitColumns != null && explicitAutoFitColumnUsage != null) {
+        double collapsedWidth = 0;
+        int collapsedCount = 0;
+        for (int i = explicitColumnCount - 1; i >= 0; i--) {
+          if (!explicitAutoFitColumns[i] || explicitAutoFitColumnUsage[i]) {
+            break;
+          }
+          collapsedWidth += colSizes[i];
+          collapsedCount++;
+          if (i > 0) {
+            collapsedWidth += colGap;
+          }
+        }
+        if (collapsedWidth > 0) {
+          usedContentWidth = math.max(0.0, usedContentWidth - collapsedWidth);
+          justificationColumnCount = math.max(0, justificationColumnCount - collapsedCount);
+          collapsedAutoFitColumnCount = collapsedCount;
+        }
+      }
+
+      // Determine the grid container's used content-box width (used for
+      // stretching auto tracks and distributing leftover space).
+      final bool isBlockGrid =
+          renderStyle.display == CSSDisplay.grid && renderStyle.effectiveDisplay == CSSDisplay.grid;
+      double layoutContentWidth = usedContentWidth;
+
+      final double? logicalBorderBoxWidth = renderStyle.borderBoxLogicalWidth;
+      if (renderStyle.width.isNotAuto &&
+          logicalBorderBoxWidth != null &&
+          logicalBorderBoxWidth.isFinite &&
+          logicalBorderBoxWidth > 0) {
+        layoutContentWidth = math.max(0.0, logicalBorderBoxWidth - horizontalPaddingBorder);
+      } else if (renderStyle.width.isAuto && innerMaxWidth != null && innerMaxWidth.isFinite) {
+        if (isBlockGrid) {
+          layoutContentWidth = math.max(layoutContentWidth, innerMaxWidth);
+        } else if (layoutContentWidth == 0 && !hasAnyChild) {
+          layoutContentWidth = innerMaxWidth;
+        }
+      } else if (layoutContentWidth == 0 && innerMaxWidth != null && innerMaxWidth.isFinite) {
+        if (renderStyle.width.isNotAuto || !hasAnyChild) {
+          layoutContentWidth = innerMaxWidth;
+        }
+      }
+
+      final double desiredBorderBoxWidth = layoutContentWidth + horizontalPaddingBorder;
+      final double constrainedBorderBoxWidth = constraints.constrainWidth(desiredBorderBoxWidth);
+      final double constrainedContentWidth = math.max(0.0, constrainedBorderBoxWidth - horizontalPaddingBorder);
+
+      double horizontalFree = math.max(0.0, constrainedContentWidth - usedContentWidth);
+
+      GridTrackSize columnTrackAt(int index) {
+        if (index >= 0 && index < resolvedColumnDefs.length) {
+          return resolvedColumnDefs[index];
+        }
+        final int implicitIndex = math.max(0, index - explicitColumnCount);
+        return autoColDefs.isNotEmpty ? autoColDefs[implicitIndex % autoColDefs.length] : const GridAuto();
+      }
+
+      double flexFactorForColumnTrack(GridTrackSize track) {
+        if (track is GridFraction) return track.fr;
+        if (track is GridMinMax && track.maxTrack is GridFraction) {
+          return (track.maxTrack as GridFraction).fr;
+        }
+        return 0.0;
+      }
+
+      // When `auto-fit` collapses empty tracks, we can end up with additional
+      // free space that should be absorbed by flexible (fr) tracks as part of
+      // track sizing rather than via justify-content alignment.
+      if (horizontalFree > 0 && collapsedAutoFitColumnCount > 0 && justificationColumnCount > 0) {
+        double frSum = 0.0;
+        final List<double> frFactors =
+            List<double>.filled(justificationColumnCount, 0.0, growable: false);
+        for (int c = 0; c < justificationColumnCount; c++) {
+          final double fr = flexFactorForColumnTrack(columnTrackAt(c));
+          if (fr > 0) {
+            frFactors[c] = fr;
+            frSum += fr;
+          }
+        }
+        if (frSum > 0) {
+          for (int c = 0; c < justificationColumnCount; c++) {
+            final double fr = frFactors[c];
+            if (fr <= 0) continue;
+            colSizes[c] += horizontalFree * (fr / frSum);
+          }
+          usedContentWidth += horizontalFree;
+          horizontalFree = 0;
+        }
+      }
+
+      // Stretch auto tracks to fill the used content-box width. This must happen
+      // before measuring auto row heights so that item layout uses the final
+      // inline sizes (per CSS Grid + Box Alignment).
+      if (horizontalFree > 0 && renderStyle.justifyContent == JustifyContent.stretch && justificationColumnCount > 0) {
+        bool isStretchableColumn(GridTrackSize track) {
+          if (track is GridAuto) return true;
+          if (track is GridMinMax) return track.maxTrack is GridAuto;
+          return false;
+        }
+
+        final List<int> stretchableColumns = <int>[];
+        for (int c = 0; c < justificationColumnCount; c++) {
+          if (isStretchableColumn(columnTrackAt(c))) {
+            stretchableColumns.add(c);
+          }
+        }
+        if (stretchableColumns.isNotEmpty) {
+          final double perColumn = horizontalFree / stretchableColumns.length;
+          for (final int c in stretchableColumns) {
+            colSizes[c] += perColumn;
+          }
+        }
+      }
+    }
+
     // Pass 2: layout children with resolved column widths.
     if (implicitRowHeights.isNotEmpty) {
       implicitRowHeights = List<double>.filled(implicitRowHeights.length, 0.0, growable: true);
