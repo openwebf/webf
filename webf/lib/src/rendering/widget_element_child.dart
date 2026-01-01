@@ -3,7 +3,6 @@
  * Licensed under GNU GPL with Enterprise exception.
  */
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/rendering.dart';
 
@@ -51,15 +50,19 @@ class WebFWidgetElementChild extends SingleChildRenderObjectWidget {
 /// constraints from the parent render object, making them accessible to
 /// WebF HTML elements through the [findWidgetElementChild] method.
 class RenderWidgetElementChild extends RenderProxyBox {
+  BoxConstraints? _effectiveChildConstraints;
+
+  /// The last constraints actually used to lay out [child].
+  ///
+  /// This can differ from [constraints] when [constraints] are unbounded and
+  /// we collapse to intrinsic sizing before laying out the WebF subtree.
+  BoxConstraints get effectiveChildConstraints => _effectiveChildConstraints ?? constraints;
+
   @override
   void performLayout() {
     final BoxConstraints incoming = constraints;
     final RenderBox? c = child;
-
-    if (c is RenderBoxModel) {
-      c.renderStyle.computeContentBoxLogicalWidth();
-      c.renderStyle.computeContentBoxLogicalHeight();
-    }
+    _effectiveChildConstraints = incoming;
 
     // When used inside layouts that provide unbounded constraints on one axis
     // (e.g., a horizontal RenderFlex main axis), forwarding those unbounded
@@ -81,6 +84,13 @@ class RenderWidgetElementChild extends RenderProxyBox {
         minHeight: incoming.minHeight,
         maxHeight: incoming.maxHeight,
       );
+    }
+
+    _effectiveChildConstraints = effective;
+
+    if (c is RenderBoxModel) {
+      c.renderStyle.computeContentBoxLogicalWidth();
+      c.renderStyle.computeContentBoxLogicalHeight();
     }
 
     if (c != null) {
