@@ -2,8 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/widgets.dart';
+import 'package:flutter/rendering.dart';
+import 'package:image/image.dart' as img;
 import 'package:webf/gesture.dart';
 import 'package:webf/webf.dart';
 
@@ -81,6 +85,55 @@ class _WebFTesterState extends State<WebFTester> {
                     height = newHeight;
                   });
                 }
+                return Future.value(null);
+              case 'captureFlutterScreenshot':
+                // Return base64 encoded PNG bytes for the whole Flutter app.
+                // This is used by integration specs to snapshot Flutter overlays
+                // that are not part of the WebF DOM render tree.
+                final RenderObject? ro = integrationRootRepaintBoundaryKey.currentContext?.findRenderObject();
+                final RenderRepaintBoundary? boundary = ro is RenderRepaintBoundary ? ro : null;
+                if (boundary == null) return Future.value('');
+
+                // Ensure the latest frame has been painted.
+                await WidgetsBinding.instance.endOfFrame;
+
+                final ui.Image image = await boundary.toImage(pixelRatio: 1.0);
+                final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+                if (byteData == null) return Future.value('');
+
+                // Optional crop: args = [x, y, width, height]
+                if (arguments is List && arguments.length == 4) {
+                  final double x = double.tryParse(arguments[0].toString()) ?? 0;
+                  final double y = double.tryParse(arguments[1].toString()) ?? 0;
+                  final double w = double.tryParse(arguments[2].toString()) ?? 0;
+                  final double h = double.tryParse(arguments[3].toString()) ?? 0;
+
+                  final bytes = byteData.buffer.asUint8List();
+                  final img.Image? decoded = img.decodePng(bytes);
+                  if (decoded == null) return Future.value(base64Encode(bytes));
+
+                  int left = x.floor();
+                  int top = y.floor();
+                  int widthPx = w.ceil();
+                  int heightPx = h.ceil();
+
+                  left = left.clamp(0, decoded.width).toInt();
+                  top = top.clamp(0, decoded.height).toInt();
+                  widthPx = widthPx.clamp(0, decoded.width - left).toInt();
+                  heightPx = heightPx.clamp(0, decoded.height - top).toInt();
+
+                  final img.Image cropped = img.copyCrop(decoded, left, top, widthPx, heightPx);
+                  final List<int> croppedPng = img.encodePng(cropped);
+                  return Future.value(base64Encode(croppedPng));
+                }
+
+                return Future.value(base64Encode(byteData.buffer.asUint8List()));
+              case 'dismissFlutterOverlays':
+                // Best-effort close of any modal routes/overlays pushed on the root navigator.
+                // Used to avoid leaks across specs (e.g. CupertinoContextMenu popup).
+                try {
+                  integrationNavigatorKey.currentState?.popUntil((route) => route.isFirst);
+                } catch (_) {}
                 return Future.value(null);
               default:
                 dynamic returnedValue = await controller.javascriptChannel

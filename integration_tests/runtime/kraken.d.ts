@@ -91,3 +91,5 @@ declare function createText(content: string): Text;
 declare function createElement(tagName: string, props?: any, children?: any[]): HTMLElement;
 declare function createElementWithStyle(tagName: string, style?: any, children?: any[]): HTMLElement;
 declare const BODY: HTMLBodyElement;
+declare function snapshotFlutter(x?: number, y?: number, w?: number, h?: number, filename?: String, postfix?: boolean | string): Promise<void>;
+declare function dismissFlutterOverlays(): Promise<void>;

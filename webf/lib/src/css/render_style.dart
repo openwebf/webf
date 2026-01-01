@@ -2681,10 +2681,16 @@ class CSSRenderStyle extends RenderStyle
             renderStyle.position != CSSPositionType.absolute &&
             renderStyle.position != CSSPositionType.fixed) {
           if (parentStyle.isSelfRenderWidget()) {
-            RenderWidgetElementChild? childWrapper = target.attachedRenderer?.findWidgetElementChild();
+            RenderWidgetElementChild? childWrapper;
+            final RenderBoxModel? currentLayoutBox =
+                renderBoxModelInLayoutStack.isNotEmpty ? renderBoxModelInLayoutStack.last : null;
+            if (currentLayoutBox != null && identical(currentLayoutBox.renderStyle, renderStyle)) {
+              childWrapper = currentLayoutBox.findWidgetElementChild();
+            }
+            childWrapper ??= target.attachedRenderer?.findWidgetElementChild();
             double? maxConstraintWidth;
             try {
-              maxConstraintWidth = childWrapper?.constraints.maxWidth;
+              maxConstraintWidth = childWrapper?.effectiveChildConstraints.maxWidth;
             } catch (_) {}
 
             if (childWrapper != null && maxConstraintWidth != null && maxConstraintWidth.isFinite) {
@@ -2710,13 +2716,22 @@ class CSSRenderStyle extends RenderStyle
           RenderStyle? ancestorRenderStyle = _findAncestorWithNoDisplayInline();
           // Should ignore renderStyle of display inline when searching for ancestors to stretch width.
           if (ancestorRenderStyle != null) {
-            RenderWidgetElementChild? childWrapper = target.attachedRenderer?.findWidgetElementChild();
+            RenderWidgetElementChild? childWrapper;
+            final RenderBoxModel? currentLayoutBox =
+                renderBoxModelInLayoutStack.isNotEmpty ? renderBoxModelInLayoutStack.last : null;
+            if (currentLayoutBox != null && identical(currentLayoutBox.renderStyle, renderStyle)) {
+              childWrapper = currentLayoutBox.findWidgetElementChild();
+            }
+            childWrapper ??= target.attachedRenderer?.findWidgetElementChild();
             double? maxConstraintWidth;
             try {
-              maxConstraintWidth = childWrapper?.constraints.maxWidth;
+              maxConstraintWidth = childWrapper?.effectiveChildConstraints.maxWidth;
             } catch (_) {}
 
-            if (ancestorRenderStyle.isSelfRenderWidget() && childWrapper != null && maxConstraintWidth != null) {
+            if (ancestorRenderStyle.isSelfRenderWidget() &&
+                childWrapper != null &&
+                maxConstraintWidth != null &&
+                maxConstraintWidth.isFinite) {
               logicalWidth = maxConstraintWidth;
             } else {
               logicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
@@ -2834,10 +2849,16 @@ class CSSRenderStyle extends RenderStyle
         CSSRenderStyle? parentRenderStyle = renderStyle.getAttachedRenderParentRenderStyle();
 
         if (parentRenderStyle != null) {
-          RenderWidgetElementChild? childWrapper = target.attachedRenderer?.findWidgetElementChild();
+          RenderWidgetElementChild? childWrapper;
+          final RenderBoxModel? currentLayoutBox =
+              renderBoxModelInLayoutStack.isNotEmpty ? renderBoxModelInLayoutStack.last : null;
+          if (currentLayoutBox != null && identical(currentLayoutBox.renderStyle, renderStyle)) {
+            childWrapper = currentLayoutBox.findWidgetElementChild();
+          }
+          childWrapper ??= target.attachedRenderer?.findWidgetElementChild();
           BoxConstraints? childWrapperConstraints;
           try {
-            childWrapperConstraints = childWrapper?.constraints;
+            childWrapperConstraints = childWrapper?.effectiveChildConstraints;
           } catch (_) {}
           RenderViewportBox? viewportBox = getCurrentViewportBox() ?? renderStyle.target.getRootViewport();
           // Override the default logicalHeight value is the parent is RenderWidget

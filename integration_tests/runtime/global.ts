@@ -460,6 +460,102 @@ async function snapshot(target?: any, filename?: String, postfix?: boolean | str
   });
 }
 
+function extractBase64Payload(raw: unknown): string {
+  let base64 = typeof raw === 'string' ? raw : String(raw ?? '');
+  base64 = base64.trim();
+
+  // Some bridges stringify return values (e.g. "method: ... return_value: ...").
+  const returnValueIndex = base64.indexOf('return_value:');
+  if (returnValueIndex !== -1) {
+    base64 = base64.slice(returnValueIndex + 'return_value:'.length).trim();
+  }
+
+  // Strip surrounding quotes if present.
+  if (
+    (base64.startsWith('"') && base64.endsWith('"')) ||
+    (base64.startsWith("'") && base64.endsWith("'"))
+  ) {
+    base64 = base64.slice(1, -1);
+  }
+
+  // Strip data URL prefix if present.
+  const dataUrlPrefix = 'data:image/png;base64,';
+  if (base64.startsWith(dataUrlPrefix)) {
+    base64 = base64.slice(dataUrlPrefix.length);
+  }
+
+  // Normalize base64url -> base64.
+  base64 = base64.replace(/-/g, '+').replace(/_/g, '/');
+
+  // Remove whitespace/newlines.
+  base64 = base64.replace(/\s+/g, '');
+
+  // Pad to a multiple of 4.
+  const mod = base64.length % 4;
+  if (mod === 2) base64 += '==';
+  else if (mod === 3) base64 += '=';
+
+  return base64;
+}
+
+function decodeBase64ToUint8Array(raw: unknown): Uint8Array {
+  const base64 = extractBase64Payload(raw);
+
+  // Browser-like env: prefer atob.
+  if (typeof atob === 'function') {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i) & 0xff;
+    }
+    return bytes;
+  }
+
+  // Node-like fallback.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const maybeBuffer: any = (globalThis as any).Buffer;
+  if (maybeBuffer) {
+    return new Uint8Array(maybeBuffer.from(base64, 'base64'));
+  }
+
+  throw new Error('No base64 decoder available (atob/Buffer).');
+}
+
+// Capture a screenshot from Flutter (includes overlays) and match against snapshot.
+// Optional crop rect: x, y, width, height (logical px in Flutter screenshot space).
+async function snapshotFlutter(x?: number, y?: number, w?: number, h?: number, filename?: String, postfix?: boolean | string) {
+  window['__webf_sync_buffer__']();
+  return new Promise<void>((resolve, reject) => {
+    requestAnimationFrame(async () => {
+      try {
+        let base64Png: any;
+        if (typeof x === 'number' && typeof y === 'number' && typeof w === 'number' && typeof h === 'number') {
+          base64Png = await webf.methodChannel.invokeMethod('captureFlutterScreenshot', x, y, w, h) as any;
+        } else {
+          base64Png = await webf.methodChannel.invokeMethod('captureFlutterScreenshot') as any;
+        }
+        if (!base64Png) {
+          throw new Error('captureFlutterScreenshot returned empty result');
+        }
+        const bytes = decodeBase64ToUint8Array(base64Png);
+        const blob = new Blob([bytes], { type: 'image/png' });
+        await expectAsync(Promise.resolve(blob)).toMatchSnapshot(filename, postfix);
+        resolve();
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
+}
+
+async function dismissFlutterOverlays() {
+  try {
+    await webf.methodChannel.invokeMethod('dismissFlutterOverlays');
+  } finally {
+    await nextFrames(2);
+  }
+}
+
 async function snapshotBody(target?: any, filename?: String, postfix?: boolean | string) {
   window['__webf_sync_buffer__']();
   return new Promise<void>((resolve, reject) => {
@@ -556,6 +652,8 @@ Object.assign(global, {
   sleep,
   nextFrames,
   snapshot,
+  snapshotFlutter,
+  dismissFlutterOverlays,
   snapshotBody,
   test,
   ftest,
