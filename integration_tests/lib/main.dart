@@ -8,17 +8,20 @@ import 'package:ansicolor/ansicolor.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:webf/css.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/webf.dart';
 
 import 'bridge/from_native.dart';
 import 'bridge/test_input.dart';
 import 'custom_elements/main.dart';
+import 'binding_objects/test_binding_object.dart';
 import 'test_module.dart';
 import 'local_http_server.dart';
 import 'utils/mem_leak_detector.dart';
 import 'webf_tester.dart';
 import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
 import 'modules/array_buffer_module.dart';
+import 'modules/method_channel_callback_module.dart';
 
 String? pass = (AnsiPen()
   ..green())('[TEST PASS]');
@@ -79,6 +82,8 @@ void main() async {
   ModuleManager.defineModule((moduleManager) => DemoModule(moduleManager));
   ModuleManager.defineModule(
           (moduleManager) => ArrayBufferModule(moduleManager));
+  ModuleManager.defineModule((moduleManager) => MethodChannelCallbackModule(moduleManager));
+  WebF.defineBindingObject('TestBindingObject', (context, args) => TestBindingObject(context, args));
   Process mockHttpServer = await startHttpMockServer(mockServerPort);
   sleep(Duration(seconds: 2));
 

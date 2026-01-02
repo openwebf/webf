@@ -20,6 +20,7 @@
 #include "bindings/qjs/converter_impl.h"
 #include "core/binding_object.h"
 #include "core/executing_context.h"
+#include "core/js_function_ref.h"
 #include "cppgc/gc_visitor.h"
 #include "foundation/native_byte_data.h"
 #include "foundation/native_value_converter.h"
@@ -87,6 +88,9 @@ static JSValue FromNativeValue(ExecutingContext* context,
       for (int i = 0; i < length; i++) {
         JSValue value = FromNativeValue(context, arr[i], shared_js_value);
         JS_SetPropertyInt64(context->ctx(), array, i, value);
+      }
+      if (!shared_js_value && arr != nullptr) {
+        dart_free(arr);
       }
       return array;
     }
@@ -262,6 +266,29 @@ NativeValue ScriptValue::ToNative(JSContext* ctx, ExceptionState& exception_stat
       // NativeString owned by NativeValue will be freed by users.
       return NativeValueConverter<NativeTypeString>::ToNativeValue(ctx, ToAtomicString(ctx));
     case JS_TAG_OBJECT: {
+      if (JS_IsFunction(ctx, value_)) {
+        auto* context = ExecutingContext::From(ctx);
+        if (!context || !context->IsContextValid()) {
+          return Native_NewNull();
+        }
+
+        auto* function_ref = new NativeJSFunctionRef();
+        function_ref->context_status = context->status();
+        function_ref->dispatcher = context->dartIsolateContext()->dispatcher().get();
+        function_ref->context_id = static_cast<int32_t>(context->contextId());
+        function_ref->is_dedicated = context->isDedicated();
+        function_ref->ctx = ctx;
+        function_ref->function = JS_DupValue(ctx, value_);
+
+        context->RegisterJSFunctionRef(function_ref);
+
+        NativeValue native_value{};
+        native_value.tag = NativeTag::TAG_FUNCTION;
+        native_value.u.ptr = function_ref;
+        native_value.uint32 = 0;
+        return native_value;
+      }
+
       if (JS_IsArrayBuffer(value_)) {
         size_t byte_len;
         uint8_t* bytes = JS_GetArrayBuffer(ctx, &byte_len, value_);

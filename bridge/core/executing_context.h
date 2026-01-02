@@ -65,6 +65,7 @@ class ScriptWrappable;
 class NativeByteDataFinalizerContext;
 class ScriptPromiseResolver;
 class HTMLScriptElement;
+struct NativeJSFunctionRef;
 
 using JSExceptionHandler = std::function<void(ExecutingContext* context, const char* message)>;
 using MicrotaskCallback = void (*)(void* data);
@@ -162,6 +163,11 @@ class ExecutingContext {
 
   void RegisterActiveNativeByteData(NativeByteDataFinalizerContext* native_byte_data);
   void UnRegisterActiveNativeByteData(NativeByteDataFinalizerContext* native_byte_data);
+
+  // Track JS function handles that were passed across the bridge (JS -> Dart).
+  // Must be called on the owning JS thread.
+  void RegisterJSFunctionRef(NativeJSFunctionRef* ref);
+  void UnregisterJSFunctionRef(NativeJSFunctionRef* ref);
 
   // Gets the DOMTimerCoordinator which maintains the "active timer
   // list" of tasks created by setTimeout and setInterval. The
@@ -293,6 +299,7 @@ class ExecutingContext {
   WebFValueStatus* executing_context_status_{new WebFValueStatus()};
   std::unordered_set<std::shared_ptr<ScriptPromiseResolver>> active_pending_promises_;
   std::unordered_set<NativeByteDataFinalizerContext*> active_native_byte_datas_;
+  std::unordered_set<NativeJSFunctionRef*> active_js_function_refs_;
   std::unordered_map<AtomicString, std::unique_ptr<WidgetElementShape>, AtomicString::KeyHasher> widget_element_shapes_;
   bool is_dedicated_;
   std::unique_ptr<RemoteObjectRegistry> remote_object_registry_;
