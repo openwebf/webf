@@ -146,8 +146,8 @@ export const <%= className %> = createWebFComponent<<%= className %>Element, <%=
     {
       propName: '<%= propName %>',
       eventName: '<%= prop.name %>',
-      handler: (callback) => (event) => {
-        callback((event as <%= getEventType(prop.type) %>));
+      handler: (callback: (event: <%= getEventType(prop.type) %>) => void) => (event: Event) => {
+        callback(event as <%= getEventType(prop.type) %>);
       },
     },
     <% }); %>

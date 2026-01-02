@@ -19,6 +19,8 @@
     "build": "rollup -c",
     "dev": "rollup -c -w",
     "clean": "rm -rf dist",
+    "test": "npm run build && node --test tests/pathMatcher.test.js tests/webfRouter.test.js tests/useRoutes.test.js tests/hybridRouterChange.test.js",
+    "type-check": "tsc --noEmit",
     "prepublishOnly": "npm run clean && npm run build"
   },
   "repository": {

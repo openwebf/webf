@@ -16,10 +16,15 @@ import {TypographyPage} from './pages/TypographyPage';
 import {ActionSheetPage} from './pages/ActionSheetPage';
 import {VideoPage} from './pages/VideoPage';
 import {FontFacePage} from './pages/FontFacePage';
-import {NativeInteractionPage} from './pages/NativeInteractionPage';
+import {WebFSharePage} from './pages/WebFSharePage';
 import {NetworkPage} from './pages/NetworkPage';
 import {ResponsivePage} from './pages/ResponsivePage';
-import {RoutingPage} from './pages/RoutingPage';
+import { RoutingPage } from './pages/RoutingPage';
+import { RoutingAboutPage } from './pages/RoutingAboutPage';
+import { RoutingUserPage } from './pages/RoutingUserPage';
+import { RoutingFilesPage } from './pages/RoutingFilesPage';
+import { RoutingNotFoundPage } from './pages/RoutingNotFoundPage';
+import { WebFRouterAPIDemoPage } from './pages/WebFRouterAPIDemoPage';
 import {ContextMenuPage} from './pages/ContextMenuPage';
 import {ModalPopupPage} from './pages/ModalPopupPage';
 import {LoadingPage} from './pages/LoadingPage';
@@ -106,6 +111,7 @@ import { CupertinoRadioPage } from './pages/cupertino/CupertinoRadioPage';
 import {UserDetailsPage} from './pages/routeDemo/UserDetailsPage';
 import {ReportDetailsPage} from './pages/routeDemo/ReportDetailsPage';
 import {ProfileEditPage} from './pages/routeDemo/ProfileEditPage';
+import {DragableListPage} from './pages/DragableListPage';
 
 function App() {
 
@@ -153,7 +159,7 @@ function App() {
         <Route path="/css/sizing" title="Sizing" element={<SizingPage />} />
         <Route path="/css/inline-formatting" title="Inline Formatting" element={<InlineFormattingPage />} />
         <Route path="/css/position" title="Positioned Layout" element={<PositionPage />} />
-        <Route path="/css/selectors" title="Selectors" element={<SelectorsPage />} />
+        {/*<Route path="/css/selectors" title="Selectors" element={<SelectorsPage />} />*/}
         <Route path="/css/values-units" title="Values & Units" element={<ValuesUnitsPage />} />
 
 
@@ -195,13 +201,20 @@ function App() {
 
 
         <Route path="/image-preload" title="Image Preload" element={<ImagePreloadPage />} />
+
+        {/* Routing / Navigation */}
+        <Route path="/routing/about" title="Routing Demo: About" element={<RoutingAboutPage />} />
+        <Route path="/routing/users/:id" title="Routing Demo: User" element={<RoutingUserPage />} />
+        <Route path="/routing/files/*" title="Routing Demo: Files" element={<RoutingFilesPage />} />
         <Route path="/routing" title="Routing & Navigation" element={<RoutingPage />} />
+        <Route path="/routing/*" title="Routing Demo: Not Found" element={<RoutingNotFoundPage />} />
+        <Route path="/routing-api" title="WebFRouter API Showcase" element={<WebFRouterAPIDemoPage />} />
 
         {/* Dynamic Route Examples */}
         <Route path="/user/:id" title="User Details" element={<UserDetailsPage />} />
         <Route path="/dashboard/:year/:month/reports/:id" title="Report Details" element={<ReportDetailsPage />} />
         <Route path="/profile/edit" title="Profile Edit" element={<ProfileEditPage />} />
-        <Route path="/native-interaction" title="WebF Share Module" element={<NativeInteractionPage />} />
+        <Route path="/webf-share" title="WebF Share" element={<WebFSharePage />} />
         <Route path="/network" title="Network Requests" element={<NetworkPage />} />
         <Route path="/image" title="Image Gallery" element={<ImagePage />} />
         <Route path="/typography" title="Typography" element={<TypographyPage />} />
@@ -210,6 +223,7 @@ function App() {
         <Route path="/alert" title="Alert" element={<AlertPage />} />
         <Route path="/theme-toggle" title="Theme Toggle" element={<ThemeTogglePage />} />
         <Route path="/gesture" title="Gesture Detection" element={<GesturePage />} />
+        <Route path="/dragable-list" title="Dragable List" element={<DragableListPage />} />
 
         {/*<Route path="/show_case" title="Show Case" element={<ShowCasePage />} />*/}
         <Route path="/listview" title="WebFListView" element={<ListviewPage />} />

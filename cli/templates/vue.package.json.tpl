@@ -9,9 +9,11 @@
   "author": "",
   "license": "ISC",
   "peerDependencies": {
-    "vue": "^3.0.0"
+    "vue": "^3.0.0",
+    "@openwebf/vue-core-ui": "^0.24.0"
   },
   "devDependencies": {
+    "@openwebf/vue-core-ui": "^0.24.0",
     "vue": "^3.0.0"
   }
 }

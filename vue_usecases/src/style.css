@@ -1,0 +1,181 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color: var(--font-color);
+    color-scheme: light dark;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    --background-color: rgb(248, 249, 250);
+    --font-color: #ffffff;
+    --font-color-primary: #1b1b1b;
+    --font-color-secondary: #696969;
+    --link-color: #0085f2;
+    --secondary-font-color: #6b7280;
+    --background-primary: #fff;
+    --background-secondary: #f9f9fb;
+    --background-tertiary: #fff;
+    --background-toc-active: #ebeaea;
+    --background-hover: rgba(0, 0, 0, 0.04);
+    --background-mark-yellow: rgba(199, 183, 0, 0.4);
+    --background-mark-green: rgba(0, 208, 97, 0.4);
+    --background-information: rgba(0, 133, 242, 0.1);
+    --background-warning: rgba(255, 42, 81, 0.1);
+    --background-critical: rgba(211, 0, 56, 0.1);
+    --background-success: rgba(0, 121, 54, 0.1);
+    --border-primary: #cdcdcd;
+    --border-secondary: #cdcdcd;
+    --border-color: #eee;
+    --button-primary-default: #1b1b1b;
+    --button-primary-text: #ffffff;
+    --button-primary-hover: #696969;
+    --button-primary-active: #9e9e9e;
+    --button-primary-inactive: #1b1b1b;
+    --button-secondary-default: #fff;
+    --button-secondary-hover: #cdcdcd;
+    --button-secondary-active: #cdcdcd;
+    --button-secondary-inactive: #f9f9fb;
+    --button-secondary-border-focus: #0085f2;
+    --button-secondary-border-red: #ff97a0;
+    --button-secondary-border-red-focus: #ffd9dc;
+    --card-border-color: #f3f4f6;
+    --card-background: var(--background-primary);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --background-color: rgb(248, 249, 250);
+      --font-color: #000000;
+      --font-color-primary: #1b1b1b;
+      --secondary-font-color: #6b7280;
+      --background-primary: #fff;
+      --background-secondary: #f9f9fb;
+      --background-tertiary: #fff;
+      --background-toc-active: #ebeaea;
+      --background-mark-yellow: rgba(199, 183, 0, 0.4);
+      --background-mark-green: rgba(0, 208, 97, 0.4);
+      --background-information: rgba(0, 133, 242, 0.1);
+      --background-warning: rgba(255, 42, 81, 0.1);
+      --background-critical: rgba(211, 0, 56, 0.1);
+      --background-success: rgba(0, 121, 54, 0.1);
+      --border-primary: #cdcdcd;
+      --border-secondary: #cdcdcd;
+      --border-color: #eee;
+      --button-primary-default: #1b1b1b;
+      --button-primary-text: #ffffff;
+      --button-primary-hover: #696969;
+      --button-primary-active: #9e9e9e;
+      --button-primary-inactive: #1b1b1b;
+      --button-secondary-default: #fff;
+      --button-secondary-hover: #cdcdcd;
+      --button-secondary-active: #cdcdcd;
+      --button-secondary-inactive: #f9f9fb;
+      --button-secondary-border-focus: #0085f2;
+      --button-secondary-border-red: #ff97a0;
+      --button-secondary-border-red-focus: #ffd9dc;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background-color: rgb(20, 18, 24);
+      --font-color: #ffffff;
+      --font-color-primary: #ffffff;
+      --font-color-secondary: #cdcdcd;
+      --link-color: #3399ff;
+      --card-border-color: #343434;
+      --card-background: var(--background-primary);
+      --secondary-font-color: #6b7280;
+      --background-primary: #1b1b1b;
+      --background-secondary: #343434;
+      --background-tertiary: #4e4e4e;
+      --background-toc-active: #343434;
+      --background-mark-yellow: rgba(199, 183, 0, 0.4);
+      --border-primary: #858585;
+      --border-secondary: #696969;
+      --border-color: #555;
+      --button-primary-default: #fff;
+      --button-primary-text: #ffffff;
+      --button-primary-hover: #cdcdcd;
+      --button-primary-active: #9e9e9e;
+      --button-primary-inactive: #fff;
+      --button-secondary-default: #4e4e4e;
+      --button-secondary-hover: #858585;
+      --button-secondary-active: #9e9e9e;
+      --button-secondary-inactive: #4e4e4e;
+      --link-color: #3b9eff;
+    }
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background-color: var(--background-color);
+    color: var(--font-color);
+    font:
+      14px -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      Oxygen,
+      Ubuntu,
+      Cantarell,
+      'Fira Sans',
+      'Droid Sans',
+      'Helvetica Neue',
+      Helvetica,
+      Arial,
+      sans-serif;
+    line-height: 1.4em;
+    min-width: 320px;
+    width: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-weight: 300;
+  }
+
+  code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+  }
+
+  #app {
+    min-height: 100vh;
+  }
+}
+
+/* WebFListView: show custom refresh indicator only when enabled */
+webf-listview[refresh-style='customCupertino'] > [slotName='refresh-indicator'],
+webf-list-view[refresh-style='customCupertino'] > [slotName='refresh-indicator'] {
+  display: flex;
+}
+
+@keyframes webf-float-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+flutter-cupertino-button[variant='filled']:not([disabled]) {
+  color: var(--button-primary-text);
+}
+
+.custom-cupertino-input-demo {
+  height: 56px;
+  border-radius: 20px;
+  padding: 0 20px;
+  text-align: right;
+}

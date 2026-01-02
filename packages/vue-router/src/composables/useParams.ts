@@ -1,6 +1,6 @@
-import { computed, inject, ComputedRef } from 'vue';
-import type { RouteContext } from '../types';
+import { computed, ComputedRef } from 'vue';
 import { RouteParams } from '../utils/pathMatcher';
+import { useRouteContext } from './useRouteContext';
 
 /**
  * Hook to get route parameters from dynamic routes
@@ -16,11 +16,9 @@ import { RouteParams } from '../utils/pathMatcher';
  * ```
  */
 export function useParams(): ComputedRef<RouteParams> {
-  const routeContext = inject<RouteContext>('route-context');
-  const routeSpecificContext = inject<ComputedRef<RouteContext>>('route-specific-context');
-  
+  const context = useRouteContext();
+
   return computed(() => {
-    const context = routeSpecificContext?.value || routeContext;
-    return context?.routeParams || {};
+    return context.value.routeParams || {};
   });
 }

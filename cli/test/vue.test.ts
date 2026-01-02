@@ -1,6 +1,6 @@
 import { generateVueTypings } from '../src/vue';
 import { IDLBlob } from '../src/IDLBlob';
-import { ClassObject, ClassObjectKind, PropsDeclaration, ConstObject } from '../src/declaration';
+import { ClassObject, ClassObjectKind, PropsDeclaration, ConstObject, TypeAliasObject } from '../src/declaration';
 
 describe('Vue Generator', () => {
   describe('generateVueTypings', () => {
@@ -16,13 +16,16 @@ describe('Vue Generator', () => {
       
       // Should include standard HTML props in Props type
       expect(result).toContain("'id'?: string;");
-      expect(result).toContain("'class'?: string;");
-      expect(result).toContain("'style'?: string | Record<string, any>;");
+      expect(result).toContain("'class'?: ClassValue;");
+      expect(result).toContain("'style'?: StyleValue;");
       
       // Should generate proper type exports
       expect(result).toContain('export type TestComponentProps = {');
       expect(result).toContain('export interface TestComponentElement {');
       expect(result).toContain('export type TestComponentEvents = {');
+
+      // Should not rely on a non-existent internal __webfTypes import
+      expect(result).not.toContain('__webfTypes');
     });
 
     it('should include standard HTML props along with custom properties', () => {
@@ -58,8 +61,8 @@ describe('Vue Generator', () => {
       
       // And still include standard HTML props
       expect(result).toContain("'id'?: string;");
-      expect(result).toContain("'class'?: string;");
-      expect(result).toContain("'style'?: string | Record<string, any>;");
+      expect(result).toContain("'class'?: ClassValue;");
+      expect(result).toContain("'style'?: StyleValue;");
     });
 
     it('should generate proper Vue component declarations', () => {
@@ -73,11 +76,20 @@ describe('Vue Generator', () => {
       const result = generateVueTypings([blob]);
       
       // Should generate proper component declarations
-      expect(result).toContain("declare module 'vue' {");
+      expect(result).toContain("declare module '@vue/runtime-core' {");
+      expect(result).toContain("interface GlobalDirectives {");
+      expect(result).toContain('vFlutterAttached: typeof flutterAttached;');
       expect(result).toContain("interface GlobalComponents {");
-      expect(result).toContain("'web-f-list-view': DefineCustomElement<");
+      expect(result).toContain("'webf-list-view': DefineCustomElement<");
+      expect(result).not.toContain("'web-f-list-view': DefineCustomElement<");
+      expect(result).toContain("WebFListViewElement,");
       expect(result).toContain("WebFListViewProps,");
       expect(result).toContain("WebFListViewEvents");
+
+      // Compatibility module for older tooling
+      expect(result).toContain("declare module 'vue' {");
+      expect(result).toContain("interface GlobalDirectives extends import('@vue/runtime-core').GlobalDirectives {}");
+      expect(result).toContain("interface GlobalComponents extends import('@vue/runtime-core').GlobalComponents {}");
     });
 
     it('should handle multiple components', () => {
@@ -145,13 +157,13 @@ describe('Vue Generator', () => {
       
       // Should include event types
       expect(result).toContain('export type TestComponentEvents = {');
-      expect(result).toContain('close?: Event;');
-      expect(result).toContain('refresh?: CustomEvent;');
+      expect(result).toContain('close: Event;');
+      expect(result).toContain('refresh: CustomEvent;');
       
       // Props should still have standard HTML props
       expect(result).toContain("'id'?: string;");
-      expect(result).toContain("'class'?: string;");
-      expect(result).toContain("'style'?: string | Record<string, any>;");
+      expect(result).toContain("'class'?: ClassValue;");
+      expect(result).toContain("'style'?: StyleValue;");
     });
 
     it('should include declare const variables as exported declarations', () => {
@@ -166,6 +178,19 @@ describe('Vue Generator', () => {
       const result = generateVueTypings([blob]);
 
       expect(result).toContain('export declare const WEBF_UNIQUE: unique symbol;');
+    });
+
+    it('should include type aliases as exported declarations', () => {
+      const blob = new IDLBlob('/test/source', '/test/target', 'TypeAliasOnly', 'test', '');
+
+      const typeAlias = new TypeAliasObject();
+      typeAlias.name = 'MyAlias';
+      typeAlias.type = 'string | number';
+
+      blob.objects = [typeAlias as any];
+
+      const result = generateVueTypings([blob]);
+      expect(result).toContain('export type MyAlias = string | number;');
     });
 
     it('should include declare enum as exported declaration', () => {

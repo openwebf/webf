@@ -1,0 +1,8 @@
+<script setup lang="ts">
+import PlaceholderPage from './_shared/PlaceholderPage.vue';
+</script>
+
+<template>
+  <PlaceholderPage title="QR Code" source="../use_cases/src/pages/QRCodePage.tsx" />
+</template>
+

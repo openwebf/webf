@@ -337,21 +337,26 @@ class CSSLengthValue {
           parentRenderStyle = parentRenderStyle.getAttachedRenderParentRenderStyle();
         }
 
-        RenderWidgetElementChild? renderWidgetElementChild =
-            currentRenderStyle?.target.attachedRenderer?.findWidgetElementChild();
+        RenderWidgetElementChild? renderWidgetElementChild;
+        final RenderBoxModel? currentLayoutBox =
+            renderBoxModelInLayoutStack.isNotEmpty ? renderBoxModelInLayoutStack.last : null;
+        if (currentLayoutBox != null && identical(currentLayoutBox.renderStyle, currentRenderStyle)) {
+          renderWidgetElementChild = currentLayoutBox.findWidgetElementChild();
+        }
+        renderWidgetElementChild ??= currentRenderStyle?.target.attachedRenderer?.findWidgetElementChild();
         bool shouldInheritRenderWidgetElementConstraintsWidth =
             parentRenderStyle?.isSelfRenderWidget() == true && renderWidgetElementChild != null;
         double? parentWidgetConstraintWidth;
         bool shouldInheritRenderWidgetElementConstraintsHeight = false;
         double? parentWidgetConstraintHeight;
         try {
-          parentWidgetConstraintWidth = renderWidgetElementChild?.constraints.maxWidth;
+          parentWidgetConstraintWidth = renderWidgetElementChild?.effectiveChildConstraints.maxWidth;
           shouldInheritRenderWidgetElementConstraintsHeight = parentRenderStyle?.isSelfRenderWidget() == true &&
               renderWidgetElementChild != null &&
-              renderWidgetElementChild.constraints.maxHeight.isFinite &&
-              renderWidgetElementChild.constraints.maxHeight !=
+              renderWidgetElementChild.effectiveChildConstraints.maxHeight.isFinite &&
+              renderWidgetElementChild.effectiveChildConstraints.maxHeight !=
                   currentRenderStyle!.target.ownerView.currentViewport!.boxSize!.height;
-          parentWidgetConstraintHeight = renderWidgetElementChild?.constraints.maxHeight;
+          parentWidgetConstraintHeight = renderWidgetElementChild?.effectiveChildConstraints.maxHeight;
         } catch (_) {}
 
         // Percentage relative width priority: RenderWidgetChild's constraints > logical width > renderer width

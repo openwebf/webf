@@ -52,13 +52,12 @@ function generateReturnType(type: ParameterType): string {
     return pointerType;
   }
   if (type.isArray && typeof type.value === 'object' && !Array.isArray(type.value)) {
-    const elemType = getPointerType(type.value);
-    // Map arrays of Dart `Type` to `any[]` in TS; parenthesize typeof
-    if (elemType === 'Type') return 'any[]';
-    if (typeof elemType === 'string' && elemType.startsWith('typeof ')) {
-      return `(${elemType})[]`;
+    const elemType = generateReturnType(type.value);
+    if (!elemType) return 'any[]';
+    if (/^[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*$/.test(elemType)) {
+      return `${elemType}[]`;
     }
-    return `${elemType}[]`;
+    return `(${elemType})[]`;
   }
   switch (type.value) {
     case FunctionArgumentType.int:
@@ -387,19 +386,12 @@ export function generateReactComponent(blob: IDLBlob, packageName?: string, rela
         return pointerType;
       }
       if (type.isArray && typeof type.value === 'object' && !Array.isArray(type.value)) {
-        const elemType = getPointerType(type.value);
-        if (elemType === 'Type') return 'any[]';
-        if (typeof elemType === 'string' && elemType.startsWith('typeof ')) {
-          const ident = elemType.substring('typeof '.length).trim();
-          return `(typeof __webfTypes.${ident})[]`;
+        const elemType = genRT(type.value);
+        if (!elemType) return 'any[]';
+        if (/^[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*$/.test(elemType)) {
+          return `${elemType}[]`;
         }
-        if (typeof elemType === 'string' && /^(?:[A-Za-z_][A-Za-z0-9_]*)(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/.test(elemType)) {
-          const base = elemType.split('.')[0];
-          if (!localTypeNames.has(base)) {
-            return `__webfTypes.${elemType}[]`;
-          }
-        }
-        return `${elemType}[]`;
+        return `(${elemType})[]`;
       }
       switch (type.value) {
         case FunctionArgumentType.int:

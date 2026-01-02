@@ -230,8 +230,8 @@ describe('Commands', () => {
 
         expect(mockSpawnSync).toHaveBeenCalledWith(
           expect.stringMatching(/npm(\.cmd)?/),
-          ['install'],
-          { cwd: target, stdio: 'inherit' }
+          ['install', '--production=false'],
+          expect.objectContaining({ cwd: target, stdio: 'inherit' })
         );
       });
     });
@@ -283,18 +283,11 @@ describe('Commands', () => {
         
         await generateCommand(target, options);
 
-        // Should install WebF typings
+        // Should install dependencies (including devDependencies) from package.json
         expect(mockSpawnSync).toHaveBeenCalledWith(
           expect.stringMatching(/npm(\.cmd)?/),
-          ['install', '@openwebf/webf-enterprise-typings'],
-          { cwd: target, stdio: 'inherit' }
-        );
-
-        // Should install Vue 3 as dev dependency
-        expect(mockSpawnSync).toHaveBeenCalledWith(
-          expect.stringMatching(/npm(\.cmd)?/),
-          ['install', 'vue', '-D'],
-          { cwd: target, stdio: 'inherit' }
+          ['install', '--production=false'],
+          expect.objectContaining({ cwd: target, stdio: 'inherit' })
         );
       });
     });

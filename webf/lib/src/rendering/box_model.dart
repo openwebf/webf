@@ -22,6 +22,13 @@ import 'package:webf/src/accessibility/semantics.dart';
 // The hashCode of all the renderBox which is in layout.
 List<int> renderBoxInLayoutHashCodes = [];
 
+// A stack of render boxes currently performing layout (last = innermost).
+//
+// This is used to associate CSS sizing computations with the *current* render
+// tree instance in cases where the same DOM element is mounted into multiple
+// Flutter subtrees simultaneously (e.g. CupertinoContextMenu preview/modal).
+final List<RenderBoxModel> renderBoxModelInLayoutStack = <RenderBoxModel>[];
+
 class RenderLayoutParentData extends ContainerBoxParentData<RenderBox> {
   // Row index of child when wrapping
   int runIndex = 0;
@@ -417,12 +424,17 @@ abstract class RenderBoxModel extends RenderBox
   @override
   void layout(Constraints constraints, {bool parentUsesSize = false}) {
     renderBoxInLayoutHashCodes.add(hashCode);
-    super.layout(constraints, parentUsesSize: parentUsesSize);
+    renderBoxModelInLayoutStack.add(this);
 
-    renderBoxInLayoutHashCodes.remove(hashCode);
-    // Clear length cache when no renderBox is in layout.
-    if (renderBoxInLayoutHashCodes.isEmpty) {
-      clearComputedValueCache();
+    try {
+      super.layout(constraints, parentUsesSize: parentUsesSize);
+    } finally {
+      renderBoxModelInLayoutStack.removeLast();
+      renderBoxInLayoutHashCodes.remove(hashCode);
+      // Clear length cache when no renderBox is in layout.
+      if (renderBoxInLayoutHashCodes.isEmpty) {
+        clearComputedValueCache();
+      }
     }
   }
 
@@ -894,24 +906,23 @@ abstract class RenderBoxModel extends RenderBox
   ///
   /// The search stops when it either:
   /// - Finds a [RenderWidgetElementChild] and returns it
-  /// - Encounters a [RenderWidget] (indicating no [WebFWidgetElementChild] was used in the build method)
   /// - Reaches the root of the render tree
+  ///
+  /// Note: [RenderWidgetElementChild] may sit above a [RenderWidget] when a WebF
+  /// element is embedded into a Flutter widget subtree (e.g., via
+  /// `WebFWidgetElementChild(child: someElement.toWidget())`). In that case, we
+  /// must continue traversing past [RenderWidget] to observe the outer Flutter
+  /// constraints.
   ///
   /// Returns null if no [RenderWidgetElementChild] is found in the ancestor chain.
   ///
   /// This is used to access parent constraints for layout calculations, allowing HTML elements
   /// to be aware of their Flutter widget container constraints for proper sizing and layout.
   RenderWidgetElementChild? findWidgetElementChild() {
-    RenderObject? parent = this.parent;
-    while (parent != null) {
-      if (parent is RenderWidgetElementChild) {
-        return parent;
-      }
-      // There were no WebFWidgetElementChild in the build() of WebFWidgetElementState
-      if (parent is RenderWidget) {
-        return null;
-      }
-      parent = parent.parent;
+    RenderObject? ancestor = parent;
+    while (ancestor != null) {
+      if (ancestor is RenderWidgetElementChild) return ancestor;
+      ancestor = ancestor.parent;
     }
     return null;
   }

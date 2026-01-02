@@ -28,6 +28,11 @@ String? err = (AnsiPen()
 final String __dirname = path.dirname(Platform.script.path);
 String testDirectory = Platform.environment['WEBF_TEST_DIR'] ?? __dirname;
 
+// A repaint boundary that wraps the entire Flutter app so integration specs can
+// capture screenshots that include Flutter overlays (e.g. CupertinoContextMenu).
+final GlobalKey integrationRootRepaintBoundaryKey = GlobalKey();
+final GlobalKey<NavigatorState> integrationNavigatorKey = GlobalKey<NavigatorState>();
+
 Future<int> findAvailablePort({int startPort = 4000, int endPort = 5000}) async {
   for (var port = startPort; port <= endPort; port++) {
     try {
@@ -94,24 +99,30 @@ void main() async {
   testTextInput = TestTextInput();
 
   runZonedGuarded(() {
-    runApp(MaterialApp(
-      title: 'webF Integration Tests',
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        appBar: AppBar(title: Text('WebF Integration Tests')),
-        body: Wrap(
-          children: [
-            WebFTester(
-              preCode: codeInjection,
-              mockServerPort: mockServerPort,
-              onWillFinish: () {
-                mockHttpServer.kill(ProcessSignal.sigkill);
-              },
+    runApp(
+      RepaintBoundary(
+        key: integrationRootRepaintBoundaryKey,
+        child: MaterialApp(
+          title: 'webF Integration Tests',
+          debugShowCheckedModeBanner: false,
+          navigatorKey: integrationNavigatorKey,
+          home: Scaffold(
+            appBar: AppBar(title: Text('WebF Integration Tests')),
+            body: Wrap(
+              children: [
+                WebFTester(
+                  preCode: codeInjection,
+                  mockServerPort: mockServerPort,
+                  onWillFinish: () {
+                    mockHttpServer.kill(ProcessSignal.sigkill);
+                  },
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
-    ));
+    );
   }, (Object error, StackTrace stack) {
     print('$error\n$stack');
   });
