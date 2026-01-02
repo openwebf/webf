@@ -15,17 +15,18 @@ export interface RouteContextWithActive extends RouteContext {
  *
  * @example
  * ```ts
- * const { params, path, isActive, routeParams } = useRouteContext();
- * 
- * if (isActive.value) {
+ * const route = useRouteContext();
+ *
+ * if (route.value.isActive) {
  *   console.log('This route is currently active');
- *   console.log('Route params:', routeParams.value);
+ *   console.log('Route params:', route.value.routeParams);
+ *   console.log('Route state:', route.value.params);
  * }
  * ```
  */
 export function useRouteContext(): ComputedRef<RouteContextWithActive> {
-  const routeContext = inject<RouteContext>('route-context');
-  const routeSpecificContext = inject<ComputedRef<RouteContext>>('route-specific-context');
+  const routeContext = inject<RouteContext | undefined>('route-context', undefined);
+  const routeSpecificContext = inject<ComputedRef<RouteContext> | undefined>('route-specific-context', undefined);
   
   return computed(() => {
     const context = routeSpecificContext?.value || routeContext;
@@ -33,6 +34,7 @@ export function useRouteContext(): ComputedRef<RouteContextWithActive> {
     if (!context) {
       return {
         path: undefined,
+        mountedPath: undefined,
         params: undefined,
         routeParams: undefined,
         activePath: undefined,
@@ -41,9 +43,9 @@ export function useRouteContext(): ComputedRef<RouteContextWithActive> {
       };
     }
     
-    // isActive is true only for push events with matching path
-    const isActive = (context.routeEventKind === 'didPush' || context.routeEventKind === 'didPushNext')
-      && context.path === context.activePath;
+    const isActive = context.activePath !== undefined
+      && context.mountedPath !== undefined
+      && context.activePath === context.mountedPath;
     
     return {
       ...context,

@@ -33,7 +33,10 @@ export function useNavigate(): NavigationMethods {
     if (typeof to === 'number') {
       // Handle relative navigation (e.g., -1 for back)
       if (to === -1) {
-        WebFRouter.back();
+        // Prefer Flutter-style stack pop to match `pushNamed` behavior in WebF.
+        // `canPop()` may be stale in some runtimes, so try `maybePop()` first.
+        const didPop = WebFRouter.maybePop();
+        if (!didPop) WebFRouter.back();
       } else {
         console.warn('Relative navigation other than -1 is not supported yet');
       }

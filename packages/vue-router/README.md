@@ -7,9 +7,18 @@ A Vue Router implementation for WebF applications using hybrid history API. This
 - 🚀 **Hybrid Navigation**: Seamlessly bridge between WebF's native navigation and Vue's routing
 - 📱 **Flutter-like API**: Familiar navigation methods like `push`, `pop`, `popUntil`, etc.
 - 🎯 **Type-safe Routing**: Full TypeScript support with type-safe route parameters
-- ⚡ **Performance Optimized**: Lazy loading support and smart component lifecycle management
+- ⚡ **Performance Optimized**: `prerender` support and smart component lifecycle management
 - 🔄 **State Management**: Pass and receive data between routes with ease
 - 📊 **Route Context**: Access route information anywhere in your component tree
+
+## Runtime Requirements (WebF)
+
+This router is designed for the WebF environment and expects:
+
+- `webf.hybridHistory` (navigation runtime)
+- `<webf-router-link>` (route container element that fires `onscreen/offscreen` and `hybridrouterchange`)
+
+It is not intended to be used in a normal browser environment.
 
 ## Installation
 
@@ -65,11 +74,11 @@ The container component that wraps all your routes and provides the routing cont
 Defines a single route in your application.
 
 ```vue
-<Route 
-  path="/profile"           
-  :element="ProfilePage"    
-  title="Profile"           
-  :prerender="true"        
+<Route
+  path="/profile"
+  :element="ProfilePage"
+  title="Profile"
+  :prerender="true"
 />
 ```
 
@@ -79,6 +88,7 @@ Defines a single route in your application.
 - `element` (Component | string, required): The component to render when this route is active
 - `title` (string, optional): Title for the route
 - `prerender` (boolean, optional): Whether to pre-render this route for better performance
+- `theme` (`'material' | 'cupertino'`, optional): Forwarded to `<webf-router-link>`
 
 ## Composition API
 
@@ -94,16 +104,16 @@ const { navigate, pop, canPop, popAndPush } = useNavigate();
 
 const handleLogin = async () => {
   await loginUser();
-  
+
   // Navigate to dashboard
   navigate('/dashboard');
-  
+
   // Navigate with state
   navigate('/profile', { state: { from: 'login' } });
-  
+
   // Replace current route
   navigate('/home', { replace: true });
-  
+
   // Go back
   navigate(-1);
 };
@@ -161,13 +171,17 @@ Access detailed route context information.
 
 ```vue
 <script setup>
+import { computed } from 'vue';
 import { useRouteContext } from '@openwebf/vue-router';
 
-const { path, params, isActive, activePath, routeEventKind } = useRouteContext();
+const route = useRouteContext();
+const userId = computed(() => route.value.routeParams?.id ?? '(missing)');
 
-if (isActive.value) {
+if (route.value.isActive) {
   console.log('This route is currently active');
-  console.log('Route params:', params.value);
+  console.log('Active path:', route.value.activePath);
+  console.log('Route params:', route.value.routeParams);
+  console.log('Route state:', route.value.params);
 }
 </script>
 ```
@@ -179,14 +193,16 @@ Get route parameters from dynamic routes.
 ```vue
 <script setup>
 // For route pattern "/user/:userId" and actual path "/user/123"
+import { computed } from 'vue';
 import { useParams } from '@openwebf/vue-router';
 
 const params = useParams();
 console.log(params.value.userId); // "123"
+const userId = computed(() => params.value.userId ?? '(missing)');
 </script>
 
 <template>
-  <div>User ID: {{ params.userId }}</div>
+  <div>User ID: {{ userId }}</div>
 </template>
 ```
 
@@ -197,18 +213,26 @@ Create routes from a configuration object.
 ```vue
 <script setup>
 import { useRoutes } from '@openwebf/vue-router';
+import { defineComponent } from 'vue';
 import HomePage from './pages/HomePage.vue';
 import AboutPage from './pages/AboutPage.vue';
 
-const routes = useRoutes([
+const routesVNode = useRoutes([
   { path: '/', element: HomePage, title: 'Home' },
   { path: '/about', element: AboutPage, title: 'About' },
-  { path: '/profile', element: 'ProfilePage', prerender: true }, // String for lazy loading
+  { path: '/profile', element: 'ProfilePage', prerender: true }, // Registered component name (string)
 ]);
+
+const RoutesView = defineComponent({
+  name: 'RoutesView',
+  setup() {
+    return () => routesVNode;
+  },
+});
 </script>
 
 <template>
-  <component :is="routes" />
+  <RoutesView />
 </template>
 ```
 
@@ -230,8 +254,24 @@ Support for route parameters like React Router:
 // In UserPage component
 import { useParams } from '@openwebf/vue-router';
 
+const params = useParams(); // computed ref
+// Access params.value.userId in script, or params.userId in template
+</script>
+```
+
+### Wildcard Routes
+
+```vue
+<Routes>
+  <Route path="/files/*" :element="FilesPage" />
+</Routes>
+
+<script setup>
+import { computed } from 'vue';
+import { useParams } from '@openwebf/vue-router';
+
 const params = useParams();
-// Access params.value.userId
+const splat = computed(() => params.value['*'] ?? '(missing)');
 </script>
 ```
 
@@ -241,11 +281,11 @@ const params = useParams();
 <script setup>
 // Navigate with state
 const { navigate } = useNavigate();
-navigate('/details', { 
-  state: { 
-    productId: 123, 
-    from: 'catalog' 
-  } 
+navigate('/details', {
+  state: {
+    productId: 123,
+    from: 'catalog'
+  }
 });
 
 // Access state in the target component
@@ -281,7 +321,7 @@ const replaceWithLogin = () => nav.navigate('/login', { replace: true });
 // Navigate with complex state
 const goToProduct = (product) => {
   nav.navigate(`/products/${product.id}`, {
-    state: { 
+    state: {
       product,
       timestamp: Date.now()
     }
@@ -292,7 +332,7 @@ const goToProduct = (product) => {
 const completeCheckout = async () => {
   // Process payment...
   await processPayment();
-  
+
   // Go to success page and prevent going back to checkout
   await nav.pushAndRemoveUntil('/success', '/');
 };
@@ -342,11 +382,11 @@ interface ProfileState {
 
 // Navigate with typed state
 const { navigate } = useNavigate();
-navigate('/profile', { 
-  state: { 
-    userId: '123', 
-    referrer: 'dashboard' 
-  } as ProfileState 
+navigate('/profile', {
+  state: {
+    userId: '123',
+    referrer: 'dashboard'
+  } as ProfileState
 });
 
 // Access typed state
@@ -364,7 +404,7 @@ if (state?.userId) {
 2. **Clean Up State**: Be mindful of state passed between routes, especially for sensitive data
 3. **Handle Missing State**: Always provide fallbacks when accessing route state
 4. **Use Type Safety**: Leverage TypeScript for route paths and state objects
-5. **Lazy Loading**: Use string component names for automatic lazy loading
+5. **Component Types**: `element` can be a Vue component, or a registered component name string
 
 ## Migration from Vue Router
 
@@ -377,6 +417,8 @@ If you're migrating from standard Vue Router, here are the key differences:
 5. **Component Structure**: Use `<Routes>` and `<Route>` instead of `<router-view>`
 
 ## Examples
+
+In this repo, a runnable demo app lives at `vue_usecases/`.
 
 ### Basic Setup
 
@@ -418,6 +460,17 @@ const { navigate } = useNavigate();
 ```
 
 ## Troubleshooting
+
+### Enable router debug logs
+
+Set a global flag early (before creating your Vue app):
+
+```ts
+// @ts-ignore
+globalThis.__WEBF_VUE_ROUTER_DEBUG__ = true;
+```
+
+When enabled, the router logs include `hybridrouterchange:*`, `routes:sync`, and `routes:activePathDecision`.
 
 ### Routes not updating
 

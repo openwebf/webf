@@ -27,11 +27,12 @@ dependencies:
   share_plus: ^10.0.0
   showcaseview: ^4.0.1
   path_provider: ^2.1.5
-  easy_refresh: ^3.4.0
   collection: ^1.18.0
   auto_size_text: ^3.0.0
   webf_cupertino_ui:
-    path: ../../webf_cupertino_ui
+    path: ../../native_uis/webf_cupertino_ui
+  webf_form:
+    path: ../../native_uis/form
   vibration: ^3.1.3
   url_launcher: ^6.3.1
   app_links: ^6.3.2

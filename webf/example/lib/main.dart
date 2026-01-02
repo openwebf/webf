@@ -15,6 +15,7 @@ import 'package:webf/devtools.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:webf_example/cronet_adapter.dart';
 import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
+import 'package:webf_form/webf_form.dart';
 
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
@@ -24,7 +25,7 @@ import 'custom_hybrid_history_delegate.dart';
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-const String demoEntryUrl = 'http://localhost:5173';
+const String demoEntryUrl = 'http://localhost:5174';
 const String demoControllerName = 'demo';
 const String demoInitialRoute = '/';
 const Map<String, dynamic>? demoInitialState = null;
@@ -34,6 +35,7 @@ void main() async {
   final savedThemeMode = await AdaptiveTheme.getThemeMode();
 
   installWebFCupertinoUI();
+  installWebFForm();
 
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
@@ -496,7 +498,6 @@ class _WebFDemoState extends State<WebFDemo> {
                   });
                 }),
             WebFInspectorFloatingPanel(),
-
           ],
         ));
   }

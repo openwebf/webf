@@ -8,8 +8,8 @@ export type <%= className %>Props = {
     <% } %>
   <% }); %>
   'id'?: string;
-  'class'?: string;
-  'style'?: string | Record<string, any>;
+  'class'?: ClassValue;
+  'style'?: StyleValue;
 }
 
 export interface <%= className %>Element {
@@ -21,7 +21,7 @@ export interface <%= className %>Element {
   <%= propName %>: <%= generateReturnType(prop.type) %>;
     <% } %>
   <% }); %>
-  <% _.forEach(properties?.methods, function(method, index) { %>
+  <% _.forEach(methods?.methods, function(method, index) { %>
   <%= generateMethodDeclaration(method) %>
   <% }); %>
 }
@@ -29,6 +29,6 @@ export interface <%= className %>Element {
 export type <%= className %>Events = {
   <% _.forEach(events?.props, function(prop, index) { %>
     <% var propName = prop.name; %>
-  <%= propName %>?: <%= generateEventHandlerType(prop.type) %>;
+  <%= propName %>: <%= generateEventHandlerType(prop.type) %>;
   <% }); %>
 }

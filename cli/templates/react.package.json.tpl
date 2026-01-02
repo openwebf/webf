@@ -15,12 +15,11 @@
   "type": "commonjs",
   "peerDependencies": {
     "react": ">=16.8.0",
-    "react-dom": ">=16.8.0"
-  },
-  "dependencies": {
-    "@openwebf/react-core-ui": "^0.2.1"
+    "react-dom": ">=16.8.0",
+    "@openwebf/react-core-ui": "^0.24.1"
   },
   "devDependencies": {
+    "@openwebf/react-core-ui": "^0.24.1",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.2",
     "picomatch": "^4.0.2",
