@@ -35,7 +35,7 @@ dependencies:
   rust_native_api_tests:
     path: rust_builder
   webf_cupertino_ui:
-    path: ../webf_cupertino_ui
+    path: ../native_uis/webf_cupertino_ui
 
 dev_dependencies:
   flutter_test:
