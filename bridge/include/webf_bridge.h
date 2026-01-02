@@ -34,6 +34,7 @@ typedef void (*EvaluateQuickjsByteCodeCallback)(Dart_Handle dart_handle, int8_t)
 typedef void (*DumpQuickjsByteCodeCallback)(Dart_Handle);
 typedef void (*ParseHTMLCallback)(Dart_Handle);
 typedef void (*EvaluateScriptsCallback)(Dart_Handle dart_handle, int8_t);
+typedef void (*InvokeJSFunctionRefCallback)(void* resolver, NativeValue* success_result, const char* error_msg);
 
 WEBF_EXPORT_C
 void* initDartIsolateContextSync(int64_t dart_port,
@@ -186,6 +187,18 @@ WEBF_EXPORT_C
 void registerPluginCode(const char* code, int32_t length, const char* pluginName);
 
 WEBF_EXPORT_C int8_t isJSThreadBlocked(void* dart_isolate_context, double context_id);
+
+// Invoke a JS function handle (created by passing a JS function to Dart via NativeValue TAG_FUNCTION).
+// - Takes ownership of |argv| (and any nested allocations referenced by it); it will be freed on the JS thread.
+// - Result and error message memory ownership is transferred to the Dart callback (it must free them).
+WEBF_EXPORT_C void invokeJSFunctionRef(void* function_ref,
+                                       int32_t argc,
+                                       NativeValue* argv,
+                                       void* resolver,
+                                       InvokeJSFunctionRefCallback result_callback);
+
+// Release a JS function handle previously passed to Dart.
+WEBF_EXPORT_C void releaseJSFunctionRef(void* function_ref);
 
 WEBF_EXPORT_C void executeNativeCallback(DartWork* work_ptr);
 WEBF_EXPORT_C
