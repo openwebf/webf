@@ -1081,6 +1081,9 @@ class WebFController with Diagnosticable {
           _loadingState.recordPhase(LoadingState.phasePreloadEnd);
           controllerPreloadingCompleter.complete();
         } else if (_entrypoint!.isHTML) {
+          // Ensure custom binding object constructors are installed before parsing HTML (scripts may run during parse).
+          await view.installBindingObjectConstructorsIfNeeded();
+
           // Evaluate the HTML entry point, and loading the stylesheets and scripts.
           final parseEndCallback = _loadingState.recordPhaseStart(LoadingState.phaseParseHTML, parameters: {
             'dataSize': _entrypoint!.data!.length,
@@ -1514,6 +1517,9 @@ class WebFController with Diagnosticable {
       WebFBundle entrypoint = _entrypoint!;
       double contextId = _view!.contextId;
       assert(entrypoint.isResolved, 'The webf bundle $entrypoint is not resolved to evaluate.');
+
+      // Ensure custom binding object constructors are installed before any entrypoint scripts run.
+      await _view!.installBindingObjectConstructorsIfNeeded();
 
       // Record evaluate start phase
       final endEvaluate = _loadingState.recordPhaseStart(LoadingState.phaseEvaluateStart, parameters: {
