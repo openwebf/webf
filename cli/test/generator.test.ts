@@ -295,6 +295,19 @@ describe('Generator', () => {
       expect(mockFs.writeFileSync).toHaveBeenCalled();
     });
 
+    it('should always generate src/types.ts for React output', async () => {
+      await reactGen({
+        source: '/test/source',
+        target: '/test/target',
+        command: 'test command'
+      });
+
+      const writeCalls = mockFs.writeFileSync.mock.calls;
+      const typesCall = writeCalls.find(call => /[\\/]src[\\/]types\.ts$/.test(call[0].toString()));
+      expect(typesCall).toBeDefined();
+      expect(typesCall![1]).toContain('export {};');
+    });
+
     it('should use the exact target directory specified', async () => {
       await reactGen({
         source: '/test/source',

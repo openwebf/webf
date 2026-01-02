@@ -4,6 +4,7 @@ import path from 'path';
 import os from 'os';
 import { dartGen, reactGen, vueGen } from './generator';
 import { generateModuleArtifacts } from './module';
+import { getPackageTypesFileFromDir, isPackageTypesReady, readJsonFile } from './peerDeps';
 import { globSync } from 'glob';
 import _ from 'lodash';
 import inquirer from 'inquirer';
@@ -441,7 +442,8 @@ function createCommand(target: string, options: { framework: string; packageName
       // Leave merge to the codegen step which appends exports safely
     }
 
-    spawnSync(NPM, ['install'], {
+    // Ensure devDependencies are installed even if the user's shell has NODE_ENV=production.
+    spawnSync(NPM, ['install', '--production=false'], {
       cwd: target,
       stdio: 'inherit'
     });
@@ -463,12 +465,8 @@ function createCommand(target: string, options: { framework: string; packageName
     const gitignoreContent = _.template(gitignore)({});
     writeFileIfChanged(gitignorePath, gitignoreContent);
 
-    spawnSync(NPM, ['install', '@openwebf/webf-enterprise-typings'], {
-      cwd: target,
-      stdio: 'inherit'
-    });
-
-    spawnSync(NPM, ['install', 'vue', '-D'], {
+    // Ensure devDependencies are installed even if the user's shell has NODE_ENV=production.
+    spawnSync(NPM, ['install', '--production=false'], {
       cwd: target,
       stdio: 'inherit'
     });
@@ -1179,6 +1177,101 @@ async function buildPackage(packagePath: string): Promise<void> {
   const packageName = packageJson.name;
   const packageVersion = packageJson.version;
 
+  function getInstalledPackageJsonPath(pkgName: string): string {
+    const parts = pkgName.split('/');
+    return path.join(packagePath, 'node_modules', ...parts, 'package.json');
+  }
+
+  function getInstalledPackageDir(pkgName: string): string {
+    const parts = pkgName.split('/');
+    return path.join(packagePath, 'node_modules', ...parts);
+  }
+
+  function findUp(startDir: string, relativePathToFind: string): string | null {
+    let dir = path.resolve(startDir);
+    while (true) {
+      const candidate = path.join(dir, relativePathToFind);
+      if (fs.existsSync(candidate)) return candidate;
+      const parent = path.dirname(dir);
+      if (parent === dir) return null;
+      dir = parent;
+    }
+  }
+
+  function ensurePeerDependencyAvailableForBuild(peerName: string): void {
+    const installedPkgJson = getInstalledPackageJsonPath(peerName);
+    if (fs.existsSync(installedPkgJson)) return;
+
+    const peerRange = packageJson.peerDependencies?.[peerName];
+    const localMap: Record<string, string> = {
+      '@openwebf/react-core-ui': path.join('packages', 'react-core-ui'),
+      '@openwebf/vue-core-ui': path.join('packages', 'vue-core-ui'),
+    };
+
+    let installSpec: string | null = null;
+
+    const localRel = localMap[peerName];
+    if (localRel) {
+      const localPath = findUp(process.cwd(), localRel);
+      if (localPath) {
+        if (!isPackageTypesReady(localPath)) {
+          const localPkgJsonPath = path.join(localPath, 'package.json');
+          if (fs.existsSync(localPkgJsonPath)) {
+            const localPkgJson = readJsonFile(localPkgJsonPath);
+            if (localPkgJson.scripts?.build) {
+              if (process.env.WEBF_CODEGEN_BUILD_LOCAL_PEERS !== '1') {
+                console.warn(
+                  `\n⚠️  Local ${peerName} found at ${localPath} but type declarations are missing; falling back to registry install.`
+                );
+              } else {
+                console.log(
+                  `\n🔧 Local ${peerName} found at ${localPath} but build artifacts are missing; building it for DTS...`
+                );
+                const buildLocalResult = spawnSync(NPM, ['run', 'build'], {
+                  cwd: localPath,
+                  stdio: 'inherit'
+                });
+                if (buildLocalResult.status === 0) {
+                  if (isPackageTypesReady(localPath)) {
+                    installSpec = localPath;
+                  } else {
+                    console.warn(
+                      `\n⚠️  Built local ${peerName} but type declarations are still missing; falling back to registry install.`
+                    );
+                  }
+                } else {
+                  console.warn(`\n⚠️  Failed to build local ${peerName}; falling back to registry install.`);
+                }
+              }
+            }
+          }
+        } else {
+          installSpec = localPath;
+        }
+      }
+    }
+
+    if (!installSpec) {
+      installSpec = peerRange ? `${peerName}@${peerRange}` : peerName;
+    }
+
+    console.log(`\n📦 Installing peer dependency for build: ${peerName}...`);
+    const installResult = spawnSync(NPM, ['install', '--no-save', installSpec], {
+      cwd: packagePath,
+      stdio: 'inherit'
+    });
+    if (installResult.status !== 0) {
+      throw new Error(`Failed to install peer dependency for build: ${peerName}`);
+    }
+
+    const installedTypesFile = getPackageTypesFileFromDir(getInstalledPackageDir(peerName));
+    if (installedTypesFile && !fs.existsSync(installedTypesFile)) {
+      throw new Error(
+        `Peer dependency ${peerName} was installed but type declarations were not found at ${installedTypesFile}`
+      );
+    }
+  }
+
   // Check if node_modules exists
   const nodeModulesPath = path.join(packagePath, 'node_modules');
   if (!fs.existsSync(nodeModulesPath)) {
@@ -1204,6 +1297,14 @@ async function buildPackage(packagePath: string): Promise<void> {
 
   // Check if package has a build script
   if (packageJson.scripts?.build) {
+    // DTS build needs peer deps present locally to resolve types (even though they are not bundled).
+    if (packageJson.peerDependencies?.['@openwebf/react-core-ui']) {
+      ensurePeerDependencyAvailableForBuild('@openwebf/react-core-ui');
+    }
+    if (packageJson.peerDependencies?.['@openwebf/vue-core-ui']) {
+      ensurePeerDependencyAvailableForBuild('@openwebf/vue-core-ui');
+    }
+
     console.log(`\nBuilding ${packageName}@${packageVersion}...`);
     const buildResult = spawnSync(NPM, ['run', 'build'], {
       cwd: packagePath,
