@@ -64,6 +64,9 @@ static JSValue FromNativeValue(ExecutingContext* context,
     case NativeTag::TAG_NULL: {
       return JS_NULL;
     }
+    case NativeTag::TAG_UNDEFINED: {
+      return JS_UNDEFINED;
+    }
     case NativeTag::TAG_UINT8_BYTES: {
       auto free_func = [](JSRuntime* rt, void* opaque, void* ptr) {
 #if defined(_WIN32)
@@ -100,12 +103,10 @@ static JSValue FromNativeValue(ExecutingContext* context,
       switch (pointer_type) {
         case JSPointerType::NativeBindingObject: {
           auto* binding_object = BindingObject::From(ptr);
-          // Only eventTarget can be converted from nativeValue to JSValue.
-          auto* event_target = DynamicTo<EventTarget>(binding_object);
-          if (event_target) {
-            return event_target->ToQuickJS();
+          if (binding_object == nullptr) {
+            return JS_NULL;
           }
-          break;
+          return binding_object->ToQuickJS();
         }
         case JSPointerType::DOMMatrix: {
           return MakeGarbageCollected<DOMMatrix>(context, ptr)->ToQuickJS();

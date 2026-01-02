@@ -22,11 +22,15 @@ import 'package:webf/launcher.dart';
 import 'package:webf/src/geometry/dom_point.dart';
 import 'package:webf/src/html/canvas/canvas_path_2d.dart';
 import 'package:webf/src/dom/intersection_observer.dart';
+import 'binding_object_registry.dart';
 
 // We have some integrated built-in behavior starting with string prefix reuse the callNativeMethod implements.
 enum BindingMethodCallOperations {
   getProperty,
   setProperty,
+  hasProperty,
+  // 0 = none, 1 = sync, 2 = async
+  getMethodType,
 }
 
 typedef NativeAsyncAnonymousFunctionCallback = Void Function(
@@ -39,6 +43,8 @@ typedef BindingCallFunc = dynamic Function(BindingObject bindingObject, List<dyn
 List<BindingCallFunc> bindingCallMethodDispatchTable = [
   getterBindingCall,
   setterBindingCall,
+  hasPropertyBindingCall,
+  getMethodTypeBindingCall,
 ];
 
 // Dispatch the event to the binding side.
@@ -152,7 +158,13 @@ enum CreateBindingObjectType {
   createPath2D,
   createDOMPoint,
   createFormData,
-  createIntersectionObserver
+  createIntersectionObserver,
+  createCustomBindingObject,
+}
+
+final class _UnregisteredCustomBindingObject extends DynamicBindingObject {
+  final String className;
+  _UnregisteredCustomBindingObject(BindingContext context, this.className) : super(context);
 }
 
 abstract class BindingBridge {
@@ -194,6 +206,30 @@ abstract class BindingBridge {
       case CreateBindingObjectType.createIntersectionObserver: {
         IntersectionObserver intersectionObserver = IntersectionObserver(BindingContext(controller.view, contextId, pointer), arguments);
         controller.view.setBindingObject(pointer, intersectionObserver);
+        break;
+      }
+      case CreateBindingObjectType.createCustomBindingObject: {
+        if (arguments.isEmpty || arguments[0] is! String) {
+          bridgeLogger.warning('CreateBindingObject: invalid custom binding object args: $arguments');
+          _UnregisteredCustomBindingObject(BindingContext(controller.view, contextId, pointer), '<invalid>');
+          break;
+        }
+
+        final String className = arguments[0] as String;
+        final creator = BindingObjectRegistry.getCreator(className);
+        if (creator == null) {
+          bridgeLogger.warning('CreateBindingObject: custom binding object not registered: $className');
+          _UnregisteredCustomBindingObject(BindingContext(controller.view, contextId, pointer), className);
+          break;
+        }
+
+        try {
+          creator(BindingContext(controller.view, contextId, pointer), arguments.sublist(1));
+        } catch (e, stack) {
+          bridgeLogger.severe('CreateBindingObject: failed to create custom binding object: $className', e, stack);
+          _UnregisteredCustomBindingObject(BindingContext(controller.view, contextId, pointer), className);
+        }
+        break;
       }
     }
     if (enableWebFCommandLog) {

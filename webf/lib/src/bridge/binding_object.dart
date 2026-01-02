@@ -303,6 +303,57 @@ dynamic _getBindingObjectProperty(BindingObject bindingObject, String key) {
   return null;
 }
 
+bool _hasBindingObjectProperty(BindingObject bindingObject, String key) {
+  if (bindingObject is StaticDefinedBindingObject) {
+    if (bindingObject.getStaticDefinedProperty(key) != null) {
+      return true;
+    }
+  }
+
+  if (bindingObject is DynamicBindingObject) {
+    return bindingObject.dynamicProperties.containsKey(key);
+  }
+
+  return false;
+}
+
+dynamic hasPropertyBindingCall(BindingObject bindingObject, List<dynamic> args) {
+  assert(args.length == 1);
+
+  String key = args[0];
+  return _hasBindingObjectProperty(bindingObject, key);
+}
+
+int _getBindingObjectMethodType(BindingObject bindingObject, String method) {
+  if (bindingObject is StaticDefinedBindingObject) {
+    if (bindingObject.getStaticDefinedSyncMethod(method) != null) {
+      return 1;
+    }
+    if (bindingObject.getStaticDefinedAsyncMethod(method) != null) {
+      return 2;
+    }
+  }
+
+  if (bindingObject is DynamicBindingObject) {
+    BindingObjectMethod? fn = bindingObject.dynamicMethods[method];
+    if (fn is BindingObjectMethodSync) {
+      return 1;
+    }
+    if (fn is AsyncBindingObjectMethod) {
+      return 2;
+    }
+  }
+
+  return 0;
+}
+
+dynamic getMethodTypeBindingCall(BindingObject bindingObject, List<dynamic> args) {
+  assert(args.length == 1);
+
+  String method = args[0];
+  return _getBindingObjectMethodType(bindingObject, method);
+}
+
 dynamic getterBindingCall(BindingObject bindingObject, List<dynamic> args) {
   assert(args.length == 1);
 

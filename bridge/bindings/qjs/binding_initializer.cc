@@ -42,6 +42,7 @@
 #include "qjs_error_event.h"
 #include "qjs_event.h"
 #include "qjs_event_target.h"
+#include "qjs_dart_binding_object.h"
 #include "qjs_file.h"
 #include "qjs_focus_event.h"
 #include "qjs_form_data.h"
@@ -171,6 +172,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSWindowOrWorkerGlobalScope::Install(context);
   QJSLocation::Install(context);
   QJSModuleManager::Install(context);
+  QJSDartBindingObject::Install(context);
   QJSConsole::Install(context);
   QJSEventTarget::Install(context);
   QJSWindow::Install(context);

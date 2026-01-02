@@ -166,6 +166,10 @@ class WebF extends StatefulWidget {
     ModuleManager.defineModule(creator);
   }
 
+  static void defineBindingObject(String className, BindingObjectCreator creator) {
+    BindingObjectRegistry.define(className, creator);
+  }
+
   /// Create a WebF widget with an existing controller.
   ///
   /// The controller must be managed by WebFControllerManager with proper lifecycle management.

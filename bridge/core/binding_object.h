@@ -70,6 +70,9 @@ struct NativeBindingObject : public DartReadable {
 enum BindingMethodCallOperations {
   kGetProperty,
   kSetProperty,
+  kHasProperty,
+  // 0 = none, 1 = sync, 2 = async
+  kGetMethodType,
 };
 
 enum CreateBindingObjectType {
@@ -78,6 +81,7 @@ enum CreateBindingObjectType {
   kCreateDOMPoint = 2,
   kCreateFormData = 3,
   kCreateIntersectionObserver = 4,
+  kCreateCustomBindingObject = 5,
 };
 
 struct BindingObjectPromiseContext : public DartReadable {
