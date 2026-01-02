@@ -4,7 +4,7 @@
 // Based on the Vue 3 documentation for defining custom elements:
 // https://vuejs.org/guide/extras/web-components
 import type { EmitFn, PublicProps, StyleValue, ClassValue } from 'vue';
-import '@openwebf/webf-enterprise-typings';
+import '@openwebf/vue-core-ui';
 
 <%= typeAliases %>
 
@@ -48,7 +48,7 @@ type DefineCustomElement<
 
 <%= components %>
 
-declare const flutterAttached: (typeof import('@openwebf/webf-enterprise-typings')) extends { flutterAttached: infer T } ? T : any;
+declare const flutterAttached: (typeof import('@openwebf/vue-core-ui')) extends { flutterAttached: infer T } ? T : any;
 
 declare module '@vue/runtime-core' {
   interface GlobalDirectives {

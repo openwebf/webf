@@ -53,13 +53,12 @@ function generateReturnType(type: ParameterType): string {
     return pointerType;
   }
   if (type.isArray && typeof type.value === 'object' && !Array.isArray(type.value)) {
-    const elemType = getPointerType(type.value);
-    if (elemType === 'Type') return 'any[]';
-    if (typeof elemType === 'string' && elemType.startsWith('typeof ')) {
-      const ident = elemType.substring('typeof '.length).trim();
-      return `(typeof ${ident})[]`;
+    const elemType = generateReturnType(type.value);
+    if (!elemType) return 'any[]';
+    if (/^[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*$/.test(elemType)) {
+      return `${elemType}[]`;
     }
-    return `${elemType}[]`;
+    return `(${elemType})[]`;
   }
   switch (type.value) {
     case FunctionArgumentType.int:
