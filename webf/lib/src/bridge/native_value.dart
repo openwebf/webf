@@ -6,6 +6,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:typed_data';
@@ -87,6 +88,127 @@ JSPointerType getPointerTypeOfBindingObject(BindingObject bindingObject) {
 typedef AnonymousNativeFunction = dynamic Function(List<dynamic> args);
 typedef AsyncAnonymousNativeFunction = Future<dynamic> Function(List<dynamic> args);
 
+final class NativeJSFunctionRef extends Opaque {}
+
+typedef NativeInvokeJSFunctionRefCallback = Void Function(
+    Pointer<Void> resolver, Pointer<NativeValue> successResult, Pointer<Utf8> errorMsg);
+typedef DartInvokeJSFunctionRefCallback = void Function(
+    Pointer<Void> resolver, Pointer<NativeValue> successResult, Pointer<Utf8> errorMsg);
+
+typedef NativeInvokeJSFunctionRef = Void Function(
+    Pointer<NativeJSFunctionRef> functionRef,
+    Int32 argc,
+    Pointer<NativeValue> argv,
+    Pointer<Void> resolver,
+    Pointer<NativeFunction<NativeInvokeJSFunctionRefCallback>> callback);
+typedef DartInvokeJSFunctionRef = void Function(
+    Pointer<NativeJSFunctionRef> functionRef,
+    int argc,
+    Pointer<NativeValue> argv,
+    Pointer<Void> resolver,
+    Pointer<NativeFunction<NativeInvokeJSFunctionRefCallback>> callback);
+
+typedef NativeReleaseJSFunctionRef = Void Function(Pointer<NativeJSFunctionRef> functionRef);
+typedef DartReleaseJSFunctionRef = void Function(Pointer<NativeJSFunctionRef> functionRef);
+
+final DartInvokeJSFunctionRef _invokeJSFunctionRef = WebFDynamicLibrary.ref
+    .lookupFunction<NativeInvokeJSFunctionRef, DartInvokeJSFunctionRef>('invokeJSFunctionRef');
+final DartReleaseJSFunctionRef _releaseJSFunctionRef = WebFDynamicLibrary.ref
+    .lookupFunction<NativeReleaseJSFunctionRef, DartReleaseJSFunctionRef>('releaseJSFunctionRef');
+
+final class JSFunction {
+  JSFunction(this._view, this._ref) {
+    _finalizer.attach(this, _ref, detach: this);
+  }
+
+  final WebFViewController _view;
+  final Pointer<NativeJSFunctionRef> _ref;
+  bool _released = false;
+
+  static final Finalizer<Pointer<NativeJSFunctionRef>> _finalizer =
+      Finalizer<Pointer<NativeJSFunctionRef>>((ref) {
+    _releaseJSFunctionRef(ref);
+  });
+
+  Future<dynamic> invoke([List<dynamic> args = const []]) {
+    if (_released) {
+      return Future.error(StateError('JSFunction has been released'));
+    }
+
+    if (isContextDedicatedThread(_view.contextId) && isJSThreadBlocked(_view.contextId)) {
+      return Future.error(StateError(
+          'Cannot invoke JS callbacks while the JS thread is blocked; call from an async binding method instead.'));
+    }
+
+    final completer = Completer<dynamic>();
+    final resolver = malloc.allocate<Uint8>(1).cast<Void>();
+    _pendingInvocations[resolver.address] = _JSFunctionInvocationContext(completer, _view);
+
+    if (args.isEmpty) {
+      _invokeJSFunctionRef(_ref, 0, nullptr, resolver, _invokeJSFunctionRefCallbackPtr);
+      return completer.future;
+    }
+
+    final Pointer<NativeValue> argv = malloc.allocate(sizeOf<NativeValue>() * args.length);
+    for (int i = 0; i < args.length; i++) {
+      toNativeValue(argv + i, args[i]);
+    }
+
+    _invokeJSFunctionRef(_ref, args.length, argv, resolver, _invokeJSFunctionRefCallbackPtr);
+    return completer.future;
+  }
+
+  void dispose() {
+    if (_released) return;
+    _released = true;
+    _finalizer.detach(this);
+    _releaseJSFunctionRef(_ref);
+  }
+}
+
+final class _JSFunctionInvocationContext {
+  _JSFunctionInvocationContext(this.completer, this.view);
+  final Completer<dynamic> completer;
+  final WebFViewController view;
+}
+
+final Map<int, _JSFunctionInvocationContext> _pendingInvocations = <int, _JSFunctionInvocationContext>{};
+
+void _handleInvokeJSFunctionRefCallback(
+    Pointer<Void> resolver, Pointer<NativeValue> successResult, Pointer<Utf8> errorMsg) {
+  final context = _pendingInvocations.remove(resolver.address);
+  malloc.free(resolver);
+
+  if (context == null) {
+    if (successResult != nullptr) {
+      malloc.free(successResult);
+    }
+    if (errorMsg != nullptr) {
+      malloc.free(errorMsg);
+    }
+    return;
+  }
+
+  if (errorMsg != nullptr) {
+    final message = errorMsg.toDartString();
+    malloc.free(errorMsg);
+    context.completer.completeError(Exception(message));
+    return;
+  }
+
+  if (successResult == nullptr) {
+    context.completer.complete(null);
+    return;
+  }
+
+  final value = fromNativeValue(context.view, successResult);
+  malloc.free(successResult);
+  context.completer.complete(value);
+}
+
+final Pointer<NativeFunction<NativeInvokeJSFunctionRefCallback>> _invokeJSFunctionRefCallbackPtr =
+    Pointer.fromFunction(_handleInvokeJSFunctionRefCallback);
+
 dynamic fromNativeValue(WebFViewController view, Pointer<NativeValue> nativeValue) {
   if (nativeValue == nullptr) return null;
 
@@ -128,7 +250,7 @@ dynamic fromNativeValue(WebFViewController view, Pointer<NativeValue> nativeValu
       return result;
     case JSValueType.tagFunction:
     case JSValueType.tagAsyncFunction:
-      break;
+      return JSFunction(view, Pointer<NativeJSFunctionRef>.fromAddress(nativeValue.ref.u));
     case JSValueType.tagJson:
       Pointer<NativeString> nativeString = Pointer.fromAddress(nativeValue.ref.u);
       dynamic value = jsonDecode(nativeStringToString(nativeString));

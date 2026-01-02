@@ -72,6 +72,28 @@ class _WebFTesterState extends State<WebFTester> {
             switch (method) {
               case 'helloInt64':
                 return Future.value(1111111111111111);
+              case 'setMethodChannelCallback': {
+                final args = arguments is List ? arguments : const [];
+                final dynamic first = args.isNotEmpty ? args[0] : null;
+                final module = controller.module.moduleManager.getModule('MethodChannelCallback');
+                if (module == null) return Future.value(false);
+
+                if (first == null) {
+                  (module as dynamic).setCallback(null);
+                  return Future.value(true);
+                }
+                if (first is JSFunction) {
+                  (module as dynamic).setCallback(first);
+                  return Future.value(true);
+                }
+                return Future.value(false);
+              }
+              case 'clearMethodChannelCallback': {
+                final module = controller.module.moduleManager.getModule('MethodChannelCallback');
+                if (module == null) return Future.value(false);
+                (module as dynamic).setCallback(null);
+                return Future.value(true);
+              }
               case 'resizeViewport':
                 double newWidth = arguments[0] == -1
                     ? 360

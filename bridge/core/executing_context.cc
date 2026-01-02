@@ -27,6 +27,7 @@
 #include "core/events/error_event.h"
 #include "core/html/html_script_element.h"
 #include "core/events/promise_rejection_event.h"
+#include "core/js_function_ref.h"
 #include "event_type_names.h"
 #include "foundation/logging.h"
 #include "foundation/native_byte_data.h"
@@ -145,6 +146,22 @@ ExecutingContext::~ExecutingContext() {
   }
 
   JS_FreeValue(script_state_.ctx(), global_object_);
+
+  // Release JS function refs that were bridged to Dart to avoid leaking JS objects at runtime teardown.
+  // Note: we do not delete the handles here because Dart may still hold them; handles are deleted by Dart via
+  // `releaseJSFunctionRef`.
+  for (auto* js_function_ref : active_js_function_refs_) {
+    if (js_function_ref == nullptr) {
+      continue;
+    }
+    js_function_ref->disposed.store(true, std::memory_order_release);
+    if (js_function_ref->ctx != nullptr && !JS_IsNull(js_function_ref->function)) {
+      JS_FreeValue(ctx(), js_function_ref->function);
+    }
+    js_function_ref->function = JS_NULL;
+    js_function_ref->ctx = nullptr;
+  }
+  active_js_function_refs_.clear();
 
   // Free active wrappers.
   for (auto& active_wrapper : active_wrappers_) {
@@ -953,6 +970,14 @@ void ExecutingContext::UnRegisterActiveNativeByteData(
   if (it != active_native_byte_datas_.end()) {
     active_native_byte_datas_.erase(it);
   }
+}
+
+void ExecutingContext::RegisterJSFunctionRef(NativeJSFunctionRef* ref) {
+  active_js_function_refs_.insert(ref);
+}
+
+void ExecutingContext::UnregisterJSFunctionRef(NativeJSFunctionRef* ref) {
+  active_js_function_refs_.erase(ref);
 }
 
 RemoteObjectRegistry* ExecutingContext::GetRemoteObjectRegistry() {

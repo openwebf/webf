@@ -6,10 +6,12 @@
 #include <core/binding_object.h>
 
 #include "bindings/qjs/cppgc/mutation_scope.h"
+#include "bindings/qjs/script_value.h"
 #include "core/dart_isolate_context.h"
 #include "core/dom/document.h"
 #include "core/html/html_script_element.h"
 #include "core/html/parser/html_parser.h"
+#include "core/js_function_ref.h"
 #include "core/page.h"
 #include "foundation/native_type.h"
 #include "include/dart_api.h"
@@ -481,6 +483,329 @@ int8_t isJSThreadBlocked(void* dart_isolate_context_, double context_id) {
   auto* dart_isolate_context = static_cast<webf::DartIsolateContext*>(dart_isolate_context_);
   auto thread_group_id = static_cast<int32_t>(context_id);
   return dart_isolate_context->dispatcher()->IsThreadBlocked(thread_group_id) ? 1 : 0;
+}
+
+namespace {
+
+struct JSFunctionInvokeContext final : public webf::DartReadable {
+  webf::NativeJSFunctionRef* function_ref{nullptr};
+  int32_t argc{0};
+  webf::NativeValue* argv{nullptr};  // Owned by this context; freed on JS thread after conversion.
+  void* resolver{nullptr};
+  InvokeJSFunctionRefCallback callback{nullptr};
+};
+
+static char* CopyToCStr(const std::string& s) {
+  char* buffer = static_cast<char*>(webf::dart_malloc(s.size() + 1));
+  memcpy(buffer, s.data(), s.size());
+  buffer[s.size()] = '\0';
+  return buffer;
+}
+
+static std::string DescribeJSException(JSContext* ctx, JSValueConst exception_value) {
+  if (JS_IsError(ctx, exception_value)) {
+    JSValue message_value = JS_GetPropertyStr(ctx, exception_value, "message");
+    JSValue error_type_value = JS_GetPropertyStr(ctx, exception_value, "name");
+    JSValue stack_value = JS_GetPropertyStr(ctx, exception_value, "stack");
+
+    const char* title = JS_ToCString(ctx, message_value);
+    const char* type = JS_ToCString(ctx, error_type_value);
+    const char* stack = JS_IsUndefined(stack_value) ? nullptr : JS_ToCString(ctx, stack_value);
+
+    std::string message;
+    if (type != nullptr) {
+      message.append(type);
+      message.append(": ");
+    }
+    if (title != nullptr) {
+      message.append(title);
+    }
+    if (stack != nullptr) {
+      message.append("\n");
+      message.append(stack);
+    }
+
+    JS_FreeValue(ctx, error_type_value);
+    JS_FreeValue(ctx, message_value);
+    JS_FreeValue(ctx, stack_value);
+    JS_FreeCString(ctx, title);
+    JS_FreeCString(ctx, stack);
+    JS_FreeCString(ctx, type);
+
+    if (!message.empty()) {
+      return message;
+    }
+  }
+
+  const char* fallback = JS_ToCString(ctx, exception_value);
+  std::string message = fallback != nullptr ? fallback : "Unknown JavaScript error";
+  JS_FreeCString(ctx, fallback);
+  return message;
+}
+
+static void ReturnInvokeJSFunctionRefResultToDart(JSFunctionInvokeContext* call_context,
+                                                  webf::NativeValue* success_result,
+                                                  const char* error_msg) {
+  if (call_context->callback != nullptr) {
+    call_context->callback(call_context->resolver, reinterpret_cast<NativeValue*>(success_result), error_msg);
+  }
+  delete call_context;
+}
+
+static void CompleteInvokeJSFunctionRef(JSFunctionInvokeContext* call_context,
+                                        webf::NativeValue* success_result,
+                                        const char* error_msg) {
+  auto* function_ref = call_context->function_ref;
+  if (function_ref == nullptr || function_ref->dispatcher == nullptr) {
+    ReturnInvokeJSFunctionRefResultToDart(call_context, success_result, error_msg);
+    return;
+  }
+
+  function_ref->dispatcher->PostToDart(
+      function_ref->is_dedicated, ReturnInvokeJSFunctionRefResultToDart, call_context, success_result, error_msg);
+}
+
+static JSValue HandleInvokePromiseSettled(JSContext* ctx,
+                                         JSValueConst this_val,
+                                         int argc,
+                                         JSValueConst* argv,
+                                         int magic,
+                                         JSValue* data) {
+  int64_t context_ptr = 0;
+  JS_ToInt64(ctx, &context_ptr, data[0]);
+  auto* call_context = reinterpret_cast<JSFunctionInvokeContext*>(static_cast<intptr_t>(context_ptr));
+  if (call_context == nullptr || call_context->function_ref == nullptr) {
+    return JS_UNDEFINED;
+  }
+
+  auto* executing_context = webf::ExecutingContext::From(ctx);
+  if (!executing_context || !executing_context->IsContextValid()) {
+    char* error = CopyToCStr("JavaScript context is disposed");
+    CompleteInvokeJSFunctionRef(call_context, nullptr, error);
+    return JS_UNDEFINED;
+  }
+
+  webf::MemberMutationScope mutation_scope{executing_context};
+
+  if (magic == 0) {
+    // Resolve
+    webf::ExceptionState exception_state;
+    webf::NativeValue native_value = argc > 0 ? webf::ScriptValue(ctx, argv[0]).ToNative(ctx, exception_state)
+                                              : webf::Native_NewNull();
+    if (UNLIKELY(exception_state.HasException())) {
+      JSValue exception_value = JS_GetException(ctx);
+      std::string message = DescribeJSException(ctx, exception_value);
+      JS_FreeValue(ctx, exception_value);
+      char* error = CopyToCStr(message);
+      CompleteInvokeJSFunctionRef(call_context, nullptr, error);
+      return JS_UNDEFINED;
+    }
+
+    auto* result = new webf::NativeValue();
+    memcpy(result, &native_value, sizeof(webf::NativeValue));
+    CompleteInvokeJSFunctionRef(call_context, result, nullptr);
+    return JS_UNDEFINED;
+  }
+
+  // Reject
+  JSValue reason = argc > 0 ? JS_DupValue(ctx, argv[0]) : JS_NewString(ctx, "Promise rejected");
+  std::string message = DescribeJSException(ctx, reason);
+  JS_FreeValue(ctx, reason);
+  char* error = CopyToCStr(message);
+  CompleteInvokeJSFunctionRef(call_context, nullptr, error);
+  return JS_UNDEFINED;
+}
+
+static void InvokeJSFunctionRefOnJSThread(JSFunctionInvokeContext* call_context) {
+  auto* function_ref = call_context->function_ref;
+  if (function_ref == nullptr) {
+    char* error = CopyToCStr("Invalid JS function reference");
+    CompleteInvokeJSFunctionRef(call_context, nullptr, error);
+    return;
+  }
+
+  if (function_ref->released.load(std::memory_order_acquire) ||
+      function_ref->disposed.load(std::memory_order_acquire) ||
+      function_ref->context_status == nullptr ||
+      function_ref->context_status->disposed ||
+      function_ref->ctx == nullptr ||
+      JS_IsNull(function_ref->function)) {
+    // We still own argv here; free it to avoid leaks.
+    if (call_context->argv != nullptr) {
+      webf::dart_free(call_context->argv);
+      call_context->argv = nullptr;
+    }
+    char* error = CopyToCStr("JavaScript context is disposed");
+    CompleteInvokeJSFunctionRef(call_context, nullptr, error);
+    return;
+  }
+
+  JSContext* ctx = function_ref->ctx;
+  auto* executing_context = webf::ExecutingContext::From(ctx);
+  if (!executing_context || !executing_context->IsContextValid()) {
+    if (call_context->argv != nullptr) {
+      webf::dart_free(call_context->argv);
+      call_context->argv = nullptr;
+    }
+    char* error = CopyToCStr("JavaScript context is disposed");
+    CompleteInvokeJSFunctionRef(call_context, nullptr, error);
+    return;
+  }
+
+  webf::MemberMutationScope mutation_scope{executing_context};
+  executing_context->SetIsIdle(false);
+
+  std::vector<JSValue> argv_values;
+  argv_values.reserve(call_context->argc);
+  for (int i = 0; i < call_context->argc; i++) {
+    webf::ScriptValue arg_value(ctx, call_context->argv[i]);
+    argv_values.emplace_back(JS_DupValue(ctx, arg_value.QJSValue()));
+  }
+
+  if (call_context->argv != nullptr) {
+    webf::dart_free(call_context->argv);
+    call_context->argv = nullptr;
+  }
+
+  JSValue return_value = JS_Call(ctx, function_ref->function, JS_UNDEFINED, call_context->argc,
+                                 argv_values.empty() ? nullptr : argv_values.data());
+
+  for (auto& v : argv_values) {
+    JS_FreeValue(ctx, v);
+  }
+
+  if (JS_IsException(return_value)) {
+    JSValue exception_value = JS_GetException(ctx);
+    std::string message = DescribeJSException(ctx, exception_value);
+    JS_FreeValue(ctx, exception_value);
+    JS_FreeValue(ctx, return_value);
+    executing_context->DrainMicrotasks();
+    char* error = CopyToCStr(message);
+    CompleteInvokeJSFunctionRef(call_context, nullptr, error);
+    return;
+  }
+
+  if (JS_IsPromise(return_value)) {
+    JSValue data[1];
+    data[0] = JS_NewInt64(ctx, static_cast<int64_t>(reinterpret_cast<intptr_t>(call_context)));
+
+    JSValue on_fulfilled = JS_NewCFunctionData(ctx, HandleInvokePromiseSettled, 1, 0, 1, data);
+    JSValue on_rejected = JS_NewCFunctionData(ctx, HandleInvokePromiseSettled, 1, 1, 1, data);
+
+    JSAtom then_atom = JS_NewAtom(ctx, "then");
+    JSValue then_args[2] = {on_fulfilled, on_rejected};
+    JSValue then_ret = JS_Invoke(ctx, return_value, then_atom, 2, then_args);
+
+    JS_FreeAtom(ctx, then_atom);
+    JS_FreeValue(ctx, then_ret);
+    JS_FreeValue(ctx, on_fulfilled);
+    JS_FreeValue(ctx, on_rejected);
+    JS_FreeValue(ctx, data[0]);
+    JS_FreeValue(ctx, return_value);
+
+    executing_context->DrainMicrotasks();
+    return;
+  }
+
+  webf::ExceptionState exception_state;
+  webf::NativeValue native_value = webf::ScriptValue(ctx, return_value).ToNative(ctx, exception_state);
+  JS_FreeValue(ctx, return_value);
+  executing_context->DrainMicrotasks();
+
+  if (UNLIKELY(exception_state.HasException())) {
+    JSValue exception_value = JS_GetException(ctx);
+    std::string message = DescribeJSException(ctx, exception_value);
+    JS_FreeValue(ctx, exception_value);
+    char* error = CopyToCStr(message);
+    CompleteInvokeJSFunctionRef(call_context, nullptr, error);
+    return;
+  }
+
+  auto* result = new webf::NativeValue();
+  memcpy(result, &native_value, sizeof(webf::NativeValue));
+  CompleteInvokeJSFunctionRef(call_context, result, nullptr);
+}
+
+}  // namespace
+
+void invokeJSFunctionRef(void* function_ref,
+                         int32_t argc,
+                         NativeValue* argv,
+                         void* resolver,
+                         InvokeJSFunctionRefCallback result_callback) {
+  auto* ref = static_cast<webf::NativeJSFunctionRef*>(function_ref);
+  if (result_callback == nullptr) {
+    if (argv != nullptr) {
+      webf::dart_free(argv);
+    }
+    return;
+  }
+
+  if (ref == nullptr) {
+    if (argv != nullptr) {
+      webf::dart_free(argv);
+    }
+    char* error = CopyToCStr("Invalid JS function reference");
+    result_callback(resolver, nullptr, error);
+    return;
+  }
+
+  auto* call_context = new JSFunctionInvokeContext();
+  call_context->function_ref = ref;
+  call_context->argc = argc;
+  call_context->argv = reinterpret_cast<webf::NativeValue*>(argv);
+  call_context->resolver = resolver;
+  call_context->callback = result_callback;
+
+  if (ref->dispatcher == nullptr) {
+    char* error = CopyToCStr("Dispatcher is not available");
+    CompleteInvokeJSFunctionRef(call_context, nullptr, error);
+    return;
+  }
+
+  ref->dispatcher->PostToJs(ref->is_dedicated, ref->context_id, InvokeJSFunctionRefOnJSThread, call_context);
+}
+
+void releaseJSFunctionRef(void* function_ref) {
+  auto* ref = static_cast<webf::NativeJSFunctionRef*>(function_ref);
+  if (ref == nullptr) {
+    return;
+  }
+
+  if (ref->released.exchange(true, std::memory_order_acq_rel)) {
+    return;
+  }
+
+  // If the context has already been disposed, the JSValue has been released during teardown.
+  if (ref->disposed.load(std::memory_order_acquire) ||
+      ref->context_status == nullptr ||
+      ref->context_status->disposed ||
+      ref->ctx == nullptr ||
+      ref->dispatcher == nullptr) {
+    delete ref;
+    return;
+  }
+
+  ref->dispatcher->PostToJs(
+      ref->is_dedicated, ref->context_id,
+      [](webf::NativeJSFunctionRef* ref) {
+        if (ref == nullptr) {
+          return;
+        }
+
+        if (ref->ctx != nullptr && !JS_IsNull(ref->function)) {
+          if (auto* context = webf::ExecutingContext::From(ref->ctx); context != nullptr) {
+            context->UnregisterJSFunctionRef(ref);
+          }
+          JS_FreeValue(ref->ctx, ref->function);
+        }
+
+        ref->function = JS_NULL;
+        ref->ctx = nullptr;
+        ref->disposed.store(true, std::memory_order_release);
+        delete ref;
+      },
+      ref);
 }
 
 // run in the dart isolate thread
