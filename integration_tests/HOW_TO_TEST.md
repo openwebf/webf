@@ -55,6 +55,12 @@ This document provides a step-by-step guide for creating, running, and verifying
    WEBF_TEST_FILTER="your_test_name" npm run integration
    ```
 
+   Example (this feature):
+   ```bash
+   cd integration_tests
+   npm run integration -- specs/modules/custom_binding_object.ts
+   ```
+
 2. **Run all tests in a group**:
    ```bash
    cd integration_tests

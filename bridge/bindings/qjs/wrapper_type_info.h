@@ -196,6 +196,9 @@ enum {
   JS_CLASS_INTERSECTION_OBSERVER,
   JS_CLASS_INTERSECTION_OBSERVER_ENTRY,
 
+  // Dart <-> JavaScript custom binding object
+  JS_CLASS_DART_BINDING_OBJECT,
+
   JS_CLASS_CUSTOM_CLASS_INIT_COUNT /* last entry for predefined classes */
 };
 

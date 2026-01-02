@@ -22,6 +22,7 @@ import 'package:ffi/ffi.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/bridge/binding_object_registry.dart';
 import 'package:webf/src/html/canvas/canvas_context_2d.dart';
 import 'package:webf/src/html/text.dart';
 import 'package:webf/webf.dart';
@@ -35,6 +36,7 @@ final DartBatchFreeFunction _batchFreeNativeBindingObjects = WebFDynamicLibrary.
 
 class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   WebFController rootController;
+  int _installedBindingObjectRegistryVersion = -1;
 
   // The methods of the WebFNavigationDelegate help you implement custom behaviors that are triggered
   // during a view's process of loading, and completing a navigation request.
@@ -374,6 +376,34 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     assert(!_disposed, 'WebF have already disposed');
     List<int> data = utf8.encode(code);
     await evaluateScripts(_contextId, Uint8List.fromList(data));
+  }
+
+  Future<void> installBindingObjectConstructorsIfNeeded() async {
+    if (_disposed) return;
+
+    final int currentVersion = BindingObjectRegistry.version;
+    if (currentVersion == _installedBindingObjectRegistryVersion) return;
+
+    final List<String> names = BindingObjectRegistry.names.toList(growable: false);
+    if (names.isEmpty) {
+      _installedBindingObjectRegistryVersion = currentVersion;
+      return;
+    }
+
+    final buffer = StringBuffer();
+    for (final name in names) {
+      final encoded = jsonEncode(name);
+      buffer.writeln(
+        'globalThis[$encoded] = function(...args) {'
+        '  const obj = __webf_create_binding_object__($encoded, ...args);'
+        '  if (new.target) { Object.setPrototypeOf(obj, new.target.prototype); }'
+        '  return obj;'
+        '};',
+      );
+    }
+
+    await evaluateJavaScripts(buffer.toString());
+    _installedBindingObjectRegistryVersion = currentVersion;
   }
 
   void _setupObserver() {
