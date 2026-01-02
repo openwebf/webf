@@ -96,6 +96,63 @@ class RenderGridLayout extends RenderLayoutBox {
     addAll(children);
   }
 
+  void _setMaxScrollableSize() {
+    // Align with other layout boxes: treat the scrollable size as the padding-box
+    // size inside borders, and expand it based on the scrollable overflow region.
+    // https://drafts.csswg.org/css-overflow-3/#scrollable
+    final CSSOverflowType effOX = renderStyle.effectiveOverflowX;
+    final CSSOverflowType effOY = renderStyle.effectiveOverflowY;
+    final bool isScrollContainer = effOX != CSSOverflowType.visible || effOY != CSSOverflowType.visible;
+
+    final double borderLeft = renderStyle.effectiveBorderLeftWidth.computedValue;
+    final double borderRight = renderStyle.effectiveBorderRightWidth.computedValue;
+    final double borderTop = renderStyle.effectiveBorderTopWidth.computedValue;
+    final double borderBottom = renderStyle.effectiveBorderBottomWidth.computedValue;
+
+    final double viewportW = math.max(0.0, size.width - borderLeft - borderRight);
+    final double viewportH = math.max(0.0, size.height - borderTop - borderBottom);
+
+    final double paddingRight = isScrollContainer ? renderStyle.paddingRight.computedValue : 0.0;
+    final double paddingBottom = isScrollContainer ? renderStyle.paddingBottom.computedValue : 0.0;
+
+    final Rect? layoutOverflow = overflowRect;
+    double maxScrollableW = viewportW;
+    double maxScrollableH = viewportH;
+    if (layoutOverflow != null) {
+      final double overflowRight = layoutOverflow.right;
+      final double overflowBottom = layoutOverflow.bottom;
+
+      double rightInsideBorders;
+      if (overflowRight > size.width + 0.01) {
+        // Overflow beyond the border box (e.g., wide grid tracks). The right
+        // edge is already relative to the left border edge, so do not subtract
+        // the right border again; include trailing padding for scroll containers.
+        rightInsideBorders = math.max(0.0, overflowRight - borderLeft) + paddingRight;
+      } else {
+        // Within the border box: subtract both borders to get the padding-box extent.
+        rightInsideBorders = math.max(0.0, overflowRight - borderLeft - borderRight);
+      }
+
+      double bottomInsideBorders;
+      if (overflowBottom > size.height + 0.01) {
+        bottomInsideBorders = math.max(0.0, overflowBottom - borderTop) + paddingBottom;
+      } else {
+        bottomInsideBorders = math.max(0.0, overflowBottom - borderTop - borderBottom);
+      }
+
+      maxScrollableW = math.max(maxScrollableW, rightInsideBorders);
+      maxScrollableH = math.max(maxScrollableH, bottomInsideBorders);
+    }
+
+    // For hidden/clip, clamp scrollable size to the viewport; for others, allow overflow-driven extent.
+    final double finalScrollableW =
+        (effOX == CSSOverflowType.hidden || effOX == CSSOverflowType.clip) ? viewportW : maxScrollableW;
+    final double finalScrollableH =
+        (effOY == CSSOverflowType.hidden || effOY == CSSOverflowType.clip) ? viewportH : maxScrollableH;
+
+    scrollableSize = Size(finalScrollableW, finalScrollableH);
+  }
+
   double _resolveGridItemMargin(CSSLengthValue value, double? percentageBasisWidth) {
     if (value.type == CSSLengthType.AUTO) return 0;
     if (value.type == CSSLengthType.PERCENTAGE) {
@@ -1676,6 +1733,8 @@ class RenderGridLayout extends RenderLayoutBox {
         Rect.fromLTRB(0, 0, size.width, size.height),
       );
       addOverflowLayoutFromChildren(_collectChildren());
+      _setMaxScrollableSize();
+      didLayout();
     } catch (error, stack) {
       if (!kReleaseMode) {
         renderingLogger.severe('RenderGridLayout.performLayout error: $error\n$stack');
@@ -3446,9 +3505,8 @@ class RenderGridLayout extends RenderLayoutBox {
       }
     }
 
-    final double desiredWidth = layoutContentWidth + horizontalPaddingBorder;
-    final double desiredHeight = layoutContentHeight + verticalPaddingBorder;
-    size = constraints.constrain(Size(desiredWidth, desiredHeight));
+    final Size layoutContentSize = getContentSize(contentWidth: layoutContentWidth, contentHeight: layoutContentHeight);
+    size = getBoxSize(layoutContentSize);
     double horizontalFree = math.max(0.0, size.width - horizontalPaddingBorder - usedContentWidth);
     double verticalFree = math.max(0.0, size.height - verticalPaddingBorder - usedContentHeight);
     bool relayoutForStretchedTracks = false;
