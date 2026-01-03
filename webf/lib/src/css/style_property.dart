@@ -112,6 +112,42 @@ class CSSStyleProperty {
     if (style.contains(PADDING_BOTTOM)) style.removeProperty(PADDING_BOTTOM, isImportant);
   }
 
+  // https://drafts.csswg.org/css-position/#insets
+  // inset: auto | <length-percentage>{1,4}
+  // Shorthand for top/right/bottom/left.
+  static void setShorthandInset(Map<String, String?> properties, String shorthandValue) {
+    List<String?>? values = getEdgeValues(shorthandValue);
+    if (values == null) return;
+
+    bool isValidInsetToken(String? token) {
+      if (token == null || token.isEmpty) return false;
+      if (token == INHERIT || CSSLength.isInitial(token)) return true;
+      return token == AUTO ||
+          CSSLength.isLength(token) ||
+          CSSPercentage.isPercentage(token) ||
+          CSSFunction.isFunction(token);
+    }
+
+    if (!isValidInsetToken(values[0]) ||
+        !isValidInsetToken(values[1]) ||
+        !isValidInsetToken(values[2]) ||
+        !isValidInsetToken(values[3])) {
+      return;
+    }
+
+    properties[TOP] = values[0];
+    properties[RIGHT] = values[1];
+    properties[BOTTOM] = values[2];
+    properties[LEFT] = values[3];
+  }
+
+  static void removeShorthandInset(CSSStyleDeclaration style, [bool? isImportant]) {
+    if (style.contains(TOP)) style.removeProperty(TOP, isImportant);
+    if (style.contains(RIGHT)) style.removeProperty(RIGHT, isImportant);
+    if (style.contains(BOTTOM)) style.removeProperty(BOTTOM, isImportant);
+    if (style.contains(LEFT)) style.removeProperty(LEFT, isImportant);
+  }
+
   static void setShorthandMargin(Map<String, String?> properties, String shorthandValue) {
     List<String?>? values = getEdgeValues(shorthandValue);
     if (values == null) return;

@@ -122,6 +122,56 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
   }
   DCHECK(context_);
 
+  // For select shorthands, we need to expand into longhands so CSSOM getters
+  // (e.g. style.gap / style.rowGap) serialize correctly.
+  //
+  // Most properties are intentionally stored as raw text values to keep the
+  // bridge lightweight; however, storing a shorthand as raw text without
+  // expansion breaks CSSOM shorthand/longhand reflection semantics and makes
+  // shorthand serialization return empty.
+  if (property.IsShorthand()) {
+    switch (property_id) {
+      case CSSPropertyID::kGap:
+      case CSSPropertyID::kGridColumn:
+      case CSSPropertyID::kPlaceItems:
+      case CSSPropertyID::kPlaceSelf: {
+        size_t properties_before = parsed_properties_->size();
+
+        const auto local_context =
+            CSSParserLocalContext().WithAliasParsing(IsPropertyAlias(unresolved_property));
+
+        bool parse_success =
+            To<Shorthand>(property).ParseShorthand(/*important=*/false, stream_, context_, local_context,
+                                                   *parsed_properties_);
+        if (!parse_success) {
+          if (parsed_properties_->size() > properties_before) {
+            parsed_properties_->erase(parsed_properties_->begin() + properties_before, parsed_properties_->end());
+          }
+          return false;
+        }
+
+        bool important = css_parsing_utils::MaybeConsumeImportant(stream_, allow_important_annotation);
+        stream_.ConsumeWhitespace();
+        if (!stream_.AtEnd()) {
+          if (parsed_properties_->size() > properties_before) {
+            parsed_properties_->erase(parsed_properties_->begin() + properties_before, parsed_properties_->end());
+          }
+          return false;
+        }
+
+        if (important) {
+          for (size_t i = properties_before; i < parsed_properties_->size(); i++) {
+            (*parsed_properties_)[i].SetImportant();
+          }
+        }
+
+        return true;
+      }
+      default:
+        break;
+    }
+  }
+
   CSSTokenizedValue value = CSSParserImpl::ConsumeRestrictedPropertyValue(stream_);
   if (!stream_.AtEnd()) {
     return false;

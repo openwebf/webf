@@ -70,8 +70,8 @@ final Map cssInitialValues = {
   WIDTH: AUTO,
   MAX_HEIGHT: NONE,
   MAX_WIDTH: NONE,
-  MIN_HEIGHT: ZERO,
-  MIN_WIDTH: ZERO,
+  MIN_HEIGHT: AUTO,
+  MIN_WIDTH: AUTO,
   OPACITY: '1.0',
   LEFT: AUTO,
   // Positioning

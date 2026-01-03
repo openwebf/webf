@@ -96,6 +96,63 @@ class RenderGridLayout extends RenderLayoutBox {
     addAll(children);
   }
 
+  void _setMaxScrollableSize() {
+    // Align with other layout boxes: treat the scrollable size as the padding-box
+    // size inside borders, and expand it based on the scrollable overflow region.
+    // https://drafts.csswg.org/css-overflow-3/#scrollable
+    final CSSOverflowType effOX = renderStyle.effectiveOverflowX;
+    final CSSOverflowType effOY = renderStyle.effectiveOverflowY;
+    final bool isScrollContainer = effOX != CSSOverflowType.visible || effOY != CSSOverflowType.visible;
+
+    final double borderLeft = renderStyle.effectiveBorderLeftWidth.computedValue;
+    final double borderRight = renderStyle.effectiveBorderRightWidth.computedValue;
+    final double borderTop = renderStyle.effectiveBorderTopWidth.computedValue;
+    final double borderBottom = renderStyle.effectiveBorderBottomWidth.computedValue;
+
+    final double viewportW = math.max(0.0, size.width - borderLeft - borderRight);
+    final double viewportH = math.max(0.0, size.height - borderTop - borderBottom);
+
+    final double paddingRight = isScrollContainer ? renderStyle.paddingRight.computedValue : 0.0;
+    final double paddingBottom = isScrollContainer ? renderStyle.paddingBottom.computedValue : 0.0;
+
+    final Rect? layoutOverflow = overflowRect;
+    double maxScrollableW = viewportW;
+    double maxScrollableH = viewportH;
+    if (layoutOverflow != null) {
+      final double overflowRight = layoutOverflow.right;
+      final double overflowBottom = layoutOverflow.bottom;
+
+      double rightInsideBorders;
+      if (overflowRight > size.width + 0.01) {
+        // Overflow beyond the border box (e.g., wide grid tracks). The right
+        // edge is already relative to the left border edge, so do not subtract
+        // the right border again; include trailing padding for scroll containers.
+        rightInsideBorders = math.max(0.0, overflowRight - borderLeft) + paddingRight;
+      } else {
+        // Within the border box: subtract both borders to get the padding-box extent.
+        rightInsideBorders = math.max(0.0, overflowRight - borderLeft - borderRight);
+      }
+
+      double bottomInsideBorders;
+      if (overflowBottom > size.height + 0.01) {
+        bottomInsideBorders = math.max(0.0, overflowBottom - borderTop) + paddingBottom;
+      } else {
+        bottomInsideBorders = math.max(0.0, overflowBottom - borderTop - borderBottom);
+      }
+
+      maxScrollableW = math.max(maxScrollableW, rightInsideBorders);
+      maxScrollableH = math.max(maxScrollableH, bottomInsideBorders);
+    }
+
+    // For hidden/clip, clamp scrollable size to the viewport; for others, allow overflow-driven extent.
+    final double finalScrollableW =
+        (effOX == CSSOverflowType.hidden || effOX == CSSOverflowType.clip) ? viewportW : maxScrollableW;
+    final double finalScrollableH =
+        (effOY == CSSOverflowType.hidden || effOY == CSSOverflowType.clip) ? viewportH : maxScrollableH;
+
+    scrollableSize = Size(finalScrollableW, finalScrollableH);
+  }
+
   double _resolveGridItemMargin(CSSLengthValue value, double? percentageBasisWidth) {
     if (value.type == CSSLengthType.AUTO) return 0;
     if (value.type == CSSLengthType.PERCENTAGE) {
@@ -1676,6 +1733,8 @@ class RenderGridLayout extends RenderLayoutBox {
         Rect.fromLTRB(0, 0, size.width, size.height),
       );
       addOverflowLayoutFromChildren(_collectChildren());
+      _setMaxScrollableSize();
+      didLayout();
     } catch (error, stack) {
       if (!kReleaseMode) {
         renderingLogger.severe('RenderGridLayout.performLayout error: $error\n$stack');
@@ -1704,6 +1763,35 @@ class RenderGridLayout extends RenderLayoutBox {
     final bool hasBH = contentConstraints.hasBoundedHeight;
     final double? innerMaxWidth = hasBW ? math.max(0.0, contentConstraints.maxWidth) : null;
     final double? innerMaxHeight = hasBH ? math.max(0.0, contentConstraints.maxHeight) : null;
+
+    // Out-of-flow positioned children (absolute/fixed/sticky) do not participate in
+    // grid item placement or track sizing. They are laid out and positioned after
+    // the grid container size and placeholder static positions are known.
+    final List<RenderBoxModel> positionedChildren = <RenderBoxModel>[];
+    final List<RenderBoxModel> stickyChildren = <RenderBoxModel>[];
+    final List<RenderBoxModel> absFixedChildren = <RenderBoxModel>[];
+    RenderBox? positionedScan = firstChild;
+    while (positionedScan != null) {
+      final GridLayoutParentData pd = positionedScan.parentData as GridLayoutParentData;
+      if (positionedScan is RenderBoxModel) {
+        final RenderStyle? style = _unwrapGridChildStyle(positionedScan);
+        if (style != null && (style.isSelfPositioned() || style.isSelfStickyPosition())) {
+          positionedChildren.add(positionedScan);
+          if (style.isSelfStickyPosition()) {
+            stickyChildren.add(positionedScan);
+          } else {
+            absFixedChildren.add(positionedScan);
+          }
+        }
+      }
+      positionedScan = pd.nextSibling;
+    }
+
+    // Pre-layout sticky positioned children so their placeholders can reserve
+    // correct space during the subsequent grid layout pass.
+    for (final RenderBoxModel sticky in stickyChildren) {
+      CSSPositionedLayout.layoutPositionedChild(this, sticky);
+    }
 
     // Resolve tracks
     // Resolve explicit track definitions from render style; if not yet materialized
@@ -1763,7 +1851,17 @@ class RenderGridLayout extends RenderLayoutBox {
     }
 
     final double colGap = _resolveLengthValue(renderStyle.columnGap, gapBaseWidth);
-    final double rowGap = _resolveLengthValue(renderStyle.rowGap, gapBaseHeight);
+    final CSSLengthValue rowGapLength = renderStyle.rowGap;
+    final bool rowGapIsPercentage = rowGapLength.type == CSSLengthType.PERCENTAGE;
+    final double rowGapPercentage = rowGapIsPercentage ? (rowGapLength.value ?? 0.0) : 0.0;
+    // Per CSS Box Alignment, gap percentages resolve against the corresponding
+    // size of the content box. For Grid Layout, cyclic percentages (e.g. % row-gap
+    // when the grid height is auto) resolve against the content box size during
+    // layout (not as zero), so defer resolution until the grid's content height
+    // is known. See: https://www.w3.org/TR/css-align-3/#gap-percent
+    final bool shouldResolveRowGapAgainstContentBoxLater =
+        rowGapIsPercentage && (gapBaseHeight == null || !gapBaseHeight.isFinite) && rowGapPercentage > 0;
+    double rowGap = shouldResolveRowGapAgainstContentBoxLater ? 0.0 : _resolveLengthValue(rowGapLength, gapBaseHeight);
 
     double? contentAvailableWidth = innerMaxWidth;
     if ((contentAvailableWidth == null || !contentAvailableWidth.isFinite) &&
@@ -1885,7 +1983,9 @@ class RenderGridLayout extends RenderLayoutBox {
     RenderBox? child;
 
     // Pass 1: resolve placements and grow implicit track lists.
-    final List<RenderBox> placementChildren = _collectChildren();
+    final List<RenderBox> placementChildren = _collectChildren()
+        .where((RenderBox child) => !_isPositionedGridChild(child))
+        .toList(growable: false);
     final int orderingColumnTrackCount = math.max(colSizes.length, 1);
     final int orderingRowTrackCount = math.max(rowSizes.length, 1);
     final List<RenderBox> definiteBothAxisItems = <RenderBox>[];
@@ -2841,6 +2941,138 @@ class RenderGridLayout extends RenderLayoutBox {
       }
     }
 
+    // Before laying out children to resolve auto row sizes, apply any horizontal
+    // track stretching that depends on the grid container's used width.
+    //
+    // Column track sizes affect item inline sizes, which in turn can affect
+    // item block sizes (e.g. via text wrapping). If we defer stretching until
+    // after measuring item heights, auto row sizing can become stale and leave
+    // the grid too tall.
+    if (colSizes.isNotEmpty) {
+      double usedContentWidth = 0;
+      int justificationColumnCount = colSizes.length;
+      for (int c = 0; c < colSizes.length; c++) {
+        usedContentWidth += colSizes[c];
+        if (c < colSizes.length - 1) usedContentWidth += colGap;
+      }
+
+      int collapsedAutoFitColumnCount = 0;
+      if (explicitAutoFitColumns != null && explicitAutoFitColumnUsage != null) {
+        double collapsedWidth = 0;
+        int collapsedCount = 0;
+        for (int i = explicitColumnCount - 1; i >= 0; i--) {
+          if (!explicitAutoFitColumns[i] || explicitAutoFitColumnUsage[i]) {
+            break;
+          }
+          collapsedWidth += colSizes[i];
+          collapsedCount++;
+          if (i > 0) {
+            collapsedWidth += colGap;
+          }
+        }
+        if (collapsedWidth > 0) {
+          usedContentWidth = math.max(0.0, usedContentWidth - collapsedWidth);
+          justificationColumnCount = math.max(0, justificationColumnCount - collapsedCount);
+          collapsedAutoFitColumnCount = collapsedCount;
+        }
+      }
+
+      // Determine the grid container's used content-box width (used for
+      // stretching auto tracks and distributing leftover space).
+      final bool isBlockGrid =
+          renderStyle.display == CSSDisplay.grid && renderStyle.effectiveDisplay == CSSDisplay.grid;
+      double layoutContentWidth = usedContentWidth;
+
+      final double? logicalBorderBoxWidth = renderStyle.borderBoxLogicalWidth;
+      if (renderStyle.width.isNotAuto &&
+          logicalBorderBoxWidth != null &&
+          logicalBorderBoxWidth.isFinite &&
+          logicalBorderBoxWidth > 0) {
+        layoutContentWidth = math.max(0.0, logicalBorderBoxWidth - horizontalPaddingBorder);
+      } else if (renderStyle.width.isAuto && innerMaxWidth != null && innerMaxWidth.isFinite) {
+        if (isBlockGrid) {
+          layoutContentWidth = math.max(layoutContentWidth, innerMaxWidth);
+        } else if (layoutContentWidth == 0 && !hasAnyChild) {
+          layoutContentWidth = innerMaxWidth;
+        }
+      } else if (layoutContentWidth == 0 && innerMaxWidth != null && innerMaxWidth.isFinite) {
+        if (renderStyle.width.isNotAuto || !hasAnyChild) {
+          layoutContentWidth = innerMaxWidth;
+        }
+      }
+
+      final double desiredBorderBoxWidth = layoutContentWidth + horizontalPaddingBorder;
+      final double constrainedBorderBoxWidth = constraints.constrainWidth(desiredBorderBoxWidth);
+      final double constrainedContentWidth = math.max(0.0, constrainedBorderBoxWidth - horizontalPaddingBorder);
+
+      double horizontalFree = math.max(0.0, constrainedContentWidth - usedContentWidth);
+
+      GridTrackSize columnTrackAt(int index) {
+        if (index >= 0 && index < resolvedColumnDefs.length) {
+          return resolvedColumnDefs[index];
+        }
+        final int implicitIndex = math.max(0, index - explicitColumnCount);
+        return autoColDefs.isNotEmpty ? autoColDefs[implicitIndex % autoColDefs.length] : const GridAuto();
+      }
+
+      double flexFactorForColumnTrack(GridTrackSize track) {
+        if (track is GridFraction) return track.fr;
+        if (track is GridMinMax && track.maxTrack is GridFraction) {
+          return (track.maxTrack as GridFraction).fr;
+        }
+        return 0.0;
+      }
+
+      // When `auto-fit` collapses empty tracks, we can end up with additional
+      // free space that should be absorbed by flexible (fr) tracks as part of
+      // track sizing rather than via justify-content alignment.
+      if (horizontalFree > 0 && collapsedAutoFitColumnCount > 0 && justificationColumnCount > 0) {
+        double frSum = 0.0;
+        final List<double> frFactors =
+            List<double>.filled(justificationColumnCount, 0.0, growable: false);
+        for (int c = 0; c < justificationColumnCount; c++) {
+          final double fr = flexFactorForColumnTrack(columnTrackAt(c));
+          if (fr > 0) {
+            frFactors[c] = fr;
+            frSum += fr;
+          }
+        }
+        if (frSum > 0) {
+          for (int c = 0; c < justificationColumnCount; c++) {
+            final double fr = frFactors[c];
+            if (fr <= 0) continue;
+            colSizes[c] += horizontalFree * (fr / frSum);
+          }
+          usedContentWidth += horizontalFree;
+          horizontalFree = 0;
+        }
+      }
+
+      // Stretch auto tracks to fill the used content-box width. This must happen
+      // before measuring auto row heights so that item layout uses the final
+      // inline sizes (per CSS Grid + Box Alignment).
+      if (horizontalFree > 0 && renderStyle.justifyContent == JustifyContent.stretch && justificationColumnCount > 0) {
+        bool isStretchableColumn(GridTrackSize track) {
+          if (track is GridAuto) return true;
+          if (track is GridMinMax) return track.maxTrack is GridAuto;
+          return false;
+        }
+
+        final List<int> stretchableColumns = <int>[];
+        for (int c = 0; c < justificationColumnCount; c++) {
+          if (isStretchableColumn(columnTrackAt(c))) {
+            stretchableColumns.add(c);
+          }
+        }
+        if (stretchableColumns.isNotEmpty) {
+          final double perColumn = horizontalFree / stretchableColumns.length;
+          for (final int c in stretchableColumns) {
+            colSizes[c] += perColumn;
+          }
+        }
+      }
+    }
+
     // Pass 2: layout children with resolved column widths.
     if (implicitRowHeights.isNotEmpty) {
       implicitRowHeights = List<double>.filled(implicitRowHeights.length, 0.0, growable: true);
@@ -2859,6 +3091,10 @@ class RenderGridLayout extends RenderLayoutBox {
       }
 
       final GridLayoutParentData pd = child.parentData as GridLayoutParentData;
+      if (_isPositionedGridChild(child)) {
+        child = pd.nextSibling;
+        continue;
+      }
       final int rowIndex = pd.rowStart;
       final int colIndex = pd.columnStart;
       final int rowSpan = math.max(1, pd.rowSpan);
@@ -3012,6 +3248,11 @@ class RenderGridLayout extends RenderLayoutBox {
     bool relayoutForImplicitRowStretch = false;
     RenderBox? stretchCheckChild = firstChild;
     while (stretchCheckChild != null) {
+      final GridLayoutParentData pd = stretchCheckChild.parentData as GridLayoutParentData;
+      if (_isPositionedGridChild(stretchCheckChild)) {
+        stretchCheckChild = pd.nextSibling;
+        continue;
+      }
       CSSRenderStyle? childGridStyle;
       if (stretchCheckChild is RenderBoxModel) {
         childGridStyle = stretchCheckChild.renderStyle;
@@ -3028,7 +3269,6 @@ class RenderGridLayout extends RenderLayoutBox {
         explicitItemHeight = childGridStyle.height.computedValue;
       }
       if (alignSelfAlignment == GridAxisAlignment.stretch && childHeightAuto && explicitItemHeight == null) {
-        final GridLayoutParentData pd = stretchCheckChild.parentData as GridLayoutParentData;
         double cellWidth = 0;
         final int colIndex = pd.columnStart;
         final int colSpan = math.max(1, pd.columnSpan).clamp(1, math.max(1, colSizes.length - colIndex));
@@ -3065,7 +3305,7 @@ class RenderGridLayout extends RenderLayoutBox {
           }
         }
       }
-      stretchCheckChild = (stretchCheckChild.parentData as GridLayoutParentData).nextSibling;
+      stretchCheckChild = pd.nextSibling;
     }
 
     // Compute used content size
@@ -3095,14 +3335,43 @@ class RenderGridLayout extends RenderLayoutBox {
         collapsedAutoFitColumnCount = collapsedCount;
       }
     }
-    double usedContentHeight = 0;
     final int totalRows = math.max(rowSizes.length, implicitRowHeights.length);
     int alignmentRowCount = totalRows;
+    double usedContentHeightWithoutGaps = 0;
     for (int r = 0; r < totalRows; r++) {
       final double segment = _resolvedRowHeight(rowSizes, implicitRowHeights, r);
-      usedContentHeight += segment;
-      if (r < totalRows - 1) usedContentHeight += rowGap;
+      if (segment.isFinite && segment > 0) {
+        usedContentHeightWithoutGaps += segment;
+      }
     }
+    if (shouldResolveRowGapAgainstContentBoxLater && totalRows > 1 && usedContentHeightWithoutGaps > 0) {
+      final int gapCount = totalRows - 1;
+      final double denominator = 1.0 - rowGapPercentage * gapCount;
+      if (denominator > 0) {
+        rowGap = (rowGapPercentage * usedContentHeightWithoutGaps) / denominator;
+      } else {
+        rowGap = 0.0;
+      }
+
+      // Child offsets were computed assuming rowGap=0; translate them to include
+      // the resolved row gaps without forcing a full relayout pass.
+      RenderBox? childForGapAdjust = firstChild;
+      while (childForGapAdjust != null) {
+        final GridLayoutParentData pd = childForGapAdjust.parentData as GridLayoutParentData;
+        if (_isPositionedGridChild(childForGapAdjust)) {
+          childForGapAdjust = pd.nextSibling;
+          continue;
+        }
+        final int rowStart = pd.rowStart;
+        if (rowStart > 0 && rowGap > 0) {
+          pd.offset = pd.offset.translate(0.0, rowGap * rowStart);
+        }
+        childForGapAdjust = pd.nextSibling;
+      }
+    }
+
+    double usedContentHeight =
+        usedContentHeightWithoutGaps + rowGap * math.max(0, totalRows - 1);
     if (explicitAutoFitRows != null && explicitAutoFitRowUsage != null) {
       double collapsedHeight = 0;
       int collapsedCount = 0;
@@ -3121,6 +3390,74 @@ class RenderGridLayout extends RenderLayoutBox {
         alignmentRowCount = math.max(0, alignmentRowCount - collapsedCount);
       }
     }
+
+    // Cache min-content contributions (content-box) for flexbox automatic
+    // minimum size (min-size:auto). Flex layout consults `minContentWidth`/
+    // `minContentHeight` to clamp flex items to their content-based minimum.
+    double minContentW = 0.0;
+    for (int c = 0; c < colSizes.length; c++) {
+      final GridTrackSize track;
+      if (c >= 0 && c < resolvedColumnDefs.length) {
+        track = resolvedColumnDefs[c];
+      } else {
+        final int implicitIndex = math.max(0, c - resolvedColumnDefs.length);
+        track = autoColDefs.isNotEmpty ? autoColDefs[implicitIndex % autoColDefs.length] : const GridAuto();
+      }
+      minContentW += _trackMinBreadth(track, null);
+      if (c < colSizes.length - 1) {
+        minContentW += colGap;
+      }
+    }
+
+    double minContentH = 0.0;
+    for (int r = 0; r < totalRows; r++) {
+      final GridTrackSize track;
+      if (r >= 0 && r < resolvedRowDefs.length) {
+        track = resolvedRowDefs[r];
+      } else {
+        final int implicitIndex = math.max(0, r - resolvedRowDefs.length);
+        track = autoRowDefs.isNotEmpty ? autoRowDefs[implicitIndex % autoRowDefs.length] : const GridAuto();
+      }
+      minContentH += _trackMinBreadth(track, null);
+      if (r < totalRows - 1) {
+        minContentH += rowGap;
+      }
+    }
+
+    if (explicitAutoFitColumns != null && explicitAutoFitColumnUsage != null && resolvedColumnDefs.isNotEmpty) {
+      double collapsedMinWidth = 0.0;
+      for (int i = explicitColumnCount - 1; i >= 0; i--) {
+        if (!explicitAutoFitColumns[i] || explicitAutoFitColumnUsage[i]) {
+          break;
+        }
+        collapsedMinWidth += _trackMinBreadth(resolvedColumnDefs[i], null);
+        if (i > 0) {
+          collapsedMinWidth += colGap;
+        }
+      }
+      if (collapsedMinWidth > 0) {
+        minContentW = math.max(0.0, minContentW - collapsedMinWidth);
+      }
+    }
+
+    if (explicitAutoFitRows != null && explicitAutoFitRowUsage != null && resolvedRowDefs.isNotEmpty) {
+      double collapsedMinHeight = 0.0;
+      for (int i = explicitRowCount - 1; i >= 0; i--) {
+        if (!explicitAutoFitRows[i] || explicitAutoFitRowUsage[i]) {
+          break;
+        }
+        collapsedMinHeight += _trackMinBreadth(resolvedRowDefs[i], null);
+        if (i > 0) {
+          collapsedMinHeight += rowGap;
+        }
+      }
+      if (collapsedMinHeight > 0) {
+        minContentH = math.max(0.0, minContentH - collapsedMinHeight);
+      }
+    }
+
+    minContentWidth = minContentW;
+    minContentHeight = minContentH;
 
     // Final size constrained by constraints.
     // For grid containers, the used border-box width/height come from:
@@ -3168,9 +3505,8 @@ class RenderGridLayout extends RenderLayoutBox {
       }
     }
 
-    final double desiredWidth = layoutContentWidth + horizontalPaddingBorder;
-    final double desiredHeight = layoutContentHeight + verticalPaddingBorder;
-    size = constraints.constrain(Size(desiredWidth, desiredHeight));
+    final Size layoutContentSize = getContentSize(contentWidth: layoutContentWidth, contentHeight: layoutContentHeight);
+    size = getBoxSize(layoutContentSize);
     double horizontalFree = math.max(0.0, size.width - horizontalPaddingBorder - usedContentWidth);
     double verticalFree = math.max(0.0, size.height - verticalPaddingBorder - usedContentHeight);
     bool relayoutForStretchedTracks = false;
@@ -3448,6 +3784,10 @@ class RenderGridLayout extends RenderLayoutBox {
     RenderBox? childForAlignment = firstChild;
     while (childForAlignment != null) {
       final GridLayoutParentData pd = childForAlignment.parentData as GridLayoutParentData;
+      if (_isPositionedGridChild(childForAlignment)) {
+        childForAlignment = pd.nextSibling;
+        continue;
+      }
       double additionalY = alignShift;
       if (distributeRows) {
         additionalY = rowDistributionLeading + pd.rowStart * rowDistributionBetween;
@@ -3485,6 +3825,18 @@ class RenderGridLayout extends RenderLayoutBox {
         }
       }
       childForRelativePosition = pd.nextSibling;
+    }
+
+    // Now that the grid container size and placeholder static positions are known,
+    // lay out and position out-of-flow children (absolute/fixed/sticky) relative to
+    // this grid container as their containing block.
+    for (final RenderBoxModel child in absFixedChildren) {
+      CSSPositionedLayout.layoutPositionedChild(this, child);
+    }
+
+    for (final RenderBoxModel child in positionedChildren) {
+      CSSPositionedLayout.applyPositionedChildOffset(this, child);
+      CSSPositionedLayout.applyStickyChildOffset(this, child);
     }
 
     placementStopwatch?.stop();

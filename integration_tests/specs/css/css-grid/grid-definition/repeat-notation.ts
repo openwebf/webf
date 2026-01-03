@@ -34,6 +34,7 @@ describe('CSS Grid repeat() notation', () => {
     grid.remove();
   });
 
+  // 异常
   it('repeats with named lines', async () => {
     const grid = document.createElement('div');
     grid.style.display = 'grid';
@@ -55,7 +56,17 @@ describe('CSS Grid repeat() notation', () => {
 
     document.body.appendChild(grid);
     await waitForFrame();
+    // Debug: ensure line names in repeat + placement parse correctly.
+    // eslint-disable-next-line no-console
+    // console.log('[grid][named-lines-repeat] templateCols:', getComputedStyle(grid).gridTemplateColumns);
+    // // eslint-disable-next-line no-console
+    // console.log('[grid][named-lines-repeat] item gridColumnStart/end:', getComputedStyle(item).gridColumnStart, getComputedStyle(item).gridColumnEnd);
+    // // eslint-disable-next-line no-console
+    // console.log('[grid][named-lines-repeat] item style gridColumn:', item.style.gridColumn);
+    // // eslint-disable-next-line no-console
+    // console.log('[grid][named-lines-repeat] item style gridColumnStart/end:', item.style.gridColumnStart, item.style.gridColumnEnd);
     await snapshot();
+    // await snapshot(1);
 
     const gridRect = grid.getBoundingClientRect();
     const itemRect = item.getBoundingClientRect();

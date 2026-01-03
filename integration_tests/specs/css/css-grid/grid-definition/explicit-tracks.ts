@@ -242,7 +242,17 @@ describe('CSS Grid explicit track definition', () => {
 
     document.body.appendChild(grid);
     await waitForFrame();
+    // Debug: ensure line names + placement parse correctly.
+    // eslint-disable-next-line no-console
+    // console.log('[grid][duplicate-line-names] templateCols:', getComputedStyle(grid).gridTemplateColumns);
+    // // eslint-disable-next-line no-console
+    // console.log('[grid][duplicate-line-names] item gridColumnStart/end:', getComputedStyle(item).gridColumnStart, getComputedStyle(item).gridColumnEnd);
+    // // eslint-disable-next-line no-console
+    // console.log('[grid][duplicate-line-names] item style gridColumn:', item.style.gridColumn);
+    // // eslint-disable-next-line no-console
+    // console.log('[grid][duplicate-line-names] item style gridColumnStart/end:', item.style.gridColumnStart, item.style.gridColumnEnd);
     await snapshot();
+    // await snapshot(1);
 
     const gridRect = grid.getBoundingClientRect();
     const itemRect = item.getBoundingClientRect();

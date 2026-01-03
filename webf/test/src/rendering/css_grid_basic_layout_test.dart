@@ -85,6 +85,74 @@ void main() {
       expect(bOffset.dx, closeTo(100.0, 2.0));
     });
 
+    testWidgets('percentage gap resolves auto row-gap against content height', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-gap-pct-auto-rows-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; width: 300px; grid-template-columns: auto auto; grid-template-rows: auto; gap: 5%;">
+            <div id="a" style="padding: 20px; background: #7B1FA2; color: white;">1</div>
+            <div id="b" style="padding: 20px; background: #8E24AA; color: white;">2</div>
+            <div id="c" style="padding: 20px; background: #9C27B0; color: white;">3</div>
+            <div id="d" style="padding: 20px; background: #AB47BC; color: white;">4</div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final a = prepared.getElementById('a');
+      final b = prepared.getElementById('b');
+      final c = prepared.getElementById('c');
+
+      final RenderGridLayout gridRenderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox ra = a.attachedRenderer as RenderBox;
+      final RenderBox rb = b.attachedRenderer as RenderBox;
+      final RenderBox rc = c.attachedRenderer as RenderBox;
+
+      final Offset aOffset = getLayoutTransformTo(ra, gridRenderer, excludeScrollOffset: true);
+      final Offset bOffset = getLayoutTransformTo(rb, gridRenderer, excludeScrollOffset: true);
+      final Offset cOffset = getLayoutTransformTo(rc, gridRenderer, excludeScrollOffset: true);
+
+      final double columnGap = bOffset.dx - (aOffset.dx + ra.size.width);
+      expect(columnGap, closeTo(15.0, 1.0)); // 5% of 300px
+
+      final double rowGap = cOffset.dy - (aOffset.dy + ra.size.height);
+      expect(rowGap, greaterThan(0));
+      expect(rowGap, closeTo(gridRenderer.size.height * 0.05, 1.0));
+    });
+
+    testWidgets('nested percentage widths do not inflate auto row height', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-nested-percent-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; grid-template-columns: auto; grid-template-rows: auto;">
+            <div id="item" style="padding: 10px; background: #FFB74D;">
+              <div style="width: 80%; padding: 10px; background: #FF9800;">
+                <div style="width: 90%; padding: 10px; background: #F57C00; color: white;">Nested content</div>
+              </div>
+            </div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final item = prepared.getElementById('item');
+
+      final RenderGridLayout gridRenderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox itemRenderer = item.attachedRenderer as RenderBox;
+
+      expect(gridRenderer.size.height, greaterThan(80));
+      expect(gridRenderer.size.height, lessThanOrEqualTo(100)); // Give more headroom
+      expect(itemRenderer.size.height, greaterThan(80));
+      expect(itemRenderer.size.height, lessThanOrEqualTo(100)); // Give more headroom
+      expect(itemRenderer.size.height, gridRenderer.size.height);
+    });
+
     testWidgets('grid-auto-columns create implicit tracks', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
