@@ -136,6 +136,16 @@ class GridRepeat extends GridTrackSize {
         );
 }
 
+class GridSubgrid extends GridTrackSize {
+  final List<List<String>> lineNameGroups;
+  const GridSubgrid({
+    this.lineNameGroups = const <List<String>>[],
+    super.leadingLineNames,
+    super.trailingLineNames,
+    super.isAutoFit,
+  }) : super();
+}
+
 class GridTemplateAreaRect {
   final int rowStart;
   final int rowEnd;
@@ -519,6 +529,23 @@ class CSSGridParser {
     final String trimmed = value.trim();
     if (trimmed.isEmpty) {
       return const <GridTrackSize>[];
+    }
+    if ((propertyName == GRID_TEMPLATE_COLUMNS || propertyName == GRID_TEMPLATE_ROWS) &&
+        trimmed.toLowerCase().startsWith('subgrid')) {
+      final String rest = trimmed.substring(7).trim();
+      if (rest.isEmpty) return const <GridTrackSize>[GridSubgrid()];
+
+      final List<String> tokens = _splitBySpacePreservingFunc(rest);
+      final List<List<String>> lineNameGroups = <List<String>>[];
+      for (final String token in tokens) {
+        final String t = token.trim();
+        if (t.isEmpty) continue;
+        if (!_isLineNameToken(t)) {
+          return const <GridTrackSize>[];
+        }
+        lineNameGroups.add(_parseLineNames(t));
+      }
+      return <GridTrackSize>[GridSubgrid(lineNameGroups: lineNameGroups)];
     }
     // For template track lists, `none` represents "no explicit tracks".
     // Represent this as an empty list so that layout can fall back to
