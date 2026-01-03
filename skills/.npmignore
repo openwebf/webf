@@ -1,0 +1,14 @@
+# Ignore hidden files
+.*
+!.npmignore
+
+# Ignore node_modules if any
+node_modules/
+
+# Ignore development files
+*.log
+*.tmp
+.DS_Store
+
+# Only include the documented skills and README
+# Everything else is excluded by default
