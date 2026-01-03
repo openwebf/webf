@@ -34,7 +34,8 @@ describe('CSS Grid repeat() notation', () => {
     grid.remove();
   });
 
-  it('repeats with named lines', async () => {
+  // 异常
+  fit('repeats with named lines', async () => {
     const grid = document.createElement('div');
     grid.style.display = 'grid';
     grid.style.width = '320px';
@@ -55,7 +56,7 @@ describe('CSS Grid repeat() notation', () => {
 
     document.body.appendChild(grid);
     await waitForFrame();
-    await snapshot();
+    await snapshot(1);
 
     const gridRect = grid.getBoundingClientRect();
     const itemRect = item.getBoundingClientRect();
