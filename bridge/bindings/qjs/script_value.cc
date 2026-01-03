@@ -266,7 +266,7 @@ NativeValue ScriptValue::ToNative(JSContext* ctx, ExceptionState& exception_stat
       // NativeString owned by NativeValue will be freed by users.
       return NativeValueConverter<NativeTypeString>::ToNativeValue(ctx, ToAtomicString(ctx));
     case JS_TAG_OBJECT: {
-      if (JS_IsFunction(ctx, value_)) {
+      if (!shared_js_value && JS_IsFunction(ctx, value_)) {
         auto* context = ExecutingContext::From(ctx);
         if (!context || !context->IsContextValid()) {
           return Native_NewNull();
