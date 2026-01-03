@@ -608,6 +608,16 @@ class CSSGridParser {
 
     final List<String> tokens = trimmed.split(RegExp(r'\s+'));
     if (tokens.length == 2) {
+      // Support both `<custom-ident> <integer>` and `<integer> <custom-ident>`
+      // forms per CSS Grid placement syntax.
+      final int? leadingInt = int.tryParse(tokens[0]);
+      if (leadingInt != null && leadingInt != 0 && isCustomIdent(tokens[1])) {
+        return GridPlacement.named(
+          tokens[1],
+          occurrence: leadingInt,
+          explicitOccurrence: true,
+        );
+      }
       final int? occurrence = int.tryParse(tokens[1]);
       if (occurrence != null && occurrence != 0 && isCustomIdent(tokens[0])) {
         return GridPlacement.named(
