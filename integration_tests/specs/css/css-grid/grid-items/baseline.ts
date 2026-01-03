@@ -328,6 +328,7 @@ describe('CSS Grid baseline alignment', () => {
     grid.remove();
   });
 
+  // TODO writingMode=vertical-rl
   xit('handles baseline with vertical writing mode', async () => {
     const grid = document.createElement('div');
     grid.style.display = 'grid';
