@@ -1,0 +1,50 @@
+{
+  "name": "@openwebf/claude-code-skills",
+  "version": "1.0.0",
+  "description": "Claude Code skills for WebF developers - guides for building native mobile/desktop apps with web technologies (React, Vue, Svelte)",
+  "keywords": [
+    "webf",
+    "claude-code",
+    "claude",
+    "skills",
+    "web-development",
+    "react",
+    "vue",
+    "svelte",
+    "mobile-development",
+    "flutter",
+    "native-apps",
+    "web-to-native",
+    "developer-tools",
+    "documentation",
+    "async-rendering",
+    "hybrid-routing",
+    "api-compatibility"
+  ],
+  "homepage": "https://openwebf.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/openwebf/webf.git",
+    "directory": "skills"
+  },
+  "bugs": {
+    "url": "https://github.com/openwebf/webf/issues"
+  },
+  "license": "Apache-2.0",
+  "author": "The OpenWebF Team",
+  "files": [
+    "README.md",
+    "webf-quickstart/",
+    "webf-async-rendering/",
+    "webf-api-compatibility/",
+    "webf-routing-setup/",
+    "webf-infinite-scrolling/"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
