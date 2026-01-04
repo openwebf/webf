@@ -1,9 +1,11 @@
 # WebF Quickstart - Quick Reference
 
+> **⚠️ IMPORTANT**: WebF Go is for **testing and development ONLY**. For production, you must build a Flutter app with WebF integration.
+
 ## Setup Checklist
 
 - [ ] Node.js installed (LTS version)
-- [ ] WebF Go downloaded and installed
+- [ ] WebF Go downloaded and installed (for testing)
 - [ ] Project created with Vite
 - [ ] Dependencies installed (`npm install`)
 - [ ] Dev server running (`npm run dev`)
@@ -21,9 +23,10 @@ npm install
 npm run dev                    # Desktop (localhost)
 npm run dev -- --host          # Mobile (network access)
 
-# Production
+# Production (Web Bundle)
 npm run build                  # Create production build
 npm run preview                # Preview production build
+vercel deploy                  # Deploy to hosting
 ```
 
 ## Network URLs by Platform
@@ -147,6 +150,45 @@ if (typeof WebF !== 'undefined') {
   console.log('Running in browser');
 }
 ```
+
+## Production Deployment
+
+⚠️ **WebF Go is NOT for production**. It's a testing tool only.
+
+### Production Checklist
+
+1. **Build Web Bundle**
+   ```bash
+   npm run build
+   ```
+
+2. **Deploy Bundle to Hosting**
+   ```bash
+   vercel deploy  # or Netlify, AWS S3, etc.
+   ```
+
+3. **Create Flutter App with WebF**
+   - Set up Flutter project
+   - Add `webf` package to `pubspec.yaml`
+   - Configure app (icons, permissions, etc.)
+   - Load your bundle URL
+
+4. **Build & Submit Flutter App**
+   - Build for iOS and Android
+   - Submit to App Store/Google Play
+
+### Key Differences
+
+| Development | Production |
+|------------|------------|
+| WebF Go | Custom Flutter app |
+| Testing only | End-user distribution |
+| No Flutter SDK needed | Flutter SDK required |
+| Don't distribute | App Store/Google Play |
+
+**Resources:**
+- Integration: https://openwebf.com/en/docs/developer-guide/integration
+- Flutter Setup: https://openwebf.com/en/docs/developer-guide/app-setup
 
 ## Next Skill After Setup
 

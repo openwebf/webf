@@ -5,7 +5,9 @@ description: Get started with WebF development - setup WebF Go, create a React/V
 
 # WebF Quickstart
 
-> **Note**: Building WebF apps is nearly identical to building regular web apps with Vite + React/Vue/Svelte. The only difference is you replace your browser with **WebF Go** for testing. Everything else - project structure, build tools, testing frameworks, and deployment - works the same way.
+> **Note**: Building WebF apps is nearly identical to building regular web apps with Vite + React/Vue/Svelte. The only difference is you replace your browser with **WebF Go** for testing during development. Everything else - project structure, build tools, testing frameworks, and deployment - works the same way.
+
+> **⚠️ IMPORTANT**: WebF Go is for **development and testing ONLY**. For production, you must build a Flutter app with WebF integration. Do NOT distribute WebF Go to end users.
 
 Get up and running with WebF in minutes. This skill guides you through setting up your development environment, creating your first project, and loading it in WebF Go.
 
@@ -20,9 +22,9 @@ WebF lets web developers build native apps using familiar web tools.
 
 ## Step-by-Step Setup
 
-### 1. Download WebF Go
+### 1. Download WebF Go (For Testing Only)
 
-WebF Go is a pre-built native app containing the WebF rendering engine.
+WebF Go is a pre-built native app containing the WebF rendering engine. It's designed for **development and testing purposes only** - not for production deployment.
 
 **For Desktop Development:**
 - Download WebF Go for your OS (macOS, Windows, Linux)
@@ -31,6 +33,8 @@ WebF Go is a pre-built native app containing the WebF rendering engine.
 **For Mobile Testing:**
 - iOS: Download from App Store
 - Android: Download from Google Play
+
+**Remember**: WebF Go is a testing tool. For production apps, you'll need to build a Flutter app with WebF integration.
 
 Launch WebF Go - you'll see an input field ready to load your app.
 
@@ -124,6 +128,63 @@ To debug your app:
 - HMR not working → Refresh the page manually
 - Dev server error → Check terminal for errors
 - Network connection lost → Reconnect WiFi
+
+## Production Deployment
+
+⚠️ **WebF Go is NOT for production use**. It's a testing tool for developers.
+
+### For Production Apps
+
+When you're ready to deploy to end users, you need to:
+
+**1. Build Your Web Bundle**
+```bash
+npm run build
+```
+
+**2. Host Your Bundle**
+- Deploy to any web hosting (Vercel, Netlify, CDN, etc.)
+- Your bundle will be accessible via URL (e.g., `https://your-app.com`)
+
+**3. Create a Flutter App with WebF Integration**
+
+You or your Flutter team needs to:
+- Set up a Flutter project
+- Add the WebF Flutter package to `pubspec.yaml`
+- Configure the app (name, icon, splash screen, permissions)
+- Load your web bundle URL in the WebF widget
+
+**Example Flutter Integration:**
+```dart
+import 'package:webf/webf.dart';
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return WebF(
+      bundle: WebFBundle.fromUrl('https://your-app.com'),
+    );
+  }
+}
+```
+
+**4. Build and Deploy Flutter App**
+- Build for iOS and Android
+- Submit to App Store and Google Play
+
+**Resources:**
+- [WebF Integration Guide](https://openwebf.com/en/docs/developer-guide/integration)
+- [Flutter App Setup](https://openwebf.com/en/docs/developer-guide/app-setup)
+
+### Development vs Production
+
+| Aspect | Development | Production |
+|--------|------------|------------|
+| **Tool** | WebF Go | Custom Flutter app |
+| **Purpose** | Testing & iteration | End-user distribution |
+| **Setup** | Download and run | Build Flutter app |
+| **Distribution** | Don't distribute | App Store/Google Play |
+| **Requirements** | Node.js only | Flutter SDK required |
 
 ## Next Steps
 
