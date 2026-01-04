@@ -22,21 +22,47 @@ Claude Code will automatically detect and load these skills when working with We
 
 **WebF** is a W3C/WHATWG-compliant web runtime for Flutter that allows web developers to build native mobile and desktop apps using standard web technologies (HTML, CSS, JavaScript). It's NOT a browser - it's a Flutter application runtime that implements web standards.
 
+## ⚠️ Important: WebF Go vs Production Deployment
+
+**WebF Go is for testing and development ONLY** - it is NOT for production deployment.
+
+### For Development & Testing:
+- ✅ Use **WebF Go** (desktop/mobile app) to test your web code
+- ✅ Fast iteration with hot reload
+- ✅ No Flutter SDK required for web developers
+
+### For Production Deployment:
+- ❌ **Do NOT distribute WebF Go to end users**
+- ✅ **You MUST build a Flutter app with WebF integration**
+- ✅ Requires Flutter SDK and proper app setup
+- ✅ Deploy through App Store/Google Play as a native app
+
+**If you're building a production app**, you or your team will need to:
+1. Set up a Flutter project
+2. Integrate the WebF Flutter package
+3. Configure your app (icons, splash screen, permissions, etc.)
+4. Build and distribute through official app stores
+
+See [WebF Integration Guide](https://openwebf.com/en/docs/developer-guide/integration) for production setup.
+
 ## Available Skills
 
 ### 1. webf-quickstart
 **Use when**: Starting a new WebF project, onboarding developers, or setting up development environment
 
 **What it covers**:
-- Downloading and setting up WebF Go
+- Downloading and setting up WebF Go (for testing ONLY)
 - Creating projects with Vite (React/Vue/Svelte)
 - Network configuration for mobile testing
 - Chrome DevTools setup
+- Understanding WebF Go vs production deployment
 
 **Trigger examples**:
 - "How do I get started with WebF?"
 - "Setup WebF development environment"
 - "Create a new WebF app"
+
+**Important**: WebF Go is for development/testing only. Production apps require a Flutter app with WebF integration.
 
 ---
 
@@ -109,6 +135,25 @@ Claude Code will automatically detect and load these skills when working with We
 - "My scrolling list is slow"
 - "How to add pull-to-refresh?"
 
+---
+
+### 6. webf-native-ui
+**Use when**: Building iOS-style apps, need native-looking components, want better performance than HTML/CSS
+
+**What it covers**:
+- Cupertino UI library (iOS-style components)
+- Setting up Flutter packages and npm packages
+- Using native components in React and Vue
+- Mixing native UI with HTML/CSS
+- Component reference and examples
+
+**Trigger examples**:
+- "How to use native UI components in WebF?"
+- "Build an iOS-style form"
+- "Use Cupertino UI components"
+- "Setup Cupertino UI"
+- "Better performance than HTML/CSS?"
+
 ## Quick Problem Solver
 
 ### "My measurements are all zeros"
@@ -137,6 +182,12 @@ Claude Code will automatically detect and load these skills when working with We
 - Pull-to-refresh and infinite scroll patterns
 - Critical: Items must be direct children
 
+### "How do I use native UI components?"
+→ Use **webf-native-ui** skill
+- Setup Cupertino UI (iOS-style components)
+- Build native iOS forms and navigation
+- Better performance than HTML/CSS
+
 ## Common Error Messages
 
 | Error/Issue | Skill to Use | Solution |
@@ -150,6 +201,8 @@ Claude Code will automatically detect and load these skills when working with We
 | Can't access localhost on mobile | webf-quickstart | Use Network URL with `--host` flag |
 | Scrolling list is slow/laggy | webf-infinite-scrolling | Use WebFListView with direct children |
 | finishLoad/finishRefresh not working | webf-infinite-scrolling | Ensure you call these methods after async operations |
+| Want to use native UI components | webf-native-ui | Install Cupertino UI package |
+| Need iOS-style buttons/forms | webf-native-ui | Use FlutterCupertinoButton and Cupertino form components |
 
 ## Development Workflow
 
@@ -164,7 +217,7 @@ The workflow is the same as Vite + React/Vue/Svelte development:
 - ✅ Deploy to any web hosting service (Vercel, Netlify, etc.)
 - ✅ All React.js and Vue.js features are fully supported
 
-**The only difference**: Replace your browser with **WebF Go** for testing.
+**The only difference**: Replace your browser with **WebF Go** for testing during development.
 
 ### The 3 Key Differences to Check
 
@@ -192,6 +245,12 @@ WebF provides performance optimizations that are automatically applied:
 - Flutter-level optimization (view recycling, 60fps scrolling)
 - Pull-to-refresh and load-more built-in
 - Critical: Each item must be a direct child of WebFListView
+
+**Native UI Components** → Use `webf-native-ui` skill
+- Pre-built Cupertino UI components (iOS-style)
+- Native iOS buttons, forms, dialogs, pickers
+- Better performance than HTML/CSS for complex UIs
+- Full React and Vue support
 
 ### Development Process
 
@@ -238,13 +297,24 @@ npm install -D vitest
 npm run test
 ```
 
-**4. Build & Deploy (Same as Web)**
+**4. Build for Production**
 ```bash
-# Build for production
+# Build your web bundle
 npm run build
+```
 
-# Deploy anywhere (Vercel, Netlify, etc.)
+**For Production Deployment**:
+- ⚠️ **Do NOT use WebF Go for production** - it's for testing only
+- ✅ Host your web bundle (Vercel, Netlify, CDN, etc.)
+- ✅ Build a Flutter app with WebF integration that loads your bundle
+- ✅ Deploy the Flutter app to App Store/Google Play
+
+```bash
+# Deploy your web bundle to hosting
 vercel deploy
+
+# Your Flutter app will load the bundle from the URL
+# See: https://openwebf.com/en/docs/developer-guide/integration
 ```
 
 ### Project Structure
@@ -281,6 +351,9 @@ my-webf-app/
 
 **Building scrollable lists?**
 → Use `webf-infinite-scrolling` - High-performance lists with pull-to-refresh
+
+**Want native UI components?**
+→ Use `webf-native-ui` - Setup and use Cupertino UI (iOS-style components)
 
 ### Integration Patterns
 
@@ -364,6 +437,11 @@ All these frameworks work with WebF out-of-the-box:
 - `@openwebf/react-core-ui` - React utilities (useFlutterAttached, WebFListView)
 - `@openwebf/vue-core-ui` - Vue utilities (useFlutterAttached, webf-list-view types)
 
+### Native UI Components
+- `@openwebf/react-cupertino-ui` - iOS-style Cupertino UI for React
+- `@openwebf/vue-cupertino-ui` - iOS-style Cupertino UI for Vue
+- `webf_cupertino_ui` - Flutter Cupertino UI package
+
 ### Native Features
 - `@openwebf/webf-share` - Native share dialog
 - `@openwebf/webf-deeplink` - Deep linking support
@@ -382,6 +460,7 @@ All skills are in `/Users/andycall/workspace/webf/skills/`:
 - `webf-api-compatibility/` - API/CSS compatibility tables
 - `webf-routing-setup/` - Routing setup and examples
 - `webf-infinite-scrolling/` - High-performance scrolling lists
+- `webf-native-ui/` - Native UI components (Cupertino UI for iOS)
 
 ### Each Skill Includes
 - `SKILL.md` - Main skill definition with instructions
@@ -394,6 +473,7 @@ All skills are in `/Users/andycall/workspace/webf/skills/`:
 3. **Check webf-api-compatibility** before using new APIs
 4. **Setup webf-routing-setup** for navigation
 5. **Use webf-infinite-scrolling** for scrollable lists and feeds
+6. **Use webf-native-ui** for native UI components
 
 ## Next Steps
 
@@ -404,6 +484,7 @@ After reading this README:
 3. **Planning features?** → Check `webf-api-compatibility/reference.md`
 4. **Adding navigation?** → Follow `webf-routing-setup/SKILL.md`
 5. **Building scrollable lists?** → Follow `webf-infinite-scrolling/SKILL.md`
+6. **Want native UI components?** → Follow `webf-native-ui/SKILL.md`
 
 ## Contributing
 
