@@ -133,6 +133,13 @@ describe('FontWeight', () => {
       test_computed_value('font-weight', '700');
       test_computed_value('font-weight', '800');
       test_computed_value('font-weight', '900');
+      // Explicit `inherit` should resolve to the parent's computed value.
+      container!.style.fontWeight = '300';
+      target!.style.setProperty('font-weight', 'inherit');
+      expect((getComputedStyle(target!) as any)['font-weight']).toEqual('300');
+
+      container!.style.fontWeight = '200';
+      expect((getComputedStyle(target!) as any)['font-weight']).toEqual('200');
       done();
     });
 

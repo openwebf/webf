@@ -2492,7 +2492,13 @@ class CSSRenderStyle extends RenderStyle
         value = CSSText.resolveTextDecorationStyle(propertyValue);
         break;
       case FONT_WEIGHT:
-        value = CSSText.resolveFontWeight(propertyValue);
+        // font-weight is an inherited property; explicitly setting `inherit`
+        // should resolve to the parent's computed value.
+        if (propertyValue == INHERIT) {
+          value = null;
+        } else {
+          value = CSSText.resolveFontWeight(propertyValue);
+        }
         break;
       case FONT_SIZE:
         value = CSSText.resolveFontSize(propertyValue, renderStyle, propertyName);
@@ -2658,7 +2664,7 @@ class CSSRenderStyle extends RenderStyle
         final bool parentInlineBlockAuto = p != null &&
             p.effectiveDisplay == CSSDisplay.inlineBlock && p.width.isAuto;
         RenderViewportBox? viewport = getCurrentViewportBox() ?? renderStyle.target.getRootViewport();
-        if (!parentInlineBlockAuto && viewport != null) {
+        if (!parentInlineBlockAuto && viewport != null && viewport.boxSize != null) {
           logicalWidth = viewport.boxSize!.width;
         }
       } else if (logicalWidth == null && (renderStyle.isSelfRouterLinkElement() && root != null)) {
