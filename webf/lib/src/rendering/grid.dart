@@ -2087,6 +2087,21 @@ class RenderGridLayout extends RenderLayoutBox {
                 ),
               )
             : <double>[];
+    if (useSubgridColumns && colSizes.isNotEmpty) {
+      final double leadingInset = paddingLeft + borderLeft;
+      final double trailingInset = paddingRight + borderRight;
+      if (colSizes.length == 1) {
+        colSizes[0] = math.max(0.0, colSizes[0] - leadingInset - trailingInset);
+      } else {
+        if (leadingInset > 0) {
+          colSizes[0] = math.max(0.0, colSizes[0] - leadingInset);
+        }
+        if (trailingInset > 0) {
+          final int last = colSizes.length - 1;
+          colSizes[last] = math.max(0.0, colSizes[last] - trailingInset);
+        }
+      }
+    }
     final int explicitColumnCount = hasExplicitCols ? colSizes.length : 0;
     List<bool>? explicitAutoFitColumns;
     if (explicitColumnCount > 0) {
@@ -2145,6 +2160,21 @@ class RenderGridLayout extends RenderLayoutBox {
                   percentageBasis: contentAvailableHeight,
                 ),
               );
+    if (useSubgridRows && rowSizes.isNotEmpty) {
+      final double leadingInset = paddingTop + borderTop;
+      final double trailingInset = paddingBottom + borderBottom;
+      if (rowSizes.length == 1) {
+        rowSizes[0] = math.max(0.0, rowSizes[0] - leadingInset - trailingInset);
+      } else {
+        if (leadingInset > 0) {
+          rowSizes[0] = math.max(0.0, rowSizes[0] - leadingInset);
+        }
+        if (trailingInset > 0) {
+          final int last = rowSizes.length - 1;
+          rowSizes[last] = math.max(0.0, rowSizes[last] - trailingInset);
+        }
+      }
+    }
     final int definedRowCount = resolvedRowDefs.length;
     final int explicitRowCount = definedRowCount > 0 ? definedRowCount : 1;
     List<bool>? explicitAutoFitRows;
