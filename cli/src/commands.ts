@@ -238,6 +238,40 @@ function readFlutterPackageMetadata(packagePath: string): FlutterPackageMetadata
   }
 }
 
+function copyReadmeToPackageRoot(params: {
+  sourceRoot: string;
+  targetRoot: string;
+}): { copied: boolean; sourcePath?: string; targetPath: string } {
+  const { sourceRoot, targetRoot } = params;
+  const targetPath = path.join(targetRoot, 'README.md');
+
+  if (fs.existsSync(targetPath)) {
+    return { copied: false, targetPath };
+  }
+
+  const candidateNames = ['README.md', 'Readme.md', 'readme.md'];
+  let sourcePath: string | null = null;
+  for (const candidate of candidateNames) {
+    const abs = path.join(sourceRoot, candidate);
+    if (fs.existsSync(abs)) {
+      sourcePath = abs;
+      break;
+    }
+  }
+
+  if (!sourcePath) {
+    return { copied: false, targetPath };
+  }
+
+  try {
+    const content = fs.readFileSync(sourcePath, 'utf-8');
+    writeFileIfChanged(targetPath, content);
+    return { copied: true, sourcePath, targetPath };
+  } catch {
+    return { copied: false, targetPath };
+  }
+}
+
 // Copy markdown docs that match .d.ts basenames from source to the built dist folder,
 // and generate an aggregated README.md in the dist directory.
 async function copyMarkdownDocsToDist(params: {
@@ -778,6 +812,17 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
 
   // Auto-initialize typings in the output directory if needed
   ensureInitialized(resolvedDistPath);
+
+  // Copy README.md from the source Flutter package into the npm package root (so `npm publish` includes it).
+  if (options.flutterPackageSrc) {
+    const { copied } = copyReadmeToPackageRoot({
+      sourceRoot: options.flutterPackageSrc,
+      targetRoot: resolvedDistPath,
+    });
+    if (copied) {
+      console.log('📄 Copied README.md to package root');
+    }
+  }
 
   console.log(`\nGenerating ${framework} code from ${options.flutterPackageSrc}...`);
 

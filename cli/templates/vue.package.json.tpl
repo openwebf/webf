@@ -4,7 +4,7 @@
   "description": "<%= description %>",
   "main": "",
   "types": "index.d.ts",
-  "files": ["index.d.ts"],
+  "files": ["index.d.ts", "README.md"],
   "keywords": [],
   "author": "",
   "license": "ISC",

@@ -456,6 +456,78 @@ describe('Commands', () => {
       }));
     });
 
+    it('should copy Flutter README.md into generated React package root', async () => {
+      const options = {
+        flutterPackageSrc: '/flutter/src',
+        framework: 'react',
+        packageName: 'test-package'
+      };
+
+      // Mock TypeScript validation
+      mockTypeScriptValidation('/flutter/src');
+
+      const originalExistsSync = mockFs.existsSync as jest.Mock;
+      mockFs.existsSync = jest.fn().mockImplementation((filePath: any) => {
+        const pathStr = filePath.toString();
+        if (pathStr === '/flutter/src/README.md') return true;
+        if (pathStr === path.join(path.resolve('/dist'), 'README.md')) return false;
+        return originalExistsSync(filePath);
+      });
+
+      const originalReadFileSync = mockFs.readFileSync as jest.Mock;
+      mockFs.readFileSync = jest.fn().mockImplementation((filePath: any, encoding?: any) => {
+        const pathStr = filePath.toString();
+        if (pathStr === '/flutter/src/README.md') {
+          return '# Flutter README\n\nHello';
+        }
+        return originalReadFileSync(filePath, encoding);
+      });
+
+      await generateCommand('/dist', options);
+
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        path.join(path.resolve('/dist'), 'README.md'),
+        '# Flutter README\n\nHello',
+        'utf-8'
+      );
+    });
+
+    it('should copy Flutter README.md into generated Vue package root', async () => {
+      const options = {
+        flutterPackageSrc: '/flutter/src',
+        framework: 'vue',
+        packageName: 'test-package'
+      };
+
+      // Mock TypeScript validation
+      mockTypeScriptValidation('/flutter/src');
+
+      const originalExistsSync = mockFs.existsSync as jest.Mock;
+      mockFs.existsSync = jest.fn().mockImplementation((filePath: any) => {
+        const pathStr = filePath.toString();
+        if (pathStr === '/flutter/src/README.md') return true;
+        if (pathStr === path.join(path.resolve('/dist'), 'README.md')) return false;
+        return originalExistsSync(filePath);
+      });
+
+      const originalReadFileSync = mockFs.readFileSync as jest.Mock;
+      mockFs.readFileSync = jest.fn().mockImplementation((filePath: any, encoding?: any) => {
+        const pathStr = filePath.toString();
+        if (pathStr === '/flutter/src/README.md') {
+          return '# Flutter README\n\nHello';
+        }
+        return originalReadFileSync(filePath, encoding);
+      });
+
+      await generateCommand('/dist', options);
+
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        path.join(path.resolve('/dist'), 'README.md'),
+        '# Flutter README\n\nHello',
+        'utf-8'
+      );
+    });
+
     it('should generate an aggregated README in dist from markdown docs', async () => {
       const options = {
         flutterPackageSrc: '/flutter/src',
