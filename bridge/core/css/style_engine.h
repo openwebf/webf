@@ -295,10 +295,12 @@ class StyleEngine final {
   UnorderedTreeScopeSet active_tree_scopes_;
   TextTrackSet text_tracks_;
   // Active author stylesheets registered by link/style processing. We track
-  // both the CSSStyleSheet wrapper (for top-level media lists) and the shared
-  // StyleSheetContents used for rule matching / invalidation.
-  std::vector<CSSStyleSheet*> author_css_sheets_;
+  // the shared StyleSheetContents used for rule matching / invalidation.
   std::vector<std::shared_ptr<StyleSheetContents>> author_sheets_;
+  // Number of registered sheets per StyleSheetContents (keyed by raw pointer).
+  // This avoids storing raw CSSStyleSheet pointers, which can become dangling
+  // when JS/GC releases wrapper objects.
+  std::unordered_map<StyleSheetContents*, size_t> author_sheet_use_count_;
   // Cached evaluation results for size-dependent (viewport/device) media query
   // sets across all active author stylesheets (including @import conditions).
   // This is used as a gate in
@@ -317,23 +319,15 @@ class StyleEngine final {
     if (!sheet) return;
     auto contents = sheet->Contents();
     if (!contents) return;
-    // Track the CSSStyleSheet wrapper so we can later inspect top-level media
-    // lists if needed.
-    bool have_sheet = false;
-    for (auto* s : author_css_sheets_) {
-      if (s == sheet) {
-        have_sheet = true;
-        break;
-      }
+    StyleSheetContents* contents_key = contents.get();
+    auto it = author_sheet_use_count_.find(contents_key);
+    if (it == author_sheet_use_count_.end()) {
+      author_sheet_use_count_.emplace(contents_key, 1);
+      author_sheets_.push_back(std::move(contents));
+    } else {
+      it->second++;
     }
-    if (!have_sheet) {
-      author_css_sheets_.push_back(sheet);
-    }
-    // Avoid duplicates
-    for (auto& s : author_sheets_) {
-      if (s.get() == contents.get()) return;
-    }
-    author_sheets_.push_back(contents);
+    assert(author_sheet_use_count_.size() == author_sheets_.size());
     if (global_rule_set_) {
       global_rule_set_->MarkDirty();
     }
@@ -343,26 +337,21 @@ class StyleEngine final {
     if (!sheet) return;
     auto contents = sheet->Contents();
     if (!contents) return;
-    author_css_sheets_.erase(
-        std::remove(author_css_sheets_.begin(), author_css_sheets_.end(), sheet),
-        author_css_sheets_.end());
-    bool still_used = false;
-    for (auto* s : author_css_sheets_) {
-      if (!s) {
-        continue;
-      }
-      auto c = s->Contents();
-      if (c && c.get() == contents.get()) {
-        still_used = true;
-        break;
-      }
+    StyleSheetContents* contents_key = contents.get();
+    auto it = author_sheet_use_count_.find(contents_key);
+    if (it == author_sheet_use_count_.end()) {
+      return;
     }
-    if (!still_used) {
+    if (it->second > 1) {
+      it->second--;
+    } else {
+      author_sheet_use_count_.erase(it);
       author_sheets_.erase(
           std::remove_if(author_sheets_.begin(), author_sheets_.end(),
-                          [&](const std::shared_ptr<StyleSheetContents>& s) { return s.get() == contents.get(); }),
+                         [&](const std::shared_ptr<StyleSheetContents>& s) { return s.get() == contents_key; }),
           author_sheets_.end());
     }
+    assert(author_sheet_use_count_.size() == author_sheets_.size());
     if (global_rule_set_) {
       global_rule_set_->MarkDirty();
     }
