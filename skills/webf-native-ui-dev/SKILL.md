@@ -1,21 +1,21 @@
 ---
-name: webf-hybrid-ui-dev
-description: Develop custom native/hybrid UI libraries based on Flutter widgets for WebF. Create reusable component libraries that wrap Flutter widgets as web-accessible custom elements. Use when building UI libraries, wrapping Flutter packages, or creating native component systems.
+name: webf-native-ui-dev
+description: Develop custom native UI libraries based on Flutter widgets for WebF. Create reusable component libraries that wrap Flutter widgets as web-accessible custom elements. Use when building UI libraries, wrapping Flutter packages, or creating native component systems.
 ---
 
-# WebF Hybrid UI Development
+# WebF Native UI Development
 
-Want to create your own native UI library for WebF by wrapping Flutter widgets? This skill guides you through the complete process of building custom hybrid UI libraries that make Flutter widgets accessible from JavaScript/TypeScript with React and Vue support.
+Want to create your own native UI library for WebF by wrapping Flutter widgets? This skill guides you through the complete process of building custom native UI libraries that make Flutter widgets accessible from JavaScript/TypeScript with React and Vue support.
 
-## What is Hybrid UI Development?
+## What is Native UI Development?
 
-Hybrid UI development in WebF means:
+Native UI development in WebF means:
 - **Wrapping Flutter widgets** as WebF custom elements
 - **Bridging native Flutter UI** to web technologies (HTML/JavaScript)
 - **Creating reusable component libraries** that work with React, Vue, and vanilla JavaScript
 - **Publishing npm packages** with type-safe TypeScript definitions
 
-## When to Create a Hybrid UI Library
+## When to Create a Native UI Library
 
 ### Use Cases:
 - ✅ You want to expose Flutter widgets to web developers
@@ -24,14 +24,14 @@ Hybrid UI development in WebF means:
 - ✅ You want to create platform-specific components (iOS, Android, etc.)
 - ✅ You need custom widgets beyond HTML/CSS capabilities
 
-### Don't Create a Hybrid UI Library When:
+### Don't Create a Native UI Library When:
 - ❌ HTML/CSS can achieve the same result (use standard web)
 - ❌ You just need to use existing UI libraries (see `webf-native-ui` skill)
 - ❌ You're building a one-off component (use WebF widget element directly)
 
 ## Architecture Overview
 
-A hybrid UI library consists of three layers:
+A native UI library consists of three layers:
 
 ```
 ┌─────────────────────────────────────────┐
@@ -713,11 +713,11 @@ See [Complete Example](./example-input.md) for a full implementation of a text i
 - **TypeScript Guide**: [CLI TYPING_GUIDE.md](https://github.com/openwebf/webf/blob/main/cli/TYPING_GUIDE.md)
 - **Example Package**: [native_uis/webf_cupertino_ui](https://github.com/openwebf/webf/tree/main/native_uis/webf_cupertino_ui)
 - **WebF Architecture**: [docs/ARCHITECTURE.md](https://github.com/openwebf/webf/blob/main/docs/ARCHITECTURE.md)
-- **Official Documentation**: https://openwebf.com/en/docs/developer-guide/hybrid-ui
+- **Official Documentation**: https://openwebf.com/en/docs/developer-guide/native-ui
 
 ## Next Steps
 
-After creating your hybrid UI library:
+After creating your native UI library:
 
 1. **Test thoroughly** on all target platforms (iOS, Android, desktop)
 2. **Write documentation** for each component (see existing `.md` files in webf_cupertino_ui)
@@ -727,7 +727,7 @@ After creating your hybrid UI library:
 
 ## Summary
 
-- ✅ Hybrid UI libraries wrap Flutter widgets as web-accessible custom elements
+- ✅ Native UI libraries wrap Flutter widgets as web-accessible custom elements
 - ✅ Write Dart wrappers extending WebFWidgetElement
 - ✅ Write TypeScript definitions (.d.ts) for each component
 - ✅ Use WebF CLI to generate React/Vue components
