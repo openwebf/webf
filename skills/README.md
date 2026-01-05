@@ -194,6 +194,28 @@ See [WebF Integration Guide](https://openwebf.com/en/docs/developer-guide/integr
 - "Create hybrid UI components"
 - "Develop native UI library"
 
+---
+
+### 9. webf-native-plugin-dev
+**Use when**: Building custom native plugins to expose Flutter packages or platform capabilities as JavaScript APIs
+
+**What it covers**:
+- Creating native plugin modules (functional capabilities, not UI)
+- Wrapping existing Flutter packages as WebF modules
+- Writing TypeScript definition files for module APIs
+- Using WebF CLI for npm package generation
+- Handling binary data, streams, and permissions
+- Publishing Flutter packages and npm packages
+- Difference between native plugins and hybrid UI
+
+**Trigger examples**:
+- "How to create a native plugin for WebF?"
+- "Wrap a Flutter package as WebF plugin"
+- "Build a camera/payment/sensor plugin"
+- "Create custom WebF module"
+- "Expose native capabilities to JavaScript"
+- "What's the difference between plugin and UI component?"
+
 ## Quick Problem Solver
 
 ### "My measurements are all zeros"
@@ -240,6 +262,13 @@ See [WebF Integration Guide](https://openwebf.com/en/docs/developer-guide/integr
 - Write TypeScript definitions and Dart wrappers
 - Generate React/Vue components with WebF CLI
 - Publish component libraries to npm
+
+### "How do I create a custom native plugin?"
+→ Use **webf-native-plugin-dev** skill
+- Build functional plugins (camera, sensors, payments)
+- Wrap Flutter packages as WebF modules
+- Write TypeScript definitions for module APIs
+- Generate npm packages with WebF CLI
 
 ## Common Error Messages
 
