@@ -158,7 +158,7 @@ mixin CSSTextMixin on RenderStyle {
     }
 
     // The root element has no fontWeight, and the fontWeight is initial.
-    return _fontWeight ?? FontWeight.w300;
+    return _fontWeight ?? FontWeight.w400;
   }
 
   set fontWeight(FontWeight? value) {
