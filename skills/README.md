@@ -154,6 +154,46 @@ See [WebF Integration Guide](https://openwebf.com/en/docs/developer-guide/integr
 - "Setup Cupertino UI"
 - "Better performance than HTML/CSS?"
 
+---
+
+### 7. webf-native-plugins
+**Use when**: Need native platform capabilities like sharing, camera, payments, geolocation, or other device features beyond standard web APIs
+
+**What it covers**:
+- Finding available native plugins
+- Installing Flutter packages and npm packages
+- Using native platform capabilities in JavaScript
+- Share plugin for content sharing
+- Creating custom plugins
+- Feature detection and error handling
+
+**Trigger examples**:
+- "How to share content in WebF?"
+- "Access native platform features"
+- "Use device camera in WebF"
+- "Install native plugins"
+- "Share images or text"
+
+---
+
+### 8. webf-hybrid-ui-dev
+**Use when**: Building custom native/hybrid UI libraries by wrapping Flutter widgets as web-accessible custom elements
+
+**What it covers**:
+- Creating hybrid UI component libraries from Flutter widgets
+- Writing TypeScript definition files (.d.ts)
+- Writing Dart widget wrappers (WebFWidgetElement)
+- Using WebF CLI for code generation
+- Publishing npm packages for React/Vue
+- Complete development workflow
+
+**Trigger examples**:
+- "How to create a custom UI library for WebF?"
+- "Wrap a Flutter widget for web use"
+- "Build a component library with Flutter widgets"
+- "Create hybrid UI components"
+- "Develop native UI library"
+
 ## Quick Problem Solver
 
 ### "My measurements are all zeros"
@@ -188,6 +228,19 @@ See [WebF Integration Guide](https://openwebf.com/en/docs/developer-guide/integr
 - Build native iOS forms and navigation
 - Better performance than HTML/CSS
 
+### "How do I access native platform features?"
+→ Use **webf-native-plugins** skill
+- Find available native plugins
+- Install Share plugin for content sharing
+- Access camera, payments, and other native APIs
+
+### "How do I create a custom UI library?"
+→ Use **webf-hybrid-ui-dev** skill
+- Wrap Flutter widgets as web custom elements
+- Write TypeScript definitions and Dart wrappers
+- Generate React/Vue components with WebF CLI
+- Publish component libraries to npm
+
 ## Common Error Messages
 
 | Error/Issue | Skill to Use | Solution |
@@ -203,6 +256,8 @@ See [WebF Integration Guide](https://openwebf.com/en/docs/developer-guide/integr
 | finishLoad/finishRefresh not working | webf-infinite-scrolling | Ensure you call these methods after async operations |
 | Want to use native UI components | webf-native-ui | Install Cupertino UI package |
 | Need iOS-style buttons/forms | webf-native-ui | Use FlutterCupertinoButton and Cupertino form components |
+| Need to share content/access camera | webf-native-plugins | Install native plugins from https://openwebf.com/en/native-plugins |
+| "Plugin module not found" | webf-native-plugins | Register plugin with WebF.defineModule() in main.dart |
 
 ## Development Workflow
 
@@ -355,6 +410,12 @@ my-webf-app/
 **Want native UI components?**
 → Use `webf-native-ui` - Setup and use Cupertino UI (iOS-style components)
 
+**Need native platform features?**
+→ Use `webf-native-plugins` - Install plugins for sharing, camera, payments, etc.
+
+**Want to create your own UI library?**
+→ Use `webf-hybrid-ui-dev` - Build custom hybrid UI libraries from Flutter widgets
+
 ### Integration Patterns
 
 _(Placeholder for future skills about Flutter integration patterns)_
@@ -442,9 +503,10 @@ All these frameworks work with WebF out-of-the-box:
 - `@openwebf/vue-cupertino-ui` - iOS-style Cupertino UI for Vue
 - `webf_cupertino_ui` - Flutter Cupertino UI package
 
-### Native Features
-- `@openwebf/webf-share` - Native share dialog
-- `@openwebf/webf-deeplink` - Deep linking support
+### Native Plugins
+- `@openwebf/webf-share` - Native share dialog (text, URLs, images)
+- `webf_share` - Flutter package for Share plugin
+- More plugins: https://openwebf.com/en/native-plugins
 
 ## Resources
 
@@ -461,6 +523,8 @@ All skills are in `/Users/andycall/workspace/webf/skills/`:
 - `webf-routing-setup/` - Routing setup and examples
 - `webf-infinite-scrolling/` - High-performance scrolling lists
 - `webf-native-ui/` - Native UI components (Cupertino UI for iOS)
+- `webf-native-plugins/` - Native platform plugins (Share, Camera, etc.)
+- `webf-hybrid-ui-dev/` - Developing custom hybrid UI libraries
 
 ### Each Skill Includes
 - `SKILL.md` - Main skill definition with instructions
@@ -474,6 +538,7 @@ All skills are in `/Users/andycall/workspace/webf/skills/`:
 4. **Setup webf-routing-setup** for navigation
 5. **Use webf-infinite-scrolling** for scrollable lists and feeds
 6. **Use webf-native-ui** for native UI components
+7. **Use webf-native-plugins** for native platform features
 
 ## Next Steps
 
@@ -485,6 +550,8 @@ After reading this README:
 4. **Adding navigation?** → Follow `webf-routing-setup/SKILL.md`
 5. **Building scrollable lists?** → Follow `webf-infinite-scrolling/SKILL.md`
 6. **Want native UI components?** → Follow `webf-native-ui/SKILL.md`
+7. **Need native platform features?** → Follow `webf-native-plugins/SKILL.md`
+8. **Creating your own UI library?** → Follow `webf-hybrid-ui-dev/SKILL.md`
 
 ## Contributing
 

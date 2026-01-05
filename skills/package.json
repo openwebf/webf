@@ -38,7 +38,10 @@
     "webf-async-rendering/",
     "webf-api-compatibility/",
     "webf-routing-setup/",
-    "webf-infinite-scrolling/"
+    "webf-infinite-scrolling/",
+    "webf-native-ui/",
+    "webf-native-plugins/",
+    "webf-hybrid-ui-dev/"
   ],
   "engines": {
     "node": ">=18.0.0"
