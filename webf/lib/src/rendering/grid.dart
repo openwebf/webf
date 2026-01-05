@@ -1368,7 +1368,7 @@ class RenderGridLayout extends RenderLayoutBox {
       int startRow;
       if (explicitRow != null) {
         startRow = explicitRow;
-      } else if (dense || hasDefiniteColumn) {
+      } else if (dense) {
         startRow = 0;
       } else {
         startRow = cursor.row;
@@ -1377,13 +1377,22 @@ class RenderGridLayout extends RenderLayoutBox {
 
       while (true) {
         _ensureOccupancyRows(occupancy, row + rowSpanClamped, columnCount);
-        final int columnStart = explicitColumn ??
-            (!dense && explicitRow == null && !hasDefiniteColumn && row == cursor.row ? cursor.column : 0);
+        int columnStart = explicitColumn ??
+            (!dense && explicitRow == null && row == cursor.row ? cursor.column : 0);
+        if (!dense &&
+            explicitRow == null &&
+            explicitColumn != null &&
+            row == cursor.row &&
+            columnStart < cursor.column) {
+          row++;
+          continue;
+        }
 
-        for (int col = math.max(0, columnStart); col <= columnCount - colSpan; col++) {
+        final int endColumn = explicitColumn != null ? math.max(0, columnStart) : columnCount - colSpan;
+        for (int col = math.max(0, columnStart); col <= endColumn; col++) {
           if (_canPlace(occupancy, row, col, rowSpanClamped, colSpan, columnCount)) {
             _markPlacement(occupancy, row, col, rowSpanClamped, colSpan);
-            if (explicitRow == null && !hasDefiniteColumn) {
+            if (!dense && explicitRow == null && !hasDefiniteRow) {
               cursor.row = row;
               cursor.column = col + colSpan;
               if (cursor.column >= columnCount) {
@@ -2329,6 +2338,74 @@ class RenderGridLayout extends RenderLayoutBox {
     for (final RenderBox placementChild in placementChildren) {
       if (placedInEarlyPasses.contains(placementChild)) continue;
       orderedChildren.add(placementChild);
+    }
+
+    // Ensure implicit columns referenced by definite placements exist before we start placing
+    // auto-positioned items; otherwise the auto-placement cursor may wrap prematurely (e.g. when
+    // later items reference implicit columns).
+    if (rowFlowForOrdering && colSizes.isNotEmpty) {
+      int requiredColumns = colSizes.length;
+      for (final RenderBox placementChild in placementChildren) {
+        CSSRenderStyle? childGridStyle;
+        if (placementChild is RenderBoxModel) {
+          childGridStyle = placementChild.renderStyle;
+        } else if (placementChild is RenderEventListener) {
+          final RenderBox? wrapped = placementChild.child;
+          if (wrapped is RenderBoxModel) {
+            childGridStyle = wrapped.renderStyle;
+          }
+        }
+        if (childGridStyle == null) continue;
+
+        GridPlacement columnStart = childGridStyle.gridColumnStart;
+        GridPlacement columnEnd = childGridStyle.gridColumnEnd;
+        GridPlacement rowStart = childGridStyle.gridRowStart;
+        GridPlacement rowEnd = childGridStyle.gridRowEnd;
+        final String? areaName = childGridStyle.gridAreaName;
+        if (areaName != null) {
+          final GridTemplateAreaRect? rect = templateAreaMap?[areaName];
+          if (rect != null) {
+            columnStart = GridPlacement.line(rect.columnStart);
+            columnEnd = GridPlacement.line(rect.columnEnd);
+            rowStart = GridPlacement.line(rect.rowStart);
+            rowEnd = GridPlacement.line(rect.rowEnd);
+          } else {
+            final String startName = '${areaName}-start';
+            final String endName = '${areaName}-end';
+            columnStart = GridPlacement.named(startName);
+            columnEnd = GridPlacement.named(endName);
+            rowStart = GridPlacement.named(startName);
+            rowEnd = GridPlacement.named(endName);
+          }
+        }
+
+        final int resolvedColSpan =
+            _resolveSpan(columnStart, columnEnd, orderingColumnTrackCount, namedLines: columnLineNameMap);
+        final int resolvedRowSpan =
+            _resolveSpan(rowStart, rowEnd, orderingRowTrackCount, namedLines: rowLineNameMap);
+        if (resolvedColSpan <= 0 || resolvedRowSpan <= 0) continue;
+
+        final int colSpan = math.max(1, resolvedColSpan);
+        final int? columnStartRequirement =
+            _resolveLineRequirementIndex(columnStart, orderingColumnTrackCount, namedLines: columnLineNameMap);
+        if (columnStartRequirement != null) {
+          requiredColumns = math.max(requiredColumns, columnStartRequirement + colSpan);
+        }
+        final int? columnEndRequirement =
+            _resolveLineRequirementIndex(columnEnd, orderingColumnTrackCount, namedLines: columnLineNameMap);
+        if (columnEndRequirement != null) {
+          requiredColumns = math.max(requiredColumns, columnEndRequirement);
+        }
+        requiredColumns = math.max(requiredColumns, colSpan);
+      }
+
+      _ensureImplicitColumns(
+        colSizes: colSizes,
+        requiredCount: requiredColumns,
+        explicitCount: explicitColumnCount,
+        autoColumns: autoColDefs,
+        innerAvailable: adjustedInnerWidth,
+      );
     }
 
     for (final RenderBox child in orderedChildren) {
