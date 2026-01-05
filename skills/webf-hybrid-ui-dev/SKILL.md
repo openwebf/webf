@@ -709,10 +709,10 @@ See [Complete Example](./example-input.md) for a full implementation of a text i
 
 ## Resources
 
-- **CLI Development Guide**: [../cli/CLAUDE.md](../../cli/CLAUDE.md)
-- **TypeScript Guide**: [CLI TYPING_GUIDE.md](../../cli/TYPING_GUIDE.md)
-- **Example Package**: [native_uis/webf_cupertino_ui](../../native_uis/webf_cupertino_ui)
-- **WebF Architecture**: [docs/ARCHITECTURE.md](../../docs/ARCHITECTURE.md)
+- **CLI Development Guide**: [cli/CLAUDE.md](https://github.com/openwebf/webf/blob/main/cli/CLAUDE.md)
+- **TypeScript Guide**: [CLI TYPING_GUIDE.md](https://github.com/openwebf/webf/blob/main/cli/TYPING_GUIDE.md)
+- **Example Package**: [native_uis/webf_cupertino_ui](https://github.com/openwebf/webf/tree/main/native_uis/webf_cupertino_ui)
+- **WebF Architecture**: [docs/ARCHITECTURE.md](https://github.com/openwebf/webf/blob/main/docs/ARCHITECTURE.md)
 - **Official Documentation**: https://openwebf.com/en/docs/developer-guide/hybrid-ui
 
 ## Next Steps

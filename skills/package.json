@@ -1,6 +1,6 @@
 {
   "name": "@openwebf/claude-code-skills",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Claude Code skills for WebF developers - guides for building native mobile/desktop apps with web technologies (React, Vue, Svelte)",
   "keywords": [
     "webf",
