@@ -1,3 +1,28 @@
+## 0.24.1
+
+### Major Features
+
+- **CSS Grid**: expanded spec coverage + fixes (out-of-flow positioning, z-index/offset behavior, percent/calc track & gap resolution, scroll support), with more WPT-based tests & snapshots (Phases 6–8).
+- **CSSOM (Blink engine)**: `CSSStyleSheet` and `CSSRuleList` support.
+- **Blink engine DOM**: `querySelector`/`querySelectorAll` fallback when `WebFController(enableBlink: true)`.
+- **JS ↔ Dart bindings**: shared binding objects and passing JS function values as parameters.
+- **CSS Positioning**: `inset` shorthand support.
+
+### Performance Improvements
+
+- **Images**: load and decode images during prerendering.
+
+### Bug Fixes
+
+- **Bridge**: avoid UAF in StyleEngine author sheet registry.
+- **Layout/Rendering**: fix duplicated-element constraints, initial-route layout errors, empty-text constraint errors, and a viewport null edge case.
+- **Typography**: fix `font-weight: inherit` to resolve to the parent’s computed weight.
+- **Tooling/Examples**: fix example build and websocket showcase; improve Vue UI generator/templates.
+
+### Compatibility
+
+- Vendor `easy_refresh` via `webf/flutter_easy_refresh` (path dependency) for WebF integration.
+
 ## 0.24.0
 
 Set the minimal flutter version requirement to 3.29.x
