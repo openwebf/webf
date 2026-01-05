@@ -1418,7 +1418,7 @@ cat package.json
 
 ## Real-World Example: Share Plugin
 
-See the complete implementation at `/Users/andycall/workspace/webf/native_plugins/share` for:
+See the complete implementation in the WebF repository at [native_plugins/share](https://github.com/openwebf/webf/tree/main/native_plugins/share) for:
 - Module implementation (`share_module.dart`)
 - TypeScript definitions (`share.module.d.ts`)
 - Error handling and platform-specific code
@@ -1427,10 +1427,10 @@ See the complete implementation at `/Users/andycall/workspace/webf/native_plugin
 
 ## Resources
 
-- **CLI Development Guide**: [../cli/CLAUDE.md](../../cli/CLAUDE.md)
-- **Module System Docs**: [../webf/lib/src/module/](../../webf/lib/src/module/)
-- **Example Plugin**: [native_plugins/share](../../native_plugins/share)
-- **WebF Architecture**: [docs/ARCHITECTURE.md](../../docs/ARCHITECTURE.md)
+- **CLI Development Guide**: [cli/CLAUDE.md](https://github.com/openwebf/webf/blob/main/cli/CLAUDE.md)
+- **Module System Docs**: [webf/lib/src/module/](https://github.com/openwebf/webf/tree/main/webf/lib/src/module/)
+- **Example Plugin**: [native_plugins/share](https://github.com/openwebf/webf/tree/main/native_plugins/share)
+- **WebF Architecture**: [docs/ARCHITECTURE.md](https://github.com/openwebf/webf/blob/main/docs/ARCHITECTURE.md)
 - **Official Documentation**: https://openwebf.com/en/docs/developer-guide/native-plugins
 
 ## Related Skills
