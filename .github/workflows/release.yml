@@ -845,15 +845,6 @@ jobs:
           skipTests: true
           relativePath: native_uis/webf_cupertino_ui
 
-      - name: Publish webf_deeplink to pub.dev
-        uses: k-paxian/dart-package-publisher@master
-        with:
-          credentialJson: ${{ secrets.PUB_DEV_TOKEN }}
-          flutter: true
-          force: true
-          skipTests: true
-          relativePath: webf_modules/deeplink
-
       - name: Publish webf_share to pub.dev
         uses: k-paxian/dart-package-publisher@master
         with:
@@ -861,7 +852,7 @@ jobs:
           flutter: true
           force: true
           skipTests: true
-          relativePath: webf_modules/share
+          relativePath: native_plugins/share
 
       - name: Summary
         run: |
@@ -883,7 +874,6 @@ jobs:
           echo "   - Published packages:"
           echo "     • webf (https://pub.dev/packages/webf)"
           echo "     • webf_cupertino_ui (https://pub.dev/packages/webf_cupertino_ui)"
-          echo "     • webf_deeplink (https://pub.dev/packages/webf_deeplink)"
           echo "     • webf_share (https://pub.dev/packages/webf_share)"
           echo "   - Debug symbols stored in Git LFS"
 
