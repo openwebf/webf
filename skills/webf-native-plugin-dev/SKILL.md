@@ -17,9 +17,9 @@ Native plugin development in WebF means:
 - **Creating reusable functional libraries** (not UI components)
 - **Publishing npm packages** with type-safe TypeScript definitions
 
-## Difference: Native Plugins vs Hybrid UI
+## Difference: Native Plugins vs Native UI
 
-| Feature | Native Plugins | Hybrid UI |
+| Feature | Native Plugins | Native UI |
 |---------|----------------|-----------|
 | **Purpose** | Functional capabilities | Visual components |
 | **Examples** | Share, Camera, Payment | Button, TextField, DatePicker |
@@ -31,7 +31,7 @@ Native plugin development in WebF means:
 
 **When to use which:**
 - **Native Plugin**: Accessing camera, handling payments, geolocation, file system, background tasks
-- **Hybrid UI**: Building native-looking buttons, forms, date pickers, navigation bars
+- **Native UI**: Building native-looking buttons, forms, date pickers, navigation bars
 
 ## When to Create a Native Plugin
 
@@ -61,7 +61,7 @@ Native plugin development in WebF means:
 - ✅ Official WebF plugins don't include the feature you need
 
 ### Don't Create a Native Plugin When:
-- ❌ You're building UI components (use `webf-hybrid-ui-dev` skill instead)
+- ❌ You're building UI components (use `webf-native-ui-dev` skill instead)
 - ❌ Standard web APIs already provide the functionality
 - ❌ An official plugin already exists (use `webf-native-plugins` skill)
 - ❌ You're building a one-off feature (use direct module invocation)
@@ -1436,14 +1436,14 @@ See the complete implementation in the WebF repository at [native_plugins/share]
 ## Related Skills
 
 - **Using Plugins**: See `webf-native-plugins` skill for how to use existing plugins
-- **Hybrid UI Development**: See `webf-hybrid-ui-dev` skill for creating UI components
+- **Native UI Development**: See `webf-native-ui-dev` skill for creating UI components
 - **CLI Usage**: See CLI documentation for code generation details
 
 ## Summary
 
 ### Creating Plugins
 - ✅ Native plugins expose Flutter/platform capabilities as JavaScript APIs
-- ✅ Different from Hybrid UI (functional vs visual)
+- ✅ Different from Native UI (functional vs visual)
 - ✅ Write Dart Module class extending generated bindings
 - ✅ Write TypeScript definitions (.d.ts) for each module
 - ✅ Use WebF CLI (`webf module-codegen`) to generate npm packages and Dart bindings

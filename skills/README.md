@@ -176,11 +176,11 @@ See [WebF Integration Guide](https://openwebf.com/en/docs/developer-guide/integr
 
 ---
 
-### 8. webf-hybrid-ui-dev
-**Use when**: Building custom native/hybrid UI libraries by wrapping Flutter widgets as web-accessible custom elements
+### 8. webf-native-ui-dev
+**Use when**: Building custom native UI libraries by wrapping Flutter widgets as web-accessible custom elements
 
 **What it covers**:
-- Creating hybrid UI component libraries from Flutter widgets
+- Creating native UI component libraries from Flutter widgets
 - Writing TypeScript definition files (.d.ts)
 - Writing Dart widget wrappers (WebFWidgetElement)
 - Using WebF CLI for code generation
@@ -191,7 +191,7 @@ See [WebF Integration Guide](https://openwebf.com/en/docs/developer-guide/integr
 - "How to create a custom UI library for WebF?"
 - "Wrap a Flutter widget for web use"
 - "Build a component library with Flutter widgets"
-- "Create hybrid UI components"
+- "Create native UI components"
 - "Develop native UI library"
 
 ---
@@ -257,7 +257,7 @@ See [WebF Integration Guide](https://openwebf.com/en/docs/developer-guide/integr
 - Access camera, payments, and other native APIs
 
 ### "How do I create a custom UI library?"
-→ Use **webf-hybrid-ui-dev** skill
+→ Use **webf-native-ui-dev** skill
 - Wrap Flutter widgets as web custom elements
 - Write TypeScript definitions and Dart wrappers
 - Generate React/Vue components with WebF CLI
@@ -443,7 +443,7 @@ my-webf-app/
 → Use `webf-native-plugins` - Install plugins for sharing, camera, payments, etc.
 
 **Want to create your own UI library?**
-→ Use `webf-hybrid-ui-dev` - Build custom hybrid UI libraries from Flutter widgets
+→ Use `webf-native-ui-dev` - Build custom native UI libraries from Flutter widgets
 
 ### Integration Patterns
 
@@ -553,7 +553,8 @@ All skills are in `/Users/andycall/workspace/webf/skills/`:
 - `webf-infinite-scrolling/` - High-performance scrolling lists
 - `webf-native-ui/` - Native UI components (Cupertino UI for iOS)
 - `webf-native-plugins/` - Native platform plugins (Share, Camera, etc.)
-- `webf-hybrid-ui-dev/` - Developing custom hybrid UI libraries
+- `webf-native-ui-dev/` - Developing custom native UI libraries
+- `webf-native-plugin-dev/` - Developing custom native plugins
 
 ### Each Skill Includes
 - `SKILL.md` - Main skill definition with instructions
@@ -580,7 +581,8 @@ After reading this README:
 5. **Building scrollable lists?** → Follow `webf-infinite-scrolling/SKILL.md`
 6. **Want native UI components?** → Follow `webf-native-ui/SKILL.md`
 7. **Need native platform features?** → Follow `webf-native-plugins/SKILL.md`
-8. **Creating your own UI library?** → Follow `webf-hybrid-ui-dev/SKILL.md`
+8. **Creating your own UI library?** → Follow `webf-native-ui-dev/SKILL.md`
+9. **Creating your own plugin?** → Follow `webf-native-plugin-dev/SKILL.md`
 
 ## Contributing
 

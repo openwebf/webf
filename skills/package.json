@@ -41,7 +41,7 @@
     "webf-infinite-scrolling/",
     "webf-native-ui/",
     "webf-native-plugins/",
-    "webf-hybrid-ui-dev/",
+    "webf-native-ui-dev/",
     "webf-native-plugin-dev/"
   ],
   "engines": {
