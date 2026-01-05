@@ -9,6 +9,7 @@ import { globSync } from 'glob';
 import _ from 'lodash';
 import inquirer from 'inquirer';
 import yaml from 'yaml';
+import { agentsInitCommand } from './agents';
 
 interface GenerateOptions {
   flutterPackageSrc?: string;
@@ -1446,4 +1447,4 @@ async function buildAndPublishPackage(packagePath: string, registry?: string, is
   }
 }
 
-export { generateCommand, generateModuleCommand };
+export { generateCommand, generateModuleCommand, agentsInitCommand };

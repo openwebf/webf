@@ -2,7 +2,7 @@
 
 const { Command } = require('commander');
 const version = require('../package.json').version;
-const { generateCommand, generateModuleCommand } = require('../dist/commands');
+const { generateCommand, generateModuleCommand, agentsInitCommand } = require('../dist/commands');
 
 const program = new Command();
 
@@ -34,5 +34,13 @@ program
   .argument('[distPath]', 'Path to output generated files', '.')
   .description('Generate NPM package and Dart bindings for a WebF module from TypeScript interfaces (*.module.d.ts)')
   .action(generateModuleCommand);
+
+const agents = program.command('agents').description('Manage Claude Code agent configs');
+
+agents
+  .command('init')
+  .argument('[projectDir]', 'Target project directory', '.')
+  .description('Initialize Claude Code skills config for a project')
+  .action(agentsInitCommand);
 
 program.parse();

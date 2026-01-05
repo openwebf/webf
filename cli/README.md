@@ -10,6 +10,14 @@ npm install -g @openwebf/webf
 
 ## Usage
 
+### Initialize Claude Code Skills
+
+The `webf agents init` command injects WebF Claude Code skills (from `@openwebf/claude-code-skills`) into your project and updates `CLAUDE.md` to reference them.
+
+```bash
+webf agents init [project-dir]
+```
+
 ### Generate Code
 
 The `webf codegen` command generates Dart abstract classes and React/Vue components from TypeScript definitions. It automatically creates a project if needed.
