@@ -59,8 +59,8 @@ jobs:
               if p:
                 packages.append(p)
           else:
-            if os.path.isfile("webf_cupertino_ui/pubspec.yaml"):
-              packages.append("webf_cupertino_ui")
+            if os.path.isfile("native_uis/webf_cupertino_ui/pubspec.yaml"):
+              packages.append("native_uis/webf_cupertino_ui")
 
             for pubspec in sorted(glob.glob("native_plugins/*/pubspec.yaml")):
               directory = os.path.dirname(pubspec)

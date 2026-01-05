@@ -843,7 +843,7 @@ jobs:
           flutter: true
           force: true
           skipTests: true
-          relativePath: webf_cupertino_ui
+          relativePath: native_uis/webf_cupertino_ui
 
       - name: Publish webf_deeplink to pub.dev
         uses: k-paxian/dart-package-publisher@master
