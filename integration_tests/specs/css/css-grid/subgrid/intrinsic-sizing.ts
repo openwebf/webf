@@ -239,6 +239,9 @@ describe('CSS Grid Subgrid intrinsic sizing', () => {
     await snapshot();
 
     const items = Array.from(subgrid.children) as HTMLElement[];
+    expect(items[0].getBoundingClientRect().height).toBeCloseTo(40, 0);
+    expect(items[1].getBoundingClientRect().height).toBeCloseTo(80, 0);
+    expect(items[2].getBoundingClientRect().height).toBeCloseTo(60, 0);
     expect(items[1].getBoundingClientRect().height).toBeGreaterThan(items[0].getBoundingClientRect().height);
     expect(items[1].getBoundingClientRect().height).toBeGreaterThan(items[2].getBoundingClientRect().height);
 

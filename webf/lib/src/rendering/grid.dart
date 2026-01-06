@@ -112,6 +112,7 @@ class RenderGridLayout extends RenderLayoutBox {
 
   _SubgridAxisContext? _pendingSubgridColumns;
   _SubgridAxisContext? _pendingSubgridRows;
+  List<double>? _subgridRowSizeContributions;
 
   void _setSubgridParentContext({
     _SubgridAxisContext? columns,
@@ -3697,37 +3698,70 @@ class RenderGridLayout extends RenderLayoutBox {
 
       final Size childSize = child.size;
       final double marginBoxHeight = childSize.height + marginVertical;
+
+      bool skipSelfRowContribution = false;
+      final RenderGridLayout? nestedGridForRows = _unwrapGridLayoutChild(child);
+      if (nestedGridForRows != null && _isSubgridTrackList(nestedGridForRows.renderStyle.gridTemplateRows)) {
+        final List<double>? contributions = nestedGridForRows._subgridRowSizeContributions;
+        if (contributions != null && contributions.isNotEmpty) {
+          final int count = math.min(rowSpan, contributions.length);
+          final CSSRenderStyle subgridStyle = nestedGridForRows.renderStyle;
+          final double leadingInset =
+              subgridStyle.paddingTop.computedValue + subgridStyle.effectiveBorderTopWidth.computedValue;
+          final double trailingInset =
+              subgridStyle.paddingBottom.computedValue + subgridStyle.effectiveBorderBottomWidth.computedValue;
+          for (int r = 0; r < count; r++) {
+            final int targetRow = rowIndex + r;
+            if (targetRow < 0 || targetRow >= rowSizes.length) continue;
+            if (rowSizes[targetRow] > 0) continue;
+            if (targetRow >= implicitRowHeights.length) continue;
+            double value = contributions[r];
+            if (!value.isFinite || value <= 0) continue;
+            if (count == 1) {
+              value += leadingInset + trailingInset;
+            } else {
+              if (r == 0) value += leadingInset;
+              if (r == count - 1) value += trailingInset;
+            }
+            implicitRowHeights[targetRow] = math.max(implicitRowHeights[targetRow], value);
+          }
+          skipSelfRowContribution = true;
+        }
+      }
+
       // Resolve implicit/auto row heights from item contributions.
       //
       // When an item spans fixed-size tracks plus implicit/auto tracks, only the
       // remaining height beyond the fixed tracks (and gutters) should be used
       // to grow the implicit/auto tracks. This matches the grid track sizing
       // algorithm where spanning items only increase tracks when necessary.
-      double fixedRowHeight = 0;
-      int flexibleRowCount = 0;
-      for (int r = 0; r < rowSpan; r++) {
-        final int targetRow = rowIndex + r;
-        if (targetRow < 0 || targetRow >= rowSizes.length) {
-          flexibleRowCount++;
-          continue;
-        }
-        final double resolved = rowSizes[targetRow];
-        if (resolved > 0) {
-          fixedRowHeight += resolved;
-        } else {
-          flexibleRowCount++;
-        }
-      }
-      final double gutters = rowGap * math.max(0, rowSpan - 1);
-      final double remaining = math.max(0, marginBoxHeight - fixedRowHeight - gutters);
-      if (flexibleRowCount > 0 && remaining > 0) {
-        final double perRow = remaining / flexibleRowCount;
+      if (!skipSelfRowContribution) {
+        double fixedRowHeight = 0;
+        int flexibleRowCount = 0;
         for (int r = 0; r < rowSpan; r++) {
           final int targetRow = rowIndex + r;
-          if (targetRow < 0 || targetRow >= rowSizes.length) continue;
-          if (rowSizes[targetRow] > 0) continue;
-          if (targetRow >= implicitRowHeights.length) continue;
-          implicitRowHeights[targetRow] = math.max(implicitRowHeights[targetRow], perRow);
+          if (targetRow < 0 || targetRow >= rowSizes.length) {
+            flexibleRowCount++;
+            continue;
+          }
+          final double resolved = rowSizes[targetRow];
+          if (resolved > 0) {
+            fixedRowHeight += resolved;
+          } else {
+            flexibleRowCount++;
+          }
+        }
+        final double gutters = rowGap * math.max(0, rowSpan - 1);
+        final double remaining = math.max(0, marginBoxHeight - fixedRowHeight - gutters);
+        if (flexibleRowCount > 0 && remaining > 0) {
+          final double perRow = remaining / flexibleRowCount;
+          for (int r = 0; r < rowSpan; r++) {
+            final int targetRow = rowIndex + r;
+            if (targetRow < 0 || targetRow >= rowSizes.length) continue;
+            if (rowSizes[targetRow] > 0) continue;
+            if (targetRow >= implicitRowHeights.length) continue;
+            implicitRowHeights[targetRow] = math.max(implicitRowHeights[targetRow], perRow);
+          }
         }
       }
 
@@ -4398,6 +4432,17 @@ class RenderGridLayout extends RenderLayoutBox {
 
     // Compute and cache CSS baselines for the grid container
     calculateBaseline();
+
+    if (useSubgridRows) {
+      final int rowCountForContribution = math.max(rowSizes.length, implicitRowHeights.length);
+      _subgridRowSizeContributions = List<double>.generate(
+        rowCountForContribution,
+        (int index) => _resolvedRowHeight(rowSizes, implicitRowHeights, index),
+        growable: false,
+      );
+    } else {
+      _subgridRowSizeContributions = null;
+    }
 
     totalProfile?.stop();
     if (totalProfile != null) {
