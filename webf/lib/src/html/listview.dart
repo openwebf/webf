@@ -16,7 +16,7 @@ import 'package:webf/src/css/position.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart' as dom;
-import 'package:easy_refresh/easy_refresh.dart';
+import 'package:webf_easy_refresh/easy_refresh.dart';
 import 'listview_bindings_generated.dart';
 
 class _WebFListViewNoScrollbarScrollBehavior extends ScrollBehavior {

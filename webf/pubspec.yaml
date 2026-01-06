@@ -21,8 +21,7 @@ dependencies:
   archive: ^3.3.7 # Pure dart module.
   web_socket_channel: ^3.0.1
   flutter_svg: ^2.0.17
-  easy_refresh:
-    path: ./flutter_easy_refresh
+  webf_easy_refresh: ^3.4.1
   http_parser: ^4.1.2
   shelf: ^1.4.2
   shelf_web_socket: ^2.0.1
