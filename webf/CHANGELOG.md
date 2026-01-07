@@ -1,3 +1,19 @@
+## 0.24.2
+
+### Major Features
+
+- **CSS Grid (Level 2)**: add `subgrid` support for `grid-template-columns` / `grid-template-rows` (track/gap inheritance, alignment, placement, named lines, and intrinsic sizing).
+
+### Bug Fixes
+
+- **CSS Grid/Subgrid**: fix implicit-column width expansion, subgrid column widths, intrinsic sizing, and row sizing/layout.
+- **Scrolling/Semantics**: fix scroll controller null cases for scrollable elements and improve overflow scroll semantics compatibility.
+
+### Compatibility
+
+- Support Flutter SDK `>=3.27.0`.
+- Replace vendored `easy_refresh` (path dependency + submodule) with published `webf_easy_refresh`.
+
 ## 0.24.1
 
 ### Major Features
