@@ -40,6 +40,20 @@ enum _IntrinsicTrackKind {
   maxContent,
 }
 
+class _SubgridAxisContext {
+  final List<double> trackSizes;
+  final double gap;
+  final bool sizesAreDefinite;
+  final Map<String, List<int>>? lineNameMap;
+
+  _SubgridAxisContext({
+    required this.trackSizes,
+    required this.gap,
+    required this.sizesAreDefinite,
+    this.lineNameMap,
+  });
+}
+
 class GridLayoutParentData extends RenderLayoutParentData {
   int rowStart = 0;
   int columnStart = 0;
@@ -94,6 +108,43 @@ class RenderGridLayout extends RenderLayoutBox {
     required super.renderStyle,
   }) {
     addAll(children);
+  }
+
+  _SubgridAxisContext? _pendingSubgridColumns;
+  _SubgridAxisContext? _pendingSubgridRows;
+  List<double>? _subgridRowSizeContributions;
+
+  void _setSubgridParentContext({
+    _SubgridAxisContext? columns,
+    _SubgridAxisContext? rows,
+  }) {
+    _pendingSubgridColumns = columns;
+    _pendingSubgridRows = rows;
+  }
+
+  _SubgridAxisContext? _takeSubgridColumnsContext() {
+    final _SubgridAxisContext? context = _pendingSubgridColumns;
+    _pendingSubgridColumns = null;
+    return context;
+  }
+
+  _SubgridAxisContext? _takeSubgridRowsContext() {
+    final _SubgridAxisContext? context = _pendingSubgridRows;
+    _pendingSubgridRows = null;
+    return context;
+  }
+
+  static bool _isSubgridTrackList(List<GridTrackSize> tracks) {
+    return tracks.length == 1 && tracks.first is GridSubgrid;
+  }
+
+  static RenderGridLayout? _unwrapGridLayoutChild(RenderBox child) {
+    if (child is RenderGridLayout) return child;
+    if (child is RenderEventListener) {
+      final RenderBox? wrapped = child.child;
+      if (wrapped is RenderGridLayout) return wrapped;
+    }
+    return null;
   }
 
   void _setMaxScrollableSize() {
@@ -208,6 +259,67 @@ class RenderGridLayout extends RenderLayoutBox {
       return child.renderStyle;
     }
     return null;
+  }
+
+  bool _configureSubgridContextForGridItem({
+    required RenderBox gridItem,
+    required GridLayoutParentData parentData,
+    required List<double> columnSizes,
+    required double columnGap,
+    required Map<String, List<int>>? columnLineNameMap,
+    required List<double> rowSizes,
+    required List<double> implicitRowHeights,
+    required double rowGap,
+    required Map<String, List<int>>? rowLineNameMap,
+  }) {
+    final RenderGridLayout? childGrid = _unwrapGridLayoutChild(gridItem);
+    if (childGrid == null) return false;
+
+    final bool wantsSubgridColumns = _isSubgridTrackList(childGrid.renderStyle.gridTemplateColumns);
+    final bool wantsSubgridRows = _isSubgridTrackList(childGrid.renderStyle.gridTemplateRows);
+    if (!wantsSubgridColumns && !wantsSubgridRows) return false;
+
+    _SubgridAxisContext? columnsContext;
+    if (wantsSubgridColumns) {
+      final int start = parentData.columnStart;
+      final int span = math.max(1, parentData.columnSpan);
+      final int end = math.min(columnSizes.length, start + span);
+      final List<double> sizes =
+          start >= 0 && start < end ? List<double>.from(columnSizes.getRange(start, end)) : <double>[];
+      final Map<String, List<int>>? names = _sliceLineNameMap(columnLineNameMap, start, start + sizes.length);
+      columnsContext = _SubgridAxisContext(
+        trackSizes: sizes,
+        gap: columnGap,
+        sizesAreDefinite: sizes.isNotEmpty,
+        lineNameMap: names,
+      );
+    }
+
+    bool needsRowRelayout = false;
+    _SubgridAxisContext? rowsContext;
+    if (wantsSubgridRows) {
+      final int start = parentData.rowStart;
+      final int span = math.max(1, parentData.rowSpan);
+      final List<double> sizes = List<double>.generate(
+        span,
+        (int i) => _resolvedRowHeight(rowSizes, implicitRowHeights, start + i),
+        growable: false,
+      );
+      final bool definite = sizes.every((double value) => value > 0.0);
+      if (!definite) {
+        needsRowRelayout = true;
+      }
+      final Map<String, List<int>>? names = _sliceLineNameMap(rowLineNameMap, start, start + span);
+      rowsContext = _SubgridAxisContext(
+        trackSizes: sizes,
+        gap: rowGap,
+        sizesAreDefinite: definite,
+        lineNameMap: names,
+      );
+    }
+
+    childGrid._setSubgridParentContext(columns: columnsContext, rows: rowsContext);
+    return needsRowRelayout;
   }
 
   void _overrideGridChildContentBoxLogicalSizes(RenderBox child, BoxConstraints borderBoxConstraints) {
@@ -1156,6 +1268,59 @@ class RenderGridLayout extends RenderLayoutBox {
     return merged.isEmpty ? null : merged;
   }
 
+  Map<String, List<int>>? _sliceLineNameMap(
+    Map<String, List<int>>? source,
+    int startLineIndex,
+    int endLineIndex,
+  ) {
+    if (source == null || source.isEmpty) return null;
+    final int start = math.max(0, startLineIndex);
+    final int end = math.max(start, endLineIndex);
+    final Map<String, List<int>> result = <String, List<int>>{};
+    for (final MapEntry<String, List<int>> entry in source.entries) {
+      final List<int> rebased = <int>[];
+      for (final int index in entry.value) {
+        if (index < start || index > end) continue;
+        rebased.add(index - start);
+      }
+      if (rebased.isNotEmpty) {
+        result[entry.key] = rebased;
+      }
+    }
+    return result.isEmpty ? null : result;
+  }
+
+  Map<String, List<int>>? _mergeLineNameMapWithSubgridGroups(
+    Map<String, List<int>>? base,
+    List<List<String>> groups, {
+    required int lineCount,
+  }) {
+    if (groups.isEmpty || lineCount <= 0) return base;
+    final Map<String, List<int>> merged =
+        base == null ? <String, List<int>>{} : base.map((key, value) => MapEntry(key, List<int>.from(value)));
+
+    void addIndex(String name, int index) {
+      if (index < 0 || index >= lineCount) return;
+      final List<int> indices = merged.putIfAbsent(name, () => <int>[]);
+      if (indices.contains(index)) return;
+      final int insertAt = indices.indexWhere((existing) => existing > index);
+      if (insertAt == -1) {
+        indices.add(index);
+      } else {
+        indices.insert(insertAt, index);
+      }
+    }
+
+    final int maxGroups = math.min(groups.length, lineCount);
+    for (int i = 0; i < maxGroups; i++) {
+      for (final String name in groups[i]) {
+        addIndex(name, i);
+      }
+    }
+
+    return merged.isEmpty ? null : merged;
+  }
+
   _GridCellPlacement _placeAutoItem({
     required List<List<bool>> occupancy,
     required List<double> columnSizes,
@@ -1204,7 +1369,7 @@ class RenderGridLayout extends RenderLayoutBox {
       int startRow;
       if (explicitRow != null) {
         startRow = explicitRow;
-      } else if (dense || hasDefiniteColumn) {
+      } else if (dense) {
         startRow = 0;
       } else {
         startRow = cursor.row;
@@ -1213,13 +1378,22 @@ class RenderGridLayout extends RenderLayoutBox {
 
       while (true) {
         _ensureOccupancyRows(occupancy, row + rowSpanClamped, columnCount);
-        final int columnStart = explicitColumn ??
-            (!dense && explicitRow == null && !hasDefiniteColumn && row == cursor.row ? cursor.column : 0);
+        int columnStart = explicitColumn ??
+            (!dense && explicitRow == null && row == cursor.row ? cursor.column : 0);
+        if (!dense &&
+            explicitRow == null &&
+            explicitColumn != null &&
+            row == cursor.row &&
+            columnStart < cursor.column) {
+          row++;
+          continue;
+        }
 
-        for (int col = math.max(0, columnStart); col <= columnCount - colSpan; col++) {
+        final int endColumn = explicitColumn != null ? math.max(0, columnStart) : columnCount - colSpan;
+        for (int col = math.max(0, columnStart); col <= endColumn; col++) {
           if (_canPlace(occupancy, row, col, rowSpanClamped, colSpan, columnCount)) {
             _markPlacement(occupancy, row, col, rowSpanClamped, colSpan);
-            if (explicitRow == null && !hasDefiniteColumn) {
+            if (!dense && explicitRow == null && !hasDefiniteRow) {
               cursor.row = row;
               cursor.column = col + colSpan;
               if (cursor.column >= columnCount) {
@@ -1830,6 +2004,20 @@ class RenderGridLayout extends RenderLayoutBox {
         rowsDef = CSSGridParser.parseTrackList(raw, renderStyle, GRID_TEMPLATE_ROWS, Axis.vertical);
       }
     }
+
+    final GridSubgrid? subgridColumnsDef = _isSubgridTrackList(colsDef) ? colsDef.first as GridSubgrid : null;
+    final GridSubgrid? subgridRowsDef = _isSubgridTrackList(rowsDef) ? rowsDef.first as GridSubgrid : null;
+    final _SubgridAxisContext? subgridColumnsContext =
+        subgridColumnsDef != null ? _takeSubgridColumnsContext() : null;
+    final _SubgridAxisContext? subgridRowsContext = subgridRowsDef != null ? _takeSubgridRowsContext() : null;
+    final bool useSubgridColumns = subgridColumnsDef != null && subgridColumnsContext != null;
+    final bool useSubgridRows = subgridRowsDef != null && subgridRowsContext != null;
+    if (subgridColumnsDef != null && !useSubgridColumns) {
+      colsDef = const <GridTrackSize>[];
+    }
+    if (subgridRowsDef != null && !useSubgridRows) {
+      rowsDef = const <GridTrackSize>[];
+    }
     double? gapBaseWidth = innerMaxWidth;
     final double? gapLogicalBorderBoxWidth = renderStyle.borderBoxLogicalWidth;
     if (renderStyle.width.isNotAuto &&
@@ -1850,7 +2038,7 @@ class RenderGridLayout extends RenderLayoutBox {
       gapBaseHeight = innerMaxHeight;
     }
 
-    final double colGap = _resolveLengthValue(renderStyle.columnGap, gapBaseWidth);
+    double colGap = _resolveLengthValue(renderStyle.columnGap, gapBaseWidth);
     final CSSLengthValue rowGapLength = renderStyle.rowGap;
     final bool rowGapIsPercentage = rowGapLength.type == CSSLengthType.PERCENTAGE;
     final double rowGapPercentage = rowGapIsPercentage ? (rowGapLength.value ?? 0.0) : 0.0;
@@ -1862,6 +2050,12 @@ class RenderGridLayout extends RenderLayoutBox {
     final bool shouldResolveRowGapAgainstContentBoxLater =
         rowGapIsPercentage && (gapBaseHeight == null || !gapBaseHeight.isFinite) && rowGapPercentage > 0;
     double rowGap = shouldResolveRowGapAgainstContentBoxLater ? 0.0 : _resolveLengthValue(rowGapLength, gapBaseHeight);
+    if (useSubgridColumns) {
+      colGap = subgridColumnsContext!.gap;
+    }
+    if (useSubgridRows) {
+      rowGap = subgridRowsContext!.gap;
+    }
 
     double? contentAvailableWidth = innerMaxWidth;
     if ((contentAvailableWidth == null || !contentAvailableWidth.isFinite) &&
@@ -1872,27 +2066,52 @@ class RenderGridLayout extends RenderLayoutBox {
       contentAvailableWidth = math.max(0.0, gapLogicalBorderBoxWidth - horizontalPaddingBorder);
     }
     final List<GridTrackSize> autoColDefs = renderStyle.gridAutoColumns;
-    final List<GridTrackSize> resolvedColumnDefs = _profileGridSection(
-      'grid.materializeColumns',
-      () => _materializeTrackList(colsDef, contentAvailableWidth, colGap, Axis.horizontal),
-    );
+    final List<GridTrackSize> resolvedColumnDefs = useSubgridColumns
+        ? List<GridTrackSize>.generate(
+            subgridColumnsContext!.trackSizes.length,
+            (int index) => subgridColumnsContext!.sizesAreDefinite
+                ? GridFixed(CSSLengthValue(subgridColumnsContext!.trackSizes[index], CSSLengthType.PX))
+                : const GridAuto(),
+            growable: false,
+          )
+        : _profileGridSection(
+            'grid.materializeColumns',
+            () => _materializeTrackList(colsDef, contentAvailableWidth, colGap, Axis.horizontal),
+          );
     double? adjustedInnerWidth = contentAvailableWidth;
     if (adjustedInnerWidth != null && adjustedInnerWidth.isFinite && resolvedColumnDefs.isNotEmpty) {
       final double totalColGap = colGap * math.max(0, resolvedColumnDefs.length - 1);
       adjustedInnerWidth = math.max(0.0, adjustedInnerWidth - totalColGap);
     }
     final bool hasExplicitCols = resolvedColumnDefs.isNotEmpty;
-    final List<double> colSizes = hasExplicitCols
-        ? _profileGridSection(
-            'grid.resolveColumns',
-            () => _resolveTracks(
-              resolvedColumnDefs,
-              adjustedInnerWidth,
-              Axis.horizontal,
-              percentageBasis: contentAvailableWidth,
-            ),
-          )
-        : <double>[];
+    final List<double> colSizes = useSubgridColumns
+        ? List<double>.from(subgridColumnsContext!.trackSizes, growable: true)
+        : hasExplicitCols
+            ? _profileGridSection(
+                'grid.resolveColumns',
+                () => _resolveTracks(
+                  resolvedColumnDefs,
+                  adjustedInnerWidth,
+                  Axis.horizontal,
+                  percentageBasis: contentAvailableWidth,
+                ),
+              )
+            : <double>[];
+    if (useSubgridColumns && colSizes.isNotEmpty) {
+      final double leadingInset = paddingLeft + borderLeft;
+      final double trailingInset = paddingRight + borderRight;
+      if (colSizes.length == 1) {
+        colSizes[0] = math.max(0.0, colSizes[0] - leadingInset - trailingInset);
+      } else {
+        if (leadingInset > 0) {
+          colSizes[0] = math.max(0.0, colSizes[0] - leadingInset);
+        }
+        if (trailingInset > 0) {
+          final int last = colSizes.length - 1;
+          colSizes[last] = math.max(0.0, colSizes[last] - trailingInset);
+        }
+      }
+    }
     final int explicitColumnCount = hasExplicitCols ? colSizes.length : 0;
     List<bool>? explicitAutoFitColumns;
     if (explicitColumnCount > 0) {
@@ -1919,26 +2138,53 @@ class RenderGridLayout extends RenderLayoutBox {
         gapLogicalBorderBoxHeight > 0) {
       contentAvailableHeight = math.max(0.0, gapLogicalBorderBoxHeight - verticalPaddingBorder);
     }
-    final List<GridTrackSize> resolvedRowDefs = _profileGridSection(
-      'grid.materializeRows',
-      () => _materializeTrackList(rowsDef, contentAvailableHeight, rowGap, Axis.vertical),
-    );
+    final List<GridTrackSize> resolvedRowDefs = useSubgridRows
+        ? List<GridTrackSize>.generate(
+            subgridRowsContext!.trackSizes.length,
+            (int index) => subgridRowsContext!.sizesAreDefinite
+                ? GridFixed(CSSLengthValue(subgridRowsContext!.trackSizes[index], CSSLengthType.PX))
+                : const GridAuto(),
+            growable: false,
+          )
+        : _profileGridSection(
+            'grid.materializeRows',
+            () => _materializeTrackList(rowsDef, contentAvailableHeight, rowGap, Axis.vertical),
+          );
     double? adjustedInnerHeight = contentAvailableHeight;
     if (adjustedInnerHeight != null && adjustedInnerHeight.isFinite && resolvedRowDefs.isNotEmpty) {
       final double totalRowGap = rowGap * math.max(0, resolvedRowDefs.length - 1);
       adjustedInnerHeight = math.max(0.0, adjustedInnerHeight - totalRowGap);
     }
-    List<double> rowSizes = resolvedRowDefs.isEmpty
-        ? <double>[]
-        : _profileGridSection(
-            'grid.resolveRows',
-            () => _resolveTracks(
-              resolvedRowDefs,
-              adjustedInnerHeight,
-              Axis.vertical,
-              percentageBasis: contentAvailableHeight,
-            ),
-          );
+    List<double> rowSizes = useSubgridRows
+        ? subgridRowsContext!.sizesAreDefinite
+            ? List<double>.from(subgridRowsContext!.trackSizes, growable: true)
+            : List<double>.filled(subgridRowsContext!.trackSizes.length, 0.0, growable: true)
+        : resolvedRowDefs.isEmpty
+            ? <double>[]
+            : _profileGridSection(
+                'grid.resolveRows',
+                () => _resolveTracks(
+                  resolvedRowDefs,
+                  adjustedInnerHeight,
+                  Axis.vertical,
+                  percentageBasis: contentAvailableHeight,
+                ),
+              );
+    if (useSubgridRows && rowSizes.isNotEmpty) {
+      final double leadingInset = paddingTop + borderTop;
+      final double trailingInset = paddingBottom + borderBottom;
+      if (rowSizes.length == 1) {
+        rowSizes[0] = math.max(0.0, rowSizes[0] - leadingInset - trailingInset);
+      } else {
+        if (leadingInset > 0) {
+          rowSizes[0] = math.max(0.0, rowSizes[0] - leadingInset);
+        }
+        if (trailingInset > 0) {
+          final int last = rowSizes.length - 1;
+          rowSizes[last] = math.max(0.0, rowSizes[last] - trailingInset);
+        }
+      }
+    }
     final int definedRowCount = resolvedRowDefs.length;
     final int explicitRowCount = definedRowCount > 0 ? definedRowCount : 1;
     List<bool>? explicitAutoFitRows;
@@ -1950,13 +2196,28 @@ class RenderGridLayout extends RenderLayoutBox {
       }
     }
 
+    final Map<String, List<int>>? baseColumnLineNameMap = useSubgridColumns
+        ? _mergeLineNameMapWithSubgridGroups(
+            subgridColumnsContext!.lineNameMap,
+            subgridColumnsDef!.lineNameGroups,
+            lineCount: colSizes.length + 1,
+          )
+        : _buildLineNameMap(resolvedColumnDefs);
     final Map<String, List<int>>? columnLineNameMap = _mergeLineNameMapWithTemplateAreas(
-      _buildLineNameMap(resolvedColumnDefs),
+      baseColumnLineNameMap,
       templateAreaMap,
       axis: Axis.horizontal,
     );
+
+    final Map<String, List<int>>? baseRowLineNameMap = useSubgridRows
+        ? _mergeLineNameMapWithSubgridGroups(
+            subgridRowsContext!.lineNameMap,
+            subgridRowsDef!.lineNameGroups,
+            lineCount: rowSizes.length + 1,
+          )
+        : _buildLineNameMap(resolvedRowDefs);
     final Map<String, List<int>>? rowLineNameMap = _mergeLineNameMapWithTemplateAreas(
-      _buildLineNameMap(resolvedRowDefs),
+      baseRowLineNameMap,
       templateAreaMap,
       axis: Axis.vertical,
     );
@@ -2078,6 +2339,74 @@ class RenderGridLayout extends RenderLayoutBox {
     for (final RenderBox placementChild in placementChildren) {
       if (placedInEarlyPasses.contains(placementChild)) continue;
       orderedChildren.add(placementChild);
+    }
+
+    // Ensure implicit columns referenced by definite placements exist before we start placing
+    // auto-positioned items; otherwise the auto-placement cursor may wrap prematurely (e.g. when
+    // later items reference implicit columns).
+    if (rowFlowForOrdering && colSizes.isNotEmpty) {
+      int requiredColumns = colSizes.length;
+      for (final RenderBox placementChild in placementChildren) {
+        CSSRenderStyle? childGridStyle;
+        if (placementChild is RenderBoxModel) {
+          childGridStyle = placementChild.renderStyle;
+        } else if (placementChild is RenderEventListener) {
+          final RenderBox? wrapped = placementChild.child;
+          if (wrapped is RenderBoxModel) {
+            childGridStyle = wrapped.renderStyle;
+          }
+        }
+        if (childGridStyle == null) continue;
+
+        GridPlacement columnStart = childGridStyle.gridColumnStart;
+        GridPlacement columnEnd = childGridStyle.gridColumnEnd;
+        GridPlacement rowStart = childGridStyle.gridRowStart;
+        GridPlacement rowEnd = childGridStyle.gridRowEnd;
+        final String? areaName = childGridStyle.gridAreaName;
+        if (areaName != null) {
+          final GridTemplateAreaRect? rect = templateAreaMap?[areaName];
+          if (rect != null) {
+            columnStart = GridPlacement.line(rect.columnStart);
+            columnEnd = GridPlacement.line(rect.columnEnd);
+            rowStart = GridPlacement.line(rect.rowStart);
+            rowEnd = GridPlacement.line(rect.rowEnd);
+          } else {
+            final String startName = '${areaName}-start';
+            final String endName = '${areaName}-end';
+            columnStart = GridPlacement.named(startName);
+            columnEnd = GridPlacement.named(endName);
+            rowStart = GridPlacement.named(startName);
+            rowEnd = GridPlacement.named(endName);
+          }
+        }
+
+        final int resolvedColSpan =
+            _resolveSpan(columnStart, columnEnd, orderingColumnTrackCount, namedLines: columnLineNameMap);
+        final int resolvedRowSpan =
+            _resolveSpan(rowStart, rowEnd, orderingRowTrackCount, namedLines: rowLineNameMap);
+        if (resolvedColSpan <= 0 || resolvedRowSpan <= 0) continue;
+
+        final int colSpan = math.max(1, resolvedColSpan);
+        final int? columnStartRequirement =
+            _resolveLineRequirementIndex(columnStart, orderingColumnTrackCount, namedLines: columnLineNameMap);
+        if (columnStartRequirement != null) {
+          requiredColumns = math.max(requiredColumns, columnStartRequirement + colSpan);
+        }
+        final int? columnEndRequirement =
+            _resolveLineRequirementIndex(columnEnd, orderingColumnTrackCount, namedLines: columnLineNameMap);
+        if (columnEndRequirement != null) {
+          requiredColumns = math.max(requiredColumns, columnEndRequirement);
+        }
+        requiredColumns = math.max(requiredColumns, colSpan);
+      }
+
+      _ensureImplicitColumns(
+        colSizes: colSizes,
+        requiredCount: requiredColumns,
+        explicitCount: explicitColumnCount,
+        autoColumns: autoColDefs,
+        innerAvailable: adjustedInnerWidth,
+      );
     }
 
     for (final RenderBox child in orderedChildren) {
@@ -2394,6 +2723,170 @@ class RenderGridLayout extends RenderLayoutBox {
         // line wrapping (browser behavior).
         final List<double> autoMinColSizes = List<double>.filled(colSizes.length, 0.0);
 
+        ({double min, double max}) resolveIntrinsicWidthContribution(
+          RenderBox target,
+          CSSRenderStyle? targetStyle,
+        ) {
+          double intrinsicMaxWidth = target.getMaxIntrinsicWidth(double.infinity);
+          double intrinsicMinWidth = target.getMinIntrinsicWidth(double.infinity);
+          if (targetStyle != null) {
+            // Guard against circular dependencies where percentage widths contribute to intrinsic sizing
+            // of `auto` tracks; fall back to the definite min-width floor if available.
+            final CSSLengthValue minWidth = targetStyle.minWidth;
+            if (minWidth.isNotAuto && minWidth.type != CSSLengthType.PERCENTAGE) {
+              final double minWidthValue = minWidth.computedValue;
+              if (minWidthValue.isFinite && minWidthValue > 0) {
+                if (!intrinsicMinWidth.isFinite || intrinsicMinWidth < minWidthValue) {
+                  intrinsicMinWidth = minWidthValue;
+                }
+                if (!intrinsicMaxWidth.isFinite || intrinsicMaxWidth < minWidthValue) {
+                  intrinsicMaxWidth = minWidthValue;
+                }
+              }
+            }
+
+            // For nowrap/pre text, the min-content contribution is the max-content contribution.
+            // Flutter's min intrinsic width defaults to the longest breakable word, so correct it
+            // here for grid track sizing.
+            if (targetStyle.whiteSpace == WhiteSpace.nowrap || targetStyle.whiteSpace == WhiteSpace.pre) {
+              if (intrinsicMaxWidth.isFinite && intrinsicMaxWidth > 0) {
+                intrinsicMinWidth = intrinsicMaxWidth;
+              }
+            }
+
+            // Aspect-ratio affects the box's intrinsic size contributions when one axis is
+            // definite and the other is auto. In particular, a definite block-size with an
+            // auto inline-size yields an intrinsic inline-size derived from the preferred
+            // aspect ratio. This is important for flex (fr) tracks: their automatic minimum
+            // size is based on the min-content contribution, and browsers will overflow the
+            // grid container rather than overlap items when these minimums exceed the
+            // available size.
+            final double? ratio = targetStyle.aspectRatio;
+            if (ratio != null && ratio > 0) {
+              final bool widthAuto = targetStyle.width.isAuto ||
+                  (targetStyle.width.type == CSSLengthType.PERCENTAGE && !targetStyle.width.computedValue.isFinite);
+              if (widthAuto && targetStyle.height.isNotAuto) {
+                final double h = targetStyle.height.computedValue;
+                if (h.isFinite && h > 0) {
+                  final double derivedW = _gridItemBorderBoxWidthFromHeight(h, ratio);
+                  if (derivedW.isFinite && derivedW > 0) {
+                    if (!intrinsicMinWidth.isFinite || derivedW > intrinsicMinWidth) {
+                      intrinsicMinWidth = derivedW;
+                    }
+                    if (!intrinsicMaxWidth.isFinite || derivedW > intrinsicMaxWidth) {
+                      intrinsicMaxWidth = derivedW;
+                    }
+                  }
+                }
+              }
+            }
+
+            // Keep max-content contribution at least the min-content contribution to avoid
+            // shrinking auto tracks below their minimum contribution.
+            if (intrinsicMinWidth.isFinite &&
+                intrinsicMinWidth > 0 &&
+                (!intrinsicMaxWidth.isFinite || intrinsicMaxWidth < intrinsicMinWidth)) {
+              intrinsicMaxWidth = intrinsicMinWidth;
+            }
+
+            // Intrinsic sizing keywords on the grid item affect its intrinsic
+            // contributions: a specified `width: max-content` forces the item's
+            // minimum contribution up to its max-content size, and `width:
+            // min-content` forces the max contribution down to its min-content
+            // size. This is important for flex (fr) tracks to avoid adjacent
+            // item overlap when the item's used size is intrinsic.
+            final CSSLengthValue preferredWidth = targetStyle.width;
+            if (preferredWidth.type == CSSLengthType.MAX_CONTENT) {
+              if (intrinsicMaxWidth.isFinite && intrinsicMaxWidth > 0) {
+                intrinsicMinWidth = intrinsicMaxWidth;
+              }
+            } else if (preferredWidth.type == CSSLengthType.MIN_CONTENT) {
+              if (intrinsicMinWidth.isFinite && intrinsicMinWidth > 0) {
+                intrinsicMaxWidth = intrinsicMinWidth;
+              }
+            }
+          }
+
+          return (min: intrinsicMinWidth, max: intrinsicMaxWidth);
+        }
+
+        void applyIntrinsicWidthContributionToColumns({
+          required int startCol,
+          required int span,
+          required double intrinsicMinWidth,
+          required double intrinsicMaxWidth,
+        }) {
+          if (startCol < 0 || startCol >= colSizes.length) return;
+          final int endCol = math.min(colSizes.length, startCol + math.max(1, span));
+          final int effectiveSpan = math.max(1, endCol - startCol);
+
+          int autoCount = 0;
+          int minContentCount = 0;
+          int maxContentCount = 0;
+          int flexCount = 0;
+          for (int c = startCol; c < endCol; c++) {
+            if (autoColumnsMask[c]) autoCount++;
+            if (minContentColumnsMask[c]) minContentCount++;
+            if (maxContentColumnsMask[c]) maxContentCount++;
+            if (flexFactors[c] > 0) flexCount++;
+          }
+
+          if ((autoCount > 0 || maxContentCount > 0) && intrinsicMaxWidth.isFinite && intrinsicMaxWidth > 0) {
+            final double availableMax = math.max(0.0, intrinsicMaxWidth - colGap * math.max(0, effectiveSpan - 1));
+            if (autoCount > 0) {
+              final double perAutoTrack = availableMax / autoCount;
+              for (int c = startCol; c < endCol; c++) {
+                if (!autoColumnsMask[c]) continue;
+                if (perAutoTrack > colSizes[c]) {
+                  colSizes[c] = perAutoTrack;
+                }
+              }
+            }
+            if (maxContentCount > 0) {
+              final double perMaxContentTrack = availableMax / maxContentCount;
+              for (int c = startCol; c < endCol; c++) {
+                if (!maxContentColumnsMask[c]) continue;
+                if (perMaxContentTrack > colSizes[c]) {
+                  colSizes[c] = perMaxContentTrack;
+                }
+              }
+            }
+          }
+
+          if ((autoCount > 0 || minContentCount > 0) && intrinsicMinWidth.isFinite && intrinsicMinWidth > 0) {
+            final double availableMin = math.max(0.0, intrinsicMinWidth - colGap * math.max(0, effectiveSpan - 1));
+            if (autoCount > 0) {
+              final double perAutoMinTrack = availableMin / autoCount;
+              for (int c = startCol; c < endCol; c++) {
+                if (!autoColumnsMask[c]) continue;
+                if (perAutoMinTrack > autoMinColSizes[c]) {
+                  autoMinColSizes[c] = perAutoMinTrack;
+                }
+              }
+            }
+            if (minContentCount > 0) {
+              final double perMinContentTrack = availableMin / minContentCount;
+              for (int c = startCol; c < endCol; c++) {
+                if (!minContentColumnsMask[c]) continue;
+                if (perMinContentTrack > colSizes[c]) {
+                  colSizes[c] = perMinContentTrack;
+                }
+              }
+            }
+          }
+
+          if (flexCount > 0 && intrinsicMinWidth.isFinite && intrinsicMinWidth > 0) {
+            final double availableMin = math.max(0.0, intrinsicMinWidth - colGap * math.max(0, effectiveSpan - 1));
+            final double perFlexMinTrack = availableMin / flexCount;
+            for (int c = startCol; c < endCol; c++) {
+              if (flexFactors[c] <= 0) continue;
+              if (perFlexMinTrack > flexMinColSizes[c]) {
+                flexMinColSizes[c] = perFlexMinTrack;
+              }
+            }
+          }
+        }
+
         void resolveFlexibleAndRangeTracks() {
           double? availableTrackSpace = adjustedInnerWidth;
           if (contentAvailableWidth != null && contentAvailableWidth.isFinite) {
@@ -2534,170 +3027,203 @@ class RenderGridLayout extends RenderLayoutBox {
         RenderBox? childForIntrinsic = firstChild;
         while (childForIntrinsic != null) {
           final GridLayoutParentData pd = childForIntrinsic.parentData as GridLayoutParentData;
+          if (_isPositionedGridChild(childForIntrinsic)) {
+            childForIntrinsic = pd.nextSibling;
+            continue;
+          }
+
           final int startCol = pd.columnStart;
           final int span = math.max(1, pd.columnSpan);
           if (startCol >= 0 && startCol < colSizes.length) {
-            CSSRenderStyle? childGridStyle;
-            if (childForIntrinsic is RenderBoxModel) {
-              childGridStyle = childForIntrinsic.renderStyle;
-            } else if (childForIntrinsic is RenderEventListener) {
-              final RenderBox? wrapped = childForIntrinsic.child;
-              if (wrapped is RenderBoxModel) {
-                childGridStyle = wrapped.renderStyle;
+            final RenderGridLayout? nestedGrid = _unwrapGridLayoutChild(childForIntrinsic);
+            final bool isSubgridColumns =
+                nestedGrid != null && _isSubgridTrackList(nestedGrid.renderStyle.gridTemplateColumns);
+
+            if (isSubgridColumns) {
+              final CSSRenderStyle subgridStyle = nestedGrid!.renderStyle;
+              final double leadingInset =
+                  subgridStyle.paddingLeft.computedValue + subgridStyle.effectiveBorderLeftWidth.computedValue;
+              final double trailingInset =
+                  subgridStyle.paddingRight.computedValue + subgridStyle.effectiveBorderRightWidth.computedValue;
+              final int subgridColumnCount = math.max(1, span);
+
+              final Map<String, List<int>>? subgridColumnLineNameMap =
+                  _sliceLineNameMap(columnLineNameMap, startCol, startCol + subgridColumnCount);
+
+              final List<RenderBox> subgridPlacementChildren = nestedGrid
+                  ._collectChildren()
+                  .where((RenderBox child) => !nestedGrid._isPositionedGridChild(child))
+                  .toList(growable: false);
+
+              final GridAutoFlow subgridAutoFlow = subgridStyle.gridAutoFlow;
+              final bool rowFlowForOrdering =
+                  subgridAutoFlow == GridAutoFlow.row || subgridAutoFlow == GridAutoFlow.rowDense;
+
+              final List<RenderBox> definiteBothAxisItems = <RenderBox>[];
+              final List<RenderBox> definiteRowItems = <RenderBox>[];
+              final List<RenderBox> definiteColumnItems = <RenderBox>[];
+
+              for (final RenderBox placementChild in subgridPlacementChildren) {
+                final CSSRenderStyle? childGridStyle = _unwrapGridChildBoxModel(placementChild)?.renderStyle;
+                GridPlacement columnStart = childGridStyle?.gridColumnStart ?? const GridPlacement.auto();
+                GridPlacement columnEnd = childGridStyle?.gridColumnEnd ?? const GridPlacement.auto();
+                GridPlacement rowStart = childGridStyle?.gridRowStart ?? const GridPlacement.auto();
+                GridPlacement rowEnd = childGridStyle?.gridRowEnd ?? const GridPlacement.auto();
+
+                final int resolvedColSpan = _resolveSpan(
+                  columnStart,
+                  columnEnd,
+                  subgridColumnCount,
+                  namedLines: subgridColumnLineNameMap,
+                );
+                final int resolvedRowSpan = _resolveSpan(rowStart, rowEnd, 1);
+                if (resolvedColSpan <= 0) {
+                  columnStart = const GridPlacement.auto();
+                  columnEnd = const GridPlacement.auto();
+                }
+                if (resolvedRowSpan <= 0) {
+                  rowStart = const GridPlacement.auto();
+                  rowEnd = const GridPlacement.auto();
+                }
+
+                final bool hasDefiniteColumn =
+                    columnStart.kind == GridPlacementKind.line || columnEnd.kind == GridPlacementKind.line;
+                final bool hasDefiniteRow =
+                    rowStart.kind == GridPlacementKind.line || rowEnd.kind == GridPlacementKind.line;
+                if (hasDefiniteRow && hasDefiniteColumn) {
+                  definiteBothAxisItems.add(placementChild);
+                } else if (hasDefiniteRow) {
+                  definiteRowItems.add(placementChild);
+                } else if (hasDefiniteColumn) {
+                  definiteColumnItems.add(placementChild);
+                }
               }
+
+              final Set<RenderBox> placedInEarlyPasses = <RenderBox>{...definiteBothAxisItems};
+              final List<RenderBox> orderedChildren = <RenderBox>[...definiteBothAxisItems];
+              if (rowFlowForOrdering) {
+                orderedChildren.addAll(definiteRowItems);
+                placedInEarlyPasses.addAll(definiteRowItems);
+              } else {
+                orderedChildren.addAll(definiteColumnItems);
+                placedInEarlyPasses.addAll(definiteColumnItems);
+              }
+              for (final RenderBox placementChild in subgridPlacementChildren) {
+                if (placedInEarlyPasses.contains(placementChild)) continue;
+                orderedChildren.add(placementChild);
+              }
+
+              final List<List<bool>> occupancy = <List<bool>>[];
+              final _GridAutoCursor cursor = _GridAutoCursor(0, 0);
+              final List<double> dummyColumnSizes = List<double>.filled(subgridColumnCount, 0.0, growable: true);
+
+              for (final RenderBox placementChild in orderedChildren) {
+                final CSSRenderStyle? childGridStyle = _unwrapGridChildBoxModel(placementChild)?.renderStyle;
+                GridPlacement columnStart = childGridStyle?.gridColumnStart ?? const GridPlacement.auto();
+                GridPlacement columnEnd = childGridStyle?.gridColumnEnd ?? const GridPlacement.auto();
+                GridPlacement rowStart = childGridStyle?.gridRowStart ?? const GridPlacement.auto();
+                GridPlacement rowEnd = childGridStyle?.gridRowEnd ?? const GridPlacement.auto();
+
+                final int resolvedColSpan = _resolveSpan(
+                  columnStart,
+                  columnEnd,
+                  subgridColumnCount,
+                  namedLines: subgridColumnLineNameMap,
+                );
+                final int resolvedRowSpan = _resolveSpan(rowStart, rowEnd, 1);
+
+                final bool invalidColumnRange = resolvedColSpan <= 0;
+                final bool invalidRowRange = resolvedRowSpan <= 0;
+                if (invalidColumnRange) {
+                  columnStart = const GridPlacement.auto();
+                  columnEnd = const GridPlacement.auto();
+                }
+                if (invalidRowRange) {
+                  rowStart = const GridPlacement.auto();
+                  rowEnd = const GridPlacement.auto();
+                }
+
+                int colSpan = (invalidColumnRange ? 1 : resolvedColSpan).clamp(1, subgridColumnCount);
+                final int rowSpan = invalidRowRange ? 1 : math.max(1, resolvedRowSpan);
+
+                int? explicitColumn = _resolveTrackIndexFromPlacement(
+                  columnStart,
+                  subgridColumnCount,
+                  namedLines: subgridColumnLineNameMap,
+                );
+                if (explicitColumn != null) {
+                  explicitColumn = explicitColumn.clamp(0, math.max(0, subgridColumnCount - colSpan));
+                }
+
+                int? explicitRow = _resolveTrackIndexFromPlacement(rowStart, 1);
+                if (explicitRow != null &&
+                    rowStart.kind == GridPlacementKind.line &&
+                    rowStart.line != null &&
+                    rowStart.line! < 0 &&
+                    rowEnd.kind == GridPlacementKind.auto &&
+                    explicitRow >= 1) {
+                  explicitRow = 0;
+                }
+
+                final bool hasDefiniteColumn =
+                    columnStart.kind == GridPlacementKind.line || columnEnd.kind == GridPlacementKind.line;
+                final bool hasDefiniteRow =
+                    rowStart.kind == GridPlacementKind.line || rowEnd.kind == GridPlacementKind.line;
+
+                final _GridCellPlacement placement = _placeAutoItem(
+                  occupancy: occupancy,
+                  columnSizes: dummyColumnSizes,
+                  explicitColumnCount: subgridColumnCount,
+                  autoColumns: const <GridTrackSize>[],
+                  adjustedInnerWidth: null,
+                  columnSpan: colSpan,
+                  rowSpan: rowSpan,
+                  explicitRow: explicitRow,
+                  explicitColumn: explicitColumn,
+                  autoFlow: subgridAutoFlow,
+                  cursor: cursor,
+                  hasDefiniteColumn: hasDefiniteColumn,
+                  hasDefiniteRow: hasDefiniteRow,
+                  explicitRowCount: 1,
+                  rowTrackCountForPlacement: 1,
+                );
+
+                final int localStartCol = placement.column;
+                final int localEndCol = localStartCol + colSpan;
+                final int globalStartCol = startCol + localStartCol;
+
+                if (globalStartCol < 0 || globalStartCol >= colSizes.length) continue;
+
+                double insetAdjustment = 0.0;
+                if (localStartCol == 0) insetAdjustment += leadingInset;
+                if (localEndCol == subgridColumnCount) insetAdjustment += trailingInset;
+
+                final ({double min, double max}) intrinsic =
+                    resolveIntrinsicWidthContribution(placementChild, childGridStyle);
+                final double intrinsicMinWidth = intrinsic.min + insetAdjustment;
+                final double intrinsicMaxWidth = intrinsic.max + insetAdjustment;
+
+                applyIntrinsicWidthContributionToColumns(
+                  startCol: globalStartCol,
+                  span: colSpan,
+                  intrinsicMinWidth: intrinsicMinWidth,
+                  intrinsicMaxWidth: intrinsicMaxWidth,
+                );
+              }
+
+              childForIntrinsic = pd.nextSibling;
+              continue;
             }
 
-            double intrinsicMaxWidth = childForIntrinsic.getMaxIntrinsicWidth(double.infinity);
-            double intrinsicMinWidth = childForIntrinsic.getMinIntrinsicWidth(double.infinity);
-            if (childGridStyle != null) {
-              // Guard against circular dependencies where percentage widths contribute to intrinsic sizing
-              // of `auto` tracks; fall back to the definite min-width floor if available.
-              final CSSLengthValue minWidth = childGridStyle.minWidth;
-              if (minWidth.isNotAuto && minWidth.type != CSSLengthType.PERCENTAGE) {
-                final double minWidthValue = minWidth.computedValue;
-                if (minWidthValue.isFinite && minWidthValue > 0) {
-                  if (!intrinsicMinWidth.isFinite || intrinsicMinWidth < minWidthValue) {
-                    intrinsicMinWidth = minWidthValue;
-                  }
-                  if (!intrinsicMaxWidth.isFinite || intrinsicMaxWidth < minWidthValue) {
-                    intrinsicMaxWidth = minWidthValue;
-                  }
-                }
-              }
-
-              // For nowrap/pre text, the min-content contribution is the max-content contribution.
-              // Flutter's min intrinsic width defaults to the longest breakable word, so correct it
-              // here for grid track sizing.
-              if (childGridStyle.whiteSpace == WhiteSpace.nowrap ||
-                  childGridStyle.whiteSpace == WhiteSpace.pre) {
-                if (intrinsicMaxWidth.isFinite && intrinsicMaxWidth > 0) {
-                  intrinsicMinWidth = intrinsicMaxWidth;
-                }
-              }
-
-              // Aspect-ratio affects the box's intrinsic size contributions when one axis is
-              // definite and the other is auto. In particular, a definite block-size with an
-              // auto inline-size yields an intrinsic inline-size derived from the preferred
-              // aspect ratio. This is important for flex (fr) tracks: their automatic minimum
-              // size is based on the min-content contribution, and browsers will overflow the
-              // grid container rather than overlap items when these minimums exceed the
-              // available size.
-              final double? ratio = childGridStyle.aspectRatio;
-              if (ratio != null && ratio > 0) {
-                final bool widthAuto = childGridStyle.width.isAuto ||
-                    (childGridStyle.width.type == CSSLengthType.PERCENTAGE &&
-                        !childGridStyle.width.computedValue.isFinite);
-                if (widthAuto && childGridStyle.height.isNotAuto) {
-                  final double h = childGridStyle.height.computedValue;
-                  if (h.isFinite && h > 0) {
-                    final double derivedW = _gridItemBorderBoxWidthFromHeight(h, ratio);
-                    if (derivedW.isFinite && derivedW > 0) {
-                      if (!intrinsicMinWidth.isFinite || derivedW > intrinsicMinWidth) {
-                        intrinsicMinWidth = derivedW;
-                      }
-                      if (!intrinsicMaxWidth.isFinite || derivedW > intrinsicMaxWidth) {
-                        intrinsicMaxWidth = derivedW;
-                      }
-                    }
-                  }
-                }
-              }
-
-              // Keep max-content contribution at least the min-content contribution to avoid
-              // shrinking auto tracks below their minimum contribution.
-              if (intrinsicMinWidth.isFinite &&
-                  intrinsicMinWidth > 0 &&
-                  (!intrinsicMaxWidth.isFinite || intrinsicMaxWidth < intrinsicMinWidth)) {
-                intrinsicMaxWidth = intrinsicMinWidth;
-              }
-
-              // Intrinsic sizing keywords on the grid item affect its intrinsic
-              // contributions: a specified `width: max-content` forces the item's
-              // minimum contribution up to its max-content size, and `width:
-              // min-content` forces the max contribution down to its min-content
-              // size. This is important for flex (fr) tracks to avoid adjacent
-              // item overlap when the item's used size is intrinsic.
-              final CSSLengthValue preferredWidth = childGridStyle.width;
-              if (preferredWidth.type == CSSLengthType.MAX_CONTENT) {
-                if (intrinsicMaxWidth.isFinite && intrinsicMaxWidth > 0) {
-                  intrinsicMinWidth = intrinsicMaxWidth;
-                }
-              } else if (preferredWidth.type == CSSLengthType.MIN_CONTENT) {
-                if (intrinsicMinWidth.isFinite && intrinsicMinWidth > 0) {
-                  intrinsicMaxWidth = intrinsicMinWidth;
-                }
-              }
-            }
-            final int endCol = math.min(colSizes.length, startCol + span);
-
-            int autoCount = 0;
-            int minContentCount = 0;
-            int maxContentCount = 0;
-            int flexCount = 0;
-            for (int c = startCol; c < endCol; c++) {
-              if (autoColumnsMask[c]) autoCount++;
-              if (minContentColumnsMask[c]) minContentCount++;
-              if (maxContentColumnsMask[c]) maxContentCount++;
-              if (flexFactors[c] > 0) flexCount++;
-            }
-
-            if ((autoCount > 0 || maxContentCount > 0) && intrinsicMaxWidth.isFinite && intrinsicMaxWidth > 0) {
-              final double availableMax =
-                  math.max(0.0, intrinsicMaxWidth - colGap * math.max(0, span - 1));
-              if (autoCount > 0) {
-                final double perAutoTrack = availableMax / autoCount;
-                for (int c = startCol; c < endCol; c++) {
-                  if (!autoColumnsMask[c]) continue;
-                  if (perAutoTrack > colSizes[c]) {
-                    colSizes[c] = perAutoTrack;
-                  }
-                }
-              }
-              if (maxContentCount > 0) {
-                final double perMaxContentTrack = availableMax / maxContentCount;
-                for (int c = startCol; c < endCol; c++) {
-                  if (!maxContentColumnsMask[c]) continue;
-                  if (perMaxContentTrack > colSizes[c]) {
-                    colSizes[c] = perMaxContentTrack;
-                  }
-                }
-              }
-            }
-
-            if ((autoCount > 0 || minContentCount > 0) && intrinsicMinWidth.isFinite && intrinsicMinWidth > 0) {
-              final double availableMin =
-                  math.max(0.0, intrinsicMinWidth - colGap * math.max(0, span - 1));
-              if (autoCount > 0) {
-                final double perAutoMinTrack = availableMin / autoCount;
-                for (int c = startCol; c < endCol; c++) {
-                  if (!autoColumnsMask[c]) continue;
-                  if (perAutoMinTrack > autoMinColSizes[c]) {
-                    autoMinColSizes[c] = perAutoMinTrack;
-                  }
-                }
-              }
-              if (minContentCount > 0) {
-                final double perMinContentTrack = availableMin / minContentCount;
-                for (int c = startCol; c < endCol; c++) {
-                  if (!minContentColumnsMask[c]) continue;
-                  if (perMinContentTrack > colSizes[c]) {
-                    colSizes[c] = perMinContentTrack;
-                  }
-                }
-              }
-            }
-
-            if (flexCount > 0 && intrinsicMinWidth.isFinite && intrinsicMinWidth > 0) {
-              final double availableMin =
-                  math.max(0.0, intrinsicMinWidth - colGap * math.max(0, span - 1));
-              final double perFlexMinTrack = availableMin / flexCount;
-              for (int c = startCol; c < endCol; c++) {
-                if (flexFactors[c] <= 0) continue;
-                if (perFlexMinTrack > flexMinColSizes[c]) {
-                  flexMinColSizes[c] = perFlexMinTrack;
-                }
-              }
-            }
+            final CSSRenderStyle? childGridStyle = _unwrapGridChildBoxModel(childForIntrinsic)?.renderStyle;
+            final ({double min, double max}) intrinsic =
+                resolveIntrinsicWidthContribution(childForIntrinsic, childGridStyle);
+            applyIntrinsicWidthContributionToColumns(
+              startCol: startCol,
+              span: span,
+              intrinsicMinWidth: intrinsic.min,
+              intrinsicMaxWidth: intrinsic.max,
+            );
           }
           childForIntrinsic = pd.nextSibling;
         }
@@ -3078,6 +3604,7 @@ class RenderGridLayout extends RenderLayoutBox {
       implicitRowHeights = List<double>.filled(implicitRowHeights.length, 0.0, growable: true);
     }
 
+    bool relayoutForSubgridRows = false;
     child = firstChild;
     while (child != null) {
       CSSRenderStyle? childGridStyle;
@@ -3150,6 +3677,18 @@ class RenderGridLayout extends RenderLayoutBox {
 
       Stopwatch? childLayoutSw;
       if (profileGrid) childLayoutSw = Stopwatch()..start();
+      relayoutForSubgridRows = relayoutForSubgridRows ||
+          _configureSubgridContextForGridItem(
+            gridItem: child,
+            parentData: pd,
+            columnSizes: colSizes,
+            columnGap: colGap,
+            columnLineNameMap: columnLineNameMap,
+            rowSizes: rowSizes,
+            implicitRowHeights: implicitRowHeights,
+            rowGap: rowGap,
+            rowLineNameMap: rowLineNameMap,
+          );
       _overrideGridChildContentBoxLogicalSizes(child, childConstraints);
       child.layout(childConstraints, parentUsesSize: true);
       if (childLayoutSw != null) {
@@ -3159,37 +3698,70 @@ class RenderGridLayout extends RenderLayoutBox {
 
       final Size childSize = child.size;
       final double marginBoxHeight = childSize.height + marginVertical;
+
+      bool skipSelfRowContribution = false;
+      final RenderGridLayout? nestedGridForRows = _unwrapGridLayoutChild(child);
+      if (nestedGridForRows != null && _isSubgridTrackList(nestedGridForRows.renderStyle.gridTemplateRows)) {
+        final List<double>? contributions = nestedGridForRows._subgridRowSizeContributions;
+        if (contributions != null && contributions.isNotEmpty) {
+          final int count = math.min(rowSpan, contributions.length);
+          final CSSRenderStyle subgridStyle = nestedGridForRows.renderStyle;
+          final double leadingInset =
+              subgridStyle.paddingTop.computedValue + subgridStyle.effectiveBorderTopWidth.computedValue;
+          final double trailingInset =
+              subgridStyle.paddingBottom.computedValue + subgridStyle.effectiveBorderBottomWidth.computedValue;
+          for (int r = 0; r < count; r++) {
+            final int targetRow = rowIndex + r;
+            if (targetRow < 0 || targetRow >= rowSizes.length) continue;
+            if (rowSizes[targetRow] > 0) continue;
+            if (targetRow >= implicitRowHeights.length) continue;
+            double value = contributions[r];
+            if (!value.isFinite || value <= 0) continue;
+            if (count == 1) {
+              value += leadingInset + trailingInset;
+            } else {
+              if (r == 0) value += leadingInset;
+              if (r == count - 1) value += trailingInset;
+            }
+            implicitRowHeights[targetRow] = math.max(implicitRowHeights[targetRow], value);
+          }
+          skipSelfRowContribution = true;
+        }
+      }
+
       // Resolve implicit/auto row heights from item contributions.
       //
       // When an item spans fixed-size tracks plus implicit/auto tracks, only the
       // remaining height beyond the fixed tracks (and gutters) should be used
       // to grow the implicit/auto tracks. This matches the grid track sizing
       // algorithm where spanning items only increase tracks when necessary.
-      double fixedRowHeight = 0;
-      int flexibleRowCount = 0;
-      for (int r = 0; r < rowSpan; r++) {
-        final int targetRow = rowIndex + r;
-        if (targetRow < 0 || targetRow >= rowSizes.length) {
-          flexibleRowCount++;
-          continue;
-        }
-        final double resolved = rowSizes[targetRow];
-        if (resolved > 0) {
-          fixedRowHeight += resolved;
-        } else {
-          flexibleRowCount++;
-        }
-      }
-      final double gutters = rowGap * math.max(0, rowSpan - 1);
-      final double remaining = math.max(0, marginBoxHeight - fixedRowHeight - gutters);
-      if (flexibleRowCount > 0 && remaining > 0) {
-        final double perRow = remaining / flexibleRowCount;
+      if (!skipSelfRowContribution) {
+        double fixedRowHeight = 0;
+        int flexibleRowCount = 0;
         for (int r = 0; r < rowSpan; r++) {
           final int targetRow = rowIndex + r;
-          if (targetRow < 0 || targetRow >= rowSizes.length) continue;
-          if (rowSizes[targetRow] > 0) continue;
-          if (targetRow >= implicitRowHeights.length) continue;
-          implicitRowHeights[targetRow] = math.max(implicitRowHeights[targetRow], perRow);
+          if (targetRow < 0 || targetRow >= rowSizes.length) {
+            flexibleRowCount++;
+            continue;
+          }
+          final double resolved = rowSizes[targetRow];
+          if (resolved > 0) {
+            fixedRowHeight += resolved;
+          } else {
+            flexibleRowCount++;
+          }
+        }
+        final double gutters = rowGap * math.max(0, rowSpan - 1);
+        final double remaining = math.max(0, marginBoxHeight - fixedRowHeight - gutters);
+        if (flexibleRowCount > 0 && remaining > 0) {
+          final double perRow = remaining / flexibleRowCount;
+          for (int r = 0; r < rowSpan; r++) {
+            final int targetRow = rowIndex + r;
+            if (targetRow < 0 || targetRow >= rowSizes.length) continue;
+            if (rowSizes[targetRow] > 0) continue;
+            if (targetRow >= implicitRowHeights.length) continue;
+            implicitRowHeights[targetRow] = math.max(implicitRowHeights[targetRow], perRow);
+          }
         }
       }
 
@@ -3597,7 +4169,7 @@ class RenderGridLayout extends RenderLayoutBox {
       }
     }
 
-    if (!relayoutForStretchedTracks && relayoutForImplicitRowStretch) {
+    if (!relayoutForStretchedTracks && (relayoutForImplicitRowStretch || relayoutForSubgridRows)) {
       relayoutForStretchedTracks = true;
     }
 
@@ -3670,6 +4242,17 @@ class RenderGridLayout extends RenderLayoutBox {
           innerMaxHeight: innerMaxHeight,
         );
 
+        _configureSubgridContextForGridItem(
+          gridItem: childForRelayout,
+          parentData: pd,
+          columnSizes: colSizes,
+          columnGap: colGap,
+          columnLineNameMap: columnLineNameMap,
+          rowSizes: rowSizes,
+          implicitRowHeights: implicitRowHeights,
+          rowGap: rowGap,
+          rowLineNameMap: rowLineNameMap,
+        );
         _overrideGridChildContentBoxLogicalSizes(childForRelayout, childConstraints);
         childForRelayout.layout(childConstraints, parentUsesSize: true);
         final Size childSize = childForRelayout.size;
@@ -3849,6 +4432,17 @@ class RenderGridLayout extends RenderLayoutBox {
 
     // Compute and cache CSS baselines for the grid container
     calculateBaseline();
+
+    if (useSubgridRows) {
+      final int rowCountForContribution = math.max(rowSizes.length, implicitRowHeights.length);
+      _subgridRowSizeContributions = List<double>.generate(
+        rowCountForContribution,
+        (int index) => _resolvedRowHeight(rowSizes, implicitRowHeights, index),
+        growable: false,
+      );
+    } else {
+      _subgridRowSizeContributions = null;
+    }
 
     totalProfile?.stop();
     if (totalProfile != null) {

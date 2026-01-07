@@ -926,6 +926,11 @@ int _countLineNameOccurrences(List<GridTrackSize> tracks, String name) {
   int count = 0;
   void collect(List<GridTrackSize> list) {
     for (final GridTrackSize track in list) {
+      if (track is GridSubgrid) {
+        for (final List<String> group in track.lineNameGroups) {
+          if (group.contains(name)) count++;
+        }
+      }
       if (track.leadingLineNames.contains(name)) count++;
       if (track.trailingLineNames.contains(name)) count++;
       if (track is GridRepeat) {
@@ -958,6 +963,16 @@ String _gridTrackListToCss(
 }) {
   if (tracks.isEmpty) {
     return templateList ? 'none' : 'auto';
+  }
+  if (tracks.length == 1 && tracks.first is GridSubgrid) {
+    final GridSubgrid subgrid = tracks.first as GridSubgrid;
+    final StringBuffer buffer = StringBuffer('subgrid');
+    for (final List<String> group in subgrid.lineNameGroups) {
+      if (group.isEmpty) continue;
+      buffer.write(' ');
+      buffer.write(_gridLineNamesToCss(group));
+    }
+    return buffer.toString().trim();
   }
   final StringBuffer buffer = StringBuffer();
   for (int i = 0; i < tracks.length; i++) {

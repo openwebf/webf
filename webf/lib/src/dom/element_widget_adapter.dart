@@ -90,18 +90,25 @@ mixin ElementAdapterMixin on ElementBase {
   Element? holderAttachedPositionedElement;
   Element? holderAttachedContainingBlockElement;
 
-  flutter.ScrollController? _scrollControllerX;
-  set scrollControllerX(value) {
-    _scrollControllerX = value;
+  flutter.ScrollController? get scrollControllerX {
+    flutter.ScrollController? controller;
+    (this as Element).forEachState((state) {
+      if (state is WebFElementWidgetState) {
+        controller ??= state._scrollControllerX;
+      }
+    });
+    return controller;
   }
-  flutter.ScrollController? get scrollControllerX => _scrollControllerX;
 
-  flutter.ScrollController? _scrollControllerY;
-  set scrollControllerY(value) {
-    _scrollControllerY = value;
+  flutter.ScrollController? get scrollControllerY {
+    flutter.ScrollController? controller;
+    (this as Element).forEachState((state) {
+      if (state is WebFElementWidgetState) {
+        controller ??= state._scrollControllerY;
+      }
+    });
+    return controller;
   }
-
-  flutter.ScrollController? get scrollControllerY => _scrollControllerY;
 
   final Set<flutter.RenderObjectElement> positionHolderElements = {};
 
@@ -183,6 +190,8 @@ class WebFElementWidget extends flutter.StatefulWidget {
 
 class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutter.AutomaticKeepAliveClientMixin {
   late final Element webFElement;
+  flutter.ScrollController? _scrollControllerX;
+  flutter.ScrollController? _scrollControllerY;
 
   @override
   void initState() {
@@ -303,20 +312,21 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       CSSOverflowType overflowY = webFElement.renderStyle.effectiveOverflowY;
 
       flutter.Widget? scrollableX;
+      flutter.ScrollController? controllerX;
       if (overflowX == CSSOverflowType.scroll ||
           overflowX == CSSOverflowType.auto ||
           overflowX == CSSOverflowType.hidden) {
-        webFElement._scrollControllerX ??= flutter.ScrollController();
+        controllerX = _scrollControllerX ??= flutter.ScrollController();
         final bool xScrollable = overflowX != CSSOverflowType.hidden;
         final bool isRTL = webFElement.renderStyle.direction == TextDirection.rtl;
         scrollableX = LayoutBoxWrapper(
             ownerElement: webFElement,
             child: NestedScrollCoordinator(
                 axis: flutter.Axis.horizontal,
-                controller: webFElement.scrollControllerX!,
+                controller: controllerX,
                 enabled: xScrollable,
                 child: flutter.Scrollable(
-                    controller: webFElement.scrollControllerX,
+                    controller: controllerX,
                     axisDirection: isRTL ? AxisDirection.left : AxisDirection.right,
                     // WebF provides custom overflow scroll semantics from the
                     // render tree (see RenderOverflowMixin.describeOverflowSemantics).
@@ -340,31 +350,33 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       if (overflowY == CSSOverflowType.scroll ||
           overflowY == CSSOverflowType.auto ||
           overflowY == CSSOverflowType.hidden) {
-        webFElement.scrollControllerY ??= flutter.ScrollController();
+        final controllerY = _scrollControllerY ??= flutter.ScrollController();
         final bool yScrollable = overflowY != CSSOverflowType.hidden;
         final bool xScrollable = overflowX != CSSOverflowType.hidden;
         widget = LayoutBoxWrapper(
             ownerElement: webFElement,
             child: NestedScrollCoordinator(
                 axis: flutter.Axis.vertical,
-                controller: webFElement.scrollControllerY!,
+                controller: controllerY,
                 enabled: yScrollable,
                 child: flutter.Scrollable(
                     axisDirection: AxisDirection.down,
                     physics: yScrollable ? const flutter.ClampingScrollPhysics() : const flutter.NeverScrollableScrollPhysics(),
-                    controller: webFElement.scrollControllerY,
+                    controller: controllerY,
                     // See note above for overflow scroll semantics ownership.
                     excludeFromSemantics: true,
                     viewportBuilder: (flutter.BuildContext context, ViewportOffset positionY) {
                       if (scrollableX != null) {
                         final bool isRTL = webFElement.renderStyle.direction == TextDirection.rtl;
+                        final controllerXForNested =
+                            controllerX ?? (_scrollControllerX ??= flutter.ScrollController());
                         return NestedScrollCoordinator(
                             axis: flutter.Axis.horizontal,
-                            controller: webFElement.scrollControllerX!,
+                            controller: controllerXForNested,
                             // Base on effective overflow to honor visible->auto conversion
                             enabled: (webFElement.renderStyle.effectiveOverflowX != CSSOverflowType.hidden),
                             child: flutter.Scrollable(
-                                controller: webFElement.scrollControllerX,
+                                controller: controllerXForNested,
                                 axisDirection: isRTL ? AxisDirection.left : AxisDirection.right,
                                 excludeFromSemantics: true,
                                 physics: xScrollable ? const flutter.ClampingScrollPhysics() : const flutter.NeverScrollableScrollPhysics(),
@@ -399,8 +411,8 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
 
     // Expose this element's scroll controllers to descendants to enable nested scrolling.
     final wrapped = NestedScrollForwarder(
-      verticalController: webFElement.scrollControllerY,
-      horizontalController: webFElement.scrollControllerX,
+      verticalController: _scrollControllerY,
+      horizontalController: _scrollControllerX,
       child: widget,
     );
 
@@ -426,10 +438,10 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
   @override
   void dispose() {
     webFElement.removeState(this);
-    webFElement._scrollControllerY?.dispose();
-    webFElement._scrollControllerY = null;
-    webFElement._scrollControllerX?.dispose();
-    webFElement._scrollControllerX = null;
+    _scrollControllerY?.dispose();
+    _scrollControllerY = null;
+    _scrollControllerX?.dispose();
+    _scrollControllerX = null;
     super.dispose();
   }
 

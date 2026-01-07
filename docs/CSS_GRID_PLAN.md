@@ -14,7 +14,7 @@
 - **Testing:** Add Flutter widget tests for parsing/layout, plus integration specs (snapshot + computed assertions) per phase; maintain `dev_css_grid_process.md`.
 
 **Non-Goals**
-- **CSS Grid Level 2+:** Subgrid, masonry layout, and advanced layout modules are out of scope for the initial landing.
+- **CSS Grid Level 2+:** Masonry layout and other advanced layout modules (excluding Subgrid) are out of scope.
 - **Legacy Layout Rewrite:** Flexbox/flow engines remain untouched except for interoperability tweaks (blockification, gap invalidation, etc.).
 - **Full bridge evaluation:** Keep grid logic in Dart/Flutter; no C++/bridge layout rewrite.
 
@@ -75,7 +75,7 @@
 Track sizing/placement for MVP grids now ships with widget + integration coverage, and per-item alignment plumbing is partially in-tree. Upcoming focus areas:
 
 1. Begin Phase 5 hardening by profiling `RenderGridLayout` hot paths (auto-placement + track resolution), enumerating slow cases, and sketching caching/intrinsic sizing fixes.
-2. Implement the `grid` shorthand property (per MDN / CSS Grid 1) as a thin layer over existing longhands (`grid-template-*`, `grid-auto-*`), covering the common `none`, template, and auto-flow forms and deferring subgrid/masonry keywords per non-goals.
+2. Implement the `grid` shorthand property (per MDN / CSS Grid 1) as a thin layer over existing longhands (`grid-template-*`, `grid-auto-*`), covering the common `none`, template, and auto-flow forms and deferring the masonry keyword per non-goals.
 3. Add a basic `grid-template` shorthand (rows/columns/areas) parser to align with authors' expectations for shorthand usage while still delegating storage to existing typed fields.
 4. Expand track-size parsing to gracefully ignore unsupported keywords like `min-content`/`max-content` in grid track lists (where they are not yet wired into layout), and document the current support level in `dev_css_grid_process.md`.
 5. Stress-test grid layouts inside representative app flows (dashboard, list virtualization) to validate performance/behavioral stability before GA.
@@ -92,12 +92,13 @@ Track sizing/placement for MVP grids now ships with widget + integration coverag
 - [x] Complete computed-style serialization and integration specs for grid properties.
 - [x] Profile and harden grid layout (Phase 5), updating docs/examples.
 - [x] Add `grid` and `grid-template` shorthands on top of existing longhands, with focused integration specs under `integration_tests/specs/css/css-grid`.
+- [x] Implement Subgrid (Phase 9) support + integration coverage.
 
 ---
 
 ## Part 2: Integration Testing Plan (WPT-Based)
 
-**Last Updated:** 2025-12-29
+**Last Updated:** 2026-01-06
 
 ### Overview
 
@@ -121,7 +122,7 @@ This section provides a comprehensive plan to add integration tests for WebF's C
 10. `computed-style.ts` - Computed styles
 11. `template-areas-overlap.ts` - Template area overlaps
 
-#### Completed Test Coverage (Phase 1-8) ✅
+#### Completed Test Coverage (Phase 1-9) ✅
 
 **Phase 1: Grid Definition & Track Sizing** (10 files, 89 tests) ✅
 - `grid-definition/explicit-tracks.ts` (8 tests)
@@ -205,7 +206,23 @@ This section provides a comprehensive plan to add integration tests for WebF's C
 - `edge-cases/extreme-values.ts` (6 tests)
 - `edge-cases/rtl-support.ts` (6 tests)
 
-**Total Completed: 77 files, 529 integration tests** ✅
+**Phase 9: Subgrid (CSS Grid Level 2)** (14 files, 68 tests) ✅
+- `subgrid/basic.ts` (2 tests)
+- `subgrid/abspos.ts` (3 tests)
+- `subgrid/alignment.ts` (4 tests)
+- `subgrid/auto-placement.ts` (4 tests)
+- `subgrid/explicit-placement.ts` (4 tests)
+- `subgrid/nested-subgrids.ts` (4 tests)
+- `subgrid/named-lines.ts` (5 tests)
+- `subgrid/axis-combinations.ts` (6 tests)
+- `subgrid/basic-inheritance.ts` (6 tests)
+- `subgrid/gap-inheritance.ts` (6 tests)
+- `subgrid/intrinsic-sizing.ts` (6 tests)
+- `subgrid/mixed-tracks.ts` (6 tests)
+- `subgrid/spanning-subgrid.ts` (6 tests)
+- `subgrid/track-sizing-contribution.ts` (6 tests)
+
+**Total Completed: 91 files, 597 integration tests** ✅
 
 #### Updated WPT Test Distribution
 | Category | Test Count | Percentage | WebF Coverage |
@@ -214,7 +231,7 @@ This section provides a comprehensive plan to add integration tests for WebF's C
 | Alignment | 476 | 20% | ✅ **Good** (90 tests) |
 | Abspos | 303 | 13% | ✅ **Good** (35 tests) |
 | Grid Items | 205 | 9% | ✅ **Good** (106 tests) |
-| Subgrid | 175 | 7% | ❌ Out of scope |
+| Subgrid | 175 | 7% | ✅ **Good** (68 tests) |
 | Grid Definition | 82 | 3% | ✅ **Excellent** (89 tests) |
 | Grid Model | 81 | 3% | ✅ **Good** (48 tests) |
 | Parsing | 61 | 3% | ✅ **Good** (48 tests) |
@@ -226,7 +243,7 @@ This section provides a comprehensive plan to add integration tests for WebF's C
 **Updated Findings:**
 - ✅ **Excellent Coverage:** Grid definition, track sizing, placement, alignment, implicit grids, absolute positioning
 - ✅ **Good Coverage:** Grid items, grid model, parsing, layout algorithm, animations
-- ❌ **Out of Scope:** Subgrid (CSS Grid Level 2)
+- ✅ **Subgrid:** Core CSS Grid Level 2 subgrid behaviors covered via Phase 9 integration specs.
 
 ### Integration Testing Phases
 
@@ -688,6 +705,39 @@ describe('CSS Grid safe/unsafe alignment', () => {
 
 ---
 
+### Phase 9: Subgrid Support (CSS Grid Level 2) ✅ COMPLETED
+**Result:** 14 test files, 68 tests
+**Priority:** 🟡 MEDIUM
+
+**Files Created:**
+- `subgrid/basic.ts` (2 tests)
+- `subgrid/abspos.ts` (3 tests)
+- `subgrid/alignment.ts` (4 tests)
+- `subgrid/auto-placement.ts` (4 tests)
+- `subgrid/explicit-placement.ts` (4 tests)
+- `subgrid/nested-subgrids.ts` (4 tests)
+- `subgrid/named-lines.ts` (5 tests)
+- `subgrid/axis-combinations.ts` (6 tests)
+- `subgrid/basic-inheritance.ts` (6 tests)
+- `subgrid/gap-inheritance.ts` (6 tests)
+- `subgrid/intrinsic-sizing.ts` (6 tests)
+- `subgrid/mixed-tracks.ts` (6 tests)
+- `subgrid/spanning-subgrid.ts` (6 tests)
+- `subgrid/track-sizing-contribution.ts` (6 tests)
+
+**Coverage Notes:**
+- Covers inherited track sizing (including `auto`, `min-content`, `max-content`, `fr`), gap + named line inheritance, explicit/auto placement, nested subgrids, alignment, and abspos interactions.
+- Follow-up: Continue porting/aligning toward the full WPT subgrid suite (175 tests) as needed.
+
+#### References
+
+- [CSS Grid Level 2 Spec - Subgrid](https://drafts.csswg.org/css-grid-2/#subgrids)
+- [MDN: CSS Subgrid](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_grid_layout/Subgrid)
+- [WPT Subgrid Tests](https://github.com/web-platform-tests/wpt/tree/master/css/css-grid/subgrid) (175 tests)
+- [Can I Use: Subgrid](https://caniuse.com/css-subgrid) (91%+ global support)
+
+---
+
 ### Test Implementation Guidelines
 
 #### Standard Test Template
@@ -751,20 +801,22 @@ describe('CSS Grid <feature>', () => {
 | Phase 6 | 8 | 48 | ✅ Complete | 🟢 LOW |
 | Phase 7 | 6 | 35 | ✅ Complete | 🟢 LOW |
 | Phase 8 | 5 | 30 | ✅ Complete | 🟢 LOW |
-| **COMPLETED** | **77** | **529** | ✅ | - |
+| Phase 9 | 14 | 68 | ✅ Complete | 🟡 MEDIUM |
+| **COMPLETED** | **91** | **597** | ✅ | - |
 
 ### Success Metrics
 
-- ✅ **Minimum 500 integration tests:** 529 tests completed (106% of target) 🎉
+- ✅ **Minimum 500 integration tests:** 597 tests completed (119% of target) 🎉
 - ✅ **All P0/P1 features tested:** Grid definition, track sizing, placement, alignment, implicit grids, absolute positioning all complete
 - ✅ **100% of implemented features have tests:** All core CSS Grid Level 1 features covered
 - ✅ **Visual regression coverage:** All tests include snapshot() for visual regression
 - ✅ **Computed style validation:** Comprehensive getComputedStyle() testing in place
-- ✅ **All phases complete:** Phases 1-8 complete including advanced features and edge cases
+- ✅ **All phases complete:** Phases 1-9 complete including advanced features, edge cases, and subgrid
 - ✅ **Animation coverage:** Track size and gap transitions tested
 - ✅ **Layout algorithm edge cases:** Sizing resolution and circular dependencies tested
 - ✅ **Interaction testing:** Nested grids and grid-in-flex scenarios covered
 - ✅ **RTL support:** Right-to-left layout direction fully tested
+- ✅ **Subgrid (Phase 9):** Covered by 14 integration spec files (68 tests)
 
 ### Running Tests
 

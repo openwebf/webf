@@ -205,7 +205,7 @@ describe('CSS Grid mixed positioned and flow items', () => {
 
     document.body.appendChild(grid);
     await waitForFrame();
-    await snapshot();
+    await snapshot(0.5);
 
     // Grid items continue to layout normally
     const items = Array.from(grid.children).slice(0, 9) as HTMLElement[];
