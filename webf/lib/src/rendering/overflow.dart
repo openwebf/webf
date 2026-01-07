@@ -467,16 +467,16 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     }
 
     // Semantic scroll-to-offset for implicit scrolling.
-    config.onScrollToOffset = (Offset targetOffset) {
-      if (yScrollable && scrollOffsetY != null) {
-        final double targetY = targetOffset.dy.clamp(0.0, maxY).toDouble();
-        scrollOffsetY!.jumpTo(targetY);
-      }
-      if (xScrollable && scrollOffsetX != null) {
-        final double targetX = targetOffset.dx.clamp(0.0, maxX).toDouble();
-        scrollOffsetX!.jumpTo(targetX);
-      }
-    };
+    // config.onScrollToOffset = (Offset targetOffset) {
+    //   if (yScrollable && scrollOffsetY != null) {
+    //     final double targetY = targetOffset.dy.clamp(0.0, maxY).toDouble();
+    //     scrollOffsetY!.jumpTo(targetY);
+    //   }
+    //   if (xScrollable && scrollOffsetX != null) {
+    //     final double targetX = targetOffset.dx.clamp(0.0, maxX).toDouble();
+    //     scrollOffsetX!.jumpTo(targetX);
+    //   }
+    // };
 
     // Semantic scroll actions (RenderSemanticsGestureHandler-like behavior).
     if (yScrollable && scrollOffsetY != null && maxY > 0.0 && hasSize) {

@@ -5,7 +5,7 @@ homepage: https://openwebf.com
 license: GPL-3.0-only
 environment:
   sdk: ">=3.0.0 <4.0.0"
-  flutter: ">=3.29.0"
+  flutter: ">=3.27.0"
 
 dependencies:
   flutter:
