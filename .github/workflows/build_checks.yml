@@ -102,6 +102,12 @@ jobs:
           flutter --version
           pod --version
 
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Generate binding code
+        run: npm run bindgen
+
       - name: Get Flutter dependencies
         run: |
           cd webf/example

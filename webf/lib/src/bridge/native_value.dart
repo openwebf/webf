@@ -12,6 +12,7 @@ import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/geometry/dom_point.dart';
 import 'package:webf/src/html/canvas/canvas_context.dart';
@@ -136,8 +137,12 @@ final class JSFunction {
     }
 
     if (isContextDedicatedThread(_view.contextId) && isJSThreadBlocked(_view.contextId)) {
-      return Future.error(StateError(
-          'Cannot invoke JS callbacks while the JS thread is blocked; call from an async binding method instead.'));
+      Completer completer = Completer();
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        completer.complete(invoke(args));
+      });
+      SchedulerBinding.instance.scheduleFrame();
+      return completer.future;
     }
 
     final completer = Completer<dynamic>();

@@ -2700,7 +2700,17 @@ class CSSRenderStyle extends RenderStyle
             } catch (_) {}
 
             if (childWrapper != null && maxConstraintWidth != null && maxConstraintWidth.isFinite) {
-              logicalWidth = maxConstraintWidth;
+              // Prefer the smaller (more restrictive) containing block width:
+              // - Widget subtree constraints can differ from CSS logical width when an element
+              //   is mounted into multiple Flutter subtrees simultaneously.
+              // - Widget elements may also apply CSS padding/max-width, making the logical
+              //   content width smaller than the raw Flutter constraints.
+              final double? parentContentLogicalWidth = parentStyle.contentBoxLogicalWidth;
+              if (parentContentLogicalWidth != null && parentContentLogicalWidth.isFinite) {
+                logicalWidth = math.min(maxConstraintWidth, parentContentLogicalWidth);
+              } else {
+                logicalWidth = maxConstraintWidth;
+              }
             }
             // If there is no WebFWidgetElementChild (or no constraints yet),
             // fall through and let the parent (flex) constraints logic handle it.
@@ -2738,7 +2748,12 @@ class CSSRenderStyle extends RenderStyle
                 childWrapper != null &&
                 maxConstraintWidth != null &&
                 maxConstraintWidth.isFinite) {
-              logicalWidth = maxConstraintWidth;
+              final double? ancestorContentLogicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
+              if (ancestorContentLogicalWidth != null && ancestorContentLogicalWidth.isFinite) {
+                logicalWidth = math.min(maxConstraintWidth, ancestorContentLogicalWidth);
+              } else {
+                logicalWidth = maxConstraintWidth;
+              }
             } else {
               logicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
             }
