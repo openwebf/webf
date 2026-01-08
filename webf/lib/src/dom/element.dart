@@ -2097,8 +2097,10 @@ abstract class Element extends ContainerNode
   }
 
   void _applyPseudoStyle(ElementCSSStyleDeclaration style) {
-    List<CSSStyleRule> pseudoRules =
-        _elementRuleCollector.matchedPseudoRules(ownerDocument.ruleSet, this);
+    final RuleSet ruleSet = ownerDocument.ruleSet;
+    if (!ruleSet.hasPseudoElementSelectors) return;
+
+    final List<CSSStyleRule> pseudoRules = _elementRuleCollector.matchedPseudoRules(ruleSet, this);
     style.handlePseudoRules(this, pseudoRules);
   }
 
