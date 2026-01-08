@@ -156,8 +156,11 @@ class LIElement extends Element {
     }
 
     // 7) Pseudo rules (::before/::after) from stylesheets to override defaults.
-    final List<CSSStyleRule> pseudoRules = collector.matchedPseudoRules(ownerDocument.ruleSet, this);
-    style.handlePseudoRules(this, pseudoRules);
+    final RuleSet ruleSet = ownerDocument.ruleSet;
+    if (ruleSet.hasPseudoElementSelectors) {
+      final List<CSSStyleRule> pseudoRules = collector.matchedPseudoRules(ruleSet, this);
+      style.handlePseudoRules(this, pseudoRules);
+    }
 
     // 8) List marker generation based on list-style-type
     String getProp(CSSStyleDeclaration s, String camel, String kebab) {
