@@ -145,8 +145,22 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     _properties[propertyName] = value;
   }
 
-  Map<String, CSSPropertyValue> _effectivePropertiesSnapshot() {
-    return Map<String, CSSPropertyValue>.from(_properties);
+  List<String> _effectivePropertyNamesSnapshot() => _properties.keys.toList(growable: false);
+
+  static bool _samePropertyValue(CSSPropertyValue? a, CSSPropertyValue? b) {
+    if (identical(a, b)) return true;
+    if (a == null && b == null) return true;
+    if (a == null || b == null) return false;
+    return a.value == b.value &&
+        a.baseHref == b.baseHref &&
+        a.important == b.important &&
+        a.propertyType == b.propertyType;
+  }
+
+  static int _cascadePriority(CSSPropertyValue value) {
+    int priority = value.important ? 2 : 0;
+    if (value.propertyType == PropertyType.inline) priority += 1;
+    return priority;
   }
 
   /// Textual representation of the declaration block.
@@ -659,23 +673,16 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
   // Inserts the style of the given Declaration into the current Declaration.
   void union(CSSStyleDeclaration declaration) {
-    bool wins(CSSPropertyValue other, CSSPropertyValue? current) {
-      if (current == null) return true;
-      if (current.important && !other.important) return false;
-      if (!current.important && other.important) return true;
-      // Same importance: inline beats sheet.
-      if (current.propertyType == PropertyType.inline && other.propertyType == PropertyType.sheet) {
-        return false;
-      }
-      return true;
-    }
-
     for (final MapEntry<String, CSSPropertyValue> entry in declaration) {
       final String propertyName = entry.key;
       final CSSPropertyValue otherValue = entry.value;
       final CSSPropertyValue? currentValue = _getEffectivePropertyValueEntry(propertyName);
-      if (!wins(otherValue, currentValue)) continue;
-      if (currentValue != otherValue) {
+      if (currentValue != null) {
+        final int otherPriority = _cascadePriority(otherValue);
+        final int currentPriority = _cascadePriority(currentValue);
+        if (otherPriority < currentPriority) continue;
+      }
+      if (!identical(currentValue, otherValue)) {
         _setStagedPropertyValue(propertyName, otherValue);
       }
     }
@@ -683,43 +690,42 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
   // Merge the difference between the declarations and return the updated status
   bool merge(CSSStyleDeclaration other) {
-    final Map<String, CSSPropertyValue> properties = _effectivePropertiesSnapshot();
-    final Map<String, CSSPropertyValue> otherProperties = other._effectivePropertiesSnapshot();
+    final List<String> properties = _effectivePropertyNamesSnapshot();
     bool updateStatus = false;
 
-    bool sameValue(CSSPropertyValue? a, CSSPropertyValue? b) {
-      if (a == null && b == null) return true;
-      if (a == null || b == null) return false;
-      return a.value == b.value &&
-          a.baseHref == b.baseHref &&
-          a.important == b.important &&
-          a.propertyType == b.propertyType;
-    }
-
-    for (final MapEntry<String, CSSPropertyValue> entry in properties.entries) {
+    // Apply updates + additions based on `other`.
+    for (final MapEntry<String, CSSPropertyValue> entry in other) {
       final String propertyName = entry.key;
-      final CSSPropertyValue? prevValue = entry.value;
-      final CSSPropertyValue? currentValue = otherProperties[propertyName];
+      final CSSPropertyValue otherValue = entry.value;
+      final CSSPropertyValue? prevValue = _getEffectivePropertyValueEntry(propertyName);
 
-      if (isNullOrEmptyValue(prevValue) && isNullOrEmptyValue(currentValue)) {
-        continue;
-      } else if (!isNullOrEmptyValue(prevValue) && isNullOrEmptyValue(currentValue)) {
-        // Remove property.
-        removeProperty(propertyName, prevValue?.important == true ? true : null);
+      // Mirror previous behavior: if the property does not exist on `this`,
+      // stage the incoming value directly (even when empty).
+      if (prevValue == null) {
+        _setStagedPropertyValue(propertyName, otherValue);
         updateStatus = true;
-      } else if (!sameValue(prevValue, currentValue)) {
-        // Update property.
-        if (currentValue != null) {
-          _setStagedPropertyValue(propertyName, currentValue);
-          updateStatus = true;
-        }
+        continue;
+      }
+
+      if (isNullOrEmptyValue(prevValue) && isNullOrEmptyValue(otherValue)) {
+        continue;
+      } else if (!isNullOrEmptyValue(prevValue) && isNullOrEmptyValue(otherValue)) {
+        // Remove property.
+        removeProperty(propertyName, prevValue.important ? true : null);
+        updateStatus = true;
+      } else if (!_samePropertyValue(prevValue, otherValue)) {
+        _setStagedPropertyValue(propertyName, otherValue);
+        updateStatus = true;
       }
     }
 
-    for (final MapEntry<String, CSSPropertyValue> entry in otherProperties.entries) {
-      final String propertyName = entry.key;
-      if (properties.containsKey(propertyName)) continue;
-      _setStagedPropertyValue(propertyName, entry.value);
+    // Remove properties missing in `other`.
+    for (final String propertyName in properties) {
+      final CSSPropertyValue? prevValue = _getEffectivePropertyValueEntry(propertyName);
+      if (isNullOrEmptyValue(prevValue)) continue;
+      if (other._getEffectivePropertyValueEntry(propertyName) != null) continue;
+
+      removeProperty(propertyName, prevValue?.important == true ? true : null);
       updateStatus = true;
     }
 
@@ -797,11 +803,15 @@ class ElementCSSStyleDeclaration extends CSSStyleDeclaration{
   }
 
   @override
-  Map<String, CSSPropertyValue> _effectivePropertiesSnapshot() {
-    if (_pendingProperties.isEmpty) return Map<String, CSSPropertyValue>.from(_properties);
-    final Map<String, CSSPropertyValue> properties = Map<String, CSSPropertyValue>.from(_properties);
-    properties.addAll(_pendingProperties);
-    return properties;
+  List<String> _effectivePropertyNamesSnapshot() {
+    if (_pendingProperties.isEmpty) return _properties.keys.toList(growable: false);
+    if (_properties.isEmpty) return _pendingProperties.keys.toList(growable: false);
+
+    final List<String> keys = _properties.keys.toList(growable: true);
+    for (final String key in _pendingProperties.keys) {
+      if (!_properties.containsKey(key)) keys.add(key);
+    }
+    return keys;
   }
 
   bool get hasInheritedPendingProperty {
