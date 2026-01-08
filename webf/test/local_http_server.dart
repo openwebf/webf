@@ -6,6 +6,7 @@
  */
 
 import 'dart:convert';
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
@@ -33,14 +34,21 @@ class LocalHttpServer {
 
   static String basePath = 'assets';
 
-  final int port = _randomPort();
+  int port = _randomPort();
   ServerSocket? _server;
 
   Uri getUri([String? path]) {
     return Uri.http('${InternetAddress.loopbackIPv4.host}:$port', path ?? '');
   }
 
-  void _startServer() {
+  static bool _isAddressInUse(SocketException error) {
+    final int? code = error.osError?.errorCode;
+    if (code == 48 || code == 98) return true; // macOS/Linux EADDRINUSE
+    final String message = error.message.toLowerCase();
+    return message.contains('address already in use');
+  }
+
+  void _startServer([int attempt = 0]) {
     ServerSocket.bind(InternetAddress.loopbackIPv4, port).then((ServerSocket server) {
       _server = server;
       server.listen((Socket socket) {
@@ -101,6 +109,13 @@ class LocalHttpServer {
           print('$error $stackTrace');
         });
       });
+    }).catchError((Object error, StackTrace stackTrace) {
+      if (error is SocketException && _isAddressInUse(error) && attempt < 20) {
+        port = _randomPort();
+        _startServer(attempt + 1);
+        return;
+      }
+      Zone.current.handleUncaughtError(error, stackTrace);
     });
   }
 

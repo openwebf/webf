@@ -279,7 +279,7 @@ static JSValue syncThreadBuffer(JSContext* ctx, JSValueConst this_val, int argc,
   // NOTE: if we snapshot after document.body.appendChild, we may not get all styles as
   // the style recalc cannot catch up the UICommand flush. This is a work-ground of the issue.
   // `__webf_sync_buffer__` is used by the snapshot test harness to flush pending UI commands.
-  // Ensure declared-value styles are recalculated and emitted as `kSetStyle` commands before syncing.
+  // Ensure declared-value styles are recalculated and emitted as `kSetInlineStyle` commands before syncing.
   if (context != nullptr && context->isBlinkEnabled()) {
     if (auto* document = context->document()) {
       MemberMutationScope scope{context};

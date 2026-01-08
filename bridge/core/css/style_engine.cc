@@ -1339,7 +1339,8 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
             } else {
               payload->href = nullptr;
             }
-            ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(key_ns), element->bindingObject(),
+            payload->important = prop.IsImportant() ? 1 : 0;
+            ctx->uiCommandBuffer()->AddCommand(UICommand::kSetInlineStyle, std::move(key_ns), element->bindingObject(),
                                                payload);
             continue;
           }
@@ -1704,7 +1705,9 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
             } else {
               payload->href = nullptr;
             }
-            ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(key_ns), el->bindingObject(), payload);
+            payload->important = prop.IsImportant() ? 1 : 0;
+            ctx->uiCommandBuffer()->AddCommand(UICommand::kSetInlineStyle, std::move(key_ns), el->bindingObject(),
+                                               payload);
             continue;
           }
 

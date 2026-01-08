@@ -65,7 +65,7 @@ final class UICommandItemFFI extends Struct {
   external int nativePtr2;
 }
 
-bool enableWebFCommandLog = !kReleaseMode && Platform.environment['ENABLE_WEBF_JS_LOG'] == 'true';
+bool enableWebFCommandLog = false || !kReleaseMode && Platform.environment['ENABLE_WEBF_JS_LOG'] == 'true';
 
 typedef NativeFreeActiveCommandBuffer = Void Function(Pointer<Void>);
 typedef DartFreeActiveCommandBuffer = void Function(Pointer<Void>);
@@ -136,15 +136,17 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
     if (enableWebFCommandLog) {
       String printMsg;
       switch(command.type) {
-        case UICommandType.setStyle:
+        case UICommandType.setInlineStyle:
           String? valueLog;
           String? baseHrefLog;
+          int? importantLog;
           if (command.nativePtr2 != nullptr) {
             try {
               final Pointer<NativeStyleValueWithHref> payload =
                   command.nativePtr2.cast<NativeStyleValueWithHref>();
               final Pointer<NativeString> valuePtr = payload.ref.value;
               final Pointer<NativeString> hrefPtr = payload.ref.href;
+              importantLog = payload.ref.important;
               if (valuePtr != nullptr) {
                 valueLog = nativeStringToString(valuePtr);
               }
@@ -154,10 +156,11 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
             } catch (_) {
               valueLog = '<error>';
               baseHrefLog = '<error>';
+              importantLog = null;
             }
           }
           printMsg =
-              'nativePtr: ${command.nativePtr} type: ${command.type} key: ${command.args} value: $valueLog baseHref: ${baseHrefLog ?? 'null'}';
+              'nativePtr: ${command.nativePtr} type: ${command.type} key: ${command.args} value: $valueLog important: ${importantLog ?? 0} baseHref: ${baseHrefLog ?? 'null'}';
           break;
         case UICommandType.setStyleById:
           final String keyLog = blinkStylePropertyNameFromId(command.stylePropertyId);
@@ -298,14 +301,16 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
         case UICommandType.cloneNode:
           view.cloneNode(nativePtr.cast<NativeBindingObject>(), command.nativePtr2.cast<NativeBindingObject>());
           break;
-        case UICommandType.setStyle:
+        case UICommandType.setInlineStyle:
           String value = '';
           String? baseHref;
+          bool important = false;
           if (command.nativePtr2 != nullptr) {
             final Pointer<NativeStyleValueWithHref> payload =
                 command.nativePtr2.cast<NativeStyleValueWithHref>();
             final Pointer<NativeString> valuePtr = payload.ref.value;
             final Pointer<NativeString> hrefPtr = payload.ref.href;
+            important = payload.ref.important == 1;
             if (valuePtr != nullptr) {
               final Pointer<NativeString> nativeValue = valuePtr.cast<NativeString>();
               value = nativeStringToString(nativeValue);
@@ -320,7 +325,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
             malloc.free(payload);
           }
 
-          view.setInlineStyle(nativePtr, command.args, value, baseHref: baseHref);
+          view.setInlineStyle(nativePtr, command.args, value, baseHref: baseHref, important: important);
           pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
         case UICommandType.setStyleById:

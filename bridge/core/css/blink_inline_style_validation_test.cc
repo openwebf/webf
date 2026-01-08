@@ -53,7 +53,7 @@ bool HasSetStyleWithKeyValue(ExecutingContext* context, const std::string& key, 
   auto* items = static_cast<UICommandItem*>(pack->data);
   for (int64_t i = 0; i < pack->length; ++i) {
     const UICommandItem& item = items[i];
-    if (item.type == static_cast<int32_t>(UICommand::kSetStyle)) {
+    if (item.type == static_cast<int32_t>(UICommand::kSetInlineStyle)) {
       if (CommandArg01ToUTF8(item) != key) {
         continue;
       }

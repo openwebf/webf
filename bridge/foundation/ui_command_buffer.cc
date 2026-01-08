@@ -34,7 +34,7 @@ UICommandKind GetKindFromUICommand(UICommand command) {
     case UICommand::kAddEvent:
     case UICommand::kRemoveEvent:
       return UICommandKind::kEvent;
-    case UICommand::kSetStyle:
+    case UICommand::kSetInlineStyle:
     case UICommand::kSetStyleById:
     case UICommand::kSetPseudoStyle:
     case UICommand::kRemovePseudoStyle:
