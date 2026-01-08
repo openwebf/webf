@@ -90,8 +90,16 @@ class RenderWidgetElementChild extends RenderProxyBox {
     _effectiveChildConstraints = effective;
 
     if (c is RenderBoxModel) {
-      c.renderStyle.computeContentBoxLogicalWidth();
-      c.renderStyle.computeContentBoxLogicalHeight();
+      // Ensure CSS sizing queries resolve constraints against the *current*
+      // render subtree when the same DOM element is mounted into multiple
+      // Flutter widget subtrees (e.g. CupertinoContextMenu preview/modal).
+      renderBoxModelInLayoutStack.add(c);
+      try {
+        c.renderStyle.computeContentBoxLogicalWidth();
+        c.renderStyle.computeContentBoxLogicalHeight();
+      } finally {
+        renderBoxModelInLayoutStack.removeLast();
+      }
     }
 
     if (c != null) {

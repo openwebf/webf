@@ -367,7 +367,15 @@ class CSSLengthValue {
 
         // Override the contentBoxWidth
         if (shouldInheritRenderWidgetElementConstraintsWidth) {
-          parentContentBoxWidth = parentWidgetConstraintWidth;
+          if (parentWidgetConstraintWidth != null && parentWidgetConstraintWidth.isFinite) {
+            if (parentContentBoxWidth == null || !parentContentBoxWidth.isFinite) {
+              parentContentBoxWidth = parentWidgetConstraintWidth;
+            } else {
+              parentContentBoxWidth = parentContentBoxWidth < parentWidgetConstraintWidth
+                  ? parentContentBoxWidth
+                  : parentWidgetConstraintWidth;
+            }
+          }
         }
 
         // Percentage relative height priority: logical height > renderer height.
@@ -388,8 +396,23 @@ class CSSLengthValue {
         double? parentContentBoxLogicalHeight = parentRenderStyle?.contentBoxLogicalHeight;
 
         if (shouldInheritRenderWidgetElementConstraintsHeight) {
-          parentContentBoxHeight = parentWidgetConstraintHeight;
-          parentContentBoxLogicalHeight = parentWidgetConstraintHeight;
+          if (parentWidgetConstraintHeight != null && parentWidgetConstraintHeight.isFinite) {
+            if (parentContentBoxHeight == null || !parentContentBoxHeight.isFinite) {
+              parentContentBoxHeight = parentWidgetConstraintHeight;
+            } else {
+              parentContentBoxHeight = parentContentBoxHeight < parentWidgetConstraintHeight
+                  ? parentContentBoxHeight
+                  : parentWidgetConstraintHeight;
+            }
+
+            if (parentContentBoxLogicalHeight == null || !parentContentBoxLogicalHeight.isFinite) {
+              parentContentBoxLogicalHeight = parentWidgetConstraintHeight;
+            } else {
+              parentContentBoxLogicalHeight = parentContentBoxLogicalHeight < parentWidgetConstraintHeight
+                  ? parentContentBoxLogicalHeight
+                  : parentWidgetConstraintHeight;
+            }
+          }
         }
 
         // Positioned element is positioned relative to the padding box of its containing block

@@ -9,7 +9,7 @@ importers:
   .:
     dependencies:
       '@openwebf/react-core-ui':
-        specifier: ^0.2.9
+        specifier: ^0.2.13
         version: 0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@openwebf/react-cupertino-ui':
         specifier: ^0.3.35
