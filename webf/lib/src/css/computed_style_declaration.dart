@@ -99,11 +99,11 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
     return _valueForPropertyInStyle(propertyID, needUpdateStyle: true);
   }
 
-  @override
   void setProperty(
     String propertyName,
     String? value, {
     bool? isImportant,
+    PropertyType? propertyType,
     String? baseHref,
     bool validate = true,
   }) {

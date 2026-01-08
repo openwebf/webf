@@ -260,7 +260,7 @@ class ElementRuleCollector {
 
   CSSStyleDeclaration collectionFromRuleSet(RuleSet ruleSet, Element element) {
     final rules = matchedRules(ruleSet, element);
-    CSSStyleDeclaration declaration = CSSStyleDeclaration();
+    CSSStyleDeclaration declaration = CSSStyleDeclaration.sheet();
     if (rules.isEmpty) {
       return declaration;
     }

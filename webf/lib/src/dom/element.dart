@@ -133,13 +133,13 @@ abstract class Element extends ContainerNode
   final Map<String, String> attributes = <String, String>{};
 
   /// The style of the element, not inline style.
-  late CSSStyleDeclaration style;
+  late ElementCSSStyleDeclaration style;
 
   /// The default user-agent style.
   Map<String, dynamic> get defaultStyle => {};
 
-  /// The inline style is a map of style property name to style property value.
-  final Map<String, dynamic> inlineStyle = {};
+  /// The inline style is a map of style property name to value/importance.
+  final Map<String, InlineStyleEntry> inlineStyle = {};
 
   /// The StatefulElements that holding the reference of this elements
   @flutter.protected
@@ -251,8 +251,7 @@ abstract class Element extends ContainerNode
 
   Element(BindingContext? context) : super(NodeType.ELEMENT_NODE, context) {
     // Init style and add change listener.
-    style = CSSStyleDeclaration.computedStyle(
-        this, defaultStyle, _onStyleChanged, _onStyleFlushed);
+    style = ElementCSSStyleDeclaration.computedStyle(this, defaultStyle, _onStyleChanged, _onStyleFlushed);
 
     // Init render style.
     renderStyle = CSSRenderStyle(target: this);
@@ -1476,7 +1475,8 @@ abstract class Element extends ContainerNode
       propertyHandler.deleter!();
     }
 
-    if (hasAttribute(qualifiedName)) {
+    final bool hasTargetAttribute = hasAttribute(qualifiedName);
+    if (hasTargetAttribute) {
       attributes.remove(qualifiedName);
       final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
       if (DebugFlags.enableCssBatchRecalc) {
@@ -1502,6 +1502,16 @@ abstract class Element extends ContainerNode
 
       // Mark semantics dirty for accessibility-relevant attributes.
       _markSemanticsDirtyIfNeeded(qualifiedName);
+    } else if (qualifiedName == _styleProperty) {
+      // Style changes from native may not populate the attribute map; still
+      // trigger recalc so stylesheet cascade is restored after inline removal.
+      final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
+      if (DebugFlags.enableCssBatchRecalc) {
+        ownerDocument.markElementStyleDirty(this,
+            reason: 'batch:remove:$qualifiedName');
+      } else {
+        recalculateStyle(rebuildNested: isNeedRecalculate);
+      }
     }
   }
 
@@ -1698,26 +1708,27 @@ abstract class Element extends ContainerNode
     }
   }
 
-  void applyDefaultStyle(CSSStyleDeclaration style) {
+  void applyDefaultStyle(ElementCSSStyleDeclaration style) {
     if (defaultStyle.isNotEmpty) {
       defaultStyle.forEach((propertyName, value) {
         if (style.contains(propertyName) == false) {
-          style.setProperty(propertyName, value);
+          style.enqueueSheetProperty(propertyName, value.toString());
         }
       });
     }
   }
 
-  void applyInlineStyle(CSSStyleDeclaration style) {
+  void applyInlineStyle(ElementCSSStyleDeclaration style) {
     if (inlineStyle.isNotEmpty) {
-      inlineStyle.forEach((propertyName, value) {
-        // Force inline style to be applied as important priority.
-        style.setProperty(propertyName, value, isImportant: true);
+      inlineStyle.forEach((propertyName, entry) {
+        if (entry.value.isEmpty) return;
+        style.enqueueInlineProperty(propertyName, entry.value,
+            isImportant: entry.important ? true : null);
       });
     }
   }
 
-  void _applySheetStyle(CSSStyleDeclaration style) {
+  void _applySheetStyle(ElementCSSStyleDeclaration style) {
     CSSStyleDeclaration matchRule = _collectMatchedRulesWithCache();
     style.union(matchRule);
   }
@@ -1984,31 +1995,86 @@ abstract class Element extends ContainerNode
 
   // Set inline style property.
   void setInlineStyle(String property, String value,
-      {String? baseHref, bool fromNative = false}) {
+      {String? baseHref, bool fromNative = false, bool important = false}) {
     final bool enableBlink = ownerDocument.ownerView.enableBlink;
     final bool validate = !(fromNative && enableBlink);
-    // Current only for mark property is setting by inline style.
-    inlineStyle[property] = value;
+    final InlineStyleEntry? previousEntry = inlineStyle[property];
+
+    bool derivedImportant = important;
+    String derivedValue = value;
+
+    // Legacy native bridge encodes CSSOM priority by appending `!important`
+    // into the value string (for older versions where UICommandType.setInlineStyle
+    // doesn't carry a priority field). Decode it back to the structured `important` flag so
+    // Dart-side parsing/cascade works as expected.
+    if (fromNative && !derivedImportant) {
+      int end = derivedValue.length;
+      while (end > 0 && derivedValue.codeUnitAt(end - 1) <= 0x20) {
+        end--;
+      }
+
+      const String keyword = 'important';
+      if (end >= keyword.length) {
+        final int keywordStart = end - keyword.length;
+        if (derivedValue.substring(keywordStart, end).toLowerCase() == keyword) {
+          int i = keywordStart;
+          while (i > 0 && derivedValue.codeUnitAt(i - 1) <= 0x20) {
+            i--;
+          }
+          if (i > 0 && derivedValue.codeUnitAt(i - 1) == 0x21) {
+            derivedImportant = true;
+            derivedValue = derivedValue.substring(0, i - 1).trimRight();
+          }
+        }
+      }
+    }
+
+    InlineStyleEntry entry =
+        InlineStyleEntry(derivedValue, important: derivedImportant);
+    if (fromNative && !derivedImportant) {
+      entry = _normalizeInlineStyleEntryFromNative(entry);
+    }
 
     // recalculate matching styles for element when inline styles are removed.
-    if (value.isEmpty) {
-      style.removeProperty(property, true);
+    if (entry.value.isEmpty) {
+      inlineStyle.remove(property);
+      final bool? wasImportant =
+          (previousEntry?.important ?? entry.important) ? true : null;
+      style.removeProperty(property, wasImportant);
       // When Blink CSS is enabled, style cascading and validation happen on
       // the native side. Avoid expensive Dart-side recalculation here.
       if (!(fromNative && enableBlink)) {
         recalculateStyle();
       }
+      return;
     } else {
-      style.setProperty(property, value,
-          isImportant: true, baseHref: baseHref, validate: validate);
+      // Current only for mark property is setting by inline style.
+      inlineStyle[property] = entry;
+      if (previousEntry?.important == true && !entry.important) {
+        style.removeProperty(property, true);
+      }
+      style.enqueueInlineProperty(property, entry.value,
+          isImportant: entry.important ? true : null, baseHref: baseHref, validate: validate);
     }
   }
 
   void clearInlineStyle() {
-    for (var key in inlineStyle.keys) {
-      style.removeProperty(key, true);
-    }
+    if (inlineStyle.isEmpty) return;
+
+    final bool enableBlink = ownerDocument.ownerView.enableBlink;
+    final Map<String, InlineStyleEntry> removedEntries = Map<String, InlineStyleEntry>.from(inlineStyle);
     inlineStyle.clear();
+
+    if (!enableBlink) {
+      recalculateStyle();
+      return;
+    }
+
+    // Blink mode expects native-side cascade to follow with computed updates.
+    // Clear any stale inline overrides immediately.
+    for (final entry in removedEntries.entries) {
+      style.removeProperty(entry.key, entry.value.important ? true : null);
+    }
   }
 
   // Set pseudo element (::before, ::after, ::first-letter, ::first-line) style.
@@ -2030,32 +2096,32 @@ abstract class Element extends ContainerNode
     style.clearPseudoStyle(type);
   }
 
-  void _applyPseudoStyle(CSSStyleDeclaration style) {
+  void _applyPseudoStyle(ElementCSSStyleDeclaration style) {
     List<CSSStyleRule> pseudoRules =
         _elementRuleCollector.matchedPseudoRules(ownerDocument.ruleSet, this);
     style.handlePseudoRules(this, pseudoRules);
   }
 
-  void applyStyle(CSSStyleDeclaration style) {
+  void applyStyle(ElementCSSStyleDeclaration style) {
     // Apply default style.
     applyDefaultStyle(style);
     // Init display from style directly cause renderStyle is not flushed yet.
     renderStyle.initDisplay(style);
 
     applyAttributeStyle(style);
-    applyInlineStyle(style);
     _applySheetStyle(style);
+    applyInlineStyle(style);
     _applyPseudoStyle(style);
   }
 
-  void applyAttributeStyle(CSSStyleDeclaration style) {
+  void applyAttributeStyle(ElementCSSStyleDeclaration style) {
     // Map the dir attribute to CSS direction so inline layout picks up RTL/LTR hints.
     final String? dirAttr = attributes['dir'];
     if (dirAttr != null) {
       final String normalized = dirAttr.trim().toLowerCase();
       final TextDirection? resolved = CSSTextMixin.resolveDirection(normalized);
       if (resolved != null) {
-        style.setProperty(DIRECTION, normalized);
+        style.enqueueSheetProperty(DIRECTION, normalized);
       }
     }
   }
@@ -2080,13 +2146,14 @@ abstract class Element extends ContainerNode
         renderStyle.display != CSSDisplay.none ||
         shouldUpdateCSSVariables) {
       // Diff style.
-      CSSStyleDeclaration newStyle = CSSStyleDeclaration();
+      ElementCSSStyleDeclaration newStyle = ElementCSSStyleDeclaration();
       applyStyle(newStyle);
-      var hasInheritedPendingProperty = false;
-      if (style.merge(newStyle)) {
-        hasInheritedPendingProperty = style.hasInheritedPendingProperty;
-        style.flushPendingProperties();
-      }
+      style.merge(newStyle);
+      final bool hasInheritedPendingProperty = style.hasInheritedPendingProperty;
+      // Always flush after a recalc. Pending properties may have already been
+      // queued (e.g. via setInlineStyle) and merge() can be a no-op when the
+      // queued values match the freshly computed ones.
+      style.flushPendingProperties();
 
       if (rebuildNested || hasInheritedPendingProperty) {
         // Update children style.
@@ -2099,15 +2166,56 @@ abstract class Element extends ContainerNode
   }
 
   void _removeInlineStyle() {
-    inlineStyle.forEach((String property, _) {
-      _removeInlineStyleProperty(property);
+    inlineStyle.forEach((String property, InlineStyleEntry entry) {
+      _removeInlineStyleProperty(property, entry.important ? true : null);
     });
     inlineStyle.clear();
     style.flushPendingProperties();
   }
 
-  void _removeInlineStyleProperty(String property) {
-    style.removeProperty(property, true);
+  void _removeInlineStyleProperty(String property, bool? important) {
+    style.removeProperty(property, important);
+  }
+
+  InlineStyleEntry _normalizeInlineStyleEntryFromNative(InlineStyleEntry entry) {
+    final String raw = entry.value;
+    int depth = 0;
+    String? quote;
+    int importantIndex = -1;
+    for (int i = 0; i < raw.length; i++) {
+      final String ch = raw[i];
+      if (quote != null) {
+        if (ch == quote) quote = null;
+        continue;
+      }
+      if (ch == '"' || ch == '\'') {
+        quote = ch;
+        continue;
+      }
+      if (ch == '(') {
+        depth++;
+        continue;
+      }
+      if (ch == ')') {
+        if (depth > 0) depth--;
+        continue;
+      }
+      if (depth == 0 && ch == '!' && i + 10 <= raw.length) {
+        final String suffix = raw.substring(i + 1, i + 10).toLowerCase();
+        if (suffix == 'important') {
+          final String trailing = raw.substring(i + 10).trim();
+          if (trailing.isEmpty) {
+            importantIndex = i;
+          }
+          break;
+        }
+      }
+    }
+    if (importantIndex >= 0) {
+      final String stripped = raw.substring(0, importantIndex).trimRight();
+      return InlineStyleEntry(stripped, important: true);
+    }
+    return entry;
   }
 
   // The Element.getBoundingClientRect() method returns a DOMRect object providing information

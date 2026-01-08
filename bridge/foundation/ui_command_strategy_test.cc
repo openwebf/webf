@@ -96,7 +96,7 @@ TEST_F(UICommandSyncStrategyTest, WaitingQueueCommands) {
                             CreateSharedString("div"), &obj1, nullptr, true);
   EXPECT_EQ(strategy_->GetWaitingCommandsCount(), 1);
 
-  strategy_->RecordUICommand(UICommand::kSetStyle,
+  strategy_->RecordUICommand(UICommand::kSetInlineStyle,
                             CreateSharedString("color:red"), &obj1, nullptr, true);
   EXPECT_EQ(strategy_->GetWaitingCommandsCount(), 2);
   
@@ -155,7 +155,7 @@ TEST_F(UICommandSyncStrategyTest, ResetClearsEverything) {
   // Add various commands
   strategy_->RecordUICommand(UICommand::kCreateElement,
                             CreateSharedString("div"), &obj1, nullptr, true);
-  strategy_->RecordUICommand(UICommand::kSetStyle,
+  strategy_->RecordUICommand(UICommand::kSetInlineStyle,
                             CreateSharedString("width:100px"), &obj1, nullptr, true);
   strategy_->RecordUICommand(UICommand::kInsertAdjacentNode,
                             CreateSharedString("beforeend"), &obj1, &obj2, true);
@@ -192,7 +192,7 @@ TEST_F(UICommandSyncStrategyTest, CommandCategorization) {
   EXPECT_EQ(strategy_->GetWaitingCommandsCount(), 1);
 
   // 3. Simple waiting queue commands
-  strategy_->RecordUICommand(UICommand::kSetStyle,
+  strategy_->RecordUICommand(UICommand::kSetInlineStyle,
                             CreateSharedString("margin:10px"), &obj, nullptr, true);
   EXPECT_EQ(strategy_->GetWaitingCommandsCount(), 2);
   
@@ -250,7 +250,7 @@ TEST_F(UICommandSyncStrategyTest, IntegrationWithSharedUICommand) {
                              CreateSharedString("integration"), &obj, nullptr, true);
   
   // The command should be recorded by the strategy
-  shared_command_->AddCommand(UICommand::kSetStyle,
+  shared_command_->AddCommand(UICommand::kSetInlineStyle,
                              CreateSharedString("display:block"), &obj, nullptr, true);
   
   // Trigger sync with a finish command

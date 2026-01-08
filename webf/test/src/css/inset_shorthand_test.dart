@@ -54,7 +54,7 @@ void main() {
     });
 
     test('removes to initial longhands', () {
-      final CSSStyleDeclaration style = CSSStyleDeclaration();
+      final ElementCSSStyleDeclaration style = ElementCSSStyleDeclaration();
       style.setProperty(INSET, '20px');
       style.removeProperty(INSET);
 
@@ -76,4 +76,3 @@ void main() {
     });
   });
 }
-

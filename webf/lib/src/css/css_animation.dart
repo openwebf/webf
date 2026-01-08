@@ -96,7 +96,7 @@ mixin CSSAnimationMixin on RenderStyle {
   }
 
   final Map<String, Animation> _runningAnimation = {};
-  final Map<String, String> _cacheOriginProperties = {};
+  final Map<String, InlineStyleEntry> _cacheOriginProperties = {};
 
   String _getSingleString(List<String> list, int index) {
     return list[index];
@@ -140,7 +140,7 @@ mixin CSSAnimationMixin on RenderStyle {
         final styles = getAnimationInitStyle(keyframes);
 
         styles.forEach((property, value) {
-          String? originStyle = target.inlineStyle[property];
+          InlineStyleEntry? originStyle = target.inlineStyle[property];
           if (originStyle != null) {
             _cacheOriginProperties.putIfAbsent(property, () => originStyle);
           }
@@ -265,8 +265,9 @@ mixin CSSAnimationMixin on RenderStyle {
     AnimationEffect? effect = animation.effect;
     if (effect != null && effect is KeyframeEffect) {
       for (var property in effect.properties) {
-        if (_cacheOriginProperties.containsKey(property)) {
-          target.setInlineStyle(property, _cacheOriginProperties[property]!);
+        InlineStyleEntry? origin = _cacheOriginProperties[property];
+        if (origin != null) {
+          target.setInlineStyle(property, origin.value, important: origin.important);
         }
         _cacheOriginProperties.remove(property);
       }

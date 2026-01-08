@@ -57,7 +57,7 @@ void main() {
       expect(div.offsetWidth, equals(100.0));
 
       // Change width dynamically
-      div.style.setProperty('width', '200px');
+      div.style.enqueueInlineProperty('width', '200px');
       await tester.pump();
 
       expect(div.offsetWidth, equals(200.0));
@@ -234,7 +234,7 @@ void main() {
       expect(div.offsetHeight, equals(150.0));
 
       // Change height dynamically
-      div.style.setProperty('height', '250px');
+      div.style.enqueueInlineProperty('height', '250px');
       await tester.pump();
 
       expect(div.offsetHeight, equals(250.0));
@@ -774,8 +774,8 @@ void main() {
       expect(box.renderStyle.height.value, equals(100.0));
 
       // Update styles
-      box.style.setProperty('width', '200px');
-      box.style.setProperty('height', '150px');
+      box.style.enqueueInlineProperty('width', '200px');
+      box.style.enqueueInlineProperty('height', '150px');
       box.style.flushPendingProperties();
       await tester.pump();
       await tester.pump();
