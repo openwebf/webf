@@ -40,7 +40,7 @@ enum class UICommand {
   kAddEvent,
   kRemoveNode,
   kInsertAdjacentNode,
-  kSetStyle,
+  kSetInlineStyle,
   kSetPseudoStyle,
   kClearStyle,
   kSetAttribute,

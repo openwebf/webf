@@ -1103,7 +1103,7 @@
     },
     {
       name: "list-style-type",
-      // Parsing and initial value only – forwarded to Dart via UICommand kSetStyle
+      // Parsing and initial value only – forwarded to Dart via UICommand kSetInlineStyle
       // We don't currently store this on ComputedStyle; values are emitted from the inline
       // property set during style resolution.
       field_template: "keyword",
@@ -1151,7 +1151,7 @@
     // CSS Counters
     {
       name: "counter-reset",
-      // Parsing and initial value only – forwarded to Dart via UICommand kSetStyle
+      // Parsing and initial value only – forwarded to Dart via UICommand kSetInlineStyle
       property_methods: [
         "ParseSingleValue",
         "InitialValue"

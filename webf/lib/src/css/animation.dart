@@ -583,7 +583,7 @@ class KeyframeEffect extends AnimationEffect {
     final selected = progress < 0.5 ? start : end;
     // Fallback path uses CSSStyleDeclaration to expand shorthands when needed.
     // This keeps layered values (e.g., background-position lists) in sync.
-    renderStyle.target.style.setProperty(property, selected?.toString() ?? '');
+    renderStyle.target.style.enqueueInlineProperty(property, selected?.toString() ?? '');
     return selected;
   }
 

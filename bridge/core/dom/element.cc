@@ -1143,7 +1143,8 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
           auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
           payload->value = stringToNativeString(value_string).release();
           payload->href = nullptr;
-          GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(),
+          payload->important = property.IsImportant() ? 1 : 0;
+          GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetInlineStyle, std::move(args_01), bindingObject(),
                                                                payload);
           continue;
         }

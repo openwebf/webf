@@ -438,7 +438,7 @@ TEST_F(SharedUICommandTest, SyncStrategyIntegration) {
   
   // Add commands that go to waiting queue
   shared_command_->AddCommand(UICommand::kCreateElement, CreateSharedString("div"), nullptr, nullptr);
-  shared_command_->AddCommand(UICommand::kSetStyle, CreateSharedString("color:blue"), nullptr, nullptr);
+  shared_command_->AddCommand(UICommand::kSetInlineStyle, CreateSharedString("color:blue"), nullptr, nullptr);
   
   // In non-dedicated mode, commands go directly to read buffer
   // In dedicated mode, they would go to waiting queue
@@ -523,7 +523,7 @@ TEST_F(SharedUICommandTest, CommandCategorizationSync) {
   
   // Test waiting queue commands
   shared_command_->AddCommand(UICommand::kSetAttribute, CreateSharedString("attr"), nullptr, nullptr);
-  shared_command_->AddCommand(UICommand::kSetStyle, CreateSharedString("style"), nullptr, nullptr);
+  shared_command_->AddCommand(UICommand::kSetInlineStyle, CreateSharedString("style"), nullptr, nullptr);
   shared_command_->AddCommand(UICommand::kDisposeBindingObject, nullptr, nullptr, nullptr);
   
   // These should be in waiting queue until we force sync

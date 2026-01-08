@@ -836,7 +836,7 @@ enum UICommandType {
   addEvent,
   removeNode,
   insertAdjacentNode,
-  setStyle,
+  setInlineStyle,
   setPseudoStyle,
   clearStyle,
   setAttribute,

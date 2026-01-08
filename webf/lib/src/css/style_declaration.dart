@@ -78,10 +78,34 @@ List<String> _propertyOrders = [
 final LinkedLruHashMap<String, Map<String, String?>> _cachedExpandedShorthand = LinkedLruHashMap(maximumSize: 500);
 
 class CSSPropertyValue {
-  String? baseHref;
-  String value;
+  final String value;
+  final String? baseHref;
+  final bool important;
+  final PropertyType propertyType;
 
-  CSSPropertyValue(this.value, {this.baseHref});
+  const CSSPropertyValue(
+    this.value, {
+    this.baseHref,
+    this.important = false,
+    this.propertyType = PropertyType.inline,
+  });
+
+  @override
+  String toString() {
+    return value;
+  }
+}
+
+enum PropertyType {
+  inline,
+  sheet,
+}
+
+class InlineStyleEntry {
+  final String value;
+  final bool important;
+
+  const InlineStyleEntry(this.value, {this.important = false});
 
   @override
   String toString() {
@@ -104,70 +128,53 @@ class CSSPropertyValue {
 /// 3. Via [Window.getComputedStyle()], which exposes the [CSSStyleDeclaration]
 ///    object as a read-only interface.
 class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBindingObject {
-  Element? target;
+  final PropertyType _defaultPropertyType;
 
-  // TODO(yuanyan): defaultStyle should be longhand properties.
-  Map<String, dynamic>? defaultStyle;
-  StyleChangeListener? onStyleChanged;
-  StyleFlushedListener? onStyleFlushed;
+  CSSStyleDeclaration([super.context]) : _defaultPropertyType = PropertyType.inline;
 
-  CSSStyleDeclaration? _pseudoBeforeStyle;
-  CSSStyleDeclaration? get pseudoBeforeStyle => _pseudoBeforeStyle;
-  set pseudoBeforeStyle(CSSStyleDeclaration? newStyle) {
-    _pseudoBeforeStyle = newStyle;
-    target?.markBeforePseudoElementNeedsUpdate();
-  }
-
-  CSSStyleDeclaration? _pseudoAfterStyle;
-  CSSStyleDeclaration? get pseudoAfterStyle => _pseudoAfterStyle;
-  set pseudoAfterStyle(CSSStyleDeclaration? newStyle) {
-    _pseudoAfterStyle = newStyle;
-    target?.markAfterPseudoElementNeedsUpdate();
-  }
-
-  // ::first-letter pseudo style (applies to the first typographic letter)
-  CSSStyleDeclaration? _pseudoFirstLetterStyle;
-  CSSStyleDeclaration? get pseudoFirstLetterStyle => _pseudoFirstLetterStyle;
-  set pseudoFirstLetterStyle(CSSStyleDeclaration? newStyle) {
-    _pseudoFirstLetterStyle = newStyle;
-    // Trigger a layout rebuild so IFC can re-shape text for first-letter styling
-    target?.markFirstLetterPseudoNeedsUpdate();
-  }
-
-  // ::first-line pseudo style (applies to only the first formatted line)
-  CSSStyleDeclaration? _pseudoFirstLineStyle;
-  CSSStyleDeclaration? get pseudoFirstLineStyle => _pseudoFirstLineStyle;
-  set pseudoFirstLineStyle(CSSStyleDeclaration? newStyle) {
-    _pseudoFirstLineStyle = newStyle;
-    target?.markFirstLinePseudoNeedsUpdate();
-  }
-
-  CSSStyleDeclaration([super.context]);
-
-  // ignore: prefer_initializing_formals
-  CSSStyleDeclaration.computedStyle(this.target, this.defaultStyle, this.onStyleChanged, [this.onStyleFlushed]);
+  CSSStyleDeclaration.sheet([super.context]) : _defaultPropertyType = PropertyType.sheet;
 
   /// An empty style declaration.
   static CSSStyleDeclaration empty = CSSStyleDeclaration();
 
-  /// When some property changed, corresponding [StyleChangeListener] will be
-  /// invoked in synchronous.
-  final List<StyleChangeListener> _styleChangeListeners = [];
-
   final Map<String, CSSPropertyValue> _properties = {};
-  Map<String, CSSPropertyValue> _pendingProperties = {};
-  final Map<String, bool> _importants = {};
-  final Map<String, dynamic> _sheetStyle = {};
+
+  CSSPropertyValue? _getEffectivePropertyValueEntry(String propertyName) => _properties[propertyName];
+
+  void _setStagedPropertyValue(String propertyName, CSSPropertyValue value) {
+    _properties[propertyName] = value;
+  }
+
+  Map<String, CSSPropertyValue> _effectivePropertiesSnapshot() {
+    return Map<String, CSSPropertyValue>.from(_properties);
+  }
 
   /// Textual representation of the declaration block.
   /// Setting this attribute changes the style.
   String get cssText {
-    String css = EMPTY_STRING;
-    _properties.forEach((property, value) {
-      if (css.isNotEmpty) css += ' ';
-      css += '${_kebabize(property)}: $value ${_importants.containsKey(property) ? '!important' : ''};';
-    });
-    return css;
+    if (length == 0) return EMPTY_STRING;
+
+    final StringBuffer css = StringBuffer();
+    bool first = true;
+
+    for (final MapEntry<String, CSSPropertyValue> entry in this) {
+      final String property = entry.key;
+      final CSSPropertyValue value = entry.value;
+
+      if (!first) css.write(' ');
+      first = false;
+
+      css
+        ..write(_kebabize(property))
+        ..write(': ')
+        ..write(value.value);
+      if (value.important) {
+        css.write(' !important');
+      }
+      css.write(';');
+    }
+
+    return css.toString();
   }
 
   /// Whether the given property is marked as `!important` on this declaration.
@@ -175,11 +182,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   /// Exposed for components (e.g., CSS variable resolver) that need to
   /// preserve importance when updating dependent properties.
   bool isImportant(String propertyName) {
-    return _importants[propertyName] == true;
-  }
-
-  bool get hasInheritedPendingProperty {
-    return _pendingProperties.keys.any((key) => isInheritedPropertyString(_kebabize(key)));
+    return _getEffectivePropertyValueEntry(propertyName)?.important ?? false;
   }
 
   // @TODO: Impl the cssText setter.
@@ -197,17 +200,17 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   /// value is a String containing the value of the property.
   /// If not set, returns the empty string.
   String getPropertyValue(String propertyName) {
-    // Get the latest pending value first.
-    return _pendingProperties[propertyName]?.value ?? _properties[propertyName]?.value ?? EMPTY_STRING;
+    return _getEffectivePropertyValueEntry(propertyName)?.value ?? EMPTY_STRING;
   }
 
   /// Returns the baseHref associated with a property value if available.
   String? getPropertyBaseHref(String propertyName) {
-    return _pendingProperties[propertyName]?.baseHref ?? _properties[propertyName]?.baseHref;
+    return _getEffectivePropertyValueEntry(propertyName)?.baseHref;
   }
 
   /// Removes a property from the CSS declaration.
   void removeProperty(String propertyName, [bool? isImportant]) {
+    propertyName = propertyName.trim();
     switch (propertyName) {
       case PADDING:
         return CSSStyleProperty.removeShorthandPadding(this, isImportant);
@@ -267,47 +270,22 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       case ANIMATION:
         return CSSStyleProperty.removeShorthandAnimation(this, isImportant);
     }
-
-    String present = EMPTY_STRING;
-    if (isImportant == true) {
-      _importants.remove(propertyName);
-      // Fallback to css style.
-      String? value = _sheetStyle[propertyName];
-      if (!isNullOrEmptyValue(value)) {
-        present = value!;
-      }
-    } else if (isImportant == false) {
-      _sheetStyle.remove(propertyName);
-    }
-
-    // Fallback to default style (UA / element default).
-    if (isNullOrEmptyValue(present) && defaultStyle != null && defaultStyle!.containsKey(propertyName)) {
-      present = defaultStyle![propertyName];
-    }
-
-    // If there is still no value, fall back to the CSS initial value for
-    // this property. To preserve inheritance semantics, we only do this for
-    // non-inherited properties. For inherited ones we prefer leaving the
-    // value empty so [RenderStyle] can pull from the parent instead.
-    if (isNullOrEmptyValue(present) && cssInitialValues.containsKey(propertyName)) {
-      final String kebabName = _kebabize(propertyName);
-      final bool isInherited = isInheritedPropertyString(kebabName);
-      if (!isInherited) {
-        present = cssInitialValues[propertyName];
-      }
-    }
-
-    // Update removed value by flush pending properties.
-    _pendingProperties[propertyName] = CSSPropertyValue(present);
+    _properties.remove(propertyName);
   }
 
   void _expandShorthand(
     String propertyName,
     String normalizedValue,
     bool? isImportant, {
+    PropertyType? propertyType,
     String? baseHref,
     bool validate = true,
   }) {
+    // Mirror setProperty()'s resolution rules so expanded longhands inherit
+    // the same origin + importance as the originating shorthand.
+    PropertyType resolvedType = propertyType ?? _defaultPropertyType;
+    bool resolvedImportant = isImportant == true;
+
     Map<String, String?> longhandProperties;
     String cacheKey = '$propertyName:$normalizedValue';
     if (_cachedExpandedShorthand.containsKey(cacheKey)) {
@@ -337,8 +315,13 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
           // comma-separated value so layered painters can retrieve per-layer positions.
           CSSStyleProperty.setShorthandBackgroundPosition(longhandProperties, normalizedValue);
           // Preserve original list for layered backgrounds (not consumed by renderStyle).
-          // Store directly to pending map during expansion to avoid recursive shorthand handling.
-          _pendingProperties[BACKGROUND_POSITION] = CSSPropertyValue(normalizedValue, baseHref: baseHref);
+          // Store directly during expansion to avoid recursive shorthand handling.
+          _setStagedPropertyValue(BACKGROUND_POSITION, CSSPropertyValue(
+            normalizedValue,
+            baseHref: baseHref,
+            important: resolvedImportant,
+            propertyType: resolvedType,
+          ));
           break;
       case BORDER_RADIUS:
         CSSStyleProperty.setShorthandBorderRadius(longhandProperties, normalizedValue);
@@ -410,11 +393,18 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
 
     if (longhandProperties.isNotEmpty) {
-      longhandProperties.forEach((String propertyName, String? value) {
+        longhandProperties.forEach((String propertyName, String? value) {
         // Preserve the baseHref from the originating declaration so any
         // url(...) in expanded longhands (e.g., background-image) resolve
         // relative to the stylesheet that contained the shorthand.
-        setProperty(propertyName, value, isImportant: isImportant, baseHref: baseHref, validate: validate);
+        setProperty(
+          propertyName,
+          value,
+          isImportant: resolvedImportant ? true : null,
+          propertyType: resolvedType,
+          baseHref: baseHref,
+          validate: validate,
+        );
       });
     }
   }
@@ -612,13 +602,14 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     String propertyName,
     String? value, {
     bool? isImportant,
+    PropertyType? propertyType,
     String? baseHref,
     bool validate = true,
   }) {
     propertyName = propertyName.trim();
 
     // Null or empty value means should be removed.
-    if (isNullOrEmptyValue(value)) {
+    if (CSSStyleDeclaration.isNullOrEmptyValue(value)) {
       removeProperty(propertyName, isImportant);
       return;
     }
@@ -630,27 +621,483 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     if (validate && !_isValidValue(propertyName, normalizedValue)) return;
 
     if (_cssShorthandProperty[propertyName] != null) {
-      return _expandShorthand(propertyName, normalizedValue, isImportant, baseHref: baseHref, validate: validate);
+      return _expandShorthand(propertyName, normalizedValue, isImportant,
+          propertyType: propertyType, baseHref: baseHref, validate: validate);
     }
 
-    // From style sheet mark the property important as false.
-    if (isImportant == false) {
-      _sheetStyle[propertyName] = normalizedValue;
+    PropertyType resolvedType = propertyType ?? _defaultPropertyType;
+    bool resolvedImportant = isImportant == true;
+
+    final CSSPropertyValue? existing = _properties[propertyName];
+    if (existing != null) {
+      final bool existingImportant = existing.important;
+      if (existingImportant && !resolvedImportant) {
+        return;
+      }
+      if (existingImportant == resolvedImportant) {
+        if (existing.propertyType == PropertyType.inline && resolvedType == PropertyType.sheet) {
+          return;
+        }
+      }
     }
 
-    // If the important property is already set, we should ignore it.
-    if (isImportant != true && _importants[propertyName] == true) {
+    if (existing != null &&
+        existing.value == normalizedValue &&
+        existing.important == resolvedImportant &&
+        existing.propertyType == resolvedType &&
+        (!CSSVariable.isCSSVariableValue(normalizedValue))) {
       return;
     }
 
-    if (isImportant == true) {
-      _importants[propertyName] = true;
+    _properties[propertyName] = CSSPropertyValue(
+      normalizedValue,
+      baseHref: baseHref,
+      important: resolvedImportant,
+      propertyType: resolvedType,
+    );
+  }
+
+  // Inserts the style of the given Declaration into the current Declaration.
+  void union(CSSStyleDeclaration declaration) {
+    bool wins(CSSPropertyValue other, CSSPropertyValue? current) {
+      if (current == null) return true;
+      if (current.important && !other.important) return false;
+      if (!current.important && other.important) return true;
+      // Same importance: inline beats sheet.
+      if (current.propertyType == PropertyType.inline && other.propertyType == PropertyType.sheet) {
+        return false;
+      }
+      return true;
     }
 
-    String? prevValue = getPropertyValue(propertyName);
-    if (normalizedValue == prevValue && (!CSSVariable.isCSSVariableValue(normalizedValue))) return;
+    for (final MapEntry<String, CSSPropertyValue> entry in declaration) {
+      final String propertyName = entry.key;
+      final CSSPropertyValue otherValue = entry.value;
+      final CSSPropertyValue? currentValue = _getEffectivePropertyValueEntry(propertyName);
+      if (!wins(otherValue, currentValue)) continue;
+      if (currentValue != otherValue) {
+        _setStagedPropertyValue(propertyName, otherValue);
+      }
+    }
+  }
 
-    _pendingProperties[propertyName] = CSSPropertyValue(normalizedValue, baseHref: baseHref);
+  // Merge the difference between the declarations and return the updated status
+  bool merge(CSSStyleDeclaration other) {
+    final Map<String, CSSPropertyValue> properties = _effectivePropertiesSnapshot();
+    final Map<String, CSSPropertyValue> otherProperties = other._effectivePropertiesSnapshot();
+    bool updateStatus = false;
+
+    bool sameValue(CSSPropertyValue? a, CSSPropertyValue? b) {
+      if (a == null && b == null) return true;
+      if (a == null || b == null) return false;
+      return a.value == b.value &&
+          a.baseHref == b.baseHref &&
+          a.important == b.important &&
+          a.propertyType == b.propertyType;
+    }
+
+    for (final MapEntry<String, CSSPropertyValue> entry in properties.entries) {
+      final String propertyName = entry.key;
+      final CSSPropertyValue? prevValue = entry.value;
+      final CSSPropertyValue? currentValue = otherProperties[propertyName];
+
+      if (isNullOrEmptyValue(prevValue) && isNullOrEmptyValue(currentValue)) {
+        continue;
+      } else if (!isNullOrEmptyValue(prevValue) && isNullOrEmptyValue(currentValue)) {
+        // Remove property.
+        removeProperty(propertyName, prevValue?.important == true ? true : null);
+        updateStatus = true;
+      } else if (!sameValue(prevValue, currentValue)) {
+        // Update property.
+        if (currentValue != null) {
+          _setStagedPropertyValue(propertyName, currentValue);
+          updateStatus = true;
+        }
+      }
+    }
+
+    for (final MapEntry<String, CSSPropertyValue> entry in otherProperties.entries) {
+      final String propertyName = entry.key;
+      if (properties.containsKey(propertyName)) continue;
+      _setStagedPropertyValue(propertyName, entry.value);
+      updateStatus = true;
+    }
+
+    return updateStatus;
+  }
+
+  operator [](String property) => getPropertyValue(property);
+  operator []=(String property, value) {
+    setProperty(property, value?.toString());
+  }
+
+  /// Check a css property is valid.
+  @override
+  bool contains(Object? property) {
+    if (property != null && property is String) {
+      return getPropertyValue(property).isNotEmpty;
+    }
+    return super.contains(property);
+  }
+
+  void reset() {
+    _properties.clear();
+  }
+
+  @override
+  Future<void> dispose() async {
+    super.dispose();
+    reset();
+  }
+
+  static bool isNullOrEmptyValue(value) {
+    if (value == null) return true;
+    if (value is CSSPropertyValue) {
+      return value.value == EMPTY_STRING;
+    }
+    return value == EMPTY_STRING;
+  }
+
+  @override
+  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) => 'CSSStyleDeclaration($cssText)';
+
+  @override
+  int get hashCode => cssText.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    return hashCode == other.hashCode;
+  }
+
+
+  @override
+  Iterator<MapEntry<String, CSSPropertyValue>> get iterator {
+    return _properties.entries.iterator;
+  }
+}
+
+class ElementCSSStyleDeclaration extends CSSStyleDeclaration{
+  Element? target;
+
+  // TODO(yuanyan): defaultStyle should be longhand properties.
+  Map<String, dynamic>? defaultStyle;
+  StyleChangeListener? onStyleChanged;
+  StyleFlushedListener? onStyleFlushed;
+
+  Map<String, CSSPropertyValue> _pendingProperties = {};
+
+  @override
+  CSSPropertyValue? _getEffectivePropertyValueEntry(String propertyName) {
+    return _pendingProperties[propertyName] ?? super._getEffectivePropertyValueEntry(propertyName);
+  }
+
+  @override
+  void _setStagedPropertyValue(String propertyName, CSSPropertyValue value) {
+    _pendingProperties[propertyName] = value;
+  }
+
+  @override
+  Map<String, CSSPropertyValue> _effectivePropertiesSnapshot() {
+    if (_pendingProperties.isEmpty) return Map<String, CSSPropertyValue>.from(_properties);
+    final Map<String, CSSPropertyValue> properties = Map<String, CSSPropertyValue>.from(_properties);
+    properties.addAll(_pendingProperties);
+    return properties;
+  }
+
+  bool get hasInheritedPendingProperty {
+    return _pendingProperties.keys.any((key) => isInheritedPropertyString(_kebabize(key)));
+  }
+
+  CSSStyleDeclaration? _pseudoBeforeStyle;
+  CSSStyleDeclaration? get pseudoBeforeStyle => _pseudoBeforeStyle;
+  set pseudoBeforeStyle(CSSStyleDeclaration? newStyle) {
+    _pseudoBeforeStyle = newStyle;
+    target?.markBeforePseudoElementNeedsUpdate();
+  }
+
+  CSSStyleDeclaration? _pseudoAfterStyle;
+  CSSStyleDeclaration? get pseudoAfterStyle => _pseudoAfterStyle;
+  set pseudoAfterStyle(CSSStyleDeclaration? newStyle) {
+    _pseudoAfterStyle = newStyle;
+    target?.markAfterPseudoElementNeedsUpdate();
+  }
+
+  // ::first-letter pseudo style (applies to the first typographic letter)
+  CSSStyleDeclaration? _pseudoFirstLetterStyle;
+  CSSStyleDeclaration? get pseudoFirstLetterStyle => _pseudoFirstLetterStyle;
+  set pseudoFirstLetterStyle(CSSStyleDeclaration? newStyle) {
+    _pseudoFirstLetterStyle = newStyle;
+    // Trigger a layout rebuild so IFC can re-shape text for first-letter styling
+    target?.markFirstLetterPseudoNeedsUpdate();
+  }
+
+  // ::first-line pseudo style (applies to only the first formatted line)
+  CSSStyleDeclaration? _pseudoFirstLineStyle;
+  CSSStyleDeclaration? get pseudoFirstLineStyle => _pseudoFirstLineStyle;
+  set pseudoFirstLineStyle(CSSStyleDeclaration? newStyle) {
+    _pseudoFirstLineStyle = newStyle;
+    target?.markFirstLinePseudoNeedsUpdate();
+  }
+
+  /// When some property changed, corresponding [StyleChangeListener] will be
+  /// invoked in synchronous.
+  final List<StyleChangeListener> _styleChangeListeners = [];
+
+  ElementCSSStyleDeclaration([super.context]);
+
+  // ignore: prefer_initializing_formals
+  ElementCSSStyleDeclaration.computedStyle(this.target, this.defaultStyle, this.onStyleChanged, [this.onStyleFlushed]);
+
+  void enqueueInlineProperty(
+    String propertyName,
+    String? value, {
+    bool? isImportant,
+    String? baseHref,
+    bool validate = true,
+  }) {
+    setProperty(
+      propertyName,
+      value,
+      isImportant: isImportant,
+      propertyType: PropertyType.inline,
+      baseHref: baseHref,
+      validate: validate,
+    );
+  }
+
+  void enqueueSheetProperty(
+    String propertyName,
+    String? value, {
+    bool? isImportant,
+    String? baseHref,
+    bool validate = true,
+  }) {
+    setProperty(
+      propertyName,
+      value,
+      isImportant: isImportant,
+      propertyType: PropertyType.sheet,
+      baseHref: baseHref,
+      validate: validate,
+    );
+  }
+
+  @override
+  void setProperty(
+    String propertyName,
+    String? value, {
+    bool? isImportant,
+    PropertyType? propertyType,
+    String? baseHref,
+    bool validate = true,
+  }) {
+    propertyName = propertyName.trim();
+
+    // Null or empty value means should be removed.
+    if (CSSStyleDeclaration.isNullOrEmptyValue(value)) {
+      final PropertyType resolvedType = propertyType ?? _defaultPropertyType;
+
+      // Clearing an inline declaration should never clobber an already-staged
+      // stylesheet value (e.g. during style recomputation where inlineStyle may
+      // transiently carry empty entries). If the current winner isn't inline,
+      // treat this as a no-op.
+      if (resolvedType == PropertyType.inline) {
+        final CSSPropertyValue? existing = _getEffectivePropertyValueEntry(propertyName);
+        if (existing != null && existing.propertyType != PropertyType.inline) {
+          final CSSPropertyValue? staged = _pendingProperties[propertyName];
+          if (staged != null && staged.propertyType == PropertyType.inline) {
+            _pendingProperties.remove(propertyName);
+          }
+          return;
+        }
+      }
+
+      removeProperty(propertyName, isImportant);
+      return;
+    }
+
+    final String rawValue = value.toString();
+    final bool isCustomProperty = CSSVariable.isCSSSVariableProperty(propertyName);
+    String normalizedValue = isCustomProperty ? rawValue : _toLowerCase(propertyName, rawValue.trim());
+
+    if (validate && !_isValidValue(propertyName, normalizedValue)) return;
+
+    if (_cssShorthandProperty[propertyName] != null) {
+      return _expandShorthand(
+        propertyName,
+        normalizedValue,
+        isImportant,
+        propertyType: propertyType,
+        baseHref: baseHref,
+        validate: validate,
+      );
+    }
+
+    PropertyType resolvedType = propertyType ?? _defaultPropertyType;
+    bool resolvedImportant = isImportant == true;
+
+    final CSSPropertyValue? existing = _pendingProperties[propertyName] ?? _properties[propertyName];
+    if (existing != null) {
+      final bool existingImportant = existing.important;
+      if (existingImportant && !resolvedImportant) {
+        return;
+      }
+      if (existingImportant == resolvedImportant) {
+        if (existing.propertyType == PropertyType.inline && resolvedType == PropertyType.sheet) {
+          return;
+        }
+      }
+    }
+
+    if (existing != null &&
+        existing.value == normalizedValue &&
+        existing.important == resolvedImportant &&
+        existing.propertyType == resolvedType &&
+        (!CSSVariable.isCSSVariableValue(normalizedValue))) {
+      return;
+    }
+
+    _pendingProperties[propertyName] = CSSPropertyValue(
+      normalizedValue,
+      baseHref: baseHref,
+      important: resolvedImportant,
+      propertyType: resolvedType,
+    );
+  }
+
+  @override
+  int get length {
+    int total = _properties.length;
+    for (final String key in _pendingProperties.keys) {
+      if (!_properties.containsKey(key)) total++;
+    }
+    return total;
+  }
+
+  @override
+  String item(int index) {
+    if (index < _properties.length) {
+      return _properties.keys.elementAt(index);
+    }
+    int remaining = index - _properties.length;
+    for (final String key in _pendingProperties.keys) {
+      if (_properties.containsKey(key)) continue;
+      if (remaining == 0) return key;
+      remaining--;
+    }
+    throw RangeError.index(index, this, 'index', null, length);
+  }
+
+  @override
+  Iterator<MapEntry<String, CSSPropertyValue>> get iterator {
+    if (_pendingProperties.isEmpty) return _properties.entries.iterator;
+    if (_properties.isEmpty) return _pendingProperties.entries.iterator;
+    return _PendingPropertiesIterator(_properties, _pendingProperties);
+  }
+
+  @override
+  void removeProperty(String propertyName, [bool? isImportant]) {
+    propertyName = propertyName.trim();
+    switch (propertyName) {
+      case PADDING:
+        return CSSStyleProperty.removeShorthandPadding(this, isImportant);
+      case MARGIN:
+        return CSSStyleProperty.removeShorthandMargin(this, isImportant);
+      case INSET:
+        return CSSStyleProperty.removeShorthandInset(this, isImportant);
+      case BACKGROUND:
+        return CSSStyleProperty.removeShorthandBackground(this, isImportant);
+      case BACKGROUND_POSITION:
+        return CSSStyleProperty.removeShorthandBackgroundPosition(this, isImportant);
+      case BORDER_RADIUS:
+        return CSSStyleProperty.removeShorthandBorderRadius(this, isImportant);
+      case GRID_TEMPLATE:
+        return CSSStyleProperty.removeShorthandGridTemplate(this, isImportant);
+      case GRID:
+        return CSSStyleProperty.removeShorthandGrid(this, isImportant);
+      case PLACE_CONTENT:
+        return CSSStyleProperty.removeShorthandPlaceContent(this, isImportant);
+      case PLACE_ITEMS:
+        return CSSStyleProperty.removeShorthandPlaceItems(this, isImportant);
+      case PLACE_SELF:
+        return CSSStyleProperty.removeShorthandPlaceSelf(this, isImportant);
+      case OVERFLOW:
+        return CSSStyleProperty.removeShorthandOverflow(this, isImportant);
+      case FONT:
+        return CSSStyleProperty.removeShorthandFont(this, isImportant);
+      case FLEX:
+        return CSSStyleProperty.removeShorthandFlex(this, isImportant);
+      case FLEX_FLOW:
+        return CSSStyleProperty.removeShorthandFlexFlow(this, isImportant);
+      case GAP:
+        return CSSStyleProperty.removeShorthandGap(this, isImportant);
+      case GRID_ROW:
+        return CSSStyleProperty.removeShorthandGridRow(this, isImportant);
+      case GRID_COLUMN:
+        return CSSStyleProperty.removeShorthandGridColumn(this, isImportant);
+      case GRID_AREA:
+        return CSSStyleProperty.removeShorthandGridArea(this, isImportant);
+      case BORDER:
+      case BORDER_TOP:
+      case BORDER_RIGHT:
+      case BORDER_BOTTOM:
+      case BORDER_LEFT:
+      case BORDER_INLINE_START:
+      case BORDER_INLINE_END:
+      case BORDER_BLOCK_START:
+      case BORDER_BLOCK_END:
+      case BORDER_COLOR:
+      case BORDER_STYLE:
+      case BORDER_WIDTH:
+        return CSSStyleProperty.removeShorthandBorder(this, propertyName, isImportant);
+      case TRANSITION:
+        return CSSStyleProperty.removeShorthandTransition(this, isImportant);
+      case TEXT_DECORATION:
+        return CSSStyleProperty.removeShorthandTextDecoration(this, isImportant);
+      case ANIMATION:
+        return CSSStyleProperty.removeShorthandAnimation(this, isImportant);
+    }
+
+    String present = EMPTY_STRING;
+
+    // Fallback to default style (UA / element default).
+    final dynamic defaultValue = defaultStyle?[propertyName];
+    if (CSSStyleDeclaration.isNullOrEmptyValue(present) && !CSSStyleDeclaration.isNullOrEmptyValue(defaultValue)) {
+      present = defaultValue.toString();
+    }
+
+    // If there is still no value, fall back to the CSS initial value for
+    // this property. To preserve inheritance semantics, we only do this for
+    // non-inherited properties. For inherited ones we prefer leaving the
+    // value empty so [RenderStyle] can pull from the parent instead.
+    if (CSSStyleDeclaration.isNullOrEmptyValue(present) && cssInitialValues.containsKey(propertyName)) {
+      final String kebabName = _kebabize(propertyName);
+      final bool isInherited = isInheritedPropertyString(kebabName);
+      if (!isInherited) {
+        present = cssInitialValues[propertyName];
+      }
+    }
+
+    // Update removed value by flush pending properties.
+    _pendingProperties[propertyName] = CSSPropertyValue(
+      present,
+      important: false,
+      propertyType: PropertyType.sheet,
+    );
+  }
+
+  @override
+  void reset() {
+    super.reset();
+    _pendingProperties.clear();
+  }
+
+  void addStyleChangeListener(StyleChangeListener listener) {
+    _styleChangeListeners.add(listener);
+  }
+
+  void removeStyleChangeListener(StyleChangeListener listener) {
+    _styleChangeListeners.remove(listener);
   }
 
   void flushDisplayProperties() {
@@ -658,8 +1105,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     // If style target element not exists, no need to do flush operation.
     if (target == null) return;
 
-    if (_pendingProperties.containsKey(DISPLAY) &&
-        target.isConnected) {
+    if (_pendingProperties.containsKey(DISPLAY) && target.isConnected) {
       CSSPropertyValue? prevValue = _properties[DISPLAY];
       CSSPropertyValue currentValue = _pendingProperties[DISPLAY]!;
       _properties[DISPLAY] = currentValue;
@@ -675,8 +1121,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     if (target == null) return;
 
     // Display change from none to other value that the renderBoxModel is null.
-    if (_pendingProperties.containsKey(DISPLAY) &&
-        target.isConnected) {
+    if (_pendingProperties.containsKey(DISPLAY) && target.isConnected) {
       CSSPropertyValue? prevValue = _properties[DISPLAY];
       CSSPropertyValue currentValue = _pendingProperties[DISPLAY]!;
       _properties[DISPLAY] = currentValue;
@@ -692,32 +1137,42 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     // Reset first avoid set property in flush stage.
     _pendingProperties = {};
 
-    List<String> propertyNames = pendingProperties.keys.toList();
-    for (String propertyName in _propertyOrders) {
-      int index = propertyNames.indexOf(propertyName);
-      if (index > -1) {
-        propertyNames.removeAt(index);
-        propertyNames.insert(0, propertyName);
+    final List<String> pendingKeys = pendingProperties.keys.toList(growable: false);
+    final Set<String> remainingKeys = pendingKeys.toSet();
+
+    // Keep ordering behavior consistent with previous implementation:
+    // 1. Move properties in `_propertyOrders` to the front.
+    // 2. Preserve pending insertion order for the rest.
+    final List<String> reorderedKeys = <String>[];
+    for (final String propertyName in _propertyOrders.reversed) {
+      if (remainingKeys.remove(propertyName)) {
+        reorderedKeys.add(propertyName);
+      }
+    }
+    for (final String propertyName in pendingKeys) {
+      if (remainingKeys.contains(propertyName)) {
+        reorderedKeys.add(propertyName);
       }
     }
 
-    Map<String, CSSPropertyValue?> prevValues = {};
-    for (String propertyName in propertyNames) {
-      // Update the prevValue to currentValue.
-      prevValues[propertyName] = _properties[propertyName];
-      _properties[propertyName] = pendingProperties[propertyName]!;
+    // Stable partition: CSS variables should be flushed first.
+    final List<String> propertyNames = <String>[];
+    for (final String propertyName in reorderedKeys) {
+      if (CSSVariable.isCSSSVariableProperty(propertyName)) {
+        propertyNames.add(propertyName);
+      }
+    }
+    for (final String propertyName in reorderedKeys) {
+      if (!CSSVariable.isCSSSVariableProperty(propertyName)) {
+        propertyNames.add(propertyName);
+      }
     }
 
-    propertyNames.sort((left, right) {
-      final isVariableLeft = CSSVariable.isCSSSVariableProperty(left) ? 1 : 0;
-      final isVariableRight = CSSVariable.isCSSSVariableProperty(right) ? 1 : 0;
-      if (isVariableLeft == 1 || isVariableRight == 1) {
-        return isVariableRight - isVariableLeft;
-      }
-      return 0;
-    });
-
-
+    final Map<String, CSSPropertyValue?> prevValues = <String, CSSPropertyValue?>{};
+    for (final MapEntry<String, CSSPropertyValue> entry in pendingProperties.entries) {
+      prevValues[entry.key] = _properties[entry.key];
+      _properties[entry.key] = entry.value;
+    }
 
     for (String propertyName in propertyNames) {
       CSSPropertyValue? prevValue = prevValues[propertyName];
@@ -726,32 +1181,72 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
 
     onStyleFlushed?.call(propertyNames);
+  }
 
+  void _emitPropertyChanged(String property, String? original, String present, {String? baseHref}) {
+    if (original == present && (!CSSVariable.isCSSVariableValue(present))) return;
+
+    if (onStyleChanged != null) {
+      onStyleChanged!(property, original, present, baseHref: baseHref);
+    }
+
+    for (int i = 0; i < _styleChangeListeners.length; i++) {
+      StyleChangeListener listener = _styleChangeListeners[i];
+      listener(property, original, present, baseHref: baseHref);
+    }
   }
 
   // Set a style property on a pseudo element (before/after/first-letter/first-line) for this element.
-  // Values set here are treated as inline on the pseudo element and marked important
-  // to override stylesheet rules when applicable.
+  // Pseudo elements don't have inline styles; this stores the resolved pseudo styles
+  // (from the native bridge and/or stylesheet matching) for the UI layer.
   void setPseudoProperty(String type, String propertyName, String value, {String? baseHref, bool validate = true}) {
     switch (type) {
       case 'before':
-        pseudoBeforeStyle ??= CSSStyleDeclaration();
-        pseudoBeforeStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref, validate: validate);
+        pseudoBeforeStyle ??= CSSStyleDeclaration.sheet();
+        pseudoBeforeStyle!.setProperty(
+          propertyName,
+          value,
+          isImportant: true,
+          propertyType: PropertyType.sheet,
+          baseHref: baseHref,
+          validate: validate,
+        );
         target?.markBeforePseudoElementNeedsUpdate();
         break;
       case 'after':
-        pseudoAfterStyle ??= CSSStyleDeclaration();
-        pseudoAfterStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref, validate: validate);
+        pseudoAfterStyle ??= CSSStyleDeclaration.sheet();
+        pseudoAfterStyle!.setProperty(
+          propertyName,
+          value,
+          isImportant: true,
+          propertyType: PropertyType.sheet,
+          baseHref: baseHref,
+          validate: validate,
+        );
         target?.markAfterPseudoElementNeedsUpdate();
         break;
       case 'first-letter':
-        pseudoFirstLetterStyle ??= CSSStyleDeclaration();
-        pseudoFirstLetterStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref, validate: validate);
+        pseudoFirstLetterStyle ??= CSSStyleDeclaration.sheet();
+        pseudoFirstLetterStyle!.setProperty(
+          propertyName,
+          value,
+          isImportant: true,
+          propertyType: PropertyType.sheet,
+          baseHref: baseHref,
+          validate: validate,
+        );
         target?.markFirstLetterPseudoNeedsUpdate();
         break;
       case 'first-line':
-        pseudoFirstLineStyle ??= CSSStyleDeclaration();
-        pseudoFirstLineStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref, validate: validate);
+        pseudoFirstLineStyle ??= CSSStyleDeclaration.sheet();
+        pseudoFirstLineStyle!.setProperty(
+          propertyName,
+          value,
+          isImportant: true,
+          propertyType: PropertyType.sheet,
+          baseHref: baseHref,
+          validate: validate,
+        );
         target?.markFirstLinePseudoNeedsUpdate();
         break;
     }
@@ -761,35 +1256,26 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   void removePseudoProperty(String type, String propertyName) {
     switch (type) {
       case 'before':
-        if (pseudoBeforeStyle != null) {
-          // Remove the inline override; fall back to stylesheet value if present.
-          pseudoBeforeStyle!.removeProperty(propertyName, true);
-        }
+        pseudoBeforeStyle?.removeProperty(propertyName, true);
         target?.markBeforePseudoElementNeedsUpdate();
         break;
       case 'after':
-        if (pseudoAfterStyle != null) {
-          pseudoAfterStyle!.removeProperty(propertyName, true);
-        }
+        pseudoAfterStyle?.removeProperty(propertyName, true);
         target?.markAfterPseudoElementNeedsUpdate();
         break;
       case 'first-letter':
-        if (pseudoFirstLetterStyle != null) {
-          pseudoFirstLetterStyle!.removeProperty(propertyName, true);
-        }
+        pseudoFirstLetterStyle?.removeProperty(propertyName, true);
         target?.markFirstLetterPseudoNeedsUpdate();
         break;
       case 'first-line':
-        if (pseudoFirstLineStyle != null) {
-          pseudoFirstLineStyle!.removeProperty(propertyName, true);
-        }
+        pseudoFirstLineStyle?.removeProperty(propertyName, true);
         target?.markFirstLinePseudoNeedsUpdate();
         break;
     }
   }
 
   void clearPseudoStyle(String type) {
-    switch(type) {
+    switch (type) {
       case 'before':
         pseudoBeforeStyle = null;
         target?.markBeforePseudoElementNeedsUpdate();
@@ -806,31 +1292,6 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         pseudoFirstLineStyle = null;
         target?.markFirstLinePseudoNeedsUpdate();
         break;
-    }
-  }
-
-  // Inserts the style of the given Declaration into the current Declaration.
-  void union(CSSStyleDeclaration declaration) {
-    Map<String, CSSPropertyValue> properties = {}
-      ..addAll(_properties)
-      ..addAll(_pendingProperties);
-
-    for (String propertyName in declaration._pendingProperties.keys) {
-      bool currentIsImportant = _importants[propertyName] ?? false;
-      bool otherIsImportant = declaration._importants[propertyName] ?? false;
-      CSSPropertyValue? currentValue = properties[propertyName];
-      CSSPropertyValue? otherValue = declaration._pendingProperties[propertyName];
-      if ((otherIsImportant || !currentIsImportant) && currentValue != otherValue) {
-        // Add property.
-        if (otherValue != null) {
-          _pendingProperties[propertyName] = otherValue;
-        } else {
-          _pendingProperties.remove(propertyName);
-        }
-        if (otherIsImportant) {
-          _importants[propertyName] = true;
-        }
-      }
     }
   }
 
@@ -875,7 +1336,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     firstLineRules.sort(sortRules);
 
     if (beforeRules.isNotEmpty) {
-      pseudoBeforeStyle ??= CSSStyleDeclaration();
+      pseudoBeforeStyle ??= CSSStyleDeclaration.sheet();
       // Merge all the rules
       for (CSSStyleRule rule in beforeRules) {
         pseudoBeforeStyle!.union(rule.declaration);
@@ -886,7 +1347,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
 
     if (afterRules.isNotEmpty) {
-      pseudoAfterStyle ??= CSSStyleDeclaration();
+      pseudoAfterStyle ??= CSSStyleDeclaration.sheet();
       for (CSSStyleRule rule in afterRules) {
         pseudoAfterStyle!.union(rule.declaration);
       }
@@ -896,7 +1357,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
 
     if (firstLetterRules.isNotEmpty) {
-      pseudoFirstLetterStyle ??= CSSStyleDeclaration();
+      pseudoFirstLetterStyle ??= CSSStyleDeclaration.sheet();
       for (CSSStyleRule rule in firstLetterRules) {
         pseudoFirstLetterStyle!.union(rule.declaration);
       }
@@ -906,7 +1367,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
 
     if (firstLineRules.isNotEmpty) {
-      pseudoFirstLineStyle ??= CSSStyleDeclaration();
+      pseudoFirstLineStyle ??= CSSStyleDeclaration.sheet();
       for (CSSStyleRule rule in firstLineRules) {
         pseudoFirstLineStyle!.union(rule.declaration);
       }
@@ -916,104 +1377,37 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
   }
 
-  // Merge the difference between the declarations and return the updated status
+  @override
   bool merge(CSSStyleDeclaration other) {
-    Map<String, CSSPropertyValue> properties = {}
-      ..addAll(_properties)
-      ..addAll(_pendingProperties);
-    bool updateStatus = false;
-    for (String propertyName in properties.keys) {
-      CSSPropertyValue? prevValue = properties[propertyName];
-      CSSPropertyValue? currentValue = other._pendingProperties[propertyName];
-      bool currentImportant = other._importants[propertyName] ?? false;
+    final bool updateStatus = super.merge(other);
 
-      if (isNullOrEmptyValue(prevValue) && isNullOrEmptyValue(currentValue)) {
-        continue;
-      } else if (!isNullOrEmptyValue(prevValue) && isNullOrEmptyValue(currentValue)) {
-        // Remove property.
-        removeProperty(propertyName, currentImportant);
-        updateStatus = true;
-      } else if (prevValue != currentValue) {
-        // Update property.
-        setProperty(propertyName, currentValue?.value, isImportant: currentImportant, baseHref: currentValue?.baseHref);
-        updateStatus = true;
-      }
-    }
+    if (other is! ElementCSSStyleDeclaration) return updateStatus;
 
-    for (String propertyName in other._pendingProperties.keys) {
-      CSSPropertyValue? prevValue = properties[propertyName];
-      CSSPropertyValue? currentValue = other._pendingProperties[propertyName];
-      bool currentImportant = other._importants[propertyName] ?? false;
-
-      if (isNullOrEmptyValue(prevValue) && !isNullOrEmptyValue(currentValue)) {
-        // Add property.
-        setProperty(propertyName, currentValue?.value, isImportant: currentImportant, baseHref: currentValue?.baseHref);
-        updateStatus = true;
-      }
-    }
-
+    bool pseudoUpdated = false;
     // Merge pseudo-element styles. Ensure target side is initialized so rules from
     // 'other' are not dropped when this side is null.
     if (other.pseudoBeforeStyle != null) {
-      pseudoBeforeStyle ??= CSSStyleDeclaration();
+      pseudoBeforeStyle ??= CSSStyleDeclaration.sheet();
       pseudoBeforeStyle!.merge(other.pseudoBeforeStyle!);
+      pseudoUpdated = true;
     }
     if (other.pseudoAfterStyle != null) {
-      pseudoAfterStyle ??= CSSStyleDeclaration();
+      pseudoAfterStyle ??= CSSStyleDeclaration.sheet();
       pseudoAfterStyle!.merge(other.pseudoAfterStyle!);
+      pseudoUpdated = true;
     }
     if (other.pseudoFirstLetterStyle != null) {
-      pseudoFirstLetterStyle ??= CSSStyleDeclaration();
+      pseudoFirstLetterStyle ??= CSSStyleDeclaration.sheet();
       pseudoFirstLetterStyle!.merge(other.pseudoFirstLetterStyle!);
+      pseudoUpdated = true;
     }
     if (other.pseudoFirstLineStyle != null) {
-      pseudoFirstLineStyle ??= CSSStyleDeclaration();
+      pseudoFirstLineStyle ??= CSSStyleDeclaration.sheet();
       pseudoFirstLineStyle!.merge(other.pseudoFirstLineStyle!);
+      pseudoUpdated = true;
     }
 
-    return updateStatus;
-  }
-
-  operator [](String property) => getPropertyValue(property);
-  operator []=(String property, value) {
-    setProperty(property, value);
-  }
-
-  /// Check a css property is valid.
-  @override
-  bool contains(Object? property) {
-    if (property != null && property is String) {
-      return getPropertyValue(property).isNotEmpty;
-    }
-    return super.contains(property);
-  }
-
-  void addStyleChangeListener(StyleChangeListener listener) {
-    _styleChangeListeners.add(listener);
-  }
-
-  void removeStyleChangeListener(StyleChangeListener listener) {
-    _styleChangeListeners.remove(listener);
-  }
-
-  void _emitPropertyChanged(String property, String? original, String present, {String? baseHref}) {
-    if (original == present && (!CSSVariable.isCSSVariableValue(present))) return;
-
-    if (onStyleChanged != null) {
-      onStyleChanged!(property, original, present, baseHref: baseHref);
-    }
-
-    for (int i = 0; i < _styleChangeListeners.length; i++) {
-      StyleChangeListener listener = _styleChangeListeners[i];
-      listener(property, original, present, baseHref: baseHref);
-    }
-  }
-
-  void reset() {
-    _properties.clear();
-    _pendingProperties.clear();
-    _importants.clear();
-    _sheetStyle.clear();
+    return updateStatus || pseudoUpdated;
   }
 
   @override
@@ -1021,28 +1415,49 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     super.dispose();
     target = null;
     _styleChangeListeners.clear();
-    reset();
+    _pseudoBeforeStyle = null;
+    _pseudoAfterStyle = null;
+    _pseudoFirstLetterStyle = null;
+    _pseudoFirstLineStyle = null;
   }
+}
 
-  static bool isNullOrEmptyValue(value) {
-    return value == null || value == EMPTY_STRING;
-  }
+class _PendingPropertiesIterator implements Iterator<MapEntry<String, CSSPropertyValue>> {
+  final Map<String, CSSPropertyValue> _properties;
+  final Map<String, CSSPropertyValue> _pendingProperties;
+  final Iterator<MapEntry<String, CSSPropertyValue>> _propertiesIterator;
+  final Iterator<MapEntry<String, CSSPropertyValue>> _pendingIterator;
 
-  @override
-  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) => 'CSSStyleDeclaration($cssText)';
+  bool _iteratingProperties = true;
+  late MapEntry<String, CSSPropertyValue> _current;
 
-  @override
-  int get hashCode => cssText.hashCode;
-
-  @override
-  bool operator ==(Object other) {
-    return hashCode == other.hashCode;
-  }
-
+  _PendingPropertiesIterator(this._properties, this._pendingProperties)
+      : _propertiesIterator = _properties.entries.iterator,
+        _pendingIterator = _pendingProperties.entries.iterator;
 
   @override
-  Iterator<MapEntry<String, CSSPropertyValue>> get iterator {
-    return _properties.entries.followedBy(_pendingProperties.entries).iterator;
+  MapEntry<String, CSSPropertyValue> get current => _current;
+
+  @override
+  bool moveNext() {
+    if (_iteratingProperties) {
+      while (_propertiesIterator.moveNext()) {
+        final MapEntry<String, CSSPropertyValue> entry = _propertiesIterator.current;
+        final CSSPropertyValue? pendingValue = _pendingProperties[entry.key];
+        _current = pendingValue == null ? entry : MapEntry(entry.key, pendingValue);
+        return true;
+      }
+      _iteratingProperties = false;
+    }
+
+    while (_pendingIterator.moveNext()) {
+      final MapEntry<String, CSSPropertyValue> entry = _pendingIterator.current;
+      if (_properties.containsKey(entry.key)) continue;
+      _current = entry;
+      return true;
+    }
+
+    return false;
   }
 }
 
