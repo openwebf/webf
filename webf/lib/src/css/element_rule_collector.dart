@@ -6,6 +6,7 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
+import 'dart:collection';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
@@ -92,7 +93,7 @@ class ElementRuleCollector {
 
     // Deduplicate while preserving order.
     final List<CSSStyleRule> list = [];
-    final Set<CSSStyleRule> seen = {};
+    final Set<CSSStyleRule> seen = HashSet<CSSStyleRule>.identity();
     for (final CSSRule r in candidates) {
       if (r is CSSStyleRule && !seen.contains(r)) {
         seen.add(r);
@@ -260,7 +261,7 @@ class ElementRuleCollector {
 
   CSSStyleDeclaration collectionFromRuleSet(RuleSet ruleSet, Element element) {
     final rules = matchedRules(ruleSet, element);
-    CSSStyleDeclaration declaration = CSSStyleDeclaration();
+    CSSStyleDeclaration declaration = CSSStyleDeclaration.sheet();
     if (rules.isEmpty) {
       return declaration;
     }

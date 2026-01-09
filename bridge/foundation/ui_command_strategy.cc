@@ -98,8 +98,11 @@ void UICommandSyncStrategy::RecordUICommand(UICommand type,
 
       break;
     }
-    case UICommand::kSetStyle:
+    case UICommand::kSetInlineStyle:
     case UICommand::kSetStyleById:
+    case UICommand::kClearSheetStyle:
+    case UICommand::kSetSheetStyle:
+    case UICommand::kSetSheetStyleById:
     case UICommand::kSetPseudoStyle:
     case UICommand::kRemovePseudoStyle:
     case UICommand::kClearPseudoStyle:

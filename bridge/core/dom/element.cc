@@ -435,30 +435,12 @@ Element* Element::insertAdjacentElement(const AtomicString& position,
   }
 }
 
-ElementStyle Element::style() {
-  if (GetExecutingContext()->isBlinkEnabled()) {
-    if (!IsStyledElement()) {
-      return static_cast<InlineCssStyleDeclaration*>(nullptr);
-    }
-    return inlineStyleForBlink();
-  }
-
+legacy::LegacyInlineCssStyleDeclaration* Element::style() {
   if (!IsStyledElement()) {
-    return static_cast<legacy::LegacyInlineCssStyleDeclaration*>(nullptr);
+    return nullptr;
   }
   legacy::LegacyCssStyleDeclaration& style = EnsureElementRareData().EnsureLegacyInlineCSSStyleDeclaration(this);
   return To<legacy::LegacyInlineCssStyleDeclaration>(&style);
-}
-
-InlineCssStyleDeclaration* Element::inlineStyleForBlink() {
-  if (!IsStyledElement())
-    return nullptr;
-  // Provide Blink inline style declaration when Blink engine is enabled; otherwise return nullptr.
-  if (!GetExecutingContext()->isBlinkEnabled()) {
-    return nullptr;
-  }
-  CSSStyleDeclaration& decl = EnsureElementRareData().EnsureInlineCSSStyleDeclaration(this);
-  return To<InlineCssStyleDeclaration>(&decl);
 }
 
 DOMTokenList* Element::classList() {
@@ -509,23 +491,11 @@ void Element::CloneNonAttributePropertiesFrom(const Element& other, CloneChildre
   // Clone the inline style from the legacy style declaration
   if (other.IsStyledElement() && this->IsStyledElement()) {
     // Get the source element's style
-    auto other_style = const_cast<Element&>(other).style();
-    auto this_style = this->style();
-
-    std::visit(MakeVisitorWithUnreachableWildcard(
-                   [&](legacy::LegacyInlineCssStyleDeclaration* other_style,
-                       legacy::LegacyInlineCssStyleDeclaration* this_style) {
-                     if (other_style && !other_style->cssText().empty()) {
-                       // Get or create this element's style and copy the CSS text
-                       if (this_style) {
-                         this_style->CopyWith(other_style);
-                       }
-                     }
-                   },
-                   [&](InlineCssStyleDeclaration* other_style, InlineCssStyleDeclaration* this_style) {
-                     // todo:
-                   }),
-               other_style, this_style);
+    auto* other_style = const_cast<Element&>(other).style();
+    auto* this_style = style();
+    if (other_style && this_style && !other_style->cssText().empty()) {
+      this_style->CopyWith(other_style);
+    }
   }
 
   // Also clone the inline style from element_data_ if it exists
@@ -880,12 +850,10 @@ void Element::SynchronizeStyleAttributeInternal() {
   assert(GetElementData()->style_attribute_is_dirty());
   GetElementData()->SetStyleAttributeIsDirty(false);
 
-  std::visit(MakeVisitor([&](auto&& inline_style) {
-               SetAttributeInternal(html_names::kStyleAttr, inline_style->cssText(),
-                                    AttributeModificationReason::kBySynchronizationOfLazyAttribute,
-                                    ASSERT_NO_EXCEPTION());
-             }),
-             style());
+  auto* inline_style = style();
+  DCHECK(inline_style);
+  SetAttributeInternal(html_names::kStyleAttr, inline_style->cssText(),
+                       AttributeModificationReason::kBySynchronizationOfLazyAttribute, ASSERT_NO_EXCEPTION());
 }
 
 void Element::SetAttributeInternal(const webf::AtomicString& name,
@@ -934,8 +902,11 @@ void Element::SynchronizeAttribute(const AtomicString& name) {
 
 void Element::InvalidateStyleAttribute(bool only_changed_independent_properties) {
   if (GetExecutingContext()->isBlinkEnabled()) {
-    DCHECK(HasElementData());
-    GetElementData()->SetStyleAttributeIsDirty(true);
+    UniqueElementData& data = EnsureUniqueElementData();
+    data.SetStyleAttributeIsDirty(true);
+    // Inline style is legacy-only in Blink mode; ensure native inline style
+    // snapshots do not participate in the native cascade.
+    data.inline_style_ = nullptr;
     SetNeedsStyleRecalc(only_changed_independent_properties ? kInlineIndependentStyleChange : kLocalStyleChange,
                         StyleChangeReasonForTracing::Create(style_change_reason::kInlineCSSStyleMutated));
     // Mirror Blink: treat inline style mutation as a style-attribute change
@@ -1011,12 +982,8 @@ void Element::StyleAttributeChanged(const AtomicString& new_style_string,
 
   if (new_style_string.IsNull()) {
     EnsureUniqueElementData().inline_style_ = nullptr;
-    if (GetExecutingContext()->isBlinkEnabled()) {
-      // Clear all inline styles on Dart side when style attribute is removed.
-      if (InActiveDocument()) {
-        GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, bindingObject(), nullptr);
-      }
-    }
+    auto&& legacy_inline_style = EnsureElementRareData().EnsureLegacyInlineCSSStyleDeclaration(this);
+    To<legacy::LegacyInlineCssStyleDeclaration>(legacy_inline_style).SetCSSTextInternal(AtomicString::Empty());
   } else {
     SetInlineStyleFromString(new_style_string);
   }
@@ -1033,101 +1000,27 @@ void Element::StyleAttributeChanged(const AtomicString& new_style_string,
     SetNeedsStyleRecalc(
         kLocalStyleChange,
         StyleChangeReasonForTracing::Create(style_change_reason::kStyleAttributeChange));
+
+    // Schedule selector invalidations for style-attribute changes. This is
+    // required for rules like `[style] .child` where a mutation on this element
+    // can affect matching on descendants/siblings.
+    StyleEngine& engine = GetDocument().EnsureStyleEngine();
+    engine.AttributeChangedForElement(html_names::kStyleAttr, *this);
   }
 }
 
 void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_string) {
-  if (GetExecutingContext()->isBlinkEnabled()) {
-    DCHECK(IsStyledElement());
-    std::shared_ptr<const CSSPropertyValueSet> inline_style = EnsureUniqueElementData().inline_style_;
+  DCHECK(IsStyledElement());
 
-    // Avoid redundant work if we're using shared attribute data with already
-    // parsed inline style.
-    if (inline_style && !GetElementData()->IsUnique()) {
-      return;
-    }
-
-    // We reconstruct the property set instead of mutating if there is no CSSOM
-    // wrapper.  This makes wrapperless property sets immutable and so cacheable.
-    if (inline_style && !inline_style->IsMutable()) {
-      inline_style = nullptr;
-    }
-
-    if (!inline_style) {
-      inline_style = CSSParser::ParseInlineStyleDeclaration(new_style_string.ToUTF8String(), this);
-    } else {
-      DCHECK(inline_style->IsMutable());
-      static_cast<MutableCSSPropertyValueSet*>(const_cast<CSSPropertyValueSet*>(inline_style.get()))
-          ->ParseDeclarationList(new_style_string, GetDocument().ElementSheet().Contents());
-    }
-
-    // Persist the parsed inline style back to the element so CSSOM accessors
-    // (style(), cssText(), getPropertyValue(), serialization) reflect updates.
-    EnsureUniqueElementData().inline_style_ = inline_style;
-
-    // Emit declared style updates to Dart as raw CSS strings (no C++ evaluation).
-    // This keeps values like calc(), var(), and viewport units intact for Dart-side evaluation.
-    if (inline_style && InActiveDocument()) {
-      unsigned count = inline_style->PropertyCount();
-      // Always clear existing inline styles before applying new set to avoid stale properties.
-      GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, bindingObject(), nullptr);
-      for (unsigned i = 0; i < count; ++i) {
-        auto property = inline_style->PropertyAt(i);
-        CSSPropertyID id = property.Id();
-        if (id == CSSPropertyID::kInvalid) {
-          continue;
-        }
-        const auto* value_ptr = property.Value();
-        if (!value_ptr || !(*value_ptr)) {
-          // Skip parse-error or missing values; they should not be forwarded to Dart.
-          continue;
-        }
-        AtomicString prop_name = property.Name().ToAtomicString();
-        if (id == CSSPropertyID::kVariable) {
-          String value_string = inline_style->GetPropertyValueWithHint(prop_name, i);
-          if (value_string.IsNull()) {
-            value_string = (*value_ptr)->CssTextForSerialization();
-          }
-          if (value_string.IsEmpty()) {
-            value_string = String(" ");
-          }
-
-          // Normalize CSS property names (e.g. background-color, text-align) to the
-          // camelCase form expected by the Dart style engine before sending them
-          // across the bridge. Custom properties starting with '--' are preserved
-          // verbatim by ToStylePropertyNameNativeString().
-          std::unique_ptr<SharedNativeString> args_01 = prop_name.ToStylePropertyNameNativeString();
-          auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
-          payload->value = stringToNativeString(value_string).release();
-          payload->href = nullptr;
-          GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(),
-                                                               payload);
-          continue;
-        }
-
-        int64_t value_slot = 0;
-        if ((*value_ptr)->IsIdentifierValue()) {
-          const auto& ident = To<CSSIdentifierValue>(*(*value_ptr));
-          value_slot = -static_cast<int64_t>(ident.GetValueID()) - 1;
-        } else {
-          String value_string = inline_style->GetPropertyValueWithHint(prop_name, i);
-          if (value_string.IsNull()) {
-            value_string = (*value_ptr)->CssTextForSerialization();
-          }
-          if (!value_string.IsEmpty()) {
-            auto* value_ns = stringToNativeString(value_string).release();
-            value_slot = static_cast<int64_t>(reinterpret_cast<intptr_t>(value_ns));
-          }
-        }
-
-        GetExecutingContext()->uiCommandBuffer()->AddStyleByIdCommand(bindingObject(), static_cast<int32_t>(id),
-                                                                      value_slot, nullptr);
-      }
-    }
-  } else {
-    auto&& legacy_inline_style = EnsureElementRareData().EnsureLegacyInlineCSSStyleDeclaration(this);
-    To<legacy::LegacyInlineCssStyleDeclaration>(legacy_inline_style).SetCSSTextInternal(new_style_string);
+  // Inline style is treated as legacy-only even when Blink CSS is enabled.
+  // Forward raw inline declarations to Dart and keep the native style engine
+  // focused on non-inline (sheet) styles.
+  if (GetExecutingContext()->isBlinkEnabled() && HasElementData()) {
+    EnsureUniqueElementData().inline_style_ = nullptr;
   }
+
+  auto&& legacy_inline_style = EnsureElementRareData().EnsureLegacyInlineCSSStyleDeclaration(this);
+  To<legacy::LegacyInlineCssStyleDeclaration>(legacy_inline_style).SetCSSTextInternal(new_style_string);
 }
 
 String Element::outerHTML() {
