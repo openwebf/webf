@@ -65,7 +65,7 @@ final class UICommandItemFFI extends Struct {
   external int nativePtr2;
 }
 
-bool enableWebFCommandLog = false || !kReleaseMode && Platform.environment['ENABLE_WEBF_JS_LOG'] == 'true';
+bool enableWebFCommandLog = !kReleaseMode && Platform.environment['ENABLE_WEBF_JS_LOG'] == 'true';
 
 typedef NativeFreeActiveCommandBuffer = Void Function(Pointer<Void>);
 typedef DartFreeActiveCommandBuffer = void Function(Pointer<Void>);
