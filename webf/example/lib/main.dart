@@ -63,7 +63,7 @@ void main() async {
       name: demoControllerName,
       createController: () =>
           WebFController(
-            enableBlink: true,
+            enableBlink: false,
             routeObserver: routeObserver,
           ),
       bundle: WebFBundle.fromUrl(demoEntryUrl),
