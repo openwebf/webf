@@ -138,7 +138,8 @@ class StyleEngine final {
   void RecalcStyleForSubtree(Element& root);
   // Recalculate styles for a single element only, without recursing into its
   // descendants. This is used for fine-grained style change types such as
-  // kInlineIndependentStyleChange where descendants are not affected.
+  // kInlineIndependentStyleChange and kLocalStyleChange where only the element
+  // itself needs rule matching (descendant effects are handled separately).
   void RecalcStyleForElementOnly(Element& element);
 
   // Returns true if there is a pending style invalidation root tracked by
