@@ -87,7 +87,8 @@ List<UICommand> nativeUICommandToDartFFI(double contextId) {
     // Extract type
     command.type = UICommandType.values[commandItem.type];
 
-    if (command.type == UICommandType.setStyleById) {
+    if (command.type == UICommandType.setStyleById ||
+        command.type == UICommandType.setSheetStyleById) {
       command.args = '';
       command.nativePtr = commandItem.nativePtr != 0 ? Pointer.fromAddress(commandItem.nativePtr) : nullptr;
       command.nativePtr2 = commandItem.nativePtr2 != 0 ? Pointer.fromAddress(commandItem.nativePtr2) : nullptr;
@@ -185,6 +186,33 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           }
           printMsg =
               'nativePtr: ${command.nativePtr} type: ${command.type} propertyId: ${command.stylePropertyId} key: $keyLog value: ${valueLog ?? '<null>'} baseHref: ${baseHrefLog ?? 'null'}';
+          break;
+        case UICommandType.setSheetStyleById:
+          final int encoded = command.stylePropertyId;
+          final bool important = (encoded & 0x80000000) != 0;
+          final int propertyId = encoded & 0x7fffffff;
+          final String keyLog = blinkStylePropertyNameFromId(propertyId);
+          String? valueLog;
+          String? baseHrefLog;
+          final int slot = command.styleValueSlot;
+          if (slot < 0) {
+            valueLog = blinkKeywordFromValueId(-slot - 1);
+          } else if (slot > 0) {
+            try {
+              valueLog = nativeStringToString(Pointer<NativeString>.fromAddress(slot));
+            } catch (_) {
+              valueLog = '<error>';
+            }
+          }
+          if (command.nativePtr2 != nullptr) {
+            try {
+              baseHrefLog = nativeStringToString(command.nativePtr2.cast<NativeString>());
+            } catch (_) {
+              baseHrefLog = '<error>';
+            }
+          }
+          printMsg =
+              'nativePtr: ${command.nativePtr} type: ${command.type} propertyId: $propertyId important: ${important ? 1 : 0} key: $keyLog value: ${valueLog ?? '<null>'} baseHref: ${baseHrefLog ?? 'null'}';
           break;
         case UICommandType.setPseudoStyle:
           if (command.nativePtr2 != nullptr) {
@@ -328,6 +356,33 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           view.setInlineStyle(nativePtr, command.args, value, baseHref: baseHref, important: important);
           pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
+        case UICommandType.setSheetStyle:
+          String value = '';
+          String? baseHref;
+          bool important = false;
+          if (command.nativePtr2 != nullptr) {
+            final Pointer<NativeStyleValueWithHref> payload =
+                command.nativePtr2.cast<NativeStyleValueWithHref>();
+            final Pointer<NativeString> valuePtr = payload.ref.value;
+            final Pointer<NativeString> hrefPtr = payload.ref.href;
+            important = payload.ref.important == 1;
+            if (valuePtr != nullptr) {
+              final Pointer<NativeString> nativeValue = valuePtr.cast<NativeString>();
+              value = nativeStringToString(nativeValue);
+              freeNativeString(nativeValue);
+            }
+            if (hrefPtr != nullptr) {
+              final Pointer<NativeString> nativeHref = hrefPtr.cast<NativeString>();
+              final String raw = nativeStringToString(nativeHref);
+              freeNativeString(nativeHref);
+              baseHref = raw.isEmpty ? null : raw;
+            }
+            malloc.free(payload);
+          }
+
+          view.setSheetStyle(nativePtr, command.args, value, baseHref: baseHref, important: important);
+          pendingStylePropertiesTargets[nativePtr.address] = true;
+          break;
         case UICommandType.setStyleById:
           final String key = blinkStylePropertyNameFromId(command.stylePropertyId);
           if (key.isEmpty) break;
@@ -354,6 +409,35 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           view.setInlineStyle(nativePtr, key, value, baseHref: baseHref);
           pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
+        case UICommandType.setSheetStyleById:
+          final int encoded = command.stylePropertyId;
+          final bool important = (encoded & 0x80000000) != 0;
+          final int propertyId = encoded & 0x7fffffff;
+          final String key = blinkStylePropertyNameFromId(propertyId);
+          if (key.isEmpty) break;
+
+          String value = '';
+          String? baseHref;
+
+          final int slot = command.styleValueSlot;
+          if (slot < 0) {
+            value = blinkKeywordFromValueId(-slot - 1);
+          } else if (slot > 0) {
+            final Pointer<NativeString> nativeValue = Pointer<NativeString>.fromAddress(slot);
+            value = nativeStringToString(nativeValue);
+            freeNativeString(nativeValue);
+          }
+
+          if (command.nativePtr2 != nullptr) {
+            final Pointer<NativeString> nativeHref = command.nativePtr2.cast<NativeString>();
+            final String raw = nativeStringToString(nativeHref);
+            freeNativeString(nativeHref);
+            baseHref = raw.isEmpty ? null : raw;
+          }
+
+          view.setSheetStyle(nativePtr, key, value, baseHref: baseHref, important: important);
+          pendingStylePropertiesTargets[nativePtr.address] = true;
+          break;
         case UICommandType.setPseudoStyle:
           if (command.nativePtr2 != nullptr) {
             final keyValue = nativePairToPairRecord(command.nativePtr2.cast());
@@ -375,6 +459,10 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           break;
         case UICommandType.clearStyle:
           view.clearInlineStyle(nativePtr);
+          pendingStylePropertiesTargets[nativePtr.address] = true;
+          break;
+        case UICommandType.clearSheetStyle:
+          view.clearSheetStyle(nativePtr);
           pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
         case UICommandType.setPseudoStyle:

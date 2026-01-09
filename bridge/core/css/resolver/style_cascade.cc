@@ -524,10 +524,8 @@ std::shared_ptr<MutableCSSPropertyValueSet> StyleCascade::BuildWinningPropertySe
     const CascadePriority* prio = map_.Find(CSSPropertyName(custom_name));
     if (!prio) continue;
     uint32_t pos = prio->GetPosition();
-    const StylePropertySet* set = nullptr;
-    unsigned idx = 0;
     CSSPropertyValueSet::PropertyReference prop_ref = CSSPropertyValueSet::PropertyReference(*result, 0);
-    if (!find_ref_at(pos, &set, &idx, &prop_ref)) {
+    if (!find_ref_at(pos, nullptr, nullptr, &prop_ref)) {
       continue;
     }
     const std::shared_ptr<const CSSValue>* value_ptr = prop_ref.Value();

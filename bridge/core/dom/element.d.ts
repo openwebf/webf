@@ -2,13 +2,10 @@ import {Node} from "./node";
 import {Document} from "./document";
 import {ScrollToOptions} from "./scroll_to_options";
 import { ElementAttributes } from './legacy/element_attributes';
-import {CSSStyleDeclaration} from "../css/css_style_declaration";
+import {LegacyInlineCssStyleDeclaration} from "../css/legacy/legacy_inline_css_style_declaration";
 import {ParentNode} from "./parent_node";
 import {ChildNode} from "./child_node";
 import {Blob} from "../fileapi/blob";
-
-// Forward-decl for std::variant ElementStyle
-declare class ElementStyleVariant{}
 
 interface Element extends Node, ParentNode, ChildNode {
   id: string;
@@ -17,7 +14,7 @@ interface Element extends Node, ParentNode, ChildNode {
   readonly dataset: DOMStringMap;
   name: DartImpl<string>;
   readonly attributes: ElementAttributes;
-  readonly style: ElementStyleVariant;
+  readonly style: LegacyInlineCssStyleDeclaration;
   readonly clientHeight: SupportAsync<DartImpl<DependentsOnLayout<number>>>;
   readonly clientLeft: SupportAsync<DartImpl<DependentsOnLayout<number>>>;
   readonly clientTop: SupportAsync<DartImpl<DependentsOnLayout<number>>>;

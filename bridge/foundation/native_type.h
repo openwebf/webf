@@ -80,7 +80,7 @@ struct NativeMap : public DartReadable {
   uint32_t length{0};
 };
 
-// Combined style value + base href payload for UICommand::kSetInlineStyle.
+// Combined style value + base href payload for UICommand::kSetInlineStyle and UICommand::kSetSheetStyle.
 // - |value| holds the serialized CSS value (NativeString*).
 // - |href| holds an optional base href (NativeString*), or nullptr if absent.
 struct NativeStyleValueWithHref : public DartReadable {

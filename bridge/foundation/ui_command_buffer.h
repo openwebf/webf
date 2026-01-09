@@ -65,7 +65,13 @@ enum class UICommand {
   kRemoveIntersectionObserver,
   kDisconnectIntersectionObserver,
   // Append-only: set inline style using CSSPropertyID/CSSValueID integers (Blink mode fast-path).
-  kSetStyleById
+  kSetStyleById,
+  // Append-only: clear non-inline (sheet) styles emitted from native Blink engine.
+  kClearSheetStyle,
+  // Append-only: set non-inline (sheet) style property/value emitted from native Blink engine.
+  kSetSheetStyle,
+  // Append-only: set non-inline (sheet) style using CSSPropertyID/CSSValueID ints (Blink mode fast-path).
+  kSetSheetStyleById
 };
 
 #define MAXIMUM_UI_COMMAND_SIZE 2048
@@ -108,6 +114,19 @@ class UICommandBuffer {
                                   int64_t value_slot,
                                   SharedNativeString* base_href,
                                   bool request_ui_update = true);
+  // Fast-path for UICommand::kSetSheetStyleById without allocating a payload struct.
+  // Encoding:
+  // - args_01_length: property id (CSSPropertyID integer value), with !important encoded in the MSB:
+  //                  encoded = property_id | (important ? 0x80000000 : 0).
+  // - string_01: either a pointer to a NativeString (SharedNativeString*) holding the value (>= 0),
+  //              or a negative immediate CSSValueID: -(value_id + 1).
+  // - nativePtr2: optional base href NativeString (SharedNativeString*) pointer (may be nullptr).
+  virtual void AddSheetStyleByIdCommand(void* nativePtr,
+                                       int32_t property_id,
+                                       int64_t value_slot,
+                                       SharedNativeString* base_href,
+                                       bool important,
+                                       bool request_ui_update = true);
   UICommandItem* data();
   uint32_t kindFlag();
   int64_t size();
