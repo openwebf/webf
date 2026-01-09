@@ -904,6 +904,16 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     }
   }
 
+  void setSheetStyle(Pointer selfPtr, String key, String value, {String? baseHref, bool important = false}) {
+    assert(hasBindingObject(selfPtr), 'id: $selfPtr key: $key value: $value');
+    Node? target = getBindingObject<Node>(selfPtr);
+    if (target == null) return;
+
+    if (target is Element) {
+      target.setSheetStyle(key, value, baseHref: baseHref, fromNative: true, important: important);
+    }
+  }
+
   void clearInlineStyle(Pointer selfPtr) {
     assert(hasBindingObject(selfPtr), 'id: $selfPtr');
     Node? target = getBindingObject<Node>(selfPtr);
@@ -911,6 +921,16 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
     if (target is Element) {
       target.clearInlineStyle();
+    }
+  }
+
+  void clearSheetStyle(Pointer selfPtr) {
+    assert(hasBindingObject(selfPtr), 'id: $selfPtr');
+    Node? target = getBindingObject<Node>(selfPtr);
+    if (target == null) return;
+
+    if (target is Element) {
+      target.clearSheetStyle();
     }
   }
 

@@ -141,6 +141,11 @@ abstract class Element extends ContainerNode
   /// The inline style is a map of style property name to value/importance.
   final Map<String, InlineStyleEntry> inlineStyle = {};
 
+  // When Blink CSS is enabled, declared-value styles are computed on the native
+  // side and pushed over the bridge. These are non-inline stylesheet results
+  // and are used as the element's sheet style snapshot during recalc.
+  CSSStyleDeclaration? _sheetStyle;
+
   /// The StatefulElements that holding the reference of this elements
   @flutter.protected
   final Set<flutter.State> _states = {};
@@ -1729,7 +1734,16 @@ abstract class Element extends ContainerNode
   }
 
   void _applySheetStyle(ElementCSSStyleDeclaration style) {
-    CSSStyleDeclaration matchRule = _collectMatchedRulesWithCache();
+    final bool enableBlink = ownerDocument.ownerView.enableBlink;
+    if (enableBlink) {
+      final CSSStyleDeclaration? sheetStyle = _sheetStyle;
+      if (sheetStyle != null && sheetStyle.isNotEmpty) {
+        style.union(sheetStyle);
+      }
+      return;
+    }
+
+    final CSSStyleDeclaration matchRule = _collectMatchedRulesWithCache();
     style.union(matchRule);
   }
 
@@ -1997,7 +2011,12 @@ abstract class Element extends ContainerNode
   void setInlineStyle(String property, String value,
       {String? baseHref, bool fromNative = false, bool important = false}) {
     final bool enableBlink = ownerDocument.ownerView.enableBlink;
-    final bool validate = !(fromNative && enableBlink);
+    // Inline styles are merged on the Dart side (even in Blink mode), so keep
+    // Dart-side validation enabled for inline declarations.
+    final bool validateInline = true;
+    // Sheet styles pushed from native Blink are already validated; avoid
+    // re-validating them on the Dart side.
+    final bool validateSheet = !(fromNative && enableBlink);
     final InlineStyleEntry? previousEntry = inlineStyle[property];
 
     bool derivedImportant = important;
@@ -2041,8 +2060,23 @@ abstract class Element extends ContainerNode
       final bool? wasImportant =
           (previousEntry?.important ?? entry.important) ? true : null;
       style.removeProperty(property, wasImportant);
-      // When Blink CSS is enabled, style cascading and validation happen on
-      // the native side. Avoid expensive Dart-side recalculation here.
+      if (fromNative && enableBlink) {
+        final CSSStyleDeclaration? sheetStyle = _sheetStyle;
+        if (sheetStyle != null) {
+          final String sheetValue = sheetStyle.getPropertyValue(property);
+          if (sheetValue.isNotEmpty) {
+            style.enqueueSheetProperty(
+              property,
+              sheetValue,
+              isImportant: sheetStyle.isImportant(property) ? true : null,
+              baseHref: sheetStyle.getPropertyBaseHref(property),
+              validate: validateSheet,
+            );
+          }
+        }
+      }
+      // When Blink CSS is enabled, non-inline cascading happens on the native
+      // side. Avoid expensive Dart-side full recalculation here.
       if (!(fromNative && enableBlink)) {
         recalculateStyle();
       }
@@ -2054,8 +2088,92 @@ abstract class Element extends ContainerNode
         style.removeProperty(property, true);
       }
       style.enqueueInlineProperty(property, entry.value,
-          isImportant: entry.important ? true : null, baseHref: baseHref, validate: validate);
+          isImportant: entry.important ? true : null, baseHref: baseHref, validate: validateInline);
     }
+  }
+
+  // Set non-inline (sheet) style property pushed from native Blink style engine.
+  void setSheetStyle(String property, String value,
+      {String? baseHref, bool fromNative = false, bool important = false}) {
+    final bool enableBlink = ownerDocument.ownerView.enableBlink;
+    final bool validate = !(fromNative && enableBlink);
+    final bool previousImportant = _sheetStyle?.isImportant(property) ?? false;
+
+    bool derivedImportant = important;
+    String derivedValue = value;
+
+    // Compatibility: allow `!important` suffix in the value string.
+    if (fromNative && !derivedImportant) {
+      int end = derivedValue.length;
+      while (end > 0 && derivedValue.codeUnitAt(end - 1) <= 0x20) {
+        end--;
+      }
+
+      const String keyword = 'important';
+      if (end >= keyword.length) {
+        final int keywordStart = end - keyword.length;
+        if (derivedValue.substring(keywordStart, end).toLowerCase() == keyword) {
+          int i = keywordStart;
+          while (i > 0 && derivedValue.codeUnitAt(i - 1) <= 0x20) {
+            i--;
+          }
+          if (i > 0 && derivedValue.codeUnitAt(i - 1) == 0x21) {
+            derivedImportant = true;
+            derivedValue = derivedValue.substring(0, i - 1).trimRight();
+          }
+        }
+      }
+    }
+
+    InlineStyleEntry entry = InlineStyleEntry(derivedValue, important: derivedImportant);
+    if (fromNative && !derivedImportant) {
+      entry = _normalizeInlineStyleEntryFromNative(entry);
+    }
+
+    // Removing a sheet declaration.
+    if (entry.value.isEmpty) {
+      _sheetStyle?.removeProperty(property);
+      if (_sheetStyle?.isEmpty == true) {
+        _sheetStyle = null;
+      }
+
+      // If there is an inline declaration, re-enqueue it so we don't lose it
+      // after clearing a previously-winning sheet `!important`.
+      final InlineStyleEntry? inlineEntry = inlineStyle[property];
+      if (inlineEntry != null && inlineEntry.value.isNotEmpty) {
+        style.enqueueInlineProperty(
+          property,
+          inlineEntry.value,
+          isImportant: inlineEntry.important ? true : null,
+          validate: validate,
+        );
+      } else {
+        style.removeProperty(property, previousImportant ? true : null);
+      }
+      return;
+    }
+
+    (_sheetStyle ??= CSSStyleDeclaration.sheet()).setProperty(
+      property,
+      entry.value,
+      isImportant: entry.important ? true : null,
+      propertyType: PropertyType.sheet,
+      baseHref: baseHref,
+      validate: validate,
+    );
+
+    // If importance was downgraded, clear the previous important value so
+    // subsequent sheet updates are not blocked by stale `!important`.
+    if (previousImportant && !entry.important) {
+      style.removeProperty(property, true);
+    }
+    style.enqueueSheetProperty(
+      property,
+      entry.value,
+      isImportant: entry.important ? true : null,
+      baseHref: baseHref,
+      validate: validate,
+    );
   }
 
   void clearInlineStyle() {
@@ -2074,6 +2192,39 @@ abstract class Element extends ContainerNode
     // Clear any stale inline overrides immediately.
     for (final entry in removedEntries.entries) {
       style.removeProperty(entry.key, entry.value.important ? true : null);
+    }
+
+    final CSSStyleDeclaration? sheetStyle = _sheetStyle;
+    if (sheetStyle != null && sheetStyle.isNotEmpty) {
+      style.union(sheetStyle);
+    }
+  }
+
+  // Clear declared-value styles pushed from the native Blink engine.
+  void clearSheetStyle() {
+    final CSSStyleDeclaration? removedSheetStyle = _sheetStyle;
+    if (removedSheetStyle == null || removedSheetStyle.isEmpty) return;
+    _sheetStyle = null;
+
+    for (final entry in removedSheetStyle) {
+      style.removeProperty(entry.key, entry.value.important ? true : null);
+    }
+
+    // Re-apply inline declarations after removing sheet overrides so inline
+    // styles remain effective (especially when a sheet `!important` was
+    // previously winning).
+    if (inlineStyle.isNotEmpty) {
+      final bool enableBlink = ownerDocument.ownerView.enableBlink;
+      final bool validate = !enableBlink;
+      inlineStyle.forEach((propertyName, inlineEntry) {
+        if (inlineEntry.value.isEmpty) return;
+        style.enqueueInlineProperty(
+          propertyName,
+          inlineEntry.value,
+          isImportant: inlineEntry.important ? true : null,
+          validate: validate,
+        );
+      });
     }
   }
 

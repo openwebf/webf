@@ -302,14 +302,8 @@ void StyleResolver::MatchAllRules(
   // Match author rules
   MatchAuthorRules(element, 0, collector);
   
-  // Match inline style (highest priority)
-  if (element.IsStyledElement()) {
-    auto inline_style_set = const_cast<Element&>(element).EnsureMutableInlineStyle();
-    if (inline_style_set && inline_style_set->PropertyCount() > 0) {
-      collector.AddElementStyleProperties(inline_style_set,
-                                         PropertyAllowedInMode::kAll);
-    }
-  }
+  // NOTE: WebF does not participate inline styles in the native (Blink) cascade.
+  // Inline declarations (style="" / CSSOM) are forwarded to Dart and merged there.
 }
 
 void StyleResolver::MatchUserRules(ElementRuleCollector& collector) {

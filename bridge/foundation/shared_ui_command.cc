@@ -100,6 +100,30 @@ void SharedUICommand::AddStyleByIdCommand(void* native_binding_object,
   ui_command_sync_strategy_->RecordStyleByIdCommand(item, request_ui_update);
 }
 
+void SharedUICommand::AddSheetStyleByIdCommand(void* native_binding_object,
+                                              int32_t property_id,
+                                              int64_t value_slot,
+                                              SharedNativeString* base_href,
+                                              bool important,
+                                              bool request_ui_update) {
+  if (!context_->isDedicated()) {
+    std::lock_guard<std::mutex> lock(read_buffer_mutex_);
+    read_buffer_->AddSheetStyleByIdCommand(native_binding_object, property_id, value_slot, base_href, important,
+                                          request_ui_update);
+    return;
+  }
+
+  UICommandItem item{};
+  item.type = static_cast<int32_t>(UICommand::kSetSheetStyleById);
+  uint32_t encoded_property_id =
+      static_cast<uint32_t>(property_id) | (important ? 0x80000000u : 0u);
+  item.args_01_length = static_cast<int32_t>(encoded_property_id);
+  item.string_01 = value_slot;
+  item.nativePtr = static_cast<int64_t>(reinterpret_cast<intptr_t>(native_binding_object));
+  item.nativePtr2 = static_cast<int64_t>(reinterpret_cast<intptr_t>(base_href));
+  ui_command_sync_strategy_->RecordStyleByIdCommand(item, request_ui_update);
+}
+
 void* SharedUICommand::data() {
   std::lock_guard<std::mutex> lock(read_buffer_mutex_);
 

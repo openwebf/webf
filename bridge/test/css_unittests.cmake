@@ -11,6 +11,7 @@ list(APPEND WEBF_CSS_UNIT_TEST_SOURCE
   ./core/css/resolver/style_cascade_test.cc
   ./core/css/resolver/selector_specificity_test.cc
   ./core/css/inline_style_test.cc
+  ./core/css/blink_inline_style_validation_test.cc
   ./core/css/selector_test.cc
   ./core/css/css_initial_test.cc
   ./core/css/css_selector_test.cc

@@ -159,7 +159,7 @@ LegacyInlineCssStyleDeclaration::LegacyInlineCssStyleDeclaration(Element* owner_
     : LegacyCssStyleDeclaration(owner_element_->ctx(), nullptr), owner_element_(owner_element_) {}
 
 ScriptValue LegacyInlineCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
-  if (webf::IsPrototypeMethods(key)) {
+  if (IsPrototypeMethods(key)) {
     return ScriptValue::Undefined(ctx());
   }
 
@@ -202,7 +202,7 @@ ScriptValue LegacyInlineCssStyleDeclaration::item(const AtomicString& key, Excep
 bool LegacyInlineCssStyleDeclaration::SetItem(const AtomicString& key,
                                         const ScriptValue& value,
                                         ExceptionState& exception_state) {
-  if (webf::IsPrototypeMethods(key)) {
+  if (IsPrototypeMethods(key)) {
     return false;
   }
 

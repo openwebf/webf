@@ -861,6 +861,12 @@ enum UICommandType {
   disconnectIntersectionObserver,
   // Append-only: set inline style using Blink CSSPropertyID/CSSValueID ints.
   setStyleById,
+  // Append-only: clear non-inline (sheet) styles emitted from native Blink engine.
+  clearSheetStyle,
+  // Append-only: set non-inline (sheet) style property/value emitted from native Blink engine.
+  setSheetStyle,
+  // Append-only: set non-inline (sheet) style using Blink CSSPropertyID/CSSValueID ints.
+  setSheetStyleById,
 }
 
 final class UICommandItem extends Struct {
