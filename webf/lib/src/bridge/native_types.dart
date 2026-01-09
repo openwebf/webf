@@ -47,7 +47,7 @@ final class NativeMap extends Struct {
   external int length;
 }
 
-// Combined style value + base href payload for UICommandType.setInlineStyle.
+// Combined style value + base href payload for UICommandType.setInlineStyle and UICommandType.setSheetStyle.
 // - |value| is the CSS value as NativeString.
 // - |href| is an optional base href as NativeString (may be nullptr).
 final class NativeStyleValueWithHref extends Struct {

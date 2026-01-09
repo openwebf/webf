@@ -46,6 +46,15 @@ class SharedUICommand : public DartReadable {
                            SharedNativeString* base_href,
                            bool request_ui_update = true);
 
+  // Fast-path for UICommand::kSetSheetStyleById without allocating a payload struct.
+  // See UICommandBuffer::AddSheetStyleByIdCommand for the data encoding.
+  void AddSheetStyleByIdCommand(void* native_binding_object,
+                               int32_t property_id,
+                               int64_t value_slot,
+                               SharedNativeString* base_href,
+                               bool important,
+                               bool request_ui_update = true);
+
   void ConfigureSyncCommandBufferSize(size_t size);
 
   void* data();

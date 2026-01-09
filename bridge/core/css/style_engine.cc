@@ -1133,35 +1133,10 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
 
         StyleCascade cascade(state);
         for (const auto& entry : collector.GetMatchResult().GetMatchedProperties()) {
-          if (entry.is_inline_style) {
-            cascade.MutableMatchResult().AddInlineStyleProperties(entry.properties);
-          } else {
-            cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
-          }
+          cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
         }
 
         std::shared_ptr<MutableCSSPropertyValueSet> property_set = cascade.ExportWinningPropertySet();
-
-        auto inline_style = const_cast<Element&>(*element).EnsureMutableInlineStyle();
-        if (inline_style && inline_style->PropertyCount() > 0) {
-          if (!property_set) {
-            property_set = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
-          }
-          unsigned icount = inline_style->PropertyCount();
-          for (unsigned i = 0; i < icount; ++i) {
-            auto in_prop = inline_style->PropertyAt(i);
-            CSSPropertyID id = in_prop.Id();
-            if (id == CSSPropertyID::kInvalid || id == CSSPropertyID::kVariable) {
-              continue;
-            }
-            if (!property_set->HasProperty(id)) {
-              const auto* vptr = in_prop.Value();
-              if (vptr && *vptr) {
-                property_set->SetProperty(id, *vptr, in_prop.IsImportant());
-              }
-            }
-          }
-        }
 
         bool display_none_for_invalidation = false;
         if (property_set && !property_set->IsEmpty()) {
@@ -1172,11 +1147,9 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
 
         if (!property_set || property_set->IsEmpty()) {
           // Even if there are no element-level winners, clear any previously-sent
-          // overrides (to avoid stale styles) and emit pseudo styles if any exist.
+          // sheet overrides (to avoid stale styles) and emit pseudo styles if any exist.
           auto* ctx = document.GetExecutingContext();
-          if (!(inline_style && inline_style->PropertyCount() > 0)) {
-            ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
-          }
+          ctx->uiCommandBuffer()->AddCommand(UICommand::kClearSheetStyle, nullptr, element->bindingObject(), nullptr);
           auto emit_pseudo_if_any = [&](PseudoId pseudo_id, const char* pseudo_name) {
             ElementRuleCollector pseudo_collector(state, SelectorChecker::kResolvingStyle);
             pseudo_collector.SetPseudoElementStyleRequest(PseudoElementStyleRequest(pseudo_id));
@@ -1185,11 +1158,7 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
 
             StyleCascade pseudo_cascade(state);
             for (const auto& entry : pseudo_collector.GetMatchResult().GetMatchedProperties()) {
-              if (entry.is_inline_style) {
-                pseudo_cascade.MutableMatchResult().AddInlineStyleProperties(entry.properties);
-              } else {
-                pseudo_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
-              }
+              pseudo_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
             }
 
             std::shared_ptr<MutableCSSPropertyValueSet> pseudo_set = pseudo_cascade.ExportWinningPropertySet();
@@ -1250,20 +1219,9 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
         }
 
         auto* ctx = document.GetExecutingContext();
-        // Only clear when we actually have properties to apply; otherwise we
-        // might clear a previously-sent snapshot and leave the element with no
-        // inline overrides (e.g., BODY background), causing incorrect paint.
-        ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
-        bool cleared = true;
+        ctx->uiCommandBuffer()->AddCommand(UICommand::kClearSheetStyle, nullptr, element->bindingObject(), nullptr);
 
-        if (!property_set || property_set->IsEmpty()) {
-          InheritedState next_state;
-          next_state.inherited_values = parent_state.inherited_values;
-          next_state.custom_vars = parent_state.custom_vars;
-          return next_state;
-        }
-
-        unsigned count = property_set->PropertyCount();
+        unsigned count = property_set ? property_set->PropertyCount() : 0;
         InheritedValueMap inherited_values(parent_state.inherited_values);
         CustomVarMap custom_vars(parent_state.custom_vars);
 
@@ -1312,25 +1270,24 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
           auto prop = property_set->PropertyAt(i);
           CSSPropertyID id = prop.Id();
           if (id == CSSPropertyID::kInvalid) continue;
+          if (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap) {
+            continue;
+          }
           const auto* value_ptr = prop.Value();
           if (!value_ptr || !(*value_ptr)) continue;
 
           AtomicString prop_name = prop.Name().ToAtomicString();
-          // Custom properties require sending the property name across the bridge.
+          String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
+
           if (id == CSSPropertyID::kVariable) {
             String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
-            String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
-            if (value_string.IsNull()) value_string = String("");
+            if (value_string.IsNull()) {
+              value_string = (*value_ptr)->CssTextForSerialization();
+            }
             if (value_string.IsEmpty()) {
               value_string = String(" ");
             }
 
-            // Skip white-space longhands; will emit shorthand later
-            if (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap) {
-              continue;
-            }
-
-            // Already cleared above.
             auto key_ns = prop_name.ToStylePropertyNameNativeString();
             auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
             payload->value = stringToNativeString(value_string).release();
@@ -1340,42 +1297,37 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
               payload->href = nullptr;
             }
             payload->important = prop.IsImportant() ? 1 : 0;
-            ctx->uiCommandBuffer()->AddCommand(UICommand::kSetInlineStyle, std::move(key_ns), element->bindingObject(),
+            ctx->uiCommandBuffer()->AddCommand(UICommand::kSetSheetStyle, std::move(key_ns), element->bindingObject(),
                                                payload);
             continue;
           }
 
-          // Skip white-space longhands; will emit shorthand later
-          if (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap) {
-            continue;
-          }
-
           int64_t value_slot = 0;
-          SharedNativeString* base_href = nullptr;
           if ((*value_ptr)->IsIdentifierValue()) {
             const auto& ident = To<CSSIdentifierValue>(*(*value_ptr));
             value_slot = -static_cast<int64_t>(ident.GetValueID()) - 1;
           } else {
             String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
-            String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
             if (value_string.IsNull()) {
-              value_string = String("");
+              value_string = (*value_ptr)->CssTextForSerialization();
             }
-            if (!value_string.IsEmpty()) {
-              auto* value_ns = stringToNativeString(value_string).release();
-              value_slot = static_cast<int64_t>(reinterpret_cast<intptr_t>(value_ns));
+            if (value_string.IsEmpty()) {
+              continue;
             }
-            if (!base_href_string.IsEmpty()) {
-              base_href = stringToNativeString(base_href_string.ToUTF8String()).release();
-            }
+            auto* value_ns = stringToNativeString(value_string).release();
+            value_slot = static_cast<int64_t>(reinterpret_cast<intptr_t>(value_ns));
           }
 
-          ctx->uiCommandBuffer()->AddStyleByIdCommand(element->bindingObject(), static_cast<int32_t>(id), value_slot,
-                                                      base_href);
+          SharedNativeString* base_href = nullptr;
+          if (!base_href_string.IsEmpty()) {
+            base_href = stringToNativeString(base_href_string.ToUTF8String()).release();
+          }
+
+          ctx->uiCommandBuffer()->AddSheetStyleByIdCommand(element->bindingObject(), static_cast<int32_t>(id),
+                                                           value_slot, base_href, prop.IsImportant());
         }
 
         if (emit_white_space_shorthand) {
-          // Already cleared above.
           CSSValueID ws_value_id = CSSValueID::kInvalid;
           EWhiteSpace ws = ToWhiteSpace(ws_collapse_enum, text_wrap_enum);
           switch (ws) {
@@ -1407,9 +1359,9 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
             value_slot = static_cast<int64_t>(reinterpret_cast<intptr_t>(value_ns));
           }
 
-          ctx->uiCommandBuffer()->AddStyleByIdCommand(element->bindingObject(),
-                                                      static_cast<int32_t>(CSSPropertyID::kWhiteSpace), value_slot,
-                                                      nullptr);
+          ctx->uiCommandBuffer()->AddSheetStyleByIdCommand(
+              element->bindingObject(), static_cast<int32_t>(CSSPropertyID::kWhiteSpace), value_slot, nullptr,
+              /*important*/ false);
         }
 
         // Pseudo emission (only minimal content properties as in RecalcStyle)
@@ -1421,11 +1373,7 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
 
           StyleCascade pseudo_cascade(state);
           for (const auto& entry : pseudo_collector.GetMatchResult().GetMatchedProperties()) {
-            if (entry.is_inline_style) {
-              pseudo_cascade.MutableMatchResult().AddInlineStyleProperties(entry.properties);
-            } else {
-              pseudo_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
-            }
+            pseudo_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
           }
 
           std::shared_ptr<MutableCSSPropertyValueSet> pseudo_set = pseudo_cascade.ExportWinningPropertySet();
@@ -1523,35 +1471,10 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
 
         StyleCascade cascade(state);
         for (const auto& entry : collector.GetMatchResult().GetMatchedProperties()) {
-          if (entry.is_inline_style) {
-            cascade.MutableMatchResult().AddInlineStyleProperties(entry.properties);
-          } else {
-            cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
-          }
+          cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
         }
 
         std::shared_ptr<MutableCSSPropertyValueSet> property_set = cascade.ExportWinningPropertySet();
-
-        auto inline_style = const_cast<Element&>(*el).EnsureMutableInlineStyle();
-        if (inline_style && inline_style->PropertyCount() > 0) {
-          if (!property_set) {
-            property_set = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
-          }
-          unsigned icount = inline_style->PropertyCount();
-          for (unsigned i = 0; i < icount; ++i) {
-            auto in_prop = inline_style->PropertyAt(i);
-            CSSPropertyID id = in_prop.Id();
-            if (id == CSSPropertyID::kInvalid || id == CSSPropertyID::kVariable) {
-              continue;
-            }
-            if (!property_set->HasProperty(id)) {
-              const auto* vptr = in_prop.Value();
-              if (vptr && *vptr) {
-                property_set->SetProperty(id, *vptr, in_prop.IsImportant());
-              }
-            }
-          }
-        }
 
         bool display_none_for_invalidation = false;
         if (property_set && !property_set->IsEmpty()) {
@@ -1563,9 +1486,7 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
         auto* ctx = document.GetExecutingContext();
 
         if (!property_set || property_set->IsEmpty()) {
-          if (!(inline_style && inline_style->PropertyCount() > 0)) {
-            ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, el->bindingObject(), nullptr);
-          }
+          ctx->uiCommandBuffer()->AddCommand(UICommand::kClearSheetStyle, nullptr, el->bindingObject(), nullptr);
 
           auto emit_pseudo_if_any = [&](PseudoId pseudo_id, const char* pseudo_name) {
             ElementRuleCollector pseudo_collector(state, SelectorChecker::kResolvingStyle);
@@ -1575,11 +1496,7 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
 
             StyleCascade pseudo_cascade(state);
             for (const auto& entry : pseudo_collector.GetMatchResult().GetMatchedProperties()) {
-              if (entry.is_inline_style) {
-                pseudo_cascade.MutableMatchResult().AddInlineStyleProperties(entry.properties);
-              } else {
-                pseudo_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
-              }
+              pseudo_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
             }
 
             std::shared_ptr<MutableCSSPropertyValueSet> pseudo_set = pseudo_cascade.ExportWinningPropertySet();
@@ -1629,10 +1546,9 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
           return next_state;
         }
 
-        // We have properties to apply. Clear existing overrides and emit winners.
-        ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, el->bindingObject(), nullptr);
+        ctx->uiCommandBuffer()->AddCommand(UICommand::kClearSheetStyle, nullptr, el->bindingObject(), nullptr);
 
-        unsigned count = property_set->PropertyCount();
+        unsigned count = property_set ? property_set->PropertyCount() : 0;
         InheritedValueMap inherited_values(parent_state.inherited_values);
         CustomVarMap custom_vars(parent_state.custom_vars);
 
@@ -1680,21 +1596,22 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
           auto prop = property_set->PropertyAt(i);
           CSSPropertyID id = prop.Id();
           if (id == CSSPropertyID::kInvalid) continue;
+          if (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap) {
+            continue;
+          }
           const auto* value_ptr = prop.Value();
           if (!value_ptr || !(*value_ptr)) continue;
 
           AtomicString prop_name = prop.Name().ToAtomicString();
-          // Custom properties require sending the property name across the bridge.
+          String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
+
           if (id == CSSPropertyID::kVariable) {
             String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
-            String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
-            if (value_string.IsNull()) value_string = String("");
+            if (value_string.IsNull()) {
+              value_string = (*value_ptr)->CssTextForSerialization();
+            }
             if (value_string.IsEmpty()) {
               value_string = String(" ");
-            }
-
-            if (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap) {
-              continue;
             }
 
             auto key_ns = prop_name.ToStylePropertyNameNativeString();
@@ -1706,37 +1623,34 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
               payload->href = nullptr;
             }
             payload->important = prop.IsImportant() ? 1 : 0;
-            ctx->uiCommandBuffer()->AddCommand(UICommand::kSetInlineStyle, std::move(key_ns), el->bindingObject(),
+            ctx->uiCommandBuffer()->AddCommand(UICommand::kSetSheetStyle, std::move(key_ns), el->bindingObject(),
                                                payload);
             continue;
           }
 
-          if (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap) {
-            continue;
-          }
-
           int64_t value_slot = 0;
-          SharedNativeString* base_href = nullptr;
-
           if ((*value_ptr)->IsIdentifierValue()) {
             const auto& ident = To<CSSIdentifierValue>(*(*value_ptr));
             value_slot = -static_cast<int64_t>(ident.GetValueID()) - 1;
           } else {
             String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
-            String base_href_string = property_set->GetPropertyBaseHrefWithHint(prop_name, i);
-            if (value_string.IsNull()) value_string = String("");
-
-            if (!value_string.IsEmpty()) {
-              auto* value_ns = stringToNativeString(value_string).release();
-              value_slot = static_cast<int64_t>(reinterpret_cast<intptr_t>(value_ns));
+            if (value_string.IsNull()) {
+              value_string = (*value_ptr)->CssTextForSerialization();
             }
-            if (!base_href_string.IsEmpty()) {
-              base_href = stringToNativeString(base_href_string.ToUTF8String()).release();
+            if (value_string.IsEmpty()) {
+              continue;
             }
+            auto* value_ns = stringToNativeString(value_string).release();
+            value_slot = static_cast<int64_t>(reinterpret_cast<intptr_t>(value_ns));
           }
 
-          ctx->uiCommandBuffer()->AddStyleByIdCommand(el->bindingObject(), static_cast<int32_t>(id), value_slot,
-                                                      base_href);
+          SharedNativeString* base_href = nullptr;
+          if (!base_href_string.IsEmpty()) {
+            base_href = stringToNativeString(base_href_string.ToUTF8String()).release();
+          }
+
+          ctx->uiCommandBuffer()->AddSheetStyleByIdCommand(el->bindingObject(), static_cast<int32_t>(id), value_slot,
+                                                           base_href, prop.IsImportant());
         }
 
         if (emit_white_space_shorthand) {
@@ -1771,9 +1685,9 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
             value_slot = static_cast<int64_t>(reinterpret_cast<intptr_t>(value_ns));
           }
 
-          ctx->uiCommandBuffer()->AddStyleByIdCommand(el->bindingObject(),
-                                                      static_cast<int32_t>(CSSPropertyID::kWhiteSpace), value_slot,
-                                                      nullptr);
+          ctx->uiCommandBuffer()->AddSheetStyleByIdCommand(
+              el->bindingObject(), static_cast<int32_t>(CSSPropertyID::kWhiteSpace), value_slot, nullptr,
+              /*important*/ false);
         }
 
         auto send_pseudo_for = [&](PseudoId pseudo_id, const char* pseudo_name) {
@@ -1784,11 +1698,7 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
 
           StyleCascade pseudo_cascade(state);
           for (const auto& entry : pseudo_collector.GetMatchResult().GetMatchedProperties()) {
-            if (entry.is_inline_style) {
-              pseudo_cascade.MutableMatchResult().AddInlineStyleProperties(entry.properties);
-            } else {
-              pseudo_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
-            }
+            pseudo_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
           }
 
           std::shared_ptr<MutableCSSPropertyValueSet> pseudo_set = pseudo_cascade.ExportWinningPropertySet();
