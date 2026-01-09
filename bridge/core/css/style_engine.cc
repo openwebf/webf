@@ -1995,15 +1995,15 @@ void StyleEngine::RecalcStyle(StyleRecalcChange change, const StyleRecalcContext
       Element* element = static_cast<Element*>(node);
       if (element->NeedsStyleRecalc()) {
         StyleChangeType change_type = element->GetStyleChangeType();
-        if (change_type == kInlineIndependentStyleChange) {
-          // Inline-only independent style changes affect this element but not
-          // its descendants. Recompute style just for this element to keep
-          // selector results in sync with the rest of the pipeline.
+        if (change_type == kInlineIndependentStyleChange || change_type == kLocalStyleChange) {
+          // Inline-only independent and local style changes only require rule
+          // matching for this element. Descendant style effects are handled via
+          // selector-based invalidation or Dart-side inheritance/var() updates.
           RecalcStyleForElementOnly(*element);
           element->ClearNeedsStyleRecalc();
         } else {
-          // For local or subtree changes, recompute styles for this element and
-          // its descendants and then clear dirty bits in that subtree.
+          // For subtree changes, recompute styles for this element and its
+          // descendants and then clear dirty bits in that subtree.
           RecalcStyleForSubtree(*element);
           clear_flags_for_subtree(element);
           return;
