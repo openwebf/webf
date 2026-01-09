@@ -1599,8 +1599,17 @@ RuleFeatureSet::SelectorPreMatch RuleFeatureSet::CollectMetadataFromSelector(
     switch (current->GetPseudoType()) {
       case CSSSelector::kPseudoHas:
         break;
+      case CSSSelector::kPseudoFirstLetter:
+        metadata.uses_first_letter_rules = true;
+        break;
       case CSSSelector::kPseudoFirstLine:
         metadata.uses_first_line_rules = true;
+        break;
+      case CSSSelector::kPseudoBefore:
+        metadata.uses_before_rules = true;
+        break;
+      case CSSSelector::kPseudoAfter:
+        metadata.uses_after_rules = true;
         break;
       case CSSSelector::kPseudoWindowInactive:
         metadata.uses_window_inactive_selector = true;
@@ -1668,6 +1677,9 @@ RuleFeatureSet::SelectorPreMatch RuleFeatureSet::CollectMetadataFromSelector(
 
 void RuleFeatureSet::FeatureMetadata::Merge(const FeatureMetadata& other) {
   uses_first_line_rules |= other.uses_first_line_rules;
+  uses_first_letter_rules |= other.uses_first_letter_rules;
+  uses_before_rules |= other.uses_before_rules;
+  uses_after_rules |= other.uses_after_rules;
   uses_window_inactive_selector |= other.uses_window_inactive_selector;
   max_direct_adjacent_selectors = std::max(max_direct_adjacent_selectors, other.max_direct_adjacent_selectors);
   uses_has_inside_nth |= other.uses_has_inside_nth;
@@ -1675,6 +1687,9 @@ void RuleFeatureSet::FeatureMetadata::Merge(const FeatureMetadata& other) {
 
 void RuleFeatureSet::FeatureMetadata::Clear() {
   uses_first_line_rules = false;
+  uses_first_letter_rules = false;
+  uses_before_rules = false;
+  uses_after_rules = false;
   uses_window_inactive_selector = false;
   max_direct_adjacent_selectors = 0;
   invalidates_parts = false;
@@ -1683,6 +1698,8 @@ void RuleFeatureSet::FeatureMetadata::Clear() {
 
 bool RuleFeatureSet::FeatureMetadata::operator==(const FeatureMetadata& other) const {
   return uses_first_line_rules == other.uses_first_line_rules &&
+         uses_first_letter_rules == other.uses_first_letter_rules &&
+         uses_before_rules == other.uses_before_rules && uses_after_rules == other.uses_after_rules &&
          uses_window_inactive_selector == other.uses_window_inactive_selector &&
          max_direct_adjacent_selectors == other.max_direct_adjacent_selectors &&
          invalidates_parts == other.invalidates_parts && uses_has_inside_nth == other.uses_has_inside_nth;

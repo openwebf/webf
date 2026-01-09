@@ -1119,6 +1119,18 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
     return;
   }
 
+  bool emit_before = true;
+  bool emit_after = true;
+  bool emit_first_letter = true;
+  bool emit_first_line = true;
+  if (global_rule_set_) {
+    const RuleFeatureSet& features = global_rule_set_->GetRuleFeatureSet();
+    emit_before = features.UsesBeforeRules();
+    emit_after = features.UsesAfterRules();
+    emit_first_letter = features.UsesFirstLetterRules();
+    emit_first_line = features.UsesFirstLineRules();
+  }
+
   std::function<InheritedState(Element*, const InheritedState&)> apply_for_element =
       [&](Element* element, const InheritedState& parent_state) -> InheritedState {
         if (!element || !element->IsStyledElement()) {
@@ -1207,10 +1219,18 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
             return true;
           };
 
-          (void)emit_pseudo_if_any(PseudoId::kPseudoIdBefore, "before");
-          (void)emit_pseudo_if_any(PseudoId::kPseudoIdAfter, "after");
-          (void)emit_pseudo_if_any(PseudoId::kPseudoIdFirstLetter, "first-letter");
-          (void)emit_pseudo_if_any(PseudoId::kPseudoIdFirstLine, "first-line");
+          if (emit_before) {
+            (void)emit_pseudo_if_any(PseudoId::kPseudoIdBefore, "before");
+          }
+          if (emit_after) {
+            (void)emit_pseudo_if_any(PseudoId::kPseudoIdAfter, "after");
+          }
+          if (emit_first_letter) {
+            (void)emit_pseudo_if_any(PseudoId::kPseudoIdFirstLetter, "first-letter");
+          }
+          if (emit_first_line) {
+            (void)emit_pseudo_if_any(PseudoId::kPseudoIdFirstLine, "first-line");
+          }
 
           InheritedState next_state;
           next_state.inherited_values = parent_state.inherited_values;
@@ -1422,10 +1442,18 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
           }
         };
 
-        send_pseudo_for(PseudoId::kPseudoIdBefore, "before");
-        send_pseudo_for(PseudoId::kPseudoIdAfter, "after");
-        send_pseudo_for(PseudoId::kPseudoIdFirstLetter, "first-letter");
-        send_pseudo_for(PseudoId::kPseudoIdFirstLine, "first-line");
+        if (emit_before) {
+          send_pseudo_for(PseudoId::kPseudoIdBefore, "before");
+        }
+        if (emit_after) {
+          send_pseudo_for(PseudoId::kPseudoIdAfter, "after");
+        }
+        if (emit_first_letter) {
+          send_pseudo_for(PseudoId::kPseudoIdFirstLetter, "first-letter");
+        }
+        if (emit_first_line) {
+          send_pseudo_for(PseudoId::kPseudoIdFirstLine, "first-line");
+        }
 
         InheritedState next_state;
         next_state.inherited_values = std::move(inherited_values);
@@ -1438,7 +1466,11 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
         if (!node) return;
         InheritedState current_state = inherited_state;
         if (node->IsElementNode()) {
-          current_state = apply_for_element(static_cast<Element*>(node), inherited_state);
+          auto* element = static_cast<Element*>(node);
+          current_state = apply_for_element(element, inherited_state);
+          if (element->IsStyledElement() && element->IsDisplayNoneForStyleInvalidation()) {
+            return;
+          }
         }
         for (Node* child = node->firstChild(); child; child = child->nextSibling()) {
           walk(child, current_state);
@@ -1453,6 +1485,18 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
   Document& document = GetDocument();
   if (!document.GetExecutingContext()->isBlinkEnabled()) {
     return;
+  }
+
+  bool emit_before = true;
+  bool emit_after = true;
+  bool emit_first_letter = true;
+  bool emit_first_line = true;
+  if (global_rule_set_) {
+    const RuleFeatureSet& features = global_rule_set_->GetRuleFeatureSet();
+    emit_before = features.UsesBeforeRules();
+    emit_after = features.UsesAfterRules();
+    emit_first_letter = features.UsesFirstLetterRules();
+    emit_first_line = features.UsesFirstLineRules();
   }
 
   // Reuse the same per-element styling logic as RecalcStyleForSubtree, but do
@@ -1535,10 +1579,18 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
             return true;
           };
 
-          (void)emit_pseudo_if_any(PseudoId::kPseudoIdBefore, "before");
-          (void)emit_pseudo_if_any(PseudoId::kPseudoIdAfter, "after");
-          (void)emit_pseudo_if_any(PseudoId::kPseudoIdFirstLetter, "first-letter");
-          (void)emit_pseudo_if_any(PseudoId::kPseudoIdFirstLine, "first-line");
+          if (emit_before) {
+            (void)emit_pseudo_if_any(PseudoId::kPseudoIdBefore, "before");
+          }
+          if (emit_after) {
+            (void)emit_pseudo_if_any(PseudoId::kPseudoIdAfter, "after");
+          }
+          if (emit_first_letter) {
+            (void)emit_pseudo_if_any(PseudoId::kPseudoIdFirstLetter, "first-letter");
+          }
+          if (emit_first_line) {
+            (void)emit_pseudo_if_any(PseudoId::kPseudoIdFirstLine, "first-line");
+          }
 
           InheritedState next_state;
           next_state.inherited_values = parent_state.inherited_values;
@@ -1746,10 +1798,18 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
           }
         };
 
-        send_pseudo_for(PseudoId::kPseudoIdBefore, "before");
-        send_pseudo_for(PseudoId::kPseudoIdAfter, "after");
-        send_pseudo_for(PseudoId::kPseudoIdFirstLetter, "first-letter");
-        send_pseudo_for(PseudoId::kPseudoIdFirstLine, "first-line");
+        if (emit_before) {
+          send_pseudo_for(PseudoId::kPseudoIdBefore, "before");
+        }
+        if (emit_after) {
+          send_pseudo_for(PseudoId::kPseudoIdAfter, "after");
+        }
+        if (emit_first_letter) {
+          send_pseudo_for(PseudoId::kPseudoIdFirstLetter, "first-letter");
+        }
+        if (emit_first_line) {
+          send_pseudo_for(PseudoId::kPseudoIdFirstLine, "first-line");
+        }
 
         InheritedState next_state;
         next_state.inherited_values = std::move(inherited_values);
