@@ -1586,6 +1586,33 @@ class RenderFlexLayout extends RenderLayoutBox {
     double? containerBaseline;
     CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
     bool isDisplayInline = effectiveDisplay != CSSDisplay.block && effectiveDisplay != CSSDisplay.flex;
+
+    double? getChildBaselineDistance(RenderBox child) {
+      // Prefer WebF's cached CSS baselines, which are safe to access even when the
+      // render tree is not attached to a PipelineOwner (e.g. offscreen/manual layout).
+      if (child is RenderBoxModel) {
+        final double? css = child.computeCssFirstBaselineOf(TextBaseline.alphabetic);
+        if (css != null) return css;
+      } else if (child is RenderPositionPlaceholder) {
+        final RenderBoxModel? positioned = child.positioned;
+        final double? css = positioned?.computeCssFirstBaselineOf(TextBaseline.alphabetic);
+        if (css != null) return css;
+      }
+
+      // Avoid RenderBox.getDistanceToBaseline when detached; it asserts on owner!.
+      if (!child.attached) {
+        if (child is RenderBoxModel) {
+          return child.boxSize?.height ?? (child.hasSize ? child.size.height : null);
+        }
+        if (child is RenderPositionPlaceholder) {
+          return child.boxSize?.height ?? (child.hasSize ? child.size.height : null);
+        }
+        return child.hasSize ? child.size.height : null;
+      }
+
+      return child.getDistanceToBaseline(TextBaseline.alphabetic);
+    }
+
     if (_flexLineBoxMetrics.isEmpty) {
       if (isDisplayInline) {
         // Inline flex container with no flex items: synthesize baseline from the
@@ -1626,7 +1653,7 @@ class RenderFlexLayout extends RenderLayoutBox {
 
         for (final _RunChild runChild in firstRunChildren) {
           final RenderBox child = runChild.child;
-          final double? childBaseline = child.getDistanceToBaseline(TextBaseline.alphabetic);
+          final double? childBaseline = getChildBaselineDistance(child);
           final bool participates = participatesInBaseline(child);
 
           if (participates && baselineChild == null) {
@@ -1696,7 +1723,7 @@ class RenderFlexLayout extends RenderLayoutBox {
 
         for (final _RunChild runChild in firstRunChildren) {
           final RenderBox child = runChild.child;
-          final double? childBaseline = child.getDistanceToBaseline(TextBaseline.alphabetic);
+          final double? childBaseline = getChildBaselineDistance(child);
 
           // Compute baseline participation (inline here for robust wrapper handling)
           RenderBoxModel? styleBox;
@@ -1751,8 +1778,13 @@ class RenderFlexLayout extends RenderLayoutBox {
 
         if (chosen != null) {
           if (chosenBaseline != null) {
-            final RenderLayoutParentData pd = chosen.parentData as RenderLayoutParentData;
-            double dy = pd.offset.dy;
+            double dy = 0.0;
+            final ParentData? pd = chosen.parentData;
+            if (pd is BoxParentData) {
+              dy = pd.offset.dy;
+            } else if (pd is ContainerBoxParentData<RenderBox>) {
+              dy = pd.offset.dy;
+            }
             if (chosen is RenderBoxModel) {
               final Offset? rel = CSSPositionedLayout.getRelativeOffset(chosen.renderStyle);
               if (rel != null) dy -= rel.dy;
