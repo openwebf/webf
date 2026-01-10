@@ -115,6 +115,7 @@ const sections: Section[] = [
     title: 'Native Plugins',
     items: [
       { label: 'WebF Share', path: '/webf-share', desc: 'Share and save content via native APIs' },
+      { label: 'WebF SQFlite', path: '/webf-sqflite', desc: 'SQLite database for persistent local storage' },
     ],
   },
   {
