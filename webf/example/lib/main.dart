@@ -21,6 +21,9 @@ import 'package:adaptive_theme/adaptive_theme.dart';
 
 import 'custom_hybrid_history_delegate.dart';
 
+import 'package:webf_share/webf_share.dart';
+import 'package:webf_sqflite/webf_sqflite.dart';
+
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -34,6 +37,9 @@ void main() async {
   final savedThemeMode = await AdaptiveTheme.getThemeMode();
 
   installWebFCupertinoUI();
+
+  WebF.defineModule((context) => ShareModule(context));
+  WebF.defineModule((context) => SQFliteModule(context));
 
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(

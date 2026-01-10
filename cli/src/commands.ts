@@ -1115,6 +1115,15 @@ async function generateModuleCommand(distPath: string, options: GenerateOptions)
     command,
   });
 
+  // Copy README.md from the source Flutter package into the npm package root
+  const { copied } = copyReadmeToPackageRoot({
+    sourceRoot: flutterPackageSrc,
+    targetRoot: resolvedDistPath,
+  });
+  if (copied) {
+    console.log('📄 Copied README.md to package root');
+  }
+
   console.log('\nModule code generation completed successfully!');
 
   try {

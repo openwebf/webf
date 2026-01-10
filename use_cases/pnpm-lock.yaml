@@ -20,11 +20,11 @@ importers:
       '@openwebf/react-ui-kit':
         specifier: ^0.1.0-beta.1
         version: 0.1.0-beta.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      '@openwebf/webf-deeplink':
-        specifier: ^1.0.0
-        version: 1.0.1(react@19.2.0)
       '@openwebf/webf-share':
         specifier: ^1.0.0
+        version: 1.0.1(react@19.2.0)
+      '@openwebf/webf-sqflite':
+        specifier: ^1.0.1
         version: 1.0.1(react@19.2.0)
       '@testing-library/dom':
         specifier: ^10.4.0
@@ -1227,9 +1227,6 @@ packages:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
-  '@openwebf/webf-deeplink@1.0.1':
-    resolution: {integrity: sha512-wGOek3DX46IPsz/giFOumIfany/J6R8pqArrnSg81h+mNu1IXx0iLerBalvxl1j9/zo53wdS6xZr2t8gNpkTeA==}
-
   '@openwebf/webf-enterprise-typings@0.21.2':
     resolution: {integrity: sha512-4tMwtw1jkoT2JSgGsbnYVWkCnZbj54pHjTAUfKjSPPR4cU1g4fe8Pk/kZefB88glxFdk+QFFRo2r1rZfeYG7qw==}
 
@@ -1243,6 +1240,9 @@ packages:
 
   '@openwebf/webf-share@1.0.1':
     resolution: {integrity: sha512-wk+zXPrcJlE7zYSVEVFSQ4P0XkFVpFPPG8wvoXnwSsqi9BdzqB7v9cZ5UsHmwqVMJFGvjxV7RYS68bo3AO6Obw==}
+
+  '@openwebf/webf-sqflite@1.0.1':
+    resolution: {integrity: sha512-RQm1I3mE+rV/gyz7BFfmtrOsy/S55l8a9/pTcr5N3ZKPEtKZqwyJ2W2Ir6Z4pXeC60Xg3ibRTERw0jeEyJ+B6g==}
 
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -7469,12 +7469,6 @@ snapshots:
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
 
-  '@openwebf/webf-deeplink@1.0.1(react@19.2.0)':
-    dependencies:
-      '@openwebf/webf-enterprise-typings': 0.23.7(react@19.2.0)
-    transitivePeerDependencies:
-      - react
-
   '@openwebf/webf-enterprise-typings@0.21.2': {}
 
   '@openwebf/webf-enterprise-typings@0.23.7(react@19.2.0)':
@@ -7482,6 +7476,12 @@ snapshots:
       react: 19.2.0
 
   '@openwebf/webf-share@1.0.1(react@19.2.0)':
+    dependencies:
+      '@openwebf/webf-enterprise-typings': 0.23.7(react@19.2.0)
+    transitivePeerDependencies:
+      - react
+
+  '@openwebf/webf-sqflite@1.0.1(react@19.2.0)':
     dependencies:
       '@openwebf/webf-enterprise-typings': 0.23.7(react@19.2.0)
     transitivePeerDependencies:

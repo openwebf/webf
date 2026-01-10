@@ -30,6 +30,10 @@ dependencies:
   collection: ^1.18.0
   auto_size_text: ^3.0.0
   webf_cupertino_ui: ^0.3.37
+  webf_share:
+    path: ../../native_plugins/share
+  webf_sqflite:
+    path: ../../native_plugins/sqflite
   # webf_form:
     # path: ../../native_uis/form
   vibration: ^3.1.3

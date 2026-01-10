@@ -1,0 +1,30 @@
+name: webf_sqflite
+description: WebF SQFlite module for SQLite database operations. Provides persistent local storage with SQL queries, transactions, and batch operations.
+version: 1.0.1
+homepage: https://openwebf.com
+repository: https://github.com/openwebf/webf
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  webf: ^0.24.0
+  sqflite: ^2.4.1
+  path: ^1.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+
+topics:
+  - webf
+  - sqlite
+  - database
+  - storage
+  - sqflite

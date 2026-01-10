@@ -17,6 +17,7 @@ import {ActionSheetPage} from './pages/ActionSheetPage';
 import {VideoPage} from './pages/VideoPage';
 import {FontFacePage} from './pages/FontFacePage';
 import {WebFSharePage} from './pages/WebFSharePage';
+import {WebFSQFlitePage} from './pages/WebFSQFlitePage';
 import {NetworkPage} from './pages/NetworkPage';
 import {ResponsivePage} from './pages/ResponsivePage';
 import { RoutingPage } from './pages/RoutingPage';
@@ -215,6 +216,7 @@ function App() {
         <Route path="/dashboard/:year/:month/reports/:id" title="Report Details" element={<ReportDetailsPage />} />
         <Route path="/profile/edit" title="Profile Edit" element={<ProfileEditPage />} />
         <Route path="/webf-share" title="WebF Share" element={<WebFSharePage />} />
+        <Route path="/webf-sqflite" title="WebF SQFlite" element={<WebFSQFlitePage />} />
         <Route path="/network" title="Network Requests" element={<NetworkPage />} />
         <Route path="/image" title="Image Gallery" element={<ImagePage />} />
         <Route path="/typography" title="Typography" element={<TypographyPage />} />
