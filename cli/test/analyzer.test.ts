@@ -366,5 +366,49 @@ describe('Analyzer', () => {
       expect(classObj.props[1].type.value).toBe(FunctionArgumentType.promise);
       expect(classObj.props[2].type.value).toBe(FunctionArgumentType.int);
     });
+
+    it('should preserve complex CustomEvent generic types', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const blob = new IDLBlob('/test/source.d.ts', '/test/target', 'test', 'test');
+      blob.raw = `
+        interface VideoError {
+          code: int;
+          message: string;
+        }
+
+        interface Events {
+          error: CustomEvent<VideoError>;
+          loadedmetadata: CustomEvent<{ duration: double; videoWidth: int; videoHeight: int }>;
+          volumechange: CustomEvent<{ volume: double; muted: boolean }>;
+        }
+      `;
+
+      const propertyCollector = {
+        properties: new Set<string>(),
+        files: new Set<string>(),
+        interfaces: new Set<string>(),
+      };
+      const unionTypeCollector = {
+        types: new Set<ParameterType[]>(),
+      };
+
+      analyzer(blob, propertyCollector, unionTypeCollector);
+
+      const eventsObj = blob.objects.find(o => (o as ClassObject).name === 'Events') as ClassObject;
+      expect(eventsObj).toBeDefined();
+
+      const errorProp = eventsObj.props.find(p => p.name === 'error');
+      expect(errorProp?.type.value).toBe('CustomEvent<VideoError>');
+
+      const loadedProp = eventsObj.props.find(p => p.name === 'loadedmetadata');
+      expect(loadedProp?.type.value).toBe('CustomEvent<{ duration: number; videoWidth: number; videoHeight: number }>');
+
+      const volumeProp = eventsObj.props.find(p => p.name === 'volumechange');
+      expect(volumeProp?.type.value).toBe('CustomEvent<{ volume: number; muted: boolean }>');
+
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
   });
 });

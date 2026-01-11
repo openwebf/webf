@@ -184,6 +184,11 @@ describe('React Generator', () => {
       // Should include custom props with generated TS types
       expect(result).toContain('title: __webfTypes.dom_string;');
       expect(result).toContain('disabled?: __webfTypes.boolean;');
+
+      // Element interface should surface properties for refs
+      expect(result).toContain('export interface TestComponentElement extends WebFElementWithMethods<{');
+      expect(result).toContain('title: __webfTypes.dom_string;');
+      expect(result).toContain('disabled?: __webfTypes.boolean;');
       
       // And still include standard HTML props
       expect(result).toContain('id?: string;');

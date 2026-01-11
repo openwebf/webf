@@ -24,7 +24,7 @@ mockFs.readFileSync = jest.fn().mockImplementation((filePath: any) => {
   if (pathStr.includes('gitignore.tpl')) return 'gitignore template';
   if (pathStr.includes('react.package.json.tpl')) return '<%= packageName %> <%= version %> <%= description %>';
   if (pathStr.includes('react.tsconfig.json.tpl')) return 'react tsconfig';
-  if (pathStr.includes('react.tsup.config.ts.tpl')) return 'tsup config';
+  if (pathStr.includes('react.tsdown.config.ts.tpl')) return 'tsdown config';
   if (pathStr.includes('react.index.ts.tpl')) return 'index template';
   if (pathStr.includes('vue.package.json.tpl')) return '<%= packageName %> <%= version %> <%= description %>';
   if (pathStr.includes('vue.tsconfig.json.tpl')) return 'vue tsconfig';
@@ -823,7 +823,7 @@ describe('Commands', () => {
               name: 'test-package',
               version: '1.0.0',
               dependencies: { react: '^18.0.0' },
-              scripts: { build: 'tsup' }
+              scripts: { build: 'tsdown' }
             });
           }
           return '';
@@ -1300,7 +1300,7 @@ describe('Commands', () => {
               name: 'test-package',
               version: '1.0.0',
               scripts: {
-                build: 'tsup'
+                build: 'tsdown'
               },
               dependencies: { react: '^18.0.0' }
             });
@@ -1349,7 +1349,7 @@ describe('Commands', () => {
               name: 'test-package',
               version: '1.0.0',
               scripts: {
-                build: 'tsup'
+                build: 'tsdown'
               },
               dependencies: { react: '^18.0.0' }
             });

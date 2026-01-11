@@ -2,12 +2,24 @@
   "name": "<%= packageName %>",
   "version": "<%= version %>",
   "description": "<%= description %>",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "types": "dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
   "files": ["dist", "README.md"],
   "scripts": {
-    "build": "tsup"
+    "build": "tsdown"
   },
   "keywords": [],
   "author": "",
@@ -23,7 +35,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.2",
     "picomatch": "^4.0.2",
-    "tsup": "^8.5.0",
+    "tsdown": "^0.19.0",
     "typescript": "^5.8.3"
   }
 }

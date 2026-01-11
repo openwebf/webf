@@ -395,6 +395,43 @@ describe('Generator', () => {
       const indexWrite = mockFs.writeFileSync.mock.calls.find(call => call[0].toString().includes('index.ts'));
       expect(indexWrite).toBeUndefined();
     });
+
+    it('should merge type-only Element exports into existing index.ts', async () => {
+      mockAnalyzer.analyzer.mockImplementation((blob: any) => {
+        const props = new ClassObject();
+        props.name = blob.filename === 'test' ? 'TestProperties' : 'ComponentProperties';
+        const events = new ClassObject();
+        events.name = blob.filename === 'test' ? 'TestEvents' : 'ComponentEvents';
+        blob.objects = [props, events];
+      });
+
+      mockFs.existsSync.mockImplementation((p: any) => {
+        const s = p.toString();
+        if (s.includes(path.join('/test/target', 'src', 'index.ts'))) return true;
+        return true;
+      });
+      mockFs.readFileSync.mockImplementation((p: any) => {
+        const s = p.toString();
+        if (s.includes(path.join('/test/target', 'src', 'index.ts'))) {
+          return '/* empty index scaffold */\n';
+        }
+        return 'test content';
+      });
+
+      await reactGen({
+        source: '/test/source',
+        target: '/test/target',
+        command: 'test command'
+      });
+
+      const indexWrite = mockFs.writeFileSync.mock.calls.find(call => call[0].toString().includes('index.ts'));
+      expect(indexWrite).toBeDefined();
+      const content = String(indexWrite![1]);
+      expect(content).toContain('export { Test }');
+      expect(content).toContain('export type { TestElement }');
+      expect(content).toContain('export { Component }');
+      expect(content).toContain('export type { ComponentElement }');
+    });
   });
 
   describe('vueGen', () => {

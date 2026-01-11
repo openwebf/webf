@@ -177,8 +177,8 @@ const moduleTsConfig = fs.readFileSync(
   'utf-8'
 );
 
-const moduleTsUpConfig = fs.readFileSync(
-  path.resolve(__dirname, '../templates/module.tsup.config.ts.tpl'),
+const moduleTsDownConfig = fs.readFileSync(
+  path.resolve(__dirname, '../templates/module.tsdown.config.ts.tpl'),
   'utf-8'
 );
 const reactPackageJson = fs.readFileSync(
@@ -191,8 +191,8 @@ const reactTsConfig = fs.readFileSync(
   'utf-8'
 );
 
-const reactTsUpConfig = fs.readFileSync(
-  path.resolve(__dirname, '../templates/react.tsup.config.ts.tpl'),
+const reactTsDownConfig = fs.readFileSync(
+  path.resolve(__dirname, '../templates/react.tsdown.config.ts.tpl'),
   'utf-8'
 );
 
@@ -453,9 +453,9 @@ function createCommand(target: string, options: { framework: string; packageName
     const tsConfigContent = _.template(reactTsConfig)({});
     writeFileIfChanged(tsConfigPath, tsConfigContent);
 
-    const tsupConfigPath = path.join(target, 'tsup.config.ts');
-    const tsupConfigContent = _.template(reactTsUpConfig)({});
-    writeFileIfChanged(tsupConfigPath, tsupConfigContent);
+    const tsdownConfigPath = path.join(target, 'tsdown.config.ts');
+    const tsdownConfigContent = _.template(reactTsDownConfig)({});
+    writeFileIfChanged(tsdownConfigPath, tsdownConfigContent);
 
     const gitignorePath = path.join(target, '.gitignore');
     const gitignoreContent = _.template(gitignore)({});
@@ -532,9 +532,9 @@ function createModuleProject(target: string, options: { packageName: string; met
   const tsConfigContent = _.template(moduleTsConfig)({});
   writeFileIfChanged(tsConfigPath, tsConfigContent);
 
-  const tsupConfigPath = path.join(target, 'tsup.config.ts');
-  const tsupConfigContent = _.template(moduleTsUpConfig)({});
-  writeFileIfChanged(tsupConfigPath, tsupConfigContent);
+  const tsdownConfigPath = path.join(target, 'tsdown.config.ts');
+  const tsdownConfigContent = _.template(moduleTsDownConfig)({});
+  writeFileIfChanged(tsdownConfigPath, tsdownConfigContent);
 
   if (!skipGitignore) {
     const gitignorePath = path.join(target, '.gitignore');
@@ -1064,7 +1064,7 @@ async function generateModuleCommand(distPath: string, options: GenerateOptions)
     packageName = packageNameAnswer.packageName;
   }
 
-  // Prevent npm scaffolding (package.json, tsup.config.ts, etc.) from being written into
+  // Prevent npm scaffolding (package.json, tsdown.config.ts, etc.) from being written into
   // the Flutter package itself. Force users to choose a separate output directory.
   if (resolvedDistPath === flutterPackageSrc) {
     console.error('\n❌ Output directory must not be the Flutter package root.');
