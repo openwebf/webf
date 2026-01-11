@@ -196,6 +196,10 @@ inline bool HTMLCollection::ElementMatches(const Element& element) const {
     case kDocAll:
     case kNodeChildren:
       return true;
+    case kSelectOptions: {
+      static const AtomicString kOption = AtomicString::CreateFromUTF8("option");
+      return element.HasTagName(kOption);
+    }
     default:
       break;
   }

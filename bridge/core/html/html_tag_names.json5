@@ -61,6 +61,16 @@
       "name": "input",
       "interfaceHeaderDir": "core/html/forms"
     },
+    {
+      "name": "select",
+      "interfaceName": "HTMLSelectElement",
+      "interfaceHeaderDir": "core/html/forms"
+    },
+    {
+      "name": "option",
+      "interfaceName": "HTMLOptionElement",
+      "interfaceHeaderDir": "core/html/forms"
+    },
     "br",
     "template",
     {
