@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 // Type-only import for type augmentation - no runtime JS in Vue package
 import type { WebFVideoPlayerElement } from '@openwebf/vue-video-player';
 
 // Refs for video players
-const basicPlayerRef = ref<WebFVideoPlayerElement | null>(null);
 const controlledPlayerRef = ref<WebFVideoPlayerElement | null>(null);
-const eventPlayerRef = ref<WebFVideoPlayerElement | null>(null);
 const playlistPlayerRef = ref<WebFVideoPlayerElement | null>(null);
 const customUIPlayerRef = ref<WebFVideoPlayerElement | null>(null);
 
@@ -46,6 +44,16 @@ const playlist = [
     poster: 'https://via.placeholder.com/640x360/34a853/white?text=Sintel',
   },
 ];
+
+// Safe access to current playlist item
+const currentPlaylistItem = computed(() => {
+  const item = playlist[currentPlaylistIndex.value];
+  return item ?? {
+    title: 'Big Buck Bunny',
+    src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    poster: 'https://via.placeholder.com/640x360/4285f4/white?text=Big+Buck+Bunny',
+  };
+});
 
 // Object fit options
 const objectFitOptions = ['contain', 'cover', 'fill', 'none'] as const;
@@ -107,14 +115,14 @@ function restartVideo() {
 }
 
 function seekBackward() {
-  if (controlledPlayerRef.value) {
-    controlledPlayerRef.value.currentTime -= 10;
+  if (controlledPlayerRef.value && controlledPlayerRef.value.currentTime !== undefined) {
+    controlledPlayerRef.value.currentTime = Math.max(0, controlledPlayerRef.value.currentTime - 10);
   }
 }
 
 function seekForward() {
-  if (controlledPlayerRef.value) {
-    controlledPlayerRef.value.currentTime += 10;
+  if (controlledPlayerRef.value && controlledPlayerRef.value.currentTime !== undefined) {
+    controlledPlayerRef.value.currentTime = controlledPlayerRef.value.currentTime + 10;
   }
 }
 
@@ -126,7 +134,7 @@ function toggleMute() {
 
 function onPlaybackRateChange(e: CustomEvent<number>) {
   const index = e.detail;
-  const rate = playbackRates[index];
+  const rate = playbackRates[index] ?? 1;
   if (controlledPlayerRef.value) {
     controlledPlayerRef.value.playbackRate = rate;
     controlledState.value.playbackRate = rate;
@@ -401,8 +409,8 @@ const features = [
             <div class="bg-black rounded-lg overflow-hidden shadow-lg">
               <webf-video-player
                 ref="playlistPlayerRef"
-                :src="playlist[currentPlaylistIndex].src"
-                :poster="playlist[currentPlaylistIndex].poster"
+                :src="currentPlaylistItem.src"
+                :poster="currentPlaylistItem.poster"
                 controls
                 :style="{ width: '100%', height: '300px' }"
                 @ended="handlePlaylistEnded"
@@ -410,7 +418,7 @@ const features = [
             </div>
             <div class="mt-4 border border-gray-200 rounded-lg overflow-hidden">
               <div class="bg-blue-500 text-white px-4 py-3 font-semibold text-sm">
-                Now Playing: {{ playlist[currentPlaylistIndex].title }}
+                Now Playing: {{ currentPlaylistItem.title }}
               </div>
               <div class="max-h-[200px] overflow-y-auto">
                 <div
