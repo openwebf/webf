@@ -607,5 +607,47 @@ void main() {
       print('✅ Text content flex items correctly sized within max-width limits');
     });
 
+    testWidgets('flex item overflow hidden should not take all width', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        html: '''
+          <div id="container" style="
+            display: flex;
+            width: 300px;
+            height: 21px;
+            font-size: 14px;
+            line-height: 21px;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+          ">
+            <div id="title" style="
+              font-size: 14px;
+              white-space: nowrap;
+              line-height: 21px;
+              min-width: 0;
+              text-overflow: ellipsis;
+              overflow: hidden;
+              font-weight: 600;
+            ">丝塔芙 【大白罐】舒润保湿霜453g身体乳护体乳不含烟酰胺</div>
+            <div id="suffix" style="
+              font-size: 14px;
+              white-space: nowrap;
+              line-height: 21px;
+              flex: 1;
+              color: #989898;
+            ">(刚刚浏览过)</div>
+          </div>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      final title = prepared.getElementById('title');
+      final suffix = prepared.getElementById('suffix');
+
+      expect(container.offsetWidth, equals(300.0));
+      expect(title.offsetWidth, lessThan(300.0));
+      expect(suffix.offsetWidth, greaterThan(0.0));
+    });
+
   });
 }

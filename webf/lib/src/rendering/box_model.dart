@@ -830,11 +830,58 @@ abstract class RenderBoxModel extends RenderBox
   // Base layout methods to compute content constraints before content box layout.
   // Call this method before content box layout.
   void beforeLayout() {
-    BoxConstraints contentConstraints = (parent is RenderEventListener
-            ? (parent as RenderEventListener).parent
-            : parent) is RenderBoxModel
-        ? constraints
-        : getConstraints();
+    final RenderObject? effectiveParent = parent is RenderEventListener ? (parent as RenderEventListener).parent : parent;
+    // In WebF's render tree, CSS boxes can be wrapped by Flutter proxy render objects
+    // (e.g., semantics/gesture/scroll adapters). Those wrappers can break the direct
+    // "parent is RenderBoxModel" check, even though the incoming constraints are
+    // already the correct containing-block size (e.g., grid/flex cell width).
+    //
+    // Prefer the incoming constraints whenever they are definite (tight) or when
+    // we are in a normal CSS parent-child relationship. Flutter proxy parents
+    // (e.g., Semantics/Scrollable) may still pass tight constraints that represent
+    // the real containing block size (like grid/flex cells).
+    //
+    // Avoid using merely *bounded* constraints from Flutter layout (e.g. Column),
+    // because that can unintentionally clamp shrink-to-fit widget elements like
+    // `<flutter-button>` and make them expand to maxWidth.
+    final bool shouldUseIncomingConstraints =
+        effectiveParent is RenderBoxModel || constraints.hasTightWidth || constraints.hasTightHeight;
+    BoxConstraints contentConstraints = shouldUseIncomingConstraints ? constraints : getConstraints();
+
+    // When a parent enforces a definite border-box size (e.g., grid/flex cell),
+    // treat that as the used size for resolving this element's "auto" sizing.
+    // This ensures descendants resolve percentages and auto widths against the
+    // actual containing block size, even when CSS boxes are wrapped by Flutter
+    // proxy render objects (Scrollable/Semantics/etc.).
+    if (shouldUseIncomingConstraints &&
+        constraints.hasTightWidth &&
+        constraints.maxWidth.isFinite &&
+        renderStyle.width.isAuto &&
+        // Do not force a definite auto width on flex items. Flex items' main-axis
+        // size is resolved by the flex formatting context; forcing auto width to
+        // the container's tight constraint here breaks flex base sizing and can
+        // collapse sibling flex items (e.g., overflow:hidden + min-width:0 text truncation).
+        !renderStyle.isParentRenderFlexLayout() &&
+        renderStyle.position != CSSPositionType.absolute &&
+        renderStyle.position != CSSPositionType.fixed) {
+      double contentW = renderStyle.deflatePaddingBorderWidth(constraints.maxWidth);
+      if (contentW.isFinite && contentW < 0) contentW = 0;
+      renderStyle.contentBoxLogicalWidth = contentW;
+      hasOverrideContentLogicalWidth = true;
+    }
+    if (shouldUseIncomingConstraints &&
+        constraints.hasTightHeight &&
+        constraints.maxHeight.isFinite &&
+        renderStyle.height.isAuto &&
+        // See width note above: do not force auto sizes for flex items.
+        !renderStyle.isParentRenderFlexLayout() &&
+        renderStyle.position != CSSPositionType.absolute &&
+        renderStyle.position != CSSPositionType.fixed) {
+      double contentH = renderStyle.deflatePaddingBorderHeight(constraints.maxHeight);
+      if (contentH.isFinite && contentH < 0) contentH = 0;
+      renderStyle.contentBoxLogicalHeight = contentH;
+      hasOverrideContentLogicalHeight = true;
+    }
 
     // Deflate border constraints.
     contentConstraints =
