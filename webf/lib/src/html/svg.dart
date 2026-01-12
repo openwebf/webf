@@ -8,6 +8,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/css.dart';
+import 'package:webf/src/foundation/string_parsers.dart';
 
 // ignore: constant_identifier_names
 const String SVG = 'svg';
@@ -293,7 +294,7 @@ class _FlutterSvgElementState extends WebFWidgetElementState {
 
   double? _parseViewBoxAspectRatio(String? viewBox) {
     if (viewBox == null) return null;
-    final parts = viewBox.trim().split(RegExp(r'\s+'));
+    final parts = splitByAsciiWhitespace(viewBox.trim());
     if (parts.length != 4) return null;
     final double? w = double.tryParse(parts[2]);
     final double? h = double.tryParse(parts[3]);

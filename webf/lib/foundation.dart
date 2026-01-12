@@ -30,3 +30,4 @@ export 'src/foundation/debug_flags.dart';
 export 'src/foundation/positioned_layout_logging.dart';
 export 'src/foundation/flex_layout_logging.dart';
 export 'src/foundation/widget_logging.dart';
+export 'src/foundation/string_parsers.dart';

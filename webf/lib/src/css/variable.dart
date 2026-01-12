@@ -12,9 +12,6 @@ import 'package:webf/foundation.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 
-// Local matcher for var(...) occurrences (supports simple nesting patterns).
-final RegExp _inlineVarFnRegExp = RegExp(r'var\(([^()]*\(.*?\)[^()]*)\)|var\(([^()]*)\)');
-
 mixin CSSVariableMixin on RenderStyle {
   Map<String, String>? _identifierStorage;
   Map<String, CSSVariable>? _variableStorage;
@@ -232,9 +229,7 @@ mixin CSSVariableMixin on RenderStyle {
     if (!input.contains('var(')) return input;
     String result = input;
     final before = result;
-    result = result.replaceAllMapped(_inlineVarFnRegExp, (Match match) {
-      final String? varString = match[0];
-      if (varString == null) return '';
+    result = replaceCssVarFunctionsIndexed(result, (String varString, int start, int end) {
       final CSSVariable? variable = CSSVariable.tryParse(this, varString);
       if (variable == null) return varString;
       if (variable.identifier != identifier) return varString;
@@ -246,8 +241,6 @@ mixin CSSVariableMixin on RenderStyle {
             c == 45 || // '-'
             c == 95; // '_'
       }
-      final int start = match.start;
-      final int end = match.end;
       final int? leftChar = start > 0 ? before.codeUnitAt(start - 1) : null;
       final int? rightChar = end < before.length ? before.codeUnitAt(end) : null;
       String rep = override;
@@ -272,9 +265,7 @@ mixin CSSVariableMixin on RenderStyle {
     int guard = 0;
     while (result.contains('var(') && guard++ < 8) {
       final before = result;
-      result = result.replaceAllMapped(_inlineVarFnRegExp, (Match match) {
-        final String? varString = match[0];
-        if (varString == null) return '';
+      result = replaceCssVarFunctionsIndexed(result, (String varString, int start, int end) {
         final CSSVariable? variable = CSSVariable.tryParse(this, varString);
         if (variable == null) return varString;
         final String ctx = depContext ?? '';
@@ -292,8 +283,6 @@ mixin CSSVariableMixin on RenderStyle {
               c == 45 || // '-'
               c == 95; // '_'
         }
-        final int start = match.start;
-        final int end = match.end;
         final int? leftChar = start > 0 ? before.codeUnitAt(start - 1) : null;
         final int? rightChar = end < before.length ? before.codeUnitAt(end) : null;
         String rep = raw.toString();

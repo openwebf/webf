@@ -13,6 +13,7 @@ import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/src/foundation/logger.dart';
+import 'package:webf/src/foundation/string_parsers.dart';
 
 class _GridAutoCursor {
   int row;
@@ -1981,9 +1982,7 @@ class RenderGridLayout extends RenderLayoutBox {
       if (raw.isEmpty) {
         final String? styleAttr = (renderStyle.target).getAttribute('style');
         if (styleAttr != null) {
-          final RegExp re = RegExp(r'grid-template-columns\s*:\s*([^;]+)', caseSensitive: false);
-          final m = re.firstMatch(styleAttr);
-          if (m != null) raw = m.group(1)!.trim();
+          raw = extractInlineStylePropertyValue(styleAttr, GRID_TEMPLATE_COLUMNS) ?? '';
         }
       }
       if (raw.isNotEmpty) {
@@ -1995,9 +1994,7 @@ class RenderGridLayout extends RenderLayoutBox {
       if (raw.isEmpty) {
         final String? styleAttr = (renderStyle.target).getAttribute('style');
         if (styleAttr != null) {
-          final RegExp re = RegExp(r'grid-template-rows\s*:\s*([^;]+)', caseSensitive: false);
-          final m = re.firstMatch(styleAttr);
-          if (m != null) raw = m.group(1)!.trim();
+          raw = extractInlineStylePropertyValue(styleAttr, GRID_TEMPLATE_ROWS) ?? '';
         }
       }
       if (raw.isNotEmpty) {

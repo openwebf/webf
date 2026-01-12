@@ -3620,9 +3620,6 @@ mixin CSSWritingModeMixin on RenderStyle {
     }
   }
 
-  // Regex matching var(...) with minimal nesting support.
-  static final RegExp _inlineVarFunctionRegExp = RegExp(r'var\(([^()]*\(.*?\)[^()]*)\)|var\(([^()]*)\)');
-
   static bool _isEntireVarFunction(String s) {
     final String trimmed = s.trimLeft();
     if (!trimmed.startsWith('var(')) return false;
@@ -3649,9 +3646,7 @@ mixin CSSWritingModeMixin on RenderStyle {
     int guard = 0;
     while (result.contains('var(') && guard++ < 8) {
       final before = result;
-      result = result.replaceAllMapped(_inlineVarFunctionRegExp, (Match match) {
-        final String? varString = match[0];
-        if (varString == null) return '';
+      result = replaceCssVarFunctionsIndexed(result, (String varString, int start, int end) {
         final CSSVariable? variable = CSSVariable.tryParse(renderStyle, varString);
         if (variable == null) return varString; // keep as-is
 
@@ -3675,8 +3670,6 @@ mixin CSSWritingModeMixin on RenderStyle {
               c == 45 || // '-'
               c == 95; // '_'
         }
-        final int start = match.start;
-        final int end = match.end;
         final int? leftChar = start > 0 ? before.codeUnitAt(start - 1) : null;
         final int? rightChar = end < before.length ? before.codeUnitAt(end) : null;
         String rep = raw.toString();

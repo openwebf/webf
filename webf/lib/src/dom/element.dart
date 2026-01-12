@@ -26,7 +26,6 @@ import 'package:webf/src/css/query_selector.dart' as query_selector;
 import 'intersection_observer.dart';
 import 'intersection_observer_entry.dart';
 
-final RegExp classNameSplitRegExp = RegExp(r'\s+');
 const String _oneSpace = ' ';
 const String _styleProperty = 'style';
 const String _idAttr = 'id';
@@ -181,10 +180,7 @@ abstract class Element extends ContainerNode
 
   @pragma('vm:prefer-inline')
   set className(String className) {
-    final List<String> classList = className
-        .split(classNameSplitRegExp)
-        .where((e) => e.isNotEmpty)
-        .toList();
+    final List<String> classList = splitByAsciiWhitespace(className);
     final List<String> oldClasses = List.from(_classList);
     final Iterable<String> checkKeys = (oldClasses + classList)
         .where((key) => !oldClasses.contains(key) || !classList.contains(key));
@@ -821,7 +817,7 @@ abstract class Element extends ContainerNode
   Map<String, int> _parseCounterList(String value) {
     Map<String, int> result = {};
     // Split by whitespace, treat pairs of (ident [number]?)
-    final parts = value.trim().split(RegExp(r"\s+"));
+    final parts = splitByAsciiWhitespace(value.trim());
     int i = 0;
     while (i < parts.length) {
       final name = parts[i];
@@ -849,7 +845,7 @@ abstract class Element extends ContainerNode
 
   Map<String, int> _parseCounterIncrementList(String value) {
     Map<String, int> result = {};
-    final parts = value.trim().split(RegExp(r"\s+"));
+    final parts = splitByAsciiWhitespace(value.trim());
     int i = 0;
     while (i < parts.length) {
       final name = parts[i];
@@ -963,6 +959,12 @@ abstract class Element extends ContainerNode
   String _evaluateContent(String content) {
     StringBuffer out = StringBuffer();
     int i = 0;
+    bool isAsciiIdentChar(int cu) {
+      return (cu >= 0x41 && cu <= 0x5A) || // A-Z
+          (cu >= 0x61 && cu <= 0x7A) || // a-z
+          cu == 0x5F || // '_'
+          cu == 0x2D; // '-'
+    }
     while (i < content.length) {
       final ch = content[i];
       if (ch == '"' || ch == '\'') {
@@ -980,7 +982,7 @@ abstract class Element extends ContainerNode
       // try function: counter(name)
       // read identifier
       int startIdent = i;
-      while (i < content.length && RegExp(r'[a-zA-Z_-]').hasMatch(content[i])) {
+      while (i < content.length && isAsciiIdentChar(content.codeUnitAt(i))) {
         i++;
       }
       final ident = content.substring(startIdent, i);

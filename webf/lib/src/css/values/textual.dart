@@ -9,8 +9,15 @@
 
 // CSS Values and Units: https://drafts.csswg.org/css-values-3/#common-keywords
 
-final _customIdentRegExp = RegExp(r'^-?[_a-zA-Z]+[_a-zA-Z0-9-]*$', caseSensitive: false);
-final _dashedIdentRegExp = RegExp(r'^--[_a-zA-Z]+[_a-zA-Z0-9-]*$', caseSensitive: false);
+@pragma('vm:prefer-inline')
+bool _isAsciiAlpha(int cu) => (cu >= 0x41 && cu <= 0x5A) || (cu >= 0x61 && cu <= 0x7A);
+
+@pragma('vm:prefer-inline')
+bool _isIdentStart(int cu) => cu == 0x5F /* _ */ || _isAsciiAlpha(cu);
+
+@pragma('vm:prefer-inline')
+bool _isIdentContinue(int cu) =>
+    _isIdentStart(cu) || (cu >= 0x30 && cu <= 0x39) || cu == 0x2D /* - */;
 
 /// All of these keywords are normatively defined in the Cascade module.
 enum CSSWideKeywords {
@@ -29,10 +36,28 @@ enum CSSWideKeywords {
 
 class CSSTextual {
   static bool isCustomIdent(String value) {
-    return _customIdentRegExp.hasMatch(value);
+    if (value.isEmpty) return false;
+    int i = 0;
+    if (value.codeUnitAt(0) == 0x2D /* - */) {
+      i++;
+      if (i >= value.length) return false;
+    }
+    if (!_isIdentStart(value.codeUnitAt(i))) return false;
+    i++;
+    while (i < value.length) {
+      if (!_isIdentContinue(value.codeUnitAt(i))) return false;
+      i++;
+    }
+    return true;
   }
 
   static bool isDashedIdent(String value) {
-    return _dashedIdentRegExp.hasMatch(value);
+    if (value.length < 3) return false;
+    if (value.codeUnitAt(0) != 0x2D /* - */ || value.codeUnitAt(1) != 0x2D /* - */) return false;
+    if (!_isIdentStart(value.codeUnitAt(2))) return false;
+    for (int i = 3; i < value.length; i++) {
+      if (!_isIdentContinue(value.codeUnitAt(i))) return false;
+    }
+    return true;
   }
 }

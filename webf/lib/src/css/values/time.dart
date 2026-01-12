@@ -10,8 +10,8 @@
 // ignore_for_file: constant_identifier_names
 
 import 'package:quiver/collection.dart';
+import 'number.dart';
 
-final _timeRegExp = RegExp(r'^[+-]?(\d+)?(\.\d+)?(?:ms|s){1}$', caseSensitive: false);
 final _zeroSeconds = '0s';
 final _zeroMilliseconds = '0ms';
 final LinkedLruHashMap<String, int?> _cachedParsedTime = LinkedLruHashMap(maximumSize: 100);
@@ -22,15 +22,31 @@ class CSSTime {
   static const String SECOND = 's';
 
   static bool isTime(String value) {
-    return (value == _zeroSeconds || value == _zeroMilliseconds || _timeRegExp.firstMatch(value) != null);
+    if (value == _zeroSeconds || value == _zeroMilliseconds) return true;
+    final String lower = value.toLowerCase();
+    String unit;
+    if (lower.endsWith(MILLISECONDS)) {
+      unit = MILLISECONDS;
+    } else if (lower.endsWith(SECOND)) {
+      unit = SECOND;
+    } else {
+      return false;
+    }
+    final String numberPart = value.substring(0, value.length - unit.length);
+    return CSSNumber.isNumber(numberPart);
   }
 
   static int? _parseTimeValue(String input) {
     int? milliseconds;
-    if (input.endsWith(MILLISECONDS)) {
-      milliseconds = double.tryParse(input.split(MILLISECONDS)[0])!.toInt();
-    } else if (input.endsWith(SECOND)) {
-      milliseconds = (double.tryParse(input.split(SECOND)[0])! * 1000).toInt();
+    final String lower = input.toLowerCase();
+    if (lower.endsWith(MILLISECONDS)) {
+      final String raw = input.substring(0, input.length - MILLISECONDS.length);
+      final double? v = double.tryParse(raw);
+      if (v != null) milliseconds = v.toInt();
+    } else if (lower.endsWith(SECOND)) {
+      final String raw = input.substring(0, input.length - SECOND.length);
+      final double? v = double.tryParse(raw);
+      if (v != null) milliseconds = (v * 1000).toInt();
     }
     return milliseconds;
   }

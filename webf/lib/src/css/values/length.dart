@@ -33,10 +33,91 @@ const double _exToEmFallbackRatio = 0.5;
 // Many UAs approximate 1ch ≈ 0.5em for common fonts.
 const double _chToEmFallbackRatio = 0.5;
 
-final String _unitRegStr = '(px|rpx|vw|vh|vmin|vmax|rem|em|ex|ch|in|cm|mm|pc|pt|q)';
-final _lengthRegExp = RegExp(r'^[+-]?(\d+)?(\.\d+)?' + _unitRegStr + r'$', caseSensitive: false);
-final _negativeZeroRegExp = RegExp(r'^-(0+)?(\.0+)?' + _unitRegStr + r'$', caseSensitive: false);
-final _nonNegativeLengthRegExp = RegExp(r'^[+]?(\d+)?(\.\d+)?' + _unitRegStr + r'$', caseSensitive: false);
+const Set<String> _lengthUnitsLower = <String>{
+  'px',
+  'rpx',
+  'vw',
+  'vh',
+  'vmin',
+  'vmax',
+  'rem',
+  'em',
+  'ex',
+  'ch',
+  'in',
+  'cm',
+  'mm',
+  'pc',
+  'pt',
+  'q',
+};
+
+@pragma('vm:prefer-inline')
+bool _isAsciiAlpha(int cu) => (cu >= 0x41 && cu <= 0x5A) || (cu >= 0x61 && cu <= 0x7A);
+
+({bool isNegative, bool isAllZero})? _tryParseSignedCssNumber(String input) {
+  final int len = input.length;
+  if (len == 0) return null;
+  int i = 0;
+  bool negative = false;
+  final int first = input.codeUnitAt(0);
+  if (first == 0x2B /* + */) {
+    i++;
+  } else if (first == 0x2D /* - */) {
+    negative = true;
+    i++;
+  }
+  if (i >= len) return null;
+
+  bool sawDigit = false;
+  bool allZero = true;
+  while (i < len) {
+    final int cu = input.codeUnitAt(i);
+    if (cu >= 0x30 && cu <= 0x39) {
+      sawDigit = true;
+      if (cu != 0x30 /* 0 */) allZero = false;
+      i++;
+      continue;
+    }
+    break;
+  }
+
+  if (i < len && input.codeUnitAt(i) == 0x2E /* . */) {
+    i++;
+    bool sawFracDigit = false;
+    while (i < len) {
+      final int cu = input.codeUnitAt(i);
+      if (cu >= 0x30 && cu <= 0x39) {
+        sawFracDigit = true;
+        if (cu != 0x30 /* 0 */) allZero = false;
+        i++;
+        continue;
+      }
+      return null;
+    }
+    // Require digits after '.', but allow none before '.' (e.g. ".5").
+    if (!sawFracDigit) return null;
+    return (isNegative: negative, isAllZero: allZero);
+  }
+
+  if (!sawDigit) return null;
+  return i == len ? (isNegative: negative, isAllZero: allZero) : null;
+}
+
+({bool isNegative, bool isAllZero})? _tryParseLengthToken(String value) {
+  final int len = value.length;
+  if (len == 0) return null;
+  // Extract trailing unit letters.
+  int unitStart = len;
+  while (unitStart > 0 && _isAsciiAlpha(value.codeUnitAt(unitStart - 1))) {
+    unitStart--;
+  }
+  if (unitStart == len) return null;
+  final String unit = value.substring(unitStart).toLowerCase();
+  if (!_lengthUnitsLower.contains(unit)) return null;
+  final String numberPart = value.substring(0, unitStart);
+  return _tryParseSignedCssNumber(numberPart);
+}
 
 enum CSSLengthType {
   // absolute units
@@ -940,15 +1021,19 @@ class CSSLength {
   }
 
   static bool isLength(String? value) {
-    return value != null && (value == ZERO || _lengthRegExp.hasMatch(value));
+    if (value == null) return false;
+    if (value == ZERO) return true;
+    return _tryParseLengthToken(value) != null;
   }
 
   static bool isNonNegativeLength(String? value) {
-    return value != null &&
-        (value == ZERO ||
-            _negativeZeroRegExp.hasMatch(value) // Negative zero is considered to be equal to zero.
-            ||
-            _nonNegativeLengthRegExp.hasMatch(value));
+    if (value == null) return false;
+    if (value == ZERO) return true;
+    final parsed = _tryParseLengthToken(value);
+    if (parsed == null) return false;
+    // Negative zero is considered to be equal to zero.
+    if (parsed.isNegative && !parsed.isAllZero) return false;
+    return true;
   }
 
   static CSSLengthValue? resolveLength(String text, RenderStyle renderStyle, String propertyName) {
