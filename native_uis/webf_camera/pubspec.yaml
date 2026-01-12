@@ -1,0 +1,28 @@
+name: webf_camera
+description: "Camera component for WebF applications. Wraps Flutter's camera package as HTML custom element for use in WebF."
+version: 0.1.0
+homepage: https://openwebf.com
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  webf: ^0.24.0
+  camera: ^0.11.0
+  logger: ^2.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+
+topics:
+  - webf
+  - camera
+  - video
+  - photo

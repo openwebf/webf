@@ -34,6 +34,8 @@ dependencies:
     path: ../../native_plugins/share
   webf_sqflite:
     path: ../../native_plugins/sqflite
+  webf_camera:
+    path: ../../native_uis/webf_camera
   # webf_form:
   webf_video_player:
     path: ../../native_uis/webf_video_player
