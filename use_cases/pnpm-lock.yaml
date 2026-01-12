@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@openwebf/react-camera':
+        specifier: ^1.0.0
+        version: 1.0.0(@openwebf/react-core-ui@0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@openwebf/react-core-ui':
         specifier: ^0.2.13
         version: 0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -1205,6 +1208,13 @@ packages:
   '@nodelib/fs.walk@1.2.8':
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
+
+  '@openwebf/react-camera@1.0.0':
+    resolution: {integrity: sha512-lqcVLOB8O0c5uZS7rf9iawvFXfyjKOxSFQz8zkZQTu42HvcqUvf7JBm9npSEL7FbbK8wXln1s6dLAK2ii6iDPQ==}
+    peerDependencies:
+      '@openwebf/react-core-ui': ^0.24.1
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
 
   '@openwebf/react-core-ui@0.2.13':
     resolution: {integrity: sha512-Cn8x5UJK+AZZKFPWSo2ow3aFg9zfY551UeIJPDEhfaQrnDCfIGcSI7wB5KCSqjc1F5znVSQNcfrLhYhUVGb4cQ==}
@@ -7449,6 +7459,12 @@ snapshots:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.19.1
+
+  '@openwebf/react-camera@1.0.0(@openwebf/react-core-ui@0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+    dependencies:
+      '@openwebf/react-core-ui': 0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
 
   '@openwebf/react-core-ui@0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:

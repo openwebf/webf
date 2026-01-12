@@ -19,6 +19,7 @@ import {FontFacePage} from './pages/FontFacePage';
 import {WebFSharePage} from './pages/WebFSharePage';
 import {WebFSQFlitePage} from './pages/WebFSQFlitePage';
 import {WebFVideoPlayerPage} from './pages/WebFVideoPlayerPage';
+import {WebFCameraPage} from './pages/WebFCameraPage';
 import {NetworkPage} from './pages/NetworkPage';
 import {ResponsivePage} from './pages/ResponsivePage';
 import { RoutingPage } from './pages/RoutingPage';
@@ -219,6 +220,7 @@ function App() {
         <Route path="/webf-share" title="WebF Share" element={<WebFSharePage />} />
         <Route path="/webf-sqflite" title="WebF SQFlite" element={<WebFSQFlitePage />} />
         <Route path="/webf-video-player" title="WebF Video Player" element={<WebFVideoPlayerPage />} />
+        <Route path="/webf-camera" title="WebF Camera" element={<WebFCameraPage />} />
         <Route path="/network" title="Network Requests" element={<NetworkPage />} />
         <Route path="/image" title="Image Gallery" element={<ImagePage />} />
         <Route path="/typography" title="Typography" element={<TypographyPage />} />
