@@ -295,6 +295,13 @@ export const appRoutes: AppRoute[] = [
   },
   { path: '/profile/edit', title: 'Profile Edit', element: defineAsyncComponent(() => import('./pages/routeDemo/ProfileEditPage.vue')) },
 
+  // Native UI
+  {
+    path: '/webf-video-player',
+    title: 'WebF Video Player',
+    element: defineAsyncComponent(() => import('./pages/WebFVideoPlayerPage.vue')),
+  },
+
   // Other demos
   { path: '/native-interaction', title: 'WebF Share Module', element: defineAsyncComponent(() => import('./pages/NativeInteractionPage.vue')) },
   { path: '/network', title: 'Network Requests', element: defineAsyncComponent(() => import('./pages/NetworkPage.vue')) },

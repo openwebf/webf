@@ -20,6 +20,9 @@ importers:
       '@openwebf/react-ui-kit':
         specifier: ^0.1.0-beta.1
         version: 0.1.0-beta.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@openwebf/react-video-player':
+        specifier: ^1.0.0
+        version: 1.0.0(@openwebf/react-core-ui@0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@openwebf/webf-share':
         specifier: ^1.0.0
         version: 1.0.1(react@19.2.0)
@@ -1224,6 +1227,13 @@ packages:
   '@openwebf/react-ui-kit@0.1.0-beta.1':
     resolution: {integrity: sha512-Z95UhcaI304WI6nojZjk7o15ZVD0rGX9EpLbOoryOzdyY0R5yyl7oP1cmirilL8twvwXdKHqpiKm7XFYGQUtLw==}
     peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+
+  '@openwebf/react-video-player@1.0.0':
+    resolution: {integrity: sha512-UBujG0he8otbgzJgdsU8H9/1TX9G9wKVkEP5bC+1Bzcwc2tIgpGaXLpLVxEZT7XIp9HL4y5IOoFjveV/kMRt1g==}
+    peerDependencies:
+      '@openwebf/react-core-ui': ^0.24.1
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
@@ -7464,6 +7474,12 @@ snapshots:
       react-dom: 19.2.0(react@19.2.0)
 
   '@openwebf/react-ui-kit@0.1.0-beta.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+    dependencies:
+      '@openwebf/react-core-ui': 0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
+
+  '@openwebf/react-video-player@1.0.0(@openwebf/react-core-ui@0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
       '@openwebf/react-core-ui': 0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       react: 19.2.0
