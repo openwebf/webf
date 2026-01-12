@@ -813,5 +813,43 @@ void main() {
       expect(offset.dx, closeTo(40, 1));
       expect(offset.dy, closeTo(90, 1));
     });
+
+    testWidgets('minmax(0, 1fr) prevents flex min overflow with percent-sized content', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-minmax-0-fr-percent-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; width: 200px; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px;">
+            <div id="a" style="border: 1px solid #000; overflow: hidden;">
+              <div style="height: 150px; background: #000;">
+                <img style="width: 100%; height: 150px; object-fit: contain;"
+                  src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'300'%20height%3D'224'%3E%3Crect%20width%3D'300'%20height%3D'224'%20fill%3D'red'%2F%3E%3C%2Fsvg%3E" />
+              </div>
+            </div>
+            <div id="b" style="border: 1px solid #000; overflow: hidden;">
+              <div style="height: 150px; background: #000;">
+                <img style="width: 100%; height: 150px; object-fit: contain;"
+                  src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'300'%20height%3D'224'%3E%3Crect%20width%3D'300'%20height%3D'224'%20fill%3D'blue'%2F%3E%3C%2Fsvg%3E" />
+              </div>
+            </div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final b = prepared.getElementById('b');
+
+      final RenderGridLayout gridRenderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox rb = b.attachedRenderer as RenderBox;
+
+      // Each column should be (200 - 16) / 2 = 92px, so B starts at 92 + 16 = 108px.
+      final Offset bOffset = getLayoutTransformTo(rb, gridRenderer, excludeScrollOffset: true);
+      expect(bOffset.dx, closeTo(108.0, 2.0));
+
+      // The grid should not overflow horizontally (regression for flex min-size inflation).
+      expect(gridRenderer.scrollableSize.width, closeTo(200.0, 2.0));
+    });
   });
 }
