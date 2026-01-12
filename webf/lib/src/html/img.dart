@@ -39,14 +39,94 @@ void _imgLog(String message) {
     // Only probe the head; SVG root attributes are near the start.
     final int probeLen = bytes.length < 4096 ? bytes.length : 4096;
     final String head = utf8.decode(bytes.sublist(0, probeLen), allowMalformed: true);
-    final Match? svgTagMatch = RegExp(r'<svg\b[^>]*>', caseSensitive: false).firstMatch(head);
-    if (svgTagMatch == null) return null;
-    final String tag = svgTagMatch.group(0)!;
+    final String lower = head.toLowerCase();
+    final int svgStart = lower.indexOf('<svg');
+    if (svgStart == -1) return null;
+    int svgEnd = -1;
+    String? quote;
+    bool escape = false;
+    for (int i = svgStart; i < head.length; i++) {
+      final String ch = head[i];
+      if (quote != null) {
+        if (escape) {
+          escape = false;
+        } else if (ch == '\\') {
+          escape = true;
+        } else if (ch == quote) {
+          quote = null;
+        }
+        continue;
+      }
+      if (ch == '"' || ch == '\'') {
+        quote = ch;
+        continue;
+      }
+      if (ch == '>') {
+        svgEnd = i;
+        break;
+      }
+    }
+    if (svgEnd == -1) return null;
+    final String tag = head.substring(svgStart, svgEnd + 1);
+
+    String? getAttrValue(String name) {
+      final String lowerName = name.toLowerCase();
+      int i = 0;
+      // Skip until after '<svg'
+      while (i < tag.length && tag[i] != '<') i++;
+      while (i < tag.length && tag[i] != ' ') i++;
+      while (i < tag.length) {
+        while (i < tag.length && isAsciiWhitespaceCodeUnit(tag.codeUnitAt(i))) i++;
+        if (i >= tag.length) break;
+        final int cu = tag.codeUnitAt(i);
+        if (cu == 0x2F /* / */ || cu == 0x3E /* > */) break;
+        final int nameStart = i;
+        while (i < tag.length) {
+          final int c = tag.codeUnitAt(i);
+          final bool isNameChar = (c >= 0x30 && c <= 0x39) ||
+              (c >= 0x41 && c <= 0x5A) ||
+              (c >= 0x61 && c <= 0x7A) ||
+              c == 0x2D ||
+              c == 0x5F ||
+              c == 0x3A;
+          if (!isNameChar) break;
+          i++;
+        }
+        final String attrName = tag.substring(nameStart, i);
+        while (i < tag.length && isAsciiWhitespaceCodeUnit(tag.codeUnitAt(i))) i++;
+        if (i >= tag.length || tag.codeUnitAt(i) != 0x3D /* = */) {
+          continue;
+        }
+        i++; // '='
+        while (i < tag.length && isAsciiWhitespaceCodeUnit(tag.codeUnitAt(i))) i++;
+        if (i >= tag.length) break;
+        final int q = tag.codeUnitAt(i);
+        String value;
+        if (q == 0x22 /* " */ || q == 0x27 /* ' */) {
+          final int quoteCu = q;
+          i++;
+          final int vStart = i;
+          while (i < tag.length && tag.codeUnitAt(i) != quoteCu) i++;
+          value = tag.substring(vStart, i);
+          if (i < tag.length && tag.codeUnitAt(i) == quoteCu) i++;
+        } else {
+          final int vStart = i;
+          while (i < tag.length) {
+            final int c = tag.codeUnitAt(i);
+            if (isAsciiWhitespaceCodeUnit(c) || c == 0x3E /* > */ || c == 0x2F /* / */) break;
+            i++;
+          }
+          value = tag.substring(vStart, i);
+        }
+        if (attrName.toLowerCase() == lowerName) return value;
+      }
+      return null;
+    }
 
     int? parseLengthAttr(String name) {
-      final Match? m = RegExp('$name\\s*=\\s*([\"\\\']?)([^\"\\\'>\\s]+)\\1', caseSensitive: false).firstMatch(tag);
-      if (m == null) return null;
-      String v = m.group(2)!.trim();
+      final String? raw = getAttrValue(name);
+      if (raw == null) return null;
+      String v = raw.trim();
       if (v.endsWith('%')) return null;
       if (v.endsWith('px')) v = v.substring(0, v.length - 2);
       final double? d = double.tryParse(v);
@@ -58,9 +138,9 @@ void _imgLog(String message) {
     final int? h = parseLengthAttr('height');
     if (w != null && h != null) return (width: w, height: h);
 
-    final Match? vb = RegExp('viewBox\\s*=\\s*([\"\\\'])([^\"\\\']+)\\1', caseSensitive: false).firstMatch(tag);
+    final String? vb = getAttrValue('viewBox') ?? getAttrValue('viewbox');
     if (vb != null) {
-      final parts = vb.group(2)!.trim().split(RegExp(r'[ ,]+'));
+      final parts = splitByAsciiWhitespace(vb.replaceAll(',', ' ').trim());
       if (parts.length == 4) {
         final double? vbw = double.tryParse(parts[2]);
         final double? vbh = double.tryParse(parts[3]);

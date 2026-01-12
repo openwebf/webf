@@ -1,0 +1,27 @@
+name: webf_video_player
+description: "HTML5-compatible video player for WebF applications. Wraps Flutter's video_player package with a familiar HTML5 video element API."
+version: 1.0.0
+homepage: https://openwebf.com
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  webf: ^0.24.0
+  video_player: ^2.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+
+topics:
+  - webf
+  - video
+  - media
+  - html5

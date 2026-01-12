@@ -230,12 +230,21 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   // Helper method to match dynamic route patterns
   bool _matchesPattern(String pattern, String path) {
-    // Convert pattern like "/user/:userId" to regex like "^/user/([^/]+)$"
-    String regexPattern = pattern.replaceAllMapped(RegExp(r':([^/]+)'), (match) => r'([^/]+)');
-    regexPattern = '^${regexPattern.replaceAll('/', r'\/')}\$';
+    final List<String> patternParts = pattern.split('/').where((p) => p.isNotEmpty).toList();
+    final List<String> pathParts = path.split('/').where((p) => p.isNotEmpty).toList();
+    if (patternParts.length != pathParts.length) return false;
 
-    RegExp regex = RegExp(regexPattern);
-    return regex.hasMatch(path);
+    for (int i = 0; i < patternParts.length; i++) {
+      final String p = patternParts[i];
+      final String v = pathParts[i];
+      if (p.isEmpty) return false;
+      if (p.codeUnitAt(0) == 0x3A /* : */) {
+        if (v.isEmpty) return false;
+        continue;
+      }
+      if (p != v) return false;
+    }
+    return true;
   }
 
   void removeHybridRouterView(String path) {

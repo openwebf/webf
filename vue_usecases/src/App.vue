@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Route, Routes } from '@openwebf/vue-router';
-import { appRoutes } from './routes';
+// import { Route, Routes } from '@openwebf/vue-router';
+// import { appRoutes } from './routes';
+import FeatureCatalogPage from "./pages/FeatureCatalogPage.vue";
 </script>
 
 <template>
@@ -10,15 +11,16 @@ import { appRoutes } from './routes';
         Vue
       </div>
     </div>
-    <Routes>
-      <Route
-        v-for="r in appRoutes"
-        :key="r.path"
-        :path="r.path"
-        :title="r.title"
-        :theme="r.theme"
-        :element="r.element"
-      />
-    </Routes>
+<!--    <Routes>-->
+<!--      <Route-->
+<!--        v-for="r in appRoutes"-->
+<!--        :key="r.path"-->
+<!--        :path="r.path"-->
+<!--        :title="r.title"-->
+<!--        :theme="r.theme"-->
+<!--        :element="r.element"-->
+<!--      />-->
+<!--    </Routes>-->
+    <FeatureCatalogPage />
   </div>
 </template>

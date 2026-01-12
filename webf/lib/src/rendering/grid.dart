@@ -13,6 +13,7 @@ import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/src/foundation/logger.dart';
+import 'package:webf/src/foundation/string_parsers.dart';
 
 class _GridAutoCursor {
   int row;
@@ -1981,9 +1982,7 @@ class RenderGridLayout extends RenderLayoutBox {
       if (raw.isEmpty) {
         final String? styleAttr = (renderStyle.target).getAttribute('style');
         if (styleAttr != null) {
-          final RegExp re = RegExp(r'grid-template-columns\s*:\s*([^;]+)', caseSensitive: false);
-          final m = re.firstMatch(styleAttr);
-          if (m != null) raw = m.group(1)!.trim();
+          raw = extractInlineStylePropertyValue(styleAttr, GRID_TEMPLATE_COLUMNS) ?? '';
         }
       }
       if (raw.isNotEmpty) {
@@ -1995,9 +1994,7 @@ class RenderGridLayout extends RenderLayoutBox {
       if (raw.isEmpty) {
         final String? styleAttr = (renderStyle.target).getAttribute('style');
         if (styleAttr != null) {
-          final RegExp re = RegExp(r'grid-template-rows\s*:\s*([^;]+)', caseSensitive: false);
-          final m = re.firstMatch(styleAttr);
-          if (m != null) raw = m.group(1)!.trim();
+          raw = extractInlineStylePropertyValue(styleAttr, GRID_TEMPLATE_ROWS) ?? '';
         }
       }
       if (raw.isNotEmpty) {
@@ -2820,15 +2817,34 @@ class RenderGridLayout extends RenderLayoutBox {
           final int endCol = math.min(colSizes.length, startCol + math.max(1, span));
           final int effectiveSpan = math.max(1, endCol - startCol);
 
+
+          bool flexTrackUsesAutoMinimum(GridTrackSize track) {
+            // In CSS Grid, a bare `<flex>` track (e.g. `1fr`) behaves like
+            // `minmax(auto, <flex>)` and thus has an automatic minimum size
+            // based on the min-content contributions of its items.
+            //
+            // However, `minmax(<fixed>, <flex>)` (e.g. Tailwind's
+            // `minmax(0, 1fr)`) has an explicit fixed minimum; item intrinsic
+            // contributions must NOT raise that minimum, otherwise the grid can
+            // overflow horizontally and effectively act like each column is
+            // full-width.
+            if (track is GridFraction) return true;
+            if (track is GridMinMax && track.maxTrack is GridFraction) {
+              final GridTrackSize minTrack = track.minTrack;
+              return minTrack is GridAuto || minTrack is GridMinContent || minTrack is GridMaxContent;
+            }
+            return false;
+          }
+
           int autoCount = 0;
           int minContentCount = 0;
           int maxContentCount = 0;
-          int flexCount = 0;
+          int flexAutoMinCount = 0;
           for (int c = startCol; c < endCol; c++) {
             if (autoColumnsMask[c]) autoCount++;
             if (minContentColumnsMask[c]) minContentCount++;
             if (maxContentColumnsMask[c]) maxContentCount++;
-            if (flexFactors[c] > 0) flexCount++;
+            if (flexFactors[c] > 0 && flexTrackUsesAutoMinimum(columnTrackAt(c))) flexAutoMinCount++;
           }
 
           if ((autoCount > 0 || maxContentCount > 0) && intrinsicMaxWidth.isFinite && intrinsicMaxWidth > 0) {
@@ -2875,11 +2891,12 @@ class RenderGridLayout extends RenderLayoutBox {
             }
           }
 
-          if (flexCount > 0 && intrinsicMinWidth.isFinite && intrinsicMinWidth > 0) {
+          if (flexAutoMinCount > 0 && intrinsicMinWidth.isFinite && intrinsicMinWidth > 0) {
             final double availableMin = math.max(0.0, intrinsicMinWidth - colGap * math.max(0, effectiveSpan - 1));
-            final double perFlexMinTrack = availableMin / flexCount;
+            final double perFlexMinTrack = availableMin / flexAutoMinCount;
             for (int c = startCol; c < endCol; c++) {
               if (flexFactors[c] <= 0) continue;
+              if (!flexTrackUsesAutoMinimum(columnTrackAt(c))) continue;
               if (perFlexMinTrack > flexMinColSizes[c]) {
                 flexMinColSizes[c] = perFlexMinTrack;
               }

@@ -150,7 +150,7 @@ my-webf-app/
 │   └── index.ts
 ├── package.json
 ├── tsconfig.json
-├── tsup.config.ts
+├── tsdown.config.ts
 ├── global.d.ts
 └── .gitignore
 ```

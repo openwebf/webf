@@ -329,7 +329,8 @@ export async function reactGen({ source, target, exclude, packageName }: Generat
   const newExports = generateReactIndex(blobs);
 
   // Build desired export map: moduleSpecifier -> Set of names
-  const desiredExports = new Map<string, Set<string>>();
+  const desiredValueExports = new Map<string, Set<string>>();
+  const desiredTypeExports = new Map<string, Set<string>>();
   const components = blobs.flatMap(blob => {
     const classObjects = blob.objects.filter(obj => obj instanceof ClassObject) as ClassObject[];
     const properties = classObjects.filter(object => object.name.endsWith('Properties'));
@@ -351,10 +352,10 @@ export async function reactGen({ source, target, exclude, packageName }: Generat
   }
   for (const { className, fileName, relativeDir } of unique.values()) {
     const spec = `./${relativeDir ? `${relativeDir}/` : ''}${fileName}`;
-    if (!desiredExports.has(spec)) desiredExports.set(spec, new Set());
-    const set = desiredExports.get(spec)!;
-    set.add(className);
-    set.add(`${className}Element`);
+    if (!desiredValueExports.has(spec)) desiredValueExports.set(spec, new Set());
+    if (!desiredTypeExports.has(spec)) desiredTypeExports.set(spec, new Set());
+    desiredValueExports.get(spec)!.add(className);
+    desiredTypeExports.get(spec)!.add(`${className}Element`);
   }
 
   if (!fs.existsSync(indexFilePath)) {
@@ -376,22 +377,41 @@ export async function reactGen({ source, target, exclude, packageName }: Generat
             ? stmt.moduleSpecifier.text
             : undefined;
           if (!moduleSpecifier) continue;
-          const desired = desiredExports.get(moduleSpecifier);
-          if (!desired) continue;
+          const desiredValues = desiredValueExports.get(moduleSpecifier);
+          const desiredTypes = desiredTypeExports.get(moduleSpecifier);
+          if (!desiredValues && !desiredTypes) continue;
+          const declIsTypeOnly = Boolean((stmt as unknown as { isTypeOnly?: boolean }).isTypeOnly);
           for (const el of stmt.exportClause.elements) {
             const name = el.name.getText(sourceFile);
-            if (desired.has(name)) desired.delete(name);
+            const specIsTypeOnly = Boolean((el as unknown as { isTypeOnly?: boolean }).isTypeOnly);
+            const isTypeOnly = declIsTypeOnly || specIsTypeOnly;
+            if (isTypeOnly) {
+              if (desiredTypes?.has(name)) desiredTypes.delete(name);
+            } else {
+              if (desiredValues?.has(name)) desiredValues.delete(name);
+            }
           }
         }
       }
 
       // Prepare new export lines for any remaining names
       const lines: string[] = [];
-      for (const [spec, names] of desiredExports) {
-        const missing = Array.from(names);
-        if (missing.length === 0) continue;
+      const specs = new Set<string>([
+        ...desiredValueExports.keys(),
+        ...desiredTypeExports.keys()
+      ]);
+
+      for (const spec of specs) {
+        const missingValues = Array.from(desiredValueExports.get(spec) ?? []);
+        const missingTypes = Array.from(desiredTypeExports.get(spec) ?? []);
+        if (missingValues.length === 0 && missingTypes.length === 0) continue;
         const specEscaped = spec.replace(/\\/g, '/');
-        lines.push(`export { ${missing.join(', ')} } from "${specEscaped}";`);
+        if (missingValues.length > 0) {
+          lines.push(`export { ${missingValues.join(', ')} } from "${specEscaped}";`);
+        }
+        if (missingTypes.length > 0) {
+          lines.push(`export type { ${missingTypes.join(', ')} } from "${specEscaped}";`);
+        }
       }
 
       if (lines.length > 0) {

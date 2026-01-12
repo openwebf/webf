@@ -983,10 +983,8 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
     }
 
     // Default: capitalize words
-    return phaseName
-        .split(RegExp(r'(?=[A-Z])'))
-        .join(' ')
-        .split('_')
+    final String spaced = splitByUppercaseBoundary(phaseName).join(' ');
+    return spaced.split('_')
         .map((word) => word.isNotEmpty
             ? word[0].toUpperCase() + word.substring(1).toLowerCase()
             : '')

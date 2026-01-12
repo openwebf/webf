@@ -297,9 +297,7 @@ class DataBundle extends WebFBundle {
 
     // Charset handling.
     String? charset;
-    final RegExp charsetRe = RegExp(r'charset=([^;]+)', caseSensitive: false);
-    final Match? m = charsetRe.firstMatch(header);
-    if (m != null) charset = m.group(1);
+    charset = parseHeaderParameter(header, 'charset=');
     if (charset == null && lowerHeader.contains(';utf8')) charset = 'utf-8';
 
     ContentType type;

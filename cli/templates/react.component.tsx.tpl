@@ -63,12 +63,16 @@ export interface <%= className %>Props {
 
 <% if (methods && methods.methods.length > 0) { %>
 /**
- * Element interface with methods accessible via ref
+ * Element interface with methods/properties accessible via ref
  * @example
  * ```tsx
  * const ref = useRef<<%= className %>Element>(null);
  * // Call methods on the element
  * ref.current?.finishRefresh('success');
+<% if (properties && properties.props && properties.props.length > 0) { %>
+ * // Access properties
+ * console.log(ref.current?.<%= _.camelCase(properties.props[0].name || 'someProp') %>);
+<% } %>
  * ```
  */
 <% } %>
@@ -76,7 +80,19 @@ export interface <%= className %>Element extends WebFElementWithMethods<{
   <% _.forEach(methods?.methods, function(method, index) { %>
 <%= generateMethodDeclarationWithDocs(method, '  ') %>
   <% }); %>
-}> {}
+}> {
+  <% _.forEach(properties?.props, function(prop, index) { %>
+  <% var propName = _.camelCase(prop.name); %>
+  <% if (prop.documentation) { %>
+  /** <%= prop.documentation.split('\n')[0] %> */
+  <% } %>
+  <% if (prop.readonly) { %>
+  readonly <%= propName %><% if (prop.optional) { %>?<% } %>: <%= generateReturnType(prop.type) %>;
+  <% } else { %>
+  <%= propName %><% if (prop.optional) { %>?<% } %>: <%= generateReturnType(prop.type) %>;
+  <% } %>
+  <% }); %>
+}
 
 <% if (properties?.documentation || methods?.documentation || events?.documentation) { %>
   <% const docs = properties?.documentation || methods?.documentation || events?.documentation; %>

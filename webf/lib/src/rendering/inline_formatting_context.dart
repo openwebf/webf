@@ -34,8 +34,36 @@ import 'inline_item.dart';
 import 'inline_items_builder.dart';
 import 'inline_layout_debugger.dart';
 
-final RegExp _softWrapWhitespaceRegExp = RegExp(r'[\s\u200B\u2060]'); // include ZWSP/WORD JOINER
-final RegExp _interiorWhitespaceRegExp = RegExp(r'\S\s+\S');
+@pragma('vm:prefer-inline')
+bool _isSoftWrapWhitespace(int codeUnit) {
+  // Common ASCII whitespace + NBSP + ZWSP + WORD JOINER.
+  return isAsciiWhitespaceCodeUnit(codeUnit) ||
+      codeUnit == 0x00A0 ||
+      codeUnit == 0x200B ||
+      codeUnit == 0x2060;
+}
+
+bool _containsSoftWrapWhitespace(String input) {
+  for (int i = 0; i < input.length; i++) {
+    if (_isSoftWrapWhitespace(input.codeUnitAt(i))) return true;
+  }
+  return false;
+}
+
+bool _containsInteriorWhitespace(String input) {
+  bool sawNonWhitespace = false;
+  bool inWhitespaceRun = false;
+  for (int i = 0; i < input.length; i++) {
+    final bool ws = _isSoftWrapWhitespace(input.codeUnitAt(i));
+    if (ws) {
+      if (sawNonWhitespace) inWhitespaceRun = true;
+      continue;
+    }
+    if (inWhitespaceRun) return true;
+    sawNonWhitespace = true;
+  }
+  return false;
+}
 
 /// Manages the inline formatting context for a block container.
 /// Based on Blink's InlineNode.
@@ -3405,10 +3433,10 @@ class InlineFormattingContext {
     for (final it in _items) {
       if (it.isText) {
         final t = it.getText(_textContent);
-        if (!hasWhitespaceInText && _softWrapWhitespaceRegExp.hasMatch(t)) {
+        if (!hasWhitespaceInText && _containsSoftWrapWhitespace(t)) {
           hasWhitespaceInText = true;
         }
-        if (!hasInteriorWhitespaceInText && _interiorWhitespaceRegExp.hasMatch(t)) {
+        if (!hasInteriorWhitespaceInText && _containsInteriorWhitespace(t)) {
           hasInteriorWhitespaceInText = true;
         }
         if (!hasBreakablePunctuationInText) {

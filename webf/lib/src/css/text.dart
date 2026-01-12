@@ -15,8 +15,9 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/rendering.dart';
+import 'package:webf/src/foundation/string_parsers.dart';
 
-final RegExp _commaRegExp = RegExp(r'\s*,\s*');
+const int _commaCodeUnit = 0x2C; // ','
 
 typedef TextPainterCallback = Paint? Function(Rect bounds);
 
@@ -739,7 +740,7 @@ class CSSText {
     final String normalized = value.trim().toLowerCase();
     if (normalized == 'normal' || normalized == 'none') return true;
 
-    final List<String> tokens = normalized.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+    final List<String> tokens = splitByAsciiWhitespace(normalized);
     if (tokens.isEmpty) return false;
     if (tokens.contains('normal') || tokens.contains('none')) return false;
 
@@ -929,7 +930,7 @@ class CSSText {
   /// multiple space-separated line keywords and combines them.
   static TextDecoration resolveTextDecorationLine(String present) {
     if (present.isEmpty) return TextDecoration.none;
-    final parts = present.trim().split(RegExp(r"\s+"));
+    final parts = splitByAsciiWhitespace(present.trim());
     // If 'none' is present with any other token, treat as none.
     if (parts.contains('none')) return TextDecoration.none;
 
@@ -1217,7 +1218,7 @@ class CSSText {
     final String normalized = fontVariant.trim().toLowerCase();
     if (!isValidFontVariantValue(normalized)) return null;
     // Normalize whitespace.
-    return normalized.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).join(' ');
+    return splitByAsciiWhitespace(normalized).join(' ');
   }
 
   static ({List<ui.FontFeature> features, FontVariantCapsSynthesis synth}) resolveFontFeaturesForVariant(
@@ -1241,7 +1242,7 @@ class CSSText {
       );
     }
 
-    final tokens = v.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+    final tokens = splitByAsciiWhitespace(v);
     final List<ui.FontFeature> features = <ui.FontFeature>[];
     FontVariantCapsSynthesis synth = FontVariantCapsSynthesis.none;
 
@@ -1407,7 +1408,7 @@ class CSSText {
 
   static List<String> resolveFontFamilyFallback(String? fontFamily) {
     fontFamily = fontFamily ?? 'sans-serif';
-    List<String> values = fontFamily.split(_commaRegExp);
+    final List<String> values = splitByTopLevelDelimiter(fontFamily, _commaCodeUnit);
     List<String> resolvedFamily = List.empty(growable: true);
 
     for (int i = 0; i < values.length; i++) {

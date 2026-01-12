@@ -79,6 +79,130 @@ void main() {
       // since text metrics are complex to calculate precisely
     });
 
+    testWidgets('text-align center should visually center inline content (unbreakable)', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'text-align-center-inline-visual-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <head>
+              <style>
+                .text-center { text-align: center; }
+              </style>
+            </head>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" class="text-center" style="width: 300px; border: 1px solid black;">
+                <span id="inline">contain</span>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      final inline = prepared.getElementById('inline');
+
+      final containerRect = container.getBoundingClientRect();
+      final inlineRect = inline.getBoundingClientRect();
+
+      // Center alignment should center the inline content within the container.
+      final double containerCenterX = containerRect.left + containerRect.width / 2;
+      final double inlineCenterX = inlineRect.left + inlineRect.width / 2;
+      expect((inlineCenterX - containerCenterX).abs(), lessThan(2.0));
+    });
+
+    testWidgets('text-align center should work inside grid items', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'text-align-center-grid-item-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <head>
+              <style>
+                .text-center { text-align: center; }
+              </style>
+            </head>
+            <body style="margin: 0; padding: 0;">
+              <div id="grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 300px;">
+                <div style="border: 1px solid black;">
+                  <div id="header" class="text-center" style="padding: 12px;">
+                    <span id="inline">contain</span>
+                  </div>
+                </div>
+                <div style="border: 1px solid black;">
+                  <div class="text-center" style="padding: 12px;">
+                    <span>cover</span>
+                  </div>
+                </div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final header = prepared.getElementById('header');
+      final inline = prepared.getElementById('inline');
+
+      final headerRect = header.getBoundingClientRect();
+      final inlineRect = inline.getBoundingClientRect();
+
+      final double headerCenterX = headerRect.left + headerRect.width / 2;
+      final double inlineCenterX = inlineRect.left + inlineRect.width / 2;
+      expect((inlineCenterX - headerCenterX).abs(), lessThan(2.0));
+    });
+
+    testWidgets('text-align center should work with overflow hidden grid items', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'text-align-center-grid-item-overflow-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <head>
+              <style>
+                .text-center { text-align: center; }
+              </style>
+            </head>
+            <body style="margin: 0; padding: 0;">
+              <div id="grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; width: 300px;">
+                <div id="item" style="border: 1px solid black; border-radius: 8px; overflow: hidden;">
+                  <div id="header" class="text-center" style="background: #eee; padding: 12px;">
+                    <span id="inline">contain</span>
+                  </div>
+                  <div style="background: black; height: 150px;">
+                    <div>11</div>
+                  </div>
+                </div>
+                <div style="border: 1px solid black; border-radius: 8px; overflow: hidden;">
+                  <div class="text-center" style="background: #eee; padding: 12px;">
+                    <span>cover</span>
+                  </div>
+                  <div style="background: black; height: 150px;">
+                    <div>11</div>
+                  </div>
+                </div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final item = prepared.getElementById('item');
+      final header = prepared.getElementById('header');
+      final inline = prepared.getElementById('inline');
+
+      final itemRect = item.getBoundingClientRect();
+      final headerRect = header.getBoundingClientRect();
+      final inlineRect = inline.getBoundingClientRect();
+
+      // Header should be constrained by its grid cell (not expand to the full grid width).
+      expect(headerRect.width, lessThanOrEqualTo(itemRect.width + 0.5));
+
+      // And the inline content should still be centered within the header.
+      final double headerCenterX = headerRect.left + headerRect.width / 2;
+      final double inlineCenterX = inlineRect.left + inlineRect.width / 2;
+      expect((inlineCenterX - headerCenterX).abs(), lessThan(2.0));
+    });
+
     testWidgets('text-align right should align text to the right', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,

@@ -11,6 +11,7 @@ import 'dart:typed_data' show Uint8List;
 import 'multipart_file.dart';
 import 'options.dart';
 import 'utils.dart';
+import '../string_parsers.dart';
 
 const _boundaryName = '--webf-boundary';
 const _rn = '\r\n';
@@ -135,9 +136,9 @@ class FormData {
   /// (even for `%` or non-ASCII characters).
   /// Here we follow their behavior.
   String? _browserEncode(String? value) {
-    return value
-        ?.replaceAll(RegExp(r'\r\n|\r|\n'), '%0D%0A')
-        .replaceAll('"', '%22');
+    final String? v = value;
+    if (v == null) return null;
+    return encodeNewlinesAsPercentCrlf(v).replaceAll('"', '%22');
   }
 
   /// The total length of the request body, in bytes. This is calculated from

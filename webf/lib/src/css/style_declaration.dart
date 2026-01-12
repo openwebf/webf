@@ -75,8 +75,6 @@ List<String> _propertyOrders = [
   HEIGHT
 ];
 
-RegExp _kebabCaseReg = RegExp(r'[A-Z]');
-
 final LinkedLruHashMap<String, Map<String, String?>> _cachedExpandedShorthand = LinkedLruHashMap(maximumSize: 500);
 
 class CSSPropertyValue {
@@ -1050,5 +1048,5 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
 // aB to a-b
 String _kebabize(String str) {
-  return str.replaceAllMapped(_kebabCaseReg, (match) => '-${match[0]!.toLowerCase()}');
+  return kebabizeCamelCase(str);
 }

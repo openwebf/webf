@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/src/foundation/logger.dart';
+import 'package:webf/src/foundation/string_parsers.dart';
 import 'package:flutter/painting.dart';
 import 'package:webf/css.dart';
 
@@ -176,12 +177,85 @@ const Map<String, int> _namedColors = {
 // CSS Values and Units: https://drafts.csswg.org/css-values-3/#colors
 // CSS Color: https://drafts.csswg.org/css-color-4/
 // ignore: public_member_api_docs
-final _colorHexRegExp = RegExp(r'^#([a-f0-9]{3,8})$', caseSensitive: false);
-final _colorHslRegExp =
-    RegExp(r'^([0-9.-]+)(deg|rad|grad|turn)?[,\s]+([0-9.]+%)[,\s]+([0-9.]+%)([,\s/]+([0-9.]+%?))?\s*$');
-final _colorRgbRegExp =
-    RegExp(r'^([+-]?[^\s,]+%?)[,\s]+([+-]?[^\s,]+%?)[,\s]+([+-]?[^\s,]+%?)([,\s/]+([+-]?[^\s,]+%?))?\s*$');
-final _variableRgbRegExp = RegExp(r'var\(([^()]*\(.*?\)[^()]*)\)|var\(([^()]*)\)');
+@pragma('vm:prefer-inline')
+bool _isHexDigit(int cu) {
+  return (cu >= 0x30 && cu <= 0x39) ||
+      (cu >= 0x41 && cu <= 0x46) ||
+      (cu >= 0x61 && cu <= 0x66);
+}
+
+bool _isHexString(String s) {
+  for (int i = 0; i < s.length; i++) {
+    if (!_isHexDigit(s.codeUnitAt(i))) return false;
+  }
+  return true;
+}
+
+List<String> _splitColorArgs(String input) {
+  // Prefer comma-separated format when present, otherwise use whitespace.
+  if (input.contains(',')) {
+    return splitByTopLevelDelimiter(input, 0x2C /* , */);
+  }
+  return splitByAsciiWhitespacePreservingGroups(input);
+}
+
+({String a, String b})? _splitAlphaBySlash(String input) {
+  final List<String> parts = splitByTopLevelDelimiter(input, 0x2F /* / */);
+  if (parts.length == 1) return null;
+  if (parts.length != 2) return null;
+  return (a: parts[0].trim(), b: parts[1].trim());
+}
+
+({String r, String g, String b, String? a})? _parseRgbArgs(String body) {
+  final String trimmed = body.trim();
+  if (trimmed.isEmpty) return null;
+
+  final slash = _splitAlphaBySlash(trimmed);
+  if (slash != null) {
+    final List<String> base = _splitColorArgs(slash.a);
+    if (base.length != 3) return null;
+    final List<String> alphaTokens = _splitColorArgs(slash.b);
+    if (alphaTokens.isEmpty) return null;
+    return (r: base[0], g: base[1], b: base[2], a: alphaTokens.first);
+  }
+
+  final List<String> tokens = _splitColorArgs(trimmed);
+  if (tokens.length == 3) return (r: tokens[0], g: tokens[1], b: tokens[2], a: null);
+  if (tokens.length == 4) return (r: tokens[0], g: tokens[1], b: tokens[2], a: tokens[3]);
+  return null;
+}
+
+({String hue, String? unit, String s, String l, String? a})? _parseHslArgs(String body) {
+  final String trimmed = body.trim();
+  if (trimmed.isEmpty) return null;
+
+  final slash = _splitAlphaBySlash(trimmed);
+  if (slash != null) {
+    final List<String> base = _splitColorArgs(slash.a);
+    if (base.length != 3) return null;
+    final List<String> alphaTokens = _splitColorArgs(slash.b);
+    if (alphaTokens.isEmpty) return null;
+    final ({String hue, String? unit}) hue = _splitHueToken(base[0]);
+    return (hue: hue.hue, unit: hue.unit, s: base[1], l: base[2], a: alphaTokens.first);
+  }
+
+  final List<String> tokens = _splitColorArgs(trimmed);
+  if (tokens.length != 3 && tokens.length != 4) return null;
+  final ({String hue, String? unit}) hue = _splitHueToken(tokens[0]);
+  return (hue: hue.hue, unit: hue.unit, s: tokens[1], l: tokens[2], a: tokens.length == 4 ? tokens[3] : null);
+}
+
+({String hue, String? unit}) _splitHueToken(String token) {
+  final String t = token.trim();
+  final String lower = t.toLowerCase();
+  const List<String> units = <String>['deg', 'rad', 'grad', 'turn'];
+  for (final u in units) {
+    if (lower.endsWith(u) && t.length > u.length) {
+      return (hue: t.substring(0, t.length - u.length), unit: u);
+    }
+  }
+  return (hue: t, unit: null);
+}
 
 final LinkedLruHashMap<String, Color> _cachedParsedColor = LinkedLruHashMap(maximumSize: 100);
 
@@ -308,9 +382,7 @@ class CSSColor with Diagnosticable {
 
   static String tryParserCSSColorWithVariable(
       String fullColor, String input, RenderStyle renderStyle, String propertyName) {
-    String replaced = input.replaceAllMapped(_variableRgbRegExp, (Match match) {
-      String? varString = match[0];
-      if (varString == null) return '';
+    final String replaced = replaceCssVarFunctions(input, (String varString) {
       var variable = renderStyle.resolveValue(propertyName, varString);
 
       if (variable is CSSVariable) {
@@ -349,24 +421,24 @@ class CSSColor with Diagnosticable {
 
     Color? parsed;
     if (color.startsWith('#')) {
-      final hexMatch = _colorHexRegExp.firstMatch(color);
-      if (hexMatch != null) {
-        final hex = hexMatch[1]!.toUpperCase();
-        switch (hex.length) {
+      final String hex = color.substring(1);
+      if (hex.length >= 3 && hex.length <= 8 && _isHexString(hex)) {
+        final String up = hex.toUpperCase();
+        switch (up.length) {
           case 3:
-            parsed = Color(int.parse('0xFF${_x2(hex)}'));
+            parsed = Color(int.parse('0xFF${_x2(up)}'));
             break;
           case 4:
-            final alpha = hex[3];
-            final rgb = hex.substring(0, 3);
+            final alpha = up[3];
+            final rgb = up.substring(0, 3);
             parsed = Color(int.parse('0x${_x2(alpha)}${_x2(rgb)}'));
             break;
           case 6:
-            parsed = Color(int.parse('0xFF$hex'));
+            parsed = Color(int.parse('0xFF$up'));
             break;
           case 8:
-            final alpha = hex.substring(6, 8);
-            final rgb = hex.substring(0, 6);
+            final alpha = up.substring(6, 8);
+            final rgb = up.substring(0, 6);
             parsed = Color(int.parse('0x$alpha$rgb'));
             break;
         }
@@ -375,23 +447,23 @@ class CSSColor with Diagnosticable {
       bool isRgba = color.startsWith(RGBA);
       String colorBody = originalColor.substring(isRgba ? 5 : 4, color.length - 1);
 
-      final RegExpMatch? rgbMatch;
+      final ({String r, String g, String b, String? a})? rgbArgs;
       if (renderStyle != null && colorBody.contains('var')) {
         final result = tryParserCSSColorWithVariable(originalColor, colorBody, renderStyle, propertyName ?? '');
         if (trace) {
           cssLogger
               .info('[color][parse] property=$prop rgb-body="$colorBody" resolved="$result"');
         }
-        rgbMatch = _colorRgbRegExp.firstMatch(result);
+        rgbArgs = _parseRgbArgs(result);
       } else {
-        rgbMatch = _colorRgbRegExp.firstMatch(colorBody);
+        rgbArgs = _parseRgbArgs(colorBody);
       }
 
-      if (rgbMatch != null) {
-        final double? rgbR = _parseColorPart(rgbMatch[1]!, 0, 255, renderStyle);
-        final double? rgbG = _parseColorPart(rgbMatch[2]!, 0, 255, renderStyle);
-        final double? rgbB = _parseColorPart(rgbMatch[3]!, 0, 255, renderStyle);
-        final double? rgbO = rgbMatch[5] != null ? _parseColorPart(rgbMatch[5]!, 0, 1, renderStyle) : 1;
+      if (rgbArgs != null) {
+        final double? rgbR = _parseColorPart(rgbArgs.r, 0, 255, renderStyle);
+        final double? rgbG = _parseColorPart(rgbArgs.g, 0, 255, renderStyle);
+        final double? rgbB = _parseColorPart(rgbArgs.b, 0, 255, renderStyle);
+        final double? rgbO = rgbArgs.a != null ? _parseColorPart(rgbArgs.a!, 0, 1, renderStyle) : 1;
         if (rgbR != null && rgbG != null && rgbB != null && rgbO != null) {
           parsed = Color.fromRGBO(rgbR.round(), rgbG.round(), rgbB.round(), rgbO);
         }
@@ -402,23 +474,23 @@ class CSSColor with Diagnosticable {
       bool isHsla = color.startsWith(HSLA);
       String colorBody = originalColor.substring(isHsla ? 5 : 4, color.length - 1);
 
-      final RegExpMatch? hslMatch;
+      final ({String hue, String? unit, String s, String l, String? a})? hslArgs;
       if (renderStyle != null && colorBody.contains('var')) {
         final result = tryParserCSSColorWithVariable(originalColor, colorBody, renderStyle, propertyName ?? '');
         if (trace) {
           cssLogger
               .info('[color][parse] property=$prop hsl-body="$colorBody" resolved="$result"');
         }
-        hslMatch = _colorHslRegExp.firstMatch(result);
+        hslArgs = _parseHslArgs(result);
       } else {
-        hslMatch = _colorHslRegExp.firstMatch(colorBody);
+        hslArgs = _parseHslArgs(colorBody);
       }
 
-      if (hslMatch != null) {
-        final double? hslH = _parseColorHue(hslMatch[1]!, hslMatch[2]);
-        final double? hslS = _parseColorPart(hslMatch[3]!, 0, 1, renderStyle);
-        final double? hslL = _parseColorPart(hslMatch[4]!, 0, 1, renderStyle);
-        final double? hslA = hslMatch[6] != null ? _parseColorPart(hslMatch[6]!, 0, 1, renderStyle) : 1;
+      if (hslArgs != null) {
+        final double? hslH = _parseColorHue(hslArgs.hue, hslArgs.unit);
+        final double? hslS = _parseColorPart(hslArgs.s, 0, 1, renderStyle);
+        final double? hslL = _parseColorPart(hslArgs.l, 0, 1, renderStyle);
+        final double? hslA = hslArgs.a != null ? _parseColorPart(hslArgs.a!, 0, 1, renderStyle) : 1;
         if (hslH != null && hslS != null && hslL != null && hslA != null) {
           parsed = HSLColor.fromAHSL(hslA, hslH, hslS, hslL).toColor();
         }

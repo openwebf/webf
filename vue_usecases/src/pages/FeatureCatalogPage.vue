@@ -113,6 +113,12 @@ const sections: Section[] = [
     items: [{ label: 'WebF Share', path: '/webf-share', desc: 'Share and save content via native APIs' }],
   },
   {
+    title: 'Native UI',
+    items: [
+      { label: 'WebF Video Player', path: '/webf-video-player', desc: 'HTML5-compatible video player with native Flutter performance' },
+    ],
+  },
+  {
     title: 'Cupertino UI',
     items: [
       { label: 'Cupertino Showcase', path: '/cupertino-showcase', desc: 'iOS-style components and interactions' },

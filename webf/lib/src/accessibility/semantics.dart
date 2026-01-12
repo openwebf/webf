@@ -254,7 +254,7 @@ class WebFAccessibility {
     // aria-labelledby: space-separated idrefs
     final String? labelledby = element.getAttribute('aria-labelledby');
     if (labelledby != null && labelledby.trim().isNotEmpty) {
-      final ids = labelledby.trim().split(RegExp(r'\s+'));
+      final ids = splitByAsciiWhitespace(labelledby.trim());
       final buffer = StringBuffer();
       for (final id in ids) {
         final list = element.ownerDocument.elementsByID[id];
@@ -342,7 +342,7 @@ class WebFAccessibility {
   static String? computeAccessibleDescription(dom.Element element) {
     final String? describedby = element.getAttribute('aria-describedby');
     if (describedby == null || describedby.trim().isEmpty) return null;
-    final ids = describedby.trim().split(RegExp(r'\s+'));
+    final ids = splitByAsciiWhitespace(describedby.trim());
     final buffer = StringBuffer();
     for (final id in ids) {
       final list = element.ownerDocument.elementsByID[id];

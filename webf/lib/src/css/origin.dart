@@ -8,9 +8,7 @@
  */
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
-
-final RegExp _spaceRegExp = RegExp(r'\s+(?![^(]*\))');
-final RegExp _originRegExp = RegExp(r'CSSOrigin\([\w\W]+\)');
+import 'package:webf/src/foundation/string_parsers.dart';
 
 class CSSOrigin {
   final Offset offset;
@@ -20,8 +18,12 @@ class CSSOrigin {
   static CSSOrigin? parseOrigin(String origin, RenderStyle renderStyle, String property) {
     // Interval stringify transform origin values.
     if (origin.startsWith('CSSOrigin')) {
-      String content = _originRegExp.firstMatch(origin)![1]!;
-      List<String> values = content.split(',');
+      final int left = origin.indexOf('(');
+      final int right = origin.lastIndexOf(')');
+      if (left == -1 || right == -1 || right <= left) return null;
+      final String content = origin.substring(left + 1, right);
+      final List<String> values = content.split(',').map((s) => s.trim()).toList();
+      if (values.length < 4) return null;
 
       return CSSOrigin(
           Offset(double.parse(values[0]), double.parse(values[1])),
@@ -29,7 +31,7 @@ class CSSOrigin {
     }
 
     if (origin.isNotEmpty) {
-      List<String> originList = origin.trim().split(_spaceRegExp);
+      final List<String> originList = splitByAsciiWhitespacePreservingGroups(origin.trim());
       String? x, y;
 
       if (originList.length == 1) {

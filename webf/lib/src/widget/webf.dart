@@ -144,8 +144,37 @@ class WebF extends StatefulWidget {
     }
   }
 
-  static bool _isValidCustomElementName(localName) {
-    return RegExp(r'^[a-z][.0-9_a-z]*-[\-.0-9_a-z]*$').hasMatch(localName);
+  static bool _isValidCustomElementName(String localName) {
+    final int len = localName.length;
+    if (len < 2) return false;
+
+    final int first = localName.codeUnitAt(0);
+    if (first < 0x61 || first > 0x7A) return false; // a-z
+
+    bool hasDash = false;
+    for (int i = 1; i < len; i++) {
+      final int cu = localName.codeUnitAt(i);
+      if (!hasDash) {
+        if (cu == 0x2D /* - */) {
+          hasDash = true;
+          continue;
+        }
+        final bool ok = cu == 0x2E /* . */ ||
+            cu == 0x5F /* _ */ ||
+            (cu >= 0x30 && cu <= 0x39) ||
+            (cu >= 0x61 && cu <= 0x7A);
+        if (!ok) return false;
+      } else {
+        final bool ok = cu == 0x2D /* - */ ||
+            cu == 0x2E /* . */ ||
+            cu == 0x5F /* _ */ ||
+            (cu >= 0x30 && cu <= 0x39) ||
+            (cu >= 0x61 && cu <= 0x7A);
+        if (!ok) return false;
+      }
+    }
+
+    return hasDash;
   }
 
   static void defineCustomElement(String tagName, ElementCreator creator) {

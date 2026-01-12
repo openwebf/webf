@@ -13,8 +13,6 @@
 
 import 'package:quiver/collection.dart';
 
-// DotAll means accept line terminators like `\n`.
-final _functionRegExp = RegExp(r'^[a-zA-Z-_]+\(.+\)$', dotAll: true);
 final _functionStart = '(';
 final _functionEnd = ')';
 final _functionNotationUrl = 'url';
@@ -23,6 +21,27 @@ const String FUNCTION_SPLIT = ',';
 const String FUNCTION_ARGS_SPLIT = ',';
 
 final LinkedLruHashMap<String, List<CSSFunctionalNotation>> _cachedParsedFunction = LinkedLruHashMap(maximumSize: 100);
+
+@pragma('vm:prefer-inline')
+bool _isAsciiAlpha(int cu) => (cu >= 0x41 && cu <= 0x5A) || (cu >= 0x61 && cu <= 0x7A);
+
+bool _isFunctionNotation(String value) {
+  final int len = value.length;
+  if (len < 4) return false; // "a()x" minimum excluded; "a(b)" minimum is 4.
+  final int left = value.indexOf(_functionStart);
+  if (left <= 0) return false;
+  if (value.codeUnitAt(len - 1) != 0x29 /* ) */) return false;
+  // Must have at least 1 char inside parentheses.
+  if (left + 1 >= len - 1) return false;
+  // Validate function name chars (ASCII letters, '_' or '-').
+  for (int i = 0; i < left; i++) {
+    final int cu = value.codeUnitAt(i);
+    if (!_isAsciiAlpha(cu) && cu != 0x5F /* _ */ && cu != 0x2D /* - */) {
+      return false;
+    }
+  }
+  return true;
+}
 
 // ignore: public_member_api_docs
 class CSSFunction {
@@ -43,7 +62,7 @@ class CSSFunction {
       }
     }
 
-    return _functionRegExp.hasMatch(value);
+    return _isFunctionNotation(value);
   }
 
   static List<CSSFunctionalNotation> parseFunction(final String value) {

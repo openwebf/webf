@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'dart:convert' as convert;
 
 import 'package:dio/dio.dart';
+import 'string_parsers.dart';
 
 const _timeStampKey = '_pdl_timeStamp_';
 
@@ -354,7 +355,7 @@ class PrettyDioLogger extends Interceptor {
       final key = '"${data.keys.elementAt(index)}"';
       dynamic value = data[data.keys.elementAt(index)];
       if (value is String) {
-        value = '"${value.toString().replaceAll(RegExp(r'([\r\n])+'), " ")}"';
+        value = '"${collapseCrlfToSingleSpace(value.toString())}"';
       }
       if (value is Map) {
         if (compact && _canFlattenMap(value)) {
@@ -467,8 +468,7 @@ class PrettyDioLogger extends Interceptor {
 
   convert.Encoding _encodingForContentType(String? contentType) {
     if (contentType == null) return convert.utf8;
-    final match = RegExp(r'charset=([^;]+)', caseSensitive: false).firstMatch(contentType);
-    final name = match?.group(1)?.trim();
+    final name = parseHeaderParameter(contentType, 'charset=')?.trim();
     return convert.Encoding.getByName(name?.toLowerCase() ?? '') ?? convert.utf8;
   }
 }

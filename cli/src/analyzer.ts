@@ -410,6 +410,188 @@ function handleGenericWrapper(typeReference: ts.TypeReferenceNode, mode?: Parame
   return getParameterBaseType(argument, mode);
 }
 
+const customEventTypePrinter = ts.createPrinter({ removeComments: true });
+
+function mapTypeReferenceIdentifierToTsType(identifier: string): string | null {
+  const mappedType = TYPE_REFERENCE_MAP[identifier];
+  if (mappedType === undefined) return null;
+  switch (mappedType) {
+    case FunctionArgumentType.boolean:
+      return 'boolean';
+    case FunctionArgumentType.dom_string:
+      return 'string';
+    case FunctionArgumentType.double:
+    case FunctionArgumentType.int:
+      return 'number';
+    case FunctionArgumentType.any:
+      return 'any';
+    case FunctionArgumentType.void:
+      return 'void';
+    case FunctionArgumentType.function:
+      return 'Function';
+    case FunctionArgumentType.promise:
+      return 'Promise<any>';
+    default:
+      return null;
+  }
+}
+
+function getBasicTypeKindAsTsType(kind: ts.SyntaxKind): string | null {
+  const basicType = BASIC_TYPE_MAP[kind];
+  if (basicType === undefined) return null;
+  switch (basicType) {
+    case FunctionArgumentType.boolean:
+      return 'boolean';
+    case FunctionArgumentType.dom_string:
+      return 'string';
+    case FunctionArgumentType.double:
+    case FunctionArgumentType.int:
+      return 'number';
+    case FunctionArgumentType.any:
+      return 'any';
+    case FunctionArgumentType.void:
+      return 'void';
+    case FunctionArgumentType.null:
+      return 'null';
+    case FunctionArgumentType.undefined:
+      return 'undefined';
+    default:
+      return null;
+  }
+}
+
+function stringifyEntityName(name: ts.EntityName): string {
+  if (ts.isIdentifier(name)) return name.text;
+  return `${stringifyEntityName(name.left)}.${name.right.text}`;
+}
+
+function safePrintCustomEventNode(node: ts.Node): string {
+  const sourceFile = node.getSourceFile();
+  const printed = customEventTypePrinter.printNode(ts.EmitHint.Unspecified, node, sourceFile);
+  // Ensure WebF IDL-like aliases used in type definitions do not leak into generated TypeScript packages.
+  return printed.replace(/\bint\b/g, 'number').replace(/\bdouble\b/g, 'number');
+}
+
+function stringifyCustomEventGenericTypeNode(typeNode: ts.TypeNode): string | null {
+  if (ts.isParenthesizedTypeNode(typeNode)) {
+    const inner = stringifyCustomEventGenericTypeNode(typeNode.type);
+    return inner ? `(${inner})` : null;
+  }
+
+  if (ts.isUnionTypeNode(typeNode)) {
+    const parts = typeNode.types.map(t => stringifyCustomEventGenericTypeNode(t)).filter((t): t is string => Boolean(t));
+    return parts.length === typeNode.types.length ? parts.join(' | ') : null;
+  }
+
+  if (ts.isIntersectionTypeNode(typeNode)) {
+    const parts = typeNode.types.map(t => stringifyCustomEventGenericTypeNode(t)).filter((t): t is string => Boolean(t));
+    return parts.length === typeNode.types.length ? parts.join(' & ') : null;
+  }
+
+  if (ts.isArrayTypeNode(typeNode)) {
+    const element = stringifyCustomEventGenericTypeNode(typeNode.elementType);
+    return element ? `${element}[]` : null;
+  }
+
+  if (ts.isTupleTypeNode(typeNode)) {
+    const elements = typeNode.elements.map(e => stringifyCustomEventGenericTypeNode(e)).filter((t): t is string => Boolean(t));
+    return elements.length === typeNode.elements.length ? `[${elements.join(', ')}]` : null;
+  }
+
+  if (ts.isLiteralTypeNode(typeNode)) {
+    const literal = typeNode.literal;
+    if (literal.kind === ts.SyntaxKind.NullKeyword) return 'null';
+    if (literal.kind === ts.SyntaxKind.UndefinedKeyword) return 'undefined';
+    if (literal.kind === ts.SyntaxKind.TrueKeyword) return 'true';
+    if (literal.kind === ts.SyntaxKind.FalseKeyword) return 'false';
+    if (ts.isStringLiteral(literal)) return JSON.stringify(literal.text);
+    if (ts.isNumericLiteral(literal)) return literal.text;
+    return null;
+  }
+
+  const basic = getBasicTypeKindAsTsType(typeNode.kind);
+  if (basic) return basic;
+
+  if (ts.isTypeReferenceNode(typeNode)) {
+    const typeName = stringifyEntityName(typeNode.typeName);
+
+    // Unwrap internal helpers used by WebF typings.
+    if (typeName === 'DartImpl' && typeNode.typeArguments && typeNode.typeArguments[0]) {
+      return stringifyCustomEventGenericTypeNode(typeNode.typeArguments[0]);
+    }
+
+    if (typeName === 'Promise') {
+      if (!typeNode.typeArguments || !typeNode.typeArguments[0]) return 'Promise<any>';
+      const inner = stringifyCustomEventGenericTypeNode(typeNode.typeArguments[0]);
+      return inner ? `Promise<${inner}>` : null;
+    }
+
+    const mapped = mapTypeReferenceIdentifierToTsType(typeName);
+    if (mapped) return mapped;
+
+    if (!typeNode.typeArguments || typeNode.typeArguments.length === 0) {
+      return typeName;
+    }
+
+    const args = typeNode.typeArguments
+      .map(arg => stringifyCustomEventGenericTypeNode(arg))
+      .filter((t): t is string => Boolean(t));
+    if (args.length !== typeNode.typeArguments.length) return null;
+    return `${typeName}<${args.join(', ')}>`;
+  }
+
+  if (ts.isTypeLiteralNode(typeNode)) {
+    const members: string[] = [];
+    for (const member of typeNode.members) {
+      if (ts.isPropertySignature(member) && member.type) {
+        const typeString = stringifyCustomEventGenericTypeNode(member.type);
+        if (!typeString) return null;
+        let nameText: string;
+        if (ts.isIdentifier(member.name)) nameText = member.name.text;
+        else if (ts.isStringLiteral(member.name)) nameText = JSON.stringify(member.name.text);
+        else if (ts.isNumericLiteral(member.name)) nameText = member.name.text;
+        else nameText = member.name.getText();
+        const optional = member.questionToken ? '?' : '';
+        members.push(`${nameText}${optional}: ${typeString}`);
+        continue;
+      }
+      if (ts.isIndexSignatureDeclaration(member) && member.type && member.parameters.length === 1) {
+        const param = member.parameters[0];
+        const paramName = ts.isIdentifier(param.name) ? param.name.text : param.name.getText();
+        const paramType = param.type ? stringifyCustomEventGenericTypeNode(param.type) : 'string';
+        const valueType = stringifyCustomEventGenericTypeNode(member.type);
+        if (!paramType || !valueType) return null;
+        members.push(`[${paramName}: ${paramType}]: ${valueType}`);
+        continue;
+      }
+      // Fallback for uncommon members (call signatures, method signatures, etc.).
+      members.push(safePrintCustomEventNode(member));
+    }
+    return `{ ${members.join('; ')} }`;
+  }
+
+  if (ts.isTypeOperatorNode(typeNode)) {
+    const inner = stringifyCustomEventGenericTypeNode(typeNode.type);
+    if (!inner) return null;
+    const operator =
+      typeNode.operator === ts.SyntaxKind.KeyOfKeyword ? 'keyof' :
+      typeNode.operator === ts.SyntaxKind.ReadonlyKeyword ? 'readonly' :
+      typeNode.operator === ts.SyntaxKind.UniqueKeyword ? 'unique' :
+      null;
+    return operator ? `${operator} ${inner}` : null;
+  }
+
+  if (ts.isIndexedAccessTypeNode(typeNode)) {
+    const objectType = stringifyCustomEventGenericTypeNode(typeNode.objectType);
+    const indexType = stringifyCustomEventGenericTypeNode(typeNode.indexType);
+    if (!objectType || !indexType) return null;
+    return `${objectType}[${indexType}]`;
+  }
+
+  // As a last resort, keep the original syntax but normalize known WebF aliases.
+  return safePrintCustomEventNode(typeNode);
+}
+
 function handleCustomEventType(typeReference: ts.TypeReferenceNode): ParameterBaseType {
   // Handle CustomEvent<T> by returning the full type with generic parameter
   if (!typeReference.typeArguments || !typeReference.typeArguments[0]) {
@@ -417,121 +599,11 @@ function handleCustomEventType(typeReference: ts.TypeReferenceNode): ParameterBa
   }
   
   const argument = typeReference.typeArguments[0];
-  let genericType: string;
-  
-  // Preserve simple union/compound generic types (e.g., boolean | null)
-  if (ts.isUnionTypeNode(argument) || ts.isIntersectionTypeNode(argument)) {
-    const unionTypes = (argument as ts.UnionTypeNode | ts.IntersectionTypeNode).types ?? [];
-    const parts = unionTypes.map(t => {
-      // Literal union members: handle null/undefined explicitly
-      if (ts.isLiteralTypeNode(t)) {
-        const lit = t.literal;
-        if (lit.kind === ts.SyntaxKind.NullKeyword) return 'null';
-        if (lit.kind === ts.SyntaxKind.UndefinedKeyword) return 'undefined';
-        if (ts.isStringLiteral(lit)) return JSON.stringify(lit.text);
-        return 'any';
-      }
-      // Basic keywords: boolean, string, number, null, undefined
-      const basic = BASIC_TYPE_MAP[t.kind];
-      if (basic !== undefined) {
-        switch (basic) {
-          case FunctionArgumentType.boolean:
-            return 'boolean';
-          case FunctionArgumentType.dom_string:
-            return 'string';
-          case FunctionArgumentType.double:
-          case FunctionArgumentType.int:
-            return 'number';
-          case FunctionArgumentType.null:
-            return 'null';
-          case FunctionArgumentType.undefined:
-            return 'undefined';
-          default:
-            return 'any';
-        }
-      }
-      // Literal null/undefined keywords that BASIC_TYPE_MAP may not cover
-      if (t.kind === ts.SyntaxKind.NullKeyword) return 'null';
-      if (t.kind === ts.SyntaxKind.UndefinedKeyword) return 'undefined';
-      // Fallback: rely on toString of node kind
-      return 'any';
-    });
-    genericType = parts.join(' | ');
-  } else if (ts.isTypeReferenceNode(argument) && ts.isIdentifier(argument.typeName)) {
-    const typeName = argument.typeName.text;
-    
-    // Check if it's a mapped type reference like 'int' or 'double'
-    const mappedType = TYPE_REFERENCE_MAP[typeName];
-    if (mappedType !== undefined) {
-      switch (mappedType) {
-        case FunctionArgumentType.boolean:
-          genericType = 'boolean';
-          break;
-        case FunctionArgumentType.dom_string:
-          genericType = 'string';
-          break;
-        case FunctionArgumentType.double:
-        case FunctionArgumentType.int:
-          genericType = 'number';
-          break;
-        case FunctionArgumentType.any:
-          genericType = 'any';
-          break;
-        case FunctionArgumentType.void:
-          genericType = 'void';
-          break;
-        case FunctionArgumentType.function:
-          genericType = 'Function';
-          break;
-        case FunctionArgumentType.promise:
-          genericType = 'Promise<any>';
-          break;
-        default:
-          genericType = typeName;
-      }
-    } else {
-      // For other type references, use the type name directly
-      genericType = typeName;
-    }
-  } else if (ts.isLiteralTypeNode(argument) && ts.isStringLiteral(argument.literal)) {
-    genericType = argument.literal.text;
-  } else {
-    // Handle basic types (boolean, string, number, etc.)
-    const basicType = BASIC_TYPE_MAP[argument.kind];
-    if (basicType !== undefined) {
-      switch (basicType) {
-        case FunctionArgumentType.boolean:
-          genericType = 'boolean';
-          break;
-        case FunctionArgumentType.dom_string:
-          genericType = 'string';
-          break;
-        case FunctionArgumentType.double:
-        case FunctionArgumentType.int:
-          genericType = 'number';
-          break;
-        case FunctionArgumentType.any:
-          genericType = 'any';
-          break;
-        case FunctionArgumentType.void:
-          genericType = 'void';
-          break;
-        case FunctionArgumentType.null:
-          genericType = 'null';
-          break;
-        case FunctionArgumentType.undefined:
-          genericType = 'undefined';
-          break;
-        default:
-          genericType = 'any';
-      }
-    } else {
-      // For truly complex types, fallback to 'any' to avoid errors
-      console.warn('Complex generic type in CustomEvent, using any');
-      genericType = 'any';
-    }
+  const genericType = stringifyCustomEventGenericTypeNode(argument);
+  if (!genericType) {
+    console.warn('Complex generic type in CustomEvent, using any');
+    return 'CustomEvent<any>';
   }
-  
   return `CustomEvent<${genericType}>`;
 }
 

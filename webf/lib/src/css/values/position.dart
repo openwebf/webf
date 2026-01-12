@@ -11,8 +11,8 @@ import 'package:flutter/painting.dart';
 import 'package:webf/css.dart';
 import 'package:quiver/collection.dart';
 import 'package:webf/src/foundation/logger.dart';
+import 'package:webf/src/foundation/string_parsers.dart';
 
-final RegExp splitRegExp = RegExp(r'(?<!\+|-|\*|\/)\s+(?!\+\s|-\s|\*\s|\/\s)');
 final LinkedLruHashMap<String, List<String>> _cachedParsedPosition = LinkedLruHashMap(maximumSize: 100);
 
 
@@ -60,7 +60,7 @@ class CSSPosition {
       return _cachedParsedPosition[input]!;
     }
 
-    final List<String> tokens = input.split(splitRegExp).where((s) => s.isNotEmpty).toList();
+    final List<String> tokens = splitByAsciiWhitespacePreservingGroups(input);
 
     if (tokens.length == 2) {
       final String a = tokens[0];

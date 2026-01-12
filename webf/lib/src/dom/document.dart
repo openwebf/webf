@@ -375,7 +375,8 @@ class Document extends ContainerNode {
 
   dynamic getElementsByClassName(List<dynamic> args) {
     if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
-    String selector = (args.first as String).split(classNameSplitRegExp).map((e) => '.$e').join('');
+    final List<String> classes = splitByAsciiWhitespace(args.first as String);
+    final String selector = classes.map((e) => '.$e').join('');
     return query_selector.querySelectorAll(this, selector);
   }
 

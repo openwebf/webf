@@ -13,13 +13,8 @@ import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/src/css/css_animation.dart';
 
-// aB to a-b
-RegExp kebabCaseReg = RegExp(r'[A-Z]');
-// a-b to aB
-final RegExp _camelCaseReg = RegExp(r'-(\w)');
-final RegExp _commaRegExp = RegExp(r',(?![^\(]*\))');
-final RegExp _slashRegExp = RegExp(r'\/(?![^(]*\))');
-final RegExp _replaceCommaRegExp = RegExp(r'\s*,\s*');
+const int _commaCodeUnit = 0x2C; // ','
+const int _slashCodeUnit = 0x2F; // '/'
 const String _comma = ', ';
 const String _0s = '0s';
 const String _0 = '0';
@@ -28,7 +23,7 @@ const String _0Percent = '0%';
 
 // aB to a-b
 String kebabize(String str) {
-  return str.replaceAllMapped(kebabCaseReg, (match) => '-${match[0]!.toLowerCase()}');
+  return kebabizeCamelCase(str);
 }
 
 // a-b -> aB
@@ -37,10 +32,7 @@ String camelize(String str) {
   if (str.startsWith('--')) {
     return str;
   }
-  return str.replaceAllMapped(_camelCaseReg, (match) {
-    String subStr = match[0]!.substring(1);
-    return subStr.isNotEmpty ? subStr.toUpperCase() : '';
-  });
+  return camelizeKebabCase(str);
 }
 
 // Origin version: https://github.com/jedmao/css-list-helpers/blob/master/src/index.ts
@@ -231,7 +223,7 @@ class CSSStyleProperty {
     cssLogger.fine('[CSSStyleProperty] Expanding background-position: "$shorthandValue"');
     // Only the first layer contributes to longhands; layered painting reads
     // the full comma-separated list directly from style.
-    final String firstLayer = shorthandValue.split(_commaRegExp).first.trim();
+    final String firstLayer = splitByTopLevelDelimiter(shorthandValue, _commaCodeUnit).first.trim();
     final List<String> positions = CSSPosition.parsePositionShorthand(firstLayer);
     if (positions.length >= 2) {
       properties[BACKGROUND_POSITION_X] = positions[0];
@@ -672,11 +664,11 @@ class CSSStyleProperty {
   // all, -moz-specific, sliding; => ['all', '-moz-specific', 'sliding']
   static List<String>? getMultipleValues(String property) {
     if (property.isEmpty) return null;
-    return property.split(_commaRegExp).map((e) => e.trim()).toList();
+    return splitByTopLevelDelimiter(property, _commaCodeUnit);
   }
 
   static List<List<String?>>? getShadowValues(String property) {
-    List shadows = property.split(_commaRegExp);
+    final List<String> shadows = splitByTopLevelDelimiter(property, _commaCodeUnit);
     // The shadow effects are applied front-to-back: the first shadow is on top and
     // the others are layered behind.
     // https://drafts.csswg.org/css-backgrounds-3/#shadow-layers
@@ -736,7 +728,7 @@ class CSSStyleProperty {
       return getEdgeValues(shorthandProperty, isNonNegativeLengthOrPercentage: true);
     }
 
-    List radius = shorthandProperty.split(_slashRegExp);
+    final List<String> radius = splitByTopLevelDelimiter(shorthandProperty, _slashCodeUnit);
     if (radius.length != 2) {
       return null;
     }
@@ -764,7 +756,9 @@ class CSSStyleProperty {
   // Current not support multiple background layer.
   static List<String?>? _getBackgroundValues(String shorthandProperty) {
     // Convert 40%/10em -> 40% / 10em
-    shorthandProperty = shorthandProperty.replaceAll(_slashRegExp, ' / ');
+    if (shorthandProperty.contains('/')) {
+      shorthandProperty = splitByTopLevelDelimiter(shorthandProperty, _slashCodeUnit).join(' / ');
+    }
     List<String> tokens = _splitBySpace(shorthandProperty);
 
     String? color;
@@ -886,9 +880,11 @@ class CSSStyleProperty {
 
   static List<String?>? _getFontValues(String shorthandProperty) {
     // Convert 40%/10em => 40% / 10em
-    shorthandProperty = shorthandProperty.replaceAll(_slashRegExp, ' / ');
+    if (shorthandProperty.contains('/')) {
+      shorthandProperty = splitByTopLevelDelimiter(shorthandProperty, _slashCodeUnit).join(' / ');
+    }
     // Convert "Goudy Bookletter 1911", sans-serif => "Goudy Bookletter 1911",sans-serif
-    shorthandProperty = shorthandProperty.replaceAll(_replaceCommaRegExp, ',');
+    shorthandProperty = removeWhitespaceAroundCommas(shorthandProperty);
     List<String> values = _splitBySpace(shorthandProperty);
 
     String? style;
@@ -1005,7 +1001,7 @@ class CSSStyleProperty {
   }
 
   static List<String?>? _getTransitionValues(String shorthandProperty) {
-    List<String> transitions = shorthandProperty.split(_commaRegExp);
+    final List<String> transitions = splitByTopLevelDelimiter(shorthandProperty, _commaCodeUnit);
     List<String?> values = List.filled(4, null);
 
     for (String transition in transitions) {
@@ -1215,7 +1211,7 @@ class CSSStyleProperty {
   }
 
   static List<String?>? _getAnimationValues(String shorthandProperty) {
-    List<String> animations = shorthandProperty.split(_commaRegExp);
+    final List<String> animations = splitByTopLevelDelimiter(shorthandProperty, _commaCodeUnit);
     List<String?> values = List.filled(8, null);
 
     for (String animation in animations) {
@@ -1294,7 +1290,7 @@ class CSSStyleProperty {
   }
 
   static void setShorthandGridRow(Map<String, String?> properties, String shorthandValue) {
-    List<String> parts = shorthandValue.split(_slashRegExp);
+    final List<String> parts = splitByTopLevelDelimiter(shorthandValue, _slashCodeUnit);
     String start = parts.isNotEmpty ? parts[0].trim() : '';
     String end = parts.length > 1 ? parts[1].trim() : '';
 
@@ -1311,7 +1307,7 @@ class CSSStyleProperty {
   }
 
   static void setShorthandGridColumn(Map<String, String?> properties, String shorthandValue) {
-    List<String> parts = shorthandValue.split(_slashRegExp);
+    final List<String> parts = splitByTopLevelDelimiter(shorthandValue, _slashCodeUnit);
     String start = parts.isNotEmpty ? parts[0].trim() : '';
     String end = parts.length > 1 ? parts[1].trim() : '';
 
@@ -1328,7 +1324,7 @@ class CSSStyleProperty {
   }
 
   static void setShorthandGridArea(Map<String, String?> properties, String shorthandValue) {
-    List<String> parts = shorthandValue.split(_slashRegExp);
+    final List<String> parts = splitByTopLevelDelimiter(shorthandValue, _slashCodeUnit);
 
     String rowStart = parts.isNotEmpty ? parts[0].trim() : '';
     String columnStart = parts.length > 1 ? parts[1].trim() : '';
@@ -1405,7 +1401,7 @@ class CSSStyleProperty {
     }
 
     // Basic rows/columns form: grid-template: <rows> / <columns>
-    final List<String> parts = value.split(_slashRegExp);
+    final List<String> parts = splitByTopLevelDelimiter(value, _slashCodeUnit);
     if (parts.length == 2) {
       final String rows = parts[0].trim();
       final String cols = parts[1].trim();
@@ -1458,7 +1454,7 @@ class CSSStyleProperty {
       return;
     }
 
-    final List<String> parts = value.split(_slashRegExp);
+    final List<String> parts = splitByTopLevelDelimiter(value, _slashCodeUnit);
     if (parts.length == 2) {
       final String before = parts[0].trim();
       final String after = parts[1].trim();
@@ -1549,7 +1545,9 @@ class CSSStyleProperty {
   }
 
   static void setShorthandPlaceContent(Map<String, String?> properties, String shorthandValue) {
-    shorthandValue = shorthandValue.replaceAll(_slashRegExp, ' ');
+    if (shorthandValue.contains('/')) {
+      shorthandValue = splitByTopLevelDelimiter(shorthandValue, _slashCodeUnit).join(' ');
+    }
     final List<String> values = _splitBySpace(shorthandValue);
     if (values.isEmpty) return;
 
@@ -1596,11 +1594,8 @@ class CSSStyleProperty {
   final String trimmed = shorthandValue.trim();
   if (trimmed.isEmpty) return null;
 
-  final List<String> slashParts = trimmed
-      .split(_slashRegExp)
-      .map((part) => part.trim())
-      .where((part) => part.isNotEmpty)
-      .toList();
+  final List<String> slashParts =
+      splitByTopLevelDelimiter(trimmed, _slashCodeUnit).map((part) => part.trim()).where((part) => part.isNotEmpty).toList();
   if (slashParts.length >= 2) {
     return (align: slashParts[0], justify: slashParts[1]);
   }

@@ -8,6 +8,7 @@
 
 import 'package:flutter/rendering.dart' show Axis;
 import 'package:webf/css.dart';
+import 'package:webf/src/foundation/string_parsers.dart';
 
 /// Grid track size model for CSS Grid (subset for MVP).
 abstract class GridTrackSize {
@@ -245,15 +246,33 @@ class CSSGridParser {
   static List<String> _parseLineNames(String token) {
     final inner = token.substring(1, token.length - 1).trim();
     if (inner.isEmpty) return const <String>[];
-    return inner.split(RegExp(r'\s+')).map((name) => name.trim()).where((name) => name.isNotEmpty).toList();
+    return splitByAsciiWhitespace(inner);
   }
 
-  static final RegExp _customIdentRegExp = RegExp(r'^-?[_a-zA-Z][\w-]*$');
   static bool isCustomIdent(String token) {
     if (token.isEmpty) return false;
     final String lower = token.toLowerCase();
     if (lower == 'auto' || lower == 'span') return false;
-    return _customIdentRegExp.hasMatch(token);
+    int i = 0;
+    if (token.codeUnitAt(0) == 0x2D /* - */) {
+      i++;
+      if (i >= token.length) return false;
+    }
+    final int first = token.codeUnitAt(i);
+    final bool firstOk = first == 0x5F /* _ */ ||
+        (first >= 0x41 && first <= 0x5A) ||
+        (first >= 0x61 && first <= 0x7A);
+    if (!firstOk) return false;
+    for (i = i + 1; i < token.length; i++) {
+      final int cu = token.codeUnitAt(i);
+      final bool ok = cu == 0x5F /* _ */ ||
+          cu == 0x2D /* - */ ||
+          (cu >= 0x30 && cu <= 0x39) ||
+          (cu >= 0x41 && cu <= 0x5A) ||
+          (cu >= 0x61 && cu <= 0x7A);
+      if (!ok) return false;
+    }
+    return true;
   }
 
   static int _topLevelCommaIndex(String input) {
@@ -557,11 +576,7 @@ class CSSGridParser {
   }
 
   static GridAutoFlow parseAutoFlow(String value) {
-    final tokens = value
-        .split(RegExp(r'\s+'))
-        .map((e) => e.trim().toLowerCase())
-        .where((e) => e.isNotEmpty)
-        .toList();
+    final List<String> tokens = splitByAsciiWhitespace(value).map((e) => e.toLowerCase()).toList();
     if (tokens.isEmpty) return GridAutoFlow.row;
     bool dense = tokens.contains('dense');
     bool column = tokens.contains('column');
@@ -611,7 +626,7 @@ class CSSGridParser {
       final String rest = trimmed.substring(4).trim();
       if (rest.isEmpty) return const GridPlacement.span(1);
       int? spanValue;
-      for (final String token in rest.split(RegExp(r'\s+'))) {
+      for (final String token in splitByAsciiWhitespace(rest)) {
         final int? parsed = int.tryParse(token);
         if (parsed != null && parsed > 0) {
           spanValue = parsed;
@@ -633,7 +648,7 @@ class CSSGridParser {
       return GridPlacement.line(lineValue);
     }
 
-    final List<String> tokens = trimmed.split(RegExp(r'\s+'));
+    final List<String> tokens = splitByAsciiWhitespace(trimmed);
     if (tokens.length == 2) {
       // Support both `<custom-ident> <integer>` and `<integer> <custom-ident>`
       // forms per CSS Grid placement syntax.
@@ -673,17 +688,36 @@ class CSSGridParser {
       );
     }
 
-    final RegExp rowPattern = RegExp(r'"([^"]*)"');
-    final List<RegExpMatch> matches = rowPattern.allMatches(trimmed).toList();
-    if (matches.isEmpty) return null;
+    final List<String> rowsText = <String>[];
+    String? quote;
+    bool escape = false;
+    int start = -1;
+    for (int i = 0; i < trimmed.length; i++) {
+      final String ch = trimmed[i];
+      if (quote != null) {
+        if (escape) {
+          escape = false;
+        } else if (ch == '\\') {
+          escape = true;
+        } else if (ch == quote) {
+          rowsText.add(trimmed.substring(start, i));
+          quote = null;
+          start = -1;
+        }
+        continue;
+      }
+      if (ch == '"' || ch == '\'') {
+        quote = ch;
+        start = i + 1;
+      }
+    }
+    if (rowsText.isEmpty) return null;
 
     final List<List<String>> rows = <List<String>>[];
-    for (final RegExpMatch match in matches) {
-      final String rowText = match.group(1)!;
+    for (final String rowText in rowsText) {
       final String normalized = rowText.trim();
       if (normalized.isEmpty) return null;
-      final List<String> tokens =
-          normalized.split(RegExp(r'\s+')).map((token) => token.trim()).where((token) => token.isNotEmpty).toList();
+      final List<String> tokens = splitByAsciiWhitespace(normalized);
       if (tokens.isEmpty) return null;
       rows.add(tokens);
     }

@@ -522,29 +522,49 @@ class InspectDOMModule extends UIInspectorModule {
       } else {
         // Replace attributes from text string
         el.attributes.clear();
-        // Match name="value" or name='value', allow hyphens/colons in attribute name
-        final pair = RegExp(r"""([^\s=]+)\s*=\s*("([^"]*)"|'([^']*)')""");
-        for (final m in pair.allMatches(text)) {
-          final attrName = m.group(1);
-          final dv = m.group(3); // double-quoted value
-          final sv = m.group(4); // single-quoted value
-          final attrValue = dv ?? sv ?? '';
-          if (attrName != null) {
-            el.setAttribute(attrName, attrValue);
+        int i = 0;
+        while (i < text.length) {
+          while (i < text.length && isAsciiWhitespaceCodeUnit(text.codeUnitAt(i))) i++;
+          if (i >= text.length) break;
+
+          final int nameStart = i;
+          while (i < text.length) {
+            final int cu = text.codeUnitAt(i);
+            if (isAsciiWhitespaceCodeUnit(cu) || cu == 0x3D /* = */) break;
+            i++;
           }
-        }
-        // Also handle boolean attributes present without =value
-        // by scanning leftover tokens that look like names
-        final consumed = pair.allMatches(text).map((m) => m.group(0)!).join(' ');
-        final remainder = text.replaceAll(consumed, ' ').trim();
-        if (remainder.isNotEmpty) {
-          // Split by whitespace and set empty string for each token not containing '='
-          for (final token in remainder.split(RegExp(r'\s+'))) {
-            if (token.isEmpty) continue;
-            if (!token.contains('=')) {
-              el.setAttribute(token, '');
-            }
+          final String attrName = text.substring(nameStart, i);
+          if (attrName.isEmpty) break;
+
+          while (i < text.length && isAsciiWhitespaceCodeUnit(text.codeUnitAt(i))) i++;
+          if (i >= text.length || text.codeUnitAt(i) != 0x3D /* = */) {
+            // Boolean attribute.
+            el.setAttribute(attrName, '');
+            continue;
           }
+
+          i++; // '='
+          while (i < text.length && isAsciiWhitespaceCodeUnit(text.codeUnitAt(i))) i++;
+          if (i >= text.length) {
+            el.setAttribute(attrName, '');
+            break;
+          }
+
+          final int q = text.codeUnitAt(i);
+          String value;
+          if (q == 0x22 /* " */ || q == 0x27 /* ' */) {
+            final int quote = q;
+            i++;
+            final int vStart = i;
+            while (i < text.length && text.codeUnitAt(i) != quote) i++;
+            value = text.substring(vStart, i);
+            if (i < text.length && text.codeUnitAt(i) == quote) i++;
+          } else {
+            final int vStart = i;
+            while (i < text.length && !isAsciiWhitespaceCodeUnit(text.codeUnitAt(i))) i++;
+            value = text.substring(vStart, i);
+          }
+          el.setAttribute(attrName, value);
         }
       }
     }
@@ -629,23 +649,83 @@ class InspectDOMModule extends UIInspectorModule {
       return;
     }
 
-    // Parse minimal outerHTML: <tag attrs>content</tag> or <tag attrs/> self-closing
-    final selfClose = RegExp(r"""^\s*<\s*([a-zA-Z0-9-]+)([^>]*)/\s*>\s*$""");
-    final normal = RegExp(r"""^\s*<\s*([a-zA-Z0-9-]+)([^>]*)>([\s\S]*)<\/\s*\1\s*>\s*$""");
     String? tag;
     String attrs = '';
     String content = '';
-    RegExpMatch? m = normal.firstMatch(outer);
-    if (m != null) {
-      tag = m.group(1);
-      attrs = m.group(2)?.trim() ?? '';
-      content = m.group(3) ?? '';
-    } else {
-      m = selfClose.firstMatch(outer);
-      if (m != null) {
-        tag = m.group(1);
-        attrs = m.group(2)?.trim() ?? '';
-        content = '';
+    final String s = outer.trim();
+    if (s.startsWith('<')) {
+      int i = 1;
+      while (i < s.length && isAsciiWhitespaceCodeUnit(s.codeUnitAt(i))) i++;
+      final int tagStart = i;
+      while (i < s.length) {
+        final int cu = s.codeUnitAt(i);
+        final bool isNameChar = (cu >= 0x30 && cu <= 0x39) ||
+            (cu >= 0x41 && cu <= 0x5A) ||
+            (cu >= 0x61 && cu <= 0x7A) ||
+            cu == 0x2D;
+        if (!isNameChar) break;
+        i++;
+      }
+      if (i > tagStart) {
+        tag = s.substring(tagStart, i);
+        // Scan to end of start tag, respecting quotes.
+        String? quote;
+        bool escape = false;
+        int startTagEnd = -1;
+        for (int j = i; j < s.length; j++) {
+          final String ch = s[j];
+          if (quote != null) {
+            if (escape) {
+              escape = false;
+            } else if (ch == '\\') {
+              escape = true;
+            } else if (ch == quote) {
+              quote = null;
+            }
+            continue;
+          }
+          if (ch == '"' || ch == '\'') {
+            quote = ch;
+            continue;
+          }
+          if (ch == '>') {
+            startTagEnd = j;
+            break;
+          }
+        }
+        if (startTagEnd != -1) {
+          // Determine self-closing.
+          int k = startTagEnd - 1;
+          while (k >= 0 && isAsciiWhitespaceCodeUnit(s.codeUnitAt(k))) k--;
+          final bool isSelfClosing = k >= 0 && s.codeUnitAt(k) == 0x2F /* / */;
+          final int attrsEnd = isSelfClosing ? k : startTagEnd;
+          attrs = s.substring(i, attrsEnd).trim();
+
+          if (isSelfClosing) {
+            content = '';
+          } else {
+            // Find the closing tag at the end.
+            int closeStart = s.lastIndexOf('</');
+            if (closeStart != -1 && closeStart > startTagEnd) {
+              int p = closeStart + 2;
+              while (p < s.length && isAsciiWhitespaceCodeUnit(s.codeUnitAt(p))) p++;
+              final int closeNameStart = p;
+              while (p < s.length) {
+                final int cu = s.codeUnitAt(p);
+                final bool isNameChar = (cu >= 0x30 && cu <= 0x39) ||
+                    (cu >= 0x41 && cu <= 0x5A) ||
+                    (cu >= 0x61 && cu <= 0x7A) ||
+                    cu == 0x2D;
+                if (!isNameChar) break;
+                p++;
+              }
+              final String closeName = (p > closeNameStart) ? s.substring(closeNameStart, p) : '';
+              if (closeName.isNotEmpty && closeName.toLowerCase() == tag.toLowerCase()) {
+                content = s.substring(startTagEnd + 1, closeStart);
+              }
+            }
+          }
+        }
       }
     }
 

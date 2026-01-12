@@ -1341,7 +1341,7 @@ class BoxDecorationPainter extends BoxPainter {
       return sin * destSize.width + cos * destSize.height;
     }
     if (arg0.startsWith('to ')) {
-      final parts = arg0.split(splitRegExp);
+      final List<String> parts = splitByAsciiWhitespacePreservingGroups(arg0);
       bool toH = parts.contains(LEFT) || parts.contains(RIGHT);
       bool toV = parts.contains(TOP) || parts.contains(BOTTOM);
       if (toH && toV) {
@@ -1364,7 +1364,7 @@ class BoxDecorationPainter extends BoxPainter {
     if (fn.args.isNotEmpty) {
       final String prelude = fn.args[0].trim();
       if (prelude.isNotEmpty) {
-        final List<String> tokens = prelude.split(splitRegExp).where((s) => s.isNotEmpty).toList();
+        final List<String> tokens = splitByAsciiWhitespacePreservingGroups(prelude);
         isEllipse = tokens.contains('ellipse');
         final int atIndex = tokens.indexOf('at');
         if (atIndex != -1) {

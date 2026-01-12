@@ -383,7 +383,7 @@ class CSSBackgroundImage {
             renderingLogger.finer('[Background] parse ${method.name}: rawArgs=${method.args}');
           }
           if (arg0.startsWith('to ')) {
-            List<String> parts = arg0.split(splitRegExp);
+            final List<String> parts = splitByAsciiWhitespacePreservingGroups(arg0);
             if (parts.length >= 2) {
               switch (parts[1]) {
                 case LEFT:
@@ -574,7 +574,7 @@ class CSSBackgroundImage {
             final String prelude = method.args[0].trim();
             if (prelude.isNotEmpty) {
               // Split by whitespace while collapsing multiple spaces.
-              final List<String> tokens = prelude.split(splitRegExp).where((s) => s.isNotEmpty).toList();
+              final List<String> tokens = splitByAsciiWhitespacePreservingGroups(prelude);
 
               // Detect ellipse/circle keywords
               isEllipse = tokens.contains('ellipse');
@@ -702,7 +702,7 @@ class CSSBackgroundImage {
           double? atX = 0.5;
           double? atY = 0.5;
           if (method.args.isNotEmpty && (method.args[0].contains('from ') || method.args[0].contains('at '))) {
-            final List<String> tokens = method.args[0].trim().split(splitRegExp).where((s) => s.isNotEmpty).toList();
+            final List<String> tokens = splitByAsciiWhitespacePreservingGroups(method.args[0].trim());
             final int fromIndex = tokens.indexOf('from');
             final int atIndex = tokens.indexOf('at');
             if (fromIndex != -1 && fromIndex + 1 < tokens.length) {
@@ -939,7 +939,7 @@ class CSSBackground {
       case AUTO:
         return CSSBackgroundSize(fit: BoxFit.none);
       default:
-        List<String> values = value.split(splitRegExp);
+        final List<String> values = splitByAsciiWhitespacePreservingGroups(value);
 
         if (values.length == 1 && values[0].isNotEmpty) {
           CSSLengthValue width = CSSLength.parseLength(values[0], renderStyle, propertyName, Axis.horizontal);
@@ -1015,16 +1015,13 @@ class CSSBackground {
         if (indexOfEnd + 1 < src.length) {
           final String remainder = src.substring(indexOfEnd + 1).trim();
           if (remainder.isNotEmpty) {
-            out.addAll(remainder.split(splitRegExp).where((s) => s.isNotEmpty));
+            out.addAll(splitByAsciiWhitespacePreservingGroups(remainder));
           }
         }
         return out;
       }
     }
-    return src
-        .split(splitRegExp)
-        .where((s) => s.isNotEmpty && s != ';')
-        .toList();
+    return splitByAsciiWhitespacePreservingGroups(src).where((s) => s != ';').toList();
   }
 
   static bool _looksLikeColorToken(String token) {
@@ -1082,10 +1079,6 @@ class CSSBackground {
     return true;
   }
 
-  // Regex adapted from color var handling to match var(...) including
-  // simple nesting cases: var( ... var(...) ... )
-  static final RegExp _varFunctionRegExp = RegExp(r'var\(([^()]*\(.*?\)[^()]*)\)|var\(([^()]*)\)');
-
   // Expand CSS custom properties within a background-image string.
   // This performs textual substitution using the raw variable value
   // (not property-typed resolution) and repeats until no var() remains
@@ -1098,9 +1091,7 @@ class CSSBackground {
     int guard = 0;
     while (result.contains('var(') && guard++ < 8) {
       final original = result;
-      result = result.replaceAllMapped(_varFunctionRegExp, (Match match) {
-        final String? varString = match[0];
-        if (varString == null) return '';
+      result = replaceCssVarFunctions(result, (String varString) {
         // Parse the var() expression to get identifier and (optional) fallback.
         final CSSVariable? variable = CSSVariable.tryParse(renderStyle, varString);
         if (variable == null) {
