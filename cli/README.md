@@ -100,6 +100,26 @@ This will:
 - Generate `src/index.ts` and `src/types.ts` that wrap `webf.invokeModuleAsync('Share', ...)`
 - Generate Dart bindings in `../webf_modules/share/lib/src/share_module_bindings_generated.dart`
 
+#### Module Events (Optional)
+
+If your module emits events via Dart `moduleManager.emitModuleEvent(...)`, you can optionally declare them in the same `*.module.d.ts` file using:
+
+```ts
+interface WebFMyModuleModuleEvents {
+  // Shorthand: only types the `event` parameter (extra defaults to `any`)
+  ready: Event;
+
+  // Tuple: [eventType, extraType] types both callback parameters
+  scanResult: [Event, { deviceId: string; rssi: number }];
+  click: [CustomEvent<string>, number[]];
+}
+```
+
+When present, `webf module-codegen` will generate:
+- `WebFMyModuleModuleEventListener` (typed listener with correlated `event.type` ↔ `extra`)
+- `WebFMyModule.addListener(eventType, listener)` (returns an unsubscribe function)
+- `WebFMyModule.removeListener()` (removes all listeners for this module)
+
 ### Interactive Mode
 
 If you don't provide all required options, the CLI will prompt you interactively:
