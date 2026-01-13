@@ -25,6 +25,7 @@ import 'package:webf_share/webf_share.dart';
 import 'package:webf_sqflite/webf_sqflite.dart';
 import 'package:webf_camera/webf_camera.dart';
 import 'package:webf_video_player/webf_video_player.dart';
+import 'package:webf_bluetooth/webf_bluetooth.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -44,6 +45,7 @@ void main() async {
 
   WebF.defineModule((context) => ShareModule(context));
   WebF.defineModule((context) => SQFliteModule(context));
+  WebF.defineModule((context) => BluetoothModule(context));
 
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(

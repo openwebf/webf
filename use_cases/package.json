@@ -9,6 +9,7 @@
     "@openwebf/react-router": "^0.24.0",
     "@openwebf/react-ui-kit": "^0.1.0-beta.1",
     "@openwebf/react-video-player": "^1.0.0",
+    "@openwebf/webf-bluetooth": "^1.0.0",
     "@openwebf/webf-share": "^1.0.0",
     "@openwebf/webf-sqflite": "^1.0.1",
     "@testing-library/dom": "^10.4.0",

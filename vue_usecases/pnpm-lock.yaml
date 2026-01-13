@@ -23,6 +23,9 @@ importers:
       '@openwebf/vue-video-player':
         specifier: ^1.0.0
         version: 1.0.0(@openwebf/vue-core-ui@0.24.0(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))
+      '@openwebf/webf-bluetooth':
+        specifier: ^1.0.0
+        version: 1.0.0
       vue:
         specifier: ^3.5.24
         version: 3.5.26(typescript@5.9.3)
@@ -143,6 +146,9 @@ packages:
     peerDependencies:
       '@openwebf/vue-core-ui': ^0.24.0
       vue: ^3.0.0
+
+  '@openwebf/webf-bluetooth@1.0.0':
+    resolution: {integrity: sha512-oN3RJaDBOt/BnjXcZMLSDBrlmE40YTwfh+aUC23c1arlk+SlVLEY2GnXes/0bZEq7PFUh/wDXyQo/yuj3FZtew==}
 
   '@openwebf/webf-enterprise-typings@0.23.7':
     resolution: {integrity: sha512-knecy8SDKQegRjO4VPhgTpA23htos+1QH8GETw9s9NxeKOf20tOFb1jyY43cB+AYt/RtjkHg2vfE2bDpNlsirg==}
@@ -882,6 +888,12 @@ snapshots:
     dependencies:
       '@openwebf/vue-core-ui': 0.24.0(vue@3.5.26(typescript@5.9.3))
       vue: 3.5.26(typescript@5.9.3)
+
+  '@openwebf/webf-bluetooth@1.0.0':
+    dependencies:
+      '@openwebf/webf-enterprise-typings': 0.23.7
+    transitivePeerDependencies:
+      - react
 
   '@openwebf/webf-enterprise-typings@0.23.7': {}
 

@@ -1,0 +1,27 @@
+name: webf_bluetooth
+description: WebF Bluetooth module for Bluetooth Low Energy operations. Provides device scanning, connection management, service discovery, and data transfer.
+version: 1.0.0
+homepage: https://openwebf.com
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  webf: ^0.24.0
+  flutter_blue_plus: ^1.32.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+
+topics:
+  - webf
+  - bluetooth
+  - ble
+  - bluetooth-low-energy

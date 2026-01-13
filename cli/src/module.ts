@@ -12,10 +12,24 @@ interface ModuleMethodSpec {
   documentation?: string;
 }
 
+interface ModuleEventSpec {
+  name: string;
+  eventTypeText: string;
+  extraTypeText: string;
+  documentation?: string;
+}
+
 interface ModuleDefinition {
   interfaceName: string;
   moduleName: string;
   methods: ModuleMethodSpec[];
+  events?: {
+    interfaceName: string;
+    eventNameTypeName: string;
+    eventArgsTypeName: string;
+    listenerTypeName: string;
+    events: ModuleEventSpec[];
+  };
   supportingStatements: ts.Statement[];
   sourceFile: ts.SourceFile;
 }
@@ -32,13 +46,12 @@ function parseModuleDefinition(modulePath: string): ModuleDefinition {
 
   let interfaceDecl: ts.InterfaceDeclaration | undefined;
   const supporting: ts.Statement[] = [];
+  const webfInterfaceDecls: ts.InterfaceDeclaration[] = [];
 
   for (const stmt of sourceFile.statements) {
     if (ts.isInterfaceDeclaration(stmt)) {
       const name = stmt.name.text;
-      if (!interfaceDecl && name.startsWith('WebF')) {
-        interfaceDecl = stmt;
-      }
+      if (name.startsWith('WebF')) webfInterfaceDecls.push(stmt);
       supporting.push(stmt);
     } else if (
       ts.isTypeAliasDeclaration(stmt) ||
@@ -47,6 +60,17 @@ function parseModuleDefinition(modulePath: string): ModuleDefinition {
     ) {
       supporting.push(stmt);
     }
+  }
+
+  // Prefer the "main module interface": first WebF* interface that declares methods.
+  if (!interfaceDecl) {
+    interfaceDecl = webfInterfaceDecls.find(decl =>
+      decl.members.some(member => ts.isMethodSignature(member))
+    );
+  }
+
+  if (!interfaceDecl) {
+    interfaceDecl = webfInterfaceDecls[0];
   }
 
   if (!interfaceDecl) {
@@ -100,13 +124,93 @@ function parseModuleDefinition(modulePath: string): ModuleDefinition {
     });
   }
 
+  // Optional module events declaration:
+  // `interface WebF<ModuleName>ModuleEvents { scanResult: [Event, Payload]; }`
+  const eventsInterfaceName = `${interfaceName}ModuleEvents`;
+  const eventsDecl = sourceFile.statements.find(
+    stmt => ts.isInterfaceDeclaration(stmt) && stmt.name.text === eventsInterfaceName
+  ) as ts.InterfaceDeclaration | undefined;
+
+  let events:
+    | {
+        interfaceName: string;
+        eventNameTypeName: string;
+        eventArgsTypeName: string;
+        listenerTypeName: string;
+        events: ModuleEventSpec[];
+      }
+    | undefined;
+
+  if (eventsDecl) {
+    const eventSpecs: ModuleEventSpec[] = [];
+    for (const member of eventsDecl.members) {
+      if (!ts.isPropertySignature(member) || !member.name) continue;
+
+      const rawName = member.name.getText(sourceFile);
+      const eventName = rawName.replace(/['"]/g, '');
+
+      let eventTypeText = 'Event';
+      let extraTypeText = 'any';
+
+      if (member.type) {
+        if (ts.isTupleTypeNode(member.type) && member.type.elements.length === 2) {
+          eventTypeText = printer.printNode(
+            ts.EmitHint.Unspecified,
+            member.type.elements[0],
+            sourceFile
+          );
+          extraTypeText = printer.printNode(
+            ts.EmitHint.Unspecified,
+            member.type.elements[1],
+            sourceFile
+          );
+        } else {
+          eventTypeText = printer.printNode(ts.EmitHint.Unspecified, member.type, sourceFile);
+        }
+      }
+
+      let documentation: string | undefined;
+      const jsDocs = (member as any).jsDoc as ts.JSDoc[] | undefined;
+      if (jsDocs && jsDocs.length > 0) {
+        documentation = jsDocs
+          .map(doc => doc.comment)
+          .filter(Boolean)
+          .join('\n');
+      }
+
+      eventSpecs.push({
+        name: eventName,
+        eventTypeText,
+        extraTypeText,
+        documentation,
+      });
+    }
+
+    if (eventSpecs.length > 0) {
+      events = {
+        interfaceName: eventsInterfaceName,
+        eventNameTypeName: `${interfaceName}ModuleEventName`,
+        eventArgsTypeName: `${interfaceName}ModuleEventArgs`,
+        listenerTypeName: `${interfaceName}ModuleEventListener`,
+        events: eventSpecs,
+      };
+    }
+  }
+
   if (methods.length === 0) {
     throw new Error(
       `Interface ${interfaceName} in ${modulePath} does not declare any methods`
     );
   }
 
-  return { interfaceName, moduleName, methods, supportingStatements: supporting, sourceFile };
+  return {
+    interfaceName,
+    moduleName,
+    methods,
+    events,
+    supportingStatements: supporting,
+    sourceFile,
+  };
 }
 
 function buildTypesFile(def: ModuleDefinition): string {
@@ -144,6 +248,24 @@ function buildTypesFile(def: ModuleDefinition): string {
   }
 
   lines.push('');
+
+  if (def.events) {
+    const { interfaceName, eventNameTypeName, eventArgsTypeName, listenerTypeName } = def.events;
+
+    lines.push(`export type ${eventNameTypeName} = Extract<keyof ${interfaceName}, string>;`);
+    lines.push(
+      `export type ${eventArgsTypeName}<K extends ${eventNameTypeName} = ${eventNameTypeName}> =`
+    );
+    lines.push(`  ${interfaceName}[K] extends readonly [infer E, infer X]`);
+    lines.push(`    ? [event: (E & { type: K }), extra: X]`);
+    lines.push(`    : [event: (${interfaceName}[K] & { type: K }), extra: any];`);
+    lines.push('');
+    lines.push(`export type ${listenerTypeName} = (...args: {`);
+    lines.push(`  [K in ${eventNameTypeName}]: ${eventArgsTypeName}<K>;`);
+    lines.push(`}[${eventNameTypeName}]) => any;`);
+    lines.push('');
+  }
+
   // Ensure file is treated as a module even if no declarations were emitted.
   lines.push('export {};');
   return lines.join('\n');
@@ -180,6 +302,10 @@ function buildIndexFile(def: ModuleDefinition): string {
       typeImportNames.add(name);
     }
   }
+  if (def.events) {
+    typeImportNames.add(def.events.eventNameTypeName);
+    typeImportNames.add(def.events.eventArgsTypeName);
+  }
   const typeImportsSorted = Array.from(typeImportNames).sort();
   if (typeImportsSorted.length > 0) {
     lines.push(
@@ -199,6 +325,64 @@ function buildIndexFile(def: ModuleDefinition): string {
   );
   lines.push('  }');
   lines.push('');
+
+  if (def.events) {
+    lines.push('  private static _moduleListenerInstalled = false;');
+    lines.push(
+      '  private static _listeners: Record<string, Set<(event: Event, extra: any) => any>> = Object.create(null);'
+    );
+    lines.push('');
+
+    lines.push(
+      `  static addListener<K extends ${def.events.eventNameTypeName}>(type: K, listener: (...args: ${def.events.eventArgsTypeName}<K>) => any): () => void {`
+    );
+    lines.push(
+      "    if (typeof webf === 'undefined' || typeof (webf as any).addWebfModuleListener !== 'function') {"
+    );
+    lines.push(
+      "      throw new Error('WebF module event API is not available. Make sure you are running in WebF runtime.');"
+    );
+    lines.push('    }');
+    lines.push('');
+    lines.push('    if (!this._moduleListenerInstalled) {');
+    lines.push(
+      `      (webf as any).addWebfModuleListener('${def.moduleName}', (event: Event, extra: any) => {`
+    );
+    lines.push('        const set = this._listeners[event.type];');
+    lines.push('        if (!set) return;');
+    lines.push('        for (const fn of set) { fn(event, extra); }');
+    lines.push('      });');
+    lines.push('      this._moduleListenerInstalled = true;');
+    lines.push('    }');
+    lines.push('');
+    lines.push('    (this._listeners[type] ??= new Set()).add(listener as any);');
+    lines.push('');
+    lines.push('    const cls = this;');
+    lines.push('    return () => {');
+    lines.push('      const set = cls._listeners[type];');
+    lines.push('      if (!set) return;');
+    lines.push('      set.delete(listener as any);');
+    lines.push('      if (set.size === 0) { delete cls._listeners[type]; }');
+    lines.push('');
+    lines.push('      if (Object.keys(cls._listeners).length === 0) {');
+    lines.push('        cls.removeListener();');
+    lines.push('      }');
+    lines.push('    };');
+    lines.push('  }');
+    lines.push('');
+
+    lines.push('  static removeListener(): void {');
+    lines.push('    this._listeners = Object.create(null);');
+    lines.push('    this._moduleListenerInstalled = false;');
+    lines.push(
+      "    if (typeof webf === 'undefined' || typeof (webf as any).removeWebfModuleListener !== 'function') {"
+    );
+    lines.push('      return;');
+    lines.push('    }');
+    lines.push(`    (webf as any).removeWebfModuleListener('${def.moduleName}');`);
+    lines.push('  }');
+    lines.push('');
+  }
 
   for (const method of def.methods) {
     if (method.documentation) {
@@ -245,6 +429,11 @@ function buildIndexFile(def: ModuleDefinition): string {
       if (name === def.interfaceName) continue;
       typeExportNames.add(stmt.name.text);
     }
+  }
+  if (def.events) {
+    typeExportNames.add(def.events.eventNameTypeName);
+    typeExportNames.add(def.events.eventArgsTypeName);
+    typeExportNames.add(def.events.listenerTypeName);
   }
   const sorted = Array.from(typeExportNames).sort();
   if (sorted.length) {
@@ -359,6 +548,9 @@ function buildDartBindings(def: ModuleDefinition, command: string): string {
   lines.push('// Generated by `webf module-codegen`');
   lines.push('');
   lines.push("import 'package:webf/module.dart';");
+  if (def.events) {
+    lines.push("import 'package:webf/dom.dart';");
+  }
   if (
     def.methods.some(m =>
       m.params.some(p => isTsByteArrayUnion(p.typeText))
@@ -371,7 +563,11 @@ function buildDartBindings(def: ModuleDefinition, command: string): string {
   // Generate Dart classes for supporting TS interfaces (compound option types).
   const optionInterfaces: ts.InterfaceDeclaration[] = [];
   for (const stmt of def.supportingStatements) {
-    if (ts.isInterfaceDeclaration(stmt) && stmt.name.text !== def.interfaceName) {
+    if (
+      ts.isInterfaceDeclaration(stmt) &&
+      stmt.name.text !== def.interfaceName &&
+      stmt.name.text !== def.events?.interfaceName
+    ) {
       optionInterfaces.push(stmt);
     }
   }
@@ -476,6 +672,27 @@ function buildDartBindings(def: ModuleDefinition, command: string): string {
   lines.push(`  @override`);
   lines.push(`  String get name => '${def.moduleName}';`);
   lines.push('');
+
+  if (def.events) {
+    for (const evt of def.events.events) {
+      const methodName = `emit${_.upperFirst(_.camelCase(evt.name))}`;
+
+      const mappedExtra = mapTsParamTypeToDart(evt.extraTypeText, optionTypeNames);
+      const dataParamType = mappedExtra.optionClassName
+        ? `${mappedExtra.optionClassName}?`
+        : 'dynamic';
+
+      lines.push(`  dynamic ${methodName}({Event? event, ${dataParamType} data}) {`);
+      if (mappedExtra.optionClassName) {
+        lines.push('    final mapped = data?.toMap();');
+        lines.push(`    return dispatchEvent(event: event ?? Event('${evt.name}'), data: mapped);`);
+      } else {
+        lines.push(`    return dispatchEvent(event: event ?? Event('${evt.name}'), data: data);`);
+      }
+      lines.push('  }');
+      lines.push('');
+    }
+  }
 
   for (const method of def.methods) {
     const dartMethodName = _.camelCase(method.name);

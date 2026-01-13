@@ -15,13 +15,26 @@ This directory contains WebF-specific Flutter packages that extend WebF function
 WebF.defineModule((context) => ShareModule(context));
 ```
 
+### 🔵 [webf_bluetooth](./bluetooth/)
+**Bluetooth Low Energy (BLE) operations**
+- Scan for nearby BLE devices
+- Connect and disconnect from devices
+- Discover services and characteristics
+- Read and write characteristic values
+- Subscribe to characteristic notifications
+
+```dart
+WebF.defineModule((context) => BluetoothModule(context));
+```
+
 ## Installation
 
 Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  webf_share: ^1.0.0  # Available on pub.dev
+  webf_share: ^1.0.0      # Share content
+  webf_bluetooth: ^1.0.0  # Bluetooth BLE
 ```
 
 ## Quick Start
@@ -29,9 +42,11 @@ dependencies:
 ```dart
 import 'package:webf/webf.dart';
 import 'package:webf_share/webf_share.dart';
+import 'package:webf_bluetooth/webf_bluetooth.dart';
 
 // Register modules globally (in main function)
 WebF.defineModule((context) => ShareModule(context));
+WebF.defineModule((context) => BluetoothModule(context));
 ```
 
 ## JavaScript Usage
@@ -39,11 +54,12 @@ WebF.defineModule((context) => ShareModule(context));
 Install the npm packages for better TypeScript support:
 
 ```bash
-npm install @openwebf/webf-share
+npm install @openwebf/webf-share @openwebf/webf-bluetooth
 ```
 
+### Share Example
+
 ```javascript
-// Share example
 import { WebFShare, ShareHelpers } from '@openwebf/webf-share';
 
 // Share text
@@ -61,12 +77,29 @@ await WebFShare.shareImage({
   text: 'Check out this amazing content!',
   subject: 'WebF Demo Screenshot'
 });
+```
 
-// Save screenshot
-const result = await WebFShare.saveScreenshot({
-  imageData,
-  filename: 'my_screenshot'
+### Bluetooth Example
+
+```javascript
+import { WebFBluetooth } from '@openwebf/webf-bluetooth';
+
+// Listen for scan results
+webf.on('Bluetooth:scanResult', (event) => {
+  const device = event.detail;
+  console.log(`Found: ${device.name} (${device.rssi} dBm)`);
 });
+
+// Start scanning
+await WebFBluetooth.startScan({ timeout: 10000 });
+
+// Connect to device
+const result = await WebFBluetooth.connect({
+  deviceId: 'AA:BB:CC:DD:EE:FF'
+});
+
+// Discover services
+const services = await WebFBluetooth.discoverServices('AA:BB:CC:DD:EE:FF');
 ```
 
 ## Requirements
