@@ -29,7 +29,7 @@ import 'package:webf_video_player/webf_video_player.dart';
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-const String demoEntryUrl = 'http://localhost:5176/';
+const String demoEntryUrl = 'http://localhost:5173/';
 const String demoControllerName = 'demo';
 const String demoInitialRoute = '/';
 const Map<String, dynamic>? demoInitialState = null;

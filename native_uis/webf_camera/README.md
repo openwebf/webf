@@ -8,7 +8,7 @@ Add this package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  webf_camera: ^0.1.0
+  webf_camera: ^1.0.1
 ```
 
 ## Setup
@@ -80,18 +80,43 @@ Install the Vue package:
 npm install @openwebf/vue-camera
 ```
 
-Basic usage:
+Basic usage (type-only import with custom element):
 
 ```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+// Type-only import - no runtime JS in Vue package
+import type { FlutterCameraElement } from '@openwebf/vue-camera';
+
+const cameraRef = ref<FlutterCameraElement | null>(null);
+
+function handleCameraReady(e: CustomEvent) {
+  console.log('Camera ready:', e.detail);
+  console.log('Zoom range:', e.detail.minZoom, '-', e.detail.maxZoom);
+}
+
+function handlePhotoCaptured(e: CustomEvent) {
+  console.log('Photo saved to:', e.detail.path);
+}
+
+function handleCameraFailed(e: CustomEvent) {
+  console.error('Camera error:', e.detail.error);
+}
+
+function takePicture() {
+  cameraRef.value?.takePicture();
+}
+</script>
+
 <template>
   <div>
-    <FlutterCamera
+    <flutter-camera
       ref="cameraRef"
       facing="back"
       resolution="high"
       flash-mode="auto"
-      :auto-init="true"
-      :enable-audio="true"
+      auto-init
+      enable-audio
       :style="{ width: '100%', height: '400px' }"
       @cameraready="handleCameraReady"
       @photocaptured="handlePhotoCaptured"
@@ -100,30 +125,6 @@ Basic usage:
     <button @click="takePicture">Take Photo</button>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref } from 'vue';
-import { FlutterCamera } from '@openwebf/vue-camera';
-
-const cameraRef = ref<InstanceType<typeof FlutterCamera> | null>(null);
-
-const handleCameraReady = (e: CustomEvent) => {
-  console.log('Camera ready:', e.detail);
-  console.log('Zoom range:', e.detail.minZoom, '-', e.detail.maxZoom);
-};
-
-const handlePhotoCaptured = (e: CustomEvent) => {
-  console.log('Photo saved to:', e.detail.path);
-};
-
-const handleCameraFailed = (e: CustomEvent) => {
-  console.error('Camera error:', e.detail.error);
-};
-
-const takePicture = () => {
-  cameraRef.value?.$el.takePicture();
-};
-</script>
 ```
 
 ### HTML Custom Element
