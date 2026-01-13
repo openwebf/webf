@@ -18,6 +18,7 @@ import {VideoPage} from './pages/VideoPage';
 import {FontFacePage} from './pages/FontFacePage';
 import {WebFSharePage} from './pages/WebFSharePage';
 import {WebFSQFlitePage} from './pages/WebFSQFlitePage';
+import {WebFBluetoothPage} from './pages/WebFBluetoothPage';
 import {WebFVideoPlayerPage} from './pages/WebFVideoPlayerPage';
 import {WebFCameraPage} from './pages/WebFCameraPage';
 import {NetworkPage} from './pages/NetworkPage';
@@ -221,6 +222,7 @@ function App() {
         <Route path="/webf-sqflite" title="WebF SQFlite" element={<WebFSQFlitePage />} />
         <Route path="/webf-video-player" title="WebF Video Player" element={<WebFVideoPlayerPage />} />
         <Route path="/webf-camera" title="WebF Camera" element={<WebFCameraPage />} />
+        <Route path="/webf-bluetooth" title="WebF Bluetooth" element={<WebFBluetoothPage />} />
         <Route path="/network" title="Network Requests" element={<NetworkPage />} />
         <Route path="/image" title="Image Gallery" element={<ImagePage />} />
         <Route path="/typography" title="Typography" element={<TypographyPage />} />

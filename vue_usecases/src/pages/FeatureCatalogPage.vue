@@ -110,7 +110,10 @@ const sections: Section[] = [
   },
   {
     title: 'Native Plugins',
-    items: [{ label: 'WebF Share', path: '/webf-share', desc: 'Share and save content via native APIs' }],
+    items: [
+      { label: 'WebF Share', path: '/webf-share', desc: 'Share and save content via native APIs' },
+      { label: 'WebF Bluetooth', path: '/webf-bluetooth', desc: 'Bluetooth Low Energy device scanning and connection' },
+    ],
   },
   {
     title: 'Native UI',

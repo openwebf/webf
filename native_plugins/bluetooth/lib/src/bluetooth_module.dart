@@ -29,6 +29,11 @@ class BluetoothModule extends BluetoothModuleBindings {
   /// Active scan session subscription
   StreamSubscription<List<ScanResult>>? _scanSubscription;
 
+  /// Scan session dedupe state to avoid re-emitting the same results repeatedly.
+  final Set<String> _scanDiscoveredDeviceIds = <String>{};
+  final Map<String, int> _scanLastEmittedAtMs = <String, int>{};
+  final Map<String, int> _scanLastRssi = <String, int>{};
+
   /// Adapter state subscription
   StreamSubscription<BluetoothAdapterState>? _adapterStateSubscription;
 
@@ -61,6 +66,9 @@ class BluetoothModule extends BluetoothModuleBindings {
     // Cancel scan subscription
     _scanSubscription?.cancel();
     _scanSubscription = null;
+    _scanDiscoveredDeviceIds.clear();
+    _scanLastEmittedAtMs.clear();
+    _scanLastRssi.clear();
 
     // Cancel adapter state subscription
     _adapterStateSubscription?.cancel();
@@ -251,6 +259,9 @@ class BluetoothModule extends BluetoothModuleBindings {
       // Stop any existing scan
       await FlutterBluePlus.stopScan();
       _scanSubscription?.cancel();
+      _scanDiscoveredDeviceIds.clear();
+      _scanLastEmittedAtMs.clear();
+      _scanLastRssi.clear();
 
       // Parse options
       final timeout = options?.timeout != null
@@ -276,7 +287,33 @@ class BluetoothModule extends BluetoothModuleBindings {
 
       // Listen for scan results and emit events
       _scanSubscription = FlutterBluePlus.onScanResults.listen((results) {
+        final nowMs = DateTime.now().millisecondsSinceEpoch;
+        final seenInBatch = <String>{};
         for (final result in results) {
+          final deviceId = result.device.remoteId.toString();
+          if (!seenInBatch.add(deviceId)) continue;
+
+          if (!allowDuplicates) {
+            if (_scanDiscoveredDeviceIds.contains(deviceId)) continue;
+            _scanDiscoveredDeviceIds.add(deviceId);
+          } else {
+            final lastAt = _scanLastEmittedAtMs[deviceId];
+            final lastRssi = _scanLastRssi[deviceId];
+
+            // When duplicates are allowed, avoid spamming identical updates:
+            // - always emit first time
+            // - otherwise emit if RSSI changed OR enough time passed
+            const minIntervalMs = 500;
+            final shouldEmit = lastAt == null ||
+                lastRssi == null ||
+                lastRssi != result.rssi ||
+                nowMs - lastAt >= minIntervalMs;
+            if (!shouldEmit) continue;
+
+            _scanLastEmittedAtMs[deviceId] = nowMs;
+            _scanLastRssi[deviceId] = result.rssi;
+          }
+
           final deviceInfo = _mapScanResult(result);
           // Emit event to JavaScript
           moduleManager!.emitModuleEvent(
@@ -330,6 +367,9 @@ class BluetoothModule extends BluetoothModuleBindings {
       await FlutterBluePlus.stopScan();
       _scanSubscription?.cancel();
       _scanSubscription = null;
+      _scanDiscoveredDeviceIds.clear();
+      _scanLastEmittedAtMs.clear();
+      _scanLastRssi.clear();
 
       return const ScanStopResult(success: 'true');
     } catch (e) {
