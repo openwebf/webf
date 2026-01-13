@@ -23,12 +23,13 @@ import 'custom_hybrid_history_delegate.dart';
 
 import 'package:webf_share/webf_share.dart';
 import 'package:webf_sqflite/webf_sqflite.dart';
+import 'package:webf_camera/webf_camera.dart';
 import 'package:webf_video_player/webf_video_player.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-const String demoEntryUrl = 'http://localhost:5175';
+const String demoEntryUrl = 'http://localhost:5173/';
 const String demoControllerName = 'demo';
 const String demoInitialRoute = '/';
 const Map<String, dynamic>? demoInitialState = null;
@@ -38,6 +39,7 @@ void main() async {
   final savedThemeMode = await AdaptiveTheme.getThemeMode();
 
   installWebFCupertinoUI();
+  installWebFCamera();
   installWebFVideoPlayer();
 
   WebF.defineModule((context) => ShareModule(context));

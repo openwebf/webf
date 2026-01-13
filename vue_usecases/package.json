@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@openwebf/vue-camera": "^1.0.1",
     "@openwebf/vue-core-ui": "^0.24.0",
     "@openwebf/vue-cupertino-ui": "^0.4.0",
     "@openwebf/vue-router": "^0.24.0",

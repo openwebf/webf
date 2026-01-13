@@ -122,6 +122,7 @@ const sections: Section[] = [
     title: 'Native UI',
     items: [
       { label: 'WebF Video Player', path: '/webf-video-player', desc: 'HTML5-compatible video player with native Flutter performance' },
+      { label: 'WebF Camera', path: '/webf-camera', desc: 'Native camera with photo capture and video recording' },
     ],
   },
   {

@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@openwebf/vue-camera':
+        specifier: ^1.0.1
+        version: 1.0.1(@openwebf/vue-core-ui@0.24.0(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))
       '@openwebf/vue-core-ui':
         specifier: ^0.24.0
         version: 0.24.0(vue@3.5.26(typescript@5.9.3))
@@ -111,6 +114,12 @@ packages:
   '@nodelib/fs.walk@1.2.8':
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
+
+  '@openwebf/vue-camera@1.0.1':
+    resolution: {integrity: sha512-t4ftZysJEeWVfNGvT54igqJu9kHEDny5nW1eJF3tIEVm68bP9YuViIHOEP3pjvoYhlhAUJbEn11lagW7vIxsEQ==}
+    peerDependencies:
+      '@openwebf/vue-core-ui': ^0.24.0
+      vue: ^3.0.0
 
   '@openwebf/vue-core-ui@0.24.0':
     resolution: {integrity: sha512-hhY9UKrM/pRJ5FcrDVzlYThGt3WCwt51fqdwsJFadJyx/2gQ/erXfYK6vpdrpcLK/qFVJr+0Hdxw96OGiGTQrQ==}
@@ -846,6 +855,11 @@ snapshots:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.1
+
+  '@openwebf/vue-camera@1.0.1(@openwebf/vue-core-ui@0.24.0(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))':
+    dependencies:
+      '@openwebf/vue-core-ui': 0.24.0(vue@3.5.26(typescript@5.9.3))
+      vue: 3.5.26(typescript@5.9.3)
 
   '@openwebf/vue-core-ui@0.24.0(vue@3.5.26(typescript@5.9.3))':
     dependencies:

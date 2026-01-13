@@ -20,6 +20,7 @@ export const appRoutes: AppRoute[] = [
   { path: '/svg-image', title: 'SVG via Img', element: defineAsyncComponent(() => import('./pages/SvgImagePage.vue')) },
   { path: '/accessibility', title: 'Accessibility Use Cases', element: defineAsyncComponent(() => import('./pages/AccessibilityPage.vue')) },
   { path: '/webf-share', title: 'WebF Share', element: defineAsyncComponent(() => import('./pages/WebFSharePage.vue')) },
+  { path: '/webf-camera', title: 'WebF Camera', element: defineAsyncComponent(() => import('./pages/WebFCameraPage.vue')) },
   { path: '/form', title: 'Form (Basic)', element: defineAsyncComponent(() => import('./pages/FormPage.vue')) },
   {
     path: '/basic-form-elements',
