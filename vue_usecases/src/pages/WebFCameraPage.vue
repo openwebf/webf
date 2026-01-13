@@ -160,9 +160,9 @@ function switchCamera() {
 
 function cycleFlashMode() {
   if (!cameraRef.value || !isCameraReady.value) return;
-  const modes = ['auto', 'off', 'always', 'torch'];
+  const modes: string[] = ['auto', 'off', 'always', 'torch'];
   const currentIndex = modes.indexOf(flashMode.value);
-  const nextMode = modes[(currentIndex + 1) % modes.length];
+  const nextMode = modes[(currentIndex + 1) % modes.length] as string;
   try {
     cameraRef.value.setFlashMode(nextMode);
     flashMode.value = nextMode;
