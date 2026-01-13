@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       packages:
-        description: "Comma-separated package paths (default: auto-discover webf_cupertino_ui + native_plugins/*)"
+        description: "Comma-separated package paths (default: auto-discover native_uis/* + native_plugins/*)"
         required: false
         default: ""
         type: string
@@ -59,9 +59,14 @@ jobs:
               if p:
                 packages.append(p)
           else:
-            if os.path.isfile("native_uis/webf_cupertino_ui/pubspec.yaml"):
-              packages.append("native_uis/webf_cupertino_ui")
+            # Auto-discover packages in native_uis/*
+            for pubspec in sorted(glob.glob("native_uis/*/pubspec.yaml")):
+              directory = os.path.dirname(pubspec)
+              if "/.dart_tool/" in directory:
+                continue
+              packages.append(directory)
 
+            # Auto-discover packages in native_plugins/*
             for pubspec in sorted(glob.glob("native_plugins/*/pubspec.yaml")):
               directory = os.path.dirname(pubspec)
               if "/.dart_tool/" in directory:
