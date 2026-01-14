@@ -75,12 +75,14 @@ class WebFPage final {
   static void EvaluateQuickjsByteCodeInternal(void* page_,
                                               uint8_t* bytes,
                                               int32_t byteLen,
+                                              const char* url,
                                               void* script_element_,
                                               Dart_PersistentHandle persistent_handle,
                                               EvaluateQuickjsByteCodeCallback result_callback);
   static void ParseHTMLInternal(void* page_,
                                 char* code,
                                 int32_t length,
+                                const char* url,
                                 Dart_PersistentHandle dart_handle,
                                 ParseHTMLCallback result_callback);
 

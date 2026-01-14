@@ -204,6 +204,7 @@ void dumpQuickjsByteCode(void* page_,
 void evaluateQuickjsByteCode(void* page_,
                              uint8_t* bytes,
                              int32_t byteLen,
+                             const char* url,
                              void* script_element_,
                              Dart_Handle dart_handle,
                              EvaluateQuickjsByteCodeCallback result_callback) {
@@ -215,12 +216,13 @@ void evaluateQuickjsByteCode(void* page_,
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   page->dartIsolateContext()->dispatcher()->PostToJs(page->isDedicated(), static_cast<int32_t>(page->contextId()),
                                                      webf::WebFPage::EvaluateQuickjsByteCodeInternal, page_, bytes,
-                                                     byteLen, script_element, persistent_handle, result_callback);
+                                                     byteLen, url, script_element, persistent_handle, result_callback);
 }
 
 void parseHTML(void* page_,
                char* code,
                int32_t length,
+               const char* url,
                Dart_Handle dart_handle,
                ParseHTMLCallback result_callback) {
 #if ENABLE_LOG
@@ -230,7 +232,7 @@ void parseHTML(void* page_,
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   page->executingContext()->dartIsolateContext()->dispatcher()->PostToJs(
       page->isDedicated(), static_cast<int32_t>(page->contextId()), webf::WebFPage::ParseHTMLInternal, page_, code,
-      length, persistent_handle, result_callback);
+      length, url, persistent_handle, result_callback);
 }
 
 void onViewportSizeChanged(void* page_, double inner_width, double inner_height) {

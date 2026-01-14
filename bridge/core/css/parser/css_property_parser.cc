@@ -184,13 +184,12 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
   // Record the parser context base URL as a base href on this raw value so
   // that later pipeline stages (e.g. StyleEngine -> UICommand bridge) can
   // resolve relative url() tokens consistently with the stylesheet URL.
-  // Treat about:blank as "no href" so consumers fall back to the document or
-  // controller URL rather than using a synthetic base.
+  // Treat about:* as "no href" so consumers never receive about: bases across
+  // the bridge.
   if (context_) {
     const KURL& base_url = context_->BaseURL();
-    std::string base = base_url.GetString();
-    if (!base_url.IsEmpty() && base_url.IsValid() && base != "about:blank") {
-      raw->SetBaseHref(String::FromUTF8(base));
+    if (!base_url.IsEmpty() && base_url.IsValid() && !base_url.ProtocolIsAbout()) {
+      raw->SetBaseHref(String::FromUTF8(base_url.GetString()));
     }
   }
   AddProperty(property_id, CSSPropertyID::kInvalid, raw, important,

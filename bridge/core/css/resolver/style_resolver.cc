@@ -320,12 +320,9 @@ void StyleResolver::MatchUARules(ElementRuleCollector& collector) {
   // Match rules from the default HTML stylesheet
   auto html_style = CSSDefaultStyleSheets::DefaultHTMLStyle();
   if (html_style && html_style->RuleCount() > 0) {
-    // Create a RuleSet from the stylesheet for matching
-    // TODO: This should be cached for performance
-    auto rule_set = std::make_shared<RuleSet>();
     ExecutingContext* context = document_->GetExecutingContext();
     MediaQueryEvaluator evaluator(context);
-    rule_set->AddRulesFromSheet(html_style, evaluator, kRuleHasNoSpecialState);
+    auto rule_set = html_style->EnsureRuleSet(evaluator);
     
     // Create match request and collect matching rules
     MatchRequest request(rule_set, CascadeOrigin::kUserAgent);
@@ -367,78 +364,31 @@ void StyleResolver::MatchAuthorRules(
     Element& element,
     ScopeOrdinal scope_ordinal,
     ElementRuleCollector& collector) {
-  // Match rules from author stylesheets (style elements, link elements)
+  // Match rules from author stylesheets registered with StyleEngine.
+  // Inline <style> elements and <link rel="stylesheet"> sheets both register
+  // their CSSStyleSheet with StyleEngine, so we can avoid per-match DOM
+  // traversal and (more importantly) avoid matching the same stylesheet twice.
   Document& document = element.GetDocument();
-  
-  // Get all style elements in the document by traversal; link-based sheets come from StyleEngine registry.
-  std::vector<Element*> style_elements;
-  
-  // Helper function to recursively find style elements
-  std::function<void(Node*)> findStyleElements = [&](Node* node) {
-    if (!node) return;
-    
-    if (node->IsElementNode()) {
-      Element* elem = static_cast<Element*>(node);
-      // Use HasTagName for robust tag matching
-      if (elem->HasTagName(html_names::kStyle)) {
-        style_elements.push_back(elem);
-      }
-    }
-    
-    for (Node* child = node->firstChild(); child; child = child->nextSibling()) {
-      findStyleElements(child);
-    }
-  };
-  
-  // Start from document element
-  findStyleElements(document.documentElement());
-  
-  // Create a media query evaluator for the current document so that
-  // media queries (including prefers-color-scheme) are evaluated against
-  // live environment values (viewport size, color scheme, etc.).
+
+  // Create a media query evaluator for the current document so that media
+  // queries are evaluated against live environment values (viewport size,
+  // color scheme, etc.).
   ExecutingContext* context = document.GetExecutingContext();
   MediaQueryEvaluator media_evaluator(context);
-  
-  const auto& author_sheets = document.EnsureStyleEngine().AuthorSheets();
-  unsigned inline_sheet_base = author_sheets.size();
-  unsigned inline_counter = 0;
 
-  for (auto* style_element : style_elements) {
-    if (!style_element) {
-      continue;
-    }
-    
-    // Check if this is a style element
-    // Note: tagName() returns uppercase for HTML elements
-    if (!style_element->HasTagName(html_names::kStyle)) {
-      continue;
-    }
-    
-    // Cast to HTMLStyleElement - safe because we checked the tag name
-    auto* html_style = static_cast<HTMLStyleElement*>(style_element);
-    if (!html_style) {
-      continue;
-    }
-    
-    CSSStyleSheet* sheet = html_style->sheet();
-    if (!sheet || !sheet->Contents()) {
-      continue;
-    }
-    
-    // Get or create the RuleSet from the style sheet contents
-    auto rule_set_ptr = sheet->Contents()->EnsureRuleSet(media_evaluator);
-    
-    // Create a match request for this style sheet
-    MatchRequest match_request(rule_set_ptr, CascadeOrigin::kAuthor, inline_sheet_base + inline_counter++);
-    collector.CollectMatchingRules(match_request);
-  }
-
-  // Process link-based author stylesheets from StyleEngine registry (robust even if DOM traversal misses links)
+  const auto& author_sheets = document.EnsureStyleEngine().AuthorStyleSheetsInDocumentOrder();
   unsigned author_index = 0;
-  for (const auto& contents : author_sheets) {
-    if (!contents) { author_index++; continue; }
+  for (const auto& sheet : author_sheets) {
+    if (!sheet) {
+      author_index++;
+      continue;
+    }
+    std::shared_ptr<StyleSheetContents> contents = sheet->Contents();
+    if (!contents) {
+      author_index++;
+      continue;
+    }
     auto rule_set_ptr = contents->EnsureRuleSet(media_evaluator);
-    // Preserve stylesheet order so later sheets override earlier ones.
     MatchRequest match_request(rule_set_ptr, CascadeOrigin::kAuthor, author_index);
     collector.CollectMatchingRules(match_request);
     author_index++;

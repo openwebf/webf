@@ -69,6 +69,14 @@ static bool RightmostCompoundTagMatchesElement(const RuleData& rule_data,
   return element.TagQName().LocalNameUpper() == actual.UpperASCII();
 }
 
+static uint32_t PseudoIdBit(PseudoId pseudo_id) {
+  unsigned id = static_cast<unsigned>(pseudo_id);
+  if (id >= 32) {
+    return 0;
+  }
+  return 1u << id;
+}
+
 ElementRuleCollector::ElementRuleCollector(StyleResolverState& state, SelectorChecker::Mode mode)
     : state_(state),
       element_(&state.GetElement()),
@@ -209,7 +217,33 @@ void ElementRuleCollector::CollectMatchingRulesForList(
     if (!rule_data) {
       continue;
     }
-    
+
+    // Fast prefilter for pseudo-element style collection: when a concrete
+    // pseudo-element (e.g. ::before) is requested, only selectors that actually
+    // target that pseudo-element can ever match. Without this, pseudo style
+    // resolution ends up iterating through all normal element rules in the same
+    // buckets and paying the full matcher cost only to fail at the end.
+    if (pseudo_element_id_ != kPseudoIdNone) {
+      // Only selectors that actually contain the requested pseudo-element can
+      // match during pseudo-element style collection. The pseudo-element is not
+      // always the rightmost simple selector (e.g. ".a::before:hover"), so scan
+      // the rightmost compound for a pseudo-element match.
+      bool targets_requested_pseudo = false;
+      for (const CSSSelector* s = &rule_data->Selector(); s; s = s->NextSimpleSelector()) {
+        if (s->Match() == CSSSelector::kPseudoElement) {
+          targets_requested_pseudo = CSSSelector::GetPseudoId(s->GetPseudoType()) == pseudo_element_id_;
+          break;
+        }
+        CSSSelector::RelationType rel = s->Relation();
+        if (rel != CSSSelector::kSubSelector && rel != CSSSelector::kScopeActivation) {
+          break;
+        }
+      }
+      if (!targets_requested_pseudo) {
+        continue;
+      }
+    }
+
     // Prevent processing too many rules
     if (++processed_count > MAX_RULES_TO_PROCESS) {
       break;
@@ -249,6 +283,14 @@ void ElementRuleCollector::CollectMatchingRulesForList(
       // ::before/::after) may "match" only to mark pseudo presence. They must
       // not contribute properties to the originating element's style.
       if (pseudo_element_id_ == kPseudoIdNone && ua_match_result.dynamic_pseudo != kPseudoIdNone) {
+        uint32_t bit = PseudoIdBit(ua_match_result.dynamic_pseudo);
+        if (bit) {
+          matched_pseudo_element_mask_ |= bit;
+          if (rule_data->Rule() &&
+              rule_data->Rule()->Properties().HasProperty(CSSPropertyID::kContent)) {
+            matched_pseudo_element_with_content_mask_ |= bit;
+          }
+        }
         continue;
       }
       DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
@@ -271,6 +313,14 @@ void ElementRuleCollector::CollectMatchingRulesForList(
       // ::before/::after) may "match" only to mark pseudo presence. They must
       // not contribute properties to the originating element's style.
       if (pseudo_element_id_ == kPseudoIdNone && match_result.dynamic_pseudo != kPseudoIdNone) {
+        uint32_t bit = PseudoIdBit(match_result.dynamic_pseudo);
+        if (bit) {
+          matched_pseudo_element_mask_ |= bit;
+          if (rule_data->Rule() &&
+              rule_data->Rule()->Properties().HasProperty(CSSPropertyID::kContent)) {
+            matched_pseudo_element_with_content_mask_ |= bit;
+          }
+        }
         continue;
       }
       DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
@@ -406,6 +456,8 @@ void ElementRuleCollector::ClearMatchedRules() {
   matched_rules_.clear();
   result_.Clear();
   current_cascade_order_ = 0;
+  matched_pseudo_element_mask_ = 0;
+  matched_pseudo_element_with_content_mask_ = 0;
 }
 
 void ElementRuleCollector::AddElementStyleProperties(

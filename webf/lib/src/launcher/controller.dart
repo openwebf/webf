@@ -1603,7 +1603,7 @@ class WebFController with Diagnosticable {
           'dataSize': data.length,
         });
         try {
-          await evaluateQuickjsByteCode(contextId, data);
+          await evaluateQuickjsByteCode(contextId, data, url: url);
           bytecodeEndCallback();
         } catch (e) {
           bytecodeEndCallback();

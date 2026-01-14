@@ -272,6 +272,7 @@ static void ReturnEvaluateQuickjsByteCodeResultToDart(Dart_PersistentHandle pers
 void WebFPage::EvaluateQuickjsByteCodeInternal(void* page_,
                                                uint8_t* bytes,
                                                int32_t byteLen,
+                                               const char* url,
                                                void* script_element_,
                                                Dart_PersistentHandle persistent_handle,
                                                EvaluateQuickjsByteCodeCallback result_callback) {
@@ -280,6 +281,13 @@ void WebFPage::EvaluateQuickjsByteCodeInternal(void* page_,
   auto binding_object = BindingObject::From(script_element_native_binding_object);
   auto* script_element = DynamicTo<HTMLScriptElement>(binding_object);
   assert(std::this_thread::get_id() == page->currentThread());
+
+  // When executing cached bytecode we no longer have a sourceURL in the QuickJS
+  // eval entrypoint, so initialize the document base URL from the Dart-provided
+  // script URL to avoid propagating about:blank into CSS resolution.
+  if (page->executingContext()) {
+    page->executingContext()->MaybeInitializeDocumentURLFromSourceURL(url);
+  }
 
   bool is_success = page->evaluateByteCode(bytes, byteLen, script_element);
 
@@ -296,10 +304,15 @@ static void ReturnParseHTMLToDart(Dart_PersistentHandle persistent_handle, Parse
 void WebFPage::ParseHTMLInternal(void* page_,
                                  char* code,
                                  int32_t length,
+                                 const char* url,
                                  Dart_PersistentHandle dart_handle,
                                  ParseHTMLCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
+
+  if (page->executingContext()) {
+    page->executingContext()->MaybeInitializeDocumentURLFromSourceURL(url);
+  }
 
   page->parseHTML(code, length);
   dart_free(code);

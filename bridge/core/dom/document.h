@@ -109,6 +109,11 @@ class Document : public ContainerNode, public TreeScope {
   // This is not an implementation of web-exposed Document.prototype.URL.
   const KURL& Url() const { return url_; }
 
+  // Set the document URL and initialize the fallback/base URL for resolving
+  // relative resources (e.g. CSS @import / url()) when the document is
+  // initially about:blank.
+  void SetDocumentURL(const KURL& url);
+
   // Document base URL.
   // https://html.spec.whatwg.org/C/#document-base-url
   const KURL& BaseURL() const;

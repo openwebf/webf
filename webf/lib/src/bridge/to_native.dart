@@ -239,9 +239,19 @@ typedef NativeEvaluateJavaScriptCallback = Void Function(Handle object, Int8 res
 
 typedef NativeParseHTMLCallback = Void Function(Handle object);
 // Register parseHTML
-typedef NativeParseHTML = Void Function(Pointer<Void>, Pointer<Uint8> code, Int32 length, Handle context,
+typedef NativeParseHTML = Void Function(
+    Pointer<Void>,
+    Pointer<Uint8> code,
+    Int32 length,
+    Pointer<Utf8> url,
+    Handle context,
     Pointer<NativeFunction<NativeParseHTMLCallback>> resultCallback);
-typedef DartParseHTML = void Function(Pointer<Void>, Pointer<Uint8> code, int length, Object context,
+typedef DartParseHTML = void Function(
+    Pointer<Void>,
+    Pointer<Uint8> code,
+    int length,
+    Pointer<Utf8> url,
+    Object context,
     Pointer<NativeFunction<NativeParseHTMLCallback>> resultCallback);
 
 final DartEvaluateScripts _evaluateScripts =
@@ -381,12 +391,13 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes,
   if (QuickJSByteCodeCacheObject.cacheMode == ByteCodeCacheMode.DEFAULT &&
       cacheObject.valid &&
       cacheObject.bytes != null) {
-    bool result = await evaluateQuickjsByteCode(contextId, cacheObject.bytes!, scriptElement: scriptElement);
+    bool result =
+        await evaluateQuickjsByteCode(contextId, cacheObject.bytes!, url: url, scriptElement: scriptElement);
     // If the bytecode evaluate failed, remove the cached file and fallback to raw javascript mode.
     if (!result) {
       await cacheObject.remove();
       // Fallback to normal script mode.
-      return evaluateScripts(contextId, codeBytes, scriptElement: scriptElement);
+      return evaluateScripts(contextId, codeBytes, url: url, scriptElement: scriptElement);
     }
     return result;
   } else {
@@ -429,6 +440,7 @@ typedef NativeEvaluateQuickjsByteCode = Void Function(
     Pointer<Void>,
     Pointer<Uint8> bytes,
     Int32 byteLen,
+    Pointer<Utf8> url,
     Pointer<NativeBindingObject>,
     Handle object,
     Pointer<NativeFunction<NativeEvaluateQuickjsByteCodeCallback>> callback);
@@ -436,6 +448,7 @@ typedef DartEvaluateQuickjsByteCode = void Function(
     Pointer<Void>,
     Pointer<Uint8> bytes,
     int byteLen,
+    Pointer<Utf8> url,
     Pointer<NativeBindingObject>,
     Object object,
     Pointer<NativeFunction<NativeEvaluateQuickjsByteCodeCallback>> callback);
@@ -449,17 +462,22 @@ final DartEvaluateQuickjsByteCode _evaluateQuickjsByteCode = WebFDynamicLibrary.
 class _EvaluateQuickjsByteCodeContext {
   Completer<bool> completer;
   Pointer<Uint8> bytes;
+  Pointer<Utf8> url;
 
-  _EvaluateQuickjsByteCodeContext(this.completer, this.bytes);
+  _EvaluateQuickjsByteCodeContext(this.completer, this.bytes, this.url);
 }
 
 void handleEvaluateQuickjsByteCodeResult(Object handle, int result) {
   _EvaluateQuickjsByteCodeContext context = handle as _EvaluateQuickjsByteCodeContext;
   malloc.free(context.bytes);
+  if (context.url != nullptr) {
+    malloc.free(context.url);
+  }
   context.completer.complete(result == 1);
 }
 
-Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes, {ScriptElement? scriptElement}) async {
+Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes,
+    {String? url, ScriptElement? scriptElement}) async {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return false;
   }
@@ -468,7 +486,8 @@ Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes, {ScriptE
   byteData.asTypedList(bytes.length).setAll(0, bytes);
   assert(_allocatedPages.containsKey(contextId));
 
-  _EvaluateQuickjsByteCodeContext context = _EvaluateQuickjsByteCodeContext(completer, byteData);
+  Pointer<Utf8> urlPtr = url != null ? url.toNativeUtf8() : nullptr;
+  _EvaluateQuickjsByteCodeContext context = _EvaluateQuickjsByteCodeContext(completer, byteData, urlPtr);
 
   Pointer<NativeFunction<NativeEvaluateQuickjsByteCodeCallback>> nativeCallback =
       Pointer.fromFunction(handleEvaluateQuickjsByteCodeResult);
@@ -476,7 +495,7 @@ Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes, {ScriptE
   Pointer<NativeBindingObject> scriptElementPtr = scriptElement?.pointer! ?? nullptr;
 
   _evaluateQuickjsByteCode(
-      _allocatedPages[contextId]!, byteData, bytes.length, scriptElementPtr, context, nativeCallback);
+      _allocatedPages[contextId]!, byteData, bytes.length, urlPtr, scriptElementPtr, context, nativeCallback);
 
   return completer.future;
 }
@@ -529,18 +548,23 @@ Future<bool> evaluateModule(double contextId, Uint8List codeBytes,
 
 void _handleParseHTMLContextResult(Object handle) {
   _ParseHTMLContext context = handle as _ParseHTMLContext;
+  if (context.url != nullptr) {
+    malloc.free(context.url);
+  }
   context.completer.complete();
 }
 
 class _ParseHTMLContext {
   Completer<void> completer;
+  Pointer<Utf8> url;
 
-  _ParseHTMLContext(this.completer);
+  _ParseHTMLContext(this.completer, this.url);
 }
 
-Future<void> parseHTML(double contextId, Uint8List codeBytes) async {
+Future<void> parseHTML(double contextId, Uint8List codeBytes, {String? url}) async {
   Completer completer = Completer();
-  if (WebFController.getControllerOfJSContextId(contextId) == null) {
+  final controller = WebFController.getControllerOfJSContextId(contextId);
+  if (controller == null) {
     return;
   }
 
@@ -560,10 +584,12 @@ Future<void> parseHTML(double contextId, Uint8List codeBytes) async {
   Pointer<Uint8> codePtr = uint8ListToPointer(codeBytes);
   try {
     assert(_allocatedPages.containsKey(contextId));
-    _ParseHTMLContext context = _ParseHTMLContext(completer);
+    final String effectiveUrl = (url == null || url.isEmpty) ? controller.url : url;
+    final Pointer<Utf8> urlPtr = effectiveUrl.isNotEmpty ? effectiveUrl.toNativeUtf8() : nullptr;
+    _ParseHTMLContext context = _ParseHTMLContext(completer, urlPtr);
     Pointer<NativeFunction<NativeParseHTMLCallback>> resultCallback =
         Pointer.fromFunction(_handleParseHTMLContextResult);
-    _parseHTML(_allocatedPages[contextId]!, codePtr, codeBytes.length, context, resultCallback);
+    _parseHTML(_allocatedPages[contextId]!, codePtr, codeBytes.length, urlPtr, context, resultCallback);
   } catch (e, stack) {
     bridgeLogger.severe('Error parsing HTML', e, stack);
     completer.completeError(e);

@@ -123,6 +123,12 @@ class ExecutingContext {
                       const char* sourceURL,
                       int startLine,
                       HTMLScriptElement* script_element = nullptr);
+
+  // Initialize the document URL/base URL from a script/module sourceURL so
+  // that subsequent CSS parsing can resolve relative URLs without ever
+  // exposing about:blank across the bridge.
+  void MaybeInitializeDocumentURLFromSourceURL(const char* sourceURL);
+
   bool IsContextValid() const;
   void SetContextInValid();
   bool IsCtxValid() const;
