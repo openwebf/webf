@@ -90,15 +90,13 @@ ElementRuleCollector::~ElementRuleCollector() = default;
 void ElementRuleCollector::CollectMatchingRules(const MatchRequest& match_request) {
   assert(element_);
   
-  // Collect rules from the match request
-  for (const auto& rule_set : match_request.GetRuleSets()) {
-    if (rule_set) {
-      CollectRuleSetMatchingRules(match_request, 
-                                 rule_set,
-                                 match_request.GetOrigin(),
-                                 0);
+  // Collect rules from the match request.
+  match_request.ForEachRuleSet([&](const std::shared_ptr<RuleSet>& rule_set) {
+    if (!rule_set) {
+      return;
     }
-  }
+    CollectRuleSetMatchingRules(match_request, rule_set, match_request.GetOrigin(), 0);
+  });
 }
 
 void ElementRuleCollector::CollectRuleSetMatchingRules(

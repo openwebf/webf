@@ -34,6 +34,7 @@
 
 #include "style_resolver.h"
 #include <algorithm>
+#include <optional>
 #include <string>
 
 #include "foundation/logging.h"
@@ -335,7 +336,10 @@ void StyleResolver::MatchAuthorRules(
   // queries are evaluated against live environment values (viewport size,
   // color scheme, etc.).
   ExecutingContext* context = document.GetExecutingContext();
-  MediaQueryEvaluator media_evaluator(context);
+  // Creating a MediaQueryEvaluator is relatively expensive (it constructs
+  // dynamic MediaValues). Avoid constructing it per-element; we only need it
+  // when a RuleSet must be (re)built (e.g. after a media-query-driven invalidation).
+  std::optional<MediaQueryEvaluator> media_evaluator;
 
   const auto& author_sheets = document.EnsureStyleEngine().AuthorStyleSheetsInDocumentOrder();
   unsigned author_index = 0;
@@ -349,7 +353,13 @@ void StyleResolver::MatchAuthorRules(
       author_index++;
       continue;
     }
-    auto rule_set_ptr = contents->EnsureRuleSet(media_evaluator);
+    std::shared_ptr<RuleSet> rule_set_ptr = contents->GetRuleSetShared();
+    if (!rule_set_ptr) {
+      if (!media_evaluator.has_value()) {
+        media_evaluator.emplace(context);
+      }
+      rule_set_ptr = contents->EnsureRuleSet(*media_evaluator);
+    }
     MatchRequest match_request(rule_set_ptr, CascadeOrigin::kAuthor, author_index);
     collector.CollectMatchingRules(match_request);
     author_index++;
