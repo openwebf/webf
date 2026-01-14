@@ -1,3 +1,27 @@
+## 0.24.3
+
+### Major Features
+
+- **Native plugins & native UIs**
+  - Add `webf_sqflite` native plugin for SQLite database support (#793).
+  - Add `webf_bluetooth` native plugin with React/Vue showcases (#796).
+  - Add `webf_camera` and `webf_video_player` native UI plugins with React/Vue use cases (#795, #794).
+- **DevTools**: copy render object tree to clipboard for the inspector panel (#798).
+- **Tooling/Codegen**: typed module event declarations and improved React codegen typings/build output.
+- **Bridge/DOM**: add `HTMLSelectElement`/`HTMLOptionElement` support for React controlled `<select>`.
+
+### Performance Improvements
+
+- **Parsing**: replace RegExp-heavy parsing with scanners/parsers to reduce allocations and improve maintainability.
+
+### Bug Fixes
+
+- **CSS/Layout**: avoid treating bounded `maxHeight` as a definite height for `RenderWidget` children (#797).
+- **Layout**: clamp widget constraint width to the CSS containing block (#791).
+- **Rendering/Grid**: prevent overflow with `minmax(0, 1fr)` and percent-sized images; fix centered text combined with grid layout.
+- **Rendering/Flex**: avoid baseline crashes on detached children / missing parentData.
+- **Build/Release**: fix iOS build issues, package publish scripts, and Bluetooth license metadata.
+
 ## 0.24.2
 
 ### Major Features
