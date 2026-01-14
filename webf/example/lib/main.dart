@@ -30,7 +30,7 @@ import 'package:webf_bluetooth/webf_bluetooth.dart';
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-const String demoEntryUrl = 'http://localhost:5173/';
+const String demoEntryUrl = 'https://usecase.openwebf.com';
 const String demoControllerName = 'demo';
 const String demoInitialRoute = '/';
 const Map<String, dynamic>? demoInitialState = null;

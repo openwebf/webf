@@ -31,6 +31,7 @@ import 'package:flutter/widgets.dart'
         RouteObserver,
         StatefulElement,
         View;
+import 'package:path_provider/path_provider.dart';
 import 'package:webf/css.dart';
 import 'package:dio/dio.dart' show Interceptor; // For custom Dio configuration
 import 'package:webf/dom.dart';
@@ -111,6 +112,16 @@ class HybridRoutePageContext {
   BuildContext context;
 
   HybridRoutePageContext(this.path, this.context, this.state);
+}
+
+class RenderObjectTreeDumpResult {
+  final String text;
+  final String? savedFilePath;
+
+  const RenderObjectTreeDumpResult({
+    required this.text,
+    this.savedFilePath,
+  });
 }
 
 enum WebFLoadingMode {
@@ -460,47 +471,80 @@ class WebFController with Diagnosticable {
   ///                 If null or matches initialRoute, prints the root render object tree.
   ///                 Otherwise prints the render tree of the specified hybrid route view.
   ///
-  /// On macOS platform, this method also writes the render object tree to a file
-  /// in the user's Documents directory with a timestamp.
+  /// On desktop platforms (macOS/Windows/Linux), this method also writes the render object tree to a file
+  /// in the user's Documents directory (or app documents directory fallback) with a timestamp.
   Future<void> printRenderObjectTree(String? routePath) async {
+    final result = await dumpRenderObjectTree(
+      routePath,
+      writeToFile: Platform.isMacOS || Platform.isWindows || Platform.isLinux,
+      printToConsole: true,
+    );
+    if (result == null) {
+      debugPrint('Render object tree is empty.');
+      return;
+    }
+    if (result.savedFilePath != null) {
+      debugPrint('Render object tree written to: ${result.savedFilePath}');
+    }
+  }
+
+  Future<RenderObjectTreeDumpResult?> dumpRenderObjectTree(
+    String? routePath, {
+    bool writeToFile = false,
+    bool printToConsole = false,
+  }) async {
     String? renderObjectTreeString;
 
     if (routePath == null || routePath == initialRoute) {
       renderObjectTreeString = view.getRootRenderObject()?.toStringDeep();
     } else {
-      RouterLinkElement? routeLinkElement = view.getHybridRouterView(routePath);
+      final RouterLinkElement? routeLinkElement = view.getHybridRouterView(routePath);
       renderObjectTreeString = routeLinkElement?.getRenderObjectTree();
     }
 
-    // On macOS, also write to file
-    if (Platform.isMacOS && renderObjectTreeString != null) {
-      try {
-        // Get the Documents directory
-        final documentsDir = Directory('${Platform.environment['HOME']}/Documents');
-        final webfDebugDir = Directory('${documentsDir.path}/WebF_Debug');
+    if (renderObjectTreeString == null || renderObjectTreeString.isEmpty) {
+      return null;
+    }
 
-        // Create WebF_Debug directory if it doesn't exist
-        if (!await webfDebugDir.exists()) {
-          await webfDebugDir.create();
+    String? savedFilePath;
+    if (writeToFile && (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
+      try {
+        Directory? documentsDir;
+        if (Platform.isMacOS || Platform.isLinux) {
+          final String? home = Platform.environment['HOME'];
+          if (home != null && home.isNotEmpty) {
+            documentsDir = Directory('$home/Documents');
+          }
+        } else if (Platform.isWindows) {
+          final String? userProfile = Platform.environment['USERPROFILE'];
+          if (userProfile != null && userProfile.isNotEmpty) {
+            documentsDir = Directory('$userProfile\\Documents');
+          }
         }
 
-        // Generate filename with timestamp and route info
+        documentsDir ??= await getApplicationDocumentsDirectory();
+        final webfDebugDir = Directory('${documentsDir.path}${Platform.pathSeparator}WebF_Debug');
+        await webfDebugDir.create(recursive: true);
+
         final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').replaceAll('.', '-');
-        final routeInfo = routePath != null ? '_route_${routePath.replaceAll('/', '_')}' : '_root';
-        final filename = 'render_tree${routeInfo}_$timestamp.txt';
-
-        // Write to file
-        final file = File('${webfDebugDir.path}/$filename');
+        final sanitizedRoute = (routePath ?? 'root').replaceAll(RegExp(r'[^a-zA-Z0-9_-]+'), '_');
+        final filename = 'render_tree_${sanitizedRoute}_$timestamp.txt';
+        final file = File('${webfDebugDir.path}${Platform.pathSeparator}$filename');
         await file.writeAsString(renderObjectTreeString);
-
-        debugPrint('Render object tree written to: ${file.path}');
+        savedFilePath = file.path;
       } catch (e) {
         debugPrint('Failed to write render object tree to file: $e');
       }
-    } else {
-      // Always print to console
+    }
+
+    if (printToConsole) {
       debugPrint(renderObjectTreeString);
     }
+
+    return RenderObjectTreeDumpResult(
+      text: renderObjectTreeString,
+      savedFilePath: savedFilePath,
+    );
   }
 
   /// Prints the render object tree for debugging purposes.
