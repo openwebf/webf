@@ -1,4 +1,3 @@
-import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/bridge.dart';
 
@@ -21,6 +20,7 @@ import 'flutter_modal_popup.dart';
 import 'flutter_intrinsic_container.dart';
 import 'sample_container.dart';
 import 'native_flex_container.dart';
+import 'flutter_max_height_container.dart';
 
 void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-button',
@@ -52,4 +52,5 @@ void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-intrinsic-container', (context) => FlutterIntrinsicContainer(context));
   WebF.defineCustomElement('sample-container', (context) => SampleContainer(context));
   WebF.defineCustomElement('native-flex', (context) => NativeFlexContainer(context));
+  WebF.defineCustomElement('flutter-max-height-container', (context) => FlutterMaxHeightContainerElement(context));
 }

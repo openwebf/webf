@@ -2886,7 +2886,11 @@ class CSSRenderStyle extends RenderStyle
           if (parentRenderStyle.isSelfRenderWidget() &&
               childWrapper != null &&
               childWrapperConstraints != null &&
-              (childWrapperConstraints.maxHeight.isFinite &&
+              // Only treat Flutter constraints as a definite height when they are tight.
+              // A bounded (but non-tight) maxHeight is common in slivers/list layouts and
+              // must not force CSS height:auto elements to expand to the available extent.
+              (childWrapperConstraints.hasTightHeight &&
+                  childWrapperConstraints.maxHeight.isFinite &&
                   viewportBox != null &&
                   childWrapperConstraints.maxHeight != viewportBox.boxSize!.height)) {
             logicalHeight = childWrapperConstraints.maxHeight;
