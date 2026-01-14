@@ -2191,24 +2191,156 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                   onPressed: () async {
                     // Get current route path if available
                     String? routePath = controller.currentBuildContext?.path;
+                    final bool isDesktop = Platform.isMacOS || Platform.isWindows || Platform.isLinux;
 
-                    // Print render object tree
-                    await controller.printRenderObjectTree(routePath);
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => Center(
+                        child: Container(
+                          padding: EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.black87,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularProgressIndicator(color: Colors.white),
+                              SizedBox(height: 16),
+                              Text(
+                                'Dumping render tree...',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+
+                    RenderObjectTreeDumpResult? dumpResult;
+                    Object? dumpError;
+                    try {
+                      dumpResult = await controller.dumpRenderObjectTree(
+                        routePath,
+                        writeToFile: isDesktop,
+                      );
+                    } catch (e) {
+                      dumpError = e;
+                    } finally {
+                      if (context.mounted) {
+                        Navigator.of(context, rootNavigator: true).pop();
+                      }
+                    }
+
                     if (!context.mounted) return;
 
-                    // Show feedback
-                    final message = Platform.isMacOS
-                        ? 'Render object tree printed to console and saved to ~/Documents/WebF_Debug/'
-                        : 'Render object tree printed to console';
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(message),
-                        duration: Duration(seconds: 3),
-                        backgroundColor: Colors.blue,
+                    if (dumpError != null) {
+                      await showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          backgroundColor: Color(0xFF1E1E1E),
+                          title: Text('Failed to dump render tree', style: TextStyle(color: Colors.white)),
+                          content: Text(dumpError.toString(), style: TextStyle(color: Colors.white70)),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: Text('OK', style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (dumpResult == null) {
+                      await showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          backgroundColor: Color(0xFF1E1E1E),
+                          title: Text('Render tree is empty', style: TextStyle(color: Colors.white)),
+                          content: Text(
+                            'No render object tree available for this route.',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: Text('OK', style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
+                        ),
+                      );
+                      return;
+                    }
+
+                    Object? clipboardError;
+                    final String? savedFilePath = dumpResult.savedFilePath;
+                    final bool shouldCopyFilePath = isDesktop && savedFilePath != null && savedFilePath.isNotEmpty;
+                    try {
+                      await Clipboard.setData(ClipboardData(text: shouldCopyFilePath ? savedFilePath : dumpResult.text));
+                    } catch (e) {
+                      clipboardError = e;
+                    }
+
+                    if (!context.mounted) return;
+
+                    if (clipboardError != null) {
+                      await showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          backgroundColor: Color(0xFF1E1E1E),
+                          title: Text('Failed to copy to clipboard', style: TextStyle(color: Colors.white)),
+                          content: Text(clipboardError.toString(), style: TextStyle(color: Colors.white70)),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: Text('OK', style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
+                        ),
+                      );
+                      return;
+                    }
+
+                    final summary = shouldCopyFilePath
+                        ? 'Render object tree saved to file.\n\nFile path copied to clipboard:\n$savedFilePath'
+                        : 'Render object tree copied to clipboard.';
+
+                    await showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        backgroundColor: Color(0xFF1E1E1E),
+                        title: Text('Copied', style: TextStyle(color: Colors.white)),
+                        content: Text(summary, style: TextStyle(color: Colors.white70)),
+                        actions: [
+                          if (shouldCopyFilePath)
+                            TextButton(
+                              onPressed: () async {
+                                try {
+                                  await Clipboard.setData(ClipboardData(text: dumpResult!.text));
+                                } finally {
+                                  if (context.mounted) {
+                                    Navigator.of(context).pop();
+                                  }
+                                }
+                              },
+                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              child: Text('Copy Tree', style: TextStyle(color: Colors.white)),
+                            ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            style: TextButton.styleFrom(foregroundColor: Colors.white),
+                            child: Text('OK', style: TextStyle(color: Colors.white)),
+                          ),
+                        ],
                       ),
                     );
                   },
-                  tooltip: 'Print Render Object Tree',
+                  tooltip: 'Copy Render Object Tree',
                 ),
                 SizedBox(width: 8),
                 IconButton(
