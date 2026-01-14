@@ -270,34 +270,6 @@ void ElementRuleCollector::CollectMatchingRulesForList(
       continue;
     }
     
-  // UA stylesheet matching must respect full selectors (combinators, pseudos).
-  // Previously we short-circuited on tag-only which caused rules like
-  // "td > p:first-child" to (incorrectly) match all <p>, zeroing margins.
-  if (cascade_origin == CascadeOrigin::kUserAgent) {
-    SelectorChecker::MatchResult ua_match_result;
-    // Ensure UA rule matching respects requested pseudo-element (e.g., ::before/::after)
-    context.pseudo_id = pseudo_element_id_;
-    bool ua_matched = selector_checker_.Match(context, ua_match_result);
-    if (ua_matched) {
-      // When collecting normal element rules, pseudo-element selectors (e.g.
-      // ::before/::after) may "match" only to mark pseudo presence. They must
-      // not contribute properties to the originating element's style.
-      if (pseudo_element_id_ == kPseudoIdNone && ua_match_result.dynamic_pseudo != kPseudoIdNone) {
-        uint32_t bit = PseudoIdBit(ua_match_result.dynamic_pseudo);
-        if (bit) {
-          matched_pseudo_element_mask_ |= bit;
-          if (rule_data->Rule() &&
-              rule_data->Rule()->Properties().HasProperty(CSSPropertyID::kContent)) {
-            matched_pseudo_element_with_content_mask_ |= bit;
-          }
-        }
-        continue;
-      }
-      DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
-    }
-    continue;  // Handled UA case.
-  }
-    
     SelectorChecker::MatchResult match_result;
     // Avoid calling TagQName() unless the selector is a tag selector.
     // Non-tag selectors (class, id, attribute, pseudo, etc.) would hit

@@ -18,7 +18,6 @@
 #include "webf_test_env.h"
 #include "bindings/qjs/cppgc/mutation_scope.h"
 #include "bindings/qjs/cppgc/member.h"
-#include "core/css/css_default_style_sheets.h"
 
 namespace webf {
 
@@ -54,9 +53,6 @@ class StyleBuilderTest : public ::testing::Test {
         JS_RunGC(runtime);
       }
     }
-    
-    // Reset UA stylesheets to avoid memory leaks
-    CSSDefaultStyleSheets::Reset();
     
     document_ = nullptr;
     context_ = nullptr;

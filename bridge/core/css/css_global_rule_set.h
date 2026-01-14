@@ -15,8 +15,8 @@ class RuleSet;
 
 // A per Document collection of CSS metadata used for style matching and
 // invalidation. The data is aggregated from author rulesets from all TreeScopes
-// in the whole Document as well as UA stylesheets and watched selectors which
-// apply to elements in all TreeScopes.
+// in the whole Document as well as watched selectors which apply to elements in
+// all TreeScopes.
 //
 // TODO(futhark@chromium.org): We would like to move as much of this data as
 // possible to the ScopedStyleResolver as possible to avoid full reconstruction
@@ -38,11 +38,9 @@ class CSSGlobalRuleSet final {
   const RuleFeatureSet& GetRuleFeatureSet() const { return features_; }
   RuleSet* WatchedSelectorsRuleSet() const { return watched_selectors_rule_set_.get(); }
   RuleSet* DocumentRulesSelectorsRuleSet() const { return document_rules_selectors_rule_set_.get(); }
-  bool HasFullscreenUAStyle() const { return has_fullscreen_ua_style_; }
 
  private:
-  // Constructed from rules in all TreeScopes including UA style and style
-  // injected from extensions.
+  // Constructed from rules in all TreeScopes and style injected from extensions.
   RuleFeatureSet features_;
 
   // Rules injected from extensions.
@@ -52,7 +50,6 @@ class CSSGlobalRuleSet final {
   // rules.
   std::shared_ptr<RuleSet> document_rules_selectors_rule_set_;
 
-  bool has_fullscreen_ua_style_ = false;
   bool is_dirty_ = true;
 };
 

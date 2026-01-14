@@ -93,8 +93,8 @@ class StyleRuleUsageTracker {
 };
 
 // This class selects a ComputedStyle for a given element in a document based on
-// the document's collection of stylesheets (user styles, author styles, UA
-// style). There is a 1-1 relationship of StyleResolver and Document.
+// the document's collection of stylesheets (user styles, author styles). There
+// is a 1-1 relationship of StyleResolver and Document.
 class StyleResolver final {
   WEBF_DISALLOW_NEW();
 
@@ -259,7 +259,6 @@ class StyleResolver final {
     const CSSSelector* selector = nullptr;
   };
 
-  void MatchUARules(ElementRuleCollector&);
   void MatchUserRules(ElementRuleCollector&);
   void MatchPresentationRules(Element& element, ElementRuleCollector&);
   void MatchAuthorRules(Element& element,
@@ -277,8 +276,6 @@ class StyleResolver final {
 
   // False if shorthand properties should not be expanded to their longhands.
   bool ShouldUpdateNeedsApplyPass(const Element&) const;
-
-  void CollectUserRulesFromUASheets(ElementRuleCollector&) const;
 
   // These flags indicate whether an @apply rule was encountered while
   // computing style for the element, and therefore whether we need to do

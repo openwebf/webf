@@ -37,7 +37,6 @@
 #include <string>
 
 #include "foundation/logging.h"
-#include "core/css/css_default_style_sheets.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_property_value_set.h"
 #include "core/css/inline_css_style_declaration.h"
@@ -290,10 +289,7 @@ void StyleResolver::MatchAllRules(
     bool include_smil_properties) {
   
   Element& element = state.GetElement();
-  
-  // Match UA rules
-  MatchUARules(collector);
-  
+
   // Match user rules
   MatchUserRules(collector);
   
@@ -311,41 +307,6 @@ void StyleResolver::MatchAllRules(
                                          PropertyAllowedInMode::kAll);
     }
   }
-}
-
-void StyleResolver::MatchUARules(ElementRuleCollector& collector) {
-  // Initialize UA stylesheets if not already done
-  CSSDefaultStyleSheets::Init();
-  
-  // Match rules from the default HTML stylesheet
-  auto html_style = CSSDefaultStyleSheets::DefaultHTMLStyle();
-  if (html_style && html_style->RuleCount() > 0) {
-    ExecutingContext* context = document_->GetExecutingContext();
-    MediaQueryEvaluator evaluator(context);
-    auto rule_set = html_style->EnsureRuleSet(evaluator);
-    
-    // Create match request and collect matching rules
-    MatchRequest request(rule_set, CascadeOrigin::kUserAgent);
-    collector.CollectMatchingRules(request);
-  }
-  
-  // Apply quirks mode stylesheet if in quirks mode
-  // TODO: Implement quirks mode detection in Document
-  // For now, we'll skip quirks mode styles
-  /*
-  if (document_->InQuirksMode()) {
-    auto quirks_style = CSSDefaultStyleSheets::QuirksStyle();
-    if (quirks_style && quirks_style->RuleCount() > 0) {
-      auto rule_set = std::make_shared<RuleSet>();
-      MediaQueryEvaluator evaluator("screen");
-      rule_set->AddRulesFromSheet(quirks_style, evaluator, kRuleHasNoSpecialState);
-      MatchRequest request(rule_set, CascadeOrigin::kUserAgent);
-      collector.CollectMatchingRules(request);
-    }
-  }
-  */
-  
-  // TODO: Add SVG and MathML stylesheets when elements support them
 }
 
 void StyleResolver::MatchUserRules(ElementRuleCollector& collector) {

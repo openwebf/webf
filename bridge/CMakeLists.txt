@@ -171,36 +171,6 @@ if (DEFINED PLATFORM)
   endif()
 endif()
 
-# Generate CSS resource headers
-# This section generates C++ header files from CSS source files
-set(CSS_RESOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/core/css/resources)
-
-# Output generated headers into the source tree under code_gen
-set(GENERATED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/code_gen/)
-
-# Ensure the generated directory exists
-file(MAKE_DIRECTORY ${GENERATED_DIR})
-
-# Read HTML CSS content (no escaping needed for raw string literals)
-file(READ ${CSS_RESOURCES_DIR}/html.css HTML_CSS_CONTENT)
-
-# Generate html_css.h from template
-configure_file(
-  ${CSS_RESOURCES_DIR}/html_css.h.in
-  ${GENERATED_DIR}/html_css.h
-  @ONLY
-)
-
-# Read Quirks CSS content (no escaping needed for raw string literals)
-file(READ ${CSS_RESOURCES_DIR}/quirks.css QUIRKS_CSS_CONTENT)
-
-# Generate quirks_css.h from template
-configure_file(
-  ${CSS_RESOURCES_DIR}/quirks_css.h.in
-  ${GENERATED_DIR}/quirks_css.h
-  @ONLY
-)
-
 # Ensure code_gen is in the include path for generated headers
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/code_gen)
 
