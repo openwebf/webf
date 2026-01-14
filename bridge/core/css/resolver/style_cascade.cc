@@ -154,119 +154,82 @@ void StyleCascade::AnalyzeMatchResult() {
   map_.Reset();
   
   const auto& matched_properties = match_result_.GetMatchedProperties();
-  uint32_t position = 0;
-  
-  // WEBF_LOG(VERBOSE) << "AnalyzeMatchResult: " << matched_properties.size() << " matched property sets";
-  
+
+  // MatchResult is expected to be provided in non-decreasing cascade-layer
+  // order (origin/tree/layer), which allows us to build the CascadeMap in a
+  // single pass without collecting and sorting per-property priorities.
+  // This is a major hot path during full subtree style recalculation.
   uint16_t block_index = 0;
-  // Collect priorities per-property, then flush to CascadeMap sorted by
-  // ForLayerComparison to satisfy CascadeMap's insertion invariant.
-  std::vector<std::vector<CascadePriority>> native_priorities(static_cast<size_t>(kNumCSSProperties));
-  std::unordered_map<AtomicString, std::vector<CascadePriority>, AtomicString::KeyHasher> custom_priorities;
   for (const auto& entry : matched_properties) {
     if (!entry.properties) {
+      ++block_index;
       continue;
     }
-    
-    const StylePropertySet& properties = *entry.properties;
-    
-    // Convert to cascade origin
-    CascadeOrigin cascade_origin = CascadeOrigin::kAuthor;
-    if (entry.origin == webf::CascadeOrigin::kUserAgent) {
-      cascade_origin = CascadeOrigin::kUserAgent;
-    } else if (entry.origin == webf::CascadeOrigin::kUser) {
-      cascade_origin = CascadeOrigin::kUser;
+
+    StyleCascadeOrigin base_origin = StyleCascadeOrigin::kAuthor;
+    switch (entry.origin) {
+      case webf::CascadeOrigin::kUserAgent:
+        base_origin = StyleCascadeOrigin::kUserAgent;
+        break;
+      case webf::CascadeOrigin::kUser:
+        base_origin = StyleCascadeOrigin::kUser;
+        break;
+      case webf::CascadeOrigin::kAuthor:
+        base_origin = StyleCascadeOrigin::kAuthor;
+        break;
+      case webf::CascadeOrigin::kAnimation:
+        base_origin = StyleCascadeOrigin::kAnimation;
+        break;
+      case webf::CascadeOrigin::kTransition:
+        base_origin = StyleCascadeOrigin::kTransition;
+        break;
+      default:
+        base_origin = StyleCascadeOrigin::kAuthor;
+        break;
     }
-    
-    // Process each property in the set
-    // WEBF_LOG(VERBOSE) << "Property set has " << properties.PropertyCount() << " properties, origin: " << static_cast<int>(entry.origin);
-    
+
+    const StylePropertySet& properties = *entry.properties;
     uint16_t declaration_index = 0;
     for (unsigned i = 0; i < properties.PropertyCount(); ++i, ++declaration_index) {
       const StylePropertySet::PropertyReference property = properties.PropertyAt(i);
-      
+      if (property.Id() == CSSPropertyID::kInvalid) {
+        continue;
+      }
       if (!property.Value() || !*property.Value()) {
         continue;
       }
-      
-      // WEBF_LOG(VERBOSE) << "Property ID: " << static_cast<int>(property.Id()) << " value: " << property.Value()->get()->CssText();
-      
-      // Convert cascade origin based on importance
-      StyleCascadeOrigin style_origin = StyleCascadeOrigin::kAuthor;
-      if (cascade_origin == CascadeOrigin::kUserAgent) {
-        style_origin = property.IsImportant() ? 
-            StyleCascadeOrigin::kImportantUserAgent : StyleCascadeOrigin::kUserAgent;
-      } else if (cascade_origin == CascadeOrigin::kUser) {
-        style_origin = property.IsImportant() ? 
-            StyleCascadeOrigin::kImportantUser : StyleCascadeOrigin::kUser;
-      } else {
-        style_origin = property.IsImportant() ? 
-            StyleCascadeOrigin::kImportantAuthor : StyleCascadeOrigin::kAuthor;
+
+      StyleCascadeOrigin style_origin = base_origin;
+      if (property.IsImportant()) {
+        // Only the non-animation origins have important variants.
+        if (base_origin == StyleCascadeOrigin::kUserAgent || base_origin == StyleCascadeOrigin::kUser ||
+            base_origin == StyleCascadeOrigin::kAuthor || base_origin == StyleCascadeOrigin::kAuthorPresentationalHint) {
+          style_origin = ToImportantOrigin(base_origin);
+        }
       }
-      
-      // Build cascade priority using layer order and a stable position
-      // Encode position as (block_index << 16) | declaration_index like Blink
+
       uint32_t encoded_position = (static_cast<uint32_t>(block_index) << 16) |
                                   static_cast<uint32_t>(declaration_index);
-      CascadePriority priority(
-          style_origin,
-          entry.is_inline_style,                          // is_inline_style
-          static_cast<uint16_t>(entry.layer_level),       // layer_order
-          encoded_position);                              // position
-      
-      // Collect per property; we will sort by ForLayerComparison before adding
-      // to CascadeMap to guarantee non-decreasing order.
+      CascadePriority priority(style_origin, entry.is_inline_style, static_cast<uint16_t>(entry.layer_level),
+                               encoded_position);
+
       if (property.Id() == CSSPropertyID::kVariable) {
-        // Custom property
         const auto& metadata = property.PropertyMetadata();
         if (!metadata.custom_name_.IsNull()) {
-          custom_priorities[metadata.custom_name_].emplace_back(priority);
+          map_.Add(metadata.custom_name_, priority);
         }
-      } else {
-        // Regular property - resolve surrogates first
-        const CSSProperty& css_property = CSSProperty::Get(property.Id());
-        const CSSProperty& resolved_property = ResolveSurrogate(css_property);
-        native_priorities[static_cast<size_t>(resolved_property.PropertyID())].emplace_back(priority);
+        continue;
       }
+
+      const CSSProperty& css_property = CSSProperty::Get(property.Id());
+      const CSSProperty& resolved_property = ResolveSurrogate(css_property);
+      map_.Add(resolved_property.PropertyID(), priority);
     }
+
     ++block_index;
   }
-  
+
   needs_match_result_analyze_ = false;
-
-  // Flush native properties in non-decreasing ForLayerComparison order.
-  for (size_t pid = 0; pid < native_priorities.size(); ++pid) {
-    auto& vec = native_priorities[pid];
-    if (vec.empty()) continue;
-    std::stable_sort(vec.begin(), vec.end(), [](const CascadePriority& a, const CascadePriority& b) {
-      uint64_t fa = a.ForLayerComparison();
-      uint64_t fb = b.ForLayerComparison();
-      if (fa != fb) return fa < fb;
-      // Tie-break: prefer non-inline before inline to keep consistency
-      if (a.IsInlineStyle() != b.IsInlineStyle()) return !a.IsInlineStyle();
-      // Final tie-breaker: position
-      return a.GetPosition() < b.GetPosition();
-    });
-    CSSPropertyID id = static_cast<CSSPropertyID>(pid);
-    for (const auto& pr : vec) {
-      map_.Add(id, pr);
-    }
-  }
-
-  // Flush custom properties in non-decreasing ForLayerComparison order.
-  for (auto& entry : custom_priorities) {
-    auto& vec = entry.second;
-    std::stable_sort(vec.begin(), vec.end(), [](const CascadePriority& a, const CascadePriority& b) {
-      uint64_t fa = a.ForLayerComparison();
-      uint64_t fb = b.ForLayerComparison();
-      if (fa != fb) return fa < fb;
-      if (a.IsInlineStyle() != b.IsInlineStyle()) return !a.IsInlineStyle();
-      return a.GetPosition() < b.GetPosition();
-    });
-    for (const auto& pr : vec) {
-      map_.Add(entry.first, pr);
-    }
-  }
 }
 
 void StyleCascade::ApplyCascadeAffecting(CascadeResolver& resolver) {

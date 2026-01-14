@@ -138,24 +138,14 @@ void ElementRuleCollector::CollectRuleSetMatchingRules(
       // any pure #id variants that may have been created elsewhere.
       bool typed_exists = false;
       for (const auto& rd : id_rules) {
-        if (rd && rd->HasRightmostType()) { typed_exists = true; break; }
-      }
-      if (typed_exists) {
-        std::vector<std::shared_ptr<RuleData>> typed_only;
-        typed_only.reserve(id_rules.size());
-        for (const auto& rd : id_rules) {
-          if (rd && rd->HasRightmostType()) typed_only.push_back(rd);
+        if (rd && rd->HasRightmostType()) {
+          typed_exists = true;
+          break;
         }
-        CollectMatchingRulesForList(typed_only,
-                                   cascade_origin,
-                                   cascade_layer,
-                                   match_request);
-      } else {
-        CollectMatchingRulesForList(id_rules,
-                                   cascade_origin,
-                                   cascade_layer,
-                                   match_request);
       }
+
+      CollectMatchingRulesForList(id_rules, cascade_origin, cascade_layer, match_request,
+                                 /*is_id_bucket*/ true, /*typed_rules_only*/ typed_exists);
     }
   }
   
@@ -178,38 +168,13 @@ void ElementRuleCollector::CollectMatchingRulesForList(
     const RuleDataListType& rules,
     CascadeOrigin cascade_origin,
     CascadeLayerLevel cascade_layer,
-    const MatchRequest& match_request) {
+    const MatchRequest& match_request,
+    bool is_id_bucket,
+    bool typed_rules_only) {
   
   // Safety check - don't process too many rules to prevent hangs
   size_t processed_count = 0;
   const size_t MAX_RULES_TO_PROCESS = 1000;
-
-  // If this is an ID bucket (rules all target the element's id), and there are
-  // typed compounds (e.g. P#id), prefer those and ignore pure-id variants. This
-  // guards against accidental id-only entries created upstream and aligns with
-  // Blink behavior for compound matching specificity.
-  auto extract_rightmost_id = [](const CSSSelector& sel) -> AtomicString {
-    const CSSSelector* s = &sel;
-    while (s) {
-      if (s->Match() == CSSSelector::kId) {
-        return s->Value();
-      }
-      s = s->NextSimpleSelector();
-    }
-    return g_null_atom;
-  };
-
-  bool maybe_id_bucket = false;
-  if (!rules.empty() && rules.front()) {
-    AtomicString idv = extract_rightmost_id(rules.front()->Selector());
-    maybe_id_bucket = !idv.IsNull() && element_->HasID() && idv == element_->id();
-  }
-  bool typed_exists_in_bucket = false;
-  if (maybe_id_bucket) {
-    for (const auto& rd : rules) {
-      if (rd && rd->HasRightmostType()) { typed_exists_in_bucket = true; break; }
-    }
-  }
   
   for (const auto& rule_data : rules) {
     if (!rule_data) {
@@ -248,7 +213,7 @@ void ElementRuleCollector::CollectMatchingRulesForList(
     }
     
     // Skip pure-id variants if we have typed compounds in the same ID bucket.
-    if (maybe_id_bucket && typed_exists_in_bucket && !rule_data->HasRightmostType()) {
+    if (is_id_bucket && typed_rules_only && !rule_data->HasRightmostType()) {
       continue;
     }
 
@@ -365,7 +330,7 @@ void ElementRuleCollector::SortAndTransferMatchedRules() {
 
 void ElementRuleCollector::SortMatchedRules() {
   // Sort by cascade order
-  std::stable_sort(matched_rules_.begin(), matched_rules_.end(),
+  std::sort(matched_rules_.begin(), matched_rules_.end(),
       [](const MatchedRule& a, const MatchedRule& b) {
         // CSS Cascade order (aligned with CascadePriority::ForLayerComparison):
         // 1) Origin (UA < User < Author < Animation < Transition)

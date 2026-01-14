@@ -145,7 +145,9 @@ class ElementRuleCollector {
       const RuleDataListType& rules,
       CascadeOrigin,
       CascadeLayerLevel,
-      const MatchRequest&);
+      const MatchRequest&,
+      bool is_id_bucket = false,
+      bool typed_rules_only = false);
 
   void DidMatchRule(std::shared_ptr<const RuleData>,
                    CascadeOrigin,

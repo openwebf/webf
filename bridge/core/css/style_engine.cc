@@ -1172,9 +1172,7 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
     const uint32_t matched_pseudo_content_mask = collector.MatchedPseudoElementWithContentMask();
 
     StyleCascade cascade(state);
-    for (const auto& entry : collector.GetMatchResult().GetMatchedProperties()) {
-      cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
-    }
+    cascade.MutableMatchResult() = collector.GetMatchResult();
 
     std::shared_ptr<MutableCSSPropertyValueSet> property_set = cascade.ExportWinningPropertySet();
 
@@ -1246,9 +1244,7 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
         pseudo_collector.SortAndTransferMatchedRules();
 
         StyleCascade pseudo_cascade(state);
-        for (const auto& entry : pseudo_collector.GetMatchResult().GetMatchedProperties()) {
-          pseudo_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
-        }
+        pseudo_cascade.MutableMatchResult() = pseudo_collector.GetMatchResult();
 
         std::shared_ptr<MutableCSSPropertyValueSet> pseudo_set = pseudo_cascade.ExportWinningPropertySet();
         bool has_pseudo = pseudo_set && pseudo_set->PropertyCount() != 0;
@@ -1508,9 +1504,7 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
       pseudo_collector.SortAndTransferMatchedRules();
 
       StyleCascade pseudo_cascade(state);
-      for (const auto& entry : pseudo_collector.GetMatchResult().GetMatchedProperties()) {
-        pseudo_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
-      }
+      pseudo_cascade.MutableMatchResult() = pseudo_collector.GetMatchResult();
 
       std::shared_ptr<MutableCSSPropertyValueSet> pseudo_set = pseudo_cascade.ExportWinningPropertySet();
       bool has_pseudo = pseudo_set && pseudo_set->PropertyCount() != 0;
@@ -1647,9 +1641,7 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
     const uint32_t matched_pseudo_content_mask = collector.MatchedPseudoElementWithContentMask();
 
     StyleCascade cascade(state);
-    for (const auto& entry : collector.GetMatchResult().GetMatchedProperties()) {
-      cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
-    }
+    cascade.MutableMatchResult() = collector.GetMatchResult();
 
     std::shared_ptr<MutableCSSPropertyValueSet> property_set = cascade.ExportWinningPropertySet();
 
@@ -1720,9 +1712,7 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
         pseudo_collector.SortAndTransferMatchedRules();
 
         StyleCascade pseudo_cascade(state);
-        for (const auto& entry : pseudo_collector.GetMatchResult().GetMatchedProperties()) {
-          pseudo_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
-        }
+        pseudo_cascade.MutableMatchResult() = pseudo_collector.GetMatchResult();
 
         std::shared_ptr<MutableCSSPropertyValueSet> pseudo_set = pseudo_cascade.ExportWinningPropertySet();
         if (!pseudo_set || pseudo_set->PropertyCount() == 0) {
@@ -1981,9 +1971,7 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
       pseudo_collector.SortAndTransferMatchedRules();
 
       StyleCascade pseudo_cascade(state);
-      for (const auto& entry : pseudo_collector.GetMatchResult().GetMatchedProperties()) {
-        pseudo_cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
-      }
+      pseudo_cascade.MutableMatchResult() = pseudo_collector.GetMatchResult();
 
       std::shared_ptr<MutableCSSPropertyValueSet> pseudo_set = pseudo_cascade.ExportWinningPropertySet();
       if (!pseudo_set || pseudo_set->PropertyCount() == 0) {

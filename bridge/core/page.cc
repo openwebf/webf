@@ -373,7 +373,7 @@ void WebFPage::DumpQuickJsByteCodeInternal(void* page_,
                                                  result_callback);
 }
 
-void WebFPage::OnViewportSizeChangedInternal(void* page_, double /*inner_width*/, double /*inner_height*/) {
+void WebFPage::OnViewportSizeChangedInternal(void* page_, double inner_width, double inner_height) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   if (!page) {
     return;
@@ -385,6 +385,10 @@ void WebFPage::OnViewportSizeChangedInternal(void* page_, double /*inner_width*/
   if (!context || !context->IsContextValid() || !context->isBlinkEnabled()) {
     return;
   }
+
+  // Cache viewport size so media query evaluation can avoid synchronous
+  // GetBindingProperty calls (which may flush layout).
+  context->SetCachedViewportSize(inner_width, inner_height);
 
   Document* document = context->document();
   if (!document) {
@@ -396,7 +400,7 @@ void WebFPage::OnViewportSizeChangedInternal(void* page_, double /*inner_width*/
   document->EnsureStyleEngine().MediaQueryAffectingValueChanged(MediaValueChange::kSize);
 }
 
-void WebFPage::OnDevicePixelRatioChangedInternal(void* page_, double /*device_pixel_ratio*/) {
+void WebFPage::OnDevicePixelRatioChangedInternal(void* page_, double device_pixel_ratio) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   if (!page) {
     return;
@@ -408,6 +412,8 @@ void WebFPage::OnDevicePixelRatioChangedInternal(void* page_, double /*device_pi
   if (!context || !context->IsContextValid() || !context->isBlinkEnabled()) {
     return;
   }
+
+  context->SetCachedDevicePixelRatio(static_cast<float>(device_pixel_ratio));
 
   Document* document = context->document();
   if (!document) {

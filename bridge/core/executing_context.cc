@@ -504,6 +504,27 @@ void ExecutingContext::SetContextInValid() {
   is_context_valid_ = false;
 }
 
+void ExecutingContext::SetCachedViewportSize(double width, double height) {
+  cached_viewport_width_ = width;
+  cached_viewport_height_ = height;
+}
+
+std::optional<double> ExecutingContext::CachedViewportWidth() const {
+  return cached_viewport_width_;
+}
+
+std::optional<double> ExecutingContext::CachedViewportHeight() const {
+  return cached_viewport_height_;
+}
+
+void ExecutingContext::SetCachedDevicePixelRatio(float device_pixel_ratio) {
+  cached_device_pixel_ratio_ = device_pixel_ratio;
+}
+
+std::optional<float> ExecutingContext::CachedDevicePixelRatio() const {
+  return cached_device_pixel_ratio_;
+}
+
 bool ExecutingContext::IsCtxValid() const {
   return script_state_.Invalid();
 }

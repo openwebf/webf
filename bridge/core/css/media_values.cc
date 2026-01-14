@@ -77,10 +77,20 @@ MediaValues* MediaValues::CreateDynamicIfFrameExists(ExecutingContext* context) 
 }
 
 double MediaValues::CalculateViewportWidth(ExecutingContext* context) {
+  if (context) {
+    if (std::optional<double> cached = context->CachedViewportWidth(); cached.has_value()) {
+      return *cached;
+    }
+  }
   return GetInnerDimension(context, binding_call_methods::kinnerWidth, kDefaultViewportWidth);
 }
 
 double MediaValues::CalculateViewportHeight(ExecutingContext* context) {
+  if (context) {
+    if (std::optional<double> cached = context->CachedViewportHeight(); cached.has_value()) {
+      return *cached;
+    }
+  }
   return GetInnerDimension(context, binding_call_methods::kinnerHeight, kDefaultViewportHeight);
 }
 
@@ -136,6 +146,11 @@ bool MediaValues::CalculateStrictMode(ExecutingContext* context) {
 }
 
 float MediaValues::CalculateDevicePixelRatio(ExecutingContext* context) {
+  if (context) {
+    if (std::optional<float> cached = context->CachedDevicePixelRatio(); cached.has_value()) {
+      return *cached;
+    }
+  }
   Window* window = GetWindow(context);
   if (!window) {
     return kDefaultDevicePixelRatio;
