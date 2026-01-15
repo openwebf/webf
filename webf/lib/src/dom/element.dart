@@ -2010,6 +2010,7 @@ abstract class Element extends ContainerNode
   // Set inline style property.
   void setInlineStyle(String property, String value,
       {String? baseHref, bool fromNative = false, bool important = false}) {
+    property = CSSStyleDeclaration.normalizePropertyName(property);
     final bool enableBlink = ownerDocument.ownerView.enableBlink;
     // Inline styles are merged on the Dart side (even in Blink mode), so keep
     // Dart-side validation enabled for inline declarations.
@@ -2095,6 +2096,7 @@ abstract class Element extends ContainerNode
   // Set non-inline (sheet) style property pushed from native Blink style engine.
   void setSheetStyle(String property, String value,
       {String? baseHref, bool fromNative = false, bool important = false}) {
+    property = CSSStyleDeclaration.normalizePropertyName(property);
     final bool enableBlink = ownerDocument.ownerView.enableBlink;
     final bool validate = !(fromNative && enableBlink);
     final bool previousImportant = _sheetStyle?.isImportant(property) ?? false;
