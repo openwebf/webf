@@ -555,6 +555,10 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     final bool isIntrinsicSizeKeyword =
         lowerValue == 'min-content' || lowerValue == 'max-content' || lowerValue == 'fit-content';
 
+    bool isValidGapToken(String token) {
+      return CSSGap.isValidGapValue(token);
+    }
+
     // Validate value.
     switch (propertyName) {
       case WIDTH:
@@ -661,6 +665,22 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         final bool isFuncFontVariant = CSSFunction.isFunction(normalizedValue);
         final bool isKeywordFontVariant = CSSText.isValidFontVariantValue(normalizedValue);
         if (!(isVarFontVariant || isFuncFontVariant || isKeywordFontVariant)) return false;
+        break;
+      case ROW_GAP:
+      case COLUMN_GAP:
+        if (!isValidGapToken(normalizedValue)) return false;
+        break;
+      case GAP:
+        // gap: <length-percentage>{1,2} | normal
+        // Shorthand for row-gap/column-gap.
+        final List<String> parts = splitByTopLevelDelimiter(normalizedValue, 0x20 /* space */)
+            .map((p) => p.trim())
+            .where((p) => p.isNotEmpty)
+            .toList();
+        if (parts.isEmpty || parts.length > 2) return false;
+        for (final String part in parts) {
+          if (!isValidGapToken(part)) return false;
+        }
         break;
     }
     return true;

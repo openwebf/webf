@@ -63,6 +63,9 @@ mixin CSSGapMixin on RenderStyle {
 
 class CSSGap {
   static bool isValidGapValue(String val) {
-    return val == 'normal' || CSSLength.isLength(val);
+    if (val == 'normal') return true;
+    if (CSSFunction.isFunction(val)) return true;
+    // Gap values are <length-percentage> (non-negative) or `normal`.
+    return CSSLength.isNonNegativeLength(val) || CSSPercentage.isNonNegativePercentage(val);
   }
 }
