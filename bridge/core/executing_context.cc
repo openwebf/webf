@@ -525,6 +525,14 @@ std::optional<float> ExecutingContext::CachedDevicePixelRatio() const {
   return cached_device_pixel_ratio_;
 }
 
+void ExecutingContext::SetCachedPreferredColorScheme(PreferredColorScheme scheme) {
+  cached_preferred_color_scheme_ = scheme;
+}
+
+std::optional<ExecutingContext::PreferredColorScheme> ExecutingContext::CachedPreferredColorScheme() const {
+  return cached_preferred_color_scheme_;
+}
+
 bool ExecutingContext::IsCtxValid() const {
   return script_state_.Invalid();
 }

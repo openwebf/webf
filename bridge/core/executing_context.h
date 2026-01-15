@@ -223,6 +223,9 @@ class ExecutingContext {
   std::optional<double> CachedViewportHeight() const;
   void SetCachedDevicePixelRatio(float device_pixel_ratio);
   std::optional<float> CachedDevicePixelRatio() const;
+  enum class PreferredColorScheme : uint8_t { kLight, kDark, kNoPreference };
+  void SetCachedPreferredColorScheme(PreferredColorScheme scheme);
+  std::optional<PreferredColorScheme> CachedPreferredColorScheme() const;
 
   // Get RemoteObjectRegistry for this context
   RemoteObjectRegistry* GetRemoteObjectRegistry();
@@ -325,6 +328,7 @@ class ExecutingContext {
   std::optional<double> cached_viewport_width_;
   std::optional<double> cached_viewport_height_;
   std::optional<float> cached_device_pixel_ratio_;
+  std::optional<PreferredColorScheme> cached_preferred_color_scheme_;
 
   // Rust methods ptr should keep alive when ExecutingContext is disposing.
   const std::unique_ptr<ExecutingContextWebFMethods> public_method_ptr_ = nullptr;

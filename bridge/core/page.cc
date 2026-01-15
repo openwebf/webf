@@ -426,7 +426,6 @@ void WebFPage::OnDevicePixelRatioChangedInternal(void* page_, double device_pixe
 }
 
 void WebFPage::OnColorSchemeChangedInternal(void* page_, const std::string& scheme/*scheme*/) {
-  WEBF_LOG(VERBOSE) << "WebFPage::OnColorSchemeChangedInternal called with value: " << scheme << std::endl;
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   if (!page) {
     return;
@@ -437,6 +436,14 @@ void WebFPage::OnColorSchemeChangedInternal(void* page_, const std::string& sche
   ExecutingContext* context = page->executingContext();
   if (!context || !context->IsContextValid() || !context->isBlinkEnabled()) {
     return;
+  }
+
+  if (scheme == "dark") {
+    context->SetCachedPreferredColorScheme(ExecutingContext::PreferredColorScheme::kDark);
+  } else if (scheme == "light") {
+    context->SetCachedPreferredColorScheme(ExecutingContext::PreferredColorScheme::kLight);
+  } else if (scheme == "no-preference") {
+    context->SetCachedPreferredColorScheme(ExecutingContext::PreferredColorScheme::kNoPreference);
   }
 
   Document* document = context->document();

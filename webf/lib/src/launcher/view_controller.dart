@@ -338,6 +338,15 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   void attachToFlutter(BuildContext context) {
     _registerPlatformBrightnessChange();
+    if (enableBlink && _inited && !_disposed) {
+      final Pointer<Void>? page = getAllocatedPage(_contextId);
+      if (page != null) {
+        final String scheme = window.colorScheme;
+        final Pointer<Utf8> schemePtr = scheme.toNativeUtf8();
+        nativeOnColorSchemeChanged(page, schemePtr, scheme.length);
+        malloc.free(schemePtr);
+      }
+    }
     // Resume animation timeline when attached back to Flutter
 
     document.animationTimeline.resume();
@@ -544,7 +553,19 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       _originalOnPlatformBrightnessChanged!();
     }
 
-    window.dispatchEvent(ColorSchemeChangeEvent(window.colorScheme));
+    if (!_inited || _disposed) return;
+
+    final String scheme = window.colorScheme;
+    window.dispatchEvent(ColorSchemeChangeEvent(scheme));
+
+    if (rootController.darkModeOverride == null && enableBlink) {
+      final Pointer<Void>? page = getAllocatedPage(_contextId);
+      if (page != null) {
+        final Pointer<Utf8> schemePtr = scheme.toNativeUtf8();
+        nativeOnColorSchemeChanged(page, schemePtr, scheme.length);
+        malloc.free(schemePtr);
+      }
+    }
 
     // Recalculate styles so prefers-color-scheme media queries re-evaluate
     document.recalculateStyleImmediately();

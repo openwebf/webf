@@ -742,10 +742,8 @@ class WebFController with Diagnosticable {
     if (_darkModeOverride != null) {
       return _darkModeOverride;
     }
-    if (ownerFlutterView != null) {
-      return ownerFlutterView!.platformDispatcher.platformBrightness == Brightness.dark;
-    }
-    return null; // Return null when we can't determine system brightness
+    final ui.PlatformDispatcher dispatcher = ownerFlutterView?.platformDispatcher ?? ui.PlatformDispatcher.instance;
+    return dispatcher.platformBrightness == Brightness.dark;
   }
 
   Map<String, WebFBundle>? _preloadBundleIndex;
