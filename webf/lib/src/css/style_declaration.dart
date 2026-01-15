@@ -139,6 +139,59 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
   final Map<String, CSSPropertyValue> _properties = {};
 
+  /// Normalize incoming property names into the internal camelCase form and
+  /// fold supported vendor-prefixed aliases into their standard equivalents.
+  ///
+  /// This is intentionally conservative: it preserves CSS custom properties
+  /// (variables) verbatim and only folds a small set of WebKit-prefixed flexbox
+  /// aliases that appear in legacy content/tests.
+  static String normalizePropertyName(String propertyName) {
+    String name = propertyName.trim();
+    if (name.isEmpty) return name;
+
+    // Preserve CSS custom properties (variables) verbatim.
+    if (CSSVariable.isCSSSVariableProperty(name)) return name;
+
+    // CSSOM `setProperty('border-width', ...)` style names are kebab-case.
+    // Internally WebF uses camelCase keys.
+    if (name.contains('-')) {
+      name = camelize(name);
+    }
+
+    // Legacy WebKit-prefixed modern flexbox properties map to the standard ones.
+    switch (name) {
+      case 'WebkitAlignItems':
+      case 'webkitAlignItems':
+        return ALIGN_ITEMS;
+      case 'WebkitAlignSelf':
+      case 'webkitAlignSelf':
+        return ALIGN_SELF;
+      case 'WebkitAlignContent':
+      case 'webkitAlignContent':
+        return ALIGN_CONTENT;
+      case 'WebkitJustifyContent':
+      case 'webkitJustifyContent':
+        return JUSTIFY_CONTENT;
+      case 'WebkitFlex':
+      case 'webkitFlex':
+        return FLEX;
+      case 'WebkitFlexDirection':
+      case 'webkitFlexDirection':
+        return FLEX_DIRECTION;
+      case 'WebkitFlexWrap':
+      case 'webkitFlexWrap':
+        return FLEX_WRAP;
+      case 'WebkitFlexFlow':
+      case 'webkitFlexFlow':
+        return FLEX_FLOW;
+      case 'WebkitOrder':
+      case 'webkitOrder':
+        return ORDER;
+    }
+
+    return name;
+  }
+
   CSSPropertyValue? _getEffectivePropertyValueEntry(String propertyName) => _properties[propertyName];
 
   void _setStagedPropertyValue(String propertyName, CSSPropertyValue value) {
@@ -196,6 +249,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   /// Exposed for components (e.g., CSS variable resolver) that need to
   /// preserve importance when updating dependent properties.
   bool isImportant(String propertyName) {
+    propertyName = normalizePropertyName(propertyName);
     return _getEffectivePropertyValueEntry(propertyName)?.important ?? false;
   }
 
@@ -214,17 +268,19 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   /// value is a String containing the value of the property.
   /// If not set, returns the empty string.
   String getPropertyValue(String propertyName) {
+    propertyName = normalizePropertyName(propertyName);
     return _getEffectivePropertyValueEntry(propertyName)?.value ?? EMPTY_STRING;
   }
 
   /// Returns the baseHref associated with a property value if available.
   String? getPropertyBaseHref(String propertyName) {
+    propertyName = normalizePropertyName(propertyName);
     return _getEffectivePropertyValueEntry(propertyName)?.baseHref;
   }
 
   /// Removes a property from the CSS declaration.
   void removeProperty(String propertyName, [bool? isImportant]) {
-    propertyName = propertyName.trim();
+    propertyName = normalizePropertyName(propertyName);
     switch (propertyName) {
       case PADDING:
         return CSSStyleProperty.removeShorthandPadding(this, isImportant);
@@ -620,7 +676,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     String? baseHref,
     bool validate = true,
   }) {
-    propertyName = propertyName.trim();
+    propertyName = normalizePropertyName(propertyName);
 
     // Null or empty value means should be removed.
     if (CSSStyleDeclaration.isNullOrEmptyValue(value)) {
@@ -901,7 +957,7 @@ class ElementCSSStyleDeclaration extends CSSStyleDeclaration{
     String? baseHref,
     bool validate = true,
   }) {
-    propertyName = propertyName.trim();
+    propertyName = CSSStyleDeclaration.normalizePropertyName(propertyName);
 
     // Null or empty value means should be removed.
     if (CSSStyleDeclaration.isNullOrEmptyValue(value)) {
@@ -1007,7 +1063,7 @@ class ElementCSSStyleDeclaration extends CSSStyleDeclaration{
 
   @override
   void removeProperty(String propertyName, [bool? isImportant]) {
-    propertyName = propertyName.trim();
+    propertyName = CSSStyleDeclaration.normalizePropertyName(propertyName);
     switch (propertyName) {
       case PADDING:
         return CSSStyleProperty.removeShorthandPadding(this, isImportant);
