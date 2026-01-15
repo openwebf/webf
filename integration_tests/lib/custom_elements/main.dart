@@ -21,6 +21,7 @@ import 'flutter_intrinsic_container.dart';
 import 'sample_container.dart';
 import 'native_flex_container.dart';
 import 'flutter_max_height_container.dart';
+import 'flutter_fixed_height_slot.dart';
 
 void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-button',
@@ -53,4 +54,5 @@ void defineWebFCustomElements() {
   WebF.defineCustomElement('sample-container', (context) => SampleContainer(context));
   WebF.defineCustomElement('native-flex', (context) => NativeFlexContainer(context));
   WebF.defineCustomElement('flutter-max-height-container', (context) => FlutterMaxHeightContainerElement(context));
+  WebF.defineCustomElement('flutter-fixed-height-slot', (context) => FlutterFixedHeightSlotElement(context));
 }
