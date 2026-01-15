@@ -2012,9 +2012,12 @@ abstract class Element extends ContainerNode
       {String? baseHref, bool fromNative = false, bool important = false}) {
     property = CSSStyleDeclaration.normalizePropertyName(property);
     final bool enableBlink = ownerDocument.ownerView.enableBlink;
-    // Inline styles are merged on the Dart side (even in Blink mode), so keep
-    // Dart-side validation enabled for inline declarations.
-    final bool validateInline = true;
+    // Inline styles are merged on the Dart side (even in Blink mode).
+    // When values originate from native Blink, they have already been validated
+    // there and may legitimately include constructs unsupported by the Dart
+    // validator (e.g. Blink-accepted values with different grammar support).
+    // Avoid re-validating on the Dart side for native-origin values.
+    final bool validateInline = !(fromNative && enableBlink);
     // Sheet styles pushed from native Blink are already validated; avoid
     // re-validating them on the Dart side.
     final bool validateSheet = !(fromNative && enableBlink);
