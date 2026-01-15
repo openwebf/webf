@@ -21,4 +21,3 @@ void main() {
     expect(style.getPropertyValue(LEFT), INHERIT);
   });
 }
-

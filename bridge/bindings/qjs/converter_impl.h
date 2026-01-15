@@ -35,6 +35,7 @@
 
 #include "core/css/computed_css_style_declaration.h"
 #include "core/css/legacy/legacy_computed_css_style_declaration.h"
+#include "foundation/utility/make_visitor.h"
 
 namespace webf {
 
@@ -634,56 +635,6 @@ struct Converter<IDLNullable<T, typename std::enable_if_t<std::is_base_of<Script
     if (value == nullptr)
       return JS_NULL;
     return Converter<T>::ToValue(ctx, value);
-  }
-};
-
-template <>
-struct Converter<ElementStyle> {
-  using ImplType = ElementStyle;
-
-  static ElementStyle FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
-    auto ectx = ExecutingContext::From(ctx);
-    if (ectx->isBlinkEnabled()) {
-      if (JS_IsNull(value)) {
-        return static_cast<InlineCssStyleDeclaration*>(nullptr);
-      }
-
-      return Converter<InlineCssStyleDeclaration>::FromValue(ctx, value, exception_state);
-    } else {
-      if (JS_IsNull(value)) {
-        return static_cast<legacy::LegacyInlineCssStyleDeclaration*>(nullptr);
-      }
-
-      return Converter<legacy::LegacyInlineCssStyleDeclaration>::FromValue(ctx, value, exception_state);
-    }
-  }
-
-  static ElementStyle ArgumentsValue(ExecutingContext* context,
-                                     JSValue value,
-                                     uint32_t argv_index,
-                                     ExceptionState& exception_state) {
-    if (context->isBlinkEnabled()) {
-      if (JS_IsNull(value)) {
-        return static_cast<InlineCssStyleDeclaration*>(nullptr);
-      }
-
-      return Converter<InlineCssStyleDeclaration>::ArgumentsValue(context, value, argv_index, exception_state);
-    } else {
-      if (JS_IsNull(value)) {
-        return static_cast<legacy::LegacyInlineCssStyleDeclaration*>(nullptr);
-      }
-
-      return Converter<legacy::LegacyInlineCssStyleDeclaration>::ArgumentsValue(context, value, argv_index, exception_state);
-    }
-  }
-
-  static JSValue ToValue(JSContext* ctx, ElementStyle value) {
-    return std::visit(MakeVisitor([&ctx](auto* style) {
-                        if (style == nullptr)
-                          return JS_NULL;
-                        return Converter<std::remove_pointer_t<std::decay_t<decltype(style)>>>::ToValue(ctx, style);
-                      }),
-                      value);
   }
 };
 

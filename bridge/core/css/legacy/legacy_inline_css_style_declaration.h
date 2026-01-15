@@ -6,6 +6,7 @@
 #define BRIDGE_CSS_LEGACY_STYLE_DECLARATION_H
 
 #include <unordered_map>
+#include <unordered_set>
 #include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_value.h"
@@ -57,10 +58,11 @@ class LegacyInlineCssStyleDeclaration : public LegacyCssStyleDeclaration {
 
  private:
   AtomicString InternalGetPropertyValue(std::string& name);
-  bool InternalSetProperty(std::string& name, const AtomicString& value);
+  bool InternalSetProperty(std::string& name, const AtomicString& value, const AtomicString& priority);
   AtomicString InternalRemoveProperty(std::string& name);
   void InternalClearProperty();
   std::unordered_map<std::string, AtomicString> properties_;
+  std::unordered_set<std::string> important_properties_;
   Member<Element> owner_element_;
 };
 

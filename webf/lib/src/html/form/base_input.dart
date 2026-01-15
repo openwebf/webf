@@ -202,13 +202,13 @@ mixin BaseInputElement on WidgetElement implements FormElementBase {
       case 'checkbox':
         {
           _checkboxDefaultStyle.forEach((key, value) {
-            style.setProperty(key, value);
+            style.enqueueSheetProperty(key, value.toString());
           });
           break;
         }
       default:
         _inputDefaultStyle.forEach((key, value) {
-          style.setProperty(key, value);
+          style.enqueueSheetProperty(key, value.toString());
         });
         break;
     }

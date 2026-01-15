@@ -127,12 +127,12 @@ class LIElement extends Element {
   // For the default outside position, markers are painted by renderer
   // as separate marker boxes and must not participate in IFC.
   @override
-  void applyStyle(CSSStyleDeclaration style) {
+  void applyStyle(ElementCSSStyleDeclaration style) {
     // 1) Apply element default styles (UA defaults).
     if (defaultStyle.isNotEmpty) {
       defaultStyle.forEach((propertyName, value) {
         if (style.contains(propertyName) == false) {
-          style.setProperty(propertyName, value);
+          style.enqueueSheetProperty(propertyName, value.toString());
         }
       });
     }
@@ -143,21 +143,24 @@ class LIElement extends Element {
     // 4) Attribute styles (none for LI currently but keep for completeness).
     applyAttributeStyle(style);
 
-    // 5) Inline styles (highest priority among author styles).
-    if (inlineStyle.isNotEmpty) {
-      inlineStyle.forEach((propertyName, value) {
-        style.setProperty(propertyName, value, isImportant: true);
-      });
-    }
-
-    // 6) Stylesheet rules matching this element.
+    // 5) Stylesheet rules matching this element.
     final ElementRuleCollector collector = ElementRuleCollector();
     final CSSStyleDeclaration matchRule = collector.collectionFromRuleSet(ownerDocument.ruleSet, this);
     style.union(matchRule);
 
+    // 6) Inline styles (highest priority among author styles).
+    if (inlineStyle.isNotEmpty) {
+      inlineStyle.forEach((propertyName, entry) {
+        style.enqueueInlineProperty(propertyName, entry.value, isImportant: entry.important ? true : null);
+      });
+    }
+
     // 7) Pseudo rules (::before/::after) from stylesheets to override defaults.
-    final List<CSSStyleRule> pseudoRules = collector.matchedPseudoRules(ownerDocument.ruleSet, this);
-    style.handlePseudoRules(this, pseudoRules);
+    final RuleSet ruleSet = ownerDocument.ruleSet;
+    if (ruleSet.hasPseudoElementSelectors) {
+      final List<CSSStyleRule> pseudoRules = collector.matchedPseudoRules(ruleSet, this);
+      style.handlePseudoRules(this, pseudoRules);
+    }
 
     // 8) List marker generation based on list-style-type
     String getProp(CSSStyleDeclaration s, String camel, String kebab) {
@@ -237,7 +240,7 @@ class LIElement extends Element {
     }
 
     void ensurePseudo() {
-      style.pseudoBeforeStyle ??= CSSStyleDeclaration();
+      style.pseudoBeforeStyle ??= CSSStyleDeclaration.sheet();
     }
 
     String effectiveListStylePosition() {

@@ -10,7 +10,6 @@
 #include "bindings/qjs/cppgc/garbage_collected.h"
 #include "bindings/qjs/script_promise.h"
 #include "container_node.h"
-#include "core/css/inline_css_style_declaration.h"
 #include "core/css/legacy/legacy_inline_css_style_declaration.h"
 #include "core/dom/attribute_collection.h"
 #include "core/dom/element_rare_data_vector.h"
@@ -22,7 +21,6 @@
 #include "parent_node.h"
 #include "plugin_api/element.h"
 #include "qjs_scroll_to_options.h"
-#include "foundation/utility/make_visitor.h"
 
 namespace webf {
 
@@ -30,6 +28,7 @@ class ShadowRoot;
 class StyleScopeData;
 class StyleRecalcChange;
 class StyleRecalcContext;
+class MutableCSSPropertyValueSet;
 
 enum class ElementFlags {
   kTabIndexWasSetExplicitly = 1 << 0,
@@ -45,8 +44,6 @@ enum class ElementFlags {
 };
 
 using ScrollOffset = gfx::Vector2dF;
-
-using ElementStyle = std::variant<legacy::LegacyInlineCssStyleDeclaration*, InlineCssStyleDeclaration*>;
 
 class Element : public ContainerNode {
   DEFINE_WRAPPERTYPEINFO();
@@ -194,10 +191,8 @@ class Element : public ContainerNode {
 
   Element* insertAdjacentElement(const AtomicString& position, Element* element, ExceptionState& exception_state);
 
-  //  InlineCssStyleDeclaration* style();
-  ElementStyle style();
-  // Blink-only inline style accessor (not exposed to legacy bindings).
-  InlineCssStyleDeclaration* inlineStyleForBlink();
+  // CSSOM inline style (legacy-only).
+  legacy::LegacyInlineCssStyleDeclaration* style();
   DOMTokenList* classList();
   DOMStringMap* dataset();
 

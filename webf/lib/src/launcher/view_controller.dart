@@ -679,8 +679,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     if (originalTarget is Element) {
       Element newElement = newTarget as Element;
       // Copy inline style.
-      originalTarget.inlineStyle.forEach((key, value) {
-        newElement.setInlineStyle(key, value);
+      originalTarget.inlineStyle.forEach((key, entry) {
+        newElement.setInlineStyle(key, entry.value, important: entry.important);
       });
       // Copy element attributes.
       originalTarget.attributes.forEach((key, value) {
@@ -842,13 +842,23 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     context2d?.requestPaint();
   }
 
-  void setInlineStyle(Pointer selfPtr, String key, String value, {String? baseHref}) {
+  void setInlineStyle(Pointer selfPtr, String key, String value, {String? baseHref, bool important = false}) {
     assert(hasBindingObject(selfPtr), 'id: $selfPtr key: $key value: $value');
     Node? target = getBindingObject<Node>(selfPtr);
     if (target == null) return;
 
     if (target is Element) {
-      target.setInlineStyle(key, value, baseHref: baseHref, fromNative: true);
+      target.setInlineStyle(key, value, baseHref: baseHref, fromNative: true, important: important);
+    }
+  }
+
+  void setSheetStyle(Pointer selfPtr, String key, String value, {String? baseHref, bool important = false}) {
+    assert(hasBindingObject(selfPtr), 'id: $selfPtr key: $key value: $value');
+    Node? target = getBindingObject<Node>(selfPtr);
+    if (target == null) return;
+
+    if (target is Element) {
+      target.setSheetStyle(key, value, baseHref: baseHref, fromNative: true, important: important);
     }
   }
 
@@ -859,6 +869,16 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
     if (target is Element) {
       target.clearInlineStyle();
+    }
+  }
+
+  void clearSheetStyle(Pointer selfPtr) {
+    assert(hasBindingObject(selfPtr), 'id: $selfPtr');
+    Node? target = getBindingObject<Node>(selfPtr);
+    if (target == null) return;
+
+    if (target is Element) {
+      target.clearSheetStyle();
     }
   }
 

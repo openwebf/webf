@@ -10,7 +10,6 @@
 #include "core/html/custom/widget_element.h"
 #include "foundation/native_value_converter.h"
 #include "foundation/string/string_builder.h"
-#include "foundation/utility/make_visitor.h"
 #include "html_names.h"
 
 namespace webf {
@@ -107,6 +106,8 @@ void ElementAttributes::removeAttribute(const AtomicString& name, ExceptionState
   std::unique_ptr<SharedNativeString> args_01 = name.ToNativeString();
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kRemoveAttribute, std::move(args_01),
                                                        element_->bindingObject(), nullptr);
+
+  element_->DidModifyAttribute(name, old_value, AtomicString::Null(), Element::AttributeModificationReason::kDirectly);
 }
 
 void ElementAttributes::CopyWith(ElementAttributes* attributes) {
@@ -133,11 +134,10 @@ String ElementAttributes::ToString() {
     } else {
       if (element_ != nullptr) {
         builder.Append("\""_s);
-        std::visit(MakeVisitor([&](auto* style) {
-                     if (style != nullptr) {
-                       builder.Append(style->ToString());
-                     }
-                   }), element_->style());
+        auto* style = element_->style();
+        if (style != nullptr) {
+          builder.Append(style->ToString());
+        }
         builder.Append("\""_s);
       }
     }

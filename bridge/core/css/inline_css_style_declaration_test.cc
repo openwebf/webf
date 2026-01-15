@@ -57,7 +57,7 @@ document.body.style.setProperty('--main-color', 'lightblue'); console.assert(doc
 
   UICommandItem& last = ((UICommandItem*)p_buffer_pack->data)[commandSize - 1];
 
-  EXPECT_EQ(last.type, (int32_t)UICommand::kSetStyle);
+  EXPECT_EQ(last.type, (int32_t)UICommand::kSetInlineStyle);
   uint16_t* last_key = (uint16_t*)last.string_01;
 
 //  auto native_str = new webf::SharedNativeString(last_key, last.args_01_length);
