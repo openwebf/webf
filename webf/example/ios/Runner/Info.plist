@@ -45,6 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+  <key>NSCameraUsageDescription</key>
+  <string>This app needs camera access to take photos and videos</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>This app needs microphone access to record audio</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
