@@ -36,7 +36,7 @@ namespace webf {
 // https://drafts.csswg.org/css-cascade/#cascade-origin
 //
 // The top 5 bits of CascadePriority::priority_ are used to store the
-// cascade origin and the important bit. The lower values represent higher
+// cascade origin and the important bit. Higher values represent higher
 // priority.
 //
 // The important bit is set by inverting the origin value. This way important
@@ -46,8 +46,12 @@ namespace webf {
 // exist in-between author and !important author, we need to stretch the
 // cascade origin by one extra bit.
 //
-// All origins (without the important bit) must fit in 5 bits. The important
-// bit is used to generate important origins by flipping the origin value.
+// Implementation note:
+// - The low 4 bits store origin + the important bit (bit 3).
+// - Bit 4 is reserved to "stretch" the origin space for transitions.
+// - Important origins are produced by inverting only the low 4 bits, keeping
+//   the transition bit untouched. This matches CascadePriority::ForLayerComparison(),
+//   which removes importance by flipping only the origin/importance low 4 bits.
 enum class StyleCascadeOrigin : uint8_t {
   kUserAgent = 0b00001,
   kUser = 0b00010,
@@ -56,9 +60,9 @@ enum class StyleCascadeOrigin : uint8_t {
   kAnimation = 0b00101,
   
   // Important versions (inverted):
-  kImportantAuthor = 0b11011,  // ~kAuthor & 0x1F
-  kImportantUser = 0b11101,   // ~kUser & 0x1F
-  kImportantUserAgent = 0b11110,  // ~kUserAgent & 0x1F
+  kImportantAuthor = 0b01011,  // ~kAuthor & 0x0F
+  kImportantUser = 0b01101,   // ~kUser & 0x0F
+  kImportantUserAgent = 0b01110,  // ~kUserAgent & 0x0F
   
   kTransition = 0b10000,
   
@@ -66,20 +70,27 @@ enum class StyleCascadeOrigin : uint8_t {
   kMax = kTransition,
 };
 
-constexpr uint8_t kCascadeOriginImportantBit = 0b10000;
+// Bit 3 of the low 4 origin/importance bits.
+constexpr uint8_t kCascadeOriginImportantBit = 0b01000;
 
 inline bool IsImportantOrigin(StyleCascadeOrigin origin) {
   return static_cast<uint8_t>(origin) & kCascadeOriginImportantBit;
 }
 
 inline StyleCascadeOrigin ToImportantOrigin(StyleCascadeOrigin origin) {
-  return static_cast<StyleCascadeOrigin>(~static_cast<uint8_t>(origin) & 0x1F);
+  uint8_t value = static_cast<uint8_t>(origin);
+  uint8_t transition_bit = value & 0b10000;
+  uint8_t flipped = (~value) & 0b01111;
+  return static_cast<StyleCascadeOrigin>(transition_bit | flipped);
 }
 
 inline StyleCascadeOrigin ToNonImportantOrigin(StyleCascadeOrigin origin) {
   if (!IsImportantOrigin(origin))
     return origin;
-  return static_cast<StyleCascadeOrigin>(~static_cast<uint8_t>(origin) & 0x1F);
+  uint8_t value = static_cast<uint8_t>(origin);
+  uint8_t transition_bit = value & 0b10000;
+  uint8_t flipped = (~value) & 0b01111;
+  return static_cast<StyleCascadeOrigin>(transition_bit | flipped);
 }
 
 }  // namespace webf
