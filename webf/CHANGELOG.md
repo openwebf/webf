@@ -1,3 +1,10 @@
+## 0.24.5
+
+### Bug Fixes
+
+- **Layout**: prevent `height: auto` flex containers from expanding to the sliver viewport height inside scrolling widget elements (e.g. `flutter-sliver-listview`) (#803).
+- **iOS**: fix camera/microphone permission prompts in the example app by adding usage descriptions to `Info.plist` (#803).
+
 ## 0.24.3
 
 ### Major Features
