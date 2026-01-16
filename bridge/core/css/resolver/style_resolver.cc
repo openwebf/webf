@@ -35,8 +35,10 @@
 #include "style_resolver.h"
 #include <algorithm>
 #include <string>
+#include <unordered_set>
 
 #include "foundation/logging.h"
+#include "core/css/cascade_layer_map.h"
 #include "core/css/css_default_style_sheets.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_property_value_set.h"
@@ -403,6 +405,13 @@ void StyleResolver::MatchAuthorRules(
   unsigned inline_sheet_base = author_sheets.size();
   unsigned inline_counter = 0;
 
+  std::vector<MatchRequest> author_requests;
+  author_requests.reserve(style_elements.size() + author_sheets.size());
+  std::vector<std::pair<unsigned, std::shared_ptr<RuleSet>>> rule_sets_in_order;
+  rule_sets_in_order.reserve(style_elements.size() + author_sheets.size());
+  std::unordered_set<StyleSheetContents*> inline_contents_seen;
+  std::unordered_set<RuleSet*> rule_sets_seen_for_map;
+
   for (auto* style_element : style_elements) {
     if (!style_element) {
       continue;
@@ -424,25 +433,78 @@ void StyleResolver::MatchAuthorRules(
     if (!sheet || !sheet->Contents()) {
       continue;
     }
-    
-    // Get or create the RuleSet from the style sheet contents
-    auto rule_set_ptr = sheet->Contents()->EnsureRuleSet(media_evaluator);
-    
-    // Create a match request for this style sheet
-    MatchRequest match_request(rule_set_ptr, CascadeOrigin::kAuthor, inline_sheet_base + inline_counter++);
-    collector.CollectMatchingRules(match_request);
+
+    std::shared_ptr<StyleSheetContents> sheet_contents = sheet->Contents();
+    if (!sheet_contents) {
+      continue;
+    }
+
+    // Get or create the RuleSet from the style sheet contents.
+    auto rule_set_ptr = sheet_contents->EnsureRuleSet(media_evaluator);
+    if (!rule_set_ptr) {
+      continue;
+    }
+
+    unsigned style_sheet_index = inline_sheet_base + inline_counter++;
+    author_requests.emplace_back(rule_set_ptr, CascadeOrigin::kAuthor, style_sheet_index);
+    inline_contents_seen.insert(sheet_contents.get());
+    if (rule_sets_seen_for_map.insert(rule_set_ptr.get()).second) {
+      rule_sets_in_order.emplace_back(style_sheet_index, rule_set_ptr);
+    }
   }
 
   // Process link-based author stylesheets from StyleEngine registry (robust even if DOM traversal misses links)
   unsigned author_index = 0;
   for (const auto& contents : author_sheets) {
-    if (!contents) { author_index++; continue; }
+    if (!contents) {
+      author_index++;
+      continue;
+    }
+
+    // Avoid double-applying inline <style> sheets already collected by DOM traversal.
+    if (inline_contents_seen.count(contents.get()) > 0) {
+      author_index++;
+      continue;
+    }
+
     auto rule_set_ptr = contents->EnsureRuleSet(media_evaluator);
+    if (!rule_set_ptr) {
+      author_index++;
+      continue;
+    }
+
     // Preserve stylesheet order so later sheets override earlier ones.
-    MatchRequest match_request(rule_set_ptr, CascadeOrigin::kAuthor, author_index);
-    collector.CollectMatchingRules(match_request);
+    author_requests.emplace_back(rule_set_ptr, CascadeOrigin::kAuthor, author_index);
+    if (rule_sets_seen_for_map.insert(rule_set_ptr.get()).second) {
+      rule_sets_in_order.emplace_back(author_index, rule_set_ptr);
+    }
     author_index++;
   }
+
+  std::stable_sort(rule_sets_in_order.begin(), rule_sets_in_order.end(),
+                   [](const auto& a, const auto& b) { return a.first < b.first; });
+  CascadeLayerMap::ActiveRuleSetVector active_rule_sets;
+  active_rule_sets.reserve(rule_sets_in_order.size());
+  for (const auto& entry : rule_sets_in_order) {
+    active_rule_sets.push_back(entry.second);
+  }
+
+#if WEBF_LOG_CASCADE_IF
+  WEBF_LAZY_STREAM(WEBF_LOG_STREAM(VERBOSE), WEBF_LOG_CASCADE_IF)
+      << "StyleResolver::MatchAuthorRules: building CascadeLayerMap with " << active_rule_sets.size()
+      << " unique RuleSets";
+  for (const auto& entry : rule_sets_in_order) {
+    WEBF_LAZY_STREAM(WEBF_LOG_STREAM(VERBOSE), WEBF_LOG_CASCADE_IF)
+        << "  sheet_index=" << entry.first << " rule_set=" << entry.second.get();
+  }
+#endif
+
+  CascadeLayerMap layer_map(active_rule_sets);
+  collector.SetCascadeLayerMap(&layer_map);
+  for (const auto& request : author_requests) {
+    collector.CollectMatchingRules(request);
+  }
+  collector.SetCascadeLayerMap(nullptr);
 }
 
 // Old method - can be removed as it's replaced by ApplyBaseStyleNoCache flow

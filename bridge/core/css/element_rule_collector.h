@@ -49,6 +49,7 @@ enum class PropertyAllowedInMode {
 
 class CSSRuleList;
 class CSSSelector;
+class CascadeLayerMap;
 class Element;
 class RuleData;
 class RuleSet;
@@ -77,8 +78,7 @@ class ElementRuleCollector {
   // Collect rules from a specific RuleSet with cascading information
   void CollectRuleSetMatchingRules(const MatchRequest&, 
                                   std::shared_ptr<RuleSet>,
-                                  CascadeOrigin,
-                                  CascadeLayerLevel);
+                                  CascadeOrigin);
 
   // Collect matching rules from shadow hosts
   void CollectMatchingRulesFromShadowHosts();
@@ -94,6 +94,8 @@ class ElementRuleCollector {
 
   // Clear matched rules
   void ClearMatchedRules();
+
+  void SetCascadeLayerMap(const CascadeLayerMap* map) { cascade_layer_map_ = map; }
 
   // Add element style properties
   void AddElementStyleProperties(std::shared_ptr<const StylePropertySet>, 
@@ -136,12 +138,10 @@ class ElementRuleCollector {
   void CollectMatchingRulesForList(
       const RuleDataListType& rules,
       CascadeOrigin,
-      CascadeLayerLevel,
       const MatchRequest&);
 
   void DidMatchRule(std::shared_ptr<const RuleData>,
                    CascadeOrigin,
-                   CascadeLayerLevel,
                    const MatchRequest&);
 
   template <class CSSRuleCollection>
@@ -164,6 +164,7 @@ class ElementRuleCollector {
   PseudoId pseudo_element_id_;
   SelectorChecker selector_checker_;
   SelectorFilter* selector_filter_;
+  const CascadeLayerMap* cascade_layer_map_ = nullptr;
   
   std::vector<MatchedRule> matched_rules_;
   MatchResult result_;

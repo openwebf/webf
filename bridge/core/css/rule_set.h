@@ -38,6 +38,8 @@
 
 namespace webf {
 
+class CascadeLayer;
+
 // Flags for rule processing
 enum AddRuleFlags {
   kRuleHasNoSpecialState = 0,
@@ -54,7 +56,10 @@ class RuleData {
   WEBF_DISALLOW_NEW();
 
  public:
-  RuleData(std::shared_ptr<StyleRule>, unsigned selector_index, unsigned position);
+  RuleData(std::shared_ptr<StyleRule>,
+           unsigned selector_index,
+           unsigned position,
+           const CascadeLayer* cascade_layer);
   ~RuleData() = default;
 
   const CSSSelector& Selector() const { 
@@ -65,6 +70,7 @@ class RuleData {
   unsigned SelectorIndex() const { return selector_index_; }
   unsigned Position() const { return position_; }
   unsigned SelectorSpecificity() const { return specificity_; }
+  const CascadeLayer* GetCascadeLayer() const { return cascade_layer_; }
 
   // Prefilter metadata for rightmost compound's type selector.
   bool HasRightmostType() const { return has_rightmost_type_; }
@@ -75,6 +81,7 @@ class RuleData {
   unsigned selector_index_;
   unsigned position_;  // Position in the original stylesheet
   unsigned specificity_;
+  const CascadeLayer* cascade_layer_ = nullptr;
 
   // Whether the rightmost compound has a type selector and its localName.
   bool has_rightmost_type_ = false;
@@ -99,10 +106,11 @@ class RuleSet {
   // Add a single rule
   void AddRule(std::shared_ptr<StyleRule>, 
               unsigned selector_index,
+              const CascadeLayer* cascade_layer,
               AddRuleFlags = kRuleHasNoSpecialState);
 
   // Add style rule
-  void AddStyleRule(std::shared_ptr<StyleRule>, AddRuleFlags);
+  void AddStyleRule(std::shared_ptr<StyleRule>, AddRuleFlags, const CascadeLayer* cascade_layer);
 
   // Get rules by category
   const std::vector<std::shared_ptr<RuleData>>& UniversalRules() const { 
@@ -128,6 +136,8 @@ class RuleSet {
   unsigned RuleCount() const { return rule_count_; }
   
   void CompactRulesIfNeeded();
+  const CascadeLayer* GetCascadeLayerRoot() const { return cascade_layer_root_.get(); }
+  CascadeLayer* GetMutableCascadeLayerRoot() { return cascade_layer_root_.get(); }
 
  private:
   using RuleDataVector = std::vector<std::shared_ptr<RuleData>>;
@@ -154,6 +164,9 @@ class RuleSet {
   
   // Selector features for optimization
   RuleFeatureSet features_;
+
+  // Per-stylesheet cascade layer tree root.
+  std::shared_ptr<CascadeLayer> cascade_layer_root_;
   
   // Statistics
   unsigned rule_count_ = 0;

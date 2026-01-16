@@ -33,7 +33,7 @@ namespace webf {
 
 CascadeLayer* CascadeLayer::FindDirectSubLayer(const AtomicString& name) const {
   // Anonymous layers are all distinct.
-  if (name == AtomicString::Empty()) {
+  if (name.IsEmpty()) {
     return nullptr;
   }
   for (const auto& sub_layer : direct_sub_layers_) {
@@ -79,11 +79,34 @@ void CascadeLayer::ToStringInternal(String& result,
 }
 
 void CascadeLayer::Merge(const CascadeLayer& other, LayerMap& mapping) {
-  // Can't use shared_from_this in non-shared_ptr context
-  // This would need to be refactored if we need this functionality
-  // mapping.insert({&other, shared_from_this()});
-  for (const auto& sub_layer : other.direct_sub_layers_) {
-    GetOrAddSubLayer({sub_layer->GetName()})->Merge(*sub_layer, mapping);
+  // Map the source layer node to its canonical counterpart (this).
+  mapping[&other] = shared_from_this();
+
+  for (const auto& other_child : other.direct_sub_layers_) {
+    if (!other_child) {
+      continue;
+    }
+
+    const AtomicString& name = other_child->GetName();
+    std::shared_ptr<CascadeLayer> canonical_child;
+
+    // Find existing named sibling (anonymous layers are always distinct).
+    if (CascadeLayer* existing = FindDirectSubLayer(name)) {
+      for (const auto& child : direct_sub_layers_) {
+        if (child.get() == existing) {
+          canonical_child = child;
+          break;
+        }
+      }
+    }
+
+    if (!canonical_child) {
+      canonical_child = std::make_shared<CascadeLayer>(name);
+      direct_sub_layers_.push_back(canonical_child);
+    }
+
+    mapping[other_child.get()] = canonical_child;
+    canonical_child->Merge(*other_child, mapping);
   }
 }
 

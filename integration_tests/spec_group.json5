@@ -30,6 +30,12 @@
     ]
   },
   {
+    "name": "Cascade",
+    "specs": [
+      "specs/css/css-cascade/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
+  {
     "name": "Storage",
     "specs": [
       "specs/storage/**/*.{js,jsx,ts,tsx,html}"

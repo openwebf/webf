@@ -36,6 +36,9 @@
 
 #include <algorithm>
 #include <limits>
+#include <string>
+#include "core/css/cascade_layer.h"
+#include "core/css/cascade_layer_map.h"
 #include "core/css/css_property_value_set.h"
 #include "core/css/css_rule_list.h"
 #include "core/css/css_selector.h"
@@ -45,6 +48,7 @@
 #include "core/css/selector_filter.h"
 #include "core/css/style_rule.h"
 #include "core/dom/element.h"
+#include "foundation/logging.h"
 #include "foundation/string/ascii_types.h"
 #include "foundation/string/string_view.h"
 
@@ -87,8 +91,7 @@ void ElementRuleCollector::CollectMatchingRules(const MatchRequest& match_reques
     if (rule_set) {
       CollectRuleSetMatchingRules(match_request, 
                                  rule_set,
-                                 match_request.GetOrigin(),
-                                 0);
+                                 match_request.GetOrigin());
     }
   }
 }
@@ -96,8 +99,7 @@ void ElementRuleCollector::CollectMatchingRules(const MatchRequest& match_reques
 void ElementRuleCollector::CollectRuleSetMatchingRules(
     const MatchRequest& match_request,
     std::shared_ptr<RuleSet> rule_set,
-    CascadeOrigin cascade_origin,
-    CascadeLayerLevel cascade_layer) {
+    CascadeOrigin cascade_origin) {
   
   if (!rule_set) {
     return;
@@ -110,7 +112,6 @@ void ElementRuleCollector::CollectRuleSetMatchingRules(
   if (!tag_rules.empty()) {
     CollectMatchingRulesForList(tag_rules,
                                cascade_origin,
-                               cascade_layer, 
                                match_request);
   }
   
@@ -119,7 +120,6 @@ void ElementRuleCollector::CollectRuleSetMatchingRules(
   if (!universal_rules.empty()) {
     CollectMatchingRulesForList(universal_rules, 
                                cascade_origin, 
-                               cascade_layer,
                                match_request);
   }
   
@@ -142,12 +142,10 @@ void ElementRuleCollector::CollectRuleSetMatchingRules(
         }
         CollectMatchingRulesForList(typed_only,
                                    cascade_origin,
-                                   cascade_layer,
                                    match_request);
       } else {
         CollectMatchingRulesForList(id_rules,
                                    cascade_origin,
-                                   cascade_layer,
                                    match_request);
       }
     }
@@ -160,7 +158,6 @@ void ElementRuleCollector::CollectRuleSetMatchingRules(
       if (!class_rules.empty()) {
         CollectMatchingRulesForList(class_rules,
                                    cascade_origin,
-                                   cascade_layer,
                                    match_request);
       }
     }
@@ -171,7 +168,6 @@ template <typename RuleDataListType>
 void ElementRuleCollector::CollectMatchingRulesForList(
     const RuleDataListType& rules,
     CascadeOrigin cascade_origin,
-    CascadeLayerLevel cascade_layer,
     const MatchRequest& match_request) {
   
   // Safety check - don't process too many rules to prevent hangs
@@ -251,7 +247,7 @@ void ElementRuleCollector::CollectMatchingRulesForList(
       if (pseudo_element_id_ == kPseudoIdNone && ua_match_result.dynamic_pseudo != kPseudoIdNone) {
         continue;
       }
-      DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
+      DidMatchRule(rule_data, cascade_origin, match_request);
     }
     continue;  // Handled UA case.
   }
@@ -273,7 +269,7 @@ void ElementRuleCollector::CollectMatchingRulesForList(
       if (pseudo_element_id_ == kPseudoIdNone && match_result.dynamic_pseudo != kPseudoIdNone) {
         continue;
       }
-      DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
+      DidMatchRule(rule_data, cascade_origin, match_request);
     }
   }
 }
@@ -281,7 +277,6 @@ void ElementRuleCollector::CollectMatchingRulesForList(
 void ElementRuleCollector::DidMatchRule(
     std::shared_ptr<const RuleData> rule_data,
     CascadeOrigin cascade_origin,
-    CascadeLayerLevel cascade_layer,
     const MatchRequest& match_request) {
   
   if (!rule_data || !rule_data->Rule()) {
@@ -293,6 +288,37 @@ void ElementRuleCollector::DidMatchRule(
       rule_data->Rule()->Properties().PropertyCount() == 0) {
     return;
   }
+
+  CascadeLayerLevel cascade_layer = static_cast<CascadeLayerLevel>(CascadeLayerMap::kImplicitOuterLayerOrder);
+  if (cascade_layer_map_) {
+    cascade_layer = static_cast<CascadeLayerLevel>(cascade_layer_map_->GetLayerOrder(rule_data->GetCascadeLayer()));
+  } else if (rule_data->GetCascadeLayer()) {
+    // Best-effort fallback when no CascadeLayerMap is provided.
+    cascade_layer = 0;
+  }
+
+#if WEBF_LOG_CASCADE_IF
+  const CascadeLayer* layer = rule_data->GetCascadeLayer();
+  std::string layer_name = "<unlayered>";
+  if (layer) {
+    String name_str = layer->GetName().GetString();
+    layer_name = name_str.IsEmpty() ? "<anonymous>" : name_str.ToUTF8String();
+  }
+  std::string element_id = "<no-id>";
+  if (element_ && element_->HasID()) {
+    element_id = element_->id().ToUTF8String();
+  }
+  WEBF_LAZY_STREAM(WEBF_LOG_STREAM(VERBOSE), WEBF_LOG_CASCADE_IF)
+      << "ElementRuleCollector(" << this << ") matched rule"
+      << " element_id=" << element_id
+      << " origin=" << static_cast<int>(cascade_origin)
+      << " sheet_index=" << match_request.GetStyleSheetIndex()
+      << " rule_pos=" << (rule_data ? rule_data->Position() : 0)
+      << " specificity=" << (rule_data ? rule_data->SelectorSpecificity() : 0)
+      << " layer=" << layer_name
+      << " layer_ptr=" << layer
+      << " layer_order=" << cascade_layer;
+#endif
   
   // Add the matched rule
   AddMatchedRule(rule_data,
