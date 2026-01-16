@@ -659,6 +659,60 @@ abstract class RenderBoxModel extends RenderBox
         maxConstraintWidth = solvedBorderBoxWidth;
       }
     }
+
+    // Resolve intrinsic sizing keywords (min-content/max-content/fit-content) for `width`
+    // at layout time using the render tree's intrinsic measurements.
+    //
+    // CSSLengthValue.computedValue returns 0 for intrinsic keywords, so treating them as
+    // definite lengths during style computation collapses boxes to padding/border only.
+    // Here we compute the used border-box width and tighten constraints to that value.
+    if (renderStyle.width.isIntrinsic &&
+        !isDisplayInline &&
+        // For non-replaced boxes, intrinsic widths come from layout content.
+        !renderStyle.isSelfRenderReplaced() &&
+        // Absolutely positioned boxes with both insets specified should be solved by insets.
+        !(isAbsOrFixed &&
+            renderStyle.left.isNotAuto &&
+            renderStyle.right.isNotAuto &&
+            renderStyle.width.isAuto)) {
+      // Use the parent's available inline size if it's definite; otherwise fall back to infinity.
+      final double available =
+          (parentBoxContentConstraintsWidth != null && parentBoxContentConstraintsWidth.isFinite)
+              ? parentBoxContentConstraintsWidth
+              : (maxConstraintWidth.isFinite ? maxConstraintWidth : double.infinity);
+
+      double minIntrinsic = getMinIntrinsicWidth(double.infinity);
+      double maxIntrinsic = getMaxIntrinsicWidth(double.infinity);
+
+      // Respect nowrap/pre: min-content equals max-content for unbreakable inline content.
+      if (renderStyle.whiteSpace == WhiteSpace.nowrap || renderStyle.whiteSpace == WhiteSpace.pre) {
+        minIntrinsic = maxIntrinsic;
+      }
+
+      if (!minIntrinsic.isFinite || minIntrinsic < 0) minIntrinsic = 0;
+      if (!maxIntrinsic.isFinite || maxIntrinsic < minIntrinsic) maxIntrinsic = minIntrinsic;
+
+      double used;
+      switch (renderStyle.width.type) {
+        case CSSLengthType.MIN_CONTENT:
+          used = minIntrinsic;
+          break;
+        case CSSLengthType.MAX_CONTENT:
+          used = maxIntrinsic;
+          break;
+        case CSSLengthType.FIT_CONTENT:
+          final double avail = available.isFinite ? available : maxIntrinsic;
+          used = math.min(maxIntrinsic, math.max(minIntrinsic, avail));
+          break;
+        default:
+          used = maxIntrinsic;
+      }
+
+      // Ensure the border-box can't be smaller than its own padding+border.
+      used = math.max(used, minConstraintWidth);
+      minConstraintWidth = used;
+      maxConstraintWidth = used;
+    }
     // Height should be not smaller than border and padding in vertical direction
     // when box-sizing is border-box which is only supported.
     double minConstraintHeight =

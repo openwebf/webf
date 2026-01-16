@@ -322,6 +322,175 @@ class RenderFlexLayout extends RenderLayoutBox {
     addAll(children);
   }
 
+  double _intrinsicPaddingBorderHorizontal() {
+    return renderStyle.paddingLeft.computedValue +
+        renderStyle.paddingRight.computedValue +
+        renderStyle.effectiveBorderLeftWidth.computedValue +
+        renderStyle.effectiveBorderRightWidth.computedValue;
+  }
+
+  double _intrinsicPaddingBorderVertical() {
+    return renderStyle.paddingTop.computedValue +
+        renderStyle.paddingBottom.computedValue +
+        renderStyle.effectiveBorderTopWidth.computedValue +
+        renderStyle.effectiveBorderBottomWidth.computedValue;
+  }
+
+  double _childMarginHorizontal(RenderBox child) {
+    if (child is RenderBoxModel) {
+      return child.renderStyle.marginLeft.computedValue +
+          child.renderStyle.marginRight.computedValue;
+    }
+    return 0.0;
+  }
+
+  double _childMarginVertical(RenderBox child) {
+    if (child is RenderBoxModel) {
+      return child.renderStyle.marginTop.computedValue +
+          child.renderStyle.marginBottom.computedValue;
+    }
+    return 0.0;
+  }
+
+  double _intrinsicMainAxisGap({required bool mainAxisIsHorizontal}) {
+    try {
+      final double gap = mainAxisIsHorizontal
+          ? renderStyle.columnGap.computedValue
+          : renderStyle.rowGap.computedValue;
+      return (gap.isFinite && gap > 0) ? gap : 0.0;
+    } catch (_) {
+      return 0.0;
+    }
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) {
+    if (renderStyle.width.isNotAuto && !renderStyle.width.isIntrinsic) {
+      return super.computeMinIntrinsicWidth(height);
+    }
+
+    final bool mainAxisIsHorizontal = _isHorizontalFlexDirection;
+    final double gap = _intrinsicMainAxisGap(mainAxisIsHorizontal: mainAxisIsHorizontal);
+
+    double contentWidth = 0.0;
+    int count = 0;
+    RenderBox? child = firstChild;
+    while (child != null) {
+      final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+      if (child is! RenderPositionPlaceholder) {
+        final double w = child.getMinIntrinsicWidth(height) + _childMarginHorizontal(child);
+        if (mainAxisIsHorizontal) {
+          if (w.isFinite) contentWidth += w;
+        } else {
+          if (w.isFinite) contentWidth = math.max(contentWidth, w);
+        }
+        count++;
+      }
+      child = childParentData.nextSibling;
+    }
+
+    if (mainAxisIsHorizontal && count > 1) {
+      contentWidth += gap * (count - 1);
+    }
+    return contentWidth + _intrinsicPaddingBorderHorizontal();
+  }
+
+  @override
+  double computeMaxIntrinsicWidth(double height) {
+    if (renderStyle.width.isNotAuto && !renderStyle.width.isIntrinsic) {
+      return super.computeMaxIntrinsicWidth(height);
+    }
+
+    final bool mainAxisIsHorizontal = _isHorizontalFlexDirection;
+    final double gap = _intrinsicMainAxisGap(mainAxisIsHorizontal: mainAxisIsHorizontal);
+
+    double contentWidth = 0.0;
+    int count = 0;
+    RenderBox? child = firstChild;
+    while (child != null) {
+      final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+      if (child is! RenderPositionPlaceholder) {
+        final double w = child.getMaxIntrinsicWidth(height) + _childMarginHorizontal(child);
+        if (mainAxisIsHorizontal) {
+          if (w.isFinite) contentWidth += w;
+        } else {
+          if (w.isFinite) contentWidth = math.max(contentWidth, w);
+        }
+        count++;
+      }
+      child = childParentData.nextSibling;
+    }
+
+    if (mainAxisIsHorizontal && count > 1) {
+      contentWidth += gap * (count - 1);
+    }
+    return contentWidth + _intrinsicPaddingBorderHorizontal();
+  }
+
+  @override
+  double computeMinIntrinsicHeight(double width) {
+    if (renderStyle.height.isNotAuto && !renderStyle.height.isIntrinsic) {
+      return super.computeMinIntrinsicHeight(width);
+    }
+
+    final bool mainAxisIsHorizontal = _isHorizontalFlexDirection;
+    final double gap = _intrinsicMainAxisGap(mainAxisIsHorizontal: !mainAxisIsHorizontal);
+
+    double contentHeight = 0.0;
+    int count = 0;
+    RenderBox? child = firstChild;
+    while (child != null) {
+      final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+      if (child is! RenderPositionPlaceholder) {
+        final double h = child.getMinIntrinsicHeight(width) + _childMarginVertical(child);
+        if (!mainAxisIsHorizontal) {
+          if (h.isFinite) contentHeight += h;
+        } else {
+          if (h.isFinite) contentHeight = math.max(contentHeight, h);
+        }
+        count++;
+      }
+      child = childParentData.nextSibling;
+    }
+
+    if (!mainAxisIsHorizontal && count > 1) {
+      contentHeight += gap * (count - 1);
+    }
+    return contentHeight + _intrinsicPaddingBorderVertical();
+  }
+
+  @override
+  double computeMaxIntrinsicHeight(double width) {
+    if (renderStyle.height.isNotAuto && !renderStyle.height.isIntrinsic) {
+      return super.computeMaxIntrinsicHeight(width);
+    }
+
+    final bool mainAxisIsHorizontal = _isHorizontalFlexDirection;
+    final double gap = _intrinsicMainAxisGap(mainAxisIsHorizontal: !mainAxisIsHorizontal);
+
+    double contentHeight = 0.0;
+    int count = 0;
+    RenderBox? child = firstChild;
+    while (child != null) {
+      final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+      if (child is! RenderPositionPlaceholder) {
+        final double h = child.getMaxIntrinsicHeight(width) + _childMarginVertical(child);
+        if (!mainAxisIsHorizontal) {
+          if (h.isFinite) contentHeight += h;
+        } else {
+          if (h.isFinite) contentHeight = math.max(contentHeight, h);
+        }
+        count++;
+      }
+      child = childParentData.nextSibling;
+    }
+
+    if (!mainAxisIsHorizontal && count > 1) {
+      contentHeight += gap * (count - 1);
+    }
+    return contentHeight + _intrinsicPaddingBorderVertical();
+  }
+
   // Returns the used flex-basis in border-box units, honoring box-sizing semantics.
   // For a definite length basis, the used border-box cannot be smaller than
   // padding+border on the main axis. For auto/content or null, returns null.
