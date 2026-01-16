@@ -2009,15 +2009,13 @@ abstract class Element extends ContainerNode
 
   // Set inline style property.
   void setInlineStyle(String property, String value,
-      {String? baseHref, bool fromNative = false, bool important = false}) {
+      {String? baseHref, bool fromNative = false, bool important = false, bool validate = true}) {
     property = CSSStyleDeclaration.normalizePropertyName(property);
     final bool enableBlink = ownerDocument.ownerView.enableBlink;
-    // Inline styles are merged on the Dart side (even in Blink mode).
-    // When values originate from native Blink, they have already been validated
-    // there and may legitimately include constructs unsupported by the Dart
-    // validator (e.g. Blink-accepted values with different grammar support).
-    // Avoid re-validating on the Dart side for native-origin values.
-    final bool validateInline = !(fromNative && enableBlink);
+    // Whether to validate inline style values in Dart. In Blink mode, legacy
+    // CSSOM inline style updates are validated on the Dart side to preserve
+    // CSSOM semantics (invalid values should be ignored).
+    final bool validateInline = validate;
     // Sheet styles pushed from native Blink are already validated; avoid
     // re-validating them on the Dart side.
     final bool validateSheet = !(fromNative && enableBlink);
@@ -2086,6 +2084,26 @@ abstract class Element extends ContainerNode
       }
       return;
     } else {
+      if (validateInline) {
+        final String v = entry.value.trim();
+        // Ensure invalid `gap` values don't overwrite previous valid values.
+        // This is particularly important in Blink mode where inline CSSOM
+        // updates are forwarded from native without native-side validation.
+        if (property == GAP || property == ROW_GAP || property == COLUMN_GAP) {
+          if (property == GAP) {
+            final List<String> parts = splitByTopLevelDelimiter(v, 0x20 /* space */)
+                .map((p) => p.trim())
+                .where((p) => p.isNotEmpty)
+                .toList();
+            if (parts.isEmpty || parts.length > 2) return;
+            for (final String part in parts) {
+              if (!CSSGap.isValidGapValue(part)) return;
+            }
+          } else {
+            if (!CSSGap.isValidGapValue(v)) return;
+          }
+        }
+      }
       // Current only for mark property is setting by inline style.
       inlineStyle[property] = entry;
       if (previousEntry?.important == true && !entry.important) {

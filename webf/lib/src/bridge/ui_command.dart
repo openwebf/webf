@@ -353,7 +353,16 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
             malloc.free(payload);
           }
 
-          view.setInlineStyle(nativePtr, command.args, value, baseHref: baseHref, important: important);
+          // Legacy inline style updates are forwarded to Dart; validate there so
+          // invalid CSSOM assignments don't clobber previous values.
+          view.setInlineStyle(
+            nativePtr,
+            command.args,
+            value,
+            baseHref: baseHref,
+            important: important,
+            validate: true,
+          );
           pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
         case UICommandType.setSheetStyle:
@@ -406,7 +415,9 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
             baseHref = raw.isEmpty ? null : raw;
           }
 
-          view.setInlineStyle(nativePtr, key, value, baseHref: baseHref);
+          // Blink style exports are already validated; skip Dart-side validation
+          // to avoid rejecting valid values not yet covered by the Dart validator.
+          view.setInlineStyle(nativePtr, key, value, baseHref: baseHref, validate: false);
           pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
         case UICommandType.setSheetStyleById:
