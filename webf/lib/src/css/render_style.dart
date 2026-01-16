@@ -2882,8 +2882,15 @@ class CSSRenderStyle extends RenderStyle
             childWrapperConstraints = childWrapper?.effectiveChildConstraints;
           } catch (_) {}
           RenderViewportBox? viewportBox = getCurrentViewportBox() ?? renderStyle.target.getRootViewport();
-          // Override the default logicalHeight value is the parent is RenderWidget
-          if (parentRenderStyle.isSelfRenderWidget() &&
+          final bool parentIsScrollingWidget = parentRenderStyle.isSelfRenderWidget() &&
+              parentRenderStyle.target is WidgetElement &&
+              (parentRenderStyle.target as WidgetElement).isScrollingElement;
+
+          // Override the default logicalHeight value if the direct parent is RenderWidget,
+          // but avoid doing so for scrolling widget elements (ListView/ScrollView), where
+          // children must shrink-wrap on the main axis.
+          if (!parentIsScrollingWidget &&
+              parentRenderStyle.isSelfRenderWidget() &&
               childWrapper != null &&
               childWrapperConstraints != null &&
               // Only treat Flutter constraints as a definite height when they are tight.

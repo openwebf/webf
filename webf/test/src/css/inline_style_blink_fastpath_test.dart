@@ -53,7 +53,7 @@ void main() {
     expect(box.style.getPropertyValue('fontSize'), equals('16px'));
 
     // Native-side (Blink) validated values should bypass Dart validation.
-    box.setInlineStyle('fontSize', '-2px', fromNative: true);
+    box.setInlineStyle('fontSize', '-2px', fromNative: true, validate: false);
     expect(box.style.getPropertyValue('fontSize'), equals('-2px'));
   });
 
@@ -74,7 +74,7 @@ void main() {
     );
 
     final box = prepared.getElementById('box');
-    box.setInlineStyle('paddingBottom', '-10px', fromNative: true);
+    box.setInlineStyle('paddingBottom', '-10px', fromNative: true, validate: false);
     expect(box.style.getPropertyValue('paddingBottom'), equals('-10px'));
 
     await tester.pump();

@@ -842,13 +842,27 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     context2d?.requestPaint();
   }
 
-  void setInlineStyle(Pointer selfPtr, String key, String value, {String? baseHref, bool important = false}) {
+  void setInlineStyle(
+    Pointer selfPtr,
+    String key,
+    String value, {
+    String? baseHref,
+    bool important = false,
+    bool validate = true,
+  }) {
     assert(hasBindingObject(selfPtr), 'id: $selfPtr key: $key value: $value');
     Node? target = getBindingObject<Node>(selfPtr);
     if (target == null) return;
 
     if (target is Element) {
-      target.setInlineStyle(key, value, baseHref: baseHref, fromNative: true, important: important);
+      target.setInlineStyle(
+        key,
+        value,
+        baseHref: baseHref,
+        fromNative: true,
+        important: important,
+        validate: validate,
+      );
     }
   }
 

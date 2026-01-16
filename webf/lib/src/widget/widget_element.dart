@@ -117,10 +117,10 @@ abstract class WidgetElement extends dom.Element {
 
   @override
   void setInlineStyle(String property, String value,
-      {String? baseHref, bool fromNative = false, bool important = false}) {
+      {String? baseHref, bool fromNative = false, bool important = false, bool validate = true}) {
     bool shouldRebuild = shouldElementRebuild(property, style.getPropertyValue(property), value);
     super.setInlineStyle(property, value,
-        baseHref: baseHref, fromNative: fromNative, important: important);
+        baseHref: baseHref, fromNative: fromNative, important: important, validate: validate);
     if (state != null && shouldRebuild) {
       state!.requestUpdateState();
     }
