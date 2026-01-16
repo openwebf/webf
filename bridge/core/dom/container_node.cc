@@ -849,9 +849,15 @@ void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange& c
     // For + and ~ combinators (as well as :nth-* positional selectors),
     // succeeding siblings may need style invalidation after an element is
     // inserted or removed.
+    //
+    // Blink typically gates this work on per-container restyle flags populated
+    // during selector matching. In WebF those flags may not be set yet (e.g.
+    // before the first style pass, or when the relevant selector has not
+    // matched any element so far). Scheduling invalidations is safe here because
+    // the StyleEngine no-ops when no invalidation sets exist for the inserted/
+    // removed element.
     if (!change.ByParser() && change.IsChildElementChange() && InActiveDocument() &&
-        GetStyleChangeType() != kSubtreeStyleChange &&
-        HasRestyleFlag(DynamicRestyleFlags::kChildrenAffectedByStructuralRules)) {
+        GetStyleChangeType() != kSubtreeStyleChange) {
       auto* changed_element = DynamicTo<Element>(change.sibling_changed);
       if (changed_element) {
         Node* node_after_change = change.sibling_after_change;
@@ -876,15 +882,12 @@ void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange& c
           return;
         }
 
-        if (!ChildrenAffectedByIndirectAdjacentRules() && !ChildrenAffectedByDirectAdjacentRules()) {
-          return;
-        }
-
         if (change.type == ChildrenChangeType::kElementInserted) {
           style_engine.ScheduleInvalidationsForInsertedSibling(element_before_change, *changed_element);
         } else {
           assert(change.type == ChildrenChangeType::kElementRemoved);
-          style_engine.ScheduleInvalidationsForRemovedSibling(element_before_change, *changed_element, *element_after_change);
+          style_engine.ScheduleInvalidationsForRemovedSibling(element_before_change, *changed_element,
+                                                             *element_after_change);
         }
       }
     }
