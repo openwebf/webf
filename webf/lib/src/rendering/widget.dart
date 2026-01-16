@@ -89,8 +89,32 @@ class RenderWidget extends RenderBoxModel
     final double verticalBorder =
         renderStyle.effectiveBorderTopWidth.computedValue +
             renderStyle.effectiveBorderBottomWidth.computedValue;
+    // Prefer the most restrictive finite constraints available:
+    // - our own incoming constraints (when bounded)
+    // - the outer Flutter widget constraints (when embedded via WebFWidgetElementChild)
+    // - the root viewport size as a final fallback
+    double effectiveViewportWidth = viewportSize.width;
+    double effectiveViewportHeight = viewportSize.height;
+
+    final RenderWidgetElementChild? widgetElementChild = findWidgetElementChild();
+    final BoxConstraints? widgetConstraints = widgetElementChild?.effectiveChildConstraints;
+    if (widgetConstraints != null) {
+      if (widgetConstraints.hasBoundedWidth && widgetConstraints.maxWidth.isFinite) {
+        effectiveViewportWidth = math.min(effectiveViewportWidth, widgetConstraints.maxWidth);
+      }
+      if (widgetConstraints.hasBoundedHeight && widgetConstraints.maxHeight.isFinite) {
+        effectiveViewportHeight = math.min(effectiveViewportHeight, widgetConstraints.maxHeight);
+      }
+    }
+
+    if (constraints.hasBoundedWidth) {
+      effectiveViewportWidth = math.min(effectiveViewportWidth, constraints.maxWidth);
+    }
+    if (constraints.hasBoundedHeight) {
+      effectiveViewportHeight = math.min(effectiveViewportHeight, constraints.maxHeight);
+    }
     final double contentViewportHeight =
-        math.max(0.0, viewportSize.height - verticalPadding - verticalBorder);
+        math.max(0.0, effectiveViewportHeight - verticalPadding - verticalBorder);
 
     BoxConstraints childConstraints;
     if (isInlineBlockAutoWidth || hasExplicitInlineWidth) {
@@ -108,7 +132,7 @@ class RenderWidget extends RenderBoxModel
           maxWidth: (contentConstraints!.hasTightWidth ||
                   (renderStyle.target as WidgetElement).allowsInfiniteWidth)
               ? contentConstraints!.maxWidth
-              : math.min(viewportSize.width, contentConstraints!.maxWidth),
+              : math.min(effectiveViewportWidth, contentConstraints!.maxWidth),
           minHeight: contentConstraints!.minHeight,
           maxHeight: (contentConstraints!.hasTightHeight ||
                   (renderStyle.target as WidgetElement).allowsInfiniteHeight)
