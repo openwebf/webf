@@ -338,17 +338,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   void attachToFlutter(BuildContext context) {
     _registerPlatformBrightnessChange();
-    if (enableBlink && _inited && !_disposed) {
-      final Pointer<Void>? page = getAllocatedPage(_contextId);
-      if (page != null) {
-        final String scheme = window.colorScheme;
-        final Pointer<Utf8> schemePtr = scheme.toNativeUtf8();
-        nativeOnColorSchemeChanged(page, schemePtr, scheme.length);
-        malloc.free(schemePtr);
-      }
-    }
-    // Resume animation timeline when attached back to Flutter
 
+    // Resume animation timeline when attached back to Flutter
     document.animationTimeline.resume();
     // Also clear the stopped guard and run any pending animation starters.
     resumeAnimationTimeline();
