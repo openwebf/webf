@@ -36,6 +36,7 @@
 
 #include <functional>
 
+#include "core/css/cascade_layer.h"
 #include "core/css/css_selector.h"
 #include "core/css/css_style_rule.h"
 #include "core/css/media_query_evaluator.h"
@@ -55,23 +56,49 @@ using ChildRuleVector = StyleRuleBase::ChildRuleVector;
 void WalkRulesFromVector(RuleSet& rule_set,
                          const MediaQueryEvaluator& medium,
                          AddRuleFlags add_rule_flags,
-                         const std::vector<std::shared_ptr<StyleRuleBase>>& rules);
+                         const std::vector<std::shared_ptr<StyleRuleBase>>& rules,
+                         CascadeLayer* layer_context,
+                         const CascadeLayer* root_layer);
 void WalkRulesFromChildVector(RuleSet& rule_set,
                               const MediaQueryEvaluator& medium,
                               AddRuleFlags add_rule_flags,
-                              const ChildRuleVector& rules);
+                              const ChildRuleVector& rules,
+                              CascadeLayer* layer_context,
+                              const CascadeLayer* root_layer);
 
 void ProcessRule(RuleSet& rule_set,
                  const MediaQueryEvaluator& medium,
                  AddRuleFlags add_rule_flags,
-                 const std::shared_ptr<StyleRuleBase>& base_rule) {
+                 const std::shared_ptr<StyleRuleBase>& base_rule,
+                 CascadeLayer* layer_context,
+                 const CascadeLayer* root_layer) {
   if (!base_rule) {
+    return;
+  }
+
+  // @layer statement rule: establishes layer order but does not add declarations.
+  if (base_rule->IsLayerStatementRule()) {
+    if (auto* layer_statement = DynamicTo<StyleRuleLayerStatement>(base_rule.get())) {
+      for (const auto& name : layer_statement->GetNames()) {
+        layer_context->GetOrAddSubLayer(name);
+      }
+    }
+    return;
+  }
+
+  // @layer block rule: recurse into children with updated layer context.
+  if (base_rule->IsLayerBlockRule()) {
+    if (auto* layer_block = DynamicTo<StyleRuleLayerBlock>(base_rule.get())) {
+      CascadeLayer* sub_layer = layer_context->GetOrAddSubLayer(layer_block->GetName());
+      WalkRulesFromChildVector(rule_set, medium, add_rule_flags, layer_block->ChildRules(), sub_layer, root_layer);
+    }
     return;
   }
 
   // Plain style rule: always add.
   if (base_rule->IsStyleRule()) {
-    rule_set.AddStyleRule(std::static_pointer_cast<StyleRule>(base_rule), add_rule_flags);
+    const CascadeLayer* cascade_layer = layer_context == root_layer ? nullptr : layer_context;
+    rule_set.AddStyleRule(std::static_pointer_cast<StyleRule>(base_rule), add_rule_flags, cascade_layer);
     return;
   }
 
@@ -87,7 +114,7 @@ void ProcessRule(RuleSet& rule_set,
           return;
         }
       }
-      WalkRulesFromChildVector(rule_set, medium, add_rule_flags, media_rule->ChildRules());
+      WalkRulesFromChildVector(rule_set, medium, add_rule_flags, media_rule->ChildRules(), layer_context, root_layer);
     }
     return;
   }
@@ -98,7 +125,8 @@ void ProcessRule(RuleSet& rule_set,
       if (!supports_rule->ConditionIsSupported()) {
         return;
       }
-      WalkRulesFromChildVector(rule_set, medium, add_rule_flags, supports_rule->ChildRules());
+      WalkRulesFromChildVector(rule_set, medium, add_rule_flags, supports_rule->ChildRules(), layer_context,
+                               root_layer);
     }
     return;
   }
@@ -108,7 +136,8 @@ void ProcessRule(RuleSet& rule_set,
   // nested @media rules still participate.
   if (base_rule->IsContainerRule()) {
     if (auto* container_rule = DynamicTo<StyleRuleContainer>(base_rule.get())) {
-      WalkRulesFromChildVector(rule_set, medium, add_rule_flags, container_rule->ChildRules());
+      WalkRulesFromChildVector(rule_set, medium, add_rule_flags, container_rule->ChildRules(), layer_context,
+                               root_layer);
     }
     return;
   }
@@ -116,7 +145,7 @@ void ProcessRule(RuleSet& rule_set,
   // Generic grouping rules that simply wrap child rules (e.g. @layer blocks,
   // @scope, @starting-style). Always recurse into their children.
   if (auto* group_rule = DynamicTo<StyleRuleGroup>(base_rule.get())) {
-    WalkRulesFromChildVector(rule_set, medium, add_rule_flags, group_rule->ChildRules());
+    WalkRulesFromChildVector(rule_set, medium, add_rule_flags, group_rule->ChildRules(), layer_context, root_layer);
     return;
   }
 }
@@ -124,16 +153,20 @@ void ProcessRule(RuleSet& rule_set,
 void WalkRulesFromVector(RuleSet& rule_set,
                          const MediaQueryEvaluator& medium,
                          AddRuleFlags add_rule_flags,
-                         const std::vector<std::shared_ptr<StyleRuleBase>>& rules) {
+                         const std::vector<std::shared_ptr<StyleRuleBase>>& rules,
+                         CascadeLayer* layer_context,
+                         const CascadeLayer* root_layer) {
   for (const auto& base_rule : rules) {
-    ProcessRule(rule_set, medium, add_rule_flags, base_rule);
+    ProcessRule(rule_set, medium, add_rule_flags, base_rule, layer_context, root_layer);
   }
 }
 
 void WalkRulesFromChildVector(RuleSet& rule_set,
                               const MediaQueryEvaluator& medium,
                               AddRuleFlags add_rule_flags,
-                              const ChildRuleVector& rules) {
+                              const ChildRuleVector& rules,
+                              CascadeLayer* layer_context,
+                              const CascadeLayer* root_layer) {
   // Iterate by index instead of relying on ChildRuleVector's iterator
   // to avoid off-by-one issues and still respect invisible rules via
   // AdjustedIndex() in operator[].
@@ -143,7 +176,7 @@ void WalkRulesFromChildVector(RuleSet& rule_set,
       continue;
     }
     auto base_rule = std::const_pointer_cast<StyleRuleBase>(base_const);
-    ProcessRule(rule_set, medium, add_rule_flags, base_rule);
+    ProcessRule(rule_set, medium, add_rule_flags, base_rule, layer_context, root_layer);
   }
 }
 
@@ -153,11 +186,13 @@ const std::vector<std::shared_ptr<RuleData>> RuleSet::empty_rule_data_vector_;
 
 RuleData::RuleData(std::shared_ptr<StyleRule> rule,
                    unsigned selector_index,
-                   unsigned position)
+                   unsigned position,
+                   const CascadeLayer* cascade_layer)
     : rule_(rule),
       selector_index_(selector_index),
       position_(position),
-      specificity_(0) {
+      specificity_(0),
+      cascade_layer_(cascade_layer) {
   if (rule_) {
     const CSSSelector& selector = rule_->SelectorAt(selector_index_);
     specificity_ = selector.Specificity();
@@ -175,7 +210,7 @@ RuleData::RuleData(std::shared_ptr<StyleRule> rule,
   }
 }
 
-RuleSet::RuleSet() = default;
+RuleSet::RuleSet() : cascade_layer_root_(std::make_shared<CascadeLayer>()) {}
 
 RuleSet::~RuleSet() = default;
 
@@ -187,7 +222,8 @@ void RuleSet::AddRulesFromSheet(std::shared_ptr<StyleSheetContents> sheet,
   }
 
   // Start with this sheet's own rules.
-  WalkRulesFromVector(*this, medium, add_rule_flags, sheet->ChildRules());
+  WalkRulesFromVector(*this, medium, add_rule_flags, sheet->ChildRules(), cascade_layer_root_.get(),
+                      cascade_layer_root_.get());
 
   // Then process any @import rules, honoring their media queries and support
   // conditions before walking into the imported sheet.
@@ -223,13 +259,14 @@ void RuleSet::AddMediaQueryResultFlags(const MediaQueryResultFlags& flags) {
 
 void RuleSet::AddRule(std::shared_ptr<StyleRule> rule,
                      unsigned selector_index,
+                     const CascadeLayer* cascade_layer,
                      AddRuleFlags add_rule_flags) {
   
   if (!rule) {
     return;
   }
   
-  auto rule_data = std::make_shared<RuleData>(rule, selector_index, rule_count_++);
+  auto rule_data = std::make_shared<RuleData>(rule, selector_index, rule_count_++, cascade_layer);
   
   // Update selector / invalidation features used for RuleInvalidationData.
   // We currently do not track style scopes here, so pass nullptr.
@@ -243,7 +280,8 @@ void RuleSet::AddRule(std::shared_ptr<StyleRule> rule,
 }
 
 void RuleSet::AddStyleRule(std::shared_ptr<StyleRule> rule,
-                          AddRuleFlags add_rule_flags) {
+                          AddRuleFlags add_rule_flags,
+                          const CascadeLayer* cascade_layer) {
   
   if (!rule) {
     return;
@@ -262,7 +300,7 @@ void RuleSet::AddStyleRule(std::shared_ptr<StyleRule> rule,
   
   // Add a rule for each selector in the style rule
   for (unsigned i = 0; i < selector_count; ++i) {
-    AddRule(rule, i, add_rule_flags);
+    AddRule(rule, i, cascade_layer, add_rule_flags);
   }
 }
 

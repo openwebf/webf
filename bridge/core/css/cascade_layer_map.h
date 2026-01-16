@@ -51,11 +51,9 @@ class CascadeLayerMap {
   // The order of the implicit outer layer
   static constexpr uint16_t kImplicitOuterLayerOrder = std::numeric_limits<uint16_t>::max();
 
-  // ActiveStyleSheet represents a pair of CSSStyleSheet and RuleSet
-  using ActiveStyleSheet = std::pair<std::shared_ptr<CSSStyleSheet>, std::shared_ptr<RuleSet>>;
-  using ActiveStyleSheetVector = std::vector<ActiveStyleSheet>;
+  using ActiveRuleSetVector = std::vector<std::shared_ptr<RuleSet>>;
 
-  explicit CascadeLayerMap(const ActiveStyleSheetVector& active_style_sheets);
+  explicit CascadeLayerMap(const ActiveRuleSetVector& active_rule_sets);
 
   // Returns the layer order of the given layer. For the implicit outer layer,
   // pass nullptr.

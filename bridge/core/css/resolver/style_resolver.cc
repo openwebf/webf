@@ -36,8 +36,10 @@
 #include <algorithm>
 #include <optional>
 #include <string>
+#include <unordered_set>
 
 #include "foundation/logging.h"
+#include "core/css/cascade_layer_map.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_property_value_set.h"
 #include "core/css/inline_css_style_declaration.h"
@@ -340,6 +342,7 @@ void StyleResolver::MatchAuthorRules(
   // dynamic MediaValues). Avoid constructing it per-element; we only need it
   // when a RuleSet must be (re)built (e.g. after a media-query-driven invalidation).
   std::optional<MediaQueryEvaluator> media_evaluator;
+
 
   const auto& author_sheets = document.EnsureStyleEngine().AuthorStyleSheetsInDocumentOrder();
   unsigned author_index = 0;
