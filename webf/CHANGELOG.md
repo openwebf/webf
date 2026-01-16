@@ -1,3 +1,22 @@
+## 0.24.4
+
+### Performance Improvements
+
+- **CSS/Style**: optimize `CSSStyleDeclaration` merge/union and reduce pseudo-element work (skip matching/emission when unused) (#792).
+- **Bridge**: reduce style invalidation work by treating `kLocalStyleChange` as element-only (#792).
+
+### Bug Fixes
+
+- **CSS Cascade**: align `!important` semantics across inline and stylesheet cascade; preserve `!important` when editing inline styles via DevTools (#792).
+- **CSS Gap**: ignore invalid `gap`/`row-gap`/`column-gap` values (including Blink CSSOM inline updates) to preserve “invalid values are ignored” behavior (#803).
+- **Layout**: prevent `height: auto` flex containers from expanding to the sliver viewport height inside scrolling widget elements (e.g. `flutter-sliver-listview`) (#803).
+- **Bridge/Style**: stabilize Blink style export traversal for better consistency when syncing styles to Dart (#792).
+- **iOS**: fix camera/microphone permission prompts in the example app by adding usage descriptions to `Info.plist` (#803).
+
+### Compatibility
+
+- **CSS Parser**: normalize legacy `-webkit-` prefixed flexbox property aliases to their standard equivalents.
+
 ## 0.24.3
 
 ### Major Features
