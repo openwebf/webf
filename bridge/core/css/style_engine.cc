@@ -2174,10 +2174,23 @@ void StyleEngine::RecalcStyle(StyleRecalcChange change, const StyleRecalcContext
       Element* element = static_cast<Element*>(node);
       if (element->NeedsStyleRecalc()) {
         StyleChangeType change_type = element->GetStyleChangeType();
-        if (change_type == kInlineIndependentStyleChange || change_type == kLocalStyleChange) {
-          // Inline-only independent and local style changes only require rule
-          // matching for this element. Descendant style effects are handled via
-          // selector-based invalidation or Dart-side inheritance/var() updates.
+        if (change_type == kInlineIndependentStyleChange) {
+          // Inline-only independent style changes only require rule matching for this element.
+          RecalcStyleForElementOnly(*element);
+          element->ClearNeedsStyleRecalc();
+        } else if (change_type == kLocalStyleChange) {
+          // If this element was previously display:none, its descendants may not have had any
+          // styles exported (we skip display:none subtrees during subtree recalc for perf).
+          //
+          // When the element becomes visible again (e.g. display:none -> block), we must
+          // recompute styles for its subtree so descendants like <img> pick up their inline
+          // styles and render correctly.
+          if (element->IsDisplayNoneForStyleInvalidation()) {
+            RecalcStyleForSubtree(*element);
+            clear_flags_for_subtree(element);
+            return;
+          }
+
           RecalcStyleForElementOnly(*element);
           element->ClearNeedsStyleRecalc();
         } else {
