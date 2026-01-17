@@ -264,8 +264,17 @@ mixin CSSSizingMixin on RenderStyle {
   }
 
   void _markScrollContainerNeedsLayout() {
-    RenderBoxModel? renderBoxModel = attachedRenderBoxModel;
-    RenderBoxModel? scrollContainer = renderBoxModel?.findScrollContainer();
-    scrollContainer?.markNeedsLayout();
+    // A DOM element can be mounted into multiple Flutter subtrees at the same
+    // time (e.g. portals, CupertinoContextMenu preview/modal). Mark the nearest
+    // scroll container for each attached render tree so overflow sizing updates
+    // don't target a stale/mismatched ancestor chain.
+    final Set<int> visited = <int>{};
+    everyAttachedWidgetRenderBox((_, RenderBoxModel renderBoxModel) {
+      final RenderBoxModel? scrollContainer = renderBoxModel.findScrollContainer();
+      if (scrollContainer != null && visited.add(scrollContainer.hashCode)) {
+        scrollContainer.markNeedsLayout();
+      }
+      return true;
+    });
   }
 }

@@ -14,6 +14,7 @@ import 'package:webf/webf.dart';
 import 'bridge/from_native.dart';
 import 'bridge/to_native.dart';
 import 'main.dart';
+import 'utils/flutter_error_capture.dart';
 
 class WebFTester extends StatefulWidget {
   final String preCode;
@@ -70,6 +71,11 @@ class _WebFTesterState extends State<WebFTester> {
           controller.javascriptChannel.onMethodCall =
               (String method, dynamic arguments) async {
             switch (method) {
+              case 'takeFlutterError':
+                return Future.value(FlutterErrorCapture.takeAsString());
+              case 'clearFlutterError':
+                FlutterErrorCapture.clear();
+                return Future.value(null);
               case 'helloInt64':
                 return Future.value(1111111111111111);
               case 'setMethodChannelCallback': {
