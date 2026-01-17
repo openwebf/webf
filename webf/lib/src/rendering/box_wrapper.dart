@@ -47,6 +47,34 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
   }
 
   @override
+  double computeMinIntrinsicWidth(double height) {
+    final RenderBox? c = child;
+    if (c == null) return super.computeMinIntrinsicWidth(height);
+    return c.getMinIntrinsicWidth(height);
+  }
+
+  @override
+  double computeMaxIntrinsicWidth(double height) {
+    final RenderBox? c = child;
+    if (c == null) return super.computeMaxIntrinsicWidth(height);
+    return c.getMaxIntrinsicWidth(height);
+  }
+
+  @override
+  double computeMinIntrinsicHeight(double width) {
+    final RenderBox? c = child;
+    if (c == null) return super.computeMinIntrinsicHeight(width);
+    return c.getMinIntrinsicHeight(width);
+  }
+
+  @override
+  double computeMaxIntrinsicHeight(double width) {
+    final RenderBox? c = child;
+    if (c == null) return super.computeMaxIntrinsicHeight(width);
+    return c.getMaxIntrinsicHeight(width);
+  }
+
+  @override
   void performLayout() {
     renderStyle.computeContentBoxLogicalWidth();
     renderStyle.computeContentBoxLogicalHeight();

@@ -2657,7 +2657,12 @@ class CSSRenderStyle extends RenderStyle
         effectiveDisplay == CSSDisplay.grid) {
       RenderViewportBox? root = getCurrentViewportBox();
       CSSRenderStyle? parentStyle = renderStyle.getAttachedRenderParentRenderStyle();
-      if (logicalWidth == null && renderStyle.width.isNotAuto) {
+      // Intrinsic sizing keywords (min-content/max-content/fit-content) depend on layout and
+      // do not establish a definite used width here. Treat them like auto and let layout
+      // (e.g., RenderBoxModel.getConstraints) resolve the used size.
+      if (logicalWidth == null && renderStyle.width.isIntrinsic) {
+        logicalWidth = null;
+      } else if (logicalWidth == null && renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
       } else if (logicalWidth == null && aspectRatio != null && renderStyle.height.isNotAuto) {
         // Prefer aspect-ratio when height is definite and width is auto.
@@ -2785,7 +2790,7 @@ class CSSRenderStyle extends RenderStyle
         effectiveDisplay == CSSDisplay.inlineFlex ||
         effectiveDisplay == CSSDisplay.inlineGrid ||
         effectiveDisplay == CSSDisplay.inline) {
-      if (logicalWidth == null && renderStyle.width.isNotAuto) {
+      if (logicalWidth == null && !renderStyle.width.isIntrinsic && renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
       }
     }

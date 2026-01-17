@@ -60,6 +60,87 @@ class RenderFlowLayout extends RenderLayoutBox {
     addAll(children);
   }
 
+  double _intrinsicPaddingBorderHorizontal() {
+    return renderStyle.paddingLeft.computedValue +
+        renderStyle.paddingRight.computedValue +
+        renderStyle.effectiveBorderLeftWidth.computedValue +
+        renderStyle.effectiveBorderRightWidth.computedValue;
+  }
+
+  double _childHorizontalMargin(RenderBox child) {
+    if (child is RenderBoxModel) {
+      return child.renderStyle.marginLeft.computedValue + child.renderStyle.marginRight.computedValue;
+    }
+    return 0.0;
+  }
+
+  bool _shouldUseIFCForIntrinsic() {
+    try {
+      return renderStyle.shouldEstablishInlineFormattingContext();
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) {
+    // Respect definite (non-intrinsic) width values.
+    if (renderStyle.width.isNotAuto && !renderStyle.width.isIntrinsic) {
+      return super.computeMinIntrinsicWidth(height);
+    }
+
+    double content = 0.0;
+    if (_shouldUseIFCForIntrinsic()) {
+      final InlineFormattingContext ifc = InlineFormattingContext(container: this);
+      try {
+        // Build and lay out a paragraph so paragraph intrinsic widths are available.
+        // `prepareLayout()` only collects inline items and does not create `_paragraph`.
+        ifc.layout(const BoxConstraints());
+        content = ifc.paragraphMinIntrinsicWidth;
+      } finally {
+        ifc.dispose();
+      }
+    } else {
+      RenderBox? child = firstChild;
+      while (child != null) {
+        final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+        final double w = child.getMinIntrinsicWidth(height) + _childHorizontalMargin(child);
+        if (w.isFinite) content = math.max(content, w);
+        child = childParentData.nextSibling;
+      }
+    }
+    return content + _intrinsicPaddingBorderHorizontal();
+  }
+
+  @override
+  double computeMaxIntrinsicWidth(double height) {
+    // Respect definite (non-intrinsic) width values.
+    if (renderStyle.width.isNotAuto && !renderStyle.width.isIntrinsic) {
+      return super.computeMaxIntrinsicWidth(height);
+    }
+
+    double content = 0.0;
+    if (_shouldUseIFCForIntrinsic()) {
+      final InlineFormattingContext ifc = InlineFormattingContext(container: this);
+      try {
+        // Build and lay out a paragraph so paragraph intrinsic widths are available.
+        ifc.layout(const BoxConstraints());
+        content = ifc.paragraphMaxIntrinsicWidth;
+      } finally {
+        ifc.dispose();
+      }
+    } else {
+      RenderBox? child = firstChild;
+      while (child != null) {
+        final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+        final double w = child.getMaxIntrinsicWidth(height) + _childHorizontalMargin(child);
+        if (w.isFinite) content = math.max(content, w);
+        child = childParentData.nextSibling;
+      }
+    }
+    return content + _intrinsicPaddingBorderHorizontal();
+  }
+
   ui.Rect? _ifcSemanticBounds;
 
   @override
