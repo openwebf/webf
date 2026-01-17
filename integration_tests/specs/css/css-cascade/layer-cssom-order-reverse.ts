@@ -46,14 +46,14 @@ describe('CSS Cascade Layers: CSSOM order changes', () => {
     document.body.appendChild(target);
     document.body.appendChild(reference);
 
-    await snapshot(undefined, undefined, 'before');
+    await snapshot();
     expect(getComputedStyle(target).color).toBe(red);
     expect(getComputedStyle(reference).color).toBe(green);
 
     sheet0.insertRule('@layer second {}', 0);
     await nextFrames();
 
-    await snapshot(undefined, undefined, 'after');
+    await snapshot();
     expect(getComputedStyle(target).color).toBe(green);
 
     style0.remove();
@@ -99,13 +99,13 @@ describe('CSS Cascade Layers: CSSOM order changes', () => {
     document.body.appendChild(reference);
 
     // With the extra earlier declaration of `second`, `first` becomes later.
-    await snapshot(undefined, undefined, 'before');
+    await snapshot();
     expect(getComputedStyle(target).color).toBe(red);
 
     sheet0.deleteRule(0);
     await nextFrames();
 
-    await snapshot(undefined, undefined, 'after');
+    await snapshot();
     expect(getComputedStyle(target).color).toBe(green);
 
     style0.remove();
