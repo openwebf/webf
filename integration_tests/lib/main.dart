@@ -22,6 +22,7 @@ import 'webf_tester.dart';
 import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
 import 'modules/array_buffer_module.dart';
 import 'modules/method_channel_callback_module.dart';
+import 'utils/flutter_error_capture.dart';
 
 String? pass = (AnsiPen()
   ..green())('[TEST PASS]');
@@ -77,6 +78,7 @@ void main() async {
 
   defineWebFCustomElements();
   installWebFCupertinoUI();
+  FlutterErrorCapture.install();
 
   int mockServerPort = await findAvailablePort();
 
@@ -130,6 +132,7 @@ void main() async {
       ),
     );
   }, (Object error, StackTrace stack) {
+    FlutterErrorCapture.recordZoneError(error, stack);
     print('$error\n$stack');
   });
 }

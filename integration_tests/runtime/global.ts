@@ -587,6 +587,17 @@ async function waitForFrame() {
   });
 }
 
+async function takeFlutterError(): Promise<string | null> {
+  const result = (await webf.methodChannel.invokeMethod('takeFlutterError')) as any;
+  if (result == null) return null;
+  const text = String(result);
+  return text.length === 0 ? null : text;
+}
+
+async function clearFlutterError(): Promise<void> {
+  await webf.methodChannel.invokeMethod('clearFlutterError');
+}
+
 let snapshotBlob: Blob | undefined
 
 afterEach(() => {
@@ -682,5 +693,7 @@ Object.assign(global, {
   onFourfoldImageLoad,
   onDoubleImageLoad,
   waitForOnScreen,
-  waitForFrame
+  waitForFrame,
+  takeFlutterError,
+  clearFlutterError
 });

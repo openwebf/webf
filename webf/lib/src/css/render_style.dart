@@ -1147,12 +1147,25 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
       case RenderObjectGetType.parent:
         final directParent = renderBoxModel.parent;
         RenderObject? parent = directParent;
-        while (parent is RenderEventListener ||
-            parent is RenderLayoutBoxWrapper ||
-            (parent is RenderFlowLayout && parent.renderStyle == this)) {
-          parent = parent!.parent;
+        while (parent != null) {
+          // Only skip wrappers that belong to this same element (same RenderStyle),
+          // otherwise we may accidentally skip a real ancestor element's render box
+          // and break layout/constraint resolution for many specs.
+          if (parent is RenderEventListener && identical(parent.renderStyle, this)) {
+            parent = parent.parent;
+            continue;
+          }
+          if (parent is RenderLayoutBoxWrapper && identical(parent.renderStyle, this)) {
+            parent = parent.parent;
+            continue;
+          }
+          if (parent is RenderFlowLayout && identical(parent.renderStyle, this)) {
+            parent = parent.parent;
+            continue;
+          }
+          break;
         }
-        return matcher(directParent, parent is RenderBoxModel ? parent.renderStyle : null);
+        return matcher(parent, parent is RenderBoxModel ? parent.renderStyle : null);
 
       case RenderObjectGetType.firstChild:
         if (renderBoxModel is RenderLayoutBox) {

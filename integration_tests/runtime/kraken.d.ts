@@ -93,3 +93,5 @@ declare function createElementWithStyle(tagName: string, style?: any, children?:
 declare const BODY: HTMLBodyElement;
 declare function snapshotFlutter(x?: number, y?: number, w?: number, h?: number, filename?: String, postfix?: boolean | string): Promise<void>;
 declare function dismissFlutterOverlays(): Promise<void>;
+declare function takeFlutterError(): Promise<string | null>;
+declare function clearFlutterError(): Promise<void>;
