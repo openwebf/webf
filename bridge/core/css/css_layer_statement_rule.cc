@@ -20,19 +20,25 @@ CSSLayerStatementRule::CSSLayerStatementRule(std::shared_ptr<StyleRuleLayerState
 
 CSSLayerStatementRule::~CSSLayerStatementRule() = default;
 
-std::vector<String> CSSLayerStatementRule::nameList() const {
-  return To<StyleRuleLayerStatement>(rule_.get())->GetNamesAsStrings();
+std::vector<AtomicString> CSSLayerStatementRule::nameList() const {
+  std::vector<AtomicString> result;
+  const auto& names = To<StyleRuleLayerStatement>(rule_.get())->GetNames();
+  result.reserve(names.size());
+  for (const auto& name : names) {
+    result.emplace_back(AtomicString(StyleRuleBase::LayerNameAsString(name)));
+  }
+  return result;
 }
 
 AtomicString CSSLayerStatementRule::cssText() const {
   StringBuilder result;
   result.Append("@layer "_s);
   
-  const std::vector<String>& names = nameList();
+  const auto names = nameList();
   for (size_t i = 0; i < names.size(); ++i) {
     if (i > 0)
       result.Append(", "_s);
-    result.Append(names[i]);
+    result.Append(names[i].GetString());
   }
   result.Append(";"_s);
   return AtomicString(result.ReleaseString());

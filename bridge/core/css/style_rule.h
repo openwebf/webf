@@ -317,7 +317,8 @@ class StyleRule : public StyleRuleBase {
     while (!selector_array[flattened_size - 1].IsLastInSelectorList()) {
       ++flattened_size;
     }
-    return std::make_shared<StyleRule>(*this, flattened_size);
+    return MakeSharedPtrWithAdditionalBytes<StyleRule>(AdditionalBytesForSelectors(flattened_size), *this,
+                                                       flattened_size);
   }
 
   // Helper function to avoid parsing lazy properties when not needed.

@@ -90,11 +90,10 @@ void FontFeatureValuesStorage::FuseUpdate(const FontFeatureValuesStorage& other,
       FeatureIndicesWithPriority entry_updated_order(entry.second);
       entry_updated_order.layer_order = other_layer_order;
       auto insert_result = own.insert({entry.first, entry_updated_order});
-      // TODO(xiezuobing)：这里要确认这个stored_value干什么用，不然用std::unordered_map后面不好查bug
       if (!insert_result.second) {
-        unsigned existing_layer_order = insert_result.stored_value->value.layer_order;
+        unsigned existing_layer_order = insert_result.first->second.layer_order;
         if (other_layer_order >= existing_layer_order) {
-          insert_result.stored_value->value = entry_updated_order;
+          insert_result.first->second = entry_updated_order;
         }
       }
     }
@@ -144,7 +143,7 @@ AtomicString StyleRuleFontFeatureValues::FamilyAsString() const {
       families.Append(", "_s);
     }
   }
-  return families.ReleaseString();
+  return AtomicString(families.ReleaseString());
 }
 
 }  // namespace webf

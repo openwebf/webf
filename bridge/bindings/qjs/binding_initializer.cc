@@ -24,6 +24,8 @@
 #include "qjs_css_import_rule.h"
 #include "qjs_css_keyframe_rule.h"
 #include "qjs_css_keyframes_rule.h"
+#include "qjs_css_layer_block_rule.h"
+#include "qjs_css_layer_statement_rule.h"
 #include "qjs_css_rule.h"
 #include "qjs_css_rule_list.h"
 
@@ -284,6 +286,8 @@ void InstallBindings(ExecutingContext* context) {
   QJSCSSStyleSheet::Install(context);
   QJSCSSRule::Install(context);
   QJSCSSRuleList::Install(context);
+  QJSCSSLayerBlockRule::Install(context);
+  QJSCSSLayerStatementRule::Install(context);
   QJSCSSImportRule::Install(context);
   QJSCSSKeyframeRule::Install(context);
   QJSCSSKeyframesRule::Install(context);
