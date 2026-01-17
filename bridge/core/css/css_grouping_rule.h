@@ -45,10 +45,7 @@ class CSSGroupingRule : public CSSRule {
 
   CSSRuleList* cssRules() const override;
 
-  unsigned insertRule(const ExecutingContext*,
-                      const String& rule,
-                      unsigned index,
-                      ExceptionState&);
+  unsigned insertRule(const AtomicString& rule, unsigned index, ExceptionState&);
   void deleteRule(unsigned index, ExceptionState&);
 
   // For CSSRuleList

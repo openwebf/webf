@@ -44,6 +44,7 @@
 #include "core/css/css_scope_rule.h"
 #include "core/css/css_nested_declarations_rule.h"
 #include "core/css/style_rule_nested_declarations.h"
+#include "core/css/style_rule_font_feature_values.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
 
 namespace webf {
@@ -60,60 +61,46 @@ String StyleRuleBase::LayerNameAsString(const webf::StyleRuleBase::LayerName& na
 }
 
 std::shared_ptr<const StyleRuleBase> StyleRuleBase::Copy() const {
-  //  switch (GetType()) {
-  //    case kStyle:
-  //      return To<StyleRule>(this)->Copy();
-  //    case kPage:
-  //      return To<StyleRulePage>(this)->Copy();
-  //    case kPageMargin:
-  //      return To<StyleRulePageMargin>(this)->Copy();
-  //    case kProperty:
-  //      return To<StyleRuleProperty>(this)->Copy();
-  //    case kFontFace:
-  //      return To<StyleRuleFontFace>(this)->Copy();
-  //    case kFontPaletteValues:
-  //      return To<StyleRuleFontPaletteValues>(this)->Copy();
-  //    case kFontFeatureValues:
-  //      return To<StyleRuleFontFeatureValues>(this)->Copy();
-  //    case kFontFeature:
-  //      return To<StyleRuleFontFeature>(this)->Copy();
-  //    case kMedia:
-  //      return To<StyleRuleMedia>(this)->Copy();
-  //    case kScope:
-  //      return To<StyleRuleScope>(this)->Copy();
-  //    case kSupports:
-  //      return To<StyleRuleSupports>(this)->Copy();
-  //    case kImport:
-  //      // FIXME: Copy import rules.
-  //      NOTREACHED_IN_MIGRATION();
-  //      return nullptr;
-  //    case kKeyframes:
-  //      return To<StyleRuleKeyframes>(this)->Copy();
-  //    case kLayerBlock:
-  //      return To<StyleRuleLayerBlock>(this)->Copy();
-  //    case kLayerStatement:
-  //      return To<StyleRuleLayerStatement>(this)->Copy();
-  //    case kNamespace:
-  //      return To<StyleRuleNamespace>(this)->Copy();
-  //    case kCharset:
-  //    case kKeyframe:
-  //    case kFunction:
-  //    case kMixin:
-  //    case kApplyMixin:
-  //      NOTREACHED_IN_MIGRATION();
-  //      return nullptr;
-  //    case kContainer:
-  //      return To<StyleRuleContainer>(this)->Copy();
-  //    case kCounterStyle:
-  //      return To<StyleRuleCounterStyle>(this)->Copy();
-  //    case kStartingStyle:
-  //      return To<StyleRuleStartingStyle>(this)->Copy();
-  //    case kViewTransition:
-  //      return To<StyleRuleViewTransition>(this)->Copy();
-  //    case kPositionTry:
-  //      return To<StyleRulePositionTry>(this)->Copy();
-  //  }
-  return shared_from_this();
+  switch (GetType()) {
+    case kStyle:
+      return To<StyleRule>(this)->Copy();
+    case kPage:
+      return To<StyleRulePage>(this)->Copy();
+    case kPageMargin:
+      return To<StyleRulePageMargin>(this)->Copy();
+    case kProperty:
+      return To<StyleRuleProperty>(this)->Copy();
+    case kFontFace:
+      return To<StyleRuleFontFace>(this)->Copy();
+    case kFontFeatureValues:
+      return To<StyleRuleFontFeatureValues>(this)->Copy();
+    case kFontFeature:
+      return std::make_shared<StyleRuleFontFeature>(*To<StyleRuleFontFeature>(this));
+    case kMedia:
+      return To<StyleRuleMedia>(this)->Copy();
+    case kScope:
+      return To<StyleRuleScope>(this)->Copy();
+    case kSupports:
+      return To<StyleRuleSupports>(this)->Copy();
+    case kKeyframes:
+      return To<StyleRuleKeyframes>(this)->Copy();
+    case kLayerBlock:
+      return To<StyleRuleLayerBlock>(this)->Copy();
+    case kLayerStatement:
+      return To<StyleRuleLayerStatement>(this)->Copy();
+    case kContainer:
+      return To<StyleRuleContainer>(this)->Copy();
+    case kCounterStyle:
+      return To<StyleRuleCounterStyle>(this)->Copy();
+    case kStartingStyle:
+      return To<StyleRuleStartingStyle>(this)->Copy();
+    case kNestedDeclarations:
+      return To<StyleRuleNestedDeclarations>(this)->Copy();
+    default:
+      // Many rules are still in migration. Prefer falling back to sharing the
+      // existing instance rather than dropping the rule tree entirely.
+      return shared_from_this();
+  }
 }
 
 CSSRule* StyleRuleBase::CreateCSSOMWrapper(uint32_t position_hint,
@@ -771,6 +758,23 @@ StyleRuleMedia::StyleRuleMedia(std::shared_ptr<const MediaQuerySet> media,
     : StyleRuleCondition(kMedia, std::move(rules)), media_queries_(media) {}
 
 void StyleRuleMedia::TraceAfterDispatch(GCVisitor* visitor) const {}
+
+StyleRuleSupports::StyleRuleSupports(const String& condition_text,
+                                     bool condition_is_supported,
+                                     std::vector<std::shared_ptr<StyleRuleBase>> rules)
+    : StyleRuleCondition(kSupports, condition_text, std::move(rules)),
+      condition_is_supported_(condition_is_supported) {}
+
+StyleRuleSupports::StyleRuleSupports(const StyleRuleSupports&) = default;
+
+void StyleRuleSupports::SetConditionText(const ExecutingContext* execution_context, String value) {
+  condition_text_ = value;
+  if (!execution_context) {
+    condition_is_supported_ = false;
+    return;
+  }
+  condition_is_supported_ = CSSParser::ParseSupportsCondition(value, execution_context);
+}
 
 StyleRuleContainer::StyleRuleContainer(ContainerQuery& container_query,
                                        std::vector<std::shared_ptr<StyleRuleBase>> rules)

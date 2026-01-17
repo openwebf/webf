@@ -17,11 +17,13 @@ namespace webf {
 class StyleRuleLayerStatement;
 
 class CSSLayerStatementRule final : public CSSRule {
+  DEFINE_WRAPPERTYPEINFO();
+
  public:
   CSSLayerStatementRule(std::shared_ptr<StyleRuleLayerStatement>, CSSStyleSheet*);
   ~CSSLayerStatementRule() override;
 
-  std::vector<String> nameList() const;
+  std::vector<AtomicString> nameList() const;
 
   void Reattach(std::shared_ptr<StyleRuleBase>) override;
   AtomicString cssText() const override;

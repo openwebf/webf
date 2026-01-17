@@ -167,7 +167,14 @@ void CSSStyleSheet::WillMutateRules() {
   // creation). Any rule mutation (insert/delete) would otherwise require
   // shifting these wrappers, which is unsafe with the current Member
   // implementation. Treat them as a cache and invalidate on mutation.
-  child_rule_cssom_wrappers_.clear();
+  //
+  // If copy-on-write is needed (shared cached StyleSheetContents), reattach
+  // any existing wrappers to the copied StyleRule objects so that CSSOM
+  // mutations performed through already-referenced CSSRule objects (e.g.
+  // CSSLayerBlockRule.insertRule/deleteRule) continue to operate on the
+  // correct rule tree.
+  std::vector<Member<CSSRule>> existing_rule_wrappers;
+  existing_rule_wrappers.swap(child_rule_cssom_wrappers_);
 
   // If we are the only client it is safe to mutate.
   if (!contents_->IsUsedFromTextCache()) {
@@ -203,9 +210,19 @@ void CSSStyleSheet::WillMutateRules() {
   contents_->ClearRuleSet();
 
   // Cached CSSOM rule wrappers reference StyleRule objects from the old
-  // StyleSheetContents. Clear them so they are recreated lazily against the
-  // new contents.
-  child_rule_cssom_wrappers_.clear();
+  // StyleSheetContents. Reattach any already-created wrappers so existing JS
+  // references continue to work against the new contents.
+  const unsigned new_rule_count = contents_->RuleCount();
+  for (unsigned i = 0; i < existing_rule_wrappers.size() && i < new_rule_count; ++i) {
+    if (!existing_rule_wrappers[i]) {
+      continue;
+    }
+    StyleRuleBase* new_rule = contents_->RuleAt(i);
+    if (!new_rule) {
+      continue;
+    }
+    existing_rule_wrappers[i]->Reattach(new_rule->shared_from_this());
+  }
 
   if (style_engine) {
     style_engine->RegisterAuthorSheet(this);

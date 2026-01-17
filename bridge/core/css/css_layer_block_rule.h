@@ -17,6 +17,8 @@ namespace webf {
 class StyleRuleLayerBlock;
 
 class CSSLayerBlockRule final : public CSSGroupingRule {
+  DEFINE_WRAPPERTYPEINFO();
+
  public:
   CSSLayerBlockRule(std::shared_ptr<StyleRuleLayerBlock>, CSSStyleSheet*);
   ~CSSLayerBlockRule() override;

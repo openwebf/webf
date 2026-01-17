@@ -71,9 +71,6 @@ StyleSheetContents::StyleSheetContents(const webf::StyleSheetContents& o)
       original_url_(o.original_url_),
       //      pre_import_layer_statement_rules_(
       //          o.pre_import_layer_statement_rules_.size()),
-      import_rules_(o.import_rules_.size()),
-      //      namespace_rules_(o.namespace_rules_.size()),
-      child_rules_(o.child_rules_.size()),
       namespaces_(o.namespaces_),
       default_namespace_(o.default_namespace_),
       has_syntactically_valid_css_header_(o.has_syntactically_valid_css_header_),
@@ -84,7 +81,28 @@ StyleSheetContents::StyleSheetContents(const webf::StyleSheetContents& o)
       has_media_queries_(o.has_media_queries_),
       has_single_owner_document_(true),
       is_used_from_text_cache_(false),
-      parser_context_(o.parser_context_) {}
+      parser_context_(o.parser_context_) {
+  import_rules_.reserve(o.import_rules_.size());
+  for (const auto& import_rule : o.import_rules_) {
+    if (!import_rule) {
+      import_rules_.push_back(nullptr);
+      continue;
+    }
+    std::shared_ptr<const StyleRuleBase> copied = import_rule->Copy();
+    auto copied_import = std::static_pointer_cast<const StyleRuleImport>(copied);
+    import_rules_.push_back(std::const_pointer_cast<StyleRuleImport>(copied_import));
+  }
+
+  child_rules_.reserve(o.child_rules_.size());
+  for (const auto& child_rule : o.child_rules_) {
+    if (!child_rule) {
+      child_rules_.push_back(nullptr);
+      continue;
+    }
+    std::shared_ptr<const StyleRuleBase> copied = child_rule->Copy();
+    child_rules_.push_back(std::const_pointer_cast<StyleRuleBase>(copied));
+  }
+}
 
 StyleSheetContents::~StyleSheetContents() = default;
 
