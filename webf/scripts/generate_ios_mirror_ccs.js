@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 /*
  Auto-generate iOS mirror C/C++ wrappers under ios/Classes based ONLY on bridge_sources.json5.
- Each wrapper mirrors src/<rel>.{cc|c} at ios/Classes/<rel>.{cc|c} with a single include:
-   #include "../.../src/<rel>.{cc|c}"
+ Each wrapper mirrors src/<rel>.{cc|c|mm} at ios/Classes/<rel>.{cc|c|mm} with a single include:
+   #include "../.../src/<rel>.{cc|c|mm}"
  where the number of "../" is (depth of <rel> directory) + 2.
+ With --fix, also removes orphan wrappers (no matching src/ file, or not listed in config) and prunes empty directories.
 
  Usage:
    node scripts/generate_ios_mirror_ccs.js [--config <path>] [--dry-run] [--fix] [--verbose]
 
  Flags:
    --config   : Path to bridge_sources.json5 (default: ../bridge/bridge_sources.json5).
-   --dry-run  : Do not write files; just print actions.
-   --fix      : If a wrapper exists but has wrong include, rewrite it.
+   --dry-run  : Do not write or remove files; just print actions.
+   --fix      : If a wrapper exists but has wrong include, rewrite it; also remove orphan wrappers.
    --verbose  : Print detailed logging.
 */
 
@@ -45,6 +46,13 @@ function ensureDirSync(dir) {
 
 function pathToPosix(p) {
   return p.split(path.sep).join('/');
+}
+
+function looksLikeGeneratedWrapper(source) {
+  const lines = source.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length !== 1) return false;
+  const line = lines[0].trim();
+  return /^#include\s+"(\.\.\/)+src\/.+\.(?:c|cc|mm)"$/.test(line);
 }
 
 function computeIncludeFor(relPathFromSrc) {
@@ -118,6 +126,8 @@ function main() {
   const created = [];
   const updated = [];
   const skipped = [];
+  const removed = [];
+  const removeSkipped = [];
 
   for (const absSrc of srcFiles) {
     const relFromSrc = path.relative(srcDir, absSrc);
@@ -150,7 +160,7 @@ function main() {
   }
 
   // Orphan detection
-  const wrapperFiles = walk(iosClassesDir, (p) => p.endsWith('.cc') || p.endsWith('.c'));
+  const wrapperFiles = walk(iosClassesDir, (p) => p.endsWith('.cc') || p.endsWith('.c') || p.endsWith('.mm'));
   const orphanNoSrc = [];
   const notListedInConfig = [];
   const relSet = new Set(relFilesFromConfig.map((p) => pathToPosix(p)));
@@ -165,6 +175,37 @@ function main() {
     }
   }
 
+  if (fix) {
+    const orphanCandidates = new Set([...orphanNoSrc, ...notListedInConfig]);
+    for (const absWrap of orphanCandidates) {
+      let existing;
+      try {
+        existing = fs.readFileSync(absWrap, 'utf8');
+      } catch (e) {
+        removeSkipped.push(absWrap);
+        continue;
+      }
+      if (!looksLikeGeneratedWrapper(existing)) {
+        removeSkipped.push(absWrap);
+        continue;
+      }
+
+      log(`ORPHAN -> will remove: ${pathToPosix(path.relative(cwd, absWrap))}`, { verbose });
+      if (!dryRun) {
+        fs.unlinkSync(absWrap);
+        // Remove empty directories up to ios/Classes.
+        let currentDir = path.dirname(absWrap);
+        while (path.resolve(currentDir) !== path.resolve(iosClassesDir)) {
+          const entries = fs.readdirSync(currentDir);
+          if (entries.length > 0) break;
+          fs.rmdirSync(currentDir);
+          currentDir = path.dirname(currentDir);
+        }
+      }
+      removed.push(absWrap);
+    }
+  }
+
   // Summary
   const rel = (p) => pathToPosix(path.relative(cwd, p));
   console.log(`iOS mirror generation complete.`);
@@ -173,19 +214,25 @@ function main() {
   if (fix) {
     console.log(`  Updated: ${updated.length}`);
     if (updated.length && verbose) updated.forEach((p) => console.log(`    ~ ${rel(p)}`));
+    console.log(`  Removed orphan wrappers: ${removed.length}`);
+    if (removed.length && verbose) removed.forEach((p) => console.log(`    - ${rel(p)}`));
+    if (removeSkipped.length) {
+      console.log(`  Skipped orphan removal (non-wrapper/unreadable): ${removeSkipped.length}`);
+      if (verbose) removeSkipped.forEach((p) => console.log(`    x ${rel(p)}`));
+    }
   }
   if (skipped.length) {
     console.log(`  Skipped (exists, mismatch): ${skipped.length} (use --fix to rewrite)`);
   }
   if (orphanNoSrc.length) {
-    console.log(`  Orphan wrappers (no src file): ${orphanNoSrc.length}`);
+    console.log(`  Orphan wrappers found (no src file): ${orphanNoSrc.length}`);
     if (verbose) orphanNoSrc.forEach((p) => console.log(`    ? ${rel(p)}`));
   }
   if (notListedInConfig.length) {
-    console.log(`  Wrappers not listed in config: ${notListedInConfig.length}`);
+    console.log(`  Wrappers found not listed in config: ${notListedInConfig.length}`);
     if (verbose) notListedInConfig.forEach((p) => console.log(`    ! ${rel(p)}`));
   }
-  if (dryRun) console.log(`Dry-run: no files were written.`);
+  if (dryRun) console.log(`Dry-run: no files were written or removed.`);
 }
 
 if (require.main === module) {

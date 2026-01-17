@@ -820,10 +820,12 @@ void _fetchImportCSSContent(
     final String baseHrefRaw = nativeStringToString(nativeBaseHref);
     final String importHref = nativeStringToString(nativeImportHref);
     // Resolve relative import URL against the stylesheet base href
-    // Fallback: if base is empty or 'about:*', use the document URL as base.
-    String effectiveBase = baseHrefRaw;
-    if (effectiveBase.isEmpty || effectiveBase.startsWith('about:')) {
-      effectiveBase = controller.url ?? '';
+    // Fallback: if base is empty, use the document URL as base.
+    final String effectiveBase = baseHrefRaw.isNotEmpty ? baseHrefRaw : controller.url;
+    if (effectiveBase.isEmpty) {
+      bridgeLogger.severe('[@import] empty base href (base="$baseHrefRaw", controller.url="${controller.url}")');
+      callback(callbackContext, contextId, 'Empty base href'.toNativeUtf8(), nullptr, 0);
+      return;
     }
     Uri resolved = controller.uriParser!.resolve(Uri.parse(effectiveBase), Uri.parse(importHref));
     bridgeLogger.fine('[@import] fetchImportCSSContent base=$baseHrefRaw (effective=$effectiveBase) import=$importHref -> $resolved');

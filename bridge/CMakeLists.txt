@@ -171,36 +171,6 @@ if (DEFINED PLATFORM)
   endif()
 endif()
 
-# Generate CSS resource headers
-# This section generates C++ header files from CSS source files
-set(CSS_RESOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/core/css/resources)
-
-# Output generated headers into the source tree under code_gen
-set(GENERATED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/code_gen/)
-
-# Ensure the generated directory exists
-file(MAKE_DIRECTORY ${GENERATED_DIR})
-
-# Read HTML CSS content (no escaping needed for raw string literals)
-file(READ ${CSS_RESOURCES_DIR}/html.css HTML_CSS_CONTENT)
-
-# Generate html_css.h from template
-configure_file(
-  ${CSS_RESOURCES_DIR}/html_css.h.in
-  ${GENERATED_DIR}/html_css.h
-  @ONLY
-)
-
-# Read Quirks CSS content (no escaping needed for raw string literals)
-file(READ ${CSS_RESOURCES_DIR}/quirks.css QUIRKS_CSS_CONTENT)
-
-# Generate quirks_css.h from template
-configure_file(
-  ${CSS_RESOURCES_DIR}/quirks_css.h.in
-  ${GENERATED_DIR}/quirks_css.h
-  @ONLY
-)
-
 # Ensure code_gen is in the include path for generated headers
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/code_gen)
 
@@ -451,70 +421,3 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     )
   endif()
 endif ()
-
-
-#############################
-# Logging options
-#############################
-
-# Helper to allow env var defaults while preserving -D cache overrides
-function(_webf_option_with_env VAR DESC DEFAULT)
-  set(_default ${DEFAULT})
-  if(DEFINED ENV{${VAR}})
-    string(TOUPPER "$ENV{${VAR}}" _env_val)
-    if(_env_val STREQUAL "1" OR _env_val STREQUAL "ON" OR _env_val STREQUAL "TRUE" OR _env_val STREQUAL "YES")
-      set(_default ON)
-    elseif(_env_val STREQUAL "0" OR _env_val STREQUAL "OFF" OR _env_val STREQUAL "FALSE" OR _env_val STREQUAL "NO")
-      set(_default OFF)
-    else()
-      message(WARNING "Ignoring invalid value for ${VAR} environment variable: '$ENV{${VAR}}'. Expected ON/OFF/1/0/TRUE/FALSE/YES/NO.")
-    endif()
-  endif()
-  option(${VAR} "${DESC}" ${_default})
-endfunction()
-
-# Master switch to quickly enable all log categories
-_webf_option_with_env(WEBF_LOG_ALL "Enable all WebF category logs" OFF)
-
-# Per-category logging switches
-_webf_option_with_env(WEBF_LOG_PARSER "Enable Parser logs" OFF)
-_webf_option_with_env(WEBF_LOG_STYLEENGINE "Enable StyleEngine logs" OFF)
-_webf_option_with_env(WEBF_LOG_CASCADE "Enable Cascade logs" OFF)
-_webf_option_with_env(WEBF_LOG_COLLECTOR "Enable Collector logs" OFF)
-_webf_option_with_env(WEBF_LOG_STYLESHEET "Enable Stylesheet logs" OFF)
-_webf_option_with_env(WEBF_LOG_SELECTOR "Enable Selector logs" OFF)
-_webf_option_with_env(WEBF_LOG_ATTR "Enable Attr logs" OFF)
-_webf_option_with_env(WEBF_LOG_COMMAND "Enable Command logs" OFF)
-
-macro(_webf_define_log VAR)
-  if (WEBF_LOG_ALL OR ${VAR})
-    add_compile_definitions(${VAR}=1)
-    list(APPEND _WEBF_ENABLED_LOGS ${VAR})
-  endif()
-endmacro()
-
-set(_WEBF_ENABLED_LOGS)
-_webf_define_log(WEBF_LOG_PARSER)
-_webf_define_log(WEBF_LOG_STYLEENGINE)
-_webf_define_log(WEBF_LOG_CASCADE)
-_webf_define_log(WEBF_LOG_COLLECTOR)
-_webf_define_log(WEBF_LOG_STYLESHEET)
-_webf_define_log(WEBF_LOG_SELECTOR)
-_webf_define_log(WEBF_LOG_ATTR)
-_webf_define_log(WEBF_LOG_COMMAND)
-
-if (_WEBF_ENABLED_LOGS)
-  list(JOIN _WEBF_ENABLED_LOGS ", " _WEBF_ENABLED_LOGS_STR)
-  message(STATUS "WebF logging enabled for: ${_WEBF_ENABLED_LOGS_STR}")
-  # Ensure targets built in this directory also receive the definitions
-  foreach(_log ${_WEBF_ENABLED_LOGS})
-    if (TARGET webf_core)
-      target_compile_definitions(webf_core PUBLIC ${_log}=1)
-    endif()
-    if (TARGET webf)
-      target_compile_definitions(webf PUBLIC ${_log}=1)
-    endif()
-  endforeach()
-else()
-  message(STATUS "WebF logging: no categories enabled (define WEBF_LOG_* or set WEBF_LOG_ALL)")
-endif()

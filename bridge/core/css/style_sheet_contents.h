@@ -187,6 +187,7 @@ class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContent
     DCHECK(rule_set_);
     return rule_set_.get();
   }
+  std::shared_ptr<RuleSet> GetRuleSetShared() const { return rule_set_; }
   bool HasRuleSet() { return rule_set_ != nullptr; }
   std::shared_ptr<RuleSet> EnsureRuleSet(const MediaQueryEvaluator&);
   void ClearRuleSet();

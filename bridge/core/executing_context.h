@@ -18,6 +18,7 @@
 #include <locale>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
@@ -123,6 +124,12 @@ class ExecutingContext {
                       const char* sourceURL,
                       int startLine,
                       HTMLScriptElement* script_element = nullptr);
+
+  // Initialize the document URL/base URL from a script/module sourceURL so
+  // that subsequent CSS parsing can resolve relative URLs without ever
+  // exposing about:blank across the bridge.
+  void MaybeInitializeDocumentURLFromSourceURL(const char* sourceURL);
+
   bool IsContextValid() const;
   void SetContextInValid();
   bool IsCtxValid() const;
@@ -207,6 +214,18 @@ class ExecutingContext {
   FORCE_INLINE bool isIdle() const { return is_idle_; }
   FORCE_INLINE void SetIsIdle(bool is_idle) { is_idle_ = is_idle; }
   FORCE_INLINE void MarkNeedsStyleUpdateInMicrotask() { is_needs_update_styles_in_microtask_ = true; }
+
+  // Cached media/viewport values pushed from Dart (e.g., during resize). These
+  // avoid synchronous GetBindingProperty calls (which may flush layout) during
+  // media query evaluation.
+  void SetCachedViewportSize(double width, double height);
+  std::optional<double> CachedViewportWidth() const;
+  std::optional<double> CachedViewportHeight() const;
+  void SetCachedDevicePixelRatio(float device_pixel_ratio);
+  std::optional<float> CachedDevicePixelRatio() const;
+  enum class PreferredColorScheme : uint8_t { kLight, kDark, kNoPreference };
+  void SetCachedPreferredColorScheme(PreferredColorScheme scheme);
+  std::optional<PreferredColorScheme> CachedPreferredColorScheme() const;
 
   // Get RemoteObjectRegistry for this context
   RemoteObjectRegistry* GetRemoteObjectRegistry();
@@ -306,6 +325,10 @@ class ExecutingContext {
   bool enable_blink_engine_ = false;
   bool is_idle_{true};
   bool is_needs_update_styles_in_microtask_ {false};
+  std::optional<double> cached_viewport_width_;
+  std::optional<double> cached_viewport_height_;
+  std::optional<float> cached_device_pixel_ratio_;
+  std::optional<PreferredColorScheme> cached_preferred_color_scheme_;
 
   // Rust methods ptr should keep alive when ExecutingContext is disposing.
   const std::unique_ptr<ExecutingContextWebFMethods> public_method_ptr_ = nullptr;

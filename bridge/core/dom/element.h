@@ -5,6 +5,7 @@
 #ifndef BRIDGE_ELEMENT_H
 #define BRIDGE_ELEMENT_H
 
+#include <cstdint>
 #include "../../foundation/string/atomic_string.h"
 #include "bindings/qjs/converter.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
@@ -237,6 +238,13 @@ class Element : public ContainerNode {
   bool IsDisplayNoneForStyleInvalidation() const { return is_display_none_for_style_invalidation_; }
   void SetDisplayNoneForStyleInvalidation(bool value) { is_display_none_for_style_invalidation_ = value; }
 
+  // Tracks which pseudo-element styles were emitted to the Dart layer for this
+  // element. This lets the native style engine avoid sending redundant
+  // kClearPseudoStyle commands and clear stale pseudo styles when they stop
+  // matching.
+  uint32_t SentPseudoStyleMask() const { return sent_pseudo_style_mask_; }
+  void SetSentPseudoStyleMask(uint32_t mask) { sent_pseudo_style_mask_ = mask; }
+
   // NOTE: This shadows Node::GetComputedStyle().
   const ComputedStyle* GetComputedStyle() const {
     // return computed_style_.Get();
@@ -388,6 +396,7 @@ class Element : public ContainerNode {
   mutable std::shared_ptr<ElementData> element_data_;
   mutable Member<ElementAttributes> attributes_;
   bool is_display_none_for_style_invalidation_ = false;
+  uint32_t sent_pseudo_style_mask_ = 0;
 
   QualifiedName tag_name_;
 };

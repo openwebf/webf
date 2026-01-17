@@ -133,6 +133,9 @@ class RuleFeatureSet {
   SelectorPreMatch CollectFeaturesFromSelector(const CSSSelector&, const StyleScope*);
 
   // Member functions for accessing non-invalidation-set related features.
+  bool UsesBeforeRules() const { return metadata_.uses_before_rules; }
+  bool UsesAfterRules() const { return metadata_.uses_after_rules; }
+  bool UsesFirstLetterRules() const { return metadata_.uses_first_letter_rules; }
   bool UsesFirstLineRules() const { return metadata_.uses_first_line_rules; }
   bool UsesWindowInactiveSelector() const { return metadata_.uses_window_inactive_selector; }
   // Returns true if we have :nth-child(... of S) selectors where S contains a
@@ -265,6 +268,9 @@ class RuleFeatureSet {
     bool operator==(const FeatureMetadata&) const;
     bool operator!=(const FeatureMetadata& o) const { return !(*this == o); }
 
+    bool uses_before_rules = false;
+    bool uses_after_rules = false;
+    bool uses_first_letter_rules = false;
     bool uses_first_line_rules = false;
     bool uses_window_inactive_selector = false;
     unsigned max_direct_adjacent_selectors = 0;

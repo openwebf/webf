@@ -59,6 +59,19 @@ const String MediaValuesDynamic::MediaType() const {
 }
 
 CSSValueID MediaValuesDynamic::PreferredColorScheme() const {
+  if (context_) {
+    if (auto cached = context_->CachedPreferredColorScheme(); cached.has_value()) {
+      switch (*cached) {
+        case ExecutingContext::PreferredColorScheme::kDark:
+          return CSSValueID::kDark;
+        case ExecutingContext::PreferredColorScheme::kLight:
+          return CSSValueID::kLight;
+        case ExecutingContext::PreferredColorScheme::kNoPreference:
+          return CSSValueID::kNoPreference;
+      }
+    }
+  }
+
   Window* window = context_ ? context_->window() : nullptr;
   if (!window) {
     return CSSValueID::kLight;
@@ -71,10 +84,22 @@ CSSValueID MediaValuesDynamic::PreferredColorScheme() const {
       NativeValueConverter<NativeTypeString>::FromNativeValue(window->ctx(), std::move(dart_result));
 
   if (scheme == AtomicString::CreateFromUTF8("dark")) {
+    if (context_) {
+      context_->SetCachedPreferredColorScheme(ExecutingContext::PreferredColorScheme::kDark);
+    }
     return CSSValueID::kDark;
   }
   if (scheme == AtomicString::CreateFromUTF8("light")) {
+    if (context_) {
+      context_->SetCachedPreferredColorScheme(ExecutingContext::PreferredColorScheme::kLight);
+    }
     return CSSValueID::kLight;
+  }
+  if (scheme == AtomicString::CreateFromUTF8("no-preference")) {
+    if (context_) {
+      context_->SetCachedPreferredColorScheme(ExecutingContext::PreferredColorScheme::kNoPreference);
+    }
+    return CSSValueID::kNoPreference;
   }
   return CSSValueID::kLight;
 }

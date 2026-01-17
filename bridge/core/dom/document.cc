@@ -398,6 +398,22 @@ const KURL& Document::BaseURL() const {
   return BlankURL();
 }
 
+void Document::SetDocumentURL(const KURL& url) {
+  if (url.IsEmpty() || !url.IsValid()) {
+    return;
+  }
+
+  // Initialize only once; a document URL should not change during script
+  // evaluation. Navigation creates a new controller/context.
+  if (!url_.IsEmpty() && url_.IsValid()) {
+    return;
+  }
+
+  url_ = url;
+  fallback_base_url_ = url;
+  UpdateBaseURL();
+}
+
 KURL Document::CompleteURL(const std::string& url, const CompleteURLPreloadStatus preload_status) const {
   return CompleteURLWithOverride(url, base_url_, preload_status);
 }
@@ -672,7 +688,7 @@ void Document::UpdateStyleForThisDocument() {
   auto duration_ms =
       std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count();
   if (duration_ms != 0) {
-    WEBF_LOG(VERBOSE) << "[Style] Document::UpdateStyleForThisDocument elapsed: " << duration_ms << "ms" << std::endl;
+    WEBF_LOG(VERBOSE) << "[Style] Document::UpdateStyleForThisDocument elapsed: " << duration_ms << "ms";
   }
 }
 

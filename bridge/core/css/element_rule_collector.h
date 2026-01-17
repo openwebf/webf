@@ -27,6 +27,7 @@
 #ifndef WEBF_CSS_ELEMENT_RULE_COLLECTOR_H
 #define WEBF_CSS_ELEMENT_RULE_COLLECTOR_H
 
+#include <cstdint>
 #include <memory>
 #include <vector>
 #include "core/css/css_rule_list.h"
@@ -105,6 +106,13 @@ class ElementRuleCollector {
   // Get the match result
   const MatchResult& GetMatchResult() const { return result_; }
 
+  // Bitmask of pseudo-elements that matched while collecting normal (non-pseudo)
+  // element rules. Each bit is (1u << PseudoId) when PseudoId < 32.
+  uint32_t MatchedPseudoElementMask() const { return matched_pseudo_element_mask_; }
+  // Subset of MatchedPseudoElementMask() where at least one matched rule
+  // declares a `content` property (used to gate ::before/::after creation).
+  uint32_t MatchedPseudoElementWithContentMask() const { return matched_pseudo_element_with_content_mask_; }
+
   // Pseudo element matching
   void SetPseudoElementStyleRequest(const PseudoElementStyleRequest&);
   void SetMatchingFromScope(bool matching_from_scope) { 
@@ -137,7 +145,9 @@ class ElementRuleCollector {
       const RuleDataListType& rules,
       CascadeOrigin,
       CascadeLayerLevel,
-      const MatchRequest&);
+      const MatchRequest&,
+      bool is_id_bucket = false,
+      bool typed_rules_only = false);
 
   void DidMatchRule(std::shared_ptr<const RuleData>,
                    CascadeOrigin,
@@ -174,6 +184,9 @@ class ElementRuleCollector {
   bool is_collecting_for_pseudo_element_ = false;
   bool is_ua_rule_ = false;
   uint16_t current_cascade_order_ = 0;
+
+  uint32_t matched_pseudo_element_mask_ = 0;
+  uint32_t matched_pseudo_element_with_content_mask_ = 0;
 };
 
 }  // namespace webf

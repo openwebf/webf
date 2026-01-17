@@ -69,6 +69,14 @@ static bool RightmostCompoundTagMatchesElement(const RuleData& rule_data,
   return element.TagQName().LocalNameUpper() == actual.UpperASCII();
 }
 
+static uint32_t PseudoIdBit(PseudoId pseudo_id) {
+  unsigned id = static_cast<unsigned>(pseudo_id);
+  if (id >= 32) {
+    return 0;
+  }
+  return 1u << id;
+}
+
 ElementRuleCollector::ElementRuleCollector(StyleResolverState& state, SelectorChecker::Mode mode)
     : state_(state),
       element_(&state.GetElement()),
@@ -82,15 +90,13 @@ ElementRuleCollector::~ElementRuleCollector() = default;
 void ElementRuleCollector::CollectMatchingRules(const MatchRequest& match_request) {
   assert(element_);
   
-  // Collect rules from the match request
-  for (const auto& rule_set : match_request.GetRuleSets()) {
-    if (rule_set) {
-      CollectRuleSetMatchingRules(match_request, 
-                                 rule_set,
-                                 match_request.GetOrigin(),
-                                 0);
+  // Collect rules from the match request.
+  match_request.ForEachRuleSet([&](const std::shared_ptr<RuleSet>& rule_set) {
+    if (!rule_set) {
+      return;
     }
-  }
+    CollectRuleSetMatchingRules(match_request, rule_set, match_request.GetOrigin(), 0);
+  });
 }
 
 void ElementRuleCollector::CollectRuleSetMatchingRules(
@@ -132,24 +138,14 @@ void ElementRuleCollector::CollectRuleSetMatchingRules(
       // any pure #id variants that may have been created elsewhere.
       bool typed_exists = false;
       for (const auto& rd : id_rules) {
-        if (rd && rd->HasRightmostType()) { typed_exists = true; break; }
-      }
-      if (typed_exists) {
-        std::vector<std::shared_ptr<RuleData>> typed_only;
-        typed_only.reserve(id_rules.size());
-        for (const auto& rd : id_rules) {
-          if (rd && rd->HasRightmostType()) typed_only.push_back(rd);
+        if (rd && rd->HasRightmostType()) {
+          typed_exists = true;
+          break;
         }
-        CollectMatchingRulesForList(typed_only,
-                                   cascade_origin,
-                                   cascade_layer,
-                                   match_request);
-      } else {
-        CollectMatchingRulesForList(id_rules,
-                                   cascade_origin,
-                                   cascade_layer,
-                                   match_request);
       }
+
+      CollectMatchingRulesForList(id_rules, cascade_origin, cascade_layer, match_request,
+                                 /*is_id_bucket*/ true, /*typed_rules_only*/ typed_exists);
     }
   }
   
@@ -172,51 +168,52 @@ void ElementRuleCollector::CollectMatchingRulesForList(
     const RuleDataListType& rules,
     CascadeOrigin cascade_origin,
     CascadeLayerLevel cascade_layer,
-    const MatchRequest& match_request) {
+    const MatchRequest& match_request,
+    bool is_id_bucket,
+    bool typed_rules_only) {
   
   // Safety check - don't process too many rules to prevent hangs
   size_t processed_count = 0;
   const size_t MAX_RULES_TO_PROCESS = 1000;
-
-  // If this is an ID bucket (rules all target the element's id), and there are
-  // typed compounds (e.g. P#id), prefer those and ignore pure-id variants. This
-  // guards against accidental id-only entries created upstream and aligns with
-  // Blink behavior for compound matching specificity.
-  auto extract_rightmost_id = [](const CSSSelector& sel) -> AtomicString {
-    const CSSSelector* s = &sel;
-    while (s) {
-      if (s->Match() == CSSSelector::kId) {
-        return s->Value();
-      }
-      s = s->NextSimpleSelector();
-    }
-    return g_null_atom;
-  };
-
-  bool maybe_id_bucket = false;
-  if (!rules.empty() && rules.front()) {
-    AtomicString idv = extract_rightmost_id(rules.front()->Selector());
-    maybe_id_bucket = !idv.IsNull() && element_->HasID() && idv == element_->id();
-  }
-  bool typed_exists_in_bucket = false;
-  if (maybe_id_bucket) {
-    for (const auto& rd : rules) {
-      if (rd && rd->HasRightmostType()) { typed_exists_in_bucket = true; break; }
-    }
-  }
   
   for (const auto& rule_data : rules) {
     if (!rule_data) {
       continue;
     }
-    
+
+    // Fast prefilter for pseudo-element style collection: when a concrete
+    // pseudo-element (e.g. ::before) is requested, only selectors that actually
+    // target that pseudo-element can ever match. Without this, pseudo style
+    // resolution ends up iterating through all normal element rules in the same
+    // buckets and paying the full matcher cost only to fail at the end.
+    if (pseudo_element_id_ != kPseudoIdNone) {
+      // Only selectors that actually contain the requested pseudo-element can
+      // match during pseudo-element style collection. The pseudo-element is not
+      // always the rightmost simple selector (e.g. ".a::before:hover"), so scan
+      // the rightmost compound for a pseudo-element match.
+      bool targets_requested_pseudo = false;
+      for (const CSSSelector* s = &rule_data->Selector(); s; s = s->NextSimpleSelector()) {
+        if (s->Match() == CSSSelector::kPseudoElement) {
+          targets_requested_pseudo = CSSSelector::GetPseudoId(s->GetPseudoType()) == pseudo_element_id_;
+          break;
+        }
+        CSSSelector::RelationType rel = s->Relation();
+        if (rel != CSSSelector::kSubSelector && rel != CSSSelector::kScopeActivation) {
+          break;
+        }
+      }
+      if (!targets_requested_pseudo) {
+        continue;
+      }
+    }
+
     // Prevent processing too many rules
     if (++processed_count > MAX_RULES_TO_PROCESS) {
       break;
     }
     
     // Skip pure-id variants if we have typed compounds in the same ID bucket.
-    if (maybe_id_bucket && typed_exists_in_bucket && !rule_data->HasRightmostType()) {
+    if (is_id_bucket && typed_rules_only && !rule_data->HasRightmostType()) {
       continue;
     }
 
@@ -236,26 +233,6 @@ void ElementRuleCollector::CollectMatchingRulesForList(
       continue;
     }
     
-  // UA stylesheet matching must respect full selectors (combinators, pseudos).
-  // Previously we short-circuited on tag-only which caused rules like
-  // "td > p:first-child" to (incorrectly) match all <p>, zeroing margins.
-  if (cascade_origin == CascadeOrigin::kUserAgent) {
-    SelectorChecker::MatchResult ua_match_result;
-    // Ensure UA rule matching respects requested pseudo-element (e.g., ::before/::after)
-    context.pseudo_id = pseudo_element_id_;
-    bool ua_matched = selector_checker_.Match(context, ua_match_result);
-    if (ua_matched) {
-      // When collecting normal element rules, pseudo-element selectors (e.g.
-      // ::before/::after) may "match" only to mark pseudo presence. They must
-      // not contribute properties to the originating element's style.
-      if (pseudo_element_id_ == kPseudoIdNone && ua_match_result.dynamic_pseudo != kPseudoIdNone) {
-        continue;
-      }
-      DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
-    }
-    continue;  // Handled UA case.
-  }
-    
     SelectorChecker::MatchResult match_result;
     // Avoid calling TagQName() unless the selector is a tag selector.
     // Non-tag selectors (class, id, attribute, pseudo, etc.) would hit
@@ -271,6 +248,14 @@ void ElementRuleCollector::CollectMatchingRulesForList(
       // ::before/::after) may "match" only to mark pseudo presence. They must
       // not contribute properties to the originating element's style.
       if (pseudo_element_id_ == kPseudoIdNone && match_result.dynamic_pseudo != kPseudoIdNone) {
+        uint32_t bit = PseudoIdBit(match_result.dynamic_pseudo);
+        if (bit) {
+          matched_pseudo_element_mask_ |= bit;
+          if (rule_data->Rule() &&
+              rule_data->Rule()->Properties().HasProperty(CSSPropertyID::kContent)) {
+            matched_pseudo_element_with_content_mask_ |= bit;
+          }
+        }
         continue;
       }
       DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
@@ -345,7 +330,7 @@ void ElementRuleCollector::SortAndTransferMatchedRules() {
 
 void ElementRuleCollector::SortMatchedRules() {
   // Sort by cascade order
-  std::stable_sort(matched_rules_.begin(), matched_rules_.end(),
+  std::sort(matched_rules_.begin(), matched_rules_.end(),
       [](const MatchedRule& a, const MatchedRule& b) {
         // CSS Cascade order (aligned with CascadePriority::ForLayerComparison):
         // 1) Origin (UA < User < Author < Animation < Transition)
@@ -406,6 +391,8 @@ void ElementRuleCollector::ClearMatchedRules() {
   matched_rules_.clear();
   result_.Clear();
   current_cascade_order_ = 0;
+  matched_pseudo_element_mask_ = 0;
+  matched_pseudo_element_with_content_mask_ = 0;
 }
 
 void ElementRuleCollector::AddElementStyleProperties(

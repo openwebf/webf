@@ -147,12 +147,22 @@ void StyleRuleImport::RequestStyleSheet() {
   loading_ = true;
 
   // Resolve base href and import href. If parser context lacks a base URL
-  // (e.g., inline <style>), fall back to the document’s base URL.
+  // (e.g., inline <style>) or is about:blank, fall back to the document URL.
   std::string base_href = parser_ctx->BaseURL().GetString();
-  if (base_href.empty()) {
+  if (base_href.empty() || base_href.rfind("about:", 0) == 0) {
     if (const Document* doc = exe_ctx->document()) {
-      base_href = doc->BaseURL().GetString();
+      // Prefer the document URL if available; otherwise use BaseURL.
+      std::string doc_url = doc->Url().GetString();
+      base_href = !doc_url.empty() ? doc_url : doc->BaseURL().GetString();
     }
+  }
+  // Never propagate about:* (including about:blank) across the bridge. Dart-side
+  // loaders expect a real, fetchable base URL for resolving relative @import
+  // paths.
+  KURL base_url(base_href);
+  if (base_url.IsEmpty() || !base_url.IsValid() || base_url.ProtocolIsAbout()) {
+    loading_ = false;
+    return;
   }
   std::string import_href = Href().ToUTF8String();
 
@@ -193,8 +203,10 @@ void StyleRuleImport::RequestStyleSheet() {
     return;
   }
 
-  // Build parser context for imported sheet with resolved base URL
-  KURL resolved_url(parser_ctx->BaseURL(), import_href);
+  // Build parser context for imported sheet with resolved base URL. Use the
+  // same effective base as the fetch path so url() tokens resolve relative to
+  // the stylesheet URL (not about:blank).
+  KURL resolved_url(KURL(base_href), import_href);
   auto child_parser_ctx = std::make_shared<CSSParserContext>(*parser_ctx->GetDocument(), resolved_url.GetString());
 
   // Create and parse the child stylesheet; do not set owner_rule to avoid shared_ptr issues

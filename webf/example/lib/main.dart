@@ -35,9 +35,22 @@ const String demoControllerName = 'demo';
 const String demoInitialRoute = '/';
 const Map<String, dynamic>? demoInitialState = null;
 
+bool? _resolveWebFDarkModeOverride(AdaptiveThemeMode mode) {
+  if (mode.isSystem) return null;
+  return mode.isDark;
+}
+
+void _syncAllWebFControllersDarkModeOverride(bool? darkModeOverride) {
+  final controllerManager = WebFControllerManager.instance;
+  for (final controllerName in controllerManager.controllerNames) {
+    controllerManager.getControllerSync(controllerName)?.darkModeOverride = darkModeOverride;
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final savedThemeMode = await AdaptiveTheme.getThemeMode();
+  final initialThemeMode = savedThemeMode ?? AdaptiveThemeMode.light;
 
   installWebFCupertinoUI();
   installWebFCamera();
@@ -69,7 +82,7 @@ void main() async {
       bundle: WebFBundle.fromUrl(demoEntryUrl),
       setup: (controller) {
         controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-        controller.darkModeOverride = savedThemeMode?.isDark;
+        controller.darkModeOverride = _resolveWebFDarkModeOverride(initialThemeMode);
       });
 
   runApp(MyApp(savedThemeMode: savedThemeMode));
@@ -253,8 +266,6 @@ class MyAppState extends State<MyApp> {
       ..remove('webfPath');
     final queryParameters = state.uri.queryParameters;
 
-    WebFController controller = WebFControllerManager.instance.getControllerSync(demoControllerName)!;
-
     return MaterialPage<void>(
         key: state.pageKey,
         name: state.uri.toString(),
@@ -286,13 +297,15 @@ class MyAppState extends State<MyApp> {
       dark: ThemeData.dark(useMaterial3: true),
       initial: widget.savedThemeMode ?? AdaptiveThemeMode.light,
       builder: (theme, darkTheme) =>
-          MaterialApp.router(
-              title: 'WebF Example App',
-              theme: theme,
-              darkTheme: darkTheme,
-              themeMode: ThemeMode.system,
-              routerConfig: _router,
-              debugShowCheckedModeBanner: false),
+          _SystemThemeSync(
+            child: MaterialApp.router(
+                title: 'WebF Example App',
+                theme: theme,
+                darkTheme: darkTheme,
+                themeMode: ThemeMode.system,
+                routerConfig: _router,
+                debugShowCheckedModeBanner: false),
+          ),
     );
   }
 
@@ -350,10 +363,8 @@ class WebFDemo extends StatefulWidget {
 class _WebFDemoState extends State<WebFDemo> {
   @override
   Widget build(BuildContext context) {
-    bool darkModeOverride = AdaptiveTheme
-        .of(context)
-        .theme
-        .brightness == Brightness.dark;
+    final themeManager = AdaptiveTheme.of(context);
+    final bool? darkModeOverride = _resolveWebFDarkModeOverride(themeManager.mode);
     // bool isDarkModeEnabled = AdaptiveTheme.of(context).
     return Scaffold(
         appBar: AppBar(
@@ -542,5 +553,73 @@ class _WebFDemoState extends State<WebFDemo> {
   @override
   void dispose() {
     super.dispose();
+  }
+}
+
+class _SystemThemeSync extends StatefulWidget {
+  const _SystemThemeSync({
+    required this.child,
+  });
+
+  final Widget child;
+
+  @override
+  State<_SystemThemeSync> createState() => _SystemThemeSyncState();
+}
+
+class _SystemThemeSyncState extends State<_SystemThemeSync> with WidgetsBindingObserver {
+  AdaptiveThemeManager<ThemeData>? _themeManager;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final nextThemeManager = AdaptiveTheme.maybeOf(context);
+    if (nextThemeManager == null || _themeManager == nextThemeManager) return;
+
+    _themeManager?.modeChangeNotifier.removeListener(_handleThemeModeChanged);
+    _themeManager = nextThemeManager;
+    _themeManager!.modeChangeNotifier.addListener(_handleThemeModeChanged);
+
+    _syncAllWebFControllersDarkModeOverride(_resolveWebFDarkModeOverride(_themeManager!.mode));
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    super.didChangePlatformBrightness();
+
+    // System theme switch: reset app theme to follow system and let WebF follow system.
+    final themeManager = _themeManager ?? AdaptiveTheme.maybeOf(context);
+    if (themeManager == null) return;
+
+    if (!themeManager.mode.isSystem) {
+      themeManager.setSystem();
+    }
+    _syncAllWebFControllersDarkModeOverride(null);
+  }
+
+  void _handleThemeModeChanged() {
+    final themeManager = _themeManager;
+    if (themeManager == null) return;
+
+    _syncAllWebFControllersDarkModeOverride(_resolveWebFDarkModeOverride(themeManager.mode));
+  }
+
+  @override
+  void dispose() {
+    _themeManager?.modeChangeNotifier.removeListener(_handleThemeModeChanged);
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
   }
 }

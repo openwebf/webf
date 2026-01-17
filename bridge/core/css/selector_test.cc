@@ -5,7 +5,6 @@
 #include "gtest/gtest.h"
 #include "webf_test_env.h"
 #include "bindings/qjs/cppgc/mutation_scope.h"
-#include "core/css/css_default_style_sheets.h"
 #include "core/css/rule_set.h"
 #include "core/css/media_query_evaluator.h"
 #include "core/css/selector_checker.h"

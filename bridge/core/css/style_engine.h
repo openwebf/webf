@@ -311,9 +311,17 @@ class StyleEngine final {
   // calling RecalcStyle(). This lets unit tests observe the optimization
   // without wiring into logging or UI commands.
   int media_query_recalc_count_for_test_{0};
+  // Cached author stylesheet list in document order. This must follow DOM order
+  // (not load/registration order) to preserve cascade semantics.
+  bool author_style_sheets_in_document_order_dirty_{true};
+  std::vector<Member<CSSStyleSheet>> author_style_sheets_in_document_order_;
 
  public:
   int media_query_recalc_count_for_test() const { return media_query_recalc_count_for_test_; }
+
+  // Returns the author stylesheets (inline <style> and <link rel=stylesheet>)
+  // in DOM order, suitable for cascade ordering.
+  const std::vector<Member<CSSStyleSheet>>& AuthorStyleSheetsInDocumentOrder();
 
   void RegisterAuthorSheet(CSSStyleSheet* sheet) {
     if (!sheet) return;
@@ -331,6 +339,7 @@ class StyleEngine final {
     if (global_rule_set_) {
       global_rule_set_->MarkDirty();
     }
+    author_style_sheets_in_document_order_dirty_ = true;
   }
 
   void UnregisterAuthorSheet(CSSStyleSheet* sheet) {
@@ -355,6 +364,7 @@ class StyleEngine final {
     if (global_rule_set_) {
       global_rule_set_->MarkDirty();
     }
+    author_style_sheets_in_document_order_dirty_ = true;
   }
 
   const std::vector<std::shared_ptr<StyleSheetContents>>& AuthorSheets() const { return author_sheets_; }

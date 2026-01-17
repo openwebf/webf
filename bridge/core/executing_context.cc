@@ -28,6 +28,7 @@
 #include "core/html/html_script_element.h"
 #include "core/events/promise_rejection_event.h"
 #include "core/js_function_ref.h"
+#include "core/platform/url/kurl.h"
 #include "event_type_names.h"
 #include "foundation/logging.h"
 #include "foundation/native_byte_data.h"
@@ -46,6 +47,40 @@ static std::atomic<int32_t> context_unique_id{0};
 #define MAX_JS_CONTEXT 8192
 thread_local std::unordered_map<double, bool> valid_contexts;
 std::atomic<uint32_t> running_context_list{0};
+
+void ExecutingContext::MaybeInitializeDocumentURLFromSourceURL(const char* sourceURL) {
+  if (sourceURL == nullptr) {
+    return;
+  }
+
+  Document* doc = document();
+  if (doc == nullptr) {
+    return;
+  }
+
+  // Do not clobber an already-initialized base URL (e.g. set by navigation or <base>).
+  if (!doc->BaseURL().IsAboutBlankURL()) {
+    return;
+  }
+
+  std::string src(sourceURL);
+  if (src.empty()) {
+    return;
+  }
+
+  KURL url(src);
+  if (url.IsEmpty() || !url.IsValid() || url.ProtocolIsAbout()) {
+    return;
+  }
+
+  // Avoid setting placeholder URLs used for anonymous script evaluation
+  // (e.g. "vm://0"). Keep "vm://bundle/..." which is a real bundle origin.
+  if (url.ProtocolIs("vm") && url.Host() != "bundle") {
+    return;
+  }
+
+  doc->SetDocumentURL(url);
+}
 
 ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
                                    bool is_dedicated,
@@ -204,6 +239,10 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
 
   SetIsIdle(false);
 
+  // Initialize document URL/base URL as early as possible so that subsequent
+  // CSS parsing (@import/url()) can resolve relative URLs correctly.
+  MaybeInitializeDocumentURLFromSourceURL(sourceURL);
+
   // Validate input parameters
   if (code == nullptr || code_len == 0) {
     return true; // Empty script is not an error
@@ -268,6 +307,9 @@ bool ExecutingContext::EvaluateJavaScript(const char16_t* code, size_t length, c
                                           HTMLScriptElement* script_element) {
   SetIsIdle(false);
 
+  // Ensure document URL is initialized for UTF-16 script evaluation as well.
+  MaybeInitializeDocumentURLFromSourceURL(sourceURL);
+
   std::string utf8Code = toUTF8(std::u16string(reinterpret_cast<const char16_t*>(code), length));
 
   // Set document.currentScript if script element is provided
@@ -314,6 +356,10 @@ bool ExecutingContext::EvaluateModule(const char* code,
   }
 
   SetIsIdle(false);
+
+  // Same as EvaluateJavaScript: ensure document URL is initialized for any
+  // module graph that will create stylesheets.
+  MaybeInitializeDocumentURLFromSourceURL(sourceURL);
 
   // Per HTML spec, document.currentScript is always null in module scripts.
   // Do not set currentScript for module evaluation.
@@ -370,6 +416,9 @@ bool ExecutingContext::EvaluateJavaScript(const char* code, size_t codeLength, c
 bool ExecutingContext::EvaluateJavaScript(const char* code, size_t codeLength, const char* sourceURL, int startLine,
                                           HTMLScriptElement* script_element) {
   SetIsIdle(false);
+
+  // Initialize document URL for direct (non-bytecode-caching) evaluation path.
+  MaybeInitializeDocumentURLFromSourceURL(sourceURL);
 
   // Set document.currentScript if script element is provided
   HTMLScriptElement* previous_current_script = nullptr;
@@ -453,6 +502,35 @@ bool ExecutingContext::IsContextValid() const {
 
 void ExecutingContext::SetContextInValid() {
   is_context_valid_ = false;
+}
+
+void ExecutingContext::SetCachedViewportSize(double width, double height) {
+  cached_viewport_width_ = width;
+  cached_viewport_height_ = height;
+}
+
+std::optional<double> ExecutingContext::CachedViewportWidth() const {
+  return cached_viewport_width_;
+}
+
+std::optional<double> ExecutingContext::CachedViewportHeight() const {
+  return cached_viewport_height_;
+}
+
+void ExecutingContext::SetCachedDevicePixelRatio(float device_pixel_ratio) {
+  cached_device_pixel_ratio_ = device_pixel_ratio;
+}
+
+std::optional<float> ExecutingContext::CachedDevicePixelRatio() const {
+  return cached_device_pixel_ratio_;
+}
+
+void ExecutingContext::SetCachedPreferredColorScheme(PreferredColorScheme scheme) {
+  cached_preferred_color_scheme_ = scheme;
+}
+
+std::optional<ExecutingContext::PreferredColorScheme> ExecutingContext::CachedPreferredColorScheme() const {
+  return cached_preferred_color_scheme_;
 }
 
 bool ExecutingContext::IsCtxValid() const {

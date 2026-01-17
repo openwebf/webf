@@ -148,7 +148,6 @@
     "core/css/if_condition.cc",
     "core/css/style_sheet_contents.cc",
     "core/css/css_style_sheet.cc",
-    "core/css/css_default_style_sheets.cc",
     "core/css/style_rule_import.cc",
     "core/css/style_sheet.cc",
     "core/css/resolver/style_resolver.cc",

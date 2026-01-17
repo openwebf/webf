@@ -8,7 +8,6 @@
 #include <unordered_map>
 
 #include "bindings/qjs/native_string_utils.h"
-#include "core/css/css_default_style_sheets.h"
 #include "core/dom/frame_request_callback_collection.h"
 #include "core/frame/dom_timer.h"
 #include "core/page.h"

@@ -24,27 +24,41 @@ class MatchRequest {
                        CascadeOrigin origin = CascadeOrigin::kAuthor,
                        unsigned style_sheet_index = 0)
       : origin_(origin), 
-        style_sheet_index_(style_sheet_index) {
-    if (rule_set) {
-      rule_sets_.push_back(rule_set);
-    }
-  }
+        style_sheet_index_(style_sheet_index),
+        primary_rule_set_(std::move(rule_set)) {}
   
   void AddRuleSet(std::shared_ptr<RuleSet> rule_set) {
-    if (rule_set) {
-      rule_sets_.push_back(rule_set);
+    if (!rule_set) {
+      return;
     }
+    if (!primary_rule_set_) {
+      primary_rule_set_ = std::move(rule_set);
+      return;
+    }
+    additional_rule_sets_.push_back(std::move(rule_set));
   }
 
-  const std::vector<std::shared_ptr<RuleSet>>& GetRuleSets() const {
-    return rule_sets_;
+  template <typename Callback>
+  void ForEachRuleSet(Callback&& callback) const {
+    if (primary_rule_set_) {
+      callback(primary_rule_set_);
+    }
+    for (const auto& rule_set : additional_rule_sets_) {
+      if (rule_set) {
+        callback(rule_set);
+      }
+    }
   }
 
   CascadeOrigin GetOrigin() const { return origin_; }
   unsigned GetStyleSheetIndex() const { return style_sheet_index_; }
 
  private:
-  std::vector<std::shared_ptr<RuleSet>> rule_sets_;
+  // Most callers match against a single RuleSet. Keep that in an inline slot
+  // to avoid per-request heap allocation (std::vector would allocate even for
+  // a single entry). Additional RuleSets are stored in a side vector.
+  std::shared_ptr<RuleSet> primary_rule_set_;
+  std::vector<std::shared_ptr<RuleSet>> additional_rule_sets_;
   CascadeOrigin origin_ = CascadeOrigin::kAuthor;
   unsigned style_sheet_index_ = 0;
 };

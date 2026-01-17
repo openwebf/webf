@@ -286,7 +286,7 @@ class LinkElement extends Element {
       } else {
         _styleSheet!.href = href;
       }
-    
+
       _styleSheet!.replaceSync(_cachedStyleSheetText!,
           windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
     } else {
@@ -516,7 +516,6 @@ class LinkElement extends Element {
   }
 
   Future<void> _sendStyleSheetToNative(String cssText, {String? href}) async {
-    print(1);
     // Ensure we have a native binding object to call.
     final pointer = this.pointer;
     if (pointer == null || isBindingObjectDisposed(pointer) || pointer.ref.invokeBindingMethodFromDart == nullptr) {

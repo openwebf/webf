@@ -65,7 +65,7 @@ void CSSGlobalRuleSet::Update(Document& document) {
   is_dirty_ = false;
   features_.Clear();
 
-  // UA / watched / document-rule selector features are currently not wired.
+  // Watched / document-rule selector features are currently not wired.
   // We conservatively aggregate only author-sheet features via StyleEngine.
   document.EnsureStyleEngine().CollectFeaturesTo(features_);
 }
@@ -75,7 +75,6 @@ void CSSGlobalRuleSet::Dispose() {
     features_.Clear();
     watched_selectors_rule_set_ = nullptr;
     document_rules_selectors_rule_set_ = nullptr;
-    has_fullscreen_ua_style_ = false;
     is_dirty_ = true;
 
    */

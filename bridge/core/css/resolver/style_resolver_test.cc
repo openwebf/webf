@@ -5,7 +5,6 @@
 #include "style_resolver.h"
 
 #include "bindings/qjs/cppgc/mutation_scope.h"
-#include "core/css/css_default_style_sheets.h"
 #include "core/css/css_style_sheet.h"
 #include "core/css/style_engine.h"
 #include "core/css/style_recalc_context.h"
@@ -59,9 +58,6 @@ class StyleResolverTest : public ::testing::Test {
         JS_RunGC(runtime);
       }
     }
-    
-    // Reset UA stylesheets to avoid memory leaks
-    CSSDefaultStyleSheets::Reset();
     
     document_ = nullptr;
     context_ = nullptr;
