@@ -7,10 +7,12 @@
  */
 
 import 'package:flutter/widgets.dart' as flutter;
+import 'package:flutter/scheduler.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/launcher.dart' show WebFLoadingMode;
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 
@@ -66,8 +68,11 @@ class RouterLinkElement extends WidgetElement {
       ownerView.setHybridRouterView(path, this);
     }
 
-    if (path == ownerDocument.controller.initialRoute) {
-      dispatchEvent(Event('pode'));
+    if (ownerDocument.controller.mode == WebFLoadingMode.preRendering && path == ownerDocument.controller.initialRoute) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        dispatchEvent(Event('prerendering'));
+      });
+      SchedulerBinding.instance.scheduleFrame();
     }
   }
 

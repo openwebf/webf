@@ -10,22 +10,22 @@ importers:
     dependencies:
       '@openwebf/react-camera':
         specifier: ^1.0.0
-        version: 1.0.0(@openwebf/react-core-ui@0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 1.0.0(@openwebf/react-core-ui@0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@openwebf/react-core-ui':
-        specifier: ^0.2.13
-        version: 0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        specifier: ^0.24.2
+        version: 0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@openwebf/react-cupertino-ui':
         specifier: ^0.3.35
         version: 0.3.35(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@openwebf/react-router':
-        specifier: ^0.24.0
-        version: 0.24.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        specifier: ^0.24.2
+        version: 0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@openwebf/react-ui-kit':
         specifier: ^0.1.0-beta.1
         version: 0.1.0-beta.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@openwebf/react-video-player':
         specifier: ^1.0.0
-        version: 1.0.0(@openwebf/react-core-ui@0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 1.0.0(@openwebf/react-core-ui@0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@openwebf/webf-bluetooth':
         specifier: ^1.0.0
         version: 1.0.0(react@19.2.0)
@@ -1225,14 +1225,20 @@ packages:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
+  '@openwebf/react-core-ui@0.24.2':
+    resolution: {integrity: sha512-CBh1Gg/Fb5FfpNg/zYp3eRmL2gR/CwwoUKrGn+WSCFA76IQdWrghubTlVIOeCyu22WcBUYVF/QSA0NyqKu9Pkg==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+
   '@openwebf/react-cupertino-ui@0.3.35':
     resolution: {integrity: sha512-VGaJj1rc58iX84vEr397+y/PvY8NznubihTTqTFO6Nib4qcleMS8MXD5V0qljsxqaq9ETary6ygnMg8O3BvaDQ==}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
-  '@openwebf/react-router@0.24.0':
-    resolution: {integrity: sha512-e2P9DvVs/DhPqLrtQ6m7y+e3JM2le+lZ7l6tHITZlo1vmk62FIt1ndRSaz3wUnGxayYtmpl/B6z0vsx1QZtHlA==}
+  '@openwebf/react-router@0.24.2':
+    resolution: {integrity: sha512-bppgSZLki/M1quQku3YYWaaOu/dH0dJw89OAn1q1ogxH0wpp6Z8Lae/u145prjT+5QVc5+3rh+PaHW1aL3udDg==}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
@@ -7466,13 +7472,18 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.19.1
 
-  '@openwebf/react-camera@1.0.0(@openwebf/react-core-ui@0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@openwebf/react-camera@1.0.0(@openwebf/react-core-ui@0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
-      '@openwebf/react-core-ui': 0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@openwebf/react-core-ui': 0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
 
   '@openwebf/react-core-ui@0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+    dependencies:
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
+
+  '@openwebf/react-core-ui@0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
@@ -7483,7 +7494,7 @@ snapshots:
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
 
-  '@openwebf/react-router@0.24.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@openwebf/react-router@0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
       '@openwebf/react-core-ui': 0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@openwebf/webf-enterprise-typings': 0.23.7(react@19.2.0)
@@ -7501,9 +7512,9 @@ snapshots:
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
 
-  '@openwebf/react-video-player@1.0.0(@openwebf/react-core-ui@0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@openwebf/react-video-player@1.0.0(@openwebf/react-core-ui@0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
-      '@openwebf/react-core-ui': 0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@openwebf/react-core-ui': 0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
 

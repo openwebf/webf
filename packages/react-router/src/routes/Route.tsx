@@ -83,7 +83,14 @@ export function Route({ path, mountedPath, prerender = false, element, title, th
   })
 
   return (
-    <WebFRouterLink path={mountedPath ?? path} title={title} theme={theme} onScreen={handleOnScreen} offScreen={handleOffScreen}>
+    <WebFRouterLink
+      path={mountedPath ?? path}
+      title={title}
+      theme={theme}
+      onPrerendering={handleOnScreen}
+      onScreen={handleOnScreen}
+      offScreen={handleOffScreen}
+    >
       {shouldRenderChildren ? element : null}
     </WebFRouterLink>
   )

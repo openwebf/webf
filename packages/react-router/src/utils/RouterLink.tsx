@@ -9,12 +9,17 @@ export interface HybridRouterChangeEvent extends SyntheticEvent {
 
 export type HybridRouterChangeEventHandler = EventHandler<HybridRouterChangeEvent>;
 
+export interface HybridRouterPrerenderingEvent extends SyntheticEvent {}
+
+export type HybridRouterPrerenderingEventHandler = EventHandler<HybridRouterPrerenderingEvent>;
+
 export interface WebFHybridRouterProps {
   path: string;
   title?: string;
   theme?: 'material' | 'cupertino';
   onScreen?: HybridRouterChangeEventHandler;
   offScreen?: HybridRouterChangeEventHandler;
+  onPrerendering?: HybridRouterPrerenderingEventHandler;
   children?: ReactNode;
 }
 
@@ -47,6 +52,13 @@ const RawWebFRouterLink = createWebFComponent<WebFRouterLinkElement, WebFHybridR
         callback(event as unknown as HybridRouterChangeEvent);
       },
     },
+    {
+      propName: 'onPrerendering',
+      eventName: 'prerendering',
+      handler: (callback) => (event) => {
+        callback(event as unknown as HybridRouterPrerenderingEvent);
+      },
+    },
   ],
 });
 
@@ -61,8 +73,20 @@ export const WebFRouterLink: FC<WebFHybridRouterProps> = function (props: WebFHy
     }
   };
 
+  const handlePrerendering = (event: HybridRouterPrerenderingEvent) => {
+    enableRender(true);
+    props.onPrerendering?.(event);
+  };
+
   return (
-    <RawWebFRouterLink title={props.title} path={props.path} theme={props.theme} onScreen={handleOnScreen} offScreen={props.offScreen}>
+    <RawWebFRouterLink
+      title={props.title}
+      path={props.path}
+      theme={props.theme}
+      onScreen={handleOnScreen}
+      offScreen={props.offScreen}
+      onPrerendering={handlePrerendering}
+    >
       {isRender ? props.children : null}
     </RawWebFRouterLink>
   );
