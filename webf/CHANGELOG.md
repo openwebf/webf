@@ -1,3 +1,12 @@
+## 0.24.6
+
+### Bug Fixes
+
+- **Intrinsic sizing**: fix `width: min-content`/`max-content`/`fit-content` collapsing to padding/border-only sizing (especially for flex containers and inline formatting contexts) by resolving intrinsic widths during layout and forwarding intrinsic measurements through wrapper render objects (#807).
+- **Rendering/Widget**: clamp hosted Flutter widget constraints using both `RenderWidget` constraints and `WebFWidgetElementChild` wrapper constraints to avoid unbounded children and unintended viewport-sized expansion (#808).
+- **CSS**: fix render parent lookup to only skip wrapper render objects belonging to the same element, preventing incorrect ancestor/constraint resolution in complex render trees (#809).
+- **Overflow/Scrolling**: when a DOM element is mounted into multiple Flutter subtrees, mark each nearest scroll container as needing layout for overflow sizing updates (#809).
+
 ## 0.24.5
 
 ### Bug Fixes
