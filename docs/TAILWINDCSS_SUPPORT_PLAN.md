@@ -7,6 +7,7 @@ Target: **Tailwind CSS v3.4.x** (core preflight + core utilities + core variants
   - Core utility surface: `require('tailwindcss/lib/corePlugins').corePlugins`
   - Variant surface: `require('tailwindcss/lib/corePlugins').variantPlugins`
   - Preflight CSS source: `integration_tests/node_modules/tailwindcss/src/css/preflight.css`
+- WebF CSS engine (Blink/bridge, C++): `bridge/core/css/` (used by `enableBlink: true` in integration tests)
 - WebF CSS engine (Dart): `webf/lib/src/css/` (parser, selector evaluator, media query evaluation, RenderStyle mixins)
 
 ## Legend
@@ -21,7 +22,7 @@ Target: **Tailwind CSS v3.4.x** (core preflight + core utilities + core variants
 
 | Capability | Tailwind uses it for | WebF status | Evidence (current) | Needed work |
 |---|---|---:|---|---|
-| `@layer` (cascade layers) | All Tailwind builds (`@tailwind base/components/utilities` expand into `@layer ... { ... }`) | ❌ | No tokenizer/parser support in `webf/lib/src/css/parser/` (no `@layer` handling) | Add tokenizer + parser support for `@layer` block + statement; integrate into rule ordering/cascade. |
+| `@layer` (cascade layers) | All Tailwind builds (`@tailwind base/components/utilities` expand into `@layer ... { ... }`) | ✅ | Implemented in Blink/bridge CSS pipeline; see `docs/CSS_CASCADE_LAYERS_PLAN.md` and integration specs under `integration_tests/specs/css/css-cascade/`. | Follow-ups (not Tailwind-critical): layered `@import ... layer(...)`, `revert-layer`. |
 | `@supports` | `supports-*` variants | ❌ | `webf/lib/src/css/parser/parser.dart` returns `null` for `DIRECTIVE_SUPPORTS` | Implement `@supports` parsing + evaluation (at least allow/deny blocks, and “declare support” checks used by Tailwind). |
 | Media queries (MQ) | Responsive (`sm/md/...`), `dark`, `motion-*`, `orientation-*`, `print`, `forced-colors`, `prefers-contrast` | ⚠️ | `webf/lib/src/css/css_rule.dart` only evaluates `min/max-width`, `min/max-aspect-ratio`, `prefers-color-scheme`; rejects `print` type | Expand media query parsing/evaluation for Tailwind variants: `prefers-reduced-motion`, `orientation`, `forced-colors`, `prefers-contrast`, `hover`, `pointer`, `print`. |
 | Selector pseudo `:where(<selector-list>)` | Preflight selectors (`abbr:where([title])`, `[hidden]:where(:not(...))`), direction variants (`rtl:`/`ltr:`) | ❌ | Selector parser only supports `:not(<simple-selector>)`; functional pseudos parse as token lists (not nested selectors) in `webf/lib/src/css/parser/parser.dart`; matcher doesn’t implement `:where` in `webf/lib/src/css/query_selector.dart` | Implement selector-list parsing for `:where()` (+ `:is()`), plus matching and specificity rules (`:where()` has 0 specificity). |
@@ -64,7 +65,6 @@ Tailwind v3.4.18 core utilities are exposed by `corePlugins` (179 keys). Below i
 ### 3.1 High-level summary (what blocks “Tailwind just works”)
 
 **P0 blockers (must fix first)**
-- CSS parsing: `@layer` support (Tailwind output is layered).
 - Selector parsing/matching: `:where(<selector-list>)` (Tailwind preflight + direction variants).
 - Selector matching: interactive pseudo-classes (hover/focus/active/disabled/checked/…).
 - Media query evaluation: `prefers-reduced-motion`, `orientation`, `print`, `forced-colors`, `prefers-contrast`.
@@ -103,7 +103,7 @@ Tailwind v3.4.18 core utilities are exposed by `corePlugins` (179 keys). Below i
 ## 4) Implementation Backlog (Proposed)
 
 ### P0 — Make Tailwind CSS parse + match correctly
-1. **`@layer` support (parser + cascade order)**: parse `@layer base|components|utilities { ... }` and apply correct ordering.
+1. ✅ **`@layer` support (parser + cascade order)**: implemented as Milestone M1; see `docs/CSS_CASCADE_LAYERS_PLAN.md`.
 2. **Selectors Level 4 essentials**: implement parsing + matching for `:where(<selector-list>)` and `:is(<selector-list>)` (Tailwind emits `:where` today; `:is` appears in some variants/plugins).
 3. **State pseudo-classes**: implement `:hover/:focus/:focus-visible/:focus-within/:active/:enabled/:disabled` and wire element state updates from Flutter events.
 4. **Media query evaluation coverage**: add Tailwind-required media features: `prefers-reduced-motion`, `orientation`, `forced-colors`, `prefers-contrast`, plus **media type `print`** handling (likely “always false” in WebF unless printing is supported).
@@ -136,7 +136,7 @@ Assumptions:
 | Milestone | Scope | Deliverable | Est. effort (person-days) |
 |---|---|---|---:|
 | M0 | Acceptance + fixtures | Integration tests that load Tailwind-built CSS + a small Tailwind showcase page as a regression target | 3–5 |
-| M1 | CSS cascade layers | Parse `@layer` (block + statement), preserve layer ordering, apply cascade correctly | 8–12 |
+| M1 | CSS cascade layers | Parse `@layer` (block + statement), preserve layer ordering, apply cascade correctly | ✅ Completed (est. 8–12) |
 | M2 | Selector L4 essentials | Parse + match `:where(<selector-list>)` + `:is(<selector-list>)`; implement correct specificity behavior | 6–10 |
 | M3 | Media variants | Expand MQ evaluation to cover Tailwind variants: `prefers-reduced-motion`, `orientation`, `forced-colors`, `prefers-contrast`, `hover`, `pointer`, and `@media print` parsing | 6–10 |
 | M4 | State variants | Implement `hover/focus/focus-visible/focus-within/active/enabled/disabled` (plus key form pseudos: `checked/placeholder-shown/required/invalid`) end-to-end (events → state → selector matching) | 12–20 |
@@ -368,7 +368,7 @@ Status here is about whether WebF supports the **underlying CSS behavior** that 
 
 | corePlugin | WebF | Notes |
 |---|---:|---|
-| `preflight` | ❌ | Blocked by `@layer` + `:where()` + missing cursor/outline/appearance/etc from preflight. |
+| `preflight` | ❌ | Blocked by `:where()` + missing cursor/outline/appearance/etc from preflight. |
 | `container` | ✅ | Depends on `@media (min-width: ...)` + `max-width`. |
 | `accessibility` | ✅ | Uses common box/positioning properties (sr-only, etc). |
 | `pointerEvents` | ❌ | CSS `pointer-events` not implemented in Dart RenderStyle. |
