@@ -15,7 +15,7 @@ import 'package:webf/devtools.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:webf_example/cronet_adapter.dart';
 import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
-
+import 'package:webf_shadcn_ui/webf_shadcn_ui.dart';
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
@@ -55,6 +55,7 @@ void main() async {
   installWebFCupertinoUI();
   installWebFCamera();
   installWebFVideoPlayer();
+  installWebFShadcnUI();
 
   WebF.defineModule((context) => ShareModule(context));
   WebF.defineModule((context) => SQFliteModule(context));

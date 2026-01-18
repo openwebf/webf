@@ -20,6 +20,9 @@ importers:
       '@openwebf/react-router':
         specifier: ^0.24.2
         version: 0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@openwebf/react-shadcn-ui':
+        specifier: link:../webf-shadcn-react
+        version: link:../webf-shadcn-react
       '@openwebf/react-ui-kit':
         specifier: ^0.1.0-beta.1
         version: 0.1.0-beta.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0)

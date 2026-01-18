@@ -1,0 +1,31 @@
+name: webf_shadcn_ui
+description: "shadcn/ui style components for WebF applications. This package provides shadcn_ui Flutter widgets wrapped as HTML custom elements for use in WebF."
+version: 0.1.0
+homepage: https://openwebf.com
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  webf:
+    path: ../../webf
+  shadcn_ui: ^0.43.3
+  collection: ^1.18.0
+
+dependency_overrides:
+  intl: ^0.20.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+
+topics:
+  - webf
+  - shadcn
+  - ui
