@@ -402,6 +402,7 @@ class CSSColor with Diagnosticable {
 
     final String? prop = propertyName;
     final bool trace = prop != null && DebugFlags.shouldLogTransitionForProp(prop);
+    final bool varDependent = renderStyle != null && color.contains('var(');
 
     if (trace) {
       cssLogger.info('[color][parse] property=$prop input="$originalColor" key="$color"');
@@ -412,7 +413,7 @@ class CSSColor with Diagnosticable {
         cssLogger.info('[color][parse] property=$prop -> transparent');
       }
       return CSSColor.transparent;
-    } else if (_cachedParsedColor.containsKey(color)) {
+    } else if (!varDependent && _cachedParsedColor.containsKey(color)) {
       if (trace) {
         cssLogger.info('[color][cache-hit] property=$prop key="$color"');
       }
@@ -506,7 +507,11 @@ class CSSColor with Diagnosticable {
         cssLogger.info(
             '[color][parsed] property=$prop rgba=${_colorByte(parsed.r)},${_colorByte(parsed.g)},${_colorByte(parsed.b)},a=${parsed.a.cssText()}');
       }
-      _cachedParsedColor[color] = parsed;
+      if (!varDependent) {
+        _cachedParsedColor[color] = parsed;
+      } else if (trace) {
+        cssLogger.info('[color][cache-skip] property=$prop key="$color" reason=var-dependent');
+      }
     } else if (trace) {
       cssLogger.info('[color][parse-failed] property=$prop input="$originalColor" key="$color"');
     }

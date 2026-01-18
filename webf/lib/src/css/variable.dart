@@ -152,9 +152,8 @@ mixin CSSVariableMixin on RenderStyle {
       if (_propertyDependencies.containsKey(identifier)) {
         _notifyCSSVariableChanged(identifier, trimmed, prevRaw);
       } else {
-        _clearColorCacheForVariable(identifier);
         if (DebugFlags.shouldLogCssVar(identifier)) {
-          cssLogger.info('[var][notify] id=$identifier no-deps; cleared-color-cache-only');
+          cssLogger.info('[var][notify] id=$identifier no-deps; skip');
         }
       }
       return;
@@ -197,28 +196,8 @@ mixin CSSVariableMixin on RenderStyle {
 
       _notifyCSSVariableChanged(identifier, value, prevRaw);
     } else {
-      // No dependencies recorded yet (e.g., first parse may have used a cached color string).
-      // Clear common color cache keys so next parse recomputes with the new variable value.
-      _clearColorCacheForVariable(identifier);
       if (DebugFlags.shouldLogCssVar(identifier)) {
-        cssLogger.info('[var][notify] id=$identifier no-deps; cleared-color-cache-only');
-      }
-
-    }
-  }
-
-  void _clearColorCacheForVariable(String identifier) {
-    List<String> maybeColorKeys = <String>[
-      'var($identifier)',
-      'rgba(var($identifier))',
-      'rgb(var($identifier))',
-      'hsla(var($identifier))',
-      'hsl(var($identifier))',
-    ];
-    for (final key in maybeColorKeys) {
-      if (CSSColor.isColor(key)) {
-
-        CSSColor.clearCachedColorValue(key);
+        cssLogger.info('[var][notify] id=$identifier no-deps; skip');
       }
     }
   }
@@ -324,22 +303,6 @@ mixin CSSVariableMixin on RenderStyle {
         // If transitions are configured and this property is animatable, schedule a
         // transition from the previous var-resolved value to the new one.
         bool handledByTransition = false;
-        // Proactively clear color cache entries for previously-resolved values
-        // like hsl(<prev>) / hsla(<prev>) / rgb(<prev>) / rgba(<prev>) to avoid
-        // stale cache hits when a var() inside a color function changes.
-        if (prevVarValue != null) {
-          final List<String> priorColorKeys = <String>[
-            'hsl($prevVarValue)',
-            'hsla($prevVarValue)',
-            'rgb($prevVarValue)',
-            'rgba($prevVarValue)',
-          ];
-          for (final key in priorColorKeys) {
-            if (CSSColor.isColor(key)) {
-              CSSColor.clearCachedColorValue(key);
-            }
-          }
-        }
         if (prevVarValue != null && this is CSSRenderStyle && cssTransitionHandlers[propertyName] != null) {
           try {
             final CSSRenderStyle rs = this as CSSRenderStyle;
@@ -413,11 +376,6 @@ mixin CSSVariableMixin on RenderStyle {
           }
           continue; // schedule next dependent property as well
         }
-        // Clear color cache conservatively when the CSS value is a bare color.
-        // For var(...) patterns, fallback cache clears below handle it.
-        if (CSSColor.isColor(cssText)) {
-          CSSColor.clearCachedColorValue(cssText);
-        }
         // Apply directly to computed style to avoid re-entrant pending queue issues.
         // For color-bearing properties, eagerly expand all var(...) before applying to
         // bypass stale color cache hits for hsl()/rgb() strings that still contain var().
@@ -442,21 +400,6 @@ mixin CSSVariableMixin on RenderStyle {
         }
         target.setRenderStyle(propertyName, cssTextToApply, baseHref: baseHref);
 
-      }
-    }
-
-    // Fallback: clear common color cache patterns for this variable to avoid stale cache hits
-    // even if we failed to record explicit dependencies (e.g., due to prior cache hits).
-    List<String> maybeColorKeys = [
-      'var($identifier)',
-      'rgba(var($identifier))',
-      'rgb(var($identifier))',
-      'hsla(var($identifier))',
-      'hsl(var($identifier))',
-    ];
-    for (final key in maybeColorKeys) {
-      if (CSSColor.isColor(key)) {
-        CSSColor.clearCachedColorValue(key);
       }
     }
 
