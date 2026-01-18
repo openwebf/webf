@@ -132,6 +132,46 @@ This approach ensures:
 - CSS styles from your HTML/JSX are preserved (font-size, font-weight, etc.)
 - Text color automatically matches the button's theme variant (primary has white text, outline has dark text, etc.)
 
+### Button Gradient and Shadow
+
+The button supports CSS `background-image` for gradients and `box-shadow` for shadows, which are passed directly to the underlying Flutter `ShadButton`.
+
+**Gradient example:**
+
+```html
+<flutter-shadcn-button style="background-image: linear-gradient(to right, #667eea, #764ba2);">
+  Gradient Button
+</flutter-shadcn-button>
+```
+
+**Shadow example:**
+
+```html
+<flutter-shadcn-button style="box-shadow: 0 10px 20px 0 rgba(0, 0, 0, 0.2);">
+  Shadow Button
+</flutter-shadcn-button>
+```
+
+**Combined gradient and shadow:**
+
+```jsx
+<FlutterShadcnButton
+  style={{
+    backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    boxShadow: '0 10px 20px 0 rgba(102, 126, 234, 0.4)'
+  }}
+>
+  Gradient + Shadow
+</FlutterShadcnButton>
+```
+
+**Supported gradient syntax:**
+- `linear-gradient(direction, color1, color2, ...)`
+- `linear-gradient(angle, color1 stop1, color2 stop2, ...)`
+
+**Supported shadow syntax:**
+- `box-shadow: offset-x offset-y blur-radius spread-radius color`
+
 ## Color Schemes
 
 The following color schemes are available:

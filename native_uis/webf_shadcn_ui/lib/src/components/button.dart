@@ -26,6 +26,9 @@ class FlutterShadcnButton extends FlutterShadcnButtonBindings {
   String get variant => _variant;
 
   @override
+  get disableBoxModelPaint => true;
+
+  @override
   set variant(value) {
     final newValue = value?.toString() ?? 'default';
     if (newValue != _variant) {
@@ -243,6 +246,12 @@ class FlutterShadcnButtonState extends WebFWidgetElementState {
     // Get the foreground color from the button theme
     final foregroundColor = _getForegroundColor(context);
 
+    // Get gradient from CSS background-image: linear-gradient(...)
+    final cssGradient = widgetElement.renderStyle.backgroundImage?.gradient;
+
+    // Get shadows from CSS box-shadow
+    final cssShadows = widgetElement.renderStyle.shadows;
+
     // Build child widget from DOM children
     Widget? childWidget;
     if (widgetElement.childNodes.isNotEmpty) {
@@ -271,6 +280,10 @@ class FlutterShadcnButtonState extends WebFWidgetElementState {
       size: widgetElement.buttonSize,
       // Only show disabled styling when actually disabled, not when loading
       enabled: !isDisabled,
+      // Apply CSS gradient if specified
+      gradient: cssGradient,
+      // Apply CSS box-shadow if specified
+      shadows: cssShadows,
       onPressed: isClickable
           ? () {
               widgetElement.dispatchEvent(Event('click'));
