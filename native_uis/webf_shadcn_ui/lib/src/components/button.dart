@@ -6,7 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/rendering.dart';
+import 'package:webf/dom.dart' as dom;
 
 import 'button_bindings_generated.dart';
 
@@ -121,34 +121,174 @@ class FlutterShadcnButtonState extends WebFWidgetElementState {
   FlutterShadcnButton get widgetElement =>
       super.widgetElement as FlutterShadcnButton;
 
+  /// Get the foreground color for the button based on its variant.
+  /// This retrieves the appropriate color from the ShadTheme.
+  Color? _getForegroundColor(BuildContext context) {
+    final theme = ShadTheme.of(context);
+    final ShadButtonTheme buttonTheme;
+
+    switch (widgetElement.buttonVariant) {
+      case ShadButtonVariant.primary:
+        buttonTheme = theme.primaryButtonTheme;
+        break;
+      case ShadButtonVariant.secondary:
+        buttonTheme = theme.secondaryButtonTheme;
+        break;
+      case ShadButtonVariant.destructive:
+        buttonTheme = theme.destructiveButtonTheme;
+        break;
+      case ShadButtonVariant.outline:
+        buttonTheme = theme.outlineButtonTheme;
+        break;
+      case ShadButtonVariant.ghost:
+        buttonTheme = theme.ghostButtonTheme;
+        break;
+      case ShadButtonVariant.link:
+        buttonTheme = theme.linkButtonTheme;
+        break;
+    }
+
+    return buttonTheme.foregroundColor;
+  }
+
+  /// Extract text content from a list of nodes recursively.
+  String _extractTextContent(Iterable<Node> nodes) {
+    final buffer = StringBuffer();
+    for (final node in nodes) {
+      if (node is TextNode) {
+        buffer.write(node.data);
+      } else if (node.childNodes.isNotEmpty) {
+        buffer.write(_extractTextContent(node.childNodes));
+      }
+    }
+    return buffer.toString().trim();
+  }
+
+  /// Extract CSS text styles from the first element child (if any).
+  /// Returns a TextStyle with CSS properties like font-size, font-weight, etc.
+  TextStyle? _extractCssTextStyle() {
+    // Find the first element child to extract CSS from
+    dom.Element? styledElement;
+    for (final node in widgetElement.childNodes) {
+      if (node is dom.Element) {
+        styledElement = node;
+        break;
+      }
+    }
+
+    if (styledElement == null) return null;
+
+    final style = styledElement.renderStyle;
+
+    // Extract CSS properties and convert to Flutter TextStyle
+    double? fontSize;
+    FontWeight? fontWeight;
+    FontStyle? fontStyle;
+    double? letterSpacing;
+    double? wordSpacing;
+    TextDecoration? decoration;
+
+    // Font size
+    final cssFontSize = style.fontSize;
+    if (cssFontSize.computedValue > 0) {
+      fontSize = cssFontSize.computedValue;
+    }
+
+    // Font weight
+    final cssFontWeight = style.fontWeight;
+    if (cssFontWeight != FontWeight.normal) {
+      fontWeight = cssFontWeight;
+    }
+
+    // Font style (italic)
+    final cssFontStyle = style.fontStyle;
+    if (cssFontStyle != FontStyle.normal) {
+      fontStyle = cssFontStyle;
+    }
+
+    // Letter spacing
+    final cssLetterSpacing = style.letterSpacing;
+    if (cssLetterSpacing != null && cssLetterSpacing.computedValue != 0) {
+      letterSpacing = cssLetterSpacing.computedValue;
+    }
+
+    // Word spacing
+    final cssWordSpacing = style.wordSpacing;
+    if (cssWordSpacing != null && cssWordSpacing.computedValue != 0) {
+      wordSpacing = cssWordSpacing.computedValue;
+    }
+
+    // Text decoration (textDecorationLine returns Flutter's TextDecoration)
+    final cssTextDecoration = style.textDecorationLine;
+    if (cssTextDecoration != TextDecoration.none) {
+      decoration = cssTextDecoration;
+    }
+
+    return TextStyle(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      fontStyle: fontStyle,
+      letterSpacing: letterSpacing,
+      wordSpacing: wordSpacing,
+      decoration: decoration,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isDisabled = widgetElement.disabled || widgetElement.loading;
+    final isLoading = widgetElement.loading;
+    final isDisabled = widgetElement.disabled;
+    final isClickable = !isDisabled && !isLoading;
 
+    // Get the foreground color from the button theme
+    final foregroundColor = _getForegroundColor(context);
+
+    // Build child widget from DOM children
     Widget? childWidget;
     if (widgetElement.childNodes.isNotEmpty) {
-      childWidget = WebFWidgetElementChild(
-        child: widgetElement.childNodes.first.toWidget(),
-      );
+      final textContent = _extractTextContent(widgetElement.childNodes);
+      if (textContent.isNotEmpty) {
+        // Extract CSS styles from child elements
+        final cssTextStyle = _extractCssTextStyle();
+
+        // Create TextStyle with foreground color and merged CSS styles
+        final textStyle = TextStyle(
+          color: foregroundColor,
+          fontSize: cssTextStyle?.fontSize,
+          fontWeight: cssTextStyle?.fontWeight,
+          fontStyle: cssTextStyle?.fontStyle,
+          letterSpacing: cssTextStyle?.letterSpacing,
+          wordSpacing: cssTextStyle?.wordSpacing,
+          decoration: cssTextStyle?.decoration,
+        );
+
+        childWidget = Text(textContent, style: textStyle);
+      }
     }
 
     return ShadButton.raw(
       variant: widgetElement.buttonVariant,
       size: widgetElement.buttonSize,
+      // Only show disabled styling when actually disabled, not when loading
       enabled: !isDisabled,
-      onPressed: isDisabled
-          ? null
-          : () {
+      onPressed: isClickable
+          ? () {
               widgetElement.dispatchEvent(Event('click'));
-            },
-      child: widgetElement.loading
+            }
+          : null,
+      child: isLoading
           ? Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(
+                SizedBox(
                   width: 16,
                   height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      foregroundColor ?? Colors.white,
+                    ),
+                  ),
                 ),
                 if (childWidget != null) ...[
                   const SizedBox(width: 8),

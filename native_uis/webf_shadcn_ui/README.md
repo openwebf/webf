@@ -97,6 +97,41 @@ void main() {
 - `<flutter-shadcn-skeleton>` - Loading placeholder
 - `<flutter-shadcn-collapsible>` - Collapsible section
 
+## CSS Customization
+
+### Button Text Styling
+
+The `<flutter-shadcn-button>` component supports CSS customization for text styles while automatically handling the text color based on the button variant and theme.
+
+**What CSS properties work on button children:**
+- `font-size` / `font-weight` / `font-family`
+- `letter-spacing` / `word-spacing`
+- `text-decoration` / `font-style`
+- Other text styling properties
+
+**What's controlled by the button theme:**
+- Text color (automatically set based on button variant)
+
+**Example with inline styles:**
+
+```html
+<flutter-shadcn-button variant="default">
+  <span style="font-size: 18px; font-weight: bold;">Large Bold Text</span>
+</flutter-shadcn-button>
+```
+
+**Example with React and Tailwind:**
+
+```jsx
+<FlutterShadcnButton variant="secondary">
+  <span className="text-lg font-semibold tracking-wide">Styled Text</span>
+</FlutterShadcnButton>
+```
+
+This approach ensures:
+- CSS styles from your HTML/JSX are preserved (font-size, font-weight, etc.)
+- Text color automatically matches the button's theme variant (primary has white text, outline has dark text, etc.)
+
 ## Color Schemes
 
 The following color schemes are available:
