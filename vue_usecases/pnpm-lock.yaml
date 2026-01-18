@@ -18,8 +18,8 @@ importers:
         specifier: ^0.4.0
         version: 0.4.1(@openwebf/vue-core-ui@0.24.0(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))
       '@openwebf/vue-router':
-        specifier: ^0.24.0
-        version: 0.24.0(@openwebf/webf-enterprise-typings@0.23.7)(vue@3.5.26(typescript@5.9.3))
+        specifier: ^0.24.1
+        version: 0.24.1(@openwebf/webf-enterprise-typings@0.23.7)(vue@3.5.26(typescript@5.9.3))
       '@openwebf/vue-video-player':
         specifier: ^1.0.0
         version: 1.0.0(@openwebf/vue-core-ui@0.24.0(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))
@@ -135,8 +135,8 @@ packages:
       '@openwebf/vue-core-ui': ^0.24.0
       vue: ^3.0.0
 
-  '@openwebf/vue-router@0.24.0':
-    resolution: {integrity: sha512-MXwOvKS2SUvTqgcOr+WhB555Mv4ICa3aOlKNkMZUv0SdR2JUmrYip2OzvAsSohGENF1aXIijy+6ZnALx+CeqEw==}
+  '@openwebf/vue-router@0.24.1':
+    resolution: {integrity: sha512-JxgDo69e/LU8IX7+FLwaKWaMae4ucVMbCTlmJ/wIR9bt7Z86qjkEpAmDIgmp0IArSXRMM/t7B4H36w439ilEug==}
     peerDependencies:
       '@openwebf/webf-enterprise-typings': '>=0.22.0'
       vue: ^3.0.0
@@ -879,7 +879,7 @@ snapshots:
       '@openwebf/vue-core-ui': 0.24.0(vue@3.5.26(typescript@5.9.3))
       vue: 3.5.26(typescript@5.9.3)
 
-  '@openwebf/vue-router@0.24.0(@openwebf/webf-enterprise-typings@0.23.7)(vue@3.5.26(typescript@5.9.3))':
+  '@openwebf/vue-router@0.24.1(@openwebf/webf-enterprise-typings@0.23.7)(vue@3.5.26(typescript@5.9.3))':
     dependencies:
       '@openwebf/webf-enterprise-typings': 0.23.7
       vue: 3.5.26(typescript@5.9.3)

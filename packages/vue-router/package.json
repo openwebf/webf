@@ -1,6 +1,6 @@
 {
   "name": "@openwebf/vue-router",
-  "version": "0.24.0",
+  "version": "0.24.1",
   "description": "Vue Router implementation for WebF applications using hybrid history API",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
@@ -19,7 +19,7 @@
     "build": "rollup -c",
     "dev": "rollup -c -w",
     "clean": "rm -rf dist",
-    "test": "npm run build && node --test tests/pathMatcher.test.js tests/webfRouter.test.js tests/useRoutes.test.js tests/hybridRouterChange.test.js",
+    "test": "npm run build && node --test tests/pathMatcher.test.js tests/webfRouter.test.js tests/useRoutes.test.js tests/hybridRouterChange.test.js tests/routerLinkPrerendering.test.js",
     "type-check": "tsc --noEmit",
     "prepublishOnly": "npm run clean && npm run build"
   },

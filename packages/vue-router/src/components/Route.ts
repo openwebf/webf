@@ -53,6 +53,7 @@ export const Route = defineComponent({
           path: pathToMount,
           title: props.title,
           theme: props.theme,
+          onPrerendering: handleOnScreen,
           onScreen: handleOnScreen,
           offScreen: handleOffScreen,
         },
