@@ -961,6 +961,23 @@ class WebFRootViewport extends MultiChildRenderObjectWidget {
   }
 
   @override
+  void updateRenderObject(BuildContext context, covariant RootRenderViewportBox renderObject) {
+    renderObject.controller = controller;
+
+    final Color? oldBackground = renderObject.background;
+    if (oldBackground != background) {
+      renderObject.background = background;
+      renderObject.markNeedsPaint();
+    }
+
+    renderObject.viewportSize =
+        (viewportWidth != null && viewportHeight != null) ? ui.Size(viewportWidth!, viewportHeight!) : null;
+
+    // Ensure the controller always points to the latest root viewport render object.
+    controller.view.viewport = renderObject;
+  }
+
+  @override
   void didUnmountRenderObject(covariant RenderObject renderObject) {
     super.didUnmountRenderObject(renderObject);
 
