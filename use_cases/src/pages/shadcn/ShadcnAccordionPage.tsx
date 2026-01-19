@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
 import {
   FlutterShadcnTheme,
@@ -6,9 +6,32 @@ import {
   FlutterShadcnAccordionItem,
   FlutterShadcnAccordionTrigger,
   FlutterShadcnAccordionContent,
+  FlutterShadcnButton,
 } from '@openwebf/react-shadcn-ui';
 
 export const ShadcnAccordionPage: React.FC = () => {
+  // Controlled single accordion state
+  const [singleValue, setSingleValue] = useState<string | undefined>(undefined);
+
+  // Controlled multiple accordion state
+  const [multipleValues, setMultipleValues] = useState<string[]>([]);
+
+  const handleSingleChange = (e: any) => {
+    const newValue = e.target?.value;
+    console.log('[React] Single accordion changed to:', newValue);
+    setSingleValue(newValue);
+  };
+
+  const handleMultipleChange = (e: any) => {
+    const newValue = e.target?.value;
+    console.log('[React] Multiple accordion changed to:', newValue);
+    if (newValue) {
+      setMultipleValues(newValue.split(',').filter((v: string) => v.trim()));
+    } else {
+      setMultipleValues([]);
+    }
+  };
+
   return (
     <FlutterShadcnTheme colorScheme="zinc" brightness="light">
       <div className="min-h-screen w-full bg-white">
@@ -17,7 +40,7 @@ export const ShadcnAccordionPage: React.FC = () => {
 
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4">Single Accordion</h2>
-            <FlutterShadcnAccordion type="single" collapsible>
+            <FlutterShadcnAccordion collapsible>
               <FlutterShadcnAccordionItem value="item-1">
                 <FlutterShadcnAccordionTrigger>Is it accessible?</FlutterShadcnAccordionTrigger>
                 <FlutterShadcnAccordionContent>
@@ -106,6 +129,159 @@ export const ShadcnAccordionPage: React.FC = () => {
                 </FlutterShadcnAccordionItem>
               </FlutterShadcnAccordion>
             </div>
+          </div>
+
+          {/* Controlled Single Accordion */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Controlled Single Accordion</h2>
+            <div className="mb-4 p-3 bg-gray-100 rounded">
+              <p className="text-sm">Current value: <strong>{singleValue || '(none)'}</strong></p>
+            </div>
+            <div className="flex gap-2 mb-4 flex-wrap">
+              <FlutterShadcnButton
+                variant="outline"
+                size="sm"
+                onClick={() => setSingleValue('ctrl-1')}
+              >
+                Open Item 1
+              </FlutterShadcnButton>
+              <FlutterShadcnButton
+                variant="outline"
+                size="sm"
+                onClick={() => setSingleValue('ctrl-2')}
+              >
+                Open Item 2
+              </FlutterShadcnButton>
+              <FlutterShadcnButton
+                variant="outline"
+                size="sm"
+                onClick={() => setSingleValue('ctrl-3')}
+              >
+                Open Item 3
+              </FlutterShadcnButton>
+              <FlutterShadcnButton
+                variant="ghost"
+                size="sm"
+                onClick={() => setSingleValue(undefined)}
+              >
+                Close All
+              </FlutterShadcnButton>
+            </div>
+            <FlutterShadcnAccordion
+              type="single"
+              collapsible
+              value={singleValue}
+              onChange={handleSingleChange}
+            >
+              <FlutterShadcnAccordionItem value="ctrl-1">
+                <FlutterShadcnAccordionTrigger>Controlled Item 1</FlutterShadcnAccordionTrigger>
+                <FlutterShadcnAccordionContent>
+                  This accordion is controlled by React state. Click the buttons above
+                  to programmatically open/close items.
+                </FlutterShadcnAccordionContent>
+              </FlutterShadcnAccordionItem>
+              <FlutterShadcnAccordionItem value="ctrl-2">
+                <FlutterShadcnAccordionTrigger>Controlled Item 2</FlutterShadcnAccordionTrigger>
+                <FlutterShadcnAccordionContent>
+                  The current expanded item is synced with React state and displayed above.
+                </FlutterShadcnAccordionContent>
+              </FlutterShadcnAccordionItem>
+              <FlutterShadcnAccordionItem value="ctrl-3">
+                <FlutterShadcnAccordionTrigger>Controlled Item 3</FlutterShadcnAccordionTrigger>
+                <FlutterShadcnAccordionContent>
+                  You can also click on items directly - the state will update accordingly.
+                </FlutterShadcnAccordionContent>
+              </FlutterShadcnAccordionItem>
+            </FlutterShadcnAccordion>
+          </div>
+
+          {/* Controlled Multiple Accordion */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Controlled Multiple Accordion</h2>
+            <div className="mb-4 p-3 bg-gray-100 rounded">
+              <p className="text-sm">
+                Current values: <strong>{multipleValues.length > 0 ? multipleValues.join(', ') : '(none)'}</strong>
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2 mb-4">
+              <FlutterShadcnButton
+                variant="outline"
+                size="sm"
+                onClick={() => setMultipleValues(['multi-1'])}
+              >
+                Only Item 1
+              </FlutterShadcnButton>
+              <FlutterShadcnButton
+                variant="outline"
+                size="sm"
+                onClick={() => setMultipleValues(['multi-1', 'multi-2'])}
+              >
+                Items 1 & 2
+              </FlutterShadcnButton>
+              <FlutterShadcnButton
+                variant="outline"
+                size="sm"
+                onClick={() => setMultipleValues(['multi-1', 'multi-2', 'multi-3'])}
+              >
+                Open All
+              </FlutterShadcnButton>
+              <FlutterShadcnButton
+                variant="ghost"
+                size="sm"
+                onClick={() => setMultipleValues([])}
+              >
+                Close All
+              </FlutterShadcnButton>
+            </div>
+            <FlutterShadcnAccordion
+              type="multiple"
+              value={multipleValues.join(',')}
+              onChange={handleMultipleChange}
+            >
+              <FlutterShadcnAccordionItem value="multi-1">
+                <FlutterShadcnAccordionTrigger>Multiple Item 1</FlutterShadcnAccordionTrigger>
+                <FlutterShadcnAccordionContent>
+                  This is a controlled multiple accordion. Multiple items can be open simultaneously.
+                </FlutterShadcnAccordionContent>
+              </FlutterShadcnAccordionItem>
+              <FlutterShadcnAccordionItem value="multi-2">
+                <FlutterShadcnAccordionTrigger>Multiple Item 2</FlutterShadcnAccordionTrigger>
+                <FlutterShadcnAccordionContent>
+                  Use the buttons above to control which items are expanded.
+                </FlutterShadcnAccordionContent>
+              </FlutterShadcnAccordionItem>
+              <FlutterShadcnAccordionItem value="multi-3">
+                <FlutterShadcnAccordionTrigger>Multiple Item 3</FlutterShadcnAccordionTrigger>
+                <FlutterShadcnAccordionContent>
+                  The expanded state is stored as a comma-separated string in the value prop.
+                </FlutterShadcnAccordionContent>
+              </FlutterShadcnAccordionItem>
+            </FlutterShadcnAccordion>
+          </div>
+
+          {/* Debug Section */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Debug: Default Expanded</h2>
+            <FlutterShadcnAccordion type="single" collapsible value="debug-2">
+              <FlutterShadcnAccordionItem value="debug-1">
+                <FlutterShadcnAccordionTrigger>Debug Item 1</FlutterShadcnAccordionTrigger>
+                <FlutterShadcnAccordionContent>
+                  Content for debug item 1.
+                </FlutterShadcnAccordionContent>
+              </FlutterShadcnAccordionItem>
+              <FlutterShadcnAccordionItem value="debug-2">
+                <FlutterShadcnAccordionTrigger>Debug Item 2 (Default Open)</FlutterShadcnAccordionTrigger>
+                <FlutterShadcnAccordionContent>
+                  This item should be open by default because value="debug-2" is set on the accordion.
+                </FlutterShadcnAccordionContent>
+              </FlutterShadcnAccordionItem>
+              <FlutterShadcnAccordionItem value="debug-3">
+                <FlutterShadcnAccordionTrigger>Debug Item 3</FlutterShadcnAccordionTrigger>
+                <FlutterShadcnAccordionContent>
+                  Content for debug item 3.
+                </FlutterShadcnAccordionContent>
+              </FlutterShadcnAccordionItem>
+            </FlutterShadcnAccordion>
           </div>
         </WebFListView>
       </div>

@@ -185,13 +185,14 @@ function generateAttributeSetter(propName: string, type: ParameterType, enumName
   // Attributes from HTML are always strings, so we need to convert them
 
   const unionHasNull = hasNullInUnion(type);
+  const lhs = `this.${propName}`;
 
   // Handle enum types
   if (enumName && Array.isArray(type.value)) {
     if (unionHasNull) {
-      return `${propName} = value == 'null' ? null : ${enumName}.parse(value)`;
+      return `${lhs} = value == 'null' ? null : ${enumName}.parse(value)`;
     }
-    return `${propName} = ${enumName}.parse(value)`;
+    return `${lhs} = ${enumName}.parse(value)`;
   }
 
   const effectiveType: ParameterType = Array.isArray(type.value) && unionHasNull
@@ -201,23 +202,23 @@ function generateAttributeSetter(propName: string, type: ParameterType, enumName
   const baseSetter = (() => {
     switch (effectiveType.value) {
     case FunctionArgumentType.boolean:
-      return `${propName} = value == 'true' || value == ''`;
+      return `${lhs} = value == 'true' || value == ''`;
     case FunctionArgumentType.int:
-      return `${propName} = int.tryParse(value) ?? 0`;
+      return `${lhs} = int.tryParse(value) ?? 0`;
     case FunctionArgumentType.double:
-      return `${propName} = double.tryParse(value) ?? 0.0`;
+      return `${lhs} = double.tryParse(value) ?? 0.0`;
     default:
       // String and other types can be assigned directly
-      return `${propName} = value`;
+      return `${lhs} = value`;
     }
   })();
 
   if (unionHasNull) {
-    const assignmentPrefix = `${propName} = `;
+    const assignmentPrefix = `${lhs} = `;
     const rhs = baseSetter.startsWith(assignmentPrefix)
       ? baseSetter.slice(assignmentPrefix.length)
       : 'value';
-    return `${propName} = value == 'null' ? null : (${rhs})`;
+    return `${lhs} = value == 'null' ? null : (${rhs})`;
   }
 
   return baseSetter;
