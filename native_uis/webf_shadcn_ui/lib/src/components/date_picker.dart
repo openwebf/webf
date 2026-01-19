@@ -113,7 +113,7 @@ class FlutterShadcnDatePickerState extends WebFWidgetElementState {
         onChanged: (date) {
           if (date != null) {
             widgetElement._value = _formatDate(date);
-            widgetElement.dispatchEvent(Event('change'));
+            widgetElement.dispatchEvent(CustomEvent('change', detail: {'value': widgetElement._value}));
             _popoverController.hide();
             widgetElement.state?.requestUpdateState(() {});
           }

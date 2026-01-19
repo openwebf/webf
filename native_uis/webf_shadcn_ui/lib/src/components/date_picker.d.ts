@@ -41,9 +41,19 @@ interface FlutterShadcnDatePickerProperties {
 }
 
 /**
+ * Detail for date picker change event.
+ */
+interface FlutterShadcnDatePickerChangeEventDetail {
+  /**
+   * The selected date in ISO format (YYYY-MM-DD).
+   */
+  value: string;
+}
+
+/**
  * Events emitted by <flutter-shadcn-date-picker>
  */
 interface FlutterShadcnDatePickerEvents {
-  /** Fired when date selection changes. */
-  change: Event;
+  /** Fired when date selection changes. Detail contains the selected value. */
+  change: CustomEvent<FlutterShadcnDatePickerChangeEventDetail>;
 }

@@ -21,8 +21,8 @@ importers:
         specifier: ^0.24.2
         version: 0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@openwebf/react-shadcn-ui':
-        specifier: link:/var/folders/68/lyfvmcts4_l_r051bppwpkm40000gn/T/webf-typings-1ynnBS
-        version: link:../../../../../var/folders/68/lyfvmcts4_l_r051bppwpkm40000gn/T/webf-typings-1ynnBS
+        specifier: link:/var/folders/68/lyfvmcts4_l_r051bppwpkm40000gn/T/webf-typings-fXmbWm
+        version: link:../../../../../var/folders/68/lyfvmcts4_l_r051bppwpkm40000gn/T/webf-typings-fXmbWm
       '@openwebf/react-ui-kit':
         specifier: ^0.1.0-beta.1
         version: 0.1.0-beta.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
