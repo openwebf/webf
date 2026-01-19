@@ -52,14 +52,20 @@ class FlutterShadcnAccordion extends FlutterShadcnAccordionBindings {
     final newValue = value == true;
     if (newValue != _collapsible) {
       _collapsible = newValue;
+      state?.requestUpdateState(() {});
     }
   }
 
   bool get isMultiple => _type == 'multiple';
 
   Set<String> get expandedValues {
-    if (_value == null) return {};
-    return _value!.split(',').map((e) => e.trim()).toSet();
+    final raw = _value?.trim();
+    if (raw == null || raw.isEmpty) return {};
+    return raw
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toSet();
   }
 
   @override
@@ -74,6 +80,8 @@ class FlutterShadcnAccordionState extends WebFWidgetElementState {
       super.widgetElement as FlutterShadcnAccordion;
 
   void _toggleItem(String itemValue) {
+    if (itemValue.trim().isEmpty) return;
+
     final expanded = widgetElement.expandedValues;
 
     if (widgetElement.isMultiple) {
@@ -82,7 +90,12 @@ class FlutterShadcnAccordionState extends WebFWidgetElementState {
       } else {
         expanded.add(itemValue);
       }
-      widgetElement._value = expanded.join(',');
+      if (expanded.isEmpty) {
+        widgetElement._value = null;
+      } else {
+        final values = expanded.toList()..sort();
+        widgetElement._value = values.join(',');
+      }
     } else {
       if (expanded.contains(itemValue) && widgetElement.collapsible) {
         widgetElement._value = null;
@@ -104,13 +117,15 @@ class FlutterShadcnAccordionState extends WebFWidgetElementState {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: items.map((item) {
-        final isExpanded =
-            widgetElement.expandedValues.contains(item._itemValue);
+      children: items.asMap().entries.map((entry) {
+        final index = entry.key;
+        final item = entry.value;
+        final itemValue = item.value ?? 'item-$index';
+        final isExpanded = widgetElement.expandedValues.contains(itemValue);
         return _AccordionItemWidget(
           item: item,
           isExpanded: isExpanded,
-          onToggle: () => _toggleItem(item._itemValue ?? ''),
+          onToggle: () => _toggleItem(itemValue),
         );
       }).toList(),
     );
@@ -128,18 +143,31 @@ class _AccordionItemWidget extends StatelessWidget {
     required this.onToggle,
   });
 
+  /// Extract text content from a list of nodes recursively.
+  String _extractTextContent(Iterable<Node> nodes) {
+    final buffer = StringBuffer();
+    for (final node in nodes) {
+      if (node is TextNode) {
+        buffer.write(node.data);
+      } else if (node.childNodes.isNotEmpty) {
+        buffer.write(_extractTextContent(node.childNodes));
+      }
+    }
+    return buffer.toString().trim();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = ShadTheme.of(context);
 
-    Widget? triggerContent;
-    Widget? contentContent;
+    String triggerText = '';
+    String contentText = '';
 
     for (final node in item.childNodes) {
       if (node is FlutterShadcnAccordionTrigger) {
-        triggerContent = WebFWidgetElementChild(child: node.toWidget());
+        triggerText = _extractTextContent(node.childNodes);
       } else if (node is FlutterShadcnAccordionContent) {
-        contentContent = WebFWidgetElementChild(child: node.toWidget());
+        contentText = _extractTextContent(node.childNodes);
       }
     }
 
@@ -153,22 +181,23 @@ class _AccordionItemWidget extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Trigger
+          // Trigger - use GestureDetector with opaque behavior to ensure taps are received
           GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: item._itemDisabled ? null : onToggle,
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: Row(
                 children: [
                   Expanded(
-                    child: DefaultTextStyle(
+                    child: Text(
+                      triggerText,
                       style: theme.textTheme.small.copyWith(
                         fontWeight: FontWeight.w500,
                         color: item._itemDisabled
                             ? theme.colorScheme.mutedForeground
                             : null,
                       ),
-                      child: triggerContent ?? const SizedBox.shrink(),
                     ),
                   ),
                   AnimatedRotation(
@@ -184,12 +213,21 @@ class _AccordionItemWidget extends StatelessWidget {
               ),
             ),
           ),
-          // Content
-          if (isExpanded && contentContent != null)
-            Container(
+          // Content with animation
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: Container(
               padding: const EdgeInsets.only(bottom: 16),
-              child: contentContent,
+              child: Text(
+                contentText,
+                style: theme.textTheme.muted,
+              ),
             ),
+            crossFadeState: isExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 200),
+          ),
         ],
       ),
     );
@@ -200,24 +238,34 @@ class _AccordionItemWidget extends StatelessWidget {
 class FlutterShadcnAccordionItem extends WidgetElement {
   FlutterShadcnAccordionItem(super.context);
 
+  // Local storage for attributes
   String? _itemValue;
   bool _itemDisabled = false;
 
   String? get value => _itemValue;
 
-  set value(value) {
-    final newValue = value?.toString();
-    if (newValue != _itemValue) {
-      _itemValue = newValue;
+  set value(dynamic val) {
+    final v = val?.toString();
+    if (v != _itemValue) {
+      _itemValue = v;
+      _notifyParent();
     }
   }
 
   bool get disabled => _itemDisabled;
 
-  set disabled(value) {
-    final newValue = value == true;
-    if (newValue != _itemDisabled) {
-      _itemDisabled = newValue;
+  set disabled(dynamic val) {
+    final v = val == true || val == 'true' || val == '' || val == 'disabled';
+    if (v != _itemDisabled) {
+      _itemDisabled = v;
+      _notifyParent();
+    }
+  }
+
+  void _notifyParent() {
+    final parent = parentNode;
+    if (parent is FlutterShadcnAccordion) {
+      parent.state?.requestUpdateState(() {});
     }
   }
 
@@ -225,16 +273,40 @@ class FlutterShadcnAccordionItem extends WidgetElement {
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
     attributes['value'] = ElementAttributeProperty(
-      getter: () => value,
-      setter: (v) => value = v,
+      getter: () => _itemValue,
+      setter: (v) {
+        value = v;
+      },
       deleter: () => value = null,
     );
     attributes['disabled'] = ElementAttributeProperty(
-      getter: () => disabled.toString(),
-      setter: (v) => disabled = v == 'true' || v == '',
+      getter: () => _itemDisabled ? 'true' : null,
+      setter: (v) {
+        disabled = v;
+      },
       deleter: () => disabled = false,
     );
   }
+
+  static StaticDefinedBindingPropertyMap flutterShadcnAccordionItemProperties = {
+    'value': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnAccordionItem>(element).value,
+      setter: (element, value) =>
+          castToType<FlutterShadcnAccordionItem>(element).value = value,
+    ),
+    'disabled': StaticDefinedBindingProperty(
+      getter: (element) =>
+          castToType<FlutterShadcnAccordionItem>(element).disabled,
+      setter: (element, value) =>
+          castToType<FlutterShadcnAccordionItem>(element).disabled = value,
+    ),
+  };
+
+  @override
+  List<StaticDefinedBindingPropertyMap> get properties => [
+        ...super.properties,
+        flutterShadcnAccordionItemProperties,
+      ];
 
   @override
   WebFWidgetElementState createState() => FlutterShadcnAccordionItemState(this);
