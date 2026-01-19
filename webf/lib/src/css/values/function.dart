@@ -91,7 +91,7 @@ class CSSFunction {
         // https://drafts.csswg.org/css-values-3/#urls
         if (fn != _functionNotationUrl && value[argsBeginIndex] == FUNCTION_ARGS_SPLIT) {
           if (containLeftCount == 0 && argBeginIndex < argsBeginIndex) {
-            argList.add(value.substring(argBeginIndex, argsBeginIndex));
+            argList.add(value.substring(argBeginIndex, argsBeginIndex).trim());
             argBeginIndex = argsBeginIndex + 1;
           }
         } else if (value[argsBeginIndex] == _functionStart) {
@@ -101,7 +101,7 @@ class CSSFunction {
             containLeftCount--;
           } else {
             if (argBeginIndex < argsBeginIndex) {
-              argList.add(value.substring(argBeginIndex, argsBeginIndex));
+              argList.add(value.substring(argBeginIndex, argsBeginIndex).trim());
               argBeginIndex = argsBeginIndex + 1;
             }
             // Function parse success when find the matched right parenthesis.
