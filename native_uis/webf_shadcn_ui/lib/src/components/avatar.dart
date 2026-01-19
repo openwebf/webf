@@ -80,12 +80,28 @@ class FlutterShadcnAvatarState extends WebFWidgetElementState {
 
   @override
   Widget build(BuildContext context) {
+    final theme = ShadTheme.of(context);
+    final fallbackText = widgetElement.fallback;
+
+    // Build fallback widget with proper theme styling
+    Widget? fallbackWidget;
+    if (fallbackText != null && fallbackText.isNotEmpty) {
+      fallbackWidget = Text(
+        fallbackText,
+        style: theme.textTheme.small.copyWith(
+          fontWeight: FontWeight.w500,
+        ),
+      );
+    }
+
+    // Get src - use null if empty to trigger placeholder display
+    final src = widgetElement.src;
+    final effectiveSrc = (src == null || src.isEmpty) ? null : src;
+
     return ShadAvatar(
-      widgetElement.src ?? '',
+      effectiveSrc,
       size: Size.square(widgetElement._size),
-      placeholder: widgetElement.fallback != null
-          ? Text(widgetElement.fallback!)
-          : null,
+      placeholder: fallbackWidget,
     );
   }
 }

@@ -64,31 +64,65 @@ class FlutterShadcnAlertState extends WebFWidgetElementState {
   FlutterShadcnAlert get widgetElement =>
       super.widgetElement as FlutterShadcnAlert;
 
-  Widget? _findSlot<T>() {
-    final node =
-        widgetElement.childNodes.firstWhereOrNull((node) => node is T);
-    if (node != null) {
-      return WebFWidgetElementChild(child: node.toWidget());
+  /// Extract text content from a list of nodes recursively.
+  String _extractTextContent(Iterable<Node> nodes) {
+    final buffer = StringBuffer();
+    for (final node in nodes) {
+      if (node is TextNode) {
+        buffer.write(node.data);
+      } else if (node.childNodes.isNotEmpty) {
+        buffer.write(_extractTextContent(node.childNodes));
+      }
     }
-    return null;
+    return buffer.toString().trim();
   }
 
   @override
   Widget build(BuildContext context) {
-    final title = _findSlot<FlutterShadcnAlertTitle>();
-    final description = _findSlot<FlutterShadcnAlertDescription>();
+    final theme = ShadTheme.of(context);
+
+    // Extract title text
+    Widget? titleWidget;
+    final titleNode = widgetElement.childNodes
+        .firstWhereOrNull((node) => node is FlutterShadcnAlertTitle);
+    if (titleNode != null) {
+      final titleText = _extractTextContent(titleNode.childNodes);
+      if (titleText.isNotEmpty) {
+        titleWidget = Text(
+          titleText,
+          style: theme.textTheme.p.copyWith(
+            fontWeight: FontWeight.w500,
+            height: 1,
+          ),
+        );
+      }
+    }
+
+    // Extract description text
+    Widget? descriptionWidget;
+    final descNode = widgetElement.childNodes
+        .firstWhereOrNull((node) => node is FlutterShadcnAlertDescription);
+    if (descNode != null) {
+      final descText = _extractTextContent(descNode.childNodes);
+      if (descText.isNotEmpty) {
+        descriptionWidget = Text(
+          descText,
+          style: theme.textTheme.muted,
+        );
+      }
+    }
 
     // Use named constructors based on variant
     if (widgetElement.alertVariant == ShadAlertVariant.destructive) {
       return ShadAlert.destructive(
-        title: title,
-        description: description,
+        title: titleWidget,
+        description: descriptionWidget,
       );
     }
 
     return ShadAlert(
-      title: title,
-      description: description,
+      title: titleWidget,
+      description: descriptionWidget,
     );
   }
 }

@@ -54,16 +54,58 @@ class FlutterShadcnBadgeState extends WebFWidgetElementState {
   FlutterShadcnBadge get widgetElement =>
       super.widgetElement as FlutterShadcnBadge;
 
+  /// Extract text content from a list of nodes recursively.
+  String _extractTextContent(Iterable<Node> nodes) {
+    final buffer = StringBuffer();
+    for (final node in nodes) {
+      if (node is TextNode) {
+        buffer.write(node.data);
+      } else if (node.childNodes.isNotEmpty) {
+        buffer.write(_extractTextContent(node.childNodes));
+      }
+    }
+    return buffer.toString().trim();
+  }
+
+  /// Get the foreground color for the badge based on its variant.
+  Color? _getForegroundColor(BuildContext context) {
+    final theme = ShadTheme.of(context);
+    final ShadBadgeTheme badgeTheme;
+
+    switch (widgetElement.badgeVariant) {
+      case ShadBadgeVariant.primary:
+        badgeTheme = theme.primaryBadgeTheme;
+        break;
+      case ShadBadgeVariant.secondary:
+        badgeTheme = theme.secondaryBadgeTheme;
+        break;
+      case ShadBadgeVariant.destructive:
+        badgeTheme = theme.destructiveBadgeTheme;
+        break;
+      case ShadBadgeVariant.outline:
+        badgeTheme = theme.outlineBadgeTheme;
+        break;
+    }
+
+    return badgeTheme.foregroundColor;
+  }
+
   @override
   Widget build(BuildContext context) {
-    Widget childWidget;
+    final foregroundColor = _getForegroundColor(context);
+
+    Widget? childWidget;
     if (widgetElement.childNodes.isNotEmpty) {
-      childWidget = WebFWidgetElementChild(
-        child: widgetElement.childNodes.first.toWidget(),
-      );
-    } else {
-      childWidget = const SizedBox.shrink();
+      final textContent = _extractTextContent(widgetElement.childNodes);
+      if (textContent.isNotEmpty) {
+        childWidget = Text(
+          textContent,
+          style: TextStyle(color: foregroundColor),
+        );
+      }
     }
+
+    childWidget ??= const SizedBox.shrink();
 
     // Use named constructors based on variant
     switch (widgetElement.badgeVariant) {
