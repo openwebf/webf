@@ -261,6 +261,12 @@ void installWebFShadcnUI() {
   WebF.defineCustomElement(
       'flutter-shadcn-breadcrumb-separator', (context) => FlutterShadcnBreadcrumbSeparator(context));
   WebF.defineCustomElement(
+      'flutter-shadcn-breadcrumb-ellipsis', (context) => FlutterShadcnBreadcrumbEllipsis(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-breadcrumb-dropdown', (context) => FlutterShadcnBreadcrumbDropdown(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-breadcrumb-dropdown-item', (context) => FlutterShadcnBreadcrumbDropdownItem(context));
+  WebF.defineCustomElement(
       'flutter-shadcn-dropdown-menu', (context) => FlutterShadcnDropdownMenu(context));
   WebF.defineCustomElement(
       'flutter-shadcn-dropdown-menu-trigger', (context) => FlutterShadcnDropdownMenuTrigger(context));
