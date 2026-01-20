@@ -20,6 +20,7 @@ import 'local_http_server.dart';
 import 'utils/mem_leak_detector.dart';
 import 'webf_tester.dart';
 import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
+import 'package:webf_shadcn_ui/webf_shadcn_ui.dart';
 import 'modules/array_buffer_module.dart';
 import 'modules/method_channel_callback_module.dart';
 import 'utils/flutter_error_capture.dart';
@@ -78,6 +79,8 @@ void main() async {
 
   defineWebFCustomElements();
   installWebFCupertinoUI();
+  installWebFShadcnUI();
+
   FlutterErrorCapture.install();
 
   int mockServerPort = await findAvailablePort();

@@ -36,6 +36,8 @@ dependencies:
     path: rust_builder
   webf_cupertino_ui:
     path: ../native_uis/webf_cupertino_ui
+  webf_shadcn_ui:
+    path: ../native_uis/webf_shadcn_ui
 
 dev_dependencies:
   flutter_test:

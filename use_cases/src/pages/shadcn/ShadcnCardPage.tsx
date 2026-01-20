@@ -56,7 +56,7 @@ export const ShadcnCardPage: React.FC = () => {
                 </div>
               </FlutterShadcnCardContent>
               <FlutterShadcnCardFooter>
-                <div className="flex gap-2">
+                <div className="flex justify-between w-full">
                   <FlutterShadcnButton variant="outline">Cancel</FlutterShadcnButton>
                   <FlutterShadcnButton>Create</FlutterShadcnButton>
                 </div>
