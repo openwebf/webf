@@ -137,9 +137,6 @@ class RuleFeatureSet {
   bool UsesAfterRules() const { return metadata_.uses_after_rules; }
   bool UsesFirstLetterRules() const { return metadata_.uses_first_letter_rules; }
   bool UsesFirstLineRules() const { return metadata_.uses_first_line_rules; }
-  bool UsesFirstLetterRules() const { return metadata_.uses_first_letter_rules; }
-  bool UsesBeforeRules() const { return metadata_.uses_before_rules; }
-  bool UsesAfterRules() const { return metadata_.uses_after_rules; }
   bool UsesWindowInactiveSelector() const { return metadata_.uses_window_inactive_selector; }
   // Returns true if we have :nth-child(... of S) selectors where S contains a
   // :has() selector.
@@ -275,9 +272,6 @@ class RuleFeatureSet {
     bool uses_after_rules = false;
     bool uses_first_letter_rules = false;
     bool uses_first_line_rules = false;
-    bool uses_first_letter_rules = false;
-    bool uses_before_rules = false;
-    bool uses_after_rules = false;
     bool uses_window_inactive_selector = false;
     unsigned max_direct_adjacent_selectors = 0;
     bool invalidates_parts = false;

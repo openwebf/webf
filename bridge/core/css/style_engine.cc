@@ -1231,7 +1231,7 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
     if (!property_set || property_set->IsEmpty()) {
       // Even if there are no element-level winners, clear any previously-sent
       // sheet overrides (to avoid stale styles) and emit pseudo styles if any exist.
-      command_buffer->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
+      command_buffer->AddCommand(UICommand::kClearSheetStyle, nullptr, element->bindingObject(), nullptr);
       auto emit_pseudo_if_any = [&](PseudoId pseudo_id, const char* pseudo_name) {
         if (!should_resolve_pseudo(pseudo_id)) {
           clear_pseudo_if_sent(pseudo_id, pseudo_name);
@@ -1320,7 +1320,7 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
       return element->IsDisplayNoneForStyleInvalidation();
     }
 
-    command_buffer->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
+    command_buffer->AddCommand(UICommand::kClearSheetStyle, nullptr, element->bindingObject(), nullptr);
 
     unsigned count = property_set->PropertyCount();
 
@@ -1425,7 +1425,8 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
         } else {
           payload->href = nullptr;
         }
-        command_buffer->AddCommand(UICommand::kSetStyle, std::move(key_ns), element->bindingObject(), payload);
+        payload->important = prop.IsImportant() ? 1 : 0;
+        command_buffer->AddCommand(UICommand::kSetSheetStyle, std::move(key_ns), element->bindingObject(), payload);
         continue;
       }
 
@@ -1450,8 +1451,8 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
         base_href = stringToNativeString(base_href_string).release();
       }
 
-      command_buffer->AddStyleByIdCommand(element->bindingObject(), static_cast<int32_t>(id), value_slot,
-                                               base_href, prop.IsImportant());
+      command_buffer->AddSheetStyleByIdCommand(element->bindingObject(), static_cast<int32_t>(id), value_slot, base_href,
+                                               prop.IsImportant());
     }
 
     if (emit_white_space_shorthand) {
@@ -1486,7 +1487,7 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
         value_slot = static_cast<int64_t>(reinterpret_cast<intptr_t>(value_ns));
       }
 
-      command_buffer->AddStyleByIdCommand(element->bindingObject(), static_cast<int32_t>(CSSPropertyID::kWhiteSpace),
+      command_buffer->AddSheetStyleByIdCommand(element->bindingObject(), static_cast<int32_t>(CSSPropertyID::kWhiteSpace),
                                                value_slot, nullptr, /*important*/ false);
     }
 
@@ -1697,7 +1698,7 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
     };
 
     if (!property_set || property_set->IsEmpty()) {
-      command_buffer->AddCommand(UICommand::kClearStyle, nullptr, el->bindingObject(), nullptr);
+      command_buffer->AddCommand(UICommand::kClearSheetStyle, nullptr, el->bindingObject(), nullptr);
 
       auto emit_pseudo_if_any = [&](PseudoId pseudo_id, const char* pseudo_name) {
         if (!should_resolve_pseudo(pseudo_id)) {
@@ -1788,7 +1789,7 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
       return;
     }
 
-    command_buffer->AddCommand(UICommand::kClearStyle, nullptr, el->bindingObject(), nullptr);
+    command_buffer->AddCommand(UICommand::kClearSheetStyle, nullptr, el->bindingObject(), nullptr);
 
     unsigned count = property_set->PropertyCount();
 
@@ -1892,7 +1893,8 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
         } else {
           payload->href = nullptr;
         }
-        command_buffer->AddCommand(UICommand::kSetStyle, std::move(key_ns), el->bindingObject(), payload);
+        payload->important = prop.IsImportant() ? 1 : 0;
+        command_buffer->AddCommand(UICommand::kSetSheetStyle, std::move(key_ns), el->bindingObject(), payload);
         continue;
       }
 
@@ -1917,7 +1919,7 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
         base_href = stringToNativeString(base_href_string).release();
       }
 
-      command_buffer->AddStyleByIdCommand(el->bindingObject(), static_cast<int32_t>(id), value_slot, base_href,
+      command_buffer->AddSheetStyleByIdCommand(el->bindingObject(), static_cast<int32_t>(id), value_slot, base_href,
                                                prop.IsImportant());
     }
 
@@ -1953,8 +1955,8 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
         value_slot = static_cast<int64_t>(reinterpret_cast<intptr_t>(value_ns));
       }
 
-    command_buffer->AddStyleByIdCommand(el->bindingObject(), static_cast<int32_t>(CSSPropertyID::kWhiteSpace),
-                                               value_slot, nullptr, /*important*/ false);
+    command_buffer->AddSheetStyleByIdCommand(el->bindingObject(), static_cast<int32_t>(CSSPropertyID::kWhiteSpace),
+                                             value_slot, nullptr, /*important*/ false);
     }
 
     auto send_pseudo_for = [&](PseudoId pseudo_id, const char* pseudo_name) {
