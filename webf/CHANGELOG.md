@@ -1,3 +1,17 @@
+## 0.24.7
+
+### Performance Improvements
+
+- **Bridge/CSS**: optimize Blink style engine matching and invalidation (including media-query evaluation and resize-triggered recalc) (#806).
+- **CSS**: skip caching `var()`-dependent colors to avoid stale cache hits and reduce variable-change overhead (#812).
+
+### Bug Fixes
+
+- **CSS**: preserve author stylesheet DOM order and base URL; fix subtree style recalculation when `display:none` becomes visible (#806).
+- **Theme**: sync system color scheme changes with Blink `prefers-color-scheme` media queries and dispatch `ColorSchemeChangeEvent` reliably (#806).
+- **Router/Prerendering**: mount `initialRoute` during prerendering and emit a `prerendering` event for initial `router-link` (#811).
+- **Rendering/Widget**: avoid unbounded width constraints for widget elements with `min-width` in unbounded contexts (e.g. `Row` + `Expanded`) (#816).
+
 ## 0.24.6
 
 ### Bug Fixes
