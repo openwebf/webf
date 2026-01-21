@@ -422,22 +422,160 @@ mixin CSSTextMixin on RenderStyle {
     _markChildrenTextNeedsLayout(this, 'wordBreak');
   }
 
-  WhiteSpace? _whiteSpace;
+  static WhiteSpace _whiteSpaceFromLonghands(WhiteSpaceCollapse collapse, TextWrapMode mode) {
+    final bool isNoWrap = mode == TextWrapMode.nowrap;
+    switch (collapse) {
+      case WhiteSpaceCollapse.collapse:
+        return isNoWrap ? WhiteSpace.nowrap : WhiteSpace.normal;
+      case WhiteSpaceCollapse.preserve:
+        return isNoWrap ? WhiteSpace.pre : WhiteSpace.preWrap;
+      case WhiteSpaceCollapse.preserveBreaks:
+        // Preserve wrapping semantics by mapping the no-wrap combination to `nowrap`.
+        return isNoWrap ? WhiteSpace.nowrap : WhiteSpace.preLine;
+      case WhiteSpaceCollapse.breakSpaces:
+        // When wrapping is disabled, `break-spaces` behaves closest to `pre`.
+        return isNoWrap ? WhiteSpace.pre : WhiteSpace.breakSpaces;
+    }
+  }
+
+  static (WhiteSpaceCollapse, TextWrapMode) _longhandsFromWhiteSpace(WhiteSpace value) {
+    switch (value) {
+      case WhiteSpace.normal:
+        return (WhiteSpaceCollapse.collapse, TextWrapMode.wrap);
+      case WhiteSpace.nowrap:
+        return (WhiteSpaceCollapse.collapse, TextWrapMode.nowrap);
+      case WhiteSpace.pre:
+        return (WhiteSpaceCollapse.preserve, TextWrapMode.nowrap);
+      case WhiteSpace.preWrap:
+        return (WhiteSpaceCollapse.preserve, TextWrapMode.wrap);
+      case WhiteSpace.preLine:
+        return (WhiteSpaceCollapse.preserveBreaks, TextWrapMode.wrap);
+      case WhiteSpace.breakSpaces:
+        return (WhiteSpaceCollapse.breakSpaces, TextWrapMode.wrap);
+    }
+  }
+
+  WhiteSpaceCollapse? _whiteSpaceCollapse;
+
+  @override
+  WhiteSpaceCollapse get whiteSpaceCollapse {
+    // Inherited property.
+    if (_whiteSpaceCollapse == null && parent != null) {
+      return parent!.whiteSpaceCollapse;
+    }
+    return _whiteSpaceCollapse ?? WhiteSpaceCollapse.collapse;
+  }
+
+  set whiteSpaceCollapse(WhiteSpaceCollapse? value) {
+    if (_whiteSpaceCollapse == value) return;
+    _whiteSpaceCollapse = value;
+    _markNestChildrenTextAndLayoutNeedsLayout(this, WHITE_SPACE_COLLAPSE);
+  }
+
+  TextWrapMode? _textWrapMode;
+
+  @override
+  TextWrapMode get textWrapMode {
+    // Inherited property.
+    if (_textWrapMode == null && parent != null) {
+      return parent!.textWrapMode;
+    }
+    return _textWrapMode ?? TextWrapMode.wrap;
+  }
+
+  set textWrapMode(TextWrapMode? value) {
+    if (_textWrapMode == value) return;
+    _textWrapMode = value;
+    _markNestChildrenTextAndLayoutNeedsLayout(this, TEXT_WRAP_MODE);
+  }
+
+  TextWrapStyle? _textWrapStyle;
+
+  @override
+  TextWrapStyle get textWrapStyle {
+    // Inherited property.
+    if (_textWrapStyle == null && parent != null) {
+      return parent!.textWrapStyle;
+    }
+    return _textWrapStyle ?? TextWrapStyle.auto;
+  }
+
+  set textWrapStyle(TextWrapStyle? value) {
+    if (_textWrapStyle == value) return;
+    _textWrapStyle = value;
+    _markNestChildrenTextAndLayoutNeedsLayout(this, TEXT_WRAP_STYLE);
+  }
+
+  @override
+  TextWrap get textWrap {
+    final TextWrapMode mode = textWrapMode;
+    if (mode == TextWrapMode.nowrap) return TextWrap.nowrap;
+    switch (textWrapStyle) {
+      case TextWrapStyle.balance:
+        return TextWrap.balance;
+      case TextWrapStyle.pretty:
+        return TextWrap.pretty;
+      case TextWrapStyle.auto:
+        return TextWrap.wrap;
+    }
+  }
+
+  set textWrap(TextWrap? value) {
+    if (value == null) {
+      // Clear the shorthand's longhands to inherit from parent.
+      if (_textWrapMode == null && _textWrapStyle == null) return;
+      _textWrapMode = null;
+      _textWrapStyle = null;
+      _markNestChildrenTextAndLayoutNeedsLayout(this, TEXT_WRAP);
+      return;
+    }
+
+    TextWrapMode mode = TextWrapMode.wrap;
+    TextWrapStyle style = TextWrapStyle.auto;
+    switch (value) {
+      case TextWrap.wrap:
+        mode = TextWrapMode.wrap;
+        style = TextWrapStyle.auto;
+        break;
+      case TextWrap.nowrap:
+        mode = TextWrapMode.nowrap;
+        style = TextWrapStyle.auto;
+        break;
+      case TextWrap.balance:
+        mode = TextWrapMode.wrap;
+        style = TextWrapStyle.balance;
+        break;
+      case TextWrap.pretty:
+        mode = TextWrapMode.wrap;
+        style = TextWrapStyle.pretty;
+        break;
+    }
+
+    if (_textWrapMode == mode && _textWrapStyle == style) return;
+    _textWrapMode = mode;
+    _textWrapStyle = style;
+    _markNestChildrenTextAndLayoutNeedsLayout(this, TEXT_WRAP);
+  }
 
   @override
   WhiteSpace get whiteSpace {
-    // Get style from self or closest parent if specified style property is not set
-    // due to style inheritance.
-    if (_whiteSpace == null && parent != null) {
-      return parent!.whiteSpace;
-    }
-    return _whiteSpace ?? WhiteSpace.normal;
+    return _whiteSpaceFromLonghands(whiteSpaceCollapse, textWrapMode);
   }
 
   set whiteSpace(WhiteSpace? value) {
-    if (_whiteSpace == value) return;
-    _whiteSpace = value;
-    // Update all the children layout and text with specified style property not set due to style inheritance.
+    if (value == null) {
+      // Clear the shorthand's longhands to inherit from parent.
+      if (_whiteSpaceCollapse == null && _textWrapMode == null) return;
+      _whiteSpaceCollapse = null;
+      _textWrapMode = null;
+      _markNestChildrenTextAndLayoutNeedsLayout(this, WHITE_SPACE);
+      return;
+    }
+
+    final (WhiteSpaceCollapse collapse, TextWrapMode mode) = _longhandsFromWhiteSpace(value);
+    if (_whiteSpaceCollapse == collapse && _textWrapMode == mode) return;
+    _whiteSpaceCollapse = collapse;
+    _textWrapMode = mode;
     _markNestChildrenTextAndLayoutNeedsLayout(this, WHITE_SPACE);
   }
 
@@ -973,6 +1111,78 @@ class CSSText {
       case 'normal':
       default:
         return WhiteSpace.normal;
+    }
+  }
+
+  static WhiteSpaceCollapse resolveWhiteSpaceCollapse(String value) {
+    switch (value) {
+      case 'preserve':
+        return WhiteSpaceCollapse.preserve;
+      case 'preserve-breaks':
+        return WhiteSpaceCollapse.preserveBreaks;
+      case 'break-spaces':
+        return WhiteSpaceCollapse.breakSpaces;
+      case 'collapse':
+      default:
+        return WhiteSpaceCollapse.collapse;
+    }
+  }
+
+  static TextWrap resolveTextWrap(String value) {
+    // Shorthand: text-wrap: [wrap | nowrap] || [auto | balance | pretty]
+    // We currently represent the combined shorthand value as a single enum.
+    final List<String> parts = splitByAsciiWhitespace(value.trim());
+    TextWrapMode mode = TextWrapMode.wrap;
+    TextWrapStyle style = TextWrapStyle.auto;
+    for (final String part in parts) {
+      switch (part) {
+        case 'wrap':
+          mode = TextWrapMode.wrap;
+          break;
+        case 'nowrap':
+          mode = TextWrapMode.nowrap;
+          break;
+        case 'auto':
+          style = TextWrapStyle.auto;
+          break;
+        case 'balance':
+          style = TextWrapStyle.balance;
+          break;
+        case 'pretty':
+          style = TextWrapStyle.pretty;
+          break;
+      }
+    }
+    if (mode == TextWrapMode.nowrap) return TextWrap.nowrap;
+    switch (style) {
+      case TextWrapStyle.balance:
+        return TextWrap.balance;
+      case TextWrapStyle.pretty:
+        return TextWrap.pretty;
+      case TextWrapStyle.auto:
+        return TextWrap.wrap;
+    }
+  }
+
+  static TextWrapMode resolveTextWrapMode(String value) {
+    switch (value) {
+      case 'nowrap':
+        return TextWrapMode.nowrap;
+      case 'wrap':
+      default:
+        return TextWrapMode.wrap;
+    }
+  }
+
+  static TextWrapStyle resolveTextWrapStyle(String value) {
+    switch (value) {
+      case 'balance':
+        return TextWrapStyle.balance;
+      case 'pretty':
+        return TextWrapStyle.pretty;
+      case 'auto':
+      default:
+        return TextWrapStyle.auto;
     }
   }
 

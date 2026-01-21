@@ -143,6 +143,11 @@ const String WORD_SPACING = 'wordSpacing';
 // CSS word-break property (camelCase form used internally)
 const String WORD_BREAK = 'wordBreak';
 const String WHITE_SPACE = 'whiteSpace';
+const String WHITE_SPACE_COLLAPSE = 'whiteSpaceCollapse';
+// `text-wrap` shorthand and its longhands.
+const String TEXT_WRAP = 'textWrap';
+const String TEXT_WRAP_MODE = 'textWrapMode';
+const String TEXT_WRAP_STYLE = 'textWrapStyle';
 const String LINE_CLAMP = 'lineClamp';
 const String TAB_SIZE = 'tabSize';
 const String TEXT_INDENT = 'textIndent';

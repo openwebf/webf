@@ -631,6 +631,49 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
           if (!CSSBackground.isValidBackgroundRepeatValue(normalizedValue)) return false;
         }
         break;
+      case WHITE_SPACE_COLLAPSE:
+        if (normalizedValue != 'collapse' &&
+            normalizedValue != 'preserve' &&
+            normalizedValue != 'preserve-breaks' &&
+            normalizedValue != 'break-spaces') {
+          return false;
+        }
+        break;
+      case TEXT_WRAP_MODE:
+        if (normalizedValue != 'wrap' && normalizedValue != 'nowrap') {
+          return false;
+        }
+        break;
+      case TEXT_WRAP_STYLE:
+        if (normalizedValue != 'auto' && normalizedValue != 'balance' && normalizedValue != 'pretty') {
+          return false;
+        }
+        break;
+      case TEXT_WRAP:
+        // text-wrap is a shorthand for text-wrap-mode + text-wrap-style.
+        // Accept a single keyword (wrap/nowrap/auto/balance/pretty) or a
+        // two-keyword combination (mode + style).
+        final List<String> parts = splitByTopLevelDelimiter(normalizedValue, 0x20 /* space */)
+            .map((p) => p.trim())
+            .where((p) => p.isNotEmpty)
+            .toList(growable: false);
+        if (parts.isEmpty || parts.length > 2) return false;
+        bool hasMode = false;
+        bool hasStyle = false;
+        for (final String part in parts) {
+          if (part == 'wrap' || part == 'nowrap') {
+            if (hasMode) return false;
+            hasMode = true;
+            continue;
+          }
+          if (part == 'auto' || part == 'balance' || part == 'pretty') {
+            if (hasStyle) return false;
+            hasStyle = true;
+            continue;
+          }
+          return false;
+        }
+        break;
       case FONT_SIZE:
         // font-size does not allow negative values.
         // Allow:
