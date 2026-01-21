@@ -66,13 +66,17 @@ class RenderWidget extends RenderBoxModel
         renderStyle.effectiveDisplay == CSSDisplay.inlineBlock &&
             renderStyle.width.isAuto;
 
-    // When the widget element has an explicit inline-size (width/min-width/max-width),
+    // When the widget element has an explicit inline-size (width/max-width),
     // we should not additionally clamp the child to the viewport. Let it size up to
     // the content constraints so that explicit widths (e.g., 500px) can overflow and
     // participate in scrollable sizing, matching regular RenderBoxModel behavior.
-    final bool hasExplicitInlineWidth = renderStyle.width.isNotAuto ||
-        renderStyle.minWidth.isNotAuto ||
-        renderStyle.maxWidth.isNotNone;
+    //
+    // Note: min-width alone (e.g. `min-width: 0` used by common flexbox patterns like
+    // Tailwind's `min-w-0`) is not an explicit used width and should not disable
+    // viewport clamping; otherwise the hosted Flutter subtree may receive unbounded
+    // width constraints and crash (e.g., Row + Expanded).
+    final bool hasExplicitInlineWidth =
+        renderStyle.width.isNotAuto || renderStyle.maxWidth.isNotNone;
 
     RenderViewportBox viewportBox =
         getViewportBox() ?? renderStyle.target.getRootViewport()!;
@@ -127,17 +131,23 @@ class RenderWidget extends RenderBoxModel
               ? contentConstraints!.maxHeight
               : math.min(contentViewportHeight, contentConstraints!.maxHeight));
     } else {
+      // Clamp the hosted Flutter subtree to the viewport when the widget element has
+      // no explicit used width, but ensure the result stays valid (max >= min).
+      final double maxWidthCap = math.min(effectiveViewportWidth, contentConstraints!.maxWidth);
+      final double maxHeightCap = math.min(contentViewportHeight, contentConstraints!.maxHeight);
+      final double safeMaxWidth = math.max(contentConstraints!.minWidth, maxWidthCap);
+      final double safeMaxHeight = math.max(contentConstraints!.minHeight, maxHeightCap);
       childConstraints = BoxConstraints(
           minWidth: contentConstraints!.minWidth,
           maxWidth: (contentConstraints!.hasTightWidth ||
                   (renderStyle.target as WidgetElement).allowsInfiniteWidth)
               ? contentConstraints!.maxWidth
-              : math.min(effectiveViewportWidth, contentConstraints!.maxWidth),
+              : safeMaxWidth,
           minHeight: contentConstraints!.minHeight,
           maxHeight: (contentConstraints!.hasTightHeight ||
                   (renderStyle.target as WidgetElement).allowsInfiniteHeight)
               ? contentConstraints!.maxHeight
-              : math.min(contentViewportHeight, contentConstraints!.maxHeight));
+              : safeMaxHeight);
     }
 
     // If an explicit CSS width is specified (non-auto), tighten the child's
