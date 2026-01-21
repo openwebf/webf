@@ -242,6 +242,15 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   WhiteSpace get whiteSpace;
 
+  WhiteSpaceCollapse get whiteSpaceCollapse;
+
+  TextWrapMode get textWrapMode;
+
+  TextWrapStyle get textWrapStyle;
+
+  // Shorthand getter for debugging/serialization.
+  TextWrap get textWrap;
+
   TextOverflow get textOverflow;
 
   TextAlign get textAlign;
@@ -1600,6 +1609,14 @@ class CSSRenderStyle extends RenderStyle
         return textShadow;
       case WHITE_SPACE:
         return whiteSpace;
+      case WHITE_SPACE_COLLAPSE:
+        return whiteSpaceCollapse;
+      case TEXT_WRAP:
+        return textWrap;
+      case TEXT_WRAP_MODE:
+        return textWrapMode;
+      case TEXT_WRAP_STYLE:
+        return textWrapStyle;
   case TEXT_OVERFLOW:
     return textOverflow;
   case WORD_BREAK:
@@ -2047,6 +2064,18 @@ class CSSRenderStyle extends RenderStyle
         break;
       case WHITE_SPACE:
         whiteSpace = value;
+        break;
+      case WHITE_SPACE_COLLAPSE:
+        whiteSpaceCollapse = value;
+        break;
+      case TEXT_WRAP:
+        textWrap = value;
+        break;
+      case TEXT_WRAP_MODE:
+        textWrapMode = value;
+        break;
+      case TEXT_WRAP_STYLE:
+        textWrapStyle = value;
         break;
       case TEXT_OVERFLOW:
         textOverflow = value;
@@ -2538,7 +2567,39 @@ class CSSRenderStyle extends RenderStyle
         value = CSSText.resolveTextShadow(propertyValue, renderStyle, propertyName);
         break;
       case WHITE_SPACE:
-        value = CSSText.resolveWhiteSpace(propertyValue);
+        if (propertyValue == INHERIT) {
+          value = null;
+        } else {
+          value = CSSText.resolveWhiteSpace(propertyValue);
+        }
+        break;
+      case WHITE_SPACE_COLLAPSE:
+        if (propertyValue == INHERIT) {
+          value = null;
+        } else {
+          value = CSSText.resolveWhiteSpaceCollapse(propertyValue);
+        }
+        break;
+      case TEXT_WRAP:
+        if (propertyValue == INHERIT) {
+          value = null;
+        } else {
+          value = CSSText.resolveTextWrap(propertyValue);
+        }
+        break;
+      case TEXT_WRAP_MODE:
+        if (propertyValue == INHERIT) {
+          value = null;
+        } else {
+          value = CSSText.resolveTextWrapMode(propertyValue);
+        }
+        break;
+      case TEXT_WRAP_STYLE:
+        if (propertyValue == INHERIT) {
+          value = null;
+        } else {
+          value = CSSText.resolveTextWrapStyle(propertyValue);
+        }
         break;
       case TEXT_OVERFLOW:
         // Overflow will affect text-overflow ellipsis taking effect

@@ -228,6 +228,10 @@ enum CSSPropertyID {
   RX,
   RY,
   D,
+  WhiteSpaceCollapse,
+  TextWrap,
+  TextWrapMode,
+  TextWrapStyle,
 }
 
 const Map<String, CSSPropertyID> CSSPropertyNameMap = {
@@ -457,6 +461,10 @@ const Map<String, CSSPropertyID> CSSPropertyNameMap = {
   'rx': CSSPropertyID.RX,
   'ry': CSSPropertyID.RY,
   'd': CSSPropertyID.D,
+  'white-space-collapse': CSSPropertyID.WhiteSpaceCollapse,
+  'text-wrap': CSSPropertyID.TextWrap,
+  'text-wrap-mode': CSSPropertyID.TextWrapMode,
+  'text-wrap-style': CSSPropertyID.TextWrapStyle,
 };
 
 const List<CSSPropertyID> ComputedProperties = [
@@ -838,19 +846,20 @@ const List<bool> _isInheritedPropertyTable = [
   true, // CSSPropertyTextAnchor
   false, // CSSPropertyVectorEffect
   true, // CSSPropertyWritingMode
-  false, // CSSPropertyX,
-  false, // CSSPropertyY,
-  false,
-  false,
-  false,
-  false,
+  false, // CSSPropertyX
+  false, // CSSPropertyY
+  false, // CSSPropertyRX
+  false, // CSSPropertyRY
+  false, // CSSPropertyD
+  true, // CSSPropertyWhiteSpaceCollapse
+  true, // CSSPropertyTextWrap
+  true, // CSSPropertyTextWrapMode
+  true, // CSSPropertyTextWrapStyle
 ];
 
 bool isInheritedPropertyString(String property) {
   CSSPropertyID? id = CSSPropertyNameMap[property];
-  if (id == null) {
-    return false;
-  }
+  if (id == null) return false;
   return isInheritedPropertyID(id);
 }
 
