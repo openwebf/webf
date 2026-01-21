@@ -25,6 +25,7 @@
 #include "core/dom/mutation_observer.h"
 #include "core/css/style_engine.h"
 #include "core/events/error_event.h"
+#include "core/html/html_body_element.h"
 #include "core/html/html_script_element.h"
 #include "core/events/promise_rejection_event.h"
 #include "core/js_function_ref.h"
@@ -827,8 +828,53 @@ void ExecutingContext::SetWidgetElementShape(NativeWidgetElementShape* native_wi
 void ExecutingContext::EnableBlinkEngine() {
   WEBF_LOG(INFO) << "=== The Blink engine is enabled ===";
 
+  if (enable_blink_engine_) {
+    return;
+  }
+
   enable_blink_engine_ = true;
   document()->EnsureStyleEngine();
+}
+
+void ExecutingContext::MaybeBeginFirstPaintStyleSync(const ContainerNode& parent,
+                                                     const Node& child,
+                                                     bool parent_was_empty) {
+  if (!enable_blink_engine_ || needs_first_paint_style_sync_) {
+    return;
+  }
+
+  // Re-arm the barrier for the first mount of a RouterLink subtree (subpage).
+  if (parent.IsRouterLinkElement() && parent_was_empty) {
+    needs_first_paint_style_sync_ = true;
+    return;
+  }
+
+  // Only gate the very first document paint once.
+  if (first_paint_committed_) {
+    return;
+  }
+
+  // Avoid deadlocking hybrid-router navigation by *not* blocking the initial
+  // insertion of RouterLink containers into <body>. Route children are mounted
+  // later (into the RouterLink element), where we can safely gate.
+  if (IsA<HTMLBodyElement>(parent) && !child.IsRouterLinkElement()) {
+    needs_first_paint_style_sync_ = true;
+  }
+}
+
+void ExecutingContext::MaybeUpdateStyleForFirstPaint() {
+  if (!enable_blink_engine_ || !needs_first_paint_style_sync_) {
+    return;
+  }
+
+  if (!document_) {
+    return;
+  }
+
+  MemberMutationScope mutation_scope{this};
+  document_->UpdateStyleForThisDocument();
+  needs_first_paint_style_sync_ = false;
+  first_paint_committed_ = true;
 }
 
 void ExecutingContext::FlushUICommand(const BindingObject* self, uint32_t reason) {

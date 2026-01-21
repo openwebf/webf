@@ -297,7 +297,32 @@ void UICommandPackageRingBuffer::FlushCurrentPackage() {
   PushPackage(std::move(package));
 }
 
+void UICommandPackageRingBuffer::FlushDeferredPackages() {
+  if (context_ && context_->needs_first_paint_style_sync_) {
+    return;
+  }
+
+  std::vector<std::unique_ptr<UICommandPackage>> deferred;
+  {
+    std::lock_guard<std::mutex> lock(deferred_mutex_);
+    if (deferred_packages_.empty()) {
+      return;
+    }
+    deferred.swap(deferred_packages_);
+  }
+
+  for (auto& package : deferred) {
+    PushPackage(std::move(package));
+  }
+}
+
 void UICommandPackageRingBuffer::PushPackage(std::unique_ptr<UICommandPackage> package) {
+  if (context_ && context_->needs_first_paint_style_sync_) {
+    std::lock_guard<std::mutex> lock(deferred_mutex_);
+    deferred_packages_.push_back(std::move(package));
+    return;
+  }
+
   size_t write_idx = write_index_.load(std::memory_order_relaxed);
   size_t next_write_idx = (write_idx + 1) & capacity_mask_;
 
@@ -357,6 +382,13 @@ size_t UICommandPackageRingBuffer::PackageCount() const {
 }
 
 bool UICommandPackageRingBuffer::Empty() const {
+  {
+    std::lock_guard<std::mutex> lock(const_cast<std::mutex&>(deferred_mutex_));
+    if (!deferred_packages_.empty()) {
+      return false;
+    }
+  }
+
   // Check if there are any packages in the ring buffer or overflow
   if (PackageCount() > 0) {
     return false;
@@ -372,6 +404,11 @@ bool UICommandPackageRingBuffer::HasUnflushedCommands() const {
   return !current_package_->commands.empty();
 }
 
+bool UICommandPackageRingBuffer::HasDeferredPackages() const {
+  std::lock_guard<std::mutex> lock(const_cast<std::mutex&>(deferred_mutex_));
+  return !deferred_packages_.empty();
+}
+
 void UICommandPackageRingBuffer::Clear() {
   write_index_.store(0, std::memory_order_relaxed);
   read_index_.store(0, std::memory_order_relaxed);
@@ -383,6 +420,9 @@ void UICommandPackageRingBuffer::Clear() {
 
   std::lock_guard<std::mutex> lock(overflow_mutex_);
   overflow_packages_.clear();
+
+  std::lock_guard<std::mutex> deferred_lock(deferred_mutex_);
+  deferred_packages_.clear();
 
   std::lock_guard<std::mutex> pkg_lock(current_package_mutex_);
   current_package_->Clear();

@@ -36,6 +36,10 @@ void SharedUICommand::AddCommand(UICommand type,
                                  void* native_binding_object,
                                  void* nativePtr2,
                                  bool request_ui_update) {
+  if (type == UICommand::kFinishRecordingCommand) {
+    context_->MaybeUpdateStyleForFirstPaint();
+  }
+
   // For non-dedicated contexts, add directly to read buffer
   if (!context_->isDedicated()) {
     std::lock_guard<std::mutex> lock(read_buffer_mutex_);
@@ -52,7 +56,12 @@ void SharedUICommand::AddCommand(UICommand type,
   if (type == UICommand::kFinishRecordingCommand) {
     // Calculate if we should request batch update based on waiting commands and ring buffer state
     bool should_request_batch_update =
-        ui_command_sync_strategy_->GetWaitingCommandsCount() > 0 || package_buffer_->HasUnflushedCommands();
+        ui_command_sync_strategy_->GetWaitingCommandsCount() > 0 || package_buffer_->HasUnflushedCommands() ||
+        package_buffer_->HasDeferredPackages() || package_buffer_->PackageCount() > 0;
+
+    if (!context_->needs_first_paint_style_sync_) {
+      package_buffer_->FlushDeferredPackages();
+    }
 
     // Flush all waiting ui commands to ring buffer
     ui_command_sync_strategy_->FlushWaitingCommands();
@@ -143,6 +152,9 @@ void SharedUICommand::SyncAllPackages() {
   // First flush waiting commands from UICommandStrategy to ring buffer
   ui_command_sync_strategy_->FlushWaitingCommands();
   package_buffer_->FlushCurrentPackage();
+  if (!context_->needs_first_paint_style_sync_) {
+    package_buffer_->FlushDeferredPackages();
+  }
 }
 
 void SharedUICommand::FillReadBuffer() {

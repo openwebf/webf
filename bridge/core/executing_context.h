@@ -66,6 +66,8 @@ class ScriptWrappable;
 class NativeByteDataFinalizerContext;
 class ScriptPromiseResolver;
 class HTMLScriptElement;
+class ContainerNode;
+class Node;
 struct NativeJSFunctionRef;
 
 using JSExceptionHandler = std::function<void(ExecutingContext* context, const char* message)>;
@@ -272,6 +274,10 @@ class ExecutingContext {
   void InstallDocument();
   void InstallPerformance();
   void InstallNativeLoader();
+  void MaybeBeginFirstPaintStyleSync(const ContainerNode& parent,
+                                     const Node& child,
+                                     bool parent_was_empty);
+  void MaybeUpdateStyleForFirstPaint();
 
   void DrainPendingPromiseJobs();
 
@@ -323,6 +329,12 @@ class ExecutingContext {
   bool is_dedicated_;
   std::unique_ptr<RemoteObjectRegistry> remote_object_registry_;
   bool enable_blink_engine_ = false;
+  // When Blink CSS is enabled, defer UICommand packages until we've run at
+  // least one `Document::UpdateStyleForThisDocument()` for a newly-mounted
+  // visual subtree, so the first visible frame ships with both DOM + styles.
+  // This barrier can be re-armed (e.g., first mount of a RouterLink subtree).
+  bool needs_first_paint_style_sync_{false};
+  bool first_paint_committed_{false};
   bool is_idle_{true};
   bool is_needs_update_styles_in_microtask_ {false};
   std::optional<double> cached_viewport_width_;
@@ -335,6 +347,10 @@ class ExecutingContext {
 
   // Native library metadata
   std::vector<NativeLibraryMetaData*> native_library_meta_data_contaner_;
+
+  friend class ContainerNode;
+  friend class SharedUICommand;
+  friend class UICommandPackageRingBuffer;
 };
 
 class ObjectProperty {
