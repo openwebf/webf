@@ -418,14 +418,20 @@ void UICommandPackageRingBuffer::Clear() {
     packages_[i].package.reset();
   }
 
-  std::lock_guard<std::mutex> lock(overflow_mutex_);
-  overflow_packages_.clear();
+  {
+    std::lock_guard<std::mutex> pkg_lock(current_package_mutex_);
+    current_package_->Clear();
+  }
 
-  std::lock_guard<std::mutex> deferred_lock(deferred_mutex_);
-  deferred_packages_.clear();
+  {
+    std::lock_guard<std::mutex> deferred_lock(deferred_mutex_);
+    deferred_packages_.clear();
+  }
 
-  std::lock_guard<std::mutex> pkg_lock(current_package_mutex_);
-  current_package_->Clear();
+  {
+    std::lock_guard<std::mutex> overflow_lock(overflow_mutex_);
+    overflow_packages_.clear();
+  }
 }
 
 bool UICommandPackageRingBuffer::ShouldCreateNewPackage(UICommand command) const {
