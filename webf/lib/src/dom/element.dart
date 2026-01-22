@@ -133,7 +133,7 @@ abstract class Element extends ContainerNode
   final Map<String, String> attributes = <String, String>{};
 
   /// The style of the element, not inline style.
-  late ElementCSSStyleDeclaration style;
+  late ElementCascadedStyleDeclaration style;
 
   /// The default user-agent style.
   Map<String, dynamic> get defaultStyle => {};
@@ -256,7 +256,7 @@ abstract class Element extends ContainerNode
 
   Element(BindingContext? context) : super(NodeType.ELEMENT_NODE, context) {
     // Init style and add change listener.
-    style = ElementCSSStyleDeclaration.computedStyle(this, defaultStyle, _onStyleChanged, _onStyleFlushed);
+    style = ElementCascadedStyleDeclaration.computedStyle(this, defaultStyle, _onStyleChanged, _onStyleFlushed);
 
     // Init render style.
     renderStyle = CSSRenderStyle(target: this);
@@ -1713,7 +1713,7 @@ abstract class Element extends ContainerNode
     }
   }
 
-  void applyDefaultStyle(ElementCSSStyleDeclaration style) {
+  void applyDefaultStyle(ElementCascadedStyleDeclaration style) {
     if (defaultStyle.isNotEmpty) {
       defaultStyle.forEach((propertyName, value) {
         if (style.contains(propertyName) == false) {
@@ -1723,7 +1723,7 @@ abstract class Element extends ContainerNode
     }
   }
 
-  void applyInlineStyle(ElementCSSStyleDeclaration style) {
+  void applyInlineStyle(ElementCascadedStyleDeclaration style) {
     if (inlineStyle.isNotEmpty) {
       inlineStyle.forEach((propertyName, entry) {
         if (entry.value.isEmpty) return;
@@ -1733,7 +1733,7 @@ abstract class Element extends ContainerNode
     }
   }
 
-  void _applySheetStyle(ElementCSSStyleDeclaration style) {
+  void _applySheetStyle(ElementCascadedStyleDeclaration style) {
     final bool enableBlink = ownerDocument.ownerView.enableBlink;
     if (enableBlink) {
       final CSSStyleDeclaration? sheetStyle = _sheetStyle;
@@ -2249,7 +2249,7 @@ abstract class Element extends ContainerNode
     style.clearPseudoStyle(type);
   }
 
-  void _applyPseudoStyle(ElementCSSStyleDeclaration style) {
+  void _applyPseudoStyle(ElementCascadedStyleDeclaration style) {
     final RuleSet ruleSet = ownerDocument.ruleSet;
     if (!ruleSet.hasPseudoElementSelectors) return;
 
@@ -2257,7 +2257,7 @@ abstract class Element extends ContainerNode
     style.handlePseudoRules(this, pseudoRules);
   }
 
-  void applyStyle(ElementCSSStyleDeclaration style) {
+  void applyStyle(ElementCascadedStyleDeclaration style) {
     // Apply default style.
     applyDefaultStyle(style);
     // Init display from style directly cause renderStyle is not flushed yet.
@@ -2269,7 +2269,7 @@ abstract class Element extends ContainerNode
     _applyPseudoStyle(style);
   }
 
-  void applyAttributeStyle(ElementCSSStyleDeclaration style) {
+  void applyAttributeStyle(ElementCascadedStyleDeclaration style) {
     // Map the dir attribute to CSS direction so inline layout picks up RTL/LTR hints.
     final String? dirAttr = attributes['dir'];
     if (dirAttr != null) {
@@ -2310,7 +2310,7 @@ abstract class Element extends ContainerNode
       }
 
       // Diff style.
-      ElementCSSStyleDeclaration newStyle = ElementCSSStyleDeclaration();
+      ElementCascadedStyleDeclaration newStyle = ElementCascadedStyleDeclaration();
       applyStyle(newStyle);
       bool hasInheritedPendingProperty = false;
       final bool merged = style.merge(newStyle);

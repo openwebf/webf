@@ -127,7 +127,7 @@ class LIElement extends Element {
   // For the default outside position, markers are painted by renderer
   // as separate marker boxes and must not participate in IFC.
   @override
-  void applyStyle(ElementCSSStyleDeclaration style) {
+  void applyStyle(ElementCascadedStyleDeclaration style) {
     // 1) Apply element default styles (UA defaults).
     if (defaultStyle.isNotEmpty) {
       defaultStyle.forEach((propertyName, value) {

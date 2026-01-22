@@ -895,7 +895,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   }
 }
 
-class ElementCSSStyleDeclaration extends CSSStyleDeclaration{
+class ElementCascadedStyleDeclaration extends CSSStyleDeclaration{
   Element? target;
 
   // TODO(yuanyan): defaultStyle should be longhand properties.
@@ -962,10 +962,10 @@ class ElementCSSStyleDeclaration extends CSSStyleDeclaration{
   /// invoked in synchronous.
   final List<StyleChangeListener> _styleChangeListeners = [];
 
-  ElementCSSStyleDeclaration([super.context]);
+  ElementCascadedStyleDeclaration([super.context]);
 
   // ignore: prefer_initializing_formals
-  ElementCSSStyleDeclaration.computedStyle(this.target, this.defaultStyle, this.onStyleChanged, [this.onStyleFlushed]);
+  ElementCascadedStyleDeclaration.computedStyle(this.target, this.defaultStyle, this.onStyleChanged, [this.onStyleFlushed]);
 
   void enqueueInlineProperty(
     String propertyName,
@@ -1500,7 +1500,7 @@ class ElementCSSStyleDeclaration extends CSSStyleDeclaration{
   bool merge(CSSStyleDeclaration other) {
     final bool updateStatus = super.merge(other);
 
-    if (other is! ElementCSSStyleDeclaration) return updateStatus;
+    if (other is! ElementCascadedStyleDeclaration) return updateStatus;
 
     bool pseudoUpdated = false;
     // Merge pseudo-element styles. Ensure target side is initialized so rules from
