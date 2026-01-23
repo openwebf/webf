@@ -216,6 +216,10 @@ class ExecutingContext {
   FORCE_INLINE bool isIdle() const { return is_idle_; }
   FORCE_INLINE void SetIsIdle(bool is_idle) { is_idle_ = is_idle; }
   FORCE_INLINE void MarkNeedsStyleUpdateInMicrotask() { is_needs_update_styles_in_microtask_ = true; }
+  // If a "first-paint style sync" barrier is active, clear it after we've
+  // performed a synchronous style update so deferred UICommand packages can be
+  // flushed to Dart (e.g. for getComputedStyle()).
+  void MaybeCommitFirstPaintStyleSync();
 
   // Cached media/viewport values pushed from Dart (e.g., during resize). These
   // avoid synchronous GetBindingProperty calls (which may flush layout) during

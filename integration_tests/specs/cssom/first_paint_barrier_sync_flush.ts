@@ -1,5 +1,5 @@
 describe('First-paint barrier: synchronous flush', () => {
-  fit('unblocks getComputedStyle() during RouterLink subtree mount', () => {
+  it('unblocks getComputedStyle() during RouterLink subtree mount', () => {
     const style = document.createElement('style');
     style.textContent = '.sync-flush-box { color: rgb(255, 0, 0); }';
     document.head.appendChild(style);
@@ -26,4 +26,3 @@ describe('First-paint barrier: synchronous flush', () => {
     routerLink.remove();
   });
 });
-

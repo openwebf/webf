@@ -877,6 +877,15 @@ void ExecutingContext::MaybeUpdateStyleForFirstPaint() {
   first_paint_committed_ = true;
 }
 
+void ExecutingContext::MaybeCommitFirstPaintStyleSync() {
+  if (!enable_blink_engine_ || !needs_first_paint_style_sync_) {
+    return;
+  }
+
+  needs_first_paint_style_sync_ = false;
+  first_paint_committed_ = true;
+}
+
 void ExecutingContext::FlushUICommand(const BindingObject* self, uint32_t reason) {
   std::vector<NativeBindingObject*> deps;
   FlushUICommand(self, reason, deps);
