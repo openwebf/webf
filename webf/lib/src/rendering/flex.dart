@@ -4401,6 +4401,8 @@ class RenderFlexLayout extends RenderLayoutBox {
           ? mainAxisStartPadding + mainAxisStartBorder + mainAxisContentSize - leadingSpace
           : leadingSpace + mainAxisStartPadding + mainAxisStartBorder;
 
+      final bool runAllChildrenAtMaxCross = _areAllRunChildrenAtMaxCrossExtent(runChildrenList, runCrossAxisExtent);
+
       for (_RunChild runChild in runChildrenList) {
         RenderBox child = runChild.child;
         // Flow-aware margins in the main axis.
@@ -4502,6 +4504,7 @@ class RenderFlexLayout extends RenderLayoutBox {
           childCrossAxisStartMargin: runChild.crossAxisStartMargin,
           childCrossAxisEndMargin: runChild.crossAxisEndMargin,
           hasAutoCrossAxisMargin: runChild.hasAutoCrossAxisMargin,
+          runAllChildrenAtMaxCross: runAllChildrenAtMaxCross,
         );
 
         // Calculate margin auto length according to CSS spec rules
@@ -4777,6 +4780,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         required double childCrossAxisStartMargin,
         required double childCrossAxisEndMargin,
         required bool hasAutoCrossAxisMargin,
+        required bool runAllChildrenAtMaxCross,
       }) {
     // Leading between height of line box's content area and line height of line box.
     double lineBoxLeading = 0;
@@ -4866,10 +4870,15 @@ class RenderFlexLayout extends RenderLayoutBox {
         final double endMargin = childCrossAxisEndMargin;
         final double borderBoxExtent = math.max(0.0, childExtentWithMargin - (startMargin + endMargin));
         // Center within the content box by default (spec-aligned).
-        // Additionally, for vertical cross-axes (row direction), if the child overflows
+        // Additionally, for vertical cross-axes (row direction), when the item overflows
         // the content box (free space < 0) and the container has cross-axis padding,
         // center within the container border-box for better visual centering of padded
-        // controls, without affecting non-overflow cases (e.g., footers).
+        // controls.
+        //
+        // When free space is exactly 0, only apply this tweak if all items in the run
+        // have the same cross size (e.g., a single-item flex container). Otherwise it
+        // would shift only the tallest item and break cross-axis alignment between
+        // siblings (e.g., `span/div/span` dividers).
         if (!crossIsHorizontal) {
           // For vertical cross-axes (row direction), when the container has non-zero
           // cross-axis padding or borders and the item overflows the content box,
@@ -4882,7 +4891,9 @@ class RenderFlexLayout extends RenderLayoutBox {
           final double borderEnd = inv?.crossAxisBorderEnd ?? renderStyle.effectiveBorderBottomWidth.computedValue;
           final double padBorderSum = padStart + padEnd + borderStart + borderEnd;
           final double freeSpace = flexLineCrossSize - borderBoxExtent;
-          if (padBorderSum > 0 && freeSpace <= 0) {
+          const double kEpsilon = 0.0001;
+          final bool isExactFit = freeSpace.abs() <= kEpsilon;
+          if (padBorderSum > 0 && (freeSpace < 0 || (isExactFit && runAllChildrenAtMaxCross))) {
             // Determine container content cross size (definite if set on style),
             // fall back to the current line cross size.
             final double containerContentCross = renderStyle.contentBoxLogicalHeight ?? flexLineCrossSize;
@@ -4934,6 +4945,17 @@ class RenderFlexLayout extends RenderLayoutBox {
       default:
         return null;
     }
+  }
+
+  bool _areAllRunChildrenAtMaxCrossExtent(List<_RunChild> runChildren, double runCrossAxisExtent) {
+    const double kEpsilon = 0.0001;
+    for (final _RunChild runChild in runChildren) {
+      final double childCrossAxisExtent = _getCrossAxisExtent(runChild.child);
+      if ((childCrossAxisExtent - runCrossAxisExtent).abs() > kEpsilon) {
+        return false;
+      }
+    }
+    return true;
   }
 
   // Compute distance to baseline of flex layout.
