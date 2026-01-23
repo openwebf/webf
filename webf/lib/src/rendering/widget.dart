@@ -155,7 +155,11 @@ class RenderWidget extends RenderBoxModel
     // our content constraints. This allows widget containers to honor fixed
     // widths (e.g., 500px) even when the viewport is narrower, letting them
     // overflow and participate in scrollable sizing like regular layout boxes.
-    if (renderStyle.width.isNotAuto) {
+    // Note: percentage widths can temporarily compute to `auto` (infinity) during
+    // style resolution when the containing block size is not yet known. At layout
+    // time we often do know the used content width (contentBoxLogicalWidth), so
+    // treat any non-AUTO width declaration as eligible for tightening.
+    if (renderStyle.width.type != CSSLengthType.AUTO) {
       final double? logicalContentWidth = renderStyle.contentBoxLogicalWidth;
       if (logicalContentWidth != null && logicalContentWidth.isFinite) {
         final double clampedWidth = logicalContentWidth.clamp(
