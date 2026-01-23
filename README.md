@@ -237,9 +237,10 @@ WebF is ideal for:
 
 ## Sponsors
 
-<p style="font-size:21px; color:black;">Browser testing via
-  <a href="https://www.lambdatest.com/?utm_source=openwebf&utm_medium=sponsor" target="_blank">
-      <img src="https://www.lambdatest.com/blue-logo.png" style="vertical-align: middle;" width="250" height="45" />
+
+<p style="font-size:21px; color:black;">
+  <a href="https://www.testmu.ai" target="_blank">
+    <img style="vertical-align: middle;" width="250" alt="black-logo" src="https://github.com/user-attachments/assets/45b689e1-e1f9-45c2-896b-1097e6220617" />
   </a>
 </p>
 
