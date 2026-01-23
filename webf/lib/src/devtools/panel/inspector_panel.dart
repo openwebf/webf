@@ -11,7 +11,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/rendering.dart' show debugPaintSizeEnabled;
+import 'package:flutter/rendering.dart' show RendererBinding, debugPaintSizeEnabled;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
@@ -1408,6 +1408,9 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
 class _WebFInspectorFloatingPanelState extends State<WebFInspectorFloatingPanel> {
   Offset _position = Offset(20, 100); // Initial position
   Timer? _refreshTimer;
+  Timer? _renderTreeDumpTimer;
+  Timer? _noticeTimer;
+  OverlayEntry? _noticeOverlayEntry;
   bool _isDragging = false;
 
   @override
@@ -1425,6 +1428,10 @@ class _WebFInspectorFloatingPanelState extends State<WebFInspectorFloatingPanel>
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _renderTreeDumpTimer?.cancel();
+    _noticeTimer?.cancel();
+    _noticeOverlayEntry?.remove();
+    _noticeOverlayEntry = null;
     super.dispose();
   }
 
@@ -1435,6 +1442,82 @@ class _WebFInspectorFloatingPanelState extends State<WebFInspectorFloatingPanel>
       backgroundColor: Colors.transparent,
       builder: (context) => _WebFInspectorBottomSheet(),
     );
+  }
+
+  String _dumpRenderObjectTree() {
+    try {
+      return RendererBinding.instance.renderView.toStringDeep();
+    } catch (e, st) {
+      return 'Failed to dump render object tree: $e\n$st';
+    }
+  }
+
+  void _showPopupNotice(String message, {required Color backgroundColor, Duration duration = const Duration(seconds: 2)}) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger != null) {
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: duration,
+          backgroundColor: backgroundColor,
+        ),
+      );
+      return;
+    }
+
+    _noticeOverlayEntry?.remove();
+    final overlay = Overlay.maybeOf(context);
+    if (overlay == null) return;
+
+    _noticeOverlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        left: 16,
+        right: 16,
+        bottom: 40,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: const [
+                BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4)),
+              ],
+            ),
+            child: Text(message, style: const TextStyle(color: Colors.white)),
+          ),
+        ),
+      ),
+    );
+    overlay.insert(_noticeOverlayEntry!);
+
+    _noticeTimer?.cancel();
+    _noticeTimer = Timer(duration, () {
+      _noticeOverlayEntry?.remove();
+      _noticeOverlayEntry = null;
+    });
+  }
+
+  void _scheduleRenderTreeDumpToClipboard() {
+    if (_isDragging) return;
+
+    _renderTreeDumpTimer?.cancel();
+    _showPopupNotice(
+      'Render tree will be copied to clipboard in 5 seconds',
+      backgroundColor: Colors.black87,
+    );
+
+    _renderTreeDumpTimer = Timer(const Duration(seconds: 5), () async {
+      final tree = _dumpRenderObjectTree();
+      await Clipboard.setData(ClipboardData(text: tree));
+      if (!mounted) return;
+      _showPopupNotice(
+        'Render tree copied to clipboard',
+        backgroundColor: Colors.green,
+      );
+    });
   }
 
   @override
@@ -1461,6 +1544,7 @@ class _WebFInspectorFloatingPanelState extends State<WebFInspectorFloatingPanel>
           }
           _isDragging = false;
         },
+        onLongPress: _scheduleRenderTreeDumpToClipboard,
         onPanStart: (_) {
           _isDragging = false;
         },
