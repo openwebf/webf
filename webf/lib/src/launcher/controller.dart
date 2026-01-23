@@ -1190,7 +1190,7 @@ class WebFController with Diagnosticable {
     if (onLoadError != null) {
       onLoadError!(FlutterError(error.toString()), stack);
     }
-    _loadingError = error;
+    _loadingError = '$error\n$stack';
   }
 
   PreRenderingStatus preRenderingStatus = PreRenderingStatus.none;
