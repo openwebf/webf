@@ -27,41 +27,36 @@ export const ShadcnCheckboxSwitchPage: React.FC = () => {
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4">Checkboxes</h2>
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <FlutterShadcnCheckbox
-                  checked={checkboxes.terms}
-                  onChange={() => setCheckboxes(prev => ({ ...prev, terms: !prev.terms }))}
-                />
-                <label className="text-sm">Accept terms and conditions</label>
-              </div>
-              <div className="flex items-center gap-3">
-                <FlutterShadcnCheckbox
-                  checked={checkboxes.marketing}
-                  onChange={() => setCheckboxes(prev => ({ ...prev, marketing: !prev.marketing }))}
-                />
-                <label className="text-sm">Receive marketing emails</label>
-              </div>
-              <div className="flex items-center gap-3">
-                <FlutterShadcnCheckbox
-                  checked={checkboxes.updates}
-                  onChange={() => setCheckboxes(prev => ({ ...prev, updates: !prev.updates }))}
-                />
-                <label className="text-sm">Get product updates</label>
-              </div>
+              <FlutterShadcnCheckbox
+                checked={checkboxes.terms}
+                onChange={() => setCheckboxes(prev => ({ ...prev, terms: !prev.terms }))}
+              >
+                Accept terms and conditions
+              </FlutterShadcnCheckbox>
+              <FlutterShadcnCheckbox
+                checked={checkboxes.marketing}
+                onChange={() => setCheckboxes(prev => ({ ...prev, marketing: !prev.marketing }))}
+              >
+                Receive marketing emails
+              </FlutterShadcnCheckbox>
+              <FlutterShadcnCheckbox
+                checked={checkboxes.updates}
+                onChange={() => setCheckboxes(prev => ({ ...prev, updates: !prev.updates }))}
+              >
+                Get product updates
+              </FlutterShadcnCheckbox>
             </div>
           </div>
 
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4">Disabled Checkboxes</h2>
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <FlutterShadcnCheckbox disabled />
-                <label className="text-sm text-gray-400">Disabled unchecked</label>
-              </div>
-              <div className="flex items-center gap-3">
-                <FlutterShadcnCheckbox checked disabled />
-                <label className="text-sm text-gray-400">Disabled checked</label>
-              </div>
+              <FlutterShadcnCheckbox disabled>
+                Disabled unchecked
+              </FlutterShadcnCheckbox>
+              <FlutterShadcnCheckbox checked disabled>
+                Disabled checked
+              </FlutterShadcnCheckbox>
             </div>
           </div>
 

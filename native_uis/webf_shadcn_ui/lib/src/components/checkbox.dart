@@ -67,13 +67,28 @@ class FlutterShadcnCheckboxState extends WebFWidgetElementState {
   FlutterShadcnCheckbox get widgetElement =>
       super.widgetElement as FlutterShadcnCheckbox;
 
+  /// Extract text content from nodes recursively.
+  String _extractTextContent(Iterable<Node> nodes) {
+    final buffer = StringBuffer();
+    for (final node in nodes) {
+      if (node is TextNode) {
+        buffer.write(node.data);
+      } else if (node.childNodes.isNotEmpty) {
+        buffer.write(_extractTextContent(node.childNodes));
+      }
+    }
+    return buffer.toString().trim();
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Extract label text from child nodes
     Widget? labelWidget;
     if (widgetElement.childNodes.isNotEmpty) {
-      labelWidget = WebFWidgetElementChild(
-        child: widgetElement.childNodes.first.toWidget(),
-      );
+      final labelText = _extractTextContent(widgetElement.childNodes);
+      if (labelText.isNotEmpty) {
+        labelWidget = Text(labelText);
+      }
     }
 
     bool? value;
@@ -83,9 +98,11 @@ class FlutterShadcnCheckboxState extends WebFWidgetElementState {
       value = widgetElement.checked;
     }
 
-    final checkbox = ShadCheckbox(
+    // Use ShadCheckbox's built-in label property so clicking label toggles checkbox
+    return ShadCheckbox(
       value: value ?? false,
       enabled: !widgetElement.disabled,
+      label: labelWidget,
       onChanged: widgetElement.disabled
           ? null
           : (newValue) {
@@ -95,28 +112,5 @@ class FlutterShadcnCheckboxState extends WebFWidgetElementState {
               widgetElement.state?.requestUpdateState(() {});
             },
     );
-
-    if (labelWidget != null) {
-      return GestureDetector(
-        onTap: widgetElement.disabled
-            ? null
-            : () {
-                widgetElement._checked = !widgetElement._checked;
-                widgetElement._indeterminate = false;
-                widgetElement.dispatchEvent(Event('change'));
-                widgetElement.state?.requestUpdateState(() {});
-              },
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            checkbox,
-            const SizedBox(width: 8),
-            labelWidget,
-          ],
-        ),
-      );
-    }
-
-    return checkbox;
   }
 }
