@@ -15,6 +15,7 @@ dependencies:
   example_app:
     path: rust_builder
   webf: ^0.10.0
+  shadcn_ui: ^0.43.3
   #  For enterprise version:
   #  webf: ^0.23.10  # Enterprise version available on pub.dev
   flutter_highlight: ^0.7.0

@@ -9,6 +9,7 @@ import 'package:cronet_http/cronet_http.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
@@ -299,16 +300,41 @@ class MyAppState extends State<MyApp> {
       light: ThemeData.light(useMaterial3: true),
       dark: ThemeData.dark(useMaterial3: true),
       initial: widget.savedThemeMode ?? AdaptiveThemeMode.light,
-      builder: (theme, darkTheme) =>
-          _SystemThemeSync(
-            child: MaterialApp.router(
+      builder: (theme, darkTheme) => Builder(
+        builder: (context) {
+          final adaptiveMode = AdaptiveTheme.of(context).mode;
+          final themeMode = adaptiveMode.isSystem
+              ? ThemeMode.system
+              : (adaptiveMode.isDark ? ThemeMode.dark : ThemeMode.light);
+
+          // Provide shadcn_ui infrastructure (theme + hover surface + cursor)
+          // without nesting a second WidgetsApp/Navigator (which would conflict
+          // with MaterialApp).
+          return ShadApp.custom(
+            theme: ShadThemeData(
+              colorScheme: const ShadZincColorScheme.light(),
+              brightness: Brightness.light,
+              radius: BorderRadius.circular(6),
+            ),
+            darkTheme: ShadThemeData(
+              colorScheme: const ShadZincColorScheme.dark(),
+              brightness: Brightness.dark,
+              radius: BorderRadius.circular(6),
+            ),
+            themeMode: themeMode,
+            appBuilder: (context) => _SystemThemeSync(
+              child: MaterialApp.router(
                 title: 'WebF Example App',
                 theme: theme,
                 darkTheme: darkTheme,
-                themeMode: ThemeMode.system,
+                themeMode: themeMode,
                 routerConfig: _router,
-                debugShowCheckedModeBanner: false),
-          ),
+                debugShowCheckedModeBanner: false,
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
