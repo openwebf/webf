@@ -17,7 +17,7 @@ abstract class FlutterShadcnScrollAreaBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['orientation'] = ElementAttributeProperty(
       getter: () => orientation?.toString(),
-      setter: (value) => orientation = value,
+      setter: (value) => this.orientation = value,
       deleter: () => orientation = null
     );
   }

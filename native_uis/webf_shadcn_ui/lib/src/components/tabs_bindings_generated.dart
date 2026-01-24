@@ -19,12 +19,12 @@ abstract class FlutterShadcnTabsBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['value'] = ElementAttributeProperty(
       getter: () => value?.toString(),
-      setter: (value) => value = value,
+      setter: (value) => this.value = value,
       deleter: () => value = null
     );
     attributes['default-value'] = ElementAttributeProperty(
       getter: () => defaultValue?.toString(),
-      setter: (value) => defaultValue = value,
+      setter: (value) => this.defaultValue = value,
       deleter: () => defaultValue = null
     );
   }

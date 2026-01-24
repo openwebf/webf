@@ -21,17 +21,17 @@ abstract class FlutterShadcnRadioBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['value'] = ElementAttributeProperty(
       getter: () => value?.toString(),
-      setter: (value) => value = value,
+      setter: (value) => this.value = value,
       deleter: () => value = null
     );
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => disabled.toString(),
-      setter: (value) => disabled = value == 'true' || value == '',
+      setter: (value) => this.disabled = value == 'true' || value == '',
       deleter: () => disabled = false
     );
     attributes['orientation'] = ElementAttributeProperty(
       getter: () => orientation?.toString(),
-      setter: (value) => orientation = value,
+      setter: (value) => this.orientation = value,
       deleter: () => orientation = null
     );
   }

@@ -17,7 +17,7 @@ abstract class FlutterShadcnFormBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => disabled.toString(),
-      setter: (value) => disabled = value == 'true' || value == '',
+      setter: (value) => this.disabled = value == 'true' || value == '',
       deleter: () => disabled = false
     );
   }

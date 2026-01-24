@@ -14,7 +14,8 @@ import 'theme_bindings_generated.dart';
 /// WebF custom element that provides shadcn_ui theming.
 ///
 /// Exposed as `<flutter-shadcn-theme>` in the DOM.
-/// Wraps child elements with [ShadApp] to provide theming context.
+/// Provides [ShadTheme] and the required hover infrastructure for shadcn_ui
+/// components (e.g. context-menu submenus).
 class FlutterShadcnTheme extends FlutterShadcnThemeBindings {
   FlutterShadcnTheme(super.context);
 
@@ -128,7 +129,11 @@ class FlutterShadcnThemeState extends WebFWidgetElementState {
 
     return ShadTheme(
       data: theme,
-      child: content,
+      child: ShadMouseAreaSurface(
+        child: ShadMouseCursorProvider(
+          child: content,
+        ),
+      ),
     );
   }
 }

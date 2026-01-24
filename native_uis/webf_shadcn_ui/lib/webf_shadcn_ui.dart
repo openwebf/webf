@@ -288,6 +288,20 @@ void installWebFShadcnUI() {
       'flutter-shadcn-context-menu-item', (context) => FlutterShadcnContextMenuItem(context));
   WebF.defineCustomElement(
       'flutter-shadcn-context-menu-separator', (context) => FlutterShadcnContextMenuSeparator(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-context-menu-label', (context) => FlutterShadcnContextMenuLabel(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-context-menu-sub', (context) => FlutterShadcnContextMenuSub(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-context-menu-sub-trigger', (context) => FlutterShadcnContextMenuSubTrigger(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-context-menu-sub-content', (context) => FlutterShadcnContextMenuSubContent(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-context-menu-checkbox-item', (context) => FlutterShadcnContextMenuCheckboxItem(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-context-menu-radio-group', (context) => FlutterShadcnContextMenuRadioGroup(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-context-menu-radio-item', (context) => FlutterShadcnContextMenuRadioItem(context));
 
   // Data Display
   WebF.defineCustomElement(

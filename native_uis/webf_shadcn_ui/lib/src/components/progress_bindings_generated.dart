@@ -21,17 +21,17 @@ abstract class FlutterShadcnProgressBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['value'] = ElementAttributeProperty(
       getter: () => value?.toString(),
-      setter: (value) => value = value,
+      setter: (value) => this.value = value,
       deleter: () => value = null
     );
     attributes['max'] = ElementAttributeProperty(
       getter: () => max?.toString(),
-      setter: (value) => max = value,
+      setter: (value) => this.max = value,
       deleter: () => max = null
     );
     attributes['variant'] = ElementAttributeProperty(
       getter: () => variant?.toString(),
-      setter: (value) => variant = value,
+      setter: (value) => this.variant = value,
       deleter: () => variant = null
     );
   }

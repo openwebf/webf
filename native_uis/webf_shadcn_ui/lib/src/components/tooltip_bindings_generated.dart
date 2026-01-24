@@ -23,22 +23,22 @@ abstract class FlutterShadcnTooltipBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['content'] = ElementAttributeProperty(
       getter: () => content?.toString(),
-      setter: (value) => content = value,
+      setter: (value) => this.content = value,
       deleter: () => content = null
     );
     attributes['show-delay'] = ElementAttributeProperty(
       getter: () => showDelay?.toString(),
-      setter: (value) => showDelay = value,
+      setter: (value) => this.showDelay = value,
       deleter: () => showDelay = null
     );
     attributes['hide-delay'] = ElementAttributeProperty(
       getter: () => hideDelay?.toString(),
-      setter: (value) => hideDelay = value,
+      setter: (value) => this.hideDelay = value,
       deleter: () => hideDelay = null
     );
     attributes['placement'] = ElementAttributeProperty(
       getter: () => placement?.toString(),
-      setter: (value) => placement = value,
+      setter: (value) => this.placement = value,
       deleter: () => placement = null
     );
   }

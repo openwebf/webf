@@ -23,22 +23,22 @@ abstract class FlutterShadcnAvatarBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['src'] = ElementAttributeProperty(
       getter: () => src?.toString(),
-      setter: (value) => src = value,
+      setter: (value) => this.src = value,
       deleter: () => src = null
     );
     attributes['alt'] = ElementAttributeProperty(
       getter: () => alt?.toString(),
-      setter: (value) => alt = value,
+      setter: (value) => this.alt = value,
       deleter: () => alt = null
     );
     attributes['fallback'] = ElementAttributeProperty(
       getter: () => fallback?.toString(),
-      setter: (value) => fallback = value,
+      setter: (value) => this.fallback = value,
       deleter: () => fallback = null
     );
     attributes['size'] = ElementAttributeProperty(
       getter: () => size?.toString(),
-      setter: (value) => size = value,
+      setter: (value) => this.size = value,
       deleter: () => size = null
     );
   }

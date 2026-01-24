@@ -19,12 +19,12 @@ abstract class FlutterShadcnAlertBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['variant'] = ElementAttributeProperty(
       getter: () => variant?.toString(),
-      setter: (value) => variant = value,
+      setter: (value) => this.variant = value,
       deleter: () => variant = null
     );
     attributes['icon'] = ElementAttributeProperty(
       getter: () => icon?.toString(),
-      setter: (value) => icon = value,
+      setter: (value) => this.icon = value,
       deleter: () => icon = null
     );
   }

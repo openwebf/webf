@@ -37,12 +37,12 @@ abstract class FlutterShadcnBreadcrumbBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['spacing'] = ElementAttributeProperty(
       getter: () => spacing?.toString(),
-      setter: (value) => spacing = double.tryParse(value) ?? 0.0,
+      setter: (value) => this.spacing = double.tryParse(value) ?? 0.0,
       deleter: () => spacing = 0.0
     );
     attributes['separator'] = ElementAttributeProperty(
       getter: () => separator?.value,
-      setter: (value) => separator = FlutterShadcnBreadcrumbSeparator.parse(value),
+      setter: (value) => this.separator = FlutterShadcnBreadcrumbSeparator.parse(value),
       deleter: () => separator = null
     );
   }

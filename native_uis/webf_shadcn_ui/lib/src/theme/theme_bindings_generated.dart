@@ -21,17 +21,17 @@ abstract class FlutterShadcnThemeBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['color-scheme'] = ElementAttributeProperty(
       getter: () => colorScheme?.toString(),
-      setter: (value) => colorScheme = value,
+      setter: (value) => this.colorScheme = value,
       deleter: () => colorScheme = null
     );
     attributes['brightness'] = ElementAttributeProperty(
       getter: () => brightness?.toString(),
-      setter: (value) => brightness = value,
+      setter: (value) => this.brightness = value,
       deleter: () => brightness = null
     );
     attributes['radius'] = ElementAttributeProperty(
       getter: () => radius?.toString(),
-      setter: (value) => radius = value,
+      setter: (value) => this.radius = value,
       deleter: () => radius = null
     );
   }

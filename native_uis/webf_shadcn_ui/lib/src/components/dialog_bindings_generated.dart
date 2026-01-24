@@ -19,12 +19,12 @@ abstract class FlutterShadcnDialogBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['open'] = ElementAttributeProperty(
       getter: () => open.toString(),
-      setter: (value) => open = value == 'true' || value == '',
+      setter: (value) => this.open = value == 'true' || value == '',
       deleter: () => open = false
     );
     attributes['close-on-outside-click'] = ElementAttributeProperty(
       getter: () => closeOnOutsideClick.toString(),
-      setter: (value) => closeOnOutsideClick = value == 'true' || value == '',
+      setter: (value) => this.closeOnOutsideClick = value == 'true' || value == '',
       deleter: () => closeOnOutsideClick = false
     );
   }

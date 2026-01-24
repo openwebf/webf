@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/webf.dart';
 import 'package:webf/widget.dart';
@@ -29,8 +30,38 @@ class _TestPercentageWidthWidgetElementState extends WebFWidgetElementState {
   }
 }
 
+class _TestDefaultStylePercentageWidthWidgetElement extends WidgetElement {
+  _TestDefaultStylePercentageWidthWidgetElement(super.context);
+
+  static BoxConstraints? lastLayoutConstraints;
+
+  @override
+  Map<String, dynamic> get defaultStyle => const {
+        DISPLAY: BLOCK,
+        WIDTH: '100%',
+      };
+
+  @override
+  WebFWidgetElementState createState() {
+    return _TestDefaultStylePercentageWidthWidgetElementState(this);
+  }
+}
+
+class _TestDefaultStylePercentageWidthWidgetElementState extends WebFWidgetElementState {
+  _TestDefaultStylePercentageWidthWidgetElementState(super.widgetElement);
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints) {
+      _TestDefaultStylePercentageWidthWidgetElement.lastLayoutConstraints = constraints;
+      return const SizedBox.shrink();
+    });
+  }
+}
+
 void main() {
   const String kProbeTagName = 'WEBF-TEST-PERCENTAGE-WIDTH-WIDGET';
+  const String kDefaultStyleProbeTagName = 'WEBF-TEST-DEFAULT-STYLE-PERCENTAGE-WIDTH-WIDGET';
 
   setUpAll(() {
     setupTest();
@@ -38,6 +69,12 @@ void main() {
       dom.defineWidgetElement(
         kProbeTagName,
         (context) => _TestPercentageWidthWidgetElement(context),
+      );
+    }
+    if (!dom.getAllWidgetElements().containsKey(kDefaultStyleProbeTagName)) {
+      dom.defineWidgetElement(
+        kDefaultStyleProbeTagName,
+        (context) => _TestDefaultStylePercentageWidthWidgetElement(context),
       );
     }
   });
@@ -71,6 +108,38 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     final BoxConstraints? constraints = _TestPercentageWidthWidgetElement.lastLayoutConstraints;
+    expect(constraints, isNotNull);
+    expect(constraints!.minWidth, closeTo(320.0, 0.01));
+    expect(constraints.maxWidth, closeTo(320.0, 0.01));
+  });
+
+  testWidgets('RenderWidget tightens percentage width from defaultStyle', (WidgetTester tester) async {
+    final String controllerName =
+        'render-widget-default-style-percentage-width-${DateTime.now().millisecondsSinceEpoch}';
+    _TestDefaultStylePercentageWidthWidgetElement.lastLayoutConstraints = null;
+
+    await WebFWidgetTestUtils.prepareWidgetTest(
+      tester: tester,
+      controllerName: controllerName,
+      viewportWidth: 360,
+      viewportHeight: 640,
+      html: '''
+        <body style="margin: 0">
+          <div style="width: 320px;">
+            <webf-test-default-style-percentage-width-widget id="probe"></webf-test-default-style-percentage-width-widget>
+          </div>
+        </body>
+      ''',
+      wrap: (Widget webf) => Directionality(
+        textDirection: TextDirection.ltr,
+        child: webf,
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final BoxConstraints? constraints = _TestDefaultStylePercentageWidthWidgetElement.lastLayoutConstraints;
     expect(constraints, isNotNull);
     expect(constraints!.minWidth, closeTo(320.0, 0.01));
     expect(constraints.maxWidth, closeTo(320.0, 0.01));

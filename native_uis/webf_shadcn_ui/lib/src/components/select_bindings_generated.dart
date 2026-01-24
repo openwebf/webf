@@ -27,32 +27,32 @@ abstract class FlutterShadcnSelectBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['value'] = ElementAttributeProperty(
       getter: () => value?.toString(),
-      setter: (value) => value = value,
+      setter: (value) => this.value = value,
       deleter: () => value = null
     );
     attributes['placeholder'] = ElementAttributeProperty(
       getter: () => placeholder?.toString(),
-      setter: (value) => placeholder = value,
+      setter: (value) => this.placeholder = value,
       deleter: () => placeholder = null
     );
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => disabled.toString(),
-      setter: (value) => disabled = value == 'true' || value == '',
+      setter: (value) => this.disabled = value == 'true' || value == '',
       deleter: () => disabled = false
     );
     attributes['multiple'] = ElementAttributeProperty(
       getter: () => multiple.toString(),
-      setter: (value) => multiple = value == 'true' || value == '',
+      setter: (value) => this.multiple = value == 'true' || value == '',
       deleter: () => multiple = false
     );
     attributes['searchable'] = ElementAttributeProperty(
       getter: () => searchable.toString(),
-      setter: (value) => searchable = value == 'true' || value == '',
+      setter: (value) => this.searchable = value == 'true' || value == '',
       deleter: () => searchable = false
     );
     attributes['search-placeholder'] = ElementAttributeProperty(
       getter: () => searchPlaceholder?.toString(),
-      setter: (value) => searchPlaceholder = value,
+      setter: (value) => this.searchPlaceholder = value,
       deleter: () => searchPlaceholder = null
     );
   }

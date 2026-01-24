@@ -17,7 +17,7 @@ abstract class FlutterShadcnContextMenuBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['open'] = ElementAttributeProperty(
       getter: () => open.toString(),
-      setter: (value) => open = value == 'true' || value == '',
+      setter: (value) => this.open = value == 'true' || value == '',
       deleter: () => open = false
     );
   }

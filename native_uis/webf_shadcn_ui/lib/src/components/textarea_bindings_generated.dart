@@ -31,42 +31,42 @@ abstract class FlutterShadcnTextareaBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['value'] = ElementAttributeProperty(
       getter: () => value?.toString(),
-      setter: (value) => value = value,
+      setter: (value) => this.value = value,
       deleter: () => value = null
     );
     attributes['placeholder'] = ElementAttributeProperty(
       getter: () => placeholder?.toString(),
-      setter: (value) => placeholder = value,
+      setter: (value) => this.placeholder = value,
       deleter: () => placeholder = null
     );
     attributes['rows'] = ElementAttributeProperty(
       getter: () => rows?.toString(),
-      setter: (value) => rows = value,
+      setter: (value) => this.rows = value,
       deleter: () => rows = null
     );
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => disabled.toString(),
-      setter: (value) => disabled = value == 'true' || value == '',
+      setter: (value) => this.disabled = value == 'true' || value == '',
       deleter: () => disabled = false
     );
     attributes['readonly'] = ElementAttributeProperty(
       getter: () => readonly.toString(),
-      setter: (value) => readonly = value == 'true' || value == '',
+      setter: (value) => this.readonly = value == 'true' || value == '',
       deleter: () => readonly = false
     );
     attributes['maxlength'] = ElementAttributeProperty(
       getter: () => maxlength?.toString(),
-      setter: (value) => maxlength = value,
+      setter: (value) => this.maxlength = value,
       deleter: () => maxlength = null
     );
     attributes['required'] = ElementAttributeProperty(
       getter: () => required.toString(),
-      setter: (value) => required = value == 'true' || value == '',
+      setter: (value) => this.required = value == 'true' || value == '',
       deleter: () => required = false
     );
     attributes['autofocus'] = ElementAttributeProperty(
       getter: () => autofocus.toString(),
-      setter: (value) => autofocus = value == 'true' || value == '',
+      setter: (value) => this.autofocus = value == 'true' || value == '',
       deleter: () => autofocus = false
     );
   }

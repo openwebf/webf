@@ -27,32 +27,32 @@ abstract class FlutterShadcnSliderBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['value'] = ElementAttributeProperty(
       getter: () => value?.toString(),
-      setter: (value) => value = value,
+      setter: (value) => this.value = value,
       deleter: () => value = null
     );
     attributes['min'] = ElementAttributeProperty(
       getter: () => min?.toString(),
-      setter: (value) => min = value,
+      setter: (value) => this.min = value,
       deleter: () => min = null
     );
     attributes['max'] = ElementAttributeProperty(
       getter: () => max?.toString(),
-      setter: (value) => max = value,
+      setter: (value) => this.max = value,
       deleter: () => max = null
     );
     attributes['step'] = ElementAttributeProperty(
       getter: () => step?.toString(),
-      setter: (value) => step = value,
+      setter: (value) => this.step = value,
       deleter: () => step = null
     );
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => disabled.toString(),
-      setter: (value) => disabled = value == 'true' || value == '',
+      setter: (value) => this.disabled = value == 'true' || value == '',
       deleter: () => disabled = false
     );
     attributes['orientation'] = ElementAttributeProperty(
       getter: () => orientation?.toString(),
-      setter: (value) => orientation = value,
+      setter: (value) => this.orientation = value,
       deleter: () => orientation = null
     );
   }
