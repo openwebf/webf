@@ -22,6 +22,10 @@ abstract class FlutterShadcnSelectBindings extends WidgetElement {
   set searchable(value);
   String? get searchPlaceholder;
   set searchPlaceholder(value);
+  bool get allowDeselection;
+  set allowDeselection(value);
+  bool get closeOnSelect;
+  set closeOnSelect(value);
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
@@ -55,6 +59,16 @@ abstract class FlutterShadcnSelectBindings extends WidgetElement {
       setter: (value) => this.searchPlaceholder = value,
       deleter: () => searchPlaceholder = null
     );
+    attributes['allow-deselection'] = ElementAttributeProperty(
+      getter: () => allowDeselection.toString(),
+      setter: (value) => this.allowDeselection = value == 'true' || value == '',
+      deleter: () => allowDeselection = false
+    );
+    attributes['close-on-select'] = ElementAttributeProperty(
+      getter: () => closeOnSelect.toString(),
+      setter: (value) => this.closeOnSelect = value == 'true' || value == '',
+      deleter: () => closeOnSelect = false
+    );
   }
   static StaticDefinedBindingPropertyMap flutterShadcnSelectProperties = {
     'value': StaticDefinedBindingProperty(
@@ -86,6 +100,16 @@ abstract class FlutterShadcnSelectBindings extends WidgetElement {
       getter: (element) => castToType<FlutterShadcnSelectBindings>(element).searchPlaceholder,
       setter: (element, value) =>
       castToType<FlutterShadcnSelectBindings>(element).searchPlaceholder = value,
+    ),
+    'allowDeselection': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnSelectBindings>(element).allowDeselection,
+      setter: (element, value) =>
+      castToType<FlutterShadcnSelectBindings>(element).allowDeselection = value,
+    ),
+    'closeOnSelect': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnSelectBindings>(element).closeOnSelect,
+      setter: (element, value) =>
+      castToType<FlutterShadcnSelectBindings>(element).closeOnSelect = value,
     ),
   };
   @override

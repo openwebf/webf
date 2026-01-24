@@ -8,10 +8,31 @@
 // ignore_for_file: library_private_types_in_public_api
 // ignore_for_file: prefer_void_to_null
 import 'package:webf/webf.dart';
+enum FlutterShadcnFormAutoValidateMode {
+  disabled('disabled'),
+  always('always'),
+  onUserInteraction('onUserInteraction'),
+  alwaysAfterFirstValidation('alwaysAfterFirstValidation');
+  final String value;
+  const FlutterShadcnFormAutoValidateMode(this.value);
+  static FlutterShadcnFormAutoValidateMode? parse(String? value) {
+    if (value == null) return null;
+    return FlutterShadcnFormAutoValidateMode.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => throw ArgumentError('Invalid FlutterShadcnFormAutoValidateMode value: $value'),
+    );
+  }
+  @override
+  String toString() => value;
+}
 abstract class FlutterShadcnFormBindings extends WidgetElement {
   FlutterShadcnFormBindings(super.context);
   bool get disabled;
   set disabled(value);
+  FlutterShadcnFormAutoValidateMode? get autoValidateMode;
+  set autoValidateMode(value);
+  String? get value;
+  set value(value);
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
@@ -20,12 +41,32 @@ abstract class FlutterShadcnFormBindings extends WidgetElement {
       setter: (value) => this.disabled = value == 'true' || value == '',
       deleter: () => disabled = false
     );
+    attributes['auto-validate-mode'] = ElementAttributeProperty(
+      getter: () => autoValidateMode?.value,
+      setter: (value) => this.autoValidateMode = FlutterShadcnFormAutoValidateMode.parse(value),
+      deleter: () => autoValidateMode = null
+    );
+    attributes['value'] = ElementAttributeProperty(
+      getter: () => value?.toString(),
+      setter: (value) => this.value = value,
+      deleter: () => value = null
+    );
   }
   static StaticDefinedBindingPropertyMap flutterShadcnFormProperties = {
     'disabled': StaticDefinedBindingProperty(
       getter: (element) => castToType<FlutterShadcnFormBindings>(element).disabled,
       setter: (element, value) =>
       castToType<FlutterShadcnFormBindings>(element).disabled = value,
+    ),
+    'autoValidateMode': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnFormBindings>(element).autoValidateMode,
+      setter: (element, value) =>
+      castToType<FlutterShadcnFormBindings>(element).autoValidateMode = value,
+    ),
+    'value': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnFormBindings>(element).value,
+      setter: (element, value) =>
+      castToType<FlutterShadcnFormBindings>(element).value = value,
     ),
   };
   @override

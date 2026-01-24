@@ -23,6 +23,8 @@ class FlutterShadcnSelect extends FlutterShadcnSelectBindings {
   bool _multiple = false;
   bool _searchable = false;
   String? _searchPlaceholder;
+  bool _allowDeselection = false;
+  bool _closeOnSelect = true;
 
   @override
   String? get value => _value;
@@ -97,32 +99,69 @@ class FlutterShadcnSelect extends FlutterShadcnSelectBindings {
   }
 
   @override
+  bool get allowDeselection => _allowDeselection;
+
+  @override
+  set allowDeselection(value) {
+    final bool v = value == true || value == 'true' || value == '';
+    if (v != _allowDeselection) {
+      _allowDeselection = v;
+      state?.requestUpdateState(() {});
+    }
+  }
+
+  @override
+  bool get closeOnSelect => _closeOnSelect;
+
+  @override
+  set closeOnSelect(value) {
+    final bool v = value == true || value == 'true' || value == '';
+    if (v != _closeOnSelect) {
+      _closeOnSelect = v;
+      state?.requestUpdateState(() {});
+    }
+  }
+
+  @override
   WebFWidgetElementState createState() => FlutterShadcnSelectState(this);
 }
 
 class FlutterShadcnSelectState extends WebFWidgetElementState {
   FlutterShadcnSelectState(super.widgetElement);
 
+  String _searchValue = '';
+
   @override
   FlutterShadcnSelect get widgetElement =>
       super.widgetElement as FlutterShadcnSelect;
 
-  List<ShadOption<String>> _buildOptions() {
+  String _extractTextContent(Iterable<dom.Node> nodes) {
+    final buffer = StringBuffer();
+    for (final node in nodes) {
+      if (node is dom.TextNode) {
+        buffer.write(node.data);
+      } else if (node.childNodes.isNotEmpty) {
+        buffer.write(_extractTextContent(node.childNodes));
+      }
+    }
+    return buffer.toString().trim();
+  }
+
+  List<ShadOption<String>> _buildOptionsFromNodes(Iterable<dom.Node> nodes) {
     final options = <ShadOption<String>>[];
 
-    for (final node in widgetElement.childNodes) {
+    for (final node in nodes) {
       if (node is FlutterShadcnSelectItem) {
         final value = node._itemValue ?? '';
-        String label = value;
+        String label = _extractTextContent(node.childNodes);
+        if (label.isEmpty) {
+          label = value;
+        }
 
-        // Get label from child text content
-        if (node.childNodes.isNotEmpty) {
-          final textContent = node.childNodes
-              .map((n) => n is dom.TextNode ? n.data : '')
-              .join('')
-              .trim();
-          if (textContent.isNotEmpty) {
-            label = textContent;
+        // Filter by search if searchable
+        if (widgetElement.searchable && _searchValue.isNotEmpty) {
+          if (!label.toLowerCase().contains(_searchValue.toLowerCase())) {
+            continue;
           }
         }
 
@@ -131,48 +170,151 @@ class FlutterShadcnSelectState extends WebFWidgetElementState {
           child: Text(label),
         ));
       } else if (node is FlutterShadcnSelectGroup) {
-        // Handle groups - add items from the group
-        for (final groupChild in node.childNodes) {
-          if (groupChild is FlutterShadcnSelectItem) {
-            final value = groupChild._itemValue ?? '';
-            String label = value;
-
-            if (groupChild.childNodes.isNotEmpty) {
-              final textContent = groupChild.childNodes
-                  .map((n) => n is dom.TextNode ? n.data : '')
-                  .join('')
-                  .trim();
-              if (textContent.isNotEmpty) {
-                label = textContent;
+        // Add group label if present
+        final groupLabel = node._label;
+        if (groupLabel != null && groupLabel.isNotEmpty) {
+          // Check if any items in this group match the search
+          bool hasMatchingItems = true;
+          if (widgetElement.searchable && _searchValue.isNotEmpty) {
+            hasMatchingItems = node.childNodes.any((child) {
+              if (child is FlutterShadcnSelectItem) {
+                final label = _extractTextContent(child.childNodes);
+                return label.toLowerCase().contains(_searchValue.toLowerCase());
               }
-            }
+              return false;
+            });
+          }
 
+          if (hasMatchingItems) {
             options.add(ShadOption(
-              value: value,
-              child: Text(label),
+              value: '__group_label_${groupLabel}__',
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 4),
+                child: Text(
+                  groupLabel,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             ));
           }
         }
+
+        // Add items from the group
+        options.addAll(_buildOptionsFromNodes(node.childNodes));
+      } else if (node is FlutterShadcnSelectLabel) {
+        final label = _extractTextContent(node.childNodes);
+        if (label.isNotEmpty) {
+          options.add(ShadOption(
+            value: '__label_${label}__',
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8, bottom: 4),
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ));
+        }
+      } else if (node is FlutterShadcnSelectContent) {
+        // Process content children
+        options.addAll(_buildOptionsFromNodes(node.childNodes));
       }
     }
 
     return options;
   }
 
+  List<ShadOption<String>> _buildOptions() {
+    return _buildOptionsFromNodes(widgetElement.childNodes);
+  }
+
+  String? _getPlaceholder() {
+    // First check for trigger with placeholder
+    final trigger = widgetElement.childNodes
+        .firstWhereOrNull((n) => n is FlutterShadcnSelectTrigger);
+    if (trigger is FlutterShadcnSelectTrigger && trigger._placeholder != null) {
+      return trigger._placeholder;
+    }
+    // Fall back to select's placeholder property
+    return widgetElement.placeholder;
+  }
+
   @override
   Widget build(BuildContext context) {
     final options = _buildOptions();
+    final placeholder = _getPlaceholder() ?? 'Select...';
+
+    if (widgetElement.searchable) {
+      return ShadSelect<String>.withSearch(
+        initialValue: widgetElement.value,
+        placeholder: Text(placeholder),
+        enabled: !widgetElement.disabled,
+        options: options,
+        allowDeselection: widgetElement.allowDeselection,
+        closeOnSelect: widgetElement.closeOnSelect,
+        searchPlaceholder: widgetElement.searchPlaceholder != null
+            ? Text(widgetElement.searchPlaceholder!)
+            : const Text('Search...'),
+        onSearchChanged: (value) {
+          setState(() {
+            _searchValue = value;
+          });
+        },
+        onChanged: (value) {
+          widgetElement._value = value;
+          widgetElement
+              .dispatchEvent(CustomEvent('change', detail: {'value': value}));
+        },
+        selectedOptionBuilder: (context, value) {
+          final option = options.firstWhereOrNull((o) => o.value == value);
+          if (option != null) {
+            return option.child;
+          }
+          return Text(value);
+        },
+      );
+    }
+
+    if (widgetElement.multiple) {
+      return ShadSelect<String>.multiple(
+        initialValues:
+            widgetElement.value != null ? {widgetElement.value!} : {},
+        placeholder: Text(placeholder),
+        enabled: !widgetElement.disabled,
+        options: options,
+        allowDeselection: widgetElement.allowDeselection,
+        closeOnSelect: widgetElement.closeOnSelect,
+        onChanged: (values) {
+          widgetElement._value = values.join(',');
+          widgetElement.dispatchEvent(
+              CustomEvent('change', detail: {'value': widgetElement._value}));
+        },
+        selectedOptionsBuilder: (context, values) {
+          if (values.isEmpty) {
+            return Text(placeholder);
+          }
+          return Text(values.join(', '));
+        },
+      );
+    }
 
     return ShadSelect<String>(
       initialValue: widgetElement.value,
-      placeholder: widgetElement.placeholder != null
-          ? Text(widgetElement.placeholder!)
-          : null,
+      placeholder: Text(placeholder),
       enabled: !widgetElement.disabled,
       options: options,
+      allowDeselection: widgetElement.allowDeselection,
+      closeOnSelect: widgetElement.closeOnSelect,
       onChanged: (value) {
         widgetElement._value = value;
-        widgetElement.dispatchEvent(Event('change'));
+        widgetElement
+            .dispatchEvent(CustomEvent('change', detail: {'value': value}));
       },
       selectedOptionBuilder: (context, value) {
         final option = options.firstWhereOrNull((o) => o.value == value);
@@ -182,6 +324,82 @@ class FlutterShadcnSelectState extends WebFWidgetElementState {
         return Text(value);
       },
     );
+  }
+}
+
+/// WebF custom element for select trigger.
+///
+/// Exposed as `<flutter-shadcn-select-trigger>` in the DOM.
+class FlutterShadcnSelectTrigger extends WidgetElement {
+  FlutterShadcnSelectTrigger(super.context);
+
+  String? _placeholder;
+
+  String? get placeholder => _placeholder;
+
+  set placeholder(value) {
+    final String? v = value?.toString();
+    if (v != _placeholder) {
+      _placeholder = v;
+      _notifyParent();
+    }
+  }
+
+  void _notifyParent() {
+    final parent = parentNode;
+    if (parent is FlutterShadcnSelect) {
+      parent.state?.requestUpdateState(() {});
+    }
+  }
+
+  @override
+  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
+    super.initializeAttributes(attributes);
+    attributes['placeholder'] = ElementAttributeProperty(
+      getter: () => placeholder?.toString(),
+      setter: (value) => placeholder = value,
+      deleter: () => placeholder = null,
+    );
+  }
+
+  @override
+  WebFWidgetElementState createState() => FlutterShadcnSelectTriggerState(this);
+}
+
+class FlutterShadcnSelectTriggerState extends WebFWidgetElementState {
+  FlutterShadcnSelectTriggerState(super.widgetElement);
+
+  @override
+  Widget build(BuildContext context) {
+    // Trigger is handled by the parent Select, return empty
+    return const SizedBox.shrink();
+  }
+}
+
+/// WebF custom element for select content.
+///
+/// Exposed as `<flutter-shadcn-select-content>` in the DOM.
+class FlutterShadcnSelectContent extends WidgetElement {
+  FlutterShadcnSelectContent(super.context);
+
+  void _notifyParent() {
+    final parent = parentNode;
+    if (parent is FlutterShadcnSelect) {
+      parent.state?.requestUpdateState(() {});
+    }
+  }
+
+  @override
+  WebFWidgetElementState createState() => FlutterShadcnSelectContentState(this);
+}
+
+class FlutterShadcnSelectContentState extends WebFWidgetElementState {
+  FlutterShadcnSelectContentState(super.widgetElement);
+
+  @override
+  Widget build(BuildContext context) {
+    // Content is handled by the parent Select, return empty
+    return const SizedBox.shrink();
   }
 }
 
@@ -215,14 +433,13 @@ class FlutterShadcnSelectItem extends WidgetElement {
   }
 
   void _notifyParent() {
-    final parent = parentNode;
-    if (parent is FlutterShadcnSelect) {
-      parent.state?.requestUpdateState(() {});
-    } else if (parent is FlutterShadcnSelectGroup) {
-      final grandParent = parent.parentNode;
-      if (grandParent is FlutterShadcnSelect) {
-        grandParent.state?.requestUpdateState(() {});
+    dom.Node? current = parentNode;
+    while (current != null) {
+      if (current is FlutterShadcnSelect) {
+        current.state?.requestUpdateState(() {});
+        break;
       }
+      current = current.parentNode;
     }
   }
 
@@ -273,9 +490,13 @@ class FlutterShadcnSelectGroup extends WidgetElement {
   }
 
   void _notifyParent() {
-    final parent = parentNode;
-    if (parent is FlutterShadcnSelect) {
-      parent.state?.requestUpdateState(() {});
+    dom.Node? current = parentNode;
+    while (current != null) {
+      if (current is FlutterShadcnSelect) {
+        current.state?.requestUpdateState(() {});
+        break;
+      }
+      current = current.parentNode;
     }
   }
 
@@ -295,6 +516,36 @@ class FlutterShadcnSelectGroup extends WidgetElement {
 
 class FlutterShadcnSelectGroupState extends WebFWidgetElementState {
   FlutterShadcnSelectGroupState(super.widgetElement);
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox.shrink();
+  }
+}
+
+/// WebF custom element for select labels.
+///
+/// Exposed as `<flutter-shadcn-select-label>` in the DOM.
+class FlutterShadcnSelectLabel extends WidgetElement {
+  FlutterShadcnSelectLabel(super.context);
+
+  void _notifyParent() {
+    dom.Node? current = parentNode;
+    while (current != null) {
+      if (current is FlutterShadcnSelect) {
+        current.state?.requestUpdateState(() {});
+        break;
+      }
+      current = current.parentNode;
+    }
+  }
+
+  @override
+  WebFWidgetElementState createState() => FlutterShadcnSelectLabelState(this);
+}
+
+class FlutterShadcnSelectLabelState extends WebFWidgetElementState {
+  FlutterShadcnSelectLabelState(super.widgetElement);
 
   @override
   Widget build(BuildContext context) {

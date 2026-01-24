@@ -138,6 +138,7 @@ import { ShadcnCalendarPage } from './pages/shadcn/ShadcnCalendarPage';
 import { ShadcnDropdownPage } from './pages/shadcn/ShadcnDropdownPage';
 import { ShadcnContextMenuPage } from './pages/shadcn/ShadcnContextMenuPage';
 import { ShadcnPopoverPage } from './pages/shadcn/ShadcnPopoverPage';
+import { ShadcnFormPage } from './pages/shadcn/ShadcnFormPage';
 
 function App() {
 
@@ -247,6 +248,7 @@ function App() {
         <Route path="/shadcn/dropdown" title="Shadcn Dropdown Menu" element={<ShadcnDropdownPage />} />
         <Route path="/shadcn/context-menu" title="Shadcn Context Menu" element={<ShadcnContextMenuPage />} />
         <Route path="/shadcn/popover" title="Shadcn Popover & Tooltip" element={<ShadcnPopoverPage />} />
+        <Route path="/shadcn/form" title="Shadcn Form" element={<ShadcnFormPage />} />
 
         <Route path="/image-preload" title="Image Preload" element={<ImagePreloadPage />} />
 

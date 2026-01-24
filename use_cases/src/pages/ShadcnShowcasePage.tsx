@@ -37,6 +37,7 @@ export const ShadcnShowcasePage: React.FC = () => {
             <Item label="Select & Combobox" desc="Dropdown selection components" to="/shadcn/select" />
             <Item label="Slider" desc="Range selection slider" to="/shadcn/slider" />
             <Item label="Radio Group" desc="Single selection from multiple options" to="/shadcn/radio" />
+            <Item label="Form" desc="Form state management with validation" to="/shadcn/form" />
           </div>
 
           <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-zinc-500">Display Components</h2>
