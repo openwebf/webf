@@ -334,9 +334,9 @@ class Element : public ContainerNode {
 
   // Form control methods
   bool IsActive() const { return false; }
-  bool MatchesEnabledPseudoClass() const { return false; }
+  bool MatchesEnabledPseudoClass() const;
   bool MatchesDefaultPseudoClass() const { return false; }
-  bool IsDisabledFormControl() const { return false; }
+  bool IsDisabledFormControl() const;
   bool MatchesReadOnlyPseudoClass() const { return false; }
   bool MatchesReadWritePseudoClass() const { return false; }
   bool IsOptionalFormControl() const { return false; }
