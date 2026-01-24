@@ -55,9 +55,24 @@ class FlutterShadcnDialog extends FlutterShadcnDialogBindings {
 class FlutterShadcnDialogState extends WebFWidgetElementState {
   FlutterShadcnDialogState(super.widgetElement);
 
+  bool _wasOpen = false;
+  bool _isShowingDialog = false;
+
   @override
   FlutterShadcnDialog get widgetElement =>
       super.widgetElement as FlutterShadcnDialog;
+
+  String _extractTextContent(Iterable<Node> nodes) {
+    final buffer = StringBuffer();
+    for (final node in nodes) {
+      if (node is TextNode) {
+        buffer.write(node.data);
+      } else if (node.childNodes.isNotEmpty) {
+        buffer.write(_extractTextContent(node.childNodes));
+      }
+    }
+    return buffer.toString().trim();
+  }
 
   Widget? _findSlot<T>() {
     final node =
@@ -68,66 +83,90 @@ class FlutterShadcnDialogState extends WebFWidgetElementState {
     return null;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (!widgetElement.open) {
-      return const SizedBox.shrink();
+  Future<void> _showDialog(BuildContext context) async {
+    if (_isShowingDialog) return;
+    _isShowingDialog = true;
+
+    // Extract title and description text
+    String? titleText;
+    String? descriptionText;
+
+    final headerNode = widgetElement.childNodes
+        .firstWhereOrNull((n) => n is FlutterShadcnDialogHeader);
+    if (headerNode != null) {
+      final titleNode = headerNode.childNodes
+          .firstWhereOrNull((n) => n is FlutterShadcnDialogTitle);
+      final descNode = headerNode.childNodes
+          .firstWhereOrNull((n) => n is FlutterShadcnDialogDescription);
+
+      if (titleNode != null) {
+        titleText = _extractTextContent(titleNode.childNodes);
+      }
+      if (descNode != null) {
+        descriptionText = _extractTextContent(descNode.childNodes);
+      }
     }
 
-    final header = _findSlot<FlutterShadcnDialogHeader>();
-    final content = _findSlot<FlutterShadcnDialogContent>();
-    final footer = _findSlot<FlutterShadcnDialogFooter>();
+    // Build actions from footer
+    final footerActions = <Widget>[];
+    final footerNode = widgetElement.childNodes
+        .firstWhereOrNull((n) => n is FlutterShadcnDialogFooter);
+    if (footerNode != null) {
+      for (final child in footerNode.childNodes) {
+        footerActions.add(WebFWidgetElementChild(child: child.toWidget()));
+      }
+    }
 
-    final theme = ShadTheme.of(context);
+    // Build content
+    final contentSlot = _findSlot<FlutterShadcnDialogContent>();
 
-    return Stack(
-      children: [
-        // Backdrop
-        GestureDetector(
-          onTap: widgetElement.closeOnOutsideClick
-              ? () {
-                  widgetElement.open = false;
-                }
-              : null,
-          child: Container(
-            color: Colors.black.withOpacity(0.5),
-          ),
-        ),
-        // Dialog
-        Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 500),
-            margin: const EdgeInsets.all(24),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.background,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 20,
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (header != null) ...[
-                  header,
-                  const SizedBox(height: 16),
-                ],
-                if (content != null) content,
-                if (footer != null) ...[
-                  const SizedBox(height: 16),
-                  footer,
-                ],
-              ],
-            ),
-          ),
-        ),
-      ],
+    await showShadDialog(
+      context: context,
+      barrierDismissible: widgetElement.closeOnOutsideClick,
+      builder: (dialogContext) => ShadDialog(
+        title: titleText != null ? Text(titleText) : null,
+        description: descriptionText != null ? Text(descriptionText) : null,
+        actions: footerActions,
+        child: contentSlot,
+      ),
     );
+
+    // Dialog was closed (either by user action or programmatically)
+    _isShowingDialog = false;
+    if (mounted && widgetElement.open) {
+      widgetElement._open = false;
+      widgetElement.dispatchEvent(Event('close'));
+    }
+  }
+
+  void _closeDialog(BuildContext context) {
+    if (_isShowingDialog) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Handle open state changes
+    if (widgetElement.open && !_wasOpen) {
+      // Opening dialog
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && widgetElement.open) {
+          _showDialog(context);
+        }
+      });
+    } else if (!widgetElement.open && _wasOpen) {
+      // Closing dialog
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _closeDialog(context);
+        }
+      });
+    }
+    _wasOpen = widgetElement.open;
+
+    // Return an empty placeholder - the dialog is shown via showShadDialog
+    return const SizedBox.shrink();
   }
 }
 
