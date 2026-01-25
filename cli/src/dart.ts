@@ -316,10 +316,14 @@ export function generateDartClass(blob: IDLBlob, command: string): string {
   const events = classObjects.filter(object => {
     return object.name.endsWith('Events');
   });
+  const methods = classObjects.filter(object => {
+    return object.name.endsWith('Methods');
+  });
 
   const others = classObjects.filter(object => {
     return !object.name.endsWith('Properties')
-      && !object.name.endsWith('Events');
+      && !object.name.endsWith('Events')
+      && !object.name.endsWith('Methods');
   });
 
   const dependencies = others.map(object => {
@@ -338,6 +342,7 @@ interface ${object.name} {
 
   const componentProperties = properties.length > 0 ? properties[0] : undefined;
   const componentEvents = events.length > 0 ? events[0] : undefined;
+  const componentMethods = methods.length > 0 ? methods[0] : undefined;
   const className = (() => {
     if (componentProperties) {
       return componentProperties.name.replace(/Properties$/, '');
@@ -345,23 +350,43 @@ interface ${object.name} {
     if (componentEvents) {
       return componentEvents.name.replace(/Events$/, '');
     }
+    if (componentMethods) {
+      return componentMethods.name.replace(/Methods$/, '');
+    }
     return '';
   })();
 
   if (!className) {
     return '';
   }
+
+  const exactComponentProperties = properties.find(p => p.name.replace(/Properties$/, '') === className);
+  const exactComponentEvents = events.find(e => e.name.replace(/Events$/, '') === className);
+  const exactComponentMethods = methods.find(m => m.name.replace(/Methods$/, '') === className);
+
+  const mergedMethodList = (() => {
+    const result: FunctionDeclaration[] = [];
+    const seen = new Set<string>();
+    for (const method of [...(exactComponentProperties?.methods ?? []), ...(exactComponentMethods?.methods ?? [])]) {
+      if (seen.has(method.name)) continue;
+      seen.add(method.name);
+      result.push(method);
+    }
+    return result;
+  })();
+
+  const mergedMethodsObject = mergedMethodList.length > 0 ? { methods: mergedMethodList } : undefined;
   
   // Generate enums for union types
   const enums: { name: string; definition: string }[] = [];
   const enumMap: Map<string, string> = new Map(); // camelCase prop name -> enum name
   
-  if (componentProperties) {
-    for (const prop of componentProperties.props) {
+  if (exactComponentProperties) {
+    for (const prop of exactComponentProperties.props) {
       if (isStringUnionType(prop.type)) {
         const values = getUnionStringValues(prop, blob);
         if (values && values.length > 0) {
-          const enumName = getEnumName(componentProperties.name, prop.name);
+          const enumName = getEnumName(exactComponentProperties.name, prop.name);
           enums.push({
             name: enumName,
             definition: generateDartEnum(enumName, values)
@@ -375,8 +400,9 @@ interface ${object.name} {
 
   const content = _.template(readTemplate('class.dart'))({
     className: className,
-    properties: componentProperties,
-    events: componentEvents,
+    properties: exactComponentProperties,
+    events: exactComponentEvents,
+    methods: mergedMethodsObject,
     classObjectDictionary,
     dependencies,
     blob,

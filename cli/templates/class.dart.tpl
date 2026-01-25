@@ -64,15 +64,16 @@ abstract class <%= className %>Bindings extends WidgetElement {
   ];
   <% } %>
 
-  <% if (properties?.methods.length > 0) { %>
+  <% if (methods?.methods.length > 0 || properties?.methods.length > 0) { %>
+  <% const methodsObject = methods ?? properties; %>
 
-  <% _.forEach(properties?.methods, function(method, index) { %>
+  <% _.forEach(methodsObject?.methods, function(method, index) { %>
     <% var methodName = _.camelCase(method.name); %>
   <%= generateReturnType(method.returnType) %> <%= methodName %>(List<dynamic> args);
   <% }) %>
 
   static StaticDefinedSyncBindingObjectMethodMap <%= _.camelCase(className) %>Methods = {
-    <% _.forEach(properties?.methods, function(method, index) { %>
+    <% _.forEach(methodsObject?.methods, function(method, index) { %>
       <% var methodName = method.name; %>
     '<%= methodName %>': StaticDefinedSyncBindingObjectMethod(
       call: (element, args) {
