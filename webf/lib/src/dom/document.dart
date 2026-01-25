@@ -556,6 +556,7 @@ class Document extends ContainerNode {
   bool _recalculating = false;
 
   void updateStyleIfNeeded() {
+    if (ownerView.enableBlink) return;
     // If a debounced update was previously scheduled, cancel it now since we are
     // about to run a synchronous update. This prevents stray pending timers in
     // tests when callers explicitly flush styles (e.g., after class changes).
@@ -586,6 +587,7 @@ class Document extends ContainerNode {
   }
 
   void flushStyle({bool rebuild = false}) {
+    if (ownerView.enableBlink) return;
 
     final int dirtyAtStart = _styleDirtyElements.length;
     // Always attempt to update active stylesheets first so changedRuleSet can
@@ -633,6 +635,7 @@ class Document extends ContainerNode {
   }
 
   void scheduleStyleUpdate() {
+    if (ownerView.enableBlink) return;
     // If only element-level dirties are pending (e.g., class/id/attr mutations)
     // and there are no stylesheet loads or candidate node changes, avoid the
     // debounce window so tests and interactive style changes observe updates
