@@ -216,7 +216,12 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     if (!isConnected) {
       return;
     }
-    ownerDocument.updateStyleIfNeeded();
+    // ChildList mutations (especially when inserting many nodes, e.g. infinite
+    // scrolling) can be extremely expensive if we synchronously flush styles on
+    // every insertion. ContainerNode already marks the relevant element(s) as
+    // style-dirty; schedule a coalesced style flush instead and rely on
+    // updateStyleIfNeeded() being called on-demand (e.g. getComputedStyle).
+    ownerDocument.scheduleStyleUpdate();
   }
 
   // https://dom.spec.whatwg.org/#dom-node-ownerdocument
