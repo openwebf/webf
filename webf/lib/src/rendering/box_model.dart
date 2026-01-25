@@ -469,6 +469,7 @@ abstract class RenderBoxModel extends RenderBox
 
     double? parentBoxContentConstraintsWidth;
     if (renderStyle.isParentRenderBoxModel() &&
+        renderStyle.getAttachedRenderParentRenderStyle()?.attachedRenderBoxModel != null &&
         (renderStyle.isSelfRenderLayoutBox() ||
             renderStyle.isSelfRenderWidget())) {
       RenderBoxModel parentRenderBoxModel = (renderStyle
