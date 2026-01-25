@@ -49,11 +49,15 @@ class Document extends ContainerNode {
   final List<AsyncCallback> pendingPreloadingScriptCallbacks = [];
 
   final Set<int> _styleDirtyElements = {};
+  final Set<int> _styleDirtyElementsRebuildNested = {};
 
   final Set<IntersectionObserver> _intersectionObserverList = {};
 
   void markElementStyleDirty(Element element, {String? reason}) {
     _styleDirtyElements.add(element.pointer!.address);
+    if (reason != null && reason.startsWith('childList-')) {
+      _styleDirtyElementsRebuildNested.add(element.pointer!.address);
+    }
     // Ensure a future flush runs even when only element-level changes occur
     // (no stylesheet updates). This coalesces via the existing scheduler.
     scheduleStyleUpdate();
@@ -61,6 +65,7 @@ class Document extends ContainerNode {
 
   void clearElementStyleDirty(Element element) {
     _styleDirtyElements.remove(element.pointer!.address);
+    _styleDirtyElementsRebuildNested.remove(element.pointer!.address);
   }
 
   final NthIndexCache _nthIndexCache = NthIndexCache();
@@ -617,10 +622,12 @@ class Document extends ContainerNode {
     } else {
       for (int address in _styleDirtyElements) {
         Element? element = ownerView.getBindingObject(Pointer.fromAddress(address)) as Element?;
-        element?.recalculateStyle();
+        final bool rebuildNested = _styleDirtyElementsRebuildNested.contains(address);
+        element?.recalculateStyle(rebuildNested: rebuildNested);
       }
     }
     _styleDirtyElements.clear();
+    _styleDirtyElementsRebuildNested.clear();
     _recalculating = false;
 
   }

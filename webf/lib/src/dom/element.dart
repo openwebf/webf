@@ -2079,20 +2079,30 @@ abstract class Element extends ContainerNode
     if (forceRecalculate ||
         renderStyle.display != CSSDisplay.none ||
         shouldUpdateCSSVariables) {
+      // Structural mutations (childList changes) can change selector matching
+      // results even when this element's own tag/id/class/attrs stay the same.
+      // The per-element matched-rules memoization fingerprint does not include
+      // sibling/ancestor topology, so ensure we don't reuse a stale entry when
+      // callers request a nested rebuild.
+      if (rebuildNested) {
+        _matchedRulesLRU = null;
+      }
+
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
-      var hasInheritedPendingProperty = false;
-      if (style.merge(newStyle)) {
+      bool hasInheritedPendingProperty = false;
+      final bool merged = style.merge(newStyle);
+      if (merged) {
         hasInheritedPendingProperty = style.hasInheritedPendingProperty;
         style.flushPendingProperties();
       }
 
+      // If callers requested a nested rebuild (e.g. DOM childList mutation),
+      // always recurse into children even when this element's own style is a no-op.
       if (rebuildNested || hasInheritedPendingProperty) {
-        // Update children style.
         for (final Element child in children) {
-          child.recalculateStyle(
-              rebuildNested: rebuildNested, forceRecalculate: forceRecalculate);
+          child.recalculateStyle(rebuildNested: rebuildNested, forceRecalculate: forceRecalculate);
         }
       }
     }
