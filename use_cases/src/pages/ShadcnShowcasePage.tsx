@@ -32,6 +32,7 @@ export const ShadcnShowcasePage: React.FC = () => {
           <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-zinc-500">Form Controls</h2>
           <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
             <Item label="Buttons" desc="Primary, secondary, destructive, outline, ghost variants" to="/shadcn/buttons" />
+            <Item label="Icon Button" desc="Icon-only buttons with Lucide icons" to="/shadcn/icon-button" />
             <Item label="Input" desc="Text input with various types and states" to="/shadcn/input" />
             <Item label="Checkbox & Switch" desc="Toggle controls for forms" to="/shadcn/checkbox-switch" />
             <Item label="Select & Combobox" desc="Dropdown selection components" to="/shadcn/select" />

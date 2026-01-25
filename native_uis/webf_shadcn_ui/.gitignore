@@ -27,6 +27,3 @@ migrate_working_dir/
 .pub/
 /build/
 pubspec.lock
-
-# Generated files
-**/*_bindings_generated.dart

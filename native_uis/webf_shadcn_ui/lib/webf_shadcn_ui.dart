@@ -41,6 +41,7 @@ export 'src/theme/colors.dart';
 
 // Form Controls
 export 'src/components/button.dart';
+export 'src/components/icon_button.dart';
 export 'src/components/input.dart';
 export 'src/components/textarea.dart';
 export 'src/components/checkbox.dart';
@@ -86,6 +87,7 @@ export 'src/components/collapsible.dart';
 // Import all components for registration
 import 'src/theme/theme.dart';
 import 'src/components/button.dart';
+import 'src/components/icon_button.dart';
 import 'src/components/input.dart';
 import 'src/components/textarea.dart';
 import 'src/components/checkbox.dart';
@@ -140,6 +142,8 @@ void installWebFShadcnUI() {
   // Form Controls
   WebF.defineCustomElement(
       'flutter-shadcn-button', (context) => FlutterShadcnButton(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-icon-button', (context) => FlutterShadcnIconButton(context));
   WebF.defineCustomElement(
       'flutter-shadcn-input', (context) => FlutterShadcnInput(context));
   WebF.defineCustomElement(
