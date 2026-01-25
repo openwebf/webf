@@ -39,6 +39,7 @@ export const HomePage: React.FC = () => {
         <div className="bg-surface-secondary rounded-xl px-3 sm:px-4 md:px-5 mb-8 divide-y divide-line">
           <Row title="Cupertino UI" desc="iOS-style components and interactions." to="/cupertino-showcase"/>
           <Row title="Shadcn UI" desc="Beautiful, accessible components built with shadcn_ui." to="/shadcn-showcase"/>
+          <Row title="Lucide Icons" desc="1600+ beautiful & consistent icons with stroke variants." to="/lucide-showcase"/>
         </div>
       </WebFListView>
     </div>

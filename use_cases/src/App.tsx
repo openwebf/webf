@@ -139,6 +139,10 @@ import { ShadcnDropdownPage } from './pages/shadcn/ShadcnDropdownPage';
 import { ShadcnContextMenuPage } from './pages/shadcn/ShadcnContextMenuPage';
 import { ShadcnPopoverPage } from './pages/shadcn/ShadcnPopoverPage';
 import { ShadcnFormPage } from './pages/shadcn/ShadcnFormPage';
+import { ShadcnIconButtonPage } from './pages/shadcn/ShadcnIconButtonPage';
+// Lucide Icons imports
+import { LucideShowcasePage } from './pages/LucideShowcasePage';
+import { LucideIconsPage } from './pages/lucide/LucideIconsPage';
 
 function App() {
 
@@ -229,6 +233,7 @@ function App() {
         {/* Shadcn UI routes */}
         <Route path="/shadcn-showcase" title="Shadcn UI Showcase" element={<ShadcnShowcasePage />} />
         <Route path="/shadcn/buttons" title="Shadcn Buttons" element={<ShadcnButtonsPage />} />
+        <Route path="/shadcn/icon-button" title="Shadcn Icon Button" element={<ShadcnIconButtonPage />} />
         <Route path="/shadcn/input" title="Shadcn Input" element={<ShadcnInputPage />} />
         <Route path="/shadcn/checkbox-switch" title="Shadcn Checkbox & Switch" element={<ShadcnCheckboxSwitchPage />} />
         <Route path="/shadcn/select" title="Shadcn Select & Combobox" element={<ShadcnSelectPage />} />
@@ -249,6 +254,10 @@ function App() {
         <Route path="/shadcn/context-menu" title="Shadcn Context Menu" element={<ShadcnContextMenuPage />} />
         <Route path="/shadcn/popover" title="Shadcn Popover & Tooltip" element={<ShadcnPopoverPage />} />
         <Route path="/shadcn/form" title="Shadcn Form" element={<ShadcnFormPage />} />
+
+        {/* Lucide Icons routes */}
+        <Route path="/lucide-showcase" title="Lucide Icons Showcase" element={<LucideShowcasePage />} />
+        <Route path="/lucide/icons" title="Lucide Icons Gallery" element={<LucideIconsPage />} />
 
         <Route path="/image-preload" title="Image Preload" element={<ImagePreloadPage />} />
 
