@@ -615,8 +615,7 @@ void main() {
       expect(p2Color.value.toARGB32(), equals(0xFF000000)); // default black
         });
 
-    testWidgets('general sibling selector', skip: true, (WidgetTester tester) async {
-      // TODO: WebF may not support general sibling selector (~)
+    testWidgets('general sibling selector', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
         controllerName: 'general-sibling-test-${DateTime.now().millisecondsSinceEpoch}',
@@ -629,8 +628,8 @@ void main() {
             </head>
             <body style="margin: 0; padding: 0;">
               <h2>Heading</h2>
+              <p id="p1">Blue text (general sibling, adjacent)</p>
               <div>Divider</div>
-              <p id="p1">Blue text (general sibling)</p>
               <p id="p2">Also blue text</p>
             </body>
           </html>
@@ -642,6 +641,87 @@ void main() {
 
       expect(p1.renderStyle.color.value.toARGB32(), equals(0xFF0000FF)); // blue
       expect(p2.renderStyle.color.value.toARGB32(), equals(0xFF0000FF)); // blue
+    });
+
+    testWidgets('general sibling with child + :not()', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'general-sibling-child-not-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <head>
+              <style>
+                .space-y-2 > :not([hidden]) ~ :not([hidden]) { color: blue; }
+              </style>
+            </head>
+            <body style="margin: 0; padding: 0;">
+              <div class="space-y-2">
+                <p id="p1">Default color (first child)</p>
+                <p id="p2">Blue text (second child)</p>
+                <p id="p3">Blue text (third child)</p>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final p1 = prepared.getElementById('p1');
+      final p2 = prepared.getElementById('p2');
+      final p3 = prepared.getElementById('p3');
+
+      expect(p1.renderStyle.color.value.toARGB32(), equals(0xFF000000)); // default black
+      expect(p2.renderStyle.color.value.toARGB32(), equals(0xFF0000FF)); // blue
+      expect(p3.renderStyle.color.value.toARGB32(), equals(0xFF0000FF)); // blue
+    });
+
+    testWidgets('general sibling updates after insertBefore', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'general-sibling-insertbefore-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <head>
+              <style>
+                .space-y-2 > :not([hidden]) ~ :not([hidden]) { color: blue; }
+              </style>
+            </head>
+            <body style="margin: 0; padding: 0;">
+              <div class="space-y-2" id="c">
+                <p id="p2">Second (initial first)</p>
+                <p id="p3">Third (initial second)</p>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('c');
+      final p2 = prepared.getElementById('p2');
+      final p3 = prepared.getElementById('p3');
+
+      // Initial: only p3 matches because it has a previous sibling.
+      expect(p2.renderStyle.color.value.toARGB32(), equals(0xFF000000)); // default black
+      expect(p3.renderStyle.color.value.toARGB32(), equals(0xFF0000FF)); // blue
+
+      // Insert p1 before p2; this should cause p2 to start matching the "~" selector.
+      await tester.runAsync(() async {
+        await prepared.controller.view.evaluateJavaScripts('''
+          (function () {
+            const c = document.getElementById('c');
+            const p2 = document.getElementById('p2');
+            const p1 = document.createElement('p');
+            p1.id = 'p1';
+            p1.textContent = 'First (inserted)';
+            c.insertBefore(p1, p2);
+          })();
+        ''');
+      });
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final p2After = prepared.getElementById('p2');
+      expect(p2After.renderStyle.color.value.toARGB32(), equals(0xFF0000FF)); // blue
     });
   });
 
