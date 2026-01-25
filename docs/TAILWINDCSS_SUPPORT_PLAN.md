@@ -66,8 +66,10 @@ Tailwind v3.4.18 core utilities are exposed by `corePlugins` (179 keys). Below i
 
 **P0 blockers (must fix first)**
 - Selector parsing/matching: `:where(<selector-list>)` (Tailwind preflight + direction variants).
+- `:has()` correctness + performance + invalidation strategy.
 - Selector matching: interactive pseudo-classes (hover/focus/active/disabled/checked/…).
-- Media query evaluation: `prefers-reduced-motion`, `orientation`, `print`, `forced-colors`, `prefers-contrast`.
+- https://github.com/openwebf/webf/issues/659
+- Media query evaluation: `orientation`, `prefers-contrast`.
 
 **P1 (big utility gaps, common in real apps)**
 - `cursor`, `pointer-events`, `user-select`, `touch-action`, `resize`
@@ -148,7 +150,7 @@ Assumptions:
 - **Tailwind “full core + variants” (M0–M6):** ~120–212 person-days (~6–10 months for 1 engineer; ~3–5 months for 2 engineers).
 
 ### Main risks / schedule drivers
-- `:has()` correctness + performance + invalidation strategy.
+
 - `box-sizing: content-box` (WebF layout code currently assumes border-box semantics in multiple places).
 - Scroll snap and `touch-action` (requires deep integration with Flutter gesture/scroll systems).
 
