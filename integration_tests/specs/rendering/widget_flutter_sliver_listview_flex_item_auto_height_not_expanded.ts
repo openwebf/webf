@@ -6,7 +6,7 @@ describe('RenderFlexLayout auto-height inside <flutter-sliver-listview>', () => 
     //
     // Regression guard: the flex container should shrink-wrap its content; it must not
     // treat the sliver viewport height as a definite main-axis size for height:auto.
-    await resizeViewport(402, 874);
+    await resizeViewport(360, 640);
 
     try {
       document.documentElement.style.margin = '0';

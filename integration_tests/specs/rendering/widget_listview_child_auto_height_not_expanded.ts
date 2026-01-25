@@ -7,7 +7,7 @@ describe('RenderWidget height:auto under bounded maxHeight', () => {
     // This spec uses `flutter-max-height-container`, a test-only custom element that
     // wraps its WebF subtree with:
     //   ConstrainedBox(BoxConstraints(maxHeight: X)) + WebFWidgetElementChild(...)
-    await resizeViewport(402, 600);
+    await resizeViewport(360, 640);
 
     try {
       document.documentElement.style.margin = '0';

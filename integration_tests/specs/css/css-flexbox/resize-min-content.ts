@@ -1,6 +1,7 @@
 /*auto generated*/
 describe('resize-min', () => {
   it('content-flexbox', async () => {
+    await resizeViewport(360, 640);
     let log;
     let content;
     let flexbox;

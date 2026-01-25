@@ -1,6 +1,6 @@
 describe('RenderWidget WebFListView child width', () => {
   it('does not let auto-width children exceed the listview content box', async () => {
-    await resizeViewport(434, 600);
+    await resizeViewport(360, 640);
 
     try {
       // Normalize body margins so viewport math is stable.
