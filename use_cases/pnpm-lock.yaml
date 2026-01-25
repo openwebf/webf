@@ -17,6 +17,9 @@ importers:
       '@openwebf/react-cupertino-ui':
         specifier: ^0.3.35
         version: 0.3.35(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@openwebf/react-lucide-icons':
+        specifier: link:/var/folders/68/lyfvmcts4_l_r051bppwpkm40000gn/T/webf-typings-2mpUH1
+        version: link:../../../../../var/folders/68/lyfvmcts4_l_r051bppwpkm40000gn/T/webf-typings-2mpUH1
       '@openwebf/react-router':
         specifier: ^0.24.2
         version: 0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)

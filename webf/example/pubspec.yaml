@@ -31,6 +31,8 @@ dependencies:
   collection: ^1.18.0
   auto_size_text: ^3.0.0
   webf_cupertino_ui: ^0.3.37
+  webf_lucide_icons:
+    path: ../../native_uis/webf_lucide_icons
   webf_shadcn_ui:
     path: ../../native_uis/webf_shadcn_ui
   webf_share:

@@ -22,6 +22,7 @@ import 'package:adaptive_theme/adaptive_theme.dart';
 
 import 'custom_hybrid_history_delegate.dart';
 
+import 'package:webf_lucide_icons/webf_lucide_icons.dart';
 import 'package:webf_share/webf_share.dart';
 import 'package:webf_sqflite/webf_sqflite.dart';
 import 'package:webf_camera/webf_camera.dart';
@@ -57,6 +58,7 @@ void main() async {
   installWebFCamera();
   installWebFVideoPlayer();
   installWebFShadcnUI();
+  installWebFLucideIcons();
 
   WebF.defineModule((context) => ShareModule(context));
   WebF.defineModule((context) => SQFliteModule(context));
