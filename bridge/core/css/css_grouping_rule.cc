@@ -39,6 +39,8 @@
 #include "bindings/qjs/exception_state.h"
 #include "core/css/css_rule_list.h"
 #include "core/css/css_style_sheet.h"
+#include "core/css/parser/css_parser.h"
+#include "core/css/parser/css_parser_context.h"
 #include "core/executing_context.h"
 
 namespace webf {
@@ -63,17 +65,68 @@ CSSRuleList* CSSGroupingRule::cssRules() const {
       const_cast<CSSGroupingRule*>(this));
 }
 
-unsigned CSSGroupingRule::insertRule(const ExecutingContext* context,
-                                     const String& rule,
-                                     unsigned index,
-                                     ExceptionState& exception_state) {
-  // TODO: Implement insertRule for dynamic rule insertion
-  // This would involve parsing the rule string and inserting it into group_rule_
-  return 0;
+void CSSGroupingRule::deleteRule(unsigned index, ExceptionState& exception_state) {
+  if (index >= length()) {
+    if (length()) {
+      exception_state.ThrowException(ctx(), ErrorType::RangeError,
+                                     "The index provided (" + std::to_string(index) +
+                                         ") is larger than the maximum index (" + std::to_string(length() - 1) + ").");
+    } else {
+      exception_state.ThrowException(ctx(), ErrorType::RangeError, "Rule list is empty (length 0).");
+    }
+    return;
+  }
+
+  CSSStyleSheet* sheet = parentStyleSheet();
+  if (!sheet || !sheet->Contents() || !group_rule_) {
+    exception_state.ThrowException(ctx(), ErrorType::InternalError, "Failed to delete rule");
+    return;
+  }
+
+  CSSStyleSheet::RuleMutationScope mutation_scope(this);
+
+  // Invalidate cached CSSOM wrappers. Child rules are index-based and must be
+  // recreated after mutation.
+  child_rule_cssom_wrappers_.clear();
+  rule_list_cssom_wrapper_ = nullptr;
+
+  group_rule_->WrapperRemoveRule(sheet, index);
 }
 
-void CSSGroupingRule::deleteRule(unsigned index, ExceptionState& exception_state) {
-  // TODO: Implement deleteRule for dynamic rule deletion
+unsigned CSSGroupingRule::insertRule(const AtomicString& rule,
+                                     unsigned index,
+                                     ExceptionState& exception_state) {
+  if (index > length()) {
+    exception_state.ThrowException(ctx(), ErrorType::InternalError,
+                                   "The index provided (" + std::to_string(index) +
+                                       ") is larger than the maximum index (" + std::to_string(length()) + ").");
+    return 0;
+  }
+
+  CSSStyleSheet* sheet = parentStyleSheet();
+  if (!sheet || !sheet->Contents() || !group_rule_) {
+    exception_state.ThrowException(ctx(), ErrorType::InternalError, "Failed to insert the rule.");
+    return 0;
+  }
+
+  auto parser_context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
+  std::shared_ptr<StyleRuleBase> parsed =
+      CSSParser::ParseRule(parser_context, sheet->Contents(), CSSNestingType::kNone,
+                           /*parent_rule_for_nesting=*/nullptr, rule.GetString());
+  if (!parsed) {
+    exception_state.ThrowException(ctx(), ErrorType::InternalError, "Failed to parse the rule.");
+    return 0;
+  }
+
+  CSSStyleSheet::RuleMutationScope mutation_scope(this);
+
+  // Invalidate cached CSSOM wrappers. Child rules are index-based and must be
+  // recreated after mutation.
+  child_rule_cssom_wrappers_.clear();
+  rule_list_cssom_wrapper_ = nullptr;
+
+  group_rule_->WrapperInsertRule(sheet, index, std::static_pointer_cast<const StyleRuleBase>(parsed));
+  return index;
 }
 
 unsigned CSSGroupingRule::length() const {

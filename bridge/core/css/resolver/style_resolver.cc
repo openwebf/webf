@@ -36,8 +36,10 @@
 #include <algorithm>
 #include <optional>
 #include <string>
+#include <unordered_set>
 
 #include "foundation/logging.h"
+#include "core/css/cascade_layer_map.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_property_value_set.h"
 #include "core/css/inline_css_style_declaration.h"
@@ -342,28 +344,46 @@ void StyleResolver::MatchAuthorRules(
   std::optional<MediaQueryEvaluator> media_evaluator;
 
   const auto& author_sheets = document.EnsureStyleEngine().AuthorStyleSheetsInDocumentOrder();
-  unsigned author_index = 0;
+
+  // Build RuleSets (respecting media queries) and compute a canonical cascade
+  // layer order across all active author stylesheets.
+  CascadeLayerMap::ActiveRuleSetVector active_rule_sets;
+  active_rule_sets.reserve(author_sheets.size());
+
   for (const auto& sheet : author_sheets) {
-    if (!sheet) {
-      author_index++;
-      continue;
-    }
-    std::shared_ptr<StyleSheetContents> contents = sheet->Contents();
-    if (!contents) {
-      author_index++;
-      continue;
-    }
-    std::shared_ptr<RuleSet> rule_set_ptr = contents->GetRuleSetShared();
-    if (!rule_set_ptr) {
-      if (!media_evaluator.has_value()) {
-        media_evaluator.emplace(context);
+    std::shared_ptr<RuleSet> rule_set_ptr;
+    if (sheet) {
+      std::shared_ptr<StyleSheetContents> contents = sheet->Contents();
+      if (contents) {
+        rule_set_ptr = contents->GetRuleSetShared();
+        if (!rule_set_ptr) {
+          if (!media_evaluator.has_value()) {
+            media_evaluator.emplace(context);
+          }
+          rule_set_ptr = contents->EnsureRuleSet(*media_evaluator);
+        }
       }
-      rule_set_ptr = contents->EnsureRuleSet(*media_evaluator);
+    }
+    active_rule_sets.push_back(rule_set_ptr);
+  }
+
+  CascadeLayerMap cascade_layer_map(active_rule_sets);
+  collector.SetCascadeLayerMap(&cascade_layer_map);
+
+  unsigned author_index = 0;
+  for (const auto& rule_set_ptr : active_rule_sets) {
+    if (!rule_set_ptr) {
+      author_index++;
+      continue;
     }
     MatchRequest match_request(rule_set_ptr, CascadeOrigin::kAuthor, author_index);
     collector.CollectMatchingRules(match_request);
     author_index++;
   }
+
+  // The collector only needs the map during matching. Clear to avoid holding a
+  // dangling pointer (the map is stack-allocated).
+  collector.SetCascadeLayerMap(nullptr);
 }
 
 // Old method - can be removed as it's replaced by ApplyBaseStyleNoCache flow

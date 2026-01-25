@@ -643,8 +643,31 @@ function test_computed_value(property: string, specified: string, computed: stri
 
 // -1 is reset
 function resizeViewport(width: number = -1, height: number = -1) {
-  return webf.methodChannel.invokeMethod('resizeViewport', width, height).then(() => {
-    return nextFrames();
+  // In WebF integration tests, viewport resize is implemented by constraining
+  // the Flutter widget (via a method channel) and then propagating the new size
+  // to the native engine. That propagation is asynchronous (debounced + flushed
+  // after a frame), so waiting for a `resize` event makes subsequent assertions
+  // and snapshots deterministic.
+  const waitForResizeEvent = (timeoutMs: number) => {
+    return new Promise<void>((resolve) => {
+      let settled = false;
+      const done = () => {
+        if (settled) return;
+        settled = true;
+        window.removeEventListener('resize', onResize);
+        resolve();
+      };
+      const onResize = () => done();
+      window.addEventListener('resize', onResize);
+      originalTimeout(done, timeoutMs);
+    });
+  };
+
+  const resizeEventPromise = waitForResizeEvent(2000);
+  return webf.methodChannel.invokeMethod('resizeViewport', width, height).then(async () => {
+    await resizeEventPromise;
+    // Ensure layout/paint catches up before continuing.
+    await nextFrames(2);
   });
 }
 

@@ -7,6 +7,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:webf/gesture.dart';
 import 'package:webf/webf.dart';
@@ -33,20 +34,49 @@ class WebFTester extends StatefulWidget {
 }
 
 class _WebFTesterState extends State<WebFTester> {
+  static const MethodChannel _windowChannel = MethodChannel('webf_integration/window');
   Pointer<Void>? testContext;
   late WebFController controller;
+  late final Widget _webfWidget;
   var width = 360.0;
   var height = 640.0;
 
+  Future<void> _ensureWindowSize(double desiredWidth, double desiredHeight) async {
+    if (!Platform.isMacOS) return;
+    try {
+      await _windowChannel.invokeMethod('ensureWindowSize', [desiredWidth, desiredHeight]);
+    } catch (_) {
+      // Best-effort: ignore if the platform channel is not implemented.
+    }
+  }
+
+  Future<void> _restoreWindowSize() async {
+    if (!Platform.isMacOS) return;
+    try {
+      await _windowChannel.invokeMethod('restoreWindowSize');
+    } catch (_) {
+      // Best-effort: ignore if the platform channel is not implemented.
+    }
+  }
+
+  bool _isResetViewport(dynamic widthArg, dynamic heightArg) {
+    final num? width = widthArg is num ? widthArg : num.tryParse(widthArg.toString());
+    final num? height = heightArg is num ? heightArg : num.tryParse(heightArg.toString());
+    return width == -1 && height == -1;
+  }
+
   @override
-  Widget build(BuildContext context) {
-    return WebF.fromControllerName(
+  void initState() {
+    super.initState();
+    _webfWidget = WebF.fromControllerName(
         controllerName: 'tester',
         initialRoute: '/',
         createController: () => WebFController(
             enableBlink: true,
-            viewportWidth: width,
-            viewportHeight: height,
+            // Let the Flutter widget constraints decide the viewport size so
+            // integration tests can resize via `resizeViewport`.
+            viewportWidth: null,
+            viewportHeight: null,
             onLoad: onLoad,
             onControllerInit: (controller) async {
               double contextId = controller.view.contextId;
@@ -101,10 +131,11 @@ class _WebFTesterState extends State<WebFTester> {
                 return Future.value(true);
               }
               case 'resizeViewport':
-                double newWidth = arguments[0] == -1
+                final bool isReset = _isResetViewport(arguments[0], arguments[1]);
+                double newWidth = isReset
                     ? 360
                     : double.tryParse(arguments[0].toString())!;
-                double newHeight = arguments[1] == -1
+                double newHeight = isReset
                     ? 640
                     : double.tryParse(arguments[1].toString())!;
                 if (newWidth != width || newHeight != height) {
@@ -112,6 +143,11 @@ class _WebFTesterState extends State<WebFTester> {
                     width = newWidth;
                     height = newHeight;
                   });
+                }
+                if (isReset) {
+                  await _restoreWindowSize();
+                } else {
+                  await _ensureWindowSize(newWidth, newHeight);
                 }
                 return Future.value(null);
               case 'captureFlutterScreenshot':
@@ -172,6 +208,21 @@ class _WebFTesterState extends State<WebFTester> {
         },
         bundle: WebFBundle.fromUrl(
             'http://localhost:${widget.mockServerPort}/public/core.build.js?search=1234#hash=hashValue'));
+
+    // Ensure the window is large enough for the default viewport even if macOS
+    // restores a tiny window size from a previous run.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureWindowSize(width, height);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      height: height,
+      child: _webfWidget,
+    );
   }
 
   onLoad(WebFController controller) async {
@@ -181,12 +232,21 @@ class _WebFTesterState extends State<WebFTester> {
       mems.add([x += 1, ProcessInfo.currentRss / 1024 ~/ 1024]);
     });
 
+    String result = 'failed';
     try {
       // Preload load test cases
-      String result =
-          await executeTest(testContext!, controller.view.contextId);
+      result = await executeTest(testContext!, controller.view.contextId);
+    } catch (e) {
+      print(e);
+    } finally {
       // Manual dispose context for memory leak check.
-      await controller.dispose();
+      try {
+        await controller.dispose();
+      } catch (_) {}
+
+      // Restore the window size so macOS state restoration does not persist an
+      // enlarged window into the next test run.
+      await _restoreWindowSize();
 
       // Check running memorys
       // Temporary disabled due to exist memory leaks
@@ -197,8 +257,6 @@ class _WebFTesterState extends State<WebFTester> {
       widget.onWillFinish?.call();
 
       exit(result == 'failed' ? 1 : 0);
-    } catch (e) {
-      print(e);
     }
   }
 }
