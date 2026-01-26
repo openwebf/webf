@@ -119,6 +119,7 @@ List<UICommand> nativeUICommandToDartFFI(double contextId) {
 
 void execUICommands(WebFViewController view, List<UICommand> commands) {
   Map<int, bool> pendingStylePropertiesTargets = {};
+  bool needsStyleUpdate = false;
 
   String blinkStylePropertyNameFromId(int propertyId) {
     if (propertyId <= 0 || propertyId >= blinkCSSPropertyIdToStyleName.length) return '';
@@ -262,7 +263,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           break;
         case UICommandType.createElement:
           view.createElement(nativePtr.cast<NativeBindingObject>(), command.args);
-
+          needsStyleUpdate = true;
           break;
         case UICommandType.createDocument:
           view.initDocument(view, nativePtr.cast<NativeBindingObject>());
@@ -272,9 +273,11 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           break;
         case UICommandType.createTextNode:
           view.createTextNode(nativePtr.cast<NativeBindingObject>(), command.args);
+          needsStyleUpdate = true;
           break;
         case UICommandType.createComment:
           view.createComment(nativePtr.cast<NativeBindingObject>());
+          needsStyleUpdate = true;
           break;
         case UICommandType.disposeBindingObject:
           WebFViewController.disposeBindingObject(view, nativePtr.cast<NativeBindingObject>());
@@ -291,9 +294,11 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
         case UICommandType.insertAdjacentNode:
           view.insertAdjacentNode(
               nativePtr.cast<NativeBindingObject>(), command.args, command.nativePtr2.cast<NativeBindingObject>());
+          needsStyleUpdate = true;
           break;
         case UICommandType.removeNode:
           view.removeNode(nativePtr.cast<NativeBindingObject>());
+          needsStyleUpdate = true;
           break;
         case UICommandType.cloneNode:
           view.cloneNode(nativePtr.cast<NativeBindingObject>(), command.nativePtr2.cast<NativeBindingObject>());
@@ -322,6 +327,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
 
           view.setInlineStyle(nativePtr, command.args, value, baseHref: baseHref);
           pendingStylePropertiesTargets[nativePtr.address] = true;
+          needsStyleUpdate = true;
           break;
         case UICommandType.setStyleById:
           final String key = blinkStylePropertyNameFromId(command.stylePropertyId);
@@ -348,6 +354,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
 
           view.setInlineStyle(nativePtr, key, value, baseHref: baseHref);
           pendingStylePropertiesTargets[nativePtr.address] = true;
+          needsStyleUpdate = true;
           break;
         case UICommandType.setPseudoStyle:
           if (command.nativePtr2 != nullptr) {
@@ -356,6 +363,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
               view.setPseudoStyle(nativePtr, command.args, keyValue.key, keyValue.value);
             }
           }
+          needsStyleUpdate = true;
           break;
         case UICommandType.removePseudoStyle:
           if (command.nativePtr2 != nullptr) {
@@ -364,13 +372,16 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
             freeNativeString(nativeKey);
             view.removePseudoStyle(nativePtr, command.args, key);
           }
+          needsStyleUpdate = true;
           break;
         case UICommandType.clearPseudoStyle:
           view.clearPseudoStyle(nativePtr, command.args);
+          needsStyleUpdate = true;
           break;
         case UICommandType.clearStyle:
           view.clearInlineStyle(nativePtr);
           pendingStylePropertiesTargets[nativePtr.address] = true;
+          needsStyleUpdate = true;
           break;
         case UICommandType.setPseudoStyle:
           if (command.nativePtr2 != nullptr) {
@@ -406,6 +417,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
               view.setPseudoStyle(nativePtr, command.args, key, value, baseHref: baseHref);
             }
           }
+          needsStyleUpdate = true;
           break;
         case UICommandType.removePseudoStyle:
           if (command.nativePtr2 != nullptr) {
@@ -414,15 +426,18 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
             freeNativeString(nativeKey);
             view.removePseudoStyle(nativePtr, command.args, key);
           }
+          needsStyleUpdate = true;
           break;
         case UICommandType.clearPseudoStyle:
           view.clearPseudoStyle(nativePtr, command.args);
+          needsStyleUpdate = true;
           break;
         case UICommandType.setAttribute:
           Pointer<NativeString> nativeKey = command.nativePtr2.cast<NativeString>();
           String key = nativeStringToString(nativeKey);
           freeNativeString(nativeKey);
           view.setAttribute(nativePtr.cast<NativeBindingObject>(), key, command.args);
+          needsStyleUpdate = true;
           break;
         case UICommandType.setProperty:
           BindingObject? target = view.getBindingObject<BindingObject>(nativePtr.cast<NativeBindingObject>());
@@ -436,6 +451,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
         case UICommandType.removeAttribute:
           String key = command.args;
           view.removeAttribute(nativePtr, key);
+          needsStyleUpdate = true;
           break;
         case UICommandType.createDocumentFragment:
           view.createDocumentFragment(nativePtr.cast<NativeBindingObject>());
@@ -489,4 +505,11 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
     }
   }
   pendingStylePropertiesTargets.clear();
+
+  // Flush document styles once per UICommand batch so layout-dependent queries
+  // (e.g., offsetLeft/offsetWidth) observe up-to-date selector matching and
+  // computed styles, without forcing a synchronous flush on every mutation.
+  if (needsStyleUpdate) {
+    view.document.updateStyleIfNeeded();
+  }
 }
