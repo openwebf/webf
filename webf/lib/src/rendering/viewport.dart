@@ -64,12 +64,8 @@ class RenderViewportBox extends RenderBox
 
   @override
   set size(Size value) {
-    final Size? oldSize = _boxSize;
     super.size = value;
     _boxSize = value;
-    if (oldSize != value) {
-      controller.view.notifyViewportSizeChanged();
-    }
   }
 
   Future<Image> toImage([double pixelRatio = 1.0]) {

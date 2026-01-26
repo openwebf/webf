@@ -970,9 +970,6 @@ class WebFRootViewport extends MultiChildRenderObjectWidget {
       renderObject.markNeedsPaint();
     }
 
-    renderObject.viewportSize =
-        (viewportWidth != null && viewportHeight != null) ? ui.Size(viewportWidth!, viewportHeight!) : null;
-
     // Ensure the controller always points to the latest root viewport render object.
     controller.view.viewport = renderObject;
   }

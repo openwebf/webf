@@ -50,6 +50,7 @@ class Document extends ContainerNode {
 
   final Set<int> _styleDirtyElements = {};
   final Set<int> _styleDirtyElementsRebuildNested = {};
+  bool _hasMutationStyleDirty = false;
 
   final Set<IntersectionObserver> _intersectionObserverList = {};
 
@@ -57,6 +58,9 @@ class Document extends ContainerNode {
     _styleDirtyElements.add(element.pointer!.address);
     if (reason != null && reason.startsWith('childList-')) {
       _styleDirtyElementsRebuildNested.add(element.pointer!.address);
+    }
+    if (reason != null && (reason.startsWith('childList-') || reason.startsWith('batch:'))) {
+      _hasMutationStyleDirty = true;
     }
     // Ensure a future flush runs even when only element-level changes occur
     // (no stylesheet updates). This coalesces via the existing scheduler.
@@ -628,6 +632,7 @@ class Document extends ContainerNode {
     }
     _styleDirtyElements.clear();
     _styleDirtyElementsRebuildNested.clear();
+    _hasMutationStyleDirty = false;
     _recalculating = false;
 
   }
@@ -641,9 +646,16 @@ class Document extends ContainerNode {
         !styleNodeManager.hasPendingStyleSheet &&
         !styleNodeManager.isStyleSheetCandidateNodeChanged;
 
+    // Debouncing is intended for stylesheet updates (<style>/<link>) and can
+    // leak pending timers in widget tests that don't advance fake time. Avoid
+    // using the debounce window when there is no stylesheet work.
+    final bool hasStyleSheetWork =
+        styleNodeManager.hasPendingStyleSheet || styleNodeManager.isStyleSheetCandidateNodeChanged;
+
     final bool useDebounce = DebugFlags.enableCssBatchStyleUpdates &&
         DebugFlags.cssBatchStyleUpdatesDebounceMs > 0 &&
-        !elementOnlyDirty;
+        hasStyleSheetWork &&
+        !(elementOnlyDirty || _hasMutationStyleDirty);
     if (useDebounce) {
       // Debounce across frames/time: reset the timer on each call.
       _styleUpdateScheduled = true;
@@ -666,6 +678,17 @@ class Document extends ContainerNode {
         _styleUpdateScheduled = false;
       });
       return;
+    }
+
+    // If a debounced update is currently pending but we've now transitioned to
+    // element-only dirties (class/id/attr changes), cancel the debounce and run
+    // promptly. Otherwise, _styleUpdateScheduled stays true and suppresses the
+    // immediate microtask scheduling, delaying style/layout updates until the
+    // debounce fires (or indefinitely in tests that don't advance time).
+    if (_styleUpdateDebounceTimer != null) {
+      _styleUpdateDebounceTimer?.cancel();
+      _styleUpdateDebounceTimer = null;
+      _styleUpdateScheduled = false;
     }
 
     if (_styleUpdateScheduled) return;
