@@ -509,6 +509,8 @@ mixin BaseInputState on WebFWidgetElementState {
           ),
         )
             : null);
+    final TextDirection textDirection = widgetElement.renderStyle.direction;
+
     Widget widget = TextField(
       controller: controller,
       cursorHeight: nonNegativeFontSize,
@@ -530,6 +532,7 @@ mixin BaseInputState on WebFWidgetElementState {
       maxLength: widgetElement.maxLength,
       onChanged: onChanged,
       textAlign: widgetElement.renderStyle.textAlign,
+      textDirection: textDirection,
       textAlignVertical: TextAlignVertical.center,
       focusNode: _focusNode,
       obscureText: widgetElement.isPassWord,
@@ -555,6 +558,10 @@ mixin BaseInputState on WebFWidgetElementState {
       },
       decoration: decoration,
     );
+
+    // Ensure the input inherits CSS `direction` even when the surrounding Flutter
+    // app Directionality is different.
+    widget = Directionality(textDirection: textDirection, child: widget);
 
     widget = IntrinsicHeight(
       child: widget,
@@ -583,7 +590,7 @@ mixin BaseInputState on WebFWidgetElementState {
       final TextPainter tp = TextPainter(
         text: TextSpan(text: zeros, style: style),
         textScaler: widgetElement.renderStyle.textScaler,
-        textDirection: TextDirection.ltr,
+        textDirection: textDirection,
         maxLines: 1,
       )
         ..layout(minWidth: 0, maxWidth: double.infinity);
@@ -611,7 +618,7 @@ mixin BaseInputState on WebFWidgetElementState {
       final TextPainter tp = TextPainter(
         text: TextSpan(text: zeros, style: style),
         textScaler: widgetElement.renderStyle.textScaler,
-        textDirection: TextDirection.ltr,
+        textDirection: textDirection,
         maxLines: 1,
       )..layout(minWidth: 0, maxWidth: double.infinity);
 
