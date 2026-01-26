@@ -44,8 +44,7 @@ TEST(BlinkFirstPaintStyleSync, EmitsSheetStyleCommandsInFirstBatch) {
   auto* pack = static_cast<UICommandBufferPack*>(context->uiCommandBuffer()->data());
   auto* items = static_cast<UICommandItem*>(pack->data);
 
-  EXPECT_TRUE(HasCommand(items, pack->length, UICommand::kClearSheetStyle));
-  EXPECT_TRUE(HasCommand(items, pack->length, UICommand::kSetSheetStyleById) ||
-              HasCommand(items, pack->length, UICommand::kSetSheetStyle));
+  EXPECT_TRUE(HasCommand(items, pack->length, UICommand::kClearStyle));
+  EXPECT_TRUE(HasCommand(items, pack->length, UICommand::kSetStyleById));
 }
 
