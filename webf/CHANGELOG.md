@@ -1,3 +1,11 @@
+## 0.24.8+1
+
+### Bug Fixes
+
+- **DOM/Style**: flush styles after DOM/inline-style UICommand batches so layout queries (e.g.
+  `offsetLeft`/`offsetWidth`) observe up-to-date selector matching and computed styles.
+- **Viewport**: remove redundant viewport size change notifications triggered during layout.
+
 ## 0.24.8
 
 ### Major Features
