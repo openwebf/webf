@@ -117,6 +117,11 @@ const String BORDER_TOP_LEFT_RADIUS = 'borderTopLeftRadius';
 const String BORDER_TOP_RIGHT_RADIUS = 'borderTopRightRadius';
 const String BORDER_BOTTOM_RIGHT_RADIUS = 'borderBottomRightRadius';
 const String BORDER_BOTTOM_LEFT_RADIUS = 'borderBottomLeftRadius';
+// Logical border radius (CSS Logical Properties)
+const String BORDER_START_START_RADIUS = 'borderStartStartRadius';
+const String BORDER_START_END_RADIUS = 'borderStartEndRadius';
+const String BORDER_END_START_RADIUS = 'borderEndStartRadius';
+const String BORDER_END_END_RADIUS = 'borderEndEndRadius';
 
 const String FONT = 'font';
 const String FONT_STYLE = 'fontStyle';
