@@ -1,3 +1,32 @@
+## 0.24.8
+
+### Major Features
+
+- **Bridge/CSS**: implement CSS cascade layers (`@layer`) end-to-end in the Blink/bridge pipeline;
+  add `CSSLayerBlockRule`/`CSSLayerStatementRule` bindings and integration coverage (Tailwind CSS
+  `@layer` support) (#814).
+- **DevTools**: long-press the floating panel button to copy the render object tree to clipboard (
+  #820).
+
+### Performance Improvements
+
+- **DOM/Style**: batch/coalesce style flushes triggered by `childList` mutations to avoid
+  synchronous recalcs during large inserts (e.g. infinite scrolling) (#825).
+
+### Bug Fixes
+
+- **CSS/Selectors**: recalculate nested styles after `childList` mutations so general sibling
+  selectors update correctly after DOM insertions (e.g. Tailwind `.space-y-*`) (#823, #825).
+- **Bridge/CSS**: fix cascade layer ordering to match expected precedence.
+- **Rendering/Widget**: honor percentage widths (e.g. `width: 100%`) for `RenderWidget` hosted
+  Flutter subtrees once containing block width is definite (#822).
+- **Rendering/Flex**: avoid cross-axis center shift when free space is 0 and only the tallest item
+  triggers the border-box centering tweak; add regression coverage (#819).
+- **CSS/Values**: trim parsed CSS function arguments to handle whitespace correctly.
+- **Build/iOS**: fix iOS builds after adding cascade layer bindings by adding missing generated
+  sources.
+- **Debugging**: include stack traces in `WebFController.loadingError` for easier diagnosis (#822).
+
 ## 0.24.7
 
 ### Performance Improvements
