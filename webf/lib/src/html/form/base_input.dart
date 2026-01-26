@@ -566,21 +566,32 @@ mixin BaseInputState on WebFWidgetElementState {
     }
 
     // Apply a default min-width of ~20ch when CSS width is auto.
-    // Use the width of 18 '0' glyphs with current text style, similar to CSS `ch` unit.
+    // Use the width of N '0' glyphs with current text style (N comes from the `size` attribute, default 20),
+    // similar to CSS `ch` unit.
     if (isAutoWidth && widgetElement is! FlutterTextAreaElement) {
+      // HTML: <input size> defines the number of characters visible.
+      // Default is 20 for text-like inputs.
+      int columns = 18;
+      final String? sizeAttr = widgetElement.getAttribute('size');
+      if (sizeAttr != null) {
+        final int? parsed = int.tryParse(sizeAttr);
+        if (parsed != null && parsed > 0) columns = parsed;
+      }
+
       final TextStyle style = widgetElement._textStyle;
+      final String zeros = List.filled(columns, '0').join();
       final TextPainter tp = TextPainter(
-        text: TextSpan(text: '000000000000000000', style: style), // 18 zeros
+        text: TextSpan(text: zeros, style: style),
         textScaler: widgetElement.renderStyle.textScaler,
         textDirection: TextDirection.ltr,
         maxLines: 1,
       )
         ..layout(minWidth: 0, maxWidth: double.infinity);
 
-      final double ch18Width = tp.width;
+      final double chWidth = tp.width;
       // Respect CSS min-width if set (default UA style may set min-width: 140px)
       final double cssMinWidth = widgetElement.renderStyle.minWidth.computedValue;
-      final double minWidth = math.max(ch18Width, cssMinWidth);
+      final double minWidth = math.max(chWidth, cssMinWidth);
 
       widget = ConstrainedBox(constraints: BoxConstraints(maxWidth: minWidth, minWidth: minWidth), child: widget);
     }

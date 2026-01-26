@@ -8,12 +8,15 @@
 
 import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
+import 'package:webf/dom.dart' as dom;
 
 import 'base_input.dart';
 import 'radio.dart';
 
 mixin BaseCheckedElement on BaseInputElement {
   bool _checked = false;
+
+  String get _earlyCheckedKey => hashCode.toString();
 
   bool getChecked() {
     if (this is FlutterInputElement) {
@@ -38,33 +41,45 @@ mixin BaseCheckedElement on BaseInputElement {
         if (input.type == 'radio') {
           _setRadioChecked(value);
         } else if (input.type == 'checkbox') {
-          // Store early checkbox state using value as unique key
-          String? attrValue = input.getAttribute('value');
-          String checkboxKey = (attrValue != null && attrValue.isNotEmpty) ? attrValue : input.hashCode.toString();
-          CheckboxElementState.setEarlyCheckboxState(checkboxKey, value);
+          // Persist on the element immediately and also cache for restoration when state mounts.
+          _checked = value;
+          CheckboxElementState.setEarlyCheckboxState(_earlyCheckedKey, value);
         }
         return;
       }
-      
-      state?.requestUpdateState(() {
-        switch (input.type) {
-          case 'radio':
-            _setRadioChecked(value);
-            break;
-          case 'checkbox':
-            _checked = value;
-            break;
-          default:
-            _checked = value;
-        }
-      });
+
+      switch (input.type) {
+        case 'radio':
+          _setRadioChecked(value);
+          // _setRadioChecked updates group selection immediately; request a rebuild for the widget.
+          state?.requestUpdateState();
+          break;
+        case 'checkbox':
+        default:
+          // Keep checkedness synchronous for JS reads, then rebuild the widget.
+          _checked = value;
+          state?.requestUpdateState();
+          break;
+      }
     }
   }
 
   bool _getRadioChecked() {
     if (this is BaseRadioElement) {
       BaseRadioElement radio = this as BaseRadioElement;
-      return state?.groupValue == '${radio.name}-${radio.value}';
+      final String groupName = (state as RadioElementState?)?.cachedGroupName ?? radio.name;
+      final String expected = '$groupName-${radio.value}';
+
+      // Before widget state mounts, honor boolean attribute presence and any group selection
+      // already recorded by early checked changes.
+      if (state == null) {
+        if (hasAttribute('checked')) return true;
+        final bool? early = RadioElementState.getEarlyCheckedState(radio.hashCode.toString());
+        if (early != null) return early;
+        return RadioElementState.getGroupValueForName(groupName) == expected;
+      }
+
+      return (state as RadioElementState).groupValue == expected;
     }
     return false;
   }
@@ -72,9 +87,20 @@ mixin BaseCheckedElement on BaseInputElement {
   void _setRadioChecked(bool newValue) {
     if (this is BaseRadioElement) {
       BaseRadioElement radio = this as BaseRadioElement;
-      String radioKey = radio.value;
+      String radioKey = radio.hashCode.toString();
       
       if (state == null) {
+        // Update group selection immediately so `el.checked` reads correctly before mount.
+        final String radioName = radio.name;
+        if (newValue && radioName.isNotEmpty) {
+          RadioElementState.setGroupValueForName(radioName, '$radioName-${radio.value}');
+        } else if (!newValue && radioName.isNotEmpty) {
+          final String expected = '$radioName-${radio.value}';
+          if (RadioElementState.getGroupValueForName(radioName) == expected) {
+            RadioElementState.setGroupValueForName(radioName, '');
+          }
+        }
+
         RadioElementState.setEarlyCheckedState(radioKey, newValue);
         return;
       }
@@ -84,6 +110,8 @@ mixin BaseCheckedElement on BaseInputElement {
 
       if (newValue) {
         String newGroupValue = '$radioName-${radio.value}';
+        // Update shared group selection immediately so all radios read consistent checkedness.
+        RadioElementState.setGroupValueForName(radioName, newGroupValue);
         Map<String, String> map = <String, String>{};
         map[radioName] = newGroupValue;
 
@@ -95,8 +123,9 @@ mixin BaseCheckedElement on BaseInputElement {
       } else {
         // When unchecking, only clear if this radio is currently the selected one
         String currentRadioValue = '$radioName-${radio.value}';
-        String currentGroupValue = state?.groupValue ?? '';
+        String currentGroupValue = (state as RadioElementState).groupValue;
         if (currentGroupValue == currentRadioValue) {
+          RadioElementState.setGroupValueForName(radioName, '');
           state?.groupValue = '';
           Map<String, String> map = <String, String>{};
           map[radioName] = '';
@@ -130,17 +159,27 @@ mixin CheckboxElementState on WebFWidgetElementState {
   static bool? getEarlyCheckboxState(String key) {
     return _earlyCheckboxStates[key];
   }
+
+  static void clearEarlyCheckboxState(String key) {
+    _earlyCheckboxStates.remove(key);
+  }
   
   BaseCheckedElement get _checkedElement => widgetElement as BaseCheckedElement;
 
   void initCheckboxState() {
-    // Check if React already set checked=true before state was initialized
-    String? attrValue = _checkedElement.getAttribute('value');
-    String checkboxKey = (attrValue != null && attrValue.isNotEmpty) ? attrValue : _checkedElement.hashCode.toString();
-    bool wasSetCheckedEarly = CheckboxElementState.getEarlyCheckboxState(checkboxKey) == true;
-    
-    // Restore early checked state
-    if (wasSetCheckedEarly) {
+    final String checkboxKey = _checkedElement.hashCode.toString();
+    final bool? early = CheckboxElementState.getEarlyCheckboxState(checkboxKey);
+    // Restore early checked state and then clear it to avoid leaks/cross-page interference.
+    if (early != null) {
+      setState(() {
+        (_checkedElement as dynamic)._checked = early;
+      });
+      CheckboxElementState.clearEarlyCheckboxState(checkboxKey);
+      return;
+    }
+
+    // Initialize from attribute presence for HTML parsing: <input checked> yields value="".
+    if ((_checkedElement as dynamic).hasAttribute('checked') == true) {
       setState(() {
         (_checkedElement as dynamic)._checked = true;
       });
@@ -157,10 +196,10 @@ mixin CheckboxElementState on WebFWidgetElementState {
         onChanged: _checkedElement.disabled
             ? null
             : (bool? newValue) {
-                setState(() {
-                  _checkedElement.setChecked(newValue!);
-                  _checkedElement.dispatchEvent(Event('change'));
-                });
+                if (newValue == null) return;
+                _checkedElement.setChecked(newValue);
+                _checkedElement.dispatchEvent(dom.InputEvent(inputType: 'checkbox', data: newValue.toString()));
+                _checkedElement.dispatchEvent(dom.Event('change'));
               },
       ),
     );
