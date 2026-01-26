@@ -472,17 +472,6 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
         Timer(_nativeMediaQueryAffectingValueDebounceDuration, _scheduleNativeMediaQueryAffectingValueFlushAfterFrame);
   }
 
-  // Called when the WebF viewport RenderObject's size changes (e.g. when the
-  // embedding widget constrains WebF to a new width/height). This is distinct
-  // from Flutter window metric changes and is required so that C++ can
-  // re-evaluate size-dependent media queries and CSS viewport units.
-  void notifyViewportSizeChanged() {
-    if (_inited && !_disposed && WebFController.getControllerOfJSContextId(_contextId) != null) {
-      _scheduleNativeMediaQueryAffectingValueChanged();
-      window.resizeViewportRelatedElements();
-    }
-  }
-
   void _scheduleNativeMediaQueryAffectingValueFlushAfterFrame() {
     _nativeMediaQueryAffectingValueDebounceTimer = null;
     if (_nativeMediaQueryAffectingValuePostFrameCallbackScheduled) return;
