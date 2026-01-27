@@ -32,7 +32,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 const String demoEntryUrl = 'http://localhost:5173';
 const String demoControllerName = 'demo';
-const String demoInitialRoute = '/features';
+const String demoInitialRoute = '/';
 const Map<String, dynamic>? demoInitialState = null;
 
 bool? _resolveWebFDarkModeOverride(AdaptiveThemeMode mode) {
