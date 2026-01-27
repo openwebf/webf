@@ -45,6 +45,8 @@ describe('Blob API', () => {
     div.style.border = '1px solid #000';
     document.body.appendChild(div);
 
+    await waitForFrame();
+
     const blob = await div.toBlob(1);
     // @ts-ignore
     const base64 = await blob.base64();

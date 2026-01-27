@@ -723,6 +723,10 @@ void ContainerNode::InsertBeforeCommon(Node& next_child, Node& new_child) {
   assert(!new_child.nextSibling());
   assert(!new_child.previousSibling());
 
+  if (auto* context = GetExecutingContext()) {
+    context->MaybeBeginFirstPaintStyleSync(*this, new_child, !hasChildren());
+  }
+
   Node* prev = next_child.previousSibling();
   assert(last_child_ != prev);
   next_child.SetPreviousSibling(&new_child);
@@ -744,6 +748,11 @@ void ContainerNode::InsertBeforeCommon(Node& next_child, Node& new_child) {
 }
 
 void ContainerNode::AppendChildCommon(Node& child) {
+  const bool was_empty = !hasChildren();
+  if (auto* context = GetExecutingContext()) {
+    context->MaybeBeginFirstPaintStyleSync(*this, child, was_empty);
+  }
+
   child.SetParentOrShadowHostNode(this);
   if (last_child_) {
     child.SetPreviousSibling(last_child_);

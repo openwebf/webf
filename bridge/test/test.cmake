@@ -36,6 +36,7 @@ list(APPEND WEBF_TEST_SOURCE
   ./core/html/html_link_element_rel_list_test.cc
   ./core/timing/performance_test.cc
   ./foundation/shared_ui_command_test.cc
+  ./foundation/blink_first_paint_style_sync_test.cc
   ./foundation/ui_command_ring_buffer_test.cc
   ./foundation/ui_command_strategy_test.cc
   ./foundation/string/string_impl_unittest.cc

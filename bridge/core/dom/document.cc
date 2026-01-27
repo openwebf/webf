@@ -684,6 +684,7 @@ void Document::UpdateStyleForThisDocument() {
   style_engine.InvalidateEnvDependentStylesIfNeeded();
   UpdateStyleInvalidationIfNeeded();
   UpdateStyle();
+  context->MaybeCommitFirstPaintStyleSync();
 
   auto duration_ms =
       std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count();

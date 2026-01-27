@@ -108,6 +108,10 @@ class UICommandPackageRingBuffer {
                   bool request_ui_update = true);
   void AddCommandItem(const UICommandItem& item, UICommand type, bool request_ui_update = true);
   void FlushCurrentPackage();
+  // Push any deferred packages to the ring buffer (no-op while a first-paint
+  // barrier is active).
+  void FlushDeferredPackages();
+  bool HasDeferredPackages() const;
   
   // Consumer operations
   std::unique_ptr<UICommandPackage> PopPackage();
@@ -139,6 +143,10 @@ class UICommandPackageRingBuffer {
   std::atomic<size_t> write_index_{0};
   std::atomic<size_t> read_index_{0};
   
+  // Deferred packages (first-paint barrier) held on the producer thread.
+  std::mutex deferred_mutex_;
+  std::vector<std::unique_ptr<UICommandPackage>> deferred_packages_;
+
   // Overflow handling
   std::mutex overflow_mutex_;
   std::vector<std::unique_ptr<UICommandPackage>> overflow_packages_;
