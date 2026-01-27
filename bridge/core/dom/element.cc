@@ -40,6 +40,7 @@
 #include "foundation/utility/make_visitor.h"
 #include "bindings/qjs/native_string_utils.h"
 #include "html_element_type_helper.h"
+#include "html_names.h"
 #include "mutation_observer_interest_group.h"
 #include "plugin_api/element.h"
 #include "qjs_element.h"
@@ -74,6 +75,26 @@ ElementAttributes& Element::EnsureElementAttributes() const {
   return *attributes_;
 }
 
+namespace {
+
+bool IsPotentiallyDisableableFormControl(const Element& element) {
+  // Minimal set for CSS :enabled/:disabled support that covers WebF's current
+  // form-control elements.
+  //
+  // Note: Avoid relying on thread-local generated `html_names::*` atoms here.
+  // In some configurations selector matching can run on a thread where
+  // `html_names::Init()` hasn't been called yet, so those atoms may still be
+  // null.
+  const AtomicString tag_name = element.localName();
+  if (tag_name.IsNull()) {
+    return false;
+  }
+  return tag_name == "button" || tag_name == "input" || tag_name == "select" || tag_name == "textarea" ||
+         tag_name == "option";
+}
+
+}  // namespace
+
 AttributeCollection Element::Attributes() const {
   if (!HasElementData()) {
     return AttributeCollection();
@@ -92,6 +113,28 @@ ContainerNode* Element::ParentElementOrDocumentFragment() const {
 
 bool Element::hasAttribute(const AtomicString& name, ExceptionState& exception_state) {
   return EnsureElementAttributes().hasAttribute(name, exception_state);
+}
+
+bool Element::MatchesEnabledPseudoClass() const {
+  if (!IsPotentiallyDisableableFormControl(*this)) {
+    return false;
+  }
+  return !IsDisabledFormControl();
+}
+
+bool Element::IsDisabledFormControl() const {
+  if (!IsPotentiallyDisableableFormControl(*this)) {
+    return false;
+  }
+
+  auto& attrs = EnsureElementAttributes();
+  for (auto it = attrs.begin(); it != attrs.end(); ++it) {
+    const AtomicString& name = it->first;
+    if (!name.IsNull() && name == "disabled") {
+      return true;
+    }
+  }
+  return false;
 }
 
 AtomicString Element::getAttribute(const AtomicString& name, ExceptionState& exception_state) const {
