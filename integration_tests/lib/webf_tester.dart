@@ -149,6 +149,11 @@ class _WebFTesterState extends State<WebFTester> {
                 } else {
                   await _ensureWindowSize(newWidth, newHeight);
                 }
+                // Ensure the viewport has been laid out with the new constraints,
+                // then sync the native media query cache (Blink) so @media rules
+                // are evaluated against the correct innerWidth/innerHeight.
+                await WidgetsBinding.instance.endOfFrame;
+                controller.view.notifyViewportSizeChangedFromLayout();
                 return Future.value(null);
               case 'captureFlutterScreenshot':
                 // Return base64 encoded PNG bytes for the whole Flutter app.
