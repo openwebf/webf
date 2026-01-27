@@ -29,6 +29,8 @@ class FlutterTextAreaElement extends WidgetElement with BaseInputElement {
   @override
   Map<String, dynamic> get defaultStyle => _textAreaDefaultStyle;
 
+  bool _dirtyDefaultValue = false;
+  String _defaultValue = '';
 
   @override
   void initializeDynamicProperties(Map<String, BindingObjectProperty> properties) {
@@ -78,11 +80,13 @@ class FlutterTextAreaElement extends WidgetElement with BaseInputElement {
 
   // For textarea, defaultValue reflects its text content.
   @override
-  String? get defaultValue => textContent;
+  String? get defaultValue => _dirtyDefaultValue ? _defaultValue : textContent;
 
   @override
   set defaultValue(String? text) {
     final String v = text?.toString() ?? '';
+    _defaultValue = v;
+    _dirtyDefaultValue = true;
     // Find all text nodes and prefer updating the first one (original node passed in creation),
     // then remove other text siblings to keep a single text node, preserving external references.
     List<TextNode> textNodes = [];

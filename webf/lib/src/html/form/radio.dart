@@ -64,6 +64,15 @@ mixin RadioElementState on WebFWidgetElementState {
 
   static final Map<String, String> _groupValues = <String, String>{};
   
+  // Public helpers for early/synchronous checkedness before widget state mounts.
+  static String getGroupValueForName(String groupName) {
+    return _groupValues[groupName] ?? '';
+  }
+
+  static void setGroupValueForName(String groupName, String value) {
+    _updateGroupValues(groupName, value);
+  }
+
   // Helper to update group values
   static void _updateGroupValues(String key, String value) {
     if (value.isEmpty) {
@@ -93,6 +102,10 @@ mixin RadioElementState on WebFWidgetElementState {
   
   static bool? getEarlyCheckedState(String key) {
     return _earlyCheckedStates[key];
+  }
+
+  static void clearEarlyCheckedState(String key) {
+    _earlyCheckedStates.remove(key);
   }
   
   static Map<String, bool> get earlyCheckedStates => _earlyCheckedStates;
@@ -133,19 +146,25 @@ mixin RadioElementState on WebFWidgetElementState {
       });
     });
 
-    // Check if this radio is initially checked or has early checked state
-    String radioKey = _radioElement.value;
-    bool wasSetCheckedEarly = RadioElementState.getEarlyCheckedState(radioKey) == true;
-    bool isInitiallyChecked = _radioElement.getAttribute('checked') == 'true';
+    // Check if this radio is initially checked or has early checked state.
+    // Use element identity as key to avoid collisions between different groups with the same value.
+    String radioKey = _radioElement.hashCode.toString();
+    final bool? early = RadioElementState.getEarlyCheckedState(radioKey);
+    final bool isInitiallyChecked = _radioElement.hasAttribute('checked');
     
     
-    if (wasSetCheckedEarly || isInitiallyChecked) {
+    if (early != null && early != true) {
+      RadioElementState.clearEarlyCheckedState(radioKey);
+    }
+
+    if (early == true || isInitiallyChecked) {
       String radioValue = _radioElement.value;
       String groupName = _cachedGroupName ?? _radioElement.name;
       String singleRadioValue = '$groupName-$radioValue';
       _updateGroupValues(groupName, singleRadioValue);
       _currentGroupValue = singleRadioValue; // Cache at instance level
       setState(() {});
+      if (early != null) RadioElementState.clearEarlyCheckedState(radioKey);
     } else {
       String groupName = _cachedGroupName ?? _radioElement.name;
       if (_groupValues.containsKey(groupName)) {

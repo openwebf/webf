@@ -1779,7 +1779,10 @@ class LoadingState {
 
   /// Records a loading phase with optional parameters
   void recordPhase(String phaseName, {Map<String, dynamic>? parameters, String? parentPhase}) {
-    final now = DateTime.now();
+    // Make the first recorded phase deterministic: treat `constructor` as the
+    // exact start time of this loading session. This avoids flaky 0/1ms deltas
+    // when the phase is recorded immediately after `LoadingState()` is created.
+    final DateTime now = (phaseName == phaseConstructor && _startTime != null) ? _startTime! : DateTime.now();
     final duration =
         _lastPhaseTime != null ? now.difference(_lastPhaseTime!) : null;
 

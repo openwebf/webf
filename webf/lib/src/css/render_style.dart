@@ -202,6 +202,14 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   CSSBorderRadius get borderBottomLeftRadius;
 
+  CSSBorderRadius get borderStartStartRadius;
+
+  CSSBorderRadius get borderStartEndRadius;
+
+  CSSBorderRadius get borderEndStartRadius;
+
+  CSSBorderRadius get borderEndEndRadius;
+
   List<BorderSide>? get borderSides;
 
   List<WebFBoxShadow>? get shadows;
@@ -247,6 +255,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   TextAlign get textAlign;
 
   TextDirection get direction;
+
+  CSSWritingMode get writingMode;
 
   // CSS word-break (inherited)
   WordBreak get wordBreak;
@@ -1562,6 +1572,14 @@ class CSSRenderStyle extends RenderStyle
         return borderBottomLeftRadius;
       case BORDER_BOTTOM_RIGHT_RADIUS:
         return borderBottomRightRadius;
+      case BORDER_START_START_RADIUS:
+        return borderStartStartRadius;
+      case BORDER_START_END_RADIUS:
+        return borderStartEndRadius;
+      case BORDER_END_START_RADIUS:
+        return borderEndStartRadius;
+      case BORDER_END_END_RADIUS:
+        return borderEndEndRadius;
       // Margin
       case MARGIN_LEFT:
         return marginLeft;
@@ -1991,6 +2009,18 @@ class CSSRenderStyle extends RenderStyle
         break;
       case BORDER_BOTTOM_RIGHT_RADIUS:
         borderBottomRightRadius = value;
+        break;
+      case BORDER_START_START_RADIUS:
+        borderStartStartRadius = value;
+        break;
+      case BORDER_START_END_RADIUS:
+        borderStartEndRadius = value;
+        break;
+      case BORDER_END_START_RADIUS:
+        borderEndStartRadius = value;
+        break;
+      case BORDER_END_END_RADIUS:
+        borderEndEndRadius = value;
         break;
       // Margin
       case MARGIN_LEFT:
@@ -2472,6 +2502,10 @@ class CSSRenderStyle extends RenderStyle
       case BORDER_TOP_RIGHT_RADIUS:
       case BORDER_BOTTOM_LEFT_RADIUS:
       case BORDER_BOTTOM_RIGHT_RADIUS:
+      case BORDER_START_START_RADIUS:
+      case BORDER_START_END_RADIUS:
+      case BORDER_END_START_RADIUS:
+      case BORDER_END_END_RADIUS:
         value = CSSBorderRadius.parseBorderRadius(propertyValue, renderStyle, propertyName);
         break;
       case OPACITY:

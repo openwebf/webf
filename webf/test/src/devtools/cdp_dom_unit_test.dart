@@ -439,6 +439,7 @@ void main() {
     final textNodeId = prepared.controller.view.forDevtoolsNodeId(text);
     domProbe.invoke(10, 'setNodeValue', {'nodeId': textNodeId, 'value': 'Hello'});
     expect(text.data, 'Hello');
+    await tester.pump(const Duration(milliseconds: 50));
   });
 
   testWidgets('DOM.removeAttribute removes attribute', (tester) async {

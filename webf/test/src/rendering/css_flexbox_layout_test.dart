@@ -559,6 +559,46 @@ void main() {
       expect(item2.getBoundingClientRect().left, equals(200.0)); // 300 - 100
     });
 
+    testWidgets('margin-inline-start auto in RTL pushes item to left', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'margin-inline-start-auto-rtl-flex-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div style="
+                display: flex;
+                direction: rtl;
+                width: 300px;
+                height: 100px;
+                background-color: #eee;
+              ">
+                <div id="item1" style="
+                  width: 100px;
+                  height: 50px;
+                  background-color: red;
+                ">Right</div>
+                <div id="item2" style="
+                  margin-inline-start: auto;
+                  width: 100px;
+                  height: 50px;
+                  background-color: green;
+                ">Left</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final item1 = prepared.getElementById('item1');
+      final item2 = prepared.getElementById('item2');
+
+      // In RTL flex row, the first item starts on the right.
+      expect(item1.getBoundingClientRect().left, equals(200.0)); // 300 - 100
+      // margin-inline-start:auto should push the second item to the inline-end (left).
+      expect(item2.getBoundingClientRect().left, equals(0.0));
+    });
+
     testWidgets('margin auto centers in both directions', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,

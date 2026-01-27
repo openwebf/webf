@@ -53,6 +53,41 @@ void main() {
       expect(cOffset.dx, closeTo(150.0, 2.0));
     });
 
+    testWidgets('columns layout from right to left in RTL', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-cols-rtl-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; direction: rtl; width: 250px; grid-template-columns: 50px 100px 100px; column-gap: 0;">
+            <div id="a" style="height:20px">A</div>
+            <div id="b" style="height:20px">B</div>
+            <div id="c" style="height:20px">C</div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final a = prepared.getElementById('a');
+      final b = prepared.getElementById('b');
+      final c = prepared.getElementById('c');
+
+      final RenderGridLayout renderer = grid.attachedRenderer as RenderGridLayout;
+      expect(renderer.size.width, equals(250));
+
+      final Offset aOffset =
+          getLayoutTransformTo(a.attachedRenderer as RenderBox, renderer, excludeScrollOffset: true);
+      final Offset bOffset =
+          getLayoutTransformTo(b.attachedRenderer as RenderBox, renderer, excludeScrollOffset: true);
+      final Offset cOffset =
+          getLayoutTransformTo(c.attachedRenderer as RenderBox, renderer, excludeScrollOffset: true);
+
+      expect(aOffset.dx, closeTo(200.0, 1.0));
+      expect(bOffset.dx, closeTo(100.0, 1.0));
+      expect(cOffset.dx, closeTo(0.0, 1.0));
+    });
+
     testWidgets('percentage columns resolve against definite width', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,

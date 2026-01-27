@@ -76,6 +76,7 @@ class RenderViewportBox extends RenderBox
 
   @override
   void performLayout() {
+    final Size? previousBoxSize = _boxSize;
     if (_viewportSize != null) {
       double width = _viewportSize!.width;
       double height = _viewportSize!.height - _bottomInset;
@@ -94,6 +95,14 @@ class RenderViewportBox extends RenderBox
             math.min(constraints.maxHeight, currentView.physicalSize.height / currentView.devicePixelRatio));
         size = constraints.constrain(preferredSize);
       }
+    }
+
+    // Notify the controller when the viewport's RenderObject size actually
+    // changes. This keeps native media query caches and resize listeners in
+    // sync even when Flutter window metrics are unchanged (e.g. resizing via
+    // widget constraints).
+    if (previousBoxSize == null || previousBoxSize != _boxSize) {
+      controller.view.notifyViewportSizeChangedFromLayout();
     }
 
     RenderObject? child = firstChild;

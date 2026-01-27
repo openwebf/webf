@@ -4382,16 +4382,19 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
 
       // Calculate margin auto children in the main axis.
-      double mainAxisMarginAutoChildrenCount = 0;
-
+      int mainAxisAutoMarginCount = 0;
       for (_RunChild runChild in runChildrenList) {
-        if (runChild.hasAutoMainAxisMargin) {
-          mainAxisMarginAutoChildrenCount++;
+        if (isHorizontal) {
+          if (runChild.marginLeftAuto) mainAxisAutoMarginCount++;
+          if (runChild.marginRightAuto) mainAxisAutoMarginCount++;
+        } else {
+          if (runChild.marginTopAuto) mainAxisAutoMarginCount++;
+          if (runChild.marginBottomAuto) mainAxisAutoMarginCount++;
         }
       }
 
-      // Justify-content has no effect if auto margin of child exists in the main axis.
-      if (mainAxisMarginAutoChildrenCount != 0) {
+      // Justify-content has no effect if any auto margin exists in the main axis.
+      if (mainAxisAutoMarginCount != 0) {
         leadingSpace = 0.0;
         betweenSpace = 0.0;
       }
@@ -4403,6 +4406,13 @@ class RenderFlexLayout extends RenderLayoutBox {
 
       final bool runAllChildrenAtMaxCross = _areAllRunChildrenAtMaxCrossExtent(runChildrenList, runCrossAxisExtent);
 
+      // Per-auto-margin main-axis share. Auto margins in the main axis absorb free space.
+      // https://www.w3.org/TR/css-flexbox-1/#auto-margins
+      final double perMainAxisAutoMargin =
+          mainAxisAutoMarginCount == 0 ? 0.0 : (math.max(0, remainingSpace) / mainAxisAutoMarginCount);
+
+      final bool mainAxisStartAtPhysicalStart = _isMainAxisStartAtPhysicalStart();
+
       for (_RunChild runChild in runChildrenList) {
         RenderBox child = runChild.child;
         // Flow-aware margins in the main axis.
@@ -4412,15 +4422,25 @@ class RenderFlexLayout extends RenderLayoutBox {
         final double childMainSizeOnly = _getMainSize(child);
 
         // Position the child along the main axis respecting direction.
+        final bool mainAxisStartAuto = isHorizontal
+            ? (mainAxisStartAtPhysicalStart ? runChild.marginLeftAuto : runChild.marginRightAuto)
+            : (mainAxisStartAtPhysicalStart ? runChild.marginTopAuto : runChild.marginBottomAuto);
+        final bool mainAxisEndAuto = isHorizontal
+            ? (mainAxisStartAtPhysicalStart ? runChild.marginRightAuto : runChild.marginLeftAuto)
+            : (mainAxisStartAtPhysicalStart ? runChild.marginBottomAuto : runChild.marginTopAuto);
+        final double startAutoSpace = mainAxisStartAuto ? perMainAxisAutoMargin : 0.0;
+        final double endAutoSpace = mainAxisEndAuto ? perMainAxisAutoMargin : 0.0;
+
         if (flipMainAxis) {
           // In reversed main axis (e.g., column-reverse or RTL row), advance from the
           // far edge by the start margin and the child's own size. Do not subtract the
           // trailing (end) margin here — it separates this item from the next.
           final double adjStartMargin = _calculateMainAxisMarginForJustContentType(childStartMargin);
-          childMainPosition -= (adjStartMargin + childMainSizeOnly);
+          childMainPosition -= (startAutoSpace + adjStartMargin + childMainSizeOnly);
         } else {
           // In normal flow, advance by the start margin before placing.
           childMainPosition += _calculateMainAxisMarginForJustContentType(childStartMargin);
+          childMainPosition += startAutoSpace;
         }
         double? childCrossPosition;
         AlignSelf alignSelf = runChild.alignSelf;
@@ -4507,53 +4527,28 @@ class RenderFlexLayout extends RenderLayoutBox {
           runAllChildrenAtMaxCross: runAllChildrenAtMaxCross,
         );
 
-        // Calculate margin auto length according to CSS spec rules
+        // Calculate cross-axis auto margin positioning according to CSS spec rules.
         // https://www.w3.org/TR/css-flexbox-1/#auto-margins
-        // margin auto takes up available space in the remaining space
-        // between flex items and flex container.
         if (child is RenderBoxModel) {
-          double horizontalRemainingSpace;
-          double verticalRemainingSpace;
           // Margin auto does not work with negative remaining space.
-          double mainAxisRemainingSpace = math.max(0, remainingSpace);
-          double crossAxisRemainingSpace = math.max(0, crossAxisContentSize - childCrossAxisExtent);
+          final double crossAxisRemainingSpace = math.max(0, crossAxisContentSize - childCrossAxisExtent);
 
           if (isHorizontal) {
-            horizontalRemainingSpace = mainAxisRemainingSpace;
-            verticalRemainingSpace = crossAxisRemainingSpace;
-            if (runChild.marginLeftAuto) {
-              if (runChild.marginRightAuto) {
-                childMainPosition += (horizontalRemainingSpace / mainAxisMarginAutoChildrenCount) / 2;
-                betweenSpace = (horizontalRemainingSpace / mainAxisMarginAutoChildrenCount) / 2;
-              } else {
-                childMainPosition += horizontalRemainingSpace / mainAxisMarginAutoChildrenCount;
-              }
-            }
-
+            // Cross axis is vertical (top/bottom).
             if (runChild.marginTopAuto) {
               if (runChild.marginBottomAuto) {
-                childCrossPosition = childCrossPosition! + verticalRemainingSpace / 2;
+                childCrossPosition = childCrossPosition! + crossAxisRemainingSpace / 2;
               } else {
-                childCrossPosition = childCrossPosition! + verticalRemainingSpace;
+                childCrossPosition = childCrossPosition! + crossAxisRemainingSpace;
               }
             }
           } else {
-            horizontalRemainingSpace = crossAxisRemainingSpace;
-            verticalRemainingSpace = mainAxisRemainingSpace;
-            if (runChild.marginTopAuto) {
-              if (runChild.marginBottomAuto) {
-                childMainPosition += (verticalRemainingSpace / mainAxisMarginAutoChildrenCount) / 2;
-                betweenSpace = (verticalRemainingSpace / mainAxisMarginAutoChildrenCount) / 2;
-              } else {
-                childMainPosition += verticalRemainingSpace / mainAxisMarginAutoChildrenCount;
-              }
-            }
-
+            // Cross axis is horizontal (left/right).
             if (runChild.marginLeftAuto) {
               if (runChild.marginRightAuto) {
-                childCrossPosition = childCrossPosition! + horizontalRemainingSpace / 2;
+                childCrossPosition = childCrossPosition! + crossAxisRemainingSpace / 2;
               } else {
-                childCrossPosition = childCrossPosition! + horizontalRemainingSpace;
+                childCrossPosition = childCrossPosition! + crossAxisRemainingSpace;
               }
             }
           }
@@ -4581,10 +4576,10 @@ class RenderFlexLayout extends RenderLayoutBox {
         if (flipMainAxis) {
           // After placing in reversed flow, move past the trailing (end) margin,
           // then account for between-space and gaps.
-          childMainPosition -= (childEndMargin + betweenSpace + effectiveGap);
+          childMainPosition -= (childEndMargin + endAutoSpace + betweenSpace + effectiveGap);
         } else {
           // Normal flow: advance by the child size, trailing margin, between-space and gaps.
-          childMainPosition += (childMainSizeOnly + childEndMargin + betweenSpace + effectiveGap);
+          childMainPosition += (childMainSizeOnly + childEndMargin + endAutoSpace + betweenSpace + effectiveGap);
         }
       }
 

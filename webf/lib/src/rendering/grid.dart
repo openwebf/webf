@@ -1930,6 +1930,7 @@ class RenderGridLayout extends RenderLayoutBox {
     final double borderRight = renderStyle.effectiveBorderRightWidth.computedValue;
     final double borderTop = renderStyle.effectiveBorderTopWidth.computedValue;
     final double borderBottom = renderStyle.effectiveBorderBottomWidth.computedValue;
+    final bool isRTL = renderStyle.direction == TextDirection.rtl;
 
     final double horizontalPaddingBorder = paddingLeft + paddingRight + borderLeft + borderRight;
     final double verticalPaddingBorder = paddingTop + paddingBottom + borderTop + borderBottom;
@@ -4380,6 +4381,9 @@ class RenderGridLayout extends RenderLayoutBox {
     }
     final double alignShift =
         _resolveAlignContentShift(renderStyle.alignContent, distributeRows ? 0 : verticalFree);
+    final double contentBoxWidth = isRTL ? math.max(0.0, size.width - horizontalPaddingBorder) : 0.0;
+    final double contentBoxLeft = paddingLeft + borderLeft;
+    final double contentBoxRight = contentBoxLeft + contentBoxWidth;
 
     RenderBox? childForAlignment = firstChild;
     while (childForAlignment != null) {
@@ -4392,11 +4396,74 @@ class RenderGridLayout extends RenderLayoutBox {
       if (distributeRows) {
         additionalY = rowDistributionLeading + pd.rowStart * rowDistributionBetween;
       }
-      double additionalX = justifyShift;
-      if (distributeColumns) {
-        additionalX += pd.columnStart * columnDistributionBetween;
+
+      if (!isRTL) {
+        double additionalX = justifyShift;
+        if (distributeColumns) {
+          additionalX += pd.columnStart * columnDistributionBetween;
+        }
+        pd.offset += Offset(additionalX, additionalY);
+      } else {
+        CSSRenderStyle? childGridStyle;
+        if (childForAlignment is RenderBoxModel) {
+          childGridStyle = childForAlignment.renderStyle;
+        } else if (childForAlignment is RenderEventListener) {
+          final RenderBox? wrapped = childForAlignment.child;
+          if (wrapped is RenderBoxModel) {
+            childGridStyle = wrapped.renderStyle;
+          }
+        }
+
+        final int colIndex = pd.columnStart.clamp(0, math.max(0, colSizes.length - 1));
+        final int colSpan =
+            math.max(1, pd.columnSpan).clamp(1, math.max(1, colSizes.length - colIndex));
+
+        double columnOffset = 0.0;
+        for (int c = 0; c < colIndex && c < colSizes.length; c++) {
+          columnOffset += colSizes[c];
+          columnOffset += colGap;
+        }
+
+        double cellWidth = 0.0;
+        final int colEnd = math.min(colIndex + colSpan, colSizes.length);
+        for (int c = colIndex; c < colEnd; c++) {
+          cellWidth += colSizes[c];
+          if (c < colEnd - 1) cellWidth += colGap;
+        }
+
+        final GridAxisAlignment justifySelfAlignment = _resolveJustifySelfAlignment(childGridStyle);
+        final _GridResolvedMargins childMargins = _resolveGridChildMargins(
+          childGridStyle,
+          cellWidth.isFinite ? cellWidth : null,
+        );
+
+        final double marginHorizontal = childMargins.horizontal;
+        double usedMarginLeft = childMargins.left;
+        double usedMarginRight = childMargins.right;
+        if (childMargins.autoLeft || childMargins.autoRight) {
+          final double free = cellWidth.isFinite ? cellWidth - (childForAlignment.size.width + marginHorizontal) : 0;
+          final double freeSpace = math.max(0, free);
+          if (childMargins.autoLeft && childMargins.autoRight) {
+            usedMarginLeft = freeSpace / 2;
+            usedMarginRight = freeSpace / 2;
+          } else if (childMargins.autoLeft) {
+            usedMarginLeft = freeSpace;
+          } else if (childMargins.autoRight) {
+            usedMarginRight = freeSpace;
+          }
+        }
+
+        final double usedMarginBoxWidth = childForAlignment.size.width + usedMarginLeft + usedMarginRight;
+        final double horizontalExtra = cellWidth.isFinite ? math.max(0, cellWidth - usedMarginBoxWidth) : 0;
+        final double horizontalInset = _alignmentOffsetWithinCell(justifySelfAlignment, horizontalExtra);
+        final double effectiveHorizontalInset = horizontalExtra - horizontalInset;
+
+        final double distributionShift = distributeColumns ? colIndex * columnDistributionBetween : 0.0;
+        final double cellRight = contentBoxRight - justifyShift - distributionShift - columnOffset;
+        final double cellLeft = cellRight - cellWidth;
+        final double x = cellLeft + usedMarginLeft + effectiveHorizontalInset;
+        pd.offset = Offset(x, pd.offset.dy + additionalY);
       }
-      pd.offset += Offset(additionalX, additionalY);
       childForAlignment = pd.nextSibling;
     }
 

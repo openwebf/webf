@@ -248,14 +248,16 @@ void main() {
 
       // Add red class
       div.className = 'red';
-      await tester.pump();
+      div.ownerDocument.updateStyleIfNeeded();
+      await tester.pump(const Duration(milliseconds: 50));
       final redColor = div.renderStyle.color;
       expect(redColor, isNotNull);
       expect(redColor.value.toARGB32(), isNot(equals(0xFF000000))); // not black
 
       // Change to blue class
       div.className = 'blue';
-      await tester.pump();
+      div.ownerDocument.updateStyleIfNeeded();
+      await tester.pump(const Duration(milliseconds: 50));
       final blueColor = div.renderStyle.color;
       expect(blueColor, isNotNull);
       expect(blueColor.value.toARGB32(), isNot(equals(0xFF000000))); // not black
@@ -715,6 +717,7 @@ void main() {
             c.insertBefore(p1, p2);
           })();
         ''');
+        prepared.document.updateStyleIfNeeded();
       });
 
       await tester.pump();

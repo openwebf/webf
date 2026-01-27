@@ -21,15 +21,25 @@ mixin CSSBoxMixin on RenderStyle {
   final ImageConfiguration imageConfiguration = ImageConfiguration.empty;
 
   CSSBoxDecoration? _cachedDecoration;
+  TextDirection? _cachedDecorationDirection;
+  CSSWritingMode? _cachedDecorationWritingMode;
 
   @override
   void resetBoxDecoration() {
     _cachedDecoration = null;
+    _cachedDecorationDirection = null;
+    _cachedDecorationWritingMode = null;
   }
 
   /// What decoration to paint, should get value after layout.
   CSSBoxDecoration? get decoration {
-    if (_cachedDecoration != null) return _cachedDecoration;
+    final TextDirection currentDirection = direction;
+    final CSSWritingMode currentWritingMode = writingMode;
+    if (_cachedDecoration != null &&
+        _cachedDecorationDirection == currentDirection &&
+        _cachedDecorationWritingMode == currentWritingMode) {
+      return _cachedDecoration;
+    }
 
     List<Radius>? radius = this.borderRadius;
     List<BorderSide>? borderSides = this.borderSides;
@@ -96,8 +106,8 @@ mixin CSSBoxMixin on RenderStyle {
       gradient: gradient,
     );
 
-
-
+    _cachedDecorationDirection = currentDirection;
+    _cachedDecorationWritingMode = currentWritingMode;
     return _cachedDecoration = built;
   }
 }

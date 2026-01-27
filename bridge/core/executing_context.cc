@@ -864,28 +864,16 @@ bool ExecutingContext::SyncUICommandBuffer(const BindingObject* self,
   if (has_waiting_commands || has_ring_buffer_packages) {
     if (is_dedicated_) {
       bool should_swap_ui_commands = false;
-      if (isUICommandReasonDependsOnElement(reason)) {
-        bool element_mounted_on_dart = self->bindingObject()->invoke_bindings_methods_from_native != nullptr;
-        bool is_deps_elements_mounted_on_dart = true;
-
-        for (auto binding : deps) {
-          if (binding->invoke_bindings_methods_from_native == nullptr) {
-            is_deps_elements_mounted_on_dart = false;
-          }
-        }
-
-        if (!element_mounted_on_dart || !is_deps_elements_mounted_on_dart) {
-          should_swap_ui_commands = true;
-        }
-      }
-
-      if (isUICommandReasonDependsOnLayout(reason) || isUICommandReasonDependsOnAll(reason)) {
+      if (isUICommandReasonDependsOnElement(reason) || isUICommandReasonDependsOnLayout(reason) ||
+          isUICommandReasonDependsOnAll(reason)) {
         should_swap_ui_commands = true;
       }
 
-      // Sync commands to dart when caller dependents on Element.
+      // When a synchronous binding call depends on element/layout state, ensure
+      // all pending UI commands are visible to Dart before the call executes.
+      // This preserves synchronous read-after-write semantics, e.g.
+      // `el.removeAttribute('checked'); el.checked` should reflect the removal.
       if (should_swap_ui_commands) {
-        // Then flush current package in ring buffer to make it visible
         shared_ui_command->SyncAllPackages();
       }
     }

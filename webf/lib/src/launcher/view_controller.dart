@@ -352,6 +352,46 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     }
   }
 
+  // Called by the viewport RenderObject after it lays out with a new size.
+  // This path is required for embedded scenarios (including integration tests)
+  // where the WebF widget constraints change but Flutter's window metrics do not
+  // (so WidgetsBindingObserver.didChangeMetrics is not triggered).
+  //
+  // When Blink is enabled, C++ media query evaluation uses cached viewport
+  // values pushed from Dart. Keep those values in sync with the actual
+  // RenderViewportBox size to avoid stale media query results (e.g. max-width
+  // breakpoints) after shrinking the widget.
+  bool _viewportSizeChangePostFrameCallbackScheduled = false;
+
+  void notifyViewportSizeChangedFromLayout() {
+    if (!_inited || _disposed) return;
+
+    // This method can be invoked from RenderViewportBox.performLayout(). We
+    // must not mutate descendants (e.g. markNeedsLayout) during layout, so
+    // defer all side effects to a post-frame callback.
+    if (_viewportSizeChangePostFrameCallbackScheduled) return;
+    _viewportSizeChangePostFrameCallbackScheduled = true;
+
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _viewportSizeChangePostFrameCallbackScheduled = false;
+      if (!_inited || _disposed) return;
+
+      if (enableBlink) {
+        // Viewport size changes driven by widget constraints do not necessarily
+        // trigger WidgetsBindingObserver.didChangeMetrics(). Avoid the debounce
+        // timer here so the native viewport cache stays in sync promptly.
+        _nativeMediaQueryAffectingValueDebounceTimer?.cancel();
+        _nativeMediaQueryAffectingValueDebounceTimer = null;
+        _flushNativeMediaQueryAffectingValueChanged();
+      }
+
+      // Mark viewport-size-relative properties dirty so vw/vh/etc can
+      // recompute against the new viewport size.
+      window.resizeViewportRelatedElements();
+    });
+    SchedulerBinding.instance.scheduleFrame();
+  }
+
   void detachFromFlutter() {
     _frameFlushLoopEnabled = false;
     _cancelBlinkStyleUpdateForNextFrame();

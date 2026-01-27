@@ -106,7 +106,8 @@
       "specs/css/css-color/**/*.{js,jsx,ts,tsx,html}",
       "specs/css/css-text-color/**/*.{js,jsx,ts,tsx,html}",
       "specs/css/filter-effects/**/*.{js,jsx,ts,tsx,html}",
-      "specs/css/css-text-mixin/**/*.{js,jsx,ts,tsx,html}"
+      "specs/css/css-text-mixin/**/*.{js,jsx,ts,tsx,html}",
+      "specs/css/css-rtl/**/*.{js,jsx,ts,tsx,html}"
     ]
   },
   {
