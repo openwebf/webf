@@ -64,6 +64,7 @@ class WebFWidgetTestUtils {
 
     await tester.runAsync(() async {
       await controller!.controllerPreloadingCompleter.future;
+      controller!.view.document.updateStyleIfNeeded();
     });
 
     // Additional frames to ensure layout

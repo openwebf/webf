@@ -312,6 +312,7 @@ void main() {
 
       // Change to large
       div.className = 'large';
+      div.ownerDocument.updateStyleIfNeeded();
       await tester.pump();
 
       expect(div.offsetWidth, equals(200.0));

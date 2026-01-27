@@ -60,7 +60,7 @@ void main() {
     expect(textarea.value, equals('property value'));
 
     text.data = 'text content value 2';
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
     expect(textarea.defaultValue, equals('default value'));
     expect(textarea.value, equals('property value'));
   });
