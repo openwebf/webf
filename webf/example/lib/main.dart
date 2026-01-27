@@ -76,7 +76,7 @@ void main() async {
       name: demoControllerName,
       createController: () =>
           WebFController(
-            enableBlink: false,
+            enableBlink: true,
             routeObserver: routeObserver,
             initialRoute: demoInitialRoute,
             initialState: demoInitialState
