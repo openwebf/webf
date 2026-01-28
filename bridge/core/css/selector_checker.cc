@@ -1805,16 +1805,21 @@ bool SelectorChecker::CheckPseudoClass(const SelectorCheckingContext& context, M
    case CSSSelector::kPseudoInvalid:
      return element.MatchesValidityPseudoClasses() && !element.IsValidElement();
    case CSSSelector::kPseudoChecked: {
-     // TODO: Implement form control checked state
-     // if (auto* input_element = DynamicTo<HTMLInputElement>(element)) {
-     //   if (input_element->ShouldAppearChecked() && !input_element->ShouldAppearIndeterminate()) {
-     //     return true;
-     //   }
-     // } else if (auto* option_element = DynamicTo<HTMLOptionElement>(element)) {
-     //   if (option_element->Selected()) {
-     //     return true;
-     //   }
-     // }
+     // Minimal :checked support for WebF's DOM model.
+     // Match checkable inputs with [checked] and <option> with [selected].
+     // This keeps selector matching consistent with attribute-based state.
+     const AtomicString tag_name = element.localName();
+     static const AtomicString checked_attr = AtomicString::CreateFromUTF8("checked");
+     static const AtomicString selected_attr = AtomicString::CreateFromUTF8("selected");
+     if (tag_name == "input") {
+       if (element.HasAttributeIgnoringNamespace(checked_attr)) {
+         return true;
+       }
+     } else if (tag_name == "option") {
+       if (element.HasAttributeIgnoringNamespace(selected_attr)) {
+         return true;
+       }
+     }
      break;
    }
    case CSSSelector::kPseudoIndeterminate:
