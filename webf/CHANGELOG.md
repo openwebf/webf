@@ -1,3 +1,29 @@
+## 0.24.9
+
+### Major Features
+
+- **Blink/CSS**: add a first-paint style synchronization barrier so the first visible frame ships
+  with both DOM and computed styles (including hybrid-router `RouterLink` subpage mounts) (#827).
+- **CSS/Logical Properties**: resolve logical `border-*-*-radius` (start/end) across `direction`
+  and `writing-mode` for correct RTL/vertical writing-mode rendering (#832).
+- **CSS/Selectors**: support `:enabled` / `:disabled` matching for form controls when Blink is
+  enabled; add Selectors Level 4 `:is()` / `:where()` integration coverage (#824).
+
+### Bug Fixes
+
+- **Bridge/UICommand**: improve UICommand synchronization on dedicated threads (flush pending
+  commands for element/layout-dependent reads; defer packages while the Blink first-paint barrier
+  is active) (#827).
+- **Rendering/Grid**: fix RTL positioning for CSS grid columns and `justify-self` alignment/margins
+  in RTL (#832).
+- **Rendering/Flex**: make main-axis `margin: auto` free-space distribution flow-aware (e.g. `row`
+  in `direction: rtl`) and distribute space per auto margin (#832).
+- **Form Controls**: fix boolean attribute setters for `disabled` / `checked`; correct radio and
+  checkbox checked synchronization before widget state mounts; dispatch `input` events for checkbox
+  toggles; fix `textarea.defaultValue` priority (#832).
+- **Viewport**: notify the controller when the viewport render-object size changes during layout
+  so resize listeners and native media-query caches stay in sync under widget constraint resizing.
+
 ## 0.24.8+1
 
 ### Bug Fixes
