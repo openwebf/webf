@@ -18,14 +18,14 @@ importers:
         specifier: ^0.3.35
         version: 0.3.35(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@openwebf/react-lucide-icons':
-        specifier: link:/var/folders/68/lyfvmcts4_l_r051bppwpkm40000gn/T/webf-typings-2mpUH1
-        version: link:../../../../../var/folders/68/lyfvmcts4_l_r051bppwpkm40000gn/T/webf-typings-2mpUH1
+        specifier: ^0.1.0
+        version: 0.1.0(@openwebf/react-core-ui@0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@openwebf/react-router':
         specifier: ^0.24.2
         version: 0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@openwebf/react-shadcn-ui':
-        specifier: link:/var/folders/68/lyfvmcts4_l_r051bppwpkm40000gn/T/webf-typings-1AWkGI
-        version: link:../../../../../var/folders/68/lyfvmcts4_l_r051bppwpkm40000gn/T/webf-typings-1AWkGI
+        specifier: ^0.1.0
+        version: 0.1.0(@openwebf/react-core-ui@0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@openwebf/react-ui-kit':
         specifier: ^0.1.0-beta.1
         version: 0.1.0-beta.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -1243,9 +1243,23 @@ packages:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
+  '@openwebf/react-lucide-icons@0.1.0':
+    resolution: {integrity: sha512-Qvnqgtte5Di/8sWLkddWlJmJycUY/i+1rJsbnvguu2O+/mh1WO+FFFBzlQtrvrP4MOP7wDewv13RLMCfmNkqMw==}
+    peerDependencies:
+      '@openwebf/react-core-ui': ^0.24.1
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+
   '@openwebf/react-router@0.24.2':
     resolution: {integrity: sha512-bppgSZLki/M1quQku3YYWaaOu/dH0dJw89OAn1q1ogxH0wpp6Z8Lae/u145prjT+5QVc5+3rh+PaHW1aL3udDg==}
     peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+
+  '@openwebf/react-shadcn-ui@0.1.0':
+    resolution: {integrity: sha512-tYiuRknaK9IoLe9W1c8jI+XzJCauZuVle9HJIzsBmzqQUghY3cXruq3bTZGS72GNbHefjK10tbOHE9Yj2fSKQg==}
+    peerDependencies:
+      '@openwebf/react-core-ui': ^0.24.1
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
@@ -7500,6 +7514,12 @@ snapshots:
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
 
+  '@openwebf/react-lucide-icons@0.1.0(@openwebf/react-core-ui@0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+    dependencies:
+      '@openwebf/react-core-ui': 0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
+
   '@openwebf/react-router@0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
       '@openwebf/react-core-ui': 0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -7509,6 +7529,12 @@ snapshots:
       ahooks: 3.9.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       event-emitter: 0.3.5
       lodash-es: 4.17.22
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
+
+  '@openwebf/react-shadcn-ui@0.1.0(@openwebf/react-core-ui@0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+    dependencies:
+      '@openwebf/react-core-ui': 0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
 
