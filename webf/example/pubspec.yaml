@@ -15,6 +15,7 @@ dependencies:
   example_app:
     path: rust_builder
   webf: ^0.10.0
+  shadcn_ui: ^0.43.3
   #  For enterprise version:
   #  webf: ^0.23.10  # Enterprise version available on pub.dev
   flutter_highlight: ^0.7.0
@@ -30,6 +31,10 @@ dependencies:
   collection: ^1.18.0
   auto_size_text: ^3.0.0
   webf_cupertino_ui: ^0.3.37
+  webf_lucide_icons:
+    path: ../../native_uis/webf_lucide_icons
+  webf_shadcn_ui:
+    path: ../../native_uis/webf_shadcn_ui
   webf_share:
     path: ../../native_plugins/share
   webf_sqflite:

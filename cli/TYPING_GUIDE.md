@@ -10,6 +10,9 @@ Each WebF custom element should have two interfaces:
 
 The component name is derived by removing the "Properties" or "Events" suffix.
 
+Optionally, you can also define:
+3. `<ComponentName>Methods` - Defines callable methods on the element
+
 ## Interface Naming Convention
 
 ```typescript
@@ -20,6 +23,10 @@ interface FlutterCupertinoButtonProperties {
 
 interface FlutterCupertinoButtonEvents {
   // events...
+}
+
+interface FlutterCupertinoButtonMethods {
+  // methods...
 }
 ```
 
@@ -72,6 +79,24 @@ interface FlutterCupertinoInputProperties {
   placeholder?: string;
   
   // Methods
+  getValue(): string;
+  setValue(value: string): void;
+  focus(): void;
+  blur(): void;
+}
+```
+
+### Methods in a Dedicated Methods Interface
+
+If you prefer to keep properties and methods separate, define methods in a `<ComponentName>Methods` interface instead:
+
+```typescript
+interface FlutterCupertinoInputProperties {
+  val?: string;
+  placeholder?: string;
+}
+
+interface FlutterCupertinoInputMethods {
   getValue(): string;
   setValue(value: string): void;
   focus(): void;

@@ -73,7 +73,7 @@ abstract class FlutterCupertinoDatePickerBindings extends WidgetElement {
     );
     attributes['value'] = ElementAttributeProperty(
       getter: () => value?.toString(),
-      setter: (value) => value = value,
+      setter: (value) => this.value = value,
       deleter: () => value = null
     );
   }

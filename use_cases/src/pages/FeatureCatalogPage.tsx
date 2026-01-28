@@ -153,6 +153,13 @@ const sections: Section[] = [
     ],
   },
   {
+    title: 'Lucide Icons',
+    items: [
+      { label: 'Lucide Icons Showcase', path: '/lucide-showcase', desc: 'Beautiful & consistent icon set overview' },
+      { label: 'Icons Gallery', path: '/lucide/icons', desc: '1600+ icons with search and stroke width variants' },
+    ],
+  },
+  {
     title: 'Forms & Input',
     items: [
       { label: 'Form (Basic)', path: '/form', desc: 'Basic form elements and validation' },

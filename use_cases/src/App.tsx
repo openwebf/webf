@@ -116,6 +116,33 @@ import {UserDetailsPage} from './pages/routeDemo/UserDetailsPage';
 import {ReportDetailsPage} from './pages/routeDemo/ReportDetailsPage';
 import {ProfileEditPage} from './pages/routeDemo/ProfileEditPage';
 import {DragableListPage} from './pages/DragableListPage';
+// Shadcn UI imports
+import { ShadcnShowcasePage } from './pages/ShadcnShowcasePage';
+import { ShadcnButtonsPage } from './pages/shadcn/ShadcnButtonsPage';
+import { ShadcnInputPage } from './pages/shadcn/ShadcnInputPage';
+import { ShadcnCheckboxSwitchPage } from './pages/shadcn/ShadcnCheckboxSwitchPage';
+import { ShadcnSelectPage } from './pages/shadcn/ShadcnSelectPage';
+import { ShadcnSliderPage } from './pages/shadcn/ShadcnSliderPage';
+import { ShadcnCardPage } from './pages/shadcn/ShadcnCardPage';
+import { ShadcnAlertBadgePage } from './pages/shadcn/ShadcnAlertBadgePage';
+import { ShadcnTabsPage } from './pages/shadcn/ShadcnTabsPage';
+import { ShadcnAccordionPage } from './pages/shadcn/ShadcnAccordionPage';
+import { ShadcnDialogPage } from './pages/shadcn/ShadcnDialogPage';
+import { ShadcnTablePage } from './pages/shadcn/ShadcnTablePage';
+import { ShadcnRadioPage } from './pages/shadcn/ShadcnRadioPage';
+import { ShadcnAvatarPage } from './pages/shadcn/ShadcnAvatarPage';
+import { ShadcnProgressPage } from './pages/shadcn/ShadcnProgressPage';
+import { ShadcnSkeletonPage } from './pages/shadcn/ShadcnSkeletonPage';
+import { ShadcnBreadcrumbPage } from './pages/shadcn/ShadcnBreadcrumbPage';
+import { ShadcnCalendarPage } from './pages/shadcn/ShadcnCalendarPage';
+import { ShadcnDropdownPage } from './pages/shadcn/ShadcnDropdownPage';
+import { ShadcnContextMenuPage } from './pages/shadcn/ShadcnContextMenuPage';
+import { ShadcnPopoverPage } from './pages/shadcn/ShadcnPopoverPage';
+import { ShadcnFormPage } from './pages/shadcn/ShadcnFormPage';
+import { ShadcnIconButtonPage } from './pages/shadcn/ShadcnIconButtonPage';
+// Lucide Icons imports
+import { LucideShowcasePage } from './pages/LucideShowcasePage';
+import { LucideIconsPage } from './pages/lucide/LucideIconsPage';
 
 function App() {
 
@@ -203,6 +230,34 @@ function App() {
         <Route path="/cupertino/checkbox" title="Cupertino CheckBox" theme={'cupertino'} element={<CupertinoCheckBoxPage />} />
         <Route path="/cupertino/radio" title="Cupertino Radio" theme={'cupertino'} element={<CupertinoRadioPage />} />
 
+        {/* Shadcn UI routes */}
+        <Route path="/shadcn-showcase" title="Shadcn UI Showcase" element={<ShadcnShowcasePage />} />
+        <Route path="/shadcn/buttons" title="Shadcn Buttons" element={<ShadcnButtonsPage />} />
+        <Route path="/shadcn/icon-button" title="Shadcn Icon Button" element={<ShadcnIconButtonPage />} />
+        <Route path="/shadcn/input" title="Shadcn Input" element={<ShadcnInputPage />} />
+        <Route path="/shadcn/checkbox-switch" title="Shadcn Checkbox & Switch" element={<ShadcnCheckboxSwitchPage />} />
+        <Route path="/shadcn/select" title="Shadcn Select & Combobox" element={<ShadcnSelectPage />} />
+        <Route path="/shadcn/slider" title="Shadcn Slider & Progress" element={<ShadcnSliderPage />} />
+        <Route path="/shadcn/card" title="Shadcn Card" element={<ShadcnCardPage />} />
+        <Route path="/shadcn/alert-badge" title="Shadcn Alert & Badge" element={<ShadcnAlertBadgePage />} />
+        <Route path="/shadcn/tabs" title="Shadcn Tabs" element={<ShadcnTabsPage />} />
+        <Route path="/shadcn/accordion" title="Shadcn Accordion" element={<ShadcnAccordionPage />} />
+        <Route path="/shadcn/dialog" title="Shadcn Dialog & Sheet" element={<ShadcnDialogPage />} />
+        <Route path="/shadcn/table" title="Shadcn Table" element={<ShadcnTablePage />} />
+        <Route path="/shadcn/radio" title="Shadcn Radio Group" element={<ShadcnRadioPage />} />
+        <Route path="/shadcn/avatar" title="Shadcn Avatar" element={<ShadcnAvatarPage />} />
+        <Route path="/shadcn/progress" title="Shadcn Progress" element={<ShadcnProgressPage />} />
+        <Route path="/shadcn/skeleton" title="Shadcn Skeleton" element={<ShadcnSkeletonPage />} />
+        <Route path="/shadcn/breadcrumb" title="Shadcn Breadcrumb" element={<ShadcnBreadcrumbPage />} />
+        <Route path="/shadcn/calendar" title="Shadcn Calendar" element={<ShadcnCalendarPage />} />
+        <Route path="/shadcn/dropdown" title="Shadcn Dropdown Menu" element={<ShadcnDropdownPage />} />
+        <Route path="/shadcn/context-menu" title="Shadcn Context Menu" element={<ShadcnContextMenuPage />} />
+        <Route path="/shadcn/popover" title="Shadcn Popover & Tooltip" element={<ShadcnPopoverPage />} />
+        <Route path="/shadcn/form" title="Shadcn Form" element={<ShadcnFormPage />} />
+
+        {/* Lucide Icons routes */}
+        <Route path="/lucide-showcase" title="Lucide Icons Showcase" element={<LucideShowcasePage />} />
+        <Route path="/lucide/icons" title="Lucide Icons Gallery" element={<LucideIconsPage />} />
 
         <Route path="/image-preload" title="Image Preload" element={<ImagePreloadPage />} />
 
