@@ -74,4 +74,47 @@ abstract class FlutterShadcnFormBindings extends WidgetElement {
     ...super.properties,
     flutterShadcnFormProperties,
   ];
+  bool validate(List<dynamic> args);
+  bool submit(List<dynamic> args);
+  void reset(List<dynamic> args);
+  dynamic getFieldValue(List<dynamic> args);
+  void setFieldValue(List<dynamic> args);
+  void setFieldError(List<dynamic> args);
+  static StaticDefinedSyncBindingObjectMethodMap flutterShadcnFormMethods = {
+    'validate': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        return castToType<FlutterShadcnFormBindings>(element).validate(args);
+      },
+    ),
+    'submit': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        return castToType<FlutterShadcnFormBindings>(element).submit(args);
+      },
+    ),
+    'reset': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        return castToType<FlutterShadcnFormBindings>(element).reset(args);
+      },
+    ),
+    'getFieldValue': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        return castToType<FlutterShadcnFormBindings>(element).getFieldValue(args);
+      },
+    ),
+    'setFieldValue': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        return castToType<FlutterShadcnFormBindings>(element).setFieldValue(args);
+      },
+    ),
+    'setFieldError': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        return castToType<FlutterShadcnFormBindings>(element).setFieldError(args);
+      },
+    ),
+  };
+  @override
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
+    ...super.methods,
+    flutterShadcnFormMethods,
+  ];
 }

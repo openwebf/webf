@@ -8,9 +8,27 @@
 // ignore_for_file: library_private_types_in_public_api
 // ignore_for_file: prefer_void_to_null
 import 'package:webf/webf.dart';
+enum FlutterShadcnIconButtonVariant {
+  primary('primary'),
+  secondary('secondary'),
+  destructive('destructive'),
+  outline('outline'),
+  ghost('ghost');
+  final String value;
+  const FlutterShadcnIconButtonVariant(this.value);
+  static FlutterShadcnIconButtonVariant? parse(String? value) {
+    if (value == null) return null;
+    return FlutterShadcnIconButtonVariant.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => throw ArgumentError('Invalid FlutterShadcnIconButtonVariant value: $value'),
+    );
+  }
+  @override
+  String toString() => value;
+}
 abstract class FlutterShadcnIconButtonBindings extends WidgetElement {
   FlutterShadcnIconButtonBindings(super.context);
-  String? get variant;
+  FlutterShadcnIconButtonVariant? get variant;
   set variant(value);
   String? get icon;
   set icon(value);
@@ -24,8 +42,8 @@ abstract class FlutterShadcnIconButtonBindings extends WidgetElement {
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
     attributes['variant'] = ElementAttributeProperty(
-      getter: () => variant?.toString(),
-      setter: (value) => this.variant = value,
+      getter: () => variant?.value,
+      setter: (value) => this.variant = FlutterShadcnIconButtonVariant.parse(value),
       deleter: () => variant = null
     );
     attributes['icon'] = ElementAttributeProperty(
@@ -35,8 +53,8 @@ abstract class FlutterShadcnIconButtonBindings extends WidgetElement {
     );
     attributes['icon-size'] = ElementAttributeProperty(
       getter: () => iconSize?.toString(),
-      setter: (value) => this.iconSize = value != null ? double.tryParse(value) : null,
-      deleter: () => iconSize = null
+      setter: (value) => this.iconSize = double.tryParse(value) ?? 0.0,
+      deleter: () => iconSize = 0.0
     );
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => disabled.toString(),

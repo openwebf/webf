@@ -157,21 +157,28 @@ IconData? _getLucideIcon(String? name) {
 class FlutterShadcnIconButton extends FlutterShadcnIconButtonBindings {
   FlutterShadcnIconButton(super.context);
 
-  String _variant = 'primary';
+  FlutterShadcnIconButtonVariant? _variant = FlutterShadcnIconButtonVariant.primary;
   String? _icon;
   double? _iconSize;
   bool _disabled = false;
   bool _loading = false;
 
   @override
-  String get variant => _variant;
+  FlutterShadcnIconButtonVariant? get variant => _variant;
 
   @override
   get disableBoxModelPaint => true;
 
   @override
   set variant(value) {
-    final newValue = value?.toString() ?? 'primary';
+    FlutterShadcnIconButtonVariant? newValue;
+    if (value is FlutterShadcnIconButtonVariant) {
+      newValue = value;
+    } else if (value is String) {
+      newValue = FlutterShadcnIconButtonVariant.parse(value);
+    } else {
+      newValue = FlutterShadcnIconButtonVariant.primary;
+    }
     if (newValue != _variant) {
       _variant = newValue;
       state?.requestUpdateState(() {});
@@ -227,14 +234,14 @@ class FlutterShadcnIconButton extends FlutterShadcnIconButtonBindings {
   }
 
   ShadButtonVariant get buttonVariant {
-    switch (_variant.toLowerCase()) {
-      case 'secondary':
+    switch (_variant) {
+      case FlutterShadcnIconButtonVariant.secondary:
         return ShadButtonVariant.secondary;
-      case 'destructive':
+      case FlutterShadcnIconButtonVariant.destructive:
         return ShadButtonVariant.destructive;
-      case 'outline':
+      case FlutterShadcnIconButtonVariant.outline:
         return ShadButtonVariant.outline;
-      case 'ghost':
+      case FlutterShadcnIconButtonVariant.ghost:
         return ShadButtonVariant.ghost;
       default:
         return ShadButtonVariant.primary;

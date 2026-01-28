@@ -71,12 +71,14 @@ class FlutterShadcnForm extends FlutterShadcnFormBindings {
   }
 
   /// Validate the form and return true if valid
-  bool validate() {
+  @override
+  bool validate(List<dynamic> args) {
     return formState?.validate() ?? false;
   }
 
   /// Save and validate the form, returning true if valid
-  bool submit() {
+  @override
+  bool submit(List<dynamic> args) {
     final result = formState?.saveAndValidate() ?? false;
     if (result) {
       final event = CustomEvent('submit', detail: {'value': value});
@@ -86,7 +88,8 @@ class FlutterShadcnForm extends FlutterShadcnFormBindings {
   }
 
   /// Reset the form to initial values
-  void reset() {
+  @override
+  void reset(List<dynamic> args) {
     formState?.reset();
     dispatchEvent(Event('reset'));
   }
@@ -120,18 +123,28 @@ class FlutterShadcnForm extends FlutterShadcnFormBindings {
   }
 
   /// Get a specific field value
-  dynamic getFieldValue(String fieldId) {
+  @override
+  dynamic getFieldValue(List<dynamic> args) {
+    final String fieldId = args.isNotEmpty ? args[0].toString() : '';
     final formValue = formState?.value ?? {};
     return formValue[fieldId];
   }
 
   /// Set a specific field value
-  void setFieldValue(String fieldId, dynamic fieldValue) {
+  @override
+  void setFieldValue(List<dynamic> args) {
+    if (args.isEmpty) return;
+    final String fieldId = args[0].toString();
+    final dynamic fieldValue = args.length > 1 ? args[1] : null;
     formState?.setFieldValue(fieldId, fieldValue);
   }
 
   /// Set error for a specific field
-  void setFieldError(String fieldId, String? error) {
+  @override
+  void setFieldError(List<dynamic> args) {
+    if (args.isEmpty) return;
+    final String fieldId = args[0].toString();
+    final String? error = args.length > 1 ? args[1]?.toString() : null;
     try {
       formState?.setFieldError(fieldId, error);
     } catch (e) {
