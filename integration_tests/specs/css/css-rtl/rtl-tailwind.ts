@@ -896,4 +896,691 @@ describe('RTL Tailwind CSS', () => {
       await snapshot();
     });
   });
+
+  // ============================================
+  // 11. RTL Variant Prefix (rtl:*)
+  // ============================================
+
+  describe('RTL Variant Prefix', () => {
+    it('should apply rtl:space-x-reverse for correct spacing in RTL', async () => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'w-[340px]';
+
+      // LTR version
+      const ltrContainer = document.createElement('div');
+      ltrContainer.className = 'p-4 border border-gray-300 mb-2';
+      ltrContainer.setAttribute('dir', 'ltr');
+
+      const ltrLabel = document.createElement('div');
+      ltrLabel.className = 'mb-2 text-sm font-medium';
+      ltrLabel.textContent = 'LTR (space-x-4):';
+      ltrContainer.appendChild(ltrLabel);
+
+      const ltrFlex = document.createElement('div');
+      ltrFlex.className = 'flex space-x-4 rtl:space-x-reverse';
+
+      ['1', '2', '3'].forEach((num, i) => {
+        const item = document.createElement('div');
+        const colors = ['bg-red-500', 'bg-green-500', 'bg-blue-500'];
+        item.className = `w-12 h-12 ${colors[i]} text-white flex items-center justify-center rounded`;
+        item.textContent = num;
+        ltrFlex.appendChild(item);
+      });
+
+      ltrContainer.appendChild(ltrFlex);
+      wrapper.appendChild(ltrContainer);
+
+      // RTL version
+      const rtlContainer = document.createElement('div');
+      rtlContainer.className = 'p-4 border border-gray-300';
+      rtlContainer.setAttribute('dir', 'rtl');
+
+      const rtlLabel = document.createElement('div');
+      rtlLabel.className = 'mb-2 text-sm font-medium';
+      rtlLabel.textContent = 'RTL (space-x-4 rtl:space-x-reverse):';
+      rtlContainer.appendChild(rtlLabel);
+
+      const rtlFlex = document.createElement('div');
+      rtlFlex.className = 'flex space-x-4 rtl:space-x-reverse';
+
+      ['1', '2', '3'].forEach((num, i) => {
+        const item = document.createElement('div');
+        const colors = ['bg-red-500', 'bg-green-500', 'bg-blue-500'];
+        item.className = `w-12 h-12 ${colors[i]} text-white flex items-center justify-center rounded`;
+        item.textContent = num;
+        rtlFlex.appendChild(item);
+      });
+
+      rtlContainer.appendChild(rtlFlex);
+      wrapper.appendChild(rtlContainer);
+
+      document.body.appendChild(wrapper);
+
+      await snapshot();
+    });
+
+    it('should apply rtl:ml-* and rtl:mr-* for conditional margins', async () => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'w-[340px]';
+
+      // LTR version
+      const ltrContainer = document.createElement('div');
+      ltrContainer.className = 'p-4 border border-gray-300 mb-2';
+      ltrContainer.setAttribute('dir', 'ltr');
+
+      const ltrLabel = document.createElement('div');
+      ltrLabel.className = 'mb-2 text-sm font-medium';
+      ltrLabel.textContent = 'LTR:';
+      ltrContainer.appendChild(ltrLabel);
+
+      const ltrBox = document.createElement('div');
+      ltrBox.className = 'ml-8 rtl:ml-0 rtl:mr-8 bg-blue-200 p-2';
+      ltrBox.textContent = 'ml-8 rtl:ml-0 rtl:mr-8';
+
+      ltrContainer.appendChild(ltrBox);
+      wrapper.appendChild(ltrContainer);
+
+      // RTL version
+      const rtlContainer = document.createElement('div');
+      rtlContainer.className = 'p-4 border border-gray-300';
+      rtlContainer.setAttribute('dir', 'rtl');
+
+      const rtlLabel = document.createElement('div');
+      rtlLabel.className = 'mb-2 text-sm font-medium';
+      rtlLabel.textContent = 'RTL:';
+      rtlContainer.appendChild(rtlLabel);
+
+      const rtlBox = document.createElement('div');
+      rtlBox.className = 'ml-8 rtl:ml-0 rtl:mr-8 bg-green-200 p-2';
+      rtlBox.textContent = 'ml-8 rtl:ml-0 rtl:mr-8';
+
+      rtlContainer.appendChild(rtlBox);
+      wrapper.appendChild(rtlContainer);
+
+      document.body.appendChild(wrapper);
+
+      await snapshot();
+    });
+
+    it('should apply rtl:pl-* and rtl:pr-* for conditional padding', async () => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'w-[340px]';
+
+      // LTR version
+      const ltrContainer = document.createElement('div');
+      ltrContainer.className = 'p-4 border border-gray-300 mb-2';
+      ltrContainer.setAttribute('dir', 'ltr');
+
+      const ltrLabel = document.createElement('div');
+      ltrLabel.className = 'mb-2 text-sm font-medium';
+      ltrLabel.textContent = 'LTR:';
+      ltrContainer.appendChild(ltrLabel);
+
+      const ltrBox = document.createElement('div');
+      ltrBox.className = 'pl-8 rtl:pl-0 rtl:pr-8 bg-purple-200 border-l-4 rtl:border-l-0 rtl:border-r-4 border-purple-500';
+      ltrBox.textContent = 'pl-8 rtl:pl-0 rtl:pr-8';
+
+      ltrContainer.appendChild(ltrBox);
+      wrapper.appendChild(ltrContainer);
+
+      // RTL version
+      const rtlContainer = document.createElement('div');
+      rtlContainer.className = 'p-4 border border-gray-300';
+      rtlContainer.setAttribute('dir', 'rtl');
+
+      const rtlLabel = document.createElement('div');
+      rtlLabel.className = 'mb-2 text-sm font-medium';
+      rtlLabel.textContent = 'RTL:';
+      rtlContainer.appendChild(rtlLabel);
+
+      const rtlBox = document.createElement('div');
+      rtlBox.className = 'pl-8 rtl:pl-0 rtl:pr-8 bg-pink-200 border-l-4 rtl:border-l-0 rtl:border-r-4 border-pink-500';
+      rtlBox.textContent = 'pl-8 rtl:pl-0 rtl:pr-8';
+
+      rtlContainer.appendChild(rtlBox);
+      wrapper.appendChild(rtlContainer);
+
+      document.body.appendChild(wrapper);
+
+      await snapshot();
+    });
+
+    it('should apply rtl:text-left and rtl:text-right for conditional alignment', async () => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'w-[340px]';
+
+      // LTR version
+      const ltrContainer = document.createElement('div');
+      ltrContainer.className = 'p-4 border border-gray-300 mb-2';
+      ltrContainer.setAttribute('dir', 'ltr');
+
+      const ltrLabel = document.createElement('div');
+      ltrLabel.className = 'mb-2 text-sm font-medium';
+      ltrLabel.textContent = 'LTR:';
+      ltrContainer.appendChild(ltrLabel);
+
+      const ltrText = document.createElement('div');
+      ltrText.className = 'text-left rtl:text-right bg-gray-100 p-2';
+      ltrText.textContent = 'text-left rtl:text-right';
+
+      ltrContainer.appendChild(ltrText);
+      wrapper.appendChild(ltrContainer);
+
+      // RTL version
+      const rtlContainer = document.createElement('div');
+      rtlContainer.className = 'p-4 border border-gray-300';
+      rtlContainer.setAttribute('dir', 'rtl');
+
+      const rtlLabel = document.createElement('div');
+      rtlLabel.className = 'mb-2 text-sm font-medium';
+      rtlLabel.textContent = 'RTL:';
+      rtlContainer.appendChild(rtlLabel);
+
+      const rtlText = document.createElement('div');
+      rtlText.className = 'text-left rtl:text-right bg-gray-200 p-2';
+      rtlText.textContent = 'text-left rtl:text-right';
+
+      rtlContainer.appendChild(rtlText);
+      wrapper.appendChild(rtlContainer);
+
+      document.body.appendChild(wrapper);
+
+      await snapshot();
+    });
+
+    it('should apply rtl:rotate-180 for icon flipping', async () => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'w-[340px]';
+
+      // LTR version
+      const ltrContainer = document.createElement('div');
+      ltrContainer.className = 'p-4 border border-gray-300 mb-2';
+      ltrContainer.setAttribute('dir', 'ltr');
+
+      const ltrLabel = document.createElement('div');
+      ltrLabel.className = 'mb-2 text-sm font-medium';
+      ltrLabel.textContent = 'LTR (arrow points right):';
+      ltrContainer.appendChild(ltrLabel);
+
+      const ltrArrow = document.createElement('div');
+      ltrArrow.className = 'w-12 h-12 bg-blue-500 text-white flex items-center justify-center text-2xl rtl:rotate-180';
+      ltrArrow.textContent = '→';
+
+      ltrContainer.appendChild(ltrArrow);
+      wrapper.appendChild(ltrContainer);
+
+      // RTL version
+      const rtlContainer = document.createElement('div');
+      rtlContainer.className = 'p-4 border border-gray-300';
+      rtlContainer.setAttribute('dir', 'rtl');
+
+      const rtlLabel = document.createElement('div');
+      rtlLabel.className = 'mb-2 text-sm font-medium';
+      rtlLabel.textContent = 'RTL (arrow rotated 180°):';
+      rtlContainer.appendChild(rtlLabel);
+
+      const rtlArrow = document.createElement('div');
+      rtlArrow.className = 'w-12 h-12 bg-green-500 text-white flex items-center justify-center text-2xl rtl:rotate-180';
+      rtlArrow.textContent = '→';
+
+      rtlContainer.appendChild(rtlArrow);
+      wrapper.appendChild(rtlContainer);
+
+      document.body.appendChild(wrapper);
+
+      await snapshot();
+    });
+
+    it('should apply rtl:scale-x-[-1] for horizontal flipping', async () => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'w-[340px]';
+
+      // LTR version
+      const ltrContainer = document.createElement('div');
+      ltrContainer.className = 'p-4 border border-gray-300 mb-2';
+      ltrContainer.setAttribute('dir', 'ltr');
+
+      const ltrLabel = document.createElement('div');
+      ltrLabel.className = 'mb-2 text-sm font-medium';
+      ltrLabel.textContent = 'LTR (normal):';
+      ltrContainer.appendChild(ltrLabel);
+
+      const ltrBox = document.createElement('div');
+      ltrBox.className = 'w-16 h-16 bg-gradient-to-r from-blue-500 to-transparent rtl:scale-x-[-1]';
+
+      ltrContainer.appendChild(ltrBox);
+      wrapper.appendChild(ltrContainer);
+
+      // RTL version
+      const rtlContainer = document.createElement('div');
+      rtlContainer.className = 'p-4 border border-gray-300';
+      rtlContainer.setAttribute('dir', 'rtl');
+
+      const rtlLabel = document.createElement('div');
+      rtlLabel.className = 'mb-2 text-sm font-medium';
+      rtlLabel.textContent = 'RTL (flipped horizontally):';
+      rtlContainer.appendChild(rtlLabel);
+
+      const rtlBox = document.createElement('div');
+      rtlBox.className = 'w-16 h-16 bg-gradient-to-r from-green-500 to-transparent rtl:scale-x-[-1]';
+
+      rtlContainer.appendChild(rtlBox);
+      wrapper.appendChild(rtlContainer);
+
+      document.body.appendChild(wrapper);
+
+      await snapshot();
+    });
+
+    it('should apply rtl:border-l-* and rtl:border-r-* for conditional borders', async () => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'w-[340px]';
+
+      // LTR version
+      const ltrContainer = document.createElement('div');
+      ltrContainer.className = 'p-4 border border-gray-300 mb-2';
+      ltrContainer.setAttribute('dir', 'ltr');
+
+      const ltrLabel = document.createElement('div');
+      ltrLabel.className = 'mb-2 text-sm font-medium';
+      ltrLabel.textContent = 'LTR (left border):';
+      ltrContainer.appendChild(ltrLabel);
+
+      const ltrBox = document.createElement('div');
+      ltrBox.className = 'border-l-4 rtl:border-l-0 rtl:border-r-4 border-blue-500 bg-blue-50 p-3';
+      ltrBox.textContent = 'border-l-4 rtl:border-l-0 rtl:border-r-4';
+
+      ltrContainer.appendChild(ltrBox);
+      wrapper.appendChild(ltrContainer);
+
+      // RTL version
+      const rtlContainer = document.createElement('div');
+      rtlContainer.className = 'p-4 border border-gray-300';
+      rtlContainer.setAttribute('dir', 'rtl');
+
+      const rtlLabel = document.createElement('div');
+      rtlLabel.className = 'mb-2 text-sm font-medium';
+      rtlLabel.textContent = 'RTL (right border):';
+      rtlContainer.appendChild(rtlLabel);
+
+      const rtlBox = document.createElement('div');
+      rtlBox.className = 'border-l-4 rtl:border-l-0 rtl:border-r-4 border-green-500 bg-green-50 p-3';
+      rtlBox.textContent = 'border-l-4 rtl:border-l-0 rtl:border-r-4';
+
+      rtlContainer.appendChild(rtlBox);
+      wrapper.appendChild(rtlContainer);
+
+      document.body.appendChild(wrapper);
+
+      await snapshot();
+    });
+
+    it('should apply rtl:rounded-l-* and rtl:rounded-r-* for conditional border radius', async () => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'w-[340px]';
+
+      // LTR version
+      const ltrContainer = document.createElement('div');
+      ltrContainer.className = 'p-4 border border-gray-300 mb-2';
+      ltrContainer.setAttribute('dir', 'ltr');
+
+      const ltrLabel = document.createElement('div');
+      ltrLabel.className = 'mb-2 text-sm font-medium';
+      ltrLabel.textContent = 'LTR (left rounded):';
+      ltrContainer.appendChild(ltrLabel);
+
+      const ltrBox = document.createElement('div');
+      ltrBox.className = 'rounded-l-xl rtl:rounded-l-none rtl:rounded-r-xl bg-purple-300 p-4';
+      ltrBox.textContent = 'rounded-l-xl rtl:rounded-l-none rtl:rounded-r-xl';
+
+      ltrContainer.appendChild(ltrBox);
+      wrapper.appendChild(ltrContainer);
+
+      // RTL version
+      const rtlContainer = document.createElement('div');
+      rtlContainer.className = 'p-4 border border-gray-300';
+      rtlContainer.setAttribute('dir', 'rtl');
+
+      const rtlLabel = document.createElement('div');
+      rtlLabel.className = 'mb-2 text-sm font-medium';
+      rtlLabel.textContent = 'RTL (right rounded):';
+      rtlContainer.appendChild(rtlLabel);
+
+      const rtlBox = document.createElement('div');
+      rtlBox.className = 'rounded-l-xl rtl:rounded-l-none rtl:rounded-r-xl bg-orange-300 p-4';
+      rtlBox.textContent = 'rounded-l-xl rtl:rounded-l-none rtl:rounded-r-xl';
+
+      rtlContainer.appendChild(rtlBox);
+      wrapper.appendChild(rtlContainer);
+
+      document.body.appendChild(wrapper);
+
+      await snapshot();
+    });
+
+    it('should combine ltr: and rtl: variants for bi-directional support', async () => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'w-[340px]';
+
+      // LTR version
+      const ltrContainer = document.createElement('div');
+      ltrContainer.className = 'p-4 border border-gray-300 mb-2';
+      ltrContainer.setAttribute('dir', 'ltr');
+
+      const ltrLabel = document.createElement('div');
+      ltrLabel.className = 'mb-2 text-sm font-medium';
+      ltrLabel.textContent = 'LTR:';
+      ltrContainer.appendChild(ltrLabel);
+
+      const ltrCard = document.createElement('div');
+      ltrCard.className = 'flex items-center gap-3 p-3 bg-gray-100 rounded ltr:flex-row rtl:flex-row-reverse';
+
+      const ltrIcon = document.createElement('div');
+      ltrIcon.className = 'w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white';
+      ltrIcon.textContent = '★';
+
+      const ltrContent = document.createElement('div');
+      ltrContent.className = 'flex-1 ltr:text-left rtl:text-right';
+      ltrContent.innerHTML = '<div class="font-medium">Title</div><div class="text-sm text-gray-500">Description text</div>';
+
+      const ltrArrow = document.createElement('div');
+      ltrArrow.className = 'text-gray-400 ltr:rotate-0 rtl:rotate-180';
+      ltrArrow.textContent = '→';
+
+      ltrCard.appendChild(ltrIcon);
+      ltrCard.appendChild(ltrContent);
+      ltrCard.appendChild(ltrArrow);
+      ltrContainer.appendChild(ltrCard);
+      wrapper.appendChild(ltrContainer);
+
+      // RTL version
+      const rtlContainer = document.createElement('div');
+      rtlContainer.className = 'p-4 border border-gray-300';
+      rtlContainer.setAttribute('dir', 'rtl');
+
+      const rtlLabel = document.createElement('div');
+      rtlLabel.className = 'mb-2 text-sm font-medium';
+      rtlLabel.textContent = 'RTL:';
+      rtlContainer.appendChild(rtlLabel);
+
+      const rtlCard = document.createElement('div');
+      rtlCard.className = 'flex items-center gap-3 p-3 bg-gray-100 rounded ltr:flex-row rtl:flex-row-reverse';
+
+      const rtlIcon = document.createElement('div');
+      rtlIcon.className = 'w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white';
+      rtlIcon.textContent = '★';
+
+      const rtlContent = document.createElement('div');
+      rtlContent.className = 'flex-1 ltr:text-left rtl:text-right';
+      rtlContent.innerHTML = '<div class="font-medium">عنوان</div><div class="text-sm text-gray-500">نص الوصف</div>';
+
+      const rtlArrow = document.createElement('div');
+      rtlArrow.className = 'text-gray-400 ltr:rotate-0 rtl:rotate-180';
+      rtlArrow.textContent = '→';
+
+      rtlCard.appendChild(rtlIcon);
+      rtlCard.appendChild(rtlContent);
+      rtlCard.appendChild(rtlArrow);
+      rtlContainer.appendChild(rtlCard);
+      wrapper.appendChild(rtlContainer);
+
+      document.body.appendChild(wrapper);
+
+      await snapshot();
+    });
+
+    it('should apply rtl:flex-row-reverse for navigation menus', async () => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'w-[340px]';
+
+      // LTR version
+      const ltrContainer = document.createElement('div');
+      ltrContainer.className = 'p-4 border border-gray-300 mb-2';
+      ltrContainer.setAttribute('dir', 'ltr');
+
+      const ltrNav = document.createElement('nav');
+      ltrNav.className = 'flex rtl:flex-row-reverse gap-4 bg-gray-800 p-3 rounded';
+
+      ['Home', 'About', 'Contact'].forEach(text => {
+        const link = document.createElement('a');
+        link.className = 'text-white text-sm hover:text-blue-300';
+        link.textContent = text;
+        ltrNav.appendChild(link);
+      });
+
+      ltrContainer.appendChild(ltrNav);
+      wrapper.appendChild(ltrContainer);
+
+      // RTL version
+      const rtlContainer = document.createElement('div');
+      rtlContainer.className = 'p-4 border border-gray-300';
+      rtlContainer.setAttribute('dir', 'rtl');
+
+      const rtlNav = document.createElement('nav');
+      rtlNav.className = 'flex rtl:flex-row-reverse gap-4 bg-gray-800 p-3 rounded';
+
+      ['الرئيسية', 'حول', 'اتصل'].forEach(text => {
+        const link = document.createElement('a');
+        link.className = 'text-white text-sm hover:text-blue-300';
+        link.textContent = text;
+        rtlNav.appendChild(link);
+      });
+
+      rtlContainer.appendChild(rtlNav);
+      wrapper.appendChild(rtlContainer);
+
+      document.body.appendChild(wrapper);
+
+      await snapshot();
+    });
+
+    it('should apply rtl:translate-x-* for positioned elements', async () => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'w-[340px]';
+
+      // LTR version
+      const ltrContainer = document.createElement('div');
+      ltrContainer.className = 'p-4 border border-gray-300 mb-2';
+      ltrContainer.setAttribute('dir', 'ltr');
+
+      const ltrLabel = document.createElement('div');
+      ltrLabel.className = 'mb-2 text-sm font-medium';
+      ltrLabel.textContent = 'LTR (translate-x-4):';
+      ltrContainer.appendChild(ltrLabel);
+
+      const ltrBox = document.createElement('div');
+      ltrBox.className = 'w-16 h-16 bg-blue-500 translate-x-4 rtl:-translate-x-4';
+
+      ltrContainer.appendChild(ltrBox);
+      wrapper.appendChild(ltrContainer);
+
+      // RTL version
+      const rtlContainer = document.createElement('div');
+      rtlContainer.className = 'p-4 border border-gray-300';
+      rtlContainer.setAttribute('dir', 'rtl');
+
+      const rtlLabel = document.createElement('div');
+      rtlLabel.className = 'mb-2 text-sm font-medium';
+      rtlLabel.textContent = 'RTL (rtl:-translate-x-4):';
+      rtlContainer.appendChild(rtlLabel);
+
+      const rtlBox = document.createElement('div');
+      rtlBox.className = 'w-16 h-16 bg-green-500 translate-x-4 rtl:-translate-x-4';
+
+      rtlContainer.appendChild(rtlBox);
+      wrapper.appendChild(rtlContainer);
+
+      document.body.appendChild(wrapper);
+
+      await snapshot();
+    });
+
+    it('should apply rtl:left-* and rtl:right-* for positioned elements', async () => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'w-[340px]';
+
+      // LTR version
+      const ltrContainer = document.createElement('div');
+      ltrContainer.className = 'p-4 border border-gray-300 mb-2';
+      ltrContainer.setAttribute('dir', 'ltr');
+
+      const ltrLabel = document.createElement('div');
+      ltrLabel.className = 'mb-2 text-sm font-medium';
+      ltrLabel.textContent = 'LTR (badge on left):';
+      ltrContainer.appendChild(ltrLabel);
+
+      const ltrRelative = document.createElement('div');
+      ltrRelative.className = 'relative w-full h-20 bg-gray-200 rounded';
+
+      const ltrBadge = document.createElement('div');
+      ltrBadge.className = 'absolute left-2 rtl:left-auto rtl:right-2 top-2 px-2 py-1 bg-red-500 text-white text-xs rounded';
+      ltrBadge.textContent = 'New';
+
+      ltrRelative.appendChild(ltrBadge);
+      ltrContainer.appendChild(ltrRelative);
+      wrapper.appendChild(ltrContainer);
+
+      // RTL version
+      const rtlContainer = document.createElement('div');
+      rtlContainer.className = 'p-4 border border-gray-300';
+      rtlContainer.setAttribute('dir', 'rtl');
+
+      const rtlLabel = document.createElement('div');
+      rtlLabel.className = 'mb-2 text-sm font-medium';
+      rtlLabel.textContent = 'RTL (badge on right):';
+      rtlContainer.appendChild(rtlLabel);
+
+      const rtlRelative = document.createElement('div');
+      rtlRelative.className = 'relative w-full h-20 bg-gray-200 rounded';
+
+      const rtlBadge = document.createElement('div');
+      rtlBadge.className = 'absolute left-2 rtl:left-auto rtl:right-2 top-2 px-2 py-1 bg-green-500 text-white text-xs rounded';
+      rtlBadge.textContent = 'جديد';
+
+      rtlRelative.appendChild(rtlBadge);
+      rtlContainer.appendChild(rtlRelative);
+      wrapper.appendChild(rtlContainer);
+
+      document.body.appendChild(wrapper);
+
+      await snapshot();
+    });
+
+    it('should apply rtl: prefix with responsive variants', async () => {
+      const container = document.createElement('div');
+      container.className = 'w-[340px] p-4 border border-gray-300';
+      container.setAttribute('dir', 'rtl');
+
+      const label = document.createElement('div');
+      label.className = 'mb-2 text-sm font-medium';
+      label.textContent = 'RTL with combined variants:';
+      container.appendChild(label);
+
+      // Simulating a card component with multiple rtl: variants
+      const card = document.createElement('div');
+      card.className = 'bg-white border border-gray-200 rounded-lg p-4 rtl:text-right';
+
+      const header = document.createElement('div');
+      header.className = 'flex items-center gap-3 mb-3 rtl:flex-row-reverse';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'w-10 h-10 bg-blue-500 rounded-full';
+
+      const info = document.createElement('div');
+
+      const name = document.createElement('div');
+      name.className = 'font-bold';
+      name.textContent = 'أحمد محمد';
+
+      const role = document.createElement('div');
+      role.className = 'text-sm text-gray-500';
+      role.textContent = 'مطور برمجيات';
+
+      info.appendChild(name);
+      info.appendChild(role);
+      header.appendChild(avatar);
+      header.appendChild(info);
+      card.appendChild(header);
+
+      const body = document.createElement('p');
+      body.className = 'text-gray-700 text-sm mb-3';
+      body.textContent = 'هذا نص تجريبي لاختبار دعم اللغة العربية مع Tailwind CSS والبادئة rtl:';
+      card.appendChild(body);
+
+      const footer = document.createElement('div');
+      footer.className = 'flex gap-2 rtl:flex-row-reverse';
+
+      const primaryBtn = document.createElement('button');
+      primaryBtn.className = 'px-3 py-1 bg-blue-500 text-white text-sm rounded';
+      primaryBtn.textContent = 'متابعة';
+
+      const secondaryBtn = document.createElement('button');
+      secondaryBtn.className = 'px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded';
+      secondaryBtn.textContent = 'رسالة';
+
+      footer.appendChild(primaryBtn);
+      footer.appendChild(secondaryBtn);
+      card.appendChild(footer);
+
+      container.appendChild(card);
+      document.body.appendChild(container);
+
+      await snapshot();
+    });
+
+    it('should apply rtl:divide-x-reverse for dividers', async () => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'w-[340px]';
+
+      // LTR version
+      const ltrContainer = document.createElement('div');
+      ltrContainer.className = 'p-4 border border-gray-300 mb-2';
+      ltrContainer.setAttribute('dir', 'ltr');
+
+      const ltrLabel = document.createElement('div');
+      ltrLabel.className = 'mb-2 text-sm font-medium';
+      ltrLabel.textContent = 'LTR:';
+      ltrContainer.appendChild(ltrLabel);
+
+      const ltrFlex = document.createElement('div');
+      ltrFlex.className = 'flex divide-x divide-gray-400 rtl:divide-x-reverse';
+
+      ['A', 'B', 'C'].forEach(text => {
+        const item = document.createElement('div');
+        item.className = 'px-4 py-2 bg-gray-100';
+        item.textContent = text;
+        ltrFlex.appendChild(item);
+      });
+
+      ltrContainer.appendChild(ltrFlex);
+      wrapper.appendChild(ltrContainer);
+
+      // RTL version
+      const rtlContainer = document.createElement('div');
+      rtlContainer.className = 'p-4 border border-gray-300';
+      rtlContainer.setAttribute('dir', 'rtl');
+
+      const rtlLabel = document.createElement('div');
+      rtlLabel.className = 'mb-2 text-sm font-medium';
+      rtlLabel.textContent = 'RTL:';
+      rtlContainer.appendChild(rtlLabel);
+
+      const rtlFlex = document.createElement('div');
+      rtlFlex.className = 'flex divide-x divide-gray-400 rtl:divide-x-reverse';
+
+      ['أ', 'ب', 'ج'].forEach(text => {
+        const item = document.createElement('div');
+        item.className = 'px-4 py-2 bg-gray-100';
+        item.textContent = text;
+        rtlFlex.appendChild(item);
+      });
+
+      rtlContainer.appendChild(rtlFlex);
+      wrapper.appendChild(rtlContainer);
+
+      document.body.appendChild(wrapper);
+
+      await snapshot();
+    });
+  });
 });
