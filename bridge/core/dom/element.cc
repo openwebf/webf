@@ -18,6 +18,7 @@
 #include "child_list_mutation_scope.h"
 #include "comment.h"
 #include "core/css/css_identifier_value.h"
+#include "core/css/css_selector_list.h"
 #include "core/css/css_property_value_set.h"
 #include "core/css/css_selector_list.h"
 #include "core/css/css_style_sheet.h"
@@ -27,12 +28,14 @@
 #include "core/css/parser/css_parser.h"
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/selector_checker.h"
+#include "core/css/parser/css_parser_context.h"
 #include "core/css/style_recalc_change.h"
 #include "core/css/style_recalc_context.h"
 #include "core/css/style_scope_frame.h"
 #include "core/css/style_scope_data.h"
 #include "core/css/style_engine.h"
 #include "core/css/style_sheet_contents.h"
+#include "core/css/selector_checker.h"
 #include "core/css/white_space.h"
 #include "core/dom/document_fragment.h"
 #include "core/dom/element_rare_data_vector.h"
@@ -156,6 +159,43 @@ bool IsPotentiallyDisableableFormControl(const Element& element) {
   }
   return tag_name == "button" || tag_name == "input" || tag_name == "select" || tag_name == "textarea" ||
          tag_name == "option";
+}
+
+std::shared_ptr<CSSSelectorList> ParseSelectorListOrThrow(const AtomicString& selectors,
+                                                          ExceptionState& exception_state,
+                                                          JSContext* ctx) {
+  auto parser_context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
+  auto sheet = std::make_shared<StyleSheetContents>(parser_context);
+
+  std::vector<CSSSelector> arena;
+  tcb::span<CSSSelector> vector =
+      CSSParser::ParseSelector(parser_context, CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr, sheet,
+                               selectors.GetString(), arena);
+
+  auto selector_list = CSSSelectorList::AdoptSelectorVector(vector);
+  if (!selector_list->IsValid()) {
+    exception_state.ThrowException(ctx, ErrorType::SyntaxError,
+                                   "'" + selectors.ToUTF8String() + "' is not a valid selector.");
+    return nullptr;
+  }
+  return selector_list;
+}
+
+bool MatchesAnySelectorInList(Element& element,
+                              const CSSSelectorList& selector_list,
+                              const ContainerNode* scope) {
+  SelectorChecker checker(SelectorChecker::kQueryingRules);
+  SelectorChecker::SelectorCheckingContext context(&element);
+  context.scope = scope;
+
+  for (const CSSSelector* selector = selector_list.First(); selector; selector = CSSSelectorList::Next(*selector)) {
+    context.selector = selector;
+    SelectorChecker::MatchResult result;
+    if (checker.Match(context, result)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 }  // namespace
@@ -570,7 +610,7 @@ bool Element::matches(const AtomicString& selectors, ExceptionState& exception_s
     if (!selector_list) {
       return false;
     }
-    return MatchesAnySelectorInList(*this, *selector_list, *this);
+    return MatchesAnySelectorInList(*this, *selector_list, this);
   }
 
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
@@ -588,9 +628,9 @@ Element* Element::closest(const AtomicString& selectors, ExceptionState& excepti
     if (!selector_list) {
       return nullptr;
     }
-
+    ContainerNode* scope = this;
     for (Element* current = this; current; current = current->parentElement()) {
-      if (MatchesAnySelectorInList(*current, *selector_list, *this)) {
+      if (MatchesAnySelectorInList(*current, *selector_list, scope)) {
         return current;
       }
     }
