@@ -925,6 +925,21 @@ class CSSParser {
 
         _eat(TokenKind.RPAREN);
         return NegationSelector(negArg);
+      } else if (!pseudoElement && (name == 'is' || name == 'where')) {
+        _eat(TokenKind.LPAREN);
+
+        // https://drafts.csswg.org/selectors-4/#matches
+        // :is() / :where() take a <forgiving-selector-list>.
+        final SelectorGroup? group = processForgivingSelectorGroup(terminatorKind: TokenKind.RPAREN);
+
+        _eat(TokenKind.RPAREN);
+
+        // If all arguments are invalid (or empty), treat the selector as invalid
+        // so the whole selector list can be discarded (WebF behavior: match nothing).
+        if (group == null) {
+          return InvalidSelector(pseudoName);
+        }
+        return PseudoClassFunctionSelector(pseudoName, group);
       } else if (!pseudoElement &&
           (name == 'host' || name == 'host-context' || name == 'global-context' || name == '-acx-global-context')) {
         _eat(TokenKind.LPAREN);
@@ -963,6 +978,69 @@ class CSSParser {
     return pseudoElement || _legacyPseudoElements.contains(name)
         ? PseudoElementSelector(pseudoName, isLegacy: !pseudoElement)
         : PseudoClassSelector(pseudoName);
+  }
+
+  // Parse a forgiving selector list, terminated by [terminatorKind] (e.g., ')').
+  // Invalid selectors are skipped; if all selectors are invalid or empty, returns null.
+  //
+  // See: https://drafts.csswg.org/selectors-4/#forgiving-selector
+  SelectorGroup? processForgivingSelectorGroup({required int terminatorKind}) {
+    final selectors = <Selector>[];
+
+    // We may already be in selector mode; preserve current state anyway.
+    final bool oldInSelector = tokenizer.inSelector;
+    tokenizer.inSelector = true;
+
+    while (!(_peekKind(terminatorKind) || _peekKind(TokenKind.END_OF_FILE))) {
+      final marked = _mark;
+      final selector = processSelector();
+
+      if (selector != null && !selector.hasInvalid) {
+        selectors.add(selector);
+      } else {
+        // Recover by consuming tokens until the next comma or terminator.
+        _restore(marked);
+        _consumeUntilForgivingSelectorBoundary(terminatorKind);
+      }
+
+      // Consume optional comma between list items (allow empty items).
+      _maybeEat(TokenKind.COMMA);
+    }
+
+    tokenizer.inSelector = oldInSelector;
+
+    if (selectors.isEmpty) return null;
+    return SelectorGroup(selectors);
+  }
+
+  void _consumeUntilForgivingSelectorBoundary(int terminatorKind) {
+    int parenDepth = 0;
+    int bracketDepth = 0;
+
+    while (!_peekKind(TokenKind.END_OF_FILE)) {
+      final int kind = _peek();
+
+      if (parenDepth == 0 && bracketDepth == 0 && (kind == TokenKind.COMMA || kind == terminatorKind)) {
+        return;
+      }
+
+      switch (kind) {
+        case TokenKind.LPAREN:
+          parenDepth++;
+          break;
+        case TokenKind.RPAREN:
+          if (parenDepth > 0) parenDepth--;
+          break;
+        case TokenKind.LBRACK:
+          bracketDepth++;
+          break;
+        case TokenKind.RBRACK:
+          if (bracketDepth > 0) bracketDepth--;
+          break;
+      }
+
+      _next();
+    }
   }
 
   /// In CSS3, the expressions are identifiers, strings, or of the form "an+b".

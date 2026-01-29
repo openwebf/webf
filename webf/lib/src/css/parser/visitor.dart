@@ -180,6 +180,12 @@ class SelectorTextVisitor extends Visitor {
     final arg = node.argument;
     if (arg is Selector) {
       arg.visit(this);
+    } else if (arg is SelectorGroup) {
+      final selectors = arg.selectors;
+      for (var i = 0; i < selectors.length; i++) {
+        if (i > 0) emit(', ');
+        selectors[i].visit(this);
+      }
     } else if (arg is List<String>) {
       // Join nth-expressions or other function args back into text.
       emit(arg.join(''));
