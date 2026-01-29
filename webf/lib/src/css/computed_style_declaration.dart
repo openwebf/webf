@@ -93,6 +93,10 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       if (style == null) {
         return '';
       }
+      final String? textValue = _valueForTextLonghandProperty(propertyName, style);
+      if (textValue != null) {
+        return textValue;
+      }
       final String? gridValue = _valueForGridProperty(propertyName, style);
       return gridValue ?? '';
     }
@@ -360,6 +364,14 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
         return style.visibility.cssText();
       case CSSPropertyID.WhiteSpace:
         return style.whiteSpace.cssText();
+      case CSSPropertyID.WhiteSpaceCollapse:
+        return style.whiteSpaceCollapse.cssText();
+      case CSSPropertyID.TextWrap:
+        return style.textWrap.cssText();
+      case CSSPropertyID.TextWrapMode:
+        return style.textWrapMode.cssText();
+      case CSSPropertyID.TextWrapStyle:
+        return style.textWrapStyle.cssText();
       case CSSPropertyID.ZIndex:
         return style.zIndex?.toString() ?? 'auto';
       case CSSPropertyID.TransitionDelay:
@@ -536,6 +548,21 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
         break;
     }
     return '';
+  }
+
+  String? _valueForTextLonghandProperty(String propertyName, CSSRenderStyle style) {
+    final String normalized = kebabize(propertyName.trim());
+    switch (normalized) {
+      case 'white-space-collapse':
+        return style.whiteSpaceCollapse.cssText();
+      case 'text-wrap-mode':
+        return style.textWrapMode.cssText();
+      case 'text-wrap-style':
+        return style.textWrapStyle.cssText();
+      case 'text-wrap':
+        return style.textWrap.cssText();
+    }
+    return null;
   }
 
   String _borderRadiusShorthandValue(RenderStyle style) {
@@ -833,6 +860,76 @@ extension WhiteSpaceText on WhiteSpace {
         return 'pre-line';
       case WhiteSpace.breakSpaces:
         return 'break-spaces';
+    }
+  }
+}
+
+// `white-space-collapse` longhand of the `white-space` shorthand.
+// https://w3c.github.io/csswg-drafts/css-text-4/#propdef-white-space-collapse
+enum WhiteSpaceCollapse { collapse, preserve, preserveBreaks, breakSpaces }
+
+extension WhiteSpaceCollapseText on WhiteSpaceCollapse {
+  String cssText() {
+    switch (this) {
+      case WhiteSpaceCollapse.collapse:
+        return 'collapse';
+      case WhiteSpaceCollapse.preserve:
+        return 'preserve';
+      case WhiteSpaceCollapse.preserveBreaks:
+        return 'preserve-breaks';
+      case WhiteSpaceCollapse.breakSpaces:
+        return 'break-spaces';
+    }
+  }
+}
+
+// `text-wrap` shorthand for `text-wrap-mode` + `text-wrap-style`.
+// https://w3c.github.io/csswg-drafts/css-text-4/#propdef-text-wrap
+enum TextWrap { wrap, nowrap, balance, pretty }
+
+extension TextWrapText on TextWrap {
+  String cssText() {
+    switch (this) {
+      case TextWrap.wrap:
+        return 'wrap';
+      case TextWrap.nowrap:
+        return 'nowrap';
+      case TextWrap.balance:
+        return 'balance';
+      case TextWrap.pretty:
+        return 'pretty';
+    }
+  }
+}
+
+// `text-wrap-mode` longhand of the `text-wrap` shorthand.
+// https://w3c.github.io/csswg-drafts/css-text-4/#propdef-text-wrap-mode
+enum TextWrapMode { wrap, nowrap }
+
+extension TextWrapModeText on TextWrapMode {
+  String cssText() {
+    switch (this) {
+      case TextWrapMode.wrap:
+        return 'wrap';
+      case TextWrapMode.nowrap:
+        return 'nowrap';
+    }
+  }
+}
+
+// `text-wrap-style` longhand of the `text-wrap` shorthand.
+// https://w3c.github.io/csswg-drafts/css-text-4/#propdef-text-wrap-style
+enum TextWrapStyle { auto, balance, pretty }
+
+extension TextWrapStyleText on TextWrapStyle {
+  String cssText() {
+    switch (this) {
+      case TextWrapStyle.auto:
+        return 'auto';
+      case TextWrapStyle.balance:
+        return 'balance';
+      case TextWrapStyle.pretty:
+        return 'pretty';
     }
   }
 }
