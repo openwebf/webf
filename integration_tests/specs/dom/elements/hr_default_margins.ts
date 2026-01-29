@@ -1,5 +1,5 @@
 describe('<hr> default margins', () => {
-  fit('uses 0.5em block margins by default', async () => {
+  it('uses 0.5em block margins by default', async () => {
     await resizeViewport(400, 300);
 
     const prevDocMargin = document.documentElement.style.margin;
