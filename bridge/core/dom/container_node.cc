@@ -358,7 +358,12 @@ Node* ContainerNode::RemoveChild(Node* old_child, ExceptionState& exception_stat
   {
     Node* prev = child->previousSibling();
     Node* next = child->nextSibling();
-    {
+    if (GetDocument().GetExecutingContext()->isBlinkEnabled()) {
+      StyleEngine& engine = GetDocument().EnsureStyleEngine();
+      StyleEngine::DOMRemovalScope style_scope(engine);
+      RemoveBetween(prev, next, *child);
+      NotifyNodeRemoved(*child);
+    } else {
       RemoveBetween(prev, next, *child);
       NotifyNodeRemoved(*child);
     }
@@ -483,12 +488,25 @@ void ContainerNode::RemoveChildren() {
 
   bool has_element_child = false;
 
-  while (Node* child = first_child_) {
-    if (child->IsElementNode()) {
-      has_element_child = true;
+  if (GetDocument().GetExecutingContext()->isBlinkEnabled()) {
+    StyleEngine& engine = GetDocument().EnsureStyleEngine();
+    StyleEngine::DOMRemovalScope style_scope(engine);
+
+    while (Node* child = first_child_) {
+      if (child->IsElementNode()) {
+        has_element_child = true;
+      }
+      RemoveBetween(nullptr, child->nextSibling(), *child);
+      NotifyNodeRemoved(*child);
     }
-    RemoveBetween(nullptr, child->nextSibling(), *child);
-    NotifyNodeRemoved(*child);
+  } else {
+    while (Node* child = first_child_) {
+      if (child->IsElementNode()) {
+        has_element_child = true;
+      }
+      RemoveBetween(nullptr, child->nextSibling(), *child);
+      NotifyNodeRemoved(*child);
+    }
   }
 
   ChildrenChange change = {
@@ -571,8 +589,12 @@ void ContainerNode::ParserRemoveChild(Node& old_child) {
 
   Node* prev = old_child.previousSibling();
   Node* next = old_child.nextSibling();
-  {
-    //    StyleEngine::DOMRemovalScope style_scope(engine);
+  if (GetDocument().GetExecutingContext()->isBlinkEnabled()) {
+    StyleEngine& engine = GetDocument().EnsureStyleEngine();
+    StyleEngine::DOMRemovalScope style_scope(engine);
+    RemoveBetween(prev, next, old_child);
+    NotifyNodeRemoved(old_child);
+  } else {
     RemoveBetween(prev, next, old_child);
     NotifyNodeRemoved(old_child);
   }
@@ -809,98 +831,54 @@ void ContainerNode::NotifyNodeRemoved(Node& root) {
 }
 
 void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange& change) {
+  ExecutingContext* context = GetDocument().GetExecutingContext();
+  if (context && context->isBlinkEnabled() &&
+      change.type == ChildrenChangeType::kFinishedBuildingDocumentFragmentTree) {
+    // The rest of this is not necessary when building a DocumentFragment.
+    return;
+  }
+
   InvalidateNodeListCachesInAncestors(nullptr, nullptr, &change);
 
-  // When Blink CSS is enabled, structural changes that affect elements should
-  // mark the affected subtree as needing style recomputation. The actual style
-  // update is performed later via StyleEngine::RecalcStyle() on the next
-  // frame / FlushUICommand, rather than doing a full synchronous recalc here.
-  if (GetDocument().GetExecutingContext()->isBlinkEnabled() &&
-      change.affects_elements == ChildrenChangeAffectsElements::kYes) {
-    Document& document = GetDocument();
-    StyleEngine& style_engine = document.EnsureStyleEngine();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
 
-    // Mirror Blink behavior: when a node is inserted into the document, assume
-    // its styles are potentially stale and force a subtree recalc starting
-    // from the root of the inserted subtree. For removals or non-element
-    // containers, fall back to marking the container (or document root).
-    Element* subtree_root = nullptr;
+  if (change.IsChildRemoval() || change.type == ChildrenChangeType::kAllChildrenRemoved) {
+    GetDocument().EnsureStyleEngine().ChildrenRemoved(*this);
+    return;
+  }
 
-    // For direct child insertions, prefer the inserted element itself as the
-    // subtree root. This matches Blink's kSubtreeStyleChange-on-host behavior
-    // for newly attached subtrees.
-    if (change.IsChildInsertion() && change.sibling_changed && change.sibling_changed->IsElementNode()) {
-      subtree_root = To<Element>(change.sibling_changed);
-      // Only treat as a style recalc root once the element is actually
-      // connected to the document tree.
-      if (!subtree_root->isConnected()) {
-        subtree_root = nullptr;
-      }
-    }
+  if (!change.IsChildInsertion()) {
+    return;
+  }
 
-    // If we did not identify a specific inserted host (e.g. removals, parser
-    // finish events, or non-element inserts), fall back to the container
-    // element, or ultimately the document element.
-    if (!subtree_root) {
-      if (IsElementNode()) {
-        subtree_root = To<Element>(this);
-      } else {
-        subtree_root = document.documentElement();
-      }
-    }
+  Node* inserted_node = change.sibling_changed;
+  if (!inserted_node) {
+    return;
+  }
 
-    if (subtree_root && subtree_root->isConnected()) {
-      subtree_root->SetNeedsStyleRecalc(
-          kSubtreeStyleChange,
-          StyleChangeReasonForTracing::Create(style_change_reason::kRelatedStyleRule));
-    }
+  if (inserted_node->IsContainerNode() || inserted_node->IsTextNode()) {
+    inserted_node->ClearFlatTreeNodeDataIfHostChanged(*this);
+  } else {
+    return;
+  }
 
-    // For + and ~ combinators (as well as :nth-* positional selectors),
-    // succeeding siblings may need style invalidation after an element is
-    // inserted or removed.
-    //
-    // Blink typically gates this work on per-container restyle flags populated
-    // during selector matching. In WebF those flags may not be set yet (e.g.
-    // before the first style pass, or when the relevant selector has not
-    // matched any element so far). Scheduling invalidations is safe here because
-    // the StyleEngine no-ops when no invalidation sets exist for the inserted/
-    // removed element.
-    if (!change.ByParser() && change.IsChildElementChange() && InActiveDocument() &&
-        GetStyleChangeType() != kSubtreeStyleChange) {
-      auto* changed_element = DynamicTo<Element>(change.sibling_changed);
-      if (changed_element) {
-        Node* node_after_change = change.sibling_after_change;
-        Node* node_before_change = change.sibling_before_change;
+  if (!InActiveDocument()) {
+    return;
+  }
 
-        Element* element_after_change = DynamicTo<Element>(node_after_change);
-        if (node_after_change && !element_after_change) {
-          element_after_change = ElementTraversal::NextSibling(*node_after_change);
-        }
-
-        Element* element_before_change = DynamicTo<Element>(node_before_change);
-        if (node_before_change && !element_before_change) {
-          element_before_change = ElementTraversal::PreviousSibling(*node_before_change);
-        }
-
-        if ((ChildrenAffectedByForwardPositionalRules() && element_after_change) ||
-            (ChildrenAffectedByBackwardPositionalRules() && element_before_change)) {
-          style_engine.ScheduleNthPseudoInvalidations(*this);
-        }
-
-        if (!element_after_change) {
-          return;
-        }
-
-        if (change.type == ChildrenChangeType::kElementInserted) {
-          style_engine.ScheduleInvalidationsForInsertedSibling(element_before_change, *changed_element);
-        } else {
-          assert(change.type == ChildrenChangeType::kElementRemoved);
-          style_engine.ScheduleInvalidationsForRemovedSibling(element_before_change, *changed_element,
-                                                             *element_after_change);
-        }
-      }
+  if (Element* element = DynamicTo<Element>(this)) {
+    // Blink gates insertion dirtiness on the presence of a ComputedStyle on the
+    // parent element (to avoid work for display:none subtrees). WebF does not
+    // store ComputedStyle on DOM nodes; approximate the behavior using the
+    // display-none flag tracked by the native style engine.
+    if (element->IsDisplayNoneForStyleInvalidation()) {
+      return;
     }
   }
+
+  inserted_node->SetStyleChangeOnInsertion();
 }
 
 void ContainerNode::InvalidateNodeListCachesInAncestors(const QualifiedName* attr_name,

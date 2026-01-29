@@ -35,6 +35,7 @@
 #include "element_rule_collector.h"
 
 #include <algorithm>
+#include <chrono>
 #include <limits>
 #include <string>
 #include "core/css/cascade_layer.h"
@@ -53,6 +54,14 @@
 #include "foundation/string/string_view.h"
 
 namespace webf {
+
+namespace {
+
+inline int64_t ToUs(std::chrono::steady_clock::duration duration) {
+  return std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
+}
+
+}  // namespace
 
 // Fast prefilter: if the rightmost compound contains a type selector,
 // ensure the candidate element’s tag matches it. This avoids falsely
@@ -120,6 +129,7 @@ void ElementRuleCollector::CollectRuleSetMatchingRules(
   const auto& tag_rules = rule_set->TagRules(element_->localName());
   if (!tag_rules.empty()) {
     CollectMatchingRulesForList(tag_rules,
+                               RuleBucket::kTag,
                                cascade_origin,
                                match_request);
   }
@@ -127,7 +137,8 @@ void ElementRuleCollector::CollectRuleSetMatchingRules(
   // Collect universal rules
   const auto& universal_rules = rule_set->UniversalRules();
   if (!universal_rules.empty()) {
-    CollectMatchingRulesForList(universal_rules, 
+    CollectMatchingRulesForList(universal_rules,
+                               RuleBucket::kUniversal,
                                cascade_origin,
                                match_request);
   }
@@ -147,8 +158,8 @@ void ElementRuleCollector::CollectRuleSetMatchingRules(
         }
       }
 
-      CollectMatchingRulesForList(id_rules, cascade_origin, match_request,
-                                 /*is_id_bucket*/ true, /*typed_rules_only*/ typed_exists);
+      CollectMatchingRulesForList(id_rules, RuleBucket::kId, cascade_origin, match_request,
+                                  /*is_id_bucket*/ true, /*typed_rules_only*/ typed_exists);
     }
   }
   
@@ -158,6 +169,7 @@ void ElementRuleCollector::CollectRuleSetMatchingRules(
       const auto& class_rules = rule_set->ClassRules(class_name);
       if (!class_rules.empty()) {
         CollectMatchingRulesForList(class_rules,
+                                   RuleBucket::kClass,
                                    cascade_origin,
                                    match_request);
       }
@@ -168,15 +180,12 @@ void ElementRuleCollector::CollectRuleSetMatchingRules(
 template <typename RuleDataListType>
 void ElementRuleCollector::CollectMatchingRulesForList(
     const RuleDataListType& rules,
+    RuleBucket bucket,
     CascadeOrigin cascade_origin,
     const MatchRequest& match_request,
     bool is_id_bucket,
     bool typed_rules_only) {
-  
-  // Safety check - don't process too many rules to prevent hangs
-  size_t processed_count = 0;
-  const size_t MAX_RULES_TO_PROCESS = 1000;
-  
+
   for (const auto& rule_data : rules) {
     if (!rule_data) {
       continue;
@@ -207,15 +216,29 @@ void ElementRuleCollector::CollectMatchingRulesForList(
         continue;
       }
     }
-
-    // Prevent processing too many rules
-    if (++processed_count > MAX_RULES_TO_PROCESS) {
-      break;
-    }
     
     // Skip pure-id variants if we have typed compounds in the same ID bucket.
     if (is_id_bucket && typed_rules_only && !rule_data->HasRightmostType()) {
       continue;
+    }
+
+    if (selector_filter_) {
+      bool rejected = false;
+      if (track_rule_match_times_) {
+        auto start_time = std::chrono::steady_clock::now();
+        rejected = selector_filter_->FastRejectSelector(rule_data->AncestorIdentifierHashes());
+        selector_filter_us_ += ToUs(std::chrono::steady_clock::now() - start_time);
+      } else {
+        rejected = selector_filter_->FastRejectSelector(rule_data->AncestorIdentifierHashes());
+      }
+
+      if (rejected) {
+        ++candidate_rules_rejected_by_filter_;
+        if (bucket == RuleBucket::kUniversal) {
+          ++candidate_universal_rejected_by_filter_;
+        }
+        continue;
+      }
     }
 
     // Check if selector matches element
@@ -234,6 +257,11 @@ void ElementRuleCollector::CollectMatchingRulesForList(
       continue;
     }
     
+    ++candidate_rules_checked_;
+    if (bucket == RuleBucket::kUniversal) {
+      ++candidate_universal_checked_;
+    }
+
     SelectorChecker::MatchResult match_result;
     // Avoid calling TagQName() unless the selector is a tag selector.
     // Non-tag selectors (class, id, attribute, pseudo, etc.) would hit
@@ -243,7 +271,19 @@ void ElementRuleCollector::CollectMatchingRulesForList(
     // so pseudo-element selectors like ::before / ::after can be evaluated
     // when the checker runs in non-querying modes.
     context.pseudo_id = pseudo_element_id_;
-    bool matched = selector_checker_.Match(context, match_result);
+    bool matched = false;
+    if (track_rule_match_times_) {
+      auto start_time = std::chrono::steady_clock::now();
+      matched = selector_checker_.Match(context, match_result);
+      int64_t duration_us = ToUs(std::chrono::steady_clock::now() - start_time);
+      selector_match_us_ += duration_us;
+      if (duration_us > max_selector_match_us_) {
+        max_selector_match_us_ = duration_us;
+        max_selector_match_selector_ = context.selector;
+      }
+    } else {
+      matched = selector_checker_.Match(context, match_result);
+    }
     if (matched) {
       // When collecting normal element rules, pseudo-element selectors (e.g.
       // ::before/::after) may "match" only to mark pseudo presence. They must
@@ -424,6 +464,12 @@ void ElementRuleCollector::ClearMatchedRules() {
   current_cascade_order_ = 0;
   matched_pseudo_element_mask_ = 0;
   matched_pseudo_element_with_content_mask_ = 0;
+  candidate_rules_checked_ = 0;
+  candidate_rules_rejected_by_filter_ = 0;
+  candidate_universal_checked_ = 0;
+  candidate_universal_rejected_by_filter_ = 0;
+  selector_filter_us_ = 0;
+  selector_match_us_ = 0;
 }
 
 void ElementRuleCollector::AddElementStyleProperties(

@@ -411,6 +411,19 @@ private:
      const QualifiedName& name);
 };
 
+struct SelectorCheckerPerfStats {
+  size_t match_selector_calls{0};
+  size_t indirect_adjacent_calls{0};
+  size_t indirect_adjacent_steps{0};
+  size_t pseudo_not_calls{0};
+  size_t pseudo_not_fast_path_calls{0};
+};
+
+// Debug/perf instrumentation for selector matching. These counters are
+// thread-local and intended for coarse-grained profiling of style recalc.
+void ResetSelectorCheckerPerfStats();
+SelectorCheckerPerfStats TakeSelectorCheckerPerfStats();
+
 }
 
 #endif  // WEBF_CORE_CSS_SELECTOR_CHECKER_H_

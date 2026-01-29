@@ -82,6 +82,22 @@ void ForcePseudoState(Element*, CSSSelector::PseudoType, bool* result) {
 }
 }  // namespace probe
 
+namespace {
+
+thread_local SelectorCheckerPerfStats g_selector_checker_perf_stats;
+
+}  // namespace
+
+void ResetSelectorCheckerPerfStats() {
+  g_selector_checker_perf_stats = SelectorCheckerPerfStats{};
+}
+
+SelectorCheckerPerfStats TakeSelectorCheckerPerfStats() {
+  SelectorCheckerPerfStats out = g_selector_checker_perf_stats;
+  g_selector_checker_perf_stats = SelectorCheckerPerfStats{};
+  return out;
+}
+
 // Helper function stubs
 static bool IsFrameFocused(const Element& element) {
   // WebF doesn't have frame focus tracking yet
@@ -211,6 +227,8 @@ bool SelectorChecker::Match(const SelectorCheckingContext& context, MatchResult&
 //   ancestor of e
 SelectorChecker::MatchStatus SelectorChecker::MatchSelector(const SelectorCheckingContext& context,
                                                            MatchResult& result) const {
+
+ ++g_selector_checker_perf_stats.match_selector_calls;
  
  // Simple recursion guard to prevent infinite loops
  static thread_local int recursion_depth = 0;
@@ -460,16 +478,46 @@ SelectorChecker::MatchStatus SelectorChecker::MatchForRelation(const SelectorChe
      DCHECK(result.has_argument_leftmost_compound_matches);
      result.has_argument_leftmost_compound_matches->push_back(context.element);
      [[fallthrough]];
-  case CSSSelector::kIndirectAdjacent:
-    if (mode_ == kResolvingStyle) {
-      if (ContainerNode* parent = context.element->ParentElementOrShadowRoot()) {
-        parent->SetChildrenAffectedByIndirectAdjacentRules();
-      }
-    }
-    next_context.element = ElementTraversal::PreviousSibling(*context.element);
-    for (; next_context.element; next_context.element = ElementTraversal::PreviousSibling(*next_context.element)) {
-      MatchStatus match = MatchSelector(next_context, result);
-      if (match == kSelectorMatches || match == kSelectorFailsAllSiblings || match == kSelectorFailsCompletely) {
+	  case CSSSelector::kIndirectAdjacent:
+	    ++g_selector_checker_perf_stats.indirect_adjacent_calls;
+	    if (mode_ == kResolvingStyle) {
+	      if (ContainerNode* parent = context.element->ParentElementOrShadowRoot()) {
+	        parent->SetChildrenAffectedByIndirectAdjacentRules();
+	      }
+	    }
+
+	    // Fast reject for selectors of the form "... > X ~ Y": for any subject Y,
+	    // all candidate X siblings share the same parent. If the selector chain to
+	    // the left of X requires a specific parent (kChild), and that parent does
+	    // not match, then no sibling can ever satisfy the selector. Avoid scanning
+	    // all previous siblings in that case.
+	    if (next_context.selector && next_context.selector->NextSimpleSelector()) {
+	      CSSSelector::RelationType next_relation = next_context.selector->Relation();
+	      if (next_relation == CSSSelector::kChild || next_relation == CSSSelector::kRelativeChild) {
+	        Element* shared_parent = context.element->parentElement();
+	        if (!shared_parent) {
+	          return kSelectorFailsAllSiblings;
+	        }
+
+	        SelectorCheckingContext parent_context(context);
+	        parent_context.element = shared_parent;
+	        parent_context.selector = next_context.selector->NextSimpleSelector();
+	        parent_context.is_sub_selector = true;
+	        parent_context.in_nested_complex_selector = true;
+	        parent_context.pseudo_id = kPseudoIdNone;
+	        MatchResult parent_result;
+	        MatchStatus parent_match = MatchSelector(parent_context, parent_result);
+	        if (parent_match != kSelectorMatches) {
+	          return kSelectorFailsAllSiblings;
+	        }
+	      }
+	    }
+
+	    next_context.element = ElementTraversal::PreviousSibling(*context.element);
+	    for (; next_context.element; next_context.element = ElementTraversal::PreviousSibling(*next_context.element)) {
+	      ++g_selector_checker_perf_stats.indirect_adjacent_steps;
+	      MatchStatus match = MatchSelector(next_context, result);
+	      if (match == kSelectorMatches || match == kSelectorFailsAllSiblings || match == kSelectorFailsCompletely) {
         return match;
       }
     }
@@ -789,23 +837,28 @@ static bool AnyAttributeMatches(Element& element, CSSSelector::MatchType match, 
     const bool any_ns = selector_attr.NamespaceURI() == g_star_atom || selector_attr.NamespaceURI().IsNull();
     if (any_ns) {
       const AtomicString& local = selector_attr.LocalName();
-      ExceptionState exception_state;  // No exception expected for attribute access.
-      if (match == CSSSelector::kAttributeSet) {
-        if (element.hasAttribute(local, exception_state)) {
-          return true;
-        }
-      } else {
-        AtomicString attr_value = element.getAttribute(local, exception_state);
-        if (!attr_value.IsNull()) {
-          Attribute fake(QualifiedName(g_null_atom, local, g_star_atom), attr_value);
-          if (AttributeValueMatches(fake, match, selector_value, case_sensitivity)) {
+      // Selector matching must be side-effect free. Do not create legacy
+      // ElementAttributes stores, and never consult widget binding properties
+      // via Element::getAttribute()/hasAttribute() which may synchronously
+      // call into Dart for WidgetElement instances.
+      if (ElementAttributes* attrs = element.GetElementAttributesIfExists()) {
+        if (match == CSSSelector::kAttributeSet) {
+          if (attrs->HasAttributeForStyle(local)) {
             return true;
           }
-          // Legacy ASCII-insensitive fallback for HTML when needed.
-          if (element.IsHTMLElement() && !selector.IsCaseSensitiveAttribute() &&
-              AttributeValueMatches(fake, match, selector_value, kTextCaseASCIIInsensitive)) {
-            if (selector.AttributeMatch() != CSSSelector::AttributeMatchType::kCaseSensitiveAlways) {
+        } else {
+          AtomicString attr_value = attrs->GetAttributeForStyle(local);
+          if (!attr_value.IsNull()) {
+            Attribute fake(QualifiedName(g_null_atom, local, g_star_atom), attr_value);
+            if (AttributeValueMatches(fake, match, selector_value, case_sensitivity)) {
               return true;
+            }
+            // Legacy ASCII-insensitive fallback for HTML when needed.
+            if (element.IsHTMLElement() && !selector.IsCaseSensitiveAttribute() &&
+                AttributeValueMatches(fake, match, selector_value, kTextCaseASCIIInsensitive)) {
+              if (selector.AttributeMatch() != CSSSelector::AttributeMatchType::kCaseSensitiveAlways) {
+                return true;
+              }
             }
           }
         }
@@ -914,7 +967,48 @@ ALWAYS_INLINE bool SelectorChecker::CheckOne(const SelectorCheckingContext& cont
  }
 }
 bool SelectorChecker::CheckPseudoNot(const SelectorCheckingContext& context, MatchResult& result) const {
- return !MatchesAnyInList(context, context.selector->SelectorList()->First(), result);
+ ++g_selector_checker_perf_stats.pseudo_not_calls;
+
+  const CSSSelectorList* list = context.selector->SelectorList();
+  if (!list) {
+    // Per spec :not() requires a selector list argument. Be conservative.
+    return false;
+  }
+
+  const CSSSelector* argument = list->First();
+  if (argument && CSSSelectorList::Next(*argument) == nullptr && !argument->NextSimpleSelector()) {
+    ++g_selector_checker_perf_stats.pseudo_not_fast_path_calls;
+
+    Element& element = *context.element;
+    bool argument_matches = false;
+    switch (argument->Match()) {
+      case CSSSelector::kTag:
+        argument_matches = MatchesTagName(element, argument->TagQName());
+        break;
+      case CSSSelector::kClass:
+        argument_matches = element.HasClass() && element.ClassNames().Contains(argument->Value());
+        break;
+      case CSSSelector::kId:
+        argument_matches = element.HasID() && element.IdForStyleResolution() == argument->Value();
+        break;
+      case CSSSelector::kAttributeExact:
+      case CSSSelector::kAttributeSet:
+      case CSSSelector::kAttributeHyphen:
+      case CSSSelector::kAttributeList:
+      case CSSSelector::kAttributeContain:
+      case CSSSelector::kAttributeBegin:
+      case CSSSelector::kAttributeEnd:
+        argument_matches = AnyAttributeMatches(element, argument->Match(), *argument);
+        break;
+      default:
+        // Fallback to the general (potentially expensive) path.
+        argument_matches = MatchesAnyInList(context, list->First(), result);
+        break;
+    }
+    return !argument_matches;
+  }
+
+  return !MatchesAnyInList(context, list->First(), result);
 }
 bool SelectorChecker::MatchesAnyInList(const SelectorCheckingContext& context,
                                       const CSSSelector* selector_list,

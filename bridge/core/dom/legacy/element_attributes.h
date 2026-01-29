@@ -37,6 +37,12 @@ class ElementAttributes : public ScriptWrappable {
   void CopyWith(ElementAttributes* attributes);
   String ToString();
 
+  // Side-effect free attribute accessors for selector matching / style
+  // resolution. Unlike getAttribute(), these must not consult widget binding
+  // properties or allocate temporary strings.
+  bool HasAttributeForStyle(const AtomicString& name) const;
+  AtomicString GetAttributeForStyle(const AtomicString& name) const;
+
   bool IsEquivalent(const ElementAttributes& other) const;
   std::unordered_map<AtomicString, AtomicString>::iterator begin();
   std::unordered_map<AtomicString, AtomicString>::iterator end();

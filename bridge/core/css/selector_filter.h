@@ -5,8 +5,10 @@
 #ifndef WEBF_CSS_SELECTOR_FILTER_H
 #define WEBF_CSS_SELECTOR_FILTER_H
 
+#include <array>
+#include <bitset>
+#include <cstdint>
 #include <memory>
-#include <unordered_set>
 #include <vector>
 #include "core/css/css_selector.h"
 #include "foundation/macros.h"
@@ -28,43 +30,52 @@ class SelectorFilter {
   
   // Pop element information from the filter
   void PopElement(const Element&);
+
+  // Precompute identifier hashes for a selector's ancestor requirements.
+  // The resulting hashes are used by FastRejectSelector() for a cheap
+  // bit-test based rejection.
+  static void CollectIdentifierHashes(const CSSSelector&, std::vector<uint32_t>& hashes);
+
+  // Fast reject using precomputed identifier hashes.
+  bool FastRejectSelector(const std::vector<uint32_t>& identifier_hashes) const;
   
   // Check if a selector might match
   bool MightMatch(const CSSSelector&) const;
   
   // Clear the filter
-  void Clear();
+ void Clear();
 
  private:
-  // Bloom filter implementation
-  static constexpr size_t kBloomFilterSize = 1024;
-  static constexpr size_t kBloomFilterMask = kBloomFilterSize - 1;
-  
-  // Hash functions for bloom filter
-  static unsigned Hash1(const AtomicString&);
-  static unsigned Hash2(const AtomicString&);
-  
-  // Add to bloom filter
-  void AddToBloomFilter(const AtomicString&);
-  
-  // Check bloom filter
-  bool MayContain(const AtomicString&) const;
-  
-  // Collect identifiers from element
-  void CollectElementIdentifiers(const Element&, std::vector<AtomicString>&);
-  
-  // Stack of bloom filters for nested elements
-  struct FilterEntry {
-    std::vector<bool> bloom_filter;
-    std::vector<AtomicString> identifiers;
-    
-    FilterEntry() : bloom_filter(kBloomFilterSize, false) {}
+  // Similar to Blink's SelectorFilter: a small bloom filter for ancestor
+  // identifiers to quickly reject rules with impossible ancestor requirements.
+  static constexpr unsigned kFilterSize = 8192;
+  static constexpr unsigned kFilterMask = kFilterSize - 1;
+
+  enum Salt : unsigned {
+    kTagSalt = 1,
+    kIdSalt = 3,
+    kClassSalt = 5,
+    kAttributeSalt = 7,
   };
-  
-  std::vector<FilterEntry> filter_stack_;
-  
-  // Current filter (top of stack)
-  FilterEntry* current_filter_ = nullptr;
+
+  void PushMark();
+  void PopToLastMark();
+
+  void AddHash(unsigned hash);
+  bool MayContainHash(unsigned hash) const;
+  void AddIdentifier(const AtomicString&, unsigned salt);
+  bool MayContainIdentifier(const AtomicString&, unsigned salt) const;
+
+  static bool IsExcludedAttribute(const AtomicString& local_name);
+
+  bool FastRejectDescendantSelectors(const CSSSelector&) const;
+  bool FastRejectDescendantCompoundSelectorIdentifierHashes(const CSSSelector* selector,
+                                                            CSSSelector::RelationType relation) const;
+  bool FastRejectForSimpleSelector(const CSSSelector&) const;
+
+  std::bitset<kFilterSize> ancestor_filter_;
+  std::vector<uint16_t> set_bits_;
+  std::vector<size_t> marks_;
 };
 
 }  // namespace webf

@@ -8,6 +8,7 @@
 
 #include <core/css/parser/css_selector_parser.h>
 
+#include <chrono>
 #include <functional>
 #include <utility>
 #include "binding_call_methods.h"
@@ -35,6 +36,7 @@
 #include "core/html/parser/html_parser.h"
 #include "element_attribute_names.h"
 #include "element_namespace_uris.h"
+#include "element_traversal.h"
 #include "foundation/logging.h"
 #include "foundation/native_value_converter.h"
 #include "foundation/utility/make_visitor.h"
@@ -47,6 +49,29 @@
 #include "text.h"
 
 namespace webf {
+
+namespace {
+
+thread_local InlineStylePerfStats g_inline_style_perf_stats;
+thread_local bool g_inline_style_perf_stats_enabled = false;
+
+inline int64_t ToUs(std::chrono::steady_clock::duration duration) {
+  return std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
+}
+
+}  // namespace
+
+void ResetInlineStylePerfStats() {
+  g_inline_style_perf_stats = InlineStylePerfStats{};
+  g_inline_style_perf_stats_enabled = true;
+}
+
+InlineStylePerfStats TakeInlineStylePerfStats() {
+  InlineStylePerfStats out = g_inline_style_perf_stats;
+  g_inline_style_perf_stats = InlineStylePerfStats{};
+  g_inline_style_perf_stats_enabled = false;
+  return out;
+}
 
 Element::Element(const AtomicString& namespace_uri,
                  const AtomicString& local_name,
@@ -327,6 +352,67 @@ AtomicString Element::nodeValue() const {
   return AtomicString::Null();
 }
 
+void Element::ChildrenChanged(const ChildrenChange& change) {
+  ContainerNode::ChildrenChanged(change);
+
+  ExecutingContext* context = GetDocument().GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  if (change.affects_elements != ChildrenChangeAffectsElements::kYes) {
+    return;
+  }
+
+  // For + and ~ combinators (as well as :nth-* positional selectors),
+  // succeeding siblings may need style invalidation after an element is
+  // inserted or removed.
+  //
+  // Blink gates this work on per-container restyle flags populated during
+  // selector matching. In WebF those flags may not be set yet (e.g. before the
+  // first style pass, or when the relevant selector has not matched any element
+  // so far). Scheduling invalidations is safe here because the StyleEngine
+  // no-ops when no invalidation sets exist for the inserted/removed element.
+  if (!change.ByParser() && change.IsChildElementChange() && InActiveDocument() &&
+      GetStyleChangeType() != kSubtreeStyleChange) {
+    auto* changed_element = DynamicTo<Element>(change.sibling_changed);
+    if (!changed_element) {
+      return;
+    }
+
+    Node* node_after_change = change.sibling_after_change;
+    Node* node_before_change = change.sibling_before_change;
+
+    Element* element_after_change = DynamicTo<Element>(node_after_change);
+    if (node_after_change && !element_after_change) {
+      element_after_change = ElementTraversal::NextSibling(*node_after_change);
+    }
+
+    Element* element_before_change = DynamicTo<Element>(node_before_change);
+    if (node_before_change && !element_before_change) {
+      element_before_change = ElementTraversal::PreviousSibling(*node_before_change);
+    }
+
+    StyleEngine& style_engine = GetDocument().EnsureStyleEngine();
+
+    if ((ChildrenAffectedByForwardPositionalRules() && element_after_change) ||
+        (ChildrenAffectedByBackwardPositionalRules() && element_before_change)) {
+      style_engine.ScheduleNthPseudoInvalidations(*this);
+    }
+
+    if (!element_after_change) {
+      return;
+    }
+
+    if (change.type == ChildrenChangeType::kElementInserted) {
+      style_engine.ScheduleInvalidationsForInsertedSibling(element_before_change, *changed_element);
+    } else if (change.type == ChildrenChangeType::kElementRemoved) {
+      style_engine.ScheduleInvalidationsForRemovedSibling(element_before_change, *changed_element,
+                                                          *element_after_change);
+    }
+  }
+}
+
 String Element::nodeName() const {
   // For HTML elements in HTML namespace, return uppercased tagName
   // For all other elements (including those created with createElementNS), preserve original case
@@ -582,12 +668,29 @@ void Element::CloneNonAttributePropertiesFrom(const Element& other, CloneChildre
 
 std::shared_ptr<const MutableCSSPropertyValueSet> Element::EnsureMutableInlineStyle() {
   DCHECK(IsStyledElement());
+  const bool track_perf = g_inline_style_perf_stats_enabled;
+  std::chrono::steady_clock::time_point start_time;
+  if (track_perf) {
+    start_time = std::chrono::steady_clock::now();
+    ++g_inline_style_perf_stats.ensure_calls;
+  }
+
   std::shared_ptr<const CSSPropertyValueSet>& inline_style = EnsureUniqueElementData().inline_style_;
   if (!inline_style) {
     CSSParserMode mode = kHTMLStandardMode;
     inline_style = std::make_shared<MutableCSSPropertyValueSet>(mode);
+    if (track_perf) {
+      ++g_inline_style_perf_stats.allocations;
+    }
   } else if (!inline_style->IsMutable()) {
     inline_style = inline_style->MutableCopy();
+    if (track_perf) {
+      ++g_inline_style_perf_stats.mutable_copies;
+    }
+  }
+
+  if (track_perf) {
+    g_inline_style_perf_stats.ensure_us += ToUs(std::chrono::steady_clock::now() - start_time);
   }
   return std::reinterpret_pointer_cast<const MutableCSSPropertyValueSet>(inline_style);
 }

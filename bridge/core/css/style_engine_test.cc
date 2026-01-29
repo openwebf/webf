@@ -127,6 +127,126 @@ TEST_F(StyleEngineTest, MarkStyleDirtyAllowed) {
   // TODO: Test with different states when InStyleRecalc, etc.
 }
 
+TEST_F(StyleEngineTest, UpdateStyleRecalcRootClearsBreadcrumbsAfterStyleRecalc) {
+  MemberMutationScope mutation_scope{GetExecutingContext()};
+  GetExecutingContext()->EnableBlinkEngine();
+
+  ASSERT_NE(GetDocument()->body(), nullptr);
+  Element* document_element = GetDocument()->documentElement();
+  ASSERT_NE(document_element, nullptr);
+
+  auto* container = MakeGarbageCollected<HTMLDivElement>(*GetDocument());
+  auto* child = MakeGarbageCollected<HTMLDivElement>(*GetDocument());
+  GetDocument()->body()->appendChild(container, ASSERT_NO_EXCEPTION());
+  container->appendChild(child, ASSERT_NO_EXCEPTION());
+
+  child->SetNeedsStyleRecalc(kLocalStyleChange,
+                             StyleChangeReasonForTracing::Create(style_change_reason::kRelatedStyleRule));
+
+  GetStyleEngine().SetNeedsActiveStyleUpdate();
+  GetDocument()->UpdateStyleForThisDocument();
+
+  EXPECT_FALSE(child->NeedsStyleRecalc());
+  EXPECT_FALSE(container->ChildNeedsStyleRecalc());
+  EXPECT_FALSE(GetDocument()->body()->ChildNeedsStyleRecalc());
+  EXPECT_FALSE(document_element->ChildNeedsStyleRecalc());
+}
+
+TEST_F(StyleEngineTest, CommonRootStyleRecalcClearsIntermediateBreadcrumbs) {
+  MemberMutationScope mutation_scope{GetExecutingContext()};
+  GetExecutingContext()->EnableBlinkEngine();
+
+  ASSERT_NE(GetDocument()->body(), nullptr);
+  Element* document_element = GetDocument()->documentElement();
+  ASSERT_NE(document_element, nullptr);
+
+  auto* container1 = MakeGarbageCollected<HTMLDivElement>(*GetDocument());
+  auto* container2 = MakeGarbageCollected<HTMLDivElement>(*GetDocument());
+  auto* child1 = MakeGarbageCollected<HTMLDivElement>(*GetDocument());
+  auto* child2 = MakeGarbageCollected<HTMLDivElement>(*GetDocument());
+
+  GetDocument()->body()->appendChild(container1, ASSERT_NO_EXCEPTION());
+  GetDocument()->body()->appendChild(container2, ASSERT_NO_EXCEPTION());
+  container1->appendChild(child1, ASSERT_NO_EXCEPTION());
+  container2->appendChild(child2, ASSERT_NO_EXCEPTION());
+
+  child1->SetNeedsStyleRecalc(kLocalStyleChange,
+                              StyleChangeReasonForTracing::Create(style_change_reason::kRelatedStyleRule));
+  child2->SetNeedsStyleRecalc(kLocalStyleChange,
+                              StyleChangeReasonForTracing::Create(style_change_reason::kRelatedStyleRule));
+
+  // Two dirty subtrees under <body> should establish a common traversal root,
+  // which means intermediate nodes under that root must have their
+  // ChildNeedsStyleRecalc breadcrumbs cleared during style recalc.
+  EXPECT_TRUE(container1->ChildNeedsStyleRecalc());
+  EXPECT_TRUE(container2->ChildNeedsStyleRecalc());
+
+  GetStyleEngine().SetNeedsActiveStyleUpdate();
+  GetDocument()->UpdateStyleForThisDocument();
+
+  EXPECT_FALSE(child1->NeedsStyleRecalc());
+  EXPECT_FALSE(child2->NeedsStyleRecalc());
+  EXPECT_FALSE(container1->ChildNeedsStyleRecalc());
+  EXPECT_FALSE(container2->ChildNeedsStyleRecalc());
+  EXPECT_FALSE(GetDocument()->body()->ChildNeedsStyleRecalc());
+  EXPECT_FALSE(document_element->ChildNeedsStyleRecalc());
+}
+
+TEST_F(StyleEngineTest, ChildrenRemovedClearsDetachedStyleRecalcRoot) {
+  MemberMutationScope mutation_scope{GetExecutingContext()};
+  GetExecutingContext()->EnableBlinkEngine();
+
+  ASSERT_NE(GetDocument()->body(), nullptr);
+  Element* document_element = GetDocument()->documentElement();
+  ASSERT_NE(document_element, nullptr);
+
+  auto* container = MakeGarbageCollected<HTMLDivElement>(*GetDocument());
+  auto* child = MakeGarbageCollected<HTMLDivElement>(*GetDocument());
+  GetDocument()->body()->appendChild(container, ASSERT_NO_EXCEPTION());
+  container->appendChild(child, ASSERT_NO_EXCEPTION());
+
+  child->SetNeedsStyleRecalc(kLocalStyleChange,
+                             StyleChangeReasonForTracing::Create(style_change_reason::kRelatedStyleRule));
+  EXPECT_TRUE(GetStyleEngine().NeedsStyleRecalc());
+  EXPECT_TRUE(container->ChildNeedsStyleRecalc());
+  EXPECT_TRUE(GetDocument()->body()->ChildNeedsStyleRecalc());
+  EXPECT_TRUE(document_element->ChildNeedsStyleRecalc());
+
+  child->remove(ASSERT_NO_EXCEPTION());
+
+  // Removing a dirty node should not leave a detached recalc root around.
+  // The mutation may schedule additional style invalidations on the parent,
+  // but a subsequent style update must clear breadcrumbs without crashing.
+  GetDocument()->UpdateStyleForThisDocument();
+
+  EXPECT_FALSE(GetStyleEngine().NeedsStyleRecalc());
+  EXPECT_FALSE(container->NeedsStyleRecalc());
+  EXPECT_FALSE(container->ChildNeedsStyleRecalc());
+  EXPECT_FALSE(GetDocument()->body()->ChildNeedsStyleRecalc());
+  EXPECT_FALSE(document_element->ChildNeedsStyleRecalc());
+}
+
+TEST_F(StyleEngineTest, InsertedSubtreeGetsInitialStyleRecalc) {
+  MemberMutationScope mutation_scope{GetExecutingContext()};
+  GetExecutingContext()->EnableBlinkEngine();
+
+  ASSERT_NE(GetDocument()->body(), nullptr);
+
+  auto* container = MakeGarbageCollected<HTMLDivElement>(*GetDocument());
+  auto* child = MakeGarbageCollected<HTMLDivElement>(*GetDocument());
+  container->appendChild(child, ASSERT_NO_EXCEPTION());
+
+  EXPECT_FALSE(container->HasEmittedStyle());
+  EXPECT_FALSE(child->HasEmittedStyle());
+
+  GetDocument()->body()->appendChild(container, ASSERT_NO_EXCEPTION());
+
+  GetDocument()->UpdateStyleForThisDocument();
+
+  EXPECT_TRUE(container->HasEmittedStyle());
+  EXPECT_TRUE(child->HasEmittedStyle());
+}
+
 TEST_F(StyleEngineTest, MarkReattachAllowed) {
   // Initially should be allowed
   EXPECT_TRUE(GetStyleEngine().MarkReattachAllowed());

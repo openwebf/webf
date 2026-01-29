@@ -34,12 +34,14 @@
 
 #include <functional>
 #include <cctype>
+#include <optional>
 #include <span>
 #include <unordered_map>
 #include <unordered_set>
 #include "core/css/invalidation/invalidation_set.h"
 #include "core/css/css_property_name.h"
 #include "core/css/css_property_value_set.h"
+#include "core/css/css_selector.h"
 #include "core/css/css_style_sheet.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_value.h"
@@ -59,6 +61,7 @@
 // StyleRecalcChange / StyleRecalcContext API surface (Blink-style).
 #include "core/css/style_recalc_change.h"
 #include "core/css/style_recalc_context.h"
+#include "core/css/selector_filter.h"
 // Logging and pending substitution value support
 #include "foundation/logging.h"
 #include "bindings/qjs/native_string_utils.h"
@@ -75,6 +78,7 @@
 #include "core/dom/container_node.h"
 #include "core/dom/node_traversal.h"
 #include "core/dom/qualified_name.h"
+#include "core/dom/nth_index_cache.h"
 
 namespace webf {
 
@@ -669,6 +673,39 @@ void StyleEngine::UpdateStyleInvalidationRoot(ContainerNode* ancestor, Node* dir
   style_invalidation_root_.Update(ancestor, dirty_node);
 }
 
+void StyleEngine::ChildrenRemoved(ContainerNode& parent) {
+  Document& document = GetDocument();
+  ExecutingContext* context = document.GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    return;
+  }
+
+  if (!parent.isConnected()) {
+    return;
+  }
+
+  if (InDOMRemoval()) {
+    // Mirror Blink's nested-removal behavior: while inside a DOM removal scope,
+    // fall back to using the document as the traversal root so that subsequent
+    // SubtreeModified() calls can clear breadcrumbs correctly, even when
+    // isConnected() is temporarily out of date.
+    if (style_invalidation_root_.GetRootNode()) {
+      UpdateStyleInvalidationRoot(nullptr, nullptr);
+    }
+    if (style_recalc_root_.GetRootNode()) {
+      UpdateStyleRecalcRoot(nullptr, nullptr);
+    }
+    return;
+  }
+
+  // Clear traversal roots if the tracked root node was detached by the
+  // mutation. This prevents stale child-dirty breadcrumbs from persisting
+  // after the root has been removed, which would violate Blink's traversal
+  // root invariants (common_ancestor != nullptr implies root_node_ != nullptr).
+  style_invalidation_root_.SubtreeModified(parent);
+  style_recalc_root_.SubtreeModified(parent);
+}
+
 void StyleEngine::UpdateStyleRecalcRoot(ContainerNode* ancestor, Node* dirty_node) {
   Document& document = GetDocument();
   ExecutingContext* context = document.GetExecutingContext();
@@ -938,6 +975,61 @@ const std::vector<Member<CSSStyleSheet>>& StyleEngine::AuthorStyleSheetsInDocume
   return author_style_sheets_in_document_order_;
 }
 
+const CascadeLayerMap::ActiveRuleSetVector& StyleEngine::ActiveAuthorRuleSets() {
+  UpdateAuthorRuleSets();
+  return active_author_rule_sets_;
+}
+
+const CascadeLayerMap* StyleEngine::AuthorCascadeLayerMap() {
+  UpdateAuthorRuleSets();
+  return author_cascade_layer_map_.get();
+}
+
+void StyleEngine::UpdateAuthorRuleSets() {
+  if (!author_rule_sets_dirty_) {
+    return;
+  }
+
+  Document& document = GetDocument();
+  ExecutingContext* context = document.GetExecutingContext();
+  if (!context || !context->isBlinkEnabled()) {
+    author_rule_sets_dirty_ = false;
+    active_author_rule_sets_.clear();
+    author_cascade_layer_map_.reset();
+    return;
+  }
+
+  const auto& author_sheets = AuthorStyleSheetsInDocumentOrder();
+
+  std::optional<MediaQueryEvaluator> media_evaluator;
+  active_author_rule_sets_.clear();
+  active_author_rule_sets_.reserve(author_sheets.size());
+  size_t active_rule_sets = 0;
+
+  for (const auto& sheet : author_sheets) {
+    std::shared_ptr<RuleSet> rule_set_ptr;
+    if (sheet) {
+      std::shared_ptr<StyleSheetContents> contents = sheet->Contents();
+      if (contents) {
+        rule_set_ptr = contents->GetRuleSetShared();
+        if (!rule_set_ptr) {
+          if (!media_evaluator.has_value()) {
+            media_evaluator.emplace(context);
+          }
+          rule_set_ptr = contents->EnsureRuleSet(*media_evaluator);
+        }
+      }
+    }
+    active_author_rule_sets_.push_back(rule_set_ptr);
+    if (rule_set_ptr) {
+      ++active_rule_sets;
+    }
+  }
+
+  author_cascade_layer_map_ = std::make_shared<CascadeLayerMap>(active_author_rule_sets_);
+  author_rule_sets_dirty_ = false;
+}
+
 void StyleEngine::UpdateActiveStyle() {
   Document& document = GetDocument();
   ExecutingContext* context = document.GetExecutingContext();
@@ -953,6 +1045,8 @@ void StyleEngine::UpdateActiveStyle() {
   if (global_rule_set_) {
     global_rule_set_->Update(document);
   }
+
+  UpdateAuthorRuleSets();
 }
 
 void StyleEngine::SetNeedsActiveStyleUpdate() {
@@ -963,6 +1057,7 @@ void StyleEngine::SetNeedsActiveStyleUpdate() {
   }
 
   author_style_sheets_in_document_order_dirty_ = true;
+  MarkAuthorRuleSetsDirty();
 
   // Mark the global RuleFeatureSet dirty so selector/invalidation metadata
   // (ids, classes, attributes, nth, etc.) will be rebuilt from the current
@@ -1159,6 +1254,17 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
   StyleResolver& resolver = EnsureStyleResolver();
   auto* command_buffer = ctx->uiCommandBuffer();
 
+  // Build a selector bloom filter for the ancestor chain so we can cheaply
+  // reject rules that mention ids/classes/tags/attrs not present in ancestors.
+  SelectorFilter selector_filter;
+  std::vector<Element*> ancestors;
+  for (Element* parent = root_element.parentElement(); parent; parent = parent->parentElement()) {
+    ancestors.push_back(parent);
+  }
+  for (auto it = ancestors.rbegin(); it != ancestors.rend(); ++it) {
+    selector_filter.PushElement(**it);
+  }
+
   auto apply_for_element = [&](Element* element) -> bool {
     if (!element || !element->IsStyledElement()) {
       return false;
@@ -1166,6 +1272,7 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
 
     StyleResolverState state(document, *element);
     ElementRuleCollector collector(state, SelectorChecker::kResolvingStyle);
+    collector.SetSelectorFilter(&selector_filter);
     resolver.CollectAllRules(state, collector, /*include_smil_properties*/ false);
     collector.SortAndTransferMatchedRules();
     const uint32_t matched_pseudo_mask = collector.MatchedPseudoElementMask();
@@ -1173,7 +1280,6 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
 
     StyleCascade cascade(state);
     cascade.MutableMatchResult() = collector.GetMatchResult();
-
     std::shared_ptr<MutableCSSPropertyValueSet> property_set = cascade.ExportWinningPropertySet();
 
     bool display_none_for_invalidation = false;
@@ -1237,8 +1343,8 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
           clear_pseudo_if_sent(pseudo_id, pseudo_name);
           return false;
         }
-
         ElementRuleCollector pseudo_collector(state, SelectorChecker::kResolvingStyle);
+        pseudo_collector.SetSelectorFilter(&selector_filter);
         pseudo_collector.SetPseudoElementStyleRequest(PseudoElementStyleRequest(pseudo_id));
         resolver.CollectAllRules(state, pseudo_collector, /*include_smil_properties*/ false);
         pseudo_collector.SortAndTransferMatchedRules();
@@ -1247,12 +1353,12 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
         pseudo_cascade.MutableMatchResult() = pseudo_collector.GetMatchResult();
 
         std::shared_ptr<MutableCSSPropertyValueSet> pseudo_set = pseudo_cascade.ExportWinningPropertySet();
+
         bool has_pseudo = pseudo_set && pseudo_set->PropertyCount() != 0;
         if (!has_pseudo) {
           clear_pseudo_if_sent(pseudo_id, pseudo_name);
           return false;
         }
-
         AtomicString pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
         command_buffer->AddCommand(UICommand::kClearPseudoStyle, pseudo_atom.ToNativeString(), element->bindingObject(),
                                    nullptr);
@@ -1317,6 +1423,7 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
         clear_pseudo_if_sent(PseudoId::kPseudoIdFirstLine, "first-line");
       }
 
+      element->SetHasEmittedStyle(true);
       return element->IsDisplayNoneForStyleInvalidation();
     }
 
@@ -1496,8 +1603,8 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
         clear_pseudo_if_sent(pseudo_id, pseudo_name);
         return;
       }
-
       ElementRuleCollector pseudo_collector(state, SelectorChecker::kResolvingStyle);
+      pseudo_collector.SetSelectorFilter(&selector_filter);
       pseudo_collector.SetPseudoElementStyleRequest(PseudoElementStyleRequest(pseudo_id));
       resolver.CollectAllRules(state, pseudo_collector, /*include_smil_properties*/ false);
       pseudo_collector.SortAndTransferMatchedRules();
@@ -1511,7 +1618,6 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
         clear_pseudo_if_sent(pseudo_id, pseudo_name);
         return;
       }
-
       AtomicString pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
       command_buffer->AddCommand(UICommand::kClearPseudoStyle, pseudo_atom.ToNativeString(), element->bindingObject(),
                                  nullptr);
@@ -1577,28 +1683,49 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
       clear_pseudo_if_sent(PseudoId::kPseudoIdFirstLine, "first-line");
     }
 
+    element->SetHasEmittedStyle(true);
     return element->IsDisplayNoneForStyleInvalidation();
   };
 
-  std::vector<Node*> stack;
-  stack.reserve(64);
-  stack.push_back(&root_element);
+  struct StackEntry {
+    Node* node;
+    bool exiting;
+  };
+
+  std::vector<StackEntry> stack;
+  stack.reserve(128);
+  stack.push_back({&root_element, false});
+
   while (!stack.empty()) {
-    Node* node = stack.back();
+    StackEntry entry = stack.back();
     stack.pop_back();
+    Node* node = entry.node;
     if (!node) {
       continue;
     }
 
+    if (entry.exiting) {
+      if (node->IsElementNode()) {
+        selector_filter.PopElement(*static_cast<Element*>(node));
+      }
+      continue;
+    }
+
+    bool skip_children = false;
     if (node->IsElementNode()) {
       auto* element = static_cast<Element*>(node);
-      if (apply_for_element(element)) {
-        continue;
-      }
+      selector_filter.PushElement(*element);
+      skip_children = apply_for_element(element);
+    }
+
+    stack.push_back({node, true});
+
+    if (skip_children) {
+      continue;
     }
 
     for (Node* child = node->lastChild(); child; child = child->previousSibling()) {
-      stack.push_back(child);
+      stack.push_back({child, false});
     }
   }
 }
@@ -1627,6 +1754,16 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
   StyleResolver& resolver = EnsureStyleResolver();
   auto* command_buffer = ctx->uiCommandBuffer();
 
+  SelectorFilter selector_filter;
+  std::vector<Element*> ancestors;
+  for (Element* parent = element.parentElement(); parent; parent = parent->parentElement()) {
+    ancestors.push_back(parent);
+  }
+  for (auto it = ancestors.rbegin(); it != ancestors.rend(); ++it) {
+    selector_filter.PushElement(**it);
+  }
+  selector_filter.PushElement(element);
+
   auto apply_for_element = [&](Element* el) {
     if (!el || !el->IsStyledElement()) {
       return;
@@ -1634,6 +1771,7 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
 
     StyleResolverState state(document, *el);
     ElementRuleCollector collector(state, SelectorChecker::kResolvingStyle);
+    collector.SetSelectorFilter(&selector_filter);
     resolver.CollectAllRules(state, collector, /*include_smil_properties*/ false);
     collector.SortAndTransferMatchedRules();
     const uint32_t matched_pseudo_mask = collector.MatchedPseudoElementMask();
@@ -1641,7 +1779,6 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
 
     StyleCascade cascade(state);
     cascade.MutableMatchResult() = collector.GetMatchResult();
-
     std::shared_ptr<MutableCSSPropertyValueSet> property_set = cascade.ExportWinningPropertySet();
 
     bool display_none_for_invalidation = false;
@@ -1704,8 +1841,8 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
           clear_pseudo_if_sent(pseudo_id, pseudo_name);
           return false;
         }
-
         ElementRuleCollector pseudo_collector(state, SelectorChecker::kResolvingStyle);
+        pseudo_collector.SetSelectorFilter(&selector_filter);
         pseudo_collector.SetPseudoElementStyleRequest(PseudoElementStyleRequest(pseudo_id));
         resolver.CollectAllRules(state, pseudo_collector, /*include_smil_properties*/ false);
         pseudo_collector.SortAndTransferMatchedRules();
@@ -1718,7 +1855,6 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
           clear_pseudo_if_sent(pseudo_id, pseudo_name);
           return false;
         }
-
         AtomicString pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
         command_buffer->AddCommand(UICommand::kClearPseudoStyle, pseudo_atom.ToNativeString(), el->bindingObject(),
                                    nullptr);
@@ -1785,6 +1921,7 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
         clear_pseudo_if_sent(PseudoId::kPseudoIdFirstLine, "first-line");
       }
 
+      el->SetHasEmittedStyle(true);
       return;
     }
 
@@ -1962,8 +2099,8 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
         clear_pseudo_if_sent(pseudo_id, pseudo_name);
         return;
       }
-
       ElementRuleCollector pseudo_collector(state, SelectorChecker::kResolvingStyle);
+      pseudo_collector.SetSelectorFilter(&selector_filter);
       pseudo_collector.SetPseudoElementStyleRequest(PseudoElementStyleRequest(pseudo_id));
       resolver.CollectAllRules(state, pseudo_collector, /*include_smil_properties*/ false);
       pseudo_collector.SortAndTransferMatchedRules();
@@ -1976,7 +2113,6 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
         clear_pseudo_if_sent(pseudo_id, pseudo_name);
         return;
       }
-
       AtomicString pseudo_atom = AtomicString::CreateFromUTF8(pseudo_name);
       command_buffer->AddCommand(UICommand::kClearPseudoStyle, pseudo_atom.ToNativeString(), el->bindingObject(),
                                  nullptr);
@@ -2042,6 +2178,8 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
     } else {
       clear_pseudo_if_sent(PseudoId::kPseudoIdFirstLine, "first-line");
     }
+
+    el->SetHasEmittedStyle(true);
   };
 
   apply_for_element(&element);
@@ -2053,6 +2191,8 @@ void StyleEngine::RecalcStyle(StyleRecalcChange change, const StyleRecalcContext
   if (!context || !context->isBlinkEnabled()) {
     return;
   }
+
+  NthIndexCacheScope nth_index_cache_scope;
 
   // Mark the document as being in style recalc so that any style-dirty marks
   // that occur during traversal do not try to update the StyleRecalcRoot.
@@ -2165,9 +2305,17 @@ void StyleEngine::RecalcStyle(StyleRecalcChange change, const StyleRecalcContext
     }
   };
 
-  std::function<void(Node*)> walk = [&](Node* node) {
+  std::function<void(Node*, bool)> walk = [&](Node* node, bool force_traverse) {
     if (!node) {
       return;
+    }
+
+    // Only Elements and Text nodes participate in style recalc, but other
+    // node types may temporarily carry style dirtiness flags due to insertion
+    // bookkeeping. Clear those flags eagerly to avoid leaving stale
+    // breadcrumbs that would force future traversals.
+    if (!node->IsElementNode() && node->NeedsStyleRecalc()) {
+      node->ClearNeedsStyleRecalc();
     }
 
     if (node->IsElementNode()) {
@@ -2191,6 +2339,12 @@ void StyleEngine::RecalcStyle(StyleRecalcChange change, const StyleRecalcContext
             return;
           }
 
+          if (!element->HasEmittedStyle()) {
+            RecalcStyleForSubtree(*element);
+            clear_flags_for_subtree(element);
+            return;
+          }
+
           RecalcStyleForElementOnly(*element);
           element->ClearNeedsStyleRecalc();
         } else {
@@ -2203,12 +2357,28 @@ void StyleEngine::RecalcStyle(StyleRecalcChange change, const StyleRecalcContext
       }
     }
 
-    for (Node* child = node->firstChild(); child; child = child->nextSibling()) {
-      walk(child);
+    // Skip traversing clean subtrees (Blink's StyleRecalcChange::TraverseChild
+    // uses similar conditions). This keeps style recalc roughly proportional
+    // to the number of dirty nodes rather than total DOM size.
+    if (!force_traverse && !node->ChildNeedsStyleRecalc()) {
+      return;
     }
+
+    for (Node* child = node->firstChild(); child; child = child->nextSibling()) {
+      if (!force_traverse && !child->NeedsStyleRecalc() && !child->ChildNeedsStyleRecalc()) {
+        continue;
+      }
+      walk(child, force_traverse);
+    }
+
+    // Blink's Element::RecalcStyle clears ChildNeedsStyleRecalc breadcrumbs as
+    // the traversal unwinds. Mirror that behavior so we don't leave
+    // intermediate nodes in the traversal root subtree with stale
+    // ChildNeedsStyleRecalc bits after style_recalc_root_ has been cleared.
+    node->ClearChildNeedsStyleRecalc();
   };
 
-  walk(root);
+  walk(root, false);
 
   // Clear breadcrumbs on the traversal root as well, not only its ancestors.
   root->ClearChildNeedsStyleRecalc();
@@ -2232,7 +2402,11 @@ void StyleEngine::RecalcStyle(StyleRecalcChange change, const StyleRecalcContext
 
   if (doc_root && root != doc_root) {
     if (Node* remaining = find_remaining_dirty_node()) {
-      walk(doc_root);
+      // If we find remaining dirty nodes outside the current traversal root,
+      // fall back to a full traversal. This mirrors Blink's defensive logic
+      // for keeping style dirtiness invariants intact even when breadcrumbs
+      // are missing (e.g. due to non-standard dirtiness marks).
+      walk(doc_root, true);
       doc_root->ClearChildNeedsStyleRecalc();
     }
   }
@@ -2377,6 +2551,7 @@ void StyleEngine::MediaQueryAffectingValueChanged(TreeScope& tree_scope, MediaVa
           contents->ClearRuleSet();
         }
       }
+      MarkAuthorRuleSetsDirty();
       if (global_rule_set_) {
         global_rule_set_->MarkDirty();
       }
@@ -2401,6 +2576,7 @@ void StyleEngine::MediaQueryAffectingValueChanged(TreeScope& tree_scope, MediaVa
             contents->ClearRuleSet();
           }
         }
+        MarkAuthorRuleSetsDirty();
         if (global_rule_set_) {
           global_rule_set_->MarkDirty();
         }

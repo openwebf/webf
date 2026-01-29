@@ -25,8 +25,12 @@ using MutationObserverOptionsMap = std::unordered_map<MutationObserver*, Mutatio
 
 const int kDOMNodeTypeShift = 2;
 const int kElementNamespaceTypeShift = 4;
-const int kNodeStyleChangeShift = 15;
-const int kNodeCustomElementShift = 17;
+// Keep style-change bits disjoint from ChildNeedsStyleRecalc (bit 15), matching
+// Blink's layout. Style-change types occupy bits 16-17.
+const int kNodeStyleChangeShift = 16;
+// Keep custom element state bits disjoint from style-change bits, matching
+// Blink's layout. Custom element state occupies bits 18-20.
+const int kNodeCustomElementShift = 18;
 
 class ComputedStyle;
 class Element;
@@ -395,6 +399,21 @@ class Node : public EventTarget {
   // Propagates a dirty bit breadcrumb for this element up the ancestor chain.
   void MarkAncestorsWithChildNeedsStyleRecalc();
 
+  // Nodes which are not connected are style clean. Mark them for style recalc
+  // when inserting them into a document. This mirrors Blink's
+  // Node::SetStyleChangeOnInsertion, which is a lightweight alternative to
+  // SetNeedsStyleRecalc.
+  void SetStyleChangeOnInsertion() {
+    assert(isConnected());
+    if (ShouldSkipMarkingStyleDirty()) {
+      return;
+    }
+    if (!NeedsStyleRecalc()) {
+      SetStyleChange(kLocalStyleChange);
+    }
+    MarkAncestorsWithChildNeedsStyleRecalc();
+  }
+
   // True if there are pending invalidations against this node.
   bool NeedsStyleInvalidation() const { return GetFlag(kNeedsStyleInvalidationFlag); }
   void ClearNeedsStyleInvalidation() { ClearFlag(kNeedsStyleInvalidationFlag); }
@@ -445,14 +464,13 @@ class Node : public EventTarget {
     kStyleChangeMask = 0x3u << kNodeStyleChangeShift,
 
     kCustomElementStateMask = 0x7 << kNodeCustomElementShift,
-    kHasNameOrIsEditingTextFlag = 1 << 20,
-    kHasEventTargetDataFlag = 1 << 21,
+    kHasNameOrIsEditingTextFlag = 1u << 21,
     kNeedsReattachLayoutTree = 1u << 22,
+    kHasEventTargetDataFlag = 1u << 23,
 
     kHasDuplicateAttributes = 1 << 24,
-    kIsWidgetElement = 1 << 25,
-
     kForceReattachLayoutTree = 1u << 25,
+    kIsWidgetElement = 1u << 26,
 
     kSelfOrAncestorHasDirAutoAttribute = 1 << 27,
     kDefaultNodeFlags = kIsFinishedParsingChildrenFlag,

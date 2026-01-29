@@ -76,6 +76,9 @@ class RuleData {
   bool HasRightmostType() const { return has_rightmost_type_; }
   const AtomicString& RightmostTag() const { return rightmost_tag_; }
 
+  // SelectorFilter precomputed hashes for ancestor requirements.
+  const std::vector<uint32_t>& AncestorIdentifierHashes() const { return ancestor_identifier_hashes_; }
+
  private:
   std::shared_ptr<StyleRule> rule_;
   unsigned selector_index_;
@@ -86,6 +89,10 @@ class RuleData {
   // Whether the rightmost compound has a type selector and its localName.
   bool has_rightmost_type_ = false;
   AtomicString rightmost_tag_;
+
+  // Hashes for SelectorFilter::FastRejectSelector(). Empty when the selector
+  // has no ancestor identifier requirements.
+  std::vector<uint32_t> ancestor_identifier_hashes_;
 };
 
 // Container for rules organized by selector characteristics

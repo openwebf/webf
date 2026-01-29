@@ -6,10 +6,44 @@
 
 #include "core/css/style_recalc_root.h"
 
+#include <utility>
+
 #include "core/dom/document.h"
 #include "core/dom/element.h"
 
 namespace webf {
+
+namespace {
+
+// In Blink, the "flat tree" may exclude nodes that are still connected in the
+// light tree (e.g. due to slotting / shadow DOM). WebF currently does not
+// implement those concepts, but we still keep Blink's predicate structure so
+// traversal-root invariants behave the same when porting code.
+bool IsFlatTreeConnected(const Node& root) {
+  if (!root.isConnected()) {
+    return false;
+  }
+  // If the recalc root is removed from the flat tree because an intermediate
+  // flat-tree container disappeared, Blink clears recalc flags during detach.
+  // Use the presence of recalc flags as a proxy for flat-tree membership.
+  return root.IsDirtyForStyleRecalc() || root.ChildNeedsStyleRecalc();
+}
+
+// Returns a pair:
+//  - first: whether we were able to determine a suitable flat-tree ancestor.
+//  - second: the ancestor element from which to clear child-dirty breadcrumbs.
+std::pair<bool, Element*> FirstFlatTreeAncestorForChildDirty(ContainerNode& parent) {
+  if (!parent.IsElementNode()) {
+    // The flat tree does not contain the document node. The closest ancestor
+    // for dirty bits is the parent element (or nullptr).
+    return {true, parent.ParentOrShadowHostElement()};
+  }
+  // WebF does not implement shadow DOM yet; for light-tree elements the parent
+  // itself is the closest flat-tree ancestor.
+  return {true, To<Element>(&parent)};
+}
+
+}  // namespace
 
 Element& StyleRecalcRoot::RootElement() const {
   Node* root_node = GetRootNode();
@@ -39,24 +73,41 @@ bool StyleRecalcRoot::IsDirty(const Node& node) const {
 }
 
 void StyleRecalcRoot::SubtreeModified(ContainerNode& parent) {
-  Node* root_node = GetRootNode();
-  if (!root_node) {
+  if (!GetRootNode()) {
     return;
   }
 
-  // If the current root is still connected, keep it; style recalc will clear
-  // dirty bits as usual.
-  if (root_node->isConnected()) {
+  if (GetRootNode()->IsDocumentNode()) {
     return;
   }
 
-  // The root was detached. Clear child-dirty breadcrumbs on ancestors up to
-  // the first non-dirty ancestor, then reset the recalc root. This keeps the
-  // tree consistent for future dirty marks.
-  for (Node* ancestor = &parent; ancestor; ancestor = ancestor->ParentOrShadowHostNode()) {
-    if (!ancestor->ChildNeedsStyleRecalc()) {
-      break;
+  if (IsFlatTreeConnected(*GetRootNode())) {
+    return;
+  }
+
+  // We are notified with the light tree parent of the node(s) which were
+  // removed from the DOM. Clear child-dirty breadcrumbs on the closest flat
+  // tree ancestor chain so that the next dirty mark can establish a fresh
+  // traversal root, mirroring Blink's StyleRecalcRoot::SubtreeModified.
+  auto opt_ancestor = FirstFlatTreeAncestorForChildDirty(parent);
+  if (!opt_ancestor.first) {
+    ContainerNode* common_ancestor = &parent;
+    ContainerNode* new_root = &parent;
+    if (!IsFlatTreeConnected(parent)) {
+      // Fall back to the document root element since the flat tree is in a
+      // state where we do not know what a suitable common ancestor would be.
+      common_ancestor = nullptr;
+      new_root = parent.GetDocument().documentElement();
     }
+    if (new_root) {
+      Update(common_ancestor, new_root);
+    }
+    return;
+  }
+
+  for (Element* ancestor = opt_ancestor.second; ancestor; ancestor = ancestor->GetStyleRecalcParent()) {
+    assert(ancestor->ChildNeedsStyleRecalc());
+    assert(!ancestor->NeedsStyleRecalc());
     ancestor->ClearChildNeedsStyleRecalc();
   }
   Clear();

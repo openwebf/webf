@@ -40,6 +40,7 @@
 #include <vector>
 #include <algorithm>
 #include "core/css/active_style_sheets.h"
+#include "core/css/cascade_layer_map.h"
 #include "core/css/css_global_rule_set.h"
 #include "core/css/css_style_sheet.h"
 #include "core/css/resolver/media_query_result.h"
@@ -92,6 +93,16 @@ class StyleEngine final {
   bool InContainerQueryStyleRecalc() const { return in_container_query_style_recalc_; }
   bool InPositionTryStyleRecalc() const { return in_position_try_style_recalc_; }
 
+  class DOMRemovalScope {
+    WEBF_STACK_ALLOCATED();
+
+   public:
+    explicit DOMRemovalScope(StyleEngine& engine) : auto_reset_(&engine.in_dom_removal_, true) {}
+
+   private:
+    AutoReset<bool> auto_reset_;
+  };
+
   class InApplyAnimationUpdateScope {
     WEBF_STACK_ALLOCATED();
 
@@ -115,6 +126,12 @@ class StyleEngine final {
   };
 
   bool InEnsureComputedStyle() const { return in_ensure_computed_style_; }
+
+  // Called when children are removed from a connected ContainerNode. This lets
+  // traversal roots (style invalidation / recalc) clear stale breadcrumbs if
+  // the currently-tracked root was detached by the mutation, mirroring Blink's
+  // StyleEngine::ChildrenRemoved.
+  void ChildrenRemoved(ContainerNode& parent);
 
   void UpdateStyleInvalidationRoot(ContainerNode* ancestor, Node* dirty_node);
   void UpdateStyleRecalcRoot(ContainerNode* ancestor, Node* dirty_node);
@@ -146,6 +163,10 @@ class StyleEngine final {
   // StyleEngine::NeedsStyleInvalidation and lets Document ask whether it
   // should run selector-based invalidation before a style recalc.
   bool NeedsStyleInvalidation() const { return style_invalidation_root_.GetRootNode(); }
+  // Returns true if there is a pending style recalc root tracked by
+  // StyleRecalcRoot. This mirrors Blink's StyleEngine::NeedsStyleRecalc and is
+  // useful for debugging traversal-root invariants.
+  bool NeedsStyleRecalc() const { return style_recalc_root_.GetRootNode(); }
 
   // Push all pending selector-based invalidations through StyleInvalidator,
   // starting from the current StyleInvalidationRoot. This is a thin wrapper
@@ -190,6 +211,13 @@ class StyleEngine final {
 
   // Aggregate selector/invalidation features from all active author sheets.
   void CollectFeaturesTo(RuleFeatureSet& features);
+
+  // Cached author RuleSets and cascade-layer map used for per-element rule
+  // matching. These are rebuilt when the active author stylesheet set changes
+  // (or when media-query-driven RuleSets are invalidated), so MatchAuthorRules
+  // can avoid reconstructing them per element.
+  const CascadeLayerMap::ActiveRuleSetVector& ActiveAuthorRuleSets();
+  const CascadeLayerMap* AuthorCascadeLayerMap();
 
   // Lightweight Blink-style hook that ensures any global selector /
   // invalidation metadata derived from the current set of active author
@@ -315,6 +343,11 @@ class StyleEngine final {
   // (not load/registration order) to preserve cascade semantics.
   bool author_style_sheets_in_document_order_dirty_{true};
   std::vector<Member<CSSStyleSheet>> author_style_sheets_in_document_order_;
+  // Cached author RuleSets in cascade (DOM) order and their cross-sheet
+  // CascadeLayerMap. Rebuilt when stylesheets or media-query state changes.
+  bool author_rule_sets_dirty_{true};
+  CascadeLayerMap::ActiveRuleSetVector active_author_rule_sets_;
+  std::shared_ptr<CascadeLayerMap> author_cascade_layer_map_;
 
  public:
   int media_query_recalc_count_for_test() const { return media_query_recalc_count_for_test_; }
@@ -340,6 +373,7 @@ class StyleEngine final {
       global_rule_set_->MarkDirty();
     }
     author_style_sheets_in_document_order_dirty_ = true;
+    MarkAuthorRuleSetsDirty();
   }
 
   void UnregisterAuthorSheet(CSSStyleSheet* sheet) {
@@ -365,9 +399,19 @@ class StyleEngine final {
       global_rule_set_->MarkDirty();
     }
     author_style_sheets_in_document_order_dirty_ = true;
+    MarkAuthorRuleSetsDirty();
   }
 
   const std::vector<std::shared_ptr<StyleSheetContents>>& AuthorSheets() const { return author_sheets_; }
+
+ private:
+  void MarkAuthorRuleSetsDirty() {
+    author_rule_sets_dirty_ = true;
+    active_author_rule_sets_.clear();
+    author_cascade_layer_map_.reset();
+  }
+
+  void UpdateAuthorRuleSets();
 };
 
 // Helper used by PendingInvalidations to schedule nth-child style invalidation

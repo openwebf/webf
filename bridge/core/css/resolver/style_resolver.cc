@@ -328,61 +328,29 @@ void StyleResolver::MatchAuthorRules(
     Element& element,
     ScopeOrdinal scope_ordinal,
     ElementRuleCollector& collector) {
+  (void)scope_ordinal;
+
   // Match rules from author stylesheets registered with StyleEngine.
-  // Inline <style> elements and <link rel="stylesheet"> sheets both register
-  // their CSSStyleSheet with StyleEngine, so we can avoid per-match DOM
-  // traversal and (more importantly) avoid matching the same stylesheet twice.
+  // Cache RuleSets and the cross-sheet CascadeLayerMap in StyleEngine so we
+  // don't rebuild them per element during rule matching.
   Document& document = element.GetDocument();
+  StyleEngine& style_engine = document.EnsureStyleEngine();
 
-  // Create a media query evaluator for the current document so that media
-  // queries are evaluated against live environment values (viewport size,
-  // color scheme, etc.).
-  ExecutingContext* context = document.GetExecutingContext();
-  // Creating a MediaQueryEvaluator is relatively expensive (it constructs
-  // dynamic MediaValues). Avoid constructing it per-element; we only need it
-  // when a RuleSet must be (re)built (e.g. after a media-query-driven invalidation).
-  std::optional<MediaQueryEvaluator> media_evaluator;
-
-  const auto& author_sheets = document.EnsureStyleEngine().AuthorStyleSheetsInDocumentOrder();
-
-  // Build RuleSets (respecting media queries) and compute a canonical cascade
-  // layer order across all active author stylesheets.
-  CascadeLayerMap::ActiveRuleSetVector active_rule_sets;
-  active_rule_sets.reserve(author_sheets.size());
-
-  for (const auto& sheet : author_sheets) {
-    std::shared_ptr<RuleSet> rule_set_ptr;
-    if (sheet) {
-      std::shared_ptr<StyleSheetContents> contents = sheet->Contents();
-      if (contents) {
-        rule_set_ptr = contents->GetRuleSetShared();
-        if (!rule_set_ptr) {
-          if (!media_evaluator.has_value()) {
-            media_evaluator.emplace(context);
-          }
-          rule_set_ptr = contents->EnsureRuleSet(*media_evaluator);
-        }
-      }
-    }
-    active_rule_sets.push_back(rule_set_ptr);
-  }
-
-  CascadeLayerMap cascade_layer_map(active_rule_sets);
-  collector.SetCascadeLayerMap(&cascade_layer_map);
+  const CascadeLayerMap::ActiveRuleSetVector& active_rule_sets = style_engine.ActiveAuthorRuleSets();
+  const CascadeLayerMap* cascade_layer_map = style_engine.AuthorCascadeLayerMap();
+  collector.SetCascadeLayerMap(cascade_layer_map);
 
   unsigned author_index = 0;
   for (const auto& rule_set_ptr : active_rule_sets) {
     if (!rule_set_ptr) {
-      author_index++;
+      ++author_index;
       continue;
     }
     MatchRequest match_request(rule_set_ptr, CascadeOrigin::kAuthor, author_index);
     collector.CollectMatchingRules(match_request);
-    author_index++;
+    ++author_index;
   }
 
-  // The collector only needs the map during matching. Clear to avoid holding a
-  // dangling pointer (the map is stack-allocated).
   collector.SetCascadeLayerMap(nullptr);
 }
 

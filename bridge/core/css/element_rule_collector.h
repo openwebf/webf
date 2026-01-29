@@ -97,6 +97,8 @@ class ElementRuleCollector {
   void ClearMatchedRules();
 
   void SetCascadeLayerMap(const CascadeLayerMap* map) { cascade_layer_map_ = map; }
+  void SetSelectorFilter(SelectorFilter* filter) { selector_filter_ = filter; }
+  void SetTrackRuleMatchTimes(bool track) { track_rule_match_times_ = track; }
 
   // Add element style properties
   void AddElementStyleProperties(std::shared_ptr<const StylePropertySet>, 
@@ -107,6 +109,16 @@ class ElementRuleCollector {
 
   // Get the match result
   const MatchResult& GetMatchResult() const { return result_; }
+
+  // Candidate rule matching stats (for perf logging).
+  size_t CandidateRulesChecked() const { return candidate_rules_checked_; }
+  size_t CandidateRulesRejectedBySelectorFilter() const { return candidate_rules_rejected_by_filter_; }
+  size_t CandidateUniversalRulesChecked() const { return candidate_universal_checked_; }
+  size_t CandidateUniversalRulesRejectedBySelectorFilter() const { return candidate_universal_rejected_by_filter_; }
+  int64_t SelectorFilterTimeUs() const { return selector_filter_us_; }
+  int64_t SelectorMatchTimeUs() const { return selector_match_us_; }
+  int64_t MaxSelectorMatchTimeUs() const { return max_selector_match_us_; }
+  const CSSSelector* MaxSelectorMatchSelector() const { return max_selector_match_selector_; }
 
   // Bitmask of pseudo-elements that matched while collecting normal (non-pseudo)
   // element rules. Each bit is (1u << PseudoId) when PseudoId < 32.
@@ -131,6 +143,13 @@ class ElementRuleCollector {
   const StyleResolverState& State() const { return state_; }
 
  private:
+  enum class RuleBucket {
+    kTag,
+    kUniversal,
+    kId,
+    kClass,
+  };
+
   struct MatchedRule {
     std::shared_ptr<const RuleData> rule_data;
     unsigned specificity;
@@ -145,6 +164,7 @@ class ElementRuleCollector {
   template <typename RuleDataListType>
   void CollectMatchingRulesForList(
       const RuleDataListType& rules,
+      RuleBucket bucket,
       CascadeOrigin,
       const MatchRequest&,
       bool is_id_bucket = false,
@@ -188,6 +208,16 @@ class ElementRuleCollector {
 
   uint32_t matched_pseudo_element_mask_ = 0;
   uint32_t matched_pseudo_element_with_content_mask_ = 0;
+
+  size_t candidate_rules_checked_{0};
+  size_t candidate_rules_rejected_by_filter_{0};
+  size_t candidate_universal_checked_{0};
+  size_t candidate_universal_rejected_by_filter_{0};
+  int64_t selector_filter_us_{0};
+  int64_t selector_match_us_{0};
+  int64_t max_selector_match_us_{0};
+  const CSSSelector* max_selector_match_selector_{nullptr};
+  bool track_rule_match_times_{false};
 };
 
 }  // namespace webf
