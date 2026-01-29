@@ -4,6 +4,9 @@
  */
 #include "legacy_inline_css_style_declaration.h"
 #include "plugin_api/legacy_inline_css_style_declaration.h"
+#include <cctype>
+#include <string_view>
+#include <utility>
 #include <vector>
 #include "core/dom/mutation_observer_interest_group.h"
 #include "core/executing_context.h"
@@ -14,6 +17,7 @@
 #include "core/css/css_property_value_set.h"
 #include "core/dom/element.h"
 #include "foundation/string/string_builder.h"
+#include "foundation/string/string_view.h"
 
 namespace webf {
 namespace legacy {
@@ -59,14 +63,16 @@ static std::string parseJavaScriptCSSPropertyName(std::string& propertyName) {
   return result;
 }
 
-static std::string convertCamelCaseToKebabCase(const std::string& propertyName) {
+static const std::string& convertCamelCaseToKebabCase(const std::string& propertyName) {
   static std::unordered_map<std::string, std::string> propertyCache{};
 
-  if (propertyCache.count(propertyName) > 0) {
-    return propertyCache[propertyName];
+  auto it = propertyCache.find(propertyName);
+  if (it != propertyCache.end()) {
+    return it->second;
   }
 
   std::string result;
+  result.reserve(propertyName.size());
   for (char c : propertyName) {
     if (std::isupper(c)) {
       result += '-';
@@ -76,8 +82,71 @@ static std::string convertCamelCaseToKebabCase(const std::string& propertyName) 
     }
   }
 
-  propertyCache[propertyName] = result;
-  return result;
+  auto inserted = propertyCache.emplace(propertyName, std::move(result));
+  return inserted.first->second;
+}
+
+enum class PriorityParseResult {
+  kNone,
+  kImportant,
+  kInvalid,
+};
+
+static PriorityParseResult ParsePriority(const AtomicString& priority) {
+  if (priority.IsNull() || priority.empty()) {
+    return PriorityParseResult::kNone;
+  }
+
+  std::string raw = priority.ToUTF8String();
+  size_t start = 0;
+  size_t end = raw.size();
+  while (start < end && std::isspace(static_cast<unsigned char>(raw[start]))) {
+    start++;
+  }
+  while (end > start && std::isspace(static_cast<unsigned char>(raw[end - 1]))) {
+    end--;
+  }
+  if (start == end) {
+    return PriorityParseResult::kNone;
+  }
+
+  std::string_view trimmed(raw.data() + start, end - start);
+  if (EqualIgnoringASCIICase(trimmed, "important")) {
+    return PriorityParseResult::kImportant;
+  }
+  return PriorityParseResult::kInvalid;
+}
+
+static std::pair<std::string, bool> ParseValueAndImportant(const std::string& raw) {
+  size_t end = raw.size();
+  while (end > 0 && std::isspace(static_cast<unsigned char>(raw[end - 1]))) {
+    end--;
+  }
+
+  constexpr std::string_view kKeyword = "important";
+  if (end < kKeyword.size()) {
+    return {raw, false};
+  }
+
+  size_t keyword_start = end - kKeyword.size();
+  std::string_view tail(raw.data() + keyword_start, kKeyword.size());
+  if (!EqualIgnoringASCIICase(tail, kKeyword)) {
+    return {raw, false};
+  }
+
+  size_t i = keyword_start;
+  while (i > 0 && std::isspace(static_cast<unsigned char>(raw[i - 1]))) {
+    i--;
+  }
+  if (i == 0 || raw[i - 1] != '!') {
+    return {raw, false};
+  }
+
+  size_t value_end = i - 1;
+  while (value_end > 0 && std::isspace(static_cast<unsigned char>(raw[value_end - 1]))) {
+    value_end--;
+  }
+  return {raw.substr(0, value_end), true};
 }
 
 LegacyInlineCssStyleDeclaration* LegacyInlineCssStyleDeclaration::Create(ExecutingContext* context,
@@ -90,7 +159,7 @@ LegacyInlineCssStyleDeclaration::LegacyInlineCssStyleDeclaration(Element* owner_
     : LegacyCssStyleDeclaration(owner_element_->ctx(), nullptr), owner_element_(owner_element_) {}
 
 ScriptValue LegacyInlineCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
-  if (webf::IsPrototypeMethods(key)) {
+  if (IsPrototypeMethods(key)) {
     return ScriptValue::Undefined(ctx());
   }
 
@@ -133,17 +202,26 @@ ScriptValue LegacyInlineCssStyleDeclaration::item(const AtomicString& key, Excep
 bool LegacyInlineCssStyleDeclaration::SetItem(const AtomicString& key,
                                         const ScriptValue& value,
                                         ExceptionState& exception_state) {
-  if (webf::IsPrototypeMethods(key)) {
+  if (IsPrototypeMethods(key)) {
     return false;
   }
 
   std::string propertyName = key.ToUTF8String();
+  AtomicString value_string = value.ToLegacyDOMString(ctx());
+
+  // CSSOM property assignment does not accept `!important` inside the value
+  // string. Use setProperty(..., "important") instead.
+  auto [_, contains_important_suffix] = ParseValueAndImportant(value_string.ToUTF8String());
+  if (contains_important_suffix) {
+    return true;
+  }
+
   AtomicString old_style = cssText();
-  bool success = InternalSetProperty(propertyName, value.ToLegacyDOMString(ctx()));
-  if (success) {
+  const bool changed = InternalSetProperty(propertyName, value_string, AtomicString::Empty());
+  if (changed) {
     InlineStyleChanged(old_style);
   }
-  return success;
+  return true;
 }
 
 bool LegacyInlineCssStyleDeclaration::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
@@ -172,9 +250,17 @@ void LegacyInlineCssStyleDeclaration::setProperty(const AtomicString& key,
                                             const AtomicString& priority,
                                             ExceptionState& exception_state) {
   std::string propertyName = key.ToUTF8String();
+  AtomicString value_string = value.ToLegacyDOMString(ctx());
+
+  // setProperty takes priority separately; `!important` is not allowed inside |value|.
+  auto [_, contains_important_suffix] = ParseValueAndImportant(value_string.ToUTF8String());
+  if (contains_important_suffix) {
+    return;
+  }
+
   AtomicString old_style = cssText();
-  bool success = InternalSetProperty(propertyName, value.ToLegacyDOMString(ctx()));
-  if (success) {
+  const bool changed = InternalSetProperty(propertyName, value_string, priority);
+  if (changed) {
     InlineStyleChanged(old_style);
   }
 }
@@ -194,19 +280,33 @@ void LegacyInlineCssStyleDeclaration::CopyWith(LegacyInlineCssStyleDeclaration* 
   for (auto& attr : inline_style->properties_) {
     properties_[attr.first] = attr.second;
   }
+  important_properties_ = inline_style->important_properties_;
 }
 
 AtomicString LegacyInlineCssStyleDeclaration::cssText() const {
-  std::string result;
-  size_t index = 0;
-  for (auto& attr : properties_) {
-    result += convertCamelCaseToKebabCase(attr.first) + ": " + attr.second.ToUTF8String() + ";";
-    index++;
-    if (index < properties_.size()) {
-      result += " ";
-    }
+  if (properties_.empty()) {
+    return AtomicString::Empty();
   }
-  return AtomicString(result);
+
+  StringBuilder builder;
+  bool first = true;
+  for (auto& attr : properties_) {
+    if (!first) {
+      builder.Append(' ');
+    }
+    first = false;
+
+    const std::string& kebab_name = convertCamelCaseToKebabCase(attr.first);
+    builder.Append(StringView(kebab_name.c_str(), kebab_name.size()));
+    builder.Append(": "_s);
+    builder.Append(attr.second);
+    if (important_properties_.count(attr.first) > 0) {
+      builder.Append(" !important"_s);
+    }
+    builder.Append(";"_s);
+  }
+
+  return builder.ToAtomicString();
 }
 
 void LegacyInlineCssStyleDeclaration::setCssText(const webf::AtomicString& value, webf::ExceptionState& exception_state) {
@@ -216,6 +316,7 @@ void LegacyInlineCssStyleDeclaration::setCssText(const webf::AtomicString& value
 }
 
 void LegacyInlineCssStyleDeclaration::SetCSSTextInternal(const AtomicString& value) {
+  static const AtomicString kImportantPriority = AtomicString::CreateFromUTF8("important");
   const std::string css_text = value.ToUTF8String();
   InternalClearProperty();
 
@@ -235,7 +336,15 @@ void LegacyInlineCssStyleDeclaration::SetCSSTextInternal(const AtomicString& val
       css_key = trim(css_key);
       std::string css_value = s.substr(position + 1, s.length());
       css_value = trim(css_value);
-      InternalSetProperty(css_key, AtomicString(css_value));
+      bool important = false;
+      auto [stripped_value, important_from_value] = ParseValueAndImportant(css_value);
+
+      if (important_from_value) {
+        important = true;
+        css_value = stripped_value;
+      }
+
+      InternalSetProperty(css_key, AtomicString(css_value), important ? kImportantPriority : AtomicString::Empty());
     }
   }
 }
@@ -254,6 +363,9 @@ String LegacyInlineCssStyleDeclaration::ToString() const {
     builder.Append(attr.first);
     builder.Append(": "_s);
     builder.Append(attr.second);
+    if (important_properties_.count(attr.first) > 0) {
+      builder.Append(" !important"_s);
+    }
     builder.Append(";"_s);
   }
 
@@ -294,21 +406,54 @@ AtomicString LegacyInlineCssStyleDeclaration::InternalGetPropertyValue(std::stri
   return g_empty_atom;
 }
 
-bool LegacyInlineCssStyleDeclaration::InternalSetProperty(std::string& name, const AtomicString& value) {
+bool LegacyInlineCssStyleDeclaration::InternalSetProperty(std::string& name,
+                                                          const AtomicString& value,
+                                                          const AtomicString& priority) {
   name = parseJavaScriptCSSPropertyName(name);
-  if (properties_[name] == value) {
+
+  // An empty value removes the property.
+  if (value.empty()) {
+    auto it = properties_.find(name);
+    if (it == properties_.end()) {
+      important_properties_.erase(name);
+      return false;
+    }
+
+    properties_.erase(it);
+    important_properties_.erase(name);
+
+    std::unique_ptr<SharedNativeString> args_01 = stringToNativeString(name);
+    GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetInlineStyle, std::move(args_01),
+                                                         owner_element_->bindingObject(), nullptr);
+    return true;
+  }
+
+  const PriorityParseResult parsed_priority = ParsePriority(priority);
+  if (parsed_priority == PriorityParseResult::kInvalid) {
+    return false;
+  }
+  const bool important = parsed_priority == PriorityParseResult::kImportant;
+
+  auto it = properties_.find(name);
+  bool was_important = important_properties_.count(name) > 0;
+  bool value_unchanged = it != properties_.end() && it->second == value;
+  if (value_unchanged && was_important == important) {
     return false;
   }
 
-  AtomicString old_value = properties_[name];
-
   properties_[name] = value;
+  if (important) {
+    important_properties_.insert(name);
+  } else {
+    important_properties_.erase(name);
+  }
 
   std::unique_ptr<SharedNativeString> args_01 = stringToNativeString(name);
   auto* payload = reinterpret_cast<NativeStyleValueWithHref*>(dart_malloc(sizeof(NativeStyleValueWithHref)));
   payload->value = value.ToNativeString().release();
   payload->href = nullptr;
-  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01),
+  payload->important = important ? 1 : 0;
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetInlineStyle, std::move(args_01),
                                                        owner_element_->bindingObject(), payload);
 
   return true;
@@ -323,9 +468,10 @@ AtomicString LegacyInlineCssStyleDeclaration::InternalRemoveProperty(std::string
 
   AtomicString return_value = properties_[name];
   properties_.erase(name);
+  important_properties_.erase(name);
 
   std::unique_ptr<SharedNativeString> args_01 = stringToNativeString(name);
-  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetInlineStyle, std::move(args_01),
                                                        owner_element_->bindingObject(), nullptr);
 
   return return_value;
@@ -335,6 +481,7 @@ void LegacyInlineCssStyleDeclaration::InternalClearProperty() {
   if (properties_.empty())
     return;
   properties_.clear();
+  important_properties_.clear();
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, owner_element_->bindingObject(),
                                                        nullptr);
 }

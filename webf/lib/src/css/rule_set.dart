@@ -35,6 +35,10 @@ class RuleSet {
 
   final Map<String, CSSKeyframesRule> keyframesRules = {};
 
+  // Fast flag to avoid expensive pseudo-element matching for every element
+  // when the active RuleSet contains no pseudo-element selectors at all.
+  bool hasPseudoElementSelectors = false;
+
   int _lastPosition = 0;
 
   void addRules(List<CSSRule> rules, { required String? baseHref }) {
@@ -70,6 +74,7 @@ class RuleSet {
     tagRules.clear();
     universalRules.clear();
     pseudoRules.clear();
+    hasPseudoElementSelectors = false;
   }
 
   // indexed by selectorText
@@ -85,6 +90,7 @@ class RuleSet {
           // Invalid selector like `P:first-line.three`; drop this rule.
           return;
         }
+        hasPseudoElementSelectors = true;
         break;
       }
     }

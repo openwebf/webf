@@ -26,7 +26,7 @@ std::string CommandArg01ToUTF8(const UICommandItem& item) {
   return String(utf16, static_cast<size_t>(item.args_01_length)).ToUTF8String();
 }
 
-std::string SharedNativeStringToUTF8(const SharedNativeString* s) {
+std::string SharedNativeStringToUTF8(const webf::SharedNativeString* s) {
   if (!s || !s->string() || s->length() == 0) {
     return "";
   }
@@ -53,7 +53,7 @@ bool HasSetStyleWithKeyValue(ExecutingContext* context, const std::string& key, 
   auto* items = static_cast<UICommandItem*>(pack->data);
   for (int64_t i = 0; i < pack->length; ++i) {
     const UICommandItem& item = items[i];
-    if (item.type == static_cast<int32_t>(UICommand::kSetStyle)) {
+    if (item.type == static_cast<int32_t>(UICommand::kSetInlineStyle)) {
       if (CommandArg01ToUTF8(item) != key) {
         continue;
       }
@@ -79,34 +79,7 @@ bool HasSetStyleWithKeyValue(ExecutingContext* context, const std::string& key, 
     if (item.string_01 < 0) {
       value_text = getValueName(static_cast<CSSValueID>(-item.string_01 - 1));
     } else {
-      auto* value_ptr = reinterpret_cast<SharedNativeString*>(static_cast<uintptr_t>(item.string_01));
-      value_text = SharedNativeStringToUTF8(value_ptr);
-    }
-    if (value_text == value) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool HasSetStyleByIdWithKeyValue(ExecutingContext* context, const std::string& key, const std::string& value) {
-  const CSSPropertyID expected_property_id = CssPropertyID(context, ConvertCamelCaseToKebabCase(key));
-  auto* pack = static_cast<UICommandBufferPack*>(context->uiCommandBuffer()->data());
-  auto* items = static_cast<UICommandItem*>(pack->data);
-  for (int64_t i = 0; i < pack->length; ++i) {
-    const UICommandItem& item = items[i];
-    if (item.type != static_cast<int32_t>(UICommand::kSetStyleById)) {
-      continue;
-    }
-    if (item.args_01_length != static_cast<int32_t>(expected_property_id)) {
-      continue;
-    }
-
-    std::string value_text;
-    if (item.string_01 < 0) {
-      value_text = getValueName(static_cast<CSSValueID>(-item.string_01 - 1));
-    } else {
-      auto* value_ptr = reinterpret_cast<SharedNativeString*>(static_cast<uintptr_t>(item.string_01));
+      auto* value_ptr = reinterpret_cast<webf::SharedNativeString*>(static_cast<uintptr_t>(item.string_01));
       value_text = SharedNativeStringToUTF8(value_ptr);
     }
     if (value_text == value) {
@@ -118,7 +91,7 @@ bool HasSetStyleByIdWithKeyValue(ExecutingContext* context, const std::string& k
 
 }  // namespace
 
-TEST(BlinkCSSStyleDeclarationValidation, RejectsInvalidFontSize) {
+TEST(BlinkCSSStyleDeclarationValidation, ForwardsInvalidFontSizeToDart) {
   bool static errorCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void*, const std::string&, int) {};
 
@@ -137,15 +110,15 @@ TEST(BlinkCSSStyleDeclarationValidation, RejectsInvalidFontSize) {
   const char* set_valid = "document.body.style.fontSize = '18px';";
   env->page()->evaluateScript(set_valid, strlen(set_valid), "vm://", 0);
   TEST_runLoop(context);
-  EXPECT_TRUE(HasSetStyleByIdWithKeyValue(context, "fontSize", "18px"));
+  EXPECT_TRUE(HasSetStyleWithKeyValue(context, "fontSize", "18px"));
 
   context->uiCommandBuffer()->clear();
 
-  // Invalid font-size should be rejected on the native (Blink) CSS side and
-  // thus should not be forwarded to Dart.
+  // Inline style is legacy-only even when Blink CSS is enabled; invalid values
+  // are forwarded to Dart for validation/handling.
   const char* set_invalid = "document.body.style.fontSize = '-1px';";
   env->page()->evaluateScript(set_invalid, strlen(set_invalid), "vm://", 0);
   TEST_runLoop(context);
-  EXPECT_FALSE(HasSetStyleByIdWithKeyValue(context, "fontSize", "-1px"));
+  EXPECT_TRUE(HasSetStyleWithKeyValue(context, "fontSize", "-1px"));
   EXPECT_EQ(errorCalled, false);
 }

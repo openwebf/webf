@@ -93,8 +93,8 @@ class CSSParser {
     return CSSStyleSheet(rules);
   }
 
-  Map<String, dynamic> parseInlineStyle() {
-    Map<String, dynamic> style = {};
+  Map<String, InlineStyleEntry> parseInlineStyle() {
+    Map<String, InlineStyleEntry> style = {};
     do {
       if (TokenKind.isIdentifier(_peekToken.kind)) {
         var propertyIdent = camelize(identifier().name);
@@ -121,7 +121,18 @@ class CSSParser {
           }
         }
         var expr = processExpr();
-        style[propertyIdent] = expr;
+        if (expr != null) {
+          final bool importantPriority = _maybeEat(TokenKind.IMPORTANT);
+          final int trailingToken = _peek();
+          final bool hasUnexpectedTrailingToken = trailingToken != TokenKind.SEMICOLON &&
+              trailingToken != TokenKind.RBRACE &&
+              trailingToken != TokenKind.END_OF_FILE;
+          if ((importantPriority && trailingToken == TokenKind.IMPORTANT) || hasUnexpectedTrailingToken) {
+            _skipToDeclarationEnd();
+          } else {
+            style[propertyIdent] = InlineStyleEntry(expr, important: importantPriority);
+          }
+        }
       } else if (_peekToken.kind == TokenKind.VAR_DEFINITION) {
         _next();
       } else if (_peekToken.kind == TokenKind.DIRECTIVE_INCLUDE) {
@@ -667,7 +678,7 @@ class CSSParser {
   List<dynamic> processDeclarations({bool checkBrace = true}) {
     if (checkBrace) _eat(TokenKind.LBRACE);
 
-    var declaration = CSSStyleDeclaration();
+    var declaration = CSSStyleDeclaration.sheet();
     List list = [declaration];
     do {
       var selectorGroup = _nestedSelector();
@@ -1132,7 +1143,13 @@ class CSSParser {
           return;
         }
 
-        style.setProperty(propertyIdent, expr, isImportant: importantPriority, baseHref: href);
+        style.setProperty(
+          propertyIdent,
+          expr.toString(),
+          isImportant: importantPriority,
+          propertyType: PropertyType.sheet,
+          baseHref: href,
+        );
       }
     } else if (_peekToken.kind == TokenKind.VAR_DEFINITION) {
       _next();

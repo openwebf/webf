@@ -66,7 +66,6 @@
 #include "foundation/dart_readable.h"
 #include "core/style/computed_style_constants.h"
 #include "foundation/native_string.h"
-#include "core/css/white_space.h"
 // Keyframes support
 #include "core/css/css_keyframes_rule.h"
 #include "core/css/resolver/media_query_result.h"
@@ -1231,7 +1230,7 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
     if (!property_set || property_set->IsEmpty()) {
       // Even if there are no element-level winners, clear any previously-sent
       // sheet overrides (to avoid stale styles) and emit pseudo styles if any exist.
-      command_buffer->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
+      command_buffer->AddCommand(UICommand::kClearSheetStyle, nullptr, element->bindingObject(), nullptr);
       auto emit_pseudo_if_any = [&](PseudoId pseudo_id, const char* pseudo_name) {
         if (!should_resolve_pseudo(pseudo_id)) {
           clear_pseudo_if_sent(pseudo_id, pseudo_name);
@@ -1320,88 +1319,14 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
       return element->IsDisplayNoneForStyleInvalidation();
     }
 
-    command_buffer->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
+    command_buffer->AddCommand(UICommand::kClearSheetStyle, nullptr, element->bindingObject(), nullptr);
 
     unsigned count = property_set->PropertyCount();
 
-    // Pre-scan white-space longhands
-    bool have_ws_collapse = false;
-    bool have_text_wrap = false;
-    WhiteSpaceCollapse ws_collapse_enum = WhiteSpaceCollapse::kCollapse;
-    TextWrap text_wrap_enum = TextWrap::kWrap;
     for (unsigned i = 0; i < count; ++i) {
       auto prop = property_set->PropertyAt(i);
       CSSPropertyID id = prop.Id();
       if (id == CSSPropertyID::kInvalid) continue;
-      const auto* value_ptr = prop.Value();
-      if (!value_ptr || !(*value_ptr)) continue;
-      const CSSValue& value = *(*value_ptr);
-      if (id == CSSPropertyID::kWhiteSpaceCollapse) {
-        std::string sv = value.CssTextForSerialization().ToUTF8String();
-        if (sv == "collapse") {
-          ws_collapse_enum = WhiteSpaceCollapse::kCollapse;
-          have_ws_collapse = true;
-        } else if (sv == "preserve") {
-          ws_collapse_enum = WhiteSpaceCollapse::kPreserve;
-          have_ws_collapse = true;
-        } else if (sv == "preserve-breaks") {
-          ws_collapse_enum = WhiteSpaceCollapse::kPreserveBreaks;
-          have_ws_collapse = true;
-        } else if (sv == "break-spaces") {
-          ws_collapse_enum = WhiteSpaceCollapse::kBreakSpaces;
-          have_ws_collapse = true;
-        }
-      } else if (id == CSSPropertyID::kTextWrap) {
-        std::string sv = value.CssTextForSerialization().ToUTF8String();
-        if (sv == "wrap") {
-          text_wrap_enum = TextWrap::kWrap;
-          have_text_wrap = true;
-        } else if (sv == "nowrap") {
-          text_wrap_enum = TextWrap::kNoWrap;
-          have_text_wrap = true;
-        } else if (sv == "balance") {
-          text_wrap_enum = TextWrap::kBalance;
-          have_text_wrap = true;
-        } else if (sv == "pretty") {
-          text_wrap_enum = TextWrap::kPretty;
-          have_text_wrap = true;
-        }
-      }
-    }
-
-    bool emit_white_space_shorthand = have_ws_collapse || have_text_wrap;
-    String white_space_value_str;
-    if (emit_white_space_shorthand) {
-      EWhiteSpace ws = ToWhiteSpace(ws_collapse_enum, text_wrap_enum);
-      switch (ws) {
-        case EWhiteSpace::kNormal:
-          white_space_value_str = String("normal");
-          break;
-        case EWhiteSpace::kNowrap:
-          white_space_value_str = String("nowrap");
-          break;
-        case EWhiteSpace::kPre:
-          white_space_value_str = String("pre");
-          break;
-        case EWhiteSpace::kPreLine:
-          white_space_value_str = String("pre-line");
-          break;
-        case EWhiteSpace::kPreWrap:
-          white_space_value_str = String("pre-wrap");
-          break;
-        case EWhiteSpace::kBreakSpaces:
-          white_space_value_str = String("break-spaces");
-          break;
-      }
-    }
-
-    for (unsigned i = 0; i < count; ++i) {
-      auto prop = property_set->PropertyAt(i);
-      CSSPropertyID id = prop.Id();
-      if (id == CSSPropertyID::kInvalid) continue;
-      if (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap) {
-        continue;
-      }
       const auto* value_ptr = prop.Value();
       if (!value_ptr || !(*value_ptr)) continue;
 
@@ -1425,7 +1350,8 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
         } else {
           payload->href = nullptr;
         }
-        command_buffer->AddCommand(UICommand::kSetStyle, std::move(key_ns), element->bindingObject(), payload);
+        payload->important = prop.IsImportant() ? 1 : 0;
+        command_buffer->AddCommand(UICommand::kSetSheetStyle, std::move(key_ns), element->bindingObject(), payload);
         continue;
       }
 
@@ -1450,44 +1376,8 @@ void StyleEngine::RecalcStyleForSubtree(Element& root_element) {
         base_href = stringToNativeString(base_href_string).release();
       }
 
-      command_buffer->AddStyleByIdCommand(element->bindingObject(), static_cast<int32_t>(id), value_slot,
-                                               base_href, prop.IsImportant());
-    }
-
-    if (emit_white_space_shorthand) {
-      CSSValueID ws_value_id = CSSValueID::kInvalid;
-      EWhiteSpace ws = ToWhiteSpace(ws_collapse_enum, text_wrap_enum);
-      switch (ws) {
-        case EWhiteSpace::kNormal:
-          ws_value_id = CSSValueID::kNormal;
-          break;
-        case EWhiteSpace::kNowrap:
-          ws_value_id = CSSValueID::kNowrap;
-          break;
-        case EWhiteSpace::kPre:
-          ws_value_id = CSSValueID::kPre;
-          break;
-        case EWhiteSpace::kPreLine:
-          ws_value_id = CSSValueID::kPreLine;
-          break;
-        case EWhiteSpace::kPreWrap:
-          ws_value_id = CSSValueID::kPreWrap;
-          break;
-        case EWhiteSpace::kBreakSpaces:
-          ws_value_id = CSSValueID::kBreakSpaces;
-          break;
-      }
-
-      int64_t value_slot = 0;
-      if (ws_value_id != CSSValueID::kInvalid) {
-        value_slot = -static_cast<int64_t>(ws_value_id) - 1;
-      } else if (!white_space_value_str.IsEmpty()) {
-        auto* value_ns = stringToNativeString(white_space_value_str).release();
-        value_slot = static_cast<int64_t>(reinterpret_cast<intptr_t>(value_ns));
-      }
-
-      command_buffer->AddStyleByIdCommand(element->bindingObject(), static_cast<int32_t>(CSSPropertyID::kWhiteSpace),
-                                               value_slot, nullptr, /*important*/ false);
+      command_buffer->AddSheetStyleByIdCommand(element->bindingObject(), static_cast<int32_t>(id), value_slot, base_href,
+                                               prop.IsImportant());
     }
 
     // Pseudo emission (only minimal content properties as in RecalcStyle)
@@ -1697,7 +1587,7 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
     };
 
     if (!property_set || property_set->IsEmpty()) {
-      command_buffer->AddCommand(UICommand::kClearStyle, nullptr, el->bindingObject(), nullptr);
+      command_buffer->AddCommand(UICommand::kClearSheetStyle, nullptr, el->bindingObject(), nullptr);
 
       auto emit_pseudo_if_any = [&](PseudoId pseudo_id, const char* pseudo_name) {
         if (!should_resolve_pseudo(pseudo_id)) {
@@ -1788,87 +1678,14 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
       return;
     }
 
-    command_buffer->AddCommand(UICommand::kClearStyle, nullptr, el->bindingObject(), nullptr);
+    command_buffer->AddCommand(UICommand::kClearSheetStyle, nullptr, el->bindingObject(), nullptr);
 
     unsigned count = property_set->PropertyCount();
 
-    bool have_ws_collapse = false;
-    bool have_text_wrap = false;
-    WhiteSpaceCollapse ws_collapse_enum = WhiteSpaceCollapse::kCollapse;
-    TextWrap text_wrap_enum = TextWrap::kWrap;
     for (unsigned i = 0; i < count; ++i) {
       auto prop = property_set->PropertyAt(i);
       CSSPropertyID id = prop.Id();
       if (id == CSSPropertyID::kInvalid) continue;
-      const auto* value_ptr = prop.Value();
-      if (!value_ptr || !(*value_ptr)) continue;
-      const CSSValue& value = *(*value_ptr);
-      if (id == CSSPropertyID::kWhiteSpaceCollapse) {
-        std::string sv = value.CssTextForSerialization().ToUTF8String();
-        if (sv == "collapse") {
-          ws_collapse_enum = WhiteSpaceCollapse::kCollapse;
-          have_ws_collapse = true;
-        } else if (sv == "preserve") {
-          ws_collapse_enum = WhiteSpaceCollapse::kPreserve;
-          have_ws_collapse = true;
-        } else if (sv == "preserve-breaks") {
-          ws_collapse_enum = WhiteSpaceCollapse::kPreserveBreaks;
-          have_ws_collapse = true;
-        } else if (sv == "break-spaces") {
-          ws_collapse_enum = WhiteSpaceCollapse::kBreakSpaces;
-          have_ws_collapse = true;
-        }
-      } else if (id == CSSPropertyID::kTextWrap) {
-        std::string sv = value.CssTextForSerialization().ToUTF8String();
-        if (sv == "wrap") {
-          text_wrap_enum = TextWrap::kWrap;
-          have_text_wrap = true;
-        } else if (sv == "nowrap") {
-          text_wrap_enum = TextWrap::kNoWrap;
-          have_text_wrap = true;
-        } else if (sv == "balance") {
-          text_wrap_enum = TextWrap::kBalance;
-          have_text_wrap = true;
-        } else if (sv == "pretty") {
-          text_wrap_enum = TextWrap::kPretty;
-          have_text_wrap = true;
-        }
-      }
-    }
-
-    bool emit_white_space_shorthand = have_ws_collapse || have_text_wrap;
-    String white_space_value_str;
-    if (emit_white_space_shorthand) {
-      EWhiteSpace ws = ToWhiteSpace(ws_collapse_enum, text_wrap_enum);
-      switch (ws) {
-        case EWhiteSpace::kNormal:
-          white_space_value_str = String("normal");
-          break;
-        case EWhiteSpace::kNowrap:
-          white_space_value_str = String("nowrap");
-          break;
-        case EWhiteSpace::kPre:
-          white_space_value_str = String("pre");
-          break;
-        case EWhiteSpace::kPreLine:
-          white_space_value_str = String("pre-line");
-          break;
-        case EWhiteSpace::kPreWrap:
-          white_space_value_str = String("pre-wrap");
-          break;
-        case EWhiteSpace::kBreakSpaces:
-          white_space_value_str = String("break-spaces");
-          break;
-      }
-    }
-
-    for (unsigned i = 0; i < count; ++i) {
-      auto prop = property_set->PropertyAt(i);
-      CSSPropertyID id = prop.Id();
-      if (id == CSSPropertyID::kInvalid) continue;
-      if (id == CSSPropertyID::kWhiteSpaceCollapse || id == CSSPropertyID::kTextWrap) {
-        continue;
-      }
       const auto* value_ptr = prop.Value();
       if (!value_ptr || !(*value_ptr)) continue;
 
@@ -1892,7 +1709,8 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
         } else {
           payload->href = nullptr;
         }
-        command_buffer->AddCommand(UICommand::kSetStyle, std::move(key_ns), el->bindingObject(), payload);
+        payload->important = prop.IsImportant() ? 1 : 0;
+        command_buffer->AddCommand(UICommand::kSetSheetStyle, std::move(key_ns), el->bindingObject(), payload);
         continue;
       }
 
@@ -1917,44 +1735,8 @@ void StyleEngine::RecalcStyleForElementOnly(Element& element) {
         base_href = stringToNativeString(base_href_string).release();
       }
 
-      command_buffer->AddStyleByIdCommand(el->bindingObject(), static_cast<int32_t>(id), value_slot, base_href,
+      command_buffer->AddSheetStyleByIdCommand(el->bindingObject(), static_cast<int32_t>(id), value_slot, base_href,
                                                prop.IsImportant());
-    }
-
-    if (emit_white_space_shorthand) {
-      CSSValueID ws_value_id = CSSValueID::kInvalid;
-      EWhiteSpace ws = ToWhiteSpace(ws_collapse_enum, text_wrap_enum);
-      switch (ws) {
-        case EWhiteSpace::kNormal:
-          ws_value_id = CSSValueID::kNormal;
-          break;
-        case EWhiteSpace::kNowrap:
-          ws_value_id = CSSValueID::kNowrap;
-          break;
-        case EWhiteSpace::kPre:
-          ws_value_id = CSSValueID::kPre;
-          break;
-        case EWhiteSpace::kPreLine:
-          ws_value_id = CSSValueID::kPreLine;
-          break;
-        case EWhiteSpace::kPreWrap:
-          ws_value_id = CSSValueID::kPreWrap;
-          break;
-        case EWhiteSpace::kBreakSpaces:
-          ws_value_id = CSSValueID::kBreakSpaces;
-          break;
-      }
-
-      int64_t value_slot = 0;
-      if (ws_value_id != CSSValueID::kInvalid) {
-        value_slot = -static_cast<int64_t>(ws_value_id) - 1;
-      } else if (!white_space_value_str.IsEmpty()) {
-        auto* value_ns = stringToNativeString(white_space_value_str).release();
-        value_slot = static_cast<int64_t>(reinterpret_cast<intptr_t>(value_ns));
-      }
-
-    command_buffer->AddStyleByIdCommand(el->bindingObject(), static_cast<int32_t>(CSSPropertyID::kWhiteSpace),
-                                               value_slot, nullptr, /*important*/ false);
     }
 
     auto send_pseudo_for = [&](PseudoId pseudo_id, const char* pseudo_name) {

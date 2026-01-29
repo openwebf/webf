@@ -220,6 +220,7 @@ describe('Transform translate', () => {
       ]
     );
     BODY.appendChild(div);
+    await waitForFrame();
     expect(div.clientWidth === div.scrollWidth).toBe(true);
 
   });

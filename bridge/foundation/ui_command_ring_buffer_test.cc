@@ -181,7 +181,7 @@ TEST_F(UICommandRingBufferTest, CommandBatchingStrategy) {
   
   // Test split on special commands
   package.Clear();
-  package.AddCommand(UICommandItem(static_cast<int32_t>(UICommand::kSetStyle), nullptr, nullptr, nullptr));
+  package.AddCommand(UICommandItem(static_cast<int32_t>(UICommand::kSetInlineStyle), nullptr, nullptr, nullptr));
   EXPECT_TRUE(package.ShouldSplit(UICommand::kStartRecordingCommand));
   EXPECT_TRUE(package.ShouldSplit(UICommand::kFinishRecordingCommand));
   EXPECT_TRUE(package.ShouldSplit(UICommand::kAsyncCaller));

@@ -316,8 +316,7 @@ legacy::LegacyComputedCssStyleDeclaration* Window::getComputedStyle(Element* ele
   // When Blink CSS engine is enabled, ensure any pending selector-based
   // invalidations are applied before querying the Dart-side computed style.
   // This keeps window.getComputedStyle() in sync with the latest styles
-  // produced by the native StyleEngine, including background-clip:text
-  // gradients that are resolved via Blink and forwarded as inline styles.
+  // produced by the native StyleEngine and forwarded to Dart as sheet styles.
   ExecutingContext* context = GetExecutingContext();
   if (context && context->isBlinkEnabled()) {
     Document* doc = context->document();

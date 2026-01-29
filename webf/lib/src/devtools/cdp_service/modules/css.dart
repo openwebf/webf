@@ -569,12 +569,14 @@ class InspectCSSModule extends UIInspectorModule {
       if (colon <= 0) continue;
       final String name = decl.substring(0, colon).trim();
       String value = decl.substring(colon + 1).trim();
-      // Drop optional trailing !important marker – inline styles already have highest priority
-      if (value.endsWith('!important')) {
+      bool important = false;
+      final String lower = value.toLowerCase();
+      if (lower.endsWith('!important')) {
         value = value.substring(0, value.length - '!important'.length).trim();
+        important = true;
       }
       if (name.isEmpty) continue;
-      element.setInlineStyle(camelize(name), value);
+      element.setInlineStyle(camelize(name), value, important: important);
       element.recalculateStyle();
     }
   }
@@ -652,13 +654,15 @@ class InspectCSSModule extends UIInspectorModule {
   static CSSStyle? buildInlineStyle(Element element) {
     List<CSSProperty> cssProperties = [];
     String cssText = '';
-    element.inlineStyle.forEach((key, value) {
+    element.inlineStyle.forEach((key, entry) {
       String kebabName = kebabize(key);
-      String propertyValue = value.toString();
-      String cssText0 = '$kebabName: $propertyValue';
+      String propertyValue = entry.value;
+      String importantSuffix = entry.important ? ' !important' : '';
+      String cssText0 = '$kebabName: $propertyValue$importantSuffix';
       CSSProperty cssProperty = CSSProperty(
         name: kebabName,
-        value: value,
+        value: propertyValue,
+        important: entry.important,
         range: SourceRange(
           startLine: 0,
           startColumn: cssText.length,
