@@ -16,6 +16,17 @@ const buildPath = path.join(context, '.specs');
 const testPath = path.join(context, 'specs');
 const snapshotPath = path.join(context, 'snapshots');
 const specGroup = JSON5.parse(fs.readFileSync(path.join(__dirname, './spec_group.json5')));
+const enableBlink = process.env.WEBF_ENABLE_BLINK === 'true';
+
+// Log blink-only spec handling
+const blinkOnlyGroups = specGroup.filter(g => g.blinkOnly);
+if (blinkOnlyGroups.length > 0) {
+  if (enableBlink) {
+    console.log(`[webpack] Blink mode enabled - including blink-only specs: ${blinkOnlyGroups.map(g => g.name).join(', ')}`);
+  } else {
+    console.log(`[webpack] Blink mode disabled - skipping blink-only specs: ${blinkOnlyGroups.map(g => g.name).join(', ')}`);
+  }
+}
 const specsPath = path.join(context, 'specs');
 const specModuleExtensions = /\.(?:[jt]sx?)$/i;
 
@@ -83,6 +94,10 @@ if (process.env.SPEC_SCOPE) {
   if (targetSpecGroup.length > 0) {
 
     targetSpecGroup.forEach((group) => {
+      // Skip blink-only groups when blink mode is not enabled
+      if (group.blinkOnly && !enableBlink) {
+        return;
+      }
       group.specs.forEach(spec => {
         let files = glob.sync(spec, {
           cwd: context,
@@ -105,6 +120,10 @@ if (process.env.SPEC_SCOPE) {
   }
 } else {
   specGroup.forEach((group) => {
+    // Skip blink-only groups when blink mode is not enabled
+    if (group.blinkOnly && !enableBlink) {
+      return;
+    }
     group.specs.forEach(spec => {
       let files = glob.sync(spec, {
         cwd: context,

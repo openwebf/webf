@@ -27,7 +27,11 @@ Options:
   --help, -h                                            Show this help message
   --skip-build                                          Skip the Flutter build step
   --filter "<test-name>"                                Filter to run only tests matching the name
-  --enable-blink                                        Enable Blink compatibility mode (default: disabled)
+  --enable-blink                                        Enable Blink compatibility mode and include blink-only specs (default: disabled)
+
+Note:
+  Tests in specs/blink-only/ directory only run when --enable-blink is specified.
+  These tests cover features that require Blink mode, such as document.styleSheets.
 `);
 }
 
@@ -76,24 +80,29 @@ function parseArgs() {
 }
 
 // Build specs with optional filtering
-function buildSpecs(specFiles) {
+function buildSpecs(specFiles, enableBlink) {
   console.log('Building integration test specs...');
-  
+
   const env = { ...process.env };
-  
+
   // If specific spec files are provided, set WEBF_TEST_FILTER
   if (specFiles.length > 0) {
     console.log('Running specific spec files:', specFiles.join(', '));
     // Create a filter that matches the full relative path
     env.WEBF_TEST_FILTER = specFiles.map(f => f.replace(/\\/g, '/')).join('|');
   }
-  
+
+  // Pass enableBlink to webpack so blink-only specs are included
+  if (enableBlink) {
+    env.WEBF_ENABLE_BLINK = 'true';
+  }
+
   const result = spawnSync('npm', ['run', 'specs'], {
     stdio: 'inherit',
     env: env,
     shell: true,
   });
-  
+
   if (result.status !== 0) {
     console.error('Failed to build specs');
     process.exit(1);
@@ -191,7 +200,7 @@ async function main() {
   const { specFiles, otherArgs, filter, enableBlink } = parseArgs();
 
   // Build specs with optional filtering
-  buildSpecs(specFiles);
+  buildSpecs(specFiles, enableBlink);
 
   const port = await getRandomNumber(11000, 14000);
 
