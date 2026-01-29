@@ -68,11 +68,12 @@ class _WebFTesterState extends State<WebFTester> {
   @override
   void initState() {
     super.initState();
+    final enableBlink = Platform.environment['WEBF_ENABLE_BLINK'] == 'true';
     _webfWidget = WebF.fromControllerName(
         controllerName: 'tester',
         initialRoute: '/',
         createController: () => WebFController(
-            enableBlink: true,
+            enableBlink: enableBlink,
             // Let the Flutter widget constraints decide the viewport size so
             // integration tests can resize via `resizeViewport`.
             viewportWidth: null,

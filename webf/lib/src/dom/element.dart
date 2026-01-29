@@ -2453,6 +2453,8 @@ abstract class Element extends ContainerNode
   Future<Uint8List> toBlob({double? devicePixelRatio}) {
     forceToRepaintBoundary = true;
 
+    ownerDocument.updateStyleIfNeeded();
+
     Completer<Uint8List> completer = Completer();
     SchedulerBinding.instance.addPostFrameCallback((_) async {
       if (!renderStyle.isRepaintBoundary()) {
