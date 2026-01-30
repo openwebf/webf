@@ -552,6 +552,20 @@ abstract class Element extends ContainerNode
   void willDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
     super.willDetachRenderer(flutterWidgetElement);
 
+    // Remove all intersection change listeners.
+    renderStyle.clearIntersectionChangeListeners(flutterWidgetElement);
+  }
+
+  @override
+  void didDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
+    super.didDetachRenderer(flutterWidgetElement);
+
+    // Keep the renderStyle → renderObject pairing alive during `willDetachRenderer`
+    // because Flutter may still hit-test/paint the render tree until `unmount()`
+    // completes. Removing the pairing too early can make renderStyle APIs (e.g.
+    // `effectiveTransformMatrix`) think there's no render box and assert.
+    renderStyle.removeRenderObject(flutterWidgetElement);
+
     if (!renderStyle.hasRenderBox()) {
       // Cancel running transition.
       renderStyle.cancelRunningTransition();
@@ -561,10 +575,6 @@ abstract class Element extends ContainerNode
 
       ownerView.window.unwatchViewportSizeChangeForElement(this);
     }
-
-    // Remove all intersection change listeners.
-    renderStyle.clearIntersectionChangeListeners(flutterWidgetElement);
-    renderStyle.removeRenderObject(flutterWidgetElement);
   }
 
   BoundingClientRect getBoundingClientRect() => boundingClientRect;
