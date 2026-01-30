@@ -83,6 +83,15 @@ JSPointerType getPointerTypeOfBindingObject(BindingObject bindingObject) {
     return JSPointerType.canvasPattern;
   }
 
+  // Dart-side CSSOM binding objects are backed by NativeBindingObject pointers
+  // allocated in Dart. They must be treated as NativeBindingObject so the JS
+  // side can wrap them with DartBindingObject (see script_value.cc).
+  if (bindingObject is CSSStyleSheetBinding ||
+      bindingObject is CSSRuleListBinding ||
+      bindingObject is CSSRuleBinding) {
+    return JSPointerType.nativeBindingObject;
+  }
+
   return JSPointerType.others;
 }
 

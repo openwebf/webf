@@ -231,9 +231,15 @@ class StyleNodeManager {
     List<CSSStyleSheet> styleSheetsForStyleSheetsList = [];
     for (Node node in _styleSheetCandidateNodes) {
       if (node is LinkElement && !node.disabled && !node.loading && node.styleSheet != null) {
-        styleSheetsForStyleSheetsList.add(node.styleSheet!);
+        final sheet = node.styleSheet!;
+        if (!sheet.disabled) {
+          styleSheetsForStyleSheetsList.add(sheet);
+        }
       } else if (node is StyleElementMixin && node.styleSheet != null) {
-        styleSheetsForStyleSheetsList.add(node.styleSheet!);
+        final sheet = node.styleSheet!;
+        if (!sheet.disabled) {
+          styleSheetsForStyleSheetsList.add(sheet);
+        }
       }
     }
     return styleSheetsForStyleSheetsList;

@@ -19,6 +19,9 @@ class DartBindingObject final : public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
  public:
   explicit DartBindingObject(ExecutingContext* context);
+  // Wrap an existing NativeBindingObject allocated on the Dart side (e.g. as a
+  // return value from a Dart binding property/method).
+  DartBindingObject(ExecutingContext* context, NativeBindingObject* native_binding_object);
 
   bool HasBindingProperty(const AtomicString& prop, ExceptionState& exception_state) const;
   // 0 = none, 1 = sync, 2 = async

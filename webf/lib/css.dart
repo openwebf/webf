@@ -55,6 +55,7 @@ export 'src/css/font_face.dart';
 export 'src/css/nth_index_cache.dart';
 
 export 'src/css/computed_style_declaration.dart';
+export 'src/css/css_style_sheet_binding.dart';
 export 'src/css/element_rule_collector.dart';
 export 'src/css/css_property_name.dart';
 

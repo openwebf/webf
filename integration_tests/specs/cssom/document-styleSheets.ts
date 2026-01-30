@@ -1,7 +1,5 @@
-describe('document.styleSheets', () => {
+describe('document.styleSheets (Dart CSS engine)', () => {
   function requireStyleSheets(): any {
-    // In WebF, `document.styleSheets` is backed by native bridge code; if you
-    // just updated bridge sources, ensure the dylib/app bundle is rebuilt.
     const sheets = (document as any).styleSheets;
     if (sheets == null) {
       throw new Error('document.styleSheets is not available');
@@ -105,3 +103,4 @@ describe('document.styleSheets', () => {
     expect(requireStyleSheets().length).toBe(baseLength);
   });
 });
+

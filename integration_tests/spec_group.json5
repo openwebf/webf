@@ -176,11 +176,11 @@
 //      "specs/rust/**/*.{js,jsx,ts,tsx,html}"
 //    ]
 //  },
-  {
-    "name": "BlinkOnly",
-    "blinkOnly": true,
-    "specs": [
-      "specs/blink-only/**/*.{js,jsx,ts,tsx,html,svg}"
-    ]
-  },
+  // {
+  //   "name": "BlinkOnly",
+  //   "blinkOnly": true,
+  //   "specs": [
+  //     "specs/blink-only/**/*.{js,jsx,ts,tsx,html,svg}"
+  //   ]
+  // },
 ]

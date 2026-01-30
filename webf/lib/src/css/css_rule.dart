@@ -14,7 +14,7 @@ import 'package:webf/src/foundation/logger.dart';
 /// https://drafts.csswg.org/cssom/#the-cssstylerule-interface
 class CSSStyleRule extends CSSRule {
   @override
-  String get cssText => declaration.cssText;
+  String get cssText => '${selectorGroup.selectorText} {${declaration.cssText}}';
 
   @override
   int get type => CSSRule.STYLE_RULE;

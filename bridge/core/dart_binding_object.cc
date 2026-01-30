@@ -8,6 +8,7 @@
 
 #include "dart_binding_object.h"
 
+#include <string>
 #include <vector>
 
 #include "bindings/qjs/cppgc/mutation_scope.h"
@@ -22,6 +23,15 @@ static inline bool IsSymbolAtom(JSContext* ctx, JSAtom atom) {
   bool is_symbol = JS_IsSymbol(atom_value);
   JS_FreeValue(ctx, atom_value);
   return is_symbol;
+}
+
+static inline AtomicString KeyFromAtom(JSContext* ctx, JSAtom atom) {
+  if (JS_AtomIsTaggedInt(atom)) {
+    const uint32_t index = JS_AtomToUInt32(atom);
+    const std::string s = std::to_string(index);
+    return AtomicString::CreateFromUTF8(s.c_str(), s.size());
+  }
+  return AtomicString(ctx, atom);
 }
 
 static inline JSValue NativeValueToJSValue(JSContext* ctx, const NativeValue& native_value) {
@@ -92,6 +102,9 @@ const WrapperTypeInfo& DartBindingObject::wrapper_type_info_ = kDartBindingObjec
 
 DartBindingObject::DartBindingObject(ExecutingContext* context) : BindingObject(context->ctx()) {}
 
+DartBindingObject::DartBindingObject(ExecutingContext* context, NativeBindingObject* native_binding_object)
+    : BindingObject(context->ctx(), native_binding_object) {}
+
 bool DartBindingObject::HasBindingProperty(const AtomicString& prop, ExceptionState& exception_state) const {
   const NativeValue argv[] = {Native_NewString(prop.ToNativeString().release())};
   NativeValue result =
@@ -122,11 +135,11 @@ JSValue DartBindingObject::StringPropertyGetter(JSContext* ctx, JSValue obj, JSA
   if (binding_object == nullptr)
     return JS_UNDEFINED;
 
-  if (IsSymbolAtom(ctx, atom) || JS_AtomIsTaggedInt(atom)) {
+  if (IsSymbolAtom(ctx, atom)) {
     return JS_UNDEFINED;
   }
 
-  AtomicString key(ctx, atom);
+  AtomicString key = KeyFromAtom(ctx, atom);
   if (binding_object->IsPrototypeProperty(key)) {
     return JS_UNDEFINED;
   }
@@ -171,11 +184,11 @@ bool DartBindingObject::StringPropertySetter(JSContext* ctx, JSValueConst obj, J
   if (binding_object == nullptr)
     return false;
 
-  if (IsSymbolAtom(ctx, atom) || JS_AtomIsTaggedInt(atom)) {
+  if (IsSymbolAtom(ctx, atom)) {
     return false;
   }
 
-  AtomicString key(ctx, atom);
+  AtomicString key = KeyFromAtom(ctx, atom);
   if (binding_object->IsPrototypeProperty(key)) {
     return false;
   }
@@ -200,10 +213,6 @@ bool DartBindingObject::PropertyChecker(JSContext* ctx, JSValueConst obj, JSAtom
   if (binding_object == nullptr)
     return false;
 
-  if (JS_AtomIsTaggedInt(atom)) {
-    return false;
-  }
-
   // For symbol keys, only check prototype chain.
   if (IsSymbolAtom(ctx, atom)) {
     JSValue proto = JS_GetPrototype(ctx, obj);
@@ -212,7 +221,7 @@ bool DartBindingObject::PropertyChecker(JSContext* ctx, JSValueConst obj, JSAtom
     return result;
   }
 
-  AtomicString key(ctx, atom);
+  AtomicString key = KeyFromAtom(ctx, atom);
   if (binding_object->IsPrototypeProperty(key)) {
     return true;
   }
