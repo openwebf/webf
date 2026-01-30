@@ -36,6 +36,7 @@ class LegacyInlineCssStyleDeclaration : public LegacyCssStyleDeclaration {
   AtomicString getPropertyValue(const AtomicString& key, ExceptionState& exception_state) override;
   void setProperty(const AtomicString& key, const ScriptValue& value, const AtomicString& priority, ExceptionState& exception_state) override;
   AtomicString removeProperty(const AtomicString& key, ExceptionState& exception_state) override;
+  AtomicString getPropertyPriority(const AtomicString& property_name) override;
 
   [[nodiscard]] String ToString() const;
 
@@ -57,10 +58,11 @@ class LegacyInlineCssStyleDeclaration : public LegacyCssStyleDeclaration {
 
  private:
   AtomicString InternalGetPropertyValue(std::string& name);
-  bool InternalSetProperty(std::string& name, const AtomicString& value);
+  bool InternalSetProperty(std::string& name, const AtomicString& value, bool important);
   AtomicString InternalRemoveProperty(std::string& name);
   void InternalClearProperty();
   std::unordered_map<std::string, AtomicString> properties_;
+  std::unordered_map<std::string, bool> importants_;
   Member<Element> owner_element_;
 };
 
