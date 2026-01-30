@@ -35,7 +35,6 @@
 #include "element_rule_collector.h"
 
 #include <algorithm>
-#include <chrono>
 #include <limits>
 #include <string>
 #include "core/css/cascade_layer.h"
@@ -54,14 +53,6 @@
 #include "foundation/string/string_view.h"
 
 namespace webf {
-
-namespace {
-
-inline int64_t ToUs(std::chrono::steady_clock::duration duration) {
-  return std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
-}
-
-}  // namespace
 
 // Fast prefilter: if the rightmost compound contains a type selector,
 // ensure the candidate element’s tag matches it. This avoids falsely
@@ -222,25 +213,6 @@ void ElementRuleCollector::CollectMatchingRulesForList(
       continue;
     }
 
-    if (selector_filter_) {
-      bool rejected = false;
-      if (track_rule_match_times_) {
-        auto start_time = std::chrono::steady_clock::now();
-        rejected = selector_filter_->FastRejectSelector(rule_data->AncestorIdentifierHashes());
-        selector_filter_us_ += ToUs(std::chrono::steady_clock::now() - start_time);
-      } else {
-        rejected = selector_filter_->FastRejectSelector(rule_data->AncestorIdentifierHashes());
-      }
-
-      if (rejected) {
-        ++candidate_rules_rejected_by_filter_;
-        if (bucket == RuleBucket::kUniversal) {
-          ++candidate_universal_rejected_by_filter_;
-        }
-        continue;
-      }
-    }
-
     // Check if selector matches element
     SelectorChecker::SelectorCheckingContext context(element_);
     context.selector = &rule_data->Selector();
@@ -257,11 +229,6 @@ void ElementRuleCollector::CollectMatchingRulesForList(
       continue;
     }
     
-    ++candidate_rules_checked_;
-    if (bucket == RuleBucket::kUniversal) {
-      ++candidate_universal_checked_;
-    }
-
     SelectorChecker::MatchResult match_result;
     // Avoid calling TagQName() unless the selector is a tag selector.
     // Non-tag selectors (class, id, attribute, pseudo, etc.) would hit
@@ -272,18 +239,7 @@ void ElementRuleCollector::CollectMatchingRulesForList(
     // when the checker runs in non-querying modes.
     context.pseudo_id = pseudo_element_id_;
     bool matched = false;
-    if (track_rule_match_times_) {
-      auto start_time = std::chrono::steady_clock::now();
-      matched = selector_checker_.Match(context, match_result);
-      int64_t duration_us = ToUs(std::chrono::steady_clock::now() - start_time);
-      selector_match_us_ += duration_us;
-      if (duration_us > max_selector_match_us_) {
-        max_selector_match_us_ = duration_us;
-        max_selector_match_selector_ = context.selector;
-      }
-    } else {
-      matched = selector_checker_.Match(context, match_result);
-    }
+    matched = selector_checker_.Match(context, match_result);
     if (matched) {
       // When collecting normal element rules, pseudo-element selectors (e.g.
       // ::before/::after) may "match" only to mark pseudo presence. They must
@@ -464,12 +420,6 @@ void ElementRuleCollector::ClearMatchedRules() {
   current_cascade_order_ = 0;
   matched_pseudo_element_mask_ = 0;
   matched_pseudo_element_with_content_mask_ = 0;
-  candidate_rules_checked_ = 0;
-  candidate_rules_rejected_by_filter_ = 0;
-  candidate_universal_checked_ = 0;
-  candidate_universal_rejected_by_filter_ = 0;
-  selector_filter_us_ = 0;
-  selector_match_us_ = 0;
 }
 
 void ElementRuleCollector::AddElementStyleProperties(
