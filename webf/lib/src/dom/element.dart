@@ -1902,23 +1902,78 @@ abstract class Element extends ContainerNode
     SchedulerBinding.instance.scheduleFrame();
   }
 
+  // Normalize vendor-prefixed style property names emitted by the JS/CSSOM
+  // bridge (e.g. '-webkit-align-items' => 'WebkitAlignItems') to the standard
+  // internal property keys used by the Dart style engine.
+  //
+  // This is required so resolveValue() can parse typed values and flex/grid
+  // relayout is properly triggered when authors use WebKit-prefixed properties.
+  String _normalizeStylePropertyName(String name) {
+    if (CSSVariable.isCSSSVariableProperty(name)) return name;
+    if (name.contains('-')) name = camelize(name);
+    switch (name) {
+      case 'WebkitAlignItems':
+      case 'webkitAlignItems':
+        return ALIGN_ITEMS;
+      case 'WebkitAlignSelf':
+      case 'webkitAlignSelf':
+        return ALIGN_SELF;
+      case 'WebkitAlignContent':
+      case 'webkitAlignContent':
+        return ALIGN_CONTENT;
+      case 'WebkitJustifyContent':
+      case 'webkitJustifyContent':
+        return JUSTIFY_CONTENT;
+      case 'WebkitFlex':
+      case 'webkitFlex':
+        return FLEX;
+      case 'WebkitFlexBasis':
+      case 'webkitFlexBasis':
+        return FLEX_BASIS;
+      case 'WebkitFlexDirection':
+      case 'webkitFlexDirection':
+        return FLEX_DIRECTION;
+      case 'WebkitFlexFlow':
+      case 'webkitFlexFlow':
+        return FLEX_FLOW;
+      case 'WebkitFlexGrow':
+      case 'webkitFlexGrow':
+        return FLEX_GROW;
+      case 'WebkitFlexShrink':
+      case 'webkitFlexShrink':
+        return FLEX_SHRINK;
+      case 'WebkitFlexWrap':
+      case 'webkitFlexWrap':
+        return FLEX_WRAP;
+      case 'WebkitOrder':
+      case 'webkitOrder':
+        return ORDER;
+      case 'WebkitLineClamp':
+      case 'webkitLineClamp':
+        return LINE_CLAMP;
+      default:
+        return name;
+    }
+  }
+
   void _onStyleChanged(
       String propertyName, String? prevValue, String currentValue,
       {String? baseHref}) {
+    final String property = _normalizeStylePropertyName(propertyName);
     // Identify color-bearing properties up front so we can normalize
     // both the previous and current values to concrete colors for
     // transition decisions, independent of any var(...) indirection.
-    final bool isColorProp = propertyName == COLOR ||
-        propertyName == BACKGROUND_COLOR ||
-        propertyName == TEXT_DECORATION_COLOR ||
-        propertyName == BORDER_LEFT_COLOR ||
-        propertyName == BORDER_TOP_COLOR ||
-        propertyName == BORDER_RIGHT_COLOR ||
-        propertyName == BORDER_BOTTOM_COLOR;
+    final bool isColorProp = property == COLOR ||
+        property == BACKGROUND_COLOR ||
+        property == TEXT_DECORATION_COLOR ||
+        property == BORDER_LEFT_COLOR ||
+        property == BORDER_TOP_COLOR ||
+        property == BORDER_RIGHT_COLOR ||
+        property == BORDER_BOTTOM_COLOR;
 
-    if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
+    if (DebugFlags.shouldLogTransitionForProp(property)) {
       cssLogger.info(
-          '[style][change] $tagName.$propertyName prev=${prevValue ?? 'null'} curr=$currentValue');
+          '[style][change] $tagName.$property prev=${prevValue ?? 'null'} curr=$currentValue');
     }
 
     // For color properties, prefer the previous *computed* color from
@@ -1926,12 +1981,12 @@ abstract class Element extends ContainerNode
     // raw serialized CSS text (which may still contain var(...)).
     String? prevForTransition = prevValue;
     if (isColorProp) {
-      final dynamic prevComputed = renderStyle.getProperty(propertyName);
+      final dynamic prevComputed = renderStyle.getProperty(property);
       if (prevComputed is CSSColor) {
         prevForTransition = prevComputed.cssText();
-        if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
+        if (DebugFlags.shouldLogTransitionForProp(property)) {
           cssLogger.info(
-              '[style][prev-computed] $tagName.$propertyName prevSerialized=${prevValue ?? 'null'} prevComputed=$prevForTransition');
+              '[style][prev-computed] $tagName.$property prevSerialized=${prevValue ?? 'null'} prevComputed=$prevForTransition');
         }
       }
     }
@@ -1943,39 +1998,39 @@ abstract class Element extends ContainerNode
     if (currentValue.contains('var(') && isColorProp) {
       try {
         currentValue = CSSWritingModeMixin.expandInlineVars(
-            currentValue, renderStyle, propertyName);
+            currentValue, renderStyle, property);
       } catch (_) {}
     }
 
     final bool shouldTrans = renderStyle.shouldTransition(
-        propertyName, prevForTransition, currentValue);
-    if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
+        property, prevForTransition, currentValue);
+    if (DebugFlags.shouldLogTransitionForProp(property)) {
       cssLogger.info(
-          '[style][route] $tagName.$propertyName shouldTransition=$shouldTrans');
+          '[style][route] $tagName.$property shouldTransition=$shouldTrans');
     }
     if (shouldTrans) {
       scheduleRunTransitionAnimations(
-          propertyName, prevForTransition, currentValue);
+          property, prevForTransition, currentValue);
       return;
     }
     // If a transition for this property is pending in this frame or currently
     // running, avoid applying the immediate setRenderStyle which would clobber
     // the animation-driven value. The scheduled/active transition will drive
     // updates.
-    final bool pending = _pendingTransitionProps.contains(propertyName);
-    final bool running = renderStyle.isTransitionRunning(propertyName);
-    if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
+    final bool pending = _pendingTransitionProps.contains(property);
+    final bool running = renderStyle.isTransitionRunning(property);
+    if (DebugFlags.shouldLogTransitionForProp(property)) {
       cssLogger.info(
-          '[style][route] $tagName.$propertyName pending=$pending running=$running');
+          '[style][route] $tagName.$property pending=$pending running=$running');
     }
     if (pending || running) {
       return;
     }
-    if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
+    if (DebugFlags.shouldLogTransitionForProp(property)) {
       cssLogger.info(
-          '[style][apply] $tagName.$propertyName direct-set value=$currentValue');
+          '[style][apply] $tagName.$property direct-set value=$currentValue');
     }
-    setRenderStyle(propertyName, currentValue, baseHref: baseHref);
+    setRenderStyle(property, currentValue, baseHref: baseHref);
   }
 
   void _onStyleFlushed(List<String> properties) {
