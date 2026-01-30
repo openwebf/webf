@@ -191,6 +191,19 @@ class CSSParser {
         }
         return expanded;
       }
+      if (rule is CSSLayerBlockRule) {
+        final List<CSSRule> expandedChildren = <CSSRule>[];
+        for (final CSSRule child in rule.cssRules) {
+          expandedChildren.addAll(expandMedia(child));
+        }
+        return <CSSRule>[
+          CSSLayerBlockRule(
+            name: rule.name,
+            layerNamePath: List<String>.from(rule.layerNamePath),
+            cssRules: expandedChildren,
+          )
+        ];
+      }
       return <CSSRule>[rule];
     }
 
@@ -679,9 +692,7 @@ class CSSParser {
     // `@layer { ... }`
     if (_peekKind(TokenKind.LBRACE)) {
       final anon = _resolveLayerPath(<String>[_createAnonymousLayerSegment()]);
-      final nodes = <CSSRule>[
-        CSSLayerStatementRule(<List<String>>[anon])
-      ];
+      final nodes = <CSSRule>[];
 
       final prev = List<String>.from(_layerStack);
       _layerStack
@@ -696,7 +707,13 @@ class CSSParser {
         ..clear()
         ..addAll(prev);
 
-      return nodes;
+      return <CSSRule>[
+        CSSLayerBlockRule(
+          name: '',
+          layerNamePath: anon,
+          cssRules: nodes,
+        )
+      ];
     }
 
     final rawNames = _processLayerNameList();
@@ -715,9 +732,7 @@ class CSSParser {
           : rawNames.first;
       final fullPath = _resolveLayerPath(layerName);
 
-      final nodes = <CSSRule>[
-        CSSLayerStatementRule(<List<String>>[fullPath])
-      ];
+      final nodes = <CSSRule>[];
 
       final prev = List<String>.from(_layerStack);
       _layerStack
@@ -732,7 +747,14 @@ class CSSParser {
         ..clear()
         ..addAll(prev);
 
-      return nodes;
+      final String nameText = rawNames.isEmpty ? '' : rawNames.first.join('.');
+      return <CSSRule>[
+        CSSLayerBlockRule(
+          name: nameText,
+          layerNamePath: fullPath,
+          cssRules: nodes,
+        )
+      ];
     }
 
     return null;

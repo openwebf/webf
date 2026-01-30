@@ -245,6 +245,10 @@ class Document extends ContainerNode {
     return binding;
   }
 
+  // Exposed for other DOM nodes (e.g. <style>/<link>) to return stable
+  // CSSStyleSheet binding objects that are shared with `document.styleSheets`.
+  CSSStyleSheetBinding ensureStyleSheetBindingForCSSOM(CSSStyleSheet sheet) => _ensureStyleSheetBinding(sheet);
+
   List<CSSStyleSheetBinding> get _styleSheetsForBinding {
     if (ownerView.enableBlink) {
       // Blink CSS exposes document.styleSheets natively.

@@ -165,6 +165,14 @@ class LinkElement extends Element {
   CSSStyleSheet? get styleSheet => _styleSheet;
   CSSStyleSheet? _styleSheet;
 
+  CSSStyleSheetBinding? get sheet {
+    if (ownerView.enableBlink) return null;
+    if (rel.toLowerCase() != REL_STYLESHEET) return null;
+    final sheet = _styleSheet;
+    if (sheet == null) return null;
+    return ownerDocument.ensureStyleSheetBindingForCSSOM(sheet);
+  }
+
   bool _loading = false;
 
   bool get loading => _loading;
@@ -202,7 +210,10 @@ class LinkElement extends Element {
         setter: (element, value) => castToType<LinkElement>(element).media = castToType<String>(value)),
     'as': StaticDefinedBindingProperty(
         getter: (element) => castToType<LinkElement>(element).as,
-        setter: (element, value) => castToType<LinkElement>(element).as = castToType<String>(value))
+        setter: (element, value) => castToType<LinkElement>(element).as = castToType<String>(value)),
+    'sheet': StaticDefinedBindingProperty(
+      getter: (element) => castToType<LinkElement>(element).sheet,
+    ),
   };
 
   @override
@@ -652,6 +663,26 @@ mixin StyleElementMixin on Element {
   CSSStyleSheet? _styleSheet;
 
   CSSStyleSheet? get styleSheet => _styleSheet;
+
+  CSSStyleSheetBinding? get sheet {
+    if (ownerView.enableBlink) return null;
+    if (_type != _CSS_MIME) return null;
+    if (_styleSheet == null) {
+      _recalculateStyle();
+    }
+    final sheet = _styleSheet;
+    if (sheet == null) return null;
+    return ownerDocument.ensureStyleSheetBindingForCSSOM(sheet);
+  }
+
+  static final StaticDefinedBindingPropertyMap _styleElementProperties = {
+    'sheet': StaticDefinedBindingProperty(
+      getter: (element) => castToType<StyleElementMixin>(element).sheet,
+    ),
+  };
+
+  @override
+  List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _styleElementProperties];
 
   // Cache signature of the last parsed stylesheet so we can skip redundant
   // replaceSync()/appendPendingStyleSheet cycles when neither the inline CSS

@@ -51,6 +51,15 @@ class RuleSet {
       layerTree.declareAll(rule.layerNamePaths);
       return;
     }
+    if (rule is CSSLayerBlockRule) {
+      // Ensure the layer is declared even if the block is empty.
+      if (rule.layerNamePath.isNotEmpty) {
+        layerTree.declare(rule.layerNamePath);
+      }
+      // Add child rules in document order.
+      addRules(rule.cssRules, baseHref: baseHref);
+      return;
+    }
     if (rule is CSSStyleRule) {
       if (rule.layerPath.isNotEmpty) {
         rule.layerOrderKey = layerTree.declare(rule.layerPath);

@@ -188,6 +188,22 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
   }
   <% } %>
 
+  <% if ((className === 'HTMLStyleElement' || className === 'HTMLLinkElement') && prop.name === 'sheet') { %>
+  // CSSOM: `HTMLStyleElement.sheet` / `HTMLLinkElement.sheet` are backed by Blink CSS
+  // when blink is enabled, otherwise delegated to the Dart CSS engine via the binding bridge.
+  if (!context->isBlinkEnabled()) {
+    ExceptionState exception_state;
+    static thread_local const AtomicString kSheet = AtomicString::CreateFromUTF8("sheet", sizeof("sheet") - 1);
+    NativeValue dart_result =
+        <%= blob.filename %>->GetBindingProperty(kSheet, FlushUICommandReason::kDependentsOnElement, exception_state);
+    if (UNLIKELY(exception_state.HasException())) {
+      return exception_state.ToQuickJS();
+    }
+    ScriptValue script_value(ctx, dart_result);
+    return JS_DupValue(ctx, script_value.QJSValue());
+  }
+  <% } %>
+
   <% if (prop.typeMode && prop.typeMode.dartImpl && prop.typeMode.supportAsync) { %>
   ExceptionState exception_state;
   ScriptPromise promise = <%= blob.filename %>->GetBindingPropertyAsync(binding_call_methods::k<%= prop.name.split('_async')[0] %>, exception_state);

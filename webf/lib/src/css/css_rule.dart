@@ -8,6 +8,7 @@
  */
 
 import 'package:quiver/core.dart';
+import 'package:collection/collection.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/foundation/logger.dart';
 
@@ -79,6 +80,67 @@ class CSSLayerStatementRule extends CSSRule {
   bool operator ==(Object other) {
     return other is CSSLayerStatementRule &&
         _deepEquals(layerNamePaths, other.layerNamePaths);
+  }
+}
+
+/// Represents a CSS Cascade Layer block: `@layer name { ... }`.
+///
+/// This is a grouping rule in the CSSOM and supports insertRule/deleteRule.
+class CSSLayerBlockRule extends CSSRule {
+  /// The layer name as written, using dot notation for nested names.
+  /// For anonymous layers, this is the empty string.
+  final String name;
+
+  /// Resolved full layer name path segments in the cascade layer tree.
+  /// This includes any parent layer context.
+  final List<String> layerNamePath;
+
+  /// Child rules within this layer block.
+  final List<CSSRule> cssRules;
+
+  CSSLayerBlockRule({
+    required this.name,
+    required this.layerNamePath,
+    required List<CSSRule> cssRules,
+  }) : cssRules = cssRules;
+
+  @override
+  int get type => CSSRule.LAYER_BLOCK_RULE;
+
+  @override
+  int get hashCode => hashObjects(<Object?>[
+        name,
+        hashObjects(layerNamePath),
+        hashObjects(cssRules),
+      ]);
+
+  static bool _listEquals(List<String> a, List<String> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CSSLayerBlockRule &&
+        other.name == name &&
+        _listEquals(other.layerNamePath, layerNamePath) &&
+        const ListEquality<CSSRule>().equals(other.cssRules, cssRules);
+  }
+
+  int insertRule(CSSRule rule, int index) {
+    if (index < 0 || index > cssRules.length) {
+      throw RangeError.index(index, cssRules, 'index');
+    }
+    cssRules.insert(index, rule);
+    return index;
+  }
+
+  void deleteRule(int index) {
+    cssRules.removeAt(index);
   }
 }
 

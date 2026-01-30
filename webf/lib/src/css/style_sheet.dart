@@ -43,7 +43,7 @@ class CSSStyleSheet implements StyleSheet, Comparable {
     }
     cssRules.insertAll(index, rules);
     for (final rule in rules) {
-      rule.parentStyleSheet = this;
+      _assignParentStyleSheetRecursive(rule, this);
     }
     return index;
   }
@@ -60,6 +60,9 @@ class CSSStyleSheet implements StyleSheet, Comparable {
     List<CSSRule> rules = CSSParser(text, href: href)
         .parseRules(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: isDarkMode);
     cssRules.addAll(rules);
+    for (final rule in rules) {
+      _assignParentStyleSheetRecursive(rule, this);
+    }
   }
 
   @override
@@ -71,7 +74,11 @@ class CSSStyleSheet implements StyleSheet, Comparable {
   int get hashCode => hashObjects(cssRules);
 
   CSSStyleSheet clone() {
-    CSSStyleSheet sheet = CSSStyleSheet(List.from(cssRules), disabled: disabled, href: href);
+    final clonedRules = cssRules.map(_cloneRuleForDiff).toList(growable: false);
+    CSSStyleSheet sheet = CSSStyleSheet(List.from(clonedRules), disabled: disabled, href: href);
+    for (final rule in sheet.cssRules) {
+      _assignParentStyleSheetRecursive(rule, sheet);
+    }
     return sheet;
   }
 
@@ -81,5 +88,33 @@ class CSSStyleSheet implements StyleSheet, Comparable {
       return 0;
     }
     return hashCode.compareTo(other.hashCode);
+  }
+
+  static void _assignParentStyleSheetRecursive(CSSRule rule, CSSStyleSheet sheet) {
+    rule.parentStyleSheet = sheet;
+    if (rule is CSSLayerBlockRule) {
+      for (final child in rule.cssRules) {
+        _assignParentStyleSheetRecursive(child, sheet);
+      }
+    }
+  }
+
+  static CSSRule _cloneRuleForDiff(CSSRule rule) {
+    // Most rule objects are immutable after parsing and safe to share between
+    // snapshots. Layer blocks can be mutated via CSSOM (insertRule/deleteRule),
+    // so they must be deep-copied to ensure change detection works.
+    if (rule is CSSLayerBlockRule) {
+      return CSSLayerBlockRule(
+        name: rule.name,
+        layerNamePath: List<String>.from(rule.layerNamePath),
+        cssRules: rule.cssRules.map(_cloneRuleForDiff).toList(growable: false),
+      );
+    }
+    if (rule is CSSLayerStatementRule) {
+      return CSSLayerStatementRule(
+        rule.layerNamePaths.map((p) => List<String>.from(p)).toList(growable: false),
+      );
+    }
+    return rule;
   }
 }

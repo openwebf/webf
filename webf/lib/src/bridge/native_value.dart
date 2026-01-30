@@ -88,7 +88,9 @@ JSPointerType getPointerTypeOfBindingObject(BindingObject bindingObject) {
   // side can wrap them with DartBindingObject (see script_value.cc).
   if (bindingObject is CSSStyleSheetBinding ||
       bindingObject is CSSRuleListBinding ||
-      bindingObject is CSSRuleBinding) {
+      bindingObject is CSSRuleBinding ||
+      bindingObject is CSSLayerBlockRuleBinding ||
+      bindingObject is CSSLayerStatementRuleBinding) {
     return JSPointerType.nativeBindingObject;
   }
 
