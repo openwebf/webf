@@ -480,6 +480,21 @@ void Element::setId(const AtomicString& value, ExceptionState& exception_state) 
 }
 
 std::vector<Element*> Element::getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state) {
+  if (GetExecutingContext() && GetExecutingContext()->isBlinkEnabled()) {
+    SpaceSplitString query(class_name);
+    if (query.size() == 0) {
+      return {};
+    }
+
+    std::vector<Element*> result;
+    for (Element& element : ElementTraversal::DescendantsOf(*this)) {
+      if (element.HasClass() && element.ClassNames().ContainsAll(query)) {
+        result.emplace_back(&element);
+      }
+    }
+    return result;
+  }
+
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), class_name)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByClassName, 1, arguments,
                                            FlushUICommandReason::kDependentsAll, exception_state);
@@ -490,6 +505,28 @@ std::vector<Element*> Element::getElementsByClassName(const AtomicString& class_
 }
 
 std::vector<Element*> Element::getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state) {
+  if (GetExecutingContext() && GetExecutingContext()->isBlinkEnabled()) {
+    if (tag_name.empty()) {
+      return {};
+    }
+
+    std::vector<Element*> result;
+    if (tag_name == g_star_atom) {
+      for (Element& element : ElementTraversal::DescendantsOf(*this)) {
+        result.emplace_back(&element);
+      }
+      return result;
+    }
+
+    StringView query(tag_name);
+    for (Element& element : ElementTraversal::DescendantsOf(*this)) {
+      if (EqualIgnoringASCIICase(StringView(element.localName()), query)) {
+        result.emplace_back(&element);
+      }
+    }
+    return result;
+  }
+
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), tag_name)};
   NativeValue result = InvokeBindingMethod(binding_call_methods::kgetElementsByTagName, 1, arguments,
                                            FlushUICommandReason::kDependentsAll, exception_state);
