@@ -44,6 +44,44 @@ class CSSImportRule extends CSSRule {
   int get type => CSSRule.IMPORT_RULE;
 }
 
+/// Represents a CSS Cascade Layer ordering statement: `@layer a, b;`.
+///
+/// WebF flattens layer blocks into normal rules and emits a statement rule to
+/// ensure empty layers still participate in ordering.
+class CSSLayerStatementRule extends CSSRule {
+  /// A list of layer name paths (each path is dot-separated in CSS).
+  /// Example: `@layer a.b, c;` becomes `[['a','b'], ['c']]`.
+  final List<List<String>> layerNamePaths;
+
+  CSSLayerStatementRule(this.layerNamePaths);
+
+  @override
+  int get type => CSSRule.LAYER_STATEMENT_RULE;
+
+  static bool _deepEquals(List<List<String>> a, List<List<String>> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      final ai = a[i];
+      final bi = b[i];
+      if (ai.length != bi.length) return false;
+      for (var j = 0; j < ai.length; j++) {
+        if (ai[j] != bi[j]) return false;
+      }
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode => hashObjects(layerNamePaths.map((p) => hashObjects(p)));
+
+  @override
+  bool operator ==(Object other) {
+    return other is CSSLayerStatementRule &&
+        _deepEquals(layerNamePaths, other.layerNamePaths);
+  }
+}
+
 class KeyFrameBlock {
   final List<String> blockSelectors;
   final CSSStyleDeclaration declarations;
@@ -95,7 +133,8 @@ class CSSKeyframesRule extends CSSRule {
         if (property == 'animationTimingFunction') {
           continue; // already captured as easing
         }
-        keyframes.add(Keyframe(property, entry.value.value, offset ?? 0, easingForThisKeyframe));
+        keyframes.add(Keyframe(
+            property, entry.value.value, offset ?? 0, easingForThisKeyframe));
       }
 
       // (removed) verbose keyframe parse diagnostics
@@ -121,7 +160,7 @@ class CSSKeyframesRule extends CSSRule {
 class CSSFontFaceRule extends CSSRule {
   final CSSStyleDeclaration declarations;
 
-  CSSFontFaceRule(this.declarations): super();
+  CSSFontFaceRule(this.declarations) : super();
 
   @override
   int get type => CSSRule.FONT_FACE_RULE;
@@ -130,7 +169,6 @@ class CSSFontFaceRule extends CSSRule {
     return '@font-face';
   }
 }
-
 
 class CSSMediaDirective extends CSSRule {
   final CSSMediaQuery? cssMediaQuery;
@@ -145,7 +183,8 @@ class CSSMediaDirective extends CSSRule {
   @override
   int get type => CSSRule.MEDIA_RULE;
 
-  List<CSSRule>? getValidMediaRules(double? windowWidth, double? windowHeight, bool isDarkMode) {
+  List<CSSRule>? getValidMediaRules(
+      double? windowWidth, double? windowHeight, bool isDarkMode) {
     List<CSSRule>? mediaRules = [];
     if (rules == null) {
       return mediaRules;
@@ -156,7 +195,9 @@ class CSSMediaDirective extends CSSRule {
     // bool isMediaTypeNotOp = cssMediaQuery._mediaUnary == TokenKind.MEDIA_OP_ONLY;
     //w3c has media type screen/print/speech/all, but webf only work on screen and all
     String? mediaType = cssMediaQuery!._mediaType?.name;
-    if (mediaType != null && mediaType != MediaType.SCREEN && mediaType != MediaType.ALL) {
+    if (mediaType != null &&
+        mediaType != MediaType.SCREEN &&
+        mediaType != MediaType.ALL) {
       return mediaRules;
     }
     List<bool> conditions = [];
@@ -165,7 +206,9 @@ class CSSMediaDirective extends CSSRule {
       // [max-width: 1800px, min-width: 450px]
       if (expression.mediaStyle != null) {
         dynamic maxAspectRatio = expression.mediaStyle!['max-aspect-ratio'];
-        if (maxAspectRatio != null && windowWidth != null && windowHeight != null) {
+        if (maxAspectRatio != null &&
+            windowWidth != null &&
+            windowHeight != null) {
           double? maxAPS;
           if (maxAspectRatio is String) {
             maxAPS = parseStringToDouble(maxAspectRatio);
@@ -179,7 +222,9 @@ class CSSMediaDirective extends CSSRule {
           }
         }
         dynamic minAspectRatio = expression.mediaStyle!['min-aspect-ratio'];
-        if (minAspectRatio != null && windowWidth != null && windowHeight != null) {
+        if (minAspectRatio != null &&
+            windowWidth != null &&
+            windowHeight != null) {
           double? minAPS;
           if (minAspectRatio is String) {
             minAPS = parseStringToDouble(minAspectRatio);
@@ -194,19 +239,24 @@ class CSSMediaDirective extends CSSRule {
         }
         dynamic maxWidth = expression.mediaStyle!['max-width'];
         if (windowWidth != null && maxWidth != null) {
-          double maxWidthValue = CSSLength.parseLength(maxWidth, null).value ?? -1;
-          bool condition = windowWidth < maxWidthValue;
+          double maxWidthValue =
+              CSSLength.parseLength(maxWidth, null).value ?? -1;
+          // Media Queries: `max-width` matches when width <= value.
+          bool condition = windowWidth <= maxWidthValue;
           conditions.add(condition);
           ops.add(expression.op == MediaOperator.AND);
         }
         dynamic minWidth = expression.mediaStyle!['min-width'];
         if (windowWidth != null && minWidth != null) {
-          double minWidthValue = CSSLength.parseLength(minWidth, null).value ?? -1;
-          bool condition = windowWidth > minWidthValue;
+          double minWidthValue =
+              CSSLength.parseLength(minWidth, null).value ?? -1;
+          // Media Queries: `min-width` matches when width >= value.
+          bool condition = windowWidth >= minWidthValue;
           conditions.add(condition);
           ops.add(expression.op == MediaOperator.AND);
         }
-        dynamic prefersColorScheme = expression.mediaStyle!['prefers-color-scheme'];
+        dynamic prefersColorScheme =
+            expression.mediaStyle!['prefers-color-scheme'];
         if (prefersColorScheme != null) {
           bool isMediaDarkMode = prefersColorScheme == 'dark';
           bool condition = isMediaDarkMode == isDarkMode;
@@ -216,7 +266,7 @@ class CSSMediaDirective extends CSSRule {
       }
     }
     bool isValid = true;
-    for (int i = 0; i < conditions.length; i ++) {
+    for (int i = 0; i < conditions.length; i++) {
       bool con = conditions[i];
       bool isAnd = ops[i];
       if (isAnd) {
@@ -233,7 +283,8 @@ class CSSMediaDirective extends CSSRule {
 
   double? parseStringToDouble(String str) {
     try {
-      if (str.contains('/')) { // 8/5
+      if (str.contains('/')) {
+        // 8/5
         List<String> parts = str.split('/');
         double num1 = double.parse(parts[0]);
         double num2 = double.parse(parts[1]);
@@ -263,9 +314,7 @@ class CSSMediaQuery extends TreeNode {
   final Identifier? _mediaType;
   final List<CSSMediaExpression> expressions;
 
-  CSSMediaQuery(
-      this._mediaUnary, this._mediaType, this.expressions)
-      : super();
+  CSSMediaQuery(this._mediaUnary, this._mediaType, this.expressions) : super();
 
   bool get hasMediaType => _mediaType != null;
   String get mediaType => _mediaType!.name;
@@ -275,7 +324,6 @@ class CSSMediaQuery extends TreeNode {
       TokenKind.idToValue(TokenKind.MEDIA_OPERATORS, _mediaUnary)!
           .toUpperCase();
 }
-
 
 /// MediaExpression grammar:
 ///

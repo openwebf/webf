@@ -28,11 +28,15 @@ import 'package:webf/src/html/text.dart';
 import 'package:webf/webf.dart';
 
 // FFI binding for the C++ batch free function
-typedef NativeBatchFreeFunction = Void Function(Pointer<Void> pointers, Int32 count);
-typedef DartBatchFreeFunction = void Function(Pointer<Void> pointers, int count);
+typedef NativeBatchFreeFunction = Void Function(
+    Pointer<Void> pointers, Int32 count);
+typedef DartBatchFreeFunction = void Function(
+    Pointer<Void> pointers, int count);
 
-final DartBatchFreeFunction _batchFreeNativeBindingObjects = WebFDynamicLibrary.ref
-    .lookupFunction<NativeBatchFreeFunction, DartBatchFreeFunction>('batchFreeNativeBindingObjects');
+final DartBatchFreeFunction _batchFreeNativeBindingObjects = WebFDynamicLibrary
+    .ref
+    .lookupFunction<NativeBatchFreeFunction, DartBatchFreeFunction>(
+        'batchFreeNativeBindingObjects');
 
 class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   WebFController rootController;
@@ -69,7 +73,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   bool get inited => _inited;
 
-  static const Duration _nativeMediaQueryAffectingValueDebounceDuration = Duration(milliseconds: 16);
+  static const Duration _nativeMediaQueryAffectingValueDebounceDuration =
+      Duration(milliseconds: 16);
   Timer? _nativeMediaQueryAffectingValueDebounceTimer;
   bool _nativeMediaQueryAffectingValuePostFrameCallbackScheduled = false;
   double? _lastNotifiedViewportWidth;
@@ -106,7 +111,6 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   void resumeAnimationTimeline() {
-
     for (var callback in _pendingAnimationTimesLines) {
       try {
         callback();
@@ -122,7 +126,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   bool _disposing = false;
   bool _frameFlushLoopEnabled = false;
 
-  bool get _canScheduleFrames => !_disposing && !_disposed && _frameFlushLoopEnabled;
+  bool get _canScheduleFrames =>
+      !_disposing && !_disposed && _frameFlushLoopEnabled;
 
   void _cancelBlinkStyleUpdateForNextFrame() {
     final int? callbackId = _beginFrameStyleUpdateCallbackId;
@@ -138,7 +143,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     if (_beginFrameStyleUpdateScheduled) return;
     _beginFrameStyleUpdateScheduled = true;
 
-    _beginFrameStyleUpdateCallbackId = SchedulerBinding.instance.scheduleFrameCallback((Duration _) {
+    _beginFrameStyleUpdateCallbackId =
+        SchedulerBinding.instance.scheduleFrameCallback((Duration _) {
       _beginFrameStyleUpdateScheduled = false;
       _beginFrameStyleUpdateCallbackId = null;
       if (!_canScheduleFrames) return;
@@ -175,7 +181,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     // Deliver pending IntersectionObserver entries to JS side.
     // Safe to call every frame; it will no-op when there are no entries.
     deliverIntersectionObserver();
-    SchedulerBinding.instance.addPostFrameCallback((_) => _flushPendingCommandsPerFrameLoop());
+    SchedulerBinding.instance
+        .addPostFrameCallback((_) => _flushPendingCommandsPerFrameLoop());
     SchedulerBinding.instance.scheduleFrame();
   }
 
@@ -230,8 +237,10 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   // Helper method to match dynamic route patterns
   bool _matchesPattern(String pattern, String path) {
-    final List<String> patternParts = pattern.split('/').where((p) => p.isNotEmpty).toList();
-    final List<String> pathParts = path.split('/').where((p) => p.isNotEmpty).toList();
+    final List<String> patternParts =
+        pattern.split('/').where((p) => p.isNotEmpty).toList();
+    final List<String> pathParts =
+        path.split('/').where((p) => p.isNotEmpty).toList();
     if (patternParts.length != pathParts.length) return false;
 
     for (int i = 0; i < patternParts.length; i++) {
@@ -280,7 +289,9 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     if (address == null) {
       return 0;
     }
-    int targetId = targetIdToDevNodeIdMap.keys.firstWhere((k) => targetIdToDevNodeIdMap[k] == address, orElse: () => 0);
+    int targetId = targetIdToDevNodeIdMap.keys.firstWhere(
+        (k) => targetIdToDevNodeIdMap[k] == address,
+        orElse: () => 0);
     return targetId;
   }
 
@@ -388,6 +399,12 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       // Mark viewport-size-relative properties dirty so vw/vh/etc can
       // recompute against the new viewport size.
       window.resizeViewportRelatedElements();
+
+      // Recalculate styles so media queries (including @layer ordering inside
+      // conditional groups) re-evaluate against the new viewport size.
+      if (!enableBlink) {
+        document.recalculateStyleImmediately();
+      }
     });
     SchedulerBinding.instance.scheduleFrame();
   }
@@ -412,7 +429,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     firstLoad = false;
   }
 
-  void initWindow(WebFViewController view, Pointer<NativeBindingObject> pointer) {
+  void initWindow(
+      WebFViewController view, Pointer<NativeBindingObject> pointer) {
     window = Window(BindingContext(view, _contextId, pointer), document);
 
     // 3 seconds should be enough for page loading, make sure the JavaScript GC was opened.
@@ -433,7 +451,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     final int currentVersion = BindingObjectRegistry.version;
     if (currentVersion == _installedBindingObjectRegistryVersion) return;
 
-    final List<String> names = BindingObjectRegistry.names.toList(growable: false);
+    final List<String> names =
+        BindingObjectRegistry.names.toList(growable: false);
     if (names.isEmpty) {
       _installedBindingObjectRegistryVersion = currentVersion;
       return;
@@ -508,8 +527,9 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   void _scheduleNativeMediaQueryAffectingValueChanged() {
     if (_nativeMediaQueryAffectingValueDebounceTimer != null) return;
-    _nativeMediaQueryAffectingValueDebounceTimer =
-        Timer(_nativeMediaQueryAffectingValueDebounceDuration, _scheduleNativeMediaQueryAffectingValueFlushAfterFrame);
+    _nativeMediaQueryAffectingValueDebounceTimer = Timer(
+        _nativeMediaQueryAffectingValueDebounceDuration,
+        _scheduleNativeMediaQueryAffectingValueFlushAfterFrame);
   }
 
   void _scheduleNativeMediaQueryAffectingValueFlushAfterFrame() {
@@ -527,7 +547,9 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   void _flushNativeMediaQueryAffectingValueChanged() {
-    if (!_inited || _disposed || WebFController.getControllerOfJSContextId(_contextId) == null) {
+    if (!_inited ||
+        _disposed ||
+        WebFController.getControllerOfJSContextId(_contextId) == null) {
       return;
     }
 
@@ -544,7 +566,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     final double width = window.innerWidth;
     final double height = window.innerHeight;
     bool shouldDispatchResizeEvent = false;
-    if (_lastNotifiedViewportWidth != width || _lastNotifiedViewportHeight != height) {
+    if (_lastNotifiedViewportWidth != width ||
+        _lastNotifiedViewportHeight != height) {
       nativeOnViewportSizeChanged(page, width, height);
       _lastNotifiedViewportWidth = width;
       _lastNotifiedViewportHeight = height;
@@ -567,15 +590,16 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   VoidCallback? _originalOnPlatformBrightnessChanged;
 
   void _registerPlatformBrightnessChange() {
-    _originalOnPlatformBrightnessChanged =
-        rootController.ownerFlutterView?.platformDispatcher.onPlatformBrightnessChanged;
-    rootController.ownerFlutterView?.platformDispatcher.onPlatformBrightnessChanged = onPlatformBrightnessChanged;
+    _originalOnPlatformBrightnessChanged = rootController
+        .ownerFlutterView?.platformDispatcher.onPlatformBrightnessChanged;
+    rootController.ownerFlutterView?.platformDispatcher
+        .onPlatformBrightnessChanged = onPlatformBrightnessChanged;
   }
 
   void _unregisterPlatformBrightnessChange() {
     if (_originalOnPlatformBrightnessChanged == null) return;
-    rootController.ownerFlutterView?.platformDispatcher.onPlatformBrightnessChanged =
-        _originalOnPlatformBrightnessChanged;
+    rootController.ownerFlutterView?.platformDispatcher
+        .onPlatformBrightnessChanged = _originalOnPlatformBrightnessChanged;
     _originalOnPlatformBrightnessChanged = null;
   }
 
@@ -603,7 +627,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   // export Uint8List bytes from rendered result.
-  Future<Uint8List> toImage(double devicePixelRatio, [Pointer<Void>? eventTargetPointer]) {
+  Future<Uint8List> toImage(double devicePixelRatio,
+      [Pointer<Void>? eventTargetPointer]) {
     assert(!_disposed, 'WebF have already disposed');
     Completer<Uint8List> completer = Completer();
     try {
@@ -612,10 +637,14 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
         completer.completeError(Exception(msg));
         return completer.future;
       }
-      var node = eventTargetPointer == null ? document.documentElement : getBindingObject(eventTargetPointer);
+      var node = eventTargetPointer == null
+          ? document.documentElement
+          : getBindingObject(eventTargetPointer);
       if (node is Element) {
         SchedulerBinding.instance.addPostFrameCallback((_) {
-          node.toBlob(devicePixelRatio: devicePixelRatio).then((Uint8List bytes) {
+          node
+              .toBlob(devicePixelRatio: devicePixelRatio)
+              .then((Uint8List bytes) {
             completer.complete(bytes);
           }).catchError((e, stack) {
             String msg =
@@ -636,34 +665,42 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   void createElement(Pointer<NativeBindingObject> nativePtr, String tagName) {
-    assert(!hasBindingObject(nativePtr), 'ERROR: Can not create element with same id "$nativePtr"');
-    document.createElement(tagName.toUpperCase(), BindingContext(document.controller.view, _contextId, nativePtr));
+    assert(!hasBindingObject(nativePtr),
+        'ERROR: Can not create element with same id "$nativePtr"');
+    document.createElement(tagName.toUpperCase(),
+        BindingContext(document.controller.view, _contextId, nativePtr));
   }
 
-  void createElementNS(Pointer<NativeBindingObject> nativePtr, String uri, String tagName) {
-    assert(!hasBindingObject(nativePtr), 'ERROR: Can not create element with same id "$nativePtr"');
-    document.createElementNS(
-        uri, tagName, BindingContext(document.controller.view, _contextId, nativePtr));
+  void createElementNS(
+      Pointer<NativeBindingObject> nativePtr, String uri, String tagName) {
+    assert(!hasBindingObject(nativePtr),
+        'ERROR: Can not create element with same id "$nativePtr"');
+    document.createElementNS(uri, tagName,
+        BindingContext(document.controller.view, _contextId, nativePtr));
   }
 
   void createTextNode(Pointer<NativeBindingObject> nativePtr, String data) {
-    document.createTextNode(data, BindingContext(document.controller.view, _contextId, nativePtr));
+    document.createTextNode(
+        data, BindingContext(document.controller.view, _contextId, nativePtr));
   }
 
   void createComment(Pointer<NativeBindingObject> nativePtr) {
-    document.createComment(BindingContext(document.controller.view, _contextId, nativePtr));
+    document.createComment(
+        BindingContext(document.controller.view, _contextId, nativePtr));
   }
 
   void createDocumentFragment(Pointer<NativeBindingObject> nativePtr) {
-    document.createDocumentFragment(BindingContext(document.controller.view, _contextId, nativePtr));
+    document.createDocumentFragment(
+        BindingContext(document.controller.view, _contextId, nativePtr));
   }
 
-  void addIntersectionObserver(
-      Pointer<NativeBindingObject> observerPointer, Pointer<NativeBindingObject> elementPointer) {
+  void addIntersectionObserver(Pointer<NativeBindingObject> observerPointer,
+      Pointer<NativeBindingObject> elementPointer) {
     assert(hasBindingObject(observerPointer), 'observer: $observerPointer');
     assert(hasBindingObject(elementPointer), 'element: $elementPointer');
 
-    IntersectionObserver? observer = getBindingObject<IntersectionObserver>(observerPointer);
+    IntersectionObserver? observer =
+        getBindingObject<IntersectionObserver>(observerPointer);
     Element? element = getBindingObject<Element>(elementPointer);
     if (null == observer || null == element) {
       return;
@@ -672,12 +709,13 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     document.addIntersectionObserver(observer, element);
   }
 
-  void removeIntersectionObserver(
-      Pointer<NativeBindingObject> observerPointer, Pointer<NativeBindingObject> elementPointer) {
+  void removeIntersectionObserver(Pointer<NativeBindingObject> observerPointer,
+      Pointer<NativeBindingObject> elementPointer) {
     assert(hasBindingObject(observerPointer), 'observer: $observerPointer');
     assert(hasBindingObject(elementPointer), 'element: $elementPointer');
 
-    IntersectionObserver? observer = getBindingObject<IntersectionObserver>(observerPointer);
+    IntersectionObserver? observer =
+        getBindingObject<IntersectionObserver>(observerPointer);
     Element? element = getBindingObject<Element>(elementPointer);
     if (null == observer || null == element) {
       return;
@@ -686,10 +724,12 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     document.removeIntersectionObserver(observer, element);
   }
 
-  void disconnectIntersectionObserver(Pointer<NativeBindingObject> observerPointer) {
+  void disconnectIntersectionObserver(
+      Pointer<NativeBindingObject> observerPointer) {
     assert(hasBindingObject(observerPointer), 'observer: $observerPointer');
 
-    IntersectionObserver? observer = getBindingObject<IntersectionObserver>(observerPointer);
+    IntersectionObserver? observer =
+        getBindingObject<IntersectionObserver>(observerPointer);
     if (null == observer) {
       return;
     }
@@ -706,11 +746,13 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     if (!hasBindingObject(nativePtr)) return;
     EventTarget? target = getBindingObject<EventTarget>(nativePtr);
     if (target != null) {
-      BindingBridge.listenEvent(target, eventType, addEventListenerOptions: addEventListenerOptions);
+      BindingBridge.listenEvent(target, eventType,
+          addEventListenerOptions: addEventListenerOptions);
     }
   }
 
-  void removeEvent(Pointer<NativeBindingObject> nativePtr, String eventType, {bool isCapture = false}) {
+  void removeEvent(Pointer<NativeBindingObject> nativePtr, String eventType,
+      {bool isCapture = false}) {
     if (!hasBindingObject(nativePtr)) return;
     EventTarget? target = getBindingObject<EventTarget>(nativePtr);
     if (target != null) {
@@ -718,7 +760,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     }
   }
 
-  void cloneNode(Pointer<NativeBindingObject> selfPtr, Pointer<NativeBindingObject> newPtr) {
+  void cloneNode(Pointer<NativeBindingObject> selfPtr,
+      Pointer<NativeBindingObject> newPtr) {
     assert(hasBindingObject(selfPtr));
     assert(hasBindingObject(newPtr));
 
@@ -768,10 +811,12 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   ///   <!-- beforeend -->
   /// </p>
   /// <!-- afterend -->
-  void insertAdjacentNode(
-      Pointer<NativeBindingObject> selfPointer, String position, Pointer<NativeBindingObject> newPointer) {
-    assert(hasBindingObject(selfPointer), 'targetId: $selfPointer position: $position newTargetId: $newPointer');
-    assert(hasBindingObject(newPointer), 'newTargetId: $newPointer position: $position');
+  void insertAdjacentNode(Pointer<NativeBindingObject> selfPointer,
+      String position, Pointer<NativeBindingObject> newPointer) {
+    assert(hasBindingObject(selfPointer),
+        'targetId: $selfPointer position: $position newTargetId: $newPointer');
+    assert(hasBindingObject(newPointer),
+        'newTargetId: $newPointer position: $position');
 
     Node? target = getBindingObject<Node>(selfPointer);
     Node? newNode = getBindingObject<Node>(newPointer);
@@ -821,8 +866,10 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     }
   }
 
-  void setAttribute(Pointer<NativeBindingObject> selfPtr, String key, String value) {
-    assert(hasBindingObject(selfPtr), 'selfPtr: $selfPtr key: $key value: $value');
+  void setAttribute(
+      Pointer<NativeBindingObject> selfPtr, String key, String value) {
+    assert(
+        hasBindingObject(selfPtr), 'selfPtr: $selfPtr key: $key value: $value');
     Node? target = getBindingObject<Node>(selfPtr);
     if (target == null) return;
 
@@ -845,7 +892,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
         (target.parentNode as WebFTextElement).notifyRootTextElement();
       }
     } else {
-      debugPrint('Only element has properties, try setting $key to Node(#$selfPtr).');
+      debugPrint(
+          'Only element has properties, try setting $key to Node(#$selfPtr).');
     }
   }
 
@@ -884,17 +932,20 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
         _debugDOMTreeChanged();
       }
     } else {
-      debugPrint('Only element has attributes, try removing $key from Node(#$selfPtr).');
+      debugPrint(
+          'Only element has attributes, try removing $key from Node(#$selfPtr).');
     }
   }
 
   void requestCanvasPaint(Pointer selfPtr) {
     assert(hasBindingObject(selfPtr), 'targetId: $selfPtr');
-    CanvasRenderingContext2D? context2d = getBindingObject<CanvasRenderingContext2D>(selfPtr);
+    CanvasRenderingContext2D? context2d =
+        getBindingObject<CanvasRenderingContext2D>(selfPtr);
     context2d?.requestPaint();
   }
 
-  void setInlineStyle(Pointer selfPtr, String key, String value, {String? baseHref}) {
+  void setInlineStyle(Pointer selfPtr, String key, String value,
+      {String? baseHref}) {
     assert(hasBindingObject(selfPtr), 'id: $selfPtr key: $key value: $value');
     Node? target = getBindingObject<Node>(selfPtr);
     if (target == null) return;
@@ -914,7 +965,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     }
   }
 
-  void setPseudoStyle(Pointer selfPtr, String args, String key, String value, {String? baseHref}) {
+  void setPseudoStyle(Pointer selfPtr, String args, String key, String value,
+      {String? baseHref}) {
     assert(hasBindingObject(selfPtr), 'id: $selfPtr');
     Node? target = getBindingObject<Node>(selfPtr);
     if (target == null) return;
@@ -923,12 +975,13 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       return;
     }
 
-    switch(args) {
+    switch (args) {
       case 'before':
       case 'after':
       case 'first-letter':
       case 'first-line':
-        target.setPseudoStyle(args, key, value, baseHref: baseHref, fromNative: true);
+        target.setPseudoStyle(args, key, value,
+            baseHref: baseHref, fromNative: true);
         break;
 
       default:
@@ -945,7 +998,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       return;
     }
 
-    switch(args) {
+    switch (args) {
       case 'before':
       case 'after':
       case 'first-letter':
@@ -992,9 +1045,11 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   VoidCallback? debugDOMTreeChanged;
 
   // Incremental DOM mutation hooks
-  void Function(Node parent, Node node, Node? previousSibling)? devtoolsChildNodeInserted;
+  void Function(Node parent, Node node, Node? previousSibling)?
+      devtoolsChildNodeInserted;
   void Function(Node parent, Node node)? devtoolsChildNodeRemoved;
-  void Function(Element element, String name, String? value)? devtoolsAttributeModified;
+  void Function(Element element, String name, String? value)?
+      devtoolsAttributeModified;
   void Function(Element element, String name)? devtoolsAttributeRemoved;
   void Function(TextNode node)? devtoolsCharacterDataModified;
 
@@ -1005,34 +1060,42 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     }
   }
 
-  Future<void> handleNavigationAction(String? sourceUrl, String targetUrl, WebFNavigationType navigationType) async {
-    WebFNavigationAction action = WebFNavigationAction(sourceUrl, targetUrl, navigationType);
+  Future<void> handleNavigationAction(String? sourceUrl, String targetUrl,
+      WebFNavigationType navigationType) async {
+    WebFNavigationAction action =
+        WebFNavigationAction(sourceUrl, targetUrl, navigationType);
 
     WebFNavigationDelegate delegate = navigationDelegate!;
 
     try {
-      WebFNavigationActionPolicy policy = await delegate.dispatchDecisionHandler(action);
+      WebFNavigationActionPolicy policy =
+          await delegate.dispatchDecisionHandler(action);
       if (policy == WebFNavigationActionPolicy.cancel) return;
 
       String targetPath = action.target;
 
       if (!Uri.parse(targetPath).isAbsolute) {
         String base = rootController.url;
-        targetPath = rootController.uriParser!.resolve(Uri.parse(base), Uri.parse(targetPath)).toString();
+        targetPath = rootController.uriParser!
+            .resolve(Uri.parse(base), Uri.parse(targetPath))
+            .toString();
       }
 
       if (action.target.trim().startsWith('#')) {
         String oldUrl = rootController.url;
-        HistoryModule historyModule = rootController.module.moduleManager.getModule('History')!;
+        HistoryModule historyModule =
+            rootController.module.moduleManager.getModule('History')!;
         historyModule.pushState(null, url: targetPath);
-        await window.dispatchEvent(HashChangeEvent(newUrl: targetPath, oldUrl: oldUrl));
+        await window
+            .dispatchEvent(HashChangeEvent(newUrl: targetPath, oldUrl: oldUrl));
         return;
       }
 
       switch (action.navigationType) {
         case WebFNavigationType.navigate:
-          await rootController
-              .load(rootController.getPreloadBundleFromUrl(targetPath) ?? WebFBundle.fromUrl(targetPath));
+          await rootController.load(
+              rootController.getPreloadBundleFromUrl(targetPath) ??
+                  WebFBundle.fromUrl(targetPath));
           break;
         case WebFNavigationType.reload:
           await rootController.reload();
@@ -1050,7 +1113,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   // Call from JS Bridge when the BindingObject class on the JS side had been Garbage collected.
-  static void disposeBindingObject(WebFViewController view, Pointer<NativeBindingObject> pointer) async {
+  static void disposeBindingObject(
+      WebFViewController view, Pointer<NativeBindingObject> pointer) async {
     BindingObject? bindingObject = view.getBindingObject(pointer);
 
     // Check if this is an EventTarget with pending events
@@ -1093,7 +1157,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   static void _addPendingPointerWithEvents(double contextId, Pointer pointer) {
-    List<Pointer> pendingPointersWithEvents = _getOrCreatePendingPointersWithEvents(contextId);
+    List<Pointer> pendingPointersWithEvents =
+        _getOrCreatePendingPointersWithEvents(contextId);
     pendingPointersWithEvents.add(pointer);
   }
 
@@ -1129,8 +1194,10 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   /// Batch free all pending pointers with events
   static void _batchFreePointersWithEvents(double contextId) {
-    List<Pointer>? pendingPointersWithEvents = _pendingPointersWithEvents[contextId];
-    if (pendingPointersWithEvents == null || pendingPointersWithEvents.isEmpty) return;
+    List<Pointer>? pendingPointersWithEvents =
+        _pendingPointersWithEvents[contextId];
+    if (pendingPointersWithEvents == null || pendingPointersWithEvents.isEmpty)
+      return;
 
     List<Pointer> pointersToFree = List.from(pendingPointersWithEvents);
     pendingPointersWithEvents.clear();
@@ -1140,7 +1207,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       _batchFreePointersArray(pointersToFree);
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Error in batch pointer cleanup for pointers with events: $e');
+        debugPrint(
+            'Error in batch pointer cleanup for pointers with events: $e');
       }
     }
   }
@@ -1150,7 +1218,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     if (pointers.isEmpty) return;
 
     // Convert Dart List<Pointer> to C array
-    Pointer<Pointer<Void>> pointersArray = malloc<Pointer<Void>>(pointers.length);
+    Pointer<Pointer<Void>> pointersArray =
+        malloc<Pointer<Void>>(pointers.length);
 
     for (int i = 0; i < pointers.length; i++) {
       pointersArray[i] = pointers[i].cast<Void>();
@@ -1158,7 +1227,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
     try {
       // Call the C++ batch free function
-      _batchFreeNativeBindingObjects(pointersArray.cast<Void>(), pointers.length);
+      _batchFreeNativeBindingObjects(
+          pointersArray.cast<Void>(), pointers.length);
     } finally {
       // Always free the temporary array
       malloc.free(pointersArray);
@@ -1203,11 +1273,17 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     // Notify C++ Blink style engine about viewport and DPR changes so that
     // media queries depending on width/height/device-size and resolution can
     // be re-evaluated.
-    if (_inited && !_disposed && WebFController.getControllerOfJSContextId(_contextId) != null) {
+    if (_inited &&
+        !_disposed &&
+        WebFController.getControllerOfJSContextId(_contextId) != null) {
       _scheduleNativeMediaQueryAffectingValueChanged();
     }
 
     window.resizeViewportRelatedElements();
+    // Recalculate styles so media queries (min/max-width etc) re-evaluate.
+    if (!enableBlink) {
+      document.recalculateStyleImmediately();
+    }
   }
 
   @override
@@ -1216,7 +1292,9 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     if (rootController.darkModeOverride == null) {
       // Notify C++ Blink style engine that color-scheme changed, so
       // prefers-color-scheme media queries can react to the new value.
-      if (_inited && !_disposed && WebFController.getControllerOfJSContextId(_contextId) != null) {
+      if (_inited &&
+          !_disposed &&
+          WebFController.getControllerOfJSContextId(_contextId) != null) {
         final Pointer<Void>? page = getAllocatedPage(_contextId);
         if (page != null) {
           final String scheme = window.colorScheme;
@@ -1247,7 +1325,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   @override
-  Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
+  Future<bool> didPushRouteInformation(
+      RouteInformation routeInformation) async {
     return false;
   }
 

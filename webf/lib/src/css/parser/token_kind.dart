@@ -191,6 +191,7 @@ class TokenKind {
   static const int DIRECTIVE_SUPPORTS = 659;
   static const int DIRECTIVE_VIEWPORT = 660;
   static const int DIRECTIVE_MS_VIEWPORT = 661;
+  static const int DIRECTIVE_LAYER = 662;
 
   // Media query operators
   static const int MEDIA_OP_ONLY = 665; // Unary.
@@ -232,7 +233,10 @@ class TokenKind {
     {'type': TokenKind.DIRECTIVE_CHARSET, 'value': 'charset'},
     {'type': TokenKind.DIRECTIVE_STYLET, 'value': 'stylet'},
     {'type': TokenKind.DIRECTIVE_KEYFRAMES, 'value': 'keyframes'},
-    {'type': TokenKind.DIRECTIVE_WEB_KIT_KEYFRAMES, 'value': '-webkit-keyframes'},
+    {
+      'type': TokenKind.DIRECTIVE_WEB_KIT_KEYFRAMES,
+      'value': '-webkit-keyframes'
+    },
     {'type': TokenKind.DIRECTIVE_MOZ_KEYFRAMES, 'value': '-moz-keyframes'},
     {'type': TokenKind.DIRECTIVE_MS_KEYFRAMES, 'value': '-ms-keyframes'},
     {'type': TokenKind.DIRECTIVE_O_KEYFRAMES, 'value': '-o-keyframes'},
@@ -247,6 +251,7 @@ class TokenKind {
     {'type': TokenKind.DIRECTIVE_SUPPORTS, 'value': 'supports'},
     {'type': TokenKind.DIRECTIVE_VIEWPORT, 'value': 'viewport'},
     {'type': TokenKind.DIRECTIVE_MS_VIEWPORT, 'value': '-ms-viewport'},
+    {'type': TokenKind.DIRECTIVE_LAYER, 'value': 'layer'},
   ];
 
   static const List<Map<String, dynamic>> MEDIA_OPERATORS = [
@@ -258,16 +263,28 @@ class TokenKind {
   ];
 
   static const List<Map<String, dynamic>> MARGIN_DIRECTIVES = [
-    {'type': TokenKind.MARGIN_DIRECTIVE_TOPLEFTCORNER, 'value': 'top-left-corner'},
+    {
+      'type': TokenKind.MARGIN_DIRECTIVE_TOPLEFTCORNER,
+      'value': 'top-left-corner'
+    },
     {'type': TokenKind.MARGIN_DIRECTIVE_TOPLEFT, 'value': 'top-left'},
     {'type': TokenKind.MARGIN_DIRECTIVE_TOPCENTER, 'value': 'top-center'},
     {'type': TokenKind.MARGIN_DIRECTIVE_TOPRIGHT, 'value': 'top-right'},
-    {'type': TokenKind.MARGIN_DIRECTIVE_TOPRIGHTCORNER, 'value': 'top-right-corner'},
-    {'type': TokenKind.MARGIN_DIRECTIVE_BOTTOMLEFTCORNER, 'value': 'bottom-left-corner'},
+    {
+      'type': TokenKind.MARGIN_DIRECTIVE_TOPRIGHTCORNER,
+      'value': 'top-right-corner'
+    },
+    {
+      'type': TokenKind.MARGIN_DIRECTIVE_BOTTOMLEFTCORNER,
+      'value': 'bottom-left-corner'
+    },
     {'type': TokenKind.MARGIN_DIRECTIVE_BOTTOMLEFT, 'value': 'bottom-left'},
     {'type': TokenKind.MARGIN_DIRECTIVE_BOTTOMCENTER, 'value': 'bottom-center'},
     {'type': TokenKind.MARGIN_DIRECTIVE_BOTTOMRIGHT, 'value': 'bottom-right'},
-    {'type': TokenKind.MARGIN_DIRECTIVE_BOTTOMRIGHTCORNER, 'value': 'bottom-right-corner'},
+    {
+      'type': TokenKind.MARGIN_DIRECTIVE_BOTTOMRIGHTCORNER,
+      'value': 'bottom-right-corner'
+    },
     {'type': TokenKind.MARGIN_DIRECTIVE_LEFTTOP, 'value': 'left-top'},
     {'type': TokenKind.MARGIN_DIRECTIVE_LEFTMIDDLE, 'value': 'left-middle'},
     {'type': TokenKind.MARGIN_DIRECTIVE_LEFTBOTTOM, 'value': 'right-bottom'},
@@ -311,8 +328,8 @@ class TokenKind {
   static const int ASCII_UPPER_Z = 90; // ASCII value for uppercase Z
 
   /// Return the token that matches the unit ident found.
-  static int matchList(
-      Iterable<Map<String, dynamic>> identList, String tokenField, String text, int offset, int length) {
+  static int matchList(Iterable<Map<String, dynamic>> identList,
+      String tokenField, String text, int offset, int length) {
     for (final entry in identList) {
       final ident = entry['value'] as String;
 
@@ -324,7 +341,9 @@ class TokenKind {
           var char = text.codeUnitAt(idx++);
           // Compare lowercase to lowercase then check if char is uppercase.
           match = match &&
-              (char == identChar || ((char >= ASCII_UPPER_A && char <= ASCII_UPPER_Z) && (char + 32) == identChar));
+              (char == identChar ||
+                  ((char >= ASCII_UPPER_A && char <= ASCII_UPPER_Z) &&
+                      (char + 32) == identChar));
           if (!match) {
             break;
           }
@@ -498,6 +517,7 @@ class TokenKind {
       case TokenKind.DIRECTIVE_MIXIN:
       case TokenKind.DIRECTIVE_INCLUDE:
       case TokenKind.DIRECTIVE_CONTENT:
+      case TokenKind.DIRECTIVE_LAYER:
         return true;
       default:
         return false;
@@ -559,6 +579,7 @@ class MediaType {
   static const String SCREEN = 'screen';
   static const String SPEECH = 'speech';
 }
+
 class MediaOperator {
   static const String NOT = 'not';
   static const String ONLY = 'only';

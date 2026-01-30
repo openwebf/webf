@@ -140,6 +140,7 @@ abstract class Element extends ContainerNode
 
   /// The inline style is a map of style property name to style property value.
   final Map<String, dynamic> inlineStyle = {};
+  final Map<String, bool> _inlineStyleImportants = {};
 
   /// The StatefulElements that holding the reference of this elements
   @flutter.protected
@@ -333,8 +334,13 @@ abstract class Element extends ContainerNode
   @mustCallSuper
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     attributes[_styleProperty] = ElementAttributeProperty(setter: (value) {
-      final map = CSSParser(value).parseInlineStyle();
-      inlineStyle.addAll(map);
+      final parsed = CSSParser(value).parseInlineStyleWithImportant();
+      inlineStyle
+        ..clear()
+        ..addAll(parsed.properties);
+      _inlineStyleImportants
+        ..clear()
+        ..addAll(parsed.importants);
       recalculateStyle();
     }, deleter: () {
       _removeInlineStyle();
@@ -965,6 +971,7 @@ abstract class Element extends ContainerNode
           cu == 0x5F || // '_'
           cu == 0x2D; // '-'
     }
+
     while (i < content.length) {
       final ch = content[i];
       if (ch == '"' || ch == '\'') {
@@ -1711,8 +1718,9 @@ abstract class Element extends ContainerNode
   void applyInlineStyle(CSSStyleDeclaration style) {
     if (inlineStyle.isNotEmpty) {
       inlineStyle.forEach((propertyName, value) {
-        // Force inline style to be applied as important priority.
-        style.setProperty(propertyName, value, isImportant: true);
+        final bool important = _inlineStyleImportants[propertyName] == true;
+        style.setProperty(propertyName, value,
+            isImportant: important ? true : null);
       });
     }
   }
@@ -1987,28 +1995,49 @@ abstract class Element extends ContainerNode
       {String? baseHref, bool fromNative = false}) {
     final bool enableBlink = ownerDocument.ownerView.enableBlink;
     final bool validate = !(fromNative && enableBlink);
+    final String raw = value;
+    String cleaned = raw.trim();
+    var important = false;
+    final String lower = cleaned.toLowerCase();
+    const String importantSuffix = '!important';
+    if (lower.endsWith(importantSuffix)) {
+      important = true;
+      cleaned = cleaned
+          .substring(0, cleaned.length - importantSuffix.length)
+          .trimRight();
+    }
+
     // Current only for mark property is setting by inline style.
-    inlineStyle[property] = value;
+    inlineStyle[property] = cleaned;
+    if (important) {
+      _inlineStyleImportants[property] = true;
+    } else {
+      _inlineStyleImportants.remove(property);
+    }
 
     // recalculate matching styles for element when inline styles are removed.
-    if (value.isEmpty) {
-      style.removeProperty(property, true);
+    if (cleaned.isEmpty) {
+      inlineStyle.remove(property);
+      final bool prevImportant =
+          _inlineStyleImportants.remove(property) == true;
+      style.removeProperty(property, prevImportant ? true : null);
       // When Blink CSS is enabled, style cascading and validation happen on
       // the native side. Avoid expensive Dart-side recalculation here.
       if (!(fromNative && enableBlink)) {
         recalculateStyle();
       }
     } else {
-      style.setProperty(property, value,
-          isImportant: true, baseHref: baseHref, validate: validate);
+      style.setProperty(property, cleaned,
+          isImportant: important ? true : null,
+          baseHref: baseHref,
+          validate: validate);
     }
   }
 
   void clearInlineStyle() {
-    for (var key in inlineStyle.keys) {
-      style.removeProperty(key, true);
-    }
     inlineStyle.clear();
+    _inlineStyleImportants.clear();
+    recalculateStyle();
   }
 
   // Set pseudo element (::before, ::after, ::first-letter, ::first-line) style.
@@ -2043,8 +2072,8 @@ abstract class Element extends ContainerNode
     renderStyle.initDisplay(style);
 
     applyAttributeStyle(style);
-    applyInlineStyle(style);
     _applySheetStyle(style);
+    applyInlineStyle(style);
     _applyPseudoStyle(style);
   }
 
@@ -2102,22 +2131,17 @@ abstract class Element extends ContainerNode
       // always recurse into children even when this element's own style is a no-op.
       if (rebuildNested || hasInheritedPendingProperty) {
         for (final Element child in children) {
-          child.recalculateStyle(rebuildNested: rebuildNested, forceRecalculate: forceRecalculate);
+          child.recalculateStyle(
+              rebuildNested: rebuildNested, forceRecalculate: forceRecalculate);
         }
       }
     }
   }
 
   void _removeInlineStyle() {
-    inlineStyle.forEach((String property, _) {
-      _removeInlineStyleProperty(property);
-    });
     inlineStyle.clear();
-    style.flushPendingProperties();
-  }
-
-  void _removeInlineStyleProperty(String property) {
-    style.removeProperty(property, true);
+    _inlineStyleImportants.clear();
+    recalculateStyle();
   }
 
   // The Element.getBoundingClientRect() method returns a DOMRect object providing information

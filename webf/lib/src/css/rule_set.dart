@@ -17,6 +17,8 @@ class RuleSet {
   final Document ownerDocument;
   RuleSet(this.ownerDocument);
 
+  final CascadeLayerTree layerTree = CascadeLayerTree();
+
   bool get isEmpty =>
       idRules.isEmpty &&
       classRules.isEmpty &&
@@ -37,22 +39,32 @@ class RuleSet {
 
   int _lastPosition = 0;
 
-  void addRules(List<CSSRule> rules, { required String? baseHref }) {
+  void addRules(List<CSSRule> rules, {required String? baseHref}) {
     for (CSSRule rule in rules) {
       addRule(rule, baseHref: baseHref);
     }
   }
 
-  void addRule(CSSRule rule, { required String? baseHref }) {
+  void addRule(CSSRule rule, {required String? baseHref}) {
     rule.position = _lastPosition++;
+    if (rule is CSSLayerStatementRule) {
+      layerTree.declareAll(rule.layerNamePaths);
+      return;
+    }
     if (rule is CSSStyleRule) {
+      if (rule.layerPath.isNotEmpty) {
+        rule.layerOrderKey = layerTree.declare(rule.layerPath);
+      } else {
+        rule.layerOrderKey = null;
+      }
       for (final selector in rule.selectorGroup.selectors) {
         findBestRuleSetAndAdd(selector, rule);
       }
     } else if (rule is CSSKeyframesRule) {
       keyframesRules[rule.name] = rule;
     } else if (rule is CSSFontFaceRule) {
-      CSSFontFace.resolveFontFaceRules(rule, ownerDocument.contextId!, baseHref);
+      CSSFontFace.resolveFontFaceRules(
+          rule, ownerDocument.contextId!, baseHref);
     } else if (rule is CSSMediaDirective) {
       // doNothing
     } else if (rule is CSSImportRule) {
@@ -70,6 +82,9 @@ class RuleSet {
     tagRules.clear();
     universalRules.clear();
     pseudoRules.clear();
+    keyframesRules.clear();
+    layerTree.reset();
+    _lastPosition = 0;
   }
 
   // indexed by selectorText
@@ -115,7 +130,8 @@ class RuleSet {
         attributeName ??= simple.name;
       } else if (simple is ElementSelector && !simple.isWildcard) {
         tagName ??= simple.name;
-      } else if (simple is PseudoClassSelector || simple is PseudoElementSelector) {
+      } else if (simple is PseudoClassSelector ||
+          simple is PseudoElementSelector) {
         final name = (simple as dynamic).name as String; // both have name
         if (_isLegacyPsuedoClass(name)) legacyPseudo ??= name;
       } else if (simple is PseudoClassFunctionSelector) {
