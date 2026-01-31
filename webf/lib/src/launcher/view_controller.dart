@@ -961,8 +961,46 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     if (target == null) return;
 
     if (target is Element) {
-      target.clearInlineStyle();
+      if (enableBlink) {
+        beginBlinkStyleSync(selfPtr);
+      } else {
+        target.clearInlineStyle();
+      }
     }
+  }
+
+  final Map<int, Set<String>> _blinkStyleSyncUpdatedProperties = {};
+
+  void beginBlinkStyleSync(Pointer selfPtr) {
+    if (!enableBlink) return;
+    _blinkStyleSyncUpdatedProperties[selfPtr.address] = <String>{};
+  }
+
+  void recordBlinkStyleSyncProperty(Pointer selfPtr, String property) {
+    if (!enableBlink) return;
+    final Set<String>? updated = _blinkStyleSyncUpdatedProperties[selfPtr.address];
+    if (updated == null) return;
+    if (property.isEmpty) return;
+    updated.add(property);
+  }
+
+  void finalizeBlinkStyleSync() {
+    if (!enableBlink || _blinkStyleSyncUpdatedProperties.isEmpty) return;
+
+    _blinkStyleSyncUpdatedProperties.forEach((int address, Set<String> updated) {
+      final Pointer ptr = Pointer.fromAddress(address);
+      if (!hasBindingObject(ptr)) return;
+      final Node? target = getBindingObject<Node>(ptr);
+      if (target is! Element) return;
+
+      final List<String> existing = target.inlineStyle.keys.cast<String>().toList(growable: false);
+      for (final String property in existing) {
+        if (updated.contains(property)) continue;
+        target.setInlineStyle(property, '', fromNative: true);
+      }
+    });
+
+    _blinkStyleSyncUpdatedProperties.clear();
   }
 
   void setPseudoStyle(Pointer selfPtr, String args, String key, String value,
