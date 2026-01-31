@@ -744,19 +744,97 @@ class CSSLengthValue {
             // Prefer actual laid-out border box size in order to stay consistent with
             // positioned offset calculations performed during layout. Fallback to
             // logical sizes when layout size is not yet available (e.g., pre-layout).
-            double? borderBoxWidth = renderStyle!.borderBoxWidth ?? renderStyle!.borderBoxLogicalWidth;
-            double? borderBoxHeight = renderStyle!.borderBoxHeight ?? renderStyle!.borderBoxLogicalHeight;
-            double? borderBoxDimension = axisType == Axis.horizontal ? borderBoxWidth : borderBoxHeight;
+            // IMPORTANT: When the render box is marked `needsRelayout`, its
+            // `borderBoxWidth/Height` may reflect a stale size from the previous
+            // layout pass. Using that stale size to resolve translate percentages
+            // can cache an incorrect transform matrix for the current frame.
+            //
+            // In that situation, prefer the logical border box size computed from
+            // style (which tracks specified px sizes immediately) so snapshots
+            // taken on the next RAF see the correct transform.
+            final bool selfNeedsRelayout =
+                (renderStyle is CSSRenderStyle) ? (renderStyle as CSSRenderStyle).isSelfNeedsRelayout() : false;
 
-              if (borderBoxDimension != null) {
-                _computedValue = value! * borderBoxDimension;
+            final double? physicalW = renderStyle!.borderBoxWidth;
+            final double? physicalH = renderStyle!.borderBoxHeight;
+            final double? logicalW = renderStyle!.borderBoxLogicalWidth;
+            final double? logicalH = renderStyle!.borderBoxLogicalHeight;
+
+            double? borderBoxDimension;
+            double? logicalDimension;
+            double? physicalDimension;
+
+            if (axisType == Axis.horizontal) {
+              physicalDimension = physicalW;
+              logicalDimension = logicalW;
+            } else {
+              physicalDimension = physicalH;
+              logicalDimension = logicalH;
+            }
+
+            // Default: prefer laid-out border box size, then logical.
+            borderBoxDimension = physicalDimension ?? logicalDimension;
+
+            // When the render box has a stale size (commonly 0) right before the
+            // first layout of a freshly inserted element (or after a document
+            // reset), resolving translate percentages against that stale size
+            // will cache an incorrect transform matrix for the snapshot frame.
+            //
+            // Heuristic: for translate percentages, if the physical border box
+            // dimension is 0 but we have a definite (non-zero) logical size from
+            // style, prefer the logical size. Also prefer logical size during a
+            // pending relayout.
+            if (propertyName == TRANSLATE &&
+                type == CSSLengthType.PERCENTAGE &&
+                logicalDimension != null &&
+                logicalDimension > 0) {
+              final bool definiteSpecifiedSize = axisType == Axis.horizontal
+                  ? (renderStyle!.width.isNotAuto && !renderStyle!.width.isPercentage)
+                  : (renderStyle!.height.isNotAuto && !renderStyle!.height.isPercentage);
+              final bool physicalLooksStaleLarge =
+                  definiteSpecifiedSize &&
+                      physicalDimension != null &&
+                      // Only treat "too large" as stale; if the physical size is
+                      // smaller than the logical size, that may be a legitimate
+                      // constraint clamp and we must honor the physical used size.
+                      physicalDimension > logicalDimension * 1.2 &&
+                      (physicalDimension - logicalDimension) > 2.0;
+              if (selfNeedsRelayout ||
+                  (definiteSpecifiedSize &&
+                      physicalDimension != null &&
+                      physicalDimension == 0)) {
+                borderBoxDimension = logicalDimension;
+              } else if (physicalLooksStaleLarge) {
+                borderBoxDimension = logicalDimension;
+              }
+            }
+
+            // For translate percentages, try extra fallbacks before giving up.
+            // Cross-frame render object lifecycles (e.g., integration test document resets)
+            // can temporarily make borderBoxWidth/borderBoxHeight unavailable even though the
+            // element's logical size is computable from style (e.g., fixed px width/height).
+            if (borderBoxDimension == null && propertyName == TRANSLATE) {
+              if (axisType == Axis.horizontal) {
+                borderBoxDimension ??= renderStyle!.borderBoxLogicalWidth;
+                if (borderBoxDimension == null && renderStyle!.width.isNotAuto) {
+                  borderBoxDimension = renderStyle!.width.computedValue;
+                }
               } else {
-                _computedValue = propertyName == TRANSLATE
-                    // Transform will be cached once resolved, so avoid resolve if width not defined.
-                    // Use double.infinity to indicate percentage not resolved.
-                    ? double.infinity
-                    : 0;
+                borderBoxDimension ??= renderStyle!.borderBoxLogicalHeight;
+                if (borderBoxDimension == null && renderStyle!.height.isNotAuto) {
+                  borderBoxDimension = renderStyle!.height.computedValue;
+                }
+              }
+            }
 
+            if (borderBoxDimension != null) {
+              _computedValue = value! * borderBoxDimension;
+            } else {
+              _computedValue = propertyName == TRANSLATE
+                  // Transform will be cached once resolved, so avoid resolve if width not defined.
+                  // Use double.infinity to indicate percentage not resolved.
+                  ? double.infinity
+                  : 0;
             }
             break;
           case BACKGROUND_POSITION_X:

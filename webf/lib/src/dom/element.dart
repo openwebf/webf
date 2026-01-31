@@ -692,6 +692,16 @@ abstract class Element extends ContainerNode
 
   void _updateHostingWidgetWithPosition(CSSPositionType oldPosition) {
     CSSPositionType currentPosition = renderStyle.position;
+    // This callback is scheduled via `whenConnected().then(...)`, but it can still
+    // run after the element is disconnected (e.g., during test document resets).
+    // Avoid mutating out-of-flow attachment state for detached elements.
+    if (!isConnected) {
+      if (DebugFlags.shouldLogPositioningForClasses(_classList)) {
+        cssLogger
+            .info('[pos][update][skip] <${tagName.toLowerCase()}> not connected');
+      }
+      return;
+    }
     if (oldPosition == currentPosition) return;
 
     // No need to detach and reattach renderBoxMode when its position
@@ -1323,7 +1333,6 @@ abstract class Element extends ContainerNode
     if (_connectedCompleter != null) {
       _connectedCompleter!.complete();
     }
-
     super.connectedCallback();
     _updateNameMap(getAttribute(_nameAttr));
     _updateIDMap(_id);
@@ -2034,6 +2043,12 @@ abstract class Element extends ContainerNode
   }
 
   void _onStyleFlushed(List<String> properties) {
+    // Mark that this element has completed at least one style flush while
+    // connected, enabling CSS transitions for subsequent style changes.
+    // Initial computed values should not trigger transitions.
+    if (isConnected) {
+      renderStyle.markDidFlushStyleWhileConnected();
+    }
     if (renderStyle.shouldAnimation(properties)) {
       runAnimation() {
         renderStyle.beforeRunningAnimation();

@@ -557,6 +557,23 @@ enum CSSTransitionEvent {
 }
 
 mixin CSSTransitionMixin on RenderStyle {
+  // Web-compatible behavior: transitions do not run on an element's initial
+  // style resolution. They only start when the computed value changes *after*
+  // the element has participated in at least one style flush while connected.
+  //
+  // This avoids flaky initial-frame snapshots when transition-* is specified
+  // together with the initial property values (e.g. `transform`), where an
+  // incorrect transition from the initial value would otherwise be scheduled.
+  bool _didFlushStyleWhileConnected = false;
+
+  @pragma('vm:prefer-inline')
+  void markDidFlushStyleWhileConnected() {
+    _didFlushStyleWhileConnected = true;
+  }
+
+  @pragma('vm:prefer-inline')
+  bool get didFlushStyleWhileConnected => _didFlushStyleWhileConnected;
+
   // Map longhand properties to their canonical transition key so that
   // a shorthand like `background-position` drives transitions for
   // `background-position-x`/`-y` changes.
@@ -710,6 +727,15 @@ mixin CSSTransitionMixin on RenderStyle {
   bool shouldTransition(String property, String? prevValue, String nextValue) {
     if (DebugFlags.shouldLogTransitionForProp(property)) {
       cssLogger.info('[transition][check] property=$property prev=${prevValue ?? 'null'} next=$nextValue');
+    }
+
+    // Do not start transitions during the element's first style flush while
+    // connected. Per spec, initial computed values should apply immediately.
+    if (!_didFlushStyleWhileConnected) {
+      if (DebugFlags.shouldLogTransitionForProp(property)) {
+        cssLogger.info('[transition][check] property=$property skip: initial-style');
+      }
+      return false;
     }
 
     // Custom properties (CSS variables) are not animatable. Their changes may

@@ -1133,7 +1133,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   dynamic getRenderBoxValueByType(RenderObjectGetType getType, RenderBoxModelGetter getter) {
     RenderBoxModel? widgetRenderBoxModel =
-    widgetRenderObjectIterator.firstWhereOrNull((renderBox) => renderBox.attached);
+        widgetRenderObjectIterator.firstWhereOrNull((renderBox) => renderBox.attached && renderBox.hasSize) ??
+            widgetRenderObjectIterator.firstWhereOrNull((renderBox) => renderBox.attached);
 
     if (widgetRenderBoxModel == null) return null;
 
@@ -3187,20 +3188,14 @@ class CSSRenderStyle extends RenderStyle
   // https://www.w3.org/TR/css-box-3/#valdef-box-border-box
   @override
   double? get borderBoxWidth {
-    if (isBoxModelHaveSize()) {
-      return getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.boxSize!.width);
-    }
-    return null;
+    return getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.hasSize ? renderBoxModel.boxSize!.width : null);
   }
 
   // Border box height of renderBoxModel after it was rendered.
   // https://www.w3.org/TR/css-box-3/#valdef-box-border-box
   @override
   double? get borderBoxHeight {
-    if (isBoxModelHaveSize()) {
-      return getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.boxSize!.height);
-    }
-    return null;
+    return getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.hasSize ? renderBoxModel.boxSize!.height : null);
   }
 
   // Padding box width of renderBoxModel after it was rendered.

@@ -539,6 +539,18 @@ class Document extends ContainerNode {
       documentElement = null;
       ruleSet.reset();
       styleSheets.clear();
+      // The JS integration test runner replaces the entire <html> tree between
+      // specs. Ensure style bookkeeping does not retain disconnected <style>/<link>
+      // nodes from the previous document element, otherwise rules leak across
+      // specs and cause order-dependent failures.
+      styleNodeManager.reset();
+      _styleDirtyElements.clear();
+      _styleDirtyElementsRebuildNested.clear();
+      nthIndexCache.clearAll();
+      elementsByID.clear();
+      elementsByName.clear();
+      elementsByClass.clear();
+      elementsByAttr.clear();
     }
     return result;
   }

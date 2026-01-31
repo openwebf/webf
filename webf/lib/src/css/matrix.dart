@@ -12,6 +12,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/dom.dart';
 import 'package:vector_math/vector_math_64.dart';
 import 'package:webf/foundation.dart';
 

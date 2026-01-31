@@ -212,4 +212,24 @@ class DebugFlags {
   // Border/border-radius diagnostics: when true, logs parsing, resolution,
   // and painting decisions for border-radius (including clip/painter paths).
   static bool enableBorderRadiusLogs = false;
+
+  // Verbose diagnostics for CSS positioning/containing-block resolution and
+  // out-of-flow (absolute/fixed/sticky) attachment.
+  //
+  // Intended to diagnose snapshot flakiness where positioned elements are
+  // attached to an unexpected containing block after document resets.
+  static bool enableCssPositioningLogs = false;
+
+  // Optional: narrow positioning logs to elements that have at least one of
+  // these class names. When empty, all positioned elements are logged.
+  static Set<String> watchedPositioningClassNames = <String>{};
+
+  static bool shouldLogPositioningForClasses(Iterable<String> classes) {
+    if (!enableCssPositioningLogs) return false;
+    if (watchedPositioningClassNames.isEmpty) return true;
+    for (final String c in classes) {
+      if (watchedPositioningClassNames.contains(c)) return true;
+    }
+    return false;
+  }
 }

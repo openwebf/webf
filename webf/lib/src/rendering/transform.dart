@@ -7,6 +7,8 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 import 'package:flutter/rendering.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 mixin RenderTransformMixin on RenderBoxModelBase {
@@ -17,7 +19,8 @@ mixin RenderTransformMixin on RenderBoxModelBase {
   }
 
   void paintTransform(PaintingContext context, Offset offset, PaintingContextCallback callback) {
-    if (renderStyle.transformMatrix != null) {
+    final Matrix4? transformMatrix = renderStyle.transformMatrix;
+    if (transformMatrix != null) {
       final Matrix4 transform = renderStyle.effectiveTransformMatrix;
       final Offset? childOffset = MatrixUtils.getAsTranslation(transform);
       if (childOffset == null) {
