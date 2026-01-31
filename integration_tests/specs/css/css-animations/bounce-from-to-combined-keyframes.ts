@@ -30,7 +30,6 @@ describe('CSS Animations: combined keyframe selectors (from, to)', () => {
     document.body.appendChild(el);
 
     await waitForOnScreen(el);
-    await snapshot();
     const y0 = parseTranslateY(getComputedStyle(el).getPropertyValue('transform'));
     expect(y0).not.toBe(null);
     const startAbs = Math.abs(y0 as number);

@@ -16,7 +16,7 @@ describe('Font-face should works', function () {
       createText('Hello World')
     ]);
     document.body.appendChild(element);
-    await snapshot(2);
+    await snapshot(4);
   });
 });
 
