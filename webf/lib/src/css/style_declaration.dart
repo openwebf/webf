@@ -542,6 +542,18 @@ class CSSStyleDeclaration extends DynamicBindingObject
 
     // Validate value.
     switch (propertyName) {
+      case GAP: {
+        final List<String> tokens = splitByAsciiWhitespacePreservingGroups(normalizedValue);
+        if (tokens.isEmpty || tokens.length > 2) return false;
+        for (final token in tokens) {
+          if (!CSSGap.isValidGapValue(token)) return false;
+        }
+        break;
+      }
+      case ROW_GAP:
+      case COLUMN_GAP:
+        if (!CSSGap.isValidGapValue(normalizedValue)) return false;
+        break;
       case WIDTH:
       case HEIGHT:
         // Validation length type

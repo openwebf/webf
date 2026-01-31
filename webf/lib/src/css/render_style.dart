@@ -2332,7 +2332,7 @@ class CSSRenderStyle extends RenderStyle
       case GAP:
       case ROW_GAP:
       case COLUMN_GAP:
-        value = CSSGapMixin.resolveGap(propertyValue, renderStyle: renderStyle);
+        value = CSSGapMixin.resolveGap(propertyValue, renderStyle: renderStyle, propertyName: propertyName);
         break;
       case PADDING_TOP:
       case MARGIN_TOP:

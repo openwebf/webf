@@ -2072,6 +2072,36 @@ abstract class Element extends ContainerNode
           .trimRight();
     }
 
+    // CSSOM setter semantics require that syntactically-invalid assignments
+    // do nothing (keep the previous specified value). For gap properties,
+    // validate early so we don't mutate Element.inlineStyle before the
+    // CSSStyleDeclaration validation/expansion runs.
+    final bool isGapProp = property == GAP || property == ROW_GAP || property == COLUMN_GAP;
+    if (isGapProp && cleaned.isNotEmpty) {
+      bool isValidGapDeclaration(String v) {
+        // CSS-wide keywords are allowed on the shorthand as a single token.
+        if (v == INHERIT || CSSLength.isInitial(v)) return true;
+        final List<String> tokens = splitByAsciiWhitespacePreservingGroups(v);
+        if (tokens.isEmpty || tokens.length > 2) return false;
+        for (final token in tokens) {
+          // CSS-wide keywords cannot appear as components in a multi-token shorthand.
+          if (token == INHERIT || CSSLength.isInitial(token)) return tokens.length == 1;
+          if (!CSSGap.isValidGapValue(token)) return false;
+        }
+        return true;
+      }
+
+      if (property == GAP) {
+        if (!isValidGapDeclaration(cleaned)) {
+          return;
+        }
+      } else if (property == ROW_GAP || property == COLUMN_GAP) {
+        if (!(cleaned == INHERIT || CSSLength.isInitial(cleaned) || CSSGap.isValidGapValue(cleaned))) {
+          return;
+        }
+      }
+    }
+
     // Current only for mark property is setting by inline style.
     inlineStyle[property] = cleaned;
     if (important) {
