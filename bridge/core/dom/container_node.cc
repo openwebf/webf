@@ -52,9 +52,9 @@ namespace webf {
 
 namespace {
 
-std::shared_ptr<CSSSelectorList> ParseSelectorListOrThrow(const AtomicString& selectors,
-                                                          ExceptionState& exception_state,
-                                                          JSContext* ctx) {
+std::shared_ptr<CSSSelectorList> ParseSelectorListOrThrow(const AtomicString &selectors,
+                                                          ExceptionState &exception_state,
+                                                          JSContext *ctx) {
   auto parser_context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   auto sheet = std::make_shared<StyleSheetContents>(parser_context);
 
@@ -72,12 +72,12 @@ std::shared_ptr<CSSSelectorList> ParseSelectorListOrThrow(const AtomicString& se
   return selector_list;
 }
 
-bool MatchesAnySelectorInList(Element& element, const CSSSelectorList& selector_list, const ContainerNode& scope) {
+bool MatchesAnySelectorInList(Element &element, const CSSSelectorList &selector_list, const ContainerNode &scope) {
   SelectorChecker checker(SelectorChecker::kQueryingRules);
   SelectorChecker::SelectorCheckingContext context(&element);
   context.scope = &scope;
 
-  for (const CSSSelector* selector = selector_list.First(); selector; selector = CSSSelectorList::Next(*selector)) {
+  for (const CSSSelector *selector = selector_list.First(); selector; selector = CSSSelectorList::Next(*selector)) {
     context.selector = selector;
     SelectorChecker::MatchResult result;
     if (checker.Match(context, result)) {
@@ -90,24 +90,24 @@ bool MatchesAnySelectorInList(Element& element, const CSSSelectorList& selector_
 }  // namespace
 
 // Legacy impls due to limited time, should remove this func in the future.
-HTMLCollection* ContainerNode::Children() {
+HTMLCollection *ContainerNode::Children() {
   return EnsureCachedCollection<HTMLCollection>(CollectionType::kNodeChildren);
 }
 
 unsigned ContainerNode::CountChildren() const {
   unsigned count = 0;
-  for (Node* node = firstChild(); node; node = node->nextSibling())
+  for (Node *node = firstChild(); node; node = node->nextSibling())
     count++;
   return count;
 }
 
-Element* ContainerNode::QuerySelector(const AtomicString& selectors, ExceptionState& exception_state) {
+Element *ContainerNode::QuerySelector(const AtomicString &selectors, ExceptionState &exception_state) {
   auto selector_list = ParseSelectorListOrThrow(selectors, exception_state, ctx());
   if (!selector_list) {
     return nullptr;
   }
 
-  for (Element& element : ElementTraversal::DescendantsOf(*this)) {
+  for (Element &element : ElementTraversal::DescendantsOf(*this)) {
     if (MatchesAnySelectorInList(element, *selector_list, *this)) {
       return &element;
     }
@@ -115,18 +115,18 @@ Element* ContainerNode::QuerySelector(const AtomicString& selectors, ExceptionSt
   return nullptr;
 }
 
-Element* ContainerNode::QuerySelector(const AtomicString& selectors) {
+Element *ContainerNode::QuerySelector(const AtomicString &selectors) {
   return QuerySelector(selectors, ASSERT_NO_EXCEPTION());
 }
 
-std::vector<Element*> ContainerNode::QuerySelectorAll(const AtomicString& selectors, ExceptionState& exception_state) {
+std::vector<Element *> ContainerNode::QuerySelectorAll(const AtomicString &selectors, ExceptionState &exception_state) {
   auto selector_list = ParseSelectorListOrThrow(selectors, exception_state, ctx());
   if (!selector_list) {
     return {};
   }
 
-  std::vector<Element*> result;
-  for (Element& element : ElementTraversal::DescendantsOf(*this)) {
+  std::vector<Element *> result;
+  for (Element &element : ElementTraversal::DescendantsOf(*this)) {
     if (MatchesAnySelectorInList(element, *selector_list, *this)) {
       result.emplace_back(&element);
     }
@@ -134,19 +134,19 @@ std::vector<Element*> ContainerNode::QuerySelectorAll(const AtomicString& select
   return result;
 }
 
-std::vector<Element*> ContainerNode::QuerySelectorAll(const AtomicString& selectors) {
+std::vector<Element *> ContainerNode::QuerySelectorAll(const AtomicString &selectors) {
   return QuerySelectorAll(selectors, ASSERT_NO_EXCEPTION());
 }
 
-inline void GetChildNodes(ContainerNode& node, NodeVector& nodes) {
+inline void GetChildNodes(ContainerNode &node, NodeVector &nodes) {
   assert(!nodes.size());
-  for (Node* child = node.firstChild(); child; child = child->nextSibling())
+  for (Node *child = node.firstChild(); child; child = child->nextSibling())
     nodes.push_back(child);
 }
 
 class ContainerNode::AdoptAndInsertBefore {
  public:
-  inline void operator()(ContainerNode& container, Node& child, Node* next) const {
+  inline void operator()(ContainerNode &container, Node &child, Node *next) const {
     assert(next);
     assert(next->parentNode() == &container);
     container.InsertBeforeCommon(*next, child);
@@ -155,15 +155,15 @@ class ContainerNode::AdoptAndInsertBefore {
 
 class ContainerNode::AdoptAndAppendChild {
  public:
-  inline void operator()(ContainerNode& container, Node& child, Node*) const { container.AppendChildCommon(child); }
+  inline void operator()(ContainerNode &container, Node &child, Node *) const { container.AppendChildCommon(child); }
 };
 
-bool ContainerNode::IsChildTypeAllowed(const Node& child) const {
-  auto* child_fragment = DynamicTo<DocumentFragment>(child);
+bool ContainerNode::IsChildTypeAllowed(const Node &child) const {
+  auto *child_fragment = DynamicTo<DocumentFragment>(child);
   if (!child_fragment)
     return ChildTypeAllowed(child.nodeType());
 
-  for (Node* node = child_fragment->firstChild(); node; node = node->nextSibling()) {
+  for (Node *node = child_fragment->firstChild(); node; node = node->nextSibling()) {
     if (!ChildTypeAllowed(node->nodeType()))
       return false;
   }
@@ -173,15 +173,15 @@ bool ContainerNode::IsChildTypeAllowed(const Node& child) const {
 // Returns true if |new_child| contains this node. In that case,
 // |exception_state| has an exception.
 // https://dom.spec.whatwg.org/#concept-tree-host-including-inclusive-ancestor
-bool ContainerNode::IsHostIncludingInclusiveAncestorOfThis(const Node& new_child,
-                                                           ExceptionState& exception_state) const {
+bool ContainerNode::IsHostIncludingInclusiveAncestorOfThis(const Node &new_child,
+                                                           ExceptionState &exception_state) const {
   // Non-ContainerNode can contain nothing.
   if (!new_child.IsContainerNode())
     return false;
 
   bool child_contains_parent = false;
-  const Node& root = TreeRoot();
-  auto* fragment = DynamicTo<DocumentFragment>(root);
+  const Node &root = TreeRoot();
+  auto *fragment = DynamicTo<DocumentFragment>(root);
   if (fragment && fragment->IsTemplateContent()) {
     child_contains_parent = new_child.ContainsIncludingHostElements(*this);
   } else {
@@ -193,10 +193,10 @@ bool ContainerNode::IsHostIncludingInclusiveAncestorOfThis(const Node& new_child
   return child_contains_parent;
 }
 
-inline bool CheckReferenceChildParent(const Node& parent,
-                                      const Node* next,
-                                      const Node* old_child,
-                                      ExceptionState& exception_state) {
+inline bool CheckReferenceChildParent(const Node &parent,
+                                      const Node *next,
+                                      const Node *old_child,
+                                      ExceptionState &exception_state) {
   if (next && next->parentNode() != &parent) {
     exception_state.ThrowException(next->ctx(), ErrorType::TypeError,
                                    "The node before which the new node is "
@@ -215,21 +215,21 @@ inline bool CheckReferenceChildParent(const Node& parent,
 // This dispatches various events; DOM mutation events, blur events, IFRAME
 // unload events, etc.
 // Returns true if DOM mutation should be proceeded.
-static inline bool CollectChildrenAndRemoveFromOldParent(Node& node,
-                                                         NodeVector& nodes,
-                                                         ExceptionState& exception_state) {
-  if (auto* fragment = DynamicTo<DocumentFragment>(node)) {
+static inline bool CollectChildrenAndRemoveFromOldParent(Node &node,
+                                                         NodeVector &nodes,
+                                                         ExceptionState &exception_state) {
+  if (auto *fragment = DynamicTo<DocumentFragment>(node)) {
     GetChildNodes(*fragment, nodes);
     fragment->RemoveChildren();
     return !nodes.empty();
   }
   nodes.push_back(&node);
-  if (ContainerNode* old_parent = node.parentNode())
+  if (ContainerNode *old_parent = node.parentNode())
     old_parent->RemoveChild(&node, exception_state);
   return !exception_state.HasException() && !nodes.empty();
 }
 
-Node* ContainerNode::InsertBefore(Node* new_child, Node* ref_child, ExceptionState& exception_state) {
+Node *ContainerNode::InsertBefore(Node *new_child, Node *ref_child, ExceptionState &exception_state) {
   assert(new_child);
   // https://dom.spec.whatwg.org/#concept-node-pre-insert
 
@@ -265,7 +265,7 @@ Node* ContainerNode::InsertBefore(Node* new_child, Node* ref_child, ExceptionSta
   return new_child;
 }
 
-Node* ContainerNode::ReplaceChild(Node* new_child, Node* old_child, ExceptionState& exception_state) {
+Node *ContainerNode::ReplaceChild(Node *new_child, Node *old_child, ExceptionState &exception_state) {
   assert(new_child);
   // https://dom.spec.whatwg.org/#concept-node-replace
 
@@ -279,7 +279,7 @@ Node* ContainerNode::ReplaceChild(Node* new_child, Node* old_child, ExceptionSta
     return old_child;
 
   // 7. Let reference child be child’s next sibling.
-  Node* next = old_child->nextSibling();
+  Node *next = old_child->nextSibling();
   // 8. If reference child is node, set it to node’s next sibling.
   if (next == new_child)
     next = new_child->nextSibling();
@@ -288,7 +288,7 @@ Node* ContainerNode::ReplaceChild(Node* new_child, Node* old_child, ExceptionSta
   // Though the following CollectChildrenAndRemoveFromOldParent() also calls
   // RemoveChild(), we'd like to call RemoveChild() here to make a separated
   // MutationRecord.
-  if (ContainerNode* new_child_parent = new_child->parentNode()) {
+  if (ContainerNode *new_child_parent = new_child->parentNode()) {
     new_child_parent->RemoveChild(new_child, exception_state);
     if (exception_state.HasException())
       return nullptr;
@@ -309,7 +309,7 @@ Node* ContainerNode::ReplaceChild(Node* new_child, Node* old_child, ExceptionSta
     // 12. If child’s parent is not null, run these substeps:
     //    1. Set removedNodes to a list solely containing child.
     //    2. Remove child from its parent with the suppress observers flag set.
-    if (ContainerNode* old_child_parent = old_child->parentNode()) {
+    if (ContainerNode *old_child_parent = old_child->parentNode()) {
       old_child_parent->RemoveChild(old_child, exception_state);
       if (exception_state.HasException())
         return nullptr;
@@ -334,14 +334,14 @@ Node* ContainerNode::ReplaceChild(Node* new_child, Node* old_child, ExceptionSta
   return old_child;
 }
 
-Node* ContainerNode::RemoveChild(Node* old_child, ExceptionState& exception_state) {
+Node *ContainerNode::RemoveChild(Node *old_child, ExceptionState &exception_state) {
   // NotFoundError: Raised if oldChild is not a child of this node.
   if (!old_child || old_child->parentNode() != this) {
     exception_state.ThrowException(ctx(), ErrorType::TypeError, "The node to be removed is not a child of this node.");
     return nullptr;
   }
 
-  Node* child = old_child;
+  Node *child = old_child;
 
   // Events fired when blurring currently focused node might have moved this
   // child into a different parent.
@@ -356,10 +356,10 @@ Node* ContainerNode::RemoveChild(Node* old_child, ExceptionState& exception_stat
   WillRemoveChild(*child);
 
   {
-    Node* prev = child->previousSibling();
-    Node* next = child->nextSibling();
+    Node *prev = child->previousSibling();
+    Node *next = child->nextSibling();
     if (GetDocument().GetExecutingContext()->isBlinkEnabled()) {
-      StyleEngine& engine = GetDocument().EnsureStyleEngine();
+      StyleEngine &engine = GetDocument().EnsureStyleEngine();
       StyleEngine::DOMRemovalScope style_scope(engine);
       RemoveBetween(prev, next, *child);
       NotifyNodeRemoved(*child);
@@ -372,7 +372,7 @@ Node* ContainerNode::RemoveChild(Node* old_child, ExceptionState& exception_stat
   return child;
 }
 
-Node* ContainerNode::AppendChild(Node* new_child, ExceptionState& exception_state) {
+Node *ContainerNode::AppendChild(Node *new_child, ExceptionState &exception_state) {
   assert(new_child);
   // Make sure adding the new child is ok
   if (!EnsurePreInsertionValidity(*new_child, nullptr, nullptr, exception_state))
@@ -393,11 +393,11 @@ Node* ContainerNode::AppendChild(Node* new_child, ExceptionState& exception_stat
   return new_child;
 }
 
-Node* ContainerNode::AppendChild(Node* new_child) {
+Node *ContainerNode::AppendChild(Node *new_child) {
   return AppendChild(new_child, ASSERT_NO_EXCEPTION());
 }
 
-void ContainerNode::WillRemoveChild(Node& child) {
+void ContainerNode::WillRemoveChild(Node &child) {
   assert(child.parentNode() == this);
   ChildListMutationScope(*this).WillRemoveChild(child);
   child.NotifyMutationObserversNodeWillDetach();
@@ -412,18 +412,18 @@ void ContainerNode::WillRemoveChildren() {
   GetChildNodes(*this, children);
 
   ChildListMutationScope mutation(*this);
-  for (const auto& node : children) {
+  for (const auto &node : children) {
     assert(node);
-    Node& child = *node;
+    Node &child = *node;
     mutation.WillRemoveChild(child);
     child.NotifyMutationObserversNodeWillDetach();
   }
 }
 
-bool ContainerNode::EnsurePreInsertionValidity(const Node& new_child,
-                                               const Node* next,
-                                               const Node* old_child,
-                                               ExceptionState& exception_state) const {
+bool ContainerNode::EnsurePreInsertionValidity(const Node &new_child,
+                                               const Node *next,
+                                               const Node *old_child,
+                                               ExceptionState &exception_state) const {
   assert(!(next && old_child));
 
   // Use common case fast path if possible.
@@ -489,10 +489,10 @@ void ContainerNode::RemoveChildren() {
   bool has_element_child = false;
 
   if (GetDocument().GetExecutingContext()->isBlinkEnabled()) {
-    StyleEngine& engine = GetDocument().EnsureStyleEngine();
+    StyleEngine &engine = GetDocument().EnsureStyleEngine();
     StyleEngine::DOMRemovalScope style_scope(engine);
 
-    while (Node* child = first_child_) {
+    while (Node *child = first_child_) {
       if (child->IsElementNode()) {
         has_element_child = true;
       }
@@ -500,7 +500,7 @@ void ContainerNode::RemoveChildren() {
       NotifyNodeRemoved(*child);
     }
   } else {
-    while (Node* child = first_child_) {
+    while (Node *child = first_child_) {
       if (child->IsElementNode()) {
         has_element_child = true;
       }
@@ -516,14 +516,14 @@ void ContainerNode::RemoveChildren() {
   ChildrenChanged(change);
 }
 
-void ContainerNode::CloneChildNodesFrom(const ContainerNode& node, CloneChildrenFlag flag) {
+void ContainerNode::CloneChildNodesFrom(const ContainerNode &node, CloneChildrenFlag flag) {
   assert(flag != CloneChildrenFlag::kSkip);
-  for (const Node& child : NodeTraversal::ChildrenOf(node)) {
+  for (const Node &child : NodeTraversal::ChildrenOf(node)) {
     AppendChild(child.Clone(GetDocument(), flag));
   }
 }
 
-void ContainerNode::ParserAppendChild(Node* new_child) {
+void ContainerNode::ParserAppendChild(Node *new_child) {
   assert(new_child);
   assert(!new_child->IsDocumentFragment());
   assert(!IsA<HTMLTemplateElement>(this));
@@ -531,7 +531,7 @@ void ContainerNode::ParserAppendChild(Node* new_child) {
   // FIXME: parserRemoveChild can run script which could then insert the
   // newChild back into the page. Loop until the child is actually removed.
   // See: fast/parser/execute-script-during-adoption-agency-removal.html
-  while (ContainerNode* parent = new_child->parentNode())
+  while (ContainerNode *parent = new_child->parentNode())
     parent->ParserRemoveChild(*new_child);
 
   {
@@ -545,7 +545,7 @@ void ContainerNode::ParserAppendChild(Node* new_child) {
   NotifyNodeInserted(*new_child, ChildrenChangeSource::kParser);
 }
 
-void ContainerNode::ParserAppendChildInDocumentFragment(Node* new_child) {
+void ContainerNode::ParserAppendChildInDocumentFragment(Node *new_child) {
   assert(new_child);
   assert(!new_child->IsDocumentFragment());
   assert(!IsA<HTMLTemplateElement>(this));
@@ -563,7 +563,7 @@ void ContainerNode::ParserFinishedBuildingDocumentFragment() {
   ScriptForbiddenScope forbid_script;
   const ChildrenChange change = ChildrenChange::ForFinishingBuildingDocumentFragmentTree();
 
-  for (Node& node : NodeTraversal::DescendantsOf(*this)) {
+  for (Node &node : NodeTraversal::DescendantsOf(*this)) {
     NotifyNodeAtEndOfBuildingFragmentTree(node, change, false);
   }
 
@@ -572,7 +572,7 @@ void ContainerNode::ParserFinishedBuildingDocumentFragment() {
   //  }
 }
 
-void ContainerNode::ParserRemoveChild(Node& old_child) {
+void ContainerNode::ParserRemoveChild(Node &old_child) {
   assert(old_child.parentNode() == this);
   assert(!old_child.IsDocumentFragment());
 
@@ -587,10 +587,10 @@ void ContainerNode::ParserRemoveChild(Node& old_child) {
   //  StyleEngine& engine = GetDocument().GetStyleEngine();
   //  StyleEngine::DetachLayoutTreeScope detach_scope(engine);
 
-  Node* prev = old_child.previousSibling();
-  Node* next = old_child.nextSibling();
+  Node *prev = old_child.previousSibling();
+  Node *next = old_child.nextSibling();
   if (GetDocument().GetExecutingContext()->isBlinkEnabled()) {
-    StyleEngine& engine = GetDocument().EnsureStyleEngine();
+    StyleEngine &engine = GetDocument().EnsureStyleEngine();
     StyleEngine::DOMRemovalScope style_scope(engine);
     RemoveBetween(prev, next, old_child);
     NotifyNodeRemoved(old_child);
@@ -601,10 +601,10 @@ void ContainerNode::ParserRemoveChild(Node& old_child) {
   ChildrenChanged(ChildrenChange::ForRemoval(old_child, prev, next, ChildrenChangeSource::kParser));
 }
 
-void ContainerNode::ParserInsertBefore(Node* new_child, Node& next_child) {
+void ContainerNode::ParserInsertBefore(Node *new_child, Node &next_child) {
   assert(new_child);
   assert(next_child.parentNode() == this ||
-         (DynamicTo<DocumentFragment>(this) && DynamicTo<DocumentFragment>(this)->IsTemplateContent()));
+      (DynamicTo<DocumentFragment>(this) && DynamicTo<DocumentFragment>(this)->IsTemplateContent()));
   assert(!new_child->IsDocumentFragment());
   assert(!IsA<HTMLTemplateElement>(this));
 
@@ -614,7 +614,7 @@ void ContainerNode::ParserInsertBefore(Node* new_child, Node& next_child) {
   // FIXME: parserRemoveChild can run script which could then insert the
   // newChild back into the page. Loop until the child is actually removed.
   // See: fast/parser/execute-script-during-adoption-agency-removal.html
-  while (ContainerNode* parent = new_child->parentNode())
+  while (ContainerNode *parent = new_child->parentNode())
     parent->ParserRemoveChild(*new_child);
 
   // This can happen if foster parenting moves nodes into a template
@@ -634,8 +634,8 @@ void ContainerNode::ParserInsertBefore(Node* new_child, Node& next_child) {
   NotifyNodeInserted(*new_child, ChildrenChangeSource::kParser);
 }
 
-void ContainerNode::ParserTakeAllChildrenFrom(webf::ContainerNode& old_parent) {
-  while (Node* child = old_parent.firstChild()) {
+void ContainerNode::ParserTakeAllChildrenFrom(webf::ContainerNode &old_parent) {
+  while (Node *child = old_parent.firstChild()) {
     // Explicitly remove since appending can fail, but this loop shouldn't be
     // infinite.
     old_parent.ParserRemoveChild(*child);
@@ -647,26 +647,26 @@ AtomicString ContainerNode::nodeValue() const {
   return AtomicString::Null();
 }
 
-Element* ContainerNode::querySelector(const webf::AtomicString& selectors, webf::ExceptionState& exception_state) {
+Element *ContainerNode::querySelector(const webf::AtomicString &selectors, webf::ExceptionState &exception_state) {
   return QuerySelector(selectors, exception_state);
 }
 
-Element* ContainerNode::OwnerShadowHost() const {
+Element *ContainerNode::OwnerShadowHost() const {
   return nullptr;
 }
 
-inline ContainerNode* Node::ParentElementOrShadowRoot() const {
-  ContainerNode* parent = parentNode();
+inline ContainerNode *Node::ParentElementOrShadowRoot() const {
+  ContainerNode *parent = parentNode();
   return parent && (parent->IsElementNode() || parent->IsShadowRoot()) ? parent : nullptr;
 }
 
-ContainerNode::ContainerNode(TreeScope* tree_scope, ConstructionType type)
+ContainerNode::ContainerNode(TreeScope *tree_scope, ConstructionType type)
     : ContainerNode(tree_scope->GetDocument().GetExecutingContext(), &tree_scope->GetDocument(), type) {}
-ContainerNode::ContainerNode(ExecutingContext* context, Document* document, ConstructionType type)
+ContainerNode::ContainerNode(ExecutingContext *context, Document *document, ConstructionType type)
     : Node(context, document, type), first_child_(nullptr), last_child_(nullptr) {}
 
-void ContainerNode::NotifyNodeAtEndOfBuildingFragmentTree(webf::Node& node,
-                                                          const webf::ContainerNode::ChildrenChange& change,
+void ContainerNode::NotifyNodeAtEndOfBuildingFragmentTree(webf::Node &node,
+                                                          const webf::ContainerNode::ChildrenChange &change,
                                                           bool may_contain_shadow_roots) {
   // Fast path parser only creates disconnected nodes.
   assert(!node.isConnected());
@@ -687,7 +687,7 @@ void ContainerNode::NotifyNodeAtEndOfBuildingFragmentTree(webf::Node& node,
   }
 }
 
-void ContainerNode::RemoveBetween(Node* previous_child, Node* next_child, Node& old_child) {
+void ContainerNode::RemoveBetween(Node *previous_child, Node *next_child, Node &old_child) {
   assert(old_child.parentNode() == this);
 
   if (next_child)
@@ -707,21 +707,21 @@ void ContainerNode::RemoveBetween(Node* previous_child, Node* next_child, Node& 
                                                        nullptr);
 }
 
-NodeListsNodeData& ContainerNode::EnsureNodeLists() {
+NodeListsNodeData &ContainerNode::EnsureNodeLists() {
   return EnsureRareData().EnsureNodeLists();
 }
 
-template <typename Functor>
-void ContainerNode::InsertNodeVector(const NodeVector& targets,
-                                     Node* next,
-                                     const Functor& mutator,
-                                     NodeVector* post_insertion_notification_targets) {
+template<typename Functor>
+void ContainerNode::InsertNodeVector(const NodeVector &targets,
+                                     Node *next,
+                                     const Functor &mutator,
+                                     NodeVector *post_insertion_notification_targets) {
   assert(post_insertion_notification_targets);
   {
-    for (const auto& target_node : targets) {
+    for (const auto &target_node : targets) {
       assert(target_node);
       assert(!target_node->parentNode());
-      Node& child = *target_node;
+      Node &child = *target_node;
       mutator(*this, child, next);
       ChildListMutationScope(*this).ChildAdded(child);
       NotifyNodeInsertedInternal(child, *post_insertion_notification_targets);
@@ -729,27 +729,27 @@ void ContainerNode::InsertNodeVector(const NodeVector& targets,
   }
 }
 
-void ContainerNode::DidInsertNodeVector(const webf::NodeVector& targets,
-                                        webf::Node* next,
-                                        const webf::NodeVector& post_insertion_notification_targets) {
-  Node* unchanged_previous = targets.size() > 0 ? targets[0]->previousSibling() : nullptr;
-  for (const auto& target_node : targets) {
+void ContainerNode::DidInsertNodeVector(const webf::NodeVector &targets,
+                                        webf::Node *next,
+                                        const webf::NodeVector &post_insertion_notification_targets) {
+  Node *unchanged_previous = targets.size() > 0 ? targets[0]->previousSibling() : nullptr;
+  for (const auto &target_node : targets) {
     ChildrenChanged(ChildrenChange::ForInsertion(*target_node, unchanged_previous, next, ChildrenChangeSource::kAPI));
   }
 }
 
-void ContainerNode::InsertBeforeCommon(Node& next_child, Node& new_child) {
+void ContainerNode::InsertBeforeCommon(Node &next_child, Node &new_child) {
   // Use insertBefore if you need to handle reparenting (and want DOM mutation
   // events).
   assert(!new_child.parentNode());
   assert(!new_child.nextSibling());
   assert(!new_child.previousSibling());
 
-  if (auto* context = GetExecutingContext()) {
+  if (auto *context = GetExecutingContext()) {
     context->MaybeBeginFirstPaintStyleSync(*this, new_child, !hasChildren());
   }
 
-  Node* prev = next_child.previousSibling();
+  Node *prev = next_child.previousSibling();
   assert(last_child_ != prev);
   next_child.SetPreviousSibling(&new_child);
   if (prev) {
@@ -769,9 +769,9 @@ void ContainerNode::InsertBeforeCommon(Node& next_child, Node& new_child) {
                                                        next_child.bindingObject(), new_child.bindingObject());
 }
 
-void ContainerNode::AppendChildCommon(Node& child) {
+void ContainerNode::AppendChildCommon(Node &child) {
   const bool was_empty = !hasChildren();
-  if (auto* context = GetExecutingContext()) {
+  if (auto *context = GetExecutingContext()) {
     context->MaybeBeginFirstPaintStyleSync(*this, child, was_empty);
   }
 
@@ -789,7 +789,7 @@ void ContainerNode::AppendChildCommon(Node& child) {
                                                        bindingObject(), child.bindingObject());
 }
 
-void ContainerNode::NotifyNodeInserted(Node& root, webf::ContainerNode::ChildrenChangeSource source) {
+void ContainerNode::NotifyNodeInserted(Node &root, webf::ContainerNode::ChildrenChangeSource source) {
   assert(!EventDispatchForbiddenScope::IsEventDispatchForbidden());
 
   NodeVector post_insertion_notification_targets;
@@ -798,11 +798,11 @@ void ContainerNode::NotifyNodeInserted(Node& root, webf::ContainerNode::Children
   ChildrenChanged(ChildrenChange::ForInsertion(root, root.previousSibling(), root.nextSibling(), source));
 }
 
-void ContainerNode::NotifyNodeInsertedInternal(Node& root, NodeVector& post_insertion_notification_targets) {
+void ContainerNode::NotifyNodeInsertedInternal(Node &root, NodeVector &post_insertion_notification_targets) {
   EventDispatchForbiddenScope assert_no_event_dispatch;
   ScriptForbiddenScope forbid_script;
 
-  for (Node& node : NodeTraversal::InclusiveDescendantsOf(root)) {
+  for (Node &node : NodeTraversal::InclusiveDescendantsOf(root)) {
     // As an optimization we don't notify leaf nodes when inserting
     // into detached subtrees that are not in a shadow tree.
     if (!isConnected() && !node.IsContainerNode())
@@ -819,8 +819,8 @@ void ContainerNode::NotifyNodeInsertedInternal(Node& root, NodeVector& post_inse
   }
 }
 
-void ContainerNode::NotifyNodeRemoved(Node& root) {
-  for (Node& node : NodeTraversal::InclusiveDescendantsOf(root)) {
+void ContainerNode::NotifyNodeRemoved(Node &root) {
+  for (Node &node : NodeTraversal::InclusiveDescendantsOf(root)) {
     // As an optimization we skip notifying Text nodes and other leaf nodes
     // of removal when they're not in the Document tree and not in a shadow root
     // since the virtual call to removedFrom is not needed.
@@ -830,8 +830,8 @@ void ContainerNode::NotifyNodeRemoved(Node& root) {
   }
 }
 
-void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange& change) {
-  ExecutingContext* context = GetDocument().GetExecutingContext();
+void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange &change) {
+  ExecutingContext *context = GetDocument().GetExecutingContext();
   if (context && context->isBlinkEnabled() &&
       change.type == ChildrenChangeType::kFinishedBuildingDocumentFragmentTree) {
     // The rest of this is not necessary when building a DocumentFragment.
@@ -853,17 +853,18 @@ void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange& c
     return;
   }
 
-    // :has() depends on structural relationships. Without full invalidation
-    // flags, conservatively force a full style recalc when any :has() rules
-    // are present and an element is inserted/removed.
-    if (!change.ByParser() && change.IsChildElementChange() && InActiveDocument()) {
-        style_engine.UpdateActiveStyle();
-        if (style_engine.GetRuleFeatureSet().NeedsHasInvalidationForInsertionOrRemoval()) {
-            style_engine.SetNeedsHasPseudoStateRecalc();
-        }
+  StyleEngine& style_engine = GetDocument().GetStyleEngine();
+  // :has() depends on structural relationships. Without full invalidation
+  // flags, conservatively force a full style recalc when any :has() rules
+  // are present and an element is inserted/removed.
+  if (!change.ByParser() && change.IsChildElementChange() && InActiveDocument()) {
+    style_engine.UpdateActiveStyle();
+    if (style_engine.GetRuleFeatureSet().NeedsHasInvalidationForInsertionOrRemoval()) {
+      style_engine.SetNeedsHasPseudoStateRecalc();
     }
+  }
 
-  Node* inserted_node = change.sibling_changed;
+  Node *inserted_node = change.sibling_changed;
   if (!inserted_node) {
     return;
   }
@@ -878,7 +879,7 @@ void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange& c
     return;
   }
 
-  if (Element* element = DynamicTo<Element>(this)) {
+  if (Element *element = DynamicTo<Element>(this)) {
     // Blink gates insertion dirtiness on the presence of a ComputedStyle on the
     // parent element (to avoid work for display:none subtrees). WebF does not
     // store ComputedStyle on DOM nodes; approximate the behavior using the
@@ -891,18 +892,18 @@ void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange& c
   inserted_node->SetStyleChangeOnInsertion();
 }
 
-void ContainerNode::InvalidateNodeListCachesInAncestors(const QualifiedName* attr_name,
-                                                        Element* attribute_owner_element,
-                                                        const ChildrenChange* change) {
+void ContainerNode::InvalidateNodeListCachesInAncestors(const QualifiedName *attr_name,
+                                                        Element *attribute_owner_element,
+                                                        const ChildrenChange *change) {
   // This is a performance optimization, NodeList cache invalidation is
   // not necessary for a text change.
   if (change && change->type == ChildrenChangeType::kTextChanged)
     return;
 
   if (!attr_name || IsAttributeNode()) {
-    if (const NodeRareData* data = RareData()) {
-      if (NodeListsNodeData* lists = data->NodeLists()) {
-        if (ChildNodeList* child_node_list = lists->GetChildNodeList(*this)) {
+    if (const NodeRareData *data = RareData()) {
+      if (NodeListsNodeData *lists = data->NodeLists()) {
+        if (ChildNodeList *child_node_list = lists->GetChildNodeList(*this)) {
           if (change) {
             child_node_list->ChildrenChanged(*change);
           } else {
@@ -928,8 +929,8 @@ void ContainerNode::InvalidateNodeListCachesInAncestors(const QualifiedName* att
 
   GetDocument().InvalidateNodeListCaches(attr_name);
 
-  for (ContainerNode* node = this; node; node = node->parentNode()) {
-    if (NodeListsNodeData* lists = node->NodeLists())
+  for (ContainerNode *node = this; node; node = node->parentNode()) {
+    if (NodeListsNodeData *lists = node->NodeLists())
       lists->InvalidateCaches(attr_name);
   }
 }
@@ -966,14 +967,14 @@ void ContainerNode::InvalidateNodeListCachesInAncestors(const webf::ContainerNod
   }
 }*/
 
-void ContainerNode::Trace(GCVisitor* visitor) const {
+void ContainerNode::Trace(GCVisitor *visitor) const {
   visitor->TraceMember(first_child_);
   visitor->TraceMember(last_child_);
 
   Node::Trace(visitor);
 }
 
-const ContainerNodePublicMethods* ContainerNode::containerNodePublicMethods() {
+const ContainerNodePublicMethods *ContainerNode::containerNodePublicMethods() {
   static ContainerNodePublicMethods container_node_public_methods;
   return &container_node_public_methods;
 }

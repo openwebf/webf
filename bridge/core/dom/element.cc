@@ -64,26 +64,6 @@ namespace {
 thread_local InlineStylePerfStats g_inline_style_perf_stats;
 thread_local bool g_inline_style_perf_stats_enabled = false;
 
-std::shared_ptr<CSSSelectorList> ParseSelectorListOrThrow(const AtomicString& selectors,
-                                                         ExceptionState& exception_state,
-                                                         JSContext* ctx) {
-  auto parser_context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
-  auto sheet = std::make_shared<StyleSheetContents>(parser_context);
-
-  std::vector<CSSSelector> arena;
-  tcb::span<CSSSelector> vector =
-      CSSParser::ParseSelector(parser_context, CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr, sheet,
-                               selectors.GetString(), arena);
-
-  auto selector_list = CSSSelectorList::AdoptSelectorVector(vector);
-  if (!selector_list->IsValid()) {
-    exception_state.ThrowException(ctx, ErrorType::SyntaxError,
-                                   "'" + selectors.ToUTF8String() + "' is not a valid selector.");
-    return nullptr;
-  }
-  return selector_list;
-}
-
 bool MatchesAnySelectorInList(Element& element, const CSSSelectorList& selector_list, const ContainerNode& scope) {
   SelectorChecker checker(SelectorChecker::kQueryingRules);
   SelectorChecker::SelectorCheckingContext context(&element);
