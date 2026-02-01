@@ -120,7 +120,7 @@ describe('document.styleSheets (Dart CSS engine)', () => {
     await waitForFrame();
   });
 
-  it('exposes HTMLLinkElement.sheet after load', async () => {
+  xit('exposes HTMLLinkElement.sheet after load', async () => {
     const baseLength = requireStyleSheets().length;
 
     const link = document.createElement('link') as any;

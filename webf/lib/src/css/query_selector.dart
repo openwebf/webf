@@ -499,14 +499,21 @@ class SelectorEvaluator extends SelectorVisitor {
   }
 
   bool _elementSatisfies(Element element, PseudoClassFunctionSelector selector, num? a, num b, IndexCounter finder) {
-    int index = 0;
+    // For a detached element, per Selectors semantics used by WPT, treat it as
+    // the sole child of its (implicit) parent subtree. This means its 1-based
+    // index is 1 and all sibling traversals are empty.
+    final ContainerNode? parent = element.parentNode;
+    if (parent == null) {
+      return _indexSatisfiesEquation(1, a, b);
+    }
 
-    int? cacheIndex = element.ownerDocument.nthIndexCache.getChildrenIndexFromCache(_element!.parentNode!, _element!, selector.name);
+    int index = 0;
+    final int? cacheIndex = element.ownerDocument.nthIndexCache.getChildrenIndexFromCache(parent, element, selector.name);
     if (cacheIndex != null) {
       index = cacheIndex;
     } else {
       index = finder(element);
-      element.ownerDocument.nthIndexCache.setChildrenIndexWithParentNode(_element!.parentNode!, _element!, selector.name, index);
+      element.ownerDocument.nthIndexCache.setChildrenIndexWithParentNode(parent, element, selector.name, index);
     }
 
     return _indexSatisfiesEquation(index + 1, a, b);
