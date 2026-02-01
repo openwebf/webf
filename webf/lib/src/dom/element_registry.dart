@@ -200,6 +200,9 @@ void defineBuiltInElements() {
   defineElement(BUTTON, (context) => ButtonElement(context));
   defineElement(INPUT, (context) => FlutterInputElement(context));
   defineElement(TEXTAREA, (context) => FlutterTextAreaElement(context));
+  defineElement(SELECT, (context) => HTMLSelectElement(context));
+  defineElement(OPTION, (context) => HTMLOptionElement(context));
+  defineElement(OPTGROUP, (context) => HTMLOptGroupElement(context));
   // Edits
   defineElement(DEL, (context) => DelElement(context));
   defineElement(INS, (context) => InsElement(context));

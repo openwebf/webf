@@ -105,6 +105,10 @@ class CheckPseudoHasArgumentContext {
     }
 
     if (relations.empty()) {
+      // No explicit combinator in :has() argument (e.g. :has(.child)).
+      // Treat it as descendant matching so we traverse the full subtree.
+      depth_limit_ = 1;
+      depth_fixed_ = false;
       return;
     }
 

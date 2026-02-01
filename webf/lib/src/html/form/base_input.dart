@@ -80,6 +80,7 @@ mixin BaseInputElement on WidgetElement implements FormElementBase {
 
   // Internal setter used by FlutterInputElement to avoid naming conflicts.
   void setElementValue(String newValue, {bool markDirty = true}) {
+    final bool changed = newValue != _value;
     _value = newValue;
     if (markDirty) _dirtyValue = true;
     // Keep controller in sync when state exists, preserving selection.
@@ -93,6 +94,18 @@ mixin BaseInputElement on WidgetElement implements FormElementBase {
         text: newValue,
         selection: TextSelection(baseOffset: selectionStart, extentOffset: selectionEnd),
       );
+    }
+    if (markDirty && changed) {
+      _markPseudoStateDirty();
+    }
+  }
+
+  void _markPseudoStateDirty() {
+    final dom.Element? root = ownerDocument.documentElement;
+    if (root != null) {
+      ownerDocument.markElementStyleDirty(root, reason: 'childList-pseudo');
+    } else {
+      ownerDocument.markElementStyleDirty(this, reason: 'childList-pseudo');
     }
   }
 
@@ -241,11 +254,18 @@ mixin BaseInputElement on WidgetElement implements FormElementBase {
   bool get disabled => _disabled;
 
   set disabled(value) {
+    final bool previous = _disabled;
     if (value is String) {
       _disabled = true;
+      if (!previous && _disabled) {
+        _markPseudoStateDirty();
+      }
       return;
     }
     _disabled = value == true;
+    if (previous != _disabled) {
+      _markPseudoStateDirty();
+    }
   }
 
   bool get autofocus => getAttribute('autofocus') != null;

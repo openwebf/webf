@@ -37,25 +37,31 @@ import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/html.dart';
+import 'package:webf/src/html/form/checked.dart';
+import 'package:webf/src/html/form/base_input.dart';
 import 'package:webf/src/html/form/form_element_base.dart';
 
 typedef IndexCounter = int Function(Element element);
 
 Element? querySelector(Node node, String selector) =>
-    SelectorEvaluator().querySelector(node, _parseSelectorGroup(selector));
+    SelectorEvaluator(scopeElement: _resolveScope(node))
+        .querySelector(node, _parseSelectorGroup(selector));
 
 List<Element> querySelectorAll(Node node, String selector) {
   final group = _parseSelectorGroup(selector);
   final results = <Element>[];
-  SelectorEvaluator().querySelectorAll(node, group, results);
+  SelectorEvaluator(scopeElement: _resolveScope(node))
+      .querySelectorAll(node, group, results);
   return results;
 }
 
 bool matches(Element element, String selector) =>
-    SelectorEvaluator().matchSelector(_parseSelectorGroup(selector), element);
+    SelectorEvaluator(scopeElement: element)
+        .matchSelector(_parseSelectorGroup(selector), element);
 
 Element? closest(Node node, String selector) =>
-    SelectorEvaluator().closest(node, _parseSelectorGroup(selector));
+    SelectorEvaluator(scopeElement: node is Element ? node : null)
+        .closest(node, _parseSelectorGroup(selector));
 
 
 // http://dev.w3.org/csswg/selectors-4/#grouping
@@ -64,9 +70,18 @@ SelectorGroup? _parseSelectorGroup(String selector) {
   return parser.processSelectorGroup();
 }
 
+Element? _resolveScope(Node node) {
+  if (node is Element) return node;
+  if (node is Document) return node.documentElement;
+  return null;
+}
+
 class SelectorEvaluator extends SelectorVisitor {
   Element? _element;
   SelectorGroup? _selectorGroup;
+  final Element? _scopeElement;
+
+  SelectorEvaluator({Element? scopeElement}) : _scopeElement = scopeElement;
 
   bool matchSelector(SelectorGroup? selectorGroup, Element? element) {
     if (selectorGroup == null || element == null) {
@@ -285,6 +300,10 @@ class SelectorEvaluator extends SelectorVisitor {
       case 'root':
         return _element!.nodeName == HTML && (_element!.parentElement == null || _element!.parentElement is Document);
 
+      case 'scope':
+        if (_scopeElement == null) return false;
+        return identical(_element, _scopeElement);
+
       // http://dev.w3.org/csswg/selectors-4/#the-empty-pseudo
       case 'empty':
         return _element!.childNodes.every((n) => !(n is Element || n is TextNode && n.data.isNotEmpty));
@@ -356,6 +375,29 @@ class SelectorEvaluator extends SelectorVisitor {
         final bool isDisabled = _isFormControlDisabled(element);
         return name == 'disabled' ? isDisabled : !isDisabled;
       }
+      // https://drafts.csswg.org/selectors-4/#validity-pseudos
+      case 'valid':
+      case 'invalid': {
+        final Element element = _element!;
+        if (!_isFormControlElement(element)) return false;
+        final bool isValid = _isFormControlValid(element);
+        return name == 'valid' ? isValid : !isValid;
+      }
+      // https://drafts.csswg.org/selectors-4/#checked
+      case 'checked': {
+        final Element element = _element!;
+        if (element is BaseCheckedElement) {
+          return element.getChecked();
+        }
+        if (element.tagName.toUpperCase() == OPTION) {
+          return _isOptionSelected(element);
+        }
+        if (element.attributes.containsKey('checked')) return true;
+        if (element.attributes.containsKey('selected')) return true;
+        final String? ariaChecked = element.attributes['aria-checked'];
+        if (ariaChecked != null && ariaChecked.toLowerCase() == 'true') return true;
+        return false;
+      }
 
       // http://dev.w3.org/csswg/selectors-4/#link
       case 'link':
@@ -395,9 +437,104 @@ class SelectorEvaluator extends SelectorVisitor {
       return element.disabled;
     }
     if (element.attributes.containsKey('disabled')) return true;
+    if (element.tagName.toUpperCase() == OPTION) {
+      final Element? optgroup = _findAncestorByTag(element, OPTGROUP);
+      if (optgroup != null && optgroup.attributes.containsKey('disabled')) {
+        return true;
+      }
+      final Element? select = _findAncestorByTag(element, SELECT);
+      if (select != null && select.attributes.containsKey('disabled')) {
+        return true;
+      }
+    }
+    if (element.tagName.toUpperCase() == OPTGROUP) {
+      final Element? select = _findAncestorByTag(element, SELECT);
+      if (select != null && select.attributes.containsKey('disabled')) {
+        return true;
+      }
+    }
     final String? ariaDisabled = element.attributes['aria-disabled'];
     if (ariaDisabled != null && ariaDisabled.toLowerCase() == 'true') return true;
     return false;
+  }
+
+  bool _isFormControlValid(Element element) {
+    if (_isFormControlDisabled(element)) {
+      return true;
+    }
+    String type = 'text';
+    String value = '';
+    if (element is BaseInputElement) {
+      type = element.type.toLowerCase();
+      value = element.value ?? '';
+    } else {
+      final String? attrType = element.attributes['type'];
+      if (attrType != null && attrType.isNotEmpty) {
+        type = attrType.toLowerCase();
+      }
+      value = element.attributes['value'] ?? '';
+    }
+    final bool required = element.attributes.containsKey('required');
+
+    if (element is BaseCheckedElement && (type == 'checkbox' || type == 'radio')) {
+      return !required || element.getChecked();
+    }
+
+    switch (type) {
+      case 'email':
+        if (value.isEmpty) return !required;
+        return RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value);
+      default:
+        if (!required) return true;
+        return value.isNotEmpty;
+    }
+  }
+
+  Element? _findAncestorByTag(Element element, String tag) {
+    Element? current = element.parentElement;
+    while (current != null) {
+      if (current.tagName.toUpperCase() == tag) {
+        return current;
+      }
+      current = current.parentElement;
+    }
+    return null;
+  }
+
+  bool _isOptionSelected(Element element) {
+    if (element.attributes.containsKey('selected')) {
+      return true;
+    }
+    final Element? select = _findAncestorByTag(element, SELECT);
+    if (select == null) {
+      return false;
+    }
+    if (select.attributes.containsKey('multiple')) {
+      return false;
+    }
+    final List<Element> options = _collectOptions(select);
+    if (options.isEmpty) {
+      return false;
+    }
+    final bool anyExplicit = options.any((option) => option.attributes.containsKey('selected'));
+    if (anyExplicit) {
+      return false;
+    }
+    return identical(options.first, element);
+  }
+
+  List<Element> _collectOptions(Element root) {
+    final List<Element> options = <Element>[];
+    void visit(Element element) {
+      if (element.tagName.toUpperCase() == OPTION) {
+        options.add(element);
+      }
+      for (final Element child in element.children) {
+        visit(child);
+      }
+    }
+    visit(root);
+    return options;
   }
 
   @override
@@ -443,6 +580,17 @@ class SelectorEvaluator extends SelectorVisitor {
         }
         return false;
       }
+      case 'has': {
+        final arg = node.argument;
+        if (arg is! SelectorGroup) return false;
+        final Element scope = _element!;
+        for (final Selector selector in arg.selectors) {
+          if (_matchesRelativeSelector(scope, selector)) {
+            return true;
+          }
+        }
+        return false;
+      }
       case 'where': {
         final arg = node.argument;
         if (arg is! SelectorGroup) return false;
@@ -481,6 +629,217 @@ class SelectorEvaluator extends SelectorVisitor {
 
     if (kDebugMode) throw _unimplemented(node);
     return false;
+  }
+
+  bool _matchesRelativeSelector(Element scope, Selector selector) {
+    if (selector.simpleSelectorSequences.isEmpty) return false;
+
+    final int leadingCombinator = selector.simpleSelectorSequences.first.combinator;
+    Iterable<Element> candidates;
+
+    switch (leadingCombinator) {
+      case TokenKind.COMBINATOR_PLUS:
+      case TokenKind.COMBINATOR_TILDE: {
+        final List<Element> roots = <Element>[];
+        Element? sibling = scope.nextElementSibling;
+        while (sibling != null) {
+          roots.add(sibling);
+          sibling = sibling.nextElementSibling;
+        }
+        if (roots.isEmpty) return false;
+        candidates = _traverseMultiple(roots);
+        break;
+      }
+      case TokenKind.COMBINATOR_GREATER:
+      case TokenKind.COMBINATOR_DESCENDANT:
+      case TokenKind.COMBINATOR_NONE:
+      default: {
+        candidates = _traverseElements(scope, includeRoot: false);
+        break;
+      }
+    }
+
+    for (final Element element in candidates) {
+      final List<Element> leftmostMatches = _collectLeftmostMatches(element, selector);
+      if (leftmostMatches.isEmpty) continue;
+      for (final Element leftmost in leftmostMatches) {
+        if (_leftmostMatchesScope(scope, leftmost, leadingCombinator)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  bool _leftmostMatchesScope(Element scope, Element leftmost, int leadingCombinator) {
+    switch (leadingCombinator) {
+      case TokenKind.COMBINATOR_GREATER:
+        return leftmost.parentElement == scope;
+      case TokenKind.COMBINATOR_PLUS:
+        return leftmost.previousElementSibling == scope;
+      case TokenKind.COMBINATOR_TILDE: {
+        Element? prev = leftmost.previousElementSibling;
+        while (prev != null) {
+          if (prev == scope) return true;
+          prev = prev.previousElementSibling;
+        }
+        return false;
+      }
+      case TokenKind.COMBINATOR_DESCENDANT:
+      case TokenKind.COMBINATOR_NONE:
+      default:
+        return _isDescendantOf(leftmost, scope);
+    }
+  }
+
+  bool _isDescendantOf(Element element, Element ancestor) {
+    Element? current = element.parentElement;
+    while (current != null) {
+      if (current == ancestor) return true;
+      current = current.parentElement;
+    }
+    return false;
+  }
+
+  Iterable<Element> _traverseMultiple(List<Element> roots) sync* {
+    for (final Element root in roots) {
+      yield* _traverseElements(root, includeRoot: true);
+    }
+  }
+
+  Iterable<Element> _traverseElements(Element root, {required bool includeRoot}) sync* {
+    if (includeRoot) yield root;
+    for (final Element child in root.children) {
+      yield child;
+      yield* _traverseElements(child, includeRoot: false);
+    }
+  }
+
+  List<Element> _collectLeftmostMatches(Element element, Selector node) {
+    final old = _element;
+    final Set<Element> results = <Element>{};
+
+    // Build right-to-left groups of compound selectors (simple selectors joined
+    // with COMBINATOR_NONE), and the combinator that connects each group to the
+    // next group on the left.
+    final List<List<SimpleSelector>> groups = <List<SimpleSelector>>[];
+    final List<int> groupCombinators = <int>[]; // combinator from this group to the next (left) group
+
+    {
+      List<SimpleSelector> current = <SimpleSelector>[];
+      for (final seq in node.simpleSelectorSequences.reversed) {
+        current.add(seq.simpleSelector);
+        if (seq.combinator != TokenKind.COMBINATOR_NONE) {
+          groups.add(current);
+          groupCombinators.add(seq.combinator);
+          current = <SimpleSelector>[];
+        }
+      }
+      if (current.isNotEmpty) {
+        groups.add(current);
+        // No combinator to the left of the leftmost group
+        groupCombinators.add(TokenKind.COMBINATOR_NONE);
+      }
+    }
+
+    bool matchesCompound(Element? element, List<SimpleSelector> compound) {
+      if (element == null) return false;
+      // Save and restore _element so nested selector checks work correctly.
+      final saved = _element;
+      _element = element;
+
+      // Optional timing/logging for diagnostics.
+      final bool wantDetail = DebugFlags.enableCssMatchDetail || (DebugFlags.cssMatchCompoundLogThresholdMs > 0);
+      final Stopwatch? sw = wantDetail ? (Stopwatch()..start()) : null;
+      bool ok = true;
+      int failIndex = -1;
+      String failType = '';
+      for (int i = 0; i < compound.length; i++) {
+        final sel = compound[i];
+        final bool matched = sel.visit(this) as bool;
+        if (!matched) {
+          ok = false;
+          failIndex = i;
+          failType = _simpleSelectorType(sel);
+          break;
+        }
+      }
+      final int elapsed = sw?.elapsedMilliseconds ?? 0;
+      if (wantDetail) {
+        final int threshold = DebugFlags.cssMatchCompoundLogThresholdMs;
+        final bool overThreshold = threshold > 0 && elapsed >= threshold;
+        if (DebugFlags.enableCssMatchDetail || overThreshold) {
+          final String elemDesc = _describeElement(element);
+          final String sels = compound.map(_simpleSelectorType).join(',');
+          cssLogger.info('[match][compound] elem=$elemDesc parts=${compound.length} ok=$ok ms=$elapsed'
+              '${ok ? '' : ' failAt=$failIndex failType=$failType'} selTypes=[$sels]');
+        }
+      }
+      _element = saved;
+      return ok;
+    }
+
+    void collect(Element current, int groupIndex) {
+      if (!matchesCompound(current, groups[groupIndex])) return;
+      if (groupIndex == groups.length - 1) {
+        results.add(current);
+        return;
+      }
+
+      final int combinator = groupCombinators[groupIndex];
+      final List<SimpleSelector> nextGroup = groups[groupIndex + 1];
+
+      switch (combinator) {
+        case TokenKind.COMBINATOR_DESCENDANT: {
+          Element? ancestor = current.parentElement;
+          while (ancestor != null) {
+            if (matchesCompound(ancestor, nextGroup)) {
+              collect(ancestor, groupIndex + 1);
+            }
+            ancestor = ancestor.parentElement;
+          }
+          break;
+        }
+        case TokenKind.COMBINATOR_GREATER: {
+          final Element? parent = current.parentElement;
+          if (parent == null || !matchesCompound(parent, nextGroup)) {
+            break;
+          }
+          collect(parent, groupIndex + 1);
+          break;
+        }
+        case TokenKind.COMBINATOR_PLUS: {
+          final Element? prev = current.previousElementSibling;
+          if (prev == null || !matchesCompound(prev, nextGroup)) {
+            break;
+          }
+          collect(prev, groupIndex + 1);
+          break;
+        }
+        case TokenKind.COMBINATOR_TILDE: {
+          Element? prev = current.previousElementSibling;
+          while (prev != null) {
+            if (matchesCompound(prev, nextGroup)) {
+              collect(prev, groupIndex + 1);
+            }
+            prev = prev.previousElementSibling;
+          }
+          break;
+        }
+        case TokenKind.COMBINATOR_NONE:
+          if (matchesCompound(current, nextGroup)) {
+            collect(current, groupIndex + 1);
+          }
+          break;
+        default:
+          if (kDebugMode) throw _unsupported(node);
+      }
+    }
+
+    collect(element, 0);
+
+    _element = old;
+    return results.toList(growable: false);
   }
 
   bool _matchesSelectorWithoutSpecificity(Selector selector, Element element) {

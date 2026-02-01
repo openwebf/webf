@@ -2218,6 +2218,18 @@ void StyleEngine::RecalcStyle(StyleRecalcChange change, const StyleRecalcContext
     return;
   }
 
+  if (needs_has_pseudo_state_recalc_) {
+    // :has() can affect ancestors/siblings outside the current recalc root.
+    // Force a full-document recalc so relational selectors stay correct.
+    Element* doc_root = document.documentElement();
+    if (doc_root && root != doc_root) {
+      style_recalc_root_.Clear();
+      root = doc_root;
+    }
+    change = change.ForceRecalcDescendants();
+    needs_has_pseudo_state_recalc_ = false;
+  }
+
   PendingInvalidationMap& map = pending_invalidations_.GetPendingInvalidationMap();
 
   // In addition to selector-based invalidation (tracked via

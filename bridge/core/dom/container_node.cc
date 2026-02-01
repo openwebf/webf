@@ -853,6 +853,16 @@ void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange& c
     return;
   }
 
+    // :has() depends on structural relationships. Without full invalidation
+    // flags, conservatively force a full style recalc when any :has() rules
+    // are present and an element is inserted/removed.
+    if (!change.ByParser() && change.IsChildElementChange() && InActiveDocument()) {
+        style_engine.UpdateActiveStyle();
+        if (style_engine.GetRuleFeatureSet().NeedsHasInvalidationForInsertionOrRemoval()) {
+            style_engine.SetNeedsHasPseudoStateRecalc();
+        }
+    }
+
   Node* inserted_node = change.sibling_changed;
   if (!inserted_node) {
     return;

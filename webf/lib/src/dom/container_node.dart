@@ -313,9 +313,7 @@ abstract class ContainerNode extends Node {
           (nodeData!.nodeList as ChildNodeList).invalidateCache();
         }
       }
-      if (parentNode != null) {
-        ownerDocument.nthIndexCache.invalidateWithParentNode(parentNode!);
-      }
+      ownerDocument.nthIndexCache.invalidateWithParentNode(this);
     }
 
     // This is a performance optimization, NodeList cache invalidation is
@@ -333,9 +331,7 @@ abstract class ContainerNode extends Node {
       }
       node = node.parentNode;
     }
-    if (parentNode != null) {
-      ownerDocument.nthIndexCache.invalidateWithParentNode(parentNode!);
-    }
+    ownerDocument.nthIndexCache.invalidateWithParentNode(this);
   }
 
   Node? _firstChild;

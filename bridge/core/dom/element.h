@@ -96,7 +96,7 @@ class Element : public ContainerNode {
   AttributeCollection Attributes() const;
 
   bool hasAttributes() const;
-  bool hasAttribute(const AtomicString&, ExceptionState& exception_state);
+  bool hasAttribute(const AtomicString&, ExceptionState& exception_state) const;
   AtomicString getAttribute(const AtomicString&, ExceptionState& exception_state) const;
 
   // Passing null as the second parameter removes the attribute when
@@ -351,10 +351,10 @@ class Element : public ContainerNode {
   bool IsDisabledFormControl() const;
   bool MatchesReadOnlyPseudoClass() const { return false; }
   bool MatchesReadWritePseudoClass() const { return false; }
-  bool IsOptionalFormControl() const { return false; }
-  bool IsRequiredFormControl() const { return false; }
-  bool MatchesValidityPseudoClasses() const { return false; }
-  bool IsValidElement() const { return false; }
+  bool IsOptionalFormControl() const;
+  bool IsRequiredFormControl() const;
+  bool MatchesValidityPseudoClasses() const;
+  bool IsValidElement() const;
 
   // Additional methods for selector matching
   bool ContainsPersistentVideo() const { return false; }

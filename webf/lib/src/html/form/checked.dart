@@ -36,7 +36,8 @@ mixin BaseCheckedElement on BaseInputElement {
   setChecked(bool value) {
     if (this is FlutterInputElement) {
       FlutterInputElement input = this as FlutterInputElement;
-      
+      final bool previous = getChecked();
+
       if (state == null) {
         if (input.type == 'radio') {
           _setRadioChecked(value);
@@ -44,22 +45,26 @@ mixin BaseCheckedElement on BaseInputElement {
           // Persist on the element immediately and also cache for restoration when state mounts.
           _checked = value;
           CheckboxElementState.setEarlyCheckboxState(_earlyCheckedKey, value);
-        }
-        return;
-      }
-
-      switch (input.type) {
-        case 'radio':
-          _setRadioChecked(value);
-          // _setRadioChecked updates group selection immediately; request a rebuild for the widget.
-          state?.requestUpdateState();
-          break;
-        case 'checkbox':
-        default:
-          // Keep checkedness synchronous for JS reads, then rebuild the widget.
+        } else {
           _checked = value;
-          state?.requestUpdateState();
-          break;
+        }
+      } else {
+        switch (input.type) {
+          case 'radio':
+            _setRadioChecked(value);
+            // _setRadioChecked updates group selection immediately; request a rebuild for the widget.
+            state?.requestUpdateState();
+            break;
+          case 'checkbox':
+          default:
+            // Keep checkedness synchronous for JS reads, then rebuild the widget.
+            _checked = value;
+            state?.requestUpdateState();
+            break;
+        }
+      }
+      if (previous != getChecked()) {
+        _markPseudoStateDirty();
       }
     }
   }
@@ -145,6 +150,15 @@ mixin BaseCheckedElement on BaseInputElement {
       return renderStyle.width.computedValue / 18.0;
     }
     return 1.0;
+  }
+
+  void _markPseudoStateDirty() {
+    final dom.Element? root = ownerDocument.documentElement;
+    if (root != null) {
+      ownerDocument.markElementStyleDirty(root, reason: 'childList-pseudo');
+    } else {
+      ownerDocument.markElementStyleDirty(this, reason: 'childList-pseudo');
+    }
   }
 }
 

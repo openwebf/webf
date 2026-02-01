@@ -8,11 +8,15 @@
  */
 
 #include "binding_object.h"
+#include "core/css/style_change_reason.h"
+#include "core/css/style_recalc_change.h"
+#include "core/dom/qualified_name.h"
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise_resolver.h"
 #include "core/dom/container_node.h"
 #include "core/dom/document.h"
+#include "core/dom/element.h"
 #include "core/dom/events/event_target.h"
 #include "core/dom/mutation_observer_interest_group.h"
 #include "core/executing_context.h"
@@ -302,6 +306,46 @@ void BindingObject::SetBindingPropertyAsync(const webf::AtomicString& prop,
     canvas_context->requestPaint();
   }
 
+  if (auto element = const_cast<WidgetElement*>(DynamicTo<WidgetElement>(this))) {
+    AtomicString old_value = element->attributes()->getAttribute(prop, exception_state);
+    AtomicString new_value = AtomicString::Null();
+
+    static const AtomicString kChecked = AtomicString::CreateFromUTF8("checked");
+    static const AtomicString kSelected = AtomicString::CreateFromUTF8("selected");
+    static const AtomicString kDisabled = AtomicString::CreateFromUTF8("disabled");
+    static const AtomicString kRequired = AtomicString::CreateFromUTF8("required");
+
+    const bool is_boolean = value.tag == NativeTag::TAG_BOOL;
+    const bool is_boolean_attribute =
+        prop == kChecked || prop == kSelected || prop == kDisabled || prop == kRequired;
+
+    if (is_boolean && is_boolean_attribute && value.u.int64 == 0) {
+      element->attributes()->removeAttribute(prop, exception_state, true);
+      new_value = AtomicString::Null();
+    } else {
+      if (value.tag == NativeTag::TAG_STRING) {
+        new_value = NativeValueConverter<NativeTypeString>::FromNativeValueShared(ctx(), value);
+      } else if (is_boolean && is_boolean_attribute) {
+        new_value = prop;
+      } else {
+        ScriptValue script_value = ScriptValue(ctx(), value);
+        new_value = script_value.ToAtomicString(ctx());
+      }
+      element->attributes()->setAttribute(prop, new_value, exception_state, true);
+    }
+
+    element->AttributeChanged(Element::AttributeModificationParams(
+        prop, old_value, new_value, Element::AttributeModificationReason::kDirectly));
+
+    if (is_boolean_attribute && GetExecutingContext()->isBlinkEnabled()) {
+      if (Element* root = element->GetDocument().documentElement()) {
+        root->SetNeedsStyleRecalc(kSubtreeStyleChange,
+                                  StyleChangeReasonForTracing::FromAttribute(QualifiedName(prop)));
+      }
+      element->GetDocument().UpdateStyleForThisDocument();
+    }
+  }
+
   std::unique_ptr<SharedNativeString> args_01 = prop.ToNativeString();
 
   auto* args_02 = (NativeValue*)dart_malloc(sizeof(NativeValue));
@@ -402,13 +446,43 @@ NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
           MutationRecord::CreateAttributes(element, prop, AtomicString::Null(), old_value));
     }
 
-    // Sync property to attributes
-    if (value.tag == NativeTag::TAG_STRING) {
-      element->attributes()->setAttribute(
-          prop, NativeValueConverter<NativeTypeString>::FromNativeValueShared(ctx(), value), exception_state, true);
+    AtomicString old_value = element->attributes()->getAttribute(prop, exception_state);
+    AtomicString new_value = AtomicString::Null();
+
+    static const AtomicString kChecked = AtomicString::CreateFromUTF8("checked");
+    static const AtomicString kSelected = AtomicString::CreateFromUTF8("selected");
+    static const AtomicString kDisabled = AtomicString::CreateFromUTF8("disabled");
+    static const AtomicString kRequired = AtomicString::CreateFromUTF8("required");
+
+    const bool is_boolean = value.tag == NativeTag::TAG_BOOL;
+    const bool is_boolean_attribute =
+        prop == kChecked || prop == kSelected || prop == kDisabled || prop == kRequired;
+
+    // Sync property to attributes for selector matching without emitting UI commands.
+    if (is_boolean && is_boolean_attribute && value.u.int64 == 0) {
+      element->attributes()->removeAttribute(prop, exception_state, true);
+      new_value = AtomicString::Null();
     } else {
-      ScriptValue script_value = ScriptValue(ctx(), value);
-      element->attributes()->setAttribute(prop, script_value.ToAtomicString(ctx()), exception_state, true);
+      if (value.tag == NativeTag::TAG_STRING) {
+        new_value = NativeValueConverter<NativeTypeString>::FromNativeValueShared(ctx(), value);
+      } else if (is_boolean && is_boolean_attribute) {
+        new_value = prop;
+      } else {
+        ScriptValue script_value = ScriptValue(ctx(), value);
+        new_value = script_value.ToAtomicString(ctx());
+      }
+      element->attributes()->setAttribute(prop, new_value, exception_state, true);
+    }
+
+    element->AttributeChanged(Element::AttributeModificationParams(
+        prop, old_value, new_value, Element::AttributeModificationReason::kDirectly));
+
+    if (is_boolean_attribute && GetExecutingContext()->isBlinkEnabled()) {
+      if (Element* root = element->GetDocument().documentElement()) {
+        root->SetNeedsStyleRecalc(kSubtreeStyleChange,
+                                  StyleChangeReasonForTracing::FromAttribute(QualifiedName(prop)));
+      }
+      element->GetDocument().UpdateStyleForThisDocument();
     }
   }
 

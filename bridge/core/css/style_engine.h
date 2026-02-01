@@ -306,6 +306,10 @@ class StyleEngine final {
   // Set to true if we are allowed to skip recalc for a size container subtree.
   bool allow_skip_style_recalc_{false};
 
+  // Forces a full subtree recalc on the next style update to keep :has()
+  // selectors in sync with pseudo-state changes.
+  bool needs_has_pseudo_state_recalc_{false};
+
   PendingInvalidations pending_invalidations_;
   // Root for selector-based style invalidation. Updated when nodes are marked
   // with NeedsStyleInvalidation / ChildNeedsStyleInvalidation and consulted by
@@ -351,6 +355,9 @@ class StyleEngine final {
 
  public:
   int media_query_recalc_count_for_test() const { return media_query_recalc_count_for_test_; }
+
+  void SetNeedsHasPseudoStateRecalc() { needs_has_pseudo_state_recalc_ = true; }
+  bool NeedsHasPseudoStateRecalc() const { return needs_has_pseudo_state_recalc_; }
 
   // Returns the author stylesheets (inline <style> and <link rel=stylesheet>)
   // in DOM order, suitable for cascade ordering.

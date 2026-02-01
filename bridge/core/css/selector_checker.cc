@@ -58,7 +58,9 @@
 #include "foundation/string/atomic_string.h"
 #include "foundation/casting.h"
 #include "foundation/logging.h"
+#include "foundation/native_value_converter.h"
 #include "bindings/qjs/exception_state.h"
+#include "core/dart_methods.h"
 
 namespace webf {
 
@@ -102,6 +104,64 @@ SelectorCheckerPerfStats TakeSelectorCheckerPerfStats() {
 static bool IsFrameFocused(const Element& element) {
   // WebF doesn't have frame focus tracking yet
   return true;
+}
+
+static const AtomicString& SelectTagName() {
+  static const AtomicString kSelect = AtomicString::CreateFromUTF8("select");
+  return kSelect;
+}
+
+static const AtomicString& OptionTagName() {
+  static const AtomicString kOption = AtomicString::CreateFromUTF8("option");
+  return kOption;
+}
+
+static const AtomicString& SelectedAttrName() {
+  static const AtomicString kSelected = AtomicString::CreateFromUTF8("selected");
+  return kSelected;
+}
+
+static bool ReadWidgetBooleanProperty(Element& element, const AtomicString& property) {
+  if (!element.IsWidgetElement()) {
+    return false;
+  }
+  ExceptionState exception_state;
+  NativeValue result =
+      element.GetBindingProperty(property, FlushUICommandReason::kDependentsOnElement, exception_state);
+  if (exception_state.HasException()) {
+    return false;
+  }
+  return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
+}
+
+static Element* FindSelectAncestor(Element& element) {
+  for (Element* current = element.parentElement(); current; current = current->parentElement()) {
+    if (current->HasTagName(SelectTagName())) {
+      return current;
+    }
+  }
+  return nullptr;
+}
+
+static bool HasAnySelectedOption(Element& select) {
+  for (Element& descendant : ElementTraversal::DescendantsOf(select)) {
+    if (!descendant.HasTagName(OptionTagName())) {
+      continue;
+    }
+    if (descendant.HasAttributeIgnoringNamespace(SelectedAttrName())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static Element* FirstOptionElement(Element& select) {
+  for (Element& descendant : ElementTraversal::DescendantsOf(select)) {
+    if (descendant.HasTagName(OptionTagName())) {
+      return &descendant;
+    }
+  }
+  return nullptr;
 }
 
 // Type alias for vector compatibility
@@ -1810,14 +1870,24 @@ bool SelectorChecker::CheckPseudoClass(const SelectorCheckingContext& context, M
      // This keeps selector matching consistent with attribute-based state.
      const AtomicString tag_name = element.localName();
      static const AtomicString checked_attr = AtomicString::CreateFromUTF8("checked");
-     static const AtomicString selected_attr = AtomicString::CreateFromUTF8("selected");
      if (tag_name == "input") {
        if (element.HasAttributeIgnoringNamespace(checked_attr)) {
          return true;
        }
-     } else if (tag_name == "option") {
-       if (element.HasAttributeIgnoringNamespace(selected_attr)) {
+       if (ReadWidgetBooleanProperty(element, checked_attr)) {
          return true;
+       }
+     } else if (tag_name == "option") {
+       if (element.HasAttributeIgnoringNamespace(SelectedAttrName())) {
+         return true;
+       }
+       if (Element* select = FindSelectAncestor(element)) {
+         if (!HasAnySelectedOption(*select)) {
+           Element* first = FirstOptionElement(*select);
+           if (first == &element) {
+             return true;
+           }
+         }
        }
      }
      break;

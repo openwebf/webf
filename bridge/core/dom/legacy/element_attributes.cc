@@ -107,18 +107,22 @@ AtomicString ElementAttributes::GetAttributeForStyle(const AtomicString& name) c
   return it->second;
 }
 
-void ElementAttributes::removeAttribute(const AtomicString& name, ExceptionState& exception_state) {
+void ElementAttributes::removeAttribute(const AtomicString& name, ExceptionState& exception_state, bool ignore_ui_command) {
   if (!hasAttribute(name, exception_state))
     return;
 
   AtomicString old_value = getAttribute(name, exception_state);
-  element_->WillModifyAttribute(name, old_value, AtomicString::Null());
+  if (!ignore_ui_command) {
+    element_->WillModifyAttribute(name, old_value, AtomicString::Null());
+  }
 
   attributes_.erase(name);
 
-  std::unique_ptr<SharedNativeString> args_01 = name.ToNativeString();
-  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kRemoveAttribute, std::move(args_01),
-                                                       element_->bindingObject(), nullptr);
+  if (!ignore_ui_command) {
+    std::unique_ptr<SharedNativeString> args_01 = name.ToNativeString();
+    GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kRemoveAttribute, std::move(args_01),
+                                                         element_->bindingObject(), nullptr);
+  }
 }
 
 void ElementAttributes::CopyWith(ElementAttributes* attributes) {

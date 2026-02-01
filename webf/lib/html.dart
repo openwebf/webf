@@ -19,6 +19,7 @@ export 'src/html/html.dart';
 export 'src/html/img.dart';
 export 'src/html/br.dart';
 export 'src/html/form/input.dart';
+export 'src/html/form/select.dart';
 export 'src/html/listview.dart';
 export 'src/html/script.dart';
 export 'src/html/portal.dart';
