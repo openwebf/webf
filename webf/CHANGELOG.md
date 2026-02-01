@@ -1,3 +1,43 @@
+## 0.24.10
+
+### Major Features
+
+- **CSSOM**: expose Dart CSSOM via `document.styleSheets`, including `CSSStyleSheet`/`CSSRule`
+  bindings (insert/delete/replace) that keep rule sets in sync and trigger style updates when
+  Blink CSS is disabled (#838).
+- **CSS/Cascade Layers**: implement cascade layer parsing and ordering for Dart CSS (inline +
+  `@media` + `@layer` + CSSOM), improving specificity tracking, rule collection, and selector
+  matching (#838).
+- **CSS/Selectors**: support selector-list parsing/matching and route `Element.matches()` /
+  `Element.closest()` through selector-list utilities when the Blink backend is enabled (#836,
+  #838).
+- **Native UIs**: add `webf_shadcn_ui` components and `webf_lucide_icons` icon library with
+  generated bindings and showcases (#834).
+- **Tooling/Codegen**: fix Dart binding method generation and add Jest coverage for generator
+  output (Dart interface/method bindings).
+
+### Performance Improvements
+
+- **Bridge/CSS**: avoid Dart/FFI round-trips during attribute selector matching (read attributes
+  from native DOM storage), add nth-index caching, and improve `SelectorFilter` prefiltering for
+  large DOM trees/long lists (#836).
+
+### Bug Fixes
+
+- **CSS/Selectors**: fix `:nth-*` pseudo matching for detached elements in the Dart selector
+  engine.
+- **DOM/Query**: use Blink traversal for `getElementsByClassName()` / `getElementsByTagName()`
+  when Blink backend is enabled (including `'*'` wildcard and ASCII case-insensitive tag
+  matching) (#836).
+- **CSS/Fonts**: relayout after `@font-face` registration to trigger font loading and repaint
+  updates (#838).
+- **CSS/Gap**: ignore invalid `gap` assignments (#838).
+- **Flexbox**: normalize `WebkitAlignItems` to `align-items` for correct flex relayout (#838).
+- **Transitions**: preserve CSS transitions during Blink style synchronization (#838).
+- **Transforms**: fix percentage translate reset when rebuilding DOM trees (#838).
+- **Rendering**: detach render object mapping in `didDetachRenderer` to avoid stale renderer
+  references (#838).
+
 ## 0.24.9
 
 ### Major Features
