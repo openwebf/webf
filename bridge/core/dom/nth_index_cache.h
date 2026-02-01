@@ -5,6 +5,7 @@
 #ifndef WEBF_CORE_DOM_NTH_INDEX_CACHE_H_
 #define WEBF_CORE_DOM_NTH_INDEX_CACHE_H_
 
+#include <cstdint>
 #include "foundation/macros.h"
 
 namespace webf {
@@ -12,6 +13,42 @@ namespace webf {
 class Element;
 class CSSSelectorList;
 class SelectorChecker;
+
+struct NthIndexCachePerfStats {
+  uint64_t nth_child_calls = 0;
+  uint64_t nth_child_steps = 0;
+  uint64_t nth_last_child_calls = 0;
+  uint64_t nth_last_child_steps = 0;
+  uint64_t nth_of_type_calls = 0;
+  uint64_t nth_of_type_steps = 0;
+  uint64_t nth_last_of_type_calls = 0;
+  uint64_t nth_last_of_type_steps = 0;
+
+  uint64_t of_filter_checks = 0;
+  uint64_t of_filter_match_selector_calls = 0;
+
+  uint64_t parent_cache_builds = 0;
+  uint64_t parent_cache_build_steps = 0;
+  uint64_t type_cache_builds = 0;
+  uint64_t type_cache_build_steps = 0;
+};
+
+void ResetNthIndexCachePerfStats();
+NthIndexCachePerfStats TakeNthIndexCachePerfStats();
+
+class NthIndexCacheScope {
+  WEBF_STACK_ALLOCATED();
+
+ public:
+  NthIndexCacheScope();
+  ~NthIndexCacheScope();
+
+  NthIndexCacheScope(const NthIndexCacheScope&) = delete;
+  NthIndexCacheScope& operator=(const NthIndexCacheScope&) = delete;
+
+ private:
+  bool previous_enabled_{false};
+};
 
 // Basic implementation of NthIndexCache for nth-child selectors
 // TODO: Add actual caching for performance optimization

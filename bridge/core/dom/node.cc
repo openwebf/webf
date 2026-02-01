@@ -855,6 +855,12 @@ void Node::MarkAncestorsWithChildNeedsStyleRecalc() {
     if (ancestor->IsDirtyForStyleRecalc()) {
       break;
     }
+    // Mirror Blink: if we reach a display-lock boundary, stop marking
+    // ancestors. WebF currently does not implement display locks, so this is
+    // effectively a no-op but keeps behavior aligned for future work.
+    if (ancestor->ChildStyleRecalcBlockedByDisplayLock()) {
+      break;
+    }
   }
   if (!isConnected())
     return;

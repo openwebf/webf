@@ -87,6 +87,10 @@ class Element : public ContainerNode {
 
   ElementAttributes* attributes() const { return &EnsureElementAttributes(); }
   ElementAttributes& EnsureElementAttributes() const;
+  // Returns the legacy ElementAttributes store if it exists, without creating
+  // it. Selector matching must not allocate or consult widget binding
+  // properties as a side effect.
+  ElementAttributes* GetElementAttributesIfExists() const { return attributes_.Get(); }
 
   // Get attributes as a collection for selector matching
   AttributeCollection Attributes() const;
@@ -171,6 +175,7 @@ class Element : public ContainerNode {
 
   bool HasTagName(const AtomicString&) const;
   AtomicString nodeValue() const override;
+  void ChildrenChanged(const ChildrenChange& change) override;
   const QualifiedName& TagQName() const { return tag_name_; }
   AtomicString tagName() const { return getUppercasedQualifiedName(); }
   AtomicString prefix() const { return prefix_; }
@@ -244,6 +249,13 @@ class Element : public ContainerNode {
   // matching.
   uint32_t SentPseudoStyleMask() const { return sent_pseudo_style_mask_; }
   void SetSentPseudoStyleMask(uint32_t mask) { sent_pseudo_style_mask_ = mask; }
+
+  // Tracks whether this element has had its declared-value style exported to
+  // the Dart layer at least once. This is used to approximate Blink's
+  // "old style is null" behavior for newly inserted subtrees: the first local
+  // style recalc for a never-styled element should traverse into descendants.
+  bool HasEmittedStyle() const { return has_emitted_style_; }
+  void SetHasEmittedStyle(bool value) { has_emitted_style_ = value; }
 
   // NOTE: This shadows Node::GetComputedStyle().
   const ComputedStyle* GetComputedStyle() const {
@@ -397,6 +409,7 @@ class Element : public ContainerNode {
   mutable Member<ElementAttributes> attributes_;
   bool is_display_none_for_style_invalidation_ = false;
   uint32_t sent_pseudo_style_mask_ = 0;
+  bool has_emitted_style_ = false;
 
   QualifiedName tag_name_;
 };
@@ -472,6 +485,16 @@ inline ElementRareDataVector* Element::GetElementRareData() const {
 inline ElementRareDataVector& Element::EnsureElementRareData() {
   return static_cast<ElementRareDataVector&>(EnsureRareData());
 }
+
+struct InlineStylePerfStats {
+  uint64_t ensure_calls = 0;
+  uint64_t allocations = 0;
+  uint64_t mutable_copies = 0;
+  int64_t ensure_us = 0;
+};
+
+void ResetInlineStylePerfStats();
+InlineStylePerfStats TakeInlineStylePerfStats();
 
 }  // namespace webf
 

@@ -43,6 +43,7 @@
 #include "core/css/style_rule.h"
 #include "core/css/style_rule_import.h"
 #include "core/css/style_sheet_contents.h"
+#include "core/css/selector_filter.h"
 #include "foundation/string/string_view.h"
 #include "foundation/casting.h"
 #include "foundation/logging.h"
@@ -198,15 +199,20 @@ RuleData::RuleData(std::shared_ptr<StyleRule> rule,
     specificity_ = selector.Specificity();
 
     // Compute rightmost compound's type selector, if any.
-    const CSSSelector* simple = &selector;
-    while (simple) {
+    for (const CSSSelector* simple = &selector; simple; simple = simple->NextSimpleSelector()) {
       if (simple->Match() == CSSSelector::kTag) {
         has_rightmost_type_ = true;
         rightmost_tag_ = simple->TagQName().LocalName();
         break;
       }
-      simple = simple->NextSimpleSelector();
+      CSSSelector::RelationType rel = simple->Relation();
+      if (rel != CSSSelector::kSubSelector && rel != CSSSelector::kScopeActivation) {
+        break;  // End of rightmost compound.
+      }
     }
+
+    // Precompute ancestor identifier hashes for SelectorFilter.
+    SelectorFilter::CollectIdentifierHashes(selector, ancestor_identifier_hashes_);
   }
 }
 

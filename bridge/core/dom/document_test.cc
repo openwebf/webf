@@ -188,6 +188,49 @@ TEST(Document, querySelectorSupportsPseudoClassesAndCombinatorsWhenBlinkEnabled)
   EXPECT_STREQ(logMessage.c_str(), "true true true true true true true true");
 }
 
+TEST(Document, getElementsByTagNameAndClassNameUseBlinkWhenEnabled) {
+  bool static errorCalled = false;
+  bool static logCalled = false;
+  std::string static logMessage;
+  errorCalled = false;
+  logCalled = false;
+  logMessage = "";
+
+  webf::WebFPage::consoleMessageHandler = [](void*, const std::string& message, int) {
+    logCalled = true;
+    logMessage = message;
+  };
+
+  auto env = TEST_init([](double, const char*) { errorCalled = true; }, nullptr, 0, /*enable_blink=*/1);
+  auto* context = env->page()->executingContext();
+  TEST_runLoop(context);
+
+  // Ensure getElementsBy* do not fall back to Dart bindings.
+  context->document()->bindingObject()->invoke_bindings_methods_from_native = nullptr;
+
+  const char* code =
+      "let root = document.createElement('div');"
+      "let s = document.createElement('span');"
+      "s.className = 'b c';"
+      "root.appendChild(s);"
+      "let d = document.createElement('div');"
+      "d.className = 'b';"
+      "root.appendChild(d);"
+      "let ok1 = root.getElementsByClassName('b').length === 2;"
+      "let ok2 = root.getElementsByClassName('b c').length === 1;"
+      "let ok3 = root.getElementsByTagName('span').length === 1;"
+      "let ok4 = root.getElementsByTagName('SPAN').length === 1;"
+      "let ok5 = root.getElementsByTagName('*').length === 2;"
+      "console.log(ok1 + ' ' + ok2 + ' ' + ok3 + ' ' + ok4 + ' ' + ok5);";
+
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  TEST_runLoop(context);
+
+  EXPECT_EQ(errorCalled, false);
+  EXPECT_EQ(logCalled, true);
+  EXPECT_STREQ(logMessage.c_str(), "true true true true true");
+}
+
 TEST(Document, appendParentWillFail) {
   bool static errorCalled = false;
   bool static logCalled = false;

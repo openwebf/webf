@@ -97,6 +97,7 @@ class ElementRuleCollector {
   void ClearMatchedRules();
 
   void SetCascadeLayerMap(const CascadeLayerMap* map) { cascade_layer_map_ = map; }
+  void SetSelectorFilter(SelectorFilter* filter) { selector_filter_ = filter; }
 
   // Add element style properties
   void AddElementStyleProperties(std::shared_ptr<const StylePropertySet>, 
@@ -131,6 +132,13 @@ class ElementRuleCollector {
   const StyleResolverState& State() const { return state_; }
 
  private:
+  enum class RuleBucket {
+    kTag,
+    kUniversal,
+    kId,
+    kClass,
+  };
+
   struct MatchedRule {
     std::shared_ptr<const RuleData> rule_data;
     unsigned specificity;
@@ -145,6 +153,7 @@ class ElementRuleCollector {
   template <typename RuleDataListType>
   void CollectMatchingRulesForList(
       const RuleDataListType& rules,
+      RuleBucket bucket,
       CascadeOrigin,
       const MatchRequest&,
       bool is_id_bucket = false,

@@ -110,4 +110,3 @@ class StyleRecalcChange {
 }  // namespace webf
 
 #endif  // WEBF_CORE_CSS_STYLE_RECALC_CHANGE_H_
-

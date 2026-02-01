@@ -120,6 +120,7 @@ void ElementRuleCollector::CollectRuleSetMatchingRules(
   const auto& tag_rules = rule_set->TagRules(element_->localName());
   if (!tag_rules.empty()) {
     CollectMatchingRulesForList(tag_rules,
+                               RuleBucket::kTag,
                                cascade_origin,
                                match_request);
   }
@@ -127,7 +128,8 @@ void ElementRuleCollector::CollectRuleSetMatchingRules(
   // Collect universal rules
   const auto& universal_rules = rule_set->UniversalRules();
   if (!universal_rules.empty()) {
-    CollectMatchingRulesForList(universal_rules, 
+    CollectMatchingRulesForList(universal_rules,
+                               RuleBucket::kUniversal,
                                cascade_origin,
                                match_request);
   }
@@ -147,8 +149,8 @@ void ElementRuleCollector::CollectRuleSetMatchingRules(
         }
       }
 
-      CollectMatchingRulesForList(id_rules, cascade_origin, match_request,
-                                 /*is_id_bucket*/ true, /*typed_rules_only*/ typed_exists);
+      CollectMatchingRulesForList(id_rules, RuleBucket::kId, cascade_origin, match_request,
+                                  /*is_id_bucket*/ true, /*typed_rules_only*/ typed_exists);
     }
   }
   
@@ -158,6 +160,7 @@ void ElementRuleCollector::CollectRuleSetMatchingRules(
       const auto& class_rules = rule_set->ClassRules(class_name);
       if (!class_rules.empty()) {
         CollectMatchingRulesForList(class_rules,
+                                   RuleBucket::kClass,
                                    cascade_origin,
                                    match_request);
       }
@@ -168,15 +171,12 @@ void ElementRuleCollector::CollectRuleSetMatchingRules(
 template <typename RuleDataListType>
 void ElementRuleCollector::CollectMatchingRulesForList(
     const RuleDataListType& rules,
+    RuleBucket bucket,
     CascadeOrigin cascade_origin,
     const MatchRequest& match_request,
     bool is_id_bucket,
     bool typed_rules_only) {
-  
-  // Safety check - don't process too many rules to prevent hangs
-  size_t processed_count = 0;
-  const size_t MAX_RULES_TO_PROCESS = 1000;
-  
+
   for (const auto& rule_data : rules) {
     if (!rule_data) {
       continue;
@@ -206,11 +206,6 @@ void ElementRuleCollector::CollectMatchingRulesForList(
       if (!targets_requested_pseudo) {
         continue;
       }
-    }
-
-    // Prevent processing too many rules
-    if (++processed_count > MAX_RULES_TO_PROCESS) {
-      break;
     }
     
     // Skip pure-id variants if we have typed compounds in the same ID bucket.
@@ -243,7 +238,8 @@ void ElementRuleCollector::CollectMatchingRulesForList(
     // so pseudo-element selectors like ::before / ::after can be evaluated
     // when the checker runs in non-querying modes.
     context.pseudo_id = pseudo_element_id_;
-    bool matched = selector_checker_.Match(context, match_result);
+    bool matched = false;
+    matched = selector_checker_.Match(context, match_result);
     if (matched) {
       // When collecting normal element rules, pseudo-element selectors (e.g.
       // ::before/::after) may "match" only to mark pseudo presence. They must

@@ -95,6 +95,18 @@ bool ElementAttributes::hasAttribute(const AtomicString& name, ExceptionState& e
   return has_attribute;
 }
 
+bool ElementAttributes::HasAttributeForStyle(const AtomicString& name) const {
+  return attributes_.find(name) != attributes_.end();
+}
+
+AtomicString ElementAttributes::GetAttributeForStyle(const AtomicString& name) const {
+  auto it = attributes_.find(name);
+  if (it == attributes_.end()) {
+    return AtomicString::Null();
+  }
+  return it->second;
+}
+
 void ElementAttributes::removeAttribute(const AtomicString& name, ExceptionState& exception_state) {
   if (!hasAttribute(name, exception_state))
     return;
