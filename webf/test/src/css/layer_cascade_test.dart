@@ -9,11 +9,23 @@ List<CSSStyleRule> _prepareMatchedStyleRules(String css) {
 
   var pos = 0;
   final styleRules = <CSSStyleRule>[];
-  for (final r in sheet.cssRules) {
+
+  void visitRule(CSSRule r) {
     r.position = pos++;
     if (r is CSSLayerStatementRule) {
       tree.declareAll(r.layerNamePaths);
-      continue;
+      return;
+    }
+    if (r is CSSLayerBlockRule) {
+      // Ensure the layer is declared even if the block is empty.
+      if (r.layerNamePath.isNotEmpty) {
+        tree.declare(r.layerNamePath);
+      }
+      // Cascade order is based on flattened document order of style rules.
+      for (final child in r.cssRules) {
+        visitRule(child);
+      }
+      return;
     }
     if (r is CSSStyleRule) {
       if (r.layerPath.isNotEmpty) {
@@ -26,6 +38,10 @@ List<CSSStyleRule> _prepareMatchedStyleRules(String css) {
       r.selectorGroup.matchSpecificity = maxSpec;
       styleRules.add(r);
     }
+  }
+
+  for (final r in sheet.cssRules) {
+    visitRule(r);
   }
 
   return styleRules;
@@ -95,14 +111,18 @@ void main() {
   group('@layer parser', () {
     test('named layer block assigns layerPath', () {
       final sheet = CSSParser('@layer a { .x { color: red; } }').parse();
-      final rules = sheet.cssRules.whereType<CSSStyleRule>().toList();
+      final blocks = sheet.cssRules.whereType<CSSLayerBlockRule>().toList();
+      expect(blocks, hasLength(1));
+      final rules = blocks.first.cssRules.whereType<CSSStyleRule>().toList();
       expect(rules, hasLength(1));
       expect(rules.first.layerPath, <String>['a', kWebFImplicitLayerSegment]);
     });
 
     test('anonymous layer block assigns synthetic layerPath segment', () {
       final sheet = CSSParser('@layer { .x { color: red; } }').parse();
-      final rules = sheet.cssRules.whereType<CSSStyleRule>().toList();
+      final blocks = sheet.cssRules.whereType<CSSLayerBlockRule>().toList();
+      expect(blocks, hasLength(1));
+      final rules = blocks.first.cssRules.whereType<CSSStyleRule>().toList();
       expect(rules, hasLength(1));
       expect(rules.first.layerPath, isNotEmpty);
       expect(rules.first.layerPath.first, startsWith('__webf_anon_layer_'));
@@ -112,7 +132,14 @@ void main() {
     test('nested layer block composes layerPath', () {
       final sheet =
           CSSParser('@layer a { @layer b { .x { color: red; } } }').parse();
-      final rules = sheet.cssRules.whereType<CSSStyleRule>().toList();
+      final outerBlocks =
+          sheet.cssRules.whereType<CSSLayerBlockRule>().toList();
+      expect(outerBlocks, hasLength(1));
+      final innerBlocks =
+          outerBlocks.first.cssRules.whereType<CSSLayerBlockRule>().toList();
+      expect(innerBlocks, hasLength(1));
+      final rules =
+          innerBlocks.first.cssRules.whereType<CSSStyleRule>().toList();
       expect(rules, hasLength(1));
       expect(
           rules.first.layerPath, <String>['a', 'b', kWebFImplicitLayerSegment]);
@@ -122,7 +149,14 @@ void main() {
         () {
       final sheet =
           CSSParser('@layer a { @layer a.b { .x { color: red; } } }').parse();
-      final rules = sheet.cssRules.whereType<CSSStyleRule>().toList();
+      final outerBlocks =
+          sheet.cssRules.whereType<CSSLayerBlockRule>().toList();
+      expect(outerBlocks, hasLength(1));
+      final innerBlocks =
+          outerBlocks.first.cssRules.whereType<CSSLayerBlockRule>().toList();
+      expect(innerBlocks, hasLength(1));
+      final rules =
+          innerBlocks.first.cssRules.whereType<CSSStyleRule>().toList();
       expect(rules, hasLength(1));
       expect(rules.first.layerPath,
           <String>['a', 'a', 'b', kWebFImplicitLayerSegment]);

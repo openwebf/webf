@@ -181,8 +181,8 @@ class CSSParser {
     List<CSSRule> expandMedia(CSSRule rule) {
       if (rule is CSSMediaDirective) {
         final List<CSSRule> expanded = <CSSRule>[];
-        final List<CSSRule>? mediaRules =
-            rule.getValidMediaRules(windowWidth, windowHeight, isDarkMode ?? false);
+        final List<CSSRule>? mediaRules = rule.getValidMediaRules(
+            windowWidth, windowHeight, isDarkMode ?? false);
         if (mediaRules == null) {
           return expanded;
         }
@@ -679,7 +679,10 @@ class CSSParser {
     return names;
   }
 
-  /// Parses `@layer ...` and returns flattened rules.
+  /// Parses `@layer ...` and returns rules.
+  ///
+  /// Note: layer blocks are represented as [CSSLayerBlockRule] (with nested
+  /// [cssRules]) instead of being flattened into top-level [CSSStyleRule]s.
   ///
   /// Supported:
   /// - `@layer { ... }` (anonymous layer block)
@@ -1131,7 +1134,8 @@ class CSSParser {
 
         // https://drafts.csswg.org/selectors-4/#matches
         // :is() / :where() take a <forgiving-selector-list>.
-        final SelectorGroup? group = processForgivingSelectorGroup(terminatorKind: TokenKind.RPAREN);
+        final SelectorGroup? group =
+            processForgivingSelectorGroup(terminatorKind: TokenKind.RPAREN);
 
         _eat(TokenKind.RPAREN);
 
@@ -1224,7 +1228,9 @@ class CSSParser {
     while (!_peekKind(TokenKind.END_OF_FILE)) {
       final int kind = _peek();
 
-      if (parenDepth == 0 && bracketDepth == 0 && (kind == TokenKind.COMMA || kind == terminatorKind)) {
+      if (parenDepth == 0 &&
+          bracketDepth == 0 &&
+          (kind == TokenKind.COMMA || kind == terminatorKind)) {
         return;
       }
 

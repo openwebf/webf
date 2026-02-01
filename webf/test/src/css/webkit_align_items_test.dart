@@ -48,15 +48,16 @@ void main() {
       expect(item.getBoundingClientRect().height, closeTo(100, 0.5));
 
       container.setInlineStyle('WebkitAlignItems', 'flex-start');
+      container.style.flushPendingProperties();
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
       expect(item.getBoundingClientRect().height, closeTo(10, 0.5));
 
       container.setInlineStyle('alignItems', 'stretch');
+      container.style.flushPendingProperties();
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
       expect(item.getBoundingClientRect().height, closeTo(100, 0.5));
     });
   });
 }
-
