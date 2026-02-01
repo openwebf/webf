@@ -5,6 +5,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/css.dart';
+import 'package:webf/dom.dart' as dom;
 import '../../setup.dart';
 import '../widget/test_utils.dart';
 
@@ -456,6 +457,74 @@ void main() {
       final c = prepared.getElementById('c');
       // Ensure :root:first-of-type descendant matched
       expect(c.renderStyle.color, isNotNull);
+    });
+
+    testWidgets(':is() empty matches nothing', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'is-empty-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <head>
+              <style>
+                main div { color: rgb(255, 0, 0); }
+                :is() { color: rgb(0, 128, 0); }
+              </style>
+            </head>
+            <body style="margin: 0; padding: 0;">
+              <main id="main">
+                <div id="a"><div id="d"></div></div>
+                <div id="b"><div id="e"></div></div>
+                <div id="c"><div id="f"></div></div>
+              </main>
+            </body>
+          </html>
+        ''',
+      );
+
+      // Should not throw; should match nothing.
+      final List<dynamic> results = prepared.document.querySelectorAll([':is()']) as List<dynamic>;
+      expect(results, isEmpty);
+
+      // The invalid :is() rule should be ignored; red rule should apply.
+      final a = prepared.getElementById('a');
+      expect(a.renderStyle.color.value.toARGB32(), equals(0xFFFF0000));
+    });
+
+    testWidgets(':is() selector list matches and has id specificity', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'is-basic-specificity-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <head>
+              <style>
+                :is(#a, #b) { color: rgb(0, 128, 0); }
+                .c { color: rgb(255, 0, 0); }
+              </style>
+            </head>
+            <body style="margin: 0; padding: 0;">
+              <div id="a" class="c">A</div>
+              <div id="b">B</div>
+              <div id="c" class="c">C</div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final List<dynamic> results = prepared.document.querySelectorAll([':is(#a, #b)']) as List<dynamic>;
+      final ids = results.map((e) => (e as dom.Element).id).toList()..sort();
+      expect(ids, equals(<String>['a', 'b']));
+
+      final a = prepared.getElementById('a');
+      final b = prepared.getElementById('b');
+      final c = prepared.getElementById('c');
+
+      // :is(#id) should have ID specificity and beat `.c` even if `.c` appears later.
+      expect(a.renderStyle.color.value.toARGB32(), equals(0xFF008000));
+      expect(b.renderStyle.color.value.toARGB32(), equals(0xFF008000));
+      // Element #c is not in the :is list, so `.c` applies.
+      expect(c.renderStyle.color.value.toARGB32(), equals(0xFFFF0000));
     });
   });
 

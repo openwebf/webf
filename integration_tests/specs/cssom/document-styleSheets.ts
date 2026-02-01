@@ -1,7 +1,5 @@
-describe('document.styleSheets', () => {
+describe('document.styleSheets (Dart CSS engine)', () => {
   function requireStyleSheets(): any {
-    // In WebF, `document.styleSheets` is backed by native bridge code; if you
-    // just updated bridge sources, ensure the dylib/app bundle is rebuilt.
     const sheets = (document as any).styleSheets;
     if (sheets == null) {
       throw new Error('document.styleSheets is not available');
@@ -103,5 +101,45 @@ describe('document.styleSheets', () => {
     await waitForFrame();
 
     expect(requireStyleSheets().length).toBe(baseLength);
+  });
+
+  it('exposes HTMLStyleElement.sheet', async () => {
+    const baseLength = requireStyleSheets().length;
+
+    const style = document.createElement('style') as any;
+    style.textContent = '.webf-styleSheets-style-sheet-prop { color: red; }';
+    document.head.appendChild(style);
+    await waitForFrame();
+
+    expect(style.sheet).toBeTruthy();
+    expect(style.sheet).toBe(requireStyleSheets()[baseLength]);
+    expect(style.sheet.cssRules.length).toBe(1);
+    expect(style.sheet.cssRules[0].cssText).toContain('.webf-styleSheets-style-sheet-prop');
+
+    style.remove();
+    await waitForFrame();
+  });
+
+  it('exposes HTMLLinkElement.sheet after load', async () => {
+    const baseLength = requireStyleSheets().length;
+
+    const link = document.createElement('link') as any;
+    link.rel = 'stylesheet';
+    link.href = 'assets/resources/base.css';
+    document.head.appendChild(link);
+
+    await new Promise<void>((resolve, reject) => {
+      link.addEventListener('load', () => resolve());
+      link.addEventListener('error', () => reject(new Error('link stylesheet failed to load')));
+    });
+    await waitForFrame();
+
+    expect(link.sheet).toBeTruthy();
+    expect(link.sheet).toBe(requireStyleSheets()[baseLength]);
+    expect(typeof link.sheet.href).toBe('string');
+    expect(link.sheet.href.length).toBeGreaterThan(0);
+
+    link.remove();
+    await waitForFrame();
   });
 });

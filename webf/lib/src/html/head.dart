@@ -165,6 +165,14 @@ class LinkElement extends Element {
   CSSStyleSheet? get styleSheet => _styleSheet;
   CSSStyleSheet? _styleSheet;
 
+  CSSStyleSheetBinding? get sheet {
+    if (ownerView.enableBlink) return null;
+    if (rel.toLowerCase() != REL_STYLESHEET) return null;
+    final sheet = _styleSheet;
+    if (sheet == null) return null;
+    return ownerDocument.ensureStyleSheetBindingForCSSOM(sheet);
+  }
+
   bool _loading = false;
 
   bool get loading => _loading;
@@ -202,7 +210,10 @@ class LinkElement extends Element {
         setter: (element, value) => castToType<LinkElement>(element).media = castToType<String>(value)),
     'as': StaticDefinedBindingProperty(
         getter: (element) => castToType<LinkElement>(element).as,
-        setter: (element, value) => castToType<LinkElement>(element).as = castToType<String>(value))
+        setter: (element, value) => castToType<LinkElement>(element).as = castToType<String>(value)),
+    'sheet': StaticDefinedBindingProperty(
+      getter: (element) => castToType<LinkElement>(element).sheet,
+    ),
   };
 
   @override
@@ -653,6 +664,26 @@ mixin StyleElementMixin on Element {
 
   CSSStyleSheet? get styleSheet => _styleSheet;
 
+  CSSStyleSheetBinding? get sheet {
+    if (ownerView.enableBlink) return null;
+    if (_type != _CSS_MIME) return null;
+    if (_styleSheet == null) {
+      _recalculateStyle();
+    }
+    final sheet = _styleSheet;
+    if (sheet == null) return null;
+    return ownerDocument.ensureStyleSheetBindingForCSSOM(sheet);
+  }
+
+  static final StaticDefinedBindingPropertyMap _styleElementProperties = {
+    'sheet': StaticDefinedBindingProperty(
+      getter: (element) => castToType<StyleElementMixin>(element).sheet,
+    ),
+  };
+
+  @override
+  List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _styleElementProperties];
+
   // Cache signature of the last parsed stylesheet so we can skip redundant
   // replaceSync()/appendPendingStyleSheet cycles when neither the inline CSS
   // text nor the evaluation context (viewport size / dark mode) has changed.
@@ -694,62 +725,60 @@ mixin StyleElementMixin on Element {
       return;
     }
 
-    String? text = collectElementChildText();
+    final String text = collectElementChildText() ?? '';
 
-    if (text != null) {
-      // Inline stylesheet parsing depends on the raw CSS text plus runtime
-      // context (viewport size + dark mode). If none of these inputs changed,
-      // we can skip scheduling another stylesheet update entirely.
-      final bool? darkMode = ownerView.rootController.isDarkMode;
-      final double w = windowWidth;
-      final double h = windowHeight;
-      final int newSignature = Object.hash(text, w, h, darkMode);
+    // Inline stylesheet parsing depends on the raw CSS text plus runtime
+    // context (viewport size + dark mode). If none of these inputs changed,
+    // we can skip scheduling another stylesheet update entirely.
+    final bool? darkMode = ownerView.rootController.isDarkMode;
+    final double w = windowWidth;
+    final double h = windowHeight;
+    final int newSignature = Object.hash(text, w, h, darkMode);
 
-      if (_styleSheet != null && _lastStyleSheetSignature == newSignature) {
+    if (_styleSheet != null && _lastStyleSheetSignature == newSignature) {
+      return;
+    }
 
-        return;
-      }
-
-
-      if (_styleSheet != null) {
-
-        _styleSheet!.replaceSync(text,
-            windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
-      } else {
-
-        _styleSheet = CSSParser(text).parse(
-            windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
-        // Resolve @import in the parsed inline stylesheet asynchronously
-        () async {
-          if (_styleSheet != null) {
-            await _resolveCSSImports(ownerDocument, _styleSheet!);
-            // Mark sheet pending so changes are picked up without candidate changes
-            ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
-            if (DebugFlags.enableCssBatchStyleUpdates) {
-              ownerDocument.scheduleStyleUpdate();
-            } else {
-              ownerDocument.updateStyleIfNeeded();
-            }
-          }
-        }();
-      }
-
-      _lastStyleSheetSignature = newSignature;
-      if (_styleSheet != null) {
-        if (DebugFlags.enableCssMultiStyleTrace) {
-          final parentTag = parentElement?.tagName ?? 'UNKNOWN';
-          cssLogger.info('[trace][multi-style][style] apply sheet (parent=$parentTag)');
-        }
-        ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
-        if (DebugFlags.enableCssBatchStyleUpdates) {
-          ownerDocument.scheduleStyleUpdate();
-        } else {
-          ownerDocument.updateStyleIfNeeded();
-        }
-      }
+    if (_styleSheet != null) {
+      _styleSheet!.replaceSync(
+        text,
+        windowWidth: windowWidth,
+        windowHeight: windowHeight,
+        isDarkMode: ownerView.rootController.isDarkMode,
+      );
     } else {
-      // No inline CSS text → drop the cache so future additions re-parse.
-      _lastStyleSheetSignature = null;
+      _styleSheet = CSSParser(text).parse(
+        windowWidth: windowWidth,
+        windowHeight: windowHeight,
+        isDarkMode: ownerView.rootController.isDarkMode,
+      );
+      // Resolve @import in the parsed inline stylesheet asynchronously.
+      () async {
+        if (_styleSheet != null) {
+          await _resolveCSSImports(ownerDocument, _styleSheet!);
+          // Mark sheet pending so changes are picked up without candidate changes.
+          ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
+          if (DebugFlags.enableCssBatchStyleUpdates) {
+            ownerDocument.scheduleStyleUpdate();
+          } else {
+            ownerDocument.updateStyleIfNeeded();
+          }
+        }
+      }();
+    }
+
+    _lastStyleSheetSignature = newSignature;
+    if (_styleSheet != null) {
+      if (DebugFlags.enableCssMultiStyleTrace) {
+        final parentTag = parentElement?.tagName ?? 'UNKNOWN';
+        cssLogger.info('[trace][multi-style][style] apply sheet (parent=$parentTag)');
+      }
+      ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
+      if (DebugFlags.enableCssBatchStyleUpdates) {
+        ownerDocument.scheduleStyleUpdate();
+      } else {
+        ownerDocument.updateStyleIfNeeded();
+      }
     }
   }
 

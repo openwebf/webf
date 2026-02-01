@@ -57,7 +57,8 @@ class ParserState extends TokenizerState {
   final Token peekToken;
   final Token? previousToken;
 
-  ParserState(this.peekToken, this.previousToken, Tokenizer tokenizer) : super(tokenizer);
+  ParserState(this.peekToken, this.previousToken, Tokenizer tokenizer)
+      : super(tokenizer);
 }
 
 bool get isChecked => true;
@@ -83,19 +84,34 @@ class CSSParser {
   /// A string containing the baseURL used to resolve relative URLs in the stylesheet.
   String? href;
 
-  CSSParser(String text, {int start = 0, this.href}) : tokenizer = Tokenizer(SourceFile.fromString(text), text, true, start) {
+  // CSS Cascade Layers (@layer)
+  static int _globalAnonymousLayerId = 0;
+  final List<String> _layerStack = <String>[];
+
+  CSSParser(String text, {int start = 0, this.href})
+      : tokenizer = Tokenizer(SourceFile.fromString(text), text, true, start) {
     _peekToken = tokenizer.next();
   }
 
   /// Main entry point for parsing an entire CSS file.
-  CSSStyleSheet parse({double? windowWidth, double? windowHeight, bool? isDarkMode}) {
-    final rules = parseRules(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: isDarkMode);
+  CSSStyleSheet parse(
+      {double? windowWidth, double? windowHeight, bool? isDarkMode}) {
+    final rules = parseRules(
+        windowWidth: windowWidth,
+        windowHeight: windowHeight,
+        isDarkMode: isDarkMode);
     return CSSStyleSheet(rules);
   }
 
   Map<String, dynamic> parseInlineStyle() {
-    Map<String, dynamic> style = {};
-    do {
+    return parseInlineStyleWithImportant().properties;
+  }
+
+  InlineStyleParseResult parseInlineStyleWithImportant() {
+    final properties = <String, dynamic>{};
+    final importants = <String, bool>{};
+
+    while (!_peekKind(TokenKind.END_OF_FILE)) {
       if (TokenKind.isIdentifier(_peekToken.kind)) {
         var propertyIdent = camelize(identifier().name);
         var resetProperty = false;
@@ -113,40 +129,90 @@ class CSSParser {
               break;
             case TokenKind.IDENTIFIER:
               if (resetProperty) {
-                propertyIdent = identifier().name;
+                propertyIdent = camelize(identifier().name);
               }
               break;
             default:
               keepGoing = false;
           }
         }
-        var expr = processExpr();
-        style[propertyIdent] = expr;
-      } else if (_peekToken.kind == TokenKind.VAR_DEFINITION) {
-        _next();
-      } else if (_peekToken.kind == TokenKind.DIRECTIVE_INCLUDE) {
-        // TODO @include mixinName in the declaration area.
-      } else if (_peekToken.kind == TokenKind.DIRECTIVE_EXTEND) {
-        _next();
+
+        final expr = processExpr();
+        var isImportant = false;
+        if (_peek() == TokenKind.IMPORTANT) {
+          _next();
+          isImportant = true;
+        }
+
+        // Allow multiple declarations separated by semicolons.
+        _maybeEat(TokenKind.SEMICOLON);
+
+        properties[propertyIdent] = expr?.trim();
+        if (isImportant) importants[propertyIdent] = true;
+        continue;
       }
-    } while (_maybeEat(TokenKind.SEMICOLON));
-    return style;
+
+      if (_peekToken.kind == TokenKind.VAR_DEFINITION) {
+        _next();
+        continue;
+      }
+
+      if (_peekToken.kind == TokenKind.DIRECTIVE_INCLUDE) {
+        // TODO @include mixinName in the declaration area.
+        _next();
+        continue;
+      }
+
+      if (_peekToken.kind == TokenKind.DIRECTIVE_EXTEND) {
+        _next();
+        continue;
+      }
+
+      // Skip unknown tokens to avoid infinite loops.
+      _next();
+    }
+
+    return InlineStyleParseResult(
+        properties: properties, importants: importants);
   }
 
-  List<CSSRule> parseRules({double? windowWidth, double? windowHeight, bool? isDarkMode}) {
+  List<CSSRule> parseRules(
+      {double? windowWidth, double? windowHeight, bool? isDarkMode}) {
+    List<CSSRule> expandMedia(CSSRule rule) {
+      if (rule is CSSMediaDirective) {
+        final List<CSSRule> expanded = <CSSRule>[];
+        final List<CSSRule>? mediaRules = rule.getValidMediaRules(
+            windowWidth, windowHeight, isDarkMode ?? false);
+        if (mediaRules == null) {
+          return expanded;
+        }
+        for (final CSSRule child in mediaRules) {
+          expanded.addAll(expandMedia(child));
+        }
+        return expanded;
+      }
+      if (rule is CSSLayerBlockRule) {
+        final List<CSSRule> expandedChildren = <CSSRule>[];
+        for (final CSSRule child in rule.cssRules) {
+          expandedChildren.addAll(expandMedia(child));
+        }
+        return <CSSRule>[
+          CSSLayerBlockRule(
+            name: rule.name,
+            layerNamePath: List<String>.from(rule.layerNamePath),
+            cssRules: expandedChildren,
+          )
+        ];
+      }
+      return <CSSRule>[rule];
+    }
+
     var rules = <CSSRule>[];
     while (!_maybeEat(TokenKind.END_OF_FILE)) {
       final data = processRule();
       if (data != null) {
         for (CSSRule cssRule in data) {
-          if (cssRule is CSSMediaDirective) {
-            List<CSSRule>? mediaRules = cssRule.getValidMediaRules(windowWidth, windowHeight, isDarkMode ?? false);
-            if (mediaRules != null) {
-              rules.addAll(mediaRules);
-            }
-          } else {
-            rules.add(cssRule);
-          }
+          rules.addAll(expandMedia(cssRule));
         }
       } else {
         _next();
@@ -175,7 +241,8 @@ class CSSParser {
 
   /// Generate an error if [file] has not been completely consumed.
   void checkEndOfFile() {
-    if (!(_peekKind(TokenKind.END_OF_FILE) || _peekKind(TokenKind.INCOMPLETE_COMMENT))) {
+    if (!(_peekKind(TokenKind.END_OF_FILE) ||
+        _peekKind(TokenKind.INCOMPLETE_COMMENT))) {
       _error('premature end of file unknown CSS');
     }
   }
@@ -309,7 +376,8 @@ class CSSParser {
           op = _peekToken.text; // and
           opLen = op.length;
           int matchMOP = TokenKind.matchMediaOperator(op, 0, opLen);
-          if (matchMOP != TokenKind.MEDIA_OP_AND && matchMOP != TokenKind.MEDIA_OP_OR) {
+          if (matchMOP != TokenKind.MEDIA_OP_AND &&
+              matchMOP != TokenKind.MEDIA_OP_OR) {
             break;
           }
           _next();
@@ -337,11 +405,12 @@ class CSSParser {
         if (_maybeEat(TokenKind.COLON)) {
           do {
             text += _next().text;
-          } while(!_maybeEat(TokenKind.RPAREN));
-          return CSSMediaExpression(op, {feature : text});
+          } while (!_maybeEat(TokenKind.RPAREN));
+          return CSSMediaExpression(op, {feature: text});
         }
       } else if (isChecked) {
-        _warning('Missing media feature in media expression', location: _makeSpan(start));
+        _warning('Missing media feature in media expression',
+            location: _makeSpan(start));
       }
     }
     return null;
@@ -377,9 +446,11 @@ class CSSParser {
         String? mediaText;
 
         // @import "file.css" ...;
-        if (_peek() == TokenKind.SINGLE_QUOTE || _peek() == TokenKind.DOUBLE_QUOTE) {
+        if (_peek() == TokenKind.SINGLE_QUOTE ||
+            _peek() == TokenKind.DOUBLE_QUOTE) {
           importHref = processQuotedString(false);
-        } else if (_peekIdentifier() && _peekToken.text.toLowerCase() == 'url') {
+        } else if (_peekIdentifier() &&
+            _peekToken.text.toLowerCase() == 'url') {
           // @import url(file.css) ...;
           // Consume 'url' and parse inside parentheses.
           _next();
@@ -395,7 +466,9 @@ class CSSParser {
         // Parse optional media list until ';'
         if (!_peekKind(TokenKind.SEMICOLON)) {
           final buf = StringBuffer();
-          while (!_peekKind(TokenKind.SEMICOLON) && !_peekKind(TokenKind.END_OF_FILE) && !_peekKind(TokenKind.LBRACE)) {
+          while (!_peekKind(TokenKind.SEMICOLON) &&
+              !_peekKind(TokenKind.END_OF_FILE) &&
+              !_peekKind(TokenKind.LBRACE)) {
             buf.write(_next().text);
           }
           final text = buf.toString().trim();
@@ -416,8 +489,7 @@ class CSSParser {
           List<CSSRule>? rule = processRule();
           if (rule != null) {
             rules.addAll(rule);
-          }
-          else {
+          } else {
             break;
           }
         } while (!_maybeEat(TokenKind.RBRACE));
@@ -576,8 +648,129 @@ class CSSParser {
     return null;
   }
 
+  String _createAnonymousLayerSegment() {
+    final id = ++_globalAnonymousLayerId;
+    return '__webf_anon_layer_$id';
+  }
+
+  List<String> _resolveLayerPath(List<String> relativeOrAbsolutePath) {
+    if (_layerStack.isEmpty) return relativeOrAbsolutePath;
+    return <String>[..._layerStack, ...relativeOrAbsolutePath];
+  }
+
+  List<String>? _processLayerName() {
+    if (!_peekIdentifier()) return null;
+    final parts = <String>[identifier().name];
+    while (_maybeEat(TokenKind.DOT)) {
+      if (!_peekIdentifier()) break;
+      parts.add(identifier().name);
+    }
+    return parts;
+  }
+
+  List<List<String>> _processLayerNameList() {
+    final names = <List<String>>[];
+    while (true) {
+      final name = _processLayerName();
+      if (name == null || name.isEmpty) break;
+      names.add(name);
+      if (!_maybeEat(TokenKind.COMMA)) break;
+    }
+    return names;
+  }
+
+  /// Parses `@layer ...` and returns rules.
+  ///
+  /// Note: layer blocks are represented as [CSSLayerBlockRule] (with nested
+  /// [cssRules]) instead of being flattened into top-level [CSSStyleRule]s.
+  ///
+  /// Supported:
+  /// - `@layer { ... }` (anonymous layer block)
+  /// - `@layer name { ... }` (named layer block)
+  /// - `@layer a, b;` (layer order statement)
+  /// - `@layer a.b;` / `@layer a.b { ... }` (nested layer names)
+  List<CSSRule>? processLayerDirective() {
+    _eat(TokenKind.DIRECTIVE_LAYER);
+
+    // `@layer { ... }`
+    if (_peekKind(TokenKind.LBRACE)) {
+      final anon = _resolveLayerPath(<String>[_createAnonymousLayerSegment()]);
+      final nodes = <CSSRule>[];
+
+      final prev = List<String>.from(_layerStack);
+      _layerStack
+        ..clear()
+        ..addAll(anon);
+
+      _eat(TokenKind.LBRACE);
+      nodes.addAll(processGroupRuleBody());
+      _eat(TokenKind.RBRACE);
+
+      _layerStack
+        ..clear()
+        ..addAll(prev);
+
+      return <CSSRule>[
+        CSSLayerBlockRule(
+          name: '',
+          layerNamePath: anon,
+          cssRules: nodes,
+        )
+      ];
+    }
+
+    final rawNames = _processLayerNameList();
+
+    // `@layer a, b;`
+    if (_maybeEat(TokenKind.SEMICOLON)) {
+      if (rawNames.isEmpty) return null;
+      final resolved = rawNames.map(_resolveLayerPath).toList(growable: false);
+      return <CSSRule>[CSSLayerStatementRule(resolved)];
+    }
+
+    // `@layer name { ... }`
+    if (_peekKind(TokenKind.LBRACE)) {
+      final List<String> layerName = rawNames.isEmpty
+          ? <String>[_createAnonymousLayerSegment()]
+          : rawNames.first;
+      final fullPath = _resolveLayerPath(layerName);
+
+      final nodes = <CSSRule>[];
+
+      final prev = List<String>.from(_layerStack);
+      _layerStack
+        ..clear()
+        ..addAll(fullPath);
+
+      _eat(TokenKind.LBRACE);
+      nodes.addAll(processGroupRuleBody());
+      _eat(TokenKind.RBRACE);
+
+      _layerStack
+        ..clear()
+        ..addAll(prev);
+
+      final String nameText = rawNames.isEmpty ? '' : rawNames.first.join('.');
+      return <CSSRule>[
+        CSSLayerBlockRule(
+          name: nameText,
+          layerNamePath: fullPath,
+          cssRules: nodes,
+        )
+      ];
+    }
+
+    return null;
+  }
+
   List<CSSRule>? processRule([SelectorGroup? selectorGroup]) {
     if (selectorGroup == null) {
+      if (_peek() == TokenKind.DIRECTIVE_LAYER) {
+        final layerRules = processLayerDirective();
+        if (layerRules != null) {
+          return layerRules;
+        }
+      }
       final directive = processDirective();
       if (directive != null) {
         _maybeEat(TokenKind.SEMICOLON);
@@ -587,17 +780,25 @@ class CSSParser {
     }
     if (selectorGroup != null) {
       final declarations = processDeclarations();
-      CSSStyleDeclaration declaration = declarations.whereType<CSSStyleDeclaration>().last;
+      CSSStyleDeclaration declaration =
+          declarations.whereType<CSSStyleDeclaration>().last;
       Iterable childRules = declarations.whereType<CSSStyleRule>();
       CSSStyleRule rule = CSSStyleRule(selectorGroup, declaration);
+      rule.layerPath = _layerStack.isEmpty
+          ? const <String>[]
+          : <String>[..._layerStack, kWebFImplicitLayerSegment];
       List<CSSRule> rules = [rule];
       for (CSSStyleRule childRule in childRules) {
+        childRule.layerPath = _layerStack.isEmpty
+            ? const <String>[]
+            : <String>[..._layerStack, kWebFImplicitLayerSegment];
         // child Rule
         for (Selector selector in childRule.selectorGroup.selectors) {
           // parentRule
           for (Selector parentSelector in selectorGroup.selectors) {
             List<SimpleSelectorSequence> newSelectorSequences =
-                mergeNestedSelector(parentSelector.simpleSelectorSequences, selector.simpleSelectorSequences);
+                mergeNestedSelector(parentSelector.simpleSelectorSequences,
+                    selector.simpleSelectorSequences);
             selector.simpleSelectorSequences.clear();
             selector.simpleSelectorSequences.addAll(newSelectorSequences);
           }
@@ -735,7 +936,8 @@ class CSSParser {
     if (selector != null) {
       for (var sequence in selector.simpleSelectorSequences) {
         if (!sequence.isCombinatorNone) {
-          _error('compound selector can not contain combinator - ${sequence.combinatorToString}');
+          _error(
+              'compound selector can not contain combinator - ${sequence.combinatorToString}');
         }
       }
     }
@@ -869,7 +1071,8 @@ class CSSParser {
         _eat(TokenKind.HASH);
 
         if (_anyWhiteSpaceBeforePeekToken(TokenKind.HASH)) {
-          _error('Not a valid ID selector expected #id', location: _makeSpan(start));
+          _error('Not a valid ID selector expected #id',
+              location: _makeSpan(start));
           return InvalidSelector(Identifier(''));
         }
         return IdSelector(identifier());
@@ -877,7 +1080,8 @@ class CSSParser {
         _eat(TokenKind.DOT);
 
         if (_anyWhiteSpaceBeforePeekToken(TokenKind.DOT)) {
-          _error('Not a valid class selector expected .className', location: _makeSpan(start));
+          _error('Not a valid class selector expected .className',
+              location: _makeSpan(start));
           return InvalidSelector(Identifier(''));
         }
         return ClassSelector(identifier());
@@ -925,8 +1129,27 @@ class CSSParser {
 
         _eat(TokenKind.RPAREN);
         return NegationSelector(negArg);
+      } else if (!pseudoElement && (name == 'is' || name == 'where')) {
+        _eat(TokenKind.LPAREN);
+
+        // https://drafts.csswg.org/selectors-4/#matches
+        // :is() / :where() take a <forgiving-selector-list>.
+        final SelectorGroup? group =
+            processForgivingSelectorGroup(terminatorKind: TokenKind.RPAREN);
+
+        _eat(TokenKind.RPAREN);
+
+        // If all arguments are invalid (or empty), treat the selector as invalid
+        // so the whole selector list can be discarded (WebF behavior: match nothing).
+        if (group == null) {
+          return InvalidSelector(pseudoName);
+        }
+        return PseudoClassFunctionSelector(pseudoName, group);
       } else if (!pseudoElement &&
-          (name == 'host' || name == 'host-context' || name == 'global-context' || name == '-acx-global-context')) {
+          (name == 'host' ||
+              name == 'host-context' ||
+              name == 'global-context' ||
+              name == '-acx-global-context')) {
         _eat(TokenKind.LPAREN);
         var selector = processCompoundSelector();
         if (selector == null) {
@@ -965,6 +1188,71 @@ class CSSParser {
         : PseudoClassSelector(pseudoName);
   }
 
+  // Parse a forgiving selector list, terminated by [terminatorKind] (e.g., ')').
+  // Invalid selectors are skipped; if all selectors are invalid or empty, returns null.
+  //
+  // See: https://drafts.csswg.org/selectors-4/#forgiving-selector
+  SelectorGroup? processForgivingSelectorGroup({required int terminatorKind}) {
+    final selectors = <Selector>[];
+
+    // We may already be in selector mode; preserve current state anyway.
+    final bool oldInSelector = tokenizer.inSelector;
+    tokenizer.inSelector = true;
+
+    while (!(_peekKind(terminatorKind) || _peekKind(TokenKind.END_OF_FILE))) {
+      final marked = _mark;
+      final selector = processSelector();
+
+      if (selector != null && !selector.hasInvalid) {
+        selectors.add(selector);
+      } else {
+        // Recover by consuming tokens until the next comma or terminator.
+        _restore(marked);
+        _consumeUntilForgivingSelectorBoundary(terminatorKind);
+      }
+
+      // Consume optional comma between list items (allow empty items).
+      _maybeEat(TokenKind.COMMA);
+    }
+
+    tokenizer.inSelector = oldInSelector;
+
+    if (selectors.isEmpty) return null;
+    return SelectorGroup(selectors);
+  }
+
+  void _consumeUntilForgivingSelectorBoundary(int terminatorKind) {
+    int parenDepth = 0;
+    int bracketDepth = 0;
+
+    while (!_peekKind(TokenKind.END_OF_FILE)) {
+      final int kind = _peek();
+
+      if (parenDepth == 0 &&
+          bracketDepth == 0 &&
+          (kind == TokenKind.COMMA || kind == terminatorKind)) {
+        return;
+      }
+
+      switch (kind) {
+        case TokenKind.LPAREN:
+          parenDepth++;
+          break;
+        case TokenKind.RPAREN:
+          if (parenDepth > 0) parenDepth--;
+          break;
+        case TokenKind.LBRACK:
+          bracketDepth++;
+          break;
+        case TokenKind.RBRACK:
+          if (bracketDepth > 0) bracketDepth--;
+          break;
+      }
+
+      _next();
+    }
+  }
+
   /// In CSS3, the expressions are identifiers, strings, or of the form "an+b".
   ///
   ///     : [ [ PLUS | '-' | DIMENSION | NUMBER | STRING | IDENT ] S* ]+
@@ -973,7 +1261,8 @@ class CSSParser {
   ///     PLUS              '+'
   ///     DIMENSION         {num}{ident}
   ///     NUMBER            {num}
-  List<String> /* SelectorExpression | LiteralTerm */ processSelectorExpression() {
+  List<String> /* SelectorExpression | LiteralTerm */
+      processSelectorExpression() {
     var expressions = <String>[];
 
     Token? termToken;
@@ -1124,15 +1413,18 @@ class CSSParser {
         //   --a: var(--b) !important !important;
         // which must be dropped per spec.
         final trailingToken = _peek();
-        final hasUnexpectedTrailingToken = trailingToken != TokenKind.SEMICOLON &&
-            trailingToken != TokenKind.RBRACE &&
-            trailingToken != TokenKind.END_OF_FILE;
-        if ((importantPriority && trailingToken == TokenKind.IMPORTANT) || hasUnexpectedTrailingToken) {
+        final hasUnexpectedTrailingToken =
+            trailingToken != TokenKind.SEMICOLON &&
+                trailingToken != TokenKind.RBRACE &&
+                trailingToken != TokenKind.END_OF_FILE;
+        if ((importantPriority && trailingToken == TokenKind.IMPORTANT) ||
+            hasUnexpectedTrailingToken) {
           _skipToDeclarationEnd();
           return;
         }
 
-        style.setProperty(propertyIdent, expr, isImportant: importantPriority, baseHref: href);
+        style.setProperty(propertyIdent, expr,
+            isImportant: importantPriority, baseHref: href);
       }
     } else if (_peekToken.kind == TokenKind.VAR_DEFINITION) {
       _next();
@@ -1152,7 +1444,8 @@ class CSSParser {
       if (_peek() == TokenKind.RPAREN) {
         parenCount--;
       }
-      if (parenCount <= 0 && (_peek() == TokenKind.SEMICOLON || _peek() == TokenKind.RBRACE)) {
+      if (parenCount <= 0 &&
+          (_peek() == TokenKind.SEMICOLON || _peek() == TokenKind.RBRACE)) {
         break;
       }
       _next();
@@ -1178,7 +1471,8 @@ class CSSParser {
       if (_peek() == TokenKind.RPAREN) {
         parenCount--;
       }
-      if (parenCount <= 0 && (_peek() == TokenKind.SEMICOLON || _peek() == TokenKind.RBRACE)) {
+      if (parenCount <= 0 &&
+          (_peek() == TokenKind.SEMICOLON || _peek() == TokenKind.RBRACE)) {
         break;
       }
       if (_peek() == TokenKind.IMPORTANT) {
@@ -1349,7 +1643,8 @@ class CSSParser {
   Identifier identifier() {
     var tok = _next();
 
-    if (!TokenKind.isIdentifier(tok.kind) && !TokenKind.isKindIdentifier(tok.kind)) {
+    if (!TokenKind.isIdentifier(tok.kind) &&
+        !TokenKind.isKindIdentifier(tok.kind)) {
       if (isChecked) {
         String message;
         try {
@@ -1363,6 +1658,13 @@ class CSSParser {
     }
     return Identifier(tok.text);
   }
+}
+
+class InlineStyleParseResult {
+  final Map<String, dynamic> properties;
+  final Map<String, bool> importants;
+
+  InlineStyleParseResult({required this.properties, required this.importants});
 }
 
 /// Escapes [text] for use in a CSS string.

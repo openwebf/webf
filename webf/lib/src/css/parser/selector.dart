@@ -89,23 +89,48 @@ class Selector extends TreeNode {
   int _calcSpecificity() {
     int specificity = 0;
     for (final simpleSelectorSequence in simpleSelectorSequences) {
-      final simpleSelector = simpleSelectorSequence.simpleSelector;
-      switch (simpleSelector) {
-        case IdSelector _:
-          specificity += kIdSpecificity;
-          break;
-        case ClassSelector _:
-        case AttributeSelector _:
-        case PseudoClassSelector _:
-          specificity += kClassLikeSpecificity;
-          break;
-        case ElementSelector _:
-        case PseudoElementSelector _:
-          specificity += kTagSpecificity;
-          break;
-      }
+      specificity += _specificityForSimpleSelector(simpleSelectorSequence.simpleSelector);
     }
     return specificity;
+  }
+
+  int _specificityForSimpleSelector(SimpleSelector simpleSelector) {
+    switch (simpleSelector) {
+      case IdSelector _:
+        return kIdSpecificity;
+      case ClassSelector _:
+      case AttributeSelector _:
+        return kClassLikeSpecificity;
+      case PseudoClassFunctionSelector node:
+        final String name = node.name.toLowerCase();
+        if (name == 'where') {
+          return 0;
+        }
+        if (name == 'is') {
+          final arg = node.argument;
+          if (arg is SelectorGroup) {
+            int maxSpecificity = 0;
+            for (final sel in arg.selectors) {
+              maxSpecificity = math.max(maxSpecificity, sel.specificity);
+            }
+            return maxSpecificity;
+          }
+          // Fallback: treat as a normal pseudo-class.
+          return kClassLikeSpecificity;
+        }
+        return kClassLikeSpecificity;
+      case PseudoClassSelector _:
+        return kClassLikeSpecificity;
+      case NegationSelector node:
+        final arg = node.negationArg;
+        if (arg == null) return 0;
+        return _specificityForSimpleSelector(arg);
+      case ElementSelector _:
+      case PseudoElementSelector _:
+        return kTagSpecificity;
+      default:
+        return 0;
+    }
   }
 
   // True if any component simple selector is invalid.

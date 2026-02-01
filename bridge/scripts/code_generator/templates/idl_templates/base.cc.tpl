@@ -15,6 +15,7 @@
 #include "bindings/qjs/member_installer.h"
 #include "bindings/qjs/qjs_function.h"
 #include "bindings/qjs/converter_impl.h"
+#include "bindings/qjs/script_value.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "bindings/qjs/script_promise.h"
 #include "bindings/qjs/cppgc/mutation_scope.h"

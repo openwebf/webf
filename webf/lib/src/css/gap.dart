@@ -53,16 +53,24 @@ mixin CSSGapMixin on RenderStyle {
     }
   }
 
-  static CSSLengthValue resolveGap(String gap, {RenderStyle? renderStyle}) {
+  static CSSLengthValue resolveGap(String gap, {RenderStyle? renderStyle, String? propertyName}) {
     if (gap == 'normal') {
       return CSSLengthValue.normal;
     }
-    return CSSLength.parseLength(gap, renderStyle);
+    // Pass propertyName so CSS-wide keywords (e.g. `inherit`) and percentages
+    // resolve with the correct context (row-gap vs column-gap).
+    return CSSLength.parseLength(gap, renderStyle, propertyName);
   }
 }
 
 class CSSGap {
   static bool isValidGapValue(String val) {
-    return val == 'normal' || CSSLength.isLength(val);
+    if (val == 'normal') return true;
+    // `gap`/`row-gap`/`column-gap`: `normal | <length-percentage>`
+    // Negative values are invalid.
+    return CSSLength.isNonNegativeLength(val) ||
+        CSSPercentage.isNonNegativePercentage(val) ||
+        // Allow function notations like `calc(...)` and `var(...)`.
+        CSSFunction.isFunction(val);
   }
 }

@@ -37,6 +37,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/html.dart';
+import 'package:webf/src/html/form/form_element_base.dart';
 
 typedef IndexCounter = int Function(Element element);
 
@@ -276,7 +277,8 @@ class SelectorEvaluator extends SelectorVisitor {
 
   @override
   bool visitPseudoClassSelector(PseudoClassSelector node) {
-    switch (node.name.toLowerCase()) {
+    final String name = node.name.toLowerCase();
+    switch (name) {
       // http://dev.w3.org/csswg/selectors-4/#structural-pseudos
 
       // http://dev.w3.org/csswg/selectors-4/#the-root-pseudo
@@ -294,14 +296,11 @@ class SelectorEvaluator extends SelectorVisitor {
 
       // http://dev.w3.org/csswg/selectors-4/#the-first-child-pseudo
       case 'first-child':
-        if (_element!.previousElementSibling != null) {
-          return _element!.previousElementSibling is HeadElement;
-        }
-        return true;
+        return _element!.previousElementSibling == null;
 
       // http://dev.w3.org/csswg/selectors-4/#the-last-child-pseudo
       case 'last-child':
-        return _element!.nextSibling == null;
+        return _element!.nextElementSibling == null;
 
       //http://drafts.csswg.org/selectors-4/#first-of-type-pseudo
       //http://drafts.csswg.org/selectors-4/#last-of-type-pseudo
@@ -319,15 +318,15 @@ class SelectorEvaluator extends SelectorVisitor {
           var isFirst = index == 0;
           var isLast = index == children.length - 1;
 
-          if (isFirst && node.name == 'first-of-type') {
+          if (isFirst && name == 'first-of-type') {
             return true;
           }
 
-          if (isLast && node.name == 'last-of-type') {
+          if (isLast && name == 'last-of-type') {
             return true;
           }
 
-          if (isFirst && isLast && node.name == 'only-of-type') {
+          if (isFirst && isLast && name == 'only-of-type') {
             return true;
           }
 
@@ -336,7 +335,7 @@ class SelectorEvaluator extends SelectorVisitor {
           // No element parent (e.g., the root element). Per spec, the root is the
           // only element child of the document, so it is simultaneously first-of-type,
           // last-of-type and only-of-type.
-          switch (node.name) {
+          switch (name) {
             case 'first-of-type':
             case 'last-of-type':
             case 'only-of-type':
@@ -347,7 +346,16 @@ class SelectorEvaluator extends SelectorVisitor {
         break;
       // http://dev.w3.org/csswg/selectors-4/#the-only-child-pseudo
       case 'only-child':
-        return _element!.previousSibling == null && _element!.nextSibling == null;
+        return _element!.previousElementSibling == null && _element!.nextElementSibling == null;
+
+      // https://drafts.csswg.org/selectors-4/#enableddisabled
+      case 'enabled':
+      case 'disabled': {
+        final Element element = _element!;
+        if (!_isFormControlElement(element)) return false;
+        final bool isDisabled = _isFormControlDisabled(element);
+        return name == 'disabled' ? isDisabled : !isDisabled;
+      }
 
       // http://dev.w3.org/csswg/selectors-4/#link
       case 'link':
@@ -359,9 +367,36 @@ class SelectorEvaluator extends SelectorVisitor {
         return false;
     }
 
-    if (_isLegacyPsuedoClass(node.name)) return true;
+    if (_isLegacyPsuedoClass(name)) return true;
 
     if (kDebugMode) throw _unimplemented(node);
+    return false;
+  }
+
+  bool _isFormControlElement(Element element) {
+    switch (element.tagName.toUpperCase()) {
+      case 'BUTTON':
+      case 'INPUT':
+      case 'SELECT':
+      case 'TEXTAREA':
+      case 'OPTION':
+      case 'OPTGROUP':
+      case 'FIELDSET':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  bool _isFormControlDisabled(Element element) {
+    // Widget-based form controls (e.g., <input>, <textarea>) keep `disabled`
+    // state in the element instance and may not reflect it as an attribute.
+    if (element is FormElementBase) {
+      return element.disabled;
+    }
+    if (element.attributes.containsKey('disabled')) return true;
+    final String? ariaDisabled = element.attributes['aria-disabled'];
+    if (ariaDisabled != null && ariaDisabled.toLowerCase() == 'true') return true;
     return false;
   }
 
@@ -394,25 +429,73 @@ class SelectorEvaluator extends SelectorVisitor {
 
   @override
   bool visitPseudoClassFunctionSelector(PseudoClassFunctionSelector node) {
-    List<num?>? data = _parseNthExpressions(node.expression);
-    //  i = An + B
-    if (data == null) {
-      return false;
-    }
+    final String name = node.name.toLowerCase();
 
-    switch (node.name) {
+    switch (name) {
+      case 'is': {
+        final arg = node.argument;
+        if (arg is! SelectorGroup) return false;
+        final Element element = _element!;
+        for (final Selector selector in arg.selectors) {
+          if (_matchesSelectorWithoutSpecificity(selector, element)) {
+            return true;
+          }
+        }
+        return false;
+      }
+      case 'where': {
+        final arg = node.argument;
+        if (arg is! SelectorGroup) return false;
+        final Element element = _element!;
+        for (final Selector selector in arg.selectors) {
+          if (_matchesSelectorWithoutSpecificity(selector, element)) {
+            return true;
+          }
+        }
+        return false;
+      }
       // http://dev.w3.org/csswg/selectors-4/#the-nth-child-pseudo
       case 'nth-child':
-        return _elementSatisfiesNthChildren(_element!, node, data[0], data[1]!);
       case 'nth-of-type':
-        return _elementSatisfiesNthChildrenOfType(_element!, _element!.tagName, node, data[0], data[1]!);
       case 'nth-last-child':
-        return _elementSatisfiesNthLastChildren(_element!, node, data[0], data[1]!);
-      case 'nth-last-of-type':
-        return _elementSatisfiesNthLastChildrenOfType(_element!, _element!.tagName, node, data[0], data[1]!);
+      case 'nth-last-of-type': {
+        final arg = node.argument;
+        if (arg is! List<String>) return false;
+        final List<num?>? data = _parseNthExpressions(arg);
+        //  i = An + B
+        if (data == null) return false;
+
+        switch (name) {
+          case 'nth-child':
+            return _elementSatisfiesNthChildren(_element!, node, data[0], data[1]!);
+          case 'nth-of-type':
+            return _elementSatisfiesNthChildrenOfType(_element!, _element!.tagName, node, data[0], data[1]!);
+          case 'nth-last-child':
+            return _elementSatisfiesNthLastChildren(_element!, node, data[0], data[1]!);
+          case 'nth-last-of-type':
+            return _elementSatisfiesNthLastChildrenOfType(_element!, _element!.tagName, node, data[0], data[1]!);
+        }
+        return false;
+      }
     }
+
     if (kDebugMode) throw _unimplemented(node);
     return false;
+  }
+
+  bool _matchesSelectorWithoutSpecificity(Selector selector, Element element) {
+    final Element? savedElement = _element;
+    final SelectorGroup? savedGroup = _selectorGroup;
+
+    _element = element;
+    // Disable matchSpecificity tracking while evaluating nested selectors.
+    _selectorGroup = null;
+    final bool result = visitSelector(selector);
+
+    _element = savedElement;
+    _selectorGroup = savedGroup;
+
+    return result;
   }
 
   bool _elementSatisfies(Element element, PseudoClassFunctionSelector selector, num? a, num b, IndexCounter finder) {
@@ -521,19 +604,23 @@ class SelectorEvaluator extends SelectorVisitor {
 
     if (exprs.isNotEmpty) {
       if (exprs.length == 1) {
-        String value = exprs[0];
+        String value = exprs[0].toLowerCase();
         if (isNumeric(value)) {
           B = num.parse(value);
+          return [A, B];
         } else {
           if (value == 'even') {
             A = 2;
-            B = 1;
+            B = 0;
+            return [A, B];
           } else if (value == 'odd') {
             A = 2;
-            B = 0;
+            B = 1;
+            return [A, B];
           } else if (value == 'n') {
             A = 1;
             B = 0;
+            return [A, B];
           } else {
             return null;
           }

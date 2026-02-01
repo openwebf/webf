@@ -321,6 +321,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           }
 
           view.setInlineStyle(nativePtr, command.args, value, baseHref: baseHref);
+          view.recordBlinkStyleSyncProperty(nativePtr, command.args);
           pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
         case UICommandType.setStyleById:
@@ -347,6 +348,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           }
 
           view.setInlineStyle(nativePtr, key, value, baseHref: baseHref);
+          view.recordBlinkStyleSyncProperty(nativePtr, key);
           pendingStylePropertiesTargets[nativePtr.address] = true;
           break;
         case UICommandType.setPseudoStyle:
@@ -480,6 +482,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
       bridgeLogger.severe('Error executing UI command', e, stack);
     }
   }
+  view.finalizeBlinkStyleSync();
   // For pending style properties, we needs to flush to render style.
   for (int address in pendingStylePropertiesTargets.keys) {
     try {

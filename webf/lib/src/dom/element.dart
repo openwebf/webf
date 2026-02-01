@@ -140,6 +140,7 @@ abstract class Element extends ContainerNode
 
   /// The inline style is a map of style property name to style property value.
   final Map<String, dynamic> inlineStyle = {};
+  final Map<String, bool> _inlineStyleImportants = {};
 
   /// The StatefulElements that holding the reference of this elements
   @flutter.protected
@@ -333,8 +334,13 @@ abstract class Element extends ContainerNode
   @mustCallSuper
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     attributes[_styleProperty] = ElementAttributeProperty(setter: (value) {
-      final map = CSSParser(value).parseInlineStyle();
-      inlineStyle.addAll(map);
+      final parsed = CSSParser(value).parseInlineStyleWithImportant();
+      inlineStyle
+        ..clear()
+        ..addAll(parsed.properties);
+      _inlineStyleImportants
+        ..clear()
+        ..addAll(parsed.importants);
       recalculateStyle();
     }, deleter: () {
       _removeInlineStyle();
@@ -546,6 +552,20 @@ abstract class Element extends ContainerNode
   void willDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
     super.willDetachRenderer(flutterWidgetElement);
 
+    // Remove all intersection change listeners.
+    renderStyle.clearIntersectionChangeListeners(flutterWidgetElement);
+  }
+
+  @override
+  void didDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
+    super.didDetachRenderer(flutterWidgetElement);
+
+    // Keep the renderStyle → renderObject pairing alive during `willDetachRenderer`
+    // because Flutter may still hit-test/paint the render tree until `unmount()`
+    // completes. Removing the pairing too early can make renderStyle APIs (e.g.
+    // `effectiveTransformMatrix`) think there's no render box and assert.
+    renderStyle.removeRenderObject(flutterWidgetElement);
+
     if (!renderStyle.hasRenderBox()) {
       // Cancel running transition.
       renderStyle.cancelRunningTransition();
@@ -555,10 +575,6 @@ abstract class Element extends ContainerNode
 
       ownerView.window.unwatchViewportSizeChangeForElement(this);
     }
-
-    // Remove all intersection change listeners.
-    renderStyle.clearIntersectionChangeListeners(flutterWidgetElement);
-    renderStyle.removeRenderObject(flutterWidgetElement);
   }
 
   BoundingClientRect getBoundingClientRect() => boundingClientRect;
@@ -676,6 +692,16 @@ abstract class Element extends ContainerNode
 
   void _updateHostingWidgetWithPosition(CSSPositionType oldPosition) {
     CSSPositionType currentPosition = renderStyle.position;
+    // This callback is scheduled via `whenConnected().then(...)`, but it can still
+    // run after the element is disconnected (e.g., during test document resets).
+    // Avoid mutating out-of-flow attachment state for detached elements.
+    if (!isConnected) {
+      if (DebugFlags.shouldLogPositioningForClasses(_classList)) {
+        cssLogger
+            .info('[pos][update][skip] <${tagName.toLowerCase()}> not connected');
+      }
+      return;
+    }
     if (oldPosition == currentPosition) return;
 
     // No need to detach and reattach renderBoxMode when its position
@@ -965,6 +991,7 @@ abstract class Element extends ContainerNode
           cu == 0x5F || // '_'
           cu == 0x2D; // '-'
     }
+
     while (i < content.length) {
       final ch = content[i];
       if (ch == '"' || ch == '\'') {
@@ -1306,7 +1333,6 @@ abstract class Element extends ContainerNode
     if (_connectedCompleter != null) {
       _connectedCompleter!.complete();
     }
-
     super.connectedCallback();
     _updateNameMap(getAttribute(_nameAttr));
     _updateIDMap(_id);
@@ -1711,8 +1737,9 @@ abstract class Element extends ContainerNode
   void applyInlineStyle(CSSStyleDeclaration style) {
     if (inlineStyle.isNotEmpty) {
       inlineStyle.forEach((propertyName, value) {
-        // Force inline style to be applied as important priority.
-        style.setProperty(propertyName, value, isImportant: true);
+        final bool important = _inlineStyleImportants[propertyName] == true;
+        style.setProperty(propertyName, value,
+            isImportant: important ? true : null);
       });
     }
   }
@@ -1884,23 +1911,78 @@ abstract class Element extends ContainerNode
     SchedulerBinding.instance.scheduleFrame();
   }
 
+  // Normalize vendor-prefixed style property names emitted by the JS/CSSOM
+  // bridge (e.g. '-webkit-align-items' => 'WebkitAlignItems') to the standard
+  // internal property keys used by the Dart style engine.
+  //
+  // This is required so resolveValue() can parse typed values and flex/grid
+  // relayout is properly triggered when authors use WebKit-prefixed properties.
+  String _normalizeStylePropertyName(String name) {
+    if (CSSVariable.isCSSSVariableProperty(name)) return name;
+    if (name.contains('-')) name = camelize(name);
+    switch (name) {
+      case 'WebkitAlignItems':
+      case 'webkitAlignItems':
+        return ALIGN_ITEMS;
+      case 'WebkitAlignSelf':
+      case 'webkitAlignSelf':
+        return ALIGN_SELF;
+      case 'WebkitAlignContent':
+      case 'webkitAlignContent':
+        return ALIGN_CONTENT;
+      case 'WebkitJustifyContent':
+      case 'webkitJustifyContent':
+        return JUSTIFY_CONTENT;
+      case 'WebkitFlex':
+      case 'webkitFlex':
+        return FLEX;
+      case 'WebkitFlexBasis':
+      case 'webkitFlexBasis':
+        return FLEX_BASIS;
+      case 'WebkitFlexDirection':
+      case 'webkitFlexDirection':
+        return FLEX_DIRECTION;
+      case 'WebkitFlexFlow':
+      case 'webkitFlexFlow':
+        return FLEX_FLOW;
+      case 'WebkitFlexGrow':
+      case 'webkitFlexGrow':
+        return FLEX_GROW;
+      case 'WebkitFlexShrink':
+      case 'webkitFlexShrink':
+        return FLEX_SHRINK;
+      case 'WebkitFlexWrap':
+      case 'webkitFlexWrap':
+        return FLEX_WRAP;
+      case 'WebkitOrder':
+      case 'webkitOrder':
+        return ORDER;
+      case 'WebkitLineClamp':
+      case 'webkitLineClamp':
+        return LINE_CLAMP;
+      default:
+        return name;
+    }
+  }
+
   void _onStyleChanged(
       String propertyName, String? prevValue, String currentValue,
       {String? baseHref}) {
+    final String property = _normalizeStylePropertyName(propertyName);
     // Identify color-bearing properties up front so we can normalize
     // both the previous and current values to concrete colors for
     // transition decisions, independent of any var(...) indirection.
-    final bool isColorProp = propertyName == COLOR ||
-        propertyName == BACKGROUND_COLOR ||
-        propertyName == TEXT_DECORATION_COLOR ||
-        propertyName == BORDER_LEFT_COLOR ||
-        propertyName == BORDER_TOP_COLOR ||
-        propertyName == BORDER_RIGHT_COLOR ||
-        propertyName == BORDER_BOTTOM_COLOR;
+    final bool isColorProp = property == COLOR ||
+        property == BACKGROUND_COLOR ||
+        property == TEXT_DECORATION_COLOR ||
+        property == BORDER_LEFT_COLOR ||
+        property == BORDER_TOP_COLOR ||
+        property == BORDER_RIGHT_COLOR ||
+        property == BORDER_BOTTOM_COLOR;
 
-    if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
+    if (DebugFlags.shouldLogTransitionForProp(property)) {
       cssLogger.info(
-          '[style][change] $tagName.$propertyName prev=${prevValue ?? 'null'} curr=$currentValue');
+          '[style][change] $tagName.$property prev=${prevValue ?? 'null'} curr=$currentValue');
     }
 
     // For color properties, prefer the previous *computed* color from
@@ -1908,12 +1990,12 @@ abstract class Element extends ContainerNode
     // raw serialized CSS text (which may still contain var(...)).
     String? prevForTransition = prevValue;
     if (isColorProp) {
-      final dynamic prevComputed = renderStyle.getProperty(propertyName);
+      final dynamic prevComputed = renderStyle.getProperty(property);
       if (prevComputed is CSSColor) {
         prevForTransition = prevComputed.cssText();
-        if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
+        if (DebugFlags.shouldLogTransitionForProp(property)) {
           cssLogger.info(
-              '[style][prev-computed] $tagName.$propertyName prevSerialized=${prevValue ?? 'null'} prevComputed=$prevForTransition');
+              '[style][prev-computed] $tagName.$property prevSerialized=${prevValue ?? 'null'} prevComputed=$prevForTransition');
         }
       }
     }
@@ -1925,42 +2007,48 @@ abstract class Element extends ContainerNode
     if (currentValue.contains('var(') && isColorProp) {
       try {
         currentValue = CSSWritingModeMixin.expandInlineVars(
-            currentValue, renderStyle, propertyName);
+            currentValue, renderStyle, property);
       } catch (_) {}
     }
 
     final bool shouldTrans = renderStyle.shouldTransition(
-        propertyName, prevForTransition, currentValue);
-    if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
+        property, prevForTransition, currentValue);
+    if (DebugFlags.shouldLogTransitionForProp(property)) {
       cssLogger.info(
-          '[style][route] $tagName.$propertyName shouldTransition=$shouldTrans');
+          '[style][route] $tagName.$property shouldTransition=$shouldTrans');
     }
     if (shouldTrans) {
       scheduleRunTransitionAnimations(
-          propertyName, prevForTransition, currentValue);
+          property, prevForTransition, currentValue);
       return;
     }
     // If a transition for this property is pending in this frame or currently
     // running, avoid applying the immediate setRenderStyle which would clobber
     // the animation-driven value. The scheduled/active transition will drive
     // updates.
-    final bool pending = _pendingTransitionProps.contains(propertyName);
-    final bool running = renderStyle.isTransitionRunning(propertyName);
-    if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
+    final bool pending = _pendingTransitionProps.contains(property);
+    final bool running = renderStyle.isTransitionRunning(property);
+    if (DebugFlags.shouldLogTransitionForProp(property)) {
       cssLogger.info(
-          '[style][route] $tagName.$propertyName pending=$pending running=$running');
+          '[style][route] $tagName.$property pending=$pending running=$running');
     }
     if (pending || running) {
       return;
     }
-    if (DebugFlags.shouldLogTransitionForProp(propertyName)) {
+    if (DebugFlags.shouldLogTransitionForProp(property)) {
       cssLogger.info(
-          '[style][apply] $tagName.$propertyName direct-set value=$currentValue');
+          '[style][apply] $tagName.$property direct-set value=$currentValue');
     }
-    setRenderStyle(propertyName, currentValue, baseHref: baseHref);
+    setRenderStyle(property, currentValue, baseHref: baseHref);
   }
 
   void _onStyleFlushed(List<String> properties) {
+    // Mark that this element has completed at least one style flush while
+    // connected, enabling CSS transitions for subsequent style changes.
+    // Initial computed values should not trigger transitions.
+    if (isConnected) {
+      renderStyle.markDidFlushStyleWhileConnected();
+    }
     if (renderStyle.shouldAnimation(properties)) {
       runAnimation() {
         renderStyle.beforeRunningAnimation();
@@ -1987,28 +2075,79 @@ abstract class Element extends ContainerNode
       {String? baseHref, bool fromNative = false}) {
     final bool enableBlink = ownerDocument.ownerView.enableBlink;
     final bool validate = !(fromNative && enableBlink);
+    final String raw = value;
+    String cleaned = raw.trim();
+    var important = false;
+    final String lower = cleaned.toLowerCase();
+    const String importantSuffix = '!important';
+    if (lower.endsWith(importantSuffix)) {
+      important = true;
+      cleaned = cleaned
+          .substring(0, cleaned.length - importantSuffix.length)
+          .trimRight();
+    }
+
+    // CSSOM setter semantics require that syntactically-invalid assignments
+    // do nothing (keep the previous specified value). For gap properties,
+    // validate early so we don't mutate Element.inlineStyle before the
+    // CSSStyleDeclaration validation/expansion runs.
+    final bool isGapProp = property == GAP || property == ROW_GAP || property == COLUMN_GAP;
+    if (isGapProp && cleaned.isNotEmpty) {
+      bool isValidGapDeclaration(String v) {
+        // CSS-wide keywords are allowed on the shorthand as a single token.
+        if (v == INHERIT || CSSLength.isInitial(v)) return true;
+        final List<String> tokens = splitByAsciiWhitespacePreservingGroups(v);
+        if (tokens.isEmpty || tokens.length > 2) return false;
+        for (final token in tokens) {
+          // CSS-wide keywords cannot appear as components in a multi-token shorthand.
+          if (token == INHERIT || CSSLength.isInitial(token)) return tokens.length == 1;
+          if (!CSSGap.isValidGapValue(token)) return false;
+        }
+        return true;
+      }
+
+      if (property == GAP) {
+        if (!isValidGapDeclaration(cleaned)) {
+          return;
+        }
+      } else if (property == ROW_GAP || property == COLUMN_GAP) {
+        if (!(cleaned == INHERIT || CSSLength.isInitial(cleaned) || CSSGap.isValidGapValue(cleaned))) {
+          return;
+        }
+      }
+    }
+
     // Current only for mark property is setting by inline style.
-    inlineStyle[property] = value;
+    inlineStyle[property] = cleaned;
+    if (important) {
+      _inlineStyleImportants[property] = true;
+    } else {
+      _inlineStyleImportants.remove(property);
+    }
 
     // recalculate matching styles for element when inline styles are removed.
-    if (value.isEmpty) {
-      style.removeProperty(property, true);
+    if (cleaned.isEmpty) {
+      inlineStyle.remove(property);
+      final bool prevImportant =
+          _inlineStyleImportants.remove(property) == true;
+      style.removeProperty(property, prevImportant ? true : null);
       // When Blink CSS is enabled, style cascading and validation happen on
       // the native side. Avoid expensive Dart-side recalculation here.
       if (!(fromNative && enableBlink)) {
         recalculateStyle();
       }
     } else {
-      style.setProperty(property, value,
-          isImportant: true, baseHref: baseHref, validate: validate);
+      style.setProperty(property, cleaned,
+          isImportant: important ? true : null,
+          baseHref: baseHref,
+          validate: validate);
     }
   }
 
   void clearInlineStyle() {
-    for (var key in inlineStyle.keys) {
-      style.removeProperty(key, true);
-    }
     inlineStyle.clear();
+    _inlineStyleImportants.clear();
+    recalculateStyle();
   }
 
   // Set pseudo element (::before, ::after, ::first-letter, ::first-line) style.
@@ -2043,8 +2182,8 @@ abstract class Element extends ContainerNode
     renderStyle.initDisplay(style);
 
     applyAttributeStyle(style);
-    applyInlineStyle(style);
     _applySheetStyle(style);
+    applyInlineStyle(style);
     _applyPseudoStyle(style);
   }
 
@@ -2102,22 +2241,17 @@ abstract class Element extends ContainerNode
       // always recurse into children even when this element's own style is a no-op.
       if (rebuildNested || hasInheritedPendingProperty) {
         for (final Element child in children) {
-          child.recalculateStyle(rebuildNested: rebuildNested, forceRecalculate: forceRecalculate);
+          child.recalculateStyle(
+              rebuildNested: rebuildNested, forceRecalculate: forceRecalculate);
         }
       }
     }
   }
 
   void _removeInlineStyle() {
-    inlineStyle.forEach((String property, _) {
-      _removeInlineStyleProperty(property);
-    });
     inlineStyle.clear();
-    style.flushPendingProperties();
-  }
-
-  void _removeInlineStyleProperty(String property) {
-    style.removeProperty(property, true);
+    _inlineStyleImportants.clear();
+    recalculateStyle();
   }
 
   // The Element.getBoundingClientRect() method returns a DOMRect object providing information
@@ -2452,6 +2586,8 @@ abstract class Element extends ContainerNode
 
   Future<Uint8List> toBlob({double? devicePixelRatio}) {
     forceToRepaintBoundary = true;
+
+    ownerDocument.updateStyleIfNeeded();
 
     Completer<Uint8List> completer = Completer();
     SchedulerBinding.instance.addPostFrameCallback((_) async {

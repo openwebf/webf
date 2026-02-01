@@ -74,8 +74,9 @@ describe('CSS Grid invalid value handling', () => {
     await snapshot();
 
     const computed = getComputedStyle(grid);
-    // Should have some valid gap value
-    expect(computed.rowGap).toBeTruthy();
+    // Invalid assignment should be a no-op: keep the previous valid value.
+    expect(parseFloat(computed.rowGap)).toBe(10);
+    expect(parseFloat(computed.columnGap)).toBe(10);
 
     grid.remove();
   });

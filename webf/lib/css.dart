@@ -12,6 +12,7 @@ export 'src/css/background.dart';
 export 'src/css/border_radius.dart';
 export 'src/css/box.dart';
 export 'src/css/box_shadow.dart';
+export 'src/css/cascade.dart';
 export 'src/css/content_visibility.dart';
 export 'src/css/flexbox.dart';
 export 'src/css/gap.dart';
@@ -55,6 +56,7 @@ export 'src/css/font_face.dart';
 export 'src/css/nth_index_cache.dart';
 
 export 'src/css/computed_style_declaration.dart';
+export 'src/css/css_style_sheet_binding.dart';
 export 'src/css/element_rule_collector.dart';
 export 'src/css/css_property_name.dart';
 

@@ -37,6 +37,12 @@ class StyleNodeManager {
 
   StyleNodeManager(this.document);
 
+  void reset() {
+    _styleSheetCandidateNodes.clear();
+    _pendingStyleSheets.clear();
+    _isStyleSheetCandidateNodeChanged = false;
+  }
+
   void addStyleSheetCandidateNode(Node node) {
     if (!node.isConnected) {
       return;
@@ -230,10 +236,20 @@ class StyleNodeManager {
   List<CSSStyleSheet> _collectActiveStyleSheets() {
     List<CSSStyleSheet> styleSheetsForStyleSheetsList = [];
     for (Node node in _styleSheetCandidateNodes) {
+      // Candidate nodes can become disconnected when the document element is
+      // replaced (e.g. integration test resets). Ignore disconnected nodes to
+      // avoid leaking stale stylesheets across document lifecycles.
+      if (!node.isConnected) continue;
       if (node is LinkElement && !node.disabled && !node.loading && node.styleSheet != null) {
-        styleSheetsForStyleSheetsList.add(node.styleSheet!);
+        final sheet = node.styleSheet!;
+        if (!sheet.disabled) {
+          styleSheetsForStyleSheetsList.add(sheet);
+        }
       } else if (node is StyleElementMixin && node.styleSheet != null) {
-        styleSheetsForStyleSheetsList.add(node.styleSheet!);
+        final sheet = node.styleSheet!;
+        if (!sheet.disabled) {
+          styleSheetsForStyleSheetsList.add(sheet);
+        }
       }
     }
     return styleSheetsForStyleSheetsList;

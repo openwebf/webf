@@ -20,7 +20,6 @@ class ElementRuleCollector {
   }
 
   List<CSSStyleRule> matchedPseudoRules(RuleSet ruleSet, Element element) {
-
     final SelectorEvaluator evaluator = SelectorEvaluator();
 
     // Collect candidates from all indexed buckets because many pseudo-element
@@ -100,7 +99,6 @@ class ElementRuleCollector {
       }
     }
 
-
     return list;
   }
 
@@ -111,9 +109,10 @@ class ElementRuleCollector {
     final SelectorEvaluator evaluator = SelectorEvaluator();
     // Build ancestor token sets once per call if fast-path is enabled, to avoid
     // repeatedly walking the ancestor chain for each candidate rule.
-    final _AncestorTokenSet? ancestorTokens = DebugFlags.enableCssAncestryFastPath
-        ? _buildAncestorTokens(element)
-        : null;
+    final _AncestorTokenSet? ancestorTokens =
+        DebugFlags.enableCssAncestryFastPath
+            ? _buildAncestorTokens(element)
+            : null;
 
     if (ruleSet.isEmpty) {
       return matchedRules;
@@ -176,8 +175,6 @@ class ElementRuleCollector {
       ancestorTokens: ancestorTokens,
     ));
 
-
-
     return matchedRules;
   }
 
@@ -188,9 +185,10 @@ class ElementRuleCollector {
     List<CSSRule> matchedRules = [];
     // Reuse a single evaluator per call.
     final SelectorEvaluator evaluator = SelectorEvaluator();
-    final _AncestorTokenSet? ancestorTokens = DebugFlags.enableCssAncestryFastPath
-        ? _buildAncestorTokens(element)
-        : null;
+    final _AncestorTokenSet? ancestorTokens =
+        DebugFlags.enableCssAncestryFastPath
+            ? _buildAncestorTokens(element)
+            : null;
 
     if (ruleSet.isEmpty) return matchedRules;
 
@@ -214,7 +212,8 @@ class ElementRuleCollector {
     // universal (optional + capped or heuristic skip)
     final bool skipUniversal = DebugFlags.enableCssInvalidateSkipUniversal ||
         (DebugFlags.enableCssInvalidateUniversalHeuristics &&
-            ruleSet.universalRules.length > DebugFlags.cssInvalidateUniversalSkipThreshold);
+            ruleSet.universalRules.length >
+                DebugFlags.cssInvalidateUniversalSkipThreshold);
     if (!skipUniversal) {
       final int cap = DebugFlags.cssInvalidateUniversalCap;
       if (cap > 0 && ruleSet.universalRules.length > cap) {
@@ -250,52 +249,25 @@ class ElementRuleCollector {
       if (matchedRules.isNotEmpty) gotoReturn(matchedRules);
     }
 
-
     return matchedRules;
   }
 
-  void gotoReturn(List<CSSRule> matchedRules) {
-
-  }
+  void gotoReturn(List<CSSRule> matchedRules) {}
 
   CSSStyleDeclaration collectionFromRuleSet(RuleSet ruleSet, Element element) {
     final rules = matchedRules(ruleSet, element);
-    CSSStyleDeclaration declaration = CSSStyleDeclaration();
-    if (rules.isEmpty) {
-      return declaration;
-    }
-
-
-
-    // sort selector
-    rules.sort((leftRule, rightRule) {
-      if (leftRule is! CSSStyleRule || rightRule is! CSSStyleRule) {
-        return 0;
-      }
-      int isCompare = leftRule.selectorGroup.matchSpecificity.compareTo(rightRule.selectorGroup.matchSpecificity);
-      if (isCompare == 0) {
-        return leftRule.position.compareTo(rightRule.position);
-      }
-      return isCompare;
-    });
-
-    // Merge all the rules
-    for (CSSRule rule in rules) {
-      if (rule is CSSStyleRule) {
-        declaration.union(rule.declaration);
-      }
-    }
-    return declaration;
+    final styleRules = rules.whereType<CSSStyleRule>().toList();
+    return cascadeMatchedStyleRules(styleRules);
   }
 
   List<CSSRule> _collectMatchingRulesForList(
     List<CSSRule>? rules,
     Element element, {
-      required SelectorEvaluator evaluator,
-      bool enableAncestryFastPath = true,
-      _AncestorTokenSet? ancestorTokens,
-      bool includePseudo = false,
-    }) {
+    required SelectorEvaluator evaluator,
+    bool enableAncestryFastPath = true,
+    _AncestorTokenSet? ancestorTokens,
+    bool includePseudo = false,
+  }) {
     if (rules == null || rules.isEmpty) {
       return [];
     }
@@ -308,17 +280,21 @@ class ElementRuleCollector {
       // requires an ancestor ID/class/tag that's not present in the chain, skip
       // the expensive evaluator entirely.
       if (enableAncestryFastPath) {
-        final _AncestorHints hints = _collectDescendantAncestorHints(rule.selectorGroup);
+        final _AncestorHints hints =
+            _collectDescendantAncestorHints(rule.selectorGroup);
         if (!hints.isEmpty) {
-          if (!_ancestorChainSatisfiesHints(element, hints, tokens: ancestorTokens)) {
+          if (!_ancestorChainSatisfiesHints(element, hints,
+              tokens: ancestorTokens)) {
             continue;
           }
         }
       }
       try {
         if (evaluator.matchSelector(rule.selectorGroup, element)) {
-          final bool hasPseudo = _selectorGroupHasPseudoElement(rule.selectorGroup);
-          final bool hasNonPseudo = _selectorGroupHasNonPseudoElement(rule.selectorGroup);
+          final bool hasPseudo =
+              _selectorGroupHasPseudoElement(rule.selectorGroup);
+          final bool hasNonPseudo =
+              _selectorGroupHasNonPseudoElement(rule.selectorGroup);
           if (includePseudo) {
             if (hasPseudo) matchedRules.add(rule);
           } else {
@@ -345,7 +321,8 @@ class ElementRuleCollector {
             } else {
               if (DebugFlags.enableCssTrace) {
                 final selText = rule.selectorGroup.selectorText;
-                cssLogger.finer('[CSS/Match] skip non-pseudo include for ${element.tagName} due to only-pseudo match: "$selText"');
+                cssLogger.finer(
+                    '[CSS/Match] skip non-pseudo include for ${element.tagName} due to only-pseudo match: "$selText"');
               }
             }
           }
@@ -361,9 +338,11 @@ class ElementRuleCollector {
 
   bool _selectorGroupHasPseudoElement(SelectorGroup selectorGroup) {
     for (final Selector selector in selectorGroup.selectors) {
-      for (final SimpleSelectorSequence seq in selector.simpleSelectorSequences) {
+      for (final SimpleSelectorSequence seq
+          in selector.simpleSelectorSequences) {
         final simple = seq.simpleSelector;
-        if (simple is PseudoElementSelector || simple is PseudoElementFunctionSelector) {
+        if (simple is PseudoElementSelector ||
+            simple is PseudoElementFunctionSelector) {
           return true;
         }
       }
@@ -373,11 +352,13 @@ class ElementRuleCollector {
 
   bool _selectorGroupHasNonPseudoElement(SelectorGroup selectorGroup) {
     for (final Selector selector in selectorGroup.selectors) {
-      for (final SimpleSelectorSequence seq in selector.simpleSelectorSequences) {
+      for (final SimpleSelectorSequence seq
+          in selector.simpleSelectorSequences) {
         final simple = seq.simpleSelector;
         // Any non-pseudo simple selector (including universal '*', tag, class, id, attribute)
         // indicates the group targets normal elements as well.
-        if (simple is! PseudoElementSelector && simple is! PseudoElementFunctionSelector) {
+        if (simple is! PseudoElementSelector &&
+            simple is! PseudoElementFunctionSelector) {
           return true;
         }
       }
@@ -388,7 +369,8 @@ class ElementRuleCollector {
   bool _selectorHasPseudoElement(Selector selector) {
     for (final SimpleSelectorSequence seq in selector.simpleSelectorSequences) {
       final simple = seq.simpleSelector;
-      if (simple is PseudoElementSelector || simple is PseudoElementFunctionSelector) {
+      if (simple is PseudoElementSelector ||
+          simple is PseudoElementFunctionSelector) {
         return true;
       }
     }
@@ -439,13 +421,18 @@ class ElementRuleCollector {
     return hints;
   }
 
-  bool _ancestorChainSatisfiesHints(Element element, _AncestorHints hints, { _AncestorTokenSet? tokens }) {
+  bool _ancestorChainSatisfiesHints(Element element, _AncestorHints hints,
+      {_AncestorTokenSet? tokens}) {
     if (hints.isEmpty) return true;
-    final _AncestorTokenSet localTokens = tokens ?? _buildAncestorTokens(element);
+    final _AncestorTokenSet localTokens =
+        tokens ?? _buildAncestorTokens(element);
     // All required tokens must be present somewhere in the chain.
-    if (hints.ids.isNotEmpty && !localTokens.ids.containsAll(hints.ids)) return false;
-    if (hints.classes.isNotEmpty && !localTokens.classes.containsAll(hints.classes)) return false;
-    if (hints.tags.isNotEmpty && !localTokens.tags.containsAll(hints.tags)) return false;
+    if (hints.ids.isNotEmpty && !localTokens.ids.containsAll(hints.ids))
+      return false;
+    if (hints.classes.isNotEmpty &&
+        !localTokens.classes.containsAll(hints.classes)) return false;
+    if (hints.tags.isNotEmpty && !localTokens.tags.containsAll(hints.tags))
+      return false;
     return true;
   }
 
@@ -476,5 +463,6 @@ class _AncestorTokenSet {
   final Set<String> ids;
   final Set<String> classes;
   final Set<String> tags;
-  _AncestorTokenSet({required this.ids, required this.classes, required this.tags});
+  _AncestorTokenSet(
+      {required this.ids, required this.classes, required this.tags});
 }

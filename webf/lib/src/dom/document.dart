@@ -217,11 +217,64 @@ class Document extends ContainerNode {
         setter: (document, value) {
           castToType<Document>(document)._title = value ?? '';
           castToType<Document>(document).controller.onTitleChanged?.call(castToType<Document>(document).title);
-        })
+        }),
+    // CSSOM: https://drafts.csswg.org/cssom/#dom-document-stylesheets
+    // In Dart CSS mode, this is backed by the Dart stylesheet engine.
+    'styleSheets': StaticDefinedBindingProperty(
+      getter: (document) => castToType<Document>(document)._styleSheetsForBinding,
+    ),
   };
 
   @override
   List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _documentProperties];
+
+  final Expando<WeakReference<CSSStyleSheetBinding>> _styleSheetBindingCache =
+      Expando<WeakReference<CSSStyleSheetBinding>>('documentStyleSheetBinding');
+
+  CSSStyleSheetBinding _ensureStyleSheetBinding(CSSStyleSheet sheet) {
+    final CSSStyleSheetBinding? existing = _styleSheetBindingCache[sheet]?.target;
+    if (existing != null && !isBindingObjectDisposed(existing.pointer)) {
+      return existing;
+    }
+    final binding = CSSStyleSheetBinding(
+      BindingContext(ownerView, contextId!, allocateNewBindingObject()),
+      this,
+      sheet,
+    );
+    _styleSheetBindingCache[sheet] = WeakReference(binding);
+    return binding;
+  }
+
+  // Exposed for other DOM nodes (e.g. <style>/<link>) to return stable
+  // CSSStyleSheet binding objects that are shared with `document.styleSheets`.
+  CSSStyleSheetBinding ensureStyleSheetBindingForCSSOM(CSSStyleSheet sheet) => _ensureStyleSheetBinding(sheet);
+
+  List<CSSStyleSheetBinding> get _styleSheetsForBinding {
+    if (ownerView.enableBlink) {
+      // Blink CSS exposes document.styleSheets natively.
+      return const <CSSStyleSheetBinding>[];
+    }
+
+    // Ensure pending <style>/<link> parsing and candidate changes are flushed
+    // before exposing the list to JS.
+    updateStyleIfNeeded();
+
+    final result = <CSSStyleSheetBinding>[];
+    for (final Node node in styleNodeManager.styleSheetCandidateNodes) {
+      if (node is LinkElement) {
+        final sheet = node.styleSheet;
+        if (sheet != null) {
+          result.add(_ensureStyleSheetBinding(sheet));
+        }
+      } else if (node is StyleElementMixin) {
+        final sheet = node.styleSheet;
+        if (sheet != null) {
+          result.add(_ensureStyleSheetBinding(sheet));
+        }
+      }
+    }
+    return result;
+  }
 
   static final StaticDefinedSyncBindingObjectMethodMap _syncDocumentMethods = {
     'querySelectorAll': StaticDefinedSyncBindingObjectMethod(
@@ -486,6 +539,18 @@ class Document extends ContainerNode {
       documentElement = null;
       ruleSet.reset();
       styleSheets.clear();
+      // The JS integration test runner replaces the entire <html> tree between
+      // specs. Ensure style bookkeeping does not retain disconnected <style>/<link>
+      // nodes from the previous document element, otherwise rules leak across
+      // specs and cause order-dependent failures.
+      styleNodeManager.reset();
+      _styleDirtyElements.clear();
+      _styleDirtyElementsRebuildNested.clear();
+      nthIndexCache.clearAll();
+      elementsByID.clear();
+      elementsByName.clear();
+      elementsByClass.clear();
+      elementsByAttr.clear();
     }
     return result;
   }

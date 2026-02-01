@@ -15,6 +15,14 @@ abstract class CSSRule {
 
   int position = -1;
 
+  /// Cascade layer path segments for this rule (e.g. `['framework', 'utilities']`).
+  /// Empty means unlayered.
+  List<String> layerPath = const <String>[];
+
+  /// Cached cascade layer sort key, assigned by [RuleSet] when rules are added.
+  /// `null` means unlayered.
+  List<int>? layerOrderKey;
+
   // https://drafts.csswg.org/cssom/#dom-cssrule-type
   // The following attribute and constants are historical.
   int get type;
@@ -27,4 +35,8 @@ abstract class CSSRule {
   static const int KEYFRAMES_RULE = 7;
   static const int MARGIN_RULE = 9;
   static const int NAMESPACE_RULE = 10;
+
+  // CSS Cascade Layers (CSSOM)
+  static const int LAYER_BLOCK_RULE = 18;
+  static const int LAYER_STATEMENT_RULE = 19;
 }

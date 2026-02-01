@@ -43,6 +43,6 @@ describe('resize-min', () => {
     document.body.offsetHeight;
     document.documentElement.style.height = '100px';
 
-    await snapshot();
+    await snapshot(2);
   });
 });

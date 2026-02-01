@@ -16,7 +16,9 @@ import 'package:webf/bridge.dart';
 import 'package:webf/html.dart';
 import 'package:quiver/collection.dart';
 
-typedef StyleChangeListener = void Function(String property, String? original, String present, {String? baseHref});
+typedef StyleChangeListener = void Function(
+    String property, String? original, String present,
+    {String? baseHref});
 typedef StyleFlushedListener = void Function(List<String> properties);
 
 const Map<String, bool> _cssShorthandProperty = {
@@ -75,7 +77,8 @@ List<String> _propertyOrders = [
   HEIGHT
 ];
 
-final LinkedLruHashMap<String, Map<String, String?>> _cachedExpandedShorthand = LinkedLruHashMap(maximumSize: 500);
+final LinkedLruHashMap<String, Map<String, String?>> _cachedExpandedShorthand =
+    LinkedLruHashMap(maximumSize: 500);
 
 class CSSPropertyValue {
   String? baseHref;
@@ -103,7 +106,8 @@ class CSSPropertyValue {
 ///    object on the first CSS rule in the document's first stylesheet.
 /// 3. Via [Window.getComputedStyle()], which exposes the [CSSStyleDeclaration]
 ///    object as a read-only interface.
-class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBindingObject {
+class CSSStyleDeclaration extends DynamicBindingObject
+    with StaticDefinedBindingObject {
   Element? target;
 
   // TODO(yuanyan): defaultStyle should be longhand properties.
@@ -145,7 +149,9 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   CSSStyleDeclaration([super.context]);
 
   // ignore: prefer_initializing_formals
-  CSSStyleDeclaration.computedStyle(this.target, this.defaultStyle, this.onStyleChanged, [this.onStyleFlushed]);
+  CSSStyleDeclaration.computedStyle(
+      this.target, this.defaultStyle, this.onStyleChanged,
+      [this.onStyleFlushed]);
 
   /// An empty style declaration.
   static CSSStyleDeclaration empty = CSSStyleDeclaration();
@@ -165,7 +171,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     String css = EMPTY_STRING;
     _properties.forEach((property, value) {
       if (css.isNotEmpty) css += ' ';
-      css += '${_kebabize(property)}: $value ${_importants.containsKey(property) ? '!important' : ''};';
+      css +=
+          '${_kebabize(property)}: $value ${_importants.containsKey(property) ? '!important' : ''};';
     });
     return css;
   }
@@ -179,7 +186,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   }
 
   bool get hasInheritedPendingProperty {
-    return _pendingProperties.keys.any((key) => isInheritedPropertyString(_kebabize(key)));
+    return _pendingProperties.keys
+        .any((key) => isInheritedPropertyString(_kebabize(key)));
   }
 
   // @TODO: Impl the cssText setter.
@@ -198,12 +206,15 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   /// If not set, returns the empty string.
   String getPropertyValue(String propertyName) {
     // Get the latest pending value first.
-    return _pendingProperties[propertyName]?.value ?? _properties[propertyName]?.value ?? EMPTY_STRING;
+    return _pendingProperties[propertyName]?.value ??
+        _properties[propertyName]?.value ??
+        EMPTY_STRING;
   }
 
   /// Returns the baseHref associated with a property value if available.
   String? getPropertyBaseHref(String propertyName) {
-    return _pendingProperties[propertyName]?.baseHref ?? _properties[propertyName]?.baseHref;
+    return _pendingProperties[propertyName]?.baseHref ??
+        _properties[propertyName]?.baseHref;
   }
 
   /// Removes a property from the CSS declaration.
@@ -218,7 +229,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       case BACKGROUND:
         return CSSStyleProperty.removeShorthandBackground(this, isImportant);
       case BACKGROUND_POSITION:
-        return CSSStyleProperty.removeShorthandBackgroundPosition(this, isImportant);
+        return CSSStyleProperty.removeShorthandBackgroundPosition(
+            this, isImportant);
       case BORDER_RADIUS:
         return CSSStyleProperty.removeShorthandBorderRadius(this, isImportant);
       case GRID_TEMPLATE:
@@ -259,11 +271,13 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       case BORDER_COLOR:
       case BORDER_STYLE:
       case BORDER_WIDTH:
-        return CSSStyleProperty.removeShorthandBorder(this, propertyName, isImportant);
+        return CSSStyleProperty.removeShorthandBorder(
+            this, propertyName, isImportant);
       case TRANSITION:
         return CSSStyleProperty.removeShorthandTransition(this, isImportant);
       case TEXT_DECORATION:
-        return CSSStyleProperty.removeShorthandTextDecoration(this, isImportant);
+        return CSSStyleProperty.removeShorthandTextDecoration(
+            this, isImportant);
       case ANIMATION:
         return CSSStyleProperty.removeShorthandAnimation(this, isImportant);
     }
@@ -281,7 +295,9 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
 
     // Fallback to default style (UA / element default).
-    if (isNullOrEmptyValue(present) && defaultStyle != null && defaultStyle!.containsKey(propertyName)) {
+    if (isNullOrEmptyValue(present) &&
+        defaultStyle != null &&
+        defaultStyle!.containsKey(propertyName)) {
       present = defaultStyle![propertyName];
     }
 
@@ -289,7 +305,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     // this property. To preserve inheritance semantics, we only do this for
     // non-inherited properties. For inherited ones we prefer leaving the
     // value empty so [RenderStyle] can pull from the parent instead.
-    if (isNullOrEmptyValue(present) && cssInitialValues.containsKey(propertyName)) {
+    if (isNullOrEmptyValue(present) &&
+        cssInitialValues.containsKey(propertyName)) {
       final String kebabName = _kebabize(propertyName);
       final bool isInherited = isInheritedPropertyString(kebabName);
       if (!isInherited) {
@@ -317,70 +334,89 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
       switch (propertyName) {
         case PADDING:
-          CSSStyleProperty.setShorthandPadding(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandPadding(
+              longhandProperties, normalizedValue);
           break;
         case MARGIN:
-          CSSStyleProperty.setShorthandMargin(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandMargin(
+              longhandProperties, normalizedValue);
           break;
         case INSET:
-          CSSStyleProperty.setShorthandInset(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandInset(
+              longhandProperties, normalizedValue);
           break;
         case BACKGROUND:
           // Expand shorthand into longhands for this declaration block only.
           // Do not mutate target.inlineStyle here: stylesheet declarations must
           // never overwrite author inline styles.
-          CSSStyleProperty.setShorthandBackground(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandBackground(
+              longhandProperties, normalizedValue);
 
           break;
         case BACKGROUND_POSITION:
           // Expand to X/Y longhands for computed usage, but also preserve the raw
           // comma-separated value so layered painters can retrieve per-layer positions.
-          CSSStyleProperty.setShorthandBackgroundPosition(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandBackgroundPosition(
+              longhandProperties, normalizedValue);
           // Preserve original list for layered backgrounds (not consumed by renderStyle).
           // Store directly to pending map during expansion to avoid recursive shorthand handling.
-          _pendingProperties[BACKGROUND_POSITION] = CSSPropertyValue(normalizedValue, baseHref: baseHref);
+          _pendingProperties[BACKGROUND_POSITION] =
+              CSSPropertyValue(normalizedValue, baseHref: baseHref);
           break;
-      case BORDER_RADIUS:
-        CSSStyleProperty.setShorthandBorderRadius(longhandProperties, normalizedValue);
-        break;
-      case GRID_TEMPLATE:
-        CSSStyleProperty.setShorthandGridTemplate(longhandProperties, normalizedValue);
-        break;
-      case GRID:
-        CSSStyleProperty.setShorthandGrid(longhandProperties, normalizedValue);
-        break;
-      case PLACE_CONTENT:
-        CSSStyleProperty.setShorthandPlaceContent(longhandProperties, normalizedValue);
-        break;
+        case BORDER_RADIUS:
+          CSSStyleProperty.setShorthandBorderRadius(
+              longhandProperties, normalizedValue);
+          break;
+        case GRID_TEMPLATE:
+          CSSStyleProperty.setShorthandGridTemplate(
+              longhandProperties, normalizedValue);
+          break;
+        case GRID:
+          CSSStyleProperty.setShorthandGrid(
+              longhandProperties, normalizedValue);
+          break;
+        case PLACE_CONTENT:
+          CSSStyleProperty.setShorthandPlaceContent(
+              longhandProperties, normalizedValue);
+          break;
         case PLACE_ITEMS:
-          CSSStyleProperty.setShorthandPlaceItems(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandPlaceItems(
+              longhandProperties, normalizedValue);
           break;
         case PLACE_SELF:
-          CSSStyleProperty.setShorthandPlaceSelf(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandPlaceSelf(
+              longhandProperties, normalizedValue);
           break;
         case OVERFLOW:
-          CSSStyleProperty.setShorthandOverflow(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandOverflow(
+              longhandProperties, normalizedValue);
           break;
         case FONT:
-          CSSStyleProperty.setShorthandFont(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandFont(
+              longhandProperties, normalizedValue);
           break;
         case FLEX:
-          CSSStyleProperty.setShorthandFlex(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandFlex(
+              longhandProperties, normalizedValue);
           break;
         case FLEX_FLOW:
-          CSSStyleProperty.setShorthandFlexFlow(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandFlexFlow(
+              longhandProperties, normalizedValue);
           break;
         case GAP:
           CSSStyleProperty.setShorthandGap(longhandProperties, normalizedValue);
           break;
         case GRID_ROW:
-          CSSStyleProperty.setShorthandGridRow(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandGridRow(
+              longhandProperties, normalizedValue);
           break;
         case GRID_COLUMN:
-          CSSStyleProperty.setShorthandGridColumn(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandGridColumn(
+              longhandProperties, normalizedValue);
           break;
         case GRID_AREA:
-          CSSStyleProperty.setShorthandGridArea(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandGridArea(
+              longhandProperties, normalizedValue);
           break;
         case BORDER:
         case BORDER_TOP:
@@ -394,16 +430,20 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         case BORDER_COLOR:
         case BORDER_STYLE:
         case BORDER_WIDTH:
-          CSSStyleProperty.setShorthandBorder(longhandProperties, propertyName, normalizedValue);
+          CSSStyleProperty.setShorthandBorder(
+              longhandProperties, propertyName, normalizedValue);
           break;
         case TRANSITION:
-          CSSStyleProperty.setShorthandTransition(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandTransition(
+              longhandProperties, normalizedValue);
           break;
         case TEXT_DECORATION:
-          CSSStyleProperty.setShorthandTextDecoration(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandTextDecoration(
+              longhandProperties, normalizedValue);
           break;
         case ANIMATION:
-          CSSStyleProperty.setShorthandAnimation(longhandProperties, normalizedValue);
+          CSSStyleProperty.setShorthandAnimation(
+              longhandProperties, normalizedValue);
           break;
       }
       _cachedExpandedShorthand[cacheKey] = longhandProperties;
@@ -414,12 +454,15 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         // Preserve the baseHref from the originating declaration so any
         // url(...) in expanded longhands (e.g., background-image) resolve
         // relative to the stylesheet that contained the shorthand.
-        setProperty(propertyName, value, isImportant: isImportant, baseHref: baseHref, validate: validate);
+        setProperty(propertyName, value,
+            isImportant: isImportant, baseHref: baseHref, validate: validate);
       });
     }
   }
 
-  String _replacePattern(String string, String lowerCase, String startString, String endString, [int start = 0]) {
+  String _replacePattern(
+      String string, String lowerCase, String startString, String endString,
+      [int start = 0]) {
     int startIndex = lowerCase.indexOf(startString, start);
     if (startIndex >= 0) {
       int? endIndex;
@@ -432,7 +475,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         var replacement = string.substring(startIndex, endIndex);
         lowerCase = lowerCase.replaceRange(startIndex, endIndex, replacement);
         if (endIndex < string.length - 1) {
-          lowerCase = _replacePattern(string, lowerCase, startString, endString, endIndex);
+          lowerCase = _replacePattern(
+              string, lowerCase, startString, endString, endIndex);
         }
       }
     }
@@ -492,11 +536,24 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     if (normalizedValue == INHERIT) return true;
 
     final String lowerValue = normalizedValue.toLowerCase();
-    final bool isIntrinsicSizeKeyword =
-        lowerValue == 'min-content' || lowerValue == 'max-content' || lowerValue == 'fit-content';
+    final bool isIntrinsicSizeKeyword = lowerValue == 'min-content' ||
+        lowerValue == 'max-content' ||
+        lowerValue == 'fit-content';
 
     // Validate value.
     switch (propertyName) {
+      case GAP: {
+        final List<String> tokens = splitByAsciiWhitespacePreservingGroups(normalizedValue);
+        if (tokens.isEmpty || tokens.length > 2) return false;
+        for (final token in tokens) {
+          if (!CSSGap.isValidGapValue(token)) return false;
+        }
+        break;
+      }
+      case ROW_GAP:
+      case COLUMN_GAP:
+        if (!CSSGap.isValidGapValue(normalizedValue)) return false;
+        break;
       case WIDTH:
       case HEIGHT:
         // Validation length type
@@ -567,7 +624,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         if (!CSSColor.isColor(normalizedValue)) return false;
         break;
       case BACKGROUND_IMAGE:
-        if (!CSSBackground.isValidBackgroundImageValue(normalizedValue)) return false;
+        if (!CSSBackground.isValidBackgroundImageValue(normalizedValue))
+          return false;
         break;
       case BACKGROUND_REPEAT:
         // Accept single token or comma-separated list of repeat keywords for layered backgrounds.
@@ -575,10 +633,13 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
           final parts = normalizedValue.split(',');
           for (final p in parts) {
             final token = p.trim();
-            if (token.isEmpty || !CSSBackground.isValidBackgroundRepeatValue(token)) return false;
+            if (token.isEmpty ||
+                !CSSBackground.isValidBackgroundRepeatValue(token))
+              return false;
           }
         } else {
-          if (!CSSBackground.isValidBackgroundRepeatValue(normalizedValue)) return false;
+          if (!CSSBackground.isValidBackgroundRepeatValue(normalizedValue))
+            return false;
         }
         break;
       case FONT_SIZE:
@@ -591,16 +652,21 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         final bool isVar = CSSVariable.isCSSVariableValue(normalizedValue);
         final bool isFunc = CSSFunction.isFunction(normalizedValue);
         final bool isNonNegLen = CSSLength.isNonNegativeLength(normalizedValue);
-        final bool isNonNegPct = CSSPercentage.isNonNegativePercentage(normalizedValue);
+        final bool isNonNegPct =
+            CSSPercentage.isNonNegativePercentage(normalizedValue);
         final bool isKeyword = CSSText.isValidFontSizeValue(normalizedValue);
-        if (!(isVar || isFunc || isNonNegLen || isNonNegPct || isKeyword)) return false;
+        if (!(isVar || isFunc || isNonNegLen || isNonNegPct || isKeyword))
+          return false;
         break;
       case FONT_VARIANT:
         // CSS2.1 font-variant accepts 'normal' or 'small-caps'.
-        final bool isVarFontVariant = CSSVariable.isCSSVariableValue(normalizedValue);
+        final bool isVarFontVariant =
+            CSSVariable.isCSSVariableValue(normalizedValue);
         final bool isFuncFontVariant = CSSFunction.isFunction(normalizedValue);
-        final bool isKeywordFontVariant = CSSText.isValidFontVariantValue(normalizedValue);
-        if (!(isVarFontVariant || isFuncFontVariant || isKeywordFontVariant)) return false;
+        final bool isKeywordFontVariant =
+            CSSText.isValidFontVariantValue(normalizedValue);
+        if (!(isVarFontVariant || isFuncFontVariant || isKeywordFontVariant))
+          return false;
         break;
     }
     return true;
@@ -624,13 +690,17 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
 
     final String rawValue = value.toString();
-    final bool isCustomProperty = CSSVariable.isCSSSVariableProperty(propertyName);
-    String normalizedValue = isCustomProperty ? rawValue : _toLowerCase(propertyName, rawValue.trim());
+    final bool isCustomProperty =
+        CSSVariable.isCSSSVariableProperty(propertyName);
+    String normalizedValue = isCustomProperty
+        ? rawValue
+        : _toLowerCase(propertyName, rawValue.trim());
 
     if (validate && !_isValidValue(propertyName, normalizedValue)) return;
 
     if (_cssShorthandProperty[propertyName] != null) {
-      return _expandShorthand(propertyName, normalizedValue, isImportant, baseHref: baseHref, validate: validate);
+      return _expandShorthand(propertyName, normalizedValue, isImportant,
+          baseHref: baseHref, validate: validate);
     }
 
     // From style sheet mark the property important as false.
@@ -648,9 +718,11 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
 
     String? prevValue = getPropertyValue(propertyName);
-    if (normalizedValue == prevValue && (!CSSVariable.isCSSVariableValue(normalizedValue))) return;
+    if (normalizedValue == prevValue &&
+        (!CSSVariable.isCSSVariableValue(normalizedValue))) return;
 
-    _pendingProperties[propertyName] = CSSPropertyValue(normalizedValue, baseHref: baseHref);
+    _pendingProperties[propertyName] =
+        CSSPropertyValue(normalizedValue, baseHref: baseHref);
   }
 
   void flushDisplayProperties() {
@@ -658,14 +730,14 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     // If style target element not exists, no need to do flush operation.
     if (target == null) return;
 
-    if (_pendingProperties.containsKey(DISPLAY) &&
-        target.isConnected) {
+    if (_pendingProperties.containsKey(DISPLAY) && target.isConnected) {
       CSSPropertyValue? prevValue = _properties[DISPLAY];
       CSSPropertyValue currentValue = _pendingProperties[DISPLAY]!;
       _properties[DISPLAY] = currentValue;
       _pendingProperties.remove(DISPLAY);
 
-      _emitPropertyChanged(DISPLAY, prevValue?.value, currentValue.value, baseHref: currentValue.baseHref);
+      _emitPropertyChanged(DISPLAY, prevValue?.value, currentValue.value,
+          baseHref: currentValue.baseHref);
     }
   }
 
@@ -675,13 +747,13 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     if (target == null) return;
 
     // Display change from none to other value that the renderBoxModel is null.
-    if (_pendingProperties.containsKey(DISPLAY) &&
-        target.isConnected) {
+    if (_pendingProperties.containsKey(DISPLAY) && target.isConnected) {
       CSSPropertyValue? prevValue = _properties[DISPLAY];
       CSSPropertyValue currentValue = _pendingProperties[DISPLAY]!;
       _properties[DISPLAY] = currentValue;
       _pendingProperties.remove(DISPLAY);
-      _emitPropertyChanged(DISPLAY, prevValue?.value, currentValue.value, baseHref: currentValue.baseHref);
+      _emitPropertyChanged(DISPLAY, prevValue?.value, currentValue.value,
+          baseHref: currentValue.baseHref);
     }
 
     if (_pendingProperties.isEmpty) {
@@ -717,41 +789,44 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       return 0;
     });
 
-
-
     for (String propertyName in propertyNames) {
       CSSPropertyValue? prevValue = prevValues[propertyName];
       CSSPropertyValue currentValue = pendingProperties[propertyName]!;
-      _emitPropertyChanged(propertyName, prevValue?.value, currentValue.value, baseHref: currentValue.baseHref);
+      _emitPropertyChanged(propertyName, prevValue?.value, currentValue.value,
+          baseHref: currentValue.baseHref);
     }
 
     onStyleFlushed?.call(propertyNames);
-
   }
 
   // Set a style property on a pseudo element (before/after/first-letter/first-line) for this element.
   // Values set here are treated as inline on the pseudo element and marked important
   // to override stylesheet rules when applicable.
-  void setPseudoProperty(String type, String propertyName, String value, {String? baseHref, bool validate = true}) {
+  void setPseudoProperty(String type, String propertyName, String value,
+      {String? baseHref, bool validate = true}) {
     switch (type) {
       case 'before':
         pseudoBeforeStyle ??= CSSStyleDeclaration();
-        pseudoBeforeStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref, validate: validate);
+        pseudoBeforeStyle!.setProperty(propertyName, value,
+            isImportant: true, baseHref: baseHref, validate: validate);
         target?.markBeforePseudoElementNeedsUpdate();
         break;
       case 'after':
         pseudoAfterStyle ??= CSSStyleDeclaration();
-        pseudoAfterStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref, validate: validate);
+        pseudoAfterStyle!.setProperty(propertyName, value,
+            isImportant: true, baseHref: baseHref, validate: validate);
         target?.markAfterPseudoElementNeedsUpdate();
         break;
       case 'first-letter':
         pseudoFirstLetterStyle ??= CSSStyleDeclaration();
-        pseudoFirstLetterStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref, validate: validate);
+        pseudoFirstLetterStyle!.setProperty(propertyName, value,
+            isImportant: true, baseHref: baseHref, validate: validate);
         target?.markFirstLetterPseudoNeedsUpdate();
         break;
       case 'first-line':
         pseudoFirstLineStyle ??= CSSStyleDeclaration();
-        pseudoFirstLineStyle!.setProperty(propertyName, value, isImportant: true, baseHref: baseHref, validate: validate);
+        pseudoFirstLineStyle!.setProperty(propertyName, value,
+            isImportant: true, baseHref: baseHref, validate: validate);
         target?.markFirstLinePseudoNeedsUpdate();
         break;
     }
@@ -789,7 +864,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   }
 
   void clearPseudoStyle(String type) {
-    switch(type) {
+    switch (type) {
       case 'before':
         pseudoBeforeStyle = null;
         target?.markBeforePseudoElementNeedsUpdate();
@@ -819,9 +894,44 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       bool currentIsImportant = _importants[propertyName] ?? false;
       bool otherIsImportant = declaration._importants[propertyName] ?? false;
       CSSPropertyValue? currentValue = properties[propertyName];
-      CSSPropertyValue? otherValue = declaration._pendingProperties[propertyName];
-      if ((otherIsImportant || !currentIsImportant) && currentValue != otherValue) {
+      CSSPropertyValue? otherValue =
+          declaration._pendingProperties[propertyName];
+      if ((otherIsImportant || !currentIsImportant) &&
+          currentValue != otherValue) {
         // Add property.
+        if (otherValue != null) {
+          _pendingProperties[propertyName] = otherValue;
+        } else {
+          _pendingProperties.remove(propertyName);
+        }
+        if (otherIsImportant) {
+          _importants[propertyName] = true;
+        }
+      }
+    }
+  }
+
+  /// Like [union], but only applies declarations matching [important].
+  ///
+  /// This is used by cascade layers where `!important` reverses layer order.
+  void unionByImportance(CSSStyleDeclaration declaration,
+      {required bool important}) {
+    Map<String, CSSPropertyValue> properties = {}
+      ..addAll(_properties)
+      ..addAll(_pendingProperties);
+
+    for (String propertyName in declaration._pendingProperties.keys) {
+      final bool otherIsImportant =
+          declaration._importants[propertyName] ?? false;
+      if (otherIsImportant != important) continue;
+
+      final bool currentIsImportant = _importants[propertyName] ?? false;
+      final CSSPropertyValue? currentValue = properties[propertyName];
+      final CSSPropertyValue? otherValue =
+          declaration._pendingProperties[propertyName];
+
+      if ((otherIsImportant || !currentIsImportant) &&
+          currentValue != otherValue) {
         if (otherValue != null) {
           _pendingProperties[propertyName] = otherValue;
         } else {
@@ -844,7 +954,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
     for (CSSStyleRule style in rules) {
       for (Selector selector in style.selectorGroup.selectors) {
-        for (SimpleSelectorSequence sequence in selector.simpleSelectorSequences) {
+        for (SimpleSelectorSequence sequence
+            in selector.simpleSelectorSequences) {
           if (sequence.simpleSelector is PseudoElementSelector) {
             if (sequence.simpleSelector.name == 'before') {
               beforeRules.add(style);
@@ -860,56 +971,29 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       }
     }
 
-    int sortRules(leftRule, rightRule) {
-      int isCompare = leftRule.selectorGroup.matchSpecificity.compareTo(rightRule.selectorGroup.matchSpecificity);
-      if (isCompare == 0) {
-        return leftRule.position.compareTo(rightRule.position);
-      }
-      return isCompare;
-    }
-
-    // sort selector
-    beforeRules.sort(sortRules);
-    afterRules.sort(sortRules);
-    firstLetterRules.sort(sortRules);
-    firstLineRules.sort(sortRules);
-
     if (beforeRules.isNotEmpty) {
-      pseudoBeforeStyle ??= CSSStyleDeclaration();
-      // Merge all the rules
-      for (CSSStyleRule rule in beforeRules) {
-        pseudoBeforeStyle!.union(rule.declaration);
-      }
+      pseudoBeforeStyle = cascadeMatchedStyleRules(beforeRules);
       parentElement.markBeforePseudoElementNeedsUpdate();
     } else if (beforeRules.isEmpty && pseudoBeforeStyle != null) {
       pseudoBeforeStyle = null;
     }
 
     if (afterRules.isNotEmpty) {
-      pseudoAfterStyle ??= CSSStyleDeclaration();
-      for (CSSStyleRule rule in afterRules) {
-        pseudoAfterStyle!.union(rule.declaration);
-      }
+      pseudoAfterStyle = cascadeMatchedStyleRules(afterRules);
       parentElement.markAfterPseudoElementNeedsUpdate();
     } else if (afterRules.isEmpty && pseudoAfterStyle != null) {
       pseudoAfterStyle = null;
     }
 
     if (firstLetterRules.isNotEmpty) {
-      pseudoFirstLetterStyle ??= CSSStyleDeclaration();
-      for (CSSStyleRule rule in firstLetterRules) {
-        pseudoFirstLetterStyle!.union(rule.declaration);
-      }
+      pseudoFirstLetterStyle = cascadeMatchedStyleRules(firstLetterRules);
       parentElement.markFirstLetterPseudoNeedsUpdate();
     } else if (firstLetterRules.isEmpty && pseudoFirstLetterStyle != null) {
       pseudoFirstLetterStyle = null;
     }
 
     if (firstLineRules.isNotEmpty) {
-      pseudoFirstLineStyle ??= CSSStyleDeclaration();
-      for (CSSStyleRule rule in firstLineRules) {
-        pseudoFirstLineStyle!.union(rule.declaration);
-      }
+      pseudoFirstLineStyle = cascadeMatchedStyleRules(firstLineRules);
       parentElement.markFirstLinePseudoNeedsUpdate();
     } else if (firstLineRules.isEmpty && pseudoFirstLineStyle != null) {
       pseudoFirstLineStyle = null;
@@ -929,13 +1013,15 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
       if (isNullOrEmptyValue(prevValue) && isNullOrEmptyValue(currentValue)) {
         continue;
-      } else if (!isNullOrEmptyValue(prevValue) && isNullOrEmptyValue(currentValue)) {
+      } else if (!isNullOrEmptyValue(prevValue) &&
+          isNullOrEmptyValue(currentValue)) {
         // Remove property.
         removeProperty(propertyName, currentImportant);
         updateStatus = true;
       } else if (prevValue != currentValue) {
         // Update property.
-        setProperty(propertyName, currentValue?.value, isImportant: currentImportant, baseHref: currentValue?.baseHref);
+        setProperty(propertyName, currentValue?.value,
+            isImportant: currentImportant, baseHref: currentValue?.baseHref);
         updateStatus = true;
       }
     }
@@ -947,7 +1033,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
       if (isNullOrEmptyValue(prevValue) && !isNullOrEmptyValue(currentValue)) {
         // Add property.
-        setProperty(propertyName, currentValue?.value, isImportant: currentImportant, baseHref: currentValue?.baseHref);
+        setProperty(propertyName, currentValue?.value,
+            isImportant: currentImportant, baseHref: currentValue?.baseHref);
         updateStatus = true;
       }
     }
@@ -996,8 +1083,10 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     _styleChangeListeners.remove(listener);
   }
 
-  void _emitPropertyChanged(String property, String? original, String present, {String? baseHref}) {
-    if (original == present && (!CSSVariable.isCSSVariableValue(present))) return;
+  void _emitPropertyChanged(String property, String? original, String present,
+      {String? baseHref}) {
+    if (original == present && (!CSSVariable.isCSSVariableValue(present)))
+      return;
 
     if (onStyleChanged != null) {
       onStyleChanged!(property, original, present, baseHref: baseHref);
@@ -1029,7 +1118,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   }
 
   @override
-  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) => 'CSSStyleDeclaration($cssText)';
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) =>
+      'CSSStyleDeclaration($cssText)';
 
   @override
   int get hashCode => cssText.hashCode;
@@ -1038,7 +1128,6 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   bool operator ==(Object other) {
     return hashCode == other.hashCode;
   }
-
 
   @override
   Iterator<MapEntry<String, CSSPropertyValue>> get iterator {

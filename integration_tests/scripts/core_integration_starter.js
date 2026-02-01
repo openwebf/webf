@@ -27,6 +27,11 @@ Options:
   --help, -h                                            Show this help message
   --skip-build                                          Skip the Flutter build step
   --filter "<test-name>"                                Filter to run only tests matching the name
+  --enable-blink                                        Enable Blink compatibility mode and include blink-only specs (default: disabled)
+
+Note:
+  Tests in specs/blink-only/ directory only run when --enable-blink is specified.
+  These tests cover features that require Blink mode, such as document.styleSheets.
 `);
 }
 
@@ -36,24 +41,31 @@ function parseArgs() {
   const specFiles = [];
   const otherArgs = [];
   let filter = null;
-  
+  let enableBlink = false;
+
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    
+
     if (arg === '--help' || arg === '-h') {
       showHelp();
       process.exit(0);
     }
-    
+
     // Handle --filter option
     if (arg === '--filter' && i + 1 < args.length) {
       filter = args[i + 1];
       i++; // Skip the next argument as it's the filter value
       continue;
     }
-    
+
+    // Handle --enable-blink option
+    if (arg === '--enable-blink') {
+      enableBlink = true;
+      continue;
+    }
+
     // Handle spec files (can start with specs/ or ./specs/)
-    if ((arg.startsWith('specs/') || arg.startsWith('./specs/')) && 
+    if ((arg.startsWith('specs/') || arg.startsWith('./specs/')) &&
         (arg.endsWith('.ts') || arg.endsWith('.js') || arg.endsWith('.tsx') || arg.endsWith('.jsx'))) {
       // Normalize path to start with specs/
       const normalizedPath = arg.startsWith('./') ? arg.slice(2) : arg;
@@ -63,29 +75,34 @@ function parseArgs() {
       otherArgs.push(arg);
     }
   }
-  
-  return { specFiles, otherArgs, filter };
+
+  return { specFiles, otherArgs, filter, enableBlink };
 }
 
 // Build specs with optional filtering
-function buildSpecs(specFiles) {
+function buildSpecs(specFiles, enableBlink) {
   console.log('Building integration test specs...');
-  
+
   const env = { ...process.env };
-  
+
   // If specific spec files are provided, set WEBF_TEST_FILTER
   if (specFiles.length > 0) {
     console.log('Running specific spec files:', specFiles.join(', '));
     // Create a filter that matches the full relative path
     env.WEBF_TEST_FILTER = specFiles.map(f => f.replace(/\\/g, '/')).join('|');
   }
-  
+
+  // Pass enableBlink to webpack so blink-only specs are included
+  if (enableBlink) {
+    env.WEBF_ENABLE_BLINK = 'true';
+  }
+
   const result = spawnSync('npm', ['run', 'specs'], {
     stdio: 'inherit',
     env: env,
     shell: true,
   });
-  
+
   if (result.status !== 0) {
     console.error('Failed to build specs');
     process.exit(1);
@@ -99,7 +116,7 @@ function getRunningPlatform() {
 }
 
 // Dart null safety error didn't report in dist binaries. Should run integration test with flutter run directly.
-function startIntegrationTest(websocketPort, filter) {
+function startIntegrationTest(websocketPort, filter, enableBlink) {
   const shouldSkipBuild = /skip\-build/.test(process.argv);
   if (!shouldSkipBuild) {
     console.log('Building integration tests macOS application from "lib/main.dart"...');
@@ -129,11 +146,17 @@ function startIntegrationTest(websocketPort, filter) {
     'skia-deterministic-rendering': true,
     WEBF_TEST_DIR: path.join(__dirname, '../')
   };
-  
+
   // Pass filter through environment variable
   if (filter) {
     env.WEBF_TEST_NAME_FILTER = filter;
     console.log(`Running tests with filter: "${filter}"`);
+  }
+
+  // Pass enableBlink through environment variable
+  if (enableBlink) {
+    env.WEBF_ENABLE_BLINK = 'true';
+    console.log('Running tests with Blink compatibility mode enabled');
   }
 
   const tester = spawn(testExecutable, [], {
@@ -174,14 +197,14 @@ function getRandomNumber(min, max) {
 }
 
 async function main() {
-  const { specFiles, otherArgs, filter } = parseArgs();
-  
+  const { specFiles, otherArgs, filter, enableBlink } = parseArgs();
+
   // Build specs with optional filtering
-  buildSpecs(specFiles);
-  
+  buildSpecs(specFiles, enableBlink);
+
   const port = await getRandomNumber(11000, 14000);
-  
-  startIntegrationTest(port, filter);
+
+  startIntegrationTest(port, filter, enableBlink);
   startWsServer(port);
 }
 

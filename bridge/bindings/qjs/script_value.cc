@@ -19,6 +19,7 @@
 #include <vector>
 #include "bindings/qjs/converter_impl.h"
 #include "core/binding_object.h"
+#include "core/dart_binding_object.h"
 #include "core/executing_context.h"
 #include "core/js_function_ref.h"
 #include "cppgc/gc_visitor.h"
@@ -107,10 +108,14 @@ static JSValue FromNativeValue(ExecutingContext* context,
       switch (pointer_type) {
         case JSPointerType::NativeBindingObject: {
           auto* binding_object = BindingObject::From(ptr);
-          if (binding_object == nullptr) {
-            return JS_NULL;
+          if (binding_object != nullptr) {
+            return binding_object->ToQuickJS();
           }
-          return binding_object->ToQuickJS();
+          // NativeBindingObject pointers can be allocated on the Dart side (e.g.
+          // returned from a Dart binding property/method). In that case there is
+          // no existing C++ BindingObject wrapper yet; create a DartBindingObject
+          // wrapper on-demand so JS can access Dart-defined properties/methods.
+          return MakeGarbageCollected<DartBindingObject>(context, ptr)->ToQuickJS();
         }
         case JSPointerType::DOMMatrix: {
           return MakeGarbageCollected<DOMMatrix>(context, ptr)->ToQuickJS();

@@ -208,7 +208,23 @@ void AbstractPropertySetCSSStyleDeclaration::SetPropertyInternal(CSSPropertyID u
     CSSPropertyID resolved = ResolveCSSPropertyID(unresolved_property);
     StylePropertyShorthand shorthand = shorthandForProperty(resolved);
     if (shorthand.length() > 0) {
-      PropertySet().RemoveShorthandProperty(resolved);
+      // Some shorthands are parsed/expanded into longhands by the property
+      // parser (see CSSPropertyParser::ParseValueStart). For these, clearing
+      // existing longhands before parsing would incorrectly turn a parse error
+      // (invalid assignment) into a destructive reset, violating CSSOM no-op
+      // semantics for invalid values.
+      //
+      // Keep the old longhands intact so invalid assignments do nothing.
+      switch (resolved) {
+        case CSSPropertyID::kGap:
+        case CSSPropertyID::kGridColumn:
+        case CSSPropertyID::kPlaceItems:
+        case CSSPropertyID::kPlaceSelf:
+          break;
+        default:
+          PropertySet().RemoveShorthandProperty(resolved);
+          break;
+      }
     }
   }
 
