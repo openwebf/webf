@@ -25,10 +25,17 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   void Function(PointerEvent)? scrollablePointerListener;
 
   void disposeScrollable() {
+    // Detach scroll offset listeners first. Otherwise ScrollPosition may continue
+    // to dispatch notifications (e.g. in-flight animations) and invoke stale
+    // callbacks after this render object has been disposed.
+    _scrollOffsetX?.removeListener(scrollXListener);
+    _scrollOffsetY?.removeListener(scrollYListener);
     scrollListener = null;
     scrollablePointerListener = null;
     _scrollOffsetX = null;
     _scrollOffsetY = null;
+    _scrollableSize = null;
+    _viewportSize = null;
     // Dispose clip layer.
     _clipRRectLayer.layer = null;
     _clipRectLayer.layer = null;
@@ -107,57 +114,62 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   }
 
   void scrollXListener() {
-    assert(scrollListener != null);
-    // If scroll is happening, that element has been unmounted, prevent null usage.
-    if (scrollOffsetX != null) {
-      if (DebugFlags.debugLogScrollableEnabled) {
-        final double maxX = math.max(
-            0.0, (_scrollableSize?.width ?? 0) - (_viewportSize?.width ?? 0));
-        renderingLogger.finer(
-            '[Overflow-Scroll] <${renderStyle.target.tagName.toLowerCase()}> X pixels='
-            '${scrollOffsetX!.pixels.toStringAsFixed(2)} max=${maxX.toStringAsFixed(2)}');
-      }
-      final AxisDirection dir = (renderStyle.direction == TextDirection.rtl)
-          ? AxisDirection.left
-          : AxisDirection.right;
-      scrollListener!(scrollOffsetX!.pixels, dir);
-      if (DebugFlags.debugLogSemanticsEnabled ||
-          DebugFlags.debugLogScrollableEnabled) {
-        debugPrint('[webf][a11y][scroll] ${renderStyle.target} '
-            'scrollX=${scrollOffsetX!.pixels.toStringAsFixed(2)} '
-            'viewport=${_viewportSize?.width.toStringAsFixed(1) ?? '?'} '
-            'content=${_scrollableSize?.width.toStringAsFixed(1) ?? '?'} '
-            '→ markNeedsSemanticsUpdate');
-      }
-      // Keep semantics tree in sync with new scroll offset so accessibility
-      // focus/geometry follows the visible content after programmatic scrolls.
-      markNeedsSemanticsUpdate();
-      markNeedsPaint();
+    final ScrollListener? listener = scrollListener;
+    final ViewportOffset? offset = scrollOffsetX;
+    // If scroll is happening while the render object is being torn down, ignore
+    // late notifications from the ScrollPosition/ViewportOffset.
+    if (listener == null || offset == null) {
+      return;
     }
+    if (DebugFlags.debugLogScrollableEnabled) {
+      final double maxX = math.max(
+          0.0, (_scrollableSize?.width ?? 0) - (_viewportSize?.width ?? 0));
+      renderingLogger.finer(
+          '[Overflow-Scroll] <${renderStyle.target.tagName.toLowerCase()}> X pixels='
+          '${offset.pixels.toStringAsFixed(2)} max=${maxX.toStringAsFixed(2)}');
+    }
+    final AxisDirection dir = (renderStyle.direction == TextDirection.rtl)
+        ? AxisDirection.left
+        : AxisDirection.right;
+    listener(offset.pixels, dir);
+    if (DebugFlags.debugLogSemanticsEnabled ||
+        DebugFlags.debugLogScrollableEnabled) {
+      debugPrint('[webf][a11y][scroll] ${renderStyle.target} '
+          'scrollX=${offset.pixels.toStringAsFixed(2)} '
+          'viewport=${_viewportSize?.width.toStringAsFixed(1) ?? '?'} '
+          'content=${_scrollableSize?.width.toStringAsFixed(1) ?? '?'} '
+          '→ markNeedsSemanticsUpdate');
+    }
+    // Keep semantics tree in sync with new scroll offset so accessibility
+    // focus/geometry follows the visible content after programmatic scrolls.
+    markNeedsSemanticsUpdate();
+    markNeedsPaint();
   }
 
   void scrollYListener() {
-    assert(scrollListener != null);
-    if (scrollOffsetY != null) {
-      if (DebugFlags.debugLogScrollableEnabled) {
-        final double maxY = math.max(
-            0.0, (_scrollableSize?.height ?? 0) - (_viewportSize?.height ?? 0));
-        renderingLogger.finer(
-            '[Overflow-Scroll] <${renderStyle.target.tagName.toLowerCase()}> Y pixels='
-            '${scrollOffsetY!.pixels.toStringAsFixed(2)} max=${maxY.toStringAsFixed(2)}');
-      }
-      scrollListener!(scrollOffsetY!.pixels, AxisDirection.down);
-      if (DebugFlags.debugLogSemanticsEnabled ||
-          DebugFlags.debugLogScrollableEnabled) {
-        debugPrint('[webf][a11y][scroll] ${renderStyle.target} '
-            'scrollY=${scrollOffsetY!.pixels.toStringAsFixed(2)} '
-            'viewport=${_viewportSize?.height.toStringAsFixed(1) ?? '?'} '
-            'content=${_scrollableSize?.height.toStringAsFixed(1) ?? '?'} '
-            '→ markNeedsSemanticsUpdate');
-      }
-      markNeedsSemanticsUpdate();
-      markNeedsPaint();
+    final ScrollListener? listener = scrollListener;
+    final ViewportOffset? offset = scrollOffsetY;
+    if (listener == null || offset == null) {
+      return;
     }
+    if (DebugFlags.debugLogScrollableEnabled) {
+      final double maxY = math.max(
+          0.0, (_scrollableSize?.height ?? 0) - (_viewportSize?.height ?? 0));
+      renderingLogger.finer(
+          '[Overflow-Scroll] <${renderStyle.target.tagName.toLowerCase()}> Y pixels='
+          '${offset.pixels.toStringAsFixed(2)} max=${maxY.toStringAsFixed(2)}');
+    }
+    listener(offset.pixels, AxisDirection.down);
+    if (DebugFlags.debugLogSemanticsEnabled ||
+        DebugFlags.debugLogScrollableEnabled) {
+      debugPrint('[webf][a11y][scroll] ${renderStyle.target} '
+          'scrollY=${offset.pixels.toStringAsFixed(2)} '
+          'viewport=${_viewportSize?.height.toStringAsFixed(1) ?? '?'} '
+          'content=${_scrollableSize?.height.toStringAsFixed(1) ?? '?'} '
+          '→ markNeedsSemanticsUpdate');
+    }
+    markNeedsSemanticsUpdate();
+    markNeedsPaint();
   }
 
   void _setUpScrollX() {
