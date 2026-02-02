@@ -278,6 +278,15 @@ dynamic fromNativeValue(WebFViewController view, Pointer<NativeValue> nativeValu
   }
 }
 
+String _encodeEnumForBridge(Enum value) {
+  // Prefer custom `toString()` (often overridden in generated enums to return
+  // a JS-facing string like 'horizontal'), otherwise fall back to `name`.
+  final String asString = value.toString();
+  final String defaultToString = '${value.runtimeType}.${value.name}';
+  if (asString != defaultToString) return asString;
+  return value.name;
+}
+
 void toNativeValue(Pointer<NativeValue> target, value, [BindingObject? ownerBindingObject]) {
   if (value == null) {
     target.ref.tag = JSValueType.tagNull.index;
@@ -292,6 +301,11 @@ void toNativeValue(Pointer<NativeValue> target, value, [BindingObject? ownerBind
     target.ref.u = doubleToInt64(value);
   } else if (value is String) {
     Pointer<NativeString> nativeString = stringToNativeString(value);
+    target.ref.tag = JSValueType.tagString.index;
+    target.ref.u = nativeString.address;
+  } else if (value is Enum) {
+    final String encoded = _encodeEnumForBridge(value);
+    Pointer<NativeString> nativeString = stringToNativeString(encoded);
     target.ref.tag = JSValueType.tagString.index;
     target.ref.u = nativeString.address;
   } else if (value is Pointer) {
@@ -319,7 +333,16 @@ void toNativeValue(Pointer<NativeValue> target, value, [BindingObject? ownerBind
       toNativeValue(lists + i, value[i], ownerBindingObject);
     }
   } else if (value is Object) {
-    String str = jsonEncode(value);
+    // Use a custom encoder so that Dart enums can cross the bridge without
+    // crashing (e.g. a generated binding getter returning an enum).
+    final encoder = JsonEncoder((nonEncodable) {
+      if (nonEncodable is Enum) return _encodeEnumForBridge(nonEncodable);
+      throw JsonUnsupportedObjectError(
+        nonEncodable,
+        cause: 'Converting object to an encodable object failed.',
+      );
+    });
+    String str = encoder.convert(value);
     target.ref.tag = JSValueType.tagJson.index;
     target.ref.u = str.toNativeUtf8().address;
   }
