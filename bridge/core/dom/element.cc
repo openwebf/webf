@@ -67,7 +67,7 @@ thread_local bool g_inline_style_perf_stats_enabled = false;
 bool MatchesAnySelectorInList(Element& element, const CSSSelectorList& selector_list, const ContainerNode& scope) {
   SelectorChecker checker(SelectorChecker::kQueryingRules);
   SelectorChecker::SelectorCheckingContext context(&element);
-  context.scope = scope;
+  context.scope = &scope;
 
   for (const CSSSelector* selector = selector_list.First(); selector; selector = CSSSelectorList::Next(*selector)) {
     context.selector = selector;

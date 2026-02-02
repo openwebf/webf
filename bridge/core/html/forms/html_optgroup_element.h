@@ -9,7 +9,21 @@
 #ifndef BRIDGE_CORE_HTML_FORMS_HTML_OPTGROUP_ELEMENT_H_
 #define BRIDGE_CORE_HTML_FORMS_HTML_OPTGROUP_ELEMENT_H_
 
-// Wrapper header for generated includes that expect html_optgroup_element.h.
-#include "html_opt_group_element.h"
+#include "core/html/html_element.h"
+
+namespace webf {
+
+class HTMLOptgroupElement : public HTMLElement {
+  DEFINE_WRAPPERTYPEINFO();
+
+ public:
+  using ImplType = HTMLOptgroupElement*;
+  explicit HTMLOptgroupElement(Document&);
+
+  bool disabled() const;
+  void setDisabled(bool disabled, ExceptionState& exception_state);
+};
+
+}  // namespace webf
 
 #endif  // BRIDGE_CORE_HTML_FORMS_HTML_OPTGROUP_ELEMENT_H_

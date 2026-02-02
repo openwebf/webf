@@ -68,7 +68,7 @@
     },
     {
       "name": "optgroup",
-      "interfaceName": "HTMLOptGroupElement",
+      "interfaceName": "HTMLOptgroupElement",
       "interfaceHeaderDir": "core/html/forms"
     },
     {

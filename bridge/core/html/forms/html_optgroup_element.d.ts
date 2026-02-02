@@ -4,7 +4,7 @@
  */
 import {HTMLElement} from "../html_element";
 
-interface HTMLOptGroupElement extends HTMLElement {
+interface HTMLOptgroupElement extends HTMLElement {
   disabled: boolean;
   new(): void;
 }

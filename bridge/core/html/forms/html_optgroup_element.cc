@@ -6,7 +6,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include "html_opt_group_element.h"
+#include "html_optgroup_element.h"
 
 namespace webf {
 
@@ -24,14 +24,14 @@ static const AtomicString& DisabledAttrName() {
 
 }  // namespace
 
-HTMLOptGroupElement::HTMLOptGroupElement(Document& document) : HTMLElement(OptGroupTagName(), &document) {}
+HTMLOptgroupElement::HTMLOptgroupElement(Document& document) : HTMLElement(OptGroupTagName(), &document) {}
 
-bool HTMLOptGroupElement::disabled() const {
+bool HTMLOptgroupElement::disabled() const {
   ExceptionState exception_state;
   return hasAttribute(DisabledAttrName(), exception_state);
 }
 
-void HTMLOptGroupElement::setDisabled(bool disabled, ExceptionState& exception_state) {
+void HTMLOptgroupElement::setDisabled(bool disabled, ExceptionState& exception_state) {
   if (disabled) {
     setAttribute(DisabledAttrName(), DisabledAttrName(), exception_state);
     return;

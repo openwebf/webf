@@ -77,7 +77,7 @@
 #include "qjs_html_iframe_element.h"
 #include "qjs_html_image_element.h"
 #include "qjs_html_input_element.h"
-#include "qjs_html_opt_group_element.h"
+#include "qjs_html_optgroup_element.h"
 #include "qjs_html_option_element.h"
 #include "qjs_html_select_element.h"
 #include "qjs_html_italic_element.h"
@@ -222,7 +222,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLImageElement::Install(context);
   QJSHTMLInputElement::Install(context);
   QJSHTMLSelectElement::Install(context);
-  QJSHTMLOptGroupElement::Install(context);
+  QJSHTMLOptgroupElement::Install(context);
   QJSHTMLOptionElement::Install(context);
   QJSHTMLParagraphElement::Install(context);
   QJSHTMLStyleElement::Install(context);
