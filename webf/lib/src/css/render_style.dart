@@ -2723,6 +2723,16 @@ class CSSRenderStyle extends RenderStyle
       } else if (logicalWidth == null && (renderStyle.isSelfRouterLinkElement() && root != null)) {
         logicalWidth = root.boxSize!.width;
       } else if (logicalWidth == null && parentStyle != null) {
+        bool isRenderSubtreeAncestor(flutter.RenderObject? ancestor, flutter.RenderObject? node) {
+          if (ancestor == null || node == null) return false;
+          flutter.RenderObject? current = node.parent;
+          while (current != null) {
+            if (identical(current, ancestor)) return true;
+            current = current.parent;
+          }
+          return false;
+        }
+
         // Resolve whether the direct parent is a flex item (its render box's parent is a flex container).
         // Determine if our direct parent is a flex item: i.e., the parent's parent is a flex container.
         final bool parentIsFlexItem = parentStyle.isParentRenderFlexLayout();
@@ -2758,9 +2768,27 @@ class CSSRenderStyle extends RenderStyle
               //   is mounted into multiple Flutter subtrees simultaneously.
               // - Widget elements may also apply CSS padding/max-width, making the logical
               //   content width smaller than the raw Flutter constraints.
-              final double? parentContentLogicalWidth = parentStyle.contentBoxLogicalWidth;
-              if (parentContentLogicalWidth != null && parentContentLogicalWidth.isFinite) {
-                logicalWidth = math.min(maxConstraintWidth, parentContentLogicalWidth);
+              //
+              // However, in portal/modal scenarios the DOM/style-tree parent (parentStyle)
+              // may not be an ancestor of the current render subtree. In that case, the
+              // parentContentLogicalWidth does NOT represent the real containing block for
+              // this layout pass and must not clamp the widget constraints.
+              final RenderBoxModel? currentLayoutBoxForAncestor =
+                  renderBoxModelInLayoutStack.isNotEmpty ? renderBoxModelInLayoutStack.last : null;
+              final bool parentIsAncestorInCurrentTree = currentLayoutBoxForAncestor == null
+                  ? true
+                  : isRenderSubtreeAncestor(
+                      parentStyle.attachedRenderBoxModel,
+                      currentLayoutBoxForAncestor,
+                    );
+
+              if (parentIsAncestorInCurrentTree) {
+                final double? parentContentLogicalWidth = parentStyle.contentBoxLogicalWidth;
+                if (parentContentLogicalWidth != null && parentContentLogicalWidth.isFinite) {
+                  logicalWidth = math.min(maxConstraintWidth, parentContentLogicalWidth);
+                } else {
+                  logicalWidth = maxConstraintWidth;
+                }
               } else {
                 logicalWidth = maxConstraintWidth;
               }
@@ -2801,9 +2829,22 @@ class CSSRenderStyle extends RenderStyle
                 childWrapper != null &&
                 maxConstraintWidth != null &&
                 maxConstraintWidth.isFinite) {
-              final double? ancestorContentLogicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
-              if (ancestorContentLogicalWidth != null && ancestorContentLogicalWidth.isFinite) {
-                logicalWidth = math.min(maxConstraintWidth, ancestorContentLogicalWidth);
+              final RenderBoxModel? currentLayoutBoxForAncestor =
+                  renderBoxModelInLayoutStack.isNotEmpty ? renderBoxModelInLayoutStack.last : null;
+              final bool ancestorIsAncestorInCurrentTree = currentLayoutBoxForAncestor == null
+                  ? true
+                  : isRenderSubtreeAncestor(
+                      ancestorRenderStyle.attachedRenderBoxModel,
+                      currentLayoutBoxForAncestor,
+                    );
+
+              if (ancestorIsAncestorInCurrentTree) {
+                final double? ancestorContentLogicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
+                if (ancestorContentLogicalWidth != null && ancestorContentLogicalWidth.isFinite) {
+                  logicalWidth = math.min(maxConstraintWidth, ancestorContentLogicalWidth);
+                } else {
+                  logicalWidth = maxConstraintWidth;
+                }
               } else {
                 logicalWidth = maxConstraintWidth;
               }
