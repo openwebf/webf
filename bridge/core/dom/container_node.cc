@@ -33,6 +33,7 @@
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/selector_checker.h"
 #include "core/css/style_engine.h"
+#include "core/css/style_change_reason.h"
 #include "core/css/style_sheet_contents.h"
 #include "foundation/logging.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
@@ -845,7 +846,25 @@ void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange &c
   }
 
   if (change.IsChildRemoval() || change.type == ChildrenChangeType::kAllChildrenRemoved) {
-    GetDocument().EnsureStyleEngine().ChildrenRemoved(*this);
+    StyleEngine& style_engine = GetDocument().EnsureStyleEngine();
+    if (change.IsChildElementChange() && !change.ByParser() && InActiveDocument()) {
+      style_engine.UpdateActiveStyle();
+      bool needs_has_invalidation = style_engine.GetRuleFeatureSet().NeedsHasInvalidationForInsertionOrRemoval();
+      if (!needs_has_invalidation) {
+        if (Element* removed_element = DynamicTo<Element>(change.sibling_changed)) {
+          needs_has_invalidation =
+              style_engine.GetRuleFeatureSet().NeedsHasInvalidationForInsertedOrRemovedElement(*removed_element);
+        }
+      }
+      if (needs_has_invalidation) {
+        style_engine.SetNeedsHasPseudoStateRecalc();
+        if (Element* root = GetDocument().documentElement()) {
+          root->SetNeedsStyleRecalc(kSubtreeStyleChange,
+                                    StyleChangeReasonForTracing::Create(style_change_reason::kAffectedByHas));
+        }
+      }
+    }
+    style_engine.ChildrenRemoved(*this);
     return;
   }
 

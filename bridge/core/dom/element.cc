@@ -279,6 +279,11 @@ bool Element::IsDisabledFormControl() const {
   if (!IsPotentiallyDisableableFormControl(*this)) {
     return false;
   }
+  // When Blink CSS is enabled, rely on the tracked disabled state (kept
+  // in sync with attribute mutations) to reflect current disabledness.
+  if (GetExecutingContext()->isBlinkEnabled()) {
+    return disabled_state_;
+  }
 
   if (HasAttributeIgnoringNamespace(DisabledAttrName())) {
     return true;
@@ -377,7 +382,14 @@ void Element::setAttribute(const AtomicString& name, const AtomicString& value, 
 }
 
 void Element::removeAttribute(const AtomicString& name, ExceptionState& exception_state) {
+  if (!EnsureElementAttributes().hasAttribute(name, exception_state)) {
+    return;
+  }
+
+  AtomicString old_value = EnsureElementAttributes().getAttribute(name, exception_state);
+  WillModifyAttribute(name, old_value, AtomicString::Null());
   EnsureElementAttributes().removeAttribute(name, exception_state);
+  DidModifyAttribute(name, old_value, AtomicString::Null(), AttributeModificationReason::kDirectly);
 }
 
 BoundingClientRect* Element::getBoundingClientRect(ExceptionState& exception_state) {
@@ -1358,6 +1370,11 @@ void Element::AttributeChanged(const AttributeModificationParams& params) {
   }
 
   const AtomicString& name = params.name;
+  if (name == CheckedAttrName()) {
+    checked_state_ = !params.new_value.IsNull() && !params.new_value.empty();
+  } else if (name == DisabledAttrName()) {
+    disabled_state_ = !params.new_value.IsNull() && !params.new_value.empty();
+  }
 
   if (IsStyledElement()) {
     if (name == html_names::kStyleAttr) {

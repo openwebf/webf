@@ -131,7 +131,25 @@ static bool ReadWidgetBooleanProperty(Element& element, const AtomicString& prop
   if (exception_state.HasException()) {
     return false;
   }
-  return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
+  switch (result.tag) {
+    case NativeTag::TAG_BOOL:
+      return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
+    case NativeTag::TAG_INT:
+      return result.u.int64 != 0;
+    case NativeTag::TAG_STRING: {
+      AtomicString value = NativeValueConverter<NativeTypeString>::FromNativeValueShared(element.ctx(), result);
+      if (value.IsNull() || value.empty()) {
+        return false;
+      }
+      auto lowered = value.LowerASCII();
+      if (lowered == "false"_s || lowered == "0"_s) {
+        return false;
+      }
+      return true;
+    }
+    default:
+      return false;
+  }
 }
 
 static Element* FindSelectAncestor(Element& element) {
@@ -1869,14 +1887,8 @@ bool SelectorChecker::CheckPseudoClass(const SelectorCheckingContext& context, M
      // Match checkable inputs with [checked] and <option> with [selected].
      // This keeps selector matching consistent with attribute-based state.
      const AtomicString tag_name = element.localName();
-     static const AtomicString checked_attr = AtomicString::CreateFromUTF8("checked");
      if (tag_name == "input") {
-       if (element.HasAttributeIgnoringNamespace(checked_attr)) {
-         return true;
-       }
-       if (ReadWidgetBooleanProperty(element, checked_attr)) {
-         return true;
-       }
+       return element.IsCheckedState();
      } else if (tag_name == "option") {
        if (element.HasAttributeIgnoringNamespace(SelectedAttrName())) {
          return true;

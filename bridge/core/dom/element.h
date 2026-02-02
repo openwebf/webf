@@ -355,6 +355,7 @@ class Element : public ContainerNode {
   bool IsRequiredFormControl() const;
   bool MatchesValidityPseudoClasses() const;
   bool IsValidElement() const;
+  bool IsCheckedState() const { return checked_state_; }
 
   // Additional methods for selector matching
   bool ContainsPersistentVideo() const { return false; }
@@ -410,6 +411,8 @@ class Element : public ContainerNode {
   bool is_display_none_for_style_invalidation_ = false;
   uint32_t sent_pseudo_style_mask_ = 0;
   bool has_emitted_style_ = false;
+  bool checked_state_ = false;
+  bool disabled_state_ = false;
 
   QualifiedName tag_name_;
 };

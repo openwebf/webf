@@ -1153,6 +1153,21 @@ void StyleEngine::IdChangedForElement(const AtomicString& old_id,
   if (!invalidation_lists.descendants.empty() || !invalidation_lists.siblings.empty()) {
     pending_invalidations_.ScheduleInvalidationSetsForNode(invalidation_lists, element);
   }
+
+  bool needs_has_invalidation = false;
+  if (!old_id.IsNull() && !old_id.empty() && features.NeedsHasInvalidationForId(old_id)) {
+    needs_has_invalidation = true;
+  }
+  if (!new_id.IsNull() && !new_id.empty() && features.NeedsHasInvalidationForId(new_id)) {
+    needs_has_invalidation = true;
+  }
+  if (needs_has_invalidation) {
+    SetNeedsHasPseudoStateRecalc();
+    if (Element* root = document.documentElement()) {
+      root->SetNeedsStyleRecalc(kSubtreeStyleChange,
+                                StyleChangeReasonForTracing::Create(style_change_reason::kAffectedByHas));
+    }
+  }
 }
 
 void StyleEngine::ClassAttributeChangedForElement(const AtomicString& old_class_value,
@@ -1198,6 +1213,38 @@ void StyleEngine::ClassAttributeChangedForElement(const AtomicString& old_class_
   if (!invalidation_lists.descendants.empty() || !invalidation_lists.siblings.empty()) {
     pending_invalidations_.ScheduleInvalidationSetsForNode(invalidation_lists, element);
   }
+
+  bool needs_has_invalidation = false;
+  if (features.NeedsHasInvalidationForClassChange()) {
+    auto check_for_has = [&](const AtomicString& value) {
+      if (needs_has_invalidation || value.IsNull() || value.empty()) {
+        return;
+      }
+      SpaceSplitString tokens(value);
+      uint32_t size = tokens.size();
+      for (uint32_t i = 0; i < size; ++i) {
+        const AtomicString& class_name = tokens[i];
+        if (class_name.empty()) {
+          continue;
+        }
+        if (features.NeedsHasInvalidationForClass(class_name)) {
+          needs_has_invalidation = true;
+          return;
+        }
+      }
+    };
+
+    check_for_has(old_class_value);
+    check_for_has(new_class_value);
+  }
+
+  if (needs_has_invalidation) {
+    SetNeedsHasPseudoStateRecalc();
+    if (Element* root = document.documentElement()) {
+      root->SetNeedsStyleRecalc(kSubtreeStyleChange,
+                                StyleChangeReasonForTracing::Create(style_change_reason::kAffectedByHas));
+    }
+  }
 }
 
 void StyleEngine::AttributeChangedForElement(const AtomicString& attribute_local_name,
@@ -1229,6 +1276,14 @@ void StyleEngine::AttributeChangedForElement(const AtomicString& attribute_local
 
   if (!invalidation_lists.descendants.empty() || !invalidation_lists.siblings.empty()) {
     pending_invalidations_.ScheduleInvalidationSetsForNode(invalidation_lists, element);
+  }
+
+  if (features.NeedsHasInvalidationForAttributeChange()) {
+    SetNeedsHasPseudoStateRecalc();
+    if (Element* root = document.documentElement()) {
+      root->SetNeedsStyleRecalc(kSubtreeStyleChange,
+                                StyleChangeReasonForTracing::Create(style_change_reason::kAffectedByHas));
+    }
   }
 }
 
