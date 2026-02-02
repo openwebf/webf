@@ -853,11 +853,18 @@ void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange &c
     return;
   }
 
+<<<<<<< HEAD
   StyleEngine& style_engine = GetDocument().GetStyleEngine();
+=======
+>>>>>>> 4d7e05bc8 (fix: bridge compile error)
   // :has() depends on structural relationships. Without full invalidation
   // flags, conservatively force a full style recalc when any :has() rules
   // are present and an element is inserted/removed.
   if (!change.ByParser() && change.IsChildElementChange() && InActiveDocument()) {
+<<<<<<< HEAD
+=======
+    StyleEngine& style_engine = GetDocument().EnsureStyleEngine();
+>>>>>>> 4d7e05bc8 (fix: bridge compile error)
     style_engine.UpdateActiveStyle();
     if (style_engine.GetRuleFeatureSet().NeedsHasInvalidationForInsertionOrRemoval()) {
       style_engine.SetNeedsHasPseudoStateRecalc();
