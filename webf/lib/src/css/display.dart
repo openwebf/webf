@@ -93,9 +93,11 @@ mixin CSSDisplayMixin on RenderStyle {
           return CSSDisplay.block;
         case CSSDisplay.inlineFlex:
           return CSSDisplay.flex;
-      // Note: inline-grid and inline-table would go here when supported
+        case CSSDisplay.inlineGrid:
+          return CSSDisplay.grid;
+        // Note: inline-table would go here when supported
         default:
-        // Block-level elements remain unchanged
+          // Block-level elements remain unchanged
           return display;
       }
     }
@@ -115,20 +117,20 @@ mixin CSSDisplayMixin on RenderStyle {
 
     // 3. Flex items are blockified (children of flex containers)
     // https://www.w3.org/TR/css-display-3/#transformations
-    if (hasRenderBox() && isParentRenderBoxModel()) {
-      RenderStyle? parentRenderStyle = getAttachedRenderParentRenderStyle();
-      if (parentRenderStyle != null) {
-        // Check if parent is a flex container
-        if (parentRenderStyle.display == CSSDisplay.flex ||
-            parentRenderStyle.display == CSSDisplay.inlineFlex) {
-          transformedDisplay = blockifyDisplay(transformedDisplay);
-        }
+    // Do not rely on the Flutter render tree shape here: style/render wrappers
+    // (e.g., overflow clips, event listeners, semantics) can sit between an item
+    // and its container, but the CSS item relationship is defined by the DOM.
+    final RenderStyle? parentRenderStyle = getAttachedRenderParentRenderStyle<RenderStyle>();
+    if (parentRenderStyle != null) {
+      final CSSDisplay parentDisplay = parentRenderStyle.display;
+      // Check if parent is a flex container
+      if (parentDisplay == CSSDisplay.flex || parentDisplay == CSSDisplay.inlineFlex) {
+        transformedDisplay = blockifyDisplay(transformedDisplay);
+      }
 
-        // 4. Grid items are blockified
-        if (parentRenderStyle.display == CSSDisplay.grid ||
-            parentRenderStyle.display == CSSDisplay.inlineGrid) {
-          transformedDisplay = blockifyDisplay(transformedDisplay);
-        }
+      // 4. Grid items are blockified
+      if (parentDisplay == CSSDisplay.grid || parentDisplay == CSSDisplay.inlineGrid) {
+        transformedDisplay = blockifyDisplay(transformedDisplay);
       }
     }
 
