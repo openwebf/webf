@@ -28,6 +28,6 @@ BODY {background: green url(assets/resources/oransqr.gif) repeat-x center top fi
       <p class="three">This paragraph should have a lime background and an orange strip which starts at the top left and runs to the top right. Therefore, extra text would be in order, so that we can intelligently evaluate the performance of your browser in handling these declarations. Hey, I didn't say the page would be pretty, did I?</p>
     `;
 
-    await snapshot();
+    await snapshot(0.3);
   });
 });
