@@ -1145,6 +1145,22 @@ class CSSParser {
           return InvalidSelector(pseudoName);
         }
         return PseudoClassFunctionSelector(pseudoName, group);
+      } else if (!pseudoElement && name == 'has') {
+        _eat(TokenKind.LPAREN);
+
+        // https://drafts.csswg.org/selectors-4/#relational
+        // :has() takes a <relative-selector-list> which is forgiving.
+        final SelectorGroup? group =
+            processForgivingSelectorGroup(terminatorKind: TokenKind.RPAREN);
+
+        _eat(TokenKind.RPAREN);
+
+        // If all arguments are invalid (or empty), treat the selector as invalid
+        // so the whole selector list can be discarded (WebF behavior: match nothing).
+        if (group == null) {
+          return InvalidSelector(pseudoName);
+        }
+        return PseudoClassFunctionSelector(pseudoName, group);
       } else if (!pseudoElement &&
           (name == 'host' ||
               name == 'host-context' ||

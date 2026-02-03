@@ -10,6 +10,7 @@
 
 #include <chrono>
 #include <functional>
+#include <string>
 #include <utility>
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_state.h"
@@ -18,6 +19,7 @@
 #include "child_list_mutation_scope.h"
 #include "comment.h"
 #include "core/css/css_identifier_value.h"
+#include "core/css/css_selector_list.h"
 #include "core/css/css_property_value_set.h"
 #include "core/css/css_selector_list.h"
 #include "core/css/css_style_sheet.h"
@@ -27,12 +29,14 @@
 #include "core/css/parser/css_parser.h"
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/selector_checker.h"
+#include "core/css/parser/css_parser_context.h"
 #include "core/css/style_recalc_change.h"
 #include "core/css/style_recalc_context.h"
 #include "core/css/style_scope_frame.h"
 #include "core/css/style_scope_data.h"
 #include "core/css/style_engine.h"
 #include "core/css/style_sheet_contents.h"
+#include "core/css/selector_checker.h"
 #include "core/css/white_space.h"
 #include "core/dom/document_fragment.h"
 #include "core/dom/element_rare_data_vector.h"
@@ -59,26 +63,6 @@ namespace {
 
 thread_local InlineStylePerfStats g_inline_style_perf_stats;
 thread_local bool g_inline_style_perf_stats_enabled = false;
-
-std::shared_ptr<CSSSelectorList> ParseSelectorListOrThrow(const AtomicString& selectors,
-                                                         ExceptionState& exception_state,
-                                                         JSContext* ctx) {
-  auto parser_context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
-  auto sheet = std::make_shared<StyleSheetContents>(parser_context);
-
-  std::vector<CSSSelector> arena;
-  tcb::span<CSSSelector> vector =
-      CSSParser::ParseSelector(parser_context, CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr, sheet,
-                               selectors.GetString(), arena);
-
-  auto selector_list = CSSSelectorList::AdoptSelectorVector(vector);
-  if (!selector_list->IsValid()) {
-    exception_state.ThrowException(ctx, ErrorType::SyntaxError,
-                                   "'" + selectors.ToUTF8String() + "' is not a valid selector.");
-    return nullptr;
-  }
-  return selector_list;
-}
 
 bool MatchesAnySelectorInList(Element& element, const CSSSelectorList& selector_list, const ContainerNode& scope) {
   SelectorChecker checker(SelectorChecker::kQueryingRules);
@@ -155,7 +139,111 @@ bool IsPotentiallyDisableableFormControl(const Element& element) {
     return false;
   }
   return tag_name == "button" || tag_name == "input" || tag_name == "select" || tag_name == "textarea" ||
-         tag_name == "option";
+         tag_name == "option" || tag_name == "optgroup";
+}
+
+const AtomicString& InputTagName() {
+  static const AtomicString kInput = AtomicString::CreateFromUTF8("input");
+  return kInput;
+}
+const AtomicString& SelectTagName() {
+  static const AtomicString kSelect = AtomicString::CreateFromUTF8("select");
+  return kSelect;
+}
+const AtomicString& TextareaTagName() {
+  static const AtomicString kTextarea = AtomicString::CreateFromUTF8("textarea");
+  return kTextarea;
+}
+const AtomicString& OptionTagName() {
+  static const AtomicString kOption = AtomicString::CreateFromUTF8("option");
+  return kOption;
+}
+const AtomicString& TypeAttrName() {
+  static const AtomicString kType = AtomicString::CreateFromUTF8("type");
+  return kType;
+}
+const AtomicString& ValueAttrName() {
+  static const AtomicString kValue = AtomicString::CreateFromUTF8("value");
+  return kValue;
+}
+const AtomicString& RequiredAttrName() {
+  static const AtomicString kRequired = AtomicString::CreateFromUTF8("required");
+  return kRequired;
+}
+const AtomicString& CheckedAttrName() {
+  static const AtomicString kChecked = AtomicString::CreateFromUTF8("checked");
+  return kChecked;
+}
+const AtomicString& SelectedAttrName() {
+  static const AtomicString kSelected = AtomicString::CreateFromUTF8("selected");
+  return kSelected;
+}
+const AtomicString& DisabledAttrName() {
+  static const AtomicString kDisabled = AtomicString::CreateFromUTF8("disabled");
+  return kDisabled;
+}
+
+bool IsFormControlTag(const AtomicString& tag_name) {
+  return tag_name == InputTagName() || tag_name == SelectTagName() || tag_name == TextareaTagName() ||
+         tag_name == OptionTagName();
+}
+
+bool IsPseudoStateAttribute(const AtomicString& name) {
+  return name == CheckedAttrName() || name == SelectedAttrName() || name == DisabledAttrName() ||
+         name == RequiredAttrName() || name == ValueAttrName() || name == TypeAttrName();
+}
+
+bool IsValidEmailAddress(const AtomicString& value) {
+  if (value.IsNull() || value.empty()) {
+    return true;
+  }
+  const auto utf8 = value.ToUTF8String();
+  const auto at = utf8.find('@');
+  if (at == std::string::npos || at == 0 || at + 1 >= utf8.size()) {
+    return false;
+  }
+  const auto dot = utf8.find('.', at + 1);
+  if (dot == std::string::npos || dot == at + 1 || dot + 1 >= utf8.size()) {
+    return false;
+  }
+  return true;
+}
+
+std::shared_ptr<CSSSelectorList> ParseSelectorListOrThrow(const AtomicString& selectors,
+                                                          ExceptionState& exception_state,
+                                                          JSContext* ctx) {
+  auto parser_context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
+  auto sheet = std::make_shared<StyleSheetContents>(parser_context);
+
+  std::vector<CSSSelector> arena;
+  tcb::span<CSSSelector> vector =
+      CSSParser::ParseSelector(parser_context, CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr, sheet,
+                               selectors.GetString(), arena);
+
+  auto selector_list = CSSSelectorList::AdoptSelectorVector(vector);
+  if (!selector_list->IsValid()) {
+    exception_state.ThrowException(ctx, ErrorType::SyntaxError,
+                                   "'" + selectors.ToUTF8String() + "' is not a valid selector.");
+    return nullptr;
+  }
+  return selector_list;
+}
+
+bool MatchesAnySelectorInList(Element& element,
+                              const CSSSelectorList& selector_list,
+                              const ContainerNode* scope) {
+  SelectorChecker checker(SelectorChecker::kQueryingRules);
+  SelectorChecker::SelectorCheckingContext context(&element);
+  context.scope = scope;
+
+  for (const CSSSelector* selector = selector_list.First(); selector; selector = CSSSelectorList::Next(*selector)) {
+    context.selector = selector;
+    SelectorChecker::MatchResult result;
+    if (checker.Match(context, result)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 }  // namespace
@@ -176,7 +264,7 @@ ContainerNode* Element::ParentElementOrDocumentFragment() const {
   return nullptr;
 }
 
-bool Element::hasAttribute(const AtomicString& name, ExceptionState& exception_state) {
+bool Element::hasAttribute(const AtomicString& name, ExceptionState& exception_state) const {
   return EnsureElementAttributes().hasAttribute(name, exception_state);
 }
 
@@ -191,15 +279,90 @@ bool Element::IsDisabledFormControl() const {
   if (!IsPotentiallyDisableableFormControl(*this)) {
     return false;
   }
+  // When Blink CSS is enabled, rely on the tracked disabled state (kept
+  // in sync with attribute mutations) to reflect current disabledness.
+  if (GetExecutingContext()->isBlinkEnabled()) {
+    return disabled_state_;
+  }
 
-  auto& attrs = EnsureElementAttributes();
-  for (auto it = attrs.begin(); it != attrs.end(); ++it) {
-    const AtomicString& name = it->first;
-    if (!name.IsNull() && name == "disabled") {
-      return true;
+  if (HasAttributeIgnoringNamespace(DisabledAttrName())) {
+    return true;
+  }
+
+  if (IsWidgetElement()) {
+    ExceptionState exception_state;
+    NativeValue result =
+        GetBindingProperty(DisabledAttrName(), FlushUICommandReason::kDependentsOnElement, exception_state);
+    if (!exception_state.HasException()) {
+      return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
     }
   }
   return false;
+}
+
+bool Element::MatchesValidityPseudoClasses() const {
+  const AtomicString tag_name = localName();
+  if (tag_name.IsNull()) {
+    return false;
+  }
+  return IsFormControlTag(tag_name);
+}
+
+bool Element::IsRequiredFormControl() const {
+  if (!MatchesValidityPseudoClasses()) {
+    return false;
+  }
+  return HasAttributeIgnoringNamespace(RequiredAttrName());
+}
+
+bool Element::IsOptionalFormControl() const {
+  if (!MatchesValidityPseudoClasses()) {
+    return false;
+  }
+  return !IsRequiredFormControl();
+}
+
+bool Element::IsValidElement() const {
+  if (!MatchesValidityPseudoClasses()) {
+    return false;
+  }
+
+  const AtomicString tag_name = localName();
+  if (tag_name != InputTagName()) {
+    // Minimal validity for other form controls.
+    return true;
+  }
+
+  ExceptionState exception_state;
+  AtomicString type = getAttribute(TypeAttrName(), exception_state);
+  if (exception_state.HasException()) {
+    return true;
+  }
+  if (type.IsNull() || type.empty()) {
+    type = AtomicString::CreateFromUTF8("text");
+  } else {
+    type = type.LowerASCII();
+  }
+
+  AtomicString value = getAttribute(ValueAttrName(), exception_state);
+  if (exception_state.HasException()) {
+    return true;
+  }
+
+  const bool required = HasAttributeIgnoringNamespace(RequiredAttrName());
+  const bool value_empty = value.IsNull() || value.empty();
+  if (required && value_empty) {
+    return false;
+  }
+
+  if (type == "email") {
+    if (value_empty && !required) {
+      return true;
+    }
+    return IsValidEmailAddress(value);
+  }
+
+  return true;
 }
 
 AtomicString Element::getAttribute(const AtomicString& name, ExceptionState& exception_state) const {
@@ -570,7 +733,7 @@ bool Element::matches(const AtomicString& selectors, ExceptionState& exception_s
     if (!selector_list) {
       return false;
     }
-    return MatchesAnySelectorInList(*this, *selector_list, *this);
+    return MatchesAnySelectorInList(*this, *selector_list, this);
   }
 
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
@@ -588,9 +751,9 @@ Element* Element::closest(const AtomicString& selectors, ExceptionState& excepti
     if (!selector_list) {
       return nullptr;
     }
-
+    ContainerNode* scope = this;
     for (Element* current = this; current; current = current->parentElement()) {
-      if (MatchesAnySelectorInList(*current, *selector_list, *this)) {
+      if (MatchesAnySelectorInList(*current, *selector_list, scope)) {
         return current;
       }
     }
@@ -1200,6 +1363,11 @@ void Element::AttributeChanged(const AttributeModificationParams& params) {
   }
 
   const AtomicString& name = params.name;
+  if (name == CheckedAttrName()) {
+    checked_state_ = !params.new_value.IsNull() && !params.new_value.empty();
+  } else if (name == DisabledAttrName()) {
+    disabled_state_ = !params.new_value.IsNull() && !params.new_value.empty();
+  }
 
   if (IsStyledElement()) {
     if (name == html_names::kStyleAttr) {
@@ -1223,6 +1391,15 @@ void Element::AttributeChanged(const AttributeModificationParams& params) {
       // engine.RecalcStyleForSubtree(*this);
     } else if (name != html_names::kStyleAttr) {
       engine.AttributeChangedForElement(name, *this);
+    }
+
+    if (IsPseudoStateAttribute(name)) {
+      engine.SetNeedsHasPseudoStateRecalc();
+      if (Element* root = GetDocument().documentElement()) {
+        root->SetNeedsStyleRecalc(
+            kSubtreeStyleChange,
+            StyleChangeReasonForTracing::FromAttribute(QualifiedName(name)));
+      }
     }
   }
 }

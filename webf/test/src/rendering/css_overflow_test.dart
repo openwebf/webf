@@ -236,6 +236,47 @@ void main() {
       expect(scrollable.scrollHeight, greaterThanOrEqualTo(200.0));
     });
 
+    testWidgets('disposing during animated scroll does not assert', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'overflow-scroll-dispose-animation-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="scrollable" style="
+                overflow: scroll;
+                width: 200px;
+                height: 200px;
+                background-color: #eee;
+              ">
+                <div style="
+                  width: 200px;
+                  height: 2000px;
+                  background-color: green;
+                ">Scrollable content</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      await tester.runAsync(() async {
+        await prepared.controller.view.evaluateJavaScripts(r'''
+          const s = document.getElementById('scrollable');
+          // Start an animated scroll, then remove the element while the
+          // ScrollPosition is still dispatching notifications.
+          s.scrollTo(0, 1500, true);
+          s.parentNode.removeChild(s);
+        ''');
+      });
+
+      // Let the (now orphaned) scroll position tick for a bit.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('with overflow-x and overflow-y', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,

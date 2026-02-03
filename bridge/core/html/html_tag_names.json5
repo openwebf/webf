@@ -67,6 +67,11 @@
       "interfaceHeaderDir": "core/html/forms"
     },
     {
+      "name": "optgroup",
+      "interfaceName": "HTMLOptgroupElement",
+      "interfaceHeaderDir": "core/html/forms"
+    },
+    {
       "name": "option",
       "interfaceName": "HTMLOptionElement",
       "interfaceHeaderDir": "core/html/forms"

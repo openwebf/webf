@@ -58,7 +58,9 @@
 #include "foundation/string/atomic_string.h"
 #include "foundation/casting.h"
 #include "foundation/logging.h"
+#include "foundation/native_value_converter.h"
 #include "bindings/qjs/exception_state.h"
+#include "core/dart_methods.h"
 
 namespace webf {
 
@@ -102,6 +104,82 @@ SelectorCheckerPerfStats TakeSelectorCheckerPerfStats() {
 static bool IsFrameFocused(const Element& element) {
   // WebF doesn't have frame focus tracking yet
   return true;
+}
+
+static const AtomicString& SelectTagName() {
+  static const AtomicString kSelect = AtomicString::CreateFromUTF8("select");
+  return kSelect;
+}
+
+static const AtomicString& OptionTagName() {
+  static const AtomicString kOption = AtomicString::CreateFromUTF8("option");
+  return kOption;
+}
+
+static const AtomicString& SelectedAttrName() {
+  static const AtomicString kSelected = AtomicString::CreateFromUTF8("selected");
+  return kSelected;
+}
+
+static bool ReadWidgetBooleanProperty(Element& element, const AtomicString& property) {
+  if (!element.IsWidgetElement()) {
+    return false;
+  }
+  ExceptionState exception_state;
+  NativeValue result =
+      element.GetBindingProperty(property, FlushUICommandReason::kDependentsOnElement, exception_state);
+  if (exception_state.HasException()) {
+    return false;
+  }
+  switch (result.tag) {
+    case NativeTag::TAG_BOOL:
+      return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
+    case NativeTag::TAG_INT:
+      return result.u.int64 != 0;
+    case NativeTag::TAG_STRING: {
+      AtomicString value = NativeValueConverter<NativeTypeString>::FromNativeValueShared(element.ctx(), result);
+      if (value.IsNull() || value.empty()) {
+        return false;
+      }
+      auto lowered = value.LowerASCII();
+      if (lowered == "false"_s || lowered == "0"_s) {
+        return false;
+      }
+      return true;
+    }
+    default:
+      return false;
+  }
+}
+
+static Element* FindSelectAncestor(Element& element) {
+  for (Element* current = element.parentElement(); current; current = current->parentElement()) {
+    if (current->HasTagName(SelectTagName())) {
+      return current;
+    }
+  }
+  return nullptr;
+}
+
+static bool HasAnySelectedOption(Element& select) {
+  for (Element& descendant : ElementTraversal::DescendantsOf(select)) {
+    if (!descendant.HasTagName(OptionTagName())) {
+      continue;
+    }
+    if (descendant.HasAttributeIgnoringNamespace(SelectedAttrName())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static Element* FirstOptionElement(Element& select) {
+  for (Element& descendant : ElementTraversal::DescendantsOf(select)) {
+    if (descendant.HasTagName(OptionTagName())) {
+      return &descendant;
+    }
+  }
+  return nullptr;
 }
 
 // Type alias for vector compatibility
@@ -1805,16 +1883,25 @@ bool SelectorChecker::CheckPseudoClass(const SelectorCheckingContext& context, M
    case CSSSelector::kPseudoInvalid:
      return element.MatchesValidityPseudoClasses() && !element.IsValidElement();
    case CSSSelector::kPseudoChecked: {
-     // TODO: Implement form control checked state
-     // if (auto* input_element = DynamicTo<HTMLInputElement>(element)) {
-     //   if (input_element->ShouldAppearChecked() && !input_element->ShouldAppearIndeterminate()) {
-     //     return true;
-     //   }
-     // } else if (auto* option_element = DynamicTo<HTMLOptionElement>(element)) {
-     //   if (option_element->Selected()) {
-     //     return true;
-     //   }
-     // }
+     // Minimal :checked support for WebF's DOM model.
+     // Match checkable inputs with [checked] and <option> with [selected].
+     // This keeps selector matching consistent with attribute-based state.
+     const AtomicString tag_name = element.localName();
+     if (tag_name == "input") {
+       return element.IsCheckedState();
+     } else if (tag_name == "option") {
+       if (element.HasAttributeIgnoringNamespace(SelectedAttrName())) {
+         return true;
+       }
+       if (Element* select = FindSelectAncestor(element)) {
+         if (!HasAnySelectedOption(*select)) {
+           Element* first = FirstOptionElement(*select);
+           if (first == &element) {
+             return true;
+           }
+         }
+       }
+     }
      break;
    }
    case CSSSelector::kPseudoIndeterminate:

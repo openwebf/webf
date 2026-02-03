@@ -401,7 +401,7 @@ std::shared_ptr<MutableCSSPropertyValueSet> StyleCascade::BuildWinningPropertySe
     CSSPropertyName name;
     std::shared_ptr<const CSSValue> value;
     bool important;
-    uint32_t position;
+    CascadePriority priority;
   };
 
   std::vector<ExportedProperty> exported_properties;
@@ -461,17 +461,16 @@ std::shared_ptr<MutableCSSPropertyValueSet> StyleCascade::BuildWinningPropertySe
     // so the UICommand receives the original logical names unchanged.
     CSSPropertyName declared_name = prop_ref.Name();
     exported_properties.push_back(
-        ExportedProperty{id, declared_name, to_set, important, pos});
+        ExportedProperty{id, declared_name, to_set, important, *prio});
   }
 
-  // Sort by encoded position so that later declarations (including shorthands)
-  // are emitted after earlier ones, matching cascade/source order. This is
-  // important for consumers like the Dart style engine that replay SetStyle
-  // commands sequentially.
+  // Sort by cascade priority so higher-priority declarations are emitted last.
+  // This keeps shorthand/longhand interactions correct when Dart replays
+  // SetStyle commands sequentially without full cascade context.
   std::sort(exported_properties.begin(), exported_properties.end(),
             [](const ExportedProperty& a, const ExportedProperty& b) {
-              if (a.position != b.position) {
-                return a.position < b.position;
+              if (a.priority != b.priority) {
+                return a.priority < b.priority;
               }
               // Tie-breaker: keep deterministic order by property id.
               return static_cast<unsigned>(a.id) < static_cast<unsigned>(b.id);

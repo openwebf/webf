@@ -26,7 +26,7 @@ Target: **Tailwind CSS v3.4.x** (core preflight + core utilities + core variants
 | `@supports` | `supports-*` variants | ❌ | `webf/lib/src/css/parser/parser.dart` returns `null` for `DIRECTIVE_SUPPORTS` | Implement `@supports` parsing + evaluation (at least allow/deny blocks, and “declare support” checks used by Tailwind). |
 | Media queries (MQ) | Responsive (`sm/md/...`), `dark`, `motion-*`, `orientation-*`, `print`, `forced-colors`, `prefers-contrast` | ⚠️ | `webf/lib/src/css/css_rule.dart` only evaluates `min/max-width`, `min/max-aspect-ratio`, `prefers-color-scheme`; rejects `print` type | Expand media query parsing/evaluation for Tailwind variants: `prefers-reduced-motion`, `orientation`, `forced-colors`, `prefers-contrast`, `hover`, `pointer`, `print`. |
 | Selector pseudo `:where(<selector-list>)` | Preflight selectors (`abbr:where([title])`, `[hidden]:where(:not(...))`), direction variants (`rtl:`/`ltr:`) | ⚠️ | Blink/bridge (C++) supports `:where()` parsing/matching and 0-specificity (`bridge/core/css/css_selector.cc` handles `CSSSelector::kPseudoWhere`), but the legacy Dart selector engine still lacks selector-list parsing/matching (`webf/lib/src/css/parser/parser.dart`, `webf/lib/src/css/query_selector.dart`). | Implement Selectors L4 `:where()`/`:is()` selector-list parsing + matching + specificity in the Dart engine; keep coverage via `integration_tests/specs/css/css-selectors/is-where-*.ts`. |
-| Selector pseudo `:has(<relative-selector-list>)` | `has-*`, `group-has-*`, `peer-has-*` variants | ❌ | No `:has()` parsing/matching in Dart selector engine | Implement `:has()` parsing/matching + invalidation strategy (at least a correct baseline, then optimize). |
+| Selector pseudo `:has(<relative-selector-list>)` | `has-*`, `group-has-*`, `peer-has-*` variants | ⚠️ | Blink/bridge parses `:has()` and has selector-checking/invalidation hooks, but traversal/caching are stubbed (`bridge/core/css/check_pseudo_has_*`); Dart selector engine still lacks `:has()`. | Implement full :has traversal/caching/invalidation in C++; add Dart parsing/matching; cover with integration tests. |
 | Pseudo-classes (state) | `hover:`, `focus:`, `focus-visible:`, `focus-within:`, `active:`, `enabled:`, `disabled:` | ❌ | `webf/lib/src/css/query_selector.dart` only implements a small set (e.g., `:root`, `:empty`, `:first-child`, `:nth-*`); does not implement hover/focus/active/etc | Add element state model + selector matching for Tailwind pseudo-class variants; hook to Flutter pointer/focus events. |
 | Pseudo-classes (forms) | `checked:`, `indeterminate:`, `placeholder-shown:`, `required:`, `valid:`/`invalid:`… | ❌ | Not implemented in selector evaluator | Implement form state pseudos based on element type/attributes/value validity model (as supported by WebF’s form elements). |
 | Pseudo-elements used by Tailwind variants | `::before/::after`, `::placeholder`, `::selection`, `::marker`, `::file-selector-button`, `::backdrop`, `::first-letter/line` | ⚠️ | WebF has real `::before/::after` elements and first-line/first-letter plumbing, but selector matcher treats only a “legacy” subset as matchable; others return false | Extend pseudo-element matching + rendering support where meaningful; at minimum `::placeholder` for preflight + utilities. |
@@ -49,7 +49,7 @@ Tailwind v3.4.18 core variants are exposed by `variantPlugins` (15 groups).
 | `orientationVariants` | `@media (orientation: portrait/landscape)` | ❌ | Media feature not evaluated today. |
 | `printVariant` | `@media print` | ❌ | WebF currently rejects non-`screen` media types. |
 | `supportsVariants` | `@supports (...)` | ❌ | `@supports` not parsed/evaluated today. |
-| `hasVariants` | `:has(...)` | ❌ | Not parsed/evaluated today. |
+| `hasVariants` | `:has(...)` | ⚠️ | Blink/bridge has parser + checker wiring, but :has traversal/caching are stubbed; Dart selector engine lacks `:has()`. |
 | `ariaVariants` | Attribute selectors like `&[aria-checked=\"true\"]` | ✅ | Attribute selectors are supported; needs Tailwind fixture tests. |
 | `dataVariants` | Attribute selectors like `&[data-state=\"open\"]` | ✅ | Attribute selectors are supported; needs Tailwind fixture tests. |
 | `childVariant` | `& > *` | ✅ | Combinators supported. |
@@ -66,7 +66,7 @@ Tailwind v3.4.18 core utilities are exposed by `corePlugins` (179 keys). Below i
 
 **P0 blockers (must fix first)**
 - Selector parsing/matching: `:where(<selector-list>)` (Tailwind preflight + direction variants).
-- `:has()` correctness + performance + invalidation strategy.
+- `:has()` correctness + performance + invalidation strategy (C++ has stubbed traversal; Dart missing).
 - Selector matching: interactive pseudo-classes (hover/focus/active/disabled/checked/…).
 - https://github.com/openwebf/webf/issues/659
 - Media query evaluation: `orientation`, `prefers-contrast`.

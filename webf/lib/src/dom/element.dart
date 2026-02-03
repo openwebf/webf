@@ -104,6 +104,7 @@ abstract class Element extends ContainerNode
   String? get id => _id;
 
   set id(String? id) {
+    final String? oldId = _id;
     final isNeedRecalculate = _checkRecalculateStyle([id, _id]);
     _updateIDMap(id, oldID: _id);
     _id = id;
@@ -112,10 +113,15 @@ abstract class Element extends ContainerNode
     _updateAttrPresenceIndex(_idAttr, present: id != null);
     if (DebugFlags.enableCssBatchRecalc) {
       ownerDocument.markElementStyleDirty(this, reason: 'batch:id');
-
+      if (oldId != id) {
+        _markHasSelectorsDirty();
+      }
       return;
     }
     recalculateStyle(rebuildNested: isNeedRecalculate);
+    if (oldId != id) {
+      _markHasSelectorsDirty();
+    }
   }
 
   // Is element an replaced element.
@@ -186,6 +192,7 @@ abstract class Element extends ContainerNode
     final Iterable<String> checkKeys = (oldClasses + classList)
         .where((key) => !oldClasses.contains(key) || !classList.contains(key));
     final bool isNeedRecalculate = _checkRecalculateStyle(List.from(checkKeys));
+    final bool classChanged = checkKeys.isNotEmpty;
 
     // Update internal class list
     _classList
@@ -198,10 +205,15 @@ abstract class Element extends ContainerNode
     _updateAttrPresenceIndex(_classNameAttr, present: true);
     if (DebugFlags.enableCssBatchRecalc) {
       ownerDocument.markElementStyleDirty(this, reason: 'batch:class');
-
+      if (classChanged) {
+        _markHasSelectorsDirty();
+      }
       return;
     }
     recalculateStyle(rebuildNested: isNeedRecalculate);
+    if (classChanged) {
+      _markHasSelectorsDirty();
+    }
   }
 
   String get className => _classList.join(_oneSpace);
@@ -1491,6 +1503,9 @@ abstract class Element extends ContainerNode
 
     // Mark semantics dirty for accessibility-relevant attributes.
     if (changed) _markSemanticsDirtyIfNeeded(qualifiedName);
+    if (changed && qualifiedName != _classNameAttr) {
+      _markHasSelectorsDirty();
+    }
   }
 
   @mustCallSuper
@@ -1528,6 +1543,9 @@ abstract class Element extends ContainerNode
 
       // Mark semantics dirty for accessibility-relevant attributes.
       _markSemanticsDirtyIfNeeded(qualifiedName);
+      if (qualifiedName != _classNameAttr) {
+        _markHasSelectorsDirty();
+      }
     }
   }
 
@@ -1558,6 +1576,14 @@ abstract class Element extends ContainerNode
     if (render != null) {
       render.markNeedsSemanticsUpdate();
     }
+  }
+
+  void _markHasSelectorsDirty() {
+    if (ownerDocument.ownerView.enableBlink) return;
+    if (!ownerDocument.ruleSet.hasHasPseudo) return;
+    final Element? root = ownerDocument.documentElement;
+    if (root == null) return;
+    ownerDocument.markElementStyleDirty(root, reason: 'childList-has');
   }
 
   @mustCallSuper

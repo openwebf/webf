@@ -33,7 +33,7 @@ class ElementAttributes : public ScriptWrappable {
                     ExceptionState& exception_state,
                     bool ignore_ui_command = false);
   bool hasAttribute(const AtomicString& name, ExceptionState& exception_state);
-  void removeAttribute(const AtomicString& name, ExceptionState& exception_state);
+  void removeAttribute(const AtomicString& name, ExceptionState& exception_state, bool ignore_ui_command = false);
   void CopyWith(ElementAttributes* attributes);
   String ToString();
 

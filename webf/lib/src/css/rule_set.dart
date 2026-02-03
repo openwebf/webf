@@ -36,6 +36,7 @@ class RuleSet {
   final List<CSSRule> pseudoRules = [];
 
   final Map<String, CSSKeyframesRule> keyframesRules = {};
+  bool hasHasPseudo = false;
 
   int _lastPosition = 0;
 
@@ -66,6 +67,14 @@ class RuleSet {
       } else {
         rule.layerOrderKey = null;
       }
+      if (!hasHasPseudo) {
+        for (final selector in rule.selectorGroup.selectors) {
+          if (_selectorContainsHas(selector)) {
+            hasHasPseudo = true;
+            break;
+          }
+        }
+      }
       for (final selector in rule.selectorGroup.selectors) {
         findBestRuleSetAndAdd(selector, rule);
       }
@@ -92,6 +101,7 @@ class RuleSet {
     universalRules.clear();
     pseudoRules.clear();
     keyframesRules.clear();
+    hasHasPseudo = false;
     layerTree.reset();
     _lastPosition = 0;
   }
@@ -182,6 +192,45 @@ class RuleSet {
     }
 
     universalRules.add(rule);
+  }
+
+  bool _selectorContainsHas(Selector selector) {
+    for (final seq in selector.simpleSelectorSequences) {
+      if (_simpleSelectorContainsHas(seq.simpleSelector)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _simpleSelectorContainsHas(SimpleSelector selector) {
+    if (selector is PseudoClassFunctionSelector) {
+      final String name = selector.name.toLowerCase();
+      if (name == 'has') {
+        return true;
+      }
+      final dynamic arg = selector.argument;
+      if (arg is SelectorGroup) {
+        for (final sel in arg.selectors) {
+          if (_selectorContainsHas(sel)) {
+            return true;
+          }
+        }
+      } else if (arg is Selector) {
+        if (_selectorContainsHas(arg)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    if (selector is NegationSelector) {
+      final SimpleSelector? neg = selector.negationArg;
+      if (neg == null) return false;
+      return _simpleSelectorContainsHas(neg);
+    }
+
+    return false;
   }
 
   static bool _isLegacyPsuedoClass(String name) {

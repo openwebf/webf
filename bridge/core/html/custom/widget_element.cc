@@ -10,12 +10,34 @@
 #include "widget_element.h"
 #include "binding_call_methods.h"
 #include "bindings/qjs/script_promise_resolver.h"
+#include "core/css/style_change_reason.h"
+#include "core/css/style_engine.h"
+#include "core/css/style_recalc_change.h"
 #include "core/dom/document.h"
+#include "core/dom/qualified_name.h"
 #include "foundation/native_value_converter.h"
 #include "foundation/string/character_visitor.h"
 #include "widget_element_shape.h"
 
 namespace webf {
+
+namespace {
+
+bool IsPseudoStateProperty(const AtomicString& name) {
+  if (name.IsNull()) {
+    return false;
+  }
+  static const AtomicString kChecked = AtomicString::CreateFromUTF8("checked");
+  static const AtomicString kSelected = AtomicString::CreateFromUTF8("selected");
+  static const AtomicString kDisabled = AtomicString::CreateFromUTF8("disabled");
+  static const AtomicString kRequired = AtomicString::CreateFromUTF8("required");
+  static const AtomicString kValue = AtomicString::CreateFromUTF8("value");
+  static const AtomicString kType = AtomicString::CreateFromUTF8("type");
+  return name == kChecked || name == kSelected || name == kDisabled || name == kRequired || name == kValue ||
+         name == kType;
+}
+
+}  // namespace
 
 WidgetElement::WidgetElement(const AtomicString& tag_name, Document* document)
     : HTMLElement(tag_name, document, ConstructionType::kCreateWidgetElement) {}
@@ -175,6 +197,15 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
 
     // Cache value for synchronous access.
     cached_properties_[sync_key] = value;
+
+    if (GetExecutingContext()->isBlinkEnabled() && IsPseudoStateProperty(sync_key)) {
+      StyleEngine& engine = GetDocument().EnsureStyleEngine();
+      engine.SetNeedsHasPseudoStateRecalc();
+      if (Element* root = GetDocument().documentElement()) {
+        root->SetNeedsStyleRecalc(kSubtreeStyleChange,
+                                  StyleChangeReasonForTracing::FromAttribute(QualifiedName(sync_key)));
+      }
+    }
 
     // Use async setter to avoid blocking.
     SetBindingPropertyAsync(sync_key, value.ToNative(ctx(), exception_state), exception_state);

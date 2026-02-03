@@ -106,7 +106,7 @@ class Selector extends TreeNode {
         if (name == 'where') {
           return 0;
         }
-        if (name == 'is') {
+        if (name == 'is' || name == 'has') {
           final arg = node.argument;
           if (arg is SelectorGroup) {
             int maxSpecificity = 0;
