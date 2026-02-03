@@ -24,6 +24,7 @@ import 'flutter_max_height_container.dart';
 import 'flutter_fixed_height_slot.dart';
 import 'flutter_cupertino_portal_modal_popup.dart';
 import 'flutter_portal_popup_item.dart';
+import 'flutter_ifc_host.dart';
 
 void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-button',
@@ -60,4 +61,5 @@ void defineWebFCustomElements() {
   WebF.defineCustomElement('native-flex', (context) => NativeFlexContainer(context));
   WebF.defineCustomElement('flutter-max-height-container', (context) => FlutterMaxHeightContainerElement(context));
   WebF.defineCustomElement('flutter-fixed-height-slot', (context) => FlutterFixedHeightSlotElement(context));
+  WebF.defineCustomElement('flutter-ifc-host', (context) => FlutterIFCHostElement(context));
 }

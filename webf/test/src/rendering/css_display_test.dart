@@ -413,7 +413,7 @@ void main() {
       expect(blockChild2.offsetHeight, equals(75.0));
     });
 
-    testWidgets('flex items should be blockified according to CSS Display spec', skip: true, (WidgetTester tester) async {
+    testWidgets('flex items should be blockified according to CSS Display spec', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
         controllerName: 'flex-blockification-test-${DateTime.now().millisecondsSinceEpoch}',
@@ -424,6 +424,7 @@ void main() {
                 <span id="inline">Inline</span>
                 <span id="inline-block" style="display: inline-block;">Inline-block</span>
                 <span id="inline-flex" style="display: inline-flex;">Inline-flex</span>
+                <span id="inline-hidden" style="overflow: hidden; width: 4px; white-space: nowrap; text-overflow: ellipsis; border: 1px solid red;">张三李四王五赵六孙七</span>
               </div>
             </body>
           </html>
@@ -433,6 +434,7 @@ void main() {
       final inline = prepared.getElementById('inline');
       final inlineBlock = prepared.getElementById('inline-block');
       final inlineFlex = prepared.getElementById('inline-flex');
+      final inlineHidden = prepared.getElementById('inline-hidden');
 
       // Ensure render tree is built
       await tester.pump();
@@ -446,6 +448,10 @@ void main() {
 
       expect(inlineFlex.renderStyle.display, equals(CSSDisplay.inlineFlex));
       expect(inlineFlex.renderStyle.effectiveDisplay, equals(CSSDisplay.flex));
+
+      // Blockification must not depend on the Flutter render tree shape (e.g., overflow clips).
+      expect(inlineHidden.renderStyle.display, equals(CSSDisplay.inline));
+      expect(inlineHidden.renderStyle.effectiveDisplay, equals(CSSDisplay.block));
     });
   });
 }
