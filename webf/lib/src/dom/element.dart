@@ -218,6 +218,23 @@ abstract class Element extends ContainerNode
 
   String get className => _classList.join(_oneSpace);
 
+  // https://html.spec.whatwg.org/multipage/dom.html#dom-dir
+  //
+  // Reflects the `dir` content attribute. Web content commonly toggles this
+  // dynamically (e.g., `document.documentElement.dir = 'rtl'`) to switch
+  // logical properties (margin-inline-start, etc.) and rtl: variants.
+  @override
+  String get dir => getAttribute('dir') ?? EMPTY_STRING;
+
+  set dir(String value) {
+    final String normalized = value.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      removeAttribute('dir');
+      return;
+    }
+    setAttribute('dir', normalized);
+  }
+
   PseudoElement? _beforeElement;
   PseudoElement? _afterElement;
 
@@ -421,7 +438,9 @@ abstract class Element extends ContainerNode
         setter: (element, value) =>
             castToType<Element>(element).className = castToType<String>(value)),
     'dir': StaticDefinedBindingProperty(
-        getter: (element) => castToType<Element>(element).dir),
+        getter: (element) => castToType<Element>(element).dir,
+        setter: (element, value) =>
+            castToType<Element>(element).dir = castToType<String>(value)),
   };
 
   @override

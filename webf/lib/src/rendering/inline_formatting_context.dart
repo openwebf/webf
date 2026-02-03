@@ -3324,6 +3324,16 @@ class InlineFormattingContext {
         pb.addText(text);
         pb.pop();
         paraPos += text.length;
+      } else if (item.type == InlineItemType.bidiControl) {
+        // Bidi isolate controls (e.g. LRI/RLI/PDI) emitted by InlineItemsBuilder for dir overrides.
+        final text = item.getText(_textContent);
+        if (text.isEmpty) continue;
+        // Treat as content so inline span left extras are flushed before the first visible glyph.
+        markContentInOpenFrames();
+        pb.pushStyle(_uiTextStyleFromCss(style));
+        pb.addText(text);
+        pb.pop();
+        paraPos += text.length;
       }
     }
 
@@ -3736,7 +3746,7 @@ class InlineFormattingContext {
         }
         pb.pop();
         paraPos += text.length;
-      } else if (item.type == InlineItemType.control) {
+      } else if (item.type == InlineItemType.control || item.type == InlineItemType.bidiControl) {
         final String text = item.getText(_textContent);
         if (text.isEmpty) continue;
         pb.pushStyle(_uiTextStyleFromCss(style));

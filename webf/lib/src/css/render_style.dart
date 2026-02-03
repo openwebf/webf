@@ -1691,9 +1691,7 @@ class CSSRenderStyle extends RenderStyle
     final bool isRTL = direction == TextDirection.rtl;
 
     // Handle inline-start properties (maps to left in LTR, right in RTL)
-    if (name == MARGIN_INLINE_START) {
-      propertyName = isRTL ? MARGIN_RIGHT : MARGIN_LEFT;
-    } else if (name == BORDER_INLINE_START) {
+    if (name == BORDER_INLINE_START) {
       propertyName = isRTL ? BORDER_RIGHT : BORDER_LEFT;
     } else if (name == BORDER_INLINE_START_WIDTH) {
       propertyName = isRTL ? BORDER_RIGHT_WIDTH : BORDER_LEFT_WIDTH;
@@ -1705,9 +1703,7 @@ class CSSRenderStyle extends RenderStyle
       propertyName = isRTL ? RIGHT : LEFT;
     }
     // Handle inline-end properties (maps to right in LTR, left in RTL)
-    else if (name == MARGIN_INLINE_END) {
-      propertyName = isRTL ? MARGIN_LEFT : MARGIN_RIGHT;
-    } else if (name == BORDER_INLINE_END) {
+    else if (name == BORDER_INLINE_END) {
       propertyName = isRTL ? BORDER_LEFT : BORDER_RIGHT;
     } else if (name == BORDER_INLINE_END_WIDTH) {
       propertyName = isRTL ? BORDER_LEFT_WIDTH : BORDER_RIGHT_WIDTH;
@@ -2036,6 +2032,12 @@ class CSSRenderStyle extends RenderStyle
       case MARGIN_BOTTOM:
         marginBottom = value;
         break;
+      case MARGIN_INLINE_START:
+        marginInlineStart = value;
+        break;
+      case MARGIN_INLINE_END:
+        marginInlineEnd = value;
+        break;
       // Text
       case COLOR:
         color = value;
@@ -2200,9 +2202,7 @@ class CSSRenderStyle extends RenderStyle
     final bool isRTL = direction == TextDirection.rtl;
 
     // Handle inline-start properties (maps to left in LTR, right in RTL)
-    if (propertyName == MARGIN_INLINE_START) {
-      mappedPropertyName = isRTL ? MARGIN_RIGHT : MARGIN_LEFT;
-    } else if (propertyName == BORDER_INLINE_START) {
+    if (propertyName == BORDER_INLINE_START) {
       mappedPropertyName = isRTL ? BORDER_RIGHT : BORDER_LEFT;
     } else if (propertyName == BORDER_INLINE_START_WIDTH) {
       mappedPropertyName = isRTL ? BORDER_RIGHT_WIDTH : BORDER_LEFT_WIDTH;
@@ -2214,9 +2214,7 @@ class CSSRenderStyle extends RenderStyle
       mappedPropertyName = isRTL ? RIGHT : LEFT;
     }
     // Handle inline-end properties (maps to right in LTR, left in RTL)
-    else if (propertyName == MARGIN_INLINE_END) {
-      mappedPropertyName = isRTL ? MARGIN_LEFT : MARGIN_RIGHT;
-    } else if (propertyName == BORDER_INLINE_END) {
+    else if (propertyName == BORDER_INLINE_END) {
       mappedPropertyName = isRTL ? BORDER_LEFT : BORDER_RIGHT;
     } else if (propertyName == BORDER_INLINE_END_WIDTH) {
       mappedPropertyName = isRTL ? BORDER_LEFT_WIDTH : BORDER_RIGHT_WIDTH;
@@ -2373,6 +2371,8 @@ class CSSRenderStyle extends RenderStyle
         break;
       case PADDING_INLINE_START:
       case PADDING_INLINE_END:
+      case MARGIN_INLINE_START:
+      case MARGIN_INLINE_END:
         value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
         break;
       case FLEX_DIRECTION:
