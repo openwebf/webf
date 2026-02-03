@@ -793,16 +793,33 @@ class WebFListViewState extends WebFWidgetElementState {
       );
     }
 
-    // Wrap with EasyRefresh for pull-to-refresh functionality
-    // Use the configured scroll behavior
-    result = EasyRefresh(
-        header: buildEasyRefreshHeader(),
-        footer: buildEasyRefreshFooter(),
-        onLoad: widgetElement.hasEventListener('loadmore') ? onLoad : null,
-        onRefresh: widgetElement.hasEventListener('refresh') ? onRefresh : null,
-        controller: refreshController,
-        scrollBehaviorBuilder: (physics) => _WebFListViewNoScrollbarScrollBehavior(physics),
-        child: result);
+    final bool hasLoadListener = widgetElement.hasEventListener('loadmore');
+    final bool hasRefreshListener = widgetElement.hasEventListener('refresh');
+    final Header? header = buildEasyRefreshHeader();
+    final Footer? footer = buildEasyRefreshFooter();
+
+    // EasyRefresh's scroll physics can schedule timers during layout (e.g. via ballistic
+    // simulations). When refresh/load-more isn't used, avoid wrapping to keep widget
+    // tests deterministic and prevent pending Timer leaks on disposal.
+    final bool enableEasyRefresh = hasLoadListener || hasRefreshListener || header != null || footer != null;
+    if (enableEasyRefresh) {
+      // Wrap with EasyRefresh for pull-to-refresh/load-more functionality
+      // Use the configured scroll behavior
+      result = EasyRefresh(
+          header: header,
+          footer: footer,
+          onLoad: hasLoadListener ? onLoad : null,
+          onRefresh: hasRefreshListener ? onRefresh : null,
+          controller: refreshController,
+          scrollBehaviorBuilder: (physics) => _WebFListViewNoScrollbarScrollBehavior(physics),
+          child: result);
+    } else {
+      // Keep the no-scrollbar/no-overscroll behavior even without EasyRefresh.
+      result = ScrollConfiguration(
+        behavior: const _WebFListViewNoScrollbarScrollBehavior(),
+        child: result,
+      );
+    }
 
     // Finally, wrap with NestedScrollForwarder to provide scroll controller to nested elements
     // This allows nested overflow containers and ListViews to find this controller

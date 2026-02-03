@@ -3054,6 +3054,18 @@ class CSSRenderStyle extends RenderStyle
     if (parentRenderStyle == null) {
       return false;
     }
+
+    // Stretching a flex item in the cross axis (height for row-direction flex)
+    // only applies when the flex container’s cross size is definite. A merely
+    // bounded (non-tight) maxHeight is not definite and must not force
+    // height:auto items to expand to the available extent (e.g., in Sliver/ListView).
+    final BoxConstraints? parentContentConstraints = parentRenderStyle.contentConstraints();
+    // Note: avoid calling parentRenderStyle.constraints() here. When computing
+    // styles for detached nodes (or before first layout), the parent may not
+    // have an attached render box and constraints() can be null/throw.
+    final bool parentHasDefiniteHeight =
+        parentRenderStyle.height.isNotAuto || (parentContentConstraints?.hasTightHeight ?? false);
+
     bool isStretch = false;
 
     bool isParentFlex =
@@ -3087,7 +3099,8 @@ class CSSRenderStyle extends RenderStyle
         isParentFlex &&
         isHorizontalDirection &&
         isFlexNoWrap &&
-        isChildStretchSelf) {
+        isChildStretchSelf &&
+        parentHasDefiniteHeight) {
       isStretch = true;
     }
 
