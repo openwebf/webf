@@ -42,6 +42,10 @@ class UpdateTransformReason extends AdapterUpdateReason {}
 
 class UpdateChildNodeUpdateReason extends AdapterUpdateReason {}
 
+// Used by Blink style-sync to reveal elements that were temporarily hidden to
+// avoid 1-frame unstyled flickers after DOM insertion.
+class BlinkFirstPaintReadyReason extends AdapterUpdateReason {}
+
 class UpdateRenderReplacedUpdateReason extends AdapterUpdateReason {}
 
 class ToRepaintBoundaryUpdateReason extends AdapterUpdateReason {}
