@@ -382,14 +382,7 @@ void Element::setAttribute(const AtomicString& name, const AtomicString& value, 
 }
 
 void Element::removeAttribute(const AtomicString& name, ExceptionState& exception_state) {
-  if (!EnsureElementAttributes().hasAttribute(name, exception_state)) {
-    return;
-  }
-
-  AtomicString old_value = EnsureElementAttributes().getAttribute(name, exception_state);
-  WillModifyAttribute(name, old_value, AtomicString::Null());
   EnsureElementAttributes().removeAttribute(name, exception_state);
-  DidModifyAttribute(name, old_value, AtomicString::Null(), AttributeModificationReason::kDirectly);
 }
 
 BoundingClientRect* Element::getBoundingClientRect(ExceptionState& exception_state) {

@@ -122,6 +122,8 @@ void ElementAttributes::removeAttribute(const AtomicString& name, ExceptionState
     std::unique_ptr<SharedNativeString> args_01 = name.ToNativeString();
     GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kRemoveAttribute, std::move(args_01),
                                                          element_->bindingObject(), nullptr);
+    element_->DidModifyAttribute(name, old_value, AtomicString::Null(),
+                                 Element::AttributeModificationReason::kDirectly);
   }
 }
 
