@@ -43,5 +43,8 @@ describe('RenderWidget flex + modal popup inner width', () => {
     expect(bug).not.toBeNull();
 
     await snapshot(bug);
+
+     // Show the modal popup via the exposed sync method.
+    (popup as any).hide();
   });
 });

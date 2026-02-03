@@ -22,6 +22,8 @@ import 'sample_container.dart';
 import 'native_flex_container.dart';
 import 'flutter_max_height_container.dart';
 import 'flutter_fixed_height_slot.dart';
+import 'flutter_cupertino_portal_modal_popup.dart';
+import 'flutter_portal_popup_item.dart';
 
 void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-button',
@@ -50,6 +52,9 @@ void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-nest-scroller-item-top-area', (context) => FlutterNestScrollerSkeletonItemTopArea(context));
   WebF.defineCustomElement('flutter-nest-scroller-item-persistent-header', (context) => FlutterNestScrollerSkeletonItemPersistentHeader(context));
   WebF.defineCustomElement('flutter-modal-popup', (context) => FlutterModalPopup(context));
+  WebF.defineCustomElement(
+      'flutter-cupertino-portal-modal-popup', (context) => FlutterCupertinoPortalModalPopup(context));
+  WebF.defineCustomElement('flutter-portal-popup-item', (context) => FlutterPortalPopupItem(context));
   WebF.defineCustomElement('flutter-intrinsic-container', (context) => FlutterIntrinsicContainer(context));
   WebF.defineCustomElement('sample-container', (context) => SampleContainer(context));
   WebF.defineCustomElement('native-flex', (context) => NativeFlexContainer(context));
