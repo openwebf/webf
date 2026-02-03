@@ -1,4 +1,4 @@
-fdescribe('RTL inline dir override', () => {
+describe('RTL inline dir override', () => {
   it('should keep LTR phone number order inside RTL container', async () => {
     const container = document.createElement('div');
     container.style.direction = 'rtl';

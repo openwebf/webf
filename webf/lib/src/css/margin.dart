@@ -37,7 +37,16 @@ mixin CSSMarginMixin on RenderStyle {
   }
 
   @override
-  CSSLengthValue get marginLeft => _marginLeft ?? CSSLengthValue.zero;
+  CSSLengthValue get marginLeft {
+    final CSSLengthValue physical = _marginLeft ?? CSSLengthValue.zero;
+    // Keep logical values so they can remap when `direction` changes. When a
+    // physical side is explicitly specified, it should override the logical
+    // fallback (matches paddingInlineStart/end behavior).
+    final CSSLengthValue? logical =
+        (direction == TextDirection.rtl) ? _marginInlineEnd : _marginInlineStart;
+    if (_marginLeft != null) return physical;
+    return logical ?? physical;
+  }
 
   CSSLengthValue? _marginRight;
 
@@ -48,7 +57,27 @@ mixin CSSMarginMixin on RenderStyle {
   }
 
   @override
-  CSSLengthValue get marginRight => _marginRight ?? CSSLengthValue.zero;
+  CSSLengthValue get marginRight {
+    final CSSLengthValue physical = _marginRight ?? CSSLengthValue.zero;
+    final CSSLengthValue? logical =
+        (direction == TextDirection.rtl) ? _marginInlineStart : _marginInlineEnd;
+    if (_marginRight != null) return physical;
+    return logical ?? physical;
+  }
+
+  CSSLengthValue? _marginInlineStart;
+  set marginInlineStart(CSSLengthValue? value) {
+    if (_marginInlineStart == value) return;
+    _marginInlineStart = value;
+    markSelfAndParentBoxModelNeedsLayout();
+  }
+
+  CSSLengthValue? _marginInlineEnd;
+  set marginInlineEnd(CSSLengthValue? value) {
+    if (_marginInlineEnd == value) return;
+    _marginInlineEnd = value;
+    markSelfAndParentBoxModelNeedsLayout();
+  }
 
   CSSLengthValue? _marginBottom;
 
