@@ -221,7 +221,9 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
     WebFState? webFState;
     WebFRouterViewState? routerViewState;
 
-    if (this is WidgetElement || webFElement.renderStyle.display == CSSDisplay.none) {
+    if (webFElement.blinkDeferFirstPaint ||
+        this is WidgetElement ||
+        webFElement.renderStyle.display == CSSDisplay.none) {
       return flutter.SizedBox.shrink();
     }
 
@@ -316,7 +318,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       if (overflowX == CSSOverflowType.scroll ||
           overflowX == CSSOverflowType.auto ||
           overflowX == CSSOverflowType.hidden) {
-        controllerX = _scrollControllerX ??= flutter.ScrollController();
+        controllerX = _scrollControllerX ??= WebFScrollController();
         final bool xScrollable = overflowX != CSSOverflowType.hidden;
         final bool isRTL = webFElement.renderStyle.direction == TextDirection.rtl;
         scrollableX = LayoutBoxWrapper(
@@ -350,7 +352,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       if (overflowY == CSSOverflowType.scroll ||
           overflowY == CSSOverflowType.auto ||
           overflowY == CSSOverflowType.hidden) {
-        final controllerY = _scrollControllerY ??= flutter.ScrollController();
+        final controllerY = _scrollControllerY ??= WebFScrollController();
         final bool yScrollable = overflowY != CSSOverflowType.hidden;
         final bool xScrollable = overflowX != CSSOverflowType.hidden;
         widget = LayoutBoxWrapper(
@@ -369,7 +371,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                       if (scrollableX != null) {
                         final bool isRTL = webFElement.renderStyle.direction == TextDirection.rtl;
                         final controllerXForNested =
-                            controllerX ?? (_scrollControllerX ??= flutter.ScrollController());
+                            controllerX ?? (_scrollControllerX ??= WebFScrollController());
                         return NestedScrollCoordinator(
                             axis: flutter.Axis.horizontal,
                             controller: controllerXForNested,
@@ -803,7 +805,7 @@ class WebFReplacedElementWidgetState extends flutter.State<WebFReplacedElementWi
   flutter.Widget build(flutter.BuildContext context) {
     super.build(context);
 
-    if (webFElement.renderStyle.display == CSSDisplay.none) {
+    if (webFElement.blinkDeferFirstPaint || webFElement.renderStyle.display == CSSDisplay.none) {
       return flutter.SizedBox.shrink();
     }
 
