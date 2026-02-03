@@ -60,6 +60,96 @@ class RenderFlowLayout extends RenderLayoutBox {
     addAll(children);
   }
 
+  bool _hasAncestorEstablishingIFC() {
+    RenderObject? node = parent;
+    while (node != null) {
+      if (node is RenderFlowLayout && node.establishIFC) return true;
+      node = node.parent;
+    }
+    return false;
+  }
+
+  bool _hasOnlyInlineInFlowContent() {
+    bool hasInlineContent = false;
+    bool hasBlockContent = false;
+
+    RenderBox? child = firstChild;
+    while (child != null) {
+      final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+
+      // Ignore position placeholders: they don't participate in IFC decisions.
+      if (child is RenderPositionPlaceholder) {
+        child = childParentData.nextSibling;
+        continue;
+      }
+
+      // Ignore out-of-flow positioned boxes entirely.
+      if (child is RenderBoxModel) {
+        final CSSPositionType pos = child.renderStyle.position;
+        if (pos == CSSPositionType.absolute || pos == CSSPositionType.fixed) {
+          child = childParentData.nextSibling;
+          continue;
+        }
+      }
+
+      RenderBox? effective = child;
+      if (child is RenderEventListener) {
+        // Inspect the real wrapped render object for display classification.
+        effective = child.child;
+      }
+
+      if (effective is RenderTextBox) {
+        if (effective.data.trim().isNotEmpty) {
+          hasInlineContent = true;
+        }
+      } else if (effective is RenderBoxModel) {
+        final CSSPositionType pos = effective.renderStyle.position;
+        if (pos == CSSPositionType.absolute || pos == CSSPositionType.fixed) {
+          child = childParentData.nextSibling;
+          continue;
+        }
+
+        if (effective.renderStyle.isSelfAnonymousFlowLayout()) {
+          hasInlineContent = true;
+        } else {
+          final CSSDisplay display = effective.renderStyle.display;
+          if (display == CSSDisplay.block || display == CSSDisplay.flex) {
+            hasBlockContent = true;
+          } else if (display == CSSDisplay.inline ||
+              display == CSSDisplay.inlineBlock ||
+              display == CSSDisplay.inlineFlex) {
+            hasInlineContent = true;
+          } else {
+            // Treat other render box models as inline-level atomic participants.
+            hasInlineContent = true;
+          }
+        }
+      } else if (effective is RenderBox) {
+        // Non-box-model render boxes (e.g. custom/replaced renderers) participate as
+        // atomic inline-level items here.
+        hasInlineContent = true;
+      }
+
+      // Mixed inline + block content should already be handled by anonymous block boxes.
+      if (hasInlineContent && hasBlockContent) return false;
+
+      child = childParentData.nextSibling;
+    }
+
+    return hasInlineContent && !hasBlockContent;
+  }
+
+  // Inline elements do not establish an inline formatting context per CSS spec.
+  // However, when an inline RenderFlowLayout is laid out under a non-IFC parent
+  // (e.g. under RenderWidget), its inline children would otherwise fall back to
+  // regular flow runs and stack vertically. In that case, establish a local
+  // paragraph-based IFC to lay out and paint its inline content.
+  bool _shouldEstablishLocalIFCForInlineRoot() {
+    if (renderStyle.effectiveDisplay != CSSDisplay.inline) return false;
+    if (_hasAncestorEstablishingIFC()) return false;
+    return _hasOnlyInlineInFlowContent();
+  }
+
   double _intrinsicPaddingBorderHorizontal() {
     return renderStyle.paddingLeft.computedValue +
         renderStyle.paddingRight.computedValue +
@@ -661,8 +751,14 @@ class RenderFlowLayout extends RenderLayoutBox {
   void _doPerformLayout() {
     beforeLayout();
 
-
-    _establishIFC = renderStyle.shouldEstablishInlineFormattingContext();
+    final bool nextEstablishIFC =
+        renderStyle.shouldEstablishInlineFormattingContext() || _shouldEstablishLocalIFCForInlineRoot();
+    // This context is not reused across layout passes. Dispose eagerly to avoid
+    // leaking paragraph/style caches when IFC establishment toggles or the box
+    // relayouts frequently.
+    _inlineFormattingContext?.dispose();
+    _inlineFormattingContext = null;
+    _establishIFC = nextEstablishIFC;
     if (_establishIFC) {
       _inlineFormattingContext = InlineFormattingContext(container: this);
     }
