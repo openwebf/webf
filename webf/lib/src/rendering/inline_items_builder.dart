@@ -33,6 +33,9 @@ class InlineItemsBuilder {
   /// Stack of embedding levels for nested elements.
   final List<int> _levelStack = [];
 
+  /// Stack of pending bidi isolates for nested elements.
+  final List<_BidiIsolateFrame> _bidiIsolateStack = [];
+
   /// Track if the previous text ended with collapsible whitespace
   bool _endsWithCollapsibleSpace = false;
 
@@ -70,6 +73,7 @@ class InlineItemsBuilder {
     _boxStack.clear();
     _directionStack.clear();
     _levelStack.clear();
+    _bidiIsolateStack.clear();
     _endsWithCollapsibleSpace = false;
     _atLineStart = true;
     _capitalizeAtWordStart = true;
@@ -114,6 +118,33 @@ class InlineItemsBuilder {
 
   /// Get the built text content.
   String get textContent => _textContent.toString();
+
+  void _addBidiControl(String char, {TextDirection? dir, int? level}) {
+    final startOffset = _currentOffset;
+    _textContent.write(char);
+    final item = InlineItem(
+      type: InlineItemType.bidiControl,
+      startOffset: startOffset,
+      endOffset: _currentOffset,
+      bidiLevel: level ?? _currentLevel,
+    );
+    item.direction = dir;
+    items.add(item);
+  }
+
+  void _ensureBidiIsolatesStarted() {
+    if (_bidiIsolateStack.isEmpty) return;
+    // Start isolates from outermost to innermost so controls nest correctly.
+    for (final frame in _bidiIsolateStack) {
+      if (!frame.needsIsolate || frame.started) continue;
+      _addBidiControl(
+        frame.direction == TextDirection.rtl ? '\u2067' : '\u2066', // RLI / LRI
+        dir: frame.direction,
+        level: frame.level,
+      );
+      frame.started = true;
+    }
+  }
 
   /// Collect inline content from render tree.
   void _collectInlines(RenderBox parent) {
@@ -314,6 +345,9 @@ class InlineItemsBuilder {
       // Skip if the text became empty after collapsing
       if (processedText.isEmpty) return;
 
+      // Before emitting any real content, start pending bidi isolates (e.g. dir="ltr" inside rtl).
+      _ensureBidiIsolatesStarted();
+
       final startOffset = _currentOffset;
       _textContent.write(processedText);
       // After emitting any text content, we're no longer at line start
@@ -365,12 +399,27 @@ class InlineItemsBuilder {
       newLevel = parentLevel;
     }
 
+    final bool needsIsolate = newDirection != _currentDirection;
+
     // Push direction and level for this element
     _directionStack.add(newDirection);
     _levelStack.add(newLevel);
+    _bidiIsolateStack.add(_BidiIsolateFrame(
+      direction: newDirection,
+      level: newLevel,
+      needsIsolate: needsIsolate,
+    ));
 
     // Collect children
     _collectInlines(box);
+
+    // Close bidi isolate for this element (only if it was started).
+    if (_bidiIsolateStack.isNotEmpty) {
+      final frame = _bidiIsolateStack.removeLast();
+      if (frame.needsIsolate && frame.started) {
+        _addBidiControl('\u2069', dir: frame.direction, level: frame.level); // PDI
+      }
+    }
 
     // Pop direction and level when leaving element
     if (_directionStack.isNotEmpty) {
@@ -397,6 +446,9 @@ class InlineItemsBuilder {
 
     // Atomic inline elements break the text flow
     _endsWithCollapsibleSpace = false;
+
+    // Atomic inline counts as content; start pending bidi isolates before emitting placeholder.
+    _ensureBidiIsolatesStarted();
 
     // Insert object replacement character
     const objectReplacementChar = '\uFFFC';
@@ -525,6 +577,8 @@ class InlineItemsBuilder {
 
   /// Add control character (newline, tab, etc).
   void _addControl(String char) {
+    // Control chars (e.g. <br>) count as content for bidi isolation.
+    _ensureBidiIsolatesStarted();
     final startOffset = _currentOffset;
     _textContent.write(char);
 
@@ -540,4 +594,17 @@ class InlineItemsBuilder {
       _endsWithCollapsibleSpace = false;
     }
   }
+}
+
+class _BidiIsolateFrame {
+  _BidiIsolateFrame({
+    required this.direction,
+    required this.level,
+    required this.needsIsolate,
+  });
+
+  final TextDirection direction;
+  final int level;
+  final bool needsIsolate;
+  bool started = false;
 }
