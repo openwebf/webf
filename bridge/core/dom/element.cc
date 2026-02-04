@@ -1363,6 +1363,14 @@ void Element::AttributeChanged(const AttributeModificationParams& params) {
   }
 
   const AtomicString& name = params.name;
+  const bool attribute_value_changed = params.old_value != params.new_value;
+  // Many frameworks (e.g. React) re-apply attributes even when their value
+  // is unchanged. Avoid forcing expensive style invalidation work when there
+  // is no effective attribute change.
+  if (!attribute_value_changed) {
+    return;
+  }
+
   if (name == CheckedAttrName()) {
     checked_state_ = !params.new_value.IsNull() && !params.new_value.empty();
   } else if (name == DisabledAttrName()) {
