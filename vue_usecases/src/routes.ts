@@ -303,6 +303,7 @@ export const appRoutes: AppRoute[] = [
     title: 'WebF Video Player',
     element: defineAsyncComponent(() => import('./pages/WebFVideoPlayerPage.vue')),
   },
+  { path: '/lucide/icons', title: 'Lucide Icons Gallery', element: defineAsyncComponent(() => import('./pages/lucide/LucideIconsPage.vue')) },
 
   // Other demos
   { path: '/native-interaction', title: 'WebF Share Module', element: defineAsyncComponent(() => import('./pages/NativeInteractionPage.vue')) },
@@ -317,7 +318,4 @@ export const appRoutes: AppRoute[] = [
   { path: '/dragable-list', title: 'Dragable List', element: defineAsyncComponent(() => import('./pages/DragableListPage.vue')) },
   { path: '/listview', title: 'WebFListView', element: defineAsyncComponent(() => import('./pages/ListviewPage.vue')) },
 
-  // Lucide Icons
-  { path: '/lucide-showcase', title: 'Lucide Icons Showcase', element: defineAsyncComponent(() => import('./pages/LucideShowcasePage.vue')) },
-  { path: '/lucide/icons', title: 'Lucide Icons Gallery', element: defineAsyncComponent(() => import('./pages/lucide/LucideIconsPage.vue')) },
 ];

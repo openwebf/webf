@@ -120,6 +120,7 @@ const sections: Section[] = [
     items: [
       { label: 'WebF Video Player', path: '/webf-video-player', desc: 'HTML5-compatible video player with native Flutter performance' },
       { label: 'WebF Camera', path: '/webf-camera', desc: 'Native camera with photo capture and video recording' },
+      { label: 'Lucide Icons', path: '/lucide/icons', desc: 'Browse 1600+ beautiful icons with search' },
     ],
   },
   {
@@ -155,13 +156,6 @@ const sections: Section[] = [
       { label: 'Basic Form Elements', path: '/basic-form-elements', desc: 'Input, textarea, select, and button elements' },
       { label: 'Input Sizing', path: '/input-sizing', desc: 'Dynamic input field sizing' },
       { label: 'Form (Advanced)', path: '/advanced-form', desc: 'Advanced form patterns and validation' },
-    ],
-  },
-  {
-    title: 'Lucide Icons',
-    items: [
-      { label: 'Lucide Icons Showcase', path: '/lucide-showcase', desc: 'Overview of Lucide icons integration' },
-      { label: 'Icons Gallery', path: '/lucide/icons', desc: 'Browse 1600+ icons with search and categories' },
     ],
   },
 ];
