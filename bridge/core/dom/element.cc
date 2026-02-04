@@ -1363,6 +1363,14 @@ void Element::AttributeChanged(const AttributeModificationParams& params) {
   }
 
   const AtomicString& name = params.name;
+  const bool attribute_value_changed = params.old_value != params.new_value;
+  // Many frameworks (e.g. React) re-apply attributes even when their value
+  // is unchanged. Avoid forcing expensive style invalidation work when there
+  // is no effective attribute change.
+  if (!attribute_value_changed) {
+    return;
+  }
+
   if (name == CheckedAttrName()) {
     // HTML boolean attributes are true by presence, even when the value is empty.
     checked_state_ = !params.new_value.IsNull();
