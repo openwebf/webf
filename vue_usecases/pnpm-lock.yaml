@@ -17,6 +17,9 @@ importers:
       '@openwebf/vue-cupertino-ui':
         specifier: ^0.4.0
         version: 0.4.1(@openwebf/vue-core-ui@0.24.0(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))
+      '@openwebf/vue-lucide-icons':
+        specifier: ^0.1.0
+        version: 0.1.0(@openwebf/vue-core-ui@0.24.0(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))
       '@openwebf/vue-router':
         specifier: ^0.24.1
         version: 0.24.1(@openwebf/webf-enterprise-typings@0.23.7)(vue@3.5.26(typescript@5.9.3))
@@ -131,6 +134,12 @@ packages:
 
   '@openwebf/vue-cupertino-ui@0.4.1':
     resolution: {integrity: sha512-njwLGFu0GzL38kO3TRGT9VhZbfMgxzF4S3tG/6SaaJXDz8Ayf6PqDyrFGTu+zYDMGK2cMqnZ8Y/3JQIyztwfYA==}
+    peerDependencies:
+      '@openwebf/vue-core-ui': ^0.24.0
+      vue: ^3.0.0
+
+  '@openwebf/vue-lucide-icons@0.1.0':
+    resolution: {integrity: sha512-+Kg839pcTS6QZl0wszDF/ewW63agHUYO1b3i+uzfbjdNRuRgvJibGzb/36tNT0symQt0RJcJuuLFctGcRBfZhQ==}
     peerDependencies:
       '@openwebf/vue-core-ui': ^0.24.0
       vue: ^3.0.0
@@ -875,6 +884,11 @@ snapshots:
       - react
 
   '@openwebf/vue-cupertino-ui@0.4.1(@openwebf/vue-core-ui@0.24.0(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))':
+    dependencies:
+      '@openwebf/vue-core-ui': 0.24.0(vue@3.5.26(typescript@5.9.3))
+      vue: 3.5.26(typescript@5.9.3)
+
+  '@openwebf/vue-lucide-icons@0.1.0(@openwebf/vue-core-ui@0.24.0(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))':
     dependencies:
       '@openwebf/vue-core-ui': 0.24.0(vue@3.5.26(typescript@5.9.3))
       vue: 3.5.26(typescript@5.9.3)

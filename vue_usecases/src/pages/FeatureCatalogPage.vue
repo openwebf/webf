@@ -157,6 +157,13 @@ const sections: Section[] = [
       { label: 'Form (Advanced)', path: '/advanced-form', desc: 'Advanced form patterns and validation' },
     ],
   },
+  {
+    title: 'Lucide Icons',
+    items: [
+      { label: 'Lucide Icons Showcase', path: '/lucide-showcase', desc: 'Overview of Lucide icons integration' },
+      { label: 'Icons Gallery', path: '/lucide/icons', desc: 'Browse 1600+ icons with search and categories' },
+    ],
+  },
 ];
 
 function navigate(path: string) {

@@ -12,6 +12,7 @@
     "@openwebf/vue-camera": "^1.0.1",
     "@openwebf/vue-core-ui": "^0.24.0",
     "@openwebf/vue-cupertino-ui": "^0.4.0",
+    "@openwebf/vue-lucide-icons": "^0.1.0",
     "@openwebf/vue-router": "^0.24.1",
     "@openwebf/vue-video-player": "^1.0.0",
     "@openwebf/webf-bluetooth": "^1.0.0",

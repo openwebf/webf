@@ -316,4 +316,8 @@ export const appRoutes: AppRoute[] = [
   { path: '/gesture', title: 'Gesture Detection', element: defineAsyncComponent(() => import('./pages/GesturePage.vue')) },
   { path: '/dragable-list', title: 'Dragable List', element: defineAsyncComponent(() => import('./pages/DragableListPage.vue')) },
   { path: '/listview', title: 'WebFListView', element: defineAsyncComponent(() => import('./pages/ListviewPage.vue')) },
+
+  // Lucide Icons
+  { path: '/lucide-showcase', title: 'Lucide Icons Showcase', element: defineAsyncComponent(() => import('./pages/LucideShowcasePage.vue')) },
+  { path: '/lucide/icons', title: 'Lucide Icons Gallery', element: defineAsyncComponent(() => import('./pages/lucide/LucideIconsPage.vue')) },
 ];

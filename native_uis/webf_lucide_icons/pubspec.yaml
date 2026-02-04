@@ -1,6 +1,6 @@
 name: webf_lucide_icons
 description: "Lucide icons for WebF applications. This package provides lucide_icons_flutter wrapped as HTML custom elements for use in WebF."
-version: 0.1.0
+version: 1.0.0
 homepage: https://openwebf.com
 
 environment:
@@ -10,8 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  webf:
-    path: ../../webf
+  webf: ^0.24.10
   lucide_icons_flutter: ^3.1.9
 
 dev_dependencies:
