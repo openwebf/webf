@@ -32,6 +32,9 @@ class FlutterInputElement extends WidgetElement
   FlutterInputElement(super.context);
 
   @override
+  List<String> get defaultAttributeNamesForNativeCache => const <String>['type'];
+
+  @override
   void initializeDynamicMethods(Map<String, BindingObjectMethod> methods) {
     super.initializeDynamicMethods(methods);
     methods['blur'] = BindingObjectMethodSync(call: (List args) {

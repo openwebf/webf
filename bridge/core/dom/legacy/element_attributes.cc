@@ -8,6 +8,7 @@
 #include "core/css/legacy/legacy_inline_css_style_declaration.h"
 #include "core/dom/element.h"
 #include "core/html/custom/widget_element.h"
+#include "core/html/custom/widget_element_shape.h"
 #include "foundation/native_value_converter.h"
 #include "foundation/string/string_builder.h"
 #include "foundation/utility/make_visitor.h"
@@ -34,6 +35,17 @@ AtomicString ElementAttributes::getAttribute(const AtomicString& name, Exception
 
   if (attributes_.count(name) == 0) {
     if (element_->IsWidgetElement()) {
+      // Prefer cached default attribute values (computed on the Dart side during
+      // page initialization and shipped via WidgetElementShape) to avoid
+      // synchronous calls back to Dart in Blink mode.
+      if (ExecutingContext* context = element_->GetExecutingContext()) {
+        if (const WidgetElementShape* shape = context->GetWidgetElementShape(element_->tagName())) {
+          AtomicString default_value = shape->GetDefaultAttributeValue(name);
+          if (!default_value.IsNull()) {
+            return default_value;
+          }
+        }
+      }
       // Fallback to directly FFI access to dart.
       NativeValue dart_result =
           element_->GetBindingProperty(name, FlushUICommandReason::kDependentsOnElement, exception_state);

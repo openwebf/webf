@@ -785,6 +785,14 @@ Future<void> allocateNewPage(bool sync, double newContextId, int syncBufferSize,
   await waitingSyncTaskComplete(newContextId);
 
   Map<String, ElementCreator> widgetElementCreators = getAllWidgetElements();
+  // Built-in HTML elements that are implemented as WidgetElement on the Dart
+  // side (e.g. INPUT/TEXTAREA/RouterLink). They are registered as normal HTML
+  // elements, but native WidgetElement code paths still need their shapes and
+  // default attribute snapshots to avoid blocking synchronous calls back to
+  // Dart when running with Blink enabled.
+  widgetElementCreators.putIfAbsent(INPUT, () => (context) => createElement(INPUT, context));
+  widgetElementCreators.putIfAbsent(TEXTAREA, () => (context) => createElement(TEXTAREA, context));
+  widgetElementCreators.putIfAbsent(ROUTER_LINK, () => (context) => createElement(ROUTER_LINK, context));
   Pointer<WidgetElementShape> shapes = createWidgetElementShape(widgetElementCreators);
 
   if (!sync) {

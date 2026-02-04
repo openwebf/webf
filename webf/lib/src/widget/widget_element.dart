@@ -56,6 +56,36 @@ abstract class WidgetElement extends dom.Element {
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 
+  /// Names of attributes whose Dart-side default values should be cached on the
+  /// native side during page initialization.
+  ///
+  /// This is used to make native `getAttribute()` non-blocking for these
+  /// defaults (i.e. avoid a synchronous call back to Dart) when the attribute
+  /// is not present in the native attribute store.
+  ///
+  /// Only include attributes whose default is stable and does not depend on
+  /// runtime state (e.g. do not include live "value" for input-like elements).
+  @protected
+  List<String> get defaultAttributeNamesForNativeCache => const <String>[];
+
+  /// Returns `[name1, value1, name2, value2, ...]` for defaults declared in
+  /// [defaultAttributeNamesForNativeCache].
+  List<String> collectDefaultAttributePairsForWidgetShape() {
+    final List<String> pairs = <String>[];
+    for (final String name in defaultAttributeNamesForNativeCache) {
+      try {
+        final String? value = getAttribute(name);
+        if (value == null) continue;
+        pairs.add(name);
+        pairs.add(value);
+      } catch (_) {
+        // Best-effort only: skip getters that depend on a non-null context or
+        // other runtime state not available during shape construction.
+      }
+    }
+    return pairs;
+  }
+
   // React to properties and attributes changes
   void attributeDidUpdate(String key, String value) {}
 
