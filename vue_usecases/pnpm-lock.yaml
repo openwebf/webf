@@ -18,8 +18,8 @@ importers:
         specifier: ^0.4.0
         version: 0.4.1(@openwebf/vue-core-ui@0.24.0(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))
       '@openwebf/vue-lucide-icons':
-        specifier: ^0.1.0
-        version: 0.1.0(@openwebf/vue-core-ui@0.24.0(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))
+        specifier: ^1.0.0
+        version: 1.0.0(@openwebf/vue-core-ui@0.24.0(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))
       '@openwebf/vue-router':
         specifier: ^0.24.1
         version: 0.24.1(@openwebf/webf-enterprise-typings@0.23.7)(vue@3.5.26(typescript@5.9.3))
@@ -138,8 +138,8 @@ packages:
       '@openwebf/vue-core-ui': ^0.24.0
       vue: ^3.0.0
 
-  '@openwebf/vue-lucide-icons@0.1.0':
-    resolution: {integrity: sha512-+Kg839pcTS6QZl0wszDF/ewW63agHUYO1b3i+uzfbjdNRuRgvJibGzb/36tNT0symQt0RJcJuuLFctGcRBfZhQ==}
+  '@openwebf/vue-lucide-icons@1.0.0':
+    resolution: {integrity: sha512-wBTMmiqRPPC/scbQNiq5Wiz2YS0likUqIXxZZnvsrA15PWW8Np7EialuBKw3NDOoSwpPUIK9Hf4pqActVEPYLQ==}
     peerDependencies:
       '@openwebf/vue-core-ui': ^0.24.0
       vue: ^3.0.0
@@ -888,7 +888,7 @@ snapshots:
       '@openwebf/vue-core-ui': 0.24.0(vue@3.5.26(typescript@5.9.3))
       vue: 3.5.26(typescript@5.9.3)
 
-  '@openwebf/vue-lucide-icons@0.1.0(@openwebf/vue-core-ui@0.24.0(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))':
+  '@openwebf/vue-lucide-icons@1.0.0(@openwebf/vue-core-ui@0.24.0(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))':
     dependencies:
       '@openwebf/vue-core-ui': 0.24.0(vue@3.5.26(typescript@5.9.3))
       vue: 3.5.26(typescript@5.9.3)
