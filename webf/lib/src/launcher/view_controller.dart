@@ -762,9 +762,6 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   void cloneNode(Pointer<NativeBindingObject> selfPtr,
       Pointer<NativeBindingObject> newPtr) {
-    assert(hasBindingObject(selfPtr));
-    assert(hasBindingObject(newPtr));
-
     EventTarget? originalTarget = getBindingObject<EventTarget>(selfPtr);
     EventTarget? newTarget = getBindingObject<EventTarget>(newPtr);
 
@@ -813,11 +810,6 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   /// <!-- afterend -->
   void insertAdjacentNode(Pointer<NativeBindingObject> selfPointer,
       String position, Pointer<NativeBindingObject> newPointer) {
-    assert(hasBindingObject(selfPointer),
-        'targetId: $selfPointer position: $position newTargetId: $newPointer');
-    assert(hasBindingObject(newPointer),
-        'newTargetId: $newPointer position: $position');
-
     Node? target = getBindingObject<Node>(selfPointer);
     Node? newNode = getBindingObject<Node>(newPointer);
 
@@ -868,8 +860,6 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   void setAttribute(
       Pointer<NativeBindingObject> selfPtr, String key, String value) {
-    assert(
-        hasBindingObject(selfPtr), 'selfPtr: $selfPtr key: $key value: $value');
     Node? target = getBindingObject<Node>(selfPtr);
     if (target == null) return;
 
@@ -898,7 +888,6 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   String? getAttribute(Pointer selfPtr, String key) {
-    assert(hasBindingObject(selfPtr), 'targetId: $selfPtr key: $key');
     Node? target = getBindingObject<Node>(selfPtr);
     if (target == null) return null;
 
@@ -914,7 +903,6 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   void removeAttribute(Pointer selfPtr, String key) {
-    assert(hasBindingObject(selfPtr), 'targetId: $selfPtr key: $key');
     Node? target = getBindingObject<Node>(selfPtr);
     if (target == null) return;
 
@@ -938,7 +926,6 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   void requestCanvasPaint(Pointer selfPtr) {
-    assert(hasBindingObject(selfPtr), 'targetId: $selfPtr');
     CanvasRenderingContext2D? context2d =
         getBindingObject<CanvasRenderingContext2D>(selfPtr);
     context2d?.requestPaint();
@@ -946,7 +933,6 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   void setInlineStyle(Pointer selfPtr, String key, String value,
       {String? baseHref}) {
-    assert(hasBindingObject(selfPtr), 'id: $selfPtr key: $key value: $value');
     Node? target = getBindingObject<Node>(selfPtr);
     if (target == null) return;
 
@@ -956,7 +942,6 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   void clearInlineStyle(Pointer selfPtr) {
-    assert(hasBindingObject(selfPtr), 'id: $selfPtr');
     Node? target = getBindingObject<Node>(selfPtr);
     if (target == null) return;
 
@@ -1005,7 +990,6 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   void setPseudoStyle(Pointer selfPtr, String args, String key, String value,
       {String? baseHref}) {
-    assert(hasBindingObject(selfPtr), 'id: $selfPtr');
     Node? target = getBindingObject<Node>(selfPtr);
     if (target == null) return;
     if (target is! Element) {
@@ -1028,7 +1012,6 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   void removePseudoStyle(Pointer selfPtr, String args, String key) {
-    assert(hasBindingObject(selfPtr), 'id: $selfPtr');
     Node? target = getBindingObject<Node>(selfPtr);
     if (target == null) return;
     if (target is! Element) {
@@ -1049,7 +1032,6 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   void clearPseudoStyle(Pointer selfPtr, String args) {
-    assert(hasBindingObject(selfPtr), 'id: $selfPtr');
     Node? target = getBindingObject<Node>(selfPtr);
     if (target == null) return;
     if (target is! Element) {
