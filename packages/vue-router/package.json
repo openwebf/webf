@@ -1,6 +1,6 @@
 {
   "name": "@openwebf/vue-router",
-  "version": "0.24.1",
+  "version": "1.0.0",
   "description": "Vue Router implementation for WebF applications using hybrid history API",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
@@ -40,6 +40,11 @@
   "peerDependencies": {
     "vue": "^3.0.0",
     "@openwebf/webf-enterprise-typings": ">=0.22.0"
+  },
+  "peerDependenciesMeta": {
+    "@openwebf/webf-enterprise-typings": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.0",

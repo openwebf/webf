@@ -20,6 +20,13 @@ export type { HybridRouterChangeEvent } from './utils/RouterLink';
 export { __unstable_deriveActivePathFromHybridRouterChange } from './utils/hybridRouterChange';
 export type { HybridRouterChangeKind, DerivedActivePathResult } from './utils/hybridRouterChange';
 
+// Platform detection
+export { isWebF, isBrowser, detectPlatform, platform } from './platform';
+export type { PlatformType } from './platform';
+
+// Browser history (for testing and advanced usage)
+export { resetBrowserHistory } from './platform/browserHistory';
+
 // Types
 export type {
   RouteContext,

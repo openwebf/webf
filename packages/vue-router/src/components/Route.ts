@@ -1,10 +1,12 @@
 import { defineComponent, computed, ref, h, PropType } from 'vue';
 import { WebFRouterLink } from '../utils/RouterLink';
+import { isWebF } from '../platform';
 
 /**
  * Route Component
  *
  * Responsible for managing page rendering and delegating mount/lifecycle to `webf-router-link`.
+ * In browser mode, renders children immediately. In WebF mode, waits for onScreen event.
  */
 export const Route = defineComponent({
   name: 'Route',
@@ -35,7 +37,9 @@ export const Route = defineComponent({
     },
   },
   setup(props) {
-    const hasRendered = ref(false);
+    const isWebFPlatform = isWebF();
+    // In browser mode, render immediately; in WebF mode, wait for onScreen event
+    const hasRendered = ref(!isWebFPlatform);
     const shouldRenderChildren = computed(() => props.prerender || hasRendered.value);
 
     const handleOnScreen = () => {
