@@ -1086,12 +1086,15 @@ class CSSStyleProperty {
       }
 
       final bool isValueVariableFunction = CSSFunction.isFunction(value, functionName: VAR);
+      final bool isValueCalcFunction = CSSFunction.isFunction(value, functionName: CALC);
       if (grow == null && (isValueVariableFunction || CSSNumber.isNumber(value))) {
         grow = value;
       } else if (shrink == null && (isValueVariableFunction || CSSNumber.isNumber(value))) {
         shrink = value;
       } else if (basis == null &&
           ((isValueVariableFunction ||
+              // Accept function notations like `calc(...)` and `var(...)`.
+              isValueCalcFunction ||
               CSSLength.isNonNegativeLength(value) ||
               CSSPercentage.isPercentage(value) ||
               value == AUTO))) {
