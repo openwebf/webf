@@ -1,5 +1,19 @@
-import React, { EventHandler, FC, ReactNode, SyntheticEvent, useState } from "react";
-import { createWebFComponent, WebFElementWithMethods } from "@openwebf/react-core-ui";
+import React, { EventHandler, FC, ReactNode, SyntheticEvent, useState, useEffect, useRef } from "react";
+import { isWebF } from "../platform";
+import { getBrowserHistory } from "../platform/browserHistory";
+
+// Conditionally import createWebFComponent only when needed
+let createWebFComponent: any = null;
+let WebFElementWithMethods: any = null;
+
+// Try to import @openwebf/react-core-ui, but don't fail if it's not available in browser
+try {
+  const coreUi = require("@openwebf/react-core-ui");
+  createWebFComponent = coreUi.createWebFComponent;
+  WebFElementWithMethods = coreUi.WebFElementWithMethods;
+} catch (e) {
+  // In browser environment without @openwebf/react-core-ui, we'll use the fallback
+}
 
 export interface HybridRouterChangeEvent extends SyntheticEvent {
   readonly state: any;
@@ -24,46 +38,199 @@ export interface WebFHybridRouterProps {
 }
 
 // Define the element interface for WebFRouterLink
-export interface WebFRouterLinkElement extends WebFElementWithMethods<{}> {}
+export interface WebFRouterLinkElement {
+  // Generic element interface
+}
 
-// Create the raw component using createWebFComponent
-const RawWebFRouterLink = createWebFComponent<WebFRouterLinkElement, WebFHybridRouterProps>({
-  tagName: 'webf-router-link',
-  displayName: 'WebFRouterLink',
+// Lazily create the WebF component only when needed
+let RawWebFRouterLink: FC<WebFHybridRouterProps> | null = null;
 
-  // Map props to attributes
-  attributeProps: ['path', 'title', 'theme'],
+function getRawWebFRouterLink(): FC<WebFHybridRouterProps> {
+  if (RawWebFRouterLink) return RawWebFRouterLink;
 
-  // Event handlers
-  events: [
-    {
-      propName: 'onScreen',
-      eventName: 'onscreen',
-      handler: (callback) => (event) => {
-        // Cast through unknown first for proper type conversion
-        callback(event as unknown as HybridRouterChangeEvent);
+  if (!createWebFComponent) {
+    throw new Error('@openwebf/react-core-ui is required in WebF environment');
+  }
+
+  RawWebFRouterLink = createWebFComponent<WebFRouterLinkElement, WebFHybridRouterProps>({
+    tagName: 'webf-router-link',
+    displayName: 'WebFRouterLink',
+
+    // Map props to attributes
+    attributeProps: ['path', 'title', 'theme'],
+
+    // Event handlers
+    events: [
+      {
+        propName: 'onScreen',
+        eventName: 'onscreen',
+        handler: (callback: any) => (event: any) => {
+          callback(event as unknown as HybridRouterChangeEvent);
+        },
       },
-    },
-    {
-      propName: 'offScreen',
-      eventName: 'offscreen',
-      handler: (callback) => (event) => {
-        // Cast through unknown first for proper type conversion
-        callback(event as unknown as HybridRouterChangeEvent);
+      {
+        propName: 'offScreen',
+        eventName: 'offscreen',
+        handler: (callback: any) => (event: any) => {
+          callback(event as unknown as HybridRouterChangeEvent);
+        },
       },
-    },
-    {
-      propName: 'onPrerendering',
-      eventName: 'prerendering',
-      handler: (callback) => (event) => {
-        callback(event as unknown as HybridRouterPrerenderingEvent);
+      {
+        propName: 'onPrerendering',
+        eventName: 'prerendering',
+        handler: (callback: any) => (event: any) => {
+          callback(event as unknown as HybridRouterPrerenderingEvent);
+        },
       },
-    },
-  ],
-});
+    ],
+  });
 
-export const WebFRouterLink: FC<WebFHybridRouterProps> = function (props: WebFHybridRouterProps) {
+  return RawWebFRouterLink!;
+}
+
+/**
+ * Browser-based RouterLink implementation
+ * Used when running in standard browser environment instead of WebF
+ */
+const BrowserRouterLink: FC<WebFHybridRouterProps> = function (props: WebFHybridRouterProps) {
+  const [isActive, setIsActive] = useState(false);
+  const [isRender, setIsRender] = useState(false);
+  const hasTriggeredOnScreen = useRef(false);
+
+  useEffect(() => {
+    const browserHistory = getBrowserHistory();
+    const currentPath = browserHistory.path;
+
+    // Check if this route matches the current path
+    const isCurrentlyActive = currentPath === props.path;
+    setIsActive(isCurrentlyActive);
+
+    if (isCurrentlyActive && !hasTriggeredOnScreen.current) {
+      hasTriggeredOnScreen.current = true;
+      setIsRender(true);
+
+      // Create a synthetic event for onScreen callback
+      if (props.onScreen) {
+        const syntheticEvent = {
+          state: browserHistory.state,
+          kind: 'didPush' as const,
+          path: props.path,
+          nativeEvent: new Event('onscreen'),
+          currentTarget: null,
+          target: null,
+          bubbles: true,
+          cancelable: false,
+          defaultPrevented: false,
+          eventPhase: 0,
+          isTrusted: true,
+          preventDefault: () => {},
+          isDefaultPrevented: () => false,
+          stopPropagation: () => {},
+          isPropagationStopped: () => false,
+          persist: () => {},
+          timeStamp: Date.now(),
+          type: 'onscreen',
+        } as unknown as HybridRouterChangeEvent;
+        props.onScreen(syntheticEvent);
+      }
+    }
+
+    // Listen for route changes
+    const handleRouteChange = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const newPath = customEvent.detail?.path || (event as any).path;
+      const newIsActive = newPath === props.path;
+
+      if (newIsActive && !isActive) {
+        // Route became active
+        hasTriggeredOnScreen.current = true;
+        setIsRender(true);
+        setIsActive(true);
+
+        if (props.onScreen) {
+          const syntheticEvent = {
+            state: customEvent.detail?.state || (event as any).state,
+            kind: (customEvent.detail?.kind || (event as any).kind) as 'didPushNext' | 'didPush' | 'didPop' | 'didPopNext',
+            path: newPath,
+            nativeEvent: event,
+            currentTarget: event.currentTarget,
+            target: event.target,
+            bubbles: true,
+            cancelable: false,
+            defaultPrevented: false,
+            eventPhase: 0,
+            isTrusted: true,
+            preventDefault: () => {},
+            isDefaultPrevented: () => false,
+            stopPropagation: () => {},
+            isPropagationStopped: () => false,
+            persist: () => {},
+            timeStamp: Date.now(),
+            type: 'onscreen',
+          } as unknown as HybridRouterChangeEvent;
+          props.onScreen(syntheticEvent);
+        }
+      } else if (!newIsActive && isActive) {
+        // Route became inactive
+        setIsActive(false);
+
+        if (props.offScreen) {
+          const syntheticEvent = {
+            state: customEvent.detail?.state || (event as any).state,
+            kind: (customEvent.detail?.kind || (event as any).kind) as 'didPushNext' | 'didPush' | 'didPop' | 'didPopNext',
+            path: newPath,
+            nativeEvent: event,
+            currentTarget: event.currentTarget,
+            target: event.target,
+            bubbles: true,
+            cancelable: false,
+            defaultPrevented: false,
+            eventPhase: 0,
+            isTrusted: true,
+            preventDefault: () => {},
+            isDefaultPrevented: () => false,
+            stopPropagation: () => {},
+            isPropagationStopped: () => false,
+            persist: () => {},
+            timeStamp: Date.now(),
+            type: 'offscreen',
+          } as unknown as HybridRouterChangeEvent;
+          props.offScreen(syntheticEvent);
+        }
+      }
+    };
+
+    document.addEventListener('hybridrouterchange', handleRouteChange);
+
+    return () => {
+      document.removeEventListener('hybridrouterchange', handleRouteChange);
+    };
+  }, [props.path, props.onScreen, props.offScreen, isActive]);
+
+  // In browser mode, we render a div that acts as a route container
+  // Only show content when route is rendered (similar to WebF behavior)
+  return (
+    <div
+      data-path={props.path}
+      data-title={props.title}
+      style={{
+        display: isActive ? 'block' : 'none',
+        width: '100%',
+        height: '100%',
+      }}
+    >
+      {isRender ? props.children : null}
+    </div>
+  );
+};
+
+/**
+ * WebF RouterLink implementation
+ * Used in WebF native environment
+ */
+const WebFNativeRouterLink: FC<WebFHybridRouterProps> = function (props: WebFHybridRouterProps) {
   const [isRender, enableRender] = useState(false);
+  const RawComponent = getRawWebFRouterLink();
 
   const handleOnScreen = (event: HybridRouterChangeEvent) => {
     enableRender(true);
@@ -79,7 +246,7 @@ export const WebFRouterLink: FC<WebFHybridRouterProps> = function (props: WebFHy
   };
 
   return (
-    <RawWebFRouterLink
+    <RawComponent
       title={props.title}
       path={props.path}
       theme={props.theme}
@@ -88,6 +255,19 @@ export const WebFRouterLink: FC<WebFHybridRouterProps> = function (props: WebFHy
       onPrerendering={handlePrerendering}
     >
       {isRender ? props.children : null}
-    </RawWebFRouterLink>
+    </RawComponent>
   );
+};
+
+/**
+ * Unified RouterLink component that works in both WebF and browser environments
+ */
+export const WebFRouterLink: FC<WebFHybridRouterProps> = function (props: WebFHybridRouterProps) {
+  // Use WebF native implementation if in WebF environment
+  if (isWebF()) {
+    return <WebFNativeRouterLink {...props} />;
+  }
+
+  // Use browser-based implementation
+  return <BrowserRouterLink {...props} />;
 }
