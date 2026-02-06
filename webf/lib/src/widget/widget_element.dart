@@ -343,7 +343,7 @@ class WebFWidgetElementAdapterState extends dom.WebFElementWidgetState {
   Widget build(BuildContext context) {
     super.build(context);
 
-    if (widgetElement.renderStyle.display == CSSDisplay.none) {
+    if (widgetElement.blinkDeferFirstPaint || widgetElement.renderStyle.display == CSSDisplay.none) {
       return SizedBox.shrink();
     }
 
