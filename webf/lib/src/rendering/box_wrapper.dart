@@ -146,8 +146,15 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
       final double childMarginLeft = renderStyle.marginLeft.computedValue;
       final double childMarginRight = renderStyle.marginRight.computedValue;
 
-      // Scrollable size of the child’s content box
-      final Size contentScrollable = c.renderStyle.isSelfScrollingContainer() ? c.size : c.scrollableSize;
+      // Scrollable size of the child's content box.
+      // When the child clips its overflow (overflow: hidden/scroll/auto), use its
+      // laid-out size directly. scrollableSize is only meaningful for visible-overflow
+      // elements where content can extend beyond the box; for clipping containers
+      // the intermediate RenderLayoutBoxWrapper (created for the Scrollable chain)
+      // never propagates scrollableSize, leaving it at Size.zero.
+      final bool isClippingContainer = c.renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
+          c.renderStyle.effectiveOverflowY != CSSOverflowType.visible;
+      final Size contentScrollable = isClippingContainer ? c.size : c.scrollableSize;
 
       // Decide sizing based on list axis. In a horizontal list (unbounded width),
       // widen by left+right margins so gaps appear between items. In a vertical

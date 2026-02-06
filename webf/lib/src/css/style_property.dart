@@ -220,7 +220,6 @@ class CSSStyleProperty {
   }
 
   static void setShorthandBackgroundPosition(Map<String, String?> properties, String shorthandValue) {
-    cssLogger.fine('[CSSStyleProperty] Expanding background-position: "$shorthandValue"');
     // Only the first layer contributes to longhands; layered painting reads
     // the full comma-separated list directly from style.
     final String firstLayer = splitByTopLevelDelimiter(shorthandValue, _commaCodeUnit).first.trim();
@@ -229,8 +228,6 @@ class CSSStyleProperty {
       properties[BACKGROUND_POSITION_X] = positions[0];
       properties[BACKGROUND_POSITION_Y] = positions[1];
     } else {
-      cssLogger.severe('[CSSStyleProperty] Invalid background-position, got tokens="$positions" from '
-          '"$shorthandValue". Using fallback 0% 0% to avoid crash.');
       properties[BACKGROUND_POSITION_X] = '0%';
       properties[BACKGROUND_POSITION_Y] = '0%';
     }
