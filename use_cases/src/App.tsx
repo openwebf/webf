@@ -3,7 +3,6 @@ import './App.css';
 import './main.css';
 import { Routes, Route } from './router';
 import {HomePage} from './pages/HomePage';
-import { FeatureCatalogPage } from './pages/FeatureCatalogPage';
 import { CookiesPage } from './pages/CookiesPage';
 import { UrlEncodingPage } from './pages/UrlEncodingPage';
 import { WebSocketPage } from './pages/WebSocketPage';
@@ -150,7 +149,6 @@ function App() {
     <div className="App">
       <Routes>
         <Route path="/" title="Home" element={<HomePage/>}/>
-        <Route path="/features" title="Features" element={<FeatureCatalogPage/>}/>
 
         <Route path="/tailwind" title="Tailwind CSS Showcase" element={<TailwindShowcasePage />} />
 

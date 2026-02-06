@@ -70,7 +70,7 @@ export function RouterDemoHome() {
       <div className="rounded-lg border border-line p-4 space-y-3 bg-surface">
         <div className="text-sm font-semibold text-fg-primary">Navigate to a path</div>
         <div className="text-xs text-fg-secondary">
-          This demo runs inside WebF and also in the browser (via react-router-dom shim).
+          This demo runs inside WebF and also in the browser (via @openwebf/react-router).
         </div>
         <div className="flex gap-2">
           <input
