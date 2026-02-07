@@ -185,6 +185,38 @@ abstract class Element extends ContainerNode
 
   List<String> get classList => _classList;
 
+  // Pseudo-class state flags used by the Dart selector engine.
+  static const int _pseudoHover = 1 << 0;
+  static const int _pseudoActive = 1 << 1;
+  static const int _pseudoFocus = 1 << 2;
+  static const int _pseudoFocusVisible = 1 << 3;
+
+  int _pseudoStateFlags = 0;
+  int _focusWithinDescendantCount = 0;
+
+  bool get isHovered => (_pseudoStateFlags & _pseudoHover) != 0;
+  bool get isActive => (_pseudoStateFlags & _pseudoActive) != 0;
+  bool get isFocused => (_pseudoStateFlags & _pseudoFocus) != 0;
+  bool get isFocusVisible => (_pseudoStateFlags & _pseudoFocusVisible) != 0;
+  bool get isFocusWithin => isFocused || _focusWithinDescendantCount > 0;
+
+  void updateHoverState(bool value) {
+    _setPseudoState(_pseudoHover, value);
+  }
+
+  void updateActiveState(bool value) {
+    _setPseudoState(_pseudoActive, value);
+  }
+
+  void updateFocusState(bool value, {bool? focusVisible}) {
+    final bool changed = _setPseudoState(_pseudoFocus, value);
+    final bool visible = value && (focusVisible ?? ownerDocument.shouldShowFocusVisible);
+    _setPseudoState(_pseudoFocusVisible, visible);
+    if (changed) {
+      _updateFocusWithinAncestors(value);
+    }
+  }
+
   @pragma('vm:prefer-inline')
   set className(String className) {
     final List<String> classList = splitByAsciiWhitespace(className);
@@ -503,38 +535,49 @@ abstract class Element extends ContainerNode
     return list;
   }
 
-  dynamic getElementsByClassName(List<dynamic> args) {
-    return query_selector.querySelectorAll(this, '.${args.first}');
-  }
-
-  dynamic getElementsByTagName(List<dynamic> args) {
-    return query_selector.querySelectorAll(this, args.first);
-  }
-
-  dynamic querySelector(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty) {
-      return null;
+  String? _selectorFromArgs(dynamic args) {
+    if (args is String) return args;
+    if (args is List && args.isNotEmpty) {
+      final dynamic first = args.first;
+      if (first is String) return first;
     }
-    return query_selector.querySelector(this, args.first);
+    return null;
   }
 
-  dynamic querySelectorAll(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
-    return query_selector.querySelectorAll(this, args.first);
+  dynamic getElementsByClassName(dynamic args) {
+    final String? selector = _selectorFromArgs(args);
+    if (selector == null || selector.isEmpty) return [];
+    return query_selector.querySelectorAll(this, '.$selector');
   }
 
-  bool matches(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty) {
-      return false;
-    }
-    return query_selector.matches(this, args.first);
+  dynamic getElementsByTagName(dynamic args) {
+    final String? selector = _selectorFromArgs(args);
+    if (selector == null || selector.isEmpty) return [];
+    return query_selector.querySelectorAll(this, selector);
   }
 
-  dynamic closest(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty) {
-      return null;
-    }
-    return query_selector.closest(this, args.first);
+  dynamic querySelector(dynamic args) {
+    final String? selector = _selectorFromArgs(args);
+    if (selector == null || selector.isEmpty) return null;
+    return query_selector.querySelector(this, selector);
+  }
+
+  dynamic querySelectorAll(dynamic args) {
+    final String? selector = _selectorFromArgs(args);
+    if (selector == null || selector.isEmpty) return [];
+    return query_selector.querySelectorAll(this, selector);
+  }
+
+  bool matches(dynamic args) {
+    final String? selector = _selectorFromArgs(args);
+    if (selector == null || selector.isEmpty) return false;
+    return query_selector.matches(this, selector);
+  }
+
+  dynamic closest(dynamic args) {
+    final String? selector = _selectorFromArgs(args);
+    if (selector == null || selector.isEmpty) return null;
+    return query_selector.closest(this, selector);
   }
 
   RenderBoxModel? createRenderBoxModel(
@@ -1603,6 +1646,45 @@ abstract class Element extends ContainerNode
     final Element? root = ownerDocument.documentElement;
     if (root == null) return;
     ownerDocument.markElementStyleDirty(root, reason: 'childList-has');
+  }
+
+  bool _setPseudoState(int flag, bool value) {
+    final bool had = (_pseudoStateFlags & flag) != 0;
+    if (had == value) return false;
+    if (value) {
+      _pseudoStateFlags |= flag;
+    } else {
+      _pseudoStateFlags &= ~flag;
+    }
+    _markPseudoStateDirty();
+    return true;
+  }
+
+  void _markPseudoStateDirty() {
+    ownerDocument.markElementStyleDirty(this, reason: 'pseudo-state');
+    _markHasSelectorsDirty();
+  }
+
+  void _updateFocusWithinAncestors(bool focused) {
+    Element? current = parentElement;
+    while (current != null) {
+      current._updateFocusWithinFromDescendant(focused);
+      current = current.parentElement;
+    }
+  }
+
+  void _updateFocusWithinFromDescendant(bool focused) {
+    final int before = _focusWithinDescendantCount;
+    if (focused) {
+      _focusWithinDescendantCount++;
+    } else if (_focusWithinDescendantCount > 0) {
+      _focusWithinDescendantCount--;
+    }
+    final bool beforeActive = before > 0;
+    final bool afterActive = _focusWithinDescendantCount > 0;
+    if (beforeActive != afterActive) {
+      _markPseudoStateDirty();
+    }
   }
 
   @mustCallSuper

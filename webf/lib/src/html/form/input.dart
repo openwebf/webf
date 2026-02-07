@@ -203,8 +203,8 @@ class FlutterInputElement extends WidgetElement
         dom.ElementAttributeProperty(getter: () => disabled.toString(), setter: (value) => disabled = dom.attributeToProperty<bool>(value));
     attributes['checked'] = dom.ElementAttributeProperty(
         getter: () => getChecked().toString(),
-        setter: (value) => setChecked(true),
-        deleter: () => setChecked(false));
+        setter: (value) => setChecked(true, fromAttribute: true),
+        deleter: () => setChecked(false, fromAttribute: true));
     attributes['name'] = dom.ElementAttributeProperty(getter: () => name, setter: (value) => name = value);
   }
 
