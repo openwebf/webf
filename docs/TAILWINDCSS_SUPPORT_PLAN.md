@@ -111,6 +111,38 @@ Tailwind v3.4.18 core utilities are exposed by `corePlugins` (179 keys). Below i
 4. **Media query evaluation coverage**: add Tailwind-required media features: `prefers-reduced-motion`, `orientation`, `forced-colors`, `prefers-contrast`, plus **media type `print`** handling (likely “always false” in WebF unless printing is supported).
 5. **Regression tests**: add a minimal “Tailwind preflight can load” integration test and a few utility/variant fixtures.
 
+### P0 Dev Plan — Interactive pseudo-classes (Dart engine)
+Scope: implement selector matching + invalidation for Tailwind’s interactive/state variants in the Dart CSS engine (`webf/lib/src/css/query_selector.dart`), including `:hover`, `:active`, `:focus`, `:focus-visible`, `:focus-within`, `:enabled`, `:disabled`, `:checked` (plus `:indeterminate`, `:required`, `:optional`, `:valid/:invalid`, `:placeholder-shown` if feasible).
+
+1. **State model on Element (Dart)**
+   - Add a lightweight pseudo-state bitset (hover/active/focus/focus-visible/checked/disabled/etc).
+   - Provide helpers to set/clear states and mark style dirty on state change.
+   - For `:focus-within`, propagate a derived flag to ancestors when focus changes.
+
+2. **Event wiring (Flutter → DOM)**
+   - Hook pointer enter/leave to `:hover` (mouseenter/leave or pointermove/exit).
+   - Hook pointer down/up to `:active` (pressed state while pointer is down).
+   - Hook focus/blur to `:focus`; track last input modality to derive `:focus-visible`.
+   - Ensure disabled/checked/value changes update state (reuse form element setters).
+
+3. **Selector evaluator updates**
+   - Extend `visitPseudoClassSelector()` in `webf/lib/src/css/query_selector.dart` to query the state model.
+   - Implement `:focus-within` by checking self or descendants with focus state.
+   - Keep current form-related logic (`:enabled/:disabled/:checked/:valid/:invalid`) consistent with the state model.
+
+4. **Style invalidation**
+   - On state changes, mark the element dirty; for `:focus-within`, mark ancestors dirty.
+   - When `:has()` exists in the ruleset, conservatively mark the document root dirty to keep relational selectors correct.
+
+5. **Tests (integration + unit)**
+   - Add integration tests under `integration_tests/specs/css/css-selectors/` for hover/active/focus/focus-visible/focus-within.
+   - Include mixed cases with `:has()` and pseudo-class variants to validate invalidation.
+   - Add minimal unit tests for state transitions if feasible in Dart.
+
+6. **Performance/flags**
+   - Consider a RuleSet flag to detect presence of interactive pseudos to avoid unnecessary full-root invalidation.
+   - Keep default behavior conservative first; optimize after correctness is verified.
+
 ### P1 — Close common utility gaps
 1. **Vendor line clamp**: map Tailwind’s `-webkit-line-clamp`, `-webkit-box-orient`, `display:-webkit-box` onto WebF’s existing `lineClamp` model (or implement full vendor behavior).
 2. **`cursor` / `pointer-events` / `user-select` / `touch-action` / `resize`**: implement in RenderStyle + event/gesture system.

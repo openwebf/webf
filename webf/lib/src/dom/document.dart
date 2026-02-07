@@ -34,6 +34,8 @@ enum DocumentReadyState { loading, interactive, complete }
 
 enum VisibilityState { visible, hidden }
 
+enum _InputModality { unknown, pointer, keyboard }
+
 class Document extends ContainerNode {
   final WebFController controller;
   late AnimationTimeline animationTimeline;
@@ -87,6 +89,9 @@ class Document extends ContainerNode {
 
   String? _readyState;
   VisibilityState _visibilityState = VisibilityState.hidden;
+  _InputModality _lastInputModality = _InputModality.unknown;
+  Element? _hoverTarget;
+  Element? _activeTarget;
 
   @override
   bool get isConnected => true;
@@ -96,6 +101,42 @@ class Document extends ContainerNode {
     _scriptRunner = ScriptRunner(this, context.contextId);
     ruleSet = RuleSet(this);
     animationTimeline = AnimationTimeline(this);
+  }
+
+  bool get shouldShowFocusVisible => _lastInputModality != _InputModality.pointer;
+
+  void notePointerInteraction() {
+    _lastInputModality = _InputModality.pointer;
+  }
+
+  void noteKeyboardInteraction() {
+    _lastInputModality = _InputModality.keyboard;
+  }
+
+  void updateHoverTarget(Element? target) {
+    if (identical(_hoverTarget, target)) return;
+    _hoverTarget?.updateHoverState(false);
+    _hoverTarget = target;
+    _hoverTarget?.updateHoverState(true);
+  }
+
+  void clearHoverTarget(Element target) {
+    if (identical(_hoverTarget, target)) {
+      updateHoverTarget(null);
+    }
+  }
+
+  void updateActiveTarget(Element? target) {
+    if (identical(_activeTarget, target)) return;
+    _activeTarget?.updateActiveState(false);
+    _activeTarget = target;
+    _activeTarget?.updateActiveState(true);
+  }
+
+  void clearActiveTarget(Element target) {
+    if (identical(_activeTarget, target)) {
+      updateActiveTarget(null);
+    }
   }
 
   void initializeCookieJarForUrl(String url) {

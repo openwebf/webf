@@ -40,12 +40,21 @@ mixin BaseRadioElement on WidgetElement, BaseCheckedElement {
   }
 
   set name(String? n) {
-    if (RadioElementState._groupValues[_name] != null) {
-      RadioElementState._groupValues.remove(_name);
+    final String previousGroupName =
+        _name.isNotEmpty ? _name : 'radio-${hashCode}';
+    if (RadioElementState._groupValues[previousGroupName] != null) {
+      RadioElementState._groupValues.remove(previousGroupName);
     }
     _name = n?.toString() ?? '';
     // Don't set the group value here - it should be set when a radio is checked
   }
+
+  // Group radios by name when present; otherwise treat each radio as its own group.
+  String get selectionGroupName =>
+      _name.isNotEmpty ? _name : 'radio-${hashCode}';
+
+  // Use element identity for selection to avoid collisions when values are equal.
+  String get selectionValue => '${selectionGroupName}-${hashCode}';
 
   double getRadioSize() {
     //TODO support zoom
@@ -113,15 +122,15 @@ mixin RadioElementState on WebFWidgetElementState {
   BaseRadioElement get _radioElement => widgetElement as BaseRadioElement;
 
   String get groupValue {
-    String groupName = _cachedGroupName ?? _radioElement.name;
+    String groupName = _cachedGroupName ?? _radioElement.selectionGroupName;
     String staticValue = _groupValues[groupName] ?? '';
     String result = _currentGroupValue.isNotEmpty ? _currentGroupValue : staticValue;
     return result;
   }
 
   set groupValue(String? gv) {
-    String groupName = _cachedGroupName ?? _radioElement.name;
-    String value = gv ?? groupName;
+    String groupName = _cachedGroupName ?? _radioElement.selectionGroupName;
+    String value = gv ?? _radioElement.selectionValue;
     _radioElement.internalSetAttribute('groupValue', value);
     _updateGroupValues(groupName, value);
     _currentGroupValue = value; // Cache at instance level
@@ -158,15 +167,14 @@ mixin RadioElementState on WebFWidgetElementState {
     }
 
     if (early == true || isInitiallyChecked) {
-      String radioValue = _radioElement.value;
-      String groupName = _cachedGroupName ?? _radioElement.name;
-      String singleRadioValue = '$groupName-$radioValue';
-      _updateGroupValues(groupName, singleRadioValue);
-      _currentGroupValue = singleRadioValue; // Cache at instance level
+      String groupName = _cachedGroupName ?? _radioElement.selectionGroupName;
+      String selectionValue = _radioElement.selectionValue;
+      _updateGroupValues(groupName, selectionValue);
+      _currentGroupValue = selectionValue; // Cache at instance level
       setState(() {});
       if (early != null) RadioElementState.clearEarlyCheckedState(radioKey);
     } else {
-      String groupName = _cachedGroupName ?? _radioElement.name;
+      String groupName = _cachedGroupName ?? _radioElement.selectionGroupName;
       if (_groupValues.containsKey(groupName)) {
         setState(() {});
       }
@@ -182,9 +190,8 @@ mixin RadioElementState on WebFWidgetElementState {
   }
 
   Widget createRadio(BuildContext context) {
-    String groupName = _cachedGroupName ?? _radioElement.name;
-    String radioValue = _radioElement.value;
-    String singleRadioValue = '$groupName-$radioValue';
+    String groupName = _cachedGroupName ?? _radioElement.selectionGroupName;
+    String singleRadioValue = _radioElement.selectionValue;
     String currentGroupValue = groupValue; // Use getter instead of direct Map access
     
     

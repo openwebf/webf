@@ -15,6 +15,7 @@ import 'radio.dart';
 
 mixin BaseCheckedElement on BaseInputElement {
   bool _checked = false;
+  bool _checkedDirty = false;
 
   String get _earlyCheckedKey => hashCode.toString();
 
@@ -25,18 +26,32 @@ mixin BaseCheckedElement on BaseInputElement {
         case 'radio':
           return _getRadioChecked();
         case 'checkbox':
+          if (!_checkedDirty && !_checked && hasAttribute('checked')) {
+            return true;
+          }
           return _checked;
         default:
+          if (!_checkedDirty && !_checked && hasAttribute('checked')) {
+            return true;
+          }
           return _checked;
       }
+    }
+    if (!_checkedDirty && !_checked && hasAttribute('checked')) {
+      return true;
     }
     return _checked;
   }
 
-  setChecked(bool value) {
+  setChecked(bool value, {bool fromAttribute = false}) {
     if (this is FlutterInputElement) {
       FlutterInputElement input = this as FlutterInputElement;
       final bool previous = getChecked();
+      if (!fromAttribute) {
+        _checkedDirty = true;
+      } else if (_checkedDirty) {
+        return;
+      }
 
       if (state == null) {
         if (input.type == 'radio') {
@@ -72,13 +87,14 @@ mixin BaseCheckedElement on BaseInputElement {
   bool _getRadioChecked() {
     if (this is BaseRadioElement) {
       BaseRadioElement radio = this as BaseRadioElement;
-      final String groupName = (state as RadioElementState?)?.cachedGroupName ?? radio.name;
-      final String expected = '$groupName-${radio.value}';
+      final String groupName =
+          (state as RadioElementState?)?.cachedGroupName ?? radio.selectionGroupName;
+      final String expected = radio.selectionValue;
 
       // Before widget state mounts, honor boolean attribute presence and any group selection
       // already recorded by early checked changes.
       if (state == null) {
-        if (hasAttribute('checked')) return true;
+        if (!_checkedDirty && hasAttribute('checked')) return true;
         final bool? early = RadioElementState.getEarlyCheckedState(radio.hashCode.toString());
         if (early != null) return early;
         return RadioElementState.getGroupValueForName(groupName) == expected;
@@ -96,11 +112,11 @@ mixin BaseCheckedElement on BaseInputElement {
       
       if (state == null) {
         // Update group selection immediately so `el.checked` reads correctly before mount.
-        final String radioName = radio.name;
-        if (newValue && radioName.isNotEmpty) {
-          RadioElementState.setGroupValueForName(radioName, '$radioName-${radio.value}');
-        } else if (!newValue && radioName.isNotEmpty) {
-          final String expected = '$radioName-${radio.value}';
+        final String radioName = radio.selectionGroupName;
+        if (newValue) {
+          RadioElementState.setGroupValueForName(radioName, radio.selectionValue);
+        } else {
+          final String expected = radio.selectionValue;
           if (RadioElementState.getGroupValueForName(radioName) == expected) {
             RadioElementState.setGroupValueForName(radioName, '');
           }
@@ -111,10 +127,11 @@ mixin BaseCheckedElement on BaseInputElement {
       }
       
       // Use cached group name from state, fallback to current name
-      String radioName = (state as RadioElementState).cachedGroupName ?? radio.name;
+      String radioName =
+          (state as RadioElementState).cachedGroupName ?? radio.selectionGroupName;
 
       if (newValue) {
-        String newGroupValue = '$radioName-${radio.value}';
+        String newGroupValue = radio.selectionValue;
         // Update shared group selection immediately so all radios read consistent checkedness.
         RadioElementState.setGroupValueForName(radioName, newGroupValue);
         Map<String, String> map = <String, String>{};
@@ -127,7 +144,7 @@ mixin BaseCheckedElement on BaseInputElement {
         }
       } else {
         // When unchecking, only clear if this radio is currently the selected one
-        String currentRadioValue = '$radioName-${radio.value}';
+        String currentRadioValue = radio.selectionValue;
         String currentGroupValue = (state as RadioElementState).groupValue;
         if (currentGroupValue == currentRadioValue) {
           RadioElementState.setGroupValueForName(radioName, '');
