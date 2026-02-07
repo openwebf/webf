@@ -64,6 +64,7 @@ export const appRoutes: AppRoute[] = [
   { path: '/css/box-shadow', title: 'Box Shadow', element: defineAsyncComponent(() => import('./pages/css/BoxShadowPage.vue')) },
   { path: '/css/filter', title: 'Filter', element: defineAsyncComponent(() => import('./pages/css/FilterPage.vue')) },
   { path: '/css/flex-layout', title: 'Flex Layout', element: defineAsyncComponent(() => import('./pages/css/FlexLayoutPage.vue')) },
+  { path: '/css/grid-layout', title: 'Grid Layout', element: defineAsyncComponent(() => import('./pages/css/GridLayoutPage.vue')) },
   { path: '/css/keyframes', title: 'Keyframes', element: defineAsyncComponent(() => import('./pages/css/KeyframesPage.vue')) },
   {
     path: '/css/border-background-shadow',

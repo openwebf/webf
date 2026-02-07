@@ -74,6 +74,7 @@ const sections: Section[] = [
     color: 'from-emerald-500 to-teal-500',
     items: [
       { label: 'Flexbox', path: '/css/flex-layout', desc: 'Flexible layouts' },
+      { label: 'CSS Grid', path: '/css/grid-layout', desc: 'Two-dimensional layouts' },
       { label: 'Display & Flow', path: '/css/display-flow', desc: 'Block, inline, flow' },
       { label: 'Sizing', path: '/css/sizing', desc: 'Width, height, box-sizing' },
       { label: 'Inline Formatting', path: '/css/inline-formatting', desc: 'Baselines, alignment' },
