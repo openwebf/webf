@@ -29,6 +29,7 @@ const sections: Section[] = [
     color: '#8b5cf6',
     items: [
       { label: 'Flexbox', path: '/css/flex-layout' },
+      { label: 'CSS Grid', path: '/css/grid-layout' },
       { label: 'Display / Flow', path: '/css/display-flow' },
       { label: 'Sizing', path: '/css/sizing' },
       { label: 'Inline Formatting', path: '/css/inline-formatting' },
