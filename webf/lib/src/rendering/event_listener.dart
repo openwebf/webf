@@ -6,8 +6,10 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/dom.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart' hide RenderBoxContainerDefaultsMixin;
@@ -167,6 +169,22 @@ class RenderEventListener extends RenderBoxModel
   @override
   void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
     super.handleEvent(event, entry);
+
+    final Element target = renderStyle.target;
+    final Document document = controller.view.document;
+
+    if (event is PointerDownEvent) {
+      document.notePointerInteraction();
+      document.updateActiveTarget(target);
+      document.updateHoverTarget(target);
+    } else if (event is PointerUpEvent || event is PointerCancelEvent) {
+      document.updateActiveTarget(null);
+    } else if (event is PointerHoverEvent ||
+        (event is PointerMoveEvent && event.buttons == 0)) {
+      document.updateHoverTarget(target);
+    } else if (event is PointerExitEvent) {
+      document.clearHoverTarget(target);
+    }
 
     _gestureDispatcher?.handlePointerEvent(event);
   }

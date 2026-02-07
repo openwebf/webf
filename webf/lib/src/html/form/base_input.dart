@@ -409,6 +409,7 @@ mixin BaseInputState on WebFWidgetElementState {
 
   void handleFocusChange() {
     if (_isFocus) {
+      widgetElement.updateFocusState(true);
       widgetElement.oldValue = widgetElement.value;
       scheduleMicrotask(() {
         widgetElement.dispatchEvent(dom.FocusEvent(dom.EVENT_FOCUS, relatedTarget: widgetElement));
@@ -427,6 +428,7 @@ mixin BaseInputState on WebFWidgetElementState {
         });
       });
     } else {
+      widgetElement.updateFocusState(false);
       if (widgetElement.oldValue != widgetElement.value) {
         scheduleMicrotask(() {
           widgetElement.dispatchEvent(dom.Event('change'));
@@ -442,12 +444,14 @@ mixin BaseInputState on WebFWidgetElementState {
 
   bool _handleKey(KeyEvent event) {
     if (event is KeyUpEvent) {
+      widgetElement.ownerDocument.noteKeyboardInteraction();
       widgetElement.dispatchEvent(dom.KeyboardEvent(
         dom.EVENT_KEY_UP,
         code: event.physicalKey.debugName ?? '',
         key: event.logicalKey.keyLabel,
       ));
     } else if (event is KeyDownEvent) {
+      widgetElement.ownerDocument.noteKeyboardInteraction();
       widgetElement.dispatchEvent(dom.KeyboardEvent(
         dom.EVENT_KEY_DOWN,
         code: event.physicalKey.debugName ?? '',

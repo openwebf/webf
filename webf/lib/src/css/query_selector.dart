@@ -367,6 +367,26 @@ class SelectorEvaluator extends SelectorVisitor {
       case 'only-child':
         return _element!.previousElementSibling == null && _element!.nextElementSibling == null;
 
+      // https://drafts.csswg.org/selectors-4/#the-hover-pseudo
+      case 'hover':
+        return _element!.isHovered;
+
+      // https://drafts.csswg.org/selectors-4/#the-active-pseudo
+      case 'active':
+        return _element!.isActive;
+
+      // https://drafts.csswg.org/selectors-4/#the-focus-pseudo
+      case 'focus':
+        return _element!.isFocused;
+
+      // https://drafts.csswg.org/selectors-4/#the-focus-visible-pseudo
+      case 'focus-visible':
+        return _element!.isFocusVisible;
+
+      // https://drafts.csswg.org/selectors-4/#the-focus-within-pseudo
+      case 'focus-within':
+        return _element!.isFocusWithin;
+
       // https://drafts.csswg.org/selectors-4/#enableddisabled
       case 'enabled':
       case 'disabled': {
@@ -374,6 +394,30 @@ class SelectorEvaluator extends SelectorVisitor {
         if (!_isFormControlElement(element)) return false;
         final bool isDisabled = _isFormControlDisabled(element);
         return name == 'disabled' ? isDisabled : !isDisabled;
+      }
+      // https://drafts.csswg.org/selectors-4/#opt-pseudos
+      case 'required':
+      case 'optional': {
+        final Element element = _element!;
+        if (!_isFormControlElement(element)) return false;
+        final bool required = element.attributes.containsKey('required');
+        return name == 'required' ? required : !required;
+      }
+      // https://drafts.csswg.org/selectors-4/#placeholder-shown-pseudo
+      case 'placeholder-shown': {
+        final Element element = _element!;
+        if (!_isFormControlElement(element)) return false;
+        String placeholder = '';
+        String value = '';
+        if (element is BaseInputElement) {
+          placeholder = element.placeholder;
+          value = element.value;
+        } else {
+          placeholder = element.attributes['placeholder'] ?? '';
+          value = element.attributes['value'] ?? '';
+        }
+        if (placeholder.isEmpty) return false;
+        return value.isEmpty;
       }
       // https://drafts.csswg.org/selectors-4/#validity-pseudos
       case 'valid':
@@ -434,7 +478,7 @@ class SelectorEvaluator extends SelectorVisitor {
     // Widget-based form controls (e.g., <input>, <textarea>) keep `disabled`
     // state in the element instance and may not reflect it as an attribute.
     if (element is FormElementBase) {
-      return element.disabled;
+      if (element.disabled) return true;
     }
     if (element.attributes.containsKey('disabled')) return true;
     if (element.tagName.toUpperCase() == OPTION) {
