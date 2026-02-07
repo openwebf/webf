@@ -70,6 +70,9 @@ class GestureDispatcher {
     EventTarget target = this.target;
 
     if (target is dom.Element) {
+      if (target.attachedRenderer == null) {
+        return;
+      }
       BoxHitTestResult boxHitTestResult = BoxHitTestResult();
       Offset offset = Offset(localPosition.dx, localPosition.dy);
       target.attachedRenderer!.hitTest(boxHitTestResult, position: offset);
