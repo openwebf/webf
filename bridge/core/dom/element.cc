@@ -1364,9 +1364,11 @@ void Element::AttributeChanged(const AttributeModificationParams& params) {
 
   const AtomicString& name = params.name;
   if (name == CheckedAttrName()) {
-    checked_state_ = !params.new_value.IsNull() && !params.new_value.empty();
+    // HTML boolean attributes are true by presence, even when the value is empty.
+    checked_state_ = !params.new_value.IsNull();
   } else if (name == DisabledAttrName()) {
-    disabled_state_ = !params.new_value.IsNull() && !params.new_value.empty();
+    // HTML boolean attributes are true by presence, even when the value is empty.
+    disabled_state_ = !params.new_value.IsNull();
   }
 
   if (IsStyledElement()) {
