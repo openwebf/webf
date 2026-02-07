@@ -47,7 +47,7 @@ interface FlutterCupertinoCheckboxEvents {
 
     // Attribute setter should treat the literal "null" as a Dart null.
     expect(dartCode).toContain(
-      "setter: (value) => checked = value == 'null' ? null : (value == 'true' || value == ''),"
+      "setter: (value) => this.checked = value == 'null' ? null : (value == 'true' || value == ''),"
     );
 
     // Deleting the attribute should reset to the default `false`.

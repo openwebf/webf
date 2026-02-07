@@ -466,14 +466,24 @@ NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
   }
 
   if (auto element = const_cast<WidgetElement*>(DynamicTo<WidgetElement>(this))) {
-    if (std::shared_ptr<MutationObserverInterestGroup> recipients =
-            MutationObserverInterestGroup::CreateForAttributesMutation(*element, prop)) {
-      AtomicString old_value = element->attributes()->getAttribute(prop, exception_state);
-      recipients->EnqueueMutationRecord(
-          MutationRecord::CreateAttributes(element, prop, AtomicString::Null(), old_value));
+    // Avoid ElementAttributes::getAttribute() for WidgetElement here: it may
+    // synchronously call into Dart when the attribute isn't present in the
+    // native attribute store, which is extremely expensive (and can block
+    // threads) in Blink mode. For selector matching and mutation records we
+    // only need the value from the native attribute store.
+    AtomicString old_value = AtomicString::Null();
+    if (ElementAttributes* existing_attributes = element->GetElementAttributesIfExists()) {
+      old_value = existing_attributes->GetAttributeForStyle(prop);
     }
 
-    AtomicString old_value = element->attributes()->getAttribute(prop, exception_state);
+    if (std::shared_ptr<MutationObserverInterestGroup> recipients =
+            MutationObserverInterestGroup::CreateForAttributesMutation(*element, prop)) {
+      recipients->EnqueueMutationRecord(
+          MutationRecord::CreateAttributes(
+              element, prop, AtomicString::Null(),
+              recipients->IsOldValueRequested() ? old_value : AtomicString::Null()));
+    }
+
     AtomicString new_value = AtomicString::Null();
 
     static const AtomicString kChecked = AtomicString::CreateFromUTF8("checked");
@@ -515,8 +525,8 @@ NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
   }
 
   const NativeValue argv[] = {Native_NewString(prop.ToNativeString().release()), value};
-  return InvokeBindingMethod(BindingMethodCallOperations::kSetProperty, 2, argv,
-                             FlushUICommandReason::kDependentsOnElement, exception_state);
+  InvokeBindingMethodAsync(BindingMethodCallOperations::kSetProperty, 2, argv, exception_state);
+  return Native_NewNull();
 }
 
 void BindingObject::CollectElementDepsOnArgs(std::vector<NativeBindingObject*>& deps,

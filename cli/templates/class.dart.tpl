@@ -64,8 +64,11 @@ abstract class <%= className %>Bindings extends WidgetElement {
   ];
   <% } %>
 
-  <% if (methods?.methods.length > 0 || properties?.methods.length > 0) { %>
-  <% const methodsObject = methods ?? properties; %>
+  <% const methodsVar = (typeof methods !== 'undefined') ? methods : undefined; %>
+  <% const methodsFromMethods = methodsVar?.methods ?? []; %>
+  <% const methodsFromProperties = properties?.methods ?? []; %>
+  <% if (methodsFromMethods.length > 0 || methodsFromProperties.length > 0) { %>
+  <% const methodsObject = methodsFromMethods.length > 0 ? methodsVar : properties; %>
 
   <% _.forEach(methodsObject?.methods, function(method, index) { %>
     <% var methodName = _.camelCase(method.name); %>

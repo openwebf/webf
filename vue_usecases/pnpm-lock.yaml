@@ -17,9 +17,12 @@ importers:
       '@openwebf/vue-cupertino-ui':
         specifier: ^0.4.0
         version: 0.4.1(@openwebf/vue-core-ui@0.24.0(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))
+      '@openwebf/vue-lucide-icons':
+        specifier: ^1.0.0
+        version: 1.0.0(@openwebf/vue-core-ui@0.24.0(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))
       '@openwebf/vue-router':
-        specifier: ^0.24.1
-        version: 0.24.1(@openwebf/webf-enterprise-typings@0.23.7)(vue@3.5.26(typescript@5.9.3))
+        specifier: ^1.0.0
+        version: 1.0.0(@openwebf/webf-enterprise-typings@0.23.7)(vue@3.5.26(typescript@5.9.3))
       '@openwebf/vue-video-player':
         specifier: ^1.0.0
         version: 1.0.0(@openwebf/vue-core-ui@0.24.0(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))
@@ -135,11 +138,20 @@ packages:
       '@openwebf/vue-core-ui': ^0.24.0
       vue: ^3.0.0
 
-  '@openwebf/vue-router@0.24.1':
-    resolution: {integrity: sha512-JxgDo69e/LU8IX7+FLwaKWaMae4ucVMbCTlmJ/wIR9bt7Z86qjkEpAmDIgmp0IArSXRMM/t7B4H36w439ilEug==}
+  '@openwebf/vue-lucide-icons@1.0.0':
+    resolution: {integrity: sha512-wBTMmiqRPPC/scbQNiq5Wiz2YS0likUqIXxZZnvsrA15PWW8Np7EialuBKw3NDOoSwpPUIK9Hf4pqActVEPYLQ==}
+    peerDependencies:
+      '@openwebf/vue-core-ui': ^0.24.0
+      vue: ^3.0.0
+
+  '@openwebf/vue-router@1.0.0':
+    resolution: {integrity: sha512-ia6tI7Ze1C4+VW9jsd9ueAPt0FsK0nlgmVZHrt96vHZnW9ofEgZHvGN/3za1KTE0MEWehX4qg6cNGgaTO2CIkg==}
     peerDependencies:
       '@openwebf/webf-enterprise-typings': '>=0.22.0'
       vue: ^3.0.0
+    peerDependenciesMeta:
+      '@openwebf/webf-enterprise-typings':
+        optional: true
 
   '@openwebf/vue-video-player@1.0.0':
     resolution: {integrity: sha512-HeZ3HHImk6ghKJpss+krcLu7o2Z+P9owOnda3QxcwiWwldwy7TI4aFKmLnifTXv5HwlXrkrZ11G1CBu3St/MPA==}
@@ -879,10 +891,16 @@ snapshots:
       '@openwebf/vue-core-ui': 0.24.0(vue@3.5.26(typescript@5.9.3))
       vue: 3.5.26(typescript@5.9.3)
 
-  '@openwebf/vue-router@0.24.1(@openwebf/webf-enterprise-typings@0.23.7)(vue@3.5.26(typescript@5.9.3))':
+  '@openwebf/vue-lucide-icons@1.0.0(@openwebf/vue-core-ui@0.24.0(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))':
     dependencies:
-      '@openwebf/webf-enterprise-typings': 0.23.7
+      '@openwebf/vue-core-ui': 0.24.0(vue@3.5.26(typescript@5.9.3))
       vue: 3.5.26(typescript@5.9.3)
+
+  '@openwebf/vue-router@1.0.0(@openwebf/webf-enterprise-typings@0.23.7)(vue@3.5.26(typescript@5.9.3))':
+    dependencies:
+      vue: 3.5.26(typescript@5.9.3)
+    optionalDependencies:
+      '@openwebf/webf-enterprise-typings': 0.23.7
 
   '@openwebf/vue-video-player@1.0.0(@openwebf/vue-core-ui@0.24.0(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))':
     dependencies:

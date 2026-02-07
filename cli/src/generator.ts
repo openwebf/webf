@@ -9,7 +9,7 @@ import { ClassObject, ConstObject, EnumObject, TypeAliasObject } from './declara
 import { analyzer, ParameterType, clearCaches } from './analyzer';
 import { generateDartClass } from './dart';
 import { generateReactComponent, generateReactIndex } from './react';
-import { generateVueTypings } from './vue';
+import { generateVueTypings, generateVueRuntimeModule } from './vue';
 import { logger, debug, info, success, warn, error, group, progress, time, timeEnd } from './logger';
 import ts from 'typescript';
 
@@ -545,17 +545,33 @@ export async function vueGen({ source, target, exclude }: GenerateOptions) {
     }
   }
   
-  // Generate Vue typings
+  // Generate Vue typings (for type declarations and GlobalComponents augmentation)
   info('\nGenerating Vue typings...');
   const typingsContent = generateVueTypings(blobs);
   const typingsFilePath = path.join(normalizedTarget, 'index.d.ts');
-  
+
   let filesChanged = 0;
   if (writeFileIfChanged(typingsFilePath, typingsContent)) {
     filesChanged++;
     debug(`Generated: index.d.ts`);
   }
-  
+
+  // Generate Vue runtime module (for concrete enum/const exports)
+  info('Generating Vue runtime module...');
+  const runtimeContent = generateVueRuntimeModule(blobs);
+
+  // Create src directory if it doesn't exist
+  const srcDir = path.join(normalizedTarget, 'src');
+  if (!fs.existsSync(srcDir)) {
+    fs.mkdirSync(srcDir, { recursive: true });
+  }
+
+  const runtimeFilePath = path.join(srcDir, 'index.ts');
+  if (writeFileIfChanged(runtimeFilePath, runtimeContent)) {
+    filesChanged++;
+    debug(`Generated: src/index.ts`);
+  }
+
   timeEnd('vueGen');
   success(`Vue typings generation completed. ${filesChanged} files changed.`);
   info(`Output directory: ${normalizedTarget}`);

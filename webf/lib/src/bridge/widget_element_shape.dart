@@ -18,6 +18,7 @@ final class WidgetElementShape extends Struct {
   external Pointer<NativeValue> properties;
   external Pointer<NativeValue> methods;
   external Pointer<NativeValue> asyncMethods;
+  external Pointer<NativeValue> defaultAttributes;
 }
 
 Pointer<WidgetElementShape> createWidgetElementShape(Map<String, ElementCreator> creators) {
@@ -58,10 +59,12 @@ Pointer<WidgetElementShape> createWidgetElementShape(Map<String, ElementCreator>
     shape.ref.properties = malloc.allocate(sizeOf<NativeValue>());
     shape.ref.methods = malloc.allocate(sizeOf<NativeValue>());
     shape.ref.asyncMethods = malloc.allocate(sizeOf<NativeValue>());
+    shape.ref.defaultAttributes = malloc.allocate(sizeOf<NativeValue>());
 
     toNativeValue(shape.ref.properties, properties);
     toNativeValue(shape.ref.methods, syncMethods);
     toNativeValue(shape.ref.asyncMethods, asyncMethods);
+    toNativeValue(shape.ref.defaultAttributes, widgetElement.collectDefaultAttributePairsForWidgetShape());
 
     shapeIndex++;
   });

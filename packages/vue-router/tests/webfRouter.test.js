@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { WebFRouter, __unstable_setEnsureRouteMountedCallback } from '../dist/index.esm.js';
+import { WebFRouter, __unstable_setEnsureRouteMountedCallback, resetBrowserHistory, isWebF } from '../dist/index.esm.js';
 
 function installHybridHistory(overrides = {}) {
   const hybridHistory = {
@@ -66,16 +66,24 @@ async function flushMicrotasks() {
   await Promise.resolve();
 }
 
-test('WebFRouter: throws when hybridHistory is missing', async () => {
+test('WebFRouter: uses browser fallback when hybridHistory is missing', async () => {
   delete globalThis.webf;
+  resetBrowserHistory();
   __unstable_setEnsureRouteMountedCallback(null);
-  await assert.rejects(() => WebFRouter.push('/missing'), /hybridHistory is not available/);
+
+  // Should not throw - uses browser fallback instead
+  await WebFRouter.push('/browser-test');
+
+  // Verify browser adapter was used (stack should have the path)
+  assert.ok(WebFRouter.stack.some(e => e.path === '/browser-test'));
+
+  resetBrowserHistory();
 });
 
-test('WebFRouter.stack: returns buildContextStack (or empty)', () => {
-  delete globalThis.webf;
-  assert.deepEqual(WebFRouter.stack, []);
+test('WebFRouter.stack: returns buildContextStack in WebF mode', () => {
+  resetBrowserHistory();
 
+  // First, test with WebF hybridHistory installed
   const hybridHistory = installHybridHistory({
     buildContextStack: [{ path: '/', state: 1 }, { path: '/a', state: 2 }],
   });
@@ -83,6 +91,20 @@ test('WebFRouter.stack: returns buildContextStack (or empty)', () => {
   assert.deepEqual(WebFRouter.stack, hybridHistory.buildContextStack);
 
   delete globalThis.webf;
+  resetBrowserHistory();
+});
+
+test('WebFRouter.stack: returns browser adapter stack when WebF not available', () => {
+  delete globalThis.webf;
+  resetBrowserHistory();
+
+  // Browser adapter initializes with a root entry
+  const stack = WebFRouter.stack;
+  assert.ok(Array.isArray(stack));
+  assert.ok(stack.length >= 1);
+  assert.ok(stack[0].path);
+
+  resetBrowserHistory();
 });
 
 test('WebFRouter.push: awaits ensureRouteMounted before pushNamed', async () => {

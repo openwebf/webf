@@ -785,6 +785,14 @@ Future<void> allocateNewPage(bool sync, double newContextId, int syncBufferSize,
   await waitingSyncTaskComplete(newContextId);
 
   Map<String, ElementCreator> widgetElementCreators = getAllWidgetElements();
+  // Built-in HTML elements that are implemented as WidgetElement on the Dart
+  // side (e.g. INPUT/TEXTAREA/RouterLink). They are registered as normal HTML
+  // elements, but native WidgetElement code paths still need their shapes and
+  // default attribute snapshots to avoid blocking synchronous calls back to
+  // Dart when running with Blink enabled.
+  widgetElementCreators.putIfAbsent(INPUT, () => (context) => createElement(INPUT, context));
+  widgetElementCreators.putIfAbsent(TEXTAREA, () => (context) => createElement(TEXTAREA, context));
+  widgetElementCreators.putIfAbsent(ROUTER_LINK, () => (context) => createElement(ROUTER_LINK, context));
   Pointer<WidgetElementShape> shapes = createWidgetElementShape(widgetElementCreators);
 
   if (!sync) {
@@ -930,6 +938,7 @@ void flushUICommandWithContextId(double contextId, Pointer<NativeBindingObject> 
 
 void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPointer) {
   if (view.disposed) return;
+  if (view.isFlushingUICommands) return;
   assert(_allocatedPages.containsKey(view.contextId));
 
   if (view.rootController.isFontsLoading) {
@@ -939,7 +948,12 @@ void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPo
     return;
   }
 
-  List<UICommand> commands = nativeUICommandToDartFFI(view.contextId);
-  execUICommands(view, commands);
+  view.isFlushingUICommands = true;
+  try {
+    List<UICommand> commands = nativeUICommandToDartFFI(view.contextId);
+    execUICommands(view, commands);
+  } finally {
+    view.isFlushingUICommands = false;
+  }
   SchedulerBinding.instance.scheduleFrame();
 }

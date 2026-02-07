@@ -64,6 +64,7 @@ export const appRoutes: AppRoute[] = [
   { path: '/css/box-shadow', title: 'Box Shadow', element: defineAsyncComponent(() => import('./pages/css/BoxShadowPage.vue')) },
   { path: '/css/filter', title: 'Filter', element: defineAsyncComponent(() => import('./pages/css/FilterPage.vue')) },
   { path: '/css/flex-layout', title: 'Flex Layout', element: defineAsyncComponent(() => import('./pages/css/FlexLayoutPage.vue')) },
+  { path: '/css/grid-layout', title: 'Grid Layout', element: defineAsyncComponent(() => import('./pages/css/GridLayoutPage.vue')) },
   { path: '/css/keyframes', title: 'Keyframes', element: defineAsyncComponent(() => import('./pages/css/KeyframesPage.vue')) },
   {
     path: '/css/border-background-shadow',
@@ -303,6 +304,7 @@ export const appRoutes: AppRoute[] = [
     title: 'WebF Video Player',
     element: defineAsyncComponent(() => import('./pages/WebFVideoPlayerPage.vue')),
   },
+  { path: '/lucide/icons', title: 'Lucide Icons Gallery', element: defineAsyncComponent(() => import('./pages/lucide/LucideIconsPage.vue')) },
 
   // Other demos
   { path: '/native-interaction', title: 'WebF Share Module', element: defineAsyncComponent(() => import('./pages/NativeInteractionPage.vue')) },
@@ -316,4 +318,5 @@ export const appRoutes: AppRoute[] = [
   { path: '/gesture', title: 'Gesture Detection', element: defineAsyncComponent(() => import('./pages/GesturePage.vue')) },
   { path: '/dragable-list', title: 'Dragable List', element: defineAsyncComponent(() => import('./pages/DragableListPage.vue')) },
   { path: '/listview', title: 'WebFListView', element: defineAsyncComponent(() => import('./pages/ListviewPage.vue')) },
+
 ];

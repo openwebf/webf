@@ -2,11 +2,25 @@
  * Router management module
  *
  * Encapsulates routing navigation functionality with route pre-mount mechanism.
+ * Supports both WebF and browser environments through platform abstraction.
+ *
+ * In WebF: Uses hybridHistory API from @openwebf/webf-enterprise-typings
+ * In Browser: Uses standard History API with WebF-compatible adapter
  */
+import { isWebF, getWebFHybridHistory } from '../platform';
+import { getBrowserHistory } from '../platform/browserHistory';
+
 type RoutePath = string;
 
+/**
+ * Get the appropriate history implementation based on platform.
+ * Returns WebF's hybridHistory in WebF environment, or browser adapter otherwise.
+ */
 function getHybridHistory(): any {
-  return (globalThis as any)?.webf?.hybridHistory;
+  if (isWebF()) {
+    return getWebFHybridHistory();
+  }
+  return getBrowserHistory();
 }
 
 type EnsureRouteMountedCallback = (pathname: string) => Promise<void> | void;

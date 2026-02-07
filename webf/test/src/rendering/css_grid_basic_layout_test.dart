@@ -212,6 +212,47 @@ void main() {
 
     });
 
+    testWidgets('fr rows account for implicit auto rows in definite height', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-fr-rows-implicit-auto-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="
+            display: grid;
+            width: 300px;
+            height: 220px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-rows: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            font-size: 14px;
+            line-height: 18px;
+          ">
+            <div id="span3" style="grid-row: span 3; padding: 10px; background: #7C3AED; color: white;">span3</div>
+            <div id="a" style="grid-column: span 2; padding: 10px; background: #BAE6FD;">A</div>
+            <div id="span2" style="grid-row: span 2; padding: 10px; background: #FB7185; color: white;">span2</div>
+            <div id="b" style="padding: 10px; background: #FCD34D;">B</div>
+            <div id="c" style="grid-column: span 2; padding: 10px; background: #A7F3D0;">C</div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final c = prepared.getElementById('c');
+
+      final RenderGridLayout gridRenderer = grid.attachedRenderer as RenderGridLayout;
+      expect(gridRenderer.size.height, closeTo(220, 0.1));
+
+      final RenderBox cRenderer = c.attachedRenderer as RenderBox;
+      final Offset cOffset = getLayoutTransformTo(cRenderer, gridRenderer, excludeScrollOffset: true);
+
+      // When the grid container has a definite height, explicit 1fr rows should
+      // leave room for implicit auto rows instead of letting them overflow.
+      expect(cOffset.dy, lessThan(gridRenderer.size.height - 1));
+      expect(cOffset.dy + cRenderer.size.height, closeTo(gridRenderer.size.height, 1.0));
+    });
+
     testWidgets('auto-fit collapses unused tracks for justification', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,

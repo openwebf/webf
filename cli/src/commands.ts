@@ -211,6 +211,11 @@ const vueTsConfig = fs.readFileSync(
   'utf-8'
 );
 
+const vueTsDownConfig = fs.readFileSync(
+  path.resolve(__dirname, '../templates/vue.tsdown.config.ts.tpl'),
+  'utf-8'
+);
+
 function readFlutterPackageMetadata(packagePath: string): FlutterPackageMetadata | null {
   try {
     const pubspecPath = path.join(packagePath, 'pubspec.yaml');
@@ -495,6 +500,10 @@ function createCommand(target: string, options: { framework: string; packageName
     const tsConfigPath = path.join(target, 'tsconfig.json');
     const tsConfigContent = _.template(vueTsConfig)({});
     writeFileIfChanged(tsConfigPath, tsConfigContent);
+
+    const tsdownConfigPath = path.join(target, 'tsdown.config.ts');
+    const tsdownConfigContent = _.template(vueTsDownConfig)({});
+    writeFileIfChanged(tsdownConfigPath, tsdownConfigContent);
 
     const gitignorePath = path.join(target, '.gitignore');
     const gitignoreContent = _.template(gitignore)({});

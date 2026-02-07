@@ -1,6 +1,6 @@
 {
   "name": "@openwebf/webf",
-  "version": "0.24.4",
+  "version": "0.24.5",
   "description": "Command line tools for WebF",
   "main": "index.js",
   "bin": {
@@ -18,9 +18,11 @@
   ],
   "scripts": {
     "build": "tsc",
+    "pretest": "npm run build",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "prepack": "npm run build"
   },
   "keywords": [],
   "author": "",

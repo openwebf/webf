@@ -227,7 +227,6 @@ class RenderChildSize extends RenderProxyBox {
       if (!child.attached) return;
 
       final ParentData? childParentData = child.parentData;
-      int childNodeId = child.hashCode;
 
       double childMainAxisExtent = _getMainAxisExtent(child);
       double childCrossAxisExtent = _getCrossAxisExtent(child);
@@ -282,7 +281,7 @@ class RenderChildSize extends RenderProxyBox {
         runCrossAxisExtent = runCrossAxisExtent + childCrossAxisExtent;
       }
 
-      runChildren[childNodeId] = child;
+      runChildren.add(child);
 
       if (childParentData is RenderLayoutParentData) {
         childParentData.runIndex = runMetrics.length;

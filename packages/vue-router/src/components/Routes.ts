@@ -22,6 +22,7 @@ import { __unstable_deriveActivePathFromHybridRouterChange, HybridRouterChangeKi
 import { Route } from './Route';
 import type { RouteContext } from '../types';
 import { debugLog, debugFlagName } from '../utils/debug';
+import { isWebF } from '../platform';
 
 /**
  * Routes component - provides routing context to child Route components
@@ -55,6 +56,16 @@ function findBestMatch(patterns: string[], pathname: string): RouteMatch | null 
 
 function escapeAttributeValue(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+/**
+ * Get the appropriate CSS selector for router link elements based on platform
+ */
+function getRouterLinkSelector(path?: string): string {
+  if (isWebF()) {
+    return path ? `webf-router-link[path="${escapeAttributeValue(path)}"]` : 'webf-router-link';
+  }
+  return path ? `[data-router-link][data-path="${escapeAttributeValue(path)}"]` : '[data-router-link]';
 }
 
 function flattenRouteSlotVNodes(nodes: unknown): VNode[] {
@@ -122,7 +133,7 @@ const RouteContextProvider = defineComponent({
         bestMatchedPatternPath === props.patternPath &&
         (typeof document === 'undefined' ||
           typeof document.querySelector !== 'function' ||
-          !document.querySelector(`webf-router-link[path="${escapeAttributeValue(activeMountedPath)}"]`));
+          !document.querySelector(getRouterLinkSelector(activeMountedPath)));
 
       const mountedPathForMatch = shouldUseActivePathForPatternMount
         ? activePath!
@@ -327,11 +338,13 @@ export const Routes = defineComponent({
 
       let routerLinks: Array<{ path: string | null; title: string | null }> = [];
       try {
-        routerLinks = Array.from(document.querySelectorAll('webf-router-link'))
+        const pathAttr = isWebF() ? 'path' : 'data-path';
+        const titleAttr = isWebF() ? 'title' : 'data-title';
+        routerLinks = Array.from(document.querySelectorAll(getRouterLinkSelector()))
           .slice(0, 20)
           .map((el) => ({
-            path: el.getAttribute('path'),
-            title: el.getAttribute('title'),
+            path: el.getAttribute(pathAttr),
+            title: el.getAttribute(titleAttr),
           }));
       } catch {
       }
@@ -394,7 +407,7 @@ export const Routes = defineComponent({
         const bestMatch = findBestMatch(routePatternsRef.value, pathname);
         if (!bestMatch) return;
 
-        const selector = `webf-router-link[path="${escapeAttributeValue(pathname)}"]`;
+        const selector = getRouterLinkSelector(pathname);
         if (document.querySelector(selector)) return;
 
         debugLog('routes:ensureRouteMounted', {
@@ -436,7 +449,7 @@ export const Routes = defineComponent({
       void routePatternsRef.value;
 
       for (const [pathname, resolvers] of pendingEnsureResolvers.entries()) {
-        const selector = `webf-router-link[path="${escapeAttributeValue(pathname)}"]`;
+        const selector = getRouterLinkSelector(pathname);
         if (!document.querySelector(selector)) continue;
         for (const resolve of resolvers) resolve();
         pendingEnsureResolvers.delete(pathname);

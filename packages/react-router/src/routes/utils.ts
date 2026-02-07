@@ -2,9 +2,22 @@
  * Router management module
  *
  * Encapsulates routing navigation functionality with route guard mechanism for permission checks
+ * Supports both WebF native environment and standard browser environment.
+ */
+import { getWebFHybridHistory, isWebF } from '../platform';
+import { getBrowserHistory } from '../platform/browserHistory';
+
+/**
+ * Get the appropriate history object based on the current platform.
+ * Returns WebF's hybridHistory in WebF environment, or BrowserHistoryAdapter in browser.
  */
 function getHybridHistory(): any {
-  return (globalThis as any)?.webf?.hybridHistory;
+  const webfHistory = getWebFHybridHistory();
+  if (webfHistory) {
+    return webfHistory;
+  }
+  // Fallback to browser history adapter
+  return getBrowserHistory();
 }
 
 type RoutePath = string;
@@ -32,7 +45,8 @@ export interface HybridRouteStackEntry {
 
 /**
  * WebF Router object - provides comprehensive navigation APIs
- * Combines web-like history management with Flutter-like navigation patterns
+ * Combines web-like history management with Flutter-like navigation patterns.
+ * Works in both WebF native environment and standard browser environment.
  */
 export const WebFRouter = {
   /**
@@ -49,148 +63,134 @@ export const WebFRouter = {
   get stack(): HybridRouteStackEntry[] {
     return (getHybridHistory()?.buildContextStack as HybridRouteStackEntry[]) ?? [];
   },
-  
+
   /**
    * Get the current route path
    */
   get path() {
     return (getHybridHistory()?.path as RoutePath) ?? '/'
   },
-  
+
   /**
    * Navigate to a specified route
    * Applies route guards for permission checks before navigation
    */
   push: async <P extends RoutePath>(path: P, state?: any) => {
     const hybridHistory = getHybridHistory();
-    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
     await ensureRouteMounted(path);
     hybridHistory.pushNamed(path, { arguments: state })
   },
-  
+
   /**
    * Replace the current route without adding to history
    * Applies route guards for permission checks before navigation
    */
   replace: async <P extends RoutePath>(path: P, state?: any) => {
     const hybridHistory = getHybridHistory();
-    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
     await ensureRouteMounted(path);
     hybridHistory.pushReplacementNamed(path, { arguments: state});
   },
-  
+
   /**
    * Navigate back to the previous route
    */
   back: () => {
     const hybridHistory = getHybridHistory();
-    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
     hybridHistory.back();
   },
-  
+
   /**
    * Close the current screen and return to the previous one
    * Flutter-style navigation method
    */
   pop: (result?: any) => {
     const hybridHistory = getHybridHistory();
-    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
     hybridHistory.pop(result);
   },
-  
+
   /**
    * Pop routes until reaching a specific route
    */
   popUntil: (path: RoutePath) => {
     const hybridHistory = getHybridHistory();
-    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
     hybridHistory.popUntil(path)
   },
-  
+
   /**
    * Pop the current route and push a new named route
    */
   popAndPushNamed: async <T extends RoutePath>(path: T, state?: any) => {
     const hybridHistory = getHybridHistory();
-    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
     await ensureRouteMounted(path);
     hybridHistory.popAndPushNamed(path, {arguments: state})
   },
-  
+
   /**
    * Push a new route and remove routes until reaching a specific route
    */
   pushNamedAndRemoveUntil: async <T extends RoutePath>(path: T, state: any, untilPath: RoutePath) => {
     const hybridHistory = getHybridHistory();
-    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
     await ensureRouteMounted(path);
     hybridHistory.pushNamedAndRemoveUntil(state, path, untilPath)
   },
-  
+
   /**
    * Push a new route and remove all routes until a specific route (Flutter-style)
    */
   pushNamedAndRemoveUntilRoute: async <T extends RoutePath>(newPath: T, untilPath: RoutePath, state?: any) => {
     const hybridHistory = getHybridHistory();
-    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
     await ensureRouteMounted(newPath);
     hybridHistory.pushNamedAndRemoveUntilRoute(newPath, untilPath, { arguments: state })
   },
-  
+
   /**
    * Check if the navigator can go back
    */
   canPop: (): boolean => {
     const hybridHistory = getHybridHistory();
-    if (!hybridHistory) return false;
     return hybridHistory.canPop();
   },
-  
+
   /**
    * Pop the current route if possible
    * Returns true if the pop was successful, false otherwise
    */
   maybePop: (result?: any): boolean => {
     const hybridHistory = getHybridHistory();
-    if (!hybridHistory) return false;
     return hybridHistory.maybePop(result);
   },
-  
+
   /**
    * Push a new state to the history stack (web-style navigation)
    */
   pushState: (state: any, name: string) => {
     const hybridHistory = getHybridHistory();
-    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
     hybridHistory.pushState(state, name);
   },
-  
+
   /**
    * Replace the current history entry with a new one (web-style navigation)
    */
   replaceState: (state: any, name: string) => {
     const hybridHistory = getHybridHistory();
-    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
     hybridHistory.replaceState(state, name);
   },
-  
+
   /**
    * Pop and push with restoration capability
    * Returns a restoration ID string
    */
   restorablePopAndPushState: (state: any, name: string): string => {
     const hybridHistory = getHybridHistory();
-    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
     return hybridHistory.restorablePopAndPushState(state, name);
   },
-  
+
   /**
    * Pop and push named route with restoration capability
    * Returns a restoration ID string
    */
   restorablePopAndPushNamed: async <T extends RoutePath>(path: T, state?: any): Promise<string> => {
     const hybridHistory = getHybridHistory();
-    if (!hybridHistory) throw new Error('WebF hybridHistory is not available');
     await ensureRouteMounted(path);
     return hybridHistory.restorablePopAndPushNamed(path, { arguments: state });
   }

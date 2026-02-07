@@ -3,7 +3,6 @@ import './App.css';
 import './main.css';
 import { Routes, Route } from './router';
 import {HomePage} from './pages/HomePage';
-import { FeatureCatalogPage } from './pages/FeatureCatalogPage';
 import { CookiesPage } from './pages/CookiesPage';
 import { UrlEncodingPage } from './pages/UrlEncodingPage';
 import { WebSocketPage } from './pages/WebSocketPage';
@@ -56,6 +55,7 @@ import BorderRadiusPage from './pages/css/BorderRadiusPage';
 import {BoxShadowPage} from './pages/css/BoxShadowPage';
 import {FilterPage} from './pages/css/FilterPage';
 import {FlexLayoutPage} from './pages/css/FlexLayoutPage';
+import {GridLayoutPage} from './pages/css/GridLayoutPage';
 import {KeyframesPage} from './pages/css/KeyframesPage';
 import {ClipPathPage} from './pages/css/ClipPathPage';
 import {OverflowPage} from './pages/css/OverflowPage';
@@ -150,7 +150,6 @@ function App() {
     <div className="App">
       <Routes>
         <Route path="/" title="Home" element={<HomePage/>}/>
-        <Route path="/features" title="Features" element={<FeatureCatalogPage/>}/>
 
         <Route path="/tailwind" title="Tailwind CSS Showcase" element={<TailwindShowcasePage />} />
 
@@ -179,6 +178,7 @@ function App() {
         <Route path="/css/box-shadow" title="Box Shadow" element={<BoxShadowPage />} />
         <Route path="/css/filter" title="Filter" element={<FilterPage />} />
         <Route path="/css/flex-layout" title="Flex Layout" element={<FlexLayoutPage />} />
+        <Route path="/css/grid-layout" title="Grid Layout" element={<GridLayoutPage />} />
         <Route path="/css/keyframes" title="Keyframes" element={<KeyframesPage />} />
         {/*<Route path="/css/clip-path" title="Clip Path" element={<ClipPathPage />} />*/}
         <Route path="/css/border-background-shadow" title="Border Background Shadow" element={<BorderBackgroundShadowPage />} />
