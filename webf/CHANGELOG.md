@@ -1,3 +1,26 @@
+## 0.24.11
+
+### Major Features
+
+- **CSS/Selectors**: add Selectors Level 4 `:has()` support to the Blink backend (Tailwind CSS
+  compatibility), including invalidation coverage and snapshots (#840).
+
+### Bug Fixes
+
+- **Rendering/Widget**: avoid clamping portal/modal popup widget width to DOM parent constraints
+  (#841).
+- **Rendering/Text**: establish a local inline formatting context for inline spans hosted under
+  `RenderWidget`, fixing flexbox/inline layout edge cases (#842).
+- **Flexbox**: don’t stretch auto-height flex items when cross-axis constraints are bounded,
+  improving `WebFListView` sizing inside flex containers (#843).
+- **RTL**: isolate per-subtree `direction` overrides and support dynamic `documentElement.dir`
+  updates (including logical margin remapping) (#844).
+- **Bridge**: serialize Dart enums across the native bridge for stable `NativeValue` round-trips
+  (#840).
+- **Form Controls**: add `HTMLOptGroupElement` support and resolve related bridge build issues
+  (#840).
+- **Scrolling**: detach overflow scroll listeners on dispose to prevent stale callbacks/leaks.
+
 ## 0.24.10
 
 ### Major Features
