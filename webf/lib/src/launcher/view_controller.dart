@@ -818,6 +818,23 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       return;
     }
 
+    // In Blink mode, style-sync UICommands may arrive a frame later than DOM
+    // insertion commands. Hide newly inserted elements until their first style
+    // sync starts to avoid a 1-frame unstyled flash.
+    final bool shouldDeferBlinkFirstPaint =
+        enableBlink && (document.documentElement?.renderStyle.hasRenderBox() ?? false);
+    if (shouldDeferBlinkFirstPaint) {
+      if (newNode is Element) {
+        newNode.markBlinkDeferFirstPaint();
+      } else if (newNode is DocumentFragment) {
+        for (final Node child in newNode.childNodes) {
+          if (child is Element) {
+            child.markBlinkDeferFirstPaint();
+          }
+        }
+      }
+    }
+
     Node? targetParentNode = target.parentNode;
 
     switch (position) {
@@ -960,6 +977,13 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   void beginBlinkStyleSync(Pointer selfPtr) {
     if (!enableBlink) return;
     _blinkStyleSyncUpdatedProperties[selfPtr.address] = <String>{};
+    // Reveal elements that were temporarily hidden to avoid 1-frame unstyled
+    // flickers after DOM insertion (Blink mode).
+    if (!hasBindingObject(selfPtr)) return;
+    final Node? target = getBindingObject<Node>(selfPtr);
+    if (target is Element) {
+      target.notifyBlinkStyleSyncStarted();
+    }
   }
 
   void recordBlinkStyleSyncProperty(Pointer selfPtr, String property) {

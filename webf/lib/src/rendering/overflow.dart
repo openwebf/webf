@@ -191,13 +191,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     _viewportSize = viewportSize;
     if (_scrollOffsetX != null) {
       _setUpScrollX();
-      // Do not auto-jump scroll position for RTL containers.
-      // Per CSS/UA expectations, initial scroll position is the start edge
-      // of the scroll range, and user agent should not forcibly move it to
-      // the visual right edge for RTL. Keeping 0 preserves expected behavior
-      // for cases where overflow content lies entirely to the right.
     }
-
     if (_scrollOffsetY != null) {
       _setUpScrollY();
     }

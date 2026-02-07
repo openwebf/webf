@@ -96,6 +96,49 @@ abstract class Element extends ContainerNode
   // Default to unknown, assign by [createElement], used by inspector.
   String tagName = unknown;
 
+  // ---------------------------------------------------------------------------
+  // Blink style-sync first-paint gate
+  //
+  // When Blink is enabled, DOM insertion UICommands can arrive one frame earlier
+  // than the style-sync UICommands for the inserted element, causing a brief
+  // unstyled flash. We gate the first paint for newly inserted elements by
+  // hiding them from widget building until their first Blink style-sync starts.
+  bool _blinkDeferFirstPaint = false;
+  bool _blinkHasSeenStyleSync = false;
+
+  bool get blinkDeferFirstPaint => _blinkDeferFirstPaint;
+  bool get blinkHasSeenStyleSync => _blinkHasSeenStyleSync;
+
+  void markBlinkDeferFirstPaint() {
+    if (_blinkHasSeenStyleSync) return;
+    if (_blinkDeferFirstPaint) return;
+    _blinkDeferFirstPaint = true;
+  }
+
+  void notifyBlinkStyleSyncStarted() {
+    final bool wasDeferred = _blinkDeferFirstPaint;
+    _blinkHasSeenStyleSync = true;
+    if (!wasDeferred) return;
+
+    _blinkDeferFirstPaint = false;
+
+    // If we were previously hidden, there may be no paired render objects yet
+    // (because the adapter built a SizedBox.shrink). Force the adapter state to
+    // rebuild so the element can create its render tree in the next frame.
+    final reason = BlinkFirstPaintReadyReason();
+    if (renderStyle.hasRenderBox()) {
+      renderStyle.requestWidgetToRebuild(reason);
+    } else {
+      forEachState((state) {
+        if (state is WebFElementWidgetState) {
+          state.requestForChildNodeUpdate(reason);
+        } else if (state is WebFReplacedElementWidgetState) {
+          state.requestForChildNodeUpdate(reason);
+        }
+      });
+    }
+  }
+
   final Set<IntersectionObserver> _intersectionObserverList = {};
   List<double> _thresholds = [0.0];
 
