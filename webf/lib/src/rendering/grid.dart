@@ -3835,6 +3835,85 @@ class RenderGridLayout extends RenderLayoutBox {
 
     // If auto-sized rows resolve to a definite height (from intrinsic measurement),
     // apply align-self: stretch so items fill the resolved row size, matching CSS Grid.
+    //
+    // Also, if the grid has a definite block size and contains flexible (fr) tracks
+    // alongside intrinsic (auto/min/max-content) tracks (including implicit auto rows),
+    // re-resolve the flexible tracks now that intrinsic contributions are known.
+    // Without this second pass, fr tracks may consume space that should have been
+    // reserved for intrinsic tracks, causing implicit rows to overflow unexpectedly.
+    bool relayoutForResolvedIntrinsicTracks = false;
+    if (rowSizes.isNotEmpty &&
+        contentAvailableHeight != null &&
+        contentAvailableHeight.isFinite &&
+        implicitRowHeights.isNotEmpty) {
+      GridTrackSize rowTrackAt(int index) {
+        if (index >= 0 && index < resolvedRowDefs.length) {
+          return resolvedRowDefs[index];
+        }
+        final int implicitIndex = math.max(0, index - resolvedRowDefs.length);
+        return autoRowDefs.isNotEmpty ? autoRowDefs[implicitIndex % autoRowDefs.length] : const GridAuto();
+      }
+
+      double flexFactorForRowTrack(GridTrackSize track) {
+        if (track is GridFraction) return track.fr;
+        if (track is GridMinMax && track.maxTrack is GridFraction) {
+          return (track.maxTrack as GridFraction).fr;
+        }
+        return 0.0;
+      }
+
+      final int rowCount = rowSizes.length;
+      final double availableTrackSpace =
+          math.max(0.0, contentAvailableHeight - rowGap * math.max(0, rowCount - 1));
+
+      double fixed = 0.0;
+      double frSum = 0.0;
+      final List<double> frFactors = List<double>.filled(rowCount, 0.0);
+      final List<double> minFlexSizes = List<double>.filled(rowCount, 0.0);
+
+      for (int r = 0; r < rowCount; r++) {
+        final GridTrackSize track = rowTrackAt(r);
+        final double fr = flexFactorForRowTrack(track);
+        if (fr > 0) {
+          frFactors[r] = fr;
+          frSum += fr;
+          if (track is GridMinMax && track.maxTrack is GridFraction) {
+            final double minSize =
+                _resolveTrackSize(track.minTrack, availableTrackSpace, percentageBasis: contentAvailableHeight);
+            if (minSize.isFinite && minSize > 0) {
+              minFlexSizes[r] = minSize;
+            }
+          }
+          continue;
+        }
+
+        final double size = _resolvedRowHeight(rowSizes, implicitRowHeights, r);
+        if (size.isFinite && size > 0) {
+          fixed += size;
+        }
+      }
+
+      if (frSum > 0) {
+        final double remaining = availableTrackSpace - fixed;
+        const double epsilon = 0.05;
+        bool anyChanged = false;
+
+        for (int r = 0; r < rowCount; r++) {
+          final double fr = frFactors[r];
+          if (fr <= 0) continue;
+          final double portion = remaining > 0 ? remaining * (fr / frSum) : 0.0;
+          final double next = math.max(portion, minFlexSizes[r]);
+          final double prev = rowSizes[r];
+          if ((prev - next).abs() > epsilon) {
+            anyChanged = true;
+          }
+          rowSizes[r] = next;
+        }
+
+        relayoutForResolvedIntrinsicTracks = anyChanged;
+      }
+    }
+
     bool relayoutForImplicitRowStretch = false;
     RenderBox? stretchCheckChild = firstChild;
     while (stretchCheckChild != null) {
@@ -4188,6 +4267,9 @@ class RenderGridLayout extends RenderLayoutBox {
     }
 
     if (!relayoutForStretchedTracks && (relayoutForImplicitRowStretch || relayoutForSubgridRows)) {
+      relayoutForStretchedTracks = true;
+    }
+    if (!relayoutForStretchedTracks && relayoutForResolvedIntrinsicTracks) {
       relayoutForStretchedTracks = true;
     }
 
