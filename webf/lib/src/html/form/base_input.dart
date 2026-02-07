@@ -29,6 +29,7 @@ const Map<String, dynamic> _checkboxDefaultStyle = {
   MARGIN: '3px 3px 3px 4px',
   PADDING: INITIAL,
   DISPLAY: INLINE_BLOCK,
+  VERTICAL_ALIGN: 'middle',
   WIDTH: 'auto',
   HEIGHT: 'auto',
   BORDER: '0'
