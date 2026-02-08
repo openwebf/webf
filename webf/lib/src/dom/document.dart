@@ -92,6 +92,7 @@ class Document extends ContainerNode {
   _InputModality _lastInputModality = _InputModality.unknown;
   Element? _hoverTarget;
   Element? _activeTarget;
+  Element? _focusTarget;
 
   @override
   bool get isConnected => true;
@@ -136,6 +137,26 @@ class Document extends ContainerNode {
   void clearActiveTarget(Element target) {
     if (identical(_activeTarget, target)) {
       updateActiveTarget(null);
+    }
+  }
+
+  void updateFocusTarget(Element? target, {bool? focusVisible}) {
+    if (identical(_focusTarget, target)) {
+      if (target != null && !target.isFocused) {
+        target.updateFocusState(true, focusVisible: focusVisible);
+      }
+      return;
+    }
+    _focusTarget?.updateFocusState(false);
+    _focusTarget = target;
+    _focusTarget?.updateFocusState(true, focusVisible: focusVisible);
+  }
+
+  void clearFocusTarget(Element target) {
+    if (identical(_focusTarget, target)) {
+      updateFocusTarget(null);
+    } else if (target.isFocused) {
+      target.updateFocusState(false);
     }
   }
 

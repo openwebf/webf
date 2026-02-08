@@ -148,6 +148,7 @@
     "required",
     "readonly",
     "placeholder",
+    "tabIndex",
     "inputMode",
     "cols",
     "rows",
