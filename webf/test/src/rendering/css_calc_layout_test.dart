@@ -57,5 +57,37 @@ void main() {
 
       expect(t2.offsetWidth, closeTo(80.0 / 3.0, 0.01));
     });
+
+    testWidgets('does not collapse calc(100% - 24px) inside shrink-to-fit flex item', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'calc-flex-shrink-to-fit-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0;">
+              <div id="right" style="width: 200px; display: flex; justify-content: flex-end; overflow: hidden;">
+                <div id="inner" style="display: flex; align-items: flex-start; overflow: hidden;">
+                  <div id="text" style="width: calc(100% - 24px); overflow: hidden; text-align: right;">Hello</div>
+                  <div id="icon" style="width: 24px; height: 20px; background: red;"></div>
+                </div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final right = prepared.getElementById('right');
+      final inner = prepared.getElementById('inner');
+      final text = prepared.getElementById('text');
+      final icon = prepared.getElementById('icon');
+
+      expect(right.offsetWidth, equals(200.0));
+      expect(icon.offsetWidth, equals(24.0));
+
+      // If percentage-in-calc is resolved against an auto-sized (shrink-to-fit) flex item
+      // during intrinsic sizing, it can collapse to 0 (inner becomes icon-only).
+      expect(text.offsetWidth, greaterThan(0.0));
+      expect(inner.offsetWidth, greaterThan(icon.offsetWidth));
+    });
   });
 }

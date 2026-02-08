@@ -584,13 +584,20 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
           descendant: descendant, rect: rect, duration: duration, curve: curve);
     }
 
+    final double oldScrollTop = scrollTop;
+    final double oldScrollLeft = scrollLeft;
+    final double oldPaintOffsetX = _paintOffsetX;
+    final double oldPaintOffsetY = _paintOffsetY;
+
     final Rect targetRect = rect ?? descendant.paintBounds;
     final Matrix4 transform = descendant.getTransformTo(this as RenderObject);
     final Rect bounds = MatrixUtils.transformRect(transform, targetRect);
 
+    double targetScrollTop = oldScrollTop;
+    double targetScrollLeft = oldScrollLeft;
+
     if (yScrollable && scrollOffsetY != null) {
       final double maxY = math.max(0.0, content.height - viewport.height);
-      double targetScrollTop = scrollTop;
       if (bounds.top < 0.0) {
         targetScrollTop += bounds.top;
       } else if (bounds.bottom > size.height) {
@@ -607,7 +614,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
 
     if (xScrollable && scrollOffsetX != null) {
       final double maxX = math.max(0.0, content.width - viewport.width);
-      double targetScrollLeft = scrollLeft;
+      targetScrollLeft = scrollLeft;
 
       final AxisDirection axisDirectionX =
           (renderStyle.direction == TextDirection.rtl)
@@ -644,11 +651,29 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     }
 
     // Let ancestors handle any additional scrolling (e.g. nested scroll views).
+    // IMPORTANT: forward the *revealed* descendant bounds (in this coordinate space),
+    // not `rect: null`. Passing null causes ancestors to attempt to reveal this
+    // entire scroll container's paint bounds, which can incorrectly scroll the
+    // outer page (e.g. jump-to-top when focusing an input).
+    final double newPaintOffsetY = -targetScrollTop;
+    final double deltaPaintY = newPaintOffsetY - oldPaintOffsetY;
+
+    double deltaPaintX = 0.0;
+    if (xScrollable) {
+      final double maxX = math.max(0.0, content.width - viewport.width);
+      final bool isRTL = renderStyle.direction == TextDirection.rtl;
+      final double newLogicalLeft = isRTL ? (maxX - targetScrollLeft) : targetScrollLeft;
+      final double newPaintOffsetX = -newLogicalLeft;
+      deltaPaintX = newPaintOffsetX - oldPaintOffsetX;
+    }
+
+    final Rect revealed = bounds.shift(Offset(deltaPaintX, deltaPaintY));
     super.showOnScreen(
-        descendant: this as RenderObject,
-        rect: null,
-        duration: duration,
-        curve: curve);
+      descendant: this as RenderObject,
+      rect: revealed,
+      duration: duration,
+      curve: curve,
+    );
   }
 
   void debugOverflowProperties(DiagnosticPropertiesBuilder properties) {
