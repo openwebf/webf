@@ -36,6 +36,7 @@ class FlutterInputElement extends WidgetElement
     super.initializeDynamicMethods(methods);
     methods['blur'] = BindingObjectMethodSync(call: (List args) {
       state?.blur();
+      ownerDocument.clearFocusTarget(this);
     });
     methods['focus'] = BindingObjectMethodSync(call: (List args) {
       // If state is not yet available, remember to focus after mount.
@@ -44,6 +45,7 @@ class FlutterInputElement extends WidgetElement
       } else {
         (this as BaseInputElement).markPendingFocus();
       }
+      ownerDocument.updateFocusTarget(this);
     });
   }
 
@@ -192,7 +194,9 @@ class FlutterInputElement extends WidgetElement
   void initializeAttributes(Map<String, dom.ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
 
-    attributes['value'] = dom.ElementAttributeProperty(getter: () => value, setter: (value) => this.value = value);
+    attributes['value'] = dom.ElementAttributeProperty(
+        getter: () => attributes['value']?.toString() ?? '',
+        setter: (value) => defaultValue = value);
     attributes['type'] = dom.ElementAttributeProperty(
         getter: () => (this.attributes['type'] ?? 'text'),
         setter: (value) {

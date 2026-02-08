@@ -323,6 +323,104 @@ abstract class Element extends ContainerNode
     initializeAttributes(_attributeProperties);
   }
 
+  @override
+  void initializeDynamicProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeDynamicProperties(properties);
+    properties['tabIndex'] = BindingObjectProperty(getter: () => tabIndex, setter: (value) => tabIndex = value);
+  }
+
+  @override
+  void initializeDynamicMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeDynamicMethods(methods);
+    methods['focus'] = BindingObjectMethodSync(call: (List args) {
+      focus();
+    });
+    methods['blur'] = BindingObjectMethodSync(call: (List args) {
+      blur();
+    });
+  }
+
+  int get tabIndex {
+    final String? raw = _getAttributeIgnoreCase('tabindex');
+    if (raw == null || raw.isEmpty) return -1;
+    return int.tryParse(raw) ?? -1;
+  }
+
+  set tabIndex(dynamic value) {
+    if (value == null) {
+      _removeAttributeIgnoreCase('tabindex');
+      return;
+    }
+    int parsed;
+    if (value is num) {
+      parsed = value.toInt();
+    } else {
+      parsed = int.tryParse(value.toString()) ?? 0;
+    }
+    internalSetAttribute('tabindex', parsed.toString());
+  }
+
+  void focus() {
+    if (!_isProgrammaticallyFocusable()) return;
+    ownerDocument.updateFocusTarget(this);
+  }
+
+  void blur() {
+    ownerDocument.clearFocusTarget(this);
+  }
+
+  bool _isProgrammaticallyFocusable() {
+    if (_hasAttributeIgnoreCase('tabindex')) return true;
+    final String tag = tagName.toUpperCase();
+    switch (tag) {
+      case 'INPUT':
+      case 'TEXTAREA':
+      case 'SELECT':
+      case 'BUTTON':
+        return true;
+      case 'A':
+        return _hasAttributeIgnoreCase('href');
+      default:
+        return false;
+    }
+  }
+
+  bool _hasAttributeIgnoreCase(String name) {
+    if (attributes.containsKey(name)) return true;
+    final String lower = name.toLowerCase();
+    for (final String key in attributes.keys) {
+      if (key.toLowerCase() == lower) return true;
+    }
+    return false;
+  }
+
+  String? _getAttributeIgnoreCase(String name) {
+    if (attributes.containsKey(name)) return attributes[name];
+    final String lower = name.toLowerCase();
+    for (final String key in attributes.keys) {
+      if (key.toLowerCase() == lower) return attributes[key];
+    }
+    return null;
+  }
+
+  void _removeAttributeIgnoreCase(String name) {
+    final String lower = name.toLowerCase();
+    String? keyToRemove;
+    if (attributes.containsKey(name)) {
+      keyToRemove = name;
+    } else {
+      for (final String key in attributes.keys) {
+        if (key.toLowerCase() == lower) {
+          keyToRemove = key;
+          break;
+        }
+      }
+    }
+    if (keyToRemove != null) {
+      removeAttribute(keyToRemove);
+    }
+  }
+
   @pragma('vm:prefer-inline')
   @override
   String get nodeName => tagName;

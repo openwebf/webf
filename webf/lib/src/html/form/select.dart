@@ -20,16 +20,30 @@ const OPTGROUP = 'OPTGROUP';
 class HTMLSelectElement extends Element {
   HTMLSelectElement([super.context]);
 
-  bool get disabled => getAttribute('disabled') != null;
+  bool get disabled => _hasAttributeIgnoreCase('disabled');
 
   set disabled(dynamic value) {
     _setBooleanAttribute('disabled', value == true);
   }
 
-  bool get multiple => getAttribute('multiple') != null;
+  bool get multiple => _hasAttributeIgnoreCase('multiple');
 
   set multiple(dynamic value) {
     _setBooleanAttribute('multiple', value == true);
+  }
+
+  bool get required => _hasAttributeIgnoreCase('required');
+
+  set required(dynamic value) {
+    _setBooleanAttribute('required', _coerceBooleanAttribute(value));
+  }
+
+  bool _coerceBooleanAttribute(dynamic value) {
+    if (value == null) return false;
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) return true;
+    return value == true;
   }
 
   void _setBooleanAttribute(String name, bool enabled) {
@@ -39,6 +53,15 @@ class HTMLSelectElement extends Element {
       removeAttribute(name);
     }
     _markPseudoStateDirty();
+  }
+
+  bool _hasAttributeIgnoreCase(String name) {
+    if (attributes.containsKey(name)) return true;
+    final String lower = name.toLowerCase();
+    for (final String key in attributes.keys) {
+      if (key.toLowerCase() == lower) return true;
+    }
+    return false;
   }
 
   void _markPseudoStateDirty() {
@@ -55,6 +78,7 @@ class HTMLSelectElement extends Element {
     super.initializeDynamicProperties(properties);
     properties['disabled'] = BindingObjectProperty(getter: () => disabled, setter: (value) => disabled = value);
     properties['multiple'] = BindingObjectProperty(getter: () => multiple, setter: (value) => multiple = value);
+    properties['required'] = BindingObjectProperty(getter: () => required, setter: (value) => required = value);
   }
 
   @override
@@ -68,6 +92,10 @@ class HTMLSelectElement extends Element {
         getter: () => multiple.toString(),
         setter: (value) => multiple = dom.attributeToProperty<bool>(value),
         deleter: _markPseudoStateDirty);
+    attributes['required'] = dom.ElementAttributeProperty(
+        getter: () => required.toString(),
+        setter: (value) => required = dom.attributeToProperty<bool>(value),
+        deleter: _markPseudoStateDirty);
   }
 }
 
@@ -80,7 +108,7 @@ class HTMLOptionElement extends Element {
     _setSelected(value == true);
   }
 
-  bool get disabled => getAttribute('disabled') != null;
+  bool get disabled => _hasAttributeIgnoreCase('disabled');
 
   set disabled(dynamic value) {
     _setBooleanAttribute('disabled', value == true);
@@ -100,8 +128,8 @@ class HTMLOptionElement extends Element {
     if (value) {
       internalSetAttribute('selected', '');
       _clearOtherSelectedIfNeeded();
-    } else if (attributes.containsKey('selected')) {
-      removeAttribute('selected');
+    } else if (_hasAttributeIgnoreCase('selected')) {
+      _removeAttributeIgnoreCase(this, 'selected');
     }
     if (previous != _isSelected()) {
       _markPseudoStateDirty();
@@ -109,7 +137,7 @@ class HTMLOptionElement extends Element {
   }
 
   bool _isSelected() {
-    if (attributes.containsKey('selected')) {
+    if (_hasAttributeIgnoreCase('selected')) {
       return true;
     }
     final Element? select = _findSelectAncestor();
@@ -123,7 +151,7 @@ class HTMLOptionElement extends Element {
     if (options.isEmpty) {
       return false;
     }
-    final bool anyExplicit = options.any((option) => option.attributes.containsKey('selected'));
+    final bool anyExplicit = options.any((option) => _elementHasAttributeIgnoreCase(option, 'selected'));
     if (anyExplicit) {
       return false;
     }
@@ -142,7 +170,7 @@ class HTMLOptionElement extends Element {
   }
 
   bool _selectAllowsMultiple(Element select) {
-    return select.attributes.containsKey('multiple');
+    return _elementHasAttributeIgnoreCase(select, 'multiple');
   }
 
   List<Element> _collectOptions(Element root) {
@@ -169,10 +197,36 @@ class HTMLOptionElement extends Element {
       if (identical(option, this)) {
         continue;
       }
-      if (option.attributes.containsKey('selected')) {
-        option.removeAttribute('selected');
-      }
+      _removeAttributeIgnoreCase(option, 'selected');
     }
+  }
+
+  bool _hasAttributeIgnoreCase(String name) =>
+      _elementHasAttributeIgnoreCase(this, name);
+
+  bool _elementHasAttributeIgnoreCase(Element element, String name) {
+    if (element.attributes.containsKey(name)) return true;
+    final String lower = name.toLowerCase();
+    for (final String key in element.attributes.keys) {
+      if (key.toLowerCase() == lower) return true;
+    }
+    return false;
+  }
+
+  void _removeAttributeIgnoreCase(Element element, String name) {
+    final String? key = _findAttributeKeyIgnoreCase(element, name);
+    if (key != null) {
+      element.removeAttribute(key);
+    }
+  }
+
+  String? _findAttributeKeyIgnoreCase(Element element, String name) {
+    if (element.attributes.containsKey(name)) return name;
+    final String lower = name.toLowerCase();
+    for (final String key in element.attributes.keys) {
+      if (key.toLowerCase() == lower) return key;
+    }
+    return null;
   }
 
   void _markPseudoStateDirty() {

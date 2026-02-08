@@ -46,6 +46,7 @@ class FlutterTextAreaElement extends WidgetElement with BaseInputElement {
     super.initializeDynamicMethods(methods);
     methods['blur'] = BindingObjectMethodSync(call: (List args) {
       state?.blur();
+      ownerDocument.clearFocusTarget(this);
     });
     methods['focus'] = BindingObjectMethodSync(call: (List args) {
       if (state != null) {
@@ -53,6 +54,7 @@ class FlutterTextAreaElement extends WidgetElement with BaseInputElement {
       } else {
         (this as BaseInputElement).markPendingFocus();
       }
+      ownerDocument.updateFocusTarget(this);
     });
   }
 
