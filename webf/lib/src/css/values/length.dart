@@ -263,14 +263,52 @@ class CSSLengthValue {
 
   // Whether the container has a definite inline (horizontal) size that
   // percentages can resolve against. Avoid depending solely on contentConstraints,
-  // which may be null on the first layout. Instead, use contentMaxConstraintsWidth
-  // which falls back to the nearest ancestor with a computed logical width, or
-  // check explicit non-percentage width on the element.
+  // which may be null on the first layout.
+  //
+  // Important: do NOT treat an ancestor-derived max constraint (e.g.
+  // `contentMaxConstraintsWidth`) as "definite" for percentage resolution.
+  // For auto-sized flex items (shrink-to-fit), resolving percentages against an
+  // ancestor's width can create a circular dependency and collapse children like:
+  //   width: calc(100% - 24px)
+  // to 0 during intrinsic sizing.
   static bool _hasDefiniteInlineSize(RenderStyle rs) {
     if (rs is CSSRenderStyle) {
-      final double cmw = rs.contentMaxConstraintsWidth;
-      if (cmw != double.infinity) return true;
-      // As a fallback, treat explicit non-percentage width as definite.
+      // Prefer a style-tree definite content width (specified width, stretched block, etc.).
+      final double? logicalContentW = rs.contentBoxLogicalWidth;
+      if (logicalContentW != null && logicalContentW.isFinite) return true;
+
+      // Flex item shrink-to-fit: when a flex item has auto width and no definite logical width,
+      // its used width may be content-based (shrink-to-fit). In that case, descendant percentage
+      // widths must NOT resolve against the flex item's current measured width, otherwise
+      // `calc(100% - 24px)` can collapse to 0 and lock the flex item at the icon-only width.
+      //
+      // Allow resolving percentages for flexible items (flex-grow > 0) and for column-direction
+      // cross-axis stretching (where width becomes definite via align-items/align-self: stretch).
+      // NOTE: do not rely solely on `isParentRenderFlexLayout()` here; during some shrink-to-fit
+      // measurement passes the render-tree parent lookup may be unavailable, but the DOM parent
+      // still indicates the flex formatting context.
+      final RenderStyle? flexParent = rs.getAttachedRenderParentRenderStyle();
+      final bool parentIsFlexContainer = flexParent != null &&
+          (flexParent.effectiveDisplay == CSSDisplay.flex || flexParent.effectiveDisplay == CSSDisplay.inlineFlex);
+      if (parentIsFlexContainer && rs.width.isAuto && rs.flexGrow == 0 && rs.contentBoxLogicalWidth == null) {
+        final FlexDirection dir = flexParent!.flexDirection;
+        final bool parentIsColumn = dir == FlexDirection.column || dir == FlexDirection.columnReverse;
+        if (parentIsColumn) {
+          final AlignSelf self = rs.alignSelf;
+          final bool stretched =
+              self == AlignSelf.stretch || (self == AlignSelf.auto && flexParent.alignItems == AlignItems.stretch);
+          if (!stretched) return false;
+        } else {
+          // Row-direction shrink-to-fit flex item: treat as indefinite for percentage resolution.
+          return false;
+        }
+      }
+
+      // A tight content constraint indicates the containing block width is already fixed for this pass.
+      final BoxConstraints? cc = rs.contentConstraints();
+      if (cc != null && cc.hasTightWidth && cc.maxWidth.isFinite) return true;
+
+      // Fallback: explicit non-percentage width is definite.
       if (rs.width.isNotAuto && !rs.width.isPercentage) return true;
     }
     return false;
