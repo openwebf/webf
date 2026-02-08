@@ -11,6 +11,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/html.dart';
@@ -41,6 +42,21 @@ mixin BaseInputElement on WidgetElement implements FormElementBase {
   String _value = '';
   bool _pendingFocus = false;
   bool _dirtyValue = false;
+
+  @override
+  void initializeDynamicProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeDynamicProperties(properties);
+    properties['required'] = BindingObjectProperty(getter: () => required, setter: (value) => required = value);
+  }
+
+  @override
+  void initializeAttributes(Map<String, dom.ElementAttributeProperty> attributes) {
+    super.initializeAttributes(attributes);
+    attributes['required'] = dom.ElementAttributeProperty(
+        getter: () => required.toString(),
+        setter: (value) => required = dom.attributeToProperty<bool>(value),
+        deleter: _markPseudoStateDirty);
+  }
 
   // Public helper to allow other classes to mark focus request before mount.
   void markPendingFocus() {
@@ -281,6 +297,56 @@ mixin BaseInputElement on WidgetElement implements FormElementBase {
     internalSetAttribute('readonly', value?.toString() ?? '');
   }
 
+  bool get required => _hasAttributeIgnoreCase('required');
+
+  set required(value) {
+    _setBooleanAttribute('required', _coerceBooleanAttribute(value));
+  }
+
+  bool _coerceBooleanAttribute(dynamic value) {
+    if (value == null) return false;
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) return true;
+    return value == true;
+  }
+
+  void _setBooleanAttribute(String name, bool enabled) {
+    if (enabled) {
+      internalSetAttribute(name, '');
+    } else {
+      _removeAttributeIgnoreCase(name);
+    }
+    _markPseudoStateDirty();
+  }
+
+  bool _hasAttributeIgnoreCase(String name) {
+    if (attributes.containsKey(name)) return true;
+    final String lower = name.toLowerCase();
+    for (final String key in attributes.keys) {
+      if (key.toLowerCase() == lower) return true;
+    }
+    return false;
+  }
+
+  void _removeAttributeIgnoreCase(String name) {
+    final String lower = name.toLowerCase();
+    String? keyToRemove;
+    if (attributes.containsKey(name)) {
+      keyToRemove = name;
+    } else {
+      for (final String key in attributes.keys) {
+        if (key.toLowerCase() == lower) {
+          keyToRemove = key;
+          break;
+        }
+      }
+    }
+    if (keyToRemove != null) {
+      removeAttribute(keyToRemove);
+    }
+  }
+
   List<BorderSide>? get borderSides => renderStyle.borderSides;
 
   // for type
@@ -410,7 +476,7 @@ mixin BaseInputState on WebFWidgetElementState {
 
   void handleFocusChange() {
     if (_isFocus) {
-      widgetElement.updateFocusState(true);
+      widgetElement.ownerDocument.updateFocusTarget(widgetElement);
       widgetElement.oldValue = widgetElement.value;
       scheduleMicrotask(() {
         widgetElement.dispatchEvent(dom.FocusEvent(dom.EVENT_FOCUS, relatedTarget: widgetElement));
@@ -429,7 +495,7 @@ mixin BaseInputState on WebFWidgetElementState {
         });
       });
     } else {
-      widgetElement.updateFocusState(false);
+      widgetElement.ownerDocument.clearFocusTarget(widgetElement);
       if (widgetElement.oldValue != widgetElement.value) {
         scheduleMicrotask(() {
           widgetElement.dispatchEvent(dom.Event('change'));

@@ -13,6 +13,11 @@ export interface HTMLElement extends Element, GlobalEventHandlers {
   readonly offsetWidth: SupportAsync<DartImpl<DependentsOnLayout<double>>>;
   readonly offsetHeight: SupportAsync<DartImpl<DependentsOnLayout<double>>>;
 
+  tabIndex: DartImpl<number>;
+
+  focus(): DartImpl<void>;
+  blur(): DartImpl<void>;
+
   click(): DartImpl<DependentsOnLayout<void>>;
 
   new(): void;
