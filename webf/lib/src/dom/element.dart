@@ -154,7 +154,7 @@ abstract class Element extends ContainerNode
     // Maintain attribute presence index for [id] selectors.
     // Treat any non-null assignment (including empty string) as presence=true.
     _updateAttrPresenceIndex(_idAttr, present: id != null);
-    if (DebugFlags.enableCssBatchRecalc) {
+    if (_shouldBatchRecalculateStyle) {
       ownerDocument.markElementStyleDirty(this, reason: 'batch:id');
       if (oldId != id) {
         _markHasSelectorsDirty();
@@ -180,6 +180,9 @@ abstract class Element extends ContainerNode
 
   // The attrs.
   final Map<String, String> attributes = <String, String>{};
+
+  bool get _shouldBatchRecalculateStyle =>
+      DebugFlags.enableCssBatchRecalc && !ownerDocument.ownerView.enableBlink;
 
   /// The style of the element, not inline style.
   late CSSStyleDeclaration style;
@@ -246,7 +249,7 @@ abstract class Element extends ContainerNode
     _updateClassIndex(oldClasses, _classList);
     // Maintain attribute presence index for [class] selectors.
     _updateAttrPresenceIndex(_classNameAttr, present: true);
-    if (DebugFlags.enableCssBatchRecalc) {
+    if (_shouldBatchRecalculateStyle) {
       ownerDocument.markElementStyleDirty(this, reason: 'batch:class');
       if (classChanged) {
         _markHasSelectorsDirty();
@@ -1538,7 +1541,7 @@ abstract class Element extends ContainerNode
       }
     } else {
       final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
-      if (DebugFlags.enableCssBatchRecalc) {
+      if (_shouldBatchRecalculateStyle) {
         ownerDocument.markElementStyleDirty(this,
             reason: 'batch:attr:$qualifiedName');
       } else {
@@ -1582,7 +1585,7 @@ abstract class Element extends ContainerNode
     if (hasAttribute(qualifiedName)) {
       attributes.remove(qualifiedName);
       final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
-      if (DebugFlags.enableCssBatchRecalc) {
+      if (_shouldBatchRecalculateStyle) {
         ownerDocument.markElementStyleDirty(this,
             reason: 'batch:remove:$qualifiedName');
       } else {
