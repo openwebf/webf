@@ -1020,8 +1020,8 @@ class RenderFlexLayout extends RenderLayoutBox {
   // Calculate automatic minimum size of flex item.
   // Refer to https://www.w3.org/TR/css-flexbox-1/#min-size-auto for detail rules
   double _getAutoMinSize(RenderBoxModel child) {
-    RenderStyle? childRenderStyle = child.renderStyle;
-    double? childAspectRatio = childRenderStyle.aspectRatio;
+    final CSSRenderStyle childRenderStyle = child.renderStyle;
+    final double? childAspectRatio = childRenderStyle.aspectRatio;
     // Use content-box for specified size suggestion, per spec language.
     // The automatic minimum size compares content-box suggestions and only
     // converts to border-box at the end by adding padding/border.
@@ -1031,7 +1031,31 @@ class RenderFlexLayout extends RenderLayoutBox {
     // If the item’s computed main size property is definite, then the specified size suggestion is that size
     // (clamped by its max main size property if it’s definite). It is otherwise undefined.
     // https://www.w3.org/TR/css-flexbox-1/#specified-size-suggestion
-    double? specifiedSize = _isHorizontalFlexDirection ? childLogicalWidth : childLogicalHeight;
+    double? specifiedSize;
+    final CSSLengthValue mainSize = _isHorizontalFlexDirection ? childRenderStyle.width : childRenderStyle.height;
+    if (!mainSize.isIntrinsic && mainSize.isNotAuto) {
+      if (mainSize.type == CSSLengthType.PERCENTAGE) {
+        // Percentage main sizes resolve against the flex container and may be
+        // indefinite until layout. Use the already-resolved logical size when
+        // available.
+        specifiedSize = _isHorizontalFlexDirection ? childLogicalWidth : childLogicalHeight;
+      } else {
+        // Avoid using `contentBoxLogicalWidth/Height` here: those values can be
+        // overridden by flex sizing (grow/shrink) and would make the "specified
+        // size suggestion" depend on the container constraints, breaking cases
+        // like a 100px-wide <img> in a 10px flex container (should overflow, not shrink).
+        final double borderBoxMain = mainSize.computedValue;
+        if (borderBoxMain.isFinite) {
+          double contentBoxMain = _isHorizontalFlexDirection
+              ? childRenderStyle.deflatePaddingBorderWidth(borderBoxMain)
+              : childRenderStyle.deflatePaddingBorderHeight(borderBoxMain);
+          if (!contentBoxMain.isFinite || contentBoxMain < 0) contentBoxMain = 0;
+          specifiedSize = contentBoxMain;
+        }
+      }
+    } else {
+      specifiedSize = null;
+    }
 
     // If the item has an intrinsic aspect ratio and its computed cross size property is definite, then the
     // transferred size suggestion is that size (clamped by its min and max cross size properties if they
