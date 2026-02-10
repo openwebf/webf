@@ -1242,5 +1242,72 @@ void main() {
       expect(item1.offsetHeight, equals(50.0));
       expect(item2.offsetHeight, equals(50.0));
     });
+
+    testWidgets('flex:1 text with fixed-size img sibling should not collapse', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'flex-overflow-hidden-img-sibling-test',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="row" style="
+                display: flex;
+                width: 132px;
+                height: 20px;
+                align-items: center;
+                background-color: #eee;
+              ">
+                <span id="name" style="
+                  flex: 1;
+                  overflow: hidden;
+                  white-space: nowrap;
+                  text-overflow: ellipsis;
+                ">CryptoTrader123</span>
+                <span id="badge" style="margin-left: 4px;">
+                  <img id="img" style="width: 16px; height: 16px;"
+                    src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'300'%20height%3D'224'%3E%3Crect%20width%3D'300'%20height%3D'224'%20fill%3D'red'%2F%3E%3C%2Fsvg%3E" />
+                </span>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final name = prepared.getElementById('name');
+      final badge = prepared.getElementById('badge');
+      final img = prepared.getElementById('img');
+
+      // Badge stays at its CSS size, not its intrinsic size (300px).
+      expect(img.offsetWidth, equals(16.0));
+      expect(img.offsetHeight, equals(16.0));
+
+      // Name takes remaining space: 132 - (badge margin-left 4 + img width 16) = 112.
+      expect(badge.offsetWidth, equals(16.0));
+      expect(name.offsetWidth, equals(112.0));
+    });
+
+    testWidgets('specified width caps intrinsic min-content for flex items', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'flex-specified-width-overflow-test',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="constrained" style="display: flex; width: 10px;">
+                <img id="img" style="width: 100px; height: 100px;"
+                  src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'200'%20height%3D'200'%3E%3Crect%20width%3D'200'%20height%3D'200'%20fill%3D'green'%2F%3E%3C%2Fsvg%3E" />
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final constrained = prepared.getElementById('constrained');
+      final img = prepared.getElementById('img');
+
+      expect(constrained.offsetWidth, equals(10.0));
+      expect(img.offsetWidth, equals(100.0));
+      expect(img.offsetHeight, equals(100.0));
+    });
   });
 }
