@@ -33,12 +33,12 @@ export const ShadcnShowcasePage: React.FC = () => {
           <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
             <Item label="Buttons" desc="Primary, secondary, destructive, outline, ghost variants" to="/shadcn/buttons" />
             <Item label="Icon Button" desc="Icon-only buttons with Lucide icons" to="/shadcn/icon-button" />
-            {/*<Item label="Input" desc="Text input with various types and states" to="/shadcn/input" />*/}
+            <Item label="Input" desc="Text input with various types and states" to="/shadcn/input" />
             <Item label="Checkbox & Switch" desc="Toggle controls for forms" to="/shadcn/checkbox-switch" />
-            {/*<Item label="Select & Combobox" desc="Dropdown selection components" to="/shadcn/select" />*/}
-            {/*<Item label="Slider" desc="Range selection slider" to="/shadcn/slider" />*/}
-            {/*<Item label="Radio Group" desc="Single selection from multiple options" to="/shadcn/radio" />*/}
-            {/*<Item label="Form" desc="Form state management with validation" to="/shadcn/form" />*/}
+            <Item label="Select & Combobox" desc="Dropdown selection components" to="/shadcn/select" />
+            <Item label="Slider" desc="Range selection slider" to="/shadcn/slider" />
+            <Item label="Radio Group" desc="Single selection from multiple options" to="/shadcn/radio" />
+            <Item label="Form" desc="Form state management with validation" to="/shadcn/form" />
           </div>
 
           <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-zinc-500">Display Components</h2>
@@ -46,13 +46,13 @@ export const ShadcnShowcasePage: React.FC = () => {
             <Item label="Card" desc="Container with header, content, and footer" to="/shadcn/card" />
             <Item label="Alert & Badge" desc="Notifications and status indicators" to="/shadcn/alert-badge" />
             <Item label="Avatar" desc="User profile images" to="/shadcn/avatar" />
-            {/*<Item label="Progress" desc="Loading and progress indicators" to="/shadcn/progress" />*/}
-            {/*<Item label="Skeleton" desc="Loading placeholder animations" to="/shadcn/skeleton" />*/}
+            <Item label="Progress" desc="Loading and progress indicators" to="/shadcn/progress" />
+            <Item label="Skeleton" desc="Loading placeholder animations" to="/shadcn/skeleton" />
           </div>
 
           <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-zinc-500">Navigation & Layout</h2>
           <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
-            {/*<Item label="Tabs" desc="Tabbed content navigation" to="/shadcn/tabs" />*/}
+            <Item label="Tabs" desc="Tabbed content navigation" to="/shadcn/tabs" />
             <Item label="Accordion" desc="Collapsible content sections" to="/shadcn/accordion" />
             <Item label="Dialog & Sheet" desc="Modal dialogs and bottom sheets" to="/shadcn/dialog" />
             <Item label="Breadcrumb" desc="Navigation hierarchy" to="/shadcn/breadcrumb" />
@@ -60,7 +60,7 @@ export const ShadcnShowcasePage: React.FC = () => {
 
           <h2 className="text-lg font-semibold text-fg-primary mb-3 pl-3 border-l-4 border-zinc-500">Data & Pickers</h2>
           <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
-            {/*<Item label="Table" desc="Data table with headers and rows" to="/shadcn/table" />*/}
+            <Item label="Table" desc="Data table with headers and rows" to="/shadcn/table" />
             <Item label="Calendar & Date Picker" desc="Date selection components" to="/shadcn/calendar" />
           </div>
 
@@ -68,7 +68,7 @@ export const ShadcnShowcasePage: React.FC = () => {
           <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
             <Item label="Dropdown Menu" desc="Action menu dropdowns" to="/shadcn/dropdown" />
             <Item label="Context Menu" desc="Right-click context menus" to="/shadcn/context-menu" />
-            {/*<Item label="Popover & Tooltip" desc="Floating content and hints" to="/shadcn/popover" />*/}
+            <Item label="Popover & Tooltip" desc="Floating content and hints" to="/shadcn/popover" />
           </div>
         </div>
       </WebFListView>
