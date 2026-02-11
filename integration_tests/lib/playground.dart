@@ -110,7 +110,7 @@ class WebFPage extends StatelessWidget {
                     viewportWidth: 360,
                     viewportHeight: 640,
                     background: Colors.black12,
-                    enableBlink: true,
+                    enableBlink: false,
                     onControllerInit: (controller) async {
                       double contextId = controller.view.contextId;
                       Pointer<Void> testContext = initTestFramework(contextId);
