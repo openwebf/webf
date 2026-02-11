@@ -25,27 +25,27 @@ abstract class FlutterShadcnButtonBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['variant'] = ElementAttributeProperty(
       getter: () => variant?.toString(),
-      setter: (value) => this.variant = value,
+      setter: (value) => variant = value,
       deleter: () => variant = null
     );
     attributes['size'] = ElementAttributeProperty(
       getter: () => size?.toString(),
-      setter: (value) => this.size = value,
+      setter: (value) => size = value,
       deleter: () => size = null
     );
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => disabled.toString(),
-      setter: (value) => this.disabled = value == 'true' || value == '',
+      setter: (value) => disabled = value == 'true' || value == '',
       deleter: () => disabled = false
     );
     attributes['loading'] = ElementAttributeProperty(
       getter: () => loading.toString(),
-      setter: (value) => this.loading = value == 'true' || value == '',
+      setter: (value) => loading = value == 'true' || value == '',
       deleter: () => loading = false
     );
     attributes['icon'] = ElementAttributeProperty(
       getter: () => icon?.toString(),
-      setter: (value) => this.icon = value,
+      setter: (value) => icon = value,
       deleter: () => icon = null
     );
   }

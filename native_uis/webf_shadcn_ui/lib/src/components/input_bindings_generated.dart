@@ -55,102 +55,102 @@ abstract class FlutterShadcnInputBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['value'] = ElementAttributeProperty(
       getter: () => value?.toString(),
-      setter: (value) => this.value = value,
+      setter: (value) => value = value,
       deleter: () => value = null
     );
     attributes['placeholder'] = ElementAttributeProperty(
       getter: () => placeholder?.toString(),
-      setter: (value) => this.placeholder = value,
+      setter: (value) => placeholder = value,
       deleter: () => placeholder = null
     );
     attributes['type'] = ElementAttributeProperty(
       getter: () => type?.toString(),
-      setter: (value) => this.type = value,
+      setter: (value) => type = value,
       deleter: () => type = null
     );
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => disabled.toString(),
-      setter: (value) => this.disabled = value == 'true' || value == '',
+      setter: (value) => disabled = value == 'true' || value == '',
       deleter: () => disabled = false
     );
     attributes['readonly'] = ElementAttributeProperty(
       getter: () => readonly.toString(),
-      setter: (value) => this.readonly = value == 'true' || value == '',
+      setter: (value) => readonly = value == 'true' || value == '',
       deleter: () => readonly = false
     );
     attributes['maxlength'] = ElementAttributeProperty(
       getter: () => maxlength?.toString(),
-      setter: (value) => this.maxlength = value,
+      setter: (value) => maxlength = value,
       deleter: () => maxlength = null
     );
     attributes['minlength'] = ElementAttributeProperty(
       getter: () => minlength?.toString(),
-      setter: (value) => this.minlength = value,
+      setter: (value) => minlength = value,
       deleter: () => minlength = null
     );
     attributes['pattern'] = ElementAttributeProperty(
       getter: () => pattern?.toString(),
-      setter: (value) => this.pattern = value,
+      setter: (value) => pattern = value,
       deleter: () => pattern = null
     );
     attributes['required'] = ElementAttributeProperty(
       getter: () => required.toString(),
-      setter: (value) => this.required = value == 'true' || value == '',
+      setter: (value) => required = value == 'true' || value == '',
       deleter: () => required = false
     );
     attributes['autofocus'] = ElementAttributeProperty(
       getter: () => autofocus.toString(),
-      setter: (value) => this.autofocus = value == 'true' || value == '',
+      setter: (value) => autofocus = value == 'true' || value == '',
       deleter: () => autofocus = false
     );
     attributes['textalign'] = ElementAttributeProperty(
       getter: () => textalign?.toString(),
-      setter: (value) => this.textalign = value,
+      setter: (value) => textalign = value,
       deleter: () => textalign = null
     );
     attributes['autocapitalize'] = ElementAttributeProperty(
       getter: () => autocapitalize?.toString(),
-      setter: (value) => this.autocapitalize = value,
+      setter: (value) => autocapitalize = value,
       deleter: () => autocapitalize = null
     );
     attributes['autocorrect'] = ElementAttributeProperty(
       getter: () => autocorrect.toString(),
-      setter: (value) => this.autocorrect = value == 'true' || value == '',
-      deleter: () => autocorrect = true
+      setter: (value) => autocorrect = value == 'true' || value == '',
+      deleter: () => autocorrect = false
     );
     attributes['enablesuggestions'] = ElementAttributeProperty(
       getter: () => enablesuggestions.toString(),
-      setter: (value) => this.enablesuggestions = value == 'true' || value == '',
-      deleter: () => enablesuggestions = true
+      setter: (value) => enablesuggestions = value == 'true' || value == '',
+      deleter: () => enablesuggestions = false
     );
     attributes['enterkeyhint'] = ElementAttributeProperty(
       getter: () => enterkeyhint?.toString(),
-      setter: (value) => this.enterkeyhint = value,
+      setter: (value) => enterkeyhint = value,
       deleter: () => enterkeyhint = null
     );
     attributes['maxlines'] = ElementAttributeProperty(
       getter: () => maxlines?.toString(),
-      setter: (value) => this.maxlines = value,
+      setter: (value) => maxlines = value,
       deleter: () => maxlines = null
     );
     attributes['minlines'] = ElementAttributeProperty(
       getter: () => minlines?.toString(),
-      setter: (value) => this.minlines = value,
+      setter: (value) => minlines = value,
       deleter: () => minlines = null
     );
     attributes['cursorcolor'] = ElementAttributeProperty(
       getter: () => cursorcolor?.toString(),
-      setter: (value) => this.cursorcolor = value,
+      setter: (value) => cursorcolor = value,
       deleter: () => cursorcolor = null
     );
     attributes['selectioncolor'] = ElementAttributeProperty(
       getter: () => selectioncolor?.toString(),
-      setter: (value) => this.selectioncolor = value,
+      setter: (value) => selectioncolor = value,
       deleter: () => selectioncolor = null
     );
     attributes['obscuringcharacter'] = ElementAttributeProperty(
       getter: () => obscuringcharacter?.toString(),
-      setter: (value) => this.obscuringcharacter = value,
+      setter: (value) => obscuringcharacter = value,
       deleter: () => obscuringcharacter = null
     );
   }

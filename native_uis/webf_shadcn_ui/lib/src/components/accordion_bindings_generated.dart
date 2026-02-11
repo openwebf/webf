@@ -21,17 +21,17 @@ abstract class FlutterShadcnAccordionBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['type'] = ElementAttributeProperty(
       getter: () => type?.toString(),
-      setter: (value) => this.type = value,
+      setter: (value) => type = value,
       deleter: () => type = null
     );
     attributes['value'] = ElementAttributeProperty(
       getter: () => value?.toString(),
-      setter: (value) => this.value = value,
+      setter: (value) => value = value,
       deleter: () => value = null
     );
     attributes['collapsible'] = ElementAttributeProperty(
       getter: () => collapsible.toString(),
-      setter: (value) => this.collapsible = value == 'true' || value == '',
+      setter: (value) => collapsible = value == 'true' || value == '',
       deleter: () => collapsible = false
     );
   }

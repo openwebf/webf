@@ -19,12 +19,12 @@ abstract class FlutterShadcnSwitchBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['checked'] = ElementAttributeProperty(
       getter: () => checked.toString(),
-      setter: (value) => this.checked = value == 'true' || value == '',
+      setter: (value) => checked = value == 'true' || value == '',
       deleter: () => checked = false
     );
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => disabled.toString(),
-      setter: (value) => this.disabled = value == 'true' || value == '',
+      setter: (value) => disabled = value == 'true' || value == '',
       deleter: () => disabled = false
     );
   }

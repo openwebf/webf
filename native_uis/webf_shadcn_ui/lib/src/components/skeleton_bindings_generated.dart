@@ -21,17 +21,17 @@ abstract class FlutterShadcnSkeletonBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['width'] = ElementAttributeProperty(
       getter: () => width?.toString(),
-      setter: (value) => this.width = value,
+      setter: (value) => width = value,
       deleter: () => width = null
     );
     attributes['height'] = ElementAttributeProperty(
       getter: () => height?.toString(),
-      setter: (value) => this.height = value,
+      setter: (value) => height = value,
       deleter: () => height = null
     );
     attributes['circle'] = ElementAttributeProperty(
       getter: () => circle.toString(),
-      setter: (value) => this.circle = value == 'true' || value == '',
+      setter: (value) => circle = value == 'true' || value == '',
       deleter: () => circle = false
     );
   }
