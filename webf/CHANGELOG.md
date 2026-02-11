@@ -1,3 +1,36 @@
+## 0.24.12
+
+### Major Features
+
+- **Routing**: add browser-history routing support for `@openwebf/react-router` and
+  `@openwebf/vue-router`, improving web-style navigation and `RouterLink` behavior (#850).
+- **Native UIs/Icons**: expand `webf_lucide_icons` support and add React/Vue showcases (#850).
+- **Tooling/Codegen**: enhance Vue generator output (runtime enum exports, updated templates) and
+  add generator tests for Dart method interface bindings (#850).
+
+### Performance Improvements
+
+- **Widget Elements**: cache stable default attributes on the native side to make `getAttribute()`
+  non-blocking for common widget defaults (#850).
+
+### Bug Fixes
+
+- **CSS/Selectors**: fix `:has()` selector state flags for `:checked` and `:disabled` matching in
+  the Blink backend (#849).
+- **CSS/Values**: prevent `calc(% - px)` from collapsing during shrink-to-fit sizing (flex items);
+  add regression snapshots (#851).
+- **Scrolling/Focus**: prevent focused inputs from scrolling the page to the top; add a
+  `showOnScreen` regression test (#851).
+- **Overflow**: fix height collapse for `overflow:hidden` children inside `WebFListView` (#850).
+- **Rendering/Grid**: re-resolve `fr` row tracks after intrinsic sizing to match expected track
+  sizing behavior (#850).
+- **Bridge/UICommand**: prevent re-entrant `flushUICommand` calls from causing missing DOM
+  elements (#850).
+- **Gestures**: guard against null `attachedRenderer` in click handling (#850).
+- **Lifecycle**: remove asserts that could fire on disposed nodes during teardown (#850).
+- **Rendering/Flexbox**: correct `min-size:auto` behavior for replaced elements (e.g. images) in
+  flex layouts (#853).
+
 ## 0.24.11
 
 ### Major Features
