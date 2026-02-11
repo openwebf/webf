@@ -74,67 +74,67 @@ abstract class FlutterShadcnCalendarBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['mode'] = ElementAttributeProperty(
       getter: () => mode?.value,
-      setter: (value) => this.mode = FlutterShadcnCalendarMode.parse(value),
+      setter: (value) => mode = FlutterShadcnCalendarMode.parse(value),
       deleter: () => mode = null
     );
     attributes['value'] = ElementAttributeProperty(
       getter: () => value?.toString(),
-      setter: (value) => this.value = value,
+      setter: (value) => value = value,
       deleter: () => value = null
     );
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => disabled.toString(),
-      setter: (value) => this.disabled = value == 'true' || value == '',
+      setter: (value) => disabled = value == 'true' || value == '',
       deleter: () => disabled = false
     );
     attributes['min'] = ElementAttributeProperty(
       getter: () => min?.toString(),
-      setter: (value) => this.min = value,
+      setter: (value) => min = value,
       deleter: () => min = null
     );
     attributes['max'] = ElementAttributeProperty(
       getter: () => max?.toString(),
-      setter: (value) => this.max = value,
+      setter: (value) => max = value,
       deleter: () => max = null
     );
     attributes['caption-layout'] = ElementAttributeProperty(
       getter: () => captionLayout?.value,
-      setter: (value) => this.captionLayout = FlutterShadcnCalendarCaptionLayout.parse(value),
+      setter: (value) => captionLayout = FlutterShadcnCalendarCaptionLayout.parse(value),
       deleter: () => captionLayout = null
     );
     attributes['hide-navigation'] = ElementAttributeProperty(
       getter: () => hideNavigation.toString(),
-      setter: (value) => this.hideNavigation = value == 'true' || value == '',
+      setter: (value) => hideNavigation = value == 'true' || value == '',
       deleter: () => hideNavigation = false
     );
     attributes['show-week-numbers'] = ElementAttributeProperty(
       getter: () => showWeekNumbers.toString(),
-      setter: (value) => this.showWeekNumbers = value == 'true' || value == '',
+      setter: (value) => showWeekNumbers = value == 'true' || value == '',
       deleter: () => showWeekNumbers = false
     );
     attributes['show-outside-days'] = ElementAttributeProperty(
       getter: () => showOutsideDays.toString(),
-      setter: (value) => this.showOutsideDays = value == 'true' || value == '',
+      setter: (value) => showOutsideDays = value == 'true' || value == '',
       deleter: () => showOutsideDays = false
     );
     attributes['fixed-weeks'] = ElementAttributeProperty(
       getter: () => fixedWeeks.toString(),
-      setter: (value) => this.fixedWeeks = value == 'true' || value == '',
+      setter: (value) => fixedWeeks = value == 'true' || value == '',
       deleter: () => fixedWeeks = false
     );
     attributes['hide-weekday-names'] = ElementAttributeProperty(
       getter: () => hideWeekdayNames.toString(),
-      setter: (value) => this.hideWeekdayNames = value == 'true' || value == '',
+      setter: (value) => hideWeekdayNames = value == 'true' || value == '',
       deleter: () => hideWeekdayNames = false
     );
     attributes['number-of-months'] = ElementAttributeProperty(
       getter: () => numberOfMonths?.toString(),
-      setter: (value) => this.numberOfMonths = double.tryParse(value) ?? 0.0,
+      setter: (value) => numberOfMonths = double.tryParse(value) ?? 0.0,
       deleter: () => numberOfMonths = 0.0
     );
     attributes['allow-deselection'] = ElementAttributeProperty(
       getter: () => allowDeselection.toString(),
-      setter: (value) => this.allowDeselection = value == 'true' || value == '',
+      setter: (value) => allowDeselection = value == 'true' || value == '',
       deleter: () => allowDeselection = false
     );
   }
