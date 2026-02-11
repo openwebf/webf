@@ -452,12 +452,32 @@ class FlutterShadcnInputState extends WebFWidgetElementState {
       ];
     }
 
+    // Map textAlign to ShadInput's alignment + placeholderAlignment.
+    // ShadInput uses three separate alignment controls:
+    //   textAlign        -> text within EditableText
+    //   alignment        -> positions the EditableText widget in the Stack
+    //   placeholderAlignment -> positions the placeholder Text in the Stack
+    AlignmentGeometry? widgetAlignment;
+    switch (widgetElement._textAlign) {
+      case TextAlign.center:
+        widgetAlignment = Alignment.topCenter;
+        break;
+      case TextAlign.right:
+      case TextAlign.end:
+        widgetAlignment = Alignment.topRight;
+        break;
+      default:
+        widgetAlignment = null; // ShadInput defaults to topLeft
+    }
+
     return ShadInput(
       controller: _controller,
       focusNode: _focusNode,
       placeholder: widgetElement.placeholder != null
           ? Text(widgetElement.placeholder!)
           : null,
+      placeholderAlignment: widgetAlignment,
+      alignment: widgetAlignment,
       enabled: !widgetElement.disabled,
       readOnly: widgetElement.readonly,
       obscureText: widgetElement.obscureText,
