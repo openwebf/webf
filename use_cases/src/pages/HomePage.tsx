@@ -126,6 +126,7 @@ type QuickStartItem = {
   to: string;
   icon: LucideIcons;
   gradient: string;
+  hidden?: boolean;
 };
 
 const quickStart: QuickStartItem[] = [
@@ -149,6 +150,7 @@ const quickStart: QuickStartItem[] = [
     to: '/shadcn-showcase',
     icon: LucideIcons.box,
     gradient: 'linear-gradient(135deg, #8b5cf6, #ec4899)',
+    hidden: !import.meta.env.DEV,
   }
 ];
 
@@ -359,7 +361,7 @@ export const HomePage: React.FC = () => {
             gap: '10px',
             overflowX: 'auto' as const,
           }}>
-            {quickStart.map((qs) => (
+            {quickStart.filter((qs) => !qs.hidden).map((qs) => (
               <QuickStartCard key={qs.to} item={qs} />
             ))}
           </div>
