@@ -83,3 +83,7 @@ pubspec.lock
 *.generated.dart
 
 .flutter-plugins-dependencies
+
+# Dylibs should not be committed
+/macos/libquickjs.dylib
+/macos/libwebf.dylib
