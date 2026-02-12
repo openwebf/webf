@@ -33,6 +33,7 @@
   "scripts": {
     "start": "vite",
     "dev": "vite",
+    "prebuild": "pnpm -C ../packages/react-shadcn-ui run build",
     "build": "vite build",
     "preview": "vite preview",
     "test": "react-scripts test"
