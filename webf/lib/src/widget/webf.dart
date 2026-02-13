@@ -488,7 +488,10 @@ class WebFState extends State<WebF> with RouteAware {
   @override
   void didPop() {
     ModalRoute route = ModalRoute.of(context)!;
-    var state = route.settings.arguments;
+    final delegate = widget.controller.hybridHistory.delegate;
+    final state = delegate != null
+        ? delegate.state(context, null)
+        : route.settings.arguments;
     String path = route.settings.name ?? widget.controller.initialRoute ?? '/';
 
     Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPop', path: path);
@@ -502,7 +505,10 @@ class WebFState extends State<WebF> with RouteAware {
   @override
   void didPopNext() {
     ModalRoute route = ModalRoute.of(context)!;
-    var state = route.settings.arguments;
+    final delegate = widget.controller.hybridHistory.delegate;
+    final state = delegate != null
+        ? delegate.state(context, null)
+        : route.settings.arguments;
     String path = route.settings.name ?? widget.controller.initialRoute ?? '';
 
     Event event =
@@ -517,7 +523,10 @@ class WebFState extends State<WebF> with RouteAware {
   @override
   void didPush() async {
     ModalRoute route = ModalRoute.of(context)!;
-    var state = route.settings.arguments;
+    final delegate = widget.controller.hybridHistory.delegate;
+    final state = delegate != null
+        ? delegate.state(context, null)
+        : route.settings.arguments;
     String path = route.settings.name ?? widget.controller.initialRoute ?? '';
 
     await widget.controller.controlledInitCompleter.future;
@@ -538,7 +547,10 @@ class WebFState extends State<WebF> with RouteAware {
   @override
   void didPushNext() async {
     ModalRoute route = ModalRoute.of(context)!;
-    var state = route.settings.arguments;
+    final delegate = widget.controller.hybridHistory.delegate;
+    final state = delegate != null
+        ? delegate.state(context, null)
+        : route.settings.arguments;
     String path = route.settings.name ?? widget.controller.initialRoute ?? '';
 
     await widget.controller.controlledInitCompleter.future;
