@@ -353,9 +353,9 @@ class Element : public ContainerNode {
   bool MatchesReadWritePseudoClass() const { return false; }
   bool IsOptionalFormControl() const;
   bool IsRequiredFormControl() const;
-  bool MatchesValidityPseudoClasses() const;
-  bool IsValidElement() const;
-  bool IsCheckedState() const { return checked_state_; }
+ bool MatchesValidityPseudoClasses() const;
+ bool IsValidElement() const;
+ bool IsCheckedState() const;
 
   // Additional methods for selector matching
   bool ContainsPersistentVideo() const { return false; }
@@ -375,10 +375,12 @@ class Element : public ContainerNode {
 
   // add for invalidation end
  protected:
-  void SetAttributeInternal(const AtomicString&,
-                            const AtomicString& value,
-                            AttributeModificationReason reason,
-                            ExceptionState& exception_state);
+ void SetAttributeInternal(const AtomicString&,
+                           const AtomicString& value,
+                           AttributeModificationReason reason,
+                           ExceptionState& exception_state);
+
+  void SetCheckedStateFromDart(bool checked);
 
   void DetachAllAttrNodesFromElement();
 

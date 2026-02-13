@@ -1117,10 +1117,12 @@ abstract class Element extends ContainerNode
         }
         // increments on ::before pseudo only for the current element being evaluated
         if (identical(node, this)) {
-          final incBefore = node.style.pseudoBeforeStyle == null
+          final CSSStyleDeclaration? beforeStyle =
+              node.style.resolvedPseudoBeforeStyle;
+          final incBefore = beforeStyle == null
               ? ''
-              : getProp(node.style.pseudoBeforeStyle!, 'counterIncrement',
-                  'counter-increment');
+              : getProp(
+                  beforeStyle, 'counterIncrement', 'counter-increment');
           if (incBefore.isNotEmpty && incBefore != 'none') {
             final map = _parseCounterIncrementList(incBefore);
             final add = (map[name] ?? 0);
@@ -1232,9 +1234,13 @@ abstract class Element extends ContainerNode
             allocateNewBindingObject()));
 
     // Merge pseudo-specific style rules collected on the parent onto the pseudo element.
-    previousPseudoElement.style.merge(kind == PseudoKind.kPseudoBefore
-        ? style.pseudoBeforeStyle!
-        : style.pseudoAfterStyle!);
+    final CSSStyleDeclaration? pseudoStyle =
+        kind == PseudoKind.kPseudoBefore
+            ? style.resolvedPseudoBeforeStyle
+            : style.resolvedPseudoAfterStyle;
+    if (pseudoStyle != null) {
+      previousPseudoElement.style.merge(pseudoStyle);
+    }
 
     // Attach the pseudo element to the correct position in the DOM tree if not already attached.
     switch (kind) {
@@ -1293,7 +1299,7 @@ abstract class Element extends ContainerNode
   void _updateBeforePseudoElement() {
     // Add pseudo elements
     String? beforeContent =
-        style.pseudoBeforeStyle?.getPropertyValue('content');
+        style.resolvedPseudoBeforeStyle?.getPropertyValue('content');
     if (beforeContent != null && beforeContent.isNotEmpty) {
       _beforeElement = _createOrUpdatePseudoElement(
           beforeContent, PseudoKind.kPseudoBefore, _beforeElement);
@@ -1312,7 +1318,8 @@ abstract class Element extends ContainerNode
   }
 
   void _updateAfterPseudoElement() {
-    String? afterContent = style.pseudoAfterStyle?.getPropertyValue('content');
+    String? afterContent =
+        style.resolvedPseudoAfterStyle?.getPropertyValue('content');
     if (afterContent != null && afterContent.isNotEmpty) {
       _afterElement = _createOrUpdatePseudoElement(
           afterContent, PseudoKind.kPseudoAfter, _afterElement);

@@ -116,34 +116,59 @@ class CSSStyleDeclaration extends DynamicBindingObject
   StyleFlushedListener? onStyleFlushed;
 
   CSSStyleDeclaration? _pseudoBeforeStyle;
+  CSSStyleDeclaration? _inlinePseudoBeforeStyle;
   CSSStyleDeclaration? get pseudoBeforeStyle => _pseudoBeforeStyle;
   set pseudoBeforeStyle(CSSStyleDeclaration? newStyle) {
     _pseudoBeforeStyle = newStyle;
     target?.markBeforePseudoElementNeedsUpdate();
   }
+  CSSStyleDeclaration? get resolvedPseudoBeforeStyle =>
+      _resolvePseudoStyle(_pseudoBeforeStyle, _inlinePseudoBeforeStyle);
 
   CSSStyleDeclaration? _pseudoAfterStyle;
+  CSSStyleDeclaration? _inlinePseudoAfterStyle;
   CSSStyleDeclaration? get pseudoAfterStyle => _pseudoAfterStyle;
   set pseudoAfterStyle(CSSStyleDeclaration? newStyle) {
     _pseudoAfterStyle = newStyle;
     target?.markAfterPseudoElementNeedsUpdate();
   }
+  CSSStyleDeclaration? get resolvedPseudoAfterStyle =>
+      _resolvePseudoStyle(_pseudoAfterStyle, _inlinePseudoAfterStyle);
 
   // ::first-letter pseudo style (applies to the first typographic letter)
   CSSStyleDeclaration? _pseudoFirstLetterStyle;
+  CSSStyleDeclaration? _inlinePseudoFirstLetterStyle;
   CSSStyleDeclaration? get pseudoFirstLetterStyle => _pseudoFirstLetterStyle;
   set pseudoFirstLetterStyle(CSSStyleDeclaration? newStyle) {
     _pseudoFirstLetterStyle = newStyle;
     // Trigger a layout rebuild so IFC can re-shape text for first-letter styling
     target?.markFirstLetterPseudoNeedsUpdate();
   }
+  CSSStyleDeclaration? get resolvedPseudoFirstLetterStyle =>
+      _resolvePseudoStyle(
+          _pseudoFirstLetterStyle, _inlinePseudoFirstLetterStyle);
 
   // ::first-line pseudo style (applies to only the first formatted line)
   CSSStyleDeclaration? _pseudoFirstLineStyle;
+  CSSStyleDeclaration? _inlinePseudoFirstLineStyle;
   CSSStyleDeclaration? get pseudoFirstLineStyle => _pseudoFirstLineStyle;
   set pseudoFirstLineStyle(CSSStyleDeclaration? newStyle) {
     _pseudoFirstLineStyle = newStyle;
     target?.markFirstLinePseudoNeedsUpdate();
+  }
+  CSSStyleDeclaration? get resolvedPseudoFirstLineStyle =>
+      _resolvePseudoStyle(_pseudoFirstLineStyle, _inlinePseudoFirstLineStyle);
+
+  bool _didProcessPseudoRules = false;
+
+  CSSStyleDeclaration? _resolvePseudoStyle(
+      CSSStyleDeclaration? ruleStyle, CSSStyleDeclaration? inlineStyle) {
+    if (ruleStyle == null) return inlineStyle;
+    if (inlineStyle == null) return ruleStyle;
+    final CSSStyleDeclaration resolved = CSSStyleDeclaration();
+    resolved.union(ruleStyle);
+    resolved.union(inlineStyle);
+    return resolved;
   }
 
   CSSStyleDeclaration([super.context]);
@@ -806,26 +831,26 @@ class CSSStyleDeclaration extends DynamicBindingObject
       {String? baseHref, bool validate = true}) {
     switch (type) {
       case 'before':
-        pseudoBeforeStyle ??= CSSStyleDeclaration();
-        pseudoBeforeStyle!.setProperty(propertyName, value,
+        _inlinePseudoBeforeStyle ??= CSSStyleDeclaration();
+        _inlinePseudoBeforeStyle!.setProperty(propertyName, value,
             isImportant: true, baseHref: baseHref, validate: validate);
         target?.markBeforePseudoElementNeedsUpdate();
         break;
       case 'after':
-        pseudoAfterStyle ??= CSSStyleDeclaration();
-        pseudoAfterStyle!.setProperty(propertyName, value,
+        _inlinePseudoAfterStyle ??= CSSStyleDeclaration();
+        _inlinePseudoAfterStyle!.setProperty(propertyName, value,
             isImportant: true, baseHref: baseHref, validate: validate);
         target?.markAfterPseudoElementNeedsUpdate();
         break;
       case 'first-letter':
-        pseudoFirstLetterStyle ??= CSSStyleDeclaration();
-        pseudoFirstLetterStyle!.setProperty(propertyName, value,
+        _inlinePseudoFirstLetterStyle ??= CSSStyleDeclaration();
+        _inlinePseudoFirstLetterStyle!.setProperty(propertyName, value,
             isImportant: true, baseHref: baseHref, validate: validate);
         target?.markFirstLetterPseudoNeedsUpdate();
         break;
       case 'first-line':
-        pseudoFirstLineStyle ??= CSSStyleDeclaration();
-        pseudoFirstLineStyle!.setProperty(propertyName, value,
+        _inlinePseudoFirstLineStyle ??= CSSStyleDeclaration();
+        _inlinePseudoFirstLineStyle!.setProperty(propertyName, value,
             isImportant: true, baseHref: baseHref, validate: validate);
         target?.markFirstLinePseudoNeedsUpdate();
         break;
@@ -836,27 +861,27 @@ class CSSStyleDeclaration extends DynamicBindingObject
   void removePseudoProperty(String type, String propertyName) {
     switch (type) {
       case 'before':
-        if (pseudoBeforeStyle != null) {
+        if (_inlinePseudoBeforeStyle != null) {
           // Remove the inline override; fall back to stylesheet value if present.
-          pseudoBeforeStyle!.removeProperty(propertyName, true);
+          _inlinePseudoBeforeStyle!.removeProperty(propertyName, true);
         }
         target?.markBeforePseudoElementNeedsUpdate();
         break;
       case 'after':
-        if (pseudoAfterStyle != null) {
-          pseudoAfterStyle!.removeProperty(propertyName, true);
+        if (_inlinePseudoAfterStyle != null) {
+          _inlinePseudoAfterStyle!.removeProperty(propertyName, true);
         }
         target?.markAfterPseudoElementNeedsUpdate();
         break;
       case 'first-letter':
-        if (pseudoFirstLetterStyle != null) {
-          pseudoFirstLetterStyle!.removeProperty(propertyName, true);
+        if (_inlinePseudoFirstLetterStyle != null) {
+          _inlinePseudoFirstLetterStyle!.removeProperty(propertyName, true);
         }
         target?.markFirstLetterPseudoNeedsUpdate();
         break;
       case 'first-line':
-        if (pseudoFirstLineStyle != null) {
-          pseudoFirstLineStyle!.removeProperty(propertyName, true);
+        if (_inlinePseudoFirstLineStyle != null) {
+          _inlinePseudoFirstLineStyle!.removeProperty(propertyName, true);
         }
         target?.markFirstLinePseudoNeedsUpdate();
         break;
@@ -866,19 +891,19 @@ class CSSStyleDeclaration extends DynamicBindingObject
   void clearPseudoStyle(String type) {
     switch (type) {
       case 'before':
-        pseudoBeforeStyle = null;
+        _inlinePseudoBeforeStyle = null;
         target?.markBeforePseudoElementNeedsUpdate();
         break;
       case 'after':
-        pseudoAfterStyle = null;
+        _inlinePseudoAfterStyle = null;
         target?.markAfterPseudoElementNeedsUpdate();
         break;
       case 'first-letter':
-        pseudoFirstLetterStyle = null;
+        _inlinePseudoFirstLetterStyle = null;
         target?.markFirstLetterPseudoNeedsUpdate();
         break;
       case 'first-line':
-        pseudoFirstLineStyle = null;
+        _inlinePseudoFirstLineStyle = null;
         target?.markFirstLinePseudoNeedsUpdate();
         break;
     }
@@ -945,7 +970,26 @@ class CSSStyleDeclaration extends DynamicBindingObject
   }
 
   void handlePseudoRules(Element parentElement, List<CSSStyleRule> rules) {
-    if (rules.isEmpty) return;
+    _didProcessPseudoRules = true;
+    if (rules.isEmpty) {
+      if (pseudoBeforeStyle != null) {
+        pseudoBeforeStyle = null;
+        parentElement.markBeforePseudoElementNeedsUpdate();
+      }
+      if (pseudoAfterStyle != null) {
+        pseudoAfterStyle = null;
+        parentElement.markAfterPseudoElementNeedsUpdate();
+      }
+      if (pseudoFirstLetterStyle != null) {
+        pseudoFirstLetterStyle = null;
+        parentElement.markFirstLetterPseudoNeedsUpdate();
+      }
+      if (pseudoFirstLineStyle != null) {
+        pseudoFirstLineStyle = null;
+        parentElement.markFirstLinePseudoNeedsUpdate();
+      }
+      return;
+    }
 
     List<CSSStyleRule> beforeRules = [];
     List<CSSStyleRule> afterRules = [];
@@ -976,6 +1020,7 @@ class CSSStyleDeclaration extends DynamicBindingObject
       parentElement.markBeforePseudoElementNeedsUpdate();
     } else if (beforeRules.isEmpty && pseudoBeforeStyle != null) {
       pseudoBeforeStyle = null;
+      parentElement.markBeforePseudoElementNeedsUpdate();
     }
 
     if (afterRules.isNotEmpty) {
@@ -983,6 +1028,7 @@ class CSSStyleDeclaration extends DynamicBindingObject
       parentElement.markAfterPseudoElementNeedsUpdate();
     } else if (afterRules.isEmpty && pseudoAfterStyle != null) {
       pseudoAfterStyle = null;
+      parentElement.markAfterPseudoElementNeedsUpdate();
     }
 
     if (firstLetterRules.isNotEmpty) {
@@ -990,6 +1036,7 @@ class CSSStyleDeclaration extends DynamicBindingObject
       parentElement.markFirstLetterPseudoNeedsUpdate();
     } else if (firstLetterRules.isEmpty && pseudoFirstLetterStyle != null) {
       pseudoFirstLetterStyle = null;
+      parentElement.markFirstLetterPseudoNeedsUpdate();
     }
 
     if (firstLineRules.isNotEmpty) {
@@ -997,6 +1044,7 @@ class CSSStyleDeclaration extends DynamicBindingObject
       parentElement.markFirstLinePseudoNeedsUpdate();
     } else if (firstLineRules.isEmpty && pseudoFirstLineStyle != null) {
       pseudoFirstLineStyle = null;
+      parentElement.markFirstLinePseudoNeedsUpdate();
     }
   }
 
@@ -1040,22 +1088,53 @@ class CSSStyleDeclaration extends DynamicBindingObject
     }
 
     // Merge pseudo-element styles. Ensure target side is initialized so rules from
-    // 'other' are not dropped when this side is null.
-    if (other.pseudoBeforeStyle != null) {
-      pseudoBeforeStyle ??= CSSStyleDeclaration();
-      pseudoBeforeStyle!.merge(other.pseudoBeforeStyle!);
-    }
-    if (other.pseudoAfterStyle != null) {
-      pseudoAfterStyle ??= CSSStyleDeclaration();
-      pseudoAfterStyle!.merge(other.pseudoAfterStyle!);
-    }
-    if (other.pseudoFirstLetterStyle != null) {
-      pseudoFirstLetterStyle ??= CSSStyleDeclaration();
-      pseudoFirstLetterStyle!.merge(other.pseudoFirstLetterStyle!);
-    }
-    if (other.pseudoFirstLineStyle != null) {
-      pseudoFirstLineStyle ??= CSSStyleDeclaration();
-      pseudoFirstLineStyle!.merge(other.pseudoFirstLineStyle!);
+    // 'other' are not dropped when this side is null. When pseudo rules were
+    // processed on the other side, clear stale pseudo styles if no rule matches.
+    if (other._didProcessPseudoRules) {
+      if (other.pseudoBeforeStyle != null) {
+        pseudoBeforeStyle ??= CSSStyleDeclaration();
+        pseudoBeforeStyle!.merge(other.pseudoBeforeStyle!);
+      } else if (pseudoBeforeStyle != null) {
+        pseudoBeforeStyle = null;
+      }
+
+      if (other.pseudoAfterStyle != null) {
+        pseudoAfterStyle ??= CSSStyleDeclaration();
+        pseudoAfterStyle!.merge(other.pseudoAfterStyle!);
+      } else if (pseudoAfterStyle != null) {
+        pseudoAfterStyle = null;
+      }
+
+      if (other.pseudoFirstLetterStyle != null) {
+        pseudoFirstLetterStyle ??= CSSStyleDeclaration();
+        pseudoFirstLetterStyle!.merge(other.pseudoFirstLetterStyle!);
+      } else if (pseudoFirstLetterStyle != null) {
+        pseudoFirstLetterStyle = null;
+      }
+
+      if (other.pseudoFirstLineStyle != null) {
+        pseudoFirstLineStyle ??= CSSStyleDeclaration();
+        pseudoFirstLineStyle!.merge(other.pseudoFirstLineStyle!);
+      } else if (pseudoFirstLineStyle != null) {
+        pseudoFirstLineStyle = null;
+      }
+    } else {
+      if (other.pseudoBeforeStyle != null) {
+        pseudoBeforeStyle ??= CSSStyleDeclaration();
+        pseudoBeforeStyle!.merge(other.pseudoBeforeStyle!);
+      }
+      if (other.pseudoAfterStyle != null) {
+        pseudoAfterStyle ??= CSSStyleDeclaration();
+        pseudoAfterStyle!.merge(other.pseudoAfterStyle!);
+      }
+      if (other.pseudoFirstLetterStyle != null) {
+        pseudoFirstLetterStyle ??= CSSStyleDeclaration();
+        pseudoFirstLetterStyle!.merge(other.pseudoFirstLetterStyle!);
+      }
+      if (other.pseudoFirstLineStyle != null) {
+        pseudoFirstLineStyle ??= CSSStyleDeclaration();
+        pseudoFirstLineStyle!.merge(other.pseudoFirstLineStyle!);
+      }
     }
 
     return updateStatus;
@@ -1103,6 +1182,15 @@ class CSSStyleDeclaration extends DynamicBindingObject
     _pendingProperties.clear();
     _importants.clear();
     _sheetStyle.clear();
+    _pseudoBeforeStyle = null;
+    _pseudoAfterStyle = null;
+    _pseudoFirstLetterStyle = null;
+    _pseudoFirstLineStyle = null;
+    _inlinePseudoBeforeStyle = null;
+    _inlinePseudoAfterStyle = null;
+    _inlinePseudoFirstLetterStyle = null;
+    _inlinePseudoFirstLineStyle = null;
+    _didProcessPseudoRules = false;
   }
 
   @override

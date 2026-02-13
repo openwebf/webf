@@ -1233,8 +1233,18 @@ class RenderFlexLayout extends RenderLayoutBox {
         // inheriting the container's main-axis cap when width is auto or
         // flex-basis:content so content can determine its natural size.
         if (!isReplaced && (s.width.isAuto || isFlexBasisContent)) {
+          // Relax the minimum width to the element's own border-box minimum,
+          // not the parent-imposed tight width, so shrink-to-fit can occur.
+          double minBorderBoxW =
+              s.effectiveBorderLeftWidth.computedValue +
+                  s.effectiveBorderRightWidth.computedValue +
+                  s.paddingLeft.computedValue +
+                  s.paddingRight.computedValue;
+          if (s.minWidth.isNotAuto && s.minWidth.type != CSSLengthType.PERCENTAGE) {
+            minBorderBoxW = math.max(minBorderBoxW, s.minWidth.computedValue);
+          }
           c = BoxConstraints(
-            minWidth: c.minWidth,
+            minWidth: minBorderBoxW,
             maxWidth: double.infinity,
             minHeight: c.minHeight,
             maxHeight: c.maxHeight,
@@ -1246,10 +1256,18 @@ class RenderFlexLayout extends RenderLayoutBox {
         // when the item has auto height or flex-basis:content. This lets the
         // item size to its content instead of being prematurely clamped to 0.
         if (!isReplaced && (s.height.isAuto || isFlexBasisContent)) {
+          double minBorderBoxH =
+              s.effectiveBorderTopWidth.computedValue +
+                  s.effectiveBorderBottomWidth.computedValue +
+                  s.paddingTop.computedValue +
+                  s.paddingBottom.computedValue;
+          if (s.minHeight.isNotAuto && s.minHeight.type != CSSLengthType.PERCENTAGE) {
+            minBorderBoxH = math.max(minBorderBoxH, s.minHeight.computedValue);
+          }
           c = BoxConstraints(
             minWidth: c.minWidth,
             maxWidth: c.maxWidth,
-            minHeight: c.minHeight,
+            minHeight: minBorderBoxH,
             maxHeight: double.infinity,
           );
         }
@@ -2046,19 +2064,28 @@ class RenderFlexLayout extends RenderLayoutBox {
         final CSSRenderStyle cs = flowChild.renderStyle;
         final bool autoMain = cs.width.isAuto;
         final bool hasDefiniteBasis = _getFlexBasis(flowChild) != null;
-        if (autoMain && !hasDefiniteBasis && flowChild.inlineFormattingContext != null) {
-          // Paragraph max-intrinsic width approximates the max-content contribution.
-          final double paraMax = flowChild.inlineFormattingContext!.paragraphMaxIntrinsicWidth;
-          // Convert content-width to border-box width by adding horizontal padding + borders.
-          final double paddingBorderH =
-              cs.paddingLeft.computedValue +
-                  cs.paddingRight.computedValue +
-                  cs.effectiveBorderLeftWidth.computedValue +
-                  cs.effectiveBorderRightWidth.computedValue;
-          final double candidate = (paraMax.isFinite ? paraMax : 0) + paddingBorderH;
+        if (autoMain && !hasDefiniteBasis) {
+          double? candidate;
+          if (flowChild.inlineFormattingContext != null) {
+            // Paragraph max-intrinsic width approximates the max-content contribution.
+            final double paraMax = flowChild.inlineFormattingContext!.paragraphMaxIntrinsicWidth;
+            // Convert content-width to border-box width by adding horizontal padding + borders.
+            final double paddingBorderH =
+                cs.paddingLeft.computedValue +
+                    cs.paddingRight.computedValue +
+                    cs.effectiveBorderLeftWidth.computedValue +
+                    cs.effectiveBorderRightWidth.computedValue;
+            candidate = (paraMax.isFinite ? paraMax : 0) + paddingBorderH;
+          } else {
+            // Fallback: use max intrinsic width (already includes padding/border).
+            final double maxIntrinsic = flowChild.getMaxIntrinsicWidth(double.infinity);
+            if (maxIntrinsic.isFinite) {
+              candidate = maxIntrinsic;
+            }
+          }
           // If the currently measured intrinsic width is larger (e.g., filled to container),
           // prefer the content-based candidate to avoid unintended expansion.
-          if (candidate > 0 && candidate < intrinsicMain) {
+          if (candidate != null && candidate > 0 && candidate < intrinsicMain) {
             intrinsicMain = candidate;
           }
         }
