@@ -36,6 +36,8 @@ const Map<String, dynamic> _checkboxDefaultStyle = {
   BORDER: '0'
 };
 
+const double _kDefaultPlaceholderOpacity = 0.54;
+
 /// create a base input widget containing input and textarea
 mixin BaseInputElement on WidgetElement implements FormElementBase {
   String? oldValue;
@@ -528,6 +530,13 @@ mixin BaseInputState on WebFWidgetElementState {
     return false;
   }
 
+  Color _resolvePlaceholderColor() {
+    final Color base = widgetElement.renderStyle.color.value;
+    final double resolvedOpacity =
+        math.max(0.0, math.min(1.0, base.opacity * _kDefaultPlaceholderOpacity));
+    return base.withOpacity(resolvedOpacity);
+  }
+
   void deactivateBaseInput() {
     _focusNode?.unfocus();
     _focusNode?.removeListener(handleFocusChange);
@@ -574,6 +583,7 @@ mixin BaseInputState on WebFWidgetElementState {
         isCollapsed: false,
         hintText: widgetElement.placeholder,
         hintStyle: TextStyle(
+          color: _resolvePlaceholderColor(),
           fontSize: nonNegativeFontSize,
           height: 1.0, // Ensure hint text has consistent line height
           // Match the main text style for consistent baseline
