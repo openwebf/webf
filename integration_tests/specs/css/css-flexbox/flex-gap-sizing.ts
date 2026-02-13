@@ -71,8 +71,14 @@ describe('css-flexbox gap sizing', () => {
     BODY.appendChild(p);
     BODY.appendChild(flexbox);
 
+    // Wait for layout to complete so the scroll controller has clients
+    await waitForFrame();
+
     // Scroll to the very end
     flexbox.scrollLeft = flexbox.scrollWidth;
+
+    // Wait for the scroll paint to take effect
+    await waitForFrame();
 
     await snapshot();
   });
@@ -154,8 +160,14 @@ describe('css-flexbox gap sizing', () => {
     BODY.appendChild(p);
     BODY.appendChild(flexbox);
 
+    // Wait for layout to complete so the scroll controller has clients
+    await waitForFrame();
+
     // Scroll to the very end
     flexbox.scrollLeft = flexbox.scrollWidth;
+
+    // Wait for the scroll paint to take effect
+    await waitForFrame();
 
     await snapshot();
   });
@@ -227,8 +239,14 @@ describe('css-flexbox gap sizing', () => {
     BODY.appendChild(p);
     BODY.appendChild(flexbox);
 
+    // Wait for layout to complete so the scroll controller has clients
+    await waitForFrame();
+
     // Scroll to the very end
     flexbox.scrollLeft = flexbox.scrollWidth;
+
+    // Wait for the scroll paint to take effect
+    await waitForFrame();
 
     await snapshot();
   });
@@ -297,8 +315,14 @@ describe('css-flexbox gap sizing', () => {
     BODY.appendChild(p);
     BODY.appendChild(flexbox);
 
+    // Wait for layout to complete so the scroll controller has clients
+    await waitForFrame();
+
     // Scroll to the very end
     flexbox.scrollTop = flexbox.scrollHeight;
+
+    // Wait for the scroll paint to take effect
+    await waitForFrame();
 
     await snapshot();
   });
@@ -376,8 +400,14 @@ describe('css-flexbox gap sizing', () => {
     BODY.appendChild(p);
     BODY.appendChild(flexbox);
 
+    // Wait for layout to complete so the scroll controller has clients
+    await waitForFrame();
+
     // Scroll to the very end
     flexbox.scrollTop = flexbox.scrollHeight;
+
+    // Wait for the scroll paint to take effect
+    await waitForFrame();
 
     await snapshot();
   });
@@ -446,8 +476,14 @@ describe('css-flexbox gap sizing', () => {
     BODY.appendChild(p);
     BODY.appendChild(flexbox);
 
+    // Wait for layout to complete so the scroll controller has clients
+    await waitForFrame();
+
     // Scroll to the very end
     flexbox.scrollTop = flexbox.scrollHeight;
+
+    // Wait for the scroll paint to take effect
+    await waitForFrame();
 
     await snapshot();
   });
