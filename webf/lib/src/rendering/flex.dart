@@ -4027,13 +4027,25 @@ class RenderFlexLayout extends RenderLayoutBox {
           }
         }
 
-        final double childScrollableMain = preSiblingsMainSize +
-            (_isHorizontalFlexDirection
-                ? childScrollableSize.width + childOffsetX
-                : childScrollableSize.height + childOffsetY);
-        final double childScrollableCross = _isHorizontalFlexDirection
+        final double childBoxMainSize = _isHorizontalFlexDirection ? child.size.width : child.size.height;
+        final double childBoxCrossSize = _isHorizontalFlexDirection ? child.size.height : child.size.width;
+        final double childMainOffset = _isHorizontalFlexDirection ? childOffsetX : childOffsetY;
+        final double childCrossOffset = _isHorizontalFlexDirection ? childOffsetY : childOffsetX;
+        final double childScrollableMainExtent = _isHorizontalFlexDirection
+            ? childScrollableSize.width + childOffsetX
+            : childScrollableSize.height + childOffsetY;
+        final double childScrollableCrossExtent = _isHorizontalFlexDirection
             ? childScrollableSize.height + childOffsetY
             : childScrollableSize.width + childOffsetX;
+
+        // The child's extent must cover at least its offset border-box.
+        // child.scrollableSize may only cover padding-box, but offsets (margin/relative/transform)
+        // still need to be preserved so negative offsets don't create phantom trailing scroll range.
+        final double childScrollableMain = preSiblingsMainSize +
+            math.max(childBoxMainSize + childMainOffset, childScrollableMainExtent);
+        final double childScrollableCross = math.max(
+            childBoxCrossSize + childCrossOffset,
+            childScrollableCrossExtent);
 
         maxScrollableMainSizeOfLine = math.max(maxScrollableMainSizeOfLine, childScrollableMain);
         maxScrollableCrossSizeInLine = math.max(maxScrollableCrossSizeInLine, childScrollableCross);
@@ -4048,6 +4060,10 @@ class RenderFlexLayout extends RenderLayoutBox {
           }
         }
         preSiblingsMainSize += childMainSize;
+        // Add main-axis gap between items (not after the last item).
+        if (runChild != runChildren.last) {
+          preSiblingsMainSize += _getMainAxisGap();
+        }
       }
 
       // Max scrollable cross size of all the children in the line.
@@ -4056,6 +4072,10 @@ class RenderFlexLayout extends RenderLayoutBox {
       scrollableMainSizeOfLines.add(maxScrollableMainSizeOfLine);
       scrollableCrossSizeOfLines.add(maxScrollableCrossSizeOfLine);
       preLinesCrossSize += runMetric.crossAxisExtent;
+      // Add cross-axis gap between flex lines (not after the last line).
+      if (runMetric != runMetrics.last) {
+        preLinesCrossSize += _getCrossAxisGap();
+      }
     }
 
     // Max scrollable main size of all lines.
