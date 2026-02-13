@@ -6,6 +6,9 @@
  * Copyright (C) 2022-present The OpenWebF Company. All rights reserved.
  */
 
+import 'dart:ffi';
+
+import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/dom.dart' as dom;
@@ -18,6 +21,29 @@ mixin BaseCheckedElement on BaseInputElement {
   bool _checkedDirty = false;
 
   String get _earlyCheckedKey => hashCode.toString();
+
+  void _syncCheckedStateToNative(bool checked) {
+    final Pointer<NativeBindingObject>? nativePtr = pointer;
+    final double? ctxId = contextId;
+    if (nativePtr == null || ctxId == null) return;
+    if (isBindingObjectDisposed(nativePtr)) return;
+    if (nativePtr.ref.invokeBindingMethodFromDart == nullptr) return;
+
+    final DartInvokeBindingMethodsFromDart invoke =
+        nativePtr.ref.invokeBindingMethodFromDart.asFunction();
+
+    final Pointer<NativeValue> method = malloc.allocate(sizeOf<NativeValue>());
+    toNativeValue(method, '__syncCheckedState', this);
+    final Pointer<NativeValue> args = makeNativeValueArguments(this, [checked]);
+
+    final _SyncCheckedStateContext context = _SyncCheckedStateContext(method, args);
+    final Pointer<NativeFunction<NativeInvokeResultCallback>> resultCallback =
+        Pointer.fromFunction(_handleSyncCheckedStateResult);
+
+    Future.microtask(() {
+      invoke(nativePtr, ctxId, method, 1, args, context, resultCallback);
+    });
+  }
 
   bool getChecked() {
     if (this is FlutterInputElement) {
@@ -80,6 +106,9 @@ mixin BaseCheckedElement on BaseInputElement {
       }
       if (previous != getChecked()) {
         _markPseudoStateDirty();
+        if (!fromAttribute && ownerDocument.ownerView.enableBlink) {
+          _syncCheckedStateToNative(getChecked());
+        }
       }
     }
   }
@@ -177,6 +206,20 @@ mixin BaseCheckedElement on BaseInputElement {
       ownerDocument.markElementStyleDirty(this, reason: 'childList-pseudo');
     }
   }
+}
+
+class _SyncCheckedStateContext {
+  final Pointer<NativeValue> method;
+  final Pointer<NativeValue> args;
+
+  _SyncCheckedStateContext(this.method, this.args);
+}
+
+void _handleSyncCheckedStateResult(Object contextHandle, Pointer<NativeValue> returnValue) {
+  final _SyncCheckedStateContext context = contextHandle as _SyncCheckedStateContext;
+  malloc.free(context.method);
+  malloc.free(context.args);
+  malloc.free(returnValue);
 }
 
 mixin CheckboxElementState on WebFWidgetElementState {

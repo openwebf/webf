@@ -300,6 +300,42 @@ bool Element::IsDisabledFormControl() const {
   return false;
 }
 
+bool Element::IsCheckedState() const {
+  // When Blink CSS is enabled, checked_state_ only tracks attribute mutations.
+  // For widget-backed inputs, checkedness can change from Dart-side interaction
+  // without attribute changes. Pull the current property from Dart to keep
+  // :checked matching aligned with the actual checkedness.
+  if (GetExecutingContext()->isBlinkEnabled() && IsWidgetElement()) {
+    ExceptionState exception_state;
+    NativeValue result =
+        GetBindingProperty(CheckedAttrName(), FlushUICommandReason::kDependentsOnElement, exception_state);
+    if (!exception_state.HasException()) {
+      bool checked = NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
+      const_cast<Element*>(this)->checked_state_ = checked;
+      return checked;
+    }
+  }
+  return checked_state_;
+}
+
+void Element::SetCheckedStateFromDart(bool checked) {
+  if (checked_state_ == checked) {
+    return;
+  }
+  checked_state_ = checked;
+  if (!GetExecutingContext()->isBlinkEnabled()) {
+    return;
+  }
+
+  // Trigger style invalidation for :checked dependent selectors in Blink mode.
+  GetDocument().EnsureStyleEngine().SetNeedsHasPseudoStateRecalc();
+  if (Element* root = GetDocument().documentElement()) {
+    root->SetNeedsStyleRecalc(kSubtreeStyleChange,
+                              StyleChangeReasonForTracing::FromAttribute(QualifiedName(CheckedAttrName())));
+  }
+  GetDocument().UpdateStyleForThisDocument();
+}
+
 bool Element::MatchesValidityPseudoClasses() const {
   const AtomicString tag_name = localName();
   if (tag_name.IsNull()) {

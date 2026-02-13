@@ -3255,7 +3255,8 @@ class InlineFormattingContext {
 
           // Apply ::first-letter if present and not yet applied.
           final ownerEl = (container as RenderBoxModel).renderStyle.target;
-          final CSSStyleDeclaration? fl = ownerEl.style.pseudoFirstLetterStyle;
+          final CSSStyleDeclaration? fl =
+              ownerEl.style.resolvedPseudoFirstLetterStyle;
           if (!firstLetterDone && fl != null) {
             // Determine prefix length to style: include leading quote if followed by ASCII letter.
             int prefixLen = 0;
@@ -3587,7 +3588,8 @@ class InlineFormattingContext {
   }) {
     if (_paragraph == null || _paraLines.isEmpty) return;
     final ownerEl = (container as RenderBoxModel).renderStyle.target;
-    final CSSStyleDeclaration? firstLineDecl = ownerEl.style.pseudoFirstLineStyle;
+    final CSSStyleDeclaration? firstLineDecl =
+        ownerEl.style.resolvedPseudoFirstLineStyle;
     if (firstLineDecl == null) return;
 
     final int firstLineLimit = _firstLineCharLimit(_paragraph!, _paraCharCount);
@@ -3600,7 +3602,7 @@ class InlineFormattingContext {
       isBlockLike: isBlockLike,
       firstLineLimit: firstLineLimit,
       firstLineDecl: firstLineDecl,
-      firstLetterDecl: ownerEl.style.pseudoFirstLetterStyle,
+      firstLetterDecl: ownerEl.style.resolvedPseudoFirstLetterStyle,
     );
 
     final int correctedLimit = _firstLineCharLimit(_paragraph!, _paraCharCount);
@@ -3614,7 +3616,7 @@ class InlineFormattingContext {
         isBlockLike: isBlockLike,
         firstLineLimit: correctedLimit,
         firstLineDecl: firstLineDecl,
-        firstLetterDecl: ownerEl.style.pseudoFirstLetterStyle,
+        firstLetterDecl: ownerEl.style.resolvedPseudoFirstLetterStyle,
       );
     }
   }
