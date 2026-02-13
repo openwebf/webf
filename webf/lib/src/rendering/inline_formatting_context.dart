@@ -894,6 +894,33 @@ class InlineFormattingContext {
     return (lt, lb, lm.baseline);
   }
 
+  BorderRadius? _borderRadiusForInlineFragment(
+      CSSRenderStyle style, {
+      required bool isFirstLine,
+      required bool isLastLine,
+      required bool isLeftEdge,
+      required bool isRightEdge,
+    }) {
+    final List<Radius>? radii = style.borderRadius;
+    if (radii == null) return null;
+    final Radius tl = (isFirstLine && isLeftEdge) ? radii[0] : Radius.zero;
+    final Radius tr = (isFirstLine && isRightEdge) ? radii[1] : Radius.zero;
+    final Radius br = (isLastLine && isRightEdge) ? radii[2] : Radius.zero;
+    final Radius bl = (isLastLine && isLeftEdge) ? radii[3] : Radius.zero;
+    if (tl == Radius.zero &&
+        tr == Radius.zero &&
+        br == Radius.zero &&
+        bl == Radius.zero) {
+      return null;
+    }
+    return BorderRadius.only(
+      topLeft: tl,
+      topRight: tr,
+      bottomRight: br,
+      bottomLeft: bl,
+    );
+  }
+
   // Find paragraph line index with maximum vertical overlap for a TextBox.
   int _bestOverlapLineIndexForBox(ui.TextBox tb, List<ui.LineMetrics> lines) {
     int best = -1;
@@ -3856,6 +3883,18 @@ class InlineFormattingContext {
       final bB = s.effectiveBorderBottomWidth.computedValue;
       // Cache metrics per style for all its fragments in this loop
       final (double mHeight, double mBaseline) = _measureTextMetricsForStyle(s);
+      int minLineIndex = 1 << 30;
+      int maxLineIndex = -1;
+      for (final rect in e.rects) {
+        final int li = _lineIndexForRect(rect);
+        if (li < 0) continue;
+        if (li < minLineIndex) minLineIndex = li;
+        if (li > maxLineIndex) maxLineIndex = li;
+      }
+      if (minLineIndex == (1 << 30)) {
+        minLineIndex = 0;
+        maxLineIndex = 0;
+      }
 
       for (int i = 0; i < e.rects.length; i++) {
         final tb = e.rects[i];
@@ -4158,8 +4197,22 @@ class InlineFormattingContext {
         final bool suppressEdge = suppressTinyEdgePaint();
         // Skip painting inline background rectangles when background-clip:text is set
         if (!suppressEdge && s.backgroundColor?.value != null && s.backgroundClip != CSSBackgroundBoundary.text) {
+          final int fragLineIndex = _lineIndexForRect(tb);
+          final bool isFirstLine = fragLineIndex == minLineIndex;
+          final bool isLastLine = fragLineIndex == maxLineIndex;
+          final BorderRadius? radius = _borderRadiusForInlineFragment(
+            s,
+            isFirstLine: isFirstLine,
+            isLastLine: isLastLine,
+            isLeftEdge: physLeftEdge,
+            isRightEdge: physRightEdge,
+          );
           final bg = Paint()..color = s.backgroundColor!.value;
-          canvas.drawRect(rect, bg);
+          if (radius != null) {
+            canvas.drawRRect(radius.toRRect(rect), bg);
+          } else {
+            canvas.drawRect(rect, bg);
+          }
         }
 
         // Borders: do not suppress on tiny edge fragments; borders must remain continuous.
