@@ -63,7 +63,10 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   @override
   void didPop() {
     ModalRoute route = ModalRoute.of(context)!;
-    var state = route.settings.arguments;
+    final delegate = widget.controller.hybridHistory.delegate;
+    final state = delegate != null
+        ? delegate.state(context, null)
+        : route.settings.arguments;
 
     // CRITICAL FIX: Use widget.path instead of route.settings.name for consistency
     String path = widget.path;
@@ -80,7 +83,10 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   @override
   void didPopNext() {
     ModalRoute route = ModalRoute.of(context)!;
-    var state = route.settings.arguments;
+    final delegate = widget.controller.hybridHistory.delegate;
+    final state = delegate != null
+        ? delegate.state(context, null)
+        : route.settings.arguments;
 
     // CRITICAL FIX: Use widget.path instead of route.settings.name for consistency
     String path = widget.path;
@@ -95,7 +101,10 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   @override
   void didPush() {
     ModalRoute route = ModalRoute.of(context)!;
-    var state = route.settings.arguments;
+    final delegate = widget.controller.hybridHistory.delegate;
+    final state = delegate != null
+        ? delegate.state(context, null)
+        : route.settings.arguments;
 
     // CRITICAL FIX: Use widget.path (the actual route path) instead of route.settings.name
     // because go_router's universal catch-all route always returns 'universal-webf-route' as the name
@@ -113,7 +122,10 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   @override
   void didPushNext() {
     ModalRoute route = ModalRoute.of(context)!;
-    var state = route.settings.arguments;
+    final delegate = widget.controller.hybridHistory.delegate;
+    final state = delegate != null
+        ? delegate.state(context, null)
+        : route.settings.arguments;
 
     // CRITICAL FIX: Use widget.path (the actual route path) instead of route.settings.name
     // because go_router's universal catch-all route always returns 'universal-webf-route' as the name

@@ -78,7 +78,9 @@ class HybridHistoryModule extends WebFBaseModule {
 
   HybridHistoryDelegate? _delegate;
 
-  set delegate(HybridHistoryDelegate value) {
+  HybridHistoryDelegate? get delegate => _delegate;
+
+  set delegate(HybridHistoryDelegate? value) {
     _delegate = value;
   }
 
